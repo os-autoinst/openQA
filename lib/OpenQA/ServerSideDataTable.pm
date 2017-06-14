@@ -22,11 +22,11 @@ sub render_response {
     my $controller            = $args{controller};
     my $resultset_name        = $args{resultset};
     my $columns               = $args{columns};
-    my $initial_conds         = $args{initial_conds};
     my $prepare_data_function = $args{prepare_data_function};
     # optional parameter
-    my $filter_conds = $args{filter_conds};
-    my $params = $args{additional_params} // {};
+    my $initial_conds = $args{initial_conds} // [];
+    my $filter_conds  = $args{filter_conds};
+    my $params        = $args{additional_params} // {};
 
     my $resultset = $controller->db->resultset($resultset_name);
 
@@ -40,9 +40,10 @@ sub render_response {
     my $filtered_count;
     if ($filter_conds) {
         push(@$filter_conds, @$initial_conds);
-        $filtered_count = $resultset->search({-and => $filter_conds}, $params);
+        $filtered_count = $resultset->search({-and => $filter_conds}, $params)->count;
     }
     else {
+        $filter_conds   = $initial_conds;
         $filtered_count = $total_count;
     }
 

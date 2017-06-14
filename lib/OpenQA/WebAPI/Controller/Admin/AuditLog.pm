@@ -23,6 +23,7 @@ use Time::Seconds;
 use Time::ParseDate;
 use JSON ();
 use OpenQA::Utils 'log_warning';
+use OpenQA::ServerSideDataTable;
 
 sub index {
     my ($self) = @_;
@@ -132,60 +133,42 @@ sub _get_search_query {
     _add_single_query($query, $current_key, \@current_search);
 
     # add proper -and => -or structure to constructed query
-    my $res;
+    my @filter_conds;
     for my $k (keys %$query) {
-        push @{$res->{-and}}, (-or => $query->{$k});
+        push(@filter_conds, (-or => $query->{$k}));
     }
-    return $res;
+    return \@filter_conds;
 }
 
 sub ajax {
     my ($self) = @_;
 
-    my $search = $self->param('search[value]') // '';
-    my $echo = int($self->param('_') // 0);
-
-    my $query  = _get_search_query($search);
-    my $params = {};
-
-    # parameter for order
-    my @columns = qw(me.t_created connection_id owner.nickname event_data event);
-    my @order_by_params;
-    my $index = 0;
-    while (1) {
-        my $column_index = $self->param("order[$index][column]") // @columns;
-        my $column_order = $self->param("order[$index][dir]");
-        last unless $column_index < @columns && grep { $column_order eq $_ } qw(asc desc);
-        push(@order_by_params, {'-' . $column_order => $columns[$column_index]});
-        ++$index;
-    }
-    $params->{order_by} = \@order_by_params if @order_by_params;
-
-    # parameter for paging
-    my $first_row = $self->param('start');
-    $params->{offset} = $first_row if $first_row;
-    my $row_limit = $self->param('length');
-    $params->{rows} = $row_limit if $row_limit;
-
-    my $events_rs = $self->db->resultset('AuditEvents')->search(undef, {prefetch => 'owner', cache => 1});
-    my $fullSize = $events_rs->count;
-    $events_rs = $events_rs->search($query);
-    my $filteredSize = $events_rs->count;
-    $events_rs = $events_rs->search(undef, $params);
-    my @events;
-    while (my $event = $events_rs->next) {
-        my $data = {
-            id         => $event->id,
-            user       => $event->owner ? $event->owner->nickname : 'system',
-            connection => $event->connection_id,
-            event      => $event->event,
-            event_data => $event->event_data,
-            event_time => $event->t_created,
-        };
-        push @events, $data;
-    }
-    $self->render(
-        json => {sEcho => $echo, aaData => \@events, iTotalRecords => $fullSize, iTotalDisplayRecords => $filteredSize}
+    OpenQA::ServerSideDataTable::render_response(
+        controller        => $self,
+        resultset         => 'AuditEvents',
+        columns           => [qw(me.t_created connection_id owner.nickname event_data event)],
+        filter_conds      => _get_search_query($self->param('search[value]') // ''),
+        additional_params => {
+            prefetch => 'owner',
+            cache    => 1
+        },
+        prepare_data_function => sub {
+            my ($results) = @_;
+            my @events;
+            while (my $event = $results->next) {
+                push(
+                    @events,
+                    {
+                        id         => $event->id,
+                        user       => $event->owner ? $event->owner->nickname : 'system',
+                        connection => $event->connection_id,
+                        event      => $event->event,
+                        event_data => $event->event_data,
+                        event_time => $event->t_created,
+                    });
+            }
+            return \@events;
+        },
     );
 }
 
