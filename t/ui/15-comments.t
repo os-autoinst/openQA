@@ -194,7 +194,7 @@ subtest 'URL auto-replace' => sub {
         bsc#2436347bla2
         <a href="https://openqa.example.com/foo/bar">https://openqa.example.com/foo/bar</a>: http://localhost:9562
         https://openqa.example.com/tests/181148 (reference http://localhost/foo/bar )
-        bsc#1234 boo#2345,poo#3456 t#4567
+        bsc#1234 boo#2345,poo#3456 t#4567 "some quotes suff should not cause problems"
         t#5678/modules/welcome/steps/1
         https://progress.opensuse.org/issues/6789
         https://bugzilla.novell.com/show_bug.cgi?id=7890
@@ -205,7 +205,8 @@ subtest 'URL auto-replace' => sub {
         https://github.com/os-autoinst/os-autoinst/pull/960
         bgo#768954 brc#1401123
         https://bugzilla.gnome.org/show_bug.cgi?id=690345
-        https://bugzilla.redhat.com/show_bug.cgi?id=343098'
+        https://bugzilla.redhat.com/show_bug.cgi?id=343098
+        [bsc#1043970](https://bugzilla.suse.com/show_bug.cgi?id=1043970 "Bugref at end of title: bsc#1043760")'
     );
     $driver->find_element_by_id('submitComment')->click();
     wait_for_ajax;
@@ -219,7 +220,7 @@ subtest 'URL auto-replace' => sub {
 qr(bsc#1234 boo#2345,poo#3456 t#4567 .*poo#6789 bsc#7890 bsc#1000629 bsc#1000630 bnc#1246 gh#os-autoinst/openQA#1234 gh#os-autoinst/os-autoinst#960 bgo#768954 brc#1401123)
     );
     my @urls = $driver->find_elements('div.media-comment a', 'css');
-    is(scalar @urls, 20);
+    is(scalar @urls, 21);
     is((shift @urls)->get_text(), 'https://openqa.example.com/foo/bar',      "url1");
     is((shift @urls)->get_text(), 'http://localhost:9562',                   "url2");
     is((shift @urls)->get_text(), 'https://openqa.example.com/tests/181148', "url3");
@@ -240,6 +241,7 @@ qr(bsc#1234 boo#2345,poo#3456 t#4567 .*poo#6789 bsc#7890 bsc#1000629 bsc#1000630
     is((shift @urls)->get_text(), 'brc#1401123',                             "url18");
     is((shift @urls)->get_text(), 'bgo#690345',                              "url19");
     is((shift @urls)->get_text(), 'brc#343098',                              "url20");
+    is((shift @urls)->get_text(), 'bsc#1043970',                             "url21");
 
     my @urls2 = $driver->find_elements('div.media-comment a', 'css');
     is((shift @urls2)->get_attribute('href'), 'https://openqa.example.com/foo/bar',                 "url1-href");
@@ -262,6 +264,7 @@ qr(bsc#1234 boo#2345,poo#3456 t#4567 .*poo#6789 bsc#7890 bsc#1000629 bsc#1000630
     is((shift @urls2)->get_attribute('href'), 'https://bugzilla.redhat.com/show_bug.cgi?id=1401123',   "url18-href");
     is((shift @urls2)->get_attribute('href'), 'https://bugzilla.gnome.org/show_bug.cgi?id=690345',     "url19-href");
     is((shift @urls2)->get_attribute('href'), 'https://bugzilla.redhat.com/show_bug.cgi?id=343098',    "url20-href");
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1043970',     "url21-href");
 };
 
 subtest 'commenting in test results including labels' => sub {
