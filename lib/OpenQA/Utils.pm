@@ -431,7 +431,7 @@ sub bugref_regex {
     my $marker = join('|', keys %bugrefs);
     my $repo_re = qr{[a-zA-Z/-]+};
     # <marker>[#<project/repo>]#<id>
-    return qr{(?<![\(\["\>])(?<match>(?<marker>$marker)\#?(?<repo>$repo_re)?\#(?<id>\d+))(?![\w])};
+    return qr{(?<![\(\[\"\>])(?<match>(?<marker>$marker)\#?(?<repo>$repo_re)?\#(?<id>\d+))(?![\w\"])};
 }
 
 sub find_bugref {
