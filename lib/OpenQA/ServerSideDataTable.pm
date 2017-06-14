@@ -14,21 +14,23 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::ServerSideDataTable;
+use Scalar::Util;
 use strict;
 
 sub render_response {
     my (%args) = @_;
     # mandatory parameter
     my $controller            = $args{controller};
-    my $resultset_name        = $args{resultset};
+    my $resultset             = $args{resultset};
     my $columns               = $args{columns};
     my $prepare_data_function = $args{prepare_data_function};
     # optional parameter
+    my $custom_query  = $args{custom_query};
     my $initial_conds = $args{initial_conds} // [];
     my $filter_conds  = $args{filter_conds};
     my $params        = $args{additional_params} // {};
 
-    my $resultset = $controller->db->resultset($resultset_name);
+    $resultset = Scalar::Util::blessed($resultset) ? $resultset : $controller->db->resultset($resultset);
 
     # determine total count
     my $total_count
@@ -75,6 +77,7 @@ sub render_response {
             recordsTotal    => $total_count,
             recordsFiltered => $filtered_count,
             data            => $data,
+            rows            => $params->{rows},
         });
 }
 
