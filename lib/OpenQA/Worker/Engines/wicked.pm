@@ -199,9 +199,9 @@ sub engine_workit {
 #export IMAGE_NAME_SUT="${IMAGE_NAME_SUT:-"SLE_12_SP3_Build0314-x86_64-default"}"
     $ENV{"IMAGE_NAME_SUT"}="SLE_12_SP3_Build0314-x86_64-default";
 #[DEBUG] setting QA_WEB_REPO=http://dist.suse.de/install/SLP/SLE-12-Module-Web-Scripting-LATEST/x86_64/CD1/
-    $ENV{"IMAGE_SOURCE"}=${$job->{settings}}{'QA_WEB_REPO'}
+    $ENV{"IMAGE_SOURCE"}=${$job->{settings}}{'QA_WEB_REPO'};
 #[DEBUG] setting NAME=00000012-sle-12-SP3-Server-DVD-x86_64-Build0420-installcheck@64bit
-    $ENV{"IMAGE_NAME"}=${$job->{settings}}{'NAME'}
+    $ENV{"IMAGE_NAME"}=${$job->{settings}}{'NAME'};
 
 
     my $shared_cache;
