@@ -195,9 +195,9 @@ sub engine_workit {
     }
 
 #export COMPILE_WICKED="${COMPILE_WICKED:-"false"}"
-    $ENV(COMPILE_WICKED)="false"
+    $ENV("COMPILE_WICKED")="false";
 #export IMAGE_NAME_SUT="${IMAGE_NAME_SUT:-"SLE_12_SP3_Build0314-x86_64-default"}"
-    $ENV(IMAGE_NAME_SUT)="SLE_12_SP3_Build0314-x86_64-default"
+    $ENV("IMAGE_NAME_SUT")="SLE_12_SP3_Build0314-x86_64-default";
 
     my $shared_cache;
 
