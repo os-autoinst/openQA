@@ -20,6 +20,7 @@ use Mojo::Util 'hmac_sha1_sum';
 
 sub auth {
     my $self = shift;
+    my $log  = $self->app->log;
     my $user;
 
     my $reason = "Not authorized";
@@ -36,39 +37,48 @@ sub auth {
         my $hash    = $headers->header('X-API-Hash');
         my $api_key;
         if ($key) {
-            $self->app->log->debug("API key from client: *$key*");
+            $log->debug("API key from client: *$key*");
             $api_key = $self->db->resultset("ApiKeys")->find({key => $key});
         }
         else {
-            $self->app->log->debug("No API key from client.");
+            $log->debug("No API key from client.");
             $reason = "no api key";
         }
         if ($api_key) {
-            $self->app->log->debug(sprintf "Key is for user '%s'", $api_key->user->username);
-            my $msg = $self->req->url->to_string;
-            #$self->app->log->debug("$hash $msg");
+            $log->debug(sprintf "Key is for user '%s'", $api_key->user->username);
+            my $msg                = $self->req->url->to_string;
             my $timestamp          = $headers->header('X-API-Microtime');
             my $build_tx_timestamp = $headers->header('X-Build-Tx-Time');
+            my $username           = $api_key->user->username;
+            my $request_ip         = $headers->header("x-forwarded-for") || "unknown";
             if ($self->_valid_hmac($hash, $msg, $build_tx_timestamp, $timestamp, $api_key)) {
                 $user = $api_key->user;
             }
             else {
-                $self->app->log->error("hmac check failed");
+                my $log_msg
+                  = sprintf "Rejecting authentication for user '%s' with ip '%s'. Valid key '%s', secret '%s'",
+                  $username, $request_ip, $api_key->key, $api_key->secret;
                 if (!_is_timestamp_valid($build_tx_timestamp, $timestamp)) {
                     $reason = "timestamp mismatch";
+                    $self->app->log->warn($log_msg . ", $reason");
                 }
                 elsif (_is_expired($api_key)) {
                     $reason = "api key expired";
+                    $self->app->log->info($log_msg . ", $reason");
+                }
+                else {
+                    $reason = "unknown error (wrong secret?)";
+                    $self->app->log->error($log_msg . ", $reason");
                 }
             }
         }
         elsif ($key) {
-            $self->app->log->error(sprintf "api key '%s' not found", $key);
+            $log->error(sprintf "api key '%s' not found", $key);
         }
     }
 
     if ($user) {
-        $self->app->log->debug(sprintf "API auth by user: %s, operator: %d", $user->username, $user->is_operator);
+        $log->debug(sprintf "API auth by user: %s, operator: %d", $user->username, $user->is_operator);
         $self->stash(current_user => {user => $user});
         return 1;
     }
