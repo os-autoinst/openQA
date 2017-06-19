@@ -252,7 +252,7 @@ sub engine_workit {
         #exec  "sudo -E su -c bash -c \"echo Ala ma asa; echo \${IMAGE_NAME_SUT};set; whoami; cd ; ./build-and-test-wicked-with-slenkins.sh\" -m jenkins ";
         #exec  "sudo -E -u jenkins bash -c \"echo Ala ma asa; echo \${IMAGE_NAME_SUT};set; whoami; cd ; ./build-and-test-wicked-with-slenkins.sh\"";
         system "echo --------------------------------------------------; whoami; echo --------------------------------------------------";
-        exec  "sudo -E -u jenkins bash -c \"echo Ala ma asa; echo \${IMAGE_NAME_SUT};set; whoami; \"";
+        exec  "sudo -E -u jenkins bash -c \"echo Ala ma asa; echo \${IMAGE_NAME_SUT};set; whoami; cd ; ./build-and-test-wicked-with-slenkins.sh\"";
         #exec  "bash -c \"echo Ala ma asa; echo \${IMAGE_NAME_SUT};set; whoami; cd ; ./build-and-test-wicked-with-slenkins.sh\"";
         #exec  "sudo su -c bash -c \"echo Ala ma asa; whoami\" jenkins ";
         die "exec failed: $!\n";
