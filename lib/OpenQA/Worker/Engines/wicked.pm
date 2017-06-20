@@ -203,7 +203,7 @@ sub engine_workit {
 #[DEBUG] setting NAME=00000012-sle-12-SP3-Server-DVD-x86_64-Build0420-installcheck@64bit
     $ENV{"IMAGE_NAME"}=${$job->{settings}}{'NAME'};
 #export WORKSPACE="${WORKSPACE:-"/var/lib/jenkins/workspace/wicked_master_nanny"}"
-    $ENV{"WORKSPACE"}=${$job->{settings}}{'/var/lib/jenkins/workspace/wicked_master_nanny'};
+    $ENV{"WORKSPACE"}='/var/lib/jenkins/workspace/wicked_master_nanny';
 
 
     my $shared_cache;
