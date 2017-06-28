@@ -130,22 +130,23 @@ sub editpage_layout_check() {
     $elem            = $driver->find_element_by_id('needleeditor_textarea');
     $decode_textarea = decode_json($elem->get_value());
     # the value already defined in $default_json
-    is(@{$decode_textarea->{area}},           1,       'exclude is not present when take matches selected');
-    is($decode_textarea->{area}[0]->{xpos},   0,       'xpos correct');
-    is($decode_textarea->{area}[0]->{ypos},   0,       'ypos correct');
-    is($decode_textarea->{area}[0]->{width},  384,     'width correct');
-    is($decode_textarea->{area}[0]->{height}, 217,     'height correct');
-    is($decode_textarea->{area}[0]->{type},   'match', 'type correct');
-
-    # unselect "take matches": exclude area should show up
-    $driver->find_element_by_id('take_matches')->click();
-    $decode_textarea = decode_json($elem->get_value());
-    is(@{$decode_textarea->{area}},           2,         'both areas present when take matches not selected');
+    is(@{$decode_textarea->{area}},           2,         'exclude areas always present');
+    is($decode_textarea->{area}[0]->{xpos},   0,         'xpos correct');
+    is($decode_textarea->{area}[0]->{ypos},   0,         'ypos correct');
+    is($decode_textarea->{area}[0]->{width},  384,       'width correct');
+    is($decode_textarea->{area}[0]->{height}, 217,       'height correct');
+    is($decode_textarea->{area}[0]->{type},   'match',   'type correct');
     is($decode_textarea->{area}[1]->{xpos},   175,       'xpos correct');
     is($decode_textarea->{area}[1]->{ypos},   45,        'ypos correct');
     is($decode_textarea->{area}[1]->{width},  160,       'width correct');
     is($decode_textarea->{area}[1]->{height}, 60,        'height correct');
     is($decode_textarea->{area}[1]->{type},   'exclude', 'type correct');
+
+    # toggling 'take matches' has no effect
+    $driver->find_element_by_xpath('//input[@value="inst-timezone"]')->click();
+    is(@{decode_json($elem->get_value())->{area}}, 2, 'exclude areas always present');
+    $driver->find_element_by_xpath('//input[@value="inst-timezone"]')->click();
+    is(@{decode_json($elem->get_value())->{area}}, 2, 'no duplicated exclude areas present');
 }
 
 sub add_needle_tag(;$) {
