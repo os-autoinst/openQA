@@ -235,7 +235,8 @@
                                 </option>
                             % }
                         </select>
-                        <input type="checkbox" id="take_matches" checked>Take matches</input>
+                        <input type="checkbox" id="take_matches" checked>
+                        <label for="take_matches">Take matches</label>
                     </div>
                 </div>
 
