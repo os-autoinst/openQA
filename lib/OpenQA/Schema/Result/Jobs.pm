@@ -1240,10 +1240,26 @@ sub allocate_network {
     my %used = map { $_->vlan => 1 } @used_rs;
 
     for ($vlan = 1;; $vlan++) {
-        if (!$used{$vlan}) {
-            $self->networks->find_or_create({name => $name, vlan => $vlan});
-            return $vlan;
+        next if ($used{$vlan});
+        my $created;
+        # a transaction is needed to avoid the same tag being assigned
+        # to two jobs that requires a new vlan tag in the same time.
+        try {
+            $self->networks->result_source->schema->txn_do(
+                sub {
+                    my $found = $self->networks->find_or_new({name => $name, vlan => $vlan});
+                    unless ($found->in_storage) {
+                        $found->insert;
+                        # return the vlan tag only if we are sure it is in the DB
+                        $created = 1 if ($found->in_storage);
+                    }
+                });
         }
+        catch {
+            log_debug("Failed to create new vlan tag: $vlan");
+            next;
+        };
+        return $vlan if $created;
     }
 }
 
