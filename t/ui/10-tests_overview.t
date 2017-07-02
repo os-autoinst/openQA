@@ -65,7 +65,7 @@ my $fmod = $driver->find_elements('.failedmodule', 'css')->[1];
 $driver->mouse_move_to_location(element => $fmod, xoffset => 8, yoffset => 8);
 wait_for_ajax;
 like($driver->find_elements('.failedmodule a', 'css')->[1]->get_attribute('href'),
-    qr/\/3$/, 'ajax update failed module step');
+    qr/\/kate\/1$/, 'ajax update failed module step');
 
 my @descriptions = $driver->find_elements('td.name a', 'css');
 is(scalar @descriptions, 1, 'only test suites with description content are shown as links');
