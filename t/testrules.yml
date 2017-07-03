@@ -28,6 +28,7 @@ seq:
      - ./t/22-dashboard.t
      - ./t/23-amqp.t
      - ./t/24-worker.t
+     - ./t/25-cache.t
      - ./t/basic.t
      - ./t/deploy.t
      - ./t/full-stack.t
