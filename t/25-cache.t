@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (c) 2016 SUSE LINUX GmbH, Nuernberg, Germany.
+# Copyright (c) 2017 SUSE LINUX GmbH, Nuernberg, Germany.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -89,15 +89,91 @@ sub db_handle_connection {
 }
 
 sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
+
+my $daemon;
+my $mock = Mojolicious->new;
+
+sub start_server {
+    $serverpid = fork();
+    if ($serverpid == 0) {
+        # setup mock
+
+        $mock->routes->get(
+            '/tests/:job/asset/:type/:filename' => sub {
+                my $c        = shift;
+                my $id       = $c->stash('job');
+                my $type     = $c->stash('type');
+                my $filename = $c->stash('filename');
+                return $c->render(status => 404, text => "Move along, nothing to see here")
+                  if $filename =~ /sle-12-SP3-x86_64-0368-404/;
+                return $c->render(status => 400, text => "Move along, nothing to see here")
+                  if $filename =~ /sle-12-SP3-x86_64-0368-400/;
+                return $c->render(status => 500, text => "Move along, nothing to see here")
+                  if $filename =~ /sle-12-SP3-x86_64-0368-500/;
+
+                if ($filename =~ /sle-12-SP3-x86_64-0368-589/) {
+                    $c->res->headers->content_length(10);
+                    $c->inactivity_timeout(1);
+                    $c->res->headers->content_type('text/plain');
+                    $c->res->body('Six!!!');
+                    $c->rendered(200);
+                }
+
+                if ($filename =~ /sle-12-SP3-x86_64-0368-200/) {
+                    my $our_etag = 'andi $a3, $t1, 41399';
+
+                    my $browser_etag = $c->req->headers->header('If-None-Match');
+                    if ($browser_etag && $browser_etag eq $our_etag) {
+                        $c->res->body('');
+                        $c->rendered(304);
+                    }
+                    else {
+                        $c->res->headers->content_length(1024);
+                        $c->inactivity_timeout(1);
+                        $c->res->headers->content_type('text/plain');
+                        $c->res->headers->header('ETag' => $our_etag);
+                        $c->res->body("\0" x 1024);
+                        $c->rendered(200);
+                    }
+
+                }
+
+
+
+            });
+
+        $mock->routes->get(
+            '/' => sub {
+                my $c = shift;
+                return $c->render(status => 200, text => "server is running");
+            });
+        # Connect application with web server and start accepting connections
+        $daemon = Mojo::Server::Daemon->new(app => $mock, listen => [$host]);
+        $daemon->start;
+
+        Mojo::IOLoop->start if !Mojo::IOLoop->is_running;
+        sleep 1 while !_port($port);
+
+    }
+}
+
+sub stop_server {
+    # now kill the worker
+    kill TERM => $serverpid;
+    sleep 1 while _port($port);
+    is(waitpid($serverpid, 0), $serverpid, 'Server is done');
+    $serverpid = undef;
+}
+
 OpenQA::Worker::Cache::init($host, $cachedir);
 
-like read_log, qr/Creating cache directory tree for/, "Cache directory tree created.";
-like read_log, qr/Deploying DB/,                      "Cache deploys the database.";
-like read_log, qr/Configured limit: 53687091200/,     "Cache limit is default (50GB).";
+$openqalogs = read_log($logfile);
+like $openqalogs, qr/Creating cache directory tree for/, "Cache directory tree created.";
+like $openqalogs, qr/Deploying DB/,                      "Cache deploys the database.";
+like $openqalogs, qr/Configured limit: 53687091200/,     "Cache limit is default (50GB).";
 ok(-e $db_file, "cache.sqlite is present");
 
-
-truncate_log;
+truncate_log $logfile;
 
 db_handle_connection;
 
@@ -119,110 +195,80 @@ for (1 .. 3) {
 
 }
 
+chdir $ENV{LOGDIR};
+
+$OpenQA::Worker::Cache::sleep_time = 1;
 OpenQA::Worker::Cache::init($host, $cachedir);
 
-unlike read_log, qr/Deploying DB/, "Cache deploys the database.";
-like read_log, qr/CACHE: Health: Real size: 168, Configured limit: 53687091200/,
+$openqalogs = read_log($logfile);
+unlike $openqalogs, qr/Deploying DB/, "Cache deploys the database.";
+like $openqalogs, qr/CACHE: Health: Real size: 168, Configured limit: 53687091200/,
   "Cache limit/size match the expected 100GB/168)";
-unlike read_log, qr/CACHE: Purging non registered.*[13].qcow2/, "Registered assets 1 and 3 were kept";
-like read_log,   qr/CACHE: Purging non registered.*2.qcow2/,    "Asset 2 was removed";
-truncate_log;
+unlike $openqalogs, qr/CACHE: Purging non registered.*[13].qcow2/, "Registered assets 1 and 3 were kept";
+like $openqalogs,   qr/CACHE: Purging non registered.*2.qcow2/,    "Asset 2 was removed";
+truncate_log $logfile;
 
 $OpenQA::Worker::Cache::limit = 100;
 OpenQA::Worker::Cache::init($host, $cachedir);
 
-like read_log, qr/CACHE: Health: Real size: 84, Configured limit: 100/, "Cache limit/size match the expected 100/84)";
-like read_log, qr/CACHE: removed.*1.qcow2/, "Oldest asset (1.qcow2) removal was logged";
-ok(!-e "$cachedir/1.qcow2", "Oldest asset (1.qcow2) was sucessfully removed");
-truncate_log;
-my $daemon;
-my $mock = Mojolicious->new;
+$openqalogs = read_log($logfile);
+like $openqalogs, qr/CACHE: Health: Real size: 84, Configured limit: 100/,
+  "Cache limit/size match the expected 100/84)";
+like $openqalogs, qr/CACHE: removed.*1.qcow2/, "Oldest asset (1.qcow2) removal was logged";
+like $openqalogs, qr/$host/, "Host was initialized correctly ($host).";
+ok(!-e "1.qcow2", "Oldest asset (1.qcow2) was sucessfully removed");
+truncate_log $logfile;
 
-sub start_server {
-    $serverpid = fork();
-    if ($serverpid == 0) {
-        # setup mock
-
-        $mock->routes->get(
-            '/tests/:job/asset/:type/:filename' => sub {
-                my $c        = shift;
-                my $id       = $c->stash('job');
-                my $type     = $c->stash('type');
-                my $filename = $c->stash('filename');
-                return $c->render(status => 404, text => "Move along, nothing to see here")
-                  if $filename =~ /sle-12-SP3-x86_64-0368-404/;
-                return $c->render(status => 400, text => "Move along, nothing to see here")
-                  if $filename =~ /sle-12-SP3-x86_64-0368-400/;
-                return $c->render(status => 500, text => "Move along, nothing to see here")
-                  if $filename =~ /sle-12-SP3-x86_64-0368-589/;
-                if ($filename =~ /sle-12-SP3-x86_64-0368-589/) {
-                    $c->res->headers->content_length(10);
-                    $c->write(
-                        'Hel' => sub {
-                            my $c = shift;
-                            $c->write('lo!');
-                        });
-                }
-            });
-
-        $mock->routes->get(
-            '/' => sub {
-                my $c = shift;
-                return $c->render(status => 200, text => "server is running");
-            });
-
-        # Connect application with web server and start accepting connections
-
-        $daemon = Mojo::Server::Daemon->new(app => $mock, listen => [$host]);
-        $daemon->start;
-
-        Mojo::IOLoop->start if !Mojo::IOLoop->is_running;
-        sleep 1 while !_port($port);
-
-    }
-}
-
-sub stop_server {
-    # now kill the worker
-    kill TERM => $serverpid;
-    sleep 1 while _port($port);
-    is(waitpid($serverpid, 0), $serverpid, 'Server is done');
-    $serverpid = undef;
-}
-
-
-chdir $ENV{LOGDIR};
 get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-textmode@64bit.qcow2');
-
 my $autoinst_log = read_log('autoinst-log.txt');
-
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-textmode\@64bit.qcow2 from/, "Asset download attempt";
-like $autoinst_log, qr/failed with: 521/, "Asset download fails with connection refused";
-truncate_log;
+like $autoinst_log, qr/failed with: 521/, "Asset download fails with: 521 - Connection refused";
+truncate_log 'autoinst-log.txt';
+
+$OpenQA::Worker::Cache::limit = 1024;
+OpenQA::Worker::Cache::init($host, $cachedir);
+start_server;
 
 get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-404@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-404\@64bit.qcow2 from/, "Asset download attempt";
-like $autoinst_log, qr/failed with: 404/, "Asset download fails with connection refused 404";
-truncate_log;
+like $autoinst_log, qr/failed with: 404/, "Asset download fails with: 404 - Not Found";
+truncate_log 'autoinst-log.txt';
 
 get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-400@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-400\@64bit.qcow2 from/, "Asset download attempt";
-like $autoinst_log, qr/failed with: 400/, "Asset download fails with connection refused 400";
-truncate_log;
-
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-500@64bit.qcow2');
-$autoinst_log = read_log('autoinst-log.txt');
-like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-500\@64bit.qcow2 from/, "Asset download attempt";
-like $autoinst_log, qr/failed with: 500/, "Asset download fails with connection refused 500";
-truncate_log;
+like $autoinst_log, qr/failed with: 400/, "Asset download fails with 400 - Bad Request";
+truncate_log 'autoinst-log.txt';
 
 get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-589@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-589\@64bit.qcow2 from/, "Asset download attempt";
-like $autoinst_log, qr/failed with: 589/, "Asset download fails with connection refused 589";
-truncate_log;
+like $autoinst_log, qr/Expected: 10 \/ Downloaded: 6/, "Incomplete download logged";
+truncate_log 'autoinst-log.txt';
+
+$openqalogs = read_log($logfile);
+like $openqalogs, qr/CACHE: Error 598, retrying download for 4 more tries/, "4 tries remaining";
+like $openqalogs, qr/CACHE: Waiting 1 seconds for the next retry/,          "1 second sleep_time set";
+like $openqalogs, qr/CACHE: Too many download errors, aborting/,            "Bailing out after too many retries";
+truncate_log $logfile;
+
+get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+$autoinst_log = read_log('autoinst-log.txt');
+like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-200\@64bit.qcow2 from/, "Asset download attempt";
+like $autoinst_log, qr/CACHE: Asset download successful to .*sle-12-SP3-x86_64-0368-200.*, Cache size is: 1024/,
+  "Full download logged";
+truncate_log 'autoinst-log.txt';
+
+$openqalogs = read_log($logfile);
+like $openqalogs, qr/ andi \$a3, \$t1, 41399 and 1024/, "Etag and size are logged";
+truncate_log $logfile;
+
+get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+$autoinst_log = read_log('autoinst-log.txt');
+like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-200\@64bit.qcow2 from/,      "Asset download attempt";
+like $autoinst_log, qr/sle-12-SP3-x86_64-0368-200\@64bit.qcow2 but updating last use/, "last use gets updated";
+truncate_log 'autoinst-log.txt';
 
 stop_server;
 
