@@ -43,7 +43,7 @@ my $db_file;
 my $dsn;
 my $dbh;
 my $cache_real_size;
-my $sleep_time = 1;
+our $sleep_time = 5;
 
 END {
     $dbh->disconnect() if $dbh;
@@ -312,7 +312,6 @@ sub update_asset {
         log_info "CACHE: updating the $asset with $etag and $size";
         return 1;
     }
-
 }
 
 sub purge_asset {
