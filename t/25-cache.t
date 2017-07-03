@@ -39,6 +39,7 @@ use IO::Socket::INET;
 use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
 use Mojo::File qw(path);
+use POSIX '_exit';
 
 my $sql;
 my $sth;
@@ -149,12 +150,11 @@ sub start_server {
             });
         # Connect application with web server and start accepting connections
         $daemon = Mojo::Server::Daemon->new(app => $mock, listen => [$host]);
-        $daemon->start;
-
-        Mojo::IOLoop->start if !Mojo::IOLoop->is_running;
-        sleep 1 while !_port($port);
-
+        $daemon->run;
+        _exit(0);
     }
+    sleep 1 while !_port($port);
+    return;
 }
 
 sub stop_server {
@@ -225,9 +225,13 @@ like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-textmode\@64bit.qcow2 
 like $autoinst_log, qr/failed with: 521/, "Asset download fails with: 521 - Connection refused";
 truncate_log 'autoinst-log.txt';
 
+$port = Mojo::IOLoop::Server->generate_port;
+$host = "http://127.0.0.1:$port";
+start_server;
+
 $OpenQA::Worker::Cache::limit = 1024;
 OpenQA::Worker::Cache::init($host, $cachedir);
-start_server;
+
 
 get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-404@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
