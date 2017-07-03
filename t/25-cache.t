@@ -34,15 +34,8 @@ use File::Spec::Functions qw(catdir catfile);
 use Digest::MD5 qw(md5);
 use Cwd qw(abs_path getcwd);
 
-use Mojo::IOLoop;
 use Mojolicious;
 use Mojo::Server::Daemon;
-use Mojolicious::Lite;
-
-
-
-# create Test DBus bus and service for fake WebSockets call
-# my $ws = OpenQA::WebSockets->new;
 
 my $sql;
 my $sth;
@@ -63,32 +56,6 @@ make_path($ENV{LOGDIR});
 open(my $FD, '>>', $logfile);
 select $FD;
 $| = 1;
-truncate_log();
-# Mock of log_* methods used by Cache:
-
-my $openqa_utils = new Test::MockModule('OpenQA::Utils');
-#log_error log_info log_debug
-
-$openqa_utils->mock(log_info  => \&mock_log_info);
-$openqa_utils->mock(log_error => \&mock_log_error);
-$openqa_utils->mock(log_debug => \&mock_log_debug);
-$openqa_utils->mock(delete    => \&mock_delete);
-
-# logging helpers
-sub mock_log_debug {
-    my ($msg) = @_;
-    print "[DEBUG] $msg\n";
-}
-
-sub mock_log_info {
-    my ($msg) = @_;
-    print "[INFO] $msg\n";
-}
-
-sub mock_log_error {
-    my ($msg) = @_;
-    print "[ERROR] $msg\n";
-}
 
 sub truncate_log {
     truncate $FD, 0;
