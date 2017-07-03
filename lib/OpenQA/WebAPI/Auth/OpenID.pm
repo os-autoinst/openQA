@@ -103,29 +103,28 @@ sub auth_response {
         args            => \%params,
     );
 
-    my $msg = "The openID server doesn't respond";
+    my $err_handler = sub {
+        my ($err, $txt) = @_;
+        $self->app->log->error($err, $txt);
+        $self->flash(error => "$err: $txt");
+        return (error => 0);
+    };
 
     $csr->handle_server_response(
         not_openid => sub {
-            die "Not an OpenID message";
+            return $err_handler->("Failed to login", "OpenID provider returned invalid data. Please retry again");
         },
         setup_needed => sub {
             my $setup_url = shift;
 
             # Redirect the user to $setup_url
-            $msg = qq{require setup [$setup_url]};
-
             $setup_url = URI::Escape::uri_unescape($setup_url);
             $self->app->log->debug(qq{setup_url[$setup_url]});
 
-            $msg = q{};
             return (redirect => $setup_url, error => 0);
         },
-        cancelled => sub {
-            # Do something appropriate when the user hits "cancel" at the OP
-            $msg = 'cancelled';
-        },
-        verified => sub {
+        cancelled => sub { },    # Do something appropriate when the user hits "cancel" at the OP
+        verified  => sub {
             my $vident = shift;
             my $sreg   = $vident->signed_extension_fields('http://openid.net/extensions/sreg/1.1');
             my $ax     = $vident->signed_extension_fields('http://openid.net/srv/ax/1.0');
@@ -155,15 +154,10 @@ sub auth_response {
                 nickname => $nickname,
                 fullname => $fullname
             );
-
-            $msg = 'verified';
             $self->session->{user} = $vident->{identity};
         },
         error => sub {
-            my ($err, $txt) = @_;
-            $self->app->log->error($err, $txt);
-            $self->flash(error => "$err: $txt");
-            return (error => 0);
+            return $err_handler->(@_);
         },
     );
 
