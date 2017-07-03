@@ -199,6 +199,7 @@ sub get_asset {
         elsif ($ret =~ /^5[0-9]{2}$/ && --$n) {
             log_debug "CACHE: Error $ret, retrying download for $n more tries";
             log_debug "CACHE: Waiting $sleep_time seconds for the next retry";
+            toggle_asset_lock($asset, 0);
             sleep $sleep_time;
             next;
         }
