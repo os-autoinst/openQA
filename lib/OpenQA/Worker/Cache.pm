@@ -95,7 +95,9 @@ sub download_asset {
             my ($ua, $tx) = @_;
             my $progress     = 0;
             my $last_updated = time;
-            $tx->req->headers->header('If-None-Match' => qq{$etag}) if $etag;
+            if (-e $asset) {    # Assets might be deleted by a sysadmin
+                $tx->req->headers->header('If-None-Match' => qq{$etag}) if $etag;
+            }
             $tx->res->on(
                 progress => sub {
                     my $msg = shift;
