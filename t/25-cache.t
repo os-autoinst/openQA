@@ -38,6 +38,7 @@ use Mojolicious;
 use IO::Socket::INET;
 use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
+use Mojo::File qw(path);
 
 my $sql;
 my $sth;
@@ -45,10 +46,11 @@ my $result;
 my $dbh;
 my $filename;
 my $serverpid;
+my $openqalogs;
 
-my $cachedir = catdir(getcwd(), 't/cache.d/cache');
+my $cachedir = catdir(getcwd(), 't', 'cache.d', 'cache');
 my $db_file = "$cachedir/cache.sqlite";
-$ENV{LOGDIR} = catdir(getcwd(), 't/cache.d', 'logs');
+$ENV{LOGDIR} = catdir(getcwd(), 't', 'cache.d', 'logs');
 my $logfile = catdir($ENV{LOGDIR}, 'cache.log');
 my $port    = Mojo::IOLoop::Server->generate_port;
 my $host    = "http://localhost:$port";
@@ -62,18 +64,16 @@ select $FD;
 $| = 1;
 
 sub truncate_log {
-    truncate $FD, 0;
-}
-
-
-sub read_log {
     my ($new_log) = @_;
     my $logfile_ = ($new_log) ? $new_log : $logfile;
-    open(my $f, '<', $logfile_) or die "OPENING $logfile_: $!\n";
-    my $log = do { local ($/); <$f> };
-    close($f);
-    truncate $f, 0;
-    return $log;
+    open(my $f, '>', $logfile_) or die "OPENING $logfile_: $!\n";
+    truncate $f, 0 or warn("Could not truncate");
+}
+
+sub read_log {
+    my ($logfile) = @_;
+    my $log_lines = path($logfile)->slurp;
+    return $log_lines;
 }
 
 sub db_handle_connection {
