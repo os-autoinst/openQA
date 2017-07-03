@@ -43,6 +43,7 @@ my $db_file;
 my $dsn;
 my $dbh;
 my $cache_real_size;
+my $sleep_time = 1;
 
 END {
     $dbh->disconnect() if $dbh;
@@ -186,8 +187,8 @@ sub get_asset {
         $result = try_lock_asset($asset);
         if (!$result) {
             update_setup_status;
-            log_debug "CACHE: Waiting 5 seconds for the lock.";
-            sleep 5;
+            log_debug "CACHE: Waiting $sleep_time seconds for the lock.";
+            sleep $sleep_time;
             next;
         }
         $ret = download_asset($job->{id}, lc($asset_type), $asset, ($result->{etag}) ? $result->{etag} : undef);
@@ -197,8 +198,8 @@ sub get_asset {
         }
         elsif ($ret =~ /^5[0-9]{2}$/ && --$n) {
             log_debug "CACHE: Error $ret, retrying download for $n more tries";
-            log_debug "CACHE: Waiting 5 seconds for the next retry";
-            sleep 5;
+            log_debug "CACHE: Waiting $sleep_time seconds for the next retry";
+            sleep $sleep_time;
             next;
         }
         elsif (!$n) {
