@@ -35,19 +35,23 @@ use Digest::MD5 qw(md5);
 use Cwd qw(abs_path getcwd);
 
 use Mojolicious;
+use IO::Socket::INET;
 use Mojo::Server::Daemon;
+use Mojo::IOLoop::Server;
 
 my $sql;
 my $sth;
 my $result;
 my $dbh;
 my $filename;
+my $serverpid;
 
 my $cachedir = catdir(getcwd(), 't/cache.d/cache');
 my $db_file = "$cachedir/cache.sqlite";
 $ENV{LOGDIR} = catdir(getcwd(), 't/cache.d', 'logs');
 my $logfile = catdir($ENV{LOGDIR}, 'cache.log');
-my $host = 'http://localhost:8080';
+my $port    = Mojo::IOLoop::Server->generate_port;
+my $host    = "http://localhost:$port";
 
 remove_tree($cachedir);
 make_path($ENV{LOGDIR});
@@ -84,6 +88,7 @@ sub db_handle_connection {
 
 }
 
+sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
 OpenQA::Worker::Cache::init($host, $cachedir);
 
 like read_log, qr/Creating cache directory tree for/, "Cache directory tree created.";
@@ -134,7 +139,7 @@ my $daemon;
 my $mock = Mojolicious->new;
 
 sub start_server {
-    my $serverpid = fork();
+    $serverpid = fork();
     if ($serverpid == 0) {
         # setup mock
 
@@ -170,11 +175,21 @@ sub start_server {
 
         $daemon = Mojo::Server::Daemon->new(app => $mock, listen => [$host]);
         $daemon->start;
+
+        Mojo::IOLoop->start if !Mojo::IOLoop->is_running;
+        sleep 1 while !_port($port);
+
     }
 }
 
-start_server;
-Mojo::IOLoop->start if !Mojo::IOLoop->is_running;
+sub stop_server {
+    # now kill the worker
+    kill TERM => $serverpid;
+    sleep 1 while _port($port);
+    is(waitpid($serverpid, 0), $serverpid, 'Server is done');
+    $serverpid = undef;
+}
+
 
 chdir $ENV{LOGDIR};
 get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-textmode@64bit.qcow2');
@@ -209,6 +224,6 @@ like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-589\@64bit.qcow2 from/
 like $autoinst_log, qr/failed with: 589/, "Asset download fails with connection refused 589";
 truncate_log;
 
-Mojo::IOLoop->stop;
+stop_server;
 
 done_testing();
