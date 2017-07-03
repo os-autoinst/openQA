@@ -151,7 +151,7 @@ UI.
 
 If one wants to recreate an existing job from any publically available openQA
 instance the script `clone_job.pl` can be used to copy the necessary settings
-and assets to another instance and schedule the test. For the the test to be
+and assets to another instance and schedule the test. For the test to be
 executed it has to be ensured that matching ressources can be found, for
 example a worker with matching `WORKER_CLASS` must be registered. More details
 on `clone_job.pl` can be found in link:WritingTests.asciidoc[Writing Tests].
