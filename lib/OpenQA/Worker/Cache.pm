@@ -122,6 +122,7 @@ sub download_asset {
 
     $tx = $ua->start($tx);
     my $code = ($tx->res->code) ? $tx->res->code : 521;    # Used by cloudflare to indicate web server is down.
+    my $size;
     if ($code eq 304) {
         if (toggle_asset_lock($asset, 0)) {
             print $log "CACHE: Content has not changed, not downloading the $asset but updating last use\n";
@@ -144,19 +145,21 @@ sub download_asset {
     elsif ($tx->res->is_success) {
         $etag = $headers->etag;
         unlink($asset);
-        $asset = $tx->res->content->asset->move_to($asset)->path;
-        my $size = (stat $asset)[7];
+        $tx->res->content->asset->move_to($asset);
+        my $file = Mojo::Asset::File->new(path => $asset);
+        my $size = $file->size;
+
         if ($size == $headers->content_length) {
             check_limits($size);
             update_asset($asset, $etag, $size);
             print $log "CACHE: Asset download successful to $asset, Cache size is: $cache_real_size\n";
         }
         else {
+            $size = ($size) ? $size : "Unknown";
             print $log "CACHE: Size of $asset differs, Expected: "
               . $headers->content_length
               . " / Downloaded: "
-              . $asset->size
-              . "\n";    # At this point, trust the contents of Mojo::Asset
+              . "$size  \n";
             $asset = 598;    # 598 (Informal convention) Network read timeout error
         }
     }
