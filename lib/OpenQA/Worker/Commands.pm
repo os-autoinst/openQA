@@ -17,9 +17,12 @@ package OpenQA::Worker::Commands;
 use 5.018;
 use warnings;
 
-use OpenQA::Utils qw(log_error log_warning log_debug);
+use OpenQA::Utils qw(log_error log_warning log_debug log_info);
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Jobs;
+use POSIX qw(:sys_wait_h);
+use File::Spec::Functions 'catdir';
+use Mojo::URL;
 
 ## WEBSOCKET commands
 sub websocket_commands {
@@ -77,6 +80,28 @@ sub websocket_commands {
         }
         elsif ($type eq 'reload_needles_and_retry') {
             if (backend_running) {
+
+                if ($hosts->{$current_host}{testpoolserver} && $worker_settings->{CACHEDIRECTORY}) {
+                    # my attempts to use ioloop::subprocess failed, so go back to blocking
+                    my $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, Mojo::URL->new($current_host)->host);
+                    my $sync_child = fork();
+                    if (!$sync_child) {
+                        OpenQA::Worker::Engines::isotovideo::cache_tests($shared_cache,
+                            $hosts->{$current_host}{testpoolserver});
+                    }
+                    else {
+                        my $last_update = time;
+                        while (waitpid($sync_child, WNOHANG) == 0) {
+                            log_info "Waiting for subprocess";
+                            if (time - $last_update > 5) {    # do not spam the webui
+                                update_setup_status;
+                                $last_update = time;
+                            }
+                            sleep .5;
+                        }
+                    }
+                }
+
                 $ua->post("$joburl/isotovideo/reload_needles");
                 log_debug('needles will be reloaded') if $verbose;
             }
