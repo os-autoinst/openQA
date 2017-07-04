@@ -146,17 +146,13 @@ sub download_asset {
     elsif ($tx->res->is_success) {
         $etag = $headers->etag;
         unlink($asset);
-        $tx->res->content->asset->move_to($asset);
-        my $file = Mojo::Asset::File->new(path => $asset);
-        my $size = $file->size;
-
+        my $size = $tx->res->content->asset->move_to($asset)->size;
         if ($size == $headers->content_length) {
             check_limits($size);
             update_asset($asset, $etag, $size);
             print $log "CACHE: Asset download successful to $asset, Cache size is: $cache_real_size\n";
         }
         else {
-            $size = ($size) ? $size : "Unknown";
             print $log "CACHE: Size of $asset differs, Expected: "
               . $headers->content_length
               . " / Downloaded: "

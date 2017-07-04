@@ -120,7 +120,7 @@ sub start_server {
                     $c->rendered(200);
                 }
 
-                if ($filename =~ /sle-12-SP3-x86_64-0368-200/) {
+                if (my ($size) = ($filename =~ /sle-12-SP3-x86_64-0368-200_?([0-9]+)?\@/)) {
                     my $our_etag = 'andi $a3, $t1, 41399';
 
                     my $browser_etag = $c->req->headers->header('If-None-Match');
@@ -129,11 +129,11 @@ sub start_server {
                         $c->rendered(304);
                     }
                     else {
-                        $c->res->headers->content_length(1024);
+                        $c->res->headers->content_length($size // 1024);
                         $c->inactivity_timeout(1);
                         $c->res->headers->content_type('text/plain');
                         $c->res->headers->header('ETag' => $our_etag);
-                        $c->res->body("\0" x 1024);
+                        $c->res->body("\0" x ($size // 1024));
                         $c->rendered(200);
                     }
 
@@ -274,6 +274,17 @@ like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-200\@64bit.qcow2 from/
 like $autoinst_log, qr/sle-12-SP3-x86_64-0368-200\@64bit.qcow2 but updating last use/, "last use gets updated";
 truncate_log 'autoinst-log.txt';
 
+get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200_256@64bit.qcow2');
+$autoinst_log = read_log('autoinst-log.txt');
+like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-200_256\@64bit.qcow2 from/, "Asset download attempt";
+like $autoinst_log, qr/CACHE: Asset download successful to .*sle-12-SP3-x86_64-0368-200_256.*, Cache size is: 256/,
+  "Full download logged";
+truncate_log 'autoinst-log.txt';
+
+$openqalogs = read_log($logfile);
+like $openqalogs, qr/ andi \$a3, \$t1, 41399 and 256/, "Etag and size are logged";
+like $openqalogs, qr/removed.*sle-12-SP3-x86_64-0368-200\@64bit.qcow2*/, "Reclaimed space for new smaller asset";
+truncate_log $logfile;
 stop_server;
 
 done_testing();
