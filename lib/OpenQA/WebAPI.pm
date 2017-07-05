@@ -466,6 +466,10 @@ sub startup {
     ## JSON API ends here
     #
 
+    # api/v1/feature
+    $api_public_r->post('/feature')->name('apiv1_post_informed_about')->to('feature#informed');
+    $api_public_r->get('/feature')->name('apiv1_check_if_informed')->to('feature#check');
+
     # reduce_result is obsolete (replaced by limit_results_and_logs)
     $self->gru->add_task(reduce_result          => \&OpenQA::Schema::Result::Jobs::reduce_result);
     $self->gru->add_task(limit_assets           => \&OpenQA::Schema::Result::Assets::limit_assets);
