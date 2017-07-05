@@ -1,7 +1,7 @@
 % my $count = 0;
 % my $limit = 25;
 
-% for my $failedmodule (sort @$failedmodules) {
+% for my $failedmodule (@$failedmodules) {
     % if ($count++) {
       % my $more = (scalar(@$failedmodules)) - $count + 1;
       % if ($more > 0 && $limit < 12) {

@@ -1094,7 +1094,7 @@ sub has_failed_modules {
 sub failed_modules {
     my ($self) = @_;
 
-    my $fails = $self->modules->search({result => 'failed'});
+    my $fails = $self->modules->search({result => 'failed'}, {order_by => 't_updated'});
     my @failedmodules;
 
     while (my $module = $fails->next) {
