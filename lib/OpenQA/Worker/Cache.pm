@@ -271,7 +271,7 @@ sub try_lock_asset {
 
 sub add_asset {
     my ($asset, $toggle) = @_;
-    my $sql = "INSERT INTO assets (downloading,filename,last_use) VALUES (1, ?, strftime('%s','now'));";
+    my $sql = "INSERT INTO assets (downloading,filename, size, last_use) VALUES (1, ?, 0, strftime('%s','now'));";
     eval { $dbh->prepare($sql)->execute($asset) or die $dbh->errstr; };
 
     if ($@) {

@@ -111,6 +111,8 @@ sub start_server {
                   if $filename =~ /sle-12-SP3-x86_64-0368-400/;
                 return $c->render(status => 500, text => "Move along, nothing to see here")
                   if $filename =~ /sle-12-SP3-x86_64-0368-500/;
+                return $c->render(status => 503, text => "Move along, nothing to see here")
+                  if $filename =~ /sle-12-SP3-x86_64-0368-503/;
 
                 if ($filename =~ /sle-12-SP3-x86_64-0368-589/) {
                     $c->res->headers->content_length(10);
@@ -136,11 +138,7 @@ sub start_server {
                         $c->res->body("\0" x ($size // 1024));
                         $c->rendered(200);
                     }
-
                 }
-
-
-
             });
 
         $mock->routes->get(
@@ -232,7 +230,6 @@ start_server;
 $OpenQA::Worker::Cache::limit = 1024;
 OpenQA::Worker::Cache::init($host, $cachedir);
 
-
 get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-404@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-404\@64bit.qcow2 from/, "Asset download attempt";
@@ -253,6 +250,18 @@ truncate_log 'autoinst-log.txt';
 
 $openqalogs = read_log($logfile);
 like $openqalogs, qr/CACHE: Error 598, retrying download for 4 more tries/, "4 tries remaining";
+like $openqalogs, qr/CACHE: Waiting 1 seconds for the next retry/,          "1 second sleep_time set";
+like $openqalogs, qr/CACHE: Too many download errors, aborting/,            "Bailing out after too many retries";
+truncate_log $logfile;
+
+get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-503@64bit.qcow2');
+$autoinst_log = read_log('autoinst-log.txt');
+like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-503\@64bit.qcow2 from/, "Asset download attempt";
+like $autoinst_log, qr/triggering a retry for 503/, "Asset download fails with 503 - Server not available";
+truncate_log 'autoinst-log.txt';
+
+$openqalogs = read_log($logfile);
+like $openqalogs, qr/CACHE: Error 503, retrying download for 4 more tries/, "4 tries remaining";
 like $openqalogs, qr/CACHE: Waiting 1 seconds for the next retry/,          "1 second sleep_time set";
 like $openqalogs, qr/CACHE: Too many download errors, aborting/,            "Bailing out after too many retries";
 truncate_log $logfile;
