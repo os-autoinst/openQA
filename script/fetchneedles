@@ -13,7 +13,7 @@ set -e
 
 : ${updateall:="0"}
 
-dir="/var/lib/openqa/tests"
+dir="/var/lib/openqa/share/tests"
 if [ -w / ]; then
 	if [ ! -e "$dir/$dist" ]; then
 		mkdir -p "$dir/$dist"
