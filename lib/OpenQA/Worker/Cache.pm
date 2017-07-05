@@ -43,6 +43,7 @@ my $db_file;
 my $dsn;
 my $dbh;
 my $cache_real_size;
+our $sleep_time = 5;
 
 END {
     $dbh->disconnect() if $dbh;
@@ -95,7 +96,9 @@ sub download_asset {
             my ($ua, $tx) = @_;
             my $progress     = 0;
             my $last_updated = time;
-            $tx->req->headers->header('If-None-Match' => qq{$etag}) if $etag;
+            if (-e $asset) {    # Assets might be deleted by a sysadmin
+                $tx->req->headers->header('If-None-Match' => qq{$etag}) if $etag;
+            }
             $tx->res->on(
                 progress => sub {
                     my $msg = shift;
@@ -120,6 +123,7 @@ sub download_asset {
 
     $tx = $ua->start($tx);
     my $code = ($tx->res->code) ? $tx->res->code : 521;    # Used by cloudflare to indicate web server is down.
+    my $size;
     if ($code eq 304) {
         if (toggle_asset_lock($asset, 0)) {
             print $log "CACHE: Content has not changed, not downloading the $asset but updating last use\n";
@@ -142,8 +146,7 @@ sub download_asset {
     elsif ($tx->res->is_success) {
         $etag = $headers->etag;
         unlink($asset);
-        $asset = $tx->res->content->asset->move_to($asset)->path;
-        my $size = (stat $asset)[7];
+        my $size = $tx->res->content->asset->move_to($asset)->size;
         if ($size == $headers->content_length) {
             check_limits($size);
             update_asset($asset, $etag, $size);
@@ -153,8 +156,8 @@ sub download_asset {
             print $log "CACHE: Size of $asset differs, Expected: "
               . $headers->content_length
               . " / Downloaded: "
-              . $size . "\n";
-            $asset = undef;
+              . "$size  \n";
+            $asset = 598;    # 598 (Informal convention) Network read timeout error
         }
     }
     else {
@@ -180,8 +183,8 @@ sub get_asset {
         $result = try_lock_asset($asset);
         if (!$result) {
             update_setup_status;
-            log_debug "CACHE: Waiting 5 seconds for the lock.";
-            sleep 5;
+            log_debug "CACHE: Waiting $sleep_time seconds for the lock.";
+            sleep $sleep_time;
             next;
         }
         $ret = download_asset($job->{id}, lc($asset_type), $asset, ($result->{etag}) ? $result->{etag} : undef);
@@ -191,8 +194,9 @@ sub get_asset {
         }
         elsif ($ret =~ /^5[0-9]{2}$/ && --$n) {
             log_debug "CACHE: Error $ret, retrying download for $n more tries";
-            log_debug "CACHE: Waiting 5 seconds for the next retry";
-            sleep 5;
+            log_debug "CACHE: Waiting $sleep_time seconds for the next retry";
+            toggle_asset_lock($asset, 0);
+            sleep $sleep_time;
             next;
         }
         elsif (!$n) {
@@ -304,7 +308,6 @@ sub update_asset {
         log_info "CACHE: updating the $asset with $etag and $size";
         return 1;
     }
-
 }
 
 sub purge_asset {
