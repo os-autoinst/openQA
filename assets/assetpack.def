@@ -17,6 +17,7 @@
 << https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/stylesheets/_bootstrap.scss
 < sass/theme.scss
 < https://raw.githubusercontent.com/vsn4ik/bootstrap-submenu/v2.0.4/dist/css/bootstrap-submenu.css
+< https://raw.githubusercontent.com/sorich87/bootstrap-tour/v0.11.0/build/css/bootstrap-tour.css
 
 ! codemirror.css
 < https://raw.githubusercontent.com/codemirror/CodeMirror/8097c7e75ce7ef0512debe9967d7568626106e53/lib/codemirror.css
@@ -60,6 +61,7 @@
 < https://cdnjs.cloudflare.com/ajax/libs/chosen/1.7.0/chosen.jquery.js
 < https://cdnjs.cloudflare.com/ajax/libs/jquery-ujs/1.2.1/rails.js
 < javascripts/disable_animations.js [mode==test]
+< https://raw.githubusercontent.com/sorich87/bootstrap-tour/v0.11.0/build/js/bootstrap-tour.js
 
 ! test_result.js
 < javascripts/test_result.js
@@ -80,4 +82,3 @@
 
 ! audio.svg
 < images/audio.svg
-
