@@ -507,7 +507,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <ul class="sectlevel2">
 <li><a href="#concepts">Glossary</a></li>
 <li><a href="#_jobs">Jobs</a></li>
-<li><a href="#_needles">Needles</a></li>
+<li><a href="#_needles">Needles</a>
+<ul class="sectlevel3">
+<li><a href="#_areas">Areas</a></li>
+</ul>
+</li>
 <li><a href="#_interactive_mode">Interactive mode</a></li>
 <li><a href="#_access_management">Access management</a></li>
 <li><a href="#_job_groups">Job groups</a></li>
@@ -1057,6 +1061,36 @@ tags.</p>
       <span class="tok-err">STRING</span><span class="tok-p">,</span> <span class="tok-err">...</span>
    <span class="tok-p">]</span>
 <span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_areas">Areas</h4>
+<div class="paragraph">
+<p>There are three kinds of areas:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Regular areas</strong> define relevant parts of the screenshot. Those must match
+with at least the specified similarity percentage. Regular areas are
+displayed as green boxes in the needle editor and as green or red frames
+in the needle view.</p>
+</li>
+<li>
+<p><strong>OCR areas</strong> also define relevant parts of the screenshot. However, an OCR
+algorithm is used for matching. In the needle editor exclude areas are
+displayed as orange boxes. To turn a regular area into an OCR area within
+the needle editor, double click the concerning area twice. Note that such
+needles are only rarely used.</p>
+</li>
+<li>
+<p><strong>Exclude areas</strong> can be used within regular areas to ignore parts of it.
+In the needle editor exclude areas are displayed as red boxes. To turn a
+regular area into an exclude area within the needle editor, double click
+the concerning area.
+In the needle view exclude areas are displayed as gray boxes.</p>
+</li>
+</ul>
 </div>
 </div>
 </div>
@@ -4883,7 +4917,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-07-06 08:40:51 UTC
+Last updated 2017-07-06 08:48:38 UTC
 </div>
 </div>
 </body>
