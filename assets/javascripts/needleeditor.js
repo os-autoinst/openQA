@@ -294,9 +294,15 @@ function loadTagsAndName() {
 function loadAreas() {
   var needle = window.needles[$('#area_select option:selected').val()];
   if ($('#take_matches').prop('checked')) {
-    nEditor.LoadAreas(needle['matches']);
+    var matchesAndExcludes = needle.matches.slice();
+    $.each(needle.area, function(index, area) {
+      if (area.type === 'exclude') {
+        matchesAndExcludes.push(area);
+      }
+    });
+    nEditor.LoadAreas(matchesAndExcludes);
   } else {
-    nEditor.LoadAreas(needle['area']);
+    nEditor.LoadAreas(needle.area);
   }
 }
 

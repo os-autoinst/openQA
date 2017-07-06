@@ -62,7 +62,7 @@ make_path($dir);
 
 # default needle JSON content
 my $default_json
-  = '{"area" : [{"height" : 217,"type" : "match","width" : 384,"xpos" : 0,"ypos" : 0}],"tags" : ["ENV-VIDEOMODE-text","inst-timezone"]}';
+  = '{"area" : [{"height" : 217,"type" : "match","width" : 384,"xpos" : 0,"ypos" : 0},{"height" : 60,"type" : "exclude","width" : 160,"xpos" : 175,"ypos" : 45}],"tags" : ["ENV-VIDEOMODE-text","inst-timezone"]}';
 
 # create a fake json
 my $filen = "$dir/inst-timezone-text.json";
@@ -114,7 +114,7 @@ sub editpage_layout_check() {
     is($driver->find_element_by_id('tags_select')->get_value(), 'inst-timezone-text', "inst-timezone tags selected");
     is($driver->find_element_by_id('image_select')->get_value(), 'screenshot', "Screenshot background selected");
     is($driver->find_element_by_id('area_select')->get_value(), 'inst-timezone-text', "inst-timezone areas selected");
-    is($driver->find_element_by_id('take_matches')->is_selected(), 1, "Matches selected");
+    is($driver->find_element_by_id('take_matches')->is_selected(), 1, '"take matches" selected by default');
 
     # check needle suggested name
     my $today = strftime("%Y%m%d", gmtime(time));
@@ -130,10 +130,23 @@ sub editpage_layout_check() {
     $elem            = $driver->find_element_by_id('needleeditor_textarea');
     $decode_textarea = decode_json($elem->get_value());
     # the value already defined in $default_json
-    is($decode_textarea->{area}[0]->{xpos},   0,   "xpos correct");
-    is($decode_textarea->{area}[0]->{ypos},   0,   "ypos correct");
-    is($decode_textarea->{area}[0]->{width},  384, "width correct");
-    is($decode_textarea->{area}[0]->{height}, 217, "height correct");
+    is(@{$decode_textarea->{area}},           2,         'exclude areas always present');
+    is($decode_textarea->{area}[0]->{xpos},   0,         'xpos correct');
+    is($decode_textarea->{area}[0]->{ypos},   0,         'ypos correct');
+    is($decode_textarea->{area}[0]->{width},  384,       'width correct');
+    is($decode_textarea->{area}[0]->{height}, 217,       'height correct');
+    is($decode_textarea->{area}[0]->{type},   'match',   'type correct');
+    is($decode_textarea->{area}[1]->{xpos},   175,       'xpos correct');
+    is($decode_textarea->{area}[1]->{ypos},   45,        'ypos correct');
+    is($decode_textarea->{area}[1]->{width},  160,       'width correct');
+    is($decode_textarea->{area}[1]->{height}, 60,        'height correct');
+    is($decode_textarea->{area}[1]->{type},   'exclude', 'type correct');
+
+    # toggling 'take matches' has no effect
+    $driver->find_element_by_xpath('//input[@value="inst-timezone"]')->click();
+    is(@{decode_json($elem->get_value())->{area}}, 2, 'exclude areas always present');
+    $driver->find_element_by_xpath('//input[@value="inst-timezone"]')->click();
+    is(@{decode_json($elem->get_value())->{area}}, 2, 'no duplicated exclude areas present');
 }
 
 sub add_needle_tag(;$) {

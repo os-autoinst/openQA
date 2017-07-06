@@ -128,7 +128,7 @@ NeedleDiff.prototype.draw = function() {
         width += 1;
       }
 
-      this.ctx.strokeStyle = "rgb(64,224,208)";
+      this.ctx.strokeStyle = NeedleDiff.strokecolor(a.type);
 
       orig = this.areas[idx];
       this.ctx.drawImage(this.needleImg, orig['xpos'], orig['ypos'],
@@ -171,6 +171,17 @@ NeedleDiff.prototype.draw = function() {
       this.ctx.lineTo(start, y_start);
       this.ctx.stroke();
     }
+  }.bind(this));
+
+  // Draw all exclude boxes
+  this.areas.forEach(function(a, idx) {
+    if(a.type !== 'exclude') {
+      return;
+    }
+    this.ctx.fillStyle = NeedleDiff.shapecolor(a.type);
+    this.ctx.strokeStyle = NeedleDiff.strokecolor(a.type);
+    this.ctx.fillRect(a.xpos, a.ypos, a.width, a.height);
+    this.ctx.strokeRect(a.xpos, a.ypos, a.width, a.height);
   }.bind(this));
 
   // Draw all match labels
@@ -253,9 +264,23 @@ NeedleDiff.prototype.mouseup = function(event) {
   this.dragstart = false;
 }
 
+NeedleDiff.strokecolors = {
+    ok:      'rgb( 64, 224, 208)',
+    fail:    'rgb( 64, 224, 208)',
+    exclude: 'rgb(100, 100, 100)',
+};
+
+NeedleDiff.strokecolor = function(type) {
+    if (type in NeedleDiff.strokecolors) {
+        return NeedleDiff.strokecolors[type];
+    }
+    return "pink";
+};
+
 NeedleDiff.shapecolors = {
-  'ok':      'rgba(  0, 255, 0, .9)',
-  'fail':    'rgba(255,   0, 0, .9)'
+  ok:      'rgba(  0, 255,   0, .9)',
+  fail:    'rgba(255,   0,   0, .9)',
+  exclude: 'rgba(225, 215, 215, .7)',
 };
 
 NeedleDiff.shapecolor = function(type) {
