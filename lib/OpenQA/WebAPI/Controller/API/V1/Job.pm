@@ -137,12 +137,14 @@ sub create {
                 run_at   => now(),
             });
 
-        notify_workers;
     }
     catch {
         $status = 400;
         $json->{error} = "$_";
     };
+
+    notify_workers unless $json->{error};
+
     $self->render(json => $json, status => $status);
 }
 

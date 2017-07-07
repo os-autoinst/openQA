@@ -135,7 +135,6 @@ is($res->json->{count}, 10, '10 new jobs created');
 my @newids = @{$res->json->{ids}};
 my $newid  = $newids[0];
 
-
 $ret = $t->get_ok('/api/v1/jobs');
 my @jobs = @{$ret->tx->res->json->{jobs}};
 

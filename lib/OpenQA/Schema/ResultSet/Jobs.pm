@@ -116,6 +116,8 @@ sub create_from_settings {
     my %new_job_args = (TEST => $settings{TEST});
     my $group;
     my %group_args;
+    my $txn_guard = $self->result_source->storage->txn_scope_guard;
+
     if ($settings{_GROUP_ID}) {
         $group_args{id} = delete $settings{_GROUP_ID};
     }
@@ -156,7 +158,6 @@ sub create_from_settings {
         }
         delete $settings{_PARALLEL_JOBS};
     }
-
     # migrate the important keys
     for my $key (qw(DISTRI VERSION FLAVOR ARCH TEST MACHINE BUILD)) {
         my $value = delete $settings{$key};
@@ -187,7 +188,7 @@ sub create_from_settings {
         OpenQA::Utils::log_warning(
             'Ignoring invalid group ' . to_json(\%group_args) . ' when creating new job ' . $job->id);
     }
-
+    $txn_guard->commit;
     return $job;
 }
 
