@@ -105,7 +105,7 @@ sub auth_response {
 
     my $err_handler = sub {
         my ($err, $txt) = @_;
-        $self->app->log->error($err, $txt);
+        $self->app->log->error("$err: $txt");
         $self->flash(error => "$err: $txt");
         return (error => 0);
     };
