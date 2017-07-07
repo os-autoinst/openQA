@@ -46,6 +46,10 @@ specify the secret key needed for API authentication
 
 path to isotovideo script, useful for running from git
 
+=item B<--engine> NAME
+
+engine for test execution, defaults to isotovideo from os-autoinst
+
 =item B<--no-cleanup>
 
 don't clean pool directory after job
@@ -118,7 +122,7 @@ sub usage($) {
 }
 
 GetOptions(
-    \%options,     "no-cleanup", "instance=i", "isotovideo=s", "host=s", "apikey:s",
+    \%options,     "no-cleanup", "instance=i", "isotovideo=s", "engine:s", "host=s", "apikey:s",
     "apisecret:s", "verbose|v",  "help|h",
 ) or usage(1);
 
