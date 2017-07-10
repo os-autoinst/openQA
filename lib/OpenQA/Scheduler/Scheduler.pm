@@ -145,6 +145,19 @@ sub job_grab {
     my $workerip   = $args{workerip};
     my $workercaps = $args{workercaps};
 
+    # Avoid to get the scheduler stuck: give a maximum limit of tries ($limit_attempts)
+    # and blocking now just sets $max_attempts to 999.
+    # Defaults to 5 (were observed in tests 2 is sufficient) before returning no jobs.
+    my $limit_attempts = 2000;
+    my $max_attempts
+      = $blocking ?
+      999
+      : exists $args{max_attempts} ?
+      (int($args{max_attempts}) < $limit_attempts && int($args{max_attempts}) > 0) ?
+        int($args{max_attempts})
+        : $limit_attempts
+      : 5;
+
     my $worker = _validate_workerid($workerid);
     if ($worker->job) {
         my $job = $worker->job;
@@ -155,7 +168,12 @@ sub job_grab {
     $worker->seen($workercaps);
 
     my $result;
-    while (1) {
+    my $attempt = 0;
+    my $job;
+    do {
+        $attempt++;
+        log_debug("Attempt to find job $attempt/$max_attempts");
+
         my $blocked = schema->resultset("JobDependencies")->search(
             {
                 -or => [
@@ -210,20 +228,21 @@ sub job_grab {
         my $preferred_parallel = _prefer_parallel(\@available_cond);
         push @available_cond, $preferred_parallel if $preferred_parallel;
 
-        # now query for the best
-        my $job = schema->resultset("Jobs")->search(
-            {
-                state => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                id    => \@available_cond,
-            },
-            {order_by => {-asc => [qw(priority id)]}})->first;
-        if ($job) {
-            # we do this in a transaction to avoid the same job being assigned
-            # to two workers - the 2nd worker will fail the unique constraint in
-            # the workers table and the throw an exception - and re-grab
-            try {
-                schema->txn_do(
-                    sub {
+        # we do this in a transaction to avoid the same job being assigned
+        # to two workers - the 2nd worker will fail the unique constraint in
+        # the workers table and the throw an exception - and re-grab
+        try {
+            schema->txn_do(
+                sub {
+                    # now query for the best
+
+                    $job = schema->resultset("Jobs")->search(
+                        {
+                            state => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                            id    => \@available_cond,
+                        },
+                        {order_by => {-asc => [qw(priority id)]}})->first;
+                    if ($job) {
                         $job->update(
                             {
                                 state              => OpenQA::Schema::Result::Jobs::RUNNING,
@@ -232,24 +251,19 @@ sub job_grab {
                             });
                         $worker->job($job);
                         $worker->update;
-                    });
-            }
-            catch {
-                # this job is most likely already taken
-                warn "Failed to grab job: $_";
-                next;
-            };
-            last;
+                    }
+                });
         }
-        last unless $blocking;
-        # XXX: do something smarter here
-        #print STDERR "no jobs for me, sleeping\n";
-        #sleep 1;
-        last;
-    }
+        catch {
+            # this job is most likely already taken
+            warn "Failed to grab job: $_";
+        };
 
-    my $job = $worker->job;
+    } until (($attempt >= $max_attempts) || $job);
+
+    $job = $worker->job;
     return {} unless ($job && $job->state eq OpenQA::Schema::Result::Jobs::RUNNING);
+    log_debug("Got job " . $job->id());
 
     my $job_hashref = {};
     $job_hashref = $job->to_hash(assets => 1);
@@ -263,12 +277,8 @@ sub job_grab {
 
     my $updated_settings = $job->register_assets_from_settings();
 
-    if ($updated_settings) {
-        for my $k (keys %$updated_settings) {
-            $job_hashref->{settings}->{$k} = $updated_settings->{$k};
-        }
-    }
-    # else assets are broken, maybe we could cancel the job right now
+    @{$job_hashref->{settings}}{keys %$updated_settings} = @{$updated_settings}{keys %$updated_settings}
+      if ($updated_settings);
 
     if (   $job_hashref->{settings}->{NICTYPE}
         && !defined $job_hashref->{settings}->{NICVLAN}
