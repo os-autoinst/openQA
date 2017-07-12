@@ -31,11 +31,13 @@ dump_templates [OPTIONS] [TABLES...]
 
 connect to specified host, defaults to localhost
 
-=item B<--apibase> HOST
+=item B<--apibase>
 
-=item B<--apikey> HOST
+Set API base URL component, default: '/api/v1'
 
-=item B<--apisecret> HOST
+=item B<--apikey> KEY, B<--apisecret> SECRET
+
+Specify api key and secret to use, overrides use of config file ~/.config/openqa/client.conf
 
 override values from config file
 
@@ -178,20 +180,26 @@ my $client = OpenQA::Client->new(apikey => $options{'apikey'}, apisecret => $opt
 my %result;
 
 for my $table (qw(Machines TestSuites Products JobTemplates)) {
-    if ($tables{$table}) {
-        $url->path($options{'apibase'} . '/' . decamelize($table));
-        my $res = $client->get($url)->res;
-        if ($res->code == 200) {
-            my %tmp = (%result, %{$res->json});
-            %result = %tmp;
-        }
-        else {
-            printf STDERR "ERROR: %s - %s\n", $res->code, $res->message;
-            if ($res->body) {
-                dd($res->json || $res->body);
-            }
+    next unless $tables{$table};
+
+    $url->path($options{'apibase'} . '/' . decamelize($table));
+    my $res = $client->get($url)->res;
+    if ($res->code && $res->code == 200) {
+        if (!$res->json) {
+            printf STDERR "ERROR requesting %s: response does not contain JSON\n", $table;
+            printf STDERR "response: %s", $res->body if $res->body;
             exit(1);
         }
+        my %tmp = (%result, %{$res->json});
+        %result = %tmp;
+    }
+    else {
+        printf STDERR "ERROR requesting %s: %s - %s\n", $table, $res->code // 'unknown error code',
+          $res->message // 'no error message';
+        if ($res->body) {
+            dd($res->json || $res->body);
+        }
+        exit(1);
     }
 }
 
