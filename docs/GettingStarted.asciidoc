@@ -200,13 +200,13 @@ There are three kinds of areas:
 * *Regular areas* define relevant parts of the screenshot. Those must match
   with at least the specified similarity percentage. Regular areas are
   displayed as green boxes in the needle editor and as green or red frames
-  in the needle view.
+  in the needle view (green for matching areas, red for non-matching ones).
 * *OCR areas* also define relevant parts of the screenshot. However, an OCR
-  algorithm is used for matching. In the needle editor exclude areas are
+  algorithm is used for matching. In the needle editor OCR areas are
   displayed as orange boxes. To turn a regular area into an OCR area within
   the needle editor, double click the concerning area twice. Note that such
   needles are only rarely used.
-* *Exclude areas* can be used within regular areas to ignore parts of it.
+* *Exclude areas* can be used to ignore parts of the reference picture.
   In the needle editor exclude areas are displayed as red boxes. To turn a
   regular area into an exclude area within the needle editor, double click
   the concerning area.
