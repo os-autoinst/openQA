@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 1.5.5">
+<meta name="generator" content="Asciidoctor 1.5.6">
 <meta name="author" content="openQA Team">
 <title>openQA Documentation</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
@@ -90,13 +90,12 @@ strong,b{font-weight:bold;line-height:inherit}
 small{font-size:60%;line-height:inherit}
 code{font-family:"Droid Sans Mono","DejaVu Sans Mono",monospace;font-weight:400;color:rgba(0,0,0,.9)}
 ul,ol,dl{font-size:1em;line-height:1.6;margin-bottom:1.25em;list-style-position:outside;font-family:inherit}
-ul,ol,ul.no-bullet,ol.no-bullet{margin-left:1.5em}
+ul,ol{margin-left:1.5em}
 ul li ul,ul li ol{margin-left:1.25em;margin-bottom:0;font-size:1em}
 ul.square li ul,ul.circle li ul,ul.disc li ul{list-style:inherit}
 ul.square{list-style-type:square}
 ul.circle{list-style-type:circle}
 ul.disc{list-style-type:disc}
-ul.no-bullet{list-style:none}
 ol li ul,ol li ol{margin-left:1.25em;margin-bottom:0}
 dl dt{margin-bottom:.3125em;font-weight:bold}
 dl dd{margin-bottom:1.25em}
@@ -132,7 +131,11 @@ strong strong{font-weight:400}
 kbd{font-family:"Droid Sans Mono","DejaVu Sans Mono",monospace;display:inline-block;color:rgba(0,0,0,.8);font-size:.65em;line-height:1.45;background-color:#f7f7f7;border:1px solid #ccc;-webkit-border-radius:3px;border-radius:3px;-webkit-box-shadow:0 1px 0 rgba(0,0,0,.2),0 0 0 .1em white inset;box-shadow:0 1px 0 rgba(0,0,0,.2),0 0 0 .1em #fff inset;margin:0 .15em;padding:.2em .5em;vertical-align:middle;position:relative;top:-.1em;white-space:nowrap}
 .keyseq kbd:first-child{margin-left:0}
 .keyseq kbd:last-child{margin-right:0}
-.menuseq,.menu{color:rgba(0,0,0,.8)}
+.menuseq,.menuref{color:#000}
+.menuseq b:not(.caret),.menuref{font-weight:inherit}
+.menuseq{word-spacing:-.02em}
+.menuseq b.caret{font-size:1.25em;line-height:.8}
+.menuseq i.caret{font-weight:bold;text-align:center;width:.45em}
 b.button:before,b.button:after{position:relative;top:-1px;font-weight:400}
 b.button:before{content:"[";padding:0 3px 0 2px}
 b.button:after{content:"]";padding:0 2px 0 3px}
@@ -199,7 +202,7 @@ table.tableblock>caption.title{white-space:nowrap;overflow:visible;max-width:0}
 table.tableblock #preamble>.sectionbody>.paragraph:first-of-type p{font-size:inherit}
 .admonitionblock>table{border-collapse:separate;border:0;background:none;width:100%}
 .admonitionblock>table td.icon{text-align:center;width:80px}
-.admonitionblock>table td.icon img{max-width:none}
+.admonitionblock>table td.icon img{max-width:initial}
 .admonitionblock>table td.icon .title{font-weight:bold;font-family:"Open Sans","DejaVu Sans",sans-serif;text-transform:uppercase}
 .admonitionblock>table td.content{padding-left:1.125em;padding-right:1.25em;border-left:1px solid #ddddd8;color:rgba(0,0,0,.6)}
 .admonitionblock>table td.content>:last-child>:last-child{margin-bottom:0}
@@ -255,13 +258,13 @@ table.pyhltable .linenodiv{background:none!important;padding-right:0!important}
 table.tableblock{max-width:100%;border-collapse:separate}
 table.tableblock td>.paragraph:last-child p>p:last-child,table.tableblock th>p:last-child,table.tableblock td>p:last-child{margin-bottom:0}
 table.tableblock,th.tableblock,td.tableblock{border:0 solid #dedede}
-table.grid-all th.tableblock,table.grid-all td.tableblock{border-width:0 1px 1px 0}
-table.grid-all tfoot>tr>th.tableblock,table.grid-all tfoot>tr>td.tableblock{border-width:1px 1px 0 0}
-table.grid-cols th.tableblock,table.grid-cols td.tableblock{border-width:0 1px 0 0}
-table.grid-all *>tr>.tableblock:last-child,table.grid-cols *>tr>.tableblock:last-child{border-right-width:0}
-table.grid-rows th.tableblock,table.grid-rows td.tableblock{border-width:0 0 1px 0}
-table.grid-all tbody>tr:last-child>th.tableblock,table.grid-all tbody>tr:last-child>td.tableblock,table.grid-all thead:last-child>tr>th.tableblock,table.grid-rows tbody>tr:last-child>th.tableblock,table.grid-rows tbody>tr:last-child>td.tableblock,table.grid-rows thead:last-child>tr>th.tableblock{border-bottom-width:0}
-table.grid-rows tfoot>tr>th.tableblock,table.grid-rows tfoot>tr>td.tableblock{border-width:1px 0 0 0}
+table.grid-all>thead>tr>.tableblock,table.grid-all>tbody>tr>.tableblock{border-width:0 1px 1px 0}
+table.grid-all>tfoot>tr>.tableblock{border-width:1px 1px 0 0}
+table.grid-cols>*>tr>.tableblock{border-width:0 1px 0 0}
+table.grid-rows>thead>tr>.tableblock,table.grid-rows>tbody>tr>.tableblock{border-width:0 0 1px 0}
+table.grid-rows>tfoot>tr>.tableblock{border-width:1px 0 0 0}
+table.grid-all>*>tr>.tableblock:last-child,table.grid-cols>*>tr>.tableblock:last-child{border-right-width:0}
+table.grid-all>tbody>tr:last-child>.tableblock,table.grid-all>thead:last-child>tr>.tableblock,table.grid-rows>tbody>tr:last-child>.tableblock,table.grid-rows>thead:last-child>tr>.tableblock{border-bottom-width:0}
 table.frame-all{border-width:1px}
 table.frame-sides{border-width:0 1px}
 table.frame-topbot{border-width:1px 0}
@@ -282,10 +285,12 @@ ul li ol{margin-left:1.5em}
 dl dd{margin-left:1.125em}
 dl dd:last-child,dl dd:last-child>:last-child{margin-bottom:0}
 ol>li p,ul>li p,ul dd,ol dd,.olist .olist,.ulist .ulist,.ulist .olist,.olist .ulist{margin-bottom:.625em}
-ul.unstyled,ol.unnumbered,ul.checklist,ul.none{list-style-type:none}
-ul.unstyled,ol.unnumbered,ul.checklist{margin-left:.625em}
-ul.checklist li>p:first-child>.fa-square-o:first-child,ul.checklist li>p:first-child>.fa-check-square-o:first-child{width:1em;font-size:.85em}
-ul.checklist li>p:first-child>input[type="checkbox"]:first-child{width:1em;position:relative;top:1px}
+ul.checklist,ul.none,ol.none,ul.no-bullet,ol.no-bullet,ol.unnumbered,ul.unstyled,ol.unstyled{list-style-type:none}
+ul.no-bullet,ol.no-bullet,ol.unnumbered{margin-left:.625em}
+ul.unstyled,ol.unstyled{margin-left:0}
+ul.checklist{margin-left:.625em}
+ul.checklist li>p:first-child>.fa-square-o:first-child,ul.checklist li>p:first-child>.fa-check-square-o:first-child{width:1.25em;font-size:.8em;position:relative;bottom:.125em}
+ul.checklist li>p:first-child>input[type="checkbox"]:first-child{margin-right:.25em}
 ul.inline{margin:0 auto .625em auto;margin-left:-1.375em;margin-right:0;padding:0;list-style:none;overflow:hidden}
 ul.inline>li{list-style:none;float:left;margin-left:1.375em;display:block}
 ul.inline>li>*{display:block}
@@ -302,7 +307,8 @@ ol.lowergreek{list-style-type:lower-greek}
 td.hdlist1,td.hdlist2{vertical-align:top;padding:0 .625em}
 td.hdlist1{font-weight:bold;padding-bottom:1.25em}
 .literalblock+.colist,.listingblock+.colist{margin-top:-.5em}
-.colist>table tr>td:first-of-type{padding:0 .75em;line-height:1}
+.colist>table tr>td:first-of-type{padding:.4em .75em 0 .75em;line-height:1;vertical-align:top}
+.colist>table tr>td:first-of-type img{max-width:initial}
 .colist>table tr>td:last-of-type{padding:.25em 0}
 .thumb,.th{line-height:0;display:inline-block;border:solid 4px #fff;-webkit-box-shadow:0 0 0 1px #ddd;box-shadow:0 0 0 1px #ddd}
 .imageblock.left,.imageblock[style*="float: left"]{margin:.25em .625em 1.25em 0}
@@ -365,6 +371,7 @@ div.unbreakable{page-break-inside:avoid}
 .yellow{color:#bfbf00}
 .yellow-background{background-color:#fafa00}
 span.icon>.fa{cursor:default}
+a span.icon>.fa{cursor:inherit}
 .admonitionblock td.icon [class^="fa icon-"]{font-size:2.5em;text-shadow:1px 1px 2px rgba(0,0,0,.5);cursor:default}
 .admonitionblock td.icon .icon-note:before{content:"\f05a";color:#19407c}
 .admonitionblock td.icon .icon-tip:before{content:"\f0eb";text-shadow:1px 1px 2px rgba(155,155,0,.8);color:#111}
@@ -597,7 +604,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_introduction_3">Introduction</a></li>
 <li><a href="#_use_of_the_web_interface">Use of the web interface</a>
 <ul class="sectlevel2">
-<li><a href="#__tests_overview_customizable_test_overview_page">/tests/overview - Customizable test overview page</a></li>
+<li><a href="#_tests_overview_customizable_test_overview_page">/tests/overview - Customizable test overview page</a></li>
 <li><a href="#_description_of_test_suites">Description of test suites</a></li>
 <li><a href="#_review_badges">Review badges</a>
 <ul class="sectlevel3">
@@ -1045,7 +1052,7 @@ tags.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="json"><span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="json"><span></span><span class="tok-p">{</span>
    <span class="tok-nt">&quot;area&quot;</span> <span class="tok-p">:</span> <span class="tok-p">[</span>
       <span class="tok-p">{</span>
          <span class="tok-nt">&quot;xpos&quot;</span> <span class="tok-p">:</span> <span class="tok-err">INTEGER</span><span class="tok-p">,</span>
@@ -1576,7 +1583,7 @@ will be substituted with the value of the specified variable at that time.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-nv">PUBLISH_HDD_1</span> <span class="tok-o">=</span> %DISTRI%-%VERSION%-%ARCH%-%DESKTOP%.qcow2</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">PUBLISH_HDD_1</span> <span class="tok-o">=</span> %DISTRI%-%VERSION%-%ARCH%-%DESKTOP%.qcow2</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1584,7 +1591,7 @@ will be substituted with the value of the specified variable at that time.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-nv">PUBLISH_HDD_1</span> <span class="tok-o">=</span> opensuse-13.1-i586-kde.qcow2</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">PUBLISH_HDD_1</span> <span class="tok-o">=</span> opensuse-13.1-i586-kde.qcow2</code></pre>
 </div>
 </div>
 </div>
@@ -1650,7 +1657,7 @@ run</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">/usr/share/openqa/script/fetchneedles</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>/usr/share/openqa/script/fetchneedles</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1663,7 +1670,7 @@ use them, you may do:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-nb">cd</span> /var/lib/openqa/share/tests
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nb">cd</span> /var/lib/openqa/share/tests
 mkdir fedora
 <span class="tok-nb">cd</span> fedora
 git clone https://pagure.io/fedora-qa/os-autoinst-distri-fedora.git
@@ -1683,7 +1690,7 @@ following command:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">/var/lib/openqa/share/tests/opensuse/products/opensuse/templates <span class="tok-o">[</span>--apikey API_KEY<span class="tok-o">]</span> <span class="tok-o">[</span>--apisecret API_SECRET<span class="tok-o">]</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>/var/lib/openqa/share/tests/opensuse/products/opensuse/templates <span class="tok-o">[</span>--apikey API_KEY<span class="tok-o">]</span> <span class="tok-o">[</span>--apisecret API_SECRET<span class="tok-o">]</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1697,7 +1704,7 @@ consider reading its help page (--help) for documentation on possible extra argu
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">/var/lib/openqa/share/tests/fedora/templates <span class="tok-o">[</span>--apikey API_KEY<span class="tok-o">]</span> <span class="tok-o">[</span>--apisecret API_SECRET<span class="tok-o">]</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>/var/lib/openqa/share/tests/fedora/templates <span class="tok-o">[</span>--apikey API_KEY<span class="tok-o">]</span> <span class="tok-o">[</span>--apisecret API_SECRET<span class="tok-o">]</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1716,7 +1723,7 @@ the following commands:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-c1"># Run the first test</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># Run the first test</span>
 /usr/share/openqa/script/client isos post <span class="tok-se">\</span>
          <span class="tok-nv">ISO</span><span class="tok-o">=</span>openSUSE-Factory-NET-x86_64-Build0053-Media.iso <span class="tok-se">\</span>
          <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>opensuse <span class="tok-se">\</span>
@@ -1749,7 +1756,7 @@ specify its path in the command.
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-c1"># Run the first test</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># Run the first test</span>
 /usr/share/openqa/script/client isos post <span class="tok-se">\</span>
          <span class="tok-nv">ISO</span><span class="tok-o">=</span>Fedora-Everything-boot-x86_64-Rawhide-20160308.n.0.iso <span class="tok-se">\</span>
          <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>fedora <span class="tok-se">\</span>
@@ -1808,7 +1815,7 @@ and later. Installation on these distributions is therefore pretty simple:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-c1"># openSUSE Leap 42.2</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE Leap 42.2</span>
 zypper ar -f obs://devel:openQA/openSUSE_Leap_42.2 openQA
 zypper ar -f obs://devel:openQA:Leap:42.2/openSUSE_Leap_42.2 openQA-perl-modules
 
@@ -1838,7 +1845,7 @@ using the command 'a2enmod'. This is not necessary on Fedora.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-c1"># openSUSE Only</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE Only</span>
 <span class="tok-c1"># You can check what modules are enabled by using &#39;a2enmod -l&#39;</span>
 a2enmod headers
 a2enmod proxy
@@ -1852,7 +1859,7 @@ setting. This will direct all HTTP traffic to openQA.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">cp /etc/apache2/vhosts.d/openqa.conf.template /etc/apache2/vhosts.d/openqa.conf</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>cp /etc/apache2/vhosts.d/openqa.conf.template /etc/apache2/vhosts.d/openqa.conf</code></pre>
 </div>
 </div>
 </div>
@@ -1869,7 +1876,7 @@ cert location in the config file). On openSUSE, you should also add <strong>SSL<
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-nv">APACHE_SERVER_FLAGS</span><span class="tok-o">=</span><span class="tok-s2">&quot;SSL&quot;</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">APACHE_SERVER_FLAGS</span><span class="tok-o">=</span><span class="tok-s2">&quot;SSL&quot;</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1878,7 +1885,7 @@ You can do that in /etc/openqa/openqa.ini:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[openid]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[openid]</span>
 <span class="tok-na">httpsonly</span> <span class="tok-o">=</span> <span class="tok-s">0</span></code></pre>
 </div>
 </div>
@@ -1890,7 +1897,7 @@ You can do that in /etc/openqa/openqa.ini:</p>
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">systemctl start openqa-scheduler
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start openqa-scheduler
 systemctl start openqa-gru
 systemctl start openqa-websockets
 systemctl start openqa-webui
@@ -1908,7 +1915,7 @@ openQA runs on each boot, you should also systemctl enable the same services.</p
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">systemctl <span class="tok-nb">enable</span> openqa-scheduler
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> openqa-scheduler
 systemctl <span class="tok-nb">enable</span> openqa-gru
 systemctl <span class="tok-nb">enable</span> openqa-websockets
 systemctl <span class="tok-nb">enable</span> openqa-webui</code></pre>
@@ -1926,7 +1933,7 @@ multiple machines but still using only one WebUI.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-c1"># openSUSE</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE</span>
 zypper in openQA-worker
 <span class="tok-c1"># Fedora</span>
 dnf install openqa-worker</code></pre>
@@ -1946,7 +1953,7 @@ your client.conf may look like this:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[localhost]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[localhost]</span>
 <span class="tok-na">key</span> <span class="tok-o">=</span> <span class="tok-s">1234567890ABCDEF</span>
 <span class="tok-na">secret</span> <span class="tok-o">=</span> <span class="tok-s">1234567890ABCDEF</span></code></pre>
 </div>
@@ -1962,7 +1969,7 @@ after @).</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">install -d -m <span class="tok-m">0755</span> -o _openqa-worker /var/lib/openqa/pool/X
+<pre class="pygments highlight"><code data-lang="sh"><span></span>install -d -m <span class="tok-m">0755</span> -o _openqa-worker /var/lib/openqa/pool/X
 sudo -u _openqa-worker /usr/share/openqa/script/worker --instance X</code></pre>
 </div>
 </div>
@@ -1980,7 +1987,7 @@ and Fake. See auth section in /etc/openqa/openqa.ini.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[auth]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[auth]</span>
 <span class="tok-c1"># method name is case sensitive!</span>
 <span class="tok-na">method</span> <span class="tok-o">=</span> <span class="tok-s">OpenID|iChain|Fake</span></code></pre>
 </div>
@@ -1998,7 +2005,7 @@ OpenID method has its own openid section in /etc/openqa/openqa.ini:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[openid]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[openid]</span>
 <span class="tok-c1">## base url for openid provider</span>
 <span class="tok-na">provider</span> <span class="tok-o">=</span> <span class="tok-s">https://www.opensuse.org/openid/user/</span>
 <span class="tok-c1">## enforce redirect back to https</span>
@@ -2027,7 +2034,7 @@ You can then use following as /etc/openqa/client.conf:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[localhost]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[localhost]</span>
 <span class="tok-na">key</span> <span class="tok-o">=</span> <span class="tok-s">1234567890ABCDEF</span>
 <span class="tok-na">secret</span> <span class="tok-o">=</span> <span class="tok-s">1234567890ABCDEF</span></code></pre>
 </div>
@@ -2059,7 +2066,7 @@ automatically to git. To do so, you need to enable git support by setting</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[global]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[global]</span>
 <span class="tok-na">scm</span> <span class="tok-o">=</span> <span class="tok-s">git</span></code></pre>
 </div>
 </div>
@@ -2075,7 +2082,7 @@ You can do so by setting your configuration in the repository
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[user]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[user]</span>
 	<span class="tok-na">email</span> <span class="tok-o">=</span> <span class="tok-s">whatever@example.com</span>
 <span class="tok-s">	name = openQA web UI</span></code></pre>
 </div>
@@ -2086,7 +2093,7 @@ to your openqa.ini:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[scm git]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[scm git]</span>
 <span class="tok-na">do_push</span> <span class="tok-o">=</span> <span class="tok-s">yes</span></code></pre>
 </div>
 </div>
@@ -2111,7 +2118,7 @@ important.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[global]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[global]</span>
 <span class="tok-na">recognized_referers</span> <span class="tok-o">=</span> <span class="tok-s">bugzilla.suse.com bugzilla.opensuse.org</span></code></pre>
 </div>
 </div>
@@ -2127,7 +2134,7 @@ following setting:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[global]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[global]</span>
 <span class="tok-na">HOST</span> <span class="tok-o">=</span> <span class="tok-s">http://openqa.example.com</span></code></pre>
 </div>
 </div>
@@ -2153,7 +2160,7 @@ NFS server is where openQA WebUI is running. Content of /etc/exports</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">/var/lib/openqa/share *<span class="tok-o">(</span><span class="tok-nv">fsid</span><span class="tok-o">=</span><span class="tok-m">0</span>,rw,no_root_squash,sync,no_subtree_check<span class="tok-o">)</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>/var/lib/openqa/share *<span class="tok-o">(</span><span class="tok-nv">fsid</span><span class="tok-o">=</span><span class="tok-m">0</span>,rw,no_root_squash,sync,no_subtree_check<span class="tok-o">)</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -2161,7 +2168,7 @@ NFS server is where openQA WebUI is running. Content of /etc/exports</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">mount -t nfs openQA-webUI-host:/var/lib/openqa/share /var/lib/openqa/share</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>mount -t nfs openQA-webUI-host:/var/lib/openqa/share /var/lib/openqa/share</code></pre>
 </div>
 </div>
 </div>
@@ -2190,7 +2197,7 @@ configure where the shared storage is mounted. Example:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[global]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[global]</span>
 <span class="tok-na">HOSTS</span> <span class="tok-o">=</span> <span class="tok-s">openqa.opensuse.org openqa.fedora.fedoraproject.org</span>
 
 <span class="tok-k">[openqa.opensuse.org]</span>
@@ -2245,7 +2252,7 @@ will be created for you.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[global]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[global]</span>
 <span class="tok-na">CACHEDIRECTORY</span> <span class="tok-o">=</span> <span class="tok-s">/var/lib/openqa/cache</span></code></pre>
 </div>
 </div>
@@ -2268,7 +2275,7 @@ workers are tracked under user whose API keys are workers using.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[global]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[global]</span>
 <span class="tok-na">audit_enabled</span> <span class="tok-o">=</span> <span class="tok-s">0</span></code></pre>
 </div>
 </div>
@@ -2278,7 +2285,7 @@ a space separated blacklist:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[audit]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[audit]</span>
 <span class="tok-na">blacklist</span> <span class="tok-o">=</span> <span class="tok-s">job_grab job_done</span></code></pre>
 </div>
 </div>
@@ -2507,7 +2514,7 @@ and change the settings in the [production] section.</p>
 <h3 id="_example_for_connecting_to_local_postgresql_database">Example for connecting to local PostgreSQL database</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[production]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[production]</span>
 <span class="tok-na">dsn</span> <span class="tok-o">=</span> <span class="tok-s">dbi:Pg:dbname=openqa</span></code></pre>
 </div>
 </div>
@@ -2516,7 +2523,7 @@ and change the settings in the [production] section.</p>
 <h3 id="_example_for_connecting_to_remote_postgresql_database">Example for connecting to remote PostgreSQL database</h3>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[production]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[production]</span>
 <span class="tok-na">dsn</span> <span class="tok-o">=</span> <span class="tok-s">dbi:Pg:dbname=openqa;host=db.example.org</span>
 <span class="tok-na">user</span> <span class="tok-o">=</span> <span class="tok-s">openqa</span>
 <span class="tok-na">password</span> <span class="tok-o">=</span> <span class="tok-s">somepassword</span></code></pre>
@@ -2566,7 +2573,7 @@ of CSV files.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sql"><span class="tok-p">.</span><span class="tok-k">mode</span> <span class="tok-n">csv</span>
+<pre class="pygments highlight"><code data-lang="sql"><span></span><span class="tok-p">.</span><span class="tok-k">mode</span> <span class="tok-n">csv</span>
 <span class="tok-p">.</span><span class="tok-n">header</span> <span class="tok-k">ON</span>
 <span class="tok-p">.</span><span class="tok-k">output</span> <span class="tok-n">assets</span><span class="tok-p">.</span><span class="tok-n">csv</span>
 <span class="tok-k">SELECT</span> <span class="tok-o">*</span> <span class="tok-k">FROM</span> <span class="tok-n">assets</span><span class="tok-p">;</span>
@@ -2613,7 +2620,7 @@ them into the new database.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sql"><span class="tok-err">\</span><span class="tok-k">copy</span> <span class="tok-n">users</span> <span class="tok-k">FROM</span> <span class="tok-n">users</span><span class="tok-p">.</span><span class="tok-n">csv</span> <span class="tok-k">WITH</span> <span class="tok-n">csv</span> <span class="tok-n">header</span> <span class="tok-k">NULL</span> <span class="tok-k">AS</span> <span class="tok-s1">&#39;&#39;</span>
+<pre class="pygments highlight"><code data-lang="sql"><span></span><span class="tok-err">\</span><span class="tok-k">copy</span> <span class="tok-n">users</span> <span class="tok-k">FROM</span> <span class="tok-n">users</span><span class="tok-p">.</span><span class="tok-n">csv</span> <span class="tok-k">WITH</span> <span class="tok-n">csv</span> <span class="tok-n">header</span> <span class="tok-k">NULL</span> <span class="tok-k">AS</span> <span class="tok-s1">&#39;&#39;</span>
 <span class="tok-err">\</span><span class="tok-k">copy</span> <span class="tok-n">api_keys</span> <span class="tok-k">FROM</span> <span class="tok-n">api_keys</span><span class="tok-p">.</span><span class="tok-n">csv</span> <span class="tok-k">WITH</span> <span class="tok-n">csv</span> <span class="tok-n">header</span> <span class="tok-k">NULL</span> <span class="tok-k">AS</span> <span class="tok-s1">&#39;&#39;</span>
 <span class="tok-err">\</span><span class="tok-k">copy</span> <span class="tok-n">secrets</span> <span class="tok-k">FROM</span> <span class="tok-n">secrets</span><span class="tok-p">.</span><span class="tok-n">csv</span> <span class="tok-k">WITH</span> <span class="tok-n">csv</span> <span class="tok-n">header</span> <span class="tok-k">NULL</span> <span class="tok-k">AS</span> <span class="tok-s1">&#39;&#39;</span>
 <span class="tok-err">\</span><span class="tok-k">copy</span> <span class="tok-n">assets</span> <span class="tok-k">FROM</span> <span class="tok-n">assets</span><span class="tok-p">.</span><span class="tok-n">csv</span> <span class="tok-k">WITH</span> <span class="tok-n">csv</span> <span class="tok-n">header</span> <span class="tok-k">NULL</span> <span class="tok-k">AS</span> <span class="tok-s1">&#39;&#39;</span>
@@ -2702,7 +2709,7 @@ from trying to use IPv6 with www.opensuse.org:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">ip -6 r a to unreachable <span class="tok-m">2620</span>:113:8044:66:130:57:66:6/128</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>ip -6 r a to unreachable <span class="tok-m">2620</span>:113:8044:66:130:57:66:6/128</code></pre>
 </div>
 </div>
 </div>
@@ -2738,7 +2745,7 @@ parameters can be tweaked by hand if you want to provide a link to specific
 views.</p>
 </div>
 <div class="sect2">
-<h3 id="__tests_overview_customizable_test_overview_page">/tests/overview - Customizable test overview page</h3>
+<h3 id="_tests_overview_customizable_test_overview_page">/tests/overview - Customizable test overview page</h3>
 <div class="paragraph">
 <p>The overview page is configurable by the filter box. Also, some additional
 query parameters can be provided which can be considered advanced or
@@ -2980,7 +2987,7 @@ should be deprioritized. Needs <code>_DEPRIORITIZEBUILD</code>. Default 100.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">openqa-client isos post <span class="tok-nv">ISO</span><span class="tok-o">=</span>my_iso.iso <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>my_distri <span class="tok-nv">FLAVOR</span><span class="tok-o">=</span>sweet <span class="tok-se">\</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-client isos post <span class="tok-nv">ISO</span><span class="tok-o">=</span>my_iso.iso <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>my_distri <span class="tok-nv">FLAVOR</span><span class="tok-o">=</span>sweet <span class="tok-se">\</span>
          <span class="tok-nv">ARCH</span><span class="tok-o">=</span>my_arch <span class="tok-nv">VERSION</span><span class="tok-o">=</span><span class="tok-m">42</span> <span class="tok-nv">BUILD</span><span class="tok-o">=</span><span class="tok-m">1234</span> <span class="tok-se">\</span>
          <span class="tok-nv">_DEPRIORITIZEBUILD</span><span class="tok-o">=</span><span class="tok-m">1</span> <span class="tok-nv">_DEPRIORITIZE_LIMIT</span><span class="tok-o">=</span><span class="tok-m">120</span> <span class="tok-se">\</span></code></pre>
 </div>
@@ -3075,7 +3082,7 @@ that boots into the desktop when pressing enter at the boot loader:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">strict</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">testapi</span><span class="tok-p">;</span>
 
@@ -3108,7 +3115,7 @@ that boots into the desktop when pressing enter at the boot loader:</p>
 <div id="testcase_examples" class="listingblock">
 <div class="title">Example: Console test that installs software from remote repository via zypper command</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span class="tok-k">sub </span><span class="tok-nf">run</span><span class="tok-p">()</span> <span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub </span><span class="tok-nf">run</span><span class="tok-p">()</span> <span class="tok-p">{</span>
     <span class="tok-c1"># change to root</span>
     <span class="tok-n">become_root</span><span class="tok-p">;</span>
 
@@ -3132,7 +3139,7 @@ that boots into the desktop when pressing enter at the boot loader:</p>
 <div class="listingblock">
 <div class="title">Example: Typical X11 test testing kate</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span class="tok-k">sub </span><span class="tok-nf">run</span><span class="tok-p">()</span> <span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub </span><span class="tok-nf">run</span><span class="tok-p">()</span> <span class="tok-p">{</span>
     <span class="tok-c1"># make sure kate was installed</span>
     <span class="tok-c1"># if not ensure_installed will try to install it</span>
     <span class="tok-n">ensure_installed</span> <span class="tok-s">&#39;kate&#39;</span><span class="tok-p">;</span>
@@ -3193,7 +3200,7 @@ settings. This script is located at /usr/share/openqa/script/.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">/usr/share/openqa/script/clone_job.pl --from localhost --host localhost <span class="tok-m">42</span> <span class="tok-nv">FOO</span><span class="tok-o">=</span>bar <span class="tok-nv">BAZ</span><span class="tok-o">=</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>/usr/share/openqa/script/clone_job.pl --from localhost --host localhost <span class="tok-m">42</span> <span class="tok-nv">FOO</span><span class="tok-o">=</span>bar <span class="tok-nv">BAZ</span><span class="tok-o">=</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -3204,7 +3211,7 @@ name, e.g.:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">clone_job.pl --from localhost <span class="tok-m">42</span> <span class="tok-nv">_GROUP</span><span class="tok-o">=</span><span class="tok-s2">&quot;openSUSE Tumbleweed&quot;</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from localhost <span class="tok-m">42</span> <span class="tok-nv">_GROUP</span><span class="tok-o">=</span><span class="tok-s2">&quot;openSUSE Tumbleweed&quot;</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -3213,7 +3220,7 @@ and the job will not appear as a job in any job group, e.g.:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">clone_job.pl --from localhost <span class="tok-m">42</span> <span class="tok-nv">_GROUP</span><span class="tok-o">=</span><span class="tok-m">0</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from localhost <span class="tok-m">42</span> <span class="tok-nv">_GROUP</span><span class="tok-o">=</span><span class="tok-m">0</span></code></pre>
 </div>
 </div>
 </div>
@@ -3286,7 +3293,7 @@ existing job and adding the setting:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">MAKETESTSNAPSHOTS</span><span class="tok-o">=</span><span class="tok-m">1</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">MAKETESTSNAPSHOTS</span><span class="tok-o">=</span><span class="tok-m">1</span></code></pre>
 </div>
 </div>
 <div class="ulist">
@@ -3298,7 +3305,7 @@ existing job and adding the setting:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">SKIPTO</span><span class="tok-o">=</span>consoletest-yast2_i</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">SKIPTO</span><span class="tok-o">=</span>consoletest-yast2_i</code></pre>
 </div>
 </div>
 <div class="ulist">
@@ -3325,7 +3332,7 @@ successful test module run. Snapshots are overwritten. The snapshot is named <co
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">TESTDEBUG</span><span class="tok-o">=</span><span class="tok-m">1</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">TESTDEBUG</span><span class="tok-o">=</span><span class="tok-m">1</span></code></pre>
 </div>
 </div>
 <div class="ulist">
@@ -3340,7 +3347,7 @@ the clone source job or specifying the variable explicitly:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">TESTDEBUG</span><span class="tok-o">=</span><span class="tok-m">1</span> <span class="tok-nv">SKIPTO</span><span class="tok-o">=</span>consoletest-yast2_i</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">TESTDEBUG</span><span class="tok-o">=</span><span class="tok-m">1</span> <span class="tok-nv">SKIPTO</span><span class="tok-o">=</span>consoletest-yast2_i</code></pre>
 </div>
 </div>
 </div>
@@ -3362,7 +3369,7 @@ can be assigned <em>only</em> to worker instances 1 and 2.</p>
 <div class="listingblock">
 <div class="title">File: workers.ini</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-k">[1]</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[1]</span>
 <span class="tok-na">WORKER_CLASS</span> <span class="tok-o">=</span> <span class="tok-s">desktop</span>
 
 <span class="tok-k">[2]</span>
@@ -3552,7 +3559,7 @@ same time and the same lock name is used, these locks are independent of each ot
 <div class="content">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">strict</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">testapi</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">lockapi</span><span class="tok-p">;</span>
@@ -3578,7 +3585,7 @@ same time and the same lock name is used, these locks are independent of each ot
 <div class="content">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">strict</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">testapi</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">lockapi</span><span class="tok-p">;</span>
@@ -3615,7 +3622,7 @@ with given ID already finished, mutex_lock() calls die.</p>
 <div class="content">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">strict</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">testapi</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">lockapi</span><span class="tok-p">;</span>
@@ -3644,7 +3651,7 @@ with given ID already finished, mutex_lock() calls die.</p>
 <div class="content">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">strict</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">testapi</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">mmapi</span><span class="tok-p">;</span>
@@ -3697,7 +3704,7 @@ with given ID already finished, mutex_lock() calls die.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">/usr/share/openqa/script/client <span class="tok-nb">jobs</span> post <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>opensuse <span class="tok-nv">VERSION</span><span class="tok-o">=</span><span class="tok-m">13</span>.2 <span class="tok-se">\</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>/usr/share/openqa/script/client <span class="tok-nb">jobs</span> post <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>opensuse <span class="tok-nv">VERSION</span><span class="tok-o">=</span><span class="tok-m">13</span>.2 <span class="tok-se">\</span>
     <span class="tok-nv">ISO</span><span class="tok-o">=</span>openSUSE-13.2-DVD-x86_64.iso  <span class="tok-nv">ARCH</span><span class="tok-o">=</span>x86_64 <span class="tok-nv">FLAVOR</span><span class="tok-o">=</span>Server-DVD <span class="tok-se">\</span>
     <span class="tok-nv">TEST</span><span class="tok-o">=</span>supportserver_generator <span class="tok-nv">MACHINE</span><span class="tok-o">=</span>64bit <span class="tok-nv">DESKTOP</span><span class="tok-o">=</span>textmode  <span class="tok-nv">INSTALLONLY</span><span class="tok-o">=</span><span class="tok-m">1</span> <span class="tok-se">\</span>
     <span class="tok-nv">AUTOYAST</span><span class="tok-o">=</span>supportserver/autoyast_supportserver.xml <span class="tok-nv">SUPPORT_SERVER_GENERATOR</span><span class="tok-o">=</span><span class="tok-m">1</span> <span class="tok-se">\</span>
@@ -3719,7 +3726,7 @@ should define correct user and password, as well as packages and the common conf
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-na">HDD_1</span><span class="tok-o">=</span><span class="tok-s">supportserver.qcow2</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-na">HDD_1</span><span class="tok-o">=</span><span class="tok-s">supportserver.qcow2</span>
 <span class="tok-na">SUPPORT_SERVER</span><span class="tok-o">=</span><span class="tok-s">1</span>
 <span class="tok-na">SUPPORT_SERVER_ROLES</span><span class="tok-o">=</span><span class="tok-s">pxe,qemuproxy</span>
 <span class="tok-na">WORKER_CLASS</span><span class="tok-o">=</span><span class="tok-s">server,qemu_autoyast_tap_64</span></code></pre>
@@ -3739,7 +3746,7 @@ Once the tests are defined, they can be added to openQA in the usual way:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">/usr/share/openqa/script/client isos post <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>opensuse <span class="tok-nv">VERSION</span><span class="tok-o">=</span><span class="tok-m">13</span>.2 <span class="tok-se">\</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>/usr/share/openqa/script/client isos post <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>opensuse <span class="tok-nv">VERSION</span><span class="tok-o">=</span><span class="tok-m">13</span>.2 <span class="tok-se">\</span>
         <span class="tok-nv">ISO</span><span class="tok-o">=</span>openSUSE-13.2-DVD-x86_64.iso <span class="tok-nv">ARCH</span><span class="tok-o">=</span>x86_64 <span class="tok-nv">FLAVOR</span><span class="tok-o">=</span>Server-DVD</code></pre>
 </div>
 </div>
@@ -3755,7 +3762,7 @@ Note that the networking is provided by tap devices, so both jobs should run on 
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-na">HDD_1</span><span class="tok-o">=</span><span class="tok-s">supportserver.qcow2</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-na">HDD_1</span><span class="tok-o">=</span><span class="tok-s">supportserver.qcow2</span>
 <span class="tok-na">SUPPORT_SERVER</span><span class="tok-o">=</span><span class="tok-s">1</span>
 <span class="tok-na">SUPPORT_SERVER_ROLES</span><span class="tok-o">=</span><span class="tok-s">dhcp,tftp</span>
 <span class="tok-na">WORKER_CLASS</span><span class="tok-o">=</span><span class="tok-s">server,qemu_autoyast_tap_64</span></code></pre>
@@ -3774,7 +3781,7 @@ Note that the networking is provided by tap devices, so both jobs should run on 
 <div class="content">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span class="tok-k">use</span> <span class="tok-n">strict</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-n">strict</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&#39;basetest&#39;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">testapi</span><span class="tok-p">;</span>
 
@@ -3802,7 +3809,7 @@ Note that the networking is provided by tap devices, so both jobs should run on 
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-na">HDD_1</span><span class="tok-o">=</span><span class="tok-s">supportserver.qcow2</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-na">HDD_1</span><span class="tok-o">=</span><span class="tok-s">supportserver.qcow2</span>
 <span class="tok-na">SUPPORT_SERVER</span><span class="tok-o">=</span><span class="tok-s">1</span>
 <span class="tok-na">SUPPORT_SERVER_ROLES</span><span class="tok-o">=</span><span class="tok-s">pxe,qemuproxy</span>
 <span class="tok-na">WORKER_CLASS</span><span class="tok-o">=</span><span class="tok-s">server,qemu_autoyast_tap_64</span></code></pre>
@@ -3813,7 +3820,7 @@ Note that the networking is provided by tap devices, so both jobs should run on 
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span class="tok-na">AUTOYAST</span><span class="tok-o">=</span><span class="tok-s">autoyast_opensuse/opensuse_autoyast_tftp.xml</span>
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-na">AUTOYAST</span><span class="tok-o">=</span><span class="tok-s">autoyast_opensuse/opensuse_autoyast_tftp.xml</span>
 <span class="tok-na">AUTOYAST_VERIFY</span><span class="tok-o">=</span><span class="tok-s">autoyast_opensuse/opensuse_autoyast_tftp.sh</span>
 <span class="tok-na">DESKTOP</span><span class="tok-o">=</span><span class="tok-s">textmode</span>
 <span class="tok-na">INSTALLONLY</span><span class="tok-o">=</span><span class="tok-s">1</span>
@@ -3830,7 +3837,7 @@ Note that the networking is provided by tap devices, so both jobs should run on 
 <div class="content">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-nb">set</span> -e -x
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nb">set</span> -e -x
 <span class="tok-nb">echo</span> <span class="tok-nb">test</span> &gt;test.txt
 <span class="tok-nb">time</span> tftp <span class="tok-c1">#SERVER_URL# -c put test.txt test2.txt</span>
 <span class="tok-nb">time</span> tftp <span class="tok-c1">#SERVER_URL# -c get test2.txt</span>
@@ -3860,7 +3867,7 @@ convenient.</p>
 <div class="content">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span class="tok-k">use</span> <span class="tok-mf">5.018</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-mf">5.018</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">warnings</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&#39;opensusebasetest&#39;</span><span class="tok-p">;</span>
 <span class="tok-k">use</span> <span class="tok-n">testapi</span><span class="tok-p">;</span>
@@ -3890,7 +3897,7 @@ is being selected and what backend/architecture the SUT is using.</p>
 <div class="content">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span class="tok-n">assert_script_run</span><span class="tok-p">(</span><span class="tok-s">&#39;cd /proc&#39;</span><span class="tok-p">);</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-n">assert_script_run</span><span class="tok-p">(</span><span class="tok-s">&#39;cd /proc&#39;</span><span class="tok-p">);</span>
 <span class="tok-k">my</span> <span class="tok-nv">$cpuinfo</span> <span class="tok-o">=</span> <span class="tok-n">script_output</span><span class="tok-p">(</span><span class="tok-s">&#39;cat cpuinfo&#39;</span><span class="tok-p">);</span>
 <span class="tok-k">if</span><span class="tok-p">(</span><span class="tok-nv">$cpuinfo</span> <span class="tok-o">=~</span> <span class="tok-sr">m/avx2/</span><span class="tok-p">)</span> <span class="tok-p">{</span>
     <span class="tok-c1"># Do something which needs avx2</span>
@@ -3942,7 +3949,7 @@ receiving TTY commands.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span class="tok-n">select_console</span><span class="tok-p">(</span><span class="tok-s">&#39;root-virtio-terminal&#39;</span><span class="tok-p">);</span>  <span class="tok-c1"># Selects a virtio based serial terminal</span></code></pre>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-n">select_console</span><span class="tok-p">(</span><span class="tok-s">&#39;root-virtio-terminal&#39;</span><span class="tok-p">);</span>  <span class="tok-c1"># Selects a virtio based serial terminal</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4080,7 +4087,7 @@ scheme is used:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">worker1: tap0 tap64 tap128 ...
+<pre class="pygments highlight"><code data-lang="sh"><span></span>worker1: tap0 tap64 tap128 ...
 worker2: tap1 tap65 tap129 ...
 worker3: tap2 tap66 tap130 ...
 ...</code></pre>
@@ -4100,7 +4107,7 @@ be able to access them.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">tunctl -u _openqa-worker -p -t tap0</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>tunctl -u _openqa-worker -p -t tap0</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4109,7 +4116,7 @@ be able to access them.</p>
 <div class="listingblock">
 <div class="title">File: /etc/sysconfig/network/ifcfg-tap0</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-nv">BOOTPROTO</span><span class="tok-o">=</span><span class="tok-s1">&#39;none&#39;</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">BOOTPROTO</span><span class="tok-o">=</span><span class="tok-s1">&#39;none&#39;</span>
 <span class="tok-nv">IPADDR</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
 <span class="tok-nv">NETMASK</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
 <span class="tok-nv">PREFIXLEN</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
@@ -4125,7 +4132,7 @@ you need to set CAP_NET_ADMIN capability on qemu binary file:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">zypper in libcap-progs
+<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper in libcap-progs
 setcap <span class="tok-nv">CAP_NET_ADMIN</span><span class="tok-o">=</span>ep /usr/bin/qemu-system-x86_64</code></pre>
 </div>
 </div>
@@ -4138,7 +4145,7 @@ specified in TAPSCRIPT variable.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">sudo brctl addif br0 <span class="tok-nv">$1</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo brctl addif br0 <span class="tok-nv">$1</span>
 sudo ip link <span class="tok-nb">set</span> <span class="tok-nv">$1</span> up</code></pre>
 </div>
 </div>
@@ -4165,7 +4172,8 @@ but provides more robust and scalable network.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-c1"># start openvswitch.service</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>
+<span class="tok-c1"># start openvswitch.service</span>
 systemctl start openvswitch.service
 systemctl <span class="tok-nb">enable</span> openvswitch.service
 
@@ -4192,7 +4200,7 @@ See Open vSwitch <a href="http://openvswitch.org/support/config-cookbooks/port-t
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">ovs-vsctl add-port br0 gre1 -- <span class="tok-nb">set</span> interface gre1 <span class="tok-nv">type</span><span class="tok-o">=</span>gre options:remote_ip<span class="tok-o">=</span>&lt;IP address of other host&gt;</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>ovs-vsctl add-port br0 gre1 -- <span class="tok-nb">set</span> interface gre1 <span class="tok-nv">type</span><span class="tok-o">=</span>gre options:remote_ip<span class="tok-o">=</span>&lt;IP address of other host&gt;</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4200,7 +4208,7 @@ See Open vSwitch <a href="http://openvswitch.org/support/config-cookbooks/port-t
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-c1"># /etc/wicked/scripts/gre_tunnel_preup.sh</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/wicked/scripts/gre_tunnel_preup.sh</span>
 <span class="tok-c1">#!/bin/sh</span>
 <span class="tok-nv">action</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$1</span><span class="tok-s2">&quot;</span>
 <span class="tok-nv">bridge</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$2</span><span class="tok-s2">&quot;</span>
@@ -4233,7 +4241,7 @@ provide non-conflicting addresses visible from host:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">MAC <span class="tok-m">52</span>:54:00:12:XX:YY -&gt; IP <span class="tok-m">10</span>.1.XX.YY</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>MAC <span class="tok-m">52</span>:54:00:12:XX:YY -&gt; IP <span class="tok-m">10</span>.1.XX.YY</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4242,7 +4250,7 @@ and netmask /15 that covers 10.0.0.0 and 10.1.0.0 ranges.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">ip addr add <span class="tok-m">10</span>.0.2.2/15 dev br0
+<pre class="pygments highlight"><code data-lang="sh"><span></span>ip addr add <span class="tok-m">10</span>.0.2.2/15 dev br0
 ip route add <span class="tok-m">10</span>.0.0.0/15 dev br0
 ip link <span class="tok-nb">set</span> br0 up</code></pre>
 </div>
@@ -4252,7 +4260,7 @@ ip link <span class="tok-nb">set</span> br0 up</code></pre>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-c1"># /etc/sysconfig/network/ifcfg-br0</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-br0</span>
 <span class="tok-nv">BOOTPROTO</span><span class="tok-o">=</span><span class="tok-s1">&#39;static&#39;</span>
 <span class="tok-nv">IPADDR</span><span class="tok-o">=</span><span class="tok-s1">&#39;10.0.2.2/15&#39;</span>
 <span class="tok-nv">STARTMODE</span><span class="tok-o">=</span><span class="tok-s1">&#39;auto&#39;</span></code></pre>
@@ -4278,7 +4286,7 @@ In some cases (e.g. on Leap) can be needed to start the OpenvSwitch service befo
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-c1"># /etc/sysconfig/network/ifcfg-br0</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-br0</span>
 <span class="tok-nv">BOOTPROTO</span><span class="tok-o">=</span><span class="tok-s1">&#39;static&#39;</span>
 <span class="tok-nv">IPADDR</span><span class="tok-o">=</span><span class="tok-s1">&#39;10.0.2.2/15&#39;</span>
 <span class="tok-nv">STARTMODE</span><span class="tok-o">=</span><span class="tok-s1">&#39;auto&#39;</span>
@@ -4297,7 +4305,7 @@ with SuSEfirewall or iptables.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-c1"># configuration options for NAT with SuSEfirewall</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># configuration options for NAT with SuSEfirewall</span>
 <span class="tok-c1"># /etc/sysconfig/SuSEfirewall2</span>
 
 <span class="tok-nv">FW_ROUTE</span><span class="tok-o">=</span><span class="tok-s2">&quot;yes&quot;</span>
@@ -4315,7 +4323,7 @@ bridge name by setting /etc/sysconfig/os-autoinst-openvswitch</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-nv">OS_AUTOINST_USE_BRIDGE</span><span class="tok-o">=</span>bridge_name</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">OS_AUTOINST_USE_BRIDGE</span><span class="tok-o">=</span>bridge_name</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4323,7 +4331,7 @@ bridge name by setting /etc/sysconfig/os-autoinst-openvswitch</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">systemctl start os-autoinst-openvswitch.service
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start os-autoinst-openvswitch.service
 systemctl <span class="tok-nb">enable</span> os-autoinst-openvswitch.service</code></pre>
 </div>
 </div>
@@ -4375,7 +4383,7 @@ systemctl <span class="tok-nb">enable</span> os-autoinst-openvswitch.service</co
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">ovs-vsctl show <span class="tok-c1"># shows the bridge br0, the tap devices are assigned to it</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>ovs-vsctl show <span class="tok-c1"># shows the bridge br0, the tap devices are assigned to it</span>
 ovs-ofctl dump-flows br0 <span class="tok-c1"># shows the rules installed by os-autoinst-openvswitch in table=0</span></code></pre>
 </div>
 </div>
@@ -4397,7 +4405,7 @@ ovs-ofctl dump-flows br0 <span class="tok-c1"># shows the rules installed by os-
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">ipables -L -v</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>ipables -L -v</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4443,7 +4451,7 @@ create a machine with the following settings:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">systemctl start openqa-vde_switch
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start openqa-vde_switch
 systemctl start openqa-slirpvde</code></pre>
 </div>
 </div>
@@ -4538,7 +4546,7 @@ i.e. before every commit call:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">./script/tidy</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>./script/tidy</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4554,7 +4562,7 @@ environment to verify everything works as expected. Call:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">make <span class="tok-nb">test</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>make <span class="tok-nb">test</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4743,7 +4751,7 @@ variable.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span class="tok-nb">export</span> <span class="tok-nv">DBIC_TRACE</span><span class="tok-o">=</span><span class="tok-m">1</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nb">export</span> <span class="tok-nv">DBIC_TRACE</span><span class="tok-o">=</span><span class="tok-m">1</span></code></pre>
 </div>
 </div>
 </div>
@@ -4764,7 +4772,7 @@ directory and set OPENQA_CONFIG in your shell setup files.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">cp -ar etc/openqa etc/mine
+<pre class="pygments highlight"><code data-lang="sh"><span></span>cp -ar etc/openqa etc/mine
 <span class="tok-nb">export</span> <span class="tok-nv">OPENQA_CONFIG</span><span class="tok-o">=</span><span class="tok-nv">$PWD</span>/etc/mine</code></pre>
 </div>
 </div>
@@ -4836,7 +4844,8 @@ page or none.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span class="tok-nv">%res</span> <span class="tok-o">=</span> <span class="tok-p">(</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span>
+<span class="tok-nv">%res</span> <span class="tok-o">=</span> <span class="tok-p">(</span>
     <span class="tok-c1"># error = 1 signals auth error</span>
     <span class="tok-n">error</span> <span class="tok-o">=&gt;</span> <span class="tok-mi">0</span><span class="tok-o">|</span><span class="tok-mi">1</span>
     <span class="tok-c1"># where to redirect the user</span>
@@ -4917,7 +4926,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-07-11 12:09:51 UTC
+Last updated 2017-07-12 12:10:42 UTC
 </div>
 </div>
 </body>
