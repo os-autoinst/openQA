@@ -51,13 +51,9 @@ __PACKAGE__->add_columns(
         false_id      => ['0', '-1'],
         default_value => '0',
     },
-    last_login_version => {
-        data_type     => 'text',
-        is_nullable   => 1,
-    },
-    feature_informed => {
-        data_type     => 'boolean',
-        default_value => '0',
+    feature_version => {
+        data_type     => 'integer',
+        default_value => 1,
     },
 );
 __PACKAGE__->add_timestamps;

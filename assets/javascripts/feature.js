@@ -1,21 +1,22 @@
 function newFeature() {
 
-    var version = "";
-    var currentFeature = 1;
+    var currentFeature;
+    checkVersion();
 
-    var feature01 = new Tour({
-        //Enable to save progress local
-        storage: false
+    var example = new Tour({
+        //Enable to save progress local, necessary for multipage traversal
+        storage: window.localStorage
     });
 
-    feature01.addSteps([
+    example.addSteps([
         {
           element: ".jumbotron",
           title: "Interested in new features?",
           content: "Just click next to see what's new in openQA",
           placement: "bottom",
-          backdrop: false,
+          backdrop: true,
           template: changeTemplate(),
+          onNext: function(){return ($('.panel-heading').click())}
         },
         {
           element: "#filter-fullscreen",
@@ -23,10 +24,19 @@ function newFeature() {
           content: "Check out the new full screen view option",
           placement: "top",
           backdrop: false,
-          onShown: function(){return endTour()}
+          onNext: function(){document.location.href = '/tests/'},
+        },
+        {
+          element: "#scheduled_wrapper",
+          title: "Multipage",
+          content: "Example about traversing across pages",
+          placement: "bottom",
+          onShown: function(){currentFeature = 2; return endTour(currentFeature)},
+          onPrev: function(){document.location.href = '/'},
         }
     ]);
 
+    //Parse html code as string to change the default layout of bootstrap tour
     function changeTemplate() {
         return ("<div class='popover tour'>"+
                 "<div class='arrow'></div>"+
@@ -42,6 +52,7 @@ function newFeature() {
                 "</div>")
     };
 
+    //Check database for allready shown features
     function checkVersion() {
         $.ajax({
             dataType: "json",
@@ -53,15 +64,14 @@ function newFeature() {
         });
     };
 
-    function getResult(data, version) {
-        version = data.version;
-    };
-
-    if (currentFeature > version) {
-        //Initialize the tour
-        feature01.init();
-        //Start the tour
-        feature01.start();
+    function getResult(data) {
+        var version = data.version;
+        if (2 > version) {
+            //Initialize the tour
+            example.init();
+            //Start the tour
+            example.start();
+        };
     };
 
     function endTour(currentFeature) {
