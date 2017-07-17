@@ -30,7 +30,9 @@
           $(function() {
           setupForAll();
           %= content_for 'ready_function'
+          % if (current_user) {
           newFeature();
+          % }
           } );
       % end
 
