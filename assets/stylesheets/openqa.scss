@@ -19,7 +19,8 @@ $color-resborder-unk: $color-module-none;
 $color-highlight-parent: #ffe0e0;
 $color-highlight-child: #d0f0ff;
 $color-labels: gray;
-$color-bolt: #ffbf00; /* amber */
+$color-bug: #f2b500; /* amber */
+$color-bug-closed: #6d6d6d; /* gray */
 $color-state-scheduled: #67A2B7;
 $color-state-cancelled: $color-module-none;
 $color-state-running: #8BDFFF;
@@ -502,7 +503,12 @@ div.flags {
 .fa.result_user_restarted { color: $color-module-none; }
 
 .fa.comment, .fa.bookmark, .fa.bug, .fa.certificate, .fa.tag { color: $color-labels; }
-.label_bug.fa-bolt { color: $color-bolt; }
+.label_bug.fa-bolt { padding: 0 3px; }
+.label_bug { color: $color-bug; }
+.label_bug.bug_closed {
+    color: $color-bug-closed;
+    transform: rotate(180deg);
+}
 
 .step_actions {
     .step_action { color: $color-step-actions; }

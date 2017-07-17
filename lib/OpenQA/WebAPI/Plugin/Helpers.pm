@@ -56,8 +56,12 @@ sub register {
 
     $app->helper(
         bugicon_for => sub {
-            my ($c, $text) = @_;
-            return ($text =~ /(poo|gh)#/) ? 'label_bug fa fa-bolt' : 'label_bug fa fa-bug';
+            my ($c, $text, $bug) = @_;
+            my $css_class = ($text =~ /(poo|gh)#/) ? 'label_bug fa fa-bolt' : 'label_bug fa fa-bug';
+            if ($bug && !$bug->open) {
+                $css_class .= " bug_closed";
+            }
+            return $css_class;
         });
 
     $app->helper(bug_report_actions => sub { shift->include_branding('external_reporting') });

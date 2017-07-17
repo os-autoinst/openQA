@@ -352,13 +352,20 @@ sub _job_labels {
     my ($self, $jobs) = @_;
 
     my %labels;
+    my %bugdetails;
     my $comments
       = $self->db->resultset('Comments')->search({job_id => {in => [map { $_->id } @$jobs]}}, {order_by => 'me.id'});
     # previous occurences of bug or label are overwritten here.
     while (my $comment = $comments->next()) {
         my $bugrefs = $comment->bugrefs;
         if (@$bugrefs) {
+            for my $bug (@$bugrefs) {
+                if (!exists $bugdetails{$bug}) {
+                    $bugdetails{$bug} = OpenQA::Schema::Result::Bugs->get_bug($bug, $self->db);
+                }
+            }
             push(@{$labels{$comment->job_id}{bugs} //= []}, @$bugrefs);
+            $labels{$comment->job_id}{bugdetails} = \%bugdetails;
             $self->app->log->debug(
                 'Found bug ticket reference ' . join(' ', @$bugrefs) . ' for job ' . $comment->job_id);
         }
@@ -421,16 +428,17 @@ sub prepare_job_results {
 
 
             $result = {
-                passed   => $result_stats->{passed},
-                unknown  => $result_stats->{unk},
-                failed   => $result_stats->{failed},
-                overall  => $overall,
-                jobid    => $jobid,
-                state    => OpenQA::Schema::Result::Jobs::DONE,
-                failures => $job->failed_modules(),
-                bugs     => $job_labels->{$jobid}{bugs},
-                label    => $job_labels->{$jobid}{label},
-                comments => $job_labels->{$jobid}{comments},
+                passed     => $result_stats->{passed},
+                unknown    => $result_stats->{unk},
+                failed     => $result_stats->{failed},
+                overall    => $overall,
+                jobid      => $jobid,
+                state      => OpenQA::Schema::Result::Jobs::DONE,
+                failures   => $job->failed_modules(),
+                bugs       => $job_labels->{$jobid}{bugs},
+                bugdetails => $job_labels->{$jobid}{bugdetails},
+                label      => $job_labels->{$jobid}{label},
+                comments   => $job_labels->{$jobid}{comments},
             };
             $aggregated->{$overall}++;
         }
