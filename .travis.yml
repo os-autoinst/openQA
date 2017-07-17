@@ -9,6 +9,7 @@ addons:
     packages:
       - libgmp3-dev
       - libdbus-1-dev
+      - dbus-x11
 env:
   matrix:
     - FULLSTACK=0 UITESTS=0
