@@ -317,6 +317,22 @@ sub register {
             my ($c, $group) = @_;
             return $c->tag('li', $c->link_to($group->name => $c->url_for('group_overview', groupid => $group->id)));
         });
+
+    $app->helper(
+        comment_icon => sub {
+            my ($c, $jobid, $comment_count) = @_;
+            return '' unless $comment_count;
+
+            return $c->link_to(
+                $c->url_for('test', 'testid' => $jobid) . '#comments' => sub {
+                    $c->tag(
+                        'i',
+                        class => 'test-label label_comment fa fa-comment',
+                        title => $comment_count . ($comment_count != 1 ? ' comments available' : ' comment available')
+                      ),
+                      ;
+                });
+        });
 }
 
 sub _step_thumbnail {

@@ -49,7 +49,16 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 # example for customizing the test database
 sub schema_hook {
     my $schema = OpenQA::Test::Database->new->create;
-    $schema->resultset('Jobs')->find(99981)->delete;
+    my $jobs   = $schema->resultset('Jobs');
+    $jobs->find(99981)->delete;
+    my $job99946_comments = $jobs->find(99946)->comments;
+    $job99946_comments->create({text => 'test1', user_id => 99901});
+    $job99946_comments->create({text => 'test2', user_id => 99901});
+    my $job99963_comments = $jobs->find(99963)->comments;
+    $job99963_comments->create({text => 'test1', user_id => 99901});
+    $job99963_comments->create({text => 'test2', user_id => 99901});
+    my $job99928_comments = $jobs->find(99928)->comments;
+    $job99928_comments->create({text => 'test1', user_id => 99901});
 }
 
 my $driver = call_phantom(\&schema_hook);
@@ -71,7 +80,6 @@ is($driver->get("/results"), 1, "/results gets");
 like($driver->get_current_url(), qr{.*/tests}, "/results redirects to /tests ");
 
 wait_for_ajax();
-#print $driver->get_page_source();
 
 # Test 99946 is successful (29/0/1)
 my $job99946 = $driver->find_element('#results #job_99946');
@@ -102,6 +110,25 @@ is_deeply(\@header, \@expected, 'test report can be adjusted with query paramete
 
 $get = $t->get_ok('/tests/99963')->status_is(200);
 $t->content_like(qr/State.*running/, "Running jobs are marked");
+
+# Available comments shown
+is(
+    $driver->find_element('#job_99963 .fa-comment')->get_attribute('title'),
+    '2 comments available',
+    'available comments shown for running jobs'
+);
+is(@{$driver->find_elements('#job_99961 .fa-comment')},
+    0, 'available comments only shown if at least one comment available');
+is(
+    $driver->find_element('#job_99928 .fa-comment')->get_attribute('title'),
+    '1 comment available',
+    'available comments shown for scheduled jobs'
+);
+is(
+    $driver->find_element('#job_99946 .fa-comment')->get_attribute('title'),
+    '2 comments available',
+    'available comments shown for finished jobs'
+);
 
 $driver->find_element_by_link_text('Build0091')->click();
 like(
@@ -139,7 +166,7 @@ is($driver->get("/tests"), 1, "/tests gets");
 wait_for_ajax();
 
 my @links = $driver->find_elements('#results #job_99946 td.test a', 'css');
-is(@links, 2, 'only two links (icon, name, no restart)');
+is(@links, 3, 'only three links (icon, name and comments but no restart)');
 
 # Test 99926 is displayed
 is($driver->find_element('#results #job_99926 .test .status.result_incomplete')->get_text(), '', '99926 incomplete');

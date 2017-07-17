@@ -143,10 +143,11 @@ sub list_ajax {
                 flavor  => $job->FLAVOR  // '',
                 arch    => $job->ARCH    // '',
                 build   => $job->BUILD   // '',
-                testtime => $job->t_finished . 'Z',
-                result   => $job->result,
-                group    => $job->group_id,
-                state    => $job->state
+                testtime      => $job->t_finished . 'Z',
+                result        => $job->result,
+                group         => $job->group_id,
+                comment_count => $job->comments->count,
+                state         => $job->state
             });
     }
     $self->render(json => {data => \@list});
