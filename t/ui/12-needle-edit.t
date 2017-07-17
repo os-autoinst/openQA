@@ -332,17 +332,34 @@ my $xoffset = my $yoffset = 200;
 change_needle_value($xoffset, $yoffset);    # xoffset and yoffset 200 for new area
 overwrite_needle($needlename);
 
-subtest 'Saving needle without taking matches' => sub {
-    $driver->get('/tests/99938/modules/logpackages/steps/1/edit');
-    $driver->find_element_by_id('tag_ENV-DESKTOP-kde')->click();
-    $driver->find_element_by_id('take_matches')->click();
-    create_needle(20, 50);
-    $driver->find_element_by_id('save')->click();
+# load needle editor for 'logpackages-before-package-selection', removing animation from modal again
+$driver->get('/tests/99938/modules/logpackages/steps/1/edit');
+$driver->execute_script('$(\'#modal-overwrite\').removeClass(\'fade\');');
+
+sub check_flash_for_saving_logpackages {
+    wait_for_ajax();
     like(
         $driver->find_element('#flash-messages span')->get_text(),
         qr/Needle logpackages-before-package-selection-\d{8} created\/updated - restart job/,
         'highlight appears correct'
     );
+    $driver->find_element('#flash-messages .close')->click();
+}
+
+subtest 'Saving needle when "taking matches" selected but no matches present' => sub {
+    $driver->find_element_by_id('tag_ENV-DESKTOP-kde')->click();
+    create_needle(100, 120);
+    $driver->find_element_by_id('save')->click();
+    check_flash_for_saving_logpackages();
+};
+
+subtest 'Saving needle when "taking matches" not selected' => sub {
+    $driver->find_element_by_id('take_matches')->click();
+    create_needle(200, 220);
+    $driver->find_element_by_id('save')->click();
+    wait_for_ajax();
+    $driver->find_element_by_id('modal-overwrite-confirm')->click();
+    check_flash_for_saving_logpackages();
 };
 
 # parse new needle json

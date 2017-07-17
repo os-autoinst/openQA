@@ -294,13 +294,17 @@ function loadTagsAndName() {
 function loadAreas() {
   var needle = window.needles[$('#area_select option:selected').val()];
   if ($('#take_matches').prop('checked')) {
-    var matchesAndExcludes = needle.matches.slice();
-    $.each(needle.area, function(index, area) {
-      if (area.type === 'exclude') {
-        matchesAndExcludes.push(area);
-      }
-    });
-    nEditor.LoadAreas(matchesAndExcludes);
+    // merge exclude areas into matches if not done yet
+    var matches = needle.matches;
+    if (!matches.hasIncludes) {
+      $.each(needle.area, function(index, area) {
+        if (area.type === 'exclude') {
+          matches.push(area);
+        }
+      });
+      matches.hasIncludes = true;
+    }
+    nEditor.LoadAreas(needle.matches);
   } else {
     nEditor.LoadAreas(needle.area);
   }
