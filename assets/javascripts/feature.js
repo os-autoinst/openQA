@@ -3,11 +3,13 @@ function newFeature() {
     var currentFeature;
     checkVersion();
 
+    //Create variable for each tour
     var example = new Tour({
         //Enable to save progress local, necessary for multipage traversal
         storage: window.localStorage
     });
 
+    //Add steps to the tour
     example.addSteps([
         {
           element: ".jumbotron",
@@ -65,9 +67,10 @@ function newFeature() {
         });
     };
 
+    //Get results from database query and start tour depending on result
     function getResult(data) {
         var version = data.version;
-        if ((2 > version) && (version !=0)) {
+        if ((2 > version) && (version != 0)) {
             //Initialize the tour
             example.init();
             //Start the tour
@@ -75,6 +78,7 @@ function newFeature() {
         };
     };
 
+    //Return progress (already seen features) to database
     function endTour(currentFeature) {
         $.ajax({
             url: '/api/v1/feature',
@@ -86,6 +90,7 @@ function newFeature() {
         });
     };
 
+    //Give user the opportunity to disable feature notfications
     function dontShow() {
         $('#dont-notify').change(function() {
             var checked = $('#dont-notify').is(':checked');
