@@ -15,6 +15,7 @@ function newFeature() {
           content: "Just click next to see what's new in openQA",
           placement: "bottom",
           backdrop: true,
+          onShown: function(){return dontShow()},
           template: changeTemplate(),
           onNext: function(){return ($('.panel-heading').click())}
         },
@@ -43,11 +44,11 @@ function newFeature() {
                 "<h3 class='popover-title'></h3>"+
                 "<div class='popover-content'></div>"+
                 "<div class='popover-navigation'>"+
-                "<div class='checkbox'><label><input type='checkbox'>Don't show again</label></div>"+
+                "<div class='checkbox'><label><input type='checkbox' id='dont-notify'>Don't notify me anymore</label></div>"+
                 "<button class='btn btn-default' data-role='prev'>« Prev</button>"+
                 "<span data-role='separator'>|</span>"+
                 "<button class='btn btn-default' data-role='next'>Next »</button>"+
-                "<button class='btn btn-default' data-role='end'>End tour</button>"+
+                "<button class='btn btn-default' data-role='end' id='end'>Quit</button>"+
                 "</div>"+
                 "</div>")
     };
@@ -66,7 +67,7 @@ function newFeature() {
 
     function getResult(data) {
         var version = data.version;
-        if (2 > version) {
+        if ((2 > version) && (version !=0)) {
             //Initialize the tour
             example.init();
             //Start the tour
@@ -84,4 +85,22 @@ function newFeature() {
                 }
         });
     };
+
+    function dontShow() {
+        $('#dont-notify').change(function() {
+            var checked = $('#dont-notify').is(':checked');
+            if (checked) {
+                $("#end").text('Confirm');
+                $("#end").attr('id', 'confirm');
+            }
+            else {
+                $("#confirm").attr('id', 'end');
+                $("#end").text('Quit');
+            }
+
+        $('#confirm').on('click', function(){
+          currentFeature = 0;
+          return endTour(currentFeature);
+        });
+    })};
 };
