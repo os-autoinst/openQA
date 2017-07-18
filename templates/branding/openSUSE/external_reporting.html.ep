@@ -25,6 +25,7 @@
     'Desktop-Incidents' => 'Desktop',
     'Desktop-Updates' => 'Desktop',
     SAP => 'for SAP Applications',
+    Leanos => 'Server',
 ); %>
 % my $distri = $distri_to_prod{$job->DISTRI};
 % my $product = '';
