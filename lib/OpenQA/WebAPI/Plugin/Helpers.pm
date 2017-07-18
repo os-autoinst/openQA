@@ -328,7 +328,7 @@ sub register {
             return '' unless $comment_count;
 
             return $c->link_to(
-                $c->url_for('test', 'testid' => $jobid) . '#comments' => sub {
+                $c->url_for('test', testid => $jobid) . '#' . comments => sub {
                     $c->tag(
                         'i',
                         class => 'test-label label_comment fa fa-comment',
