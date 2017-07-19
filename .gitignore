@@ -38,3 +38,8 @@ t/full-stack.d/openqa/images/
 t/full-stack.d/openqa/pool/
 t/full-stack.d/openqa/share/
 t/full-stack.d/openqa/testresults
+.prove
+t/cache.d/
+t/data/openqa/share/factory/hdd/00099963-hdd_image2.qcow2
+t/data/openqa/share/factory/hdd/hdd_image.qcow2
+t/data/openqa/share/factory/iso/Core-7.2.iso
