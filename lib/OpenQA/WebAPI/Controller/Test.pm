@@ -114,16 +114,14 @@ sub list_ajax {
         while (my $j = $jobs->next) { push(@ids, $j->id); }
     }
 
-    # job modules stats
-    my $stats = OpenQA::Schema::Result::JobModules::job_module_stats(\@ids);
-
     # complete response
     my @list;
     my @jobs = $self->db->resultset("Jobs")->search(
         {'me.id' => {in => \@ids}},
         {
-            columns =>
-              [qw(me.id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST state clone_id test result group_id t_finished)],
+            columns => [
+                qw(me.id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST state clone_id test result group_id t_finished passed_module_count softfailed_module_count failed_module_count skipped_module_count)
+            ],
             order_by => ['me.t_finished DESC, me.id DESC'],
             prefetch => [qw(children parents)],
         })->all;
@@ -134,10 +132,15 @@ sub list_ajax {
             {
                 DT_RowId     => "job_" . $job->id,
                 id           => $job->id,
-                result_stats => $stats->{$job->id},
-                deps         => $job->dependencies,
-                clone        => $job->clone_id,
-                test         => $job->TEST . "@" . ($job->MACHINE // ''),
+                result_stats => {
+                    passed     => $job->passed_module_count,
+                    softfailed => $job->softfailed_module_count,
+                    failed     => $job->failed_module_count,
+                    none       => $job->skipped_module_count,
+                },
+                deps  => $job->dependencies,
+                clone => $job->clone_id,
+                test  => $job->TEST . "@" . ($job->MACHINE // ''),
                 distri  => $job->DISTRI  // '',
                 version => $job->VERSION // '',
                 flavor  => $job->FLAVOR  // '',
