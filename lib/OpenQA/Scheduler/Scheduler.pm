@@ -147,7 +147,7 @@ sub job_grab {
 
     # Avoid to get the scheduler stuck: give a maximum limit of tries ($limit_attempts)
     # and blocking now just sets $max_attempts to 999.
-    # Defaults to 5 (were observed in tests 2 is sufficient) before returning no jobs.
+    # Defaults to 1 (were observed in tests 2 is sufficient) before returning no jobs.
     my $limit_attempts = 2000;
     my $max_attempts
       = $blocking ?
@@ -156,7 +156,7 @@ sub job_grab {
       (int($args{max_attempts}) < $limit_attempts && int($args{max_attempts}) > 0) ?
         int($args{max_attempts})
         : $limit_attempts
-      : 5;
+      : 1;
 
     my $worker = _validate_workerid($workerid);
     if ($worker->job) {
