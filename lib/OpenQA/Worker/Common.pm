@@ -417,7 +417,7 @@ sub call_websocket {
 }
 
 sub register_worker {
-    my ($host, $dir, $testpoolserver) = @_;
+    my ($host, $dir, $testpoolserver, $shared_cache) = @_;
     die unless $host;
     $hosts->{$host}{accepting_jobs} = 0;
 
@@ -447,6 +447,7 @@ sub register_worker {
 
     # test pool is from config, so it doesn't change
     $hosts->{$host}{testpoolserver} = $testpoolserver if $testpoolserver;
+    $hosts->{$host}{shared_cache}   = $shared_cache   if $shared_cache;
 
     # reset workerid
     $hosts->{$host}{workerid} = undef;
