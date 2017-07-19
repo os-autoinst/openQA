@@ -162,11 +162,19 @@ sub grab {
     $caps->{cpu_opmode}    = $self->param('cpu_opmode');
     $caps->{mem_max}       = $self->param('mem_max');
 
-    my $res = $ipc->scheduler('job_grab',
-        {workerid => $workerid, blocking => $blocking, workerip => $workerip, workercaps => $caps});
-    $self->emit_event('openqa_job_grab',
-        {workerid => $workerid, blocking => $blocking, workerip => $workerip, id => $res->{id}});
-    $self->render(json => {job => $res});
+    $self->render_later;
+    Mojo::IOLoop->subprocess(
+        sub {
+            my $job = $ipc->scheduler('job_grab',
+                {workerid => $workerid, blocking => $blocking, workerip => $workerip, workercaps => $caps});
+            $self->emit_event('openqa_job_grab',
+                {workerid => $workerid, blocking => $blocking, workerip => $workerip, id => $job->{id}})
+              if $job->{id};
+            return $job;
+        },
+        sub {
+            $self->render(json => {job => $_[2]});
+        });
 }
 
 sub show {
