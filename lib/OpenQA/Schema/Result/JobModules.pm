@@ -91,7 +91,88 @@ sub sqlt_deploy_hook {
     $sqlt_table->add_index(name => 'idx_job_modules_result', fields => ['result']);
 }
 
-# overload to straighten out needle references
+my %columns_by_result = (
+    OpenQA::Schema::Result::Jobs::PASSED     => 'passed_module_count',
+    OpenQA::Schema::Result::Jobs::SOFTFAILED => 'softfailed_module_count',
+    OpenQA::Schema::Result::Jobs::FAILED     => 'failed_module_count',
+    OpenQA::Schema::Result::Jobs::NONE       => 'skipped_module_count',
+);
+
+# override to update job module stats in jobs table
+sub store_column {
+    my ($self, $name, $value) = @_;
+
+    # only updates of result relevant here
+    if (!($name eq 'result' || $name eq 'job_id')) {
+        return $self->next::method($name, $value);
+    }
+
+    # set default result to 'none'
+    $value //= OpenQA::Schema::Result::Jobs::NONE if ($name eq 'result');
+
+    # remember previous value before updating
+    my $previous_value = $self->get_column($name);
+    my $res = $self->next::method($name, $value);
+
+    # skip this when the value does not change
+    if ($value && $previous_value && $value eq $previous_value) {
+        return $res;
+    }
+
+    # update statistics in relevant job(s)
+    if ($name eq 'result') {
+        # update assigned job on result change
+        my $job = $self->job or return $res;
+        my %job_update;
+        if (my $value_column = $columns_by_result{$value}) {
+            $job_update{$value_column} = $job->get_column($value_column) + 1;
+        }
+        if ($previous_value) {
+            if (my $previous_value_column = $columns_by_result{$previous_value}) {
+                $job_update{$previous_value_column} = $job->get_column($previous_value_column) - 1;
+            }
+        }
+        $job->update(\%job_update);
+
+    }
+    elsif ($name eq 'job_id') {
+        # update previous job and new job on job assignment
+        # handling previous job might not be neccassary because once a job is assigned, it shouldn't
+        # change anymore, right?
+        my $result = $self->result or return $res;
+        my $result_column = $columns_by_result{$result} or return $res;
+        if ($previous_value) {
+            if (my $previous_job = $self->result_source->schema->resultset('Jobs')->find($previous_value)) {
+                $previous_job->update({$result_column => $previous_job->get_column($result_column) - 1});
+            }
+        }
+        if ($value) {
+            if (my $job = $self->result_source->schema->resultset('Jobs')->find($value)) {
+                $job->update({$result_column => $job->get_column($result_column) + 1});
+            }
+        }
+    }
+
+    return $res;
+}
+
+# override to update job module stats in jobs table
+sub insert {
+    my ($self, @args) = @_;
+    $self->next::method(@args);
+
+    # count modules which are initially skipped (default value for the result) in statistics of associated job
+    # doing this explicitely is required because in this case store_column does not seem to be called
+    my $job    = $self->job;
+    my $result = $self->result;
+    if ($job && (!$result || $result eq OpenQA::Schema::Result::Jobs::NONE)) {
+        $job->update({skipped_module_count => $job->skipped_module_count + 1});
+    }
+
+    return $self;
+}
+
+# override to straighten out needle references
 sub delete {
     my ($self) = @_;
 

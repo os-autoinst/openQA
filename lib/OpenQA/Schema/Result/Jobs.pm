@@ -229,7 +229,7 @@ sub sqlt_deploy_hook {
     $sqlt_table->add_index(name => 'idx_jobs_scenario',    fields => [qw(VERSION DISTRI FLAVOR TEST MACHINE ARCH)]);
 }
 
-# overload to straighten out job modules
+# override to straighten out job modules
 sub delete {
     my ($self) = @_;
 
