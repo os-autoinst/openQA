@@ -119,6 +119,7 @@ sub get_bug_values {
         status     => $self->param('status'),
         resolution => $self->param('resolution'),
         existing   => $self->param('existing') ? 1 : 0,
+        t_updated  => time2str('%Y-%m-%d %H:%M:%S', time, 'UTC'),
         refreshed  => 1
     };
 }
