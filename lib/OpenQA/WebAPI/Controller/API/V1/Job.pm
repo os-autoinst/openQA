@@ -169,7 +169,8 @@ sub grab {
                 {workerid => $workerid, blocking => $blocking, workerip => $workerip, workercaps => $caps});
         },
         sub {
-            my $res = pop @_;
+            my ($sub, $err, $res) = @_;
+            return $self->render(json => {job => {}}) unless ref($res) eq "HASH" && !$err;
             $self->emit_event('openqa_job_grab',
                 {workerid => $workerid, blocking => $blocking, workerip => $workerip, id => $res->{id}})
               if $res->{id};
