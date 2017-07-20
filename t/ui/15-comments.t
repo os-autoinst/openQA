@@ -412,6 +412,7 @@ subtest 'editing when logged in as regular user' => sub {
     };
 
     $driver->get('/login?user=nobody');
+    $driver->find_element_by_id('end')->click();
     subtest 'test results' => sub {
         $driver->get('/tests/99938#comments');
         no_edit_no_remove_on_other_comments_expected;
