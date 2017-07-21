@@ -69,7 +69,7 @@ BEGIN {
     $ENV{MOJO_CONNECT_TIMEOUT}    = 300;
     # the default is EV, and this heavily screws with our children handling
     $ENV{MOJO_REACTOR} = 'Mojo::Reactor::Poll';
-    #$ENV{MOJO_LOG_LEVEL} = 'debug';
+    $ENV{MOJO_LOG_LEVEL} = 'debug';
     #$ENV{MOJO_USERAGENT_DEBUG} = 1;
     #$ENV{MOJO_IOLOOP_DEBUG} = 1;
 }
@@ -81,6 +81,9 @@ use Getopt::Long;
 use Mojo::Base -strict;
 use Mojo::UserAgent;
 use Mojo::URL;
+use Mojo::Log;
+use OpenQA::Client;
+use JSON;
 
 Getopt::Long::Configure("no_ignore_case");
 
@@ -100,19 +103,40 @@ GetOptions(
 
 usage(0) if ($options{help});
 
-$options{master} ||= "http://deimos.suse.de";
-$options{slave}  ||= "http://lanner.arch.suse.de";
+my $log = Mojo::Log->new;
+$options{master} ||= 'http://0DCD0E0C65A6822A:59D8C0D855F2AABD@deimos.suse.de';
+$options{slave}  ||= 'http://0DCD0E0C65A6822A:59D8C0D855F2AABD@lanner.arch.suse.de';
 $options{limit} ||= 1000;
 $options{worker_class} ||= "cluster_job";
 
-
-
 #"/api/v1/jobs.json?&worker_class=aarch64_seattle9&limit=1000";
-my $url = Mojo::URL->new($options{master})->path("/api/v1/jobs.json")->query({
+my $master_url = Mojo::URL->new($options{master})->path("/api/v1/jobs.json")->query({
         limit => $options{limt},
         worker_class => $options{worker_class}
     });
 
-say $url->to_abs;
+my $master = OpenQA::Client->new(
+        api    => $master_url->host,
+        apikey => $master_url->username,
+        apisecret => $master_url->password,
+    );
+
+
+my $slave_url = Mojo::URL->new($options{slave})->path("/api/v1/jobs");
+my $slave = OpenQA::Client->new(
+        api    => $slave_url->host,
+        apikey => $slave_url->username,
+        apisecret => $slave_url->password,
+    );
+
+$log->info("Master: ". $master_url->to_abs);
+$log->info("Slave: ". $slave_url->to_abs);
+my $jobs;
+if($jobs = $master->get($master_url->clone)->res->is_success && ($slave->get($slave_url->clone)->res->is_success)){
+    $log->info("Works");
+}
+
+# $log->error();
+# $log->error($slave->get($slave_url->clone)->res->is_sucess);
 
 # vim: set sw=4 sts=4 et:
