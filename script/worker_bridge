@@ -1,0 +1,118 @@
+#!/usr/bin/env perl
+# Copyright (C) 2017 SUSE Linux Products GmbH
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>.
+
+=head1 slave_bridge
+
+slave_bridge - openQA slave bridge
+
+=head1 SYNOPSIS
+
+worker [OPTIONS]
+
+=head2OPTIONS
+
+=over 4
+
+=item B<--master> https://s.ky.net.openqa.opensuse.org
+
+=item B<--master> https://openqa.opensuse.org
+
+=item B<--help, -h>
+
+print help
+
+=back
+
+=head2 DESCRIPTION
+
+(no content)
+
+=head1 CONFIG FILE
+
+L<worker> relies on credentials provided by L<OpenQA::Client>, i.e. tries to
+find a config file C<client.conf> resolving C<$OPENQA_CONFIG> or
+C<~/.config/openqa> or C</etc/openqa/> in this order of preference.
+Additionally L<worker> uses a config file C<workers.ini> to configure worker
+settings.
+
+Example:
+  [global]
+  BACKEND = qemu
+  HOST = http://openqa.example.com
+
+
+=head1 SEE ALSO
+L<OpenQA::Client>
+
+=cut
+
+use strict;
+use warnings;
+
+BEGIN {
+    #prepare for large files
+    $ENV{MOJO_MAX_MESSAGE_SIZE}   = 1024 * 1024 * 1024 * 20;
+    $ENV{MOJO_INACTIVITY_TIMEOUT} = 300;
+    $ENV{MOJO_CONNECT_TIMEOUT}    = 300;
+    # the default is EV, and this heavily screws with our children handling
+    $ENV{MOJO_REACTOR} = 'Mojo::Reactor::Poll';
+    #$ENV{MOJO_LOG_LEVEL} = 'debug';
+    #$ENV{MOJO_USERAGENT_DEBUG} = 1;
+    #$ENV{MOJO_IOLOOP_DEBUG} = 1;
+}
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use Config::IniFiles;
+use Getopt::Long;
+use Mojo::Base -strict;
+use Mojo::UserAgent;
+use Mojo::URL;
+
+Getopt::Long::Configure("no_ignore_case");
+
+my %options;
+
+sub usage($) {
+    my $r = shift;
+    eval "use Pod::Usage; pod2usage($r);";
+    if ($@) {
+        die "cannot display help, install perl(Pod::Usage)\n";
+    }
+}
+
+GetOptions(
+    \%options, "master=s", "slave=s", "verbose|v", "help|h",
+) or usage(1);
+
+usage(0) if ($options{help});
+
+$options{master} ||= "http://deimos.suse.de";
+$options{slave}  ||= "http://lanner.arch.suse.de";
+$options{limit} ||= 1000;
+$options{worker_class} ||= "cluster_job";
+
+
+
+#"/api/v1/jobs.json?&worker_class=aarch64_seattle9&limit=1000";
+my $url = Mojo::URL->new($options{master})->path("/api/v1/jobs.json")->query({
+        limit => $options{limt},
+        worker_class => $options{worker_class}
+    });
+
+say $url->to_abs;
+
+# vim: set sw=4 sts=4 et:
