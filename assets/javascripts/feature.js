@@ -6,7 +6,9 @@ function newFeature() {
     //Create variable for each tour
     var example = new Tour({
         //Enable to save progress local, necessary for multipage traversal
-        storage: window.localStorage
+        storage: window.localStorage,
+        template: changeTemplate(),
+        onShown: function(){return dontShow(), currentFeature = 2; quitTour(currentFeature)}
     });
 
     //Add steps to the tour
@@ -17,8 +19,6 @@ function newFeature() {
           content: "Just click next to see what's new in openQA",
           placement: "bottom",
           backdrop: true,
-          onShown: function(){return dontShow()},
-          template: changeTemplate(),
           onNext: function(){return ($('.panel-heading').click())}
         },
         {
@@ -34,7 +34,6 @@ function newFeature() {
           title: "Multipage",
           content: "Example about traversing across pages",
           placement: "bottom",
-          onShown: function(){currentFeature = 2; return endTour(currentFeature)},
           onPrev: function(){document.location.href = '/'},
         }
     ]);
@@ -47,12 +46,16 @@ function newFeature() {
                 "<div class='popover-content'></div>"+
                 "<div class='popover-navigation'>"+
                 "<div class='checkbox'><label><input type='checkbox' id='dont-notify'>Don't notify me anymore</label></div>"+
-                "<button class='btn btn-default' data-role='prev'>« Prev</button>"+
+                "<button class='btn btn-default' data-role='prev' id='prev'>« Prev</button>"+
                 "<span data-role='separator'>|</span>"+
-                "<button class='btn btn-default' data-role='next'>Next »</button>"+
+                "<button class='btn btn-default' data-role='next'id='next'>Next »</button>"+
                 "<button class='btn btn-default' data-role='end' id='end'>Quit</button>"+
                 "</div>"+
                 "</div>")
+    };
+
+    function quitTour(currentFeature){
+        $('#end').on('click', function(){return endTour(currentFeature)});
     };
 
     //Check database for allready shown features

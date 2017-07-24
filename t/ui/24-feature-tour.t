@@ -56,7 +56,7 @@ $driver->find_element_by_link_text('Logout')->click();
 $driver->get('/login?user=nobody');
 ok($driver->find_element('#step-0')->is_displayed(), 'tour popover is displayed');
 my $text = $driver->find_element('h3.popover-title')->get_text();
-is($text,'Interested in new features?');
+is($text, 'Interested in new features?');
 $driver->find_element_by_id('end')->click();
 $driver->find_element_by_link_text('Logged in as nobody')->click();
 $driver->find_element_by_link_text('Logout')->click();
