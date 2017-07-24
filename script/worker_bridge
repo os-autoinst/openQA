@@ -83,7 +83,10 @@ use Mojo::UserAgent;
 use Mojo::URL;
 use Mojo::Log;
 use OpenQA::Client;
+use Mojo::IOLoop;
 use JSON;
+
+use Data::Dumper;
 
 Getopt::Long::Configure("no_ignore_case");
 
@@ -131,12 +134,66 @@ my $slave = OpenQA::Client->new(
 
 $log->info("Master: ". $master_url->to_abs);
 $log->info("Slave: ". $slave_url->to_abs);
-my $jobs;
-if($jobs = $master->get($master_url->clone)->res->is_success && ($slave->get($slave_url->clone)->res->is_success)){
-    $log->info("Works");
+
+sub get_asset_list {
+    return {a => 1};
 }
 
-# $log->error();
-# $log->error($slave->get($slave_url->clone)->res->is_sucess);
+sub monitor_jobs {
+
+my $masterUI = $master->get($master_url->clone);
+my $slaveUI = $slave->get($slave_url->clone);
+
+    if($masterUI->res->is_success){
+        $log->info("Works: ". $master_url->to_abs);
+        #Get a list of assets to download:
+        my $asset_list = get_asset_list($masterUI->res->json);
+
+    }
+}
+my $main_loop = Mojo::IOLoop->singleton;
+
+$main_loop->on(new_jobs => sub {
+    my $loop = shift;
+    $log->info("New Jobs available on master webui");
+        for (1..80){
+            print '.';
+        }
+    });
+
+$main_loop->on(job_progress => sub {
+    my $loop = shift;
+    $log->info("New job progress available on the webui");
+    });
+
+#$Add a timer
+$main_loop->recurring(0.2 => sub {
+    my $loop = shift;
+    $loop->emit('job_progress');
+    $log->debug("job progress event");
+});
+
+#Add a timer
+$main_loop->recurring(5 => sub {
+    my $loop = shift;
+    # Add a timer
+    Mojo::IOLoop->subprocess(
+        sub {
+            my $subprocess = shift;
+            # $loop->remove($id);
+            $log->debug("Executing every 10 and will check for new jobs");
+            monitor_jobs();
+        },
+        sub {
+        my ($subprocess, $err, @results) = @_;
+        $subprocess->ioloop->emit('new_jobs');
+        # $->emit('newjobs');
+    });
+
+});
+
+Mojo::IOLoop->start;
+
+return 0;
 
 # vim: set sw=4 sts=4 et:
