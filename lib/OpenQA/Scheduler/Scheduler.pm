@@ -35,14 +35,39 @@ use Mojo::URL;
 use Try::Tiny;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
-
+use Scalar::Util qw(weaken isweak);
 use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
-use OpenQA::Utils qw(log_debug log_warning notify_workers);
+use OpenQA::Utils qw(log_debug log_warning notify_workers send_job_to_worker );
 use db_helpers 'rndstr';
 
 use OpenQA::IPC;
+
+# How many jobs to allocate in one tick. Defaults to 0 (as much as possible)
+use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 0;
+
+# How many attempts have to be performed to find a job before assuming there is nothing to be scheduled
+use constant FIND_JOB_ATTEMPTS => $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS} // 5;
+
+# Exp. backoff to avoid congestion.
+# Enable it with 1, disable with 0. Following options depends on it.
+use constant CONGESTION_CONTROL => $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL} // 1;
+
+# Timeslot. Defaults to 15s
+use constant TIMESLOT => $ENV{OPENQA_SCHEDULER_TIMESLOT} // 15000;
+
+# Maximum backoff. Defaults to 360s
+use constant MAX_BACKOFF => $ENV{OPENQA_SCHEDULER_MAX_BACKOFF} // 360000;
+
+# Our exponent, used to calculate backoff. Defaults to 2 (Binary)
+use constant EXPBACKOFF => $ENV{OPENQA_SCHEDULER_EXP_BACKOFF} // 2;
+
+# Timer reset to avoid starvation caused by congestion. Defaults to 660s
+use constant CAPTURE_LOOP_AVOIDANCE => $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} // 660000;
+
+# set it to 1 if you want to backoff when no jobs can be assigned
+use constant BUSY_BACKOFF => $ENV{OPENQA_SCHEDULER_BUSY_BACKOFF} // 0;
 
 use Carp;
 
@@ -56,6 +81,16 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
   job_set_stop job_stop iso_stop_old_builds
   asset_list
 );
+
+my $failure = 0;
+
+sub reactor {
+    my $react = shift;
+    CORE::state $reactor;
+    $reactor ||= $react;
+    weaken $reactor if !isweak $reactor;
+    return $reactor;
+}
 
 sub schema {
     CORE::state $schema;
@@ -138,12 +173,99 @@ sub _prefer_parallel {
     return;
 }
 
+sub schedule {
+    my $allocated_job;
+    my $allocated_worker;
+
+    # Avoid to go into starvation
+    reactor->{timer}->{capture_loop_avoidance} ||= reactor->add_timeout(
+        CAPTURE_LOOP_AVOIDANCE,
+        Net::DBus::Callback->new(
+            method => sub {
+                return if $failure == 0;
+                $failure = 0;
+                my $default_tick = OpenQA::Scheduler::SCHEDULE_TICK_MS();
+                reactor->remove_timeout(reactor->{timer}->{schedule_jobs});
+                reactor->{timer}->{schedule_jobs} = reactor->add_timeout(
+                    $default_tick,
+                    Net::DBus::Callback->new(
+                        method => \&OpenQA::Scheduler::Scheduler::schedule
+                    ));
+                log_debug(
+"[Congestion control] seems we had congestions before, resetting failures count to $failure and next scheduler round will be in $default_tick"
+                );
+            })) if (CONGESTION_CONTROL);
+
+    my @allocated_jobs;
+    try {
+        @allocated_jobs = schema->txn_do(
+            sub {
+                my $all_workers = schema->resultset("Workers")->count();
+                my @allocated_workers;
+                my @allocated_jobs;
+                my @free_workers = schema->resultset("Workers")
+                  ->search({job_id => undef}, ({rows => MAX_JOB_ALLOCATION}) x !!(MAX_JOB_ALLOCATION > 0))->all();
+                log_debug("Scheduler TICK. Free workers: " . scalar(@free_workers) . "/$all_workers");
+
+                # Consider it a failure if CONGESTION_CONTROL is set
+                # so if there are no free workers scheduler will kick in later.
+                $failure++ and return ()
+                  if @free_workers == 0 && CONGESTION_CONTROL && BUSY_BACKOFF && $all_workers > 0;
+
+                for my $w (@free_workers) {
+                    my %caps = $w->all_properties();
+                    $allocated_job = job_grab(
+                        workerid     => $w->id(),
+                        blocking     => 0,
+                        workercaps   => \%caps,
+                        scheduler    => 1,
+                        max_attempts => FIND_JOB_ATTEMPTS
+                    );
+                    next unless $allocated_job && exists $allocated_job->{id};
+                    push(@allocated_jobs, $allocated_job);
+                }
+                return @allocated_jobs;
+
+            });
+    }
+    catch {
+        return unless (CONGESTION_CONTROL);
+        # we had a failure
+        $failure++;
+    };
+
+    if (@allocated_jobs > 0) {
+        !!send_job_to_worker($_) && log_debug("Allocated job " . $_->{id} . " to worker " . $_->{assigned_worker_id})
+          for @allocated_jobs;
+        $failure-- if $failure > 0;
+    }
+
+    if ($failure > 0) {
+        my $backoff = ((EXPBACKOFF**$failure) - 1) * TIMESLOT;
+        log_debug
+          "[Congestion control] Failed to schedule job. Failures#: ${failure}. Backoff period is : ${backoff}ms";
+        _reschedule($backoff > MAX_BACKOFF ? MAX_BACKOFF : $backoff);
+    }
+}
+
+sub _reschedule {
+    my $time = shift;
+    log_debug "[scheduler] New tick will be in: ${time}ms";
+    reactor->remove_timeout(reactor->{timer}->{schedule_jobs});
+    reactor->{timer}->{schedule_jobs} = reactor->add_timeout(
+        $time,
+        Net::DBus::Callback->new(
+            method => \&OpenQA::Scheduler::Scheduler::schedule
+        ));
+}
+
 sub job_grab {
     my %args       = @_;
     my $workerid   = $args{workerid};
     my $blocking   = int($args{blocking} || 0);
     my $workerip   = $args{workerip};
     my $workercaps = $args{workercaps};
+    return {} unless $args{scheduler};
 
     # Avoid to get the scheduler stuck: give a maximum limit of tries ($limit_attempts)
     # and blocking now just sets $max_attempts to 999.
@@ -298,7 +420,7 @@ sub job_grab {
 
     # starting one job from parallel group can unblock
     # other jobs from the group
-    notify_workers;
+    #notify_workers;
 
     return $job_hashref;
 }

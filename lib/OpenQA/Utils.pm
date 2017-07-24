@@ -70,6 +70,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   loaded_modules
   loaded_plugins
   hashwalker
+  send_job_to_worker
 );
 
 if ($0 =~ /\.t$/) {
@@ -566,6 +567,19 @@ sub notify_workers {
     # do not wait for a reply - avoid deadlocks. this way we can even call it
     # from within the scheduler without having to worry about reentering
     $con->send($msg);
+}
+
+
+sub send_job_to_worker {
+    my $ipc = OpenQA::IPC->ipc;
+    my $job = shift;
+
+    # ugly work around for Net::DBus::Test not being able to handle us using low level API
+    return if ref($ipc->{bus}->get_connection) eq 'Net::DBus::Test::MockConnection';
+    eval { $ipc->websockets('ws_send_job', $job); };
+    if ($@) {
+        log_debug($@);
+    }
 }
 
 sub _round_a_bit {

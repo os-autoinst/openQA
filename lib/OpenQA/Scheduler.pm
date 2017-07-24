@@ -29,6 +29,8 @@ use OpenQA::Scheduler::Locks     ();
 use OpenQA::Utils 'log_debug';
 use OpenQA::ServerStartup;
 
+use constant SCHEDULE_TICK_MS => $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} // 1000;    # in ms
+
 # monkey patching for debugging IPC
 sub _is_method_allowed {
     my ($self, $method) = @_;
@@ -48,7 +50,14 @@ sub run {
 
     OpenQA::Scheduler->new();
     log_debug("Scheduler started");
-    Net::DBus::Reactor->main->run;
+    my $reactor = Net::DBus::Reactor->main;
+    OpenQA::Scheduler::Scheduler::reactor($reactor);
+    $reactor->{timer}->{schedule_jobs} = $reactor->add_timeout(
+        SCHEDULE_TICK_MS,
+        Net::DBus::Callback->new(
+            method => \&OpenQA::Scheduler::Scheduler::schedule
+        ));
+    $reactor->run;
 }
 
 sub new {

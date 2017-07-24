@@ -29,7 +29,7 @@ require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
 
 @ISA       = qw(Exporter);
-@EXPORT    = qw(ws_send ws_send_all);
+@EXPORT    = qw(ws_send ws_send_all ws_send_job);
 @EXPORT_OK = qw(ws_create ws_is_worker_connected);
 
 # id->worker mapping
@@ -57,6 +57,33 @@ sub ws_send {
             log_debug("Unable to send command \"$msg\" to worker $workerid");
         }
     }
+}
+
+sub ws_send_job {
+    my %job_data = @_;
+    my $job      = \%job_data;
+    my $retry;
+    my $workerid = $job->{assigned_worker_id} if ref($job) eq "HASH" && exists $job->{assigned_worker_id};
+    return {state => {msg_sent => 0}} unless ($workerid && $workers->{$workerid});
+    my $res;
+    my $tx = $workers->{$workerid}->{socket};
+    if ($tx) {
+        $res = $tx->send({json => {type => 'grab_job', job => $job}});
+    }
+    unless ($res && $res->success) {
+        $retry ||= 0;
+        if ($retry < 3) {
+            Mojo::IOLoop->timer(2 => sub { ws_send_job($workerid, $job, ++$retry); });
+        }
+        else {
+            log_debug("Unable to allocate job to worker $workerid");
+            return {};
+        }
+    }
+    else {
+        log_debug("message sent to $workerid for job $job->{id}");
+    }
+    return {state => {msg_sent => 1}};
 }
 
 # consider ws_send_all as broadcast and don't wait for confirmation

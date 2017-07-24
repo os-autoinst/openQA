@@ -125,13 +125,36 @@ sub websocket_commands {
         elsif ($type eq 'job_available') {
             log_debug("received job notification from $host") if $verbose;
             if (!$job && $hosts->{$host}{accepting_jobs}) {
-                Mojo::IOLoop->next_tick(sub { check_job($host) });
+                #  Mojo::IOLoop->next_tick(sub { check_job($host) });
             }
             else {
                 if ($verbose) {
                     my $jid = $job ? $job->{id} : '';
                     log_debug("job notification ignored! job: $jid - accepting: $hosts->{$host}{accepting_jobs}");
                 }
+            }
+        }
+        elsif ($type eq 'grab_job') {
+            state $check_job_running;
+            my $job = $json->{job};
+            return unless $job;
+            return if $check_job_running->{$host};
+
+            #Kill other Ws connections to avoid race-conditions in job assignments
+            foreach my $h (grep { $_ ne $host } keys %{$OpenQA::Worker::Common::hosts}) {
+                log_debug("Terminating connection to $h - we could receive other jobs meanwhile");
+                $OpenQA::Worker::Common::hosts->{$h}{ws}->finish
+                  if $OpenQA::Worker::Common::hosts->{$h}{ws}->can("finish");
+                $OpenQA::Worker::Common::hosts->{$h}{ws} = undef;
+                delete $OpenQA::Worker::Common::ws_to_host->{$OpenQA::Worker::Common::hosts->{$h}{ws}};
+            }
+
+            $OpenQA::Worker::Common::job = $job;
+            log_debug("Job received thru websockets");
+            $check_job_running->{$host} = 1;
+            if ($job && $job->{id}) {
+                log_debug("Job " . $job->{id} . " scheduled for next cycle");
+                Mojo::IOLoop->singleton->next_tick(sub { start_job($host); $check_job_running->{$host} = 0; });
             }
         }
         else {
