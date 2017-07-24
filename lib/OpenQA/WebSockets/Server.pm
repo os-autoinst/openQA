@@ -29,7 +29,7 @@ require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
 
 @ISA       = qw(Exporter);
-@EXPORT    = qw(ws_send ws_send_all);
+@EXPORT    = qw(ws_send ws_send_all ws_send_job);
 @EXPORT_OK = qw(ws_create ws_is_worker_connected);
 
 # id->worker mapping
@@ -57,6 +57,34 @@ sub ws_send {
             log_debug("Unable to send command \"$msg\" to worker $workerid");
         }
     }
+}
+
+sub ws_send_job {
+    my ($job) = @_;
+    my $result = {state => {msg_sent => 0}};
+
+    unless (ref($job) eq "HASH" && exists $job->{assigned_worker_id} && $workers->{$job->{assigned_worker_id}}) {
+        $result->{state}->{error} = "No workerid assigned, or worker doesn't have established a ws connection";
+        return $result;
+    }
+    my $res;
+    my $tx = $workers->{$job->{assigned_worker_id}}->{socket};
+    if ($tx) {
+        $res = $tx->send({json => {type => 'grab_job', job => $job}});
+    }
+    unless ($res && $res->success) {
+        # Since it is used by scheduler, it's fine to let it fail,
+        # will be rescheduled on next round
+        log_debug("Unable to allocate job to worker $job->{assigned_worker_id}");
+        $result->{state}->{error} = "Sending $job->{id} thru WebSockets to $job->{assigned_worker_id} failed miserably";
+        $result->{state}->{res}   = $res;
+        return $result;
+    }
+    else {
+        log_debug("message sent to $job->{assigned_worker_id} for job $job->{id}");
+        $result->{state}->{msg_sent} = 1;
+    }
+    return $result;
 }
 
 # consider ws_send_all as broadcast and don't wait for confirmation

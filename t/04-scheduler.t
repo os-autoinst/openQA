@@ -274,7 +274,7 @@ $current_jobs = list_jobs(%args);
 is_deeply($current_jobs, [$jobs->[0]], "jobs with specified IDs (comma list)");
 
 # Testing job_grab
-%args = (workerid => $worker->{id},);
+%args = (workerid => $worker->{id}, scheduler => 1);
 my $rjobs_before = list_jobs(state => 'running');
 my $grabbed      = OpenQA::Scheduler::Scheduler::job_grab(%args);
 my $rjobs_after  = list_jobs(state => 'running');
@@ -372,7 +372,7 @@ my $no_job_id = job_get($job_id);
 ok($result && !defined $no_job_id, "job_delete");
 
 # Testing double grab
-%args   = (workerid => $worker->{id},);
+%args   = (workerid => $worker->{id}, scheduler => 1);
 $job    = OpenQA::Scheduler::Scheduler::job_grab(%args);
 $job_id = $job->{id};
 $job    = job_get($job_id);

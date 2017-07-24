@@ -428,10 +428,10 @@ sub _stop_job_finish {
             if ($quit) {
                 Mojo::IOLoop->stop;
             }
-            else {
-                # immediatelly check for already scheduled job
-                Mojo::IOLoop->next_tick(sub { check_job(keys %$hosts) });
-            }
+            #  else {
+            # immediatelly check for already scheduled job
+            #Mojo::IOLoop->next_tick(sub { check_job(keys %$hosts) });
+            #  }
         });
 }
 
