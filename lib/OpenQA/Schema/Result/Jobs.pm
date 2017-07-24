@@ -39,15 +39,16 @@ use constant {
     SCHEDULED => 'scheduled',
     SETUP     => 'setup',
     RUNNING   => 'running',
+    PROXIED   => 'proxied',
     CANCELLED => 'cancelled',
     WAITING   => 'waiting',
     DONE      => 'done',
     UPLOADING => 'uploading',
     #    OBSOLETED => 'obsoleted',
 };
-use constant STATES => (SCHEDULED, SETUP, RUNNING, CANCELLED, WAITING, DONE, UPLOADING);
-use constant PENDING_STATES => (SCHEDULED, SETUP, RUNNING, WAITING, UPLOADING);
-use constant EXECUTION_STATES => (RUNNING, WAITING, UPLOADING);
+use constant STATES => (SCHEDULED, SETUP, RUNNING, PROXIED, CANCELLED, WAITING, DONE, UPLOADING);
+use constant PENDING_STATES => (SCHEDULED, SETUP, PROXIED, RUNNING, WAITING, UPLOADING);
+use constant EXECUTION_STATES => (RUNNING, WAITING, PROXIED, UPLOADING);
 use constant FINAL_STATES => (DONE, CANCELLED);
 
 # Results
