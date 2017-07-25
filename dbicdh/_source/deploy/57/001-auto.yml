@@ -3525,6 +3525,30 @@ schema:
           order: 3
           size:
             - 0
+<<<<<<< HEAD
+||||||| parent of 317d4804... Disable feature tour by seeting database entry to zero
+        feature_informed:
+          data_type: boolean
+          default_value: 0
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: feature_informed
+          order: 9
+          size:
+            - 0
+=======
+        feature_version:
+          data_type: integer
+          default_value: 0
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: feature_version
+          order: 8
+          size:
+            - 0
+>>>>>>> 317d4804... Disable feature tour by seeting database entry to zero
         fullname:
           data_type: text
           default_value: ~
@@ -3583,7 +3607,13 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: t_created
+<<<<<<< HEAD
           order: 8
+||||||| parent of 317d4804... Disable feature tour by seeting database entry to zero
+          order: 10
+=======
+          order: 9
+>>>>>>> 317d4804... Disable feature tour by seeting database entry to zero
           size:
             - 0
         t_updated:
@@ -3593,7 +3623,13 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: t_updated
+<<<<<<< HEAD
           order: 9
+||||||| parent of 317d4804... Disable feature tour by seeting database entry to zero
+          order: 11
+=======
+          order: 10
+>>>>>>> 317d4804... Disable feature tour by seeting database entry to zero
           size:
             - 0
         username:

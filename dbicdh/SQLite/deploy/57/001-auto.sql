@@ -1,6 +1,12 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
+<<<<<<< HEAD
 -- Created on Wed Jul 19 10:43:19 2017
+||||||| parent of 317d4804... Disable feature tour by seeting database entry to zero
+-- Created on Wed Jul  5 14:04:56 2017
+=======
+-- Created on Tue Jul 25 14:29:07 2017
+>>>>>>> 317d4804... Disable feature tour by seeting database entry to zero
 -- 
 
 ;
@@ -222,6 +228,13 @@ CREATE TABLE users (
   nickname text,
   is_operator integer NOT NULL DEFAULT 0,
   is_admin integer NOT NULL DEFAULT 0,
+<<<<<<< HEAD
+||||||| parent of 317d4804... Disable feature tour by seeting database entry to zero
+  last_login_version text,
+  feature_informed boolean NOT NULL DEFAULT 0,
+=======
+  feature_version integer NOT NULL DEFAULT 0,
+>>>>>>> 317d4804... Disable feature tour by seeting database entry to zero
   t_created timestamp NOT NULL,
   t_updated timestamp NOT NULL
 );

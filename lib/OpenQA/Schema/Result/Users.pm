@@ -53,7 +53,7 @@ __PACKAGE__->add_columns(
     },
     feature_version => {
         data_type     => 'integer',
-        default_value => 1,
+        default_value => 0,
     },
 );
 __PACKAGE__->add_timestamps;

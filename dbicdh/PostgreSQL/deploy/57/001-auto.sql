@@ -1,6 +1,12 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
+<<<<<<< HEAD
 -- Created on Wed Jul 19 10:43:19 2017
+||||||| parent of 317d4804... Disable feature tour by seeting database entry to zero
+-- Created on Wed Jul  5 14:04:56 2017
+=======
+-- Created on Tue Jul 25 14:29:07 2017
+>>>>>>> 317d4804... Disable feature tour by seeting database entry to zero
 -- 
 ;
 --
@@ -260,6 +266,13 @@ CREATE TABLE users (
   nickname text,
   is_operator integer DEFAULT 0 NOT NULL,
   is_admin integer DEFAULT 0 NOT NULL,
+<<<<<<< HEAD
+||||||| parent of 317d4804... Disable feature tour by seeting database entry to zero
+  last_login_version text,
+  feature_informed boolean DEFAULT '0' NOT NULL,
+=======
+  feature_version integer DEFAULT 0 NOT NULL,
+>>>>>>> 317d4804... Disable feature tour by seeting database entry to zero
   t_created timestamp NOT NULL,
   t_updated timestamp NOT NULL,
   PRIMARY KEY (id),

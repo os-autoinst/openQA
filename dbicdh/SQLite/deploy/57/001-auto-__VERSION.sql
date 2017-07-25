@@ -1,6 +1,12 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
+<<<<<<< HEAD
 -- Created on Wed Jul 19 10:43:19 2017
+||||||| parent of 317d4804... Disable feature tour by seeting database entry to zero
+-- Created on Wed Jul  5 14:04:56 2017
+=======
+-- Created on Tue Jul 25 14:29:07 2017
+>>>>>>> 317d4804... Disable feature tour by seeting database entry to zero
 -- 
 
 ;
