@@ -32,6 +32,7 @@ use MIME::Base64;
 use File::Basename 'basename';
 use File::Which 'which';
 use Mojo::File 'path';
+use Scalar::Util 'looks_like_number';
 
 use POSIX ':sys_wait_h';
 
@@ -111,6 +112,15 @@ sub check_job {
         callback => sub {
             my ($res) = @_;
             return unless ($res);
+            if (exists $res->{state} && exists $res->{state}->{backoff} && looks_like_number($res->{state}->{backoff}))
+            {
+                log_debug("Scheduler asked to backoff for " . $res->{state}->{backoff}) if $verbose;
+                return Mojo::IOLoop->timer(
+                    $res->{state}->{backoff} => sub {
+                        check_job(@todo);
+                    });
+            }
+
             $job = $res->{job};
             if ($job && $job->{id}) {
                 Mojo::IOLoop->next_tick(sub { start_job($host) });

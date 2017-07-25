@@ -22,6 +22,11 @@ use OpenQA::Utils 'find_job';
 use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
 
+has _fails       => 0;
+has _timeslot    => 60;
+has _max_backoff => 500;
+has _exp         => 2;     # Binary exponential backoff
+
 sub list {
     my $self = shift;
 
@@ -169,11 +174,24 @@ sub grab {
                 {workerid => $workerid, blocking => $blocking, workerip => $workerip, workercaps => $caps});
         },
         sub {
-            my $res = pop @_;
+            my ($sub, $err, $res) = @_;
+
+            # Congestion control: Exponential backoff.
+            if (ref($res) ne "HASH" && !$err) {
+                $self->{_fails}++;
+                my $backoff = (($self->{_exp}**$self->{_fails}) - 1) * $self->{_timeslot};
+                return $self->render(
+                    json => {state => {backoff => $backoff > $self->{_max_backoff} ? $self->{_max_backoff} : $backoff}})
+                  unless ref($res) eq "HASH" && !$err;    # This can go even outside of the error
+            }
+            $self->{_fails}-- if $self->{_fails} >= 0;
+
+            # TODO: Avoid capture effect (starvation)
+
             $self->emit_event('openqa_job_grab',
                 {workerid => $workerid, blocking => $blocking, workerip => $workerip, id => $res->{id}})
               if $res->{id};
-            $self->render(json => {job => $res});
+            return $self->render(json => {job => $res});
         });
 }
 
