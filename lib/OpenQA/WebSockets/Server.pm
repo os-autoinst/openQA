@@ -60,30 +60,31 @@ sub ws_send {
 }
 
 sub ws_send_job {
-    my %job_data = @_;
-    my $job      = \%job_data;
-    my $retry;
-    my $workerid = $job->{assigned_worker_id} if ref($job) eq "HASH" && exists $job->{assigned_worker_id};
-    return {state => {msg_sent => 0}} unless ($workerid && $workers->{$workerid});
+    my ($job) = @_;
+    my $result = {state => {msg_sent => 0}};
+
+    unless (ref($job) eq "HASH" && exists $job->{assigned_worker_id} && $workers->{$job->{assigned_worker_id}}) {
+        $result->{state}->{error} = "No workerid assigned, or worker doesn't have established a ws connection";
+        return $result;
+    }
     my $res;
-    my $tx = $workers->{$workerid}->{socket};
+    my $tx = $workers->{$job->{assigned_worker_id}}->{socket};
     if ($tx) {
         $res = $tx->send({json => {type => 'grab_job', job => $job}});
     }
     unless ($res && $res->success) {
-        $retry ||= 0;
-        if ($retry < 3) {
-            Mojo::IOLoop->timer(2 => sub { ws_send_job($workerid, $job, ++$retry); });
-        }
-        else {
-            log_debug("Unable to allocate job to worker $workerid");
-            return {};
-        }
+        # Since it is used by scheduler, it's fine to let it fail,
+        # will be rescheduled on next round
+        log_debug("Unable to allocate job to worker $job->{assigned_worker_id}");
+        $result->{state}->{error} = "Sending $job->{id} thru WebSockets to $job->{assigned_worker_id} failed miserably";
+        $result->{state}->{res}   = $res;
+        return $result;
     }
     else {
-        log_debug("message sent to $workerid for job $job->{id}");
+        log_debug("message sent to $job->{assigned_worker_id} for job $job->{id}");
+        $result->{state}->{msg_sent} = 1;
     }
-    return {state => {msg_sent => 1}};
+    return $result;
 }
 
 # consider ws_send_all as broadcast and don't wait for confirmation

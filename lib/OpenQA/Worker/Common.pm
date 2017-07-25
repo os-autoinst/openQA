@@ -337,10 +337,9 @@ sub call_websocket {
             my ($ua, $tx) = @_;
             if ($tx->is_websocket) {
                 # keep websocket connection busy
-                $tx->send({json => {type => 'ok'}});
+                $tx->send({json => {type => 'ok'}});    # Send keepalive immediately
                 $hosts->{$host}{timers}{keepalive}
-                  = add_timer('keepalive', 5,
-                    sub { log_debug("KEEPALIVE to $host"); $tx->send({json => {type => 'ok'}}); });
+                  = add_timer('keepalive', 5, sub { $tx->send({json => {type => 'ok'}}); });
 
                 $tx->on(json => \&OpenQA::Worker::Commands::websocket_commands);
                 $tx->on(
@@ -368,8 +367,10 @@ sub call_websocket {
                 else {
                     my $err = $tx->error;
                     if (defined $err) {
-                        warn "Unable to upgrade connection to WebSocket: " . $err->{code} . ". proxy_wstunnel enabled?";
-                        if ($err->{code} eq '404' && $hosts->{$host}{workerid}) {
+                        warn "Unable to upgrade connection to WebSocket: "
+                          . ($err->{code} ? $err->{code} : "[no code]")
+                          . ". proxy_wstunnel enabled?";
+                        if ($err->{code} && $err->{code} eq '404' && $hosts->{$host}{workerid}) {
                             # worker id suddenly not known anymore. Abort. If workerid
                             # is unset we already detected that in api_call
                             $hosts->{$host}{workerid} = undef;

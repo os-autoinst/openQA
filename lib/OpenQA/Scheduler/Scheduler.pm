@@ -35,7 +35,7 @@ use Mojo::URL;
 use Try::Tiny;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
-use Scalar::Util qw(weaken isweak);
+use Scalar::Util 'weaken';
 use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
@@ -43,31 +43,6 @@ use OpenQA::Utils qw(log_debug log_warning notify_workers send_job_to_worker );
 use db_helpers 'rndstr';
 
 use OpenQA::IPC;
-
-# How many jobs to allocate in one tick. Defaults to 0 (as much as possible)
-use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 0;
-
-# How many attempts have to be performed to find a job before assuming there is nothing to be scheduled
-use constant FIND_JOB_ATTEMPTS => $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS} // 5;
-
-# Exp. backoff to avoid congestion.
-# Enable it with 1, disable with 0. Following options depends on it.
-use constant CONGESTION_CONTROL => $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL} // 1;
-
-# Timeslot. Defaults to 15s
-use constant TIMESLOT => $ENV{OPENQA_SCHEDULER_TIMESLOT} // 15000;
-
-# Maximum backoff. Defaults to 360s
-use constant MAX_BACKOFF => $ENV{OPENQA_SCHEDULER_MAX_BACKOFF} // 360000;
-
-# Our exponent, used to calculate backoff. Defaults to 2 (Binary)
-use constant EXPBACKOFF => $ENV{OPENQA_SCHEDULER_EXP_BACKOFF} // 2;
-
-# Timer reset to avoid starvation caused by congestion. Defaults to 660s
-use constant CAPTURE_LOOP_AVOIDANCE => $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} // 660000;
-
-# set it to 1 if you want to backoff when no jobs can be assigned
-use constant BUSY_BACKOFF => $ENV{OPENQA_SCHEDULER_BUSY_BACKOFF} // 0;
 
 use Carp;
 
@@ -82,13 +57,13 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
   asset_list
 );
 
-my $failure = 0;
+CORE::state $failure = 0;
 
 sub reactor {
-    my $react = shift;
     CORE::state $reactor;
-    $reactor ||= $react;
-    weaken $reactor if !isweak $reactor;
+    return $reactor if $reactor;
+    $reactor = shift;
+    weaken $reactor;
     return $reactor;
 }
 
@@ -179,22 +154,16 @@ sub schedule {
 
     # Avoid to go into starvation
     reactor->{timer}->{capture_loop_avoidance} ||= reactor->add_timeout(
-        CAPTURE_LOOP_AVOIDANCE,
+        OpenQA::Scheduler::CAPTURE_LOOP_AVOIDANCE(),
         Net::DBus::Callback->new(
             method => sub {
                 return if $failure == 0;
                 $failure = 0;
-                my $default_tick = OpenQA::Scheduler::SCHEDULE_TICK_MS();
-                reactor->remove_timeout(reactor->{timer}->{schedule_jobs});
-                reactor->{timer}->{schedule_jobs} = reactor->add_timeout(
-                    $default_tick,
-                    Net::DBus::Callback->new(
-                        method => \&OpenQA::Scheduler::Scheduler::schedule
-                    ));
-                log_debug(
-"[Congestion control] seems we had congestions before, resetting failures count to $failure and next scheduler round will be in $default_tick"
-                );
-            })) if (CONGESTION_CONTROL);
+                log_debug("[Congestion control] Resetting failures count. Next scheduler round will be reset to "
+                      . OpenQA::Scheduler::SCHEDULE_TICK_MS()
+                      . "ms");
+                _reschedule(OpenQA::Scheduler::SCHEDULE_TICK_MS());
+            })) if (OpenQA::Scheduler::CONGESTION_CONTROL());
 
     my @allocated_jobs;
     try {
@@ -203,14 +172,23 @@ sub schedule {
                 my $all_workers = schema->resultset("Workers")->count();
                 my @allocated_workers;
                 my @allocated_jobs;
-                my @free_workers = schema->resultset("Workers")
-                  ->search({job_id => undef}, ({rows => MAX_JOB_ALLOCATION}) x !!(MAX_JOB_ALLOCATION > 0))->all();
-                log_debug("Scheduler TICK. Free workers: " . scalar(@free_workers) . "/$all_workers");
+                my @free_workers = grep { !$_->dead } schema->resultset("Workers")->search(
+                    {job_id => undef},
+                    ({rows => OpenQA::Scheduler::MAX_JOB_ALLOCATION()})
+                      x !!(OpenQA::Scheduler::MAX_JOB_ALLOCATION() > 0))->all();
+                log_debug("-" x 16);
+                log_debug("Scheduling jobs.");
+                log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
+                log_debug("\t Failures# ${failure}");
 
-                # Consider it a failure if CONGESTION_CONTROL is set
+                # Consider it a failure if OpenQA::Scheduler::CONGESTION_CONTROL is set
                 # so if there are no free workers scheduler will kick in later.
-                $failure++ and return ()
-                  if @free_workers == 0 && CONGESTION_CONTROL && BUSY_BACKOFF && $all_workers > 0;
+                $failure++
+                  and return ()
+                  if @free_workers == 0
+                  && OpenQA::Scheduler::CONGESTION_CONTROL()
+                  && OpenQA::Scheduler::BUSY_BACKOFF()
+                  && $all_workers > 0;
 
                 for my $w (@free_workers) {
                     my %caps = $w->all_properties();
@@ -219,38 +197,84 @@ sub schedule {
                         blocking     => 0,
                         workercaps   => \%caps,
                         scheduler    => 1,
-                        max_attempts => FIND_JOB_ATTEMPTS
-                    );
+                        max_attempts => OpenQA::Scheduler::FIND_JOB_ATTEMPTS());
                     next unless $allocated_job && exists $allocated_job->{id};
                     push(@allocated_jobs, $allocated_job);
                 }
                 return @allocated_jobs;
-
             });
     }
     catch {
-        return unless (CONGESTION_CONTROL);
-        # we had a failure
-        $failure++;
+        # we had a real failure
+        $failure++ if OpenQA::Scheduler::CONGESTION_CONTROL();
     };
 
-    if (@allocated_jobs > 0) {
-        !!send_job_to_worker($_) && log_debug("Allocated job " . $_->{id} . " to worker " . $_->{assigned_worker_id})
-          for @allocated_jobs;
-        $failure-- if $failure > 0;
-    }
+    my $successfully_allocated = 0;
+    foreach my $allocated (@allocated_jobs) {
+        my $res = send_job_to_worker($allocated);
+        if (ref($res) eq "HASH" && $res->{state}->{msg_sent} == 1) {
+            log_debug("Allocated job '" . $allocated->{id} . "' to worker '" . $allocated->{assigned_worker_id} . "'");
+            $successfully_allocated++;
+        }
+        else {
+            $failure++
+              if OpenQA::Scheduler::CONGESTION_CONTROL()
+              && OpenQA::Scheduler::BUSY_BACKOFF();    # We failed dispatching it. We might be under load
 
-    if ($failure > 0) {
-        my $backoff = ((EXPBACKOFF**$failure) - 1) * TIMESLOT;
-        log_debug
-          "[Congestion control] Failed to schedule job. Failures#: ${failure}. Backoff period is : ${backoff}ms";
-        _reschedule($backoff > MAX_BACKOFF ? MAX_BACKOFF : $backoff);
+            log_debug("Failed sending job '"
+                  . $allocated->{id}
+                  . "' to worker '"
+                  . $allocated->{assigned_worker_id} . "' : "
+                  . pp($res));
+            # put the job in scheduled state again.
+            # we could search, dispatch the job and then update database in one transactions.
+            # but it's better avoid to put ipc communication over dbus inside a transaction
+            # (caused more-than-one complete sqlite database breakage locally)
+            try {
+                schema->txn_do(
+                    sub {
+                        my $job = schema->resultset("Jobs")->find({id => $allocated->{id},});
+                        my $worker = schema->resultset("Workers")->find({id => $allocated->{assigned_worker_id}});
+                        if ($job && $worker) {
+                            $job->update(
+                                {
+                                    state              => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                                    t_started          => undef,
+                                    assigned_worker_id => undef,
+                                });
+                            $worker->job(undef);
+                            $worker->update;
+                            log_debug("Job '$allocated->{id}' reset to scheduled state");
+                        }
+                    });
+            }
+            catch {
+                log_debug("Failed resetting job '$allocated->{id}' to scheduled state :( bummer!");
+                $failure++
+                  if OpenQA::Scheduler::CONGESTION_CONTROL()
+                  && OpenQA::Scheduler::BUSY_BACKOFF();    # double it, we might be in a heavy load condition.
+                                                           # Also, the workers could be massively in re-registration.
+            };
+        }
+    }
+    $failure--
+      if $failure > 0
+      && $successfully_allocated > 0
+      && OpenQA::Scheduler::CONGESTION_CONTROL()
+      && OpenQA::Scheduler::BUSY_BACKOFF();
+
+    if ($failure > 0 && OpenQA::Scheduler::CONGESTION_CONTROL()) {
+        my $backoff = ((OpenQA::Scheduler::EXPBACKOFF()**$failure) - 1) * OpenQA::Scheduler::TIMESLOT();
+        log_debug "[Congestion control] Failures# ${failure} - Backoff period is : ${backoff}ms";
+        _reschedule($backoff > OpenQA::Scheduler::MAX_BACKOFF() ? OpenQA::Scheduler::MAX_BACKOFF() : $backoff);
     }
 }
 
 sub _reschedule {
-    my $time = shift;
-    log_debug "[scheduler] New tick will be in: ${time}ms";
+    my $time             = shift;
+    my $current_interval = reactor->{timeouts}->[reactor->{timer}->{schedule_jobs}]->{interval};
+    return unless $current_interval != $time;
+    log_debug "[scheduler] Current tick is at ${current_interval}ms. New tick will be in: ${time}ms";
     reactor->remove_timeout(reactor->{timer}->{schedule_jobs});
     reactor->{timer}->{schedule_jobs} = reactor->add_timeout(
         $time,
@@ -398,8 +422,9 @@ sub job_grab {
     $job_hashref->{settings}->{JOBTOKEN} = $token;
 
     my $updated_settings = $job->register_assets_from_settings();
+    my @k                = keys %$updated_settings;
 
-    @{$job_hashref->{settings}}{keys %$updated_settings} = @{$updated_settings}{keys %$updated_settings}
+    @{$job_hashref->{settings}}{@k} = @{$updated_settings}{@k}
       if ($updated_settings);
 
     if (   $job_hashref->{settings}->{NICTYPE}

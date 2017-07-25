@@ -29,7 +29,33 @@ use OpenQA::Scheduler::Locks     ();
 use OpenQA::Utils 'log_debug';
 use OpenQA::ServerStartup;
 
-use constant SCHEDULE_TICK_MS => $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} // 1000;    # in ms
+# How many jobs to allocate in one tick. Defaults to 0 (as much as possible)
+use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 20;
+
+# How many attempts have to be performed to find a job before assuming there is nothing to be scheduled
+use constant FIND_JOB_ATTEMPTS => $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS} // 2;
+
+# Exp. backoff to avoid congestion.
+# Enable it with 1, disable with 0. Following options depends on it.
+use constant CONGESTION_CONTROL => $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL} // 1;
+
+# Timeslot. Defaults to 3s
+use constant TIMESLOT => $ENV{OPENQA_SCHEDULER_TIMESLOT} // 3000;
+
+# Scheduler default clock. Defaults to timeslot
+use constant SCHEDULE_TICK_MS => $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} // TIMESLOT;
+
+# Maximum backoff. Defaults to 360s
+use constant MAX_BACKOFF => $ENV{OPENQA_SCHEDULER_MAX_BACKOFF} // 360000;
+
+# Our exponent, used to calculate backoff. Defaults to 2 (Binary)
+use constant EXPBACKOFF => $ENV{OPENQA_SCHEDULER_EXP_BACKOFF} // 2;
+
+# Timer reset to avoid starvation caused by congestion. Defaults to 660s
+use constant CAPTURE_LOOP_AVOIDANCE => $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} // 50000;
+
+# set it to 1 if you want to backoff when no jobs can be assigned
+use constant BUSY_BACKOFF => $ENV{OPENQA_SCHEDULER_BUSY_BACKOFF} // 1;
 
 # monkey patching for debugging IPC
 sub _is_method_allowed {
@@ -50,6 +76,16 @@ sub run {
 
     OpenQA::Scheduler->new();
     log_debug("Scheduler started");
+    log_debug("\t Scheduler default interval(ms) : " . SCHEDULE_TICK_MS);
+    log_debug("\t Max job allocation: " . MAX_JOB_ALLOCATION);
+    log_debug("\t Find job retries : " . FIND_JOB_ATTEMPTS);
+    log_debug("\t Congestion control : " .                  (CONGESTION_CONTROL ? "enabled" : "disabled"));
+    log_debug("\t Backoff when we can't schedule jobs : " . (BUSY_BACKOFF       ? "enabled" : "disabled"));
+    log_debug("\t Capture loop avoidance(ms) : " . CAPTURE_LOOP_AVOIDANCE);
+    log_debug("\t Timeslot(ms) : " . TIMESLOT);
+    log_debug("\t Max backoff(ms) : " . MAX_BACKOFF);
+    log_debug("\t Exp backoff : " . EXPBACKOFF);
+
     my $reactor = Net::DBus::Reactor->main;
     OpenQA::Scheduler::Scheduler::reactor($reactor);
     $reactor->{timer}->{schedule_jobs} = $reactor->add_timeout(

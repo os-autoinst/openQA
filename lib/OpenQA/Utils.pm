@@ -573,13 +573,15 @@ sub notify_workers {
 sub send_job_to_worker {
     my $ipc = OpenQA::IPC->ipc;
     my $job = shift;
-
+    my $res;
     # ugly work around for Net::DBus::Test not being able to handle us using low level API
     return if ref($ipc->{bus}->get_connection) eq 'Net::DBus::Test::MockConnection';
-    eval { $ipc->websockets('ws_send_job', $job); };
+    eval { $res = $ipc->websockets('ws_send_job', $job); };
     if ($@) {
         log_debug($@);
+        $res = $@;
     }
+    return $res;
 }
 
 sub _round_a_bit {
