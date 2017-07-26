@@ -35,8 +35,15 @@ $test_case->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $driver = call_phantom();
+sub schema_hook {
+    my $schema = OpenQA::Test::Database->new->create;
+    my $users  = $schema->resultset('Users');
 
+    my $user = $users->create({username => 'nobody', feature_version => 1});
+}
+
+
+my $driver = call_phantom(\&schema_hook);
 unless ($driver) {
     plan skip_all => $t::ui::PhantomTest::phantommissing;
     exit(0);
@@ -49,6 +56,7 @@ $driver->find_element_by_link_text('Login')->click();
 # we are back on the main page
 # make sure tour does not appear for demo user
 $driver->title_is("openQA", "back on main page");
+is(scalar(@{$driver->find_elements('#step-0')}), 0);
 $driver->find_element_by_link_text('Logged in as Demo')->click();
 $driver->find_element_by_link_text('Logout')->click();
 

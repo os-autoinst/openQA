@@ -48,13 +48,7 @@
         ]
     },
     Users => {
-        id              => 99904,
         username        => 'Demo',
-        email           => 'demo@user.org',
-        fullname        => 'Demo User',
-        nickname        => 'Demo',
-        is_operator     => 0,
-        is_admin        => 0,
         feature_version => 0,
     },
 ]
