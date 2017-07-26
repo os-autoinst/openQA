@@ -20,6 +20,7 @@ use Cwd qw(abs_path getcwd);
 
 BEGIN {
     unshift @INC, 'lib';
+    push @INC, '.';
     use FindBin;
     use Mojo::File qw(path tempdir);
     $ENV{OPENQA_BASEDIR} = path(tempdir, 't', 'full-stack.d');
