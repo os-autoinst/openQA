@@ -17,6 +17,7 @@
 
 BEGIN {
     unshift @INC, 'lib';
+    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
