@@ -32,6 +32,7 @@ use MIME::Base64;
 use File::Basename 'basename';
 use File::Which 'which';
 use Mojo::File 'path';
+use Mojo::IOLoop;
 
 use POSIX ':sys_wait_h';
 
@@ -138,7 +139,10 @@ sub stop_job {
         Mojo::IOLoop->stop if $aborted eq 'quit';
         return;
     }
-    return if $job_id && $job_id != $job->{id};
+
+    if ($job_id && $job_id != $job->{id}) {
+        return;
+    }
     $job_id = $job->{id};
 
     log_debug("stop_job $aborted") if $verbose;
@@ -274,6 +278,7 @@ sub _reset_state {
     $worker           = undef;
     $stop_job_running = 0;
     $current_host     = undef;
+    Mojo::IOLoop->singleton->emit("stop_job");
 }
 
 sub _stop_job {
@@ -480,6 +485,7 @@ sub start_job {
         },
         1
     );
+    Mojo::IOLoop->singleton->emit("start_job");
 }
 
 sub log_snippet {

@@ -84,4 +84,10 @@ sub ws_send_all {
     return OpenQA::WebSockets::Server::ws_send_all(@args);
 }
 
+dbus_method('ws_worker_accepted_job', ['uint32'], ['uint32']);
+sub ws_worker_accepted_job {
+    my ($self, @args) = @_;
+    return OpenQA::WebSockets::Server::ws_worker_accepted_job(@args);
+}
+
 1;
