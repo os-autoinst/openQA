@@ -35,6 +35,9 @@ our (@ISA, @EXPORT, @EXPORT_OK);
 # id->worker mapping
 my $workers;
 
+# jobs->worker mapping
+my $accepted_jobs;
+
 # internal helpers prototypes
 sub _message;
 sub _get_worker;
@@ -149,6 +152,18 @@ sub ws_is_worker_connected {
     return ($workers->{$workerid} && $workers->{$workerid}->{socket} ? 1 : 0);
 }
 
+sub ws_worker_accepted_job {
+    my ($jobid) = @_;
+    if ($accepted_jobs->{$jobid}) {
+        log_debug("Worker $accepted_jobs->{$jobid} accepted job $jobid");
+        return delete $accepted_jobs->{$jobid};
+        # return ;
+    }
+    log_debug("Job# $jobid was not accepted");
+
+    return 0;
+}
+
 sub _get_worker {
     my ($tx) = @_;
     for my $worker (values %$workers) {
@@ -188,6 +203,11 @@ sub _message {
     $worker->{last_seen} = time();
     if ($json->{type} eq 'ok') {
         $ws->tx->send({json => {type => 'ok'}});
+    }
+    elsif ($json->{type} eq 'accepted') {
+        my $jobid = $json->{jobid};
+        $accepted_jobs->{$jobid} = $worker->{id};
+        log_debug("Worker: $worker->{id} accepted job $jobid");
     }
     elsif ($json->{type} eq 'status') {
         # handle job status update through web socket

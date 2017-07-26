@@ -347,7 +347,7 @@ sub call_websocket {
                         remove_timer($hosts->{$host}{timers}{keepalive});
                         $hosts->{$host}{timers}{setup_websocket}
                           = add_timer('setup_websocket', 5, sub { setup_websocket($host) }, 1);
-                        delete $ws_to_host->{$hosts->{$host}{ws}};
+                        delete $ws_to_host->{$hosts->{$host}{ws}} if $ws_to_host->{$hosts->{$host}{ws}};
                         $hosts->{$host}{ws} = undef;
                     });
                 $hosts->{$host}{ws} = $tx->max_websocket_size(10485760);

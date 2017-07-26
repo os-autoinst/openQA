@@ -39,7 +39,7 @@ use Scalar::Util 'weaken';
 use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
-use OpenQA::Utils qw(log_debug log_warning notify_workers send_job_to_worker );
+use OpenQA::Utils qw(log_debug log_warning notify_workers send_job_to_worker is_job_allocated);
 use db_helpers 'rndstr';
 
 use OpenQA::IPC;
@@ -57,7 +57,8 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
   asset_list
 );
 
-CORE::state $failure = 0;
+CORE::state $failure           = 0;
+CORE::state $ws_allocated_jobs = {};
 
 sub reactor {
     CORE::state $reactor;
@@ -152,6 +153,45 @@ sub schedule {
     my $allocated_job;
     my $allocated_worker;
 
+# If in the other tick we allocated some job, let's check meanwhile we got an answer from the worker, saying it have accepted it.
+    foreach my $j (keys %{$ws_allocated_jobs}) {
+        my $workerid          = is_job_allocated($j);
+        my $expected_workerid = $ws_allocated_jobs->{$j}->{assigned_worker_id};
+        log_debug("Checking if job '$j' was actually accepted by the assigned worker $expected_workerid :"
+              . pp($ws_allocated_jobs->{$j}));
+        log_debug(pp($ws_allocated_jobs));
+
+        next if $expected_workerid == $workerid;
+
+        if (   $ws_allocated_jobs->{$j}->{result}
+            && $ws_allocated_jobs->{$j}->{result} ne OpenQA::Schema::Result::Jobs::NONE)
+        {
+            log_debug("Job has a result but wasn't processed. Something bad happened");
+            schema->txn_do(
+                sub {
+                    schema->resultset("Jobs")->find({id => $j})->cancel;
+                });
+            next;
+        }
+
+        log_debug("Too bad '$j' seems wasn't accepted");
+        OpenQA::IPC->ipc->websockets('ws_send', $expected_workerid, "abort", $j)
+          ;    # The worker could have already started the build, but it was way too slow.
+
+
+        try {
+            _reset_job($j, $expected_workerid);
+        }
+        catch {
+            log_debug("Failed resetting job '$j' to scheduled state after we assigned it :( bummer!");
+            $failure++
+              if OpenQA::Scheduler::CONGESTION_CONTROL()
+              && OpenQA::Scheduler::BUSY_BACKOFF();    # double it, we might be in a heavy load condition.
+                                                       # Also, the workers could be massively in re-registration.
+        };
+    }
+    $ws_allocated_jobs = {};
+
     # Avoid to go into starvation
     reactor->{timer}->{capture_loop_avoidance} ||= reactor->add_timeout(
         OpenQA::Scheduler::CAPTURE_LOOP_AVOIDANCE(),
@@ -215,6 +255,8 @@ sub schedule {
         if (ref($res) eq "HASH" && $res->{state}->{msg_sent} == 1) {
             log_debug("Allocated job '" . $allocated->{id} . "' to worker '" . $allocated->{assigned_worker_id} . "'");
             $successfully_allocated++;
+            $ws_allocated_jobs->{$allocated->{id}}
+              = {assigned_worker_id => $allocated->{assigned_worker_id}, result => $allocated->{result}};
         }
         else {
             $failure++
@@ -231,22 +273,7 @@ sub schedule {
             # but it's better avoid to put ipc communication over dbus inside a transaction
             # (caused more-than-one complete sqlite database breakage locally)
             try {
-                schema->txn_do(
-                    sub {
-                        my $job = schema->resultset("Jobs")->find({id => $allocated->{id},});
-                        my $worker = schema->resultset("Workers")->find({id => $allocated->{assigned_worker_id}});
-                        if ($job && $worker) {
-                            $job->update(
-                                {
-                                    state              => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                                    t_started          => undef,
-                                    assigned_worker_id => undef,
-                                });
-                            $worker->job(undef);
-                            $worker->update;
-                            log_debug("Job '$allocated->{id}' reset to scheduled state");
-                        }
-                    });
+                _reset_job($allocated->{id}, $allocated->{assigned_worker_id});
             }
             catch {
                 log_debug("Failed resetting job '$allocated->{id}' to scheduled state :( bummer!");
@@ -268,6 +295,26 @@ sub schedule {
         log_debug "[Congestion control] Failures# ${failure} - Backoff period is : ${backoff}ms";
         _reschedule($backoff > OpenQA::Scheduler::MAX_BACKOFF() ? OpenQA::Scheduler::MAX_BACKOFF() : $backoff);
     }
+}
+
+sub _reset_job {
+    my ($jobid, $workerid) = @_;
+    schema->txn_do(
+        sub {
+            my $job = schema->resultset("Jobs")->find({id => $jobid,});
+            my $worker = schema->resultset("Workers")->find({id => $workerid});
+            if ($job && $worker) {
+                $job->update(
+                    {
+                        state              => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                        t_started          => undef,
+                        assigned_worker_id => undef,
+                    });
+                $worker->job(undef);
+                $worker->update;
+                log_debug("Job '$jobid' reset to scheduled state");
+            }
+        });
 }
 
 sub _reschedule {
