@@ -47,11 +47,13 @@ sub query_for_settings {
                 }
                 push(@joins, 'siblings');
             }
+            my $setting_value = ($args->{$setting} =~ /^:\w+:/) ? {'like', "$&%"} : $args->{$setting};
             push(
                 @conds,
                 {
                     "$tname.key"   => $setting,
-                    "$tname.value" => $args->{$setting}});
+                    "$tname.value" => $setting_value
+                });
         }
     }
     return $self->search({-and => \@conds}, {join => \@joins});
