@@ -17,6 +17,7 @@
 package OpenQA::Schema::ResultSet::JobSettings;
 use strict;
 use base 'DBIx::Class::ResultSet';
+use OpenQA::Utils;
 
 =head2 query_for_settings
 
@@ -47,11 +48,24 @@ sub query_for_settings {
                 }
                 push(@joins, 'siblings');
             }
-            push(
-                @conds,
-                {
-                    "$tname.key"   => $setting,
-                    "$tname.value" => $args->{$setting}});
+            if ($args->{$setting} =~ /^:\w+:/) {
+                my $worker_class = $&;
+                log_error($');
+                push(
+                    @conds,
+                    {
+                        "$tname.key"   => $setting,
+                        "$tname.value" => {'like', "$worker_class%"},
+                    });
+                print $worker_class;
+            }
+            else {
+                push(
+                    @conds,
+                    {
+                        "$tname.key"   => $setting,
+                        "$tname.value" => $args->{$setting}});
+            }
         }
     }
     return $self->search({-and => \@conds}, {join => \@joins});
