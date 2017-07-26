@@ -468,7 +468,6 @@ sub startup {
 
     # api/v1/feature
     $api_ru->post('/feature')->name('apiv1_post_informed_about')->to('feature#informed');
-    $api_ru->get('/feature')->name('apiv1_check_if_informed')->to('feature#check');
 
     # reduce_result is obsolete (replaced by limit_results_and_logs)
     $self->gru->add_task(reduce_result          => \&OpenQA::Schema::Result::Jobs::reduce_result);

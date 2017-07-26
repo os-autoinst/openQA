@@ -10,10 +10,4 @@ sub informed {
     $user->update({feature_version => $version});
 }
 
-sub check {
-    my ($self) = @_;
-    my $user = $self->current_user;
-    return $self->render(json => {version => $user->feature_version});
-}
-
 1;
