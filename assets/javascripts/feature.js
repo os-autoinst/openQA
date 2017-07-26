@@ -1,7 +1,6 @@
-function newFeature() {
+function newFeature(featureVersion) {
 
     var currentFeature;
-    checkVersion();
 
     //Create variable for each tour
     var example = new Tour({
@@ -38,6 +37,8 @@ function newFeature() {
         }
     ]);
 
+    initTour(featureVersion);
+
     //Parse html code as string to change the default layout of bootstrap tour
     function changeTemplate() {
         return ("<div class='popover tour'>"+
@@ -58,22 +59,8 @@ function newFeature() {
         $('#end').on('click', function(){return endTour(currentFeature)});
     };
 
-    //Check database for allready shown features
-    function checkVersion() {
-        $.ajax({
-            dataType: "json",
-            url: '/api/v1/feature',
-            method: 'GET',
-            success: function(data){
-                getResult(data);
-            }
-        });
-    };
-
-    //Get results from database query and start tour depending on result
-    function getResult(data) {
-        var version = data.version;
-        if ((2 > version) && (version != 0)) {
+    function initTour(featureVersion) {
+        if ((2 > featureVersion) && (featureVersion != 0)) {
             //Initialize the tour
             example.init();
             //Start the tour
@@ -81,7 +68,7 @@ function newFeature() {
         };
     };
 
-    //Return progress (already seen features) to database
+    //Return progress (seen features) to database
     function endTour(currentFeature) {
         $.ajax({
             url: '/api/v1/feature',

@@ -31,7 +31,7 @@
           setupForAll();
           %= content_for 'ready_function'
           % if (current_user) {
-          newFeature();
+              newFeature(<%= current_user->feature_version %>);
           % }
           } );
       % end
