@@ -55,6 +55,7 @@ sub new {
     # Scheduling a couple of hundred jobs takes quite some time - so we better wait a couple of minutes
     # (default is 20 seconds)
     $self->inactivity_timeout(600);
+    $self->max_redirects(3);
 
     $self->on(
         start => sub {
