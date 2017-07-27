@@ -108,7 +108,7 @@ usage(0) if ($options{help});
 
 my $log = Mojo::Log->new;
 $options{master} ||= 'http://0DCD0E0C65A6822A:59D8C0D855F2AABD@deimos.suse.de';
-$options{slave}  ||= 'http://0DCD0E0C65A6822A:59D8C0D855F2AABD@lanner.arch.suse.de';
+$options{slave}  ||= 'http://6468159B01623A43:FA7B6B37353EDD4F@lanner.arch.suse.de';
 $options{limit} ||= 1000;
 $options{worker_class} ||= "cluster_job";
 
@@ -135,30 +135,87 @@ my $slave = OpenQA::Client->new(
 $log->info("Master: ". $master_url->to_abs);
 $log->info("Slave: ". $slave_url->to_abs);
 
+my $masterUI = $master->get($master_url->clone);
+my $slaveUI = $slave;
+
 sub get_asset_list {
     return {a => 1};
 }
 
-sub monitor_jobs {
-
-my $masterUI = $master->get($master_url->clone);
-my $slaveUI = $slave->get($slave_url->clone);
-
-    if($masterUI->res->is_success){
-        $log->info("Works: ". $master_url->to_abs);
-        #Get a list of assets to download:
-        my $asset_list = get_asset_list($masterUI->res->json);
-
+sub move_job {
+    my ($job) = @_;
+    my %settings = %{$job->{settings}};
+    if ($job->{group}) {
+        $settings{_GROUP} = $job->{group};
+    }
+    delete $settings{NAME};
+    # print JSON->new->pretty->encode(\%settings) if ($options{verbose});
+    my $url = $slave_url->clone;
+    $settings{federated_report} = $master_url->scheme . '://' . $master_url->host().'/tests/'.$job->{id};
+    $url->query(%settings);
+    $log->info("Posting to: $url");
+    my $tx = $slaveUI->post($url);
+    if ($tx->success) {
+        my $remote_id = $tx->success->json->{id};
+        if ($remote_id) {
+            my $url = $slave_url->scheme . '://' . $slave_url->host . '/tests/' . $remote_id;
+            $log->info( "Created job #$remote_id: ".$job->{name}." -> $url\n");
+                update_job($job);
+            return {jobid => $remote_id, url => $url};
+        }
+        else {
+            die "job not created. duplicate? ", pp($tx->res->body);
+        }
+    }
+    else {
+        die "Failed to create job, empty response. Make sure your HTTP proxy is running, e.g. apache, nginx, etc."
+          unless $tx->res->body;
+        die "Failed to create job: ", pp($tx->res->body);
     }
 }
+
+sub fetch_jobs {
+    my @crop;
+    if($masterUI->res->is_success){
+        my $job_count = scalar @{$masterUI->res->json->{jobs}};
+        $log->info("Found: $job_count at ". $master_url->to_abs);
+        foreach my $job (@{$masterUI->res->json->{jobs}}){
+            push @crop, move_job($job);
+        }
+        #my $asset_list = get_asset_list($masterUI->res->json);
+    }
+}
+
+sub update_job {
+    my ($job) = @_;
+
+    my $url = $master_url->clone;
+    $url->path("jobs/".$job->{id}."/status");
+    my $js = {status => {proxied => 1}};
+    # $url->query($js);
+    $log->info("Posting to: $url");
+    my $tx = $master->post($url => json => $js);
+    if ($tx->success) {
+        my $req = $tx->success->json;
+        if ($req) {
+            $log->debug(Dumper($req));
+        } else {
+            die "job not created. duplicate? ", Dumper($tx->res->body);
+        }
+    }
+    else {
+        die "Failed to create job, empty response. Make sure your HTTP proxy is running, e.g. apache, nginx, etc."
+          unless $tx->res->body;
+        die "Failed to create job: ", Dumper($tx->res->body);
+    }
+}
+
 my $main_loop = Mojo::IOLoop->singleton;
 
 $main_loop->on(new_jobs => sub {
     my $loop = shift;
     $log->info("New Jobs available on master webui");
-        for (1..80){
-            print '.';
-        }
+
     });
 
 $main_loop->on(job_progress => sub {
@@ -173,27 +230,28 @@ $main_loop->recurring(0.2 => sub {
     $log->debug("job progress event");
 });
 
-#Add a timer
+#Check for new jobs on the master webUI
 $main_loop->recurring(5 => sub {
     my $loop = shift;
     # Add a timer
+    $log->info("Checking for new jobs on the masterUI");
     Mojo::IOLoop->subprocess(
         sub {
             my $subprocess = shift;
-            # $loop->remove($id);
             $log->debug("Executing every 10 and will check for new jobs");
-            monitor_jobs();
+            return fetch_jobs();
         },
         sub {
         my ($subprocess, $err, @results) = @_;
         $subprocess->ioloop->emit('new_jobs');
-        # $->emit('newjobs');
     });
+
+    $log->info("New jobs monitoring finished");
 
 });
 
-Mojo::IOLoop->start;
+#Mojo::IOLoop->start;
 
-return 0;
+fetch_jobs();
 
 # vim: set sw=4 sts=4 et:
