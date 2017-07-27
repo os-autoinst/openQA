@@ -1302,6 +1302,11 @@ sub update_status {
         return $ret;
     }
 
+    if ($status->{setup}) {
+        $self->update({state => SETUP});
+        return $ret;
+    }
+
     $self->append_log($status->{log},             "autoinst-log-live.txt");
     $self->append_log($status->{serial_log},      "serial-terminal-live.txt");
     $self->append_log($status->{serial_terminal}, "serial-terminal-live.txt");
