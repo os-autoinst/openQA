@@ -157,10 +157,8 @@ sub ws_worker_accepted_job {
     if ($accepted_jobs->{$jobid}) {
         log_debug("Worker $accepted_jobs->{$jobid} accepted job $jobid");
         return delete $accepted_jobs->{$jobid};
-        # return ;
     }
     log_debug("Job# $jobid was not accepted");
-
     return 0;
 }
 
@@ -203,6 +201,11 @@ sub _message {
     $worker->{last_seen} = time();
     if ($json->{type} eq 'ok') {
         $ws->tx->send({json => {type => 'ok'}});
+        my $w = app->schema->resultset("Workers")->find($worker->{id});
+        if ($w and $w->dead()) {
+            log_debug("Keepalive from worker $worker->{id} received, and worker thought dead. updating DB");
+            app->schema->txn_do(sub { $w->seen; });    # Update DB from keepalives as well.
+        }
     }
     elsif ($json->{type} eq 'accepted') {
         my $jobid = $json->{jobid};
