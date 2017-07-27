@@ -62,6 +62,17 @@ sub _job_create {
     return $job;
 }
 
+subtest 'initial job module statistics' => sub {
+    # Those counters are not directly hardcoded in the jobs table of the fixtures.
+    # Instead, the counters are automatically incremented when initializing the
+    # job module fixtures.
+    my $job = $rs->find(99946);
+    is($job->passed_module_count,     28, 'number of passed modules');
+    is($job->softfailed_module_count, 1,  'number of softfailed modules');
+    is($job->failed_module_count,     1,  'number of failed modules');
+    is($job->skipped_module_count,    0,  'number of skipped modules');
+};
+
 subtest 'job with all modules passed => overall is passsed' => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'A';
@@ -76,6 +87,32 @@ subtest 'job with all modules passed => overall is passsed' => sub {
     $job->done;
     $job->discard_changes;
     is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
+    is($job->passed_module_count, 4, 'number of passed modules incremented');
+    is($job->softfailed_module_count, 0, 'number of softfailed modules not incremented');
+    is($job->failed_module_count,     0, 'number of failed modules not incremented');
+    is($job->skipped_module_count,    0, 'number of skipped modules not incremented');
+};
+
+subtest 'job with one skipped module => overall is failed' => sub {
+    my %_settings = %settings;
+    $_settings{TEST} = 'A';
+    my $job = _job_create(\%_settings);
+    $job->insert_module({name => 'e', category => 'e', script => 'e', flags => {}});
+    $job->update_module('e', {result => 'none', details => []});
+    for my $i (qw(a b c d)) {
+        $job->insert_module({name => $i, category => $i, script => $i, flags => {}});
+        $job->update_module($i, {result => 'ok', details => []});
+    }
+    $job->update;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    $job->done;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
+    is($job->passed_module_count, 4, 'number of passed modules incremented');
+    is($job->softfailed_module_count, 0, 'number of softfailed modules not incremented');
+    is($job->failed_module_count,     0, 'number of failed modules not incremented');
+    is($job->skipped_module_count,    1, 'number of skipped modules incremented');
 };
 
 subtest 'job with at least one module failed => overall is failed' => sub {
@@ -92,6 +129,10 @@ subtest 'job with at least one module failed => overall is failed' => sub {
     $job->done;
     $job->discard_changes;
     is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
+    is($job->passed_module_count, 3, 'number of passed modules incremented');
+    is($job->softfailed_module_count, 0, 'number of softfailed modules not incremented');
+    is($job->failed_module_count,     1, 'number of failed modules incremented');
+    is($job->skipped_module_count,    0, 'number of skipped modules not incremented');
 };
 
 subtest 'job with at least one softfailed and rest passed => overall is softfailed' => sub {
@@ -110,6 +151,10 @@ subtest 'job with at least one softfailed and rest passed => overall is softfail
     $job->done;
     $job->discard_changes;
     is($job->result, OpenQA::Schema::Result::Jobs::SOFTFAILED, 'job result is softfailed');
+    is($job->passed_module_count, 3, 'number of passed modules incremented');
+    is($job->softfailed_module_count, 1, 'number of softfailed modules incremented');
+    is($job->failed_module_count,     0, 'number of failed modules not incremented');
+    is($job->skipped_module_count,    0, 'number of skipped modules not incremented');
 };
 
 subtest 'job with at least one failed module and one softfailed => overall is failed' => sub {

@@ -165,6 +165,22 @@ __PACKAGE__->add_columns(
         data_type     => 'boolean',
         default_value => 1,
     },
+    passed_module_count => {
+        data_type     => 'integer',
+        default_value => 0,
+    },
+    failed_module_count => {
+        data_type     => 'integer',
+        default_value => 0,
+    },
+    softfailed_module_count => {
+        data_type     => 'integer',
+        default_value => 0,
+    },
+    skipped_module_count => {
+        data_type     => 'integer',
+        default_value => 0,
+    },
 );
 __PACKAGE__->add_timestamps;
 
@@ -213,7 +229,7 @@ sub sqlt_deploy_hook {
     $sqlt_table->add_index(name => 'idx_jobs_scenario',    fields => [qw(VERSION DISTRI FLAVOR TEST MACHINE ARCH)]);
 }
 
-# overload to straighten out job modules
+# override to straighten out job modules
 sub delete {
     my ($self) = @_;
 
