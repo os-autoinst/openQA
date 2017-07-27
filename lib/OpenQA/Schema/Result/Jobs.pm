@@ -1279,6 +1279,11 @@ sub update_status {
     my ($self, $status) = @_;
 
     my $ret = {result => 1};
+    if ($status->{proxied}) {
+        $self->update({state => PROXIED});
+        return $ret;
+    }
+
     if (!$self->worker) {
         OpenQA::Utils::log_info(
             'Got status update for job with no worker assigned (maybe running job already considered dead): '
