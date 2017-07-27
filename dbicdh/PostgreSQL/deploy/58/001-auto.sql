@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Wed Jul 19 10:43:19 2017
+-- Created on Thu Jul 27 13:16:59 2017
 -- 
 ;
 --
@@ -260,6 +260,7 @@ CREATE TABLE users (
   nickname text,
   is_operator integer DEFAULT 0 NOT NULL,
   is_admin integer DEFAULT 0 NOT NULL,
+  feature_version integer DEFAULT 0 NOT NULL,
   t_created timestamp NOT NULL,
   t_updated timestamp NOT NULL,
   PRIMARY KEY (id),

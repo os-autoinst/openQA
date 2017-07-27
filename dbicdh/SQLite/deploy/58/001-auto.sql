@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
--- Created on Wed Jul 19 10:43:19 2017
+-- Created on Thu Jul 27 13:16:59 2017
 -- 
 
 ;
@@ -222,6 +222,7 @@ CREATE TABLE users (
   nickname text,
   is_operator integer NOT NULL DEFAULT 0,
   is_admin integer NOT NULL DEFAULT 0,
+  feature_version integer NOT NULL DEFAULT 0,
   t_created timestamp NOT NULL,
   t_updated timestamp NOT NULL
 );
