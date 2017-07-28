@@ -86,7 +86,7 @@ sub update_caps {
 }
 
 sub all_properties {
-    map { lc($_->key()) => $_->value() } shift->properties->all();
+    map { $_->key => $_->value } shift->properties->all();
 }
 
 sub get_property {
@@ -94,6 +94,12 @@ sub get_property {
 
     my $r = $self->properties->find({key => $key});
     return $r ? $r->value : undef;
+}
+
+sub delete_property {
+    my ($self, $key) = @_;
+
+    return $self->properties->find({key => $key})->delete;
 }
 
 sub set_property {
@@ -151,6 +157,36 @@ sub connected {
     my $ipc = OpenQA::IPC->ipc;
     return $ipc->websockets('ws_is_worker_connected', $self->id) ? 1 : 0;
 }
+
+sub unprepare_for_work {
+    my $self = shift;
+    # $self->set_property('JOBTOKEN');
+    # $self->set_property('STOP_WAITFORNEEDLE_REQUESTED');
+    # $self->set_property('STOP_WAITFORNEEDLE_REQUESTED');
+
+    $self->delete_property('STOP_WAITFORNEEDLE_REQUESTED');
+    $self->delete_property('JOBTOKEN');
+    $self->delete_property('WORKER_TMPDIR');
+
+    return $self;
+}
+
+# sub free {
+#     my $self   = shift;
+#     my $result = 0;
+#     try {
+#         $self->job(undef);
+#         $self->update;
+#
+#         $result = 1;
+#         log_debug("Worker '" . $self->id . "' has no job assigned anymore");
+#     }
+#     catch {
+#         log_debug("Worker '" . $self->id . "' failed to set it free");
+#
+#     };
+#     return $result;
+# }
 
 sub info {
     my ($self) = @_;

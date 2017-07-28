@@ -29,11 +29,14 @@ use OpenQA::Scheduler::Locks     ();
 use OpenQA::Utils 'log_debug';
 use OpenQA::ServerStartup;
 
-# How many jobs to allocate in one tick. Defaults to 0 (as much as possible)
-use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 20;
+# How many jobs to allocate in one tick. Defaults to 50 ( set it to 0 for as much as possible)
+use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 50;
 
-# How many attempts have to be performed to find a job before assuming there is nothing to be scheduled
-use constant FIND_JOB_ATTEMPTS => $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS} // 2;
+# How many attempts have to be performed to find a job before assuming there is nothing to be scheduled. Defaults to 1
+use constant FIND_JOB_ATTEMPTS => $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS} // 1;
+
+# Shuffle free available workers. Defaults to 1
+use constant SHUFFLE_WORKERS => $ENV{OPENQA_SCHEDULER_SHUFFLE_WORKERS} // 1;
 
 # Exp. backoff to avoid congestion.
 # Enable it with 1, disable with 0. Following options depends on it.
@@ -51,8 +54,8 @@ use constant MAX_BACKOFF => $ENV{OPENQA_SCHEDULER_MAX_BACKOFF} // 360000;
 # Our exponent, used to calculate backoff. Defaults to 2 (Binary)
 use constant EXPBACKOFF => $ENV{OPENQA_SCHEDULER_EXP_BACKOFF} // 2;
 
-# Timer reset to avoid starvation caused by congestion. Defaults to 660s
-use constant CAPTURE_LOOP_AVOIDANCE => $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} // 50000;
+# Timer reset to avoid starvation caused by congestion. Defaults to 70s
+use constant CAPTURE_LOOP_AVOIDANCE => $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} // 70000;
 
 # set it to 1 if you want to backoff when no jobs can be assigned
 use constant BUSY_BACKOFF => $ENV{OPENQA_SCHEDULER_BUSY_BACKOFF} // 1;
