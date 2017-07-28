@@ -143,7 +143,7 @@ sub create {
         $json->{error} = "$_";
     };
 
-    notify_workers unless $json->{error};
+    #  notify_workers unless $json->{error};
 
     $self->render(json => $json, status => $status);
 }
@@ -383,7 +383,7 @@ sub done {
     my $children = $job->deps_hash->{children};
     if (@{$children->{Chained}} && grep { $res eq $_ } OpenQA::Schema::Result::Jobs::OK_RESULTS) {
         $self->app->log->debug("Job result OK and has chained children! Notifying workers");
-        notify_workers;
+        #  notify_workers;
     }
 
     # See comment in set_command
@@ -448,7 +448,7 @@ sub duplicate {
 
     my $dup = $job->auto_duplicate($args);
     if ($dup) {
-        notify_workers;
+        #  notify_workers;
         $self->emit_event(
             'openqa_job_duplicate',
             {

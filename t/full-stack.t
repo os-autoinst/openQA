@@ -25,6 +25,11 @@ BEGIN {
     use Mojo::File qw(path tempdir);
     $ENV{OPENQA_BASEDIR} = path(tempdir, 't', 'full-stack.d');
     $ENV{OPENQA_CONFIG} = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
+    # Since tests depends on timing, we require the scheduler to be fixed in its actions.
+    $ENV{OPENQA_SCHEDULER_TIMESLOT}           = 3000;
+    $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 1;
+    $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS}  = 1;
+    $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL} = 0;
     path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
     path($FindBin::Bin, "data")->child("database.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("database.ini"));
     path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
