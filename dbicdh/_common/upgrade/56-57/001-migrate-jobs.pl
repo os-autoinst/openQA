@@ -22,16 +22,26 @@ sub {
     my ($schema) = @_;
 
     my $jobs = $schema->resultset('Jobs');
-    my $all_result_stats = OpenQA::Schema::Result::JobModules::job_module_stats([map { $_->id } $jobs->all]);
 
     while (my $job = $jobs->next) {
-        my $result_stats = $all_result_stats->{$job->id} or next;
+        my $stats = {passed => 0, failed => 0, softfailed => 0, none => 0};
+
+        my $query = $schema->resultset("JobModules")->search(
+            {job_id => $job->id},
+            {
+                select   => ['job_id', 'result', {count => 'id'}],
+                as       => [qw(job_id result count)],
+                group_by => [qw(job_id result)]});
+
+        while (my $line = $query->next) {
+            $stats->{$line->result} = $line->get_column('count');
+        }
         $job->update(
             {
-                passed_module_count     => $result_stats->{passed},
-                failed_module_count     => $result_stats->{failed},
-                softfailed_module_count => $result_stats->{softfailed},
-                skipped_module_count    => $result_stats->{none},
+                passed_module_count     => $stats->{passed},
+                failed_module_count     => $stats->{failed},
+                softfailed_module_count => $stats->{softfailed},
+                skipped_module_count    => $stats->{none},
             });
     }
   }
