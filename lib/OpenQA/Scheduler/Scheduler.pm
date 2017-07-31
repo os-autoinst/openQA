@@ -233,7 +233,7 @@ sub schedule {
                   && OpenQA::Scheduler::CONGESTION_CONTROL()
                   && OpenQA::Scheduler::BUSY_BACKOFF()
                   && $all_workers > 0;
-
+                my $allocating = {};
                 for my $w (@free_workers) {
                     my $allocated_job = job_grab(
                         workerid     => $w->id(),
@@ -243,7 +243,9 @@ sub schedule {
                         max_attempts => OpenQA::Scheduler::FIND_JOB_ATTEMPTS());
                     $allocated_job->{assigned_worker_id} = $w->id() if $allocated_job;
                     next unless $allocated_job && exists $allocated_job->{id};
-                    push(@allocated_jobs, $allocated_job);
+      # TODO: we need to be sure job_grab is not returning the same job for different workers - for now do not push them
+                    push(@allocated_jobs, $allocated_job) if !exists $allocating->{$allocated_job->{id}};
+                    $allocating->{$allocated_job->{id}}++;
                 }
                 return @allocated_jobs;
             });
