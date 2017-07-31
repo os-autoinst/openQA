@@ -169,10 +169,7 @@ sub websocket_commands {
             if ($job && $job->{id}) {
                 $OpenQA::Worker::Common::job = $job;
                 log_debug("Job " . $job->{id} . " scheduled for next cycle");
-                Mojo::IOLoop->singleton->next_tick(
-                    sub {
-                        $tx->send({json => {type => "accepted", jobid => $job->{id}}} => sub { start_job($host); });
-                    });
+                $tx->send({json => {type => "accepted", jobid => $job->{id}}} => sub { start_job($host); });
             }
             else {
                 $job_in_progress = 0;
