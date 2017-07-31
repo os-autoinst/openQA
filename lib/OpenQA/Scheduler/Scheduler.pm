@@ -225,9 +225,10 @@ sub schedule {
                     #          x !!(OpenQA::Scheduler::MAX_JOB_ALLOCATION() > 0)
 
                 )->all();
-                @free_workers = shuffle(@free_workers) if OpenQA::Scheduler::SHUFFLE_WORKERS();
-                log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers | Failures# ${failure}");
-
+                @free_workers = shuffle(@free_workers)
+                  if OpenQA::Scheduler::SHUFFLE_WORKERS();   # shuffle avoids starvation if a free worker keeps failing.
+                log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
+                log_debug("\t Failure# ${failure}") if OpenQA::Scheduler::CONGESTION_CONTROL();
                 # Consider it a failure if OpenQA::Scheduler::CONGESTION_CONTROL is set
                 # so if there are no free workers scheduler will kick in later.
                 $failure++
@@ -332,11 +333,10 @@ sub schedule {
             # but it's better avoid to put ipc communication over dbus inside a transaction
             # (caused more-than-one complete sqlite database breakage locally)
             try {
-                $job->reschedule_state;
-                #  _reset_job($allocated->{id}, $allocated->{assigned_worker_id});
+                die "Failed reset" unless $job->reschedule_state;
             }
             catch {
-                log_debug("Failed resetting job '$allocated->{id}' to scheduled state :( bummer!");
+                log_debug("Failed resetting job '$allocated->{id}' to scheduled state :( bummer! Reason: $_");
                 $failure++
                   if OpenQA::Scheduler::CONGESTION_CONTROL()
                   && OpenQA::Scheduler::BUSY_BACKOFF();    # double it, we might be in a heavy load condition.

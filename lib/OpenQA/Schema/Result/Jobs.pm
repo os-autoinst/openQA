@@ -322,9 +322,8 @@ sub worker_id {
 }
 
 sub reschedule_state {
-    my $self   = shift;
-    my $state  = shift // OpenQA::Schema::Result::Jobs::SCHEDULED;
-    my $result = 0;
+    my $self = shift;
+    my $state = shift // OpenQA::Schema::Result::Jobs::SCHEDULED;
 
     # cleanup
     $self->set_property('JOBTOKEN');
@@ -332,25 +331,25 @@ sub reschedule_state {
     $self->owned_locks->delete;
     $self->locked_locks->update({locked_by => undef});
 
-    try {
-        $self->update(
-            {
-                state              => $state,
-                t_started          => undef,
-                assigned_worker_id => undef,
-            });
-        if ($self->worker) {
-            # free the worker
-            $self->worker->update({job_id => undef});
-        }
-        $result = 1;
-        log_debug("Job '" . $self->id . "' reset to '$state' state");
+    $self->update(
+        {
+            state              => $state,
+            t_started          => undef,
+            assigned_worker_id => undef,
+        });
+    if ($self->worker) {
+        # free the worker
+        $self->worker->update({job_id => undef});
     }
-    catch {
-        log_debug("Job '" . $self->id . "' FAILED reset to '$state' state");
 
-    };
-    return $result;
+    if (!defined $self->assigned_worker_id && !defined $self->worker) {
+        log_debug("Job '" . $self->id . "' reset to '$state' state");
+        return 1;
+    }
+    else {
+        log_debug("Job '" . $self->id . "' FAILED reset to '$state' state");
+        return 0;
+    }
 }
 
 sub set_scheduling_worker {
@@ -931,12 +930,13 @@ sub set_running {
                 state     => RUNNING,
                 t_started => now()});
         log_debug("[Job#" . $self->id . "] set to running state");
+        return 1;
     }
     else {
         log_debug(
             "[Job#" . $self->id . "] is already in state '" . $self->state . "' with result '" . $self->result . "'");
+        return 0;
     }
-    return $self;
 }
 
 sub set_property {
