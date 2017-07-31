@@ -206,7 +206,10 @@ sub schedule {
                 log_debug("[Congestion control] Resetting failures count. Next scheduler round will be reset to "
                       . OpenQA::Scheduler::SCHEDULE_TICK_MS()
                       . "ms");
-                _reschedule(OpenQA::Scheduler::SCHEDULE_TICK_MS());
+                _reschedule(
+                    OpenQA::Scheduler::BUSY_BACKOFF() ?
+                      OpenQA::Scheduler::SCHEDULE_TICK_MS() + 1000
+                    : OpenQA::Scheduler::SCHEDULE_TICK_MS());
             })) if (OpenQA::Scheduler::CONGESTION_CONTROL());
 
     my @allocated_jobs;
@@ -347,14 +350,34 @@ sub schedule {
       && OpenQA::Scheduler::CONGESTION_CONTROL()
       && OpenQA::Scheduler::BUSY_BACKOFF();
 
-    if ($failure > 0 && OpenQA::Scheduler::CONGESTION_CONTROL()) {
-        my $backoff = ((OpenQA::Scheduler::EXPBACKOFF()**$failure) - 1) * OpenQA::Scheduler::TIMESLOT();
-        log_debug "[Congestion control] Failures# ${failure} - Backoff period is : ${backoff}ms";
-        _reschedule($backoff > OpenQA::Scheduler::MAX_BACKOFF() ? OpenQA::Scheduler::MAX_BACKOFF() : $backoff);
+    my $elapsed_rounded = sprintf("%.5f", (time - $start_time));
+    log_debug "Scheduler took ${elapsed_rounded}s to perform operations";
+
+    if (
+        ($failure > 0
+            && OpenQA::Scheduler::CONGESTION_CONTROL()
+        )    # We had failures, so we will use the calculated backoff to reschedule
+        || (OpenQA::Scheduler::BUSY_BACKOFF()
+            && ((int(${elapsed_rounded}) * 1000) > OpenQA::Scheduler::SCHEDULE_TICK_MS())
+        ) # We took too much time to schedule, so we reschedule next round later. We can't rely on CONGESTION_CONTROL, could be disabled
+          # NOTE: This is particularly useful when we have a lot of free workers.
+          # Since the query to seek a new job in current implementation is *still* per-worker;
+          # if we have a big number of free nodes (mostly in bootstrapping of large clusters)
+          # the overall time of schedule() is affected by the sum of the time that job_grab
+          # takes to a find a job for each worker. Hence it's reccomended to enable BUSY_BACKOFF
+      )
+    {
+        my $backoff
+          = OpenQA::Scheduler::CONGESTION_CONTROL()
+          ?
+          ((OpenQA::Scheduler::EXPBACKOFF()**$failure) - 1) * OpenQA::Scheduler::TIMESLOT()
+          : OpenQA::Scheduler::SCHEDULE_TICK_MS() * OpenQA::Scheduler::EXPBACKOFF();
+        $backoff = $backoff > OpenQA::Scheduler::MAX_BACKOFF() ? OpenQA::Scheduler::MAX_BACKOFF() : $backoff + 1000;
+        log_debug "[Congestion control] Calculated backoff: ${backoff}ms";
+        log_debug "[Congestion control] Failures# ${failure}" if OpenQA::Scheduler::CONGESTION_CONTROL();
+        _reschedule($backoff);
     }
 
-    my $elapsed_rounded = sprintf("%.5f", (time - $start_time));
-    log_debug("Scheduler took ${elapsed_rounded}s to perform operations");
     log_debug("+=" . ("-" x 16) . "=+");
 }
 
