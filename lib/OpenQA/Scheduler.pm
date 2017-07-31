@@ -42,20 +42,20 @@ use constant SHUFFLE_WORKERS => $ENV{OPENQA_SCHEDULER_SHUFFLE_WORKERS} // 1;
 # Enable it with 1, disable with 0. Following options depends on it.
 use constant CONGESTION_CONTROL => $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL} // 1;
 
-# Timeslot. Defaults to 3s
-use constant TIMESLOT => $ENV{OPENQA_SCHEDULER_TIMESLOT} // 3000;
+# Timeslot. Defaults to 8s
+use constant TIMESLOT => $ENV{OPENQA_SCHEDULER_TIMESLOT} // 8000;
 
 # Scheduler default clock. Defaults to timeslot
 use constant SCHEDULE_TICK_MS => $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} // TIMESLOT;
 
-# Maximum backoff. Defaults to 360s
-use constant MAX_BACKOFF => $ENV{OPENQA_SCHEDULER_MAX_BACKOFF} // 360000;
+# Maximum backoff. Defaults to 560s
+use constant MAX_BACKOFF => $ENV{OPENQA_SCHEDULER_MAX_BACKOFF} // 560000;
 
 # Our exponent, used to calculate backoff. Defaults to 2 (Binary)
 use constant EXPBACKOFF => $ENV{OPENQA_SCHEDULER_EXP_BACKOFF} // 2;
 
-# Timer reset to avoid starvation caused by congestion. Defaults to 70s
-use constant CAPTURE_LOOP_AVOIDANCE => $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} // 70000;
+# Timer reset to avoid starvation caused by congestion. Defaults to 660s
+use constant CAPTURE_LOOP_AVOIDANCE => $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} // 660000;
 
 # set it to 1 if you want to backoff when no jobs can be assigned
 use constant BUSY_BACKOFF => $ENV{OPENQA_SCHEDULER_BUSY_BACKOFF} // 1;

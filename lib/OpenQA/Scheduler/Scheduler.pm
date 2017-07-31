@@ -42,7 +42,7 @@ use lib $FindBin::Bin;
 use OpenQA::Utils qw(log_debug log_warning notify_workers send_job_to_worker is_job_allocated);
 use db_helpers 'rndstr';
 use Time::HiRes 'time';
-use List::Util qw(shuffle);
+use List::Util 'shuffle';
 use OpenQA::IPC;
 
 use Carp;
@@ -171,12 +171,13 @@ sub schedule {
 
         if ($expected_workerid == $workerid) {
             try {
-                $job->set_running;              #avoids to reset the state if the worker killed the job immediately
-                log_debug("[Job#${j}] Accepted by worker $expected_workerid");
+                die "Could not set the job to running state. "
+                  unless $job->set_running;     #avoids to reset the state if the worker killed the job immediately
+                log_debug("[Job#${j}] Accepted by worker $expected_workerid - setted to running state");
             }
             catch {
                 # Aborts and set the job to scheduled again
-                $job->reschedule_rollback;
+                $job->reschedule_rollback if $job->result eq OpenQA::Schema::Result::Jobs::NONE;
                 $failure++
                   if OpenQA::Scheduler::CONGESTION_CONTROL()
                   && OpenQA::Scheduler::BUSY_BACKOFF();
@@ -205,7 +206,10 @@ sub schedule {
                 log_debug("[Congestion control] Resetting failures count. Next scheduler round will be reset to "
                       . OpenQA::Scheduler::SCHEDULE_TICK_MS()
                       . "ms");
-                _reschedule(OpenQA::Scheduler::SCHEDULE_TICK_MS());
+                _reschedule(
+                    OpenQA::Scheduler::BUSY_BACKOFF() ?
+                      OpenQA::Scheduler::SCHEDULE_TICK_MS() + 1000
+                    : OpenQA::Scheduler::SCHEDULE_TICK_MS());
             })) if (OpenQA::Scheduler::CONGESTION_CONTROL());
 
     my @allocated_jobs;
@@ -235,14 +239,29 @@ sub schedule {
                   && $all_workers > 0;
                 my $allocating = {};
                 for my $w (@free_workers) {
-                    my $allocated_job = job_grab(
+
+                    my @possible_jobs = job_grab(
                         workerid     => $w->id(),
                         blocking     => 0,
                         allocate     => 0,
                         scheduler    => 1,
+                        jobs         => OpenQA::Scheduler::MAX_JOB_ALLOCATION(),
                         max_attempts => OpenQA::Scheduler::FIND_JOB_ATTEMPTS());
+                    log_debug("[Worker#" . $w->id() . "] Possible jobs to allocate: " . scalar(@possible_jobs));
+                    my $allocated_job;
+                    for my $p_job (@possible_jobs) {
+                        next if exists $p_job->{id} && exists $allocating->{$p_job->{id}};
+                        last if $allocated_job;
+                        $allocated_job = $p_job;
+                    }
+                    log_debug(pp(\@possible_jobs));
+                    log_debug("[Worker#" . $w->id() . "] Among them, we have chosen job: " . $allocated_job->{id})
+                      if $allocated_job && exists $allocated_job->{id};
+
                     $allocated_job->{assigned_worker_id} = $w->id() if $allocated_job;
                     next unless $allocated_job && exists $allocated_job->{id};
+
+
       # TODO: we need to be sure job_grab is not returning the same job for different workers - for now do not push them
                     push(@allocated_jobs, $allocated_job) if !exists $allocating->{$allocated_job->{id}};
                     $allocating->{$allocated_job->{id}}++;
@@ -346,21 +365,41 @@ sub schedule {
       && OpenQA::Scheduler::CONGESTION_CONTROL()
       && OpenQA::Scheduler::BUSY_BACKOFF();
 
-    if ($failure > 0 && OpenQA::Scheduler::CONGESTION_CONTROL()) {
-        my $backoff = ((OpenQA::Scheduler::EXPBACKOFF()**$failure) - 1) * OpenQA::Scheduler::TIMESLOT();
-        log_debug "[Congestion control] Failures# ${failure} - Backoff period is : ${backoff}ms";
-        _reschedule($backoff > OpenQA::Scheduler::MAX_BACKOFF() ? OpenQA::Scheduler::MAX_BACKOFF() : $backoff);
+    my $elapsed_rounded = sprintf("%.5f", (time - $start_time));
+    log_debug "Scheduler took ${elapsed_rounded}s to perform operations";
+
+    if (
+        ($failure > 0
+            && OpenQA::Scheduler::CONGESTION_CONTROL()
+        )    # We had failures, so we will use the calculated backoff to reschedule
+        || (OpenQA::Scheduler::BUSY_BACKOFF()
+            && ((int(${elapsed_rounded}) * 1000) > OpenQA::Scheduler::SCHEDULE_TICK_MS())
+        ) # We took too much time to schedule, so we reschedule next round later. We can't rely on CONGESTION_CONTROL, could be disabled
+          # NOTE: This is particularly useful when we have a lot of free workers.
+          # Since the query to seek a new job in current implementation is *still* per-worker;
+          # if we have a big number of free nodes (mostly in bootstrapping of large clusters)
+          # the overall time of schedule() is affected by the sum of the time that job_grab
+          # takes to a find a job for each worker. Hence it's reccomended to enable BUSY_BACKOFF
+      )
+    {
+        my $backoff
+          = OpenQA::Scheduler::CONGESTION_CONTROL()
+          ?
+          ((OpenQA::Scheduler::EXPBACKOFF()**($failure || 1)) - 1) * OpenQA::Scheduler::TIMESLOT()
+          : OpenQA::Scheduler::SCHEDULE_TICK_MS() * OpenQA::Scheduler::EXPBACKOFF();
+        $backoff = $backoff > OpenQA::Scheduler::MAX_BACKOFF() ? OpenQA::Scheduler::MAX_BACKOFF() : $backoff + 1000;
+        log_debug "[Congestion control] Calculated backoff: ${backoff}ms";
+        log_debug "[Congestion control] Failures# ${failure}" if OpenQA::Scheduler::CONGESTION_CONTROL();
+        _reschedule($backoff, 1);
     }
 
-    my $elapsed_rounded = sprintf("%.5f", (time - $start_time));
-    log_debug("Scheduler took ${elapsed_rounded}s to perform operations");
     log_debug("+=" . ("-" x 16) . "=+");
 }
 
 sub _reschedule {
-    my $time             = shift;
+    my ($time, $force) = @_;
     my $current_interval = reactor->{timeouts}->[reactor->{timer}->{schedule_jobs}]->{interval};
-    return unless $current_interval != $time;
+    return unless ($current_interval != $time || $force);
     log_debug "[scheduler] Current tick is at ${current_interval}ms. New tick will be in: ${time}ms";
     reactor->remove_timeout(reactor->{timer}->{schedule_jobs});
     reactor->{timer}->{schedule_jobs} = reactor->add_timeout(
@@ -483,17 +522,16 @@ sub _job_allocate {
       #        });
 }
 
-
 sub job_grab {
     my %args     = @_;
     my $workerid = $args{workerid};
     my $blocking = int($args{blocking} || 0);
     #    my $workercaps = $args{workercaps};
     my $allocate = int($args{allocate} || 0);
+    my $job_n = $args{jobs} // 0;
     return {} unless $args{scheduler};
 
     my $worker;
-    my $result;
     my $attempt = 0;
     my $matching_job;
 
@@ -501,6 +539,7 @@ sub job_grab {
     # and blocking now just sets $max_attempts to 999.
     # Defaults to 1 (were observed in tests 2 is sufficient) before returning no jobs.
     my $limit_attempts = 2000;
+    my @jobs;
 
     my $max_attempts
       = $blocking ?
@@ -542,9 +581,18 @@ sub job_grab {
             schema->txn_do(
                 sub {
                     # now query for the best
-                    $matching_job = _get_job($worker);
-                    $worker = _job_allocate($matching_job->id, $worker->id(), OpenQA::Schema::Result::Jobs::RUNNING)
-                      if ($matching_job && $allocate);
+                    my $search = schema->resultset("Jobs")->search(
+                        {
+                            state => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                            id    => [_build_search_query($worker)],
+                        },
+                        {order_by => {-asc => [qw(priority id)]}});
+
+                    @jobs = $job_n > 0 ? $search->slice(0, $job_n) : $job_n == 0 ? $search->all() : ($search->first());
+
+                    $worker = _job_allocate($jobs[0]->id, $worker->id(), OpenQA::Schema::Result::Jobs::RUNNING)
+                      if ($allocate && $jobs[0]);
+
                 });
         }
         catch {
@@ -552,15 +600,24 @@ sub job_grab {
             warn "Failed to grab job: $_";
         };
 
-    } until (($attempt >= $max_attempts) || $matching_job);
+    } until (($attempt >= $max_attempts) || scalar(@jobs) > 0);
 
-    return $matching_job ? $matching_job->to_hash(assets => 1) : {} unless $allocate;
+# Check if we had more than one result, if we had convert them into hashrefs, otherwise return the single result or none if not found.
+
+    return $job_n >= 0 ?
+      @jobs ?
+        map { $_->to_hash(assets => 1) } @jobs
+        : ()
+      : $jobs[0] ?
+      $jobs[0]->to_hash(assets => 1)
+      : {}
+      unless ($allocate);
+#return scalar(@jobs) == 0 ? () : $job_n!=1 ? map {$_->to_hash(assets => 1)} @jobs : $jobs[0] ?  $jobs[0]->to_hash(assets => 1) : {}  unless ($allocate);
+
+    return {} unless ($worker && $worker->job && $worker->job->state eq OpenQA::Schema::Result::Jobs::RUNNING);
 
     my $job = $worker->job;
-    return {} unless ($job && $job->state eq OpenQA::Schema::Result::Jobs::RUNNING);
-
     log_debug("Got job " . $job->id());
-
     return $job->prepare_for_work($worker);
 }
 

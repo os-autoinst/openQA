@@ -336,13 +336,14 @@ sub reschedule_state {
             state              => $state,
             t_started          => undef,
             assigned_worker_id => undef,
+            result             => NONE
         });
     if ($self->worker) {
         # free the worker
         $self->worker->update({job_id => undef});
     }
-
-    if (!defined $self->assigned_worker_id && !defined $self->worker) {
+    if ($self->state eq $state) {
+        #if (!$self->assigned_worker_id && !$self->worker) {
         log_debug("Job '" . $self->id . "' reset to '$state' state");
         return 1;
     }
@@ -361,18 +362,16 @@ sub reschedule_rollback {
 }
 
 sub set_scheduling_worker {
-    my ($self, $worker, $state) = @_;
-    $state //= OpenQA::Schema::Result::Jobs::SCHEDULED;
+    my ($self, $worker) = @_;
     return 0 unless $worker;
 
     $self->update(
         {
-            state              => $state,
-            t_started          => ($state eq RUNNING) ? now() : undef,
+            state              => SCHEDULED,
+            t_started          => undef,
             assigned_worker_id => $worker->id,
         });
 
-    # free the worker
     $worker->update({job_id => $self->id});
 
     if ($worker->job->id eq $self->id) {
@@ -939,13 +938,17 @@ sub scheduler_abort {
 sub set_running {
     my $self = shift;
 
-    #avoids to reset the state if e.g. the worker killed the job immediately
-    if ($self->state eq SCHEDULED || $self->result eq NONE) {
+    # avoids to reset the state if e.g. the worker killed the job immediately
+    if ($self->state eq SCHEDULED && $self->result eq NONE) {
         $self->update(
             {
                 state     => RUNNING,
                 t_started => now()});
-        log_debug("[Job#" . $self->id . "] set to running state");
+
+    }
+
+    if ($self->state eq RUNNING) {
+        log_debug("[Job#" . $self->id . "] is in the running state");
         return 1;
     }
     else {
