@@ -42,7 +42,7 @@ use lib $FindBin::Bin;
 use OpenQA::Utils qw(log_debug log_warning notify_workers send_job_to_worker is_job_allocated);
 use db_helpers 'rndstr';
 use Time::HiRes 'time';
-use List::Util qw(shuffle);
+use List::Util 'shuffle';
 use OpenQA::IPC;
 
 use Carp;
@@ -171,12 +171,13 @@ sub schedule {
 
         if ($expected_workerid == $workerid) {
             try {
-                $job->set_running;              #avoids to reset the state if the worker killed the job immediately
-                log_debug("[Job#${j}] Accepted by worker $expected_workerid");
+                die "Could not set the job to running state. "
+                  unless $job->set_running;     #avoids to reset the state if the worker killed the job immediately
+                log_debug("[Job#${j}] Accepted by worker $expected_workerid - setted to running state");
             }
             catch {
                 # Aborts and set the job to scheduled again
-                $job->reschedule_rollback;
+                $job->reschedule_rollback if $job->result eq OpenQA::Schema::Result::Jobs::NONE;
                 $failure++
                   if OpenQA::Scheduler::CONGESTION_CONTROL()
                   && OpenQA::Scheduler::BUSY_BACKOFF();
