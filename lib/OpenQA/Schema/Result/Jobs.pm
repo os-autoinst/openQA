@@ -352,6 +352,13 @@ sub reschedule_state {
     }
 }
 
+sub reschedule_rollback {
+    my $self = shift;
+    $self->abort();    # TODO: this might become a problem if we have duplicated job IDs from 2 or more WebUI
+                       # Workers should be able to kill a job checking the (job token + job id) instead.
+    return $self->reschedule_state();
+}
+
 sub set_scheduling_worker {
     my ($self, $worker, $state) = @_;
     $state //= OpenQA::Schema::Result::Jobs::SCHEDULED;
