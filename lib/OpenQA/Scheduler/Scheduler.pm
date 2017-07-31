@@ -289,7 +289,7 @@ sub schedule {
                       = {assigned_worker_id => $allocated->{assigned_worker_id}, result => $allocated->{result}};
                 }
                 else {
-                    die "Failed rollback of job" unless $job->reschedule_rollback;
+                    die "Failed rollback of job" unless $job->reschedule_rollback($worker);
                 }
             }
             catch {

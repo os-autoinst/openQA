@@ -289,6 +289,13 @@ sub _stop_job {
     # checksums again can take a long while, so the webui needs to know
     log_debug('stop_job 2nd part') if $verbose;
 
+    if ($aborted eq "scheduler_abort") {
+        log_debug('stop_job called by the scheduler. do not send logs');
+        _kill_worker($worker);
+        _reset_state;
+        return;
+    }
+
     # the update_status timers and such are gone by now (1st part), so we're
     # basically "single threaded" and can block
 

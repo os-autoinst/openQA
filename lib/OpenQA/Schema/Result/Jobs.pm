@@ -353,9 +353,10 @@ sub reschedule_state {
 }
 
 sub reschedule_rollback {
-    my $self = shift;
-    $self->abort();    # TODO: this might become a problem if we have duplicated job IDs from 2 or more WebUI
-                       # Workers should be able to kill a job checking the (job token + job id) instead.
+    my ($self, $worker) = @_;
+    $self->scheduler_abort($worker)
+      ;    # TODO: this might become a problem if we have duplicated job IDs from 2 or more WebUI
+           # Workers should be able to kill a job checking the (job token + job id) instead.
     return $self->reschedule_state();
 }
 
@@ -925,6 +926,14 @@ sub abort {
     return unless $self->worker;
     log_debug("[Job#" . $self->id . "] Sending abort command");
     $self->worker->send_command(command => 'abort', job_id => $self->id);
+}
+
+sub scheduler_abort {
+    my ($self, $worker) = @_;
+    return unless $self->worker || $worker;
+    $worker = $self->worker unless $worker;
+    log_debug("[Job#" . $self->id . "] Sending scheduler_abort command to worker: " . $worker->id);
+    $worker->send_command(command => 'scheduler_abort', job_id => $self->id);
 }
 
 sub set_running {

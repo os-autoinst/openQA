@@ -22,6 +22,7 @@ use OpenQA::IPC;
 use OpenQA::Utils qw(log_debug log_warning log_error notify_workers);
 use OpenQA::Schema;
 use OpenQA::ServerStartup;
+use Data::Dumper;
 
 use db_profiler;
 
@@ -193,10 +194,11 @@ sub _message {
         return;
     }
     unless (ref($json) eq 'HASH') {
-        use Data::Dumper;
         log_error(sprintf('Received unexpected WS message "%s from worker %u', Dumper($json), $worker->id));
         return;
     }
+
+    $ws->app->log->debug(sprintf('Received WS message "%s from worker %u', Dumper($json), $worker->{id}));
 
     $worker->{last_seen} = time();
     if ($json->{type} eq 'ok') {

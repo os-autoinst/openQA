@@ -25,7 +25,7 @@ use OpenQA::Utils 'log_error';
 use OpenQA::IPC;
 use db_helpers;
 
-use constant COMMANDS => qw(quit abort cancel obsolete job_available
+use constant COMMANDS => qw(quit abort scheduler_abort cancel obsolete job_available
   enable_interactive_mode disable_interactive_mode
   stop_waitforneedle reload_needles_and_retry continue_waitforneedle
   livelog_stop livelog_start);
