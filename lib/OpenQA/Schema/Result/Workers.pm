@@ -25,7 +25,7 @@ use OpenQA::Utils 'log_error';
 use OpenQA::IPC;
 use db_helpers;
 
-use constant COMMANDS => qw(quit abort cancel obsolete job_available
+use constant COMMANDS => qw(quit abort scheduler_abort cancel obsolete job_available
   enable_interactive_mode disable_interactive_mode
   stop_waitforneedle reload_needles_and_retry continue_waitforneedle
   livelog_stop livelog_start);
@@ -160,9 +160,6 @@ sub connected {
 
 sub unprepare_for_work {
     my $self = shift;
-    # $self->set_property('JOBTOKEN');
-    # $self->set_property('STOP_WAITFORNEEDLE_REQUESTED');
-    # $self->set_property('STOP_WAITFORNEEDLE_REQUESTED');
 
     $self->delete_property('STOP_WAITFORNEEDLE_REQUESTED');
     $self->delete_property('JOBTOKEN');
@@ -170,23 +167,6 @@ sub unprepare_for_work {
 
     return $self;
 }
-
-# sub free {
-#     my $self   = shift;
-#     my $result = 0;
-#     try {
-#         $self->job(undef);
-#         $self->update;
-#
-#         $result = 1;
-#         log_debug("Worker '" . $self->id . "' has no job assigned anymore");
-#     }
-#     catch {
-#         log_debug("Worker '" . $self->id . "' failed to set it free");
-#
-#     };
-#     return $result;
-# }
 
 sub info {
     my ($self) = @_;

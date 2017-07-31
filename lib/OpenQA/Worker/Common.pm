@@ -354,8 +354,6 @@ sub call_websocket {
                 $ws_to_host->{$hosts->{$host}{ws}} = $host;
 
                 $hosts->{$host}{accepting_jobs} = 1;
-                # check for new job immediately
-                # OpenQA::Worker::Jobs::check_job($host);
             }
             else {
                 delete $ws_to_host->{$hosts->{$host}{ws}} if ($hosts->{$host}{ws});
