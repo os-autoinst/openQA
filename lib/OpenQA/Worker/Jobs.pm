@@ -112,7 +112,7 @@ sub check_job {
             my ($res) = @_;
             return unless ($res);
             $job = $res->{job};
-            if ($job && $job->{id}) {
+            if ($job && ref($job) eq "HASH" && $job->{id}) {
                 Mojo::IOLoop->next_tick(sub { start_job($host) });
             }
             else {
