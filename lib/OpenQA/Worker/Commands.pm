@@ -125,13 +125,55 @@ sub websocket_commands {
         elsif ($type eq 'job_available') {
             log_debug("received job notification from $host") if $verbose;
             if (!$job && $hosts->{$host}{accepting_jobs}) {
-                Mojo::IOLoop->next_tick(sub { check_job($host) });
+                #  Mojo::IOLoop->next_tick(sub { check_job($host) });
             }
             else {
                 if ($verbose) {
                     my $jid = $job ? $job->{id} : '';
                     log_debug("job notification ignored! job: $jid - accepting: $hosts->{$host}{accepting_jobs}");
                 }
+            }
+        }
+        elsif ($type eq 'grab_job') {
+            state $check_job_running;
+            state $job_in_progress;
+
+            my $job = $json->{job};
+            if ($job_in_progress) {
+                log_debug("Refusing, we are already performing another job");
+                return;
+            }
+
+            return unless $job;
+            return if $check_job_running->{$host};
+
+            $job_in_progress = 1;
+            $check_job_running->{$host} = 1;
+            #  Mojo::IOLoop->singleton->on("start_job" => sub {$job_in_progress = 1; $check_job_running->{$host} = 1;});
+            Mojo::IOLoop->singleton->on(
+                "stop_job" => sub {
+                    log_debug("Build finished, setting us free to pick up new jobs");
+                    $job_in_progress = 0;
+                    $check_job_running->{$host} = 0;
+                });
+
+#Kill other Ws connections to avoid race-conditions in job assignments
+# foreach my $h (grep { $_ ne $host } keys %{$OpenQA::Worker::Common::hosts}) {
+#     log_debug("Terminating connection to $h - we could receive other jobs meanwhile");
+#     $OpenQA::Worker::Common::hosts->{$h}{ws}->finish
+#       if $OpenQA::Worker::Common::hosts->{$h}{ws}->can("finish");
+#     $OpenQA::Worker::Common::hosts->{$h}{ws} = undef;
+#     delete $OpenQA::Worker::Common::ws_to_host->{$OpenQA::Worker::Common::hosts->{$h}{ws}} if $OpenQA::Worker::Common::ws_to_host->{$OpenQA::Worker::Common::hosts->{$h}{ws}};
+# }
+
+            if ($job && $job->{id}) {
+                $OpenQA::Worker::Common::job = $job;
+                log_debug("Job " . $job->{id} . " scheduled for next cycle");
+                $tx->send({json => {type => "accepted", jobid => $job->{id}}} => sub { start_job($host); });
+            }
+            else {
+                $job_in_progress = 0;
+                $check_job_running->{$host} = 0;
             }
         }
         else {

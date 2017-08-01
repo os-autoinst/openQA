@@ -23,11 +23,12 @@ use JSON;
 use Fcntl;
 use DateTime;
 use db_helpers;
-use OpenQA::Utils qw(log_debug log_info log_warning parse_assets_from_settings locate_asset);
+use OpenQA::Utils qw(log_debug log_info log_warning parse_assets_from_settings locate_asset send_job_to_worker);
 use File::Basename qw(basename dirname);
 use File::Spec::Functions 'catfile';
 use File::Path ();
 use DBIx::Class::Timestamps 'now';
+use File::Temp 'tempdir';
 
 # The state and results constants are duplicated in the Python client:
 # if you change them or add any, please also update const.py.
@@ -318,6 +319,122 @@ sub worker_id {
         return $self->worker->id;
     }
     return 0;
+}
+
+sub reschedule_state {
+    my $self = shift;
+    my $state = shift // OpenQA::Schema::Result::Jobs::SCHEDULED;
+
+    # cleanup
+    $self->set_property('JOBTOKEN');
+    $self->release_networks();
+    $self->owned_locks->delete;
+    $self->locked_locks->update({locked_by => undef});
+
+    $self->update(
+        {
+            state              => $state,
+            t_started          => undef,
+            assigned_worker_id => undef,
+            result             => NONE
+        });
+    if ($self->worker) {
+        # free the worker
+        $self->worker->update({job_id => undef});
+    }
+    if ($self->state eq $state) {
+        #if (!$self->assigned_worker_id && !$self->worker) {
+        log_debug("Job '" . $self->id . "' reset to '$state' state");
+        return 1;
+    }
+    else {
+        log_debug("Job '" . $self->id . "' FAILED reset to '$state' state");
+        return 0;
+    }
+}
+
+sub reschedule_rollback {
+    my ($self, $worker) = @_;
+    $self->scheduler_abort($worker)
+      ;    # TODO: this might become a problem if we have duplicated job IDs from 2 or more WebUI
+           # Workers should be able to kill a job checking the (job token + job id) instead.
+    return $self->reschedule_state();
+}
+
+sub set_scheduling_worker {
+    my ($self, $worker) = @_;
+    return 0 unless $worker;
+
+    $self->update(
+        {
+            state              => SCHEDULED,
+            t_started          => undef,
+            assigned_worker_id => $worker->id,
+        });
+
+    $worker->update({job_id => $self->id});
+
+    if ($worker->job->id eq $self->id) {
+        log_debug("Job '" . $self->id . "' has worker '" . $worker->id . "' assigned");
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
+sub prepare_for_work {
+    my $self   = shift;
+    my $worker = shift;
+    return unless $worker;
+    log_debug("[Job#" . $self->id . "] Prepare for being processed by worker " . $worker->id);
+    my $job_hashref = {};
+    $job_hashref = $self->to_hash(assets => 1);
+
+    $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', 0);
+    # JOBTOKEN for test access to API
+    my $token = db_helpers::rndstr;
+    $worker->set_property('JOBTOKEN', $token);
+    #$self->set_property('JOBTOKEN', $token);
+
+    $job_hashref->{settings}->{JOBTOKEN} = $token;
+
+    my $updated_settings = $self->register_assets_from_settings();
+    my @k = keys %$updated_settings; #better don't rely on random key hashes - even if we don't touch the hash meanwhile
+
+    @{$job_hashref->{settings}}{@k} = @{$updated_settings}{@k}
+      if ($updated_settings);
+
+    if (   $job_hashref->{settings}->{NICTYPE}
+        && !defined $job_hashref->{settings}->{NICVLAN}
+        && $job_hashref->{settings}->{NICTYPE} ne 'user')
+    {
+        my @networks = ('fixed');
+        @networks = split /\s*,\s*/, $job_hashref->{settings}->{NETWORKS} if $job_hashref->{settings}->{NETWORKS};
+        my @vlans;
+        for my $net (@networks) {
+            push @vlans, $self->allocate_network($net);
+        }
+        $job_hashref->{settings}->{NICVLAN} = join(',', @vlans);
+    }
+
+    # TODO: cleanup previous tmpdir
+    $worker->set_property('WORKER_TMPDIR', tempdir());
+
+    # starting one job from parallel group can unblock
+    # other jobs from the group
+    #notify_workers;
+    #$job_hashref->{assigned_worker_id} = $worker->id;
+    return $job_hashref;
+}
+
+sub ws_send {
+    my $self   = shift;
+    my $worker = shift;
+    return unless $worker;
+    my $hashref = $self->prepare_for_work($worker);
+    $hashref->{assigned_worker_id} = $worker->id;
+    return send_job_to_worker($hashref);
 }
 
 sub settings_hash {
@@ -801,6 +918,44 @@ sub auto_duplicate {
 
     log_debug('new job ' . $clones{$self->id}->id);
     return $clones{$self->id};
+}
+
+sub abort {
+    my $self = shift;
+    return unless $self->worker;
+    log_debug("[Job#" . $self->id . "] Sending abort command");
+    $self->worker->send_command(command => 'abort', job_id => $self->id);
+}
+
+sub scheduler_abort {
+    my ($self, $worker) = @_;
+    return unless $self->worker || $worker;
+    $worker = $self->worker unless $worker;
+    log_debug("[Job#" . $self->id . "] Sending scheduler_abort command to worker: " . $worker->id);
+    $worker->send_command(command => 'scheduler_abort', job_id => $self->id);
+}
+
+sub set_running {
+    my $self = shift;
+
+    # avoids to reset the state if e.g. the worker killed the job immediately
+    if ($self->state eq SCHEDULED && $self->result eq NONE) {
+        $self->update(
+            {
+                state     => RUNNING,
+                t_started => now()});
+
+    }
+
+    if ($self->state eq RUNNING) {
+        log_debug("[Job#" . $self->id . "] is in the running state");
+        return 1;
+    }
+    else {
+        log_debug(
+            "[Job#" . $self->id . "] is already in state '" . $self->state . "' with result '" . $self->result . "'");
+        return 0;
+    }
 }
 
 sub set_property {
