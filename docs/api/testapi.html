@@ -729,7 +729,7 @@ default <code>'left'</code>. <code>'left'</code> and <code>'right'</code> is sup
 <h5 id="_wait_screen_change">wait_screen_change</h5>
 <div class="literalblock">
 <div class="content">
-<pre>wait_screen_change(CODEREF [,$timeout]);</pre>
+<pre>wait_screen_change(CODEREF [,$timeout [, similarity_level =&gt; 50]]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -767,7 +767,8 @@ subroutine block.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Returns true if screen changed or <code>undef</code> on timeout. Default timeout is 10s.</p>
+<p>Returns true if screen changed or false on timeout. Default timeout is 10s. Default
+similarity_level is 50.</p>
 </div>
 </div>
 <div class="sect4">
@@ -1660,7 +1661,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-08-01 12:23:29 UTC
+Last updated 2017-08-02 17:26:40 UTC
 </div>
 </div>
 </body>
