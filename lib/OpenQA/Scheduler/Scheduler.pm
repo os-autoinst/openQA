@@ -268,7 +268,6 @@ sub schedule {
                         workerid     => $w->id(),
                         blocking     => 0,
                         allocate     => 0,
-                        scheduler    => 1,
                         jobs         => OpenQA::Scheduler::MAX_JOB_ALLOCATION(),
                         max_attempts => OpenQA::Scheduler::FIND_JOB_ATTEMPTS());
                     log_debug("[Worker#" . $w->id() . "] Possible jobs to allocate: " . scalar(@possible_jobs));
@@ -544,10 +543,6 @@ If enabled, will retry 999 times before returning no jobs available.
 
 If enabled it will allocate the job in the DB before returning the result.
 
-  scheduler    => 1
-
-Shortcut to keep the old behavior. If not setted returns no jobs.
-
   jobs         => 0
 
 How many jobs at maximum have to be found: if set to 0 it will return all possible
@@ -565,7 +560,6 @@ sub job_grab {
     my $blocking = int($args{blocking} || 0);
     my $allocate = int($args{allocate} || 0);
     my $job_n    = $args{jobs} // 0;
-    return {} unless $args{scheduler};
 
     my $worker;
     my $attempt = 0;

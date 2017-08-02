@@ -136,7 +136,7 @@ my @jobs_in_expected_order = (
     $jobE => 'C and D are now running so we can start E',
 );
 for my $i (0 .. 5) {
-    my $job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $worker_ids[$i], scheduler => 1, allocate => 1);
+    my $job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $worker_ids[$i], allocate => 1);
     is($job->{id}, ${jobs_in_expected_order [$i * 2]}->id, ${jobs_in_expected_order [$i * 2 + 1]});
     is($job->{settings}->{NICVLAN}, 1, 'same vlan for whole group');
 }
@@ -344,7 +344,7 @@ $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$job
 
 # job_grab now should return jobs from clonned group
 # we already called job_set_done on jobE, so worker 6 is available
-$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $worker_ids[5], scheduler => 1, allocate => 1);
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $worker_ids[5], allocate => 1);
 is($job->{id},                  $jobB2, "jobB2");            #lowest prio of jobs without parents
 is($job->{settings}->{NICVLAN}, 2,      "different vlan");
 

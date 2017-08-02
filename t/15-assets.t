@@ -77,7 +77,7 @@ $jobA->set_prio(1);
 my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
 my $w = $c->_register($schema, 'host', '1', $workercaps);
 # grab job
-my $job = job_grab(workerid => $w, scheduler => 1, allocate => 1);
+my $job = job_grab(workerid => $w, allocate => 1);
 is($job->{id}, $jobA->id, 'jobA grabbed');
 @assets = $jobA->jobs_assets;
 @assets = map { $_->asset_id } @assets;
@@ -133,7 +133,7 @@ $schema->resultset('JobsAssets')->create(
 
 # set jobB to running
 $jobB->set_prio(1);
-$job = job_grab(workerid => $w, scheduler => 1, allocate => 1);
+$job = job_grab(workerid => $w, allocate => 1);
 is($job->{id}, $jobB->id, 'jobB grabbed');
 @assets = $jobB->jobs_assets;
 @assets = map { $_->asset_id } @assets;

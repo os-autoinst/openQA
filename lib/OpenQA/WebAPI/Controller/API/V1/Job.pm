@@ -146,36 +146,6 @@ sub create {
     $self->render(json => $json, status => $status);
 }
 
-sub grab {
-    my $self = shift;
-    my $ipc  = OpenQA::IPC->ipc;
-
-    my $workerid = $self->stash('workerid');
-    my $blocking = int($self->param('blocking') || 0);
-    my $workerip = $self->tx->remote_address;
-    my $caps     = {};
-
-    $caps->{cpu_modelname} = $self->param('cpu_modelname');
-    $caps->{cpu_arch}      = $self->param('cpu_arch');
-    $caps->{cpu_opmode}    = $self->param('cpu_opmode');
-    $caps->{mem_max}       = $self->param('mem_max');
-
-    $self->render_later;
-    Mojo::IOLoop->subprocess(
-        sub {
-            return $ipc->scheduler('job_grab',
-                {workerid => $workerid, blocking => $blocking, workerip => $workerip, workercaps => $caps});
-        },
-        sub {
-            my ($sub, $err, $res) = @_;
-            return $self->render(json => {job => {}}) unless ref($res) eq "HASH" && !$err;
-            $self->emit_event('openqa_job_grab',
-                {workerid => $workerid, blocking => $blocking, workerip => $workerip, id => $res->{id}})
-              if $res->{id};
-            $self->render(json => {job => $res});
-        });
-}
-
 sub show {
     my $self   = shift;
     my $job_id = int($self->stash('jobid'));
