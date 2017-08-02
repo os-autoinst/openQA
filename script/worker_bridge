@@ -110,7 +110,7 @@ my $log = Mojo::Log->new;
 $options{master} ||= 'http://0DCD0E0C65A6822A:59D8C0D855F2AABD@deimos.suse.de';
 $options{slave}  ||= 'http://6468159B01623A43:FA7B6B37353EDD4F@lanner.arch.suse.de';
 $options{limit} ||= 1000;
-$options{worker_class} ||= "cluster_job";
+$options{worker_class} ||= ":provo:qemu_aarch64";
 
 #"/api/v1/jobs.json?&worker_class=aarch64_seattle9&limit=1000";
 my $master_url = Mojo::URL->new($options{master})->path("/api/v1/jobs.json")->query({
@@ -123,7 +123,6 @@ my $master = OpenQA::Client->new(
         apikey => $master_url->username,
         apisecret => $master_url->password,
     );
-
 
 my $slave_url = Mojo::URL->new($options{slave})->path("/api/v1/jobs");
 my $slave = OpenQA::Client->new(
@@ -149,19 +148,22 @@ sub move_job {
         $settings{_GROUP} = $job->{group};
     }
     delete $settings{NAME};
+    $settings{WORKER_CLASS} =~ s/:provo://;
+    $settings{PROXIED} = 1;
+
     # print JSON->new->pretty->encode(\%settings) if ($options{verbose});
     my $url = $slave_url->clone;
     $settings{federated_report} = $master_url->scheme . '://' . $master_url->host().'/tests/'.$job->{id};
+    $log->info("Posting to: ".$url->to_abs);
     $url->query(%settings);
-    $log->info("Posting to: $url");
     my $tx = $slaveUI->post($url);
     if ($tx->success) {
         my $remote_id = $tx->success->json->{id};
         if ($remote_id) {
-            my $url = $slave_url->scheme . '://' . $slave_url->host . '/tests/' . $remote_id;
-            $log->info( "Created job #$remote_id: ".$job->{name}." -> $url\n");
-                update_job($job);
-            return {jobid => $remote_id, url => $url};
+            my $new_url = $slave_url->scheme . '://' . $slave_url->host . '/tests/' . $remote_id;
+            $log->info( "Created job #$remote_id: ".$job->{name}." -> $new_url\n");
+            update_job($job);
+            return {jobid => $remote_id, url => $new_url};
         }
         else {
             die "job not created. duplicate? ", pp($tx->res->body);
@@ -180,10 +182,12 @@ sub fetch_jobs {
         my $job_count = scalar @{$masterUI->res->json->{jobs}};
         $log->info("Found: $job_count at ". $master_url->to_abs);
         foreach my $job (@{$masterUI->res->json->{jobs}}){
-            push @crop, move_job($job);
+            my $seed = move_job($job);
+            push @crop, $seed if $seed;
         }
         #my $asset_list = get_asset_list($masterUI->res->json);
     }
+    return @crop;
 }
 
 sub update_job {
@@ -193,12 +197,13 @@ sub update_job {
     $url->path("jobs/".$job->{id}."/status");
     my $js = {status => {proxied => 1}};
     # $url->query($js);
-    $log->info("Posting to: $url");
+    $log->info("Updating job: ".$job->{id}." at the MasterUI");
     my $tx = $master->post($url => json => $js);
     if ($tx->success) {
         my $req = $tx->success->json;
         if ($req) {
-            $log->debug(Dumper($req));
+            $log->debug("Job #".$job->{id}." sucessully updated in the MasterUI");
+            return 1;
         } else {
             die "job not created. duplicate? ", Dumper($tx->res->body);
         }
@@ -210,48 +215,49 @@ sub update_job {
     }
 }
 
+sub proxy_job_monitor {
+    ...
+}
+
 my $main_loop = Mojo::IOLoop->singleton;
 
 $main_loop->on(new_jobs => sub {
     my $loop = shift;
-    $log->info("New Jobs available on master webui");
-
+    $log->info("Jobs available on the MasterUI");
+    proxy_job_monitor();
     });
 
 $main_loop->on(job_progress => sub {
-    my $loop = shift;
-    $log->info("New job progress available on the webui");
+    my ($loop, @report_agrs) = shift;
+    $log->info("Job progress on the SlaveUI");
     });
 
 #$Add a timer
-$main_loop->recurring(0.2 => sub {
-    my $loop = shift;
-    $loop->emit('job_progress');
-    $log->debug("job progress event");
-});
+#$main_loop->recurring(0.2 => sub {
+#    my $loop = shift;
+#    $loop->emit('job_progress');
+#    $log->debug("job progress event");
+#});
 
 #Check for new jobs on the master webUI
 $main_loop->recurring(5 => sub {
     my $loop = shift;
     # Add a timer
-    $log->info("Checking for new jobs on the masterUI");
+    $log->info("Checking for new jobs on the MasterUI");
     Mojo::IOLoop->subprocess(
         sub {
             my $subprocess = shift;
-            $log->debug("Executing every 10 and will check for new jobs");
+            $log->debug("Checking for new jobs");
             return fetch_jobs();
         },
         sub {
         my ($subprocess, $err, @results) = @_;
-        $subprocess->ioloop->emit('new_jobs');
+        $subprocess->ioloop->emit('new_jobs', @results);
+        map { $log->info("Job ".$_->{jobid}." created at ". $_->{url}) } @results;
     });
-
     $log->info("New jobs monitoring finished");
-
 });
 
-#Mojo::IOLoop->start;
-
-fetch_jobs();
+Mojo::IOLoop->start;
 
 # vim: set sw=4 sts=4 et:
