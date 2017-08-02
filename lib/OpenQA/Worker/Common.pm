@@ -243,7 +243,7 @@ sub api_call {
             OpenQA::Worker::Jobs::stop_job('api-failure');
             # stop accepting jobs and schedule reregistration - keep the rest running
             $hosts->{$host}{accepting_jobs} = 0;
-            add_timer('register_worker', 10, sub { register_worker($host) }, 1);
+            add_timer("register_worker-$host", 10, sub { register_worker($host) }, 1);
             $callback->();
             return;
         }
@@ -337,24 +337,23 @@ sub call_websocket {
             my ($ua, $tx) = @_;
             if ($tx->is_websocket) {
                 # keep websocket connection busy
+                $tx->send({json => {type => 'ok'}});    # Send keepalive immediately
                 $hosts->{$host}{timers}{keepalive}
-                  = add_timer('keepalive', 5, sub { $tx->send({json => {type => 'ok'}}); });
+                  = add_timer("keepalive-$host", 5, sub { $tx->send({json => {type => 'ok'}}); });
 
                 $tx->on(json => \&OpenQA::Worker::Commands::websocket_commands);
                 $tx->on(
                     finish => sub {
-                        remove_timer($hosts->{$host}{timers}{keepalive});
+                        remove_timer("keepalive-$host");
                         $hosts->{$host}{timers}{setup_websocket}
-                          = add_timer('setup_websocket', 5, sub { setup_websocket($host) }, 1);
-                        delete $ws_to_host->{$hosts->{$host}{ws}};
+                          = add_timer("setup_websocket-$host", 5, sub { setup_websocket($host) }, 1);
+                        delete $ws_to_host->{$hosts->{$host}{ws}} if $ws_to_host->{$hosts->{$host}{ws}};
                         $hosts->{$host}{ws} = undef;
                     });
                 $hosts->{$host}{ws} = $tx->max_websocket_size(10485760);
                 $ws_to_host->{$hosts->{$host}{ws}} = $host;
 
                 $hosts->{$host}{accepting_jobs} = 1;
-                # check for new job immediately
-                OpenQA::Worker::Jobs::check_job($host);
             }
             else {
                 delete $ws_to_host->{$hosts->{$host}{ws}} if ($hosts->{$host}{ws});
@@ -366,21 +365,23 @@ sub call_websocket {
                 else {
                     my $err = $tx->error;
                     if (defined $err) {
-                        warn "Unable to upgrade connection to WebSocket: " . $err->{code} . ". proxy_wstunnel enabled?";
-                        if ($err->{code} eq '404' && $hosts->{$host}{workerid}) {
+                        warn "Unable to upgrade connection to WebSocket: "
+                          . ($err->{code} ? $err->{code} : "[no code]")
+                          . ". proxy_wstunnel enabled?";
+                        if ($err->{code} && $err->{code} eq '404' && $hosts->{$host}{workerid}) {
                             # worker id suddenly not known anymore. Abort. If workerid
                             # is unset we already detected that in api_call
                             $hosts->{$host}{workerid} = undef;
                             OpenQA::Worker::Jobs::stop_job('api-failure');
                             $hosts->{$host}{timers}{register_worker}
-                              = add_timer('register_worker', 10, sub { register_worker($host) }, 1);
+                              = add_timer("register_worker-$host", 10, sub { register_worker($host) }, 1);
                             return;
                         }
                     }
                     # just retry in any error case - except when the worker ID isn't known
                     # anymore (hence return 3 lines above)
                     $hosts->{$host}{timers}{setup_websocket}
-                      = add_timer('setup_websocket', 10, sub { setup_websocket($host) }, 1);
+                      = add_timer("setup_websocket-$host", 10, sub { setup_websocket($host) }, 1);
                 }
             }
         });
@@ -453,13 +454,13 @@ sub register_worker {
                 log_warning(
                     sprintf('failed to register worker %s - %s:%s, retry in 10s', $host, $err_code, $tx->res->body));
                 $hosts->{$host}{timers}{register_worker}
-                  = add_timer('register_worker', 10, sub { register_worker($host) }, 1);
+                  = add_timer("register_worker-$host", 10, sub { register_worker($host) }, 1);
             }
         }
         else {
             log_error("unable to connect to host $host, retry in 10s");
             $hosts->{$host}{timers}{register_worker}
-              = add_timer('register_worker', 10, sub { register_worker($host) }, 1);
+              = add_timer("register_worker-$host", 10, sub { register_worker($host) }, 1);
         }
         return;
     }

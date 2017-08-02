@@ -143,38 +143,7 @@ sub create {
         $json->{error} = "$_";
     };
 
-    notify_workers unless $json->{error};
-
     $self->render(json => $json, status => $status);
-}
-
-sub grab {
-    my $self = shift;
-    my $ipc  = OpenQA::IPC->ipc;
-
-    my $workerid = $self->stash('workerid');
-    my $blocking = int($self->param('blocking') || 0);
-    my $workerip = $self->tx->remote_address;
-    my $caps     = {};
-
-    $caps->{cpu_modelname} = $self->param('cpu_modelname');
-    $caps->{cpu_arch}      = $self->param('cpu_arch');
-    $caps->{cpu_opmode}    = $self->param('cpu_opmode');
-    $caps->{mem_max}       = $self->param('mem_max');
-
-    $self->render_later;
-    Mojo::IOLoop->subprocess(
-        sub {
-            return $ipc->scheduler('job_grab',
-                {workerid => $workerid, blocking => $blocking, workerip => $workerip, workercaps => $caps});
-        },
-        sub {
-            my $res = pop @_;
-            $self->emit_event('openqa_job_grab',
-                {workerid => $workerid, blocking => $blocking, workerip => $workerip, id => $res->{id}})
-              if $res->{id};
-            $self->render(json => {job => $res});
-        });
 }
 
 sub show {
@@ -378,13 +347,6 @@ sub done {
     # use $res as a result, it is recomputed result by scheduler
     $self->emit_event('openqa_job_done', {id => $job->id, result => $res, newbuild => $newbuild});
 
-    # notify workers if job has any chained children
-    my $children = $job->deps_hash->{children};
-    if (@{$children->{Chained}} && grep { $res eq $_ } OpenQA::Schema::Result::Jobs::OK_RESULTS) {
-        $self->app->log->debug("Job result OK and has chained children! Notifying workers");
-        notify_workers;
-    }
-
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
@@ -447,7 +409,6 @@ sub duplicate {
 
     my $dup = $job->auto_duplicate($args);
     if ($dup) {
-        notify_workers;
         $self->emit_event(
             'openqa_job_duplicate',
             {

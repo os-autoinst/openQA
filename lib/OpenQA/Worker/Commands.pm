@@ -122,16 +122,36 @@ sub websocket_commands {
         elsif ($type eq 'ok') {
             # ignore keepalives, but dont' report as unknown
         }
-        elsif ($type eq 'job_available') {
-            log_debug("received job notification from $host") if $verbose;
-            if (!$job && $hosts->{$host}{accepting_jobs}) {
-                Mojo::IOLoop->next_tick(sub { check_job($host) });
+        elsif ($type eq 'grab_job') {
+            state $check_job_running;
+            state $job_in_progress;
+
+            my $job = $json->{job};
+            if ($job_in_progress) {
+                log_debug("Refusing, we are already performing another job");
+                return;
+            }
+
+            return unless $job;
+            return if $check_job_running->{$host};
+
+            $job_in_progress = 1;
+            $check_job_running->{$host} = 1;
+            Mojo::IOLoop->singleton->on(
+                "stop_job" => sub {
+                    log_debug("Build finished, setting us free to pick up new jobs");
+                    $job_in_progress = 0;
+                    $check_job_running->{$host} = 0;
+                });
+
+            if ($job && $job->{id}) {
+                $OpenQA::Worker::Common::job = $job;
+                log_debug("Job " . $job->{id} . " scheduled for next cycle");
+                $tx->send({json => {type => "accepted", jobid => $job->{id}}} => sub { start_job($host); });
             }
             else {
-                if ($verbose) {
-                    my $jid = $job ? $job->{id} : '';
-                    log_debug("job notification ignored! job: $jid - accepting: $hosts->{$host}{accepting_jobs}");
-                }
+                $job_in_progress = 0;
+                $check_job_running->{$host} = 0;
             }
         }
         else {

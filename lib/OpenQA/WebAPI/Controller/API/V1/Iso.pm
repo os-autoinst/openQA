@@ -449,7 +449,6 @@ sub schedule_iso {
             run_at   => now(),
         });
 
-    notify_workers;
     $self->emit_event('openqa_iso_create', $args);
     return {
         successful_job_ids => \@successful_job_ids,

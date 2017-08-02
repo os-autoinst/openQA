@@ -58,7 +58,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &asset_type_from_setting
   &check_download_url
   &check_download_whitelist
-  &notify_workers
   &human_readable_size
   &locate_asset
   &job_groups_and_parents
@@ -70,6 +69,8 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   loaded_modules
   loaded_plugins
   hashwalker
+  send_job_to_worker
+  is_job_allocated
 );
 
 if ($0 =~ /\.t$/) {
@@ -550,22 +551,32 @@ sub check_download_whitelist {
     return ();
 }
 
-sub notify_workers {
+sub send_job_to_worker {
     my $ipc = OpenQA::IPC->ipc;
-
-    my $con = $ipc->{bus}->get_connection;
-
+    my $job = shift;
+    my $res;
     # ugly work around for Net::DBus::Test not being able to handle us using low level API
-    return if ref($con) eq 'Net::DBus::Test::MockConnection';
+    return if ref($ipc->{bus}->get_connection) eq 'Net::DBus::Test::MockConnection';
+    eval { $res = $ipc->websockets('ws_send_job', $job); };
+    if ($@) {
+        log_debug($@);
+        $res = $@;
+    }
+    return $res;
+}
 
-    my $msg = $con->make_method_call_message(
-        "org.opensuse.openqa.Scheduler",
-        "/Scheduler", "org.opensuse.openqa.Scheduler",
-        "emit_jobs_available"
-    );
-    # do not wait for a reply - avoid deadlocks. this way we can even call it
-    # from within the scheduler without having to worry about reentering
-    $con->send($msg);
+sub is_job_allocated {
+    my $ipc = OpenQA::IPC->ipc;
+    my $job = shift;
+    my $res;
+    # ugly work around for Net::DBus::Test not being able to handle us using low level API
+    return if ref($ipc->{bus}->get_connection) eq 'Net::DBus::Test::MockConnection';
+    eval { $res = $ipc->websockets('ws_worker_accepted_job', $job); };
+    if ($@) {
+        log_debug($@);
+        $res = $@;
+    }
+    return $res;
 }
 
 sub _round_a_bit {

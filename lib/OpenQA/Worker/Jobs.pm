@@ -32,6 +32,7 @@ use MIME::Base64;
 use File::Basename 'basename';
 use File::Which 'which';
 use Mojo::File 'path';
+use Mojo::IOLoop;
 
 use POSIX ':sys_wait_h';
 
@@ -139,6 +140,7 @@ sub stop_job {
         return;
     }
     return if $job_id && $job_id != $job->{id};
+
     $job_id = $job->{id};
 
     log_debug("stop_job $aborted") if $verbose;
@@ -274,6 +276,7 @@ sub _reset_state {
     $worker           = undef;
     $stop_job_running = 0;
     $current_host     = undef;
+    Mojo::IOLoop->singleton->emit("stop_job");
 }
 
 sub _stop_job {
@@ -283,6 +286,13 @@ sub _stop_job {
     # process of killing the backend process and checksums uploads and
     # checksums again can take a long while, so the webui needs to know
     log_debug('stop_job 2nd part') if $verbose;
+
+    if ($aborted eq "scheduler_abort") {
+        log_debug('stop_job called by the scheduler. do not send logs');
+        _kill_worker($worker);
+        _reset_state;
+        return;
+    }
 
     # the update_status timers and such are gone by now (1st part), so we're
     # basically "single threaded" and can block
@@ -428,10 +438,10 @@ sub _stop_job_finish {
             if ($quit) {
                 Mojo::IOLoop->stop;
             }
-            else {
-                # immediatelly check for already scheduled job
-                Mojo::IOLoop->next_tick(sub { check_job(keys %$hosts) });
-            }
+            #  else {
+            # immediatelly check for already scheduled job
+            #Mojo::IOLoop->next_tick(sub { check_job(keys %$hosts) });
+            #  }
         });
 }
 
@@ -480,6 +490,7 @@ sub start_job {
         },
         1
     );
+    Mojo::IOLoop->singleton->emit("start_job");
 }
 
 sub log_snippet {

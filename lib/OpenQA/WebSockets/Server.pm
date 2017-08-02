@@ -19,9 +19,10 @@ use Mojo::Util 'hmac_sha1_sum';
 use Try::Tiny;
 
 use OpenQA::IPC;
-use OpenQA::Utils qw(log_debug log_warning log_error notify_workers);
+use OpenQA::Utils qw(log_debug log_warning log_error);
 use OpenQA::Schema;
 use OpenQA::ServerStartup;
+use Data::Dumper;
 
 use db_profiler;
 
@@ -29,11 +30,14 @@ require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
 
 @ISA       = qw(Exporter);
-@EXPORT    = qw(ws_send ws_send_all);
+@EXPORT    = qw(ws_send ws_send_all ws_send_job);
 @EXPORT_OK = qw(ws_create ws_is_worker_connected);
 
 # id->worker mapping
 my $workers;
+
+# jobs->worker mapping
+my $accepted_jobs;
 
 # internal helpers prototypes
 sub _message;
@@ -57,6 +61,34 @@ sub ws_send {
             log_debug("Unable to send command \"$msg\" to worker $workerid");
         }
     }
+}
+
+sub ws_send_job {
+    my ($job) = @_;
+    my $result = {state => {msg_sent => 0}};
+
+    unless (ref($job) eq "HASH" && exists $job->{assigned_worker_id} && $workers->{$job->{assigned_worker_id}}) {
+        $result->{state}->{error} = "No workerid assigned, or worker doesn't have established a ws connection";
+        return $result;
+    }
+    my $res;
+    my $tx = $workers->{$job->{assigned_worker_id}}->{socket};
+    if ($tx) {
+        $res = $tx->send({json => {type => 'grab_job', job => $job}});
+    }
+    unless ($res && $res->success) {
+        # Since it is used by scheduler, it's fine to let it fail,
+        # will be rescheduled on next round
+        log_debug("Unable to allocate job to worker $job->{assigned_worker_id}");
+        $result->{state}->{error} = "Sending $job->{id} thru WebSockets to $job->{assigned_worker_id} failed miserably";
+        $result->{state}->{res}   = $res;
+        return $result;
+    }
+    else {
+        log_debug("message sent to $job->{assigned_worker_id} for job $job->{id}");
+        $result->{state}->{msg_sent} = 1;
+    }
+    return $result;
 }
 
 # consider ws_send_all as broadcast and don't wait for confirmation
@@ -121,6 +153,16 @@ sub ws_is_worker_connected {
     return ($workers->{$workerid} && $workers->{$workerid}->{socket} ? 1 : 0);
 }
 
+sub ws_worker_accepted_job {
+    my ($jobid) = @_;
+    if ($accepted_jobs->{$jobid}) {
+        log_debug("Worker $accepted_jobs->{$jobid} accepted job $jobid");
+        return delete $accepted_jobs->{$jobid};
+    }
+    log_debug("Job# $jobid was not accepted");
+    return 0;
+}
+
 sub _get_worker {
     my ($tx) = @_;
     for my $worker (values %$workers) {
@@ -152,7 +194,6 @@ sub _message {
         return;
     }
     unless (ref($json) eq 'HASH') {
-        use Data::Dumper;
         log_error(sprintf('Received unexpected WS message "%s from worker %u', Dumper($json), $worker->id));
         return;
     }
@@ -160,6 +201,20 @@ sub _message {
     $worker->{last_seen} = time();
     if ($json->{type} eq 'ok') {
         $ws->tx->send({json => {type => 'ok'}});
+        my $w = app->schema->resultset("Workers")->find($worker->{id});
+        # NOTE: Update the worker state from keepalives.
+        # We could check if the worker is dead before updating seen state
+        # the downside of it will be that we will have more timewindows
+        # where the worker is seen as dead.
+        #
+        #    if ($w and $w->dead())  # It's still one query, at this point let's just update the seen status
+        #        log_debug("Keepalive from worker $worker->{id} received, and worker thought dead. updating the DB");
+        app->schema->txn_do(sub { $w->seen; });
+    }
+    elsif ($json->{type} eq 'accepted') {
+        my $jobid = $json->{jobid};
+        $accepted_jobs->{$jobid} = $worker->{id};
+        log_debug("Worker: $worker->{id} accepted job $jobid");
     }
     elsif ($json->{type} eq 'status') {
         # handle job status update through web socket
@@ -245,19 +300,12 @@ sub _workers_checker {
         $job->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
         my $res = $job->auto_duplicate;
         if ($res) {
-            # do it through the DBUS signal to avoid messing with file descriptors
-            notify_workers;
             log_warning(sprintf('dead job %d aborted and duplicated %d', $job->id, $res->id));
         }
         else {
             log_warning(sprintf('dead job %d aborted as incomplete', $job->id));
         }
     }
-}
-
-sub jobs_available {
-    OpenQA::WebSockets::Server::ws_send_all(('job_available'));
-    return;
 }
 
 # Mojolicious startup
@@ -280,20 +328,6 @@ sub setup {
 
     # start worker checker - check workers each 2 minutes
     Mojo::IOLoop->recurring(120 => \&_workers_checker);
-
-    my $connect_signal;
-    $connect_signal = sub {
-        try {
-            log_debug "connecting scheduler signal";
-            OpenQA::IPC->ipc(1)->service('scheduler')->connect_to_signal(JobsAvailable => \&jobs_available);
-        }
-        catch {
-            log_debug "scheduler connect failed, retrying in 2 seconds";
-            Mojo::IOLoop->timer(2 => $connect_signal);
-        };
-    };
-    # delay that until the ioloop is up
-    Mojo::IOLoop->next_tick($connect_signal);
 
     return Mojo::Server::Daemon->new(app => app, listen => ["$listen"]);
 }

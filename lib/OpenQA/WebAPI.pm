@@ -374,7 +374,6 @@ sub startup {
     my $worker_r = $api_ro->route('/workers/:workerid', workerid => qr/\d+/);
     $api_public_r->route('/workers/:workerid', workerid => qr/\d+/)->get('/')->name('apiv1_worker')->to('worker#show');
     $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');
-    $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab');
 
     # redirect for older workers
     $worker_r->websocket(
