@@ -122,18 +122,6 @@ sub websocket_commands {
         elsif ($type eq 'ok') {
             # ignore keepalives, but dont' report as unknown
         }
-        elsif ($type eq 'job_available') {
-            log_debug("received job notification from $host") if $verbose;
-            if (!$job && $hosts->{$host}{accepting_jobs}) {
-                #  Mojo::IOLoop->next_tick(sub { check_job($host) });
-            }
-            else {
-                if ($verbose) {
-                    my $jid = $job ? $job->{id} : '';
-                    log_debug("job notification ignored! job: $jid - accepting: $hosts->{$host}{accepting_jobs}");
-                }
-            }
-        }
         elsif ($type eq 'grab_job') {
             state $check_job_running;
             state $job_in_progress;
@@ -149,22 +137,12 @@ sub websocket_commands {
 
             $job_in_progress = 1;
             $check_job_running->{$host} = 1;
-            #  Mojo::IOLoop->singleton->on("start_job" => sub {$job_in_progress = 1; $check_job_running->{$host} = 1;});
             Mojo::IOLoop->singleton->on(
                 "stop_job" => sub {
                     log_debug("Build finished, setting us free to pick up new jobs");
                     $job_in_progress = 0;
                     $check_job_running->{$host} = 0;
                 });
-
-#Kill other Ws connections to avoid race-conditions in job assignments
-# foreach my $h (grep { $_ ne $host } keys %{$OpenQA::Worker::Common::hosts}) {
-#     log_debug("Terminating connection to $h - we could receive other jobs meanwhile");
-#     $OpenQA::Worker::Common::hosts->{$h}{ws}->finish
-#       if $OpenQA::Worker::Common::hosts->{$h}{ws}->can("finish");
-#     $OpenQA::Worker::Common::hosts->{$h}{ws} = undef;
-#     delete $OpenQA::Worker::Common::ws_to_host->{$OpenQA::Worker::Common::hosts->{$h}{ws}} if $OpenQA::Worker::Common::ws_to_host->{$OpenQA::Worker::Common::hosts->{$h}{ws}};
-# }
 
             if ($job && $job->{id}) {
                 $OpenQA::Worker::Common::job = $job;

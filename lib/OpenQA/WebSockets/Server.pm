@@ -19,7 +19,7 @@ use Mojo::Util 'hmac_sha1_sum';
 use Try::Tiny;
 
 use OpenQA::IPC;
-use OpenQA::Utils qw(log_debug log_warning log_error notify_workers);
+use OpenQA::Utils qw(log_debug log_warning log_error);
 use OpenQA::Schema;
 use OpenQA::ServerStartup;
 use Data::Dumper;
@@ -300,19 +300,12 @@ sub _workers_checker {
         $job->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
         my $res = $job->auto_duplicate;
         if ($res) {
-            # do it through the DBUS signal to avoid messing with file descriptors
-            notify_workers;
             log_warning(sprintf('dead job %d aborted and duplicated %d', $job->id, $res->id));
         }
         else {
             log_warning(sprintf('dead job %d aborted as incomplete', $job->id));
         }
     }
-}
-
-sub jobs_available {
-    OpenQA::WebSockets::Server::ws_send_all(('job_available'));
-    return;
 }
 
 # Mojolicious startup
@@ -335,20 +328,6 @@ sub setup {
 
     # start worker checker - check workers each 2 minutes
     Mojo::IOLoop->recurring(120 => \&_workers_checker);
-
-    my $connect_signal;
-    $connect_signal = sub {
-        try {
-            log_debug "connecting scheduler signal";
-            OpenQA::IPC->ipc(1)->service('scheduler')->connect_to_signal(JobsAvailable => \&jobs_available);
-        }
-        catch {
-            log_debug "scheduler connect failed, retrying in 2 seconds";
-            Mojo::IOLoop->timer(2 => $connect_signal);
-        };
-    };
-    # delay that until the ioloop is up
-    Mojo::IOLoop->next_tick($connect_signal);
 
     return Mojo::Server::Daemon->new(app => app, listen => ["$listen"]);
 }

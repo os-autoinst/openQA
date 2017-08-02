@@ -66,7 +66,6 @@ sub _register {
     if (my $job = $worker->job) {
         $job->set_property('JOBTOKEN');
         $job->auto_duplicate;
-        notify_workers;
 
         # .. set it incomplete
         $job->update(

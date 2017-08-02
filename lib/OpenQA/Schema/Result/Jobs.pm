@@ -421,10 +421,6 @@ sub prepare_for_work {
     # TODO: cleanup previous tmpdir
     $worker->set_property('WORKER_TMPDIR', tempdir());
 
-    # starting one job from parallel group can unblock
-    # other jobs from the group
-    #notify_workers;
-    #$job_hashref->{assigned_worker_id} = $worker->id;
     return $job_hashref;
 }
 
@@ -859,7 +855,6 @@ the caller is responsible to notify the workers about the new job - the model is
 
 I.e.
     $job->auto_duplicate;
-    notify_workers;
 
 =cut
 sub auto_duplicate {

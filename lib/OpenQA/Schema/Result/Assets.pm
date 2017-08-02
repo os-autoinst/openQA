@@ -148,7 +148,6 @@ sub download_asset {
         # we're not going to die because this is a gru task and we don't
         # want to cause the Endless Gru Loop Of Despair, just return and
         # let the jobs fail
-        notify_workers;
         return;
     }
 
@@ -166,7 +165,6 @@ sub download_asset {
             OpenQA::Utils::log_error("download_asset: URL $url host $host is blacklisted!");
         }
         OpenQA::Utils::log_error("**API MAY HAVE BEEN BYPASSED TO CREATE THIS TASK!**");
-        notify_workers;
         return;
     }
     if ($do_extract) {
@@ -208,7 +206,6 @@ sub download_asset {
         catch {
             # again, we're trying not to die here, but log and return on fail
             OpenQA::Utils::log_error("Error renaming or extracting temporary file to $assetpath: $_");
-            notify_workers;
             return;
         };
     }
@@ -216,15 +213,11 @@ sub download_asset {
         # Clean up after ourselves. Probably won't exist, but just in case
         OpenQA::Utils::log_error("Download of $url to $assetpath failed! Deleting files.");
         unlink($assetpath);
-        notify_workers;
         return;
     }
     # set proper permissions for downloaded asset
     chmod 0644, $assetpath;
 
-    # We want to notify workers either way: if we failed to download, we
-    # want the jobs to run and fail.
-    notify_workers;
 }
 
 # this is a GRU task - abusing the namespace
