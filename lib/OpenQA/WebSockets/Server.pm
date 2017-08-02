@@ -202,10 +202,14 @@ sub _message {
     if ($json->{type} eq 'ok') {
         $ws->tx->send({json => {type => 'ok'}});
         my $w = app->schema->resultset("Workers")->find($worker->{id});
-        #    if ($w and $w->dead()) { # It's still one query, at this point let's just update the seen status
-        #        log_debug("Keepalive from worker $worker->{id} received, and worker thought dead. updating DB");
-        app->schema->txn_do(sub { $w->seen; });    # Update DB from keepalives as well.
-                                                   #    }
+        # NOTE: Update the worker state from keepalives.
+        # We could check if the worker is dead before updating seen state
+        # the downside of it will be that we will have more timewindows
+        # where the worker is seen as dead.
+        #
+        #    if ($w and $w->dead())  # It's still one query, at this point let's just update the seen status
+        #        log_debug("Keepalive from worker $worker->{id} received, and worker thought dead. updating the DB");
+        app->schema->txn_do(sub { $w->seen; });
     }
     elsif ($json->{type} eq 'accepted') {
         my $jobid = $json->{jobid};
