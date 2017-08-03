@@ -44,6 +44,7 @@ use db_helpers 'rndstr';
 use Time::HiRes 'time';
 use List::Util 'shuffle';
 use OpenQA::IPC;
+use sigtrap 'handler' => \&normal_signals_handler, 'normal-signals';
 
 use Carp;
 
@@ -61,7 +62,13 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 CORE::state $failure           = 0;
 CORE::state $ws_allocated_jobs = {};
 CORE::state $keepalives        = {};
+CORE::state $quit              = 0;
 
+sub normal_signals_handler {
+    log_debug("Received signal to stop");
+    $quit++;
+    _reschedule(1, 1);
+}
 
 =head2 reactor
 
@@ -244,6 +251,12 @@ sub schedule {
                 log_debug("[Keepalives] Resetting count");
 
             })) if OpenQA::Scheduler::KEEPALIVE_DEAD_WORKERS();
+
+    # Exit only when database state is consistent.
+    if ($quit) {
+        log_debug("Exiting");
+        exit(0);
+    }
 
     my @allocated_jobs;
 
