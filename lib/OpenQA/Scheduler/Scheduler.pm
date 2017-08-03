@@ -44,7 +44,7 @@ use db_helpers 'rndstr';
 use Time::HiRes 'time';
 use List::Util 'shuffle';
 use OpenQA::IPC;
-use sigtrap 'handler' => \&normal_signals_handler, 'normal-signals';
+use sigtrap handler => \&normal_signals_handler, 'normal-signals';
 
 use Carp;
 
@@ -192,6 +192,8 @@ sub schedule {
     foreach my $j (keys %{$ws_allocated_jobs}) {
         my $workerid          = is_job_allocated($j);                             # Delete from the queue
         my $expected_workerid = $ws_allocated_jobs->{$j}->{assigned_worker_id};
+        my $exceeds_max_retry
+          = $ws_allocated_jobs->{$j}->{retries} > OpenQA::Scheduler::RETRY_JOB_ALLOCATION_ATTEMPTS();
 
         log_debug("[Job#${j}] Check if was accepted by the assigned worker $expected_workerid :"
               . pp($ws_allocated_jobs->{$j}));
@@ -201,30 +203,46 @@ sub schedule {
             try {
                 die "Could not set the job to running state. "
                   unless $job->set_running;    #avoids to reset the state if the worker killed the job immediately
+                delete $ws_allocated_jobs->{$j};    # delete only if set_running doesn't fails.
                 log_debug("[Job#${j}] Accepted by worker $expected_workerid - setted to running state");
             }
             catch {
+                log_debug("[Job#${j}] Cannot set job to running state for worker $expected_workerid, reason: " . $_);
+
                 # Aborts and set the job to scheduled again
-                $job->reschedule_rollback if $job->result eq OpenQA::Schema::Result::Jobs::NONE;
+                $job->reschedule_rollback if $job->result eq OpenQA::Schema::Result::Jobs::NONE && $exceeds_max_retry;
 
                 # Either we had a real failure or the system is under load.
                 $failure++
                   if OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::BUSY_BACKOFF();
             };
         }
-        else {
-            log_debug("[Job#${j}] Too bad, the job was not accepted by the worker - sending abort");
+        elsif ($exceeds_max_retry) {
+            log_debug(
+                    "[Job#${j}] Too bad, the job was not accepted by the worker. Maximum number of retrials exceeded ("
+                  . OpenQA::Scheduler::RETRY_JOB_ALLOCATION_ATTEMPTS()
+                  . ")");
 
             $job->reschedule_rollback;
+
+            delete $ws_allocated_jobs->{$j};
 
             # If we had a different accept, possibly means
             # we are really congested by the messages coming from different workers
             # that we allocated in a "burst" of scheduling
             $failure++
               if OpenQA::Scheduler::CONGESTION_CONTROL();
+
         }
+        else {
+            log_debug("[Job#${j}] [Attempt#"
+                  . $ws_allocated_jobs->{$j}->{retries}
+                  . "] Still no message back from Worker $expected_workerid - ");
+
+            $ws_allocated_jobs->{$j}->{retries}++;
+        }
+
     }
-    $ws_allocated_jobs = {};    # empty the hash now
 
     # Avoid to go into starvation - reset the scheduler tick counter.
     reactor->{timer}->{capture_loop_avoidance} ||= reactor->add_timeout(
@@ -365,8 +383,11 @@ sub schedule {
                 if ($job->set_scheduling_worker($worker)) {
                     $successfully_allocated++;
                     # Save it, in next round we will check if we got answer from worker and see what to do
-                    $ws_allocated_jobs->{$allocated->{id}}
-                      = {assigned_worker_id => $allocated->{assigned_worker_id}, result => $allocated->{result}};
+                    $ws_allocated_jobs->{$allocated->{id}} = {
+                        assigned_worker_id => $allocated->{assigned_worker_id},
+                        result             => $allocated->{result},
+                        retries            => 0
+                    };
                 }
                 else {
                     die "Failed rollback of job" unless $job->reschedule_rollback($worker);

@@ -41,7 +41,11 @@ use constant SHUFFLE_WORKERS => $ENV{OPENQA_SCHEDULER_SHUFFLE_WORKERS} // 1;
 
 # When enabled scheduler will keep a table of seen workers and periodically clean it up.
 # Jobs will be allocated also to those workers, even if we see them as dead from the DB state.
-use constant KEEPALIVE_DEAD_WORKERS => $ENV{KEEPALIVE_DEAD_WORKERS} // 1;
+use constant KEEPALIVE_DEAD_WORKERS => $ENV{KEEPALIVE_DEAD_WORKERS} // 0;
+
+# Max attempts to performs before seeing the worker that didn't accepted the job.
+# Defaults to 3
+use constant RETRY_JOB_ALLOCATION_ATTEMPTS => $ENV{RETRY_JOB_ALLOCATION_ATTEMPTS} // 3;
 
 # Scheduler default clock. Defaults to 8s
 # Optimization rule of thumb is:
@@ -58,16 +62,16 @@ use constant SCHEDULE_TICK_MS => $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} // 8000
 use constant CONGESTION_CONTROL => $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL} // 1;
 
 # Timeslot. Defaults to SCHEDULE_TICK_MS
-use constant TIMESLOT => $ENV{OPENQA_SCHEDULER_TIMESLOT} // SCHEDULE_TICK_MS;
+use constant TIMESLOT => $ENV{OPENQA_SCHEDULER_TIMESLOT} // 1000;
 
-# Maximum backoff. Defaults to 560s
-use constant MAX_BACKOFF => $ENV{OPENQA_SCHEDULER_MAX_BACKOFF} // 560000;
+# Maximum backoff. Defaults to 60s
+use constant MAX_BACKOFF => $ENV{OPENQA_SCHEDULER_MAX_BACKOFF} // 60000;
 
 # Our exponent, used to calculate backoff. Defaults to 2 (Binary)
 use constant EXPBACKOFF => $ENV{OPENQA_SCHEDULER_EXP_BACKOFF} // 2;
 
-# Timer reset to avoid starvation caused by CONGESTION_CONTROL/BUSY_BACKOFF. Defaults to 660s
-use constant CAPTURE_LOOP_AVOIDANCE => $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} // 660000;
+# Timer reset to avoid starvation caused by CONGESTION_CONTROL/BUSY_BACKOFF. Defaults to 120s
+use constant CAPTURE_LOOP_AVOIDANCE => $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} // 120000;
 
 # set it to 1 if you want to backoff when no jobs can be assigned or we are really busy
 # Default is enabled as CONGESTION_CONTROL.
