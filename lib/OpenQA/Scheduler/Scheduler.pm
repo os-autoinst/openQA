@@ -45,6 +45,7 @@ use Time::HiRes 'time';
 use List::Util 'shuffle';
 use OpenQA::IPC;
 use sigtrap handler => \&normal_signals_handler, 'normal-signals';
+use OpenQA::Scheduler;
 
 use Carp;
 
@@ -68,6 +69,11 @@ sub normal_signals_handler {
     log_debug("Received signal to stop");
     $quit++;
     _reschedule(1, 1);
+}
+
+sub wakeup_scheduler {
+    log_debug("I've been summoned by the webui");
+    _reschedule(OpenQA::Scheduler::SCHEDULE_TICK_MS()) if OpenQA::Scheduler::WAKEUP_ON_REQUEST();
 }
 
 =head2 reactor
@@ -193,17 +199,19 @@ sub schedule {
         my $workerid          = is_job_allocated($j);                             # Delete from the queue
         my $expected_workerid = $ws_allocated_jobs->{$j}->{assigned_worker_id};
         my $exceeds_max_retry
-          = $ws_allocated_jobs->{$j}->{retries} > OpenQA::Scheduler::RETRY_JOB_ALLOCATION_ATTEMPTS();
+          = $ws_allocated_jobs->{$j}->{retries} >= OpenQA::Scheduler::RETRY_JOB_ALLOCATION_ATTEMPTS();
 
         log_debug("[Job#${j}] Check if was accepted by the assigned worker $expected_workerid :"
               . pp($ws_allocated_jobs->{$j}));
 
         my $job = schema->resultset("Jobs")->find({id => $j});
         if ($expected_workerid == $workerid) {
+            log_debug("[Job#${j}] Accepted by the assigned worker $expected_workerid");
+
             try {
-                die "Could not set the job to running state. "
+                delete $ws_allocated_jobs->{$j};
+                die "Already updated state"
                   unless $job->set_running;    #avoids to reset the state if the worker killed the job immediately
-                delete $ws_allocated_jobs->{$j};    # delete only if set_running doesn't fails.
                 log_debug("[Job#${j}] Accepted by worker $expected_workerid - setted to running state");
             }
             catch {
@@ -235,11 +243,11 @@ sub schedule {
 
         }
         else {
+            $ws_allocated_jobs->{$j}->{retries}++;
+
             log_debug("[Job#${j}] [Attempt#"
                   . $ws_allocated_jobs->{$j}->{retries}
                   . "] Still no message back from Worker $expected_workerid - ");
-
-            $ws_allocated_jobs->{$j}->{retries}++;
         }
 
     }
@@ -478,8 +486,11 @@ and a boolean that makes bypass constraints checks about rescheduling.
 
 sub _reschedule {
     my ($time, $force) = @_;
-    my $current_interval = reactor->{timeouts}->[reactor->{timer}->{schedule_jobs}]->{interval};
-    return unless ($current_interval != $time || $force);
+    my $current_interval
+      = reactor
+      && reactor->{timeouts}
+      && ref(reactor->{timeouts}) eq "ARRAY" ? reactor->{timeouts}->[reactor->{timer}->{schedule_jobs}]->{interval} : 0;
+    return unless (reactor && (($current_interval != $time) || $force));
     log_debug "[scheduler] Current tick is at ${current_interval}ms. New tick will be in: ${time}ms";
     reactor->remove_timeout(reactor->{timer}->{schedule_jobs});
     reactor->{timer}->{schedule_jobs} = reactor->add_timeout(
@@ -800,7 +811,7 @@ sub job_restart {
         log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
         $j->worker->send_command(command => 'abort', job_id => $j->id);
     }
-
+    wakeup_scheduler();
     return @duplicated;
 }
 

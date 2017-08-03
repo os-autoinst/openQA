@@ -41,11 +41,11 @@ use constant SHUFFLE_WORKERS => $ENV{OPENQA_SCHEDULER_SHUFFLE_WORKERS} // 1;
 
 # When enabled scheduler will keep a table of seen workers and periodically clean it up.
 # Jobs will be allocated also to those workers, even if we see them as dead from the DB state.
-use constant KEEPALIVE_DEAD_WORKERS => $ENV{KEEPALIVE_DEAD_WORKERS} // 0;
+use constant KEEPALIVE_DEAD_WORKERS => $ENV{OPENQA_SCHEDULER_KEEPALIVE_DEAD_WORKERS} // 0;
 
 # Max attempts to performs before seeing the worker that didn't accepted the job.
 # Defaults to 3
-use constant RETRY_JOB_ALLOCATION_ATTEMPTS => $ENV{RETRY_JOB_ALLOCATION_ATTEMPTS} // 3;
+use constant RETRY_JOB_ALLOCATION_ATTEMPTS => $ENV{OPENQA_SCHEDULER_RETRY_JOB_ALLOCATION_ATTEMPTS} // 3;
 
 # Scheduler default clock. Defaults to 8s
 # Optimization rule of thumb is:
@@ -60,6 +60,9 @@ use constant SCHEDULE_TICK_MS => $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} // 8000
 # backoff to avoid congestion.
 # Enable it with 1, disable with 0. Following options depends on it.
 use constant CONGESTION_CONTROL => $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL} // 1;
+
+# Wakes up the scheduler on request
+use constant WAKEUP_ON_REQUEST => $ENV{OPENQA_SCHEDULER_WAKEUP_ON_REQUEST} // 0;
 
 # Timeslot. Defaults to SCHEDULE_TICK_MS
 use constant TIMESLOT => $ENV{OPENQA_SCHEDULER_TIMESLOT} // 1000;
@@ -98,7 +101,9 @@ sub run {
     log_debug("Scheduler started");
     log_debug("\t Scheduler default interval(ms) : " . SCHEDULE_TICK_MS);
     log_debug("\t Max job allocation: " . MAX_JOB_ALLOCATION);
+    log_debug("\t Job allocation retries: " . RETRY_JOB_ALLOCATION_ATTEMPTS);
     log_debug("\t Timeslot(ms) : " . TIMESLOT);
+    log_debug("\t Wakeup on request : " .     (WAKEUP_ON_REQUEST      ? "enabled" : "disabled"));
     log_debug("\t Internal worker cache : " . (KEEPALIVE_DEAD_WORKERS ? "enabled" : "disabled"));
     log_debug("\t Find job retries : " . FIND_JOB_ATTEMPTS);
     log_debug("\t Congestion control : " .                  (CONGESTION_CONTROL ? "enabled" : "disabled"));
@@ -145,6 +150,12 @@ dbus_method('job_grab', [['dict', 'string', ['variant']]], [['dict', 'string', [
 sub job_grab {
     my ($self, $args) = @_;
     return OpenQA::Scheduler::Scheduler::job_grab(%$args);
+}
+
+dbus_method('wakeup_scheduler');
+sub wakeup_scheduler {
+    my ($self, $args) = @_;
+    return OpenQA::Scheduler::Scheduler::wakeup_scheduler();
 }
 
 dbus_method('job_restart', [['array', 'uint32']], [['array', 'uint32']]);
