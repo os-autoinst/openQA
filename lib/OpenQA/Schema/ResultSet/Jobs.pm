@@ -317,7 +317,7 @@ sub complex_query {
         my %js_settings;
         # Check if the settings are between the arguments passed via query url
         # they come in lowercase, so mace sure $key is lc'ed
-        for my $key (qw(ISO HDD_1 WORKER_CLASS CLUSTER)) {
+        for my $key (qw(ISO HDD_1 WORKER_CLASS PROXIED)) {
             $js_settings{$key} = $args{lc $key} if defined $args{lc $key};
         }
         if (%js_settings) {
