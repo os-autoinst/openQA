@@ -39,6 +39,10 @@ use constant FIND_JOB_ATTEMPTS => $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS} // 1;
 # Setting it to 0 may lead to worker starvation
 use constant SHUFFLE_WORKERS => $ENV{OPENQA_SCHEDULER_SHUFFLE_WORKERS} // 1;
 
+# When enabled scheduler will keep a table of seen workers and periodically clean it up.
+# Jobs will be allocated also to those workers, even if we see them as dead from the DB state.
+use constant KEEPALIVE_DEAD_WORKERS => $ENV{KEEPALIVE_DEAD_WORKERS} // 1;
+
 # Scheduler default clock. Defaults to 8s
 # Optimization rule of thumb is:
 # if we see a enough big number of messages while in debug mode stating "Congestion control"
@@ -90,11 +94,12 @@ sub run {
     log_debug("Scheduler started");
     log_debug("\t Scheduler default interval(ms) : " . SCHEDULE_TICK_MS);
     log_debug("\t Max job allocation: " . MAX_JOB_ALLOCATION);
+    log_debug("\t Timeslot(ms) : " . TIMESLOT);
+    log_debug("\t Internal worker cache : " . (KEEPALIVE_DEAD_WORKERS ? "enabled" : "disabled"));
     log_debug("\t Find job retries : " . FIND_JOB_ATTEMPTS);
     log_debug("\t Congestion control : " .                  (CONGESTION_CONTROL ? "enabled" : "disabled"));
     log_debug("\t Backoff when we can't schedule jobs : " . (BUSY_BACKOFF       ? "enabled" : "disabled"));
     log_debug("\t Capture loop avoidance(ms) : " . CAPTURE_LOOP_AVOIDANCE);
-    log_debug("\t Timeslot(ms) : " . TIMESLOT);
     log_debug("\t Max backoff(ms) : " . MAX_BACKOFF);
     log_debug("\t Exp backoff : " . EXPBACKOFF);
 

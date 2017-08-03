@@ -60,6 +60,7 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 
 CORE::state $failure           = 0;
 CORE::state $ws_allocated_jobs = {};
+CORE::state $keepalives        = {};
 
 
 =head2 reactor
@@ -234,6 +235,16 @@ sub schedule {
                     : OpenQA::Scheduler::SCHEDULE_TICK_MS());
             })) if (OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::BUSY_BACKOFF());
 
+    # Keepalives reset
+    reactor->{timer}->{keepalive_reset} ||= reactor->add_timeout(
+        (OpenQA::Scheduler::CAPTURE_LOOP_AVOIDANCE()) / 2,
+        Net::DBus::Callback->new(
+            method => sub {
+                $keepalives = {};
+                log_debug("[Keepalives] Resetting count");
+
+            })) if OpenQA::Scheduler::KEEPALIVE_DEAD_WORKERS();
+
     my @allocated_jobs;
 
     log_debug("-> Scheduling new jobs.");
@@ -243,13 +254,22 @@ sub schedule {
                 my $all_workers = schema->resultset("Workers")->count();
                 my @allocated_workers;
                 my @allocated_jobs;
+                my %free_workers_id;
 
                 # NOTE: $worker->connected is too much expensive since is over dbus, prefer dead.
                 my @free_workers = grep { !$_->dead } schema->resultset("Workers")->search({job_id => undef})->all();
                 @free_workers = shuffle(@free_workers)
                   if OpenQA::Scheduler::SHUFFLE_WORKERS();   # shuffle avoids starvation if a free worker keeps failing.
+
+                %free_workers_id = map { $_->id() => 1 } @free_workers;    # keep a hash of worker ids
+
                 log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
                 log_debug("\t Failure# ${failure}") if OpenQA::Scheduler::CONGESTION_CONTROL();
+
+                my @possible_free_workers = grep { !$_->job_id && !exists $free_workers_id{$_->id} }
+                  map { schema->resultset("Workers")->find($_) } keys %{$keepalives};
+
+                log_debug("Possible dead worker (not seen from search query): " . $_->id) for @possible_free_workers;
 
                 if (@free_workers == 0) {
                     # Consider it a failure when either BUSY_BACKOFF or CONGESTION_CONTROL is enabled
@@ -262,8 +282,8 @@ sub schedule {
                 }
 
                 my $allocating = {};
-                for my $w (@free_workers) {
-
+                for my $w (@free_workers, @possible_free_workers) {
+                    next if !$w->id();
                     my @possible_jobs = job_grab(
                         workerid     => $w->id(),
                         blocking     => 0,
@@ -281,6 +301,8 @@ sub schedule {
                       if $allocated_job && exists $allocated_job->{id};
 
                     $allocated_job->{assigned_worker_id} = $w->id() if $allocated_job;
+                    $keepalives->{$w->id()}++
+                      if OpenQA::Scheduler::KEEPALIVE_DEAD_WORKERS();    # Count the worker as seen recently.
                     next unless $allocated_job && exists $allocated_job->{id};
 
 
