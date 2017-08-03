@@ -145,7 +145,7 @@ sub setup_logging {
             });
     }
 
-    if ($logfile && $config->{logging}->{level}) {
+    if ($config->{logging}->{level}) {
         $app->log->level($config->{logging}->{level});
     }
     if ($ENV{OPENQA_SQL_DEBUG} // $config->{logging}->{sql_debug} // 'false' eq 'true') {
