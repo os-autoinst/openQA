@@ -44,6 +44,8 @@ use db_helpers 'rndstr';
 use Time::HiRes 'time';
 use List::Util 'shuffle';
 use OpenQA::IPC;
+use sigtrap handler => \&normal_signals_handler, 'normal-signals';
+use OpenQA::Scheduler;
 
 use Carp;
 
@@ -60,7 +62,19 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 
 CORE::state $failure           = 0;
 CORE::state $ws_allocated_jobs = {};
+CORE::state $keepalives        = {};
+CORE::state $quit              = 0;
 
+sub normal_signals_handler {
+    log_debug("Received signal to stop");
+    $quit++;
+    _reschedule(1, 1);
+}
+
+sub wakeup_scheduler {
+    log_debug("I've been summoned by the webui");
+    _reschedule(OpenQA::Scheduler::SCHEDULE_TICK_MS()) if OpenQA::Scheduler::WAKEUP_ON_REQUEST();
+}
 
 =head2 reactor
 
@@ -184,39 +198,59 @@ sub schedule {
     foreach my $j (keys %{$ws_allocated_jobs}) {
         my $workerid          = is_job_allocated($j);                             # Delete from the queue
         my $expected_workerid = $ws_allocated_jobs->{$j}->{assigned_worker_id};
+        my $exceeds_max_retry
+          = $ws_allocated_jobs->{$j}->{retries} >= OpenQA::Scheduler::RETRY_JOB_ALLOCATION_ATTEMPTS();
 
         log_debug("[Job#${j}] Check if was accepted by the assigned worker $expected_workerid :"
               . pp($ws_allocated_jobs->{$j}));
 
         my $job = schema->resultset("Jobs")->find({id => $j});
         if ($expected_workerid == $workerid) {
+            log_debug("[Job#${j}] Accepted by the assigned worker $expected_workerid");
+
             try {
-                die "Could not set the job to running state. "
+                delete $ws_allocated_jobs->{$j};
+                die "Already updated state"
                   unless $job->set_running;    #avoids to reset the state if the worker killed the job immediately
                 log_debug("[Job#${j}] Accepted by worker $expected_workerid - setted to running state");
             }
             catch {
+                log_debug("[Job#${j}] Cannot set job to running state for worker $expected_workerid, reason: " . $_);
+
                 # Aborts and set the job to scheduled again
-                $job->reschedule_rollback if $job->result eq OpenQA::Schema::Result::Jobs::NONE;
+                $job->reschedule_rollback if $job->result eq OpenQA::Schema::Result::Jobs::NONE && $exceeds_max_retry;
 
                 # Either we had a real failure or the system is under load.
                 $failure++
                   if OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::BUSY_BACKOFF();
             };
         }
-        else {
-            log_debug("[Job#${j}] Too bad, the job was not accepted by the worker - sending abort");
+        elsif ($exceeds_max_retry) {
+            log_debug(
+                    "[Job#${j}] Too bad, the job was not accepted by the worker. Maximum number of retrials exceeded ("
+                  . OpenQA::Scheduler::RETRY_JOB_ALLOCATION_ATTEMPTS()
+                  . ")");
 
             $job->reschedule_rollback;
+
+            delete $ws_allocated_jobs->{$j};
 
             # If we had a different accept, possibly means
             # we are really congested by the messages coming from different workers
             # that we allocated in a "burst" of scheduling
             $failure++
               if OpenQA::Scheduler::CONGESTION_CONTROL();
+
         }
+        else {
+            $ws_allocated_jobs->{$j}->{retries}++;
+
+            log_debug("[Job#${j}] [Attempt#"
+                  . $ws_allocated_jobs->{$j}->{retries}
+                  . "] Still no message back from Worker $expected_workerid - ");
+        }
+
     }
-    $ws_allocated_jobs = {};    # empty the hash now
 
     # Avoid to go into starvation - reset the scheduler tick counter.
     reactor->{timer}->{capture_loop_avoidance} ||= reactor->add_timeout(
@@ -234,6 +268,22 @@ sub schedule {
                     : OpenQA::Scheduler::SCHEDULE_TICK_MS());
             })) if (OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::BUSY_BACKOFF());
 
+    # Keepalives reset
+    reactor->{timer}->{keepalive_reset} ||= reactor->add_timeout(
+        (OpenQA::Scheduler::CAPTURE_LOOP_AVOIDANCE()) / 2,
+        Net::DBus::Callback->new(
+            method => sub {
+                $keepalives = {};
+                log_debug("[Keepalives] Resetting count");
+
+            })) if OpenQA::Scheduler::KEEPALIVE_DEAD_WORKERS();
+
+    # Exit only when database state is consistent.
+    if ($quit) {
+        log_debug("Exiting");
+        exit(0);
+    }
+
     my @allocated_jobs;
 
     log_debug("-> Scheduling new jobs.");
@@ -243,13 +293,22 @@ sub schedule {
                 my $all_workers = schema->resultset("Workers")->count();
                 my @allocated_workers;
                 my @allocated_jobs;
+                my %free_workers_id;
 
                 # NOTE: $worker->connected is too much expensive since is over dbus, prefer dead.
                 my @free_workers = grep { !$_->dead } schema->resultset("Workers")->search({job_id => undef})->all();
                 @free_workers = shuffle(@free_workers)
                   if OpenQA::Scheduler::SHUFFLE_WORKERS();   # shuffle avoids starvation if a free worker keeps failing.
+
+                %free_workers_id = map { $_->id() => 1 } @free_workers;    # keep a hash of worker ids
+
                 log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
                 log_debug("\t Failure# ${failure}") if OpenQA::Scheduler::CONGESTION_CONTROL();
+
+                my @possible_free_workers = grep { !$_->job_id && !exists $free_workers_id{$_->id} }
+                  map { schema->resultset("Workers")->find($_) } keys %{$keepalives};
+
+                log_debug("Possible dead worker (not seen from search query): " . $_->id) for @possible_free_workers;
 
                 if (@free_workers == 0) {
                     # Consider it a failure when either BUSY_BACKOFF or CONGESTION_CONTROL is enabled
@@ -262,8 +321,8 @@ sub schedule {
                 }
 
                 my $allocating = {};
-                for my $w (@free_workers) {
-
+                for my $w (@free_workers, @possible_free_workers) {
+                    next if !$w->id();
                     my @possible_jobs = job_grab(
                         workerid     => $w->id(),
                         blocking     => 0,
@@ -281,6 +340,8 @@ sub schedule {
                       if $allocated_job && exists $allocated_job->{id};
 
                     $allocated_job->{assigned_worker_id} = $w->id() if $allocated_job;
+                    $keepalives->{$w->id()}++
+                      if OpenQA::Scheduler::KEEPALIVE_DEAD_WORKERS();    # Count the worker as seen recently.
                     next unless $allocated_job && exists $allocated_job->{id};
 
 
@@ -330,8 +391,11 @@ sub schedule {
                 if ($job->set_scheduling_worker($worker)) {
                     $successfully_allocated++;
                     # Save it, in next round we will check if we got answer from worker and see what to do
-                    $ws_allocated_jobs->{$allocated->{id}}
-                      = {assigned_worker_id => $allocated->{assigned_worker_id}, result => $allocated->{result}};
+                    $ws_allocated_jobs->{$allocated->{id}} = {
+                        assigned_worker_id => $allocated->{assigned_worker_id},
+                        result             => $allocated->{result},
+                        retries            => 0
+                    };
                 }
                 else {
                     die "Failed rollback of job" unless $job->reschedule_rollback($worker);
@@ -422,8 +486,11 @@ and a boolean that makes bypass constraints checks about rescheduling.
 
 sub _reschedule {
     my ($time, $force) = @_;
-    my $current_interval = reactor->{timeouts}->[reactor->{timer}->{schedule_jobs}]->{interval};
-    return unless ($current_interval != $time || $force);
+    my $current_interval
+      = reactor
+      && reactor->{timeouts}
+      && ref(reactor->{timeouts}) eq "ARRAY" ? reactor->{timeouts}->[reactor->{timer}->{schedule_jobs}]->{interval} : 0;
+    return unless (reactor && (($current_interval != $time) || $force));
     log_debug "[scheduler] Current tick is at ${current_interval}ms. New tick will be in: ${time}ms";
     reactor->remove_timeout(reactor->{timer}->{schedule_jobs});
     reactor->{timer}->{schedule_jobs} = reactor->add_timeout(
@@ -744,7 +811,7 @@ sub job_restart {
         log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
         $j->worker->send_command(command => 'abort', job_id => $j->id);
     }
-
+    wakeup_scheduler();
     return @duplicated;
 }
 

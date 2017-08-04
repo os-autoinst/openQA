@@ -71,6 +71,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   hashwalker
   send_job_to_worker
   is_job_allocated
+  wakeup_scheduler
 );
 
 if ($0 =~ /\.t$/) {
@@ -579,6 +580,24 @@ sub is_job_allocated {
     return $res;
 }
 
+sub wakeup_scheduler {
+    my $ipc = OpenQA::IPC->ipc;
+
+    my $con = $ipc->{bus}->get_connection;
+
+    # ugly work around for Net::DBus::Test not being able to handle us using low level API
+    return if ref($con) eq 'Net::DBus::Test::MockConnection';
+
+    my $msg = $con->make_method_call_message(
+        "org.opensuse.openqa.Scheduler",
+        "/Scheduler", "org.opensuse.openqa.Scheduler",
+        "wakeup_scheduler"
+    );
+    # do not wait for a reply - avoid deadlocks. this way we can even call it
+    # from within the scheduler without having to worry about reentering
+    $con->send($msg);
+}
+
 sub _round_a_bit {
     my ($size) = @_;
 
@@ -754,7 +773,6 @@ sub hashwalker {
         pop @$keys;
     }
 }
-
 
 1;
 # vim: set sw=4 et:

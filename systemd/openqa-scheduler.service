@@ -8,6 +8,7 @@ User=geekotest
 Environment="DBUS_STARTER_BUS_TYPE=system"
 ExecStart=/usr/share/openqa/script/openqa-scheduler
 BusName=org.opensuse.openqa.Scheduler
+TimeoutStopSec=120
 Type=dbus
 
 [Install]

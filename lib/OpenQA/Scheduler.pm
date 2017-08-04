@@ -39,6 +39,14 @@ use constant FIND_JOB_ATTEMPTS => $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS} // 1;
 # Setting it to 0 may lead to worker starvation
 use constant SHUFFLE_WORKERS => $ENV{OPENQA_SCHEDULER_SHUFFLE_WORKERS} // 1;
 
+# When enabled scheduler will keep a table of seen workers and periodically clean it up.
+# Jobs will be allocated also to those workers, even if we see them as dead from the DB state.
+use constant KEEPALIVE_DEAD_WORKERS => $ENV{OPENQA_SCHEDULER_KEEPALIVE_DEAD_WORKERS} // 0;
+
+# Max attempts to performs before seeing the worker that didn't accepted the job.
+# Defaults to 3
+use constant RETRY_JOB_ALLOCATION_ATTEMPTS => $ENV{OPENQA_SCHEDULER_RETRY_JOB_ALLOCATION_ATTEMPTS} // 3;
+
 # Scheduler default clock. Defaults to 8s
 # Optimization rule of thumb is:
 # if we see a enough big number of messages while in debug mode stating "Congestion control"
@@ -53,17 +61,20 @@ use constant SCHEDULE_TICK_MS => $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} // 8000
 # Enable it with 1, disable with 0. Following options depends on it.
 use constant CONGESTION_CONTROL => $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL} // 1;
 
-# Timeslot. Defaults to SCHEDULE_TICK_MS
-use constant TIMESLOT => $ENV{OPENQA_SCHEDULER_TIMESLOT} // SCHEDULE_TICK_MS;
+# Wakes up the scheduler on request
+use constant WAKEUP_ON_REQUEST => $ENV{OPENQA_SCHEDULER_WAKEUP_ON_REQUEST} // 0;
 
-# Maximum backoff. Defaults to 560s
-use constant MAX_BACKOFF => $ENV{OPENQA_SCHEDULER_MAX_BACKOFF} // 560000;
+# Timeslot. Defaults to SCHEDULE_TICK_MS
+use constant TIMESLOT => $ENV{OPENQA_SCHEDULER_TIMESLOT} // 1000;
+
+# Maximum backoff. Defaults to 60s
+use constant MAX_BACKOFF => $ENV{OPENQA_SCHEDULER_MAX_BACKOFF} // 60000;
 
 # Our exponent, used to calculate backoff. Defaults to 2 (Binary)
 use constant EXPBACKOFF => $ENV{OPENQA_SCHEDULER_EXP_BACKOFF} // 2;
 
-# Timer reset to avoid starvation caused by CONGESTION_CONTROL/BUSY_BACKOFF. Defaults to 660s
-use constant CAPTURE_LOOP_AVOIDANCE => $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} // 660000;
+# Timer reset to avoid starvation caused by CONGESTION_CONTROL/BUSY_BACKOFF. Defaults to 120s
+use constant CAPTURE_LOOP_AVOIDANCE => $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} // 120000;
 
 # set it to 1 if you want to backoff when no jobs can be assigned or we are really busy
 # Default is enabled as CONGESTION_CONTROL.
@@ -90,11 +101,14 @@ sub run {
     log_debug("Scheduler started");
     log_debug("\t Scheduler default interval(ms) : " . SCHEDULE_TICK_MS);
     log_debug("\t Max job allocation: " . MAX_JOB_ALLOCATION);
+    log_debug("\t Job allocation retries: " . RETRY_JOB_ALLOCATION_ATTEMPTS);
+    log_debug("\t Timeslot(ms) : " . TIMESLOT);
+    log_debug("\t Wakeup on request : " .     (WAKEUP_ON_REQUEST      ? "enabled" : "disabled"));
+    log_debug("\t Internal worker cache : " . (KEEPALIVE_DEAD_WORKERS ? "enabled" : "disabled"));
     log_debug("\t Find job retries : " . FIND_JOB_ATTEMPTS);
     log_debug("\t Congestion control : " .                  (CONGESTION_CONTROL ? "enabled" : "disabled"));
     log_debug("\t Backoff when we can't schedule jobs : " . (BUSY_BACKOFF       ? "enabled" : "disabled"));
     log_debug("\t Capture loop avoidance(ms) : " . CAPTURE_LOOP_AVOIDANCE);
-    log_debug("\t Timeslot(ms) : " . TIMESLOT);
     log_debug("\t Max backoff(ms) : " . MAX_BACKOFF);
     log_debug("\t Exp backoff : " . EXPBACKOFF);
 
@@ -136,6 +150,12 @@ dbus_method('job_grab', [['dict', 'string', ['variant']]], [['dict', 'string', [
 sub job_grab {
     my ($self, $args) = @_;
     return OpenQA::Scheduler::Scheduler::job_grab(%$args);
+}
+
+dbus_method('wakeup_scheduler');
+sub wakeup_scheduler {
+    my ($self, $args) = @_;
+    return OpenQA::Scheduler::Scheduler::wakeup_scheduler();
 }
 
 dbus_method('job_restart', [['array', 'uint32']], [['array', 'uint32']]);

@@ -281,6 +281,7 @@ sub _reset_state {
 
 sub _stop_job {
     my ($aborted, $job_id) = @_;
+    my $workerid = verify_workerid;
 
     # now tell the webui that we're about to finish, but the following
     # process of killing the backend process and checksums uploads and
@@ -297,7 +298,7 @@ sub _stop_job {
     # the update_status timers and such are gone by now (1st part), so we're
     # basically "single threaded" and can block
 
-    my $status = {uploading => 1};
+    my $status = {uploading => 1, worker_id => $workerid};
     api_call(
         'post', "jobs/$job_id/status",
         json => {status => $status},
@@ -569,7 +570,8 @@ sub has_logviewers {
 sub upload_status {
     my ($final_upload, $callback) = @_;
 
-    return unless verify_workerid;
+
+    return unless my $workerid = verify_workerid;
     return unless $job;
 
     # If the worker has a setup failure, the $job object is not
@@ -579,7 +581,7 @@ sub upload_status {
         return;
     }
 
-    my $status = {};
+    my $status = {worker_id => $workerid};
 
     my $ua        = Mojo::UserAgent->new;
     my $os_status = $ua->get($job->{URL} . "/isotovideo/status")->res->json;
