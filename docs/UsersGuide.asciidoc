@@ -83,20 +83,25 @@ image::images/review_badges.png[Review badges]
 For bugreferences write `<bugtracker_shortname>#<bug_nr>` in a comment, e.g. "bsc#1234", for generic labels use `label:<keyword>` where `<keyword>` can be any valid character up to the next whitespace, e.g. "false_positive". The keywords are not defined within openQA itself. A valid list of keywords should be decided upon within each project or environment of one openQA instance.
 
 [[generic_label]]
-.Example for a generic label:
+.Example for a generic label
 image::images/generic_label.png[Example of a generic label]
 
 [[bug_label]]
-.Example for bug label:
+.Example for bug label
 image::images/bug_label.png[Example of a bug label]
 
 Related issue: https://progress.opensuse.org/issues/10212[#10212]
 
-Hint: You can also write (or copy-paste) full links to bugs and issues. The links are automatically changed to the shortlinks (e.g. `https://progress.opensuse.org/issues/11110` turns into https://progress.opensuse.org/issues/11110[poo#11110]). Related issue: https://progress.opensuse.org/issues/11110[[line-through]*poo#11110*]
+'Hint:' You can also write (or copy-paste) full links to bugs and issues. The links are automatically changed to the shortlinks (e.g. `https://progress.opensuse.org/issues/11110` turns into https://progress.opensuse.org/issues/11110[poo#11110]). Related issue: https://progress.opensuse.org/issues/11110[[line-through]*poo#11110*]
 
 Also github pull requests and issues can be linked using the generic format
 `<marker>[#<project/repo>]#<id>`, e.g. https://github.com/os-autoinst/openQA/issues/1234[gh#os-autoinst/openQA#1234], see https://github.com/os-autoinst/openQA/pull/973[gh#973]
 
+All issue references are stored within the internal database of openQA. The status can be updated using the `/bugs` API route for example using external tools.
+
+[[labels_closed_tickets]]
+.Example for visualization of closed issue references. Upside down icons in red visualize closed issues.
+image::images/labels_closed_tickets.png[Example for visualization of closed issue references]
 
 === Build tagging ===
 
