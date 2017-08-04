@@ -219,6 +219,20 @@ sub update_status {
         return;
     }
 
+    if (!exists $status->{worker_id}) {
+        OpenQA::Utils::log_info(
+            'Got status update for job ' . $self->stash('jobid') . ' but does not contain a worker id! ');
+        return;
+    }
+
+    if (!$job->worker || $job->worker->id != $status->{worker_id}) {
+        OpenQA::Utils::log_info('Got status update for job '
+              . $self->stash('jobid')
+              . ' that does not belong to Worker '
+              . $status->{worker_id});
+        return;
+    }
+
     my $ret = $job->update_status($status);
     if (!$ret || $ret->{error} || $ret->{error_status}) {
         $ret = {} unless $ret;
