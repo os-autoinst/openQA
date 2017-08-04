@@ -473,14 +473,15 @@ sub register_worker {
 }
 
 sub update_setup_status {
-    my $status = {setup => 1};
+    my $workerid = verify_workerid();
+    my $status = {setup => 1, worker_id => $workerid};
     api_call(
         'post',
         'jobs/' . $job->{id} . '/status',
         json     => {status => $status},
         callback => "no",
     );
-    log_debug("Update status so job is not considered dead.");
+    log_debug("[Worker#" . $workerid . "] Update status so job '" . $job->{id} . "' is not considered dead.");
 }
 
 sub verify_workerid {
