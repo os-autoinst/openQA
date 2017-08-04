@@ -478,4 +478,33 @@ subtest 'update job and job settings' => sub {
     );
 };
 
+subtest 'Federated openQA job handling' => sub {
+    my $job_properties = {
+        iso          => 'openSUSE-Tumbleweed-DVD-x86_64-Current.iso',
+        DISTRI       => 'opensuse',
+        VERSION      => 'Tumbleweed',
+        FLAVOR       => 'DVD',
+        ARCH         => 'X86_64',
+        TEST         => 'awesome',
+        MACHINE      => '64bit',
+        BUILD        => '1234',
+        _GROUP       => 'opensuse',
+        WORKER_CLASS => ':federation:qemu_x86_64'
+    };
+
+    $post = $t->post_ok('/api/v1/jobs', form => $job_properties)->status_is(200);
+    $get = $t->get_ok('/api/v1/federation?worker_class=:federation:');
+    is(scalar(@{$get->tx->res->json->{jobs}}), 1);
+
+    #We have only one job
+    $t->get_ok('/api/v1/jobs/' . $get->tx->res->json->{jobs}[0]{id})->status_is(200);
+    $t->json_is(
+        '/job/settings' => {
+            WORKER_CLASS => ':federation:qemu_x86_64',
+        },
+        'also name update, all other settings cleaned'
+    );
+
+};
+
 done_testing();

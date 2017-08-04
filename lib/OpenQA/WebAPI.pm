@@ -352,6 +352,9 @@ sub startup {
     $job_r->post('/artefact')->name('apiv1_create_artefact')->to('job#create_artefact');
     $job_r->post('/ack_temporary')->to('job#ack_temporary');
 
+    # api/v1/federation
+    # mimic for now the behaviour in job#list
+    $api_public_r->get('/federation')->name('apiv1_jobs')->to('job#list');
 
     # job_set_waiting, job_set_continue
     my $command_r = $job_r->route('/set_:command', command => [qw(waiting running)]);
