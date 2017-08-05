@@ -611,6 +611,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_meaning_of_the_different_colors">Meaning of the different colors</a></li>
 </ul>
 </li>
+<li><a href="#_show_bug_or_label_icon_on_overview_if_labeled_a_href_https_github_com_os_autoinst_openqa_pull_550_gh_550_a">Show bug or label icon on overview if labeled <a href="https://github.com/os-autoinst/openQA/pull/550">gh#550</a></a></li>
 <li><a href="#_build_tagging">Build tagging</a>
 <ul class="sectlevel3">
 <li><a href="#_tag_builds_with_special_comments_on_group_overview">Tag builds with special comments on group overview</a></li>
@@ -2820,6 +2821,53 @@ reason is stated:</p>
 </div>
 </div>
 <div class="sect2">
+<h3 id="_show_bug_or_label_icon_on_overview_if_labeled_a_href_https_github_com_os_autoinst_openqa_pull_550_gh_550_a">Show bug or label icon on overview if labeled <a href="https://github.com/os-autoinst/openQA/pull/550">gh#550</a></h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Show bug icon with URL if mentioned in test comments</p>
+</li>
+<li>
+<p>Show bug or label icon on overview if labeled</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For bugreferences write <code>&lt;bugtracker_shortname&gt;#&lt;bug_nr&gt;</code> in a comment, e.g. "bsc#1234", for generic labels use <code>label:&lt;keyword&gt;</code> where <code>&lt;keyword&gt;</code> can be any valid character up to the next whitespace, e.g. "false_positive". The keywords are not defined within openQA itself. A valid list of keywords should be decided upon within each project or environment of one openQA instance.</p>
+</div>
+<div id="generic_label" class="imageblock">
+<div class="content">
+<img src="images/generic_label.png" alt="Example of a generic label">
+</div>
+<div class="title">Figure 5. Example for a generic label</div>
+</div>
+<div id="bug_label" class="imageblock">
+<div class="content">
+<img src="images/bug_label.png" alt="Example of a bug label">
+</div>
+<div class="title">Figure 6. Example for bug label</div>
+</div>
+<div class="paragraph">
+<p>Related issue: <a href="https://progress.opensuse.org/issues/10212">#10212</a></p>
+</div>
+<div class="paragraph">
+<p>'Hint:' You can also write (or copy-paste) full links to bugs and issues. The links are automatically changed to the shortlinks (e.g. <code><a href="https://progress.opensuse.org/issues/11110" class="bare">https://progress.opensuse.org/issues/11110</a></code> turns into <a href="https://progress.opensuse.org/issues/11110">poo#11110</a>). Related issue: <a href="https://progress.opensuse.org/issues/11110"><strong class="line-through">poo#11110</strong></a></p>
+</div>
+<div class="paragraph">
+<p>Also github pull requests and issues can be linked using the generic format
+<code>&lt;marker&gt;[<mark>&lt;project/repo&gt;]</mark>&lt;id&gt;</code>, e.g. <a href="https://github.com/os-autoinst/openQA/issues/1234">gh#os-autoinst/openQA#1234</a>, see <a href="https://github.com/os-autoinst/openQA/pull/973">gh#973</a></p>
+</div>
+<div class="paragraph">
+<p>All issue references are stored within the internal database of openQA. The status can be updated using the <code>/bugs</code> API route for example using external tools.</p>
+</div>
+<div id="labels_closed_tickets" class="imageblock">
+<div class="content">
+<img src="images/labels_closed_tickets.png" alt="Example for visualization of closed issue references">
+</div>
+<div class="title">Figure 7. Example for visualization of closed issue references. Upside down icons in red visualize closed issues.</div>
+</div>
+</div>
+<div class="sect2">
 <h3 id="_build_tagging">Build tagging</h3>
 <div class="sect3">
 <h4 id="_tag_builds_with_special_comments_on_group_overview">Tag builds with special comments on group overview</h4>
@@ -4926,7 +4974,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-08-05 12:24:35 UTC
+Last updated 2017-08-05 12:49:25 UTC
 </div>
 </div>
 </body>
