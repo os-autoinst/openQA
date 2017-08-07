@@ -67,10 +67,17 @@ sub ws_send_job {
     my ($job) = @_;
     my $result = {state => {msg_sent => 0}};
 
-    unless (ref($job) eq "HASH" && exists $job->{assigned_worker_id} && $workers->{$job->{assigned_worker_id}}) {
-        $result->{state}->{error} = "No workerid assigned, or worker doesn't have established a ws connection";
+    unless (ref($job) eq "HASH" && exists $job->{assigned_worker_id}) {
+        $result->{state}->{error} = "No workerid assigned";
         return $result;
     }
+
+    unless ($workers->{$job->{assigned_worker_id}}) {
+        $result->{state}->{error}
+          = "Worker " . $job->{assigned_worker_id} . " doesn't have established a ws connection";
+        return $result;
+    }
+
     my $res;
     my $tx = $workers->{$job->{assigned_worker_id}}->{socket};
     if ($tx) {
