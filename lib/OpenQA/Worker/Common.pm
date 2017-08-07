@@ -365,7 +365,9 @@ sub call_websocket {
                 else {
                     my $err = $tx->error;
                     if (defined $err) {
-                        warn "Unable to upgrade connection to WebSocket: "
+                        log_error "Unable to upgrade connection for host "
+                          . "\"$hosts->{$host}{url}{host}\""
+                          . " to WebSocket: "
                           . ($err->{code} ? $err->{code} : "[no code]")
                           . ". proxy_wstunnel enabled?";
                         if ($err->{code} && $err->{code} eq '404' && $hosts->{$host}{workerid}) {
@@ -409,7 +411,7 @@ sub register_worker {
     log_info("registering worker with openQA $host...");
 
     if (!$hosts->{$host}) {
-        warn "WebUI $host is unknown! - Should not happen but happened, exiting!";
+        log_error "WebUI $host is unknown! - Should not happen but happened, exiting!";
         Mojo::IOLoop->stop;
         return;
     }
