@@ -475,11 +475,9 @@ sub schedule {
             && ((int(${elapsed_rounded}) * 1000) > OpenQA::Scheduler::SCHEDULE_TICK_MS())))
     {
         my $backoff
-          = OpenQA::Scheduler::CONGESTION_CONTROL()
-          ?
-          ((OpenQA::Scheduler::EXPBACKOFF()**($failure || 1)) - 1) * OpenQA::Scheduler::TIMESLOT()
-          : ((($failure || 1) / OpenQA::Scheduler::EXPBACKOFF())**OpenQA::Scheduler::EXPBACKOFF())
-          + OpenQA::Scheduler::SCHEDULE_TICK_MS();
+          = OpenQA::Scheduler::CONGESTION_CONTROL() ?
+          ((2**($failure || 1)) - 1) * OpenQA::Scheduler::TIMESLOT()
+          : ((($failure  || 1) / 2)**2) + OpenQA::Scheduler::SCHEDULE_TICK_MS();
         $backoff = $backoff > OpenQA::Scheduler::MAX_BACKOFF() ? OpenQA::Scheduler::MAX_BACKOFF() : $backoff + 1000;
         log_debug "[Congestion control] Calculated backoff: ${backoff}ms";
         log_debug "[Congestion control] Failures# ${failure}"
