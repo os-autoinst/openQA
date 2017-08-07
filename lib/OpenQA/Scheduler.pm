@@ -35,10 +35,6 @@ use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 
 # How many attempts have to be performed to find a job before assuming there is nothing to be scheduled. Defaults to 1
 use constant FIND_JOB_ATTEMPTS => $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS} // 1;
 
-# Shuffle free available workers. Defaults to 1.
-# Setting it to 0 may lead to worker starvation
-use constant SHUFFLE_WORKERS => $ENV{OPENQA_SCHEDULER_SHUFFLE_WORKERS} // 1;
-
 # When enabled scheduler will keep a table of seen workers and periodically clean it up.
 # Jobs will be allocated also to those workers, even if we see them as dead from the DB state.
 use constant KEEPALIVE_DEAD_WORKERS => $ENV{OPENQA_SCHEDULER_KEEPALIVE_DEAD_WORKERS} // 0;

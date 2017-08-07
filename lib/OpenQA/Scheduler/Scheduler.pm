@@ -294,10 +294,9 @@ sub schedule {
                 my %free_workers_id;
 
                 # NOTE: $worker->connected is too much expensive since is over dbus, prefer dead.
-                my @free_workers = grep { !$_->dead } schema->resultset("Workers")->search({job_id => undef})->all();
-
-                @free_workers = shuffle(@free_workers)
-                  if OpenQA::Scheduler::SHUFFLE_WORKERS();   # shuffle avoids starvation if a free worker keeps failing.
+                # shuffle avoids starvation if a free worker keeps failing.
+                my @free_workers
+                  = shuffle(grep { !$_->dead } schema->resultset("Workers")->search({job_id => undef})->all());
 
                 %free_workers_id = map { $_->id() => 1 } @free_workers;    # keep a hash of worker ids
 
