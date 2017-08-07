@@ -215,21 +215,27 @@ sub update_status {
 
     my $job = find_job($self, $self->stash('jobid'));
     if (!$job) {
-        OpenQA::Utils::log_info('Got status update for non-existing job: ' . $self->stash('jobid'));
+        my $err = 'Got status update for non-existing job: ' . $self->stash('jobid');
+        OpenQA::Utils::log_info($err);
+        $self->render(json => {error => $err}, status => 400);
         return;
     }
 
     if (!exists $status->{worker_id}) {
-        OpenQA::Utils::log_info(
-            'Got status update for job ' . $self->stash('jobid') . ' but does not contain a worker id! ');
+        my $err = 'Got status update for job ' . $self->stash('jobid') . ' but does not contain a worker id!';
+        OpenQA::Utils::log_info($err);
+        $self->render(json => {error => $err}, status => 400);
         return;
     }
 
     if (!$job->worker || $job->worker->id != $status->{worker_id}) {
-        OpenQA::Utils::log_info('Got status update for job '
-              . $self->stash('jobid')
-              . ' that does not belong to Worker '
-              . $status->{worker_id});
+        my $err
+          = 'Got status update for job '
+          . $self->stash('jobid')
+          . ' that does not belong to Worker '
+          . $status->{worker_id};
+        OpenQA::Utils::log_info($err);
+        $self->render(json => {error => $err}, status => 400);
         return;
     }
 
