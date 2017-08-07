@@ -485,6 +485,7 @@ sub schedule {
     }
 
     log_debug("+=" . ("-" x 16) . "=+");
+    return ($successfully_allocated, $failure);
 }
 
 =head2 _reschedule
