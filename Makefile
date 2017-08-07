@@ -97,7 +97,7 @@ travis:
 	  (cd ../os-autoinst && SETUP_FOR_TRAVIS=1 sh autogen.sh && make ) ;\
           eval $$(dbus-launch --sh-syntax) ;\
 	  export PERL5OPT="$$PERL5OPT $$HARNESS_PERL_SWITCHES"; \
-	  perl t/full-stack.t ;\
+	  perl t/full-stack.t && perl t/05-scheduler-full.t ;\
 	else \
 	  list= ;\
 	  if test "x$$UITESTS" = x1; then \
@@ -132,4 +132,3 @@ public/favicon.ico: assets/images/logo.svg
 	done
 	convert assets/images/logo-16.png assets/images/logo-32.png assets/images/logo-64.png assets/images/logo-128.png -background white -alpha remove public/favicon.ico
 	rm assets/images/logo-128.png assets/images/logo-32.png assets/images/logo-64.png
-
