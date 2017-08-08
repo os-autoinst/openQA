@@ -42,10 +42,11 @@ use constant {
     WAITING   => 'waiting',
     DONE      => 'done',
     UPLOADING => 'uploading',
-    #    OBSOLETED => 'obsoleted',
+    ASSIGNED  => 'assigned'
+      #    OBSOLETED => 'obsoleted',
 };
-use constant STATES => (SCHEDULED, SETUP, RUNNING, CANCELLED, WAITING, DONE, UPLOADING);
-use constant PENDING_STATES => (SCHEDULED, SETUP, RUNNING, WAITING, UPLOADING);
+use constant STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, CANCELLED, WAITING, DONE, UPLOADING);
+use constant PENDING_STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, WAITING, UPLOADING);
 use constant EXECUTION_STATES => (RUNNING, WAITING, UPLOADING);
 use constant FINAL_STATES => (DONE, CANCELLED);
 
@@ -360,6 +361,41 @@ sub reschedule_rollback {
            # Workers should be able to kill a job checking the (job token + job id) instead.
     return $self->reschedule_state();
 }
+
+sub incomplete_and_duplicate {
+    my $self = shift;
+    $self->done(result => INCOMPLETE);
+    my $res = $self->auto_duplicate;
+    if ($res) {
+        log_debug("[Job#" . $self->id . "] Duplicated as job '" . $res->id . "'");
+        return $res;
+    }
+    return;
+}
+
+
+sub set_assigned_worker {
+    my ($self, $worker) = @_;
+    return 0 unless $worker;
+
+    $self->update(
+        {
+            state              => ASSIGNED,
+            t_started          => undef,
+            assigned_worker_id => $worker->id,
+        });
+
+    $worker->update({job_id => $self->id});
+
+    if ($worker->job->id eq $self->id) {
+        log_debug("Job '" . $self->id . "' has worker '" . $worker->id . "' assigned");
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
 
 sub set_scheduling_worker {
     my ($self, $worker) = @_;
@@ -934,7 +970,7 @@ sub set_running {
     my $self = shift;
 
     # avoids to reset the state if e.g. the worker killed the job immediately
-    if ($self->state eq SCHEDULED && $self->result eq NONE) {
+    if ($self->state eq ASSIGNED && $self->result eq NONE) {
         $self->update(
             {
                 state     => RUNNING,

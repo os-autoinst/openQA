@@ -79,8 +79,6 @@ sub create_worker {
         exec("perl ./script/worker $connect_args --isotovideo=../os-autoinst/isotovideo --verbose");
         die "FAILED TO START WORKER";
     }
-    sleep 60;
-
     return $workerpid;
 }
 

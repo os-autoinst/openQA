@@ -24,17 +24,14 @@ BEGIN {
     $ENV{OPENQA_BASEDIR} = path(tempdir, 't', 'scheduler');
     $ENV{OPENQA_CONFIG} = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
     # Since tests depends on timing, we require the scheduler to be fixed in its actions.
-    $ENV{OPENQA_SCHEDULER_TIMESLOT}                      = 1000;
-    $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION}            = 2;
-    $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS}             = 2;
-    $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL}            = 1;
-    $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}              = 2001;
-    $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}                   = 8000;
-    $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE}        = 38000;
-    $ENV{OPENQA_SCHEDULER_RETRY_JOB_ALLOCATION_ATTEMPTS} = 3;
-
-    $ENV{OPENQA_SCHEDULER_WAKEUP_ON_REQUEST}      = 1;
-    $ENV{OPENQA_SCHEDULER_KEEPALIVE_DEAD_WORKERS} = 0;
+    $ENV{OPENQA_SCHEDULER_TIMESLOT}               = 1000;
+    $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION}     = 2;
+    $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS}      = 2;
+    $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL}     = 1;
+    $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}       = 2001;
+    $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}            = 8000;
+    $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} = 38000;
+    $ENV{OPENQA_SCHEDULER_WAKEUP_ON_REQUEST}      = 0;
     path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
     path($FindBin::Bin, "data")->child("database.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("database.ini"));
     path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
@@ -80,6 +77,9 @@ path($sharedir, 'tests')->make_path;
 symlink(abs_path('../os-autoinst/t/data/tests/'), path($sharedir, 'tests')->child("tinycore"))
   || die "can't symlink";
 
+my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
+ok -d $resultdir;
+
 # Instantiate our (hacked) scheduler
 my $reactor = get_reactor();
 
@@ -87,83 +87,86 @@ subtest 'Scheduler backoff timing calculations' => sub {
 
     my $allocated;
     my $failures;
+    my $duplicates;
+    my $running;
 
     my $c = $failures;
     for (0 .. 5) {
-        ($allocated, $failures) = scheduler_step($reactor);
+        ($allocated, $duplicates, $running, $failures) = scheduler_step($reactor);
         $c++;
         my $expected_backoff = ((2**($c || 1)) - 1) * OpenQA::Scheduler::TIMESLOT() + 1000;
         $expected_backoff
           = $expected_backoff > OpenQA::Scheduler::MAX_BACKOFF ? OpenQA::Scheduler::MAX_BACKOFF : $expected_backoff;
         is get_scheduler_tick($reactor), $expected_backoff, "Tick was incremented due to growing failures($c)";
         is $failures, $c, "Expected failures: $c";
-        is $allocated, 0, "Expected allocations: 0";
+        is @$allocated, 0, "Expected allocations: 0";
+        is @$running,   0, "Expected new running jobs: 0";
     }
 
     # Capture loop avoidence timer fired. back to default
-    ($allocated, $failures) = scheduler_step($reactor);
+    ($allocated, $duplicates, $running, $failures) = scheduler_step($reactor);
     is $reactor->{timeouts}->[$reactor->{timer}->{schedule_jobs}]->{interval},
       $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} + 1000, "Scheduler clock got reset";
-
+    $reactor->remove_timeout($reactor->{timer}->{schedule_jobs});
+    delete $reactor->{timer}->{schedule_jobs};
     $reactor->{tick} = $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS};    # Reset to what we expect to be normal ticking
-    ($allocated, $failures) = scheduler_step($reactor);
+
+
+    ($allocated, $duplicates, $running, $failures) = scheduler_step($reactor);
     is get_scheduler_tick($reactor), 2000, "Tick is of lowest backoff value";
-    is $failures,  1;
-    is $allocated, 0;
-    #  $reactor->remove_timeout($reactor->{timer}->{schedule_jobs}) if $reactor->{timer}->{schedule_jobs};
-    #undef $reactor;
+    is $failures, 1;
+    is @$allocated, 0;
+    is @$running, 0, "Expected new running jobs: 0";
+
 };
 
 #
 subtest 'Scheduler worker job allocation' => sub {
 
     scheduler_step($reactor);    # let it go for 1 step without querying it in subtests - reset counters :)
+    scheduler_step($reactor);
 
     my $allocated;
     my $failures;
-
+    my $duplicates;
+    my $running;
 
     # Step 1
-    ($allocated, $failures) = scheduler_step($reactor);
-    is get_scheduler_tick($reactor), 8000, "We expect the failure carried on by the previous tests";
-    is $failures,  3;
-    is $allocated, 0;
+    ($allocated, $duplicates, $running, $failures) = scheduler_step($reactor);
+    is $failures, 4;
+    is @$allocated, 0;
+    is @$running, 0, "Expected new running jobs: 0";
 
-    my $k  = $schema->resultset("ApiKeys")->create({user_id => "99904"});
-    my $k2 = $schema->resultset("ApiKeys")->create({user_id => "99904"});
+    my $k = $schema->resultset("ApiKeys")->create({user_id => "99903"});
 
     # GO GO GO GO GO!!! like crazy now
-    #start_worker($k->key,  $k->secret,  "http://localhost:$mojoport", 1);
     my $w1_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 1);
-    sleep 20;
-
+    my $w2_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2);
+    sleep 5;
 
     # Step 1
-    ($allocated, $failures) = scheduler_step($reactor);
-    is get_scheduler_tick($reactor), 8000, "We expect the failure carried on by the previous tests";
-    #  is $failures,  3;
-    #  is $allocated, 2;
-    sleep 20;
-    # Step 2
-    ($allocated, $failures) = scheduler_step($reactor);
-    #  is get_scheduler_tick($reactor), 8000, "We expect the failure carried on by the previous tests";
-    # is $failures,  3;
-    # is $allocated, 2;
+    ($allocated, $duplicates, $running, $failures) = scheduler_step($reactor);
+    is $failures, 3;
+    is @$allocated, 2;
 
-    kill_service($w1_pid);    # Simulate a failure!
+    my $job_id1 = $allocated->[0]->{job};
+    my $job_id2 = $allocated->[1]->{job};
+    my $wr_id1  = $allocated->[0]->{worker};
+    my $wr_id2  = $allocated->[1]->{worker};
+    ok $wr_id1 != $wr_id2,   "Jobs dispatched to different workers";
+    ok $job_id1 != $job_id2, "Jobs dispatched to different workers";
+    ($allocated, $duplicates, $running, $failures) = scheduler_step($reactor);
+    is @$running, 0, 'Scheduler did nothing since jobs failed immediately';
+    is $failures, 3;
+    is @$allocated, 0;
 
-    #and up again
-    #  $w1_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 1);
-
-
-
-    #  kill_service($_) for ($w1_pid, $w2_pid);
+    kill_service($_) for ($w1_pid, $w2_pid);
 
 };
-#
-#
+
 kill_service($wspid);
 kill_service($webapi);
+
 sub get_reactor {
     # Instantiate our (hacked) scheduler
     OpenQA::Scheduler->new();
@@ -184,28 +187,30 @@ sub range_ok {
 }
 
 sub scheduler_step {
+    use Data::Dumper;
     my $reactor = shift;
     my $started = $reactor->_now;
-    my ($allocated, $failures);
+    my ($allocated, $duplicates, $running, $failures);
     my $fired;
     my $current_tick = $reactor->{tick};
-    $reactor->remove_timeout($reactor->{timer}->{schedule_jobs}) if $reactor->{timer}->{schedule_jobs};
     $reactor->{timer}->{schedule_jobs} = $reactor->add_timeout(
         $current_tick,
         Net::DBus::Callback->new(
             method => sub {
                 $fired = $reactor->_now;
-                ($allocated, $failures) = OpenQA::Scheduler::Scheduler::schedule();
+                ($allocated, $duplicates, $running, $failures) = OpenQA::Scheduler::Scheduler::schedule();
+                print STDERR Dumper($allocated) . "\n";
+                print STDERR Dumper($duplicates) . "\n";
+
                 $reactor->{tick} = $reactor->{timeouts}->[$reactor->{timer}->{schedule_jobs}]->{interval};
-                $reactor->shutdown;
+                $reactor->remove_timeout($reactor->{timer}->{schedule_jobs});    # Scheduler reallocate itself :)
+                                                                                 #  $reactor->shutdown;
             }));
     $reactor->{running} = 1;
     $reactor->step;
-    # Scheduler reallocate itself :)
-    do { $reactor->remove_timeout($reactor->{timer}->{schedule_jobs}); delete $reactor->{timer}->{schedule_jobs}; }
-      if $fired;
+
     range_ok($current_tick, $started, $fired) if $fired;
-    return ($allocated, $failures);
+    return ($allocated, $duplicates, $running, $failures);
 }
 sub get_scheduler_tick { shift->{tick} }
 
