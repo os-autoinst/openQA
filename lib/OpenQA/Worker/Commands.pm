@@ -137,7 +137,7 @@ sub websocket_commands {
 
             $job_in_progress = 1;
             $check_job_running->{$host} = 1;
-            Mojo::IOLoop->singleton->on(
+            Mojo::IOLoop->singleton->once(
                 "stop_job" => sub {
                     log_debug("Build finished, setting us free to pick up new jobs");
                     $job_in_progress = 0;
@@ -148,6 +148,17 @@ sub websocket_commands {
                 $OpenQA::Worker::Common::job = $job;
                 log_debug("Job " . $job->{id} . " scheduled for next cycle");
                 $tx->send({json => {type => "accepted", jobid => $job->{id}}} => sub { start_job($host); });
+                Mojo::IOLoop->singleton->once(
+                    "start_job" => sub {
+                        log_debug("Sending IMMEDIATELY worker status to $host");
+                        $tx->send(
+                            {
+                                json => {
+                                    type => 'worker_status',
+                                    (status => 'working', job => $job) x !!($job),
+                                    (status => 'free') x !!(!$job),
+                                }});
+                    });
             }
             else {
                 $job_in_progress = 0;

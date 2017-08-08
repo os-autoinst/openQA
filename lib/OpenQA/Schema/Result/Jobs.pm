@@ -364,6 +364,7 @@ sub reschedule_rollback {
 
 sub incomplete_and_duplicate {
     my $self = shift;
+    $self->abort();
     $self->done(result => INCOMPLETE);
     my $res = $self->auto_duplicate;
     if ($res) {
@@ -372,7 +373,6 @@ sub incomplete_and_duplicate {
     }
     return;
 }
-
 
 sub set_assigned_worker {
     my ($self, $worker) = @_;
