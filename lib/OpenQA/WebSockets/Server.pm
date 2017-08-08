@@ -165,11 +165,7 @@ sub ws_is_worker_connected {
 
 sub ws_worker_accepted_job {
     my ($jobid) = @_;
-    if ($accepted_jobs->{$jobid}) {
-        log_debug("Worker $accepted_jobs->{$jobid} accepted job $jobid");
-        return delete $accepted_jobs->{$jobid};
-    }
-    log_debug("Job# $jobid was not accepted");
+    return delete $accepted_jobs->{$jobid} if ($accepted_jobs->{$jobid});
     return 0;
 }
 
@@ -341,12 +337,13 @@ sub _workers_checker {
                 && exists $worker_status->{$j->worker->id()}->{state}
                 && $worker_status->{$j->worker->id()}->{state} eq "free"))
         {
+            log_warning(sprintf('Stale running job %d detected', $j->id));
             $j->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
             my $res = $j->auto_duplicate;
             if ($res) {
                 log_warning(
                     sprintf(
-                        'running job %d with no worker or worker mismatching id aborted and duplicated %d',
+                        'running job %d with no worker or worker mismatching id aborted and duplicated to job "%d"',
                         $j->id, $res->id
                     ));
             }

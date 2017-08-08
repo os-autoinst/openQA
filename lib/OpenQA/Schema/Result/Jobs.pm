@@ -364,7 +364,6 @@ sub reschedule_rollback {
 
 sub incomplete_and_duplicate {
     my $self = shift;
-    $self->abort();
     $self->done(result => INCOMPLETE);
     my $res = $self->auto_duplicate;
     if ($res) {

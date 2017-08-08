@@ -575,7 +575,7 @@ sub is_job_allocated {
     eval { $res = $ipc->websockets('ws_worker_accepted_job', $job); };
     if ($@) {
         log_debug($@);
-        $res = $@;
+        return 0;
     }
     return $res;
 }
