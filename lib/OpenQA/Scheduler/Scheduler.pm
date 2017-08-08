@@ -62,7 +62,6 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 
 CORE::state $failure           = 0;
 CORE::state $ws_allocated_jobs = {};
-CORE::state $keepalives        = {};
 CORE::state $quit              = 0;
 
 sub normal_signals_handler {
@@ -198,7 +197,6 @@ sub schedule {
     foreach my $j (keys %{$ws_allocated_jobs}) {
         my $workerid          = is_job_allocated($j);                             # Delete from the queue
         my $expected_workerid = $ws_allocated_jobs->{$j}->{assigned_worker_id};
-        my $can_retry = $ws_allocated_jobs->{$j}->{retries} < OpenQA::Scheduler::RETRY_JOB_ALLOCATION_ATTEMPTS();
 
         log_debug("[Job#${j}] Check if was accepted by the assigned worker $expected_workerid :"
               . pp($ws_allocated_jobs->{$j}));
@@ -208,7 +206,6 @@ sub schedule {
             log_debug("[Job#${j}] Accepted by the assigned worker $expected_workerid");
 
             try {
-                delete $ws_allocated_jobs->{$j};
                 die "Already updated state"
                   unless $job->set_running;    #avoids to reset the state if the worker killed the job immediately
                 log_debug("[Job#${j}] Accepted by worker $expected_workerid - setted to running state");
@@ -224,13 +221,6 @@ sub schedule {
                   if OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::BUSY_BACKOFF();
             };
         }
-        elsif ($can_retry) {
-            $ws_allocated_jobs->{$j}->{retries}++;
-
-            log_debug("[Job#${j}] [Attempt#"
-                  . $ws_allocated_jobs->{$j}->{retries}
-                  . "] Still no message back from Worker $expected_workerid - ");
-        }
         else {
             log_debug(
                     "[Job#${j}] Too bad, the job was not accepted by the worker. Maximum number of retrials exceeded ("
@@ -238,8 +228,6 @@ sub schedule {
                   . ")");
 
             $job->reschedule_rollback;
-
-            delete $ws_allocated_jobs->{$j};
 
             # If we had a different accept, possibly means
             # we are really congested by the messages coming from different workers
@@ -249,6 +237,7 @@ sub schedule {
         }
 
     }
+    $ws_allocated_jobs = {};
 
     # Avoid to go into starvation - reset the scheduler tick counter.
     reactor->{timer}->{capture_loop_avoidance} ||= reactor->add_timeout(
@@ -265,16 +254,6 @@ sub schedule {
                       OpenQA::Scheduler::SCHEDULE_TICK_MS() + 1000
                     : OpenQA::Scheduler::SCHEDULE_TICK_MS());
             })) if (OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::BUSY_BACKOFF());
-
-    # Keepalives reset
-    reactor->{timer}->{keepalive_reset} ||= reactor->add_timeout(
-        (OpenQA::Scheduler::CAPTURE_LOOP_AVOIDANCE()) / 2,
-        Net::DBus::Callback->new(
-            method => sub {
-                $keepalives = {};
-                log_debug("[Keepalives] Resetting count");
-
-            })) if OpenQA::Scheduler::KEEPALIVE_DEAD_WORKERS();
 
     # Exit only when database state is consistent.
     if ($quit) {
@@ -303,14 +282,6 @@ sub schedule {
                 log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
                 log_debug("\t Failure# ${failure}") if OpenQA::Scheduler::CONGESTION_CONTROL();
 
-                # Get id of workers recorded in the keepalives hash.
-                # We query the DB to check if they don't have any job assigned,
-                # and we filter also them from the following that will be allocated
-                my @possible_free_workers = grep { !$_->job_id && !exists $free_workers_id{$_->id} }
-                  map { schema->resultset("Workers")->find($_) } keys %{$keepalives};
-
-                log_debug("Possible dead worker (not seen from search query): " . $_->id) for @possible_free_workers;
-
                 if (@free_workers == 0) {
                     # Consider it a failure when either BUSY_BACKOFF or CONGESTION_CONTROL is enabled
                     # so if there are no free workers but we still have
@@ -322,7 +293,7 @@ sub schedule {
                 }
 
                 my $allocating = {};
-                for my $w (@free_workers, @possible_free_workers) {
+                for my $w (@free_workers) {
                     next if !$w->id();
                     # Get possible jobs by priority that can be allocated
                     # by checking workers capabilities
@@ -344,12 +315,10 @@ sub schedule {
                         $allocated_job = $p_job;
                     }
 
-                    $keepalives->{$w->id()}++
-                      if OpenQA::Scheduler::KEEPALIVE_DEAD_WORKERS();    # Count the worker as seen recently.
                     next unless $allocated_job && exists $allocated_job->{id};
 
                     log_debug("[Worker#" . $w->id() . "] Among them, we have chosen job: " . $allocated_job->{id});
-                    $allocated_job->{assigned_worker_id} = $w->id();     # Set the worker id
+                    $allocated_job->{assigned_worker_id} = $w->id();    # Set the worker id
 
                     # TODO: we need to be sure job_grab is not returning the same job
                     # for different workers - for now do not push them into allocated array.
@@ -404,9 +373,7 @@ sub schedule {
                     # answer from the assigned worker and see what to do
                     $ws_allocated_jobs->{$allocated->{id}} = {
                         assigned_worker_id => $allocated->{assigned_worker_id},
-                        result             => $allocated->{result},
-                        retries            => 0
-                    };
+                        result             => $allocated->{result}};
                 }
                 else {
                     # Send abort and reschedule if we fail associating the job to the worker
