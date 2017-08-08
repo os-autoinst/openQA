@@ -53,7 +53,8 @@ sub websocket_commands {
                 return;
             }
             elsif (!$current_host) {
-                die 'Job ids match but current host not set';
+                log_warning('Job ids match but current host not set');
+                return unless $type eq "scheduler_abort";
             }
             elsif ($current_host ne $host) {
                 log_warning(
