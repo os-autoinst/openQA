@@ -201,6 +201,7 @@ sub _message {
     my $worker = _get_worker($ws->tx);
     unless ($worker) {
         $ws->app->log->warn("A message received from unknown worker connection");
+        log_debug(sprintf('A message received from unknown worker connection: %s', Dumper($json)));
         return;
     }
     unless (ref($json) eq 'HASH') {
