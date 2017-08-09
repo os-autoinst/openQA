@@ -134,13 +134,42 @@ $log->info("Master: ". $master_url->to_abs);
 $log->info("Slave: ". $slave_url->to_abs);
 
 my $masterUI = $master;
+my $masterUI_workerid=register_worker($masterUI, $master_url->clone);
 my $slaveUI = $slave;
+my $slaveUI_workerid=register_worker($slaveUI, $slave_url->clone);
 my $main_loop = Mojo::IOLoop->singleton;
 my $proxy_job_monitor_lock = 0;
 
 
 sub get_asset_list {
     return {a => 1};
+}
+
+sub register_worker {
+    my ($webui, $url) = @_;
+    $url->path("/api/v1/workers")->query(Mojo::Parameters->new);
+    $url->query(
+        host => ':bridge:'.$url->host,
+        instance => 1,
+        cpu_arch => 'bridge',
+        mem_max => 0,
+        worker_class => 'FEDERATION_BRIDGE_WORKER'
+        );
+    $log->info("Registering bridge at ".$url->to_abs);
+    my $tx = $webui->post($url);
+    if ($tx->success) {
+        my $req = $tx->success->json;
+        if ($req) {
+            return $tx->success->json->{id};
+        } else {
+            die "job not created. duplicate? ", Dumper($tx->res->body);
+        }
+    }
+    else {
+        die "Failed to create job, empty response. Make sure your HTTP proxy is running, e.g. apache, nginx, etc."
+          unless $tx->res->body;
+        die "Failed to create job: ", Dumper($tx->res->body);
+    }
 }
 
 sub move_job {
@@ -235,7 +264,7 @@ sub proxy_job_monitor {
         $log->error($UI->res);
     }
 
-    foreach my $job (@{$UI->res->json->{jobs}}) { 
+    foreach my $job (@{$UI->res->json->{jobs}}) {
         my $progress_updated = process_job_progress($job);
         if ($progress_updated eq 1){
             push @jobs, $job;
