@@ -150,6 +150,7 @@ sub show {
     my $self   = shift;
     my $job_id = int($self->stash('jobid'));
     my $job    = $self->db->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
+
     if ($job) {
         my $details = $self->req->params->to_hash->{details} || 0;
         $self->render(json => {job => $job->to_hash(assets => 1, deps => 1, details => $details)});
@@ -261,7 +262,7 @@ sub update {
     my $settings = delete $json->{settings};
 
     # validate specified columns (print error if at least one specified column does not exist)
-    my @allowed_cols = qw(group_id priority retry_avbl);
+    my @allowed_cols = qw(group_id priority retry_avbl backend backend_info);
     for my $key (keys %$json) {
         if (!grep $_ eq $key, @allowed_cols) {
             return $self->render(json => {error => "Column $key can not be set"}, status => 400);
