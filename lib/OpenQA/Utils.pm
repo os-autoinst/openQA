@@ -72,6 +72,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   send_job_to_worker
   is_job_allocated
   wakeup_scheduler
+  read_test_modules
 );
 
 if ($0 =~ /\.t$/) {
@@ -662,6 +663,48 @@ sub find_job {
     }
 
     return $job;
+}
+
+sub read_test_modules {
+    my ($job) = @_;
+
+    my $testresultdir = $job->result_dir();
+    return [] unless $testresultdir;
+
+    my $category;
+    my @modlist;
+
+    for my $module (OpenQA::Schema::Result::JobModules::job_modules($job)) {
+        my $name = $module->name();
+        # add link to $testresultdir/$name*.png via png CGI
+        my @details;
+
+        my $num = 1;
+
+        for my $step (@{$module->details}) {
+            $step->{num} = $num++;
+            push(@details, $step);
+        }
+
+        push(
+            @modlist,
+            {
+                name      => $module->name,
+                result    => $module->result,
+                details   => \@details,
+                milestone => $module->milestone,
+                important => $module->important,
+                fatal     => $module->fatal
+            });
+
+        if (!$category || $category ne $module->category) {
+            $category = $module->category;
+            $modlist[-1]->{category} = $category;
+        }
+
+    }
+
+    return \@modlist;
 }
 
 sub wait_with_progress {
