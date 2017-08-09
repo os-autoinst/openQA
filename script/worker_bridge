@@ -111,8 +111,9 @@ $options{limit} ||= 1000;
 $options{worker_class} ||= ":provo:qemu_aarch64";
 
 #"/api/v1/jobs.json?&worker_class=aarch64_seattle9&limit=1000";
-my $master_url = Mojo::URL->new($options{master})->path("/api/v1/jobs.json")->query({
+my $master_url = Mojo::URL->new($options{master})->path("/api/v1/federation")->query({
         limit => $options{limt},
+        state => 'scheduled',
         worker_class => $options{worker_class}
     });
 
@@ -180,7 +181,7 @@ sub move_job {
 sub fetch_jobs {
     my @crop;
     my $UI = $masterUI->get($master_url->clone);
-    $log->debug("fetching jobs from".$master_url->clone);
+    $log->debug("fetching jobs from ".$master_url->clone);
     if($UI->res->is_success){
         my $job_count = scalar @{$UI->res->json->{jobs}};
         $log->info("Found: $job_count at ". $master_url->to_abs);
