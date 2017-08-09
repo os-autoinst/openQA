@@ -810,3 +810,19 @@ h2 + * {
   margin-right: 10px;
   width: auto;
 }
+
+#footer-links {
+    &.left {
+        float: left;
+    }
+
+    &.right {
+        float: right;
+    }
+
+    a {
+        display: inline-table;
+        margin-left: 15px;
+        margin-right: 15px;
+    }
+}
