@@ -135,6 +135,7 @@ $log->info("Slave: ". $slave_url->to_abs);
 my $masterUI = $master;
 my $slaveUI = $slave;
 my $main_loop = Mojo::IOLoop->singleton;
+my $proxy_job_monitor_lock = 0;
 
 
 sub get_asset_list {
@@ -196,9 +197,8 @@ sub fetch_jobs {
 sub update_proxied_job {
     my ($job, $url, $status) = @_;
     $url->path("jobs/".$job->{id}."/status");
-    my $js = {status => $status};
-    # $url->query($js);
-    $log->info("Updating job: ".$job->{id}." at the MasterUI");
+    my $js = {status => $status, backend => 'UFP', backend_info => 'United Federation of Planets'};
+    $log->info("Updating job: ".$job->{id}." at ".$url->host);
     my $tx = $master->post($url => json => $js);
     if ($tx->success) {
         my $req = $tx->success->json;
@@ -206,52 +206,68 @@ sub update_proxied_job {
             $log->debug("Job #".$job->{id}." sucessully updated in the MasterUI");
             return 1;
         } else {
-            die "job not created. duplicate? ", Dumper($tx->res->body);
+            $log->error( "job not created. duplicate? ", Dumper($tx->res->json));
+            return $tx->res->json;
         }
     }
     else {
-        die "Failed to create job, empty response. Make sure your HTTP proxy is running, e.g. apache, nginx, etc."
-          unless $tx->res->body;
-        die "Failed to create job: ", Dumper($tx->res->body);
+        $log->error("Failed to create job, empty response. Make sure your HTTP proxy is running, e.g. apache, nginx, etc.")
+          unless $tx->res->json;
+        return $tx->res->json;
     }
 }
 
 sub proxy_job_monitor {
-    my ($result) = @_;
-    $log->debug("proxy_job_monitor: ".$result->{jobid});
-    $main_loop->recurring(2 => sub {
-        my $loop = shift;
-        # Add a timer
-        $log->error("Adding a monitor for #".$result->{jobid}, Dumper($result));
 
-        Mojo::IOLoop->subprocess(
-            sub {
-                    $log->info("Checking for job #".$result->{jobid}, Dumper($result));
-                    my $url = $slave_url->clone;
-                    $url->path("jobs/".$result->{jobid});
-                    my $UI = $slaveUI->get($url);
-                    $log->info("Job #". $result->{jobid} ." reported ".$UI->res->json->{job}{state});
-                    if($UI->res->is_success){
-                        my $job_status = $UI->res->json->{state};
-                        $log->info("Job #". $result->{jobid} ." reported ".$UI->res->json->{job}{state});
-                        $log->info(Dumper($result));
-                        $log->info(Dumper($UI->res->json));
-                        update_proxied_job(id => $result->{jobid}, $master_url->clone, passed => 1) if $UI->res->json->{job}{state} eq 'done' ;
-                        update_proxied_job(id => $result->{jobid}, $master_url->clone, incomplete => 1) if $UI->res->json->{job}{state} eq 'scheduled' ;
-                    }
-            },
-            sub {
-            my ($subprocess, $err, @results) = @_;
-            $subprocess->ioloop->emit('job_progress', @results);
-        });
-    });
+    $log->debug("Monitoring SlaveUI for jobs that are either DONE or CANCELLED");
+    $log->debug("setting up subprocess");
+    my @jobs;
+    my $url = $slave_url->clone->query({
+                # limit => $options{limt},
+                state => 'cancelled,incomplete,scheduled',
+                proxied => 1
+            });
+    my $UI = $slaveUI->get($url);
+    if($UI->res->is_success){
+        $log->info("Transaction executed");
+    } else {
+        $log->error($UI->res);
+    }
 
+    foreach my $job (@{$UI->res->json->{jobs}}) { 
+        my $progress_updated = process_job_progress($job);
+        if ($progress_updated eq 1){
+            push @jobs, $job;
+        } else {
+            $log->debug($progress_updated->{error});
+        }
+    };
+
+    $proxy_job_monitor_lock = 0;
+    $log->info("Lock released", $url->to_abs);
+    return @jobs;
+}
+
+sub process_job_progress {
+    my ($job) = @_;
+    return 0 unless $job->{settings}{FEDERATED_REPORT};
+    my $id = Mojo::URL->new($job->{settings}{FEDERATED_REPORT});
+    my $status;
+    $job->{id} = $id->path->parts->[1];
+    $status = {passed => 1} if $job->{state} eq 'done';
+    $status = {incomplete => 1} if $job->{state} eq 'incomplete';
+    my $result = update_proxied_job($job, $master_url->clone, $status);
+    if ($result){
+        return $result;
+    } else {
+        return 0;
+    }
 }
 
 $main_loop->on(new_jobs => sub {
     my ($loop, @report_args) = @_;
     $log->info("Job progress on the SlaveUI", Dumper(\@report_args));
-    map { proxy_job_monitor($_) } @report_args;
+    #map { proxy_job_monitor($_) } @report_args;
     });
 
 $main_loop->on(job_progress => sub {
@@ -280,6 +296,37 @@ $main_loop->recurring(5 => sub {
             $subprocess->ioloop->emit('new_jobs', @results);
         }
     });
+});
+
+# Check the slaveUI and check for jobs that are in a final state DONE or CANCELLED
+$main_loop->recurring(0.5 => sub {
+    my $loop = shift;
+    # Add a timer
+    unless($proxy_job_monitor_lock){
+    $log->info("Checking for job progress on the slaveUI");
+    $log->info("Locking");
+    $proxy_job_monitor_lock = 1;
+    # Mojo::IOLoop->subprocess(
+        # sub {
+            # my $subprocess = shift;
+            $log->debug("Calling proxy job monitor");
+            my @jobs = proxy_job_monitor();
+            $log->info("Got ${@jobs} to update") if @jobs;
+            $log->info("Jobs have been updated");
+            # return @jobs;
+        # },
+        # sub {
+        # my ($subprocess, $err, @results) = @_;
+        # if (@results){
+            map { $log->debug("Job ".$_->{jobid}." created at ". $_->{slave_url}) } @jobs;
+            $log->info("Jobs available on the MasterUI");
+            # $subprocess->ioloop->emit('job_progress', @results);
+        # }
+    # });
+    } else {
+        $log->debug("Still locked");
+    }
+    $log->debug("Hello?");
 });
 
 Mojo::IOLoop->start;
