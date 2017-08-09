@@ -151,7 +151,8 @@ sub show {
     my $job_id = int($self->stash('jobid'));
     my $job    = $self->db->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
     if ($job) {
-        $self->render(json => {job => $job->to_hash(assets => 1, deps => 1)});
+        my $details = $self->req->params->to_hash->{details} || 0;
+        $self->render(json => {job => $job->to_hash(assets => 1, deps => 1, details => $details)});
     }
     else {
         $self->reply->not_found;

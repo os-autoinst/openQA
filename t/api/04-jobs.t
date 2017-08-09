@@ -401,6 +401,18 @@ $t->json_is('/job/settings/DISTRI'  => undef);
 
 $post = $t->post_ok('/api/v1/jobs', form => {})->status_is(400);
 
+subtest 'job details' => sub {
+
+    $t->get_ok('/api/v1/jobs/99926')->status_is(200);
+    $t->json_is('/job/testresults' => undef, 'Test details are not present');
+
+    $t->get_ok('/api/v1/jobs/99926?details=1')->status_is(200);
+    $t->json_hasnt('/job/testresults/0', 'Test details are empty');
+
+    $t->get_ok('/api/v1/jobs/99963?details=1')->status_is(200);
+    $t->json_has('/job/testresults/0', 'Test details are there');
+};
+
 subtest 'update job and job settings' => sub {
     # check defaults
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);
