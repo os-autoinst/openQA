@@ -39,7 +39,7 @@ use Scalar::Util 'weaken';
 use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
-use OpenQA::Utils qw(log_debug log_warning send_job_to_worker is_job_allocated);
+use OpenQA::Utils qw(log_debug log_warning send_job_to_worker);
 use db_helpers 'rndstr';
 use Time::HiRes 'time';
 use List::Util 'shuffle';
@@ -60,9 +60,8 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
   asset_list
 );
 
-CORE::state $failure           = 0;
-CORE::state $ws_allocated_jobs = {};
-CORE::state $quit              = 0;
+CORE::state $failure = 0;
+CORE::state $quit    = 0;
 
 sub normal_signals_handler {
     log_debug("Received signal to stop");
@@ -186,74 +185,8 @@ sub schedule {
     my $allocated_worker;
     my $start_time = time;
 
-    my @duplicated;
-    my @now_running;
     log_debug("+=" . ("-" x 16) . "=+");
 
-    # If in the other tick we allocated some job,
-    # let's check if meanwhile we got an answer from the worker replying it have accepted.
-    # While doing that, we also cleanup the websocket
-    # queue that keeps the accepted messages.
-    my @jobs = schema->resultset("Jobs")->search({state => OpenQA::Schema::Result::Jobs::ASSIGNED})->all();
-    log_debug("Check if previously dispatched jobs(" . scalar(@jobs) . ") were accepted");
-
-    foreach my $job (@jobs) {
-        my $j                 = $job->id();
-        my $workerid          = is_job_allocated($j);    # Delete from the queue
-        my $expected_workerid = $job->worker->id();
-        log_debug("[Job#${j}] Check if was accepted by the assigned worker $expected_workerid");
-
-        if ($expected_workerid == $workerid) {
-            log_debug("[Job#${j}] Accepted by the assigned worker $expected_workerid");
-
-            try {
-                die "Already updated state"
-                  unless $job->set_running;    #avoids to reset the state if the worker killed the job immediately
-                log_debug("[Job#${j}] Accepted by worker $expected_workerid - setted to running state");
-                push(@now_running, {job => $j, worker => $expected_workerid});
-            }
-            catch {
-                log_debug("[Job#${j}] Cannot set job to running state for worker $expected_workerid, reason: " . $_);
-
-                # Aborts and set the job to scheduled again
-                #$job->reschedule_rollback if $job->result eq OpenQA::Schema::Result::Jobs::NONE;
-
-                # Set the job to incomplete and duplicate it
-                if (   $job->result eq OpenQA::Schema::Result::Jobs::NONE
-                    && $job->state eq OpenQA::Schema::Result::Jobs::ASSIGNED)
-                {
-                    if (my $res = $job->incomplete_and_duplicate) {
-                        log_debug("[Job#${j}] Duplicated as job '" . $res->id . "'");
-                        push(@duplicated, {old => $job->id, new => $res->id});
-                    }
-                }
-
-                # Either we had a real failure or the system is under load.
-                $failure++
-                  if OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::BUSY_BACKOFF();
-            };
-        }
-        else {
-            log_debug("[Job#${j}] Too bad, the job was not accepted by the worker '${expected_workerid}'.");
-
-            #  $job->reschedule_rollback;
-
-            # Set the job to incomplete and duplicate it
-            if (my $res = $job->incomplete_and_duplicate) {
-                log_debug("[Job#${j}] Duplicated as job '" . $res->id . "'");
-                push(@duplicated, {old => $job->id, new => $res->id});
-            }
-
-            # If we had a different accept, possibly means
-            # we are really congested by the messages coming from different workers
-            # that we allocated in a "burst" of scheduling
-            $failure++
-              if OpenQA::Scheduler::CONGESTION_CONTROL();
-        }
-    }
-
-    is_job_allocated($_) for (keys %{$ws_allocated_jobs});    # We have to empty websocket server memory. or will leak
-    $ws_allocated_jobs = {};
     # Avoid to go into starvation - reset the scheduler tick counter.
     reactor->{timer}->{capture_loop_avoidance} ||= reactor->add_timeout(
         OpenQA::Scheduler::CAPTURE_LOOP_AVOIDANCE(),
@@ -383,7 +316,6 @@ sub schedule {
                 if ($job->set_assigned_worker($worker)) {
                     push(@successfully_allocated,
                         {job => $allocated->{id}, worker => $allocated->{assigned_worker_id}});
-                    $ws_allocated_jobs->{$allocated->{id}}++;
                 }
                 else {
                     # Send abort and reschedule if we fail associating the job to the worker
@@ -441,9 +373,7 @@ sub schedule {
     my $elapsed_rounded = sprintf("%.5f", (time - $start_time));
     log_debug "Scheduler took ${elapsed_rounded}s to perform operations and allocated "
       . scalar(@successfully_allocated) . " jobs";
-    log_debug "Allocated: " . pp($_)                 for @successfully_allocated;
-    log_debug "Duplicated: " . pp($_)                for @duplicated;
-    log_debug "New jobs to running state: " . pp($_) for @now_running;
+    log_debug "Allocated: " . pp($_) for @successfully_allocated;
 
     # Decide if we want to reschedule ourselves or not.
     # we do that in two situations: either we had failures and CONGESTION_CONTROL is enabled,
@@ -465,7 +395,7 @@ sub schedule {
     }
 
     log_debug("+=" . ("-" x 16) . "=+");
-    return (\@successfully_allocated, \@duplicated, \@now_running, $failure);
+    return (\@successfully_allocated, $failure);
 }
 
 =head2 _reschedule
