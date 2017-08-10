@@ -152,6 +152,7 @@ sub websocket_commands {
                 Mojo::IOLoop->singleton->once(
                     "start_job" => sub {
                         log_debug("Sending IMMEDIATELY worker status to $host");
+                        $job->{state} = "running";
                         $tx->send(
                             {
                                 json => {
