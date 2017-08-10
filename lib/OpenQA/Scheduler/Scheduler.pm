@@ -219,7 +219,9 @@ sub schedule {
                 #$job->reschedule_rollback if $job->result eq OpenQA::Schema::Result::Jobs::NONE;
 
                 # Set the job to incomplete and duplicate it
-                if ($job->result eq OpenQA::Schema::Result::Jobs::NONE) {
+                if (   $job->result eq OpenQA::Schema::Result::Jobs::NONE
+                    && $job->state eq OpenQA::Schema::Result::Jobs::ASSIGNED)
+                {
                     if (my $res = $job->incomplete_and_duplicate) {
                         log_debug("[Job#${j}] Duplicated as job '" . $res->id . "'");
                         push(@duplicated, {old => $job->id, new => $res->id});

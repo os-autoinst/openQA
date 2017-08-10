@@ -36,9 +36,6 @@ our (@ISA, @EXPORT, @EXPORT_OK);
 # id->worker mapping
 my $workers;
 
-# jobs->worker mapping
-my $accepted_jobs;
-
 # Will be filled out from worker status messages
 my $worker_status;
 
@@ -163,12 +160,6 @@ sub ws_is_worker_connected {
     return ($workers->{$workerid} && $workers->{$workerid}->{socket} ? 1 : 0);
 }
 
-sub ws_worker_accepted_job {
-    my ($jobid) = @_;
-    return delete $accepted_jobs->{$jobid} if ($accepted_jobs->{$jobid});
-    return 0;
-}
-
 sub _get_worker {
     my ($tx) = @_;
     for my $worker (values %$workers) {
@@ -220,7 +211,6 @@ sub _message {
     }
     elsif ($json->{type} eq 'accepted') {
         my $jobid = $json->{jobid};
-        $accepted_jobs->{$jobid} = $worker->{id};
         log_debug("Worker: $worker->{id} accepted job $jobid");
     }
     elsif ($json->{type} eq 'status') {
@@ -250,7 +240,20 @@ sub _message {
         my $status = $json->{state};
         my $jobid  = $json->{job};
         $worker_status->{$worker->{id}} = $json;
-        log_debug(sprintf('Received worker_status message "%s"', Dumper($json)));
+        log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $worker->{id}, Dumper($json)));
+        return unless $jobid && exists $jobid->{state} && $jobid->{state} eq OpenQA::Schema::Result::Jobs::RUNNING;
+        app->schema->txn_do(
+            sub {
+                my $job = $ws->app->schema->resultset("Jobs")->find($jobid->{id});
+                return
+                  unless ($job
+                    && $job->result eq OpenQA::Schema::Result::Jobs::NONE
+                    && $job->state eq OpenQA::Schema::Result::Jobs::ASSIGNED);
+                $job->state(OpenQA::Schema::Result::Jobs::RUNNING);
+                $job->update();
+                log_debug(sprintf('Job "%s" set to running states from ws status updates', $json->{job}->{id}));
+            });
+
     }
     else {
         log_error(sprintf('Received unknown message type "%s" from worker %u', $json->{type}, $worker->{id}));

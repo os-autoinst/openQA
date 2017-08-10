@@ -233,20 +233,6 @@ subtest 'Simulation of running workers (normal)' => sub {
     is @{$running}[0]->{worker}, 6;
 
     kill_service($w1_pid, 1);
-
-    # Let's wait for the websocket reset and see if the job was duplicated
-    # 120 is the websocket hardcoded timeout for reset jobs whose status is not updated by the worker.
-    for (0 .. 360) {    # simulate seen, but worker won't send worker_status updates anymore.
-            # XXX:  $schema->resultset("Workers")->find(6)->seen(); need to test if we keep sending seen
-            # But before we need to send a worker_status of type free, to actually test the new timeout on ws server
-        last if $schema->resultset("Jobs")->find(99983)->result eq OpenQA::Schema::Result::Jobs::INCOMPLETE;
-        sleep 1;
-    }
-
-    is $schema->resultset("Jobs")->find(99983)->result, OpenQA::Schema::Result::Jobs::INCOMPLETE,
-"After the timeout is exhausted, and we had no answers from worker the websocket server should reset the job state even if on running";
-    $schema->resultset("Workers")->find(3)->update({t_updated => DateTime->from_epoch(epoch => time - 7200)})
-      ;     # Hide the unstable worker, so appears dead
 };
 
 kill_service($_) for ($wspid, $webapi);
