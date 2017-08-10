@@ -39,6 +39,9 @@ my $workers;
 # jobs->worker mapping
 my $accepted_jobs;
 
+# Will be filled out from worker status messages
+my $worker_status;
+
 # internal helpers prototypes
 sub _message;
 sub _get_worker;
@@ -67,10 +70,17 @@ sub ws_send_job {
     my ($job) = @_;
     my $result = {state => {msg_sent => 0}};
 
-    unless (ref($job) eq "HASH" && exists $job->{assigned_worker_id} && $workers->{$job->{assigned_worker_id}}) {
-        $result->{state}->{error} = "No workerid assigned, or worker doesn't have established a ws connection";
+    unless (ref($job) eq "HASH" && exists $job->{assigned_worker_id}) {
+        $result->{state}->{error} = "No workerid assigned";
         return $result;
     }
+
+    unless ($workers->{$job->{assigned_worker_id}}) {
+        $result->{state}->{error}
+          = "Worker " . $job->{assigned_worker_id} . " doesn't have established a ws connection";
+        return $result;
+    }
+
     my $res;
     my $tx = $workers->{$job->{assigned_worker_id}}->{socket};
     if ($tx) {
@@ -155,11 +165,7 @@ sub ws_is_worker_connected {
 
 sub ws_worker_accepted_job {
     my ($jobid) = @_;
-    if ($accepted_jobs->{$jobid}) {
-        log_debug("Worker $accepted_jobs->{$jobid} accepted job $jobid");
-        return delete $accepted_jobs->{$jobid};
-    }
-    log_debug("Job# $jobid was not accepted");
+    return delete $accepted_jobs->{$jobid} if ($accepted_jobs->{$jobid});
     return 0;
 }
 
@@ -191,6 +197,7 @@ sub _message {
     my $worker = _get_worker($ws->tx);
     unless ($worker) {
         $ws->app->log->warn("A message received from unknown worker connection");
+        log_debug(sprintf('A message received from unknown worker connection: %s', Dumper($json)));
         return;
     }
     unless (ref($json) eq 'HASH') {
@@ -238,6 +245,12 @@ sub _message {
         else {
             log_error("Unknown property received from worker $worker->{id}");
         }
+    }
+    elsif ($json->{type} eq 'worker_status') {
+        my $status = $json->{state};
+        my $jobid  = $json->{job};
+        $worker_status->{$worker->{id}} = $json;
+        log_debug(sprintf('Received worker_status message "%s"', Dumper($json)));
     }
     else {
         log_error(sprintf('Received unknown message type "%s" from worker %u', $json->{type}, $worker->{id}));
@@ -306,6 +319,39 @@ sub _workers_checker {
             log_warning(sprintf('dead job %d aborted as incomplete', $job->id));
         }
     }
+
+    # Check all job in running state with statuses received by the workers
+    my @running_jobs
+      = OpenQA::Schema::connect_db->resultset("Jobs")
+      ->search({state => OpenQA::Schema::Result::Jobs::RUNNING}, {join => 'worker'})->all();
+    # If there is neither a worker assigned or we have a mismatch from the statuses
+    # received by the workers we set it as incomplete and duplicate it
+    foreach my $j (@running_jobs) {
+        if (
+            !$j->worker
+            || (   exists $worker_status->{$j->worker->id()}
+                && exists $worker_status->{$j->worker->id()}->{job}
+                && exists $worker_status->{$j->worker->id()}->{job}->{id}
+                && $worker_status->{$j->worker->id()}->{job}->{id} != $j->id)
+            || (   exists $worker_status->{$j->worker->id()}
+                && exists $worker_status->{$j->worker->id()}->{state}
+                && $worker_status->{$j->worker->id()}->{state} eq "free"))
+        {
+            log_warning(sprintf('Stale running job %d detected', $j->id));
+            $j->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
+            my $res = $j->auto_duplicate;
+            if ($res) {
+                log_warning(
+                    sprintf(
+                        'running job %d with no worker or worker mismatching id aborted and duplicated to job "%d"',
+                        $j->id, $res->id
+                    ));
+            }
+            else {
+                log_warning(sprintf('running job %d aborted as incomplete', $j->id));
+            }
+        }
+    }
 }
 
 # Mojolicious startup
@@ -328,6 +374,13 @@ sub setup {
 
     # start worker checker - check workers each 2 minutes
     Mojo::IOLoop->recurring(120 => \&_workers_checker);
+
+    Mojo::IOLoop->recurring(
+        380 => sub {
+            log_debug("Resetting worker status table");
+            $worker_status = {};
+        });
+
 
     return Mojo::Server::Daemon->new(app => app, listen => ["$listen"]);
 }

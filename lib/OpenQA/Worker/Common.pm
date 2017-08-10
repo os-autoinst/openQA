@@ -341,10 +341,26 @@ sub call_websocket {
                 $hosts->{$host}{timers}{keepalive}
                   = add_timer("keepalive-$host", 5, sub { $tx->send({json => {type => 'ok'}}); });
 
+                $hosts->{$host}{timers}{status} = add_timer(
+                    "workerstatus-$host",
+                    15,
+                    sub {
+                        log_debug("Sending worker status to $host");
+                        $tx->send(
+                            {
+                                json => {
+                                    type => 'worker_status',
+                                    (status => 'working', job => $job) x !!($job),
+                                    (status => 'free') x !!(!$job),
+                                }});
+                    });
+
                 $tx->on(json => \&OpenQA::Worker::Commands::websocket_commands);
                 $tx->on(
                     finish => sub {
                         remove_timer("keepalive-$host");
+                        remove_timer("workerstatus-$host");
+
                         $hosts->{$host}{timers}{setup_websocket}
                           = add_timer("setup_websocket-$host", 5, sub { setup_websocket($host) }, 1);
                         delete $ws_to_host->{$hosts->{$host}{ws}} if $ws_to_host->{$hosts->{$host}{ws}};
