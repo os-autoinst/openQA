@@ -245,12 +245,8 @@ sub _message {
         app->schema->txn_do(
             sub {
                 my $job = $ws->app->schema->resultset("Jobs")->find($jobid->{id});
-                return
-                  unless ($job
-                    && $job->result eq OpenQA::Schema::Result::Jobs::NONE
-                    && $job->state eq OpenQA::Schema::Result::Jobs::ASSIGNED);
-                $job->state(OpenQA::Schema::Result::Jobs::RUNNING);
-                $job->update();
+                return unless $job;
+                $job->set_running();
                 log_debug(sprintf('Job "%s" set to running states from ws status updates', $json->{job}->{id}));
             });
 
