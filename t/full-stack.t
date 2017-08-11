@@ -26,12 +26,12 @@ BEGIN {
     $ENV{OPENQA_BASEDIR} = path(tempdir, 't', 'full-stack.d');
     $ENV{OPENQA_CONFIG} = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
     # Since tests depends on timing, we require the scheduler to be fixed in its actions.
-    $ENV{OPENQA_SCHEDULER_TIMESLOT}           = 2000;
+    $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 4000;
+    $ENV{OPENQA_SCHEDULER_TIMESLOT}           = $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS};
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 1;
     $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS}  = 1;
-    $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL} = 0;
-    $ENV{OPENQA_SCHEDULER_BUSY_BACKOFF}       = 0;
-    $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 4000;
+    $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL} = 1;
+    $ENV{OPENQA_SCHEDULER_BUSY_BACKOFF}       = 1;
     $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}        = 8000;
     $ENV{OPENQA_SCHEDULER_WAKEUP_ON_REQUEST}  = 0;
     path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));

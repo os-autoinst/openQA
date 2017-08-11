@@ -12,10 +12,11 @@ use OpenQA::Utils qw(log_error log_info log_debug);
 
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK
-  = qw(create_webapi create_websocket_server create_worker kill_service unstable_worker job_create client_output);
+  = qw(create_webapi create_websocket_server create_worker kill_service unstable_worker job_create client_output unresponsive_worker);
 
 sub kill_service {
-    my $pid    = shift;
+    my $pid = shift;
+    return unless $pid;
     my $forced = shift;
     kill TERM => $pid;
     kill KILL => $pid if $forced;
@@ -135,6 +136,43 @@ sub unstable_worker {
         }
         Devel::Cover::report() if Devel::Cover->can('report');
         do { 1 } while 1;
+        _exit(0);
+    }
+
+    return $pid;
+
+}
+
+
+
+sub unresponsive_worker {
+    # the help of the Doctor would be really appreciated here.
+    my ($apikey, $apisecret, $host, $instance) = @_;
+
+    my $pid = fork();
+    if ($pid == 0) {
+        use Mojo::Util 'monkey_patch';
+        use Mojo::IOLoop;
+        my ($worker_settings, $host_settings)
+          = read_worker_config($instance, $host);    # It will read from config file, so watch out
+        $OpenQA::Worker::Common::worker_settings = $worker_settings;
+        $OpenQA::Worker::Common::instance        = $instance;
+
+
+        # XXX: this should be sent to the scheduler to be included in the worker's table
+        $ENV{QEMUPORT} = ($instance) * 10 + 20002;
+        $ENV{VNC}      = ($instance) + 90;
+        # Mangle worker main()
+        monkey_patch 'OpenQA::Worker::Commands', websocket_commands => sub {
+            my ($tx, $json) = @_;
+            use Data::Dumper;
+            log_debug("Received " . Dumper($json));
+        };
+
+        OpenQA::Worker::init($host_settings, {apikey => $apikey, apisecret => $apisecret});
+        OpenQA::Worker::main($host_settings);
+        Mojo::IOLoop->start;
+        Devel::Cover::report() if Devel::Cover->can('report');
         _exit(0);
     }
 
