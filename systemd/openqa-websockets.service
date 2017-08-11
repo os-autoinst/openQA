@@ -1,8 +1,8 @@
 [Unit]
 Description=The openQA WebSockets server
-Wants=apache2.service
+Wants=apache2.service network.target
 Before=apache2.service openqa-webui.service
-After=openqa-scheduler.service postgresql.service mariadb.service
+After=openqa-scheduler.service postgresql.service mariadb.service network.target
 Requires=openqa-scheduler.service
 
 [Service]
