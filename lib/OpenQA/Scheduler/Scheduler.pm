@@ -47,6 +47,7 @@ use OpenQA::IPC;
 use sigtrap handler => \&normal_signals_handler, 'normal-signals';
 use OpenQA::Scheduler;
 
+
 use Carp;
 
 require Exporter;
@@ -60,8 +61,9 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
   asset_list
 );
 
-CORE::state $failure = 0;
-CORE::state $quit    = 0;
+CORE::state $failure    = 0;
+CORE::state $no_actions = 0;
+CORE::state $quit       = 0;
 
 sub normal_signals_handler {
     log_debug("Received signal to stop");
@@ -184,7 +186,8 @@ performing operations (CONGESTION_CONTROL) or when we are overloaded (BUSY_BACKO
 sub schedule {
     my $allocated_worker;
     my $start_time = time;
-
+    my $hard_busy  = (OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::BUSY_BACKOFF());
+    my $soft_busy  = (OpenQA::Scheduler::CONGESTION_CONTROL() && OpenQA::Scheduler::BUSY_BACKOFF());
     log_debug("+=" . ("-" x 16) . "=+");
 
     # Avoid to go into starvation - reset the scheduler tick counter.
@@ -194,14 +197,28 @@ sub schedule {
             method => sub {
                 return if $failure == 0;
                 $failure = 0;
-                log_debug("[Congestion control] Resetting failures count. Next scheduler round will be reset to "
-                      . OpenQA::Scheduler::SCHEDULE_TICK_MS()
-                      . "ms");
+                log_debug("[Congestion control] Resetting failures count and rescheduling if necessary");
                 _reschedule(
                     OpenQA::Scheduler::BUSY_BACKOFF() ?
                       OpenQA::Scheduler::SCHEDULE_TICK_MS() + 1000
                     : OpenQA::Scheduler::SCHEDULE_TICK_MS());
-            })) if (OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::BUSY_BACKOFF());
+            })) if $hard_busy;
+
+
+
+    # Avoid to go into starvation - reset the scheduler tick counter.
+    reactor->{timer}->{no_actions_reset} ||= reactor->add_timeout(
+        OpenQA::Scheduler::CAPTURE_LOOP_AVOIDANCE(),
+        Net::DBus::Callback->new(
+            method => sub {
+                return if $no_actions == 0;
+                $no_actions = 0;
+                log_debug("[Congestion control] Resetting no actions count and rescheduling if necessary");
+                _reschedule(
+                    OpenQA::Scheduler::BUSY_BACKOFF() ?
+                      OpenQA::Scheduler::SCHEDULE_TICK_MS() + 1000
+                    : OpenQA::Scheduler::SCHEDULE_TICK_MS());
+            })) if $hard_busy;
 
     # Exit only when database state is consistent.
     if ($quit) {
@@ -232,8 +249,7 @@ sub schedule {
                     # so if there are no free workers but we still have
                     # workers registered, scheduler will kick in later.
                     $failure++
-                      if ((OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::BUSY_BACKOFF())
-                        && $all_workers > 0);
+                      if ($hard_busy && $all_workers > 0);
                     return ();
                 }
 
@@ -274,10 +290,10 @@ sub schedule {
             });
     }
     catch {
+        log_debug("Could not get new jobs to allocate: $_");
         # we had a real failure
         $failure++ if OpenQA::Scheduler::CONGESTION_CONTROL();
     };
-
 
     # Cut the jobs if we have a limit set since we didn't performed any DB update yet
     @allocated_jobs = splice @allocated_jobs, 0, OpenQA::Scheduler::MAX_JOB_ALLOCATION()
@@ -288,23 +304,43 @@ sub schedule {
 
     foreach my $allocated (@allocated_jobs) {
         #  Now we need to set the worker in the job, with the state in SCHEDULED.
-        my $job = schema->resultset("Jobs")->find({id => $allocated->{id}});
-        my $worker = schema->resultset("Workers")->find({id => $allocated->{assigned_worker_id}});
+        my $job;
+        my $worker;
+        try {
+            $job = schema->resultset("Jobs")->find({id => $allocated->{id}});
+        }
+        catch {
+            log_debug("Failed to retrieve Job(" . $allocated->{id} . ") in the DB :( bummer! Reason: $_");
+
+            $failure++
+              if $soft_busy;
+        };
+
+        try {
+            $worker = schema->resultset("Workers")->find({id => $allocated->{assigned_worker_id}});
+        }
+        catch {
+            log_debug(
+                "Failed to retrieve Worker(" . $allocated->{assigned_worker_id} . ") in the DB :( bummer! Reason: $_");
+
+            $failure++
+              if $soft_busy;
+        };
+
+        next unless $job && $worker;
         my $res;
         try {
             $res = $job->ws_send($worker);    # send the job to the worker
+            die "Failed contacting websocket server over dbus" unless ref($res) eq "HASH" && exists $res->{state};
         }
         catch {
             log_debug("Failed to send data to websocket :( bummer! Reason: $_");
-
-            $worker->unprepare_for_work;
 
             # If we fail during dispatch to dbus service
             # it's possible that websocket server is under heavy load.
             # Hence increment the counter in both modes
             $failure++
-              if OpenQA::Scheduler::CONGESTION_CONTROL()
-              || OpenQA::Scheduler::BUSY_BACKOFF();
+              if $hard_busy;
         };
 
         # We succeded dispatching the message
@@ -327,7 +363,7 @@ sub schedule {
 
                 # If we see this, we are in a really bad state.
                 $failure++
-                  if OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::CONGESTION_CONTROL();
+                  if $hard_busy;
             };
 
         }
@@ -338,9 +374,7 @@ sub schedule {
                   . $allocated->{assigned_worker_id} . "' : "
                   . pp($res));
             $failure++
-              if OpenQA::Scheduler::CONGESTION_CONTROL()
-              && OpenQA::Scheduler::BUSY_BACKOFF()
-              ;    # We failed dispatching it. We might be under load, but it's not a big issue
+              if $soft_busy;    # We failed dispatching it. We might be under load, but it's not a big issue
 
             try {
                 $worker->unprepare_for_work;
@@ -349,7 +383,7 @@ sub schedule {
                 log_debug("Failed resetting unprepare worker :( bummer! Reason: $_");
                 # Again: If we see this, we are in a really bad state.
                 $failure++
-                  if OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::BUSY_BACKOFF();
+                  if $hard_busy;
             };
 
             try {
@@ -360,42 +394,65 @@ sub schedule {
                 # Again: If we see this, we are in a really bad state.
                 log_debug("Failed resetting job '$allocated->{id}' to scheduled state :( bummer! Reason: $_");
                 $failure++
-                  if OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::BUSY_BACKOFF();
+                  if $hard_busy;
             };
         }
     }
 
+    # update counters based on status
     $failure--
       if $failure > 0
       && scalar(@successfully_allocated) > 0
-      && (OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::BUSY_BACKOFF());
+      && $hard_busy;
+
+    $no_actions++
+      if scalar(@successfully_allocated) == 0
+      && $hard_busy;
+
+    $no_actions = 0
+      if $no_actions > 0
+      && scalar(@successfully_allocated) > 0
+      && $hard_busy;
 
     my $elapsed_rounded = sprintf("%.5f", (time - $start_time));
     log_debug "Scheduler took ${elapsed_rounded}s to perform operations and allocated "
       . scalar(@successfully_allocated) . " jobs";
+
+    my $exceeded_timer = ((${elapsed_rounded} * 1000) > OpenQA::Scheduler::SCHEDULE_TICK_MS());
+    if ($exceeded_timer && $hard_busy) {
+        $failure += 2;
+        log_debug "Scheduling took too much time. Increasing failure count. ($failure)";
+    }
     log_debug "Allocated: " . pp($_) for @successfully_allocated;
 
+
+    my $rescheduled;
     # Decide if we want to reschedule ourselves or not.
     # we do that in two situations: either we had failures and CONGESTION_CONTROL is enabled,
     # or when we take too much time to perform the operations and either CONGESTION_CONTROL or BUSY_BACKOFF is enabled
     if (
-        ($failure > 0 && OpenQA::Scheduler::CONGESTION_CONTROL())
-        || (   (OpenQA::Scheduler::BUSY_BACKOFF() || OpenQA::Scheduler::CONGESTION_CONTROL())
-            && ((int(${elapsed_rounded}) * 1000) > OpenQA::Scheduler::SCHEDULE_TICK_MS())))
+           ($no_actions > 0 && $hard_busy)
+        || ($failure > 0 && OpenQA::Scheduler::CONGESTION_CONTROL())
+        || (   $hard_busy
+            && $exceeded_timer))
     {
         my $backoff
-          = OpenQA::Scheduler::CONGESTION_CONTROL() ?
-          ((2**($failure || 1)) - 1) * OpenQA::Scheduler::TIMESLOT()
-          : ((($failure  || 1) / 2)**2) + OpenQA::Scheduler::SCHEDULE_TICK_MS();
+          = OpenQA::Scheduler::CONGESTION_CONTROL()
+          ?
+          ((2**(($failure + $no_actions) || 2)) - 1) * OpenQA::Scheduler::TIMESLOT()
+          : (((($failure + $no_actions)  || 2) / 2)**2) + OpenQA::Scheduler::SCHEDULE_TICK_MS();
         $backoff = $backoff > OpenQA::Scheduler::MAX_BACKOFF() ? OpenQA::Scheduler::MAX_BACKOFF() : $backoff + 1000;
         log_debug "[Congestion control] Calculated backoff: ${backoff}ms";
+        log_debug "[Congestion control] Rounds with no actions performed: ${no_actions}"
+          if $hard_busy;
         log_debug "[Congestion control] Failures# ${failure}"
-          if OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::BUSY_BACKOFF();
+          if $hard_busy;
         _reschedule($backoff, 1);
+        $rescheduled++;
     }
 
     log_debug("+=" . ("-" x 16) . "=+");
-    return (\@successfully_allocated, $failure);
+    return (\@successfully_allocated, $failure, $no_actions, $rescheduled);
 }
 
 =head2 _reschedule
@@ -413,7 +470,7 @@ sub _reschedule {
       && reactor->{timeouts}
       && ref(reactor->{timeouts}) eq "ARRAY" ? reactor->{timeouts}->[reactor->{timer}->{schedule_jobs}]->{interval} : 0;
     return unless (reactor && (($current_interval != $time) || $force));
-    log_debug "[scheduler] Current tick is at ${current_interval}ms. New tick will be in: ${time}ms";
+    log_debug "[rescheduling] Current tick is at ${current_interval}ms. New tick will be in: ${time}ms";
     reactor->remove_timeout(reactor->{timer}->{schedule_jobs});
     reactor->{timer}->{schedule_jobs} = reactor->add_timeout(
         $time,
