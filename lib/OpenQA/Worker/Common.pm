@@ -339,7 +339,7 @@ sub call_websocket {
                 # keep websocket connection busy
                 $tx->send({json => {type => 'ok'}});    # Send keepalive immediately
                 $hosts->{$host}{timers}{keepalive}
-                  = add_timer("keepalive-$host", 5, sub { $tx->send({json => {type => 'ok'}}); });
+                  = add_timer("keepalive-$host", 10, sub { $tx->send({json => {type => 'ok'}}); });
 
                 $hosts->{$host}{timers}{status} = add_timer(
                     "workerstatus-$host",
