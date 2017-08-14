@@ -199,7 +199,6 @@ sub _message {
     $worker->{last_seen} = time();
     if ($json->{type} eq 'ok') {
         $ws->tx->send({json => {type => 'ok'}});
-        my $w = app->schema->resultset("Workers")->find($worker->{id});
         # NOTE: Update the worker state from keepalives.
         # We could check if the worker is dead before updating seen state
         # the downside of it will be that we will have more timewindows
@@ -207,7 +206,8 @@ sub _message {
         #
         #    if ($w and $w->dead())  # It's still one query, at this point let's just update the seen status
         #        log_debug("Keepalive from worker $worker->{id} received, and worker thought dead. updating the DB");
-        app->schema->txn_do(sub { $w->seen; });
+        app->schema->txn_do(sub { my $w = app->schema->resultset("Workers")->find($worker->{id}); $w->seen; })
+          if $worker && exists $worker->{id};
     }
     elsif ($json->{type} eq 'accepted') {
         my $jobid = $json->{jobid};
@@ -237,17 +237,86 @@ sub _message {
         }
     }
     elsif ($json->{type} eq 'worker_status') {
-        my $status = $json->{state};
-        my $jobid  = $json->{job};
-        $worker_status->{$worker->{id}} = $json;
-        log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $worker->{id}, Dumper($json)));
-        return unless $jobid && exists $jobid->{state} && $jobid->{state} eq OpenQA::Schema::Result::Jobs::RUNNING;
+        my $current_worker_status = $json->{status};
+        my $job_status            = $json->{job}->{state};
+        my $jobid                 = $json->{job}->{id};
+        my $wid                   = $worker->{id};
+        $worker_status->{$wid} = $json;
+        log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $wid, Dumper($json)));
+
+        # XXX: This would make keepalive useless.
+        # app->schema->txn_do(
+        #     sub {
+        #         my $w = app->schema->resultset("Workers")->find($wid);
+        #         return unless $w;
+        #         log_debug("Updated worker seen from worker_status");
+        #         $w->seen;
+        #     });
+
+        my $registered_job_id;
+        my $registered_job_token;
+        try {
+            $registered_job_id = app->schema->resultset("Workers")->find($wid)->job->id();
+            log_debug("Found Job($registered_job_id) in DB from worker_status update sent by Worker($wid)")
+              if $registered_job_id && $wid;
+            log_debug("Received request has id: " . $worker_status->{$wid}->{job}->{id})
+              if $worker_status->{$wid}->{job}->{id};
+        };
+
+        try {
+            # We cover the case where id can be the same, but the token will differ.
+            die "Do not check" unless ($registered_job_id);
+            $registered_job_token = app->schema->resultset("Workers")->find($wid)->get_property('JOBTOKEN');
+            log_debug("Worker($wid) for Job($registered_job_id) has token $registered_job_token")
+              if $registered_job_token && $registered_job_id && $wid;
+            log_debug("Received request has token: " . $worker_status->{$wid}->{job}->{settings}->{JOBTOKEN})
+              if $worker_status->{$wid}->{job}->{settings}->{JOBTOKEN};
+        };
+
+        # XXX: we should have a field in the DB as well so scheduler can allocate directly on free workers.
         app->schema->txn_do(
             sub {
-                my $job = $ws->app->schema->resultset("Jobs")->find($jobid->{id});
-                return unless $job;
+                my $w = app->schema->resultset("Workers")->find($wid);
+                log_debug('Possibly worker ' . $w->id() . ' should be freed.');
+                return unless ($w && $w->job);
+                return $w->job->incomplete_and_duplicate
+                  if ( $w->job->result eq OpenQA::Schema::Result::Jobs::NONE
+                    && $w->job->state eq OpenQA::Schema::Result::Jobs::RUNNING
+                    && $current_worker_status eq "free");
+                return $w->job->reschedule_state
+                  if ($w->job->state eq OpenQA::Schema::Result::Jobs::ASSIGNED);    # Was a stale job
+            })
+          if (
+            # Check if worker is doing a job for another WebUI
+            (
+                   $registered_job_id
+                && exists $worker_status->{$wid}
+                && exists $worker_status->{$wid}->{job}
+                && exists $worker_status->{$wid}->{job}->{id}
+                && $worker_status->{$wid}->{job}->{id} != $registered_job_id
+            )
+            || (   $registered_job_token
+                && exists $worker_status->{$wid}
+                && exists $worker_status->{$wid}->{job}
+                && exists $worker_status->{$wid}->{job}->{settings}->{JOBTOKEN}
+                && $worker_status->{$wid}->{job}->{settings}->{JOBTOKEN} ne $registered_job_token))
+          ||
+          # Or if it declares itself free.
+          ($current_worker_status && $current_worker_status eq "free");
+
+        return unless $jobid && $job_status && $job_status eq OpenQA::Schema::Result::Jobs::RUNNING;
+        app->schema->txn_do(
+            sub {
+                my $job = app->schema->resultset("Jobs")->find($jobid);
+                return
+                  if (
+                    (
+                        $job && (($job->state eq OpenQA::Schema::Result::Jobs::RUNNING)
+                            || ($job->result ne OpenQA::Schema::Result::Jobs::NONE)))
+                    || !$job
+                  );
                 $job->set_running();
-                log_debug(sprintf('Job "%s" set to running states from ws status updates', $json->{job}->{id}));
+                log_debug(sprintf('Job "%s" set to running states from ws status updates', $jobid));
             });
 
     }
@@ -333,8 +402,8 @@ sub _workers_checker {
                 && exists $worker_status->{$j->worker->id()}->{job}->{id}
                 && $worker_status->{$j->worker->id()}->{job}->{id} != $j->id)
             || (   exists $worker_status->{$j->worker->id()}
-                && exists $worker_status->{$j->worker->id()}->{state}
-                && $worker_status->{$j->worker->id()}->{state} eq "free"))
+                && exists $worker_status->{$j->worker->id()}->{status}
+                && $worker_status->{$j->worker->id()}->{status} eq "free"))
         {
             log_warning(sprintf('Stale running job %d detected', $j->id));
             $j->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
