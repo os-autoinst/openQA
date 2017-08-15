@@ -2,12 +2,12 @@
 % my $step_url = url_for('step')->to_abs;
 % my $module = stash('moduleid');
 % my %product_details = ();
-% $product_details{short_desc} = "[Build $build] openQA test fails in $module";
 
 <% my %distri_to_product_url_new = (
     sle => 'https://bugzilla.suse.com/enter_bug.cgi',
     opensuse => 'https://bugzilla.opensuse.org/enter_bug.cgi',
     casp => 'https://bugzilla.suse.com/enter_bug.cgi',
+    openqa => 'https://progress.opensuse.org/projects/openqav3/issues/new'
 );%>
 <% my %distri_to_prod = (
     sle => 'SUSE Linux Enterprise',
@@ -47,8 +47,10 @@
 % elsif ($job->DISTRI eq 'casp') {
 %     $product = $job->VERSION;
 % }
-% $product_details{product} = "$distri $product";
-% $product_details{bug_file_loc} = $step_url;
+% elsif ($job->DISTRI eq 'openqa') {
+%     $product = 'openQA';
+% }
+
 % sub build_link {
 %     my ($job) = @_;
 %     return '[' . $job->BUILD . '](' . url_for('test', testid => $job->id)->to_abs .  ')';
@@ -84,7 +86,17 @@ Last good: $last_good (or more recent)
 
 Always latest result in this scenario: [latest]($latest)
 "; %>
-% $product_details{comment} = $description;
+
+% if ($product eq 'openQA') {
+%    $product_details{'issue[subject]'} = "test fails in $module";
+%    $product_details{'issue[description]'} = $description;
+% }
+% else {
+%    $product_details{short_desc} = "[Build $build] openQA test fails in $module";
+%    $product_details{comment} = $description;
+%    $product_details{product} = "$distri $product";
+%    $product_details{bug_file_loc} = $step_url;
+% }
 % my $product_url_new = $distri_to_product_url_new{$job->DISTRI};
 % if ($product) {
     %= stepaction_for('Report product bug' => url_for($product_url_new)->query(%product_details), 'fa-bug', 'report product_bug');
