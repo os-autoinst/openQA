@@ -424,6 +424,8 @@ sub _workers_checker {
 
 # Mojolicious startup
 sub setup {
+
+    app->defaults(appname => "openQA Websocket Server");
     app->helper(schema => sub { return OpenQA::Schema::connect_db; });
     # not really meaningful for websockets, but required for mode defaults
     app->helper(mode     => sub { return 'production' });
