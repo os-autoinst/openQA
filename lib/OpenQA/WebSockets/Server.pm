@@ -273,52 +273,57 @@ sub _message {
               if $worker_status->{$wid}->{job}->{settings}->{JOBTOKEN};
         };
 
-        # XXX: we should have a field in the DB as well so scheduler can allocate directly on free workers.
-        app->schema->txn_do(
-            sub {
-                my $w = app->schema->resultset("Workers")->find($wid);
-                log_debug('Possibly worker ' . $w->id() . ' should be freed.');
-                return unless ($w && $w->job);
-                return $w->job->incomplete_and_duplicate
-                  if ( $w->job->result eq OpenQA::Schema::Result::Jobs::NONE
-                    && $w->job->state eq OpenQA::Schema::Result::Jobs::RUNNING
-                    && $current_worker_status eq "free");
-                return $w->job->reschedule_state
-                  if ($w->job->state eq OpenQA::Schema::Result::Jobs::ASSIGNED);    # Was a stale job
-            })
-          if (
-            # Check if worker is doing a job for another WebUI
-            (
-                   $registered_job_id
-                && exists $worker_status->{$wid}
-                && exists $worker_status->{$wid}->{job}
-                && exists $worker_status->{$wid}->{job}->{id}
-                && $worker_status->{$wid}->{job}->{id} != $registered_job_id
-            )
-            || (   $registered_job_token
-                && exists $worker_status->{$wid}
-                && exists $worker_status->{$wid}->{job}
-                && exists $worker_status->{$wid}->{job}->{settings}->{JOBTOKEN}
-                && $worker_status->{$wid}->{job}->{settings}->{JOBTOKEN} ne $registered_job_token))
-          ||
-          # Or if it declares itself free.
-          ($current_worker_status && $current_worker_status eq "free");
+        try {
+            # XXX: we should have a field in the DB as well so scheduler can allocate directly on free workers.
+            app->schema->txn_do(
+                sub {
+                    my $w = app->schema->resultset("Workers")->find($wid);
+                    log_debug('Possibly worker ' . $w->id() . ' should be freed.');
+                    return unless ($w && $w->job);
+                    return $w->job->incomplete_and_duplicate
+                      if ( $w->job->result eq OpenQA::Schema::Result::Jobs::NONE
+                        && $w->job->state eq OpenQA::Schema::Result::Jobs::RUNNING
+                        && $current_worker_status eq "free");
+                    return $w->job->reschedule_state
+                      if ($w->job->state eq OpenQA::Schema::Result::Jobs::ASSIGNED);    # Was a stale job
+                })
+              if (
+                # Check if worker is doing a job for another WebUI
+                (
+                       $registered_job_id
+                    && exists $worker_status->{$wid}
+                    && exists $worker_status->{$wid}->{job}
+                    && exists $worker_status->{$wid}->{job}->{id}
+                    && $worker_status->{$wid}->{job}->{id} != $registered_job_id
+                )
+                || (   $registered_job_token
+                    && exists $worker_status->{$wid}
+                    && exists $worker_status->{$wid}->{job}
+                    && exists $worker_status->{$wid}->{job}->{settings}->{JOBTOKEN}
+                    && $worker_status->{$wid}->{job}->{settings}->{JOBTOKEN} ne $registered_job_token))
+              ||
+              # Or if it declares itself free.
+              ($current_worker_status && $current_worker_status eq "free");
 
-        return unless $jobid && $job_status && $job_status eq OpenQA::Schema::Result::Jobs::RUNNING;
-        app->schema->txn_do(
-            sub {
-                my $job = app->schema->resultset("Jobs")->find($jobid);
-                return
-                  if (
-                    (
-                        $job && (($job->state eq OpenQA::Schema::Result::Jobs::RUNNING)
-                            || ($job->result ne OpenQA::Schema::Result::Jobs::NONE)))
-                    || !$job
-                  );
-                $job->set_running();
-                log_debug(sprintf('Job "%s" set to running states from ws status updates', $jobid));
-            });
+            return unless $jobid && $job_status && $job_status eq OpenQA::Schema::Result::Jobs::RUNNING;
+            app->schema->txn_do(
+                sub {
+                    my $job = app->schema->resultset("Jobs")->find($jobid);
+                    return
+                      if (
+                        (
+                            $job && (($job->state eq OpenQA::Schema::Result::Jobs::RUNNING)
+                                || ($job->result ne OpenQA::Schema::Result::Jobs::NONE)))
+                        || !$job
+                      );
+                    $job->set_running();
+                    log_debug(sprintf('Job "%s" set to running states from ws status updates', $jobid));
+                });
 
+        }
+        catch {
+            log_debug("Failed parsing status message : $_");
+        };
     }
     else {
         log_error(sprintf('Received unknown message type "%s" from worker %u', $json->{type}, $worker->{id}));
@@ -372,54 +377,73 @@ sub _is_job_considered_dead {
 # Check if worker with job has been updated recently; if not, assume it
 # got stuck somehow and duplicate or incomplete the job
 sub _workers_checker {
+    my $schema = OpenQA::Schema::connect_db;
+    try {
+        $schema->txn_do(
+            sub {
+                my $threshold  = 40;
+                my $stale_jobs = _get_stale_worker_jobs($threshold);
+                for my $job ($stale_jobs->all) {
+                    next unless _is_job_considered_dead($job);
 
-    my $threshold  = 40;
-    my $stale_jobs = _get_stale_worker_jobs($threshold);
-    for my $job ($stale_jobs->all) {
-        next unless _is_job_considered_dead($job);
-
-        $job->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
-        my $res = $job->auto_duplicate;
-        if ($res) {
-            log_warning(sprintf('dead job %d aborted and duplicated %d', $job->id, $res->id));
-        }
-        else {
-            log_warning(sprintf('dead job %d aborted as incomplete', $job->id));
-        }
+                    $job->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
+                    # XXX: auto_duplicate was killing ws server in production
+                    my $res = $job->auto_duplicate;
+                    if ($res) {
+                        log_warning(sprintf('dead job %d aborted and duplicated %d', $job->id, $res->id));
+                    }
+                    else {
+                        log_warning(sprintf('dead job %d aborted as incomplete', $job->id));
+                    }
+                }
+            });
     }
+    catch {
+        log_debug("Failed dead job detection : $_");
+    };
 
-    # Check all job in running state with statuses received by the workers
-    my @running_jobs
-      = OpenQA::Schema::connect_db->resultset("Jobs")
-      ->search({state => OpenQA::Schema::Result::Jobs::RUNNING}, {join => 'worker'})->all();
-    # If there is neither a worker assigned or we have a mismatch from the statuses
-    # received by the workers we set it as incomplete and duplicate it
-    foreach my $j (@running_jobs) {
-        if (
-            !$j->worker
-            || (   exists $worker_status->{$j->worker->id()}
-                && exists $worker_status->{$j->worker->id()}->{job}
-                && exists $worker_status->{$j->worker->id()}->{job}->{id}
-                && $worker_status->{$j->worker->id()}->{job}->{id} != $j->id)
-            || (   exists $worker_status->{$j->worker->id()}
-                && exists $worker_status->{$j->worker->id()}->{status}
-                && $worker_status->{$j->worker->id()}->{status} eq "free"))
-        {
-            log_warning(sprintf('Stale running job %d detected', $j->id));
-            $j->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
-            my $res = $j->auto_duplicate;
-            if ($res) {
-                log_warning(
-                    sprintf(
-                        'running job %d with no worker or worker mismatching id aborted and duplicated to job "%d"',
-                        $j->id, $res->id
-                    ));
-            }
-            else {
-                log_warning(sprintf('running job %d aborted as incomplete', $j->id));
-            }
-        }
-    }
+
+   # XXX: We might need the following check in the future
+   #     try {
+   #         $schema->txn_do(
+   #             sub {
+   #                 # XXX: not needed as for now - check all job in running state with statuses received by the workers
+   #                 my @running_jobs
+   #                   = OpenQA::Schema::connect_db->resultset("Jobs")
+   #                   ->search({state => OpenQA::Schema::Result::Jobs::RUNNING}, {join => 'worker'})->all();
+   #                 # If there is neither a worker assigned or we have a mismatch from the statuses
+   #                 # received by the workers we set it as incomplete and duplicate it
+   #                 foreach my $j (@running_jobs) {
+   #                     if (
+   #                         !$j->worker
+   #                         || (   exists $worker_status->{$j->worker->id()}
+   #                             && exists $worker_status->{$j->worker->id()}->{job}
+   #                             && exists $worker_status->{$j->worker->id()}->{job}->{id}
+   #                             && $worker_status->{$j->worker->id()}->{job}->{id} != $j->id)
+   #                         || (   exists $worker_status->{$j->worker->id()}
+   #                             && exists $worker_status->{$j->worker->id()}->{status}
+   #                             && $worker_status->{$j->worker->id()}->{status} eq "free"))
+   #                     {
+   #                         log_warning(sprintf('Stale running job %d detected', $j->id));
+   #                         $j->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
+   #                         my $res = $j->auto_duplicate;
+   #                         if ($res) {
+   #                             log_warning(
+   #                                 sprintf(
+   # 'running job %d with no worker or worker mismatching id aborted and duplicated to job "%d"',
+   #                                     $j->id, $res->id
+   #                                 ));
+   #                         }
+   #                         else {
+   #                             log_warning(sprintf('running job %d aborted as incomplete', $j->id));
+   #                         }
+   #                     }
+   #                 }
+   #             });
+   #     }
+   #     catch {
+   #         log_debug("Failed stale running job detection : $_");
+   #     };
 }
 
 # Mojolicious startup
