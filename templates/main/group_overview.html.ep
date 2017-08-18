@@ -4,7 +4,8 @@
 %= include 'layouts/info'
 
 % content_for 'ready_function' => begin
-    $('.timeago').timeago();
+    setupGroupOverview();
+    hideNavbar();
 % end
 
 % if (is_admin) {
@@ -53,3 +54,27 @@
         %= include 'comments/add_comment_form_groups'
     % end
 % }
+
+<div class="panel panel-default filter-panel-bottom" id="filter-panel">
+    <div class="panel-heading"><strong>Filter</strong> <span>no filter present, click to toggle filter form</span></div>
+    <div class="panel-body">
+        <form action="#" method="get" id="filter-form">
+            <div class="form-group">
+                <strong>Misc</strong>
+                <input value="1" name="show_comments" type="checkbox" id="filter-show-comments">
+                <label for="filter-show-comments">Show comments</label>
+                <%= help_popover('Help for <i>Show comments</i>' => '<p>Show comments for current group overview</p>')
+                %>
+                <input value="1" name="latest_comment" type="checkbox" id="filter-latest-comment">
+                <label for="filter-latest-comment">Only latest comment</label>
+                <%= help_popover('Help for <i>Only latest comment</i>' => '<p>Show only the latest comment</p>')
+                %>
+                <input value="1" name="fullscreen" type="checkbox" id="filter-fullscreen">
+                <label for="filter-fullscreen">Full screen</label>
+                <%= help_popover('Help for <i>Full screen</i>' => '<p>Show group overview in full screen mode</p>')
+                %>
+            </div>
+            <button type="submit" class="btn btn-default">Apply</button>
+        </form>
+    </div>
+</div>
