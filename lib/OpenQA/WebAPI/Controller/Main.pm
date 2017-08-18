@@ -90,7 +90,7 @@ sub group_overview {
     my $group = $self->db->resultset($resultset)->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
 
-    my $show_comments = $self->param('show_comments');
+    my $show_comments  = $self->param('show_comments');
     my $latest_comment = $self->param('latest_comment');
 
     my @comments;
@@ -127,6 +127,7 @@ sub group_overview {
     $self->stash('comments',        \@comments);
     $self->stash('pinned_comments', \@pinned_comments);
     $self->stash('latest_comment',  $latest_comment);
+    $self->stash('show_comments',   $show_comments);
     if ($group->can('children')) {
         my @child_groups = $group->children->all;
         $self->stash('child_groups', \@child_groups);
