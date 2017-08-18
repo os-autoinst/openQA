@@ -336,10 +336,14 @@ sub call_websocket {
         $ua_url => {'Sec-WebSocket-Extensions' => 'permessage-deflate'} => sub {
             my ($ua, $tx) = @_;
             if ($tx->is_websocket) {
-                # keep websocket connection busy
-                $tx->send({json => {type => 'ok'}});    # Send keepalive immediately
-                $hosts->{$host}{timers}{keepalive}
-                  = add_timer("keepalive-$host", 10, sub { $tx->send({json => {type => 'ok'}}); });
+
+                $tx->send(
+                    {
+                        json => {
+                            type => 'worker_status',
+                            (status => 'working', job => $job) x !!($job),
+                            (status => 'free') x !!(!$job),
+                        }});
 
                 $hosts->{$host}{timers}{status} = add_timer(
                     "workerstatus-$host",
@@ -358,7 +362,6 @@ sub call_websocket {
                 $tx->on(json => \&OpenQA::Worker::Commands::websocket_commands);
                 $tx->on(
                     finish => sub {
-                        remove_timer("keepalive-$host");
                         remove_timer("workerstatus-$host");
 
                         $hosts->{$host}{timers}{setup_websocket}

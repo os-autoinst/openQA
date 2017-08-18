@@ -120,9 +120,6 @@ sub websocket_commands {
                 }
             }
         }
-        elsif ($type eq 'ok') {
-            # ignore keepalives, but dont' report as unknown
-        }
         elsif ($type eq 'grab_job') {
             state $check_job_running;
             state $job_in_progress;

@@ -197,19 +197,8 @@ sub _message {
     }
 
     $worker->{last_seen} = time();
-    if ($json->{type} eq 'ok') {
-        $ws->tx->send({json => {type => 'ok'}});
-        # NOTE: Update the worker state from keepalives.
-        # We could check if the worker is dead before updating seen state
-        # the downside of it will be that we will have more timewindows
-        # where the worker is seen as dead.
-        #
-        #    if ($w and $w->dead())  # It's still one query, at this point let's just update the seen status
-        #        log_debug("Keepalive from worker $worker->{id} received, and worker thought dead. updating the DB");
-        app->schema->txn_do(sub { my $w = app->schema->resultset("Workers")->find($worker->{id}); $w->seen; })
-          if $worker && exists $worker->{id};
-    }
-    elsif ($json->{type} eq 'accepted') {
+
+    if ($json->{type} eq 'accepted') {
         my $jobid = $json->{jobid};
         log_debug("Worker: $worker->{id} accepted job $jobid");
     }
@@ -244,15 +233,18 @@ sub _message {
         $worker_status->{$wid} = $json;
         log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $wid, Dumper($json)));
 
-        # XXX: This would make keepalive useless.
-        # app->schema->txn_do(
-        #     sub {
-        #         my $w = app->schema->resultset("Workers")->find($wid);
-        #         return unless $w;
-        #         log_debug("Updated worker seen from worker_status");
-        #         $w->seen;
-        #     });
-
+        try {
+            app->schema->txn_do(
+                sub {
+                    my $w = app->schema->resultset("Workers")->find($wid);
+                    return unless $w;
+                    log_debug("Updated worker seen from worker_status");
+                    $w->seen;
+                });
+        }
+        catch {
+            log_debug("Failed updating worker seen status : $_");
+        };
         my $registered_job_id;
         my $registered_job_token;
         try {
