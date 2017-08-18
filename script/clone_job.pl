@@ -111,10 +111,8 @@ use LWP::UserAgent;
 Getopt::Long::Configure("no_ignore_case");
 use Mojo::URL;
 use JSON;
-
 use FindBin;
-use lib "$FindBin::Bin/../lib";
-use OpenQA::Client;
+use lib "$FindBin::RealBin/../lib";
 
 my %options;
 

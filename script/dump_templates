@@ -102,10 +102,8 @@ JobTemplates e.g. to load them on another instance.
 
 =cut
 
-BEGIN {
-    use FindBin qw($Bin);
-    use lib "$Bin/../lib";
-}
+use FindBin;
+use lib "$FindBin::RealBin/../lib";
 
 use strict;
 use Data::Dump;
