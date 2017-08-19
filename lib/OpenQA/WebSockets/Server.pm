@@ -365,7 +365,7 @@ sub _is_job_considered_dead {
 # got stuck somehow and duplicate or incomplete the job
 sub _workers_checker {
 
-    my $threshold  = 40;
+    my $threshold  = 120;
     my $stale_jobs = _get_stale_worker_jobs($threshold);
     for my $job ($stale_jobs->all) {
         next unless _is_job_considered_dead($job);
