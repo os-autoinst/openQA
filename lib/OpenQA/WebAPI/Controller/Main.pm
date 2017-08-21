@@ -89,7 +89,7 @@ sub group_overview {
     my $only_tagged = $self->param('only_tagged') // 0;
     my $group = $self->db->resultset($resultset)->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
-    $self->stash('fullscreen', $self->param('fullscreen'));
+    $self->stash('fullscreen', $self->param('fullscreen') // 0);
 
     my @comments;
     my @pinned_comments;
