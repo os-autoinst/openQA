@@ -89,9 +89,7 @@ sub group_overview {
     my $only_tagged = $self->param('only_tagged') // 0;
     my $group = $self->db->resultset($resultset)->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
-
-    my $show_comments  = $self->param('show_comments');
-    my $latest_comment = $self->param('latest_comment');
+    $self->stash('fullscreen', $self->param('fullscreen'));
 
     my @comments;
     my @pinned_comments;
@@ -126,8 +124,6 @@ sub group_overview {
     $self->stash('only_tagged',     $only_tagged);
     $self->stash('comments',        \@comments);
     $self->stash('pinned_comments', \@pinned_comments);
-    $self->stash('latest_comment',  $latest_comment);
-    $self->stash('show_comments',   $show_comments);
     if ($group->can('children')) {
         my @child_groups = $group->children->all;
         $self->stash('child_groups', \@child_groups);

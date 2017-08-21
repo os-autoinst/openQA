@@ -7,3 +7,12 @@
     % my $selected = $rtagged{$only_tagged};
     %= b join(' / ', map { $_ eq $selected ? "<b>$_</b>" : link_to($_ => url_with->query([only_tagged => $tagged{$_}])) } reverse sort keys %tagged);
 </div>
+
+<div id="more_comments">
+    Set mode to
+    % if ($fullscreen == 0) {
+        <%= link_to url_for->query(fullscreen => 1)->to_abs => begin %>Full screen<% end %>
+    % } else {
+      <%= link_to url_for->query(fullscreen => 0)->to_abs => begin %>Default view<% end %>
+    % }
+</div>

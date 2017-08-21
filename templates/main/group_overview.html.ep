@@ -4,8 +4,8 @@
 %= include 'layouts/info'
 
 % content_for 'ready_function' => begin
-    setupGroupOverview();
-    hideNavbar();
+    $('.timeago').timeago();
+    hideNavbar(<%= $fullscreen %>);
 % end
 
 % if (is_admin) {
@@ -41,17 +41,9 @@
 %= include 'main/group_builds', build_results => $build_results, group => $group, children => undef, default_expanded => 1
 %= include 'main/more_builds', limit_builds => $limit_builds
 
-
-% if ($show_comments) {
-    <h2>Comments</h2>
-    % if ($latest_comment) {
-        % my $comment = @$comments[-1],
-        %= include 'comments/comment_row', comment_id => $comment->id, comment => $comment, user => $comment->user, context => {type => 'group', id => $group->{id}}, put_action => 'apiv1_put_group_comment', delete_action => 'apiv1_delete_group_comment'
-    % } else {
-        % for my $comment (reverse @$comments) {
-        %= include 'comments/comment_row', comment_id => $comment->id, comment => $comment, user => $comment->user, context => {type => 'group', id => $group->{id}}, put_action => 'apiv1_put_group_comment', delete_action => 'apiv1_delete_group_comment'
-        % }
-    % }
+<h2>Comments</h2>
+% for my $comment (reverse @$comments) {
+    %= include 'comments/comment_row', comment_id => $comment->id, comment => $comment, user => $comment->user, context => {type => 'group', id => $group->{id}}, put_action => 'apiv1_put_group_comment', delete_action => 'apiv1_delete_group_comment'
 % }
 
 % if (current_user) {
@@ -62,27 +54,3 @@
         %= include 'comments/add_comment_form_groups'
     % end
 % }
-
-<div class="panel panel-default filter-panel-bottom" id="filter-panel">
-    <div class="panel-heading"><strong>Filter</strong> <span>no filter present, click to toggle filter form</span></div>
-    <div class="panel-body">
-        <form action="#" method="get" id="filter-form">
-            <div class="form-group">
-                <strong>Misc</strong>
-                <input value="1" name="show_comments" type="checkbox" id="filter-show-comments">
-                <label for="filter-show-comments">Show comments</label>
-                <%= help_popover('Help for <i>Show comments</i>' => '<p>Show comments for current group overview</p>')
-                %>
-                <input value="1" name="latest_comment" type="checkbox" id="filter-latest-comment">
-                <label for="filter-latest-comment">Only latest comment</label>
-                <%= help_popover('Help for <i>Only latest comment</i>' => '<p>Show only the latest comment</p>')
-                %>
-                <input value="1" name="fullscreen" type="checkbox" id="filter-fullscreen">
-                <label for="filter-fullscreen">Full screen</label>
-                <%= help_popover('Help for <i>Full screen</i>' => '<p>Show group overview in full screen mode</p>')
-                %>
-            </div>
-            <button type="submit" class="btn btn-default">Apply</button>
-        </form>
-    </div>
-</div>

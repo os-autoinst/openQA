@@ -52,7 +52,7 @@
 < javascripts/comments.js
 < javascripts/keyevent.js
 < javascripts/feature.js
-< javascripts/group_overview.js
+< javascripts/fullscreen.js
 < https://raw.githubusercontent.com/vsn4ik/bootstrap-submenu/v2.0.4/dist/js/bootstrap-submenu.js
 < https://raw.githubusercontent.com/twbs/bootstrap-sass/5d6b2ebba0c2a5885ce2f0e01e9218db3d3b5e47/assets/javascripts/bootstrap/collapse.js
 < https://raw.githubusercontent.com/twbs/bootstrap-sass/5d6b2ebba0c2a5885ce2f0e01e9218db3d3b5e47/assets/javascripts/bootstrap/tooltip.js
