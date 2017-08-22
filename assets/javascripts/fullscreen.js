@@ -25,3 +25,14 @@ function hideNavbar(fullscreen) {
         }, false);
     }
 };
+
+function autoRefresh(fullscreen) {
+    if (fullscreen == 1) {
+        $($(document).ready(function() {
+            setInterval(function() {
+                $("#build-results").load(location.href + " #build-results");
+                $("#comments-preview").load(location.href + " #comments-preview");
+            }, 60000);
+        }));
+    };
+};
