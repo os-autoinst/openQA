@@ -26,13 +26,13 @@ function hideNavbar(fullscreen) {
     }
 };
 
-function autoRefresh(fullscreen) {
+function autoRefresh(fullscreen, interval) {
     if (fullscreen == 1) {
         $($(document).ready(function() {
             setInterval(function() {
                 $("#build-results").load(location.href + " #build-results");
                 $("#comments-preview").load(location.href + " #comments-preview");
-            }, 60000);
+            }, interval*1000);
         }));
     };
 };

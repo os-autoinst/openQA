@@ -6,7 +6,7 @@
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
     hideNavbar(<%= $fullscreen %>);
-    autoRefresh(<%= $fullscreen %>);
+    autoRefresh(<%= $fullscreen %>, <%= $interval %>);
 % end
 
 % if (is_admin) {

@@ -90,6 +90,8 @@ sub group_overview {
     my $group = $self->db->resultset($resultset)->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
     $self->stash('fullscreen', $self->param('fullscreen') // 0);
+    my $interval = $self->param('interval') // 60;
+    $self->stash('interval', $interval);
 
     my @comments;
     my @pinned_comments;
