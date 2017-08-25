@@ -7,5 +7,6 @@
     notifempty
     missingok
     copytruncate
+    hourly
 }
 
