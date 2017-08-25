@@ -11,7 +11,7 @@ permalink: /api/testapi/
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 1.5.6.1">
-<title>Untitled</title>
+<title>introduction</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /* Asciidoctor default stylesheet | MIT License | http://asciidoctor.org */
@@ -431,15 +431,1237 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 .show-for-print{display:inherit!important}}
 </style>
 </head>
-<body class="article">
+<body class="article toc2 toc-left">
 <div id="header">
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel3">
+<li><a href="#_introduction">introduction</a></li>
+<li><a href="#_internal">internal</a>
+<ul class="sectlevel4">
+<li><a href="#_init">init</a></li>
+<li><a href="#_set_distribution">set_distribution</a></li>
+</ul>
+</li>
+<li><a href="#_video_output_handling">video output handling</a>
+<ul class="sectlevel4">
+<li><a href="#_save_screenshot">save_screenshot</a></li>
+<li><a href="#_record_soft_failure">record_soft_failure</a></li>
+<li><a href="#_record_info">record_info</a></li>
+<li><a href="#_assert_screen">assert_screen</a></li>
+<li><a href="#_check_screen">check_screen</a></li>
+<li><a href="#_match_has_tag">match_has_tag</a></li>
+<li><a href="#_assert_and_click">assert_and_click</a></li>
+<li><a href="#_assert_and_dclick">assert_and_dclick</a></li>
+<li><a href="#_wait_screen_change">wait_screen_change</a></li>
+<li><a href="#_assert_screen_change">assert_screen_change</a></li>
+<li><a href="#_wait_still_screen">wait_still_screen</a></li>
+</ul>
+</li>
+<li><a href="#_test_variable_access">test variable access</a>
+<ul class="sectlevel4">
+<li><a href="#_get_var">get_var</a></li>
+<li><a href="#_get_required_var">get_required_var</a></li>
+<li><a href="#_set_var">set_var</a></li>
+<li><a href="#_check_var">check_var</a></li>
+<li><a href="#_get_var_array">get_var_array</a></li>
+<li><a href="#_check_var_array">check_var_array</a></li>
+</ul>
+</li>
+<li><a href="#_script_execution_helpers">script execution helpers</a>
+<ul class="sectlevel4">
+<li><a href="#_is_serial_terminal">is_serial_terminal</a></li>
+<li><a href="#_wait_serial">wait_serial</a></li>
+<li><a href="#_x11_start_program">x11_start_program</a></li>
+<li><a href="#_assert_script_run">assert_script_run</a></li>
+<li><a href="#_script_run">script_run</a></li>
+<li><a href="#_assert_script_sudo">assert_script_sudo</a></li>
+<li><a href="#_script_sudo">script_sudo</a></li>
+<li><a href="#_script_output">script_output</a></li>
+<li><a href="#_validate_script_output">validate_script_output</a></li>
+<li><a href="#_become_root">become_root</a></li>
+<li><a href="#_ensure_installed">ensure_installed</a></li>
+<li><a href="#_hashed_string">hashed_string</a></li>
+</ul>
+</li>
+<li><a href="#_keyboard_support">keyboard support</a>
+<ul class="sectlevel4">
+<li><a href="#_send_key">send_key</a></li>
+<li><a href="#_hold_key">hold_key</a></li>
+<li><a href="#_release_key">release_key</a></li>
+<li><a href="#_send_key_until_needlematch">send_key_until_needlematch</a></li>
+<li><a href="#_type_string">type_string</a></li>
+<li><a href="#_type_password">type_password</a></li>
+</ul>
+</li>
+<li><a href="#_mouse_support">mouse support</a>
+<ul class="sectlevel4">
+<li><a href="#_mouse_set">mouse_set</a></li>
+<li><a href="#_mouse_click">mouse_click</a></li>
+<li><a href="#_mouse_dclick">mouse_dclick</a></li>
+<li><a href="#_mouse_tclick">mouse_tclick</a></li>
+<li><a href="#_mouse_hide">mouse_hide</a></li>
+</ul>
+</li>
+<li><a href="#_multi_console_support">multi console support</a>
+<ul class="sectlevel4">
+<li><a href="#_add_console">add_console</a></li>
+<li><a href="#_select_console">select_console</a></li>
+<li><a href="#_console">console</a></li>
+<li><a href="#_reset_consoles">reset_consoles</a></li>
+</ul>
+</li>
+<li><a href="#_audio_support">audio support</a>
+<ul class="sectlevel4">
+<li><a href="#_start_audiocapture">start_audiocapture</a></li>
+<li><a href="#_assert_recorded_sound">assert_recorded_sound</a></li>
+</ul>
+</li>
+<li><a href="#_miscellaneous">miscellaneous</a>
+<ul class="sectlevel4">
+<li><a href="#_power">power</a></li>
+<li><a href="#_assert_shutdown">assert_shutdown</a></li>
+<li><a href="#_eject_cd">eject_cd</a></li>
+<li><a href="#_save_memory_dump">save_memory_dump</a></li>
+<li><a href="#_save_storage_drives">save_storage_drives</a></li>
+<li><a href="#_freeze_vm">freeze_vm</a></li>
+<li><a href="#_resume_vm">resume_vm</a></li>
+<li><a href="#_parse_junit_log">parse_junit_log</a></li>
+<li><a href="#_wait_idle">wait_idle</a></li>
+</ul>
+</li>
+<li><a href="#_log_and_data_upload_and_download_helpers">log and data upload and download helpers</a>
+<ul class="sectlevel4">
+<li><a href="#_diag">diag</a></li>
+<li><a href="#_autoinst_url">autoinst_url</a></li>
+<li><a href="#_data_url">data_url</a></li>
+<li><a href="#_upload_logs">upload_logs</a></li>
+<li><a href="#_upload_asset">upload_asset</a></li>
+</ul>
+</li>
+</ul>
+</div>
 </div>
 <div id="content">
-
+<div class="sect3">
+<h4 id="_introduction">introduction</h4>
+<div class="paragraph">
+<p>This test API module provides methods exposed by the os-autoinst backend to be
+used within tests.</p>
+</div>
+<div class="paragraph">
+<p>Many methods define a timeout parameter which can be scaled by setting the
+<code>TIMEOUT_SCALE</code> variable in the test settings which are read by the isotovideo
+process. The scale parameter can be used based on performance of workers to
+prevent false positive timeouts based on differing worker performance.</p>
+</div>
+<div class="paragraph">
+<p>os-autoinst is used in the openQA project.
++For more information on how to use openQA, please visit <a href="http://open.qa/documentation" class="bare">http://open.qa/documentation</a></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_internal">internal</h4>
+<div class="sect4">
+<h5 id="_init">init</h5>
+<div class="paragraph">
+<p>Used for internal initialization, do not call from tests.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_set_distribution">set_distribution</h5>
+<div class="literalblock">
+<div class="content">
+<pre>set_distribution($distri);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Set distribution object.</p>
+</div>
+<div class="paragraph">
+<p>You can use distribution object to implement distribution specific helpers.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_video_output_handling">video output handling</h4>
+<div class="sect4">
+<h5 id="_save_screenshot">save_screenshot</h5>
+<div class="literalblock">
+<div class="content">
+<pre>save_screenshot;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Saves screenshot of current SUT screen.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_record_soft_failure">record_soft_failure</h5>
+<div class="literalblock">
+<div class="content">
+<pre>record_soft_failure([$reason]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Record a soft failure on the current test modules result. The result will
+still be counted as a success. Use this to mark where workarounds are applied.
+Takes an optional <code>$reason</code> string which is recorded in the log file.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_record_info">record_info</h5>
+<div class="literalblock">
+<div class="content">
+<pre>record_info($title, $output [, result =&gt; $result] [, resultname =&gt; $resultname]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Example:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>record_info('workaround', "we know what we are doing");</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Record a generic step result on the current test modules. This is meant for
+informational purposes to be interpreted by a displaying system. For example
+openQA can show a info box as part of the job results details. Use this
+instead of <code>record_soft_failure</code> for example when you do not want to mark the
+job as a softfail. The optional value <code>$result</code> can be 'ok' (default),
+'fail', 'softfail'. <code>$resultname</code> can be specified for the additional name
+tag on the result file.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_assert_screen">assert_screen</h5>
+<div class="literalblock">
+<div class="content">
+<pre>assert_screen($mustmatch [, [$timeout] | [timeout =&gt; $timeout]] [, no_wait =&gt; $no_wait]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wait for needle with tag <code>$mustmatch</code> to appear on SUT screen. <code>$mustmatch</code>
+can be string or <code>ARRAYREF</code> of string (<code>['tag1', 'tag2']</code>). The maximum
+waiting time is defined by <code>$timeout</code>. It is recommended to use a value lower
+than the default timeout only when explicitly needed. <code>assert_screen</code> is not
+very suitable for checking performance expectations. Under the normal
+circumstance of the screen being shown this does not imply a longer waiting
+time as the method returns as soon as a successful needle match occurred.</p>
+</div>
+<div class="paragraph">
+<p>Specify <code>$no_wait</code> to run the screen check as fast as possible that is
+possibly more than once per second which is default. Select this to check a
+screen which can change in a range faster than 1-2 seconds not to miss the
+screen to check for.</p>
+</div>
+<div class="paragraph">
+<p>Returns matched needle or throws <code>NeedleFailed</code> exception if $timeout timeout
+is hit. Default timeout is 30s.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_check_screen">check_screen</h5>
+<div class="literalblock">
+<div class="content">
+<pre>check_screen($mustmatch [, [$timeout] | [timeout =&gt; $timeout]] [, no_wait =&gt; $no_wait]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Similar to <code>assert_screen</code> but does not throw exceptions. Use this for optional matches.
+Check <code>assert_screen</code> for parameters.</p>
+</div>
+<div class="paragraph">
+<p>Unlike <code>assert_screen</code> it is recommended to use the lowest possible timeout
+to prevent needless waiting time in case no match is expected behaviour. In
+general a value of 0s for the timeout should suffice, that is only checking
+once with no waiting time. In most cases a check_screen with a higher timeout
+can be replaced by <code>assert_screen</code> with multiple tags using an <code>ARRAYREF</code> in
+combination with <code>match_has_tag</code> or another synchronization call in before,
+for example <code>wait_screen_change</code> or <code>wait_still_screen</code>.</p>
+</div>
+<div class="paragraph">
+<p>Returns matched needle or <code>undef</code> if timeout is hit. Default timeout is 30s.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_match_has_tag">match_has_tag</h5>
+<div class="literalblock">
+<div class="content">
+<pre>match_has_tag($tag);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Returns true if last matched needle has <code>$tag</code> else return <code>undef</code>.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_assert_and_click">assert_and_click</h5>
+<div class="literalblock">
+<div class="content">
+<pre>assert_and_click($mustmatch, [$button], [$timeout], [$click_time], [$dclick]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wait for needle with <code>$mustmatch</code> tag to appear on SUT screen. Then click
+<code>$button</code> in the middle of the last match region as defined in the needle
+JSON file. If <code>$dclick</code> is set, do double click instead.  <code>$mustmatch</code> can
+be string or <code>ARRAYREF</code> of strings (<code>['tag1', 'tag2']</code>).  <code>$button</code> is by
+default <code>'left'</code>. <code>'left'</code> and <code>'right'</code> is supported.</p>
+</div>
+<div class="paragraph">
+<p>Throws <code>NeedleFailed</code> exception if <code>$timeout</code> timeout is hit. Default timeout is 30s.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_assert_and_dclick">assert_and_dclick</h5>
+<div class="literalblock">
+<div class="content">
+<pre>assert_and_dclick($mustmatch, $button, [$timeout], [$click_time]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Alias for <code>assert_and_click</code> with <code>$dclick</code> set.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_wait_screen_change">wait_screen_change</h5>
+<div class="literalblock">
+<div class="content">
+<pre>wait_screen_change(CODEREF [,$timeout [, similarity_level =&gt; 50]]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wrapper around code that is supposed to change the screen.
+This is the opposite to <code>wait_still_screen</code>. Make sure to put the commands to change the screen
+within the block to avoid races between the action and the screen change.</p>
+</div>
+<div class="paragraph">
+<p>Example:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>wait_screen_change {
+   send_key 'esc';
+};</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Notice: If you use the second parameter, you could get the following warning</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>Useless use of private variable in void context</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To avoid it, use parentheses for the function call and the reserved word 'sub' for the callback
+subroutine block.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>wait_screen_change(sub {
+  send_key 'esc';
+}, 15);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Returns true if screen changed or false on timeout. Default timeout is 10s. Default
+similarity_level is 50.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_assert_screen_change">assert_screen_change</h5>
+<div class="literalblock">
+<div class="content">
+<pre>assert_screen_change(CODEREF [,$timeout]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Run <code>CODEREF</code> with <code>wait_screen_change</code> but <code>die</code> if screen did not change
+within timeout. Look into <code>wait_screen_change</code> for details.</p>
+</div>
+<div class="paragraph">
+<p>Example:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>assert_screen_change { send_key 'alt-f4' };</pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_wait_still_screen">wait_still_screen</h5>
+<div class="literalblock">
+<div class="content">
+<pre>wait_still_screen([$stilltime_sec [, $timeout [, $similarity_level]]]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wait until the screen stops changing.</p>
+</div>
+<div class="paragraph">
+<p>Returns true if screen is not changed for given $stilltime (in seconds) or undef on timeout.
+Default timeout is 30s, default stilltime is 7s.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_test_variable_access">test variable access</h4>
+<div class="sect4">
+<h5 id="_get_var">get_var</h5>
+<div class="literalblock">
+<div class="content">
+<pre>get_var($variable [, $default ])</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Returns content of test variable <code>$variable</code> or the <code>$default</code> given as second argument or <code>undef</code></p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_get_required_var">get_required_var</h5>
+<div class="literalblock">
+<div class="content">
+<pre>get_required_var($variable)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Similar to <code>get_var</code> but without default value and throws exception if variable can not be retrieved.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_set_var">set_var</h5>
+<div class="literalblock">
+<div class="content">
+<pre>set_var($variable, $value);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Set test variable <code>$variable</code> to value <code>$value</code>.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_check_var">check_var</h5>
+<div class="literalblock">
+<div class="content">
+<pre>check_var($variable, $value);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Returns true if test variable <code>$variable</code> is equal to <code>$value</code> or returns <code>undef</code>.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_get_var_array">get_var_array</h5>
+<div class="literalblock">
+<div class="content">
+<pre>get_var_array($variable [, $default ]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Return the given variable as array reference (split variable value by , | or ; )</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_check_var_array">check_var_array</h5>
+<div class="literalblock">
+<div class="content">
+<pre>check_var_array($variable, $value);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Boolean function to check if a value list contains a value</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_script_execution_helpers">script execution helpers</h4>
+<div class="sect4">
+<h5 id="_is_serial_terminal">is_serial_terminal</h5>
+<div class="literalblock">
+<div class="content">
+<pre>is_serial_terminal;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Determines if communication with the guest is being performed purely over a
+serial port. When true, the guest should have a tty attached to a serial port
+and os-autoinst sends commands to it as text. This differs from when a text
+console is selected in the guest, but VNC is being used to simulate key presses.</p>
+</div>
+<div class="paragraph">
+<p>When a serial terminal is selected you will not be able to use functions which
+rely on needles. This sub is not exported by default as most tests <em>will not
+benefit</em>' from changing their behaviour depending on if communication happens
+over serial or VNC.</p>
+</div>
+<div class="paragraph">
+<p>For more info see consoles/virtio_console.pm and consoles/virtio_screen.pm.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_wait_serial">wait_serial</h5>
+<div class="literalblock">
+<div class="content">
+<pre>wait_serial($regex or ARRAYREF of $regexes [[, $timeout], $expect_not_found]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wait for <code>$regex</code> or anyone of <code>$regexes</code> to appear on serial output.</p>
+</div>
+<div class="paragraph">
+<p>Returns the string matched or <code>undef</code> if <code>$expect_not_found</code> is false
+(default).</p>
+</div>
+<div class="paragraph">
+<p>Returns <code>undef</code> or (after timeout) the string that <em>did _not</em> match_' if
+<code>$expect_not_found</code> is true.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_x11_start_program">x11_start_program</h5>
+<div class="literalblock">
+<div class="content">
+<pre>x11_start_program($program[, $timeout, $options]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Start <code>$program</code> in graphical desktop environment.</p>
+</div>
+<div class="paragraph">
+<p><em>The implementation is distribution specific and not always available.</em>'</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_assert_script_run">assert_script_run</h5>
+<div class="literalblock">
+<div class="content">
+<pre>assert_script_run($cmd [, timeout =&gt; $timeout] [, fail_message =&gt; $fail_message]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Deprecated mode</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>assert_script_run($cmd [, $timeout [, $fail_message]]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Run <code>$cmd</code> via <code>$distri-`script_run&gt; and `die</code> unless it returns zero (indicating
+successful completion of <code>$cmd</code>). Default timeout is 90 seconds.
+Use <code>script_run</code> instead if <code>$cmd</code> may fail.</p>
+</div>
+<div class="paragraph">
+<p><code>$fail_message</code> is returned in the die message if specified.</p>
+</div>
+<div class="paragraph">
+<p><em>The <code>script_run</code> implementation is distribution specific and not always available.
+For this to work correctly, it must return 0 if and only if <code>$command</code> completes
+successfully. It must NOT return 0 if <code>$command</code> times out. The default implementation
+should work on *nix operating systems with a configured serial device.</em>'</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_script_run">script_run</h5>
+<div class="literalblock">
+<div class="content">
+<pre>script_run($cmd [, $wait]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Run <code>$cmd</code> (in the default implementation, by assuming the console prompt and typing
+the command). If $wait_seconds is greater than 0, wait for that length of time for
+execution to complete (otherwise, returns undef immediately). See `distri-`script_run&gt;
+for default timeout.</p>
+</div>
+<div class="paragraph">
+<p>&lt;Returns&gt; exit code received from <em>$cmd</em>', or undef if $wait_seconds is 0 or execution
+does not complete within $wait_seconds.</p>
+</div>
+<div class="paragraph">
+<p><em>The implementation is distribution specific and not always available.</em>'</p>
+</div>
+<div class="paragraph">
+<p>The default implementation should work on *nix operating systems with a configured
+serial device so long as the user has permissions to write to the supplied serial
+device <code>$serialdev</code>.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_assert_script_sudo">assert_script_sudo</h5>
+<div class="literalblock">
+<div class="content">
+<pre>assert_script_sudo($command [, $wait]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Run <code>$command</code> via <code>script_sudo</code> and then check by <code>wait_serial</code> if its exit
+status is not zero.
+See <code>wait_serial</code> for default timeout.</p>
+</div>
+<div class="paragraph">
+<p><em>The implementation is distribution specific and not always available.</em>'</p>
+</div>
+<div class="paragraph">
+<p>Make sure the non-root user has permissions to write to the supplied serial device
+<code>$serialdev</code>.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_script_sudo">script_sudo</h5>
+<div class="literalblock">
+<div class="content">
+<pre>script_sudo($program [, $wait]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Run <code>$program</code> using sudo. Handle the sudo timeout and send password when appropriate.
+<code>$wait</code> defaults to 2 seconds.</p>
+</div>
+<div class="paragraph">
+<p><em>The implementation is distribution specific and not always available.</em>'</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_script_output">script_output</h5>
+<div class="literalblock">
+<div class="content">
+<pre>script_output($script [, $wait])</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>fetches the script through HTTP into the SUT and execs it with <code>bash -xe</code> and directs
+<code>stdout</code> (<em>not</em>' <code>stderr</code>!) to the serial console and returns the output <em>if</em>' the script
+exists with 0. Otherwise the test is set to failed.</p>
+</div>
+<div class="paragraph">
+<p>The default timeout for the script is 30 seconds. If you need more, pass a second parameter</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_validate_script_output">validate_script_output</h5>
+<div class="literalblock">
+<div class="content">
+<pre>validate_script_output($script, $code, [$wait])</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wrapper around script_output, that runs a callback on the output. Use it as</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>validate_script_output "cat /etc/hosts", sub { m/127.*localhost/ }</pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_become_root">become_root</h5>
+<div class="literalblock">
+<div class="content">
+<pre>become_root;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Open a root shell.</p>
+</div>
+<div class="paragraph">
+<p><em>The implementation is distribution specific and not always available.</em>'</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_ensure_installed">ensure_installed</h5>
+<div class="literalblock">
+<div class="content">
+<pre>ensure_installed $package;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Helper to install a package to SUT.</p>
+</div>
+<div class="paragraph">
+<p><em>The implementation is distribution specific and not always available.</em>'</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_hashed_string">hashed_string</h5>
+<div class="literalblock">
+<div class="content">
+<pre>hashed_string();</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Return a short string representing the given string by passing it through the
+MD5 algorithm and taking the first characters.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_keyboard_support">keyboard support</h4>
+<div class="sect4">
+<h5 id="_send_key">send_key</h5>
+<div class="literalblock">
+<div class="content">
+<pre>send_key($key [, $do_wait]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Send one <code>$key</code> to SUT keyboard input.</p>
+</div>
+<div class="paragraph">
+<p>Special characters naming:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>'esc', 'down', 'right', 'up', 'left', 'equal', 'spc',  'minus', 'shift', 'ctrl'
+'caps', 'meta', 'alt', 'ret', 'tab', 'backspace', 'end', 'delete', 'home', 'insert'
+'pgup', 'pgdn', 'sysrq', 'super'</pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_hold_key">hold_key</h5>
+<div class="literalblock">
+<div class="content">
+<pre>hold_key($key);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Hold one <code>$key</code> until release it</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_release_key">release_key</h5>
+<div class="literalblock">
+<div class="content">
+<pre>release_key($key);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Release one <code>$key</code> which is kept holding</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_send_key_until_needlematch">send_key_until_needlematch</h5>
+<div class="literalblock">
+<div class="content">
+<pre>send_key_until_needlematch($tag, $key [, $counter, $timeout]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Send specific key until needle with <code>$tag</code> is not matched or <code>$counter</code> is 0.
+<code>$tag</code> can be string or <code>ARRAYREF</code> (<code>['tag1', 'tag2']</code>)
+Default counter is 20 steps, default timeout is 1s</p>
+</div>
+<div class="paragraph">
+<p>Throws <code>NeedleFailed</code> exception if needle is not matched until <code>$counter</code> is 0.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_type_string">type_string</h5>
+<div class="literalblock">
+<div class="content">
+<pre>type_string($string [, max_interval =&gt; &lt;num&gt; ] [, wait_screen_changes =&gt; &lt;num&gt; ] [, secret =&gt; 1 ] );</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>send a string of characters, mapping them to appropriate key names as necessary</p>
+</div>
+<div class="paragraph">
+<p>you can pass optional parameters with following keys:</p>
+</div>
+<div class="paragraph">
+<p><code>max_interval (1-250)</code> determines the typing speed, the lower the
+<code>max_interval</code> the slower the typing.</p>
+</div>
+<div class="paragraph">
+<p><code>wait_screen_change</code> if set, type only this many characters at a time
+<code>wait_screen_change</code> and wait for the screen to change between sets.</p>
+</div>
+<div class="paragraph">
+<p><code>secret (bool)</code> suppresses logging of the actual string typed.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_type_password">type_password</h5>
+<div class="literalblock">
+<div class="content">
+<pre>type_password([$password]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A convenience wrapper around <code>type_string</code>, which doesn&#8217;t log the string.</p>
+</div>
+<div class="paragraph">
+<p>Uses <code>$testapi::password</code> if no string is given.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_mouse_support">mouse support</h4>
+<div class="sect4">
+<h5 id="_mouse_set">mouse_set</h5>
+<div class="literalblock">
+<div class="content">
+<pre>mouse_set($x, $y);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Move mouse pointer to given coordinates</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_mouse_click">mouse_click</h5>
+<div class="literalblock">
+<div class="content">
+<pre>mouse_click([$button, $hold_time]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Click mouse <code>$button</code>. Can be <code>'left'</code> or <code>'right'</code>. Set <code>$hold_time</code> to hold button for set time in seconds.
+Default hold time is 1s</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_mouse_dclick">mouse_dclick</h5>
+<div class="literalblock">
+<div class="content">
+<pre>mouse_dclick([$button, $hold_time]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Same as mouse_click only for double click.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_mouse_tclick">mouse_tclick</h5>
+<div class="literalblock">
+<div class="content">
+<pre>mouse_tclick([$button, $hold_time]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Same as mouse_click only for triple click.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_mouse_hide">mouse_hide</h5>
+<div class="literalblock">
+<div class="content">
+<pre>mouse_hide([$border_offset]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Hide mouse cursor by moving it out of screen area.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_multi_console_support">multi console support</h4>
+<div class="paragraph">
+<p>All <code>testapi</code> commands that interact with the system under test do that
+through a console.  <code>send_key</code>, <code>type_string</code> type into a console.
+<code>assert_screen</code> 'looks' at a console, <code>assert_and_click</code> looks at
+and clicks on a console.</p>
+</div>
+<div class="paragraph">
+<p>Most backends support several consoles in some way.  These consoles
+then have names as defined by the backend.</p>
+</div>
+<div class="paragraph">
+<p>Consoles can be selected for interaction with the system under test.
+One of them is 'selected' by default, as defined by the backend.</p>
+</div>
+<div class="paragraph">
+<p>There are no consoles predefined by default, the distribution has
+to add them during initial setup and define actions on what should
+happen when they are selected first by the tests.</p>
+</div>
+<div class="paragraph">
+<p>E.g. your distribution can give e.g. <code>tty2</code> and <code>tty4</code> a name for the
+tests to select</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>$self-&gt;add_console('root-console',  'tty-console', {tty =&gt; 2});
+$self-&gt;add_console('user-console',  'tty-console', {tty =&gt; 4});</pre>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_add_console">add_console</h5>
+<div class="literalblock">
+<div class="content">
+<pre>add_console("console", "console type" [, optional console parameters...])</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You need to do this in your distribution and not in tests. It will not trigger
+any action on the system under test, but only store the parameters.</p>
+</div>
+<div class="paragraph">
+<p>The console parameters are console specific.</p>
+</div>
+<div class="paragraph">
+<p><em>The implementation is distribution specific and not always available.</em>'</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_select_console">select_console</h5>
+<div class="literalblock">
+<div class="content">
+<pre>select_console($console [, @args]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Example:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>select_console("root-console");</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Select the named console for further <code>testapi</code> interaction (send_text,
+send_key, wait_screen_change, &#8230;&#8203;)</p>
+</div>
+<div class="paragraph">
+<p>If this the first time, a test selects this console, the distribution
+will get a call into activate_console('root-console', $console_obj) to
+make sure to actually log in root. For the backend it&#8217;s just a <code>tty</code>
+object (in this example) - so it will ensure the console is active,
+but to setup the root shell on this console, the distribution needs
+to run test code.</p>
+</div>
+<div class="paragraph">
+<p>After the console selection the distribution callback
+<code>$distri-`console_selected&gt; is called with `@args</code>.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_console">console</h5>
+<div class="literalblock">
+<div class="content">
+<pre>console("testapi_console")-&gt;$console_command(@console_command_args)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Some consoles have special commands beyond <code>type_string</code>, <code>assert_screen</code></p>
+</div>
+<div class="paragraph">
+<p>Such commands can be accessed using this API.</p>
+</div>
+<div class="paragraph">
+<p><code>console("bootloader")</code>, <code>console("errorlog")</code>, &#8230;&#8203; returns a proxy
+object for the specific console which can then be directly accessed.</p>
+</div>
+<div class="paragraph">
+<p>This is also useful for typing/interacting 'in the background',
+without turning the video away from the currently selected console.</p>
+</div>
+<div class="paragraph">
+<p>Note: <code>assert_screen()</code> and friends look at the currently selected
+console (select_console), no matter which console you send commands to
+here.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_reset_consoles">reset_consoles</h5>
+<div class="literalblock">
+<div class="content">
+<pre>reset_consoles;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>will make sure the next select_console will activate the console. This is important
+if you did something to the system that affects the console (e.g. trigger reboot).</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_audio_support">audio support</h4>
+<div class="sect4">
+<h5 id="_start_audiocapture">start_audiocapture</h5>
+<div class="literalblock">
+<div class="content">
+<pre>start_audiocapture;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Tells the backend to record a <code>.wav</code> file of the sound card.</p>
+</div>
+<div class="paragraph">
+<p><em>Only supported by qemu backend.</em>'</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_assert_recorded_sound">assert_recorded_sound</h5>
+<div class="literalblock">
+<div class="content">
+<pre>assert_recorded_sound('we-will-rock-you');</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Tells the backend to record a <code>.wav</code> file of the sound card.</p>
+</div>
+<div class="paragraph">
+<p><em>Only supported by QEMU backend.</em>'</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_miscellaneous">miscellaneous</h4>
+<div class="sect4">
+<h5 id="_power">power</h5>
+<div class="literalblock">
+<div class="content">
+<pre>power($action);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Trigger backend specific power action, can be <code>'on'</code>, <code>'off'</code>, <code>'acpi'</code> or <code>'reset'</code></p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_assert_shutdown">assert_shutdown</h5>
+<div class="literalblock">
+<div class="content">
+<pre>assert_shutdown([$timeout]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Periodically check backend for status until <code>'shutdown'</code>. Does <em>not</em>' initiate shutdown.
+Default timeout is 60s</p>
+</div>
+<div class="paragraph">
+<p>Returns <code>undef</code> on success, throws exception on timeout.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_eject_cd">eject_cd</h5>
+<div class="literalblock">
+<div class="content">
+<pre>eject_cd;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>if backend supports it, eject the CD</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_save_memory_dump">save_memory_dump</h5>
+<div class="literalblock">
+<div class="content">
+<pre>save_memory_dump(filename =&gt; undef, migration_speed =&gt; "4096m");</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Saves the SUT memory state using <code>$filename</code> as base for the memory dump
+filename,  the default will be the current test&#8217;s name.</p>
+</div>
+<div class="paragraph">
+<p>The memory dump can be created at any point, but it&#8217;s recommended to use it
+within a post fail hook. Different filenames should be provided if the dump is
+being used within the test itself.</p>
+</div>
+<div class="paragraph">
+<p><em>Currently only qemu backend is supported.</em>'</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_save_storage_drives">save_storage_drives</h5>
+<div class="literalblock">
+<div class="content">
+<pre>save_storage_drives([$filename]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Saves all of the SUT drives using <code>$filename</code> as part of the final filename,
+the default will be the current test&#8217;s name. The disk number will be always present.</p>
+</div>
+<div class="paragraph">
+<p>This method must be called within a post_fail_hook.</p>
+</div>
+<div class="paragraph">
+<p><em>Currently only qemu backend is supported.</em>'</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_freeze_vm">freeze_vm</h5>
+<div class="literalblock">
+<div class="content">
+<pre>freeze_vm;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If the backend supports it, freeze the virtual machine. This will allow the
+virtual machine to be paused/frozen within the test, but only from the
+post_fail_hook. So that memory and disk dumps can be extracted without any
+risk of data changing.</p>
+</div>
+<div class="paragraph">
+<p>Call this method to ensure memory and disk dump refer to the same machine state.</p>
+</div>
+<div class="paragraph">
+<p><em>Currently only qemu backend is supported.</em>'</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_resume_vm">resume_vm</h5>
+<div class="literalblock">
+<div class="content">
+<pre>resume_vm;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If the backend supports it, resume the virtual machine. Call this method to
+start virtual machine CPU explicitly if DELAYED_START is set.</p>
+</div>
+<div class="paragraph">
+<p><em>Currently only qemu backend is supported.</em>'</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_parse_junit_log">parse_junit_log</h5>
+<div class="literalblock">
+<div class="content">
+<pre>parse_junit_log("report.xml");</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Upload log file from SUT (calls upload_logs internally). The uploaded
+file is then parsed as jUnit format and extra test results are created from it.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_wait_idle">wait_idle</h5>
+<div class="literalblock">
+<div class="content">
+<pre>wait_idle([$timeout_sec]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wait until the system becomes idle (as configured by IDLETHRESHOLD) or timeout.
+This function only works on qemu backend and will sleep on other backends. As
+such it&#8217;s wasting a lot of time and should be avoided as such. Take it
+as last resort if there is nothing else you can assert on.
+Default timeout is 19s.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_log_and_data_upload_and_download_helpers">log and data upload and download helpers</h4>
+<div class="sect4">
+<h5 id="_diag">diag</h5>
+<div class="literalblock">
+<div class="content">
+<pre>diag('important message');</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Write a diagnostic message to the logfile. In color, if possible.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_autoinst_url">autoinst_url</h5>
+<div class="literalblock">
+<div class="content">
+<pre>autoinst_url([$path, $query]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>returns the base URL to contact the local <code>os-autoinst</code> service</p>
+</div>
+<div class="paragraph">
+<p>Optional <code>$path</code> argument is appended after base url.</p>
+</div>
+<div class="paragraph">
+<p>Optional HASHREF <code>$query</code> is converted to URL query and appended
+after path.</p>
+</div>
+<div class="paragraph">
+<p>Returns constructor URL. Can be used inline:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>script_run("curl " . autoinst_url . "/data");</pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_data_url">data_url</h5>
+<div class="literalblock">
+<div class="content">
+<pre>data_url($name);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>returns the URL to download data or asset file
+Special values REPO_\d and ASSET_\d points to the asset configured
+in the corresponding variable</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_upload_logs">upload_logs</h5>
+<div class="literalblock">
+<div class="content">
+<pre>upload_logs($file [, failok =&gt; 0, timeout =&gt; 90 ]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Upload <code>$file</code> to OpenQA WebUI as a log file and
+return the uploaded file name. If failok is not set, a failed upload or
+timeout will cause the test to die. Failed uploads happen if the file does not
+exist or is over 20 GiB in size, so failok is useful when you just want
+to upload the file if it exists but not mind if it doesn&#8217;t. Default
+timeout is 90s.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_upload_asset">upload_asset</h5>
+<div class="literalblock">
+<div class="content">
+<pre>upload_asset $file [,$public[,$nocheck]];</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Uploads <code>$file</code> as asset to OpenQA WebUI</p>
+</div>
+<div class="paragraph">
+<p>You can upload private assets only accessible by related jobs:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>upload_asset '/tmp/suse.ps';</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Or you can upload public assets that will have a fixed filename
+replacing previous assets - useful for external users:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>upload_asset '/tmp/suse.ps', 1;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you just want to upload a file and verify that it was uploaded
+correctly on your own (e.g. in svirt console we don&#8217;t have a serial
+line and can&#8217;t rely on assert_script_run check), add an optional
+<code>$nocheck</code> parameter:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>upload_asset '/tmp/suse.ps', 1, 1;</pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-08-23 12:37:16 UTC
+Last updated 2017-08-25 12:37:52 UTC
 </div>
 </div>
 </body>
