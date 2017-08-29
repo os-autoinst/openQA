@@ -1542,11 +1542,18 @@ file is then parsed as jUnit format and extra test results are created from it.<
 </div>
 </div>
 <div class="paragraph">
-<p>Wait until the system becomes idle (as configured by IDLETHRESHOLD) or timeout.
-This function only works on qemu backend and will sleep on other backends. As
-such it&#8217;s wasting a lot of time and should be avoided as such. Take it
-as last resort if there is nothing else you can assert on.
-Default timeout is 19s.</p>
+<p>*Deprecated: * It is recommended to avoid the use of <code>wait_idle</code>. See
+<a href="https://progress.opensuse.org/issues/5830" class="bare">https://progress.opensuse.org/issues/5830</a> for details.</p>
+</div>
+<div class="paragraph">
+<p>This function will basically just sleep some time as this is the only viable
+option considering all backend implementations. Previously this function tried
+to wait until a test system becomes idle or timeout which only reliably worked
+on qemu backend and was just sleeping on other backends. As such it is wasting
+a lot of time and should be avoided as such.</p>
+</div>
+<div class="paragraph">
+<p>Default timeout is 19s.</p>
 </div>
 </div>
 </div>
@@ -1661,7 +1668,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-08-27 12:39:11 UTC
+Last updated 2017-08-29 07:08:05 UTC
 </div>
 </div>
 </body>
