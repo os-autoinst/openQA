@@ -65,8 +65,7 @@ $driver->find_element_by_link_text('Logout')->click();
 $driver->get('/login?user=nobody');
 ok($driver->find_element('#step-0')->is_displayed(), 'tour popover is displayed');
 my $text = $driver->find_element('h3.popover-title')->get_text();
-is($text, 'Interested in new features?');
-$driver->find_element_by_id('end')->click();
+is($text, 'All tests area');
 $driver->find_element_by_link_text('Logged in as nobody')->click();
 $driver->find_element_by_link_text('Logout')->click();
 
@@ -81,11 +80,9 @@ ok($driver->find_element('#step-0')->is_displayed(), 'tour popover is displayed 
 
 # do the tour
 $driver->find_element_by_id('next')->click();
-$driver->find_element_by_id('next')->click();
-ok($driver->find_element('#step-2')->is_displayed(), 'tour popover is displayed');
+ok($driver->find_element('#step-1')->is_displayed(), 'tour popover is displayed');
 $driver->pause();
 $driver->find_element_by_id('prev')->click();
-$driver->find_element_by_id('end')->click();
 $driver->execute_script($clear);
 $driver->refresh();
 
