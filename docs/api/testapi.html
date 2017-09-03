@@ -1613,7 +1613,7 @@ in the corresponding variable</p>
 <h5 id="_upload_logs">upload_logs</h5>
 <div class="literalblock">
 <div class="content">
-<pre>upload_logs($file [, failok =&gt; 0, timeout =&gt; 90 ]);</pre>
+<pre>upload_logs($file [, failok =&gt; 0, timeout =&gt; 90, log_name =&gt; "custom_name.log" ]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1622,7 +1622,7 @@ return the uploaded file name. If failok is not set, a failed upload or
 timeout will cause the test to die. Failed uploads happen if the file does not
 exist or is over 20 GiB in size, so failok is useful when you just want
 to upload the file if it exists but not mind if it doesn&#8217;t. Default
-timeout is 90s.</p>
+timeout is 90s. <code>log_name</code> parameter allow to control resulted job&#8217;s attachment name.</p>
 </div>
 </div>
 <div class="sect4">
@@ -1668,7 +1668,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-09-01 12:41:30 UTC
+Last updated 2017-09-03 12:42:00 UTC
 </div>
 </div>
 </body>
