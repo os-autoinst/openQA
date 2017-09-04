@@ -188,11 +188,13 @@ sub _message {
     my $worker = _get_worker($ws->tx);
     unless ($worker) {
         $ws->app->log->warn("A message received from unknown worker connection");
-        log_debug(sprintf('A message received from unknown worker connection: %s', Dumper($json)));
+        log_debug(sprintf('A message received from unknown worker connection (terminating ws): %s', Dumper($json)));
+        $ws->finish("1008", "Connection terminated from WebSocket server - thought dead");
         return;
     }
     unless (ref($json) eq 'HASH') {
         log_error(sprintf('Received unexpected WS message "%s from worker %u', Dumper($json), $worker->id));
+        $ws->finish("1003", "Received unexpected data from worker, forcing close");
         return;
     }
 
