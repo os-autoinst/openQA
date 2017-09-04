@@ -1,0 +1,87 @@
+#!/usr/bin/perl
+
+# Copyright (C) 2017 SUSE LLC
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>.
+
+use 5.018;
+use warnings;
+use strict;
+use Test::More;
+use POSIX;
+use FindBin;
+use lib ("$FindBin::Bin/lib", "../lib", "lib");
+use OpenQA::WebSockets::Server;
+OpenQA::WebSockets::Server->new();
+
+subtest "WebSocket Server _message()" => sub {
+    use Mojo::Util 'monkey_patch';
+    monkey_patch "OpenQA::WebSockets::Server", _get_worker => sub { FooBarWorker->new };
+    my $fake_tx = FooBarTransaction->new;
+    my $buf;
+    $fake_tx->OpenQA::WebSockets::Server::_message("");
+
+    is @{$fake_tx->{out}}[0], "1003,Received unexpected data from worker, forcing close",
+      "WS Server returns 1003 when message is not a hash";
+
+    $fake_tx->OpenQA::WebSockets::Server::_message({type => "status", jobid => 1, data => "mydata"});
+    is @{$fake_tx->{w}->{status}}[0], "mydata", "status got updated";
+
+    $fake_tx->OpenQA::WebSockets::Server::_message(
+        {type => "property_change", jobid => 1, data => {interactive_mode => 1}});
+    is @{$fake_tx->{w}->{property}}[0], "INTERACTIVE,1", "property got updated";
+    $fake_tx->OpenQA::WebSockets::Server::_message(
+        {type => "property_change", jobid => 1, data => {interactive_mode => 0}});
+    is @{$fake_tx->{w}->{property}}[1], "INTERACTIVE,0", "property got updated";
+    is @{$fake_tx->{w}->{property}}[2], "STOP_WAITFORNEEDLE_REQUESTED,0", "property got updated";
+
+    open my $FD, '>', \$buf;
+    *STDOUT = $FD;
+    *STDERR = $FD;
+
+    $fake_tx->OpenQA::WebSockets::Server::_message({type => "FOOBAR"});
+    like $buf, qr/Received unknown message type "FOOBAR" from worker/, "log_error on unknown message";
+};
+
+
+done_testing();
+
+sub _store { push(@{shift->{+shift()}}, join(",", @_)); }
+
+package FooBarTransaction;
+
+sub new { bless({w => FooBarWorker->new()->set}, shift) }
+sub tx  { shift }
+sub app { shift }
+sub log { shift }
+sub schema    { shift }
+sub resultset { shift }
+sub find      { shift->{w} }
+sub warn      { return $_[1] }
+sub finish    { main::_store(shift, "out", @_) }
+sub send      { main::_store(shift, "send", @_) }
+
+package FooBarWorker;
+my $singleton;
+sub new { $singleton ||= bless({}, shift) }
+sub set {
+    $singleton->{db} = $singleton;
+    $singleton->{id} = \&id;
+    $singleton;
+}
+sub id            { 1 }
+sub update_status { main::_store(shift, "status", @_) }
+sub set_property  { main::_store(shift, "property", @_) }
+
+1;

@@ -59,10 +59,10 @@ my $host    = "http://localhost:$port";
 remove_tree($cachedir);
 make_path($ENV{LOGDIR});
 
-#redirect stdout
-open(my $FD, '>>', $logfile);
-select $FD;
-$| = 1;
+# reassign STDOUT, STDERR
+open my $FD, '>>', $logfile;
+*STDOUT = $FD;
+*STDERR = $FD;
 
 sub truncate_log {
     my ($new_log) = @_;
@@ -164,7 +164,6 @@ sub stop_server {
 }
 
 OpenQA::Worker::Cache::init($host, $cachedir);
-
 $openqalogs = read_log($logfile);
 like $openqalogs, qr/Creating cache directory tree for/, "Cache directory tree created.";
 like $openqalogs, qr/Deploying DB/,                      "Cache deploys the database.";

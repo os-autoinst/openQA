@@ -58,6 +58,7 @@ eval 'use Test::More::Color "foreground"';
 
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
+use OpenQA::Test::Utils 'create_websocket_server';
 
 plan skip_all => "set FULLSTACK=1 (be careful)" unless $ENV{FULLSTACK};
 
@@ -136,28 +137,7 @@ $driver->title_is("openQA", "back on main page");
 # but ...
 
 my $wsport = $mojoport + 1;
-$wspid = fork();
-if ($wspid == 0) {
-    $ENV{MOJO_LISTEN} = "http://127.0.0.1:$wsport";
-    use OpenQA::WebSockets;
-    OpenQA::WebSockets::run;
-    Devel::Cover::report() if Devel::Cover->can('report');
-    _exit(0);
-}
-else {
-    # wait for websocket server
-    my $wait = time + 20;
-    while (time < $wait) {
-        my $t      = time;
-        my $socket = IO::Socket::INET->new(
-            PeerHost => '127.0.0.1',
-            PeerPort => $wsport,
-            Proto    => 'tcp'
-        );
-        last if $socket;
-        sleep 1 if time - $t < 1;
-    }
-}
+$wspid = create_websocket_server($wsport);
 
 my $connect_args = "--apikey=1234567890ABCDEF --apisecret=1234567890ABCDEF --host=http://localhost:$mojoport";
 

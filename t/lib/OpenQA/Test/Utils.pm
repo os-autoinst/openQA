@@ -8,7 +8,19 @@ use OpenQA::Worker::Common;
 use Config::IniFiles;
 use File::Spec::Functions 'catdir';
 use OpenQA::Utils qw(log_error log_info log_debug);
+use Mojo::Home;
 #use OpenQA::Worker::Pool qw(lockit clean_pool);
+
+BEGIN {
+    if (!$ENV{MOJO_HOME}) {
+        # override default home as Mojo gets it wrong for our sub apps
+        # This 'require' is here because the 'home detect' method
+        # relies on %INC, which is only populated when the module is
+        # loaded: see #870 and #876
+        require OpenQA::Utils;
+        $ENV{MOJO_HOME} = Mojo::Home->new->detect('OpenQA::Utils');
+    }
+}
 
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK
@@ -18,8 +30,8 @@ sub kill_service {
     my $pid = shift;
     return unless $pid;
     my $forced = shift;
-    kill TERM => $pid;
-    kill KILL => $pid if $forced;
+    kill POSIX::SIGTERM => $pid;
+    kill POSIX::SIGKILL => $pid if $forced;
     waitpid($pid, 0);
 }
 
@@ -56,11 +68,20 @@ sub create_webapi {
 }
 
 sub create_websocket_server {
-    my $port = shift;
-    $wspid = fork();
+    my $port  = shift;
+    my $bogus = shift;
+    my $wspid = fork();
     if ($wspid == 0) {
         $ENV{MOJO_LISTEN} = "http://127.0.0.1:$port";
         use OpenQA::WebSockets;
+        use Mojo::Util 'monkey_patch';
+        use OpenQA::WebSockets::Server;
+        if ($bogus) {
+            monkey_patch 'OpenQA::WebSockets::Server', ws_create => sub {
+                $_[0]->on(json   => \&OpenQA::WebSockets::Server::_message);
+                $_[0]->on(finish => \&OpenQA::WebSockets::Server::_finish);
+            };
+        }
         OpenQA::WebSockets::run;
         Devel::Cover::report() if Devel::Cover->can('report');
         _exit(0);
@@ -83,15 +104,16 @@ sub create_websocket_server {
 }
 
 sub create_worker {
-    my ($apikey, $apisecret, $host, $instance) = @_;
+    my ($apikey, $apisecret, $host, $instance, $log) = @_;
     my $connect_args = "--instance=${instance} --apikey=${apikey} --apisecret=${apisecret} --host=${host}";
 
     my $workerpid = fork();
     if ($workerpid == 0) {
-        exec("perl ./script/worker $connect_args --isotovideo=../os-autoinst/isotovideo --verbose");
+        exec("perl ./script/worker $connect_args --isotovideo=../os-autoinst/isotovideo --verbose"
+              . (defined $log ? " 2>&1 > $log" : ""));
         die "FAILED TO START WORKER";
     }
-    return $workerpid;
+    return defined $log ? `pgrep -P $workerpid` : $workerpid;
 }
 
 sub unstable_worker {
