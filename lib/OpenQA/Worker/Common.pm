@@ -358,6 +358,8 @@ sub call_websocket {
                 $tx->on(json => \&OpenQA::Worker::Commands::websocket_commands);
                 $tx->on(
                     finish => sub {
+                        my (undef, $code, $reason) = @_;
+                        log_debug("Connection turned off from $host - $code : $reason");
                         remove_timer("keepalive-$host");
                         remove_timer("workerstatus-$host");
 
