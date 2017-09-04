@@ -133,7 +133,7 @@ documentation available at its http://mojolicio.us[home page].
 
 In addition to Mojolicious and its dependencies, several other CPAN modules are
 required by the openQA package. For a full list of hard dependencies, see the
-file DEPENDENCIES.txt at the root of the openQA repository. Some additional
+file +cpanfile+ at the root of the openQA repository. Some additional
 modules could be required when using a database engine other than the default
 SQLite.
 
