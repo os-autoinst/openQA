@@ -22,6 +22,7 @@ use Mojo::URL;
 use Regexp::Common 'URI';
 use Try::Tiny;
 use Mojo::File 'path';
+use IO::Handle;
 
 require Exporter;
 our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
@@ -212,7 +213,7 @@ sub log_debug {
         $app->log->debug($msg);
     }
     else {
-        print "[DEBUG] $msg\n";
+        STDOUT->printflush("[DEBUG] $msg\n");
     }
 }
 
@@ -222,7 +223,7 @@ sub log_info {
         $app->log->info($msg);
     }
     else {
-        print "[INFO] $msg\n";
+        STDOUT->printflush("[INFO] $msg\n");
     }
 }
 
@@ -232,7 +233,7 @@ sub log_warning {
         $app->log->warn($msg);
     }
     else {
-        print STDERR "[WARN] $msg\n";
+        STDERR->printflush("[WARN] $msg\n");
     }
 }
 
@@ -242,7 +243,7 @@ sub log_error {
         $app->log->error($msg);
     }
     else {
-        print STDERR "[ERROR] $msg\n";
+        STDERR->printflush("[ERROR] $msg\n");
     }
 }
 
