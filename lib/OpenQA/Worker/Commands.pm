@@ -120,9 +120,6 @@ sub websocket_commands {
                 }
             }
         }
-        elsif ($type eq 'ok') {
-            # ignore keepalives, but dont' report as unknown
-        }
         elsif ($type eq 'grab_job') {
             state $check_job_running;
             state $job_in_progress;
@@ -148,19 +145,20 @@ sub websocket_commands {
             if ($job && $job->{id}) {
                 $OpenQA::Worker::Common::job = $job;
                 log_debug("Job " . $job->{id} . " scheduled for next cycle");
+                my $send_status = sub {
+                    log_debug("Sending IMMEDIATELY worker status to $host");
+                    $job->{state} = "running";
+                    $tx->send(
+                        {
+                            json => {
+                                type => 'worker_status',
+                                (status => 'working', job => $job) x !!($job),
+                                (status => 'free') x !!(!$job),
+                            }});
+                };
+                Mojo::IOLoop->singleton->once("start_job" => $send_status);
+                Mojo::IOLoop->singleton->once("stop_job"  => $send_status);
                 $tx->send({json => {type => "accepted", jobid => $job->{id}}} => sub { start_job($host); });
-                Mojo::IOLoop->singleton->once(
-                    "start_job" => sub {
-                        log_debug("Sending IMMEDIATELY worker status to $host");
-                        $job->{state} = "running";
-                        $tx->send(
-                            {
-                                json => {
-                                    type => 'worker_status',
-                                    (status => 'working', job => $job) x !!($job),
-                                    (status => 'free') x !!(!$job),
-                                }});
-                    });
             }
             else {
                 $job_in_progress = 0;

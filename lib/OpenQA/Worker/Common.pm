@@ -23,8 +23,12 @@ use POSIX 'uname';
 use Mojo::URL;
 use OpenQA::Client;
 use OpenQA::Utils qw(log_error log_debug log_warning log_info);
-
+use Scalar::Util 'looks_like_number';
 use base 'Exporter';
+
+use constant DEAD_DETECTION_THRESHOLD => 30;    # 40 is the threshold in dead job detection
+use constant MIN_STATUS_TIMER         => 15;
+
 our @EXPORT = qw($job $verbose $instance $worker_settings $pooldir $nocleanup
   $hosts $ws_to_host $current_host
   $worker_caps $testresults update_setup_status
@@ -336,31 +340,35 @@ sub call_websocket {
         $ua_url => {'Sec-WebSocket-Extensions' => 'permessage-deflate'} => sub {
             my ($ua, $tx) = @_;
             if ($tx->is_websocket) {
-                # keep websocket connection busy
-                $tx->send({json => {type => 'ok'}});    # Send keepalive immediately
-                $hosts->{$host}{timers}{keepalive}
-                  = add_timer("keepalive-$host", 10, sub { $tx->send({json => {type => 'ok'}}); });
 
-                $hosts->{$host}{timers}{status} = add_timer(
-                    "workerstatus-$host",
-                    15,
-                    sub {
-                        log_debug("Sending worker status to $host");
-                        $tx->send(
-                            {
-                                json => {
-                                    type => 'worker_status',
-                                    (status => 'working', job => $job) x !!($job),
-                                    (status => 'free') x !!(!$job),
-                                }});
-                    });
+                my $send_status = sub {
+                    log_debug("Sending worker status to $host");
+                    $tx->send(
+                        {
+                            json => {
+                                type => 'worker_status',
+                                (status => 'working', job => $job) x !!($job),
+                                (status => 'free') x !!(!$job),
+                            }});
+                };
+
+                my $i = looks_like_number($instance) ? $instance : 1;
+            # Feature scaling - we do not know the instance maximum per worker, we take DEAD_DETECTION_THRESHOLD as max.
+                my $imax = $i > DEAD_DETECTION_THRESHOLD ? $i : DEAD_DETECTION_THRESHOLD;
+                my $worker_status_timer
+                  = int(MIN_STATUS_TIMER + ((($i - 1) * (DEAD_DETECTION_THRESHOLD - MIN_STATUS_TIMER)) / ($imax - 1)));
+                log_debug("## worker_status timer will be sending status each $worker_status_timer seconds")
+                  if $verbose;
+                $hosts->{$host}{timers}{status} ||= Mojo::IOLoop->recurring($worker_status_timer => $send_status);
 
                 $tx->on(json => \&OpenQA::Worker::Commands::websocket_commands);
                 $tx->on(
                     finish => sub {
-                        remove_timer("keepalive-$host");
-                        remove_timer("workerstatus-$host");
 
+                        if (exists $hosts->{$host}{timers}{status}) {
+                            Mojo::IOLoop->remove($hosts->{$host}{timers}{status});
+                            undef $hosts->{$host}{timers}{status};
+                        }
                         $hosts->{$host}{timers}{setup_websocket}
                           = add_timer("setup_websocket-$host", 5, sub { setup_websocket($host) }, 1);
                         delete $ws_to_host->{$hosts->{$host}{ws}} if $ws_to_host->{$hosts->{$host}{ws}};
