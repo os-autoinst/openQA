@@ -36,6 +36,7 @@
             % my $version = $job->VERSION // '';
             % my $flavor = $job->FLAVOR // '';
 	    % my $arch = $job->ARCH // '';
+            % my $start_time = $job->t_started ? $job->t_started->datetime() : 0;
             % my $query = { distri => $distri, version => $version, build => $build };
             % if ($job->group_id) {
                 % $query->{groupid} = $job->group_id;
@@ -82,7 +83,7 @@
                         </div>
                     </div>
                 </td>
-                <td class="testtime" title="<%= $job->t_started %>Z"><%= $job->t_started->datetime() %>Z</td>
+                <td class="testtime" title="<%= $job->t_started %>Z"><%= $start_time %>Z</td>
             </tr>
         % }
     </tbody>
