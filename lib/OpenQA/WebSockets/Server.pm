@@ -427,13 +427,23 @@ sub _workers_checker {
 # Mojolicious startup
 sub setup {
 
-    app->defaults(appname => "openQA Websocket Server");
-    app->helper(schema => sub { return OpenQA::Schema::connect_db; });
-    # not really meaningful for websockets, but required for mode defaults
-    app->helper(mode     => sub { return 'production' });
+
     app->helper(log_name => sub { return 'websockets' });
+    app->helper(schema   => sub { return OpenQA::Schema::connect_db; });
+
     OpenQA::ServerStartup::read_config(app);
     OpenQA::ServerStartup::setup_logging(app);
+
+    # not really meaningful for websockets, but required for mode defaults
+    app->defaults(appname => "openQA Websocket Server");
+    app->helper(mode => sub { return 'production' });
+
+    push @{app->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
+
+    # Assetpack is required to render layouts pages.
+    app->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Fetch OpenQA::WebAPI::AssetPipe Combine)]});
+    app->plugin("Helpers");
+    app->asset->process;
 
     # use port one higher than WebAPI
     my $listen = $ENV{MOJO_LISTEN} || "http://localhost:9527";
