@@ -47,6 +47,7 @@ use OpenQA::Test::Database;
 use Test::More;
 use Net::DBus qw(:typing);
 use Mojo::IOLoop::Server;
+use Mojo::File 'tempfile';
 use OpenQA::Test::Utils
   qw(create_webapi create_websocket_server create_worker kill_service unstable_worker client_output unresponsive_worker);
 use Mojolicious;
@@ -295,6 +296,29 @@ subtest 'Simulation of heavy unstable load' => sub {
     }
 
     kill_service($_, 1) for @workers;
+};
+
+subtest 'Websocket server - close connection test' => sub {
+    kill_service($wspid);
+    my $log_file        = tempfile;
+    my $unstable_ws_pid = create_websocket_server($mojoport + 1, 1);
+    my $w2_pid          = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2, $log_file);
+    my $re              = qr/Connection turned off from .*?\- (.*?)\s\:(.*?) dead/;
+
+    my $attempts = 40;
+    do {
+        sleep 1;
+        $attempts--;
+    } until ((() = $log_file->slurp() =~ m/$re/g) > 6 || $attempts <= 0);
+
+    kill_service($_) for ($unstable_ws_pid, $w2_pid);
+    dead_workers($schema);
+    my @matches = $log_file->slurp() =~ m/$re/g;
+    ok scalar(@matches) / 2 > 2, "Enough matches";
+    ok scalar(@matches) % 2 == 0, "Matches should contain an error message and a status code";
+    is $matches[0], "1008", "Connection was turned off by ws server correctly - code error is 1008";
+    like $matches[1], qr/Connection terminated from WebSocket server/,
+      "Connection was turned off by ws server correctly";
 };
 
 # This test destroys almost everything.

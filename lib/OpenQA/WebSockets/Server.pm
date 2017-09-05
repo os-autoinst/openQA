@@ -188,11 +188,13 @@ sub _message {
     my $worker = _get_worker($ws->tx);
     unless ($worker) {
         $ws->app->log->warn("A message received from unknown worker connection");
-        log_debug(sprintf('A message received from unknown worker connection: %s', Dumper($json)));
+        log_debug(sprintf('A message received from unknown worker connection (terminating ws): %s', Dumper($json)));
+        $ws->finish("1008", "Connection terminated from WebSocket server - thought dead");
         return;
     }
     unless (ref($json) eq 'HASH') {
         log_error(sprintf('Received unexpected WS message "%s from worker %u', Dumper($json), $worker->id));
+        $ws->finish("1003", "Received unexpected data from worker, forcing close");
         return;
     }
 
@@ -449,13 +451,23 @@ sub _workers_checker {
 # Mojolicious startup
 sub setup {
 
-    app->defaults(appname => "openQA Websocket Server");
-    app->helper(schema => sub { return OpenQA::Schema::connect_db; });
-    # not really meaningful for websockets, but required for mode defaults
-    app->helper(mode     => sub { return 'production' });
+
     app->helper(log_name => sub { return 'websockets' });
+    app->helper(schema   => sub { return OpenQA::Schema::connect_db; });
+
     OpenQA::ServerStartup::read_config(app);
     OpenQA::ServerStartup::setup_logging(app);
+
+    # not really meaningful for websockets, but required for mode defaults
+    app->defaults(appname => "openQA Websocket Server");
+    app->helper(mode => sub { return 'production' });
+
+    push @{app->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
+
+    # Assetpack is required to render layouts pages.
+    app->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Fetch OpenQA::WebAPI::AssetPipe Combine)]});
+    app->plugin("Helpers");
+    app->asset->process;
 
     # use port one higher than WebAPI
     my $listen = $ENV{MOJO_LISTEN} || "http://localhost:9527";

@@ -486,6 +486,22 @@ subtest 'job is not marked as linked if accessed from unrecognized referal' => s
     is($linked, 0, 'job not linked after accessed from unknown referer');
 };
 
+subtest 'job set_running()' => sub {
+    my %_settings = %settings;
+    $_settings{TEST} = 'L';
+    my $job = _job_create(\%_settings);
+    $job->update({state => OpenQA::Schema::Result::Jobs::ASSIGNED});
+    is($job->set_running, 1, 'job was set to running');
+    is($job->state, OpenQA::Schema::Result::Jobs::RUNNING, 'job state is now on running');
+    $job->update({state => OpenQA::Schema::Result::Jobs::RUNNING});
+    is($job->set_running, 1, 'job already running');
+    is($job->state, OpenQA::Schema::Result::Jobs::RUNNING, 'job state is now on running');
+    $job->update({state => 'foobar'});
+    is($job->set_running, 0,        'job not set to running');
+    is($job->state,       'foobar', 'job state is foobar');
+};
+
+
 use OpenQA::Worker::Common 'get_timer';
 use OpenQA::Worker::Jobs;
 no warnings 'redefine';
