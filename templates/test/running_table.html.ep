@@ -35,7 +35,7 @@
             % my $distri = $job->DISTRI // '';
             % my $version = $job->VERSION // '';
             % my $flavor = $job->FLAVOR // '';
-	    % my $arch = $job->ARCH // '';
+        % my $arch = $job->ARCH // '';
             % my $start_time = $job->t_started ? $job->t_started->datetime() : 0;
             % my $query = { distri => $distri, version => $version, build => $build };
             % if ($job->group_id) {
@@ -48,12 +48,12 @@
                     of <%= "$distri-$version-$flavor.$arch" %>
                 </td>
                 <td class="test">
-		    % if (is_operator) {
-			%= link_to url_for('apiv1_cancel', jobid => $job->id) => (class => 'cancel') => begin
-                          <i class="action fa fa-fw fa-times-circle-o"></i>
-			% end
-		    % }
-		    %= link_to url_for('test', 'testid' => $job->id) => begin
+                    % if (is_operator) {
+                    %= link_to url_for('apiv1_cancel', jobid => $job->id) => (class => 'cancel') => begin
+                                  <i class="action fa fa-fw fa-times-circle-o"></i>
+                    % end
+                    % }
+                    %= link_to url_for('test', 'testid' => $job->id) => begin
                         <i class="status state_running fa fa-circle" title="Running"></i>
                     % end
                     %= link_to url_for('test', 'testid' => $job->id) => begin
