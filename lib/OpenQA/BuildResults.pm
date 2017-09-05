@@ -109,7 +109,7 @@ sub compute_build_results {
 
     # 400 is the max. limit selectable in the group overview
     my $row_limit   = (defined($limit) && $limit > 400) ? $limit : 400;
-    my @search_cols = qw(VERSION BUILD);
+    my @search_cols = qw(DISTRI VERSION BUILD);
     my %search_opts = (
         select   => [@search_cols, {max => 'id', -as => 'lasted_job'}],
         group_by => \@search_cols,
@@ -123,7 +123,7 @@ sub compute_build_results {
     }
 
     # add search filter for tags
-    # caveat: a tag that references only a build, not including a version, might be ambiguous
+    # caveat: a tag that references only a build, not including a version and distri, might be ambiguous
     if ($tags) {
         my @builds;
         my @versions;
@@ -140,7 +140,8 @@ sub compute_build_results {
     my $jobs_resultset = $group->result_source->schema->resultset('Jobs');
     my @builds = $jobs_resultset->search(\%search_filter, \%search_opts)->all;
     for my $build (@builds) {
-        $build->{key} = join('-', $build->VERSION, $build->BUILD);
+        $build->{key} = join('-', $build->DISTRI, $build->VERSION, $build->BUILD);
+        $build->{sort_key} = join('-', $build->VERSION, $build->BUILD);
     }
     # sort by treating the key as a version number, if job group
     # indicates this is OK (the default). otherwise, list remains
@@ -148,7 +149,7 @@ sub compute_build_results {
     my $versort = 1;
     $versort = $group->build_version_sort if $group->can('build_version_sort');
     if ($versort) {
-        @builds = reverse sort { versioncmp($a->{key}, $b->{key}); } @builds;
+        @builds = reverse sort { versioncmp($a->{sort_key}, $b->{sort_key}); } @builds;
     }
 
     my $max_jobs = 0;
@@ -158,6 +159,7 @@ sub compute_build_results {
 
         my $jobs = $jobs_resultset->search(
             {
+                DISTRI   => $b->DISTRI,
                 VERSION  => $b->VERSION,
                 BUILD    => $b->BUILD,
                 group_id => {in => $group_ids},
@@ -166,6 +168,7 @@ sub compute_build_results {
             {order_by => 'me.id DESC'});
         my %jr = (
             key     => $b->{key},
+            distri  => $b->DISTRI,
             build   => $b->BUILD,
             version => $b->VERSION,
             oldest  => DateTime->now
