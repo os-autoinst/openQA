@@ -43,12 +43,13 @@ use constant {
     DONE      => 'done',
     UPLOADING => 'uploading',
     ASSIGNED  => 'assigned'
-      #    OBSOLETED => 'obsoleted',
 };
-use constant STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, CANCELLED, WAITING, DONE, UPLOADING);
+
+use constant STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING, WAITING, DONE, CANCELLED);
 use constant PENDING_STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, WAITING, UPLOADING);
-use constant EXECUTION_STATES => (ASSIGNED, RUNNING, WAITING, UPLOADING);
-use constant FINAL_STATES => (DONE, CANCELLED);
+use constant EXECUTION_STATES => (ASSIGNED, SETUP, WAITING, RUNNING, UPLOADING);
+use constant PRE_EXECUTION_STATES => (SCHEDULED); # Assigned belongs to pre execution, but makes no sense for now
+use constant FINAL_STATES         => (DONE,      CANCELLED);
 
 # Results
 use constant {
