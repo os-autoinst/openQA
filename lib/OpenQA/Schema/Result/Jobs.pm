@@ -1777,6 +1777,17 @@ sub dependencies {
     };
 }
 
+sub result_stats {
+    my ($self) = @_;
+
+    return {
+        passed     => $self->passed_module_count,
+        softfailed => $self->softfailed_module_count,
+        failed     => $self->failed_module_count,
+        none       => $self->skipped_module_count,
+    };
+}
+
 1;
 
 # vim: set sw=4 et:

@@ -65,7 +65,6 @@ sub previous_jobs_ajax {
             my ($results) = @_;
             my @jobs = $results->all;
             my @ids = map { $_->id } @jobs;
-            my $stats = OpenQA::Schema::Result::JobModules::job_module_stats(\@ids);
             my @data;
             for my $job (@jobs) {
                 push(
@@ -75,7 +74,7 @@ sub previous_jobs_ajax {
                         name         => $job->name,
                         deps         => $job->dependencies,
                         result       => $job->result,
-                        result_stats => $stats->{$job->id},
+                        result_stats => $job->result_stats,
                         state        => $job->state,
                         clone        => $job->clone_id,
                         finished     => $job->t_finished ? $job->t_finished->datetime() . 'Z' : undef,
