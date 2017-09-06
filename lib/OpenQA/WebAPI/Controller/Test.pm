@@ -424,7 +424,7 @@ sub prepare_job_results {
 
             $result = {
                 passed     => $result_stats->{passed},
-                unknown    => $result_stats->{unk},
+                unknown    => $result_stats->{none},
                 failed     => $result_stats->{failed},
                 overall    => $overall,
                 jobid      => $jobid,
