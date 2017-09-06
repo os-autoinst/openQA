@@ -67,12 +67,11 @@ sub list {
         groupid => $groupid,
         assetid => $assetid
     );
-    my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($running);
     my @list;
     while (my $job = $running->next) {
         my $data = {
             job          => $job,
-            result_stats => $result_stats->{$job->id},
+            result_stats => $job->result_stats,
             run_stat     => $job->running_modinfo(),
         };
         push @list, $data;
@@ -385,8 +384,6 @@ sub prepare_job_results {
     my %results;
     my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, scheduled => 0, running => 0, unknown => 0};
     my $preferred_machines = _calculate_preferred_machines($jobs);
-    my @latest_jobs_ids    = map { $_->id } @{$jobs};
-    my $all_result_stats   = OpenQA::Schema::Result::JobModules::job_module_stats(\@latest_jobs_ids);
 
     # prefetch the number of available labels for those jobs
     my $job_labels = $self->_job_labels($jobs);
@@ -411,7 +408,7 @@ sub prepare_job_results {
           && $job->result ne OpenQA::Schema::Result::Jobs::FAILED;
 
         if ($job->state eq OpenQA::Schema::Result::Jobs::DONE) {
-            my $result_stats = $all_result_stats->{$jobid};
+            my $result_stats = $job->result_stats;
             my $overall      = $job->result;
 
             if ($todo) {

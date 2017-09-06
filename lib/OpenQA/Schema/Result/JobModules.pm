@@ -338,43 +338,6 @@ sub job_modules {
     return $schema->resultset("JobModules")->search({job_id => $job->id}, {order_by => 'id'})->all;
 }
 
-sub job_module_stats {
-    my ($jobs) = @_;
-
-    my $result_stat = {};
-
-    my $schema = OpenQA::Scheduler::Scheduler::schema();
-
-    my $ids;
-
-    if (ref($jobs) ne 'ARRAY') {
-        my @ids;
-        while (my $j = $jobs->next) { push(@ids, $j->id); }
-        $jobs->reset;
-        $ids = \@ids;
-    }
-    else {
-        $ids = $jobs;
-    }
-
-    for my $id (@$ids) {
-        $result_stat->{$id} = {passed => 0, failed => 0, softfailed => 0, none => 0};
-    }
-
-    my $query = $schema->resultset("JobModules")->search(
-        {job_id => {in => $ids}},
-        {
-            select   => ['job_id', 'result', {count => 'id'}],
-            as       => [qw(job_id result count)],
-            group_by => [qw(job_id result)]});
-
-    while (my $line = $query->next) {
-        $result_stat->{$line->job_id}->{$line->result} = $line->get_column('count');
-    }
-
-    return $result_stat;
-}
-
 sub update_result {
     my ($self, $r) = @_;
 
