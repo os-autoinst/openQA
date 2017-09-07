@@ -303,7 +303,7 @@ subtest 'Websocket server - close connection test' => sub {
     my $log_file        = tempfile;
     my $unstable_ws_pid = create_websocket_server($mojoport + 1, 1);
     my $w2_pid          = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2, $log_file);
-    my $re              = qr/Connection turned off from .*?\- (.*?)\s\:(.*?) dead/;
+    my $re              = qr/\[.*?\]\s\[.*?\]\sConnection turned off from .*?\- (.*?)\s\:(.*?) dead/;
 
     my $attempts = 40;
     do {
