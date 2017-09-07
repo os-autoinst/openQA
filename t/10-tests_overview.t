@@ -277,7 +277,7 @@ $get = $t->get_ok(
     })->status_is(200);
 like(get_summary, qr/Passed: 0 Failed: 2/i, 'expected job failures matches');
 $failedmodules = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#res_DVD_x86_64_doc')->all_text);
-is($failedmodules, 'logpackages failing_ ...', 'failing_module module failed');
+is($failedmodules, 'logpackages failing_module', 'failing_module module failed');
 
 # Check if failed_modules hides successful jobs even if a (fake) module failure is there
 $failing_module = $t->app->db->resultset('JobModules')->create(

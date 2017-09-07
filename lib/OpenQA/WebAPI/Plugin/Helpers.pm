@@ -284,12 +284,9 @@ sub register {
         });
 
     $app->helper(
-        trim_text => sub {
-            my ($c, $text, $length) = @_;
-            $length //= 10;
-            return $text if (length($text) < $length);
-
-            return $c->tag('span', title => $text, sub { substr($text, 0, $length - 4) . " ..." });
+        text_with_title => sub {
+            my ($c, $text) = @_;
+            return $c->tag('span', title => $text, $text);
         });
 
     $app->helper(
