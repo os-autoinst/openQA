@@ -359,7 +359,8 @@ sub call_websocket {
                 $tx->on(
                     finish => sub {
                         my (undef, $code, $reason) = @_;
-                        log_debug("Connection turned off from $host - $code : $reason");
+                        log_debug("Connection turned off from $host - $code : "
+                              . (defined $reason ? $reason : "Not specified"));
                         remove_timer("keepalive-$host");
                         remove_timer("workerstatus-$host");
 
