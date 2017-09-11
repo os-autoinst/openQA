@@ -181,7 +181,7 @@ sub api_call {
     my $ignore_errors = $args{ignore_errors} // 0;
     my $tries         = $args{tries} // 3;
 
-    die 'No worker id or webui host set!' unless verify_workerid($host);
+    do { OpenQA::Worker::Jobs::_reset_state(); die 'No worker id or webui host set!'; } unless verify_workerid($host);
 
     $method = uc $method;
     my $ua_url = $hosts->{$host}{url}->clone;
