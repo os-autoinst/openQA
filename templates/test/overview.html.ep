@@ -6,6 +6,14 @@
   setupOverview();
 % end
 
+% my $only_distri = scalar keys $results == 1;
+% if (!defined $distri and $only_distri) {
+    % $distri = (keys $results)[0];
+    % if (!defined $version and scalar keys $results->{$distri} == 1) {
+        % $version = (keys $results->{$distri})[0];
+    % }
+% }
+
 <div>
     <h2>Test result overview</h2>
     <div id="summary" class="panel <%= ($aggregated->{failed} + $aggregated->{incomplete}) ? 'panel-danger' : 'panel-success' %>">
@@ -14,10 +22,15 @@
             % if (@$groups) {
                 <b><%= b join(', ', map { link_to $_->name => url_for('group_overview', groupid => $_->id) } @$groups) %></b>
             % }
-            % else {
+            % elsif ($distri or $version) {
                 <b><%= $distri %> <%= $version %></b>
             % }
-            build <%= $build %>
+            % else {
+                multiple distri/version
+            % }
+            % if ($build) {
+                build <%= $build %>
+            % }
         </div>
         <div class="panel-body">
             Passed: <span class="badge"><%= $aggregated->{passed} %></span>
@@ -106,47 +119,18 @@
             </form>
         </div>
     </div>
-    % for my $type (@$types) {
-        <h3>Flavor: <%= $type %></h3>
-        <table id="results_<%= $type %>" class="overview table table-striped table-hover">
-            <thead>
-                <tr id="flavors">
-                    <th>Test</th>
-                    % for my $arch (@{$archs->{$type}}) {
-                        <th id="flavor_<%= $type %>_arch_<%= $arch %>"><%= $arch %></th>
-                    % }
-                </tr>
-            </thead>
-            <tbody>
-                % for my $config (sort keys %$results) {
-                    % next unless $results->{$config}{flavors}{$type};
-                    <tr>
-                        <td class="name">
-                            % my $test_label = trim_text($config, 30);
-                            % if (my $description = $results->{$config}{description}) {
-                                <a data-content="<p><%= rendered_refs $description %></p>"
-                                data-title="<%= $config %>" data-toggle="popover" data-trigger="focus" role="button" tabindex="0"><%= $test_label %></a>
-                            % }
-                            % else {
-                                <%= $test_label %>
-                            % }
-                        </td>
-
-                        % for my $arch (@{$archs->{$type}}) {
-                            % my $res = $results->{$config}{flavors}{$type}{$arch};
-                            % my $jobid = $res->{jobid};
-                            % my $state = $res->{state};
-
-                            % if (!$state) {
-                                <td>-</td>
-                                % next;
-                            % }
-                            % my $resultid = join('_', $type, $arch, $config);
-                            %= include 'test/tr_job_result', resultid => $resultid, res => $res, state => $state, jobid => $jobid
-                        % }
-                    </tr>
-                % }
-            </tbody>
-        </table>
+    % for my $distri (sort keys $results) {
+        % my $type_prefix_distri = $only_distri ? '' : "Distri: $distri / ";
+        % my $version_results = $results->{$distri};
+        % my $only_version = scalar keys $version_results == 1;
+        % for my $version (sort keys $version_results) {
+            % my $type_prefix = $type_prefix_distri . ($only_version ? '' : " Version: $version / ");
+            % my $type_archs = $archs->{$distri}{$version};
+            % for my $type (sort keys $type_archs) {
+                % my $type_result = $version_results->{$version}{$type};
+                <h3><%= $type_prefix %>Flavor: <%= $type %></h3>
+                %= include 'test/overview_result_table', type => $type, type_results => $type_result, type_archs => $type_archs->{$type}
+            % }
+        % }
     % }
 </div>

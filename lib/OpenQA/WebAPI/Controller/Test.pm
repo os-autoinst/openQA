@@ -476,15 +476,23 @@ sub prepare_job_results {
             $test .= "@" . $job->MACHINE;
         }
         # poor mans set
-        $archs{$flavor} //= [];
-        push(@{$archs{$flavor}}, $arch) unless (grep { $arch eq $_ } @{$archs{$flavor}});
+        my $distri  = $job->DISTRI;
+        my $version = $job->VERSION;
+        $archs{$distri}{$version}{$flavor} //= [];
+        push(@{$archs{$distri}{$version}{$flavor}}, $arch)
+          unless (grep { $arch eq $_ } @{$archs{$distri}{$version}{$flavor}});
 
-        # Populate %results
-        $results{$test}                   //= {};
-        $results{$test}{description}      //= $descriptions{$test};
-        $results{$test}{flavors}          //= {};
-        $results{$test}{flavors}{$flavor} //= {};
-        $results{$test}{flavors}{$flavor}{$arch} = $result;
+        # Populate %results by putting all distri, version, build, flavor into
+        # levels of the hashes and just iterate over all levels in template.
+        # if there is only one member on each level, do not output the key of
+        # that level to resemble previous behaviour or maybe better, show it
+        # in aggregation only
+        $results{$distri}                                        //= {};
+        $results{$distri}{$version}                              //= {};
+        $results{$distri}{$version}{$flavor}                     //= {};
+        $results{$distri}{$version}{$flavor}{$test}              //= {};
+        $results{$distri}{$version}{$flavor}{$test}{description} //= $descriptions{$test};
+        $results{$distri}{$version}{$flavor}{$test}{$arch} = $result;
     }
     return (\%archs, \%results, $aggregated);
 }
@@ -492,19 +500,14 @@ sub prepare_job_results {
 # A generic query page showing test results in a configurable matrix
 sub overview {
     my ($self) = @_;
-    my $validation = $self->validation;
-    for my $arg (qw(distri version)) {
-        $validation->required($arg);
-    }
-    if ($validation->has_error) {
-        return $self->render(text => 'Missing parameters', status => 404);
-    }
-
     my %search_args;
     my @groups;
     for my $arg (qw(distri version flavor build)) {
         next unless defined $self->param($arg);
         $search_args{$arg} = $self->param($arg);
+    }
+    if ($self->param('failed_modules')) {
+        $search_args{failed_modules} = $self->every_param('failed_modules');
     }
 
     # By 'every_param' we make sure to use multiple values for groupid and
@@ -514,46 +517,38 @@ sub overview {
         my @group_id_search   = map { {id   => $_} } @{$self->every_param('groupid')};
         my @group_name_search = map { {name => $_} } @{$self->every_param('group')};
         my @search_terms = (@group_id_search, @group_name_search);
-        @groups = $self->db->resultset("JobGroups")->search(\@search_terms)->all;
+        @groups = $self->db->resultset('JobGroups')->search(\@search_terms)->all;
     }
-
-    if ($self->param('failed_modules')) {
-        $search_args{failed_modules} = $self->every_param('failed_modules');
-    }
-
     if (!$search_args{build}) {
-        if (@groups >= 1) {
+        if (@groups == 0) {
+            $self->app->log->debug('No build and no group specified, will lookup build based on the other parameters');
+        }
+        elsif (@groups == 1) {
+            $self->app->log->debug('Only one group but no build specified, searching for build');
+            $search_args{groupid} = $groups[0]->id;
+        }
+        else {
             $self->app->log->info('More than one group but no build specified, selecting build of first group');
             $search_args{groupid} = $groups[0]->id;
         }
-        $search_args{build} = $self->db->resultset("Jobs")->latest_build(%search_args);
+        $search_args{build} = $self->db->resultset('Jobs')->latest_build(%search_args);
     }
+    my %stash = (
+        # build, version, distri are not mandatory and therefore not
+        # necessarily come from the search args so they can be undefined.
+        build   => $search_args{build},
+        version => $search_args{version},
+        distri  => $search_args{distri},
+        groups  => \@groups
+    );
     $search_args{scope} = 'current';
-
     # Forward all query parameters to jobs query to allow specifying additional
     # query parameters which are then properly shown on the overview.
     my $req_params = $self->req->params->to_hash;
     %search_args = (%search_args, %$req_params);
-    my @latest_jobs = $self->db->resultset("Jobs")->complex_query(%search_args)->latest_jobs;
-    my ($archs, $results, $aggregated) = $self->prepare_job_results(\@latest_jobs);
-    # Sorting everything
-    my @types = keys %$archs;
-    @types = sort @types;
-    for my $flavor (@types) {
-        my @sorted = sort(@{$archs->{$flavor}});
-        $archs->{$flavor} = \@sorted;
-    }
-
-    $self->stash(
-        build      => $search_args{build},
-        version    => $search_args{version},
-        distri     => $search_args{distri},
-        groups     => \@groups,
-        types      => \@types,
-        archs      => $archs,
-        results    => $results,
-        aggregated => $aggregated
-    );
+    my @latest_jobs = $self->db->resultset('Jobs')->complex_query(%search_args)->latest_jobs;
+    ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->prepare_job_results(\@latest_jobs);
+    return $self->stash(%stash);
 }
 
 sub latest {
