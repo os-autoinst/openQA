@@ -29,7 +29,9 @@ table pre {
             <%= $route->has_custom_name ? qq{"$name"} : $name %>
         </td>
         <td>
-            <%= $api_description->{$route->name} %>
+            % if (my $description = $api_description->{$route->name}) {
+                %= $description
+            % }
         </td>
     </tr>
     % $depth++;
