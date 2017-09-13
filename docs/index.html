@@ -3130,11 +3130,11 @@ that boots into the desktop when pressing enter at the boot loader:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">strict</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">testapi</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-nn">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">strict</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">testapi</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub </span><span class="tok-nf">run</span> <span class="tok-p">{</span>
+<span class="tok-k">sub</span> <span class="tok-nf">run</span> <span class="tok-p">{</span>
     <span class="tok-c1"># wait for bootloader to appear</span>
     <span class="tok-c1"># with a timeout explicitly lower than the default because</span>
     <span class="tok-c1"># the bootloader screen will timeout itself</span>
@@ -3147,7 +3147,7 @@ that boots into the desktop when pressing enter at the boot loader:</p>
     <span class="tok-n">assert_screen</span> <span class="tok-s">&quot;desktop&quot;</span><span class="tok-p">,</span> <span class="tok-mi">300</span><span class="tok-p">;</span>
 <span class="tok-p">}</span>
 
-<span class="tok-k">sub </span><span class="tok-nf">test_flags</span> <span class="tok-p">{</span>
+<span class="tok-k">sub</span> <span class="tok-nf">test_flags</span> <span class="tok-p">{</span>
     <span class="tok-c1"># &#39;fatal&#39;          - abort whole test suite if this fails (and set overall state &#39;failed&#39;)</span>
     <span class="tok-c1"># &#39;ignore_failure&#39; - if this module fails, it will not affect the overall result at all</span>
     <span class="tok-c1"># &#39;milestone&#39;      - after this test succeeds, update &#39;lastgood&#39;</span>
@@ -3163,7 +3163,7 @@ that boots into the desktop when pressing enter at the boot loader:</p>
 <div id="testcase_examples" class="listingblock">
 <div class="title">Example: Console test that installs software from remote repository via zypper command</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub </span><span class="tok-nf">run</span><span class="tok-p">()</span> <span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span> <span class="tok-nf">run</span><span class="tok-p">()</span> <span class="tok-p">{</span>
     <span class="tok-c1"># change to root</span>
     <span class="tok-n">become_root</span><span class="tok-p">;</span>
 
@@ -3187,7 +3187,7 @@ that boots into the desktop when pressing enter at the boot loader:</p>
 <div class="listingblock">
 <div class="title">Example: Typical X11 test testing kate</div>
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub </span><span class="tok-nf">run</span><span class="tok-p">()</span> <span class="tok-p">{</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span> <span class="tok-nf">run</span><span class="tok-p">()</span> <span class="tok-p">{</span>
     <span class="tok-c1"># make sure kate was installed</span>
     <span class="tok-c1"># if not ensure_installed will try to install it</span>
     <span class="tok-n">ensure_installed</span> <span class="tok-s">&#39;kate&#39;</span><span class="tok-p">;</span>
@@ -3607,13 +3607,13 @@ same time and the same lock name is used, these locks are independent of each ot
 <div class="content">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">strict</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">testapi</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">lockapi</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">mmapi</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-nn">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">strict</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">testapi</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">lockapi</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">mmapi</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub </span><span class="tok-nf">run</span> <span class="tok-p">{</span>
+<span class="tok-k">sub</span> <span class="tok-nf">run</span> <span class="tok-p">{</span>
     <span class="tok-n">assert_screen</span> <span class="tok-s">&#39;bootloader&#39;</span><span class="tok-p">;</span>
     <span class="tok-n">assert_screen</span> <span class="tok-s">&#39;login&#39;</span><span class="tok-p">,</span> <span class="tok-mi">300</span><span class="tok-p">;</span>
 
@@ -3633,12 +3633,12 @@ same time and the same lock name is used, these locks are independent of each ot
 <div class="content">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">strict</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">testapi</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">lockapi</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-nn">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">strict</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">testapi</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">lockapi</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub </span><span class="tok-nf">run</span> <span class="tok-p">{</span>
+<span class="tok-k">sub</span> <span class="tok-nf">run</span> <span class="tok-p">{</span>
     <span class="tok-n">assert_screen</span> <span class="tok-s">&#39;bootloader&#39;</span><span class="tok-p">;</span>
     <span class="tok-n">assert_screen</span> <span class="tok-s">&#39;login&#39;</span><span class="tok-p">,</span> <span class="tok-mi">300</span><span class="tok-p">;</span>
 
@@ -3670,13 +3670,13 @@ with given ID already finished, mutex_lock() calls die.</p>
 <div class="content">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">strict</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">testapi</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">lockapi</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">mmapi</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-nn">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">strict</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">testapi</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">lockapi</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">mmapi</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub </span><span class="tok-nf">run</span> <span class="tok-p">{</span>
+<span class="tok-k">sub</span> <span class="tok-nf">run</span> <span class="tok-p">{</span>
     <span class="tok-k">my</span> <span class="tok-nv">$children</span> <span class="tok-o">=</span> <span class="tok-n">get_children</span><span class="tok-p">();</span>
 
     <span class="tok-c1"># let&#39;s suppose there is only one child</span>
@@ -3699,12 +3699,12 @@ with given ID already finished, mutex_lock() calls die.</p>
 <div class="content">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">strict</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">testapi</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">mmapi</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-nn">base</span> <span class="tok-s">&quot;basetest&quot;</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">strict</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">testapi</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">mmapi</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub </span><span class="tok-nf">run</span> <span class="tok-p">{</span>
+<span class="tok-k">sub</span> <span class="tok-nf">run</span> <span class="tok-p">{</span>
     <span class="tok-c1"># returns a hash ref containing (id =&gt; state) for all children</span>
     <span class="tok-k">my</span> <span class="tok-nv">$children</span> <span class="tok-o">=</span> <span class="tok-n">get_children</span><span class="tok-p">();</span>
 
@@ -3829,11 +3829,11 @@ Note that the networking is provided by tap devices, so both jobs should run on 
 <div class="content">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-n">strict</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&#39;basetest&#39;</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">testapi</span><span class="tok-p">;</span>
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-nn">strict</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">base</span> <span class="tok-s">&#39;basetest&#39;</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">testapi</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub </span><span class="tok-nf">run</span> <span class="tok-p">{</span>
+<span class="tok-k">sub</span> <span class="tok-nf">run</span> <span class="tok-p">{</span>
   <span class="tok-k">my</span> <span class="tok-nv">$script</span><span class="tok-o">=</span><span class="tok-s">&quot;set -e -x\n&quot;</span><span class="tok-p">;</span>
   <span class="tok-nv">$script</span><span class="tok-o">.=</span><span class="tok-s">&quot;echo test &gt;test.txt\n&quot;</span><span class="tok-p">;</span>
   <span class="tok-nv">$script</span><span class="tok-o">.=</span><span class="tok-s">&quot;time tftp &quot;</span><span class="tok-o">.</span><span class="tok-nv">$server_ip</span><span class="tok-o">.</span><span class="tok-s">&quot; -c put test.txt test2.txt\n&quot;</span><span class="tok-p">;</span>
@@ -3916,12 +3916,12 @@ convenient.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-mf">5.018</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">warnings</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">base</span> <span class="tok-s">&#39;opensusebasetest&#39;</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">testapi</span><span class="tok-p">;</span>
-<span class="tok-k">use</span> <span class="tok-n">utils</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">warnings</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">base</span> <span class="tok-s">&#39;opensusebasetest&#39;</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">testapi</span><span class="tok-p">;</span>
+<span class="tok-k">use</span> <span class="tok-nn">utils</span><span class="tok-p">;</span>
 
-<span class="tok-k">sub </span><span class="tok-nf">run</span> <span class="tok-p">{</span>
+<span class="tok-k">sub</span> <span class="tok-nf">run</span> <span class="tok-p">{</span>
     <span class="tok-n">wait_boot</span><span class="tok-p">;</span>  <span class="tok-c1"># Utility function defined by the SUSE distribution</span>
     <span class="tok-n">select_console</span> <span class="tok-s">&#39;root-console&#39;</span><span class="tok-p">;</span>
 <span class="tok-p">}</span>
@@ -4974,7 +4974,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-09-12 09:21:27 UTC
+Last updated 2017-09-13 09:01:47 UTC
 </div>
 </div>
 </body>
