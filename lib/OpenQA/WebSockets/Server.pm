@@ -152,6 +152,7 @@ sub ws_create {
     # upgrade connection to websocket by subscribing to events
     $self->on(json   => \&_message);
     $self->on(finish => \&_finish);
+    $self->inactivity_timeout(0);    # Do not force connection close due to inactivity
     $worker->{socket} = $self->tx->max_websocket_size(10485760);
 }
 
