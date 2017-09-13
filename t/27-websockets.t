@@ -25,6 +25,32 @@ use lib ("$FindBin::Bin/lib", "../lib", "lib");
 use OpenQA::WebSockets::Server;
 OpenQA::WebSockets::Server->new();
 
+subtest "WebSocket Server _workers_checker" => sub {
+    use Mojo::Util 'monkey_patch';
+    monkey_patch "OpenQA::Schema", connect_db => sub { FooBarTransaction->new };
+    my $buffer;
+    {
+        open my $handle, '>', \$buffer;
+        local *STDOUT = $handle;
+        OpenQA::WebSockets::Server::_workers_checker;
+    };
+    like $buffer, qr/Failed dead job detection/;
+};
+
+subtest "WebSocket Server _get_stale_worker_jobs" => sub {
+    use Mojo::Util 'monkey_patch';
+    monkey_patch "OpenQA::WebSockets::Server", app => sub { FooBarTransaction->new };
+    FooBarWorker->new->OpenQA::WebSockets::Server::ws_create();
+    my $buffer;
+    {
+        open my $handle, '>', \$buffer;
+        local *STDOUT = $handle;
+        OpenQA::WebSockets::Server::_get_stale_worker_jobs(-9999999999);
+    };
+    diag($buffer);
+    like $buffer, qr/Worker Boooo not seen since 0 seconds/;
+};
+
 subtest "WebSocket Server _message()" => sub {
     use Mojo::Util 'monkey_patch';
     monkey_patch "OpenQA::WebSockets::Server", _get_worker => sub { FooBarWorker->new };
@@ -54,7 +80,6 @@ subtest "WebSocket Server _message()" => sub {
     like $buf, qr/Received unknown message type "FOOBAR" from worker/, "log_error on unknown message";
 };
 
-
 done_testing();
 
 sub _store { push(@{shift->{+shift()}}, join(",", @_)); }
@@ -65,12 +90,17 @@ sub new { bless({w => FooBarWorker->new()->set}, shift) }
 sub tx  { shift }
 sub app { shift }
 sub log { shift }
-sub schema    { shift }
-sub resultset { shift }
-sub find      { shift->{w} }
-sub warn      { return $_[1] }
-sub finish    { main::_store(shift, "out", @_) }
-sub send      { main::_store(shift, "send", @_) }
+sub schema          { shift }
+sub resultset       { shift }
+sub find            { shift->{w} }
+sub warn            { return $_[1] }
+sub finish          { main::_store(shift, "out", @_) }
+sub send            { main::_store(shift, "send", @_) }
+sub storage         { shift }
+sub datetime_parser { shift }
+sub format_datetime { shift }
+sub search          { shift }
+sub txn_do          { die "BHUAHUAHUAHUA"; }
 
 package FooBarWorker;
 my $singleton;
@@ -80,8 +110,14 @@ sub set {
     $singleton->{id} = \&id;
     $singleton;
 }
-sub id            { 1 }
-sub update_status { main::_store(shift, "status", @_) }
-sub set_property  { main::_store(shift, "property", @_) }
+sub id                 { 1 }
+sub update_status      { main::_store(shift, "status", @_) }
+sub set_property       { main::_store(shift, "property", @_) }
+sub param              { 1 }
+sub on                 { shift }
+sub inactivity_timeout { shift }
+sub tx                 { shift }
+sub max_websocket_size { shift }
+sub name               { "Boooo" }
 
 1;
