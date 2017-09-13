@@ -347,6 +347,29 @@ is(
     'oldest version/build still shown'
 );
 
+subtest 'build which has jobs with different DISTRIs links to overview with all DISTRIs' => sub {
+    my $job_with_different_distri = $opensuse_group->jobs->create(
+        {
+            ARCH    => 'x86_64',
+            BUILD   => '87.5011',
+            DISTRI  => 'opensuse',
+            FLAVOR  => 'staging_e',
+            TEST    => 'minimaly',
+            VERSION => '14.2',
+            MACHINE => '32bit',
+        });
+    my $get  = $t->get_ok('/?limit_builds=20&show_tags=0')->status_is(200);
+    my @urls = $get->tx->res->dom->find('.h4 a')->each;
+    is(scalar @urls, 12, 'still 12 builds shown');
+    my $first_url = $urls[1]->attr('href');
+    is(
+        $first_url,
+        '/tests/overview?distri=opensuse&distri=suse&version=14.2&build=87.5011&groupid=1001',
+        'both distris present in overview link'
+    );
+    $job_with_different_distri->delete;
+};
+
 # helper sub used by next two subtests
 sub check_builds {
     my ($build_names, $group, $msg, $parent) = @_;
@@ -450,7 +473,5 @@ subtest 'job parent groups with multiple version and builds' => sub {
         'parent_group_overview');
 
 };
-
-
 
 done_testing;

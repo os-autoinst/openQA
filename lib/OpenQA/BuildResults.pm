@@ -24,6 +24,10 @@ use Sort::Versions;
 sub init_job_figures {
     my ($job_result) = @_;
 
+    # relevant distributions for the build (hash is used as a set)
+    $job_result->{distris} = {};
+
+    # number of passed/failed/... jobs
     $job_result->{passed}     = 0;
     $job_result->{failed}     = 0;
     $job_result->{unfinished} = 0;
@@ -189,7 +193,7 @@ sub compute_build_results {
         $jobs->reset;
 
         while (my $job = $jobs->next) {
-            $jr{distri} //= $job->DISTRI;
+            $jr{distris}->{$job->DISTRI} = 1;
             my $key = $job->TEST . "-" . $job->ARCH . "-" . $job->FLAVOR . "-" . $job->MACHINE;
             next if $seen{$key}++;
 
@@ -197,7 +201,7 @@ sub compute_build_results {
             count_job($job, \%jr, \%labels);
             if ($jr{children}) {
                 my $child = $jr{children}->{$job->group_id};
-                $child->{distri}  //= $job->DISTRI;
+                $child->{distris}->{$job->DISTRI} = 1;
                 $child->{version} //= $job->VERSION;
                 $child->{build}   //= $job->BUILD;
                 count_job($job, $child, \%labels);
