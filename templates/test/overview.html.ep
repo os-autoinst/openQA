@@ -6,11 +6,13 @@
   setupOverview();
 % end
 
-% my $only_distri = scalar keys $results == 1;
+% my @distris = keys %$results;
+% my $only_distri = scalar @distris == 1;
 % if (!defined $distri and $only_distri) {
-    % $distri = (keys $results)[0];
-    % if (!defined $version and scalar keys $results->{$distri} == 1) {
-        % $version = (keys $results->{$distri})[0];
+    % $distri = $distris[0];
+    % if (!defined $version) {
+        % my @versions = keys %{$results->{$distri}};
+        % $version = $versions[0] if (scalar @versions == 1);
     % }
 % }
 
@@ -119,14 +121,14 @@
             </form>
         </div>
     </div>
-    % for my $distri (sort keys $results) {
+    % for my $distri (sort keys %$results) {
         % my $type_prefix_distri = $only_distri ? '' : "Distri: $distri / ";
         % my $version_results = $results->{$distri};
-        % my $only_version = scalar keys $version_results == 1;
-        % for my $version (sort keys $version_results) {
+        % my $only_version = scalar keys %$version_results == 1;
+        % for my $version (sort keys %$version_results) {
             % my $type_prefix = $type_prefix_distri . ($only_version ? '' : " Version: $version / ");
             % my $type_archs = $archs->{$distri}{$version};
-            % for my $type (sort keys $type_archs) {
+            % for my $type (sort keys %$type_archs) {
                 % my $type_result = $version_results->{$version}{$type};
                 <h3><%= $type_prefix %>Flavor: <%= $type %></h3>
                 %= include 'test/overview_result_table', type => $type, type_results => $type_result, type_archs => $type_archs->{$type}
