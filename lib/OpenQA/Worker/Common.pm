@@ -25,7 +25,7 @@ use OpenQA::Client;
 use OpenQA::Utils qw(log_error log_debug log_warning log_info);
 
 use base 'Exporter';
-our @EXPORT = qw($job $verbose $instance $worker_settings $pooldir $nocleanup
+our @EXPORT = qw($job $instance $worker_settings $pooldir $nocleanup
   $hosts $ws_to_host $current_host
   $worker_caps $testresults update_setup_status
   STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
@@ -34,7 +34,6 @@ our @EXPORT = qw($job $verbose $instance $worker_settings $pooldir $nocleanup
 
 # Exported variables
 our $job;
-our $verbose  = 0;
 our $instance = 'manual';
 our $worker_settings;
 our $pooldir;
@@ -94,7 +93,7 @@ sub add_timer {
     die "must specify callback\n" unless $callback && ref $callback eq 'CODE';
     # skip if timer already defined, but not if one shot timer (avoid the need to call remove_timer for nonrecurring)
     return if ($timer && $timers->{$timer} && !$nonrecurring);
-    log_debug("## adding timer $timer $timeout") if $verbose;
+    log_debug("## adding timer $timer $timeout");
     my $timerid;
     if ($nonrecurring) {
         $timerid = Mojo::IOLoop->timer($timeout => $callback);
@@ -112,7 +111,7 @@ sub add_timer {
 sub remove_timer {
     my ($timer) = @_;
     return unless $timer;
-    log_debug("## removing timer $timer") if $verbose;
+    log_debug("## removing timer $timer");
     my $timerid = $timer;
     if ($timers->{$timer}) {
         # global timers needs translation to actual timerid
@@ -125,7 +124,7 @@ sub remove_timer {
 sub change_timer {
     my ($timer, $newtimeout, $callback) = @_;
     return unless ($timer && $timers->{$timer});
-    log_debug("## changing timer $timer") if $verbose;
+    log_debug("## changing timer $timer");
     $callback = $timers->{$timer}->[1] unless $callback;
     remove_timer($timer);
     add_timer($timer, $newtimeout, $callback);
@@ -190,7 +189,7 @@ sub api_call {
     $ua_url->path($path =~ s/^\///r);
     $ua_url->query($params) if $params;
 
-    log_debug("$method $ua_url") if $verbose;
+    log_debug("$method $ua_url");
 
     my @args = ($method, $ua_url);
 
@@ -265,7 +264,7 @@ sub ws_call {
     die 'Current host not set!' unless $current_host;
 
     # this call is also non blocking, result and image upload is handled by json handles
-    log_debug("WEBSOCKET: $type") if $verbose;
+    log_debug("WEBSOCKET: $type");
     my $ws = $hosts->{$current_host}{ws};
     $ws->send({json => {type => $type, jobid => $job->{id} || '', data => $data}});
 }
@@ -323,7 +322,7 @@ sub setup_websocket {
         $ua_url->scheme('wss');
     }
     $ua_url->path("ws/$workerid");
-    log_debug("WEBSOCKET $ua_url") if $verbose;
+    log_debug("WEBSOCKET $ua_url");
 
     call_websocket($host, $ua_url);
 }
@@ -495,7 +494,7 @@ sub register_worker {
     }
     my $newid = $tx->res->json->{id};
 
-    log_debug("new worker id within WebUI $host is $newid") if $verbose;
+    log_debug("new worker id within WebUI $host is $newid");
     $hosts->{$host}{workerid} = $newid;
 
     setup_websocket($host);

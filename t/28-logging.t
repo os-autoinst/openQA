@@ -20,7 +20,7 @@ BEGIN {
 }
 use Test::More;
 use Mojo::File qw(tempdir tempfile);
-use OpenQA::Utils qw(log_error log_info log_debug);
+use OpenQA::Utils qw(log_error log_warning log_fatal log_info log_debug);
 use OpenQA::FakeApp;
 use File::Path qw(make_path remove_tree);
 use Sys::Hostname;
@@ -92,6 +92,42 @@ subtest 'Logging to file' => sub {
     ok(@matches / 2 == 3, 'Worker log matches');
     for (my $i = 0; $i < @matches; $i += 2) {
         ok($matches[$i] eq $matches[$i + 1], "OK $matches[$i]");
+    }
+
+    # clear the system
+    remove_tree $ENV{OPENQA_WORKER_LOGDIR};
+    delete $ENV{OPENQA_WORKER_LOGDIR};
+};
+
+subtest 'Checking log level' => sub {
+    $ENV{OPENQA_WORKER_LOGDIR} = tempdir;
+    make_path $ENV{OPENQA_WORKER_LOGDIR};
+
+    my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
+
+    my @loglevels = qw(debug info warn error fatal);
+    my $counter   = @loglevels;
+    for (@loglevels) {
+        my $app = OpenQA::FakeApp->new(
+            mode     => 'production',
+            log_name => 'worker',
+            instance => 1,
+            log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
+            level    => $_
+        );
+
+        $app->setup_log();
+        $OpenQA::Utils::app = $app;
+
+        log_debug('debug message');
+        log_info('info message');
+        log_warning('warn message');
+        log_error('error message');
+        log_fatal('fatal message');
+
+        my %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$re/gm);
+        ok(keys(%matches) == $counter--, "Worker log level $_ entry");
+        truncate $output_logfile, 0;
     }
 
     # clear the system

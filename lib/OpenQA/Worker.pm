@@ -37,17 +37,16 @@ sub init {
     $instance  = $options->{instance} if defined $options->{instance};
     $pooldir   = $OpenQA::Utils::prjdir . '/pool/' . $instance;
     $nocleanup = $options->{"no-cleanup"};
-    $verbose   = $options->{verbose} if defined $options->{verbose};
 
     my $logdir = $ENV{OPENQA_WORKER_LOGDIR} // $worker_settings->{LOG_DIR};
     my $app = OpenQA::FakeApp->new(
         mode     => 'production',
         log_name => 'worker',
         instance => $instance,
-        log_dir  => $logdir,
-        level    => $worker_settings->{LOG_LEVEL} // 'debug'
+        log_dir  => $logdir
     );
 
+    $app->level($worker_settings->{LOG_LEVEL}) if $worker_settings->{LOG_LEVEL};
     $app->setup_log();
     $OpenQA::Utils::app = $app;
     OpenQA::Worker::Common::api_init($host_settings, $options);
@@ -75,7 +74,7 @@ sub main {
             next;
         }
 
-        log_debug("Using dir $dir for host $h") if $verbose;
+        log_debug("Using dir $dir for host $h");
         Mojo::IOLoop->next_tick(
             sub { OpenQA::Worker::Common::register_worker($h, $dir, $host_settings->{$h}{TESTPOOLSERVER}) });
     }

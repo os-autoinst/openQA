@@ -33,7 +33,7 @@ has mode => 'production';
 
 has log_name => 'scheduler';
 
-has level => 'debug';
+has level => 'info';
 
 has instance => undef;
 
