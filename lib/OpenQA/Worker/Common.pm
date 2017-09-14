@@ -328,6 +328,25 @@ sub setup_websocket {
     call_websocket($host, $ua_url);
 }
 
+sub send_status {
+    my $tx = shift;
+
+    my $status_message = {
+        json => {
+            type => 'worker_status'
+        }};
+
+    if (defined $job && ref($job) eq "HASH" && exists $job->{id}) {
+        $status_message->{json}->{status} = "working";
+        $status_message->{json}->{job}    = $job;
+    }
+    else {
+        $status_message->{json}->{status} = "free";
+    }
+
+    $tx->send($status_message);
+}
+
 sub call_websocket {
     my ($host, $ua_url) = @_;
     my $ua = $hosts->{$host}{ua};
@@ -341,19 +360,8 @@ sub call_websocket {
                 $hosts->{$host}{timers}{keepalive}
                   = add_timer("keepalive-$host", 10, sub { $tx->send({json => {type => 'ok'}}); });
 
-                $hosts->{$host}{timers}{status} = add_timer(
-                    "workerstatus-$host",
-                    15,
-                    sub {
-                        log_debug("Sending worker status to $host");
-                        $tx->send(
-                            {
-                                json => {
-                                    type => 'worker_status',
-                                    (status => 'working', job => $job) x !!($job),
-                                    (status => 'free') x !!(!$job),
-                                }});
-                    });
+                $hosts->{$host}{timers}{status} = add_timer("workerstatus-$host", 15,
+                    sub { send_status($tx); log_debug("Sending worker status to $host (workerstatus timer)"); });
 
                 $tx->on(json => \&OpenQA::Worker::Commands::websocket_commands);
                 $tx->on(
