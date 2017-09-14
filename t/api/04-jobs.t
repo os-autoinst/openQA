@@ -308,6 +308,7 @@ sub find_build {
 my $delete = $t->delete_ok('/api/v1/jobs/99937')->status_is(200);
 $t->get_ok('/api/v1/jobs/99937')->status_is(404);
 
+# test .json routes of group overview (which are actually not part of the API)
 $get = $t->get_ok('/group_overview/1001.json')->status_is(200);
 $get = $get->tx->res->json;
 is_deeply({id => 1001, name => 'opensuse'}, $get->{group}, 'group info');
@@ -324,7 +325,7 @@ is_deeply(
         total           => 3,
         passed          => 0,
         skipped         => 0,
-        distri          => 'opensuse',
+        distris         => {'opensuse' => 1},
         unfinished      => 1,
         version         => 'Factory',
         escaped_version => 'Factory',
@@ -348,7 +349,7 @@ is_deeply(
     {
         passed          => 1,
         version         => '13.1',
-        distri          => 'opensuse',
+        distris         => {'opensuse' => 1},
         labeled         => 0,
         total           => 1,
         failed          => 0,
