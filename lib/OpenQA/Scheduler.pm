@@ -23,7 +23,7 @@ use Net::DBus::Reactor;
 use Data::Dump 'pp';
 
 use OpenQA::IPC;
-use OpenQA::Scheduler::FakeApp;
+use OpenQA::FakeApp;
 use OpenQA::Scheduler::Scheduler ();
 use OpenQA::Scheduler::Locks     ();
 use OpenQA::Utils 'log_debug';
@@ -78,7 +78,7 @@ sub _is_method_allowed {
 
 our $fakeapp;
 sub run {
-    $fakeapp = OpenQA::Scheduler::FakeApp->new;
+    $fakeapp = OpenQA::FakeApp->new;
     OpenQA::ServerStartup::read_config($fakeapp);
     OpenQA::ServerStartup::setup_logging($fakeapp);
 

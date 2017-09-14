@@ -22,6 +22,7 @@ use Mojo::Server::Daemon;
 use Mojo::IOLoop;
 
 use File::Spec::Functions 'catdir';
+use Mojo::File 'path';
 
 use OpenQA::Client;
 use OpenQA::Utils qw(log_error log_info log_debug);
@@ -29,6 +30,7 @@ use OpenQA::Worker::Common;
 use OpenQA::Worker::Commands;
 use OpenQA::Worker::Pool qw(lockit clean_pool);
 use OpenQA::Worker::Jobs;
+use OpenQA::FakeApp;
 
 sub init {
     my ($host_settings, $options) = @_;
@@ -37,6 +39,17 @@ sub init {
     $nocleanup = $options->{"no-cleanup"};
     $verbose   = $options->{verbose} if defined $options->{verbose};
 
+    my $logdir = $ENV{OPENQA_WORKER_LOGDIR} // $worker_settings->{LOG_DIR};
+    my $app = OpenQA::FakeApp->new(
+        mode     => 'production',
+        log_name => 'worker',
+        instance => $instance,
+        log_dir  => $logdir,
+        level    => $worker_settings->{LOG_LEVEL} // 'debug'
+    );
+
+    $app->setup_log();
+    $OpenQA::Utils::app = $app;
     OpenQA::Worker::Common::api_init($host_settings, $options);
     OpenQA::Worker::Engines::isotovideo::set_engine_exec($options->{isotovideo}) if $options->{isotovideo};
 }
