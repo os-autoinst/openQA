@@ -209,4 +209,44 @@ subtest 'mock test stop_job' => sub {
     is $stop_job, 1, "stop_job() reached";
 };
 
+subtest 'mock test send_status' => sub {
+    $OpenQA::Worker::Common::job = {id => 9999, state => "scheduled"};
+
+    my $faketx = FakeTx->new;
+    OpenQA::Worker::Common::send_status($faketx);
+
+    is($faketx->get(0)->{status},       "working");
+    is($faketx->get(0)->{job}->{state}, "scheduled");
+
+    $OpenQA::Worker::Common::job = {};
+
+    OpenQA::Worker::Common::send_status($faketx);
+
+    is($faketx->get(1)->{status}, "free");
+    ok(!exists $faketx->get(1)->{job}->{state});
+
+    $OpenQA::Worker::Common::job = undef;
+
+    OpenQA::Worker::Common::send_status($faketx);
+
+    is($faketx->get(2)->{status}, "free");
+    ok(!exists $faketx->get(2)->{job}->{state});
+
+    $OpenQA::Worker::Common::job = {id => 9999, state => "running", settings => {NAME => "Foo"}};
+    OpenQA::Worker::Common::send_status($faketx);
+    is($faketx->get(3)->{status},       "working");
+    is($faketx->get(3)->{job}->{state}, "running");
+
+    OpenQA::Worker::Jobs::_reset_state();
+    OpenQA::Worker::Common::send_status($faketx);
+    is($faketx->get(4)->{status}, "free");
+    ok(!exists $faketx->get(4)->{job}->{state});
+};
+
 done_testing();
+
+package FakeTx;
+my $singleton;
+sub new { $singleton ||= bless({}, shift) }
+sub get { my ($self, $id) = @_; return (@{$self->{recv}})[$id]->{json} }
+sub send { push(@{+shift()->{recv}}, @_) }
