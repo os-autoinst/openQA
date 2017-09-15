@@ -99,14 +99,50 @@ subtest 'Logging to file' => sub {
     delete $ENV{OPENQA_WORKER_LOGDIR};
 };
 
+subtest 'log fatal to stderr' => sub {
+    delete $ENV{OPENQA_WORKER_LOGDIR};
+    # Capture STDERR:
+    # 1- dups the current STDERR to $oldSTDERR. This is used to restore the STDERR later
+    # 2- Closes the current STDERR
+    # 2- Links the STDERR to the variable
+    open(my $oldSTDERR, ">&", STDERR) or die "Can't preserve STDERR\n$!\n";
+    close STDERR;
+    my $output;
+    open STDERR, '>', \$output;
+    ### Testing code here ###
+
+    my $app = OpenQA::FakeApp->new(
+        mode     => 'production',
+        log_name => 'worker',
+        instance => 1,
+        log_dir  => undef,
+        level    => 'debug'
+    );
+
+    $app->setup_log();
+    $OpenQA::Utils::app = undef;    # To make sure we don't are setting it in other tests
+    eval { log_fatal('fatal message'); };
+    my $exception_raised = 0;
+    $exception_raised++ if $@;
+    ### End of the Testing code ###
+    # Close the capture (current stdout) and restore STDOUT (by dupping the old STDOUT);
+    close STDERR;
+    open(STDERR, '>&', $oldSTDERR) or die "Can't dup \$oldSTDERR: $!";
+    ok($exception_raised == 1, 'Fatal raised exception');
+    like($output, qr/\[FATAL\] fatal message/, 'OK fatal');
+
+};
+
 subtest 'Checking log level' => sub {
     $ENV{OPENQA_WORKER_LOGDIR} = tempdir;
+    delete $ENV{MOJO_LOG_LEVEL};    # The Makefile is overriding this variable
     make_path $ENV{OPENQA_WORKER_LOGDIR};
 
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
 
-    my @loglevels = qw(debug info warn error fatal);
-    my $counter   = @loglevels;
+    my @loglevels    = qw(debug info warn error fatal);
+    my $deathcounter = 0;
+    my $counter      = @loglevels;
     for (@loglevels) {
         my $app = OpenQA::FakeApp->new(
             mode     => 'production',
@@ -123,12 +159,17 @@ subtest 'Checking log level' => sub {
         log_info('info message');
         log_warning('warn message');
         log_error('error message');
-        log_fatal('fatal message');
+
+        my $exception = 0;
+        eval { log_fatal('fatal message'); };
+
+        $deathcounter++ if $@;
 
         my %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$re/gm);
         ok(keys(%matches) == $counter--, "Worker log level $_ entry");
         truncate $output_logfile, 0;
     }
+    ok($deathcounter == @loglevels, "Worker dies when logs fatal");
 
     # clear the system
     remove_tree $ENV{OPENQA_WORKER_LOGDIR};

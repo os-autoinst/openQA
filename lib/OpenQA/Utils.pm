@@ -43,6 +43,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &log_warning
   &log_info
   &log_error
+  &log_fatal
   &save_base64_png
   &run_cmd_with_log
   &run_cmd_with_log_return_error
@@ -245,6 +246,17 @@ sub log_error {
     else {
         STDERR->printflush("[ERROR] $msg\n");
     }
+}
+
+sub log_fatal {
+    my ($msg) = @_;
+    if ($app && $app->log) {
+        $app->log->fatal($msg);
+    }
+    else {
+        STDERR->printflush("[FATAL] $msg\n");
+    }
+    die $msg;
 }
 
 sub save_base64_png($$$) {
