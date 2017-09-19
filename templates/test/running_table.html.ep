@@ -5,13 +5,13 @@
         "columnDefs": [
             { targets: 0,
               className: "name" },
-            { targets: 3,
-              className: "time",
+            { targets: 'time',
               "render": function ( data, type, row ) {
-                    if (type === 'display') {
+                    if (type === 'display' && data != '0Z') {
                       return jQuery.timeago(new Date(data));
-                  } else
-                      return data;
+                  } else {
+                      return 'Not yet';
+                  }
               }
             },
         ],
@@ -24,7 +24,7 @@
             <th class="name">Medium</th>
             <th class="test">Test</th>
             <th>Progress</th>
-            <th>Started</th>
+            <th class="time">Started</th>
         </tr>
     </thead>
     <tbody>
@@ -83,7 +83,7 @@
                         </div>
                     </div>
                 </td>
-                <td class="testtime" title="<%= $job->t_started %>Z"><%= $start_time %>Z</td>
+                <td class="time" title="<%= $job->t_started %>Z"><%= $start_time %>Z</td>
             </tr>
         % }
     </tbody>
