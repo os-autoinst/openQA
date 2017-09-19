@@ -78,10 +78,14 @@ use Digest::MD5 'md5_hex';
 
 sub gravatar {
     my ($self, $size) = @_;
-
-    my $email = $self->email;
     $size //= 40;
-    "//www.gravatar.com/avatar/" . md5_hex(lc $email) . "?d=monsterid&s=$size";
+
+    if (my $email = $self->email) {
+        return "//www.gravatar.com/avatar/" . md5_hex(lc $email) . "?d=monsterid&s=$size";
+    }
+    else {
+        return "//www.gravatar.com/avatar?s=$size";
+    }
 }
 
 
