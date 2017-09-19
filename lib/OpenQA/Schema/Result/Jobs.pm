@@ -48,8 +48,8 @@ use constant {
 use constant STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING, WAITING, DONE, CANCELLED);
 use constant PENDING_STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, WAITING, UPLOADING);
 use constant EXECUTION_STATES => (ASSIGNED, SETUP, WAITING, RUNNING, UPLOADING);
-use constant PRE_EXECUTION_STATES => (SCHEDULED); # Assigned belongs to pre execution, but makes no sense for now
-use constant FINAL_STATES         => (DONE,      CANCELLED);
+use constant PRE_EXECUTION_STATES => (SCHEDULED);    # Assigned belongs to pre execution, but makes no sense for now
+use constant FINAL_STATES => (DONE, CANCELLED);
 
 # Results
 use constant {
@@ -57,13 +57,13 @@ use constant {
     PASSED             => 'passed',
     SOFTFAILED         => 'softfailed',
     FAILED             => 'failed',
-    INCOMPLETE         => 'incomplete',            # worker died or reported some problem
-    SKIPPED            => 'skipped',               # dependencies failed before starting this job
-    OBSOLETED          => 'obsoleted',             # new iso was posted
-    PARALLEL_FAILED    => 'parallel_failed',       # parallel job failed, this job can't continue
-    PARALLEL_RESTARTED => 'parallel_restarted',    # parallel job was restarted, this job has to be restarted too
-    USER_CANCELLED     => 'user_cancelled',        # cancelled by user via job_cancel
-    USER_RESTARTED     => 'user_restarted',        # restarted by user via job_restart
+    INCOMPLETE         => 'incomplete',              # worker died or reported some problem
+    SKIPPED            => 'skipped',                 # dependencies failed before starting this job
+    OBSOLETED          => 'obsoleted',               # new iso was posted
+    PARALLEL_FAILED    => 'parallel_failed',         # parallel job failed, this job can't continue
+    PARALLEL_RESTARTED => 'parallel_restarted',      # parallel job was restarted, this job has to be restarted too
+    USER_CANCELLED     => 'user_cancelled',          # cancelled by user via job_cancel
+    USER_RESTARTED     => 'user_restarted',          # restarted by user via job_restart
 };
 use constant RESULTS => (NONE, PASSED, SOFTFAILED, FAILED, INCOMPLETE, SKIPPED,
     OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED

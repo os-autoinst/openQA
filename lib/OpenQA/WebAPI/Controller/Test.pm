@@ -77,7 +77,20 @@ sub list {
         };
         push @list, $data;
     }
-    @list = sort { $b->{job}->t_started <=> $a->{job}->t_started || $b->{job}->id <=> $a->{job}->id } @list;
+    @list = sort {
+        if ($b->{job} && $a->{job}) {
+            $b->{job}->t_started <=> $a->{job}->t_started || $b->{job}->id <=> $a->{job}->id;
+        }
+        elsif ($b->{job}) {
+            1;
+        }
+        elsif ($a->{job}) {
+            -1;
+        }
+        else {
+            0;
+        }
+    } @list;
     $self->stash(running => \@list);
 
     my @scheduled = $self->db->resultset("Jobs")->complex_query(
@@ -86,6 +99,20 @@ sub list {
         groupid => $groupid,
         assetid => $assetid
     )->all;
+    # @scheduled = sort {
+    #     if ($b->{job} && $a->{job}) {
+    #         $b->{job}->t_created <=> $a->{job}->t_created || $b->{job}->id <=> $a->{job}->id;
+    #     }
+    #     elsif ($b->{job}) {
+    #         1;
+    #     }
+    #     elsif ($a->{job}) {
+    #         -1;
+    #     }
+    #     else {
+    #         0;
+    #     }
+    # }
     @scheduled = sort { $b->t_created <=> $a->t_created || $b->id <=> $a->id } @scheduled;
     $self->stash(scheduled => \@scheduled);
 }
