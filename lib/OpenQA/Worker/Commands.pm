@@ -20,6 +20,8 @@ use warnings;
 use OpenQA::Utils qw(log_error log_warning log_debug);
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Jobs;
+use POSIX qw(:sys_wait_h);
+use OpenQA::Worker::Engines::isotovideo;
 
 ## WEBSOCKET commands
 sub websocket_commands {
@@ -77,6 +79,13 @@ sub websocket_commands {
         }
         elsif ($type eq 'reload_needles_and_retry') {
             if (backend_running) {
+                if ($hosts->{$current_host}{testpoolserver} && $hosts->{$host}{shared_cache}) {
+                    my $sync_child = fork();
+                    if (!$sync_child) {
+                        OpenQA::Worker::Engines::isotovideo::cache_tests($hosts->{$host}{shared_cache},
+                            $hosts->{$current_host}{testpoolserver});
+                    }
+                }
                 $ua->post("$joburl/isotovideo/reload_needles");
                 log_debug('needles will be reloaded') if $verbose;
             }

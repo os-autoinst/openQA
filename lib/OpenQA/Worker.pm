@@ -58,6 +58,7 @@ sub main {
     my ($host_settings) = @_;
     my $lockfd = lockit();
     my $dir;
+    my $shared_cache;
     clean_pool();
     ## register worker at startup to all webuis
     for my $h (@{$host_settings->{HOSTS}}) {
@@ -65,7 +66,7 @@ sub main {
         # if caching is not enabled
 
         if ($worker_settings->{CACHEDIRECTORY}) {
-            prepare_cache_directory($h, $worker_settings->{CACHEDIRECTORY});
+            $shared_cache = prepare_cache_directory($h, $worker_settings->{CACHEDIRECTORY});
         }
 
         my @dirs = ($host_settings->{$h}{SHARE_DIRECTORY}, catdir($OpenQA::Utils::prjdir, 'share'));
@@ -77,7 +78,9 @@ sub main {
 
         log_debug("Using dir $dir for host $h") if $verbose;
         Mojo::IOLoop->next_tick(
-            sub { OpenQA::Worker::Common::register_worker($h, $dir, $host_settings->{$h}{TESTPOOLSERVER}) });
+            sub {
+                OpenQA::Worker::Common::register_worker($h, $dir, $host_settings->{$h}{TESTPOOLSERVER}, $shared_cache);
+            });
     }
 
     # start event loop - this will block until stop is called
