@@ -795,14 +795,17 @@ within timeout. Look into <code>wait_screen_change</code> for details.</p>
 <h5 id="_wait_still_screen">wait_still_screen</h5>
 <div class="literalblock">
 <div class="content">
-<pre>wait_still_screen([$stilltime_sec [, $timeout [, $similarity_level]]]);</pre>
+<pre>wait_still_screen([$stilltime | [stilltime =&gt; $stilltime]] [, $timeout] | [timeout =&gt; $timeout]] [, similarity_level =&gt; $similarity_level] [, no_wait =&gt; $no_wait]);</pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Wait until the screen stops changing.</p>
 </div>
 <div class="paragraph">
-<p>Returns true if screen is not changed for given $stilltime (in seconds) or undef on timeout.
+<p>See <code>assert_screen</code> for <code>$no_wait</code>.</p>
+</div>
+<div class="paragraph">
+<p>Returns true if screen is not changed for given <code>$stilltime</code> (in seconds) or undef on timeout.
 Default timeout is 30s, default stilltime is 7s.</p>
 </div>
 </div>
@@ -1163,7 +1166,7 @@ Default counter is 20 steps, default timeout is 1s</p>
 <h5 id="_type_string">type_string</h5>
 <div class="literalblock">
 <div class="content">
-<pre>type_string($string [, max_interval =&gt; &lt;num&gt; ] [, wait_screen_changes =&gt; &lt;num&gt; ] [, secret =&gt; 1 ] );</pre>
+<pre>type_string($string [, max_interval =&gt; &lt;num&gt; ] [, wait_screen_changes =&gt; &lt;num&gt; ] [, wait_still_screen =&gt; &lt;num&gt; ] [, secret =&gt; 1 ] );</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1179,6 +1182,10 @@ Default counter is 20 steps, default timeout is 1s</p>
 <div class="paragraph">
 <p><code>wait_screen_change</code> if set, type only this many characters at a time
 <code>wait_screen_change</code> and wait for the screen to change between sets.</p>
+</div>
+<div class="paragraph">
+<p><code>wait_still_screen</code> if set, <code>wait_still_screen</code> for the given seconds
+after the whole string is typed.</p>
 </div>
 <div class="paragraph">
 <p><code>secret (bool)</code> suppresses logging of the actual string typed.</p>
@@ -1668,7 +1675,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-09-19 14:47:52 UTC
+Last updated 2017-09-20 13:10:31 UTC
 </div>
 </div>
 </body>
