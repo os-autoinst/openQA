@@ -29,6 +29,7 @@ seq:
      - ./t/23-amqp.t
      - ./t/24-worker.t
      - ./t/25-cache.t
+     - ./t/27-errorpages.t
      - ./t/basic.t
      - ./t/deploy.t
      - ./t/full-stack.t

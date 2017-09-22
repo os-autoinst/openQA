@@ -164,6 +164,7 @@ sub startup {
     my $r         = $self->routes;
     my $logged_in = $r->under('/')->to("session#ensure_user");
     my $auth      = $r->under('/')->to("session#ensure_operator");
+    my %api_description;
 
     $r->post('/session')->to('session#create');
     $r->delete('/session')->to('session#destroy');
@@ -467,6 +468,8 @@ sub startup {
 
     # api/v1/feature
     $api_ru->post('/feature')->name('apiv1_post_informed_about')->to('feature#informed');
+    $api_description{'apiv1_post_informed_about'}
+      = 'Post integer value to save feature tour progress of current user in the database';
 
     # reduce_result is obsolete (replaced by limit_results_and_logs)
     $self->gru->add_task(reduce_result          => \&OpenQA::Schema::Result::Jobs::reduce_result);
@@ -512,6 +515,7 @@ sub startup {
                 # the JSON API might already provide JSON in some error cases which must be preserved
                 (($args->{json} //= {})->{error_status}) = $args->{status};
             }
+            $c->stash('api_description', \%api_description);
         });
 }
 
