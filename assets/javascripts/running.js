@@ -192,36 +192,81 @@ function initStatus(jobid, status_url, details_url) {
 var scrolldown;
 
 // checkbox callback
-function setScrolldown(newval) {
+function setScrolldown() {
     scrolldown = $(this).prop('checked');
+    scrollToBottomOfLiveLog();
+}
+
+// scrolls to bottom of live log (if enabled)
+function scrollToBottomOfLiveLog() {
+    var livelog = $('#livelog')[0];
     if (scrolldown) {
-        var livelog = $('#livelog')[0];
-        $('#livelog').scrollTop = livelog.scrollHeight;
+        livelog.scrollTop = livelog.scrollHeight;
     }
 }
 
-function setDataListener(elem, callback) {
-    var events = new EventSource(elem.data('url'));
-    events.addEventListener('message', function(event) {
-        elem[0].innerHTML += JSON.parse(event.data)[0];
-        if (callback) callback();
-    }, false);
+function removeDataListener(elem) {
+    if (elem.eventSource) {
+        elem.eventSource.removeEventListener('message', elem.eventCallback);
+        elem.eventSource.close();
+    }
 }
 
-function initLivelog() {
+function addDataListener(elem, callback) {
+    // ensure any previously added event source is removed
+    removeDataListener(elem);
+
+    // define callback function
+    if (!elem.eventCallback) {
+        elem.eventCallback = function(event) {
+            elem[0].innerHTML += JSON.parse(event.data)[0];
+            if (callback) {
+                callback();
+            }
+        };
+    }
+
+    // add new event source and add listener
+    elem.eventSource = new EventSource(elem.data('url'));
+    elem.eventSource.addEventListener('message', elem.eventCallback, false);
+}
+
+function initLivelogAndTerminal() {
+    // init scrolldown for live log
     scrolldown = true;
     $('#scrolldown').attr('checked', true);
 
-    // start stream
-    var livelog = $('#livelog');
-    setDataListener(livelog, function() {
-        if (scrolldown) livelog[0].scrollTop = livelog[0].scrollHeight;
+    // enable expanding/collapsing live log/terminal
+    $.each([{
+           panel: $('#live-log-panel'),
+           log: $('#livelog'),
+           callback: scrollToBottomOfLiveLog
+        }, {
+           panel: $('#live-terminal-panel'),
+           log: $('#liveterminal')
+        }], function(index, value) {
+            value.panel.bodyVisible = false;
+            value.panel.find('.panel-heading').on('click', function() {
+                    // toggle visiblity
+                var body = value.panel.find('.panel-body');
+                    body.toggle(200);
+                    value.panel.bodyVisible = !value.panel.bodyVisible;
+
+                    // toggle receiving updates
+                    if (value.panel.bodyVisible) {
+                        addDataListener(value.log, value.callback);
+
+                        // scroll to bottom of panel when expanding
+                        $('html,body').animate({
+                            scrollTop: value.panel.offset().top + value.panel.height()
+                        });
+                    } else {
+                        removeDataListener(value.log);
+                    }
+                });
     });
 }
 
-function initLiveterminal() {
-    setDataListener($('#liveterminal'));
-}
 
 /********* LIVE LOG END *********/
 
@@ -256,8 +301,7 @@ function initLivestream() {
 /********* LIVE STREAM END *********/
 
 function setupRunning(jobid, status_url, details_url) {
-  initLivelog();
-  initLiveterminal();
+  initLivelogAndTerminal();
   initLivestream();
   initStatus(jobid, status_url, details_url);
 

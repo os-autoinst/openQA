@@ -316,12 +316,15 @@ ul.modcategory {
     width: calc(73% + (23% - 280px));
 }
 
-#livelog {
+#liveterminal, #livelog {
     padding: 0;
     margin: 0;
     border: none;
     background: none;
     width: 100%;
+}
+
+#livelog {
     height: 30em;
     overflow-x: hidden;
     overflow-y: scroll;
