@@ -23,8 +23,10 @@ BEGIN {
 }
 
 our (@EXPORT, @EXPORT_OK);
-@EXPORT_OK
-  = qw(create_webapi create_websocket_server create_worker kill_service unstable_worker job_create client_output unresponsive_worker);
+@EXPORT_OK = (
+    qw(create_webapi create_websocket_server create_worker unresponsive_worker),
+    qw(kill_service unstable_worker job_create client_output create_resourceallocator start_resourceallocator)
+);
 
 sub kill_service {
     my $pid = shift;
@@ -101,6 +103,28 @@ sub create_websocket_server {
         }
     }
     return $wspid;
+}
+
+sub create_resourceallocator {
+    my $resourceallocatorpid = fork();
+    if ($resourceallocatorpid == 0) {
+        use OpenQA::ResourceAllocator;
+        OpenQA::ResourceAllocator->new->run;
+        Devel::Cover::report() if Devel::Cover->can('report');
+        _exit(0);
+    }
+
+    return $resourceallocatorpid;
+}
+
+sub start_resourceallocator {
+    my $resourceallocatorpid = fork();
+    if ($resourceallocatorpid == 0) {
+        exec("perl ./script/openqa-resource-allocator");
+        die "FAILED TO START WORKER";
+    }
+
+    return $resourceallocatorpid;
 }
 
 sub create_worker {

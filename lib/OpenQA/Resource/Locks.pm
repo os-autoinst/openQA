@@ -13,14 +13,15 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Scheduler::Locks;
+package OpenQA::Resource::Locks;
 
 use strict;
 use warnings;
 
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobLocks;
-use OpenQA::Scheduler::Scheduler;
+use OpenQA::Resource::Jobs;
+use OpenQA::Utils qw(wakeup_scheduler log_debug);
 
 # In normal situation the lock is created by the parent (server)
 # and released when a service becomes available and the child (client)

@@ -34,10 +34,10 @@ sub mutex_action {
 
     my $res;
     if ($action eq 'lock') {
-        $res = $ipc->scheduler('mutex_lock', $name, $jobid, $where);
+        $res = $ipc->resourceallocator('mutex_lock', $name, $jobid, $where);
     }
     else {
-        $res = $ipc->scheduler('mutex_unlock', $name, $jobid);
+        $res = $ipc->resourceallocator('mutex_unlock', $name, $jobid);
     }
     return $self->render(text => 'ack',  status => 200) if $res > 0;
     return $self->render(text => 'nack', status => 410) if $res < 0;
@@ -56,7 +56,7 @@ sub mutex_create {
     my $name = $validation->param('name');
 
     my $ipc = OpenQA::IPC->ipc;
-    my $res = $ipc->scheduler('mutex_create', $name, $jobid);
+    my $res = $ipc->resourceallocator('mutex_create', $name, $jobid);
     return $self->render(text => 'ack', status => 200) if $res;
     return $self->render(text => 'nack', status => 409);
 }
@@ -72,7 +72,7 @@ sub barrier_wait {
     my $where = $validation->param('where') // '';
 
     my $ipc = OpenQA::IPC->ipc;
-    my $res = $ipc->scheduler('barrier_wait', $name, $jobid, $where);
+    my $res = $ipc->resourceallocator('barrier_wait', $name, $jobid, $where);
 
     return $self->render(text => 'ack',  status => 200) if $res > 0;
     return $self->render(text => 'nack', status => 410) if $res < 0;
@@ -91,7 +91,7 @@ sub barrier_create {
     my $name  = $validation->param('name');
 
     my $ipc = OpenQA::IPC->ipc;
-    my $res = $ipc->scheduler('barrier_create', $name, $jobid, $tasks);
+    my $res = $ipc->resourceallocator('barrier_create', $name, $jobid, $tasks);
     return $self->render(text => 'ack', status => 200) if $res;
     return $self->render(text => 'nack', status => 409);
 }
@@ -107,7 +107,7 @@ sub barrier_destroy {
     my $where = $validation->param('where') // '';
 
     my $ipc = OpenQA::IPC->ipc;
-    my $res = $ipc->scheduler('barrier_destroy', $name, $jobid, $where);
+    my $res = $ipc->resourceallocator('barrier_destroy', $name, $jobid, $where);
 
     return $self->render(text => 'ack', status => 200);
 }

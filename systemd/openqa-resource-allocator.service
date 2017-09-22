@@ -1,0 +1,15 @@
+[Unit]
+Description=The openQA ResourceAllocator
+Before=openqa-webui.service openqa-websockets.service openqa-scheduler.service
+After=postgresql.service mariadb.service
+
+[Service]
+User=geekotest
+Environment="DBUS_STARTER_BUS_TYPE=system"
+ExecStart=/usr/share/openqa/script/openqa-resource-allocator
+BusName=org.opensuse.openqa.ResourceAllocator
+TimeoutStopSec=120
+Type=dbus
+
+[Install]
+WantedBy=multi-user.target

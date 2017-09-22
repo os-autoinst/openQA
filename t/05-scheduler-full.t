@@ -49,7 +49,7 @@ use Net::DBus qw(:typing);
 use Mojo::IOLoop::Server;
 use Mojo::File 'tempfile';
 use OpenQA::Test::Utils
-  qw(create_webapi create_websocket_server create_worker kill_service unstable_worker client_output unresponsive_worker);
+  qw(create_webapi create_resourceallocator start_resourceallocator create_websocket_server create_worker kill_service unstable_worker client_output unresponsive_worker);
 use Mojolicious;
 use File::Path qw(make_path remove_tree);
 use Cwd qw(abs_path getcwd);
@@ -61,9 +61,10 @@ init_db();
 my $schema = OpenQA::Test::Database->new->create();
 
 # Create webapi and websocket server services.
-my $mojoport = Mojo::IOLoop::Server->generate_port();
-my $wspid    = create_websocket_server($mojoport + 1);
-my $webapi   = create_webapi($mojoport);
+my $mojoport             = Mojo::IOLoop::Server->generate_port();
+my $wspid                = create_websocket_server($mojoport + 1);
+my $webapi               = create_webapi($mojoport);
+my $resourceallocatorpid = start_resourceallocator;
 
 # Setup needed files for workers.
 my $sharedir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'share')->make_path;
@@ -357,7 +358,7 @@ subtest 'Simulation of heavy failures' => sub {
     kill_service($_, 1) for @workers;
 };
 
-kill_service($_) for ($wspid, $webapi);
+kill_service($_) for ($wspid, $webapi, $resourceallocatorpid);
 
 sub dead_workers {
     my $schema = shift;

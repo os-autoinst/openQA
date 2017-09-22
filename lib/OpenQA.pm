@@ -21,6 +21,7 @@ use warnings;
 use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::WebAPI;
+use OpenQA::ResourceAllocator;
 
 use POSIX ':sys_wait_h';
 
@@ -62,6 +63,8 @@ sub run {
     if ($deamonize) {
         # start Mojo::IOLoop @ Scheduler
         _run('scheduler', \&OpenQA::Scheduler::run);
+        # start Mojo::IOLoop @ ResourceAllocator
+        _run('resourceallocator', sub { OpenQA::ResourceAllocator->new->run });
         # start Mojo::Lite @ WebSockets
         _run('websockets', \&OpenQA::WebSockets::run);
         # start Mojolicious @ WebAPI

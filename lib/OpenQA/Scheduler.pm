@@ -24,8 +24,7 @@ use Data::Dump 'pp';
 
 use OpenQA::IPC;
 use OpenQA::FakeApp;
-use OpenQA::Scheduler::Scheduler ();
-use OpenQA::Scheduler::Locks     ();
+
 use OpenQA::Utils 'log_debug';
 use OpenQA::ServerStartup;
 
@@ -119,20 +118,13 @@ sub new {
 }
 
 # Scheduler ABI goes here
-## Assets
-dbus_method('asset_list', [['dict', 'string', 'string']], [['array', ['dict', 'string', 'string']]]);
-sub asset_list {
-    my ($self, $args) = @_;
-    my $rs = OpenQA::Scheduler::Scheduler::asset_list(%$args);
-    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-    return [$rs->all];
-}
 
-dbus_method('job_grab', [['dict', 'string', ['variant']]], [['dict', 'string', ['variant']]]);
-sub job_grab {
-    my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::job_grab(%$args);
-}
+#
+# dbus_method('job_grab', [['dict', 'string', ['variant']]], [['dict', 'string', ['variant']]]);
+# sub job_grab {
+#     my ($self, $args) = @_;
+#     return OpenQA::Scheduler::Scheduler::job_grab(%$args);
+# }
 
 dbus_method('wakeup_scheduler');
 sub wakeup_scheduler {
@@ -140,83 +132,5 @@ sub wakeup_scheduler {
     return OpenQA::Scheduler::Scheduler::wakeup_scheduler();
 }
 
-dbus_method('job_restart', [['array', 'uint32']], [['array', 'uint32']]);
-sub job_restart {
-    my ($self, $args) = @_;
-    my @res = OpenQA::Scheduler::Scheduler::job_restart($args);
-    return \@res;
-}
-
-dbus_method('job_update_status', ['uint32', ['dict', 'string', ['variant']]], ['uint32']);
-sub job_update_status {
-    my ($self, $jobid, $status) = @_;
-}
-
-dbus_method('job_set_waiting', ['uint32'], ['uint32']);
-sub job_set_waiting {
-    my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::job_set_waiting($args);
-}
-
-dbus_method('job_set_running', ['uint32'], ['uint32']);
-sub job_set_running {
-    my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::job_set_running($args);
-}
-
-## Worker auth
-dbus_method('validate_workerid', ['uint32'], ['bool']);
-sub validate_workerid {
-    my ($self, $args) = @_;
-    my $res = OpenQA::Scheduler::Scheduler::_validate_workerid($args);
-    return 1 if ($res);
-    return 0;
-}
-
-## Lock API
-dbus_method('mutex_create', ['string', 'uint32'], ['bool']);
-sub mutex_create {
-    my ($self, @args) = @_;
-    my $res = OpenQA::Scheduler::Locks::create(@args);
-    return 0 unless $res;
-    return 1;
-}
-
-dbus_method('mutex_lock', ['string', 'uint32', 'string'], ['int32']);
-sub mutex_lock {
-    my ($self, @args) = @_;
-    my $res = OpenQA::Scheduler::Locks::lock(@args);
-    return $res;
-}
-
-dbus_method('mutex_unlock', ['string', 'uint32'], ['int32']);
-sub mutex_unlock {
-    my ($self, @args) = @_;
-    my $res = OpenQA::Scheduler::Locks::unlock(@args);
-    return $res;
-}
-
-dbus_method('barrier_create', ['string', 'uint32', 'uint32'], ['bool']);
-sub barrier_create {
-    my ($self, @args) = @_;
-    my $res = OpenQA::Scheduler::Locks::barrier_create(@args);
-    return 0 unless $res;
-    return 1;
-}
-
-dbus_method('barrier_wait', ['string', 'uint32', 'string'], ['int32']);
-sub barrier_wait {
-    my ($self, @args) = @_;
-    my $res = OpenQA::Scheduler::Locks::barrier_wait(@args);
-    return $res;
-}
-
-dbus_method('barrier_destroy', ['string', 'uint32', 'string'], ['bool']);
-sub barrier_destroy {
-    my ($self, @args) = @_;
-    my $res = OpenQA::Scheduler::Locks::barrier_destroy(@args);
-    return 0 unless $res;
-    return 1;
-}
 
 1;

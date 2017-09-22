@@ -25,16 +25,18 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
 use OpenQA::Test::Database;
-use OpenQA::Scheduler;
+use OpenQA::ResourceAllocator;
+
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 
-# create Test DBus bus and service for fake WebSockets call
-my $sh = OpenQA::Scheduler->new;
 
 my $schema = OpenQA::Test::Database->new->create();
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
+
+# create Test DBus bus and service for fake WebSockets call
+my $sh = OpenQA::ResourceAllocator->new;
 
 # from fixtures
 my $jobA   = 99961;

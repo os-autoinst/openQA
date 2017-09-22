@@ -1,0 +1,40 @@
+#!/usr/bin/env perl
+
+# Copyright (C) 2017 SUSE Linux GmbH
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>.
+
+use strict;
+use warnings;
+
+use FindBin;
+use Mojo::Home;
+BEGIN {
+    unshift @INC, "$FindBin::Bin/../lib";
+    if (!$ENV{MOJO_HOME}) {
+        # override default home as Mojo gets it wrong for our sub apps
+        # This 'require' is here because the 'home detect' method
+        # relies on %INC, which is only populated when the module is
+        # loaded: see #870 and #876
+        require OpenQA::Utils;
+        $ENV{MOJO_HOME} = Mojo::Home->new->detect('OpenQA::Utils');
+    }
+}
+
+use OpenQA::Schema;
+use OpenQA::ResourceAllocator;
+
+OpenQA::ResourceAllocator->new->run;
+
+# vim: set sw=4 sts=4 et:
