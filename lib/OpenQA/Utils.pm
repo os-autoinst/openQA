@@ -74,6 +74,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   send_job_to_worker
   wakeup_scheduler
   read_test_modules
+  exists_worker
 );
 
 if ($0 =~ /\.t$/) {
@@ -590,6 +591,15 @@ sub wakeup_scheduler {
     # do not wait for a reply - avoid deadlocks. this way we can even call it
     # from within the scheduler without having to worry about reentering
     $con->send($msg);
+}
+
+sub exists_worker($$) {
+    my $schema   = shift;
+    my $workerid = shift;
+    die "invalid worker id\n" unless $workerid;
+    my $rs = $schema->resultset("Workers")->find($workerid);
+    die "invalid worker id $workerid\n" unless $rs;
+    return $rs;
 }
 
 sub _round_a_bit {
