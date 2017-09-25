@@ -24,7 +24,7 @@ use Data::Dump 'pp';
 use Scalar::Util 'blessed';
 
 use OpenQA::IPC;
-use OpenQA::Utils qw(log_debug wakeup_scheduler);
+use OpenQA::Utils qw(log_debug wakeup_scheduler exists_worker);
 use OpenQA::ServerStartup;
 use OpenQA::Resource::Jobs  ();
 use OpenQA::Resource::Locks ();
@@ -80,6 +80,8 @@ sub _is_method_allowed {
     return $ret;
 }
 
+
+
 ## Assets
 dbus_method('asset_list', [['dict', 'string', 'string']], [['array', ['dict', 'string', 'string']]]);
 sub asset_list {
@@ -117,7 +119,7 @@ sub job_set_running {
 dbus_method('validate_workerid', ['uint32'], ['bool']);
 sub validate_workerid {
     my ($self, $args) = @_;
-    my $res = OpenQA::Resource::Jobs::_validate_workerid($args);
+    my $res = exists_worker($self->schema, $args);
     return 1 if ($res);
     return 0;
 }
@@ -167,5 +169,7 @@ sub barrier_destroy {
     return 0 unless $res;
     return 1;
 }
+
+*instance = \&new;
 
 1;

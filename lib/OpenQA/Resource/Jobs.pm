@@ -27,23 +27,14 @@ use DBIx::Class::ResultClass::HashRefInflator;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
 use OpenQA::Utils qw(wakeup_scheduler log_debug);
+use OpenQA::ResourceAllocator;
+
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA    = qw(Exporter);
 @EXPORT = qw(job_restart job_create);
 
-sub schema {
-    CORE::state $schema;
-    $schema = OpenQA::Schema::connect_db() unless $schema;
-    return $schema;
-}
-sub _validate_workerid($) {
-    my $workerid = shift;
-    die "invalid worker id\n" unless $workerid;
-    my $rs = schema->resultset("Workers")->find($workerid);
-    die "invalid worker id $workerid\n" unless $rs;
-    return $rs;
-}
+sub schema { OpenQA::ResourceAllocator->instance->schema }
 
 =head2 job_set_waiting
 

@@ -39,7 +39,7 @@ use Scalar::Util 'weaken';
 use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
-use OpenQA::Utils qw(log_debug log_warning send_job_to_worker);
+use OpenQA::Utils qw(log_debug log_warning send_job_to_worker exists_worker);
 use db_helpers 'rndstr';
 use Time::HiRes 'time';
 use List::Util 'shuffle';
@@ -91,14 +91,6 @@ sub schema {
     CORE::state $schema;
     $schema = OpenQA::Schema::connect_db() unless $schema;
     return $schema;
-}
-
-sub _validate_workerid($) {
-    my $workerid = shift;
-    die "invalid worker id\n" unless $workerid;
-    my $rs = schema->resultset("Workers")->find($workerid);
-    die "invalid worker id $workerid\n" unless $rs;
-    return $rs;
 }
 
 #
@@ -621,7 +613,7 @@ sub job_grab {
       : 1;
 
     try {
-        $worker = _validate_workerid($workerid);
+        $worker = exists_worker(schema(), $workerid);
 
         if ($worker->job && $allocate) {
             my $job = $worker->job;
