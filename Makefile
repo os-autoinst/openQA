@@ -96,12 +96,16 @@ travis:
 	export MOJO_LOG_LEVEL=debug ;\
 	export MOJO_TMPDIR=$$(mktemp -d) ;\
 	export OPENQA_LOGFILE=/tmp/openqa-debug.log ;\
+	if test "x$$FULLSTACK" = x1 || test "x$$SCHEDULER_FULLSTACK" = x1; then \
+		git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst ;\
+		(cd ../os-autoinst && SETUP_FOR_TRAVIS=1 sh autogen.sh && make ) ;\
+					eval $$(dbus-launch --sh-syntax) ;\
+		export PERL5OPT="$$PERL5OPT $$HARNESS_PERL_SWITCHES"; \
+	fi ;\
 	if test "x$$FULLSTACK" = x1; then \
-	  git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst ;\
-	  (cd ../os-autoinst && SETUP_FOR_TRAVIS=1 sh autogen.sh && make ) ;\
-          eval $$(dbus-launch --sh-syntax) ;\
-	  export PERL5OPT="$$PERL5OPT $$HARNESS_PERL_SWITCHES"; \
-	  perl t/full-stack.t && perl t/05-scheduler-full.t ;\
+	  perl t/full-stack.t ;\
+	elif test "x$$SCHEDULER_FULLSTACK" = x1; then \
+		perl t/05-scheduler-full.t ;\
 	else \
 	  list= ;\
 	  if test "x$$UITESTS" = x1; then \

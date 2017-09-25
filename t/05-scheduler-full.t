@@ -32,6 +32,7 @@ BEGIN {
     $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}            = 4000;
     $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} = 38000;
     $ENV{OPENQA_SCHEDULER_WAKEUP_ON_REQUEST}      = 0;
+    $ENV{FULLSTACK}                               = 1 if $ENV{SCHEDULER_FULLSTACK};
     path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
     path($FindBin::Bin, "data")->child("database.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("database.ini"));
     path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
@@ -55,7 +56,7 @@ use File::Path qw(make_path remove_tree);
 use Cwd qw(abs_path getcwd);
 use DateTime;
 # This test have to be treated like fullstack.
-plan skip_all => "set FULLSTACK=1 (be careful)" unless $ENV{FULLSTACK};
+plan skip_all => "set SCHEDULER_FULLSTACK=1 (be careful)" unless $ENV{SCHEDULER_FULLSTACK};
 
 init_db();
 my $schema = OpenQA::Test::Database->new->create();

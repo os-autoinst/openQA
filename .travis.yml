@@ -3,7 +3,7 @@ dist: trusty
 language: perl
 perl:
   - "5.18"
-addons: 
+addons:
   ssh_known_hosts: github.com
   apt:
     packages:
@@ -15,6 +15,7 @@ env:
     - FULLSTACK=0 UITESTS=0
     - FULLSTACK=0 UITESTS=1 SELENIUM_CHROME=0
     - GH_PUBLISH=true FULLSTACK=1 SELENIUM_CHROME=0
+    - SCHEDULER_FULLSTACK=1
   global:
     - COMMIT_AUTHOR_EMAIL=skynet@open.qa
 before_install:
