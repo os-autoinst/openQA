@@ -9,7 +9,6 @@ use Config::IniFiles;
 use File::Spec::Functions 'catdir';
 use OpenQA::Utils qw(log_error log_info log_debug);
 use Mojo::Home;
-#use OpenQA::Worker::Pool qw(lockit clean_pool);
 
 BEGIN {
     if (!$ENV{MOJO_HOME}) {
@@ -24,7 +23,7 @@ BEGIN {
 
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
-    qw(create_webapi create_websocket_server create_worker unresponsive_worker),
+    qw(create_webapi create_websocket_server create_worker unresponsive_worker wait_for_worker),
     qw(kill_service unstable_worker job_create client_output create_resourceallocator start_resourceallocator)
 );
 
@@ -35,6 +34,17 @@ sub kill_service {
     kill POSIX::SIGTERM => $pid;
     kill POSIX::SIGKILL => $pid if $forced;
     waitpid($pid, 0);
+}
+
+sub wait_for_worker {
+    my $schema = shift;
+    my $id     = shift;
+    for (0 .. 10) {
+        sleep 2;
+        warn 'Attempt for worker: ' . $id;
+        my $w = $schema->resultset("Workers")->find($id);
+        last if defined $w && !$w->dead;
+    }
 }
 
 sub create_webapi {
@@ -70,9 +80,11 @@ sub create_webapi {
 }
 
 sub create_websocket_server {
-    my $port  = shift;
-    my $bogus = shift;
-    my $wspid = fork();
+    my $port          = shift;
+    my $bogus         = shift;
+    my $nowait        = shift;
+    my $noworkercheck = shift;
+    my $wspid         = fork();
     if ($wspid == 0) {
         $ENV{MOJO_LISTEN} = "http://127.0.0.1:$port";
         use OpenQA::WebSockets;
@@ -84,11 +96,14 @@ sub create_websocket_server {
                 $_[0]->on(finish => \&OpenQA::WebSockets::Server::_finish);
             };
         }
+        if ($noworkercheck) {
+            monkey_patch 'OpenQA::WebSockets::Server', _workers_checker => sub { 1 };
+        }
         OpenQA::WebSockets::run;
         Devel::Cover::report() if Devel::Cover->can('report');
         _exit(0);
     }
-    else {
+    elsif (!defined $nowait) {
         # wait for websocket server
         my $wait = time + 20;
         while (time < $wait) {
@@ -121,7 +136,7 @@ sub start_resourceallocator {
     my $resourceallocatorpid = fork();
     if ($resourceallocatorpid == 0) {
         exec("perl ./script/openqa-resource-allocator");
-        die "FAILED TO START WORKER";
+        die "FAILED TO START ResourceAllocator";
     }
 
     return $resourceallocatorpid;
@@ -188,8 +203,6 @@ sub unstable_worker {
     return $pid;
 
 }
-
-
 
 sub unresponsive_worker {
     # the help of the Doctor would be really appreciated here.

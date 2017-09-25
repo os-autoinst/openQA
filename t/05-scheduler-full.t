@@ -50,7 +50,7 @@ use Net::DBus qw(:typing);
 use Mojo::IOLoop::Server;
 use Mojo::File 'tempfile';
 use OpenQA::Test::Utils
-  qw(create_webapi create_resourceallocator start_resourceallocator create_websocket_server create_worker kill_service unstable_worker client_output unresponsive_worker);
+  qw(create_webapi wait_for_worker create_resourceallocator start_resourceallocator create_websocket_server create_worker kill_service unstable_worker client_output unresponsive_worker);
 use Mojolicious;
 use File::Path qw(make_path remove_tree);
 use Cwd qw(abs_path getcwd);
@@ -63,10 +63,11 @@ my $schema = OpenQA::Test::Database->new->create();
 
 # Create webapi and websocket server services.
 my $mojoport             = Mojo::IOLoop::Server->generate_port();
-my $wspid                = create_websocket_server($mojoport + 1);
 my $webapi               = create_webapi($mojoport);
 my $resourceallocatorpid = start_resourceallocator;
+my $wspid                = create_websocket_server($mojoport + 1, 0, 1, 1);
 
+my $reactor = get_reactor();
 # Setup needed files for workers.
 my $sharedir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'share')->make_path;
 
@@ -84,10 +85,6 @@ symlink(abs_path('../os-autoinst/t/data/tests/'), path($sharedir, 'tests')->chil
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok -d $resultdir;
 
-# Instantiate our (hacked) scheduler
-my $reactor = get_reactor();
-
-
 my $k = $schema->resultset("ApiKeys")->create({user_id => "99903"});
 
 subtest 'Scheduler backoff timing calculations' => sub {
@@ -97,7 +94,11 @@ subtest 'Scheduler backoff timing calculations' => sub {
     my $failures;
     my $no_actions;
     my $c;
-    for (0 .. 5) {
+
+    scheduler_step($reactor) for (0 .. 11);
+    trigger_capture_event_loop($reactor);
+
+    for (0 .. 8) {
         $c++;
         ($allocated, $failures, $no_actions) = scheduler_step($reactor);
         is $failures, $c, "Expected failures: $c";
@@ -105,46 +106,22 @@ subtest 'Scheduler backoff timing calculations' => sub {
         is $no_actions, $c, "No actions performed will match failures - since we have no free workers";
     }
 
-
-
-    ($allocated, $failures, $no_actions) = scheduler_step($reactor);
-    is $failures,   7;
-    is $no_actions, 7;
-    is @$allocated, 0;
 };
-
-#
 subtest 'Scheduler worker job allocation' => sub {
 
     my $allocated;
     my $failures;
     my $no_actions;
 
-    ($allocated, $failures, $no_actions) = scheduler_step($reactor);
-    is $failures,   8;
-    is $no_actions, $failures;
-    is @$allocated, 0;
 
-    ($allocated, $failures, $no_actions) = scheduler_step($reactor);
-    is $failures,   9;
-    is $no_actions, $failures;
-    is @$allocated, 0;
-
-    # Step 1
-    ($allocated, $failures, $no_actions) = scheduler_step($reactor);
-    is $failures,   10;
-    is $no_actions, $failures;
-    is @$allocated, 0;
-
-    # Capture loop avoidance timer fired. back to default
     trigger_capture_event_loop($reactor);
 
+    #
     # Step 1
     ($allocated, $failures, $no_actions) = scheduler_step($reactor);
     is $failures,   1;
     is $no_actions, $failures;
     is @$allocated, 0;
-    #  my $k = $schema->resultset("ApiKeys")->create({user_id => "99903"});
 
     # GO GO GO GO GO!!! like crazy now
     my $w1_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 1);
@@ -193,8 +170,6 @@ subtest 'Simulation of unstable workers' => sub {
     my $unstable_w_pid = unresponsive_worker($k->key, $k->secret, "http://localhost:$mojoport", 3);
 
     ($allocated, $failures, $no_actions) = scheduler_step($reactor);
-    is $failures,   0;
-    is $no_actions, 0;
     is @$allocated, 1;
     is @{$allocated}[0]->{job},    99982;
     is @{$allocated}[0]->{worker}, 5;
@@ -215,7 +190,7 @@ subtest 'Simulation of unstable workers' => sub {
 
     # Same job, since was put in scheduled state again.
     $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, 8);
-    sleep 5;
+    wait_for_worker($schema, 5);
 
     ($allocated, $failures, $no_actions) = scheduler_step($reactor);
     is $failures,   0;
@@ -369,19 +344,34 @@ sub dead_workers {
 sub reset_tick {
     my $reactor = shift;
 
-    $reactor->remove_timeout($reactor->{timer}->{schedule_jobs});
+    eval { $reactor->remove_timeout($reactor->{timer}->{schedule_jobs}) } if exists $reactor->{timer}->{schedule_jobs};
     delete $reactor->{timer}->{schedule_jobs};
     $reactor->{tick} = $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS};    # Reset to what we expect to be normal ticking
     return $reactor;
 }
 
+sub remove_timers {
+    my $reactor = shift;
+
+    $reactor->{timeouts} = [undef];                                # This is Net::DBus default...
+    delete $reactor->{timer}->{no_actions_reset};
+    delete $reactor->{timer}->{capture_loop_avoidance};
+}
+
 sub trigger_capture_event_loop {
     my $reactor = shift;
+
     # Capture loop avoidance timer fired. back to default
-    scheduler_step($reactor);
+    $reactor->{running} = 1;
+    $reactor->step;
+    $reactor->{running} = 0;
+
     is $reactor->{timeouts}->[$reactor->{timer}->{schedule_jobs}]->{interval},
-      $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} + 1000, "Scheduler clock got reset";
+      $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} + 1000, "Scheduler clock got reset";    #scheduler_step($reactor);
+
     reset_tick($reactor);
+    remove_timers($reactor);
+
     return $reactor;
 }
 
@@ -410,8 +400,11 @@ sub scheduler_step {
     my $started = $reactor->_now;
     my ($allocated, $failures, $no_actions, $rescheduled);
     my $fired;
-    my $current_tick = $reactor->{tick};
-    $reactor->{timer}->{schedule_jobs} = $reactor->add_timeout(
+
+    my $current_tick = $reactor->{tick} // $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS};
+    eval { $reactor->remove_timeout($reactor->{timer}->{schedule_jobs}) } if exists $reactor->{timer}->{schedule_jobs};
+
+    my $tid = $reactor->add_timeout(
         $current_tick,
         Net::DBus::Callback->new(
             method => sub {
@@ -420,11 +413,23 @@ sub scheduler_step {
                 print STDERR Dumper($allocated) . "\n";
 
                 $reactor->{tick} = $reactor->{timeouts}->[$reactor->{timer}->{schedule_jobs}]->{interval};
-                $reactor->remove_timeout($reactor->{timer}->{schedule_jobs});    # Scheduler reallocate itself :)
-                                                                                 #  $reactor->shutdown;
+                eval { $reactor->remove_timeout($reactor->{timer}->{schedule_jobs}) }
+                  if exists $reactor->{timer}->{schedule_jobs};    # Scheduler reallocate itself :)
+                                                                   #  $reactor->shutdown;
+
             }));
+    $reactor->{timer}->{schedule_jobs} = $tid;
+    diag 'Running scheduler step';
     $reactor->{running} = 1;
     $reactor->step;
+    $reactor->{running} = 0;
+    $reactor->{timer}->{schedule_jobs} = $tid;
+    $failures   = 0 if !defined $failures;
+    $no_actions = 0 if !defined $no_actions;
+    $reactor->shutdown;
+
+    eval { $reactor->remove_timeout($reactor->{timer}->{schedule_jobs}) }
+      if exists $reactor->{timer}->{schedule_jobs};    # Scheduler reallocate itself :)
 
     range_ok($current_tick, $started, $fired) if $fired;
 
