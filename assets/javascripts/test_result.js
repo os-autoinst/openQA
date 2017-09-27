@@ -191,14 +191,8 @@ function setupResult(state, jobid, status_url, details_url) {
   });
 
   // don't overwrite the tab if coming from the URL (ignore '#')
-  if (location.hash.length < 2) {
-    if (state == "scheduled") {
-      setResultHash("#settings", true);
-    } else if (state == "running" || state == "waiting") {
-      if (window.location.href.substr(-1) != "#") {
-        setResultHash("#live", true);
-      }
-    }
+  if (location.hash.length < 2 && state === "scheduled") {
+    setResultHash("#settings", true);
   }
   if (state == "running" || state == "waiting" || state == "uploading" || state == "assigned") {
     setupRunning(jobid, status_url, details_url);
