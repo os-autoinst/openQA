@@ -200,7 +200,12 @@ function setupResult(state, jobid, status_url, details_url) {
       }
     }
   }
-  if (state == "running" || state == "waiting" || state == "uploading" || state == "assigned") {
+  // This could be easily rewritten as $.inArray
+  if ( state == "running"   ||
+       state == "waiting"   ||
+       state == "uploading" ||
+       state == "assigned"  ||
+       state == "setup" ) {
     setupRunning(jobid, status_url, details_url);
   }
   else if (state == "scheduled") {

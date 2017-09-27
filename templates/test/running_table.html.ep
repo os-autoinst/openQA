@@ -5,13 +5,13 @@
         "columnDefs": [
             { targets: 0,
               className: "name" },
-            { targets: 3,
-              className: "time",
+            { targets: 'time',
               "render": function ( data, type, row ) {
-                    if (type === 'display') {
+                    if (type === 'display' && data != '0Z') {
                       return jQuery.timeago(new Date(data));
-                  } else
-                      return data;
+                  } else {
+                      return 'Not yet';
+                  }
               }
             },
         ],
@@ -24,7 +24,7 @@
             <th class="name">Medium</th>
             <th class="test">Test</th>
             <th>Progress</th>
-            <th>Started</th>
+            <th class="time">Started</th>
         </tr>
     </thead>
     <tbody>
@@ -35,7 +35,7 @@
             % my $distri = $job->DISTRI // '';
             % my $version = $job->VERSION // '';
             % my $flavor = $job->FLAVOR // '';
-	    % my $arch = $job->ARCH // '';
+            % my $arch = $job->ARCH // '';
             % my $start_time = $job->t_started ? $job->t_started->datetime() : 0;
             % my $query = { distri => $distri, version => $version, build => $build };
             % if ($job->group_id) {
@@ -48,12 +48,12 @@
                     of <%= "$distri-$version-$flavor.$arch" %>
                 </td>
                 <td class="test">
-		    % if (is_operator) {
-			%= link_to url_for('apiv1_cancel', jobid => $job->id) => (class => 'cancel') => begin
-                          <i class="action fa fa-fw fa-times-circle-o"></i>
-			% end
-		    % }
-		    %= link_to url_for('test', 'testid' => $job->id) => begin
+                    % if (is_operator) {
+                    %= link_to url_for('apiv1_cancel', jobid => $job->id) => (class => 'cancel') => begin
+                                  <i class="action fa fa-fw fa-times-circle-o"></i>
+                    % end
+                    % }
+                    %= link_to url_for('test', 'testid' => $job->id) => begin
                         <i class="status state_running fa fa-circle" title="Running"></i>
                     % end
                     %= link_to url_for('test', 'testid' => $job->id) => begin
@@ -75,7 +75,7 @@
                             %   $ptext = $value."%";
                         % } else
                         % {
-                            %   $ptext = "pre-processing";
+                            %   $ptext = $job->state;
                             %   $classes = " progress-bar-striped active";
                         % }
                         <div class="progress-bar <%= $classes %>" role="progressbar" style="width: <%= $value %>%; min-width: 2em;" aria-valuemax="100" aria-valuemin="0" aria-valuenow="<%= $value %>">
@@ -83,7 +83,7 @@
                         </div>
                     </div>
                 </td>
-                <td class="testtime" title="<%= $job->t_started %>Z"><%= $start_time %>Z</td>
+                <td class="time" title="<%= $job->t_started %>Z"><%= $start_time %>Z</td>
             </tr>
         % }
     </tbody>

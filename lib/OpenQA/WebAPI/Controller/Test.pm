@@ -51,7 +51,7 @@ sub list {
     my $limit   = $self->param('limit') // 500;
 
     my $jobs = $self->db->resultset("Jobs")->complex_query(
-        state   => 'done,cancelled',
+        state   => [OpenQA::Schema::Result::Jobs::FINAL_STATES],
         match   => $match,
         scope   => $scope,
         assetid => $assetid,
@@ -62,7 +62,7 @@ sub list {
     $self->stash(jobs => $jobs);
 
     my $running = $self->db->resultset("Jobs")->complex_query(
-        state   => 'running,waiting',
+        state   => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         match   => $match,
         groupid => $groupid,
         assetid => $assetid
@@ -77,15 +77,42 @@ sub list {
         };
         push @list, $data;
     }
-    @list = sort { $b->{job}->t_started <=> $a->{job}->t_started || $b->{job}->id <=> $a->{job}->id } @list;
+    @list = sort {
+        if ($b->{job} && $a->{job}) {
+            $b->{job}->t_started <=> $a->{job}->t_started || $b->{job}->id <=> $a->{job}->id;
+        }
+        elsif ($b->{job}) {
+            1;
+        }
+        elsif ($a->{job}) {
+            -1;
+        }
+        else {
+            0;
+        }
+    } @list;
     $self->stash(running => \@list);
 
     my @scheduled = $self->db->resultset("Jobs")->complex_query(
-        state   => 'scheduled',
+        state   => [OpenQA::Schema::Result::Jobs::PRE_EXECUTION_STATES],
         match   => $match,
         groupid => $groupid,
         assetid => $assetid
     )->all;
+    # @scheduled = sort {
+    #     if ($b->{job} && $a->{job}) {
+    #         $b->{job}->t_created <=> $a->{job}->t_created || $b->{job}->id <=> $a->{job}->id;
+    #     }
+    #     elsif ($b->{job}) {
+    #         1;
+    #     }
+    #     elsif ($a->{job}) {
+    #         -1;
+    #     }
+    #     else {
+    #         0;
+    #     }
+    # }
     @scheduled = sort { $b->t_created <=> $a->t_created || $b->id <=> $a->id } @scheduled;
     $self->stash(scheduled => \@scheduled);
 }
@@ -120,7 +147,11 @@ sub list_ajax {
         {'me.id' => {in => \@ids}},
         {
             columns => [
-                qw(me.id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST state clone_id test result group_id t_finished passed_module_count softfailed_module_count failed_module_count skipped_module_count)
+                qw(me.id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
+                  state clone_id test result group_id t_finished
+                  passed_module_count softfailed_module_count
+                  failed_module_count skipped_module_count
+                  )
             ],
             order_by => ['me.t_finished DESC, me.id DESC'],
             prefetch => [qw(children parents)],
