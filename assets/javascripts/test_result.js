@@ -146,8 +146,7 @@ function checkResultHash() {
       setCurrentPreview(null);
     }
   } else if (hash.search("#comment-") == 0) {
-    var commentstab = $("[href='#comments']");
-    commentstab.tab("show");
+    $("[href='#comments']").tab("show");
   } else {
     // reset
     setCurrentPreview(null);
@@ -218,5 +217,15 @@ function setupResult(state, jobid, status_url, details_url) {
       return;
     }
     setResultHash(tabshown);
+  });
+
+  // define handler for tab switch to resume/pause live view depending on whether it is the
+  // current tab
+  $('#result-row a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+    if (e.target.hash === '#live') {
+      resumeLiveView();
+    } else {
+      pauseLiveView();
+    }
   });
 }
