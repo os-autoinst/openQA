@@ -170,20 +170,7 @@ sub streamtext {
 sub livelog {
     my ($self) = @_;
     return 0 unless $self->init();
-    my $ipc = OpenQA::IPC->ipc;
-
-    my $start_hook = sub {
-        my ($worker, $job) = @_;
-        # tell worker to increase status updates rate for more responsive updates
-        $ipc->websockets('ws_send', $worker->id, 'livelog_start', $job->id);
-    };
-
-    my $close_hook = sub {
-        my ($worker, $job) = @_;
-        $ipc->websockets('ws_send', $worker->id, 'livelog_stop', $job->id);
-    };
-
-    $self->streamtext('autoinst-log-live.txt', $start_hook, $close_hook);
+    $self->streamtext('autoinst-log-live.txt');
 }
 
 sub liveterminal {
@@ -195,14 +182,17 @@ sub liveterminal {
 sub streaming {
     my ($self) = @_;
     return 0 unless $self->init();
+    my $ipc = OpenQA::IPC->ipc;
 
     $self->render_later;
     Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
     $self->res->code(200);
     $self->res->headers->content_type('text/event-stream');
 
+    my $job      = $self->stash('job');
+    my $worker   = $job->worker;
     my $lastfile = '';
-    my $basepath = $self->stash('job')->worker->get_property('WORKER_TMPDIR');
+    my $basepath = $worker->get_property('WORKER_TMPDIR');
 
     # Set up a recurring timer to send the last screenshot to the client,
     # plus a utility function to close the connection if anything goes wrong.
@@ -231,7 +221,18 @@ sub streaming {
             }
         });
 
-    $self->on(finish => sub { Mojo::IOLoop->remove($id) });
+    # ask worker to create live stream
+    OpenQA::Utils::log_debug('Asking the worker to start providing livestream');
+    $ipc->websockets('ws_send', $worker->id, 'livelog_start', $job->id);
+
+    $self->once(
+        finish => sub {
+            Mojo::IOLoop->remove($id);
+            # ask worker to stop live stream
+            OpenQA::Utils::log_debug('Asking the to stop providing livestream');
+            $ipc->websockets('ws_send', $worker->id, 'livelog_stop', $job->id);
+        },
+    );
 }
 
 1;
