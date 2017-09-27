@@ -438,6 +438,7 @@ table.overview {
         td.name {
                 padding-top: .5em;
                 padding-bottom: .5em;
+                text-overflow: ellipsis;
         }
         .failedmodule {
                 background-color: #E9F7C9;

@@ -14,7 +14,7 @@
             % next unless $type_results->{$config};
             <tr>
                 <td class="name">
-                    % my $test_label = trim_text($config, 30);
+                    % my $test_label = text_with_title($config);
                     % if (my $description = $type_results->{$config}{description}) {
                         <a data-content="<p><%= href_to_bugref(render_escaped_refs($description)) %></p>"
                         data-title="<%= $config %>" data-toggle="popover" data-trigger="focus" role="button" tabindex="0"><%= $test_label %></a>
