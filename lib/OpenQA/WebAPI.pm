@@ -344,7 +344,8 @@ sub startup {
     $api_ro->post('/jobs/restart')->name('apiv1_restart_jobs')->to('job#restart');
 
     my $job_r = $api_ro->route('/jobs/:jobid', jobid => qr/\d+/);
-    $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->get('/')->name('apiv1_job')->to('job#show');
+    $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->name('apiv1_job')->to('job#show');
+    $api_public_r->route('/jobs/:jobid/details', jobid => qr/\d+/)->name('apiv1_job')->to('job#show', details => 1);
     $job_r->put('/')->name('apiv1_put_job')->to('job#update');
     $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');
     $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio');

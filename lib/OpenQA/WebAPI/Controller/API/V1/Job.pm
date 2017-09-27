@@ -147,11 +147,12 @@ sub create {
 }
 
 sub show {
-    my $self   = shift;
-    my $job_id = int($self->stash('jobid'));
-    my $job    = $self->db->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
+    my $self    = shift;
+    my $job_id  = int($self->stash('jobid'));
+    my $details = $self->stash('details') || 0;
+    my $job     = $self->db->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
     if ($job) {
-        $self->render(json => {job => $job->to_hash(assets => 1, deps => 1)});
+        $self->render(json => {job => $job->to_hash(assets => 1, deps => 1, details => $details)});
     }
     else {
         $self->reply->not_found;

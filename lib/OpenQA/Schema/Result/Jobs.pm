@@ -23,7 +23,11 @@ use JSON;
 use Fcntl;
 use DateTime;
 use db_helpers;
-use OpenQA::Utils qw(log_debug log_info log_warning parse_assets_from_settings locate_asset send_job_to_worker);
+use OpenQA::Utils (
+    qw(log_debug log_info log_warning),
+    qw(parse_assets_from_settings locate_asset),
+    qw(send_job_to_worker read_test_modules)
+);
 use File::Basename qw(basename dirname);
 use File::Spec::Functions 'catfile';
 use File::Path ();
@@ -582,6 +586,9 @@ sub to_hash {
     }
     if ($args{deps}) {
         $j = {%$j, %{$job->deps_hash}};
+    }
+    if ($args{details}) {
+        $j->{testresults} = read_test_modules($job);
     }
     return $j;
 }
