@@ -101,12 +101,12 @@ $time->text_like(qr/1[01] minutes ago/, 'right time for running');
 
 $get = $t->get_ok('/tests')->status_is(200);
 my @header = $t->tx->res->dom->find('h2')->map('text')->each;
-my @expected = ('2 jobs are running', '2 scheduled jobs', 'Last 11 finished jobs');
+my @expected = ('2 jobs are running', '2 scheduled jobs', 'Finished jobs');
 is_deeply(\@header, \@expected, 'all job summaries correct with defaults');
 
 $get      = $t->get_ok('/tests?limit=1')->status_is(200);
 @header   = $t->tx->res->dom->find('h2')->map('text')->each;
-@expected = ('2 jobs are running', '2 scheduled jobs', 'Last 1 finished jobs');
+@expected = ('2 jobs are running', '2 scheduled jobs', 'Finished jobs');
 is_deeply(\@header, \@expected, 'test report can be adjusted with query parameter');
 
 $get = $t->get_ok('/tests/99963')->status_is(200);

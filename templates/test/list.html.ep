@@ -4,7 +4,7 @@
 % content_for 'ready_function' => begin
   is_operator = <%= (is_operator) ? 'true' : 'false' %>;
   restart_url = "<%= url_for("apiv1_restart", jobid => 'REPLACEIT') %>";
-  renderTestsList([ <%= join(',', map { $_->id } $jobs->all) %> ]);
+  renderTestsList();
 % end
 
 % if (@$running) {
@@ -24,13 +24,14 @@
 
 <div>
 
-  <h2>Last <%= $jobs->all %> finished jobs</h2>
+  <h2>Finished jobs</h2>
     <div class="col-sm-5" id="relevantbox" style="display: none">
 	%= check_box relevant => '1', 'checked' => 'checked' => (id => 'relevantfilter')
 	%= label_for 'relevantfilter' => 'Show only relevant jobs'
     </div>
     
-    <table id="results" class="display table table-striped no-wrap" style="width: 100%">
+    <table id="results" class="display table table-striped no-wrap" style="width: 100%"
+      data-ajax-url="<%= url_for('tests_finished_ajax') %>">
         <thead>
             <tr>
                 <th class="name">Medium</th>

@@ -184,7 +184,7 @@ sub startup {
     $r->get('/tests/latest')->name('latest')->to('test#latest');
 
     $r->get('/tests/export')->name('tests_export')->to('test#export');
-    $r->post('/tests/list_ajax')->name('tests_ajax')->to('test#list_ajax');
+    $r->post('/tests/list_finished_ajax')->name('tests_finished_ajax')->to('test#list_finished_ajax');
 
     # only provide a URL helper - this is overtaken by apache
     $r->get('/assets/*assetpath')->name('download_asset')->to('file#download_asset');

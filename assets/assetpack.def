@@ -4,7 +4,7 @@
 << https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/fonts/glyphicons-halflings-regular.woff
 << https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/fonts/glyphicons-halflings-regular.ttf
 << https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/fonts/glyphicons-halflings-regular.eot
-< https://cdn.datatables.net/1.10.12/css/dataTables.bootstrap.css
+< https://cdn.datatables.net/1.10.13/css/dataTables.bootstrap.css
 << https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/fontawesome-webfont.eot#iefix&v=4.7.0
 << https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/fontawesome-webfont.eot
 << https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/fontawesome-webfont.svg?v=4.7.0
@@ -34,8 +34,8 @@
 ! bootstrap.js
 < https://code.jquery.com/jquery-3.1.1.js
 < javascripts/openqa.js
-< https://cdn.datatables.net/1.10.12/js/jquery.dataTables.js
-< https://cdn.datatables.net/1.10.12/js/dataTables.bootstrap.js
+< https://cdn.datatables.net/1.10.13/js/jquery.dataTables.js
+< https://cdn.datatables.net/1.10.13/js/dataTables.bootstrap.js
 < http://timeago.yarp.com/jquery.timeago.js
 < javascripts/index.js
 < javascripts/admintable.js

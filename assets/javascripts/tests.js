@@ -117,41 +117,37 @@ function renderTestResult( data, type, row ) {
     }
 }
 
-function renderTestsList(jobs) {
+function renderTestsList() {
 
-    var table = $('#results').DataTable( {
-        "dom": "<'row'<'col-sm-3'l><'#toolbar'><'col-sm-4'f>>" +
+    var table = $('#results');
+    table.DataTable( {
+        processing: true,
+        serverSide: true,
+        deferRender: true,
+        dom: "<'row'<'col-sm-3'l><'#toolbar'><'col-sm-4'f>>" +
             "<'row'<'col-sm-12'tr>>" +
             "<'row'<'col-sm-6'i><'col-sm-6'p>>",
-        "lengthMenu": [[10, 25, 50], [10, 25, 50]],
-        "ajax": {
-            "url": "/tests/list_ajax",
-            "type": "POST", // we use POST as the URLs can get long
-            "data": function(d) {
-                var ret = {
-                    "relevant": $('#relevantfilter').prop('checked')
-                };
-                if (jobs != null) {
-                    ret['jobs'] = jobs;
-                    ret['initial'] = 1;
-                }
-                // reset for reload
-                jobs = null;
-                return ret;
+        lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+        ajax: {
+            url: table.data('ajax-url'),
+            type: "POST", // we use POST as the URLs can get long
+            data: function(data) {
+                data.relevant = $('#relevantfilter').prop('checked');
+                return data;
             }
         },
         // no initial resorting
-        "order": [],
-        "columns": [
-            { "data": "name" },
-            { "data": "test" },
-            { "data": "result_stats" },
-            { "data": "testtime" },
+        order: [],
+        columns: [
+            { data: "name" },
+            { data: "test" },
+            { data: "result_stats" },
+            { data: "testtime" },
         ],
-        "columnDefs": [
+        columnDefs: [
             { targets: 0,
               className: "name",
-              "render": function ( data, type, row ) {
+              render: function ( data, type, row ) {
                   var link = '/tests/overview?build=' + row['build'] + '&distri=' + row['distri'] + '&version=' + row['version'];
                   if (row['group'])
                       link += '&groupid=' + row['group'];
@@ -163,26 +159,26 @@ function renderTestsList(jobs) {
             },
             { targets: 1,
               className: "test",
-              "render": renderTestName
+              render: renderTestName
             },
             { targets: 3,
               className: "time",
-              "render": renderTimeAgo
+              render: renderTimeAgo
             },
             { targets: 2,
-              "render": renderTestResult
+              render: renderTestResult
             }
         ]
     } );
     $("#relevantbox").detach().appendTo('#toolbar');
     $('#relevantbox').css('display', 'inherit');
     // Event listener to the two range filtering inputs to redraw on input
-    $('#relevantfilter').change( function() {
+    $('#relevantfilter').change(function() {
         $('#relevantbox').css('color', 'cyan');
         table.ajax.reload(function() {
             $('#relevantbox').css('color', 'inherit');
         } );
-    } );
+    });
 
     $(document).on('mouseover', '.parent_child', highlightJobs);
     $(document).on('mouseout', '.parent_child', unhighlightJobs);
