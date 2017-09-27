@@ -190,7 +190,7 @@ my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
 $driver->find_element_by_link_text('core@coolone')->click();
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 1 is scheduled');
-javascript_console_is_empty;
+javascript_console_has_no_warnings_or_errors;
 
 sub start_worker {
     $workerpid = fork();
@@ -209,7 +209,7 @@ sub wait_for_result_panel {
         last if $driver->find_element('#result-row .panel-body')->get_text() =~ $result_panel;
         sleep 1;
     }
-    javascript_console_is_empty;
+    javascript_console_has_no_warnings_or_errors;
     $driver->refresh();
     like($driver->find_element('#result-row .panel-body')->get_text(), $result_panel, $desc);
 }
@@ -265,7 +265,7 @@ $job_name = 'tinycore-1-flavor-i386-Build1-core@noassets';
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 4 is scheduled');
 
-javascript_console_is_empty;
+javascript_console_has_no_warnings_or_errors;
 start_worker;
 
 wait_for_result_panel qr/Result: incomplete/, 'Test 4 crashed as expected';
