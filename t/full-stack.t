@@ -216,6 +216,7 @@ sub wait_for_result_panel {
 
 sub wait_for_job_running {
     wait_for_result_panel qr/State: running/, 'job is running';
+    $driver->find_element_by_link_text('Live View')->click();
 }
 wait_for_job_running;
 wait_for_result_panel qr/Result: passed/, 'test 1 is passed';
