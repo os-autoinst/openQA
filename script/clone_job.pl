@@ -113,6 +113,7 @@ use Mojo::URL;
 use JSON;
 use FindBin;
 use lib "$FindBin::RealBin/../lib";
+use OpenQA::Client;
 
 my %options;
 
