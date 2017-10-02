@@ -130,6 +130,7 @@ sub setup_logging {
     my $logfile = $ENV{OPENQA_LOGFILE} || $config->{logging}->{file};
 
     if ($logfile) {
+        $app->log->handle(path($logfile)->open('>>'));
         $app->log->path($logfile);
         $app->log->format(
             sub {
