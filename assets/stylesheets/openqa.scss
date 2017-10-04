@@ -453,6 +453,38 @@ table.overview {
         }
 }
 
+#finished_jobs_result_filter_chosen {
+    margin-left: 3px;
+
+    .chosen-results {
+        text-align: left;
+        float: none;
+    }
+}
+
+
+#results {
+    clear: both;
+}
+
+#results_filter label {
+    vertical-align: top;
+}
+
+@media (min-width: $screen-sm) {
+    #toolbar {
+        &> div {
+            padding-right: 0px !important;
+            width: 20%;
+        }
+
+        &+ div {
+            padding-left: 0px !important;
+            width: 55%;
+        }
+    }
+}
+
 span.status .fa {
     font-size: 120%;
 }

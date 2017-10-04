@@ -25,11 +25,25 @@
 <div>
 
   <h2>Last <%= $jobs->all %> finished jobs</h2>
-    <div class="col-sm-5" id="relevantbox" style="display: none">
-	%= check_box relevant => '1', 'checked' => 'checked' => (id => 'relevantfilter')
-	%= label_for 'relevantfilter' => 'Show only relevant jobs'
-    </div>
-    
+    <form action="#">
+        <div class="col-sm-3" id="relevantbox" style="display: none;">
+            %= check_box relevant => '1', 'checked' => 'checked' => (id => 'relevantfilter')
+            %= label_for 'relevantfilter' => 'Show only relevant jobs'
+            <select style="min-width: 250px;" id="finished-jobs-result-filter" data-placeholder="Filter by result" class="chosen-select" multiple>
+                <option>Passed</option>
+                <option>Softfailed</option>
+                <option>Failed</option>
+                <option>Incomplete</option>
+                <option>Skipped</option>
+                <option>Obsoleted</option>
+                <option>Parallel failed</option>
+                <option>Parallel restarted</option>
+                <option>User cancelled</option>
+                <option>User restarted</option>
+            </select>
+        </div>
+    </form>
+
     <table id="results" class="display table table-striped no-wrap" style="width: 100%">
         <thead>
             <tr>
