@@ -43,7 +43,8 @@ install:
 
 	install -D -m 644 etc/logrotate.d/openqa "$(DESTDIR)"/etc/logrotate.d/openqa
 #
-	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/{system,system-generators}
+	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system
+	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/system-generators
 	install -d -m 755 "$(DESTDIR)"/usr/lib/tmpfiles.d
 	install -m 644 systemd/openqa-worker@.service "$(DESTDIR)"/usr/lib/systemd/system
 	sed -e 's_^\(ExecStart=/usr/share/openqa/script/worker\) \(--instance %i\)$$_\1 --no-cleanup \2_' \
