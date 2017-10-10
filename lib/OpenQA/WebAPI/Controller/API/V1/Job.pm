@@ -166,7 +166,7 @@ sub set_command {
     my $command = 'job_set_' . $self->stash('command');
     my $ipc     = OpenQA::IPC->ipc;
 
-    my $res = try { $ipc->scheduler($command, $jobid) };
+    my $res = $ipc->scheduler($command, $jobid);
     $self->emit_event('openqa_' . $command, {id => $jobid}) if ($res);
     # Referencing the scalar will result in true or false
     # (see http://mojolicio.us/perldoc/Mojo/JSON)
