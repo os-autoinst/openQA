@@ -6,7 +6,8 @@ use Mojo::IOLoop::Server;
 require Mojolicious::Commands;
 require OpenQA::Test::Database;
 
-@EXPORT = qw($phantommissing check_phantom_modules call_phantom kill_phantom wait_for_ajax javascript_console_is_empty);
+@EXPORT
+  = qw($phantommissing check_phantom_modules call_phantom kill_phantom wait_for_ajax javascript_console_has_no_warnings_or_errors);
 
 use Data::Dump 'pp';
 use Test::More;
@@ -149,8 +150,19 @@ sub wait_for_ajax {
     }
 }
 
-sub javascript_console_is_empty {
-    is(pp($_driver->get_log('browser')), "[]", "no errors on javascript console");
+sub javascript_console_has_no_warnings_or_errors {
+    my $log = $_driver->get_log('browser');
+    my @errors;
+    for my $log_entry (@$log) {
+        my $level = $log_entry->{level};
+        if ($level eq 'DEBUG' or $level eq 'INFO') {
+            next;
+        }
+        push(@errors, $log_entry);
+    }
+
+    diag('javascript console output: ' . pp($log)) if @$log;
+    is_deeply(\@errors, [], 'no errors or warnings on javascript console');
 }
 
 sub kill_phantom() {

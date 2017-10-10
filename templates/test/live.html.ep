@@ -38,13 +38,29 @@
     <canvas id="livestream" width="1024" height="768" data-url='<%= url_for("streaming", testid => $testid) %>'>
     </canvas>
 </div>
-<div class="h5">Live Log</div>
-<div class="panel panel-default">
-    <pre id="livelog" data-url='<%= url_for("livelog", testid => $testid) %>'></pre>
+
+<div class="panel panel-default filter-panel-bottom" id="live-log-panel">
+    <div class="panel-heading">
+        <strong>Live log</strong>
+        <span>click to toggle</span>
+    </div>
+    <div class="panel-body">
+        <pre id="livelog" data-url='<%= url_for("livelog", testid => $testid) %>'></pre>
+        <form action="#">
+            <div>
+                <input type="checkbox" id="scrolldown" checked="checked" />
+                <label for="scrolldown">Autoscroll log</label>
+            </div>
+        </form>
+    </div>
 </div>
-<input type="checkbox" id="scrolldown" checked="checked" />
-<label for="scrolldown">Autoscroll log</label>
-<div class="h5">Serial Output (serial0.txt and serial_terminal.txt)</div>
-<div class="panel panel-default">
-    <pre id="liveterminal" data-url='<%= url_for("liveterminal", testid => $testid) %>'></pre>
+
+<div class="panel panel-default filter-panel-bottom" id="live-terminal-panel">
+    <div class="panel-heading">
+        <strong>Serial output</strong> (serial0.txt and serial_terminal.txt)
+        <span>click to toggle</span>
+    </div>
+    <div class="panel-body">
+        <pre id="liveterminal" data-url='<%= url_for("liveterminal", testid => $testid) %>'></pre>
+    </div>
 </div>

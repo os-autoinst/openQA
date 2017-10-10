@@ -12,6 +12,14 @@ var testStatus = {
     img_reload_time: 0
 };
 
+// holds elements relevant for live stream, live log and serial output
+// (populated in initLivelogAndTerminal() and initLivestream())
+var liveViewElements = [];
+
+// holds elements relevant for live log and serial output
+// (initialized in initLivelogAndTerminal())
+var logElements;
+
 // Update global variable testStatus
 function updateTestStatus(newStatus) {
     if (newStatus.state != 'running' && newStatus.state != 'waiting') {
@@ -192,36 +200,86 @@ function initStatus(jobid, status_url, details_url) {
 var scrolldown;
 
 // checkbox callback
-function setScrolldown(newval) {
+function setScrolldown() {
     scrolldown = $(this).prop('checked');
+    scrollToBottomOfLiveLog();
+}
+
+// scrolls to bottom of live log (if enabled)
+function scrollToBottomOfLiveLog() {
+    var livelog = $('#livelog')[0];
     if (scrolldown) {
-        var livelog = $('#livelog')[0];
-        $('#livelog').scrollTop = livelog.scrollHeight;
+        livelog.scrollTop = livelog.scrollHeight;
     }
 }
 
-function setDataListener(elem, callback) {
-    var events = new EventSource(elem.data('url'));
-    events.addEventListener('message', function(event) {
-        elem[0].innerHTML += JSON.parse(event.data)[0];
-        if (callback) callback();
-    }, false);
+function removeDataListener(elem) {
+    if (elem.eventSource) {
+        elem.eventSource.removeEventListener('message', elem.eventCallback);
+        elem.eventSource.close();
+        elem.eventSource = undefined;
+    }
 }
 
-function initLivelog() {
+function addDataListener(elem, callback) {
+    // ensure any previously added event source is removed
+    removeDataListener(elem);
+
+    // define callback function
+    if (!elem.eventCallback) {
+        elem.eventCallback = function(event) {
+            elem[0].innerHTML += JSON.parse(event.data)[0];
+            if (callback) {
+                callback();
+            }
+        };
+    }
+
+    // add new event source and add listener
+    elem.eventSource = new EventSource(elem.data('url'));
+    elem.eventSource.addEventListener('message', elem.eventCallback, false);
+}
+
+function initLivelogAndTerminal() {
+    // init scrolldown for live log
     scrolldown = true;
     $('#scrolldown').attr('checked', true);
 
-    // start stream
-    var livelog = $('#livelog');
-    setDataListener(livelog, function() {
-        if (scrolldown) livelog[0].scrollTop = livelog[0].scrollHeight;
+    // find log elements
+    logElements = [{
+        panel: $('#live-log-panel'),
+        log: $('#livelog'),
+        callback: scrollToBottomOfLiveLog
+    }, {
+        panel: $('#live-terminal-panel'),
+        log: $('#liveterminal')
+    }];
+
+    // enable expanding/collapsing live log/terminal
+    $.each(logElements, function(index, value) {
+            liveViewElements.push(value);
+            value.panel.bodyVisible = false;
+            value.panel.find('.panel-heading').on('click', function() {
+                    // toggle visiblity
+                    var body = value.panel.find('.panel-body');
+                    body.toggle(200);
+                    value.panel.bodyVisible = !value.panel.bodyVisible;
+
+                    // toggle receiving updates
+                    if (value.panel.bodyVisible) {
+                        addDataListener(value.log, value.callback);
+
+                        // scroll to bottom of panel when expanding
+                        $('html,body').animate({
+                            scrollTop: value.panel.offset().top + value.panel.height()
+                        });
+                    } else {
+                        removeDataListener(value.log);
+                    }
+                });
     });
 }
 
-function initLiveterminal() {
-    setDataListener($('#liveterminal'));
-}
 
 /********* LIVE LOG END *********/
 
@@ -244,20 +302,21 @@ function loadCanvas(canvas, dataURL) {
 }
 
 function initLivestream() {
-    // start stream
+    // setup callback for livestream
     var livestream = $('#livestream');
-    var events = new EventSource(livestream.data('url'));
-    events.addEventListener('message', function(event) {
+    livestream.eventCallback = function(event) {
         loadCanvas(livestream, event.data);
         last_event = event;
-    }, false);
+    };
+    liveViewElements.push({log: livestream});
 }
 
 /********* LIVE STREAM END *********/
 
+// initialize elements for live stream, live log and serial output but does not
+// start to consume any streams (called in setupResult() if state is running)
 function setupRunning(jobid, status_url, details_url) {
-  initLivelog();
-  initLiveterminal();
+  initLivelogAndTerminal();
   initLivestream();
   initStatus(jobid, status_url, details_url);
 
@@ -278,6 +337,26 @@ function setupRunning(jobid, status_url, details_url) {
   });
 
   $('#scrolldown').change(setScrolldown);
+}
+
+// starts consuming streams for live stream, live log and serial output
+// (called when live view tab is shown)
+function resumeLiveView() {
+  $.each(liveViewElements, function(index, value) {
+    // skip streams which are shown in an expandible pannel which is currently collapsed
+    if(value.panel && !value.panel.bodyVisible) {
+      return;
+    }
+    addDataListener(value.log, value.callback);
+  });
+}
+
+// stops consuming streams for live stream, live log and serial output
+// (called when any tab except the live view tab is shown)
+function pauseLiveView() {
+  $.each(liveViewElements, function(index, value) {
+    removeDataListener(value.log);
+  });
 }
 
 // vim: set sw=4 et:

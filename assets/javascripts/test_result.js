@@ -146,8 +146,7 @@ function checkResultHash() {
       setCurrentPreview(null);
     }
   } else if (hash.search("#comment-") == 0) {
-    var commentstab = $("[href='#comments']");
-    commentstab.tab("show");
+    $("[href='#comments']").tab("show");
   } else {
     // reset
     setCurrentPreview(null);
@@ -191,14 +190,8 @@ function setupResult(state, jobid, status_url, details_url) {
   });
 
   // don't overwrite the tab if coming from the URL (ignore '#')
-  if (location.hash.length < 2) {
-    if (state == "scheduled") {
-      setResultHash("#settings", true);
-    } else if (state == "running" || state == "waiting") {
-      if (window.location.href.substr(-1) != "#") {
-        setResultHash("#live", true);
-      }
-    }
+  if (location.hash.length < 2 && state === "scheduled") {
+    setResultHash("#settings", true);
   }
   // This could be easily rewritten as $.inArray
   if ( state == "running"   ||
@@ -229,5 +222,15 @@ function setupResult(state, jobid, status_url, details_url) {
       return;
     }
     setResultHash(tabshown);
+  });
+
+  // define handler for tab switch to resume/pause live view depending on whether it is the
+  // current tab
+  $('#result-row a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+    if (e.target.hash === '#live') {
+      resumeLiveView();
+    } else {
+      pauseLiveView();
+    }
   });
 }
