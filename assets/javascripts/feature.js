@@ -3,37 +3,29 @@ function newFeature(featureVersion) {
     var currentFeature;
 
     //Create variable for each tour
-    var example = new Tour({
+    //For instructions about creating a tour checkout http://bootstraptour.com/api/
+    var tour01 = new Tour({
         //Enable to save progress local, necessary for multipage traversal
         storage: window.localStorage,
         template: changeTemplate(),
-        onShown: function(){return dontShow(), currentFeature = 2; quitTour(currentFeature)}
+        onShown: function(){return dontShow(), currentFeature = 2, quitTour(currentFeature)}
     });
 
     //Add steps to the tour
-    example.addSteps([
+    tour01.addSteps([
         {
-          element: ".jumbotron",
-          title: "Interested in new features?",
-          content: "Just click next to see what's new in openQA",
+          element: "#all_tests",
+          title: "All tests area",
+          content: "In this area all tests are provided and sorted by the current state. You can see which jobs are running, scheduled or finished",
           placement: "bottom",
-          backdrop: true,
-          onNext: function(){return ($('.panel-heading').click())}
-        },
-        {
-          element: "#filter-fullscreen",
-          title: "Full screen mode",
-          content: "Check out the new full screen view option",
-          placement: "top",
           backdrop: false,
-          onNext: function(){document.location.href = '/tests/'},
         },
         {
-          element: "#scheduled_wrapper",
-          title: "Multipage",
-          content: "Example about traversing across pages",
+          element: "#job_groups",
+          title: "Job group menu",
+          content: "Access the job group overview pages from here. Besides test results, a description and commenting area is provided",
           placement: "bottom",
-          onPrev: function(){document.location.href = '/'},
+          backdrop: false,
         }
     ]);
 
@@ -46,7 +38,7 @@ function newFeature(featureVersion) {
                 "<h3 class='popover-title'></h3>"+
                 "<div class='popover-content'></div>"+
                 "<div class='popover-navigation'>"+
-                "<div class='checkbox'><label><input type='checkbox' id='dont-notify'>Don't notify me anymore</label></div>"+
+                "<div class='checkbox'><label><input type='checkbox' id='dont-notify'>Don't notify me anymore (permanent)</label></div>"+
                 "<button class='btn btn-default' data-role='prev' id='prev'>« Prev</button>"+
                 "<span data-role='separator'>|</span>"+
                 "<button class='btn btn-default' data-role='next'id='next'>Next »</button>"+
@@ -62,9 +54,9 @@ function newFeature(featureVersion) {
     function initTour(featureVersion) {
         if ((2 > featureVersion) && (featureVersion != 0)) {
             //Initialize the tour
-            example.init();
+            tour01.init();
             //Start the tour
-            example.start();
+            tour01.start();
         };
     };
 
