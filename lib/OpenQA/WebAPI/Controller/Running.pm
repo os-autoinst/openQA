@@ -223,16 +223,17 @@ sub streaming {
 
     # ask worker to create live stream
     OpenQA::Utils::log_debug('Asking the worker to start providing livestream');
-    $ipc->websockets('ws_send', $worker->id, 'livelog_start', $job->id);
 
-    $self->once(
+    $self->tx->once(
         finish => sub {
             Mojo::IOLoop->remove($id);
             # ask worker to stop live stream
-            OpenQA::Utils::log_debug('Asking the to stop providing livestream');
+            OpenQA::Utils::log_debug('Asking the worker to stop providing livestream');
             $ipc->websockets('ws_send', $worker->id, 'livelog_stop', $job->id);
         },
     );
+
+    $ipc->websockets('ws_send', $worker->id, 'livelog_start', $job->id);
 }
 
 1;
