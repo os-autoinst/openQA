@@ -714,9 +714,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#_getting_involved_into_development">Getting involved into development</a></li>
 <li><a href="#_technologies">Technologies</a></li>
+<li><a href="#_starting_the_webserver_from_local_git_checkout">Starting the webserver from local Git checkout</a></li>
 <li><a href="#_managing_the_database">Managing the database</a>
 <ul class="sectlevel2">
-<li><a href="#_how_to_change_the_database_schema">How to change the database schema</a></li>
+<li><a href="#_when_is_it_required_to_update_the_database_schema">When is it required to update the database schema?</a></li>
+<li><a href="#_how_to_update_the_database_schema">How to update the database schema</a></li>
 <li><a href="#_how_to_add_fixtures_to_the_database">How to add fixtures to the database</a></li>
 </ul>
 </li>
@@ -4728,16 +4730,55 @@ follows the most common Perl style conventions.</p>
 </div>
 </div>
 <div class="sect1">
+<h2 id="_starting_the_webserver_from_local_git_checkout">Starting the webserver from local Git checkout</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>To start the webserver for development, use the scripts/openqa daemon.</p>
+</li>
+<li>
+<p>openQA will pull the required asssets on the first run.</p>
+</li>
+<li>
+<p>openQA uses SASS, so Ruby development files are required. Under openSUSE,
+installing the packages devel_C_C++ and ruby-devel should be sufficient.
+openQA will install the required files automatically under .gem. Add
+.gem/ruby/2.4.0/bin to the PATH variable to let it find the sass/scss
+binaries. I also had to create symlinks of those binaries without .ruby2.4
+suffix so openQA could find them.</p>
+</li>
+<li>
+<p>It is also useful to start openQA with morbo which allows applying changes
+without restarting the server:
+morbo -m development -w assets -w lib -w templates
+  -l http://localhost:9526 script/openqa daemon</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_managing_the_database">Managing the database</h2>
 <div class="sectionbody">
-<div class="sect2">
-<h3 id="_how_to_change_the_database_schema">How to change the database schema</h3>
 <div class="paragraph">
 <p>During the development process there are cases in which the database schema
-needs to be changed. After modifying files in lib/OpenQA/Schema/Result
+needs to be changed.
 there are some steps that have to be followed so that new database instances
 and upgrades include those changes.</p>
 </div>
+<div class="sect2">
+<h3 id="_when_is_it_required_to_update_the_database_schema">When is it required to update the database schema?</h3>
+<div class="paragraph">
+<p>After modifying files in lib/OpenQA/Schema/Result. However, not all changes
+require to update the schema. Adding just another method or altering/adding
+functions like has_many doesn&#8217;t require an update. However, adding new
+columns, modifying or removing existing ones requires to follow the steps
+mentioned above.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_how_to_update_the_database_schema">How to update the database schema</h3>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
@@ -4761,25 +4802,42 @@ initialize the schema and to upgrade from one version
 to the next in the corresponding database engine.</p>
 </li>
 <li>
-<p>And finally, you need to create the fixtures files. Under
-dbicdh/_common/deploy, rename the directory of the (previous) latest version
-to the new version and do the necessary changes (if any). Then, under
-dbicdh/_common/upgrade create a &lt;prev_version&gt;-&lt;new_version&gt; directory and
-put some files there with SQL statements that upgrade the fixtures. Usually a
-diff from the previous version to the new one helps to see what has to be in
-the upgrade file.</p>
+<p>Migration scripts to upgrade from previous versions can be added under
+dbicdh/_common/upgrade. Create a &lt;prev_version&gt;-&lt;new_version&gt; directory and
+put some files there with DBIx commands for the migration. For examples just
+have a look at the migrations which are already there.</p>
 </li>
 </ol>
 </div>
 <div class="paragraph">
-<p>The above steps are executed in the developer&#8217;s system. Once openQA is
-installed in a production server, you should run either
-./script/initdb --init_database or ./script/upgradedb --upgrade_database
-to actually create or upgrade a database.</p>
+<p>The above steps are only for preparing the required SQL statements, but do not
+actually alter the database. Before doing so, it is recommended <strong>to backup your
+database</strong> to be able to downgrade again if something goes wrong or you just need
+to continue working on another branch. To do so, just copy your SQLite file.
+If you are using PostgreSQL, the following command can be used to create a copy:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>createdb -O ownername -T originaldb newdb</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To actually create or update the database (after creating a backup as described),
+you should run either ./script/initdb --init_database or
+./script/upgradedb --upgrade_database. This is also required when the changes
+are installed in a production server.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_how_to_add_fixtures_to_the_database">How to add fixtures to the database</h3>
+<div class="paragraph">
+<p>Note: This section is not about the fixtures for the testsuite. Those are located
+under t/fixtures.</p>
+</div>
+<div class="paragraph">
+<p>Note: This section might not be relevant anymore. At least there are currently
+none of the mentioned directories with files containing SQL statements present.</p>
+</div>
 <div class="paragraph">
 <p>Fixtures (initial data stored in tables at installation time) are stored
 in files into the dbicdh/_common/deploy/_any/&lt;version&gt; and
@@ -4974,7 +5032,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-10-09 05:48:15 UTC
+Last updated 2017-10-10 07:49:57 UTC
 </div>
 </div>
 </body>
