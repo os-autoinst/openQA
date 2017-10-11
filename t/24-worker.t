@@ -42,7 +42,7 @@ like(
             {HOSTS => ['http://any_host']},
             {
                 host => 'http://any_host',
-            })
+            });
     },
     qr/API key.*needed/,
     'auth required'
