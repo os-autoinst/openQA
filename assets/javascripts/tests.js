@@ -195,7 +195,12 @@ function renderTestsList(jobs) {
     finishedJobsResultFilter.chosen();
     // ensure the table is re-drawn when a filter is added/removed
     finishedJobsResultFilter.change(function(event) {
+        // update data table
         table.draw();
+        // update query params
+        var params = parseQueryParams();
+        params.resultfilter = finishedJobsResultFilter.val();
+        updateQueryParams(params);
     });
     // add a handler for the actual filtering
     $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
@@ -220,6 +225,11 @@ function renderTestsList(jobs) {
         }
         return false;
     });
+    // apply filter from query params
+    var filter = parseQueryParams().resultfilter;
+    if (filter) {
+        finishedJobsResultFilter.val(filter).trigger('chosen:updated').trigger('change');
+    }
 
     $(document).on('mouseover', '.parent_child', highlightJobs);
     $(document).on('mouseout', '.parent_child', unhighlightJobs);

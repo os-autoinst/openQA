@@ -46,3 +46,40 @@ function toggleChildGroups(link) {
     buildRow.toggleClass('children-expanded');
     return false;
 }
+
+function parseQueryParams() {
+    var params = {};
+    $.each(window.location.search.substr(1).split('&'), function(index, param) {
+        var equationSignIndex = param.indexOf('=');
+        if (equationSignIndex < 0) {
+            var key = decodeURIComponent(param);
+            var value = undefined;
+        } else {
+            var key = decodeURIComponent(param.substr(0, equationSignIndex));
+            var value = decodeURIComponent(param.substr(equationSignIndex + 1));
+        }
+        if (Array.isArray(params[key])) {
+            params[key].push(value);
+        } else {
+            params[key] = [value];
+        }
+    });
+    return params;
+}
+
+function updateQueryParams(params) {
+    if (!history.replaceState) {
+        return; // skip if not supported
+    }
+    var search = [];
+    $.each(params, function(key, values) {
+        $.each(values, function(index, value) {
+            if (value === undefined) {
+                search.push(encodeURIComponent(key));
+            } else {
+                search.push(encodeURIComponent(key) + '=' + encodeURIComponent(value));
+            }
+        });
+    });
+    history.replaceState({} , document.title, window.location.pathname + '?' + search.join('&'));
+}
