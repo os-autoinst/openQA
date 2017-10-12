@@ -138,7 +138,8 @@ sub read_config {
             profiling_enabled   => 0,
             plugins             => undef,
             hide_asset_types    => 'repo',
-            recognized_referers => ''
+            recognized_referers => '',
+            changelog_file      => '/usr/share/openqa/public/Changelog',
         },
         auth => {
             method => 'OpenID',

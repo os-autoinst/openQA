@@ -168,7 +168,7 @@ sub changelog {
     my ($self) = @_;
 
     my $changelog;
-    if (open(my $changelog_file, '<', '/usr/share/openqa/public/Changelog')) {
+    if (open(my $changelog_file, '<', $self->app->config->{global}->{changelog_file})) {
         read($changelog_file, $changelog, -s $changelog_file);
         close($changelog_file);
     }
