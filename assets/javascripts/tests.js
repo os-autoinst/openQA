@@ -174,15 +174,62 @@ function renderTestsList(jobs) {
             }
         ]
     } );
-    $("#relevantbox").detach().appendTo('#toolbar');
+
+    // fix layout for controls on top of the finished table (can't be done directly because some elements come
+    // from the datatable)
+    $('#relevantbox').detach().appendTo('#toolbar');
     $('#relevantbox').css('display', 'inherit');
-    // Event listener to the two range filtering inputs to redraw on input
+    $('#results_filter').parent().toggleClass('col-sm-4 col-sm-6');
+
+    // register event listener to the two range filtering inputs to redraw on input
     $('#relevantfilter').change( function() {
         $('#relevantbox').css('color', 'cyan');
         table.ajax.reload(function() {
             $('#relevantbox').css('color', 'inherit');
         } );
     } );
+
+    // initialize filter for result (of finished jobs) as chosen
+    var finishedJobsResultFilter = $('#finished-jobs-result-filter');
+    $('#finished-jobs-result-filter').detach().appendTo('#results_filter');
+    finishedJobsResultFilter.chosen();
+    // ensure the table is re-drawn when a filter is added/removed
+    finishedJobsResultFilter.change(function(event) {
+        // update data table
+        table.draw();
+        // update query params
+        var params = parseQueryParams();
+        params.resultfilter = finishedJobsResultFilter.val();
+        updateQueryParams(params);
+    });
+    // add a handler for the actual filtering
+    $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+        var selectedResults = finishedJobsResultFilter.find('option:selected');
+        // don't apply filter if no result is selected
+        if (!selectedResults.length) {
+            return true;
+        }
+        // check whether actual result is contained by list of results to be filtered
+        var data = table.row(dataIndex).data();
+        if (!data) {
+            return false;
+        }
+        var result = data.result;
+        if (!result) {
+            return false;
+        }
+        for (var i = 0; i != selectedResults.length; ++i) {
+            if (selectedResults[i].value.toLowerCase() === result) {
+                return true;
+            }
+        }
+        return false;
+    });
+    // apply filter from query params
+    var filter = parseQueryParams().resultfilter;
+    if (filter) {
+        finishedJobsResultFilter.val(filter).trigger('chosen:updated').trigger('change');
+    }
 
     $(document).on('mouseover', '.parent_child', highlightJobs);
     $(document).on('mouseout', '.parent_child', unhighlightJobs);

@@ -217,6 +217,17 @@ is_deeply(
     'all rows displayed'
 );
 
+# test filtering finished jobs by result
+my $filter_input = $driver->find_element('#finished_jobs_result_filter_chosen input', 'css');
+$filter_input->click();
+$filter_input->send_keys('Passed');
+$driver->find_element('#finished_jobs_result_filter_chosen .active-result', 'css')->click();
+# actually this does not use AJAX, but be sure all JavaScript processing is done anyways
+wait_for_ajax();
+@jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
+is_deeply(\@jobs, [qw(job_99947 job_99946 job_99945 job_80000 job_99937)], 'only passed jobs displayed');
+$driver->find_element('#finished_jobs_result_filter_chosen .search-choice-close', 'css')->click();
+
 # now toggle back
 #print $driver->get_page_source();
 $driver->find_element_by_id('relevantfilter')->click();
