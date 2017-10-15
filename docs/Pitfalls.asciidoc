@@ -36,3 +36,20 @@ user can share the environment without problems.
 This approach will lead to a problem when the openqa package is updated, since the
 directory permissions will be changed again, nothing a `chmod -R g+rwx /var/lib/openqa/`
 and `chgrp -R openqa /var/lib/openqa` can not fix.
+
+== Performance impact
+
+openQA workers can cause high I/O load, especially when creating VM snapshots.
+The impact therefore gets more severe when +MAKETESTSNAPSHOTS+ is enabled.
+should not impact the stability of openQA jobs but can increase job execution
+time. If you run jobs on a machine where responsiveness of other services
+matter, for example your desktop machine, consider patching the
+IOSchedulingPriority of a workers service file as described in the
+https://www.freedesktop.org/software/systemd/man/systemd.exec.html#IOSchedulingPriority=[systemd
+documentation], for example set +IOSchedulingPriority=7+ for the lowest
+priority. If not available then you can try to execute the worker processes
+with +ionice+ to reduce the risk of your system becoming significantly
+impacted by snapshot creation. Loading VM snapshots can also have an impact on
+SUT behavior as the execution of the first step after loading a snapshot might
+be delayed. This can lead to problems if the executed tests do not foresee an
+appropriate timeout margin.
