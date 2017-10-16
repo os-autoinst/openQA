@@ -227,9 +227,20 @@ wait_for_ajax();
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
 is_deeply(\@jobs, [qw(job_99947 job_99946 job_99945 job_80000 job_99937)], 'only passed jobs displayed');
 $driver->find_element('#finished_jobs_result_filter_chosen .search-choice-close', 'css')->click();
+# enable filter via query parameter, this time disable relevantfilter
+$driver->get('/tests?resultfilter=Failed&foo=bar&resultfilter=Softfailed');
+$driver->find_element_by_id('relevantfilter')->click();
+wait_for_ajax();
+@jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
+is_deeply(
+    \@jobs,
+    [qw(job_99940 job_99939 job_99938 job_99936 job_99962 job_99944)],
+    'only softfailed and failed jobs displayed'
+);
+$driver->find_element('#finished_jobs_result_filter_chosen .search-choice-close', 'css')->click();
+$driver->find_element('#finished_jobs_result_filter_chosen .search-choice-close', 'css')->click();
 
 # now toggle back
-#print $driver->get_page_source();
 $driver->find_element_by_id('relevantfilter')->click();
 wait_for_ajax();
 

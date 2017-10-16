@@ -36,10 +36,10 @@
                 <option>Incomplete</option>
                 <option>Skipped</option>
                 <option>Obsoleted</option>
-                <option>Parallel failed</option>
-                <option>Parallel restarted</option>
-                <option>User cancelled</option>
-                <option>User restarted</option>
+                <option value="parallel_failed">Parallel failed</option>
+                <option value="parallel_restarted">Parallel restarted</option>
+                <option value="user_cancelled">User cancelled</option>
+                <option value="user_restarted">User restarted</option>
             </select>
         </div>
     </form>
