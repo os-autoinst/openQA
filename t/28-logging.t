@@ -48,8 +48,7 @@ subtest 'Logging to stdout' => sub {
         log_dir  => undef,
         level    => 'debug'
     );
-
-    $app->setup_log();
+    
     $OpenQA::Utils::app = $app;
     log_debug('debug message');
     log_error('error message');
@@ -81,7 +80,6 @@ subtest 'Logging to file' => sub {
     );
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
 
-    $app->setup_log();
     $OpenQA::Utils::app = $app;
     log_debug('debug message');
     log_error('error message');
@@ -119,7 +117,6 @@ subtest 'log fatal to stderr' => sub {
         level    => 'debug'
     );
 
-    $app->setup_log();
     $OpenQA::Utils::app = undef;    # To make sure we don't are setting it in other tests
     eval { log_fatal('fatal message'); };
     my $exception_raised = 0;
@@ -152,7 +149,6 @@ subtest 'Checking log level' => sub {
             level    => $_
         );
 
-        $app->setup_log();
         $OpenQA::Utils::app = $app;
 
         log_debug('debug message');
