@@ -3,6 +3,7 @@ dist: trusty
 language: perl
 perl:
   - "5.18"
+  - dev
 addons: 
   ssh_known_hosts: github.com
   apt:
