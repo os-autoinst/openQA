@@ -115,8 +115,7 @@ sub scan_images {
             $app->db->resultset('Screenshots')->populate(\@part);
             @part = ();
         }
-        catch {
-        };
+        catch { };
         # if populate fails, resort to insert - this runs as GRU task and some images
         # might already be in, but the filename is unique
         shift @part;    # columns
