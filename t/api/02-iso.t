@@ -273,7 +273,7 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     $ret = $t->get_ok('/api/v1/jobs?state=scheduled');
     my @jobs = @{$ret->tx->res->json->{jobs}};
     lj;
-    ok(!grep({ $_->{settings}->{BUILD} =~ '009[2]' } @jobs), 'no jobs from intermediate, not-important build');
+    ok(!grep({$_->{settings}->{BUILD} =~ '009[2]'} @jobs), 'no jobs from intermediate, not-important build');
     is(scalar @jobs, 21, 'only the important jobs, jobs from the current build and the important build are scheduled');
     # now test with a VERSION-BUILD format tag
     $tag = 'tag:13.1-0093:important';
@@ -283,8 +283,8 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     $ret  = $t->get_ok('/api/v1/jobs?state=scheduled');
     @jobs = @{$ret->tx->res->json->{jobs}};
     lj;
-    ok(grep({ $_->{settings}->{BUILD} eq '0091' } @jobs), 'we have jobs from important build 0091');
-    ok(grep({ $_->{settings}->{BUILD} eq '0093' } @jobs), 'we have jobs from important build 0093');
+    ok(grep({$_->{settings}->{BUILD} eq '0091'} @jobs), 'we have jobs from important build 0091');
+    ok(grep({$_->{settings}->{BUILD} eq '0093'} @jobs), 'we have jobs from important build 0093');
     is(scalar @jobs, 31, 'only the important jobs, jobs from the current build and the important builds are scheduled');
 };
 
@@ -294,7 +294,7 @@ subtest 'build obsoletion/depriorization' => sub {
     $ret = $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
     my @jobs = @{$ret->tx->res->json->{jobs}};
     lj;
-    ok(!grep({ $_->{settings}->{BUILD} =~ '009[24]' } @jobs), 'recent non-important builds were obsoleted');
+    ok(!grep({$_->{settings}->{BUILD} =~ '009[24]'} @jobs), 'recent non-important builds were obsoleted');
     is(scalar @jobs, 31, 'current build and the important build are scheduled');
     $res  = schedule_iso({%iso, BUILD => '0096', '_NOOBSOLETEBUILD' => 1});
     $ret  = $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
