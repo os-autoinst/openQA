@@ -20,7 +20,7 @@ use warnings;
 use OpenQA::Utils qw(log_error log_warning log_debug);
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Jobs;
-use POSIX qw(:sys_wait_h);
+use POSIX q(:sys_wait_h);
 use OpenQA::Worker::Engines::isotovideo;
 
 ## WEBSOCKET commands
