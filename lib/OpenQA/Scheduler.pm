@@ -78,9 +78,15 @@ sub _is_method_allowed {
 
 our $fakeapp;
 sub run {
-    $fakeapp = OpenQA::FakeApp->new;
-    OpenQA::ServerStartup::read_config($fakeapp);
-    OpenQA::ServerStartup::setup_logging($fakeapp);
+
+    $fakeapp = OpenQA::FakeApp->new(
+        log_name => 'scheduler'    
+    );
+    
+    $OpenQA::Utils::app = $fakeapp;
+    
+    # OpenQA::ServerStartup::read_config($fakeapp);
+    # OpenQA::ServerStartup::setup_logging($fakeapp);
 
     OpenQA::Scheduler->new();
     log_debug("Scheduler started");

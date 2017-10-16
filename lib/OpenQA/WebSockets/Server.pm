@@ -452,12 +452,15 @@ sub _workers_checker {
 # Mojolicious startup
 sub setup {
 
-
+    bless app->app, 'OpenQA::FakeApp';
+    app->app->log_name('server');
+    $OpenQA::Utils::app = app->app;
+    
     app->helper(log_name => sub { return 'websockets' });
     app->helper(schema   => sub { return OpenQA::Schema::connect_db; });
 
-    OpenQA::ServerStartup::read_config(app);
-    OpenQA::ServerStartup::setup_logging(app);
+    # OpenQA::ServerStartup::read_config(app);
+    # OpenQA::ServerStartup::setup_logging(app);
 
     # not really meaningful for websockets, but required for mode defaults
     app->defaults(appname => "openQA Websocket Server");

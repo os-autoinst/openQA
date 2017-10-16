@@ -69,9 +69,16 @@ sub log_name {
 # This method will run once at server start
 sub startup {
     my $self = shift;
-
-    OpenQA::ServerStartup::read_config($self);
-    OpenQA::ServerStartup::setup_logging($self);
+    bless $self->app, 'OpenQA::FakeApp';
+    # my $fakeApp = OpenQA::FakeApp->new(
+    #     mode     => 'production',
+    #     log_name => 'webapi',
+    # );
+    # $self->app($fakeApp); # TODO: Need to be sure that any already defined value, get lost.
+    # OpenQA::ServerStartup::read_config($self);
+    # OpenQA::ServerStartup::setup_logging($self);
+    OpenQA::FakeApp::setup_log($self->app);
+    $OpenQA::Utils::app=$self->app;
 
     # Set some application defaults
     $self->defaults(appname         => $self->app->config->{global}->{appname});
@@ -127,7 +134,8 @@ sub startup {
     }
 
     # Read configurations expected by plugins.
-    OpenQA::ServerStartup::update_config($self->config, @{$self->plugins->namespaces}, "OpenQA::WebAPI::Auth");
+    # OpenQA::ServerStartup::update_config($self->config, @{$self->plugins->namespaces}, "OpenQA::WebAPI::Auth");
+    OpenQA::FakeApp::update_config($self->app, @{$self->plugins->namespaces}, "OpenQA::WebAPI::Auth");
 
     # End plugin loading/handling
 
