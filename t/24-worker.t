@@ -194,7 +194,6 @@ subtest 'test timer helpers' => sub {
 subtest 'mock test stop_job' => sub {
     use Mojo::Util 'monkey_patch';
     $OpenQA::Worker::Common::job = {id => 9999};
-    $OpenQA::Worker::Common::verbose = 1;
 
     my $stop_job = 0;
     monkey_patch 'Mojo::IOLoop', timer => sub {

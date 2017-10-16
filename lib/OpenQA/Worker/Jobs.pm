@@ -103,7 +103,7 @@ sub check_job {
     return if $job;
 
     $check_job_running->{$host} = 1;
-    log_debug("checking for job with webui $host") if $verbose;
+    log_debug("checking for job with webui $host");
     api_call(
         'post',
         "workers/$workerid/grab_job",
@@ -143,7 +143,7 @@ sub stop_job {
 
     $job_id = $job->{id};
 
-    log_debug("stop_job $aborted") if $verbose;
+    log_debug("stop_job $aborted");
     $stop_job_running = 1;
 
     # stop all job related timers
@@ -156,7 +156,7 @@ sub stop_job {
     my $stop_job_check_status;
     $stop_job_check_status = sub {
         if ($update_status_running) {
-            log_debug("waiting for update_status to finish") if $verbose;
+            log_debug("waiting for update_status to finish");
             Mojo::IOLoop->timer(1 => $stop_job_check_status);
         }
         else {
@@ -178,7 +178,7 @@ sub upload {
     open(my $log, '>>', "autoinst-log.txt");
     printf $log "uploading %s\n", $filename;
     close $log;
-    log_debug("uploading $filename") if $verbose;
+    log_debug("uploading $filename");
 
     my $regular_upload_failed = 0;
     my $retry_counter         = 5;
@@ -286,7 +286,7 @@ sub _stop_job {
     # now tell the webui that we're about to finish, but the following
     # process of killing the backend process and checksums uploads and
     # checksums again can take a long while, so the webui needs to know
-    log_debug('stop_job 2nd part') if $verbose;
+    log_debug('stop_job 2nd part');
 
     if ($aborted eq "scheduler_abort") {
         log_debug('stop_job called by the scheduler. do not send logs');
@@ -309,7 +309,7 @@ sub _stop_job_2 {
     my ($aborted, $job_id) = @_;
     _kill_worker($worker);
 
-    log_debug('stop_job 3rd part') if $verbose;
+    log_debug('stop_job 3rd part');
 
     my $name = $job->{settings}->{NAME};
     $aborted ||= 'done';
@@ -383,13 +383,13 @@ sub _stop_job_2 {
         }
 
         if ($aborted eq 'obsolete') {
-            log_debug('setting job ' . $job->{id} . ' to incomplete (obsolete)') if $verbose;
+            log_debug('setting job ' . $job->{id} . ' to incomplete (obsolete)');
             upload_status(1, sub { _stop_job_finish({result => 'incomplete', newbuild => 1}) });
             $job_done = 1;
         }
         elsif ($aborted eq 'cancel') {
             # not using job_incomplete here to avoid duplicate
-            log_debug('setting job ' . $job->{id} . ' to incomplete (cancel)') if $verbose;
+            log_debug('setting job ' . $job->{id} . ' to incomplete (cancel)');
             upload_status(1, sub { _stop_job_finish({result => 'incomplete'}) });
             $job_done = 1;
         }
@@ -397,13 +397,13 @@ sub _stop_job_2 {
             log_warning('job ' . $job->{id} . ' spent more time than MAX_JOB_TIME');
         }
         elsif ($aborted eq 'done') {    # not aborted
-            log_debug('setting job ' . $job->{id} . ' to done') if $verbose;
+            log_debug('setting job ' . $job->{id} . ' to done');
             upload_status(1, \&_stop_job_finish);
             $job_done = 1;
         }
     }
     unless ($job_done || $aborted eq 'api-failure') {
-        log_debug(sprintf 'job %d incomplete', $job->{id}) if $verbose;
+        log_debug(sprintf 'job %d incomplete', $job->{id});
         if ($aborted eq 'quit') {
             log_debug(sprintf "duplicating job %d\n", $job->{id});
             api_call(
@@ -425,7 +425,7 @@ sub _stop_job_2 {
 
 sub _stop_job_finish {
     my ($params, $quit) = @_;
-    log_debug("update status running $update_status_running") if $verbose && $update_status_running;
+    log_debug("update status running $update_status_running") if $update_status_running;
     if ($update_status_running) {
         add_timer('', 1, sub { _stop_job_finish($params, $quit) }, 1);
         return;
@@ -541,7 +541,7 @@ sub read_last_screen {
 sub update_status {
     return if $update_status_running;
     $update_status_running = 1;
-    log_debug('updating status') if $verbose;
+    log_debug('updating status');
     upload_status();
     return;
 }
@@ -550,7 +550,7 @@ sub stop_livelog {
     # We can have multiple viewers at the same time
     $do_livelog--;
     if ($do_livelog eq 0) {
-        log_debug('Removing live_log mark, live views active') if $verbose;
+        log_debug('Removing live_log mark, live views active');
         unlink "$pooldir/live_log";
     }
 }
@@ -682,7 +682,7 @@ sub optimize_image {
     my ($image) = @_;
 
     if (which('optipng')) {
-        log_debug("optipng $image") if $verbose;
+        log_debug("optipng $image");
         # be careful not to be too eager optimizing, this needs to be quick
         # or we will be considered a dead worker
         system('optipng', '-quiet', '-o2', $image);
@@ -702,7 +702,7 @@ sub upload_images {
 
     my $fileprefix = "$pooldir/testresults";
     while (my ($md5, $file) = each %$tosend_images) {
-        log_debug("upload $file as $md5") if $verbose;
+        log_debug("upload $file as $md5");
 
         optimize_image("$fileprefix/$file");
         my $form = {
@@ -729,7 +729,7 @@ sub upload_images {
     $tosend_images = {};
 
     for my $file (@$tosend_files) {
-        log_debug("upload $file") if $verbose;
+        log_debug("upload $file");
 
         my $form = {
             file => {
@@ -829,7 +829,7 @@ sub backend_running {
 }
 
 sub check_backend {
-    log_debug("checking backend state") if $verbose;
+    log_debug("checking backend state");
     my $res = engine_check;
     if ($res && $res ne 'ok') {
         stop_job($res);

@@ -148,7 +148,7 @@ sub engine_workit {
     my $workerid   = $hosts->{$current_host}{workerid};
     my %vars       = (OPENQA_URL => $openqa_url, WORKER_INSTANCE => $instance, WORKER_ID => $workerid);
     while (my ($k, $v) = each %{$job->{settings}}) {
-        log_debug("setting $k=$v") if $verbose;
+        log_debug("setting $k=$v");
         $vars{$k} = $v;
     }
 
@@ -274,9 +274,8 @@ sub engine_check {
 
     # check if the worker is still running
     my $pid = waitpid($workerpid, WNOHANG);
-    if ($verbose) {
-        log_debug("waitpid $workerpid returned $pid with status $?");
-    }
+    log_debug("waitpid $workerpid returned $pid with status $?");
+
     if ($pid == -1 && $!{ECHILD}) {
         warn "we lost our child\n";
         return 'died';

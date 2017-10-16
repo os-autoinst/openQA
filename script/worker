@@ -118,8 +118,8 @@ sub usage($) {
 }
 
 GetOptions(
-    \%options,     "no-cleanup", "instance=i", "isotovideo=s", "host=s", "apikey:s",
-    "apisecret:s", "verbose|v",  "help|h",
+    \%options,     "no-cleanup",        "instance=i", "isotovideo=s", "host=s", "apikey:s",
+    "apisecret:s", "verbose|v|debug|d", "help|h",
 ) or usage(1);
 
 usage(0) if ($options{help});
@@ -161,6 +161,7 @@ sub read_worker_config {
 $options{instance} ||= 1;
 
 my ($worker_settings, $host_settings) = read_worker_config($options{instance}, $options{host});
+$worker_settings->{LOG_LEVEL} = 'debug' if $options{verbose};
 $OpenQA::Worker::Common::worker_settings = $worker_settings;
 # XXX: this should be sent to the scheduler to be included in the worker's table
 $ENV{QEMUPORT} = ($options{instance}) * 10 + 20002;

@@ -67,13 +67,13 @@ sub websocket_commands {
             $joburl = $job->{URL};
         }
         if ($type =~ m/quit|abort|cancel|obsolete/) {
-            log_debug("received command: $type") if $verbose;
+            log_debug("received command: $type");
             stop_job($type);
         }
         elsif ($type eq 'stop_waitforneedle') {
             if (backend_running) {
                 $ua->post("$joburl/isotovideo/stop_waitforneedle");
-                log_debug('stop_waitforneedle triggered') if $verbose;
+                log_debug('stop_waitforneedle triggered');
                 ws_call('property_change', {waitforneedle => 1});
             }
         }
@@ -87,27 +87,27 @@ sub websocket_commands {
                     }
                 }
                 $ua->post("$joburl/isotovideo/reload_needles");
-                log_debug('needles will be reloaded') if $verbose;
+                log_debug('needles will be reloaded');
             }
         }
         elsif ($type eq 'enable_interactive_mode') {
             if (backend_running) {
                 $ua->post("$joburl/isotovideo/interactive?state=1");
-                log_debug('interactive mode enabled') if $verbose;
+                log_debug('interactive mode enabled');
                 ws_call('property_change', {interactive_mode => 1});
             }
         }
         elsif ($type eq 'disable_interactive_mode') {
             if (backend_running) {
                 $ua->post("$joburl/isotovideo/interactive?state=0");
-                log_debug('interactive mode disabled') if $verbose;
+                log_debug('interactive mode disabled');
                 ws_call('property_change', {interactive_mode => 0});
             }
         }
         elsif ($type eq 'continue_waitforneedle') {
             if (backend_running) {
                 $ua->post("$joburl/isotovideo/continue_waitforneedle");
-                log_debug('waitforneedle will continue') if $verbose;
+                log_debug('waitforneedle will continue');
                 ws_call('property_change', {waitforneedle => 0});
             }
         }
@@ -115,14 +115,14 @@ sub websocket_commands {
             # change update_status timer if $job running
             if (backend_running) {
                 OpenQA::Worker::Jobs::start_livelog();
-                log_debug('Starting livelog') if $verbose;
+                log_debug('Starting livelog');
                 change_timer('update_status', STATUS_UPDATES_FAST);
             }
         }
         elsif ($type eq 'livelog_stop') {
             # change update_status timer
             if (backend_running) {
-                log_debug('Stopping livelog') if $verbose;
+                log_debug('Stopping livelog');
                 OpenQA::Worker::Jobs::stop_livelog();
                 unless (OpenQA::Worker::Jobs::has_logviewers()) {
                     change_timer('update_status', STATUS_UPDATES_SLOW);
