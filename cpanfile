@@ -90,6 +90,7 @@ requires 'diagnostics';
 requires 'namespace::clean';
 requires 'strict';
 requires 'warnings';
+requires 'File::Path';
 
 on 'test' => sub {
   requires 'Perl::Tidy';

@@ -23,14 +23,14 @@ use lib "$FindBin::Bin/lib";
 use Test::More;
 use Test::Warnings;
 use Mojolicious;
-use OpenQA::ServerStartup;
+use OpenQA::Setup;
 
 subtest 'Test configuration default modes' => sub {
     local $ENV{OPENQA_CONFIG} = undef;
 
     my $app = Mojolicious->new();
     $app->mode("test");
-    OpenQA::ServerStartup::read_config($app);
+    OpenQA::Setup::read_config($app);
     my $config = $app->config;
     is(length($config->{_openid_secret}), 16, "config has openid_secret");
     my $test_config = {
@@ -76,7 +76,7 @@ subtest 'Test configuration default modes' => sub {
     # Test configuration generation with "development" mode
     $app = Mojolicious->new();
     $app->mode("development");
-    OpenQA::ServerStartup::read_config($app);
+    OpenQA::Setup::read_config($app);
     $config = $app->config;
     $test_config->{_openid_secret} = $config->{_openid_secret};
     is_deeply $config, $test_config, 'right "development" configuration';
@@ -84,7 +84,7 @@ subtest 'Test configuration default modes' => sub {
     # Test configuration generation with an unknown mode (should fallback to default)
     $app = Mojolicious->new();
     $app->mode("foo_bar");
-    OpenQA::ServerStartup::read_config($app);
+    OpenQA::Setup::read_config($app);
     $config                        = $app->config;
     $test_config->{_openid_secret} = $config->{_openid_secret};
     $test_config->{auth}->{method} = "OpenID";
@@ -95,7 +95,7 @@ subtest 'Test configuration default modes' => sub {
     # Test configuration generation with an unknown mode (should fallback to default)
     $app = Mojolicious->new();
     $app->mode("foo_bar");
-    OpenQA::ServerStartup::read_config($app);
+    OpenQA::Setup::read_config($app);
     $config                        = $app->config;
     $test_config->{_openid_secret} = $config->{_openid_secret};
     $test_config->{auth}->{method} = "OpenID";
@@ -118,7 +118,7 @@ subtest 'Test configuration override from file' => sub {
         "blacklist = job_grab job_done\n"
     );
     $t_dir->child("openqa.ini")->spurt(@data);
-    OpenQA::ServerStartup::read_config($app);
+    OpenQA::Setup::read_config($app);
 
     ok -e $t_dir->child("openqa.ini");
     ok($app->config->{global}->{suse_mirror} eq 'http://blah/',   'suse mirror');

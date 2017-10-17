@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2016 SUSE LLC
+# Copyright (C) 2017 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,20 +13,117 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-# This package contains shared functions between WebAPI and WebSockets
-package OpenQA::ServerStartup;
-
+package OpenQA::Setup;
+use Mojo::Log;
+use Mojo::Home;
 use strict;
 use warnings;
+use Mojo::Base -base;
+use Sys::Hostname;
+use File::Spec::Functions 'catfile';
+use Mojo::File 'path';
 use Config::IniFiles;
 use db_profiler;
 use db_helpers;
 use OpenQA::Utils;
-use Mojo::File 'path';
+use File::Path 'make_path';
+
+has config => sub { {} };
+
+has log => sub { Mojo::Log->new(handle => \*STDOUT, level => "debug"); };
+
+has home => sub { Mojo::Home->new($ENV{MOJO_HOME} || '/') };
+
+has mode => 'production';
+
+has 'log_name';
+
+has level => 'info';
+
+has 'instance';
+
+has 'log_dir';
+
+has schema => sub { OpenQA::Schema::connect_db() };
+
+sub setup_log {
+    my ($self) = @_;
+    my ($logfile, $logdir, $level, $log);
+
+    if ($self->isa('OpenQA::Setup')) {
+        $logdir = $self->log_dir;
+        $level  = $self->level;
+        if ($logdir && !-e $logdir) {
+            make_path($logdir);
+        }
+        elsif ($logdir && !-d $logdir) {
+            die "Please point the logs to a valid folder!";
+        }
+    }
+    else {
+        $log = $self->log;
+        $level = $self->config->{logging}->{level} || 'debug';
+    }
+    $logfile = $ENV{OPENQA_LOGFILE} || $self->config->{logging}->{file};
+
+    if ($logfile && $logdir) {
+        $logfile = catfile($logdir, $logfile);
+        $log = Mojo::Log->new(
+            handle => path($logfile)->open('>>'),
+            level  => $self->level,
+            format => sub { return log_format($self->log_name, @_); });
+    }
+    elsif ($logfile) {
+        $log = Mojo::Log->new(
+            handle => path($logfile)->open('>>'),
+            level  => $level,
+            format => sub { return log_format($self->log_name, @_); });
+    }
+    elsif ($logdir) {
+        # So each worker from each host get it's own log (as the folder can be shared). Hopefully the machine hostname
+        # is already sanitized. Otherwise we need to check
+        $logfile
+          = catfile($logdir, hostname() . (defined $self->instance ? "-${\$self->instance}" : '') . ".log");
+        $log = Mojo::Log->new(
+            handle => path($logfile)->open('>>'),
+            level  => $self->level,
+            format => sub { return log_format($self->log_name, @_); });
+    }
+    else {
+        $log = Mojo::Log->new(
+            handle => \*STDOUT,
+            level  => $level,
+            format => sub {
+                my ($time, $level, @lines) = @_;
+                return "[${\$self->log_name}:$level] " . join "\n", @lines, '';
+            });
+    }
+
+    $self->log($log);
+    unless ($self->isa('OpenQA::Setup')) {
+        if ($ENV{OPENQA_SQL_DEBUG} // $self->config->{logging}->{sql_debug} // 'false' eq 'true') {
+            # avoid enabling the SQL debug unless we really want to see it
+            # it's rather expensive
+            db_profiler::enable_sql_debugging($self);
+        }
+    }
+
+    $OpenQA::Utils::app = $self;
+    return $log;
+}
+
+sub log_format {
+    my ($logname, $time, $level, @lines) = @_;
+    return '[' . localtime($time) . "] [$logname:$level] " . join "\n", @lines, '';
+}
+
+sub emit_event {
+    my ($self, $event, $data) = @_;
+    # nothing to see here, move along
+}
 
 sub read_config {
-    my $app = shift;
-
+    my $app      = shift;
     my %defaults = (
         global => {
             appname             => 'openQA',
@@ -121,41 +218,6 @@ sub read_config {
     $app->config->{global}->{recognized_referers} = [split(/ /, $app->config->{global}->{recognized_referers})];
     $app->config->{_openid_secret} = db_helpers::rndstr(16);
     $app->config->{auth}->{method} =~ s/\s//g;
-}
-
-sub setup_logging {
-    my ($app) = @_;
-
-    my $config = $app->config;
-    my $logfile = $ENV{OPENQA_LOGFILE} || $config->{logging}->{file};
-
-    if ($logfile) {
-        $app->log->handle(path($logfile)->open('>>'));
-        $app->log->path($logfile);
-        $app->log->format(
-            sub {
-                my ($time, $level, @lines) = @_;
-                return '[' . localtime($time) . "] [" . $app->log_name . ":$level] " . join "\n", @lines, '';
-            });
-    }
-    else {
-        $app->log->format(
-            sub {
-                my (undef, $level, @lines) = @_;
-                return '[' . $app->log_name . ":$level] " . join "\n", @lines, '';
-            });
-    }
-
-    if ($config->{logging}->{level}) {
-        $app->log->level($config->{logging}->{level});
-    }
-    if ($ENV{OPENQA_SQL_DEBUG} // $config->{logging}->{sql_debug} // 'false' eq 'true') {
-        # avoid enabling the SQL debug unless we really want to see it
-        # it's rather expensive
-        db_profiler::enable_sql_debugging($app);
-    }
-
-    $OpenQA::Utils::app = $app;
 }
 
 # Update config definition from plugin requests

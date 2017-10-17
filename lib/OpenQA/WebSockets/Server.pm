@@ -21,7 +21,7 @@ use Try::Tiny;
 use OpenQA::IPC;
 use OpenQA::Utils qw(log_debug log_warning log_error);
 use OpenQA::Schema;
-use OpenQA::ServerStartup;
+use OpenQA::Setup;
 use Data::Dumper;
 use Data::Dump 'pp';
 use db_profiler;
@@ -458,9 +458,8 @@ sub setup {
 
     app->helper(log_name => sub { return 'websockets' });
     app->helper(schema   => sub { return OpenQA::Schema::connect_db; });
-
-    OpenQA::ServerStartup::read_config(app);
-    OpenQA::ServerStartup::setup_logging(app);
+    OpenQA::Setup::read_config(app);
+    OpenQA::Setup::setup_log(app);
 
     # not really meaningful for websockets, but required for mode defaults
     app->defaults(appname => "openQA Websocket Server");

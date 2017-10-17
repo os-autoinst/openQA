@@ -30,7 +30,7 @@ use OpenQA::Worker::Common;
 use OpenQA::Worker::Commands;
 use OpenQA::Worker::Pool qw(lockit clean_pool);
 use OpenQA::Worker::Jobs;
-use OpenQA::FakeApp;
+use OpenQA::Setup;
 
 sub init {
     my ($host_settings, $options) = @_;
@@ -39,7 +39,7 @@ sub init {
     $nocleanup = $options->{"no-cleanup"};
 
     my $logdir = $ENV{OPENQA_WORKER_LOGDIR} // $worker_settings->{LOG_DIR};
-    my $app = OpenQA::FakeApp->new(
+    my $app = OpenQA::Setup->new(
         mode     => 'production',
         log_name => 'worker',
         instance => $instance,
@@ -48,7 +48,6 @@ sub init {
 
     $app->level($worker_settings->{LOG_LEVEL}) if $worker_settings->{LOG_LEVEL};
     $app->setup_log();
-    $OpenQA::Utils::app = $app;
     OpenQA::Worker::Common::api_init($host_settings, $options);
     OpenQA::Worker::Engines::isotovideo::set_engine_exec($options->{isotovideo}) if $options->{isotovideo};
 }

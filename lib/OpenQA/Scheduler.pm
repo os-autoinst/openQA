@@ -23,10 +23,9 @@ use Net::DBus::Reactor;
 use Data::Dump 'pp';
 
 use OpenQA::IPC;
-use OpenQA::FakeApp;
+use OpenQA::Setup;
 
 use OpenQA::Utils 'log_debug';
-use OpenQA::ServerStartup;
 
 # How many jobs to allocate in one tick. Defaults to 50 ( set it to 0 for as much as possible)
 use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 50;
@@ -75,11 +74,11 @@ sub _is_method_allowed {
     return $ret;
 }
 
-our $fakeapp;
+our $setup;
 sub run {
-    $fakeapp = OpenQA::FakeApp->new;
-    OpenQA::ServerStartup::read_config($fakeapp);
-    OpenQA::ServerStartup::setup_logging($fakeapp);
+    $setup = OpenQA::Setup->new(log_name => 'scheduler');
+    OpenQA::Setup::read_config($setup);
+    OpenQA::Setup::setup_log($setup);
 
     OpenQA::Scheduler->new();
     log_debug("Scheduler started");
