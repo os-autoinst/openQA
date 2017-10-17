@@ -688,6 +688,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_needle_editing">Needle editing</a></li>
 <li><a href="#_403_messages_when_using_scripts">403 messages when using scripts</a></li>
 <li><a href="#_mixed_production_and_development_environment">Mixed production and development environment</a></li>
+<li><a href="#_performance_impact">Performance impact</a></li>
 </ul>
 </li>
 <li><a href="#_networking_in_openqa">Networking in OpenQA</a>
@@ -4082,6 +4083,27 @@ and <code>chgrp -R openqa /var/lib/openqa</code> can not fix.</p>
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_performance_impact">Performance impact</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>openQA workers can cause high I/O load, especially when creating VM snapshots.
+The impact therefore gets more severe when MAKETESTSNAPSHOTS is enabled.
+should not impact the stability of openQA jobs but can increase job execution
+time. If you run jobs on a machine where responsiveness of other services
+matter, for example your desktop machine, consider patching the
+IOSchedulingPriority of a workers service file as described in the
+<a href="https://www.freedesktop.org/software/systemd/man/systemd.exec.html#IOSchedulingPriority=">systemd
+documentation</a>, for example set IOSchedulingPriority=7 for the lowest
+priority. If not available then you can try to execute the worker processes
+with ionice to reduce the risk of your system becoming significantly
+impacted by snapshot creation. Loading VM snapshots can also have an impact on
+SUT behavior as the execution of the first step after loading a snapshot might
+be delayed. This can lead to problems if the executed tests do not foresee an
+appropriate timeout margin.</p>
+</div>
+</div>
+</div>
 <h1 id="_networking_in_openqa" class="sect0">Networking in OpenQA</h1>
 <div class="openblock partintro">
 <div class="content">
@@ -5032,7 +5054,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-10-16 06:28:26 UTC
+Last updated 2017-10-17 06:10:43 UTC
 </div>
 </div>
 </body>
