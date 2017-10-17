@@ -258,15 +258,11 @@ sub try_lock_asset {
         log_error "try_lock_asset: Rolling back $@";
         $dbh->rollback;
     }
-    else {
-        if ($lock_granted) {
-            return $result;
-        }
-        else {
-            return 0;
-        }
+    elsif ($lock_granted) {
+        return $result;
     }
 
+    return 0;
 }
 
 sub add_asset {
