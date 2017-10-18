@@ -503,8 +503,10 @@ sub startup {
         log_warning('Running in test mode - dbus services mocked');
         require OpenQA::WebSockets;
         require OpenQA::Scheduler;
+        require OpenQA::ResourceAllocator;
         OpenQA::WebSockets->new;
         OpenQA::Scheduler->new;
+        OpenQA::ResourceAllocator->new;
     }
 
     # add method to be called before rendering

@@ -1357,14 +1357,10 @@ sub update_status {
     $self->worker->seen;
 
     if ($status->{status}->{needinput}) {
-        if ($self->state eq RUNNING) {
-            $self->state(WAITING);
-        }
+        $self->state(WAITING) if $self->state eq RUNNING;
     }
     else {
-        if ($self->state eq WAITING) {
-            $self->state(RUNNING);
-        }
+        $self->state(RUNNING) and $self->t_started(now()) if grep { $_ eq $self->state } (WAITING, ASSIGNED, SETUP);
     }
     $self->update();
 

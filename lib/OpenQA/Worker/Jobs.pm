@@ -167,9 +167,22 @@ sub stop_job {
     $stop_job_check_status->();
 }
 
+sub _reset_state {
+    log_info('cleaning up ' . $job->{settings}->{NAME}) if $job;
+    clean_pool;
+    $job              = undef;
+    $worker           = undef;
+    $stop_job_running = 0;
+    $current_host     = undef;
+    Mojo::IOLoop->singleton->emit("stop_job");
+}
+
 sub upload {
     my ($job_id, $form) = @_;
-    die 'No current_host!' unless verify_workerid;
+    unless (verify_workerid) {
+        _reset_state;
+        die 'No current_host!';
+    }
     my $filename = $form->{file}->{filename};
     my $file     = $form->{file}->{file};
 
@@ -267,16 +280,6 @@ sub upload {
         }
     }
     return 1;
-}
-
-sub _reset_state {
-    log_info('cleaning up ' . $job->{settings}->{NAME}) if $job;
-    clean_pool;
-    $job              = undef;
-    $worker           = undef;
-    $stop_job_running = 0;
-    $current_host     = undef;
-    Mojo::IOLoop->singleton->emit("stop_job");
 }
 
 sub _stop_job {

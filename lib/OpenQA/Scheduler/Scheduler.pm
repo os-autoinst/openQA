@@ -39,7 +39,7 @@ use Scalar::Util 'weaken';
 use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
-use OpenQA::Utils qw(log_debug log_warning send_job_to_worker);
+use OpenQA::Utils qw(log_debug log_warning send_job_to_worker exists_worker);
 use db_helpers 'rndstr';
 use Time::HiRes 'time';
 use List::Util 'shuffle';
@@ -52,14 +52,8 @@ use Carp;
 
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-@ISA = qw(Exporter);
-
-@EXPORT = qw(worker_register job_create
-  job_grab job_set_done job_set_waiting job_set_running
-  job_restart
-  job_set_stop job_stop iso_stop_old_builds
-  asset_list
-);
+@ISA    = qw(Exporter);
+@EXPORT = qw(job_grab);
 
 CORE::state $failure    = 0;
 CORE::state $no_actions = 0;
@@ -97,14 +91,6 @@ sub schema {
     CORE::state $schema;
     $schema = OpenQA::Schema::connect_db() unless $schema;
     return $schema;
-}
-
-sub _validate_workerid($) {
-    my $workerid = shift;
-    die "invalid worker id\n" unless $workerid;
-    my $rs = schema->resultset("Workers")->find($workerid);
-    die "invalid worker id $workerid\n" unless $rs;
-    return $rs;
 }
 
 #
@@ -627,7 +613,7 @@ sub job_grab {
       : 1;
 
     try {
-        $worker = _validate_workerid($workerid);
+        $worker = exists_worker(schema(), $workerid);
 
         if ($worker->job && $allocate) {
             my $job = $worker->job;
@@ -699,122 +685,6 @@ sub job_grab {
     return $job->prepare_for_work($worker);
 }
 
-=head2 job_set_waiting
-
-mark job as waiting. No error check. Meant to be called from worker!
-
-=cut
-sub job_set_waiting {
-    my $jobid = shift;
-
-    # TODO: only allowed for running jobs
-    my $r = schema->resultset("Jobs")->search(
-        {
-            id    => $jobid,
-            state => OpenQA::Schema::Result::Jobs::RUNNING,
-        }
-      )->update(
-        {
-            state => OpenQA::Schema::Result::Jobs::WAITING,
-        });
-    return $r;
-}
-
-=head2 job_set_running
-
-mark job as running. No error check. Meant to be called from worker!
-
-=cut
-sub job_set_running {
-    my ($jobid) = @_;
-
-    my $r = schema->resultset("Jobs")->search(
-        {
-            id    => $jobid,
-            state => OpenQA::Schema::Result::Jobs::WAITING,
-        }
-      )->update(
-        {
-            state => OpenQA::Schema::Result::Jobs::RUNNING,
-        });
-    return $r;
-}
-
-=head2 job_restart
-
-=over
-
-=item Arguments: SCALAR or ARRAYREF of Job IDs
-
-=item Return value: ARRAY of new job ids
-
-=back
-
-Handle job restart by user (using API or WebUI). Job is only restarted when either running
-or done. Scheduled jobs can't be restarted.
-
-=cut
-sub job_restart {
-    my ($jobids) = @_ or die "missing name parameter\n";
-
-    # first, duplicate all jobs that are either running, waiting or done
-    my $jobs = schema->resultset("Jobs")->search(
-        {
-            id    => $jobids,
-            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES, OpenQA::Schema::Result::Jobs::FINAL_STATES],
-        });
-
-    my @duplicated;
-    while (my $j = $jobs->next) {
-        my $job = $j->auto_duplicate;
-        push @duplicated, $job->id if $job;
-    }
-
-    # then tell workers to abort
-    $jobs = schema->resultset("Jobs")->search(
-        {
-            id    => $jobids,
-            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
-        });
-
-    $jobs->search(
-        {
-            result => OpenQA::Schema::Result::Jobs::NONE,
-        }
-      )->update(
-        {
-            result => OpenQA::Schema::Result::Jobs::USER_RESTARTED,
-        });
-
-    while (my $j = $jobs->next) {
-        log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
-        $j->worker->send_command(command => 'abort', job_id => $j->id);
-    }
-    wakeup_scheduler();
-    return @duplicated;
-}
-
-#
-# Assets API
-#
-
-sub asset_list {
-    my %args = @_;
-
-    my %cond;
-    my %attrs;
-
-    if ($args{limit}) {
-        $attrs{rows} = $args{limit};
-    }
-    $attrs{page} = $args{page} || 0;
-
-    if ($args{type}) {
-        $cond{type} = $args{type};
-    }
-
-    return schema->resultset("Assets")->search(\%cond, \%attrs);
-}
 
 1;
 # vim: set sw=4 et:

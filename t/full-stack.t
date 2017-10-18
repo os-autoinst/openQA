@@ -58,13 +58,14 @@ eval 'use Test::More::Color "foreground"';
 
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
-use OpenQA::Test::Utils 'create_websocket_server';
+use OpenQA::Test::Utils qw(create_websocket_server create_resourceallocator start_resourceallocator);
 
 plan skip_all => "set FULLSTACK=1 (be careful)" unless $ENV{FULLSTACK};
 
 my $workerpid;
 my $wspid;
 my $schedulerpid;
+my $resourceallocatorpid;
 my $sharedir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'share')->make_path;
 
 sub turn_down_stack {
@@ -83,6 +84,10 @@ sub turn_down_stack {
         waitpid($schedulerpid, 0);
     }
 
+    if ($resourceallocatorpid) {
+        kill TERM => $resourceallocatorpid;
+        waitpid($resourceallocatorpid, 0);
+    }
 }
 
 sub kill_worker {
@@ -121,6 +126,8 @@ if ($schedulerpid == 0) {
     Devel::Cover::report() if Devel::Cover->can('report');
     _exit(0);
 }
+
+$resourceallocatorpid = start_resourceallocator;
 
 # we don't want no fixtures
 my $driver = call_phantom(sub { });

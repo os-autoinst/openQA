@@ -30,13 +30,15 @@ use Data::Dumper;
 
 use OpenQA::WebSockets;
 use OpenQA::Scheduler;
+use OpenQA::ResourceAllocator;
+
+my $test_case = OpenQA::Test::Case->new;
+$test_case->init_data;
 
 # create Test DBus bus and service for fake WebSockets and Scheduler call
 my $ws = OpenQA::WebSockets->new;
 my $sh = OpenQA::Scheduler->new;
-
-my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+my $ra = OpenQA::ResourceAllocator->new;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 

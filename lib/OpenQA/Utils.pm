@@ -23,6 +23,8 @@ use Regexp::Common 'URI';
 use Try::Tiny;
 use Mojo::File 'path';
 use IO::Handle;
+use Scalar::Util 'blessed';
+use Data::Dump 'pp';
 
 require Exporter;
 our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
@@ -74,6 +76,8 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   send_job_to_worker
   wakeup_scheduler
   read_test_modules
+  exists_worker
+  safe_call
 );
 
 if ($0 =~ /\.t$/) {
@@ -592,6 +596,15 @@ sub wakeup_scheduler {
     $con->send($msg);
 }
 
+sub exists_worker($$) {
+    my $schema   = shift;
+    my $workerid = shift;
+    die "invalid worker id\n" unless $workerid;
+    my $rs = $schema->resultset("Workers")->find($workerid);
+    die "invalid worker id $workerid\n" unless $rs;
+    return $rs;
+}
+
 sub _round_a_bit {
     my ($size) = @_;
 
@@ -808,6 +821,22 @@ sub hashwalker {
         }
         pop @$keys;
     }
+}
+
+sub safe_call {
+    # no critic is for symbol de/reference
+    no strict 'refs';    ## no critic
+    my $ret;
+    log_debug("Safe call: " . pp(@_));
+    eval {
+        $ret
+          = blessed $_[0] ? [+shift->${\+shift()}(splice @_, 1)]
+          : *{"$_[0]::$_[1]"}{CODE} ? [*{"$_[0]::$_[1]"}{CODE}(splice @_, 2)]
+          :                           die(qq|Can't locate object method "$_[1]" via package "$_[0]"|);
+    };
+    log_debug("Return: " . pp($ret));
+    log_error("Safe call error: $@") and return [] if $@;
+    return $ret;
 }
 
 1;

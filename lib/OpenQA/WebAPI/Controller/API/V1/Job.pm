@@ -165,8 +165,7 @@ sub set_command {
     my $jobid   = int($self->stash('jobid'));
     my $command = 'job_set_' . $self->stash('command');
     my $ipc     = OpenQA::IPC->ipc;
-
-    my $res = $ipc->scheduler($command, $jobid);
+    my $res     = $ipc->resourceallocator($command, $jobid);
     $self->emit_event('openqa_' . $command, {id => $jobid}) if ($res);
     # Referencing the scalar will result in true or false
     # (see http://mojolicio.us/perldoc/Mojo/JSON)
@@ -386,7 +385,7 @@ sub restart {
     }
 
     my $ipc = OpenQA::IPC->ipc;
-    my $res = $ipc->scheduler('job_restart', $jobs);
+    my $res = $ipc->resourceallocator('job_restart', $jobs);
     for (my $i = 0; $i < @$res; $i++) {
         $self->emit_event('openqa_job_restart', {id => $jobs->[$i], result => $res->[$i]});
     }

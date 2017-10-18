@@ -30,10 +30,8 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Scheduler;
 use OpenQA::WebSockets;
+use OpenQA::ResourceAllocator;
 use JSON qw(decode_json);
-
-my $sh = OpenQA::Scheduler->new;
-my $ws = OpenQA::WebSockets->new;
 
 my $test_case;
 my $t;
@@ -43,6 +41,9 @@ sub set_up {
     $test_case = OpenQA::Test::Case->new;
     $test_case->init_data;
     $t = Test::Mojo->new('OpenQA::WebAPI');
+    my $sh = OpenQA::Scheduler->new;
+    my $ws = OpenQA::WebSockets->new;
+    my $ra = OpenQA::ResourceAllocator->new;
     $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
     $test_case->login($t, 'percival');
 }

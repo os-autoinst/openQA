@@ -32,9 +32,10 @@ use OpenQA::Utils qw(log_debug log_warning);
 
 my $openqa_prefix = 'org.opensuse.openqa';
 my %services      = (
-    scheduler  => 'Scheduler',
-    websockets => 'WebSockets',
-    webapi     => 'WebAPI',
+    scheduler         => 'Scheduler',
+    websockets        => 'WebSockets',
+    webapi            => 'WebAPI',
+    resourceallocator => 'ResourceAllocator'
 );
 
 my %handles;
@@ -221,7 +222,7 @@ sub service {
 
 sub _dispatch {
     my ($self, $target, $command, @data) = @_;
-    my $ret = undef;
+    my $ret;
     try {
         my $object = $self->service($target);
         log_debug("dispatching IPC $command to $target: " . pp(\@data));
@@ -252,6 +253,12 @@ sub webapi {
     my ($self, @param) = @_;
     return $self->_dispatch('webapi', @param);
 }
+
+sub resourceallocator {
+    my ($self, @param) = @_;
+    return $self->_dispatch('resourceallocator', @param);
+}
+
 
 1;
 # vim: set sw=4 et:

@@ -25,7 +25,8 @@ use strict;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use Data::Dump qw(pp dd);
-use OpenQA::Scheduler::Scheduler;
+use OpenQA::Resource::Jobs;
+use OpenQA::Resource::Locks;
 use OpenQA::WebSockets;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
@@ -94,7 +95,7 @@ delete $job2->{settings}->{NAME};
 delete $job1->{assets};
 is_deeply($job1, $job2, 'duplicated job equal');
 
-my @ret = OpenQA::Scheduler::Scheduler::job_restart(99926);
+my @ret = OpenQA::Resource::Jobs::job_restart(99926);
 is(@ret, 0, "no job ids returned");
 
 $jobs = list_jobs();
@@ -106,7 +107,7 @@ $job1 = job_get(99927);
 is($job1->{state}, 'cancelled', "scheduled job cancelled after cancel");
 
 $job1 = job_get(99937);
-@ret  = OpenQA::Scheduler::Scheduler::job_restart(99937);
+@ret  = OpenQA::Resource::Jobs::job_restart(99937);
 $job2 = job_get(99937);
 
 like($job2->{clone_id}, qr/\d+/, "clone is tracked");
@@ -126,7 +127,7 @@ is(@$jobs, @$current_jobs + 2, "two more job after restarting done job with chai
 
 $current_jobs = $jobs;
 
-OpenQA::Scheduler::Scheduler::job_restart(99963);
+OpenQA::Resource::Jobs::job_restart(99963);
 
 $jobs = list_jobs();
 is(@$jobs, @$current_jobs + 2, "two more job after restarting running job with parallel dependency");

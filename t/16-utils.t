@@ -161,4 +161,30 @@ subtest 'Plugins handling' => sub {
 
 };
 
+subtest safe_call => sub {
+    use OpenQA::Utils 'safe_call';
+
+    my $foo = foo->new;
+
+    is @{safe_call($foo => baz => qw(a b c))}[1], 'a';
+    is @{safe_call($foo => baz => qw(a b c))}[2], 'b';
+    is @{safe_call($foo => baz => qw(a b c))}[3], 'c';
+    ok scalar(@{safe_call($foo => not_existant2 => qw(a b c))}) == 0;
+    like $@, qr/Can't locate object method "not_existant2" via package "foo"/;
+
+    my $test = safe_call($foo => baz => qw(a b c));
+    is @$test[3], 'c';
+
+    ok(scalar(@{safe_call(foo => 'baz')}) == 0);
+    is_deeply safe_call(foo => baz => qw(a b c)), [qw(a b c)];
+    ok scalar(@{safe_call(foo => not_existant => qw(a b c))}) == 0;
+    like $@, qr/Can't locate object method "not_existant" via package "foo"/;
+};
+
 done_testing;
+
+{
+    package foo;
+    use Mojo::Base -base;
+    sub baz { @_ }
+}
