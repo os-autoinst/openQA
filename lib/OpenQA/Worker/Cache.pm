@@ -344,9 +344,13 @@ sub asset_lookup {
     my $lock_granted;
     my $result;
 
-    $sql    = "SELECT filename, etag, last_use, size from assets where filename = ?";
-    $sth    = $dbh->prepare($sql);
-    $result = $dbh->selectrow_hashref($sql, undef, $asset);
+    eval {
+        $sql    = "SELECT filename, etag, last_use, size from assets where filename = ?";
+        $sth    = $dbh->prepare($sql);
+        $result = $dbh->selectrow_hashref($sql, undef, $asset);
+    };
+    log_error "Error while accessing database: $@" if $@;
+
     if (!$result) {
         log_info "CACHE: Purging non registered $asset";
         purge_asset($asset);
