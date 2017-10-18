@@ -50,8 +50,9 @@ $client_mock->fake_module(
 
         return $self;
     },
-    catch => sub { },
-    on    => sub {
+    heartbeat_timeout => sub { },
+    catch             => sub { },
+    on                => sub {
         my $self  = shift;
         my $event = shift;
         my $sub   = shift;

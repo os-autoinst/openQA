@@ -77,6 +77,7 @@ sub connect {
 
     OpenQA::Utils::log_info("Connecting to AMQP server");
     $self->{client} = Mojo::RabbitMQ::Client->new(url => $self->{config}->{amqp}{url});
+    $self->{client}->heartbeat_timeout($self->{config}->{amqp}{heartbeat_timeout} // 60);
     $self->{client}->on(
         open => sub {
             OpenQA::Utils::log_info("AMQP connection established");
