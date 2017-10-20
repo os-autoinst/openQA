@@ -22,7 +22,8 @@ use Carp;
 use POSIX 'uname';
 use Mojo::URL;
 use OpenQA::Client;
-use OpenQA::Utils qw(log_error log_debug log_warning log_info);
+use OpenQA::Utils qw(log_error log_debug log_warning log_info), qw(feature_scaling rand_range logistic_map_steps);
+use Scalar::Util 'looks_like_number';
 
 use base 'Exporter';
 our @EXPORT = qw($job $instance $worker_settings $pooldir $nocleanup
@@ -56,6 +57,8 @@ my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
 use constant {
     STATUS_UPDATES_SLOW => 10,
     STATUS_UPDATES_FAST => 0.5,
+    MAX_TIMER           => 100,    # It should never be more than OpenQA::WebSockets::Server::_workers_checker threshold
+    MIN_TIMER           => 20,
 };
 
 # the template noted what architecture are known
@@ -350,17 +353,39 @@ sub call_websocket {
     my ($host, $ua_url) = @_;
     my $ua = $hosts->{$host}{ua};
 
+    my $i = looks_like_number($instance) ? $instance : 1;
+    my $imax
+      = !$worker_settings->{TOTAL_INSTANCES}            ? 1
+      : $worker_settings->{TOTAL_INSTANCES} > MAX_TIMER ? MAX_TIMER - 1
+      :                                                   $worker_settings->{TOTAL_INSTANCES} + 1;
+    my $scale_factor = 4;
+
+    # XXX: we are using now fixed values, to stick with a
+    #      predictable behavior but random intervals
+    #      seems to work as well.
+    # my $steps = int(rand_range(2, 120));
+    # my $r = rand_range(3.20, 3.88);
+
+    my $steps      = 88;
+    my $r          = 3.88;
+    my $population = feature_scaling($i, $imax, 0.1, 1);
+    my $status_timer
+      = abs(feature_scaling(logistic_map_steps($steps, $r, $population), $imax, MIN_TIMER, MAX_TIMER) * $scale_factor);
+
+    $status_timer = $status_timer > MIN_TIMER && $status_timer < MAX_TIMER ? $status_timer : MIN_TIMER;
+
+    log_debug("worker_status timer time window: $status_timer");
     $ua->websocket(
         $ua_url => {'Sec-WebSocket-Extensions' => 'permessage-deflate'} => sub {
             my ($ua, $tx) = @_;
             if ($tx->is_websocket) {
-                # keep websocket connection busy
-                $tx->send({json => {type => 'ok'}});    # Send keepalive immediately
-                $hosts->{$host}{timers}{keepalive}
-                  = add_timer("keepalive-$host", 10, sub { $tx->send({json => {type => 'ok'}}); });
-
-                $hosts->{$host}{timers}{status} = add_timer("workerstatus-$host", 15,
-                    sub { send_status($tx); log_debug("Sending worker status to $host (workerstatus timer)"); });
+                $hosts->{$host}{timers}{status} = add_timer(
+                    "workerstatus-$host",
+                    $status_timer,
+                    sub {
+                        send_status($tx);
+                        log_debug("Sending worker status to $host (workerstatus timer)");
+                    });
 
                 $tx->on(json => \&OpenQA::Worker::Commands::websocket_commands);
                 $tx->on(
@@ -368,7 +393,6 @@ sub call_websocket {
                         my (undef, $code, $reason) = @_;
                         log_debug("Connection turned off from $host - $code : "
                               . (defined $reason ? $reason : "Not specified"));
-                        remove_timer("keepalive-$host");
                         remove_timer("workerstatus-$host");
 
                         $hosts->{$host}{timers}{setup_websocket}

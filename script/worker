@@ -101,6 +101,8 @@ BEGIN {
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Config::IniFiles;
+use Scalar::Util 'looks_like_number';
+use List::Util 'max';
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 
@@ -152,6 +154,7 @@ sub read_worker_config {
             $host_settings->{$section} = {};
         }
     }
+    $sets->{TOTAL_INSTANCES} ||= $cfg ? max(grep { looks_like_number($_) } $cfg->Sections) || 1 : 1;
     $host_settings->{HOSTS} = \@hosts;
 
     return $sets, $host_settings;

@@ -174,7 +174,7 @@ subtest 'Simulation of unstable workers' => sub {
     is @{$allocated}[0]->{job},    99982;
     is @{$allocated}[0]->{worker}, 5;
 
-    for (0 .. 10) {
+    for (0 .. 100) {
         last if $schema->resultset("Jobs")->find(99982)->state eq OpenQA::Schema::Result::Jobs::SCHEDULED;
         sleep 2;
     }
@@ -204,7 +204,7 @@ subtest 'Simulation of unstable workers' => sub {
 
     $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, 8);
 
-    for (0 .. 10) {
+    for (0 .. 100) {
         last if $schema->resultset("Jobs")->find(99982)->state eq OpenQA::Schema::Result::Jobs::DONE;
         sleep 2;
     }
@@ -245,7 +245,7 @@ subtest 'Simulation of heavy unstable load' => sub {
     }
 
     for my $dup (@duplicated) {
-        for (0 .. 10) {
+        for (0 .. 100) {
             last if $dup->state eq OpenQA::Schema::Result::Jobs::SCHEDULED;
             sleep 2;
         }
@@ -265,7 +265,7 @@ subtest 'Simulation of heavy unstable load' => sub {
     is get_scheduler_tick($reactor), $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}, "Tick is at the expected value";
 
     for my $dup (@duplicated) {
-        for (0 .. 10) {
+        for (0 .. 100) {
             last if $dup->state eq OpenQA::Schema::Result::Jobs::SCHEDULED;
             sleep 2;
         }
@@ -280,9 +280,9 @@ subtest 'Websocket server - close connection test' => sub {
     my $log_file        = tempfile;
     my $unstable_ws_pid = create_websocket_server($mojoport + 1, 1);
     my $w2_pid          = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2, $log_file);
-    my $re              = qr/\[.*?\]\s\[.*?\]\sConnection turned off from .*?\- (.*?)\s\:(.*?) dead/;
+    my $re              = qr/\[.*?\]\sConnection turned off from .*?\- (.*?)\s\:(.*?) dead/;
 
-    my $attempts = 40;
+    my $attempts = 800;
     do {
         sleep 1;
         $attempts--;
@@ -291,7 +291,7 @@ subtest 'Websocket server - close connection test' => sub {
     kill_service($_) for ($unstable_ws_pid, $w2_pid);
     dead_workers($schema);
     my @matches = $log_file->slurp() =~ m/$re/g;
-    ok scalar(@matches) / 2 > 2, "Enough matches";
+    ok scalar(@matches) / 2 > 2, "Enough matches" or diag explain $log_file->slurp();
     ok scalar(@matches) % 2 == 0, "Matches should contain an error message and a status code";
     is $matches[0], "1008", "Connection was turned off by ws server correctly - code error is 1008";
     like $matches[1], qr/Connection terminated from WebSocket server/,
