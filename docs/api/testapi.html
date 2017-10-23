@@ -515,6 +515,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <ul class="sectlevel4">
 <li><a href="#_start_audiocapture">start_audiocapture</a></li>
 <li><a href="#_assert_recorded_sound">assert_recorded_sound</a></li>
+<li><a href="#_check_recorded_sound">check_recorded_sound</a></li>
 </ul>
 </li>
 <li><a href="#_miscellaneous">miscellaneous</a>
@@ -1416,7 +1417,23 @@ if you did something to the system that affects the console (e.g. trigger reboot
 </div>
 </div>
 <div class="paragraph">
-<p>Tells the backend to record a <code>.wav</code> file of the sound card.</p>
+<p>Tells the backend to record a <code>.wav</code> file of the sound card and asserts if it matches
+expected audio. Comparison is performed after conversion to the image.</p>
+</div>
+<div class="paragraph">
+<p><em>Only supported by QEMU backend.</em>'</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_check_recorded_sound">check_recorded_sound</h5>
+<div class="literalblock">
+<div class="content">
+<pre>check_recorded_sound('we-will-rock-you');</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Tells the backend to record a <code>.wav</code> file of the sound card and checks if it matches
+expected audio. Comparison is performed after conversion to the image.</p>
 </div>
 <div class="paragraph">
 <p><em>Only supported by QEMU backend.</em>'</p>
@@ -1681,7 +1698,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-10-21 13:03:58 UTC
+Last updated 2017-10-23 13:08:35 UTC
 </div>
 </div>
 </body>
