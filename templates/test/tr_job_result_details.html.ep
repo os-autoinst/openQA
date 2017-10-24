@@ -1,6 +1,6 @@
 %# 'bentostrap' has an item 'label' which
 %# we do not want to use so we use 'test-label'
-% for my $bug (@{$res->{bugs}}) {
+% for my $bug (sort {$b cmp $a} keys %{$res->{bugs}}) {
     <span id="bug-<%= $jobid %>">
         <a href="<%= bugurl_for $bug %>">
             <i class="test-label <%= bugicon_for $bug, $res->{bugdetails}->{$bug} %>" title="Bug referenced: <%= $bug %>"></i>
