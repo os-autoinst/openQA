@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2017 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,9 @@ sub index {
     }
     $self->stash(workers => \%workers);
 
-    $self->render('admin/workers/index');
+    $self->respond_to(
+        json => {json     => {workers => \%workers}},
+        html => {template => 'admin/workers/index'});
 }
 
 sub show {
