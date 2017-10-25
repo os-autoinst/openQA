@@ -58,16 +58,19 @@ sub previous_jobs_ajax {
     my ($self) = @_;
 
     OpenQA::ServerSideDataTable::render_response(
-        controller            => $self,
-        resultset             => 'Jobs',
-        columns               => [qw(id result t_finished)],
+        controller => $self,
+        resultset  => 'Jobs',
+        columns    => [
+            [qw(BUILD DISTRI VERSION FLAVOR ARCH)],
+            [qw(passed_module_count softfailed_module_count failed_module_count)],
+            qw(t_finished)
+        ],
         initial_conds         => [{assigned_worker_id => $self->param('worker_id')}],
-        additional_params     => {prefetch => [qw(children parents)]},
+        additional_params     => {prefetch            => [qw(children parents)]},
         prepare_data_function => sub {
             my ($results) = @_;
             my @jobs = $results->all;
             my @ids = map { $_->id } @jobs;
-            my $stats = OpenQA::Schema::Result::JobModules::job_module_stats(\@ids);
             my @data;
             for my $job (@jobs) {
                 push(
@@ -77,7 +80,7 @@ sub previous_jobs_ajax {
                         name         => $job->name,
                         deps         => $job->dependencies,
                         result       => $job->result,
-                        result_stats => $stats->{$job->id},
+                        result_stats => $job->result_stats,
                         state        => $job->state,
                         clone        => $job->clone_id,
                         finished     => $job->t_finished ? $job->t_finished->datetime() . 'Z' : undef,

@@ -4,7 +4,7 @@ function setupWorkerNeedles() {
         {ajax: $('#previous_jobs').data('ajax-url'),
             deferRender: true,
             "columns": [
-                {data: "name", orderable: false},
+                {data: "name"},
                 {data: "result_stats"},
                 {data: "finished"}
             ],

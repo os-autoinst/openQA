@@ -67,12 +67,11 @@ sub list {
         groupid => $groupid,
         assetid => $assetid
     );
-    my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($running);
     my @list;
     while (my $job = $running->next) {
         my $data = {
             job          => $job,
-            result_stats => $result_stats->{$job->id},
+            result_stats => $job->result_stats,
             run_stat     => $job->running_modinfo(),
         };
         push @list, $data;
@@ -163,15 +162,10 @@ sub list_ajax {
             {
                 DT_RowId     => "job_" . $job->id,
                 id           => $job->id,
-                result_stats => {
-                    passed     => $job->passed_module_count,
-                    softfailed => $job->softfailed_module_count,
-                    failed     => $job->failed_module_count,
-                    none       => $job->skipped_module_count,
-                },
-                deps  => $job->dependencies,
-                clone => $job->clone_id,
-                test  => $job->TEST . "@" . ($job->MACHINE // ''),
+                result_stats => $job->result_stats,
+                deps         => $job->dependencies,
+                clone        => $job->clone_id,
+                test         => $job->TEST . "@" . ($job->MACHINE // ''),
                 distri  => $job->DISTRI  // '',
                 version => $job->VERSION // '',
                 flavor  => $job->FLAVOR  // '',
@@ -380,8 +374,6 @@ sub prepare_job_results {
     my %results;
     my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, scheduled => 0, running => 0, unknown => 0};
     my $preferred_machines = _calculate_preferred_machines($jobs);
-    my @latest_jobs_ids    = map { $_->id } @{$jobs};
-    my $all_result_stats   = OpenQA::Schema::Result::JobModules::job_module_stats(\@latest_jobs_ids);
 
     # prefetch the number of available labels for those jobs
     my $job_labels = $self->_job_labels($jobs);
@@ -406,7 +398,7 @@ sub prepare_job_results {
           && $job->result ne OpenQA::Schema::Result::Jobs::FAILED;
 
         if ($job->state eq OpenQA::Schema::Result::Jobs::DONE) {
-            my $result_stats = $all_result_stats->{$jobid};
+            my $result_stats = $job->result_stats;
             my $overall      = $job->result;
 
             if ($todo) {
@@ -422,7 +414,7 @@ sub prepare_job_results {
 
             $result = {
                 passed     => $result_stats->{passed},
-                unknown    => $result_stats->{unk},
+                unknown    => $result_stats->{none},
                 failed     => $result_stats->{failed},
                 overall    => $overall,
                 jobid      => $jobid,
