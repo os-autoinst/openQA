@@ -351,12 +351,13 @@ sub _job_labels {
     while (my $comment = $comments->next()) {
         my $bugrefs = $comment->bugrefs;
         if (@$bugrefs) {
+            my $bugs_of_job = ($labels{$comment->job_id}{bugs} //= {});
             for my $bug (@$bugrefs) {
                 if (!exists $bugdetails{$bug}) {
                     $bugdetails{$bug} = OpenQA::Schema::Result::Bugs->get_bug($bug, $self->db);
                 }
+                $bugs_of_job->{$bug} = 1;
             }
-            push(@{$labels{$comment->job_id}{bugs} //= []}, @$bugrefs);
             $labels{$comment->job_id}{bugdetails} = \%bugdetails;
             $self->app->log->debug(
                 'Found bug ticket reference ' . join(' ', @$bugrefs) . ' for job ' . $comment->job_id);
