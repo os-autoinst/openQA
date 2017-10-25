@@ -24,6 +24,8 @@ use Mojo::URL;
 use OpenQA::Client;
 use OpenQA::Utils qw(log_error log_debug log_warning log_info), qw(feature_scaling rand_range logistic_map_steps);
 use Scalar::Util 'looks_like_number';
+use Config::IniFiles;
+use List::Util 'max';
 
 use base 'Exporter';
 our @EXPORT = qw($job $instance $worker_settings $pooldir $nocleanup
@@ -542,6 +544,40 @@ sub verify_workerid {
     $host //= $current_host;
     return unless $host;
     return $hosts->{$host}{workerid};
+}
+
+sub read_worker_config {
+    my ($instance, $host) = @_;
+    my $worker_dir = $ENV{OPENQA_CONFIG} || '/etc/openqa';
+    my $cfg = Config::IniFiles->new(-file => $worker_dir . '/workers.ini');
+
+    my $sets = {};
+    for my $section ('global', $instance) {
+        if ($cfg && $cfg->SectionExists($section)) {
+            for my $set ($cfg->Parameters($section)) {
+                $sets->{uc $set} = $cfg->val($section, $set);
+            }
+        }
+    }
+    # use separate set as we may not want to advertise other host confiuration to the world in job settings
+    my $host_settings;
+    $host ||= $sets->{HOST} ||= 'localhost';
+    delete $sets->{HOST};
+    my @hosts = split / /, $host;
+    for my $section (@hosts) {
+        if ($cfg && $cfg->SectionExists($section)) {
+            for my $set ($cfg->Parameters($section)) {
+                $host_settings->{$section}{uc $set} = $cfg->val($section, $set);
+            }
+        }
+        else {
+            $host_settings->{$section} = {};
+        }
+    }
+    $sets->{TOTAL_INSTANCES} ||= $cfg ? max(grep { looks_like_number($_) } $cfg->Sections) || 1 : 1;
+    $host_settings->{HOSTS} = \@hosts;
+
+    return $sets, $host_settings;
 }
 
 1;

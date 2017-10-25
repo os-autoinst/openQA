@@ -208,6 +208,66 @@ subtest 'mock test stop_job' => sub {
     is $stop_job, 1, "stop_job() reached";
 };
 
+subtest 'worker configuration reading' => sub {
+    use Mojo::File qw(tempdir path);
+    my $configdir = tempdir();
+    local $ENV{OPENQA_CONFIG} = $configdir;
+    my $ini = $configdir->child('workers.ini');
+    $ini->spurt(
+        <<EOF
+# Configuration of the workers and their backends.
+[global]
+CACHEDIRECTORY = /var/lib/openqa/cache
+HOST = localhost foobar
+TOTAL_INSTANCES = 6
+[1]
+WORKER_CLASS = tap,qemu_x86_64,caasp_x86_64
+CACHEDIRECTORY = /var/lib/openqa/cache
+[2]
+WORKER_CLASS = tap,qemu_x86_64,caasp_x86_64
+CACHEDIRECTORY = /var/lib/openqa/cache
+[3]
+WORKER_CLASS = tap,qemu_x86_64,caasp_x86_64
+CACHEDIRECTORY = /var/lib/openqa/cache
+EOF
+    );
+
+    my ($w_setting, $h_setting) = OpenQA::Worker::Common::read_worker_config(1, 'localhost');
+    is $w_setting->{TOTAL_INSTANCES}, 6 or diag explain $w_setting;
+
+
+    $ini->spurt(
+        <<EOF
+# Configuration of the workers and their backends.
+[global]
+CACHEDIRECTORY = /var/lib/openqa/cache
+HOST = localhost foobar
+[1]
+WORKER_CLASS = tap,qemu_x86_64,caasp_x86_64
+CACHEDIRECTORY = /var/lib/openqa/cache
+[2]
+WORKER_CLASS = tap,qemu_x86_64,caasp_x86_64
+CACHEDIRECTORY = /var/lib/openqa/cache
+[3]
+WORKER_CLASS = tap,qemu_x86_64,caasp_x86_64
+CACHEDIRECTORY = /var/lib/openqa/cache
+EOF
+    );
+    ($w_setting, $h_setting) = OpenQA::Worker::Common::read_worker_config(1, 'localhost');
+    is $w_setting->{TOTAL_INSTANCES}, 3 or diag explain $w_setting;
+
+    $ini->spurt(
+        <<EOF
+# Configuration of the workers and their backends.
+[global]
+CACHEDIRECTORY = /var/lib/openqa/cache
+HOST = localhost foobar
+EOF
+    );
+    ($w_setting, $h_setting) = OpenQA::Worker::Common::read_worker_config(1, 'localhost');
+    is $w_setting->{TOTAL_INSTANCES}, 1 or diag explain $w_setting;
+};
+
 subtest 'mock test send_status' => sub {
     $OpenQA::Worker::Common::job = {id => 9999, state => "scheduled"};
 
