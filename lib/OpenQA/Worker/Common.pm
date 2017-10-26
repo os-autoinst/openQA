@@ -351,13 +351,12 @@ sub send_status {
     $tx->send($status_message);
 }
 
-sub call_websocket {
-    my ($host, $ua_url) = @_;
-    my $ua = $hosts->{$host}{ua};
-
-    my $i = looks_like_number($instance) ? $instance : 1;
+sub calculate_status_timer {
+    my ($hosts, $host) = @_;
+    my $i = $hosts->{$host}{workerid} ? $hosts->{$host}{workerid} : looks_like_number($instance) ? $instance : 1;
     my $imax
-      = !$worker_settings->{TOTAL_INSTANCES}            ? 1
+      = $hosts->{$host}{population}                     ? $hosts->{$host}{population}
+      : !$worker_settings->{TOTAL_INSTANCES}            ? 1
       : $worker_settings->{TOTAL_INSTANCES} > MAX_TIMER ? MAX_TIMER - 1
       :                                                   $worker_settings->{TOTAL_INSTANCES} + 1;
     my $scale_factor = 4;
@@ -375,6 +374,13 @@ sub call_websocket {
       = abs(feature_scaling(logistic_map_steps($steps, $r, $population), $imax, MIN_TIMER, MAX_TIMER) * $scale_factor);
 
     $status_timer = $status_timer > MIN_TIMER && $status_timer < MAX_TIMER ? $status_timer : MIN_TIMER;
+    return int($status_timer);
+}
+
+sub call_websocket {
+    my ($host, $ua_url) = @_;
+    my $ua = $hosts->{$host}{ua};
+    my $status_timer = calculate_status_timer($hosts, $host, $instance, $worker_settings);
 
     log_debug("worker_status timer time window: $status_timer");
     $ua->websocket(

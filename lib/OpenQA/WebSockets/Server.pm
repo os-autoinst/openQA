@@ -23,7 +23,7 @@ use OpenQA::Utils qw(log_debug log_warning log_error);
 use OpenQA::Schema;
 use OpenQA::ServerStartup;
 use Data::Dumper;
-
+use Data::Dump 'pp';
 use db_profiler;
 
 require Exporter;
@@ -235,7 +235,6 @@ sub _message {
         $worker_status->{$wid} = $json;
         log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $wid, Dumper($json)));
 
-        # XXX: This would make keepalive useless.
         try {
             app->schema->txn_do(
                 sub {
@@ -257,6 +256,15 @@ sub _message {
               if $registered_job_id && $wid;
             log_debug("Received request has id: " . $worker_status->{$wid}->{job}->{id})
               if $worker_status->{$wid}->{job}->{id};
+        };
+
+        try {
+            my $workers_population = app->schema->resultset("Workers")->count();
+            my $msg = {type => 'info', population => $workers_population};
+            $ws->tx->send({json => $msg} => sub { log_debug("Sent population to worker: " . pp($msg)) });
+        }
+        catch {
+            log_debug("Could not be able to send population number to worker: $_");
         };
 
         try {
@@ -320,6 +328,7 @@ sub _message {
         catch {
             log_debug("Failed parsing status message : $_");
         };
+
     }
     else {
         log_error(sprintf('Received unknown message type "%s" from worker %u', $json->{type}, $worker->{id}));

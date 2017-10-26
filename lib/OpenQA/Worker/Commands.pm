@@ -22,6 +22,7 @@ use OpenQA::Worker::Common;
 use OpenQA::Worker::Jobs;
 use POSIX ':sys_wait_h';
 use OpenQA::Worker::Engines::isotovideo;
+use Data::Dump 'pp';
 
 ## WEBSOCKET commands
 sub websocket_commands {
@@ -35,12 +36,11 @@ sub websocket_commands {
         }
     }
     else {
-        # requests
-        my $type = $json->{type};
-        if (!$type) {
-            log_warning('Received WS message without type!');
+        if (!$json->{type}) {
+            log_warning('Received WS message without type! ' . pp($json));
             return;
         }
+        my $type = $json->{type};
         my $jobid = $json->{jobid} // '';
         my $joburl;
         my $host = $ws_to_host->{$tx};
@@ -69,6 +69,11 @@ sub websocket_commands {
         if ($type =~ m/quit|abort|cancel|obsolete/) {
             log_debug("received command: $type");
             stop_job($type);
+        }
+        elsif ($type eq 'info') {
+            $hosts->{$host}{population} = $json->{population} if $json->{population};
+            log_debug("Population for $host is " . $hosts->{$host}{population});
+            change_timer("workerstatus-$host", OpenQA::Worker::Common::calculate_status_timer($hosts, $host));
         }
         elsif ($type eq 'stop_waitforneedle') {
             if (backend_running) {

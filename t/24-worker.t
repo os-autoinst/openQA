@@ -268,6 +268,21 @@ EOF
     is $w_setting->{TOTAL_INSTANCES}, 1 or diag explain $w_setting;
 };
 
+subtest 'worker status timer calculation' => sub {
+    $OpenQA::Worker::Common::worker_settings = {};
+    my $pop = 1;
+    do {
+        $OpenQA::Worker::Common::instance = int(rand_range(1, $pop));
+        ok in_range(
+            OpenQA::Worker::Common::calculate_status_timer({localhost => {population => ++$pop}}, 'localhost'),
+            OpenQA::Worker::Common::MIN_TIMER,
+            OpenQA::Worker::Common::MAX_TIMER
+          ),
+          "timer in range with worker population of $pop";
+      }
+      for 1 .. 999;
+};
+
 subtest 'mock test send_status' => sub {
     $OpenQA::Worker::Common::job = {id => 9999, state => "scheduled"};
 
