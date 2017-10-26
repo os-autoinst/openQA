@@ -26,6 +26,8 @@ use Data::Dumper;
 use Data::Dump 'pp';
 use db_profiler;
 
+use constant WORKERS_CHECKER_THRESHOLD => 120;
+
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
 
@@ -386,8 +388,7 @@ sub _workers_checker {
     try {
         $schema->txn_do(
             sub {
-                my $threshold  = 120;
-                my $stale_jobs = _get_stale_worker_jobs($threshold);
+                my $stale_jobs = _get_stale_worker_jobs(WORKERS_CHECKER_THRESHOLD);
                 for my $job ($stale_jobs->all) {
                     next unless _is_job_considered_dead($job);
 

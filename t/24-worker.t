@@ -34,6 +34,7 @@ use Mojo::File qw(tempdir path);
 
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Jobs;
+use OpenQA::WebSockets::Server;
 
 # api_init (must be called before making other calls anyways)
 like(
@@ -219,7 +220,7 @@ subtest 'worker configuration reading' => sub {
 [global]
 CACHEDIRECTORY = /var/lib/openqa/cache
 HOST = localhost foobar
-TOTAL_INSTANCES = 6
+FOO_BAR_BAZ = 6
 [1]
 WORKER_CLASS = tap,qemu_x86_64,caasp_x86_64
 CACHEDIRECTORY = /var/lib/openqa/cache
@@ -233,43 +234,22 @@ EOF
     );
 
     my ($w_setting, $h_setting) = OpenQA::Worker::Common::read_worker_config(1, 'localhost');
-    is $w_setting->{TOTAL_INSTANCES}, 6 or diag explain $w_setting;
-
-
-    $ini->spurt(
-        <<EOF
-# Configuration of the workers and their backends.
-[global]
-CACHEDIRECTORY = /var/lib/openqa/cache
-HOST = localhost foobar
-[1]
-WORKER_CLASS = tap,qemu_x86_64,caasp_x86_64
-CACHEDIRECTORY = /var/lib/openqa/cache
-[2]
-WORKER_CLASS = tap,qemu_x86_64,caasp_x86_64
-CACHEDIRECTORY = /var/lib/openqa/cache
-[3]
-WORKER_CLASS = tap,qemu_x86_64,caasp_x86_64
-CACHEDIRECTORY = /var/lib/openqa/cache
-EOF
-    );
-    ($w_setting, $h_setting) = OpenQA::Worker::Common::read_worker_config(1, 'localhost');
-    is $w_setting->{TOTAL_INSTANCES}, 3 or diag explain $w_setting;
-
-    $ini->spurt(
-        <<EOF
-# Configuration of the workers and their backends.
-[global]
-CACHEDIRECTORY = /var/lib/openqa/cache
-HOST = localhost foobar
-EOF
-    );
-    ($w_setting, $h_setting) = OpenQA::Worker::Common::read_worker_config(1, 'localhost');
-    is $w_setting->{TOTAL_INSTANCES}, 1 or diag explain $w_setting;
+    is $w_setting->{FOO_BAR_BAZ}, 6, 'Additional global options are in worker setting' or diag explain $w_setting;
+    is $w_setting->{CACHEDIRECTORY}, '/var/lib/openqa/cache'        or diag explain $w_setting;
+    is $w_setting->{WORKER_CLASS},   'tap,qemu_x86_64,caasp_x86_64' or diag explain $w_setting;
+    is $h_setting->{HOSTS}->[0], 'localhost' or diag explain $h_setting;
+    is_deeply $h_setting->{localhost}, {} or diag explain $h_setting;
 };
 
 subtest 'worker status timer calculation' => sub {
     $OpenQA::Worker::Common::worker_settings = {};
+
+    # Or we would see workers detected as dead
+    ok(
+        (OpenQA::WebSockets::Server::WORKERS_CHECKER_THRESHOLD - OpenQA::Worker::Common::MAX_TIMER) >= 20,
+"OpenQA::WebSockets::Server::WORKERS_CHECKER_THRESHOLD is bigger than OpenQA::Worker::Common::MAX_TIMER at least by 20s"
+    );
+
     my $pop = 1;
     do {
         $OpenQA::Worker::Common::instance = int(rand_range(1, $pop));

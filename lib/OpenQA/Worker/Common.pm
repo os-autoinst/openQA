@@ -354,12 +354,8 @@ sub send_status {
 sub calculate_status_timer {
     my ($hosts, $host) = @_;
     my $i = $hosts->{$host}{workerid} ? $hosts->{$host}{workerid} : looks_like_number($instance) ? $instance : 1;
-    my $imax
-      = $hosts->{$host}{population}                     ? $hosts->{$host}{population}
-      : !$worker_settings->{TOTAL_INSTANCES}            ? 1
-      : $worker_settings->{TOTAL_INSTANCES} > MAX_TIMER ? MAX_TIMER - 1
-      :                                                   $worker_settings->{TOTAL_INSTANCES} + 1;
-    my $scale_factor = 4;
+    my $imax = $hosts->{$host}{population} ? $hosts->{$host}{population} : 1;
+    my $scale_factor = 300;
 
     # XXX: we are using now fixed values, to stick with a
     #      predictable behavior but random intervals
@@ -367,8 +363,8 @@ sub calculate_status_timer {
     # my $steps = int(rand_range(2, 120));
     # my $r = rand_range(3.20, 3.88);
 
-    my $steps      = 88;
-    my $r          = 3.88;
+    my $steps      = 215;
+    my $r          = 3.81199961;
     my $population = feature_scaling($i, $imax, 0.1, 1);
     my $status_timer
       = abs(feature_scaling(logistic_map_steps($steps, $r, $population), $imax, MIN_TIMER, MAX_TIMER) * $scale_factor);
@@ -580,7 +576,6 @@ sub read_worker_config {
             $host_settings->{$section} = {};
         }
     }
-    $sets->{TOTAL_INSTANCES} ||= $cfg ? max(grep { looks_like_number($_) } $cfg->Sections) || 1 : 1;
     $host_settings->{HOSTS} = \@hosts;
 
     return $sets, $host_settings;
