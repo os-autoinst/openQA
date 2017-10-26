@@ -44,6 +44,7 @@ use lib "$FindBin::Bin/lib";
 use Data::Dump qw(pp dd);
 use OpenQA::Scheduler;
 use OpenQA::Scheduler::Scheduler;
+use OpenQA::Utils;
 use OpenQA::Test::Database;
 use Test::More;
 use Net::DBus qw(:typing);
@@ -390,7 +391,7 @@ sub range_ok {
     my $low_limit  = $tick - $step;
     my $high_limit = $tick + $step;
     my $delta      = $fired - $started;
-    ok($delta > $low_limit && $delta < $high_limit,
+    ok(in_range($delta, $low_limit, $high_limit),
         "timeout in range $low_limit->$high_limit (setted tick $tick, real tick occurred at $delta)");
 }
 
