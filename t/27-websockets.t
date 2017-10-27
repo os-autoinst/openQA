@@ -78,6 +78,14 @@ subtest "WebSocket Server _message()" => sub {
 
     $fake_tx->OpenQA::WebSockets::Server::_message({type => "FOOBAR"});
     like $buf, qr/Received unknown message type "FOOBAR" from worker/, "log_error on unknown message";
+
+    monkey_patch "Mojo::Transaction::Websocket", send => sub { undef };
+    $fake_tx->OpenQA::WebSockets::Server::_message({type => 'worker_status'});
+    like $buf, qr/Could not be able to send population number to worker/ or diag explain $buf;
+
+    monkey_patch "OpenQA::WebAPI", schema => sub { undef };
+    $fake_tx->OpenQA::WebSockets::Server::_message({type => 'worker_status'});
+    like $buf, qr/Failed updating worker seen status/ or diag explain $buf;
 };
 
 done_testing();
