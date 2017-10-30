@@ -100,7 +100,6 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-use Scalar::Util 'looks_like_number';
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 

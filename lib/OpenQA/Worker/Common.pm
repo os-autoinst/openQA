@@ -355,7 +355,13 @@ sub calculate_status_timer {
     my ($hosts, $host) = @_;
     my $i = $hosts->{$host}{workerid} ? $hosts->{$host}{workerid} : looks_like_number($instance) ? $instance : 1;
     my $imax = $hosts->{$host}{population} ? $hosts->{$host}{population} : 1;
-    my $scale_factor = 300;
+    my $scale_factor = $imax;
+    my $steps        = 215;
+    my $r            = 3.81199961;
+
+    # my $scale_factor = 4;
+    # my $scale_factor =  (MAX_TIMER - MIN_TIMER)/MIN_TIMER;
+    # log_debug("I: $i population: $imax scale_factor: $scale_factor");
 
     # XXX: we are using now fixed values, to stick with a
     #      predictable behavior but random intervals
@@ -363,13 +369,11 @@ sub calculate_status_timer {
     # my $steps = int(rand_range(2, 120));
     # my $r = rand_range(3.20, 3.88);
 
-    my $steps      = 215;
-    my $r          = 3.81199961;
-    my $population = feature_scaling($i, $imax, 0.1, 1);
+    my $population = feature_scaling($i, $imax, 0, 1);
     my $status_timer
-      = abs(feature_scaling(logistic_map_steps($steps, $r, $population), $imax, MIN_TIMER, MAX_TIMER) * $scale_factor);
-
-    $status_timer = $status_timer > MIN_TIMER && $status_timer < MAX_TIMER ? $status_timer : MIN_TIMER;
+      = abs(feature_scaling(logistic_map_steps($steps, $r, $population) * $scale_factor, $imax, MIN_TIMER, MAX_TIMER));
+    $status_timer = $status_timer > MIN_TIMER
+      && $status_timer < MAX_TIMER ? $status_timer : $status_timer > MAX_TIMER ? MAX_TIMER : MIN_TIMER;
     return int($status_timer);
 }
 
