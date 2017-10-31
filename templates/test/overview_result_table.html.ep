@@ -10,7 +10,8 @@
         </tr>
     </thead>
     <tbody>
-        % for my $config (sort keys %$type_results) {
+        % my @configs = sort { $a =~ s/@/ /r cmp $b =~ s/@/ /r } keys %$type_results;
+        % for my $config (@configs) {
             % next unless $type_results->{$config};
             <tr>
                 <td class="name">
