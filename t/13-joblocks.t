@@ -235,4 +235,91 @@ ok($res, 'barrier1 is still there');
 $t->ua->unsubscribe('start');
 $t->delete_ok($b_prefix . '/barrier1')->status_is(403);
 
+
+
+sub test_barrier_destroy {
+
+    my ($state, $test) = @_;
+    # create barrier succeeds with 3 expected tasks
+    my $jA = job_create_with_worker('testA');
+    my $jB = job_create_with_worker('testB', $jA);
+    my $jC = job_create_with_worker('testC', $jA);
+
+    $test = eval "\$$test";
+    set_token_header($t->ua, 'token' . $jA);
+    $t->post_ok($b_prefix, form => {name => 'barrier2', tasks => 3},)->status_is(200);
+    # barrier is not unlocked after one task
+    $t->post_ok($b_prefix . '/barrier2', form => {action => 'wait'})->status_is(409);
+    # barrier is not unlocked after two tasks
+    set_token_header($t->ua, 'token' . $jB);
+    $t->post_ok($b_prefix . '/barrier2', form => {action => 'wait', check_dead_job => 1})->status_is(409);
+
+    my $job = $schema->resultset('Jobs')->find($test)->update({result => $state});
+
+    # barrier will be destroyed
+    set_token_header($t->ua, 'token' . $jA);
+    $t->post_ok($b_prefix . '/barrier2', form => {action => 'wait', check_dead_job => 1})->status_is(410);
+    # barrier is not there  for all jobs
+    set_token_header($t->ua, 'token' . $jC);
+    $t->post_ok($b_prefix . '/barrier2', form => {action => 'wait'})->status_is(410);
+    set_token_header($t->ua, 'token' . $jA);
+    $t->post_ok($b_prefix . '/barrier2', form => {action => 'wait'})->status_is(410);
+    set_token_header($t->ua, 'token' . $jB);
+    $t->post_ok($b_prefix . '/barrier2', form => {action => 'wait'})->status_is(410);
+    return 1;
+}
+
+test_barrier_destroy($_, "jA")
+  && test_barrier_destroy($_, "jB")
+  && test_barrier_destroy($_, "jC")
+  for OpenQA::Schema::Result::Jobs::NOT_OK_RESULTS();
+
+
+# create barrier succeeds with 3 expected tasks
+$jA = job_create_with_worker('testA');
+$jB = job_create_with_worker('testB', $jA);
+$jC = job_create_with_worker('testC', $jA);
+diag "$jA $jB $jC";
+set_token_header($t->ua, 'token' . $jA);
+$t->post_ok($b_prefix, form => {name => 'barrier2', tasks => 3},)->status_is(200);
+# barrier is not unlocked after one task
+$t->post_ok($b_prefix . '/barrier2', form => {action => 'wait', check_dead_job => 1})->status_is(409);
+# barrier is not unlocked after two tasks
+set_token_header($t->ua, 'token' . $jB);
+$t->post_ok($b_prefix . '/barrier2', form => {action => 'wait', check_dead_job => 1})->status_is(409);
+
+my $job = $schema->resultset('Jobs')->find($jB)->update({result => 'INVALIDRESULT'});
+
+set_token_header($t->ua, 'token' . $jB);
+$t->post_ok($b_prefix . '/barrier2', form => {action => 'wait', check_dead_job => 1})->status_is(409);
+
+set_token_header($t->ua, 'token' . $jA);
+$t->post_ok($b_prefix . '/barrier2', form => {action => 'wait', check_dead_job => 1})->status_is(409);
+# barrier is not there  for all jobs
+set_token_header($t->ua, 'token' . $jC);
+$t->post_ok($b_prefix . '/barrier2', form => {action => 'wait', check_dead_job => 1})->status_is(200);
+
+
+# create barrier succeeds with 3 expected tasks
+$jA = job_create_with_worker('testA');
+$jB = job_create_with_worker('testB', $jA);
+$jC = job_create_with_worker('testC', $jA);
+
+set_token_header($t->ua, 'token' . $jA);
+$t->post_ok($b_prefix, form => {name => 'barrier2', tasks => 3},)->status_is(200);
+# barrier is not unlocked after one task
+$t->post_ok($b_prefix . '/barrier2', form => {action => 'wait', check_dead_job => 1})->status_is(409);
+# barrier is not unlocked after two tasks
+set_token_header($t->ua, 'token' . $jB);
+$t->post_ok($b_prefix . '/barrier2', form => {action => 'wait', check_dead_job => 1})->status_is(409);
+
+$schema->resultset('Jobs')->find($jB)->update({result => 'done'});
+
+set_token_header($t->ua, 'token' . $jA);
+$t->post_ok($b_prefix . '/barrier2', form => {action => 'wait', check_dead_job => 1})->status_is(409);
+# barrier is not there  for all jobs
+set_token_header($t->ua, 'token' . $jC);
+$t->post_ok($b_prefix . '/barrier2', form => {action => 'wait', check_dead_job => 1})->status_is(200);
+
+
 done_testing();

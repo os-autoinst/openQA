@@ -159,11 +159,11 @@ sub barrier_create {
     !!@$res[0];
 }
 
-dbus_method('barrier_wait', ['string', 'uint32', 'string'], ['int32']);
+dbus_method('barrier_wait', ['string', 'uint32', 'string', 'uint32'], ['int32']);
 sub barrier_wait {
     my ($self, @args) = @_;
     my $res = safe_call 'OpenQA::Resource::Locks' => barrier_wait => @args;
-    !!@$res[0];
+    @$res[0] if defined @$res[0];
 }
 
 dbus_method('barrier_destroy', ['string', 'uint32', 'string'], ['bool']);

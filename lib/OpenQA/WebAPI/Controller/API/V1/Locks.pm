@@ -68,11 +68,14 @@ sub barrier_wait {
 
     my $validation = $self->validation;
     $validation->optional('where')->like(qr/^[0-9]+$/);
+    $validation->optional('check_dead_job')->like(qr/^[0-9]+$/);
+
     return $self->render(text => 'Bad request', status => 400) if ($validation->has_error);
-    my $where = $validation->param('where') // '';
+    my $where          = $validation->param('where')          // '';
+    my $check_dead_job = $validation->param('check_dead_job') // 0;
 
     my $ipc = OpenQA::IPC->ipc;
-    my $res = $ipc->resourceallocator('barrier_wait', $name, $jobid, $where);
+    my $res = $ipc->resourceallocator('barrier_wait', $name, $jobid, $where, $check_dead_job);
 
     return $self->render(text => 'ack',  status => 200) if $res > 0;
     return $self->render(text => 'nack', status => 410) if $res < 0;
