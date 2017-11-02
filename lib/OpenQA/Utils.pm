@@ -25,6 +25,7 @@ use Mojo::File 'path';
 use IO::Handle;
 use Scalar::Util 'blessed';
 use Data::Dump 'pp';
+use Mojo::Log;
 
 require Exporter;
 our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
@@ -46,6 +47,9 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &log_info
   &log_error
   &log_fatal
+  add_log_channel
+  remove_log_channel
+  get_channel_handle
   &save_base64_png
   &run_cmd_with_log
   &run_cmd_with_log_return_error
@@ -110,6 +114,8 @@ our $otherdir  = "$assetdir/other";
 our $imagesdir = "$prjdir/images";
 our $hostname  = $ENV{SERVER_NAME};
 our $app;
+
+my %channels = ();
 
 # the desired new folder structure is
 # $testcasedir/<testrepository>
@@ -219,8 +225,12 @@ sub needle_info {
 
 # logging helpers
 sub log_debug {
-    my ($msg) = @_;
-    if ($app && $app->log) {
+    my ($msg, $channel) = @_;
+
+    if ($channel && $channels{$channel}) {
+        $channels{$channel}->debug($msg);
+    }
+    elsif ($app && $app->log) {
         $app->log->debug($msg);
     }
     else {
@@ -229,8 +239,11 @@ sub log_debug {
 }
 
 sub log_info {
-    my ($msg) = @_;
-    if ($app && $app->log) {
+    my ($msg, $channel) = @_;
+    if ($channel && $channels{$channel}) {
+        $channels{$channel}->info($msg);
+    }
+    elsif ($app && $app->log) {
         $app->log->info($msg);
     }
     else {
@@ -239,8 +252,11 @@ sub log_info {
 }
 
 sub log_warning {
-    my ($msg) = @_;
-    if ($app && $app->log) {
+    my ($msg, $channel) = @_;
+    if ($channel && $channels{$channel}) {
+        $channels{$channel}->warn($msg);
+    }
+    elsif ($app && $app->log) {
         $app->log->warn($msg);
     }
     else {
@@ -249,8 +265,11 @@ sub log_warning {
 }
 
 sub log_error {
-    my ($msg) = @_;
-    if ($app && $app->log) {
+    my ($msg, $channel) = @_;
+    if ($channel && $channels{$channel}) {
+        $channels{$channel}->error($msg);
+    }
+    elsif ($app && $app->log) {
         $app->log->error($msg);
     }
     else {
@@ -259,14 +278,37 @@ sub log_error {
 }
 
 sub log_fatal {
-    my ($msg) = @_;
-    if ($app && $app->log) {
+    my ($msg, $channel) = @_;
+    if ($channel && $channels{$channel}) {
+        $channels{$channel}->fatal($msg);
+    }
+    elsif ($app && $app->log) {
         $app->log->fatal($msg);
     }
     else {
         STDERR->printflush("[FATAL] $msg\n");
     }
     die $msg;
+}
+
+sub add_log_channel {
+    my ($channel, @options) = @_;
+    $channels{$channel} = Mojo::Log->new(@options);
+}
+
+sub remove_log_channel {
+    my ($channel) = @_;
+    delete $channels{$channel} if $channel;
+}
+
+sub get_channel_handle {
+    my ($channel) = @_;
+    if ($channel) {
+        return $channels{$channel}->handle if $channels{$channel};
+    }
+    elsif ($app) {
+        return $app->log->handle;
+    }
 }
 
 sub save_base64_png($$$) {

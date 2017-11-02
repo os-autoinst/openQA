@@ -18,7 +18,7 @@ use strict;
 use warnings;
 
 use OpenQA::Worker::Common;
-use OpenQA::Utils qw(locate_asset log_error log_info log_debug);
+use OpenQA::Utils qw(locate_asset log_error log_info log_debug get_channel_handle);
 
 use POSIX qw(:sys_wait_h strftime uname _exit);
 use JSON 'to_json';
@@ -29,6 +29,7 @@ use Errno;
 use Cwd qw(abs_path getcwd);
 use OpenQA::Worker::Cache;
 use Time::HiRes 'sleep';
+use IO::Handle;
 
 my $isotovideo = "/usr/bin/isotovideo";
 my $workerpid;
@@ -119,13 +120,10 @@ sub detect_asset_keys {
 sub engine_workit {
     my ($job) = @_;
 
-    if (open(my $log, '>', "autoinst-log.txt")) {
-        print $log "+++ setup notes +++\n";
-        printf $log "start time: %s\n", strftime("%F %T", gmtime);
-        my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
-        printf $log "running on $hostname:%d ($sysname $release $version $machine)\n", $instance;
-        close($log);
-    }
+    my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
+    log_debug('+++ setup notes +++', 'autoinst');
+    log_debug(sprintf("start time: %s", strftime("%F %T", gmtime)), 'autoinst');
+    log_debug(sprintf("running on $hostname:%d ($sysname $release $version $machine)", $instance), 'autoinst');
 
     # set base dir to the one assigned with webui
     OpenQA::Utils::change_sharedir($hosts->{$current_host}{dir});
@@ -213,15 +211,14 @@ sub engine_workit {
         setpgrp(0, 0);
         $ENV{TMPDIR} = $tmpdir;
         log_info("$$: WORKING " . $job->{id});
-        if (open(my $log, '>>', "autoinst-log.txt")) {
-            print $log "+++ worker notes +++\n";
-            printf $log "start time: %s\n", strftime("%F %T", gmtime);
-            my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
-            printf $log "running on $hostname:%d ($sysname $release $version $machine)\n", $instance;
-            close($log);
-        }
-        open STDOUT, ">>", "autoinst-log.txt";
-        open STDERR, ">&STDOUT";
+        log_debug('+++ worker notes +++', 'autoinst');
+        log_debug(sprintf("start time: %s", strftime("%F %T", gmtime)), 'autoinst');
+
+        my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
+        log_debug(sprintf("running on $hostname:%d ($sysname $release $version $machine)", $instance), 'autoinst');
+        my $handle = get_channel_handle('autoinst');
+        STDOUT->fdopen($handle, 'w');
+        STDERR->fdopen($handle, 'w');
         exec "perl", "$isotovideo", '-d';
         die "exec failed: $!\n";
     }

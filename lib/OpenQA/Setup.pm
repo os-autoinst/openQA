@@ -30,7 +30,7 @@ use File::Path 'make_path';
 
 has config => sub { {} };
 
-has log => sub { Mojo::Log->new(handle => \*STDOUT, level => "debug"); };
+has log => sub { Mojo::Log->new(handle => \*STDOUT, level => "info"); };
 
 has home => sub { Mojo::Home->new($ENV{MOJO_HOME} || '/') };
 
