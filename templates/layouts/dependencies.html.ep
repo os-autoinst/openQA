@@ -4,7 +4,9 @@
     <table class="infotbl">
         <% for my $dep ($job->parents->all()) {  %>
         <tr>
-            <td style="width: 40%;"><%= link_to $dep->to_string => url_for ('test', 'testid' => $dep->parent->id) => (title => $dep->parent->name ) %></td>
+            <td style="width: 40%;">
+                <%= $dep->to_string %> - <%= link_to $dep->parent->TEST => url_for ('test', 'testid' => $dep->parent->id) => (title => $dep->parent->name ) %>
+            </td>
             <td>
                 %if ($dep->parent->state eq 'cancelled' || $dep->parent->state eq 'done') {
                     <span style="padding: 0 10%; display: inline-block;
@@ -25,7 +27,9 @@
     <table class="infotbl">
         <% for my $dep ($job->children->all()) {  %>
         <tr>
-            <td style="width: 40%;"><%= link_to $dep->to_string => url_for ('test', 'testid' => $dep->child->id) => (title => $dep->child->name ) %></td>
+            <td style="width: 40%;">
+                <%= $dep->to_string %> - <%= link_to $dep->child->TEST => url_for ('test', 'testid' => $dep->child->id) => (title => $dep->child->name ) %>
+            </td>
             <td>
                 %if ($dep->child->state eq 'cancelled' || $dep->child->state eq 'done') {
                     <span style="padding: 0 10%; display: inline-block;
