@@ -1274,7 +1274,7 @@ sub create_asset {
     # FIXME: pass as parameter to avoid guessing
     my $type;
     $type = 'iso' if $fname =~ /\.iso$/;
-    $type = 'hdd' if $fname =~ /\.(?:qcow2|raw)$/;
+    $type = 'hdd' if $fname =~ /\.(?:qcow2|raw|vhd|vhdx)$/;
     $type //= 'other';
 
     $fname = sprintf("%08d-%s", $self->id, $fname) if $scope ne 'public';
