@@ -322,7 +322,8 @@ sub purge_asset {
 }
 
 sub cache_cleanup {
-    my @assets = `find $location -maxdepth 1 -type f -name '*.img' -o -name '*.qcow2' -o -name '*.iso'`;
+    my @assets
+      = `find $location -maxdepth 1 -type f -name '*.img' -o -name '*.qcow2' -o -name '*.iso' -o -name '*.vhd' -o -name '*.vhdx'`;
     chomp @assets;
     foreach my $file (@assets) {
         my $asset_size = (stat $file)[7];
