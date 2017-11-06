@@ -34,6 +34,7 @@ use Mojo::File qw(tempdir path);
 
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Jobs;
+use OpenQA::WebSockets::Server;
 
 # api_init (must be called before making other calls anyways)
 like(
@@ -72,6 +73,20 @@ sub test_via_io_loop {
     my ($test_function) = @_;
     add_timer('call', 0, $test_function, 1);
     Mojo::IOLoop->start;
+}
+
+sub test_timer {
+    my ($i, $population) = @_;
+    $OpenQA::Worker::Common::instance = $i;
+    OpenQA::Worker::Common::calculate_status_timer({localhost => {population => $population}}, 'localhost');
+}
+
+sub compare_timers {
+    my ($instance1, $instance2, $population) = @_;
+    my $t  = test_timer($instance1, $population);
+    my $t1 = test_timer($instance2, $population);
+    ok $t != $t1,
+      "timer between instances $instance1 and $instance2 is different in a population of $population ( $t != $t1 )";
 }
 
 test_via_io_loop sub {
@@ -208,6 +223,80 @@ subtest 'mock test stop_job' => sub {
     is $stop_job, 1, "stop_job() reached";
 };
 
+subtest 'worker configuration reading' => sub {
+    use Mojo::File qw(tempdir path);
+    my $configdir = tempdir();
+    local $ENV{OPENQA_CONFIG} = $configdir;
+    my $ini = $configdir->child('workers.ini');
+    $ini->spurt(
+        <<EOF
+# Configuration of the workers and their backends.
+[global]
+CACHEDIRECTORY = /var/lib/openqa/cache
+HOST = localhost foobar
+FOO_BAR_BAZ = 6
+[1]
+WORKER_CLASS = tap,qemu_x86_64,caasp_x86_64
+CACHEDIRECTORY = /var/lib/openqa/cache
+[2]
+WORKER_CLASS = tap,qemu_x86_64,caasp_x86_64
+CACHEDIRECTORY = /var/lib/openqa/cache
+[3]
+WORKER_CLASS = tap,qemu_x86_64,caasp_x86_64
+CACHEDIRECTORY = /var/lib/openqa/cache
+EOF
+    );
+
+    my ($w_setting, $h_setting) = OpenQA::Worker::Common::read_worker_config(1, 'localhost');
+    is $w_setting->{FOO_BAR_BAZ}, 6, 'Additional global options are in worker setting' or diag explain $w_setting;
+    is $w_setting->{CACHEDIRECTORY}, '/var/lib/openqa/cache'        or diag explain $w_setting;
+    is $w_setting->{WORKER_CLASS},   'tap,qemu_x86_64,caasp_x86_64' or diag explain $w_setting;
+    is $h_setting->{HOSTS}->[0], 'localhost' or diag explain $h_setting;
+    is_deeply $h_setting->{localhost}, {} or diag explain $h_setting;
+};
+
+subtest 'worker status timer calculation' => sub {
+    $OpenQA::Worker::Common::worker_settings = {};
+
+    # Or we would see workers detected as dead
+    ok(
+        (OpenQA::WebSockets::Server::WORKERS_CHECKER_THRESHOLD - OpenQA::Worker::Common::MAX_TIMER) >= 20,
+"OpenQA::WebSockets::Server::WORKERS_CHECKER_THRESHOLD is bigger than OpenQA::Worker::Common::MAX_TIMER at least by 20s"
+    );
+    my $instance = 1;
+    my $pop      = $instance;
+    do {
+        $pop++;
+        my $t = test_timer($instance, $pop);
+        ok in_range($t, 70, 90), "timer $t for instance $instance in range with worker population of $pop";
+      }
+      for $instance .. 10;
+
+    $instance = 25;
+    $pop      = $instance;
+         compare_timers(7, 9, ++$pop)
+      && compare_timers(5, 10,        $pop)
+      && compare_timers(4, $instance, $pop)
+      && compare_timers(9, 10,        $pop)
+      for $instance .. 30;
+
+    $instance = 205;
+    $pop      = $instance;
+    compare_timers(40, 190, ++$pop)
+      && compare_timers(30, 200, $pop)
+      && compare_timers(70, 254, $pop)
+      for $instance .. 300;
+
+    $pop = 1;
+    ok in_range(
+        test_timer(int(rand_range(1, $pop)), ++$pop),
+        OpenQA::Worker::Common::MIN_TIMER,
+        OpenQA::Worker::Common::MAX_TIMER
+      ),
+      "timer in range with worker population of $pop"
+      for 1 .. 999;
+};
+
 subtest 'mock test send_status' => sub {
     $OpenQA::Worker::Common::job = {id => 9999, state => "scheduled"};
 
@@ -240,6 +329,19 @@ subtest 'mock test send_status' => sub {
     OpenQA::Worker::Common::send_status($faketx);
     is($faketx->get(4)->{status}, "free");
     ok(!exists $faketx->get(4)->{job}->{state});
+};
+
+subtest 'Worker websocket messages' => sub {
+    use OpenQA::Worker::Commands;
+    my $buf;
+    open my $FD, '>', \$buf;
+    *STDOUT = $FD;
+    *STDERR = $FD;
+    OpenQA::Worker::Commands::websocket_commands(undef, {fooo => undef});
+    like $buf, qr/Received WS message without type!/ or diag explain $buf;
+
+    OpenQA::Worker::Commands::websocket_commands(FakeTx->new, {type => 'foo'});
+    like $buf, qr/got unknown command/ or diag explain $buf;
 };
 
 done_testing();

@@ -100,7 +100,6 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-use Config::IniFiles;
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 
@@ -124,43 +123,10 @@ GetOptions(
 
 usage(0) if ($options{help});
 
-sub read_worker_config {
-    my ($instance, $host) = @_;
-    my $worker_dir = $ENV{OPENQA_CONFIG} || '/etc/openqa';
-    my $cfg = Config::IniFiles->new(-file => $worker_dir . '/workers.ini');
-
-    my $sets = {};
-    for my $section ('global', $instance) {
-        if ($cfg && $cfg->SectionExists($section)) {
-            for my $set ($cfg->Parameters($section)) {
-                $sets->{uc $set} = $cfg->val($section, $set);
-            }
-        }
-    }
-    # use separate set as we may not want to advertise other host confiuration to the world in job settings
-    my $host_settings;
-    $host ||= $sets->{HOST} ||= 'localhost';
-    delete $sets->{HOST};
-    my @hosts = split / /, $host;
-    for my $section (@hosts) {
-        if ($cfg && $cfg->SectionExists($section)) {
-            for my $set ($cfg->Parameters($section)) {
-                $host_settings->{$section}{uc $set} = $cfg->val($section, $set);
-            }
-        }
-        else {
-            $host_settings->{$section} = {};
-        }
-    }
-    $host_settings->{HOSTS} = \@hosts;
-
-    return $sets, $host_settings;
-}
-
 # count workers from 1 if not set - if tap devices are used worker would try to use tap -1
 $options{instance} ||= 1;
 
-my ($worker_settings, $host_settings) = read_worker_config($options{instance}, $options{host});
+my ($worker_settings, $host_settings) = OpenQA::Worker::Common::read_worker_config($options{instance}, $options{host});
 $worker_settings->{LOG_LEVEL} = 'debug' if $options{verbose};
 $OpenQA::Worker::Common::worker_settings = $worker_settings;
 # XXX: this should be sent to the scheduler to be included in the worker's table

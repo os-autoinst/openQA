@@ -23,8 +23,10 @@ use OpenQA::Utils qw(log_debug log_warning log_error);
 use OpenQA::Schema;
 use OpenQA::ServerStartup;
 use Data::Dumper;
-
+use Data::Dump 'pp';
 use db_profiler;
+
+use constant WORKERS_CHECKER_THRESHOLD => 120;
 
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
@@ -200,19 +202,7 @@ sub _message {
     }
 
     $worker->{last_seen} = time();
-    if ($json->{type} eq 'ok') {
-        $ws->tx->send({json => {type => 'ok'}});
-        # NOTE: Update the worker state from keepalives.
-        # We could check if the worker is dead before updating seen state
-        # the downside of it will be that we will have more timewindows
-        # where the worker is seen as dead.
-        #
-        #    if ($w and $w->dead())  # It's still one query, at this point let's just update the seen status
-        #        log_debug("Keepalive from worker $worker->{id} received, and worker thought dead. updating the DB");
-        app->schema->txn_do(sub { my $w = app->schema->resultset("Workers")->find($worker->{id}); $w->seen; })
-          if $worker && exists $worker->{id};
-    }
-    elsif ($json->{type} eq 'accepted') {
+    if ($json->{type} eq 'accepted') {
         my $jobid = $json->{jobid};
         log_debug("Worker: $worker->{id} accepted job $jobid");
     }
@@ -247,14 +237,18 @@ sub _message {
         $worker_status->{$wid} = $json;
         log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $wid, Dumper($json)));
 
-        # XXX: This would make keepalive useless.
-        # app->schema->txn_do(
-        #     sub {
-        #         my $w = app->schema->resultset("Workers")->find($wid);
-        #         return unless $w;
-        #         log_debug("Updated worker seen from worker_status");
-        #         $w->seen;
-        #     });
+        try {
+            app->schema->txn_do(
+                sub {
+                    my $w = app->schema->resultset("Workers")->find($wid);
+                    return unless $w;
+                    log_debug("Updated worker seen from worker_status");
+                    $w->seen;
+                });
+        }
+        catch {
+            log_error("Failed updating worker seen status: $_");
+        };
 
         my $registered_job_id;
         my $registered_job_token;
@@ -264,6 +258,15 @@ sub _message {
               if $registered_job_id && $wid;
             log_debug("Received request has id: " . $worker_status->{$wid}->{job}->{id})
               if $worker_status->{$wid}->{job}->{id};
+        };
+
+        try {
+            my $workers_population = app->schema->resultset("Workers")->count();
+            my $msg = {type => 'info', population => $workers_population};
+            $ws->tx->send({json => $msg} => sub { log_debug("Sent population to worker: " . pp($msg)) });
+        }
+        catch {
+            log_debug("Could not be able to send population number to worker: $_");
         };
 
         try {
@@ -327,6 +330,7 @@ sub _message {
         catch {
             log_debug("Failed parsing status message : $_");
         };
+
     }
     else {
         log_error(sprintf('Received unknown message type "%s" from worker %u', $json->{type}, $worker->{id}));
@@ -384,8 +388,7 @@ sub _workers_checker {
     try {
         $schema->txn_do(
             sub {
-                my $threshold  = 40;
-                my $stale_jobs = _get_stale_worker_jobs($threshold);
+                my $stale_jobs = _get_stale_worker_jobs(WORKERS_CHECKER_THRESHOLD);
                 for my $job ($stale_jobs->all) {
                     next unless _is_job_considered_dead($job);
 
