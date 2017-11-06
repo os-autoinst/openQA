@@ -63,6 +63,13 @@ sub schema_hook {
             refreshed => 1,
             open      => 0,
         });
+
+    # add a job result on another machine type to test rendering
+    my $jobs = $schema->resultset('Jobs');
+    my $new  = $jobs->find(99963)->to_hash->{settings};
+    $new->{MACHINE} = 'uefi';
+    $new->{_GROUP}  = 'opensuse';
+    $jobs->create_from_settings($new);
 }
 
 my $driver = call_phantom(\&schema_hook);
@@ -103,7 +110,7 @@ like($driver->find_elements('.failedmodule a', 'css')->[1]->get_attribute('href'
     qr/\/kate\/1$/, 'ajax update failed module step');
 
 my @descriptions = $driver->find_elements('td.name a', 'css');
-is(scalar @descriptions, 1, 'only test suites with description content are shown as links');
+is(scalar @descriptions, 2, 'only test suites with description content are shown as links');
 $descriptions[0]->click();
 is($driver->find_element('.popover-title')->get_text, 'kde', 'description popover shows content');
 
