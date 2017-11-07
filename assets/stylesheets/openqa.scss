@@ -453,6 +453,18 @@ table.overview {
         }
 }
 
+#ltp-table_wrapper {
+    margin-top: 10px;
+}
+
+#ltp-table {
+    table-layout: fixed;
+
+    td {
+        cursor: pointer;
+    }
+}
+
 #finished_jobs_result_filter_chosen {
     margin-left: 3px;
 

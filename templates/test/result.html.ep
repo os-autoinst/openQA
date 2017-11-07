@@ -24,6 +24,9 @@
 
             <ul class="nav nav-tabs" role="tablist" id="result_tabs">
                 <li role="presentation" class="active"><a href="#details" aria-controls="details" role="tab" data-toggle="tab">Details</a></li>
+                % if ($ltp_results_file) {
+                    <li role="presentation"><a href="#details-ltp" aria-controls="details-ltp" role="tab" data-toggle="tab">LTP</a></li>
+                % }
                 % if ($job->running_or_waiting) {
                     <li role="presentation"><a href="#live" aria-controls="live" role="tab" data-toggle="tab">Live View</a></li>
                 % }
@@ -37,6 +40,12 @@
                 <div role="tabpanel" class="tab-pane active" id="details">
                     %= include 'test/details'
                 </div>
+
+                % if ($ltp_results_file) {
+                    <div role="tabpanel" class="tab-pane active" id="details-ltp">
+                        %= include 'test/details-ltp'
+                    </div>
+                % }
 
                 % if ($job->running_or_waiting) {
                     <div role="tabpanel" class="tab-pane" id="live">

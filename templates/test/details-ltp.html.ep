@@ -1,0 +1,29 @@
+<div id="ltp-log-modal" class="modal fade" role="dialog">
+  <div class="modal-dialog modal-lg">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Log for <i id="ltp-log-modal-title"></i></h4>
+      </div>
+      <div class="modal-body">
+        <pre id="ltp-log-modal-text"></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+<table id="ltp-table"
+       class="display table table-striped"
+       data-json-url="<%= url_for('test_file', testid => $testid, filename => $ltp_results_file) %>">
+    <thead>
+        <tr>
+            <th class="name">Function</th>
+            <th>Runtime</th>
+            <th>Result</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
