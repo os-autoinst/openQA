@@ -40,7 +40,7 @@ The optional parameter C<$schema_hook> allows to provide a custom way of creatin
 
 sub start_app {
     my ($schema_hook) = @_;
-    $mojoport = Mojo::IOLoop::Server->generate_port;
+    $mojoport = $ENV{TESTSERVER_PORT} // Mojo::IOLoop::Server->generate_port;
 
     $startingpid = $$;
     $mojopid     = fork();
