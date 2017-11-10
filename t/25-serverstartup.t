@@ -31,7 +31,7 @@ use strict;
 use warnings;
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use OpenQA::ServerStartup;
+use OpenQA::Setup;
 use OpenQA::Utils;
 use Test::More;
 use Mojolicious;
@@ -41,7 +41,7 @@ subtest 'Setup logging to file' => sub {
     local $ENV{OPENQA_LOGFILE} = undef;
     my $tempfile = tempfile;
     my $app = Mojolicious->new(config => {logging => {file => $tempfile}});
-    OpenQA::ServerStartup::setup_logging($app);
+    OpenQA::Setup::setup_log($app);
     $app->attr('log_name', sub { return "test"; });
 
     my $log = $app->log;
@@ -57,14 +57,15 @@ subtest 'Setup logging to file' => sub {
     like $content, qr/\[.*\] \[test:info\] Works too/,    'right info message';
 };
 
-subtest 'Setup logging to STDERR' => sub {
+subtest 'Setup logging to STDOUT' => sub {
     local $ENV{OPENQA_LOGFILE} = undef;
     my $buffer = '';
     my $app    = Mojolicious->new();
-    OpenQA::ServerStartup::setup_logging($app);
+    OpenQA::Setup::setup_log($app);
+    $app->attr('log_name', sub { return "test"; });
     {
         open my $handle, '>', \$buffer;
-        local *STDERR = $handle;
+        local *STDOUT = $handle;
         my $log = $app->log;
         $log->error('Just works');
         $log->fatal('Fatal error');
@@ -80,7 +81,7 @@ subtest 'Setup logging to STDERR' => sub {
 subtest 'Setup logging to file (ENV)' => sub {
     local $ENV{OPENQA_LOGFILE} = tempfile;
     my $app = Mojolicious->new(config => {logging => {file => "/tmp/ignored_foo_bar"}});
-    OpenQA::ServerStartup::setup_logging($app);
+    OpenQA::Setup::setup_log($app);
     $app->attr('log_name', sub { return "test"; });
 
     my $log = $app->log;
@@ -97,7 +98,7 @@ subtest 'Setup logging to file (ENV)' => sub {
     ok !-e "/tmp/ignored_foo_bar";
 
     $app = Mojolicious->new();
-    OpenQA::ServerStartup::setup_logging($app);
+    OpenQA::Setup::setup_log($app);
     $app->attr('log_name', sub { return "test"; });
 
     $log = $app->log;
@@ -152,7 +153,7 @@ subtest 'Update configuration from Plugin requirements' => sub {
     # inline packages declaration needs to appear as "loaded"
     $INC{"OpenQA/FakePlugin/Fuzz.pm"}   = undef;
     $INC{"OpenQA/FakePlugin/Fuzzer.pm"} = undef;
-    OpenQA::ServerStartup::update_config($config, "OpenQA::FakePlugin");
+    OpenQA::Setup::update_config($config, "OpenQA::FakePlugin");
 
     ok exists($config->{auth}->{method}),      "Config option exists for OpenQA::FakePlugin::Foo";
     ok exists($config->{bar}->{foo}),          "Config option exists for OpenQA::FakePlugin::FooBar";
@@ -171,7 +172,7 @@ subtest 'Update configuration from Plugin requirements' => sub {
     push @{$app->plugins->namespaces}, "OpenQA::FakePlugin";
     $app->config->{ini_config} = $config->{ini_config};
     $app->plugin("FooFoo");
-    OpenQA::ServerStartup::update_config($app->config, "OpenQA::FakePlugin");
+    OpenQA::Setup::update_config($app->config, "OpenQA::FakePlugin");
     is $app->config->{foofoo}->{is_there}, "wohoo", "Right config option for OpenQA::FakePlugin::Foofoo";
 };
 done_testing();

@@ -20,7 +20,7 @@ use warnings;
 use File::Basename;
 use Fcntl ':flock';
 use Mojo::UserAgent;
-use OpenQA::Utils qw(log_error log_info log_debug);
+use OpenQA::Utils qw(log_error log_info log_debug get_channel_handle add_log_channel);
 use OpenQA::Worker::Common;
 use List::MoreUtils;
 use File::Spec::Functions 'catdir';
@@ -82,12 +82,11 @@ sub init {
 sub download_asset {
     my ($id, $type, $asset, $etag) = @_;
 
-    open(my $log, '>>', "autoinst-log.txt") or die("Cannot open autoinst-log.txt");
-    local $| = 1;
+    add_log_channel('autoinst', path => 'autoinst-log.txt', level => 'debug') unless get_channel_handle('autoinst');
     my $ua = Mojo::UserAgent->new(max_redirects => 2);
     $ua->max_response_size(0);
     my $url = sprintf '%s/tests/%d/asset/%s/%s', $host, $id, $type, basename($asset);
-    print $log "Downloading " . basename($asset) . " from $url\n";
+    log_debug("Downloading " . basename($asset) . " from $url", 'autoinst');
     my $tx = $ua->build_tx(GET => $url);
     my $headers;
 
@@ -115,7 +114,7 @@ sub download_asset {
                         $last_updated = time;
                         if ($progress < $current) {
                             $progress = $current;
-                            print $log "CACHE: Downloading $asset: ", $size == $len ? 100 : $progress . "%\n";
+                            log_debug("CACHE: Downloading $asset: ", $size == $len ? 100 : $progress . "%", 'autoinst');
                         }
                     }
                 });
@@ -126,20 +125,20 @@ sub download_asset {
     my $size;
     if ($code eq 304) {
         if (toggle_asset_lock($asset, 0)) {
-            print $log "CACHE: Content has not changed, not downloading the $asset but updating last use\n";
+            log_debug("CACHE: Content has not changed, not downloading the $asset but updating last use", 'autoinst');
         }
         else {
-            print $log "CACHE: Abnormal situation, code 304. Retrying download\n";    # poo#19270 might give a hint
+            log_debug("CACHE: Abnormal situation, code 304. Retrying download", 'autoinst');
             $asset = 520;
         }
     }
     elsif ($tx->res->is_server_error) {
         if (toggle_asset_lock($asset, 0)) {
-            print $log "CACHE: Could not download the asset, triggering a retry for $code.\n";
+            log_debug("CACHE: Could not download the asset, triggering a retry for $code.", 'autoinst');
             $asset = $code;
         }
         else {
-            print $log "CACHE: Abnormal situation, server error. Retrying download\n";
+            log_debug("CACHE: Abnormal situation, server error. Retrying download", 'autoinst');
             $asset = $code;
         }
     }
@@ -150,19 +149,18 @@ sub download_asset {
         if ($size == $headers->content_length) {
             check_limits($size);
             update_asset($asset, $etag, $size);
-            print $log "CACHE: Asset download successful to $asset, Cache size is: $cache_real_size\n";
+            log_debug("CACHE: Asset download successful to $asset, Cache size is: $cache_real_size", 'autoinst');
         }
         else {
-            print $log "CACHE: Size of $asset differs, Expected: "
-              . $headers->content_length
-              . " / Downloaded: "
-              . "$size  \n";
+            log_debug(
+                "CACHE: Size of $asset differs, Expected: " . $headers->content_length . " / Downloaded: " . "$size",
+                'autoinst');
             $asset = 598;    # 598 (Informal convention) Network read timeout error
         }
     }
     else {
         my $message = $tx->res->error->{message};
-        print $log "CACHE: Download of $asset failed with: $code - $message\n";
+        log_debug("CACHE: Download of $asset failed with: $code - $message", 'autoinst');
         purge_asset($asset);
         $asset = undef;
     }

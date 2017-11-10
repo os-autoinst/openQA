@@ -25,10 +25,9 @@ use Scalar::Util 'blessed';
 
 use OpenQA::IPC;
 use OpenQA::Utils qw(log_debug wakeup_scheduler exists_worker safe_call);
-use OpenQA::ServerStartup;
 use OpenQA::Resource::Jobs  ();
 use OpenQA::Resource::Locks ();
-use OpenQA::FakeApp;
+use OpenQA::Setup;
 use sigtrap handler => \&normal_signals_handler, 'normal-signals';
 
 my $singleton;
@@ -59,9 +58,9 @@ sub new {
 
 sub run {
     my $self = shift;
-    my $fakeapp = OpenQA::FakeApp->new(log_name => 'resource-allocator');
-    OpenQA::ServerStartup::read_config($fakeapp);
-    OpenQA::ServerStartup::setup_logging($fakeapp);
+    my $setup = OpenQA::Setup->new(log_name => 'resource-allocator');
+    OpenQA::Setup::read_config($setup);
+    OpenQA::Setup::setup_log($setup);
     log_debug("Resource allocator started");
     $self->{reactor}->run()
       if exists $self->{reactor} && blessed($self->{reactor}) && $self->{reactor}->isa("Net::DBus::Reactor");

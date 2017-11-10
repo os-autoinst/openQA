@@ -21,8 +21,7 @@ use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::IPC;
 use OpenQA::Utils qw(log_warning job_groups_and_parents detect_current_version);
-use OpenQA::ServerStartup;
-
+use OpenQA::Setup;
 use Mojo::IOLoop;
 use Mojolicious::Commands;
 use DateTime;
@@ -69,9 +68,8 @@ sub log_name {
 # This method will run once at server start
 sub startup {
     my $self = shift;
-
-    OpenQA::ServerStartup::read_config($self);
-    OpenQA::ServerStartup::setup_logging($self);
+    OpenQA::Setup::read_config($self);
+    OpenQA::Setup::setup_log($self);
 
     # Set some application defaults
     $self->defaults(appname         => $self->app->config->{global}->{appname});
@@ -127,7 +125,7 @@ sub startup {
     }
 
     # Read configurations expected by plugins.
-    OpenQA::ServerStartup::update_config($self->config, @{$self->plugins->namespaces}, "OpenQA::WebAPI::Auth");
+    OpenQA::Setup::update_config($self->config, @{$self->plugins->namespaces}, "OpenQA::WebAPI::Auth");
 
     # End plugin loading/handling
 

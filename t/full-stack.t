@@ -280,11 +280,19 @@ wait_for_result_panel qr/Result: incomplete/, 'Test 4 crashed as expected';
 
 # Slurp the whole file, it's not that big anyways
 my $filename = $resultdir . "/00000/00000004-$job_name/autoinst-log.txt";
+ok(-s $filename, 'Test 4 autoinst-log.txt file created');
 open(my $f, '<', $filename) or die "OPENING $filename: $!\n";
 my $autoinst_log = do { local ($/); <$f> };
 close($f);
 
 like($autoinst_log, qr/result: setup failure/, 'Test 4 state correct: setup failure');
+
+like((split(/\n/, $autoinst_log))[0], qr/\[debug\] \+\+\+ setup notes \+\+\+/, 'Test 4 correct autoinst setup notes');
+like(
+    (split(/\n/, $autoinst_log))[-1],
+    qr/\[debug\] uploading autoinst-log.txt/,
+    'Test 4 correct autoinst uploading autoinst'
+);
 kill_worker;    # Ensure that the worker can be killed with TERM signal
 
 my $cache_location = path($ENV{OPENQA_BASEDIR}, 'cache')->make_path;
@@ -341,7 +349,18 @@ subtest 'Cache tests' => sub {
     close($f);
 
     like($autoinst_log, qr/Downloading Core-7.2.iso/, 'Test 5, downloaded the right iso.');
-    like($autoinst_log, qr/11116544/, 'Test 5 Core-7.2.iso size is correct.');
+    like($autoinst_log, qr/11116544/,                 'Test 5 Core-7.2.iso size is correct.');
+    like($autoinst_log, qr/\[debug\] result: done/,   'Test 5 result done');
+    like(
+        (split(/\n/, $autoinst_log))[0],
+        qr/\[debug\] \+\+\+ setup notes \+\+\+/,
+        'Test 5 correct autoinst setup notes'
+    );
+    like(
+        (split(/\n/, $autoinst_log))[-1],
+        qr/\[debug\] uploading autoinst-log.txt/,
+        'Test 5 correct autoinst uploading autoinst'
+    );
 
     my $dbh
       = DBI->connect("dbi:SQLite:dbname=$db_file", undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1});
@@ -401,20 +420,46 @@ subtest 'Cache tests' => sub {
     wait_for_result_panel qr/Result: passed/, 'test 7 is passed';
 
     $filename = path($resultdir, '00000', "00000007-$job_name")->child("autoinst-log.txt");
+    ok(-s $filename, 'Test 7 autoinst-log.txt file created');
+
     open($f, '<', $filename) or die "OPENING $filename: $!\n";
     $autoinst_log = do { local ($/); <$f> };
     close($f);
 
     like($autoinst_log, qr/Content has not changed/, 'Test 7 Core-7.2.iso has not changed.');
+    like($autoinst_log, qr/\[debug\] \+\+\+\ worker notes \+\+\+/, 'Test 7 correct autoinst worker notes');
+    like(
+        (split(/\n/, $autoinst_log))[0],
+        qr/\[debug\] \+\+\+ setup notes \+\+\+/,
+        'Test 7 correct autoinst setup notes'
+    );
+    like(
+        (split(/\n/, $autoinst_log))[-1],
+        qr/\[debug\] uploading autoinst-log.txt/,
+        'Test 7 correct autoinst uploading autoinst'
+    );
 
     client_call("jobs post $JOB_SETUP HDD_1=non-existent.qcow2");
     $driver->get('/tests/8');
     wait_for_result_panel qr/Result: incomplete/, 'test 8 is incomplete';
-
     $filename = path($resultdir, '00000', "00000008-$job_name")->child("autoinst-log.txt");
+    ok(-s $filename, 'Test 8 autoinst-log.txt file created');
+
     open($f, '<', $filename) or die "OPENING $filename: $!\n";
     $autoinst_log = do { local ($/); <$f> };
     close($f);
+
+    like($autoinst_log, qr/\[debug\] \+\+\+\ worker notes \+\+\+/, 'Test 7 correct autoinst worker notes');
+    like(
+        (split(/\n/, $autoinst_log))[0],
+        qr/\[debug\] \+\+\+ setup notes \+\+\+/,
+        'Test 8 correct autoinst setup notes'
+    );
+    like(
+        (split(/\n/, $autoinst_log))[-1],
+        qr/\[debug\] uploading autoinst-log.txt/,
+        'Test 8 correct autoinst uploading autoinst'
+    );
 
     like($autoinst_log, qr/non-existent.qcow2 failed with: 404 - Not Found/, 'Test 8 failure message found in log.');
     like($autoinst_log, qr/result: setup failure/, 'Test 8 state correct: setup failure');

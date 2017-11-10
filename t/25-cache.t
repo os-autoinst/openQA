@@ -69,6 +69,7 @@ sub truncate_log {
     my $logfile_ = ($new_log) ? $new_log : $logfile;
     open(my $f, '>', $logfile_) or die "OPENING $logfile_: $!\n";
     truncate $f, 0 or warn("Could not truncate");
+    close $f;
 }
 
 sub read_log {

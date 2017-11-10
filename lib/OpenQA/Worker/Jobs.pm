@@ -126,7 +126,6 @@ sub check_job {
 
 sub stop_job {
     my ($aborted, $job_id) = @_;
-
     # we call this function in all situations, so better check
     if (!$job || $stop_job_running) {
         # In case there is no job, or if the job was asked to stop
@@ -188,9 +187,7 @@ sub upload {
 
     # we need to open and close the log here as one of the files
     # might actually be autoinst-log.txt
-    open(my $log, '>>', "autoinst-log.txt");
-    printf $log "uploading %s\n", $filename;
-    close $log;
+    log_debug("uploading $filename", 'autoinst');
     log_debug("uploading $filename");
 
     my $regular_upload_failed = 0;
@@ -228,10 +225,8 @@ sub upload {
 
             # Just return if all upload retries have failed
             # this will cause the next group of uploads to be triggered
-            my $msg = "All $retry_limit upload attempts have failed for $filename\n";
-            open(my $log, '>>', "autoinst-log.txt");
-            print $log $msg;
-            close $log;
+            my $msg = "All $retry_limit upload attempts have failed for $filename";
+            log_debug($msg, 'autoinst');
             log_error($msg);
             return 0;
         }
@@ -246,9 +241,7 @@ sub upload {
         else {
             $msg = sprintf "ERROR %s: Connection error: $err->{message}\n", $filename;
         }
-        open(my $log, '>>', "autoinst-log.txt");
-        print $log $msg;
-        close $log;
+        log_debug($msg, 'autoinst');
         log_error($msg);
         return 0;
     }
@@ -267,15 +260,15 @@ sub upload {
             ($csum2, $size2) = split(/ /, <$cfd>);
             close($cfd);
         }
-        open(my $log, '>>', "autoinst-log.txt");
-        print $log "Checksum comparison (actual:expected) $csum1:$csum2 with size (actual:expected) $size1:$size2\n";
+        log_debug("Checksum comparison (actual:expected) $csum1:$csum2 with size (actual:expected) $size1:$size2",
+            'autoinst');
         if ($csum1 eq $csum2 && $size1 eq $size2) {
             my $ua_url = $hosts->{$current_host}{url}->clone;
             $ua_url->path("jobs/$job_id/ack_temporary");
             $hosts->{$current_host}{ua}->post($ua_url => form => {temporary => $res->res->json->{temporary}});
         }
         else {
-            print $log "Checksum/size comparison of $filename FAILED\n";
+            log_debug("Checksum/size comparison of $filename FAILED", 'autoinst');
             return 0;
         }
     }
@@ -318,13 +311,9 @@ sub _stop_job_2 {
     $aborted ||= 'done';
 
     my $job_done;    # undef
-
-    open(my $log, '>>', "autoinst-log.txt");
-    print $log "+++ worker notes +++\n";
-    printf $log "end time: %s\n", strftime("%F %T", gmtime);
-    print $log "result: $aborted\n";
-    close $log;
-
+    log_debug("+++ worker notes +++", 'autoinst');
+    log_debug(sprintf("end time: %s", strftime("%F %T", gmtime)), 'autoinst');
+    log_debug("result: $aborted", 'autoinst');
     if ($aborted ne 'quit' && $aborted ne 'abort' && $aborted ne 'api-failure') {
         # collect uploaded logs
         my @uploaded_logfiles = glob "$pooldir/ulogs/*";
@@ -367,7 +356,6 @@ sub _stop_job_2 {
                 }
             }
         }
-
         for my $file (qw(video.ogv vars.json serial0 autoinst-log.txt virtio_console.log)) {
             next unless -e $file;
             # default serial output file called serial0

@@ -429,15 +429,14 @@ is_deeply(
 my $asset = $schema->resultset('Assets')->register('iso', $settings{ISO});
 is($asset->name, $settings{ISO}, "asset register returns same");
 
-subtest 'OpenQA::FakeApp object test' => sub {
-    use OpenQA::FakeApp;
-    use OpenQA::ServerStartup;
-    my $fakeapp = OpenQA::FakeApp->new;
-    OpenQA::ServerStartup::read_config($fakeapp);
-    OpenQA::ServerStartup::setup_logging($fakeapp);
-    isa_ok($fakeapp->home,   'Mojo::Home');
-    isa_ok($fakeapp->schema, 'OpenQA::Schema');
-    isa_ok($fakeapp->log,    'Mojo::Log');
+subtest 'OpenQA::Setup object test' => sub {
+    use OpenQA::Setup;
+    my $setup = OpenQA::Setup->new;
+    OpenQA::Setup::read_config($setup);
+    OpenQA::Setup::setup_log($setup);
+    isa_ok($setup->home,   'Mojo::Home');
+    isa_ok($setup->schema, 'OpenQA::Schema');
+    isa_ok($setup->log,    'Mojo::Log');
 };
 
 done_testing;

@@ -17,7 +17,7 @@ package OpenQA::Worker::Commands;
 use 5.018;
 use warnings;
 
-use OpenQA::Utils qw(log_error log_warning log_debug);
+use OpenQA::Utils qw(log_error log_warning log_debug add_log_channel remove_log_channel);
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Jobs;
 use POSIX ':sys_wait_h';
@@ -158,6 +158,8 @@ sub websocket_commands {
 
             if ($job && $job->{id}) {
                 $OpenQA::Worker::Common::job = $job;
+                remove_log_channel('autoinst');
+                add_log_channel('autoinst', path => 'autoinst-log.txt', level => 'debug');
                 log_debug("Job " . $job->{id} . " scheduled for next cycle");
                 Mojo::IOLoop->singleton->once(
                     "start_job" => sub {

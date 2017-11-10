@@ -278,17 +278,18 @@ subtest 'Simulation of heavy unstable load' => sub {
 
 subtest 'Websocket server - close connection test' => sub {
     kill_service($wspid);
-    my $log_file        = tempfile;
+    my $log_file = tempfile;
+    local $ENV{OPENQA_LOGFILE};
+    local $ENV{MOJO_LOG_LEVEL};
     my $unstable_ws_pid = create_websocket_server($mojoport + 1, 1);
-    my $w2_pid          = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2, $log_file);
-    my $re              = qr/\[.*?\]\sConnection turned off from .*?\- (.*?)\s\:(.*?) dead/;
+    my $w2_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2, $log_file);
+    my $re = qr/\[.*?\]\sConnection turned off from .*?\- (.*?)\s\:(.*?) dead/;
 
     my $attempts = 800;
     do {
         sleep 1;
         $attempts--;
     } until ((() = $log_file->slurp() =~ m/$re/g) > 6 || $attempts <= 0);
-
     kill_service($_) for ($unstable_ws_pid, $w2_pid);
     dead_workers($schema);
     my @matches = $log_file->slurp() =~ m/$re/g;
@@ -297,6 +298,28 @@ subtest 'Websocket server - close connection test' => sub {
     is $matches[0], "1008", "Connection was turned off by ws server correctly - code error is 1008";
     like $matches[1], qr/Connection terminated from WebSocket server/,
       "Connection was turned off by ws server correctly";
+};
+
+
+subtest 'Worker logs correctly' => sub {
+    kill_service($wspid);
+    my $log_file = tempfile;
+    local $ENV{OPENQA_LOGFILE};
+    local $ENV{MOJO_LOG_LEVEL};
+    my $worker_pid = create_worker($k->key, $k->secret, "http://bogushost:999999", 1, $log_file);
+    my @re = qr/\[worker:debug\] Using dir .*? for host .*/,
+      qr/\[worker:info\] registering worker with .*/,
+      qr/\[worker:error\] unable to connect to host .* retry in /,
+      qr/\[worker:debug\] ## adding timer register_worker-.*/;
+    sleep(5);
+    my $i = 0;
+    for my $re (@re) {
+        my @matches = $log_file->slurp() =~ m/$re/gm;
+        ok(1 == @matches, "Worker logs correctly @{[++$i]}");
+
+    }
+
+    kill_service $worker_pid;
 };
 
 # This test destroys almost everything.
@@ -465,3 +488,4 @@ EOC
 
 
 done_testing;
+

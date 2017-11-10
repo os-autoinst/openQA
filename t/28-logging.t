@@ -20,17 +20,18 @@ BEGIN {
 }
 use Test::More;
 use Mojo::File qw(tempdir tempfile);
-use OpenQA::Utils qw(log_error log_warning log_fatal log_info log_debug);
-use OpenQA::FakeApp;
+use OpenQA::Utils qw(log_error log_warning log_fatal log_info log_debug add_log_channel);
+use OpenQA::Setup;
 use File::Path qw(make_path remove_tree);
 use Sys::Hostname;
 use File::Spec::Functions 'catfile';
 
-my $re = qr/\[.*?\] \[worker:(.*)\] (.*) message/;
-
+my $reFile    = qr/\[.*?\] \[worker:(.*?)\] (.*?) message/;
+my $reStdOut  = qr/(?:.*?)\[worker:(.*?)\] (.*?) message/;
+my $reChannel = qr/\[.*?\] \[(.*?)\] (.*?) message/;
 subtest 'Logging to stdout' => sub {
-    delete $ENV{OPENQA_WORKER_LOGDIR};
-
+    local $ENV{OPENQA_WORKER_LOGDIR};
+    local $ENV{OPENQA_LOGFILE};
     # Capture STDOUT:
     # 1- dups the current STDOUT to $oldSTDOUT. This is used to restore the STDOUT later
     # 2- Closes the current STDOUT
@@ -41,7 +42,7 @@ subtest 'Logging to stdout' => sub {
     open STDOUT, '>', \$output;
     ### Testing code here ###
 
-    my $app = OpenQA::FakeApp->new(
+    my $app = OpenQA::Setup->new(
         mode     => 'production',
         log_name => 'worker',
         instance => 1,
@@ -50,7 +51,7 @@ subtest 'Logging to stdout' => sub {
     );
 
     $app->setup_log();
-    $OpenQA::Utils::app = $app;
+
     log_debug('debug message');
     log_error('error message');
     log_info('info message');
@@ -59,9 +60,7 @@ subtest 'Logging to stdout' => sub {
     # Close the capture (current stdout) and restore STDOUT (by dupping the old STDOUT);
     close STDOUT;
     open(STDOUT, '>&', $oldSTDOUT) or die "Can't dup \$oldSTDOUT: $!";
-
-    # Tests
-    my @matches = ($output =~ m/$re/gm);
+    my @matches = ($output =~ m/$reStdOut/gm);
     ok(@matches / 2 == 3, 'Worker log matches');
     for (my $i = 0; $i < @matches; $i += 2) {
         ok($matches[$i] eq $matches[$i + 1], "OK $matches[$i]");
@@ -69,10 +68,11 @@ subtest 'Logging to stdout' => sub {
 };
 
 subtest 'Logging to file' => sub {
+    delete $ENV{OPENQA_LOGFILE};
     $ENV{OPENQA_WORKER_LOGDIR} = tempdir;
     make_path $ENV{OPENQA_WORKER_LOGDIR};
 
-    my $app = OpenQA::FakeApp->new(
+    my $app = OpenQA::Setup->new(
         mode     => 'production',
         log_name => 'worker',
         instance => 1,
@@ -80,15 +80,13 @@ subtest 'Logging to file' => sub {
         level    => 'debug'
     );
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
-
     $app->setup_log();
-    $OpenQA::Utils::app = $app;
     log_debug('debug message');
     log_error('error message');
     log_info('info message');
 
     # Tests
-    my @matches = (Mojo::File->new($output_logfile)->slurp =~ m/$re/gm);
+    my @matches = (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
     ok(@matches / 2 == 3, 'Worker log matches');
     for (my $i = 0; $i < @matches; $i += 2) {
         ok($matches[$i] eq $matches[$i + 1], "OK $matches[$i]");
@@ -100,6 +98,7 @@ subtest 'Logging to file' => sub {
 };
 
 subtest 'log fatal to stderr' => sub {
+    delete $ENV{OPENQA_LOGFILE};
     delete $ENV{OPENQA_WORKER_LOGDIR};
     # Capture STDERR:
     # 1- dups the current STDERR to $oldSTDERR. This is used to restore the STDERR later
@@ -111,7 +110,7 @@ subtest 'log fatal to stderr' => sub {
     open STDERR, '>', \$output;
     ### Testing code here ###
 
-    my $app = OpenQA::FakeApp->new(
+    my $app = OpenQA::Setup->new(
         mode     => 'production',
         log_name => 'worker',
         instance => 1,
@@ -136,40 +135,130 @@ subtest 'log fatal to stderr' => sub {
 subtest 'Checking log level' => sub {
     $ENV{OPENQA_WORKER_LOGDIR} = tempdir;
     delete $ENV{MOJO_LOG_LEVEL};    # The Makefile is overriding this variable
+    delete $ENV{OPENQA_LOGFILE};
     make_path $ENV{OPENQA_WORKER_LOGDIR};
 
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
 
-    my @loglevels    = qw(debug info warn error fatal);
-    my $deathcounter = 0;
-    my $counter      = @loglevels;
-    for (@loglevels) {
-        my $app = OpenQA::FakeApp->new(
+    my @loglevels      = qw(debug info warn error fatal);
+    my $deathcounter   = 0;
+    my $counterFile    = @loglevels;
+    my $counterChannel = @loglevels;
+    for my $level (@loglevels) {
+        my $app = OpenQA::Setup->new(
             mode     => 'production',
             log_name => 'worker',
             instance => 1,
             log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
-            level    => $_
+            level    => $level
         );
 
         $app->setup_log();
-        $OpenQA::Utils::app = $app;
+        # $OpenQA::Utils::app = $app;
 
         log_debug('debug message');
         log_info('info message');
         log_warning('warn message');
         log_error('error message');
 
-        my $exception = 0;
         eval { log_fatal('fatal message'); };
 
         $deathcounter++ if $@;
 
-        my %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$re/gm);
-        ok(keys(%matches) == $counter--, "Worker log level $_ entry");
+        my %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
+        ok(keys(%matches) == $counterFile, "Worker log level $level entry");
+
+        my $logging_test_file = tempfile;
+
+        add_log_channel('test', path => $logging_test_file, level => $level);
+        log_debug("debug message", 'test');
+        log_info("info message", 'test');
+        log_warning("warn message", 'test');
+        log_error("error message", 'test');
+
+        eval { log_fatal('fatal message', 'test'); };
+        $deathcounter++ if $@;
+
+        %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file)->slurp =~ m/$reChannel/gm);
+        ok(keys(%matches) == $counterChannel--, "Worker channel log level $level entry");   # TODO
+                                                                                            # use Data::Dumper;
+                                                                                            # print Dumper(\%matches);
+                                                                                            # unlink $logging_test_file;
+
+        log_debug("debug message", 'no_channel');
+        log_info("info message", 'no_channel');
+        log_warning("warn message", 'no_channel');
+        log_error("error", 'no_channel');
+
+        eval { log_fatal('fatal message', 'no_channel'); };
+
+        $deathcounter++ if $@;
+
+        # print Mojo::File->new($output_logfile)->slurp;
+
+        %matches = map { $_ => ($matches{$_} // 0) + 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
+        my @vals = grep { $_ != 2 } (values(%matches));
+        ok(keys(%matches) == $counterFile--, "Worker no existent channel log level $level entry");
+        ok(@vals == 0,                       'Worker no existent channel log level $level entry ');
+
         truncate $output_logfile, 0;
     }
-    ok($deathcounter == @loglevels, "Worker dies when logs fatal");
+    ok($deathcounter / 3 == @loglevels, "Worker dies when logs fatal");
+
+    # clear the system
+    remove_tree $ENV{OPENQA_WORKER_LOGDIR};
+    delete $ENV{OPENQA_WORKER_LOGDIR};
+};
+
+subtest 'Logging to right place' => sub {
+    delete $ENV{OPENQA_LOGFILE};
+    $ENV{OPENQA_WORKER_LOGDIR} = tempdir;
+    make_path $ENV{OPENQA_WORKER_LOGDIR};
+
+    my $app = OpenQA::Setup->new(
+        mode     => 'production',
+        log_name => 'worker',
+        instance => 1,
+        log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
+        level    => 'debug'
+    );
+    my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
+    $app->setup_log();
+    log_debug('debug message');
+    log_error('error message');
+    log_info('info message');
+    ok(-f $output_logfile, 'Log file defined in logdir');
+
+    local $ENV{OPENQA_LOGFILE} = 'test_log_file.log';
+    $app = OpenQA::Setup->new(
+        mode     => 'production',
+        log_name => 'worker',
+        instance => 1,
+        log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
+        level    => 'debug'
+    );
+    $app->setup_log();
+    log_debug('debug message');
+    log_error('error message');
+    log_info('info message');
+    ok(
+        -f catfile($ENV{OPENQA_WORKER_LOGDIR}, $ENV{OPENQA_LOGFILE}),
+        'Log file created defined in logdir and environment'
+    );
+
+
+    local $ENV{OPENQA_LOGFILE} = catfile($ENV{OPENQA_WORKER_LOGDIR}, 'another_test_log_file.log');
+    $app = OpenQA::Setup->new(
+        mode     => 'production',
+        log_name => 'worker',
+        instance => 1,
+        level    => 'debug'
+    );
+    $app->setup_log();
+    log_debug('debug message');
+    log_error('error message');
+    log_info('info message');
+    ok(-f $ENV{OPENQA_LOGFILE}, 'Log file created defined in environment');
 
     # clear the system
     remove_tree $ENV{OPENQA_WORKER_LOGDIR};

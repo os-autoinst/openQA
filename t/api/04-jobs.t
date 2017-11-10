@@ -279,6 +279,62 @@ $get = $t->get_ok($query->path_query)->status_is(200);
 $res = $get->tx->res->json;
 ok(!@{$res->{jobs}}, 'no result for nonexising state');
 
+subtest 'Check job status and output' => sub {
+    $get      = $t->get_ok('/api/v1/jobs');
+    @new_jobs = @{$get->tx->res->json->{jobs}};
+    my $running_job_id;
+
+    local $ENV{MOJO_LOG_LEVEL} = 'debug';
+    local $ENV{OPENQA_LOGFILE};
+    local $ENV{OPENQA_WORKER_LOGDIR};
+    $OpenQA::Utils::app->log(Mojo::Log->new(handle => \*STDOUT));
+
+    for my $job (@new_jobs) {
+        my $worker_id = $job->{assigned_worker_id};
+        my $json      = {};
+        if ($worker_id) {
+            $json->{status} = {worker_id => $worker_id};
+            $running_job_id = $job->{id};
+        }
+
+        open(my $oldSTDOUT, ">&", STDOUT) or die "Can't preserve STDOUT\n$!\n";
+        close STDOUT;
+        my $output;
+        open STDOUT, '>', \$output;
+
+
+        $post = $t->post_ok("/api/v1/jobs/$job->{id}/status", json => $json);
+        $worker_id = 0;
+        close STDOUT;
+        open(STDOUT, '>&', $oldSTDOUT) or die "Can't dup \$oldSTDOUT: $!";
+        if ($job->{id} == 99963) {
+            $post->status_is(200);
+        }
+        else {
+            $post->status_is(400);
+            ok($output =~ /\[.*info\] Got status update for job .*? but does not contain a worker id!/,
+                "Check status update for job $job->{id}");
+        }
+    }
+
+    open(my $oldSTDOUT, ">&", STDOUT) or die "Can't preserve STDOUT\n$!\n";
+    close STDOUT;
+    my $output;
+    open STDOUT, '>', \$output;
+    # bogus job ID
+    my $bogus_job_post = $t->post_ok("/api/v1/jobs/9999999/status", json => {});
+    # bogus worker ID
+    my $bogus_worker_post
+      = $t->post_ok("/api/v1/jobs/$running_job_id/status", json => {status => {worker_id => 999999}});
+    close STDOUT;
+    open(STDOUT, '>&', $oldSTDOUT) or die "Can't dup \$oldSTDOUT: $!";
+
+    $bogus_job_post->status_is(400);
+    $bogus_worker_post->status_is(400);
+    ok($output =~ /\[.*info\] Got status update for non-existing job/, 'Check status update for non-existing job');
+    ok($output =~ /\[.*info\] Got status update for job .* that does not belong to Worker/,
+        'Got status update for job that doesnt belong to worker');
+};
 # Test /jobs/cancel
 # TODO: cancelling jobs via API in tests doesn't work for some reason
 #

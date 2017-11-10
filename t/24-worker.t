@@ -27,7 +27,7 @@ use OpenQA::Client;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
-use Test::Output qw(stdout_like stderr_like);
+use Test::Output 'combined_like';
 use Test::Fatal;
 use Mojo::File qw(tempdir path);
 #use Scalar::Utils 'refaddr';
@@ -97,7 +97,7 @@ test_via_io_loop sub {
         tries         => 1,
         callback => sub { my $res = shift; is($res, undef, 'error ignored') });
 
-    stderr_like(
+    combined_like(
         sub {
             OpenQA::Worker::Common::api_call(
                 'post', 'jobs/500/status',
@@ -106,7 +106,7 @@ test_via_io_loop sub {
                 callback => sub { my $res = shift; is($res, undef, 'error handled'); Mojo::IOLoop->stop() });
             while (Mojo::IOLoop->is_running) { Mojo::IOLoop->singleton->reactor->one_tick }
         },
-        qr/.*\[ERROR\] Connection error:.*(remaining tries: 0).*/i,
+        qr/.*\[ERROR\] Connection error:.*(remaining tries: 0).*\[DEBUG\] .* no job running.*/s,
         'warning about 503 error'
     );
 };
