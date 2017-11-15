@@ -52,11 +52,13 @@ use Test::More;
 use Net::DBus qw(:typing);
 use Mojo::IOLoop::Server;
 use Mojo::File 'tempfile';
-use OpenQA::Test::Utils
-  qw(create_webapi wait_for_worker create_resourceallocator start_resourceallocator create_websocket_server create_worker kill_service unstable_worker client_output unresponsive_worker);
+use OpenQA::Test::Utils qw(
+  create_webapi wait_for_worker setup_share_dir
+  create_resourceallocator start_resourceallocator create_websocket_server create_worker
+  kill_service unstable_worker client_output unresponsive_worker
+);
 use Mojolicious;
 use File::Path qw(make_path remove_tree);
-use Cwd qw(abs_path getcwd);
 use DateTime;
 # This test have to be treated like fullstack.
 plan skip_all => "set SCHEDULER_FULLSTACK=1 (be careful)" unless $ENV{SCHEDULER_FULLSTACK};
@@ -72,18 +74,8 @@ my $wspid                = create_websocket_server($mojoport + 1, 0, 1, 1);
 
 my $reactor = get_reactor();
 # Setup needed files for workers.
-my $sharedir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'share')->make_path;
 
-path($sharedir, 'factory', 'iso')->make_path;
-
-symlink(abs_path("../os-autoinst/t/data/Core-7.2.iso"),
-    path($sharedir, 'factory', 'iso')->child("Core-7.2.iso")->to_string)
-  || die "can't symlink";
-
-path($sharedir, 'tests')->make_path;
-
-symlink(abs_path('../os-autoinst/t/data/tests/'), path($sharedir, 'tests')->child("tinycore"))
-  || die "can't symlink";
+my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok -d $resultdir;
@@ -302,14 +294,14 @@ subtest 'Websocket server - close connection test' => sub {
       "Connection was turned off by ws server correctly";
 };
 
-
 subtest 'Worker logs correctly' => sub {
     kill_service($wspid);
     my $log_file = tempfile;
     local $ENV{OPENQA_LOGFILE};
     local $ENV{MOJO_LOG_LEVEL};
+
     my $worker_pid = create_worker($k->key, $k->secret, "http://bogushost:999999", 1, $log_file);
-    my @re = qr/\[worker:debug\] Using dir .*? for host .*/,
+    my @re = qr/\[worker:info\] Project dir for host .*? is .*/,
       qr/\[worker:info\] registering worker with .*/,
       qr/\[worker:error\] unable to connect to host .* retry in /,
       qr/\[worker:debug\] ## adding timer register_worker-.*/;
@@ -317,11 +309,23 @@ subtest 'Worker logs correctly' => sub {
     my $i = 0;
     for my $re (@re) {
         my @matches = $log_file->slurp() =~ m/$re/gm;
-        ok(1 == @matches, "Worker logs correctly @{[++$i]}");
-
+        ok(1 == @matches, "Worker logs correctly @{[++$i]} for nonexistent host");
     }
 
     kill_service $worker_pid;
+    path($sharedir)->remove_tree;
+
+    $worker_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 1, $log_file);
+    @re = qr/\[worker:debug\] Found possible working directory for .*?: .*/,
+      qr/\[worker:error\] Ignoring host '.*?': Working directory does not exist/;
+    sleep(5);
+    $i = 0;
+    for my $re (@re) {
+        my @matches = $log_file->slurp() =~ m/$re/gm;
+        ok(1 == @matches, "Worker logs correctly @{[++$i]} for missing directory");
+    }
+    kill_service $worker_pid;
+    setup_share_dir($ENV{OPENQA_BASEDIR});
 };
 
 # This test destroys almost everything.
@@ -487,7 +491,6 @@ EOC
     # make sure the assets are prefetched
     ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
 }
-
 
 done_testing;
 

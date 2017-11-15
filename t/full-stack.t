@@ -16,10 +16,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-use Cwd qw(abs_path getcwd);
-
-use strict;
-
 BEGIN {
     unshift @INC, 'lib';
     use FindBin;
@@ -62,7 +58,7 @@ eval 'use Test::More::Color "foreground"';
 
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
-use OpenQA::Test::Utils qw(create_websocket_server create_resourceallocator start_resourceallocator);
+use OpenQA::Test::Utils qw(create_websocket_server create_resourceallocator start_resourceallocator setup_share_dir);
 
 plan skip_all => "set FULLSTACK=1 (be careful)" unless $ENV{FULLSTACK};
 
@@ -70,7 +66,7 @@ my $workerpid;
 my $wspid;
 my $schedulerpid;
 my $resourceallocatorpid;
-my $sharedir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'share')->make_path;
+my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 
 sub turn_down_stack {
     if ($workerpid) {
@@ -154,17 +150,6 @@ my $wsport = $mojoport + 1;
 $wspid = create_websocket_server($wsport);
 
 my $connect_args = "--apikey=1234567890ABCDEF --apisecret=1234567890ABCDEF --host=http://localhost:$mojoport";
-
-path($sharedir, 'factory', 'iso')->make_path;
-
-symlink(abs_path("../os-autoinst/t/data/Core-7.2.iso"),
-    path($sharedir, 'factory', 'iso')->child("Core-7.2.iso")->to_string)
-  || die "can't symlink";
-
-path($sharedir, 'tests')->make_path;
-
-symlink(abs_path('../os-autoinst/t/data/tests/'), path($sharedir, 'tests')->child("tinycore"))
-  || die "can't symlink";
 
 sub client_output {
     my ($args) = @_;

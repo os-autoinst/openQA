@@ -66,7 +66,7 @@ sub main {
         if ($worker_settings->{CACHEDIRECTORY}) {
             $shared_cache = prepare_cache_directory($h, $worker_settings->{CACHEDIRECTORY});
         }
-
+        # this is being also duplicated by OpenQA::Test::Utils since 49c06362d
         my @dirs = ($host_settings->{$h}{SHARE_DIRECTORY}, catdir($OpenQA::Utils::prjdir, 'share'));
         ($dir) = grep { $_ && -d } @dirs;
         unless ($dir) {
