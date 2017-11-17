@@ -275,7 +275,8 @@ sub schedule_iso {
     }
     my $deprioritize       = delete $args->{_DEPRIORITIZEBUILD} // 0;
     my $deprioritize_limit = delete $args->{_DEPRIORITIZE_LIMIT};
-    my $obsolete           = !(delete $args->{_NOOBSOLETEBUILD} // $deprioritize);
+    my $obsolete           = !(delete $args->{_NO_OBSOLETE} // delete $args->{_NOOBSOLETEBUILD} // $deprioritize);
+    my $onlysame           = delete $args->{_ONLY_OBSOLETE_SAME_BUILD} // 0;
 
     # Any arg name ending in _URL is special: it tells us to download
     # the file at that URL before running the job
@@ -344,7 +345,9 @@ sub schedule_iso {
         OpenQA::Utils::log_debug(
             "Triggering new iso with build \'$build\', obsolete: $obsolete, deprioritize: $deprioritize");
         my %cond;
-        for my $k (qw(DISTRI VERSION FLAVOR ARCH)) {
+        my @attrs = qw(DISTRI VERSION FLAVOR ARCH);
+        push @attrs, 'BUILD' if ($onlysame);
+        for my $k (@attrs) {
             next unless $jobs->[0]->{$k};
             $cond{$k} = $jobs->[0]->{$k};
         }

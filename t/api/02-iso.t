@@ -299,7 +299,7 @@ subtest 'build obsoletion/depriorization' => sub {
     lj;
     ok(!grep({ $_->{settings}->{BUILD} =~ '009[24]' } @jobs), 'recent non-important builds were obsoleted');
     is(scalar @jobs, 31, 'current build and the important build are scheduled');
-    $res  = schedule_iso({%iso, BUILD => '0096', '_NOOBSOLETEBUILD' => 1});
+    $res  = schedule_iso({%iso, BUILD => '0096', '_NO_OBSOLETE' => 1});
     $ret  = $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
     @jobs = @{$ret->tx->res->json->{jobs}};
     lj;
@@ -319,6 +319,22 @@ subtest 'build obsoletion/depriorization' => sub {
     is($jobs_previous_build[0]->{priority}, 50, 'job of previous build is deprioritized');
     $t->get_ok('/api/v1/jobs/' . $job_at_prio_limit)->status_is(200);
     $t->json_is('/job/state' => 'cancelled', 'older job already at priorization limit was cancelled');
+    # test 'only same build' obsoletion
+    my @jobs_0097 = grep { $_->{settings}->{BUILD} eq '0097' } @jobs;
+    $res  = schedule_iso({%iso, BUILD => '0097', '_ONLY_OBSOLETE_SAME_BUILD' => 1});
+    $ret  = $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
+    @jobs = @{$ret->tx->res->json->{jobs}};
+    lj;
+    # jobs from previous build shouldn't be cancelled
+    @jobs_previous_build = grep { $_->{settings}->{BUILD} eq '0095' } @jobs;
+    ok(@jobs_previous_build, 'old build still in progress');
+    # previous 0097 jobs should be cancelled
+    my $old0097job = $jobs_0097[0]->{id};
+    $t->get_ok('/api/v1/jobs/' . $old0097job)->status_is(200);
+    $t->json_is('/job/state' => 'cancelled', 'job from previous 0097 group was cancelled');
+    # we should have new 0097 jobs
+    @jobs_0097 = grep { $_->{settings}->{BUILD} eq '0097' } @jobs;
+    ok(@jobs_0097, 'new jobs for 0097 were created');
 };
 
 $t->app->config->{global}->{download_domains} = 'localhost';
