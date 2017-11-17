@@ -3009,12 +3009,12 @@ parameters.</p>
 <table>
 <tr>
 <td class="hdlist1">
-_NOOBSOLETEBUILD
+_NO_OBSOLETE
 </td>
 <td class="hdlist2">
-<p>Do not obsolete jobs in older builds which would be
-default. With this option jobs which are currently in execution, for example
-scheduled or running, are not cancelled when a new medium is triggered.</p>
+<p>Do not obsolete jobs in older builds with same DISTRI and VERSION
+(as is the default behavior). With this option jobs which are currently pending,
+for example scheduled or running, are not cancelled when a new medium is triggered.</p>
 </td>
 </tr>
 <tr>
@@ -3033,6 +3033,18 @@ _DEPRIORITIZE_LIMIT
 <td class="hdlist2">
 <p>The configurable limit of priority up to which jobs
 should be deprioritized. Needs <code>_DEPRIORITIZEBUILD</code>. Default 100.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+_ONLY_OBSOLETE_SAME_BUILD
+</td>
+<td class="hdlist2">
+<p>Only obsolete (or deprioritize) jobs for the same BUILD.
+This is useful for cases where a new build appearing doesn&#8217;t necessarily
+mean existing jobs for earlier builds with the same DISTRI and VERSION are
+no longer interesting, but you still want to be able to re-submit jobs for a
+build and have existing jobs for the exact same build obsoleted.</p>
 </td>
 </tr>
 </table>
@@ -5058,7 +5070,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-11-16 13:16:50 UTC
+Last updated 2017-11-17 09:17:39 UTC
 </div>
 </div>
 </body>
