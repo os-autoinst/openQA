@@ -31,16 +31,22 @@ function update_docs {
         update_api
         ln -f openqa-documentation-${verbose_doc_name}.html index.html
         ln -f openqa-documentation-${verbose_doc_name}.pdf current.pdf
-
-        cd ..
-        git add _includes/api.html
-        git add docs/index.html docs/current.pdf docs/api/testapi.html
-        echo "Update documentation to commit ${shortref}" > last.commit
-        echo "" >> last.commit # somehow travis does not like \n
-        (cd .. && git log --pretty=fuller ${TRAVIS_COMMIT} -1 >> out/last.commit)
-        git commit -F last.commit
-        git push $SSH_REPO $TARGET_BRANCH
-        cd ..
+        # "Change is inevitable, except for vending machines"
+        # gh#1480
+        # 2 files changed, 2 insertions(+), 2 deletions(-)
+        ANYTHING_CHANGED=3 #
+        ANYTHING_CHANGED=$(git diff --shortstat | perl -ne 'my $n; print $n = () = m/(?: 2 \w+)/g')
+        if [ ${ANYTHING_CHANGED} -ne 3]; then
+            cd ..
+            git add _includes/api.html
+            git add docs/index.html docs/current.pdf docs/api/testapi.html
+            echo "Update documentation to commit ${shortref}" > last.commit
+            echo "" >> last.commit # somehow travis does not like \n
+            (cd .. && git log --pretty=fuller ${TRAVIS_COMMIT} -1 >> out/last.commit)
+            git commit -F last.commit
+            git push $SSH_REPO $TARGET_BRANCH
+            cd ..
+        fi
         rm -rf out
 
 }
