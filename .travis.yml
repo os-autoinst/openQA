@@ -14,7 +14,6 @@ env:
   matrix:
     - FULLSTACK=0 UITESTS=0
     - FULLSTACK=0 UITESTS=1 SELENIUM_CHROME=0
-    - GH_PUBLISH=true FULLSTACK=1 SELENIUM_CHROME=0
     - SCHEDULER_FULLSTACK=1
   global:
     - COMMIT_AUTHOR_EMAIL=skynet@open.qa
@@ -35,6 +34,14 @@ install:
 script:
   - bash script/generate-documentation $encrypted_e2c381aa6b8c_key $encrypted_e2c381aa6b8c_iv
   - make travis-codecov
+jobs:
+  include:
+    - stage: fullstack
+      env:
+        - FULLSTACK=1 SELENIUM_CHROME=0 GH_PUBLISH=true
+stages:
+  - test
+  - fullstack
 after_failure:
   - cat /tmp/openqa-debug.log
 cache:
