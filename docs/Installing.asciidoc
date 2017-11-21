@@ -373,10 +373,10 @@ is no priority, or other ordering, support at the moment.
 It is possible to mix local openQA instance with remote instances or use only
 remote instances.
 
-=== Needle Caching
+=== Asset Caching
 
 If your network is slow or you experience long time to load needles you
-might want to consider needle caching. To use needle caching a directory
+might want to consider to enable caching in your remote workers. To enable caching,
 +/var/lib/openqa/cache+ must be created, and right permissions given to the
 'geekotest' user. If you install openQA through the repositories, said directory
 will be created for you.
@@ -386,8 +386,17 @@ In the +/etc/openqa/workers.ini+
 [source,ini]
 --------------------------------------------------------------------------------
 [global]
-CACHEDIRECTORY = /var/lib/openqa/cache
+HOST=http://webui
+CACHEDIRECTORY = $cache_location
+CACHELIMIT = 50 # This is currently noop. Cache supports limiting, but is not enabled.
+
+[http://webui]
+TESTPOOLSERVER = rsync://yourlocation/tests
 --------------------------------------------------------------------------------
+
+This will allow the workers to download the assets from the webUI and use them
+locally. If +TESTPOOLSERVER+ is set tests and needles will also be cached by the
+worker.
 
 == Auditing - tracking openQA changes
 [id="auditing"]
