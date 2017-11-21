@@ -231,20 +231,6 @@ sub _message {
         my $ret = $job->update_status($status);
         $ws->tx->send({json => $ret});
     }
-    elsif ($json->{type} eq 'property_change') {
-        my $prop = $json->{data};
-        if (defined $prop->{interactive_mode}) {
-            $worker->{db}->set_property('INTERACTIVE', $prop->{interactive_mode} ? 1 : 0);
-            # synchronize INTERACTIVE and STOP_WAITFORNEEDLE_REQUESTED properties
-            $prop->{waitforneedle} = 0 if !$prop->{interactive_mode};
-        }
-        if (defined $prop->{waitforneedle}) {
-            $worker->{db}->set_property('STOP_WAITFORNEEDLE_REQUESTED', $prop->{waitforneedle} ? 1 : 0);
-        }
-        else {
-            log_error("Unknown property received from worker $worker->{id}");
-        }
-    }
     elsif ($json->{type} eq 'worker_status') {
         my $current_worker_status = $json->{status};
         my $job_status            = $json->{job}->{state};
@@ -491,8 +477,8 @@ sub setup {
     # use port one higher than WebAPI
     my $listen = $ENV{MOJO_LISTEN} || "http://localhost:9527";
 
-    under \&check_authorized;
-    websocket '/ws/:workerid' => [workerid => qr/\d+/] => \&ws_create;
+    my $ca = under \&check_authorized;
+    $ca->websocket('/ws/:workerid' => [workerid => qr/\d+/] => \&ws_create);
 
     # no cookies for worker, no secrets to protect
     app->secrets(['nosecretshere']);

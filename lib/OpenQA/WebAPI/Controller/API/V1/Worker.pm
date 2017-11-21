@@ -120,10 +120,6 @@ sub _register {
         $worker->update({job_id => undef});
     }
 
-    $worker->set_property('INTERACTIVE',                  0);
-    $worker->set_property('STOP_WAITFORNEEDLE',           0);
-    $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', 0);
-
     # $worker->seen();
     die "got invalid id" unless $worker->id;
     return $worker->id;

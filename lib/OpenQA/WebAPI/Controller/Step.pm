@@ -524,9 +524,6 @@ sub save_needle_ajax {
 
     $self->emit_event('openqa_needle_modify', {needle => "$baseneedle.png", tags => $json_data->{tags}, update => 0});
     my $info = {info => "Needle $needlename created/updated"};
-    if ($job->worker_id && $job->worker->get_property('INTERACTIVE')) {
-        $info->{interactive_job} = $job->id;
-    }
     if ($job->can_be_duplicated) {
         $info->{restart} = $self->url_for('apiv1_restart', jobid => $job->id);
     }

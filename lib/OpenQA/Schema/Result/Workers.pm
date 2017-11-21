@@ -26,9 +26,7 @@ use OpenQA::IPC;
 use db_helpers;
 use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
 
-use constant COMMANDS => qw(quit abort scheduler_abort cancel obsolete enable_interactive_mode disable_interactive_mode
-  stop_waitforneedle reload_needles_and_retry continue_waitforneedle
-  livelog_stop livelog_start);
+use constant COMMANDS => qw(quit abort scheduler_abort cancel obsolete livelog_stop livelog_start);
 
 __PACKAGE__->table('workers');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
@@ -174,7 +172,6 @@ sub connected {
 sub unprepare_for_work {
     my $self = shift;
 
-    $self->delete_property('STOP_WAITFORNEEDLE_REQUESTED');
     $self->delete_property('JOBTOKEN');
     $self->delete_property('WORKER_TMPDIR');
 

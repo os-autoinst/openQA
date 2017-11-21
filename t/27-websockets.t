@@ -68,14 +68,6 @@ subtest "WebSocket Server _message()" => sub {
     $fake_tx->OpenQA::WebSockets::Server::_message({type => "status", jobid => 1, data => "mydata"});
     is @{$fake_tx->{w}->{status}}[0], "mydata", "status got updated";
 
-    $fake_tx->OpenQA::WebSockets::Server::_message(
-        {type => "property_change", jobid => 1, data => {interactive_mode => 1}});
-    is @{$fake_tx->{w}->{property}}[0], "INTERACTIVE,1", "property got updated";
-    $fake_tx->OpenQA::WebSockets::Server::_message(
-        {type => "property_change", jobid => 1, data => {interactive_mode => 0}});
-    is @{$fake_tx->{w}->{property}}[1], "INTERACTIVE,0", "property got updated";
-    is @{$fake_tx->{w}->{property}}[2], "STOP_WAITFORNEEDLE_REQUESTED,0", "property got updated";
-
     $buf = undef;
 
     $fake_tx->OpenQA::WebSockets::Server::_message({type => "FOOBAR"});

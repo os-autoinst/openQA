@@ -97,18 +97,6 @@ subtest 'worker accepted ws commands' => sub {
     }
 
     $OpenQA::Worker::Common::job = {id => 'job', URL => '127.0.0.1/nojob'};
-    for my $c (qw(stop_waitforneedle continue_waitforneedle)) {
-        OpenQA::Worker::Commands::websocket_commands($ws, {type => $c});
-        is($ws->get_last_command->[0]{json}{type}, 'property_change');
-        is($ws->get_last_command->[0]{json}{data}{waitforneedle}, $c eq 'stop_waitforneedle' ? 1 : 0);
-    }
-
-    for my $c (qw(enable_interactive_mode disable_interactive_mode)) {
-        OpenQA::Worker::Commands::websocket_commands($ws, {type => $c});
-        is($ws->get_last_command->[0]{json}{type}, 'property_change');
-        is($ws->get_last_command->[0]{json}{data}{interactive_mode}, $c eq 'enable_interactive_mode' ? 1 : 0);
-    }
-
     $OpenQA::Worker::Common::pooldir = 't';
     OpenQA::Worker::Commands::websocket_commands($ws, {type => 'livelog_start'});
     is($OpenQA::Worker::Jobs::do_livelog, 1, 'livelog is started');
