@@ -225,13 +225,6 @@ sub download_asset {
 sub limit_assets {
     my ($app) = @_;
     my $groups = $app->db->resultset('JobGroups');
-    # keep track of all assets related to jobs
-    my %seen_asset;
-    my %toremove;
-    my %keep;
-    my $doremove = 0;
-
-    my $debug_keep = 0;
 
     # to avoid perpetually being on the very edge of the size limit and prone
     # to edge cases while multiple jobs that may upload images are running,
@@ -243,52 +236,100 @@ sub limit_assets {
     # If $doremove is 1 we remove all in %toremove that no other group put in
     # %keep (assets can easily be in 2 groups - and both have different update
     # ratios, it's up to the admin to configure the size limit)
+
+    # define variables to keep track of all assets related to jobs
+    my %seen_asset;    # group ID by asset ID, just to find assets having no group
+    my %toremove;      # assets to be removed when $doremove
+    my %keep;          # assets needed to be kept
+    my $doremove   = 0;    # whether we actually want to remove something
+    my $debug_keep = 0;    # enables debug output
+
+    # find relevant assets which belong to a job group
     while (my $g = $groups->next) {
         my $sizelimit = $g->size_limit_gb * 1024 * 1024 * 1024;
         my $reduceto  = $sizelimit * 0.8;
-        # we need to find a distinct set of assets per job group ordered by
-        # their last use. Need to do this in 2 steps
+
+        # find the job-to-asset mapping for all jobs in the group
         my @job_assets = $app->db->resultset('JobsAssets')->search(
             {
                 job_id => {-in => $g->jobs->get_column('id')->as_query},
             },
             {
-                select   => ['asset_id', 'created_by', {max => 'job_id', -as => 'latest'},],
+                select   => ['job_id', 'asset_id', 'created_by', {max => 'job_id', -as => 'latest'},],
                 group_by => 'asset_id,created_by',
                 order_by => {-desc => 'latest'}})->all;
-        my %assets;
+
+        # find all assets for the job group using the mapping
         my $assets = $app->db->resultset('Assets')->search(
             {
                 id => {-in => [map { $_->asset_id } @job_assets]}});
+
+        # assign assets to a hash
+        my %assets;
         while (my $a = $assets->next) {
             $assets{$a->id} = $a;
         }
+
+        # define variable to keep track of all the jobs which have been kept
+        my @kept_by_jobgroup;
+
+        # loop through all entries in the job-to-asset mapping
         for my $a (@job_assets) {
             my $asset = $assets{$a->asset_id};
+
             OpenQA::Utils::log_debug(
                 sprintf "Group %s: %s/%s %s->%s",
                 $g->name, $asset->type, $asset->name,
                 human_readable_size($asset->size // 0),
                 human_readable_size($sizelimit));
+
             # ignore fixed assets
             next if ($asset->is_fixed);
+
+            # add asset to mapping of seen assets by group
             $seen_asset{$asset->id} = $g->id;
+
+            # check whether the asset has a size and whether we haven't exceeded the reduce limit
             my $size = $asset->ensure_size;
             if ($size > 0 && $reduceto > 0) {
-                $keep{$a->asset_id} = sprintf "%s: %s/%s", $g->name, $asset->type, $asset->name;
+                # keep asset
+                push(
+                    @kept_by_jobgroup,
+                    $keep{$a->asset_id} = {
+                        group_id => $g->id,
+                        job_id   => $a->job_id,
+                        log_msg  => sprintf "%s: %s/%s",
+                        $g->name, $asset->type, $asset->name,
+                    });
             }
             else {
+                # add assets to removal list
                 $toremove{$a->asset_id} = sprintf "%s/%s", $asset->type, $asset->name;
+                # set flag for removal if we have exceeded the actual size limit
                 $doremove = 1 if ($sizelimit <= 0);
             }
+
             $sizelimit -= $size;
             $reduceto  -= $size;
         }
+
+        # print messages
+        if ($debug_keep && @kept_by_jobgroup) {
+            OpenQA::Utils::log_debug('the following assets are kept by job group: ' . $g->name);
+            for my $kept_asset (@kept_by_jobgroup) {
+                OpenQA::Utils::log_debug($kept_asset->{log_msg} . '; referencing job: ' . $kept_asset->{job_id});
+            }
+        }
     }
+
+    # remove all kept assets from the removal list
     for my $id (keys %keep) {
-        OpenQA::Utils::log_debug("KEEP $toremove{$id} $keep{$id}") if $debug_keep;
+        my $asset = $keep{$id};
+        OpenQA::Utils::log_debug("KEEP $toremove{$id} $asset->{log_msg}") if $debug_keep;
         delete $toremove{$id};
     }
+
+    # remove assets in removal list (form db and disk)
     if ($doremove) {
         # skip assets for pending jobs
         my $pending = $app->db->resultset('Jobs')->search({state => [OpenQA::Schema::Result::Jobs::PENDING_STATES]})
@@ -310,10 +351,13 @@ sub limit_assets {
             $a->delete;
         }
     }
-    my $timecond = {"<" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600, 'UTC')};
 
+    # find assets which do not belong to a job group
+    my $timecond = {"<" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600, 'UTC')};
     my $search = {t_created => $timecond, type => [qw(iso hdd repo)], id => {-not_in => [sort keys %seen_asset]}};
     my $assets = $app->db->resultset('Assets')->search($search, {order_by => [qw(t_created)]});
+
+    # remove all assets older than 14 days which do not belong to a job group
     while (my $a = $assets->next) {
         next if is_fixed($a);
         my $delta = $a->t_created->delta_days(DateTime->now)->in_units('days');
@@ -330,6 +374,8 @@ sub limit_assets {
                   . " days");
         }
     }
+
+    # search for new assets and register them
     for my $type (qw(iso repo hdd)) {
         my $dh;
         if (opendir($dh, $OpenQA::Utils::assetdir . "/$type")) {
