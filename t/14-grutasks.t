@@ -81,13 +81,30 @@ $module->mock(delete           => \&mock_delete);
 $module->mock(remove_from_disk => \&mock_remove);
 
 my $schema = OpenQA::Test::Case->new->init_data;
+my $jobs   = $schema->resultset('Jobs');
+my $assets = $schema->resultset('Assets');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-
 
 # now to something completely different: testing limit_assets
 my $c = OpenQA::WebAPI::Plugin::Gru::Command::gru->new();
 $c->app($t->app);
+
+sub find_kept_assets_with_last_jobs {
+    my $last_used_jobs = $assets->search(
+        {
+            -not => {
+                -or => {
+                    name            => {-in => \@removed},
+                    last_use_job_id => undef
+                },
+            }
+        },
+        {
+            order_by => {-asc => 'last_use_job_id'}});
+    return [map { {asset => $_->name, job => $_->last_use_job_id} } $last_used_jobs->all];
+}
+is_deeply(find_kept_assets_with_last_jobs, [], 'initially, none of the assets has the job of its last use assigned');
 
 sub run_gru {
     my ($task, $args) = @_;
@@ -112,6 +129,18 @@ run_gru('limit_assets');
 is_deeply(\@removed, [], "nothing should have been 'removed' at size 25GiB");
 is_deeply(\@deleted, [], "nothing should have been 'deleted' at size 25GiB");
 
+is_deeply(
+    find_kept_assets_with_last_jobs,
+    [
+        {asset => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso', job => 99926},
+        {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',               job => 99947},
+        {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',             job => 99961},
+        {asset => 'testrepo',                                                 job => 99961},
+        {asset => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso',        job => 99981}
+    ],
+    'last jobs correctly assigned'
+);
+
 # at size 30GiB, we're over the 80% threshold but under the 100GiB limit
 # still no removal should occur.
 $module->mock(ensure_size => \&mock_size_30);
@@ -125,10 +154,19 @@ is_deeply(\@deleted, [], "nothing should have been 'deleted' at size 30GiB");
 $module->mock(ensure_size => \&mock_size_34);
 run_gru('limit_assets');
 
-my $remsize = @removed;
-my $delsize = @deleted;
-is($remsize, 1, "one asset should have been 'removed' at size 34GiB");
-is($delsize, 1, "one asset should have been 'deleted' at size 34GiB");
+is(scalar @removed, 1, "one asset should have been 'removed' at size 34GiB");
+is(scalar @deleted, 1, "one asset should have been 'deleted' at size 34GiB");
+
+is_deeply(
+    find_kept_assets_with_last_jobs,
+    [
+        {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',        job => 99947},
+        {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',      job => 99961},
+        {asset => 'testrepo',                                          job => 99961},
+        {asset => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso', job => 99981}
+    ],
+    'last jobs still present but first one deleted'
+);
 
 # empty the tracking arrays before next test
 @removed = ();
@@ -140,10 +178,8 @@ is($delsize, 1, "one asset should have been 'deleted' at size 34GiB");
 $module->mock(ensure_size => \&mock_size_45);
 run_gru('limit_assets');
 
-$remsize = @removed;
-$delsize = @deleted;
-is($remsize, 2, "two assets should have been 'removed' at size 45GiB");
-is($delsize, 2, "two assets should have been 'deleted' at size 45GiB");
+is(scalar @removed, 2, "two assets should have been 'removed' at size 45GiB");
+is(scalar @deleted, 2, "two assets should have been 'deleted' at size 45GiB");
 
 # empty the tracking arrays before next test
 @removed = ();
@@ -163,10 +199,8 @@ run_gru('limit_assets');
 # Now only *one* asset should get removed, as asset 1 will be in the
 # list of removal candidates, but will be protected by association
 # with a pending job.
-$remsize = @removed;
-$delsize = @deleted;
-is($remsize, 1, "one assets should have been 'removed' at size 45GiB with 99937 pending");
-is($delsize, 1, "one assets should have been 'deleted' at size 45GiB with 99937 pending");
+is(scalar @removed, 1, "one assets should have been 'removed' at size 45GiB with 99937 pending");
+is(scalar @deleted, 1, "one assets should have been 'deleted' at size 45GiB with 99937 pending");
 
 # restore job 99937 to DONE state
 $job99937->state(OpenQA::Schema::Result::Jobs::DONE);
