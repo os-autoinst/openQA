@@ -52,12 +52,18 @@ __PACKAGE__->add_columns(
         data_type     => 'text',
         is_nullable   => 1,
         default_value => undef
+    },
+    last_use_job_id => {
+        data_type      => 'integer',
+        is_nullable    => 1,
+        is_foreign_key => 1,
     });
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw(type name)]);
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'asset_id');
 __PACKAGE__->many_to_many(jobs => 'jobs_assets', 'job');
+__PACKAGE__->belongs_to(last_use_job => 'OpenQA::Schema::Result::Jobs', 'last_use_job_id');
 
 sub _getDirSize {
     my ($dir, $size) = @_;
@@ -223,8 +229,9 @@ sub download_asset {
 
 # this is a GRU task - abusing the namespace
 sub limit_assets {
-    my ($app) = @_;
-    my $groups = $app->db->resultset('JobGroups');
+    my ($app)           = @_;
+    my $groups          = $app->db->resultset('JobGroups');
+    my $asset_resultset = $app->db->resultset('Assets');
 
     # to avoid perpetually being on the very edge of the size limit and prone
     # to edge cases while multiple jobs that may upload images are running,
@@ -260,7 +267,7 @@ sub limit_assets {
                 order_by => {-desc => 'latest'}})->all;
 
         # find all assets for the job group using the mapping
-        my $assets = $app->db->resultset('Assets')->search(
+        my $assets = $asset_resultset->search(
             {
                 id => {-in => [map { $_->asset_id } @job_assets]}});
 
@@ -298,9 +305,12 @@ sub limit_assets {
                     $keep{$a->asset_id} = {
                         group_id => $g->id,
                         job_id   => $a->job_id,
-                        log_msg  => sprintf "%s: %s/%s",
-                        $g->name, $asset->type, $asset->name,
+                        log_msg  => sprintf("%s: %s/%s", $g->name, $asset->type, $asset->name),
                     });
+
+                # of course this might override the group/job information about the kept asset
+                # in case the asset is kept because of multiple jobs
+                # FIXME: problem? at least we get some job/group which prevents the asset from being delete
             }
             else {
                 # add assets to removal list
@@ -322,11 +332,18 @@ sub limit_assets {
         }
     }
 
-    # remove all kept assets from the removal list
+    # remove all kept assets from the removal list and propagate last update to asset table
     for my $id (keys %keep) {
         my $asset = $keep{$id};
-        OpenQA::Utils::log_debug("KEEP $toremove{$id} $asset->{log_msg}") if $debug_keep;
+
+        OpenQA::Utils::log_debug("KEEP $asset->{log_msg}") if $debug_keep;
         delete $toremove{$id};
+
+        # set the time of the last use and the related job group
+        $asset_resultset->find($id)->update(
+            {
+                last_use_job_id => $asset->{job_id},
+            });
     }
 
     # remove assets in removal list (form db and disk)
