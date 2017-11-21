@@ -17,7 +17,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -31,13 +30,13 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 
-use t::ui::PhantomTest;
+use OpenQA::PhantomTest;
 
 OpenQA::Test::Case->new->init_data;
 
 my $driver = call_phantom();
 if (!$driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::PhantomTest::phantommissing;
     exit(0);
 }
 
@@ -49,7 +48,7 @@ sub wait_for_data_table {
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 # we need to talk to the phantom instance or else we're using wrong database
-my $url = 'http://localhost:' . t::ui::PhantomTest::get_mojoport;
+my $url = 'http://localhost:' . OpenQA::PhantomTest::get_mojoport;
 
 # Scheduled isos are only available to operators and admins
 $t->get_ok($url . '/admin/auditlog')->status_is(302);

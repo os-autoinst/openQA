@@ -18,7 +18,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -45,11 +44,11 @@ my $sh = OpenQA::Scheduler->new;
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-use t::ui::PhantomTest;
+use OpenQA::PhantomTest;
 
 my $driver = call_phantom();
 unless ($driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::PhantomTest::phantommissing;
     exit(0);
 }
 

@@ -1,4 +1,4 @@
-package t::ui::PhantomTest;
+package OpenQA::PhantomTest;
 use base 'Exporter';
 
 use Mojo::IOLoop::Server;

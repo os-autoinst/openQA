@@ -15,7 +15,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -28,13 +27,13 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Test::Database;
 use Data::Dumper;
-use t::ui::PhantomTest;
+use OpenQA::PhantomTest;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 my $driver = call_phantom();
 unless ($driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::PhantomTest::phantommissing;
     exit(0);
 }
 

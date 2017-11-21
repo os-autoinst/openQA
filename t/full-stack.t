@@ -20,7 +20,6 @@ use Cwd qw(abs_path getcwd);
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     use FindBin;
     use Mojo::File qw(path tempdir);
     $ENV{OPENQA_BASEDIR} = path(tempdir, 't', 'full-stack.d');
@@ -97,11 +96,11 @@ sub kill_worker {
     $workerpid = undef;
 }
 
-use t::ui::PhantomTest;
+use OpenQA::PhantomTest;
 
 # skip if appropriate modules aren't available
 unless (check_phantom_modules) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::PhantomTest::phantommissing;
     exit(0);
 }
 path($ENV{OPENQA_CONFIG})->child("database.ini")->to_string;
@@ -131,7 +130,7 @@ $resourceallocatorpid = start_resourceallocator;
 
 # we don't want no fixtures
 my $driver = call_phantom(sub { });
-my $mojoport = t::ui::PhantomTest::get_mojoport;
+my $mojoport = OpenQA::PhantomTest::get_mojoport;
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok -d $resultdir;

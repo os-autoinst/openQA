@@ -16,7 +16,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -30,13 +29,13 @@ use OpenQA::Test::Case;
 
 OpenQA::Test::Case->new->init_data;
 
-use t::ui::PhantomTest;
+use OpenQA::PhantomTest;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $driver = call_phantom();
 unless ($driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::PhantomTest::phantommissing;
     exit(0);
 }
 
@@ -58,7 +57,7 @@ ok($driver->get("/tests?groupid=1001"), "list jobs without group 1001");
 @rows = $driver->find_child_elements($driver->find_element('#running tbody'), "tr");
 is(@rows, 1, 'one running job with this group');
 isnt($driver->find_element('#running #job_99963'), undef, '99963 listed');
-#t::ui::PhantomTest::make_screenshot('mojoResults.png');
+#OpenQA::PhantomTest::make_screenshot('mojoResults.png');
 
 
 kill_phantom();

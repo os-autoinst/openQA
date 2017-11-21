@@ -18,7 +18,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -29,7 +28,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
-use t::ui::PhantomTest;
+use OpenQA::PhantomTest;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
@@ -46,7 +45,7 @@ sub schema_hook {
 
 my $driver = call_phantom(\&schema_hook);
 unless ($driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::PhantomTest::phantommissing;
     exit(0);
 }
 

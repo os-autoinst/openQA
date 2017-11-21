@@ -18,7 +18,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -36,7 +35,7 @@ use Mojo::IOLoop;
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-use t::ui::PhantomTest;
+use OpenQA::PhantomTest;
 
 sub schema_hook {
     my $schema = OpenQA::Test::Database->new->create;
@@ -49,7 +48,7 @@ sub schema_hook {
 
 my $driver = call_phantom(\&schema_hook);
 unless ($driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::PhantomTest::phantommissing;
     exit(0);
 }
 my $baseurl = $driver->get_current_url;

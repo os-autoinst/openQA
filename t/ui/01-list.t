@@ -18,7 +18,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -41,7 +40,7 @@ my $sh = OpenQA::Scheduler->new;
 
 OpenQA::Test::Case->new->init_data;
 
-use t::ui::PhantomTest;
+use OpenQA::PhantomTest;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
@@ -64,7 +63,7 @@ sub schema_hook {
 
 my $driver = call_phantom(\&schema_hook);
 unless ($driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::PhantomTest::phantommissing;
     exit(0);
 }
 
@@ -275,7 +274,7 @@ $driver->title_is('openQA: Test results', 'restart stays on page');
 $td = $driver->find_element('#results #job_99946 td.test');
 is($td->get_text(), 'textmode@32bit (restarted)', 'restart removes link');
 
-#t::ui::PhantomTest::make_screenshot('mojoResults.png');
+#OpenQA::PhantomTest::make_screenshot('mojoResults.png');
 
 kill_phantom();
 done_testing();
