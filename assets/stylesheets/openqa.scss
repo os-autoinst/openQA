@@ -862,3 +862,18 @@ h2 + * {
         margin-right: 15px;
     }
 }
+
+.changelog {
+    ul {
+        font-weight: bold;
+
+        p {
+            margin-top: 10px;
+            margin-bottom: 0px;
+        }
+
+        ul, span {
+            font-weight: normal;
+        }
+    }
+}
