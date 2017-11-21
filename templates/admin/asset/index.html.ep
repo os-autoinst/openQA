@@ -18,6 +18,7 @@
                     <th>Name</th>
                     <th>#Jobs</th>
                     <th>Created</th>
+                    <th>Size</th>
                 </tr>
             </thead>
             <tbody>
@@ -29,6 +30,7 @@
                 <td class="t_created">
                     %= $asset->t_created
                 </td>
+                <td><%= $asset->size %></td>
             </tr>
             % }
             </tbody>
