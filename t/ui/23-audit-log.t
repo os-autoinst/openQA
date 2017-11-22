@@ -55,7 +55,7 @@ $t->get_ok($url . '/admin/auditlog')->status_is(302);
 $t->get_ok($url . '/login')->status_is(302);
 $t->get_ok($url . '/admin/auditlog')->status_is(200);
 
-# Log in as Demo in phantomjs webui
+# Log in as Demo
 $driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page

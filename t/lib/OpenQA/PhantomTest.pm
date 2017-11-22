@@ -7,7 +7,7 @@ require Mojolicious::Commands;
 require OpenQA::Test::Database;
 
 @EXPORT
-  = qw($phantommissing check_phantom_modules call_phantom kill_phantom wait_for_ajax javascript_console_has_no_warnings_or_errors);
+  = qw($drivermissing check_driver_modules call_driver kill_driver wait_for_ajax javascript_console_has_no_warnings_or_errors);
 
 use Data::Dump 'pp';
 use Test::More;
@@ -15,9 +15,8 @@ use Test::More;
 our $_driver;
 our $mojopid;
 our $mojoport;
-our $startingpid = 0;
-our $phantommissing
-  = 'Install Selenium::Remote::Driver and Selenium::PhantomJS (or Selenium::Chrome with SELENIUM_CHROME set) to run these tests';
+our $startingpid   = 0;
+our $drivermissing = 'Install Selenium::Remote::Driver and Selenium::Chrome to run these tests';
 
 =head2 start_app
 
@@ -76,7 +75,7 @@ sub start_app {
     return $mojoport;
 }
 
-sub start_phantomjs {
+sub start_driver {
     my ($mojoport) = @_;
 
     # Connect to it
@@ -86,22 +85,16 @@ sub start_phantomjs {
             default_finder   => 'css',
             webelement_class => 'Test::Selenium::Remote::WebElement'
         );
-        if ($ENV{SELENIUM_CHROME}) {
-            # chromedriver is unfortunately hidden on openSUSE
-            my @chromiumdirs = qw(/usr/lib64/chromium);
-            for my $dir (@chromiumdirs) {
-                if (-d $dir) {
-                    $ENV{PATH} = "$ENV{PATH}:$dir";
-                }
+        # chromedriver is unfortunately hidden on openSUSE
+        my @chromiumdirs = qw(/usr/lib64/chromium);
+        for my $dir (@chromiumdirs) {
+            if (-d $dir) {
+                $ENV{PATH} = "$ENV{PATH}:$dir";
             }
-            $opts{custom_args}        = "--log-path=t/log_chromedriver";
-            $opts{extra_capabilities} = {chromeOptions => {args => ['--headless', '--disable-gpu']}};
-            $_driver                  = Test::Selenium::Chrome->new(%opts);
         }
-        else {
-            $opts{custom_args} = "--webdriver-logfile=t/log_phantomjs --webdriver-loglevel=DEBUG";
-            $_driver = Test::Selenium::PhantomJS->new(%opts);
-        }
+        $opts{custom_args}        = "--log-path=t/log_chromedriver";
+        $opts{extra_capabilities} = {chromeOptions => {args => ['--headless', '--disable-gpu']}};
+        $_driver                  = Test::Selenium::Chrome->new(%opts);
         $_driver->set_implicit_wait_timeout(2000);
         $_driver->set_window_size(600, 800);
         $_driver->get("http://localhost:$mojoport/");
@@ -122,24 +115,22 @@ sub make_screenshot($) {
     close($fh);
 }
 
-sub check_phantom_modules {
+sub check_driver_modules {
     # load required modules if possible. DO NOT EVER PUT THESE IN
     # 'use' FUNCTION CALLS! Always use can_load! Otherwise you will
     # break the case where they are not available and tests should
     # be skipped.
     use Module::Load::Conditional qw(can_load);
-    my $modname = $ENV{SELENIUM_CHROME} ? 'Test::Selenium::Chrome' : 'Test::Selenium::PhantomJS';
-    my $modver = $ENV{SELENIUM_CHROME} ? '1.20' : undef;
-    return can_load(modules => {$modname => $modver, 'Selenium::Remote::Driver' => undef,});
+    return can_load(modules => {'Test::Selenium::Chrome' => '1.20', 'Selenium::Remote::Driver' => undef,});
 }
 
-sub call_phantom {
-    # return a phantomjs driver using specified schema hook if modules
+sub call_driver {
+    # return a omjs driver using specified schema hook if modules
     # are available, otherwise return undef
-    return undef unless check_phantom_modules;
+    return undef unless check_driver_modules;
     my ($schema_hook) = @_;
     my $mojoport = start_app($schema_hook);
-    return start_phantomjs($mojoport);
+    return start_driver($mojoport);
 }
 
 sub wait_for_ajax {
@@ -167,7 +158,7 @@ sub javascript_console_has_no_warnings_or_errors {
     is_deeply(\@errors, [], 'no errors or warnings on javascript console');
 }
 
-sub kill_phantom() {
+sub kill_driver() {
     return unless $$ == $startingpid;
     if ($_driver) {
         $_driver->quit();
@@ -186,7 +177,7 @@ sub get_mojoport {
 }
 
 END {
-    kill_phantom;
+    kill_driver;
 }
 
 1;

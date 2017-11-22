@@ -134,16 +134,9 @@ sub test_comment_editing {
         # try to remove the first displayed comment (wthe one which has just been edited)
         $driver->find_element('button.remove-edit-button')->click();
 
-        # phantomjs doesn't support alerts yet
-        if ($driver->isa('Test::Selenium::PhantomJS')) {
-            $driver->execute_script("window.confirm = function() { return false; }");
-        }
-        else {
-
-            is($driver->get_alert_text, "Do you really want to delete the comment written by Demo?", "Alert opened");
-            # check confirmation and dismiss in the first place
-            $driver->dismiss_alert;
-        }
+        is($driver->get_alert_text, "Do you really want to delete the comment written by Demo?", "Alert opened");
+        # check confirmation and dismiss in the first place
+        $driver->dismiss_alert;
 
         # the comment musn't be deleted yet
         is($driver->find_element('div.media-comment')->get_text(),

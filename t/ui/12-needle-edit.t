@@ -238,15 +238,7 @@ sub overwrite_needle($) {
     is($driver->find_element_by_id('needleeditor_name')->get_value(), "", "needle name input clean up");
     $driver->find_element_by_id('needleeditor_name')->send_keys($needlename);
     is($driver->find_element_by_id('needleeditor_name')->get_value(), "$needlename", "new needle name inputed");
-    if ($ENV{SELENIUM_CHROME}) {
-        $driver->find_element_by_id('save')->click();
-    }
-    else {
-        # workaround for PhantomJS because clicking button (even via execute_script) would lead to crash
-        # Error while executing command: clickElement: Server returned error message Server closed connection
-        # without sending any data back ... see also https://progress.opensuse.org/issues/19652
-        $driver->execute_script('saveNeedle();');
-    }
+    $driver->find_element_by_id('save')->click();
     wait_for_ajax;
     my $diag;
     $diag = $driver->find_element_by_id('modal-overwrite');

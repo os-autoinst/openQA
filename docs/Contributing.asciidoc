@@ -336,5 +336,4 @@ To run UI tests the package +perl-Selenium-Remote-Driver+ is required. Note that
 the version provided by Leap 42.2 is too old. The version from the repository
 +devel-languages-perl+ can be used instead.
 
-To use ChromeDriver instead of PhantomJS the environment variable
-+SELENIUM_CHROME+ can be set.
+You need to install chromedriver and either chrome or chromium for the ui tests.

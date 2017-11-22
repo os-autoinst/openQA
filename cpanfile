@@ -68,7 +68,7 @@ requires 'Sort::Versions';
 requires 'SQL::SplitStatement';
 requires 'SQL::Translator';
 requires 'Scalar::Util';
-requires 'Selenium::Remote::Driver', '>= 1.0';
+requires 'Selenium::Remote::Driver', '>= 1.20';
 requires 'Sub::Install';
 requires 'Sub::Name';
 requires 'Test::Compile';
