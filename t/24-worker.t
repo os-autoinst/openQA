@@ -49,7 +49,6 @@ like(
     'auth required'
 );
 
-
 OpenQA::Worker::Common::api_init(
     {HOSTS => ['this_host_should_not_exist']},
     {
@@ -168,6 +167,11 @@ $hosts->{host1}{workerid} = 2;
 $hosts->{host2}{workerid} = 2;
 
 subtest 'check_job works when no job, then is ignored' => sub {
+    open(my $oldSTDOUT, ">&", STDOUT) or die "Can't preserve STDOUT\n$!\n";
+    close STDOUT;
+    my $stdout;
+    open STDOUT, '>', \$stdout;
+
     test_via_io_loop sub { OpenQA::Worker::Jobs::check_job('host1') };
     while (Mojo::IOLoop->is_running) { Mojo::IOLoop->singleton->reactor->one_tick }
     is($OpenQA::Worker::Common::job, 'job set from host1', 'job set');
@@ -175,9 +179,21 @@ subtest 'check_job works when no job, then is ignored' => sub {
     test_via_io_loop sub { OpenQA::Worker::Jobs::check_job('host2'); Mojo::IOLoop->stop };
     while (Mojo::IOLoop->is_running) { Mojo::IOLoop->singleton->reactor->one_tick }
     is($OpenQA::Worker::Common::job, 'job set from host1', 'job still the same');
+
+    my @matches = ($stdout =~ m/\[DEBUG\] ## adding timer/g);
+    ok(@matches == 2, 'Adding timer log');
+    @matches = ($stdout =~ m/\[DEBUG\] checking for job/g);
+    ok(@matches == 1, 'Checking job');
+    close STDOUT;
+    open(STDOUT, '>&', $oldSTDOUT) or die "Can't dup \$oldSTDOUT: $!";
 };
 
 subtest 'test timer helpers' => sub {
+    open(my $oldSTDOUT, ">&", STDOUT) or die "Can't preserve STDOUT\n$!\n";
+    close STDOUT;
+    my $stdout;
+    open STDOUT, '>', \$stdout;
+
     my $t_recurrent = add_timer('recurrent', 5, sub { 1 });
     ok(Mojo::IOLoop->singleton->reactor->{timers}{$t_recurrent},            'timer registered in reactor');
     ok(Mojo::IOLoop->singleton->reactor->{timers}{$t_recurrent}{recurring}, 'timer is recurrent');
@@ -203,10 +219,25 @@ subtest 'test timer helpers' => sub {
     $t_recurrent = change_timer('recurrent', 6, sub { 2 });
     is(Mojo::IOLoop->singleton->reactor->{timers}{$t_recurrent}{after},  6, 'timer registered for 6s');
     is(Mojo::IOLoop->singleton->reactor->{timers}{$t_recurrent}{cb}->(), 2, 'timer function match y');
+
+    my @matches = ($stdout =~ m/\[DEBUG\] ## adding timer/g);
+    ok(@matches == 5, 'Adding timer log');
+    @matches = ($stdout =~ m/\[DEBUG\] ## removing timer/g);
+    ok(@matches == 5, 'Removing timer log');
+    @matches = ($stdout =~ m/\[DEBUG\] ## changing timer/g);
+    ok(@matches == 2, 'Changing timer log');
+
+    close STDOUT;
+    open(STDOUT, '>&', $oldSTDOUT) or die "Can't dup \$oldSTDOUT: $!";
 };
 
 # Ensure stop_job gets executed to avoid uncovered changes in codecov
 subtest 'mock test stop_job' => sub {
+    open(my $oldSTDOUT, ">&", STDOUT) or die "Can't preserve STDOUT\n$!\n";
+    close STDOUT;
+    my $stdout;
+    open STDOUT, '>', \$stdout;
+
     use Mojo::Util 'monkey_patch';
     $OpenQA::Worker::Common::job = {id => 9999};
 
@@ -221,6 +252,18 @@ subtest 'mock test stop_job' => sub {
 
     OpenQA::Worker::Jobs::stop_job(0, 9999);
     is $stop_job, 1, "stop_job() reached";
+    print STDERR $stdout;
+    my @matches = ($stdout =~ m/\[DEBUG\] updating status/g);
+    ok(@matches == 1, 'Updating status log');
+    @matches = ($stdout =~ m/\[DEBUG\] stop_job/g);
+    ok(@matches == 1, 'Stop job log');
+    @matches = ($stdout =~ m/\[DEBUG\] ## removing timer/g);
+    ok(@matches == 3, 'Changing timer log');
+    @matches = ($stdout =~ m/\[DEBUG\] waiting for update_status/g);
+    ok(@matches == 1, 'Waiting for update status log');
+
+    close STDOUT;
+    open(STDOUT, '>&', $oldSTDOUT) or die "Can't dup \$oldSTDOUT: $!";
 };
 
 subtest 'worker configuration reading' => sub {

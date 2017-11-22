@@ -21,7 +21,8 @@ use feature 'state';
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Pool 'clean_pool';
 use OpenQA::Worker::Engines::isotovideo;
-use OpenQA::Utils qw(wait_with_progress log_error log_warning log_debug log_info);
+use OpenQA::Utils
+  qw(wait_with_progress log_error log_warning log_debug log_info add_log_channel remove_log_channel get_channel_handle);
 
 use POSIX qw(strftime SIGTERM);
 use File::Copy qw(copy move);
@@ -187,8 +188,7 @@ sub upload {
 
     # we need to open and close the log here as one of the files
     # might actually be autoinst-log.txt
-    log_debug("uploading $filename", 'autoinst');
-    log_debug("uploading $filename");
+    log_debug("uploading $filename", channels => ['worker', 'autoinst'], default => 1);
 
     my $regular_upload_failed = 0;
     my $retry_counter         = 5;
@@ -226,8 +226,7 @@ sub upload {
             # Just return if all upload retries have failed
             # this will cause the next group of uploads to be triggered
             my $msg = "All $retry_limit upload attempts have failed for $filename";
-            log_debug($msg, 'autoinst');
-            log_error($msg);
+            log_error($msg, channels => ['autoinst', 'worker'], default => 1);
             return 0;
         }
         last;
@@ -241,8 +240,7 @@ sub upload {
         else {
             $msg = sprintf "ERROR %s: Connection error: $err->{message}\n", $filename;
         }
-        log_debug($msg, 'autoinst');
-        log_error($msg);
+        log_error($msg, channels => ['autoinst', 'worker'], default => 1);
         return 0;
     }
 
@@ -261,14 +259,14 @@ sub upload {
             close($cfd);
         }
         log_debug("Checksum comparison (actual:expected) $csum1:$csum2 with size (actual:expected) $size1:$size2",
-            'autoinst');
+            channels => 'autoinst');
         if ($csum1 eq $csum2 && $size1 eq $size2) {
             my $ua_url = $hosts->{$current_host}{url}->clone;
             $ua_url->path("jobs/$job_id/ack_temporary");
             $hosts->{$current_host}{ua}->post($ua_url => form => {temporary => $res->res->json->{temporary}});
         }
         else {
-            log_debug("Checksum/size comparison of $filename FAILED", 'autoinst');
+            log_debug("Checksum/size comparison of $filename FAILED", channels => 'autoinst');
             return 0;
         }
     }
@@ -282,7 +280,6 @@ sub _stop_job {
     # now tell the webui that we're about to finish, but the following
     # process of killing the backend process and checksums uploads and
     # checksums again can take a long while, so the webui needs to know
-    log_debug('stop_job 2nd part');
 
     if ($aborted eq "scheduler_abort") {
         log_debug('stop_job called by the scheduler. do not send logs');
@@ -305,15 +302,13 @@ sub _stop_job_2 {
     my ($aborted, $job_id) = @_;
     _kill_worker($worker);
 
-    log_debug('stop_job 3rd part');
-
     my $name = $job->{settings}->{NAME};
     $aborted ||= 'done';
 
     my $job_done;    # undef
-    log_debug("+++ worker notes +++", 'autoinst');
-    log_debug(sprintf("end time: %s", strftime("%F %T", gmtime)), 'autoinst');
-    log_debug("result: $aborted", 'autoinst');
+    log_debug("+++ worker notes +++", channels => 'autoinst');
+    log_debug(sprintf("end time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
+    log_debug("result: $aborted", channels => 'autoinst');
     if ($aborted ne 'quit' && $aborted ne 'abort' && $aborted ne 'api-failure') {
         # collect uploaded logs
         my @uploaded_logfiles = glob "$pooldir/ulogs/*";
@@ -356,7 +351,7 @@ sub _stop_job_2 {
                 }
             }
         }
-        for my $file (qw(video.ogv vars.json serial0 autoinst-log.txt virtio_console.log)) {
+        for my $file (qw(video.ogv vars.json serial0 autoinst-log.txt virtio_console.log worker-log.txt)) {
             next unless -e $file;
             # default serial output file called serial0
             my $ofile = $file;
@@ -416,7 +411,8 @@ sub _stop_job_2 {
 
 sub _stop_job_finish {
     my ($params, $quit) = @_;
-    log_debug("update status running $update_status_running") if $update_status_running;
+    log_debug("update status running $update_status_running")
+      if $update_status_running;
     if ($update_status_running) {
         add_timer('', 1, sub { _stop_job_finish($params, $quit) }, 1);
         return;
@@ -442,6 +438,7 @@ sub start_job {
     # block the job from having dangerous settings (isotovideo specific though)
     # it needs to come from worker_settings
     delete $job->{settings}->{GENERAL_HW_CMD_DIR};
+    # add_log_channel('worker', path => 'worker-log.txt', level => $worker_settings->{LOG_LEVEL} // 'info');
 
     # update settings with worker-specific stuff
     @{$job->{settings}}{keys %$worker_settings} = values %$worker_settings;
@@ -460,7 +457,7 @@ sub start_job {
 
     $worker = engine_workit($job);
     if ($worker->{error}) {
-        log_warning('job is missing files, releasing job');
+        log_warning('job is missing files, releasing job', channels => ['worker', 'autoinst'], default => 1);
         return stop_job("setup failure: $worker->{error}");
     }
     my $jobid = $job->{id};
@@ -694,7 +691,6 @@ sub upload_images {
     my $fileprefix = "$pooldir/testresults";
     while (my ($md5, $file) = each %$tosend_images) {
         log_debug("upload $file as $md5");
-
         optimize_image("$fileprefix/$file");
         my $form = {
             file => {
@@ -721,7 +717,6 @@ sub upload_images {
 
     for my $file (@$tosend_files) {
         log_debug("upload $file");
-
         my $form = {
             file => {
                 file     => "$pooldir/testresults/$file",

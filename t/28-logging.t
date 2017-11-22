@@ -20,7 +20,7 @@ BEGIN {
 }
 use Test::More;
 use Mojo::File qw(tempdir tempfile);
-use OpenQA::Utils qw(log_error log_warning log_fatal log_info log_debug add_log_channel);
+use OpenQA::Utils qw(log_error log_warning log_fatal log_info log_debug add_log_channel remove_log_channel);
 use OpenQA::Setup;
 use File::Path qw(make_path remove_tree);
 use Sys::Hostname;
@@ -141,6 +141,7 @@ subtest 'Checking log level' => sub {
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
 
     my @loglevels      = qw(debug info warn error fatal);
+    my @channels       = qw(channel1 channel2 channel3);
     my $deathcounter   = 0;
     my $counterFile    = @loglevels;
     my $counterChannel = @loglevels;
@@ -168,29 +169,33 @@ subtest 'Checking log level' => sub {
         my %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
         ok(keys(%matches) == $counterFile, "Worker log level $level entry");
 
-        my $logging_test_file = tempfile;
+        for my $channel (@channels) {
+            my $logging_test_file = tempfile;
 
-        add_log_channel('test', path => $logging_test_file, level => $level);
-        log_debug("debug message", 'test');
-        log_info("info message", 'test');
-        log_warning("warn message", 'test');
-        log_error("error message", 'test');
+            add_log_channel($channel, path => $logging_test_file, level => $level);
+            log_debug("debug message", channels => $channel);
+            log_info("info message", channels => $channel);
+            log_warning("warn message", channels => $channel);
+            log_error("error message", channels => $channel);
 
-        eval { log_fatal('fatal message', 'test'); };
-        $deathcounter++ if $@;
+            eval { log_fatal('fatal message', channels => $channel); };
+            $deathcounter++ if $@;
 
-        %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file)->slurp =~ m/$reChannel/gm);
-        ok(keys(%matches) == $counterChannel--, "Worker channel log level $level entry");   # TODO
-                                                                                            # use Data::Dumper;
-                                                                                            # print Dumper(\%matches);
-                                                                                            # unlink $logging_test_file;
+            %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file)->slurp =~ m/$reChannel/gm);
+            ok(keys(%matches) == $counterChannel, "Worker channel log level $level entry");  # TODO
+                                                                                             #  use Data::Dumper;
+                                                                                             #  print Dumper(\%matches);
+                 #  print "counter Channel: $counterChannel";
+                 # unlink $logging_test_file;
+        }
+        $counterChannel--;
 
-        log_debug("debug message", 'no_channel');
-        log_info("info message", 'no_channel');
-        log_warning("warn message", 'no_channel');
-        log_error("error", 'no_channel');
+        log_debug("debug message", channels => 'no_channel');
+        log_info("info message", channels => 'no_channel');
+        log_warning("warn message", channels => 'no_channel');
+        log_error("error", channels => 'no_channel');
 
-        eval { log_fatal('fatal message', 'no_channel'); };
+        eval { log_fatal('fatal message', channels => 'no_channel'); };
 
         $deathcounter++ if $@;
 
@@ -203,7 +208,7 @@ subtest 'Checking log level' => sub {
 
         truncate $output_logfile, 0;
     }
-    ok($deathcounter / 3 == @loglevels, "Worker dies when logs fatal");
+    ok($deathcounter == (@loglevels * 2 + @channels * @loglevels), "Worker dies when logs fatal");
 
     # clear the system
     remove_tree $ENV{OPENQA_WORKER_LOGDIR};
@@ -263,6 +268,236 @@ subtest 'Logging to right place' => sub {
     # clear the system
     remove_tree $ENV{OPENQA_WORKER_LOGDIR};
     delete $ENV{OPENQA_WORKER_LOGDIR};
+};
+
+subtest 'Logs to multiple channels' => sub {
+    delete $ENV{OPENQA_LOGFILE};
+    $ENV{OPENQA_WORKER_LOGDIR} = tempdir;
+    make_path $ENV{OPENQA_WORKER_LOGDIR};
+
+    my $output_logfile  = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
+    my @loglevels       = qw(debug info warn error fatal);
+    my @channel_tupples = ([qw/channel1 channel2/], [qw/channel3 channel4/]);
+    my $counterChannel  = @loglevels;
+
+
+    for my $level (@loglevels) {
+        my $app = OpenQA::Setup->new(
+            mode     => 'production',
+            log_name => 'worker',
+            instance => 1,
+            log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
+            level    => $level
+        );
+        $app->setup_log();
+
+        for my $channel_tupple (@channel_tupples) {
+            my $logging_test_file1 = tempfile;
+            my $logging_test_file2 = tempfile;
+
+            add_log_channel($channel_tupple->[0], path => $logging_test_file1, level => $level);
+            add_log_channel($channel_tupple->[1], path => $logging_test_file2, level => $level);
+
+            log_debug("debug message", channels => $channel_tupple, standard => 1);
+            log_info("info message", channels => $channel_tupple, standard => 1);
+            log_warning("warn message", channels => $channel_tupple, standard => 1);
+            log_error("error message", channels => $channel_tupple, standard => 1);
+
+            eval { log_fatal('fatal message', channels => $channel_tupple, standard => 1); };
+
+            my %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file1)->slurp =~ m/$reChannel/gm);
+            ok(keys(%matches) == $counterChannel,
+                "Worker multiple channel $channel_tupple->[0] log level $level entry");
+
+            %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file2)->slurp =~ m/$reChannel/gm);
+            ok(keys(%matches) == $counterChannel,
+                "Worker multiple channel $channel_tupple->[1] log level $level entry");
+            %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
+            ok(keys(%matches) == $counterChannel, "Worker multiple channel Default log level $level entry");
+            truncate $output_logfile, 0;
+        }
+        $counterChannel--;
+    }
+
+    # clear the system
+    remove_tree $ENV{OPENQA_WORKER_LOGDIR};
+    delete $ENV{OPENQA_WORKER_LOGDIR};
+
+};
+
+subtest 'Logs to bogus channels' => sub {
+    delete $ENV{OPENQA_LOGFILE};
+    $ENV{OPENQA_WORKER_LOGDIR} = tempdir;
+    make_path $ENV{OPENQA_WORKER_LOGDIR};
+
+    my $output_logfile  = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
+    my @loglevels       = qw(debug info warn error fatal);
+    my @channel_tupples = ([qw/channel1 channel2/], [qw/channel3 channel4/]);
+    my $counterChannel  = @loglevels;
+
+    for my $level (@loglevels) {
+        my $app = OpenQA::Setup->new(
+            mode     => 'production',
+            log_name => 'worker',
+            instance => 1,
+            log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
+            level    => $level
+        );
+        $app->setup_log();
+
+        for my $channel_tupple (@channel_tupples) {
+            my $logging_test_file1 = tempfile;
+            my $logging_test_file2 = tempfile;
+
+            add_log_channel($channel_tupple->[0], path => $logging_test_file1, level => $level);
+            add_log_channel($channel_tupple->[1], path => $logging_test_file2, level => $level);
+
+            log_debug("debug message", channels => ['test', 'test1']);
+            log_info("info message", channels => ['test', 'test1']);
+            log_warning("warn message", channels => ['test', 'test1']);
+            log_error("error message", channels => ['test', 'test1']);
+
+            eval { log_fatal('fatal message', channels => ['test', 'test1']); };
+
+            my %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file1)->slurp =~ m/$reChannel/gm);
+            ok(keys(%matches) == 0, "Worker multiple channel $channel_tupple->[0] log level $level entry");
+
+            %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file2)->slurp =~ m/$reChannel/gm);
+            ok(keys(%matches) == 0, "Worker multiple channel $channel_tupple->[1] log level $level entry");
+
+            %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
+            ok(keys(%matches) == $counterChannel, "Worker multiple channel Default log level $level entry");
+            truncate $output_logfile, 0;
+
+        }
+        $counterChannel--;
+    }
+
+    # clear the system
+    remove_tree $ENV{OPENQA_WORKER_LOGDIR};
+    delete $ENV{OPENQA_WORKER_LOGDIR};
+
+};
+
+
+subtest 'Logs to defaults channels' => sub {
+    delete $ENV{OPENQA_LOGFILE};
+    $ENV{OPENQA_WORKER_LOGDIR} = tempdir;
+    make_path $ENV{OPENQA_WORKER_LOGDIR};
+
+    my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
+    my @loglevels      = qw(debug info warn error fatal);
+    my $counterChannel = @loglevels;
+
+
+    for my $level (@loglevels) {
+        my $app = OpenQA::Setup->new(
+            mode     => 'production',
+            log_name => 'worker',
+            instance => 1,
+            log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
+            level    => $level
+        );
+        $app->setup_log();
+
+        my $logging_test_file1 = tempfile;
+        my $logging_test_file2 = tempfile;
+
+        add_log_channel('channel 1', path => $logging_test_file1, level => $level, default => 'set');
+        add_log_channel('channel 2', path => $logging_test_file2, level => $level);
+
+        log_debug("debug message");
+        log_info("info message");
+        log_warning("warn message");
+        log_error("error message");
+
+        eval { log_fatal('fatal message'); };
+
+        %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file1)->slurp =~ m/$reChannel/gm);
+        ok(keys(%matches) == $counterChannel, "Worker default channel 1 log level $level entry");
+
+        %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file2)->slurp =~ m/$reChannel/gm);
+        ok(keys(%matches) == 0, "Worker not default channel 2 log level $level entry");
+
+        %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
+        ok(keys(%matches) == 0, "Worker not default channels log level $level entry");
+
+        truncate $logging_test_file1, 0;
+        truncate $logging_test_file2, 0;
+
+
+
+        add_log_channel('channel 2', path => $logging_test_file2, level => $level, default => 'append');
+
+        log_debug("debug message");
+        log_info("info message");
+        log_warning("warn message");
+        log_error("error message");
+
+        eval { log_fatal('fatal message'); };
+
+        %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file1)->slurp =~ m/$reChannel/gm);
+        ok(keys(%matches) == $counterChannel, "Worker default channel 1 log level $level entry");
+
+        %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file2)->slurp =~ m/$reChannel/gm);
+        ok(keys(%matches) == $counterChannel, "Worker append to default channel 2 log level $level entry");
+
+        %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
+        ok(keys(%matches) == 0, "Worker not default channels log level $level entry");
+
+
+        remove_log_channel('channel 1');
+        truncate $logging_test_file1, 0;
+        truncate $logging_test_file2, 0;
+
+        log_debug("debug message");
+        log_info("info message");
+        log_warning("warn message");
+        log_error("error message");
+
+        eval { log_fatal('fatal message'); };
+
+        %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file1)->slurp =~ m/$reChannel/gm);
+        ok(keys(%matches) == 0, "Worker default channel 1 log level $level entry");
+
+        %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file2)->slurp =~ m/$reChannel/gm);
+        ok(keys(%matches) == $counterChannel, "Worker append to default channel 2 log level $level entry");
+
+        %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
+        ok(keys(%matches) == 0, "Worker not default channels log level $level entry");
+
+
+        remove_log_channel('channel 2');
+        truncate $logging_test_file1, 0;
+        truncate $logging_test_file2, 0;
+
+        log_debug("debug message");
+        log_info("info message");
+        log_warning("warn message");
+        log_error("error message");
+
+        eval { log_fatal('fatal message'); };
+
+        %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file1)->slurp =~ m/$reChannel/gm);
+        ok(keys(%matches) == 0, "Worker default channel 1 log level $level entry");
+
+        %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file2)->slurp =~ m/$reChannel/gm);
+        ok(keys(%matches) == 0, "Worker append to default channel 2 log level $level entry");
+
+        %matches = map { $_ => 1 } (Mojo::File->new($output_logfile)->slurp =~ m/$reFile/gm);
+        ok(keys(%matches) == $counterChannel, "Worker not default channels log level $level entry");
+
+
+        truncate $output_logfile, 0;
+
+
+        $counterChannel--;
+    }
+
+    # clear the system
+    remove_tree $ENV{OPENQA_WORKER_LOGDIR};
+    delete $ENV{OPENQA_WORKER_LOGDIR};
+
 };
 
 done_testing;

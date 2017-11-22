@@ -273,6 +273,12 @@ like $autoinst_log, qr/CACHE: Asset download successful to .*sle-12-SP3-x86_64-0
   "Full download logged";
 truncate_log 'autoinst-log.txt';
 
+get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+$autoinst_log = read_log('autoinst-log.txt');
+like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-200\@64bit.qcow2 from/, "Asset download attempt";
+like $autoinst_log, qr/CACHE: Content has not changed, not downloading .* but updating last use/, "Upading last use";
+truncate_log 'autoinst-log.txt';
+
 $openqalogs = read_log($logfile);
 like $openqalogs, qr/ andi \$a3, \$t1, 41399 and 1024/, "Etag and size are logged";
 truncate_log $logfile;
