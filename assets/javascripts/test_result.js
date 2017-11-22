@@ -153,6 +153,84 @@ function checkResultHash() {
   }
 }
 
+// queries LTP results (JSON file), only called when the LTP tab is accessed
+function loadLtpResults() {
+  var ltpTable = $('#ltp-table');
+  // skip if table is not present (meaning no LTP results available anyways) or the table
+  // has already been populated
+  if (!ltpTable.length || ltpTable.data('populated')) {
+    return;
+  }
+  ltpTable.data('populated', true);
+
+  // request JSON results
+  $.ajax({
+    url: ltpTable.data('json-url'),
+    method: 'GET',
+    success: function(response) {
+      renderLtpResults(response);
+    },
+    error: function() {
+      addFlash('danger', 'Unable to request LTP results.');
+    }
+  });
+}
+
+// renders the LTP table when queried results are available
+function renderLtpResults(results) {
+  var ltpTable = $('#ltp-table');
+  var ltpBody = ltpTable.find('tbody');
+
+  results = results.results;
+  if (!Array.isArray(results)) {
+    return; // TODO: log
+  }
+
+  var resultByLtpRes = {
+    TPASS: 'passed'
+  };
+
+  // define helper for adding cells
+  var newCell = function(tr, text) {
+    var td = $('<td></td>');
+    td.text(text);
+    tr.append(td);
+  }
+  var addInvisibleCell = function(tr) {
+    tr.append('<td style="display: none"></td>');
+  }
+
+  $.each(results, function(index, result) {
+    var name = result.test_fqn;
+    var test = result.test;
+    if (!name || !test) {
+      return; // TODO: log
+    }
+
+    var result = resultByLtpRes[test.result];
+    if (!result) {
+      result = 'none';
+    }
+
+    // add regular cells
+    var cellsTr = $('<tr></tr>');
+    newCell(cellsTr, name);
+    newCell(cellsTr, test.duration);
+    cellsTr.append($('<td><i class="status fa fa-circle result_' + result + '"></i> ' + test.result + '</td>'));
+    cellsTr.on('click', function() {
+      $('#ltp-log-modal-title').text(name);
+      $('#ltp-log-modal-text').text(test.log);
+      $('#ltp-log-modal').modal();
+    });
+    ltpBody.append(cellsTr);
+  });
+
+  ltpTable.DataTable({
+    lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+    order: []
+  });
+}
+
 function setupResult(state, jobid, status_url, details_url) {
   setupAsyncFailedResult();
   $(".current_preview").removeClass("current_preview");
@@ -231,6 +309,12 @@ function setupResult(state, jobid, status_url, details_url) {
       resumeLiveView();
     } else {
       pauseLiveView();
+      if (e.target.hash === '#details-ltp') {
+        loadLtpResults();
+      }
     }
   });
+
+  // load LTP results in case it is the initial/current tab
+  loadLtpResults();
 }

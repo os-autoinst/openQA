@@ -276,6 +276,10 @@ sub _show {
 
         $self->stash(resultfiles => \@resultfiles);
         $self->stash(ulogs       => \@ulogs);
+
+        # check whether LTP specific results are available and add the stash the relevant filename
+        # TODO: use a less generic name for that file
+        $self->stash(ltp_results_file => grep(/^result_array\.json$/, @ulogs) ? 'result_array.json' : 0);
     }
     else {
         $self->stash(resultfiles => []);
