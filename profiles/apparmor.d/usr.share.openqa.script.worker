@@ -100,7 +100,7 @@
   /usr/sbin/ipmiconsole rix,
   /usr/share/openqa/lib/DBIx/Class/Timestamps.pm r,
   /usr/share/openqa/lib/OpenQA/** r,
-  /usr/share/openqa/lib/db_helpers.pm r,
+  /usr/share/openqa/lib/** r,
   /usr/share/openqa/script/worker r,
   /usr/share/qemu/* r,
   /usr/share/qemu/keymaps/* r,
