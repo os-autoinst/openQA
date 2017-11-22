@@ -31,7 +31,7 @@ use OpenQA::Test::Case;
 
 OpenQA::Test::Case->new->init_data;
 
-use OpenQA::PhantomTest;
+use OpenQA::SeleniumTest;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
@@ -52,7 +52,7 @@ sub schema_hook {
 
 my $driver = call_phantom(\&schema_hook);
 unless ($driver) {
-    plan skip_all => $OpenQA::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
     exit(0);
 }
 

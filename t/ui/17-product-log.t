@@ -30,7 +30,7 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 
-use OpenQA::PhantomTest;
+use OpenQA::SeleniumTest;
 
 OpenQA::Test::Case->new->init_data;
 
@@ -43,14 +43,14 @@ sub schema_hook {
 
 my $driver = call_phantom(\&schema_hook);
 if (!$driver) {
-    plan skip_all => $OpenQA::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
     exit(0);
 }
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # we need to talk to the phantom instance or else we're using wrong database
-my $url = 'http://localhost:' . OpenQA::PhantomTest::get_mojoport;
+my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
 
 # Schedule iso - need UA change to add security headers
 # XXX: Test::Mojo loses it's app when setting a new ua

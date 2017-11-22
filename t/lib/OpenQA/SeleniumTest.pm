@@ -1,4 +1,4 @@
-package OpenQA::PhantomTest;
+package OpenQA::SeleniumTest;
 use base 'Exporter';
 
 use Mojo::IOLoop::Server;

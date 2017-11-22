@@ -43,7 +43,7 @@ eval 'use Test::More::Color "foreground"';
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-use OpenQA::PhantomTest;
+use OpenQA::SeleniumTest;
 
 sub schema_hook {
     OpenQA::Test::Database->new->create->resultset('Jobs')->search({id => {-in => [99926, 99928]}})
@@ -52,7 +52,7 @@ sub schema_hook {
 
 my $driver = call_phantom(\&schema_hook);
 unless ($driver) {
-    plan skip_all => $OpenQA::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
     exit(0);
 }
 

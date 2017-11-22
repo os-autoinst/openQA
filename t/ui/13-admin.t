@@ -41,11 +41,11 @@ use Module::Load::Conditional qw(can_load);
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-use OpenQA::PhantomTest;
+use OpenQA::SeleniumTest;
 
 my $driver = call_phantom();
 unless ($driver) {
-    plan skip_all => $OpenQA::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
     exit(0);
 }
 

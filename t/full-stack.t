@@ -96,11 +96,11 @@ sub kill_worker {
     $workerpid = undef;
 }
 
-use OpenQA::PhantomTest;
+use OpenQA::SeleniumTest;
 
 # skip if appropriate modules aren't available
 unless (check_phantom_modules) {
-    plan skip_all => $OpenQA::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
     exit(0);
 }
 path($ENV{OPENQA_CONFIG})->child("database.ini")->to_string;
@@ -130,7 +130,7 @@ $resourceallocatorpid = start_resourceallocator;
 
 # we don't want no fixtures
 my $driver = call_phantom(sub { });
-my $mojoport = OpenQA::PhantomTest::get_mojoport;
+my $mojoport = OpenQA::SeleniumTest::get_mojoport;
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok -d $resultdir;
