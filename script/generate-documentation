@@ -36,7 +36,7 @@ function update_docs {
         # 2 files changed, 2 insertions(+), 2 deletions(-)
         ANYTHING_CHANGED=3 #
         ANYTHING_CHANGED=$(git diff --shortstat | perl -ne 'my $n; print $n = () = m/(?: 2 \w+)/g')
-        if [ ${ANYTHING_CHANGED} -ne 3]; then
+        if [ ${ANYTHING_CHANGED} -ne 3 ]; then
             cd ..
             git add _includes/api.html
             git add docs/index.html docs/current.pdf docs/api/testapi.html
