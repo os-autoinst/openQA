@@ -1,11 +1,13 @@
 /var/log/openqa {
     compress
-    dateext
+    hourly
     maxage 30
-    rotate 10
-    size=+2000k
+    rotate 20
+    size=+300000k
     notifempty
     missingok
     copytruncate
+    compresscmd /usr/bin/xz
+    uncompresscmd /usr/bin/xzdec
 }
 
