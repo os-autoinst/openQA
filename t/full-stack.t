@@ -99,8 +99,8 @@ sub kill_worker {
 use OpenQA::SeleniumTest;
 
 # skip if appropriate modules aren't available
-unless (check_phantom_modules) {
-    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
+unless (check_driver_modules) {
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 path($ENV{OPENQA_CONFIG})->child("database.ini")->to_string;
@@ -129,7 +129,7 @@ if ($schedulerpid == 0) {
 $resourceallocatorpid = start_resourceallocator;
 
 # we don't want no fixtures
-my $driver = call_phantom(sub { });
+my $driver = call_driver(sub { });
 my $mojoport = OpenQA::SeleniumTest::get_mojoport;
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
@@ -466,13 +466,13 @@ subtest 'Cache tests' => sub {
     kill_worker;
 };
 
-kill_phantom;
+kill_driver;
 turn_down_stack;
 done_testing;
 
 # in case it dies
 END {
-    kill_phantom;
+    kill_driver;
     turn_down_stack;
     $? = 0;
 }

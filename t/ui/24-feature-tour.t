@@ -43,9 +43,9 @@ sub schema_hook {
 }
 
 
-my $driver = call_phantom(\&schema_hook);
+my $driver = call_driver(\&schema_hook);
 unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -104,6 +104,6 @@ $driver->find_element_by_link_text('Login')->click();
 $driver->find_element_by_link_text('Logged in as Demo')->click();
 $driver->find_element_by_link_text('Logout')->click();
 
-kill_phantom();
+kill_driver();
 
 done_testing();

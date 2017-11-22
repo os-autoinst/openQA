@@ -52,9 +52,9 @@ sub schema_hook {
             file_present           => 1,
         });
 }
-my $driver = call_phantom(\&schema_hook);
+my $driver = call_driver(\&schema_hook);
 unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -168,5 +168,5 @@ subtest 'delete needle' => sub {
     };
 };
 
-kill_phantom();
+kill_driver();
 done_testing();

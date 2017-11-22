@@ -34,9 +34,9 @@ $test_case->init_data;
 
 use OpenQA::SeleniumTest;
 
-my $driver = call_phantom();
+my $driver = call_driver();
 unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -81,5 +81,5 @@ like($driver->get_current_url(), qr(\Qtests/99938#settings\E$), "hash marks tab"
 $driver->find_element_by_link_text('Details')->click();
 like($driver->get_current_url(), qr(\Qtests/99938#\E$), "hash marks tab 2");
 
-kill_phantom();
+kill_driver();
 done_testing();

@@ -33,9 +33,9 @@ use OpenQA::SeleniumTest;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $driver = call_phantom();
+my $driver = call_driver();
 unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -60,5 +60,5 @@ isnt($driver->find_element('#running #job_99963'), undef, '99963 listed');
 #OpenQA::SeleniumTest::make_screenshot('mojoResults.png');
 
 
-kill_phantom();
+kill_driver();
 done_testing();

@@ -46,9 +46,9 @@ $test_case->init_data;
 
 use OpenQA::SeleniumTest;
 
-my $driver = call_phantom();
+my $driver = call_driver();
 unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -406,7 +406,7 @@ subtest 'areas/tags verified via JavaScript' => sub {
     $driver->find_element('.alert-danger button')->click();
 };
 
-kill_phantom();
+kill_driver();
 
 subtest '(created) needles can be accessed over API' => sub {
     my $t = Test::Mojo->new('OpenQA::WebAPI');

@@ -41,9 +41,9 @@ sub schema_hook {
     $test_suits->find(1017)->settings->find({key => 'START_AFTER_TEST'})->update({value => 'kda,textmode'});
 }
 
-my $driver = call_phantom(\&schema_hook);
+my $driver = call_driver(\&schema_hook);
 if (!$driver) {
-    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -122,6 +122,6 @@ ok($table, 'products tables found');
 @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
 is(scalar @rows, $nrows + 1, 'iso rescheduled by replay action');
 
-kill_phantom();
+kill_driver();
 
 done_testing();

@@ -35,10 +35,10 @@ $test_case->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $driver = call_phantom();
+my $driver = call_driver();
 
 unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -431,6 +431,6 @@ subtest 'editing when logged in as regular user' => sub {
     };
 };
 
-kill_phantom();
+kill_driver();
 
 done_testing();

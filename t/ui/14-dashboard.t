@@ -36,9 +36,9 @@ use OpenQA::SeleniumTest;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $driver = call_phantom();
+my $driver = call_driver();
 unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -144,5 +144,5 @@ like($t->get_ok('/')->tx->res->dom->at('#filter-panel .help_popover')->{'data-ti
 
 # parent group overview: tested in t/22-dashboard.t
 
-kill_phantom();
+kill_driver();
 done_testing();

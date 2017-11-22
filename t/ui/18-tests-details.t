@@ -46,9 +46,9 @@ sub schema_hook {
     $jobs->find(99963)->update({assigned_worker_id => 1});
 }
 
-my $driver = call_phantom(\&schema_hook);
+my $driver = call_driver(\&schema_hook);
 unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 my $baseurl = $driver->get_current_url;
@@ -281,5 +281,5 @@ like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker
 # warnings
 $get = $t->get_ok('/tests/80000')->status_is(200);
 
-kill_phantom();
+kill_driver();
 done_testing();

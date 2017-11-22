@@ -50,9 +50,9 @@ sub schema_hook {
       ->update({assigned_worker_id => 1});
 }
 
-my $driver = call_phantom(\&schema_hook);
+my $driver = call_driver(\&schema_hook);
 unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -121,5 +121,5 @@ is_deeply(
     'the first job has been restarted'
 );
 
-kill_phantom();
+kill_driver();
 done_testing();

@@ -34,9 +34,9 @@ use OpenQA::SeleniumTest;
 
 OpenQA::Test::Case->new->init_data;
 
-my $driver = call_phantom();
+my $driver = call_driver();
 if (!$driver) {
-    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -114,6 +114,6 @@ wait_for_data_table;
 is(scalar @entries, 1, 'one element when filtered by combination');
 
 
-kill_phantom();
+kill_driver();
 
 done_testing();

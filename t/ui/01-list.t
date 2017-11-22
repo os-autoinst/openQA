@@ -61,9 +61,9 @@ sub schema_hook {
     $job99928_comments->create({text => 'test1', user_id => 99901});
 }
 
-my $driver = call_phantom(\&schema_hook);
+my $driver = call_driver(\&schema_hook);
 unless ($driver) {
-    plan skip_all => $OpenQA::SeleniumTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -276,5 +276,5 @@ is($td->get_text(), 'textmode@32bit (restarted)', 'restart removes link');
 
 #OpenQA::SeleniumTest::make_screenshot('mojoResults.png');
 
-kill_phantom();
+kill_driver();
 done_testing();
