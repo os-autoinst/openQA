@@ -140,7 +140,10 @@ is($driver->find_element('#user-action a')->get_text(), 'Login', "noone logged i
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 $driver->title_is("openQA", "back on main page");
-# but ...
+
+# cleak away the tour
+$driver->find_element_by_id('dont-notify')->click();
+$driver->find_element_by_id('confirm')->click();
 
 my $wsport = $mojoport + 1;
 $wspid = create_websocket_server($wsport);

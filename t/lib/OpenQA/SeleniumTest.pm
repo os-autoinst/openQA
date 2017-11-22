@@ -92,9 +92,11 @@ sub start_driver {
                 $ENV{PATH} = "$ENV{PATH}:$dir";
             }
         }
-        $opts{custom_args}        = "--log-path=t/log_chromedriver";
-        $opts{extra_capabilities} = {chromeOptions => {args => ['--headless', '--disable-gpu']}};
-        $_driver                  = Test::Selenium::Chrome->new(%opts);
+        $opts{custom_args} = "--log-path=t/log_chromedriver";
+        unless ($ENV{NOT_HEADLESS}) {
+            $opts{extra_capabilities} = {chromeOptions => {args => ['--headless', '--disable-gpu']}};
+        }
+        $_driver = Test::Selenium::Chrome->new(%opts);
         $_driver->set_implicit_wait_timeout(2000);
         $_driver->set_window_size(600, 800);
         $_driver->get("http://localhost:$mojoport/");
