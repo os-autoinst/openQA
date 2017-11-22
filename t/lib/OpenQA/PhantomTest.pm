@@ -82,10 +82,9 @@ sub start_phantomjs {
     # Connect to it
     eval {
         my %opts = (
-            base_url          => "http://localhost:$mojoport/",
-            inner_window_size => [600, 800],
-            default_finder    => 'css',
-            webelement_class  => 'Test::Selenium::Remote::WebElement'
+            base_url         => "http://localhost:$mojoport/",
+            default_finder   => 'css',
+            webelement_class => 'Test::Selenium::Remote::WebElement'
         );
         if ($ENV{SELENIUM_CHROME}) {
             # chromedriver is unfortunately hidden on openSUSE
@@ -95,7 +94,9 @@ sub start_phantomjs {
                     $ENV{PATH} = "$ENV{PATH}:$dir";
                 }
             }
-            $_driver = Test::Selenium::Chrome->new(%opts);
+            $opts{custom_args}        = "--log-path=t/log_chromedriver";
+            $opts{extra_capabilities} = {chromeOptions => {args => ['--headless', '--disable-gpu']}};
+            $_driver                  = Test::Selenium::Chrome->new(%opts);
         }
         else {
             $opts{custom_args} = "--webdriver-logfile=t/log_phantomjs --webdriver-loglevel=DEBUG";
@@ -103,7 +104,8 @@ sub start_phantomjs {
         }
         $_driver->set_implicit_wait_timeout(2000);
         $_driver->set_window_size(600, 800);
-        $_driver->get('/');
+        $_driver->get("http://localhost:$mojoport/");
+
     };
     die $@ if ($@);
 
@@ -127,7 +129,7 @@ sub check_phantom_modules {
     # be skipped.
     use Module::Load::Conditional qw(can_load);
     my $modname = $ENV{SELENIUM_CHROME} ? 'Test::Selenium::Chrome' : 'Test::Selenium::PhantomJS';
-    my $modver = $ENV{SELENIUM_CHROME} ? '1.02' : undef;
+    my $modver = $ENV{SELENIUM_CHROME} ? '1.20' : undef;
     return can_load(modules => {$modname => $modver, 'Selenium::Remote::Driver' => undef,});
 }
 
