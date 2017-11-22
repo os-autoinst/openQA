@@ -26,7 +26,7 @@ use List::MoreUtils;
 use File::Spec::Functions 'catdir';
 use File::Path qw(remove_tree make_path);
 use Data::Dumper;
-use JSON;
+use Cpanel::JSON::XS;
 use DBI;
 
 

@@ -26,7 +26,7 @@ use OpenQA::Utils qw(wait_with_progress log_error log_warning log_debug log_info
 use POSIX qw(strftime SIGTERM);
 use File::Copy qw(copy move);
 use File::Path 'remove_tree';
-use JSON 'decode_json';
+use Cpanel::JSON::XS 'decode_json';
 use Fcntl;
 use MIME::Base64;
 use File::Basename 'basename';

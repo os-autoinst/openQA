@@ -21,7 +21,7 @@ use OpenQA::Worker::Common;
 use OpenQA::Utils qw(locate_asset log_error log_info log_debug get_channel_handle);
 
 use POSIX qw(:sys_wait_h strftime uname _exit);
-use JSON 'to_json';
+use Cpanel::JSON::XS 'encode_json';
 use Fcntl;
 use File::Spec::Functions 'catdir';
 use File::Basename;
@@ -63,7 +63,7 @@ sub _save_vars($) {
     fcntl($fd, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$)) or die "cannot lock vars.json: $!\n";
     truncate($fd, 0) or die "cannot truncate vars.json: $!\n";
 
-    print $fd to_json(\%$vars, {pretty => 1});
+    print $fd Cpanel::JSON::XS->new->pretty(1)->encode(\%$vars);
     close($fd);
 }
 
@@ -135,7 +135,7 @@ sub engine_workit {
         $job->{settings}->{$i} = $ENV{$i};
     }
     if (open(my $fh, '>', 'job.json')) {
-        print $fh to_json($job, {pretty => 1});
+        print $fh Cpanel::JSON::XS->new->pretty(1)->encode($job);
         close $fh;
     }
 

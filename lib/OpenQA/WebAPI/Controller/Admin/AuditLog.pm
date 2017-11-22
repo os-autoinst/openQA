@@ -21,7 +21,7 @@ use parent 'Mojolicious::Controller';
 use Time::Piece;
 use Time::Seconds;
 use Time::ParseDate;
-use JSON ();
+use Cpanel::JSON::XS ();
 use OpenQA::Utils 'log_warning';
 use OpenQA::ServerSideDataTable;
 
@@ -52,7 +52,7 @@ sub productlog {
     my $events_rs = $self->db->resultset("AuditEvents")
       ->search({event => 'iso_create'}, {order_by => {-desc => 'me.id'}, prefetch => 'owner', rows => 100});
     my @events;
-    my $json = JSON->new();
+    my $json = Cpanel::JSON::XS->new();
     $json->allow_nonref(1);
     while (my $event = $events_rs->next) {
         my $data = {

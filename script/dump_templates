@@ -256,8 +256,8 @@ for my $table (keys %result) {
 }
 
 if ($options{json}) {
-    use JSON;
-    print JSON->new->pretty->encode(\%result);
+    use Cpanel::JSON::XS;
+    print Cpanel::JSON::XS->new->pretty->encode(\%result);
 }
 else {
     dd \%result;

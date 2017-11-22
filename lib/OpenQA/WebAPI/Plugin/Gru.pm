@@ -19,7 +19,7 @@ package OpenQA::WebAPI::Plugin::Gru;
 
 use strict;
 use warnings;
-use JSON;
+use Cpanel::JSON::XS;
 
 use DBIx::Class::Timestamps 'now';
 use base 'Mojolicious::Plugin';

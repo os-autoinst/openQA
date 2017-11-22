@@ -6,11 +6,11 @@
             % for my $needle (@$needles) {
                 % my $title = $needle->{avg_similarity} . "%: " . $needle->{name};
                 <option data-image="<%= $needle->{image} %>"
-                        data-areas="<%= JSON::to_json($needle->{areas})%>"
+                        data-areas="<%= Cpanel::JSON::XS::encode_json($needle->{areas})%>"
                         % if ($needle->{selected}) {
                         selected="selected"
                         % }
-                        data-matches="<%= JSON::to_json($needle->{matches}) %>">
+                        data-matches="<%= Cpanel::JSON::XS::encode_json($needle->{matches}) %>">
                     <%= $title %></option>
             % }
         </select>

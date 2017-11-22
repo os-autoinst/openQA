@@ -19,7 +19,7 @@ use strict;
 use warnings;
 use base 'DBIx::Class::Core';
 use Try::Tiny;
-use JSON;
+use Cpanel::JSON::XS;
 use Fcntl;
 use DateTime;
 use db_helpers;
@@ -1078,7 +1078,7 @@ sub update_backend {
     $self->update(
         {
             backend      => $backend_info->{backend},
-            backend_info => JSON::encode_json($backend_info->{backend_info})});
+            backend_info => encode_json($backend_info->{backend_info})});
 }
 
 sub insert_module {

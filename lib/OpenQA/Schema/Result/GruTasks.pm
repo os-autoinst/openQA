@@ -18,7 +18,7 @@ package OpenQA::Schema::Result::GruTasks;
 use base 'DBIx::Class::Core';
 use strict;
 
-use JSON;
+use Cpanel::JSON::XS;
 use db_helpers;
 
 __PACKAGE__->table('gru_tasks');
@@ -63,7 +63,7 @@ sub sqlt_deploy_hook {
 }
 
 sub decode_json_from_db {
-    my $ret = JSON::decode_json($_[1]);
+    my $ret = decode_json($_[1]);
     return $ret->{_} if ref($ret) eq 'HASH' && defined $ret->{_};
     return $ret;
 }
@@ -73,7 +73,7 @@ sub encode_json_to_db {
     if (!ref($args)) {
         $args = {'_' => $args};
     }
-    JSON::encode_json($args);
+    encode_json($args);
 }
 
 1;
