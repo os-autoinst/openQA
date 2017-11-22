@@ -18,7 +18,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -33,13 +32,13 @@ use OpenQA::Test::Case;
 
 OpenQA::Test::Case->new->init_data;
 
-use t::ui::PhantomTest;
+use OpenQA::SeleniumTest;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $driver = call_phantom();
+my $driver = call_driver();
 unless ($driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -145,5 +144,5 @@ like($t->get_ok('/')->tx->res->dom->at('#filter-panel .help_popover')->{'data-ti
 
 # parent group overview: tested in t/22-dashboard.t
 
-kill_phantom();
+kill_driver();
 done_testing();

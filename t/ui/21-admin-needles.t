@@ -18,7 +18,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 
 }
@@ -31,7 +30,7 @@ use Test::Mojo;
 use Test::Warnings ':all';
 use OpenQA::Test::Case;
 use Time::HiRes qw(sleep);
-use t::ui::PhantomTest;
+use OpenQA::SeleniumTest;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
@@ -53,9 +52,9 @@ sub schema_hook {
             file_present           => 1,
         });
 }
-my $driver = call_phantom(\&schema_hook);
+my $driver = call_driver(\&schema_hook);
 unless ($driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -74,10 +73,10 @@ $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 $driver->title_is("openQA", "back on main page");
 
-is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
-
 sub goto_admin_needle_table {
+    is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
     $driver->find_element('#user-action a')->click();
+    wait_for_ajax;
     $driver->find_element_by_link_text('Needles')->click();
     wait_for_ajax;
 }
@@ -169,5 +168,5 @@ subtest 'delete needle' => sub {
     };
 };
 
-kill_phantom();
+kill_driver();
 done_testing();

@@ -18,7 +18,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -29,7 +28,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
-use t::ui::PhantomTest;
+use OpenQA::SeleniumTest;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
@@ -44,9 +43,9 @@ sub schema_hook {
 }
 
 
-my $driver = call_phantom(\&schema_hook);
+my $driver = call_driver(\&schema_hook);
 unless ($driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -105,6 +104,6 @@ $driver->find_element_by_link_text('Login')->click();
 $driver->find_element_by_link_text('Logged in as Demo')->click();
 $driver->find_element_by_link_text('Logout')->click();
 
-kill_phantom();
+kill_driver();
 
 done_testing();

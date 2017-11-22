@@ -20,7 +20,6 @@ use Cwd qw(abs_path getcwd);
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     use FindBin;
     use Mojo::File qw(path tempdir);
     $ENV{OPENQA_BASEDIR} = path(tempdir, 't', 'full-stack.d');
@@ -97,11 +96,11 @@ sub kill_worker {
     $workerpid = undef;
 }
 
-use t::ui::PhantomTest;
+use OpenQA::SeleniumTest;
 
 # skip if appropriate modules aren't available
-unless (check_phantom_modules) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+unless (check_driver_modules) {
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 path($ENV{OPENQA_CONFIG})->child("database.ini")->to_string;
@@ -130,8 +129,8 @@ if ($schedulerpid == 0) {
 $resourceallocatorpid = start_resourceallocator;
 
 # we don't want no fixtures
-my $driver = call_phantom(sub { });
-my $mojoport = t::ui::PhantomTest::get_mojoport;
+my $driver = call_driver(sub { });
+my $mojoport = OpenQA::SeleniumTest::get_mojoport;
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok -d $resultdir;
@@ -141,7 +140,10 @@ is($driver->find_element('#user-action a')->get_text(), 'Login', "noone logged i
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 $driver->title_is("openQA", "back on main page");
-# but ...
+
+# cleak away the tour
+$driver->find_element_by_id('dont-notify')->click();
+$driver->find_element_by_id('confirm')->click();
 
 my $wsport = $mojoport + 1;
 $wspid = create_websocket_server($wsport);
@@ -467,13 +469,13 @@ subtest 'Cache tests' => sub {
     kill_worker;
 };
 
-kill_phantom;
+kill_driver;
 turn_down_stack;
 done_testing;
 
 # in case it dies
 END {
-    kill_phantom;
+    kill_driver;
     turn_down_stack;
     $? = 0;
 }

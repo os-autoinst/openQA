@@ -18,7 +18,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -29,17 +28,17 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
-use t::ui::PhantomTest;
+use OpenQA::SeleniumTest;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $driver = call_phantom();
+my $driver = call_driver();
 
 unless ($driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -135,16 +134,9 @@ sub test_comment_editing {
         # try to remove the first displayed comment (wthe one which has just been edited)
         $driver->find_element('button.remove-edit-button')->click();
 
-        # phantomjs doesn't support alerts yet
-        if ($driver->isa('Test::Selenium::PhantomJS')) {
-            $driver->execute_script("window.confirm = function() { return false; }");
-        }
-        else {
-
-            is($driver->get_alert_text, "Do you really want to delete the comment written by Demo?", "Alert opened");
-            # check confirmation and dismiss in the first place
-            $driver->dismiss_alert;
-        }
+        is($driver->get_alert_text, "Do you really want to delete the comment written by Demo?", "Alert opened");
+        # check confirmation and dismiss in the first place
+        $driver->dismiss_alert;
 
         # the comment musn't be deleted yet
         is($driver->find_element('div.media-comment')->get_text(),
@@ -439,6 +431,6 @@ subtest 'editing when logged in as regular user' => sub {
     };
 };
 
-kill_phantom();
+kill_driver();
 
 done_testing();

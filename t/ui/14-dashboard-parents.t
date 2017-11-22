@@ -18,7 +18,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -32,7 +31,7 @@ use OpenQA::Test::Case;
 
 OpenQA::Test::Case->new->init_data;
 
-use t::ui::PhantomTest;
+use OpenQA::SeleniumTest;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
@@ -51,9 +50,9 @@ sub schema_hook {
     }
 }
 
-my $driver = call_phantom(\&schema_hook);
+my $driver = call_driver(\&schema_hook);
 unless ($driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -94,5 +93,5 @@ is(scalar @links, 11, 'all links expanded in the first place');
 $driver->find_element_by_link_text('Build0091')->click();
 ok($driver->find_element('#group1_build13_1-0091 .h4 a')->is_hidden(), 'link to child group collapsed');
 
-kill_phantom();
+kill_driver();
 done_testing();

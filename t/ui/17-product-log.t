@@ -17,7 +17,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -31,7 +30,7 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 
-use t::ui::PhantomTest;
+use OpenQA::SeleniumTest;
 
 OpenQA::Test::Case->new->init_data;
 
@@ -42,16 +41,16 @@ sub schema_hook {
     $test_suits->find(1017)->settings->find({key => 'START_AFTER_TEST'})->update({value => 'kda,textmode'});
 }
 
-my $driver = call_phantom(\&schema_hook);
+my $driver = call_driver(\&schema_hook);
 if (!$driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # we need to talk to the phantom instance or else we're using wrong database
-my $url = 'http://localhost:' . t::ui::PhantomTest::get_mojoport;
+my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
 
 # Schedule iso - need UA change to add security headers
 # XXX: Test::Mojo loses it's app when setting a new ua
@@ -123,6 +122,6 @@ ok($table, 'products tables found');
 @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
 is(scalar @rows, $nrows + 1, 'iso rescheduled by replay action');
 
-kill_phantom();
+kill_driver();
 
 done_testing();

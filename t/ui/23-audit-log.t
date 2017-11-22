@@ -17,7 +17,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -31,13 +30,13 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 
-use t::ui::PhantomTest;
+use OpenQA::SeleniumTest;
 
 OpenQA::Test::Case->new->init_data;
 
-my $driver = call_phantom();
+my $driver = call_driver();
 if (!$driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -49,14 +48,14 @@ sub wait_for_data_table {
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 # we need to talk to the phantom instance or else we're using wrong database
-my $url = 'http://localhost:' . t::ui::PhantomTest::get_mojoport;
+my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
 
 # Scheduled isos are only available to operators and admins
 $t->get_ok($url . '/admin/auditlog')->status_is(302);
 $t->get_ok($url . '/login')->status_is(302);
 $t->get_ok($url . '/admin/auditlog')->status_is(200);
 
-# Log in as Demo in phantomjs webui
+# Log in as Demo
 $driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
@@ -115,6 +114,6 @@ wait_for_data_table;
 is(scalar @entries, 1, 'one element when filtered by combination');
 
 
-kill_phantom();
+kill_driver();
 
 done_testing();

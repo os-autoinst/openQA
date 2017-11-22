@@ -18,7 +18,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -36,7 +35,7 @@ use Mojo::IOLoop;
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-use t::ui::PhantomTest;
+use OpenQA::SeleniumTest;
 
 sub schema_hook {
     my $schema = OpenQA::Test::Database->new->create;
@@ -47,9 +46,9 @@ sub schema_hook {
     $jobs->find(99963)->update({assigned_worker_id => 1});
 }
 
-my $driver = call_phantom(\&schema_hook);
+my $driver = call_driver(\&schema_hook);
 unless ($driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 my $baseurl = $driver->get_current_url;
@@ -282,5 +281,5 @@ like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker
 # warnings
 $get = $t->get_ok('/tests/80000')->status_is(200);
 
-kill_phantom();
+kill_driver();
 done_testing();

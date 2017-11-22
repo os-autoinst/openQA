@@ -15,7 +15,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -26,7 +25,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
-use t::ui::PhantomTest;
+use OpenQA::SeleniumTest;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
@@ -72,10 +71,10 @@ sub schema_hook {
     $jobs->create_from_settings($new);
 }
 
-my $driver = call_phantom(\&schema_hook);
+my $driver = call_driver(\&schema_hook);
 
 unless ($driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -123,6 +122,6 @@ my @open_bugs = $driver->find_elements('#bug-99946 .label_bug', 'css');
 is(scalar @open_bugs,   1, 'open bug correctly shown, and only once despite the 2 comments');
 is(scalar @closed_bugs, 0, 'open bug not shown as closed bug');
 
-kill_phantom();
+kill_driver();
 
 done_testing();

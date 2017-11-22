@@ -18,7 +18,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -42,11 +41,11 @@ use Module::Load::Conditional qw(can_load);
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-use t::ui::PhantomTest;
+use OpenQA::SeleniumTest;
 
-my $driver = call_phantom();
+my $driver = call_driver();
 unless ($driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -482,5 +481,5 @@ subtest 'asset list' => sub {
     is('about 2 hours ago', $td->get_text(), 'timeago 2h');
 };
 
-kill_phantom();
+kill_driver();
 done_testing();

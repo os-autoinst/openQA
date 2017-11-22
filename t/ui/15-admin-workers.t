@@ -17,7 +17,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    push @INC, '.';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
@@ -44,16 +43,16 @@ eval 'use Test::More::Color "foreground"';
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-use t::ui::PhantomTest;
+use OpenQA::SeleniumTest;
 
 sub schema_hook {
     OpenQA::Test::Database->new->create->resultset('Jobs')->search({id => {-in => [99926, 99928]}})
       ->update({assigned_worker_id => 1});
 }
 
-my $driver = call_phantom(\&schema_hook);
+my $driver = call_driver(\&schema_hook);
 unless ($driver) {
-    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
 }
 
@@ -122,5 +121,5 @@ is_deeply(
     'the first job has been restarted'
 );
 
-kill_phantom();
+kill_driver();
 done_testing();
