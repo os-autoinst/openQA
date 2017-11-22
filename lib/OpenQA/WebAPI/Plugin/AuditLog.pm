@@ -20,7 +20,7 @@ use warnings;
 
 use parent 'Mojolicious::Plugin';
 use Mojo::IOLoop;
-use JSON ();
+use Cpanel::JSON::XS ();
 
 my @table_events = qw(table_create table_update table_delete);
 my @job_events   = qw(job_create job_delete job_cancel job_duplicate job_restart jobs_restart job_update_result
@@ -65,7 +65,7 @@ sub on_event {
     my ($user_id, $connection_id, $event, $event_data) = @$args;
     # no need to log openqa_ prefix in openqa log
     $event =~ s/^openqa_//;
-    my $json = JSON->new();
+    my $json = Cpanel::JSON::XS->new();
     $json->allow_nonref(1);
     $app->db->resultset('AuditEvents')->create(
         {

@@ -20,7 +20,7 @@ use warnings;
 
 use parent 'Mojolicious::Plugin';
 use IPC::Run;
-use JSON;
+use Cpanel::JSON::XS;
 use Mojo::IOLoop;
 use OpenQA::Schema::Result::Jobs;
 
@@ -49,7 +49,7 @@ sub log_event {
     $event =~ s/_/\./g;
 
     # convert data to JSON, with reliable key ordering (helps the tests)
-    $event_data = to_json($event_data, {canonical => 1, allow_blessed => 1});
+    $event_data = Cpanel::JSON::XS->new->canonical(1)->allow_blessed(1)->encode($event_data);
 
     OpenQA::Utils::log_debug("Sending fedmsg for $event");
 

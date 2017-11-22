@@ -25,6 +25,8 @@ use strict;
 use warnings;
 use FindBin;
 use lib "$FindBin::Bin/lib";
+# https://github.com/rurban/Cpanel-JSON-XS/issues/65
+use JSON::PP;
 use DateTime;
 use Test::More;
 use Test::Warnings;

@@ -3,6 +3,7 @@ dist: trusty
 language: perl
 perl:
   - "5.18"
+  - "5.26"
 addons:
   chrome: stable
   ssh_known_hosts: github.com

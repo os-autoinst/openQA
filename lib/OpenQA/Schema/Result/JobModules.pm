@@ -21,7 +21,7 @@ use strict;
 use db_helpers;
 use OpenQA::Scheduler::Scheduler;
 use OpenQA::Schema::Result::Jobs;
-use JSON ();
+use Cpanel::JSON::XS qw(decode_json encode_json);
 use File::Basename qw(dirname basename);
 use File::Path 'remove_tree';
 use Cwd 'abs_path';
@@ -204,7 +204,7 @@ sub details {
     my $ret;
     # decode_json dies if JSON is malformed, so handle that
     try {
-        $ret = JSON::decode_json(<$fh>);
+        $ret = decode_json(<$fh>);
     }
     catch {
         OpenQA::Utils::log_debug "malformed JSON file $fn";
@@ -442,7 +442,7 @@ sub save_details {
 
     $self->store_needle_infos($details);
     open(my $fh, ">", $self->job->result_dir . "/details-" . $self->name . ".json");
-    $fh->print(JSON::encode_json($details));
+    $fh->print(encode_json($details));
     close($fh);
     return $existent_md5;
 }

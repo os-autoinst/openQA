@@ -21,7 +21,6 @@ use OpenQA::Utils;
 use OpenQA::Schema::Result::Jobs;
 use File::Basename;
 use POSIX 'strftime';
-use JSON 'decode_json';
 
 sub referer_check {
     my ($self) = @_;

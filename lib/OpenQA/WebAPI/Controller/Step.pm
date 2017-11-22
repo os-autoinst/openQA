@@ -23,7 +23,7 @@ use File::Copy;
 use File::Which 'which';
 use POSIX 'strftime';
 use Try::Tiny;
-use JSON;
+use Cpanel::JSON::XS;
 
 sub init {
     my ($self) = @_;
