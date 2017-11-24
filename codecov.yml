@@ -15,7 +15,7 @@ coverage:
         branches: null
     project:
       default:
-        target: 86.5
+        target: 88.4
         threshold: 0.1
     patch:
       default:
