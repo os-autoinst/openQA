@@ -181,9 +181,9 @@ function updateStatus() {
     $.ajax(testStatus.status_url).
         done(function(status) {
             updateTestStatus(status);
-            setTimeout("updateStatus()", 1000);
+            setTimeout("updateStatus()", 5000);
         }).fail(function() {
-            setTimeout(function() {location.reload();}, 1000);
+            setTimeout(function() {location.reload();}, 5000);
         });
 }
 
