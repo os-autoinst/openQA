@@ -69,6 +69,11 @@ sub schema_hook {
     $new->{MACHINE} = 'uefi';
     $new->{_GROUP}  = 'opensuse';
     $jobs->create_from_settings($new);
+
+    # another one with default to have a unambiguous "preferred" machine type
+    $new->{TEST}    = 'kde+workarounds';
+    $new->{MACHINE} = '64bit';
+    $jobs->create_from_settings($new);
 }
 
 my $driver = call_driver(\&schema_hook);
