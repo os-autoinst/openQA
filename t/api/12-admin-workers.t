@@ -17,6 +17,7 @@
 
 BEGIN {
     unshift @INC, 'lib';
+    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use Mojo::Base -strict;
@@ -27,6 +28,7 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
+use OpenQA::WebSockets;
 
 OpenQA::Test::Case->new->init_data;
 
@@ -35,6 +37,10 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
+
+# create test dbus service for WebSockets as ws_is_worker_connected
+# will be called. test passes without this, but it's more correct
+my $ws = OpenQA::WebSockets->new;
 
 my $get     = $t->get_ok('/admin/workers.json');
 my %workers = %{$get->tx->res->json->{workers}};
