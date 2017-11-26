@@ -2,15 +2,20 @@ package OpenQA::SeleniumTest;
 use base 'Exporter';
 
 use Mojo::IOLoop::Server;
+use strict;
+
 # Start command line interface for application
 require Mojolicious::Commands;
 require OpenQA::Test::Database;
 
-@EXPORT
-  = qw($drivermissing check_driver_modules call_driver kill_driver wait_for_ajax javascript_console_has_no_warnings_or_errors);
+our @EXPORT = qw($drivermissing check_driver_modules
+  call_driver kill_driver wait_for_ajax
+  javascript_console_has_no_warnings_or_errors);
 
 use Data::Dump 'pp';
 use Test::More;
+use Try::Tiny;
+use Time::HiRes 'time';
 
 our $_driver;
 our $mojopid;
@@ -36,7 +41,6 @@ The optional parameter C<$schema_hook> allows to provide a custom way of creatin
     start_app(\&schema_hook);
 =cut
 
-
 sub start_app {
     my ($schema_hook) = @_;
     $mojoport = Mojo::IOLoop::Server->generate_port;
@@ -50,6 +54,7 @@ sub start_app {
         else {
             OpenQA::Test::Database->new->create;
         }
+
         # TODO: start the server manually - and make it silent
         # Run openQA in test mode - it will mock Scheduler and Websockets DBus services
         $ENV{MOJO_MODE}   = 'test';
@@ -85,6 +90,7 @@ sub start_driver {
             default_finder   => 'css',
             webelement_class => 'Test::Selenium::Remote::WebElement'
         );
+
         # chromedriver is unfortunately hidden on openSUSE
         my @chromiumdirs = qw(/usr/lib64/chromium);
         for my $dir (@chromiumdirs) {
@@ -118,15 +124,21 @@ sub make_screenshot($) {
 }
 
 sub check_driver_modules {
+
     # load required modules if possible. DO NOT EVER PUT THESE IN
     # 'use' FUNCTION CALLS! Always use can_load! Otherwise you will
     # break the case where they are not available and tests should
     # be skipped.
     use Module::Load::Conditional qw(can_load);
-    return can_load(modules => {'Test::Selenium::Chrome' => '1.20', 'Selenium::Remote::Driver' => undef,});
+    return can_load(
+        modules => {
+            'Test::Selenium::Chrome'   => '1.20',
+            'Selenium::Remote::Driver' => undef,
+        });
 }
 
 sub call_driver {
+
     # return a omjs driver using specified schema hook if modules
     # are available, otherwise return undef
     return undef unless check_driver_modules;
@@ -135,11 +147,12 @@ sub call_driver {
     return start_driver($mojoport);
 }
 
+sub _default_check_interval {
+    return shift // 0.25;
+}
+
 sub wait_for_ajax {
-    my ($check_interval) = (@_);
-    if (!$check_interval) {
-        $check_interval = 0.25;
-    }
+    my $check_interval = _default_check_interval(shift);
     while (!$_driver->execute_script("return jQuery.active == 0")) {
         sleep $check_interval;
     }
@@ -153,14 +166,16 @@ sub javascript_console_has_no_warnings_or_errors {
         if ($level eq 'DEBUG' or $level eq 'INFO') {
             next;
         }
+
         # FIXME: loading thumbs during live run causes 404. ignore for now
         if ($log_entry->{source} eq 'network') {
-            next if $log_entry->{message} =~ m,thumb/,;
+            next if $log_entry->{message} =~ m,/thumb/,;
+            next if $log_entry->{message} =~ m,/.thumbs/,;
         }
         push(@errors, $log_entry);
     }
 
-    diag('javascript console output: ' . pp($log)) if @$log;
+    diag('javascript console output: ' . pp(\@errors)) if @errors;
     is_deeply(\@errors, [], 'no errors or warnings on javascript console');
 }
 

@@ -15,6 +15,10 @@
 
 package OpenQA::WebAPI;
 use strict;
+
+# https://github.com/rurban/Cpanel-JSON-XS/issues/65
+use JSON::PP;
+
 use Mojolicious 7.18;
 use Mojo::Base 'Mojolicious';
 use OpenQA::Schema;

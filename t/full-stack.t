@@ -18,6 +18,8 @@
 
 use Cwd qw(abs_path getcwd);
 
+use strict;
+
 BEGIN {
     unshift @INC, 'lib';
     use FindBin;
@@ -39,6 +41,9 @@ BEGIN {
     path($ENV{OPENQA_BASEDIR}, 'openqa', 'db')->make_path->child("db.lock")->spurt;
     # DO NOT SET OPENQA_IPC_TEST HERE
 }
+
+# https://github.com/rurban/Cpanel-JSON-XS/issues/65
+use JSON::PP;
 
 use Mojo::Base -strict;
 use lib "$FindBin::Bin/lib";
@@ -137,13 +142,13 @@ ok -d $resultdir;
 
 $driver->title_is("openQA", "on main page");
 is($driver->find_element('#user-action a')->get_text(), 'Login', "noone logged in");
-$driver->find_element_by_link_text('Login')->click();
+$driver->click_element_ok('Login', 'link_text');
 # we're back on the main page
 $driver->title_is("openQA", "back on main page");
 
 # cleak away the tour
-$driver->find_element_by_id('dont-notify')->click();
-$driver->find_element_by_id('confirm')->click();
+$driver->click_element_ok('dont-notify', 'id');
+$driver->click_element_ok('confirm',     'id');
 
 my $wsport = $mojoport + 1;
 $wspid = create_websocket_server($wsport);
@@ -163,7 +168,7 @@ symlink(abs_path('../os-autoinst/t/data/tests/'), path($sharedir, 'tests')->chil
 
 sub client_output {
     my ($args) = @_;
-    open(my $client, "perl ./script/client $connect_args $args|");
+    open(my $client, "-|", "perl ./script/client $connect_args $args");
     my $out;
     while (<$client>) {
         $out .= $_;
@@ -190,7 +195,7 @@ my $JOB_SETUP
 client_call("jobs post $JOB_SETUP");
 
 # verify it's displayed scheduled
-$driver->find_element_by_link_text('All Tests')->click();
+$driver->click_element_ok('All Tests', 'link_text');
 $driver->title_is('openQA: Test results', 'tests followed');
 like($driver->get_page_source(), qr/\Q<h2>1 scheduled jobs<\/h2>\E/, '1 job scheduled');
 wait_for_ajax;
@@ -263,13 +268,15 @@ like(
 
 client_call("jobs post $JOB_SETUP MACHINE=noassets HDD_1=nihilist_disk.hda");
 
-$driver->find_element_by_link_text('All Tests')->click();
-$driver->find_element_by_link_text('core@coolone')->click();
+$driver->click_element_ok('All Tests',    'link_text', 'All tests clicked');
+$driver->click_element_ok('core@coolone', 'link_text', 'clicked on 3');
 
-$driver->find_element_by_id('cancel_running')->click();
-$driver->find_element_by_link_text('All Tests')->click();
-$driver->find_element_by_link_text('core@noassets')->click();
-
+# it can happen that the test is assigned and needs to wait for the scheduler
+# to detect it as dead before it's moved back to scheduled
+wait_for_result_panel qr/State: scheduled/, 'Test 3 is scheduled';
+$driver->click_element_ok('cancel_running', 'id', 'Caught cancel');
+$driver->click_element_ok('All Tests',      'link_text');
+$driver->click_element_ok('core@noassets',  'link_text');
 
 $job_name = 'tinycore-1-flavor-i386-Build1-core@noassets';
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
@@ -282,6 +289,11 @@ wait_for_result_panel qr/Result: incomplete/, 'Test 4 crashed as expected';
 
 # Slurp the whole file, it's not that big anyways
 my $filename = $resultdir . "/00000/00000004-$job_name/autoinst-log.txt";
+# give it some time to be created
+for (my $i = 0; $i < 5; $i++) {
+    last if -s $filename;
+    sleep 1;
+}
 ok(-s $filename, 'Test 4 autoinst-log.txt file created');
 open(my $f, '<', $filename) or die "OPENING $filename: $!\n";
 my $autoinst_log = do { local ($/); <$f> };
