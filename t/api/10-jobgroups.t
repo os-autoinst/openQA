@@ -216,4 +216,19 @@ subtest 'prevent deleting non-empty job group' => sub() {
     $get = $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(404);
 };
 
+subtest 'prevent create/update duplicate job group on top level' => sub() {
+    $t->post_ok(
+        '/api/v1/job_groups',
+        form => {
+            name      => 'Cool group',
+            parent_id => undef,
+        })->status_is(500);
+    $t->put_ok(
+        '/api/v1/job_groups/1001',
+        form => {
+            name      => 'Cool group',
+            parent_id => undef,
+        })->status_is(500);
+};
+
 done_testing();
