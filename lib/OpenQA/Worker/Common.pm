@@ -374,7 +374,7 @@ sub calculate_status_timer {
       = abs(feature_scaling(logistic_map_steps($steps, $r, $population) * $scale_factor, $imax, MIN_TIMER, MAX_TIMER));
     $status_timer = $status_timer > MIN_TIMER
       && $status_timer < MAX_TIMER ? $status_timer : $status_timer > MAX_TIMER ? MAX_TIMER : MIN_TIMER;
-    return int($status_timer);
+    return sprintf("%.2f", $status_timer);
 }
 
 sub call_websocket {
