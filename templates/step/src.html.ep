@@ -20,7 +20,8 @@
 
         <script type="text/javascript">
          var editor = CodeMirror.fromTextArea(document.getElementById("script"), {
-             lineNumbers: true
+             lineNumbers: true,
+             readOnly: true
          });
         </script>
 </div>
