@@ -15,6 +15,7 @@ use OpenQA::Schema;
 use OpenQA::Utils;
 use Mojo::Base -base;
 use Mojo::File 'path';
+use db_helpers 'rndstr';
 has fixture_path => 't/fixtures';
 
 sub create {
@@ -26,6 +27,10 @@ sub create {
 
     # New db
     my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
+    $schema->{tmp_schema} = 'tmp_' . rndstr();
+    $schema->storage->dbh->do("create schema $schema->{tmp_schema}");
+    $schema->storage->dbh->do("SET search_path TO $schema->{tmp_schema}");
+
     OpenQA::Schema::deployment_check($schema);
     $self->insert_fixtures($schema) unless $options{skip_fixtures};
 
@@ -33,8 +38,7 @@ sub create {
 }
 
 sub insert_fixtures {
-    my $self   = shift;
-    my $schema = shift;
+    my ($self, $schema) = @_;
 
     # Store working dir
     my $cwd = getcwd;
@@ -68,7 +72,10 @@ sub insert_fixtures {
 }
 
 sub disconnect {
-    return shift->storage->dbh->disconnect;
+    my $schema = shift;
+    my $dbh    = $schema->storage->dbh;
+    $dbh->do("drop schema $schema->{tmp_schema}");
+    return $dbh->disconnect;
 }
 
 1;

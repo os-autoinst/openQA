@@ -96,6 +96,7 @@ travis:
 	export MOJO_LOG_LEVEL=debug ;\
 	export MOJO_TMPDIR=$$(mktemp -d) ;\
 	export OPENQA_LOGFILE=/tmp/openqa-debug.log ;\
+	export TEST_PG=DBI:Pg:dbname=openqa_test ;\
 	if test "x$$FULLSTACK" = x1 || test "x$$SCHEDULER_FULLSTACK" = x1; then \
 		git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst ;\
 		(cd ../os-autoinst && SETUP_FOR_TRAVIS=1 sh autogen.sh && make ) ;\

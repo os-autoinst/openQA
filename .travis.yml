@@ -3,7 +3,12 @@ dist: trusty
 language: perl
 perl:
   - "5.18"
+services:
+  - postgresql
+before_script:
+  - psql -c 'create database openqa_test;' -U postgres
 addons:
+  postgresql: "9.6"
   chrome: stable
   ssh_known_hosts: github.com
   apt:

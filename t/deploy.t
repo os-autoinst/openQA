@@ -16,9 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-BEGIN { unshift @INC, 'lib'; }
-
 use strict;
+BEGIN { unshift @INC, 'lib'; }
 
 # https://github.com/rurban/Cpanel-JSON-XS/issues/65
 use JSON::PP;
@@ -28,15 +27,18 @@ use DBIx::Class::DeploymentHandler;
 use SQL::Translator;
 use OpenQA::Schema;
 use Try::Tiny;
+use FindBin;
+
+system("dropdb -h $FindBin::Bin/db openqa_test");
+system("createdb -h $FindBin::Bin/db openqa_test");
 
 my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
 my $dh = DBIx::Class::DeploymentHandler->new(
     {
-        schema              => $schema,
-        script_directory    => 'dbicdh',
-        databases           => 'SQLite',
-        sql_translator_args => {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}},
-        force_overwrite     => 0,
+        schema           => $schema,
+        script_directory => 'dbicdh',
+        databases        => 'PostgreSQL',
+        force_overwrite  => 0,
     });
 my $deployed_version;
 try {
@@ -49,24 +51,18 @@ ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
 is($ret, 2, 'Expected return value (2) for a deployment');
 
-$schema->storage->with_deferred_fk_checks(
-    sub {
-        for my $source ($schema->sources) {
-            try {
-                $schema->storage->dbh->do('DROP TABLE ' . $source);
-            };
-        }
-    });
-
 OpenQA::Schema::disconnect_db;
+system("dropdb -h $FindBin::Bin/db openqa_test");
+system("createdb -h $FindBin::Bin/db openqa_test");
 $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
+
 # redeploy DB to older version and check if deployment_check upgrades the DB
 $dh = DBIx::Class::DeploymentHandler->new(
     {
         schema              => $schema,
         script_directory    => 'dbicdh',
-        databases           => 'SQLite',
-        sql_translator_args => {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}},
+        databases           => 'PostgreSQL',
+        sql_translator_args => {add_drop_table => 0},
         force_overwrite     => 1,
     });
 $dh->install({version => $dh->schema_version - 2});

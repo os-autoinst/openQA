@@ -16,7 +16,7 @@
 
 package OpenQA::WebAPI::Controller::Admin::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller';
-use DateTime::Format::SQLite;
+use DateTime::Format::Pg;
 
 sub index {
     my ($self) = @_;

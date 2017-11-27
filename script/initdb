@@ -76,30 +76,8 @@ if ($user) {
 umask 027;
 
 my $script_directory = "$FindBin::Bin/../dbicdh";
-my @databases        = qw( SQLite PostgreSQL );
+my @databases        = qw( PostgreSQL );
 my $schema           = OpenQA::Schema::connect_db(check => 0);
-
-if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
-    my $dbdir = dirname($1);
-    die "$dbdir does not exist\n" unless -d $dbdir;
-    unless ($user) {
-        # if --user wasn't set, try to guess appropriate owner for db
-        my @s = stat(_);
-        if (getgid() != $s[5]) {
-            setgid($s[5]) or die "can't change gid to $s[5]: $!\n";
-        }
-        if (getuid() != $s[4]) {
-            setuid($s[4]) or die "can't change uid to $s[4]: $!\n";
-        }
-    }
-
-    # speed this up a bit
-    $schema->storage->dbh_do(
-        sub {
-            my ($storage, $dbh, @args) = @_;
-            $dbh->do("PRAGMA synchronous = OFF");
-        });
-}
 
 if ($prepare_init) {
     my $dh = DBIx::Class::DeploymentHandler->new(
