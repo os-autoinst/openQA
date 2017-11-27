@@ -25,6 +25,8 @@ use OpenQA::Utils 'log_error';
 use OpenQA::IPC;
 use db_helpers;
 
+use constant WORKERS_CHECKER_THRESHOLD => 120;
+
 use constant COMMANDS => qw(quit abort scheduler_abort cancel obsolete enable_interactive_mode disable_interactive_mode
   stop_waitforneedle reload_needles_and_retry continue_waitforneedle
   livelog_stop livelog_start);
@@ -123,8 +125,10 @@ sub dead {
     my ($self) = @_;
 
     my $dt = DateTime->now(time_zone => 'UTC');
-    # check for workers active in last 40s (last seen should be updated each 10s)
-    $dt->subtract(seconds => 40);
+    # check for workers active in last WORKERS_CHECKER_THRESHOLD
+    # last seen should be updated at least in MAX_TIMER t in worker
+    # and should not be greater than WORKERS_CHECKER_THRESHOLD.
+    $dt->subtract(seconds => WORKERS_CHECKER_THRESHOLD);
 
     $self->t_updated < $dt;
 }

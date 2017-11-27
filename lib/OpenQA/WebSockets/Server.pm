@@ -26,8 +26,7 @@ use OpenQA::Setup;
 use Data::Dumper;
 use Data::Dump 'pp';
 use db_profiler;
-
-use constant WORKERS_CHECKER_THRESHOLD => 120;
+use OpenQA::Schema::Result::Workers ();
 
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
@@ -188,7 +187,7 @@ sub _finish {
     # jobs assigned from scheduler (which will check DB and not WS state)
     my $dt = DateTime->now(time_zone => 'UTC');
     # 2 minutes is long enough for the scheduler not to take it
-    $dt->subtract(seconds => WORKERS_CHECKER_THRESHOLD);
+    $dt->subtract(seconds => (OpenQA::Schema::Result::Workers::WORKERS_CHECKER_THRESHOLD() + 20));
     $worker->{db}->update({t_updated => $dt});
     $worker->{socket} = undef;
 }
@@ -395,7 +394,7 @@ sub _workers_checker {
     try {
         $schema->txn_do(
             sub {
-                my $stale_jobs = _get_stale_worker_jobs(WORKERS_CHECKER_THRESHOLD);
+                my $stale_jobs = _get_stale_worker_jobs(OpenQA::Schema::Result::Workers::WORKERS_CHECKER_THRESHOLD());
                 for my $job ($stale_jobs->all) {
                     next unless _is_job_considered_dead($job);
 
