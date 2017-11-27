@@ -69,7 +69,7 @@ use DBIx::Class::DeploymentHandler;
 use Getopt::Long;
 use OpenQA::Utils;
 use OpenQA::Scheduler::Scheduler;
-use JSON "decode_json";
+use Cpanel::JSON::XS 'decode_json';
 
 Getopt::Long::Configure("no_ignore_case");
 
