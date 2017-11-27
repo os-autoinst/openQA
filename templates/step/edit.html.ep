@@ -8,7 +8,7 @@
 % content_for 'ready_function' => begin
     window.needles = {};
     % for my $needle (@$needles) {
-        window.needles['<%= $needle->{name} %>'] = <%= b(JSON->new->pretty->encode($needle)) %>;
+        window.needles['<%= $needle->{name} %>'] = <%= b(Cpanel::JSON::XS->new->pretty->encode($needle)) %>;
     % }
     setup_needle_editor( <%= b(Cpanel::JSON::XS::encode_json($default_needle)) %> );
     setupResultButtons();
