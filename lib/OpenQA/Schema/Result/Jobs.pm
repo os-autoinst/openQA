@@ -76,6 +76,7 @@ use constant COMPLETE_RESULTS => (PASSED, SOFTFAILED, FAILED);
 use constant OK_RESULTS => (PASSED, SOFTFAILED);
 use constant INCOMPLETE_RESULTS =>
   (INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED);
+use constant NOT_OK_RESULTS => (INCOMPLETE_RESULTS, FAILED);
 
 # scenario keys w/o MACHINE. Add MACHINE when desired, commonly joined on
 # other keys with the '@' character

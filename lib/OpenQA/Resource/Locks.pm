@@ -24,6 +24,8 @@ use OpenQA::Resource::Jobs;
 use OpenQA::ResourceAllocator;
 use OpenQA::Utils qw(wakeup_scheduler log_debug);
 
+my %final_states = map { $_ => 1 } OpenQA::Schema::Result::Jobs::NOT_OK_RESULTS();
+
 # In normal situation the lock is created by the parent (server)
 # and released when a service becomes available and the child (client)
 # can lock and use it. That's why the lock are checked for self and parent
@@ -125,15 +127,25 @@ sub barrier_create {
 }
 
 sub barrier_wait {
-    my ($name, $jobid, $where) = @_;
+    my ($name, $jobid, $where, $check_dead_job) = @_;
     return -1 unless $name && $jobid;
     my $barrier = _get_lock($name, $jobid, $where);
     return -1 unless $barrier;
+    my $jobschema = OpenQA::ResourceAllocator->instance->schema()->resultset("Jobs");
     my @jobs = split(/,/, $barrier->locked_by // '');
+
+    do { $barrier->delete; return -1 }
+      if $check_dead_job
+      && grep { $final_states{$_} }
+
+      map { $jobschema->find($_)->result }
+      ($jobid, @jobs, map { scalar $_->id } ($barrier->owner->parents->all, $barrier->owner->children->all));
+
     if (grep { $_ eq $jobid } @jobs) {
         return 1 if (scalar @jobs eq $barrier->count);
         return 0;
     }
+
     push @jobs, $jobid;
     $barrier->update({locked_by => join(',', @jobs)});
     return 1 if (scalar @jobs eq $barrier->count);
