@@ -28,11 +28,10 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings ':all';
 use OpenQA::Test::Case;
-use Cwd qw(abs_path);
-
+use Cwd 'abs_path';
+use Cpanel::JSON::XS 'decode_json';
 use File::Path qw(make_path remove_tree);
-use POSIX qw(strftime);
-use JSON;
+use POSIX 'strftime';
 
 use OpenQA::WebSockets;
 use OpenQA::Scheduler;
