@@ -31,8 +31,8 @@
                 <td class="t_created">
                     %= $asset->t_created
                 </td>
-                <td><%= $asset->size %></td>
-                <td>
+                <td class="size"><%= $asset->size %></td>
+                <td class="last_use">
                     % if (my $last_use_job = $asset->last_use_job) {
                         % if (my $group = $last_use_job->group) {
                             <%= link_to($group->name => url_for(is_admin() ? 'admin_job_templates' : 'group_overview', groupid => $group->id)); %>:

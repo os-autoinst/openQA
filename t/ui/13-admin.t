@@ -28,7 +28,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
-use Data::Dumper;
+use Date::Format 'time2str';
 use IO::Socket::INET;
 
 # optional but very useful
@@ -43,7 +43,19 @@ $test_case->init_data;
 
 use OpenQA::SeleniumTest;
 
-my $driver = call_driver();
+sub schema_hook {
+    my $schema = OpenQA::Test::Database->new->create;
+    my $assets = $schema->resultset('Assets');
+
+    $assets->find(2)->update(
+        {
+            size            => 4096,
+            last_use_job_id => 99962,
+            t_created       => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+        });
+}
+
+my $driver = call_driver(\&schema_hook);
 unless ($driver) {
     plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
@@ -466,14 +478,31 @@ subtest 'edit mediums' => sub() {
     is_element_text(\@picks, [qw(64bit 64bit HURRA)], 'chosen tests present');
 };
 
+sub get_cell_contents {
+    my ($row) = @_;
+    return [map { $_->get_text() } $driver->find_elements($row . ' td')];
+}
+
 subtest 'asset list' => sub {
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Assets')->click();
     $driver->title_is("openQA: Assets", "on asset");
     wait_for_ajax;
 
-    my $td = $driver->find_element('tr#asset_1 td.t_created');
-    is('about 2 hours ago', $td->get_text(), 'timeago 2h');
+    is_deeply(
+        get_cell_contents('tr#asset_1'),
+        ['iso', 'openSUSE-13.1-DVD-i586-Build0091-Media.iso', '5', 'about 2 hours ago', '', 'unknown'],
+        'asset with unknown last use'
+    );
+    is_deeply(
+        get_cell_contents('tr#asset_2'),
+        [
+            'iso',   'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',
+            '3',     'about 2 hours ago',
+            '4 KiB', 'opensuse: opensuse-13.1-DVD-x86_64-Build0091-kde@64bit'
+        ],
+        'asset with last use'
+    );
 };
 
 kill_driver();
