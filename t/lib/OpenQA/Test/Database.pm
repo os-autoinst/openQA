@@ -18,6 +18,9 @@ use Mojo::File 'path';
 use db_helpers 'rndstr';
 has fixture_path => 't/fixtures';
 
+use Test::More;
+plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
+
 sub create {
     my $self    = shift;
     my %options = (

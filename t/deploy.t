@@ -29,8 +29,7 @@ use OpenQA::Schema;
 use Try::Tiny;
 use FindBin;
 
-system("dropdb -h $FindBin::Bin/db openqa_test");
-system("createdb -h $FindBin::Bin/db openqa_test");
+plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
 my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
 my $dh = DBIx::Class::DeploymentHandler->new(
