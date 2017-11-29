@@ -44,6 +44,7 @@ sub insert_fixtures {
     my $cwd = getcwd;
 
     chdir $self->fixture_path;
+    my %ids;
 
     foreach my $fixture (glob "*.pl") {
 
@@ -63,12 +64,21 @@ sub insert_fixtures {
 
         # Arrayref of hashrefs, multiple tables per file
         for (my $i = 0; $i < @$info; $i++) {
-            $schema->resultset($info->[$i])->create($info->[++$i]);
+            my $class = $info->[$i];
+            my $ri    = $info->[++$i];
+            my $row   = $schema->resultset($class)->create($ri);
+            $ids{$row->result_source->from} = $ri->{id} if $ri->{id};
         }
     }
 
     # Restore working dir
     chdir $cwd;
+    my $dbh = $schema->storage->dbh;
+
+    for my $table (keys %ids) {
+        my $max = $dbh->selectrow_arrayref("select max(id) from $table")->[0] + 1;
+        $schema->storage->dbh->do("alter sequence $table\_id_seq restart with $max");
+    }
 }
 
 sub disconnect {
