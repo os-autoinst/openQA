@@ -41,6 +41,8 @@ BEGIN {
 
 use strict;
 use lib "$FindBin::Bin/lib";
+# https://github.com/rurban/Cpanel-JSON-XS/issues/65
+use JSON::PP;
 use Data::Dump qw(pp dd);
 use OpenQA::Scheduler;
 use OpenQA::Scheduler::Scheduler;

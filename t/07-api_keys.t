@@ -17,6 +17,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 use strict;
+# https://github.com/rurban/Cpanel-JSON-XS/issues/65
+use JSON::PP;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 
