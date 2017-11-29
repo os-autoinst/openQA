@@ -46,35 +46,37 @@ $test_case->login($t, 'percival');
 
 # Percival can see all his keys, but not the Lancelot's one
 $req = $t->get_ok('/api_keys')->status_is(200);
-$req->element_exists('#api_key_99902', 'keys are there');
-$req->element_exists('#api_key_99903', 'keys are there');
-$req->element_exists('#api_key_99904', 'keys are there');
+$req->element_exists('#api_key_3', 'keys are there');
+$req->element_exists('#api_key_4', 'keys are there');
+$req->element_exists('#api_key_5', 'keys are there');
 $req->element_exists_not('#api_key_99901', "no other users's keys");
-$req->text_isnt('#api_key_99902 .expiration' => 'never');
-$req->text_is('#api_key_99904 .expiration' => 'never');
+$req->text_isnt('#api_key_3 .expiration' => 'never');
+$req->text_is('#api_key_5 .expiration' => 'never');
 
 # When clicking in 'create' a new API key is displayed in the listing
 $req = $t->post_ok('/api_keys', {'X-CSRF-Token' => $token} => form => {})->status_is(302);
 $req = $t->get_ok('/api_keys')->status_is(200);
-$req->element_exists('#api_key_99902', 'keys are there');
-$req->element_exists('#api_key_99906', 'keys are there');
+$req->element_exists('#api_key_3', 'keys are there');
+$req->element_exists('#api_key_6', 'keys are there');
 
 # It's also possible to specify an expiration date
 $req = $t->post_ok('/api_keys', {'X-CSRF-Token' => $token} => form => {t_expiration => '2016-01-05'})->status_is(302);
 $req = $t->get_ok('/api_keys')->status_is(200);
-$req->text_is('#api_key_99906 .expiration' => 'never');
-$req->text_like('#api_key_99907 .expiration' => qr/2016-01-05/);
+$req->text_is('#api_key_6 .expiration' => 'never');
+$req->text_like('#api_key_7 .expiration' => qr/2016-01-05/);
+
+#die $req->content_like(qr/NOWHERE/);
 
 # check invalid expiration date
 $req = $t->post_ok('/api_keys', {'X-CSRF-Token' => $token} => form => {t_expiration => 'asdlfj'})->status_is(302);
 $req = $t->get_ok('/api_keys')->status_is(200);
-$req->element_exists_not('#api_key_99908', "No invalid key created");
+$req->element_exists_not('#api_key_8', "No invalid key created");
 $req->element_exists('#flash-messages .alert-warning', "Error message displayed");
 
 # And to delete keys
-$req = $t->delete_ok('/api_keys/99906', {'X-CSRF-Token' => $token})->status_is(302);
+$req = $t->delete_ok('/api_keys/6', {'X-CSRF-Token' => $token})->status_is(302);
 $req = $t->get_ok('/api_keys')->status_is(200);
-$req->element_exists_not('#api_key_99906', 'API key 99906 is gone');
+$req->element_exists_not('#api_key_6', 'API key 6 is gone');
 $req->content_like(qr/API key deleted/, 'deletion is reported');
 
 #
@@ -89,7 +91,7 @@ $req->content_like(qr/API key not found/, 'error is displayed');
 $req
   = $t->post_ok('/api_keys', {'X-CSRF-Token' => $token} => form => {user_id => 99902, user => 99902})->status_is(302);
 $req = $t->get_ok('/api_keys')->status_is(200);
-$req->element_exists('#api_key_99902', 'Percival keys are there');
-$req->element_exists('#api_key_99908', 'and the new one belongs to Percival, not Lancelot');
+$req->element_exists('#api_key_3', 'Percival keys are there');
+$req->element_exists('#api_key_8', 'and the new one belongs to Percival, not Lancelot');
 
 done_testing();

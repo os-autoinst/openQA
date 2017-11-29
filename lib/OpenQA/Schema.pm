@@ -48,7 +48,7 @@ sub connect_db {
     my $schema = _get_schema;
     unless ($$schema) {
 
-        if ($args{mode} eq 'test') {
+        if (($args{mode} || '') eq 'test') {
             $$schema = __PACKAGE__->connect($ENV{TEST_PG});
         }
         else {
