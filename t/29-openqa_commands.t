@@ -16,6 +16,8 @@
 
 use strict;
 use warnings;
+# https://github.com/rurban/Cpanel-JSON-XS/issues/65
+use JSON::PP;
 use FindBin;
 use lib ("$FindBin::Bin/lib", "../lib", "lib");
 use Test::More;

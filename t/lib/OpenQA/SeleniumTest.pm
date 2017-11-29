@@ -180,7 +180,7 @@ sub javascript_console_has_no_warnings_or_errors {
 }
 
 sub kill_driver() {
-    return unless $$ == $startingpid;
+    return unless $startingpid && $$ == $startingpid;
     if ($_driver) {
         $_driver->quit();
         $_driver->shutdown_binary;
