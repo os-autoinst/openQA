@@ -1,33 +1,27 @@
 [
     Assets => {
-        id   => 1,
         type => 'iso',
         name => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',
         # Two hours ago
         t_created => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
     },
     Assets => {
-        id   => 2,
         type => 'iso',
         name => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'
     },
     Assets => {
-        id   => 3,
         type => 'iso',
         name => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso'
     },
     Assets => {
-        id   => 4,
         type => 'iso',
         name => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso',
     },
     Assets => {
-        id   => 5,
         type => 'hdd',
         name => 'openSUSE-13.1-x86_64.hda',
     },
     Assets => {
-        id   => 6,
         type => 'repo',
         name => 'testrepo',
     },
