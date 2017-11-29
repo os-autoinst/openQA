@@ -183,8 +183,7 @@ sub create_temp_job_log_file {
 }
 
 subtest 'limit_results_and_logs gru task cleans up logs' => sub {
-    my @jobs = $t->app->db->resultset('Jobs')->search({state => 'done'})->all;
-    my $job = $jobs[3];
+    my $job = $t->app->db->resultset('Jobs')->find(99937);
     $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
     $job->group->update({"keep_logs_in_days" => 5});
     my $filename = create_temp_job_log_file($job->result_dir);
@@ -271,8 +270,7 @@ subtest 'scan_images' => sub {
 };
 
 subtest 'labeled jobs considered important' => sub {
-    my @jobs = $t->app->db->resultset('Jobs')->search({state => 'done'})->all;
-    my $job = $jobs[4];
+    my $job = $t->app->db->resultset('Jobs')->find(99938);
     # but gets cleaned after important limit - change finished to 12 days ago
     $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
     $job->group->update({"keep_logs_in_days"           => 5});
