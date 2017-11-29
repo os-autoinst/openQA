@@ -151,7 +151,7 @@ sub websocket_commands {
             $check_job_running->{$host} = 1;
             Mojo::IOLoop->singleton->once(
                 "stop_job" => sub {
-                    log_debug("Build finished, setting us free to pick up new jobs");
+                    log_debug("Build finished, setting us free to pick up new jobs",);
                     $job_in_progress = 0;
                     $check_job_running->{$host} = 0;
                 });
@@ -159,7 +159,15 @@ sub websocket_commands {
             if ($job && $job->{id}) {
                 $OpenQA::Worker::Common::job = $job;
                 remove_log_channel('autoinst');
+                remove_log_channel('worker');
                 add_log_channel('autoinst', path => 'autoinst-log.txt', level => 'debug');
+                add_log_channel(
+                    'worker',
+                    path    => 'worker-log.txt',
+                    level   => $worker_settings->{LOG_LEVEL} // 'info',
+                    default => 'append'
+                );
+
                 log_debug("Job " . $job->{id} . " scheduled for next cycle");
                 Mojo::IOLoop->singleton->once(
                     "start_job" => sub {

@@ -48,7 +48,9 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &log_error
   &log_fatal
   add_log_channel
+  append_channel_to_defaults
   remove_log_channel
+  remove_channel_from_defaults
   get_channel_handle
   &save_base64_png
   &run_cmd_with_log
@@ -114,8 +116,8 @@ our $otherdir  = "$assetdir/other";
 our $imagesdir = "$prjdir/images";
 our $hostname  = $ENV{SERVER_NAME};
 our $app;
-
 my %channels = ();
+my %log_defaults = (LOG_TO_STANDARD_CHANNEL => 1, CHANNELS => []);
 
 # the desired new folder structure is
 # $testcasedir/<testrepository>
@@ -223,81 +225,140 @@ sub needle_info {
     return $needle;
 }
 
-# logging helpers
+# logging helpers - _log_msg wrappers
+
+# log_debug("message"[, param1=>val1, param2=>val2]);
+# please check the _log_msg function for a brief description of the accepted params
+# examples:
+#  log_debug("message");
+#  log_debug("message", channels=>'channel1')
+#  log_debug("message", channels=>'channel1', standard=>0)
 sub log_debug {
-    my ($msg, $channel) = @_;
-
-    if ($channel && $channels{$channel}) {
-        $channels{$channel}->debug($msg);
-    }
-    elsif ($app && $app->log) {
-        $app->log->debug($msg);
-    }
-    else {
-        STDOUT->printflush("[DEBUG] $msg\n");
-    }
+    _log_msg('debug', @_);
 }
 
+# log_info("message"[, param1=>val1, param2=>val2]);
 sub log_info {
-    my ($msg, $channel) = @_;
-    if ($channel && $channels{$channel}) {
-        $channels{$channel}->info($msg);
-    }
-    elsif ($app && $app->log) {
-        $app->log->info($msg);
-    }
-    else {
-        STDOUT->printflush("[INFO] $msg\n");
-    }
+
+    _log_msg('info', @_);
 }
 
+# log_warning("message"[, param1=>val1, param2=>val2]);
 sub log_warning {
-    my ($msg, $channel) = @_;
-    if ($channel && $channels{$channel}) {
-        $channels{$channel}->warn($msg);
-    }
-    elsif ($app && $app->log) {
-        $app->log->warn($msg);
-    }
-    else {
-        STDERR->printflush("[WARN] $msg\n");
-    }
+    _log_msg('warn', @_);
 }
 
+# log_error("message"[, param1=>val1, param2=>val2]);
 sub log_error {
-    my ($msg, $channel) = @_;
-    if ($channel && $channels{$channel}) {
-        $channels{$channel}->error($msg);
-    }
-    elsif ($app && $app->log) {
-        $app->log->error($msg);
-    }
-    else {
-        STDERR->printflush("[ERROR] $msg\n");
-    }
+    _log_msg('error', @_);
 }
 
+# log_fatal("message"[, param1=>val1, param2=>val2]);
 sub log_fatal {
-    my ($msg, $channel) = @_;
-    if ($channel && $channels{$channel}) {
-        $channels{$channel}->fatal($msg);
-    }
-    elsif ($app && $app->log) {
-        $app->log->fatal($msg);
-    }
-    else {
-        STDERR->printflush("[FATAL] $msg\n");
-    }
-    die $msg;
+    _log_msg('fatal', @_);
+    die $_[0];
 }
 
+# The %options parameter is used to control which destinations the message should go.
+# Accepted parameters: channels, standard.
+#  - channels. Scalar or a arrayref containing the name of the channels to log to.
+#  - standard. Boolean to indicate if it should use the *defaults*  to log.
+#
+#  This function is used together with _log, and if any of parameters above don't exist,
+#  then it will log to the defaults (by default is $app) - the standard option need to be
+#  set to true. Please check the function add_log_channel to learn on how to set a
+#  channel as default
+sub _log_msg {
+    my ($level, $msg, %options) = @_;
+    my $log_to_standard = 0;
+
+    if (!%options) {
+        # set defaults
+        _log_msg($level, $msg, channels => $log_defaults{CHANNELS}, standard => $log_defaults{LOG_TO_STANDARD_CHANNEL});
+        $log_to_standard = 0;
+    }
+    else {
+
+        if ($options{channels}) {
+            if (ref($options{channels}) eq 'ARRAY') {
+                for my $channel (@{$options{channels}}) {
+                    _log($level, $msg, $channel);
+                }
+            }
+            else {
+
+                _log($level, $msg, $options{channels});
+            }
+        }
+        $log_to_standard = $options{standard} // $log_defaults{LOG_TO_STANDARD_CHANNEL};
+    }
+
+    _log($level, $msg) if $log_to_standard;
+}
+
+# There are three possibilities for logging:
+# 1- Logging to a channel
+# 2- Logging to the default destination
+# 3- Logging to the STDERR/STDOUT as a fallback in case of none of the above are set
+sub _log {
+    my ($level, $msg, $channel) = @_;
+
+    if ($channel && $channels{$channel}) {
+        $channels{$channel}->$level($msg);
+    }
+    elsif ($app && $app->log) {
+        $app->log->$level($msg);
+    }
+    else {
+        if ($level =~ /warn|error|fatal/) {
+            STDERR->printflush("[@{[uc $level]}] $msg\n");
+        }
+        else {
+            STDOUT->printflush("[@{[uc $level]}] $msg\n");
+        }
+    }
+}
+
+# When a developer wants to log constantly to a channel he can either constantly pass the parameter
+# 'channels' in the log_* functions, or when creating the channel, pass the parameter 'default'.
+# This parameter can have two values:
+# - "append". This value will append the channel to the defaults, so the simple call to the log_*
+#   functions will try to log to the channels set as default.
+
+# - "set". This value will replace all the defaults with the channel being created.
+
+# All the parameters set in %options are passed to the Mojo::Log constructor
 sub add_log_channel {
-    my ($channel, @options) = @_;
-    $channels{$channel} = Mojo::Log->new(@options);
+    my ($channel, %options) = @_;
+    if ($options{default}) {
+        if ($options{default} eq 'append') {
+            push @{$log_defaults{CHANNELS}}, $channel;
+        }
+        elsif ($options{default} eq 'set') {
+            $log_defaults{CHANNELS}                = [$channel];
+            $log_defaults{LOG_TO_STANDARD_CHANNEL} = 0;
+        }
+        delete $options{default};
+    }
+
+    $channels{$channel} = Mojo::Log->new(%options);
+}
+
+sub append_channel_to_defaults {
+    my ($channel) = @_;
+    push @{$log_defaults{CHANNELS}}, $channel if $channels{$channel};
+}
+
+# Removes a channel from defaults.
+sub remove_channel_from_defaults {
+    my ($channel) = @_;
+    $log_defaults{CHANNELS} = [grep { $_ ne $channel } @{$log_defaults{CHANNELS}}];
+    $log_defaults{LOG_TO_STANDARD_CHANNEL} = 1 if !@{$log_defaults{CHANNELS}};
 }
 
 sub remove_log_channel {
     my ($channel) = @_;
+    remove_channel_from_defaults($channel);
     delete $channels{$channel} if $channel;
 }
 
@@ -882,7 +943,10 @@ sub safe_call {
           :                           die(qq|Can't locate object method "$_[1]" via package "$_[0]"|);
     };
     log_debug("Return: " . pp($ret));
-    log_error("Safe call error: $@") and return [] if $@;
+    if ($@) {
+        log_error("Safe call error: $@");
+        return [];
+    }
     return $ret;
 }
 

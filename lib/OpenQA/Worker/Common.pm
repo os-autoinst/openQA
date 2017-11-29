@@ -240,7 +240,7 @@ sub api_call {
         else {
             $msg = "Connection error: $err->{message}";
         }
-        OpenQA::Utils::log_error($msg . " (remaining tries: $tries)");
+        log_error($msg . " (remaining tries: $tries)");
 
         if (!$tries) {
             # abort the current job, we're in trouble - but keep running to grab the next
@@ -428,6 +428,7 @@ sub call_websocket {
                           . " to WebSocket: "
                           . ($err->{code} ? $err->{code} : "[no code]")
                           . ". proxy_wstunnel enabled?";
+
                         if ($err->{code} && $err->{code} eq '404' && $hosts->{$host}{workerid}) {
                             # worker id suddenly not known anymore. Abort. If workerid
                             # is unset we already detected that in api_call

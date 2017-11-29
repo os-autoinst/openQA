@@ -121,9 +121,10 @@ sub engine_workit {
     my ($job) = @_;
 
     my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
-    log_debug('+++ setup notes +++', 'autoinst');
-    log_debug(sprintf("start time: %s", strftime("%F %T", gmtime)), 'autoinst');
-    log_debug(sprintf("running on $hostname:%d ($sysname $release $version $machine)", $instance), 'autoinst');
+    log_debug('+++ setup notes +++', channels => 'autoinst');
+    log_debug(sprintf("start time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
+    log_debug(sprintf("running on $hostname:%d ($sysname $release $version $machine)", $instance),
+        channels => 'autoinst');
 
     # set base dir to the one assigned with webui
     OpenQA::Utils::change_sharedir($hosts->{$current_host}{dir});
@@ -211,11 +212,12 @@ sub engine_workit {
         setpgrp(0, 0);
         $ENV{TMPDIR} = $tmpdir;
         log_info("$$: WORKING " . $job->{id});
-        log_debug('+++ worker notes +++', 'autoinst');
-        log_debug(sprintf("start time: %s", strftime("%F %T", gmtime)), 'autoinst');
+        log_debug('+++ worker notes +++', channels => 'autoinst');
+        log_debug(sprintf("start time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
 
         my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
-        log_debug(sprintf("running on $hostname:%d ($sysname $release $version $machine)", $instance), 'autoinst');
+        log_debug(sprintf("running on $hostname:%d ($sysname $release $version $machine)", $instance),
+            channels => 'autoinst');
         my $handle = get_channel_handle('autoinst');
         STDOUT->fdopen($handle, 'w');
         STDERR->fdopen($handle, 'w');
@@ -262,7 +264,7 @@ sub engine_check {
             my $pid = <$fh>;
             close $fh;
             if ($pid =~ /(\d+)/) {
-                log_info("killing qemu $1");
+                log_error("killing qemu $1");
                 _kill($1);
             }
         }

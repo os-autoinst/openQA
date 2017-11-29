@@ -20,7 +20,8 @@ use warnings;
 use File::Basename;
 use Fcntl ':flock';
 use Mojo::UserAgent;
-use OpenQA::Utils qw(log_error log_info log_debug get_channel_handle add_log_channel);
+use OpenQA::Utils
+  qw(log_error log_info log_debug get_channel_handle add_log_channel append_channel_to_defaults remove_channel_from_defaults);
 use OpenQA::Worker::Common;
 use List::MoreUtils;
 use File::Spec::Functions 'catdir';
@@ -52,6 +53,7 @@ END {
 sub deploy_cache {
     local $/;
     my $sql = <DATA>;
+    print STDOUT "\n\n\n\nINIT\n";
     log_info "Creating cache directory tree for $location";
     remove_tree($location, {keep_root => 1});
     make_path(File::Spec->catdir($location, Mojo::URL->new($host)->host || $host));
@@ -82,11 +84,17 @@ sub init {
 sub download_asset {
     my ($id, $type, $asset, $etag) = @_;
 
-    add_log_channel('autoinst', path => 'autoinst-log.txt', level => 'debug') unless get_channel_handle('autoinst');
+    if (get_channel_handle('autoinst')) {
+        append_channel_to_defaults('autoinst');
+    }
+    else {
+        add_log_channel('autoinst', path => 'autoinst-log.txt', level => 'debug', default => 'append');
+    }
+
     my $ua = Mojo::UserAgent->new(max_redirects => 2);
     $ua->max_response_size(0);
     my $url = sprintf '%s/tests/%d/asset/%s/%s', $host, $id, $type, basename($asset);
-    log_debug("Downloading " . basename($asset) . " from $url", 'autoinst');
+    log_debug("Downloading " . basename($asset) . " from $url");
     my $tx = $ua->build_tx(GET => $url);
     my $headers;
 
@@ -114,7 +122,7 @@ sub download_asset {
                         $last_updated = time;
                         if ($progress < $current) {
                             $progress = $current;
-                            log_debug("CACHE: Downloading $asset: ", $size == $len ? 100 : $progress . "%", 'autoinst');
+                            log_debug("CACHE: Downloading $asset: ", $size == $len ? 100 : $progress . "%");
                         }
                     }
                 });
@@ -125,20 +133,20 @@ sub download_asset {
     my $size;
     if ($code eq 304) {
         if (toggle_asset_lock($asset, 0)) {
-            log_debug("CACHE: Content has not changed, not downloading the $asset but updating last use", 'autoinst');
+            log_debug("CACHE: Content has not changed, not downloading the $asset but updating last use");
         }
         else {
-            log_debug("CACHE: Abnormal situation, code 304. Retrying download", 'autoinst');
+            log_debug("CACHE: Abnormal situation, code 304. Retrying download");
             $asset = 520;
         }
     }
     elsif ($tx->res->is_server_error) {
         if (toggle_asset_lock($asset, 0)) {
-            log_debug("CACHE: Could not download the asset, triggering a retry for $code.", 'autoinst');
+            log_debug("CACHE: Could not download the asset, triggering a retry for $code.");
             $asset = $code;
         }
         else {
-            log_debug("CACHE: Abnormal situation, server error. Retrying download", 'autoinst');
+            log_debug("CACHE: Abnormal situation, server error. Retrying download");
             $asset = $code;
         }
     }
@@ -149,22 +157,21 @@ sub download_asset {
         if ($size == $headers->content_length) {
             check_limits($size);
             update_asset($asset, $etag, $size);
-            log_debug("CACHE: Asset download successful to $asset, Cache size is: $cache_real_size", 'autoinst');
+            log_debug("CACHE: Asset download successful to $asset, Cache size is: $cache_real_size");
         }
         else {
             log_debug(
-                "CACHE: Size of $asset differs, Expected: " . $headers->content_length . " / Downloaded: " . "$size",
-                'autoinst');
+                "CACHE: Size of $asset differs, Expected: " . $headers->content_length . " / Downloaded: " . "$size");
             $asset = 598;    # 598 (Informal convention) Network read timeout error
         }
     }
     else {
         my $message = $tx->res->error->{message};
-        log_debug("CACHE: Download of $asset failed with: $code - $message", 'autoinst');
+        log_debug("CACHE: Download of $asset failed with: $code - $message");
         purge_asset($asset);
         $asset = undef;
     }
-
+    remove_channel_from_defaults('autoinst');
     return $asset;
 }
 
