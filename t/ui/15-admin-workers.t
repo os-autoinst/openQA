@@ -94,11 +94,11 @@ is(scalar @entries, 6, 'two previous jobs shown (3 cols per row)');
 is_deeply(
     \@entries,
     [
-        'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
-        '0',
-        'about an hour ago',
         'opensuse-13.1-DVD-i586-Build0091-RAID1@32bit',
-        '', 'not finished yet',
+        '',
+        'not finished yet',
+        'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
+        '0', 'about an hour ago',
     ],
     'correct entries shown'
 );
@@ -112,11 +112,11 @@ ok($table, 'still on same page (with table)');
 is_deeply(
     \@entries,
     [
-        'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit (restarted)',
-        '0',
-        'about an hour ago',
-        'opensuse-13.1-DVD-i586-Build0091-RAID1@32bit',
-        '', 'not finished yet',
+        'opensuse-13.1-DVD-i586-Build0091-RAID1@32bit (restarted)',
+        '',
+        'not finished yet',
+        'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
+        '0', 'about an hour ago',
     ],
     'the first job has been restarted'
 );
