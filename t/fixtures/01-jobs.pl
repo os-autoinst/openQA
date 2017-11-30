@@ -28,11 +28,13 @@
     JobGroups => {
         id          => 1001,
         name        => 'opensuse',
+        sort_order  => 0,
         description => "##Test description\n\nwith bugref bsc#1234",
     },
     JobGroups => {
-        id   => 1002,
-        name => 'opensuse test'
+        id         => 1002,
+        sort_order => 0,
+        name       => 'opensuse test'
     },
     Jobs => {
         # job with empty value settings as default

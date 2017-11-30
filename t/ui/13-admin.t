@@ -328,9 +328,9 @@ subtest 'add job group' => sub() {
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
     is(@parent_group_entries, 4,
         'now 4 top-level groups present (one is new parent, remaining are parentless job groups)');
-    is((shift @parent_group_entries)->get_text(), 'Cool Group',       'new parentless group present');
     is((shift @parent_group_entries)->get_text(), 'opensuse',         'first parentless group from fixtures present');
     is((shift @parent_group_entries)->get_text(), 'opensuse test',    'second parentless group from fixtures present');
+    is((shift @parent_group_entries)->get_text(), 'Cool Group',       'new parentless group present');
     is((shift @parent_group_entries)->get_text(), 'New parent group', 'new group present');
 };
 
