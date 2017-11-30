@@ -29,6 +29,38 @@ use File::Spec::Functions 'catfile';
 my $reFile    = qr/\[.*?\] \[worker:(.*?)\] (.*?) message/;
 my $reStdOut  = qr/(?:.*?)\[worker:(.*?)\] (.*?) message/;
 my $reChannel = qr/\[.*?\] \[(.*?)\] (.*?) message/;
+
+subtest 'load correct configs' => sub {
+    local $ENV{OPENQA_CONFIG} = 't/data/logging/';
+    my $app = OpenQA::Setup->new(
+        mode     => 'production',
+        log_name => 'worker',
+        instance => 1,
+        log_dir  => undef,
+        level    => 'debug'
+    );
+
+    OpenQA::Setup::read_config($app);
+    is($app->level,                    'debug');
+    is($app->mode,                     'production');
+    is($app->config->{logging}{level}, 'warning');
+    is($app->log->level,               'info');
+    OpenQA::Setup::setup_log($app);
+    is($app->level,      'debug');
+    is($app->log->level, 'debug');
+
+    $app = OpenQA::Setup->new();
+    OpenQA::Setup::read_config($app);
+    is($app->level,                    undef);
+    is($app->mode,                     'production');
+    is($app->config->{logging}{level}, 'warning');
+    is($app->log->level,               'info');
+    OpenQA::Setup::setup_log($app);
+    is($app->level,      undef);
+    is($app->log->level, 'warning');
+
+};
+
 subtest 'Logging to stdout' => sub {
     local $ENV{OPENQA_WORKER_LOGDIR};
     local $ENV{OPENQA_LOGFILE};
