@@ -64,7 +64,7 @@ use DateTime;
 plan skip_all => "set SCHEDULER_FULLSTACK=1 (be careful)" unless $ENV{SCHEDULER_FULLSTACK};
 
 init_db();
-my $schema = OpenQA::Test::Database->new->create();
+my $schema = OpenQA::Test::Database->new->create(skip_schema => 1);
 
 # Create webapi and websocket server services.
 my $mojoport             = Mojo::IOLoop::Server->generate_port();
@@ -481,16 +481,18 @@ sub init_db {
     ok(open(my $conf, '>', path($ENV{OPENQA_CONFIG})->child("database.ini")->to_string));
     print $conf <<"EOC";
   [production]
-  dsn = dbi:SQLite:dbname=$ENV{OPENQA_BASEDIR}/openqa/db/db.sqlite
-  on_connect_call = use_foreign_keys
-  on_connect_do = PRAGMA synchronous = OFF
-  sqlite_unicode = 1
+  dsn = $ENV{TEST_PG}
 EOC
     close($conf);
+    # drop the schema from the existant database
+    my $dbh = DBI->connect($ENV{TEST_PG});
+    $dbh->do('SET client_min_messages TO WARNING;');
+    $dbh->do('drop schema if exists public cascade;');
+    $dbh->do('CREATE SCHEMA public;');
+    $dbh->disconnect;
     is(system("perl ./script/initdb --init_database"), 0);
     # make sure the assets are prefetched
     ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
 }
 
 done_testing;
-

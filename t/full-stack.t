@@ -111,12 +111,17 @@ ok -e path($ENV{OPENQA_BASEDIR}, 'openqa', 'db')->child("db.lock");
 ok(open(my $conf, '>', path($ENV{OPENQA_CONFIG})->child("database.ini")->to_string));
 print $conf <<"EOC";
 [production]
-dsn = dbi:SQLite:dbname=$ENV{OPENQA_BASEDIR}/openqa/db/db.sqlite
-on_connect_call = use_foreign_keys
-on_connect_do = PRAGMA synchronous = OFF
-sqlite_unicode = 1
+dsn = $ENV{TEST_PG}
 EOC
 close($conf);
+
+# drop the schema from the existant database
+my $dbh = DBI->connect($ENV{TEST_PG});
+$dbh->do('SET client_min_messages TO WARNING;');
+$dbh->do('drop schema if exists public cascade;');
+$dbh->do('CREATE SCHEMA public;');
+$dbh->disconnect;
+
 is(system("perl ./script/initdb --init_database"), 0);
 # make sure the assets are prefetched
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));

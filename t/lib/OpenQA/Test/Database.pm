@@ -30,9 +30,11 @@ sub create {
 
     # New db
     my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
-    $schema->{tmp_schema} = 'tmp_' . rndstr();
-    $schema->storage->dbh->do("create schema $schema->{tmp_schema}");
-    $schema->storage->dbh->do("SET search_path TO $schema->{tmp_schema}");
+    unless (defined $options{skip_schema}) {
+        $schema->{tmp_schema} = 'tmp_' . rndstr();
+        $schema->storage->dbh->do("create schema $schema->{tmp_schema}");
+        $schema->storage->dbh->do("SET search_path TO $schema->{tmp_schema}");
+    }
 
     OpenQA::Schema::deployment_check($schema);
     $self->insert_fixtures($schema) unless $options{skip_fixtures};

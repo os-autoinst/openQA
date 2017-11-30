@@ -23,6 +23,8 @@ BEGIN {
 
 use strict;
 use warnings;
+# https://github.com/rurban/Cpanel-JSON-XS/issues/65
+use JSON::PP;
 use DBIx::Class::DeploymentHandler;
 use File::Basename qw(dirname);
 use POSIX qw(getuid getgid setuid setgid);
