@@ -74,15 +74,16 @@ sub list {
         json => {
             $table => [
                 map {
-                    my $row  = $_;
-                    my %hash = (
+                    my $row      = $_;
+                    my @settings = sort { $a->key cmp $b->key } $row->settings;
+                    my %hash     = (
                         (
                             map {
                                 my $val = $row->get_column($_);
                                 $val ? ($_ => $val) : ()
                             } @{$tables{$table}->{cols}}
                         ),
-                        settings => [map { {key => $_->key, value => $_->value} } $row->settings]);
+                        settings => [map { {key => $_->key, value => $_->value} } @settings]);
                     \%hash;
                 } @result
             ]});
