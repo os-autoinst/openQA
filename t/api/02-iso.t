@@ -265,11 +265,12 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     $res = schedule_iso(
         {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091'});
     is($res->json->{count}, 10, '10 jobs created');
-    $ret = $t->get_ok('/api/v1/jobs/99992')->status_is(200);
+    my $example = $res->json->{ids}->[9];
+    $ret = $t->get_ok("/api/v1/jobs/$example")->status_is(200);
     is($ret->tx->res->json->{job}->{state}, 'scheduled');
     $res = schedule_iso(
         {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0092'});
-    $ret = $t->get_ok('/api/v1/jobs/99992')->status_is(200);
+    $ret = $t->get_ok("/api/v1/jobs/$example")->status_is(200);
     is($ret->tx->res->json->{job}->{state}, 'scheduled', 'job in old important build still scheduled');
     $res = schedule_iso(
         {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0093'});
