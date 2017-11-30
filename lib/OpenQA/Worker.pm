@@ -66,15 +66,16 @@ sub main {
         if ($worker_settings->{CACHEDIRECTORY}) {
             $shared_cache = prepare_cache_directory($h, $worker_settings->{CACHEDIRECTORY});
         }
-
+        # this is being also duplicated by OpenQA::Test::Utils since 49c06362d
         my @dirs = ($host_settings->{$h}{SHARE_DIRECTORY}, catdir($OpenQA::Utils::prjdir, 'share'));
         ($dir) = grep { $_ && -d } @dirs;
         unless ($dir) {
-            log_error("Can not find working directory for host $h. Ignoring host");
+            map { log_debug("Found possible working directory for $h: $_") if $_ } @dirs;
+            log_error("Ignoring host '$h': Working directory does not exist.");
             next;
         }
 
-        log_debug("Using dir $dir for host $h");
+        log_info("Project dir for host $h is $dir");
         Mojo::IOLoop->next_tick(
             sub {
                 OpenQA::Worker::Common::register_worker($h, $dir, $host_settings->{$h}{TESTPOOLSERVER}, $shared_cache);

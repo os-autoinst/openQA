@@ -6,9 +6,10 @@ use POSIX '_exit';
 use OpenQA::Worker;
 use OpenQA::Worker::Common;
 use Config::IniFiles;
-use File::Spec::Functions 'catdir';
 use OpenQA::Utils qw(log_error log_info log_debug);
 use Mojo::Home;
+use Mojo::File qw(path tempdir);
+use Cwd qw(abs_path getcwd);
 
 BEGIN {
     if (!$ENV{MOJO_HOME}) {
@@ -23,7 +24,7 @@ BEGIN {
 
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
-    qw(create_webapi create_websocket_server create_worker unresponsive_worker wait_for_worker),
+    qw(create_webapi create_websocket_server create_worker unresponsive_worker wait_for_worker setup_share_dir),
     qw(kill_service unstable_worker job_create client_output create_resourceallocator start_resourceallocator)
 );
 
@@ -143,6 +144,24 @@ sub start_resourceallocator {
     return $resourceallocatorpid;
 }
 
+sub setup_share_dir {
+    my ($sharedir) = @_;
+    $sharedir = path($sharedir, 'openqa', 'share')->make_path;
+
+    path($sharedir, 'factory', 'iso')->make_path;
+
+    symlink(abs_path("../os-autoinst/t/data/Core-7.2.iso"),
+        path($sharedir, 'factory', 'iso')->child("Core-7.2.iso")->to_string)
+      || die "can't symlink";
+
+    path($sharedir, 'tests')->make_path;
+
+    symlink(abs_path('../os-autoinst/t/data/tests/'), path($sharedir, 'tests')->child("tinycore"))
+      || die "can't symlink";
+
+    return $sharedir;
+}
+
 sub create_worker {
     my ($apikey, $apisecret, $host, $instance, $log) = @_;
     my $connect_args = "--instance=${instance} --apikey=${apikey} --apisecret=${apisecret} --host=${host}";
@@ -179,7 +198,7 @@ sub unstable_worker {
             my ($host_settings) = @_;
             my $dir;
             for my $h (@{$host_settings->{HOSTS}}) {
-                my @dirs = ($host_settings->{$h}{SHARE_DIRECTORY}, catdir($OpenQA::Utils::prjdir, 'share'));
+                my @dirs = ($host_settings->{$h}{SHARE_DIRECTORY}, path($OpenQA::Utils::prjdir, 'share'));
                 ($dir) = grep { $_ && -d } @dirs;
                 unless ($dir) {
                     log_error("Can not find working directory for host $h. Ignoring host");
