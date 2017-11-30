@@ -281,7 +281,6 @@ test_barrier_destroy($_, "jA")
 $jA = job_create_with_worker('testA');
 $jB = job_create_with_worker('testB', $jA);
 $jC = job_create_with_worker('testC', $jA);
-diag "$jA $jB $jC";
 set_token_header($t->ua, 'token' . $jA);
 $t->post_ok($b_prefix, form => {name => 'barrier2', tasks => 3},)->status_is(200);
 # barrier is not unlocked after one task

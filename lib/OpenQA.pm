@@ -45,14 +45,14 @@ sub _stopAll {
         my $pid = $pids{$_};
         my $ret;
         print STDERR "stopping $_ with pid $pid\n";
-        kill('TERM', $pid);
+        kill POSIX::SIGTERM => $pid;
         for my $i (1 .. 5) {
             $ret = waitpid($pid, WNOHANG);
             last if ($ret == $pid);
             sleep 1;
         }
         next if ($ret == $pid);
-        kill("KILL", $pid);
+        kill POSIX::SIGKILL => $pid;
     }
     %pids = ();
 }
