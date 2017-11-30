@@ -1039,16 +1039,21 @@ See <code>wait_serial</code> for default timeout.</p>
 <h5 id="_script_output">script_output</h5>
 <div class="literalblock">
 <div class="content">
-<pre>script_output($script [, $wait])</pre>
+<pre>script_output($script [, $wait, type_command =&gt; 1])</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>fetches the script through HTTP into the SUT and execs it with <code>bash -xe</code> and directs
-<code>stdout</code> (<em>not</em>' <code>stderr</code>!) to the serial console and returns the output <em>if</em>' the script
-exists with 0. Otherwise the test is set to failed.</p>
+<p>Executing script inside SUT with <code>bash -eox</code> (in case of serial console with <code>bash -eo</code>)
+and directs <code>stdout</code> (<em>not</em>' <code>stderr</code>!) to the serial console and returns
+the output <em>if</em>' the script exists with 0. Otherwise the test is set to failed.</p>
 </div>
 <div class="paragraph">
-<p>The default timeout for the script is 30 seconds. If you need more, pass a second parameter</p>
+<p>Script content based on <code>current_test_script</code> value and typed or fetched
+through HTTP depends on various parameters,so if you need to have it typed because
+your SUT is offline, pass type_command &#8658; 1.</p>
+</div>
+<div class="paragraph">
+<p>The default timeout for the script is 30 seconds. If you need more, pass a second parameter.</p>
 </div>
 </div>
 <div class="sect4">
@@ -1698,7 +1703,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-11-18 13:18:20 UTC
+Last updated 2017-11-30 08:54:40 UTC
 </div>
 </div>
 </body>
