@@ -25,6 +25,7 @@ use JSON::PP;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
+use OpenQA::Schema::Result::Jobs;
 use File::Copy;
 use OpenQA::Test::Database;
 use Test::MockModule;
@@ -143,6 +144,33 @@ $remsize = @removed;
 $delsize = @deleted;
 is($remsize, 2, "two assets should have been 'removed' at size 45GiB");
 is($delsize, 2, "two assets should have been 'deleted' at size 45GiB");
+
+# empty the tracking arrays before next test
+@removed = ();
+@deleted = ();
+
+# set a job that uses asset 1 to a PENDING state. before we do this,
+# only assets 2 and 6 in our fixtures are considered to be associated
+# with PENDING jobs; there are other job fixtures in PENDING states
+# which list other assets in their SETTINGS, but these fixtures don't
+# have jobs_assets set. We could 'fix' that but it'd require rejigging
+# all the above tests.
+my $job99937 = $schema->resultset('Jobs')->find({id => 99937});
+$job99937->state(OpenQA::Schema::Result::Jobs::SCHEDULED);
+$job99937->update;
+run_gru('limit_assets');
+
+# Now only *one* asset should get removed, as asset 1 will be in the
+# list of removal candidates, but will be protected by association
+# with a pending job.
+$remsize = @removed;
+$delsize = @deleted;
+is($remsize, 1, "one assets should have been 'removed' at size 45GiB with 99937 pending");
+is($delsize, 1, "one assets should have been 'deleted' at size 45GiB with 99937 pending");
+
+# restore job 99937 to DONE state
+$job99937->state(OpenQA::Schema::Result::Jobs::DONE);
+$job99937->update;
 
 sub create_temp_job_log_file {
     my ($resultdir) = @_;

@@ -18,6 +18,7 @@ package OpenQA::Schema::Result::Assets;
 use base 'DBIx::Class::Core';
 use strict;
 
+use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
 use OpenQA::IPC;
 use Date::Format;
@@ -289,8 +290,21 @@ sub limit_assets {
         delete $toremove{$id};
     }
     if ($doremove) {
-        my $removes
-          = $app->db->resultset('Assets')->search({id => {in => [sort keys %toremove]}}, {order_by => qw(t_created)});
+        # skip assets for pending jobs
+        my $pending = $app->db->resultset('Jobs')->search({state => [OpenQA::Schema::Result::Jobs::PENDING_STATES]})
+          ->get_column('id')->as_query;
+        my @pendassets
+          = $app->db->resultset('JobsAssets')->search({job_id => {-in => $pending}})->get_column('asset_id')->all;
+        my $removes = $app->db->resultset('Assets')->search(
+            {
+                -and => [
+                    id => {in        => [sort keys %toremove]},
+                    id => {'-not in' => \@pendassets},
+                ],
+            },
+            {
+                order_by => qw(t_created)
+            });
         while (my $a = $removes->next) {
             $a->remove_from_disk;
             $a->delete;
