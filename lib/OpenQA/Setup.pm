@@ -38,7 +38,7 @@ has mode => 'production';
 
 has 'log_name';
 
-has level => 'info';
+has 'level';
 
 has 'instance';
 
@@ -62,8 +62,8 @@ sub setup_log {
     }
     else {
         $log = $self->log;
-        $level = $self->config->{logging}->{level} || 'debug';
     }
+    $level //= $self->config->{logging}->{level} // 'info';
     $logfile = $ENV{OPENQA_LOGFILE} || $self->config->{logging}->{file};
 
     if ($logfile && $logdir) {
