@@ -76,7 +76,7 @@ __PACKAGE__->add_columns(
         is_nullable   => 0,
     });
 
-__PACKAGE__->add_unique_constraint([qw(name)]);
+__PACKAGE__->add_unique_constraint([qw(name parent_id)]);
 
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');

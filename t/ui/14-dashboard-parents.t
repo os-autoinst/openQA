@@ -24,6 +24,7 @@ BEGIN {
 use Mojo::Base -strict;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
+use Date::Format;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
@@ -39,7 +40,7 @@ sub schema_hook {
     my $schema        = OpenQA::Test::Database->new->create;
     my $parent_groups = $schema->resultset('JobGroupParents');
     my $job_groups    = $schema->resultset('JobGroups');
-
+    my $jobs          = $schema->resultset('Jobs');
     # add job groups from fixtures to new parent
     my $parent_group = $parent_groups->create({name => 'Test parent', sort_order => 0});
     while (my $job_group = $job_groups->next) {
@@ -48,6 +49,36 @@ sub schema_hook {
                 parent_id => $parent_group->id
             });
     }
+    # add data to test same name job group within different parent group
+    my $parent_group2 = $parent_groups->create({name => 'Test parent 2', sort_order => 1});
+    my $new_job_group = $job_groups->create({name => 'opensuse', parent_id => $parent_group2->id});
+    my $new_job       = $jobs->create({
+            id       => 100001,
+            group_id => $new_job_group->id,
+            result   => "none",
+            state    => "cancelled",
+            priority => 35,
+            t_finished => undef,
+            backend    => 'qemu',
+            # 10 minutes ago
+            t_started => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),
+            # Two hours ago
+            t_created => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+            TEST      => "upgrade",
+            ARCH      => 'x86_64',
+            BUILD     => '0100',
+            DISTRI    => 'opensuse',
+            FLAVOR    => 'NET',
+            MACHINE   => '64bit',
+            VERSION   => '13.1',
+            result_dir  => '00099961-opensuse-13.1-DVD-x86_64-Build0100-kde',
+            settings    => [
+                {key => 'DESKTOP',     value => 'kde'},
+                {key => 'ISO_MAXSIZE', value => '4700372992'},
+                {key => 'ISO',         value => 'openSUSE-13.1-DVD-x86_64-Build0100-Media.iso'},
+                {key => 'DVD',         value => '1'},
+            ]
+        });
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -92,6 +123,15 @@ my @links = $driver->find_elements('.h4 a', 'css');
 is(scalar @links, 11, 'all links expanded in the first place');
 $driver->find_element_by_link_text('Build0091')->click();
 ok($driver->find_element('#group1_build13_1-0091 .h4 a')->is_hidden(), 'link to child group collapsed');
+
+# check same name group within different parent group
+isnt(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, "child group 'opensuse' in 'Test parent'");
+
+# back to home and go to another parent group overview
+$driver->find_element_by_class('navbar-brand')->click();
+$driver->find_element_by_link_text('Test parent 2')->click();
+disable_bootstrap_animations();
+isnt(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, "child group 'opensuse' in 'Test parent 2'");
 
 kill_driver();
 done_testing();

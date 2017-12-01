@@ -93,11 +93,25 @@ sub list {
     $self->render(json => \@results);
 }
 
+# check existing job group on top level to prevent create/update duplicate
+sub check_top_level_group {
+    my ($self) = @_;
+
+    return 0 if $self->is_parent;
+    my $properties = $self->load_properties;
+    return $self->resultset->search({name => $properties->{name}, parent_id => undef});
+}
+
 sub create {
     my ($self) = @_;
 
     my $group_name = $self->param('name');
     return $self->render(json => {error => 'No group name specified'}, status => 400) unless $group_name;
+
+    my $check = $self->check_top_level_group;
+    if ($check != 0) {
+        return $self->render(json => {error => 'Unable to create group due to not allow duplicated job group on top level'}, status => 500)
+    }
 
     my $group = $self->resultset->create($self->load_properties);
     return $self->render(json => {error => 'Unable to create group with specified properties'}, status => 400)
@@ -111,6 +125,11 @@ sub update {
 
     my $group = $self->find_group;
     return unless $group;
+
+    my $check = $self->check_top_level_group;
+    if ($check != 0) {
+        return $self->render(json => {error => 'Unable to update group due to not allow duplicated job group on top level'}, status => 500)
+    }
 
     my $res = $group->update($self->load_properties);
     return $self->render(json => {error => 'Specified job group ' . $group->id . ' exist but unable to update, though'})
