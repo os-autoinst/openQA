@@ -140,6 +140,18 @@ print $fh "[host2]\nkey=1234\nsecret=1234\n";
 print $fh "[host3]\nkey=1234\nsecret=1234\n";
 close $fh or die 'can not close client.conf after writing';
 
+subtest 'Worker verify job' => sub {
+    $OpenQA::Worker::Common::job = "foobar";
+
+    is OpenQA::Worker::Jobs::verify_job, 0;
+
+    $OpenQA::Worker::Common::job = {id => 9999, state => "scheduled"};
+
+    is OpenQA::Worker::Jobs::verify_job, 1;
+
+    OpenQA::Worker::Jobs::_reset_state();
+};
+
 subtest 'api init with multiple webuis' => sub {
     OpenQA::Worker::Common::api_init({HOSTS => ['host1', 'host2', 'host3']});
     for my $h (qw(host1 host2 host3)) {
@@ -298,6 +310,18 @@ EOF
     is $w_setting->{WORKER_CLASS},   'tap,qemu_x86_64,caasp_x86_64' or diag explain $w_setting;
     is $h_setting->{HOSTS}->[0], 'localhost' or diag explain $h_setting;
     is_deeply $h_setting->{localhost}, {} or diag explain $h_setting;
+
+    my $j = {settings => {}};
+    OpenQA::Worker::Jobs::copy_job_settings($j, $w_setting);
+
+    is($j->{settings}->{FOO_BAR_BAZ}, 6, 'Worker settings are copied to the job settings') or diag explain $job;
+    is($j->{settings}->{CACHEDIRECTORY}, '/var/lib/openqa/cache', 'Worker  settings are copied to the job settings')
+      or diag explain $j;
+    is(
+        $j->{settings}->{WORKER_CLASS},
+        'tap,qemu_x86_64,caasp_x86_64',
+        'Worker  settings are copied to the job settings'
+    ) or diag explain $j;
 };
 
 subtest 'worker status timer calculation' => sub {

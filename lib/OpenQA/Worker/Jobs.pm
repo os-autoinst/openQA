@@ -167,8 +167,13 @@ sub stop_job {
     $stop_job_check_status->();
 }
 
+sub verify_job {
+    return 1 if $job && ref($job) eq "HASH";
+    return 0;
+}
+
 sub _reset_state {
-    log_info('cleaning up ' . $job->{settings}->{NAME}) if $job;
+    log_info('cleaning up ' . $job->{settings}->{NAME}) if verify_job && exists $job->{settings}->{NAME};
     clean_pool;
     $job              = undef;
     $worker           = undef;
@@ -433,15 +438,24 @@ sub _stop_job_finish {
         });
 }
 
+sub copy_job_settings {
+    my ($j, $worker_settings) = @_;
+    my @worker_settings_key = keys %$worker_settings;
+    @{$j->{settings}}{@worker_settings_key} = @{$worker_settings}{@worker_settings_key};
+}
+
 sub start_job {
     my ($host) = @_;
+
+    return _reset_state unless verify_job;
     # block the job from having dangerous settings (isotovideo specific though)
     # it needs to come from worker_settings
     delete $job->{settings}->{GENERAL_HW_CMD_DIR};
     # add_log_channel('worker', path => 'worker-log.txt', level => $worker_settings->{LOG_LEVEL} // 'info');
 
     # update settings with worker-specific stuff
-    @{$job->{settings}}{keys %$worker_settings} = values %$worker_settings;
+    copy_job_settings($job, $worker_settings);
+
     my $name = $job->{settings}->{NAME};
     log_info(sprintf('got job %d: %s', $job->{id}, $name));
 
