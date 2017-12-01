@@ -121,9 +121,9 @@ sub engine_workit {
     my ($job) = @_;
 
     my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
-    log_debug('+++ setup notes +++', channels => 'autoinst');
-    log_debug(sprintf("start time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
-    log_debug(sprintf("running on $hostname:%d ($sysname $release $version $machine)", $instance),
+    log_info('+++ setup notes +++', channels => 'autoinst');
+    log_info(sprintf("start time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
+    log_info(sprintf("running on $hostname:%d ($sysname $release $version $machine)", $instance),
         channels => 'autoinst');
 
     # set base dir to the one assigned with webui

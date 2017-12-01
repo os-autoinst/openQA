@@ -94,7 +94,7 @@ sub download_asset {
     my $ua = Mojo::UserAgent->new(max_redirects => 2);
     $ua->max_response_size(0);
     my $url = sprintf '%s/tests/%d/asset/%s/%s', $host, $id, $type, basename($asset);
-    log_debug("Downloading " . basename($asset) . " from $url");
+    log_info("Downloading " . basename($asset) . " from $url");
     my $tx = $ua->build_tx(GET => $url);
     my $headers;
 

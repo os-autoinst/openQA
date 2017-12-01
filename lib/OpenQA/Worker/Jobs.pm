@@ -193,7 +193,7 @@ sub upload {
 
     # we need to open and close the log here as one of the files
     # might actually be autoinst-log.txt
-    log_debug("uploading $filename", channels => ['worker', 'autoinst'], default => 1);
+    log_info("uploading $filename", channels => ['worker', 'autoinst'], default => 1);
 
     my $regular_upload_failed = 0;
     my $retry_counter         = 5;
@@ -311,9 +311,9 @@ sub _stop_job_2 {
     $aborted ||= 'done';
 
     my $job_done;    # undef
-    log_debug("+++ worker notes +++", channels => 'autoinst');
-    log_debug(sprintf("end time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
-    log_debug("result: $aborted", channels => 'autoinst');
+    log_info("+++ worker notes +++", channels => 'autoinst');
+    log_info(sprintf("end time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
+    log_info("result: $aborted", channels => 'autoinst');
     if ($aborted ne 'quit' && $aborted ne 'abort' && $aborted ne 'api-failure') {
         # collect uploaded logs
         my @uploaded_logfiles = glob "$pooldir/ulogs/*";
