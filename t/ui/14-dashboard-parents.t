@@ -52,33 +52,33 @@ sub schema_hook {
     # add data to test same name job group within different parent group
     my $parent_group2 = $parent_groups->create({name => 'Test parent 2', sort_order => 1});
     my $new_job_group = $job_groups->create({name => 'opensuse', parent_id => $parent_group2->id});
-    my $new_job       = $jobs->create({
-            id       => 100001,
-            group_id => $new_job_group->id,
-            result   => "none",
-            state    => "cancelled",
-            priority => 35,
+    my $new_job = $jobs->create(
+        {
+            id         => 100001,
+            group_id   => $new_job_group->id,
+            result     => "none",
+            state      => "cancelled",
+            priority   => 35,
             t_finished => undef,
             backend    => 'qemu',
             # 10 minutes ago
             t_started => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),
             # Two hours ago
-            t_created => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
-            TEST      => "upgrade",
-            ARCH      => 'x86_64',
-            BUILD     => '0100',
-            DISTRI    => 'opensuse',
-            FLAVOR    => 'NET',
-            MACHINE   => '64bit',
-            VERSION   => '13.1',
-            result_dir  => '00099961-opensuse-13.1-DVD-x86_64-Build0100-kde',
-            settings    => [
+            t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+            TEST       => "upgrade",
+            ARCH       => 'x86_64',
+            BUILD      => '0100',
+            DISTRI     => 'opensuse',
+            FLAVOR     => 'NET',
+            MACHINE    => '64bit',
+            VERSION    => '13.1',
+            result_dir => '00099961-opensuse-13.1-DVD-x86_64-Build0100-kde',
+            settings   => [
                 {key => 'DESKTOP',     value => 'kde'},
                 {key => 'ISO_MAXSIZE', value => '4700372992'},
                 {key => 'ISO',         value => 'openSUSE-13.1-DVD-x86_64-Build0100-Media.iso'},
                 {key => 'DVD',         value => '1'},
-            ]
-        });
+            ]});
 }
 
 my $driver = call_driver(\&schema_hook);

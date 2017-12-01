@@ -110,7 +110,10 @@ sub create {
 
     my $check = $self->check_top_level_group;
     if ($check != 0) {
-        return $self->render(json => {error => 'Unable to create group due to not allow duplicated job group on top level'}, status => 500)
+        return $self->render(
+            json   => {error => 'Unable to create group due to not allow duplicated job group on top level'},
+            status => 500
+        );
     }
 
     my $group = $self->resultset->create($self->load_properties);
@@ -128,7 +131,10 @@ sub update {
 
     my $check = $self->check_top_level_group;
     if ($check != 0) {
-        return $self->render(json => {error => 'Unable to update group due to not allow duplicated job group on top level'}, status => 500)
+        return $self->render(
+            json   => {error => 'Unable to update group due to not allow duplicated job group on top level'},
+            status => 500
+        );
     }
 
     my $res = $group->update($self->load_properties);
