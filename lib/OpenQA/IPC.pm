@@ -223,6 +223,7 @@ sub service {
 sub _dispatch {
     my ($self, $target, $command, @data) = @_;
     my $ret;
+    $@ = undef;
     try {
         my $object = $self->service($target);
         log_debug("dispatching IPC $command to $target: " . pp(\@data));
@@ -230,7 +231,8 @@ sub _dispatch {
         log_debug('IPC finished');
     }
     catch {
-        log_warning('IPC failed: ' . $_);
+        log_error('IPC failed: ' . $_);
+        $@ = $_;
     };
     return $ret;
 }

@@ -212,7 +212,9 @@ sub send_command {
                 {workerid => $self->id, command => $args{command}});
         };
     }
-    if (!OpenQA::IPC->ipc->websockets('ws_send', $self->id, $args{command}, $args{job_id})) {
+
+    OpenQA::IPC->ipc->websockets('ws_send', $self->id, $args{command}, $args{job_id});
+    if ($@) {
         log_error(
             sprintf(
                 'Failed dispatching message to websocket server over ipc for worker "%s:%n"',
