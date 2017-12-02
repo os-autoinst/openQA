@@ -20,39 +20,35 @@ use warnings;
 use JSON::PP;
 use FindBin;
 use lib ("$FindBin::Bin/lib", "../lib", "lib");
-use Test::More;
+use Test::More tests => 3;
 use OpenQA;
-use Test::Output 'stderr_like';
+use Test::Output 'combined_like';
 
 subtest _run => sub {
-    stderr_like sub {
-        OpenQA::_run("fake", sub { Devel::Cover::report() if Devel::Cover->can('report') });
+    combined_like sub {
+        OpenQA::_run(
+            "fake",
+            sub {
+                Devel::Cover::report() if Devel::Cover->can('report');
+                exit 0;
+            });
     }, qr/fake started with pid/;
 };
 
 subtest _stopAll => sub {
-    OpenQA::_run("fake", sub { $| = 1; print "Boo" while sleep 1; });
-
-    stderr_like sub {
+    combined_like sub {
+        OpenQA::_run("fake", sub { 42 });
         OpenQA::_stopAll();
     }, qr/stopping fake with pid /;
 };
 
 subtest run => sub {
-    $ARGV[0] = "daemon";
-    stderr_like sub { OpenQA::run(); }, qr/webapi started/;
-
-    stderr_like sub {
-        OpenQA::run();
-    }, qr/stopping webapi with pid/;
-    OpenQA::_stopAll();
-
     $ARGV[0] = "";
     my $touched;
     use Mojo::Util 'monkey_patch';
-    monkey_patch "OpenQA::WebAPI", run => sub { $touched++ };
+    monkey_patch "OpenQA::WebAPI", run => sub { $touched++; };
     OpenQA::run();
-    is $touched, 1;
+    is $touched, 1 or diag $touched;
 };
 
-done_testing;
+1;

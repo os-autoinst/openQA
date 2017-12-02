@@ -24,9 +24,17 @@ BEGIN {
 
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
+    qw(redirect_output),
     qw(create_webapi create_websocket_server create_worker unresponsive_worker wait_for_worker setup_share_dir),
     qw(kill_service unstable_worker job_create client_output create_resourceallocator start_resourceallocator)
 );
+
+sub redirect_output {
+    my ($buf) = @_;
+    open my $FD, '>', $buf;
+    *STDOUT = $FD;
+    *STDERR = $FD;
+}
 
 sub kill_service {
     my $pid = shift;

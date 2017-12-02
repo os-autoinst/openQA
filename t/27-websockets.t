@@ -23,6 +23,8 @@ use POSIX;
 use FindBin;
 use lib ("$FindBin::Bin/lib", "../lib", "lib");
 use OpenQA::WebSockets::Server;
+use OpenQA::Test::Utils 'redirect_output';
+
 OpenQA::WebSockets::Server->new();
 
 subtest "WebSocket Server _workers_checker" => sub {
@@ -47,7 +49,6 @@ subtest "WebSocket Server _get_stale_worker_jobs" => sub {
         local *STDOUT = $handle;
         OpenQA::WebSockets::Server::_get_stale_worker_jobs(-9999999999);
     };
-    diag($buffer);
     like $buffer, qr/Worker Boooo not seen since 0 seconds/;
 };
 
@@ -56,6 +57,8 @@ subtest "WebSocket Server _message()" => sub {
     monkey_patch "OpenQA::WebSockets::Server", _get_worker => sub { FooBarWorker->new };
     my $fake_tx = FooBarTransaction->new;
     my $buf;
+    redirect_output(\$buf);
+
     $fake_tx->OpenQA::WebSockets::Server::_message("");
 
     is @{$fake_tx->{out}}[0], "1003,Received unexpected data from worker, forcing close",
@@ -72,9 +75,7 @@ subtest "WebSocket Server _message()" => sub {
     is @{$fake_tx->{w}->{property}}[1], "INTERACTIVE,0", "property got updated";
     is @{$fake_tx->{w}->{property}}[2], "STOP_WAITFORNEEDLE_REQUESTED,0", "property got updated";
 
-    open my $FD, '>', \$buf;
-    *STDOUT = $FD;
-    *STDERR = $FD;
+    $buf = undef;
 
     $fake_tx->OpenQA::WebSockets::Server::_message({type => "FOOBAR"});
     like $buf, qr/Received unknown message type "FOOBAR" from worker/, "log_error on unknown message";

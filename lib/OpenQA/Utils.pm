@@ -942,7 +942,6 @@ sub safe_call {
           : *{"$_[0]::$_[1]"}{CODE} ? [*{"$_[0]::$_[1]"}{CODE}(splice @_, 2)]
           :                           die(qq|Can't locate object method "$_[1]" via package "$_[0]"|);
     };
-    log_debug("Return: " . pp($ret));
     if ($@) {
         log_error("Safe call error: $@");
         return [];

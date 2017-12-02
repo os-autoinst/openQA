@@ -20,8 +20,11 @@ BEGIN {
     unshift @INC, 'lib';
 }
 
+use FindBin;
+use lib "$FindBin::Bin/lib";
 use strict;
 use OpenQA::Utils;
+use OpenQA::Test::Utils 'redirect_output';
 use Test::More;
 
 is bugurl('bsc#1234'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bug url is properly expanded';
@@ -163,7 +166,8 @@ subtest 'Plugins handling' => sub {
 
 subtest safe_call => sub {
     use OpenQA::Utils 'safe_call';
-
+    my $output;
+    redirect_output(\$output);
     my $foo = foo->new;
 
     is @{safe_call($foo => baz => qw(a b c))}[1], 'a';

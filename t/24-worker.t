@@ -37,6 +37,7 @@ use Mojo::File qw(tempdir path);
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Jobs;
 use OpenQA::WebSockets::Server;
+use OpenQA::Schema::Result::Workers ();
 
 # api_init (must be called before making other calls anyways)
 like(
@@ -329,7 +330,7 @@ subtest 'worker status timer calculation' => sub {
 
     # Or we would see workers detected as dead
     ok(
-        (OpenQA::WebSockets::Server::WORKERS_CHECKER_THRESHOLD - OpenQA::Worker::Common::MAX_TIMER) >= 20,
+        (OpenQA::Schema::Result::Workers::WORKERS_CHECKER_THRESHOLD - OpenQA::Worker::Common::MAX_TIMER) >= 20,
 "OpenQA::WebSockets::Server::WORKERS_CHECKER_THRESHOLD is bigger than OpenQA::Worker::Common::MAX_TIMER at least by 20s"
     );
     my $instance = 1;
