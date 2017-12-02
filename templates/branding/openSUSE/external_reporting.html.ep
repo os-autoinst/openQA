@@ -6,13 +6,13 @@
 <% my %distri_to_product_url_new = (
     sle => 'https://bugzilla.suse.com/enter_bug.cgi',
     opensuse => 'https://bugzilla.opensuse.org/enter_bug.cgi',
-    casp => 'https://bugzilla.suse.com/enter_bug.cgi',
+    caasp => 'https://bugzilla.suse.com/enter_bug.cgi',
     openqa => 'https://progress.opensuse.org/projects/openqav3/issues/new'
 );%>
 <% my %distri_to_prod = (
     sle => 'SUSE Linux Enterprise',
     opensuse => 'openSUSE',
-    casp => 'SUSE Container as a Service Platform',
+    caasp => 'SUSE CaaS Platform',
 ); %>
 <% my %flavor_to_prod_sle = (
     Server => 'Server',
@@ -45,8 +45,8 @@
 % elsif ($job->DISTRI eq 'opensuse') {
 %     $product = $job->VERSION eq 'Tumbleweed' ? 'Tumbleweed' : 'Distribution';
 % }
-% elsif ($job->DISTRI eq 'casp') {
-%     $product = $job->VERSION;
+% elsif ($job->DISTRI eq 'caasp') {
+%     $product = $job->VERSION =~ s/\.[0-9]//r;
 % }
 % elsif ($job->DISTRI eq 'openqa') {
 %     $product = 'openQA';
