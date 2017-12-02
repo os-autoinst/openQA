@@ -31,7 +31,17 @@ use FindBin;
 
 plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
+sub redo_schema {
+    my $dbh = shift->storage->dbh;
+    $dbh->do('SET client_min_messages TO WARNING;');
+    $dbh->do("drop schema if exists deploy cascade");
+    $dbh->do("create schema deploy");
+    $dbh->do("SET search_path TO deploy");
+}
+
 my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
+redo_schema $schema;
+
 my $dh = DBIx::Class::DeploymentHandler->new(
     {
         schema           => $schema,
@@ -51,9 +61,8 @@ is($dh->version_storage->database_version, $dh->schema_version, 'Schema at corre
 is($ret, 2, 'Expected return value (2) for a deployment');
 
 OpenQA::Schema::disconnect_db;
-system("dropdb -h $FindBin::Bin/db openqa_test");
-system("createdb -h $FindBin::Bin/db openqa_test");
 $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
+redo_schema $schema;
 
 # redeploy DB to older version and check if deployment_check upgrades the DB
 $dh = DBIx::Class::DeploymentHandler->new(

@@ -143,15 +143,10 @@ sub test_comment_editing {
             $edited_test_message, "comment is still there after dismissing removal");
 
         # try to remove the first displayed comment again (and accept this time);
-        if ($driver->isa('Test::Selenium::PhantomJS')) {
-            $driver->execute_script("window.confirm = function() { return true; };");
-        }
         $driver->find_element('button.remove-edit-button')->click();
 
-        if (!$driver->isa('Test::Selenium::PhantomJS')) {
-            $driver->alert_text_is("Do you really want to delete the comment written by Demo?");
-            $driver->accept_alert;
-        }
+        $driver->alert_text_is("Do you really want to delete the comment written by Demo?");
+        $driver->accept_alert;
         wait_for_ajax;
 
         # check whether the comment is gone
