@@ -48,11 +48,11 @@ sub connect_db {
     my $schema = _get_schema;
     unless ($$schema) {
 
-        if (($args{mode} || '') eq 'test') {
+        my $mode = $args{mode} || $ENV{OPENQA_DATABASE} || 'production';
+        if ($mode eq 'test') {
             $$schema = __PACKAGE__->connect($ENV{TEST_PG});
         }
         else {
-            my $mode = $args{mode} || $ENV{OPENQA_DATABASE} || 'production';
             my %ini;
             my $cfgpath = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
             my $database_file = $cfgpath . '/database.ini';
