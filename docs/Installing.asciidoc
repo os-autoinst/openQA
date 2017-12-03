@@ -55,7 +55,7 @@ It is required to run openQA behind an http proxy (apache, nginx, etc..). See th
 *openqa.conf.template* config file in */etc/apache2/vhosts.d* (openSUSE) or
 +/etc/httpd/conf.d+ (Fedora). To make everything work correctly on openSUSE, you
 need to enable the 'headers', 'proxy', 'proxy_http' and 'proxy_wstunnel' modules
-using the command 'a2enmod'. This is not necessary on Fedora. 
+using the command 'a2enmod'. This is not necessary on Fedora.
 
 [source,sh]
 --------------------------------------------------------------------------------
@@ -456,7 +456,7 @@ development mode.
 directories, most of which must be owned by the user that runs openQA
 (default 'geekotest'):
 
-* +db+ contains the sqlite database
+* +db+ contains the database lockfile
 * +images+ is where the server stores test screenshots and thumbnails
 * +share+ contains shared directories for remote workers, can be owned by root
 * +share/factory+ contains test assets and temp directory, can be owned by root but sysadmin must create subdirs
@@ -505,18 +505,16 @@ The worker needs to own +/var/lib/openqa/pool/$INSTANCE+, e.g.
 You can also give the whole pool directory to the +_openqa-worker+ user and let
 the workers create their own instance directories.
 
-== Other database engines
-[id="otherdb"]
+== Database engine (PostgreSQL)
+:DBD-Pg-DBI_Class_Methods: https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods[DBD::Pg]
 
-By default, openQA will use an SQLite database: +/var/lib/openqa/db/db.sqlite+.
-This will be automatically created on first access to the openQA web UI, if it
-does not exist.
+To setup openQA you will need a PostgreSQL database available to the user
+running openQA. You need to create a database and a dedicated user account with
+full access to it. To configure access to the chosen database in openQA,
+edit +/etc/openqa/database.ini+ and change the settings in the +[production]+ section.
 
-It is possible to use PostgreSQL or MariaDB / MySQL instead of SQLite, and
-indeed this is recommended for production deployments of openQA. You should
-create a database and a dedicated user account with full access to it. To
-configure access to the chosen database in openQA, edit +/etc/openqa/database.ini+
-and change the settings in the +[production]+ section.
+The +dsn+ value format technically depends on the database type and is
+documented for PostgreSQL at {DBD-Pg-DBI_Class_Methods}
 
 === Example for connecting to local PostgreSQL database
 
@@ -535,128 +533,6 @@ dsn = dbi:Pg:dbname=openqa;host=db.example.org
 user = openqa
 password = somepassword
 --------------------------------------------------------------------------------
-
-=== General notes
-:DBD-Pg-DBI_Class_Methods: https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods[DBD::Pg]
-:DBD-mysql_Class_Methods: https://metacpan.org/pod/DBD::mysql#DBI-Class-Methods[DBD::mysql]
-
-The +dsn+ value format technically depends on the database type (though at
-time of writing it's in fact identical for both supported databases). For
-PostgreSQL it's documented at {DBD-Pg-DBI_Class_Methods},
-for MySQL / MariaDB it's documented at {DBD-mysql_Class_Methods}
-
-
-If you intend to use a different database, it is best to create the database
-and configuration file before starting the services and connecting to the
-web UI for the first time, otherwise openQA will set itself up with an SQLite
-database and may get confused when you try to switch to a different one. See
-the following section if you want to migrate an existing openQA-on-SQLite
-deployment to a different database.
-
-=== Changing the database engine
-[id="dbengine"]
-
-openQA is compatible with several database engines and comes with all the needed
-tools to initialize a clean database in any of them. But openQA does not
-include tools to migrate the existing data from a database to another. If you
-are planning, for example, to leave behind SQLite and switch to PostgreSQL in
-your openQA installation, you will need to start with a clean database or
-perform the data conversion by yourself.
-
-Converting databases from one engine to another is far from trivial. There are
-plenty of tools, both commercial and free, that try to address the problem for
-different databases and in different ways. The following example SQL scritps are
-provided just as a starting point for those willing to migrate from SQLite (the
-default engine) to PostgreSQL (successfully backing the biggest openQA
-installations at the time of writing). Keep in mind that the scripts will
-probably need some previous work, since they are based on the version 22 of the
-database schema (likely outdated at the time of reading).
-
-First, run this in the SQLite database to dump the database content into a bunch
-of CSV files.
-[source,sql]
---------------------------------------------------------------------------------
-.mode csv
-.header ON
-.output assets.csv
-SELECT * FROM assets;
-.output job_settings.csv
-SELECT * FROM job_settings;
-.output machine_settings.csv
-SELECT * FROM machine_settings;
-.output machines.csv
-SELECT * FROM machines;
-.output product_settings.csv
-SELECT * FROM product_settings;
-.output products.csv
-SELECT * FROM products;
-.output secrets.csv
-SELECT * FROM secrets;
-.output test_suite_settings.csv
-SELECT * FROM test_suite_settings;
-.output test_suites.csv
-SELECT * FROM test_suites;
-.output users.csv
-SELECT * FROM users;
-.output worker_properties.csv
-SELECT * FROM worker_properties;
-.output workers.csv
-SELECT * FROM workers WHERE id > 0;
-.output api_keys.csv
-SELECT * FROM api_keys;
-.output job_modules.csv
-SELECT * FROM job_modules;
-.output job_templates.csv
-SELECT * FROM job_templates;
-.output jobs.csv
-SELECT * FROM jobs;
-.output job_dependencies.csv
-SELECT * FROM job_dependencies;
-.output jobs_assets.csv
-SELECT * FROM jobs_assets;
---------------------------------------------------------------------------------
-
-Then, initialize the PostgreSQL database using the standard procedure and
-afterwards run this script from the directory containing the CSV files to import
-them into the new database.
-
-[source,sql]
----------------------------------------------------------------------------------------
-\copy users FROM users.csv WITH csv header NULL AS ''
-\copy api_keys FROM api_keys.csv WITH csv header NULL AS ''
-\copy secrets FROM secrets.csv WITH csv header NULL AS ''
-\copy assets FROM assets.csv WITH csv header NULL AS ''
-\copy workers FROM workers.csv WITH csv header NULL AS ''
-\copy worker_properties FROM worker_properties.csv WITH csv header NULL AS ''
-\copy products FROM products.csv WITH csv header NULL AS ''
-\copy product_settings FROM product_settings.csv WITH csv header NULL AS ''
-\copy machines FROM machines.csv WITH csv header NULL AS ''
-\copy machine_settings FROM machine_settings.csv WITH csv header NULL AS ''
-\copy test_suites FROM test_suites.csv WITH csv header NULL AS ''
-\copy test_suite_settings FROM test_suite_settings.csv WITH csv header NULL AS ''
-\copy job_templates FROM job_templates.csv WITH csv header NULL AS ''
-\copy jobs FROM jobs.csv WITH csv header NULL AS ''
-\copy job_settings FROM job_settings.csv WITH csv header NULL AS ''
-\copy job_modules FROM job_modules.csv WITH csv header NULL AS ''
-\copy job_dependencies FROM job_dependencies.csv WITH csv header NULL AS ''
-\copy jobs_assets FROM jobs_assets.csv WITH csv header NULL AS ''
-SELECT SETVAL('users_id_seq', (SELECT MAX(id) FROM users));
-SELECT SETVAL('api_keys_id_seq', (SELECT MAX(id) FROM api_keys));
-SELECT SETVAL('secrets_id_seq', (SELECT MAX(id) FROM secrets));
-SELECT SETVAL('assets_id_seq', (SELECT MAX(id) FROM assets));
-SELECT SETVAL('workers_id_seq', (SELECT MAX(id) FROM workers));
-SELECT SETVAL('worker_properties_id_seq', (SELECT MAX(id) FROM worker_properties));
-SELECT SETVAL('products_id_seq', (SELECT MAX(id) FROM products));
-SELECT SETVAL('product_settings_id_seq', (SELECT MAX(id) FROM product_settings));
-SELECT SETVAL('machines_id_seq', (SELECT MAX(id) FROM machines));
-SELECT SETVAL('machine_settings_id_seq', (SELECT MAX(id) FROM machine_settings));
-SELECT SETVAL('test_suites_id_seq', (SELECT MAX(id) FROM test_suites));
-SELECT SETVAL('test_suite_settings_id_seq', (SELECT MAX(id) FROM test_suite_settings));
-SELECT SETVAL('job_templates_id_seq', (SELECT MAX(id) FROM job_templates));
-SELECT SETVAL('jobs_id_seq', (SELECT MAX(id) FROM jobs));
-SELECT SETVAL('job_settings_id_seq', (SELECT MAX(id) FROM job_settings));
-SELECT SETVAL('job_modules_id_seq', (SELECT MAX(id) FROM job_modules));
----------------------------------------------------------------------------------------
 
 == Troubleshooting
 [id="troubleshooting"]

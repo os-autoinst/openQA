@@ -118,7 +118,7 @@ Use skip_fixtures to prevent loading fixtures.
 
 =head2 insert_fixtures
 
-Insert fixtures into sqlite3 database
+Insert fixtures into database
 
 =head2 disconnect ($schema)
 

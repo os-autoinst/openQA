@@ -75,26 +75,16 @@ if ($user) {
 my $schema = OpenQA::Schema::connect_db(check => 0);
 
 my $script_directory = "$FindBin::Bin/../dbicdh";
-my @databases        = qw( SQLite PostgreSQL );
-
-if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
-    # Some SQLite update scripts do not work correctly with foreign keys on
-    $schema->storage->dbh_do(
-        sub {
-            my ($storage, $dbh, @args) = @_;
-            $dbh->do("PRAGMA foreign_keys = OFF;");
-        });
-}
+my @databases        = qw( PostgreSQL );
 
 if ($prepare_upgrades) {
     my $dh = DH->new(
         {
-            schema           => $schema,
-            script_directory => $script_directory,
-            databases        => \@databases,
-            sql_translator_args =>
-              {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}, quote_identifiers => 0},
-            force_overwrite => $force,
+            schema              => $schema,
+            script_directory    => $script_directory,
+            databases           => \@databases,
+            sql_translator_args => {add_drop_table => 0, quote_identifiers => 0},
+            force_overwrite     => $force,
         });
 
 

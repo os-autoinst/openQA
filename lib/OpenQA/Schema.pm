@@ -124,8 +124,6 @@ sub _db_tweaks {
 sub _try_deploy_db {
     my ($dh) = @_;
     my $schema = $dh->schema;
-    # the sqlite database should be only readable by the owner.
-    my $mask = umask 027;
     my $version;
     try {
         $version = $dh->version_storage->database_version;
@@ -141,7 +139,6 @@ sub _try_deploy_db {
                 nickname => 'system'
             });
     };
-    umask $mask;
     return !$version;
 }
 

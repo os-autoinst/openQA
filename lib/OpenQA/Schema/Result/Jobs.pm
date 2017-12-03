@@ -260,19 +260,14 @@ sub delete {
         log_debug "Skipping deleting screenshots, migration is in progress";
     }
     else {
-        # sqlite does not like too many variables, so splice it
-        while (@ids) {
-            my @part = splice @ids, 0, 300;
-
-            my $fns = $schema->resultset('Screenshots')->search(
-                {id => {-in => \@part}},
-                {
-                    join     => 'links_outer',
-                    group_by => 'me.id',
-                    having   => \['COUNT(links_outer.job_id) = 0']});
-            while (my $sc = $fns->next) {
-                $sc->delete;
-            }
+        my $fns = $schema->resultset('Screenshots')->search(
+            {id => {-in => \@ids}},
+            {
+                join     => 'links_outer',
+                group_by => 'me.id',
+                having   => \['COUNT(links_outer.job_id) = 0']});
+        while (my $sc = $fns->next) {
+            $sc->delete;
         }
     }
     my $ret = $self->SUPER::delete;
