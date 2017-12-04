@@ -21,8 +21,9 @@ use OpenQA::ServerSideDataTable;
 use Scalar::Util 'looks_like_number';
 
 sub _extend_info {
-    my ($w) = @_;
-    my $info = $w->info;
+    my ($w, $live) = @_;
+    $live //= 0;
+    my $info = $w->info($live);
     $info->{name}      = $w->name;
     $info->{t_updated} = $w->t_updated;
     return $info;
@@ -49,7 +50,7 @@ sub show {
 
     my $w = $self->db->resultset('Workers')->find($self->param('worker_id'))
       or return $self->reply->not_found;
-    $self->stash(worker => _extend_info($w));
+    $self->stash(worker => _extend_info($w, 1));
 
     $self->render('admin/workers/show');
 }

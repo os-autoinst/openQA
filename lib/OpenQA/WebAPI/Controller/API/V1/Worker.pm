@@ -122,7 +122,7 @@ sub show {
     my ($self) = @_;
     my $worker = $self->db->resultset("Workers")->find($self->param('workerid'));
     if ($worker) {
-        $self->render(json => {worker => $worker->info});
+        $self->render(json => {worker => $worker->info(1)});
     }
     else {
         $self->reply->not_found;
