@@ -5,6 +5,26 @@
     $('#workers').DataTable( { "order": [[2, "desc"],[0, "asc"]] } );
 % end
 
+% my $percent_online         = int(($workers_online*100)/$total);
+% my $percent_busy           = int(($workers_busy*100)/$total);
+% my $percent_active_free    = int(($workers_active_free*100)/$total);
+% my $percent_busy_online    = $workers_online? int(($workers_active_free*100)/$workers_online) : 0;
+
+<div class="row">
+    <div class="col-sm-3">
+        <h2>Online: <%= $percent_online %></h2>
+    </div>
+    <div class="col-sm-3">
+        <h2>Busy: <%= $percent_busy %></h2>
+    </div>
+    <div class="col-sm-3">
+        <h2>Idle: <%= $percent_active_free %></h2>
+    </div>
+    <div class="col-sm-3">
+        <h2>Free (Among actives): <%= $percent_busy_online %></h2>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-sm-12">
         <h2><%= title %></h2>

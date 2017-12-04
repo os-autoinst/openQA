@@ -17,8 +17,8 @@
 
     <div><span>Host: </span><%= $worker->{host} %></div>
     <div><span>Instance: </span><%= $worker->{instance} %></div>
-    <div><span>Alive: </span><%= $worker->{alive} %></div>
-    <div><span>Websocket connection: </span><%= $worker->{websocket}? 'Active' : 'Offline' %></div>
+    <div><span>Alive: </span><%= $worker->{alive} ? 'yes' : 'no' %></div>
+    <div><span>Websocket connection: </span><%= $worker->{websocket} ? 'Active' : 'Offline' %></div>
     <div><span>Seen: </span><abbr class="timeago" title="<%= $worker->{t_updated}->datetime() %>Z"><%= format_time($worker->{t_updated}) %></abbr></div>
 
 
