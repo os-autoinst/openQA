@@ -10,6 +10,7 @@ use OpenQA::Utils qw(log_error log_info log_debug);
 use Mojo::Home;
 use Mojo::File qw(path tempdir);
 use Cwd qw(abs_path getcwd);
+use Test::More;
 
 BEGIN {
     if (!$ENV{MOJO_HOME}) {
@@ -50,7 +51,7 @@ sub wait_for_worker {
     my $id     = shift;
     for (0 .. 10) {
         sleep 2;
-        warn 'Attempt for worker: ' . $id;
+        diag('Attempt for worker: ' . $id);
         my $w = $schema->resultset("Workers")->find($id);
         last if defined $w && !$w->dead;
     }
@@ -58,6 +59,7 @@ sub wait_for_worker {
 
 sub create_webapi {
     my $mojoport = shift;
+    diag("Starting WebUI service. Port: $mojoport");
 
     $startingpid = $$;
     my $mojopid = fork();
@@ -93,7 +95,11 @@ sub create_websocket_server {
     my $bogus         = shift;
     my $nowait        = shift;
     my $noworkercheck = shift;
-    my $wspid         = fork();
+
+    diag("Starting WebSocket service");
+    diag("Bogus: $bogus | No wait: $nowait | No worker checks: $noworkercheck");
+
+    my $wspid = fork();
     if ($wspid == 0) {
         $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
         $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
@@ -143,6 +149,7 @@ sub create_resourceallocator {
 }
 
 sub start_resourceallocator {
+    diag("Starting ResourceAllocator service");
     my $resourceallocatorpid = fork();
     if ($resourceallocatorpid == 0) {
         exec("perl ./script/openqa-resource-allocator");
@@ -173,6 +180,7 @@ sub setup_share_dir {
 sub create_worker {
     my ($apikey, $apisecret, $host, $instance, $log) = @_;
     my $connect_args = "--instance=${instance} --apikey=${apikey} --apisecret=${apisecret} --host=${host}";
+    diag("Starting standard worker. Instance: $instance for host $host");
 
     my $workerpid = fork();
     if ($workerpid == 0) {
@@ -185,7 +193,8 @@ sub create_worker {
 
 sub unstable_worker {
     # the help of the Doctor would be really appreciated here.
-    my ($apikey, $apisecret, $host, $instance, $ticks) = @_;
+    my ($apikey, $apisecret, $host, $instance, $ticks, $sleep) = @_;
+    diag("Starting unstable worker. Instance: $instance for host $host");
     $ticks = 1 unless $ticks;
 
     my $pid = fork();
@@ -224,12 +233,14 @@ sub unstable_worker {
             Mojo::IOLoop->singleton->one_tick;
         }
         Devel::Cover::report() if Devel::Cover->can('report');
-        do { 1 } while 1;
+        if ($sleep) {
+            1 while sleep $sleep;
+        }
         _exit(0);
     }
+    sleep $sleep if $sleep;
 
     return $pid;
-
 }
 
 sub unresponsive_worker {
