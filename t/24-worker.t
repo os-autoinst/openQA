@@ -401,17 +401,57 @@ subtest 'mock test send_status' => sub {
     ok(!exists $faketx->get(4)->{job}->{state});
 };
 
+
+subtest 'Worker logs' => sub {
+    use OpenQA::Test::Utils qw(redirect_output standard_worker kill_service setup_share_dir);
+    use Mojo::File qw(path tempdir);
+    use OpenQA::Utils;
+    local $ENV{OPENQA_LOGFILE};
+    #local $ENV{MOJO_LOG_LEVEL};
+    path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
+
+    my @re = (
+        '\[worker:debug\] Found possible working directory for .*?: .*',
+        '\[worker:error\] Ignoring host .*: Working directory does not exist'
+    );
+    my $c = join('\n', @re);
+
+    combined_like sub {
+        my $worker_pid = standard_worker('123', '456', "http://bogushost:999999", 1);
+        sleep 5;
+        kill_service $worker_pid;
+    }, qr/$c/;
+
+    path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt("");
+    $OpenQA::Utils::prjdir = path(tempdir(), 'openqa');
+
+    @re = (
+        '\[worker:info\] Project dir for host .*? is .*',
+        '\[worker:info\] registering worker with .*',
+        '\[worker:error\] unable to connect to host .* retry in .*',
+        '\[worker:debug\] ## adding timer register_worker-.*'
+    );
+
+    $c = join('\n', @re);
+
+    my $sharedir = path($OpenQA::Utils::prjdir, 'share')->make_path;
+    combined_like(
+        sub {
+            my $worker_pid = standard_worker('123', '456', "http://bogushost:999999", 1);
+            sleep 5;
+            kill_service $worker_pid;
+            path($OpenQA::Utils::prjdir)->remove_tree;
+        },
+        qr/$c/
+    );
+};
+
 subtest 'Worker websocket messages' => sub {
     use OpenQA::Worker::Commands;
-    my $buf;
-    open my $FD, '>', \$buf;
-    *STDOUT = $FD;
-    *STDERR = $FD;
-    OpenQA::Worker::Commands::websocket_commands(undef, {fooo => undef});
-    like $buf, qr/Received WS message without type!/ or diag explain $buf;
-
-    OpenQA::Worker::Commands::websocket_commands(FakeTx->new, {type => 'foo'});
-    like $buf, qr/got unknown command/ or diag explain $buf;
+    combined_like sub { OpenQA::Worker::Commands::websocket_commands(undef, {fooo => undef}) },
+      qr/Received WS message without type!/;
+    combined_like sub { OpenQA::Worker::Commands::websocket_commands(FakeTx->new, {type => 'foo'}) },
+      qr/got unknown command/;
 };
 
 done_testing();

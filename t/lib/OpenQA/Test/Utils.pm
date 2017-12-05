@@ -25,7 +25,7 @@ BEGIN {
 
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
-    qw(redirect_output),
+    qw(redirect_output standard_worker),
     qw(create_webapi create_websocket_server create_worker unresponsive_worker wait_for_worker setup_share_dir),
     qw(kill_service unstable_worker job_create client_output create_resourceallocator start_resourceallocator)
 );
@@ -243,9 +243,13 @@ sub unstable_worker {
     return $pid;
 }
 
-sub unresponsive_worker {
+sub standard_worker     { c_worker(@_, 0) }
+sub unresponsive_worker { c_worker(@_, 1) }
+
+sub c_worker {
     # the help of the Doctor would be really appreciated here.
-    my ($apikey, $apisecret, $host, $instance) = @_;
+    my ($apikey, $apisecret, $host, $instance, $bogus) = @_;
+    $bogus //= 1;
 
     my $pid = fork();
     if ($pid == 0) {
@@ -261,11 +265,13 @@ sub unresponsive_worker {
         $ENV{QEMUPORT} = ($instance) * 10 + 20002;
         $ENV{VNC}      = ($instance) + 90;
         # Mangle worker main()
-        monkey_patch 'OpenQA::Worker::Commands', websocket_commands => sub {
-            my ($tx, $json) = @_;
-            use Data::Dumper;
-            log_debug("Received " . Dumper($json));
-        };
+        if ($bogus) {
+            monkey_patch 'OpenQA::Worker::Commands', websocket_commands => sub {
+                my ($tx, $json) = @_;
+                use Data::Dumper;
+                log_debug("Received " . Dumper($json));
+            };
+        }
 
         OpenQA::Worker::init($host_settings, {apikey => $apikey, apisecret => $apisecret});
         OpenQA::Worker::main($host_settings);
@@ -275,7 +281,6 @@ sub unresponsive_worker {
     }
 
     return $pid;
-
 }
 
 sub job_create {
