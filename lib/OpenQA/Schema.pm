@@ -30,8 +30,7 @@ use OpenQA::Utils ();
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
-our $VERSION   = 60;
-our @databases = qw(PostgreSQL);
+our $VERSION = 60;
 
 __PACKAGE__->load_namespaces;
 
@@ -101,7 +100,7 @@ sub deployment_check {
         {
             schema              => $schema,
             script_directory    => $dir,
-            databases           => \@databases,
+            databases           => ['PostgreSQL'],
             sql_translator_args => {add_drop_table => 0},
             force_overwrite     => $force_overwrite
         });
@@ -110,15 +109,6 @@ sub deployment_check {
     $ret = 1 if (!$ret && _try_upgrade_db($dh));
     close($dblock) or die "Can't close database lock file ${dblockfile}!";
     return $ret;
-}
-
-sub _db_tweaks {
-    my ($schema, $tweak) = @_;
-    $schema->storage->dbh_do(
-        sub {
-            my ($storage, $dbh, @args) = @_;
-            $dbh->do($tweak);
-        });
 }
 
 sub _try_deploy_db {
