@@ -45,7 +45,7 @@ my $comments = $t->app->db->resultset('Comments');
 
 sub post_comment_1001 {
     my ($comment) = @_;
-    return $comments->create({group_id => 1001, user_id => 99901, text => $comment});
+    return $comments->create({group_id => 1001, user_id => 1, text => $comment});
 }
 
 # this and 'create_job_version_build' are for adding jobs on the fly,
@@ -225,8 +225,7 @@ subtest 'no cleanup of important builds' => sub {
     $c->app($t->app);
 
     # build 0048 has already been tagged as important before
-    my @jobs     = $jobs->search({state => 'done', group_id => 1001, BUILD => '0048'})->all;
-    my $job      = $jobs[1];
+    my $job = $jobs->search({id => 99938, state => 'done', group_id => 1001, BUILD => '0048'})->first;
     my $filename = $job->result_dir . '/autoinst-log.txt';
     $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
     $job->group->update(

@@ -61,9 +61,14 @@ export MOJO_TMPDIR="$DIR/tmp"
 export OPENQA_DATABASE=test
 export OPENQA_TEST_IPC=1
 
+DBDIR=$(mktemp -d)
+./t/test_postgresql $DBDIR
+export TEST_PG="DBI:Pg:dbname=openqa_test;host=$DBDIR"
+
 # 'version' is the smallest codepath we can hit to produce the assets
 ./script/openqa eval '1+0' -m test > /dev/null
 ./script/openqa eval '1+0' -m development > /dev/null
 
 # asset/cache is now generated
+pg_ctl -D $DBDIR stop
 

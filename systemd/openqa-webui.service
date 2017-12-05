@@ -2,8 +2,8 @@
 Description=The openQA web UI
 Wants=apache2.service
 Before=apache2.service
-After=postgresql.service mariadb.service
-Requires=openqa-resource-allocator.service openqa-scheduler.service openqa-websockets.service
+After=postgresql.service
+Requires=openqa-resource-allocator.service openqa-scheduler.service openqa-websockets.service postgresql.service
 
 [Service]
 # TODO: define whether we want to run the web ui with the same user

@@ -64,7 +64,7 @@ use DateTime;
 plan skip_all => "set SCHEDULER_FULLSTACK=1 (be careful)" unless $ENV{SCHEDULER_FULLSTACK};
 
 init_db();
-my $schema = OpenQA::Test::Database->new->create();
+my $schema = OpenQA::Test::Database->new->create(skip_schema => 1);
 
 # Create webapi and websocket server services.
 my $mojoport             = Mojo::IOLoop::Server->generate_port();
@@ -251,8 +251,7 @@ subtest 'Simulation of heavy unstable load' => sub {
 
     @workers = ();
 
-    push(@workers, unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", $_, 3)) for (1 .. 50);
-    sleep 5;
+    push(@workers, unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", $_, 3)) for (1 .. 30);
 
     ($allocated, $failures, $no_actions) = scheduler_step($reactor); # Will try to allocate to previous worker and fail!
     is @$allocated, 0, "All failed allocation on second step - workers were killed";
@@ -275,7 +274,7 @@ subtest 'Websocket server - close connection test' => sub {
     my $log_file = tempfile;
     local $ENV{OPENQA_LOGFILE};
     local $ENV{MOJO_LOG_LEVEL};
-    my $unstable_ws_pid = create_websocket_server($mojoport + 1, 1);
+    my $unstable_ws_pid = create_websocket_server($mojoport + 1, 1, 0, 1);
     my $w2_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2, $log_file);
     my $re = qr/\[.*?\]\sConnection turned off from .*?\- (.*?)\s\:(.*?) dead/;
 
@@ -283,49 +282,13 @@ subtest 'Websocket server - close connection test' => sub {
     do {
         sleep 1;
         $attempts--;
-    } until ((() = $log_file->slurp() =~ m/$re/g) > 6 || $attempts <= 0);
+    } until ((() = $log_file->slurp() =~ m/$re/g) >= 1 || $attempts <= 0);
     kill_service($_) for ($unstable_ws_pid, $w2_pid);
     dead_workers($schema);
     my @matches = $log_file->slurp() =~ m/$re/g;
-    ok scalar(@matches) / 2 > 2, "Enough matches" or diag explain $log_file->slurp();
-    ok scalar(@matches) % 2 == 0, "Matches should contain an error message and a status code";
     is $matches[0], "1008", "Connection was turned off by ws server correctly - code error is 1008";
     like $matches[1], qr/Connection terminated from WebSocket server/,
       "Connection was turned off by ws server correctly";
-};
-
-subtest 'Worker logs correctly' => sub {
-    kill_service($wspid);
-    my $log_file = tempfile;
-    local $ENV{OPENQA_LOGFILE};
-    local $ENV{MOJO_LOG_LEVEL};
-
-    my $worker_pid = create_worker($k->key, $k->secret, "http://bogushost:999999", 1, $log_file);
-    my @re = qr/\[worker:info\] Project dir for host .*? is .*/,
-      qr/\[worker:info\] registering worker with .*/,
-      qr/\[worker:error\] unable to connect to host .* retry in /,
-      qr/\[worker:debug\] ## adding timer register_worker-.*/;
-    sleep(5);
-    my $i = 0;
-    for my $re (@re) {
-        my @matches = $log_file->slurp() =~ m/$re/gm;
-        ok(1 == @matches, "Worker logs correctly @{[++$i]} for nonexistent host");
-    }
-
-    kill_service $worker_pid;
-    path($sharedir)->remove_tree;
-
-    $worker_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 1, $log_file);
-    @re = qr/\[worker:debug\] Found possible working directory for .*?: .*/,
-      qr/\[worker:error\] Ignoring host '.*?': Working directory does not exist/;
-    sleep(5);
-    $i = 0;
-    for my $re (@re) {
-        my @matches = $log_file->slurp() =~ m/$re/gm;
-        ok(1 == @matches, "Worker logs correctly @{[++$i]} for missing directory");
-    }
-    kill_service $worker_pid;
-    setup_share_dir($ENV{OPENQA_BASEDIR});
 };
 
 # This test destroys almost everything.
@@ -342,22 +305,22 @@ subtest 'Simulation of heavy failures' => sub {
     trigger_capture_event_loop($reactor);
     scheduler_step($reactor);
 
-    push(@workers, unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", $_, 3)) for (1 .. 10);
-    sleep 5;
-
     # Destroy db to achieve maximum failures - simulate when we can't reach db to update states.
-    unlink(path($ENV{OPENQA_BASEDIR}, "openqa", "db")->child("db.sqlite"));
+    my $dbh = DBI->connect($ENV{TEST_PG});
+    $dbh->do('DROP SCHEMA public CASCADE;');
+    $dbh->do('CREATE SCHEMA public;');
+    $dbh->disconnect;
 
     ($allocated, $failures, $no_actions) = scheduler_step($reactor); # Will try to allocate to previous worker and fail!
     is @$allocated, 0, "Everything is failing as expected - 0 allocations";
-    ok $failures >= 11, "Failure count should be >=11";
-    is $no_actions, 2;
+    is $failures , $no_actions, "Failure count should be 2";
+    is $no_actions, 2, '2 Actions were performed';
     is get_scheduler_tick($reactor), $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}, "Tick is at the expected value";
 
     ($allocated, $failures, $no_actions) = scheduler_step($reactor); # Will try to allocate to previous worker and fail!
     is @$allocated, 0, "Everything is failing as expected - 0 allocations";
-    ok $failures >= 11, "Failure count should be >=11";
-    is $no_actions, 3;
+    is $failures , $no_actions, "Failure count should be 3";
+    is $no_actions, 3, '3 Actions were performed';
     is get_scheduler_tick($reactor), $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}, "Tick is at the expected value";
 
 
@@ -481,16 +444,18 @@ sub init_db {
     ok(open(my $conf, '>', path($ENV{OPENQA_CONFIG})->child("database.ini")->to_string));
     print $conf <<"EOC";
   [production]
-  dsn = dbi:SQLite:dbname=$ENV{OPENQA_BASEDIR}/openqa/db/db.sqlite
-  on_connect_call = use_foreign_keys
-  on_connect_do = PRAGMA synchronous = OFF
-  sqlite_unicode = 1
+  dsn = $ENV{TEST_PG}
 EOC
     close($conf);
+    # drop the schema from the existant database
+    my $dbh = DBI->connect($ENV{TEST_PG});
+    $dbh->do('SET client_min_messages TO WARNING;');
+    $dbh->do('drop schema if exists public cascade;');
+    $dbh->do('CREATE SCHEMA public;');
+    $dbh->disconnect;
     is(system("perl ./script/initdb --init_database"), 0);
     # make sure the assets are prefetched
     ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
 }
 
 done_testing;
-

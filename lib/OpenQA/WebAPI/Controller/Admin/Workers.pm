@@ -62,8 +62,7 @@ sub previous_jobs_ajax {
         resultset  => 'Jobs',
         columns    => [
             [qw(BUILD DISTRI VERSION FLAVOR ARCH)],
-            [qw(passed_module_count softfailed_module_count failed_module_count)],
-            qw(t_finished)
+            [qw(passed_module_count softfailed_module_count failed_module_count)], qw(id)
         ],
         initial_conds         => [{assigned_worker_id => $self->param('worker_id')}],
         additional_params     => {prefetch            => [qw(children parents)]},

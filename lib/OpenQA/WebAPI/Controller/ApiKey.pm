@@ -16,7 +16,7 @@
 
 package OpenQA::WebAPI::Controller::ApiKey;
 use Mojo::Base 'Mojolicious::Controller';
-use DateTime::Format::SQLite;
+use DateTime::Format::Pg;
 
 sub index {
     my $self = shift;
@@ -34,11 +34,11 @@ sub create {
 
     my $error;
     if ($validation->has_error) {
-        $error = "Date must be in format " . DateTime::Format::SQLite->format_datetime(DateTime->now());
+        $error = "Date must be in format " . DateTime::Format::Pg->format_datetime(DateTime->now());
     }
 
     if (!$error && $validation->is_valid('t_expiration')) {
-        eval { $expiration = DateTime::Format::SQLite->parse_datetime($self->param('t_expiration')) };
+        eval { $expiration = DateTime::Format::Pg->parse_datetime($self->param('t_expiration')) };
         $error = $@;
     }
     unless ($error) {

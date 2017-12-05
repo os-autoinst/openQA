@@ -1,0 +1,30 @@
+#! /bin/sh
+
+set -e
+
+DIR=$1
+if test -z "$DIR"; then
+	DIR=$(mktemp -d)
+else
+	DIR=$(readlink -f $DIR)
+fi
+if test -e $DIR/postmaster.pid; then
+  pg_ctl -D $DIR stop -w
+fi
+if test -d $DIR; then
+  rm -r $DIR
+fi
+initdb --auth-local=peer -N $DIR -U $USER
+echo "listen_addresses=''" >> $DIR/postgresql.conf
+echo "unix_socket_directories='$DIR'" >> $DIR/postgresql.conf
+echo "fsync=off" >> $DIR/postgresql.conf
+echo "full_page_writes=off" >> $DIR/postgresql.conf
+
+pg_ctl -D $DIR -l log_test_postgresql start -w
+createdb -h $DIR openqa_test
+
+echo "Now export TEST_PG like:"
+echo ""
+echo "  export TEST_PG='DBI:Pg:dbname=openqa_test;host=$DIR'"
+echo ""
+echo " and if you don't need it anymore, use pg_ctl -D $DIR stop"

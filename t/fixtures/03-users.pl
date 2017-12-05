@@ -7,7 +7,7 @@
         nickname        => 'artie',
         is_operator     => 1,
         is_admin        => 1,
-        api_keys        => [{key => 'ARTHURKEY01', secret => 'EXCALIBUR', id => 99905},],
+        api_keys        => [{key => 'ARTHURKEY01', secret => 'EXCALIBUR'},],
         feature_version => 0,
     },
     Users => {
@@ -19,7 +19,7 @@
         nickname        => 'lance',
         is_operator     => 0,
         is_admin        => 0,
-        api_keys        => [{key => 'LANCELOTKEY01', secret => 'MANYPEOPLEKNOW', id => 99901},],
+        api_keys        => [{key => 'LANCELOTKEY01', secret => 'MANYPEOPLEKNOW'},],
         feature_version => 0,
     },
     Users => {
@@ -35,19 +35,18 @@
             {
                 key          => 'EXPIREDKEY01',
                 secret       => 'WHOCARESAFTERALL',
-                id           => 99902,
                 t_expiration => DateTime->from_epoch(epoch => time - 7200)
             },
             {
                 key          => 'PERCIVALKEY01',
                 secret       => 'PERCIVALSECRET01',
-                id           => 99903,
                 t_expiration => DateTime->from_epoch(epoch => time + 7200)
             },
-            {key => 'PERCIVALKEY02', secret => 'PERCIVALSECRET02', id => 99904},
+            {key => 'PERCIVALKEY02', secret => 'PERCIVALSECRET02'},
         ]
     },
     Users => {
+        id              => 99904,
         username        => 'Demo',
         feature_version => 0,
     },

@@ -15,7 +15,11 @@ use OpenQA::Schema;
 use OpenQA::Utils;
 use Mojo::Base -base;
 use Mojo::File 'path';
+use db_helpers 'rndstr';
 has fixture_path => 't/fixtures';
+
+use Test::More;
+plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
 sub create {
     my $self    = shift;
@@ -26,6 +30,12 @@ sub create {
 
     # New db
     my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
+    unless (defined $options{skip_schema}) {
+        $schema->{tmp_schema} = 'tmp_' . rndstr();
+        $schema->storage->dbh->do("create schema $schema->{tmp_schema}");
+        $schema->storage->dbh->do("SET search_path TO $schema->{tmp_schema}");
+    }
+
     OpenQA::Schema::deployment_check($schema);
     $self->insert_fixtures($schema) unless $options{skip_fixtures};
 
@@ -33,13 +43,13 @@ sub create {
 }
 
 sub insert_fixtures {
-    my $self   = shift;
-    my $schema = shift;
+    my ($self, $schema) = @_;
 
     # Store working dir
     my $cwd = getcwd;
 
     chdir $self->fixture_path;
+    my %ids;
 
     foreach my $fixture (glob "*.pl") {
 
@@ -59,16 +69,28 @@ sub insert_fixtures {
 
         # Arrayref of hashrefs, multiple tables per file
         for (my $i = 0; $i < @$info; $i++) {
-            $schema->resultset($info->[$i])->create($info->[++$i]);
+            my $class = $info->[$i];
+            my $ri    = $info->[++$i];
+            my $row   = $schema->resultset($class)->create($ri);
+            $ids{$row->result_source->from} = $ri->{id} if $ri->{id};
         }
     }
 
     # Restore working dir
     chdir $cwd;
+    my $dbh = $schema->storage->dbh;
+
+    for my $table (keys %ids) {
+        my $max = $dbh->selectrow_arrayref("select max(id) from $table")->[0] + 1;
+        $schema->storage->dbh->do("alter sequence $table\_id_seq restart with $max");
+    }
 }
 
 sub disconnect {
-    return shift->storage->dbh->disconnect;
+    my $schema = shift;
+    my $dbh    = $schema->storage->dbh;
+    $dbh->do("drop schema $schema->{tmp_schema}");
+    return $dbh->disconnect;
 }
 
 1;
@@ -96,7 +118,7 @@ Use skip_fixtures to prevent loading fixtures.
 
 =head2 insert_fixtures
 
-Insert fixtures into sqlite3 database
+Insert fixtures into database
 
 =head2 disconnect ($schema)
 

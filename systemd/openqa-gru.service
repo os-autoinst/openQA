@@ -1,6 +1,7 @@
 [Unit]
 Description=The openQA gru daemon
-After=postgresql.service mariadb.service
+After=postgresql.service
+Requires=postgresql.service
 
 [Service]
 User=geekotest

@@ -1,7 +1,8 @@
 [Unit]
 Description=The openQA Scheduler
 Before=openqa-webui.service openqa-websockets.service
-After=postgresql.service mariadb.service
+After=postgresql.service
+Requires=postgresql.service
 
 [Service]
 User=geekotest

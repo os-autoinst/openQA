@@ -23,6 +23,8 @@ BEGIN {
 
 use strict;
 use warnings;
+# https://github.com/rurban/Cpanel-JSON-XS/issues/65
+use JSON::PP;
 use DBIx::Class::DeploymentHandler;
 use File::Basename qw(dirname);
 use POSIX qw(getuid getgid setuid setgid);
@@ -72,44 +74,18 @@ if ($user) {
     setuid($uid) || die "can't suid to $user";
 }
 
-# the sqlite database should be only readable by the owner.
-umask 027;
-
 my $script_directory = "$FindBin::Bin/../dbicdh";
-my @databases        = qw( SQLite PostgreSQL );
+my @databases        = qw( PostgreSQL );
 my $schema           = OpenQA::Schema::connect_db(check => 0);
-
-if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
-    my $dbdir = dirname($1);
-    die "$dbdir does not exist\n" unless -d $dbdir;
-    unless ($user) {
-        # if --user wasn't set, try to guess appropriate owner for db
-        my @s = stat(_);
-        if (getgid() != $s[5]) {
-            setgid($s[5]) or die "can't change gid to $s[5]: $!\n";
-        }
-        if (getuid() != $s[4]) {
-            setuid($s[4]) or die "can't change uid to $s[4]: $!\n";
-        }
-    }
-
-    # speed this up a bit
-    $schema->storage->dbh_do(
-        sub {
-            my ($storage, $dbh, @args) = @_;
-            $dbh->do("PRAGMA synchronous = OFF");
-        });
-}
 
 if ($prepare_init) {
     my $dh = DBIx::Class::DeploymentHandler->new(
         {
-            schema           => $schema,
-            script_directory => $script_directory,
-            databases        => \@databases,
-            sql_translator_args =>
-              {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}, quote_identifiers => 0},
-            force_overwrite => $force,
+            schema              => $schema,
+            script_directory    => $script_directory,
+            databases           => \@databases,
+            sql_translator_args => {add_drop_table => 0, quote_identifiers => 0},
+            force_overwrite     => $force,
         });
 
     my $version = $dh->schema_version;

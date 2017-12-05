@@ -28,7 +28,7 @@ use Try::Tiny;
 use Carp;
 
 use Scalar::Util 'weaken';
-use OpenQA::Utils qw(log_debug log_warning);
+use OpenQA::Utils qw(log_debug log_warning log_error);
 
 my $openqa_prefix = 'org.opensuse.openqa';
 my %services      = (

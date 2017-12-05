@@ -30,8 +30,7 @@ use OpenQA::Utils ();
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
-our $VERSION   = 60;
-our @databases = qw(SQLite PostgreSQL);
+our $VERSION = 60;
 
 __PACKAGE__->load_namespaces;
 
@@ -40,19 +39,26 @@ sub _get_schema {
     return \$schema;
 }
 
+
 sub connect_db {
     my %args  = @_;
     my $check = $args{check};
     $check //= 1;
     my $schema = _get_schema;
     unless ($$schema) {
+
         my $mode = $args{mode} || $ENV{OPENQA_DATABASE} || 'production';
-        my %ini;
-        my $cfgpath = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
-        my $database_file = $cfgpath . '/database.ini';
-        tie %ini, 'Config::IniFiles', (-file => $database_file);
-        die 'Could not find database section \'' . $mode . '\' in ' . $database_file unless $ini{$mode};
-        $$schema = __PACKAGE__->connect($ini{$mode});
+        if ($mode eq 'test') {
+            $$schema = __PACKAGE__->connect($ENV{TEST_PG});
+        }
+        else {
+            my %ini;
+            my $cfgpath = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
+            my $database_file = $cfgpath . '/database.ini';
+            tie %ini, 'Config::IniFiles', (-file => $database_file);
+            die 'Could not find database section \'' . $mode . '\' in ' . $database_file unless $ini{$mode};
+            $$schema = __PACKAGE__->connect($ini{$mode});
+        }
         deployment_check $$schema if ($check);
     }
     return $$schema;
@@ -94,7 +100,7 @@ sub deployment_check {
         {
             schema              => $schema,
             script_directory    => $dir,
-            databases           => \@databases,
+            databases           => ['PostgreSQL'],
             sql_translator_args => {add_drop_table => 0},
             force_overwrite     => $force_overwrite
         });
@@ -105,29 +111,14 @@ sub deployment_check {
     return $ret;
 }
 
-sub _db_tweaks {
-    my ($schema, $tweak) = @_;
-    $schema->storage->dbh_do(
-        sub {
-            my ($storage, $dbh, @args) = @_;
-            $dbh->do($tweak);
-        });
-}
-
 sub _try_deploy_db {
     my ($dh) = @_;
     my $schema = $dh->schema;
-    # the sqlite database should be only readable by the owner.
-    my $mask = umask 027;
     my $version;
     try {
         $version = $dh->version_storage->database_version;
     }
     catch {
-        if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
-            # speed this up a bit
-            _db_tweaks($schema, 'PRAGMA synchronous = OFF;');
-        }
         $dh->install;
         # create system user right away
         $schema->resultset('Users')->create(
@@ -138,7 +129,6 @@ sub _try_deploy_db {
                 nickname => 'system'
             });
     };
-    umask $mask;
     return !$version;
 }
 
@@ -146,10 +136,6 @@ sub _try_upgrade_db {
     my ($dh) = @_;
     my $schema = $dh->schema;
     if ($dh->schema_version > $dh->version_storage->database_version) {
-        if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
-            # Some SQLite update scripts do not work correctly with foreign keys on
-            _db_tweaks($schema, 'PRAGMA foreign_keys = OFF;');
-        }
         $dh->upgrade;
         return 1;
     }

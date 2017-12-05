@@ -493,7 +493,7 @@ sub startup {
     $self->validator->add_check(
         datetime => sub {
             my ($validation, $name, $value) = @_;
-            eval { DateTime::Format::SQLite->parse_datetime($value); };
+            eval { DateTime::Format::Pg->parse_datetime($value); };
             if ($@) {
                 return 1;
             }

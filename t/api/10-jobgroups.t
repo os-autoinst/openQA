@@ -45,7 +45,7 @@ subtest 'list job groups' => sub() {
             {
                 name                           => 'opensuse',
                 parent_id                      => undef,
-                sort_order                     => undef,
+                sort_order                     => 0,
                 keep_logs_in_days              => 30,
                 keep_important_logs_in_days    => 120,
                 default_priority               => 50,
@@ -66,7 +66,7 @@ subtest 'list job groups' => sub() {
                 name                           => 'opensuse test',
                 parent_id                      => undef,
                 keep_important_logs_in_days    => 120,
-                sort_order                     => undef,
+                sort_order                     => 0,
                 keep_logs_in_days              => 30,
                 default_priority               => 50
             }]);
@@ -168,7 +168,7 @@ subtest 'update job group' => sub() {
             {
                 name                           => 'opensuse',
                 parent_id                      => $new_id,
-                sort_order                     => undef,
+                sort_order                     => 0,
                 keep_logs_in_days              => 30,
                 keep_important_logs_in_days    => 45,           # inherited value overridden
                 default_priority               => 50,

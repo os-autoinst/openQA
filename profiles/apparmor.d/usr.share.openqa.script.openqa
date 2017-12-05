@@ -35,8 +35,6 @@
   /var/lib/openqa/cache/** rw,
   /var/lib/openqa/db/ r,
   /var/lib/openqa/db/db.lock wk,
-  /var/lib/openqa/db/db.sqlite rwk,
-  /var/lib/openqa/db/db.sqlite-journal rw,
   /var/lib/openqa/images/ r,
   /var/lib/openqa/images/** rw,
   /var/lib/openqa/pool/ r,

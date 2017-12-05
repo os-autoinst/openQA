@@ -328,9 +328,9 @@ subtest 'add job group' => sub() {
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
     is(@parent_group_entries, 4,
         'now 4 top-level groups present (one is new parent, remaining are parentless job groups)');
-    is((shift @parent_group_entries)->get_text(), 'Cool Group',       'new parentless group present');
     is((shift @parent_group_entries)->get_text(), 'opensuse',         'first parentless group from fixtures present');
     is((shift @parent_group_entries)->get_text(), 'opensuse test',    'second parentless group from fixtures present');
+    is((shift @parent_group_entries)->get_text(), 'Cool Group',       'new parentless group present');
     is((shift @parent_group_entries)->get_text(), 'New parent group', 'new group present');
 };
 
@@ -383,17 +383,12 @@ subtest 'job property editor' => sub() {
 
 sub is_element_text {
     my ($elements, $expected, $message) = @_;
-    is_deeply(
-        [
-            map {
-                my $text = $_->get_text();
-                $text =~ s/^\s+|\s+$//g;
-                $text;
-            } @$elements
-        ],
-        $expected,
-        $message
-    );
+    my @texts = map {
+        my $text = $_->get_text();
+        $text =~ s/^\s+|\s+$//g;
+        $text;
+    } @$elements;
+    is_deeply(\@texts, $expected, $message);
 }
 
 subtest 'edit mediums' => sub() {
@@ -434,16 +429,16 @@ subtest 'edit mediums' => sub() {
     my @options = $driver->find_elements('#sle-13-DVD tr:first-of-type td:first-of-type option');
     is_element_text(
         \@options,
-        ['Select…', 'RAID0', 'advanced_kde', 'client1', 'client2', 'kde', 'server', "t\"e\\st\'Suite\\'", 'textmode'],
+        ['Select…', 'advanced_kde', 'client1', 'client2', 'kde', 'RAID0', 'server', "t\"e\\st\'Suite\\'", 'textmode'],
         'xfce not selectable because test has already been added before'
     );
 
     # select advanced_kde option
-    $options[2]->click();
+    $options[1]->click();
     # to check whether the same test isn't selectable twice add another selection and also select advanced_kde
     $driver->find_element('#sle-13-DVD .plus-sign')->click();
     @options = $driver->find_elements('#sle-13-DVD tr:first-of-type td:first-of-type option');
-    $options[2]->click();
+    $options[1]->click();
     # now finalize the selection
     $td = $driver->find_element('#undefined_arm19_new_chosen .search-field');
     $driver->mouse_move_to_location(element => $td);
@@ -455,7 +450,7 @@ subtest 'edit mediums' => sub() {
     @options = $driver->find_elements('#sle-13-DVD tr:nth-of-type(2) td:first-of-type option');
     is_element_text(
         \@options,
-        ['Select…', 'RAID0', 'client1', 'client2', 'kde', 'server', "t\"e\\st\'Suite\\'", 'textmode'],
+        ['Select…', 'client1', 'client2', 'kde', 'RAID0', 'server', "t\"e\\st\'Suite\\'", 'textmode'],
         'advanced_kde not selectable twice'
     );
 

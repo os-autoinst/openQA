@@ -365,7 +365,7 @@ sub _get_stale_worker_jobs {
         state              => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         'worker.t_updated' => {'<' => $dtf->format_datetime($dt)},
         'worker.id'        => {-not_in => [sort @ok_workers]});
-    my %attrs = (join => 'worker');
+    my %attrs = (join => 'worker', order_by => 'worker.id desc');
 
     return $schema->resultset("Jobs")->search(\%cond, \%attrs);
 }
