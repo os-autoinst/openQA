@@ -11,6 +11,13 @@ DocumentRoot /usr/share/openqa/public
 <Directory "/var/lib/openqa/share/factory">
     AllowOverride None
     Require all granted
+    Options SymLinksIfOwnerMatch
+    <FilesMatch "Win10_.*_x64\.iso$">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "[wW]indows.*\.(qcow2|hda)$">
+        Require all denied
+    </FilesMatch>
 </Directory>
 Alias /assets "/var/lib/openqa/share/factory"
 
@@ -48,6 +55,7 @@ ProxyPass /javascripts !
 ProxyPass /stylesheets !
 ProxyPass /assets !
 ProxyPass /error !
+ProxyPass /server-status !
 
 #webSocket proxy pass to different port
 ProxyPass "/api/v1/ws/" "ws://localhost:9527/ws/" keepalive=On
