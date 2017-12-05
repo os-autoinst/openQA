@@ -505,10 +505,11 @@ subtest 'update job and job settings' => sub {
         json => {
             priority => 50,
             settings => {
-                TEST    => 'minimalx',
-                ARCH    => 'i686',
-                DESKTOP => 'kde',
-                NEW_KEY => 'new value',
+                TEST         => 'minimalx',
+                ARCH         => 'i686',
+                DESKTOP      => 'kde',
+                NEW_KEY      => 'new value',
+                WORKER_CLASS => ':MiB:Promised_Land',
             },
         })->status_is(200);
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);
@@ -523,21 +524,45 @@ subtest 'update job and job settings' => sub {
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);
     $t->json_is('/job/group' => undef, 'group removed');
 
+
     # set machine
     $t->put_ok(
         '/api/v1/jobs/99926',
         json => {
             settings => {
-                MACHINE => '64bit'
+                MACHINE      => '64bit',
+                WORKER_CLASS => ':UFP:NCC1701F',
             }})->status_is(200);
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);
     $t->json_is(
         '/job/settings' => {
-            NAME    => '00099926-@64bit',
-            MACHINE => '64bit',
+            NAME         => '00099926-@64bit',
+            MACHINE      => '64bit',
+            WORKER_CLASS => ':UFP:NCC1701F',
         },
-        'also name update, all other settings cleaned'
+        'also name and worker class updated, all other settings cleaned'
     );
+};
+
+subtest 'filter by worker_class' => sub {
+
+    $query->query(worker_class => ':MiB:');
+    $get = $t->get_ok($query->path_query)->status_is(200);
+    $res = $get->tx->res->json;
+    ok(!@{$res->{jobs}}, 'Worker class does not exist');
+
+    $query->query(worker_class => '::');
+    $get = $t->get_ok($query->path_query)->status_is(200);
+    $res = $get->tx->res->json;
+    ok(!@{$res->{jobs}}, 'Wrong worker class provides zero results');
+
+    $query->query(worker_class => ':UFP:');
+    $get = $t->get_ok($query->path_query)->status_is(200);
+    $res = $get->tx->res->json;
+    ok(@{$res->{jobs}} eq 1, 'Known worker class group exists, and returns one job');
+
+    $t->json_is('/jobs/0/settings/WORKER_CLASS' => ':UFP:NCC1701F', 'Correct worker class');
+
 };
 
 done_testing();
