@@ -1,6 +1,5 @@
-function setup_asset_table()
-{
-    $('#assets').DataTable(
+function setup_asset_table() {
+    $('#assets, #untracked-assets').DataTable(
         {
             columnDefs: [
                 { targets: 3,
