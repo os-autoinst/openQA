@@ -229,8 +229,8 @@ sub download_asset {
 
 # this is a GRU task - abusing the namespace
 sub limit_assets {
-    my ($app)           = @_;
-    my $groups          = $app->db->resultset('JobGroups');
+    my ($app) = @_;
+    my $groups = $app->db->resultset('JobGroups')->search(undef, {order_by => 'id'});
     my $asset_resultset = $app->db->resultset('Assets');
 
     # to avoid perpetually being on the very edge of the size limit and prone
@@ -251,47 +251,41 @@ sub limit_assets {
     my $doremove   = 0;    # whether we actually want to remove something
     my $debug_keep = 0;    # enables debug output
 
+    # these querie are just too much for dbix
+    my $dbh = $app->schema->storage->dbh;
+    my $job_assets_sth
+      = $dbh->prepare(
+"select a.*,max(j.id) from jobs_assets ja join jobs j on j.id=ja.job_id join assets a on a.id=ja.asset_id where j.group_id=? group by a.id order by max desc;"
+      );
+
+    # prefetch all assets
+    my %assets;
+    while (my $a = $asset_resultset->next) {
+        $assets{$a->id} = $a;
+        $keep{$a->id} = {log_msg => "fixed"} if $a->is_fixed;
+    }
+
     # find relevant assets which belong to a job group
     while (my $g = $groups->next) {
         my $sizelimit = $g->size_limit_gb * 1024 * 1024 * 1024;
         my $reduceto  = $sizelimit * 0.8;
 
-        # find the job-to-asset mapping for all jobs in the group
-        my @job_assets = $app->db->resultset('JobsAssets')->search(
-            {
-                job_id => {-in => $g->jobs->get_column('id')->as_query},
-            },
-            {
-                select   => ['job_id', 'asset_id', 'created_by', {max => 'job_id', -as => 'latest'},],
-                group_by => 'asset_id,created_by',
-                order_by => {-desc => 'latest'}})->all;
-
-        # find all assets for the job group using the mapping
-        my $assets = $asset_resultset->search(
-            {
-                id => {-in => [map { $_->asset_id } @job_assets]}});
-
-        # assign assets to a hash
-        my %assets;
-        while (my $a = $assets->next) {
-            $assets{$a->id} = $a;
-        }
+        $job_assets_sth->execute($g->id);
 
         # define variable to keep track of all the jobs which have been kept
         my @kept_by_jobgroup;
 
-        # loop through all entries in the job-to-asset mapping
-        for my $a (@job_assets) {
-            my $asset = $assets{$a->asset_id};
-
-            OpenQA::Utils::log_debug(
-                sprintf "Group %s: %s/%s %s->%s",
-                $g->name, $asset->type, $asset->name,
-                human_readable_size($asset->size // 0),
-                human_readable_size($sizelimit));
+        while (my $a = $job_assets_sth->fetchrow_hashref) {
+            my $asset = $assets{$a->{id}};
 
             # ignore fixed assets
-            next if ($asset->is_fixed);
+            next if $asset->is_fixed;
+
+            OpenQA::Utils::log_debug(
+                sprintf "Group %d: %s/%s %s->%s",
+                $g->id, $asset->type, $asset->name,
+                human_readable_size($asset->size // 0),
+                human_readable_size($sizelimit));
 
             # add asset to mapping of seen assets by group
             $seen_asset{$asset->id} = $g->id;
@@ -302,19 +296,19 @@ sub limit_assets {
                 # keep asset
                 push(
                     @kept_by_jobgroup,
-                    $keep{$a->asset_id} = {
+                    $keep{$a->{id}} = {
                         group_id => $g->id,
-                        job_id   => $a->job_id,
+                        job_id   => $a->{max},
                         log_msg  => sprintf("%s: %s/%s", $g->name, $asset->type, $asset->name),
                     });
 
                 # of course this might override the group/job information about the kept asset
                 # in case the asset is kept because of multiple jobs
-                # FIXME: problem? at least we get some job/group which prevents the asset from being delete
+                # FIXME: problem? at least we get some job/group which prevents the asset from being deleted
             }
             else {
                 # add assets to removal list
-                $toremove{$a->asset_id} = sprintf "%s/%s", $asset->type, $asset->name;
+                $toremove{$asset->id} = sprintf "%s/%s", $asset->type, $asset->name;
                 # set flag for removal if we have exceeded the actual size limit
                 $doremove = 1 if ($sizelimit <= 0);
             }
@@ -332,21 +326,21 @@ sub limit_assets {
         }
     }
 
+    # use DBD::Pg as dbix doesn't seem to have a direct update call - find()->update are 2 queries
+    my $update_sth = $dbh->prepare('UPDATE assets SET last_use_job_id = ? WHERE id = ?');
+
     # remove all kept assets from the removal list and propagate last update to asset table
-    for my $id (keys %keep) {
+    for my $id (sort keys %keep) {
         my $asset = $keep{$id};
 
         OpenQA::Utils::log_debug("KEEP $asset->{log_msg}") if $debug_keep;
         delete $toremove{$id};
 
         # set the time of the last use and the related job group
-        $asset_resultset->find($id)->update(
-            {
-                last_use_job_id => $asset->{job_id},
-            });
+        $update_sth->execute($asset->{job_id}, $id);
     }
 
-    # remove assets in removal list (form db and disk)
+    # remove assets in removal list (from db and disk)
     if ($doremove) {
         # skip assets for pending jobs
         my $pending = $app->db->resultset('Jobs')->search({state => [OpenQA::Schema::Result::Jobs::PENDING_STATES]})
