@@ -491,8 +491,8 @@ subtest 'asset list' => sub {
 
     is_deeply(
         get_cell_contents('tr#asset_1'),
-        ['iso', 'openSUSE-13.1-DVD-i586-Build0091-Media.iso', '5', 'about 2 hours ago', '', 'unknown'],
-        'asset with unknown last use'
+        ['iso', 'openSUSE-13.1-DVD-i586-Build0091-Media.iso', '5', 'about 2 hours ago', 'unknown', 'unknown'],
+        'asset with unknown last use and size'
     );
     is_deeply(
         get_cell_contents('tr#asset_2'),
