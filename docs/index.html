@@ -4506,7 +4506,7 @@ are the right way to contribute improvements and fixes.</p>
 <ul>
 <li>
 <p>Every commit is checked by <a href="https://travis-ci.org/travis">Travis CI</a> as soon as
-you create a pull request but you <strong>should</strong> run the openQA tests locally,
+you create a pull request but you <strong>should</strong> run the tidy script locally,
 i.e. before every commit call:</p>
 </li>
 </ul>
@@ -4517,7 +4517,7 @@ i.e. before every commit call:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>to ensure your perl code changes are consistent with the style rules</p>
+<p>to ensure your Perl code changes are consistent with the style rules.</p>
 </div>
 <div class="ulist">
 <ul>
@@ -4534,6 +4534,25 @@ environment to verify everything works as expected. Call:</p>
 </div>
 <div class="paragraph">
 <p>for unit and integration tests.</p>
+</div>
+<div class="paragraph">
+<p>To execute a single test, one can use prove. You must set TEST_PG so the database
+can be found. If you set a custom base directory, be sure to unset it when running tests.
+Example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">TEST_PG</span><span class="tok-o">=</span><span class="tok-s1">&#39;DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg&#39;</span> <span class="tok-nv">OPENQA_BASEDIR</span><span class="tok-o">=</span> prove -v t/14-grutasks.t</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To speed up the test initialization, start PostgreSQL using t/test_postgresql
+instead of using the system service. Eg.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>t/test_postgresql /dev/shm/tpg</code></pre>
+</div>
 </div>
 <div class="ulist">
 <ul>
@@ -4938,7 +4957,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-12-05 19:02:31 UTC
+Last updated 2017-12-06 14:53:22 UTC
 </div>
 </div>
 </body>
