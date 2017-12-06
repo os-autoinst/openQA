@@ -87,18 +87,22 @@ for my $i ($iso1, $iso2) {
 
 my $listing = [
     {
-        id       => 7,
-        name     => $iso1,
-        type     => "iso",
-        size     => undef,
-        checksum => undef,
+        id              => 7,
+        name            => $iso1,
+        type            => "iso",
+        size            => undef,
+        checksum        => undef,
+        last_use_job_id => undef,
+        fixed           => 0,
     },
     {
-        id       => 8,
-        name     => $iso2,
-        type     => "iso",
-        size     => undef,
-        checksum => undef,
+        id              => 8,
+        name            => $iso2,
+        type            => "iso",
+        size            => undef,
+        checksum        => undef,
+        last_use_job_id => undef,
+        fixed           => 0,
     },
 ];
 

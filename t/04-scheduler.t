@@ -424,7 +424,15 @@ my $rs = OpenQA::Resource::Jobs::asset_list();
 $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
 is_deeply(
     nots($rs->all()),
-    {id => 1, name => "whatever.iso", type => "iso", size => undef, checksum => undef},
+    {
+        id              => 1,
+        name            => "whatever.iso",
+        type            => "iso",
+        size            => undef,
+        checksum        => undef,
+        last_use_job_id => undef,
+        fixed           => 0,
+    },
     "asset list"
 );
 

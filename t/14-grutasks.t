@@ -58,36 +58,56 @@ sub mock_remove {
 
 # a series of mock 'ensure_size' methods for the Assets class which
 # return different sizes (in GiB), for testing limit_assets
+my $gib = 1024 * 1024 * 1024;
 sub mock_size_25 {
-    return 25 * 1024 * 1024 * 1024;
+    return 25 * $gib;
 }
 
 sub mock_size_30 {
-    return 30 * 1024 * 1024 * 1024;
+    return 30 * $gib;
 }
 
 sub mock_size_34 {
-    return 34 * 1024 * 1024 * 1024;
+    return 34 * $gib;
 }
 
 sub mock_size_45 {
-    return 45 * 1024 * 1024 * 1024;
+    return 45 * $gib;
 }
-
 
 
 my $module = new Test::MockModule('OpenQA::Schema::Result::Assets');
 $module->mock(delete           => \&mock_delete);
 $module->mock(remove_from_disk => \&mock_remove);
 
-my $schema = OpenQA::Test::Case->new->init_data;
+my $schema     = OpenQA::Test::Case->new->init_data;
+my $jobs       = $schema->resultset('Jobs');
+my $job_groups = $schema->resultset('JobGroups');
+my $assets     = $schema->resultset('Assets');
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-
 
 # now to something completely different: testing limit_assets
 my $c = OpenQA::WebAPI::Plugin::Gru::Command::gru->new();
 $c->app($t->app);
+
+sub find_kept_assets_with_last_jobs {
+    my $last_used_jobs = $assets->search(
+        {
+            -not => {
+                -or => {
+                    name            => {-in => \@removed},
+                    last_use_job_id => undef
+                },
+            }
+        },
+        {
+            order_by => {-asc => 'last_use_job_id'}});
+    return [map { {asset => $_->name, job => $_->last_use_job_id} } $last_used_jobs->all];
+}
+is_deeply(find_kept_assets_with_last_jobs, [], 'initially, none of the assets has the job of its last use assigned');
+is($job_groups->find(1001)->exclusively_kept_asset_size,
+    undef, 'initially no size for exclusively kept assets accumulated');
 
 sub run_gru {
     my ($task, $args) = @_;
@@ -112,6 +132,24 @@ run_gru('limit_assets');
 is_deeply(\@removed, [], "nothing should have been 'removed' at size 25GiB");
 is_deeply(\@deleted, [], "nothing should have been 'deleted' at size 25GiB");
 
+my @expected_last_jobs_no_removal = (
+    {asset => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso', job => 99926},
+    {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',               job => 99947},
+    {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',             job => 99961},
+    {asset => 'testrepo',                                                 job => 99961},
+    {asset => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso',        job => 99981},
+);
+
+is_deeply(find_kept_assets_with_last_jobs, \@expected_last_jobs_no_removal, 'last jobs correctly assigned');
+
+is($job_groups->find(1001)->exclusively_kept_asset_size,
+    75 * $gib, 'kept assets for group 1001 accumulated (25 GiB per asset)');
+is($job_groups->find(1002)->exclusively_kept_asset_size,
+    25 * $gib, 'kept assets for group 1002 accumulated (25 GiB per asset)');
+# NOTE: 75 GiB + 25 GiB does not make the total of 125 GiB
+# this is correct because asset 2 is shared by both groups and hence not taken into account
+
+
 # at size 30GiB, we're over the 80% threshold but under the 100GiB limit
 # still no removal should occur.
 $module->mock(ensure_size => \&mock_size_30);
@@ -120,15 +158,39 @@ run_gru('limit_assets');
 is_deeply(\@removed, [], "nothing should have been 'removed' at size 30GiB");
 is_deeply(\@deleted, [], "nothing should have been 'deleted' at size 30GiB");
 
+is_deeply(find_kept_assets_with_last_jobs, \@expected_last_jobs_no_removal, 'last jobs have not been altered');
+
+# one job of 1001 is now over the 80 % threshold of the size limit and hence
+# no longer considered kept - removal just didn't happen because the size limit
+# itself has not been exceeded
+is($job_groups->find(1001)->exclusively_kept_asset_size,
+    60 * $gib, 'kept assets for group 1001 accumulated, job over threshold not taken into account (30 GiB per asset)');
+is($job_groups->find(1002)->exclusively_kept_asset_size,
+    30 * $gib, 'kept assets for group 1002 accumulated (30 GiB per asset)');
+
 # at size 34GiB, we're over the limit, so removal should occur. Removing
 # just one asset will get under the 80GiB threshold.
 $module->mock(ensure_size => \&mock_size_34);
 run_gru('limit_assets');
 
-my $remsize = @removed;
-my $delsize = @deleted;
-is($remsize, 1, "one asset should have been 'removed' at size 34GiB");
-is($delsize, 1, "one asset should have been 'deleted' at size 34GiB");
+is(scalar @removed, 1, "one asset should have been 'removed' at size 34GiB");
+is(scalar @deleted, 1, "one asset should have been 'deleted' at size 34GiB");
+
+is_deeply(
+    find_kept_assets_with_last_jobs,
+    [
+        {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',        job => 99947},
+        {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',      job => 99961},
+        {asset => 'testrepo',                                          job => 99961},
+        {asset => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso', job => 99981}
+    ],
+    'last jobs still present but first one deleted'
+);
+
+is($job_groups->find(1001)->exclusively_kept_asset_size,
+    68 * $gib, 'kept assets for group 1001 accumulated and deleted asset not taken into account (34 GiB per asset)');
+is($job_groups->find(1002)->exclusively_kept_asset_size,
+    34 * $gib, 'kept assets for group 1002 accumulated (34 GiB per asset)');
 
 # empty the tracking arrays before next test
 @removed = ();
@@ -140,10 +202,8 @@ is($delsize, 1, "one asset should have been 'deleted' at size 34GiB");
 $module->mock(ensure_size => \&mock_size_45);
 run_gru('limit_assets');
 
-$remsize = @removed;
-$delsize = @deleted;
-is($remsize, 2, "two assets should have been 'removed' at size 45GiB");
-is($delsize, 2, "two assets should have been 'deleted' at size 45GiB");
+is(scalar @removed, 2, "two assets should have been 'removed' at size 45GiB");
+is(scalar @deleted, 2, "two assets should have been 'deleted' at size 45GiB");
 
 # empty the tracking arrays before next test
 @removed = ();
@@ -163,10 +223,8 @@ run_gru('limit_assets');
 # Now only *one* asset should get removed, as asset 1 will be in the
 # list of removal candidates, but will be protected by association
 # with a pending job.
-$remsize = @removed;
-$delsize = @deleted;
-is($remsize, 1, "one assets should have been 'removed' at size 45GiB with 99937 pending");
-is($delsize, 1, "one assets should have been 'deleted' at size 45GiB with 99937 pending");
+is(scalar @removed, 1, "one assets should have been 'removed' at size 45GiB with 99937 pending");
+is(scalar @deleted, 1, "one assets should have been 'deleted' at size 45GiB with 99937 pending");
 
 # restore job 99937 to DONE state
 $job99937->state(OpenQA::Schema::Result::Jobs::DONE);
