@@ -2,45 +2,12 @@
 % title 'Workers';
 
 % content_for 'ready_function' => begin
-
-    var table = $('#workers').DataTable( {
-        initComplete: function () {
-            var that = this;
-            this.api().columns().every( function () {
-                var column = this;
-                var colheader = this.header();
-                var title = $(colheader).text().trim();
-                if ( title != "Status") {
-                  return false
-                }
-
-                var select = $('<select><option value="">All</option></select>')
-                    .appendTo( $(column.header()).empty() )
-                    .on( 'change', function () {
-                        var val = $.fn.dataTable.util.escapeRegex(
-                            $(this).val()
-                        );
-
-                        column
-                            // .search( val ? '^'+val+'$' : '', true, false )
-                            .search( val ? val : '', true, false )
-                            .draw();
-                    } );
-
-                select.append( '<option value="Online">Online</option>' );
-                select.append( '<option value="Offline">Offline</option>' );
-                select.append( '<option value="Working">Working</option>' );
-                select.val('Online');
-            } );
-            this.api().column(4).search("Online").draw();
-        }
-    } );
-
+    loadWorkerTable();
 % end
 
-% my $percent_online         = int(($workers_online*100)/$total);
-% my $percent_busy           = int(($workers_busy*100)/$total);
-% my $percent_active_free    = int(($workers_active_free*100)/$total);
+% my $percent_online         = $total ? int(($workers_online*100)/$total) : 0;
+% my $percent_busy           = $total ? int(($workers_busy*100)/$total) : 0;
+% my $percent_active_free    = $total ? int(($workers_active_free*100)/$total) : 0;
 % my $percent_busy_online    = $workers_online? int(($workers_active_free*100)/$workers_online) : 0;
 
 <div id="summary" class="panel panel-default">
@@ -49,16 +16,16 @@
     </div>
     <div class="panel-body row">
         <div class="col-sm-3">
-            Online: <span class="badge"><%= $workers_online %></span>
+            Online: <span class="badge"><%= $workers_online ? $workers_online : 0 %></span>
         </div>
         <div class="col-sm-3">
-            Busy: <span class="badge"><%= $workers_busy %></span>
+            Busy: <span class="badge"><%= $workers_busy ? $workers_busy : 0 %></span>
         </div>
         <div class="col-sm-3">
-            Idle: <span class="badge"><%= $workers_active_free %></span>
+            Idle: <span class="badge"><%= $workers_active_free ? $workers_active_free : 0 %></span>
         </div>
         <div class="col-sm-3">
-            Total: <span class="badge"><%= $total %></span>
+            Total: <span class="badge"><%= $total ? $total : 0 %></span>
         </div>
     </div>
 </div>

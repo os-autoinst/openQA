@@ -192,9 +192,10 @@ sub info {
         my $cs = $self->currentstep;
         $settings->{currentstep} = $cs if $cs;
     }
-    $settings->{alive}     = !$self->dead;
-    $settings->{websocket} = $live ? $self->connected : undef;
-    $settings->{connected} = $live ? $self->connected : $settings->{alive};
+    $settings->{alive}     = $self->dead ? 0                      : 1;
+    $settings->{connected} = $live       ? $self->connected       : $settings->{alive};
+    $settings->{websocket} = $live       ? $settings->{connected} : 0;
+
     # $self->connected is expensive
     # should be done only on single view
     return $settings;
