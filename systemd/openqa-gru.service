@@ -1,7 +1,7 @@
 [Unit]
 Description=The openQA gru daemon
-After=postgresql.service
-Requires=postgresql.service
+After=postgresql.service openqa-setup-db.service
+Wants=openqa-setup-db.service
 
 [Service]
 User=geekotest

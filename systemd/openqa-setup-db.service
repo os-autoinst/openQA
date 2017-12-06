@@ -1,0 +1,14 @@
+[Unit]
+Description=Setup local PostgreSQL database for openQA
+Requires=postgresql.service
+After=postgresql.service
+
+[Service]
+User=postgres
+Type=oneshot
+ExecStart=-/usr/bin/createuser -D geekotest
+ExecStart=-/usr/bin/createdb -O geekotest openqa
+
+[Install]
+WantedBy=multi-user.target
+
