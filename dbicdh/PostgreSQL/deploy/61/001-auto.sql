@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Wed Dec  6 06:40:05 2017
+-- Created on Wed Dec  6 09:30:59 2017
 -- 
 ;
 --
@@ -445,6 +445,7 @@ CREATE TABLE assets (
   size bigint,
   checksum text,
   last_use_job_id integer,
+  fixed boolean DEFAULT '0' NOT NULL,
   t_created timestamp NOT NULL,
   t_updated timestamp NOT NULL,
   PRIMARY KEY (id),
