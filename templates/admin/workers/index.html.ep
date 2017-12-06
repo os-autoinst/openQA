@@ -22,13 +22,17 @@
                         );
 
                         column
-                            .search( val ? '^'+val+'$' : '', true, false )
+                            // .search( val ? '^'+val+'$' : '', true, false )
+                            .search( val ? val : '', true, false )
                             .draw();
                     } );
 
-                    select.append( '<option value="Online">Online</option>' );
-                    select.append( '<option value="Offline">Offline</option>' );
+                select.append( '<option value="Online">Online</option>' );
+                select.append( '<option value="Offline">Offline</option>' );
+                select.append( '<option value="Working">Working</option>' );
+                select.val('Online');
             } );
+            this.api().column(4).search("Online").draw();
         }
     } );
 
@@ -70,6 +74,9 @@
             <thead>
                 <tr>
                     <th>Worker</th>
+                    <th>Host</th>
+                    <th>Class</th>
+                    <th>Arch</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -79,6 +86,15 @@
                     <tr id="worker_<%= $worker->{id} %>" >
                         <td class="worker">
                             %= link_to( $workername => url_for('admin_worker_show', worker_id => $worker->{id}) )
+                        </td>
+                        <td class="host">
+                            <%= exists $worker->{host} ? $worker->{host} : 'unknown' %>
+                        </td>
+                        <td class="class">
+                            <%= exists $worker->{properties} && $worker->{properties}->{WORKER_CLASS} ? $worker->{properties}->{WORKER_CLASS} : 'unknown' %>
+                        </td>
+                        <td class="arch">
+                            <%= exists $worker->{properties} && $worker->{properties}->{CPU_ARCH} ? $worker->{properties}->{CPU_ARCH} : 'unknown' %>
                         </td>
                         <td class="status">
                             % stash(workername => $workername, worker => $worker);
