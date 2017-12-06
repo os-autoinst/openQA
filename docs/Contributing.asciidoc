@@ -46,7 +46,7 @@ are the right way to contribute improvements and fixes.
 [id="rules_for_commits"]
 
 * Every commit is checked by https://travis-ci.org/travis[Travis CI] as soon as
-you create a pull request but you *should* run the openQA tests locally,
+you create a pull request but you *should* run the tidy script locally,
 i.e. before every commit call:
 
 [source,sh]
@@ -54,7 +54,7 @@ i.e. before every commit call:
 ./script/tidy
 ----
 
-to ensure your perl code changes are consistent with the style rules
+to ensure your Perl code changes are consistent with the style rules.
 
 * You *may* also run local tests on your machine or in your own development
 environment to verify everything works as expected. Call:
@@ -65,6 +65,21 @@ make test
 ----
 
 for unit and integration tests.
+
+To execute a single test, one can use +prove+. You must set +TEST_PG+ so the database
+can be found. If you set a custom base directory, be sure to unset it when running tests.
+Example:
+[source,sh]
+----
+TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_BASEDIR= prove -v t/14-grutasks.t
+----
+
+To speed up the test initialization, start PostgreSQL using +t/test_postgresql+
+instead of using the system service. Eg.
+[source,sh]
+----
+t/test_postgresql /dev/shm/tpg
+----
 
 * For git commit messages use the rules stated on
 http://chris.beams.io/posts/git-commit/[How to Write a Git Commit Message] as
