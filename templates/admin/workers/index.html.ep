@@ -14,7 +14,7 @@
                   return false
                 }
 
-                var select = $('<select><option value=""></option></select>')
+                var select = $('<select><option value="">All</option></select>')
                     .appendTo( $(column.header()).empty() )
                     .on( 'change', function () {
                         var val = $.fn.dataTable.util.escapeRegex(
@@ -26,9 +26,8 @@
                             .draw();
                     } );
 
-                column.data().unique().sort().each( function ( d, j ) {
-                    select.append( '<option value="'+d+'">'+d+'</option>' )
-                } );
+                    select.append( '<option value="Online">Online</option>' );
+                    select.append( '<option value="Offline">Offline</option>' );
             } );
         }
     } );
@@ -40,22 +39,23 @@
 % my $percent_active_free    = int(($workers_active_free*100)/$total);
 % my $percent_busy_online    = $workers_online? int(($workers_active_free*100)/$workers_online) : 0;
 
-<div class="row">
-  <h2><%= title %></h2>
-</div>
-
-<div class="row">
-    <div class="col-sm-3">
-        <h3>Online: <%= $workers_online %></h3>
+<div id="summary" class="panel panel-default">
+    <div class="panel-heading">
+        <h4><%= title %></h4>
     </div>
-    <div class="col-sm-3">
-        <h3>Busy: <%= $workers_busy %></h3>
-    </div>
-    <div class="col-sm-3">
-        <h3>Idle: <%= $workers_active_free %></h3>
-    </div>
-    <div class="col-sm-3">
-        <h3>Total: <%= $total %></h3>
+    <div class="panel-body row">
+        <div class="col-sm-3">
+            Online: <span class="badge"><%= $workers_online %></span>
+        </div>
+        <div class="col-sm-3">
+            Busy: <span class="badge"><%= $workers_busy %></span>
+        </div>
+        <div class="col-sm-3">
+            Idle: <span class="badge"><%= $workers_active_free %></span>
+        </div>
+        <div class="col-sm-3">
+            Total: <span class="badge"><%= $total %></span>
+        </div>
     </div>
 </div>
 

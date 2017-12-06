@@ -1,13 +1,22 @@
 % if($worker->{status} eq 'running') {
-    Working on job <%= link_to $worker->{jobid}, url_for('test', testid => $worker->{jobid}) %>
-% } elsif ($worker->{status} eq 'dead' && $worker->{job} )
+    Working
+    <%= help_popover('Worker status' =>
+          'Job: ' .
+          link_to($worker->{jobid}, url_for('test', testid => $worker->{jobid})) .
+          ( $worker->{status} eq 'running' && defined($worker->{currentstep}) ?
+          '<br> Step: '. $worker->{currentstep} : '' )
+        )
+    %>
+% } elsif ($worker->{status} eq 'dead' && $worker->{job})
 % {
-    Dead with job <%= link_to $worker->{jobid}, url_for('test', testid => $worker->{jobid}) %>
+    Dead
+    <%= help_popover('Worker status' =>
+          'Dead with job: ' .
+          link_to($worker->{jobid}, url_for('test', testid => $worker->{jobid}))
+        )
+    %>
 % } elsif ($worker->{connected}) {
     Online
 % } else {
     Offline
-% }
-% if($worker->{status} eq 'running' && defined($worker->{currentstep}) ) {
-    - <%= $worker->{currentstep} %>
 % }
