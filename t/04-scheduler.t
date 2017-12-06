@@ -430,7 +430,8 @@ is_deeply(
         type            => "iso",
         size            => undef,
         checksum        => undef,
-        last_use_job_id => undef
+        last_use_job_id => undef,
+        fixed           => 0,
     },
     "asset list"
 );

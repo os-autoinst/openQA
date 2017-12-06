@@ -54,7 +54,8 @@ subtest 'list job groups' => sub() {
                 keep_important_results_in_days => 0,
                 size_limit_gb                  => 100,
                 build_version_sort             => 1,
-                id                             => 1001
+                id                             => 1001,
+                exclusively_kept_asset_size    => undef,
             },
             {
                 description                    => undef,
@@ -68,7 +69,8 @@ subtest 'list job groups' => sub() {
                 keep_important_logs_in_days    => 120,
                 sort_order                     => 0,
                 keep_logs_in_days              => 30,
-                default_priority               => 50
+                default_priority               => 50,
+                exclusively_kept_asset_size    => undef,
             }]);
 };
 
@@ -131,7 +133,8 @@ subtest 'create job group' => sub() {
                 keep_important_results_in_days => 0,
                 size_limit_gb                  => 200,
                 build_version_sort             => 1,
-                id                             => $new_id
+                id                             => $new_id,
+                exclusively_kept_asset_size    => undef,
             },
         ],
         'list created job group'
@@ -178,6 +181,7 @@ subtest 'update job group' => sub() {
                 size_limit_gb                  => 101,
                 build_version_sort             => 0,
                 id                             => 1001,
+                exclusively_kept_asset_size    => undef,
             },
         ],
         'list updated job group'

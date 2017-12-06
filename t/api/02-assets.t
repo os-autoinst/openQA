@@ -93,6 +93,7 @@ my $listing = [
         size            => undef,
         checksum        => undef,
         last_use_job_id => undef,
+        fixed           => 0,
     },
     {
         id              => 8,
@@ -101,6 +102,7 @@ my $listing = [
         size            => undef,
         checksum        => undef,
         last_use_job_id => undef,
+        fixed           => 0,
     },
 ];
 
