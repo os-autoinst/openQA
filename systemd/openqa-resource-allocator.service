@@ -1,8 +1,8 @@
 [Unit]
 Description=The openQA ResourceAllocator
 Before=openqa-webui.service openqa-websockets.service openqa-scheduler.service
-After=postgresql.service
-Requires=postgresql.service
+After=postgresql.service openqa-setup-db.service
+Wants=openqa-setup-db.service
 
 [Service]
 User=geekotest
