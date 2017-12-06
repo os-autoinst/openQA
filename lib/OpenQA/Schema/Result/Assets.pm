@@ -57,6 +57,10 @@ __PACKAGE__->add_columns(
         data_type      => 'integer',
         is_nullable    => 1,
         is_foreign_key => 1,
+    },
+    fixed => {
+        data_type     => 'boolean',
+        default_value => '0',
     });
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
@@ -91,6 +95,7 @@ sub disk_file {
     return locate_asset($self->type, $self->name);
 }
 
+# actually checking the file - will be updated to fixed in DB by limit_assets
 sub is_fixed {
     my ($self) = @_;
     return (index($self->disk_file, catfile('fixed', $self->name)) > -1);
@@ -262,7 +267,13 @@ sub limit_assets {
     my %assets;
     while (my $a = $asset_resultset->next) {
         $assets{$a->id} = $a;
-        $keep{$a->id} = {log_msg => "fixed"} if $a->is_fixed;
+        if ($a->is_fixed) {
+            $a->update({fixed => 1});
+            $keep{$a->id} = {log_msg => "fixed"};
+        }
+        else {
+            $a->update({fixed => 0});
+        }
     }
 
     # find relevant assets which belong to a job group
@@ -279,7 +290,7 @@ sub limit_assets {
             my $asset = $assets{$a->{id}};
 
             # ignore fixed assets
-            next if $asset->is_fixed;
+            next if $asset->fixed;
 
             OpenQA::Utils::log_debug(
                 sprintf "Group %d: %s/%s %s->%s",
@@ -370,7 +381,7 @@ sub limit_assets {
 
     # remove all assets older than 14 days which do not belong to a job group
     while (my $a = $assets->next) {
-        next if is_fixed($a);
+        next if $a->fixed;
         my $delta = $a->t_created->delta_days(DateTime->now)->in_units('days');
         if ($delta >= 14) {
             $a->remove_from_disk;

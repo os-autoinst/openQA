@@ -1,10 +1,13 @@
--- Convert schema '/home/coolo/prod/openQA/script/../dbicdh/_source/deploy/60/001-auto.yml' to '/home/coolo/prod/openQA/script/../dbicdh/_source/deploy/61/001-auto.yml':;
+-- Convert schema '/space/prod/openQA/script/../dbicdh/_source/deploy/60/001-auto.yml' to '/space/prod/openQA/script/../dbicdh/_source/deploy/61/001-auto.yml':;
 
 ;
 BEGIN;
 
 ;
 ALTER TABLE assets ADD COLUMN last_use_job_id integer;
+
+;
+ALTER TABLE assets ADD COLUMN fixed boolean DEFAULT '0' NOT NULL;
 
 ;
 CREATE INDEX assets_idx_last_use_job_id on assets (last_use_job_id);
