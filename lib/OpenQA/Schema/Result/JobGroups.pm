@@ -42,6 +42,10 @@ __PACKAGE__->add_columns(
         data_type   => 'integer',
         is_nullable => 1,
     },
+    exclusively_kept_asset_size => {
+        data_type   => 'bigint',
+        is_nullable => 1,
+    },
     keep_logs_in_days => {
         data_type   => 'integer',
         is_nullable => 1,

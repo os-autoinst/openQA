@@ -1160,7 +1160,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: build_version_sort
-          order: 12
+          order: 13
           size:
             - 0
         default_priority:
@@ -1170,7 +1170,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: default_priority
-          order: 9
+          order: 10
           size:
             - 0
         description:
@@ -1180,7 +1180,17 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: description
-          order: 11
+          order: 12
+          size:
+            - 0
+        exclusively_kept_asset_size:
+          data_type: bigint
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: exclusively_kept_asset_size
+          order: 5
           size:
             - 0
         id:
@@ -1201,7 +1211,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: keep_important_logs_in_days
-          order: 6
+          order: 7
           size:
             - 0
         keep_important_results_in_days:
@@ -1211,7 +1221,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: keep_important_results_in_days
-          order: 8
+          order: 9
           size:
             - 0
         keep_logs_in_days:
@@ -1221,7 +1231,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: keep_logs_in_days
-          order: 5
+          order: 6
           size:
             - 0
         keep_results_in_days:
@@ -1231,7 +1241,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: keep_results_in_days
-          order: 7
+          order: 8
           size:
             - 0
         name:
@@ -1271,7 +1281,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: sort_order
-          order: 10
+          order: 11
           size:
             - 0
         t_created:
@@ -1281,7 +1291,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: t_created
-          order: 13
+          order: 14
           size:
             - 0
         t_updated:
@@ -1291,7 +1301,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: t_updated
-          order: 14
+          order: 15
           size:
             - 0
       indices:
