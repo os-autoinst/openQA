@@ -61,36 +61,57 @@ is_deeply(
 $t->ua(OpenQA::Client->new(api => 'testapi')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
+my $workers = [
+    {
+        id         => 1,
+        instance   => 1,
+        connected  => 0,
+        websocket  => 0,
+        alive      => 1,
+        jobid      => 99963,
+        host       => 'localhost',
+        properties => {'JOBTOKEN' => 'token99963'},
+        status     => 'running'
+    },
+    {
+        'jobid'      => 99961,
+        'properties' => {
+            'JOBTOKEN' => 'token99961'
+        },
+        'id'        => 2,
+        'connected' => 0,
+        'websocket' => 0,
+        'alive'     => 1,
+        'status'    => 'running',
+        'host'      => 'remotehost',
+        'instance'  => 1
+    }];
+
+$ret = $t->get_ok('/api/v1/workers?live=1');
+ok($ret->tx->success, 'listing workers works');
+is(ref $ret->tx->res->json, 'HASH', 'workers returned hash');
+is_deeply(
+    $ret->tx->res->json,
+    {
+        workers => $workers,
+    },
+    'worker present'
+);
+
+$workers->[0]->{connected} = 1;
+$workers->[1]->{connected} = 1;
+
 $ret = $t->get_ok('/api/v1/workers');
 ok($ret->tx->success, 'listing workers works');
 is(ref $ret->tx->res->json, 'HASH', 'workers returned hash');
 is_deeply(
     $ret->tx->res->json,
     {
-        workers => [
-            {
-                id         => 1,
-                instance   => 1,
-                connected  => 0,
-                jobid      => 99963,
-                host       => 'localhost',
-                properties => {'JOBTOKEN' => 'token99963'},
-                status     => 'running'
-            },
-            {
-                'jobid'      => 99961,
-                'properties' => {
-                    'JOBTOKEN' => 'token99961'
-                },
-                'id'        => 2,
-                'connected' => 0,
-                'status'    => 'running',
-                'host'      => 'remotehost',
-                'instance'  => 1
-            }]
+        workers => $workers,
     },
     'worker present'
 );
+
 
 my $worker_caps = {
     host     => 'localhost',

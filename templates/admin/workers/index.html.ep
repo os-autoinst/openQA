@@ -2,12 +2,38 @@
 % title 'Workers';
 
 % content_for 'ready_function' => begin
-    $('#workers').DataTable( { "order": [[2, "desc"],[0, "asc"]] } );
+    loadWorkerTable();
 % end
+
+% my $percent_online         = $total ? int(($workers_online*100)/$total) : 0;
+% my $percent_busy           = $total ? int(($workers_busy*100)/$total) : 0;
+% my $percent_active_free    = $total ? int(($workers_active_free*100)/$total) : 0;
+% my $percent_busy_online    = $workers_online? int(($workers_active_free*100)/$workers_online) : 0;
+
+<div id="summary" class="panel panel-default">
+    <div class="panel-heading">
+        <h4><%= title %></h4>
+    </div>
+    <div class="panel-body row">
+        <div class="col-sm-3">
+            Online: <span class="badge"><%= $workers_online ? $workers_online : 0 %></span>
+        </div>
+        <div class="col-sm-3">
+            Busy: <span class="badge"><%= $workers_busy ? $workers_busy : 0 %></span>
+        </div>
+        <div class="col-sm-3">
+            Idle: <span class="badge"><%= $workers_active_free ? $workers_active_free : 0 %></span>
+        </div>
+        <div class="col-sm-3">
+            Total: <span class="badge"><%= $total ? $total : 0 %></span>
+        </div>
+    </div>
+</div>
+
+<div class="row"><hr></div>
 
 <div class="row">
     <div class="col-sm-12">
-        <h2><%= title %></h2>
 
         %= include 'layouts/info'
 
@@ -15,6 +41,9 @@
             <thead>
                 <tr>
                     <th>Worker</th>
+                    <th>Host</th>
+                    <th>Class</th>
+                    <th>Arch</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -24,6 +53,15 @@
                     <tr id="worker_<%= $worker->{id} %>" >
                         <td class="worker">
                             %= link_to( $workername => url_for('admin_worker_show', worker_id => $worker->{id}) )
+                        </td>
+                        <td class="host">
+                            <%= exists $worker->{host} ? $worker->{host} : 'unknown' %>
+                        </td>
+                        <td class="class">
+                            <%= exists $worker->{properties} && $worker->{properties}->{WORKER_CLASS} ? $worker->{properties}->{WORKER_CLASS} : 'unknown' %>
+                        </td>
+                        <td class="arch">
+                            <%= exists $worker->{properties} && $worker->{properties}->{CPU_ARCH} ? $worker->{properties}->{CPU_ARCH} : 'unknown' %>
                         </td>
                         <td class="status">
                             % stash(workername => $workername, worker => $worker);

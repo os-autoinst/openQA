@@ -21,8 +21,9 @@ use OpenQA::ServerSideDataTable;
 use Scalar::Util 'looks_like_number';
 
 sub _extend_info {
-    my ($w) = @_;
-    my $info = $w->info;
+    my ($w, $live) = @_;
+    $live //= 0;
+    my $info = $w->info($live);
     $info->{name}      = $w->name;
     $info->{t_updated} = $w->t_updated;
     return $info;
@@ -31,13 +32,24 @@ sub _extend_info {
 sub index {
     my ($self) = @_;
 
-    my $workers = $self->db->resultset('Workers');
+    my $workers_db          = $self->db->resultset('Workers');
+    my $total_online        = grep { !$_->dead } $workers_db->all();
+    my $total               = $workers_db->count;
+    my $free_active_workers = grep { !$_->dead } $workers_db->search({job_id => undef})->all();
+    my $busy_workers        = grep { !$_->dead } $workers_db->search({job_id => {'!=', undef}})->all();
+
     my %workers;
-    while (my $w = $workers->next) {
+    while (my $w = $workers_db->next) {
         next unless $w->id;
         $workers{$w->name} = _extend_info($w);
     }
-    $self->stash(workers => \%workers);
+    $self->stash(
+        workers_online      => $total_online,
+        total               => $total,
+        workers_active_free => $free_active_workers,
+        workers_busy        => $busy_workers,
+        workers             => \%workers
+    );
 
     $self->respond_to(
         json => {json     => {workers => \%workers}},
@@ -49,7 +61,7 @@ sub show {
 
     my $w = $self->db->resultset('Workers')->find($self->param('worker_id'))
       or return $self->reply->not_found;
-    $self->stash(worker => _extend_info($w));
+    $self->stash(worker => _extend_info($w, 1));
 
     $self->render('admin/workers/show');
 }

@@ -20,3 +20,36 @@ function setupWorkerNeedles() {
     table.on('draw.dt', setupTestButtons);
     $('#previous_jobs_filter').hide();
 }
+
+function loadWorkerTable() {
+  $('#workers').DataTable( {
+      initComplete:  function () {
+        this.api().columns().every( function () {
+            var column = this;
+            var colheader = this.header();
+            var title = $(colheader).text().trim();
+            if ( title != "Status") {
+              return false
+            }
+
+            var select = $('<select id="workers_online"><option value="">All</option></select>')
+                .appendTo( $(column.header()).empty() )
+                .on( 'change', function () {
+                    var val = $.fn.dataTable.util.escapeRegex(
+                        $(this).val()
+                    );
+                    column
+                        // .search( val ? '^'+val+'$' : '', true, false )
+                        .search( val ? val : '', true, false )
+                        .draw();
+                } );
+
+            select.append( '<option value="Online">Online</option>' );
+            select.append( '<option value="Offline">Offline</option>' );
+            select.append( '<option value="Working">Working</option>' );
+            select.val('Online');
+        } );
+        this.api().column(4).search("Online").draw();
+      }
+  } );
+}

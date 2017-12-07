@@ -21,16 +21,17 @@ use OpenQA::Utils;
 use OpenQA::Schema::Result::Jobs;
 use DBIx::Class::Timestamps 'now';
 use Try::Tiny;
+use Scalar::Util 'looks_like_number';
 
 sub list {
     my ($self) = @_;
-
+    my $live    = !looks_like_number($self->param('live')) ? 0 : !!$self->param('live');
     my $workers = $self->db->resultset("Workers");
     my $ret     = [];
 
     while (my $w = $workers->next) {
         next unless ($w->id);
-        push(@$ret, $w->info);
+        push(@$ret, $w->info($live));
     }
     $self->render(json => {workers => $ret});
 }
@@ -79,7 +80,7 @@ sub _register {
     $worker->set_property('INTERACTIVE',                  0);
     $worker->set_property('STOP_WAITFORNEEDLE',           0);
     $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', 0);
-
+    # $worker->seen();
     die "got invalid id" unless $worker->id;
     return $worker->id;
 }
@@ -122,7 +123,7 @@ sub show {
     my ($self) = @_;
     my $worker = $self->db->resultset("Workers")->find($self->param('workerid'));
     if ($worker) {
-        $self->render(json => {worker => $worker->info});
+        $self->render(json => {worker => $worker->info(1)});
     }
     else {
         $self->reply->not_found;

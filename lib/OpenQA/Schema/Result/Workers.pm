@@ -172,7 +172,8 @@ sub unprepare_for_work {
 }
 
 sub info {
-    my ($self) = @_;
+    my $self = shift;
+    my ($live) = ref $_[0] eq "HASH" ? @{$_[0]}{qw(live)} : @_;
 
     my $settings = {
         id       => $self->id,
@@ -191,7 +192,12 @@ sub info {
         my $cs = $self->currentstep;
         $settings->{currentstep} = $cs if $cs;
     }
-    $settings->{connected} = $self->connected;
+    $settings->{alive}     = $self->dead ? 0                      : 1;
+    $settings->{connected} = $live       ? $self->connected       : $settings->{alive};
+    $settings->{websocket} = $live       ? $settings->{connected} : 0;
+
+    # $self->connected is expensive
+    # should be done only on single view
     return $settings;
 }
 

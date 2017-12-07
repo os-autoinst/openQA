@@ -70,20 +70,27 @@ $driver->find_element_by_link_text('Workers')->click();
 
 $driver->title_is("openQA: Workers", "on workers overview");
 
+$driver->find_element_by_xpath("//select[\@id='workers_online']/option[1]")->click();
+
 is($driver->find_element('tr#worker_1 .worker')->get_text(), 'localhost:1',  'localhost:1');
 is($driver->find_element('tr#worker_2 .worker')->get_text(), 'remotehost:1', 'remotehost:1');
 
 # we can't check if it's "working" as after 10s the worker is 'dead'
-like($driver->find_element('tr#worker_1 .status')->get_text(), qr/job 99963/, 'on 99963');
-like($driver->find_element('tr#worker_2 .status')->get_text(), qr/job 99961/, 'working 99961');
+$driver->find_element('tr#worker_1 .help_popover')->click();
+like($driver->find_element('tr#worker_1 .popover')->get_text(), qr/Worker status\nJob: 99963/, 'on 99963');
+
+$driver->find_element('tr#worker_2 .help_popover')->click();
+like($driver->find_element('tr#worker_2 .popover')->get_text(), qr/Worker status\nJob: 99961/, 'working 99961');
 
 $driver->find_element('tr#worker_1 .worker a')->click();
 
 $driver->title_is('openQA: Worker localhost:1', 'on worker 1');
 
+$driver->find_element('.help_popover')->click();
 my $body = $driver->find_element_by_xpath('//body');
-like($body->get_text(), qr/Status: .* job 99963/, 'still on 99963');
-like($body->get_text(), qr/JOBTOKEN token99963/,  'token for 99963');
+
+like($body->get_text(), qr/Worker status\nJob: 99963/, 'still on 99963');
+like($body->get_text(), qr/JOBTOKEN token99963/,       'token for 99963');
 
 # previous jobs table
 wait_for_ajax;
