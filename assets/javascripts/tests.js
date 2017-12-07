@@ -34,7 +34,7 @@ function renderTestName ( data, type, row ) {
                 var url = restart_url.replace('REPLACEIT', row.id);
                 html += ' <a class="restart"';
                 html += ' href="' + url + '">';
-                html += '<i class="action fa fa-fw fa-repeat" title="Restart Job"></i></a>';
+                html += '<i class="action fa fa-fw fa-redo" title="Restart Job"></i></a>';
             } else {
                 html += '<i class="fa fa-fw"></i>';
             }
@@ -60,7 +60,7 @@ function renderTestName ( data, type, row ) {
         if (depsTooltip.length) {
             html += ' <a href="/tests/' + row.id + '" title="' + depsTooltip.join(', ') + '"'
             + highlightJobsHtml(children.Parallel.concat(children.Chained), parents.Parallel.concat(parents.Chained))
-            + '><i class="fa fa-code-fork"></i></a>';
+            + '><i class="fa fa-code-branch"></i></a>';
         }
         if (row.comment_count) {
             html += ' <a href="/tests/' + row.id + '#comments"><i class="test-label label_comment fa fa-comment" title="' + row.comment_count + (row.comment_count != 1 ? ' comments' : ' comment') + ' available"'
@@ -90,10 +90,10 @@ function renderTestResult( data, type, row ) {
         if (row['state'] === 'done') {
             html += data['passed'] + "<i class='fa module_passed fa-star' title='modules passed'></i>";
             if (data['softfailed']) {
-                html += " " + data['softfailed'] + "<i class='fa module_softfailed fa-star-half-empty' title='modules with warnings'></i>";
+                html += " " + data['softfailed'] + "<i class='fa module_softfailed fa-star-half' title='modules with warnings'></i>";
             }
             if (data['failed']) {
-                html += " " + data['failed'] + "<i class='fa module_failed fa-star-o' title='modules failed'></i>";
+                html += " " + data['failed'] + "<i class='far module_failed fa-star' title='modules failed'></i>";
             }
             if (data['none']) {
                 html += " " + data['none'] + "<i class='fa module_none fa-ban' title='modules skipped'></i>";
@@ -105,7 +105,7 @@ function renderTestResult( data, type, row ) {
         if (row['deps']['parents']['Parallel'].length + row['deps']['parents']['Chained'].length > 0) {
             if (row['result'] === 'skipped' ||
                 row['result'] === 'parallel_failed') {
-                html += " <i class='fa fa-chain-broken' title='dependency failed'></i>";
+                html += " <i class='fa fa-unlink' title='dependency failed'></i>";
             }
             else {
                 html += " <i class='fa fa-link' title='dependency passed'></i>";
@@ -247,7 +247,7 @@ function setupTestButtons() {
         $.post(restart_link.attr("href")).done( function( data, res, xhr ) {
             link.append(' <a href="' + xhr.responseJSON.test_url + '" title="new test">(restarted)</a>');
         });
-        var i = $(this).find('i').removeClass('fa-repeat');
+        var i = $(this).find('i').removeClass('fa-redo');
         $(this).replaceWith(i);
     });
 
@@ -256,7 +256,7 @@ function setupTestButtons() {
         var cancel_link = $(this);
         var test = $(this).parent('td');
         $.post(cancel_link.attr("href")).done( function( data ) { $(test).append(' (cancelled)'); });
-        var i = $(this).find('i').removeClass('fa-times-circle-o');
+        var i = $(this).find('i').removeClass('fa-times-circle');
         $(this).replaceWith(i);
     });
 }

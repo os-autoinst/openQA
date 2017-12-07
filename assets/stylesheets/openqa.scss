@@ -521,7 +521,7 @@ div.flags {
     color: $color-state-running;
 }
 
-.fa.module_failed { color: $color-failed; }
+.far.module_failed { color: $color-failed; }
 .fa.module_none { color: $color-module-none; }
 .fa.module_passed { color: $color-module-passed !important; }
 .fa.module_softfailed { color: $color-softfailed; }
@@ -571,7 +571,7 @@ table#users {
                                                 display: block;
                                                 color: #690;
                                         }
-                                        .fa-circle-o {
+                                        .far.fa-circle {
                                                 display: none;
                                         }
                                 }

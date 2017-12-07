@@ -5,7 +5,7 @@
             <li>
                 % if($resultfile =~ /video.ogv$/) {
                     %= link_to url_for('test_file', testid => $testid, filename => 'video.ogv') => begin
-                        <i title="ogg/theora video of this testrun" class="fa fa-file-video-o"></i> Video
+                        <i title="ogg/theora video of this testrun" class="far fa-file-video"></i> Video
                     %= end
                 % } else
                 % {

@@ -81,8 +81,8 @@ sub register {
             my ($c, $testid, $frametime) = @_;
             my $url = $c->url_for('test_file', testid => $testid, filename => 'video.ogv');
             $url .= sprintf("#t=%s,%s", ${$frametime}[0], ${$frametime}[1]);
-            my $icon = $c->t(i => (class => "step_action fa fa-video-file-o fa-lg"));
-            my $class = "step_action fa fa-file-video-o fa-lg";
+            my $icon = $c->t(i => (class => "step_action far fa-video-file fa-lg"));
+            my $class = "step_action far fa-file-video fa-lg";
             return $c->link_to($url => (title => "Jump to video", class => $class) => sub { "" });
         });
 
