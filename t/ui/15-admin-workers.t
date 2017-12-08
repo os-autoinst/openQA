@@ -57,6 +57,13 @@ unless ($driver) {
 }
 
 $driver->title_is("openQA", "on main page");
+
+# without loggin we hide properties of worker
+$driver->get('/admin/workers/1');
+$driver->title_is('openQA: Worker localhost:1', 'on worker 1');
+is(scalar @{$driver->find_elements('h3', 'css')}, 1, 'table properties hidden');
+
+$driver->find_element_by_class('navbar-brand')->click();
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 $driver->title_is("openQA", "back on main page");
@@ -85,6 +92,7 @@ like($driver->find_element('tr#worker_2 .popover')->get_text(), qr/Worker status
 $driver->find_element('tr#worker_1 .worker a')->click();
 
 $driver->title_is('openQA: Worker localhost:1', 'on worker 1');
+is(scalar @{$driver->find_elements('h3', 'css')}, 2, 'table properties shown');
 
 $driver->find_element('.help_popover')->click();
 my $body = $driver->find_element_by_xpath('//body');
