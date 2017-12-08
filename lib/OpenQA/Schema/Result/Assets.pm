@@ -406,7 +406,7 @@ sub limit_assets {
     while (my $a = $assets->next) {
         next if $a->fixed;
         my $delta = $a->t_created->delta_days(DateTime->now)->in_units('days');
-        if ($delta >= 14) {
+        if ($delta >= 14 || $a->ensure_size == 0) {
             $a->remove_from_disk;
             $a->delete;
         }
