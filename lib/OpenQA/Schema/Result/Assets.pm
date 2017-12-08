@@ -308,7 +308,7 @@ sub limit_assets {
 
             # check whether the asset has a size and whether we haven't exceeded the reduce limit
             my $size = $asset->ensure_size;
-            if ($size > 0 && $reduceto > 0) {
+            if ($size > 0 && $reduceto > 0 && $sizelimit >= $size) {
                 # keep asset
 
                 # determine whether the asset is kept exclusively by this group
