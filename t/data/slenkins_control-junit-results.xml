@@ -1,0 +1,1845 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="tests-systemd" time="173.985745" tests="166" failures="0" disabled="0" skipped="29" errors="0">
+  <testsuite package="tests-systemd.running upstream tests" timestamp="2017-11-08T04:18:47" hostname="susetest" time="73.284929" id="0" tests="140" failures="0" disabled="0" skipped="29" errors="0">
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test rule-syntax-check.py" time="0.432536" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name rule-syntax-check.py --log-file /tmp/rule-syntax-check.log --trs-file /tmp/rule-syntax-check.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: rule-syntax-check.py
+sut: grep ":test-result:" /tmp/rule-syntax-check.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test sysv-generator-test.py" time="0.590867" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name sysv-generator-test.py --log-file /tmp/sysv-generator-test.log --trs-file /tmp/sysv-generator-test.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: sysv-generator-test.py
+sut: grep ":test-result:" /tmp/sysv-generator-test.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-acd" time="0.000555" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-af-list" time="0.410013" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-af-list --log-file /tmp/test-af-list.log --trs-file /tmp/test-af-list.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-af-list
+sut: grep ":test-result:" /tmp/test-af-list.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-architecture" time="0.398344" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-architecture --log-file /tmp/test-architecture.log --trs-file /tmp/test-architecture.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-architecture
+sut: grep ":test-result:" /tmp/test-architecture.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-arphrd-list" time="0.401292" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-arphrd-list --log-file /tmp/test-arphrd-list.log --trs-file /tmp/test-arphrd-list.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-arphrd-list
+sut: grep ":test-result:" /tmp/test-arphrd-list.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-async" time="1.416452" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-async --log-file /tmp/test-async.log --trs-file /tmp/test-async.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-async
+sut: grep ":test-result:" /tmp/test-async.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-audit-type" time="0.413100" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-audit-type --log-file /tmp/test-audit-type.log --trs-file /tmp/test-audit-type.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-audit-type
+sut: grep ":test-result:" /tmp/test-audit-type.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-barrier" time="0.404879" status="skipped">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-barrier --log-file /tmp/test-barrier.log --trs-file /tmp/test-barrier.trs --color-tests yes
+standard output:
+\033[1;34mSKIP\033[m: test-barrier
+sut: grep ":test-result:" /tmp/test-barrier.trs
+standard output:
+:test-result: SKIP
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bitmap" time="0.407507" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bitmap --log-file /tmp/test-bitmap.log --trs-file /tmp/test-bitmap.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-bitmap
+sut: grep ":test-result:" /tmp/test-bitmap.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-boot-timestamp" time="0.000341" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-btrfs" time="0.000004" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-benchmark" time="0.396167" status="skipped">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-benchmark --log-file /tmp/test-bus-benchmark.log --trs-file /tmp/test-bus-benchmark.trs --color-tests yes
+standard output:
+\033[1;34mSKIP\033[m: test-bus-benchmark
+sut: grep ":test-result:" /tmp/test-bus-benchmark.trs
+standard output:
+:test-result: SKIP
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-chat" time="0.396947" status="skipped">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-chat --log-file /tmp/test-bus-chat.log --trs-file /tmp/test-bus-chat.trs --color-tests yes
+standard output:
+\033[1;34mSKIP\033[m: test-bus-chat
+sut: grep ":test-result:" /tmp/test-bus-chat.trs
+standard output:
+:test-result: SKIP
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-cleanup" time="0.406889" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-cleanup --log-file /tmp/test-bus-cleanup.log --trs-file /tmp/test-bus-cleanup.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-bus-cleanup
+sut: grep ":test-result:" /tmp/test-bus-cleanup.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-creds" time="0.395011" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-creds --log-file /tmp/test-bus-creds.log --trs-file /tmp/test-bus-creds.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-bus-creds
+sut: grep ":test-result:" /tmp/test-bus-creds.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-error" time="0.396012" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-error --log-file /tmp/test-bus-error.log --trs-file /tmp/test-bus-error.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-bus-error
+sut: grep ":test-result:" /tmp/test-bus-error.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-gvariant" time="0.415706" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-gvariant --log-file /tmp/test-bus-gvariant.log --trs-file /tmp/test-bus-gvariant.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-bus-gvariant
+sut: grep ":test-result:" /tmp/test-bus-gvariant.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-introspect" time="0.416971" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-introspect --log-file /tmp/test-bus-introspect.log --trs-file /tmp/test-bus-introspect.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-bus-introspect
+sut: grep ":test-result:" /tmp/test-bus-introspect.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-kernel" time="0.406667" status="skipped">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-kernel --log-file /tmp/test-bus-kernel.log --trs-file /tmp/test-bus-kernel.trs --color-tests yes
+standard output:
+\033[1;34mSKIP\033[m: test-bus-kernel
+sut: grep ":test-result:" /tmp/test-bus-kernel.trs
+standard output:
+:test-result: SKIP
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-kernel-bloom" time="0.405066" status="skipped">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-kernel-bloom --log-file /tmp/test-bus-kernel-bloom.log --trs-file /tmp/test-bus-kernel-bloom.trs --color-tests yes
+standard output:
+\033[1;34mSKIP\033[m: test-bus-kernel-bloom
+sut: grep ":test-result:" /tmp/test-bus-kernel-bloom.trs
+standard output:
+:test-result: SKIP
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-marshal" time="0.394239" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-marshal --log-file /tmp/test-bus-marshal.log --trs-file /tmp/test-bus-marshal.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-bus-marshal
+sut: grep ":test-result:" /tmp/test-bus-marshal.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-match" time="0.399571" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-match --log-file /tmp/test-bus-match.log --trs-file /tmp/test-bus-match.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-bus-match
+sut: grep ":test-result:" /tmp/test-bus-match.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-objects" time="0.395505" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-objects --log-file /tmp/test-bus-objects.log --trs-file /tmp/test-bus-objects.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-bus-objects
+sut: grep ":test-result:" /tmp/test-bus-objects.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-policy" time="0.400385" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-policy --log-file /tmp/test-bus-policy.log --trs-file /tmp/test-bus-policy.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-bus-policy
+sut: grep ":test-result:" /tmp/test-bus-policy.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-proxy" time="0.395654" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-proxy --log-file /tmp/test-bus-proxy.log --trs-file /tmp/test-bus-proxy.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-bus-proxy
+sut: grep ":test-result:" /tmp/test-bus-proxy.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-server" time="0.395655" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-server --log-file /tmp/test-bus-server.log --trs-file /tmp/test-bus-server.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-bus-server
+sut: grep ":test-result:" /tmp/test-bus-server.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-signature" time="0.396098" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-signature --log-file /tmp/test-bus-signature.log --trs-file /tmp/test-bus-signature.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-bus-signature
+sut: grep ":test-result:" /tmp/test-bus-signature.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-bus-zero-copy" time="0.395163" status="skipped">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-bus-zero-copy --log-file /tmp/test-bus-zero-copy.log --trs-file /tmp/test-bus-zero-copy.trs --color-tests yes
+standard output:
+\033[1;34mSKIP\033[m: test-bus-zero-copy
+sut: grep ":test-result:" /tmp/test-bus-zero-copy.trs
+standard output:
+:test-result: SKIP
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-calendarspec" time="0.403990" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-calendarspec --log-file /tmp/test-calendarspec.log --trs-file /tmp/test-calendarspec.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-calendarspec
+sut: grep ":test-result:" /tmp/test-calendarspec.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-cap-list" time="0.393887" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-cap-list --log-file /tmp/test-cap-list.log --trs-file /tmp/test-cap-list.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-cap-list
+sut: grep ":test-result:" /tmp/test-cap-list.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-capability" time="0.395956" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-capability --log-file /tmp/test-capability.log --trs-file /tmp/test-capability.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-capability
+sut: grep ":test-result:" /tmp/test-capability.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-catalog" time="0.411751" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-catalog --log-file /tmp/test-catalog.log --trs-file /tmp/test-catalog.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-catalog
+sut: grep ":test-result:" /tmp/test-catalog.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-cgroup" time="0.000324" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-cgroup-mask" time="0.410987" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-cgroup-mask --log-file /tmp/test-cgroup-mask.log --trs-file /tmp/test-cgroup-mask.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-cgroup-mask
+sut: grep ":test-result:" /tmp/test-cgroup-mask.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-cgroup-util" time="0.404570" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-cgroup-util --log-file /tmp/test-cgroup-util.log --trs-file /tmp/test-cgroup-util.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-cgroup-util
+sut: grep ":test-result:" /tmp/test-cgroup-util.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-compress" time="0.439373" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-compress --log-file /tmp/test-compress.log --trs-file /tmp/test-compress.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-compress
+sut: grep ":test-result:" /tmp/test-compress.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-compress-benchmark" time="6.455518" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-compress-benchmark --log-file /tmp/test-compress-benchmark.log --trs-file /tmp/test-compress-benchmark.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-compress-benchmark
+sut: grep ":test-result:" /tmp/test-compress-benchmark.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-condition" time="0.395380" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-condition --log-file /tmp/test-condition.log --trs-file /tmp/test-condition.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-condition
+sut: grep ":test-result:" /tmp/test-condition.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-conf-files" time="0.396327" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-conf-files --log-file /tmp/test-conf-files.log --trs-file /tmp/test-conf-files.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-conf-files
+sut: grep ":test-result:" /tmp/test-conf-files.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-conf-parser" time="0.396899" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-conf-parser --log-file /tmp/test-conf-parser.log --trs-file /tmp/test-conf-parser.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-conf-parser
+sut: grep ":test-result:" /tmp/test-conf-parser.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-copy" time="0.399341" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-copy --log-file /tmp/test-copy.log --trs-file /tmp/test-copy.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-copy
+sut: grep ":test-result:" /tmp/test-copy.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-coredump-vacuum" time="0.000335" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-daemon" time="0.000003" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-date" time="0.394272" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-date --log-file /tmp/test-date.log --trs-file /tmp/test-date.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-date
+sut: grep ":test-result:" /tmp/test-date.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-device-nodes" time="0.395757" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-device-nodes --log-file /tmp/test-device-nodes.log --trs-file /tmp/test-device-nodes.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-device-nodes
+sut: grep ":test-result:" /tmp/test-device-nodes.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-dhcp-client" time="0.399562" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-dhcp-client --log-file /tmp/test-dhcp-client.log --trs-file /tmp/test-dhcp-client.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-dhcp-client
+sut: grep ":test-result:" /tmp/test-dhcp-client.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-dhcp-option" time="0.395626" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-dhcp-option --log-file /tmp/test-dhcp-option.log --trs-file /tmp/test-dhcp-option.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-dhcp-option
+sut: grep ":test-result:" /tmp/test-dhcp-option.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-dhcp-server" time="0.407607" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-dhcp-server --log-file /tmp/test-dhcp-server.log --trs-file /tmp/test-dhcp-server.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-dhcp-server
+sut: grep ":test-result:" /tmp/test-dhcp-server.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-dhcp6-client" time="1.548074" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-dhcp6-client --log-file /tmp/test-dhcp6-client.log --trs-file /tmp/test-dhcp6-client.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-dhcp6-client
+sut: grep ":test-result:" /tmp/test-dhcp6-client.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-dns-domain" time="0.395546" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-dns-domain --log-file /tmp/test-dns-domain.log --trs-file /tmp/test-dns-domain.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-dns-domain
+sut: grep ":test-result:" /tmp/test-dns-domain.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-driver" time="0.000327" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-ellipsize" time="0.396451" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-ellipsize --log-file /tmp/test-ellipsize.log --trs-file /tmp/test-ellipsize.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-ellipsize
+sut: grep ":test-result:" /tmp/test-ellipsize.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-engine" time="0.426243" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-engine --log-file /tmp/test-engine.log --trs-file /tmp/test-engine.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-engine
+sut: grep ":test-result:" /tmp/test-engine.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-env-replace" time="0.397765" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-env-replace --log-file /tmp/test-env-replace.log --trs-file /tmp/test-env-replace.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-env-replace
+sut: grep ":test-result:" /tmp/test-env-replace.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-event" time="3.338987" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-event --log-file /tmp/test-event.log --trs-file /tmp/test-event.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-event
+sut: grep ":test-result:" /tmp/test-event.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-execute" time="0.755853" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-execute --log-file /tmp/test-execute.log --trs-file /tmp/test-execute.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-execute
+sut: grep ":test-result:" /tmp/test-execute.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-extract-word" time="0.395978" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-extract-word --log-file /tmp/test-extract-word.log --trs-file /tmp/test-extract-word.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-extract-word
+sut: grep ":test-result:" /tmp/test-extract-word.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-fdset" time="0.395186" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-fdset --log-file /tmp/test-fdset.log --trs-file /tmp/test-fdset.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-fdset
+sut: grep ":test-result:" /tmp/test-fdset.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-fileio" time="0.397178" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-fileio --log-file /tmp/test-fileio.log --trs-file /tmp/test-fileio.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-fileio
+sut: grep ":test-result:" /tmp/test-fileio.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-fstab-util" time="0.389557" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-fstab-util --log-file /tmp/test-fstab-util.log --trs-file /tmp/test-fstab-util.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-fstab-util
+sut: grep ":test-result:" /tmp/test-fstab-util.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-hashmap" time="5.969071" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-hashmap --log-file /tmp/test-hashmap.log --trs-file /tmp/test-hashmap.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-hashmap
+sut: grep ":test-result:" /tmp/test-hashmap.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-hostname" time="0.000297" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-hostname-util" time="0.399853" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-hostname-util --log-file /tmp/test-hostname-util.log --trs-file /tmp/test-hostname-util.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-hostname-util
+sut: grep ":test-result:" /tmp/test-hostname-util.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-id128" time="0.395066" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-id128 --log-file /tmp/test-id128.log --trs-file /tmp/test-id128.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-id128
+sut: grep ":test-result:" /tmp/test-id128.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-inhibit" time="0.000333" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-install" time="0.000006" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-install-root" time="0.411002" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-install-root --log-file /tmp/test-install-root.log --trs-file /tmp/test-install-root.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-install-root
+sut: grep ":test-result:" /tmp/test-install-root.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-ipcrm" time="0.000319" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-ipv4ll" time="1.163370" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-ipv4ll --log-file /tmp/test-ipv4ll.log --trs-file /tmp/test-ipv4ll.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-ipv4ll
+sut: grep ":test-result:" /tmp/test-ipv4ll.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-ipv4ll-manual" time="0.000378" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-job-type" time="0.395371" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-job-type --log-file /tmp/test-job-type.log --trs-file /tmp/test-job-type.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-job-type
+sut: grep ":test-result:" /tmp/test-job-type.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-journal" time="0.443897" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-journal --log-file /tmp/test-journal.log --trs-file /tmp/test-journal.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-journal
+sut: grep ":test-result:" /tmp/test-journal.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-journal-enum" time="0.000314" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-journal-flush" time="0.431262" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-journal-flush --log-file /tmp/test-journal-flush.log --trs-file /tmp/test-journal-flush.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-journal-flush
+sut: grep ":test-result:" /tmp/test-journal-flush.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-journal-init" time="0.403582" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-journal-init --log-file /tmp/test-journal-init.log --trs-file /tmp/test-journal-init.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-journal-init
+sut: grep ":test-result:" /tmp/test-journal-init.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-journal-interleaving" time="0.432700" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-journal-interleaving --log-file /tmp/test-journal-interleaving.log --trs-file /tmp/test-journal-interleaving.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-journal-interleaving
+sut: grep ":test-result:" /tmp/test-journal-interleaving.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-journal-match" time="0.396207" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-journal-match --log-file /tmp/test-journal-match.log --trs-file /tmp/test-journal-match.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-journal-match
+sut: grep ":test-result:" /tmp/test-journal-match.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-journal-send" time="1.427619" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-journal-send --log-file /tmp/test-journal-send.log --trs-file /tmp/test-journal-send.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-journal-send
+sut: grep ":test-result:" /tmp/test-journal-send.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-journal-stream" time="0.424799" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-journal-stream --log-file /tmp/test-journal-stream.log --trs-file /tmp/test-journal-stream.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-journal-stream
+sut: grep ":test-result:" /tmp/test-journal-stream.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-journal-syslog" time="0.399352" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-journal-syslog --log-file /tmp/test-journal-syslog.log --trs-file /tmp/test-journal-syslog.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-journal-syslog
+sut: grep ":test-result:" /tmp/test-journal-syslog.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-journal-verify" time="0.506529" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-journal-verify --log-file /tmp/test-journal-verify.log --trs-file /tmp/test-journal-verify.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-journal-verify
+sut: grep ":test-result:" /tmp/test-journal-verify.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-json" time="0.405244" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-json --log-file /tmp/test-json.log --trs-file /tmp/test-json.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-json
+sut: grep ":test-result:" /tmp/test-json.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-libsystemd-sym" time="0.406532" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-libsystemd-sym --log-file /tmp/test-libsystemd-sym.log --trs-file /tmp/test-libsystemd-sym.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-libsystemd-sym
+sut: grep ":test-result:" /tmp/test-libsystemd-sym.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-libsystemd-sym.o" time="0.000320" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-libudev" time="0.000005" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-libudev-sym" time="0.394898" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-libudev-sym --log-file /tmp/test-libudev-sym.log --trs-file /tmp/test-libudev-sym.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-libudev-sym
+sut: grep ":test-result:" /tmp/test-libudev-sym.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-list" time="0.391351" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-list --log-file /tmp/test-list.log --trs-file /tmp/test-list.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-list
+sut: grep ":test-result:" /tmp/test-list.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-lldp" time="0.391798" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-lldp --log-file /tmp/test-lldp.log --trs-file /tmp/test-lldp.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-lldp
+sut: grep ":test-result:" /tmp/test-lldp.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-local-addresses" time="0.396056" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-local-addresses --log-file /tmp/test-local-addresses.log --trs-file /tmp/test-local-addresses.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-local-addresses
+sut: grep ":test-result:" /tmp/test-local-addresses.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-locale-util" time="0.395668" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-locale-util --log-file /tmp/test-locale-util.log --trs-file /tmp/test-locale-util.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-locale-util
+sut: grep ":test-result:" /tmp/test-locale-util.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-log" time="0.000326" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-login" time="0.000004" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-login-shared" time="0.404638" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-login-shared --log-file /tmp/test-login-shared.log --trs-file /tmp/test-login-shared.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-login-shared
+sut: grep ":test-result:" /tmp/test-login-shared.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-login-tables" time="0.394456" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-login-tables --log-file /tmp/test-login-tables.log --trs-file /tmp/test-login-tables.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-login-tables
+sut: grep ":test-result:" /tmp/test-login-tables.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-loopback" time="0.000337" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-machine-tables" time="0.399389" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-machine-tables --log-file /tmp/test-machine-tables.log --trs-file /tmp/test-machine-tables.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-machine-tables
+sut: grep ":test-result:" /tmp/test-machine-tables.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-mmap-cache" time="0.396196" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-mmap-cache --log-file /tmp/test-mmap-cache.log --trs-file /tmp/test-mmap-cache.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-mmap-cache
+sut: grep ":test-result:" /tmp/test-mmap-cache.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-namespace" time="0.403686" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-namespace --log-file /tmp/test-namespace.log --trs-file /tmp/test-namespace.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-namespace
+sut: grep ":test-result:" /tmp/test-namespace.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-ndisc-rs" time="0.396742" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-ndisc-rs --log-file /tmp/test-ndisc-rs.log --trs-file /tmp/test-ndisc-rs.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-ndisc-rs
+sut: grep ":test-result:" /tmp/test-ndisc-rs.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-netlink" time="0.394270" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-netlink --log-file /tmp/test-netlink.log --trs-file /tmp/test-netlink.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-netlink
+sut: grep ":test-result:" /tmp/test-netlink.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-netlink-manual" time="0.000286" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-ns" time="0.000170" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-parse-util" time="0.391804" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-parse-util --log-file /tmp/test-parse-util.log --trs-file /tmp/test-parse-util.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-parse-util
+sut: grep ":test-result:" /tmp/test-parse-util.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-path" time="0.540261" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-path --log-file /tmp/test-path.log --trs-file /tmp/test-path.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-path
+sut: grep ":test-result:" /tmp/test-path.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-path-lookup" time="0.395491" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-path-lookup --log-file /tmp/test-path-lookup.log --trs-file /tmp/test-path-lookup.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-path-lookup
+sut: grep ":test-result:" /tmp/test-path-lookup.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-path-util" time="0.411480" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-path-util --log-file /tmp/test-path-util.log --trs-file /tmp/test-path-util.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-path-util
+sut: grep ":test-result:" /tmp/test-path-util.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-prioq" time="0.399856" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-prioq --log-file /tmp/test-prioq.log --trs-file /tmp/test-prioq.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-prioq
+sut: grep ":test-result:" /tmp/test-prioq.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-process-util" time="0.396552" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-process-util --log-file /tmp/test-process-util.log --trs-file /tmp/test-process-util.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-process-util
+sut: grep ":test-result:" /tmp/test-process-util.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-qcow2" time="0.000307" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-ratelimit" time="1.394513" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-ratelimit --log-file /tmp/test-ratelimit.log --trs-file /tmp/test-ratelimit.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-ratelimit
+sut: grep ":test-result:" /tmp/test-ratelimit.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-replace-var" time="0.395778" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-replace-var --log-file /tmp/test-replace-var.log --trs-file /tmp/test-replace-var.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-replace-var
+sut: grep ":test-result:" /tmp/test-replace-var.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-resolve" time="0.535566" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-resolve --log-file /tmp/test-resolve.log --trs-file /tmp/test-resolve.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-resolve
+sut: grep ":test-result:" /tmp/test-resolve.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-sched-prio" time="0.411973" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-sched-prio --log-file /tmp/test-sched-prio.log --trs-file /tmp/test-sched-prio.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-sched-prio
+sut: grep ":test-result:" /tmp/test-sched-prio.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-set" time="0.395615" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-set --log-file /tmp/test-set.log --trs-file /tmp/test-set.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-set
+sut: grep ":test-result:" /tmp/test-set.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-sigbus" time="0.391848" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-sigbus --log-file /tmp/test-sigbus.log --trs-file /tmp/test-sigbus.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-sigbus
+sut: grep ":test-result:" /tmp/test-sigbus.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-siphash24" time="0.396078" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-siphash24 --log-file /tmp/test-siphash24.log --trs-file /tmp/test-siphash24.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-siphash24
+sut: grep ":test-result:" /tmp/test-siphash24.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-sleep" time="0.395627" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-sleep --log-file /tmp/test-sleep.log --trs-file /tmp/test-sleep.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-sleep
+sut: grep ":test-result:" /tmp/test-sleep.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-socket-util" time="0.395548" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-socket-util --log-file /tmp/test-socket-util.log --trs-file /tmp/test-socket-util.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-socket-util
+sut: grep ":test-result:" /tmp/test-socket-util.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-strbuf" time="0.396060" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-strbuf --log-file /tmp/test-strbuf.log --trs-file /tmp/test-strbuf.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-strbuf
+sut: grep ":test-result:" /tmp/test-strbuf.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-string-util" time="0.395320" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-string-util --log-file /tmp/test-string-util.log --trs-file /tmp/test-string-util.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-string-util
+sut: grep ":test-result:" /tmp/test-string-util.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-strip-tab-ansi" time="0.391877" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-strip-tab-ansi --log-file /tmp/test-strip-tab-ansi.log --trs-file /tmp/test-strip-tab-ansi.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-strip-tab-ansi
+sut: grep ":test-result:" /tmp/test-strip-tab-ansi.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-strv" time="0.399268" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-strv --log-file /tmp/test-strv.log --trs-file /tmp/test-strv.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-strv
+sut: grep ":test-result:" /tmp/test-strv.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-strxcpyx" time="0.396672" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-strxcpyx --log-file /tmp/test-strxcpyx.log --trs-file /tmp/test-strxcpyx.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-strxcpyx
+sut: grep ":test-result:" /tmp/test-strxcpyx.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-tables" time="0.400307" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-tables --log-file /tmp/test-tables.log --trs-file /tmp/test-tables.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-tables
+sut: grep ":test-result:" /tmp/test-tables.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-terminal-util" time="0.395419" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-terminal-util --log-file /tmp/test-terminal-util.log --trs-file /tmp/test-terminal-util.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-terminal-util
+sut: grep ":test-result:" /tmp/test-terminal-util.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-time" time="0.400008" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-time --log-file /tmp/test-time.log --trs-file /tmp/test-time.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-time
+sut: grep ":test-result:" /tmp/test-time.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-tmpfiles" time="5.112645" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-tmpfiles --log-file /tmp/test-tmpfiles.log --trs-file /tmp/test-tmpfiles.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-tmpfiles
+sut: grep ":test-result:" /tmp/test-tmpfiles.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-udev" time="0.000227" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-uid-range" time="0.392924" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-uid-range --log-file /tmp/test-uid-range.log --trs-file /tmp/test-uid-range.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-uid-range
+sut: grep ":test-result:" /tmp/test-uid-range.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-unaligned" time="0.392616" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-unaligned --log-file /tmp/test-unaligned.log --trs-file /tmp/test-unaligned.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-unaligned
+sut: grep ":test-result:" /tmp/test-unaligned.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-unit-file" time="0.467247" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-unit-file --log-file /tmp/test-unit-file.log --trs-file /tmp/test-unit-file.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-unit-file
+sut: grep ":test-result:" /tmp/test-unit-file.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-unit-name" time="0.414026" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-unit-name --log-file /tmp/test-unit-name.log --trs-file /tmp/test-unit-name.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-unit-name
+sut: grep ":test-result:" /tmp/test-unit-name.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-user-util" time="0.398290" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-user-util --log-file /tmp/test-user-util.log --trs-file /tmp/test-user-util.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-user-util
+sut: grep ":test-result:" /tmp/test-user-util.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-utf8" time="0.393823" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-utf8 --log-file /tmp/test-utf8.log --trs-file /tmp/test-utf8.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-utf8
+sut: grep ":test-result:" /tmp/test-utf8.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-util" time="0.413183" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-util --log-file /tmp/test-util.log --trs-file /tmp/test-util.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-util
+sut: grep ":test-result:" /tmp/test-util.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-verbs" time="0.396169" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-verbs --log-file /tmp/test-verbs.log --trs-file /tmp/test-verbs.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-verbs
+sut: grep ":test-result:" /tmp/test-verbs.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-watchdog" time="0.000295" status="skipped"/>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test test-xml" time="0.394853" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name test-xml --log-file /tmp/test-xml.log --trs-file /tmp/test-xml.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: test-xml
+sut: grep ":test-result:" /tmp/test-xml.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.running upstream tests" name="running upstream test udev-test.pl" time="1.212068" status="success">
+      <system-out>
+<![CDATA[sut: cd /var/opt/systemd-tests/ && ./test-driver --test-name udev-test.pl --log-file /tmp/udev-test.log --trs-file /tmp/udev-test.trs --color-tests yes
+standard output:
+\033[0;32mPASS\033[m: udev-test.pl
+sut: grep ":test-result:" /tmp/udev-test.trs
+standard output:
+:test-result: PASS
+]]>
+      </system-out>
+    </testcase>
+  </testsuite>
+  <testsuite package="tests-systemd.Various tests" timestamp="2017-11-08T04:20:01" hostname="susetest" time="1.314081" id="1" tests="6" failures="0" disabled="0" skipped="0" errors="0">
+    <testcase classname="tests-systemd.Various tests" name="test systemctl daemon-reload" time="0.309714" status="success">
+      <system-out>
+<![CDATA[sut: systemctl daemon-reload
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.Various tests" name="check there has not been any failed service" time="0.202008" status="success">
+      <system-out>
+<![CDATA[sut: systemctl --state=failed --no-legend --no-pager
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.Various tests" name="check the SUT booted with systemd" time="0.197783" status="success">
+      <system-out>
+<![CDATA[sut: systemd-notify --booted
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.Various tests" name="detect virtualized environment" time="0.203384" status="success">
+      <system-out>
+<![CDATA[sut: systemd-detect-virt
+standard output:
+kvm
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.Various tests" name="get systemd paths" time="0.201467" status="success">
+      <system-out>
+<![CDATA[sut: systemd-path
+standard output:
+temporary: /tmp
+temporary-large: /var/tmp
+system-binaries: /usr/bin
+system-include: /usr/include
+system-library-private: /usr/lib
+system-library-arch: /usr/lib64
+system-shared: /usr/share
+system-configuration-factory: /usr/share/factory/etc
+system-state-factory: /usr/share/factory/var
+system-configuration: /etc
+system-runtime: /run
+system-runtime-logs: /run/log
+system-state-private: /var/lib
+system-state-logs: /var/log
+system-state-cache: /var/cache
+system-state-spool: /var/spool
+user-binaries: /root/.local/bin
+user-library-private: /root/.local/lib
+user-library-arch: /root/.local/lib/x86_64-linux-gnu
+user-shared: /root/.local/share
+user-configuration: /root/.config
+user-runtime: /run/user/0
+user-state-cache: /root/.cache
+user: /root
+user-documents: /root
+user-music: /root
+user-pictures: /root
+user-videos: /root
+user-download: /root
+user-public: /root
+user-templates: /root
+user-desktop: /root/Desktop
+search-binaries: /sbin:/usr/sbin:/usr/local/sbin:/root/bin:/usr/local/bin:/usr/bin:/bin:/usr/games
+search-library-private: /root/.local/lib:/usr/local/lib:/usr/lib:/lib
+search-library-arch: /root/.local/lib/x86_64-linux-gnu:/usr/lib64:/usr/lib64
+search-shared: /root/.local/share:/usr/share
+search-configuration-factory: /usr/local/share/factory/etc:/usr/share/factory/etc
+search-state-factory: /usr/local/share/factory/var:/usr/share/factory/var
+search-configuration: /root/.config:/etc/xdg
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.Various tests" name="test escaping of string to systemd name" time="0.198285" status="success">
+      <system-out>
+<![CDATA[sut: systemd-escape -p --suffix=mount "/tmp//waldi/foobar/"
+standard output:
+tmp-waldi-foobar.mount
+]]>
+      </system-out>
+    </testcase>
+  </testsuite>
+  <testsuite package="tests-systemd.testing hostnamectl" timestamp="2017-11-08T04:20:02" hostname="susetest" time="1.664967" id="2" tests="2" failures="0" disabled="0" skipped="0" errors="0">
+    <testcase classname="tests-systemd.testing hostnamectl" name="test some hostnamectl commands" time="1.061319" status="success">
+      <system-out>
+<![CDATA[sut: hostnamectl --transient
+standard output:
+sut
+sut: hostnamectl --static
+standard output:
+sut
+sut: hostnamectl --pretty
+standard output:
+
+sut: hostnamectl status
+standard output:
+   Static hostname: sut
+         Icon name: computer-vm
+           Chassis: vm
+        Machine ID: 10ef41181c58c82569bbf13a599ea634
+           Boot ID: 7a56efdea194405e84f96e72525dc61e
+    Virtualization: kvm
+  Operating System: SUSE Linux Enterprise Server 12 SP3
+       CPE OS Name: cpe:/o:suse:sles:12:sp3
+            Kernel: Linux 4.4.73-5-default
+      Architecture: x86-64
+sut: hostnamectl
+standard output:
+   Static hostname: sut
+         Icon name: computer-vm
+           Chassis: vm
+        Machine ID: 10ef41181c58c82569bbf13a599ea634
+           Boot ID: 7a56efdea194405e84f96e72525dc61e
+    Virtualization: kvm
+  Operating System: SUSE Linux Enterprise Server 12 SP3
+       CPE OS Name: cpe:/o:suse:sles:12:sp3
+            Kernel: Linux 4.4.73-5-default
+      Architecture: x86-64
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.testing hostnamectl" name="change hostname" time="0.603283" status="success">
+      <system-out>
+<![CDATA[sut: hostnamectl set-hostname systemd
+sut: hostname
+standard output:
+systemd
+sut: cat /etc/hostname
+standard output:
+systemd
+]]>
+      </system-out>
+    </testcase>
+  </testsuite>
+  <testsuite package="tests-systemd.testing services" timestamp="2017-11-08T04:20:04" hostname="susetest" time="8.604355" id="3" tests="4" failures="0" disabled="0" skipped="0" errors="0">
+    <testcase classname="tests-systemd.testing services" name="test simple service" time="5.415383" status="success">
+      <system-out>
+<![CDATA[sut: systemctl start sleep5.service
+sut: systemctl status sleep5.service
+sut: command "systemctl status sleep5.service" failed: status 3
+standard output:
+\342\227\217 sleep5.service - Sleep for 5 seconds
+   Loaded: loaded (/usr/lib/systemd/system/sleep5.service; static; vendor preset: disabled)
+   Active: inactive (dead)
+
+Dec 08 04:20:03 systemd systemd[1]: Starting Sleep for 5 seconds...
+Dec 08 04:20:08 systemd systemd[1]: Started Sleep for 5 seconds.
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.testing services" name="test unstoppable service" time="0.880910" status="success">
+      <system-out>
+<![CDATA[sut: systemctl start unstoppable.service
+sut: systemctl stop unstoppable.service
+sut: command "systemctl stop unstoppable.service" failed: status 1
+standard output:
+Job for unstoppable.service canceled.
+sut: systemctl stop --job-mode=replace-irreversibly unstoppable.service
+sut: systemctl start unstoppable.service
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.testing services" name="cancel queued job" time="1.250308" status="success">
+      <system-out>
+<![CDATA[sut: systemctl start --no-block hello-after-sleep60.target
+sut: /var/lib/slenkins/tests-systemd/tests-sut/bin/wait-for-running-service.sh sleep60
+standard output:
+2721 sleep60.service            start running
+sut: systemctl list-jobs
+standard output:
+ JOB UNIT                       TYPE  STATE  
+2635 hello.service              start waiting
+2634 hello-after-sleep60.target start waiting
+2721 sleep60.service            start running
+
+3 jobs listed.
+sut: systemctl start --job-mode=ignore-dependencies hello
+sut: systemctl list-jobs
+standard output:
+ JOB UNIT                       TYPE  STATE  
+2634 hello-after-sleep60.target start waiting
+2721 sleep60.service            start running
+
+2 jobs listed.
+sut: systemctl stop sleep60.service hello-after-sleep60.target
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.testing services" name="cancel new jobs" time="1.056938" status="success">
+      <system-out>
+<![CDATA[sut: systemctl start --no-block hello-after-sleep60.target
+sut: systemctl try-restart --job-mode=fail hello.service
+sut: systemctl try-restart hello.service
+sut: systemctl list-jobs
+standard output:
+ JOB UNIT                       TYPE  STATE  
+2756 hello.service              start waiting
+2842 sleep60.service            start running
+2755 hello-after-sleep60.target start waiting
+
+3 jobs listed.
+sut: systemctl stop hello.service sleep60.service hello-after-sleep60.target
+]]>
+      </system-out>
+    </testcase>
+  </testsuite>
+  <testsuite package="tests-systemd.testing journal" timestamp="2017-11-08T04:20:12" hostname="susetest" time="7.498470" id="4" tests="2" failures="0" disabled="0" skipped="0" errors="0">
+    <testcase classname="tests-systemd.testing journal" name="test journaling with level prefixes" time="0.842877" status="success">
+      <system-out>
+<![CDATA[sut: journalctl --new-id128
+standard output:
+As string:
+9b3b23b333474652a02c7e52dfe49973
+
+As UUID:
+9b3b23b3-3347-4652-a02c-7e52dfe49973
+
+As macro:
+#define MESSAGE_XYZ SD_ID128_MAKE(9b,3b,23,b3,33,47,46,52,a0,2c,7e,52,df,e4,99,73)
+
+As Python constant:
+>>> import uuid
+>>> MESSAGE_XYZ = uuid.UUID('9b3b23b333474652a02c7e52dfe49973')
+sut: printf $'<5> \t Level 5 \t \n\n<6>Level 6\n<5>Level 5 again\n' | systemd-cat -t 9b3b23b333474652a02c7e52dfe49973 --level-prefix true
+sut: journalctl --sync
+sut: journalctl -b -o cat -t 9b3b23b333474652a02c7e52dfe49973
+standard output:
+ 	 Level 5
+Level 6
+Level 5 again
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.testing journal" name="check that restarting the journal daemon does not lose logs" time="6.654950" status="success">
+      <system-out>
+<![CDATA[sut: systemctl start forever-print-hola
+sut: systemctl restart systemd-journald
+sut: systemctl stop forever-print-hola
+]]>
+      </system-out>
+    </testcase>
+  </testsuite>
+  <testsuite package="tests-systemd.testing containers" timestamp="2017-11-08T04:20:20" hostname="susetest" time="1.675927" id="5" tests="5" failures="0" disabled="0" skipped="0" errors="0">
+    <testcase classname="tests-systemd.testing containers" name="create a jail from the current btrfs snapshots" time="0.504200" status="success">
+      <system-out>
+<![CDATA[sut: btrfs subvolume snapshot / /.tmp
+standard output:
+Create a snapshot of '/' in '//.tmp'
+sut: rm /.tmp/etc/machine-id
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.testing containers" name="run a test command on container with options ''" time="0.286879" status="success">
+      <system-out>
+<![CDATA[sut: systemd-nspawn  -D /.tmp whoami
+standard output:
+Spawning container tmp on /.tmp.
+Press ^] three times within 1s to kill container.
+root
+
+Container tmp exited successfully.
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.testing containers" name="run a test command on container with options '--register=no'" time="0.215578" status="success">
+      <system-out>
+<![CDATA[sut: systemd-nspawn --register=no -D /.tmp whoami
+standard output:
+Spawning container tmp on /.tmp.
+Press ^] three times within 1s to kill container.
+root
+Container tmp exited successfully.
+
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.testing containers" name="run a test command on container with options '--private-network'" time="0.222605" status="success">
+      <system-out>
+<![CDATA[sut: systemd-nspawn --private-network -D /.tmp whoami
+standard output:
+Spawning container tmp on /.tmp.
+Press ^] three times within 1s to kill container.
+root
+Container tmp exited successfully.
+
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.testing containers" name="run a test command on container with options ''" time="0.445724" status="success">
+      <system-out>
+<![CDATA[sut: ln -s .tmp /.link
+sut: systemd-nspawn  -D /.link whoami
+standard output:
+Spawning container link on /.tmp.
+Press ^] three times within 1s to kill container.
+root
+Container link exited successfully.
+
+]]>
+      </system-out>
+    </testcase>
+  </testsuite>
+  <testsuite package="tests-systemd.testing crypsetup" timestamp="2017-11-08T04:20:21" hostname="susetest" time="75.753556" id="6" tests="3" failures="0" disabled="0" skipped="0" errors="0">
+    <testcase classname="tests-systemd.testing crypsetup" name="create encrypted disk" time="17.388436" status="success">
+      <system-out>
+<![CDATA[sut: echo -n test > /etc/keyfile && chmod go-rwx /etc/keyfile
+sut: cryptsetup -q luksFormat /dev/vdb /etc/keyfile
+sut: cryptsetup luksOpen /dev/vdb mntcrypt < /etc/keyfile
+sut: mkfs.ext3 -L var /dev/mapper/mntcrypt
+standard output:
+mke2fs 1.42.11 (09-Jul-2014)
+Creating filesystem with 10485248 4k blocks and 2621440 inodes
+Filesystem UUID: f4055412-a0a3-4c64-9a52-af745dc321cc
+Superblock backups stored on blocks: 
+	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208, 
+	4096000, 7962624
+
+Allocating group tables:   0/320\010\010\010\010\010\010\010       \010\010\010\010\010\010\010done                            
+Writing inode tables:   0/320\010\010\010\010\010\010\010 98/320\010\010\010\010\010\010\010139/320\010\010\010\010\010\010\010174/320\010\010\010\010\010\010\010207/320\010\010\010\010\010\010\010240/320\010\010\010\010\010\010\010273/320\010\010\010\010\010\010\010307/320\010\010\010\010\010\010\010       \010\010\010\010\010\010\010done                            
+Creating journal (32768 blocks): done
+Writing superblocks and filesystem accounting information:   0/320\010\010\010\010\010\010\010  2/320\010\010\010\010\010\010\010       \010\010\010\010\010\010\010done
+
+sut: mount /dev/mapper/mntcrypt /mnt
+sut: echo "OSS117 was here" > /mnt/secret
+sut: umount /mnt
+sut: cryptsetup luksClose /dev/mapper/mntcrypt
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.testing crypsetup" name="reboot" time="58.069889" status="success">
+      <system-out>
+<![CDATA[sut: echo "mntcrypt   /dev/vdb    /etc/keyfile" > /etc/crypttab
+sut: echo "/dev/mapper/mntcrypt    /mnt    ext3    defaults 0 1" >> /etc/fstab
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.testing crypsetup" name="check the encrypted file system got remounted" time="0.294793" status="success">
+      <system-out>
+<![CDATA[sut: cat /mnt/secret
+standard output:
+OSS117 was here
+]]>
+      </system-out>
+    </testcase>
+  </testsuite>
+  <testsuite package="tests-systemd.testing known bugs" timestamp="2017-11-08T04:21:37" hostname="susetest" time="2.305804" id="7" tests="1" failures="0" disabled="0" skipped="0" errors="0">
+    <testcase classname="tests-systemd.testing known bugs" name="[Bug 965867] SSH login delayed after fully patching the system" time="2.305619" status="success">
+      <system-out>
+<![CDATA[generating key to ssh to localhost
+sut: ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa &>/dev/null
+sut: cat .ssh/id_rsa.pub >> .ssh/authorized_keys
+sut: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@localhost "ls"
+standard output:
+Warning: Permanently added 'localhost' (ECDSA) to the list of known hosts.\r
+bin
+inst-sys
+command with ssh took 0.51362490654 s
+sut: service dbus restart
+trying to ssh to SUT after dbus restart
+sut: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@localhost "ls"
+standard output:
+Warning: Permanently added 'localhost' (ECDSA) to the list of known hosts.\r
+bin
+inst-sys
+command with ssh took 0.731257200241 s
+]]>
+      </system-out>
+    </testcase>
+  </testsuite>
+  <testsuite package="tests-systemd.post-tests audits" timestamp="2017-11-08T04:21:40" hostname="susetest" time="1.089824" id="8" tests="3" failures="0" disabled="0" skipped="0" errors="0">
+    <testcase classname="tests-systemd.post-tests audits" name="audit with systemd-analyze blame" time="0.438513" status="success">
+      <system-out>
+<![CDATA[sut: systemd-analyze blame
+standard output:
+         15.171s wicked.service
+          9.549s systemd-fsck@dev-mapper-mntcrypt.service
+          2.067s systemd-cryptsetup@mntcrypt.service
+          1.297s postfix.service
+           838ms systemd-vconsole-setup.service
+           546ms dev-vda2.device
+           229ms var-lib-named.mount
+           227ms var-lib-mailman.mount
+           227ms var-crash.mount
+           200ms dev-disk-by\x2duuid-a33e6cfb\x2d9fe3\x2d4cc3\x2d9ca9\x2d1d5834340198.swap
+           166ms sshd.service
+           146ms iscsi.service
+           144ms var-lib-pgsql.mount
+           143ms btrfsmaintenance-refresh.service
+           142ms var-lib-libvirt-images.mount
+           140ms var-cache.mount
+           140ms rsyslog.service
+           140ms systemd-udev-trigger.service
+           139ms plymouth-quit-wait.service
+           139ms usr-local.mount
+           138ms plymouth-quit.service
+           118ms var-lib-machines.mount
+           117ms home.mount
+           116ms var-log.mount
+           115ms srv.mount
+           110ms var-opt.mount
+           109ms boot-grub2-i386\x2dpc.mount
+           103ms var-tmp.mount
+           102ms var-spool.mount
+           101ms tmp.mount
+           100ms var-lib-mariadb.mount
+            98ms opt.mount
+            89ms var-lib-mysql.mount
+            89ms \x2esnapshots.mount
+            85ms boot-grub2-x86_64\x2defi.mount
+            70ms mnt.mount
+            68ms rc-local.service
+            65ms systemd-udevd.service
+            53ms user@0.service
+            46ms systemd-remount-fs.service
+            45ms wickedd-dhcp6.service
+            44ms systemd-sysctl.service
+            44ms systemd-journald.service
+            43ms systemd-modules-load.service
+            42ms plymouth-start.service
+            41ms wickedd-auto4.service
+            40ms nscd.service
+            40ms systemd-tmpfiles-setup-dev.service
+            39ms systemd-logind.service
+            36ms dev-mqueue.mount
+            34ms wickedd-dhcp4.service
+            33ms systemd-fsck-root.service
+            32ms systemd-journal-flush.service
+            32ms wickedd-nanny.service
+            29ms sys-kernel-debug.mount
+            28ms kmod-static-nodes.service
+            28ms systemd-udev-root-symlink.service
+            27ms dev-hugepages.mount
+            26ms wickedd.service
+            25ms plymouth-read-write.service
+            22ms systemd-tmpfiles-setup.service
+            21ms systemd-user-sessions.service
+            13ms systemd-update-utmp.service
+            12ms systemd-random-seed.service
+            11ms dracut-shutdown.service
+             6ms systemd-update-utmp-runlevel.service
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.post-tests audits" name="audit with systemd-analyze critical-chain" time="0.350023" status="success">
+      <system-out>
+<![CDATA[sut: systemd-analyze critical-chain
+standard output:
+The time after the unit is active or started is printed after the "@" character.
+The time the unit takes to start is printed after the "+" character.
+
+multi-user.target @29.054s
+\342\224\224\342\224\200cron.service @29.054s
+  \342\224\224\342\224\200postfix.service @27.756s +1.297s
+    \342\224\224\342\224\200network.target @27.751s
+      \342\224\224\342\224\200wicked.service @12.580s +15.171s
+        \342\224\224\342\224\200basic.target @12.317s
+          \342\224\224\342\224\200sockets.target @12.317s
+            \342\224\224\342\224\200dbus.socket @12.317s
+              \342\224\224\342\224\200sysinit.target @12.314s
+                \342\224\224\342\224\200systemd-update-utmp.service @12.299s +13ms
+                  \342\224\224\342\224\200systemd-tmpfiles-setup.service @12.270s +22ms
+                    \342\224\224\342\224\200local-fs.target @12.269s
+                      \342\224\224\342\224\200mnt.mount @12.197s +70ms
+                        \342\224\224\342\224\200systemd-fsck@dev-mapper-mntcrypt.service @2.646s +9.549s
+                          \342\224\224\342\224\200dev-mapper-mntcrypt.device @2.645s
+]]>
+      </system-out>
+    </testcase>
+    <testcase classname="tests-systemd.post-tests audits" name="audit with systemd-cgls" time="0.301161" status="success">
+      <system-out>
+<![CDATA[sut: systemd-cgls --no-pager
+standard output:
+Control group /:
+-.slice
+\342\224\234\342\224\200init.scope
+\342\224\202 \342\224\224\342\224\2001 /usr/lib/systemd/systemd --switched-root --system --deserialize 24
+\342\224\234\342\224\200system.slice
+\342\224\202 \342\224\234\342\224\200dbus.service
+\342\224\202 \342\224\202 \342\224\224\342\224\2001922 /bin/dbus-daemon --system --address=systemd: --nofork --nopidfile ...
+\342\224\202 \342\224\234\342\224\200cron.service
+\342\224\202 \342\224\202 \342\224\224\342\224\2001632 /usr/sbin/cron -n
+\342\224\202 \342\224\234\342\224\200wickedd.service
+\342\224\202 \342\224\202 \342\224\224\342\224\2001932 /usr/sbin/wickedd --systemd --foreground
+\342\224\202 \342\224\234\342\224\200postfix.service
+\342\224\202 \342\224\202 \342\224\234\342\224\2001618 /usr/lib/postfix/master -w
+\342\224\202 \342\224\202 \342\224\234\342\224\2001620 pickup -l -t fifo -u
+\342\224\202 \342\224\202 \342\224\224\342\224\2001621 qmgr -l -t fifo -u
+\342\224\202 \342\224\234\342\224\200wickedd-nanny.service
+\342\224\202 \342\224\202 \342\224\224\342\224\2001936 /usr/sbin/wickedd-nanny --systemd --foreground
+\342\224\202 \342\224\234\342\224\200nscd.service
+\342\224\202 \342\224\202 \342\224\224\342\224\2001016 /usr/sbin/nscd
+\342\224\202 \342\224\234\342\224\200system-serial\x2dgetty.slice
+\342\224\202 \342\224\202 \342\224\234\342\224\200serial-getty@hvc0.service
+\342\224\202 \342\224\202 \342\224\202 \342\224\224\342\224\2001070 /sbin/agetty --keep-baud 115200,38400,9600 hvc0 vt220
+\342\224\202 \342\224\202 \342\224\224\342\224\200serial-getty@ttyS0.service
+\342\224\202 \342\224\202   \342\224\224\342\224\2001069 /sbin/agetty --keep-baud 115200,38400,9600 ttyS0 vt220
+\342\224\202 \342\224\234\342\224\200systemd-journald.service
+\342\224\202 \342\224\202 \342\224\224\342\224\200682 /usr/lib/systemd/systemd-journald
+\342\224\202 \342\224\234\342\224\200wickedd-dhcp4.service
+\342\224\202 \342\224\202 \342\224\224\342\224\2001927 /usr/lib/wicked/bin/wickedd-dhcp4 --systemd --foreground
+\342\224\202 \342\224\234\342\224\200systemd-logind.service
+\342\224\202 \342\224\202 \342\224\224\342\224\2001933 /usr/lib/systemd/systemd-logind
+\342\224\202 \342\224\234\342\224\200wickedd-dhcp6.service
+\342\224\202 \342\224\202 \342\224\224\342\224\2001925 /usr/lib/wicked/bin/wickedd-dhcp6 --systemd --foreground
+\342\224\202 \342\224\234\342\224\200system-getty.slice
+\342\224\202 \342\224\202 \342\224\224\342\224\200getty@tty1.service
+\342\224\202 \342\224\202   \342\224\224\342\224\2001068 /sbin/agetty --noclear tty1 linux
+\342\224\202 \342\224\234\342\224\200sshd.service
+\342\224\202 \342\224\202 \342\224\224\342\224\2001549 /usr/sbin/sshd -D
+\342\224\202 \342\224\234\342\224\200systemd-udevd.service
+\342\224\202 \342\224\202 \342\224\224\342\224\200721 /usr/lib/systemd/systemd-udevd
+\342\224\202 \342\224\234\342\224\200haveged.service
+\342\224\202 \342\224\202 \342\224\224\342\224\200712 /usr/sbin/haveged -w 1024 -v 0 -F
+\342\224\202 \342\224\234\342\224\200wickedd-auto4.service
+\342\224\202 \342\224\202 \342\224\224\342\224\2001926 /usr/lib/wicked/bin/wickedd-auto4 --systemd --foreground
+\342\224\202 \342\224\224\342\224\200rsyslog.service
+\342\224\202   \342\224\224\342\224\2001008 /usr/sbin/rsyslogd -n
+\342\224\224\342\224\200user.slice
+  \342\224\224\342\224\200user-0.slice
+    \342\224\234\342\224\200user@0.service
+    \342\224\202 \342\224\224\342\224\200init.scope
+    \342\224\202   \342\224\234\342\224\2002456 /usr/lib/systemd/systemd --user
+    \342\224\202   \342\224\224\342\224\2002458 (sd-pam)
+    \342\224\224\342\224\200session-12.scope
+      \342\224\234\342\224\2002445 sshd: root@notty
+      \342\224\224\342\224\2002461 systemd-cgls --no-pager
+]]>
+      </system-out>
+    </testcase>
+  </testsuite>
+</testsuites>
