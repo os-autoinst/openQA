@@ -257,7 +257,9 @@ sub limit_assets {
     my $doremove   = 0;   # whether we actually want to remove something
     my $debug_keep = 0;   # enables debug output
 
-    # these querie are just too much for dbix
+    # these queries are just too much for dbix. note the sort order here:
+    # we sort the assets in descending order by highest related job ID,
+    # so assets for recent jobs are considered first (and most likely to be kept)
     my $dbh = $app->schema->storage->dbh;
     my $job_assets_sth
       = $dbh->prepare(
@@ -308,6 +310,9 @@ sub limit_assets {
 
             # check whether the asset has a size and whether we haven't exceeded the reduce limit
             my $size = $asset->ensure_size;
+            # count the current asset's size against the limits
+            $sizelimit -= $size;
+            $reduceto  -= $size;
             if ($size > 0 && $reduceto > 0) {
                 # keep asset
 
@@ -337,9 +342,6 @@ sub limit_assets {
                 # set flag for removal if we have exceeded the actual size limit
                 $doremove = 1 if ($sizelimit <= 0);
             }
-
-            $sizelimit -= $size;
-            $reduceto  -= $size;
         }
 
         # print messages
