@@ -50,7 +50,7 @@
                     % if (is_operator) {
                         <td>
                             %= link_to url_for('apiv1_create_iso') => (class => 'iso_restart') => begin
-                                <i class="action fa fa-repeat" title="Reschedule product tests"></i>
+                                <i class="action fa fa-redo" title="Reschedule product tests"></i>
                             % end
                         </td>
                     % }

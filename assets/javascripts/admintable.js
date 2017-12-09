@@ -105,20 +105,20 @@ function table_row (data, table, edit, is_admin)
                 if (data['id']) {
                     // edit existing
                     html +=
-                         '<button type="submit" class="btn" alt="Update" title="Update" onclick="submit_table_row_button( this, ' + data['id'] + ');"><i class="fa fa-floppy-o"></i></button>' +
+                         '<button type="submit" class="btn" alt="Update" title="Update" onclick="submit_table_row_button( this, ' + data['id'] + ');"><i class="far fa-save"></i></button>' +
                          '<button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="refresh_table_row_button( this, ' + data['id'] + ' , false);"><i class="fa fa-undo"></i></button>' +
-                         '<button type="submit" class="btn" alt="Delete" title="Delete" onclick="delete_table_row_button( this, ' + data['id'] + ');"><i class="fa fa-trash"></i></button>';
+                         '<button type="submit" class="btn" alt="Delete" title="Delete" onclick="delete_table_row_button( this, ' + data['id'] + ');"><i class="fa fa-trash-alt"></i></button>';
                 }
                 else {
                     // add new
                     html +=
-                         '<button type="submit" class="btn" alt="Add" title="Add" onclick="submit_table_row_button( this );"><i class="fa fa-floppy-o"></i></button>' +
+                         '<button type="submit" class="btn" alt="Add" title="Add" onclick="submit_table_row_button( this );"><i class="far fa-save"></i></button>' +
                          '<button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="delete_table_row_button( this );"><i class="fa fa-undo"></i></button>';
                 }
             }
             else if (is_admin) {
                 html +=
-                     '<button type="submit" class="btn" alt="Edit" title="Edit" onclick="refresh_table_row_button( this, ' + data['id'] + ' , true);"><i class="fa fa-pencil-square-o"></i></button>';
+                     '<button type="submit" class="btn" alt="Edit" title="Edit" onclick="refresh_table_row_button( this, ' + data['id'] + ' , true);"><i class="far fa-edit"></i></button>';
             }
             html += '</td>';
         }
@@ -327,4 +327,3 @@ function populate_admin_table (is_admin)
         });
     }
 }
-

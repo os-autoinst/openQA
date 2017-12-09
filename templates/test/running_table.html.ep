@@ -50,7 +50,7 @@
                 <td class="test">
                     % if (is_operator) {
                     %= link_to url_for('apiv1_cancel', jobid => $job->id) => (class => 'cancel') => begin
-                                  <i class="action fa fa-fw fa-times-circle-o"></i>
+                                  <i class="action far fa-fw fa-times-circle"></i>
                     % end
                     % }
                     %= link_to url_for('test', 'testid' => $job->id) => begin

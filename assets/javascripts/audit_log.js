@@ -167,7 +167,7 @@ function loadProductLogTable ()
             }
             action_cell.append(message);
         });
-        var i = $(this).find('i').removeClass('fa-repeat');
+        var i = $(this).find('i').removeClass('fa-redo');
         $(this).replaceWith(i);
         return false;
     });
