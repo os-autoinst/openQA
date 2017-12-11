@@ -27,6 +27,8 @@ sub parse {
     my @tests;
     for my $ts ($dom->find('testsuite')->each) {
         my $ts_category = $ts->{package};
+        my $script = $ts->{script} ? $ts->{script} : undef;
+
         $ts_category =~ s/[^A-Za-z0-9._-]/_/g;    # the name is used as part of url so we must strip special characters
         my $ts_name = $ts_category;
         $ts_category =~ s/\..*$//;
@@ -42,7 +44,7 @@ sub parse {
                 flags    => {},
                 category => $ts_category,
                 name     => $ts_name,
-                script   => $autotest::current_test->{script},
+                script   => $script,
             });
 
         my $ts_result = 'ok';

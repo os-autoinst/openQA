@@ -24,7 +24,7 @@ sub to_hash {
         category => $_[0]->category(),
         name     => $_[0]->name(),
         flags    => $_[0]->flags(),
-        script   => $_[0]->script(),
+        script   => $_[0]->script() // 'unk',
     };
 }
 

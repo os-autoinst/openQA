@@ -34,6 +34,7 @@ has [qw(_dom)];
 
 *results = \&generated_tests_results;
 *tests   = \&generated_tests;
+*outputs = \&generated_tests_output;
 
 sub load {
     my ($self, $file) = @_;
