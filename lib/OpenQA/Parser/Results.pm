@@ -34,4 +34,11 @@ sub search_in_details {
         grep { blessed($_) && $_->isa("OpenQA::Parser::Result") } @{$self})->flatten;
 }
 
+sub search {
+    my ($self, $field, $re) = @_;
+    my $results = OpenQA::Parser::Results->new();
+    $self->each(sub { $results->add($_) if $_->$field =~ $re });
+    $results;
+}
+
 1;

@@ -19,18 +19,19 @@ use OpenQA::Parser::Results;
 use Mojo::File 'path';
 use Mojo::JSON qw(decode_json encode_json);
 
-has 'result';
 has details => sub { [] };
 has dents => 0;
-has 'name';
+has [qw(result name test)];
 
 sub TO_JSON {
     {
         result  => $_[0]->result(),
         dents   => $_[0]->dents(),
         details => $_[0]->details(),
-    };
+        (test => $_[0]->test ? $_[0]->test->to_hash : undef) x !!($_[1])};
 }
+
+*to_hash = \&TO_JSON;
 
 sub search_in_details {
     my ($self, $field, $re) = @_;
