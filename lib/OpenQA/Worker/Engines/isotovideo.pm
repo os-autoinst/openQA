@@ -145,7 +145,12 @@ sub engine_workit {
     # workerid is also used by libvirt backend to identify VMs
     my $openqa_url = $current_host;
     my $workerid   = $hosts->{$current_host}{workerid};
-    my %vars       = (OPENQA_URL => $openqa_url, WORKER_INSTANCE => $instance, WORKER_ID => $workerid);
+    my %vars       = (
+        OPENQA_URL      => $openqa_url,
+        WORKER_INSTANCE => $instance,
+        WORKER_ID       => $workerid,
+        PRJDIR          => $OpenQA::Utils::sharedir
+    );
     while (my ($k, $v) = each %{$job->{settings}}) {
         log_debug("setting $k=$v");
         $vars{$k} = $v;
@@ -158,13 +163,14 @@ sub engine_workit {
     # do asset caching if CACHEDIRECTORY is set
     if ($worker_settings->{CACHEDIRECTORY}) {
         my $host_to_cache = Mojo::URL->new($current_host)->host;
-        $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
         OpenQA::Worker::Cache::init($current_host, $worker_settings->{CACHEDIRECTORY});
         my $error = cache_assets(\%vars, $assetkeys);
         return $error if $error;
 
         # do test caching if TESTPOOLSERVER is set
         if ($hosts->{$current_host}{testpoolserver}) {
+            $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
+            $vars{PRJDIR} = $shared_cache;
             # my attempts to use ioloop::subprocess failed, so go back to blocking
             my $sync_child = fork();
             if (!$sync_child) {
@@ -184,15 +190,10 @@ sub engine_workit {
                     return {error => "Failed to rsync tests: exit $?"};
                 }
             }
-            $vars{PRJDIR} = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
-            $shared_cache = catdir($vars{PRJDIR}, 'tests');
-        }
-        else {
-            $vars{PRJDIR} = $OpenQA::Utils::sharedir;
+            $shared_cache = catdir($shared_cache, 'tests');
         }
     }
     else {
-        $vars{PRJDIR} = $OpenQA::Utils::sharedir;
         my $error = locate_local_assets(\%vars, $assetkeys);
         return $error if $error;
     }
