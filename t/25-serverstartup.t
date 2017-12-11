@@ -39,6 +39,7 @@ use Mojo::File qw(tempfile path);
 
 subtest 'Setup logging to file' => sub {
     local $ENV{OPENQA_LOGFILE} = undef;
+    local $ENV{MOJO_LOG_LEVEL} = 'debug';
     my $tempfile = tempfile;
     my $app = Mojolicious->new(config => {logging => {file => $tempfile}});
     OpenQA::Setup::setup_log($app);
@@ -59,6 +60,7 @@ subtest 'Setup logging to file' => sub {
 
 subtest 'Setup logging to STDOUT' => sub {
     local $ENV{OPENQA_LOGFILE} = undef;
+    local $ENV{MOJO_LOG_LEVEL} = 'debug';
     my $buffer = '';
     my $app    = Mojolicious->new();
     OpenQA::Setup::setup_log($app);
@@ -80,6 +82,7 @@ subtest 'Setup logging to STDOUT' => sub {
 
 subtest 'Setup logging to file (ENV)' => sub {
     local $ENV{OPENQA_LOGFILE} = tempfile;
+    local $ENV{MOJO_LOG_LEVEL} = 'debug';
     my $app = Mojolicious->new(config => {logging => {file => "/tmp/ignored_foo_bar"}});
     OpenQA::Setup::setup_log($app);
     $app->attr('log_name', sub { return "test"; });
