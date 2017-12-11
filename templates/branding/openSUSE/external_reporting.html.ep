@@ -7,12 +7,14 @@
     sle => 'https://bugzilla.suse.com/enter_bug.cgi',
     opensuse => 'https://bugzilla.opensuse.org/enter_bug.cgi',
     caasp => 'https://bugzilla.suse.com/enter_bug.cgi',
-    openqa => 'https://progress.opensuse.org/projects/openqav3/issues/new'
+    openqa => 'https://progress.opensuse.org/projects/openqav3/issues/new',
+    kubic => 'https://bugzilla.opensuse.org/enter_bug.cgi'
 );%>
 <% my %distri_to_prod = (
     sle => 'SUSE Linux Enterprise',
     opensuse => 'openSUSE',
     caasp => 'SUSE CaaS Platform',
+    kubic => 'openSUSE'
 ); %>
 <% my %flavor_to_prod_sle = (
     Server => 'Server',
@@ -97,6 +99,9 @@ Always latest result in this scenario: [latest]($latest)
 %    $product_details{comment} = $description;
 %    $product_details{product} = "$distri $product";
 %    $product_details{bug_file_loc} = $step_url;
+% }
+% if ($distri eq 'kubic') {
+%    $product_details{component} = 'Kubic';
 % }
 % my $product_url_new = $distri_to_product_url_new{$job->DISTRI};
 % if ($product) {
