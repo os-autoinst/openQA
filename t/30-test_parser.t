@@ -39,7 +39,7 @@ subtest parse => sub {
         'category' => 'tests-systemd',
         'flags'    => {},
         'name'     => '1_running_upstream_tests',
-        'script'   => undef
+        'script'   => 'unk'
       };
 
     is $parser->tests->search("name", qr/1_running_upstream_tests/)->first()->name, '1_running_upstream_tests';
@@ -117,7 +117,7 @@ subtest parse => sub {
         'category' => 'tests-systemd',
         'flags'    => {},
         'name'     => '9_post-tests_audits',
-        'script'   => undef
+        'script'   => 'unk'
     };
 
     is_deeply $parser->results->last->to_hash(1), $expected_test_result, 'Test is showed';
