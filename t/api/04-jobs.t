@@ -565,4 +565,60 @@ subtest 'filter by worker_class' => sub {
 
 };
 
+subtest 'Parse extra tests results' => sub {
+    use Mojo::File 'path';
+    use OpenQA::Parser::JUnit;
+
+    my $fname  = 'slenkins_control-junit-results.xml';
+    my $junit  = "t/data/$fname";
+    my $parser = OpenQA::Parser::JUnit->new->load($junit);
+
+    my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
+
+    my $post = $t->post_ok(
+        '/api/v1/jobs/99963/artefact' => form => {
+            file       => {file => $junit, filename => $fname},
+            type       => "foo",
+            extra_test => 1,
+            script     => 'test'
+        })->status_is(200);
+
+    ok $post->tx->res->content->body_contains('FAILED'), 'request FAILED';
+
+    ok !-e path($basedir, 'details-1_running_upstream_tests.json'), 'detail from junit was NOT written';
+
+    $post = $t->post_ok(
+        '/api/v1/jobs/99963/artefact' => form => {
+            file       => {file => $junit, filename => $fname},
+            type       => "JUnit",
+            extra_test => 1,
+            script     => 'test'
+        })->status_is(200);
+
+    ok $post->tx->res->content->body_contains('OK'), 'request went fine';
+    ok !$post->tx->res->content->body_contains('FAILED'), 'request went fine, really';
+
+    ok !-e path($basedir, $fname), 'file was not uploaded';
+
+    # Check now that parser writes what we expect.
+    ok $parser->tests->size > 2, 'Tests parsed correctly';
+
+
+    # Note: if parser fails parsing, tests won't run reliably, that's why we do this
+    # At least those two should be there:
+    ok -e path($basedir, 'details-1_running_upstream_tests.json'),   'detail from junit was written';
+    ok -e path($basedir, 'tests-systemd-9_post-tests_audits-3.txt'), 'junit was parsed';
+
+    # Now we check what parser expects to have (this have been generated from openQA side)
+    $parser->tests->each(
+        sub {
+            ok -e path($basedir, 'details-' . $_->name . '.json'), 'detail from junit was written for ' . $_->name;
+        });
+    $parser->outputs->each(
+        sub {
+            ok -e path($basedir, $_->file), 'test result from junit was written for ' . $_->file;
+        });
+
+};
+
 done_testing();

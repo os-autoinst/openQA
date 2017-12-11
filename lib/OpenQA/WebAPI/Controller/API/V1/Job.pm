@@ -320,6 +320,11 @@ sub create_artefact {
         $self->render(text => "OK");
         return;
     }
+    elsif ($self->param('extra_test')) {
+        return $self->render(text => "OK")
+          if $job->parse_extra_tests($self->param('file'), $self->param('type'), $self->param('script'));
+        return $self->render(text => "FAILED");
+    }
     elsif ($self->param('asset')) {
         my $abs = $job->create_asset($self->param('file'), $self->param('asset'));
         $self->render(json => {temporary => $abs});
