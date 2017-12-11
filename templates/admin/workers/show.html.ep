@@ -24,21 +24,23 @@
         %= include 'admin/workers/worker_status'
     </div>
 
-    <h3>Properties</h3>
-    <table class="table table-striped">
-        <thead>
-            <th>Key</th>
-            <th>Value</th>
-        </thead>
-        <tbody>
-            % for my $k (sort keys %{$worker->{properties}}) {
-                <tr>
-                    <td><%= $k %></td>
-                    <td><%= $worker->{properties}->{$k} %></td>
-                </tr>
-            % }
-        </tbody>
-    </table>
+    % if (is_operator) {
+        <h3>Properties</h3>
+        <table class="table table-striped">
+            <thead>
+                <th>Key</th>
+                <th>Value</th>
+            </thead>
+            <tbody>
+                % for my $k (sort keys %{$worker->{properties}}) {
+                    <tr>
+                        <td><%= $k %></td>
+                        <td><%= $worker->{properties}->{$k} %></td>
+                    </tr>
+                % }
+            </tbody>
+        </table>
+    % }
 
     <h3>Previous jobs</h3>
     <table id="previous_jobs" class="table table-striped"
