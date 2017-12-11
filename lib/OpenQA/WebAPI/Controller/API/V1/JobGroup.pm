@@ -95,11 +95,13 @@ sub list {
 
 # check existing job group on top level to prevent create/update duplicate
 sub check_top_level_group {
-    my ($self) = @_;
+    my ($self, $group_id) = @_;
 
     return 0 if $self->is_parent;
     my $properties = $self->load_properties;
-    return $self->resultset->search({name => $properties->{name}, parent_id => undef});
+    my $conditions = {name => $properties->{name}, parent_id => undef};
+    $conditions->{id} = {'!=', $group_id} if $group_id;
+    return $self->resultset->search($conditions);
 }
 
 sub create {
@@ -129,7 +131,7 @@ sub update {
     my $group = $self->find_group;
     return unless $group;
 
-    my $check = $self->check_top_level_group;
+    my $check = $self->check_top_level_group($group->id);
     if ($check != 0) {
         return $self->render(
             json   => {error => 'Unable to update group due to not allow duplicated job group on top level'},

@@ -221,18 +221,50 @@ subtest 'prevent deleting non-empty job group' => sub() {
 };
 
 subtest 'prevent create/update duplicate job group on top level' => sub() {
+    # Try to create a group has same name "Cool group" with existing one
     $t->post_ok(
         '/api/v1/job_groups',
         form => {
             name      => 'Cool group',
             parent_id => undef,
         })->status_is(500);
+    # Update "opensuse" group to have name "Cool group"
     $t->put_ok(
         '/api/v1/job_groups/1001',
         form => {
             name      => 'Cool group',
             parent_id => undef,
         })->status_is(500);
+    # Update the existing "Cool group"
+    $t->put_ok(
+        '/api/v1/job_groups/1003',
+        form => {
+            size_limit_gb               => 300,
+            description                 => 'Updated group without parent',
+            keep_important_logs_in_days => 100
+        })->status_is(200);
+    my $get = $t->get_ok('/api/v1/job_groups/1003')->status_is(200);
+    is_deeply(
+        $get->tx->res->json,
+        [
+            {
+                name                           => 'Cool group',
+                parent_id                      => undef,
+                sort_order                     => undef,
+                keep_logs_in_days              => 30,
+                keep_important_logs_in_days    => 100,
+                default_priority               => 50,
+                description                    => 'Updated group without parent',
+                keep_results_in_days           => 365,
+                keep_important_results_in_days => 0,
+                size_limit_gb                  => 300,
+                build_version_sort             => 1,
+                id                             => 1003,
+                exclusively_kept_asset_size    => undef,
+            },
+        ],
+        'Update Cool group without parent'
+    );
 };
 
 done_testing();
