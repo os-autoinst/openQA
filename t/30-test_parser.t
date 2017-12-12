@@ -23,11 +23,12 @@ use OpenQA;
 use Test::Output 'combined_like';
 use OpenQA::Parser;
 use OpenQA::Parser::JUnit;
+use OpenQA::Parser::LTP;
 use Mojo::File qw(path tempdir);
 use Data::Dumper;
 use Mojo::JSON qw(decode_json encode_json);
 
-subtest parse => sub {
+subtest junit_parse => sub {
     my $parser = OpenQA::Parser::JUnit->new;
 
     my $junit_test_file = path($FindBin::Bin, "data")->child("slenkins_control-junit-results.xml");
@@ -61,17 +62,6 @@ subtest parse => sub {
             ok $_->slurp =~ /# system-out:|# running upstream test/, 'Output result was written correctly';
         });
 
-    my $testdir = tempdir;
-    $parser->write_test_result($testdir);
-    is $testdir->list_tree->size, 9, '9 test outputs were written';
-    $testdir->list_tree->each(
-        sub {
-            my $res = decode_json $_->slurp;
-            ok exists $res->{result}, 'JSON result can be decoded';
-        });
-
-    $testdir->remove_tree;
-
     my $expected_test_result = {
         dents   => 0,
         details => [
@@ -93,6 +83,23 @@ subtest parse => sub {
         ],
         result => 'ok'
     };
+
+    is_deeply $parser->generated_tests_results->last->to_hash, $expected_test_result, 'TO_JSONs';
+
+    my $testdir = tempdir;
+    $parser->write_test_result($testdir);
+    is $testdir->list_tree->size, 9, '9 test outputs were written';
+    $testdir->list_tree->each(
+        sub {
+            my $res = decode_json $_->slurp;
+            is ref $res, "HASH", 'JSON result can be decoded' or diag explain $_->slurp;
+
+            ok exists $res->{result}, 'JSON result can be decoded';
+        });
+
+    $testdir->remove_tree;
+
+
     is_deeply $parser->results->last->to_hash(), $expected_test_result,
       'Expected test result match - with no include_results';
 
@@ -123,6 +130,31 @@ subtest parse => sub {
     is_deeply $parser->results->last->to_hash(1), $expected_test_result, 'Test is showed';
 };
 
+subtest ltp_parse => sub {
+
+    my $parser = OpenQA::Parser::LTP->new;
+
+    my $ltp_test_result_file = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
+
+    $parser->load($ltp_test_result_file);
+
+    is $parser->results->size, 6, 'Expected 6 results';
+    my $i = 2;
+    $parser->results->each(
+        sub {
+            is $_->status, 'pass', 'Tests passed';
+            ok !!$_->environment, 'Environment is present';
+            ok !!$_->test,        'Test information is present';
+            is $_->environment->gcc, 'gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]',
+              'Environment information matches';
+            is $_->test->result, 'TPASS', 'subtest result is TPASS';
+            is $_->test_fqn, "LTP:cpuhotplug:cpuhotplug0$i", "test_fqn matches and are different";
+            $i++;
+        });
+
+    is $parser->results->get(0)->environment->gcc, 'gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]',
+      'Environment information matches';
+};
 
 done_testing;
 
