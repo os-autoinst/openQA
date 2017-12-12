@@ -1,0 +1,119 @@
+{
+   "results" : [
+      {
+         "status" : "pass",
+         "environment" : {
+            "gcc" : "gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]",
+            "product" : "sle:15",
+            "revision" : "288.8",
+            "kernel" : "susetest 4.12.11-1.11-default #1 SMP Fri Sep 8 11:49:35 UTC 2017 (8fc62b4) x86_64 x86_64 x86_64 GNU/Linux",
+            "ltp_version" : "git 4850afd",
+            "harness" : "SUSE OpenQA",
+            "libc" : "libc.2.26",
+            "arch" : "caasp_x86_64,qemu_x86_64,tap"
+         },
+         "test_fqn" : "LTP:cpuhotplug:cpuhotplug02",
+         "test" : {
+            "log" : "\nName:   cpuhotplug02\nDate:   Fri Oct  6 04:22:25 EDT 2017\nDesc:   What happens to a process when its CPU is offlined?\n\nCPU is 1\ncpuhotplug02 1 TPASS: turned off CPU 1, process migrated to \tCPU   0\n### TEST cpuhotplug02 COMPLETE >>> 0",
+            "duration" : 7.12316519673914,
+            "result" : "TPASS"
+         }
+      },
+      {
+         "environment" : {
+            "gcc" : "gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]",
+            "product" : "sle:15",
+            "revision" : "288.8",
+            "kernel" : "susetest 4.12.11-1.11-default #1 SMP Fri Sep 8 11:49:35 UTC 2017 (8fc62b4) x86_64 x86_64 x86_64 GNU/Linux",
+            "ltp_version" : "git 4850afd",
+            "harness" : "SUSE OpenQA",
+            "libc" : "libc.2.26",
+            "arch" : "caasp_x86_64,qemu_x86_64,tap"
+         },
+         "status" : "pass",
+         "test_fqn" : "LTP:cpuhotplug:cpuhotplug03",
+         "test" : {
+            "duration" : 1.35847639571875,
+            "result" : "TPASS",
+            "log" : "\nName:   cpuhotplug03\nDate:   Fri Oct  6 04:22:32 EDT 2017\nDesc:   Do tasks get scheduled to a newly on-lined CPU?\n\nCPU is 1\nUSER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nroot      1851  0.0  0.1  12308  1152 hvc0     R+   04:22   0:00 /bin/sh /opt/ltp/testcases/bin/cpuhotplug_do_spin_loop\nroot      1852 20.0  0.1  12308  1228 hvc0     R+   04:22   0:00 /bin/sh /opt/ltp/testcases/bin/cpuhotplug_do_spin_loop\nroot      1853  0.0  0.1  12308  1196 hvc0     R+   04:22   0:00 /bin/sh /opt/ltp/testcases/bin/cpuhotplug_do_spin_loop\nroot      1854  0.0  0.1  12308  1208 hvc0     R+   04:22   0:00 /bin/sh /opt/ltp/testcases/bin/cpuhotplug_do_spin_loop\nroot      1859  0.0  0.0   7424   880 hvc0     R+   04:22   0:00 grep cpuhotplug_do_spin_loop\ncpuhotplug03 1 TINFO: Onlining CPU 1\n  1 /bin/sh /opt/ltp/testcases/bin/cpuhotplug_do_spin_loop\n  0 /bin/sh /opt/ltp/testcases/bin/cpuhotplug_do_spin_loop\n  0 /bin/sh /opt/ltp/testcases/bin/cpuhotplug_do_spin_loop\n  1 /bin/sh /opt/ltp/testcases/bin/cpuhotplug_do_spin_loop\ncpuhotplug03 1 TPASS: 2 cpuhotplug_do_spin_loop processes found on \tCPU1\n### TEST cpuhotplug03 COMPLETE >>> 0"
+         }
+      },
+      {
+         "test_fqn" : "LTP:cpuhotplug:cpuhotplug04",
+         "test" : {
+            "duration" : 0.0940412851050496,
+            "result" : "TPASS",
+            "log" : "\nName:   cpuhotplug04\nDate:   Fri Oct  6 04:22:33 EDT 2017\nDesc:   Does it prevent us from offlining the last CPU?\n\ncpuhotplug04 1 TPASS: Success\n### TEST cpuhotplug04 COMPLETE >>> 0"
+         },
+         "environment" : {
+            "gcc" : "gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]",
+            "product" : "sle:15",
+            "revision" : "288.8",
+            "kernel" : "susetest 4.12.11-1.11-default #1 SMP Fri Sep 8 11:49:35 UTC 2017 (8fc62b4) x86_64 x86_64 x86_64 GNU/Linux",
+            "ltp_version" : "git 4850afd",
+            "harness" : "SUSE OpenQA",
+            "libc" : "libc.2.26",
+            "arch" : "caasp_x86_64,qemu_x86_64,tap"
+         },
+         "status" : "pass"
+      },
+      {
+         "status" : "pass",
+         "environment" : {
+            "gcc" : "gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]",
+            "product" : "sle:15",
+            "revision" : "288.8",
+            "kernel" : "susetest 4.12.11-1.11-default #1 SMP Fri Sep 8 11:49:35 UTC 2017 (8fc62b4) x86_64 x86_64 x86_64 GNU/Linux",
+            "ltp_version" : "git 4850afd",
+            "harness" : "SUSE OpenQA",
+            "libc" : "libc.2.26",
+            "arch" : "caasp_x86_64,qemu_x86_64,tap"
+         },
+         "test" : {
+            "duration" : 6.15568801015615,
+            "result" : "TPASS",
+            "log" : "\nName:   cpuhotplug05\nDate:   Fri Oct  6 04:22:33 EDT 2017\nDesc:   Does sar behave properly during CPU hotplug events?\n\nCPU is 1\ncpuhotplug05 1 TPASS: SAR updated statistics after the CPU was turned on.\n### TEST cpuhotplug05 COMPLETE >>> 0"
+         },
+         "test_fqn" : "LTP:cpuhotplug:cpuhotplug05"
+      },
+      {
+         "environment" : {
+            "gcc" : "gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]",
+            "product" : "sle:15",
+            "revision" : "288.8",
+            "kernel" : "susetest 4.12.11-1.11-default #1 SMP Fri Sep 8 11:49:35 UTC 2017 (8fc62b4) x86_64 x86_64 x86_64 GNU/Linux",
+            "ltp_version" : "git 4850afd",
+            "harness" : "SUSE OpenQA",
+            "libc" : "libc.2.26",
+            "arch" : "caasp_x86_64,qemu_x86_64,tap"
+         },
+         "status" : "pass",
+         "test" : {
+            "result" : "TPASS",
+            "duration" : 2.07859050203115,
+            "log" : "\nName:   cpuhotplug06\nDate:   Fri Oct  6 04:22:40 EDT 2017\nDesc:   Does top work properly when CPU hotplug events occur?\n\nCPU is 1\n 2078 hvc0     00:00:00 top\ncpuhotplug06 1 TPASS: PID 2078 still running.\n### TEST cpuhotplug06 COMPLETE >>> 0"
+         },
+         "test_fqn" : "LTP:cpuhotplug:cpuhotplug06"
+      },
+      {
+         "status" : "pass",
+         "environment" : {
+            "gcc" : "gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]",
+            "product" : "sle:15",
+            "revision" : "288.8",
+            "kernel" : "susetest 4.12.11-1.11-default #1 SMP Fri Sep 8 11:49:35 UTC 2017 (8fc62b4) x86_64 x86_64 x86_64 GNU/Linux",
+            "ltp_version" : "git 4850afd",
+            "harness" : "SUSE OpenQA",
+            "libc" : "libc.2.26",
+            "arch" : "caasp_x86_64,qemu_x86_64,tap"
+         },
+         "test_fqn" : "LTP:cpuhotplug:cpuhotplug07",
+         "test" : {
+            "duration" : 4.09300871286541,
+            "result" : "TPASS",
+            "log" : "\nName:   cpuhotplug07\nDate:   Fri Oct  6 04:22:42 EDT 2017\nDesc:   What happens when hotplugging during a heavy workload?\nIssue:  Hotplug bugs have been found during kernel compiles\n\nCPU is 1\ncpuhotplug07 1 TINFO: initial CPU affinity for kernel compile is: \tpid 2113's current affinity mask: 3\ncpuhotplug07 1 TINFO: Starting loop\nOfflining cpu1: Return Code = 0\nOnlining cpu1: Return Code = 0\ncpuhotplug07 1 TPASS: turned off CPU 1, process migrated to \tCPU   1\n### TEST cpuhotplug07 COMPLETE >>> 0"
+         }
+      }
+   ],
+   "format" : "result_array:v1"
+}
