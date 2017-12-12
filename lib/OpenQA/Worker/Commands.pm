@@ -184,7 +184,7 @@ sub websocket_commands {
             }
         }
         else {
-            log_error("got unknown command $type");
+            log_error("got unknown command '$type'. Are the worker and openQA running compatible versions?");
         }
 
     }
