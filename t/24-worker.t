@@ -411,8 +411,8 @@ subtest 'Worker logs' => sub {
     path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
 
     my @re = (
-        '\[worker:debug\] Found possible working directory for .*?: .*',
-        '\[worker:error\] Ignoring host .*: Working directory does not exist'
+        '\[debug\] Found possible working directory for .*?: .*',
+        '\[error\] Ignoring host .*: Working directory does not exist'
     );
     my $c = join('\n', @re);
 
@@ -426,10 +426,10 @@ subtest 'Worker logs' => sub {
     $OpenQA::Utils::prjdir = path(tempdir(), 'openqa');
 
     @re = (
-        '\[worker:info\] Project dir for host .*? is .*',
-        '\[worker:info\] registering worker with .*',
-        '\[worker:error\] unable to connect to host .* retry in .*',
-        '\[worker:debug\] ## adding timer register_worker-.*'
+        '\[info\] Project dir for host .*? is .*',
+        '\[info\] registering worker with .*',
+        '\[error\] unable to connect to host .* retry in .*',
+        '\[debug\] ## adding timer register_worker-.*'
     );
 
     $c = join('\n', @re);
