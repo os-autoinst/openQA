@@ -687,6 +687,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_403_messages_when_using_scripts">403 messages when using scripts</a></li>
 <li><a href="#_mixed_production_and_development_environment">Mixed production and development environment</a></li>
 <li><a href="#_performance_impact">Performance impact</a></li>
+<li><a href="#_db_migration_from_sqlite_to_postgresql">DB migration from SQlite to postgreSQL</a></li>
 </ul>
 </li>
 <li><a href="#_networking_in_openqa">Networking in OpenQA</a>
@@ -3999,6 +4000,51 @@ appropriate timeout margin.</p>
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_db_migration_from_sqlite_to_postgresql">DB migration from SQlite to postgreSQL</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>As a first step to start using postgreSQL, please, configure postgreSQL database
+according to the
+<a href="Contributing.asciidoc#how-to-setup-postgresql-to-test-locally-with-production-data">postgreSQL setup guide</a></p>
+</div>
+<div class="paragraph">
+<p>To migrate api keys run following commands:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Export data from the SQlite db:</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code>sqlite3 db.sqlite -csv -separator ',' 'select * from api_keys;' &gt; apikeys.csv</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note: SQlite database file is located in <code>/var/lib/openqa/db</code> by default.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Import data to the postgreSQL</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code># openqa is the postgreSQL database name and apikeys.csv is api keys export file
+psql -U postgres -d openqa -c "copy api_keys from 'apikeys.csv' with (format csv);"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In case you need to migrate job groups, test suites, use dump_templates and
+load_templates scripts accordingly.</p>
+</div>
+</div>
+</div>
 <h1 id="_networking_in_openqa" class="sect0">Networking in OpenQA</h1>
 <div class="openblock partintro">
 <div class="content">
@@ -4957,7 +5003,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-12-12 06:11:07 UTC
+Last updated 2017-12-12 17:27:59 UTC
 </div>
 </div>
 </body>
