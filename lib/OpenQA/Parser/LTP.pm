@@ -20,8 +20,6 @@ use Mojo::Base 'OpenQA::Parser';
 use Carp qw(croak confess);
 use Mojo::JSON 'decode_json';
 use OpenQA::Parser::Result::LTP::Test;
-use OpenQA::Parser::Result::LTP::SubTest;
-use OpenQA::Parser::Result::LTP::Environment;
 
 sub parse {
     my ($self, $json) = @_;

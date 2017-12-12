@@ -23,6 +23,9 @@ use OpenQA::Parser::Result::Test;
 use OpenQA::Parser::Result::Output;
 use OpenQA::Parser::Result;
 use OpenQA::Parser::Results;
+use Storable;
+use Scalar::Util 'blessed';
+
 has include_results => 0;
 
 has generated_tests => sub { OpenQA::Parser::Results->new };    #testsuites
@@ -71,6 +74,49 @@ sub detect_type {
 
 sub _read_file { path($_[1])->slurp() }
 sub _add_test  { shift->generated_tests->add(OpenQA::Parser::Result::Test->new(@_)) }
+
+sub _build_tree {
+    my $self = shift;
+
+    my $tree;
+    $self->generated_tests_results->each(sub { push(@{$tree->{results}}, $_->to_hash) });
+    $self->generated_tests_output->each(sub  { push(@{$tree->{output}},  $_->to_hash) });
+    $self->generated_tests->each(sub         { push(@{$tree->{tests}},   $_->to_hash) });
+
+    $tree->{output_type}
+      = blessed $self->generated_tests_output->last ?
+      ref $self->generated_tests_output->last
+      : "OpenQA::Parser::Result::Output";
+    $tree->{result_type}
+      = blessed $self->generated_tests_results->last ?
+      ref $self->generated_tests_results->last
+      : "OpenQA::Parser::Result";
+    $tree->{test_type}
+      = blessed $self->generated_tests->last ? ref $self->generated_tests->last : "OpenQA::Parser::Result::Test";
+
+    return $tree;
+}
+
+sub _load_tree {
+    my $self = shift;
+
+    my $tree = Storable::thaw(shift);
+    {
+        no strict 'refs';    ## no critic
+        local $@;
+        eval {
+            $self->generated_tests_results->add($tree->{result_type}->new($_)) for @{$tree->{results}};
+            $self->generated_tests_output->add($tree->{output_type}->new($_))  for @{$tree->{output}};
+            $self->generated_tests->add($tree->{test_type}->new($_))           for @{$tree->{tests}};
+        };
+        die "Failed parsing the tree: $@" if $@;
+    }
+
+    return $self;
+}
+
+sub serialize   { Storable::freeze(shift->_build_tree) }
+sub deserialize { shift->_load_tree($_[0]) }
 
 sub _add_single_result { shift->generated_tests_results->add(OpenQA::Parser::Result->new(@_)) }
 sub _add_result {

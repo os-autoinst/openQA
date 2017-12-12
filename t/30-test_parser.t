@@ -28,6 +28,14 @@ use Mojo::File qw(path tempdir);
 use Data::Dumper;
 use Mojo::JSON qw(decode_json encode_json);
 
+subtest 'Result base class object' => sub {
+    use OpenQA::Parser::Result;
+    my $res = OpenQA::Parser::Result->new();
+    $res->{foo} = 2;
+    $res->{bar} = 4;
+    is_deeply($res->to_hash(), {bar => 4, foo => 2}, 'to_hash maps correctly');
+};
+
 subtest junit_parse => sub {
     my $parser = OpenQA::Parser::JUnit->new;
 
@@ -130,17 +138,11 @@ subtest junit_parse => sub {
     is_deeply $parser->results->last->to_hash(1), $expected_test_result, 'Test is showed';
 };
 
-subtest ltp_parse => sub {
-
-    my $parser = OpenQA::Parser::LTP->new;
-
-    my $ltp_test_result_file = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
-
-    $parser->load($ltp_test_result_file);
-
-    is $parser->results->size, 6, 'Expected 6 results';
+sub test_ltp_file {
+    my $p = shift;
+    is $p->results->size, 6, 'Expected 6 results';
     my $i = 2;
-    $parser->results->each(
+    $p->results->each(
         sub {
             is $_->status, 'pass', 'Tests passed';
             ok !!$_->environment, 'Environment is present';
@@ -151,9 +153,32 @@ subtest ltp_parse => sub {
             is $_->test_fqn, "LTP:cpuhotplug:cpuhotplug0$i", "test_fqn matches and are different";
             $i++;
         });
-
-    is $parser->results->get(0)->environment->gcc, 'gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]',
+    is $p->results->get(0)->environment->gcc, 'gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]',
       'Environment information matches';
+}
+
+subtest ltp_parse => sub {
+
+    my $parser = OpenQA::Parser::LTP->new;
+
+    my $ltp_test_result_file = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
+
+    $parser->load($ltp_test_result_file);
+
+    test_ltp_file($parser);
+};
+
+subtest 'serialize/deserialize' => sub {
+    my $parser = OpenQA::Parser::LTP->new;
+
+    my $ltp_test_result_file = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
+
+    $parser->load($ltp_test_result_file);
+    my $obj_content  = $parser->serialize();
+    my $deserialized = OpenQA::Parser::LTP->new->deserialize($obj_content);
+    ok "$deserialized" ne "$parser", "Different objects";
+    test_ltp_file($parser);
+    test_ltp_file($deserialized);
 };
 
 done_testing;

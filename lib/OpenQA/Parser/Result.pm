@@ -23,8 +23,28 @@ use Mojo::JSON qw(decode_json encode_json);
 use Carp 'croak';
 use Mojo::File 'path';
 
+sub new {
+    return shift->SUPER::new(@_) unless ref $_[1] eq 'HASH';
+
+    my ($class, @args) = @_;
+    foreach my $attribute (keys %{$args[0]}) {
+        next unless ref $args[0]->{$attribute} eq 'HASH' && $class->can($attribute);
+        {
+            no strict 'refs';    ## no critic
+            my $ref = ref $class->new->$attribute();
+            $args[0]->{$attribute} = $ref->new($args[0]->{$attribute}) unless (grep(/$ref/, qw(HASH ARRAY)));
+        }
+    }
+
+    $class->SUPER::new(@args);
+}
+
 sub to_json   { encode_json shift }
 sub from_json { __PACKAGE__->new(decode_json $_[1]) }
+sub to_hash {
+    my $self = shift;
+    return {map { $_ => $self->{$_} } sort keys %{$self}};
+}
 
 sub write {
     my ($self, $dir) = @_;
