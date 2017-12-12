@@ -26,8 +26,8 @@ use File::Path qw(make_path remove_tree);
 use Sys::Hostname;
 use File::Spec::Functions 'catfile';
 
-my $reFile    = qr/\[.*?\] \[worker:(.*?)\] (.*?) message/;
-my $reStdOut  = qr/(?:.*?)\[worker:(.*?)\] (.*?) message/;
+my $reFile    = qr/\[.*?\] \[(.*?)\] (.*?) message/;
+my $reStdOut  = qr/(?:.*?)\[(.*?)\] (.*?) message/;
 my $reChannel = qr/\[.*?\] \[(.*?)\] (.*?) message/;
 
 subtest 'load correct configs' => sub {

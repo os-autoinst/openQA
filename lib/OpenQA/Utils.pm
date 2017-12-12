@@ -23,6 +23,8 @@ use Regexp::Common 'URI';
 use Try::Tiny;
 use Mojo::File 'path';
 use IO::Handle;
+use Time::HiRes 'gettimeofday';
+use POSIX 'strftime';
 use Scalar::Util 'blessed';
 use Data::Dump 'pp';
 use Mojo::Log;
@@ -51,6 +53,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   append_channel_to_defaults
   remove_log_channel
   remove_channel_from_defaults
+  log_format_callback
   get_channel_handle
   &save_base64_png
   &run_cmd_with_log
@@ -340,8 +343,18 @@ sub add_log_channel {
         }
         delete $options{default};
     }
-
     $channels{$channel} = Mojo::Log->new(%options);
+
+    $channels{$channel}->format(\&log_format_callback);
+}
+# The default format for logging
+sub log_format_callback {
+    my ($time, $level, @lines) = @_;
+    # Unfortunately $time doesn't have the precision we want. So we need to use Time::HiRes
+    $time = gettimeofday;
+    return
+      sprintf(strftime("[%FT%T.%%04d %Z] [$level] ", localtime($time)), 1000 * ($time - int($time)))
+      . join("\n", @lines, '');
 }
 
 sub append_channel_to_defaults {

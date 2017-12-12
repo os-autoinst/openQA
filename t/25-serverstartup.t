@@ -51,10 +51,10 @@ subtest 'Setup logging to file' => sub {
     $log->info('Works too');
 
     my $content = $tempfile->slurp;
-    like $content, qr/\[.*\] \[test:error\] Just works/,  'right error message';
-    like $content, qr/\[.*\] \[test:fatal\] Fatal error/, 'right fatal message';
-    like $content, qr/\[.*\] \[test:debug\] It works/,    'right debug message';
-    like $content, qr/\[.*\] \[test:info\] Works too/,    'right info message';
+    like $content, qr/\[.*\] \[error\] Just works/,  'right error message';
+    like $content, qr/\[.*\] \[fatal\] Fatal error/, 'right fatal message';
+    like $content, qr/\[.*\] \[debug\] It works/,    'right debug message';
+    like $content, qr/\[.*\] \[info\] Works too/,    'right info message';
 };
 
 subtest 'Setup logging to STDOUT' => sub {
@@ -72,10 +72,10 @@ subtest 'Setup logging to STDOUT' => sub {
         $log->debug('It works');
         $log->info('Works too');
     }
-    like $buffer, qr/\[test:error\] Just works\n/,  'right error message';
-    like $buffer, qr/\[test:fatal\] Fatal error\n/, 'right fatal message';
-    like $buffer, qr/\[test:debug\] It works\n/,    'right debug message';
-    like $buffer, qr/\[test:info\] Works too\n/,    'right info message';
+    like $buffer, qr/\[error\] Just works\n/,  'right error message';
+    like $buffer, qr/\[fatal\] Fatal error\n/, 'right fatal message';
+    like $buffer, qr/\[debug\] It works\n/,    'right debug message';
+    like $buffer, qr/\[info\] Works too\n/,    'right info message';
 };
 
 subtest 'Setup logging to file (ENV)' => sub {
@@ -91,10 +91,10 @@ subtest 'Setup logging to file (ENV)' => sub {
     $log->info('Works too');
 
     my $content = path($ENV{OPENQA_LOGFILE})->slurp;
-    like $content, qr/\[.*\] \[test:error\] Just works/,  'right error message';
-    like $content, qr/\[.*\] \[test:fatal\] Fatal error/, 'right fatal message';
-    like $content, qr/\[.*\] \[test:debug\] It works/,    'right debug message';
-    like $content, qr/\[.*\] \[test:info\] Works too/,    'right info message';
+    like $content, qr/\[.*\] \[error\] Just works/,  'right error message';
+    like $content, qr/\[.*\] \[fatal\] Fatal error/, 'right fatal message';
+    like $content, qr/\[.*\] \[debug\] It works/,    'right debug message';
+    like $content, qr/\[.*\] \[info\] Works too/,    'right info message';
     ok !-e "/tmp/ignored_foo_bar";
 
     $app = Mojolicious->new();
@@ -108,10 +108,10 @@ subtest 'Setup logging to file (ENV)' => sub {
     $log->info('Works too');
 
     $content = path($ENV{OPENQA_LOGFILE})->slurp;
-    like $content, qr/\[.*\] \[test:error\] Just works/,  'right error message';
-    like $content, qr/\[.*\] \[test:fatal\] Fatal error/, 'right fatal message';
-    like $content, qr/\[.*\] \[test:debug\] It works/,    'right debug message';
-    like $content, qr/\[.*\] \[test:info\] Works too/,    'right info message';
+    like $content, qr/\[.*\] \[error\] Just works/,  'right error message';
+    like $content, qr/\[.*\] \[fatal\] Fatal error/, 'right fatal message';
+    like $content, qr/\[.*\] \[debug\] It works/,    'right debug message';
+    like $content, qr/\[.*\] \[info\] Works too/,    'right info message';
 };
 
 subtest 'Update configuration from Plugin requirements' => sub {

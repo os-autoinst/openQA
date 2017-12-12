@@ -27,6 +27,8 @@ use db_profiler;
 use db_helpers;
 use OpenQA::Utils;
 use File::Path 'make_path';
+use POSIX 'strftime';
+use Time::HiRes 'gettimeofday';
 
 has config => sub { {} };
 
@@ -71,13 +73,15 @@ sub setup_log {
         $log = Mojo::Log->new(
             handle => path($logfile)->open('>>'),
             level  => $self->level,
-            format => sub { return log_format($self->log_name, @_); });
+            format => \&log_format_callback
+        );
     }
     elsif ($logfile) {
         $log = Mojo::Log->new(
             handle => path($logfile)->open('>>'),
             level  => $level,
-            format => sub { return log_format($self->log_name, @_); });
+            format => \&log_format_callback
+        );
     }
     elsif ($logdir) {
         # So each worker from each host get it's own log (as the folder can be shared). Hopefully the machine hostname
@@ -87,7 +91,8 @@ sub setup_log {
         $log = Mojo::Log->new(
             handle => path($logfile)->open('>>'),
             level  => $self->level,
-            format => sub { return log_format($self->log_name, @_); });
+            format => \&log_format_callback
+        );
     }
     else {
         $log = Mojo::Log->new(
@@ -95,7 +100,7 @@ sub setup_log {
             level  => $level,
             format => sub {
                 my ($time, $level, @lines) = @_;
-                return "[${\$self->log_name}:$level] " . join "\n", @lines, '';
+                return "[$level] " . join "\n", @lines, '';
             });
     }
 
@@ -110,11 +115,6 @@ sub setup_log {
 
     $OpenQA::Utils::app = $self;
     return $log;
-}
-
-sub log_format {
-    my ($logname, $time, $level, @lines) = @_;
-    return '[' . localtime($time) . "] [$logname:$level] " . join "\n", @lines, '';
 }
 
 sub emit_event {
