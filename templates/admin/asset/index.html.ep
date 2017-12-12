@@ -76,5 +76,36 @@
             % }
             </tbody>
         </table>
+
+        <h3>Assets by group</h3>
+        <p>The following list shows the <em>exclusively</em> kept assets for each group. Untracked assets will never be shown here.</p>
+        <ul id="assets-by-group">
+            % for my $group (@$assets_by_group) {
+                <li>
+                    <input id="group-<%= $group->{id} %>-checkbox" type="checkbox">
+                    <label for="group-<%= $group->{id} %>-checkbox">
+                        %= $group->{name}
+                    </label>
+                    % if (is_admin) {
+                        <a href="<%= $c->url_for('admin_job_templates', groupid => $group->{id}) %>">
+                            <i class="fa fa-wrench" title="Configure"></i>
+                        </a>
+                    % }
+                    <span>
+                        %= ($group->{size} ? OpenQA::Utils::human_readable_size($group->{size}) : 'unknown')
+                    </span>
+                    <ul>
+                        % for my $asset (@{$group->{assets}}) {
+                            <li>
+                                %= $asset->{name}
+                                <span>
+                                    %= ($asset->{size} ? OpenQA::Utils::human_readable_size($asset->{size}) : 'unknown')
+                                </span>
+                            </li>
+                        % }
+                    </ul>
+                </li>
+            % }
+        </ul>
     </div>
 </div>

@@ -44,14 +44,19 @@ $test_case->init_data;
 use OpenQA::SeleniumTest;
 
 sub schema_hook {
-    my $schema = OpenQA::Test::Database->new->create;
-    my $assets = $schema->resultset('Assets');
+    my $schema     = OpenQA::Test::Database->new->create;
+    my $job_groups = $schema->resultset('JobGroups');
+    my $assets     = $schema->resultset('Assets');
 
     $assets->find(2)->update(
         {
             size            => 4096,
             last_use_job_id => 99962,
             t_created       => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+        });
+    $job_groups->find(1002)->update(
+        {
+            exclusively_kept_asset_size => 4096,
         });
 }
 
@@ -489,6 +494,7 @@ subtest 'asset list' => sub {
     $driver->title_is("openQA: Assets", "on asset");
     wait_for_ajax;
 
+    # table of assets
     is_deeply(
         get_cell_contents('tr#asset_1'),
         ['iso', 'openSUSE-13.1-DVD-i586-Build0091-Media.iso', '5', 'about 2 hours ago', 'unknown'],
@@ -510,6 +516,19 @@ subtest 'asset list' => sub {
     ok(
         $driver->find_child_element($untracked_assets, 'tr#asset_1'),
         'asset with unknown last use part of untracked assets'
+    );
+
+    # assets by group
+    is_deeply(
+        [map { $_->get_text() } $driver->find_elements('#assets-by-group > li')],
+        ["opensuse\nunknown", "Cool Group has been edited!\nunknown", "opensuse test\n4KiB",],
+        'groups of "assets by group"'
+    );
+    $driver->find_element('#group-1001-checkbox + label')->click();
+    is_deeply(
+        [map { $_->get_text() } $driver->find_elements('#group-1001-checkbox ~ ul li')],
+        ["openSUSE-13.1-DVD-x86_64-Build0091-Media.iso\n4KiB",],
+        'assets of "assets by group"'
     );
 };
 

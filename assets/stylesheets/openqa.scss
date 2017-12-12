@@ -821,6 +821,43 @@ h2 + * {
     }
 }
 
+/* admin asset tables */
+#assets-by-group {
+    span {
+        float: right;
+    }
+
+    & > li {
+        margin-top: 5px;
+
+        input[type="checkbox"] {
+            display: none;
+        }
+
+        label {
+            cursor: pointer;
+            font-weight: normal;
+        }
+
+        .fa {
+            padding-left: 3px;
+            opacity: 0.3;
+        }
+
+        & > span {
+            font-weight: bold;
+        }
+
+        input[type="checkbox"] ~ ul {
+            display: none;
+        }
+
+        input[type="checkbox"]:checked ~ ul {
+            display: block;
+        }
+    }
+}
+
 /* parent group overview */
 * + #child_groups {
     border-top: 1px solid #e3e3e3;
