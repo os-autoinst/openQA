@@ -478,6 +478,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_assert_script_sudo">assert_script_sudo</a></li>
 <li><a href="#_script_sudo">script_sudo</a></li>
 <li><a href="#_script_output">script_output</a></li>
+<li><a href="#_save_tmp_file">save_tmp_file</a></li>
+<li><a href="#_get_test_data">get_test_data</a></li>
 <li><a href="#_validate_script_output">validate_script_output</a></li>
 <li><a href="#_become_root">become_root</a></li>
 <li><a href="#_ensure_installed">ensure_installed</a></li>
@@ -1054,6 +1056,44 @@ your SUT is offline, pass type_command &#8658; 1.</p>
 </div>
 <div class="paragraph">
 <p>The default timeout for the script is 30 seconds. If you need more, pass a second parameter.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_save_tmp_file">save_tmp_file</h5>
+<div class="literalblock">
+<div class="content">
+<pre>save_tmp_file($relpath, $content)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Saves content to the file in the worker pool directory using hash of the path,
+including file, so it can be fetched via http later on using
+ ` &lt;autoinst_url`/files/#path_to_the_file&gt; &gt; url.
+Can be used to modify files for specific test needs, e.g. autoinst profiles.
+Dies if cannot open file for writing.</p>
+</div>
+<div class="paragraph">
+<p>Example:
+  save_tmp_file('autoyast/autoinst.xml', '&lt;profile&gt;Test&lt;/profile&gt;')
+Then the file can be fetched using url:
+` &lt;autoinst_url`/files/autoyast/autoinst.xml&gt; &gt;</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_get_test_data">get_test_data</h5>
+<div class="literalblock">
+<div class="content">
+<pre>get_test_data($relpath)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Returns content of the file located in data directory. This method can be used
+if one needs to modify files content before accessing it in SUT.</p>
+</div>
+<div class="paragraph">
+<p>Example:
+  get_test_data('autoyast/autoinst.xml')
+This will return content of the file located in data/autoyast/autoinst.xml</p>
 </div>
 </div>
 <div class="sect4">
@@ -1703,7 +1743,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-12-12 17:29:03 UTC
+Last updated 2017-12-12 17:42:31 UTC
 </div>
 </div>
 </body>
