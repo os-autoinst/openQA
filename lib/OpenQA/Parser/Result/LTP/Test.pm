@@ -29,4 +29,21 @@ sub to_hash {
     };
 }
 
+# Additional data structure - they get mapped automatically
+# no need to override here
+
+{
+    package OpenQA::Parser::Result::LTP::SubTest;
+    use Mojo::Base 'OpenQA::Parser::Result';
+
+    has [qw(log duration result)];
+}
+
+{
+    package OpenQA::Parser::Result::LTP::Environment;
+    use Mojo::Base 'OpenQA::Parser::Result';
+
+    has [qw(gcc product revision kernel ltp_version harness libc arch)];
+}
+
 1;
