@@ -14,35 +14,24 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Parser::Result;
+# Base class that holds the test result
+# Used while parsing from format X to Whatever
+
 use Mojo::Base -base;
 use OpenQA::Parser::Results;
-use Mojo::File 'path';
 use Mojo::JSON qw(decode_json encode_json);
+use Carp 'croak';
+use Mojo::File 'path';
 
-has details => sub { [] };
-has dents => 0;
-has [qw(result name test)];
-
-sub TO_JSON {
-    {
-        result  => $_[0]->result(),
-        dents   => $_[0]->dents(),
-        details => $_[0]->details(),
-        (test => $_[0]->test ? $_[0]->test->to_hash : undef) x !!($_[1])};
-}
-
-*to_hash = \&TO_JSON;
-
-sub search_in_details {
-    my ($self, $field, $re) = @_;
-    my $results = OpenQA::Parser::Results->new();
-    $results->add($_) for grep { $_->{$field} =~ $re } @{$self->details};
-    $results;
-}
+sub to_json   { encode_json shift }
+sub from_json { __PACKAGE__->new(decode_json $_[1]) }
 
 sub write {
     my ($self, $dir) = @_;
+    croak 'OpenQA::Parser::Result write() requires a name field' unless $self->can('name');
     path($dir, join('.', join('-', 'result', $self->name), 'json'))->spurt(encode_json($self));
 }
+
+*write_json = \&write;
 
 1;

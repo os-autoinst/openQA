@@ -14,9 +14,13 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Parser::JUnit;
-
+# Translates to JUnit -> openQA internal
 use Mojo::Base 'OpenQA::Parser';
 use Carp qw(croak confess);
+use OpenQA::Parser::Result::OpenQA;
+
+# Override to use specific OpenQA Result class.
+sub _add_single_result { shift->generated_tests_results->add(OpenQA::Parser::Result::OpenQA->new(@_)) }
 
 sub parse {
     my ($self, $xml) = @_;
@@ -96,6 +100,5 @@ sub parse {
     }
     $self;
 }
-sub to_html { }
 
 !!42;

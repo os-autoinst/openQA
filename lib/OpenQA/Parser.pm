@@ -39,9 +39,9 @@ has [qw(_dom)];
 sub load {
     my ($self, $file) = @_;
     croak "You need to specify a file" if !$file;
-    my $xml = $self->_read_file($file);
-    confess "Failed reading XML file $file" if !$xml;
-    $self->parse($xml);
+    my $file_content = $self->_read_file($file);
+    confess "Failed reading file $file" if !$file_content;
+    $self->parse($file_content);
     $self;
 }
 
@@ -64,6 +64,10 @@ sub write_test_result {
 sub parse          { croak 'parse() not implemented by base class' }
 sub to_openqa_test { croak 'to_openqa_test() not implemented by base class' }
 sub to_html        { croak 'to_html() not implemented by base class' }
+
+sub detect_type {
+    my ($self, $file) = @_;
+}
 
 sub _read_file { path($_[1])->slurp() }
 sub _add_test  { shift->generated_tests->add(OpenQA::Parser::Result::Test->new(@_)) }

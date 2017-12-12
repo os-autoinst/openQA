@@ -13,34 +13,33 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Parser::Results;
-# Generic result class.
+package OpenQA::Parser::Result::OpenQA;
+# Basic class that holds the tests details and results as seen by openQA
+# Used while parsing from format X to OpenQA test modules.
 
-use Mojo::Base 'Mojo::Collection';
-use Scalar::Util 'blessed';
-sub add {
-    my $self = shift;
-    push @{$self}, @_;
-    $self;
-}
+use Mojo::Base 'OpenQA::Parser::Result';
+use OpenQA::Parser::Results;
+use Mojo::File 'path';
 
-sub get    { @{$_[0]}[$_[1]] }
-sub remove { delete @{$_[0]}[$_[1]] }
+has details => sub { [] };
+has dents => 0;
+has [qw(result name test)];
 
-# Returns a new flattened OpenQA::Parser::Results which is a cumulative result of
-# the other collections inside it
 sub search_in_details {
     my ($self, $field, $re) = @_;
-    __PACKAGE__->new(
-        map { $_->search_in_details($field, $re) }
-        grep { blessed($_) && $_->isa("OpenQA::Parser::Result") } @{$self})->flatten;
-}
-
-sub search {
-    my ($self, $field, $re) = @_;
     my $results = OpenQA::Parser::Results->new();
-    $self->each(sub { $results->add($_) if $_->$field =~ $re });
+    $results->add($_) for grep { $_->{$field} =~ $re } @{$self->details};
     $results;
 }
+
+sub TO_JSON {
+    {
+        result  => $_[0]->result(),
+        dents   => $_[0]->dents(),
+        details => $_[0]->details(),
+        (test => $_[0]->test ? $_[0]->test->to_hash : undef) x !!($_[1])};
+}
+
+*to_hash = \&TO_JSON;
 
 1;
