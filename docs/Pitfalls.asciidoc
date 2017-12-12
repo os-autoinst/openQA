@@ -13,12 +13,12 @@
   confusing
 - If a needle is deleted, old tests may display an error when viewing
   them in the web UI.
-  
+
 == 403 messages when using scripts
 
-- If you come across messages displaying +ERROR: 403 - Forbidden+, make 
-  sure that the correct API key is present in client.conf file. 
-- If you are using a hostname other than +localhost+, pass *--host foo* to the script. 
+- If you come across messages displaying +ERROR: 403 - Forbidden+, make
+  sure that the correct API key is present in client.conf file.
+- If you are using a hostname other than +localhost+, pass *--host foo* to the script.
 - If you are using fake authentication method, and the message says also "api key expired"
   you can simply logout and log in again in the webUI and the expiration will be automatically
   updated
@@ -53,3 +53,25 @@ impacted by snapshot creation. Loading VM snapshots can also have an impact on
 SUT behavior as the execution of the first step after loading a snapshot might
 be delayed. This can lead to problems if the executed tests do not foresee an
 appropriate timeout margin.
+
+== DB migration from SQlite to postgreSQL
+As a first step to start using postgreSQL, please, configure postgreSQL database
+according to the
+link:Contributing.asciidoc#how-to-setup-postgresql-to-test-locally-with-production-data[postgreSQL setup guide]
+
+To migrate api keys run following commands:
+
+* Export data from the SQlite db:
+```
+sqlite3 db.sqlite -csv -separator ',' 'select * from api_keys;' > apikeys.csv
+```
+Note: SQlite database file is located in `/var/lib/openqa/db` by default.
+
+* Import data to the postgreSQL
+```
+# openqa is the postgreSQL database name and apikeys.csv is api keys export file
+psql -U postgres -d openqa -c "copy api_keys from 'apikeys.csv' with (format csv);"
+```
+
+In case you need to migrate job groups, test suites, use dump_templates and
+load_templates scripts accordingly.
