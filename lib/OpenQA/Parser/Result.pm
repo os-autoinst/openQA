@@ -23,6 +23,7 @@ use Mojo::JSON qw(decode_json encode_json);
 use Carp 'croak';
 use Mojo::File 'path';
 use OpenQA::Utils 'hihwalker';
+use Scalar::Util 'blessed';
 
 sub new {
     return shift->SUPER::new(@_) unless ref $_[1] eq 'HASH';
@@ -54,7 +55,8 @@ sub to_json   { encode_json shift }
 sub from_json { __PACKAGE__->new(decode_json $_[1]) }
 sub to_hash {
     my $self = shift;
-    return {map { $_ => $self->{$_} } sort keys %{$self}};
+    return {map { $_ => blessed $self->{$_} && $self->{$_}->can("to_hash") ? $self->{$_}->to_hash : $self->{$_} }
+          sort keys %{$self}};
 }
 
 sub write {
