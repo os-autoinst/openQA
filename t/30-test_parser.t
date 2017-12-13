@@ -36,12 +36,8 @@ subtest 'Result base class object' => sub {
     is_deeply($res->to_hash(), {bar => 4, foo => 2}, 'to_hash maps correctly');
 };
 
-subtest junit_parse => sub {
-    my $parser = OpenQA::Parser::JUnit->new;
-
-    my $junit_test_file = path($FindBin::Bin, "data")->child("slenkins_control-junit-results.xml");
-
-    $parser->load($junit_test_file);
+sub test_junit_file {
+    my $parser = shift;
 
     is_deeply $parser->tests->first->to_hash,
       {
@@ -92,41 +88,56 @@ subtest junit_parse => sub {
         result => 'ok'
     };
 
-    is_deeply $parser->generated_tests_results->last->to_hash, $expected_test_result, 'TO_JSONs';
+    is_deeply $parser->generated_tests_results->last->TO_JSON, $expected_test_result, 'TO_JSON matches';
 
     my $testdir = tempdir;
     $parser->write_test_result($testdir);
-    is $testdir->list_tree->size, 9, '9 test outputs were written';
+    is $testdir->list_tree->size, 9, '9 test results were written' or diag explain $parser->generated_tests_results;
     $testdir->list_tree->each(
         sub {
             my $res = decode_json $_->slurp;
             is ref $res, "HASH", 'JSON result can be decoded' or diag explain $_->slurp;
-
+            like $_, qr/result-\d_.*\.json/;
             ok exists $res->{result}, 'JSON result can be decoded';
+            ok !exists $res->{name},  'JSON result can be decoded';
+
         });
 
     $testdir->remove_tree;
 
+    is_deeply $parser->results->last->TO_JSON(), $expected_test_result,
+      'Expected test result match - with no include_results'
+      or diag explain $parser->results->last->TO_JSON();
+    return $expected_test_result;
+}
+
+subtest junit_parse => sub {
+    my $parser = OpenQA::Parser::JUnit->new;
+
+    my $junit_test_file = path($FindBin::Bin, "data")->child("slenkins_control-junit-results.xml");
+
+    $parser->load($junit_test_file);
+    my $expected_test_result = test_junit_file($parser);
+    $expected_test_result->{test} = undef;
+    is_deeply $parser->results->last->TO_JSON(1), $expected_test_result,
+      'Expected test result match - with no include_results - forcing to output the test';
+    $expected_test_result->{name} = '9_post-tests_audits';
+    delete $expected_test_result->{test};
 
     is_deeply $parser->results->last->to_hash(), $expected_test_result,
-      'Expected test result match - with no include_results';
-
-    $expected_test_result->{test} = undef;
-    is_deeply $parser->results->last->to_hash(1), $expected_test_result,
       'Expected test result match - with no include_results - forcing to output the test';
-    delete $expected_test_result->{test};
+    delete $expected_test_result->{name};
 
     $parser = OpenQA::Parser::JUnit->new;
 
     $parser->include_results(1);
     $parser->load($junit_test_file);
 
-
     is $parser->results->size, 9,
       'Generated 9 openQA tests results';    # 9 testsuites with all cumulative results for openQA
 
 
-    is_deeply $parser->results->last->to_hash(0), $expected_test_result, 'Test is hidden';
+    is_deeply $parser->results->last->TO_JSON(0), $expected_test_result, 'Test is hidden';
 
     $expected_test_result->{test} = {
         'category' => 'tests-systemd',
@@ -135,7 +146,7 @@ subtest junit_parse => sub {
         'script'   => 'unk'
     };
 
-    is_deeply $parser->results->last->to_hash(1), $expected_test_result, 'Test is showed';
+    is_deeply $parser->results->last->TO_JSON(1), $expected_test_result, 'Test is showed';
 };
 
 sub test_ltp_file {
@@ -187,7 +198,7 @@ subtest ltp_parse => sub {
 
     my $parser_format_v2 = OpenQA::Parser::LTP->new;
 
-    my $ltp_test_result_file = path($FindBin::Bin, "data")->child("new_ltp_result_array.json");
+    $ltp_test_result_file = path($FindBin::Bin, "data")->child("new_ltp_result_array.json");
 
     $parser_format_v2->load($ltp_test_result_file);
 
@@ -218,6 +229,22 @@ subtest 'serialize/deserialize LTP v2' => sub {
     ok "$deserialized" ne "$parser", "Different objects";
     test_ltp_file_v2($parser);
     test_ltp_file_v2($deserialized);
+};
+
+
+subtest 'serialize/deserialize Junit' => sub {
+    my $parser = OpenQA::Parser::JUnit->new;
+
+    my $junit_test_file = path($FindBin::Bin, "data")->child("slenkins_control-junit-results.xml");
+
+    $parser->load($junit_test_file);
+    my $obj_content  = $parser->serialize();
+    my $deserialized = OpenQA::Parser::JUnit->new()->deserialize($obj_content);
+    ok "$deserialized" ne "$parser", "Different objects";
+    diag("Not-Serializied test");
+    test_junit_file($parser);
+    diag("Serializied test");
+    test_junit_file($deserialized);
 };
 
 done_testing;
