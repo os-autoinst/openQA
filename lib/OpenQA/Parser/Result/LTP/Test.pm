@@ -20,16 +20,6 @@ has environment => sub { OpenQA::Parser::Result::LTP::Environment->new() };
 has test        => sub { OpenQA::Parser::Result::LTP::SubTest->new() };
 has [qw(status test_fqn)];
 
-sub to_hash {
-    {
-        test_fqn => $_[0]->test_fqn(),
-        status   => $_[0]->status(),
-        ## TODO: this could be auto-resolved
-        (test => $_[0]->test->to_hash) x !!($_[0]->test),
-        (environment => $_[0]->environment->to_hash) x !!($_[0]->environment),
-    };
-}
-
 # Additional data structure - they get mapped automatically
 # no need to override here
 
