@@ -55,8 +55,9 @@ sub to_json   { encode_json shift }
 sub from_json { __PACKAGE__->new(decode_json $_[1]) }
 sub to_hash {
     my $self = shift;
-    return {map { $_ => blessed $self->{$_} && $self->{$_}->can("to_hash") ? $self->{$_}->to_hash : $self->{$_} }
-          sort keys %{$self}};
+    return {
+        map { $_ => blessed $self->{$_} && $self->{$_}->can("to_hash") ? $self->{$_}->to_hash : $self->{$_} }
+        sort keys %{$self}};
 }
 
 sub write {
