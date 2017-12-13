@@ -40,6 +40,14 @@ sub TO_JSON {
         (test => $_[0]->test ? $_[0]->test->to_hash : undef) x !!($_[1])};
 }
 
-*to_hash = \&TO_JSON;
+sub to_hash {
+    {
+        result  => $_[0]->result(),
+        dents   => $_[0]->dents(),
+        details => $_[0]->details(),
+        name    => $_[0]->name(),      # Note: name is hidden for json
+        (test => $_[0]->test ? $_[0]->test->to_hash : undef) x !!($_[1])};
+}
+
 
 1;
