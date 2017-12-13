@@ -92,6 +92,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   logistic_map
   rand_range
   in_range
+  hihwalker
 );
 
 if ($0 =~ /\.t$/) {
@@ -939,6 +940,20 @@ sub hashwalker {
         }
         else {
             $callback->($key, $value, $keys);
+        }
+        pop @$keys;
+    }
+}
+
+# Walks a hash considering the hashes insides of it
+sub hihwalker {
+    my ($hash, $callback, $keys) = @_;
+    $keys = [] if !$keys;
+    while (my ($key, $value) = each %$hash) {
+        push @$keys, $key;
+        if (ref($value) eq 'HASH') {
+            $callback->($key, $value, $keys);
+            hihwalker($value, $callback, $keys);
         }
         pop @$keys;
     }

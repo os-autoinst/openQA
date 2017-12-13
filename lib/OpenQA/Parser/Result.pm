@@ -22,19 +22,30 @@ use OpenQA::Parser::Results;
 use Mojo::JSON qw(decode_json encode_json);
 use Carp 'croak';
 use Mojo::File 'path';
+use OpenQA::Utils 'hihwalker';
 
 sub new {
     return shift->SUPER::new(@_) unless ref $_[1] eq 'HASH';
 
     my ($class, @args) = @_;
-    foreach my $attribute (keys %{$args[0]}) {
-        next unless ref $args[0]->{$attribute} eq 'HASH' && $class->can($attribute);
+
+    hihwalker $args[0] => sub {
+        my ($key, $value, $keys) = @_;
+
+        my $hash = $args[0];
+        for (my $i = 0; $i < scalar @$keys; $i++) {
+            $hash = $hash->{$keys->[$i]} if $i < (scalar @$keys) - 1;
+        }
+
+        return unless $class->can($key);
         {
             no strict 'refs';    ## no critic
-            my $ref = ref $class->new->$attribute();
-            $args[0]->{$attribute} = $ref->new($args[0]->{$attribute}) unless (grep(/$ref/, qw(HASH ARRAY)));
+            my $ref = ref($class->new->$key());
+            return unless $ref;
+            $hash->{$key} = $ref->new($value) unless (grep(/$ref/, qw(HASH ARRAY)));
         }
-    }
+
+    };
 
     $class->SUPER::new(@args);
 }

@@ -147,21 +147,28 @@ subtest 'Plugins handling' => sub {
     my $test_hash = {
         auth => {
             method => "Fake",
-            foo    => "bar"
+            foo    => "bar",
+            b      => {bar2 => 2},
         },
         baz => {
             bar => "test"
         }};
 
-    my $reconstructed_hash;
-
+    my %reconstructed_hash;
     hashwalker $test_hash => sub {
         my ($key, $value, $keys) = @_;
-        $reconstructed_hash->{@$keys[0]}->{$key} = $value;
+
+        my $r_hash = \%reconstructed_hash;
+        for (my $i = 0; $i < scalar @$keys; $i++) {
+            $r_hash->{$keys->[$i]} //= {};
+            $r_hash = $r_hash->{$keys->[$i]} if $i < (scalar @$keys) - 1;
+        }
+
+        $r_hash->{$key} = $value if ref $r_hash eq 'HASH';
+
     };
 
-    is_deeply $reconstructed_hash, $test_hash, "hashwalker() reconstructed original hash correctly";
-
+    is_deeply \%reconstructed_hash, $test_hash, "hashwalker() reconstructed original hash correctly";
 };
 
 subtest safe_call => sub {
@@ -183,6 +190,26 @@ subtest safe_call => sub {
     is_deeply safe_call(foo => baz => qw(a b c)), [qw(a b c)];
     ok scalar(@{safe_call(foo => not_existant => qw(a b c))}) == 0;
     like $@, qr/Can't locate object method "not_existant" via package "foo"/;
+};
+
+subtest hihwalker => sub {
+
+    hihwalker {boo => foo => bar => {}} => sub {
+        my ($key, $value, $keys) = @_;
+        is $key, 'bar';
+    };
+
+    hihwalker {
+        foo => {
+            bar => {
+                too => 42
+            }
+        },
+        baz => 2
+      } => sub {
+        my ($key, $value, $keys) = @_;
+        like $key, qr/foo|bar/;
+      };
 };
 
 done_testing;
