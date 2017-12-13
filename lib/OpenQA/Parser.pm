@@ -32,14 +32,14 @@ has generated_tests => sub { OpenQA::Parser::Results->new };    #testsuites
 has generated_tests_results =>
   sub { OpenQA::Parser::Results->new };    #testsuites results - when include_result is set it includes also the test.
 has generated_tests_output => sub { OpenQA::Parser::Results->new };    #testcase results
-has generated_tests_extra => sub { OpenQA::Parser::Results->new };    # tests extra data.
+has generated_tests_extra  => sub { OpenQA::Parser::Results->new };    # tests extra data.
 
 has [qw(_dom)];
 
 *results = \&generated_tests_results;
 *tests   = \&generated_tests;
 *outputs = \&generated_tests_output;
-*extra = \&generated_tests_extra;
+*extra   = \&generated_tests_extra;
 
 sub load {
     my ($self, $file) = @_;
@@ -50,20 +50,23 @@ sub load {
     $self;
 }
 
+sub _write_all {
+    my ($self, $res, $dir) = @_;
+    path($dir)->make_path unless -d $dir;
+    $self->$res->each(sub { $_->write($dir) });
+    $self;
+}
+
 sub write_output {
     my ($self, $dir) = @_;
     croak "You need to specify a directory" unless $dir;
-    path($dir)->make_path unless -d $dir;
-    $self->generated_tests_output->map(sub { $_->write($dir) });
-    $self;
+    $self->_write_all(generated_tests_output => $dir);
 }
 
 sub write_test_result {
     my ($self, $dir) = @_;
     croak "You need to specify a directory" unless $dir;
-    path($dir)->make_path unless -d $dir;
-    $self->generated_tests_results->map(sub { $_->write($dir) });
-    $self;
+    $self->_write_all(generated_tests_results => $dir);
 }
 
 sub parse          { croak 'parse() not implemented by base class' }
@@ -117,7 +120,7 @@ sub _load_tree {
             $self->generated_tests_results->add($tree->{result_type}->new($_)) for @{$tree->{results}};
             $self->generated_tests_output->add($tree->{output_type}->new($_))  for @{$tree->{output}};
             $self->generated_tests->add($tree->{test_type}->new($_))           for @{$tree->{tests}};
-            $self->generated_tests_extra->add($tree->{extra_type}->new($_))           for @{$tree->{extra}};
+            $self->generated_tests_extra->add($tree->{extra_type}->new($_))    for @{$tree->{extra}};
         };
         die "Failed parsing the tree: $@" if $@;
     }
