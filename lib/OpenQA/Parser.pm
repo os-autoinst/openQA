@@ -32,12 +32,14 @@ has generated_tests => sub { OpenQA::Parser::Results->new };    #testsuites
 has generated_tests_results =>
   sub { OpenQA::Parser::Results->new };    #testsuites results - when include_result is set it includes also the test.
 has generated_tests_output => sub { OpenQA::Parser::Results->new };    #testcase results
+has generated_tests_extra => sub { OpenQA::Parser::Results->new };    # tests extra data.
 
 has [qw(_dom)];
 
 *results = \&generated_tests_results;
 *tests   = \&generated_tests;
 *outputs = \&generated_tests_output;
+*extra = \&generated_tests_extra;
 
 sub load {
     my ($self, $file) = @_;
@@ -82,7 +84,10 @@ sub _build_tree {
     $self->generated_tests_results->each(sub { push(@{$tree->{results}}, $_->to_hash) });
     $self->generated_tests_output->each(sub  { push(@{$tree->{output}},  $_->to_hash) });
     $self->generated_tests->each(sub         { push(@{$tree->{tests}},   $_->to_hash) });
+    $self->generated_tests_extra->each(sub   { push(@{$tree->{extra}},   $_->to_hash) });
 
+    # This gets auto-detected
+    # so caveat here it's elements should be of the same type
     $tree->{output_type}
       = blessed $self->generated_tests_output->last ?
       ref $self->generated_tests_output->last
@@ -93,6 +98,10 @@ sub _build_tree {
       : "OpenQA::Parser::Result";
     $tree->{test_type}
       = blessed $self->generated_tests->last ? ref $self->generated_tests->last : "OpenQA::Parser::Result::Test";
+    $tree->{extra_type}
+      = blessed $self->generated_tests_extra->last ?
+      ref $self->generated_tests_extra->last
+      : "OpenQA::Parser::Result";
 
     return $tree;
 }
@@ -108,6 +117,7 @@ sub _load_tree {
             $self->generated_tests_results->add($tree->{result_type}->new($_)) for @{$tree->{results}};
             $self->generated_tests_output->add($tree->{output_type}->new($_))  for @{$tree->{output}};
             $self->generated_tests->add($tree->{test_type}->new($_))           for @{$tree->{tests}};
+            $self->generated_tests_extra->add($tree->{extra_type}->new($_))           for @{$tree->{extra}};
         };
         die "Failed parsing the tree: $@" if $@;
     }
