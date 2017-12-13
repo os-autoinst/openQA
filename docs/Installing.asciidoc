@@ -20,32 +20,67 @@ https://github.com/os-autoinst/openQA[official repository].
 
 == Installation
 
-The easiest way to install openQA is from packages. You can find openSUSE
-packages in OBS in the
-https://build.opensuse.org/project/show/devel:openQA[openQA:devel] repository.
+Keep in mind that there can be disruptive changes between openQA versions.
+You need to be sure that the webui and the worker that you are using have the
+same version number or, at least, are compatible.
 
-For Fedora, packages are available in the official repositories for Fedora 23
-and later. Installation on these distributions is therefore pretty simple:
+For example, the package distributed with openSUSE Leap 42.3 is not compatible with the
+version on Tumbleweed.
+And the package distributed with Tumbleweed may not be compatible with the
+version in the development package.
+
+=== Installation from distribution packages
+
+The easiest way to install openQA is from distribution packages.
+
+- For openSUSE, packages are available for Leap 42.3 and later.
+- For Fedora, packages are available in the official repositories for Fedora 23
+and later.
+
+You can install the packages using these commands.
 
 [source,sh]
-----
-# openSUSE Leap 42.2
-zypper ar -f obs://devel:openQA/openSUSE_Leap_42.2 openQA
-zypper ar -f obs://devel:openQA:Leap:42.2/openSUSE_Leap_42.2 openQA-perl-modules
-
-# openSUSE Leap 42.3
-zypper ar -f obs://devel:openQA/openSUSE_Leap_42.3 openQA
-zypper ar -f obs://devel:openQA:Leap:42.3/openSUSE_Leap_42.3 openQA-perl-modules
-
-# openSUSE Tumbleweed
-zypper ar -f obs://devel:openQA/openSUSE_Tumbleweed openQA
-
-# all openSUSE
+-------------------------------------------------------------------------------
+# openSUSE Leap 42.3+
 zypper in openQA
+
 
 # Fedora 23+
 dnf install openqa openqa-httpd
-----
+-------------------------------------------------------------------------------
+
+
+=== Installation from development versions of packages
+
+You can find the development version of openQA in OBS in the
+https://build.opensuse.org/project/show/devel:openQA[openQA:devel] repository.
+
+To add the development repository to your system, you can use these commands.
+
+[source,sh]
+-------------------------------------------------------------------------------
+# openSUSE Tumbleweed
+zypper ar -f obs://devel:openQA/openSUSE_Tumbleweed devel-openQA
+
+
+# openSUSE Leap 42.3
+zypper ar -f obs://devel:openQA/openSUSE_Leap_42.3 devel-openQA
+zypper ar -f obs://devel:openQA:Leap:42.3/openSUSE_Leap_42.3 devel-openQA-perl-modules
+
+
+# openSUSE Leap 42.2
+zypper ar -f obs://devel:openQA/openSUSE_Leap_42.2 devel-openQA
+zypper ar -f obs://devel:openQA:Leap:42.2/openSUSE_Leap_42.2 devel-openQA-perl-modules
+-------------------------------------------------------------------------------
+
+Then you can install them using this command.
+
+[source,sh]
+-------------------------------------------------------------------------------
+# all openSUSE
+zypper in devel-openQA:openQA
+-------------------------------------------------------------------------------
+
 
 == Basic configuration
 
@@ -99,13 +134,47 @@ You can do that in +/etc/openqa/openqa.ini+:
 httpsonly = 0
 --------------------------------------------------------------------------------
 
+=== Database
+
+Since version _4.5.1512500474.437cc1c7_ of openQA, PostgreSQL is used as the
+database.
+
+To configure access to the database in openQA, edit +/etc/openqa/database.ini+
+and change the settings in the +[production]+ section.
+
+The +dsn+ value format technically depends on the database type and is
+documented for PostgreSQL at
+https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods[DBD::Pg]
+
+====== Example for connecting to local PostgreSQL database
+
+[source,ini]
+--------------------------------------------------------------------------------
+[production]
+dsn = dbi:Pg:dbname=openqa
+--------------------------------------------------------------------------------
+
+====== Example for connecting to remote PostgreSQL database
+
+[source,ini]
+--------------------------------------------------------------------------------
+[production]
+dsn = dbi:Pg:dbname=openqa;host=db.example.org
+user = openqa
+password = somepassword
+--------------------------------------------------------------------------------
+
+For older versions of openQA, you can migrate from SQLite to PostgreSQL
+according to
+link:Pitfalls.asciidoc#db-migration-from-sqlite-to-postgresql[DB migration from SQLite to PostgreSQL]
+
+
 == Run the web UI
 
 [source,sh]
 --------------------------------------------------------------------------------
-systemctl start openqa-scheduler
+systemctl start postgresql
 systemctl start openqa-gru
-systemctl start openqa-websockets
 systemctl start openqa-webui
 # openSUSE
 systemctl restart apache2
@@ -120,9 +189,8 @@ openQA runs on each boot, you should also +systemctl enable+ the same services.
 
 [source,sh]
 --------------------------------------------------------------------------------
-systemctl enable openqa-scheduler
+systemctl enable postgresql
 systemctl enable openqa-gru
-systemctl enable openqa-websockets
 systemctl enable openqa-webui
 --------------------------------------------------------------------------------
 
@@ -505,34 +573,6 @@ The worker needs to own +/var/lib/openqa/pool/$INSTANCE+, e.g.
 You can also give the whole pool directory to the +_openqa-worker+ user and let
 the workers create their own instance directories.
 
-== Database engine (PostgreSQL)
-:DBD-Pg-DBI_Class_Methods: https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods[DBD::Pg]
-
-To setup openQA you will need a PostgreSQL database available to the user
-running openQA. You need to create a database and a dedicated user account with
-full access to it. To configure access to the chosen database in openQA,
-edit +/etc/openqa/database.ini+ and change the settings in the +[production]+ section.
-
-The +dsn+ value format technically depends on the database type and is
-documented for PostgreSQL at {DBD-Pg-DBI_Class_Methods}
-
-=== Example for connecting to local PostgreSQL database
-
-[source,ini]
---------------------------------------------------------------------------------
-[production]
-dsn = dbi:Pg:dbname=openqa
---------------------------------------------------------------------------------
-
-=== Example for connecting to remote PostgreSQL database
-
-[source,ini]
---------------------------------------------------------------------------------
-[production]
-dsn = dbi:Pg:dbname=openqa;host=db.example.org
-user = openqa
-password = somepassword
---------------------------------------------------------------------------------
 
 == Troubleshooting
 [id="troubleshooting"]
