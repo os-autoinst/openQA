@@ -27,6 +27,9 @@ use OpenQA::Parser::Results;
 use Storable;
 use Scalar::Util 'blessed';
 
+use constant
+  SERIALIZABLE_COLLECTIONS => qw(generated_tests_results generated_tests_output),
+  qw(generated_tests generated_tests_extra);
 has include_results => 0;
 
 has generated_tests => sub { OpenQA::Parser::Results->new };    #testsuites
@@ -83,30 +86,15 @@ sub _add_test  { shift->generated_tests->add(OpenQA::Parser::Result::Test->new(@
 
 sub _build_tree {
     my $self = shift;
-
     my $tree;
-    $self->generated_tests_results->each(sub { push(@{$tree->{results}}, $_->to_hash) });
-    $self->generated_tests_output->each(sub  { push(@{$tree->{output}},  $_->to_hash) });
-    $self->generated_tests->each(sub         { push(@{$tree->{tests}},   $_->to_hash) });
-    $self->generated_tests_extra->each(sub   { push(@{$tree->{extra}},   $_->to_hash) });
-
-    # This gets auto-detected
-    # so caveat here it's elements should be of the same type
-    $tree->{output_type}
-      = blessed $self->generated_tests_output->last ?
-      ref $self->generated_tests_output->last
-      : "OpenQA::Parser::Result::Output";
-    $tree->{result_type}
-      = blessed $self->generated_tests_results->last ?
-      ref $self->generated_tests_results->last
-      : "OpenQA::Parser::Result";
-    $tree->{test_type}
-      = blessed $self->generated_tests->last ? ref $self->generated_tests->last : "OpenQA::Parser::Result::Test";
-    $tree->{extra_type}
-      = blessed $self->generated_tests_extra->last ?
-      ref $self->generated_tests_extra->last
-      : "OpenQA::Parser::Result";
-
+    foreach my $collection (SERIALIZABLE_COLLECTIONS) {
+        $self->$collection->each(
+            sub {
+                croak "Serialization is supported only if elements can be hashified with ->to_hash()"
+                  if !$_->can("to_hash");
+                push(@{$tree->{$collection}}, {data => $_->to_hash, type => ref $_});
+            });
+    }
     return $tree;
 }
 
@@ -118,12 +106,11 @@ sub _load_tree {
         no strict 'refs';    ## no critic
         local $@;
         eval {
-            $self->generated_tests_results->add($tree->{result_type}->new($_)) for @{$tree->{results}};
-            $self->generated_tests_output->add($tree->{output_type}->new($_))  for @{$tree->{output}};
-            $self->generated_tests->add($tree->{test_type}->new($_))           for @{$tree->{tests}};
-            $self->generated_tests_extra->add($tree->{extra_type}->new($_))    for @{$tree->{extra}};
+            foreach my $collection (SERIALIZABLE_COLLECTIONS) {
+                $self->$collection->add($_->{type}->new($_->{data})) for @{$tree->{$collection}};
+            }
         };
-        die "Failed parsing the tree: $@" if $@;
+        die "Failed parsing tree: $@" if $@;
     }
 
     return $self;
