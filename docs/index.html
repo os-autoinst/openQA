@@ -549,11 +549,22 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_openqa_installation_guide">openQA installation guide</a>
 <ul class="sectlevel1">
 <li><a href="#_introduction_2">Introduction</a></li>
-<li><a href="#_installation">Installation</a></li>
+<li><a href="#_installation">Installation</a>
+<ul class="sectlevel2">
+<li><a href="#_installation_from_distribution_packages">Installation from distribution packages</a></li>
+<li><a href="#_installation_from_development_versions_of_packages">Installation from development versions of packages</a></li>
+</ul>
+</li>
 <li><a href="#_basic_configuration">Basic configuration</a>
 <ul class="sectlevel2">
 <li><a href="#_apache_proxy">Apache proxy</a></li>
 <li><a href="#_tls_ssl">TLS/SSL</a></li>
+<li><a href="#_database">Database</a>
+<ul class="sectlevel5">
+<li><a href="#_example_for_connecting_to_local_postgresql_database">Example for connecting to local PostgreSQL database</a></li>
+<li><a href="#_example_for_connecting_to_remote_postgresql_database">Example for connecting to remote PostgreSQL database</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#_run_the_web_ui">Run the web UI</a></li>
@@ -582,12 +593,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </ul>
 </li>
 <li><a href="#_filesystem_layout">Filesystem Layout</a></li>
-<li><a href="#_database_engine_postgresql">Database engine (PostgreSQL)</a>
-<ul class="sectlevel2">
-<li><a href="#_example_for_connecting_to_local_postgresql_database">Example for connecting to local PostgreSQL database</a></li>
-<li><a href="#_example_for_connecting_to_remote_postgresql_database">Example for connecting to remote PostgreSQL database</a></li>
-</ul>
-</li>
 <li><a href="#_troubleshooting">Troubleshooting</a>
 <ul class="sectlevel2">
 <li><a href="#troubleshooting">Tests fail quickly</a></li>
@@ -1808,32 +1813,79 @@ Starter Guide, available at the
 <h2 id="_installation">Installation</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The easiest way to install openQA is from packages. You can find openSUSE
-packages in OBS in the
-<a href="https://build.opensuse.org/project/show/devel:openQA">openQA:devel</a> repository.</p>
+<p>Keep in mind that there can be disruptive changes between openQA versions.
+You need to be sure that the webui and the worker that you are using have the
+same version number or, at least, are compatible.</p>
 </div>
 <div class="paragraph">
+<p>For example, the package distributed with openSUSE Leap 42.3 is not compatible with the
+version on Tumbleweed.
+And the package distributed with Tumbleweed may not be compatible with the
+version in the development package.</p>
+</div>
+<div class="sect2">
+<h3 id="_installation_from_distribution_packages">Installation from distribution packages</h3>
+<div class="paragraph">
+<p>The easiest way to install openQA is from distribution packages.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>For openSUSE, packages are available for Leap 42.3 and later.</p>
+</li>
+<li>
 <p>For Fedora, packages are available in the official repositories for Fedora 23
-and later. Installation on these distributions is therefore pretty simple:</p>
+and later.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>You can install the packages using these commands.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE Leap 42.2</span>
-zypper ar -f obs://devel:openQA/openSUSE_Leap_42.2 openQA
-zypper ar -f obs://devel:openQA:Leap:42.2/openSUSE_Leap_42.2 openQA-perl-modules
-
-<span class="tok-c1"># openSUSE Leap 42.3</span>
-zypper ar -f obs://devel:openQA/openSUSE_Leap_42.3 openQA
-zypper ar -f obs://devel:openQA:Leap:42.3/openSUSE_Leap_42.3 openQA-perl-modules
-
-<span class="tok-c1"># openSUSE Tumbleweed</span>
-zypper ar -f obs://devel:openQA/openSUSE_Tumbleweed openQA
-
-<span class="tok-c1"># all openSUSE</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE Leap 42.3+</span>
 zypper in openQA
+
 
 <span class="tok-c1"># Fedora 23+</span>
 dnf install openqa openqa-httpd</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_installation_from_development_versions_of_packages">Installation from development versions of packages</h3>
+<div class="paragraph">
+<p>You can find the development version of openQA in OBS in the
+<a href="https://build.opensuse.org/project/show/devel:openQA">openQA:devel</a> repository.</p>
+</div>
+<div class="paragraph">
+<p>To add the development repository to your system, you can use these commands.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE Tumbleweed</span>
+zypper ar -f obs://devel:openQA/openSUSE_Tumbleweed devel-openQA
+
+
+<span class="tok-c1"># openSUSE Leap 42.3</span>
+zypper ar -f obs://devel:openQA/openSUSE_Leap_42.3 devel-openQA
+zypper ar -f obs://devel:openQA:Leap:42.3/openSUSE_Leap_42.3 devel-openQA-perl-modules
+
+
+<span class="tok-c1"># openSUSE Leap 42.2</span>
+zypper ar -f obs://devel:openQA/openSUSE_Leap_42.2 devel-openQA
+zypper ar -f obs://devel:openQA:Leap:42.2/openSUSE_Leap_42.2 devel-openQA-perl-modules</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then you can install them using this command.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># all openSUSE</span>
+zypper in devel-openQA:openQA</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -1897,6 +1949,47 @@ You can do that in /etc/openqa/openqa.ini:</p>
 </div>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_database">Database</h3>
+<div class="paragraph">
+<p>Since version <em>4.5.1512500474.437cc1c7</em> of openQA, PostgreSQL is used as the
+database.</p>
+</div>
+<div class="paragraph">
+<p>To configure access to the database in openQA, edit /etc/openqa/database.ini
+and change the settings in the [production] section.</p>
+</div>
+<div class="paragraph">
+<p>The dsn value format technically depends on the database type and is
+documented for PostgreSQL at
+<a href="https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods">DBD::Pg</a></p>
+</div>
+<div class="sect5">
+<h6 id="_example_for_connecting_to_local_postgresql_database">Example for connecting to local PostgreSQL database</h6>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[production]</span>
+<span class="tok-na">dsn</span> <span class="tok-o">=</span> <span class="tok-s">dbi:Pg:dbname=openqa</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect5">
+<h6 id="_example_for_connecting_to_remote_postgresql_database">Example for connecting to remote PostgreSQL database</h6>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[production]</span>
+<span class="tok-na">dsn</span> <span class="tok-o">=</span> <span class="tok-s">dbi:Pg:dbname=openqa;host=db.example.org</span>
+<span class="tok-na">user</span> <span class="tok-o">=</span> <span class="tok-s">openqa</span>
+<span class="tok-na">password</span> <span class="tok-o">=</span> <span class="tok-s">somepassword</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For older versions of openQA, you can migrate from SQLite to PostgreSQL
+according to
+<a href="Pitfalls.asciidoc#db-migration-from-sqlite-to-postgresql">DB migration from SQLite to PostgreSQL</a></p>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -1904,9 +1997,8 @@ You can do that in /etc/openqa/openqa.ini:</p>
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start openqa-scheduler
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start postgresql
 systemctl start openqa-gru
-systemctl start openqa-websockets
 systemctl start openqa-webui
 <span class="tok-c1"># openSUSE</span>
 systemctl restart apache2
@@ -1922,9 +2014,8 @@ openQA runs on each boot, you should also systemctl enable the same services.</p
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> openqa-scheduler
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> postgresql
 systemctl <span class="tok-nb">enable</span> openqa-gru
-systemctl <span class="tok-nb">enable</span> openqa-websockets
 systemctl <span class="tok-nb">enable</span> openqa-webui</code></pre>
 </div>
 </div>
@@ -2509,41 +2600,6 @@ software.</p>
 <div class="paragraph">
 <p>You can also give the whole pool directory to the _openqa-worker user and let
 the workers create their own instance directories.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_database_engine_postgresql">Database engine (PostgreSQL)</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>To setup openQA you will need a PostgreSQL database available to the user
-running openQA. You need to create a database and a dedicated user account with
-full access to it. To configure access to the chosen database in openQA,
-edit /etc/openqa/database.ini and change the settings in the [production] section.</p>
-</div>
-<div class="paragraph">
-<p>The dsn value format technically depends on the database type and is
-documented for PostgreSQL at <a href="https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods">DBD::Pg</a></p>
-</div>
-<div class="sect2">
-<h3 id="_example_for_connecting_to_local_postgresql_database">Example for connecting to local PostgreSQL database</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[production]</span>
-<span class="tok-na">dsn</span> <span class="tok-o">=</span> <span class="tok-s">dbi:Pg:dbname=openqa</span></code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_example_for_connecting_to_remote_postgresql_database">Example for connecting to remote PostgreSQL database</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[production]</span>
-<span class="tok-na">dsn</span> <span class="tok-o">=</span> <span class="tok-s">dbi:Pg:dbname=openqa;host=db.example.org</span>
-<span class="tok-na">user</span> <span class="tok-o">=</span> <span class="tok-s">openqa</span>
-<span class="tok-na">password</span> <span class="tok-o">=</span> <span class="tok-s">somepassword</span></code></pre>
-</div>
-</div>
 </div>
 </div>
 </div>
@@ -5003,7 +5059,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-12-13 13:03:07 UTC
+Last updated 2017-12-13 13:58:01 UTC
 </div>
 </div>
 </body>
