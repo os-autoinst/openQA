@@ -157,6 +157,23 @@ sub test_ltp_file {
       'Environment information matches';
 }
 
+sub test_ltp_file_v2 {
+    my $p = shift;
+    is $p->results->size, 4, 'Expected 4 results';
+    is $p->extra->first->gcc, 'gcc (SUSE Linux) 7.2.1 20171020 [gcc-7-branch revision 253932]';
+    my $i = 2;
+    $p->results->each(
+        sub {
+            is $_->status, 'pass', 'Tests passed';
+            ok !!$_->environment, 'Environment is present';
+            ok !!$_->test,        'Test information is present';
+            is $_->environment->gcc, undef;
+            is $_->test->result, 'PASS', 'subtest result is PASS';
+            like $_->test_fqn, qr/LTP:/, "test_fqn is there";
+            $i++;
+        });
+}
+
 subtest ltp_parse => sub {
 
     my $parser = OpenQA::Parser::LTP->new;
@@ -166,9 +183,18 @@ subtest ltp_parse => sub {
     $parser->load($ltp_test_result_file);
 
     test_ltp_file($parser);
+
+
+    my $parser_format_v2 = OpenQA::Parser::LTP->new;
+
+    my $ltp_test_result_file = path($FindBin::Bin, "data")->child("new_ltp_result_array.json");
+
+    $parser_format_v2->load($ltp_test_result_file);
+
+    test_ltp_file_v2($parser_format_v2);
 };
 
-subtest 'serialize/deserialize' => sub {
+subtest 'serialize/deserialize LTP' => sub {
     my $parser = OpenQA::Parser::LTP->new;
 
     my $ltp_test_result_file = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
@@ -179,6 +205,19 @@ subtest 'serialize/deserialize' => sub {
     ok "$deserialized" ne "$parser", "Different objects";
     test_ltp_file($parser);
     test_ltp_file($deserialized);
+};
+
+subtest 'serialize/deserialize LTP v2' => sub {
+    my $parser = OpenQA::Parser::LTP->new;
+
+    my $ltp_test_result_file = path($FindBin::Bin, "data")->child("new_ltp_result_array.json");
+
+    $parser->load($ltp_test_result_file);
+    my $obj_content  = $parser->serialize();
+    my $deserialized = OpenQA::Parser::LTP->new->deserialize($obj_content);
+    ok "$deserialized" ne "$parser", "Different objects";
+    test_ltp_file_v2($parser);
+    test_ltp_file_v2($deserialized);
 };
 
 done_testing;
