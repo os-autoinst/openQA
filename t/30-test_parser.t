@@ -205,46 +205,42 @@ subtest ltp_parse => sub {
     test_ltp_file_v2($parser_format_v2);
 };
 
+sub serialize_test {
+    my ($parser_name, $file, $test_function) = @_;
+    diag "Serialization test for $parser_name and $file with test $test_function";
+    {
+        no strict 'refs';    ## no critic
+        my $parser = $parser_name->new;
+
+        my $test_result_file = path($FindBin::Bin, "data")->child($file);
+
+        $parser->load($test_result_file);
+        my $obj_content  = $parser->serialize();
+        my $deserialized = $parser_name->new->deserialize($obj_content);
+        ok "$deserialized" ne "$parser", "Different objects";
+        $test_function->($parser);
+        $test_function->($deserialized);
+
+        $parser = $parser_name->new;
+        $parser->load($test_result_file);
+
+        $obj_content  = $parser->to_json();
+        $deserialized = $parser_name->new->from_json($obj_content);
+        ok "$deserialized" ne "$parser", "Different objects";
+        $test_function->($parser);
+        $test_function->($deserialized);
+    }
+}
+
 subtest 'serialize/deserialize LTP' => sub {
-    my $parser = OpenQA::Parser::LTP->new;
-
-    my $ltp_test_result_file = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
-
-    $parser->load($ltp_test_result_file);
-    my $obj_content  = $parser->serialize();
-    my $deserialized = OpenQA::Parser::LTP->new->deserialize($obj_content);
-    ok "$deserialized" ne "$parser", "Different objects";
-    test_ltp_file($parser);
-    test_ltp_file($deserialized);
+    serialize_test("OpenQA::Parser::LTP", "ltp_test_result_format.json", "test_ltp_file");
 };
 
 subtest 'serialize/deserialize LTP v2' => sub {
-    my $parser = OpenQA::Parser::LTP->new;
-
-    my $ltp_test_result_file = path($FindBin::Bin, "data")->child("new_ltp_result_array.json");
-
-    $parser->load($ltp_test_result_file);
-    my $obj_content  = $parser->serialize();
-    my $deserialized = OpenQA::Parser::LTP->new->deserialize($obj_content);
-    ok "$deserialized" ne "$parser", "Different objects";
-    test_ltp_file_v2($parser);
-    test_ltp_file_v2($deserialized);
+    serialize_test("OpenQA::Parser::LTP", "new_ltp_result_array.json", "test_ltp_file_v2");
 };
-
-
-subtest 'serialize/deserialize Junit' => sub {
-    my $parser = OpenQA::Parser::JUnit->new;
-
-    my $junit_test_file = path($FindBin::Bin, "data")->child("slenkins_control-junit-results.xml");
-
-    $parser->load($junit_test_file);
-    my $obj_content  = $parser->serialize();
-    my $deserialized = OpenQA::Parser::JUnit->new()->deserialize($obj_content);
-    ok "$deserialized" ne "$parser", "Different objects";
-    diag("Not-Serializied test");
-    test_junit_file($parser);
-    diag("Serializied test");
-    test_junit_file($deserialized);
+subtest 'serialize/deserialize LTP v2' => sub {
+    serialize_test("OpenQA::Parser::JUnit", "slenkins_control-junit-results.xml", "test_junit_file");
 };
 
 done_testing;

@@ -19,6 +19,7 @@ use Mojo::Base -base;
 use Carp qw(croak confess);
 use Mojo::File 'path';
 use Mojo::Collection;
+use Mojo::JSON qw(encode_json decode_json);
 use OpenQA::Parser::Result::Test;
 use OpenQA::Parser::Result::Output;
 use OpenQA::Parser::Result;
@@ -112,7 +113,7 @@ sub _build_tree {
 sub _load_tree {
     my $self = shift;
 
-    my $tree = Storable::thaw(shift);
+    my $tree = shift;
     {
         no strict 'refs';    ## no critic
         local $@;
@@ -129,7 +130,10 @@ sub _load_tree {
 }
 
 sub serialize   { Storable::freeze(shift->_build_tree) }
-sub deserialize { shift->_load_tree($_[0]) }
+sub deserialize { shift->_load_tree(Storable::thaw(shift)) }
+
+sub to_json   { encode_json shift->_build_tree }
+sub from_json { shift->_load_tree(decode_json shift) }
 
 sub _add_single_result { shift->generated_tests_results->add(OpenQA::Parser::Result->new(@_)) }
 sub _add_result {
