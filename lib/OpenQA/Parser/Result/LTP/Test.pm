@@ -24,7 +24,8 @@ sub to_hash {
     {
         test_fqn => $_[0]->test_fqn(),
         status   => $_[0]->status(),
-        (test        => $_[0]->test->to_hash) x !!($_[0]->test),
+        ## TODO: this could be auto-resolved
+        (test => $_[0]->test->to_hash) x !!($_[0]->test),
         (environment => $_[0]->environment->to_hash) x !!($_[0]->environment),
     };
 }

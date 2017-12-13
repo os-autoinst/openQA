@@ -26,9 +26,12 @@ sub parse {
     confess "No JSON given/loaded" unless $json;
     my $decoded_json = decode_json $json;
 
+
     foreach my $res (@{$decoded_json->{results}}) {
-        $res->{environment} = OpenQA::Parser::Result::LTP::Environment->new($res->{environment});
-        $res->{test}        = OpenQA::Parser::Result::LTP::SubTest->new($res->{test});
+        # may be optional since format result_array:v2
+        $res->{environment} = OpenQA::Parser::Result::LTP::Environment->new($res->{environment}) if $res->{environment};
+
+        $res->{test} = OpenQA::Parser::Result::LTP::SubTest->new($res->{test});
 
         $self->generated_tests_results->add(OpenQA::Parser::Result::LTP::Test->new($res));
     }
