@@ -46,7 +46,27 @@ like bugref_to_href('bsc#2345 poo#3456 and more'),
 like bugref_to_href('boo#2345,poo#3456'),
   qr{a href="https://bugzilla.opensuse.org/show_bug.cgi\?id=2345">boo\#2345</a>,<a href=.*3456.*},
   'interpunctation is not consumed by href';
+my $t1 = {boo => foo => bar => {}};
+my $t2 = {
+    foo => {
+        bar => {
+            too => 42
+        }
+    },
+    baz => 2
+};
 
+hihwalker(
+    $t1 => sub {
+        my ($key, $value, $keys) = @_;
+        is $key, 'bar';
+    });
+
+hihwalker(
+    $t2 => sub {
+        my ($key, $value, $keys) = @_;
+        like $key, qr/foo|bar/;
+    });
 subtest 'get current version' => sub {
     use Mojo::File qw(path tempdir tempfile);
     # Let's check that the version matches our versioning scheme.
@@ -192,25 +212,6 @@ subtest safe_call => sub {
     like $@, qr/Can't locate object method "not_existant" via package "foo"/;
 };
 
-subtest hihwalker => sub {
-
-    hihwalker {boo => foo => bar => {}} => sub {
-        my ($key, $value, $keys) = @_;
-        is $key, 'bar';
-    };
-
-    hihwalker {
-        foo => {
-            bar => {
-                too => 42
-            }
-        },
-        baz => 2
-      } => sub {
-        my ($key, $value, $keys) = @_;
-        like $key, qr/foo|bar/;
-      };
-};
 
 done_testing;
 
