@@ -27,6 +27,8 @@ use OpenQA::Parser::Results;
 use Storable;
 use Scalar::Util 'blessed';
 
+# TODO: add functional interface with type detect (and not)
+
 use constant
   SERIALIZABLE_COLLECTIONS => qw(generated_tests_results generated_tests_output),
   qw(generated_tests generated_tests_extra);
@@ -73,9 +75,7 @@ sub write_test_result {
     $self->_write_all(generated_tests_results => $dir);
 }
 
-sub parse          { croak 'parse() not implemented by base class' }
-sub to_openqa_test { croak 'to_openqa_test() not implemented by base class' }
-sub to_html        { croak 'to_html() not implemented by base class' }
+sub parse { croak 'parse() not implemented by base class' }
 
 sub detect_type {
     my ($self, $file) = @_;

@@ -45,6 +45,13 @@ subtest 'Parser base class object' => sub {
     is $res->generated_tests->first->name, 'foo';
     $res->reset();
     is $res->generated_tests->size, 0;
+
+    my $meant_to_fail = OpenQA::Parser->new();
+
+    eval { $meant_to_fail->parse(); };
+    ok $@;
+    like $@, qr/parse\(\) not implemented by base class/, 'Base class does not parse data';
+
 };
 
 sub test_junit_file {
@@ -249,7 +256,153 @@ subtest 'serialize/deserialize' => sub {
     serialize_test("OpenQA::Parser::JUnit", "slenkins_control-junit-results.xml", "test_junit_file");
 };
 
+subtest 'Unstructured data' => sub {
+    # Unstructured data can be still parsed.
+    # However it will require a specific parser implementation to handle the data.
+    # Then we can map results as general OpenQA::Parser::Result objects.
+    my $parser = OpenQA::Parser::UnstructuredDummy->new();
+    $parser->parse(join('', <DATA>));
+    ok $parser->results->size == 5, 'There are some results';
+
+    $parser->results->each(
+        sub {
+            ok exists $_->{'servlet-name'}, 'servlet-name exists';
+        });
+
+    my $serialized   = $parser->serialize();
+    my $deserialized = OpenQA::Parser::UnstructuredDummy->new()->deserialize($serialized);
+
+    $deserialized->results->each(
+        sub {
+            ok exists $_->{'servlet-name'}, 'servlet-name exists';
+        });
+    ok $deserialized->results->size == 5, 'There are some results';
+
+    is $deserialized->results->first->{'init-param'}->{'configGlossary:installationAt'}, 'Philadelphia, PA',
+      'Nested serialization works!';
+};
 
 done_testing;
 
 1;
+
+{
+    package OpenQA::Parser::UnstructuredDummy;
+    use Mojo::Base 'OpenQA::Parser';
+    use Mojo::JSON 'decode_json';
+
+    sub parse() {
+        my ($self, $json) = @_;
+        die "No JSON given/loaded" unless $json;
+        my $decoded_json = decode_json $json;
+
+        foreach my $res (@{$decoded_json->{'web-app'}->{servlet}}) {
+            $self->results->add(OpenQA::Parser::Result->new($res));
+        }
+
+        $self;
+    }
+
+}
+
+__DATA__
+{
+	"web-app": {
+		"servlet": [
+			{
+				"servlet-name": "cofaxCDS",
+				"servlet-class": "org.cofax.cds.CDSServlet",
+				"init-param": {
+					"configGlossary:installationAt": "Philadelphia, PA",
+					"configGlossary:adminEmail": "ksm@pobox.com",
+					"configGlossary:poweredBy": "Cofax",
+					"configGlossary:poweredByIcon": "/images/cofax.gif",
+					"configGlossary:staticPath": "/content/static",
+					"templateProcessorClass": "org.cofax.WysiwygTemplate",
+					"templateLoaderClass": "org.cofax.FilesTemplateLoader",
+					"templatePath": "templates",
+					"templateOverridePath": "",
+					"defaultListTemplate": "listTemplate.htm",
+					"defaultFileTemplate": "articleTemplate.htm",
+					"useJSP": false,
+					"jspListTemplate": "listTemplate.jsp",
+					"jspFileTemplate": "articleTemplate.jsp",
+					"cachePackageTagsTrack": 200,
+					"cachePackageTagsStore": 200,
+					"cachePackageTagsRefresh": 60,
+					"cacheTemplatesTrack": 100,
+					"cacheTemplatesStore": 50,
+					"cacheTemplatesRefresh": 15,
+					"cachePagesTrack": 200,
+					"cachePagesStore": 100,
+					"cachePagesRefresh": 10,
+					"cachePagesDirtyRead": 10,
+					"searchEngineListTemplate": "forSearchEnginesList.htm",
+					"searchEngineFileTemplate": "forSearchEngines.htm",
+					"searchEngineRobotsDb": "WEB-INF/robots.db",
+					"useDataStore": true,
+					"dataStoreClass": "org.cofax.SqlDataStore",
+					"redirectionClass": "org.cofax.SqlRedirection",
+					"dataStoreName": "cofax",
+					"dataStoreDriver": "com.microsoft.jdbc.sqlserver.SQLServerDriver",
+					"dataStoreUrl": "jdbc:microsoft:sqlserver://LOCALHOST:1433;DatabaseName=goon",
+					"dataStoreUser": "sa",
+					"dataStorePassword": "dataStoreTestQuery",
+					"dataStoreTestQuery": "SET NOCOUNT ON;select test='test';",
+					"dataStoreLogFile": "/usr/local/tomcat/logs/datastore.log",
+					"dataStoreInitConns": 10,
+					"dataStoreMaxConns": 100,
+					"dataStoreConnUsageLimit": 100,
+					"dataStoreLogLevel": "debug",
+					"maxUrlLength": 500
+				}
+			},
+			{
+				"servlet-name": "cofaxEmail",
+				"servlet-class": "org.cofax.cds.EmailServlet",
+				"init-param": {
+					"mailHost": "mail1",
+					"mailHostOverride": "mail2"
+				}
+			},
+			{
+				"servlet-name": "cofaxAdmin",
+				"servlet-class": "org.cofax.cds.AdminServlet"
+			},
+			{
+				"servlet-name": "fileServlet",
+				"servlet-class": "org.cofax.cds.FileServlet"
+			},
+			{
+				"servlet-name": "cofaxTools",
+				"servlet-class": "org.cofax.cms.CofaxToolsServlet",
+				"init-param": {
+					"templatePath": "toolstemplates/",
+					"log": 1,
+					"logLocation": "/usr/local/tomcat/logs/CofaxTools.log",
+					"logMaxSize": "",
+					"dataLog": 1,
+					"dataLogLocation": "/usr/local/tomcat/logs/dataLog.log",
+					"dataLogMaxSize": "",
+					"removePageCache": "/content/admin/remove?cache=pages&id=",
+					"removeTemplateCache": "/content/admin/remove?cache=templates&id=",
+					"fileTransferFolder": "/usr/local/tomcat/webapps/content/fileTransferFolder",
+					"lookInContext": 1,
+					"adminGroupID": 4,
+					"betaServer": true
+				}
+			}
+		],
+		"servlet-mapping": {
+			"cofaxCDS": "/",
+			"cofaxEmail": "/cofaxutil/aemail/*",
+			"cofaxAdmin": "/admin/*",
+			"fileServlet": "/static/*",
+			"cofaxTools": "/tools/*"
+		},
+		"taglib": {
+			"taglib-uri": "cofax.tld",
+			"taglib-location": "/WEB-INF/tlds/cofax.tld"
+		}
+	}
+}
