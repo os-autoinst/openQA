@@ -47,9 +47,31 @@ subtest 'Parser base class object' => sub {
     is $res->generated_tests->size, 0;
 
     my $meant_to_fail = OpenQA::Parser->new();
-    eval { $meant_to_fail->parse(); };
+    eval { $meant_to_fail->parse() };
     ok $@;
     like $@, qr/parse\(\) not implemented by base class/, 'Base class does not parse data';
+
+    eval { $meant_to_fail->load() };
+    ok $@;
+    like $@, qr/You need to specify a file/, 'load croaks if no file is specified';
+
+    eval { $meant_to_fail->load('thiswontexist') };
+    ok $@;
+    like $@, qr/Can't open file \"thiswontexist\"/, 'load confesses if file is invalid';
+
+    use Mojo::File 'tempfile';
+    my $tmp = tempfile;
+    eval { $meant_to_fail->load($tmp) };
+    ok $@;
+    like $@, qr/Failed reading file $tmp/, 'load confesses if file is invalid';
+
+    eval { $meant_to_fail->write_output() };
+    ok $@;
+    like $@, qr/You need to specify a directory/, 'write_output needs a directory as argument';
+
+    eval { $meant_to_fail->write_test_result() };
+    ok $@;
+    like $@, qr/You need to specify a directory/, 'write_test_result needs a directory as argument';
 
     my $good_parser = OpenQA::Parser->new();
 
