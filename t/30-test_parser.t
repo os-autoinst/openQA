@@ -34,6 +34,10 @@ subtest 'Result base class object' => sub {
     $res->{foo} = 2;
     $res->{bar} = 4;
     is_deeply($res->to_hash(), {bar => 4, foo => 2}, 'to_hash maps correctly');
+
+    my $j    = $res->to_json;
+    my $res2 = OpenQA::Parser::Result->new()->from_json($j);
+    is_deeply($res2->to_hash(), {bar => 4, foo => 2}, 'to_hash maps correctly');
 };
 
 subtest 'Parser base class object' => sub {
