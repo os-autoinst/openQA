@@ -57,7 +57,7 @@ sub schema {
 
 sub enqueue {
     my ($self, $task) = (shift, shift);
-    my $args    = shift // [];
+    my $args = shift // [];
     my $options = shift // {};
 
     $self->schema->resultset('GruTasks')->create(

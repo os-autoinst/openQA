@@ -40,7 +40,7 @@ sub websocket_commands {
             log_warning('Received WS message without type! ' . pp($json));
             return;
         }
-        my $type = $json->{type};
+        my $type  = $json->{type};
         my $jobid = $json->{jobid} // '';
         my $joburl;
         my $host = $ws_to_host->{$tx};

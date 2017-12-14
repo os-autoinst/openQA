@@ -324,7 +324,7 @@ sub worker_id {
 }
 
 sub reschedule_state {
-    my $self = shift;
+    my $self  = shift;
     my $state = shift // OpenQA::Schema::Result::Jobs::SCHEDULED;
 
     # cleanup
@@ -939,7 +939,7 @@ sub auto_duplicate {
         {
             result => OpenQA::Schema::Result::Jobs::NONE,
         }
-      )->update(
+    )->update(
         {
             result => OpenQA::Schema::Result::Jobs::PARALLEL_RESTARTED,
         });

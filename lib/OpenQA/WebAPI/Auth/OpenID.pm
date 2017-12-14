@@ -96,9 +96,9 @@ sub auth_response {
     }
 
     my $csr = Net::OpenID::Consumer->new(
-        debug         => sub { $self->app->log->debug("Net::OpenID::Consumer: " . join(' ', @_)); },
-        ua            => LWP::UserAgent->new,
-        required_root => $url,
+        debug           => sub { $self->app->log->debug("Net::OpenID::Consumer: " . join(' ', @_)); },
+        ua              => LWP::UserAgent->new,
+        required_root   => $url,
         consumer_secret => $self->app->config->{_openid_secret},
         args            => \%params,
     );

@@ -71,7 +71,7 @@ sub barrier_wait {
     $validation->optional('check_dead_job')->like(qr/^[0-9]+$/);
 
     return $self->render(text => 'Bad request', status => 400) if ($validation->has_error);
-    my $where          = $validation->param('where')          // '';
+    my $where          = $validation->param('where') // '';
     my $check_dead_job = $validation->param('check_dead_job') // 0;
 
     my $ipc = OpenQA::IPC->ipc;
