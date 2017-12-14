@@ -90,9 +90,20 @@ sub _build_tree {
     foreach my $collection (SERIALIZABLE_COLLECTIONS) {
         $self->$collection->each(
             sub {
-                croak "Serialization is supported only if elements can be hashified with ->to_hash()"
-                  if !$_->can("to_hash");
-                push(@{$tree->{$collection}}, {data => $_->to_hash, type => ref $_});
+                my $to_hash;
+                my @type = (type => ref $_);
+                if (blessed $_ && $_->can("to_hash")) {
+                    $to_hash = $_->to_hash;
+                }
+                elsif (blessed $_ && !$_->can("to_hash")) {
+                    warn "Serialization is offically supported only if object can be hashified with ->to_hash()";
+                    $to_hash = {%$_};
+                }
+                else {
+                    $to_hash = $_;
+                    @type    = ();
+                }
+                push(@{$tree->{$collection}}, {data => $to_hash, @type});
             });
     }
     return $tree;
@@ -107,7 +118,8 @@ sub _load_tree {
         local $@;
         eval {
             foreach my $collection (SERIALIZABLE_COLLECTIONS) {
-                $self->$collection->add($_->{type}->new($_->{data})) for @{$tree->{$collection}};
+                $self->$collection->add($_->{type} ? $_->{type}->new($_->{data}) : $_->{data})
+                  for @{$tree->{$collection}};
             }
         };
         die "Failed parsing tree: $@" if $@;
@@ -125,7 +137,7 @@ sub from_json { shift->_load_tree(decode_json shift) }
 sub _add_single_result { shift->generated_tests_results->add(OpenQA::Parser::Result->new(@_)) }
 sub _add_result {
     my $self = shift;
-    my %opts = @_;
+    my %opts = ref $_[0] eq 'HASH' ? %{$_[0]} : @_;
     return $self->_add_single_result(@_) unless $self->include_results && $opts{name};
 
     my $name = $opts{name};

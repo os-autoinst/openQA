@@ -47,11 +47,31 @@ subtest 'Parser base class object' => sub {
     is $res->generated_tests->size, 0;
 
     my $meant_to_fail = OpenQA::Parser->new();
-
     eval { $meant_to_fail->parse(); };
     ok $@;
     like $@, qr/parse\(\) not implemented by base class/, 'Base class does not parse data';
 
+    my $good_parser = OpenQA::Parser->new();
+
+    $good_parser->results->add({foo => 1});
+    is $good_parser->results->size, 1;
+    is_deeply $good_parser->_build_tree->{generated_tests_results}->[0]->{data}, {foo => 1};
+
+    $good_parser->results->remove(0);
+    is $good_parser->results->size, 0;
+
+    use Mojo::Base;
+    $good_parser->results->add(Mojo::Base->new(test => 'bar'));
+
+    combined_like sub {
+        $good_parser->_build_tree;
+    }, qr/Serialization is offically supported only if object can be hashified with \-\>to_hash\(\)/;
+
+    is $good_parser->results->size, 1;
+    is_deeply $good_parser->_build_tree->{generated_tests_results}->[0]->{data}, {test => 'bar'};
+
+    $good_parser->results->remove(0);
+    is $good_parser->results->size, 0;
 };
 
 sub test_junit_file {
@@ -297,9 +317,10 @@ done_testing;
         my $decoded_json = decode_json $json;
 
         foreach my $res (@{$decoded_json->{'web-app'}->{servlet}}) {
-            $self->results->add(OpenQA::Parser::Result->new($res));
+            $self->_add_result($res);
+            # equivalent to $self->results->add(OpenQA::Parser::Result->new($res));
+            # or $self->_add_single_result($res);
         }
-
         $self;
     }
 
