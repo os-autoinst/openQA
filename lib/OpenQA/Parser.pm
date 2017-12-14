@@ -19,6 +19,7 @@ use Mojo::Base -base;
 use Carp qw(croak confess);
 use Mojo::File 'path';
 use Mojo::Collection;
+use Mojo::Loader 'load_class';
 use Mojo::JSON qw(encode_json decode_json);
 use OpenQA::Parser::Result::Test;
 use OpenQA::Parser::Result::Output;
@@ -27,7 +28,8 @@ use OpenQA::Parser::Results;
 use Storable;
 use Scalar::Util 'blessed';
 
-# TODO: add functional interface with type detect (and not)
+our @EXPORT_OK = qw(parser p);
+use Exporter 'import';
 
 use constant
   SERIALIZABLE_COLLECTIONS => qw(generated_tests_results generated_tests_output),
@@ -46,6 +48,32 @@ has [qw(_dom)];
 *tests   = \&generated_tests;
 *outputs = \&generated_tests_output;
 *extra   = \&generated_tests_extra;
+*p       = \&parser;
+
+
+# parser("Format", "file")
+# parser("LTP")->load("file")
+# parser("Whatever")
+sub parser {
+    @_ > 1 && ref $_[0] ne 'HASH' ? _build_parser(shift(@_))->load(shift(@_)) : _build_parser(shift(@_));
+}
+
+sub _build_parser {
+    my $wanted_parser = shift;
+    croak 'You need to specify a parser - base class does not parse' if !$wanted_parser;
+    my $parser_name = "OpenQA::Parser::${wanted_parser}";
+    my @args        = @_;
+    my $p_instance;
+    {
+        if (my $e = load_class $parser_name) {
+            croak ref $e ? "Exception: $e" : 'Parser not found!';
+        }
+        no strict 'refs';    ## no critic
+        eval { $p_instance = $parser_name->new(@args); };
+        croak "Invalid parser supplied: $@" if $@;
+    }
+    $p_instance;
+}
 
 sub load {
     my ($self, $file) = @_;
@@ -76,10 +104,6 @@ sub write_test_result {
 }
 
 sub parse { croak 'parse() not implemented by base class' }
-
-sub detect_type {
-    my ($self, $file) = @_;
-}
 
 sub _read_file { path($_[1])->slurp() }
 sub _add_test  { shift->generated_tests->add(OpenQA::Parser::Result::Test->new(@_)) }

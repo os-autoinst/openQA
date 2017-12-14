@@ -21,7 +21,7 @@ use lib ("$FindBin::Bin/lib", "../lib", "lib");
 use Test::More;
 use OpenQA;
 use Test::Output 'combined_like';
-use OpenQA::Parser;
+use OpenQA::Parser qw(parser p);
 use OpenQA::Parser::JUnit;
 use OpenQA::Parser::LTP;
 use Mojo::File qw(path tempdir);
@@ -328,9 +328,68 @@ subtest 'Unstructured data' => sub {
       'Nested serialization works!';
 };
 
+subtest functional_interface => sub {
+
+    use OpenQA::Parser qw(parser p);
+
+    my $ltp = parser("LTP");
+    is ref($ltp), 'OpenQA::Parser::LTP', 'Parser found';
+
+    eval { p("Doesn'tExist!"); };
+    ok $@;
+    like $@, qr/Parser not found!/, 'Croaked correctly';
+    {
+        package OpenQA::Parser::Broken;
+        sub new { die 'boo' }
+    }
+
+    eval { p("Broken"); };
+    ok $@;
+    like $@, qr/Invalid parser supplied: boo/, 'Croaked correctly';
+
+    eval { p(); };
+    ok $@;
+    like $@, qr/You need to specify a parser - base class does not parse/, 'Croaked correctly';
+
+    # Supports functional interface.
+    my $test_file = path($FindBin::Bin, "data")->child("new_ltp_result_array.json");
+    my $parsed_res = p("LTP", $test_file);
+
+    is $parsed_res->results->size, 4, 'Expected 4 results';
+    is $parsed_res->extra->first->gcc, 'gcc (SUSE Linux) 7.2.1 20171020 [gcc-7-branch revision 253932]';
+
+    # Keeps working as usual
+    $parsed_res = p("LTP")->load($test_file);
+
+    is $parsed_res->results->size, 4, 'Expected 4 results';
+    is $parsed_res->extra->first->gcc, 'gcc (SUSE Linux) 7.2.1 20171020 [gcc-7-branch revision 253932]';
+
+    $parsed_res = p("LTP")->parse($test_file->slurp);
+
+    is $parsed_res->results->size, 4, 'Expected 4 results';
+    is $parsed_res->extra->first->gcc, 'gcc (SUSE Linux) 7.2.1 20171020 [gcc-7-branch revision 253932]';
+};
+
+subtest dummy_search_fails => sub {
+
+    my $parsed_res = p("Dummy");
+    $parsed_res->include_results(1);
+    $parsed_res->parse;
+    is $parsed_res->results->size, 1, 'Expected 1 result';
+    is $parsed_res->results->first->{name}, 'test', 'Name of result is test';
+    is $parsed_res->results->first->{test}, undef;
+
+};
+
 done_testing;
 
 1;
+
+{
+    package OpenQA::Parser::Dummy;
+    use Mojo::Base 'OpenQA::Parser';
+    sub parse { shift->_add_result(name => 'test'); }
+}
 
 {
     package OpenQA::Parser::UnstructuredDummy;
