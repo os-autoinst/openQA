@@ -36,6 +36,17 @@ subtest 'Result base class object' => sub {
     is_deeply($res->to_hash(), {bar => 4, foo => 2}, 'to_hash maps correctly');
 };
 
+subtest 'Parser base class object' => sub {
+    use OpenQA::Parser;
+    my $res = OpenQA::Parser->new();
+
+    $res->_add_test({name => 'foo'});
+
+    is $res->generated_tests->first->name, 'foo';
+    $res->reset();
+    is $res->generated_tests->size, 0;
+};
+
 sub test_junit_file {
     my $parser = shift;
 
@@ -232,16 +243,12 @@ sub serialize_test {
     }
 }
 
-subtest 'serialize/deserialize LTP' => sub {
-    serialize_test("OpenQA::Parser::LTP", "ltp_test_result_format.json", "test_ltp_file");
-};
-
-subtest 'serialize/deserialize LTP v2' => sub {
-    serialize_test("OpenQA::Parser::LTP", "new_ltp_result_array.json", "test_ltp_file_v2");
-};
-subtest 'serialize/deserialize LTP v2' => sub {
+subtest 'serialize/deserialize' => sub {
+    serialize_test("OpenQA::Parser::LTP",   "ltp_test_result_format.json",        "test_ltp_file");
+    serialize_test("OpenQA::Parser::LTP",   "new_ltp_result_array.json",          "test_ltp_file_v2");
     serialize_test("OpenQA::Parser::JUnit", "slenkins_control-junit-results.xml", "test_junit_file");
 };
+
 
 done_testing;
 

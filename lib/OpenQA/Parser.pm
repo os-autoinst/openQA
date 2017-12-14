@@ -141,6 +141,8 @@ sub _add_result {
     return $self->generated_tests_results;
 }
 
+sub reset { my $self = shift; $self->$_->reset() for SERIALIZABLE_COLLECTIONS }
+
 sub _add_output { shift->generated_tests_output->add(OpenQA::Parser::Result::Output->new(@_)) }
 
 !!42;

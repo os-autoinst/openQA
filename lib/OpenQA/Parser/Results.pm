@@ -43,4 +43,6 @@ sub search {
     $results;
 }
 
+sub reset { @{$_[0]} = () }
+
 1;
