@@ -34,15 +34,12 @@ use Exporter 'import';
 use constant
   SERIALIZABLE_COLLECTIONS => qw(generated_tests_results generated_tests_output),
   qw(generated_tests generated_tests_extra);
-has include_results => 0;
 
 has generated_tests => sub { OpenQA::Parser::Results->new };    #testsuites
 has generated_tests_results =>
   sub { OpenQA::Parser::Results->new };    #testsuites results - when include_result is set it includes also the test.
 has generated_tests_output => sub { OpenQA::Parser::Results->new };    #testcase results
 has generated_tests_extra  => sub { OpenQA::Parser::Results->new };    # tests extra data.
-
-has [qw(_dom)];
 
 *results = \&generated_tests_results;
 *tests   = \&generated_tests;
@@ -106,7 +103,10 @@ sub write_test_result {
 sub parse { croak 'parse() not implemented by base class' }
 
 sub _read_file { path($_[1])->slurp() }
-sub _add_test  { shift->generated_tests->add(OpenQA::Parser::Result::Test->new(@_)) }
+
+sub _add_test   { shift->generated_tests->add(OpenQA::Parser::Result::Test->new(@_)) }
+sub _add_result { shift->generated_tests_results->add(OpenQA::Parser::Result->new(@_)) }
+sub _add_output { shift->generated_tests_output->add(OpenQA::Parser::Result::Output->new(@_)) }
 
 sub _build_tree {
     my $self = shift;
@@ -158,27 +158,7 @@ sub deserialize { shift->_load_tree(Storable::thaw(shift)) }
 sub to_json   { encode_json shift->_build_tree }
 sub from_json { shift->_load_tree(decode_json shift) }
 
-sub _add_single_result { shift->generated_tests_results->add(OpenQA::Parser::Result->new(@_)) }
-sub _add_result {
-    my $self = shift;
-    my %opts = ref $_[0] eq 'HASH' ? %{$_[0]} : @_;
-    return $self->_add_single_result(@_) unless $self->include_results && $opts{name};
-
-    my $name = $opts{name};
-    my $tests = $self->generated_tests->search('name', qr/$name/);
-
-    if ($tests->size == 1) {
-        $self->_add_single_result(@_, test => $tests->first);
-    }
-    else {
-        $self->_add_single_result(@_);
-    }
-
-    return $self->generated_tests_results;
-}
-
 sub reset { my $self = shift; $self->$_->reset() for SERIALIZABLE_COLLECTIONS }
 
-sub _add_output { shift->generated_tests_output->add(OpenQA::Parser::Result::Output->new(@_)) }
 
 !!42;

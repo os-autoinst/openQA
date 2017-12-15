@@ -19,8 +19,28 @@ use Mojo::Base 'OpenQA::Parser';
 use Carp qw(croak confess);
 use OpenQA::Parser::Result::OpenQA;
 
+has include_results => 0;
+has [qw(_dom)];
+
 # Override to use specific OpenQA Result class.
 sub _add_single_result { shift->generated_tests_results->add(OpenQA::Parser::Result::OpenQA->new(@_)) }
+sub _add_result {
+    my $self = shift;
+    my %opts = ref $_[0] eq 'HASH' ? %{$_[0]} : @_;
+    return $self->_add_single_result(@_) unless $self->include_results && $opts{name};
+
+    my $name = $opts{name};
+    my $tests = $self->generated_tests->search('name', qr/$name/);
+
+    if ($tests->size == 1) {
+        $self->_add_single_result(@_, test => $tests->first);
+    }
+    else {
+        $self->_add_single_result(@_);
+    }
+
+    return $self->generated_tests_results;
+}
 
 sub parse {
     my ($self, $xml) = @_;

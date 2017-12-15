@@ -353,7 +353,7 @@ subtest functional_interface => sub {
 
     # Supports functional interface.
     my $test_file = path($FindBin::Bin, "data")->child("new_ltp_result_array.json");
-    my $parsed_res = p("LTP", $test_file);
+    my $parsed_res = p(LTP => $test_file);
 
     is $parsed_res->results->size, 4, 'Expected 4 results';
     is $parsed_res->extra->first->gcc, 'gcc (SUSE Linux) 7.2.1 20171020 [gcc-7-branch revision 253932]';
@@ -373,7 +373,6 @@ subtest functional_interface => sub {
 subtest dummy_search_fails => sub {
 
     my $parsed_res = p("Dummy");
-    $parsed_res->include_results(1);
     $parsed_res->parse;
     is $parsed_res->results->size, 1, 'Expected 1 result';
     is $parsed_res->results->first->{name}, 'test', 'Name of result is test';
