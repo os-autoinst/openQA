@@ -407,7 +407,7 @@ done_testing;
 
 {
     package OpenQA::Parser::Dummy;
-    use Mojo::Base 'OpenQA::Parser';
+    use Mojo::Base 'OpenQA::Parser::JUnit';
     sub parse { shift->_add_result(name => 'test'); }
 }
 

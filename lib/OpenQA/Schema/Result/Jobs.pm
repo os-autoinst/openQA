@@ -34,7 +34,7 @@ use File::Path ();
 use DBIx::Class::Timestamps 'now';
 use File::Temp 'tempdir';
 use Mojo::File 'tempfile';
-use OpenQA::Parser::JUnit;
+use OpenQA::Parser 'parser';
 # The state and results constants are duplicated in the Python client:
 # if you change them or add any, please also update const.py.
 
@@ -1252,14 +1252,11 @@ sub parse_extra_tests {
 
     return unless $type eq "JUnit";    # The only one that is supported as for now
 
-    my $p = "OpenQA::Parser::$type";
     my $parser;
     {
-        no strict 'refs';              ## no critic
-        local $@;
-        $parser = eval { $p->new() };
+        $parser = parser($type);
         if ($@) {
-            log_error("Failed while creating parser object $p for job " . $self->id);
+            log_error("Failed while creating parser object $type for job " . $self->id);
             return;
         }
     }
