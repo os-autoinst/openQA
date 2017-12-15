@@ -312,7 +312,7 @@ subtest 'Unstructured data' => sub {
 
     $parser->results->each(
         sub {
-            ok exists $_->{'servlet-name'}, 'servlet-name exists';
+            ok !!$_->get('servlet-name'), 'servlet-name exists: ' . $_->get('servlet-name');
         });
 
     my $serialized   = $parser->serialize();
@@ -320,11 +320,11 @@ subtest 'Unstructured data' => sub {
 
     $deserialized->results->each(
         sub {
-            ok exists $_->{'servlet-name'}, 'servlet-name exists';
+            ok !!$_->get('servlet-name'), 'servlet-name exists - ' . $_->get('servlet-name');
         });
     ok $deserialized->results->size == 5, 'There are some results';
 
-    is $deserialized->results->first->{'init-param'}->{'configGlossary:installationAt'}, 'Philadelphia, PA',
+    is $deserialized->results->first->get('init-param')->{'configGlossary:installationAt'}, 'Philadelphia, PA',
       'Nested serialization works!';
 };
 
@@ -375,7 +375,7 @@ subtest dummy_search_fails => sub {
     my $parsed_res = p("Dummy");
     $parsed_res->parse;
     is $parsed_res->results->size, 1, 'Expected 1 result';
-    is $parsed_res->results->first->{name}, 'test', 'Name of result is test';
+    is $parsed_res->results->first->get('name'), 'test', 'Name of result is test';
     is $parsed_res->results->first->{test}, undef;
 
 };

@@ -51,6 +51,8 @@ sub new {
     $class->SUPER::new(@args);
 }
 
+sub get { shift->{shift()} }
+
 sub to_json   { encode_json shift->to_hash }
 sub from_json { __PACKAGE__->new(decode_json $_[1]) }
 sub to_hash {
