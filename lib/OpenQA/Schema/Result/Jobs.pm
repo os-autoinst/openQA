@@ -1257,18 +1257,20 @@ sub parse_extra_tests {
     {
         no strict 'refs';              ## no critic
         local $@;
-        $parser = eval { $p->new(include_results => 1) };
+        $parser = eval { $p->new() };
         if ($@) {
             log_error("Failed while creating parser object $p for job " . $self->id);
             return;
         }
     }
+    $parser->include_results(1) if $parser->can("include_results");
     my $tmp_extra_test = tempfile;
 
     $asset->move_to($tmp_extra_test);
 
     $parser->load($tmp_extra_test)->results->each(
         sub {
+            return if !$_->test;
             $_->test->script($script) if $script;
             my $t_info = $_->test->to_hash;
             $self->insert_module($t_info);
