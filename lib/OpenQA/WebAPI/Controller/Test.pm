@@ -159,17 +159,17 @@ sub list_ajax {
         push(
             @list,
             {
-                DT_RowId     => "job_" . $job->id,
-                id           => $job->id,
-                result_stats => $job->result_stats,
-                deps         => $job->dependencies,
-                clone        => $job->clone_id,
-                test         => $job->TEST . "@" . ($job->MACHINE // ''),
-                distri  => $job->DISTRI  // '',
-                version => $job->VERSION // '',
-                flavor  => $job->FLAVOR  // '',
-                arch    => $job->ARCH    // '',
-                build   => $job->BUILD   // '',
+                DT_RowId      => "job_" . $job->id,
+                id            => $job->id,
+                result_stats  => $job->result_stats,
+                deps          => $job->dependencies,
+                clone         => $job->clone_id,
+                test          => $job->TEST . "@" . ($job->MACHINE // ''),
+                distri        => $job->DISTRI // '',
+                version       => $job->VERSION // '',
+                flavor        => $job->FLAVOR // '',
+                arch          => $job->ARCH // '',
+                build         => $job->BUILD // '',
                 testtime      => $job->t_finished . 'Z',
                 result        => $job->result,
                 group         => $job->group_id,
@@ -291,7 +291,7 @@ sub _show {
     }
     # arbitrary limit of previous results to show
     my $limit_previous = $self->param('limit_previous') // 10;
-    my %attrs = (
+    my %attrs          = (
         rows     => $limit_previous,
         order_by => ['me.id DESC']);
     my $previous_jobs_rs = $self->db->resultset("Jobs")->search({-and => \@conds}, \%attrs);

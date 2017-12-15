@@ -90,7 +90,7 @@ sub save_connect {
     }
 
     my $values = {
-        prio => $self->param('prio') // $group->default_priority,
+        prio          => $self->param('prio') // $group->default_priority,
         product_id    => $self->param('medium'),
         machine_id    => $self->param('machine'),
         group_id      => $group->id,

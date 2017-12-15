@@ -50,7 +50,7 @@ sub job_set_waiting {
             id    => $jobid,
             state => OpenQA::Schema::Result::Jobs::RUNNING,
         }
-      )->update(
+    )->update(
         {
             state => OpenQA::Schema::Result::Jobs::WAITING,
         });
@@ -70,7 +70,7 @@ sub job_set_running {
             id    => $jobid,
             state => OpenQA::Schema::Result::Jobs::WAITING,
         }
-      )->update(
+    )->update(
         {
             state => OpenQA::Schema::Result::Jobs::RUNNING,
         });
@@ -118,7 +118,7 @@ sub job_restart {
         {
             result => OpenQA::Schema::Result::Jobs::NONE,
         }
-      )->update(
+    )->update(
         {
             result => OpenQA::Schema::Result::Jobs::USER_RESTARTED,
         });

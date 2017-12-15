@@ -39,7 +39,7 @@ sub init {
     $nocleanup = $options->{"no-cleanup"};
 
     my $logdir = $ENV{OPENQA_WORKER_LOGDIR} // $worker_settings->{LOG_DIR};
-    my $app = OpenQA::Setup->new(
+    my $app    = OpenQA::Setup->new(
         mode     => 'production',
         log_name => 'worker',
         instance => $instance,

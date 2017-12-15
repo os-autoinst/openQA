@@ -49,8 +49,8 @@ sub index {
     my $time_limit_days = $self->param('time_limit_days');
     $time_limit_days = 14 unless looks_like_number($time_limit_days);
     $self->app->log->debug("Retrieving results for up to $limit_builds builds up to $time_limit_days days old");
-    my $only_tagged = $self->param('only_tagged') // 0;
-    my $show_tags   = $self->param('show_tags')   // $only_tagged;
+    my $only_tagged  = $self->param('only_tagged') // 0;
+    my $show_tags    = $self->param('show_tags') // $only_tagged;
     my $group_params = $self->every_param('group');
     my @results;
     my $groups = $self->stash('job_groups_and_parents');
@@ -87,7 +87,7 @@ sub group_overview {
 
     $self->app->log->debug("Retrieving results for up to $limit_builds builds up to $time_limit_days days old");
     my $only_tagged = $self->param('only_tagged') // 0;
-    my $group = $self->db->resultset($resultset)->find($self->param('groupid'));
+    my $group       = $self->db->resultset($resultset)->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
     $self->stash('fullscreen', $self->param('fullscreen') // 0);
     my $interval = $self->param('interval') // 60;

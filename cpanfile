@@ -62,18 +62,13 @@ requires 'Net::OpenID::Consumer';
 requires 'Package::Stash';
 requires 'Params::Util';
 requires 'Params::Validate';
-requires 'Perl::Tidy';
 requires 'Regexp::Common';
 requires 'Sort::Versions';
 requires 'SQL::SplitStatement';
 requires 'SQL::Translator';
 requires 'Scalar::Util';
-requires 'Selenium::Remote::Driver', '>= 1.20';
 requires 'Sub::Install';
 requires 'Sub::Name';
-requires 'Test::Compile';
-requires 'Test::Mojo';
-requires 'Test::More';
 requires 'Text::Markdown';
 requires 'Time::HiRes';
 requires 'Time::ParseDate';
@@ -93,14 +88,18 @@ requires 'warnings';
 requires 'POSIX';
 
 on 'test' => sub {
-  requires 'Perl::Tidy';
   requires 'Perl::Critic';
+  requires 'Perl::Tidy', '>= 20171214';
+  requires 'Selenium::Remote::Driver', '>= 1.20';
+  requires 'Test::Compile';
+  requires 'Test::Fatal';
+  requires 'Test::MockModule';
+  requires 'Test::MockObject';
+  requires 'Test::Mojo';
+  requires 'Test::More';
   requires 'Test::Output';
   requires 'Test::Pod';
   requires 'Test::Warnings';
-  requires 'Test::MockModule';
-  requires 'Test::MockObject';
-  requires 'Test::Fatal';
 };
 
 feature 'coverage', 'coverage for travis' => sub {
