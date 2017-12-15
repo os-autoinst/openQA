@@ -18,6 +18,9 @@ package OpenQA::Parser::Results;
 
 use Mojo::Base 'Mojo::Collection';
 use Scalar::Util 'blessed';
+use Mojo::JSON qw(encode_json decode_json);
+use Storable;
+
 sub add {
     my $self = shift;
     push @{$self}, @_;
@@ -42,6 +45,12 @@ sub search {
     $self->each(sub { $results->add($_) if $_->$field =~ $re });
     $results;
 }
+
+sub to_json   { encode_json shift() }
+sub from_json { __PACKAGE__->new(@{decode_json $_[1]}) }
+
+sub serialize   { Storable::freeze($_[0]) }
+sub deserialize { __PACKAGE__->new(@{Storable::thaw($_[1])}) }
 
 sub reset { @{$_[0]} = () }
 

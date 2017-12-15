@@ -40,6 +40,27 @@ subtest 'Result base class object' => sub {
     is_deeply($res2->to_hash(), {bar => 4, foo => 2}, 'to_hash maps correctly');
 };
 
+subtest 'Results base class object' => sub {
+    use OpenQA::Parser::Results;
+    my $res = OpenQA::Parser::Results->new();
+
+    $res->add({foo => 'bar'});
+
+    my $json_encode = $res->to_json;
+
+    my $deserialized = OpenQA::Parser::Results->from_json($json_encode);
+    is $deserialized->first->{foo}, 'bar' or diag explain $deserialized;
+
+    $res = OpenQA::Parser::Results->new();
+
+    $res->add({bar => 'baz'});
+
+    my $serialized = $res->serialize;
+
+    $deserialized = OpenQA::Parser::Results->new->deserialize($serialized);
+    is $deserialized->first->{bar}, 'baz' or diag explain $deserialized;
+};
+
 subtest 'Parser base class object' => sub {
     use OpenQA::Parser;
     my $res = OpenQA::Parser->new();
