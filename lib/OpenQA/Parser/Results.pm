@@ -46,8 +46,19 @@ sub search {
     $results;
 }
 
+sub new {
+    my ($class, @args) = @_;
+    no strict 'refs';    ## no critic
+    return $class->SUPER::new(@args) unless ${$class . "::of"};
+    return $class->SUPER::new(map { ${$class . "::of"}->new($_) } @args);
+}
+
 sub to_json   { encode_json shift() }
 sub from_json { __PACKAGE__->new(@{decode_json $_[1]}) }
+sub to_array {
+    [map { blessed $_ && $_->can("to_hash") ? $_->to_hash : blessed $_ && $_->can("to_array") ? $_->to_array : $_ }
+          @{shift()}];
+}
 
 sub serialize   { Storable::freeze($_[0]) }
 sub deserialize { __PACKAGE__->new(@{Storable::thaw($_[1])}) }

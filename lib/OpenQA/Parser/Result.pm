@@ -32,7 +32,6 @@ sub new {
 
     hihwalker $args[0] => sub {
         my ($key, $value, $keys) = @_;
-
         my $hash = $args[0];
         for (my $i = 0; $i < scalar @$keys; $i++) {
             $hash = $hash->{$keys->[$i]} if $i < (scalar @$keys) - 1;
@@ -43,7 +42,9 @@ sub new {
             no strict 'refs';    ## no critic
             my $ref = ref($class->new->$key());
             return unless $ref;
-            $hash->{$key} = $ref->new($value) unless (grep(/$ref/, qw(HASH ARRAY)));
+            return if (grep(/$ref/, qw(HASH ARRAY)));
+
+            $hash->{$key} = ref $value eq 'ARRAY' ? $ref->new(@{$value}) : $ref->new($value);
         }
 
     };
@@ -58,8 +59,12 @@ sub from_json { __PACKAGE__->new(decode_json $_[1]) }
 sub to_hash {
     my $self = shift;
     return {
-        map { $_ => blessed $self->{$_} && $self->{$_}->can("to_hash") ? $self->{$_}->to_hash : $self->{$_} }
-        sort keys %{$self}};
+        map {
+                $_ => blessed $self->{$_} && $self->{$_}->can("to_hash") ? $self->{$_}->to_hash
+              : blessed $self->{$_} && $self->{$_}->can("to_array") ? $self->{$_}->to_array
+              : $self->{$_}
+          }
+          sort keys %{$self}};
 }
 
 sub write {

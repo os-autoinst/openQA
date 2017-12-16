@@ -142,7 +142,8 @@ sub _load_tree {
         local $@;
         eval {
             foreach my $collection (SERIALIZABLE_COLLECTIONS) {
-                $self->$collection->add($_->{type} ? $_->{type}->new($_->{data}) : $_->{data})
+                $self->$collection->add(
+                    $_->{type} ? $_->{type}->new($_->{data}) : ref $_->{data} eq "ARRAY" ? @{$_->{data}} : $_->{data})
                   for @{$tree->{$collection}};
             }
         };

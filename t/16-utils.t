@@ -50,8 +50,7 @@ my $t1 = {boo => foo => bar => {}};
 my $t2 = {
     foo => {
         bar => {
-            too => 42
-        }
+            too => []}
     },
     baz => 2
 };
@@ -65,8 +64,9 @@ hihwalker(
 hihwalker(
     $t2 => sub {
         my ($key, $value, $keys) = @_;
-        like $key, qr/foo|bar/;
+        like $key, qr/foo|bar|too/;
     });
+
 subtest 'get current version' => sub {
     use Mojo::File qw(path tempdir tempfile);
     # Let's check that the version matches our versioning scheme.

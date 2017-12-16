@@ -955,6 +955,9 @@ sub hihwalker {
             $callback->($key, $value, $keys);
             hihwalker($value, $callback, $keys);
         }
+        elsif (ref $value eq 'ARRAY') {
+            $callback->($key, $value, $keys);
+        }
         pop @$keys;
     }
 }
