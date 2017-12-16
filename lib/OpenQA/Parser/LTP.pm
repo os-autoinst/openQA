@@ -14,13 +14,14 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Parser::LTP;
+
 # Translates to JSON LTP format -> LTP internal representation
 # The parser results will be a collection of OpenQA::Parser::Result::LTP::Test
 use Mojo::Base 'OpenQA::Parser';
 use Carp qw(croak confess);
 use Mojo::JSON 'decode_json';
-use OpenQA::Parser::Result::LTP::Test;
 
+# Parser
 sub parse {
     my ($self, $json) = @_;
     confess "No JSON given/loaded" unless $json;
@@ -38,6 +39,31 @@ sub parse {
     }
 
     $self;
+}
+
+# Schema
+{
+    package OpenQA::Parser::Result::LTP::Test;
+    use Mojo::Base 'OpenQA::Parser::Result';
+
+    has environment => sub { OpenQA::Parser::Result::LTP::Environment->new() };
+    has test        => sub { OpenQA::Parser::Result::LTP::SubTest->new() };
+    has [qw(status test_fqn)];
+}
+
+# Additional data structure - they get mapped automatically
+{
+    package OpenQA::Parser::Result::LTP::SubTest;
+    use Mojo::Base 'OpenQA::Parser::Result';
+
+    has [qw(log duration result)];
+}
+
+{
+    package OpenQA::Parser::Result::LTP::Environment;
+    use Mojo::Base 'OpenQA::Parser::Result';
+
+    has [qw(gcc product revision kernel ltp_version harness libc arch)];
 }
 
 !!42;
