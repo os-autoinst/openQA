@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Parser::JUnit;
+package OpenQA::Parser::Format::JUnit;
 # Translates to JUnit -> openQA internal
 use Mojo::Base 'OpenQA::Parser';
 use Carp qw(croak confess);

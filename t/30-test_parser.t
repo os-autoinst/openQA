@@ -22,9 +22,9 @@ use Test::More;
 use OpenQA;
 use Test::Output 'combined_like';
 use OpenQA::Parser qw(parser p);
-use OpenQA::Parser::JUnit;
-use OpenQA::Parser::LTP;
-use OpenQA::Parser::XUnit;
+use OpenQA::Parser::Format::JUnit;
+use OpenQA::Parser::Format::LTP;
+use OpenQA::Parser::Format::XUnit;
 use Mojo::File qw(path tempdir);
 use Data::Dumper;
 use Mojo::JSON qw(decode_json encode_json);
@@ -278,7 +278,7 @@ sub test_xunit_file {
 }
 
 subtest junit_parse => sub {
-    my $parser = OpenQA::Parser::JUnit->new;
+    my $parser = OpenQA::Parser::Format::JUnit->new;
 
     my $junit_test_file = path($FindBin::Bin, "data")->child("slenkins_control-junit-results.xml");
 
@@ -294,7 +294,7 @@ subtest junit_parse => sub {
       'Expected test result match - with no include_results - forcing to output the test';
     delete $expected_test_result->{name};
 
-    $parser = OpenQA::Parser::JUnit->new;
+    $parser = OpenQA::Parser::Format::JUnit->new;
 
     $parser->include_results(1);
     $parser->load($junit_test_file);
@@ -355,7 +355,7 @@ sub test_ltp_file_v2 {
 
 subtest ltp_parse => sub {
 
-    my $parser = OpenQA::Parser::LTP->new;
+    my $parser = OpenQA::Parser::Format::LTP->new;
 
     my $ltp_test_result_file = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
 
@@ -364,7 +364,7 @@ subtest ltp_parse => sub {
     test_ltp_file($parser);
 
 
-    my $parser_format_v2 = OpenQA::Parser::LTP->new;
+    my $parser_format_v2 = OpenQA::Parser::Format::LTP->new;
 
     $ltp_test_result_file = path($FindBin::Bin, "data")->child("new_ltp_result_array.json");
 
@@ -401,10 +401,10 @@ sub serialize_test {
 }
 
 subtest 'serialize/deserialize' => sub {
-    serialize_test("OpenQA::Parser::LTP",   "ltp_test_result_format.json",        "test_ltp_file");
-    serialize_test("OpenQA::Parser::LTP",   "new_ltp_result_array.json",          "test_ltp_file_v2");
-    serialize_test("OpenQA::Parser::JUnit", "slenkins_control-junit-results.xml", "test_junit_file");
-    serialize_test("OpenQA::Parser::XUnit", "xunit_format_example.xml",           "test_xunit_file");
+    serialize_test("OpenQA::Parser::Format::LTP",   "ltp_test_result_format.json",        "test_ltp_file");
+    serialize_test("OpenQA::Parser::Format::LTP",   "new_ltp_result_array.json",          "test_ltp_file_v2");
+    serialize_test("OpenQA::Parser::Format::JUnit", "slenkins_control-junit-results.xml", "test_junit_file");
+    serialize_test("OpenQA::Parser::Format::XUnit", "xunit_format_example.xml",           "test_xunit_file");
 };
 
 subtest 'Unstructured data' => sub {
@@ -438,13 +438,13 @@ subtest functional_interface => sub {
     use OpenQA::Parser qw(parser p);
 
     my $ltp = parser("LTP");
-    is ref($ltp), 'OpenQA::Parser::LTP', 'Parser found';
+    is ref($ltp), 'OpenQA::Parser::Format::LTP', 'Parser found';
 
     eval { p("Doesn'tExist!"); };
     ok $@;
     like $@, qr/Parser not found!/, 'Croaked correctly';
     {
-        package OpenQA::Parser::Broken;
+        package OpenQA::Parser::Format::Broken;
         sub new { die 'boo' }
     }
 
@@ -516,8 +516,8 @@ done_testing;
 1;
 
 {
-    package OpenQA::Parser::Dummy;
-    use Mojo::Base 'OpenQA::Parser::JUnit';
+    package OpenQA::Parser::Format::Dummy;
+    use Mojo::Base 'OpenQA::Parser::Format::JUnit';
     sub parse { shift->_add_result(name => 'test'); }
 }
 

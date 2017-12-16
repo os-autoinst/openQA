@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Parser::LTP;
+package OpenQA::Parser::Format::LTP;
 
 # Translates to JSON LTP format -> LTP internal representation
 # The parser results will be a collection of OpenQA::Parser::Result::LTP::Test

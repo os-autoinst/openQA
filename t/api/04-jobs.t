@@ -567,11 +567,11 @@ subtest 'filter by worker_class' => sub {
 
 subtest 'Parse extra tests results' => sub {
     use Mojo::File 'path';
-    use OpenQA::Parser::JUnit;
+    use OpenQA::Parser 'parser';
 
     my $fname  = 'slenkins_control-junit-results.xml';
     my $junit  = "t/data/$fname";
-    my $parser = OpenQA::Parser::JUnit->new->load($junit);
+    my $parser = parser(JUnit => $junit);
 
     my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
 

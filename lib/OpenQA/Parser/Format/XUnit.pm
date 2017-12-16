@@ -13,9 +13,9 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Parser::XUnit;
+package OpenQA::Parser::Format::XUnit;
 
-use Mojo::Base 'OpenQA::Parser::JUnit';
+use Mojo::Base 'OpenQA::Parser::Format::JUnit';
 use Carp qw(croak confess);
 
 sub _add_single_result { shift->results->add(OpenQA::Parser::Result::XUnit->new(@_)) }
