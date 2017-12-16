@@ -571,8 +571,9 @@ subtest 'Parse extra tests results' => sub {
 
     my $fname  = 'slenkins_control-junit-results.xml';
     my $junit  = "t/data/$fname";
-    my $parser = parser(JUnit => $junit);
-
+    my $parser = parser('JUnit');
+    $parser->include_results(1);
+    $parser->load($junit);
     my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
 
     my $post = $t->post_ok(
@@ -610,15 +611,24 @@ subtest 'Parse extra tests results' => sub {
     ok -e path($basedir, 'tests-systemd-9_post-tests_audits-3.txt'), 'junit was parsed';
 
     # Now we check what parser expects to have (this have been generated from openQA side)
-    $parser->tests->each(
+    $parser->results->each(
         sub {
-            ok -e path($basedir, 'details-' . $_->name . '.json'), 'detail from junit was written for ' . $_->name;
+            my $db_module = $t->app->schema->resultset('Jobs')->find(99963)->modules->find({name => $_->test->name});
+
+            ok -e path($basedir, 'details-' . $_->test->name . '.json'),
+              'detail from junit was written for ' . $_->test->name;
+            is_deeply $db_module->details, $_->details;
+            is $db_module->name,           $_->test->name, 'Modules name are matching';
+            is $db_module->script,         'test', 'Modules script are matching';
+            is $db_module->category,       $_->test->category, 'Modules category are matching';
+            is $db_module->result,         'passed', 'Modules result are ok';
         });
+
+
     $parser->outputs->each(
         sub {
             ok -e path($basedir, $_->file), 'test result from junit was written for ' . $_->file;
         });
-
 };
 
 done_testing();
