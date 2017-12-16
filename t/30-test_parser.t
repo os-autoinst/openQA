@@ -24,6 +24,7 @@ use Test::Output 'combined_like';
 use OpenQA::Parser qw(parser p);
 use OpenQA::Parser::JUnit;
 use OpenQA::Parser::LTP;
+use OpenQA::Parser::XUnit;
 use Mojo::File qw(path tempdir);
 use Data::Dumper;
 use Mojo::JSON qw(decode_json encode_json);
@@ -196,6 +197,86 @@ sub test_junit_file {
     return $expected_test_result;
 }
 
+
+sub test_xunit_file {
+    my $parser = shift;
+    is_deeply $parser->tests->first->to_hash,
+      {
+        'category' => 'xunit',
+        'flags'    => {},
+        'name'     => 'bacon',
+        'script'   => 'unk'
+      };
+    is $parser->tests->search("name", qr/bacon/)->size, 1;
+
+    is $parser->tests->search("name", qr/bacon/)->first()->name, 'bacon';
+    is $parser->generated_tests_results->search("result", qr/ok/)->size, 7;
+
+    is $parser->generated_tests_results->first()->properties->first->value, 'y';
+    is $parser->generated_tests_results->first()->properties->last->value,  'd';
+
+    ok $parser->generated_tests_results->first()->time;
+    ok $parser->generated_tests_results->first()->errors;
+    ok $parser->generated_tests_results->first()->failures;
+    ok $parser->generated_tests_results->first()->tests;
+
+    is $parser->tests->size, 11,
+      'Generated 11 openQA tests results';    # 9 testsuites with all cumulative results for openQA
+    is $parser->generated_tests_results->size, 11, 'Object contains 11 testsuites';
+
+    is $parser->results->search_in_details("title", qr/bacon/)->size, 13,
+      'Overall 11 testsuites, 2 tests does not have title containing bacon';
+    is $parser->results->search_in_details("text", qr/bacon/)->size, 15,
+      'Overall 11 testsuites, 15 tests are for bacon';
+    is $parser->generated_tests_output->size, 23, "23 Outputs";
+
+    my $resultsdir = tempdir;
+    $parser->write_output($resultsdir);
+    is $resultsdir->list_tree->size, 23, '23 test outputs were written';
+    $resultsdir->list_tree->each(
+        sub {
+            ok $_->slurp =~ /^# Test messages /, 'Output result was written correctly';
+        });
+
+    my $expected_test_result = {
+
+        'dents'   => 0,
+        'details' => [
+            {
+                'result' => 'ok',
+                'text'   => 'xunit-child_of_child_two-1.txt',
+                'title'  => 'child of child two test'
+            }
+        ],
+        'result' => 'ok'
+
+    };
+
+    is_deeply $parser->generated_tests_results->last->TO_JSON, $expected_test_result, 'TO_JSON matches'
+      or diag explain $parser->generated_tests_results->last->TO_JSON;
+
+    my $testdir = tempdir;
+    $parser->write_test_result($testdir);
+    is $testdir->list_tree->size, 11, '11 test results were written' or diag explain $parser->generated_tests_results;
+    $testdir->list_tree->each(
+        sub {
+            my $res = decode_json $_->slurp;
+            is ref $res, "HASH", 'JSON result can be decoded' or diag explain $_->slurp;
+            like $_, qr/result-.*\.json/;
+            ok exists $res->{result}, 'JSON result can be decoded';
+            like $res->{result}, qr/ok|fail/, 'result can be ok or fail';
+            ok !exists $res->{name},       'JSON result can be decoded';
+            ok !exists $res->{properties}, 'JSON result can be decoded';
+        });
+
+    $testdir->remove_tree;
+
+    is_deeply $parser->results->last->TO_JSON(), $expected_test_result,
+      'Expected test result match - with no include_results'
+      or diag explain $parser->results->last->TO_JSON();
+    return $expected_test_result;
+}
+
 subtest junit_parse => sub {
     my $parser = OpenQA::Parser::JUnit->new;
 
@@ -233,6 +314,8 @@ subtest junit_parse => sub {
 
     is_deeply $parser->results->last->TO_JSON(1), $expected_test_result, 'Test is showed';
 };
+
+
 
 sub test_ltp_file {
     my $p = shift;
@@ -321,6 +404,7 @@ subtest 'serialize/deserialize' => sub {
     serialize_test("OpenQA::Parser::LTP",   "ltp_test_result_format.json",        "test_ltp_file");
     serialize_test("OpenQA::Parser::LTP",   "new_ltp_result_array.json",          "test_ltp_file_v2");
     serialize_test("OpenQA::Parser::JUnit", "slenkins_control-junit-results.xml", "test_junit_file");
+    serialize_test("OpenQA::Parser::XUnit", "xunit_format_example.xml",           "test_xunit_file");
 };
 
 subtest 'Unstructured data' => sub {
@@ -394,11 +478,37 @@ subtest functional_interface => sub {
 subtest dummy_search_fails => sub {
 
     my $parsed_res = p("Dummy");
+    $parsed_res->include_results(1);
     $parsed_res->parse;
     is $parsed_res->results->size, 1, 'Expected 1 result';
     is $parsed_res->results->first->get('name'), 'test', 'Name of result is test';
     is $parsed_res->results->first->{test}, undef;
 
+};
+
+
+subtest xunit_parse => sub {
+    my $parser = parser(XUnit => path($FindBin::Bin, "data")->child("xunit_format_example.xml"));
+
+    my $expected_test_result = test_xunit_file($parser);
+    #
+    # $parser = parser('XUnit');
+    #
+    # $parser->include_results(1);
+    # $parser->load(path($FindBin::Bin, "data")->child("xunit_format_example.xml"));
+    #
+    # is $parser->results->size, 9,
+    #   'Generated 9 openQA tests results';
+    # is_deeply $parser->results->last->TO_JSON(0), $expected_test_result, 'Test is hidden';
+    #
+    # $expected_test_result->{test} = {
+    #     'category' => 'tests-systemd',
+    #     'flags'    => {},
+    #     'name'     => '9_post-tests_audits',
+    #     'script'   => 'unk'
+    # };
+    #
+    # is_deeply $parser->results->last->TO_JSON(1), $expected_test_result, 'Test is showed';
 };
 
 done_testing;
