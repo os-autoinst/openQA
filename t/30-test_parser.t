@@ -62,17 +62,67 @@ subtest 'Results base class object' => sub {
     is $deserialized->first->{bar}, 'baz' or diag explain $deserialized;
 };
 
+{
+    package Dummy;
+    sub new {
+        my $class = shift;
+        my $self  = {};
+        bless $self, $class;
+        $self->{test} = 1;
+        return $self;
+    }
+}
+
+{
+    package Dummy2;
+
+    sub new {
+        my $class = shift;
+        my $self  = [];
+        bless $self, $class;
+        @{$self} = qw(1 2 3);
+        return $self;
+    }
+}
+
+{
+    package Dummy2to;
+    sub new {
+        my $class = shift;
+        my $self  = [];
+        bless $self, $class;
+        @{$self} = qw(a b c);
+        return $self;
+    }
+    sub to_array { [@{shift()}] }
+}
+
+{
+    package Dummy3;
+    use Symbol;
+
+    sub new {
+        my $class = shift;
+        my $self  = gensym;
+        bless $self, $class;
+        return $self;
+    }
+}
 subtest 'Parser base class object' => sub {
-    use OpenQA::Parser;
-    my $res = OpenQA::Parser->new();
-
+    my $res = parser('Base');
+    ok $res->parse eq "$res";
+    $res->include_content(1);
+    $res->{content} = 42;
     $res->_add_test({name => 'foo'});
-
+    is $res->content,         42;
+    is $res->include_content, 1;
     is $res->generated_tests->first->name, 'foo';
     $res->reset();
-    is $res->generated_tests->size, 0;
+    is $res->include_content, undef or diag explain $res;
+    is $res->content,         undef or diag explain $res;
+    is $res->generated_tests->size, 0, '0 tests';
 
-    my $meant_to_fail = OpenQA::Parser->new();
+    my $meant_to_fail = OpenQA::Parser->new;
     eval { $meant_to_fail->parse() };
     ok $@;
     like $@, qr/parse\(\) not implemented by base class/, 'Base class does not parse data';
@@ -99,7 +149,7 @@ subtest 'Parser base class object' => sub {
     ok $@;
     like $@, qr/You need to specify a directory/, 'write_test_result needs a directory as argument';
 
-    my $good_parser = OpenQA::Parser->new();
+    my $good_parser = parser('Base');
 
     $good_parser->results->add({foo => 1});
     is $good_parser->results->size, 1;
@@ -108,18 +158,52 @@ subtest 'Parser base class object' => sub {
     $good_parser->results->remove(0);
     is $good_parser->results->size, 0;
 
-    use Mojo::Base;
-    $good_parser->results->add(Mojo::Base->new(test => 'bar'));
+    $good_parser->results->add(Dummy->new);
 
     combined_like sub {
         $good_parser->_build_tree;
-    }, qr/Serialization is offically supported only if object can be hashified with \-\>to_hash\(\)/;
-
-    is $good_parser->results->size, 1;
-    is_deeply $good_parser->_build_tree->{generated_tests_results}->[0]->{data}, {test => 'bar'};
+      }, qr/Serialization is offically supported only if object can be hashified with \-\>to_hash\(\)/,
+      'serialization support warns';
 
     $good_parser->results->remove(0);
+
+    $good_parser->results->add(Dummy2->new);
+    combined_like sub {
+        $good_parser->_build_tree;
+      }, qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+      'serialization support warns';
+
+    is_deeply $good_parser->_build_tree->{generated_tests_results}->[0]->{data}, [qw(1 2 3)];
+
+    $good_parser->results->add({test => 'bar'});
+
+    $good_parser->results->add(Dummy3->new);
+    combined_like sub {
+        $good_parser->_build_tree;
+    }, qr/Data type with format not supported for serialization/, 'serialization support warns';
+    $good_parser->results->remove(2);
+
+    is $good_parser->results->size, 2, '2 results';
+    is_deeply $good_parser->_build_tree->{generated_tests_results}->[1]->{data}, {test => 'bar'};
+
+    my $copy = parser("Base")->_load_tree($good_parser->_build_tree);
+    is_deeply $copy->_build_tree->{generated_tests_results}->[0]->{data}, [qw(1 2 3)]
+      or diag explain $copy->_build_tree->{generated_tests_results};
+    is_deeply $copy->_build_tree->{generated_tests_results}->[1]->{data}, {test => 'bar'};
+
+    $good_parser->results->remove(1);
+    $good_parser->results->remove(0);
+
     is $good_parser->results->size, 0;
+
+    $good_parser->results->add(Dummy2to->new);
+
+    is_deeply $good_parser->_build_tree->{generated_tests_results}->[0]->{data}, [qw(a b c)]
+      or diag explain $good_parser->_build_tree->{generated_tests_results};
+
+    $copy = parser("Base")->_load_tree($good_parser->_build_tree);
+    is_deeply $copy->_build_tree->{generated_tests_results}->[0]->{data}, [qw(a b c)]
+      or diag explain $copy->_build_tree->{generated_tests_results};
 };
 
 sub test_junit_file {
@@ -378,25 +462,96 @@ sub serialize_test {
     diag "Serialization test for $parser_name and $file with test $test_function";
     {
         no strict 'refs';    ## no critic
-        my $parser = $parser_name->new;
-
         my $test_result_file = path($FindBin::Bin, "data")->child($file);
 
+        # With content saved
+        my $parser = $parser_name->new(include_content => 1);
         $parser->load($test_result_file);
         my $obj_content  = $parser->serialize();
         my $deserialized = $parser_name->new->deserialize($obj_content);
         ok "$deserialized" ne "$parser", "Different objects";
         $test_function->($parser);
         $test_function->($deserialized);
+        is $parser->content, $test_result_file->slurp, 'Content was kept intact for original obj'
+          or diag explain $deserialized->content;
+        is $deserialized->content, $test_result_file->slurp, 'Content was kept intact'
+          or diag explain $deserialized->content;
 
-        $parser = $parser_name->new;
+        $parser = $parser_name->new(include_content => 1);
+        my $saved = tempfile;
         $parser->load($test_result_file);
-
-        $obj_content  = $parser->to_json();
-        $deserialized = $parser_name->new->from_json($obj_content);
+        is path($saved)->slurp, '', 'Empty';
+        ok length(path($saved)->slurp) == 0, 'Data';
+        $parser->save($saved);
+        ok length(path($saved)->slurp) > 50, 'Data';
+        $deserialized = $parser_name->new->from_file($saved);
         ok "$deserialized" ne "$parser", "Different objects";
         $test_function->($parser);
         $test_function->($deserialized);
+        is $parser->content, $test_result_file->slurp, 'Content was kept intact for original obj'
+          or diag explain $deserialized->content;
+        is $deserialized->content, $test_result_file->slurp, 'Content was kept intact'
+          or diag explain $deserialized->content;
+
+        # No content saved
+        $parser = $parser_name->new();
+        $parser->load($test_result_file);
+        $obj_content  = $parser->serialize();
+        $deserialized = $parser_name->new->deserialize($obj_content);
+        ok "$deserialized" ne "$parser", "Different objects";
+        $test_function->($parser);
+        $test_function->($deserialized);
+        is $parser->content,       undef, 'Content is not there' or diag explain $deserialized->content;
+        is $deserialized->content, undef, 'Content is not there' or diag explain $deserialized->content;
+
+        $parser = $parser_name->new();
+        $parser->load($test_result_file);
+        $saved = tempfile;
+        is path($saved)->slurp, '', 'Empty';
+        ok length(path($saved)->slurp) == 0, 'Data';
+        $parser->save($saved);
+        ok length(path($saved)->slurp) > 50, 'Data';
+        $deserialized = $parser_name->new->from_file($saved);
+        ok "$deserialized" ne "$parser", "Different objects";
+        $test_function->($parser);
+        $test_function->($deserialized);
+        is $parser->content,       undef, 'Content is not there' or diag explain $deserialized->content;
+        is $deserialized->content, undef, 'Content is not there' or diag explain $deserialized->content;
+
+        # Json
+        $parser = $parser_name->new();
+        $parser->load($test_result_file);
+        $obj_content  = $parser->to_json();
+        $deserialized = $parser_name->new()->from_json($obj_content);
+        ok "$deserialized" ne "$parser", "Different objects";
+        $test_function->($parser);
+        $test_function->($deserialized);
+
+        $parser = $parser_name->new();
+        $parser->load($test_result_file);
+        $saved = tempfile;
+        ok length(path($saved)->slurp) == 0, 'Data';
+        $parser->save_to_json($saved);
+        ok length(path($saved)->slurp) > 50, 'Data';
+        $deserialized = $parser_name->new()->from_json_file($saved);
+        ok "$deserialized" ne "$parser", "Different objects";
+        $test_function->($parser);
+        $test_function->($deserialized);
+
+        $parser = $parser_name->new(include_content => 1);
+        $parser->load($test_result_file);
+        $saved = tempfile;
+        ok length(path($saved)->slurp) == 0, 'Data';
+        $parser->save_to_json($saved);
+        ok length(path($saved)->slurp) > 50, 'Data';
+        $deserialized = $parser_name->new()->from_json_file($saved);
+        ok "$deserialized" ne "$parser", "Different objects";
+        $test_function->($parser);
+        $test_function->($deserialized);
+        is $parser->content, $test_result_file->slurp, 'Content was kept intact for original obj'
+          or diag explain $deserialized->content;
+        is $deserialized->content, $test_result_file->slurp, 'Content was kept intact'
+          or diag explain $deserialized->content;
     }
 }
 
@@ -418,6 +573,7 @@ subtest 'Unstructured data' => sub {
     $parser->results->each(
         sub {
             ok !!$_->get('servlet-name'), 'servlet-name exists: ' . $_->get('servlet-name');
+            like $_->get('servlet-name'), qr/cofax|servlet/i, 'Name matches';
         });
 
     my $serialized   = $parser->serialize();
@@ -426,11 +582,34 @@ subtest 'Unstructured data' => sub {
     $deserialized->results->each(
         sub {
             ok !!$_->get('servlet-name'), 'servlet-name exists - ' . $_->get('servlet-name');
+            like $_->get('servlet-name'), qr/cofax|servlet/i, 'Name matches';
+
         });
     ok $deserialized->results->size == 5, 'There are some results';
-
     is $deserialized->results->first->get('init-param')->{'configGlossary:installationAt'}, 'Philadelphia, PA',
       'Nested serialization works!';
+
+    #bool are decoded '1'/1 or '0'/0 between perl 5.18 and 5.26
+    $deserialized->results->last->get('init-param')->{'betaServer'}
+      = $deserialized->results->last->get('init-param')->{'betaServer'} ? 1 : 0;
+
+    is_deeply $deserialized->results->last->get('init-param'),
+      {
+        "templatePath"        => "toolstemplates/",
+        "log"                 => 1,
+        "logLocation"         => "/usr/local/tomcat/logs/CofaxTools.log",
+        "logMaxSize"          => "",
+        "dataLog"             => 1,
+        "dataLogLocation"     => "/usr/local/tomcat/logs/dataLog.log",
+        "dataLogMaxSize"      => "",
+        "removePageCache"     => "/content/admin/remove?cache=pages&id=",
+        "removeTemplateCache" => "/content/admin/remove?cache=templates&id=",
+        "fileTransferFolder"  => "/usr/local/tomcat/webapps/content/fileTransferFolder",
+        "lookInContext"       => 1,
+        "adminGroupID"        => 4,
+        "betaServer"          => 1
+      },
+      'Last servlet matches';
 };
 
 subtest functional_interface => sub {

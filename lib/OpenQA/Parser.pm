@@ -26,14 +26,10 @@ use OpenQA::Parser::Result::Output;
 use OpenQA::Parser::Result;
 use OpenQA::Parser::Results;
 use Storable;
-use Scalar::Util 'blessed';
+use Scalar::Util qw(blessed reftype);
 
 our @EXPORT_OK = qw(parser p);
 use Exporter 'import';
-
-use constant
-  SERIALIZABLE_COLLECTIONS => qw(generated_tests_results generated_tests_output),
-  qw(generated_tests generated_tests_extra);
 
 has generated_tests => sub { OpenQA::Parser::Results->new };    #testsuites
 has generated_tests_results =>
@@ -41,16 +37,17 @@ has generated_tests_results =>
 has generated_tests_output => sub { OpenQA::Parser::Results->new };    #testcase results
 has generated_tests_extra  => sub { OpenQA::Parser::Results->new };    # tests extra data.
 
+has include_content => 0;
+has 'content';
+
 *results = \&generated_tests_results;
 *tests   = \&generated_tests;
 *outputs = \&generated_tests_output;
 *extra   = \&generated_tests_extra;
 *p       = \&parser;
 
-
-# parser("Format", "file")
-# parser("LTP")->load("file")
-# parser("Whatever")
+# parser( Format => 'file.json')
+# or parser( 'Format' )
 sub parser {
     @_ > 1 && ref $_[0] ne 'HASH' ? _build_parser(shift(@_))->load(shift(@_)) : _build_parser(shift(@_));
 }
@@ -77,6 +74,7 @@ sub load {
     croak "You need to specify a file" if !$file;
     my $file_content = $self->_read_file($file);
     confess "Failed reading file $file" if !$file_content;
+    $self->content($file_content) if $self->include_content;
     $self->parse($file_content);
     $self;
 }
@@ -108,27 +106,49 @@ sub _add_test   { shift->generated_tests->add(OpenQA::Parser::Result::Test->new(
 sub _add_result { shift->generated_tests_results->add(OpenQA::Parser::Result->new(@_)) }
 sub _add_output { shift->generated_tests_output->add(OpenQA::Parser::Result::Output->new(@_)) }
 
+sub _gen_tree_el {
+    my $el = shift;
+    return {data => $el} unless blessed $el;
+
+    my $el_ref;
+    if ($el->can("to_hash")) {
+        $el_ref = $el->to_hash;
+    }
+    elsif ($el->can("to_array")) {
+        $el_ref = $el->to_array;
+    }
+    elsif (reftype $el eq 'ARRAY') {
+        warn "Serialization is offically supported only if object can be turned into an array with ->to_array()";
+        $el_ref = [@{$el}];
+    }
+    elsif (reftype $el eq 'HASH') {
+        warn "Serialization is offically supported only if object can be hashified with ->to_hash()";
+        $el_ref = {%{$el}};
+    }
+    else {
+        warn "Data type with format not supported for serialization";
+        $el_ref = $el;
+    }
+
+    return {data => $el_ref, type => ref $el};
+}
+
 sub _build_tree {
     my $self = shift;
+
     my $tree;
-    foreach my $collection (SERIALIZABLE_COLLECTIONS) {
-        $self->$collection->each(
-            sub {
-                my $to_hash;
-                my @type = (type => ref $_);
-                if (blessed $_ && $_->can("to_hash")) {
-                    $to_hash = $_->to_hash;
-                }
-                elsif (blessed $_ && !$_->can("to_hash")) {
-                    warn "Serialization is offically supported only if object can be hashified with ->to_hash()";
-                    $to_hash = {%$_};
-                }
-                else {
-                    $to_hash = $_;
-                    @type    = ();
-                }
-                push(@{$tree->{$collection}}, {data => $to_hash, @type});
-            });
+    my @coll = sort keys %{$self};
+
+    foreach my $collection (@coll) {
+        if (blessed $self->{$collection} && $self->{$collection}->can('each')) {
+            $self->$collection->each(
+                sub {
+                    push(@{$tree->{$collection}}, _gen_tree_el($_));
+                });
+        }
+        else {
+            $tree->{$collection} = _gen_tree_el($self->{$collection});
+        }
     }
     return $tree;
 }
@@ -137,17 +157,28 @@ sub _load_tree {
     my $self = shift;
 
     my $tree = shift;
+    my @coll = sort keys %{$tree};
+
     {
         no strict 'refs';    ## no critic
         local $@;
         eval {
-            foreach my $collection (SERIALIZABLE_COLLECTIONS) {
-                $self->$collection->add(
-                    $_->{type} ? $_->{type}->new($_->{data}) : ref $_->{data} eq "ARRAY" ? @{$_->{data}} : $_->{data})
-                  for @{$tree->{$collection}};
+            foreach my $collection (@coll) {
+                if (ref $tree->{$collection} eq 'ARRAY') {
+                    $self->$collection->add(
+                          $_->{type}                ? $_->{type}->new($_->{data})
+                        : ref $_->{data} eq "ARRAY" ? @{$_->{data}}
+                        :                             $_->{data}) for @{$tree->{$collection}};
+                }
+                else {
+                    $self->{$collection}
+                      = $tree->{$collection}->{type} ?
+                      $tree->{$collection}->{type}->new($tree->{$collection}->{data})
+                      : $tree->{$collection}->{data};
+                }
             }
         };
-        die "Failed parsing tree: $@" if $@;
+        confess "Failed parsing tree: $@" if $@;
     }
 
     return $self;
@@ -159,7 +190,21 @@ sub deserialize { shift->_load_tree(Storable::thaw(shift)) }
 sub to_json   { encode_json shift->_build_tree }
 sub from_json { shift->_load_tree(decode_json shift) }
 
-sub reset { my $self = shift; $self->$_->reset() for SERIALIZABLE_COLLECTIONS }
+sub save         { my $s = shift; path(@_)->spurt($s->serialize); $s }
+sub save_to_json { my $s = shift; path(@_)->spurt($s->to_json);   $s }
+sub from_file    { __PACKAGE__->new()->deserialize(path(pop)->slurp()) }
+sub from_json_file { __PACKAGE__->new()->from_json(path(pop)->slurp()) }
+
+sub reset {
+    my $self = shift;
+
+    do {
+        do { $self->{$_}->reset(); next } if blessed $self->{$_} && $self->{$_}->can('reset');
+        $self->{$_} = undef;
+      }
+      for (sort keys %{$self})
+
+}
 
 
 !!42;
