@@ -490,16 +490,16 @@ sub commit_git_return_error {
 
 sub asset_type_from_setting {
     my ($setting) = @_;
-    if ($setting eq 'ISO' || $setting =~ /^ISO_\d$/) {
+    if ($setting eq 'ISO' || $setting =~ /^ISO_\d+$/) {
         return 'iso';
     }
-    if ($setting =~ /^HDD_\d$/) {
+    if ($setting =~ /^HDD_\d+$/) {
         return 'hdd';
     }
-    if ($setting =~ /^REPO_\d$/) {
+    if ($setting =~ /^REPO_\d+$/) {
         return 'repo';
     }
-    if ($setting =~ /^ASSET_\d$/ || $setting eq 'KERNEL' || $setting eq 'INITRD') {
+    if ($setting =~ /^ASSET_\d+$/ || $setting eq 'KERNEL' || $setting eq 'INITRD') {
         return 'other';
     }
     # empty string if this doesn't look like an asset type
