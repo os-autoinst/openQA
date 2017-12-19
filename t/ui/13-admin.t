@@ -530,6 +530,14 @@ subtest 'asset list' => sub {
         ["openSUSE-13.1-DVD-x86_64-Build0091-Media.iso\n4KiB",],
         'assets of "assets by group"'
     );
+
+    # delete one of the assets
+    $driver->find_element('#asset_4 .name a')->click();
+    wait_for_ajax;
+    is(scalar @{$driver->find_elements('#asset_4')}, 0, 'asset gone');
+    $driver->get($driver->get_current_url());
+    wait_for_ajax;
+    is(scalar @{$driver->find_elements('#asset_4')}, 0, 'asset gone forever');
 };
 
 kill_driver();

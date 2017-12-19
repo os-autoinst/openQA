@@ -29,3 +29,16 @@ function setup_asset_table() {
         }
     );
 }
+
+function deleteAsset(assetId) {
+    $.ajax({
+        url: '/api/v1/assets/' + assetId,
+        method: 'DELETE',
+        success: function() {
+            $('#asset_' + assetId).remove();
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            window.alert('The asset couldn\'t be deleted: ' + thrownError);
+        }
+    });
+}
