@@ -491,8 +491,8 @@ subtest 'asset list' => sub {
 
     is_deeply(
         get_cell_contents('tr#asset_1'),
-        ['iso', 'openSUSE-13.1-DVD-i586-Build0091-Media.iso', '5', 'about 2 hours ago', '', 'unknown'],
-        'asset with unknown last use'
+        ['iso', 'openSUSE-13.1-DVD-i586-Build0091-Media.iso', '5', 'about 2 hours ago', 'unknown'],
+        'asset with unknown last use and size'
     );
     is_deeply(
         get_cell_contents('tr#asset_2'),
@@ -502,6 +502,14 @@ subtest 'asset list' => sub {
             '4 KiB', 'opensuse: opensuse-13.1-DVD-x86_64-Build0091-kde@64bit'
         ],
         'asset with last use'
+    );
+
+    my $used_assets      = $driver->find_element('#assets');
+    my $untracked_assets = $driver->find_element('#untracked-assets');
+    ok($driver->find_child_element($used_assets, 'tr#asset_2'), 'asset with last use part of used assets');
+    ok(
+        $driver->find_child_element($untracked_assets, 'tr#asset_1'),
+        'asset with unknown last use part of untracked assets'
     );
 };
 
