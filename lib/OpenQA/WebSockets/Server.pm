@@ -464,12 +464,11 @@ sub setup {
 
     app->helper(log_name => sub { return 'websockets' });
     app->helper(schema   => sub { return OpenQA::Schema::connect_db; });
+    app->defaults(appname => "openQA Websocket Server");
+    app->mode('production');
+
     OpenQA::Setup::read_config(app);
     OpenQA::Setup::setup_log(app);
-
-    # not really meaningful for websockets, but required for mode defaults
-    app->defaults(appname => "openQA Websocket Server");
-    app->helper(mode => sub { return 'production' });
 
     push @{app->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
 
