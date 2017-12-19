@@ -40,7 +40,7 @@ is($rs->latest_build, '0091');
 is($rs->latest_build(version => 'Factory', distri => 'opensuse'), '0048@0815');
 is($rs->latest_build(version => '13.1',    distri => 'opensuse'), '0091');
 
-my @latest = $t->app->db->resultset("Jobs")->latest_jobs;
+my @latest = $rs->latest_jobs;
 my @ids = map { $_->id } @latest;
 # These two jobs have later clones in the fixture set, so should not appear
 ok(grep(!/^(99962|99945)$/, @ids));
@@ -543,5 +543,24 @@ subtest 'job timers are added after start job and removed after stop job' => sub
 };
 
 $t->get_ok('/t99946')->status_is(302)->header_like(Location => qr{tests/99946});
+
+subtest 'delete job assigned as last use for asset' => sub {
+    my $assets     = $t->app->db->resultset('Assets');
+    my $some_job   = $rs->first;
+    my $some_asset = $assets->first;
+    my $asset_id   = $some_asset->id;
+
+    # let the asset reference a job
+    $some_asset->update({last_use_job_id => $some_job->id});
+
+    # delete that job
+    ok($some_job->delete,      'job deletion ok');
+    ok(!$some_job->in_storage, 'job no in storage anymore');
+
+    # assert whether asset is still present
+    $some_asset = $assets->find($asset_id);
+    ok($some_asset, 'asset still exists');
+    is($some_asset->last_use_job_id, undef, 'last job unset');
+};
 
 done_testing();

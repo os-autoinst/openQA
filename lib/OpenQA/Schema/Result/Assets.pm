@@ -67,7 +67,10 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw(type name)]);
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'asset_id');
 __PACKAGE__->many_to_many(jobs => 'jobs_assets', 'job');
-__PACKAGE__->belongs_to(last_use_job => 'OpenQA::Schema::Result::Jobs', 'last_use_job_id');
+__PACKAGE__->belongs_to(
+    last_use_job => 'OpenQA::Schema::Result::Jobs',
+    'last_use_job_id',
+    {join_type => 'left', on_delete => 'SET NULL'});
 
 sub _getDirSize {
     my ($dir, $size) = @_;
