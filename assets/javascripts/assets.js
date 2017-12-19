@@ -1,6 +1,5 @@
-function setup_asset_table()
-{
-    $('#assets').DataTable(
+function setup_asset_table() {
+    $('#assets, #untracked-assets').DataTable(
         {
             columnDefs: [
                 { targets: 3,
@@ -14,15 +13,10 @@ function setup_asset_table()
                 { targets: 4,
                   render: function(data, type, row) {
                       if (type === 'display') {
-                          var unitFactor = 1073741824; // one GiB
-                          var dataWithUnit;
-                          $.each([' GiB', ' MiB', ' KiB', ' byte'], function(index, unit) {
-                              if (!unitFactor || data >= unitFactor) {
-                                  dataWithUnit = (data / unitFactor) + unit;
-                                  return false;
-                              }
-                              unitFactor >>= 10;
-                          });
+                          if (data === '') {
+                              return 'unknown';
+                          }
+                          var dataWithUnit = renderDataSize(data);
                           if (dataWithUnit) {
                             return dataWithUnit;
                           }

@@ -19,9 +19,36 @@ use Mojo::Base 'Mojolicious::Controller';
 
 sub index {
     my $self = shift;
-    my $assets = $self->db->resultset("Assets")->search(undef, {order_by => 'id', prefetch => 'jobs_assets'});
 
-    $self->stash('assets', $assets);
+    # query assets
+    my $assets = $self->db->resultset('Assets');
+    my $assets_ordered_by_id = $assets->search(undef, {order_by => 'id', prefetch => 'jobs_assets'});
+
+    # query list of job groups to show assets by job group
+    my @assets_by_group;
+    my $groups
+      = $self->db->resultset('JobGroups')->search(undef, {order_by => {-desc => 'exclusively_kept_asset_size'}});
+    my $dbh                = $self->db->storage->dbh;
+    my $query_group_assets = $dbh->prepare(
+        'select a.* from assets a join jobs j on j.id = a.last_use_job_id where j.group_id = ? order by a.size desc;');
+    while (my $group = $groups->next) {
+        my @group_assets;
+        $query_group_assets->execute($group->id);
+        while (my $asset = $query_group_assets->fetchrow_hashref) {
+            push(@group_assets, $asset);
+        }
+        push(
+            @assets_by_group,
+            {
+                id     => $group->id,
+                name   => $group->name,
+                size   => $group->exclusively_kept_asset_size,
+                assets => \@group_assets,
+            });
+    }
+
+    $self->stash('assets',          $assets_ordered_by_id);
+    $self->stash('assets_by_group', \@assets_by_group);
     $self->render('admin/asset/index');
 }
 
