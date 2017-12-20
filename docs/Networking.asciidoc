@@ -55,21 +55,6 @@ be able to access them.
 tunctl -u _openqa-worker -p -t tap0
 ---------------
 
-or Wicked way:
-[caption="File: "]
-[source,sh]
-./etc/sysconfig/network/ifcfg-tap0
----------------
-BOOTPROTO='none'
-IPADDR=''
-NETMASK=''
-PREFIXLEN=''
-STARTMODE='auto'
-TUNNEL='tap'
-TUNNEL_SET_GROUP='nogroup'
-TUNNEL_SET_OWNER='_openqa-worker'
----------------
-
 If you want to use TAP device which doesn't exist on the system,
 you need to set CAP_NET_ADMIN capability on qemu binary file:
 
@@ -121,29 +106,6 @@ ovs-vsctl add-port br0 tap4 tag=999
 
 ---------------
 
-If the workers with TAP capability are spread across multiple hosts, the network must be connected.
-See Open vSwitch http://openvswitch.org/support/config-cookbooks/port-tunneling/[documentation] for details.
-
-Optionally you can join two (or maybe even more by gre2 and so on) host machines and its ovs bridges together by GRE tunnel to get more workers for one test.
-
-Change remote_ip value correspondingly and run comamand on both hosts:
-[source,sh]
-----
-ovs-vsctl add-port br0 gre1 -- set interface gre1 type=gre options:remote_ip=<IP address of other host>
-----
-
-Or by wicked way - call the following script from ifcfg-br0 by +PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh"+ entry
-[source,sh]
-----
-# /etc/wicked/scripts/gre_tunnel_preup.sh
-#!/bin/sh
-action="$1"
-bridge="$2"
-ovs-vsctl --may-exist add-port $bridge gre1 -- set interface gre1 type=gre options:remote_ip=<IP address of other host>
-----
-
-NOTE: When using GRE tunnels keep in mind that VMs inside the ovs bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If you are using support_server/setup.pm the MTU will be set automatically to that value on support_server itself and it does MTU advertisement for DHCP clients as well.
-
 The virtual machines need access to os-autoinst webserver acessible
 via IP 10.0.2.2. The IP addresses of VMs are controlled by tests
 and are likely to conflict if more independent tests runs in parallel.
@@ -168,67 +130,6 @@ ip route add 10.0.0.0/15 dev br0
 ip link set br0 up
 ---------------
 
-and permanently in /etc/sysconfig/network
-[source,sh]
----------------
-# /etc/sysconfig/network/ifcfg-br0
-BOOTPROTO='static'
-IPADDR='10.0.2.2/15'
-STARTMODE='auto'
----------------
-
-wicked 0.6.23 and later has enhanced support for the creation and configuration of OpenvSwitch bridges.
-
-NOTE: In some cases (e.g. on Leap) can be needed to start the OpenvSwitch service before the Network service by modifying the OpenvSwitch service. For reference see https://en.opensuse.org/Portal:Wicked/OpenvSwitch#Wicked_0.6.23.2B[this].
-
-The permanent configuration for wicked 0.6.23 and later should look like this:
-
-[source,sh]
----------------
-# /etc/sysconfig/network/ifcfg-br0
-BOOTPROTO='static'
-IPADDR='10.0.2.2/15'
-STARTMODE='auto'
-OVS_BRIDGE='yes'
-OVS_BRIDGE_PORT_DEVICE_1='tap0'
-OVS_BRIDGE_PORT_DEVICE_2='tap1'
-OVS_BRIDGE_PORT_DEVICE_3='tap2'
-# Following needed for GRE
-PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh"
----------------
-
-The IP 10.0.2.2 can also serve as a gateway to access outside
-network. For this, a NAT between br0 and eth0 must be configured
-with SuSEfirewall or iptables.
-
-[source,sh]
----------------
-# configuration options for NAT with SuSEfirewall
-# /etc/sysconfig/SuSEfirewall2
-
-FW_ROUTE="yes"
-FW_MASQUERADE="yes"
-FW_DEV_INT="br0"
-# Following needed for GRE
-FW_SERVICES_EXT_IP="GRE"
-FW_SERVICES_EXT_TCP="1723"
----------------
-
-Then it is possible to start the os-autoinst-openvswitch.service
-The service uses +br0+ by default. It can be configured for another
-bridge name by setting +/etc/sysconfig/os-autoinst-openvswitch+
-
-[source,sh]
----------------
-OS_AUTOINST_USE_BRIDGE=bridge_name
----------------
-
-Then, start the service:
-[source,sh]
----------------
-systemctl start os-autoinst-openvswitch.service
-systemctl enable os-autoinst-openvswitch.service
----------------
 
 == Debugging Open vSwitch configuration
 
@@ -307,3 +208,105 @@ has no internet access. To enable user mode networking set
 `VDE_USE_SLIRP=1` on one of the machines. The worker running the job
 on such a machine will start slirpvde and put it in the correct VLAN
 then.
+
+== Worker configuration
+
+Requirements
+```bash
+zypper in openvswitch os-autoinst-openvswitch openQA-worker tunctl
+
+systemctl enable SuSEfirewall2              # Needed to create NAT to outside network
+systemctl enable openvswitch                # Needed for network creation
+systemctl enable os-autoinst-openvswitch    # Needed to separate networks for parallel clusters
+```
+
+NOTE: In some cases (e.g. on Leap) can be needed to start the OpenvSwitch service before the Network service by modifying the OpenvSwitch service. For reference see https://en.opensuse.org/Portal:Wicked/OpenvSwitch#Wicked_0.6.23.2B[this].
+
+
+The os-autoinst-openvswitch.service uses +br0+ by default.
+Usually it's used by KVM, so we need to configure br1.
+
+```bash
+# /etc/sysconfig/os-autoinst-openvswitch
+OS_AUTOINST_USE_BRIDGE=br1
+```
+
+For every MM worker you need tap device (tap0 tap1 tap2 ..)
+```bash
+# /etc/sysconfig/network/ifcfg-tap0
+BOOTPROTO='none'
+IPADDR=''
+NETMASK=''
+PREFIXLEN=''
+STARTMODE='auto'
+TUNNEL='tap'
+TUNNEL_SET_GROUP='nogroup'
+TUNNEL_SET_OWNER='_openqa-worker'
+```
+
+Add all tap devices to bridge config
+```bash
+# /etc/sysconfig/network/ifcfg-br1
+BOOTPROTO='static'
+IPADDR='10.0.2.2/15'
+STARTMODE='auto'
+OVS_BRIDGE='yes'
+OVS_BRIDGE_PORT_DEVICE_1='tap0'
+OVS_BRIDGE_PORT_DEVICE_2='tap1'
+OVS_BRIDGE_PORT_DEVICE_3='tap2'
+```
+
+The IP 10.0.2.2 can also serve as a gateway to access outside
+network. For this, a NAT between br1 and eth0 must be configured
+with SuSEfirewall or iptables.
+
+```bash
+# /etc/sysconfig/SuSEfirewall2
+FW_ROUTE="yes"
+FW_MASQUERADE="yes"
+FW_DEV_INT="br1"
+```
+
+Tell workers to run also multi-machine jobs
+```bash
+# /etc/openqa/workers.ini
+[global]
+WORKER_CLASS = qemu_x86_64,tap
+```
+
+REBOOT
+
+
+== GRE tunnels
+
+By default all multi-machine workers have to be on single physical machine.
+You can join multiple physical machines and its ovs bridges together by GRE tunnel.
+
+If the workers with TAP capability are spread across multiple hosts, the network must be connected.
+See Open vSwitch http://openvswitch.org/support/config-cookbooks/port-tunneling/[documentation] for details.
+
+
+Create gre_tunnel_preup script (change remote_ip value correspondingly on both hosts)
+```bash
+# /etc/wicked/scripts/gre_tunnel_preup.sh
+#!/bin/sh
+action="$1"
+bridge="$2"
+ovs-vsctl --may-exist add-port $bridge gre1 -- set interface gre1 type=gre options:remote_ip=<IP address of other host>
+```
+
+And call it by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry
+```bash
+# /etc/sysconfig/network/ifcfg-br1
+<..>
+PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh"
+```
+
+Allow GRE in firewall
+```bash
+# /etc/sysconfig/SuSEfirewall2
+FW_SERVICES_EXT_IP="GRE"
+FW_SERVICES_EXT_TCP="1723"
+```
+
+NOTE: When using GRE tunnels keep in mind that VMs inside the ovs bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If you are using support_server/setup.pm the MTU will be set automatically to that value on support_server itself and it does MTU advertisement for DHCP clients as well.
