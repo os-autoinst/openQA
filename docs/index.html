@@ -707,6 +707,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_multi_machine_tests">Multi machine tests</a></li>
 </ul>
 </li>
+<li><a href="#_worker_configuration">Worker configuration</a></li>
+<li><a href="#_gre_tunnels">GRE tunnels</a></li>
 </ul>
 </li>
 <li><a href="#_openqa_developer_guide">openQA developer guide</a>
@@ -4180,22 +4182,6 @@ be able to access them.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>or Wicked way:</p>
-</div>
-<div class="listingblock">
-<div class="title">File: /etc/sysconfig/network/ifcfg-tap0</div>
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">BOOTPROTO</span><span class="tok-o">=</span><span class="tok-s1">&#39;none&#39;</span>
-<span class="tok-nv">IPADDR</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
-<span class="tok-nv">NETMASK</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
-<span class="tok-nv">PREFIXLEN</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
-<span class="tok-nv">STARTMODE</span><span class="tok-o">=</span><span class="tok-s1">&#39;auto&#39;</span>
-<span class="tok-nv">TUNNEL</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap&#39;</span>
-<span class="tok-nv">TUNNEL_SET_GROUP</span><span class="tok-o">=</span><span class="tok-s1">&#39;nogroup&#39;</span>
-<span class="tok-nv">TUNNEL_SET_OWNER</span><span class="tok-o">=</span><span class="tok-s1">&#39;_openqa-worker&#39;</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
 <p>If you want to use TAP device which doesn&#8217;t exist on the system,
 you need to set CAP_NET_ADMIN capability on qemu binary file:</p>
 </div>
@@ -4258,45 +4244,6 @@ ovs-vsctl add-port br0 tap4 <span class="tok-nv">tag</span><span class="tok-o">=
 </div>
 </div>
 <div class="paragraph">
-<p>If the workers with TAP capability are spread across multiple hosts, the network must be connected.
-See Open vSwitch <a href="http://openvswitch.org/support/config-cookbooks/port-tunneling/">documentation</a> for details.</p>
-</div>
-<div class="paragraph">
-<p>Optionally you can join two (or maybe even more by gre2 and so on) host machines and its ovs bridges together by GRE tunnel to get more workers for one test.</p>
-</div>
-<div class="paragraph">
-<p>Change remote_ip value correspondingly and run comamand on both hosts:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>ovs-vsctl add-port br0 gre1 -- <span class="tok-nb">set</span> interface gre1 <span class="tok-nv">type</span><span class="tok-o">=</span>gre options:remote_ip<span class="tok-o">=</span>&lt;IP address of other host&gt;</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Or by wicked way - call the following script from ifcfg-br0 by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/wicked/scripts/gre_tunnel_preup.sh</span>
-<span class="tok-c1">#!/bin/sh</span>
-<span class="tok-nv">action</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$1</span><span class="tok-s2">&quot;</span>
-<span class="tok-nv">bridge</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$2</span><span class="tok-s2">&quot;</span>
-ovs-vsctl --may-exist add-port <span class="tok-nv">$bridge</span> gre1 -- <span class="tok-nb">set</span> interface gre1 <span class="tok-nv">type</span><span class="tok-o">=</span>gre options:remote_ip<span class="tok-o">=</span>&lt;IP address of other host&gt;</code></pre>
-</div>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
-When using GRE tunnels keep in mind that VMs inside the ovs bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If you are using support_server/setup.pm the MTU will be set automatically to that value on support_server itself and it does MTU advertisement for DHCP clients as well.
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
 <p>The virtual machines need access to os-autoinst webserver acessible
 via IP 10.0.2.2. The IP addresses of VMs are controlled by tests
 and are likely to conflict if more independent tests runs in parallel.</p>
@@ -4322,86 +4269,6 @@ and netmask /15 that covers 10.0.0.0 and 10.1.0.0 ranges.</p>
 <pre class="pygments highlight"><code data-lang="sh"><span></span>ip addr add <span class="tok-m">10</span>.0.2.2/15 dev br0
 ip route add <span class="tok-m">10</span>.0.0.0/15 dev br0
 ip link <span class="tok-nb">set</span> br0 up</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>and permanently in /etc/sysconfig/network</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-br0</span>
-<span class="tok-nv">BOOTPROTO</span><span class="tok-o">=</span><span class="tok-s1">&#39;static&#39;</span>
-<span class="tok-nv">IPADDR</span><span class="tok-o">=</span><span class="tok-s1">&#39;10.0.2.2/15&#39;</span>
-<span class="tok-nv">STARTMODE</span><span class="tok-o">=</span><span class="tok-s1">&#39;auto&#39;</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>wicked 0.6.23 and later has enhanced support for the creation and configuration of OpenvSwitch bridges.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
-In some cases (e.g. on Leap) can be needed to start the OpenvSwitch service before the Network service by modifying the OpenvSwitch service. For reference see <a href="https://en.opensuse.org/Portal:Wicked/OpenvSwitch#Wicked_0.6.23.2B">this</a>.
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>The permanent configuration for wicked 0.6.23 and later should look like this:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-br0</span>
-<span class="tok-nv">BOOTPROTO</span><span class="tok-o">=</span><span class="tok-s1">&#39;static&#39;</span>
-<span class="tok-nv">IPADDR</span><span class="tok-o">=</span><span class="tok-s1">&#39;10.0.2.2/15&#39;</span>
-<span class="tok-nv">STARTMODE</span><span class="tok-o">=</span><span class="tok-s1">&#39;auto&#39;</span>
-<span class="tok-nv">OVS_BRIDGE</span><span class="tok-o">=</span><span class="tok-s1">&#39;yes&#39;</span>
-<span class="tok-nv">OVS_BRIDGE_PORT_DEVICE_1</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap0&#39;</span>
-<span class="tok-nv">OVS_BRIDGE_PORT_DEVICE_2</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap1&#39;</span>
-<span class="tok-nv">OVS_BRIDGE_PORT_DEVICE_3</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap2&#39;</span>
-<span class="tok-c1"># Following needed for GRE</span>
-<span class="tok-nv">PRE_UP_SCRIPT</span><span class="tok-o">=</span><span class="tok-s2">&quot;wicked:gre_tunnel_preup.sh&quot;</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The IP 10.0.2.2 can also serve as a gateway to access outside
-network. For this, a NAT between br0 and eth0 must be configured
-with SuSEfirewall or iptables.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># configuration options for NAT with SuSEfirewall</span>
-<span class="tok-c1"># /etc/sysconfig/SuSEfirewall2</span>
-
-<span class="tok-nv">FW_ROUTE</span><span class="tok-o">=</span><span class="tok-s2">&quot;yes&quot;</span>
-<span class="tok-nv">FW_MASQUERADE</span><span class="tok-o">=</span><span class="tok-s2">&quot;yes&quot;</span>
-<span class="tok-nv">FW_DEV_INT</span><span class="tok-o">=</span><span class="tok-s2">&quot;br0&quot;</span>
-<span class="tok-c1"># Following needed for GRE</span>
-<span class="tok-nv">FW_SERVICES_EXT_IP</span><span class="tok-o">=</span><span class="tok-s2">&quot;GRE&quot;</span>
-<span class="tok-nv">FW_SERVICES_EXT_TCP</span><span class="tok-o">=</span><span class="tok-s2">&quot;1723&quot;</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Then it is possible to start the os-autoinst-openvswitch.service
-The service uses br0 by default. It can be configured for another
-bridge name by setting /etc/sysconfig/os-autoinst-openvswitch</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">OS_AUTOINST_USE_BRIDGE</span><span class="tok-o">=</span>bridge_name</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Then, start the service:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start os-autoinst-openvswitch.service
-systemctl <span class="tok-nb">enable</span> os-autoinst-openvswitch.service</code></pre>
 </div>
 </div>
 </div>
@@ -4540,6 +4407,159 @@ has no internet access. To enable user mode networking set
 on such a machine will start slirpvde and put it in the correct VLAN
 then.</p>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_worker_configuration">Worker configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Requirements</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="bash"><span></span>zypper in openvswitch os-autoinst-openvswitch openQA-worker tunctl
+
+systemctl <span class="tok-nb">enable</span> SuSEfirewall2              <span class="tok-c1"># Needed to create NAT to outside network</span>
+systemctl <span class="tok-nb">enable</span> openvswitch                <span class="tok-c1"># Needed for network creation</span>
+systemctl <span class="tok-nb">enable</span> os-autoinst-openvswitch    <span class="tok-c1"># Needed to separate networks for parallel clusters</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+In some cases (e.g. on Leap) can be needed to start the OpenvSwitch service before the Network service by modifying the OpenvSwitch service. For reference see <a href="https://en.opensuse.org/Portal:Wicked/OpenvSwitch#Wicked_0.6.23.2B">this</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The os-autoinst-openvswitch.service uses br0 by default.
+Usually it&#8217;s used by KVM, so we need to configure br1.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="bash"><span></span><span class="tok-c1"># /etc/sysconfig/os-autoinst-openvswitch</span>
+<span class="tok-nv">OS_AUTOINST_USE_BRIDGE</span><span class="tok-o">=</span>br1</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For every MM worker you need tap device (tap0 tap1 tap2 ..)</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="bash"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-tap0</span>
+<span class="tok-nv">BOOTPROTO</span><span class="tok-o">=</span><span class="tok-s1">&#39;none&#39;</span>
+<span class="tok-nv">IPADDR</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
+<span class="tok-nv">NETMASK</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
+<span class="tok-nv">PREFIXLEN</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
+<span class="tok-nv">STARTMODE</span><span class="tok-o">=</span><span class="tok-s1">&#39;auto&#39;</span>
+<span class="tok-nv">TUNNEL</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap&#39;</span>
+<span class="tok-nv">TUNNEL_SET_GROUP</span><span class="tok-o">=</span><span class="tok-s1">&#39;nogroup&#39;</span>
+<span class="tok-nv">TUNNEL_SET_OWNER</span><span class="tok-o">=</span><span class="tok-s1">&#39;_openqa-worker&#39;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Add all tap devices to bridge config</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="bash"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-br1</span>
+<span class="tok-nv">BOOTPROTO</span><span class="tok-o">=</span><span class="tok-s1">&#39;static&#39;</span>
+<span class="tok-nv">IPADDR</span><span class="tok-o">=</span><span class="tok-s1">&#39;10.0.2.2/15&#39;</span>
+<span class="tok-nv">STARTMODE</span><span class="tok-o">=</span><span class="tok-s1">&#39;auto&#39;</span>
+<span class="tok-nv">OVS_BRIDGE</span><span class="tok-o">=</span><span class="tok-s1">&#39;yes&#39;</span>
+<span class="tok-nv">OVS_BRIDGE_PORT_DEVICE_1</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap0&#39;</span>
+<span class="tok-nv">OVS_BRIDGE_PORT_DEVICE_2</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap1&#39;</span>
+<span class="tok-nv">OVS_BRIDGE_PORT_DEVICE_3</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap2&#39;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The IP 10.0.2.2 can also serve as a gateway to access outside
+network. For this, a NAT between br1 and eth0 must be configured
+with SuSEfirewall or iptables.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="bash"><span></span><span class="tok-c1"># /etc/sysconfig/SuSEfirewall2</span>
+<span class="tok-nv">FW_ROUTE</span><span class="tok-o">=</span><span class="tok-s2">&quot;yes&quot;</span>
+<span class="tok-nv">FW_MASQUERADE</span><span class="tok-o">=</span><span class="tok-s2">&quot;yes&quot;</span>
+<span class="tok-nv">FW_DEV_INT</span><span class="tok-o">=</span><span class="tok-s2">&quot;br1&quot;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Tell workers to run also multi-machine jobs</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="bash"><span></span><span class="tok-c1"># /etc/openqa/workers.ini</span>
+<span class="tok-o">[</span>global<span class="tok-o">]</span>
+<span class="tok-nv">WORKER_CLASS</span> <span class="tok-o">=</span> qemu_x86_64,tap</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>REBOOT</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_gre_tunnels">GRE tunnels</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>By default all multi-machine workers have to be on single physical machine.
+You can join multiple physical machines and its ovs bridges together by GRE tunnel.</p>
+</div>
+<div class="paragraph">
+<p>If the workers with TAP capability are spread across multiple hosts, the network must be connected.
+See Open vSwitch <a href="http://openvswitch.org/support/config-cookbooks/port-tunneling/">documentation</a> for details.</p>
+</div>
+<div class="paragraph">
+<p>Create gre_tunnel_preup script (change remote_ip value correspondingly on both hosts)</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="bash"><span></span><span class="tok-c1"># /etc/wicked/scripts/gre_tunnel_preup.sh</span>
+<span class="tok-c1">#!/bin/sh</span>
+<span class="tok-nv">action</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$1</span><span class="tok-s2">&quot;</span>
+<span class="tok-nv">bridge</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$2</span><span class="tok-s2">&quot;</span>
+ovs-vsctl --may-exist add-port <span class="tok-nv">$bridge</span> gre1 -- <span class="tok-nb">set</span> interface gre1 <span class="tok-nv">type</span><span class="tok-o">=</span>gre options:remote_ip<span class="tok-o">=</span>&lt;IP address of other host&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And call it by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="bash"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-br1</span>
+&lt;..&gt;
+<span class="tok-nv">PRE_UP_SCRIPT</span><span class="tok-o">=</span><span class="tok-s2">&quot;wicked:gre_tunnel_preup.sh&quot;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Allow GRE in firewall</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="bash"><span></span><span class="tok-c1"># /etc/sysconfig/SuSEfirewall2</span>
+<span class="tok-nv">FW_SERVICES_EXT_IP</span><span class="tok-o">=</span><span class="tok-s2">&quot;GRE&quot;</span>
+<span class="tok-nv">FW_SERVICES_EXT_TCP</span><span class="tok-o">=</span><span class="tok-s2">&quot;1723&quot;</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+When using GRE tunnels keep in mind that VMs inside the ovs bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If you are using support_server/setup.pm the MTU will be set automatically to that value on support_server itself and it does MTU advertisement for DHCP clients as well.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -5059,7 +5079,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-12-20 06:10:55 UTC
+Last updated 2017-12-20 06:24:16 UTC
 </div>
 </div>
 </body>
