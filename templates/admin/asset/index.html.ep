@@ -29,7 +29,12 @@
                 % next unless ($asset->last_use_job_id);
             <tr id="asset_<%= $asset->id %>">
                 <td class="type"><%= $asset->type %></td>
-                <td class="name"><%= $asset->name %></td>
+                <td class="name">
+                    %= $asset->name
+                    <a href="#" onclick="deleteAsset(<%= $asset->id %>);">
+                        <i class="action far fa-fw fa-times-circle" title="Delete asset"></i>
+                    </a>
+                </td>
                 <td class="nrjobs"><%= link_to($asset->jobs_assets->count => url_for('tests')->query(assetid => $asset->id)) %></td>
                 <td class="t_created">
                     %= $asset->t_created
@@ -66,7 +71,12 @@
                 % next if ($asset->last_use_job_id);
                 <tr id="asset_<%= $asset->id %>">
                     <td class="type"><%= $asset->type %></td>
-                    <td class="name"><%= $asset->name %></td>
+                    <td class="name">
+                        %= $asset->name
+                        <a href="#" onclick="deleteAsset(<%= $asset->id %>);">
+                            <i class="action far fa-fw fa-times-circle" title="Delete asset"></i>
+                        </a>
+                    </td>
                     <td class="nrjobs"><%= link_to($asset->jobs_assets->count => url_for('tests')->query(assetid => $asset->id)) %></td>
                     <td class="t_created">
                         %= $asset->t_created
