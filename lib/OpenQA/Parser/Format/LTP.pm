@@ -17,9 +17,13 @@ package OpenQA::Parser::Format::LTP;
 
 # Translates to JSON LTP format -> LTP internal representation
 # The parser results will be a collection of OpenQA::Parser::Result::LTP::Test
-use Mojo::Base 'OpenQA::Parser';
+use Mojo::Base 'OpenQA::Parser::Format::JUnit';
 use Carp qw(croak confess);
 use Mojo::JSON 'decode_json';
+use Storable 'dclone';
+has include_results => 1;
+
+sub _add_single_result { shift->results->add(OpenQA::Parser::Result::LTP::Test->new(@_)) }
 
 # Parser
 sub parse {
@@ -32,10 +36,46 @@ sub parse {
       if $decoded_json->{environment};
 
     foreach my $res (@{$decoded_json->{results}}) {
+        my $result = dclone $res;
+        my $t_name = $res->{test_fqn};
+        $t_name =~ s/:/_/g;
+
+        $result->{result} = 'ok';
+        $result->{result} = 'fail' if $result->{test}->{result} !~ /pass/i || $result->{status} !~ /pass/i;
+
         # may be optional since format result_array:v2
-        $res->{environment} = OpenQA::Parser::Result::LTP::Environment->new($res->{environment}) if $res->{environment};
-        $res->{test} = OpenQA::Parser::Result::LTP::SubTest->new($res->{test});
-        $self->generated_tests_results->add(OpenQA::Parser::Result::LTP::Test->new($res));
+        $result->{environment} = OpenQA::Parser::Result::LTP::Environment->new($result->{environment})
+          if $res->{environment};
+
+        $result->{name} = $t_name;
+
+        my $details
+          = {result => ($result->{test}->{result} !~ /pass/i || $result->{status} !~ /pass/i) ? 'fail' : 'ok'};
+        my $text_fn = "LTP-$t_name.txt";
+        my $content = $res->{test}->{log};
+
+        $details->{text}  = $text_fn;
+        $details->{title} = $t_name;
+
+        push @{$result->{details}}, $details;
+
+        $self->_add_output(
+            {
+                file    => $text_fn,
+                content => $content
+            });
+
+        my $t = OpenQA::Parser::Result::LTP::SubTest->new(
+            flags    => {},
+            category => 'LTP',
+            name     => $t_name,
+            log      => $res->{test}->{log},
+            duration => $res->{test}->{duration},
+            script   => undef,
+            result   => $res->{test}->{result});
+        $self->tests->add($t);
+        $result->{test} = $t if $self->include_results();
+        $self->_add_single_result($result);
     }
 
     $self;
@@ -44,19 +84,45 @@ sub parse {
 # Schema
 {
     package OpenQA::Parser::Result::LTP::Test;
-    use Mojo::Base 'OpenQA::Parser::Result';
+    use Mojo::Base 'OpenQA::Parser::Result::OpenQA';
 
     has environment => sub { OpenQA::Parser::Result::LTP::Environment->new() };
     has test        => sub { OpenQA::Parser::Result::LTP::SubTest->new() };
     has [qw(status test_fqn)];
+
+    sub to_hash {
+        {
+            environment => $_[0]->environment->to_hash,
+            status      => $_[0]->status,
+            test_fqn    => $_[0]->test_fqn,
+            result      => $_[0]->result(),
+            dents       => $_[0]->dents(),
+            details     => $_[0]->details(),
+            name        => $_[0]->name(),                 # Note: name is hidden for json
+            test        => $_[0]->test->to_hash,
+        };
+    }
+    *TO_JSON = \&to_hash;
 }
 
 # Additional data structure - they get mapped automatically
 {
     package OpenQA::Parser::Result::LTP::SubTest;
-    use Mojo::Base 'OpenQA::Parser::Result';
+    use Mojo::Base 'OpenQA::Parser::Result::Test';
 
     has [qw(log duration result)];
+    sub to_hash {
+        {
+            log      => $_[0]->log(),
+            duration => $_[0]->duration(),
+            result   => $_[0]->result(),
+            category => $_[0]->category(),
+            name     => $_[0]->name(),
+            flags    => $_[0]->flags(),
+            script   => $_[0]->script() // 'unk',
+        };
+    }
+    *TO_JSON = \&to_hash;
 }
 
 {

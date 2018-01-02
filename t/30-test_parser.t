@@ -407,12 +407,12 @@ sub test_ltp_file {
     my $i = 2;
     $p->results->each(
         sub {
-            is $_->status, 'pass', 'Tests passed';
+            is $_->result, 'ok', 'Tests passed' or diag explain $_;
             ok !!$_->environment, 'Environment is present';
             ok !!$_->test,        'Test information is present';
             is $_->environment->gcc, 'gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]',
               'Environment information matches';
-            is $_->test->result, 'TPASS', 'subtest result is TPASS';
+            is $_->test->result, 'TPASS', 'subtest result is TPASS' or diag explain $_;
             is $_->test_fqn, "LTP:cpuhotplug:cpuhotplug0$i", "test_fqn matches and are different";
             $i++;
         });
@@ -519,6 +519,7 @@ sub serialize_test {
         is $deserialized->content, undef, 'Content is not there' or diag explain $deserialized->content;
 
         # Json
+        diag("JSON serialization");
         $parser = $parser_name->new();
         $parser->load($test_result_file);
         $obj_content  = $parser->to_json();
