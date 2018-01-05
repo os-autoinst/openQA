@@ -36,7 +36,7 @@ sub new {
 
 *_restore_el = \&OpenQA::Parser::_restore_el;
 
-sub get { shift->{shift()} }
+sub get { OpenQA::Parser::Result::Node->new(val => shift->{shift()}) }
 
 sub to_json   { encode_json shift->_gen_tree_el }
 sub from_json { __PACKAGE__->new(_restore_el(decode_json $_[1])) }
@@ -71,5 +71,20 @@ sub write {
 }
 
 *write_json = \&write;
+
+{
+    package OpenQA::Parser::Result::Node;
+    use Mojo::Base 'OpenQA::Parser::Result';
+    has 'val';
+    sub get { __PACKAGE__->new(val => shift->{shift()}) }
+
+    sub AUTOLOAD {
+        our $AUTOLOAD;
+        my $fn = $AUTOLOAD;
+        $fn =~ s/.*:://;
+        return if $fn eq "DESTROY";
+        return shift->val->{$fn};
+    }
+}
 
 1;

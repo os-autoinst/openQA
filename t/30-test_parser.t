@@ -688,7 +688,7 @@ subtest 'Unstructured data' => sub {
     $parser->results->each(
         sub {
             ok !!$_->get('servlet-name'), 'servlet-name exists: ' . $_->get('servlet-name');
-            like $_->get('servlet-name'), qr/cofax|servlet/i, 'Name matches';
+            like $_->get('servlet-name')->val, qr/cofax|servlet/i, 'Name matches';
         });
 
     my $serialized   = $parser->serialize();
@@ -697,18 +697,20 @@ subtest 'Unstructured data' => sub {
     $deserialized->results->each(
         sub {
             ok !!$_->get('servlet-name'), 'servlet-name exists - ' . $_->get('servlet-name');
-            like $_->get('servlet-name'), qr/cofax|servlet/i, 'Name matches';
+            like $_->get('servlet-name')->val(), qr/cofax|servlet/i, 'Name matches';
 
         });
     ok $deserialized->results->size == 5, 'There are some results';
-    is $deserialized->results->first->get('init-param')->{'configGlossary:installationAt'}, 'Philadelphia, PA',
+    is $deserialized->results->first->get('init-param')->val->{'configGlossary:installationAt'}, 'Philadelphia, PA',
       'Nested serialization works!';
 
-    #bool are decoded '1'/1 or '0'/0 between perl 5.18 and 5.26
-    $deserialized->results->last->get('init-param')->{'betaServer'}
-      = $deserialized->results->last->get('init-param')->{'betaServer'} ? 1 : 0;
+    my $n = $deserialized->results->last->get('init-param');
+    is $n->dataLogLocation(), "/usr/local/tomcat/logs/dataLog.log";
 
-    is_deeply $deserialized->results->last->get('init-param'),
+    #bool are decoded '1'/1 or '0'/0 between perl 5.18 and 5.26
+    $n->val->{'betaServer'} = $n->val->{'betaServer'} ? 1 : 0;
+
+    is_deeply $n->val,
       {
         "templatePath"        => "toolstemplates/",
         "log"                 => 1,
@@ -775,7 +777,7 @@ subtest dummy_search_fails => sub {
     $parsed_res->include_results(1);
     $parsed_res->parse;
     is $parsed_res->results->size, 1, 'Expected 1 result';
-    is $parsed_res->results->first->get('name'), 'test', 'Name of result is test';
+    is $parsed_res->results->first->get('name')->val, 'test', 'Name of result is test';
     is $parsed_res->results->first->{test}, undef;
 };
 
