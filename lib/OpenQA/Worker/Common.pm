@@ -43,7 +43,7 @@ our $pooldir;
 our $nocleanup = 0;
 our $testresults;
 our $worker_caps;
-
+our $isotovideo_interface_version = 0;
 # package global variables
 # HASHREF with structure
 # {hostname => {url => Mojo::URL, ua => OpenQA::Client, ws => Mojo::Transaction::WebSockets}, workerid => uint}
@@ -61,6 +61,7 @@ use constant {
     STATUS_UPDATES_FAST => 0.5,
     MAX_TIMER           => 100,    # It should never be more than OpenQA::WebSockets::Server::_workers_checker threshold
     MIN_TIMER           => 20,
+    INTERFACE_VERSION => 1,   # Which version the worker follows. Minimal version that will connect to the openqa server
 };
 
 # the template noted what architecture are known
@@ -337,7 +338,10 @@ sub send_status {
 
     my $status_message = {
         json => {
-            type => 'worker_status'
+            type                         => 'worker_status',
+            websocket_api_version        => INTERFACE_VERSION,
+            isotovideo_interface_version => $isotovideo_interface_version
+
         }};
 
     if (defined $job && ref($job) eq "HASH" && exists $job->{id}) {
@@ -467,7 +471,9 @@ sub register_worker {
         $worker_caps->{worker_class} = 'qemu_' . $worker_caps->{cpu_arch};
     }
 
-    log_info("registering worker with openQA $host...");
+    log_info(
+"registering worker $hostname version $isotovideo_interface_version with openQA $host using protocol version [@{[INTERFACE_VERSION]}]"
+    );
 
     if (!$hosts->{$host}) {
         log_error "WebUI $host is unknown! - Should not happen but happened, exiting!";

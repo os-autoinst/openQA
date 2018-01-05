@@ -41,9 +41,13 @@ our (@ISA, @EXPORT);
 
 sub set_engine_exec {
     my ($path) = @_;
-    die "Path to isotovideo invalid: $path" unless -f $path;
-    # save the absolute path as we chdir later
-    $isotovideo = abs_path($path);
+    if ($path) {
+        die "Path to isotovideo invalid: $path" unless -f $path;
+        # save the absolute path as we chdir later
+        $isotovideo = abs_path($path);
+    }
+    $OpenQA::Worker::Common::isotovideo_interface_version = $1
+      if (-f $isotovideo && qx(perl $isotovideo --version) =~ /interface v(\d+)/);
 }
 
 sub _kill($) {

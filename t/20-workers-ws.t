@@ -34,6 +34,7 @@ use Test::Output qw(stderr_like);
 use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
+use OpenQA::Test::Utils 'redirect_output';
 require OpenQA::Worker::Commands;
 
 my $schema = OpenQA::Test::Database->new->create();
@@ -113,6 +114,12 @@ subtest 'worker accepted ws commands' => sub {
     is($OpenQA::Worker::Jobs::do_livelog, 1, 'livelog is started');
     OpenQA::Worker::Commands::websocket_commands($ws, {type => 'livelog_stop'});
     is($OpenQA::Worker::Jobs::do_livelog, 0, 'livelog is stopped');
+
+    my $buf;
+    redirect_output(\$buf);
+    OpenQA::Worker::Commands::websocket_commands($ws, {type => 'incompatible'});
+    like($buf, qr/The worker is running an incompatible version/, 'The worker is running an incompatible version');
+
 };
 
 done_testing();
