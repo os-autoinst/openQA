@@ -34,11 +34,11 @@ subtest 'Result base class object' => sub {
     my $res = OpenQA::Parser::Result->new();
     $res->{foo} = 2;
     $res->{bar} = 4;
-    is_deeply($res->to_hash(), {bar => 4, foo => 2}, 'to_hash maps correctly');
+    is_deeply($res->to_hash(), {bar => 4, foo => 2}, 'to_hash maps correctly') or die diag explain $res;
 
     my $j    = $res->to_json;
     my $res2 = OpenQA::Parser::Result->new()->from_json($j);
-    is_deeply($res2->to_hash(), {bar => 4, foo => 2}, 'to_hash maps correctly');
+    is_deeply($res2->to_hash(), {bar => 4, foo => 2}, 'to_hash maps correctly') or die diag explain $res2;
 };
 
 subtest 'Results base class object' => sub {
@@ -108,6 +108,22 @@ subtest 'Results base class object' => sub {
         return $self;
     }
 }
+
+
+{
+    package NestedResults;
+    use Mojo::Base 'OpenQA::Parser::Results';
+}
+
+{
+    package NestedResult;
+    use Mojo::Base 'OpenQA::Parser::Result';
+
+    has result1 => sub { NestedResult->new() };
+    has result2 => sub { NestedResult->new() };
+    has 'val';
+}
+
 subtest 'Parser base class object' => sub {
     my $res = parser('Base');
     ok $res->parse eq "$res";
@@ -153,7 +169,7 @@ subtest 'Parser base class object' => sub {
 
     $good_parser->results->add({foo => 1});
     is $good_parser->results->size, 1;
-    is_deeply $good_parser->_build_tree->{generated_tests_results}->[0]->{data}, {foo => 1};
+    is_deeply $good_parser->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()}, {foo => 1};
 
     $good_parser->results->remove(0);
     is $good_parser->results->size, 0;
@@ -173,7 +189,7 @@ subtest 'Parser base class object' => sub {
       }, qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
       'serialization support warns';
 
-    is_deeply $good_parser->_build_tree->{generated_tests_results}->[0]->{data}, [qw(1 2 3)];
+    is_deeply $good_parser->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()}, [qw(1 2 3)];
 
     $good_parser->results->add({test => 'bar'});
 
@@ -184,12 +200,14 @@ subtest 'Parser base class object' => sub {
     $good_parser->results->remove(2);
 
     is $good_parser->results->size, 2, '2 results';
-    is_deeply $good_parser->_build_tree->{generated_tests_results}->[1]->{data}, {test => 'bar'};
+    is_deeply $good_parser->_build_tree->{generated_tests_results}->[1]->{OpenQA::Parser::DATA_FIELD()},
+      {test => 'bar'};
 
     my $copy = parser("Base")->_load_tree($good_parser->_build_tree);
-    is_deeply $copy->_build_tree->{generated_tests_results}->[0]->{data}, [qw(1 2 3)]
+    is_deeply $copy->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()}, [qw(1 2 3)]
       or diag explain $copy->_build_tree->{generated_tests_results};
-    is_deeply $copy->_build_tree->{generated_tests_results}->[1]->{data}, {test => 'bar'};
+    is_deeply $copy->_build_tree->{generated_tests_results}->[1]->{OpenQA::Parser::DATA_FIELD()}, {test => 'bar'}
+      or die diag explain $good_parser->_build_tree;
 
     $good_parser->results->remove(1);
     $good_parser->results->remove(0);
@@ -198,12 +216,108 @@ subtest 'Parser base class object' => sub {
 
     $good_parser->results->add(Dummy2to->new);
 
-    is_deeply $good_parser->_build_tree->{generated_tests_results}->[0]->{data}, [qw(a b c)]
+    is_deeply $good_parser->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()}, [qw(a b c)]
       or diag explain $good_parser->_build_tree->{generated_tests_results};
 
     $copy = parser("Base")->_load_tree($good_parser->_build_tree);
-    is_deeply $copy->_build_tree->{generated_tests_results}->[0]->{data}, [qw(a b c)]
+    is_deeply $copy->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()}, [qw(a b c)]
       or diag explain $copy->_build_tree->{generated_tests_results};
+
+};
+
+subtest 'Nested results' => sub {
+
+    my $deep_p = parser('Base');
+
+    my $r = NestedResult->new(
+        result1 => NestedResult->new(val => 'result_1_result_1'),
+        result2 => NestedResult->new(val => 'result_1_result_2'));
+
+    is_deeply $r->_gen_tree_el,
+      {
+        '__data__' => {
+            'result1' => {
+                '__data__' => {
+                    'val' => 'result_1_result_1'
+                },
+                '__type__' => 'NestedResult'
+            },
+            'result2' => {
+                '__data__' => {
+                    'val' => 'result_1_result_2'
+                },
+                '__type__' => 'NestedResult'
+            }
+        },
+        '__type__' => 'NestedResult'
+      },
+      '_gen_tree_el is working correctly'
+      or die diag explain $r->_gen_tree_el;
+
+    $deep_p->results->add(
+        NestedResult->new(
+            result1 => NestedResult->new(
+                result1 => NestedResult->new(val => 'result_1_result_1'),
+                result2 => NestedResult->new(val => 'result_1_result_2')
+            ),
+            result2 => NestedResult->new(
+                result1 => NestedResult->new(val => 'result_2_result_1'),
+                result2 => NestedResult->new(val => 'result_2_result_2'))));
+    is $deep_p->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::TYPE_FIELD()}, 'NestedResult';
+    is $deep_p->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()}->{result1}
+      ->{OpenQA::Parser::TYPE_FIELD()}, 'NestedResult';
+    is $deep_p->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()}->{result1}
+      ->{OpenQA::Parser::DATA_FIELD()}->{result1}->{OpenQA::Parser::TYPE_FIELD()}, 'NestedResult'
+      or diag explain $deep_p->_build_tree->{generated_tests_results}->[0];
+
+    my $parser_nested = parser('Base');
+    $parser_nested->{from_nothing}  = NestedResult->new(val => 'from nothing!');
+    $parser_nested->{from_nothing2} = [qw(1 2 3)];
+    $parser_nested->{from_nothing3} = {1 => 2};
+
+    $parser_nested->results(
+        NestedResults->new(
+            NestedResult->new(
+                result1 => NestedResult->new(
+                    result1 => NestedResult->new(val => '0_result_1_result_1_val'),
+                    result2 => NestedResult->new(val => '0_result_1_result_2_val')
+                ),
+                result2 => NestedResult->new(
+                    result1 => NestedResult->new(val => '0_result_2_result_1_val'),
+                    result2 => NestedResult->new(val => '0_result_2_result_2_val'))
+            ),
+            NestedResult->new(result_1 => '1_result_1'),
+            NestedResults->new(
+                NestedResults->new(
+                    NestedResult->new(
+                        result1 => NestedResult->new(val => '2_0_0_result1_val'),
+                        val     => '2_0_0_val'
+                    ),
+                    NestedResult->new(val => '2_0_1_val'))
+            ),
+            NestedResult->new(
+                result1 => NestedResults->new(
+                    NestedResult->new(val => 'result_1_result_1'),
+                    NestedResult->new(val => 'result_1_result_2'))
+            ),
+        ));
+
+    my $serialized      = parser("Base")->deserialize($parser_nested->serialize());
+    my $serialized_tree = $serialized->_build_tree();
+    is_deeply $serialized->_build_tree(), $parser_nested->_build_tree(), 'Tree are matching'
+      or die diag explain $serialized;
+
+    is $serialized->{from_nothing}->val(), 'from nothing!', 'Capable of serializing the whole object'
+      or die diag explain $serialized;
+
+    is_deeply $serialized->{from_nothing2}, [qw(1 2 3)], 'Capable of serializing the whole object'
+      or die diag explain $serialized;
+
+    is_deeply $serialized->{from_nothing3}, {1 => 2}, 'Capable of serializing the whole object'
+      or die diag explain $serialized;
+
+    ok "$serialized" ne "$parser_nested";
+    is $serialized->results->get(2)->first->first->result1->val, '2_0_0_result1_val', 'Can use the objects normally';
 };
 
 sub test_junit_file {
@@ -475,7 +589,7 @@ sub serialize_test {
         is $parser->content, $test_result_file->slurp, 'Content was kept intact for original obj'
           or diag explain $deserialized->content;
         is $deserialized->content, $test_result_file->slurp, 'Content was kept intact'
-          or diag explain $deserialized->content;
+          or die diag explain $deserialized->content;
 
         $parser = $parser_name->new(include_content => 1);
         my $saved = tempfile;
@@ -663,7 +777,6 @@ subtest dummy_search_fails => sub {
     is $parsed_res->results->size, 1, 'Expected 1 result';
     is $parsed_res->results->first->get('name'), 'test', 'Name of result is test';
     is $parsed_res->results->first->{test}, undef;
-
 };
 
 

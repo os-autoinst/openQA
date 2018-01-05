@@ -27,6 +27,10 @@ use OpenQA::Parser::Result;
 use OpenQA::Parser::Results;
 use Storable;
 use Scalar::Util qw(blessed reftype);
+use constant DATA_FIELD => '__data__';
+use constant TYPE_FIELD => '__type__';
+use OpenQA::Utils 'walker';
+
 
 our @EXPORT_OK = qw(parser p);
 use Exporter 'import';
@@ -102,16 +106,30 @@ sub parse { croak 'parse() not implemented by base class' }
 
 sub _read_file { path($_[1])->slurp() }
 
+sub reset {
+    my $self = shift;
+
+    do {
+        do { $self->{$_}->reset(); next } if blessed $self->{$_} && $self->{$_}->can('reset');
+        $self->{$_} = undef;
+      }
+      for (sort keys %{$self});
+}
+
 sub _add_test   { shift->generated_tests->add(OpenQA::Parser::Result::Test->new(@_)) }
 sub _add_result { shift->generated_tests_results->add(OpenQA::Parser::Result->new(@_)) }
 sub _add_output { shift->generated_tests_output->add(OpenQA::Parser::Result::Output->new(@_)) }
 
+# Serialization - tree building functions
 sub _gen_tree_el {
     my $el = shift;
-    return {data => $el} unless blessed $el;
+    return {DATA_FIELD() => $el} unless blessed $el;
 
     my $el_ref;
-    if ($el->can("to_hash")) {
+    if ($el->can("_gen_tree_el")) {
+        return $el->_gen_tree_el;
+    }
+    elsif ($el->can("to_hash")) {
         $el_ref = $el->to_hash;
     }
     elsif ($el->can("to_array")) {
@@ -130,7 +148,7 @@ sub _gen_tree_el {
         $el_ref = $el;
     }
 
-    return {data => $el_ref, type => ref $el};
+    return {DATA_FIELD() => $el_ref, TYPE_FIELD() => ref $el};
 }
 
 sub _build_tree {
@@ -153,6 +171,42 @@ sub _build_tree {
     return $tree;
 }
 
+sub _restore_el {
+    my $obj = shift;
+    return $obj if blessed $obj;
+    return $obj if ref $obj eq 'ARRAY';
+    return $obj unless ref $obj eq 'HASH' && exists $obj->{OpenQA::Parser::DATA_FIELD()};
+    return $obj->{OpenQA::Parser::DATA_FIELD()} unless exists $obj->{OpenQA::Parser::TYPE_FIELD()};
+
+    my $type = $obj->{OpenQA::Parser::TYPE_FIELD()};
+    my $data = $obj->{OpenQA::Parser::DATA_FIELD()};
+
+    {
+        no strict 'refs';    ## no critic
+        return $type->can('new') ? $type->new(ref $data eq 'ARRAY' ? @{$data} : $data) : $data;
+    };
+}
+
+sub _restore_tree_section {
+    my $ref = shift;
+    eval {
+        walker $ref => sub {
+            my ($key, $value, $keys) = @_;
+            my $hash = $ref;
+            for (my $i = 0; $i < scalar @$keys - 1; $i++) {
+                my ($type, $kk) = @{$keys->[$i]};
+                $hash = $hash->{$kk} if $type eq 'HASH';
+                $hash = $hash->[$kk] if $type eq 'ARRAY';
+            }
+
+
+            $hash->{$key} = _restore_el($value) if reftype $hash eq 'HASH';
+            $hash->[$key] = _restore_el($value) if reftype $hash eq 'ARRAY';
+        };
+    };
+    confess $@ if $@;
+}
+
 sub _load_tree {
     my $self = shift;
 
@@ -165,16 +219,10 @@ sub _load_tree {
         eval {
             foreach my $collection (@coll) {
                 if (ref $tree->{$collection} eq 'ARRAY') {
-                    $self->$collection->add(
-                          $_->{type}                ? $_->{type}->new($_->{data})
-                        : ref $_->{data} eq "ARRAY" ? @{$_->{data}}
-                        :                             $_->{data}) for @{$tree->{$collection}};
+                    $self->$collection->add(_restore_el($_)) for @{$tree->{$collection}};
                 }
                 else {
-                    $self->{$collection}
-                      = $tree->{$collection}->{type} ?
-                      $tree->{$collection}->{type}->new($tree->{$collection}->{data})
-                      : $tree->{$collection}->{data};
+                    $self->{$collection} = _restore_el($tree->{$collection});
                 }
             }
         };
@@ -194,17 +242,5 @@ sub save         { my $s = shift; path(@_)->spurt($s->serialize); $s }
 sub save_to_json { my $s = shift; path(@_)->spurt($s->to_json);   $s }
 sub from_file    { __PACKAGE__->new()->deserialize(path(pop)->slurp()) }
 sub from_json_file { __PACKAGE__->new()->from_json(path(pop)->slurp()) }
-
-sub reset {
-    my $self = shift;
-
-    do {
-        do { $self->{$_}->reset(); next } if blessed $self->{$_} && $self->{$_}->can('reset');
-        $self->{$_} = undef;
-      }
-      for (sort keys %{$self})
-
-}
-
 
 !!42;

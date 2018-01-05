@@ -19,43 +19,27 @@ package OpenQA::Parser::Result;
 
 use Mojo::Base -base;
 use OpenQA::Parser::Results;
+use OpenQA::Parser;
+
 use Mojo::JSON qw(decode_json encode_json);
 use Carp 'croak';
 use Mojo::File 'path';
-use OpenQA::Utils 'hihwalker';
-use Scalar::Util 'blessed';
+use Scalar::Util qw(blessed reftype);
 
 sub new {
-    return shift->SUPER::new(@_) unless ref $_[1] eq 'HASH';
+    return shift->SUPER::new(@_) unless @_ > 1 && reftype $_[1] && reftype $_[1] eq 'HASH' && !blessed $_[1];
 
     my ($class, @args) = @_;
-
-    hihwalker $args[0] => sub {
-        my ($key, $value, $keys) = @_;
-        my $hash = $args[0];
-        for (my $i = 0; $i < scalar @$keys; $i++) {
-            $hash = $hash->{$keys->[$i]} if $i < (scalar @$keys) - 1;
-        }
-
-        return unless $class->can($key);
-        {
-            no strict 'refs';    ## no critic
-            my $ref = ref($class->new->$key());
-            return unless $ref;
-            return if (grep(/$ref/, qw(HASH ARRAY)));
-
-            $hash->{$key} = ref $value eq 'ARRAY' ? $ref->new(@{$value}) : $ref->new($value);
-        }
-
-    };
-
+    OpenQA::Parser::_restore_tree_section($args[0]);
     $class->SUPER::new(@args);
 }
 
+*_restore_el = \&OpenQA::Parser::_restore_el;
+
 sub get { shift->{shift()} }
 
-sub to_json   { encode_json shift->to_hash }
-sub from_json { __PACKAGE__->new(decode_json $_[1]) }
+sub to_json   { encode_json shift->_gen_tree_el }
+sub from_json { __PACKAGE__->new(_restore_el(decode_json $_[1])) }
 sub to_hash {
     my $self = shift;
     return {
@@ -65,6 +49,19 @@ sub to_hash {
               : $self->{$_}
           }
           sort keys %{$self}};
+}
+
+sub to_el {
+    my $self = shift;
+
+    return {
+        map { $_ => blessed $self->{$_} && $self->{$_}->can("_gen_tree_el") ? $self->{$_}->_gen_tree_el : $self->{$_} }
+        sort keys %{$self}};
+}
+
+sub _gen_tree_el {
+    my $el = shift;
+    return {OpenQA::Parser::DATA_FIELD() => $el->to_el, OpenQA::Parser::TYPE_FIELD() => ref $el};
 }
 
 sub write {

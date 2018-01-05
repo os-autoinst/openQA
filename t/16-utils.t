@@ -26,6 +26,7 @@ use strict;
 use OpenQA::Utils;
 use OpenQA::Test::Utils 'redirect_output';
 use Test::More;
+use Scalar::Util 'reftype';
 
 is bugurl('bsc#1234'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bug url is properly expanded';
 ok find_bugref('gh#os-autoinst/openQA#1234'), 'github bugref is recognized';
@@ -46,26 +47,66 @@ like bugref_to_href('bsc#2345 poo#3456 and more'),
 like bugref_to_href('boo#2345,poo#3456'),
   qr{a href="https://bugzilla.opensuse.org/show_bug.cgi\?id=2345">boo\#2345</a>,<a href=.*3456.*},
   'interpunctation is not consumed by href';
-my $t1 = {boo => foo => bar => {}};
-my $t2 = {
-    foo => {
-        bar => {
-            too => []}
-    },
-    baz => 2
-};
 
-hihwalker(
-    $t1 => sub {
-        my ($key, $value, $keys) = @_;
-        is $key, 'bar';
+my $t3 = {
+    bar => {
+        foo => 1,
+        baz => [{fish => {boring => 'too'}}, {fish2 => {boring => 'not_really'}}]}};
+walker(
+    $t3 => sub {
+        my ($k, $v, $ks, $what) = @_;
+        next if reftype $what eq 'HASH' && exists $what->{_data};
+        like $_[0], qr/bar|baz|foo|0|1|fish$|fish2|boring/, "Walked";
+
+        $what->[$k] = {_type => ref $v, _data => $v} if reftype $what eq 'ARRAY';
+        $what->{$k} = {_type => ref $v, _data => $v} if reftype $what eq 'HASH';
+
     });
 
-hihwalker(
-    $t2 => sub {
-        my ($key, $value, $keys) = @_;
-        like $key, qr/foo|bar|too/;
-    });
+is_deeply $t3,
+  {
+    'bar' => {
+        '_data' => {
+            'baz' => {
+                '_data' => [
+                    {
+                        '_data' => {
+                            'fish' => {
+                                '_data' => {
+                                    'boring' => {
+                                        '_data' => 'too',
+                                        '_type' => ''
+                                    }
+                                },
+                                '_type' => 'HASH'
+                            }
+                        },
+                        '_type' => 'HASH'
+                    },
+                    {
+                        '_data' => {
+                            'fish2' => {
+                                '_data' => {
+                                    'boring' => {
+                                        '_data' => 'not_really',
+                                        '_type' => ''
+                                    }
+                                },
+                                '_type' => 'HASH'
+                            }
+                        },
+                        '_type' => 'HASH'
+                    }
+                ],
+                '_type' => 'ARRAY'
+            },
+            'foo' => {
+                '_data' => 1,
+                '_type' => ''
+            }
+        },
+        '_type' => 'HASH'
+    }};
 
 subtest 'get current version' => sub {
     use Mojo::File qw(path tempdir tempfile);

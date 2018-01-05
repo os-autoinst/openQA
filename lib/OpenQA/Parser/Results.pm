@@ -18,6 +18,7 @@ package OpenQA::Parser::Results;
 
 use Mojo::Base 'Mojo::Collection';
 use Scalar::Util 'blessed';
+use OpenQA::Parser;
 use Mojo::JSON qw(encode_json decode_json);
 use Storable;
 
@@ -48,16 +49,32 @@ sub search {
 
 sub new {
     my ($class, @args) = @_;
+
+    OpenQA::Parser::_restore_tree_section(\@args);
+
     no strict 'refs';    ## no critic
-    return $class->SUPER::new(@args) unless ${$class . "::of"};
+
+    return $class->SUPER::new(map { _restore_el($_); $_ } @args) unless ${$class . "::of"};
     return $class->SUPER::new(map { ${$class . "::of"}->new($_) } @args);
 }
 
-sub to_json   { encode_json shift() }
+sub to_json   { encode_json shift()->to_array }
 sub from_json { __PACKAGE__->new(@{decode_json $_[1]}) }
+
+*_restore_el = \&OpenQA::Parser::_restore_el;
+
 sub to_array {
     [map { blessed $_ && $_->can("to_hash") ? $_->to_hash : blessed $_ && $_->can("to_array") ? $_->to_array : $_ }
           @{shift()}];
+}
+
+sub to_el {
+    [map { blessed $_ && $_->can("_gen_tree_el") ? $_->_gen_tree_el : $_ } @{shift()}];
+}
+
+sub _gen_tree_el {
+    my $self = shift;
+    return {OpenQA::Parser::DATA_FIELD() => $self->to_el, OpenQA::Parser::TYPE_FIELD() => ref $self};
 }
 
 sub serialize   { Storable::freeze($_[0]) }

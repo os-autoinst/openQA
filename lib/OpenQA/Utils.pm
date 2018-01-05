@@ -28,6 +28,7 @@ use POSIX 'strftime';
 use Scalar::Util 'blessed';
 use Data::Dump 'pp';
 use Mojo::Log;
+use Scalar::Util qw(blessed reftype);
 
 require Exporter;
 our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
@@ -92,7 +93,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   logistic_map
   rand_range
   in_range
-  hihwalker
+  walker
 );
 
 if ($0 =~ /\.t$/) {
@@ -945,22 +946,50 @@ sub hashwalker {
     }
 }
 
-# Walks a hash considering the hashes insides of it
-sub hihwalker {
+# Walks whatever
+sub walker {
     my ($hash, $callback, $keys) = @_;
-    $keys = [] if !$keys;
-    while (my ($key, $value) = each %$hash) {
-        push @$keys, $key;
-        if (ref($value) eq 'HASH') {
-            $callback->($key, $value, $keys);
-            hihwalker($value, $callback, $keys);
+    $keys //= [];
+    if (reftype $hash eq 'HASH') {
+        foreach my $key (sort keys %$hash) {
+            push @$keys, [reftype($hash), $key];
+            my $k_ref = reftype $hash->{$key};
+            if ($k_ref && $k_ref eq 'HASH') {
+                walker($hash->{$key}, $callback, $keys);
+                $callback->($key, $hash->{$key}, $keys, $hash);
+            }
+            elsif ($k_ref && $k_ref eq 'ARRAY') {
+                walker($hash->{$key}, $callback, $keys);
+                $callback->($key, $hash->{$key}, $keys, $hash);
+            }
+            else {
+                $callback->($key, $hash->{$key}, $keys, $hash);
+            }
+            pop @$keys;
         }
-        elsif (ref $value eq 'ARRAY') {
-            $callback->($key, $value, $keys);
+    }
+    elsif (reftype $hash eq 'ARRAY') {
+        my $i = 0;
+        for my $elem (@{$hash}) {
+            push @$keys, [reftype($hash), $i];
+            my $el_ref = reftype $elem;
+            if ($el_ref && $el_ref eq 'ARRAY') {
+                walker($elem, $callback, $keys);
+                $callback->($i, $elem, $keys, $hash);
+            }
+            elsif ($el_ref && $el_ref eq 'HASH') {
+                walker($elem, $callback, $keys);
+                $callback->($i, $elem, $keys, $hash);
+            }
+            else {
+                $callback->($i, $elem, $keys, $hash);
+            }
+            $i++;
+            pop @$keys;
         }
-        pop @$keys;
     }
 }
+
 
 sub safe_call {
     # no critic is for symbol de/reference
