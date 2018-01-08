@@ -52,10 +52,7 @@ sub new {
 
     OpenQA::Parser::_restore_tree_section(\@args);
 
-    no strict 'refs';    ## no critic
-
-    return $class->SUPER::new(map { _restore_el($_); $_ } @args) unless ${$class . "::of"};
-    return $class->SUPER::new(map { ${$class . "::of"}->new($_) } @args);
+    return $class->SUPER::new(map { _restore_el($_); $_ } @args);
 }
 
 sub to_json   { encode_json shift()->to_array }
