@@ -46,6 +46,7 @@ sub parse {
     my ($self, $xml) = @_;
     confess "No XML given/loaded" unless $xml;
     $self->_dom(Mojo::DOM->new($xml));
+    confess "Failed parsing XML" unless @{$self->_dom->tree} > 2;
 
     my $dom = $self->_dom();
     my @tests;

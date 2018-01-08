@@ -24,7 +24,7 @@ use Fcntl;
 use DateTime;
 use db_helpers;
 use OpenQA::Utils (
-    qw(log_debug log_info log_warning),
+    qw(log_debug log_info log_warning log_error),
     qw(parse_assets_from_settings locate_asset),
     qw(send_job_to_worker read_test_modules)
 );
@@ -1250,32 +1250,36 @@ sub store_image {
 sub parse_extra_tests {
     my ($self, $asset, $type, $script) = @_;
 
-    return unless $type eq "JUnit";    # The only one that is supported as for now
+    return unless ($type eq 'JUnit'
+        || $type eq 'XUnit'
+        || $type eq 'LTP');
 
-    my $parser;
-    {
-        $parser = parser($type);
-        if ($@) {
-            log_error("Failed while creating parser object $type for job " . $self->id);
-            return;
-        }
+
+    local ($@);
+    eval {
+        my $parser = parser($type);
+
+        $parser->include_results(1) if $parser->can("include_results");
+        my $tmp_extra_test = tempfile;
+
+        $asset->move_to($tmp_extra_test);
+
+        $parser->load($tmp_extra_test)->results->each(
+            sub {
+                return if !$_->test;
+                $_->test->script($script) if $script;
+                my $t_info = $_->test->to_hash;
+                $self->insert_module($t_info);
+                $self->update_module($_->test->name, $_->to_hash);
+            });
+
+        $parser->write_output($self->result_dir);
+    };
+
+    if ($@) {
+        log_error("Failed parsing data $type for job " . $self->id . ": " . $@);
+        return;
     }
-    $parser->include_results(1) if $parser->can("include_results");
-    my $tmp_extra_test = tempfile;
-
-    $asset->move_to($tmp_extra_test);
-
-    $parser->load($tmp_extra_test)->results->each(
-        sub {
-            return if !$_->test;
-            $_->test->script($script) if $script;
-            my $t_info = $_->test->to_hash;
-            $self->insert_module($t_info);
-            $self->update_module($_->test->name, $_->to_hash);
-        });
-
-    $parser->write_output($self->result_dir);
-
     return 1;
 }
 

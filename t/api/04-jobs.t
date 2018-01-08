@@ -565,7 +565,159 @@ subtest 'filter by worker_class' => sub {
 
 };
 
-subtest 'Parse extra tests results' => sub {
+subtest 'Parse extra tests results - LTP' => sub {
+    use Mojo::File 'path';
+    use OpenQA::Parser 'parser';
+    my $fname  = 'new_ltp_result_array.json';
+    my $junit  = "t/data/$fname";
+    my $parser = parser('LTP');
+    $parser->include_results(1);
+    $parser->load($junit);
+    my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
+
+    my $post = $t->post_ok(
+        '/api/v1/jobs/99963/artefact' => form => {
+            file       => {file => $junit, filename => $fname},
+            type       => "JUnit",
+            extra_test => 1,
+            script     => 'test'
+        })->status_is(200);
+
+    ok $post->tx->res->content->body_contains('FAILED'), 'request FAILED' or die diag explain $post->tx->res->content;
+
+    $post = $t->post_ok(
+        '/api/v1/jobs/99963/artefact' => form => {
+            file       => {file => $junit, filename => $fname},
+            type       => "foo",
+            extra_test => 1,
+            script     => 'test'
+        })->status_is(200);
+
+    ok $post->tx->res->content->body_contains('FAILED'), 'request FAILED';
+
+    ok !-e path($basedir, 'details-LTP_syscalls_accept01.json'), 'detail from LTP was NOT written';
+
+    $post = $t->post_ok(
+        '/api/v1/jobs/99963/artefact' => form => {
+            file       => {file => $junit, filename => $fname},
+            type       => "LTP",
+            extra_test => 1,
+            script     => 'test'
+        })->status_is(200);
+
+    ok $post->tx->res->content->body_contains('OK'), 'request went fine';
+    ok !$post->tx->res->content->body_contains('FAILED'), 'request went fine, really';
+
+    ok !-e path($basedir, $fname), 'file was not uploaded';
+
+    # Check now that parser writes what we expect.
+    is $parser->tests->size, 4, 'Tests parsed correctly' or die diag $parser->tests->size;
+
+    # Note: if parser fails parsing, tests won't run reliably, that's why we do this
+    # At least those two should be there:
+    ok -e path($basedir, 'details-LTP_syscalls_accept01.json'), 'detail from LTP was written'
+      or die diag explain path($basedir)->list_tree;
+    ok -e path($basedir, 'LTP-LTP_syscalls_accept01.txt'), 'LTP was parsed';
+
+    # Now we check what parser expects to have (this have been generated from openQA side)
+    $parser->results->each(
+        sub {
+            my $db_module = $t->app->schema->resultset('Jobs')->find(99963)->modules->find({name => $_->test->name});
+
+            ok -e path($basedir, 'details-' . $_->test->name . '.json'),
+              'detail from junit was written for ' . $_->test->name;
+            is_deeply $db_module->details, $_->details;
+            is $db_module->name,           $_->test->name, 'Modules name are matching';
+            is $db_module->script,         'test', 'Modules script are matching';
+            is $db_module->category,       $_->test->category, 'Modules category are matching';
+            is $db_module->result, ($_->result eq 'ok' ? 'passed' : 'failed'), 'Modules can be passed or failed';
+        });
+
+    $parser->outputs->each(
+        sub {
+            ok -e path($basedir, $_->file), 'test result from junit was written for ' . $_->file;
+            is path($basedir, $_->file)->slurp, $_->content, 'Content is present for ' . $_->file;
+        });
+};
+
+subtest 'Parse extra tests results - xunit' => sub {
+    use Mojo::File 'path';
+    use OpenQA::Parser 'parser';
+    my $fname  = 'xunit_format_example.xml';
+    my $junit  = "t/data/$fname";
+    my $parser = parser('XUnit');
+    $parser->include_results(1);
+    $parser->load($junit);
+    my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
+
+    my $post = $t->post_ok(
+        '/api/v1/jobs/99963/artefact' => form => {
+            file       => {file => $junit, filename => $fname},
+            type       => "LTP",
+            extra_test => 1,
+            script     => 'test'
+        })->status_is(200);
+
+    ok $post->tx->res->content->body_contains('FAILED'), 'request FAILED';
+
+    $post = $t->post_ok(
+        '/api/v1/jobs/99963/artefact' => form => {
+            file       => {file => $junit, filename => $fname},
+            type       => "foo",
+            extra_test => 1,
+            script     => 'test'
+        })->status_is(200);
+
+    ok $post->tx->res->content->body_contains('FAILED'), 'request FAILED';
+
+    ok !-e path($basedir, 'details-unkn.json'), 'detail from junit was NOT written';
+
+    $post = $t->post_ok(
+        '/api/v1/jobs/99963/artefact' => form => {
+            file       => {file => $junit, filename => $fname},
+            type       => "XUnit",
+            extra_test => 1,
+            script     => 'test'
+        })->status_is(200);
+
+    ok $post->tx->res->content->body_contains('OK'), 'request went fine';
+    ok !$post->tx->res->content->body_contains('FAILED'), 'request went fine, really';
+
+    ok !-e path($basedir, $fname), 'file was not uploaded';
+
+    # Check now that parser writes what we expect.
+    is $parser->tests->size, 11, 'Tests parsed correctly' or die diag $parser->tests->size;
+
+
+    # Note: if parser fails parsing, tests won't run reliably, that's why we do this
+    # At least those two should be there:
+    ok -e path($basedir, 'details-unkn.json'), 'detail from junit was written'
+      or die diag explain path($basedir)->list_tree;
+    ok -e path($basedir, 'xunit-bacon-1.txt'), 'junit was parsed';
+
+    # Now we check what parser expects to have (this have been generated from openQA side)
+    $parser->results->each(
+        sub {
+            my $db_module = $t->app->schema->resultset('Jobs')->find(99963)->modules->find({name => $_->test->name});
+
+            ok -e path($basedir, 'details-' . $_->test->name . '.json'),
+              'detail from junit was written for ' . $_->test->name;
+            is_deeply $db_module->details, $_->details;
+            is $db_module->name,           $_->test->name, 'Modules name are matching';
+            is $db_module->script,         'test', 'Modules script are matching';
+            is $db_module->category,       $_->test->category, 'Modules category are matching';
+            is $db_module->result, ($_->result eq 'ok' ? 'passed' : 'failed'), 'Modules can be passed or failed';
+        });
+
+
+    $parser->outputs->each(
+        sub {
+            ok -e path($basedir, $_->file), 'test result from junit was written for ' . $_->file;
+            is path($basedir, $_->file)->slurp, $_->content, 'Content is present for ' . $_->file;
+        });
+};
+
+subtest 'Parse extra tests results - junit' => sub {
     use Mojo::File 'path';
     use OpenQA::Parser 'parser';
 
@@ -628,6 +780,7 @@ subtest 'Parse extra tests results' => sub {
     $parser->outputs->each(
         sub {
             ok -e path($basedir, $_->file), 'test result from junit was written for ' . $_->file;
+            is path($basedir, $_->file)->slurp, $_->content, 'Content is present for ' . $_->file;
         });
 };
 
