@@ -76,14 +76,14 @@ sub write {
     package OpenQA::Parser::Result::Node;
     use Mojo::Base 'OpenQA::Parser::Result';
     has 'val';
-    sub get { __PACKAGE__->new(val => shift->{shift()}) }
+    sub get { __PACKAGE__->new(val => shift->val->{shift()}) }
 
     sub AUTOLOAD {
         our $AUTOLOAD;
         my $fn = $AUTOLOAD;
         $fn =~ s/.*:://;
         return if $fn eq "DESTROY";
-        return shift->val->{$fn};
+        return shift->get($fn);
     }
 }
 

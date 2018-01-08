@@ -981,9 +981,7 @@ sub walker {
                 walker($elem, $callback, $keys);
                 $callback->($i, $elem, $keys, $hash);
             }
-            else {
-                $callback->($i, $elem, $keys, $hash);
-            }
+
             $i++;
             pop @$keys;
         }

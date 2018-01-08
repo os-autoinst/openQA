@@ -98,6 +98,19 @@ subtest 'Results base class object' => sub {
 }
 
 {
+    package Dummy3to;
+    sub new {
+        my $class = shift;
+        my $self  = {};
+        bless $self, $class;
+        $self->{foobar} = 'barbaz';
+        return $self;
+    }
+    sub to_hash { return {%{shift()}} }
+}
+
+
+{
     package Dummy3;
     use Symbol;
 
@@ -223,6 +236,16 @@ subtest 'Parser base class object' => sub {
     is_deeply $copy->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()}, [qw(a b c)]
       or diag explain $copy->_build_tree->{generated_tests_results};
 
+
+    my $alt_parser = parser("Base");
+
+    $alt_parser->results->add(Dummy3to->new);
+
+    is $alt_parser->results->first->{foobar}, 'barbaz', 'Result is there';
+
+    $copy = parser("Base")->_load_tree($alt_parser->_build_tree);
+
+    is $copy->results->first->{foobar}, 'barbaz', 'Result is there';
 };
 
 subtest 'Nested results' => sub {
@@ -581,8 +604,14 @@ sub serialize_test {
         # With content saved
         my $parser = $parser_name->new(include_content => 1);
         $parser->load($test_result_file);
-        my $obj_content  = $parser->serialize();
-        my $deserialized = $parser_name->new->deserialize($obj_content);
+        my $obj_content = $parser->serialize();
+
+        my $wrote_file = tempfile();
+        $wrote_file->spurt($obj_content);
+        ok -e $wrote_file, 'File was written';
+        ok length($wrote_file->slurp()) > 3000, 'File has content';
+
+        my $deserialized = $parser_name->new->deserialize($wrote_file->slurp);
         ok "$deserialized" ne "$parser", "Different objects";
         $test_function->($parser);
         $test_function->($deserialized);
@@ -704,8 +733,16 @@ subtest 'Unstructured data' => sub {
     is $deserialized->results->first->get('init-param')->val->{'configGlossary:installationAt'}, 'Philadelphia, PA',
       'Nested serialization works!';
 
+    my $init_params = $deserialized->results->get(1)->get('init-param');
+
+    isa_ok($init_params,                                   'OpenQA::Parser::Result::Node');
+    isa_ok($init_params->get('mailHost'),                  'OpenQA::Parser::Result::Node');
+    isa_ok($init_params->get('mailHost')->get('override'), 'OpenQA::Parser::Result::Node');
+    is($init_params->get('mailHost')->get('override')->get('always')->val, 'yes') or die diag explain $init_params;
+    is($init_params->mailHost->override->always->val,                      'yes') or die diag explain $init_params;
+
     my $n = $deserialized->results->last->get('init-param');
-    is $n->dataLogLocation(), "/usr/local/tomcat/logs/dataLog.log";
+    is $n->dataLogLocation()->val(), "/usr/local/tomcat/logs/dataLog.log", or die diag explain $n;
 
     #bool are decoded '1'/1 or '0'/0 between perl 5.18 and 5.26
     $n->val->{'betaServer'} = $n->val->{'betaServer'} ? 1 : 0;
@@ -726,7 +763,8 @@ subtest 'Unstructured data' => sub {
         "adminGroupID"        => 4,
         "betaServer"          => 1
       },
-      'Last servlet matches';
+      'Last servlet matches',
+      or die diag explain $n;
 };
 
 subtest functional_interface => sub {
@@ -892,7 +930,13 @@ __DATA__
 				"servlet-name": "cofaxEmail",
 				"servlet-class": "org.cofax.cds.EmailServlet",
 				"init-param": {
-					"mailHost": "mail1",
+					"mailHost": {
+  					"realMail": "foo@bar",
+  					"override": {
+        					"for": "foo@bar2",
+        					"always": "yes"
+            }
+  				},
 					"mailHostOverride": "mail2"
 				}
 			},
