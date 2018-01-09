@@ -91,7 +91,7 @@ sub delete {
 
     my $asset = $self->app->schema->resultset("Assets")->search(\%cond, \%attrs);
     return unless $asset;
-    my $rs = $asset->delete;
+    my $rs = $asset->delete_all;
     $self->emit_event('openqa_asset_delete', \%args);
 
     $self->render(json => {count => $rs});

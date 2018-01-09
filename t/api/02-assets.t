@@ -26,6 +26,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
+use Test::MockModule;
 use Test::Warnings ':all';
 use OpenQA::Test::Case;
 use OpenQA::Client;
@@ -56,6 +57,14 @@ sub nots {
     return $h;
 }
 
+# a mock 'delete' method for Assets which does not actually remove the file from the disk
+#sub mock_delete {
+#    my ($self) = @_;
+#    return $self->SUPER::delete;
+#}
+#my $module = new Test::MockModule('OpenQA::Schema::Result::Assets');
+#$module->mock(delete => \&mock_delete);
+
 OpenQA::Test::Case->new->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
@@ -77,13 +86,21 @@ sub la {
 
 my $ret;
 
+sub iso_path {
+    my ($iso) = @_;
+    return "t/data/openqa/share/factory/iso/$iso";
+}
+
+sub touch_isos {
+    my ($isos) = @_;
+    for my $iso (@$isos) {
+        ok(open(FH, '>', iso_path($iso)), "touch $iso");
+        close FH;
+    }
+}
 my $iso1 = 'test-dvd-1.iso';
 my $iso2 = 'test-dvd-2.iso';
-
-for my $i ($iso1, $iso2) {
-    ok(open(FH, '>', "t/data/openqa/share/factory/iso/$i"), "touch $i");
-    close FH;
-}
+touch_isos [$iso1, $iso2];
 
 my $listing = [
     {
@@ -147,16 +164,20 @@ is($ret->tx->res->json->{count}, 1, "one asset deleted");
 
 # verify it's really gone
 $ret = $t->get_ok('/api/v1/assets/' . $listing->[0]->{id})->status_is(404);
+ok(!-e iso_path($iso1), 'iso file 1 has been removed');
 # but two must be still there
 $ret = $t->get_ok('/api/v1/assets/' . $listing->[1]->{id})->status_is(200);
+ok(-e iso_path($iso2), 'iso file 2 is still there');
 
 # register it again
+touch_isos [$iso1];
 $ret = $t->post_ok('/api/v1/assets', form => {type => 'iso', name => $iso1})->status_is(200);
 is($ret->tx->res->json->{id}, $listing->[1]->{id} + 1, "asset has next id");
 
 # delete by name
 $ret = $t->delete_ok('/api/v1/assets/iso/' . $iso2)->status_is(200);
 is($ret->tx->res->json->{count}, 1, "one asset deleted");
+ok(!-e iso_path($iso2), 'iso file 2 has been removed');
 # but three must be still there
 $ret = $t->get_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(200);
 
@@ -181,9 +202,7 @@ $ret = $t->delete_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))
 $ret = $t->delete_ok('/api/v1/assets/iso/' . $iso1)->status_is(403, 'asset deletion forbidden for operator');
 # asset must be still there
 $ret = $t->get_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(200);
-
-for my $i ($iso1, $iso2) {
-    ok(unlink("t/data/openqa/share/factory/iso/$i"), "rm $i");
-}
+ok(-e iso_path($iso1),      'iso file 1 is still there');
+ok(unlink(iso_path($iso1)), 'remove iso file 1 manually');
 
 done_testing();
