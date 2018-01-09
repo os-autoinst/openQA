@@ -47,6 +47,7 @@ my @deleted;
 # @deleted array
 sub mock_delete {
     my ($self) = @_;
+    $self->remove_from_disk;
     push @deleted, $self->name;
 }
 

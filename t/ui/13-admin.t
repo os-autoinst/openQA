@@ -24,6 +24,8 @@ BEGIN {
 use Mojo::Base -strict;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
+use File::Path qw(remove_tree);
+use File::Spec::Functions 'catfile';
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
@@ -531,6 +533,14 @@ subtest 'asset list' => sub {
         'assets of "assets by group"'
     );
 
+    # add the file for asset 4 actually in the file system to check deletion
+    my $asset_path
+      = catfile($OpenQA::Utils::assetdir, 'iso', 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso');
+    open(my $fh, '>', $asset_path);
+    print $fh "ISO\n";
+    close($fh);
+    ok(-e $asset_path, 'dummy asset present at ' . $asset_path);
+
     # delete one of the assets
     $driver->find_element('#asset_4 .name a')->click();
     wait_for_ajax;
@@ -538,6 +548,9 @@ subtest 'asset list' => sub {
     $driver->get($driver->get_current_url());
     wait_for_ajax;
     is(scalar @{$driver->find_elements('#asset_4')}, 0, 'asset gone forever');
+
+    ok(!-e $asset_path, 'dummy asset should have been removed');
+    unlink($asset_path);
 };
 
 kill_driver();

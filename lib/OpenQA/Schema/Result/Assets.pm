@@ -117,7 +117,14 @@ sub remove_from_disk {
         use File::Path 'remove_tree';
         remove_tree($file) || print "can't remove $file\n";
     }
+}
 
+# override to automatically remove the corresponding file from disk when deleteing the database entry
+sub delete {
+    my ($self) = @_;
+
+    $self->remove_from_disk;
+    return $self->SUPER::delete;
 }
 
 sub ensure_size {
@@ -380,7 +387,7 @@ sub limit_assets {
           ->get_column('id')->as_query;
         my @pendassets
           = $app->db->resultset('JobsAssets')->search({job_id => {-in => $pending}})->get_column('asset_id')->all;
-        my $removes = $app->db->resultset('Assets')->search(
+        $app->db->resultset('Assets')->search(
             {
                 -and => [
                     id => {in        => [sort keys %toremove]},
@@ -389,11 +396,7 @@ sub limit_assets {
             },
             {
                 order_by => qw(t_created)
-            });
-        while (my $a = $removes->next) {
-            $a->remove_from_disk;
-            $a->delete;
-        }
+            })->delete_all;
     }
 
     # update accumulated sizes in the data base
@@ -412,7 +415,6 @@ sub limit_assets {
         next if $a->fixed;
         my $delta = $a->t_created->delta_days(DateTime->now)->in_units('days');
         if ($delta >= 14 || $a->ensure_size == 0) {
-            $a->remove_from_disk;
             $a->delete;
         }
         else {
