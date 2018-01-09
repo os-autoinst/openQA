@@ -52,4 +52,9 @@ function loadWorkerTable() {
         this.api().column(4).search("Online").draw();
       }
   } );
+
+  // prevent sorting when worker status selection clicked
+  $('#workers_online').on('click', function(event) {
+      event.stopPropagation();
+  });
 }
