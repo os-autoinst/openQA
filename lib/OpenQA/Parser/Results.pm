@@ -31,19 +31,10 @@ sub add {
 sub get    { @{$_[0]}[$_[1]] }
 sub remove { delete @{$_[0]}[$_[1]] }
 
-# Returns a new flattened OpenQA::Parser::Results which is a cumulative result of
-# the other collections inside it
-sub search_in_details {
-    my ($self, $field, $re) = @_;
-    __PACKAGE__->new(
-        map { $_->search_in_details($field, $re) }
-        grep { blessed($_) && $_->isa("OpenQA::Parser::Result") } @{$self})->flatten;
-}
-
 sub search {
     my ($self, $field, $re) = @_;
-    my $results = OpenQA::Parser::Results->new();
-    $self->each(sub { $results->add($_) if $_->$field =~ $re });
+    my $results = $self->new();
+    $self->each(sub { $results->add($_) if $_->{$field} =~ $re });
     $results;
 }
 

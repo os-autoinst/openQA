@@ -20,10 +20,11 @@ use Carp 'croak';
 use OpenQA::Parser::Result::Test;
 use OpenQA::Parser::Result;
 use OpenQA::Parser::Result::Output;
+use OpenQA::Parser::Result::OpenQA;
 
 has generated_tests => sub { OpenQA::Parser::Results->new };    #testsuites
 has generated_tests_results =>
-  sub { OpenQA::Parser::Results->new };    #testsuites results - when include_result is set it includes also the test.
+  sub { OpenQA::Parser::Result::OpenQA::Results->new }; #testsuites results - when include_result is set it includes also the test.
 has generated_tests_output => sub { OpenQA::Parser::Results->new };    #testcase results
 has generated_tests_extra  => sub { OpenQA::Parser::Results->new };    # tests extra data.
 

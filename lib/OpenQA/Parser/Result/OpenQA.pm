@@ -27,7 +27,7 @@ has [qw(result name test)];
 
 sub search_in_details {
     my ($self, $field, $re) = @_;
-    my $results = OpenQA::Parser::Results->new();
+    my $results = OpenQA::Parser::Result::OpenQA::Results->new();
     $results->add($_) for grep { $_->{$field} =~ $re } @{$self->details};
     $results;
 }
@@ -50,5 +50,23 @@ sub TO_JSON {
 }
 
 sub write { $_[0]->SUPER::write(path($_[1], join('.', join('-', 'result', $_[0]->name), 'json'))) }
+
+{
+    package OpenQA::Parser::Result::OpenQA::Results;
+    # Basic class that holds the tests details and results as seen by openQA
+    # Used while parsing from format X to OpenQA test modules.
+
+    use Mojo::Base 'OpenQA::Parser::Results';
+    use Scalar::Util 'blessed';
+
+    # Returns a new flattened OpenQA::Parser::Results which is a cumulative result of
+    # the other collections inside it
+    sub search_in_details {
+        my ($self, $field, $re) = @_;
+        __PACKAGE__->new(
+            map { $_->search_in_details($field, $re) }
+            grep { blessed($_) && $_->isa("OpenQA::Parser::Result") } @{$self})->flatten;
+    }
+}
 
 1;
