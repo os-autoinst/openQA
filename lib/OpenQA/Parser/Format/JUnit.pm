@@ -1,4 +1,4 @@
-# Copyright (C) 2017 SUSE LLC
+# Copyright (C) 2017-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 
 package OpenQA::Parser::Format::JUnit;
 # Translates to JUnit -> openQA internal
-use Mojo::Base 'OpenQA::Parser';
+use Mojo::Base 'OpenQA::Parser::Format::Base';
 use Carp qw(croak confess);
 use OpenQA::Parser::Result::OpenQA;
 

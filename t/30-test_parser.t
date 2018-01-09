@@ -170,15 +170,15 @@ subtest 'Parser base class object' => sub {
     ok $@;
     like $@, qr/Failed reading file $tmp/, 'load confesses if file is invalid';
 
-    eval { $meant_to_fail->write_output() };
+    my $good_parser = parser('Base');
+
+    eval { $good_parser->write_output() };
     ok $@;
     like $@, qr/You need to specify a directory/, 'write_output needs a directory as argument';
 
-    eval { $meant_to_fail->write_test_result() };
+    eval { $good_parser->write_test_result() };
     ok $@;
     like $@, qr/You need to specify a directory/, 'write_test_result needs a directory as argument';
-
-    my $good_parser = parser('Base');
 
     $good_parser->results->add({foo => 1});
     is $good_parser->results->size, 1;
@@ -522,7 +522,6 @@ subtest junit_parse => sub {
     is $parser->results->size, 9,
       'Generated 9 openQA tests results';    # 9 testsuites with all cumulative results for openQA
 
-
     is_deeply $parser->results->last->TO_JSON(0), $expected_test_result, 'Test is hidden';
 
     $expected_test_result->{test} = {
@@ -612,8 +611,10 @@ sub serialize_test {
 
         my $deserialized = $parser_name->new->deserialize($wrote_file->slurp);
         ok "$deserialized" ne "$parser", "Different objects";
+
         $test_function->($parser);
         $test_function->($deserialized);
+
         is $parser->content, $test_result_file->slurp, 'Content was kept intact for original obj'
           or diag explain $deserialized->content;
         is $deserialized->content, $test_result_file->slurp, 'Content was kept intact'
@@ -855,7 +856,7 @@ done_testing;
 
 {
     package OpenQA::Parser::UnstructuredDummy;
-    use Mojo::Base 'OpenQA::Parser';
+    use Mojo::Base 'OpenQA::Parser::Format::Base';
     use Mojo::JSON 'decode_json';
 
     sub parse() {

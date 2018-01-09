@@ -1,4 +1,4 @@
-# Copyright (C) 2017 SUSE LLC
+# Copyright (C) 2017-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,24 +31,11 @@ use constant DATA_FIELD => '__data__';
 use constant TYPE_FIELD => '__type__';
 use OpenQA::Utils 'walker';
 
-
 our @EXPORT_OK = qw(parser p);
 use Exporter 'import';
 
-has generated_tests => sub { OpenQA::Parser::Results->new };    #testsuites
-has generated_tests_results =>
-  sub { OpenQA::Parser::Results->new };    #testsuites results - when include_result is set it includes also the test.
-has generated_tests_output => sub { OpenQA::Parser::Results->new };    #testcase results
-has generated_tests_extra  => sub { OpenQA::Parser::Results->new };    # tests extra data.
-
 has include_content => 0;
 has 'content';
-
-*results = \&generated_tests_results;
-*tests   = \&generated_tests;
-*outputs = \&generated_tests_output;
-*extra   = \&generated_tests_extra;
-*p       = \&parser;
 
 # parser( Format => 'file.json')
 # or parser( 'Format' )
@@ -83,25 +70,6 @@ sub load {
     $self;
 }
 
-sub _write_all {
-    my ($self, $res, $dir) = @_;
-    path($dir)->make_path unless -d $dir;
-    $self->$res->each(sub { $_->write($dir) });
-    $self;
-}
-
-sub write_output {
-    my ($self, $dir) = @_;
-    croak "You need to specify a directory" unless $dir;
-    $self->_write_all(generated_tests_output => $dir);
-}
-
-sub write_test_result {
-    my ($self, $dir) = @_;
-    croak "You need to specify a directory" unless $dir;
-    $self->_write_all(generated_tests_results => $dir);
-}
-
 sub parse { croak 'parse() not implemented by base class' }
 
 sub _read_file { path($_[1])->slurp() }
@@ -115,10 +83,6 @@ sub reset {
       }
       for (sort keys %{$self});
 }
-
-sub _add_test   { shift->generated_tests->add(OpenQA::Parser::Result::Test->new(@_)) }
-sub _add_result { shift->generated_tests_results->add(OpenQA::Parser::Result->new(@_)) }
-sub _add_output { shift->generated_tests_output->add(OpenQA::Parser::Result::Output->new(@_)) }
 
 # Serialization - tree building functions
 sub _gen_tree_el {
@@ -240,7 +204,184 @@ sub from_json { shift->_load_tree(decode_json shift) }
 
 sub save         { my $s = shift; path(@_)->spurt($s->serialize); $s }
 sub save_to_json { my $s = shift; path(@_)->spurt($s->to_json);   $s }
-sub from_file    { __PACKAGE__->new()->deserialize(path(pop)->slurp()) }
-sub from_json_file { __PACKAGE__->new()->from_json(path(pop)->slurp()) }
+sub from_file    { shift->new()->deserialize(path(pop)->slurp()) }
+sub from_json_file { shift->new()->from_json(path(pop)->slurp()) }
+
+*p = \&parser;
+
+=encoding utf-8
+
+=head1 NAME
+
+OpenQA::Parser - Parser for external tests results formats and serializer
+
+=head1 SYNOPSIS
+
+    use OpenQA::Parser::Format::XUnit;
+
+    my $parser = OpenQA::Parser::Format::XUnit->new()->load('file.xml');
+
+    # Alternative interface
+    use OpenQA::Parser qw(parser p);
+
+    my $parser = p('Base'); # Generate empty object
+
+    my $parser = parser(XUnit => 'my_result.xml');
+
+=head1 DESCRIPTION
+
+OpenQA::Parser is the parser base object. Specific file format to be parsed have their own
+parser Class that must inherit this one.
+
+=head1 ATTRIBUTES
+
+Implements the following attributes:
+
+=head2 include_content
+
+    use OpenQA::Parser 'parser';
+    my $parser = parser('LTP')->include_content(1);
+
+    $parser->load('file.json');
+    # ....
+
+    my $content = $parser->content;
+
+Tells the parser to keep the original content of the parsed file.
+It can be accessed later with C<content()>.
+
+=head2 content()
+
+    use OpenQA::Parser 'parser';
+    my $parser = parser('LTP')->include_content(1);
+
+    $parser->load('file.json');
+    # ....
+
+    my $content = $parser->content;
+
+It returns the file parsed original content.
+
+=head1 METHODS
+
+L<OpenQA::Parser> inherits all methods from L<Mojo::Base> and implements
+the following new ones:
+
+=head2 load()
+
+    use OpenQA::Parser qw(parser);
+    my $p = parser('LTP')->load('file.json');
+
+    use OpenQA::Parser qw(parser);
+    my $p = parser( LTP => 'file.json' ); # ->load() is implied
+
+    use OpenQA::Parser::Format::Dummy
+    my $p = OpenQA::Parser::Format::Dummy->new()->load('file.json');
+
+Load and parse a file.
+
+=head2 parse()
+
+    use OpenQA::Parser qw(parser);
+
+    my $p = parser('LTP')->parse($json_content);
+
+    use OpenQA::Parser::Format::LTP;
+    my $p = OpenQA::Parser::Format::LTP->new()->parse('file.json');
+
+Parse a string and decode it's content based on the format.
+It returns the Parser object.
+
+=head2 reset()
+
+    use OpenQA::Parser qw(parser);
+
+    my $p = parser('LTP')->parse($json_content);
+
+    $p->reset();
+
+Resets the parser state. All collections and the data tree is entirely wiped out.
+
+=head2 serialize()
+
+    use OpenQA::Parser qw(parser);
+
+    my $p = parser('LTP')->parse($json_content);
+
+    my $serialized_data = $p->serialize();
+
+    my $p2 = parser('LTP')->deserialize($serialized_data);
+
+Serialize the parser contents using L<Storable>. If the same content is given back
+to C<deserialize()> it will regenerate the original content ( objects will be re-initialized ).
+
+=head2 deserialize()
+
+    use OpenQA::Parser qw(parser);
+
+    my $parser = parser('Base')->deserialize($serialized_data);
+
+Restore the parser tree and objects with the data provided. It expects a storable data blob.
+
+=head2 save()
+
+    use OpenQA::Parser qw(parser);
+
+    my $parser = parser(LTP => 'file.json')->save('serialized.storable');
+
+Save the L<Storable> serialization of the parser tree directly to file.
+
+
+=head2 from_file()
+
+    use OpenQA::Parser qw(parser);
+
+    my $parser = parser('LTP')->from_file('serialized.storable');
+
+Restore the L<Storable> serialization of the parser tree from file.
+It returns the Parser object with the original data.
+
+=head2 to_json()
+
+    use OpenQA::Parser qw(parser);
+
+    my $p = parser('LTP')->parse($json_content);
+
+    my $json_encoded_data = $p->to_json();
+
+    my $p2 = parser('LTP')->from_json($json_encoded_data);
+
+Serialize the parser contents using JSON instead of L<Storable>. If the same content is given back
+to C<from_json()> it will regenerate the original content ( objects will be re-initialized ).
+
+=head2 from_json()
+
+    use OpenQA::Parser qw(parser);
+
+    my $parser = parser('Base')->from_json($json_encoded_data);
+
+Restore the parser tree and objects with the data provided.
+It expects a JSON structure representing the parser tree.
+It returns the Parser object with the original data.
+
+=head2 save_to_json()
+
+    use OpenQA::Parser qw(parser);
+
+    parser(LTP => 'file.json')->save_to_json('serialized.json');
+
+Save the JSON serialization of the parser tree directly to file.
+
+
+=head2 from_json()
+
+    use OpenQA::Parser qw(parser);
+
+    my $parser = parser('LTP')->from_json('serialized.json');
+
+Restore the JSON serialization of the parser tree from file.
+It returns the Parser object with the original data.
+
+=cut
 
 !!42;
