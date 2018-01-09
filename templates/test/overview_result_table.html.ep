@@ -12,11 +12,12 @@
     <tbody>
         % my @configs = sort { $a =~ s/@/ /r cmp $b =~ s/@/ /r } keys %$type_results;
         % for my $config (@configs) {
-            % next unless $type_results->{$config};
+            % my $config_results = $type_results->{$config};
+            % next unless $config_results;
             <tr>
                 <td class="name">
                     % my $test_label = text_with_title($config);
-                    % if (my $description = $type_results->{$config =~ s/@.*//r}{description}) {
+                    % if (my $description = $config_results->{description}) {
                         <a data-content="<p><%= href_to_bugref(render_escaped_refs($description)) %></p>"
                         data-title="<%= $config %>" data-toggle="popover" data-trigger="focus" role="button" tabindex="0"><%= $test_label %></a>
                     % }
@@ -26,7 +27,7 @@
                 </td>
 
                 % for my $arch (@archs) {
-                    % my $res = $type_results->{$config}{$arch};
+                    % my $res = $config_results->{$arch};
                     % my $jobid = $res->{jobid};
                     % my $state = $res->{state};
 
