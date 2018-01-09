@@ -1,4 +1,4 @@
-# Copyright (C) 2017 SUSE LLC
+# Copyright (C) 2017-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,13 +30,6 @@ sub add {
 
 sub get    { @{$_[0]}[$_[1]] }
 sub remove { delete @{$_[0]}[$_[1]] }
-
-sub search {
-    my ($self, $field, $re) = @_;
-    my $results = $self->new();
-    $self->each(sub { $results->add($_) if $_->{$field} =~ $re });
-    $results;
-}
 
 sub new {
     my ($class, @args) = @_;
@@ -70,5 +63,132 @@ sub reset { @{$_[0]} = () }
 
 *_restore_el = \&OpenQA::Parser::_restore_el;
 *TO_JSON     = \&to_array;
+
+
+=encoding utf-8
+
+=head1 NAME
+
+OpenQA::Parser::Results - Baseclass of parser collections
+
+=head1 SYNOPSIS
+
+    use OpenQA::Parser::Results;
+
+    my $result = OpenQA::Parser::Results->new(qw(a b c));
+
+    $result->add(OpenQA::Parser::Results->new(OpenQA::Parser::Result->new));
+    $result->add('a');
+    $result->add('b');
+    $result->add('c');
+
+    $results->remove(0);
+    $results->get(1);
+    $results->first();
+    $results->last();
+    $results->each( sub { ... } );
+
+=head1 DESCRIPTION
+
+OpenQA::Parser::Results is the base object representing a collection of results.
+Elements of the parser tree that represent an ARRAY needs to inherit this class.
+
+=head1 METHODS
+
+OpenQA::Parser::Result inherits all methods from L<Mojo::Collection>
+and implements the following new ones:
+
+=head2 get()
+
+    use OpenQA::Parser::Results;
+
+    my $results = OpenQA::Parser::Results->new(qw(a b c));
+    my $first = $results->get(0);
+
+Returns the element of the array at the index supplied.
+
+=head2 add()
+
+    use OpenQA::Parser::Results;
+
+    my $results = OpenQA::Parser::Results->new(qw(a b c));
+    $results->add('d');
+
+Adds an element to the array.
+
+=head2 remove()
+
+    use OpenQA::Parser::Results;
+
+    my $results = OpenQA::Parser::Results->new(qw(a b c));
+    $results->remove(0);
+
+Removes the element of the array at the index supplied.
+
+=head2 reset()
+
+    use OpenQA::Parser::Results;
+
+    my $results = OpenQA::Parser::Results->new(qw(a b c));
+    $results->reset;
+
+Wipes the content of the array.
+
+=head2 to_json()
+
+    use OpenQA::Parser::Results;
+
+    my $results = OpenQA::Parser::Result->new(qw(a b c));
+    my $json = $results->to_json();
+
+It will encode and return a string that is the JSON representation of the collection.
+
+=head2 from_json()
+
+    use OpenQA::Parser::Results;
+
+    my $results = OpenQA::Parser::Results->new()->from_json($json_data);
+
+It will restore the result and return a new object representing it.
+
+=head2 to_array()
+
+    use OpenQA::Parser::Results;
+
+    my $results = OpenQA::Parser::Results->new(qw(a b c));
+    my $arrayref = $results->to_array();
+
+It will return an ARRAY reference representing the object.
+
+=head2 to_el()
+
+    use OpenQA::Parser::Results;
+
+    my $results = OpenQA::Parser::Results->new(qw(a b c));
+    my $el = $results->to_el();
+
+It will encode the result and return a parser tree leaf representation.
+
+=head2 serialize()
+
+    use OpenQA::Parser::Results;
+
+    my $p = OpenQA::Parser::Results->new(qw(a b c));
+
+    my $serialized_data = $results->serialize();
+
+    my $original_data = OpenQA::Parser::Results->new->deserialize($serialized_data);
+
+Serialize the parser contents using L<Storable>.
+
+=head2 deserialize()
+
+    use OpenQA::Parser::Results;
+
+    my $original_data = OpenQA::Parser::Results->new->deserialize($serialized_data);
+
+Restore the object with the data provided. It expects a storable data blob.
+
+=cut
 
 1;

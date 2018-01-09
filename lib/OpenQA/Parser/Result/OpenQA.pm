@@ -67,6 +67,13 @@ sub write { $_[0]->SUPER::write(path($_[1], join('.', join('-', 'result', $_[0]-
             map { $_->search_in_details($field, $re) }
             grep { blessed($_) && $_->isa("OpenQA::Parser::Result") } @{$self})->flatten;
     }
+
+    sub search {
+        my ($self, $field, $re) = @_;
+        my $results = $self->new();
+        $self->each(sub { $results->add($_) if $_->{$field} =~ $re });
+        $results;
+    }
 }
 
 1;
