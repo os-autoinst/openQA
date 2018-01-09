@@ -303,3 +303,24 @@ function getFailedSteps(failed_module) {
 function setupAsyncFailedResult() {
     $(document).on('show.bs.tooltip', '.failedmodule', function() { getFailedSteps(this) });
 }
+
+function setupRunningAndScheduledTables() {
+    $('#scheduled, #running').DataTable({
+        pagingType: 'simple',
+        order: [],
+        columnDefs: [{
+            targets: 0,
+            className: "name"
+        },
+        {
+            targets: "time",
+            render: function ( data, type, row ) {
+                if (type === 'display') {
+                    return data !== '0Z' ? jQuery.timeago(new Date(data)) : 'not yet';
+                } else {
+                    return data;
+                }
+            }
+        }],
+    });
+}

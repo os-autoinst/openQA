@@ -1,22 +1,3 @@
-% content_for 'ready_function' => begin
-  $('#scheduled').DataTable( {
-    "pagingType" : 'simple',
-    "order": [],
-    "columnDefs": [
-        { targets: 0,
-              className: "name" },
-        { targets: "time",
-              "render": function ( data, type, row ) {
-                    if (type === 'display' && data != '0Z') {
-                      return jQuery.timeago(new Date(data));
-                  } else
-                      return 'Not yet';
-              }
-            },
-        ],
-  } );
-% end
-
 <table id="scheduled" class="display table table-striped" style="width: 100%">
     <thead>
         <tr>
