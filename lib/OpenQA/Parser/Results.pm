@@ -55,10 +55,8 @@ sub new {
     return $class->SUPER::new(map { _restore_el($_); $_ } @args);
 }
 
-sub to_json   { encode_json shift()->to_array }
+sub to_json   { encode_json shift() }                      # Mojo will call TO_JSON
 sub from_json { __PACKAGE__->new(@{decode_json $_[1]}) }
-
-*_restore_el = \&OpenQA::Parser::_restore_el;
 
 sub to_array {
     [map { blessed $_ && $_->can("to_hash") ? $_->to_hash : blessed $_ && $_->can("to_array") ? $_->to_array : $_ }
@@ -78,5 +76,8 @@ sub serialize   { Storable::freeze($_[0]) }
 sub deserialize { __PACKAGE__->new(@{Storable::thaw($_[1])}) }
 
 sub reset { @{$_[0]} = () }
+
+*_restore_el = \&OpenQA::Parser::_restore_el;
+*TO_JSON     = \&to_array;
 
 1;

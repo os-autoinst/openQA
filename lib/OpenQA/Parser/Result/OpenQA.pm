@@ -32,22 +32,21 @@ sub search_in_details {
     $results;
 }
 
+# For internal use
+sub to_openqa {
+    return {
+        result  => $_[0]->result(),
+        dents   => $_[0]->dents(),
+        details => $_[0]->details()};
+}
+
+# For generating files that can be read by openQA
 sub TO_JSON {
-    {
+    return {
         result  => $_[0]->result(),
         dents   => $_[0]->dents(),
         details => $_[0]->details(),
-        (test => $_[0]->test ? $_[0]->test->to_hash : undef) x !!($_[1])};
+        (test => $_[0]->test ? $_[0]->test->TO_JSON : undef) x !!($_[1])};
 }
-
-sub to_hash {
-    {
-        result  => $_[0]->result(),
-        dents   => $_[0]->dents(),
-        details => $_[0]->details(),
-        name    => $_[0]->name(),      # Note: name is hidden for json
-        (test => $_[0]->test ? $_[0]->test->to_hash : undef) x !!($_[1])};
-}
-
 
 1;

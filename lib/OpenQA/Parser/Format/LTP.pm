@@ -89,20 +89,6 @@ sub parse {
     has environment => sub { OpenQA::Parser::Result::LTP::Environment->new() };
     has test        => sub { OpenQA::Parser::Result::LTP::SubTest->new() };
     has [qw(status test_fqn)];
-
-    sub to_hash {
-        {
-            environment => $_[0]->environment->to_hash,
-            status      => $_[0]->status,
-            test_fqn    => $_[0]->test_fqn,
-            result      => $_[0]->result(),
-            dents       => $_[0]->dents(),
-            details     => $_[0]->details(),
-            name        => $_[0]->name(),                 # Note: name is hidden for json
-            test        => $_[0]->test->to_hash,
-        };
-    }
-    *TO_JSON = \&to_hash;
 }
 
 # Additional data structure - they get mapped automatically
@@ -111,18 +97,6 @@ sub parse {
     use Mojo::Base 'OpenQA::Parser::Result::Test';
 
     has [qw(log duration result)];
-    sub to_hash {
-        {
-            log      => $_[0]->log(),
-            duration => $_[0]->duration(),
-            result   => $_[0]->result(),
-            category => $_[0]->category(),
-            name     => $_[0]->name(),
-            flags    => $_[0]->flags(),
-            script   => $_[0]->script() // 'unk',
-        };
-    }
-    *TO_JSON = \&to_hash;
 }
 
 {

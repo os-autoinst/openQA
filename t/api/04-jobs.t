@@ -631,6 +631,7 @@ subtest 'Parse extra tests results - LTP' => sub {
             is $db_module->script,         'test', 'Modules script are matching';
             is $db_module->category,       $_->test->category, 'Modules category are matching';
             is $db_module->result, ($_->result eq 'ok' ? 'passed' : 'failed'), 'Modules can be passed or failed';
+            ok -e path($basedir, $_->{text}) for @{$db_module->details};
         });
 
     $parser->outputs->each(
@@ -707,6 +708,7 @@ subtest 'Parse extra tests results - xunit' => sub {
             is $db_module->script,         'test', 'Modules script are matching';
             is $db_module->category,       $_->test->category, 'Modules category are matching';
             is $db_module->result, ($_->result eq 'ok' ? 'passed' : 'failed'), 'Modules can be passed or failed';
+            ok -e path($basedir, $_->{text}) for @{$db_module->details};
         });
 
 
@@ -774,6 +776,8 @@ subtest 'Parse extra tests results - junit' => sub {
             is $db_module->script,         'test', 'Modules script are matching';
             is $db_module->category,       $_->test->category, 'Modules category are matching';
             is $db_module->result,         'passed', 'Modules result are ok';
+
+            ok -e path($basedir, $_->{text}) for @{$db_module->details};
         });
 
 

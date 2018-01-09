@@ -21,8 +21,17 @@ use Mojo::Base 'OpenQA::Parser::Result';
 has flags => sub { {} };
 has [qw(category name script)];
 
-sub to_hash {
-    {
+sub to_openqa {
+    return {
+        category => $_[0]->category(),
+        name     => $_[0]->name(),
+        flags    => $_[0]->flags(),
+        script   => $_[0]->script() // 'unk',
+    };
+}
+
+sub TO_JSON {
+    return {
         category => $_[0]->category(),
         name     => $_[0]->name(),
         flags    => $_[0]->flags(),

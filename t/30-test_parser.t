@@ -351,7 +351,7 @@ sub test_junit_file {
         'category' => 'tests-systemd',
         'flags'    => {},
         'name'     => '1_running_upstream_tests',
-        'script'   => 'unk'
+        'script'   => undef
       };
 
     is $parser->tests->search("name", qr/1_running_upstream_tests/)->first()->name, '1_running_upstream_tests';
@@ -405,9 +405,8 @@ sub test_junit_file {
             my $res = decode_json $_->slurp;
             is ref $res, "HASH", 'JSON result can be decoded' or diag explain $_->slurp;
             like $_, qr/result-\d_.*\.json/;
-            ok exists $res->{result}, 'JSON result can be decoded';
-            ok !exists $res->{name},  'JSON result can be decoded';
-
+            ok exists $res->{result}, 'JSON result can be decoded' or die diag explain $res;
+            ok !exists $res->{name},  'JSON result can be decoded' or die diag explain $res;
         });
 
     $testdir->remove_tree;
@@ -426,7 +425,7 @@ sub test_xunit_file {
         'category' => 'xunit',
         'flags'    => {},
         'name'     => 'bacon',
-        'script'   => 'unk'
+        'script'   => undef
       };
     is $parser->tests->search("name", qr/bacon/)->size, 1;
 

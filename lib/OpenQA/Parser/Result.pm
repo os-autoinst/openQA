@@ -38,8 +38,8 @@ sub new {
 
 sub get { OpenQA::Parser::Result::Node->new(val => shift->{shift()}) }
 
-sub to_json   { encode_json shift->_gen_tree_el }
-sub from_json { __PACKAGE__->new(_restore_el(decode_json $_[1])) }
+sub to_json   { encode_json shift }
+sub from_json { __PACKAGE__->new(decode_json $_[1]) }
 sub to_hash {
     my $self = shift;
     return {
@@ -67,9 +67,10 @@ sub _gen_tree_el {
 sub write {
     my ($self, $dir) = @_;
     croak 'OpenQA::Parser::Result write() requires a name field' unless $self->can('name');
-    path($dir, join('.', join('-', 'result', $self->name), 'json'))->spurt(encode_json($self));
+    path($dir, join('.', join('-', 'result', $self->name), 'json'))->spurt($self->to_json);
 }
 
+*TO_JSON    = \&to_hash;
 *write_json = \&write;
 
 {

@@ -40,10 +40,10 @@ sub parse {
         # We add support for this optional field :)
         my $ts_generator_script = exists $ts->{script} ? $ts->{script} : undef;
 
-        $result->{errors}   = exists $ts->{errors}   ? $ts->{errors} : undef;
-        $result->{tests}    = exists $ts->{tests}    ? $ts->{tests}  : undef;
-        $result->{failures} = exists $ts->{failures} ? $ts->{errors} : undef;
-        $result->{time}     = exists $ts->{time}     ? $ts->{time}   : undef;
+        $result->{errors}   = exists $ts->{errors}   ? $ts->{errors}   : undef;
+        $result->{tests}    = exists $ts->{tests}    ? $ts->{tests}    : undef;
+        $result->{failures} = exists $ts->{failures} ? $ts->{failures} : undef;
+        $result->{time}     = exists $ts->{time}     ? $ts->{time}     : undef;
 
 
         $ts_category =~ s/[^A-Za-z0-9._-]/_/g;
@@ -113,37 +113,9 @@ sub parse {
 {
     package OpenQA::Parser::Result::XUnit;
     use Mojo::Base 'OpenQA::Parser::Result::OpenQA';
-    has properties => sub { OpenQA::Parser::Result::XUnit::PropertyResults->new };
+    has properties => sub { OpenQA::Parser::Results->new };
 
     has [qw(errors tests failures time)];
-
-    sub to_hash {
-        {
-            properties => $_[0]->properties()->to_array,
-            errors     => $_[0]->errors(),
-            tests      => $_[0]->tests(),
-            failures   => $_[0]->failures(),
-            time       => $_[0]->time(),
-            result     => $_[0]->result(),
-            dents      => $_[0]->dents(),
-            details    => $_[0]->details(),
-            name       => $_[0]->name(),
-            (test => $_[0]->test ? $_[0]->test->to_hash : undef) x !!($_[1])};
-    }
-
-}
-
-{
-    package OpenQA::Parser::Result::XUnit::PropertyResults;
-    use Mojo::Base 'OpenQA::Parser::Results';
-
-    # Declare the mapping of the results collection
-    our $of = 'OpenQA::Parser::Result::XUnit::Property';
-
-    # or either override the constructor explictly and map the arguments:
-    #sub new {
-    #    return shift->SUPER::new(map{OpenQA::Parser::Result::XUnit::Property->new($_)} @_);
-    #}
 }
 
 {

@@ -1268,9 +1268,9 @@ sub parse_extra_tests {
             sub {
                 return if !$_->test;
                 $_->test->script($script) if $script;
-                my $t_info = $_->test->to_hash;
+                my $t_info = $_->test->to_openqa;
                 $self->insert_module($t_info);
-                $self->update_module($_->test->name, $_->to_hash);
+                $self->update_module($_->test->name, $_->to_openqa);
             });
 
         $parser->write_output($self->result_dir);
