@@ -1,4 +1,4 @@
-# Copyright (C) 2017 SUSE LLC
+# Copyright (C) 2017-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,12 +34,10 @@ sub new {
     $class->SUPER::new(@args);
 }
 
-*_restore_el = \&OpenQA::Parser::_restore_el;
-
 sub get { OpenQA::Parser::Result::Node->new(val => shift->{shift()}) }
 
 sub to_json   { encode_json shift }
-sub from_json { __PACKAGE__->new(decode_json $_[1]) }
+sub from_json { shift->new(decode_json shift()) }
 sub to_hash {
     my $self = shift;
     return {
@@ -65,19 +63,21 @@ sub _gen_tree_el {
 }
 
 sub write {
-    my ($self, $dir) = @_;
-    croak 'OpenQA::Parser::Result write() requires a name field' unless $self->can('name');
-    path($dir, join('.', join('-', 'result', $self->name), 'json'))->spurt($self->to_json);
+    my ($self, $path) = @_;
+    croak __PACKAGE__ . ' write() requires a path' unless $path;
+    path($path)->spurt($self->to_json);
 }
 
-*TO_JSON    = \&to_hash;
-*write_json = \&write;
+*TO_JSON     = \&to_hash;
+*write_json  = \&write;
+*_restore_el = \&OpenQA::Parser::_restore_el;
 
+# Separate package is done to avoid unpleasant AUTOLOAD situations
 {
     package OpenQA::Parser::Result::Node;
     use Mojo::Base 'OpenQA::Parser::Result';
     has 'val';
-    sub get { __PACKAGE__->new(val => shift->val->{shift()}) }
+    sub get { $_[0]->new(val => $_[0]->val->{$_[1]}) }
 
     sub AUTOLOAD {
         our $AUTOLOAD;
@@ -87,5 +87,89 @@ sub write {
         return shift->get($fn);
     }
 }
+
+=encoding utf-8
+
+=head1 NAME
+
+OpenQA::Parser::Result - Baseclass of parser result
+
+=head1 SYNOPSIS
+
+    use OpenQA::Parser::Result;
+
+    my $result = OpenQA::Parser::Result->new();
+
+=head1 DESCRIPTION
+
+OpenQA::Parser::Result is the base object representing a result.
+Elements of the parser tree that represent a HASH needs to inherit this class.
+
+=head1 METHODS
+
+OpenQA::Parser::Result inherits all methods from L<Mojo::Base>
+and implements the following new ones:
+
+=head2 get()
+
+    use OpenQA::Parser::Result;
+
+    my $result = OpenQA::Parser::Result->new({ foo => { bar => 'baz' }});
+    my $section = $result->get('foo');
+    my $baz = $section->get('bar')->val();
+
+Returns a L<OpenQA::Parser::Result::Node> object, which represent a subsection of the hash.
+L<OpenQA::Parser::Result::Node> exposes only C<get()> and C<val()> methods and uses AUTOLOAD
+features for sub-tree resolution.
+
+C<get()> is used for getting further tree sub-sections,
+it always returns a new L<OpenQA::Parser::Result::Node> which is a subportion of the result.
+C<val()> returns the associated value.
+
+=head2 write()
+
+    use OpenQA::Parser::Result;
+
+    my $result = OpenQA::Parser::Result->new({ foo => { bar => 'baz' }});
+    $result->write('to_file.json');
+
+It will encode and write the result as JSON.
+
+=head2 to_json()
+
+    use OpenQA::Parser::Result;
+
+    my $result = OpenQA::Parser::Result->new({ foo => { bar => 'baz' }});
+    my $json = $result->to_json();
+
+It will encode and return a string that is the JSON representation of the result.
+
+=head2 from_json()
+
+    use OpenQA::Parser::Result;
+
+    my $result = OpenQA::Parser::Result->new()->from_json($json_data);
+
+It will restore the result and return a new result object representing it.
+
+=head2 to_hash()
+
+    use OpenQA::Parser::Result;
+
+    my $result = OpenQA::Parser::Result->new({ foo => { bar => 'baz' }});
+    my $json = $result->to_hash();
+
+It will return a HASH representing the object.
+
+=head2 to_el()
+
+    use OpenQA::Parser::Result;
+
+    my $result = OpenQA::Parser::Result->new({ foo => { bar => 'baz' }});
+    my $el = $result->to_el();
+
+It will encode the result and return a parser tree leaf representation.
+
+=cut
 
 1;

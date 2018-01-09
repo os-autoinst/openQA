@@ -1,4 +1,4 @@
-# Copyright (C) 2017 SUSE LLC
+# Copyright (C) 2017-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -48,5 +48,7 @@ sub TO_JSON {
         details => $_[0]->details(),
         (test => $_[0]->test ? $_[0]->test->TO_JSON : undef) x !!($_[1])};
 }
+
+sub write { $_[0]->SUPER::write(path($_[1], join('.', join('-', 'result', $_[0]->name), 'json'))) }
 
 1;
