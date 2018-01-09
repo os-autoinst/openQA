@@ -26,7 +26,6 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
-use Test::MockModule;
 use Test::Warnings ':all';
 use OpenQA::Test::Case;
 use OpenQA::Client;
@@ -56,14 +55,6 @@ sub nots {
     }
     return $h;
 }
-
-# a mock 'delete' method for Assets which does not actually remove the file from the disk
-#sub mock_delete {
-#    my ($self) = @_;
-#    return $self->SUPER::delete;
-#}
-#my $module = new Test::MockModule('OpenQA::Schema::Result::Assets');
-#$module->mock(delete => \&mock_delete);
 
 OpenQA::Test::Case->new->init_data;
 
