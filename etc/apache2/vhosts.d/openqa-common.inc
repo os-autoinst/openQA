@@ -59,10 +59,6 @@ ProxyPassReverse / http://localhost:9526/
 RequestHeader set X-Forwarded-HTTPS "1"
 RequestHeader set X-Forwarded-Proto "https"
 </If>
-<Else>
-RequestHeader set X-Forwarded-HTTPS "0"
-RequestHeader set X-Forwarded-Proto "http"
-</Else>
 
 HostnameLookups Off
 UseCanonicalName Off
