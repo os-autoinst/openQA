@@ -135,6 +135,12 @@ C<val()> returns the associated value.
 
 It will encode and write the result as JSON.
 
+=head2 TO_JSON
+
+    my $hash = $result->TO_JSON;
+
+Alias for L</"to_hash">.
+
 =head2 to_json()
 
     use OpenQA::Parser::Result;
@@ -159,7 +165,7 @@ It will restore the result and return a new result object representing it.
     my $result = OpenQA::Parser::Result->new({ foo => { bar => 'baz' }});
     my $json = $result->to_hash();
 
-It will return a HASH representing the object.
+Turn object into hash reference.
 
 =head2 to_el()
 

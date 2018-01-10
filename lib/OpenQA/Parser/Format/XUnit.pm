@@ -125,4 +125,64 @@ sub parse {
     has [qw(name value)];
 }
 
+=head1 NAME
+
+OpenQA::Parser::Format::XUnit - XUnit file parser
+
+=head1 SYNOPSIS
+
+    use OpenQA::Parser::Format::XUnit;
+
+    my $parser = OpenQA::Parser::Format::XUnit->new()->load('file.xml');
+
+    # Alternative interface
+    use OpenQA::Parser qw(parser p);
+
+    my $parser = p('XUnit')->include_result(1)->load('file.xml');
+
+    my $parser = parser( XUnit => 'file.xml' );
+
+    my $result_collection = $parser->results();
+    my $test_collection   = $parser->tests();
+    my $output_collection = $parser->output();
+
+    $parser->results->remove(0);
+
+=head1 DESCRIPTION
+
+OpenQA::Parser::Format::XUnit is the parser for the xunit file format.
+The parser is making use of the C<tests()>, C<results()> and C<output()> collections.
+
+With the attribute C<include_result()> set to true, it will include inside the
+results the respective test that generated it (inside the C<test()> attribute).
+See also L<OpenQA::Parser::Result::OpenQA>.
+
+The C<results()> is a special collection that contains L<OpenQA::Parser::Result::XUnit>
+elements. OpenQA::Parser::Result::XUnit exposes the attribute C<properties()> which
+is a collection of type OpenQA::Parser::Result::XUnit::Property, which represent
+generic properties that each result can have in form of key/value.
+
+    my $parser  = parser( XUnit => 'file.xml' );
+
+    my $p_name  = $parser->results()->first->properties->first->name;
+    my $p_value = $parser->results()->first->properties->first->value;
+
+    my $all_prop_first_result = $parser->results()->first->properties;
+
+    ...
+
+    $all_prop_first_result->each(sub { ... });
+
+
+=head1 ATTRIBUTES
+
+OpenQA::Parser::Format::XUnit inherits all attributes from L<OpenQA::Parser::Format::JUnit>.
+
+=head1 METHODS
+
+OpenQA::Parser::Format::XUnit inherits all methods from L<OpenQA::Parser::Format::JUnit>, it only overrides
+C<parse()> to generate a tree of results.
+
+=cut
+
 !!42;

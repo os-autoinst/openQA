@@ -49,6 +49,7 @@ sub TO_JSON {
         (test => $_[0]->test ? $_[0]->test->TO_JSON : undef) x !!($_[1])};
 }
 
+# Override to get automatically the file name
 sub write { $_[0]->SUPER::write(path($_[1], join('.', join('-', 'result', $_[0]->name), 'json'))) }
 
 {
@@ -75,5 +76,91 @@ sub write { $_[0]->SUPER::write(path($_[1], join('.', join('-', 'result', $_[0]-
         $results;
     }
 }
+
+=encoding utf-8
+
+=head1 NAME
+
+OpenQA::Parser::Result::OpenQA - OpenQA result class
+
+=head1 SYNOPSIS
+
+    use OpenQA::Parser::Result::OpenQA;
+
+    my $result = OpenQA::Parser::Result::OpenQA->new( details => [ {text => ''}, ... ],
+                                                      dents => 3,
+                                                      result => 'ok' );
+
+    my @details = @{ $result->details() };
+    my $dents   = $result->dents();
+    my $state   = $result->result();
+    my $name    = $result->name();
+    my $test    = $result->test();
+
+    $result->details([qw(a b c), qw(b c d)]);
+    $result->dents(4);
+    $result->result('ok');
+    $result->name('test_1');
+    $result->test();
+
+=head1 DESCRIPTION
+
+OpenQA::Parser::Result::OpenQA it is representing an openQA result.
+It may optionally include the test that generated it.
+Elements of the parser tree that wish to map it's data with openQA needs to inherit this class.
+
+=head1 ATTRIBUTES
+
+OpenQA::Parser::Result::OpenQA inherits all attributes from L<OpenQA::Parser::Result>
+and implements the following new ones: C<details()>, C<dents()>, C<result()>, C<name()> and C<test()>.
+Respectively mapping the openQA test result fields.
+Note: only C<details()>, C<dents()> and C<result()> are 'required' by openQA.
+The other are optional and used to ease out results parsing/reading e.g. test can contain
+the test that generated the result in some format implementations.
+
+=head1 METHODS
+
+OpenQA::Parser::Result::OpenQA inherits all methods from L<OpenQA::Parser::Result>
+and implements the following new ones:
+
+=head2 search_in_details()
+
+    use OpenQA::Parser::Result::OpenQA;
+
+    my $result = OpenQA::Parser::Result::OpenQA->new( details => [ {text => 'foo'}, ... ],
+                                                      dents => 3,
+                                                      result => 'ok' );
+    my $results = $result->search_in_details('text' => qr/foo/);
+    my $text = $results->first->{text};
+
+Returns a L<OpenQA::Parser::Result::OpenQA::Results> collection containing the details results of the search.
+It assumes that C<details()> of the result object is a arrayref of hashrefs.
+
+=head2 write()
+
+    use OpenQA::Parser::Result::OpenQA;
+
+    my $result = OpenQA::Parser::Result::OpenQA->new( details => [ {text => 'foo'}, ... ],
+                                                      dents => 3,
+                                                      result => 'ok' );
+    $result->write('directory/');
+
+It will encode and write the result file as JSON in the supplied directory. The name of the
+file is extracted from the object name attribute, following openQA expectations.
+
+=head2 to_openqa()
+
+    use OpenQA::Parser::Result::OpenQA;
+
+    my $result = OpenQA::Parser::Result::OpenQA->new( details => [ {text => 'foo'}, ... ],
+                                          dents => 3,
+                                          result => 'ok' );
+    my $info = $result->to_openqa;
+    # { details => [], dents=> 3, result=>'ok' }
+
+It will return a hashref which contains as elements the only one strictly required by openQA
+to parse the result.
+
+=cut
 
 1;

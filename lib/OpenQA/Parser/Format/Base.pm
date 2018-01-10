@@ -67,14 +67,18 @@ OpenQA::Parser::Format::Base - Baseclass for reading test formats
 
 =head1 SYNOPSIS
 
+    # OOP Interface
     use OpenQA::Parser::Format::Base;
 
     my $parser = OpenQA::Parser::Format::Base->new();
 
+    ....
+
     # Alternative interface
     use OpenQA::Parser qw(parser p);
 
-    my $parser = p('Base'); # Generate empty object
+    # Generates an instance of OpenQA::Parser::Format::Base
+    my $parser = p('Base');
 
 =head1 DESCRIPTION
 

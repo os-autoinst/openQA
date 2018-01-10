@@ -86,7 +86,7 @@ OpenQA::Parser::Results - Baseclass of parser collections
     $results->get(1);
     $results->first();
     $results->last();
-    $results->each( sub { ... } );
+    $results->each( sub { ... } ); # See also Mojo::Collection's SYNOPSIS
 
 =head1 DESCRIPTION
 
@@ -158,7 +158,7 @@ It will restore the result and return a new object representing it.
     my $results = OpenQA::Parser::Results->new(qw(a b c));
     my $arrayref = $results->to_array();
 
-It will return an ARRAY reference representing the object.
+Turn collection into array reference.
 
 =head2 to_el()
 
@@ -188,6 +188,12 @@ Serialize the parser contents using L<Storable>.
     my $original_data = OpenQA::Parser::Results->new->deserialize($serialized_data);
 
 Restore the object with the data provided. It expects a storable data blob.
+
+=head2 TO_JSON
+
+    my $array = $result->TO_JSON;
+
+Alias for L</"to_array">.
 
 =cut
 

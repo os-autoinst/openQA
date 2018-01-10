@@ -106,4 +106,67 @@ sub parse {
     has [qw(gcc product revision kernel ltp_version harness libc arch)];
 }
 
+=head1 NAME
+
+OpenQA::Parser::Format::LTP - LTP file parser
+
+=head1 SYNOPSIS
+
+    use OpenQA::Parser::Format::LTP;
+
+    my $parser = OpenQA::Parser::Format::LTP->new()->load('file.json');
+
+    # Alternative interface
+    use OpenQA::Parser qw(parser p);
+
+    my $parser = p('LTP')->include_result(1)->load('file.json');
+
+    my $parser = parser( LTP => 'file.json' );
+
+    my $result_collection = $parser->results();
+    my $test_collection   = $parser->tests();
+    my $output_collection = $parser->output();
+    my $extra_collection  = $parser->extra();
+
+    my $environment = $parser->extra()->first;  # Since LTP format v2
+
+    my $arrayref = $extra_collection->to_array;
+
+    $parser->results->remove(0);
+
+    my $passed_results = $parser->results->search( result => qr/ok/ );
+    my $size = $passed_results->size;
+
+=head1 DESCRIPTION
+
+OpenQA::Parser::Format::LTP is the parser for the ltp file format.
+The parser is making use of the C<tests()>, C<results()>, C<output()> and C<extra()> collections.
+
+With the attribute C<include_result()> set to true, it will include inside the
+results the respective test that generated it (inside the C<test()> attribute).
+See also L<OpenQA::Parser::Result::OpenQA>.
+
+The C<extra()> collection was introduced in the format v2,
+which can include the environment of the tests shared among the results.
+After the parsing, depending on the processed file, it should contain one element,
+which is the environment.
+
+    my $parser = parser( LTP => 'file.json' );
+
+    my $environment = $parser->extra()->first;
+
+Results objects are of specific type, as they are including additional attributes that are
+supported only by the format (thus not by openQA).
+
+=head1 ATTRIBUTES
+
+OpenQA::Parser::Format::LTP inherits all attributes from L<OpenQA::Parser::Format::JUnit>.
+
+=head1 METHODS
+
+OpenQA::Parser::Format::LTP inherits all methods from L<OpenQA::Parser::Format::JUnit>, it only overrides
+C<parse()> to generate a tree of results.
+
+=cut
+
 !!42;

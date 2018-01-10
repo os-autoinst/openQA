@@ -122,4 +122,55 @@ sub parse {
     $self;
 }
 
+=encoding utf-8
+
+=head1 NAME
+
+OpenQA::Parser::Format::JUnit - JUnit file parser
+
+=head1 SYNOPSIS
+
+    use OpenQA::Parser::Format::JUnit;
+
+    my $parser = OpenQA::Parser::Format::JUnit->new()->load('file.xml');
+
+    # Alternative interface
+    use OpenQA::Parser qw(parser p);
+
+    my $parser = p('JUnit')->include_result(1)->load('file.xml');
+
+    my $parser = parser( JUnit => 'file.xml' );
+
+    my $result_collection = $parser->results();
+    my $test_collection   = $parser->tests();
+    my $output_collection = $parser->output();
+
+    my $arrayref = $result_collection->to_array;
+
+    $parser->results->remove(0);
+
+    my $passed_results = $parser->results->search( result => qr/ok/ );
+    my $size = $passed_results->size;
+
+
+=head1 DESCRIPTION
+
+OpenQA::Parser::Format::JUnit is the parser for junit file format.
+The parser is making use of the C<tests()>, C<results()> and C<output()> collections.
+
+With the attribute C<include_result()> set to true, it will include inside the
+results the respective test that generated it (inside the C<test()> attribute).
+See also L<OpenQA::Parser::Result::OpenQA>.
+
+=head1 ATTRIBUTES
+
+OpenQA::Parser::Format::JUnit inherits all attributes from L<OpenQA::Parser::Format::Base>.
+
+=head1 METHODS
+
+OpenQA::Parser::Format::Base inherits all methods from L<OpenQA::Parser::Format::Base>, it only overrides
+C<parse()> to generate a tree of results.
+
+=cut
+
 !!42;
