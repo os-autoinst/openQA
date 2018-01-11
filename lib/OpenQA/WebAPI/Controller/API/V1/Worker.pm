@@ -23,6 +23,32 @@ use DBIx::Class::Timestamps 'now';
 use Try::Tiny;
 use Scalar::Util 'looks_like_number';
 
+=pod
+
+=head1 NAME
+
+OpenQA::WebAPI::Controller::API::V1::Worker
+
+=head1 SYNOPSIS
+
+  use OpenQA::WebAPI::Controller::API::V1::Worker;
+
+=head1 DESCRIPTION
+
+Implements API methods relating to OpenQA Workers.
+
+=over 4
+
+=item list()
+
+Returns a list of workers with useful information for each including its ID, the host
+where the worker is located, the worker instance, the worker status and the worker's
+websocket status.
+
+=back
+
+=cut
+
 sub list {
     my ($self) = @_;
     my $live    = !looks_like_number($self->param('live')) ? 0 : !!$self->param('live');
@@ -36,9 +62,22 @@ sub list {
     $self->render(json => {workers => $ret});
 }
 
-# TODO: this function exists purely for unit tests to be able to register
-# workers without fixtures so usage elsewhere should be avoided
-# NOTE: currently this function is used in create (API entry point)
+=over 4
+
+=item _register()
+
+Register a worker instance on the database or update its information if it
+was already registered.
+
+B<TODO>: this function exists purely for unit tests to be able to register
+workers without fixtures so usage elsewhere should be avoided
+
+B<NOTE>: currently this function is used in create (API entry point)
+
+=back
+
+=cut
+
 sub _register {
     my ($self, $schema, $host, $instance, $caps) = @_;
 
@@ -85,6 +124,16 @@ sub _register {
     return $worker->id;
 }
 
+=over 4
+
+=item create()
+
+Initializes and registers a worker.
+
+=back
+
+=cut
+
 sub create {
     my ($self) = @_;
 
@@ -118,6 +167,19 @@ sub create {
     $self->render(json => {id => $id});
 
 }
+
+=over 4
+
+=item show()
+
+Prints information from a worker given its ID. Each entry contains the "hostname",
+the boolean flag "connected" which can be 0 or 1 depending on the connection to
+the websockets server and the field "status" which can be "dead", "idle", "running".
+A worker can be considered "up" when "connected=1" and "status!=dead"'
+
+=back
+
+=cut
 
 sub show {
     my ($self) = @_;

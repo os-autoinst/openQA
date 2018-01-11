@@ -3,6 +3,30 @@ use strict;
 use warnings;
 use Mojo::Base 'Mojolicious::Controller';
 
+=pod
+
+=head1 NAME
+
+OpenQA::WebAPI::Controller::API::V1::Feature
+
+=head1 SYNOPSIS
+
+  use OpenQA::WebAPI::Controller::API::V1::Feature;
+
+=head1 DESCRIPTION
+
+Implements feature API.
+
+=over 4
+
+=item informed()
+
+Post integer value to save feature tour progress of current user in the database
+
+=back
+
+=cut
+
 sub informed {
     my ($self)  = @_;
     my $user    = $self->current_user;
