@@ -32,6 +32,11 @@ use DateTime;
 use Cwd 'abs_path';
 use File::Path 'make_path';
 use BSD::Resource 'getrusage';
+use Mojo::File 'path';
+use Pod::Tree;
+
+# Global hash to store method's description
+my %methods_description;
 
 # reinit pseudo random number generator in every child to avoid
 # starting off with the same state.
@@ -302,6 +307,8 @@ sub startup {
     #
     ## JSON API starts here
     ###
+    # Array to store new API routes' references, so they can all be checked to get API description from POD
+    my @api_routes = ();
     my $api_auth_any_user = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth');
     my $api_auth_operator = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_operator');
     my $api_auth_admin    = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_admin');
@@ -309,6 +316,7 @@ sub startup {
     my $api_ro = $api_auth_operator->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     my $api_ra = $api_auth_admin->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     my $api_public_r = $r->route('/api/v1')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    push @api_routes, $api_ru, $api_ro, $api_ra, $api_public_r;
     # this is fallback redirect if one does not use apache
     $api_public_r->websocket(
         '/ws/:workerid' => sub {
@@ -323,6 +331,7 @@ sub startup {
         });
     my $api_job_auth = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_jobtoken');
     my $api_r_job = $api_job_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    push @api_routes, $api_job_auth, $api_r_job;
     $api_r_job->get('/whoami')->name('apiv1_jobauth_whoami')->to('job#whoami');    # primarily for tests
 
     # api/v1/job_groups
@@ -347,6 +356,7 @@ sub startup {
     $api_ro->post('/jobs/restart')->name('apiv1_restart_jobs')->to('job#restart');
 
     my $job_r = $api_ro->route('/jobs/:jobid', jobid => qr/\d+/);
+    push @api_routes, $job_r;
     $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->name('apiv1_job')->to('job#show');
     $api_public_r->route('/jobs/:jobid/details', jobid => qr/\d+/)->name('apiv1_job')->to('job#show', details => 1);
     $job_r->put('/')->name('apiv1_put_job')->to('job#update');
@@ -357,9 +367,9 @@ sub startup {
     $job_r->post('/artefact')->name('apiv1_create_artefact')->to('job#create_artefact');
     $job_r->post('/ack_temporary')->to('job#ack_temporary');
 
-
     # job_set_waiting, job_set_continue
     my $command_r = $job_r->route('/set_:command', command => [qw(waiting running)]);
+    push @api_routes, $command_r;
     $command_r->post('/')->name('apiv1_set_command')->to('job#set_command');
     $job_r->post('/restart')->name('apiv1_restart')->to('job#restart');
     $job_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel');
@@ -369,6 +379,7 @@ sub startup {
     $api_public_r->get('/bugs')->name('apiv1_bugs')->to('bug#list');
     $api_ro->post('/bugs')->name('apiv1_create_bug')->to('bug#create');
     my $bug_r = $api_ro->route('/bugs/:id', bid => qr/\d+/);
+    push @api_routes, $bug_r;
     $bug_r->get('/')->name('apiv1_show_bug')->to('bug#show');
     $bug_r->put('/')->name('apiv1_put_bug')->to('bug#update');
     $bug_r->delete('/')->name('apiv1_delete_bug')->to('bug#destroy');
@@ -379,6 +390,7 @@ sub startup {
       = 'Each entry contains the "hostname", the boolean flag "connected" which can be 0 or 1 depending on the connection to the websockets server and the field "status" which can be "dead", "idle", "running". A worker can be considered "up" when "connected=1" and "status!=dead"';
     $api_ro->post('/workers')->name('apiv1_create_worker')->to('worker#create');
     my $worker_r = $api_ro->route('/workers/:workerid', workerid => qr/\d+/);
+    push @api_routes, $worker_r;
     $api_public_r->route('/workers/:workerid', workerid => qr/\d+/)->get('/')->name('apiv1_worker')->to('worker#show');
     $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');
 
@@ -407,6 +419,7 @@ sub startup {
 
     # api/v1/mm
     my $mm_api = $api_r_job->route('/mm');
+    push @api_routes, $mm_api;
     $mm_api->get('/children/:status' => [status => [qw(running scheduled done)]])->name('apiv1_mm_running_children')
       ->to('mm#get_children_status');
     $mm_api->get('/children')->name('apiv1_mm_children')->to('mm#get_children');
@@ -474,8 +487,13 @@ sub startup {
 
     # api/v1/feature
     $api_ru->post('/feature')->name('apiv1_post_informed_about')->to('feature#informed');
-    $api_description{'apiv1_post_informed_about'}
-      = 'Post integer value to save feature tour progress of current user in the database';
+
+    # Parse API controller modules for POD
+    get_pod_from_controllers(@api_routes);
+    # Set API descriptions
+    foreach my $api_rt (@api_routes) {
+        set_api_desc(\%api_description, $api_rt);
+    }
 
     # reduce_result is obsolete (replaced by limit_results_and_logs)
     $self->gru->add_task(reduce_result          => \&OpenQA::Schema::Result::Jobs::reduce_result);
@@ -551,6 +569,111 @@ sub _add_memory_limit {
 sub run {
     # Start command line interface for application
     Mojolicious::Commands->start_app('OpenQA::WebAPI');
+}
+
+sub get_pod_from_controllers {
+    # Object to get API descriptions from POD
+    my $tree = Pod::Tree->new or die "cannot create object: $!\n";
+    my %controllers;
+    my $OPENQA_CODEBASE = '/usr/share/openqa';
+    my $ctrlrpath = path($OPENQA_CODEBASE)->child('lib', 'OpenQA', 'WebAPI', 'Controller', 'API', 'V1');
+
+    # Review all routes to get controllers, and from there get the .pm filename to parse for POD
+    foreach my $api_rt (@_) {
+        next if (ref($api_rt) ne 'Mojolicious::Routes::Route');
+        foreach my $rt (@{$api_rt->children}) {
+            next unless ($rt->to->{controller});
+            my $filename = ucfirst($rt->to->{controller});
+            if ($filename =~ /_/) {
+                $filename = join('', map(ucfirst, split(/_/, $filename)));
+            }
+            $filename .= '.pm';
+            $controllers{$rt->to->{controller}} = $filename;
+        }
+    }
+
+    # Parse API controller files for POD
+    foreach my $ctrl (keys %controllers) {
+        $tree->load_file($ctrlrpath->child($controllers{$ctrl})->to_string);
+        $tree->get_root->set_filename($ctrl);
+        if ($tree->loaded() and $tree->has_pod()) {
+            $tree->walk(\&_itemize);
+        }
+    }
+}
+
+sub set_api_desc {
+    my $api_description = shift;
+    my $api_route       = shift;
+
+    if (ref($api_description) ne 'HASH') {
+        log_warning("set_api_desc: expected HASH ref for api_descriptions. Got: " . ref($api_description));
+        return;
+    }
+
+    if (ref($api_route) ne 'Mojolicious::Routes::Route') {
+        log_warning("set_api_desc: expected Mojolicious::Routes::Route for api_routes. Got: " . ref($api_route));
+        return;
+    }
+
+    foreach my $r (@{$api_route->children}) {
+        next unless ($r->to->{controller} and $r->to->{action});
+        my $key = $r->to->{controller} . '#' . $r->to->{action};
+        $api_description->{$r->name} = $methods_description{$key} if (defined $methods_description{$key});
+    }
+}
+
+sub _itemize {
+    if (ref($_[0]) ne 'Pod::Tree::Node') {
+        log_warning("_itemize() expected Pod::Tree::Node arg. Got " . ref($_[0]));
+        return 0; # Stop walking the tree
+    }
+    my $methodname = '';
+    my $desc       = '';
+    my $controller = $_[0]->get_filename;
+    if ($_[0]->is_item()) {
+        $methodname = _get_pod_text($_[0]);
+        $methodname =~ s/\s+//g;
+        $methodname =~ s/\(\)//;
+        my $siblings = $_[0]->get_siblings();
+        foreach my $i (@$siblings) {
+            unless ($desc) { # Only take first paragraph for the description
+                $desc = $i->get_text() if $i->is_text();
+                $desc = _get_pod_text($i) if $i->is_ordinary();
+            }
+        }
+        $methods_description{$controller . '#' . $methodname} = $desc;
+    }
+    else {
+        return 1; # Keep walking the tree
+    }
+}
+
+sub _get_pod_text {
+    my $retval = '';
+    if (ref($_[0]) ne 'Pod::Tree::Node') {
+        log_warning("_get_pod_text() expected Pod::Tree::Node arg. Got " . ref($_[0]));
+    }
+    else {
+        my $argtype = $_[0]->get_type();
+        unless ($argtype eq 'item' or $argtype eq 'ordinary') {
+            log_warning("_get_pod_test() Pod::Tree::Node arg should be of type item or ordinary. Got [$argtype]");
+        }
+        my $children = $_[0]->get_children();
+        if (defined $children->[0] and ref($children->[0]) eq 'Pod::Tree::Node') {
+            if ($children->[0]->is_text) {
+                $retval = $children->[0]->get_text();
+                $retval =~ s/[\r\n]/ /g;
+            }
+            if ($children->[0]->is_sequence) {
+                my $seqs = $children->[0]->get_children();
+                if (defined $seqs->[0] and ref($seqs->[0]) eq 'Pod::Tree::Node' and $seqs->[0]->is_text) {
+                    $retval = $seqs->[0]->get_text();
+                }
+            }
+        }
+    }
+    return $retval;
 }
 
 1;
