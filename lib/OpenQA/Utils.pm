@@ -28,6 +28,7 @@ use POSIX 'strftime';
 use Scalar::Util 'blessed';
 use Data::Dump 'pp';
 use Mojo::Log;
+use Scalar::Util qw(blessed reftype);
 
 require Exporter;
 our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
@@ -92,6 +93,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   logistic_map
   rand_range
   in_range
+  walker
 );
 
 if ($0 =~ /\.t$/) {
@@ -943,6 +945,49 @@ sub hashwalker {
         pop @$keys;
     }
 }
+
+# Walks whatever
+sub walker {
+    my ($hash, $callback, $keys) = @_;
+    $keys //= [];
+    if (reftype $hash eq 'HASH') {
+        foreach my $key (sort keys %$hash) {
+            push @$keys, [reftype($hash), $key];
+            my $k_ref = reftype $hash->{$key};
+            if ($k_ref && $k_ref eq 'HASH') {
+                walker($hash->{$key}, $callback, $keys);
+                $callback->($key, $hash->{$key}, $keys, $hash);
+            }
+            elsif ($k_ref && $k_ref eq 'ARRAY') {
+                walker($hash->{$key}, $callback, $keys);
+                $callback->($key, $hash->{$key}, $keys, $hash);
+            }
+            else {
+                $callback->($key, $hash->{$key}, $keys, $hash);
+            }
+            pop @$keys;
+        }
+    }
+    elsif (reftype $hash eq 'ARRAY') {
+        my $i = 0;
+        for my $elem (@{$hash}) {
+            push @$keys, [reftype($hash), $i];
+            my $el_ref = reftype $elem;
+            if ($el_ref && $el_ref eq 'ARRAY') {
+                walker($elem, $callback, $keys);
+                $callback->($i, $elem, $keys, $hash);
+            }
+            elsif ($el_ref && $el_ref eq 'HASH') {
+                walker($elem, $callback, $keys);
+                $callback->($i, $elem, $keys, $hash);
+            }
+
+            $i++;
+            pop @$keys;
+        }
+    }
+}
+
 
 sub safe_call {
     # no critic is for symbol de/reference

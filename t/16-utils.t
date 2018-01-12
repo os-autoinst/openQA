@@ -26,6 +26,7 @@ use strict;
 use OpenQA::Utils;
 use OpenQA::Test::Utils 'redirect_output';
 use Test::More;
+use Scalar::Util 'reftype';
 
 is bugurl('bsc#1234'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bug url is properly expanded';
 ok find_bugref('gh#os-autoinst/openQA#1234'), 'github bugref is recognized';
@@ -46,6 +47,66 @@ like bugref_to_href('bsc#2345 poo#3456 and more'),
 like bugref_to_href('boo#2345,poo#3456'),
   qr{a href="https://bugzilla.opensuse.org/show_bug.cgi\?id=2345">boo\#2345</a>,<a href=.*3456.*},
   'interpunctation is not consumed by href';
+
+my $t3 = {
+    bar => {
+        foo => 1,
+        baz => [{fish => {boring => 'too'}}, {fish2 => {boring => 'not_really'}}]}};
+walker(
+    $t3 => sub {
+        my ($k, $v, $ks, $what) = @_;
+        next if reftype $what eq 'HASH' && exists $what->{_data};
+        like $_[0], qr/bar|baz|foo|0|1|fish$|fish2|boring/, "Walked";
+
+        $what->[$k] = {_type => ref $v, _data => $v} if reftype $what eq 'ARRAY';
+        $what->{$k} = {_type => ref $v, _data => $v} if reftype $what eq 'HASH';
+
+    });
+
+is_deeply $t3,
+  {
+    'bar' => {
+        '_data' => {
+            'baz' => {
+                '_data' => [
+                    {
+                        '_data' => {
+                            'fish' => {
+                                '_data' => {
+                                    'boring' => {
+                                        '_data' => 'too',
+                                        '_type' => ''
+                                    }
+                                },
+                                '_type' => 'HASH'
+                            }
+                        },
+                        '_type' => 'HASH'
+                    },
+                    {
+                        '_data' => {
+                            'fish2' => {
+                                '_data' => {
+                                    'boring' => {
+                                        '_data' => 'not_really',
+                                        '_type' => ''
+                                    }
+                                },
+                                '_type' => 'HASH'
+                            }
+                        },
+                        '_type' => 'HASH'
+                    }
+                ],
+                '_type' => 'ARRAY'
+            },
+            'foo' => {
+                '_data' => 1,
+                '_type' => ''
+            }
+        },
+        '_type' => 'HASH'
+    }};
 
 subtest 'get current version' => sub {
     use Mojo::File qw(path tempdir tempfile);
@@ -147,21 +208,28 @@ subtest 'Plugins handling' => sub {
     my $test_hash = {
         auth => {
             method => "Fake",
-            foo    => "bar"
+            foo    => "bar",
+            b      => {bar2 => 2},
         },
         baz => {
             bar => "test"
         }};
 
-    my $reconstructed_hash;
-
+    my %reconstructed_hash;
     hashwalker $test_hash => sub {
         my ($key, $value, $keys) = @_;
-        $reconstructed_hash->{@$keys[0]}->{$key} = $value;
+
+        my $r_hash = \%reconstructed_hash;
+        for (my $i = 0; $i < scalar @$keys; $i++) {
+            $r_hash->{$keys->[$i]} //= {};
+            $r_hash = $r_hash->{$keys->[$i]} if $i < (scalar @$keys) - 1;
+        }
+
+        $r_hash->{$key} = $value if ref $r_hash eq 'HASH';
+
     };
 
-    is_deeply $reconstructed_hash, $test_hash, "hashwalker() reconstructed original hash correctly";
-
+    is_deeply \%reconstructed_hash, $test_hash, "hashwalker() reconstructed original hash correctly";
 };
 
 subtest safe_call => sub {
@@ -184,6 +252,7 @@ subtest safe_call => sub {
     ok scalar(@{safe_call(foo => not_existant => qw(a b c))}) == 0;
     like $@, qr/Can't locate object method "not_existant" via package "foo"/;
 };
+
 
 done_testing;
 
