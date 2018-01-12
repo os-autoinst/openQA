@@ -89,7 +89,10 @@ sub _gen_tree_el {
     return {DATA_FIELD() => $el} unless blessed $el;
 
     my $el_ref;
-    if ($el->can("_gen_tree_el")) {
+    if ($el->isa('OpenQA::Parser')) {
+        $el_ref = $el;
+    }
+    elsif ($el->can("_gen_tree_el")) {
         return $el->_gen_tree_el;
     }
     elsif ($el->can("to_hash")) {

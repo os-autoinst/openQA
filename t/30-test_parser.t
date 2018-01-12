@@ -823,24 +823,24 @@ subtest xunit_parse => sub {
     my $parser = parser(XUnit => path($FindBin::Bin, "data")->child("xunit_format_example.xml"));
 
     my $expected_test_result = test_xunit_file($parser);
-    #
-    # $parser = parser('XUnit');
-    #
-    # $parser->include_results(1);
-    # $parser->load(path($FindBin::Bin, "data")->child("xunit_format_example.xml"));
-    #
-    # is $parser->results->size, 9,
-    #   'Generated 9 openQA tests results';
-    # is_deeply $parser->results->last->TO_JSON(0), $expected_test_result, 'Test is hidden';
-    #
-    # $expected_test_result->{test} = {
-    #     'category' => 'tests-systemd',
-    #     'flags'    => {},
-    #     'name'     => '9_post-tests_audits',
-    #     'script'   => 'unk'
-    # };
-    #
-    # is_deeply $parser->results->last->TO_JSON(1), $expected_test_result, 'Test is showed';
+};
+
+subtest nested_parsers => sub {
+    my $join = p();
+
+    my $parser = parser(LTP => path($FindBin::Bin, "data")->child("new_ltp_result_array.json"));
+    # E.g serialize it and retrieve (normally it would be only retrieved)
+    my $frozen = $parser->serialize();
+
+    my $data = parser('LTP')->deserialize($frozen);
+    $join->results()->add($data);
+    my $frozen_again = $join->serialize();
+
+    my $frozen_file = tempfile();
+    $frozen_file->spurt($frozen_again);
+
+    my $final_data = parser()->deserialize($frozen_file->slurp());
+    test_ltp_file_v2($final_data->results->first);
 };
 
 done_testing;
