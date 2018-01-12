@@ -26,17 +26,13 @@ use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::IPC;
 use OpenQA::Utils qw(log_warning job_groups_and_parents detect_current_version);
 use OpenQA::Setup;
+use OpenQA::WebAPI::Description qw(get_pod_from_controllers set_api_desc);
 use Mojo::IOLoop;
 use Mojolicious::Commands;
 use DateTime;
 use Cwd 'abs_path';
 use File::Path 'make_path';
 use BSD::Resource 'getrusage';
-use Mojo::File 'path';
-use Pod::Tree;
-
-# Global hash to store method's description
-my %methods_description;
 
 # reinit pseudo random number generator in every child to avoid
 # starting off with the same state.
@@ -569,111 +565,6 @@ sub _add_memory_limit {
 sub run {
     # Start command line interface for application
     Mojolicious::Commands->start_app('OpenQA::WebAPI');
-}
-
-sub get_pod_from_controllers {
-    # Object to get API descriptions from POD
-    my $tree = Pod::Tree->new or die "cannot create object: $!\n";
-    my %controllers;
-    my $OPENQA_CODEBASE = '/usr/share/openqa';
-    my $ctrlrpath = path($OPENQA_CODEBASE)->child('lib', 'OpenQA', 'WebAPI', 'Controller', 'API', 'V1');
-
-    # Review all routes to get controllers, and from there get the .pm filename to parse for POD
-    foreach my $api_rt (@_) {
-        next if (ref($api_rt) ne 'Mojolicious::Routes::Route');
-        foreach my $rt (@{$api_rt->children}) {
-            next unless ($rt->to->{controller});
-            my $filename = ucfirst($rt->to->{controller});
-            if ($filename =~ /_/) {
-                $filename = join('', map(ucfirst, split(/_/, $filename)));
-            }
-            $filename .= '.pm';
-            $controllers{$rt->to->{controller}} = $filename;
-        }
-    }
-
-    # Parse API controller files for POD
-    foreach my $ctrl (keys %controllers) {
-        $tree->load_file($ctrlrpath->child($controllers{$ctrl})->to_string);
-        $tree->get_root->set_filename($ctrl);
-        if ($tree->loaded() and $tree->has_pod()) {
-            $tree->walk(\&_itemize);
-        }
-    }
-}
-
-sub set_api_desc {
-    my $api_description = shift;
-    my $api_route       = shift;
-
-    if (ref($api_description) ne 'HASH') {
-        log_warning("set_api_desc: expected HASH ref for api_descriptions. Got: " . ref($api_description));
-        return;
-    }
-
-    if (ref($api_route) ne 'Mojolicious::Routes::Route') {
-        log_warning("set_api_desc: expected Mojolicious::Routes::Route for api_routes. Got: " . ref($api_route));
-        return;
-    }
-
-    foreach my $r (@{$api_route->children}) {
-        next unless ($r->to->{controller} and $r->to->{action});
-        my $key = $r->to->{controller} . '#' . $r->to->{action};
-        $api_description->{$r->name} = $methods_description{$key} if (defined $methods_description{$key});
-    }
-}
-
-sub _itemize {
-    if (ref($_[0]) ne 'Pod::Tree::Node') {
-        log_warning("_itemize() expected Pod::Tree::Node arg. Got " . ref($_[0]));
-        return 0; # Stop walking the tree
-    }
-    my $methodname = '';
-    my $desc       = '';
-    my $controller = $_[0]->get_filename;
-    if ($_[0]->is_item()) {
-        $methodname = _get_pod_text($_[0]);
-        $methodname =~ s/\s+//g;
-        $methodname =~ s/\(\)//;
-        my $siblings = $_[0]->get_siblings();
-        foreach my $i (@$siblings) {
-            unless ($desc) { # Only take first paragraph for the description
-                $desc = $i->get_text() if $i->is_text();
-                $desc = _get_pod_text($i) if $i->is_ordinary();
-            }
-        }
-        $methods_description{$controller . '#' . $methodname} = $desc;
-    }
-    else {
-        return 1; # Keep walking the tree
-    }
-}
-
-sub _get_pod_text {
-    my $retval = '';
-    if (ref($_[0]) ne 'Pod::Tree::Node') {
-        log_warning("_get_pod_text() expected Pod::Tree::Node arg. Got " . ref($_[0]));
-    }
-    else {
-        my $argtype = $_[0]->get_type();
-        unless ($argtype eq 'item' or $argtype eq 'ordinary') {
-            log_warning("_get_pod_test() Pod::Tree::Node arg should be of type item or ordinary. Got [$argtype]");
-        }
-        my $children = $_[0]->get_children();
-        if (defined $children->[0] and ref($children->[0]) eq 'Pod::Tree::Node') {
-            if ($children->[0]->is_text) {
-                $retval = $children->[0]->get_text();
-                $retval =~ s/[\r\n]/ /g;
-            }
-            if ($children->[0]->is_sequence) {
-                my $seqs = $children->[0]->get_children();
-                if (defined $seqs->[0] and ref($seqs->[0]) eq 'Pod::Tree::Node' and $seqs->[0]->is_text) {
-                    $retval = $seqs->[0]->get_text();
-                }
-            }
-        }
-    }
-    return $retval;
 }
 
 1;
