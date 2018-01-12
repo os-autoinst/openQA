@@ -1528,7 +1528,7 @@ Default timeout is 60s</p>
 <h5 id="_save_memory_dump">save_memory_dump</h5>
 <div class="literalblock">
 <div class="content">
-<pre>save_memory_dump(filename =&gt; undef, migration_speed =&gt; "4096m");</pre>
+<pre>save_memory_dump(filename =&gt; undef);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1536,9 +1536,7 @@ Default timeout is 60s</p>
 filename,  the default will be the current test&#8217;s name.</p>
 </div>
 <div class="paragraph">
-<p>The memory dump can be created at any point, but it&#8217;s recommended to use it
-within a post fail hook. Different filenames should be provided if the dump is
-being used within the test itself.</p>
+<p>This method must be called within a post_fail_hook.</p>
 </div>
 <div class="paragraph">
 <p><em>Currently only qemu backend is supported.</em>'</p>
@@ -1743,7 +1741,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-01-11 13:49:45 UTC
+Last updated 2018-01-12 14:32:03 UTC
 </div>
 </div>
 </body>
