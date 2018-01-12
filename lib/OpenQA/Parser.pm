@@ -44,10 +44,9 @@ sub parser {
 }
 
 sub _build_parser {
-    my $wanted_parser = shift;
-    croak 'You need to specify a parser - base class does not parse' if !$wanted_parser;
-    my $parser_name = "OpenQA::Parser::Format::${wanted_parser}";
-    my @args        = @_;
+    my $wanted_parser = shift // 'Base';
+    my $parser_name   = "OpenQA::Parser::Format::${wanted_parser}";
+    my @args          = @_;
     my $p_instance;
     {
         if (my $e = load_class $parser_name) {

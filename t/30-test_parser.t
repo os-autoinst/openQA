@@ -786,9 +786,8 @@ subtest functional_interface => sub {
     ok $@;
     like $@, qr/Invalid parser supplied: boo/, 'Croaked correctly';
 
-    eval { p(); };
-    ok $@;
-    like $@, qr/You need to specify a parser - base class does not parse/, 'Croaked correctly';
+    my $default = p();
+    ok $default->isa('OpenQA::Parser::Format::Base');
 
     # Supports functional interface.
     my $test_file = path($FindBin::Bin, "data")->child("new_ltp_result_array.json");
