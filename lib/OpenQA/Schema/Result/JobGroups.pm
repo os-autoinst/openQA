@@ -146,6 +146,20 @@ sub rendered_description {
     return;
 }
 
+sub full_name {
+    my ($self) = @_;
+
+    if (my $parent = $self->parent) {
+        return $parent->name . ' / ' . $self->name;
+    }
+    return $self->name;
+}
+
+sub matches_nested {
+    my ($self, $regex) = @_;
+    return $self->full_name =~ /$regex/;
+}
+
 # check the group comments for important builds
 sub important_builds {
     my ($self) = @_;
