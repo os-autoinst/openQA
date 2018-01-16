@@ -421,8 +421,16 @@ subtest 'editing when logged in as regular user' => sub {
         $driver->find_element_by_id('text')->send_keys($description_test_message);
         $driver->find_element_by_id('submitComment')->click();
         $driver->get('/group_overview/1001');
-        my @comments = $driver->find_elements('.pinned-comment-row', 'css');
-        is(scalar @comments, 1, 'there shouldn\'t appear more pinned comments');
+        is(scalar @{$driver->find_elements('.pinned-comment-row')}, 1, 'there shouldn\'t appear more pinned comments');
+
+        # pagination present
+        is(scalar @{$driver->find_elements('.comments-pagination a')}, 1, 'one pagination button present');
+        $driver->get('/group_overview/1001?comments_limit=2');
+        my @pagination_buttons = $driver->find_elements('.comments-pagination a', 'css');
+        is(scalar @pagination_buttons,                       4, 'four pagination buttons present (one is >>)');
+        is(scalar @{$driver->find_elements('.comment-row')}, 2, 'only 2 comments present');
+        $pagination_buttons[2]->click();
+        is(scalar @{$driver->find_elements('.comment-row')}, 1, 'only 1 comment present on last page');
     };
 };
 

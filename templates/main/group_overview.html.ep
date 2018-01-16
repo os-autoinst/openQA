@@ -49,7 +49,7 @@
         %= include 'comments/comment_row', comment_id => $comment->id, comment => $comment, user => $comment->user, context => {type => 'group', id => $group->{id}}, put_action => 'apiv1_put_group_comment', delete_action => 'apiv1_delete_group_comment'
     % }
 </div>
-
+%= include 'comments/pagination', comments_pager => $comments_pager;
 % if (current_user) {
     <script id="comment-row-template" type="text/template">
         %= include 'comments/comment_row', comment_id => '@comment_id@', comment => 0, user => current_user, context => {type => 'group', id => $group->{id}}, put_action => 'apiv1_put_group_comment', delete_action => 'apiv1_delete_group_comment'

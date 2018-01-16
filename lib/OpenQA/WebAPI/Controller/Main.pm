@@ -99,15 +99,40 @@ sub group_overview {
     my @pinned_comments;
     my $tags;
     if ($group->can('comments')) {
-        for my $comment ($group->comments->all) {
-            # find pinned comments
-            if ($comment->user->is_operator && CORE::index($comment->text, 'pinned-description') >= 0) {
-                push(@pinned_comments, $comment);
-            }
-            else {
-                push(@comments, $comment);
-            }
+        # read paging parameter
+        my $page       = int($self->param('comments_page') // 1);
+        my $page_limit = int($self->param('comments_limit') // 5);
+        return $self->respond_to(json => sub { html => 'Invalid paging parameter specified.' })
+          unless $page && $page_limit;
+
+        # find comments
+        my $comments_resultset = $self->app->schema->resultset('Comments');
+        my $comments           = $comments_resultset->search(
+            {
+                group_id => $group->id
+            },
+            {
+                page     => $page,
+                rows     => $page_limit,
+                order_by => {-desc => 't_created'},
+            });
+        $self->stash('comments_pager', $comments->pager());
+        @comments = $comments->all;
+
+        # find "pinned descriptions" (comments by operators with the word 'pinned-description' in it)
+        # FIXME: use a join with the user table here to do the check for operator via the database
+        for my $comment (
+            $comments_resultset->search(
+                {
+                    group_id => $group->id,
+                    text     => {like => '%pinned-description%'},
+                }
+            )->all
+          )
+        {
+            push(@pinned_comments, $comment) if ($comment->user->is_operator);
         }
+
     }
     $tags = $group->tags;
 
