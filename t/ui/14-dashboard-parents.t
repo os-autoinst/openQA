@@ -21,6 +21,7 @@ BEGIN {
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
+use Module::Load::Conditional qw(can_load);
 use Mojo::Base -strict;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
@@ -87,6 +88,13 @@ unless ($driver) {
     exit(0);
 }
 
+# DO NOT MOVE THIS INTO A 'use' FUNCTION CALL! It will cause the tests
+# to crash if the module is unavailable
+unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
+    plan skip_all => 'Install Selenium::Remote::WDKeys to run this test';
+    exit(0);
+}
+
 # don't tests basics here again, this is already done in t/22-dashboard.t and t/ui/14-dashboard.t
 
 sub disable_bootstrap_animations {
@@ -132,6 +140,26 @@ $driver->find_element_by_class('navbar-brand')->click();
 $driver->find_element_by_link_text('Test parent 2')->click();
 disable_bootstrap_animations();
 isnt(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, "child group 'opensuse' in 'Test parent 2'");
+
+# test filtering for nested groups
+subtest 'filtering subgroups' => sub {
+    $driver->get('/');
+    my $url = $driver->get_current_url;
+    $driver->find_element('#filter-panel .panel-heading')->click();
+    $driver->find_element_by_id('filter-group')->send_keys('Test parent$');
+    $driver->find_element_by_id('filter-subgroup')->send_keys('test');
+    my $ele = $driver->find_element_by_id('filter-limit-builds');
+    $ele->click();
+    $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{end}, '0');    # appended
+    $ele = $driver->find_element_by_id('filter-time-limit-days');
+    $ele->click();
+    $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{end}, '0');    # appended
+    $driver->find_element('#filter-form button')->click();
+    $url .= '?group=Test+parent%24&subgroup=test&limit_builds=30&time_limit_days=140#';
+    is($driver->get_current_url, $url, 'URL parameters for filter are correct');
+    is(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, "child group 'opensuse' filtered out");
+    isnt(scalar @{$driver->find_elements('opensuse test', 'link_text')}, 0, "child group 'opensuse test' present'");
+};
 
 kill_driver();
 done_testing();
