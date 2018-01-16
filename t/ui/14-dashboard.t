@@ -131,7 +131,7 @@ subtest 'filter form' => sub {
     $ele->click();
     $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{end}, '2');    # appended to default '14'
     $driver->find_element('#filter-form button')->click();
-    $url .= '?group=SLE+12+SP2&limit_builds=38&time_limit_days=142#';
+    $url .= '?group=SLE+12+SP2&subgroup=&limit_builds=38&time_limit_days=142#';
     is($driver->get_current_url, $url, 'URL parameters for filter are correct');
 };
 

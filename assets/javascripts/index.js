@@ -25,6 +25,9 @@ function setupIndexPage() {
         } else if (key === 'group') {
             $('#filter-group').prop('value', val);
             return "group '" + val + "'";
+        } else if (key === 'subgroup') {
+            $('#filter-subgroup').prop('value', val);
+            return "nested group '" + val + "'";
         } else if (key === 'limit_builds') {
             $('#filter-limit-builds').prop('value', val);
             return val + ' builds per group';

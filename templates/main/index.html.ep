@@ -47,6 +47,10 @@
                 <strong>Group</strong>
                 <input type="text" class="form-control" name="group" placeholder="all" id="filter-group">
             </div>
+            <div class="form-group">
+                <strong>Nested group</strong>
+                <input type="text" class="form-control" name="subgroup" placeholder="all" id="filter-subgroup">
+            </div>
             <div class="form-group form-inline">
                 <strong>Limit builds</strong>
                 Maximum number of builds per group <input type="number" class="form-control" name="limit_builds" value="3" id="filter-limit-builds"><br>
