@@ -85,13 +85,27 @@ sub add_review_badge {
 }
 
 sub compute_build_results {
-    my ($group, $limit, $time_limit_days, $tags) = @_;
+    my ($group, $limit, $time_limit_days, $tags, $subgroups) = @_;
 
+    # find child groups
     my $group_ids;
     my @children;
     if ($group->can('children')) {
-        @children  = $group->children;
-        $group_ids = $group->child_group_ids;
+        if (@$subgroups) {
+            # filter subgroups
+            $group_ids = [];
+            for my $child ($group->children) {
+                if (grep { $_ eq '' || $child->name =~ /$_/ } @$subgroups) {
+                    push(@$group_ids, $child->id);
+                    push(@children,   $child);
+                }
+            }
+
+        }
+        else {
+            $group_ids = $group->child_group_ids;
+            @children  = $group->children;
+        }
     }
     else {
         $group_ids = [$group->id];

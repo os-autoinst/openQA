@@ -30,7 +30,7 @@
         <h2>
             %= link_to $group->{name} => url_for('parent_group_overview', groupid => $group->{id})
         </h2>
-        %= include 'main/group_builds', build_results => $build_results, group => $group, max_jobs => $max_jobs, children => $groupresults->{children}, default_expanded => 0
+        %= include 'main/group_builds', build_results => $build_results, group => $group, max_jobs => $max_jobs, children => $groupresults->{children}, default_expanded => $has_subgroup_filter
     % } else {
         <h2>
             %= link_to $group->{name} => url_for('group_overview', groupid => $group->{id})
