@@ -126,7 +126,8 @@ subtest 'filter form' => sub {
     $driver->find_element('#filter-panel .panel-heading')->click();
     $driver->find_element_by_id('filter-group')->send_keys('SLE 12 SP2');
     my $ele = $driver->find_element_by_id('filter-limit-builds');
-    $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{end}, '8');    # append to 3
+    $ele->click();
+    $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{end}, '8');    # appended to default '3'
     $ele = $driver->find_element_by_id('filter-time-limit-days');
     $ele->click();
     $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{end}, '2');    # appended to default '14'
