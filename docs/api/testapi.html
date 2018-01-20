@@ -530,6 +530,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_freeze_vm">freeze_vm</a></li>
 <li><a href="#_resume_vm">resume_vm</a></li>
 <li><a href="#_parse_junit_log">parse_junit_log</a></li>
+<li><a href="#_parse_extra_log">parse_extra_log</a></li>
 <li><a href="#_wait_idle">wait_idle</a></li>
 </ul>
 </li>
@@ -1608,6 +1609,24 @@ file is then parsed as jUnit format and extra test results are created from it.<
 </div>
 </div>
 <div class="sect4">
+<h5 id="_parse_extra_log">parse_extra_log</h5>
+<div class="literalblock">
+<div class="content">
+<pre>parse_extra_log( Format =&gt; "report.xml" );</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Upload log file from SUT (calls upload_logs internally). The uploaded
+file is then parsed as the format supplied, that can be understood by OpenQA::Parser
+ and extra test results are created from it.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>Formats currently supported are: JUnit, XUnit, LTP</pre>
+</div>
+</div>
+</div>
+<div class="sect4">
 <h5 id="_wait_idle">wait_idle</h5>
 <div class="literalblock">
 <div class="content">
@@ -1741,7 +1760,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-01-18 13:51:28 UTC
+Last updated 2018-01-20 13:52:13 UTC
 </div>
 </div>
 </body>
