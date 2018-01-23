@@ -103,6 +103,7 @@ sub _seek_content {
 
 sub _write_content {
     my ($self, $file_name) = @_;
+    Mojo::File->new($file_name)->spurt('') unless -e $file_name;
     CORE::open my $file, '+<', $file_name or croak "Can't open file $file_name: $!";
     my $ret;
     sysseek($file, $self->start(), 1);
