@@ -65,7 +65,7 @@ sub split {
             file        => $self->file,
             total_cksum => $total_cksum,
         );
-        $piece->generate_sum;
+        #$piece->generate_sum; # XXX: Generate sha here?
         $files->add($piece);
     }
     return $files unless $residual;
@@ -78,7 +78,7 @@ sub split {
         index       => $total,
         file        => $self->file
     );
-    $piece->generate_sum;
+    #$piece->generate_sum;
     $files->add($piece);
 
     return $files;
@@ -155,7 +155,9 @@ package OpenQA::Files {
     sub write        { path(pop())->spurt(shift()->join()) }
     sub generate_sum { sha1_base64(shift()->join()) }
     sub is_sum       { shift->generate_sum eq shift }
-
+    sub prepare {
+        shift()->each(sub { $_->generate_sum });
+    }
     sub write_chunks {
         my $file       = pop();
         my $chunk_path = pop();
@@ -175,7 +177,11 @@ package OpenQA::Files {
 
     sub spurt {
         my $dir = pop();
-        shift->each(sub { Mojo::File->new($dir, $_->index)->spurt($_->serialize) });
+        shift->each(
+            sub {
+                $_->generate_sum;
+                Mojo::File->new($dir, $_->index)->spurt($_->serialize);
+            });
     }
 
     sub verify_chunks {

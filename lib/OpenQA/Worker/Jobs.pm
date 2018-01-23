@@ -190,14 +190,16 @@ sub _multichunk_upload {
     my $is_asset = $form->{asset};
 
     my $pieces = OpenQA::File->new(file => Mojo::File->new($file))->split(1024);
-    my $ret++;
-    $pieces->each(
-        sub {
-            my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
 
-            $ret += _upload($job_id, {asset => $form->{asset}, file => {filename => $filename, file => $chunk_asset}});
-        });
-    return ($ret eq $pieces->size) ? 1 : 0;
+    for ($pieces->each) {
+        $_->generate_sum();
+        my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
+        return 0
+          unless _upload($job_id, {asset => $form->{asset}, file => {filename => $filename, file => $chunk_asset}});
+        $_->content('');
+    }
+
+    return 1;
 }
 
 sub _upload {

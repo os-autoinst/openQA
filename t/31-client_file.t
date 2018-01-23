@@ -77,8 +77,10 @@ subtest 'recompose in-place' => sub {
     my $t_dir       = tempdir();
     my $copied_file = tempfile();
 
+
     # Save pieces to disk
-    Mojo::File->new($t_dir, $_->index)->spurt($_->serialize) for $pieces->each();
+    $_->generate_sum && Mojo::File->new($t_dir, $_->index)->spurt($_->serialize) for $pieces->each();
+    #$pieces->prepare(); it will call generate_sum for each one
 
     is $t_dir->list_tree->size, $pieces->last->total;
 
@@ -117,7 +119,8 @@ subtest 'verify_chunks' => sub {
     my $t_dir       = tempdir();
     my $copied_file = tempfile();
 
-    # Save pieces to disk
+    $pieces->prepare();    # not needed, as we use spurt
+                           # Save pieces to disk
     $pieces->spurt($t_dir);
 
     is $t_dir->list_tree->size, $pieces->last->total;

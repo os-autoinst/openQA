@@ -1322,13 +1322,14 @@ sub create_asset {
 
     my $suffix = '.CHUNKS';
     my $abs = path($fpath, $fname . $suffix);
-    $abs->make_tree unless -d $abs;
+    $abs->make_path unless -d $abs;
     my $final_file = path($fpath, $fname);
     local $@;
     eval {
         my $chunk = OpenQA::File->deserialize($asset->slurp);
-        $chunk->write_content($abs->child($chunk->index));
-
+        $abs->child($chunk->index)->spurt($asset->slurp);
+        # XXX: Add also a message from worker to remove them if chunk upload failed
+        # XXX: Watch out also apparmor permissions
         if ($chunk->size == $abs->list_tree->size()) {
             my $e = OpenQA::Files->write_verify_chunks($abs => $final_file);
 
