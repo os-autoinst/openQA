@@ -33,7 +33,8 @@ use File::Spec::Functions 'catfile';
 use File::Path ();
 use DBIx::Class::Timestamps 'now';
 use File::Temp 'tempdir';
-use Mojo::File 'tempfile';
+use Mojo::File qw(tempfile path);
+use OpenQA::File;
 use OpenQA::Parser 'parser';
 # The state and results constants are duplicated in the Python client:
 # if you change them or add any, please also update const.py.
@@ -1319,14 +1320,28 @@ sub create_asset {
         mkdir($fpath) || die "can't mkdir $fpath: $!";
     }
 
-    my $suffix = '.TEMP-' . db_helpers::rndstr(8);
-    my $abs = join('/', $fpath, $fname . $suffix);
-    $asset->move_to($abs);
-    chmod 0644, $abs;
-    log_debug("moved to $abs");
-    $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type}, created_by => 1});
+    my $suffix = '.CHUNKS';
+    my $abs = path($fpath, $fname . $suffix);
+    $abs->make_tree unless -d $abs;
+    my $final_file = path($fpath, $fname);
+    local $@;
+    eval {
+        my $chunk = OpenQA::File->deserialize($asset->slurp);
+        $chunk->write_content($abs->child($chunk->index));
 
-    return $abs;
+        if ($chunk->size == $abs->list_tree->size()) {
+            my $e = OpenQA::Files->write_verify_chunks($abs => $final_file);
+
+            die "cksum mismatch: $e" if $e;
+            $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type}, created_by => 1});
+
+            chmod 0644, $final_file;
+            $abs->remove_tree;
+        }
+
+    };
+    return $@ if $@;
+    return 0;
 }
 
 sub has_failed_modules {

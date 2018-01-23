@@ -34,6 +34,7 @@ use File::Basename 'basename';
 use File::Which 'which';
 use Mojo::File 'path';
 use Mojo::IOLoop;
+use OpenQA::File;
 
 use POSIX ':sys_wait_h';
 
@@ -182,15 +183,27 @@ sub _reset_state {
     Mojo::IOLoop->singleton->emit("stop_job");
 }
 
-sub upload {
+sub _multichunk_upload {
     my ($job_id, $form) = @_;
-    unless (verify_workerid) {
-        _reset_state;
-        die 'No current_host!';
-    }
     my $filename = $form->{file}->{filename};
     my $file     = $form->{file}->{file};
+    my $is_asset = $form->{asset};
 
+    my $pieces = OpenQA::File->new(file => Mojo::File->new($file))->split(1024);
+    my $ret++;
+    $pieces->each(
+        sub {
+            my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
+
+            $ret += _upload($job_id, {file => {filename => $filename, file => $chunk_asset}});
+        });
+    return ($ret eq $pieces->size) ? 1 : 0;
+}
+
+sub _upload {
+    my ($job_id, $form) = @_;
+    my $filename = $form->{file}->{filename};
+    my $file     = $form->{file}->{file};
     # we need to open and close the log here as one of the files
     # might actually be autoinst-log.txt
     log_info("uploading $filename", channels => ['worker', 'autoinst'], default => 1);
@@ -200,7 +213,6 @@ sub upload {
     my $retry_limit           = 5;
     my $tics                  = 5;
     my $res;
-
 
     while (1) {
         my $ua_url = $hosts->{$current_host}{url}->clone;
@@ -249,33 +261,21 @@ sub upload {
         return 0;
     }
 
-    # double check uploads if the webui asks us to
-    if ($res->res->json && $res->res->json->{temporary}) {
-        my $csum1 = '1';
-        my $size1;
-        if (open(my $cfd, "-|", "cksum", $res->res->json->{temporary})) {
-            ($csum1, $size1) = split(/ /, <$cfd>);
-            close($cfd);
-        }
-        my $csum2 = '2';
-        my $size2;
-        if (open(my $cfd, "-|", "cksum", $file)) {
-            ($csum2, $size2) = split(/ /, <$cfd>);
-            close($cfd);
-        }
-        log_debug("Checksum comparison (actual:expected) $csum1:$csum2 with size (actual:expected) $size1:$size2",
-            channels => 'autoinst');
-        if ($csum1 eq $csum2 && $size1 eq $size2) {
-            my $ua_url = $hosts->{$current_host}{url}->clone;
-            $ua_url->path("jobs/$job_id/ack_temporary");
-            $hosts->{$current_host}{ua}->post($ua_url => form => {temporary => $res->res->json->{temporary}});
-        }
-        else {
-            log_debug("Checksum/size comparison of $filename FAILED", channels => 'autoinst');
-            return 0;
-        }
-    }
     return 1;
+}
+
+sub upload {
+    my ($job_id, $form) = @_;
+    unless (verify_workerid) {
+        _reset_state;
+        die 'No current_host!';
+    }
+    my $filename = $form->{file}->{filename};
+    my $file     = $form->{file}->{file};
+    my $is_asset = $form->{asset};
+
+    return _upload($job_id, $form) unless $is_asset;
+    return _multichunk_upload($job_id, $form);
 }
 
 sub _stop_job {
