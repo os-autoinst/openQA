@@ -87,7 +87,9 @@ sub group_overview {
 
     $self->app->log->debug("Retrieving results for up to $limit_builds builds up to $time_limit_days days old");
     my $only_tagged = $self->param('only_tagged') // 0;
-    my $group       = $self->db->resultset($resultset)->find($self->param('groupid'));
+    my $group_id    = $self->param('groupid');
+    return $self->reply->not_found unless looks_like_number($group_id);
+    my $group = $self->db->resultset($resultset)->find($group_id);
     return $self->reply->not_found unless $group;
     $self->stash('fullscreen', $self->param('fullscreen') // 0);
     my $interval = $self->param('interval') // 60;
