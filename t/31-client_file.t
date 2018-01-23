@@ -122,19 +122,19 @@ subtest 'verify_chunks' => sub {
 
     is $t_dir->list_tree->size, $pieces->last->total;
 
-    # Write piece-by-piece to another file.
-    $t_dir->list_tree->shuffle->each(
-        sub {
-            my $chunk = OpenQA::File->deserialize(Mojo::File->new($_)->slurp);
-            $chunk->write_content($copied_file);
-        });
+    OpenQA::Files->write_chunks($t_dir => $copied_file);
+
     ok(OpenQA::Files->verify_chunks($t_dir => $copied_file), 'Verify chunks passes');
+    $copied_file->spurt('');
+
+    ok(!OpenQA::Files->verify_chunks($t_dir => $copied_file), 'Cannot verify chunks passes');
+    is $copied_file->slurp, '', 'File is empty now';
+    ok(OpenQA::Files->write_verify_chunks($t_dir => $copied_file), 'Write and verify passes');
     is $original->slurp, Mojo::File->new($copied_file)->slurp, 'Same content';
 
     $pieces->first->content('42')->write_content($copied_file);    #Let's simulate a writing error
     ok(!OpenQA::Files->verify_chunks($t_dir => $copied_file), 'Verify chunks fail');
     isnt $original->slurp, Mojo::File->new($copied_file)->slurp, 'Not same content';
-
 };
 
 done_testing();

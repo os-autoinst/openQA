@@ -155,6 +155,23 @@ package OpenQA::Files {
     sub generate_sum { sha1_base64(shift()->join()) }
     sub is_sum       { shift->generate_sum eq shift }
 
+    sub write_chunks {
+        my $file       = pop();
+        my $chunk_path = pop();
+        Mojo::File->new($chunk_path)->list_tree()->each(
+            sub {
+                my $chunk = OpenQA::File->deserialize($_->slurp);
+                $chunk->write_content($file);
+            });
+    }
+
+    sub write_verify_chunks {
+        my $file       = pop();
+        my $chunk_path = pop();
+        write_chunks($chunk_path => $file);
+        return verify_chunks($chunk_path => $file);
+    }
+
     sub verify_chunks {
         my $verify_file = pop();
         my $chunk_path  = pop();
