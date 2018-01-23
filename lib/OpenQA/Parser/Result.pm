@@ -68,6 +68,9 @@ sub write {
     path($path)->spurt($self->to_json);
 }
 
+sub serialize   { Storable::freeze(shift->to_el) }
+sub deserialize { shift()->new(_restore_el(Storable::thaw(shift))) }
+
 *TO_JSON     = \&to_hash;
 *write_json  = \&write;
 *_restore_el = \&OpenQA::Parser::_restore_el;
