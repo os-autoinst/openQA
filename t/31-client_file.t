@@ -72,7 +72,7 @@ subtest 'split/join' => sub {
 subtest 'recompose in-place' => sub {
     my $original = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
 
-    my $pieces = $original->split(2000);
+    my $pieces = $original->split(203);
 
     my $t_dir       = tempdir();
     my $copied_file = tempfile();
@@ -90,10 +90,10 @@ subtest 'recompose in-place' => sub {
         });
 
     my $sha;
-    $t_dir->list_tree->each(
+    $t_dir->list_tree->shuffle->each(
         sub {
             my $chunk = OpenQA::File->deserialize(Mojo::File->new($_)->slurp);
-            ok $chunk->verify_content($copied_file), 'chunk verified';
+            ok $chunk->verify_content($copied_file), 'chunk: ' . $chunk->index . ' verified';
             $sha = $chunk->total_cksum;
         });
 
@@ -112,13 +112,13 @@ subtest 'recompose in-place' => sub {
 subtest 'verify_chunks' => sub {
     my $original = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
 
-    my $pieces = $original->split(200);
+    my $pieces = $original->split(10);
 
     my $t_dir       = tempdir();
     my $copied_file = tempfile();
 
     # Save pieces to disk
-    Mojo::File->new($t_dir, $_->index)->spurt($_->serialize) for $pieces->each();
+    $pieces->spurt($t_dir);
 
     is $t_dir->list_tree->size, $pieces->last->total;
 

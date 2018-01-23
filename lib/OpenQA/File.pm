@@ -172,6 +172,11 @@ package OpenQA::Files {
         return verify_chunks($chunk_path => $file);
     }
 
+    sub spurt {
+        my $dir = pop();
+        shift->each(sub { Mojo::File->new($dir, $_->index)->spurt($_->serialize) });
+    }
+
     sub verify_chunks {
         my $verify_file = pop();
         my $chunk_path  = pop();
