@@ -44,8 +44,10 @@
     <div class="panel-body">
         <form action="#" method="get" id="filter-form">
             <div class="form-group">
-                <strong>Group</strong>
+                <strong>Groups</strong>
                 <input type="text" class="form-control" name="group" placeholder="all" id="filter-group">
+                <input value="1" name="default_expanded" type="checkbox" id="filter-default-expanded">
+                <label for="filter-default-expanded">Nested groups by default expanded</label>
             </div>
             <div class="form-group form-inline">
                 <strong>Limit builds</strong>

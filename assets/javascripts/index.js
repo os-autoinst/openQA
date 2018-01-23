@@ -13,6 +13,7 @@ function setupIndexPage() {
         }
         showTagsElement.prop('disabled', checked);
     });
+    $('#filter-default-expanded').prop('checked', false);
 
     parseFilterArguments(function(key, val) {
         if (key === 'show_tags') {
@@ -34,6 +35,9 @@ function setupIndexPage() {
         } else if (key === 'fullscreen') {
           $('#filter-fullscreen').prop('checked', val !== '0');
           return 'fullscreen';
+        } else if (key === 'default_expanded') {
+            $('#filter-default-expanded').prop('checked', val !== '0');
+            return 'expanded';
         }
     });
 }
