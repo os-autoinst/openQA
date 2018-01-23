@@ -195,7 +195,7 @@ sub _multichunk_upload {
         sub {
             my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
 
-            $ret += _upload($job_id, {file => {filename => $filename, file => $chunk_asset}});
+            $ret += _upload($job_id, {asset => $form->{asset}, file => {filename => $filename, file => $chunk_asset}});
         });
     return ($ret eq $pieces->size) ? 1 : 0;
 }

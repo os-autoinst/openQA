@@ -21,6 +21,7 @@ use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils 'find_job';
 use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
+use Mojo::Asset::Memory;
 
 =pod
 
