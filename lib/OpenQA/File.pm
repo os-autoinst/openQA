@@ -15,12 +15,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::File;
-use Mojo::Base -base;
+use Mojo::Base 'OpenQA::Parser::Result';
 use OpenQA::Parser::Results;
 use Exporter 'import';
 use Carp 'croak';
-has 'file' => sub { Mojo::File->new() };
-has [qw(start end index cksum total)];
+use Digest::SHA 'sha1_base64';
+
+has file => sub { Mojo::File->new() };
+has [qw(start end index cksum total content total_cksum)];
 
 our @EXPORT_OK = ('path');
 
@@ -30,61 +32,144 @@ sub child       { __PACKAGE__->new(file => shift->file->child(@_)) }
 sub slurp       { shift()->file()->slurp() }
 sub _chunk_size { int($_[0] / $_[1]) + (($_[0] % $_[1]) ? 1 : 0) }
 
+sub write_content {
+    my $self = shift;
+    $self->_write_content(pop);
+    $self;
+}
+
+sub verify_content {
+    my $self = shift;
+    return !!($self->cksum eq $self->_sum($self->_seek_content(pop)));
+}
+
 sub split {
     my ($self, $chunk_size) = @_;
     return OpenQA::Files->new($self) unless $chunk_size < $self->size;
-    my $residual = $self->size() % $chunk_size;
-    my $n_chunks = _chunk_size($self->size(), $chunk_size);
-    my $files    = OpenQA::Files->new();
+    my $residual    = $self->size() % $chunk_size;
+    my $total       = my $n_chunks = _chunk_size($self->size(), $chunk_size);
+    my $files       = OpenQA::Files->new();
+    my $total_cksum = $self->_sum($self->file->slurp);
 
     $n_chunks-- if $residual;
 
     for (my $i = 1; $i <= $n_chunks; $i++) {
         my $seek_start = ($i - 1) * $chunk_size;
         my $end        = $seek_start + $chunk_size;
-        $files->add(
-            $self->new(
-                total => $n_chunks + 1,
-                end   => $end,
-                start => $seek_start,
-                index => $i,
-                file  => $self->file
-            ));
-    }
 
-    $files->add(
-        $self->new(
-            total => $n_chunks + 1,
-            end   => $files->last->end + $residual,
-            start => $files->last->end,
-            index => $n_chunks + 1,
-            file  => $self->file
-        )) if $residual;
+        my $piece = $self->new(
+            total       => $total,
+            end         => $end,
+            start       => $seek_start,
+            index       => $i,
+            file        => $self->file,
+            total_cksum => $total_cksum,
+        );
+        $piece->generate_sum;
+        $files->add($piece);
+    }
+    return $files unless $residual;
+
+    my $piece = $self->new(
+        total_cksum => $total_cksum,
+        total       => $total,
+        end         => $files->last->end + $residual,
+        start       => $files->last->end,
+        index       => $total,
+        file        => $self->file
+    );
+    $piece->generate_sum;
+    $files->add($piece);
 
     return $files;
 }
 
 sub read {
-    my $self      = shift;
-    my $file_name = ${$self->file};
+    my $self = shift;
+    return $self->content() if $self->content();
+    $self->content($self->_seek_content(${$self->file}));
+    return $self->content;
+}
+
+sub _seek_content {
+    my ($self, $file_name) = @_;
     CORE::open my $file, '<', $file_name or croak "Can't open file $file_name: $!";
     my $ret = my $content = '';
-    seek($file, $self->start(), 1);
+    sysseek($file, $self->start(), 1);
     $ret = $file->sysread($content, ($self->end() - $self->start()));
     croak "Can't read from file $file_name : $!" unless defined $ret;
     return $content;
 }
 
+sub _write_content {
+    my ($self, $file_name) = @_;
+    CORE::open my $file, '+<', $file_name or croak "Can't open file $file_name: $!";
+    my $ret;
+    sysseek($file, $self->start(), 1);
+    $ret = $file->syswrite($self->content, ($self->end() - $self->start()));
+    croak "Can't write to file $file_name : $!" unless defined $ret;
+    return $ret;
+}
+
+sub generate_sum {
+    my $self = shift;
+    $self->read() if !$self->content();
+    $self->cksum($self->_sum($self->content()));
+    $self->cksum;
+}
+
+sub _sum { sha1_base64(pop) }
+
 package OpenQA::Files {
     use Mojo::Base 'OpenQA::Parser::Results';
+    use Digest::SHA 'sha1_base64';
+    use Mojo::File 'path';
+    use OpenQA::File;
 
-    sub compose {
+    sub join {
         my $content;
         shift()->each(
             sub {
                 $content .= $_->read();
             });
         $content;
+    }
+
+    sub serialize {
+        my $self = shift;
+        $self->join();    # Be sure content was read
+        my @res;
+        $self->each(
+            sub {
+                push @res, $_->serialize();
+            });
+        @res;
+    }
+
+    sub deserialize {
+        my $self = shift;
+        return $self->new(map { OpenQA::File->deserialize($_) } @_);
+    }
+
+    sub write        { path(pop())->spurt(shift()->join()) }
+    sub generate_sum { sha1_base64(shift()->join()) }
+    sub is_sum       { shift->generate_sum eq shift }
+
+    sub verify_chunks {
+        my $verify_file = pop();
+        my $chunk_path  = pop();
+
+        my $sum;
+        for (Mojo::File->new($chunk_path)->list_tree()->each) {
+            my $chunk = OpenQA::File->deserialize($_->slurp);
+            $sum = $chunk->total_cksum if !$sum;
+            return 0 if $sum ne $chunk->total_cksum;
+            return 0 if !$chunk->verify_content($verify_file);
+        }
+
+        return 0 if $sum ne sha1_base64(Mojo::File->new($verify_file)->slurp);
+
+        return 1;
     }
 }
 
