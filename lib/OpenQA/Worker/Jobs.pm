@@ -183,6 +183,14 @@ sub _reset_state {
     Mojo::IOLoop->singleton->emit("stop_job");
 }
 
+sub _upload_state {
+    my ($job_id, $form) = @_;
+    my $ua_url = $hosts->{$current_host}{url}->clone;
+    $ua_url->path("jobs/$job_id/upload_state");
+    $hosts->{$current_host}{ua}->post($ua_url => form => $form);
+    return 1;
+}
+
 sub _multichunk_upload {
     my ($job_id, $form) = @_;
     my $filename = $form->{file}->{filename};
@@ -194,9 +202,9 @@ sub _multichunk_upload {
     for ($pieces->each) {
         $_->generate_sum();
         my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
-        return 0
+        _upload_state($job_id, {state => 'fail', filename => $filename, scope => $is_asset}) && return 0
           unless _upload($job_id, {asset => $form->{asset}, file => {filename => $filename, file => $chunk_asset}});
-        $_->content('');
+        $_->content(\undef);
     }
 
     return 1;

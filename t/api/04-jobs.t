@@ -217,27 +217,137 @@ is(calculate_file_md5($rp), "feeebd34e507d3a1641c774da135be77", "md5sum matches"
 $rp = "t/data/openqa/share/factory/hdd/hdd_image.qcow2";
 unlink($rp);
 $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
-      {file => {file => $filename, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(200);
-my $temp = $post->tx->res->json->{temporary};
-like($temp, qr,t/data/openqa/share/factory/hdd/hdd_image\.qcow2\.TEMP.*,);
-ok(-e $temp, "temporary exists");
-ok(!-e $rp,  "asset doesn't exist after");
-$t->post_ok('/api/v1/jobs/99963/ack_temporary' => form => {temporary => $temp});
-ok(!-e $temp, "temporary is gone");
-ok(-e $rp,    "asset exist after ACK");
+      {file => {file => $filename, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(400);
+my $error = $post->tx->res->json->{error};
+like($error, qr/Byte order is not compatible/);
+
+#Get chunks!
+use OpenQA::File;
+use Mojo::File 'tempfile';
+my $chunkdir = 't/data/openqa/share/factory/hdd/hdd_image.qcow2.CHUNKS/';
+path($chunkdir)->remove_tree;
+my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
+
+$pieces->each(
+    sub {
+        $_->generate_sum;
+        my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
+        $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+              {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(200);
+        my $error  = $post->tx->res->json->{error};
+        my $status = $post->tx->res->json->{status};
+
+        ok !$error or die diag explain $post->tx->res->json;
+        is $status, 'ok';
+        ok(-d $chunkdir, 'Chunk directory exists') if $_->index != $_->total;
+        ok((-e path($chunkdir, $_->index)), 'Chunk is there') if $_->index != $_->total;
+
+        $_->content(\undef);
+    });
+
+ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
+
+ok(-e $rp, 'Asset exists after upload');
+
 my $ret = $t->get_ok('/api/v1/assets/hdd/hdd_image.qcow2')->status_is(200);
 is($ret->tx->res->json->{name}, 'hdd_image.qcow2');
 
-$rp = "t/data/openqa/share/factory/hdd/00099963-hdd_image2.qcow2";
-unlink($rp);
+$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
+
+$pieces->each(
+    sub {
+        $_->generate_sum;
+        $_->content(int(rand(99999)));
+        my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
+        $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+              {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
+        my $error  = $post->tx->res->json->{error};
+        my $status = $post->tx->res->json->{status};
+
+        is $status, 'ok' if $_->index != $_->total;
+        ok $error if $_->index == $_->total;
+        ok(!-d $chunkdir, 'Chunk directory does not exists') if $_->index == $_->total;
+        ok((-e path($chunkdir, $_->index)), 'Chunk is there') if $_->index != $_->total;
+    });
+
+ok(!-d $chunkdir, 'Chunk directory does not exists - upload failed');
+$t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(404);
+$t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(404);
+
+$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
+
+my $first_chunk = $pieces->first;
+$first_chunk->generate_sum;
+
+my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
 $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
-      {file => {file => $filename, filename => 'hdd_image2.qcow2'}, asset => 'private'})->status_is(200);
-$temp = $post->tx->res->json->{temporary};
-like($temp, qr,t/data/openqa/share/factory/hdd/00099963-hdd_image2\.qcow2\.TEMP.*,);
-$t->post_ok('/api/v1/jobs/99963/ack_temporary' => form => {temporary => $temp});
-ok(-e $rp, 'asset exist after');
-$ret = $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(200);
-is($ret->tx->res->json->{name}, '00099963-hdd_image2.qcow2');
+      {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
+
+is $post->tx->res->json->{status}, 'ok';
+ok(-d $chunkdir, 'Chunk directory exists');
+ok((-e path($chunkdir, $first_chunk->index)), 'Chunk is there') or die;
+
+# Simulate worker failed upload
+$t->post_ok(
+    '/api/v1/jobs/99963/upload_state' => form => {filename => 'hdd_image.qcow2', scope => 'public', state => 'fail'});
+ok(!-d $chunkdir, 'Chunk directory was removed') or die;
+ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed') or die;
+
+# Test for private assets
+$chunkdir = 't/data/openqa/share/factory/hdd/00099963-hdd_image.qcow2.CHUNKS/';
+path($chunkdir)->remove_tree;
+
+
+$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
+
+$first_chunk = $pieces->first;
+$first_chunk->generate_sum;
+
+$chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
+$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+      {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'private'});
+
+is $post->tx->res->json->{status}, 'ok';
+ok(-d $chunkdir, 'Chunk directory exists');
+ok((-e path($chunkdir, $first_chunk->index)), 'Chunk is there') or die;
+
+# Simulate worker failed upload
+$t->post_ok(
+    '/api/v1/jobs/99963/upload_state' => form => {
+        filename => 'hdd_image.qcow2',
+        scope    => 'private',
+        state    => 'fail'
+    });
+ok(!-d $chunkdir, 'Chunk directory was removed') or die;
+ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed') or die;
+
+$t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(404);
+
+$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
+
+$pieces->each(
+    sub {
+        $_->generate_sum;
+        my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
+        $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+              {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'private'})->status_is(200);
+        my $error  = $post->tx->res->json->{error};
+        my $status = $post->tx->res->json->{status};
+
+        ok !$error or die diag explain $post->tx->res->json;
+        is $status, 'ok';
+        ok(-d $chunkdir, 'Chunk directory exists') if $_->index != $_->total;
+        ok((-e path($chunkdir, $_->index)), 'Chunk is there') if $_->index != $_->total;
+
+        $_->content(\undef);
+    });
+
+ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
+ok(-e $rp,        'Asset exists after upload');
+
+$ret = $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(200);
+is($ret->tx->res->json->{name}, '00099963-hdd_image.qcow2');
+
 
 # /api/v1/jobs supports filtering by state, result
 my $query = Mojo::URL->new('/api/v1/jobs');

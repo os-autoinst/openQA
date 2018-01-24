@@ -1301,6 +1301,18 @@ sub create_artefact {
     return 1;
 }
 
+sub _move_asset {
+    my ($self, $dir, $final_file, $fname, $type) = @_;
+    # XXX: Watch out also apparmor permissions
+    my $e = OpenQA::Files->write_verify_chunks($dir => $final_file);
+    path($dir)->remove_tree;
+
+    die "cksum mismatch" unless $e;
+    $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type}, created_by => 1});
+
+    chmod 0644, $final_file;
+}
+
 sub create_asset {
     my ($self, $asset, $scope) = @_;
 
@@ -1327,19 +1339,8 @@ sub create_asset {
     local $@;
     eval {
         my $chunk = OpenQA::File->deserialize($asset->slurp);
-        $abs->child($chunk->index)->spurt($asset->slurp);
-        # XXX: Add also a message from worker to remove them if chunk upload failed
-        # XXX: Watch out also apparmor permissions
-        if ($chunk->size == $abs->list_tree->size()) {
-            my $e = OpenQA::Files->write_verify_chunks($abs => $final_file);
-
-            die "cksum mismatch: $e" if $e;
-            $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type}, created_by => 1});
-
-            chmod 0644, $final_file;
-            $abs->remove_tree;
-        }
-
+        $asset->move_to($abs->child($chunk->index));
+        $self->_move_asset($abs, $final_file, $fname, $type) if ($chunk->total == $abs->list_tree->size());
     };
     return $@ if $@;
     return 0;
