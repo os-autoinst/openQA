@@ -1340,7 +1340,7 @@ sub create_asset {
     eval {
         my $chunk = OpenQA::File->deserialize($asset->slurp);
         $asset->move_to($abs->child($chunk->index));
-        $self->_move_asset($abs, $final_file, $fname, $type) if ($chunk->total == $abs->list_tree->size());
+        $self->_move_asset($abs, $final_file, $fname, $type) if ($chunk->is_last);
     };
     return $@ if $@;
     return 0;

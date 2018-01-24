@@ -226,7 +226,7 @@ use OpenQA::File;
 use Mojo::File 'tempfile';
 my $chunkdir = 't/data/openqa/share/factory/hdd/hdd_image.qcow2.CHUNKS/';
 path($chunkdir)->remove_tree;
-my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
+my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split();
 
 $pieces->each(
     sub {
@@ -239,8 +239,8 @@ $pieces->each(
 
         ok !$error or die diag explain $post->tx->res->json;
         is $status, 'ok';
-        ok(-d $chunkdir, 'Chunk directory exists') if $_->index != $_->total;
-        ok((-e path($chunkdir, $_->index)), 'Chunk is there') if $_->index != $_->total;
+        ok(-d $chunkdir, 'Chunk directory exists') unless $_->is_last;
+        ok((-e path($chunkdir, $_->index)), 'Chunk is there') unless $_->is_last;
 
         $_->content(\undef);
     });
@@ -264,10 +264,10 @@ $pieces->each(
         my $error  = $post->tx->res->json->{error};
         my $status = $post->tx->res->json->{status};
 
-        is $status, 'ok' if $_->index != $_->total;
-        ok $error if $_->index == $_->total;
-        ok(!-d $chunkdir, 'Chunk directory does not exists') if $_->index == $_->total;
-        ok((-e path($chunkdir, $_->index)), 'Chunk is there') if $_->index != $_->total;
+        is $status, 'ok' unless $_->is_last;
+        ok $error if $_->is_last;
+        ok(!-d $chunkdir, 'Chunk directory does not exists') if $_->is_last;
+        ok((-e path($chunkdir, $_->index)), 'Chunk is there') unless $_->is_last;
     });
 
 ok(!-d $chunkdir, 'Chunk directory does not exists - upload failed');
@@ -336,8 +336,8 @@ $pieces->each(
 
         ok !$error or die diag explain $post->tx->res->json;
         is $status, 'ok';
-        ok(-d $chunkdir, 'Chunk directory exists') if $_->index != $_->total;
-        ok((-e path($chunkdir, $_->index)), 'Chunk is there') if $_->index != $_->total;
+        ok(-d $chunkdir, 'Chunk directory exists') unless $_->is_last;
+        ok((-e path($chunkdir, $_->index)), 'Chunk is there') unless $_->is_last;
 
         $_->content(\undef);
     });

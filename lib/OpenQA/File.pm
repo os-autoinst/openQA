@@ -31,6 +31,7 @@ sub path        { __PACKAGE__->new(file => Mojo::File->new(@_)) }
 sub child       { __PACKAGE__->new(file => shift->file->child(@_)) }
 sub slurp       { shift()->file()->slurp() }
 sub _chunk_size { int($_[0] / $_[1]) + (($_[0] % $_[1]) ? 1 : 0) }
+sub is_last     { !!($_[0]->total == $_[0]->index()) }
 
 sub write_content {
     my $self = shift;
@@ -45,6 +46,7 @@ sub verify_content {
 
 sub split {
     my ($self, $chunk_size) = @_;
+    $chunk_size //= 100000;
     return OpenQA::Files->new($self) unless $chunk_size < $self->size;
     my $residual = $self->size() % $chunk_size;
     my $total    = my $n_chunks = _chunk_size($self->size(), $chunk_size);
@@ -163,7 +165,7 @@ package OpenQA::Files {
     sub write_chunks {
         my $file       = pop();
         my $chunk_path = pop();
-        Mojo::File->new($chunk_path)->list_tree()->each(
+        Mojo::File->new($chunk_path)->list_tree()->sort->each(
             sub {
                 my $chunk = OpenQA::File->deserialize($_->slurp);
                 $chunk->write_content($file);
