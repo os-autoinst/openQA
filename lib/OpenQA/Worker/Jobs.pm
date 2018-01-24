@@ -197,11 +197,18 @@ sub _multichunk_upload {
     my $file     = $form->{file}->{file};
     my $is_asset = $form->{asset};
 
-    my $pieces = OpenQA::File->new(file => Mojo::File->new($file))->split(1024);
+    my $chunk_size = $worker_settings->{UPLOAD_CHUNK_SIZE} // 1000000;
+    log_info("$filename multi-chunk upload", channels => ['worker'], default => 1);
+
+    my $pieces = OpenQA::File->new(file => Mojo::File->new($file))->split($chunk_size);
+    log_info("$filename: " . $pieces->size() . " chunks",   channels => ['worker'], default => 1);
+    log_info("$filename: chunks of $chunk_size bytes each", channels => ['worker'], default => 1);
 
     for ($pieces->each) {
         $_->generate_sum();
         my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
+        log_info("$filename: Uploading chunk " . $_->index(), channels => ['worker'], default => 1);
+
         _upload_state($job_id, {state => 'fail', filename => $filename, scope => $is_asset}) && return 0
           unless _upload($job_id, {asset => $form->{asset}, file => {filename => $filename, file => $chunk_asset}});
         $_->content(\undef);
@@ -216,7 +223,6 @@ sub _upload {
     my $file     = $form->{file}->{file};
     # we need to open and close the log here as one of the files
     # might actually be autoinst-log.txt
-    log_info("uploading $filename", channels => ['worker', 'autoinst'], default => 1);
 
     my $regular_upload_failed = 0;
     my $retry_counter         = 5;
@@ -283,6 +289,7 @@ sub upload {
     my $filename = $form->{file}->{filename};
     my $file     = $form->{file}->{file};
     my $is_asset = $form->{asset};
+    log_info("uploading $filename", channels => ['worker', 'autoinst'], default => 1);
 
     return _upload($job_id, $form) unless $is_asset;
     return _multichunk_upload($job_id, $form);
