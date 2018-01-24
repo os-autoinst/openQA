@@ -46,10 +46,12 @@ sub verify_content {
 sub split {
     my ($self, $chunk_size) = @_;
     return OpenQA::Files->new($self) unless $chunk_size < $self->size;
-    my $residual    = $self->size() % $chunk_size;
-    my $total       = my $n_chunks = _chunk_size($self->size(), $chunk_size);
-    my $files       = OpenQA::Files->new();
-    my $total_cksum = $self->_sum($self->file->slurp);
+    my $residual = $self->size() % $chunk_size;
+    my $total    = my $n_chunks = _chunk_size($self->size(), $chunk_size);
+    my $files    = OpenQA::Files->new();
+    my $digest   = Digest::SHA->new('sha1');
+    $digest->addfile($self->file->to_string);
+    my $total_cksum = $digest->b64digest;
 
     $n_chunks-- if $residual;
 
@@ -187,17 +189,20 @@ package OpenQA::Files {
     sub verify_chunks {
         my $verify_file = pop();
         my $chunk_path  = pop();
+        my $digest      = Digest::SHA->new('sha1');
 
         my $sum;
+
         for (Mojo::File->new($chunk_path)->list_tree()->each) {
             my $chunk = OpenQA::File->deserialize($_->slurp);
             $sum = $chunk->total_cksum if !$sum;
             return 0 if $sum ne $chunk->total_cksum;
-            return 0 if !$chunk->verify_content($verify_file);
+            return 0 unless $chunk->verify_content($verify_file);
         }
+        # So you can either pass it a Mojo::File or a normal path
+        $digest->addfile(Mojo::File->new($verify_file)->to_string);
 
-        return 0 if $sum ne sha1_base64(Mojo::File->new($verify_file)->slurp);
-
+        return 0 if $sum ne $digest->b64digest;
         return 1;
     }
 }
