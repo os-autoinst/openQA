@@ -217,14 +217,15 @@ is(calculate_file_md5($rp), "feeebd34e507d3a1641c774da135be77", "md5sum matches"
 $rp = "t/data/openqa/share/factory/hdd/hdd_image.qcow2";
 unlink($rp);
 $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
-      {file => {file => $filename, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(400);
+      {file => {file => $filename, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(500);
 my $error = $post->tx->res->json->{error};
 like($error, qr/Byte order is not compatible/);
 
 #Get chunks!
 use OpenQA::File;
 use Mojo::File 'tempfile';
-my $chunkdir = 't/data/openqa/share/factory/hdd/hdd_image.qcow2.CHUNKS/';
+my $chunkdir = 't/data/openqa/share/factory/tmp/hdd_image.qcow2.CHUNKS/';
+
 path($chunkdir)->remove_tree;
 my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split();
 
@@ -294,7 +295,7 @@ ok(!-d $chunkdir, 'Chunk directory was removed') or die;
 ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed') or die;
 
 # Test for private assets
-$chunkdir = 't/data/openqa/share/factory/hdd/00099963-hdd_image.qcow2.CHUNKS/';
+$chunkdir = 't/data/openqa/share/factory/tmp/00099963-hdd_image.qcow2.CHUNKS/';
 path($chunkdir)->remove_tree;
 
 
@@ -347,6 +348,26 @@ ok(-e $rp,        'Asset exists after upload');
 
 $ret = $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(200);
 is($ret->tx->res->json->{name}, '00099963-hdd_image.qcow2');
+
+
+# Test for private assets
+$chunkdir = 't/data/openqa/share/factory/tmp/00099963-new_ltp_result_array.json.CHUNKS/';
+path($chunkdir)->remove_tree;
+
+# Try to send very small-sized data
+$pieces = OpenQA::File->new(file => Mojo::File->new('t/data/new_ltp_result_array.json'))->split();
+
+is $pieces->size(), 1 or die 'Size should be 1!';
+$first_chunk = $pieces->first;
+$first_chunk->generate_sum;
+
+$chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
+$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+      {file => {file => $chunk_asset, filename => 'new_ltp_result_array.json'}, asset => 'other'});
+
+is $post->tx->res->json->{status}, 'ok';
+ok(!-d $chunkdir, 'Chunk directory doesnt exists');
+$t->get_ok('/api/v1/assets/other/00099963-new_ltp_result_array.json')->status_is(200);
 
 
 # /api/v1/jobs supports filtering by state, result

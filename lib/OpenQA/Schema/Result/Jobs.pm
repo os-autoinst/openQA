@@ -1327,20 +1327,23 @@ sub create_asset {
     $fname = sprintf("%08d-%s", $self->id, $fname) if $scope ne 'public';
 
     my $fpath = join('/', $OpenQA::Utils::assetdir, $type);
+    my $temp_path = path($OpenQA::Utils::assetdir, 'tmp');
 
     if (!-d $fpath) {
         mkdir($fpath) || die "can't mkdir $fpath: $!";
     }
 
     my $suffix = '.CHUNKS';
-    my $abs = path($fpath, $fname . $suffix);
-    $abs->make_path unless -d $abs;
+
+    my $temp_chunk_folder = path($temp_path, $fname . $suffix);
+    $temp_chunk_folder->make_path unless -d $temp_chunk_folder;
+
     my $final_file = path($fpath, $fname);
     local $@;
     eval {
         my $chunk = OpenQA::File->deserialize($asset->slurp);
-        $asset->move_to($abs->child($chunk->index));
-        $self->_move_asset($abs, $final_file, $fname, $type) if ($chunk->is_last);
+        $asset->move_to($temp_chunk_folder->child($chunk->index)->to_string);
+        $self->_move_asset($temp_chunk_folder, $final_file, $fname, $type) if ($chunk->is_last);
     };
     return $@ if $@;
     return 0;

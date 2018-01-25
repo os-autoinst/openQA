@@ -208,9 +208,11 @@ sub _multichunk_upload {
         $_->generate_sum();
         my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
         log_info("$filename: Uploading chunk " . $_->index(), channels => ['worker'], default => 1);
-
-        _upload_state($job_id, {state => 'fail', filename => $filename, scope => $is_asset}) && return 0
-          unless _upload($job_id, {asset => $form->{asset}, file => {filename => $filename, file => $chunk_asset}});
+        unless (_upload($job_id, {asset => $form->{asset}, file => {filename => $filename, file => $chunk_asset}})) {
+            _upload_state($job_id, {state => 'fail', filename => $filename, scope => $is_asset});
+            log_error("$filename: FAILED Uploading chunk " . $_->index(), channels => ['worker'], default => 1);
+            return 0;
+        }
         $_->content(\undef);
     }
 
@@ -253,6 +255,9 @@ sub _upload {
 
         # Upload known server failures (Instead of anything that's not 200)
         if ($res->res->is_server_error) {
+            log_error($res->res->json->{error}, channels => ['autoinst', 'worker'], default => 1)
+              if $res->res->json && $res->res->json->{error};
+
             $regular_upload_failed = 1;
             next if $retry_counter;
 

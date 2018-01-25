@@ -451,7 +451,9 @@ sub create_artefact {
     }
     elsif ($self->param('asset')) {
         my $e = $job->create_asset($self->param('file'), $self->param('asset'));
-        return $self->render(json => {error => 'Failed receiving chunk: ' . $e}, status => 400) if $e;
+        # Even if most probably it is an error on client side, we return 500
+        # So worker can keep retrying if it was caused by network failures
+        return $self->render(json => {error => 'Failed receiving chunk: ' . $e}, status => 500) if $e;
         return $self->render(json => {status => 'ok'});
     }
     if ($job->create_artefact($self->param('file'), $self->param('ulog'))) {
@@ -495,7 +497,7 @@ sub upload_state {
 
     if ($state eq 'fail') {
         $self->app->log->debug("FAIL chunk upload of $file");
-        path($fpath)->list_tree({dir => 1})->each(
+        path($OpenQA::Utils::assetdir, 'tmp')->list_tree({dir => 1})->each(
             sub {
                 $_->remove_tree if -d $_ && $_->basename eq $file . $suffix;
             });
