@@ -537,6 +537,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_log_and_data_upload_and_download_helpers">log and data upload and download helpers</a>
 <ul class="sectlevel4">
 <li><a href="#_diag">diag</a></li>
+<li><a href="#_host_ip">host_ip</a></li>
 <li><a href="#_autoinst_url">autoinst_url</a></li>
 <li><a href="#_data_url">data_url</a></li>
 <li><a href="#_upload_logs">upload_logs</a></li>
@@ -1663,6 +1664,19 @@ a lot of time and should be avoided as such.</p>
 </div>
 </div>
 <div class="sect4">
+<h5 id="_host_ip">host_ip</h5>
+<div class="literalblock">
+<div class="content">
+<pre>    Return VM's host IP
+    in a kvm instance you reach the VM's host under 10.0.2.2
+=cut
+sub host_ip {
+    return check_var('BACKEND', 'qemu') ? '10.0.2.2' : get_required_var('WORKER_HOSTNAME');
+}</pre>
+</div>
+</div>
+</div>
+<div class="sect4">
 <h5 id="_autoinst_url">autoinst_url</h5>
 <div class="literalblock">
 <div class="content">
@@ -1760,7 +1774,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-01-23 14:04:55 UTC
+Last updated 2018-01-25 13:57:23 UTC
 </div>
 </div>
 </body>
