@@ -43,6 +43,7 @@ sub lockit() {
 }
 
 sub check_qemu_pid {
+    return unless $pooldir;
     my $pidfile = "$pooldir/qemu.pid";
     return unless open(my $fh, '<', $pidfile);
 
@@ -61,9 +62,9 @@ sub check_qemu_pid {
 
 
 sub clean_pool() {
+    check_qemu_pid();
     return if $nocleanup;
     return unless $pooldir;
-    check_qemu_pid();
     for my $file (glob "$pooldir/*") {
         if (-d $file) {
             remove_tree($file);
