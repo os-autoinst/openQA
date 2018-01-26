@@ -20,7 +20,6 @@ use OpenQA::Parser::Results;
 use Exporter 'import';
 use Carp 'croak';
 use Digest::SHA 'sha1_base64';
-use Storable;
 
 has file => sub { Mojo::File->new() };
 has [qw(start end index cksum total content total_cksum)];
@@ -50,8 +49,9 @@ sub split {
     $chunk_size //= 100000;
     croak 'You need to define a file' unless defined $self->file();
     $self->file(Mojo::File->new($self->file())) unless ref $self->file eq 'Mojo::File';
-
-    my $total_cksum = $self->_sum($self->file->slurp);
+    my $digest = Digest::SHA->new('sha1');
+    $digest->addfile($self->file->to_string);
+    my $total_cksum = $digest->b64digest;
 
     return OpenQA::Files->new(
         $self->new(
@@ -62,6 +62,7 @@ sub split {
             file        => $self->file(),
             total_cksum => $total_cksum,
         )) unless $chunk_size < $self->size;
+
     my $residual = $self->size() % $chunk_size;
     my $total    = my $n_chunks = _chunk_size($self->size(), $chunk_size);
     my $files    = OpenQA::Files->new();
@@ -113,9 +114,10 @@ sub _seek_content {
 
     CORE::open my $file, '<', $file_name or croak "Can't open file $file_name: $!";
     my $ret = my $content = '';
-    sysseek($file, $self->start(), 1);
+    sysseek($file, $self->start(), 0);
     $ret = $file->sysread($content, ($self->end() - $self->start()));
     croak "Can't read from file $file_name : $!" unless defined $ret;
+    close($file);
     return $content;
 }
 
@@ -127,15 +129,16 @@ sub _write_content {
     Mojo::File->new($file_name)->spurt('') unless -e $file_name;
     CORE::open my $file, '+<', $file_name or croak "Can't open file $file_name: $!";
     my $ret;
-    sysseek($file, $self->start(), 1);
+    sysseek($file, $self->start(), 0);
     $ret = $file->syswrite($self->content, ($self->end() - $self->start()));
     croak "Can't write to file $file_name : $!" unless defined $ret;
+    close($file);
     return $ret;
 }
 
 sub generate_sum {
     my $self = shift;
-    $self->read() if !$self->content();
+    $self->read() unless $self->content();
     $self->cksum($self->_sum($self->content()));
     $self->cksum;
 }
@@ -216,9 +219,10 @@ package OpenQA::Files {
             return 0 if $sum ne $chunk->total_cksum;
             return 0 if !$chunk->verify_content($verify_file);
         }
+        my $digest = Digest::SHA->new('sha1');
+        $digest->addfile(Mojo::File->new($verify_file)->to_string);
 
-        return 0 if $sum ne sha1_base64(Mojo::File->new($verify_file)->slurp);
-
+        return 0 if $sum ne $digest->b64digest;
         return 1;
     }
 }
