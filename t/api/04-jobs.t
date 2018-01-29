@@ -241,7 +241,7 @@ $pieces->each(
         ok !$error or die diag explain $post->tx->res->json;
         is $status, 'ok';
         ok(-d $chunkdir, 'Chunk directory exists') unless $_->is_last;
-        ok((-e path($chunkdir, $_->index)), 'Chunk is there') unless $_->is_last;
+        #  ok((-e path($chunkdir, $_->index)), 'Chunk is there') unless $_->is_last;
 
         $_->content(\undef);
     });
@@ -255,6 +255,7 @@ is($ret->tx->res->json->{name}, 'hdd_image.qcow2');
 
 $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
 
+# Test failure - if chunks are broken
 $pieces->each(
     sub {
         $_->prepare;
@@ -265,15 +266,36 @@ $pieces->each(
         my $error  = $post->tx->res->json->{error};
         my $status = $post->tx->res->json->{status};
 
-        is $status, 'ok' unless $_->is_last;
-        like $error, qr/Failed receiving chunk: Can't verify written data from chunk/ if $_->is_last;
+        #  like $error, qr/Checksum mismatch expected/ if $_->is_last;
+        like $error, qr/Can't verify written data from chunk/ unless $_->is_last();
         ok(!-d $chunkdir, 'Chunk directory does not exists') if $_->is_last;
-        ok((-e path($chunkdir, $_->index)), 'Chunk is there') unless $_->is_last;
+        ok((-e path($chunkdir, 'hdd_image.qcow2')), 'Chunk is there') unless $_->is_last;
     });
 
 ok(!-d $chunkdir, 'Chunk directory does not exists - upload failed');
 $t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(404);
 $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(404);
+
+# Simulate an error - only the last chunk will be cksummed with an offending content
+# That will fail during total cksum calculation
+$pieces->each(
+    sub {
+        $_->content(int(rand(99999))) if $_->is_last;
+        $_->prepare;
+        my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
+        $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+              {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
+        my $error  = $post->tx->res->json->{error};
+        my $status = $post->tx->res->json->{status};
+        ok !$error unless $_->is_last();
+        like $error, qr/Checksum mismatch expected/ if $_->is_last;
+        ok(!-d $chunkdir, 'Chunk directory does not exists') if $_->is_last;
+    });
+
+ok(!-d $chunkdir, 'Chunk directory does not exists - upload failed');
+$t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(404);
+$t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(404);
+
 
 $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
 
@@ -286,7 +308,7 @@ $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
 
 is $post->tx->res->json->{status}, 'ok';
 ok(-d $chunkdir, 'Chunk directory exists');
-ok((-e path($chunkdir, $first_chunk->index)), 'Chunk is there') or die;
+#ok((-e path($chunkdir, $first_chunk->index)), 'Chunk is there') or die;
 
 # Simulate worker failed upload
 $t->post_ok(
@@ -309,7 +331,7 @@ $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
 
 is $post->tx->res->json->{status}, 'ok';
 ok(-d $chunkdir, 'Chunk directory exists');
-ok((-e path($chunkdir, $first_chunk->index)), 'Chunk is there') or die;
+#ok((-e path($chunkdir, $first_chunk->index)), 'Chunk is there') or die;
 
 # Simulate worker failed upload
 $t->post_ok(
@@ -318,8 +340,6 @@ $t->post_ok(
         scope    => 'private',
         state    => 'fail'
     });
-
-
 
 ok(!-d $chunkdir, 'Chunk directory was removed') or die;
 ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed') or die;
@@ -342,9 +362,7 @@ $pieces->each(
         ok !$error or die diag explain $post->tx->res->json;
         is $status, 'ok';
         ok(-d $chunkdir, 'Chunk directory exists') unless $_->is_last;
-        ok((-e path($chunkdir, $_->index)), 'Chunk is there') unless $_->is_last;
-
-        #  $_->content(\undef);
+        #    ok((-e path($chunkdir, $_->index)), 'Chunk is there') unless $_->is_last;
     });
 
 ok(!-d $chunkdir, 'Chunk directory should not exist anymore');

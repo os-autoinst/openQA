@@ -483,23 +483,15 @@ sub upload_state {
     my $scope  = $self->param('scope');
     my $job_id = $self->stash('jobid');
 
-    my $type;
-    $type = 'iso' if $file =~ /\.iso$/;
-    $type = 'hdd' if $file =~ /\.(?:qcow2|raw|vhd|vhdx)$/;
-    $type //= 'other';
-
     $file = sprintf("%08d-%s", $job_id, $file) if $scope ne 'public';
-
-    my $fpath = join('/', $OpenQA::Utils::assetdir, $type);
-
-    my $suffix = '.CHUNKS';
-    my $abs = path($fpath, $file . $suffix);
 
     if ($state eq 'fail') {
         $self->app->log->debug("FAIL chunk upload of $file");
-        path($OpenQA::Utils::assetdir, 'tmp')->list_tree({dir => 1})->each(
+        path($OpenQA::Utils::assetdir, 'tmp', $scope)->list_tree({dir => 1})->each(
             sub {
-                $_->remove_tree if -d $_ && $_->basename eq $file . $suffix;
+                $self->app->log->debug("Folder contains : " . $_->to_string);
+
+                $_->remove_tree if -d $_ && $_->basename eq $file . '.CHUNKS';
             });
     }
     $self->render(text => "OK");

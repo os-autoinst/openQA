@@ -67,7 +67,7 @@ sub prepare {
 
 sub split {
     my ($self, $chunk_size) = @_;
-    $chunk_size //= 100000;
+    $chunk_size //= 10000000;
     croak 'You need to define a file' unless defined $self->file();
     $self->file(Mojo::File->new($self->file())) unless ref $self->file eq 'Mojo::File';
 

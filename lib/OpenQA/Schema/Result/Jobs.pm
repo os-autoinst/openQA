@@ -1301,18 +1301,6 @@ sub create_artefact {
     return 1;
 }
 
-sub _move_asset {
-    my ($self, $dir, $final_file, $fname, $type) = @_;
-    # XXX: Watch out also apparmor permissions
-    my $e = OpenQA::Files->write_verify_chunks($dir => $final_file);
-    path($dir)->remove_tree;
-
-    die $e->verbose(1) if $e;
-    $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type}, created_by => 1});
-
-    chmod 0644, $final_file;
-}
-
 sub create_asset {
     my ($self, $asset, $scope) = @_;
 
@@ -1329,21 +1317,43 @@ sub create_asset {
     my $fpath = path($OpenQA::Utils::assetdir, $type);
     my $temp_path = path($OpenQA::Utils::assetdir, 'tmp', $scope);
 
-    $fpath->make_path     unless -d $fpath;
-    $temp_path->make_path unless -d $temp_path;
+    my $temp_chunk_folder = path($temp_path,         join('.', $fname, 'CHUNKS'));
+    my $temp_final_file   = path($temp_chunk_folder, $fname);
+    my $final_file        = path($fpath,             $fname);
 
-    my $suffix = '.CHUNKS';
-
-    my $temp_chunk_folder = path($temp_path, $fname . $suffix);
+    $fpath->make_path             unless -d $fpath;
+    $temp_path->make_path         unless -d $temp_path;
     $temp_chunk_folder->make_path unless -d $temp_chunk_folder;
-
-    my $final_file = path($fpath, $fname);
 
     local $@;
     eval {
+        # Upgrade to Mojo::Asset::File always
+        $asset = Mojo::Asset::File->new()->add_chunk($asset->slurp) if ref $asset eq 'Mojo::Asset::Memory';
         my $chunk = OpenQA::File->deserialize($asset->slurp);
-        $asset->move_to($temp_chunk_folder->child($chunk->index)->to_string);
-        $self->_move_asset($temp_chunk_folder, $final_file, $fname, $type) if ($chunk->is_last);
+        $chunk->decode_content;
+        $chunk->write_content($temp_final_file);
+
+        unless ($chunk->verify_content($temp_final_file)) {
+            $temp_chunk_folder->remove_tree if ($chunk->is_last);
+            die Mojo::Exception->new("Can't verify written data from chunk");
+        }
+        elsif ($chunk->is_last) {
+            # XXX: Watch out also apparmor permissions
+
+            my $sum      = $chunk->total_cksum;
+            my $real_sum = $chunk->_file_digest($temp_final_file->to_string);
+
+            $temp_chunk_folder->remove_tree
+              && die Mojo::Exception->new("Checksum mismatch expected $sum, calculated $real_sum")
+              unless $sum eq $real_sum;
+
+            $temp_final_file->move_to($final_file);
+            $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type}, created_by => 1});
+
+            chmod 0644, $final_file;
+
+            $temp_chunk_folder->remove_tree if ($chunk->is_last);
+        }
     };
     # $temp_chunk_folder->remove_tree if $@; # XXX: Don't! as worker will try again to upload.
     return $@ if $@;
