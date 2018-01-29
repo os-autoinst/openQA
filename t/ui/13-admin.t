@@ -56,6 +56,7 @@ sub schema_hook {
             last_use_job_id => 99962,
             t_created       => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
         });
+
     $job_groups->find(1002)->update(
         {
             exclusively_kept_asset_size => 4096,
@@ -491,48 +492,6 @@ sub get_cell_contents {
 }
 
 subtest 'asset list' => sub {
-    $driver->find_element('#user-action a')->click();
-    $driver->find_element_by_link_text('Assets')->click();
-    $driver->title_is("openQA: Assets", "on asset");
-    wait_for_ajax;
-
-    # table of assets
-    is_deeply(
-        get_cell_contents('tr#asset_1'),
-        ['iso', 'openSUSE-13.1-DVD-i586-Build0091-Media.iso', '5', 'about 2 hours ago', 'unknown'],
-        'asset with unknown last use and size'
-    );
-    is_deeply(
-        get_cell_contents('tr#asset_2'),
-        [
-            'iso',   'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',
-            '3',     'about 2 hours ago',
-            '4 KiB', 'opensuse: opensuse-13.1-DVD-x86_64-Build0091-kde@64bit'
-        ],
-        'asset with last use'
-    );
-
-    my $used_assets      = $driver->find_element('#assets');
-    my $untracked_assets = $driver->find_element('#untracked-assets');
-    ok($driver->find_child_element($used_assets, 'tr#asset_2'), 'asset with last use part of used assets');
-    ok(
-        $driver->find_child_element($untracked_assets, 'tr#asset_1'),
-        'asset with unknown last use part of untracked assets'
-    );
-
-    # assets by group
-    is_deeply(
-        [map { $_->get_text() } $driver->find_elements('#assets-by-group > li')],
-        ["opensuse\nunknown", "Cool Group has been edited!\nunknown", "opensuse test\n4KiB",],
-        'groups of "assets by group"'
-    );
-    $driver->find_element('#group-1001-checkbox + label')->click();
-    is_deeply(
-        [map { $_->get_text() } $driver->find_elements('#group-1001-checkbox ~ ul li')],
-        ["openSUSE-13.1-DVD-x86_64-Build0091-Media.iso\n4KiB",],
-        'assets of "assets by group"'
-    );
-
     # add the file for asset 4 actually in the file system to check deletion
     my $asset_path
       = catfile($OpenQA::Utils::assetdir, 'iso', 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso');
@@ -541,8 +500,52 @@ subtest 'asset list' => sub {
     close($fh);
     ok(-e $asset_path, 'dummy asset present at ' . $asset_path);
 
+    # breaks test
+    ok(
+        !-e catfile($OpenQA::Utils::assetdir, 'iso', 'Core-7.2.iso'),
+        "no old iso/Core-7.2.iso in $OpenQA::Utils::assetdir"
+    );
+
+    $driver->find_element('#user-action a')->click();
+    $driver->find_element_by_link_text('Assets')->click();
+    $driver->title_is("openQA: Assets", "on asset");
+    wait_for_ajax;
+
+    # table of assets
+    is_deeply(
+        get_cell_contents('tr#asset_1'),
+        ['iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso', '99947', '4 byte', '1001'],
+        'asset with unknown last use and size'
+    );
+    is_deeply(
+        get_cell_contents('tr#asset_2'),
+        ['iso/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso', '99963', '4 byte', '1001 1002'],
+        'asset with last use'
+    );
+
+    my $used_assets = $driver->find_element('#assets');
+    ok($driver->find_child_element($used_assets, 'tr#asset_2'), 'asset with last use part of used assets');
+
+    # assets by group
+    is_deeply(
+        [map { $_->get_text() } $driver->find_elements('#assets-by-group > li')],
+        ["opensuse\n16 Byte / 100 GiB", "opensuse test\n16 Byte / 100 GiB"],
+        'groups of "assets by group"'
+    );
+    $driver->click_element_ok('#group-1001-checkbox + label', 'css');
+    is_deeply(
+        [map { $_->get_text() } $driver->find_elements('#group-1001-checkbox ~ ul li')],
+        [
+            "iso/openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso\n4 Byte",
+            "iso/openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso\n4 Byte",
+            "iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso\n4 Byte",
+            "hdd/fixed/openSUSE-13.1-x86_64.hda\n4 Byte"
+        ],
+        'assets of "assets by group"'
+    );
+
     # delete one of the assets
-    $driver->find_element('#asset_4 .name a')->click();
+    $driver->click_element_ok('#asset_4 .name a', 'css');
     wait_for_ajax;
     is(scalar @{$driver->find_elements('#asset_4')}, 0, 'asset gone');
     $driver->get($driver->get_current_url());

@@ -1,16 +1,8 @@
 function setup_asset_table() {
-    $('#assets, #untracked-assets').DataTable(
+    $('#assets').DataTable(
         {
             columnDefs: [
-                { targets: 3,
-                  render: function(data, type, row) {
-                      if (type === 'display') {
-                          return jQuery.timeago(data + "Z");
-                      }
-                      return data;
-                  }
-                },
-                { targets: 4,
+                { targets: 2,
                   render: function(data, type, row) {
                       if (type === 'display') {
                           if (data === '') {
@@ -25,7 +17,7 @@ function setup_asset_table() {
                   }
                 }
             ],
-            order: [[3, 'desc']]
+            order: [[1, 'desc']]
         }
     );
 }

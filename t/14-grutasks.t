@@ -142,35 +142,31 @@ sub run_gru {
 # `mock_size` subs above, which cause every asset to be seen as the
 # size in the sub's name.
 #
-# The default size limit per group is 100GB, so the 'toremove' limit
-# will be 80GB.
-
 # So if each asset's 'size' is reported as 18GiB, both groups should
-# be under the size limit and the toremove threshold, and no deletion
-# should occur.
+# be under the size limit, and no deletion should occur.
 $module->mock(ensure_size => \&mock_size_18);
 run_gru('limit_assets');
 
 is_deeply(\@removed, [], "nothing should have been 'removed' at size 18GiB");
 is_deeply(\@deleted, [], "nothing should have been 'deleted' at size 18GiB");
 
-# asset 5 doesn't appear as it's ignored, no last_use_job_id is assigned to it
 my @expected_last_jobs_no_removal = (
     {asset => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso', job => 99926},
+    {asset => 'openSUSE-13.1-x86_64.hda',                                 job => 99946},
     {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',               job => 99947},
-    {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',             job => 99961},
     {asset => 'testrepo',                                                 job => 99961},
+    {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',             job => 99963},
     {asset => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso',        job => 99981},
 );
 
 is_deeply(find_kept_assets_with_last_jobs, \@expected_last_jobs_no_removal, 'last jobs correctly assigned');
 
-# 1001 should exclusively keep 3, 1 and 4
+# 1001 should exclusively keep 3, 1, 5 and 4
 is($job_groups->find(1001)->exclusively_kept_asset_size,
-    54 * $gib, 'kept assets for group 1001 accumulated (18 GiB per asset)');
-# 1002 should exclusively keep 6
+    72 * $gib, 'kept assets for group 1001 accumulated (18 GiB per asset)');
+# 1002 should exclusively keep 2 and 6
 is($job_groups->find(1002)->exclusively_kept_asset_size,
-    18 * $gib, 'kept assets for group 1002 accumulated (18 GiB per asset)');
+    36 * $gib, 'kept assets for group 1002 accumulated (18 GiB per asset)');
 
 
 # at size 24GiB, group 1001 is over the 80% threshold but under the 100GiB
@@ -183,13 +179,18 @@ is_deeply(\@deleted, [], "nothing should have been 'deleted' at size 24GiB");
 
 is_deeply(find_kept_assets_with_last_jobs, \@expected_last_jobs_no_removal, 'last jobs have not been altered');
 
-# 1001 should exclusively keep 3 and 1; 4 is not explicitly 'kept', it
-# is added to $toremove, but not actually deleted
-is($job_groups->find(1001)->exclusively_kept_asset_size,
-    48 * $gib, 'kept assets for group 1001 accumulated, job over threshold not taken into account (24 GiB per asset)');
-# 1002 should exclusively keep 6
-is($job_groups->find(1002)->exclusively_kept_asset_size,
-    24 * $gib, 'kept assets for group 1002 accumulated (24 GiB per asset)');
+# 1001 should exclusively keep the same as above
+is(
+    $job_groups->find(1001)->exclusively_kept_asset_size,
+    4 * 24 * $gib,
+    'kept assets for group 1001 accumulated, job over threshold not taken into account (24 GiB per asset)'
+);
+# 1002 should exclusively keep the same as above
+is(
+    $job_groups->find(1002)->exclusively_kept_asset_size,
+    2 * 24 * $gib,
+    'kept assets for group 1002 accumulated (24 GiB per asset)'
+);
 
 # at size 26GiB, 1001 is over the limit, so removal should occur. Removing
 # just one asset - #4 - will get under the 80GiB threshold.
@@ -202,50 +203,63 @@ is(scalar @deleted, 1, "one asset should have been 'deleted' at size 26GiB");
 is_deeply(
     find_kept_assets_with_last_jobs,
     [
+        {asset => 'openSUSE-13.1-x86_64.hda',                          job => 99946},
         {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',        job => 99947},
-        {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',      job => 99961},
         {asset => 'testrepo',                                          job => 99961},
+        {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',      job => 99963},
         {asset => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso', job => 99981}
     ],
     'last jobs still present but first one deleted'
 );
 
-# 1001 should exclusively keep 3 and 1
-is($job_groups->find(1001)->exclusively_kept_asset_size,
-    52 * $gib, 'kept assets for group 1001 accumulated and deleted asset not taken into account (26 GiB per asset)');
-# 1002 should exclusively keep 6
-is($job_groups->find(1002)->exclusively_kept_asset_size,
-    26 * $gib, 'kept assets for group 1002 accumulated (26 GiB per asset)');
+# 1001 should exclusively keep 3, 5 and 1
+is(
+    $job_groups->find(1001)->exclusively_kept_asset_size,
+    3 * 26 * $gib,
+    'kept assets for group 1001 accumulated and deleted asset not taken into account (26 GiB per asset)'
+);
+# 1002 should exclusively keep 2 and 6
+is(
+    $job_groups->find(1002)->exclusively_kept_asset_size,
+    2 * 26 * $gib,
+    'kept assets for group 1002 accumulated (26 GiB per asset)'
+);
 
 # empty the tracking arrays before next test
 @removed = ();
 @deleted = ();
 
-# at size 34GiB, 1001 is over the limit, so removal should occur. Removing
-# one asset will not suffice to get under the 80GiB threshold, so *two*
-# assets should be removed (1 and 4)
+# at size 34GiB, 1001 is over the limit, so removal should occur.
 $module->mock(ensure_size => \&mock_size_34);
 run_gru('limit_assets');
 
-is(scalar @removed, 2, "two assets should have been 'removed' at size 34GiB");
-is(scalar @deleted, 2, "two assets should have been 'deleted' at size 34GiB");
+is(scalar @removed, 1, "two assets should have been 'removed' at size 34GiB");
+is(scalar @deleted, 1, "two assets should have been 'deleted' at size 34GiB");
 
 is_deeply(
     find_kept_assets_with_last_jobs,
     [
-        {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',      job => 99961},
+        {asset => 'openSUSE-13.1-x86_64.hda',                          job => 99946},
+        {asset => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',        job => 99947},
         {asset => 'testrepo',                                          job => 99961},
+        {asset => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',      job => 99963},
         {asset => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso', job => 99981}
     ],
     'last jobs still present but first two deleted'
 );
 
-# 1001 should exclusively keep 3
-is($job_groups->find(1001)->exclusively_kept_asset_size,
-    34 * $gib, 'kept assets for group 1001 accumulated and deleted asset not taken into account (34 GiB per asset)');
-# 1002 should exclusively keep 6
-is($job_groups->find(1002)->exclusively_kept_asset_size,
-    34 * $gib, 'kept assets for group 1002 accumulated (34 GiB per asset)');
+# 1001 should exclusively keep 1, 3 and 5
+is(
+    $job_groups->find(1001)->exclusively_kept_asset_size,
+    2 * 34 * $gib,
+    'kept assets for group 1001 accumulated and deleted asset not taken into account (34 GiB per asset)'
+);
+# 1002 should exclusively keep 2 and 6
+is(
+    $job_groups->find(1002)->exclusively_kept_asset_size,
+    2 * 34 * $gib,
+    'kept assets for group 1002 accumulated (34 GiB per asset)'
+);
 
 # empty the tracking arrays before next test
 @removed = ();
