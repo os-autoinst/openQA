@@ -24,6 +24,17 @@ use OpenQA::File 'path';
 use Digest::SHA 'sha1_base64';
 use Mojo::File qw(tempfile tempdir);
 
+subtest 'base' => sub {
+    my $file = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
+    ok $file->end;
+    $file->read;
+    my $content = $file->content();
+    $file->encode_content();
+    isnt $file->content(), $content or die diag explain $file;
+    $file->decode_content();
+    is $file->content(), $content, 'decoded content match to original one' or die 'Horrible thing would happen';
+};
+
 subtest 'split/join' => sub {
 
     is path($FindBin::Bin, "data")->child("ltp_test_result_format.json")->size, 6991, 'size matches';
@@ -72,15 +83,15 @@ subtest 'split/join' => sub {
 subtest 'recompose in-place' => sub {
     my $original = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
 
-    my $pieces = $original->split(203);
+    my $pieces = $original->split(103);
 
     my $t_dir       = tempdir();
     my $copied_file = tempfile();
 
 
     # Save pieces to disk
-    $_->generate_sum && Mojo::File->new($t_dir, $_->index)->spurt($_->serialize) for $pieces->each();
-    #$pieces->prepare(); it will call generate_sum for each one
+    $_->prepare && Mojo::File->new($t_dir, $_->index)->spurt($_->serialize) for $pieces->each();
+    #$pieces->prepare(); it will call prepare for each one
 
     is $t_dir->list_tree->size, $pieces->last->total;
 
@@ -88,6 +99,7 @@ subtest 'recompose in-place' => sub {
     $t_dir->list_tree->shuffle->each(
         sub {
             my $chunk = OpenQA::File->deserialize(Mojo::File->new($_)->slurp);
+            $chunk->decode_content;
             $chunk->write_content($copied_file);
         });
 
@@ -95,11 +107,12 @@ subtest 'recompose in-place' => sub {
     $t_dir->list_tree->shuffle->each(
         sub {
             my $chunk = OpenQA::File->deserialize(Mojo::File->new($_)->slurp);
-            ok $chunk->verify_content($copied_file), 'chunk: ' . $chunk->index . ' verified';
+            $chunk->decode_content;
+            is $chunk->verify_content($copied_file), 1, 'chunk: ' . $chunk->index . ' verified';
             $sha = $chunk->total_cksum;
         });
 
-    is $sha, sha1_base64(Mojo::File->new($copied_file)->slurp), 'SHA-1 Matches';
+    is $sha, OpenQA::File::_file_digest($copied_file->to_string), 'SHA-1 Matches';
 
     is $original->slurp, Mojo::File->new($copied_file)->slurp, 'Same content';
 
@@ -114,29 +127,38 @@ subtest 'recompose in-place' => sub {
 subtest 'verify_chunks' => sub {
     my $original = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
 
-    my $pieces = $original->split(10);
+    my $pieces = $original->split(100000);
 
     my $t_dir       = tempdir();
     my $copied_file = tempfile();
 
-    $pieces->prepare();    # not needed, as we use spurt
-                           # Save pieces to disk
+    # Save pieces to disk
     $pieces->spurt($t_dir);
 
     is $t_dir->list_tree->size, $pieces->last->total;
 
     OpenQA::Files->write_chunks($t_dir => $copied_file);
 
-    ok(OpenQA::Files->verify_chunks($t_dir => $copied_file), 'Verify chunks passes');
+    is(OpenQA::Files->verify_chunks($t_dir => $copied_file), undef, 'Verify chunks passes');
     $copied_file->spurt('');
 
-    ok(!OpenQA::Files->verify_chunks($t_dir => $copied_file), 'Cannot verify chunks passes');
+    is(
+        OpenQA::Files->verify_chunks($t_dir => $copied_file)->message(),
+        'Can\'t verify written data from chunk',
+        'Cannot verify chunks passes'
+    );
     is $copied_file->slurp, '', 'File is empty now';
-    ok(OpenQA::Files->write_verify_chunks($t_dir => $copied_file), 'Write and verify passes');
+
+    is(OpenQA::Files->write_verify_chunks($t_dir => $copied_file), undef, 'Write and verify passes');
+
     is $original->slurp, Mojo::File->new($copied_file)->slurp, 'Same content';
 
     $pieces->first->content('42')->write_content($copied_file);    #Let's simulate a writing error
-    ok(!OpenQA::Files->verify_chunks($t_dir => $copied_file), 'Verify chunks fail');
+    is(
+        OpenQA::Files->verify_chunks($t_dir => $copied_file),
+        'Can\'t verify written data from chunk',
+        'Verify chunks fail'
+    );
     isnt $original->slurp, Mojo::File->new($copied_file)->slurp, 'Not same content';
 };
 

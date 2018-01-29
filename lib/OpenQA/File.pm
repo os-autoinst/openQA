@@ -20,11 +20,24 @@ use OpenQA::Parser::Results;
 use Exporter 'import';
 use Carp 'croak';
 use Digest::SHA 'sha1_base64';
+use Fcntl 'SEEK_SET';
+#use Sereal qw( encode_sereal decode_sereal ); # XXX: This would speed up notably
 
 has file => sub { Mojo::File->new() };
 has [qw(start end index cksum total content total_cksum)];
 
 our @EXPORT_OK = ('path');
+
+sub new {
+    my $self = shift->SUPER::new(@_);
+    croak 'You must specify a file!'          unless defined $self->file();
+    $self->file(Mojo::File->new($self->file)) unless ref $self->file eq 'Mojo::File';
+    $self->index(1)                           unless defined $self->index;
+    $self->start(0)                           unless defined $self->start;
+    $self->total(1)                           unless defined $self->total;
+    $self->end($self->size)                   unless defined $self->end;
+    $self;
+}
 
 sub size        { -s shift()->file() }
 sub path        { __PACKAGE__->new(file => Mojo::File->new(@_)) }
@@ -32,6 +45,9 @@ sub child       { __PACKAGE__->new(file => shift->file->child(@_)) }
 sub slurp       { shift()->file()->slurp() }
 sub _chunk_size { int($_[0] / $_[1]) + (($_[0] % $_[1]) ? 1 : 0) }
 sub is_last     { !!($_[0]->total == $_[0]->index()) }
+
+#sub serialize   { encode_sereal(shift->to_el) }
+#sub deserialize { shift()->new(OpenQA::Parser::Result::_restore_el(decode_sereal(shift))) }
 
 sub write_content {
     my $self = shift;
@@ -44,60 +60,52 @@ sub verify_content {
     return !!($self->cksum eq $self->_sum($self->_seek_content(pop)));
 }
 
+sub prepare {
+    $_[0]->generate_sum;
+    $_[0]->encode_content;
+}
+
 sub split {
     my ($self, $chunk_size) = @_;
     $chunk_size //= 100000;
     croak 'You need to define a file' unless defined $self->file();
     $self->file(Mojo::File->new($self->file())) unless ref $self->file eq 'Mojo::File';
-    my $digest = Digest::SHA->new('sha1');
-    $digest->addfile($self->file->to_string);
-    my $total_cksum = $digest->b64digest;
 
-    return OpenQA::Files->new(
-        $self->new(
-            total       => 1,
-            end         => $self->size(),
-            start       => 0,
-            index       => 1,
-            file        => $self->file(),
-            total_cksum => $total_cksum,
-        )) unless $chunk_size < $self->size;
+    my $total_cksum = OpenQA::File::_file_digest($self->file->to_string);
 
     my $residual = $self->size() % $chunk_size;
-    my $total    = my $n_chunks = _chunk_size($self->size(), $chunk_size);
+    my $n_chunks = _chunk_size($self->size(), $chunk_size);
     my $files    = OpenQA::Files->new();
-
-    $n_chunks-- if $residual;
 
     for (my $i = 1; $i <= $n_chunks; $i++) {
         my $seek_start = ($i - 1) * $chunk_size;
-        my $end        = $seek_start + $chunk_size;
+        my $prev       = ($i - 2) * $chunk_size + $chunk_size;
+        my ($chunk_start, $chunk_end)
+          = $i == $n_chunks
+          && $residual ?
+          ($prev, $prev + $chunk_size + $residual)
+          : ($seek_start, $seek_start + $chunk_size);
 
         my $piece = $self->new(
-            total       => $total,
-            end         => $end,
-            start       => $seek_start,
             index       => $i,
-            file        => $self->file,
+            start       => $chunk_start,
+            end         => $chunk_end,
+            total       => $n_chunks,
             total_cksum => $total_cksum,
+            file        => $self->file,
         );
-        #$piece->generate_sum; # XXX: Generate sha here?
+        #$piece->generate_sum; # XXX: Generate sha here and ditch content?
         $files->add($piece);
     }
-    return $files unless $residual;
-
-    my $piece = $self->new(
-        total_cksum => $total_cksum,
-        total       => $total,
-        end         => $files->last->end + $residual,
-        start       => $files->last->end,
-        index       => $total,
-        file        => $self->file
-    );
-    #$piece->generate_sum;
-    $files->add($piece);
 
     return $files;
+}
+
+sub _file_digest {
+    my $file   = pop;
+    my $digest = Digest::SHA->new('sha256');
+    $digest->addfile($file);
+    return $digest->b64digest;
 }
 
 sub read {
@@ -113,8 +121,9 @@ sub _seek_content {
     croak 'No end point is defined'   unless defined $self->end();
 
     CORE::open my $file, '<', $file_name or croak "Can't open file $file_name: $!";
+    binmode($file);    # old Perl versions might need this
     my $ret = my $content = '';
-    sysseek($file, $self->start(), 0);
+    sysseek($file, $self->start(), SEEK_SET);
     $ret = $file->sysread($content, ($self->end() - $self->start()));
     croak "Can't read from file $file_name : $!" unless defined $ret;
     close($file);
@@ -128,8 +137,9 @@ sub _write_content {
 
     Mojo::File->new($file_name)->spurt('') unless -e $file_name;
     CORE::open my $file, '+<', $file_name or croak "Can't open file $file_name: $!";
+    binmode($file);    # old Perl versions might need this
     my $ret;
-    sysseek($file, $self->start(), 0);
+    sysseek($file, $self->start(), SEEK_SET);
     $ret = $file->syswrite($self->content, ($self->end() - $self->start()));
     croak "Can't write to file $file_name : $!" unless defined $ret;
     close($file);
@@ -143,13 +153,17 @@ sub generate_sum {
     $self->cksum;
 }
 
-sub _sum { sha1_base64(pop) }
+sub encode_content { $_[0]->content(unpack 'H*', $_[0]->content()) }
+sub decode_content { $_[0]->content(pack 'H*',   $_[0]->content()) }
+
+sub _sum { sha1_base64(pop) }    # Weaker for chunks
 
 package OpenQA::Files {
     use Mojo::Base 'OpenQA::Parser::Results';
     use Digest::SHA 'sha1_base64';
     use Mojo::File 'path';
     use OpenQA::File;
+    use Mojo::Exception;
 
     sub join {
         my $content;
@@ -176,11 +190,11 @@ package OpenQA::Files {
         return $self->new(map { OpenQA::File->deserialize($_) } @_);
     }
 
-    sub write        { path(pop())->spurt(shift()->join()) }
+    sub write        { Mojo::File->new(pop())->spurt(shift()->join()) }
     sub generate_sum { sha1_base64(shift()->join()) }
     sub is_sum       { shift->generate_sum eq shift }
     sub prepare {
-        shift()->each(sub { $_->generate_sum });
+        shift()->each(sub { $_->prepare });
     }
     sub write_chunks {
         my $file       = pop();
@@ -188,6 +202,7 @@ package OpenQA::Files {
         Mojo::File->new($chunk_path)->list_tree()->sort->each(
             sub {
                 my $chunk = OpenQA::File->deserialize($_->slurp);
+                $chunk->decode_content;    # Decode content before writing it
                 $chunk->write_content($file);
             });
     }
@@ -203,7 +218,7 @@ package OpenQA::Files {
         my $dir = pop();
         shift->each(
             sub {
-                $_->generate_sum;
+                $_->prepare;    # Prepare your data first before serializing
                 Mojo::File->new($dir, $_->index)->spurt($_->serialize);
             });
     }
@@ -215,15 +230,20 @@ package OpenQA::Files {
         my $sum;
         for (Mojo::File->new($chunk_path)->list_tree()->each) {
             my $chunk = OpenQA::File->deserialize($_->slurp);
-            $sum = $chunk->total_cksum if !$sum;
-            return 0 if $sum ne $chunk->total_cksum;
-            return 0 if !$chunk->verify_content($verify_file);
-        }
-        my $digest = Digest::SHA->new('sha1');
-        $digest->addfile(Mojo::File->new($verify_file)->to_string);
 
-        return 0 if $sum ne $digest->b64digest;
-        return 1;
+            $chunk->decode_content;
+            $sum = $chunk->total_cksum if !$sum;
+            return Mojo::Exception->new(
+                "Chunk: " . $chunk->id() . " differs in total checksum, expected $sum given " . $chunk->total_cksum)
+              if $sum ne $chunk->total_cksum;
+            return Mojo::Exception->new("Can't verify written data from chunk")
+              unless $chunk->verify_content($verify_file);
+        }
+
+        my $final_sum = OpenQA::File::_file_digest(Mojo::File->new($verify_file)->to_string);
+        return Mojo::Exception->new("Total checksum failed: expected $sum, computed " . $final_sum)
+          if $sum ne $final_sum;
+        return;
     }
 }
 

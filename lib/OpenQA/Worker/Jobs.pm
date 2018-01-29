@@ -205,7 +205,7 @@ sub _multichunk_upload {
     log_info("$filename: chunks of $chunk_size bytes each", channels => ['worker'], default => 1);
 
     for ($pieces->each) {
-        $_->generate_sum();
+        $_->prepare();    # Generate sum and encode content
         my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
         log_info("$filename: Uploading chunk " . $_->index(), channels => ['worker'], default => 1);
         unless (_upload($job_id, {asset => $form->{asset}, file => {filename => $filename, file => $chunk_asset}})) {
@@ -237,10 +237,6 @@ sub _upload {
         $ua_url->path("jobs/$job_id/artefact");
 
         my $tx = $hosts->{$current_host}{ua}->build_tx(POST => $ua_url => form => $form);
-        # override the default boundary calculation - it reads whole file
-        # and it can cause various timeouts
-        my $headers = $tx->req->headers;
-        $headers->content_type($headers->content_type . "; boundary=$boundary");
 
         if ($regular_upload_failed) {
             log_warning(

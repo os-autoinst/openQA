@@ -1307,7 +1307,7 @@ sub _move_asset {
     my $e = OpenQA::Files->write_verify_chunks($dir => $final_file);
     path($dir)->remove_tree;
 
-    die "cksum mismatch" unless $e;
+    die $e->verbose(1) if $e;
     $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type}, created_by => 1});
 
     chmod 0644, $final_file;
@@ -1326,12 +1326,11 @@ sub create_asset {
 
     $fname = sprintf("%08d-%s", $self->id, $fname) if $scope ne 'public';
 
-    my $fpath = join('/', $OpenQA::Utils::assetdir, $type);
-    my $temp_path = path($OpenQA::Utils::assetdir, 'tmp');
+    my $fpath = path($OpenQA::Utils::assetdir, $type);
+    my $temp_path = path($OpenQA::Utils::assetdir, 'tmp', $scope);
 
-    if (!-d $fpath) {
-        mkdir($fpath) || die "can't mkdir $fpath: $!";
-    }
+    $fpath->make_path     unless -d $fpath;
+    $temp_path->make_path unless -d $temp_path;
 
     my $suffix = '.CHUNKS';
 
@@ -1339,12 +1338,14 @@ sub create_asset {
     $temp_chunk_folder->make_path unless -d $temp_chunk_folder;
 
     my $final_file = path($fpath, $fname);
+
     local $@;
     eval {
         my $chunk = OpenQA::File->deserialize($asset->slurp);
         $asset->move_to($temp_chunk_folder->child($chunk->index)->to_string);
         $self->_move_asset($temp_chunk_folder, $final_file, $fname, $type) if ($chunk->is_last);
     };
+    # $temp_chunk_folder->remove_tree if $@; # XXX: Don't! as worker will try again to upload.
     return $@ if $@;
     return 0;
 }

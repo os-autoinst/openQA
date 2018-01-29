@@ -219,19 +219,19 @@ unlink($rp);
 $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
       {file => {file => $filename, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(500);
 my $error = $post->tx->res->json->{error};
-like($error, qr/Byte order is not compatible/);
+like($error, qr/Failed receiving chunk/);
 
 #Get chunks!
 use OpenQA::File;
 use Mojo::File 'tempfile';
-my $chunkdir = 't/data/openqa/share/factory/tmp/hdd_image.qcow2.CHUNKS/';
+my $chunkdir = 't/data/openqa/share/factory/tmp/public/hdd_image.qcow2.CHUNKS/';
 
 path($chunkdir)->remove_tree;
-my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split();
+my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(123062);
 
 $pieces->each(
     sub {
-        $_->generate_sum;
+        $_->prepare;
         my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
         $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
               {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(200);
@@ -257,7 +257,7 @@ $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
 
 $pieces->each(
     sub {
-        $_->generate_sum;
+        $_->prepare;
         $_->content(int(rand(99999)));
         my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
         $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
@@ -266,7 +266,7 @@ $pieces->each(
         my $status = $post->tx->res->json->{status};
 
         is $status, 'ok' unless $_->is_last;
-        ok $error if $_->is_last;
+        like $error, qr/Failed receiving chunk: Can't verify written data from chunk/ if $_->is_last;
         ok(!-d $chunkdir, 'Chunk directory does not exists') if $_->is_last;
         ok((-e path($chunkdir, $_->index)), 'Chunk is there') unless $_->is_last;
     });
@@ -278,7 +278,7 @@ $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(404);
 $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
 
 my $first_chunk = $pieces->first;
-$first_chunk->generate_sum;
+$first_chunk->prepare;
 
 my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
 $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
@@ -295,14 +295,13 @@ ok(!-d $chunkdir, 'Chunk directory was removed') or die;
 ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed') or die;
 
 # Test for private assets
-$chunkdir = 't/data/openqa/share/factory/tmp/00099963-hdd_image.qcow2.CHUNKS/';
+$chunkdir = 't/data/openqa/share/factory/tmp/private/00099963-hdd_image.qcow2.CHUNKS/';
 path($chunkdir)->remove_tree;
-
 
 $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
 
 $first_chunk = $pieces->first;
-$first_chunk->generate_sum;
+$first_chunk->prepare;
 
 $chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
 $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
@@ -319,16 +318,21 @@ $t->post_ok(
         scope    => 'private',
         state    => 'fail'
     });
+
+
+
 ok(!-d $chunkdir, 'Chunk directory was removed') or die;
 ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed') or die;
 
 $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(404);
 
-$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
-
+$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(9999);
+ok(!-d $chunkdir, 'Chunk directory empty');
+my $sum = OpenQA::File::_file_digest($filename);
+is $sum, $pieces->first->total_cksum or die 'Computed cksum is not same';
 $pieces->each(
     sub {
-        $_->generate_sum;
+        $_->prepare;
         my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
         $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
               {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'private'})->status_is(200);
@@ -340,7 +344,7 @@ $pieces->each(
         ok(-d $chunkdir, 'Chunk directory exists') unless $_->is_last;
         ok((-e path($chunkdir, $_->index)), 'Chunk is there') unless $_->is_last;
 
-        $_->content(\undef);
+        #  $_->content(\undef);
     });
 
 ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
@@ -359,7 +363,7 @@ $pieces = OpenQA::File->new(file => Mojo::File->new('t/data/new_ltp_result_array
 
 is $pieces->size(), 1 or die 'Size should be 1!';
 $first_chunk = $pieces->first;
-$first_chunk->generate_sum;
+$first_chunk->prepare;
 
 $chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
 $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
