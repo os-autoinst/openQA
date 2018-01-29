@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -106,6 +106,7 @@ Trigger jobs on iso B<bar.iso> matching test suite B<blah>.
 # client jobs/1/artefact post file.file=bar file.filename=bar.log
 
 use strict;
+use warnings;
 use FindBin;
 BEGIN { unshift @INC, "$FindBin::RealBin/../lib" }
 
@@ -114,6 +115,8 @@ use Data::Dump;
 use Mojo::URL;
 use OpenQA::Client;
 use Getopt::Long;
+use OpenQA::Client::Archive;
+
 Getopt::Long::Configure("no_ignore_case");
 
 my %options;
@@ -128,7 +131,8 @@ sub usage($) {
 
 GetOptions(
     \%options,     'host=s',   'apibase=s', 'json-output', 'verbose|v', 'apikey:s',
-    'apisecret:s', 'params=s', 'form',      'json-data:s', 'help|h|?'
+    'apisecret:s', 'params=s', 'form',      'json-data:s', 'help|h|?',  'archive|a:s',
+    'skip-download'
 ) or usage(1);
 
 usage(1) unless @ARGV;
@@ -168,6 +172,7 @@ for my $arg (@ARGV) {
 }
 
 my $url;
+
 if ($options{host} !~ '/') {
     $url = Mojo::URL->new();
     $url->host($options{host});
@@ -205,7 +210,22 @@ elsif ($options{'json-data'}) {
     $res = $client->$method($url, {'Content-Type' => 'application/json'} => $options{'json-data'})->res;
 }
 else {
-    $res = $client->$method($url)->res;
+    dd(%options);
+    $options{path}    = $path;
+    $options{url}     = $url;
+    $options{params}  = \%params;
+    $options{params2} = @ARGV;
+    #treat it as a command if there is no form parameter
+    if ($options{archive}) {
+        print("Going to archive something!\n");
+        OpenQA::Client::Archive::run($client, %options);
+        exit;
+    }
+    else {
+        $res = $client->$method($url)->res;
+        #exit(0);
+    }
+
 }
 if ($res->code == 200) {
     if ($options{'json-output'}) {

@@ -54,6 +54,9 @@ sub new {
     # (default is 20 seconds)
     $self->inactivity_timeout(600);
 
+    # Some urls might redirect to https and then there are internal redirects for assets
+    $self->max_redirects(3);
+
     $self->on(
         start => sub {
             $self->_add_auth_headers(@_);
