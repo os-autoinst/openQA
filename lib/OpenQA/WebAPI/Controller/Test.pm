@@ -468,12 +468,14 @@ sub prepare_job_results {
         # if there is only one member on each level, do not output the key of
         # that level to resemble previous behaviour or maybe better, show it
         # in aggregation only
-        $results{$distri}                                        //= {};
-        $results{$distri}{$version}                              //= {};
-        $results{$distri}{$version}{$flavor}                     //= {};
-        $results{$distri}{$version}{$flavor}{$test}              //= {};
-        $results{$distri}{$version}{$flavor}{$test}{description} //= $descriptions{$test};
+        $results{$distri}                           //= {};
+        $results{$distri}{$version}                 //= {};
+        $results{$distri}{$version}{$flavor}        //= {};
+        $results{$distri}{$version}{$flavor}{$test} //= {};
         $results{$distri}{$version}{$flavor}{$test}{$arch} = $result;
+
+        # add description
+        $results{$distri}{$version}{$flavor}{$test}{description} //= $descriptions{$test =~ s/@.*//r};
     }
     return (\%archs, \%results, $aggregated);
 }
