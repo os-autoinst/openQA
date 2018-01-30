@@ -624,14 +624,24 @@ subtest 'job details' => sub {
 
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);
     $t->json_is('/job/testresults' => undef, 'Test details are not present');
-
-    $t->get_ok('/api/v1/jobs/99926/details')->status_is(200);
-    $t->json_hasnt('/job/testresults/0', 'Test details are empty');
+    $t->json_hasnt('/job/logs/0' => undef, 'Test result logs are empty');
 
     $t->get_ok('/api/v1/jobs/99963/details')->status_is(200);
     $t->json_has('/job/testresults/0', 'Test details are there');
     $t->json_is('/job/assets/hdd/0',           => 'hdd_image.qcow2', 'Job has hdd_image.qcow2 as asset');
     $t->json_is('/job/testresults/0/category', => 'installation',    'Job category is "installation"');
+
+    $post = $t->get_ok('/api/v1/jobs/99946/details')->status_is(200);
+    $t->json_has('/job/testresults/0', 'Test details are there');
+    $t->json_is('/job/assets/hdd/0',           => 'openSUSE-13.1-x86_64.hda', 'Job has openSUSE-13.1-x86_64.hda as asset');
+    $t->json_is('/job/testresults/0/category', => 'installation',    'Job category is "installation"');
+
+    $t->json_is('/job/testresults/5/name', 'logpackages', 'logpackages test is present');
+    $t->json_like('/job/testresults/5/details/5/text_data', qr/fate/, 'logpackages has fate');
+
+    $t->json_has('/job/logs', 'Test result logs are present');
+    $t->json_has('/job/ulogs', 'Test result uploaded logs are present');
+
 };
 
 subtest 'update job and job settings' => sub {

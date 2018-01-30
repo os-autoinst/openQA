@@ -588,6 +588,8 @@ sub to_hash {
     }
     if ($args{details}) {
         $j->{testresults} = read_test_modules($job);
+        @{$j->{logs}} = $job->test_resultfile_list;
+        @{$j->{ulogs}} = $job->test_uploadlog_list;
     }
     return $j;
 }

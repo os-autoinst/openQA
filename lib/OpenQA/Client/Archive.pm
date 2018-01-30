@@ -5,7 +5,7 @@ use Data::Dump;
 
 use JSON;
 use Mojo::URL;
-use Mojo::File;
+use Mojo::File 'path';
 
 our $client;
 our %options;
@@ -25,7 +25,7 @@ sub run {
     if ($res->code eq 200) {
         $job = $res->json->{job};
         #We have a job now, make a directory in $pwd by default
-        $path = Mojo::File::path($options{archive} || $job->{name})->make_path;
+        $path = path($options{archive} || $job->{name})->make_path;
         chdir($path);
         #we can't backup repos, so don't even try
         delete($job->{assets}->{repos});
@@ -33,10 +33,6 @@ sub run {
         download_test_results(@{$job->{testresults}});
     }
     else {
-        dd($res);
-        dd($req);
-        dd($url->to_string);
-        dd(%options);
         die "There's an error openQA client returned ", $res->code;
     }
 }
@@ -46,7 +42,6 @@ sub _download_test_result_details {
     my $url    = $options{url}->clone;
     my $ua     = $client;
     if ($module->{screenshot}) {
-        my $data = $module->{screenshot} // $module;
         #same structure is used for thumbnails and screenshots
         my $dir = $module->{'md5_dirname'} || ($module->{'md5_1'} . '/' . $module->{'md5_2'});
 
@@ -54,20 +49,21 @@ sub _download_test_result_details {
         $ua->get($url)->res->content->asset->move_to('testresults/' . $module->{screenshot});
 
         if ($options{'with-thumbnails'}) {
-            Mojo::File::path('testresults/thumbnails')->make_path;
-            $url->path(sprintf '/image/%s/.thumbs/%s', $dir, $module->{md5_basename});
+            path('testresults/thumbnails')->make_path;
+            $url->path('/image/', $dir, '/.thumbs/', $module->{md5_basename});
             $ua->get($url)->res->content->asset->move_to('testresults/thumbnails/' . $module->{md5_basename});
         }
 
     }
     elsif ($module->{text}) {
-        ...;
+        my $file = Mojo::File->new('testresults', $module->{text});
+        $file->spurt($module->{text_data} // "No data\n");
     }
 }
 
 sub download_test_results {
     my @testresults = @_;
-    my $resultdir   = Mojo::File::path('testresults')->make_path;
+    my $resultdir   = path('testresults')->make_path;
     for my $test (@testresults) {
         my $filename = "details-" . $test->{name};
         open(my $fh, ">", $resultdir->path . "/details-" . $test->{name} . ".json");
@@ -91,9 +87,8 @@ sub download_asset {
     my $headers;
 
     #assume that we're in the working directory.
-    Mojo::File::path("$type")->make_path;
-
-    die "can't write $path/$type" unless -w "$type";
+    path("$type")->make_path;
+    die "can't write in $path/$type directory" unless -w "$type";
     $file = path("$type/$file");
     #Download progress monitor
     $ua->on(
