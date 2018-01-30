@@ -1773,6 +1773,41 @@ sub _job_stop_children {
     return $count;
 }
 
+sub test_uploadlog_list {
+    # get a list of uploaded logs
+    my ($self) = @_;
+    my $testresdir = $self->result_dir();
+
+    my @filelist;
+    for my $f (glob "$testresdir/ulogs/*") {
+        $f =~ s#.*/##;
+        push(@filelist, $f);
+    }
+    return @filelist;
+}
+
+sub test_resultfile_list {
+    # get a list of existing resultfiles
+    my ($self) = @_;
+    my $testresdir = $self->result_dir();
+
+    my @filelist = qw(video.ogv vars.json backend.json serial0.txt autoinst-log.txt worker-log.txt);
+    my @filelist_existing;
+    for my $f (@filelist) {
+        if (-e "$testresdir/$f") {
+            push(@filelist_existing, $f);
+        }
+    }
+
+    for my $f (qw(serial_terminal.txt)) {
+        if (-s "$testresdir/$f") {
+            push(@filelist_existing, $f);
+        }
+    }
+
+    return @filelist_existing;
+}
+
 =head2 done
 
 Finalize job by setting it as DONE.

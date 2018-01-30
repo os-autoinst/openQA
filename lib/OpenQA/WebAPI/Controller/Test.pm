@@ -180,38 +180,6 @@ sub list_ajax {
     $self->render(json => {data => \@list});
 }
 
-sub test_uploadlog_list($) {
-    # get a list of uploaded logs
-    my $testresdir = shift;
-    my @filelist;
-    for my $f (glob "$testresdir/ulogs/*") {
-        $f =~ s#.*/##;
-        push(@filelist, $f);
-    }
-    return @filelist;
-}
-
-sub test_resultfile_list($) {
-    # get a list of existing resultfiles
-    my ($testresdir) = @_;
-
-    my @filelist = qw(video.ogv vars.json backend.json serial0.txt autoinst-log.txt worker-log.txt);
-    my @filelist_existing;
-    for my $f (@filelist) {
-        if (-e "$testresdir/$f") {
-            push(@filelist_existing, $f);
-        }
-    }
-
-    for my $f (qw(serial_terminal.txt)) {
-        if (-s "$testresdir/$f") {
-            push(@filelist_existing, $f);
-        }
-    }
-
-    return @filelist_existing;
-}
-
 sub details {
     my ($self) = @_;
 
@@ -268,10 +236,10 @@ sub _show {
     my $rd = $job->result_dir();
     if ($rd) {    # saved anything
                   # result files box
-        my @resultfiles = test_resultfile_list($job->result_dir());
+        my @resultfiles = $job->test_resultfile_list;
 
         # uploaded logs box
-        my @ulogs = test_uploadlog_list($job->result_dir());
+        my @ulogs =  $job->test_uploadlog_list;
 
         $self->stash(resultfiles => \@resultfiles);
         $self->stash(ulogs       => \@ulogs);
