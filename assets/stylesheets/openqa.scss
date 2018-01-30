@@ -858,6 +858,10 @@ h2 + * {
     }
 }
 
+.comments-pagination {
+    text-align: center;
+}
+
 /* parent group overview */
 * + #child_groups {
     border-top: 1px solid #e3e3e3;
