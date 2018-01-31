@@ -1327,8 +1327,6 @@ sub create_asset {
 
     local $@;
     eval {
-        # Upgrade to Mojo::Asset::File always
-        $asset = Mojo::Asset::File->new()->add_chunk($asset->slurp) if ref $asset eq 'Mojo::Asset::Memory';
         my $chunk = OpenQA::File->deserialize($asset->slurp);
         $chunk->decode_content;
         $chunk->write_content($temp_final_file);

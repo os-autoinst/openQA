@@ -207,12 +207,21 @@ sub _multichunk_upload {
     for ($pieces->each) {
         $_->prepare();    # Generate sum and encode content
         my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
-        log_info("$filename: Uploading chunk " . $_->index(), channels => ['worker'], default => 1);
+        my $t_start     = time();
         unless (_upload($job_id, {asset => $form->{asset}, file => {filename => $filename, file => $chunk_asset}})) {
             _upload_state($job_id, {state => 'fail', filename => $filename, scope => $is_asset});
             log_error("$filename: FAILED Uploading chunk " . $_->index(), channels => ['worker'], default => 1);
             return 0;
         }
+        my $spent  = time() - $t_start;
+        my $kbytes = ($_->end - $_->start) / 1024;
+        my $speed  = sprintf("%.3f", $kbytes / $spent);
+        log_info(
+            "$filename: Uploaded chunk " . $_->index() . "/" . $_->total . " avg speed ~${speed}KB/s",
+            channels => ['worker'],
+            default  => 1
+        );
+
         $_->content(\undef);
     }
 
