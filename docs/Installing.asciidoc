@@ -462,6 +462,37 @@ CACHELIMIT = 50 # This is currently noop. Cache supports limiting, but is not en
 TESTPOOLSERVER = rsync://yourlocation/tests
 --------------------------------------------------------------------------------
 
+Setup and run rsync server daemon on HOST machine, in /etc/rsyncd.conf should be:
+
+[source,ini]
+--------------------------------------------------------------------------------
+gid = users
+read only = true
+use chroot = true
+transfer logging = true
+log format = %h %o %f %l %b
+log file = /var/log/rsyncd.log
+pid file = /var/run/rsyncd.pid
+slp refresh = 300
+use slp = false
+
+#[Example]
+#	path = /home/Example
+#	comment = An Example
+#	auth users = user
+#	secrets file = /etc/rsyncd.secrets
+
+[tests]
+path = /var/lib/openqa/share/tests
+comment = OpenQA Test Distributions
+--------------------------------------------------------------------------------
+and
+[source,sh]
+--------------------------------------------------------------------------------
+systemctl start rsyncd.service
+systemctl enable rsyncd.service
+--------------------------------------------------------------------------------
+
 This will allow the workers to download the assets from the webUI and use them
 locally. If +TESTPOOLSERVER+ is set tests and needles will also be cached by the
 worker.
