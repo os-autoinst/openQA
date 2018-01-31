@@ -2362,6 +2362,41 @@ will be created for you.</p>
 </div>
 </div>
 <div class="paragraph">
+<p>Setup and run rsync server daemon on HOST machine, in /etc/rsyncd.conf should be:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-na">gid</span> <span class="tok-o">=</span> <span class="tok-s">users</span>
+<span class="tok-na">read only</span> <span class="tok-o">=</span> <span class="tok-s">true</span>
+<span class="tok-na">use chroot</span> <span class="tok-o">=</span> <span class="tok-s">true</span>
+<span class="tok-na">transfer logging</span> <span class="tok-o">=</span> <span class="tok-s">true</span>
+<span class="tok-na">log format</span> <span class="tok-o">=</span> <span class="tok-s">%h %o %f %l %b</span>
+<span class="tok-na">log file</span> <span class="tok-o">=</span> <span class="tok-s">/var/log/rsyncd.log</span>
+<span class="tok-na">pid file</span> <span class="tok-o">=</span> <span class="tok-s">/var/run/rsyncd.pid</span>
+<span class="tok-na">slp refresh</span> <span class="tok-o">=</span> <span class="tok-s">300</span>
+<span class="tok-na">use slp</span> <span class="tok-o">=</span> <span class="tok-s">false</span>
+
+<span class="tok-c1">#[Example]</span>
+<span class="tok-c1">#	path = /home/Example</span>
+<span class="tok-c1">#	comment = An Example</span>
+<span class="tok-c1">#	auth users = user</span>
+<span class="tok-c1">#	secrets file = /etc/rsyncd.secrets</span>
+
+<span class="tok-k">[tests]</span>
+<span class="tok-na">path</span> <span class="tok-o">=</span> <span class="tok-s">/var/lib/openqa/share/tests</span>
+<span class="tok-na">comment</span> <span class="tok-o">=</span> <span class="tok-s">OpenQA Test Distributions</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start rsyncd.service
+systemctl <span class="tok-nb">enable</span> rsyncd.service</code></pre>
+</div>
+</div>
+<div class="paragraph">
 <p>This will allow the workers to download the assets from the webUI and use them
 locally. If TESTPOOLSERVER is set tests and needles will also be cached by the
 worker.</p>
@@ -5079,7 +5114,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-01-30 15:34:19 UTC
+Last updated 2018-01-31 16:33:47 UTC
 </div>
 </div>
 </body>
