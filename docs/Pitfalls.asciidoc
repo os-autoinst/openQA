@@ -1,4 +1,5 @@
 
+[[pitfalls]]
 = openQA pitfalls
 :toc: left
 :toclevels: 6
@@ -54,10 +55,11 @@ SUT behavior as the execution of the first step after loading a snapshot might
 be delayed. This can lead to problems if the executed tests do not foresee an
 appropriate timeout margin.
 
+[[db-migration]]
 == DB migration from SQlite to postgreSQL
 As a first step to start using postgreSQL, please, configure postgreSQL database
 according to the
-link:Contributing.asciidoc#how-to-setup-postgresql-to-test-locally-with-production-data[postgreSQL setup guide]
+<<Contributing.asciidoc#setup-postgresql,postgreSQL setup guide>>
 
 To migrate api keys run following commands:
 

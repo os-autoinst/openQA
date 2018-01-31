@@ -1,4 +1,5 @@
 
+[[usersguide]]
 = openQA users guide
 :toc: left
 :toclevels: 6
@@ -9,7 +10,7 @@
 This document provides additional information for use of the web interface or
 the REST API as well as administration information.
 For administrators it is recommend to have read the
-link:Installing.asciidoc[installation guide] first to understand the structure
+<<Installing.asciidoc#installing,Installation Guide>> first to understand the structure
 of components as well as the configuration of an installed instance.
 
 == Use of the web interface
@@ -164,7 +165,7 @@ instance without needing to install the full package. Call
 --help`).
 
 Basics are described in the
-link:GettingStarted.asciidoc[Getting Started] guide.
+<<GettingStarted.asciidoc#gettingstarted,Getting Started>> guide.
 
 
 === Triggering tests
@@ -181,7 +182,7 @@ instance the script `clone_job.pl` can be used to copy the necessary settings
 and assets to another instance and schedule the test. For the test to be
 executed it has to be ensured that matching ressources can be found, for
 example a worker with matching `WORKER_CLASS` must be registered. More details
-on `clone_job.pl` can be found in link:WritingTests.asciidoc[Writing Tests].
+on `clone_job.pl` can be found in <<WritingTests.asciidoc#writingtests,Writing Tests>>.
 
 
 ==== Spawning single new jobs - jobs post ====
@@ -196,7 +197,7 @@ examples for this.
 The most common way of spawning jobs on production instances is using the
 `isos post` API route. Based on previously defined settings for media, job
 groups, machines and test suites jobs are triggered based on template
-matching. The link:GettingStarted.asciidoc[Getting Started] guide already
+matching. The <<GettingStarted.asciidoc#gettingstarted,Getting Started>> guide already
 mentioned examples. Additionally to the necessary template matching parameters
 more parameters can be specified which are forwarded to all triggered jobs.
 There are also special parameters which only have an influence on the way the
@@ -236,4 +237,4 @@ openqa-client isos post ISO=my_iso.iso DISTRI=my_distri FLAVOR=sweet \
 == Where to now?
 
 For test developers it is recommended to continue with the
-link:WritingTests.asciidoc[Test Developer Guide].
+<<WritingTests.asciidoc#writingtests,Test Developer Guide>>.
