@@ -1325,24 +1325,39 @@ sub create_asset {
     $temp_path->make_path         unless -d $temp_path;
     $temp_chunk_folder->make_path unless -d $temp_chunk_folder;
 
+    # XXX : Moving this to subprocess/promises won't help much
+    # As calculating sha256 over >2GB file is pretty expensive
+    # IF we are receiving simultaneously uploads
+
     local $@;
     eval {
         my $chunk = OpenQA::File->deserialize($asset->slurp);
         $chunk->decode_content;
         $chunk->write_content($temp_final_file);
 
+        # Always checking written data SHA
         unless ($chunk->verify_content($temp_final_file)) {
             $temp_chunk_folder->remove_tree if ($chunk->is_last);
             die Mojo::Exception->new("Can't verify written data from chunk");
         }
-        elsif ($chunk->is_last) {
-            # XXX: Watch out also apparmor permissions
 
-            my $sum      = $chunk->total_cksum;
-            my $real_sum = $chunk->_file_digest($temp_final_file->to_string);
+        if ($chunk->is_last) {
+            # XXX: Watch out also apparmor permissions
+            my $sum;
+            my $real_sum;
+
+            # Perform weak check on last bytes if files > 250MB
+            if ($chunk->end > 250000000) {
+                $sum      = $chunk->end;
+                $real_sum = -s $temp_final_file->to_string;
+            }
+            else {
+                $sum      = $chunk->total_cksum;
+                $real_sum = $chunk->_file_digest($temp_final_file->to_string);
+            }
 
             $temp_chunk_folder->remove_tree
-              && die Mojo::Exception->new("Checksum mismatch expected $sum, calculated $real_sum")
+              && die Mojo::Exception->new("Checksum mismatch expected $sum got: $real_sum")
               unless $sum eq $real_sum;
 
             $temp_final_file->move_to($final_file);

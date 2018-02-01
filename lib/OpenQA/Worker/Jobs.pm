@@ -213,7 +213,7 @@ sub _multichunk_upload {
             log_error("$filename: FAILED Uploading chunk " . $_->index(), channels => ['worker'], default => 1);
             return 0;
         }
-        my $spent  = time() - $t_start;
+        my $spent  = (time() - $t_start) || 1;
         my $kbytes = ($_->end - $_->start) / 1024;
         my $speed  = sprintf("%.3f", $kbytes / $spent);
         log_info(

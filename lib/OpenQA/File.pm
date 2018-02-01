@@ -21,6 +21,7 @@ use Exporter 'import';
 use Carp 'croak';
 use Digest::SHA 'sha1_base64';
 use Fcntl 'SEEK_SET';
+use Mojo::JSON qw(encode_json decode_json);
 #use Sereal qw( encode_sereal decode_sereal ); # XXX: This would speed up notably
 
 has file => sub { Mojo::File->new() };
@@ -46,8 +47,10 @@ sub slurp       { shift()->file()->slurp() }
 sub _chunk_size { int($_[0] / $_[1]) + (($_[0] % $_[1]) ? 1 : 0) }
 sub is_last     { !!($_[0]->total == $_[0]->index()) }
 
-#sub serialize   { encode_sereal(shift->to_el) }
-#sub deserialize { shift()->new(OpenQA::Parser::Result::_restore_el(decode_sereal(shift))) }
+# sub serialize   { encode_sereal(shift->to_el) }
+# sub deserialize { shift()->new(OpenQA::Parser::Result::_restore_el(decode_sereal(shift))) }
+sub serialize   { encode_json(shift->to_el) }
+sub deserialize { shift()->new(OpenQA::Parser::Result::_restore_el(decode_json(shift))) }
 
 sub write_content {
     my $self = shift;
@@ -83,7 +86,7 @@ sub split {
         my ($chunk_start, $chunk_end)
           = $i == $n_chunks
           && $residual ?
-          ($prev, $prev + $chunk_size + $residual)
+          ($prev, $prev + $residual)
           : ($seek_start, $seek_start + $chunk_size);
 
         my $piece = $self->new(

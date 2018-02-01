@@ -36,8 +36,9 @@ subtest 'base' => sub {
 };
 
 subtest 'split/join' => sub {
+    my $size = path($FindBin::Bin, "data")->child("ltp_test_result_format.json")->size;
 
-    is path($FindBin::Bin, "data")->child("ltp_test_result_format.json")->size, 6991, 'size matches';
+    is $size, 6991, 'size matches';
 
     is OpenQA::File::_chunk_size(20, 10), 2, 'calculated chunk match';
     is OpenQA::File::_chunk_size(21, 10), 3;
@@ -46,6 +47,8 @@ subtest 'split/join' => sub {
     is OpenQA::File::_chunk_size(31, 10), 4;
 
     my $pieces = path($FindBin::Bin, "data")->child("ltp_test_result_format.json")->split(2000);
+
+    is $pieces->last->end, $size, 'Last piece end must match with size';
 
     is $pieces->join(), path($FindBin::Bin, "data")->child("ltp_test_result_format.json")->slurp, 'Content match'
       or die diag explain $pieces;
