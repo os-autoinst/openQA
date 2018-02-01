@@ -1,4 +1,5 @@
 
+[[gettingstarted]]
 = openQA starter guide
 :toc: left
 :toclevels: 6
@@ -521,6 +522,7 @@ request, the test suite setting would 'win' and the value would be foo.
 If the same variable is set with a + prefix in multiple places, the same precedence
 order described above will apply to those settings.
 
+[[get-testing]]
 == Testing openSUSE or Fedora
 
 An easy way to start using openQA is to start testing openSUSE or Fedora as they
@@ -627,9 +629,9 @@ For Fedora, a sample run might be:
 --------------------------------------------------------------------------------
 
 More details on triggering tests can also be found in the
-link:UsersGuide.asciidoc[Users Guide].
+<<UsersGuide.asciidoc#usersguide,Users Guide>>.
 
 
 == Pitfalls
 
-Take a look at link:Pitfalls.asciidoc[Documented Pitfalls].
+Take a look at <<Pitfalls.asciidoc#pitfalls,Documented Pitfalls>>.

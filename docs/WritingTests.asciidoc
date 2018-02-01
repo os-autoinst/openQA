@@ -1,4 +1,5 @@
 
+[[writingtests]]
 = openQA tests developer guide
 :toc: left
 :toclevels: 6
@@ -305,7 +306,7 @@ In short, writing multi-machine tests adds a few more layers of complexity:
 
 1. documenting the dependencies and order between individual tests
 2. synchronization between individual tests
-3. actual technical realization (i.e. link:Networking.asciidoc[custom networking])
+3. actual technical realization (i.e. <<Networking.asciidoc#networking,custom networking>>)
 
 ==== Job dependencies
 

@@ -1,4 +1,5 @@
 
+[[contributing]]
 = openQA developer guide
 :toc: left
 :toclevels: 6
@@ -273,8 +274,8 @@ export OPENQA_CONFIG=$PWD/etc/mine
 Note that OPENQA_CONFIG points to the directory containing openqa.ini, database.ini,
 client.conf and workers.ini.
 
+[[setup-postgresql]]
 == How to setup PostgreSQL to test locally with production data
-:other-db-engines: link:Installing.asciidoc#other-database-engines[Other database engines]
 
 1. Install PosgreSQL - under openSUSE the following package are required:
    +postgresql-server postgresql-init+
@@ -292,14 +293,13 @@ client.conf and workers.ini.
 
 7. Import dump: +pg_restore -c -d openqa path/to/dump+
 
-8. Configure openQA to use PostgreSQL as described in the section {other-db-engines} of the installation guide.
+8. Configure openQA to use PostgreSQL as described in the section <<Installing.asciidoc#database,Database>> of the installation guide.
  User name and password are not required.
 
 == Adding new authentication module
-:user-authentication: link:Installing.asciidoc#user-authentication[User authentication]
 
 OpenQA comes with three authentication modules providing authentication methods:
-OpenID, iChain and Fake (see {user-authentication}).
+OpenID, iChain and Fake (see <<Installing.asciidoc#authentication,User authentication>>).
 
 All authentication modules reside in +lib/OpenQA/Auth+ directory. During
 OpenQA start, +[auth]/method+ section of +/etc/openqa/openqa.ini+ is read and according

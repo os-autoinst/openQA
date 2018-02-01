@@ -1,4 +1,5 @@
 
+[[installing]]
 = openQA installation guide
 :toc: left
 :toclevels: 6
@@ -134,6 +135,7 @@ You can do that in +/etc/openqa/openqa.ini+:
 httpsonly = 0
 --------------------------------------------------------------------------------
 
+[[database]]
 === Database
 
 Since version _4.5.1512500474.437cc1c7_ of openQA, PostgreSQL is used as the
@@ -166,7 +168,7 @@ password = somepassword
 
 For older versions of openQA, you can migrate from SQLite to PostgreSQL
 according to
-link:Pitfalls.asciidoc#db-migration-from-sqlite-to-postgresql[DB migration from SQLite to PostgreSQL]
+<<Pitfalls.asciidoc#db-migration,DB migration from SQLite to PostgreSQL>>
 
 
 == Run the web UI
@@ -244,6 +246,7 @@ installed 'os-autoinst' from packages make sure to pass +--isotovideo+ option
 to point to the checkout dir where isotovideo is, not to +/usr/lib+! Otherwise
 it will have trouble finding its perl modules.
 
+[[authentication]]
 === User authentication
 
 OpenQA supports three different authentication methods - OpenID (default), iChain
@@ -300,8 +303,8 @@ You may be vulnerable for up to a day until Fake API key expires.
 
 == Where to now?
 
-From this point on, you can refer to the link:GettingStarted.asciidoc#testing-opensuse-or-fedora[getting started] guide to
-fetch the tests cases and possibly take a look at link:WritingTests.asciidoc[Test Developer Guide]
+From this point on, you can refer to the <<GettingStarted.asciidoc#get-testing,Getting Started>> guide to
+fetch the tests cases and possibly take a look at <<WritingTests.asciidoc#writingtests,Test Developer Guide>>
 
 == Advanced configuration
 [id="advanced"]
