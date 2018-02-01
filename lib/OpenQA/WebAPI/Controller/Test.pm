@@ -239,7 +239,7 @@ sub _show {
         my @resultfiles = $job->test_resultfile_list;
 
         # uploaded logs box
-        my @ulogs =  $job->test_uploadlog_list;
+        my @ulogs = $job->test_uploadlog_list;
 
         $self->stash(resultfiles => \@resultfiles);
         $self->stash(ulogs       => \@ulogs);
