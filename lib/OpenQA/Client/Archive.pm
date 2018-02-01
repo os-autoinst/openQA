@@ -91,27 +91,8 @@ sub download_asset {
     die "can't write in $path/$type directory" unless -w "$type";
     $file = path("$type/$file");
     #Download progress monitor
-    $ua->on(
-        start => sub {
-            my ($ua, $tx) = @_;
-            my $progress     = 0;
-            my $last_updated = time;
-            $tx->res->on(
-                progress => sub {
-                    my $msg = shift;
-                    $msg->finish if $msg->code == 304;
-                    return unless my $len = $msg->headers->content_length;
-                    local $| = 1;
-                    my $size = $msg->content->progress;
-                    $headers = $msg->headers if !$headers;
-                    my $current = int($size / ($len / 100));
-                    $last_updated = time;
-                    if ($progress < $current) {
-                        $progress = $current;
-                        print("\rDownloading $file: ", $size == $len ? 100 : $progress . "%");
-                    }
-                });
-        });
+    $ua->on(start => \&_progress_monitior);
+    $ua->{filename} = $file;
     $tx = $ua->start($tx);
     my $code = ($tx->res->code) ? $tx->res->code : 521;    # Used by cloudflare to indicate web server is down.
     my $size;
@@ -136,6 +117,34 @@ sub download_assets {
     for $asset_group (keys %{$job->{assets}}) {
         map { download_asset($job->{id}, $asset_group, $_) } @{$job->{assets}{$asset_group}};
     }
+}
+
+sub _progress_monitior {
+
+    my ($ua, $tx) = @_;
+    my $progress = 0;
+    print "We're here!";
+    my $last_updated = time;
+    my $filename     = $ua->{filename} // 'file';
+    my $headers;
+
+    print "We're here!";
+
+    $tx->res->on(
+        progress => sub {
+            my $msg = shift;
+            $msg->finish if $msg->code == 304;
+            return unless my $len = $msg->headers->content_length;
+            local $| = 1;
+            my $size = $msg->content->progress;
+            $headers = $msg->headers if !$headers;
+            my $current = int($size / ($len / 100));
+            $last_updated = time;
+            if ($progress < $current) {
+                $progress = $current;
+                print("\rDownloading $filename: ", $size == $len ? 100 : $progress . "%");
+            }
+        });
 }
 
 1;
