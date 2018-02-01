@@ -489,8 +489,6 @@ sub upload_state {
         $self->app->log->debug("FAIL chunk upload of $file");
         path($OpenQA::Utils::assetdir, 'tmp', $scope)->list_tree({dir => 1})->each(
             sub {
-                $self->app->log->debug("Folder contains : " . $_->to_string);
-
                 $_->remove_tree if -d $_ && $_->basename eq $file . '.CHUNKS';
             });
     }

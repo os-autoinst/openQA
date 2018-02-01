@@ -1347,17 +1347,17 @@ sub create_asset {
             my $real_sum;
 
             # Perform weak check on last bytes if files > 250MB
-            if ($chunk->end > 250000000) {
-                $sum      = $chunk->end;
-                $real_sum = -s $temp_final_file->to_string;
-            }
-            else {
-                $sum      = $chunk->total_cksum;
-                $real_sum = $chunk->_file_digest($temp_final_file->to_string);
-            }
+            # if ($chunk->end > 250000000) {
+            $sum      = $chunk->end;
+            $real_sum = -s $temp_final_file->to_string;
+            # }
+            # else {
+            #     $sum      = $chunk->total_cksum;
+            #     $real_sum = $chunk->_file_digest($temp_final_file->to_string);
+            #
 
             $temp_chunk_folder->remove_tree
-              && die Mojo::Exception->new("Checksum mismatch expected $sum got: $real_sum")
+              && die Mojo::Exception->new("Checksum mismatch expected $sum got: $real_sum ( weak check on last bytes )")
               unless $sum eq $real_sum;
 
             $temp_final_file->move_to($final_file);
@@ -1367,6 +1367,7 @@ sub create_asset {
 
             $temp_chunk_folder->remove_tree if ($chunk->is_last);
         }
+        $chunk->content(\undef);
     };
     # $temp_chunk_folder->remove_tree if $@; # XXX: Don't! as worker will try again to upload.
     return $@ if $@;
