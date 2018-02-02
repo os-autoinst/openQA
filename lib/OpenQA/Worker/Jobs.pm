@@ -49,6 +49,7 @@ my $current_running;
 my $test_order;
 my $stop_job_running;
 my $update_status_running;
+my $children_dead = 0;
 
 my $boundary = '--a_sTrinG-thAt_wIll_n0t_apPEar_iN_openQA_uPloads-61020111';
 
@@ -56,6 +57,16 @@ my $tosend_images = {};
 my $tosend_files  = [];
 
 our $do_livelog;
+
+sub chld_handler {
+    while ((my $child = waitpid(-1, WNOHANG)) > 0) {
+        if ($?) {
+            $children_dead = 1;
+            $SIG{CHLD} = 'DEFAULT';
+            _stop_job_2('dead_children', $job->{id});
+        }
+    }
+}
 
 ## Job management
 sub _kill_worker($) {
@@ -137,6 +148,7 @@ sub stop_job {
         $job_state .= ($aborted) ? "|Reason: $aborted" : ' $aborted is empty';
         log_debug("Either there is no job running or we were asked to stop: ($job_state)");
         Mojo::IOLoop->stop if $aborted eq 'quit';
+
         return;
     }
     return if $job_id && $job_id != $job->{id};
@@ -200,7 +212,6 @@ sub upload {
     my $retry_limit           = 5;
     my $tics                  = 5;
     my $res;
-
 
     while (1) {
         my $ua_url = $hosts->{$current_host}{url}->clone;
@@ -281,11 +292,10 @@ sub upload {
 sub _stop_job {
     my ($aborted, $job_id) = @_;
     my $workerid = verify_workerid;
-
     # now tell the webui that we're about to finish, but the following
     # process of killing the backend process and checksums uploads and
     # checksums again can take a long while, so the webui needs to know
-
+    # _reap_grandchildren;
     if ($aborted eq "scheduler_abort") {
         log_debug('stop_job called by the scheduler. do not send logs');
         _kill_worker($worker);
@@ -306,7 +316,6 @@ sub _stop_job {
 sub _stop_job_2 {
     my ($aborted, $job_id) = @_;
     _kill_worker($worker);
-
     my $name = $job->{settings}->{NAME};
     $aborted ||= 'done';
 
@@ -391,6 +400,15 @@ sub _stop_job_2 {
             log_debug('setting job ' . $job->{id} . ' to done');
             upload_status(1, \&_stop_job_finish);
             $job_done = 1;
+        }
+        elsif ($aborted eq 'dead_children') {
+            $job_done = 1;
+            api_call(
+                'post', 'jobs/' . $job->{id} . '/set_done',
+                params   => {result => 'incomplete'},
+                callback => 'no'
+            );
+            die "dead children";
         }
     }
     unless ($job_done || $aborted eq 'api-failure') {
@@ -493,6 +511,8 @@ sub start_job {
         },
         1
     );
+
+    $SIG{CHLD} = \&chld_handler;
     Mojo::IOLoop->singleton->emit("start_job");
 }
 
@@ -560,7 +580,7 @@ sub stop_livelog {
 sub start_livelog {
     # We can have multiple viewers at the same time
     $do_livelog++;
-    open my $fh, '>', "$pooldir/live_log" or die "Cannot create live_log file";
+    open(my $fh, '>', "$pooldir/live_log") or die("Cannot create live_log file");
     close($fh);
 }
 
