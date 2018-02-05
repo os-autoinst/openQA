@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2018 SUSE Linux Products GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,83 +15,16 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Client;
+use Mojo::Base 'OpenQA::UserAgent';
 
-use Mojo::Base 'Mojo::UserAgent';
-use Mojo::Util 'hmac_sha1_sum';
-use Config::IniFiles;
+use OpenQA::Client::Upload;
 use Scalar::Util ();
 
-use Carp;
-
-has 'apikey';
-has 'apisecret';
-
-sub new {
-    my $self = shift->SUPER::new;
-    my %args = @_;
-
-    for my $i (qw(apikey apisecret)) {
-        next unless $args{$i};
-        $self->$i($args{$i});
-    }
-
-    if ($args{api}) {
-        my @cfgpaths = (glob('~/.config/openqa'), '/etc/openqa');
-        @cfgpaths = ($ENV{OPENQA_CONFIG}, @cfgpaths) if defined $ENV{OPENQA_CONFIG};
-        for my $path (@cfgpaths) {
-            my $file = $path . '/client.conf';
-            next unless $file && -r $file;
-            my $cfg = Config::IniFiles->new(-file => $file) || last;
-            last unless $cfg->SectionExists($args{api});
-            for my $i (qw(key secret)) {
-                my $attr = "api$i";
-                next if $self->$attr;
-                (my $val = $cfg->val($args{api}, $i)) =~ s/\s+$//;    # remove trailing whitespace
-                $self->$attr($val);
-            }
-            last;
-        }
-    }
-    # Scheduling a couple of hundred jobs takes quite some time - so we better wait a couple of minutes
-    # (default is 20 seconds)
-    $self->inactivity_timeout(600);
-
-    $self->on(
-        start => sub {
-            $self->_add_auth_headers(@_);
-        });
-
-    return $self;
-}
-
-sub _add_auth_headers {
-    my ($self, $ua, $tx) = @_;
-
-    my $timestamp = time;
-    my %headers   = (
-        Accept            => 'application/json',
-        'X-API-Microtime' => $timestamp
-    );
-    if ($self->apisecret && $self->apikey) {
-        $headers{'X-API-Key'} = $self->apikey;
-        $headers{'X-API-Hash'} = hmac_sha1_sum($self->_path_query($tx) . $timestamp, $self->apisecret);
-    }
-
-    while (my ($k, $v) = each %headers) {
-        $tx->req->headers->header($k, $v);
-    }
-}
-
-sub _path_query {
-    my $self  = shift;
-    my $url   = shift->req->url;
-    my $query = $url->query->to_string;
-    # as use this for hashing, we need to make sure the query is escaping
-    # space the same as the mojo url parser.
-    $query =~ s,%20,+,g;
-    my $r = $url->path->to_string . (length $query ? "?$query" : '');
-    return $r;
-}
+has upload => sub {
+    my $upload = OpenQA::Client::Upload->new(client => shift);
+    Scalar::Util::weaken $upload->{client};
+    return $upload;
+};
 
 1;
 
@@ -128,7 +61,7 @@ See L<Mojo::UserAgent> for more.
 
 =head1 ATTRIBUTES
 
-L<OpenQA::Client> implmements the following attributes.
+L<OpenQA::Client> inherits from L<OpenQA::UserAgent> and implemements the following attributes.
 
 =head2 apikey
 
