@@ -20,6 +20,8 @@ use OpenQA::Client;
 
 has client => sub { OpenQA::Client->new };
 
+has api_path => '/api/v1/';
+
 sub _build_post {
     my $self     = shift;
     my $base_url = $self->client->base_url;
@@ -27,7 +29,7 @@ sub _build_post {
     my $form     = shift;
 
     my $ua_url = $base_url->clone;
-    $ua_url->path->merge($uri);
+    $ua_url->path($uri);
 
     return $self->client->build_tx(POST => $ua_url => form => $form);
 }

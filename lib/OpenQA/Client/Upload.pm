@@ -37,7 +37,8 @@ sub asset {
     croak 'Options must be a HASH ref'                               unless ref $opts eq 'HASH';
     croak 'Need a file to upload in the options!'                    unless $opts->{file};
 
-    my $uri = "api/v1/jobs/$job_id";
+    my $is_api_url = $self->client->base_url->path->parts->[0];
+    my $uri = ($is_api_url && $is_api_url eq 'api') ? "jobs/$job_id" : $self->api_path . "jobs/$job_id";
     $opts->{asset} //= 'public';
     my $file_name  = (!$opts->{name}) ? path($opts->{file})->basename : $opts->{name};
     my $chunk_size = $opts->{chunk_size} // 1000000;
@@ -47,9 +48,9 @@ sub asset {
     my $failed;
 
     for ($pieces->each) {
+        last if $failed;
         $self->emit('upload_chunk.start' => $_);
         $_->prepare();
-        last if $failed;
 
         my $trial = $self->max_retrials;
         my $res;
