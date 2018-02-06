@@ -918,3 +918,15 @@ h2 + * {
         }
     }
 }
+
+table#assets {
+  a.picked-group {
+    text-decoration: underline !important;
+  }
+  a.to-be-removed {
+    text-decoration: line-through !important;
+  }
+  td {
+    overflow:hidden; white-space: nowrap; text-overflow: ellipsis;
+  }
+}

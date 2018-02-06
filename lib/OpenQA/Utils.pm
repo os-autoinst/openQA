@@ -743,7 +743,11 @@ sub human_readable_size {
     my ($size) = @_;
 
     my $p = ($size < 0) ? '-' : '';
-    $size = abs($size) / 1024.;
+    $size = abs($size);
+    if ($size < 3000) {
+        return "$p$size Byte";
+    }
+    $size = $size / 1024.;
     if ($size < 1024) {
         return $p . _round_a_bit($size) . "KiB";
     }
