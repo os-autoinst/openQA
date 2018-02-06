@@ -109,7 +109,8 @@ like($elem->get_attribute('data-content'), qr/inst-bootmenu/, "show searched nee
 $elem->click();
 wait_for_ajax;
 ok($driver->find_element('.step_actions .popover')->is_displayed(), "needle info is a clickable popover");
-$driver->find_element_by_xpath('//a[@href="#step/installer_timezone/1"]')->click();
+# hide again
+$elem->click();
 wait_for_ajax;
 
 my @report_links = $driver->find_elements('#preview_container_in .report', 'css');
