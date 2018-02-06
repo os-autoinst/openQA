@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Client::Handler;
-use Mojo::Base -base;
+use Mojo::Base 'Mojo::EventEmitter';
 use OpenQA::Client;
 
 has client => sub { OpenQA::Client->new };

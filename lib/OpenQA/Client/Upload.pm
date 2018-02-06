@@ -42,10 +42,12 @@ sub asset {
     my $file_name  = (!$opts->{name}) ? path($opts->{file})->basename : $opts->{name};
     my $chunk_size = $opts->{chunk_size} // 1000000;
     my $pieces     = OpenQA::File->new(file => Mojo::File->new($opts->{file}))->split($chunk_size);
+    $self->emit('upload_chunk.prepare' => $pieces);
 
     my $failed;
 
     for ($pieces->each) {
+        $self->emit('upload_chunk.start' => $_);
         $_->prepare();
         last if $failed;
 
@@ -59,15 +61,16 @@ sub asset {
                 asset => $opts->{asset}};
             my $post = $self->_build_post("$uri/artefact" => $file_opts);
 
-            $res   = $self->client->start($post);
-            $done  = 1 if $res && $res->res->json && $res->res->json->{status} && $res->res->json->{status} eq 'ok';
+            $res = $self->client->start($post);
+            $self->emit('upload_chunk.response' => $res);
+            $done = 1 if $res && $res->res->json && $res->res->json->{status} && $res->res->json->{status} eq 'ok';
             $trial = 0 if (!$res->res->is_server_error && $res->error);
             $trial-- if $trial > 0;
             die Mojo::Exception->new($res->res) if $trial == 0 && $done == 0;
         } until ($trial == 0 || $done);
 
         $failed++ if $trial == 0 && $done == 0;
-
+        $self->emit('upload_chunk.finish' => $_);
         $_->content(\undef);
     }
 
