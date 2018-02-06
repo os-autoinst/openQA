@@ -84,24 +84,57 @@ sub add_review_badge {
     $build_res->{reviewed}   = $build_res->{labeled} >= $build_res->{failed};
 }
 
-sub compute_build_results {
-    my ($group, $limit, $time_limit_days, $tags) = @_;
+sub filter_subgroups {
+    my ($group, $subgroup_filter) = @_;
 
-    my $group_ids;
+    my @group_ids;
     my @children;
-    if ($group->can('children')) {
-        @children  = $group->children;
-        $group_ids = $group->child_group_ids;
+    my $group_name = $group->name;
+
+    for my $child ($group->children) {
+        my $full_name = $child->full_name;
+        if (grep { $_ eq '' || $full_name =~ /$_/ } @$subgroup_filter) {
+            push(@group_ids, $child->id);
+            push(@children,  $child);
+        }
     }
-    else {
-        $group_ids = [$group->id];
-    }
+    return {
+        group_ids => \@group_ids,
+        children  => \@children,
+    };
+}
+
+sub find_child_groups {
+    my ($group, $subgroup_filter) = @_;
+
+    # handle regular (non-parent) groups
+    return {
+        group_ids => [$group->id],
+        children  => [],
+    } unless $group->can('children');
+
+    # handle simple case where no filter for subgroups present
+    return {
+        group_ids => $group->child_group_ids,
+        children  => [$group->children],
+    } unless @$subgroup_filter;
+
+    return filter_subgroups($group, $subgroup_filter);
+}
+
+sub compute_build_results {
+    my ($group, $limit, $time_limit_days, $tags, $subgroup_filter) = @_;
+
+    # find relevant child groups taking filter into account
+    my $child_groups = find_child_groups($group, $subgroup_filter);
+    my $group_ids    = $child_groups->{group_ids};
+    my $children     = $child_groups->{children};
 
     my @sorted_results;
     my %result = (
         build_results => \@sorted_results,
         max_jobs      => 0,
-        children      => [map { {id => $_->id, name => $_->name} } @children],
+        children      => [map { {id => $_->id, name => $_->name} } @$children],
         group         => {
             id   => $group->id,
             name => $group->name
@@ -175,7 +208,7 @@ sub compute_build_results {
             oldest  => DateTime->now
         );
         init_job_figures(\%jr);
-        for my $child (@children) {
+        for my $child (@$children) {
             init_job_figures($jr{children}->{$child->id} = {});
         }
 

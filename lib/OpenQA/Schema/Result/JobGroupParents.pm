@@ -110,6 +110,17 @@ around 'default_priority' => sub {
     return $self->get_column('default_priority') // OpenQA::Schema::JobGroupDefaults::PRIORITY;
 };
 
+sub matches_nested {
+    my ($self, $regex) = @_;
+
+    return 1 if ($self->name =~ /$regex/);
+    my $children = $self->children;
+    while (my $child = $children->next) {
+        return 1 if ($child->matches_nested($regex));
+    }
+    return 0;
+}
+
 sub child_group_ids {
     my ($self) = @_;
     return [map { $_->id } $self->children];

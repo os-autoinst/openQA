@@ -30,7 +30,7 @@
         <h2>
             %= link_to $group->{name} => url_for('parent_group_overview', groupid => $group->{id})
         </h2>
-        %= include 'main/group_builds', build_results => $build_results, group => $group, max_jobs => $max_jobs, children => $groupresults->{children}, default_expanded => 0
+        %= include 'main/group_builds', build_results => $build_results, group => $group, max_jobs => $max_jobs, children => $groupresults->{children}, default_expanded => $default_expanded
     % } else {
         <h2>
             %= link_to $group->{name} => url_for('group_overview', groupid => $group->{id})
@@ -44,8 +44,20 @@
     <div class="panel-body">
         <form action="#" method="get" id="filter-form">
             <div class="form-group">
-                <strong>Group</strong>
+                <strong>
+                    Groups
+                    <%= help_popover('Help for <i>group filter</i>' => '
+                        <p>Filters groups by its name. Use of regular expressions is supported.</p>
+                        <p>Note that for the purpose of filtering, the name of a nested group is combined with the name of its parent. This is done in the same way as on the group overview, eg.: <pre>SLE 15 / Functional</pre>
+                        So nested groups can be matched unambiguously.</p>')
+                    %>
+                </strong>
                 <input type="text" class="form-control" name="group" placeholder="all" id="filter-group">
+                <input value="1" name="default_expanded" type="checkbox" id="filter-default-expanded">
+                <label for="filter-default-expanded">Nested groups by default expanded</label>
+                <%= help_popover('Help for <i>default expanded</i>' => '
+                    <p>This option allows to show nested groups directly when loading the page.</p>')
+                %>
             </div>
             <div class="form-group form-inline">
                 <strong>Limit builds</strong>

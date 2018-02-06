@@ -49,19 +49,22 @@ sub index {
     my $time_limit_days = $self->param('time_limit_days');
     $time_limit_days = 14 unless looks_like_number($time_limit_days);
     $self->app->log->debug("Retrieving results for up to $limit_builds builds up to $time_limit_days days old");
-    my $only_tagged  = $self->param('only_tagged') // 0;
-    my $show_tags    = $self->param('show_tags') // $only_tagged;
-    my $group_params = $self->every_param('group');
+    my $only_tagged      = $self->param('only_tagged') // 0;
+    my $default_expanded = $self->param('default_expanded') // 0;
+    my $show_tags        = $self->param('show_tags') // $only_tagged;
+    my $group_params     = $self->every_param('group');
     my @results;
     my $groups = $self->stash('job_groups_and_parents');
 
     for my $group (@$groups) {
         if (@$group_params) {
-            next unless grep { $_ eq '' || $group->name =~ /$_/ } @$group_params;
+            next unless grep { $_ eq '' || $group->matches_nested($_) } @$group_params;
         }
         my $tags = $show_tags || $only_tagged ? $group->tags : undef;
-        my $build_results = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
-            $only_tagged ? $tags : undef);
+        my $build_results
+          = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
+            $only_tagged ? $tags : undef,
+            $group_params);
 
         my $build_results_for_group = $build_results->{build_results};
         if ($show_tags) {
@@ -69,9 +72,10 @@ sub index {
         }
         push(@results, $build_results) if @{$build_results_for_group};
     }
-    $self->stash('limit_builds',    $limit_builds);
-    $self->stash('time_limit_days', $time_limit_days);
-    $self->stash('results',         \@results);
+    $self->stash('limit_builds',     $limit_builds);
+    $self->stash('time_limit_days',  $time_limit_days);
+    $self->stash('default_expanded', $default_expanded);
+    $self->stash('results',          \@results);
     $self->respond_to(
         json => {json     => {results => \@results}},
         html => {template => 'main/index'});
@@ -136,8 +140,10 @@ sub group_overview {
     }
     $tags = $group->tags;
 
-    my $cbr = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
-        $only_tagged ? $tags : undef);
+    my $cbr = OpenQA::BuildResults::compute_build_results(
+        $group, $limit_builds, $time_limit_days,
+        $only_tagged ? $tags : undef,
+        $self->every_param('group'));
     my $build_results = $cbr->{build_results};
     my $max_jobs      = $cbr->{max_jobs};
     $self->stash(children => $cbr->{children});
