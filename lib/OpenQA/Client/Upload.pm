@@ -45,17 +45,17 @@ sub asset {
     my $pieces     = OpenQA::File->new(file => Mojo::File->new($opts->{file}))->split($chunk_size);
     $self->emit('upload_chunk.prepare' => $pieces);
 
-    my $failed;
+    $self->once('upload_chunk.error' =>
+          sub { $self->_upload_asset_fail($uri => {filename => $file_name, scope => $opts->{asset}}) });
 
     for ($pieces->each) {
-        last if $failed;
         $self->emit('upload_chunk.start' => $_);
         $_->prepare();
 
         my $trial = $self->max_retrials;
         my $res;
         my $done = 0;
-
+        my $e;
         do {
             my $file_opts = {
                 file  => {filename => $file_name, file => Mojo::Asset::Memory->new->add_chunk($_->serialize)},
@@ -67,15 +67,19 @@ sub asset {
             $done = 1 if $res && $res->res->json && $res->res->json->{status} && $res->res->json->{status} eq 'ok';
             $trial = 0 if (!$res->res->is_server_error && $res->error);
             $trial-- if $trial > 0;
-            die Mojo::Exception->new($res->res) if $trial == 0 && $done == 0;
+            $self->emit('upload_chunk.fail' => $res => $_) if $done == 0;
+            $e = Mojo::Exception->new($res->res->json) if $trial == 0 && $done == 0;
         } until ($trial == 0 || $done);
 
-        $failed++ if $trial == 0 && $done == 0;
+        if ($trial == 0 && $done == 0) {
+            $self->emit('upload_chunk.error' => $e);
+            #die $e;
+            last;
+        }
+
         $self->emit('upload_chunk.finish' => $_);
         $_->content(\undef);
     }
-
-    $self->_upload_asset_fail($uri => {filename => $file_name, scope => $opts->{asset}}) if $failed;
 
     return;
 }
