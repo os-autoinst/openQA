@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2018 SUSE Linux Products GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 
 package OpenQA::WebAPI::Controller::Admin::Asset;
 use Mojo::Base 'Mojolicious::Controller';
-use List::Util qw(sum);
+use List::Util 'sum';
 
 sub index {
     my $self = shift;
