@@ -57,8 +57,8 @@ sub get {
     }
 
     if (defined $args{id} && $args{id} !~ /^\d+$/) {
-         $self->render(json => {}, status => 404);
-         return;
+        $self->render(json => {}, status => 404);
+        return;
     }
 
     my $rs = $schema->resultset("Assets")->search(\%args);
