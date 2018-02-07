@@ -47,15 +47,17 @@ sub asset {
 
     $self->once('upload_chunk.error' =>
           sub { $self->_upload_asset_fail($uri => {filename => $file_name, scope => $opts->{asset}}) });
+    my $failed;
+    my $e;
 
     for ($pieces->each) {
+        last if $failed;
         $self->emit('upload_chunk.start' => $_);
         $_->prepare();
 
         my $trial = $self->max_retrials;
         my $res;
         my $done = 0;
-        my $e;
         do {
             my $file_opts = {
                 file  => {filename => $file_name, file => Mojo::Asset::Memory->new->add_chunk($_->serialize)},
@@ -68,18 +70,17 @@ sub asset {
             $trial = 0 if (!$res->res->is_server_error && $res->error);
             $trial-- if $trial > 0;
             $self->emit('upload_chunk.fail' => $res => $_) if $done == 0;
-            $e = Mojo::Exception->new($res->res->json) if $trial == 0 && $done == 0;
+            $e = $res->res if $trial == 0 && $done == 0;
         } until ($trial == 0 || $done);
 
-        if ($trial == 0 && $done == 0) {
-            $self->emit('upload_chunk.error' => $e);
-            #die $e;
-            last;
-        }
+        $failed++ if $trial == 0 && $done == 0;
+
+        $_->content(\undef);
 
         $self->emit('upload_chunk.finish' => $_);
-        $_->content(\undef);
     }
+
+    $self->emit('upload_chunk.error' => $e) if $failed;
 
     return;
 }

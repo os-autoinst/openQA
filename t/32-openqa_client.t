@@ -23,6 +23,7 @@ use OpenQA::Client;
 use Test::Mojo;
 use OpenQA::WebAPI;
 use Mojo::File qw(tempfile tempdir path);
+use OpenQA::Client;
 
 use OpenQA::Test::Case;
 
@@ -46,9 +47,7 @@ my $base_url = $t->ua->server->url->to_string;
 $t->app->schema->resultset('Jobs')->find(99963)->update({state              => 'running'});
 $t->app->schema->resultset('Jobs')->find(99963)->update({assigned_worker_id => 2});
 
-subtest 'OpenQA::Client' => sub {
-    use OpenQA::Client;
-
+subtest 'upload public assets' => sub {
     use File::Temp;
     my ($fh, $filename) = File::Temp::tempfile(UNLINK => 1);
     seek($fh, 20 * 1024 * 1024, 0);    # create 200MB quick
@@ -85,5 +84,187 @@ subtest 'OpenQA::Client' => sub {
 
 };
 
+
+subtest 'upload private assets' => sub {
+
+    use File::Temp;
+    my ($fh, $filename) = File::Temp::tempfile(UNLINK => 1);
+    syswrite($fh, "B");
+    seek($fh, 20 * 1024 * 1024, 0);    # create 200MB quick
+    syswrite($fh, "A");
+    close($fh);
+    my $sum = OpenQA::File::_file_digest($filename);
+
+    my $client = OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')
+      ->ioloop(Mojo::IOLoop->singleton);
+    $client->base_url($base_url);
+
+    my $app = $t->app;
+    $t->ua($client);
+
+    $t->app($app);
+
+    my $chunkdir = 't/data/openqa/share/factory/tmp/private/00099963-hdd_image3.qcow2.CHUNKS/';
+    my $rp       = "t/data/openqa/share/factory/hdd/00099963-hdd_image3.qcow2";
+
+    local $@;
+    eval { $t->ua->upload->asset(99963 => {file => $filename, name => 'hdd_image3.qcow2', asset => 'private'}); };
+
+    ok !$@, 'No upload errors' or die explain $@;
+
+    ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
+
+    ok(-e $rp, 'Asset exists after upload');
+
+    is $sum, OpenQA::File::_file_digest($rp), 'cksum match!';
+    my $ret = $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image3.qcow2')->status_is(200);
+    is($ret->tx->res->json->{name}, '00099963-hdd_image3.qcow2');
+
+};
+
+
+subtest 'upload other assets' => sub {
+
+    use File::Temp;
+    my ($fh, $filename) = File::Temp::tempfile(UNLINK => 1);
+    syswrite($fh, "F");
+    seek($fh, 20 * 1024 * 1024, 0);    # create 200MB quick
+    syswrite($fh, "V");
+    close($fh);
+    my $sum = OpenQA::File::_file_digest($filename);
+
+    my $client = OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')
+      ->ioloop(Mojo::IOLoop->singleton);
+    $client->base_url($base_url);
+
+    my $app = $t->app;
+    $t->ua($client);
+
+    $t->app($app);
+
+    my $chunkdir = 't/data/openqa/share/factory/tmp/other/00099963-hdd_image3.xml.CHUNKS/';
+    my $rp       = "t/data/openqa/share/factory/other/00099963-hdd_image3.xml";
+
+    $t->ua->upload->once(
+        'upload_chunk.response' => sub {
+            ok(-d $chunkdir, 'Chunk directory exists');
+        });
+
+    local $@;
+    eval { $t->ua->upload->asset(99963 => {file => $filename, name => 'hdd_image3.xml', asset => 'other'}); };
+
+    ok !$@, 'No upload errors' or die explain $@;
+
+    ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
+
+    ok(-e $rp, 'Asset exists after upload');
+
+    is $sum, OpenQA::File::_file_digest($rp), 'cksum match!';
+    my $ret = $t->get_ok('/api/v1/assets/other/00099963-hdd_image3.xml')->status_is(200);
+    is($ret->tx->res->json->{name}, '00099963-hdd_image3.xml');
+
+};
+
+subtest 'upload retrials' => sub {
+
+    use File::Temp;
+    my ($fh, $filename) = File::Temp::tempfile(UNLINK => 1);
+    syswrite($fh, "B");
+    seek($fh, 20 * 1024 * 1024, 0);    # create 200MB quick
+    syswrite($fh, "V");
+    close($fh);
+    my $sum = OpenQA::File::_file_digest($filename);
+
+    my $client = OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')
+      ->ioloop(Mojo::IOLoop->singleton);
+    $client->base_url($base_url);
+
+    my $app = $t->app;
+    $t->ua($client);
+
+    $t->app($app);
+
+    my $chunkdir = 't/data/openqa/share/factory/tmp/other/00099963-hdd_image4.xml.CHUNKS/';
+    my $rp       = "t/data/openqa/share/factory/other/00099963-hdd_image4.xml";
+
+    # Sabotage!
+    my $fired;
+    my $fail_chunk;
+    $t->ua->upload->once(
+        'upload_chunk.response' => sub { my ($self, $response) = @_; delete $response->res->json->{status}; $fired++; }
+    );
+    $t->ua->upload->on('upload_chunk.fail' => sub { $fail_chunk++ });
+
+    local $@;
+    eval { $t->ua->upload->asset(99963 => {file => $filename, name => 'hdd_image4.xml', asset => 'other'}); };
+
+    is $fail_chunk, 1, 'One chunk failed uploading, but we recovered';
+
+    ok !$@, 'No upload errors';
+
+
+    ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
+
+    ok(-e $rp, 'Asset exists after upload');
+
+    is $sum, OpenQA::File::_file_digest($rp), 'cksum match!';
+    my $ret = $t->get_ok('/api/v1/assets/other/00099963-hdd_image4.xml')->status_is(200);
+    is($ret->tx->res->json->{name}, '00099963-hdd_image4.xml');
+
+};
+
+
+subtest 'upload failures' => sub {
+
+    use File::Temp;
+    my ($fh, $filename) = File::Temp::tempfile(UNLINK => 1);
+    syswrite($fh, "B");
+    seek($fh, 20 * 1024 * 1024, 0);    # create 200MB quick
+    syswrite($fh, "V");
+    close($fh);
+    my $sum = OpenQA::File::_file_digest($filename);
+
+    my $client = OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')
+      ->ioloop(Mojo::IOLoop->singleton);
+    $client->base_url($base_url);
+
+    my $app = $t->app;
+    $t->ua($client);
+
+    $t->app($app);
+
+    my $chunkdir = 't/data/openqa/share/factory/tmp/other/00099963-hdd_image5.xml.CHUNKS/';
+    my $rp       = "t/data/openqa/share/factory/other/00099963-hdd_image5.xml";
+
+    # Moar Sabotage!
+    my $fired;
+    my $fail_chunk;
+    my $errored;
+    $t->ua->upload->on('upload_chunk.response' =>
+          sub { my ($self, $response) = @_; $response->res->json->{status} = 'foobar'; $fired++; });
+    $t->ua->upload->on('upload_chunk.fail' => sub { $fail_chunk++ });
+    $t->ua->upload->on(
+        'upload_chunk.error' => sub {
+            $errored++;
+            is(pop()->json->{status}, 'foobar', 'Error message status is correct');
+        });
+
+    local $@;
+    eval { $t->ua->upload->asset(99963 => {file => $filename, name => 'hdd_image5.xml', asset => 'other'}); };
+
+    is $fail_chunk, 5, 'All chunk failed, but we did not recovered :(';
+
+    is $errored, 1, 'Upload errors';
+
+    ok !$@, 'No function errors';
+
+    ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
+
+    ok(!-e $rp, 'Asset does not exists after upload');
+
+    my $ret = $t->get_ok('/api/v1/assets/other/00099963-hdd_image5.xml')->status_is(404);
+};
+
 done_testing();
+
 1;
