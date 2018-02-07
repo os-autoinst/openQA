@@ -197,39 +197,40 @@ sub _multichunk_upload {
     my $file       = $form->{file}->{file};
     my $is_asset   = $form->{asset};
     my $chunk_size = $worker_settings->{UPLOAD_CHUNK_SIZE} // 1000000;
+    my $client     = $hosts->{$current_host}{ua};
+    my $e;
 
     log_info("$filename multi-chunk upload", channels => ['worker'], default => 1);
 
-    $hosts->{$current_host}{ua}->upload->once(
+    $client->upload->once(
         'upload_chunk.prepare' => sub {
             my ($self, $pieces) = @_;
             log_info("$filename: " . $pieces->size() . " chunks",   channels => ['worker'], default => 1);
             log_info("$filename: chunks of $chunk_size bytes each", channels => ['worker'], default => 1);
         });
     my $t_start;
-    $hosts->{$current_host}{ua}->upload->on('upload_chunk.start' => sub { $t_start = time() });
-    $hosts->{$current_host}{ua}->upload->on(
+    $client->upload->on('upload_chunk.start' => sub { $t_start = time() });
+    $client->upload->on(
         'upload_chunk.finish' => sub {
             my ($self, $piece) = @_;
             my $spent  = (time() - $t_start) || 1;
             my $kbytes = ($piece->end - $piece->start) / 1024;
             my $speed  = sprintf("%.3f", $kbytes / $spent);
             log_info(
-                "$filename: Uploaded chunk " . $piece->index() . "/" . $piece->total . " avg speed ~${speed}KB/s",
+                "$filename: Processing chunk " . $piece->index() . "/" . $piece->total . " avg speed ~${speed}KB/s",
                 channels => ['worker'],
                 default  => 1
             );
         });
 
-    $hosts->{$current_host}{ua}->upload->on(
+    $client->upload->on(
         'upload_chunk.response' => sub {
             my ($self, $res) = @_;
             if ($res->res->is_server_error) {
                 log_error($res->res->json->{error}, channels => ['autoinst', 'worker'], default => 1)
                   if $res->res->json && $res->res->json->{error};
-                my $msg = "All upload attempts have failed for $filename";
+                my $msg = "Failed uploading chunk";
                 log_error($msg, channels => ['autoinst', 'worker'], default => 1);
-                return;
             }
 
             if (my $err = $res->error) {
@@ -241,13 +242,27 @@ sub _multichunk_upload {
                     $msg = sprintf "ERROR %s: Connection error: $err->{message}\n", $filename;
                 }
                 log_error($msg, channels => ['autoinst', 'worker'], default => 1);
-                return 0;
             }
+        });
+    $client->upload->on(
+        'upload_chunk.fail' => sub {
+            my ($self, $res, $chunk) = @_;
+            log_error(
+                "Upload failed for chunk " . $chunk->index . ": " . $e->body,
+                channels => ['autoinst', 'worker'],
+                default  => 1
+            );
+        });
+
+    $client->upload->once(
+        'upload_chunk.error' => sub {
+            $e = pop();
+            log_error($e->body, channels => ['autoinst', 'worker'], default => 1);
         });
 
     local $@;
     eval {
-        $hosts->{$current_host}{ua}->upload->asset(
+        $client->upload->asset(
             $job_id => {
                 file       => $file,
                 name       => $filename,
@@ -256,12 +271,14 @@ sub _multichunk_upload {
             });
     };
 
-    $hosts->{$current_host}{ua}->upload->unsubscribe('upload_chunk.response');
-    $hosts->{$current_host}{ua}->upload->unsubscribe('upload_chunk.start');
-    $hosts->{$current_host}{ua}->upload->unsubscribe('upload_chunk.finish');
-    $hosts->{$current_host}{ua}->upload->unsubscribe('upload_chunk.prepare');
+    $client->upload->unsubscribe('upload_chunk.response');
+    $client->upload->unsubscribe('upload_chunk.start');
+    $client->upload->unsubscribe('upload_chunk.finish');
+    $client->upload->unsubscribe('upload_chunk.prepare');
+    $client->upload->unsubscribe('upload_chunk.error');
+    $client->upload->unsubscribe('upload_chunk.fail');
 
-    return 0 if $@;
+    return 0 if $@ || $e;
     return 1;
 }
 
