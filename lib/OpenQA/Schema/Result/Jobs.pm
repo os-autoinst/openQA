@@ -1328,6 +1328,7 @@ sub create_asset {
     # XXX : Moving this to subprocess/promises won't help much
     # As calculating sha256 over >2GB file is pretty expensive
     # IF we are receiving simultaneously uploads
+    my $last = 0;
 
     local $@;
     eval {
@@ -1345,33 +1346,33 @@ sub create_asset {
             # XXX: Watch out also apparmor permissions
             my $sum;
             my $real_sum;
+            $last++;
 
             # Perform weak check on last bytes if files > 250MB
-            # if ($chunk->end > 250000000) {
-            $sum      = $chunk->end;
-            $real_sum = -s $temp_final_file->to_string;
-            # }
-            # else {
-            #     $sum      = $chunk->total_cksum;
-            #     $real_sum = $chunk->_file_digest($temp_final_file->to_string);
-            #
+            if ($chunk->end > 250000000) {
+                $sum      = $chunk->end;
+                $real_sum = -s $temp_final_file->to_string;
+            }
+            else {
+                $sum      = $chunk->total_cksum;
+                $real_sum = $chunk->_file_digest($temp_final_file->to_string);
+            }
 
             $temp_chunk_folder->remove_tree
               && die Mojo::Exception->new("Checksum mismatch expected $sum got: $real_sum ( weak check on last bytes )")
               unless $sum eq $real_sum;
 
             $temp_final_file->move_to($final_file);
-            $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type}, created_by => 1});
 
             chmod 0644, $final_file;
 
-            $temp_chunk_folder->remove_tree if ($chunk->is_last);
+            $temp_chunk_folder->remove_tree;
         }
         $chunk->content(\undef);
     };
     # $temp_chunk_folder->remove_tree if $@; # XXX: Don't! as worker will try again to upload.
     return $@ if $@;
-    return 0;
+    return 0, $fname, $type, $last;
 }
 
 sub has_failed_modules {

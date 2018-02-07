@@ -276,6 +276,8 @@ ok(!-d $chunkdir, 'Chunk directory does not exists - upload failed');
 $t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(404);
 $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(404);
 
+$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
+
 # Simulate an error - only the last chunk will be cksummed with an offending content
 # That will fail during total cksum calculation
 $pieces->each(

@@ -450,11 +450,28 @@ sub create_artefact {
         return $self->render(text => "FAILED");
     }
     elsif ($self->param('asset')) {
-        my $e = $job->create_asset($self->param('file'), $self->param('asset'));
-        # Even if most probably it is an error on client side, we return 500
-        # So worker can keep retrying if it was caused by network failures
-        return $self->render(json => {error => 'Failed receiving chunk: ' . $e}, status => 500) if $e;
-        return $self->render(json => {status => 'ok'});
+        $self->render_later;    # XXX: Not really needed, but in case of upstream changes
+        return Mojo::IOLoop->subprocess(
+            sub {
+                my ($e, $fname, $type, $last) = $job->create_asset($self->param('file'), $self->param('asset'));
+                die "$e" if $e;
+                return $fname, $type, $last;
+            },
+            sub {
+                my ($subprocess, $e, @results) = @_;
+                # Even if most probably it is an error on client side, we return 500
+                # So worker can keep retrying if it was caused by network failures
+                $self->app->log->debug($e) if $e;
+
+                $self->render(json => {error => 'Failed receiving chunk: ' . $e}, status => 500) and return if $e;
+                my $fname = $results[0];
+                my $type  = $results[1];
+                my $last  = $results[2];
+
+                $job->jobs_assets->create({job => $job, asset => {name => $fname, type => $type}, created_by => 1})
+                  if $last && !$e;
+                return $self->render(json => {status => 'ok'});
+            });
     }
     if ($job->create_artefact($self->param('file'), $self->param('ulog'))) {
         $self->render(text => "OK");
