@@ -56,6 +56,11 @@ sub get {
         $args{$arg} = $self->stash($arg) if defined $self->stash($arg);
     }
 
+    if (defined $args{id} && $args{id} !~ /^\d+$/) {
+         $self->render(json => {}, status => 404);
+         return;
+    }
+
     my $rs = $schema->resultset("Assets")->search(\%args);
     $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
 
@@ -79,6 +84,10 @@ sub delete {
     my %attrs;
 
     if (defined $args{id}) {
+        if ($args{id} !~ /^\d+$/) {
+            $self->render(json => {}, status => 404);
+            return;
+        }
         $cond{id} = $args{id};
     }
     elsif (defined $args{type} && defined $args{name}) {

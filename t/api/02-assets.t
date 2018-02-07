@@ -180,6 +180,10 @@ $ret = $t->post_ok('/api/v1/assets', form => {type => 'foo', name => $iso1})->st
 # try to register non existing asset
 $ret = $t->post_ok('/api/v1/assets', form => {type => 'iso', name => 'foo.iso'})->status_is(400);
 
+# check/delete asset by invalid id that should give 404 rather than 500
+$ret = $t->get_ok('/api/v1/assets/iso')->status_is(404);
+$ret = $t->delete_ok('/api/v1/assets/iso')->status_is(404);
+
 # switch to operator (percival) and try some modifications
 $app = $t->app;
 $t->ua(
