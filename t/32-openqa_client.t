@@ -190,11 +190,12 @@ subtest 'upload retrials' => sub {
     # Sabotage!
     my $fired;
     my $fail_chunk;
+    my $responses;
     $t->ua->upload->once(
         'upload_chunk.response' => sub { my ($self, $response) = @_; delete $response->res->json->{status}; $fired++; }
     );
-    $t->ua->upload->on('upload_chunk.fail' => sub { $fail_chunk++ });
-
+    $t->ua->upload->on('upload_chunk.fail'     => sub { $fail_chunk++ });
+    $t->ua->upload->on('upload_chunk.response' => sub { $responses++; });
     local $@;
     eval { $t->ua->upload->asset(99963 => {file => $filename, name => 'hdd_image4.xml', asset => 'other'}); };
 
@@ -202,7 +203,7 @@ subtest 'upload retrials' => sub {
 
     ok !$@, 'No upload errors';
 
-
+    is $responses, OpenQA::File::_chunk_size(-s $filename, 1000000) + 1;
     ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
 
     ok(-e $rp, 'Asset exists after upload');
