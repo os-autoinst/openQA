@@ -44,6 +44,8 @@ my $ws = OpenQA::WebSockets->new;
 my $sh = OpenQA::Scheduler->new;
 my $ra = OpenQA::ResourceAllocator->new;
 
+Mojo::IOLoop->singleton->on('chunk_upload.end' => sub { Devel::Cover::report() if Devel::Cover->can('report'); });
+
 sub calculate_file_md5($) {
     my ($file) = @_;
     my $c      = path($file)->slurp;

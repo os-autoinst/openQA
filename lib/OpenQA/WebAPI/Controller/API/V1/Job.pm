@@ -451,9 +451,14 @@ sub create_artefact {
     }
     elsif ($self->param('asset')) {
         $self->render_later;    # XXX: Not really needed, but in case of upstream changes
+        my @ioloop_evs = qw(events);
+        my @evs        = @{Mojo::IOLoop->singleton}{@ioloop_evs};
         return Mojo::IOLoop->subprocess(
             sub {
+                @{Mojo::IOLoop->singleton}{@ioloop_evs} = @evs;
+                Mojo::IOLoop->singleton->emit('chunk_upload.start' => $self);
                 my ($e, $fname, $type, $last) = $job->create_asset($self->param('file'), $self->param('asset'));
+                Mojo::IOLoop->singleton->emit('chunk_upload.end' => ($self, $e, $fname, $type, $last));
                 die "$e" if $e;
                 return $fname, $type, $last;
             },

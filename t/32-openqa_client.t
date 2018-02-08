@@ -36,6 +36,11 @@ $ENV{MOJO_MAX_MESSAGE_SIZE} = 207741824;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
+Mojo::IOLoop->singleton->on(
+    'chunk_upload.end' => sub {
+        Devel::Cover::report() if Devel::Cover->can('report');
+    });
+
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
 my $app = $t->app;
@@ -43,6 +48,7 @@ $t->ua(
     OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 my $base_url = $t->ua->server->url->to_string;
+
 
 $t->app->schema->resultset('Jobs')->find(99963)->update({state              => 'running'});
 $t->app->schema->resultset('Jobs')->find(99963)->update({assigned_worker_id => 2});
