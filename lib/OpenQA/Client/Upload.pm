@@ -32,13 +32,11 @@ sub _upload_asset_fail {
 
 sub asset {
     my ($self, $job_id, $opts) = @_;
-    croak 'You need to specify a base_url'                           unless $self->client->base_url;
-    $self->client->base_url(Mojo::URL->new($self->client->base_url)) unless ref $self->client->base_url eq 'Mojo::URL';
-    croak 'Options must be a HASH ref'                               unless ref $opts eq 'HASH';
-    croak 'Need a file to upload in the options!'                    unless $opts->{file};
+    croak 'You need to specify a base_url'        unless $self->client->base_url;
+    croak 'Options must be a HASH ref'            unless ref $opts eq 'HASH';
+    croak 'Need a file to upload in the options!' unless $opts->{file};
 
-    my $is_api_url = $self->client->base_url->path->parts->[0];
-    my $uri = ($is_api_url && $is_api_url eq 'api') ? "jobs/$job_id" : $self->api_path . "jobs/$job_id";
+    my $uri = "jobs/$job_id";
     $opts->{asset} //= 'public';
     my $file_name  = (!$opts->{name}) ? path($opts->{file})->basename : $opts->{name};
     my $chunk_size = $opts->{chunk_size} // 1000000;
@@ -59,12 +57,12 @@ sub asset {
         my $res;
         my $done = 0;
         do {
-            my $file_opts = {
-                file  => {filename => $file_name, file => Mojo::Asset::Memory->new->add_chunk($_->serialize)},
-                asset => $opts->{asset}};
-            my $post = $self->_build_post("$uri/artefact" => $file_opts);
-
-            $res = $self->client->start($post);
+            $res = $self->client->start(
+                $self->_build_post(
+                    "$uri/artefact" => {
+                        file => {filename => $file_name, file => Mojo::Asset::Memory->new->add_chunk($_->serialize)},
+                        asset => $opts->{asset},
+                    }));
             $self->emit('upload_chunk.response' => $res);
             $done = 1 if $res && $res->res->json && $res->res->json->{status} && $res->res->json->{status} eq 'ok';
             $trial = 0 if (!$res->res->is_server_error && $res->error);
