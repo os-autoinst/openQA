@@ -35,6 +35,7 @@ use File::Which 'which';
 use Mojo::File 'path';
 use Mojo::IOLoop;
 use OpenQA::File;
+use Mojo::IOLoop::ReadWriteProcess;
 
 use POSIX ':sys_wait_h';
 
@@ -62,33 +63,9 @@ our $do_livelog;
 sub _kill_worker($) {
     my ($worker) = @_;
 
-    return unless $worker->{pid};
+    return unless $worker->is_running;
 
-    if (kill('TERM', $worker->{pid})) {
-        warn "killed $worker->{pid}\n";
-        my $deadline = time + 40;
-        # don't leave here before the worker is dead
-        while ($worker) {
-            my $pid = waitpid($worker->{pid}, WNOHANG);
-            if ($pid == -1) {
-                warn "waitpid returned error: $!\n";
-            }
-            elsif ($pid == 0) {
-                sleep(.5);
-                if (time > $deadline) {
-                    # if still running after the deadline, try harder
-                    # to kill the worker
-                    kill('KILL', -$worker->{pid});
-                    # now loop again
-                    $deadline = time + 20;
-                }
-            }
-            else {
-                last;
-            }
-        }
-    }
-    $worker = undef;
+    $worker->stop;
 }
 
 # method prototypes
@@ -551,7 +528,7 @@ sub start_job {
     ($ENV{OPENQA_HOSTNAME}) = $host =~ m|([^/]+:?\d*)/?$|;
 
     $worker = engine_workit($job);
-    if ($worker->{error}) {
+    if ($worker->errored || !$worker->is_running) {
         log_warning('job is missing files, releasing job', channels => ['worker', 'autoinst'], default => 1);
         return stop_job("setup failure: $worker->{error}");
     }
@@ -906,14 +883,21 @@ sub read_result_file($$) {
 }
 
 sub backend_running {
-    return $worker;
+    return $worker->is_running;
 }
 
 sub check_backend {
     log_debug("checking backend state");
-    my $res = engine_check;
-    if ($res && $res ne 'ok') {
-        stop_job($res);
+    unless ($worker->is_running()) {
+        if ($worker->errored) {
+            stop_job('died');
+        }
+        else {
+            stop_job('done');
+        }
+    }
+    else {
+        log_debug("backend is running!");
     }
 }
 
