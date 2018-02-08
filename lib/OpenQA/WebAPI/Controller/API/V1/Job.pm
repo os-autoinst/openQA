@@ -22,6 +22,34 @@ use OpenQA::Utils 'find_job';
 use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
 
+=pod
+
+=head1 NAME
+
+OpenQA::WebAPI::Controller::API::V1::Job
+
+=head1 SYNOPSIS
+
+  use OpenQA::WebAPI::Controller::API::V1::Job;
+
+=head1 DESCRIPTION
+
+Implements API methods to access jobs.
+
+=cut
+
+=over 4
+
+=item list()
+
+List jobs in the system, including related information for each job such as the assets
+associated, assigned worker id, children and parents, job id, group id, name, priority,
+result, settings, state and times of startup and finish of the job.
+
+=back
+
+=cut
+
 sub list {
     my $self = shift;
 
@@ -109,6 +137,17 @@ sub list {
     $self->render(json => {jobs => \@results});
 }
 
+=over 4
+
+=item create()
+
+Creates a job given a list of settings passed as parameters. TEST setting/parameter
+is mandatory and should be the name of the test.
+
+=back
+
+=cut
+
 sub create {
     my $self   = shift;
     my $params = $self->req->params->to_hash;
@@ -146,6 +185,18 @@ sub create {
     $self->render(json => $json, status => $status);
 }
 
+=over 4
+
+=item show()
+
+Shows details for a specific job, such as the assets associated, assigned worker id,
+children and parents, job id, group id, name, priority, result, settings, state and times
+of startup and finish of the job.
+
+=back
+
+=cut
+
 sub show {
     my $self    = shift;
     my $job_id  = int($self->stash('jobid'));
@@ -158,6 +209,16 @@ sub show {
         $self->reply->not_found;
     }
 }
+
+=over 4
+
+=item set_command()
+
+Sets a job as waiting or running.
+
+=back
+
+=cut
 
 # set_waiting and set_running
 sub set_command {
@@ -172,6 +233,16 @@ sub set_command {
     $self->render(json => {result => \$res});
 }
 
+=over 4
+
+=item destroy()
+
+Deletes a job from the system.
+
+=back
+
+=cut
+
 sub destroy {
     my $self = shift;
 
@@ -180,6 +251,16 @@ sub destroy {
     $job->delete;
     $self->render(json => {result => 1});
 }
+
+=over 4
+
+=item prio()
+
+Sets priority for a given job.
+
+=back
+
+=cut
 
 sub prio {
     my ($self) = @_;
@@ -190,7 +271,16 @@ sub prio {
     $self->render(json => {result => \$res});
 }
 
-# replaced in favor of done
+=over 4
+
+=item result()
+
+Updates result of a job in the system. Replaced in favor of done.
+
+=back
+
+=cut
+
 sub result {
     my ($self) = @_;
     my $job    = find_job($self, $self->stash('jobid')) or return;
@@ -202,6 +292,18 @@ sub result {
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
+
+=over 4
+
+=item update_status()
+
+Updates status of a job. Requires a new status, the id of the job and of the
+worker assigned to the job. In order to update the status, the submitted worker
+id must match the id of the worker assigned to the job identified by the job id.
+
+=back
+
+=cut
 
 # this is the general worker update call
 sub update_status {
@@ -250,6 +352,17 @@ sub update_status {
     $self->render(json => $ret);
 }
 
+=over 4
+
+=item update()
+
+Updates the settings of a job with information specified in a passed JSON argument.
+Columns group_id, priority and retry_avbl cannot be set.
+
+=back
+
+=cut
+
 sub update {
     my ($self) = @_;
 
@@ -296,7 +409,16 @@ sub update {
     $self->render(json => {job_id => $job->id});
 }
 
-# used by the worker to upload files to the test
+=over 4
+
+=item create_artefact()
+
+Used by the worker to upload files to the test.
+
+=back
+
+=cut
+
 sub create_artefact {
     my ($self) = @_;
 
@@ -338,6 +460,18 @@ sub create_artefact {
     }
 }
 
+=over 4
+
+=item ack_temporary()
+
+Verifies existence of a temporary file passed as the param "temporary" to the method,
+and logs a message if the file is present. Also renames the temporary file to its
+corresponding asset name if possible.
+
+=back
+
+=cut
+
 sub ack_temporary {
     my ($self) = @_;
 
@@ -352,6 +486,16 @@ sub ack_temporary {
     }
     $self->render(text => "OK");
 }
+
+=over 4
+
+=item done()
+
+Updates result of a job in the system.
+
+=back
+
+=cut
 
 sub done {
     my ($self) = @_;
@@ -376,7 +520,16 @@ sub done {
     $self->render(json => {result => \$res});
 }
 
-# Used for both apiv1_restart and apiv1_restart_jobs
+=over 4
+
+=item restart()
+
+Restart job or jobs. Used for both apiv1_restart and apiv1_restart_jobs
+
+=back
+
+=cut
+
 sub restart {
     my ($self) = @_;
     my $jobs = $self->param('jobid');
@@ -398,7 +551,16 @@ sub restart {
     $self->render(json => {result => $res, test_url => \@urls});
 }
 
-# Used for both apiv1_cancel and apiv1_cancel_jobs
+=over 4
+
+=item cancel()
+
+Cancel job or jobs. Used for both apiv1_cancel and apiv1_cancel_jobs
+
+=back
+
+=cut
+
 sub cancel {
     my ($self) = @_;
     my $jobid = $self->param('jobid');
@@ -418,6 +580,16 @@ sub cancel {
 
     $self->render(json => {result => $res});
 }
+
+=over 4
+
+=item duplicate()
+
+Creates a new job as a duplicate of an existing one given its job id.
+
+=back
+
+=cut
 
 sub duplicate {
     my ($self) = @_;
@@ -447,6 +619,16 @@ sub duplicate {
         $self->render(json => {});
     }
 }
+
+=over 4
+
+=item whoami()
+
+Returns the job id of the current job.
+
+=back
+
+=cut
 
 sub whoami {
     my ($self) = @_;
