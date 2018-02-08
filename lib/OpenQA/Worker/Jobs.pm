@@ -62,10 +62,8 @@ our $do_livelog;
 ## Job management
 sub _kill_worker($) {
     my ($worker) = @_;
-
-    return unless $worker->is_running;
-
-    $worker->stop;
+    return if !$worker->{child} || !$worker->{child}->is_running;
+    $worker->{child}->stop;
 }
 
 # method prototypes
@@ -450,6 +448,16 @@ sub _stop_job_2 {
             upload_status(1, \&_stop_job_finish);
             $job_done = 1;
         }
+        elsif ($aborted eq 'dead_children') {
+            log_debug('Dead children found. Launching systemd collection');
+
+            api_call(
+                'post', 'jobs/' . $job->{id} . '/set_done',
+                params   => {result => 'incomplete'},
+                callback => 'no'
+            );
+            die "Dead children!";
+        }
     }
     unless ($job_done || $aborted eq 'api-failure') {
         log_debug(sprintf 'job %d incomplete', $job->{id});
@@ -528,10 +536,29 @@ sub start_job {
     ($ENV{OPENQA_HOSTNAME}) = $host =~ m|([^/]+:?\d*)/?$|;
 
     $worker = engine_workit($job);
-    if ($worker->errored || !$worker->is_running) {
+    if ($worker->{error}) {
         log_warning('job is missing files, releasing job', channels => ['worker', 'autoinst'], default => 1);
         return stop_job("setup failure: $worker->{error}");
     }
+    elsif ($worker->{child}->errored() || !$worker->{child}->is_running()) {
+        log_warning('job errored. Releasing job', channels => ['worker', 'autoinst'], default => 1);
+        return stop_job("job run failure");
+    }
+    else {
+        $worker->{child}->on(
+            collect_status => sub {
+                my ($self, $status) = (@_, $?);
+                STDERR->printflush("collect status: $status\n");
+                # TODO: deal when the job was restarted. The process is always killed.
+                # This is only problematic if we die, Otherwise this is just to exterminate
+                # all the family :-)
+                if ($status != 0) {
+                    _stop_job_2('dead_children', $job->{id});
+                }
+            });
+    }
+
+
     my $jobid = $job->{id};
 
     # start updating status - slow updates if livelog is not running
@@ -883,21 +910,19 @@ sub read_result_file($$) {
 }
 
 sub backend_running {
-    return $worker->is_running;
+    return $worker->{child}->is_running;
 }
 
 sub check_backend {
     log_debug("checking backend state");
-    unless ($worker->is_running()) {
-        if ($worker->errored) {
-            stop_job('died');
-        }
-        else {
-            stop_job('done');
-        }
+
+    return log_debug("backend is running") if $worker->{child}->is_running();
+
+    if ($worker->{child}->is_running()) {
+        stop_job('died');
     }
     else {
-        log_debug("backend is running!");
+        stop_job('done');
     }
 }
 

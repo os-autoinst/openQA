@@ -242,20 +242,9 @@ sub engine_workit {
         max_kill_attempts    => 1,
         _default_kill_signal => -POSIX::SIGTERM());
 
-    $child->on(
-        collect_status => sub {
-            my ($self, $status) = (@_, $?);
-            if ($status != 0) {
-                # kill all the processes
-            }
-            # TODO:
-            # stop_job();
-
-        });
-
     $child->start();
     $workerpid = $child->pid();
-    return $child;
+    return {child => $child};
 }
 
 sub locate_local_assets {
