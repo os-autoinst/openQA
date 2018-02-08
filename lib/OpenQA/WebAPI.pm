@@ -304,14 +304,14 @@ sub startup {
     ## JSON API starts here
     ###
     # Array to store new API routes' references, so they can all be checked to get API description from POD
-    my @api_routes = ();
+    my @api_routes        = ();
     my $api_auth_any_user = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth');
     my $api_auth_operator = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_operator');
     my $api_auth_admin    = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_admin');
-    my $api_ru = $api_auth_any_user->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
-    my $api_ro = $api_auth_operator->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
-    my $api_ra = $api_auth_admin->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
-    my $api_public_r = $r->route('/api/v1')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_ru            = $api_auth_any_user->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_ro            = $api_auth_operator->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_ra            = $api_auth_admin->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_public_r      = $r->route('/api/v1')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     push @api_routes, $api_ru, $api_ro, $api_ra, $api_public_r;
     # this is fallback redirect if one does not use apache
     $api_public_r->websocket(

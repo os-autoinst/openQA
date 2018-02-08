@@ -17,7 +17,7 @@ use strict;
 
 use OpenQA::Utils 'log_warning';
 use Mojo::File 'path';
-use Pod::Tree;
+use Pod::POM;
 
 require Exporter;
 our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
@@ -30,8 +30,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 0.01 $ =~ /(\d+)/g;
 
 # Global hash to store method's description
 my %methods_description;
-# Path where openQA is installed
-my $OPENQA_CODEBASE = '/usr/share/openqa';
 
 # Determine the controller modules being used by the API routes and parse the POD from the files.
 # Extract the description of the methods and store them in the global HASH %methods_description
@@ -39,9 +37,12 @@ my $OPENQA_CODEBASE = '/usr/share/openqa';
 
 sub get_pod_from_controllers {
     # Object to get API descriptions from POD
-    my $tree = Pod::Tree->new or die "cannot create object: $!\n";
+    my $parser = Pod::POM->new or die "cannot create object: $!\n";
+    my $tree;
     my %controllers;
-    my $ctrlrpath = path($OPENQA_CODEBASE)->child('lib', 'OpenQA', 'WebAPI', 'Controller', 'API', 'V1');
+    # Path where openQA is installed
+    my $code_base = $ENV{OPENQA_CODEBASE} ? $ENV{OPENQA_CODEBASE} : '/usr/share/openqa';
+    my $ctrlrpath = path($code_base)->child('lib', 'OpenQA', 'WebAPI', 'Controller', 'API', 'V1');
 
     # Review all routes to get controllers, and from there get the .pm filename to parse for POD
     foreach my $api_rt (@_) {
@@ -61,11 +62,16 @@ sub get_pod_from_controllers {
     foreach my $ctrl (keys %controllers) {
         # Only attempt to load files that exist
         next unless (-e -f $ctrlrpath->child($controllers{$ctrl})->to_string);
-        $tree->load_file($ctrlrpath->child($controllers{$ctrl})->to_string);
-        if ($tree->loaded() and $tree->has_pod()) {
-            $tree->get_root->set_filename($ctrl);
-            $tree->walk(\&_itemize);
+        $tree = $parser->parse_file($ctrlrpath->child($controllers{$ctrl})->to_string);
+        unless ($tree) {
+            log_warning("get_pod_from_controllers: could not parse file: ["
+                  . $ctrlrpath->child($controllers{$ctrl})->to_string
+                  . "] for POD. Error: ["
+                  . $tree->error()
+                  . "]");
+            next;
         }
+        _itemize($tree, $ctrl);
     }
 }
 
@@ -93,64 +99,34 @@ sub set_api_desc {
     }
 }
 
-# Support method to ->walk() a POD tree and extract the documentation for each =item
+# Recurse into a Pod::POM object - ie, walk the tree - and extract the =item sections' name
+# and description. Sets its findings into %methods_description
 
 sub _itemize {
-    my ($node) = @_;
-    if (ref($node) ne 'Pod::Tree::Node') {
-        log_warning("_itemize() expected Pod::Tree::Node arg. Got " . ref($node));
+    my $node = shift;
+    if (ref($node) !~ /^Pod::POM::Node/) {
+        log_warning("_itemize() expected Pod::POM::Node::* arg. Got " . ref($node));
         return 0;    # Stop walking the tree
     }
+    my $controller = shift;
     my $methodname = '';
     my $desc       = '';
-    my $controller = $node->get_filename;
-    if ($node->is_item()) {
-        $methodname = _get_pod_text($node);
-        $methodname =~ s/\s+//g;
-        $methodname =~ s/\(\)//;
-        my $siblings = $node->get_siblings();
-        foreach my $i (@$siblings) {
-            unless ($desc) {    # Only take first paragraph for the description
-                $desc = $i->get_text()    if $i->is_text();
-                $desc = _get_pod_text($i) if $i->is_ordinary();
-            }
-        }
-        my $key = $controller . '#' . $methodname;
-        $methods_description{$key} = $desc;
-    }
-    else {
-        return 1;               # Keep walking the tree
-    }
-}
 
-# Extract POD text for children's of item and ordinary nodes
-
-sub _get_pod_text {
-    my $node   = shift;
-    my $retval = '';
-    if (ref($node) ne 'Pod::Tree::Node') {
-        log_warning("_get_pod_text() expected Pod::Tree::Node arg. Got " . ref($node));
-    }
-    else {
-        my $argtype = $node->get_type();
-        unless ($argtype eq 'item' or $argtype eq 'ordinary') {
-            log_warning("_get_pod_test() Pod::Tree::Node arg should be of type item or ordinary. Got [$argtype]");
+    foreach my $s ($node->content()) {
+        my $type = $s->type();
+        if ($type eq 'item') {
+            $methodname = $s->title;
+            $desc       = $s->text;
+            $methodname =~ s/\s+//g;
+            $methodname =~ s/\(\)//;
+            $desc =~ s/[\r\n]/ /g;
+            my $key = $controller . '#' . $methodname;
+            $methods_description{$key} = $desc;
         }
-        my $children = $node->get_children();
-        if (defined $children->[0] and ref($children->[0]) eq 'Pod::Tree::Node') {
-            if ($children->[0]->is_text) {
-                $retval = $children->[0]->get_text();
-                $retval =~ s/[\r\n]/ /g;
-            }
-            if ($children->[0]->is_sequence) {
-                my $seqs = $children->[0]->get_children();
-                if (defined $seqs->[0] and ref($seqs->[0]) eq 'Pod::Tree::Node' and $seqs->[0]->is_text) {
-                    $retval = $seqs->[0]->get_text();
-                }
-            }
+        elsif ($type =~ /^head/ or $type eq 'over') {
+            _itemize($s, $controller);
         }
     }
-    return $retval;
 }
 
 1;

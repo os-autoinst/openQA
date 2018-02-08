@@ -79,7 +79,7 @@ requires 'URI::Heuristic';
 requires 'URI::URL';
 requires 'URI::WithBase';
 requires 'URI::data';
-requires 'Pod::Tree';
+requires 'Pod::POM';
 requires 'base';
 requires 'constant';
 requires 'diagnostics';
