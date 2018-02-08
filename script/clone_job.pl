@@ -235,6 +235,19 @@ sub download_assets {
     }
 }
 
+sub openqa_baseurl {
+    my ($local_url) = @_;
+    my $port = '';
+    if (
+        $local_url->port
+        && (   ($local_url->scheme eq 'http' && $local_url->port != 80)
+            || ($local_url->scheme eq 'https' && $local_url->port != 443)))
+    {
+        $port = ':' . $local_url->port;
+    }
+    return $local_url->scheme . '://' . $local_url->host . $port;
+}
+
 sub clone_job {
     my ($jobid, $clone_map, $depth) = @_;
     $clone_map //= {};
@@ -290,7 +303,7 @@ sub clone_job {
     if ($tx->success) {
         my $r = $tx->success->json->{id};
         if ($r) {
-            my $url = $local_url->scheme . '://' . $local_url->host . '/t' . $r;
+            my $url = openqa_baseurl($local_url) . '/t' . $r;
             print "Created job #$r: $job->{name} -> $url\n";
             $clone_map->{$jobid} = $r;
             return $r;
