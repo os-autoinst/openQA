@@ -35,9 +35,6 @@ my $get = $t->get_ok('/unavailable_page')->status_is(404);
 my $dom = $get->tx->res->dom;
 is_deeply([$dom->find('h1')->map('text')->each], ['Page not found'],   'correct page');
 is_deeply([$dom->find('h2')->map('text')->each], ['Available routes'], 'available routes shown');
-ok(
-    index($get->tx->res->text, 'Post integer value to save feature tour progress of current user in the database') >= 0,
-    'description shown'
-);
+ok(index($get->tx->res->text, 'Each entry contains the') >= 0, 'description shown');
 
 done_testing;
