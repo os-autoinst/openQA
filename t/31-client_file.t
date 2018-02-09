@@ -127,6 +127,16 @@ subtest 'recompose in-place' => sub {
     ok !$chunk->verify_content($copied_file), 'chunk NOT verified';
 };
 
+subtest 'prepare_chunks' => sub {
+    my $original = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
+
+    my $pieces = $original->split(10);
+
+    $pieces->prepare;
+
+    ok $_->cksum, "Checksum present for " . $_->index for $pieces->each;
+};
+
 subtest 'verify_chunks' => sub {
     my $original = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
 
