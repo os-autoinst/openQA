@@ -44,6 +44,8 @@ my $ws = OpenQA::WebSockets->new;
 my $sh = OpenQA::Scheduler->new;
 my $ra = OpenQA::ResourceAllocator->new;
 
+my $chunk_size = 10000000;
+
 Mojo::IOLoop->singleton->on('chunk_upload.end' => sub { Devel::Cover::report() if Devel::Cover->can('report'); });
 
 sub calculate_file_md5($) {
@@ -229,7 +231,7 @@ use Mojo::File 'tempfile';
 my $chunkdir = 't/data/openqa/share/factory/tmp/public/hdd_image.qcow2.CHUNKS/';
 
 path($chunkdir)->remove_tree;
-my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(123062);
+my $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
 
 $pieces->each(
     sub {
@@ -255,7 +257,7 @@ ok(-e $rp, 'Asset exists after upload');
 my $ret = $t->get_ok('/api/v1/assets/hdd/hdd_image.qcow2')->status_is(200);
 is($ret->tx->res->json->{name}, 'hdd_image.qcow2');
 
-$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
+$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
 
 # Test failure - if chunks are broken
 $pieces->each(
@@ -278,7 +280,7 @@ ok(!-d $chunkdir, 'Chunk directory does not exists - upload failed');
 $t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(404);
 $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(404);
 
-$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
+$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
 
 # Simulate an error - only the last chunk will be cksummed with an offending content
 # That will fail during total cksum calculation
@@ -301,7 +303,7 @@ $t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(404);
 $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(404);
 
 
-$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
+$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
 
 my $first_chunk = $pieces->first;
 $first_chunk->prepare;
@@ -324,7 +326,7 @@ ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed') or die;
 $chunkdir = 't/data/openqa/share/factory/tmp/private/00099963-hdd_image.qcow2.CHUNKS/';
 path($chunkdir)->remove_tree;
 
-$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(30000);
+$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
 
 $first_chunk = $pieces->first;
 $first_chunk->prepare;
@@ -350,7 +352,7 @@ ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed') or die;
 
 $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(404);
 
-$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split(9999);
+$pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
 ok(!-d $chunkdir, 'Chunk directory empty');
 my $sum = OpenQA::File::_file_digest($filename);
 is $sum, $pieces->first->total_cksum or die 'Computed cksum is not same';
@@ -381,7 +383,7 @@ $chunkdir = 't/data/openqa/share/factory/tmp/00099963-new_ltp_result_array.json.
 path($chunkdir)->remove_tree;
 
 # Try to send very small-sized data
-$pieces = OpenQA::File->new(file => Mojo::File->new('t/data/new_ltp_result_array.json'))->split();
+$pieces = OpenQA::File->new(file => Mojo::File->new('t/data/new_ltp_result_array.json'))->split($chunk_size);
 
 is $pieces->size(), 1 or die 'Size should be 1!';
 $first_chunk = $pieces->first;

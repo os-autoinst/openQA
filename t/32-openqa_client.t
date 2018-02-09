@@ -30,6 +30,7 @@ use OpenQA::Test::Case;
 require OpenQA::Schema::Result::Jobs;
 
 OpenQA::Test::Case->new->init_data;
+my $chunk_size = 10000000;
 
 # allow up to 200MB - videos mostly
 $ENV{MOJO_MAX_MESSAGE_SIZE} = 207741824;
@@ -74,7 +75,9 @@ subtest 'upload public assets' => sub {
     my $rp       = "t/data/openqa/share/factory/hdd/hdd_image2.qcow2";
 
     local $@;
-    eval { $t->ua->upload->asset(99963 => {file => $filename, name => 'hdd_image2.qcow2',}); };
+    eval {
+        $t->ua->upload->asset(99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image2.qcow2',});
+    };
 
     ok !$@, 'No upload errors' or die explain $@;
 
@@ -114,7 +117,10 @@ subtest 'upload private assets' => sub {
     my $rp       = "t/data/openqa/share/factory/hdd/00099963-hdd_image3.qcow2";
 
     local $@;
-    eval { $t->ua->upload->asset(99963 => {file => $filename, name => 'hdd_image3.qcow2', asset => 'private'}); };
+    eval {
+        $t->ua->upload->asset(
+            99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image3.qcow2', asset => 'private'});
+    };
 
     ok !$@, 'No upload errors' or die explain $@;
 
@@ -157,7 +163,10 @@ subtest 'upload other assets' => sub {
         });
 
     local $@;
-    eval { $t->ua->upload->asset(99963 => {file => $filename, name => 'hdd_image3.xml', asset => 'other'}); };
+    eval {
+        $t->ua->upload->asset(
+            99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image3.xml', asset => 'other'});
+    };
 
     ok !$@, 'No upload errors' or die explain $@;
 
@@ -203,13 +212,16 @@ subtest 'upload retrials' => sub {
     $t->ua->upload->on('upload_chunk.fail'     => sub { $fail_chunk++ });
     $t->ua->upload->on('upload_chunk.response' => sub { $responses++; });
     local $@;
-    eval { $t->ua->upload->asset(99963 => {file => $filename, name => 'hdd_image4.xml', asset => 'other'}); };
+    eval {
+        $t->ua->upload->asset(
+            99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image4.xml', asset => 'other'});
+    };
 
     is $fail_chunk, 1, 'One chunk failed uploading, but we recovered';
 
     ok !$@, 'No upload errors';
 
-    is $responses, OpenQA::File::_chunk_size(-s $filename, 1000000) + 1;
+    is $responses, OpenQA::File::_chunk_size(-s $filename, $chunk_size) + 1;
     ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
 
     ok(-e $rp, 'Asset exists after upload');
@@ -257,7 +269,10 @@ subtest 'upload failures' => sub {
         });
 
     local $@;
-    eval { $t->ua->upload->asset(99963 => {file => $filename, name => 'hdd_image5.xml', asset => 'other'}); };
+    eval {
+        $t->ua->upload->asset(
+            99963 => {chunk_size => $chunk_size, file => $filename, name => 'hdd_image5.xml', asset => 'other'});
+    };
 
     is $fail_chunk, 5, 'All chunk failed, but we did not recovered :(';
 
