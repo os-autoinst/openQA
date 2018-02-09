@@ -68,6 +68,39 @@ sub prepare {
     $_[0]->encode_content;
 }
 
+sub _chunk {
+    my ($self, $index, $n_chunks, $chunk_size, $residual, $total_cksum) = @_;
+
+    my $seek_start = ($index - 1) * $chunk_size;
+    my $prev       = ($index - 2) * $chunk_size + $chunk_size;
+    my ($chunk_start, $chunk_end)
+      = $index == $n_chunks
+      && $residual ?
+      ($prev, $prev + $residual)
+      : ($seek_start, $seek_start + $chunk_size);
+
+    return $self->new(
+        index       => $index,
+        start       => $chunk_start,
+        end         => $chunk_end,
+        total       => $n_chunks,
+        total_cksum => $total_cksum,
+        file        => $self->file,
+    );
+}
+
+sub get_piece {
+    my ($self, $index, $chunk_size) = @_;
+    croak 'You need to define a file' unless defined $self->file();
+    $self->file(Mojo::File->new($self->file())) unless ref $self->file eq 'Mojo::File';
+
+    my $total_cksum = OpenQA::File::_file_digest($self->file->to_string);
+    my $residual    = $self->size() % $chunk_size;
+    my $n_chunks    = _chunk_size($self->size(), $chunk_size);
+
+    return $self->_chunk($index, $n_chunks, $chunk_size, $residual, $total_cksum);
+}
+
 sub split {
     my ($self, $chunk_size) = @_;
     $chunk_size //= 10000000;
@@ -81,24 +114,8 @@ sub split {
     my $files    = OpenQA::Files->new();
 
     for (my $i = 1; $i <= $n_chunks; $i++) {
-        my $seek_start = ($i - 1) * $chunk_size;
-        my $prev       = ($i - 2) * $chunk_size + $chunk_size;
-        my ($chunk_start, $chunk_end)
-          = $i == $n_chunks
-          && $residual ?
-          ($prev, $prev + $residual)
-          : ($seek_start, $seek_start + $chunk_size);
-
-        my $piece = $self->new(
-            index       => $i,
-            start       => $chunk_start,
-            end         => $chunk_end,
-            total       => $n_chunks,
-            total_cksum => $total_cksum,
-            file        => $self->file,
-        );
         #$piece->generate_sum; # XXX: Generate sha here and ditch content?
-        $files->add($piece);
+        $files->add($self->_chunk($i, $n_chunks, $chunk_size, $residual, $total_cksum));
     }
 
     return $files;

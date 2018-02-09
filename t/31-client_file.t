@@ -175,5 +175,37 @@ subtest 'verify_chunks' => sub {
     isnt $original->slurp, Mojo::File->new($copied_file)->slurp, 'Not same content';
 };
 
+sub compare {
+    my ($file, $chunk_size) = @_;
+    my $original = path($FindBin::Bin, "data")->child($file);
+    my $pieces = $original->split($chunk_size);
+
+    is(OpenQA::File::_chunk_size($original->size, $chunk_size), $pieces->size, 'Size and pieces matches!');
+
+    for (my $i = 1; $i <= $pieces->size; $i++) {
+        my $piece = $original->get_piece($i => $chunk_size);
+        my $from_split = $pieces->get($i - 1);
+        is_deeply $piece, $from_split, 'Structs are matching';
+
+        $piece->prepare();
+        $from_split->prepare();
+
+        ok $piece->verify_content($original->file->to_string),      'Chunk verified';
+        ok $from_split->verify_content($original->file->to_string), 'Chunk verified';
+
+        is_deeply $piece, $from_split, 'Structs are matching after prepare()';
+    }
+}
+
+subtest 'get_piece' => sub {
+    my $file = "ltp_test_result_format.json";
+    my $size = path($FindBin::Bin, "data")->child($file)->size;
+
+    compare($file => 1);
+    compare($file => 10);
+    compare($file => 21);
+    compare($file => $size);
+};
+
 done_testing();
 1;
