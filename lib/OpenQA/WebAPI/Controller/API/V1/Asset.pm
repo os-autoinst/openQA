@@ -18,6 +18,32 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::IPC;
 
+=pod
+
+=head1 NAME
+
+OpenQA::WebAPI::Controller::API::V1::Asset
+
+=head1 SYNOPSIS
+
+  use OpenQA::WebAPI::Controller::API::V1::Asset;
+
+=head1 DESCRIPTION
+
+OpenQA API implementation for assets handling methods.
+
+=head1 METHODS
+
+=over 4
+
+=item register()
+
+Register an asset given its name and type. Returns a code of 200 on success and of 400 on error.
+
+=back
+
+=cut
+
 sub register {
     my ($self) = @_;
 
@@ -38,6 +64,17 @@ sub register {
     $self->render(json => $json, status => $status);
 }
 
+=over 4
+
+=item list()
+
+Returns a list of all assets present in the system. For each asset relevant information such
+as its id, name, timestamp of creation and type is included.
+
+=back
+
+=cut
+
 sub list {
     my $self   = shift;
     my $schema = $self->app->schema;
@@ -46,6 +83,18 @@ sub list {
     $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
     $self->render(json => {assets => [$rs->all]});
 }
+
+=over 4
+
+=item get()
+
+Returns information for a specific asset given its id or its type and name. Information
+returned the asset id, name, timestamp of creation and type. Returns a code of 200
+on success and of 404 on error.
+
+=back
+
+=cut
 
 sub get {
     my $self   = shift;
@@ -71,6 +120,17 @@ sub get {
         $self->render(json => {}, status => 404);
     }
 }
+
+=over 4
+
+=item delete()
+
+Removes an asset from the system given its id or its type and name. Returns the
+number of assets removed. 
+
+=back
+
+=cut
 
 sub delete {
     my ($self) = @_;

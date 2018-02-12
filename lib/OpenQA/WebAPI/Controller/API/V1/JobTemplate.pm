@@ -17,6 +17,40 @@
 package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller';
 
+=pod
+
+=head1 NAME
+
+OpenQA::WebAPI::Controller::API::V1::JobTemplate
+
+=head1 SYNOPSIS
+
+  use OpenQA::WebAPI::Controller::API::V1::JobTemplate;
+
+=head1 DESCRIPTION
+
+Implements API method for handling job templates in openQA.
+
+=head1 METHODS
+
+=over 4
+
+=item list()
+
+Shows information for the job templates defined in the system. If given a job template id, only the
+information for that template is shown, otherwise will attempt to fetch job templates based on any
+of the following parameters: machine name or id, test suite name or id, distri, arch, version, flavor,
+product id or group id. If none of those arguments are passed to the method, will attempt to list
+all job templates defined in the system.
+
+Returns a list of job templates containing the following information for each template: template id,
+priority, group name, product (id, arch, distri, flavor, group and version), machine (id and name)
+and test suite (id and name).
+
+=back
+
+=cut
+
 sub list {
     my $self = shift;
 
@@ -82,6 +116,21 @@ sub list {
 
     $self->render(json => {JobTemplates => \@templates});
 }
+
+=over 4
+
+=item create()
+
+Creates a new job template. If the method receives a valid product id as argument, it will
+also check for the following arguments: machine id, group id, test suite id and priority. If
+no valid product id is received as argument, the method will instead check for the following
+arguments: product name, machine name, test suite name, arch, distri, flavor, version and
+priority. Returns a 400 code on error, or a 303 code and the job template id within a JSON
+block on success.
+
+=back
+
+=cut
 
 sub create {
     my $self = shift;
@@ -171,6 +220,17 @@ sub create {
             $self->redirect_to($self->req->headers->referrer);
         });
 }
+
+=over 4
+
+=item destroy()
+
+Deletes a job template given its id. Returns a 404 error code if the template is not found,
+a 400 code on other errors or a 303 code on success.
+
+=back
+
+=cut
 
 sub destroy {
     my $self          = shift;

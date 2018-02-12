@@ -26,16 +26,51 @@ use OpenQA::Schema::Result::JobDependencies;
 
 use Carp;
 
-# return settings key for given job settings
+=pod
+
+=head1 NAME
+
+OpenQA::WebAPI::Controller::API::V1::Iso
+
+=head1 SYNOPSIS
+
+  use OpenQA::WebAPI::Controller::API::V1::Iso;
+
+=head1 DESCRIPTION
+
+Implements API methods to handle job creation, cancellation and removal based on ISOs, ie,
+schedule jobs for a given ISO, or cancel jobs for a given ISO.
+
+=head1 METHODS
+
+=over 4
+
+=item _settings_key()
+
+Return settings key for given job settings. Internal method.
+
+=back
+
+=cut
+
 sub _settings_key {
     my ($settings) = @_;
     return $settings->{TEST} . ':' . $settings->{MACHINE};
 
 }
 
-# parse dependency variable in format like "suite1,suite2,suite3"
-# and return settings key for each entry
-# TODO: allow inter-machine dependency
+=over 4
+
+=item _parse_dep_variable()
+
+Parse dependency variable in format like "suite1,suite2,suite3"
+and return settings key for each entry. Internal method. B<TODO>:
+allow inter-machine dependency.
+
+=back
+
+=cut
+
 sub _parse_dep_variable {
     my ($value, $settings) = @_;
 
@@ -46,7 +81,17 @@ sub _parse_dep_variable {
     return map { $_ . ':' . $settings->{MACHINE} } @after;
 }
 
-# sort the job list so that children are put after parents
+=over 4
+
+=item _sort_dep()
+
+Sort the job list so that children are put after parents. Internal method
+used in B<_generate_jobs>.
+
+=back
+
+=cut
+
 sub _sort_dep {
     my ($list) = @_;
 
@@ -91,6 +136,18 @@ sub _sort_dep {
 
     return \@out;
 }
+
+=over 4
+
+=item _generate_jobs()
+
+Create jobs for products matching the contents of the DISTRI, VERSION, FLAVOR and ARCH
+settings, and returns a sorted list of jobs (parent jobs first) including its settings. Internal
+method used in the B<schedule_iso()> method.
+
+=back
+
+=cut
 
 sub _generate_jobs {
     my ($self, $args) = @_;
@@ -232,6 +289,17 @@ sub _generate_jobs {
     return $ret;
 }
 
+=over 4
+
+=item job_create_dependencies()
+
+Create job dependencies for tasks with settings START_AFTER_TEST or PARALLEL_WITH
+defined. Internal method used by the B<schedule_iso()> method.
+
+=back
+
+=cut
+
 sub job_create_dependencies {
     my ($self, $job, $testsuite_mapping) = @_;
 
@@ -264,8 +332,20 @@ sub job_create_dependencies {
     return \@error_messages;
 }
 
+=over 4
 
-# internal function not exported - but called by create
+=item schedule_iso()
+
+Schedule jobs for a given ISO. Starts by downloading needed assets and cancelling obsolete jobs
+(unless _NO_OBSOLOLETE was set), and then attempts to start the jobs from the job settings received
+from B<_generate_jobs()>. Returns a list of job ids from the jobs that were succesfully scheduled
+and a list of failure reason for the jobs that could not be scheduled. Internal function, not
+exported - but called by B<create()>.
+
+=back
+
+=cut
+
 sub schedule_iso {
     my ($self, $args) = @_;
     # register assets posted here right away, in case no job
@@ -459,6 +539,18 @@ sub schedule_iso {
     };
 }
 
+=over 4
+
+=item create()
+
+Schedule jobs for assets matching the required settings DISTRI, VERSION, FLAVOR and ARCH
+passed to the method as arguments. Returns a JSON block containing the number of jobs
+created, their job ids and the information for jobs that could not be scheduled.
+
+=back
+
+=cut
+
 sub create {
     my ($self) = @_;
 
@@ -519,6 +611,17 @@ sub create {
         });
 }
 
+=over 4
+
+=item destroy()
+
+Delete jobs whose ISO setting match a particular ISO argument passed to the method. Return a
+JSON block containing the number of jobs deleted.
+
+=back
+
+=cut
+
 sub destroy {
     my $self = shift;
     my $iso  = $self->stash('name');
@@ -534,6 +637,17 @@ sub destroy {
     }
     $self->render(json => {count => scalar(@jobs)});
 }
+
+=over 4
+
+=item cancel()
+
+Cancel jobs whose ISO setting match a particular ISO argument passed to the method.
+Return number of cancelled jobs within a JSON block.
+
+=back
+
+=cut
 
 sub cancel {
     my $self = shift;

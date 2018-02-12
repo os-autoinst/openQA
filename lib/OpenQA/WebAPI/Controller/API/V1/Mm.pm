@@ -19,6 +19,34 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
 
+=pod
+
+=head1 NAME
+
+OpenQA::WebAPI::Controller::API::V1::Mm
+
+=head1 SYNOPSIS
+
+  use OpenQA::WebAPI::Controller::API::V1::Mm;
+
+=head1 DESCRIPTION
+
+OpenQA API implementation for multi machine methods.
+
+=head1 METHODS
+
+=over 4
+
+=item get_children_status()
+
+Given a job id and a status text (running, scheduled or done), this method returns a list of
+children jobs' job ids that have the same status as the parent job. Return a 200 code and a
+JSON block with the list.
+
+=back
+
+=cut
+
 # this needs 2 calls to do anything useful
 # IMHO it should be replaced with get_children and removed
 sub get_children_status {
@@ -41,6 +69,17 @@ sub get_children_status {
     return $self->render(json => {jobs => \@res_ids}, status => 200);
 }
 
+=over 4
+
+=item get_children()
+
+Returns a list of jobs that are configured as children of a given job identified by job_id. For the
+children jobs, their id and state is returned in a JSON block.
+
+=back
+
+=cut
+
 sub get_children {
     my ($self) = @_;
     my $jobid = $self->stash('job_id');
@@ -51,6 +90,17 @@ sub get_children {
     my %res_ids = map { ($_->id, $_->state) } @res;
     return $self->render(json => {jobs => \%res_ids}, status => 200);
 }
+
+=over 4
+
+=item get_parents()
+
+Returns a list of jobs that are configured as parents of a given job identified by job_id. For the
+parents jobs, their id is returned in a JSON block.
+
+=back
+
+=cut
 
 sub get_parents {
     my ($self) = @_;

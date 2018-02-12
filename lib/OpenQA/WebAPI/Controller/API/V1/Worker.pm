@@ -37,6 +37,8 @@ OpenQA::WebAPI::Controller::API::V1::Worker
 
 Implements API methods relating to OpenQA Workers.
 
+=head1 METHODS
+
 =over 4
 
 =item list()

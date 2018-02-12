@@ -32,11 +32,13 @@ OpenQA::WebAPI::Controller::API::V1::Locks
 
 OpenQA API implementation for locking and mutex mechanisms.
 
+=head1 METHODS
+
 =over 4
 
 =item mutex_action()
 
-Perform the mutex operations of "lock" or "unlock" as requested. Renders a return
+Perform the mutex operations of "lock" or "unlock" as requested. Returns a
 code of 200 on success, 410 on error and 409 on mutex unavailable.
 
 =back
@@ -73,7 +75,7 @@ sub mutex_action {
 
 =item mutex_create()
 
-Creates a named mutex resource associated with the current job. Renders a return code
+Creates a named mutex resource associated with the current job. Returns a code
 of 200 on success and 409 on error.
 
 =back
@@ -103,7 +105,7 @@ sub mutex_create {
 =item barrier_wait()
 
 Blocks execution of the calling job until the method is called by all tasks
-using the barrier referenced by "name". Renders a 200 code on success, 410
+using the barrier referenced by "name". Returns a 200 code on success, 410
 on error on 409 when the referenced barrier does not exist.
 
 =back
@@ -136,7 +138,7 @@ sub barrier_wait {
 =item barrier_create()
 
 Creates a new barrier resource for a group of tasks referenced by the argument "task."
-Renders a return code of 200 on success or of 409 on error.
+Returns a code of 200 on success or of 409 on error.
 
 =back
 

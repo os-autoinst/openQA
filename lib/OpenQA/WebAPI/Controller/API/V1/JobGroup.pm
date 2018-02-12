@@ -31,6 +31,8 @@ OpenQA::WebAPI::Controller::API::V1::JobGroup
 
 Implements API methods to access group of jobs.
 
+=head1 METHODS
+
 =cut
 
 # Helper methods

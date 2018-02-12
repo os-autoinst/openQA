@@ -36,7 +36,7 @@ OpenQA::WebAPI::Controller::API::V1::Job
 
 Implements API methods to access jobs.
 
-=cut
+=head1 METHODS
 
 =over 4
 

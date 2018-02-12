@@ -22,9 +22,34 @@ use DBIx::Class::Timestamps 'now';
 use Date::Format 'time2str';
 use Try::Tiny;
 
+=pod
+
+=head1 NAME
+
+OpenQA::WebAPI::Controller::API::V1::Bug
+
+=head1 SYNOPSIS
+
+  use OpenQA::WebAPI::Controller::API::V1::Bug;
+
+=head1 DESCRIPTION
+
+OpenQA API implementation for bug handling methods.
+
+=head1 METHODS
+
+=over 4
+
+=item list()
+
+Returns list of bugs reported in the system with its id and text.
+
+=back
+
+=cut
+
 sub list {
     my ($self) = @_;
-
 
     my $bugs;
     if ($self->param('refreshable')) {
@@ -46,6 +71,18 @@ sub list {
     $self->render(json => {bugs => \%ret});
 }
 
+=over 4
+
+=item show()
+
+Returns information for a bug given its id in the system. Information includes the internal
+(openQA-specific) and the external bug id. Also shows the bug's title, priority, whether its
+assigned or not and its assignee, whether its open or not, status, resolution, whether its an
+existing bug or not, and the date when the bug was last updated in the system.
+
+=back
+
+=cut
 
 sub show {
     my ($self) = @_;
@@ -62,6 +99,18 @@ sub show {
     $self->render(json => \%json);
 }
 
+=over 4
+
+=item create()
+
+Creates a new bug in the system. This method will check for the existence of a bug with the same
+external bug id, in which case the method fails with an error code of 1. Otherwise, the new bug
+is created with the bug values passed as arguments.
+
+=back
+
+=cut
+
 sub create {
     my ($self) = @_;
 
@@ -76,6 +125,17 @@ sub create {
     $self->emit_event('openqa_bug_create', {id => $bug->id, bugid => $bug->bugid, fromapi => 1});
     $self->render(json => {id => $bug->id});
 }
+
+=over 4
+
+=item update()
+
+Updates the information of a bug given its id and a set of bug values to update. Returns
+the id of the bug, or an error if the bug id is not found in the system.
+
+=back
+
+=cut
 
 sub update {
     my ($self) = @_;
@@ -92,6 +152,16 @@ sub update {
     $self->render(json => {id => $bug->id});
 }
 
+=over 4
+
+=item destroy()
+
+Removes a bug from the system given its bug id. Return 1 on success or not found on error.
+
+=back
+
+=cut
+
 sub destroy {
     my ($self) = @_;
 
@@ -106,6 +176,20 @@ sub destroy {
     $bug->delete;
     $self->render(json => {result => 1});
 }
+
+=over 4
+
+=item get_bug_values()
+
+Internal method to extract from the query string the named arguments for values that can be
+set for a bug: title, priority, whether its assigned or not (assigned), assignee, whether its
+an open bug or not (open), status, resolution, whether its an existing bug or not (existing),
+and the timestamp of the update operation (t_updated). This method is used by B<create()> and
+B<update()>.
+
+=back
+
+=cut
 
 sub get_bug_values {
     my ($self) = @_;

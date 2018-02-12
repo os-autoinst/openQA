@@ -487,6 +487,7 @@ sub startup {
     # Parse API controller modules for POD
     get_pod_from_controllers(@api_routes);
     # Set API descriptions
+    $api_description{apiv1} = 'Root API V1 path';
     foreach my $api_rt (@api_routes) {
         set_api_desc(\%api_description, $api_rt);
     }

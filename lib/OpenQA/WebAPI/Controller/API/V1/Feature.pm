@@ -17,6 +17,8 @@ OpenQA::WebAPI::Controller::API::V1::Feature
 
 Implements feature API.
 
+=head1 METHODS
+
 =over 4
 
 =item informed()

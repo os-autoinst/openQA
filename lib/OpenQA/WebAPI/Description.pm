@@ -33,7 +33,7 @@ my %methods_description;
 
 # Determine the controller modules being used by the API routes and parse the POD from the files.
 # Extract the description of the methods and store them in the global HASH %methods_description
-# by ->walk()ing the POD tree from each controller module file
+# by walking the POD tree from each controller module file
 
 sub get_pod_from_controllers {
     # Object to get API descriptions from POD
