@@ -26,7 +26,6 @@ sub run {
         $job = $res->json->{job} || die("No job could be retrieved");
         #We have a job now, make a directory in $pwd by default
         $path = path($options{archive})->make_path->to_abs;
-        chdir($path);
         #we can't backup repos, so don't even try
         delete($job->{assets}->{repos});
         download_assets() unless $options{'skip-download'};
