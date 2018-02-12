@@ -153,8 +153,6 @@ sub api_init {
             $url = Mojo::URL->new($host);
         }
 
-        # Relative paths are appended to the existing one
-        $url->path('/api/v1/');
 
         my ($apikey, $apisecret) = ($options->{apikey}, $options->{apisecret});
         $ua = OpenQA::Client->new(
@@ -162,7 +160,11 @@ sub api_init {
             apikey    => $apikey,
             apisecret => $apisecret
         );
-        $ua->base_url($host);
+        $ua->base_url($url);
+
+        # Relative paths are appended to the existing one
+        $url->path('/api/v1/');
+
         # disable keep alive to avoid time outs in strange places - we only reach the
         # webapi once in a while so take the price of reopening the connection every time
         # we do
