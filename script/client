@@ -130,9 +130,9 @@ sub usage($) {
 }
 
 GetOptions(
-    \%options,     'host=s',   'apibase=s', 'json-output', 'verbose|v', 'apikey:s',
-    'apisecret:s', 'params=s', 'form',      'json-data:s', 'help|h|?',  'archive|a:s',
-    'skip-download'
+    \%options,       'host=s',   'apibase=s', 'json-output', 'verbose|v', 'apikey:s',
+    'apisecret:s',   'params=s', 'form',      'json-data:s', 'help|h|?',  'archive|a:s',
+    'skip-download', 'with-thumbnails'
 ) or usage(1);
 
 usage(1) unless @ARGV;
@@ -210,16 +210,14 @@ elsif ($options{'json-data'}) {
     $res = $client->$method($url, {'Content-Type' => 'application/json'} => $options{'json-data'})->res;
 }
 else {
-    dd(%options);
-    $options{path}    = $path;
-    $options{url}     = $url;
-    $options{params}  = \%params;
-    $options{params2} = @ARGV;
-    #treat it as a command if there is no form parameter
+    # Either the user wants to call a command or wants to interact with
+    # the rest api directly.
     if ($options{archive}) {
-        print("Going to archive something!\n");
-        OpenQA::Client::Archive::run($client, %options);
-        exit;
+        $options{path}    = $path;
+        $options{url}     = $url;
+        $options{params}  = \%params;
+        $options{params2} = @ARGV;
+        my $call = $client->archive->run(%options);
     }
     else {
         $res = $client->$method($url)->res;

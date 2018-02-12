@@ -27,44 +27,33 @@ use OpenQA::WebAPI;
 use Mojo::File qw(tempfile tempdir path);
 use OpenQA::Test::Case;
 
-
-# allow up to 200MB - videos mostly
-$ENV{MOJO_MAX_MESSAGE_SIZE} = 207741824;
-
 # init test case
 OpenQA::Test::Case->new->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-my $app = $t->app;
-
-
-path('t', 'client_tests.d')->remove_tree;
-my $dir = path('t', 'client_tests.d', tempdir)->make_path;
-
 
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
-$t->ua(OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
-# $client->max_redirects(3);
-
+my $app = $t->app;
+$t->ua(
+    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
-$t->app->log->level('debug');
-$t->ua->max_redirects(3);
-
 my $base_url = $t->ua->server->url->to_string;
 
-use Data::Dump;
+path('t', 'client_tests.d')->remove_tree;
+my $destination = path('t', 'client_tests.d', tempdir)->make_path;
 
 subtest 'OpenQA::Client:Archive tests' => sub {
     my $jobid = 99938;
-    diag $t->ua->server->url->path("/api/v1/jobs/$jobid");
-    diag $dir->to_abs;
 
-    my %options = (archive => $dir, url => "/api/v1/jobs/$jobid/details");
-    $t->get_ok('/tests/99938/file/video.ogv');
-    $t->ua->OpenQA::Client::Archive::run(%options);
-    $t->get_ok('/tests/99938/file/video.ogv');
+    my $command = $t->ua->archive->run({archive => $destination, url => "/api/v1/jobs/$jobid/details"});
 
-    is($@, '', '--archive 1234 would perform correctly' . $@);
+    is($@, '', 'Archive functionality works as expected would perform correctly' . $@);
+    my $file = path($destination, 'testresults', 'details-zypper_up.json');
+    ok(-e $file, 'details-zypper_up.json file exists') or diag $file;
+    $file = path($destination, 'testresults', 'video.ogv');
+    ok(-e $file, 'Test video file exists') or diag $file;
+    $file = path($destination, 'testresults','ulogs', 'y2logs.tar.bz2');
+    ok(-e $file, 'Test uploaded logs file exists') or diag $file;
 
 };
 
