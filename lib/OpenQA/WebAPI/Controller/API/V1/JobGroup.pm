@@ -17,17 +17,65 @@ package OpenQA::WebAPI::Controller::API::V1::JobGroup;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Schema::Result::JobGroups;
 
+=pod
+
+=head1 NAME
+
+OpenQA::WebAPI::Controller::API::V1::JobGroup
+
+=head1 SYNOPSIS
+
+  use OpenQA::WebAPI::Controller::API::V1::JobGroup;
+
+=head1 DESCRIPTION
+
+Implements API methods to access group of jobs.
+
+=head1 METHODS
+
+=cut
+
 # Helper methods
+
+=over 4
+
+=item is_parent()
+
+Reports true if the job group given to the method is a parent group.
+
+=back
+
+=cut
 
 sub is_parent {
     my ($self) = @_;
     return $self->req->url->path =~ qr/.*\/parent_groups/;
 }
 
+=over 4
+
+=item resultset()
+
+Returns results for a set of groups.
+
+=back
+
+=cut
+
 sub resultset {
     my ($self) = @_;
     return $self->db->resultset($self->is_parent ? 'JobGroupParents' : 'JobGroups');
 }
+
+=over 4
+
+=item find_group()
+
+Returns information from a job group given its ID.
+
+=back
+
+=cut
 
 sub find_group {
     my ($self) = @_;
@@ -46,6 +94,16 @@ sub find_group {
 
     return $group;
 }
+
+=over 4
+
+=item load_properties()
+
+Returns an indexed list of properties for a job group.
+
+=back
+
+=cut
 
 sub load_properties {
     my ($self) = @_;
@@ -66,6 +124,18 @@ sub load_properties {
 }
 
 # Actual API entry points
+
+=over 4
+
+=item list()
+
+Shows a list jobs belonging to a job group given its ID, or a list of all jobs.
+For each job in the list, all relevant information - with the exception of
+timestamps - is also returned as a list of indexed lists.
+
+=back
+
+=cut
 
 sub list {
     my ($self) = @_;
@@ -93,7 +163,16 @@ sub list {
     $self->render(json => \@results);
 }
 
-# check existing job group on top level to prevent create/update duplicate
+=over 4
+
+=item check_top_level_group()
+
+Check existing job group on top level to prevent create/update duplicate.
+
+=back
+
+=cut
+
 sub check_top_level_group {
     my ($self, $group_id) = @_;
 
@@ -103,6 +182,16 @@ sub check_top_level_group {
     $conditions->{id} = {'!=', $group_id} if $group_id;
     return $self->resultset->search($conditions);
 }
+
+=over 4
+
+=item create()
+
+Creates a new job group given a name. Prevents the creation of job groups with the same name.
+
+=back
+
+=cut
 
 sub create {
     my ($self) = @_;
@@ -125,6 +214,16 @@ sub create {
     $self->render(json => {id => $group->id});
 }
 
+=over 4
+
+=item update()
+
+Updates the properties of a job group.
+
+=back
+
+=cut
+
 sub update {
     my ($self) = @_;
 
@@ -145,6 +244,16 @@ sub update {
     $self->render(json => {id => $res->id});
 }
 
+=over 4
+
+=item list_jobs()
+
+List jobs belonging to a job group.
+
+=back
+
+=cut
+
 sub list_jobs {
     my ($self) = @_;
 
@@ -160,6 +269,16 @@ sub list_jobs {
     }
     return $self->render(json => {ids => [sort map { $_->id } @jobs]});
 }
+
+=over 4
+
+=item delete()
+
+Deletes a job group. Verifies that it is not empty before attempting to remove.
+
+=back
+
+=cut
 
 sub delete {
     my ($self) = @_;

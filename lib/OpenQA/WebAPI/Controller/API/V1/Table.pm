@@ -20,6 +20,44 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use Try::Tiny;
 
+=pod
+
+=head1 NAME
+
+OpenQA::WebAPI::Controller::API::V1::Table
+
+=head1 SYNOPSIS
+
+  use OpenQA::WebAPI::Controller::API::V1::Table;
+
+=head1 DESCRIPTION
+
+OpenQA API implementation for table handling.
+
+Within this package, three types of tables are handled:
+
+=over 4
+
+=item Machines
+
+Machines are defined by id, name, a backend and a description. Only the id and the backend are
+always required.
+
+=item Test Suites
+
+Test Suites are defined by id, name and description. Only the name is always required.
+
+=item Products
+
+Products are defined by id, distri, version, arch, flavor and description. The distri,
+version, arch and flavor parameters are always required.
+
+=back
+
+=head1 METHODS
+
+=cut
+
 my %tables = (
     Machines => {
         keys => [['id'], ['name'],],
@@ -41,6 +79,20 @@ my %tables = (
     },
 );
 
+=over 4
+
+=item list()
+
+List the parameters of tables given its type (machine, test suite or product). If an
+id is passed as an argument to the method, only information for the passed id is
+returned, otherwise all structures of the same type defined in the system are
+returned. For further information on the type of parameters associated to each
+of the type of tables, check the OpenQA::WebAPI::Controller::API::V1::Table package
+documentation.
+
+=back
+
+=cut
 
 sub list {
     my ($self) = @_;
@@ -89,6 +141,20 @@ sub list {
             ]});
 }
 
+=over 4
+
+=item create()
+
+Creates a new table given its type (machine, test suite or product). Returns the
+table id in a JSON block on success or a 400 code on error. For information on the
+type of parameters associated to each of the type of tables, as well as which of those
+parameters are required and validated when calling this method, check the
+OpenQA::WebAPI::Controller::API::V1::Table package documentation.
+
+=back
+
+=cut
+
 sub create {
     my ($self)     = @_;
     my $table      = $self->param("table");
@@ -126,6 +192,22 @@ sub create {
     $self->emit_event('openqa_table_create', {table => $table, %entry});
     $self->render(json => {id => $id});
 }
+
+=over 4
+
+=item update()
+
+Updates the parameters of a table given its type (machine, test suite or product). This
+method will check the required parameters for the type of structure before updating. 
+For information on the type of parameters associated to each of the type of tables, as
+well as which of those parameters are required and validated when calling this method, check
+the OpenQA::WebAPI::Controller::API::V1::Table package documentation. Returns a 404 error
+code if the table is not found, 400 on other errors or a JSON block containing the number
+of tables updated by the method on success.
+
+=back
+
+=cut
 
 sub update {
     my ($self) = @_;
@@ -191,6 +273,17 @@ sub update {
     $self->render(json => {result => int($ret)});
 }
 
+=over 4
+
+=item destroy()
+
+Deletes a table given its type (machine, test suite or product) and its id. Returns
+a 404 error code when the table is not found, 400 on other errors or a JSON block
+with the number of deleted tables on success.
+
+=back
+
+=cut
 
 sub destroy {
     my ($self)   = @_;

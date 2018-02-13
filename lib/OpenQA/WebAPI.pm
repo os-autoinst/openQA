@@ -26,6 +26,7 @@ use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::IPC;
 use OpenQA::Utils qw(log_warning job_groups_and_parents detect_current_version);
 use OpenQA::Setup;
+use OpenQA::WebAPI::Description qw(get_pod_from_controllers set_api_desc);
 use Mojo::IOLoop;
 use Mojolicious::Commands;
 use DateTime;
@@ -302,13 +303,16 @@ sub startup {
     #
     ## JSON API starts here
     ###
+    # Array to store new API routes' references, so they can all be checked to get API description from POD
+    my @api_routes        = ();
     my $api_auth_any_user = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth');
     my $api_auth_operator = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_operator');
     my $api_auth_admin    = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_admin');
-    my $api_ru = $api_auth_any_user->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
-    my $api_ro = $api_auth_operator->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
-    my $api_ra = $api_auth_admin->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
-    my $api_public_r = $r->route('/api/v1')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_ru            = $api_auth_any_user->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_ro            = $api_auth_operator->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_ra            = $api_auth_admin->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_public_r      = $r->route('/api/v1')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    push @api_routes, $api_ru, $api_ro, $api_ra, $api_public_r;
     # this is fallback redirect if one does not use apache
     $api_public_r->websocket(
         '/ws/:workerid' => sub {
@@ -323,6 +327,7 @@ sub startup {
         });
     my $api_job_auth = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_jobtoken');
     my $api_r_job = $api_job_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    push @api_routes, $api_job_auth, $api_r_job;
     $api_r_job->get('/whoami')->name('apiv1_jobauth_whoami')->to('job#whoami');    # primarily for tests
 
     # api/v1/job_groups
@@ -347,6 +352,7 @@ sub startup {
     $api_ro->post('/jobs/restart')->name('apiv1_restart_jobs')->to('job#restart');
 
     my $job_r = $api_ro->route('/jobs/:jobid', jobid => qr/\d+/);
+    push @api_routes, $job_r;
     $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->name('apiv1_job')->to('job#show');
     $api_public_r->route('/jobs/:jobid/details', jobid => qr/\d+/)->name('apiv1_job')->to('job#show', details => 1);
     $job_r->put('/')->name('apiv1_put_job')->to('job#update');
@@ -357,9 +363,9 @@ sub startup {
     $job_r->post('/artefact')->name('apiv1_create_artefact')->to('job#create_artefact');
     $job_r->post('/ack_temporary')->to('job#ack_temporary');
 
-
     # job_set_waiting, job_set_continue
     my $command_r = $job_r->route('/set_:command', command => [qw(waiting running)]);
+    push @api_routes, $command_r;
     $command_r->post('/')->name('apiv1_set_command')->to('job#set_command');
     $job_r->post('/restart')->name('apiv1_restart')->to('job#restart');
     $job_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel');
@@ -369,6 +375,7 @@ sub startup {
     $api_public_r->get('/bugs')->name('apiv1_bugs')->to('bug#list');
     $api_ro->post('/bugs')->name('apiv1_create_bug')->to('bug#create');
     my $bug_r = $api_ro->route('/bugs/:id', bid => qr/\d+/);
+    push @api_routes, $bug_r;
     $bug_r->get('/')->name('apiv1_show_bug')->to('bug#show');
     $bug_r->put('/')->name('apiv1_put_bug')->to('bug#update');
     $bug_r->delete('/')->name('apiv1_delete_bug')->to('bug#destroy');
@@ -379,6 +386,7 @@ sub startup {
       = 'Each entry contains the "hostname", the boolean flag "connected" which can be 0 or 1 depending on the connection to the websockets server and the field "status" which can be "dead", "idle", "running". A worker can be considered "up" when "connected=1" and "status!=dead"';
     $api_ro->post('/workers')->name('apiv1_create_worker')->to('worker#create');
     my $worker_r = $api_ro->route('/workers/:workerid', workerid => qr/\d+/);
+    push @api_routes, $worker_r;
     $api_public_r->route('/workers/:workerid', workerid => qr/\d+/)->get('/')->name('apiv1_worker')->to('worker#show');
     $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');
 
@@ -407,6 +415,7 @@ sub startup {
 
     # api/v1/mm
     my $mm_api = $api_r_job->route('/mm');
+    push @api_routes, $mm_api;
     $mm_api->get('/children/:status' => [status => [qw(running scheduled done)]])->name('apiv1_mm_running_children')
       ->to('mm#get_children_status');
     $mm_api->get('/children')->name('apiv1_mm_children')->to('mm#get_children');
@@ -474,8 +483,14 @@ sub startup {
 
     # api/v1/feature
     $api_ru->post('/feature')->name('apiv1_post_informed_about')->to('feature#informed');
-    $api_description{'apiv1_post_informed_about'}
-      = 'Post integer value to save feature tour progress of current user in the database';
+
+    # Parse API controller modules for POD
+    get_pod_from_controllers(@api_routes);
+    # Set API descriptions
+    $api_description{apiv1} = 'Root API V1 path';
+    foreach my $api_rt (@api_routes) {
+        set_api_desc(\%api_description, $api_rt);
+    }
 
     # reduce_result is obsolete (replaced by limit_results_and_logs)
     $self->gru->add_task(reduce_result          => \&OpenQA::Schema::Result::Jobs::reduce_result);

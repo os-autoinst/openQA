@@ -18,23 +18,13 @@ BEGIN {
     unshift @INC, 'lib';
 }
 
-use FindBin;
-use lib "$FindBin::Bin/lib";
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
-use OpenQA::Test::Case;
 
-# init test case
-my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-my $get = $t->get_ok('/unavailable_page')->status_is(404);
-my $dom = $get->tx->res->dom;
-is_deeply([$dom->find('h1')->map('text')->each], ['Page not found'],   'correct page');
-is_deeply([$dom->find('h2')->map('text')->each], ['Available routes'], 'available routes shown');
-ok(index($get->tx->res->text, 'Each entry contains the') >= 0, 'description shown');
+use_ok('OpenQA::WebAPI::Description', qw(get_pod_from_controllers set_api_desc));
+$ENV{OPENQA_CODEBASE} = ".";
+get_pod_from_controllers();
 
 done_testing;

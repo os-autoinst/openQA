@@ -19,6 +19,34 @@ use OpenQA::Utils;
 use OpenQA::IPC;
 use Try::Tiny;
 
+=pod
+
+=head1 NAME
+
+OpenQA::WebAPI::Controller::API::V1::Command
+
+=head1 SYNOPSIS
+
+  use OpenQA::WebAPI::Controller::API::V1::Command;
+
+=head1 DESCRIPTION
+
+Implements API methods for openQA commands.
+
+=head1 METHODS
+
+=over 4
+
+=item create()
+
+Sends a command to a worker. Receives the worker id and the command as arguments. Returns not
+found if the worker cannot be found or a 200 status code and a JSON with an OK status of 1 on
+success.
+
+=back
+
+=cut
+
 sub create {
     my $self     = shift;
     my $workerid = $self->stash('workerid');

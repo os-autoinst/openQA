@@ -20,6 +20,34 @@ use OpenQA::Utils;
 use OpenQA::IPC;
 use OpenQA::Utils 'href_to_bugref';
 
+=pod
+
+=head1 NAME
+
+OpenQA::WebAPI::Controller::API::V1::Comment
+
+=head1 SYNOPSIS
+
+  use OpenQA::WebAPI::Controller::API::V1::Comment;
+
+=head1 DESCRIPTION
+
+Implements openQA API methods for comments handling.
+
+=head1 METHODS
+
+=over 4
+
+=item obj_comments()
+
+Internal method to extract the comments from a job or job group. Returns an object containing
+the comments or a 404 error status if an unexistent job or job group was referenced. Used by
+the B<comments()> method.
+
+=back
+
+=cut
+
 sub obj_comments {
     my ($self, $param, $table, $label) = @_;
     my $id  = int($self->param($param));
@@ -31,6 +59,19 @@ sub obj_comments {
     return $obj->comments;
 }
 
+=over 4
+
+=item comments()
+
+Returns a list of comments for a job or a job group given its id. For each comment the
+list includes its bug references, date of creation, comment id, rendered markdown text,
+text, date of update and the user name that created the comment. Internal method used
+by B<list()>.
+
+=back
+
+=cut
+
 sub comments {
     my ($self) = @_;
     if ($self->param('job_id')) {
@@ -40,6 +81,18 @@ sub comments {
         return $self->obj_comments('group_id', 'JobGroups', 'Job group');
     }
 }
+
+=over 4
+
+=item list()
+
+Returns a list of comments for a job or a job group given its id. For each comment the
+list includes its bug references, date of creation, comment id, rendered markdown text,
+text, date of update and the user name that created the comment.
+
+=back
+
+=cut
 
 sub list {
     my ($self) = @_;
@@ -53,8 +106,18 @@ sub list {
     $self->render(json => \@comments);
 }
 
-# Renders text and properties for a comment specified by job/group id and comment id
-# including rendered markdown and bugrefs
+=over 4
+
+=item text()
+
+Renders text and properties for a comment specified by job/group id and comment id
+including rendered markdown and bug references. Returns a 404 code if the specified
+comment does not exist, or 200 on success.
+
+=back
+
+=cut
+
 sub text {
     my ($self) = @_;
     my $comments = $self->comments();
@@ -66,7 +129,17 @@ sub text {
     $self->render(json => $comment->extended_hash);
 }
 
-# Adds a new comment to the specified job/group.
+=over 4
+
+=item create()
+
+Adds a new comment to the specified job/group. Returns a 200 code with a JSON containing the
+new comment id or 400 if no text is specified for the comment.
+
+=back
+
+=cut
+
 sub create {
     my ($self) = @_;
     my $comments = $self->comments();
@@ -84,7 +157,19 @@ sub create {
     $self->render(json => {id => $res->id});
 }
 
-# Updates an existing comment specified by job/group id and comment id
+=over 4
+
+=item update()
+
+Updates an existing comment specified by job/group id and comment id. An update text argument
+is required. Returns a 200 code and a JSON on success and 400 if no text was specified, 404 if
+the comment to update does not exist and 403 if the update is not requested by the original
+author of the comment.
+
+=back
+
+=cut
+
 sub update {
     my ($self) = @_;
     my $comments = $self->comments();
@@ -103,7 +188,16 @@ sub update {
     $self->render(json => {id => $res->id});
 }
 
-# Deletes an existing comment specified by job/group id and comment id
+=over 4
+
+=item delete()
+
+Deletes an existing comment specified by job/group id and comment id.
+
+=back
+
+=cut
+
 sub delete {
     my ($self) = @_;
     my $comments = $self->comments();
