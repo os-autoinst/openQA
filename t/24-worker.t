@@ -39,6 +39,11 @@ use OpenQA::Worker::Jobs;
 use OpenQA::WebSockets::Server;
 use OpenQA::Schema::Result::Workers ();
 
+ok(
+    OpenQA::Worker::Common::INTERFACE_VERSION == OpenQA::WebSockets::Server::INTERFACE_VERSION,
+"Worker interface version [@{[OpenQA::Worker::Common::INTERFACE_VERSION]}] compatible with server version [@{[OpenQA::WebSockets::Server::INTERFACE_VERSION]}]"
+);
+
 # api_init (must be called before making other calls anyways)
 like(
     exception {
@@ -375,6 +380,10 @@ subtest 'mock test send_status' => sub {
 
     is($faketx->get(0)->{status},       "working");
     is($faketx->get(0)->{job}->{state}, "scheduled");
+    ok(exists $faketx->get(0)->{websocket_api_version});
+    ok(exists $faketx->get(0)->{isotovideo_interface_version});
+    is($faketx->get(0)->{websocket_api_version},        1);
+    is($faketx->get(0)->{isotovideo_interface_version}, 0);
 
     $OpenQA::Worker::Common::job = {};
 
@@ -399,6 +408,10 @@ subtest 'mock test send_status' => sub {
     OpenQA::Worker::Common::send_status($faketx);
     is($faketx->get(4)->{status}, "free");
     ok(!exists $faketx->get(4)->{job}->{state});
+    ok(exists $faketx->get(4)->{websocket_api_version});
+    ok(exists $faketx->get(4)->{isotovideo_interface_version});
+    is($faketx->get(4)->{websocket_api_version},        1);
+    is($faketx->get(4)->{isotovideo_interface_version}, 0);
 };
 
 
@@ -419,7 +432,7 @@ subtest 'Worker logs' => sub {
     combined_like sub {
         my $worker_pid = standard_worker('123', '456', "http://bogushost:999999", 1);
         sleep 5;
-        kill_service $worker_pid;
+        kill_service $worker_pid, 1;
     }, qr/$c/;
 
     path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt("");
@@ -427,7 +440,7 @@ subtest 'Worker logs' => sub {
 
     @re = (
         '\[info\] Project dir for host .*? is .*',
-        '\[info\] registering worker with .*',
+        '\[info\] registering worker .*? version \d+ with openQA .*? using protocol version .*',
         '\[error\] unable to connect to host .* retry in .*',
         '\[debug\] ## adding timer register_worker-.*'
     );
@@ -439,7 +452,7 @@ subtest 'Worker logs' => sub {
         sub {
             my $worker_pid = standard_worker('123', '456', "http://bogushost:999999", 1);
             sleep 5;
-            kill_service $worker_pid;
+            kill_service $worker_pid, 1;
             path($OpenQA::Utils::prjdir)->remove_tree;
         },
         qr/$c/

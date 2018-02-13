@@ -487,6 +487,25 @@ subtest 'Cache tests' => sub {
     kill_worker;
 };
 
+
+subtest 'Isotovideo version' => sub {
+    use OpenQA::Worker::Engines::isotovideo;
+    use OpenQA::Worker;
+
+    eval { OpenQA::Worker::Engines::isotovideo::set_engine_exec('/bogus/location'); };
+    like($@, qr/Path to isotovideo invalid/, 'isotovideo version path invalid');
+    OpenQA::Worker::init({}, {apikey => 123, apisecret => 456, instance => 1});
+    is($OpenQA::Worker::Common::isotovideo_interface_version, 0, 'isotovideo worker init not set');
+
+    OpenQA::Worker::Engines::isotovideo::set_engine_exec('../os-autoinst/isotovideo');
+    ok($OpenQA::Worker::Common::isotovideo_interface_version > 0, 'isotovideo update version');
+
+    $OpenQA::Worker::Common::isotovideo_interface_version = 0;
+    OpenQA::Worker::init({},
+        {apikey => 123, apisecret => 456, instance => 1, isotovideo => '../os-autoinst/isotovideo'});
+    ok($OpenQA::Worker::Common::isotovideo_interface_version > 0, 'isotovideo worker init');
+};
+
 kill_driver;
 turn_down_stack;
 done_testing;

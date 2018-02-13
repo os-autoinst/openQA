@@ -49,7 +49,7 @@ sub init {
     $app->level($worker_settings->{LOG_LEVEL}) if $worker_settings->{LOG_LEVEL};
     $app->setup_log();
     OpenQA::Worker::Common::api_init($host_settings, $options);
-    OpenQA::Worker::Engines::isotovideo::set_engine_exec($options->{isotovideo}) if $options->{isotovideo};
+    OpenQA::Worker::Engines::isotovideo::set_engine_exec($options->{isotovideo});
 }
 
 sub main {

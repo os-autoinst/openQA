@@ -45,6 +45,8 @@
                     <th>Class</th>
                     <th>Arch</th>
                     <th>Status</th>
+                    <th>Websocket Api version</th>
+                    <th>os-autoinst version</th>
                 </tr>
             </thead>
             <tbody>
@@ -67,6 +69,12 @@
                             % stash(workername => $workername, worker => $worker);
                             %= include 'admin/workers/worker_status'
                         </td>
+                        <td class="version">
+                            <%= exists $worker->{properties} && $worker->{properties}->{WEBSOCKET_API_VERSION} ? $worker->{properties}->{WEBSOCKET_API_VERSION} : 'unknown' %>
+                        </td>
+                        <td class="version">
+                            <%= exists $worker->{properties} && $worker->{properties}->{ISOTOVIDEO_INTERFACE_VERSION} ? $worker->{properties}->{ISOTOVIDEO_INTERFACE_VERSION} : 'unknown' %>
+                        </td>                        
                     </tr>
                 % }
             </tbody>
