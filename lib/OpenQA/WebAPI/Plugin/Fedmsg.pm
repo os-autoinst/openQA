@@ -13,6 +13,11 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
+# An openQA plugin that emits fedmsgs for certain openQA events (by shadowing
+# fedmsg internal events). See http://www.fedmsg.com for more on fedmsg.
+# Currently quite specific to Fedora usage. Requires daemonize and
+# fedmsg-logger.
+
 package OpenQA::WebAPI::Plugin::Fedmsg;
 
 use strict;
@@ -56,10 +61,12 @@ sub log_event {
     # do you want to write perl bindings for fedmsg? no? me either.
     # FIXME: should be some way for plugins to have configuration and then
     # cert-prefix could be configurable, for now we hard code it
-    # we use IPC::Run rather than system() as it's easier to mock for testing
+    # we use IPC::Run rather than system() as it's easier to mock for testing,
+    # and we daemonize so we don't block until the message is sent (which can
+    # cause problems when sending hundreds of messages on ISO post)
     my @command = (
-        "fedmsg-logger", "--cert-prefix=openqa", "--modname=openqa", "--topic=$event",
-        "--json-input",  "--message=$event_data"
+        "/usr/sbin/daemonize", "/usr/bin/fedmsg-logger", "--cert-prefix=openqa", "--modname=openqa",
+        "--topic=$event",      "--json-input",           "--message=$event_data"
     );
     my ($stdin, $stderr, $output) = (undef, undef, undef);
     IPC::Run::run(\@command, \$stdin, \$output, \$stderr);
