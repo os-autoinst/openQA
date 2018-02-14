@@ -34,6 +34,7 @@ use File::Basename 'basename';
 use File::Which 'which';
 use Mojo::File 'path';
 use Mojo::IOLoop;
+use OpenQA::File;
 
 use POSIX ':sys_wait_h';
 
@@ -182,18 +183,111 @@ sub _reset_state {
     Mojo::IOLoop->singleton->emit("stop_job");
 }
 
-sub upload {
+sub _upload_state {
     my ($job_id, $form) = @_;
-    unless (verify_workerid) {
-        _reset_state;
-        die 'No current_host!';
-    }
+    my $ua_url = $hosts->{$current_host}{url}->clone;
+    $ua_url->path("jobs/$job_id/upload_state");
+    $hosts->{$current_host}{ua}->post($ua_url => form => $form);
+    return 1;
+}
+
+sub _multichunk_upload {
+    my ($job_id, $form) = @_;
+    my $filename   = $form->{file}->{filename};
+    my $file       = $form->{file}->{file};
+    my $is_asset   = $form->{asset};
+    my $chunk_size = $worker_settings->{UPLOAD_CHUNK_SIZE} // 1000000;
+    my $client     = $hosts->{$current_host}{ua};
+    my $e;
+
+    log_info("$filename multi-chunk upload", channels => ['worker'], default => 1);
+
+    $client->upload->once(
+        'upload_chunk.prepare' => sub {
+            my ($self, $pieces) = @_;
+            log_info("$filename: " . $pieces->size() . " chunks",   channels => ['worker'], default => 1);
+            log_info("$filename: chunks of $chunk_size bytes each", channels => ['worker'], default => 1);
+        });
+    my $t_start;
+    $client->upload->on('upload_chunk.start' => sub { $t_start = time() });
+    $client->upload->on(
+        'upload_chunk.finish' => sub {
+            my ($self, $piece) = @_;
+            my $spent  = (time() - $t_start) || 1;
+            my $kbytes = ($piece->end - $piece->start) / 1024;
+            my $speed  = sprintf("%.3f", $kbytes / $spent);
+            log_info(
+                "$filename: Processing chunk " . $piece->index() . "/" . $piece->total . " avg speed ~${speed}KB/s",
+                channels => ['worker'],
+                default  => 1
+            );
+        });
+
+    $client->upload->on(
+        'upload_chunk.response' => sub {
+            my ($self, $res) = @_;
+            if ($res->res->is_server_error) {
+                log_error($res->res->json->{error}, channels => ['autoinst', 'worker'], default => 1)
+                  if $res->res->json && $res->res->json->{error};
+                my $msg = "Failed uploading chunk";
+                log_error($msg, channels => ['autoinst', 'worker'], default => 1);
+            }
+
+            if (my $err = $res->error) {
+                my $msg;
+                if ($err->{code}) {
+                    $msg = sprintf "ERROR %s: $err->{code} response: $err->{message}\n", $filename;
+                }
+                else {
+                    $msg = sprintf "ERROR %s: Connection error: $err->{message}\n", $filename;
+                }
+                log_error($msg, channels => ['autoinst', 'worker'], default => 1);
+            }
+        });
+    $client->upload->on(
+        'upload_chunk.fail' => sub {
+            my ($self, $res, $chunk) = @_;
+            log_error(
+                "Upload failed for chunk " . $chunk->index . ": " . $e->body,
+                channels => ['autoinst', 'worker'],
+                default  => 1
+            );
+        });
+
+    $client->upload->once(
+        'upload_chunk.error' => sub {
+            $e = pop();
+            log_error($e->body, channels => ['autoinst', 'worker'], default => 1);
+        });
+
+    local $@;
+    eval {
+        $client->upload->asset(
+            $job_id => {
+                file       => $file,
+                name       => $filename,
+                asset      => $form->{asset},
+                chunk_size => $chunk_size
+            });
+    };
+
+    $client->upload->unsubscribe('upload_chunk.response');
+    $client->upload->unsubscribe('upload_chunk.start');
+    $client->upload->unsubscribe('upload_chunk.finish');
+    $client->upload->unsubscribe('upload_chunk.prepare');
+    $client->upload->unsubscribe('upload_chunk.error');
+    $client->upload->unsubscribe('upload_chunk.fail');
+
+    return 0 if $@ || $e;
+    return 1;
+}
+
+sub _upload {
+    my ($job_id, $form) = @_;
     my $filename = $form->{file}->{filename};
     my $file     = $form->{file}->{file};
-
     # we need to open and close the log here as one of the files
     # might actually be autoinst-log.txt
-    log_info("uploading $filename", channels => ['worker', 'autoinst'], default => 1);
 
     my $regular_upload_failed = 0;
     my $retry_counter         = 5;
@@ -201,16 +295,11 @@ sub upload {
     my $tics                  = 5;
     my $res;
 
-
     while (1) {
         my $ua_url = $hosts->{$current_host}{url}->clone;
         $ua_url->path("jobs/$job_id/artefact");
 
         my $tx = $hosts->{$current_host}{ua}->build_tx(POST => $ua_url => form => $form);
-        # override the default boundary calculation - it reads whole file
-        # and it can cause various timeouts
-        my $headers = $tx->req->headers;
-        $headers->content_type($headers->content_type . "; boundary=$boundary");
 
         if ($regular_upload_failed) {
             log_warning(
@@ -225,6 +314,9 @@ sub upload {
 
         # Upload known server failures (Instead of anything that's not 200)
         if ($res->res->is_server_error) {
+            log_error($res->res->json->{error}, channels => ['autoinst', 'worker'], default => 1)
+              if $res->res->json && $res->res->json->{error};
+
             $regular_upload_failed = 1;
             next if $retry_counter;
 
@@ -249,33 +341,22 @@ sub upload {
         return 0;
     }
 
-    # double check uploads if the webui asks us to
-    if ($res->res->json && $res->res->json->{temporary}) {
-        my $csum1 = '1';
-        my $size1;
-        if (open(my $cfd, "-|", "cksum", $res->res->json->{temporary})) {
-            ($csum1, $size1) = split(/ /, <$cfd>);
-            close($cfd);
-        }
-        my $csum2 = '2';
-        my $size2;
-        if (open(my $cfd, "-|", "cksum", $file)) {
-            ($csum2, $size2) = split(/ /, <$cfd>);
-            close($cfd);
-        }
-        log_debug("Checksum comparison (actual:expected) $csum1:$csum2 with size (actual:expected) $size1:$size2",
-            channels => 'autoinst');
-        if ($csum1 eq $csum2 && $size1 eq $size2) {
-            my $ua_url = $hosts->{$current_host}{url}->clone;
-            $ua_url->path("jobs/$job_id/ack_temporary");
-            $hosts->{$current_host}{ua}->post($ua_url => form => {temporary => $res->res->json->{temporary}});
-        }
-        else {
-            log_debug("Checksum/size comparison of $filename FAILED", channels => 'autoinst');
-            return 0;
-        }
-    }
     return 1;
+}
+
+sub upload {
+    my ($job_id, $form) = @_;
+    unless (verify_workerid) {
+        _reset_state;
+        die 'No current_host!';
+    }
+    my $filename = $form->{file}->{filename};
+    my $file     = $form->{file}->{file};
+    my $is_asset = $form->{asset};
+    log_info("uploading $filename", channels => ['worker', 'autoinst'], default => 1);
+
+    return _upload($job_id, $form) unless $is_asset;
+    return _multichunk_upload($job_id, $form);
 }
 
 sub _stop_job {

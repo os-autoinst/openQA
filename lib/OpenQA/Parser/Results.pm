@@ -57,7 +57,7 @@ sub _gen_tree_el {
 }
 
 sub serialize   { Storable::freeze($_[0]) }
-sub deserialize { __PACKAGE__->new(@{Storable::thaw($_[1])}) }
+sub deserialize { shift->new(@{Storable::thaw(shift)}) }
 
 sub reset { @{$_[0]} = () }
 

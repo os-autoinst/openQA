@@ -21,6 +21,8 @@ use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils 'find_job';
 use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
+use Mojo::Asset::Memory;
+use Mojo::File 'path';
 
 =pod
 
@@ -448,9 +450,33 @@ sub create_artefact {
         return $self->render(text => "FAILED");
     }
     elsif ($self->param('asset')) {
-        my $abs = $job->create_asset($self->param('file'), $self->param('asset'));
-        $self->render(json => {temporary => $abs});
-        return;
+        $self->render_later;    # XXX: Not really needed, but in case of upstream changes
+        my @ioloop_evs = qw(events);
+        my @evs        = @{Mojo::IOLoop->singleton}{@ioloop_evs};
+        return Mojo::IOLoop->subprocess(
+            sub {
+                @{Mojo::IOLoop->singleton}{@ioloop_evs} = @evs;
+                Mojo::IOLoop->singleton->emit('chunk_upload.start' => $self);
+                my ($e, $fname, $type, $last) = $job->create_asset($self->param('file'), $self->param('asset'));
+                Mojo::IOLoop->singleton->emit('chunk_upload.end' => ($self, $e, $fname, $type, $last));
+                die "$e" if $e;
+                return $fname, $type, $last;
+            },
+            sub {
+                my ($subprocess, $e, @results) = @_;
+                # Even if most probably it is an error on client side, we return 500
+                # So worker can keep retrying if it was caused by network failures
+                $self->app->log->debug($e) if $e;
+
+                $self->render(json => {error => 'Failed receiving chunk: ' . $e}, status => 500) and return if $e;
+                my $fname = $results[0];
+                my $type  = $results[1];
+                my $last  = $results[2];
+
+                $job->jobs_assets->create({job => $job, asset => {name => $fname, type => $type}, created_by => 1})
+                  if $last && !$e;
+                return $self->render(json => {status => 'ok'});
+            });
     }
     if ($job->create_artefact($self->param('file'), $self->param('ulog'))) {
         $self->render(text => "OK");
@@ -462,27 +488,31 @@ sub create_artefact {
 
 =over 4
 
-=item ack_temporary()
+=item upload_state()
 
-Verifies existence of a temporary file passed as the param "temporary" to the method,
-and logs a message if the file is present. Also renames the temporary file to its
-corresponding asset name if possible.
+It is used by the worker to inform the webui of a failed download. This is the case when
+all upload retrials from the worker have been exhausted and webui can remove the file
+that has been partially uploaded.
 
 =back
 
 =cut
 
-sub ack_temporary {
+sub upload_state {
     my ($self) = @_;
+    my $file   = $self->param('filename');
+    my $state  = $self->param('state');
+    my $scope  = $self->param('scope');
+    my $job_id = $self->stash('jobid');
 
-    my $temp = $self->param('temporary');
-    if (-f $temp) {
-        $self->app->log->debug("ACK $temp");
-        if ($temp =~ /^(.*)\.TEMP-[^\/]*$/) {
-            my $asset = $1;
-            $self->app->log->debug("RENAME $temp to $asset");
-            rename($temp, $asset);
-        }
+    $file = sprintf("%08d-%s", $job_id, $file) if $scope ne 'public';
+
+    if ($state eq 'fail') {
+        $self->app->log->debug("FAIL chunk upload of $file");
+        path($OpenQA::Utils::assetdir, 'tmp', $scope)->list_tree({dir => 1})->each(
+            sub {
+                $_->remove_tree if -d $_ && $_->basename eq $file . '.CHUNKS';
+            });
     }
     $self->render(text => "OK");
 }

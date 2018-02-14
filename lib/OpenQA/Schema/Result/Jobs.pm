@@ -33,7 +33,8 @@ use File::Spec::Functions 'catfile';
 use File::Path ();
 use DBIx::Class::Timestamps 'now';
 use File::Temp 'tempdir';
-use Mojo::File 'tempfile';
+use Mojo::File qw(tempfile path);
+use OpenQA::File;
 use OpenQA::Parser 'parser';
 # The state and results constants are duplicated in the Python client:
 # if you change them or add any, please also update const.py.
@@ -1313,20 +1314,65 @@ sub create_asset {
 
     $fname = sprintf("%08d-%s", $self->id, $fname) if $scope ne 'public';
 
-    my $fpath = join('/', $OpenQA::Utils::assetdir, $type);
+    my $fpath = path($OpenQA::Utils::assetdir, $type);
+    my $temp_path = path($OpenQA::Utils::assetdir, 'tmp', $scope);
 
-    if (!-d $fpath) {
-        mkdir($fpath) || die "can't mkdir $fpath: $!";
-    }
+    my $temp_chunk_folder = path($temp_path,         join('.', $fname, 'CHUNKS'));
+    my $temp_final_file   = path($temp_chunk_folder, $fname);
+    my $final_file        = path($fpath,             $fname);
 
-    my $suffix = '.TEMP-' . db_helpers::rndstr(8);
-    my $abs = join('/', $fpath, $fname . $suffix);
-    $asset->move_to($abs);
-    chmod 0644, $abs;
-    log_debug("moved to $abs");
-    $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type}, created_by => 1});
+    $fpath->make_path             unless -d $fpath;
+    $temp_path->make_path         unless -d $temp_path;
+    $temp_chunk_folder->make_path unless -d $temp_chunk_folder;
 
-    return $abs;
+    # XXX : Moving this to subprocess/promises won't help much
+    # As calculating sha256 over >2GB file is pretty expensive
+    # IF we are receiving simultaneously uploads
+    my $last = 0;
+
+    local $@;
+    eval {
+        my $chunk = OpenQA::File->deserialize($asset->slurp);
+        $chunk->decode_content;
+        $chunk->write_content($temp_final_file);
+
+        # Always checking written data SHA
+        unless ($chunk->verify_content($temp_final_file)) {
+            $temp_chunk_folder->remove_tree if ($chunk->is_last);
+            die Mojo::Exception->new("Can't verify written data from chunk");
+        }
+
+        if ($chunk->is_last) {
+            # XXX: Watch out also apparmor permissions
+            my $sum;
+            my $real_sum;
+            $last++;
+
+            # Perform weak check on last bytes if files > 250MB
+            if ($chunk->end > 250000000) {
+                $sum      = $chunk->end;
+                $real_sum = -s $temp_final_file->to_string;
+            }
+            else {
+                $sum      = $chunk->total_cksum;
+                $real_sum = $chunk->_file_digest($temp_final_file->to_string);
+            }
+
+            $temp_chunk_folder->remove_tree
+              && die Mojo::Exception->new("Checksum mismatch expected $sum got: $real_sum ( weak check on last bytes )")
+              unless $sum eq $real_sum;
+
+            $temp_final_file->move_to($final_file);
+
+            chmod 0644, $final_file;
+
+            $temp_chunk_folder->remove_tree;
+        }
+        $chunk->content(\undef);
+    };
+    # $temp_chunk_folder->remove_tree if $@; # XXX: Don't! as worker will try again to upload.
+    return $@ if $@;
+    return 0, $fname, $type, $last;
 }
 
 sub has_failed_modules {

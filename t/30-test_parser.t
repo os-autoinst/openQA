@@ -256,6 +256,8 @@ subtest 'Nested results' => sub {
         result1 => NestedResult->new(val => 'result_1_result_1'),
         result2 => NestedResult->new(val => 'result_1_result_2'));
 
+    is_deeply(NestedResult->deserialize($r->serialize()), $r);
+
     is_deeply $r->_gen_tree_el,
       {
         '__data__' => {
