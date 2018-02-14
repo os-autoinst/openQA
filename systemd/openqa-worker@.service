@@ -15,6 +15,7 @@ ExecStartPre=/usr/bin/install -d -m 0755 -o _openqa-worker /var/lib/openqa/pool/
 ExecStart=/usr/share/openqa/script/worker --instance %i
 User=_openqa-worker
 KillMode=mixed
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target

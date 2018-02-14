@@ -30,6 +30,7 @@ use Cwd qw(abs_path getcwd);
 use OpenQA::Worker::Cache;
 use Time::HiRes 'sleep';
 use IO::Handle;
+use Mojo::IOLoop::ReadWriteProcess;
 
 my $isotovideo = "/usr/bin/isotovideo";
 my $workerpid;
@@ -215,31 +216,35 @@ sub engine_workit {
     my $tmpdir = "$pooldir/tmp";
     mkdir($tmpdir) unless (-d $tmpdir);
 
-    my $child = fork();
-    die "failed to fork: $!\n" unless defined $child;
+    my $child = Mojo::IOLoop::ReadWriteProcess->new(
+        code => sub {
 
-    unless ($child) {
-        # create new process group
-        setpgrp(0, 0);
-        $ENV{TMPDIR} = $tmpdir;
-        log_info("$$: WORKING " . $job->{id});
-        log_debug('+++ worker notes +++', channels => 'autoinst');
-        log_debug(sprintf("start time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
+            setpgrp(0, 0);
+            $ENV{TMPDIR} = $tmpdir;
+            log_info("$$: WORKING " . $job->{id});
+            log_debug('+++ worker notes +++', channels => 'autoinst');
+            log_debug(sprintf("start time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
 
-        my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
-        log_debug(sprintf("running on $hostname:%d ($sysname $release $version $machine)", $instance),
-            channels => 'autoinst');
-        my $handle = get_channel_handle('autoinst');
-        STDOUT->fdopen($handle, 'w');
-        STDERR->fdopen($handle, 'w');
-        exec "perl", "$isotovideo", '-d';
-        die "exec failed: $!\n";
-    }
-    else {
-        $workerpid = $child;
-        return {pid => $child};
-    }
+            my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
+            log_debug(sprintf("running on $hostname:%d ($sysname $release $version $machine)", $instance),
+                channels => 'autoinst');
+            my $handle = get_channel_handle('autoinst');
+            STDOUT->fdopen($handle, 'w');
+            STDERR->fdopen($handle, 'w');
 
+            exec "perl", "$isotovideo", '-d';
+            die "exec failed: $!\n";
+
+        },
+        set_pipes            => 0,
+        internal_pipes       => 0,
+        blocking_stop        => 1,
+        max_kill_attempts    => 1,
+        _default_kill_signal => -POSIX::SIGTERM());
+
+    $child->start();
+    $workerpid = $child->pid();
+    return {child => $child};
 }
 
 sub locate_local_assets {
@@ -256,49 +261,3 @@ sub locate_local_assets {
     return undef;
 }
 
-sub engine_check {
-    # abort job if backend crashed and reschedule it
-    if (-e "$pooldir/backend.crashed") {
-        unlink("$pooldir/backend.crashed");
-        log_error('backend crashed ...');
-        if (open(my $fh, '<', "$pooldir/os-autoinst.pid")) {
-            local $/;
-            my $pid = <$fh>;
-            close $fh;
-            if ($pid =~ /(\d+)/) {
-                log_info("killing os-autoinst $1");
-                _kill($1);
-            }
-        }
-        if (open(my $fh, '<', "$pooldir/qemu.pid")) {
-            local $/;
-            my $pid = <$fh>;
-            close $fh;
-            if ($pid =~ /(\d+)/) {
-                log_error("killing qemu $1");
-                _kill($1);
-            }
-        }
-        return 'crashed';
-    }
-
-    # check if the worker is still running
-    my $pid = waitpid($workerpid, WNOHANG);
-    log_debug("waitpid $workerpid returned $pid with status $?");
-
-    if ($pid == -1 && $!{ECHILD}) {
-        warn "we lost our child\n";
-        return 'died';
-    }
-
-    if ($pid == $workerpid) {
-        if ($?) {
-            warn "child $pid died with exit status $?\n";
-            return 'died';
-        }
-        else {
-            return 'done';
-        }
-    }
-    return;
-}

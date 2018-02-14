@@ -31,6 +31,8 @@ use OpenQA::Test::Case;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
+use Mojo::IOLoop::ReadWriteProcess;
+use OpenQA::Test::Utils 'redirect_output';
 
 my $schema = OpenQA::Test::Case->new->init_data;
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
@@ -506,9 +508,15 @@ subtest 'job set_running()' => sub {
 
 use OpenQA::Worker::Common 'get_timer';
 use OpenQA::Worker::Jobs;
+use OpenQA::Worker::Pool;
+use File::Spec::Functions;
 no warnings 'redefine';
 sub OpenQA::Worker::Jobs::engine_workit {
-    return shift;
+    return {child => Mojo::IOLoop::ReadWriteProcess->new};
+}
+my $alive = 1;
+sub Mojo::IOLoop::ReadWriteProcess::is_running {
+    return $alive;
 }
 
 sub OpenQA::Worker::Jobs::_stop_job {
@@ -538,7 +546,13 @@ subtest 'job timers are added after start job and removed after stop job' => sub
     $OpenQA::Worker::Jobs::job = {id => 1, settings => {NAME => 'test_job'}};
     OpenQA::Worker::Jobs::start_job('example.host');
     _check_timers(1);
-    OpenQA::Worker::Jobs::stop_job('done');
+
+    my $exception = 1;
+    eval {
+        OpenQA::Worker::Jobs::stop_job('done');
+        $exception = 0;
+    };
+    ok(!$exception, 'Pool check qemu done');
     _check_timers(0);
 };
 
@@ -561,6 +575,50 @@ subtest 'delete job assigned as last use for asset' => sub {
     $some_asset = $assets->find($asset_id);
     ok($some_asset, 'asset still exists');
     is($some_asset->last_use_job_id, undef, 'last job unset');
+};
+
+subtest 'check dead qemu' => sub {
+    use OpenQA::Worker::Pool 'clean_pool';
+    use OpenQA::Worker::Common qw($nocleanup $pooldir);
+    $nocleanup = 0;
+
+    $pooldir = Mojo::File->tempdir('pool');
+    my $qemu_pid_fh = Mojo::File->new(catfile($pooldir), 'qemu.pid')->open('>');
+    print $qemu_pid_fh '999999999999999999';
+    close $qemu_pid_fh;
+
+    my $exception = 1;
+    eval {
+        clean_pool();
+        $exception = 0;
+    };
+    ok(!$exception, 'dead qemu bogus pid');
+
+    $qemu_pid_fh = Mojo::File->new(catfile($pooldir), 'qemu.pid')->open('>');
+    print $qemu_pid_fh $$;
+    close $qemu_pid_fh;
+    $exception = 1;
+    eval {
+        clean_pool();
+        $exception = 0;
+    };
+    ok(!$exception, 'dead qemu bogus exec');
+};
+
+
+subtest 'check dead children stop job' => sub {
+    sub OpenQA::Worker::Jobs::api_call { 1; }
+
+    $alive = 0;
+
+    my $exception = 1;
+    eval {
+        OpenQA::Worker::Jobs::_stop_job_2('dead_children');
+        $exception = 0;
+    };
+
+    ok($exception, 'dead children got exception');
+    like($@, qr/Dead children/, 'dead children match exception');
 };
 
 done_testing();
