@@ -82,30 +82,11 @@ subtest "WebSocket Server _message()" => sub {
 
     monkey_patch "Mojo::Transaction::Websocket", send => sub { undef };
     $fake_tx->OpenQA::WebSockets::Server::_message({type => 'worker_status'});
-    like $buf, qr/Received a message from an incompatible worker/ or diag explain $buf;
-    $fake_tx->OpenQA::WebSockets::Server::_message(
-        {type => 'worker_status', websocket_api_version => OpenQA::WebSockets::Server->INTERFACE_VERSION});
     like $buf, qr/Could not be able to send population number to worker/ or diag explain $buf;
-    $fake_tx->OpenQA::WebSockets::Server::_message(
-        {
-            type                         => 'worker_status',
-            websocket_api_version        => 999999,
-            isotovideo_interface_version => 9999
-        });
-    like $buf, qr/Received a message from an incompatible worker/ or diag explain $buf;
 
     monkey_patch "OpenQA::WebAPI", schema => sub { undef };
     $fake_tx->OpenQA::WebSockets::Server::_message({type => 'worker_status'});
-    like $buf, qr/Received a message from an incompatible worker/ or diag explain $buf;
-    $fake_tx->OpenQA::WebSockets::Server::_message(
-        {
-            type                         => 'worker_status',
-            websocket_api_version        => OpenQA::WebSockets::Server->INTERFACE_VERSION,
-            isotovideo_interface_version => 9999
-        });
     like $buf, qr/Failed updating worker seen status/ or diag explain $buf;
-    $fake_tx->OpenQA::WebSockets::Server::_message({type => 'worker_status', websocket_api_version => 99999});
-    like $buf, qr/Received a message from an incompatible worker/ or diag explain $buf;
 };
 
 done_testing();

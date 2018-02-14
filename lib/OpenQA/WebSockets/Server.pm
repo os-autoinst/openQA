@@ -33,7 +33,7 @@ our (@ISA, @EXPORT, @EXPORT_OK);
 
 @ISA       = qw(Exporter);
 @EXPORT    = qw(ws_send ws_send_all ws_send_job);
-@EXPORT_OK = qw(ws_create ws_is_worker_connected);
+@EXPORT_OK = qw(ws_create ws_is_worker_connected INTERFACE_VERSION);
 
 # id->worker mapping
 my $workers;
@@ -249,8 +249,6 @@ sub _message {
         my $job_status                   = $json->{job}->{state};
         my $jobid                        = $json->{job}->{id};
         my $wid                          = $worker->{id};
-        my $websocket_api_version        = $json->{websocket_api_version} // 0;
-        my $isotovideo_interface_version = $json->{isotovideo_interface_version} // 0;
 
         $worker_status->{$wid} = $json;
         log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $wid, Dumper($json)));
@@ -262,24 +260,11 @@ sub _message {
                     return unless $w;
                     log_debug("Updated worker seen from worker_status");
                     $w->seen;
-                    $w->set_property('WEBSOCKET_API_VERSION',        $websocket_api_version);
-                    $w->set_property('ISOTOVIDEO_INTERFACE_VERSION', $isotovideo_interface_version);
                 });
         }
         catch {
             log_error("Failed updating worker seen status: $_");
         };
-
-        if (INTERFACE_VERSION != $websocket_api_version) {
-            log_debug("Received a message from an incompatible worker");
-            $ws->tx->send({json => {type => 'incompatible'}});
-            # In case the worker haven't been updated to understand the "incompatible" type message,
-            # we need to force the shutdown
-            $ws->finish("1008",
-                "Connection terminated from WebSocket server - incompatible communication protocol version")
-              if $websocket_api_version == 0;
-            return;
-        }
 
         my $registered_job_id;
         my $registered_job_token;

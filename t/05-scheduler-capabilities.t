@@ -29,6 +29,7 @@ use lib "$FindBin::Bin/lib";
 use Data::Dump qw(pp dd);
 use OpenQA::Scheduler;
 use OpenQA::WebSockets;
+use OpenQA::WebSockets::Server 'INTERFACE_VERSION';
 use OpenQA::Test::Database;
 use Test::Mojo;
 use Test::More;
@@ -63,11 +64,13 @@ my %settings = (
 );
 
 my %workercaps64;
-$workercaps64{cpu_modelname} = 'Rainbow CPU';
-$workercaps64{cpu_arch}      = 'x86_64';
-$workercaps64{worker_class}  = 'qemu_x86_64,qemu_i686';
-$workercaps64{cpu_opmode}    = '32-bit, 64-bit';
-$workercaps64{mem_max}       = '4096';
+$workercaps64{cpu_modelname}                = 'Rainbow CPU';
+$workercaps64{cpu_arch}                     = 'x86_64';
+$workercaps64{worker_class}                 = 'qemu_x86_64,qemu_i686';
+$workercaps64{cpu_opmode}                   = '32-bit, 64-bit';
+$workercaps64{mem_max}                      = '4096';
+$workercaps64{websocket_api_version}        = INTERFACE_VERSION;
+$workercaps64{isotovideo_interface_version} = INTERFACE_VERSION;
 
 my %workercaps64_server = %workercaps64;
 $workercaps64_server{worker_class} = 'server,qemu_x86_64';
@@ -76,12 +79,13 @@ my %workercaps64_client = %workercaps64;
 $workercaps64_client{worker_class} = 'client,qemu_x86_64';
 
 my %workercaps32;
-$workercaps32{cpu_modelname} = 'Rainbow CPU';
-$workercaps32{cpu_arch}      = 'i686';
-$workercaps32{worker_class}  = 'qemu_i686';
-$workercaps32{cpu_opmode}    = '32-bit';
-$workercaps32{mem_max}       = '4096';
-
+$workercaps32{cpu_modelname}                = 'Rainbow CPU';
+$workercaps32{cpu_arch}                     = 'i686';
+$workercaps32{worker_class}                 = 'qemu_i686';
+$workercaps32{cpu_opmode}                   = '32-bit';
+$workercaps32{mem_max}                      = '4096';
+$workercaps32{websocket_api_version}        = INTERFACE_VERSION;
+$workercaps32{isotovideo_interface_version} = INTERFACE_VERSION;
 
 my %settingsA = %settings;
 my %settingsB = %settings;

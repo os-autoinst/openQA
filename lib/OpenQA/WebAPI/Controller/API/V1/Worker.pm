@@ -22,6 +22,7 @@ use OpenQA::Schema::Result::Jobs;
 use DBIx::Class::Timestamps 'now';
 use Try::Tiny;
 use Scalar::Util 'looks_like_number';
+use OpenQA::WebSockets::Server 'INTERFACE_VERSION';
 
 =pod
 
@@ -83,6 +84,8 @@ B<NOTE>: currently this function is used in create (API entry point)
 sub _register {
     my ($self, $schema, $host, $instance, $caps) = @_;
 
+    die "Incompatible websocket api" if INTERFACE_VERSION != ($caps->{websocket_api_version} // 0);
+
     my $worker = $schema->resultset("Workers")->search(
         {
             host     => $host,
@@ -102,7 +105,6 @@ sub _register {
     }
     # store worker's capabilities to database
     $worker->update_caps($caps) if $caps;
-
     # in case the worker died ...
     # ... restart job assigned to this worker
     if (my $job = $worker->job) {
@@ -121,6 +123,7 @@ sub _register {
     $worker->set_property('INTERACTIVE',                  0);
     $worker->set_property('STOP_WAITFORNEEDLE',           0);
     $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', 0);
+
     # $worker->seen();
     die "got invalid id" unless $worker->id;
     return $worker->id;
@@ -137,8 +140,7 @@ Initializes and registers a worker.
 =cut
 
 sub create {
-    my ($self) = @_;
-
+    my ($self)           = @_;
     my $validation       = $self->validation;
     my @mandatory_params = qw(host instance cpu_arch mem_max worker_class);
     for my $k (@mandatory_params) {
@@ -158,16 +160,30 @@ sub create {
     my $instance = $self->param('instance');
     my $caps     = {};
 
-    $caps->{cpu_modelname} = $self->param('cpu_modelname');
-    $caps->{cpu_arch}      = $self->param('cpu_arch');
-    $caps->{cpu_opmode}    = $self->param('cpu_opmode');
-    $caps->{mem_max}       = $self->param('mem_max');
-    $caps->{worker_class}  = $self->param('worker_class');
+    $caps->{cpu_modelname}                = $self->param('cpu_modelname');
+    $caps->{cpu_arch}                     = $self->param('cpu_arch');
+    $caps->{cpu_opmode}                   = $self->param('cpu_opmode');
+    $caps->{mem_max}                      = $self->param('mem_max');
+    $caps->{worker_class}                 = $self->param('worker_class');
+    $caps->{websocket_api_version}        = $self->param('websocket_api_version');
+    $caps->{isotovideo_interface_version} = $self->param('isotovideo_interface_version');
 
-    my $id = $self->_register($self->db, $host, $instance, $caps);
+    my $id;
+    try {
+        $id = $self->_register($self->db, $host, $instance, $caps);
+    }
+    catch {
+        if (/Incompatible/) {
+            $self->render(status => 426, json => {error => $_});
+        }
+        else {
+            die $_;
+        }
+
+    };
+
     $self->emit_event('openqa_worker_register', {id => $id, host => $host, instance => $instance, caps => $caps});
     $self->render(json => {id => $id});
-
 }
 
 =over 4

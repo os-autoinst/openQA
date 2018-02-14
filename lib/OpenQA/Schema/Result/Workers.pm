@@ -133,6 +133,12 @@ sub dead {
     $self->t_updated < $dt;
 }
 
+sub get_websocket_api_version {
+    my ($self) = @_;
+
+    return $self->get_property('WEBSOCKET_API_VERSION');
+}
+
 sub currentstep {
     my ($self) = @_;
 

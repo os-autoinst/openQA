@@ -380,10 +380,8 @@ subtest 'mock test send_status' => sub {
 
     is($faketx->get(0)->{status},       "working");
     is($faketx->get(0)->{job}->{state}, "scheduled");
-    ok(exists $faketx->get(0)->{websocket_api_version});
-    ok(exists $faketx->get(0)->{isotovideo_interface_version});
-    is($faketx->get(0)->{websocket_api_version},        1);
-    is($faketx->get(0)->{isotovideo_interface_version}, 0);
+    is($faketx->get(0)->{type},         "worker_status");
+    is(keys %{$faketx->get(0)},         3);
 
     $OpenQA::Worker::Common::job = {};
 
@@ -391,6 +389,8 @@ subtest 'mock test send_status' => sub {
 
     is($faketx->get(1)->{status}, "free");
     ok(!exists $faketx->get(1)->{job}->{state});
+    is($faketx->get(1)->{type}, "worker_status");
+    is(keys %{$faketx->get(1)}, 3);
 
     $OpenQA::Worker::Common::job = undef;
 
@@ -398,20 +398,22 @@ subtest 'mock test send_status' => sub {
 
     is($faketx->get(2)->{status}, "free");
     ok(!exists $faketx->get(2)->{job}->{state});
+    is($faketx->get(2)->{type}, "worker_status");
+    is(keys %{$faketx->get(2)}, 3);
 
     $OpenQA::Worker::Common::job = {id => 9999, state => "running", settings => {NAME => "Foo"}};
     OpenQA::Worker::Common::send_status($faketx);
     is($faketx->get(3)->{status},       "working");
     is($faketx->get(3)->{job}->{state}, "running");
+    is($faketx->get(3)->{type},         "worker_status");
+    is(keys %{$faketx->get(3)},         3);
 
     OpenQA::Worker::Jobs::_reset_state();
     OpenQA::Worker::Common::send_status($faketx);
     is($faketx->get(4)->{status}, "free");
     ok(!exists $faketx->get(4)->{job}->{state});
-    ok(exists $faketx->get(4)->{websocket_api_version});
-    ok(exists $faketx->get(4)->{isotovideo_interface_version});
-    is($faketx->get(4)->{websocket_api_version},        1);
-    is($faketx->get(4)->{isotovideo_interface_version}, 0);
+    is($faketx->get(4)->{type}, "worker_status");
+    is(keys %{$faketx->get(4)}, 3);
 };
 
 

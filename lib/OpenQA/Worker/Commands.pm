@@ -183,10 +183,6 @@ sub websocket_commands {
                 $check_job_running->{$host} = 0;
             }
         }
-        elsif ($type eq 'incompatible') {
-            log_error("The worker is running an incompatible version");
-            Mojo::IOLoop->singleton->stop_gracefully;
-        }
         else {
             log_error("got unknown command $type");
         }
