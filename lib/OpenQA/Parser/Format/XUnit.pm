@@ -17,6 +17,7 @@ package OpenQA::Parser::Format::XUnit;
 
 use Mojo::Base 'OpenQA::Parser::Format::JUnit';
 use Carp qw(croak confess);
+use Mojo::DOM;
 
 sub _add_single_result { shift->results->add(OpenQA::Parser::Result::XUnit->new(@_)) }
 

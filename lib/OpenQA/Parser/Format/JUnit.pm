@@ -18,6 +18,7 @@ package OpenQA::Parser::Format::JUnit;
 use Mojo::Base 'OpenQA::Parser::Format::Base';
 use Carp qw(croak confess);
 use OpenQA::Parser::Result::OpenQA;
+use Mojo::DOM;
 
 has include_results => 0;
 has [qw(_dom)];
