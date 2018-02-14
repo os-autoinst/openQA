@@ -1,8 +1,5 @@
 ! bootstrap.css
 # download the fonts
-<< https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/fonts/glyphicons-halflings-regular.woff2
-<< https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/fonts/glyphicons-halflings-regular.ttf
-<< https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/fonts/glyphicons-halflings-regular.eot
 < https://cdn.datatables.net/1.10.16/css/dataTables.bootstrap.css
 < https://use.fontawesome.com/releases/v5.0.0/css/all.css
 << https://use.fontawesome.com/releases/v5.0.0/webfonts/fa-brands-400.eot
@@ -22,7 +19,7 @@
 < stylesheets/openqa.scss
 < https://cdnjs.cloudflare.com/ajax/libs/chosen/1.7.0/chosen.css
 < stylesheets/result_preview.scss
-<< https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/stylesheets/_bootstrap.scss
+<< https://raw.githubusercontent.com/twbs/bootstrap/v4.0.0/scss/bootstrap.scss
 < sass/theme.scss
 < https://raw.githubusercontent.com/vsn4ik/bootstrap-submenu/v2.0.4/dist/css/bootstrap-submenu.css
 < https://raw.githubusercontent.com/sorich87/bootstrap-tour/v0.11.0/build/css/bootstrap-tour.css
@@ -40,7 +37,7 @@
 < javascripts/shapes.js
 
 ! bootstrap.js
-< https://code.jquery.com/jquery-3.1.1.js
+< https://code.jquery.com/jquery-3.3.1.js
 < javascripts/openqa.js
 < https://cdn.datatables.net/1.10.16/js/jquery.dataTables.js
 < https://cdn.datatables.net/1.10.16/js/dataTables.bootstrap.js
@@ -62,12 +59,10 @@
 < javascripts/feature.js
 < javascripts/fullscreen.js
 < https://raw.githubusercontent.com/vsn4ik/bootstrap-submenu/v2.0.4/dist/js/bootstrap-submenu.js
-< https://raw.githubusercontent.com/twbs/bootstrap-sass/5d6b2ebba0c2a5885ce2f0e01e9218db3d3b5e47/assets/javascripts/bootstrap/collapse.js
-< https://raw.githubusercontent.com/twbs/bootstrap-sass/5d6b2ebba0c2a5885ce2f0e01e9218db3d3b5e47/assets/javascripts/bootstrap/tooltip.js
-< https://raw.githubusercontent.com/twbs/bootstrap-sass/5d6b2ebba0c2a5885ce2f0e01e9218db3d3b5e47/assets/javascripts/bootstrap/popover.js
-< https://raw.githubusercontent.com/twbs/bootstrap-sass/5d6b2ebba0c2a5885ce2f0e01e9218db3d3b5e47/assets/javascripts/bootstrap/tab.js
-< https://raw.githubusercontent.com/twbs/bootstrap-sass/5d6b2ebba0c2a5885ce2f0e01e9218db3d3b5e47/assets/javascripts/bootstrap.js
-< https://raw.githubusercontent.com/twbs/bootstrap-sass/5d6b2ebba0c2a5885ce2f0e01e9218db3d3b5e47/assets/javascripts/bootstrap/transition.js
+< https://github.com/twbs/bootstrap/tree/v4.0.0/js/dist/collapse.js
+< https://github.com/twbs/bootstrap/tree/v4.0.0/js/dist/tooltip.js
+< https://github.com/twbs/bootstrap/tree/v4.0.0/js/dist/popover.js
+< https://github.com/twbs/bootstrap/tree/v4.0.0/js/dist/tab.js
 < https://cdnjs.cloudflare.com/ajax/libs/chosen/1.7.0/chosen.jquery.js
 < https://cdnjs.cloudflare.com/ajax/libs/jquery-ujs/1.2.1/rails.js
 < javascripts/disable_animations.js [mode==test]
