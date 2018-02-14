@@ -1,0 +1,137 @@
+<testsuites>
+  <testsuite package="Scenario-1" hostname="localhost" timestamp="2018-02-13T10:17:36" name="Default configuration">
+    <properties/>
+    <testcase classname="server.default-configuration" status="failure" name="server.default-configuration" time="0.015">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="server.NOSSL-vsftpd-configuration" status="failure" name="Test vsftpd service with NOSSL local users only ro" time="0.016">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="client.NOSSL-vsftpd-configuration" status="failure" name="NOSSL curl used to UP and DWNLD files - local users only ro" time="0.016">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="server.NOSSL-vsftpd-configuration" status="failure" name="Test vsftpd service with NOSSL - local users only rw" time="0.015">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="client.NOSSL-vsftpd-configuration" status="failure" name="NOSSL curl used to UP and DWNLD files - local users only rw" time="0.015">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="server.NOSSL-vsftpd-configuration" status="failure" name="Test vsftpd service with NOSSL - anon only ro" time="0.015">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="client.NOSSL-vsftpd-configuration" status="failure" name="NOSSL curl used to UP and DWNLD files - anonymous users only ro" time="0.014">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="server.NOSSL-vsftpd-configuration" status="failure" name="Test vsftpd service with NOSSL - anon only rw" time="0.015">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="client.NOSSL-vsftpd-configuration" status="failure" name="NOSSL curl used to UP and DWNLD files - anonymous users only rw" time="0.016">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="server.NOSSL-vsftpd-configuration" status="failure" name="Test vsftpd service with NOSSL - invalid users only" time="0.015">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="client.NOSSL-vsftpd-configuration" status="failure" name="NOSSL curl used to UP and DWNLD files - invalid users only" time="0.014">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="server.NOSSL-vsftpd-configuration" status="failure" name="Test vsftpd service with NOSSL listdirs valid users only" time="0.016">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="client.NOSSL-vsftpd-configuration" status="failure" name="NOSSL curl used to UP and DWNLD files - listdirs valid users only" time="0.015">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="server.NOSSL-vsftpd-configuration" status="failure" name="Test vsftpd service with NOSSL listdirs valid users only chroot" time="0.015">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="client.NOSSL-vsftpd-configuration" status="failure" name="NOSSL curl used to UP and DWNLD files - listdirs valid users only chroot" time="0.015">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="server.NOSSL-vsftpd-configuration" status="failure" name="Test vsftpd service with NOSSL listdirs invalid chrootperms\n###\n" time="0.014">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="client.NOSSL-vsftpd-configuration" status="failure" name="NOSSL curl used to UP and DWNLD files - listdirs invalid chrootperms" time="0.015">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="server.SSL-vsftpd-configuration" status="failure" name="Test vsftpd service with SSL local users only ro" time="0.016">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="client.SSL-vsftpd-configuration" status="failure" name="SSL curl used to UP and DWNLD files - local users only ro" time="0.015">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="server.SSL-vsftpd-configuration" status="failure" name="Test vsftpd service with SSL - local users only rw" time="0.016">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="client.SSL-vsftpd-configuration" status="failure" name="SSL curl used to UP and DWNLD files - local users only rw" time="0.015">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="server.SSL-vsftpd-configuration" status="failure" name="Test vsftpd service with SSL - anon only ro" time="0.015">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="client.SSL-vsftpd-configuration" status="failure" name="SSL curl used to UP and DWNLD files - anonymous users only ro" time="0.014">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="server.SSL-vsftpd-configuration" status="failure" name="Test vsftpd service with SSL - anon only rw" time="0.014">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="client.SSL-vsftpd-configuration" status="failure" name="SSL curl used to UP and DWNLD files - anonymous users only rw" time="0.015">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="server.SSL-vsftpd-configuration" status="failure" name="Test vsftpd service with SSL - invalid users only" time="0.015">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="client.SSL-vsftpd-configuration" status="failure" name="SSL curl used to UP and DWNLD files - invalid users only" time="0.014">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="server.SSL-vsftpd-configuration" status="failure" name="Test vsftpd service with SSL listdirs valid users only" time="0.016">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="client.SSL-vsftpd-configuration" status="failure" name="SSL curl used to UP and DWNLD files - listdirs valid users only" time="0.017">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="server.SSL-vsftpd-configuration" status="failure" name="Test vsftpd service with SSL listdirs valid users only chroot" time="0.016">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="client.SSL-vsftpd-configuration" status="failure" name="SSL curl used to UP and DWNLD files - listdirs valid users only chroot" time="0.017">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="server.SSL-vsftpd-configuration" status="failure" name="Test vsftpd service with SSL listdirs invalid chrootperms\n###\n" time="0.016">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+    <testcase classname="client.SSL-vsftpd-configuration" status="failure" name="SSL curl used to UP and DWNLD files - listdirs invalid chrootperms" time="0.017">
+      <failure message="(unknown)" type="randomError"><![CDATA[Error while initializing library: Unknown plugin.
+]]></failure>
+    </testcase>
+  </testsuite>
+</testsuites>
