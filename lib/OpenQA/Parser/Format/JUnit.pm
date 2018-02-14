@@ -97,6 +97,8 @@ sub parse {
                 $tc_result =~ s/^failure$/fail/;     # test failed
             }
 
+            $result->{result} = 'fail' if $tc_result eq 'fail';
+
             my $details = {result => $tc_result};
 
             my $text_fn = "$ts_category-$ts_name-$num.txt";

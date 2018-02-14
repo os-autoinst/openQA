@@ -534,6 +534,17 @@ subtest junit_parse => sub {
     };
 
     is_deeply $parser->results->last->TO_JSON(1), $expected_test_result, 'Test is showed';
+
+    $parser = OpenQA::Parser::Format::JUnit->new;
+
+    $junit_test_file = path($FindBin::Bin, "data")->child("slenkins_control-junit-results-fail.xml");
+
+    $parser->load($junit_test_file);
+
+    is $parser->results->first->result, 'fail', 'First testsuite fails as testcases are failing';
+    is scalar @{$parser->results->first->details}, 33, '33 test cases details';
+    is $_->{result}, 'fail', 'All testcases are failing' for @{$parser->results->first->details};
+
 };
 
 
@@ -718,7 +729,7 @@ subtest 'Unstructured data' => sub {
 
     $parser->results->each(
         sub {
-            ok !!$_->get('servlet-name'), 'servlet-name exists: ' . $_->get('servlet-name');
+            ok !!$_->get('servlet-name'), 'servlet-name exists: ' . $_->get('servlet-name')->val;
             like $_->get('servlet-name')->val, qr/cofax|servlet/i, 'Name matches';
         });
 
@@ -727,7 +738,7 @@ subtest 'Unstructured data' => sub {
 
     $deserialized->results->each(
         sub {
-            ok !!$_->get('servlet-name'), 'servlet-name exists - ' . $_->get('servlet-name');
+            ok !!$_->get('servlet-name'), 'servlet-name exists - ' . $_->get('servlet-name')->val;
             like $_->get('servlet-name')->val(), qr/cofax|servlet/i, 'Name matches';
 
         });
