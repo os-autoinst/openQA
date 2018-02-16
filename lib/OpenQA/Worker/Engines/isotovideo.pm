@@ -30,7 +30,7 @@ use Cwd qw(abs_path getcwd);
 use OpenQA::Worker::Cache;
 use Time::HiRes 'sleep';
 use IO::Handle;
-use Mojo::IOLoop::ReadWriteProcess;
+use Mojo::IOLoop::ReadWriteProcess 'process';
 
 my $isotovideo = "/usr/bin/isotovideo";
 my $workerpid;
@@ -176,25 +176,24 @@ sub engine_workit {
         if ($hosts->{$current_host}{testpoolserver}) {
             $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
             $vars{PRJDIR} = $shared_cache;
-            # my attempts to use ioloop::subprocess failed, so go back to blocking
-            my $sync_child = fork();
-            if (!$sync_child) {
-                cache_tests($shared_cache, $hosts->{$current_host}{testpoolserver});
-            }
-            else {
-                my $last_update = time;
-                while (waitpid($sync_child, WNOHANG) == 0) {
-                    log_info "Waiting for subprocess";
-                    if (time - $last_update > 5) {    # do not spam the webui
-                        update_setup_status;
-                        $last_update = time;
-                    }
-                    sleep .5;
-                }
-                if ($?) {
-                    return {error => "Failed to rsync tests: exit $?"};
+
+            my $rsync = process(sub { cache_tests($shared_cache, $hosts->{$current_host}{testpoolserver}) });
+            $rsync->set_pipes(0);
+            $rsync->start;
+
+            my $last_update = time;
+            while ($rsync->is_running) {
+                sleep .5;
+                if (time - $last_update > 5) {
+                    update_setup_status;
+                    $last_update = time;
                 }
             }
+
+            $rsync->stop;
+
+            return {error => "Failed to rsync tests: exit " . $rsync->exit_status} unless $rsync->exit_status == 0;
+
             $shared_cache = catdir($shared_cache, 'tests');
         }
     }
@@ -216,7 +215,7 @@ sub engine_workit {
     my $tmpdir = "$pooldir/tmp";
     mkdir($tmpdir) unless (-d $tmpdir);
 
-    my $child = Mojo::IOLoop::ReadWriteProcess->new(
+    my $child = process(
         code => sub {
 
             setpgrp(0, 0);
@@ -260,4 +259,3 @@ sub locate_local_assets {
     }
     return undef;
 }
-
