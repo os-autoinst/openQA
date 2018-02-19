@@ -1,4 +1,4 @@
-PROVE_ARGS ?= -r
+PROVE_ARGS ?= -r -v
 
 .PHONY: all
 all:
