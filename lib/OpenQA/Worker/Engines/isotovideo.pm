@@ -31,6 +31,7 @@ use OpenQA::Worker::Cache;
 use Time::HiRes 'sleep';
 use IO::Handle;
 use Mojo::IOLoop::ReadWriteProcess 'process';
+use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 
 my $isotovideo = "/usr/bin/isotovideo";
 my $workerpid;
@@ -125,11 +126,24 @@ sub detect_asset_keys {
 sub engine_workit {
     my ($job) = @_;
 
+    session->enable;
+    session->reset();
+    session->enable_subreaper();
+
     my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
     log_info('+++ setup notes +++', channels => 'autoinst');
     log_info(sprintf("start time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
     log_info(sprintf("running on $hostname:%d ($sysname $release $version $machine)", $instance),
         channels => 'autoinst');
+
+    log_error("Failed enabling subreaper mode", channels => 'autoinst') unless session->subreaper;
+
+    session->on(
+        collected_orphan => sub {
+            my ($session, $p) = @_;
+            log_info("Collected unknown process with pid " . $p->pid . " and exit status: " . $p->exit_status,
+                channels => 'autoinst');
+        });
 
     # set base dir to the one assigned with webui
     OpenQA::Utils::change_sharedir($hosts->{$current_host}{dir});
@@ -177,20 +191,17 @@ sub engine_workit {
             $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
             $vars{PRJDIR} = $shared_cache;
 
-            my $rsync = process(sub { cache_tests($shared_cache, $hosts->{$current_host}{testpoolserver}) });
-            $rsync->set_pipes(0);
-            $rsync->start;
-
+            my $rsync = process(sub { cache_tests($shared_cache, $hosts->{$current_host}{testpoolserver}) })->start;
             my $last_update = time;
-            while ($rsync->is_running) {
-                sleep .5;
+            while (defined(my $line = $rsync->getline)) {
+                log_info("rsync: " . $line, channels => 'autoinst');
                 if (time - $last_update > 5) {
                     update_setup_status;
                     $last_update = time;
                 }
             }
 
-            $rsync->stop;
+            $rsync->wait_stop;
 
             return {error => "Failed to rsync tests: exit " . $rsync->exit_status} unless $rsync->exit_status == 0;
 
@@ -216,8 +227,7 @@ sub engine_workit {
     mkdir($tmpdir) unless (-d $tmpdir);
 
     my $child = process(
-        code => sub {
-
+        sub {
             setpgrp(0, 0);
             $ENV{TMPDIR} = $tmpdir;
             log_info("$$: WORKING " . $job->{id});
@@ -233,15 +243,11 @@ sub engine_workit {
 
             exec "perl", "$isotovideo", '-d';
             die "exec failed: $!\n";
+        });
 
-        },
-        set_pipes            => 0,
-        internal_pipes       => 0,
-        blocking_stop        => 1,
-        max_kill_attempts    => 1,
-        _default_kill_signal => -POSIX::SIGTERM());
+    $child->_default_kill_signal(-POSIX::SIGTERM())->_default_blocking_signal(-POSIX::SIGKILL());
+    $child->set_pipes(0)->internal_pipes(0)->blocking_stop(1)->start();
 
-    $child->start();
     $workerpid = $child->pid();
     return {child => $child};
 }

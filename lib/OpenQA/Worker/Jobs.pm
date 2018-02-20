@@ -456,7 +456,6 @@ sub _stop_job_2 {
                 params   => {result => 'incomplete'},
                 callback => 'no'
             );
-            die "Dead children!";
         }
     }
     unless ($job_done || $aborted eq 'api-failure') {
@@ -544,20 +543,18 @@ sub start_job {
         log_warning('job errored. Releasing job', channels => ['worker', 'autoinst'], default => 1);
         return stop_job("job run failure");
     }
-    else {
-        $worker->{child}->on(
-            collect_status => sub {
-                my ($self, $status) = (@_, $?);
-                STDERR->printflush("collect status: $status\n");
-                # TODO: deal when the job was restarted. The process is always killed.
-                # This is only problematic if we die, Otherwise this is just to exterminate
-                # all the family :-)
-                if ($status != 0) {
-                    _stop_job_2('dead_children', $job->{id});
-                }
-            });
-    }
 
+    $worker->{child}->on(
+        collected => sub {
+            my $self = shift;
+            STDERR->printflush("collect status: " . $self->exit_status . "\n");
+            # TODO: deal when the job was restarted. The process is always killed.
+            # This is only problematic if we die, Otherwise this is just to exterminate
+            # all the family :-)
+            if ($self->exit_status != 0) {
+                _stop_job_2('dead_children', $job->{id});
+            }
+        }) if $worker->{child};
 
     my $jobid = $job->{id};
 
