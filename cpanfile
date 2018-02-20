@@ -91,7 +91,7 @@ requires 'POSIX';
 
 on 'test' => sub {
   requires 'Perl::Critic';
-  requires 'Perl::Tidy', '>= 20171214';
+  requires 'Perl::Tidy', '>= 20180101, != 20180219';
   requires 'Selenium::Remote::Driver', '>= 1.23';
   requires 'Test::Compile';
   requires 'Test::Fatal';
