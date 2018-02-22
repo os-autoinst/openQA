@@ -236,13 +236,13 @@ sub _show {
     my $rd = $job->result_dir();
     if ($rd) {    # saved anything
                   # result files box
-        my @resultfiles = $job->test_resultfile_list;
+        my $resultfiles = $job->test_resultfile_list;
 
         # uploaded logs box
-        my @ulogs = $job->test_uploadlog_list;
+        my $ulogs = $job->test_uploadlog_list;
 
-        $self->stash(resultfiles => \@resultfiles);
-        $self->stash(ulogs       => \@ulogs);
+        $self->stash(resultfiles => $resultfiles);
+        $self->stash(ulogs       => $ulogs);
     }
     else {
         $self->stash(resultfiles => []);

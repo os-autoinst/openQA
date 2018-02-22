@@ -588,8 +588,8 @@ sub to_hash {
     }
     if ($args{details}) {
         $j->{testresults} = read_test_modules($job);
-        @{$j->{logs}}  = $job->test_resultfile_list;
-        @{$j->{ulogs}} = $job->test_uploadlog_list;
+        $j->{logs}        = $job->test_resultfile_list;
+        $j->{ulogs}       = $job->test_uploadlog_list;
     }
     return $j;
 }
@@ -1785,7 +1785,7 @@ sub test_uploadlog_list {
         $f =~ s#.*/##;
         push(@filelist, $f);
     }
-    return @filelist;
+    return \@filelist;
 }
 
 sub test_resultfile_list {
@@ -1807,7 +1807,7 @@ sub test_resultfile_list {
         }
     }
 
-    return @filelist_existing;
+    return \@filelist_existing;
 }
 
 =head2 done

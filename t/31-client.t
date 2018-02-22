@@ -52,7 +52,7 @@ subtest 'OpenQA::Client:Archive tests' => sub {
     ok(-e $file, 'details-zypper_up.json file exists') or diag $file;
     $file = path($destination, 'testresults', 'video.ogv');
     ok(-e $file, 'Test video file exists') or diag $file;
-    $file = path($destination, 'testresults','ulogs', 'y2logs.tar.bz2');
+    $file = path($destination, 'testresults', 'ulogs', 'y2logs.tar.bz2');
     ok(-e $file, 'Test uploaded logs file exists') or diag $file;
 
 };
