@@ -136,7 +136,12 @@ sub dead {
 sub get_websocket_api_version {
     my ($self) = @_;
 
-    return $self->get_property('WEBSOCKET_API_VERSION');
+    # Cache this value. To avoid keeping querying the DB.
+    unless ($self->{_websocket_api_version_}) {
+        $self->{_websocket_api_version_} = $self->get_property('WEBSOCKET_API_VERSION');
+    }
+
+    return $self->{_websocket_api_version_};
 }
 
 sub currentstep {

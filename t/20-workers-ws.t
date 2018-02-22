@@ -121,7 +121,7 @@ subtest 'worker accepted ws commands' => sub {
     like($buf, qr/got unknown command/, 'Unknown command');
     $buf = '';
     OpenQA::Worker::Commands::websocket_commands($ws, {type => 'incompatible'});
-    like($buf, qr/got unknown command/, 'Unknown command');
+    like($buf, qr/The worker is running an incompatible version/, 'incompatible version');
 
 };
 

@@ -216,6 +216,15 @@ sub _message {
         return;
     }
 
+    # This is to make sure that no worker can skip the _registration.
+    if (($worker->{db}->get_websocket_api_version() || 0) != INTERFACE_VERSION) {
+        log_warning("Received a message from an incompatible worker");
+        $ws->tx->send({json => {type => 'incompatible'}});
+        $ws->finish("1008",
+            "Connection terminated from WebSocket server - incompatible communication protocol version");
+        return;
+    }
+
     $worker->{last_seen} = time();
     if ($json->{type} eq 'accepted') {
         my $jobid = $json->{jobid};
@@ -245,10 +254,10 @@ sub _message {
         }
     }
     elsif ($json->{type} eq 'worker_status') {
-        my $current_worker_status        = $json->{status};
-        my $job_status                   = $json->{job}->{state};
-        my $jobid                        = $json->{job}->{id};
-        my $wid                          = $worker->{id};
+        my $current_worker_status = $json->{status};
+        my $job_status            = $json->{job}->{state};
+        my $jobid                 = $json->{job}->{id};
+        my $wid                   = $worker->{id};
 
         $worker_status->{$wid} = $json;
         log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $wid, Dumper($json)));
