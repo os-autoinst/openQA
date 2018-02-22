@@ -127,8 +127,8 @@ sub engine_workit {
     my ($job) = @_;
 
     session->enable;
-    session->reset();
-    session->enable_subreaper();
+    session->reset;
+    session->enable_subreaper;
 
     my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
     log_info('+++ setup notes +++', channels => 'autoinst');
@@ -245,8 +245,15 @@ sub engine_workit {
             die "exec failed: $!\n";
         });
 
+    $child->on(
+        collected => sub {
+            my $self = shift;
+            log_info("Isotovideo exit status: " . $self->exit_status, channels => 'autoinst');
+        });
     $child->_default_kill_signal(-POSIX::SIGTERM())->_default_blocking_signal(-POSIX::SIGKILL());
     $child->set_pipes(0)->internal_pipes(0)->blocking_stop(1)->start();
+
+
 
     $workerpid = $child->pid();
     return {child => $child};

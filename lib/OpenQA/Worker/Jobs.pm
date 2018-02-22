@@ -449,7 +449,7 @@ sub _stop_job_2 {
             $job_done = 1;
         }
         elsif ($aborted eq 'dead_children') {
-            log_debug('Dead children found. Launching systemd collection');
+            log_debug('Dead children found.');
 
             api_call(
                 'post', 'jobs/' . $job->{id} . '/set_done',
@@ -543,18 +543,6 @@ sub start_job {
         log_warning('job errored. Releasing job', channels => ['worker', 'autoinst'], default => 1);
         return stop_job("job run failure");
     }
-
-    $worker->{child}->on(
-        collected => sub {
-            my $self = shift;
-            STDERR->printflush("collect status: " . $self->exit_status . "\n");
-            # TODO: deal when the job was restarted. The process is always killed.
-            # This is only problematic if we die, Otherwise this is just to exterminate
-            # all the family :-)
-            if ($self->exit_status != 0) {
-                _stop_job_2('dead_children', $job->{id});
-            }
-        }) if $worker->{child};
 
     my $jobid = $job->{id};
 
@@ -914,8 +902,10 @@ sub check_backend {
     log_debug("checking backend state");
 
     return log_debug("backend is running") if $worker->{child}->is_running();
+    return log_debug("backend state not known") unless defined $worker->{child}->exit_status;
 
-    if ($worker->{child}->is_running()) {
+    log_debug("backend is not running anymore");
+    if ($worker->{child}->exit_status != 0) {
         stop_job('died');
     }
     else {
