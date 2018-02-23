@@ -552,6 +552,8 @@ sub start_job {
         'job_timeout',
         $job->{settings}->{MAX_JOB_TIME} || $max_job_time,
         sub {
+            # Prevent to determine status of job from exit_status
+            eval { $worker->{child}->unsubscribe('collected') if $worker->{child}; };
             # abort job if it takes too long
             if ($job && $job->{id} eq $jobid) {
                 log_warning("max job time exceeded, aborting $name");
