@@ -278,7 +278,7 @@ subtest 'mock test stop_job' => sub {
     @matches = ($stdout =~ m/\[DEBUG\] stop_job/g);
     ok(@matches == 1, 'Stop job log');
     @matches = ($stdout =~ m/\[DEBUG\] ## removing timer/g);
-    ok(@matches == 3, 'Changing timer log');
+    ok(@matches == 2, 'Changing timer log');
     @matches = ($stdout =~ m/\[DEBUG\] waiting for update_status/g);
     ok(@matches == 1, 'Waiting for update status log');
 

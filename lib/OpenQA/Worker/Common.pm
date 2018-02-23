@@ -86,8 +86,6 @@ my $timers = {
     check_job => undef,
     # update status of running job
     update_status => undef,
-    # check for crashed backend and its running status
-    check_backend => undef,
     # trigger stop_job if running for > $max_job_time
     job_timeout => undef,
     # app call retry

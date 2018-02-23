@@ -249,11 +249,16 @@ sub engine_workit {
         collected => sub {
             my $self = shift;
             log_info("Isotovideo exit status: " . $self->exit_status, channels => 'autoinst');
+            if ($self->exit_status != 0) {
+                OpenQA::Worker::Jobs::stop_job('died');
+            }
+            else {
+                OpenQA::Worker::Jobs::stop_job('done');
+            }
         });
+
     $child->_default_kill_signal(-POSIX::SIGTERM())->_default_blocking_signal(-POSIX::SIGKILL());
     $child->set_pipes(0)->internal_pipes(0)->blocking_stop(1)->start();
-
-
 
     $workerpid = $child->pid();
     return {child => $child};

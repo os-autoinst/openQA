@@ -526,14 +526,14 @@ sub OpenQA::Worker::Jobs::_stop_job {
 sub _check_timers {
     my ($is_set) = @_;
     my $set = 0;
-    for my $t (qw(check_backend update_status job_timeout)) {
+    for my $t (qw(update_status job_timeout)) {
         my $timer = get_timer($t);
         if ($timer) {
             $set += 1 if Mojo::IOLoop->singleton->reactor->{timers}{$timer->[0]};
         }
     }
     if ($is_set) {
-        is($set, 3, 'timers set');
+        is($set, 2, 'timers set');
     }
     else {
         is($set, 0, 'timers not set');

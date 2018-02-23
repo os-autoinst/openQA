@@ -124,7 +124,6 @@ sub stop_job {
 
     # stop all job related timers
     remove_timer('update_status');
-    remove_timer('check_backend');
     remove_timer('job_timeout');
 
     # XXX: we need to wait if there is an update_status in progress.
@@ -548,8 +547,6 @@ sub start_job {
 
     # start updating status - slow updates if livelog is not running
     add_timer('update_status', STATUS_UPDATES_SLOW, \&update_status);
-    # start backend checks
-    add_timer('check_backend', 2, \&check_backend);
     # create job timeout timer
     add_timer(
         'job_timeout',
@@ -896,21 +893,6 @@ sub read_result_file($$) {
 
 sub backend_running {
     return $worker->{child}->is_running;
-}
-
-sub check_backend {
-    log_debug("checking backend state");
-
-    return log_debug("backend is running") if $worker->{child}->is_running();
-    return log_debug("backend state not known") unless defined $worker->{child}->exit_status;
-
-    log_debug("backend is not running anymore");
-    if ($worker->{child}->exit_status != 0) {
-        stop_job('died');
-    }
-    else {
-        stop_job('done');
-    }
 }
 
 1;
