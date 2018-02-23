@@ -27,25 +27,20 @@ use Data::Dumper;
 use Data::Dump 'pp';
 use db_profiler;
 use OpenQA::Schema::Result::Workers ();
+use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
 
 @ISA       = qw(Exporter);
 @EXPORT    = qw(ws_send ws_send_all ws_send_job);
-@EXPORT_OK = qw(ws_create ws_is_worker_connected INTERFACE_VERSION);
+@EXPORT_OK = qw(ws_create ws_is_worker_connected);
 
 # id->worker mapping
 my $workers;
 
 # Will be filled out from worker status messages
 my $worker_status;
-
-# Minimal worker version that allows them to connect;
-# To be modified manuallly when we want to break compability and force workers to update
-# If this value differs from server to worker and is lower for the worker than for the server
-# Then it won't be able to connect.
-use constant INTERFACE_VERSION => 1;
 
 # internal helpers prototypes
 sub _message;
@@ -217,7 +212,7 @@ sub _message {
     }
 
     # This is to make sure that no worker can skip the _registration.
-    if (($worker->{db}->get_websocket_api_version() || 0) != INTERFACE_VERSION) {
+    if (($worker->{db}->get_websocket_api_version() || 0) != WEBSOCKET_API_VERSION) {
         log_warning("Received a message from an incompatible worker");
         $ws->tx->send({json => {type => 'incompatible'}});
         $ws->finish("1008",

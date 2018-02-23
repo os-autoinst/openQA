@@ -29,7 +29,7 @@ use lib "$FindBin::Bin/lib";
 use Data::Dump qw(pp dd);
 use OpenQA::Scheduler::Scheduler;
 use OpenQA::WebSockets;
-use OpenQA::WebSockets::Server 'INTERFACE_VERSION';
+use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use Test::Mojo;
 use Test::More;
@@ -80,8 +80,8 @@ my %workercaps = (
     cpu_arch                     => 'x86_64',
     cpu_opmode                   => '32-bit, 64-bit',
     mem_max                      => '4096',
-    isotovideo_interface_version => INTERFACE_VERSION,
-    websocket_api_version        => INTERFACE_VERSION
+    isotovideo_interface_version => WEBSOCKET_API_VERSION,
+    websocket_api_version        => WEBSOCKET_API_VERSION
 );
 
 # parallel dependencies:

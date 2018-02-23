@@ -22,7 +22,7 @@ use OpenQA::Schema::Result::Jobs;
 use DBIx::Class::Timestamps 'now';
 use Try::Tiny;
 use Scalar::Util 'looks_like_number';
-
+use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 =pod
 
 =head1 NAME
@@ -84,7 +84,7 @@ sub _register {
     my ($self, $schema, $host, $instance, $caps) = @_;
 
     die "Incompatible websocket api"
-      if OpenQA::WebSockets::Server::INTERFACE_VERSION() != ($caps->{websocket_api_version} // 0);
+      if OpenQA::Constants::WEBSOCKET_API_VERSION() != ($caps->{websocket_api_version} // 0);
 
     my $worker = $schema->resultset("Workers")->search(
         {

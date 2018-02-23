@@ -35,7 +35,7 @@ use OpenQA::Scheduler::Scheduler 'job_grab';
 use OpenQA::Resource::Jobs 'job_restart';
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::WebSockets;
-use OpenQA::WebSockets::Server 'INTERFACE_VERSION';
+use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use OpenQA::Utils;
 
@@ -85,12 +85,12 @@ like($@, qr/Incompatible websocket api/, 'Worker no version - incompatible versi
 $workercaps->{websocket_api_version} = 999999;
 eval { $w = $c->_register($schema, 'host', '1', $workercaps); };
 like($@, qr/Incompatible websocket api/, 'Worker different version - incompatible version exception');
-$workercaps->{websocket_api_version} = INTERFACE_VERSION;
+$workercaps->{websocket_api_version} = WEBSOCKET_API_VERSION;
 eval { $w = $c->_register($schema, 'host', '1', $workercaps); };
 ok(!$@, 'Worker correct version');
 
 my $worker = $schema->resultset('Workers')->find($w);
-is($worker->get_websocket_api_version(), INTERFACE_VERSION, 'Worker version set correctly');
+is($worker->get_websocket_api_version(), WEBSOCKET_API_VERSION, 'Worker version set correctly');
 
 # grab job
 my $job = job_grab(workerid => $w, allocate => 1);

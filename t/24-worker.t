@@ -40,8 +40,8 @@ use OpenQA::WebSockets::Server;
 use OpenQA::Schema::Result::Workers ();
 
 ok(
-    OpenQA::Worker::Common::INTERFACE_VERSION == OpenQA::WebSockets::Server::INTERFACE_VERSION,
-"Worker interface version [@{[OpenQA::Worker::Common::INTERFACE_VERSION]}] compatible with server version [@{[OpenQA::WebSockets::Server::INTERFACE_VERSION]}]"
+    OpenQA::Worker::Common::WEBSOCKET_API_VERSION == OpenQA::Constants::WEBSOCKET_API_VERSION,
+"Worker interface version [@{[OpenQA::Worker::Common::WEBSOCKET_API_VERSION]}] compatible with server version [@{[OpenQA::Constants::WEBSOCKET_API_VERSION]}]"
 );
 
 # api_init (must be called before making other calls anyways)

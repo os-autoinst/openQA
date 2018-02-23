@@ -31,7 +31,7 @@ use Mojo::URL;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::WebSockets;
-use OpenQA::WebSockets::Server 'INTERFACE_VERSION';
+use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Scheduler;
 
 # create Test DBus bus and service for fake WebSockets and Scheduler call
@@ -134,7 +134,7 @@ $worker_caps->{worker_class} = 'bar';
 
 $ret = $t->post_ok('/api/v1/workers', form => $worker_caps);
 is($ret->tx->res->code, 426, "worker informed to upgrade");
-$worker_caps->{websocket_api_version} = INTERFACE_VERSION;
+$worker_caps->{websocket_api_version} = WEBSOCKET_API_VERSION;
 
 $ret = $t->post_ok('/api/v1/workers', form => $worker_caps);
 is($ret->tx->res->code,       200, "register existing worker with token");

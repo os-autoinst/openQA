@@ -61,7 +61,9 @@ use constant {
     STATUS_UPDATES_FAST => 0.5,
     MAX_TIMER           => 100,    # It should never be more than OpenQA::WebSockets::Server::_workers_checker threshold
     MIN_TIMER           => 20,
-    INTERFACE_VERSION => 1,   # Which version the worker follows. Minimal version that will connect to the openqa server
+    # Which version the worker follows. Minimal version that will connect to the openqa server.
+    # Needs to match the WEBSOCKET_API_VERSION in the OpenQA::Constants.
+    WEBSOCKET_API_VERSION => 1,
 };
 
 # the template noted what architecture are known
@@ -459,7 +461,7 @@ sub register_worker {
     $worker_caps                                 = _get_capabilities;
     $worker_caps->{host}                         = $hostname;
     $worker_caps->{instance}                     = $instance;
-    $worker_caps->{websocket_api_version}        = INTERFACE_VERSION;
+    $worker_caps->{websocket_api_version}        = WEBSOCKET_API_VERSION;
     $worker_caps->{isotovideo_interface_version} = $isotovideo_interface_version;
     if ($worker_settings->{WORKER_CLASS}) {
         $worker_caps->{worker_class} = $worker_settings->{WORKER_CLASS};
@@ -473,7 +475,7 @@ sub register_worker {
     }
 
     log_info(
-"registering worker $hostname version $isotovideo_interface_version with openQA $host using protocol version [@{[INTERFACE_VERSION]}]"
+"registering worker $hostname version $isotovideo_interface_version with openQA $host using protocol version [@{[WEBSOCKET_API_VERSION]}]"
     );
 
     if (!$hosts->{$host}) {

@@ -23,6 +23,7 @@ use POSIX;
 use FindBin;
 use lib ("$FindBin::Bin/lib", "../lib", "lib");
 use OpenQA::WebSockets::Server;
+use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Utils 'redirect_output';
 
 OpenQA::WebSockets::Server->new();
@@ -103,7 +104,7 @@ subtest "WebSocket Server _message()" => sub {
       "1008,Connection terminated from WebSocket server - incompatible communication protocol version";
 
     $buf = undef;
-    *FooBarWorker::get_websocket_api_version = sub { OpenQA::WebSockets::Server::INTERFACE_VERSION + 1 };
+    *FooBarWorker::get_websocket_api_version = sub { WEBSOCKET_API_VERSION + 1 };
     $fake_tx->OpenQA::WebSockets::Server::_message({type => 'accepted'});
     like $buf, qr/Received a message from an incompatible worker/ or diag explain $buf;
     is @{$fake_tx->{out}}[3],
@@ -150,6 +151,6 @@ sub inactivity_timeout        { shift }
 sub tx                        { shift }
 sub max_websocket_size        { shift }
 sub name                      { "Boooo" }
-sub get_websocket_api_version { OpenQA::WebSockets::Server::INTERFACE_VERSION }
+sub get_websocket_api_version { OpenQA::Constants::WEBSOCKET_API_VERSION() }
 
 1;
