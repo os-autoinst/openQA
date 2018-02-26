@@ -102,14 +102,14 @@ test_via_io_loop sub {
         json          => {status => 'RUNNING'},
         ignore_errors => 1,
         tries         => 1,
-        callback => sub { my $res = shift; is($res, undef, 'error ignored') });
+        callback      => sub { my $res = shift; is($res, undef, 'error ignored') });
 
     combined_like(
         sub {
             OpenQA::Worker::Common::api_call(
                 'post', 'jobs/500/status',
-                json  => {status => 'RUNNING'},
-                tries => 1,
+                json     => {status => 'RUNNING'},
+                tries    => 1,
                 callback => sub { my $res = shift; is($res, undef, 'error handled'); Mojo::IOLoop->stop() });
             while (Mojo::IOLoop->is_running) { Mojo::IOLoop->singleton->reactor->one_tick }
         },

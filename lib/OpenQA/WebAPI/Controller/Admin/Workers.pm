@@ -77,7 +77,7 @@ sub previous_jobs_ajax {
             [qw(passed_module_count softfailed_module_count failed_module_count)], qw(id)
         ],
         initial_conds         => [{assigned_worker_id => $self->param('worker_id')}],
-        additional_params     => {prefetch            => [qw(children parents)]},
+        additional_params     => {prefetch => [qw(children parents)]},
         prepare_data_function => sub {
             my ($results) = @_;
             my @jobs = $results->all;

@@ -193,8 +193,8 @@ sub _find_expired_jobs {
     # filter out linked jobs
     my $expired_jobs
       = $self->jobs->search(
-        {BUILD => {-not_in => $important_builds}, t_finished => $timecond, text => {like => 'label:linked%'}},
-        {order_by => 'me.id', join => 'comments'});
+        {BUILD    => {-not_in => $important_builds}, t_finished => $timecond, text => {like => 'label:linked%'}},
+        {order_by => 'me.id',                        join       => 'comments'});
     my @linked_jobs = map { $_->id } $expired_jobs->all;
     push(@ors, {BUILD => {-not_in => $important_builds}, t_finished => $timecond, id => {-not_in => \@linked_jobs}});
 

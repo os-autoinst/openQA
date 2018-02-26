@@ -354,7 +354,7 @@ sub _stop_job {
     my $status = {uploading => 1, worker_id => $workerid};
     api_call(
         'post', "jobs/$job_id/status",
-        json => {status => $status},
+        json     => {status => $status},
         callback => sub { _stop_job_2($aborted, $job_id); });
 }
 
