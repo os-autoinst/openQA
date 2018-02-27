@@ -124,7 +124,6 @@ sub stop_job {
 
     # stop all job related timers
     remove_timer('update_status');
-    remove_timer('check_backend');
     remove_timer('job_timeout');
 
     # XXX: we need to wait if there is an update_status in progress.
@@ -355,7 +354,7 @@ sub _stop_job {
     my $status = {uploading => 1, worker_id => $workerid};
     api_call(
         'post', "jobs/$job_id/status",
-        json => {status => $status},
+        json     => {status => $status},
         callback => sub { _stop_job_2($aborted, $job_id); });
 }
 
@@ -449,14 +448,13 @@ sub _stop_job_2 {
             $job_done = 1;
         }
         elsif ($aborted eq 'dead_children') {
-            log_debug('Dead children found. Launching systemd collection');
+            log_debug('Dead children found.');
 
             api_call(
                 'post', 'jobs/' . $job->{id} . '/set_done',
                 params   => {result => 'incomplete'},
                 callback => 'no'
             );
-            die "Dead children!";
         }
     }
     unless ($job_done || $aborted eq 'api-failure') {
@@ -544,32 +542,21 @@ sub start_job {
         log_warning('job errored. Releasing job', channels => ['worker', 'autoinst'], default => 1);
         return stop_job("job run failure");
     }
-    else {
-        $worker->{child}->on(
-            collect_status => sub {
-                my ($self, $status) = (@_, $?);
-                STDERR->printflush("collect status: $status\n");
-                # TODO: deal when the job was restarted. The process is always killed.
-                # This is only problematic if we die, Otherwise this is just to exterminate
-                # all the family :-)
-                if ($status != 0) {
-                    _stop_job_2('dead_children', $job->{id});
-                }
-            });
-    }
-
 
     my $jobid = $job->{id};
 
     # start updating status - slow updates if livelog is not running
     add_timer('update_status', STATUS_UPDATES_SLOW, \&update_status);
-    # start backend checks
-    add_timer('check_backend', 2, \&check_backend);
     # create job timeout timer
     add_timer(
         'job_timeout',
         $job->{settings}->{MAX_JOB_TIME} || $max_job_time,
         sub {
+            # Prevent to determine status of job from exit_status
+            eval {
+                $worker->{child}->session->_protect(sub { $worker->{child}->unsubscribe('collected') })
+                  if $worker->{child};
+            };
             # abort job if it takes too long
             if ($job && $job->{id} eq $jobid) {
                 log_warning("max job time exceeded, aborting $name");
@@ -911,19 +898,6 @@ sub read_result_file($$) {
 
 sub backend_running {
     return $worker->{child}->is_running;
-}
-
-sub check_backend {
-    log_debug("checking backend state");
-
-    return log_debug("backend is running") if $worker->{child}->is_running();
-
-    if ($worker->{child}->is_running()) {
-        stop_job('died');
-    }
-    else {
-        stop_job('done');
-    }
 }
 
 1;

@@ -507,7 +507,7 @@ sub _build_search_query {
 
         my $not_applying_jobs = schema->resultset("JobSettings")->search(
             {
-                job_id => {-in     => $scheduled->as_query},
+                job_id => {-in => $scheduled->as_query},
                 key    => 'WORKER_CLASS',
                 value  => {-not_in => \@classes},
             },

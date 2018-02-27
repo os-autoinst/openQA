@@ -102,14 +102,14 @@ test_via_io_loop sub {
         json          => {status => 'RUNNING'},
         ignore_errors => 1,
         tries         => 1,
-        callback => sub { my $res = shift; is($res, undef, 'error ignored') });
+        callback      => sub { my $res = shift; is($res, undef, 'error ignored') });
 
     combined_like(
         sub {
             OpenQA::Worker::Common::api_call(
                 'post', 'jobs/500/status',
-                json  => {status => 'RUNNING'},
-                tries => 1,
+                json     => {status => 'RUNNING'},
+                tries    => 1,
                 callback => sub { my $res = shift; is($res, undef, 'error handled'); Mojo::IOLoop->stop() });
             while (Mojo::IOLoop->is_running) { Mojo::IOLoop->singleton->reactor->one_tick }
         },
@@ -278,7 +278,7 @@ subtest 'mock test stop_job' => sub {
     @matches = ($stdout =~ m/\[DEBUG\] stop_job/g);
     ok(@matches == 1, 'Stop job log');
     @matches = ($stdout =~ m/\[DEBUG\] ## removing timer/g);
-    ok(@matches == 3, 'Changing timer log');
+    ok(@matches == 2, 'Changing timer log');
     @matches = ($stdout =~ m/\[DEBUG\] waiting for update_status/g);
     ok(@matches == 1, 'Waiting for update status log');
 

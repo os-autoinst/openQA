@@ -526,14 +526,14 @@ sub OpenQA::Worker::Jobs::_stop_job {
 sub _check_timers {
     my ($is_set) = @_;
     my $set = 0;
-    for my $t (qw(check_backend update_status job_timeout)) {
+    for my $t (qw(update_status job_timeout)) {
         my $timer = get_timer($t);
         if ($timer) {
             $set += 1 if Mojo::IOLoop->singleton->reactor->{timers}{$timer->[0]};
         }
     }
     if ($is_set) {
-        is($set, 3, 'timers set');
+        is($set, 2, 'timers set');
     }
     else {
         is($set, 0, 'timers not set');
@@ -608,17 +608,20 @@ subtest 'check dead qemu' => sub {
 
 subtest 'check dead children stop job' => sub {
     sub OpenQA::Worker::Jobs::api_call { 1; }
+    use OpenQA::Utils;
+    my $log = add_log_channel('autoinst', level => 'debug', default => 'append');
+    my @messages;
+    $log->on(
+        message => sub {
+            my ($log, $level, @lines) = @_;
+            push @messages, @lines;
+        });
 
     $alive = 0;
 
-    my $exception = 1;
-    eval {
-        OpenQA::Worker::Jobs::_stop_job_2('dead_children');
-        $exception = 0;
-    };
+    eval { OpenQA::Worker::Jobs::_stop_job_2('dead_children'); };
 
-    ok($exception, 'dead children got exception');
-    like($@, qr/Dead children/, 'dead children match exception');
+    like($messages[2], qr/result: dead_children/, 'dead children match exception');
 };
 
 done_testing();

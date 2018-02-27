@@ -86,7 +86,7 @@ sub get_children {
 
     my @res = $self->db->resultset('Jobs')->search(
         {'parents.parent_job_id' => $jobid, 'parents.dependency' => OpenQA::Schema::Result::JobDependencies::PARALLEL},
-        {columns => ['id', 'state'], join => 'parents'});
+        {columns                 => ['id', 'state'], join => 'parents'});
     my %res_ids = map { ($_->id, $_->state) } @res;
     return $self->render(json => {jobs => \%res_ids}, status => 200);
 }

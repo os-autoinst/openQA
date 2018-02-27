@@ -48,7 +48,7 @@ requires 'Module::Runtime';
 requires 'Mojo::Base';
 requires 'Mojo::ByteStream';
 requires 'Mojo::IOLoop';
-requires 'Mojo::IOLoop::ReadWriteProcess';
+requires 'Mojo::IOLoop::ReadWriteProcess', '0.19';
 requires 'Mojo::JSON';
 requires 'Mojo::RabbitMQ::Client';
 requires 'Mojo::URL';
