@@ -404,6 +404,35 @@ NFS clients are where openQA workers are running. Run following command:
 mount -t nfs openQA-webUI-host:/var/lib/openqa/share /var/lib/openqa/share
 --------------------------------------------------------------------------------
 
+=== Configuring AMQP message emission
+
+You can configure openQA to send events (new comments, tests finished, …)
+to an AMQP message bus.
+The messages consist of a topic and a body.
+The body contains json encoded info about the event.
+See https://github.com/openSUSE/suse_msg/blob/master/amqp_infra.md[amqp_infra.md]
+for more info about the server and the message topic format.
+There you will find instructions how to configure the AMQP server as well.
+
+To let openQA send messages to an AMQP message bus,
+first make sure that the +perl-Mojo-RabbitMQ-Client+ RPM is installed.
+Then you will need to configure amqp in +/etc/openqa/openqa.ini+:
+
+[source,ini]
+--------------------------------------------------------------------------------
+# Configuration for AMQP plugin
+[amqp]
+heartbeat_timeout = 60
+reconnect_timeout = 5
+# guest/guest is the default anonymous user/pass for RabbitMQ
+url = amqp://guest:guest@localhost:5672/
+exchange = pubsub
+topic_prefix = suse
+--------------------------------------------------------------------------------
+
+For a TLS connection use +amqps://+ and port +5671+.
+
+
 === Configuring worker to use more than one openQA server
 
 When there are multiple openQA web interfaces (openQA instances) available a worker
