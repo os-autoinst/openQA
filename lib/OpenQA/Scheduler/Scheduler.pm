@@ -286,6 +286,8 @@ sub schedule {
       if (OpenQA::Scheduler::MAX_JOB_ALLOCATION() > 0
         && scalar(@allocated_jobs) > OpenQA::Scheduler::MAX_JOB_ALLOCATION());
 
+    @allocated_jobs = filter_jobs(@allocated_jobs);
+
     my @successfully_allocated;
 
     foreach my $allocated (@allocated_jobs) {
@@ -466,18 +468,21 @@ sub _reschedule {
 }
 
 sub _build_search_query {
-    my $worker  = shift;
-    my $blocked = schema->resultset("JobDependencies")->search(
+    my $worker     = shift;
+    my $allocating = shift;
+    my $blocked    = schema->resultset("JobDependencies")->search(
         {
             -or => [
                 -and => {
                     dependency => OpenQA::Schema::Result::JobDependencies::CHAINED,
                     state      => {-not_in => [OpenQA::Schema::Result::Jobs::FINAL_STATES]},
                 },
-                -and => {
-                    dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
-                    state      => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                },
+                (
+                    -and => {
+                        dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+                        state      => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                    }
+                ) x !!($allocating),
             ],
         },
         {
@@ -556,6 +561,43 @@ sub _job_allocate {
     log_debug("Seems we really failed updating the DB status." . pp($job->to_hash));
 
     return 0;
+}
+
+
+sub filter_jobs {
+    my @jobs          = @_;
+    my @filtered_jobs = @jobs;
+    my @delete;
+    my $allocated_tests;
+    my @k = qw(ARCH DISTRI BUILD FLAVOR);
+
+    try {
+        $allocated_tests->{$_->{test} . join(".", @{$_->{settings}}{@k})}++ for @jobs;
+
+        foreach my $j (@jobs) {
+            next unless exists $j->{settings}->{PARALLEL_CLUSTER};
+
+
+            @filtered_jobs = grep { $_->{id} ne $j->{id} } @filtered_jobs
+              if grep { !exists $allocated_tests->{$_ . join(".", @{$j->{settings}}{@k})} } (
+                (
+                    map { schema->resultset("Jobs")->search({id => $_,})->first->TEST } @{
+                        schema->resultset("Jobs")->search(
+                            {
+                                id => $j->{id},
+                            }
+                        )->first->dependencies->{children}->{Parallel}}
+                ),
+                exists $j->{settings}->{PARALLEL_WITH} ? split(/,/, $j->{settings}->{PARALLEL_WITH}) : ());
+        }
+    }
+    catch {
+        log_debug("Failed job filtering, error: " . $_);
+        @filtered_jobs = @jobs;
+
+    };
+
+    return @filtered_jobs;
 }
 
 =head2 job_grab
@@ -644,7 +686,7 @@ sub job_grab {
                     my $search = schema->resultset("Jobs")->search(
                         {
                             state => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                            id    => [_build_search_query($worker)],
+                            id    => [_build_search_query($worker, $allocate)],
                         },
                         {order_by => {-asc => [qw(priority id)]}});
 
