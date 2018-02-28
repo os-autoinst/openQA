@@ -97,9 +97,16 @@ sub schema {
 # Jobs API
 #
 sub _prefer_parallel {
-    my ($available_cond) = @_;
+    my ($available_cond, $allocating) = @_;
     my $running = schema->resultset("Jobs")->search(
-        {
+        @$allocating > 0 ?
+          {
+            -or => [
+                id    => {-in => $allocating},
+                state => OpenQA::Schema::Result::Jobs::RUNNING,
+            ],
+          }
+        : {
             state => OpenQA::Schema::Result::Jobs::RUNNING,
         })->get_column('id')->as_query;
 
@@ -246,6 +253,7 @@ sub schedule {
                     # by checking workers capabilities
                     my @possible_jobs = job_grab(
                         workerid     => $w->id(),
+                        allocating   => [keys %$allocating],
                         blocking     => 0,
                         allocate     => 0,
                         jobs         => OpenQA::Scheduler::MAX_JOB_ALLOCATION(),
@@ -470,6 +478,7 @@ sub _reschedule {
 sub _build_search_query {
     my $worker     = shift;
     my $allocating = shift;
+    my $allocate   = shift;
     my $blocked    = schema->resultset("JobDependencies")->search(
         {
             -or => [
@@ -482,7 +491,7 @@ sub _build_search_query {
                         dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
                         state      => OpenQA::Schema::Result::Jobs::SCHEDULED,
                     }
-                ) x !!($allocating),
+                ) x !!($allocate),
             ],
         },
         {
@@ -521,7 +530,7 @@ sub _build_search_query {
         push @available_cond, {-not_in => $not_applying_jobs->as_query};
     }
 
-    my $preferred_parallel = _prefer_parallel(\@available_cond);
+    my $preferred_parallel = _prefer_parallel(\@available_cond, $allocating);
     push @available_cond, $preferred_parallel if $preferred_parallel;
     return @available_cond;
 }
@@ -629,11 +638,12 @@ Maximum attempts to find a job.
 =cut
 
 sub job_grab {
-    my %args     = @_;
-    my $workerid = $args{workerid};
-    my $blocking = int($args{blocking} || 0);
-    my $allocate = int($args{allocate} || 0);
-    my $job_n    = $args{jobs} // 0;
+    my %args       = @_;
+    my $workerid   = $args{workerid};
+    my $blocking   = int($args{blocking} || 0);
+    my $allocate   = int($args{allocate} || 0);
+    my $job_n      = $args{jobs} // 0;
+    my $allocating = $args{allocating} // [];
 
     my $worker;
     my $attempt = 0;
@@ -686,7 +696,7 @@ sub job_grab {
                     my $search = schema->resultset("Jobs")->search(
                         {
                             state => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                            id    => [_build_search_query($worker, $allocate)],
+                            id    => [_build_search_query($worker, $allocating, $allocate)],
                         },
                         {order_by => {-asc => [qw(priority id)]}});
 
