@@ -658,6 +658,12 @@ subtest 'job PARALLEL_WITH' => sub {
     $_settings{PARALLEL_WITH} = 'A,B,C';
     my $jobE = _job_create(\%_settings);
 
+    %_settings                   = %settings;
+    $_settings{TEST}             = 'H';
+    $_settings{PARALLEL_WITH}    = 'B,C,D';
+    $_settings{PARALLEL_CLUSTER} = '1';
+    my $jobH = _job_create(\%_settings);
+
     $jobA->children->create(
         {
             child_job_id => $jobB->id,
@@ -730,6 +736,28 @@ subtest 'job PARALLEL_WITH' => sub {
     # just few that requires cluster are going, but since they want to be together, they are not
     @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobA->to_hash, $jobB->to_hash, $jobC->to_hash);
     is @res, 0;
+
+    # just few that requires cluster are going, but since they want to be together, they are not
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobH->to_hash, $jobC->to_hash);
+    is @res, 0;
+
+    # just few that requires cluster are going, but since they want to be together, they are not
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobH->to_hash, $jobC->to_hash, $jobB->to_hash);
+    is @res, 0;
+
+    # just few that requires cluster are going, but since they want to be together, they are not
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobH->to_hash, $jobB->to_hash, $jobD->to_hash);
+    is @res, 0;
+
+    # A requires E, so it is not going
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobH->to_hash, $jobC->to_hash, $jobB->to_hash, $jobA->to_hash,
+        $jobD->to_hash);
+    is @res, 4 or die diag explain \@res;
+
+
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobH->to_hash, $jobC->to_hash, $jobE->to_hash, $jobB->to_hash,
+        $jobA->to_hash, $jobD->to_hash);
+    is @res, 6 or die diag explain \@res;
 };
 
 done_testing();

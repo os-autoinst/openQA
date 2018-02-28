@@ -294,6 +294,7 @@ sub schedule {
       if (OpenQA::Scheduler::MAX_JOB_ALLOCATION() > 0
         && scalar(@allocated_jobs) > OpenQA::Scheduler::MAX_JOB_ALLOCATION());
 
+    # We filter after, or we risk to cut jobs that meant to be parallel later
     @allocated_jobs = filter_jobs(@allocated_jobs);
 
     my @successfully_allocated;
@@ -486,12 +487,12 @@ sub _build_search_query {
                     dependency => OpenQA::Schema::Result::JobDependencies::CHAINED,
                     state      => {-not_in => [OpenQA::Schema::Result::Jobs::FINAL_STATES]},
                 },
-                (
-                    -and => {
-                        dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
-                        state      => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                    }
-                ) x !!($allocate),
+                -and => {
+                    dependency    => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+                    state         => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                    parent_job_id => {-not_in => $allocating},
+
+                }
             ],
         },
         {
