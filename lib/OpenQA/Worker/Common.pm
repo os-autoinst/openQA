@@ -56,14 +56,12 @@ our $current_host;
 my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
 
 # global constants
+use OpenQA::Constants qw(WEBSOCKET_API_VERSION MAX_TIMER MIN_TIMER);
+
+# local constants
 use constant {
     STATUS_UPDATES_SLOW => 10,
     STATUS_UPDATES_FAST => 0.5,
-    MAX_TIMER           => 100,    # It should never be more than OpenQA::WebSockets::Server::_workers_checker threshold
-    MIN_TIMER           => 20,
-    # Which version the worker follows. Minimal version that will connect to the openqa server.
-    # Needs to match the WEBSOCKET_API_VERSION in the OpenQA::Constants.
-    WEBSOCKET_API_VERSION => 1,
 };
 
 # the template noted what architecture are known

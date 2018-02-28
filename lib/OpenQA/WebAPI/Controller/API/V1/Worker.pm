@@ -84,7 +84,7 @@ sub _register {
     my ($self, $schema, $host, $instance, $caps) = @_;
 
     die "Incompatible websocket api"
-      if OpenQA::Constants::WEBSOCKET_API_VERSION() != ($caps->{websocket_api_version} // 0);
+      if WEBSOCKET_API_VERSION != ($caps->{websocket_api_version} // 0);
 
     my $worker = $schema->resultset("Workers")->search(
         {
@@ -175,11 +175,13 @@ sub create {
     catch {
         if (/Incompatible/) {
             $self->render(status => 426, json => {error => $_});
+
         }
         else {
-            die $_;
+            $self->render(status => 500, json => {error => "Failed: $_"});
         }
 
+        return;
     };
 
     $self->emit_event('openqa_worker_register', {id => $id, host => $host, instance => $instance, caps => $caps});

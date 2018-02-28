@@ -24,8 +24,7 @@ use Try::Tiny;
 use OpenQA::Utils 'log_error';
 use OpenQA::IPC;
 use db_helpers;
-
-use constant WORKERS_CHECKER_THRESHOLD => 120;
+use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
 
 use constant COMMANDS => qw(quit abort scheduler_abort cancel obsolete enable_interactive_mode disable_interactive_mode
   stop_waitforneedle reload_needles_and_retry continue_waitforneedle

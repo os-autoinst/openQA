@@ -38,11 +38,7 @@ use OpenQA::Worker::Common;
 use OpenQA::Worker::Jobs;
 use OpenQA::WebSockets::Server;
 use OpenQA::Schema::Result::Workers ();
-
-ok(
-    OpenQA::Worker::Common::WEBSOCKET_API_VERSION == OpenQA::Constants::WEBSOCKET_API_VERSION,
-"Worker interface version [@{[OpenQA::Worker::Common::WEBSOCKET_API_VERSION]}] compatible with server version [@{[OpenQA::Constants::WEBSOCKET_API_VERSION]}]"
-);
+use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD MAX_TIMER MIN_TIMER);
 
 # api_init (must be called before making other calls anyways)
 like(
@@ -334,10 +330,8 @@ subtest 'worker status timer calculation' => sub {
     $OpenQA::Worker::Common::worker_settings = {};
 
     # Or we would see workers detected as dead
-    ok(
-        (OpenQA::Schema::Result::Workers::WORKERS_CHECKER_THRESHOLD - OpenQA::Worker::Common::MAX_TIMER) >= 20,
-"OpenQA::WebSockets::Server::WORKERS_CHECKER_THRESHOLD is bigger than OpenQA::Worker::Common::MAX_TIMER at least by 20s"
-    );
+    ok((WORKERS_CHECKER_THRESHOLD - MAX_TIMER) >= 20,
+        "WORKERS_CHECKER_THRESHOLD is bigger than MAX_TIMER at least by 20s");
     my $instance = 1;
     my $pop      = $instance;
     do {
@@ -363,11 +357,7 @@ subtest 'worker status timer calculation' => sub {
       for $instance .. 300;
 
     $pop = 1;
-    ok in_range(
-        test_timer(int(rand_range(1, $pop)), ++$pop),
-        OpenQA::Worker::Common::MIN_TIMER,
-        OpenQA::Worker::Common::MAX_TIMER
-      ),
+    ok in_range(test_timer(int(rand_range(1, $pop)), ++$pop), MIN_TIMER, MAX_TIMER),
       "timer in range with worker population of $pop"
       for 1 .. 999;
 };
