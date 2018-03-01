@@ -583,24 +583,30 @@ sub filter_jobs {
     my $allocated_tests;
     my @k = qw(ARCH DISTRI BUILD FLAVOR);
 
+    # TODO: @jobs's jobs needs to be a schema again
+    # previously we didn't needed schema after scheduling phase
+    # so we stripped down to what we needed
+
     try {
+        # Build adjacent list with the tests that would have been assigned
         $allocated_tests->{$_->{test} . join(".", @{$_->{settings}}{@k})}++ for @jobs;
 
         foreach my $j (@jobs) {
+
+            #Filter by PARALLEL_CLUSTER
             next unless exists $j->{settings}->{PARALLEL_CLUSTER};
 
+            my $dep = schema->resultset("Jobs")->search({id => $j->{id},})->first->dependencies;
 
+            # Get dependencies - do not map with dbix, no oneline fun :(
+            my @dep_tests;
+            push(@dep_tests, schema->resultset("Jobs")->search({id => $_,})->first->TEST)
+              for (@{$dep->{children}->{Parallel}}, @{$dep->{parents}->{Parallel}});
+
+            # Filter if dependencies are not in the same allocation round
             @filtered_jobs = grep { $_->{id} ne $j->{id} } @filtered_jobs
-              if grep { !exists $allocated_tests->{$_ . join(".", @{$j->{settings}}{@k})} } (
-                (
-                    map { schema->resultset("Jobs")->search({id => $_,})->first->TEST } @{
-                        schema->resultset("Jobs")->search(
-                            {
-                                id => $j->{id},
-                            }
-                        )->first->dependencies->{children}->{Parallel}}
-                ),
-                exists $j->{settings}->{PARALLEL_WITH} ? split(/,/, $j->{settings}->{PARALLEL_WITH}) : ());
+              if grep { s/^\s+|\s+$//g; !exists $allocated_tests->{$_ . join(".", @{$j->{settings}}{@k})} } ## no critic
+              (@dep_tests, exists $j->{settings}->{PARALLEL_WITH} ? split(/,/, $j->{settings}->{PARALLEL_WITH}) : ());
         }
     }
     catch {

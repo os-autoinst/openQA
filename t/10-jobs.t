@@ -649,7 +649,7 @@ subtest 'job PARALLEL_WITH' => sub {
 
     %_settings                   = %settings;
     $_settings{TEST}             = 'D';
-    $_settings{PARALLEL_WITH}    = 'A,B,C';
+    $_settings{PARALLEL_WITH}    = 'A,B, C ';    # Let's commit an error on purpose :)
     $_settings{PARALLEL_CLUSTER} = '1';
     my $jobD = _job_create(\%_settings);
 
