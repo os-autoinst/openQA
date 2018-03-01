@@ -28,7 +28,7 @@ use OpenQA::Setup;
 use OpenQA::Utils 'log_debug';
 
 # How many jobs to allocate in one tick. Defaults to 50 ( set it to 0 for as much as possible)
-use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 50;
+use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 80;
 
 # How many attempts have to be performed to find a job before assuming there is nothing to be scheduled. Defaults to 1
 use constant FIND_JOB_ATTEMPTS => $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS} // 1;
