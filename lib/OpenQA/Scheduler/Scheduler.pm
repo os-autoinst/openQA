@@ -125,8 +125,10 @@ sub _prefer_parallel {
 
     my $available_children = $children->search(
         {
-            child_job_id => $available_cond
-        });
+            -and => [
+                child_job_id => $available_cond,
+                child_job_id => {-not_in => $allocating},
+            ]});
 
     # we have scheduled children that are not blocked
     return ({'-in' => $available_children->get_column('child_job_id')->as_query})
@@ -138,6 +140,7 @@ sub _prefer_parallel {
             dependency   => OpenQA::Schema::Result::JobDependencies::PARALLEL,
             child_job_id => {-in => $children->get_column('child_job_id')->as_query},
             state        => OpenQA::Schema::Result::Jobs::SCHEDULED,
+            child_job_id => {-not_in => $allocating},
         },
         {
             join => 'parent',
