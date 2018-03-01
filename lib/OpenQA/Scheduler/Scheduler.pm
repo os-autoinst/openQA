@@ -488,10 +488,9 @@ sub _build_search_query {
                     state      => {-not_in => [OpenQA::Schema::Result::Jobs::FINAL_STATES]},
                 },
                 -and => {
-                    dependency    => OpenQA::Schema::Result::JobDependencies::PARALLEL,
-                    state         => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                    parent_job_id => {-not_in => $allocating},
-
+                    dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+                    state      => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                    (parent_job_id => {-not_in => $allocating}) x !!(@$allocating > 0),
                 }
             ],
         },
