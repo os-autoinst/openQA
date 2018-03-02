@@ -594,8 +594,8 @@ sub filter_jobs {
 
         foreach my $j (@jobs) {
 
-            #Filter by PARALLEL_CLUSTER
-            next unless exists $j->{settings}->{PARALLEL_CLUSTER};
+            # Filter by PARALLEL_CLUSTER
+            # next unless exists $j->{settings}->{PARALLEL_CLUSTER};
 
             my $dep = schema->resultset("Jobs")->search({id => $j->{id},})->first->dependencies;
 
