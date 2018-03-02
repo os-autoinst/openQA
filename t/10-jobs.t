@@ -752,6 +752,10 @@ subtest 'job PARALLEL_WITH' => sub {
     @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobH->to_hash, $jobC->to_hash, $jobE->to_hash, $jobB->to_hash,
         $jobA->to_hash, $jobD->to_hash);
     is @res, 6 or die diag explain \@res;
+
+    my @e = ([], [qw(a b c)], [qw(d e f)]);
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs(@e);
+    is_deeply \@res, \@e or die diag explain \@res;
 };
 
 done_testing();

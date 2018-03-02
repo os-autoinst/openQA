@@ -480,10 +480,8 @@ sub _reschedule {
 }
 
 sub _build_search_query {
-    my $worker     = shift;
-    my $allocating = shift;
-    my $allocate   = shift;
-    my $blocked    = schema->resultset("JobDependencies")->search(
+    my ($worker, $allocating, $allocate) = @_;
+    my $blocked = schema->resultset("JobDependencies")->search(
         {
             -or => [
                 -and => {
@@ -613,7 +611,6 @@ sub filter_jobs {
     catch {
         log_debug("Failed job filtering, error: " . $_);
         @filtered_jobs = @jobs;
-
     };
 
     return @filtered_jobs;
