@@ -246,12 +246,15 @@ subtest 'Simulation of heavy unstable load' => sub {
         }
         is $dup->state, OpenQA::Schema::Result::Jobs::SCHEDULED, "Job(" . $dup->id . ") back in scheduled state";
     }
-    dead_workers($schema);
     kill_service($_, 1) for @workers;
+    dead_workers($schema);
 
     @workers = ();
 
     push(@workers, unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", $_, 3)) for (1 .. 30);
+    my $i = 5;
+    wait_for_worker($schema, ++$i) for 0 .. 12;
+    trigger_capture_event_loop($reactor);
 
     ($allocated, $failures, $no_actions) = scheduler_step($reactor); # Will try to allocate to previous worker and fail!
     is @$allocated, 0, "All failed allocation on second step - workers were killed";
