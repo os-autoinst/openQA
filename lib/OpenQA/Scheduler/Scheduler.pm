@@ -506,6 +506,7 @@ sub _build_search_query {
             -not_in => $blocked->get_column('child_job_id')->as_query
         },
     );
+    push @available_cond, {-not_in => $allocating} if @$allocating > 0;
 
     # Don't kick off jobs if GRU task they depend on is running
     my $waiting_jobs = schema->resultset("GruDependencies")->get_column('job_id')->as_query;
