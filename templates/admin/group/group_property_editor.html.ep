@@ -1,10 +1,10 @@
-<div id="properties" class="panel panel-default"
+<div id="properties" class="card"
     % if (!$is_parent) {
         style="display: none;"
     % }
 >
-    <div class="panel-heading">
-        <h3 class="panel-title">
+    <div class="card-header">
+        <h3 class="card-title">
            % if (is_admin) {
                 Edit job group properties
             % }
@@ -13,7 +13,7 @@
             % }
         </h3>
     </div>
-    <div class="panel-body">
+    <div class="card-body">
         <form action="#" class="form-horizontal" onsubmit="return submitProperties(this);"
           data-put-url="<%= url_for(($is_parent ? 'apiv1_put_parent_group' : 'apiv1_put_job_group') => (group_id => $group->id)) %>">
             % if (!is_admin) {

@@ -9,15 +9,17 @@
 % end
 
 <div class="jumbotron">
-    <div class="container">
-        <div class="col-md-10">
-            %= include_branding 'docbox'
-        </div>
+  <div class='container'>
+    <div class="row">
+      <div class="col-md-10">
+        %= include_branding 'docbox'
+      </div>
 
-        <div class="col-md-2 hidden-sm hidden-xs">
-            %= include_branding 'sponsorbox'
-        </div>
+      <div class="col-md-2 hidden-sm hidden-sm-down">
+        %= include_branding 'sponsorbox'
+      </div>
     </div>
+  </div>
 </div>
 
 <div id="build-results"></div>
