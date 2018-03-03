@@ -24,8 +24,7 @@ use Try::Tiny;
 use OpenQA::Utils 'log_error';
 use OpenQA::IPC;
 use db_helpers;
-
-use constant WORKERS_CHECKER_THRESHOLD => 120;
+use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
 
 use constant COMMANDS => qw(quit abort scheduler_abort cancel obsolete enable_interactive_mode disable_interactive_mode
   stop_waitforneedle reload_needles_and_retry continue_waitforneedle
@@ -131,6 +130,17 @@ sub dead {
     $dt->subtract(seconds => WORKERS_CHECKER_THRESHOLD);
 
     $self->t_updated < $dt;
+}
+
+sub get_websocket_api_version {
+    my ($self) = @_;
+
+    # Cache this value. To avoid keeping querying the DB.
+    unless ($self->{_websocket_api_version_}) {
+        $self->{_websocket_api_version_} = $self->get_property('WEBSOCKET_API_VERSION');
+    }
+
+    return $self->{_websocket_api_version_};
 }
 
 sub currentstep {

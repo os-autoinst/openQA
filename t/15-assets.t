@@ -35,6 +35,7 @@ use OpenQA::Scheduler::Scheduler 'job_grab';
 use OpenQA::Resource::Jobs 'job_restart';
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::WebSockets;
+use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use OpenQA::Utils;
 
@@ -78,7 +79,19 @@ $jobA->set_prio(1);
 ## test asset is assigned after grab_job
 # register worker
 my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
-my $w = $c->_register($schema, 'host', '1', $workercaps);
+my $w;
+eval { $w = $c->_register($schema, 'host', '1', $workercaps); };
+like($@, qr/Incompatible websocket api/, 'Worker no version - incompatible version exception');
+$workercaps->{websocket_api_version} = 999999;
+eval { $w = $c->_register($schema, 'host', '1', $workercaps); };
+like($@, qr/Incompatible websocket api/, 'Worker different version - incompatible version exception');
+$workercaps->{websocket_api_version} = WEBSOCKET_API_VERSION;
+eval { $w = $c->_register($schema, 'host', '1', $workercaps); };
+ok(!$@, 'Worker correct version');
+
+my $worker = $schema->resultset('Workers')->find($w);
+is($worker->get_websocket_api_version(), WEBSOCKET_API_VERSION, 'Worker version set correctly');
+
 # grab job
 my $job = job_grab(workerid => $w, allocate => 1);
 is($job->{id}, $jobA->id, 'jobA grabbed');

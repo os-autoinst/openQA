@@ -29,9 +29,9 @@ use lib "$FindBin::Bin/lib";
 use Data::Dump qw(pp dd);
 use OpenQA::Scheduler;
 use OpenQA::WebSockets;
+use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use Net::DBus;
-
 use Test::More;
 use Test::Warnings;
 
@@ -183,10 +183,12 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
 
     # we need 3 workers for command issue test
     my $workercaps = {};
-    $workercaps->{cpu_modelname} = 'Rainbow CPU';
-    $workercaps->{cpu_arch}      = 'x86_64';
-    $workercaps->{cpu_opmode}    = '32-bit, 64-bit';
-    $workercaps->{mem_max}       = '4096';
+    $workercaps->{cpu_modelname}                = 'Rainbow CPU';
+    $workercaps->{cpu_arch}                     = 'x86_64';
+    $workercaps->{cpu_opmode}                   = '32-bit, 64-bit';
+    $workercaps->{mem_max}                      = '4096';
+    $workercaps->{websocket_api_version}        = WEBSOCKET_API_VERSION;
+    $workercaps->{isotovideo_interface_version} = WEBSOCKET_API_VERSION;
     use OpenQA::WebAPI::Controller::API::V1::Worker;
     my $c  = OpenQA::WebAPI::Controller::API::V1::Worker->new;
     my $w1 = $schema->resultset('Workers')->find($c->_register($schema, "host", "1", $workercaps));

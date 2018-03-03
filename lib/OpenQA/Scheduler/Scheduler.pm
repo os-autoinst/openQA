@@ -46,8 +46,7 @@ use List::Util 'shuffle';
 use OpenQA::IPC;
 use sigtrap handler => \&normal_signals_handler, 'normal-signals';
 use OpenQA::Scheduler;
-
-
+use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use Carp;
 
 require Exporter;
@@ -225,7 +224,8 @@ sub schedule {
                 # NOTE: $worker->connected is too much expensive since is over dbus, prefer dead.
                 # shuffle avoids starvation if a free worker keeps failing.
                 my @free_workers
-                  = shuffle(grep { !$_->dead } schema->resultset("Workers")->search({job_id => undef})->all());
+                  = shuffle(grep { !$_->dead && $_->get_websocket_api_version() == WEBSOCKET_API_VERSION }
+                      schema->resultset("Workers")->search({job_id => undef})->all());
 
                 log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
                 log_debug("\t Failure# ${failure}") if OpenQA::Scheduler::CONGESTION_CONTROL();

@@ -31,7 +31,7 @@ use OpenQA::WebSockets;
 use OpenQA::ResourceAllocator;
 use OpenQA::Resource::Locks;
 use OpenQA::Resource::Jobs;
-
+use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use Net::DBus;
 use Net::DBus::Test::MockObject;
@@ -88,10 +88,12 @@ is_deeply($current_jobs, [], "assert database has no jobs to start with")
 # New worker
 
 my $workercaps = {};
-$workercaps->{cpu_modelname} = 'Rainbow CPU';
-$workercaps->{cpu_arch}      = 'x86_64';
-$workercaps->{cpu_opmode}    = '32-bit, 64-bit';
-$workercaps->{mem_max}       = '4096';
+$workercaps->{cpu_modelname}                = 'Rainbow CPU';
+$workercaps->{cpu_arch}                     = 'x86_64';
+$workercaps->{cpu_opmode}                   = '32-bit, 64-bit';
+$workercaps->{mem_max}                      = '4096';
+$workercaps->{websocket_api_version}        = WEBSOCKET_API_VERSION;
+$workercaps->{isotovideo_interface_version} = WEBSOCKET_API_VERSION;
 
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;

@@ -29,6 +29,7 @@ use lib "$FindBin::Bin/lib";
 use Data::Dump qw(pp dd);
 use OpenQA::Scheduler::Scheduler;
 use OpenQA::WebSockets;
+use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use Test::Mojo;
 use Test::More;
@@ -75,10 +76,12 @@ my %settings     = (
     NICTYPE     => 'tap'
 );
 my %workercaps = (
-    cpu_modelname => 'Rainbow CPU',
-    cpu_arch      => 'x86_64',
-    cpu_opmode    => '32-bit, 64-bit',
-    mem_max       => '4096'
+    cpu_modelname                => 'Rainbow CPU',
+    cpu_arch                     => 'x86_64',
+    cpu_opmode                   => '32-bit, 64-bit',
+    mem_max                      => '4096',
+    isotovideo_interface_version => WEBSOCKET_API_VERSION,
+    websocket_api_version        => WEBSOCKET_API_VERSION
 );
 
 # parallel dependencies:

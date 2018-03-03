@@ -27,6 +27,7 @@ use Data::Dumper;
 use Data::Dump 'pp';
 use db_profiler;
 use OpenQA::Schema::Result::Workers ();
+use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKERS_CHECKER_THRESHOLD);
 
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
@@ -40,12 +41,6 @@ my $workers;
 
 # Will be filled out from worker status messages
 my $worker_status;
-
-# Minimal worker version that allows them to connect;
-# To be modified manuallly when we want to break compability and force workers to update
-# If this value differs from server to worker and is lower for the worker than for the server
-# Then it won't be able to connect.
-use constant INTERFACE_VERSION => 1;
 
 # internal helpers prototypes
 sub _message;
@@ -193,7 +188,7 @@ sub _finish {
     # jobs assigned from scheduler (which will check DB and not WS state)
     my $dt = DateTime->now(time_zone => 'UTC');
     # 2 minutes is long enough for the scheduler not to take it
-    $dt->subtract(seconds => (OpenQA::Schema::Result::Workers::WORKERS_CHECKER_THRESHOLD() + 20));
+    $dt->subtract(seconds => (WORKERS_CHECKER_THRESHOLD + 20));
     $worker->{db}->update({t_updated => $dt});
     $worker->{socket} = undef;
     # remove the version as we don't know if the worker is updated while shutdown
@@ -213,6 +208,15 @@ sub _message {
     unless (ref($json) eq 'HASH') {
         log_error(sprintf('Received unexpected WS message "%s from worker %u', Dumper($json), $worker->id));
         $ws->finish("1003", "Received unexpected data from worker, forcing close");
+        return;
+    }
+
+    # This is to make sure that no worker can skip the _registration.
+    if (($worker->{db}->get_websocket_api_version() || 0) != WEBSOCKET_API_VERSION) {
+        log_warning("Received a message from an incompatible worker");
+        $ws->tx->send({json => {type => 'incompatible'}});
+        $ws->finish("1008",
+            "Connection terminated from WebSocket server - incompatible communication protocol version");
         return;
     }
 
@@ -245,12 +249,10 @@ sub _message {
         }
     }
     elsif ($json->{type} eq 'worker_status') {
-        my $current_worker_status        = $json->{status};
-        my $job_status                   = $json->{job}->{state};
-        my $jobid                        = $json->{job}->{id};
-        my $wid                          = $worker->{id};
-        my $websocket_api_version        = $json->{websocket_api_version} // 0;
-        my $isotovideo_interface_version = $json->{isotovideo_interface_version} // 0;
+        my $current_worker_status = $json->{status};
+        my $job_status            = $json->{job}->{state};
+        my $jobid                 = $json->{job}->{id};
+        my $wid                   = $worker->{id};
 
         $worker_status->{$wid} = $json;
         log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $wid, Dumper($json)));
@@ -262,24 +264,11 @@ sub _message {
                     return unless $w;
                     log_debug("Updated worker seen from worker_status");
                     $w->seen;
-                    $w->set_property('WEBSOCKET_API_VERSION',        $websocket_api_version);
-                    $w->set_property('ISOTOVIDEO_INTERFACE_VERSION', $isotovideo_interface_version);
                 });
         }
         catch {
             log_error("Failed updating worker seen status: $_");
         };
-
-        if (INTERFACE_VERSION != $websocket_api_version) {
-            log_debug("Received a message from an incompatible worker");
-            $ws->tx->send({json => {type => 'incompatible'}});
-            # In case the worker haven't been updated to understand the "incompatible" type message,
-            # we need to force the shutdown
-            $ws->finish("1008",
-                "Connection terminated from WebSocket server - incompatible communication protocol version")
-              if $websocket_api_version == 0;
-            return;
-        }
 
         my $registered_job_id;
         my $registered_job_token;
@@ -419,7 +408,7 @@ sub _workers_checker {
     try {
         $schema->txn_do(
             sub {
-                my $stale_jobs = _get_stale_worker_jobs(OpenQA::Schema::Result::Workers::WORKERS_CHECKER_THRESHOLD());
+                my $stale_jobs = _get_stale_worker_jobs(WORKERS_CHECKER_THRESHOLD);
                 for my $job ($stale_jobs->all) {
                     next unless _is_job_considered_dead($job);
 

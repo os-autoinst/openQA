@@ -28,7 +28,7 @@ use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 use OpenQA::ResourceAllocator;
-
+use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
@@ -146,11 +146,13 @@ sub job_create_with_worker {
     ok($job, "Job $test created with id " . $job->id);
     is($job->parents->single->parent_job_id, $parent, 'Job has correct parent') if $parent;
     my %worker = (
-        cpu_modelname => 'Rainbow CPU',
-        cpu_arch      => 'x86_64',
-        worker_class  => 'qemu_x86_64,qemu_i686',
-        cpu_opmode    => '32-bit, 64-bit',
-        mem_max       => '4096'
+        cpu_modelname                => 'Rainbow CPU',
+        cpu_arch                     => 'x86_64',
+        worker_class                 => 'qemu_x86_64,qemu_i686',
+        cpu_opmode                   => '32-bit, 64-bit',
+        mem_max                      => '4096',
+        websocket_api_version        => WEBSOCKET_API_VERSION,
+        isotovideo_interface_version => WEBSOCKET_API_VERSION
     );
 
     use OpenQA::WebAPI::Controller::API::V1::Worker;

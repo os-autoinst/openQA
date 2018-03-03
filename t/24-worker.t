@@ -38,11 +38,7 @@ use OpenQA::Worker::Common;
 use OpenQA::Worker::Jobs;
 use OpenQA::WebSockets::Server;
 use OpenQA::Schema::Result::Workers ();
-
-ok(
-    OpenQA::Worker::Common::INTERFACE_VERSION == OpenQA::WebSockets::Server::INTERFACE_VERSION,
-"Worker interface version [@{[OpenQA::Worker::Common::INTERFACE_VERSION]}] compatible with server version [@{[OpenQA::WebSockets::Server::INTERFACE_VERSION]}]"
-);
+use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD MAX_TIMER MIN_TIMER);
 
 # api_init (must be called before making other calls anyways)
 like(
@@ -334,10 +330,8 @@ subtest 'worker status timer calculation' => sub {
     $OpenQA::Worker::Common::worker_settings = {};
 
     # Or we would see workers detected as dead
-    ok(
-        (OpenQA::Schema::Result::Workers::WORKERS_CHECKER_THRESHOLD - OpenQA::Worker::Common::MAX_TIMER) >= 20,
-"OpenQA::WebSockets::Server::WORKERS_CHECKER_THRESHOLD is bigger than OpenQA::Worker::Common::MAX_TIMER at least by 20s"
-    );
+    ok((WORKERS_CHECKER_THRESHOLD - MAX_TIMER) >= 20,
+        "WORKERS_CHECKER_THRESHOLD is bigger than MAX_TIMER at least by 20s");
     my $instance = 1;
     my $pop      = $instance;
     do {
@@ -363,11 +357,7 @@ subtest 'worker status timer calculation' => sub {
       for $instance .. 300;
 
     $pop = 1;
-    ok in_range(
-        test_timer(int(rand_range(1, $pop)), ++$pop),
-        OpenQA::Worker::Common::MIN_TIMER,
-        OpenQA::Worker::Common::MAX_TIMER
-      ),
+    ok in_range(test_timer(int(rand_range(1, $pop)), ++$pop), MIN_TIMER, MAX_TIMER),
       "timer in range with worker population of $pop"
       for 1 .. 999;
 };
@@ -380,10 +370,8 @@ subtest 'mock test send_status' => sub {
 
     is($faketx->get(0)->{status},       "working");
     is($faketx->get(0)->{job}->{state}, "scheduled");
-    ok(exists $faketx->get(0)->{websocket_api_version});
-    ok(exists $faketx->get(0)->{isotovideo_interface_version});
-    is($faketx->get(0)->{websocket_api_version},        1);
-    is($faketx->get(0)->{isotovideo_interface_version}, 0);
+    is($faketx->get(0)->{type},         "worker_status");
+    is(keys %{$faketx->get(0)},         3);
 
     $OpenQA::Worker::Common::job = {};
 
@@ -391,6 +379,8 @@ subtest 'mock test send_status' => sub {
 
     is($faketx->get(1)->{status}, "free");
     ok(!exists $faketx->get(1)->{job}->{state});
+    is($faketx->get(1)->{type}, "worker_status");
+    is(keys %{$faketx->get(1)}, 3);
 
     $OpenQA::Worker::Common::job = undef;
 
@@ -398,20 +388,22 @@ subtest 'mock test send_status' => sub {
 
     is($faketx->get(2)->{status}, "free");
     ok(!exists $faketx->get(2)->{job}->{state});
+    is($faketx->get(2)->{type}, "worker_status");
+    is(keys %{$faketx->get(2)}, 3);
 
     $OpenQA::Worker::Common::job = {id => 9999, state => "running", settings => {NAME => "Foo"}};
     OpenQA::Worker::Common::send_status($faketx);
     is($faketx->get(3)->{status},       "working");
     is($faketx->get(3)->{job}->{state}, "running");
+    is($faketx->get(3)->{type},         "worker_status");
+    is(keys %{$faketx->get(3)},         3);
 
     OpenQA::Worker::Jobs::_reset_state();
     OpenQA::Worker::Common::send_status($faketx);
     is($faketx->get(4)->{status}, "free");
     ok(!exists $faketx->get(4)->{job}->{state});
-    ok(exists $faketx->get(4)->{websocket_api_version});
-    ok(exists $faketx->get(4)->{isotovideo_interface_version});
-    is($faketx->get(4)->{websocket_api_version},        1);
-    is($faketx->get(4)->{isotovideo_interface_version}, 0);
+    is($faketx->get(4)->{type}, "worker_status");
+    is(keys %{$faketx->get(4)}, 3);
 };
 
 
