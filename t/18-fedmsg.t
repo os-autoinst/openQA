@@ -84,12 +84,14 @@ my $settings = {
     ARCH        => 'x86_64'
 };
 
+my $commonexpr = '/usr/sbin/daemonize /usr/bin/fedmsg-logger --cert-prefix=openqa --modname=openqa';
 # create a job via API
 my $post = $t->post_ok("/api/v1/jobs" => form => $settings)->status_is(200);
 my $job = $post->tx->res->json->{id};
 is(
     $args,
-    'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.create --json-input --message='
+    $commonexpr
+      . ' --topic=job.create --json-input --message='
       . '{"ARCH":"x86_64","BUILD":"666","DESKTOP":"DESKTOP","DISTRI":"Unicorn","FLAVOR":"pink","ISO":"whatever.iso",'
       . '"ISO_MAXSIZE":"1","KVM":"KVM","MACHINE":"RainbowPC","TEST":"rainbow","VERSION":"42","id":'
       . $job
@@ -106,7 +108,8 @@ $post = $t->post_ok("/api/v1/jobs/" . $job . "/set_done")->status_is(200);
 # check plugin called fedmsg-logger correctly
 is(
     $args,
-    'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.done --json-input --message='
+    $commonexpr
+      . ' --topic=job.done --json-input --message='
       . '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
       . '"TEST":"rainbow","id":'
       . $job
@@ -124,7 +127,8 @@ my $newjob = $post->tx->res->json->{id};
 # check plugin called fedmsg-logger correctly
 is(
     $args,
-    'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.duplicate --json-input --message='
+    $commonexpr
+      . ' --topic=job.duplicate --json-input --message='
       . '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
       . '"TEST":"rainbow","auto":0,"id":'
       . $job
@@ -140,7 +144,8 @@ $post = $t->post_ok("/api/v1/jobs/" . $newjob . "/cancel")->status_is(200);
 # check plugin called fedmsg-logger correctly
 is(
     $args,
-    'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.cancel --json-input --message='
+    $commonexpr
+      . ' --topic=job.cancel --json-input --message='
       . '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
       . '"TEST":"rainbow","id":'
       . $newjob
@@ -157,8 +162,7 @@ $post = $t->post_ok("/api/v1/jobs/$job/comments" => form => {text => "test comme
 # stash the comment ID
 my $comment = $post->tx->res->json->{id};
 # check plugin called fedmsg-logger correctly
-my $commonexpr = 'fedmsg-logger --cert-prefix=openqa --modname=openqa';
-my $dateexpr   = '\d{4}-\d{1,2}-\d{1,2}T\d{2}:\d{2}:\d{2}Z';
+my $dateexpr = '\d{4}-\d{1,2}-\d{1,2}T\d{2}:\d{2}:\d{2}Z';
 like(
     $args,
 qr/$commonexpr --topic=comment.create --json-input --message=\{"created":"$dateexpr","group_id":null,"id":$comment,"job_id":$job,"text":"test comment","updated":"$dateexpr","user":"perci"\}/,

@@ -533,6 +533,9 @@ sub schedule_iso {
         });
 
     $self->emit_event('openqa_iso_create', $args);
+    for my $succjob (@successful_job_ids) {
+        $self->emit_event('openqa_job_create', {id => $succjob});
+    }
     return {
         successful_job_ids => \@successful_job_ids,
         failed_job_info    => \@failed_job_info,
