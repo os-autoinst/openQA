@@ -17,11 +17,11 @@
 < stylesheets/overview.scss
 < stylesheets/comments.scss
 < stylesheets/openqa.scss
+< https://raw.githubusercontent.com/bootstrapthemesco/bootstrap-4-multi-dropdown-navbar/beta2.0/css/bootstrap-4-navbar.css
 < https://cdnjs.cloudflare.com/ajax/libs/chosen/1.7.0/chosen.css
 < stylesheets/result_preview.scss
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.0.0/scss/bootstrap.scss
 < sass/theme.scss
-< https://raw.githubusercontent.com/vsn4ik/bootstrap-submenu/v2.0.4/dist/css/bootstrap-submenu.css
 < https://raw.githubusercontent.com/sorich87/bootstrap-tour/v0.11.0/build/css/bootstrap-tour.css
 
 ! codemirror.css
@@ -58,11 +58,9 @@
 < javascripts/keyevent.js
 < javascripts/feature.js
 < javascripts/fullscreen.js
-< https://raw.githubusercontent.com/vsn4ik/bootstrap-submenu/v2.0.4/dist/js/bootstrap-submenu.js
-< https://github.com/twbs/bootstrap/tree/v4.0.0/js/dist/collapse.js
-< https://github.com/twbs/bootstrap/tree/v4.0.0/js/dist/tooltip.js
-< https://github.com/twbs/bootstrap/tree/v4.0.0/js/dist/popover.js
-< https://github.com/twbs/bootstrap/tree/v4.0.0/js/dist/tab.js
+< https://raw.githubusercontent.com/bootstrapthemesco/bootstrap-4-multi-dropdown-navbar/beta2.0/js/bootstrap-4-navbar.js
+< https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.js
+< https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.js
 < https://cdnjs.cloudflare.com/ajax/libs/chosen/1.7.0/chosen.jquery.js
 < https://cdnjs.cloudflare.com/ajax/libs/jquery-ujs/1.2.1/rails.js
 < javascripts/disable_animations.js [mode==test]

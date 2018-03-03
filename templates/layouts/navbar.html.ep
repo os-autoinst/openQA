@@ -1,0 +1,80 @@
+<div class='container'>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+     <a class="navbar-brand" href="/"><img src="<%= icon_url 'logo.svg'%>" alt="openQA"></a>
+     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+       <span class="navbar-toggler-icon"></span>
+     </button>
+     <div class="collapse navbar-collapse" id="navbarNav">
+       <ul class="navbar-nav">
+         <li class='nav-item' id="all_tests">
+            %= link_to 'All Tests' => url_for('tests') => class => 'nav-link'
+         </li>
+
+         <li class="nav-item dropdown" id="job_groups">
+            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" data-submenu>Job Groups<span class="caret"></span></a>
+            <ul class="dropdown-menu">
+               %= current_job_group
+               % for my $parent_or_group (@$job_groups_and_parents) {
+                  % if ($parent_or_group->can('children')) {
+                    % my @children = $parent_or_group->children;
+                      % if (scalar(@children)) {
+                          <li>
+                            %= link_to $parent_or_group->name => url_for('parent_group_overview', groupid => $parent_or_group->id) => class => 'dropdown-item dropdown-toggle'
+                            <ul class='dropdown-menu'>
+                              % for my $group (@children) {
+                                %= group_link_menu_entry $group;
+                              % }
+                            </ul>
+                          </li>
+                      % }
+                    % } else {
+                        %= group_link_menu_entry $parent_or_group;
+                    % }
+                % }
+            </ul>
+          </li>
+        </ul>
+        <ul class="navbar-nav ml-auto">
+        % if (current_user) {
+            <li class="nav-item dropdown" id="user-action">
+                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" >Logged in as
+                    %= current_user->name
+                    <span class="caret"></span>
+                </a>
+                <div class="dropdown-menu">
+                  %= tag 'h3' => class => 'dropdown-header' => 'Operators Menu'
+                  %= link_to 'Medium types' => url_for('admin_products') => class => 'dropdown-item'
+                  %= link_to 'Machines' => url_for('admin_machines') => class => 'dropdown-item'
+                  %= link_to 'Test suites' => url_for('admin_test_suites') => class => 'dropdown-item'
+                  %= link_to 'Job groups' => url_for('admin_groups') => class => 'dropdown-item'
+                  %= link_to 'Scheduled products' => url_for('admin_product_log') => class => 'dropdown-item'
+
+                  %= link_to 'Assets' => url_for('admin_assets') => class => 'dropdown-item'
+                  <!-- Sure this is not the proper place for the workers view,
+                  but the previous one was even more annoying -->
+                  %= link_to 'Workers' => url_for('admin_workers') => class => 'dropdown-item'
+                  % if (is_admin) {
+                      %= tag 'div' => class => 'dropdown-divider'
+                      %= tag 'h3' => class => 'dropdown-header' => 'Administrator Menu'
+                      %= link_to('Users' => url_for('admin_users') => class => 'dropdown-item')
+                      %= link_to('Needles' => url_for('admin_needles') => class => 'dropdown-item')
+                      %= link_to('Audit log' => url_for('audit_log') => class => 'dropdown-item')
+                  % }
+                  %= tag 'div' => class => 'dropdown-divider'
+                  % if (is_operator) {
+                      %= link_to "Manage API keys" => url_for('api_keys') => class => 'dropdown-item'
+                  % }
+                  %= link_to "API help" => url_for('api_help') => class => 'dropdown-item'
+                  %= link_to 'Changelog' => url_for('changelog') => class => 'dropdown-item'
+                  %= link_to 'Logout' => url_for('logout') => 'data-method' => 'delete' => class => 'dropdown-item'
+                </div>
+            </li>
+        % } else {
+            <li class='nav-item' id="user-action">
+                %= link_to('Login' => url_for('login') => class => 'nav-link')
+            </li>
+        % }
+     </ul>
+   </div>
+  </nav>
+</div>

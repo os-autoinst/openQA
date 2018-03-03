@@ -1,9 +1,0 @@
-$icon-font-path: '/fonts/';
-@import "../cache/raw.githubusercontent.com/twbs/bootstrap/v4.0.0/scss/bootstrap.scss";
-@import "rounded_tables.scss";
-@import "footer.scss";
-
-table a:not(.btn),
-.table a:not(.btn) {
-	  text-decoration: inherit;
-}
