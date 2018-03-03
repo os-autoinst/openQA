@@ -1,6 +1,6 @@
 ! bootstrap.css
 # download the fonts
-< https://cdn.datatables.net/1.10.16/css/dataTables.bootstrap.css
+< https://cdn.datatables.net/1.10.16/css/dataTables.bootstrap4.css
 < https://use.fontawesome.com/releases/v5.0.0/css/all.css
 << https://use.fontawesome.com/releases/v5.0.0/webfonts/fa-brands-400.eot
 << https://use.fontawesome.com/releases/v5.0.0/webfonts/fa-brands-400.woff2
@@ -40,7 +40,7 @@
 < https://code.jquery.com/jquery-3.3.1.js
 < javascripts/openqa.js
 < https://cdn.datatables.net/1.10.16/js/jquery.dataTables.js
-< https://cdn.datatables.net/1.10.16/js/dataTables.bootstrap.js
+< https://cdn.datatables.net/1.10.16/js/dataTables.bootstrap4.js
 < http://timeago.yarp.com/jquery.timeago.js
 < javascripts/index.js
 < javascripts/admintable.js

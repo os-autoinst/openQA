@@ -35,8 +35,8 @@ function showAddParentGroup() {
 }
 
 function showError(message) {
-    $('#new_group_creating').addClass('hidden');
-    $('#new_group_error').removeClass('hidden');
+    $('#new_group_creating').hide();
+    $('#new_group_error').show();
     $('#new_group_error_message').text(message ? message : 'something went wrong');
 }
 
@@ -48,7 +48,7 @@ function fetchHtmlEntry(url, targetElement) {
             var element = $(response);
             element.hide();
             targetElement.prepend(element);
-            $('#new_group_creating').addClass('hidden');
+            $('#new_group_creating').hide();
             $('#add_group_modal').modal('hide');
             element.fadeIn('slow');
         },
@@ -61,17 +61,17 @@ function fetchHtmlEntry(url, targetElement) {
 function createGroup(form) {
     var editorForm = $(form);
 
-    $('#new_group_error').addClass('hidden');
+    $('#new_group_error').hide();
 
     if(!$('#new_group_name').val().length) {
         $('#new_group_name_group').addClass('has-error');
-        $('#new_group_name_group .help-block').removeClass('hidden');
+        $('#new_group_name_group .help-block').show();
         return false;
     }
 
-    $('#new_group_creating').removeClass('hidden');
+    $('#new_group_creating').show();
     $('#new_group_name_group').removeClass('has-error');
-    $('#new_group_name_group .help-block').addClass('hidden');
+    $('#new_group_name_group .help-block').hide();
 
     var data = editorForm.serialize();
     if(editorForm.data('create-parent')) {
@@ -233,10 +233,10 @@ function saveReorganizedGroups() {
 
     // to avoid flickering, show the panel a litle bit delayed
     showPanelTimeout = setTimeout(function() {
-        $('#reorganize_groups_panel').removeClass('hidden');
+        $('#reorganize_groups_panel').show();
     }, 500);
-    $('#reorganize_groups_progress').removeClass('hidden');
-    $('#reorganize_groups_error').addClass('hidden');
+    $('#reorganize_groups_progress').show();
+    $('#reorganize_groups_error').hide();
 
     var jobGroupList = $('#job_group_list');
     var updateParentGroupUrl = jobGroupList.data('put-parent-group-url');
@@ -244,9 +244,9 @@ function saveReorganizedGroups() {
 
     // event handlers for AJAX queries
     var handleError = function(xhr, ajaxOptions, thrownError) {
-        $('#reorganize_groups_panel').removeClass('hidden');
-        $('#reorganize_groups_error').removeClass('hidden');
-        $('#reorganize_groups_progress').addClass('hidden');
+        $('#reorganize_groups_panel').show();
+        $('#reorganize_groups_error').show();
+        $('#reorganize_groups_progress').hide();
         $('#reorganize_groups_error_message').text(thrownError ? thrownError : 'something went wrong');
         $('html, body').animate({scrollTop: 0}, 1000);
     };
@@ -280,9 +280,9 @@ function saveReorganizedGroups() {
                 clearTimeout(showPanelTimeout);
                 showPanelTimeout = undefined;
             }
-            $('#reorganize_groups_progress').addClass('hidden');
-            $('#reorganize_groups_error').addClass('hidden');
-            $('#reorganize_groups_panel').addClass('hidden');
+            $('#reorganize_groups_progress').hide();
+            $('#reorganize_groups_error').hide();
+            $('#reorganize_groups_panel').hide();
         }
     };
 

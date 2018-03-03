@@ -133,7 +133,7 @@
             <div class="panel-body">
                 <div class="col-md-6">
                     %= form_for save_needle_ajax => (id => 'save_needle_form') => (method => 'POST') => begin
-                        <div class="hidden">
+                        <div style="display: none;">
                             <label>JSON:</label><br/>
                             <textarea id="needleeditor_textarea" name="json" readOnly="yes"></textarea>
                             <input type="hidden" id="needleeditor_image" name="imagename"/>

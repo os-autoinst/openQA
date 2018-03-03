@@ -3,7 +3,7 @@
         text-align: left;
         word-break: break-word;
     }
-    
+
     .tooltip-inner {
         /* we need some more space for all the needles */
         max-width: 400px;
@@ -19,7 +19,7 @@
 }
 
 #filter-panel, #live-log-panel, #live-terminal-panel {
-    .panel-heading {
+    .card-header {
         cursor: pointer;
 
         span {
@@ -28,7 +28,7 @@
             font-weight: 500;
         }
     }
-    .panel-body {
+    .card-body {
         display: none;
     }
 
