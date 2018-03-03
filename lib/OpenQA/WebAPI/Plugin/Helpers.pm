@@ -316,7 +316,11 @@ sub register {
     $app->helper(
         group_link_menu_entry => sub {
             my ($c, $group) = @_;
-            return $c->tag('li', $c->link_to($group->name => $c->url_for('group_overview', groupid => $group->id)));
+            return $c->tag(
+                'li',
+                $c->link_to(
+                    $group->name => $c->url_for('group_overview', groupid => $group->id) => class => 'dropdown-item'
+                ));
         });
 
     $app->helper(

@@ -28,11 +28,11 @@
       %= javascript begin
           %= content_for 'head_javascript'
           $(function() {
-          setupForAll();
-          %= content_for 'ready_function'
-          % if (current_user) {
+            setupForAll();
+            %= content_for 'ready_function'
+            % if (current_user) {
               newFeature(<%= current_user->feature_version %>);
-          % }
+            % }
           } );
       % end
 
@@ -43,83 +43,7 @@
 
   </head>
   <body>
-      <nav class="navbar navbar-expand-lg navbar-light bg-light">
-         <a class="navbar-brand" href="/"><img src="<%= icon_url 'logo.svg'%>" alt="openQA"></a>
-	 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-	<div class="collapse navbar-collapse" id="navbarNav">
-    <ul class="navbar-nav">
-                      <li id="all_tests">
-                          %= link_to 'All Tests' => url_for('tests')
-                      </li>
-
-                      <li class="dropdown" id="job_groups">
-                          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" data-submenu>Job Groups<span class="caret"></span></a>
-                          <ul class="dropdown-menu">
-                              %= current_job_group
-                              % for my $parent_or_group (@$job_groups_and_parents) {
-                                  % if ($parent_or_group->can('children')) {
-                                      % my @children = $parent_or_group->children;
-                                      % if (scalar(@children)) {
-                                          <li class="dropdown-submenu">
-                                              %= link_to $parent_or_group->name => url_for('parent_group_overview', groupid => $parent_or_group->id)
-                                              <ul class="dropdown-menu">
-                                                  % for my $group (@children) {
-                                                      %= group_link_menu_entry $group;
-                                                  % }
-                                              </ul>
-                                          </li>
-                                      % }
-                                  % } else {
-                                      %= group_link_menu_entry $parent_or_group;
-                                  % }
-                              % }
-                          </ul>
-                      </li>
-                  </ul>
-                  <ul class="navbar-nav navbar-right">
-                      % if (current_user) {
-                          <li class="dropdown" id="user-action">
-                              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" >Logged in as
-                                  %= current_user->name
-                                  <span class="caret"></span>
-                              </a>
-                              <ul class="dropdown-menu">
-                                <li class="dropdown-header">Operators Menu</li>
-                                <li><%= link_to('Medium types' => url_for('admin_products')) %></li>
-                                <li><%= link_to('Machines' => url_for('admin_machines')) %></li>
-                                <li><%= link_to('Test suites' => url_for('admin_test_suites')) %></li>
-                                <li><%= link_to('Job groups' => url_for('admin_groups')) %></li>
-                                <li><%= link_to('Scheduled products' => url_for('admin_product_log')) %></li>
-
-                                <li><%= link_to('Assets' => url_for('admin_assets')) %></li>
-                                <!-- Sure this is not the proper place for the workers view,
-                                but the previous one was even more annoying -->
-                                <li><%= link_to('Workers' => url_for('admin_workers')) %></li>
-                                % if (is_admin) {
-                                    <li role="separator" class="divider"></li>
-                                    <li class="dropdown-header">Administrators Menu</li>
-                                    <li><%= link_to('Users' => url_for('admin_users')) %></li>
-                                    <li><%= link_to('Needles' => url_for('admin_needles')) %></li>
-                                    <li><%= link_to('Audit log' => url_for('audit_log')) %></li>
-                                % }
-                                <li role="separator" class="divider"></li>
-                                % if (is_operator) {
-                                    <li><%= link_to "Manage API keys" => url_for('api_keys') %></li>
-                                % }
-                                <li><%= link_to "API help" => url_for('api_help') %></li>
-                                <li><%= link_to(Changelog => url_for('changelog')) %></li>
-                                <li><%= link_to('Logout' => url_for('logout') => 'data-method' => 'delete') %></li>
-                              </ul>
-                          </li>
-                      % } else {
-                          <li id="user-action">
-                              %= link_to('Login' => url_for('login'))
-                          </li>
-                      % }
-                  </ul>
-      </nav>
+      %= include 'layouts/navbar'
       <div class="container" id="content">
           %= content
       </div>
