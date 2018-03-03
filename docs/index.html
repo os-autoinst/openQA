@@ -681,6 +681,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_using_text_consoles_and_the_serial_terminal">Using text consoles and the serial terminal</a>
 <ul class="sectlevel3">
 <li><a href="#_using_a_serial_terminal">Using a serial terminal</a></li>
+<li><a href="#_the_virtio_serial_terminal_implementation">The virtio serial terminal implementation</a></li>
 </ul>
 </li>
 </ul>
@@ -3929,8 +3930,25 @@ diff -u test.txt test2.txt <span class="tok-o">&amp;&amp;</span> <span class="to
 <div class="paragraph">
 <p>Typically the OS you are testing will boot into a graphical shell e.g. The
 Gnome desktop environment. This is fine if you wish to test a program with a
-GUI, but lets say you want to run some shell scripts then it is not so
-convenient.</p>
+GUI, but in many situations you will need to enter commands into a textual
+shell (e.g Bash), TTY, text terminal, command prompt, TUI etc.</p>
+</div>
+<div class="paragraph">
+<p>OpenQA has two basic methods for interacting with a text shell. The first uses
+the same input and output methods as when interacting with a GUI, plus a
+serial port for getting raw text output from the SUT. This is primarily
+implemented with VNC and so I will referrer to it as the VNC text console.</p>
+</div>
+<div class="paragraph">
+<p>The second method uses a single serial port for both input and output. The SUT
+attaches a TTY to the serial port and all communication is text based. This is
+called the serial terminal console (or the virtio console, see implementation
+section for details).</p>
+</div>
+<div class="paragraph">
+<p>The VNC text console is very slow and expensive relative to the serial
+terminal console, but allows you to continue using assert_screen and is more
+widely supported. Below is an example of how to use the VNC text console.</p>
 </div>
 <div class="paragraph">
 <div class="title">To access a text based console or TTY, you can do something like the</div>
@@ -3955,13 +3973,15 @@ convenient.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>This will select a text TTY and login as the root user (you could use
-become_root instead in this case). Had select_console 'root-console' been
-used before then it would just select the TTY. Now that we are on a text
-console it is possible to run scripts and observe their output. Note that
-root-console is defined by the distribution, but also that calls to
-select_console can have far reaching consequences depending on what console
-is being selected and what backend/architecture the SUT is using.</p>
+<p>This will select a text TTY and login as the root user (if necessary). Now
+that we are on a text console it is possible to run scripts and observe their
+output either as raw text or on the video feed.</p>
+</div>
+<div class="paragraph">
+<p>Note that root-console is defined by the distribution, so on different
+distributions or operating systems this can vary. There are also many utility
+functions that wrap select_console, so check your distributions utility
+library before using it directly.</p>
 </div>
 </div>
 </div>
@@ -3981,18 +4001,21 @@ is being selected and what backend/architecture the SUT is using.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Note that it is usually not necessary to return text from the SUT to the test
-module for processing and it is often faster to do the processing in a shell
-script on the SUT. However you may find it more convenient, readable or
-reliable to do it in the Perl test module.</p>
+<p>This returns the contents of the SUT&#8217;s /proc/cpuinfo file to the test script
+and then searches it for the term 'avx2' using a regex.</p>
 </div>
 </div>
 </div>
 <div class="paragraph">
-<p>The script_run and script_output commands are high level commands which
-use type_string and wait_serial underneath. Sometimes you may wish to use
+<p>The script_run and script_output are high level commands which use
+type_string and wait_serial underneath. Sometimes you may wish to use
 lower level commands which give you more control, but be warned that it may
 also make your code less portable.</p>
+</div>
+<div class="paragraph">
+<p>The command wait_serial watches the SUT&#8217;s serial port for text output and
+matches it against a regex. type_string sends a string to the SUT like it
+was typed in by the user over VNC.</p>
 </div>
 <div class="sect3">
 <h4 id="_using_a_serial_terminal">Using a serial terminal</h4>
@@ -4020,6 +4043,20 @@ output from the SUT&#8217;s serial port.</p>
 text commands it is much faster to use a serial port for both sending and
 receiving TTY commands.</p>
 </div>
+<div class="paragraph">
+<p>Communicating entirely using text also means that you no longer have to worry
+about your needles being invalidated due to a font change or similar. It is
+also much cheaper to transfer text and test it against regular expressions
+than encode images from a VNC feed and test them against sample images
+(needles).</p>
+</div>
+<div class="paragraph">
+<p>On the other hand you can no longer use assert_screen or take a screen shot
+because the text is never rendered as an image. A lot of programs will also
+send ANSI escape sequences which will appear as raw text to the test script
+instead of being interpreted by a terminal emulator which then renders the
+text.</p>
+</div>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-n">select_console</span><span class="tok-p">(</span><span class="tok-s">&#39;root-virtio-terminal&#39;</span><span class="tok-p">);</span>  <span class="tok-c1"># Selects a virtio based serial terminal</span></code></pre>
@@ -4027,15 +4064,210 @@ receiving TTY commands.</p>
 </div>
 <div class="paragraph">
 <p>Changing input and output to a serial terminal has the side effect of changing
-where wait_serial reads output from. This will cause some distribution
-specific utility functions to fail, however they can usually be fixed with the
-is_serial_terminal API function. To find out more look at the
-is_serial_terminal POD in testapi.pm.</p>
+where wait_serial reads output from. On a QEMU VM wait_serial usually
+reads from an emulated serial port which is also where the kernel log is
+usually output to.</p>
 </div>
 <div class="paragraph">
-<p>Another consequence of moving to a serial terminal is that none of the needle
-based commands will be available because there is no screen image to match
-against.</p>
+<p>When switching to a virtio based serial terminal, wait_serial will then read
+from the virtio serial port instead. However the emulated serial port still
+exists and can receive output. Some utility library functions are hard coded
+to redirect output to the emulated serial port and expect that wait_serial
+will be able to read it. Usually it is not too difficult to fix the utility
+function, you just need to remove some redirection in the shell command.</p>
+</div>
+<div class="paragraph">
+<p>Another common problem is that some library or utility function tries to take
+a screen shot. The hard part is finding what takes the screen shot, but then
+it is just a simple case of checking is_serial_terminal and not taking the
+screen shot if we are on a serial terminal.</p>
+</div>
+<div class="paragraph">
+<p>Distributions usually wrap select_console, so instead of using it directly,
+you can use something like the following which is from the OpenSUSE test
+suite.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">if</span> <span class="tok-p">(</span><span class="tok-n">select_virtio_console</span><span class="tok-p">())</span> <span class="tok-p">{</span>
+        <span class="tok-c1"># Do something which only works, or is necessary, on a serial terminal</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This selects the virtio based serial terminal if possible. If it is available
+then it returns true. It is also possible to check if the current console is a
+serial terminal by calling is_serial_terminal.</p>
+</div>
+<div class="paragraph">
+<p>Once you have selected a serial terminal, the video feed will disappear from
+the live view, however at the bottom of the live screen there is a separate
+text feed. After the test has finished you can view the serial log(s) in the
+assets tab. You will probably have two serial logs; serial0.txt and
+serial_terminal.txt.</p>
+</div>
+<div class="paragraph">
+<p>Now that you are on a serial terminal everything will start to go a lot
+faster. So much faster in fact that race conditions become a big
+issue. Generally these can be avoided by using the higher level functions such
+as script_run and script_output.</p>
+</div>
+<div class="paragraph">
+<p>It is rarely necessary to use the lower level functions, however it helps to
+recognise problems caused by race conditions at the lower level, so please
+read the following section regardless.</p>
+</div>
+<div class="paragraph">
+<p>So if you do need to use type_string and wait_serial directly then try to
+use the following pattern:</p>
+</div>
+<div class="paragraph">
+<p>1) Wait for the terminal prompt to appear.
+2) Send your command
+3) Wait for your command text to be echoed by the shell (if applicable)
+4) Send enter
+5) Wait for your command output (if applicable)</p>
+</div>
+<div class="paragraph">
+<p>To illustrate this is a snippet from the LTP test runner which uses the lower
+level commands to achieve a little bit more control. I have numbered the lines
+which correspond to the steps above.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">my</span> <span class="tok-nv">$fin_msg</span>    <span class="tok-o">=</span> <span class="tok-s">&quot;### TEST $test-&gt;{name} COMPLETE &gt;&gt;&gt; &quot;</span><span class="tok-p">;</span>
+<span class="tok-k">my</span> <span class="tok-nv">$cmd_text</span>   <span class="tok-o">=</span> <span class="tok-sx">qq($test-&gt;{command}; echo &quot;$fin_msg\$?&quot;)</span><span class="tok-p">;</span>
+<span class="tok-k">my</span> <span class="tok-nv">$klog_stamp</span> <span class="tok-o">=</span> <span class="tok-s">&quot;echo &#39;OpenQA::run_ltp.pm: Starting $test-&gt;{name}&#39; &gt; /dev/$serialdev&quot;</span><span class="tok-p">;</span>
+
+<span class="tok-c1"># More variables and other stuff</span>
+
+<span class="tok-k">if</span> <span class="tok-p">(</span><span class="tok-n">is_serial_terminal</span><span class="tok-p">)</span> <span class="tok-p">{</span>
+        <span class="tok-n">script_run</span><span class="tok-p">(</span><span class="tok-nv">$klog_stamp</span><span class="tok-p">);</span>
+        <span class="tok-n">wait_serial</span><span class="tok-p">(</span><span class="tok-n">serial_term_prompt</span><span class="tok-p">(),</span> <span class="tok-nb">undef</span><span class="tok-p">,</span> <span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-n">no_regex</span> <span class="tok-o">=&gt;</span> <span class="tok-mi">1</span><span class="tok-p">);</span> <span class="tok-c1">#Step 1</span>
+        <span class="tok-n">type_string</span><span class="tok-p">(</span><span class="tok-nv">$cmd_text</span><span class="tok-p">);</span>		  	    	     	    <span class="tok-c1">#Step 2</span>
+        <span class="tok-n">wait_serial</span><span class="tok-p">(</span><span class="tok-nv">$cmd_text</span><span class="tok-p">,</span> <span class="tok-nb">undef</span><span class="tok-p">,</span> <span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-n">no_regex</span> <span class="tok-o">=&gt;</span> <span class="tok-mi">1</span><span class="tok-p">);</span>	    <span class="tok-c1">#Step 3</span>
+        <span class="tok-n">type_string</span><span class="tok-p">(</span><span class="tok-s">&quot;\n&quot;</span><span class="tok-p">);</span>     	      	 	     		    <span class="tok-c1">#Step 4</span>
+<span class="tok-p">}</span> <span class="tok-k">else</span> <span class="tok-p">{</span>
+        <span class="tok-c1"># The slow path</span>
+<span class="tok-p">}</span>
+<span class="tok-k">my</span> <span class="tok-nv">$test_log</span> <span class="tok-o">=</span> <span class="tok-n">wait_serial</span><span class="tok-p">(</span><span class="tok-sx">qr/$fin_msg\d+/</span><span class="tok-p">,</span> <span class="tok-nv">$timeout</span><span class="tok-p">,</span> <span class="tok-mi">0</span><span class="tok-p">,</span> <span class="tok-n">record_output</span> <span class="tok-o">=&gt;</span> <span class="tok-mi">1</span><span class="tok-p">);</span> <span class="tok-c1">#Step 5</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The first wait_serial (Step 1) ensures that the shell prompt has
+appeared. If we do not wait for the shell prompt then it is possible that we
+can send input to whatever command was run before. In this case that command
+would be 'echo' which is used by script_run to print a 'finished' message.</p>
+</div>
+<div class="paragraph">
+<p>It is possible that echo was able to print the finish message, but was then
+suspended by the OS before it could exit. In which case the test script is able
+to race ahead and start sending input which will just be dropped by echo once
+it is resumed. Waiting for the shell prompt stops this from happening.</p>
+</div>
+<div class="paragraph">
+<p>The function serial_term_prompt is a distribution specific function which
+returns the characters previously set as the shell prompt (e.g. export PS1="#
+", see the bash(1) or dash(1) man pages). If you are adapting a new
+distribution to use the serial terminal console, then we recommend setting a
+simple shell prompt and keeping track of it with utility functions.</p>
+</div>
+<div class="paragraph">
+<p>The no_regex argument tells wait_serial to use simple string matching
+instead of regular expressions, see the implementation section for more
+details. The other arguments are the timeout (undef means we use the
+default) and a boolean which inverts the result of wait_serial. These are
+explained in the os-autoinst/testapi.pm documentation.</p>
+</div>
+<div class="paragraph">
+<p>Then the test script enters our command with type_string (Step 2) and waits
+for the command&#8217;s text to be echoed back by the system under test. Terminals
+usually echo back the characters sent to them so that the user can see what
+they have typed.</p>
+</div>
+<div class="paragraph">
+<p>However this can be disabled (see the stty(1) man page) or possibly even
+unimplemented on your terminal. So this step may not be applicable, but it
+provides some error checking so you should think carefully before disabling
+echo deliberately.</p>
+</div>
+<div class="paragraph">
+<p>We then consume the echo text (Step 3) before sending enter, to both check
+that the correct text was received and also to separate it from the command
+output. It also ensures that the text has been fully processed before sending
+the newline character which will cause the shell to change state.</p>
+</div>
+<div class="paragraph">
+<p>It is worth reminding oneself that we are sending and receiving data
+extremely quickly on an interface usually limited by human typing speed. So
+any string which results in a significant state change should be treated as a
+potential source of race conditions.</p>
+</div>
+<div class="paragraph">
+<p>Finally we send the newline character and wait for our custom finish
+message. record_output is set to ensure all the output from the SUT is
+saved (see the next section for more info).</p>
+</div>
+<div class="paragraph">
+<p>What we do <strong>not</strong> do at this point, is wait for the shell prompt to appear.
+That would consume the prompt character breaking the next call to
+script_run.</p>
+</div>
+<div class="paragraph">
+<p>We choose to wait for the prompt just before sending a command, rather than
+after it, so that Step 5 can be deferred to a later time. In theory this
+allows the test script to perform some other work while the SUT is busy.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_the_virtio_serial_terminal_implementation">The virtio serial terminal implementation</h4>
+<div class="paragraph">
+<p>The os-autoinst package supports several types of 'consoles' of which the
+virtio serial terminal is one. The majority of code for this console is
+located in consoles/virtio_terminal.pm and consoles/virtio_screen.pm. However
+there is also related code in backends/qemu.pm and distribution.pm.</p>
+</div>
+<div class="paragraph">
+<p>You may find it useful to read the documentation in virtio_terminal.pm and
+virtio_screen.pm if you need to perform some special action on a terminal such
+as triggering a signal or simulating the SysRq key. There are also some
+console specific arguments to wait_serial and type_string such as
+record_output.</p>
+</div>
+<div class="paragraph">
+<p>The virtio 'screen' essentially reads data from a socket created by QEMU into
+a ring buffer and scans it after every read with a regular expression. The
+ring buffer is large enough to hold anything you are likely to want to match
+against, but not too large as to cause performance issues. Usually the
+contents of this ring buffer, up to the end of the match, are returned by
+wait_serial. This means earlier output will be overwritten once the ring
+buffer&#8217;s length is exceeded. However you can pass record_output which saves
+the output to a separate unlimited buffer and returns that instead.</p>
+</div>
+<div class="paragraph">
+<p>Like record_output, the no_regex argument is a console specific argument
+supported by the serial terminal console. It may or may not have some
+performance benefits, but more importantly it allows you to easily match
+arbitrary strings which may contain regex escape sequences. To be clear,
+no_regex hints that wait_serial should just treat its input as a plain
+string and use the Perl library function index to search for a match in the
+ring buffer.</p>
+</div>
+<div class="paragraph">
+<p>Very little of the code (perhaps none) is specific to a virtio based serial
+terminal and can be reused with a physical serial port, SSH socket, IPMI or
+some other text based interface. It is called the virtio console because the
+current implementation just uses a virtio serial device in QEMU (and it could
+easily be converted to an emulated port), but it otherwise has nothing to do
+with the virtio standard and so you should avoid using the name 'virtio
+console' unless specifically referring to the QEMU virtio implementation.</p>
+</div>
+<div class="paragraph">
+<p>As mentioned previously, ANSI escape sequences can be a pain. So we try to
+avoid them by informing the shell that it is running on a 'dumb' terminal (see
+the SUSE distribution&#8217;s serial terminal utility library). However some
+programs ignore this, but piping there output into tee is usually enough to
+stop them outputting non-printable characters.</p>
 </div>
 </div>
 </div>
@@ -5147,7 +5379,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-03-03 08:29:18 UTC
+Last updated 2018-03-03 08:45:27 UTC
 </div>
 </div>
 </body>
