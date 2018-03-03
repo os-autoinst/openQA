@@ -141,6 +141,24 @@ httpsonly = 0
 Since version _4.5.1512500474.437cc1c7_ of openQA, PostgreSQL is used as the
 database.
 
+Install Postgres if not yet installed:
+[source,sh]
+--------------------------------------------------------------------------------
+# openSUSE
+zypper in postgresql postgresql-server
+# Fedora
+dnf install postgresql-server postgresql-contrib
+--------------------------------------------------------------------------------
+
+If you don't have a database yet, create one:
+[source,sh]
+--------------------------------------------------------------------------------
+systemctl start postgresql
+su - postgres
+createuser geekotest
+createdb -O geekotest openqa
+--------------------------------------------------------------------------------
+
 To configure access to the database in openQA, edit +/etc/openqa/database.ini+
 and change the settings in the +[production]+ section.
 
