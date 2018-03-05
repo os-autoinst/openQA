@@ -222,16 +222,21 @@ sub _multichunk_upload {
         'upload_chunk.fail' => sub {
             my ($self, $res, $chunk) = @_;
             log_error(
-                "Upload failed for chunk " . $chunk->index . ": " . $e->body,
+                "Upload failed for chunk " . $chunk->index,
                 channels => ['autoinst', 'worker'],
                 default  => 1
             );
+            sleep 5;    # do not choke webui
         });
 
     $client->upload->once(
         'upload_chunk.error' => sub {
             $e = pop();
-            log_error($e->body, channels => ['autoinst', 'worker'], default => 1);
+            log_error(
+                "Upload failed, and all retry attempts have been exhausted",
+                channels => ['autoinst', 'worker'],
+                default  => 1
+            );
         });
 
     local $@;
@@ -244,13 +249,11 @@ sub _multichunk_upload {
                 chunk_size => $chunk_size
             });
     };
+    log_error($@, channels => ['autoinst', 'worker'], default => 1) if $@;
 
-    $client->upload->unsubscribe('upload_chunk.response');
-    $client->upload->unsubscribe('upload_chunk.start');
-    $client->upload->unsubscribe('upload_chunk.finish');
-    $client->upload->unsubscribe('upload_chunk.prepare');
-    $client->upload->unsubscribe('upload_chunk.error');
-    $client->upload->unsubscribe('upload_chunk.fail');
+    $client->upload->unsubscribe($_)
+      for qw(upload_chunk.request_err upload_chunk.error upload_chunk.fail),
+      qw( upload_chunk.response upload_chunk.start upload_chunk.finish upload_chunk.prepare);
 
     return 0 if $@ || $e;
     return 1;
