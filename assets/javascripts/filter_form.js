@@ -1,7 +1,7 @@
 function setupFilterForm() {
     // make filter form expandable
-    $('#filter-panel .panel-heading').on('click', function() {
-        $('#filter-panel .panel-body').toggle(200);
+    $('#filter-panel .card-header').on('click', function() {
+        $('#filter-panel .card-body').toggle(200);
         if($('#filter-panel').hasClass('filter-panel-bottom')) {
             $('html,body').animate({
                 scrollTop: $(document).height()
@@ -17,7 +17,7 @@ function setupFilterForm() {
         if($('#filter-form').serialize() !== window.location.search.substring(1)) {
             // show progress indication
             $('#filter-form').hide();
-            $('#filter-panel .panel-body').append('<span id="filter-progress"><i class="fa fa-cog fa-spin fa-2x fa-fw"></i> <span>Applying filter…</span></span>');
+            $('#filter-panel .card-body').append('<span id="filter-progress"><i class="fa fa-cog fa-spin fa-2x fa-fw"></i> <span>Applying filter…</span></span>');
         }
     });
 }
@@ -46,7 +46,7 @@ function parseFilterArguments(paramHandler) {
         }
     }
     if(filterLabels.length > 0) {
-        $('#filter-panel .panel-heading').find('span').text('current: ' + filterLabels.join(', '));
+        $('#filter-panel .card-header').find('span').text('current: ' + filterLabels.join(', '));
     }
     return filterLabels;
 }
