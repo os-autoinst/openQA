@@ -41,9 +41,9 @@
     % }
 % }
 
-<div class="panel panel-default filter-panel-bottom" id="filter-panel">
-    <div class="panel-heading"><strong>Filter</strong> <span>no filter present, click to toggle filter form</span></div>
-    <div class="panel-body">
+<div class="card card-outline-secondary filter-panel-bottom" id="filter-panel">
+    <div class="card-header"><strong>Filter</strong> <span>no filter present, click to toggle filter form</span></div>
+    <div class="card-body">
         <form action="#" method="get" id="filter-form">
             <div class="form-group">
                 <strong>
