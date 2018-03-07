@@ -96,9 +96,16 @@ sub schema {
 # Jobs API
 #
 sub _prefer_parallel {
-    my ($available_cond) = @_;
+    my ($available_cond, $allocating) = @_;
     my $running = schema->resultset("Jobs")->search(
-        {
+        @$allocating > 0 ?
+          {
+            -or => [
+                id    => {-in => $allocating},
+                state => OpenQA::Schema::Result::Jobs::RUNNING,
+            ],
+          }
+        : {
             state => OpenQA::Schema::Result::Jobs::RUNNING,
         })->get_column('id')->as_query;
 
@@ -117,8 +124,10 @@ sub _prefer_parallel {
 
     my $available_children = $children->search(
         {
-            child_job_id => $available_cond
-        });
+            -and => [
+                child_job_id => $available_cond,
+                child_job_id => {-not_in => $allocating},
+            ]});
 
     # we have scheduled children that are not blocked
     return ({'-in' => $available_children->get_column('child_job_id')->as_query})
@@ -130,6 +139,7 @@ sub _prefer_parallel {
             dependency   => OpenQA::Schema::Result::JobDependencies::PARALLEL,
             child_job_id => {-in => $children->get_column('child_job_id')->as_query},
             state        => OpenQA::Schema::Result::Jobs::SCHEDULED,
+            child_job_id => {-not_in => $allocating},
         },
         {
             join => 'parent',
@@ -246,6 +256,7 @@ sub schedule {
                     # by checking workers capabilities
                     my @possible_jobs = job_grab(
                         workerid     => $w->id(),
+                        allocating   => [keys %$allocating],
                         blocking     => 0,
                         allocate     => 0,
                         jobs         => OpenQA::Scheduler::MAX_JOB_ALLOCATION(),
@@ -285,6 +296,9 @@ sub schedule {
     @allocated_jobs = splice @allocated_jobs, 0, OpenQA::Scheduler::MAX_JOB_ALLOCATION()
       if (OpenQA::Scheduler::MAX_JOB_ALLOCATION() > 0
         && scalar(@allocated_jobs) > OpenQA::Scheduler::MAX_JOB_ALLOCATION());
+
+    # We filter after, or we risk to cut jobs that meant to be parallel later
+    @allocated_jobs = filter_jobs(@allocated_jobs);
 
     my @successfully_allocated;
 
@@ -466,7 +480,7 @@ sub _reschedule {
 }
 
 sub _build_search_query {
-    my $worker  = shift;
+    my ($worker, $allocating, $allocate) = @_;
     my $blocked = schema->resultset("JobDependencies")->search(
         {
             -or => [
@@ -477,7 +491,8 @@ sub _build_search_query {
                 -and => {
                     dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
                     state      => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                },
+                    (parent_job_id => {-not_in => $allocating}) x !!(@$allocating > 0),
+                }
             ],
         },
         {
@@ -489,6 +504,7 @@ sub _build_search_query {
             -not_in => $blocked->get_column('child_job_id')->as_query
         },
     );
+    push @available_cond, {-not_in => $allocating} if @$allocating > 0;
 
     # Don't kick off jobs if GRU task they depend on is running
     my $waiting_jobs = schema->resultset("GruDependencies")->get_column('job_id')->as_query;
@@ -516,7 +532,7 @@ sub _build_search_query {
         push @available_cond, {-not_in => $not_applying_jobs->as_query};
     }
 
-    my $preferred_parallel = _prefer_parallel(\@available_cond);
+    my $preferred_parallel = _prefer_parallel(\@available_cond, $allocating);
     push @available_cond, $preferred_parallel if $preferred_parallel;
     return @available_cond;
 }
@@ -558,6 +574,48 @@ sub _job_allocate {
     return 0;
 }
 
+
+sub filter_jobs {
+    my @jobs          = @_;
+    my @filtered_jobs = @jobs;
+    my @delete;
+    my $allocated_tests;
+    my @k = qw(ARCH DISTRI BUILD FLAVOR);
+
+    # TODO: @jobs's jobs needs to be a schema again
+    # previously we didn't needed schema after scheduling phase
+    # so we stripped down to what we needed
+
+    try {
+        # Build adjacent list with the tests that would have been assigned
+        $allocated_tests->{$_->{test} . join(".", @{$_->{settings}}{@k})}++ for @jobs;
+
+        foreach my $j (@jobs) {
+
+            # Filter by PARALLEL_CLUSTER
+            # next unless exists $j->{settings}->{PARALLEL_CLUSTER};
+
+            my $dep = schema->resultset("Jobs")->search({id => $j->{id},})->first->dependencies;
+
+            # Get dependencies - do not map with dbix, no oneline fun :(
+            my @dep_tests;
+            push(@dep_tests, schema->resultset("Jobs")->search({id => $_,})->first->TEST)
+              for (@{$dep->{children}->{Parallel}}, @{$dep->{parents}->{Parallel}});
+
+            # Filter if dependencies are not in the same allocation round
+            @filtered_jobs = grep { $_->{id} ne $j->{id} } @filtered_jobs
+              if grep { s/^\s+|\s+$//g; !exists $allocated_tests->{$_ . join(".", @{$j->{settings}}{@k})} } ## no critic
+              (@dep_tests, exists $j->{settings}->{PARALLEL_WITH} ? split(/,/, $j->{settings}->{PARALLEL_WITH}) : ());
+        }
+    }
+    catch {
+        log_debug("Failed job filtering, error: " . $_);
+        @filtered_jobs = @jobs;
+    };
+
+    return @filtered_jobs;
+}
+
 =head2 job_grab
 
 Search for matching jobs corresponding to a given worker id.
@@ -587,11 +645,12 @@ Maximum attempts to find a job.
 =cut
 
 sub job_grab {
-    my %args     = @_;
-    my $workerid = $args{workerid};
-    my $blocking = int($args{blocking} || 0);
-    my $allocate = int($args{allocate} || 0);
-    my $job_n    = $args{jobs} // 0;
+    my %args       = @_;
+    my $workerid   = $args{workerid};
+    my $blocking   = int($args{blocking} || 0);
+    my $allocate   = int($args{allocate} || 0);
+    my $job_n      = $args{jobs} // 0;
+    my $allocating = $args{allocating} // [];
 
     my $worker;
     my $attempt = 0;
@@ -644,7 +703,7 @@ sub job_grab {
                     my $search = schema->resultset("Jobs")->search(
                         {
                             state => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                            id    => [_build_search_query($worker)],
+                            id    => [_build_search_query($worker, $allocating, $allocate)],
                         },
                         {order_by => {-asc => [qw(priority id)]}});
 
