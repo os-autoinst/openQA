@@ -66,7 +66,20 @@ jobs/639172 put --json-data '{"group_id": 1}'
 
 print help
 
-=back
+=head2 Archive mode
+
+=item B<--archive, -a> DIRECTORY
+
+Archive mode: Download assets and test results from a job to DIRECTORY.
+
+=item B<--with-thumbnails>
+
+Archive mode: Include thumbnails
+
+=item B<--asset-size-limit> LIMIT
+
+Archive mode: Download assets that do not exceed the specified limit in bytes
+The default limit is 200 MB.
 
 =head1 SYNOPSIS
 
@@ -93,6 +106,10 @@ Delete job nr. B<1> (permissions read from config file).
 =item client --host openqa.example.com isos post iso=bar.iso tests=blah
 
 Trigger jobs on iso B<bar.iso> matching test suite B<blah>.
+
+=item client --archive /path/to/directory --asset-size-limit 1048576000 --with-thumbnails --host openqa.opensuse.org jobs/42
+
+Download all assets and test logs and images from job B<42> with asset limit of B<1GB> to B</path/to/directory>.
 
 =cut
 
@@ -123,16 +140,17 @@ my %options;
 
 sub usage($) {
     my $r = shift;
-    eval "use Pod::Usage; pod2usage(1);";
+    eval { use Pod::Usage; pod2usage(1); };
     if ($@) {
         die "cannot display help, install perl(Pod::Usage)\n";
     }
 }
 
 GetOptions(
-    \%options,       'host=s',   'apibase=s', 'json-output', 'verbose|v', 'apikey:s',
-    'apisecret:s',   'params=s', 'form',      'json-data:s', 'help|h|?',  'archive|a:s',
-    'skip-download', 'with-thumbnails'
+    \%options,            'host=s',      'apibase=s',   'json-output',
+    'verbose|v',          'apikey:s',    'apisecret:s', 'params=s',
+    'form',               'json-data:s', 'help|h|?',    'archive|a:s',
+    'asset-size-limit:i', 'with-thumbnails'
 ) or usage(1);
 
 usage(1) unless @ARGV;
@@ -217,7 +235,9 @@ else {
         $options{url}     = $url;
         $options{params}  = \%params;
         $options{params2} = @ARGV;
-        my $call = $client->archive->run(%options);
+        eval { $res = $client->archive->run(\%options) };
+        die "ERROR: $@ \n", $@ if $@;
+        exit(0);
     }
     else {
         $res = $client->$method($url)->res;

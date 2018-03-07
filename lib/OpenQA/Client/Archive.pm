@@ -39,17 +39,20 @@ sub run {
     croak 'Need a file to upload in the options!' unless $options->{url};
 
     $url = Mojo::URL->new($options->{url});
-    my $req = $self->client->get($url);
-    my $res = $req->res;
+    my $req                    = $self->client->get($url);
+    my $res                    = $req->res;
+    my $default_max_asset_size = 1024 * 1024 * 200;
+    $options->{'asset-size-limit'} //= $default_max_asset_size;
+    $self->client->max_response_size($options->{'asset-size-limit'});
 
     if ($res->code eq 200) {
         $job = $res->json->{job} || die("No job could be retrieved");
         #We have a job now, make a directory in $pwd by default
         $path = path($options->{archive})->make_path;
         #we can't backup repos, so don't even try
-        delete($job->{assets}->{repos});
+        delete($job->{assets}->{repo});
         $path->path('testresults/thumbnails')->make_path if $options->{'with-thumbnails'};
-        $self->download_assets unless $options->{'skip-download'};
+        $self->download_assets;
         $self->download_test_results;
     }
     else {
@@ -59,6 +62,7 @@ sub run {
 
 sub _download_test_result_details {
     my ($self, $module) = @_;
+    #$self->client->max_response_size(10);
     my $ua = $self->client;
     if ($module->{screenshot}) {
         #same structure is used for thumbnails and screenshots
@@ -97,7 +101,7 @@ sub _download_file_at {
     $ua->{filename} = $file;
 
     my $tx = $ua->build_tx(GET => $url);
-    $tx = $ua->start($tx);
+    $ua->start($tx);
 
     # fix the \r :)
     print "\n";
@@ -108,20 +112,29 @@ sub _download_file_at {
 sub _download_handler {
     my ($tx, $file) = @_;
 
-    print("Unexpected error while downloading $file.\n") unless $tx;
+    my $filename = $file;
+    my $message;
+    $filename = $file->basename;
 
-    if ($tx->res->is_success && $tx->res->content->asset->move_to($file)) {
-        print "File download successful to $file\n";
-        return 1;
+    $message = {message => "Unexpected error while downloading $filename\n"} unless $tx;
+
+    if ($tx && $tx->error) {
+        my $err = $tx->error;
+        $message //= {message => "file not found.\n"} if $tx->error->{code} && $tx->error->{code} eq 404;
+        $message //= {message => "Unexpected error while downloading: @{ [$tx->error->{message}]}\n"}
+          if $tx->error->{message};
     }
-    elsif ($tx->res->is_server_error) {
-        print "Could not download the file $file.\n";
+    elsif ($tx->res->is_success && $tx->res->content->asset->move_to($file)) {
+        $message = {success => 1, message => "Asset $filename sucessfully downloaded and moved to $file\n"};
     }
-    elsif ($tx->res->code == 404) {
-        print "file not found.\n";
+    else {
+        warn $tx->req->url;
+        $message //= {message => "Unexpected error while moving $file.\n"};
     }
 
-    print "Unexpected error while moving $file.\n";
+    # Everything is an error, except when there is sucess
+    print $message->{message} if $message->{success};
+    print $message->{message} unless $message->{success};
 
 }
 
@@ -157,25 +170,23 @@ sub download_asset {
 
     my ($self, $jobid, $type, $file) = @_;
     my $ua = $self->client;
-    local $| = 1;
-
-    # Override waitting time as big assets can take quite some time
-    $url->path("/tests/$jobid/asset/$type/$file");
-    my $tx = $ua->build_tx(GET => $url);
-    my $headers;
 
     #assume that we're in the working directory.
     my $destination_directory = $path->path("$type")->make_path;
     die "can't write in $path/$type directory" unless -w "$destination_directory";
     $file = $destination_directory->path($file);
 
-    #Download progress monitor
+    # ensure we are requesting the right file, so call basename
+    $url->path("/tests/$jobid/asset/$type/" . $file->basename);
+
+    # Attach the download monitor
     $ua->on(start => \&_progress_monitior);
+    my $tx = $ua->build_tx(GET => $url);
+    my $headers;
 
     $ua->{filename} = $file;
     $tx = $ua->start($tx);
 
-    $| = 0;
     # fix the \r :)
     print "\n";
     _download_handler($tx, $file);
@@ -192,11 +203,10 @@ sub download_assets {
 }
 
 sub _progress_monitior {
-
     my ($ua, $tx) = @_;
     my $progress     = 0;
     my $last_updated = time;
-    my $filename     = $ua->{filename} // 'file';
+    my $filename     = $ua->{filename} // 'File';
     my $headers;
 
     $tx->res->on(

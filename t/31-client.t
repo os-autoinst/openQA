@@ -43,18 +43,31 @@ path('t', 'client_tests.d')->remove_tree;
 my $destination = path('t', 'client_tests.d', tempdir)->make_path;
 
 subtest 'OpenQA::Client:Archive tests' => sub {
-    my $jobid = 99938;
+    my $jobid     = 99938;
+    my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults');
+    my $limit     = 1024 * 1024;
+    system(
+"dd if=/dev/zero of=$resultdir/00099/00099938-opensuse-Factory-DVD-x86_64-Build0048-doc/ulogs/limittest.tar.bz2 bs=1M count=2"
+    );
+    eval {
+        my $command
+          = $t->ua->archive->run(
+            {archive => $destination, url => "/api/v1/jobs/$jobid/details", 'asset-size-limit' => $limit});
+    };
+    is($@, '', 'Archive functionality works as expected would perform correctly') or diag explain $@;
 
-    my $command = $t->ua->archive->run({archive => $destination, url => "/api/v1/jobs/$jobid/details"});
-
-    is($@, '', 'Archive functionality works as expected would perform correctly' . $@);
     my $file = path($destination, 'testresults', 'details-zypper_up.json');
     ok(-e $file, 'details-zypper_up.json file exists') or diag $file;
     $file = path($destination, 'testresults', 'video.ogv');
+
     ok(-e $file, 'Test video file exists') or diag $file;
     $file = path($destination, 'testresults', 'ulogs', 'y2logs.tar.bz2');
-    ok(-e $file, 'Test uploaded logs file exists') or diag $file;
 
+    ok(-e $file, 'Test uploaded logs file exists') or diag $file;
+    $file = path($destination, 'testresults', 'ulogs', 'limittest.tar.bz2');
+
+    ok(!-e $file, 'Test uploaded logs file was not created') or diag $file;
+    is($t->ua->max_response_size, $limit, "Max response size for UA is correct ($limit)");
 };
 
 done_testing();
