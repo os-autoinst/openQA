@@ -57,18 +57,24 @@ sub asset {
         my $res;
         my $done = 0;
         do {
-            $res = $self->client->start(
-                $self->_build_post(
-                    "$uri/artefact" => {
-                        file => {filename => $file_name, file => Mojo::Asset::Memory->new->add_chunk($_->serialize)},
-                        asset => $opts->{asset},
-                    }));
-            $self->emit('upload_chunk.response' => $res);
-            $done = 1 if $res && $res->res->json && $res->res->json->{status} && $res->res->json->{status} eq 'ok';
-            $trial = 0 if (!$res->res->is_server_error && $res->error);
-            $trial-- if $trial > 0;
+            local $@;
+            eval {
+                $res = $self->client->start(
+                    $self->_build_post(
+                        "$uri/artefact" => {
+                            file =>
+                              {filename => $file_name, file => Mojo::Asset::Memory->new->add_chunk($_->serialize)},
+                            asset => $opts->{asset},
+                        }));
+                $self->emit('upload_chunk.response' => $res);
+                $done = 1
+                  if $res && $res->res->json && exists $res->res->json->{status} && $res->res->json->{status} eq 'ok';
+            };
             $self->emit('upload_chunk.fail' => $res => $_) if $done == 0;
-            $e = $res->res if $trial == 0 && $done == 0;
+
+            $trial-- if $trial > 0;
+            $self->emit('upload_chunk.request_err' => $res => $@) if $@;
+            $e = $@ || $res if $trial == 0 && $done == 0;
         } until ($trial == 0 || $done);
 
         $failed++ if $trial == 0 && $done == 0;
