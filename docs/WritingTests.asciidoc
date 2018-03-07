@@ -688,10 +688,17 @@ the same input and output methods as when interacting with a GUI, plus a
 serial port for getting raw text output from the SUT. This is primarily
 implemented with VNC and so I will referrer to it as the VNC text console.
 
-The second method uses a single serial port for both input and output. The SUT
-attaches a TTY to the serial port and all communication is text based. This is
-called the serial terminal console (or the virtio console, see implementation
-section for details).
+The serial port device which is used with the VNC text console is the default
+virtual serial port device in QEMU (i.e. the device configured with the
++-serial+ command line option). I will refer to this as the "default serial
+port". OpenQA currently only uses this serial port for one way communication
+from the SUT to the host.
+
+The second method uses another serial port for both input and output. The SUT
+attaches a TTY to the serial port which os-autoinst logs into. All
+communication is therefor text based, similar to if you SSH'd into a remote
+machine. This is called the serial terminal console (or the virtio console,
+see implementation section for details).
 
 The VNC text console is very slow and expensive relative to the serial
 terminal console, but allows you to continue using +assert_screen+ and is more
@@ -723,7 +730,7 @@ output either as raw text or on the video feed.
 
 Note that +root-console+ is defined by the distribution, so on different
 distributions or operating systems this can vary. There are also many utility
-functions that wrap +select_console+, so check your distributions utility
+functions that wrap +select_console+, so check your distribution's utility
 library before using it directly.
 
 ====
@@ -765,11 +772,11 @@ IMPORTANT: You need a QEMU version >= 2.6.1 and to set the
 Usually OpenQA controls the system under test using VNC. This allows the use
 of both graphical and text based consoles. Key presses are sent individually
 as VNC commands and output is returned in the form of screen images and text
-output from the SUT's serial port.
+output from the SUT's default serial port.
 
-Sending key presses over VNC is very slow so for tests which send a lot of
-text commands it is much faster to use a serial port for both sending and
-receiving TTY commands.
+Sending key presses over VNC is very slow, so for tests which send a lot of
+text commands it is much faster to use a serial port for both sending shell
+commands and received program output.
 
 Communicating entirely using text also means that you no longer have to worry
 about your needles being invalidated due to a font change or similar. It is
@@ -788,22 +795,34 @@ text.
 select_console('root-virtio-terminal');  # Selects a virtio based serial terminal
 --------------------------------------------------------------------------------
 
-Changing input and output to a serial terminal has the side effect of changing
-where +wait_serial+ reads output from. On a QEMU VM +wait_serial+ usually
-reads from an emulated serial port which is also where the kernel log is
-usually output to.
+The above code will cause +type_string+ and +wait_serial+ to write and read
+from a virtio serial port. A distribution specific call back will be made
+which allows os-autoinst to log into a serial terminal session running on the
+SUT. Once +select_console+ returns you should be logged into a TTY as root.
+
+If you are struggling to visualise what is happening, imagine SSH-ing into a
+remote machine as root, you can then type in commands and read the results as
+if you were sat at that computer. What we are doing is much simpler than using
+an SSH connection (it is more like using GNU +screen+ with a serial port), but
+the end result looks quite similar.
+
+As mentioned above, changing input and output to a serial terminal has the
+effect of changing where +wait_serial+ reads output from. On a QEMU VM
++wait_serial+ usually reads from the default serial port which is also where
+the kernel log is usually output to.
 
 When switching to a virtio based serial terminal, +wait_serial+ will then read
-from the virtio serial port instead. However the emulated serial port still
+from a virtio serial port instead. However the default serial port still
 exists and can receive output. Some utility library functions are hard coded
-to redirect output to the emulated serial port and expect that +wait_serial+
+to redirect output to the default serial port and expect that +wait_serial+
 will be able to read it. Usually it is not too difficult to fix the utility
-function, you just need to remove some redirection in the shell command.
+function, you just need to remove some redirection from the relevant shell
+command.
 
 Another common problem is that some library or utility function tries to take
 a screen shot. The hard part is finding what takes the screen shot, but then
 it is just a simple case of checking +is_serial_terminal+ and not taking the
-screen shot if we are on a serial terminal.
+screen shot if we are on a serial terminal console.
 
 Distributions usually wrap +select_console+, so instead of using it directly,
 you can use something like the following which is from the OpenSUSE test
@@ -816,18 +835,18 @@ if (select_virtio_console()) {
 }
 --------------------------------------------------------------------------------
 
-This selects the virtio based serial terminal if possible. If it is available
-then it returns true. It is also possible to check if the current console is a
-serial terminal by calling +is_serial_terminal+.
+This selects the virtio based serial terminal console if possible. If it is
+available then it returns true. It is also possible to check if the current
+console is a serial terminal by calling +is_serial_terminal+.
 
 Once you have selected a serial terminal, the video feed will disappear from
 the live view, however at the bottom of the live screen there is a separate
 text feed. After the test has finished you can view the serial log(s) in the
-assets tab. You will probably have two serial logs; +serial0.txt+ and
-+serial_terminal.txt+.
+assets tab. You will probably have two serial logs; +serial0.txt+ which is
+written from the default serial port and +serial_terminal.txt+.
 
-Now that you are on a serial terminal everything will start to go a lot
-faster. So much faster in fact that race conditions become a big
+Now that you are on a serial terminal console everything will start to go a
+lot faster. So much faster in fact that race conditions become a big
 issue. Generally these can be avoided by using the higher level functions such
 as +script_run+ and +script_output+.
 
@@ -863,7 +882,7 @@ if (is_serial_terminal) {
         wait_serial($cmd_text, undef, 0, no_regex => 1);	    #Step 3
         type_string("\n");     	      	 	     		    #Step 4
 } else {
-        # The slow path
+        # None serial terminal console code (e.g. the VNC console)
 }
 my $test_log = wait_serial(qr/$fin_msg\d+/, $timeout, 0, record_output => 1); #Step 5
 --------------------------------------------------------------------------------
@@ -874,9 +893,15 @@ can send input to whatever command was run before. In this case that command
 would be 'echo' which is used by +script_run+ to print a 'finished' message.
 
 It is possible that echo was able to print the finish message, but was then
-suspended by the OS before it could exit. In which case the test script is able
-to race ahead and start sending input which will just be dropped by echo once
-it is resumed. Waiting for the shell prompt stops this from happening.
+suspended by the OS before it could exit. In which case the test script is
+able to race ahead and start sending input to echo which was intended for the
+shell. Waiting for the shell prompt stops this from happening.
+
+INFO: It appears that echo does not read STDIN in this case, and so the input
+will stay inside STDIN's buffer and be read by the shell (Bash). Unfortunately
+this results in the input being displayed twice: once by the terminal's echo
+(explained later) and once by Bash. Depending on your configuration the
+behavior could be completely different
 
 The function +serial_term_prompt+ is a distribution specific function which
 returns the characters previously set as the shell prompt (e.g. export PS1="#
@@ -922,6 +947,45 @@ We choose to wait for the prompt just before sending a command, rather than
 after it, so that Step 5 can be deferred to a later time. In theory this
 allows the test script to perform some other work while the SUT is busy.
 
+==== Sending signals - ctrl-c and ctrl-d
+
+On a VNC based console you simply use +send_key+ like follows.
+
+[source,perl]
+--------------------------------------------------------------------------------
+send_key('ctrl-c');
+--------------------------------------------------------------------------------
+
+This usually (see termios(3)) has the effect of sending SIGINT to whatever
+command is running. Most commands terminate upon receiving this signal (see
+signal(7)).
+
+On a serial terminal console the +send_key+ command is not implemented (see
+implementation section). So instead the following can be done to achieve the
+same effect.
+
+[source,perl]
+--------------------------------------------------------------------------------
+type_string('', terminate_with => 'ETX');
+--------------------------------------------------------------------------------
+
+The ETX ASCII code means End of Text and usually results in SIGINT being
+raised. In fact pressing +ctrl-c+ may just be translated into ETX, so you
+might consider this a more direct method. Also you can use 'EOT' to do the
+same thing as pressing +ctrl-d+.
+
+You also have the option of using Perl's control character escape sequences in
+the first argument to +type_string+. So you can also send ETX with:
+
+[source,perl]
+--------------------------------------------------------------------------------
+type_string("\cC");
+--------------------------------------------------------------------------------
+
+The +terminate_with+ parameter just exists to display intention. It is also
+possible to send any character using the hex code like '\x0f' which may have
+the effect of pressing the magic SysRq key if you are lucky.
+
 ==== The virtio serial terminal implementation
 
 The os-autoinst package supports several types of 'consoles' of which the
@@ -952,6 +1016,13 @@ arbitrary strings which may contain regex escape sequences. To be clear,
 string and use the Perl library function +index+ to search for a match in the
 ring buffer.
 
+The +send_key+ function is not implemented for the serial terminal console
+because the OpenQA console implementation would need to map key actions like
++ctrl-c+ to a character and then send that character. This may mislead some
+people into thinking they are actually sending +ctrl-c+ to the SUT and also
+requires OpenQA to choose what character +ctrl-c+ represents which varies
+across terminal configurations.
+
 Very little of the code (perhaps none) is specific to a virtio based serial
 terminal and can be reused with a physical serial port, SSH socket, IPMI or
 some other text based interface. It is called the virtio console because the
@@ -965,3 +1036,4 @@ avoid them by informing the shell that it is running on a 'dumb' terminal (see
 the SUSE distribution's serial terminal utility library). However some
 programs ignore this, but piping there output into +tee+ is usually enough to
 stop them outputting non-printable characters.
+
