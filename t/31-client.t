@@ -43,16 +43,22 @@ path('t', 'client_tests.d')->remove_tree;
 my $destination = path('t', 'client_tests.d', tempdir)->make_path;
 
 subtest 'OpenQA::Client:Archive tests' => sub {
-    my $jobid     = 99938;
-    my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults');
-    my $limit     = 1024 * 1024;
-    system(
-"dd if=/dev/zero of=$resultdir/00099/00099938-opensuse-Factory-DVD-x86_64-Build0048-doc/ulogs/limittest.tar.bz2 bs=1M count=2"
-    );
+    my $jobid          = 99938;
+    my $limit          = 1024 * 1024;
+    my $limittest_path = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults', '00099',
+        '00099938-opensuse-Factory-DVD-x86_64-Build0048-doc', 'ulogs');
+
+    system("dd if=/dev/zero of=$limittest_path/limittest.tar.bz2 bs=1M count=2");
+    ok(-e "$limittest_path/limittest.tar.bz2", "limit test file is created");
+
     eval {
-        my $command
-          = $t->ua->archive->run(
-            {archive => $destination, url => "/api/v1/jobs/$jobid/details", 'asset-size-limit' => $limit});
+        my %options = (
+            archive            => $destination,
+            url                => "/api/v1/jobs/$jobid/details",
+            'asset-size-limit' => $limit,
+            'with-thumbnails'  => 1
+        );
+        my $command = $t->ua->archive->run(\%options);
     };
     is($@, '', 'Archive functionality works as expected would perform correctly') or diag explain $@;
 
@@ -68,6 +74,7 @@ subtest 'OpenQA::Client:Archive tests' => sub {
 
     ok(!-e $file, 'Test uploaded logs file was not created') or diag $file;
     is($t->ua->max_response_size, $limit, "Max response size for UA is correct ($limit)");
+
 };
 
 done_testing();

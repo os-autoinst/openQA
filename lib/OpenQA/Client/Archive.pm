@@ -133,8 +133,7 @@ sub _download_handler {
     }
 
     # Everything is an error, except when there is sucess
-    print $message->{message} if $message->{success};
-    print $message->{message} unless $message->{success};
+    print $message->{message};
 
 }
 
@@ -198,7 +197,7 @@ sub download_assets {
     my $asset_group;
     for my $asset_group (keys %{$job->{assets}}) {
         print "Attempt $asset_group download:\n";
-        map { download_asset($job->{id}, $asset_group, $_) } @{$job->{assets}{$asset_group}};
+        map { $self->download_asset($job->{id}, $asset_group, $_) } @{$job->{assets}{$asset_group}};
     }
 }
 
@@ -208,6 +207,22 @@ sub _progress_monitior {
     my $last_updated = time;
     my $filename     = $ua->{filename} // 'File';
     my $headers;
+    my $limit = $ua->max_response_size;
+
+    # Mojo::Messages seem to have a problem when the user wants to use a transaction
+    # instead of a get to download files.
+    $tx->res->once(
+        progress => sub {
+            my $msg = shift;
+            return unless my $len = $msg->headers->content_length;
+            # Messages were useful while debugging, let's leave them for a while.
+            # print "Asset $limit, downloading $filename of @{[ $msg->headers->content_length ]}\n";
+            if ($limit && $msg->headers->content_length >= $limit) {
+                # print "Limit $limit exceeded @{[ $msg->headers->content_length ]}\n";
+                $msg->error(
+                    {message => path($filename)->basename . " exceeeds maximum size limit of $limit", code => 509});
+            }
+        });
 
     $tx->res->on(
         progress => sub {

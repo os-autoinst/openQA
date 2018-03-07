@@ -243,7 +243,6 @@ else {
         $res = $client->$method($url)->res;
         #exit(0);
     }
-
 }
 if ($res->code == 200) {
     if ($options{'json-output'}) {
