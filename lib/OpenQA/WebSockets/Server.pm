@@ -191,9 +191,6 @@ sub _finish {
     $dt->subtract(seconds => (WORKERS_CHECKER_THRESHOLD + 20));
     $worker->{db}->update({t_updated => $dt});
     $worker->{socket} = undef;
-    # remove the version as we don't know if the worker is updated while shutdown
-    $worker->{db}->set_property('WEBSOCKET_API_VERSION',        '');
-    $worker->{db}->set_property('ISOTOVIDEO_INTERFACE_VERSION', '');
 }
 
 sub _message {
@@ -206,14 +203,14 @@ sub _message {
         return;
     }
     unless (ref($json) eq 'HASH') {
-        log_error(sprintf('Received unexpected WS message "%s from worker %u', Dumper($json), $worker->id));
+        log_error(sprintf('Received unexpected WS message "%s from worker %u', Dumper($json), $worker->{id}));
         $ws->finish("1003", "Received unexpected data from worker, forcing close");
         return;
     }
 
     # This is to make sure that no worker can skip the _registration.
     if (($worker->{db}->get_websocket_api_version() || 0) != WEBSOCKET_API_VERSION) {
-        log_warning("Received a message from an incompatible worker");
+        log_warning("Received a message from an incompatible worker " . $worker->{id});
         $ws->tx->send({json => {type => 'incompatible'}});
         $ws->finish("1008",
             "Connection terminated from WebSocket server - incompatible communication protocol version");
