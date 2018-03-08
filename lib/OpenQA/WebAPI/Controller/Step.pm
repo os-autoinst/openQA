@@ -453,7 +453,8 @@ sub save_needle_ajax {
     $validation->required('json');
     $validation->required('imagename')->like(qr/^[^.\/][^\/]{3,}\.png$/);
     $validation->optional('imagedistri')->like(qr/^[^.\/]+$/);
-    $validation->optional('imageversion')->like(qr/^[^.\/]+$/);
+    $validation->optional('imageversion')->like(qr/^(?!.*([.])\1+).*$/);
+    $validation->optional('imageversion')->like(qr/^[^\/]+$/);
     $validation->required('needlename')->like(qr/^[^.\/][^\/]{3,}$/);
 
     if ($validation->has_error) {
