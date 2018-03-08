@@ -32,7 +32,7 @@ before_install:
   - cpanm local::lib
   - eval "$(perl -Mlocal::lib=${HOME}/perl_modules)"
   - mkdir -p $HOME/chrome
-  - if ! test -f $HOME/chrome/chromedriver; then curl -s https://chromedriver.storage.googleapis.com/2.33/chromedriver_linux64.zip | funzip - > $HOME/chrome/chromedriver; fi
+  - if ! test -f $HOME/chrome/chromedriver; then curl -s https://chromedriver.storage.googleapis.com/2.36/chromedriver_linux64.zip | funzip - > $HOME/chrome/chromedriver; fi
   - chmod a+x $HOME/chrome/chromedriver
   - export PATH=$PATH:$HOME/chrome
 install:
