@@ -119,6 +119,8 @@
 
 
   profile /usr/bin/Xvnc {
+    /home/newman/openqa/.../os-autoinst/bmwqemu.pm r,
+
     #include <abstractions/X>
     #include <abstractions/base>
     #include <abstractions/consoles>
@@ -165,3 +167,51 @@
 
   }
 }
+
+  profile /usr/bin/Xvnc {
+    #include <abstractions/X>
+    #include <abstractions/base>
+    #include <abstractions/consoles>
+    #include <abstractions/fonts>
+    #include <abstractions/nameservice>
+
+    /bin/bash rix,
+    /proc/*/cmdline r,
+    /tmp/* rwlk,
+    /usr/bin/Xvnc mr,
+    /usr/bin/xkbcomp rix,
+    /var/lib/openqa/pool/*/autoinst-log.txt w,
+
+  }
+
+  profile /usr/bin/lscpu {
+    #include <abstractions/base>
+
+    /proc/** r,
+    /sys/devices/** r,
+    /usr/bin/lscpu mr,
+
+  }
+
+  profile /usr/bin/x3270 {
+    #include <abstractions/X>
+    #include <abstractions/base>
+    #include <abstractions/consoles>
+    #include <abstractions/freedesktop.org>
+    #include <abstractions/nameservice>
+    #include <abstractions/openssl>
+
+    /bin/bash rix,
+    /dev/ptmx rw,
+    /etc/ssh/ssh_config r,
+    /etc/x3270/ibm_hosts r,
+    /proc/*/fd/ r,
+    /proc/filesystems r,
+    /proc/meminfo r,
+    /usr/bin/ssh rix,
+    /usr/bin/x3270 mr,
+    /var/lib/openqa/pool/*/known_hosts w,
+    /var/lib/openqa/pool/1/x3scr.*.txt w,
+    /var/lib/openqa/pool/1/x3trc.* w,
+
+  }
