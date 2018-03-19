@@ -90,15 +90,17 @@ sub ajax {
                         module_id => $n->last_seen_module_id,
                         needle_id => $n->id
                     )};
-                $modules{$n->last_seen_module_id} = undef;
-                if ($n->last_matched_module_id) {
-                    $hash->{last_match}      = $n->last_matched_module_id;
+                if (my $last_seen_module_id = $n->last_seen_module_id) {
+                    $modules{$n->last_seen_module_id} = undef;
+                }
+                if (my $last_matched_module_id = $n->last_matched_module_id) {
+                    $hash->{last_match}      = $last_matched_module_id;
                     $hash->{last_match_link} = $self->url_for(
                         'admin_needle_module',
-                        module_id => $n->last_matched_module_id,
-                        needle_id => $n->id
+                        module_id => $last_matched_module_id,
+                        needle_id => $n->id,
                     );
-                    $modules{$n->last_matched_module_id} = undef;
+                    $modules{$last_matched_module_id} = undef;
                 }
                 push(@data, $hash);
             }
@@ -108,7 +110,7 @@ sub ajax {
                 $modules{$m->id} = $m->t_created->datetime() . 'Z';
             }
             for my $d (@data) {
-                $d->{last_seen} = $modules{$d->{last_seen}};
+                $d->{last_seen}  = $modules{$d->{last_seen}  || 0} || 'never';
                 $d->{last_match} = $modules{$d->{last_match} || 0} || 'never';
             }
             return \@data;
