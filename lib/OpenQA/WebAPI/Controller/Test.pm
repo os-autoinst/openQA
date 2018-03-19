@@ -531,7 +531,10 @@ sub overview {
     %search_args = (%search_args, %$req_params);
     my @latest_jobs = $self->db->resultset('Jobs')->complex_query(%search_args)->latest_jobs;
     ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->prepare_job_results(\@latest_jobs);
-    return $self->stash(%stash);
+    $self->stash(%stash);
+    $self->respond_to(
+        json => {json     => \%stash},
+        html => {template => 'test/overview'});
 }
 
 sub latest {
