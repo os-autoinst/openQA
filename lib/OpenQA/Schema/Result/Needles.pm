@@ -126,8 +126,7 @@ sub update_needle {
         }
         if (!$dir->in_storage) {
             # first job seen defines the name
-            my $name = sprintf "%s-%s", $module->job->DISTRI, $module->job->VERSION;
-            $dir->name($name);
+            $dir->set_name_from_job($module->job);
             $dir->insert;
         }
         $needle ||= $dir->needles->find_or_new({filename => $basename, first_seen_module_id => $module->id},

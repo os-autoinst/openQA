@@ -547,6 +547,9 @@ sub save_needle_ajax {
         };
     }
 
+    # create/update needle in database
+    $self->app->schema->resultset('Needles')->update_needle_from_editor($needledir, $needlename, $json_data, $job);
+
     $self->emit_event('openqa_needle_modify', {needle => "$baseneedle.png", tags => $json_data->{tags}, update => 0});
     my $info = {info => "Needle $needlename created/updated"};
     if ($job->worker_id && $job->worker->get_property('INTERACTIVE')) {
