@@ -122,6 +122,18 @@ ok($table, 'products tables found');
 @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
 is(scalar @rows, $nrows + 1, 'iso rescheduled by replay action');
 
+like(
+    $driver->find_element_by_id('product_log_table_info')->get_text(),
+    qr/Showing 1 to 2 of 2 entries/,
+    'Info line shows number of entries'
+);
+$driver->get($url . '/admin/productlog?entries=1');
+like(
+    $driver->find_element_by_id('product_log_table_info')->get_text(),
+    qr/Showing.*of 1 entries/,
+    'Maximum number of entries can be configured by query'
+);
+
 kill_driver();
 
 done_testing();

@@ -48,9 +48,10 @@ sub index {
 
 sub productlog {
     my ($self) = @_;
+    my $entries = $self->param('entries') // 100;
     $self->stash(audit_enabled => $self->app->config->{global}{audit_enabled});
     my $events_rs = $self->db->resultset("AuditEvents")
-      ->search({event => 'iso_create'}, {order_by => {-desc => 'me.id'}, prefetch => 'owner', rows => 100});
+      ->search({event => 'iso_create'}, {order_by => {-desc => 'me.id'}, prefetch => 'owner', rows => $entries});
     my @events;
     my $json = Cpanel::JSON::XS->new();
     $json->allow_nonref(1);
