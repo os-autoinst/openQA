@@ -72,80 +72,21 @@ my $filen = "$dir/inst-timezone-text.json";
     close $fh;
 }
 
-sub open_needle_editor {
-    # init the preview
-    wait_for_ajax;
-
-    $driver->find_element_by_xpath('//a[@href="#step/installer_timezone/1"]')->click();
-
-    # init the diff
-    wait_for_ajax;
-
-    $driver->find_element('.step_actions .create_new_needle')->click();
-}
-
-sub goto_editpage() {
-    $driver->title_is("openQA", "on main page");
-    $driver->find_element_by_link_text('Login')->click();
-    # we're back on the main page
-    $driver->title_is("openQA", "back on main page");
-
-    is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
-
-    $driver->get("/tests/99946");
+sub goto_editor_for_installer_timezone {
+    $driver->get('/tests/99946');
     is(
         $driver->get_title(),
         'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results',
         'tests/99946 followed'
     );
-
-    open_needle_editor;
-
-    # no warnings about missing/bad needles present (yet)
-    my @warnings = $driver->find_elements('#editor_warnings', 'css');
-    is(scalar @warnings, 0, 'no warnings');
-}
-
-sub editpage_layout_check() {
+    # init the preview
     wait_for_ajax;
 
-    # layout check
-    is($driver->find_element_by_id('tags_select')->get_value(), 'inst-timezone-text', "inst-timezone tags selected");
-    is($driver->find_element_by_id('image_select')->get_value(), 'screenshot', "Screenshot background selected");
-    is($driver->find_element_by_id('area_select')->get_value(), 'inst-timezone-text', "inst-timezone areas selected");
-    is($driver->find_element_by_id('take_matches')->is_selected(), 1, '"take matches" selected by default');
+    # init the diff
+    $driver->find_element_by_xpath('//a[@href="#step/installer_timezone/1"]')->click();
+    wait_for_ajax;
 
-    # check needle suggested name
-    my $today = strftime("%Y%m%d", gmtime(time));
-    is($driver->find_element_by_id('needleeditor_name')->get_value(),
-        "inst-timezone-text-$today", "has correct needle name");
-
-    # ENV-VIDEOMODE-text and inst-timezone tag are selected
-    is($driver->find_element_by_xpath('//input[@value="inst-timezone"]')->is_selected(), 1, "tag selected");
-
-    # workaround property isn't selected
-    is($driver->find_element_by_id('property_workaround')->is_selected(), 0, "workaround property unselected");
-
-    $elem            = $driver->find_element_by_id('needleeditor_textarea');
-    $decode_textarea = decode_json($elem->get_value());
-    # the value already defined in $default_json
-    is(@{$decode_textarea->{area}},           2,         'exclude areas always present');
-    is($decode_textarea->{area}[0]->{xpos},   0,         'xpos correct');
-    is($decode_textarea->{area}[0]->{ypos},   0,         'ypos correct');
-    is($decode_textarea->{area}[0]->{width},  384,       'width correct');
-    is($decode_textarea->{area}[0]->{height}, 217,       'height correct');
-    is($decode_textarea->{area}[0]->{type},   'match',   'type correct');
-    is($decode_textarea->{area}[1]->{xpos},   175,       'xpos correct');
-    is($decode_textarea->{area}[1]->{ypos},   45,        'ypos correct');
-    is($decode_textarea->{area}[1]->{width},  160,       'width correct');
-    is($decode_textarea->{area}[1]->{height}, 60,        'height correct');
-    is($decode_textarea->{area}[1]->{type},   'exclude', 'type correct');
-
-    # toggling 'take matches' has no effect
-    $driver->find_element_by_xpath('//input[@value="inst-timezone"]')->click();
-    is(@{decode_json($elem->get_value())->{area}}, 2, 'exclude areas always present');
-    $driver->find_element_by_xpath('//input[@value="inst-timezone"]')->click();
-    is(@{decode_json($elem->get_value())->{area}}, 2, 'no duplicated exclude areas present');
+    $driver->find_element('.step_actions .create_new_needle')->click();
 }
 
 sub add_needle_tag(;$) {
@@ -268,65 +209,6 @@ sub overwrite_needle($) {
     );
 }
 
-# start testing
-goto_editpage();
-editpage_layout_check();
-
-# creating new needle
-add_needle_tag();
-
-my $needlename = 'test-newneedle';
-
-# check needle name input
-$driver->find_element_by_id('needleeditor_name')->clear();
-is($driver->find_element_by_id('needleeditor_name')->get_value(), "", "needle name input clean up");
-$driver->find_element_by_id('needleeditor_name')->send_keys($needlename);
-is($driver->find_element_by_id('needleeditor_name')->get_value(), "$needlename", "new needle name inputed");
-
-# select 'Copy areas from: None'
-$driver->execute_script('$("#area_select option").eq(0).prop("selected", true)');
-$driver->find_element_by_id('save')->click();
-wait_for_ajax;
-is(
-    $driver->find_element('.alert-danger span')->get_text(),
-    "Unable to save needle:\nNo areas defined.",
-    'areas verified via JavaScript when "Copy areas from: None" selected'
-);
-# dismiss the alert (can't use click because of fade effect)
-$driver->execute_script('$(".alert-danger").remove()');
-
-# select 'Copy areas from: 100%: inst-timezone-text' again
-$driver->execute_script('$("#area_select option").eq(1).prop("selected", true)');
-
-# create new needle by clicked save button
-$driver->find_element_by_id('save')->click();
-wait_for_ajax;
-
-# check state highlight appears with valid content
-is(
-    $driver->find_element('#flash-messages span')->get_text(),
-    'Needle test-newneedle created/updated - restart job',
-    'highlight appears correct'
-);
-# check files are exists
-ok(-f "$dir/$needlename.json", "$needlename.json created");
-ok(-f "$dir/$needlename.png",  "$needlename.png created");
-
-# test overwrite needle
-add_needle_tag('test-overwritetag');
-add_workaround_property();
-
-like($driver->find_element_by_id('change-match')->get_attribute('class'), qr/disabled/, "match level disabled");
-
-# change area
-my $xoffset = my $yoffset = 200;
-change_needle_value($xoffset, $yoffset);    # xoffset and yoffset 200 for new area
-overwrite_needle($needlename);
-
-# load needle editor for 'logpackages-before-package-selection', removing animation from modal again
-$driver->get('/tests/99938/modules/logpackages/steps/1/edit');
-$driver->execute_script('$(\'#modal-overwrite\').removeClass(\'fade\');');
-
 sub check_flash_for_saving_logpackages {
     wait_for_ajax();
     like(
@@ -336,6 +218,121 @@ sub check_flash_for_saving_logpackages {
     );
     $driver->find_element('#flash-messages .close')->click();
 }
+
+# the actual test starts here
+
+subtest 'Open needle editor for installer_timezone' => sub {
+    $driver->title_is('openQA', 'on main page');
+    $driver->find_element_by_link_text('Login')->click();
+    # we're back on the main page
+    $driver->title_is('openQA', 'back on main page');
+
+    is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
+
+    goto_editor_for_installer_timezone();
+
+    # no warnings about missing/bad needles present (yet)
+    my @warnings = $driver->find_elements('#editor_warnings', 'css');
+    is(scalar @warnings, 0, 'no warnings');
+};
+
+subtest 'Needle editor layout' => sub {
+    wait_for_ajax;
+
+    # layout check
+    is($driver->find_element_by_id('tags_select')->get_value(), 'inst-timezone-text', "inst-timezone tags selected");
+    is($driver->find_element_by_id('image_select')->get_value(), 'screenshot', "Screenshot background selected");
+    is($driver->find_element_by_id('area_select')->get_value(), 'inst-timezone-text', "inst-timezone areas selected");
+    is($driver->find_element_by_id('take_matches')->is_selected(), 1, '"take matches" selected by default');
+
+    # check needle suggested name
+    my $today = strftime("%Y%m%d", gmtime(time));
+    is($driver->find_element_by_id('needleeditor_name')->get_value(),
+        "inst-timezone-text-$today", "has correct needle name");
+
+    # ENV-VIDEOMODE-text and inst-timezone tag are selected
+    is($driver->find_element_by_xpath('//input[@value="inst-timezone"]')->is_selected(), 1, "tag selected");
+
+    # workaround property isn't selected
+    is($driver->find_element_by_id('property_workaround')->is_selected(), 0, "workaround property unselected");
+
+    $elem            = $driver->find_element_by_id('needleeditor_textarea');
+    $decode_textarea = decode_json($elem->get_value());
+    # the value already defined in $default_json
+    is(@{$decode_textarea->{area}},           2,         'exclude areas always present');
+    is($decode_textarea->{area}[0]->{xpos},   0,         'xpos correct');
+    is($decode_textarea->{area}[0]->{ypos},   0,         'ypos correct');
+    is($decode_textarea->{area}[0]->{width},  384,       'width correct');
+    is($decode_textarea->{area}[0]->{height}, 217,       'height correct');
+    is($decode_textarea->{area}[0]->{type},   'match',   'type correct');
+    is($decode_textarea->{area}[1]->{xpos},   175,       'xpos correct');
+    is($decode_textarea->{area}[1]->{ypos},   45,        'ypos correct');
+    is($decode_textarea->{area}[1]->{width},  160,       'width correct');
+    is($decode_textarea->{area}[1]->{height}, 60,        'height correct');
+    is($decode_textarea->{area}[1]->{type},   'exclude', 'type correct');
+
+    # toggling 'take matches' has no effect
+    $driver->find_element_by_xpath('//input[@value="inst-timezone"]')->click();
+    is(@{decode_json($elem->get_value())->{area}}, 2, 'exclude areas always present');
+    $driver->find_element_by_xpath('//input[@value="inst-timezone"]')->click();
+    is(@{decode_json($elem->get_value())->{area}}, 2, 'no duplicated exclude areas present');
+};
+
+my $needlename = 'test-newneedle';
+my $xoffset = my $yoffset = 200;
+
+subtest 'Create new needle' => sub {
+    add_needle_tag();
+
+    # check needle name input
+    $driver->find_element_by_id('needleeditor_name')->clear();
+    is($driver->find_element_by_id('needleeditor_name')->get_value(), "", "needle name input clean up");
+    $driver->find_element_by_id('needleeditor_name')->send_keys($needlename);
+    is($driver->find_element_by_id('needleeditor_name')->get_value(), "$needlename", "new needle name inputed");
+
+    # select 'Copy areas from: None'
+    $driver->execute_script('$("#area_select option").eq(0).prop("selected", true)');
+    $driver->find_element_by_id('save')->click();
+    wait_for_ajax;
+    is(
+        $driver->find_element('.alert-danger span')->get_text(),
+        "Unable to save needle:\nNo areas defined.",
+        'areas verified via JavaScript when "Copy areas from: None" selected'
+    );
+    # dismiss the alert (can't use click because of fade effect)
+    $driver->execute_script('$(".alert-danger").remove()');
+
+    # select 'Copy areas from: 100%: inst-timezone-text' again
+    $driver->execute_script('$("#area_select option").eq(1).prop("selected", true)');
+
+    # create new needle by clicked save button
+    $driver->find_element_by_id('save')->click();
+    wait_for_ajax;
+
+    # check state highlight appears with valid content
+    is(
+        $driver->find_element('#flash-messages span')->get_text(),
+        'Needle test-newneedle created/updated - restart job',
+        'highlight appears correct'
+    );
+    # check files are exists
+    ok(-f "$dir/$needlename.json", "$needlename.json created");
+    ok(-f "$dir/$needlename.png",  "$needlename.png created");
+
+    # test overwrite needle
+    add_needle_tag('test-overwritetag');
+    add_workaround_property();
+
+    like($driver->find_element_by_id('change-match')->get_attribute('class'), qr/disabled/, "match level disabled");
+
+    # change area
+    change_needle_value($xoffset, $yoffset);    # xoffset and yoffset 200 for new area
+    overwrite_needle($needlename);
+
+    # load needle editor for 'logpackages-before-package-selection', removing animation from modal again
+    $driver->get('/tests/99938/modules/logpackages/steps/1/edit');
+    $driver->execute_script('$(\'#modal-overwrite\').removeClass(\'fade\');');
+};
 
 subtest 'Saving needle when "taking matches" selected but no matches present' => sub {
     $driver->find_element_by_id('tag_ENV-DESKTOP-kde')->click();
@@ -353,45 +350,69 @@ subtest 'Saving needle when "taking matches" not selected' => sub {
     check_flash_for_saving_logpackages();
 };
 
-# parse new needle json
-my $new_needle_path = "$dir/$needlename.json";
-my $overwrite_json;
-{
-    local $/;    #Enable 'slurp' mode
-    open my $fh, "<", $new_needle_path;
-    $overwrite_json = <$fh>;
-    close $fh;
-}
-my $decode_json = decode_json($overwrite_json);
-my $new_tags    = $decode_json->{'tags'};
+subtest 'Verify new needle\'s JSON' => sub {
+    # parse new needle json
+    my $new_needle_path = "$dir/$needlename.json";
+    my $overwrite_json;
+    {
+        local $/;    #Enable 'slurp' mode
+        open my $fh, "<", $new_needle_path;
+        $overwrite_json = <$fh>;
+        close $fh;
+    }
+    my $decode_json = decode_json($overwrite_json);
+    my $new_tags    = $decode_json->{'tags'};
 
-# check new needle json is correct
-my $match = 0;
-for my $tag (@$new_tags) {
-    $match = 1 if ($tag eq 'test-overwritetag');
-}
-is($match, 1, "found new tag in new needle");
-is($decode_json->{'area'}[0]->{xpos}, $decode_textarea->{'area'}[0]->{xpos} + $xoffset,
-    "new xpos stored to new needle");
-is($decode_json->{'area'}[0]->{ypos}, $decode_textarea->{'area'}[0]->{ypos} + $yoffset,
-    "new ypos stored to new needle");
+    # check new needle json is correct
+    my $match = 0;
+    for my $tag (@$new_tags) {
+        $match = 1 if ($tag eq 'test-overwritetag');
+    }
+    is($match, 1, "found new tag in new needle");
+    is(
+        $decode_json->{'area'}[0]->{xpos},
+        $decode_textarea->{'area'}[0]->{xpos} + $xoffset,
+        "new xpos stored to new needle"
+    );
+    is(
+        $decode_json->{'area'}[0]->{ypos},
+        $decode_textarea->{'area'}[0]->{ypos} + $yoffset,
+        "new ypos stored to new needle"
+    );
+};
+
+#$needlename = 'logpackages-before-package-selection-20180321';
+my $new_needle_warning
+  = "A new needle with matching tags has been created since the job started: $needlename.json (tags: ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag)";
+
+subtest 'New needle instantly visible after reloading needle editor' => sub {
+    goto_editor_for_installer_timezone();
+
+    is($driver->find_element('#editor_warnings span')->get_text(),
+        $new_needle_warning, 'warning about new needle displayed');
+    my $tags_select = $driver->find_element_by_id('tags_select');
+    my $new_needle_options = $driver->find_child_elements($tags_select, "./option[\@value='$needlename']", 'xpath');
+    is(scalar @$new_needle_options, 1, 'new needle appears in based-on selection');
+
+    # uncheck 'tag_inst-timezone' tag
+    $driver->find_element_by_id('tag_inst-timezone')->click();
+    is($driver->find_element_by_id('tag_inst-timezone')->is_selected(), 0, 'tag_inst-timezone not checked anymore');
+
+    # check 'tag_inst-timezone' again by selecting new needle
+    $new_needle_options->[0]->click();
+    is($driver->find_element_by_id('tag_inst-timezone')->is_selected(),
+        1, 'tag_inst-timezone checked again via new needle');
+};
 
 subtest 'Deletion of needle is handled gracefully' => sub {
-    # re-open the needle editor after deleting needle
-    unlink $filen;
-    $driver->get("/tests/99946");
-    is(
-        $driver->get_title(),
-        'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results',
-        'tests/99946 followed'
-    );
-    open_needle_editor;
+    # delete needle on disk and reload the needle editor
+    ok(unlink $filen);
+    $driver->get($driver->get_current_url);
     $driver->title_is('openQA: Needle Editor', 'needle editor still shows up');
     is(
         $driver->find_element('#editor_warnings span')->get_text(),
-        'Could not find needle: inst-timezone-text for opensuse 13.1
-A new needle with matching tags has been created since the job started: test-newneedle.json (tags: ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag)',
-        'warnings about new and deleted needle are displayed'
+        join("\n", 'Could not find needle: inst-timezone-text for opensuse 13.1', $new_needle_warning),
+        'warning about deleted needle displayed'
     );
 };
 
