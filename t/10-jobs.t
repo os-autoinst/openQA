@@ -632,21 +632,25 @@ subtest 'job PARALLEL_WITH' => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'A';
     #  $_settings{PARALLEL_WITH}    = 'B,C,D';
+    $_settings{PARALLEL_CLUSTER} = '1';
     my $jobA = _job_create(\%_settings);
 
-    %_settings                = %settings;
-    $_settings{TEST}          = 'B';
-    $_settings{PARALLEL_WITH} = 'A,C,D';
+    %_settings                   = %settings;
+    $_settings{TEST}             = 'B';
+    $_settings{PARALLEL_WITH}    = 'A,C,D';
+    $_settings{PARALLEL_CLUSTER} = '1';
     my $jobB = _job_create(\%_settings);
 
-    %_settings                = %settings;
-    $_settings{TEST}          = 'C';
-    $_settings{PARALLEL_WITH} = 'A,B,D';
+    %_settings                   = %settings;
+    $_settings{TEST}             = 'C';
+    $_settings{PARALLEL_WITH}    = 'A,B,D';
+    $_settings{PARALLEL_CLUSTER} = '1';
     my $jobC = _job_create(\%_settings);
 
-    %_settings                = %settings;
-    $_settings{TEST}          = 'D';
-    $_settings{PARALLEL_WITH} = 'A,B, C ';    # Let's commit an error on purpose :)
+    %_settings                   = %settings;
+    $_settings{TEST}             = 'D';
+    $_settings{PARALLEL_WITH}    = 'A,B, C ';    # Let's commit an error on purpose :)
+    $_settings{PARALLEL_CLUSTER} = '1';
     my $jobD = _job_create(\%_settings);
 
     %_settings                = %settings;
@@ -684,8 +688,9 @@ subtest 'job PARALLEL_WITH' => sub {
     $_settings{TEST} = 'F';
     my $jobF = _job_create(\%_settings);
 
-    %_settings = %settings;
-    $_settings{TEST} = 'G';
+    %_settings                   = %settings;
+    $_settings{TEST}             = 'G';
+    $_settings{PARALLEL_CLUSTER} = '1';
     my $jobG = _job_create(\%_settings);
 
     # A wants to be in the cluster while being assigned!
@@ -698,11 +703,12 @@ subtest 'job PARALLEL_WITH' => sub {
         $jobE->to_hash, $jobF->to_hash);
     is @res, 6;
 
-    # Only F doesn't belong to any cluster
+    # Only E and F doesn't care about clusters, and we are not about to start B
     @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobA->to_hash, $jobC->to_hash, $jobD->to_hash, $jobE->to_hash,
         $jobF->to_hash);
-    is @res, 1;
-    is $res[0]->{id}, $jobF->id();
+    is @res, 2;
+    is $res[0]->{id}, $jobE->id();
+    is $res[1]->{id}, $jobF->id();
 
     # Only E and F doesn't care about clusters, and we are not about to start D
     @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobA->to_hash, $jobC->to_hash, $jobB->to_hash, $jobE->to_hash,
