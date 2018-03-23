@@ -318,6 +318,10 @@ sub edit {
         {
             t_created => {'>' => $job->t_started},
             -or       => \@new_needle_conds,
+        },
+        {
+            order_by => {-desc => 'id'},
+            rows     => 5,
         });
     while (my $new_needle = $new_needles->next) {
         my $tags = $new_needle->tags;

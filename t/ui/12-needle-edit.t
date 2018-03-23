@@ -381,27 +381,60 @@ subtest 'Verify new needle\'s JSON' => sub {
     );
 };
 
-#$needlename = 'logpackages-before-package-selection-20180321';
-my $new_needle_warning
-  = "A new needle with matching tags has been created since the job started: $needlename.json (tags: ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag)";
-
 subtest 'New needle instantly visible after reloading needle editor' => sub {
     goto_editor_for_installer_timezone();
 
-    is($driver->find_element('#editor_warnings span')->get_text(),
-        $new_needle_warning, 'warning about new needle displayed');
+    is(
+        $driver->find_element('#editor_warnings span')->get_text(),
+"A new needle with matching tags has been created since the job started: $needlename.json (tags: ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag)",
+        'warning about new needle displayed'
+    );
     my $tags_select = $driver->find_element_by_id('tags_select');
     my $new_needle_options = $driver->find_child_elements($tags_select, "./option[\@value='$needlename']", 'xpath');
     is(scalar @$new_needle_options, 1, 'new needle appears in based-on selection');
+    is($new_needle_options->[0]->get_text(), 'new: ' . $needlename, 'needle title');
 
     # uncheck 'tag_inst-timezone' tag
     $driver->find_element_by_id('tag_inst-timezone')->click();
     is($driver->find_element_by_id('tag_inst-timezone')->is_selected(), 0, 'tag_inst-timezone not checked anymore');
 
     # check 'tag_inst-timezone' again by selecting new needle
+
     $new_needle_options->[0]->click();
     is($driver->find_element_by_id('tag_inst-timezone')->is_selected(),
         1, 'tag_inst-timezone checked again via new needle');
+};
+
+my @expected_needle_warnings;
+
+subtest 'Showing new needles limited to the 5 most recent ones' => sub {
+    my @expected_needle_names = ('None', '100%: inst-timezone-text',);
+
+    # add 6 new needles (makes 7 new needles in total since one has already been added)
+    my $needle_name_input = $driver->find_element_by_id('needleeditor_name');
+    for (my $i = 0; $i != 7; ++$i) {
+        # enter new needle name
+        my $new_needle_name = "$needlename-$i";
+        $needle_name_input->clear();
+        $needle_name_input->send_keys($new_needle_name);
+        # ensure there are areas selected (by taking over areas from previously created needle)
+        $driver->execute_script(
+'$("#area_select option").eq(1).prop("selected", true); if ($("#take_matches").prop("checked")) { $("#take_matches").click(); }'
+        );
+        $driver->find_element_by_id('save')->click();
+        wait_for_ajax;
+        # add expected warnings and needle names for needle
+        if ($i >= 2) {
+            unshift(@expected_needle_warnings,
+"A new needle with matching tags has been created since the job started: $new_needle_name.json (tags: ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag)"
+            );
+            splice(@expected_needle_names, 2, 0, 'new: ' . $new_needle_name);
+        }
+    }
+
+    $driver->get($driver->get_current_url);
+    my @needle_names = map { $_->get_text() } $driver->find_elements('#tags_select option');
+    is_deeply(\@needle_names, \@expected_needle_names, 'new needles limited to 5 most recent');
 };
 
 subtest 'Deletion of needle is handled gracefully' => sub {
@@ -411,8 +444,8 @@ subtest 'Deletion of needle is handled gracefully' => sub {
     $driver->title_is('openQA: Needle Editor', 'needle editor still shows up');
     is(
         $driver->find_element('#editor_warnings span')->get_text(),
-        join("\n", 'Could not find needle: inst-timezone-text for opensuse 13.1', $new_needle_warning),
-        'warning about deleted needle displayed'
+        join("\n", 'Could not find needle: inst-timezone-text for opensuse 13.1', @expected_needle_warnings),
+        'warning about deleted needle displayed (beside new needle warnings)'
     );
 };
 
