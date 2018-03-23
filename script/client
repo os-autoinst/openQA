@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -66,7 +66,20 @@ jobs/639172 put --json-data '{"group_id": 1}'
 
 print help
 
-=back
+=head2 Archive mode
+
+=item B<--archive, -a> DIRECTORY
+
+Archive mode: Download assets and test results from a job to DIRECTORY.
+
+=item B<--with-thumbnails>
+
+Archive mode: Include thumbnails
+
+=item B<--asset-size-limit> LIMIT
+
+Archive mode: Download assets that do not exceed the specified limit in bytes
+The default limit is 200 MB.
 
 =head1 SYNOPSIS
 
@@ -94,6 +107,10 @@ Delete job nr. B<1> (permissions read from config file).
 
 Trigger jobs on iso B<bar.iso> matching test suite B<blah>.
 
+=item client --archive /path/to/directory --asset-size-limit 1048576000 --with-thumbnails --host openqa.opensuse.org jobs/42
+
+Download all assets and test logs and images from job B<42> with asset limit of B<1GB> to B</path/to/directory>.
+
 =cut
 
 # Intentionally commented out - so far useful only for openQA debugging
@@ -106,6 +123,7 @@ Trigger jobs on iso B<bar.iso> matching test suite B<blah>.
 # client jobs/1/artefact post file.file=bar file.filename=bar.log
 
 use strict;
+use warnings;
 use FindBin;
 BEGIN { unshift @INC, "$FindBin::RealBin/../lib" }
 
@@ -114,21 +132,25 @@ use Data::Dump;
 use Mojo::URL;
 use OpenQA::Client;
 use Getopt::Long;
+use OpenQA::Client::Archive;
+
 Getopt::Long::Configure("no_ignore_case");
 
 my %options;
 
 sub usage($) {
     my $r = shift;
-    eval "use Pod::Usage; pod2usage(1);";
+    eval { use Pod::Usage; pod2usage(1); };
     if ($@) {
         die "cannot display help, install perl(Pod::Usage)\n";
     }
 }
 
 GetOptions(
-    \%options,     'host=s',   'apibase=s', 'json-output', 'verbose|v', 'apikey:s',
-    'apisecret:s', 'params=s', 'form',      'json-data:s', 'help|h|?'
+    \%options,            'host=s',      'apibase=s',   'json-output',
+    'verbose|v',          'apikey:s',    'apisecret:s', 'params=s',
+    'form',               'json-data:s', 'help|h|?',    'archive|a:s',
+    'asset-size-limit:i', 'with-thumbnails'
 ) or usage(1);
 
 usage(1) unless @ARGV;
@@ -168,6 +190,7 @@ for my $arg (@ARGV) {
 }
 
 my $url;
+
 if ($options{host} !~ '/') {
     $url = Mojo::URL->new();
     $url->host($options{host});
@@ -205,7 +228,21 @@ elsif ($options{'json-data'}) {
     $res = $client->$method($url, {'Content-Type' => 'application/json'} => $options{'json-data'})->res;
 }
 else {
-    $res = $client->$method($url)->res;
+    # Either the user wants to call a command or wants to interact with
+    # the rest api directly.
+    if ($options{archive}) {
+        $options{path}    = $path;
+        $options{url}     = $url;
+        $options{params}  = \%params;
+        $options{params2} = @ARGV;
+        eval { $res = $client->archive->run(\%options) };
+        die "ERROR: $@ \n", $@ if $@;
+        exit(0);
+    }
+    else {
+        $res = $client->$method($url)->res;
+        #exit(0);
+    }
 }
 if ($res->code == 200) {
     if ($options{'json-output'}) {

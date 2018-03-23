@@ -18,12 +18,19 @@ package OpenQA::Client;
 use Mojo::Base 'OpenQA::UserAgent';
 
 use OpenQA::Client::Upload;
+use OpenQA::Client::Archive;
 use Scalar::Util ();
 
 has upload => sub {
     my $upload = OpenQA::Client::Upload->new(client => shift);
     Scalar::Util::weaken $upload->{client};
     return $upload;
+};
+
+has archive => sub {
+    my $archive = OpenQA::Client::Archive->new(client => shift);
+    Scalar::Util::weaken $archive->{client};
+    return $archive;
 };
 
 1;

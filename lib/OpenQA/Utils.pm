@@ -107,7 +107,7 @@ use File::Basename;
 use File::Spec;
 use File::Spec::Functions qw(catfile catdir);
 use Fcntl;
-use Cpanel::JSON::XS "decode_json";
+use Cpanel::JSON::XS qw(encode_json decode_json);
 use Mojo::Util 'xml_escape';
 our $basedir   = $ENV{OPENQA_BASEDIR} || "/var/lib";
 our $prj       = "openqa";
@@ -816,6 +816,10 @@ sub read_test_modules {
 
         for my $step (@{$module->details}) {
             $step->{num} = $num++;
+            if ($step->{text}) {
+                log_debug("Reading information from " . encode_json($step));
+                $step->{text_data} = path($job->result_dir(), $step->{text})->slurp;
+            }
             push(@details, $step);
         }
 
