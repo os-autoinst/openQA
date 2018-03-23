@@ -339,7 +339,7 @@ sub edit {
             push(@error_messages, $error_message);
             next;
         }
-        $needle_info->{title}          = $needle_name;
+        $needle_info->{title}          = 'new: ' . $needle_name;
         $needle_info->{suggested_name} = $self->_timestamp($needle_name);
         $needle_info->{imageurl}  = $self->url_for('test_img', filename => $module_detail->{screenshot})->to_string;
         $needle_info->{imagename} = $imgname;
