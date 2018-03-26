@@ -587,11 +587,13 @@ sub filter_jobs {
     # so we stripped down to what we needed
 
     try {
+        my @running = map { $_->to_hash(assets => 1) }
+          schema->resultset("Jobs")->search({state => OpenQA::Schema::Result::Jobs::RUNNING})->all;
+
         # Build adjacent list with the tests that would have been assigned
-        $allocated_tests->{$_->{test} . join(".", @{$_->{settings}}{@k})}++ for @jobs;
+        $allocated_tests->{$_->{test} . join(".", @{$_->{settings}}{@k})}++ for (@jobs, @running);
 
         foreach my $j (@jobs) {
-
             # Filter by PARALLEL_CLUSTER
             # next unless exists $j->{settings}->{PARALLEL_CLUSTER};
 
