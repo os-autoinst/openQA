@@ -646,55 +646,80 @@ sub viewimg {
     my $distribution = $job->DISTRI;
     my $dversion = $job->VERSION || '';
 
-    my @needles;
+    # initialize hash to store needle lists by tags
+    my %needles_by_tag;
+    for my $tag (@{$module_detail->{tags}}) {
+        $needles_by_tag{$tag} = [];
+    }
+
+    my $append_needle_info = sub {
+        my ($tags, $needle_info) = @_;
+
+        # handle case when the needle has (for some reason) no tags
+        if (!$tags) {
+            push(@{$needles_by_tag{'tags unknown'} //= []}, $needle_info);
+            return;
+        }
+        # add the needle info to tags ...
+        for my $tag (@$tags) {
+            # ... but only to tags the test was actually looking for
+            if (my $needles = $needles_by_tag{$tag}) {
+                push(@$needles, $needle_info);
+            }
+        }
+    };
 
     # load primary needle match
-    if ($module_detail->{needle}) {
-        my $needle = needle_info($module_detail->{needle}, $distribution, $dversion, $module_detail->{json});
-        if ($needle) {    # possibly missing/broken file
+    if (my $needle = $module_detail->{needle}) {
+        if (my $needleinfo = needle_info($needle, $distribution, $dversion, $module_detail->{json})) {
             my $info = {
-                name => $module_detail->{needle},
-                image =>
-                  $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion, $needle->{json}),
-                areas   => $needle->{area},
-                error   => $module_detail->{error},
-                matches => []};
+                name          => $needle,
+                image         => $self->needle_url($distribution, $needle . '.png', $dversion, $needleinfo->{json}),
+                areas         => $needleinfo->{area},
+                error         => $module_detail->{error},
+                matches       => [],
+                primary_match => 1,
+                selected      => 1,
+            };
             calc_matches($info, $module_detail->{area});
-            push(@needles, $info);
+            $append_needle_info->($needleinfo->{tags} => $info);
         }
     }
 
     # load other needle matches
     if ($module_detail->{needles}) {
-        my $needlename;
-        my $needleinfo;
         for my $needle (@{$module_detail->{needles}}) {
-            $needlename = $needle->{name};
-            $needleinfo = needle_info($needlename, $distribution, $dversion, $needle->{json});
+            my $needlename = $needle->{name};
+            my $needleinfo = needle_info($needlename, $distribution, $dversion, $needle->{json});
             next unless $needleinfo;
             my $info = {
                 name    => $needlename,
                 image   => $self->needle_url($distribution, "$needlename.png", $dversion, $needleinfo->{json}),
                 error   => $needle->{error},
                 areas   => $needleinfo->{area},
-                matches => []};
+                matches => [],
+            };
             calc_matches($info, $needle->{area});
-            push(@needles, $info);
+            $append_needle_info->($needleinfo->{tags} => $info);
         }
     }
 
-    # the highest matches first
-    @needles = sort { $b->{avg_similarity} <=> $a->{avg_similarity} || $a->{name} cmp $b->{name} } @needles;
+    # sort needles by average similarity
+    my $has_selection = $module_detail->{needle};
+    for my $tag (keys %needles_by_tag) {
+        my @sorted_needles = sort { $b->{avg_similarity} <=> $a->{avg_similarity} || $a->{name} cmp $b->{name} }
+          @{$needles_by_tag{$tag}};
+        $needles_by_tag{$tag} = \@sorted_needles;
 
-    # preselect a rather good needle
-    if ($needles[0] && $needles[0]->{avg_similarity} > 70) {
-        $needles[0]->{selected} = 1;
+        # preselect a rather good needle
+        if (!$has_selection && $sorted_needles[0] && $sorted_needles[0]->{avg_similarity} > 70) {
+            $has_selection = $sorted_needles[0]->{selected} = 1;
+        }
     }
 
-    $self->stash('screenshot', $module_detail->{screenshot});
-    $self->stash('tags',       $module_detail->{tags});
-    $self->stash('needles',    \@needles);
-    $self->stash('frametime',  $module_detail->{frametime});
+    $self->stash('screenshot',     $module_detail->{screenshot});
+    $self->stash('frametime',      $module_detail->{frametime});
+    $self->stash('needles_by_tag', \%needles_by_tag);
     return $self->render('step/viewimg');
 }
 
