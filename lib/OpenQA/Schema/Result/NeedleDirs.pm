@@ -39,4 +39,10 @@ __PACKAGE__->add_unique_constraint([qw(path)]);
 
 __PACKAGE__->has_many(needles => 'OpenQA::Schema::Result::Needles', 'dir_id');
 
+sub set_name_from_job {
+    my ($self, $job) = @_;
+
+    $self->name(sprintf('%s-%s', $job->DISTRI, $job->VERSION));
+}
+
 1;

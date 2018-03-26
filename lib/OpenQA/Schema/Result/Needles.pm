@@ -18,6 +18,7 @@ package OpenQA::Schema::Result::Needles;
 use 5.018;
 use warnings;
 use base 'DBIx::Class::Core';
+use DBIx::Class::Timestamps 'now';
 use File::Basename;
 use Cwd 'realpath';
 use File::Spec::Functions 'catdir';
@@ -28,6 +29,7 @@ use OpenQA::Utils qw(log_error commit_git_return_error);
 use db_helpers;
 
 __PACKAGE__->table('needles');
+__PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->add_columns(
     id => {
         data_type         => 'integer',
@@ -41,10 +43,12 @@ __PACKAGE__->add_columns(
         data_type => 'text',
     },
     first_seen_module_id => {
-        data_type => 'integer',
+        data_type   => 'integer',
+        is_nullable => 1,
     },
     last_seen_module_id => {
-        data_type => 'integer',
+        data_type   => 'integer',
+        is_nullable => 1,
     },
     last_matched_module_id => {
         data_type   => 'integer',
@@ -55,11 +59,21 @@ __PACKAGE__->add_columns(
         is_nullable   => 0,
         default_value => 1,
     },
+    tags => {
+        data_type   => 'text[]',
+        is_nullable => 1,
+    },
 );
+__PACKAGE__->add_timestamps;
+
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw(dir_id filename)]);
-__PACKAGE__->belongs_to(first_seen => 'OpenQA::Schema::Result::JobModules', 'first_seen_module_id');
-__PACKAGE__->belongs_to(last_seen  => 'OpenQA::Schema::Result::JobModules', 'last_seen_module_id');
+__PACKAGE__->belongs_to(
+    first_seen => 'OpenQA::Schema::Result::JobModules',
+    'first_seen_module_id', {join_type => 'LEFT'});
+__PACKAGE__->belongs_to(
+    last_seen => 'OpenQA::Schema::Result::JobModules',
+    'last_seen_module_id', {join_type => 'LEFT'});
 __PACKAGE__->belongs_to(
     last_match => 'OpenQA::Schema::Result::JobModules',
     'last_matched_module_id', {join_type => 'LEFT'});
@@ -112,8 +126,7 @@ sub update_needle {
         }
         if (!$dir->in_storage) {
             # first job seen defines the name
-            my $name = sprintf "%s-%s", $module->job->DISTRI, $module->job->VERSION;
-            $dir->name($name);
+            $dir->set_name_from_job($module->job);
             $dir->insert;
         }
         $needle ||= $dir->needles->find_or_new({filename => $basename, first_seen_module_id => $module->id},
@@ -121,7 +134,7 @@ sub update_needle {
     }
 
     # normally we would not need that, but the migration is working on the jobs from past backward
-    if ($needle->first_seen_module_id > $module->id) {
+    if (($needle->first_seen_module_id // 0) > $module->id) {
         $needle->first_seen_module_id($module->id);
     }
 

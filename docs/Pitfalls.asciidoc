@@ -8,10 +8,12 @@
 == Needle editing
 
 - If a new needle is created based on a failed test, the new needle
-  will not be listed in old tests.
+  will not be listed in old tests. However, when opening the needle
+  editor, a warning about the new needle will be shown and it can be
+  selected as base.
 - If an existing needle is updated with a new image or different
   areas, the old test will display the new needle which might be
-  confusing
+  confusing.
 - If a needle is deleted, old tests may display an error when viewing
   them in the web UI.
 

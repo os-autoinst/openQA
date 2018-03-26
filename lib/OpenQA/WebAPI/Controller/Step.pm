@@ -309,6 +309,57 @@ sub edit {
     # the highest matches first
     @needles = sort { $b->{avg_similarity} <=> $a->{avg_similarity} || $a->{name} cmp $b->{name} } @needles;
 
+    # check whether new needles with matching tags have already been created since the job has been started
+    my @new_needle_conds;
+    for my $tag (@$tags) {
+        push(@new_needle_conds, \["? = ANY (tags)", $tag]);
+    }
+    my $new_needles = $self->app->schema->resultset('Needles')->search(
+        {
+            t_created => {'>' => $job->t_started},
+            -or       => \@new_needle_conds,
+        },
+        {
+            order_by => {-desc => 'id'},
+            rows     => 5,
+        });
+    while (my $new_needle = $new_needles->next) {
+        my $tags = $new_needle->tags;
+        my $joined_tags = $tags ? join(', ', @$tags) : 'none';
+        # show warning for new needle with matching tags
+        push(
+            @error_messages,
+            sprintf(
+                "A new needle with matching tags has been created since the job started: %s (tags: %s)",
+                $new_needle->filename, $joined_tags
+            ));
+        # get needle info to show the needle also in selection
+        my $needle_name = $new_needle->name;
+        my $needle_info = needle_info($needle_name, $distribution, $dversion || '', $new_needle->path);
+        if (!$needle_info) {
+            my $error_message
+              = sprintf("Could not parse needle: %s for %s %s", $needle_name, $distribution, $dversion || '');
+            $self->app->log->error($error_message);
+            push(@error_messages, $error_message);
+            next;
+        }
+        $needle_info->{title}          = 'new: ' . $needle_name;
+        $needle_info->{suggested_name} = $self->_timestamp($needle_name);
+        $needle_info->{imageurl}  = $self->url_for('test_img', filename => $module_detail->{screenshot})->to_string;
+        $needle_info->{imagename} = $imgname;
+        $needle_info->{imagedir}  = '';
+        $needle_info->{imageurl}
+          = $self->needle_url($distribution, "$needle_name.png", $dversion || '', $needle_info->{json})->to_string;
+        $needle_info->{imagename}    = basename($needle_info->{image});
+        $needle_info->{imagedir}     = dirname($needle_info->{image});
+        $needle_info->{imagedistri}  = $needle_info->{distri};
+        $needle_info->{imageversion} = $needle_info->{version};
+        $needle_info->{tags}         = $tags;
+        $needle_info->{matches}      = [];
+        $needle_info->{properties}   = [];
+        push(@needles, $needle_info);
+    }
+
     # Default values
     #  - area: matches from best candidate
     #  - tags: tags from the screenshot
@@ -449,6 +500,7 @@ sub save_needle_ajax {
     my ($self) = @_;
     return 0 unless $self->init();
 
+    # validate parameter
     my $validation = $self->validation;
     $validation->required('json');
     $validation->required('imagename')->like(qr/^[^.\/][^\/]{3,}\.png$/);
@@ -456,7 +508,6 @@ sub save_needle_ajax {
     $validation->optional('imageversion')->like(qr/^(?!.*([.])\1+).*$/);
     $validation->optional('imageversion')->like(qr/^[^\/]+$/);
     $validation->required('needlename')->like(qr/^[^.\/][^\/]{3,}$/);
-
     if ($validation->has_error) {
         my $error = 'wrong parameters:';
         for my $k (qw(json imagename imagedistri imageversion needlename)) {
@@ -466,6 +517,7 @@ sub save_needle_ajax {
         return $self->render(json => {error => "Error creating/updating needle: $error"});
     }
 
+    # read parameter
     my $job          = find_job($self, $self->param('testid')) or return;
     my $distribution = $job->DISTRI;
     my $dversion     = $job->VERSION || '';
@@ -477,6 +529,7 @@ sub save_needle_ajax {
     my $needlename   = $validation->param('needlename');
     my $needledir    = needledir($job->DISTRI, $job->VERSION);
 
+    # read JSON data
     my $json_data;
     eval { $json_data = $self->_json_validation($json); };
     if ($@) {
@@ -485,6 +538,7 @@ sub save_needle_ajax {
         return $self->render(json => {error => $message});
     }
 
+    # determine imagepath
     my $success = 1;
     my $imagepath;
     if ($imagedir) {
@@ -501,19 +555,19 @@ sub save_needle_ajax {
         return $self->render(json => {error => "Image $imagename could not be found!"});
     }
 
-    my $baseneedle = "$needledir/$needlename";
     # do not overwrite the exist needle if disallow to overwrite
+    my $baseneedle = "$needledir/$needlename";
     if (-e "$baseneedle.png" && !$self->param('overwrite')) {
         $success = 0;
         my $returned_data = $self->req->params->to_hash;
         $returned_data->{requires_overwrite} = 1;
         return $self->render(json => $returned_data);
     }
-    unless ($imagepath eq "$baseneedle.png") {
-        unless (copy($imagepath, "$baseneedle.png")) {
-            $self->app->log->error("Copy $imagepath -> $baseneedle.png failed: $!");
-            $success = 0;
-        }
+
+    # copy image
+    if (!($imagepath eq "$baseneedle.png") && !copy($imagepath, "$baseneedle.png")) {
+        $self->app->log->error("Copy $imagepath -> $baseneedle.png failed: $!");
+        $success = 0;
     }
     if ($success) {
         open(my $J, ">", "$baseneedle.json") or $success = 0;
@@ -525,39 +579,37 @@ sub save_needle_ajax {
             $self->app->log->error("Writing needle $baseneedle.json failed: $!");
         }
     }
-
-    if ($success) {
-        $self->app->gru->enqueue('scan_needles');
-        if (($self->app->config->{global}->{scm} || '') eq 'git') {
-            if ($needledir && -d "$needledir/.git") {
-                try {
-                    $self->_commit_git($job, $needledir, $needlename);
-                }
-                catch {
-                    $self->app->log->error($_);
-                    return $self->render(json => {error => $_});
-                };
-            }
-            else {
-                return $self->render(json => {error => "$needledir is not a git repo"});
-            }
-        }
-        $self->emit_event('openqa_needle_modify',
-            {needle => "$baseneedle.png", tags => $json_data->{tags}, update => 0});
-        my $info = {info => "Needle $needlename created/updated"};
-        if ($job->worker_id && $job->worker->get_property('INTERACTIVE')) {
-            $info->{interactive_job} = $job->id;
-        }
-        if ($job->can_be_duplicated) {
-            $info->{restart} = $self->url_for('apiv1_restart', jobid => $job->id);
-        }
-        return $self->render(json => $info);
-    }
-    else {
+    if (!$success) {
         return $self->render(json => {error => "Error creating/updating needle: $!."});
     }
-    # not reached
-    return;
+
+    # commit needle in Git repository
+    $self->app->gru->enqueue('scan_needles');
+    if (($self->app->config->{global}->{scm} || '') eq 'git') {
+        if (!$needledir || !(-d "$needledir/.git")) {
+            return $self->render(json => {error => "$needledir is not a git repo"});
+        }
+        try {
+            $self->_commit_git($job, $needledir, $needlename);
+        }
+        catch {
+            $self->app->log->error($_);
+            return $self->render(json => {error => $_});
+        };
+    }
+
+    # create/update needle in database
+    $self->app->schema->resultset('Needles')->update_needle_from_editor($needledir, $needlename, $json_data, $job);
+
+    $self->emit_event('openqa_needle_modify', {needle => "$baseneedle.png", tags => $json_data->{tags}, update => 0});
+    my $info = {info => "Needle $needlename created/updated"};
+    if ($job->worker_id && $job->worker->get_property('INTERACTIVE')) {
+        $info->{interactive_job} = $job->id;
+    }
+    if ($job->can_be_duplicated) {
+        $info->{restart} = $self->url_for('apiv1_restart', jobid => $job->id);
+    }
+    return $self->render(json => $info);
 }
 
 sub map_error_to_avg {
