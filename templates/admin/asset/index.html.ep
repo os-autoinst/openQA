@@ -69,7 +69,7 @@
                     <label for="group-<%= $group->{id} %>-checkbox">
                         %= $group->{group}
                     </label>
-                    % if (is_admin) {
+                    % if (is_admin && defined($group->{id})) {
                         <a href="<%= $c->url_for('admin_job_templates', groupid => $group->{id}) %>">
                             <i class="fa fa-wrench" title="Configure"></i>
                         </a>

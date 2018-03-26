@@ -154,7 +154,7 @@ END_SQL
     # We collect data required for /admin/assets *and* the limit_assets task
     my $groups = $schema->resultset('JobGroups');
     my %group_infos;
-    $group_infos{0} = {size_limit_gb => 0, size => 0, group => 'Untracked', id => 0};
+    $group_infos{0} = {size_limit_gb => 0, size => 0, group => 'Untracked', id => undef};
 
     # find relevant assets which belong to a job group
     while (my $g = $groups->next) {
