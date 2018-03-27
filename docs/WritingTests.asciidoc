@@ -160,6 +160,34 @@ Variables are accessible via the *get_var* and *check_var* functions.
 
 == Test Development tricks
 
+=== Capturing kernel exceptions and/or any other exceptions from the serial console
+
+Soft and hard failures can be triggered on demand by regular expressions when they match the
+serial output which is done after the test is executed. To use this functionality the test 
+developer needs to define the patterns to look for in the serial output either in the main.pm 
+or in the test itself. Any pattern change done in a test it will be reflected in the next 
+tests.
+
+The patterns defined in the main.pm will be valid for all the tests. 
+
+[caption="Example: "]
+.Defining serial exception capture in the main.pm
+[source,perl]
+--------------------------------------------------------------
+$testapi::distri->set_serial_failures(soft=>[quotemeta 'Error'], hard=>[qr/exception/]);
+--------------------------------------------------------------
+
+[caption="Example: "]
+.Defining serial exception capture in the test
+[source,perl]
+--------------------------------------------------------------
+sub run {
+    my ($self) = @_;
+    $self->set_serial_failures(soft=>[quotemeta 'Error'], hard=>[qr/exception/]);
+    ...
+}
+--------------------------------------------------------------
+
 === Modifying setting of an existing test
 
 There is no interface to modify existing tests but the clone_job.pl script
