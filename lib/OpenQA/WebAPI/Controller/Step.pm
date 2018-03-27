@@ -310,54 +310,56 @@ sub edit {
     @needles = sort { $b->{avg_similarity} <=> $a->{avg_similarity} || $a->{name} cmp $b->{name} } @needles;
 
     # check whether new needles with matching tags have already been created since the job has been started
-    my @new_needle_conds;
-    for my $tag (@$tags) {
-        push(@new_needle_conds, \["? = ANY (tags)", $tag]);
-    }
-    my $new_needles = $self->app->schema->resultset('Needles')->search(
-        {
-            t_created => {'>' => $job->t_started},
-            -or       => \@new_needle_conds,
-        },
-        {
-            order_by => {-desc => 'id'},
-            rows     => 5,
-        });
-    while (my $new_needle = $new_needles->next) {
-        my $tags = $new_needle->tags;
-        my $joined_tags = $tags ? join(', ', @$tags) : 'none';
-        # show warning for new needle with matching tags
-        push(
-            @error_messages,
-            sprintf(
-                "A new needle with matching tags has been created since the job started: %s (tags: %s)",
-                $new_needle->filename, $joined_tags
-            ));
-        # get needle info to show the needle also in selection
-        my $needle_name = $new_needle->name;
-        my $needle_info = needle_info($needle_name, $distribution, $dversion || '', $new_needle->path);
-        if (!$needle_info) {
-            my $error_message
-              = sprintf("Could not parse needle: %s for %s %s", $needle_name, $distribution, $dversion || '');
-            $self->app->log->error($error_message);
-            push(@error_messages, $error_message);
-            next;
+    if (@$tags) {
+        my @new_needle_conds;
+        for my $tag (@$tags) {
+            push(@new_needle_conds, \["? = ANY (tags)", $tag]);
         }
-        $needle_info->{title}          = 'new: ' . $needle_name;
-        $needle_info->{suggested_name} = $self->_timestamp($needle_name);
-        $needle_info->{imageurl}  = $self->url_for('test_img', filename => $module_detail->{screenshot})->to_string;
-        $needle_info->{imagename} = $imgname;
-        $needle_info->{imagedir}  = '';
-        $needle_info->{imageurl}
-          = $self->needle_url($distribution, "$needle_name.png", $dversion || '', $needle_info->{json})->to_string;
-        $needle_info->{imagename}    = basename($needle_info->{image});
-        $needle_info->{imagedir}     = dirname($needle_info->{image});
-        $needle_info->{imagedistri}  = $needle_info->{distri};
-        $needle_info->{imageversion} = $needle_info->{version};
-        $needle_info->{tags}         = $tags;
-        $needle_info->{matches}      = [];
-        $needle_info->{properties}   = [];
-        push(@needles, $needle_info);
+        my $new_needles = $self->app->schema->resultset('Needles')->search(
+            {
+                t_created => {'>' => $job->t_started},
+                -or       => \@new_needle_conds,
+            },
+            {
+                order_by => {-desc => 'id'},
+                rows     => 5,
+            });
+        while (my $new_needle = $new_needles->next) {
+            my $tags = $new_needle->tags;
+            my $joined_tags = $tags ? join(', ', @$tags) : 'none';
+            # show warning for new needle with matching tags
+            push(
+                @error_messages,
+                sprintf(
+                    "A new needle with matching tags has been created since the job started: %s (tags: %s)",
+                    $new_needle->filename, $joined_tags
+                ));
+            # get needle info to show the needle also in selection
+            my $needle_name = $new_needle->name;
+            my $needle_info = needle_info($needle_name, $distribution, $dversion || '', $new_needle->path);
+            if (!$needle_info) {
+                my $error_message
+                  = sprintf("Could not parse needle: %s for %s %s", $needle_name, $distribution, $dversion || '');
+                $self->app->log->error($error_message);
+                push(@error_messages, $error_message);
+                next;
+            }
+            $needle_info->{title}          = 'new: ' . $needle_name;
+            $needle_info->{suggested_name} = $self->_timestamp($needle_name);
+            $needle_info->{imageurl}  = $self->url_for('test_img', filename => $module_detail->{screenshot})->to_string;
+            $needle_info->{imagename} = $imgname;
+            $needle_info->{imagedir}  = '';
+            $needle_info->{imageurl}
+              = $self->needle_url($distribution, "$needle_name.png", $dversion || '', $needle_info->{json})->to_string;
+            $needle_info->{imagename}    = basename($needle_info->{image});
+            $needle_info->{imagedir}     = dirname($needle_info->{image});
+            $needle_info->{imagedistri}  = $needle_info->{distri};
+            $needle_info->{imageversion} = $needle_info->{version};
+            $needle_info->{tags}         = $tags;
+            $needle_info->{matches}      = [];
+            $needle_info->{properties}   = [];
+            push(@needles, $needle_info);
+        }
     }
 
     # Default values

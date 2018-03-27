@@ -460,6 +460,17 @@ subtest 'areas/tags verified via JavaScript' => sub {
     $driver->find_element('.alert-danger button')->click();
 };
 
+subtest 'show needle editor for screenshot (without any tags)' => sub {
+    $driver->get_ok('/tests/99946');
+    wait_for_ajax();
+    $driver->find_element_by_xpath('//a[@href="#step/isosize/1"]')->click();
+    wait_for_ajax;
+    $driver->find_element('.step_actions .create_new_needle')->click();
+    wait_for_ajax();
+    is(OpenQA::Test::Case::trim_whitespace($driver->find_element_by_id('image_select')->get_text()),
+        'Screenshot', 'images taken from screenshot');
+};
+
 kill_driver();
 
 subtest '(created) needles can be accessed over API' => sub {
