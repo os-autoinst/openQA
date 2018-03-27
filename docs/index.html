@@ -653,6 +653,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_variables">Variables</a></li>
 <li><a href="#_test_development_tricks">Test Development tricks</a>
 <ul class="sectlevel2">
+<li><a href="#_capturing_kernel_exceptions_and_or_any_other_exceptions_from_the_serial_console">Capturing kernel exceptions and/or any other exceptions from the serial console</a></li>
 <li><a href="#_modifying_setting_of_an_existing_test">Modifying setting of an existing test</a></li>
 <li><a href="#_using_snapshots_to_speed_up_development_of_tests">Using snapshots to speed up development of tests</a>
 <ul class="sectlevel3">
@@ -3267,6 +3268,35 @@ on GitHub</a> for examples.</p>
 <h2 id="_test_development_tricks">Test Development tricks</h2>
 <div class="sectionbody">
 <div class="sect2">
+<h3 id="_capturing_kernel_exceptions_and_or_any_other_exceptions_from_the_serial_console">Capturing kernel exceptions and/or any other exceptions from the serial console</h3>
+<div class="paragraph">
+<p>Soft and hard failures can be triggered on demand by regular expressions when they match the
+serial output which is done after the test is executed. To use this functionality the test
+developer needs to define the patterns to look for in the serial output either in the main.pm
+or in the test itself. Any pattern change done in a test it will be reflected in the next
+tests.</p>
+</div>
+<div class="paragraph">
+<p>The patterns defined in the main.pm will be valid for all the tests.</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Defining serial exception capture in the main.pm</div>
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-nv">$</span><span class="tok-nn">testapi::</span><span class="tok-nv">distri</span><span class="tok-o">-&gt;</span><span class="tok-n">set_serial_failures</span><span class="tok-p">(</span><span class="tok-n">soft</span><span class="tok-o">=&gt;</span><span class="tok-p">[</span><span class="tok-nb">quotemeta</span> <span class="tok-s">&#39;Error&#39;</span><span class="tok-p">],</span> <span class="tok-n">hard</span><span class="tok-o">=&gt;</span><span class="tok-p">[</span><span class="tok-sx">qr/exception/</span><span class="tok-p">]);</span></code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example: Defining serial exception capture in the test</div>
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">sub</span> <span class="tok-nf">run</span> <span class="tok-p">{</span>
+    <span class="tok-k">my</span> <span class="tok-p">(</span><span class="tok-nv">$self</span><span class="tok-p">)</span> <span class="tok-o">=</span> <span class="tok-nv">@_</span><span class="tok-p">;</span>
+    <span class="tok-nv">$self</span><span class="tok-o">-&gt;</span><span class="tok-n">set_serial_failures</span><span class="tok-p">(</span><span class="tok-n">soft</span><span class="tok-o">=&gt;</span><span class="tok-p">[</span><span class="tok-nb">quotemeta</span> <span class="tok-s">&#39;Error&#39;</span><span class="tok-p">],</span> <span class="tok-n">hard</span><span class="tok-o">=&gt;</span><span class="tok-p">[</span><span class="tok-sx">qr/exception/</span><span class="tok-p">]);</span>
+    <span class="tok-o">...</span>
+<span class="tok-p">}</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
 <h3 id="_modifying_setting_of_an_existing_test">Modifying setting of an existing test</h3>
 <div class="paragraph">
 <p>There is no interface to modify existing tests but the clone_job.pl script
@@ -5465,7 +5495,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-03-26 14:26:16 UTC
+Last updated 2018-03-27 10:01:22 UTC
 </div>
 </div>
 </body>
