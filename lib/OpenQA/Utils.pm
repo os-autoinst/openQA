@@ -817,8 +817,11 @@ sub read_test_modules {
         for my $step (@{$module->details}) {
             $step->{num} = $num++;
             if ($step->{text}) {
-                log_debug("Reading information from " . encode_json($step));
-                $step->{text_data} = path($job->result_dir(), $step->{text})->slurp;
+                my $file = path($job->result_dir(), $step->{text});
+                if (-e $file) {
+                    log_debug("Reading information from " . encode_json($step));
+                    $step->{text_data} = $file->slurp;
+                }
             }
             push(@details, $step);
         }
