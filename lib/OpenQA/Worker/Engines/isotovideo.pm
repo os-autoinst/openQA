@@ -135,6 +135,7 @@ sub engine_workit {
     log_info(sprintf("start time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
     log_info(sprintf("running on $hostname:%d ($sysname $release $version $machine)", $instance),
         channels => 'autoinst');
+    log_info("isotovideo interface: $OpenQA::Worker::Common::isotovideo_interface_version", channels => 'autoinst');
 
     log_error("Failed enabling subreaper mode", channels => 'autoinst') unless session->subreaper;
 
