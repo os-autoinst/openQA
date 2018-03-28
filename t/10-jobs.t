@@ -654,10 +654,9 @@ subtest 'job PARALLEL_WITH' => sub {
     $_settings{PARALLEL_WITH} = 'A,B,C';
     my $jobE = _job_create(\%_settings);
 
-    %_settings                   = %settings;
-    $_settings{TEST}             = 'H';
-    $_settings{PARALLEL_WITH}    = 'B,C,D';
-    $_settings{PARALLEL_CLUSTER} = '1';
+    %_settings                = %settings;
+    $_settings{TEST}          = 'H';
+    $_settings{PARALLEL_WITH} = 'B,C,D';
     my $jobH = _job_create(\%_settings);
 
     $jobA->children->create(
@@ -752,6 +751,29 @@ subtest 'job PARALLEL_WITH' => sub {
     @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobH->to_hash, $jobC->to_hash, $jobE->to_hash, $jobB->to_hash,
         $jobA->to_hash, $jobD->to_hash);
     is @res, 6 or die diag explain \@res;
+
+    %_settings                = %settings;
+    $_settings{TEST}          = 'J';
+    $_settings{PARALLEL_WITH} = 'K,L';
+    my $jobJ = _job_create(\%_settings);
+
+    %_settings                = %settings;
+    $_settings{TEST}          = 'K';
+    $_settings{PARALLEL_WITH} = 'J,L';
+    my $jobK = _job_create(\%_settings);
+
+    %_settings                = %settings;
+    $_settings{TEST}          = 'L';
+    $_settings{PARALLEL_WITH} = 'J,K';
+    my $jobL = _job_create(\%_settings);
+
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobJ->to_hash, $jobK->to_hash);
+    is @res, 0 or die diag explain \@res;
+
+    $jobL->update({state => OpenQA::Schema::Result::Jobs::RUNNING});
+
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobJ->to_hash, $jobK->to_hash);
+    is @res, 2 or die diag explain \@res;
 
     my @e = ([], [qw(a b c)], [qw(d e f)]);
     @res = OpenQA::Scheduler::Scheduler::filter_jobs(@e);
