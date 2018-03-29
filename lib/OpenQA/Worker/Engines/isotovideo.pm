@@ -265,7 +265,7 @@ sub engine_workit {
     $child->on(
         collected => sub {
             my $self = shift;
-            log_info("Isotovideo exit status: " . $self->exit_status, channels => 'autoinst');
+            eval { log_info("Isotovideo exit status: " . $self->exit_status, channels => 'autoinst'); };
             if ($self->exit_status != 0) {
                 OpenQA::Worker::Jobs::stop_job('died');
             }
@@ -274,7 +274,11 @@ sub engine_workit {
             }
         });
 
-    session->on(register => sub { shift; log_debug("Registered process:" . shift->pid, channels => 'worker'); });
+    session->on(
+        register => sub {
+            shift;
+            eval { log_debug("Registered process:" . shift->pid, channels => 'worker'); };
+        });
 
     $child->_default_kill_signal(-POSIX::SIGTERM())->_default_blocking_signal(-POSIX::SIGKILL());
     $child->set_pipes(0)->internal_pipes(0)->blocking_stop(1);
