@@ -444,7 +444,7 @@ subtest 'Deletion of needle is handled gracefully' => sub {
     $driver->title_is('openQA: Needle Editor', 'needle editor still shows up');
     is(
         $driver->find_element('#editor_warnings span')->get_text(),
-        join("\n", 'Could not find needle: inst-timezone-text for opensuse 13.1', @expected_needle_warnings),
+        join("\n", 'Could not parse needle: inst-timezone-text for opensuse 13.1', @expected_needle_warnings),
         'warning about deleted needle displayed (beside new needle warnings)'
     );
 };
