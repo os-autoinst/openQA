@@ -16,6 +16,7 @@ ExecStart=/usr/share/openqa/script/worker --instance %i
 User=_openqa-worker
 KillMode=mixed
 Restart=on-failure
+Delegate=yes
 
 [Install]
 WantedBy=multi-user.target

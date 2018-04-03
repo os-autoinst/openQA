@@ -32,6 +32,12 @@ use Time::HiRes 'sleep';
 use IO::Handle;
 use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
+use Mojo::IOLoop::ReadWriteProcess::Container 'container';
+use Mojo::IOLoop::ReadWriteProcess::CGroup 'cgroupv2';
+use Mojo::Collection 'c';
+use Mojo::File 'path';
+
+use constant CGROUP_SLICE => $ENV{OPENQA_CGROUP_SLICE};
 
 my $isotovideo = "/usr/bin/isotovideo";
 my $workerpid;
@@ -224,7 +230,18 @@ sub engine_workit {
 
     # create tmpdir for qemu to write here
     my $tmpdir = "$pooldir/tmp";
+    my $proc_cgroup;
+    my $cgroup;
     mkdir($tmpdir) unless (-d $tmpdir);
+
+    eval { $proc_cgroup = (split(/\n/, path("/proc", $$, "cgroup")->slurp))[-1]; $proc_cgroup =~ s/1:name=|://g; };
+
+    local $@;
+    eval { $cgroup = cgroupv2->from(CGROUP_SLICE // $proc_cgroup)->child($job->{id})->create; };
+    $cgroup = c() and log_error(
+"Failed creating CGroup subtree '$@', disabling them. You can define a custom slice with OPENQA_CGROUP_SLICE or indicating the base mount with MOJO_CGROUP_FS",
+        channels => 'worker'
+    ) if $@;
 
     my $child = process(
         sub {
@@ -248,7 +265,7 @@ sub engine_workit {
     $child->on(
         collected => sub {
             my $self = shift;
-            log_info("Isotovideo exit status: " . $self->exit_status, channels => 'autoinst');
+            eval { log_info("Isotovideo exit status: " . $self->exit_status, channels => 'autoinst'); };
             if ($self->exit_status != 0) {
                 OpenQA::Worker::Jobs::stop_job('died');
             }
@@ -257,9 +274,22 @@ sub engine_workit {
             }
         });
 
-    $child->_default_kill_signal(-POSIX::SIGTERM())->_default_blocking_signal(-POSIX::SIGKILL());
-    $child->set_pipes(0)->internal_pipes(0)->blocking_stop(1)->start();
+    session->on(
+        register => sub {
+            shift;
+            eval { log_debug("Registered process:" . shift->pid, channels => 'worker'); };
+        });
 
+    $child->_default_kill_signal(-POSIX::SIGTERM())->_default_blocking_signal(-POSIX::SIGKILL());
+    $child->set_pipes(0)->internal_pipes(0)->blocking_stop(1);
+
+    my $container
+      = container(clean_cgroup => 1, pre_migrate => 1, cgroups => $cgroup, process => $child, subreaper => 0);
+
+    $container->on(
+        container_error => sub { shift; my $e = shift; log_error("Container error: @{$e}", channels => 'worker') });
+
+    $container->start();
     $workerpid = $child->pid();
     return {child => $child};
 }
