@@ -94,6 +94,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   rand_range
   in_range
   walker
+  &db_result_to_hash
 );
 
 if ($0 =~ /\.t$/) {
@@ -1030,6 +1031,15 @@ sub logistic_map_steps {
 sub rand_range { $_[0] + rand($_[1] - $_[0]) }
 sub in_range { $_[0] >= $_[1] && $_[0] <= $_[2] ? 1 : 0 }
 
+sub db_result_to_hash {
+    my ($res, $base) = @_;
+
+    $base //= {};
+    for my $col ($res->result_source->columns) {
+        $base->{$col} = $res->$col;
+    }
+    return $base;
+}
 
 1;
 # vim: set sw=4 et:
