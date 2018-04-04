@@ -395,7 +395,7 @@ sub _stop_job_2 {
             }
         }
 
-        if ($aborted eq 'done') {
+        if ($aborted eq 'done' || $aborted eq 'cancel') {
             # job succeeded, upload assets created by the job
 
           ASSET_UPLOAD: for my $dir (qw(private public)) {
