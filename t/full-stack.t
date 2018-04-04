@@ -493,17 +493,26 @@ subtest 'Isotovideo version' => sub {
     use OpenQA::Worker;
 
     eval { OpenQA::Worker::Engines::isotovideo::set_engine_exec('/bogus/location'); };
+    is($OpenQA::Worker::Common::isotovideo_interface_version,
+        0, 'providing wrong isotovideo binary causes isotovideo version to remain 0');
     like($@, qr/Path to isotovideo invalid/, 'isotovideo version path invalid');
+
+    # init does not fail without isotovideo parameter
+    # note that this might set the isotovideo version because the isotovideo path defaults
+    # to /usr/bin/isotovideo
     OpenQA::Worker::init({}, {apikey => 123, apisecret => 456, instance => 1});
-    is($OpenQA::Worker::Common::isotovideo_interface_version, 0, 'isotovideo worker init not set');
+    $OpenQA::Worker::Common::isotovideo_interface_version = 0;
 
     OpenQA::Worker::Engines::isotovideo::set_engine_exec('../os-autoinst/isotovideo');
-    ok($OpenQA::Worker::Common::isotovideo_interface_version > 0, 'isotovideo update version');
+    ok($OpenQA::Worker::Common::isotovideo_interface_version > 0, 'update isotovideo version via set_engine_exec');
 
     $OpenQA::Worker::Common::isotovideo_interface_version = 0;
     OpenQA::Worker::init({},
         {apikey => 123, apisecret => 456, instance => 1, isotovideo => '../os-autoinst/isotovideo'});
-    ok($OpenQA::Worker::Common::isotovideo_interface_version > 0, 'isotovideo worker init');
+    ok(
+        $OpenQA::Worker::Common::isotovideo_interface_version > 0,
+        'update isotovideo version indirectly via OpenQA::Worker::init'
+    );
 };
 
 kill_driver;
