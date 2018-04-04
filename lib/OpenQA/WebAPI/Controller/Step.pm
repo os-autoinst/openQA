@@ -323,7 +323,8 @@ sub _extended_needle_info {
 
     $needle_info->{title}          = $needle_name;
     $needle_info->{suggested_name} = ensure_timestamp_appended($needle_name);
-    $needle_info->{imageurl}     = $self->url_for('test_img', filename => $basic_needle_data->{image_name})->to_string;
+    $needle_info->{imageurl}
+      = $self->needle_url($distri, $needle_name . '.png', $version, $needle_info->{json})->to_string();
     $needle_info->{imagename}    = basename($needle_info->{image});
     $needle_info->{imagedir}     = dirname($needle_info->{image});
     $needle_info->{imagedistri}  = $distri;
