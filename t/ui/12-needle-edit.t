@@ -381,6 +381,20 @@ subtest 'Verify new needle\'s JSON' => sub {
     );
 };
 
+sub assert_needle_appears_in_selection {
+    my ($selection_id, $needlename) = @_;
+
+    my $selection = $driver->find_element_by_id($selection_id);
+    my $new_needle_options = $driver->find_child_elements($selection, "./option[\@value='$needlename']", 'xpath');
+    is(scalar @$new_needle_options, 1, "needle appears in $selection_id selection");
+    is(
+        OpenQA::Test::Case::trim_whitespace($new_needle_options->[0]->get_text()),
+        'new: ' . $needlename,
+        "needle title in $selection_id selection correct"
+    );
+    return $new_needle_options;
+}
+
 subtest 'New needle instantly visible after reloading needle editor' => sub {
     goto_editor_for_installer_timezone();
 
@@ -389,20 +403,30 @@ subtest 'New needle instantly visible after reloading needle editor' => sub {
 "A new needle with matching tags has been created since the job started: $needlename.json (tags: ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag)",
         'warning about new needle displayed'
     );
-    my $tags_select = $driver->find_element_by_id('tags_select');
-    my $new_needle_options = $driver->find_child_elements($tags_select, "./option[\@value='$needlename']", 'xpath');
-    is(scalar @$new_needle_options, 1, 'new needle appears in based-on selection');
-    is($new_needle_options->[0]->get_text(), 'new: ' . $needlename, 'needle title');
+
+    my $based_on_option = assert_needle_appears_in_selection('tags_select',  $needlename);
+    my $image_option    = assert_needle_appears_in_selection('image_select', $needlename);
 
     # uncheck 'tag_inst-timezone' tag
     $driver->find_element_by_id('tag_inst-timezone')->click();
     is($driver->find_element_by_id('tag_inst-timezone')->is_selected(), 0, 'tag_inst-timezone not checked anymore');
 
     # check 'tag_inst-timezone' again by selecting new needle
-
-    $new_needle_options->[0]->click();
+    $based_on_option->[0]->click();
     is($driver->find_element_by_id('tag_inst-timezone')->is_selected(),
         1, 'tag_inst-timezone checked again via new needle');
+
+    # check selecting/displaying image
+    my $current_image_script = 'return nEditor.bgImage.src;';
+    my $current_image        = $driver->execute_script($current_image_script);
+    like($current_image, qr/.*installer_timezone-1\.png/, 'screenshot shown by default');
+    # select image of new needle
+    $image_option->[0]->click();
+    wait_for_ajax;
+    $current_image = $driver->execute_script($current_image_script);
+    like($current_image, qr/.*test-newneedle\.png\?.*/,           'new needle image shown');
+    like($current_image, qr/.*version=13\.1.*/,                   'new needle image shown');
+    like($current_image, qr/.*jsonfile=.*test-newneedle\.json.*/, 'new needle image shown');
 };
 
 my @expected_needle_warnings;
