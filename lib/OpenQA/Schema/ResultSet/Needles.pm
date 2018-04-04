@@ -50,4 +50,23 @@ sub update_needle_from_editor {
     return $needle;
 }
 
+sub new_needles_since {
+    my ($self, $since, $tags) = @_;
+
+    my @new_needle_conds;
+    for my $tag (@$tags) {
+        push(@new_needle_conds, \["? = ANY (tags)", $tag]);
+    }
+
+    return $self->search(
+        {
+            t_created => {'>' => $since},
+            -or       => \@new_needle_conds,
+        },
+        {
+            order_by => {-desc => 'id'},
+            rows     => 5,
+        });
+}
+
 1;

@@ -444,7 +444,7 @@ subtest 'Deletion of needle is handled gracefully' => sub {
     $driver->title_is('openQA: Needle Editor', 'needle editor still shows up');
     is(
         $driver->find_element('#editor_warnings span')->get_text(),
-        join("\n", 'Could not find needle: inst-timezone-text for opensuse 13.1', @expected_needle_warnings),
+        join("\n", 'Could not parse needle: inst-timezone-text for opensuse 13.1', @expected_needle_warnings),
         'warning about deleted needle displayed (beside new needle warnings)'
     );
 };
@@ -458,6 +458,17 @@ subtest 'areas/tags verified via JavaScript' => sub {
         'areas/tags verified via JavaScript'
     );
     $driver->find_element('.alert-danger button')->click();
+};
+
+subtest 'show needle editor for screenshot (without any tags)' => sub {
+    $driver->get_ok('/tests/99946');
+    wait_for_ajax();
+    $driver->find_element_by_xpath('//a[@href="#step/isosize/1"]')->click();
+    wait_for_ajax;
+    $driver->find_element('.step_actions .create_new_needle')->click();
+    wait_for_ajax();
+    is(OpenQA::Test::Case::trim_whitespace($driver->find_element_by_id('image_select')->get_text()),
+        'Screenshot', 'images taken from screenshot');
 };
 
 kill_driver();

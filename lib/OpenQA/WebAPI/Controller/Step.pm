@@ -139,7 +139,7 @@ sub edit {
     my $distribution = $job->DISTRI;
     my $dversion = $job->VERSION || '';
 
-    # Each object in $needles will contain the name, both the url and the local path
+    # Each object in @needles will contain the name, both the url and the local path
     # of the image and 2 lists of areas: 'area' and 'matches'.
     # The former refers to the original definitions and the later shows the position
     # found (best try) in the actual screenshot.
@@ -147,230 +147,97 @@ sub edit {
     # 'areas' (there is no needle associated to the screenshot) and with all matching
     # areas in 'matches'.
     my @needles;
+
     my @error_messages;
-    # All tags (from all needles)
-    my $tags = [];
-    $tags = $module_detail->{tags} if ($module_detail->{tags});
+    my $tags = $module_detail->{tags} // [];
     my $screenshot;
+    my %basic_needle_data = (
+        tags       => $tags,
+        distri     => $distribution,
+        version    => $dversion,
+        image_name => $imgname,
+    );
 
-    if ($module_detail->{needle}) {
-
+    if (my $needle_name = $module_detail->{needle}) {
         # First position: the screenshot with all the matching areas (in result)
-        $screenshot = {
-            name       => 'screenshot',
-            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot})->to_string,
-            imagename  => $imgname,
-            imagedir   => "",
-            area       => [],
-            matches    => [],
-            properties => [],
-            json       => "",
-            tags       => []};
-        for my $tag (@$tags) {
-            push(@{$screenshot->{tags}}, $tag);
-        }
-        for my $area (@{$module_detail->{area}}) {
-            my $narea = {
-                xpos   => int $area->{x},
-                width  => int $area->{w},
-                ypos   => int $area->{y},
-                height => int $area->{h},
-                type   => 'match'
-            };
-            push(@{$screenshot->{matches}}, $narea);
-        }
+        $screenshot = $self->_new_screenshot($tags, $imgname, $module_detail->{area});
+
         # Second position: the only needle (with the same matches)
-        my $needle = needle_info($module_detail->{needle}, $distribution, $dversion, $module_detail->{json});
-
-        if (!$needle) {
-            my $error_message
-              = sprintf("Could not find needle: %s for %s %s", $module_detail->{needle}, $distribution, $dversion);
-            $self->app->log->error($error_message);
-            push(@error_messages, $error_message);
+        my $needle_info = $self->_extended_needle_info($needle_name, \%basic_needle_data, $module_detail->{json}, 0,
+            \@error_messages);
+        if ($needle_info) {
+            $needle_info->{matches} = $screenshot->{matches};
+            push(@needles, $needle_info);
         }
-        else {
-            my $matched = {
-                name           => $module_detail->{needle},
-                suggested_name => $self->_timestamp($module_detail->{needle}),
-                imageurl =>
-                  $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion, $needle->{json})
-                  ->to_string,
-                imagename      => basename($needle->{image}),
-                imagedir       => dirname($needle->{image}),
-                imagedistri    => $needle->{distri},
-                imageversion   => $needle->{version},
-                area           => $needle->{area},
-                avg_similarity => map_error_to_avg($needle->{error}),
-                tags           => $needle->{tags},
-                json           => $needle->{json} || "",
-                properties     => $needle->{properties} || [],
-                matches        => $screenshot->{matches}};
-            $matched->{title} = $matched->{avg_similarity} . "%: " . $matched->{name};
-            push(@needles, $matched);
-        }
-
-        for my $t (@{$needle->{tags}}) {
-            push(@$tags, $t) unless grep(/^$t$/, @$tags);
-        }
-
     }
     if ($module_detail->{needles}) {
-
         # First position: the screenshot
-        $screenshot = {
-            name       => 'screenshot',
-            imagename  => $imgname,
-            imagedir   => "",
-            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot})->to_string,
-            area       => [],
-            matches    => [],
-            properties => [],
-            json       => "",
-            tags       => []};
-        for my $tag (@$tags) {
-            push(@{$screenshot->{tags}}, $tag);
-        }
-        # Afterwards, all the candidate needles
-        my $needleinfo;
-        my $needlename;
-        my $area;
-        # For each candidate we will use the following variables:
-        # $needle: needle information from result, in which 'areas' refers to the best matches
-        # $needlename: read from the above
-        # $needleinfo: actual definition of the needle, with the original areas
-        # We also use $area for transforming the match information intro a real area
+        $screenshot = $self->_new_screenshot($tags, $imgname);
+
+        # Afterwards: all the candidate needles
+        # $needle contains information from result, in which 'areas' refers to the best matches.
+        # We also use $area for transforming the match information into a real area
         for my $needle (@{$module_detail->{needles}}) {
-            $needlename = $needle->{name};
-            $needleinfo = needle_info($needlename, $distribution, $dversion || '', $needle->{json});
-
-            if (!defined $needleinfo) {
-                my $error_message
-                  = sprintf("Could not parse needle: %s for %s %s", $needlename, $distribution, $dversion || '');
-                $self->app->log->error($error_message);
-                push(@error_messages, $error_message);
-
-                $needleinfo->{image}  = [];
-                $needleinfo->{tags}   = [];
-                $needleinfo->{area}   = [];
-                $needleinfo->{broken} = 1;
-            }
-
-            my $needlehash = {
-                name           => $needlename,
-                title          => $needlename,
-                avg_similarity => map_error_to_avg($needle->{error}),
-                suggested_name => $self->_timestamp($needlename),
-                imageurl =>
-                  $self->needle_url($distribution, "$needlename.png", $dversion, $needleinfo->{json})->to_string,
-                imagename    => basename($needleinfo->{image}),
-                imagedir     => dirname($needleinfo->{image}),
-                imagedistri  => $needleinfo->{distri},
-                imageversion => $needleinfo->{version},
-                tags         => $needleinfo->{tags},
-                area         => $needleinfo->{area},
-                json         => $needleinfo->{json} || "",
-                properties   => $needleinfo->{properties} || [],
-                matches      => [],
-                broken       => $needleinfo->{broken}};
-            push(@needles, $needlehash) unless $needlehash->{broken};
+            my $needle_info
+              = $self->_extended_needle_info($needle->{name}, \%basic_needle_data, $needle->{json},
+                $needle->{error}, \@error_messages)
+              || next;
             for my $match (@{$needle->{area}}) {
-                $area = {
+                my $area = {
                     xpos   => int $match->{x},
                     width  => int $match->{w},
                     ypos   => int $match->{y},
                     height => int $match->{h},
-                    type   => 'match'
+                    type   => 'match',
                 };
                 $area->{margin} = int($match->{margin}) if defined $match->{margin};
                 $area->{match}  = int($match->{match})  if defined $match->{match};
-                #push(@{$screenshot->{matches}}, $area);
-                push(@{$needlehash->{matches}}, $area);
+                push(@{$needle_info->{matches}}, $area);
             }
-            $needlehash->{title} = $needlehash->{avg_similarity} . "%: " . $needlehash->{name};
-            for my $t (@{$needleinfo->{tags}}) {
-                push(@$tags, $t) unless grep(/^$t$/, @$tags);
-            }
+            push(@needles, $needle_info);
         }
     }
-    if (!@needles) {
-        # Failing with not a single candidate needle
-        $screenshot = {
-            name       => 'screenshot',
-            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot})->to_string,
-            imagename  => $imgname,
-            imagedir   => "",
-            area       => [],
-            matches    => [],
-            tags       => $tags,
-            json       => "",
-            properties => []};
-    }
 
-    # the highest matches first
+    # handle case when failing with not a single candidate needle
+    $screenshot //= $self->_new_screenshot($tags, $imgname);
+
+    # sort needles: the highest matches first
     @needles = sort { $b->{avg_similarity} <=> $a->{avg_similarity} || $a->{name} cmp $b->{name} } @needles;
 
     # check whether new needles with matching tags have already been created since the job has been started
-    my @new_needle_conds;
-    for my $tag (@$tags) {
-        push(@new_needle_conds, \["? = ANY (tags)", $tag]);
-    }
-    my $new_needles = $self->app->schema->resultset('Needles')->search(
-        {
-            t_created => {'>' => $job->t_started},
-            -or       => \@new_needle_conds,
-        },
-        {
-            order_by => {-desc => 'id'},
-            rows     => 5,
-        });
-    while (my $new_needle = $new_needles->next) {
-        my $tags = $new_needle->tags;
-        my $joined_tags = $tags ? join(', ', @$tags) : 'none';
-        # show warning for new needle with matching tags
-        push(
-            @error_messages,
-            sprintf(
-                "A new needle with matching tags has been created since the job started: %s (tags: %s)",
-                $new_needle->filename, $joined_tags
-            ));
-        # get needle info to show the needle also in selection
-        my $needle_name = $new_needle->name;
-        my $needle_info = needle_info($needle_name, $distribution, $dversion || '', $new_needle->path);
-        if (!$needle_info) {
-            my $error_message
-              = sprintf("Could not parse needle: %s for %s %s", $needle_name, $distribution, $dversion || '');
-            $self->app->log->error($error_message);
-            push(@error_messages, $error_message);
-            next;
+    if (@$tags) {
+        my $new_needles = $self->app->schema->resultset('Needles')->new_needles_since($job->t_started, $tags);
+        while (my $new_needle = $new_needles->next) {
+            my $new_needle_tags = $new_needle->tags;
+            my $joined_tags = $new_needle_tags ? join(', ', @$new_needle_tags) : 'none';
+            # show warning for new needle with matching tags
+            push(
+                @error_messages,
+                sprintf(
+                    'A new needle with matching tags has been created since the job started: %s (tags: %s)',
+                    $new_needle->filename, $joined_tags
+                ));
+            # get needle info to show the needle also in selection
+            my $needle_info
+              = $self->_extended_needle_info($new_needle->name, \%basic_needle_data, $new_needle->path, undef,
+                \@error_messages)
+              || next;
+            $needle_info->{title} = 'new: ' . $needle_info->{title};
+            push(@needles, $needle_info);
         }
-        $needle_info->{title}          = 'new: ' . $needle_name;
-        $needle_info->{suggested_name} = $self->_timestamp($needle_name);
-        $needle_info->{imageurl}  = $self->url_for('test_img', filename => $module_detail->{screenshot})->to_string;
-        $needle_info->{imagename} = $imgname;
-        $needle_info->{imagedir}  = '';
-        $needle_info->{imageurl}
-          = $self->needle_url($distribution, "$needle_name.png", $dversion || '', $needle_info->{json})->to_string;
-        $needle_info->{imagename}    = basename($needle_info->{image});
-        $needle_info->{imagedir}     = dirname($needle_info->{image});
-        $needle_info->{imagedistri}  = $needle_info->{distri};
-        $needle_info->{imageversion} = $needle_info->{version};
-        $needle_info->{tags}         = $tags;
-        $needle_info->{matches}      = [];
-        $needle_info->{properties}   = [];
-        push(@needles, $needle_info);
     }
 
-    # Default values
+    # set default values
     #  - area: matches from best candidate
     #  - tags: tags from the screenshot
     my $default_needle = {};
-    my $default_name;
-    if ($needles[0] && ($needles[0]->{avg_similarity} || 0) > 70) {
-        $needles[0]->{selected}       = 1;
-        $default_needle->{tags}       = $needles[0]->{tags};
-        $default_needle->{area}       = $needles[0]->{matches};
-        $default_needle->{properties} = $needles[0]->{properties};
-        $screenshot->{suggested_name} = $needles[0]->{suggested_name};
+    my $first_needle   = $needles[0];
+    if ($first_needle && ($first_needle->{avg_similarity} || 0) > 70) {
+        $first_needle->{selected}     = 1;
+        $default_needle->{tags}       = $first_needle->{tags};
+        $default_needle->{area}       = $first_needle->{matches};
+        $default_needle->{properties} = $first_needle->{properties};
+        $screenshot->{suggested_name} = $first_needle->{suggested_name};
     }
     else {
         $screenshot->{selected}       = 1;
@@ -389,16 +256,14 @@ sub edit {
                 $name .= "-$ftag";
             }
         }
-        $screenshot->{suggested_name} = $self->_timestamp($name);
+        $screenshot->{suggested_name} = ensure_timestamp_appended($name);
     }
 
-    $screenshot->{title}   = 'Screenshot';
-    $screenshot->{tags}    = [];
-    $screenshot->{area}    = [];
-    $screenshot->{matches} = [];
+    # clear tags, area and matches of screenshot and prepend it to needles
+    $screenshot->{tags} = $screenshot->{area} = $screenshot->{matches} = [];
     unshift(@needles, $screenshot);
 
-    # stashing the properties
+    # stash properties
     my $properties = {};
     for my $property (@{$default_needle->{properties}}) {
         $properties->{$property} = $property;
@@ -408,8 +273,76 @@ sub edit {
     $self->stash('properties',     $properties);
     $self->stash('default_needle', $default_needle);
     $self->stash('error_messages', \@error_messages);
-
     $self->render('step/edit');
+}
+
+sub _new_screenshot {
+    my ($self, $tags, $image_name, $matches) = @_;
+
+    my %screenshot = (
+        name       => 'screenshot',
+        title      => 'Screenshot',
+        imagename  => $image_name,
+        imagedir   => '',
+        imageurl   => $self->url_for('test_img', filename => $image_name)->to_string(),
+        area       => [],
+        matches    => [],
+        properties => [],
+        json       => '',
+        tags       => $tags,
+    );
+    return \%screenshot unless $matches;
+
+    for my $area (@$matches) {
+        push(
+            @{$screenshot{matches}},
+            {
+                xpos   => int $area->{x},
+                width  => int $area->{w},
+                ypos   => int $area->{y},
+                height => int $area->{h},
+                type   => 'match'
+            });
+    }
+    return \%screenshot;
+}
+
+sub _extended_needle_info {
+    my ($self, $needle_name, $basic_needle_data, $file_name, $error, $error_messages) = @_;
+
+    my $overall_list_of_tags = $basic_needle_data->{tags};
+    my $distri               = $basic_needle_data->{distri};
+    my $version              = $basic_needle_data->{version};
+    my $needle_info          = needle_info($needle_name, $distri, $version, $file_name);
+    if (!$needle_info) {
+        my $error_message = sprintf('Could not parse needle: %s for %s %s', $needle_name, $distri, $version);
+        $self->app->log->error($error_message);
+        push(@$error_messages, $error_message);
+        return;
+    }
+
+    $needle_info->{title}          = $needle_name;
+    $needle_info->{suggested_name} = ensure_timestamp_appended($needle_name);
+    $needle_info->{imageurl}     = $self->url_for('test_img', filename => $basic_needle_data->{image_name})->to_string;
+    $needle_info->{imagename}    = basename($needle_info->{image});
+    $needle_info->{imagedir}     = dirname($needle_info->{image});
+    $needle_info->{imagedistri}  = $distri;
+    $needle_info->{imageversion} = $version;
+    $needle_info->{tags}       //= [];
+    $needle_info->{matches}    //= [];
+    $needle_info->{properties} //= [];
+    $needle_info->{json}       //= '';
+
+    $error //= $needle_info->{error};
+    if (defined $error) {
+        $needle_info->{avg_similarity} = map_error_to_avg($error);
+        $needle_info->{title}          = $needle_info->{avg_similarity} . '%: ' . $needle_name;
+    }
+    for my $tag (@{$needle_info->{tags}}) {
+        push(@$overall_list_of_tags, $tag) unless grep(/^$tag$/, @$overall_list_of_tags);
+    }
+
+    return $needle_info;
 }
 
 sub src {
@@ -451,19 +384,6 @@ sub _commit_git {
         die "failed to git commit $name";
     }
     return;
-}
-
-# Adds a timestamp to a needle name or replace the already present timestamp
-sub _timestamp {
-    my ($self, $name) = @_;
-    my $today = strftime('%Y%m%d', gmtime(time));
-
-    if ($name =~ /(.*)-\d{8}$/) {
-        return $1 . "-" . $today;
-    }
-    else {
-        return $name . "-" . $today;
-    }
 }
 
 sub _json_validation($) {

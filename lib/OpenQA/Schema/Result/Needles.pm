@@ -164,8 +164,8 @@ sub update_needle {
 
 sub name() {
     my ($self) = @_;
-
-    return fileparse($self->filename, qw(.json));
+    my ($name, $dir, $extension) = fileparse($self->filename, qw(.json));
+    return $name;
 }
 
 # gru task injected by migration - can be removed later

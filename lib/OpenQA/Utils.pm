@@ -94,6 +94,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   rand_range
   in_range
   walker
+  &ensure_timestamp_appended
 );
 
 if ($0 =~ /\.t$/) {
@@ -228,6 +229,17 @@ sub needle_info {
     $needle->{distri}    = $distri;
     $needle->{version}   = $version;
     return $needle;
+}
+
+# Adds a timestamp to a string (eg. needle name) or replace the already present timestamp
+sub ensure_timestamp_appended {
+    my ($str) = @_;
+
+    my $today = strftime('%Y%m%d', gmtime(time));
+    if ($str =~ /(.*)-\d{8}$/) {
+        return "$1-$today";
+    }
+    return "$str-$today";
 }
 
 # logging helpers - _log_msg wrappers
