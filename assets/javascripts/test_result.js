@@ -51,6 +51,9 @@ function previewSuccess(data, force) {
     }
   });
   $('[data-toggle="popover"]').popover({html: true});
+  $('.dropdown-persistent').on('click', function (event) {
+      event.stopPropagation();
+  });
 }
 
 function mapHash(hash) {

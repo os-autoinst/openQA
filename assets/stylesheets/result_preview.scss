@@ -85,3 +85,90 @@
         border: #ddd 1px solid;
     }
 }
+
+.candidates-selection {
+    min-width: 50%;
+
+    .dropdown-toggle:after {
+        float: right;
+        margin-top: 0.255rem;
+        margin-right: 0.255rem;
+    }
+
+    .dropdown-toggle {
+        font-weight: 400;
+        border-radius: 4px;
+        box-shadow: 0 0 0 1px rgba(34,36,38,.15) inset;
+        padding: 8pt;
+        width: 100%;
+        text-align: left;
+    }
+
+    .dropdown-menu {
+        padding: 0pt;
+        min-width: 300pt;
+        max-height: 80vh;
+        overflow-x: hidden;
+    }
+
+    ul {
+        list-style-type: none;
+        margin: 0pt;
+        padding: 0pt;
+
+        & > li {
+            table {
+                padding: 3pt;
+                line-height: 100%;
+                border: none;
+                width: 100%;
+
+                thead {
+                    th {
+                        padding: 5pt;
+                        padding-top: 10pt;
+                        padding-bottom: 7pt;
+                        border-radius: unset !important;
+                        background-image: linear-gradient(to bottom, #fff 0%, #eee 100%) !important;
+                    }
+
+                    .fas {
+                        padding-left: 3pt;
+                        padding-right: 3pt;
+                    }
+                }
+
+                tbody {
+                    td {
+                        border: none !important;
+                        padding: 5pt;
+
+                        &:nth-child(1), &:nth-child(3) {
+                            text-align: right;
+                            white-space: nowrap;
+                        }
+
+                        &:nth-child(1):after {
+                            content: "%";
+                        }
+
+                        &:nth-child(3) i {
+                            padding: 1pt;
+                            font-size: 120%;
+                        }
+                    }
+                    tr {
+                        cursor: pointer;
+                    }
+                    tr:hover {
+                        background-color: #eee;
+                    }
+                    tr.selected {
+                        color: #fff;
+                        background-color: #4582ec;
+                    }
+                }
+            }
+        }
+    }
+}

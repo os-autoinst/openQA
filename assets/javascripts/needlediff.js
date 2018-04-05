@@ -325,14 +325,37 @@ function setDiffScreenshot(differ, screenshotSrc) {
   });
 }
 
-function setNeedle() {
-  var sel = $('#needlediff_selector').find('option:selected');
+function setNeedle(sel, kind) {
+  // default to 'area-only-diff'
+  if (!kind) {
+    kind = 'area-only-diff';
+  }
+  if (kind !== 'area-only-diff') {
+    window.alert(kind + ' is not available (yet)!');
+    return;
+  }
 
-  window.differ.areas = sel.data('areas');
-  window.differ.matches = sel.data('matches');
+  var currentSelection = $('#needlediff_selector').find('tbody tr.selected');
+  if (sel) {
+    // set needle for newly selected item
+    currentSelection.removeClass('selected');
+    sel.addClass('selected');
+    $('#current_needle_label').text(sel.data('label'));
+  } else {
+    // set needle for current selection
+    sel = currentSelection;
+  }
 
+  // set areas/matches
+  if (sel.length) {
+    window.differ.areas = sel.data('areas');
+    window.differ.matches = sel.data('matches');
+  } else {
+    window.differ.areas = window.differ.matches = [];
+  }
+
+  // set image
   var src = sel.data('image');
-
   if (src) {
     $('<img src="' + src + '">').on('load', function() {
       var image = $(this).get(0);

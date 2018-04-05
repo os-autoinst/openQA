@@ -581,6 +581,10 @@ sub viewimg {
             push(@{$needles_by_tag{'tags unknown'} //= []}, $needle_info);
             return;
         }
+
+        # ensure we have a label assigned
+        $needle_info->{label} //= $needle_info->{avg_similarity} . '%: ' . $needle_info->{name};
+
         # add the needle info to tags ...
         for my $tag (@$tags) {
             # ... but only to tags the test was actually looking for
@@ -591,6 +595,7 @@ sub viewimg {
     };
 
     # load primary needle match
+    my $primary_match;
     if (my $needle = $module_detail->{needle}) {
         if (my $needleinfo = needle_info($needle, $distribution, $dversion, $module_detail->{json})) {
             my $info = {
@@ -603,6 +608,7 @@ sub viewimg {
                 selected      => 1,
             };
             calc_matches($info, $module_detail->{area});
+            $primary_match = $info;
             $append_needle_info->($needleinfo->{tags} => $info);
         }
     }
@@ -626,7 +632,7 @@ sub viewimg {
     }
 
     # sort needles by average similarity
-    my $has_selection = $module_detail->{needle};
+    my $has_selection = $primary_match;
     for my $tag (keys %needles_by_tag) {
         my @sorted_needles = sort { $b->{avg_similarity} <=> $a->{avg_similarity} || $a->{name} cmp $b->{name} }
           @{$needles_by_tag{$tag}};
@@ -635,11 +641,13 @@ sub viewimg {
         # preselect a rather good needle
         if (!$has_selection && $sorted_needles[0] && $sorted_needles[0]->{avg_similarity} > 70) {
             $has_selection = $sorted_needles[0]->{selected} = 1;
+            $primary_match = $sorted_needles[0];
         }
     }
 
     $self->stash('screenshot',     $module_detail->{screenshot});
     $self->stash('frametime',      $module_detail->{frametime});
+    $self->stash('default_label',  $primary_match ? $primary_match->{label} : 'None');
     $self->stash('needles_by_tag', \%needles_by_tag);
     return $self->render('step/viewimg');
 }
