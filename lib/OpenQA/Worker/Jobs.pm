@@ -148,7 +148,9 @@ sub verify_job {
 }
 
 sub _reset_state {
-    log_info('cleaning up ' . $job->{settings}->{NAME}) if verify_job && exists $job->{settings}->{NAME};
+    local $@;
+    eval { log_info('cleaning up ' . $job->{settings}->{NAME}) if verify_job && exists $job->{settings}->{NAME}; };
+    log_error($@) if $@;
     clean_pool;
     $job              = undef;
     $worker           = undef;
