@@ -1122,11 +1122,6 @@ sub part_of_important_build {
     return grep { $_ eq $build } @{$self->group->important_builds};
 }
 
-# obsolete gru job, replaced by JobGroups::limit_results_and_logs
-sub reduce_result {
-    return;
-}
-
 sub delete_logs {
     my ($self) = @_;
 

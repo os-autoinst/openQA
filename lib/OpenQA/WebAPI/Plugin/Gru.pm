@@ -20,34 +20,42 @@ package OpenQA::WebAPI::Plugin::Gru;
 use strict;
 use warnings;
 use Cpanel::JSON::XS;
+use Minion;
+use Data::Dumper;
 
 use DBIx::Class::Timestamps 'now';
-use base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Pg;
+
+has 'app';
+has dsn => sub { shift->schema->storage->connect_info->[0] };
 
 sub new {
     my $class = shift;
     my $self  = $class->SUPER::new(@_);
     $self->{tasks} = {};
     my $app = shift;
-    $self->{app} = $app;
-    $self->{schema} = $app->db if $app;
+    $self->app($app);
+    $self->{schema} = $self->app->db if $self->app;
     return $self;
 }
 
 sub register {
-
     my ($self, $app, $config) = @_;
+
+    $app->plugin(Minion => {Pg => Mojo::Pg->new->dsn($self->dsn)});
+    $app->plugin($_)
+      for (
+        qw(OpenQA::Task::Asset::Download OpenQA::Task::Asset::Limit),
+        qw(OpenQA::Task::Job::Limit OpenQA::Task::Job::Modules),
+        qw(OpenQA::Task::Needle::Scan),
+        qw(OpenQA::Task::Screenshot::Scan)
+      );
 
     push @{$app->commands->namespaces}, 'OpenQA::WebAPI::Plugin::Gru::Command';
 
     my $gru = OpenQA::WebAPI::Plugin::Gru->new($app);
     $app->helper(gru => sub { $gru });
-}
-
-sub add_task {
-    my ($self, $taskname, $coderef) = @_;
-
-    $self->{tasks}->{$taskname} = $coderef;
 }
 
 sub schema {
@@ -60,64 +68,51 @@ sub enqueue {
     my $args = shift // [];
     my $options = shift // {};
 
-    $self->schema->resultset('GruTasks')->create(
-        {
-            taskname => $task,
-            args     => $args,
-            priority => $options->{priority} // 0,
-            run_at   => $options->{run_at} // now()});
+    $args = [$args] if ref $args eq 'HASH';
+
+    my $delay = $options->{run_at} && $options->{run_at} > now() ? $options->{run_at} - now() : 0;
+
+    $self->app->minion->enqueue($task => $args => {priority => $options->{priority} // 0, delay => $delay});
 }
 
 package OpenQA::WebAPI::Plugin::Gru::Command::gru;
 use Mojo::Base 'Mojolicious::Command';
+use Minion;
+use Mojo::Pg;
+use Data::Dumper;
+use OpenQA::WebAPI::Plugin::Gru;
 
 has usage       => "usage: $0 gru [-o]\n";
 has description => 'Run a gru to process jobs - give -o to exit _o_nce everything is done';
+has minion      => sub { Minion->new(Pg => Mojo::Pg->new->dsn(shift->app->db->storage->connect_info->[0])) };
 
 sub cmd_list {
     my ($self) = @_;
-
-    my $tasks = $self->app->schema->resultset('GruTasks');
-    while (my $task = $tasks->next) {
-        use Data::Dumper;
-        print $task->taskname . " " . Dumper($task->args) . "\n";
-    }
-}
-
-sub run_first {
-    my ($self) = @_;
-
-    my $dtf   = $self->app->schema->storage->datetime_parser;
-    my $where = {run_at => {'<=', $dtf->format_datetime(DBIx::Class::Timestamps::now())}};
-    my $first = $self->app->schema->resultset('GruTasks')
-      ->search($where, {order_by => [{-desc => 'priority'}, 'id'], rows => 1})->first;
-
-    if ($first) {
-        $self->app->log->debug(sprintf("Running Gru task %d(%s)", $first->id, $first->taskname));
-        my $subref = $self->app->gru->{tasks}->{$first->taskname};
-        if ($subref) {
-            eval { &$subref($self->app, $first->args) };
-            if ($@) {
-                print $@ . "\n";
-                return;
-            }
-            $first->delete;
-            return 1;
-        }
+    my $tasks = $self->minion->backend->list_jobs();
+    foreach my $j (@{$tasks->{jobs}}) {
+        print $j->{task} . " " . Dumper($j->{args}) . " result: " . $j->{result} . "\n";
     }
 }
 
 sub cmd_run {
     my $self = shift;
     my $opt = $_[0] || '';
-    while (1) {
-        if (!$self->run_first) {
-            if ($opt eq '-o') {
-                return;
-            }
-            sleep(5);
-        }
+
+    $self->app->plugin('OpenQA::WebAPI::Plugin::Gru');
+
+    my $worker = $self->app->minion->repair->worker->register;
+
+    if ($opt eq '-o') {
+        while (my $job = $worker->register->dequeue(0)) { $job->finish unless defined(my $err = $job->_run) }
+        $worker->unregister;
+        return;
     }
+
+    while (int rand 2) {
+        next unless my $job = $worker->register->dequeue(5);
+        $job->finish unless defined(my $err = $job->_run);
+    }
+    $worker->unregister;
 }
 
 sub run {
@@ -126,7 +121,7 @@ sub run {
     my $cmd  = shift;
 
     if (!$cmd) {
-        print "gru: [list|run|\n";
+        print "gru: [list|run]\n";
         return;
     }
     if ($cmd eq 'list') {
