@@ -59,6 +59,17 @@ sub disable_bootstrap_fade_animation {
     );
 }
 
+# returns the contents of the candidates combo box as hash (key: tag, value: array of needle names)
+sub find_candidate_needles {
+    my @tag_elements   = $driver->find_elements('#needlediff_selector optgroup');
+    my %needles_by_tag = map {
+        my @needle_elements = $driver->find_child_elements($_, 'option');
+        my @needles = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @needle_elements;
+        $_->get_attribute('label') => \@needles;
+    } @tag_elements;
+    return \%needles_by_tag;
+}
+
 $driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
@@ -104,14 +115,7 @@ unlike($driver->get_current_url(), qr/#step/, "current url doesn't contain #step
 
 $driver->find_element('[href="#step/bootloader/1"]')->click();
 wait_for_ajax;
-my $elem = $driver->find_element('.step_actions .fa-info-circle');
-like($elem->get_attribute('data-content'), qr/inst-bootmenu/, "show searched needle tags");
-$elem->click();
-wait_for_ajax;
-ok($driver->find_element('.step_actions .popover')->is_displayed(), "needle info is a clickable popover");
-# hide again
-$elem->click();
-wait_for_ajax;
+is_deeply(find_candidate_needles, {'inst-bootmenu' => []}, 'correct tags displayed');
 
 my @report_links = $driver->find_elements('#preview_container_in .report', 'css');
 my @title = map { $_->get_attribute('title') } @report_links;
@@ -220,7 +224,8 @@ my $ntext = <<EOM;
     }
   ],
   "tags": [
-    "sudo-password"
+      "sudo-passwordprompt",
+      "some-other-tag"
   ]
 }
 EOM
@@ -233,35 +238,65 @@ print $fh $ntext;
 close($fh);
 
 sub test_with_error {
-    my ($needle, $error, $expect) = @_;
+    my ($needle_to_modify, $error, $tags, $expect, $test_name) = @_;
 
-    if (defined $needle) {
+    # modify the fixture test data: parse JSON -> modify -> write JSON
+    if (defined $needle_to_modify || defined $tags) {
         local $/;
         my $fn
           = 't/data/openqa/testresults/00099/00099946-opensuse-13.1-DVD-i586-Build0091-textmode/details-yast2_lan.json';
         open(my $fh, '<', $fn);
         my $details = decode_json(<$fh>);
         close($fh);
-        $details->[0]->{needles}->[$needle]->{error} = $error;
+        my $detail = $details->[0];
+        if (defined $needle_to_modify && defined $error) {
+            $detail->{needles}->[$needle_to_modify]->{error} = $error;
+        }
+        if (defined $tags) {
+            $detail->{tags} = $tags;
+        }
         open($fh, '>', $fn);
         print $fh encode_json($details);
         close($fh);
     }
 
-    $driver->get("/tests/99946#step/yast2_lan/1");
+    # check whether candidates are displayed as expected
+    $driver->get('/tests/99946#step/yast2_lan/1');
     wait_for_ajax;
-
-    my $text = $driver->find_element_by_id('needlediff_selector')->get_text();
-    $text =~ s,\s+, ,g;
-    is($text, $expect, "combo box matches");
+    is($driver->find_element('#needlediff_selector > option')->get_text(), 'None', 'none always present');
+    is_deeply(find_candidate_needles, $expect, $test_name // 'candidates displayed as expected');
 }
 
-# default fixture
-test_with_error(undef, undef, " -None- 63%: sudo-passwordprompt-lxde 52%: sudo-passwordprompt ");
-test_with_error(1,     0.1,   " -None- 68%: sudo-passwordprompt-lxde 52%: sudo-passwordprompt ");
-test_with_error(1,     0,     " -None- 100%: sudo-passwordprompt-lxde 52%: sudo-passwordprompt ");
-# when the error is the same, the one without suffix is first
-test_with_error(0, 0, " -None- 100%: sudo-passwordprompt 100%: sudo-passwordprompt-lxde ");
+subtest 'test candidate list' => sub {
+    test_with_error(undef, undef, [], {}, 'no tags at all');
+
+    my %expected_candidates = (
+        'this-tag-does-not-exist' => [],
+        'sudo-passwordprompt'     => ['63%: sudo-passwordprompt-lxde', '52%: sudo-passwordprompt'],
+    );
+    my @tags = sort keys %expected_candidates;
+    test_with_error(undef, undef, \@tags, \%expected_candidates, '63%, 52%');
+    # notes:
+    # - some-other-tag is not in the list because the fixture test isn't looking for it
+    # - this-tag-does-not-exist is in the list because the test is looking it, even though
+    #   no needle with the tag actually exists
+
+    $expected_candidates{'sudo-passwordprompt'} = ['68%: sudo-passwordprompt-lxde', '52%: sudo-passwordprompt'];
+    test_with_error(1, 0.1, \@tags, \%expected_candidates, '68%, 52%');
+    $expected_candidates{'sudo-passwordprompt'} = ['100%: sudo-passwordprompt-lxde', '52%: sudo-passwordprompt'];
+    test_with_error(1, 0, \@tags, \%expected_candidates, '100%, 52%');
+
+    $expected_candidates{'sudo-passwordprompt'} = ['100%: sudo-passwordprompt', '100%: sudo-passwordprompt-lxde'];
+    test_with_error(0, 0, \@tags, \%expected_candidates, '100%, 100%');
+
+    # modify fixture tests to look for some-other-tag as well, needles should now appear twice
+    %expected_candidates = (
+        'sudo-passwordprompt' => $expected_candidates{'sudo-passwordprompt'},
+        'some-other-tag'      => $expected_candidates{'sudo-passwordprompt'},
+    );
+    test_with_error(0, 0, ['sudo-passwordprompt', 'some-other-tag'],
+        \%expected_candidates, 'needles appear twice, each time under different tag');
+};
 
 # set job 99963 to done via API to tests whether worker is still displayed then
 my $t_api = Test::Mojo->new('OpenQA::WebAPI');
