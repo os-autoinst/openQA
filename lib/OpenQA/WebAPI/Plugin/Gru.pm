@@ -27,8 +27,7 @@ use DBIx::Class::Timestamps 'now';
 use Mojo::Base 'Mojolicious::Plugin';
 use Mojo::Pg;
 
-has 'app';
-has dsn => sub { shift->schema->storage->connect_info->[0] };
+has [qw(app dsn)];
 
 sub new {
     my $class = shift;
@@ -42,7 +41,10 @@ sub new {
 
 sub register {
     my ($self, $app, $config) = @_;
-
+    $self->dsn(
+        ref $app->schema->storage->connect_info->[0] eq 'HASH' ?
+          $app->schema->dsn
+        : $app->schema->storage->connect_info->[0]);
     $app->plugin(Minion => {Pg => Mojo::Pg->new->dsn($self->dsn)});
     $app->plugin($_)
       for (
@@ -84,7 +86,13 @@ use OpenQA::WebAPI::Plugin::Gru;
 
 has usage       => "usage: $0 gru [-o]\n";
 has description => 'Run a gru to process jobs - give -o to exit _o_nce everything is done';
-has minion      => sub { Minion->new(Pg => Mojo::Pg->new->dsn(shift->app->db->storage->connect_info->[0])) };
+has minion      => sub {
+    Minion->new(
+        Pg => Mojo::Pg->new->dsn(
+            ref $_[0]->app->schema->storage->connect_info->[0] eq 'HASH' ?
+              $_[0]->app->schema->dsn
+            : $_[0]->app->schema->storage->connect_info->[0]));
+};
 
 sub cmd_list {
     my ($self) = @_;
