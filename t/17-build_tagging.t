@@ -221,8 +221,7 @@ And job OR job_group OR asset linked to build which is marked as important by co
 Then "important builds" are skipped from cleanup
 =cut
 subtest 'no cleanup of important builds' => sub {
-    my $c = OpenQA::WebAPI::Plugin::Gru::Command::gru->new();
-    $c->app($t->app);
+    my $c = OpenQA::WebAPI::Plugin::Gru::Command::gru->new(app => $t->app);
 
     # build 0048 has already been tagged as important before
     my $job = $jobs->search({id => 99938, state => 'done', group_id => 1001, BUILD => '0048'})->first;
@@ -240,11 +239,13 @@ subtest 'no cleanup of important builds' => sub {
     close $fh;
 
     $t->app->gru->enqueue('limit_results_and_logs');
-    $c->run('run', '-o');
+    $c->run(qw(run -o));
     ok(-e $filename, 'file still exists');
 };
 
 subtest 'version tagging' => sub {
+    $t = Test::Mojo->new('OpenQA::WebAPI');
+
     # alter jobs to have 2 jobs with the same build but different versions in opensuse group
     $jobs->find(99940)->update({VERSION => '1.2-2', BUILD => '5000'});
     $jobs->find(99938)->update({VERSION => '1.2-1', BUILD => '5000'});

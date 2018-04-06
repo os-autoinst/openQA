@@ -27,7 +27,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Schema;
 use OpenQA::Test::Database;
-
+use OpenQA::Task::Needle::Scan;
 use File::Find;
 use Test::More;
 use Test::Mojo;
@@ -118,7 +118,7 @@ is($rs->count({filename => "test-nonexistent.json"}), 1);
 # check that DB indicates that file is present
 is($rs->find({filename => "test-nonexistent.json"})->file_present, 1);
 # update info about whether needles are present
-OpenQA::Schema::Result::Needles::scan_needles($t->app);
+OpenQA::Task::Needle::Scan::_needles($t->app);
 # this needle actually doesn't exist, so it should have file_present set to 0
 is($rs->find({filename => "test-nonexistent.json"})->file_present, 0);
 # this needle exists, so it should have file_present set to 1

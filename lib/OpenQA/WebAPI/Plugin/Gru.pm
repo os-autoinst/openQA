@@ -22,6 +22,7 @@ use warnings;
 use Cpanel::JSON::XS;
 use Minion;
 use Data::Dumper;
+use Scalar::Util ();
 
 use DBIx::Class::Timestamps 'now';
 use Mojo::Base 'Mojolicious::Plugin';
@@ -32,20 +33,18 @@ has [qw(app dsn)];
 sub new {
     my $class = shift;
     my $self  = $class->SUPER::new(@_);
-    $self->{tasks} = {};
+    #$self->{tasks} = {};
     my $app = shift;
     $self->app($app);
-    $self->{schema} = $self->app->db if $self->app;
+    Scalar::Util::weaken $self->{app};
+    #  $self->{schema} = $self->app->db if $self->app;
     return $self;
 }
 
-sub register {
-    my ($self, $app, $config) = @_;
-    $self->dsn(
-        ref $app->schema->storage->connect_info->[0] eq 'HASH' ?
-          $app->schema->dsn
-        : $app->schema->storage->connect_info->[0]);
-    $app->plugin(Minion => {Pg => Mojo::Pg->new->dsn($self->dsn)});
+sub register_tasks {
+    my $self = shift;
+    my $app  = $self->app;
+
     $app->plugin($_)
       for (
         qw(OpenQA::Task::Asset::Download OpenQA::Task::Asset::Limit),
@@ -53,6 +52,20 @@ sub register {
         qw(OpenQA::Task::Needle::Scan),
         qw(OpenQA::Task::Screenshot::Scan)
       );
+}
+
+sub register {
+    my ($self, $app, $config) = @_;
+    $self->app($app) unless $self->app;
+    $self->{schema} = $self->app->db if $self->app->db;
+
+    $self->dsn(
+        ref $self->schema->storage->connect_info->[0] eq 'HASH' ?
+          $self->schema->dsn
+        : $self->schema->storage->connect_info->[0]);
+    $app->plugin(Minion => {Pg => Mojo::Pg->new->dsn($self->dsn)});
+
+    $self->register_tasks;
 
     push @{$app->commands->namespaces}, 'OpenQA::WebAPI::Plugin::Gru::Command';
 
@@ -79,24 +92,17 @@ sub enqueue {
 
 package OpenQA::WebAPI::Plugin::Gru::Command::gru;
 use Mojo::Base 'Mojolicious::Command';
-use Minion;
+#use Minion;
 use Mojo::Pg;
 use Data::Dumper;
-use OpenQA::WebAPI::Plugin::Gru;
+#use OpenQA::WebAPI::Plugin::Gru;
 
 has usage       => "usage: $0 gru [-o]\n";
 has description => 'Run a gru to process jobs - give -o to exit _o_nce everything is done';
-has minion      => sub {
-    Minion->new(
-        Pg => Mojo::Pg->new->dsn(
-            ref $_[0]->app->schema->storage->connect_info->[0] eq 'HASH' ?
-              $_[0]->app->schema->dsn
-            : $_[0]->app->schema->storage->connect_info->[0]));
-};
 
 sub cmd_list {
     my ($self) = @_;
-    my $tasks = $self->minion->backend->list_jobs();
+    my $tasks = $self->app->minion->backend->list_jobs();
     foreach my $j (@{$tasks->{jobs}}) {
         print $j->{task} . " " . Dumper($j->{args}) . " result: " . $j->{result} . "\n";
     }
@@ -106,19 +112,17 @@ sub cmd_run {
     my $self = shift;
     my $opt = $_[0] || '';
 
-    $self->app->plugin('OpenQA::WebAPI::Plugin::Gru');
-
     my $worker = $self->app->minion->repair->worker->register;
 
     if ($opt eq '-o') {
         while (my $job = $worker->register->dequeue(0)) { $job->finish unless defined(my $err = $job->_run) }
-        $worker->unregister;
-        return;
+        return $worker->unregister;
     }
 
-    while (int rand 2) {
+    while (1) {
         next unless my $job = $worker->register->dequeue(5);
         $job->finish unless defined(my $err = $job->_run);
+        sleep 2;
     }
     $worker->unregister;
 }
