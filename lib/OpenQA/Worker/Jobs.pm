@@ -395,7 +395,7 @@ sub _stop_job_2 {
             }
         }
 
-        if ($aborted eq 'done') {
+        if ($aborted eq 'done' || $aborted eq 'cancel') {
             # job succeeded, upload assets created by the job
 
           ASSET_UPLOAD: for my $dir (qw(private public)) {
@@ -716,13 +716,6 @@ sub upload_status {
         $status->{serial_terminal} = log_snippet("$pooldir/virtio_console.log", \$serial_terminal_offset);
         my $screen = read_last_screen;
         $status->{screen} = $screen if $screen;
-    }
-
-    # if there is nothing to say, don't say it (said my mother)
-    unless (%$status) {
-        $update_status_running = 0;
-        return $callback->() if $callback;
-        return;
     }
 
     if ($os_status->{running}) {
