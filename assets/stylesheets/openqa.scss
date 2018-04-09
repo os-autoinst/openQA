@@ -1,6 +1,16 @@
-@import "../sass/theme_variables.scss";
-@import "../cache/raw.githubusercontent.com/twbs/bootstrap/v4.0.0/scss/bootstrap.scss";
+$icon-font-path: '/fonts/';
 
+// use theme variables from Litera 4.0.0 Bootswatch theme
+@import "../sass/theme_variables.scss";
+
+// customize some theme variables
+$font-size-base:     0.85rem;
+$h2-font-size:       1.65rem;
+$h3-font-size:       1.25rem;
+$h4-font-size:       1.15rem;
+$progress-font-size: 0.78rem;
+
+// define openQA specific colors
 $color-softfailed: #EEB560;
 $color-ok: #CDFFB9;
 $color-warning: #ff9;
@@ -28,30 +38,235 @@ $color-state-cancelled: $color-module-none;
 $color-state-running: #8BDFFF;
 $color-step-actions: #666;
 
-.build-dashboard {
+// include Bootstrap 4
+@import "../cache/raw.githubusercontent.com/twbs/bootstrap/v4.0.0/scss/bootstrap.scss";
 
-        .progress-bar-passed {
-                background-color: $color-module-passed;
-                color: $color-result;
-        }
-        .progress-bar-softfailed {
-                background-color: $color-softfailed;
-                color: $color-result;
-        }
-        .progress-bar-unfinished {
-                background-color: $color-state-running;
-                color: $color-result;
-        }
-        .progress-bar-failed {
-                background-color: $color-failed;
-                color: white;
-        }
-        .progress-bar-skipped {
-                background-color: lighten($color-state-cancelled, 12.5%);
-                color: white;
-        }
+// include and use Roboto font
+$web-font-path: "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" !default;
+@import url($web-font-path);
+body {
+    font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    line-height: 1.428571429;
+    -webkit-font-smoothing: antialiased;
 }
 
+// overall appearance (background color, font color, paragraphs, footer, etc.)
+html {
+    position: relative;
+    min-height: 100%;
+}
+body {
+    color: #666;
+    background-color: #fff;
+    letter-spacing: .1px;
+
+    // always show a scrollbar not to flicker on tabs / long drop downs
+    overflow-y: scroll;
+}
+
+// footer
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    // set the fixed height of the footer here
+    height: 30px;
+    background-color: #f5f5f5;
+}
+body {
+    // add some space between last elements and footer
+    margin-bottom: 45px;
+}
+
+// paragraphs, links
+p {
+    margin: 0 0 1em;
+}
+a {
+    @include transition(all 0.2s);
+}
+
+// headings
+h1, .h1, h2, .h2 {
+    margin-top: 18px;
+    margin-bottom: 9px;
+}
+
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+    font-family: inherit;
+    font-weight: 400;
+    line-height: 1.1;
+    color: #444;
+}
+
+// cards (former panels)
+.card {
+    margin-bottom: 15px;
+}
+
+// tabs
+.tab-content {
+    padding-top: 15px;
+}
+
+// big welcome box ("jumbtron")
+.jumbotron {
+    padding-top: 30px;
+    padding-bottom: 30px;
+    margin-bottom: 30px;
+    color: inherit;
+    background-color: #f9f9f9;
+}
+.jumbotron p {
+    margin-bottom: 15px;
+    font-size: 20px;
+    font-weight: 200;
+}
+
+// flash messages
+#flash-messages {
+    box-sizing: border-box;
+    width: 100%;
+}
+
+// navbar and dropdown menues
+.navbar {
+    border: none;
+    -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    padding-top: 0px;
+    padding-bottom: 0px;
+    margin-bottom: 30px;
+
+    &-brand {
+        height: 64px;
+        margin: 0px;
+        padding-top: 0px;
+        padding-bottom: 0px;
+
+        & > img {
+            height: 100%;
+            padding: 8px;
+            width: auto;
+        }
+    }
+}
+.dropdown-menu {
+    font-size: inherit;
+}
+
+// tables
+thead {
+    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.0) 0%, rgba(0, 0, 0, 0.05)) !important;
+}
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+.table-hover {
+    > tbody > tr,
+    > tbody > tr > th,
+    > tbody > tr > td {
+        @include transition(all 0.2s);
+    }
+}
+.dataTables_wrapper.container-fluid {
+    padding-left: 0px;
+    padding-right: 0px;
+}
+
+// form elements
+.btn, .form-control {
+    font-size: 0.94rem;
+    padding: 0.6rem;
+    line-height: 0.7rem;
+}
+.form-control {
+    padding: 0.4rem;
+    line-height: normal;
+}
+.form-group .control-label {
+    text-align: right;
+    font-weight: bold;
+    margin-top: auto;
+    margin-bottom: auto;
+}
+.btn {
+    padding: 0.6rem;
+    line-height: 0.7rem;
+}
+select.form-control {
+    padding: 0rem;
+}
+.form-inline {
+    // don't use flexbox here, this would break too much of our forms
+    display: block;
+}
+
+// wells (used for comments)
+.well-lg {
+    padding: 24px;
+    border-radius: 3px;
+}
+.well {
+    min-height: 20px;
+    padding: 19px;
+    margin-bottom: 20px;
+    background-color: #fdfdfd;
+    border: 1px solid #e3e3e3;
+    border-radius: 1px;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+
+// round images (used for comments) and badges inside summary
+.img-circle {
+    border-radius: 50%;
+}
+
+// adjust arrows for submenus
+.dropdown-toggle::after {
+    // maybe later
+}
+
+// progress bars for dashboard
+div.progress {
+    // add margin to progress bars for correct vertical alignment
+    margin-top: 3px;
+    margin-bottom: 3px;
+}
+td div.progress {
+    // however, progress bars inside table cells, eg. under /tests should not have margin
+    margin-top: 0;
+    margin-bottom: 0;
+}
+.build-dashboard {
+    .progress-bar {
+        // don' use flex box because it leads to undesired overflow behavior
+        display: inline;
+    }
+    .progress-bar-passed {
+        background-color: $color-module-passed;
+        color: $color-result;
+    }
+    .progress-bar-softfailed {
+        background-color: $color-softfailed;
+        color: $color-result;
+    }
+    .progress-bar-unfinished {
+        background-color: $color-state-running;
+        color: $color-result;
+    }
+    .progress-bar-failed {
+        background-color: $color-failed;
+        color: white;
+    }
+    .progress-bar-skipped {
+        background-color: lighten($color-state-cancelled, 12.5%);
+        color: white;
+    }
+}
+
+// expandible items on dashboard (mainly the BuildXXXX headings)
 .build_group_children {
     & > div {
         margin-left: 17px;
@@ -62,23 +277,20 @@ $color-step-actions: #666;
         margin-bottom: 10px;
     }
 }
-
 .build-row .h4 {
     text-overflow: ellipsis;
     overflow: hidden;
-}
 
+}
 .col-lg-4.text-nowrap {
     display: flex;
     align-items: baseline;
 }
-
 .col-lg-4.text-nowrap span {
     font-size: $h4-font-size;
     margin-left: 2px;
     margin-right: 2px;
 }
-
 .build_group_children, .build-row {
     .h4:before {
         display: inline-box;
@@ -86,36 +298,31 @@ $color-step-actions: #666;
         content: '\25CF';
     }
 }
-
 .children-collapsed .h4:before {
     content: "\25B8";
     position: relative;
     top: -2px;
 }
-
 .children-expanded .h4:before {
     content: "\25BE";
     position: relative;
     top: -2px;
 }
-
 h2 .fa {
     color: $color-labels;
     margin-right: 5px;
     font-size: 90%;
 }
 
-#info_box {
-        &.panel-warning .panel-heading {
-                background-color: $color-softfailed;
-                color: $color-result;
-        }
+// info box in the test results
+#info_box .panel-warning .panel-heading {
+    background-color: $color-softfailed;
+    color: $color-result;
 }
 
 .highlight_parent {
     background-color: $color-highlight-parent !important;
 }
-
 .highlight_child {
     background-color: $color-highlight-child !important;
 }
@@ -345,8 +552,9 @@ ul.modcategory {
 
 #audit_log_search_popover {
     float: right;
-    margin-top: -15px;
-    margin-right: -5px;
+    margin-top: 5px;
+    margin-right: 20px;
+    margin-left: -25px;
 
     .popover {
         min-width: 30em;
@@ -860,8 +1068,12 @@ h2 + * {
     }
 }
 
+// center comments pagination
 .comments-pagination {
-    text-align: center;
+    display: block;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* parent group overview */
@@ -931,4 +1143,15 @@ table#assets {
   td {
     overflow:hidden; white-space: nowrap; text-overflow: ellipsis;
   }
+}
+
+// test results overview
+#summary .badge {
+    font-size: 120%;
+    font-weight: bold;
+    border-radius: 50rem;
+    height: 2.4rem;
+    width: 2.4rem;
+    padding-left: 0;
+    padding-right: 0px;
 }

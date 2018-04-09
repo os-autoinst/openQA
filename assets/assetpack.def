@@ -100,7 +100,6 @@
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.0.0/scss/utilities/_text.scss
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.0.0/scss/utilities/_visibility.scss
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.0.0/scss/_print.scss
-< sass/theme.scss
 < https://raw.githubusercontent.com/sorich87/bootstrap-tour/v0.11.0/build/css/bootstrap-tour.css
 
 ! codemirror.css

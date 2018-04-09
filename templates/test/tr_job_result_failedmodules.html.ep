@@ -9,10 +9,16 @@
          % last;
       % }
     % }
-    % my $async_url = url_for('test_module_fails', 'testid' => $jobid, 'moduleid' => $failedmodule);
 
-    <span title="<i class='fa fa-sync fa-spin fa-2x fa-fw'></i><span class='sr-only'>Loading...</span>" data-toggle="tooltip" class="failedmodule" data-async="<%= $async_url %>">
+    % my $async_url = url_for('test_module_fails', 'testid' => $jobid, 'moduleid' => $failedmodule);
+    <span
+        class="failedmodule"
+        data-toggle="tooltip"
+        data-placement="left"
+        data-async="<%= $async_url %>"
+        title="<i class='fa fa-sync fa-spin fa-2x fa-fw'></i><span class='sr-only'>Loading...</span>"
+    >
         %= link_to text_with_title($failedmodule) => url_for('test', 'testid' => $jobid) . "#step/$failedmodule/1"
-	% $limit -= length($failedmodule) > $limit ? $limit : length($failedmodule) + 2;
+        % $limit -= length($failedmodule) > $limit ? $limit : length($failedmodule) + 2;
     </span>
 % }

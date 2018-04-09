@@ -1,22 +1,22 @@
-        % my $panelclass = 'panel-info';
+        % my $panelclass = '';
         % if ($job->state eq 'done') {
             % if ($job->result eq 'passed') {
-                % $panelclass = 'panel-success';
+                % $panelclass = 'border-success';
             % } elsif ($job->result eq 'softfailed') {
-                % $panelclass = 'panel-warning';
+                % $panelclass = 'border-warning';
             % } else {
-                % $panelclass = 'panel-danger';
+                % $panelclass = 'border-danger';
             % }
         % }
-        <div class="panel <%= $panelclass %>" id="info_box">
-            <div class="panel-heading">
+        <div class="card <%= $panelclass %>" id="info_box">
+            <div class="card-header">
                 Results for
                 % if (current_route 'latest') {
                     <%= link_to $job->id => url_for ('test', testid => $job->id) %>:
                 % }
                 %= $job->name
             </div>
-            <div class="panel-body">
+            <div class="card-body">
                 <div>
                     %if ($job->state eq 'done') {
                         Result: <b><%= $job->result %></b>

@@ -38,7 +38,7 @@ table pre {
     %= $walk->($walk, $_, $depth) for @{$route->children};
     % $depth--;
     % end
-    <table class="table">
+    <table class="table table-striped">
         <thead>
             <tr><th>Pattern</th><th>Methods</th><th>Name</th><th>Description</th></tr>
         </thead>

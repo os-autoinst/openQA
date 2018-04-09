@@ -5,9 +5,9 @@
 
     %= include 'layouts/info'
 
-    <div class="panel panel-default">
-        <div class="panel-heading">New API Key</div>
-        <div class="panel-body">
+    <div class="card">
+        <div class="card-header">New API Key</div>
+        <div class="card-body">
             %= form_for api_keys => (method => 'post') => begin
                 <div class="input-group">
                 <span class="input-group-addon">

@@ -18,8 +18,8 @@
 
 <div>
     <h2>Test result overview</h2>
-    <div id="summary" class="panel <%= ($aggregated->{failed} + $aggregated->{incomplete}) ? 'panel-danger' : 'panel-success' %>">
-        <div class="panel-heading">
+    <div id="summary" class="card <%= ($aggregated->{failed} + $aggregated->{incomplete}) ? 'card-danger' : 'card-success' %>">
+        <div class="card-header">
             Overall Summary of
             % if (@$groups) {
                 <b><%= b join(', ', map { link_to $_->name => url_for('group_overview', groupid => $_->id) } @$groups) %></b>
@@ -34,39 +34,39 @@
                 build <%= $build %>
             % }
         </div>
-        <div class="panel-body">
-            Passed: <span class="badge"><%= $aggregated->{passed} %></span>
+        <div class="card-body">
+            Passed: <span class="badge badge-success"><%= $aggregated->{passed} %></span>
 
             % if ($aggregated->{incomplete}) {
                 Incomplete:
-                <span class="badge"><%= $aggregated->{incomplete} %></span>
+                <span class="badge badge-secondary"><%= $aggregated->{incomplete} %></span>
             % }
             % if ($aggregated->{softfailed}) {
                 Soft-Failed:
-                <span class="badge"><%= $aggregated->{softfailed} %></span>
+                <span class="badge badge-warning"><%= $aggregated->{softfailed} %></span>
             % }
-            Failed: <span class="badge"><%= $aggregated->{failed} %></span>
+            Failed: <span class="badge badge-danger"><%= $aggregated->{failed} %></span>
 
             % if ($aggregated->{scheduled}) {
                 Scheduled:
-                <span class="badge"><%= $aggregated->{scheduled} %></span>
+                <span class="badge badge-info"><%= $aggregated->{scheduled} %></span>
             % }
             % if ($aggregated->{running}) {
                 Running:
-                <span class="badge"><%= $aggregated->{running} %></span>
+                <span class="badge badge-primary"><%= $aggregated->{running} %></span>
             % }
             % if ($aggregated->{none}) {
                 None:
-                <span class="badge"><%= $aggregated->{none} %></span>
+                <span class="badge badge-light"><%= $aggregated->{none} %></span>
             % }
             % if ($aggregated->{unknown}) {
                 Unknown:
-                <span class="badge"><%= $aggregated->{unknown} %></span>
+                <span class="badge badge-light"><%= $aggregated->{unknown} %></span>
             % }
         </div>
     </div>
-    <div class="panel panel-default" id="filter-panel">
-        <div class="panel-heading"><strong>Filter</strong>
+    <div class="card" id="filter-panel">
+        <div class="card-header"><strong>Filter</strong>
             <%= help_popover('Help for the <em>test overview</em>' => '
                     <p>This page shows an overview of job results in a matrix
                     view. Only the latest job for each scenario is shown. The
@@ -85,7 +85,7 @@
                 %>
             <span>no filter present, click to toggle filter form</span>
         </div>
-        <div class="panel-body">
+        <div class="card-body">
             <form action="#" type="get" id="filter-form">
                 <div class="form-group" id="filter-results">
                     <strong>Result</strong>
@@ -105,7 +105,10 @@
                 </div>
                 <div class="form-group">
                     <strong>Failed modules</strong>
-                    <input name="failed_modules" type="text" id="filter-failed_modules" placeholder="failed modules, comma separated, e.g. mod1,mod2">
+                    <input name="failed_modules" type="text" id="filter-failed_modules"
+                        placeholder="failed modules, comma separated, e.g. mod1,mod2"
+                        class="form-control"
+                        style="display: inline; width: 85%;">
                     <%= help_popover('Help for the <em>Failed Modules</em> filter' => '
                         <p>Shows only the jobs that failed in the specified modules</p>') %>
                 </div>

@@ -452,9 +452,11 @@ function setup_needle_editor(imageurl, default_needle)
 
   $('#review_json').popover({
     trigger: 'focus',
-    content: function() { return $('#needleeditor_textarea').val(); },
-    template: '<div class="popover" role="tooltip"><div class="arrow"></div><h3 class="popover-title"></h3><pre class="popover-content"></pre></div>'
-  } );
+    content: function() {
+        return $('#needleeditor_textarea').val();
+    },
+    template: '<div class="popover" role="tooltip"><div class="arrow"></div><h3 class="popover-header"></h3><pre class="popover-body"></pre></div>'
+  });
 
   $('#modal-overwrite').on('hidden.bs.modal', function() { $('#save').prop('disabled', false); });
   $('#modal-overwrite-confirm').click(function() {

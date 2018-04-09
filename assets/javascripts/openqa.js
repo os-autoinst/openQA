@@ -34,8 +34,9 @@ function setupForAll() {
 function addFlash(status, text) {
     // keep design in line with the static in layouts/info
     var flash = $('#flash-messages');
-    var div = $('<div class="alert fade in"><button class="close" data-dismiss="alert">x</button></div>');
-    div.append($("<span>" + text + "</span>"));
+    var div = $('<div class="alert alert-primary alert-dismissible fade show" role="alert"></div>');
+    div.append($('<span>' + text + '</span>'));
+    div.append($('<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'));
     div.addClass('alert-' + status);
     flash.append(div);
 }

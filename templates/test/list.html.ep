@@ -10,52 +10,51 @@
 
 % if (@$running) {
     <div>
-	<h2><%= @$running %> jobs are running</h2>
-	%= include 'test/running_table'
+        <h2><%= @$running %> jobs are running</h2>
+        %= include 'test/running_table'
     </div>
 % }
 
 % if (@$scheduled) {
     <div>
-	<h2><%= @$scheduled %> scheduled jobs</h2>
-	
-	%= include 'test/scheduled_table'
+        <h2><%= @$scheduled %> scheduled jobs</h2>
+        %= include 'test/scheduled_table'
     </div>
 % }
 
 <div>
-
   <h2>Last <%= $jobs->all %> finished jobs</h2>
-    <form action="#">
-        <div class="col-sm-3" id="relevantbox" style="display: none;">
-            %= check_box relevant => '1', 'checked' => 'checked' => (id => 'relevantfilter')
-            %= label_for 'relevantfilter' => 'Show only relevant jobs'
-            <select style="min-width: 250px;" id="finished-jobs-result-filter" data-placeholder="Filter by result" class="chosen-select" multiple>
-                <option>Passed</option>
-                <option>Softfailed</option>
-                <option>Failed</option>
-                <option>Incomplete</option>
-                <option>Skipped</option>
-                <option>Obsoleted</option>
-                <option value="parallel_failed">Parallel failed</option>
-                <option value="parallel_restarted">Parallel restarted</option>
-                <option value="user_cancelled">User cancelled</option>
-                <option value="user_restarted">User restarted</option>
-            </select>
-        </div>
-    </form>
-
+    <div class="row" style="margin-bottom: 10px;">
+            <div class="col-sm-12 col-md-6">
+                %= check_box relevant => '1', 'checked' => 'checked' => (id => 'relevantfilter')
+                %= label_for 'relevantfilter' => 'Show only relevant jobs'
+            </div>
+            <div class="col-sm-12 col-md-6" style="text-align: right;">
+                Result:
+                <select style="min-width: 250px;" id="finished-jobs-result-filter" data-placeholder="Filter by result" class="chosen-select" multiple>
+                    <option>Passed</option>
+                    <option>Softfailed</option>
+                    <option>Failed</option>
+                    <option>Incomplete</option>
+                    <option>Skipped</option>
+                    <option>Obsoleted</option>
+                    <option value="parallel_failed">Parallel failed</option>
+                    <option value="parallel_restarted">Parallel restarted</option>
+                    <option value="user_cancelled">User cancelled</option>
+                    <option value="user_restarted">User restarted</option>
+                </select>
+            </div>
+    </div>
     <table id="results" class="display table table-striped no-wrap" style="width: 100%">
         <thead>
             <tr>
                 <th class="name">Medium</th>
-		<th>Test</th>
-		<th>Result</th>
+                <th>Test</th>
+                <th>Result</th>
                 <th>Finished</th>
             </tr>
         </thead>
-	<tbody>
-	</tbody>
+        <tbody>
+        </tbody>
     </table>
 </div>
-

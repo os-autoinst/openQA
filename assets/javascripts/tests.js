@@ -120,9 +120,6 @@ function renderTestResult( data, type, row ) {
 function renderTestsList(jobs) {
 
     var table = $('#results').DataTable( {
-        "dom": "<'row'<'col-sm-3'l><'#toolbar'><'col-sm-4'f>>" +
-            "<'row'<'col-sm-12'tr>>" +
-            "<'row'<'col-sm-6'i><'col-sm-6'p>>",
         "lengthMenu": [[10, 25, 50], [10, 25, 50]],
         "ajax": {
             "url": "/tests/list_ajax",
@@ -175,12 +172,6 @@ function renderTestsList(jobs) {
         ]
     } );
 
-    // fix layout for controls on top of the finished table (can't be done directly because some elements come
-    // from the datatable)
-    $('#relevantbox').detach().appendTo('#toolbar');
-    $('#relevantbox').css('display', 'inherit');
-    $('#results_filter').parent().toggleClass('col-sm-4 col-sm-6');
-
     // register event listener to the two range filtering inputs to redraw on input
     $('#relevantfilter').change( function() {
         $('#relevantbox').css('color', 'cyan');
@@ -191,7 +182,6 @@ function renderTestsList(jobs) {
 
     // initialize filter for result (of finished jobs) as chosen
     var finishedJobsResultFilter = $('#finished-jobs-result-filter');
-    $('#finished-jobs-result-filter').detach().appendTo('#results_filter');
     finishedJobsResultFilter.chosen();
     // ensure the table is re-drawn when a filter is added/removed
     finishedJobsResultFilter.change(function(event) {
@@ -275,25 +265,24 @@ function getFailedSteps(failed_module) {
         return;
     }
     failed_module.has_failed_steps = true;
-    var m = $(failed_module);
-    var a = m.children('a');
-    $.getJSON(m.data('async'), function(fails) {
-        var new_href = a.attr('href').replace(/\/1$/, '/'+fails.first_failed_step);
-        a.replaceWith('<a href="'+new_href+'">'+a.text()+'</a>');
-        if (fails.failed_needles.length) {
-            var new_title = '<p>Failed needles:</p><ul>';
-            $.each(fails.failed_needles, function(i, needle) {
-                new_title += '<li>'+needle+'</li>';
-            });
-            new_title += '</ul>'
-            m.attr('data-original-title', new_title);
-            if (m.next('.tooltip:visible').length) {
-                m.tooltip('show');
-            }
+    var failedModuleElement = $(failed_module);
+    var failedModuleLink = failedModuleElement.children('a');
+    $.getJSON(failedModuleElement.data('async'), function(fails) {
+        var new_href = failedModuleLink.attr('href').replace(/\/1$/, '/' + fails.first_failed_step);
+        failedModuleLink.replaceWith('<a href="' + new_href + '">' + failedModuleLink.text() + '</a>');
+        if (!fails.failed_needles.length) {
+            failedModuleElement.attr('data-original-title', "");
+            failedModuleElement.tooltip('hide');
+            return;
         }
-        else {
-            m.attr('data-original-title', "");
-            m.tooltip('hide');
+        var new_title = '<p>Failed needles:</p><ul>';
+        $.each(fails.failed_needles, function(i, needle) {
+            new_title += '<li>' + needle + '</li>';
+        });
+        new_title += '</ul>';
+        failedModuleElement.attr('data-original-title', new_title);
+        if ($('.tooltip:visible').length) {
+            failedModuleElement.tooltip('show');
         }
     }).fail(function() {
         failed_module.has_failed_steps = false;
@@ -301,7 +290,9 @@ function getFailedSteps(failed_module) {
 }
 
 function setupAsyncFailedResult() {
-    $(document).on('show.bs.tooltip', '.failedmodule', function() { getFailedSteps(this) });
+    $(document).on('show.bs.tooltip', '.failedmodule', function() {
+        getFailedSteps(this);
+    });
 }
 
 function setupRunningAndScheduledTables() {

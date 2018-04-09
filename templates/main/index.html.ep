@@ -46,25 +46,33 @@
     <div class="card-body">
         <form action="#" method="get" id="filter-form">
             <div class="form-group">
-                <strong>
-                    Groups
-                    <%= help_popover('Help for <i>group filter</i>' => '
-                        <p>Filters groups by its name. Use of regular expressions is supported.</p>
-                        <p>Note that for the purpose of filtering, the name of a nested group is combined with the name of its parent. This is done in the same way as on the group overview, eg.: <pre>SLE 15 / Functional</pre>
-                        So nested groups can be matched unambiguously.</p>')
+                <p>
+                    <strong>
+                        Groups
+                        <%= help_popover('Help for <i>group filter</i>' => '
+                            <p>Filters groups by its name. Use of regular expressions is supported.</p>
+                            <p>Note that for the purpose of filtering, the name of a nested group is combined with the name of its parent. This is done in the same way as on the group overview, eg.: <pre>SLE 15 / Functional</pre>
+                            So nested groups can be matched unambiguously.</p>')
+                        %>
+                    </strong>
+                    <input type="text" class="form-control" name="group" placeholder="all" id="filter-group">
+                </p>
+                <p>
+                    <input value="1" name="default_expanded" type="checkbox" id="filter-default-expanded">
+                    <label for="filter-default-expanded">Nested groups by default expanded</label>
+                    <%= help_popover('Help for <i>default expanded</i>' => '
+                        <p>This option allows to show nested groups directly when loading the page.</p>')
                     %>
-                </strong>
-                <input type="text" class="form-control" name="group" placeholder="all" id="filter-group">
-                <input value="1" name="default_expanded" type="checkbox" id="filter-default-expanded">
-                <label for="filter-default-expanded">Nested groups by default expanded</label>
-                <%= help_popover('Help for <i>default expanded</i>' => '
-                    <p>This option allows to show nested groups directly when loading the page.</p>')
-                %>
+                </p>
             </div>
             <div class="form-group form-inline">
-                <strong>Limit builds</strong>
-                Maximum number of builds per group <input type="number" class="form-control" name="limit_builds" value="3" id="filter-limit-builds"><br>
-                Maximum age in days <input type="number" class="form-control" name="time_limit_days" value="14" id="filter-time-limit-days">
+                <p>
+                    <strong style="display: block;">Limit builds</strong>
+                    Maximum number of builds per group <input type="number" class="form-control" name="limit_builds" value="3" id="filter-limit-builds">
+                </p>
+                <p>
+                    Maximum age in days <input type="number" class="form-control" name="time_limit_days" value="14" id="filter-time-limit-days">
+                </p>
             </div>
             <div class="form-group">
                 <strong>Misc</strong>

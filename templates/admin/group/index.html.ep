@@ -8,18 +8,20 @@
 <div class="modal fade" id="add_group_modal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
             <form action="#" id="new_group_form" onsubmit="return createGroup(this);"
               data-post-job-group-url="<%= url_for('apiv1_post_job_group') %>"
               data-post-parent-group-url="<%= url_for('apiv1_post_parent_group') %>"
               data-job-group-row-url="<%= url_for('admin_job_group_row') %>"
               data-parent-group-row-url="<%= url_for('admin_parent_group_row') %>"
               class="form-horizontal">
-                <div class="modal-header">
-                    <button type="reset" class="close" id="x_delete" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title"></h4>
-                </div>
                 <div class="modal-body">
-                    <div class="form-group" id="new_group_name_group">
+                    <div class="form-group row" id="new_group_name_group">
                         <label for="new_group_name" class="col-sm-2 control-label">Name</label>
                         <div class="col-sm-10">
                             <input type="text" name="name" id="new_group_name" value="" class="form-control">

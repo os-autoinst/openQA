@@ -36,20 +36,9 @@
         strong {
             display: block;
         }
-        .form-group {
-            label {
-                margin-left: 0px;
-                padding-left: 0px;
-                font-weight: normal;
-            }
-            input {
-                margin-left: 20px;
-                margin-right: 2px;
-                padding-right: 0px;
-            }
-            strong + input {
-                margin-left: 0px;
-            }
+        .form-group label {
+            margin-right: 3px;
+            font-weight: normal;
         }
     }
 }
