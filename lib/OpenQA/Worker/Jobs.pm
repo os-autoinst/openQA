@@ -718,13 +718,6 @@ sub upload_status {
         $status->{screen} = $screen if $screen;
     }
 
-    # if there is nothing to say, don't say it (said my mother)
-    unless (%$status) {
-        $update_status_running = 0;
-        return $callback->() if $callback;
-        return;
-    }
-
     if ($os_status->{running}) {
         $status->{result}->{$os_status->{running}}->{result} = 'running';
     }
