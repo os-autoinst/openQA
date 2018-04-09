@@ -6,20 +6,20 @@ function hideNavbar(fullscreen) {
 
     if (($('#filter-fullscreen').is(':checked')) || (fullscreen == 1)) {
         $("#content").attr('id', 'content_fullscreen');
-        $(".navbar").addClass('hidden');
-        $(".footer").addClass('hidden');
-        $(".jumbotron").addClass('hidden');
+        $(".navbar").hide();
+        $(".footer").hide();
+        $(".jumbotron").hide();
         if (fullscreen == 1) {
-            $("#group_description").addClass('hidden');
+            $("#group_description").hide();
         }
         document.addEventListener('mousemove', function(e){
             mouseY = e.clientY || e.pageY;
             if (mouseY < navbarHeight) {
-                $(".navbar").removeClass('hidden').addClass('show');
+                $(".navbar").show();
             }
             else if (mouseY > navbarHeight) {
                 if (!$("li").hasClass('dropdown open')) {
-                    $(".navbar").removeClass('show').addClass('hidden');
+                    $(".navbar").hide();
                 }
             }
         }, false);

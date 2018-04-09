@@ -9,15 +9,17 @@
 % end
 
 <div class="jumbotron">
-    <div class="container">
-        <div class="col-md-10">
-            %= include_branding 'docbox'
-        </div>
+  <div class='container'>
+    <div class="row">
+      <div class="col-md-10">
+        %= include_branding 'docbox'
+      </div>
 
-        <div class="col-md-2 hidden-sm hidden-xs">
-            %= include_branding 'sponsorbox'
-        </div>
+      <div class="col-md-2 hidden-sm hidden-sm-down">
+        %= include_branding 'sponsorbox'
+      </div>
     </div>
+  </div>
 </div>
 
 <div id="build-results"></div>
@@ -39,9 +41,9 @@
     % }
 % }
 
-<div class="panel panel-default filter-panel-bottom" id="filter-panel">
-    <div class="panel-heading"><strong>Filter</strong> <span>no filter present, click to toggle filter form</span></div>
-    <div class="panel-body">
+<div class="card card-outline-secondary filter-panel-bottom" id="filter-panel">
+    <div class="card-header"><strong>Filter</strong> <span>no filter present, click to toggle filter form</span></div>
+    <div class="card-body">
         <form action="#" method="get" id="filter-form">
             <div class="form-group">
                 <strong>

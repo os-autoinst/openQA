@@ -23,7 +23,7 @@ function setupForAll() {
         e.target.closest('a').focus();
     });
 
-    $('[data-submenu]').submenupicker();
+    //$('[data-submenu]').submenupicker();
 
     $.ajaxSetup({
         headers:

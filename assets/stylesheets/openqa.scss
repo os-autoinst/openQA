@@ -1,4 +1,6 @@
 @import "../sass/theme_variables.scss";
+@import "../cache/raw.githubusercontent.com/twbs/bootstrap/v4.0.0/scss/bootstrap.scss";
+
 $color-softfailed: #EEB560;
 $color-ok: #CDFFB9;
 $color-warning: #ff9;
@@ -72,7 +74,7 @@ $color-step-actions: #666;
 }
 
 .col-lg-4.text-nowrap span {
-    font-size: $font-size-h4;
+    font-size: $h4-font-size;
     margin-left: 2px;
     margin-right: 2px;
 }
@@ -471,7 +473,7 @@ table.overview {
     vertical-align: top;
 }
 
-@media (min-width: $screen-sm) {
+@include media-breakpoint-up(sm) {
     #toolbar {
         &> div {
             padding-right: 0px !important;
