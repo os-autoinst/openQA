@@ -714,11 +714,12 @@ is_deeply($jobD2_h->{parents}->{Chained}, [$jobA2->id], 'jobD2 has jobA2 as chai
 is($jobD2_h->{settings}{TEST}, $jobD->TEST, 'jobD2 test and jobD test are equal');
 
 my $jobA2_h = job_get_deps($jobA2->id);
-is_deeply(
-    $jobA2_h->{children}->{Chained},
-    [$jobB2_h->{id}, $jobC2_h->{id}, $jobD2_h->{id}],
-    'jobA2 has jobB2, jobC2 and jobD2 as children'
-);
+
+# We are sorting here because is_deeply needs the elements to be with the same order
+# and the DB query doesn't enforce any order
+my @clone_deps = sort { $a <=> $b } @{$jobA2_h->{children}->{Chained}};
+my @deps = sort { $a <=> $b } ($jobB2_h->{id}, $jobC2_h->{id}, $jobD2_h->{id});
+is_deeply(\@clone_deps, \@deps, 'jobA2 has jobB2, jobC2 and jobD2 as children');
 
 # situation parent is done, children running -> parent is cloned -> parent is running -> parent is cloned. Check all children has new parent:
 # A <- B
