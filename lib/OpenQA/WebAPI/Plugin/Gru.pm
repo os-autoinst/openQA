@@ -82,23 +82,37 @@ sub enqueue {
     my ($self, $task) = (shift, shift);
     my $args = shift // [];
     my $options = shift // {};
+    my $jobs = shift // [];
 
     $args = [$args] if ref $args eq 'HASH';
 
     my $delay = $options->{run_at} && $options->{run_at} > now() ? $options->{run_at} - now() : 0;
 
-    $self->app->minion->enqueue($task => $args => {priority => $options->{priority} // 0, delay => $delay});
+    my $gru = $self->schema->resultset('GruTasks')->create(
+        {
+            taskname => $task,
+            priority => $options->{priority} // 0,
+            args     => $args,
+            run_at   => $options->{run_at} // now(),
+            jobs     => $jobs,
+        });
+
+    $self->app->minion->enqueue(
+        $task => $args => {priority => $options->{priority} // 0, delay => $delay, notes => {gru_id => $gru->id}});
 }
 
 package OpenQA::WebAPI::Plugin::Gru::Command::gru;
 use Mojo::Base 'Mojolicious::Command';
-#use Minion;
 use Mojo::Pg;
 use Data::Dumper;
-#use OpenQA::WebAPI::Plugin::Gru;
 
 has usage       => "usage: $0 gru [-o]\n";
 has description => 'Run a gru to process jobs - give -o to exit _o_nce everything is done';
+
+sub delete_gru {
+    my ($self, $id) = @_;
+    $self->app->db->resultset('GruTasks')->find($id)->delete();
+}
 
 sub cmd_list {
     my ($self) = @_;
@@ -115,14 +129,18 @@ sub cmd_run {
     my $worker = $self->app->minion->repair->worker->register;
 
     if ($opt eq '-o') {
-        while (my $job = $worker->register->dequeue(0)) { $job->finish unless defined(my $err = $job->_run) }
+        while (my $job = $worker->register->dequeue(0)) {
+            $job->finish unless defined(my $err = $job->_run);
+            $self->delete_gru($job->info->{notes}{gru_id}) if exists $job->info->{notes}{gru_id};
+        }
         return $worker->unregister;
     }
 
     while (1) {
         next unless my $job = $worker->register->dequeue(5);
         $job->finish unless defined(my $err = $job->_run);
-        sleep 2;
+        $self->delete_gru($job->info->{notes}{gru_id}) if exists $job->info->{notes}{gru_id};
+        sleep 5;
     }
     $worker->unregister;
 }

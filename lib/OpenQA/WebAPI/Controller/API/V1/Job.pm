@@ -170,14 +170,7 @@ sub create {
         $json->{id} = $job->id;
 
         # enqueue gru job
-        $self->db->resultset('GruTasks')->create(
-            {
-                taskname => 'limit_assets',
-                priority => 10,
-                args     => [],
-                run_at   => now(),
-            });
-
+        $self->gru->enqueue(limit_assets => [] => {priority => 10});
     }
     catch {
         $status = 400;

@@ -495,14 +495,7 @@ sub schedule_iso {
             my @jobsarray = map +{job_id => $_}, @successful_job_ids;
             for my $url (keys %downloads) {
                 my ($path, $do_extract) = @{$downloads{$url}};
-                $self->db->resultset('GruTasks')->create(
-                    {
-                        taskname => 'download_asset',
-                        priority => 20,
-                        args     => [$url, $path, $do_extract],
-                        run_at   => now(),
-                        jobs     => \@jobsarray,
-                    });
+                $self->gru->enqueue(download_asset => [$url, $path, $do_extract] => {priority => 20} => \@jobsarray);
             }
         }
     };
@@ -517,20 +510,8 @@ sub schedule_iso {
         @successful_job_ids = ();
     };
 
-    $self->db->resultset('GruTasks')->create(
-        {
-            taskname => 'limit_assets',
-            priority => 10,
-            args     => [],
-            run_at   => now(),
-        });
-    $self->db->resultset('GruTasks')->create(
-        {
-            taskname => 'limit_results_and_logs',
-            priority => 5,
-            args     => [],
-            run_at   => now(),
-        });
+    $self->gru->enqueue(limit_assets           => [] => {priority => 10});
+    $self->gru->enqueue(limit_results_and_logs => [] => {priority => 5});
 
     $self->emit_event('openqa_iso_create', $args);
     for my $succjob (@successful_job_ids) {
