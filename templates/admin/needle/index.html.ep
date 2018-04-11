@@ -85,16 +85,17 @@
                 </form>
             </div>
             <div class="col-sm-4">
-                <div>
-                    <label for="select_all">
-                        Affects all visible:
-                    </label>
-                </div>
-
-                <div>
-                    <button class="btn btn-default" id="select_all">Select</button>
-                    <button class="btn btn-default" id="unselect_all">Unselect</button>
-                    <button class="btn btn-danger" id="delete_all">Delete</button>
+                <div style="width: fit-content; margin-left: auto;">
+                    <div>
+                        <label for="select_all">
+                            Affects all visible:
+                        </label>
+                    </div>
+                    <div>
+                        <button class="btn btn-default" id="select_all">Select</button>
+                        <button class="btn btn-default" id="unselect_all">Unselect</button>
+                        <button class="btn btn-danger" id="delete_all">Delete</button>
+                    </div>
                 </div>
             </div>
         </div>

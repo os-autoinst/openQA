@@ -1305,3 +1305,12 @@ table#assets {
     padding-left: 0;
     padding-right: 0px;
 }
+
+// status info (used on worker details)
+.status-info div span {
+    min-width: 20%;
+    display: inline-block;
+    text-align: right;
+    padding-right: 1rem;
+    font-weight: 500;
+}

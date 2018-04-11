@@ -259,9 +259,9 @@ function initLivelogAndTerminal() {
     $.each(logElements, function(index, value) {
             liveViewElements.push(value);
             value.panel.bodyVisible = false;
-            value.panel.find('.panel-heading').on('click', function() {
+            value.panel.find('.card-header').on('click', function() {
                     // toggle visiblity
-                    var body = value.panel.find('.panel-body');
+                    var body = value.panel.find('.card-body');
                     body.toggle(200);
                     value.panel.bodyVisible = !value.panel.bodyVisible;
 
