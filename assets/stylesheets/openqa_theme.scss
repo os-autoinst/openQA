@@ -1,3 +1,11 @@
+$grid-breakpoints: (
+    xs: 0,
+    sm: 500px,
+    md: 600px,
+    lg: 700px,
+    xl: 1000px
+);
+
 $icon-font-path:              '/fonts/';
 $default-font-color:          #666666;
 $default-bg-color:            #ffffff;
