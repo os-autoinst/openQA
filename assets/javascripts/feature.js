@@ -16,14 +16,14 @@ function newFeature(featureVersion) {
         {
           element: "#all_tests",
           title: "All tests area",
-          content: "In this area all tests are provided and sorted by the current state. You can see which jobs are running, scheduled or finished",
+          content: "In this area all tests are provided and grouped by the current state. You can see which jobs are running, scheduled or finished.",
           placement: "bottom",
           backdrop: false,
         },
         {
           element: "#job_groups",
           title: "Job group menu",
-          content: "Access the job group overview pages from here. Besides test results, a description and commenting area is provided",
+          content: "Access the job group overview pages from here. Besides test results, a description and commenting area are provided.",
           placement: "bottom",
           backdrop: false,
         }
