@@ -1,0 +1,139 @@
+// include and use Roboto font
+$web-font-path: "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" !default;
+@import url($web-font-path);
+body {
+    font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    line-height: 1.428571429;
+    -webkit-font-smoothing: antialiased;
+}
+
+// overall appearance (background color, font color, paragraphs, footer, etc.)
+html {
+    position: relative;
+    min-height: 100%;
+}
+body {
+    color: $default-font-color;
+    background-color: $default-bg-color;
+    letter-spacing: .1px;
+
+    // always show a scrollbar not to flicker on tabs / long drop downs
+    overflow-y: scroll;
+}
+
+// footer
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    // set the fixed height of the footer here
+    height: 30px;
+    background-color: #f5f5f5;
+}
+#footer-links {
+    &.left {
+        float: left;
+    }
+
+    &.right {
+        float: right;
+    }
+
+    a {
+        display: inline;
+        margin-left: 15px;
+        margin-right: 15px;
+    }
+}
+body {
+    // add some space between last elements and footer
+    margin-bottom: 45px;
+}
+
+// paragraphs, links, misc
+p {
+    margin: 0 0 1em;
+}
+a {
+    @include transition(all 0.2s);
+}
+.links {
+    text-align: left;
+    padding-top: 0;
+}
+
+// headings
+h1, .h1, h2, .h2 {
+    margin-top: 18px;
+    margin-bottom: 9px;
+}
+
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+    font-family: inherit;
+    font-weight: 400;
+    line-height: 1.1;
+    color: #444;
+}
+
+// cards (former panels)
+.card {
+    margin-bottom: 15px;
+}
+
+// big welcome box ("jumbtron")
+.jumbotron {
+    padding-top: 30px;
+    padding-bottom: 30px;
+    margin-bottom: 30px;
+    color: inherit;
+    background-color: #f9f9f9;
+}
+.jumbotron p {
+    margin-bottom: 15px;
+    font-size: 20px;
+    font-weight: 200;
+}
+
+// flash messages
+#flash-messages {
+    box-sizing: border-box;
+    width: 100%;
+}
+
+// tabs
+.tab-content {
+    padding-top: 15px;
+}
+.nav-tabs .nav-link {
+    border: none;
+    color: $default-font-color;
+
+    &:hover, &:focus, &.active {
+        border: none;
+        -webkit-box-shadow: inset 0 -2px 0 #446E9B;
+        box-shadow: inset 0 -2px 0 #446E9B;
+        color: #446E9B;
+    }
+}
+
+// popover
+.help_popover  {
+    margin: 0px 5px;
+    &:focus, &:hover {
+        outline: none;
+        text-decoration: none;
+    }
+}
+.popover code {
+    word-break: break-all;
+}
+.popover .popover-title {
+    word-break: break-all;
+}
+
+// full screen mode
+#content_fullscreen {
+    margin-left: 10px;
+    margin-right: 10px;
+    width: auto;
+}

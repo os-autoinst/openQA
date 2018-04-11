@@ -14,8 +14,6 @@
 << https://use.fontawesome.com/releases/v5.0.0/webfonts/fa-solid-900.woff2
 << https://use.fontawesome.com/releases/v5.0.0/webfonts/fa-solid-900.ttf
 << https://use.fontawesome.com/releases/v5.0.0/webfonts/fa-solid-900.svg
-< stylesheets/overview.scss
-< stylesheets/comments.scss
 < stylesheets/openqa.scss
 < https://raw.githubusercontent.com/bootstrapthemesco/bootstrap-4-multi-dropdown-navbar/beta2.0/css/bootstrap-4-navbar.css
 < https://cdnjs.cloudflare.com/ajax/libs/chosen/1.7.0/chosen.css

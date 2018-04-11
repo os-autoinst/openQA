@@ -1,0 +1,49 @@
+// navbar and dropdown menues
+.navbar {
+    border: none;
+    -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    padding-top: 0px;
+    padding-bottom: 0px;
+    margin-bottom: 30px;
+
+    &-brand {
+        height: 64px;
+        margin: 0px;
+        padding-top: 0px;
+        padding-bottom: 0px;
+
+        & > img {
+            height: 100%;
+            padding: 8px;
+            width: auto;
+        }
+    }
+}
+.navbar-nav {
+    @include media-breakpoint-up(lg) {
+        .nav-link {
+            // hack to let the navbar items take all vertical space like in Bootstrap 3
+            padding-top: 22px;
+            padding-bottom: 23px;
+        }
+        .nav-link:hover, .nav-link:focus {
+            color: #16181b;
+            text-decoration: none;
+            background-color: #f8f9fa;
+        }
+    }
+}
+.dropdown-menu {
+    font-size: inherit;
+    margin-top: 0;
+    border: none;
+    border-radius: 0;
+    -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+// adjust arrows for submenus
+.dropdown-toggle::after {
+    // maybe later
+}
