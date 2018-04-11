@@ -33,11 +33,9 @@ has [qw(app dsn)];
 sub new {
     my $class = shift;
     my $self  = $class->SUPER::new(@_);
-    #$self->{tasks} = {};
-    my $app = shift;
+    my $app   = shift;
     $self->app($app);
     Scalar::Util::weaken $self->{app};
-    #  $self->{schema} = $self->app->db if $self->app;
     return $self;
 }
 
@@ -72,6 +70,10 @@ sub register {
     $conn->dsn($self->dsn());
     $app->plugin(Minion => {Pg => $conn});
     $self->register_tasks;
+
+    # Enable the Minion Admin interface under /minion
+    my $auth = $app->routes->under('/minion')->to("session#ensure_operator");
+    $app->plugin('Minion::Admin' => {route => $auth});
 
     push @{$app->commands->namespaces}, 'OpenQA::WebAPI::Plugin::Gru::Command';
 
