@@ -35,12 +35,11 @@ function newFeature(featureVersion) {
     function changeTemplate() {
         return ("<div class='popover tour'>"+
                 "<div class='arrow'></div>"+
-                "<h3 class='popover-title'></h3>"+
-                "<div class='popover-content'></div>"+
+                "<h3 class='popover-header'></h3>"+
+                "<div class='popover-body'></div>"+
                 "<div class='popover-navigation'>"+
                 "<div class='checkbox'><label><input type='checkbox' id='dont-notify'>Don't notify me anymore (permanent)</label></div>"+
                 "<button class='btn btn-default' data-role='prev' id='prev'>« Prev</button>"+
-                "<span data-role='separator'>|</span>"+
                 "<button class='btn btn-default' data-role='next'id='next'>Next »</button>"+
                 "<button class='btn btn-default' data-role='end' id='end'>Quit</button>"+
                 "</div>"+
@@ -54,7 +53,8 @@ function newFeature(featureVersion) {
     function initTour(featureVersion) {
         if ((2 > featureVersion) && (featureVersion != 0)) {
             //Initialize the tour
-            tour01.init();
+            tour01.init(true);
+            tour01._current = null;
             //Start the tour
             tour01.start();
         };

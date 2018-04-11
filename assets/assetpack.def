@@ -98,7 +98,7 @@
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.0.0/scss/utilities/_text.scss
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.0.0/scss/utilities/_visibility.scss
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.0.0/scss/_print.scss
-< https://raw.githubusercontent.com/sorich87/bootstrap-tour/v0.11.0/build/css/bootstrap-tour.css
+< https://raw.githubusercontent.com/sorich87/bootstrap-tour/6a1028fb562f9aa68c451f0901f8cfeb43cad140/build/css/bootstrap-tour.css
 
 ! codemirror.css
 < https://raw.githubusercontent.com/codemirror/CodeMirror/8097c7e75ce7ef0512debe9967d7568626106e53/lib/codemirror.css
@@ -140,7 +140,7 @@
 < https://cdnjs.cloudflare.com/ajax/libs/chosen/1.7.0/chosen.jquery.js
 < https://cdnjs.cloudflare.com/ajax/libs/jquery-ujs/1.2.1/rails.js
 < javascripts/disable_animations.js [mode==test]
-< https://raw.githubusercontent.com/sorich87/bootstrap-tour/v0.11.0/build/js/bootstrap-tour.js
+< https://raw.githubusercontent.com/sorich87/bootstrap-tour/6a1028fb562f9aa68c451f0901f8cfeb43cad140/build/js/bootstrap-tour.min.js
 
 ! test_result.js
 < javascripts/test_result.js
