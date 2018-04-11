@@ -23,8 +23,8 @@
         <div role="tabpanel">
 
             <ul class="nav nav-tabs" role="tablist" id="result_tabs">
-                <li role="presentation" class="active" class="nav-item">
-                    <a href="#details" aria-controls="details" role="tab" data-toggle="tab" class="nav-link">Details</a>
+                <li role="presentation" class="nav-item">
+                    <a href="#details" aria-controls="details" role="tab" data-toggle="tab" class="nav-link active">Details</a>
                 </li>
                 % if ($job->running_or_waiting) {
                     <li role="presentation" class="nav-item">

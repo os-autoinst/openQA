@@ -55,7 +55,7 @@
                   %= link_to 'Workers' => url_for('admin_workers') => class => 'dropdown-item'
                   % if (is_admin) {
                       %= tag 'div' => class => 'dropdown-divider'
-                      %= tag 'h3' => class => 'dropdown-header' => 'Administrator Menu'
+                      %= tag 'h3' => class => 'dropdown-header' => 'Administrators Menu'
                       %= link_to('Users' => url_for('admin_users') => class => 'dropdown-item')
                       %= link_to('Needles' => url_for('admin_needles') => class => 'dropdown-item')
                       %= link_to('Audit log' => url_for('audit_log') => class => 'dropdown-item')
