@@ -22,10 +22,7 @@ use Mojo::URL;
 sub register {
     my ($self, $app) = @_;
     $app->minion->add_task(scan_old_jobs => sub { _old_jobs($app, @_) });
-    #    if exists $app->{minion} && defined $app->{minion};
     $app->minion->add_task(scan_needles => sub { _needles($app, @_) });
-    #  if exists $app->{minion} && defined $app->{minion};
-
 }
 
 sub _needles {

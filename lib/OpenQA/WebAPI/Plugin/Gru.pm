@@ -59,12 +59,18 @@ sub register {
     $self->app($app) unless $self->app;
     $self->{schema} = $self->app->db if $self->app->db;
 
-    $self->dsn(
-        ref $self->schema->storage->connect_info->[0] eq 'HASH' ?
-          $self->schema->dsn
-        : $self->schema->storage->connect_info->[0]);
-    $app->plugin(Minion => {Pg => Mojo::Pg->new->dsn($self->dsn)});
+    my $conn = Mojo::Pg->new;
+    if (ref $self->schema->storage->connect_info->[0] eq 'HASH') {
+        $self->dsn($self->schema->dsn);
+        $conn->username($self->schema->storage->connect_info->[0]->{user});
+        $conn->password($self->schema->storage->connect_info->[0]->{password});
+    }
+    else {
+        $self->dsn($self->schema->storage->connect_info->[0]);
+    }
 
+    $conn->dsn($self->dsn());
+    $app->plugin(Minion => {Pg => $conn});
     $self->register_tasks;
 
     push @{$app->commands->namespaces}, 'OpenQA::WebAPI::Plugin::Gru::Command';
@@ -111,7 +117,8 @@ has description => 'Run a gru to process jobs - give -o to exit _o_nce everythin
 
 sub delete_gru {
     my ($self, $id) = @_;
-    $self->app->db->resultset('GruTasks')->find($id)->delete();
+    my $gru = $self->app->db->resultset('GruTasks')->find($id);
+    $gru->delete() if $gru;
 }
 
 sub cmd_list {
@@ -119,6 +126,14 @@ sub cmd_list {
     my $tasks = $self->app->minion->backend->list_jobs();
     foreach my $j (@{$tasks->{jobs}}) {
         print $j->{task} . " " . Dumper($j->{args}) . " result: " . $j->{result} . "\n";
+    }
+}
+
+sub execute_job {
+    my ($self, $job) = @_;
+    unless (my $err = $job->_run) {
+        $job->finish;
+        $self->delete_gru($job->info->{notes}{gru_id}) if exists $job->info->{notes}{gru_id};
     }
 }
 
@@ -130,16 +145,14 @@ sub cmd_run {
 
     if ($opt eq '-o') {
         while (my $job = $worker->register->dequeue(0)) {
-            $job->finish unless defined(my $err = $job->_run);
-            $self->delete_gru($job->info->{notes}{gru_id}) if exists $job->info->{notes}{gru_id};
+            $self->execute_job($job);
         }
         return $worker->unregister;
     }
 
     while (1) {
         next unless my $job = $worker->register->dequeue(5);
-        $job->finish unless defined(my $err = $job->_run);
-        $self->delete_gru($job->info->{notes}{gru_id}) if exists $job->info->{notes}{gru_id};
+        $self->execute_job($job);
         sleep 5;
     }
     $worker->unregister;
