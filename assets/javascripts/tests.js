@@ -297,7 +297,6 @@ function setupAsyncFailedResult() {
 
 function setupRunningAndScheduledTables() {
     $('#scheduled, #running').DataTable({
-        pagingType: 'simple',
         order: [],
         columnDefs: [{
             targets: 0,
