@@ -1,4 +1,4 @@
-        % my $panelclass = '';
+        % my $panelclass = 'border-info';
         % if ($job->state eq 'done') {
             % if ($job->result eq 'passed') {
                 % $panelclass = 'border-success';

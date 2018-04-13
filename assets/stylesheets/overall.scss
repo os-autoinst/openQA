@@ -79,6 +79,22 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .card {
     margin-bottom: 15px;
 }
+// colorful card headers (Bootstrap 4 only has colorful borders or fully colored cards)
+.card.border-danger .card-header {
+    background-color: rgba(255, 0, 0, 0.10);
+}
+.card.border-success .card-header {
+    background-color: rgba(2, 184, 117, 0.10);
+}
+.card.border-warning .card-header {
+    background-color: rgba(240, 173, 78, 0.10);
+}
+.card.border-info {
+    border-color: rgb(188, 232, 241) !important;
+}
+.card.border-info .card-header {
+    background-color: rgba(188, 232, 241, 0.30);
+}
 
 // big welcome box ("jumbtron")
 .jumbotron {
