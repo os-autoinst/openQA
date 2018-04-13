@@ -51,8 +51,14 @@ function previewSuccess(data, force) {
     }
   });
   $('[data-toggle="popover"]').popover({html: true});
+  // make persistent dropdowns persistent by preventing click-event propagation
   $('.dropdown-persistent').on('click', function (event) {
       event.stopPropagation();
+  });
+  // ensure keydown event happening when button has focus is propagated to the right handler
+  $('.candidates-selection .dropdown-toggle').on('keydown', function (event) {
+      event.stopPropagation();
+      handleKeyDownOnTestDetails(event);
   });
 }
 
@@ -156,30 +162,58 @@ function checkResultHash() {
   }
 }
 
+function prevNeedle() {
+    var newSelection = $('#needlediff_selector tbody tr.selected').prev();
+    if (newSelection.length) {
+        setNeedle(newSelection);
+    }
+}
+
+function nextNeedle() {
+    var newSelection = $('#needlediff_selector tbody tr.selected').next();
+    if (newSelection.length) {
+        setNeedle(newSelection);
+    }
+}
+
+function handleKeyDownOnTestDetails(e) {
+    var ftn = $(':focus').prop('tagName');
+    if (ftn === 'INPUT' || ftn === 'TEXTAREA') {
+        return;
+    }
+    if (e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) {
+        return;
+    }
+
+    switch(e.which) {
+        case KeyEvent.DOM_VK_LEFT:
+            prevPreview();
+            e.preventDefault();
+            break;
+        case KeyEvent.DOM_VK_RIGHT:
+            nextPreview();
+            e.preventDefault();
+            break;
+        case KeyEvent.DOM_VK_ESCAPE:
+            setCurrentPreview(null);
+            e.preventDefault();
+            break;
+        case KeyEvent.DOM_VK_UP:
+            prevNeedle();
+            e.preventDefault();
+            break;
+        case KeyEvent.DOM_VK_DOWN:
+            nextNeedle();
+            e.preventDefault();
+            break;
+    }
+}
+
 function setupResult(state, jobid, status_url, details_url) {
   setupAsyncFailedResult();
   $(".current_preview").removeClass("current_preview");
 
-  $(window).keydown(function(e) {
-    var ftn = $(":focus").prop("tagName");
-    if (ftn == "INPUT" || ftn == "TEXTAREA") {
-      return;
-    }
-    if (e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) {
-      return;
-    }
-    if (e.which == KeyEvent.DOM_VK_LEFT) {
-      prevPreview();
-      e.preventDefault();
-    }
-    else if (e.which == KeyEvent.DOM_VK_RIGHT) {
-      nextPreview();
-      e.preventDefault();
-    } else if (e.which == KeyEvent.DOM_VK_ESCAPE) {
-      setCurrentPreview(null);
-      e.preventDefault();
-    }
-  });
+  $(window).keydown(handleKeyDownOnTestDetails);
 
   $(window).resize(function() {
     if ($(".current_preview")) {

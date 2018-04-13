@@ -335,7 +335,7 @@ function setNeedle(sel, kind) {
     return;
   }
 
-  var currentSelection = $('#needlediff_selector').find('tbody tr.selected');
+  var currentSelection = $('#needlediff_selector tbody tr.selected');
   if (sel) {
     // set needle for newly selected item
     currentSelection.removeClass('selected');
