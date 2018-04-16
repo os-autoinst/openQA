@@ -59,6 +59,23 @@ sub lj {
     }
 }
 
+sub job_state {
+    my $job_id = shift;
+    my $ret    = $t->get_ok("/api/v1/jobs/$job_id")->status_is(200);
+    return $ret->tx->res->json->{job}->{state};
+}
+
+sub job_result {
+    my $job_id = shift;
+    my $ret    = $t->get_ok("/api/v1/jobs/$job_id")->status_is(200);
+    return $ret->tx->res->json->{job}->{result};
+}
+
+sub job_gru {
+    my $job_id = shift;
+    return $t->app->db->resultset("GruDependencies")->search({job_id => $job_id})->single->gru_task->id;
+}
+
 sub find_job {
     my ($jobs, $newids, $name, $machine) = @_;
     my $ret;
@@ -521,5 +538,29 @@ is_deeply(
     {iso => ['openSUSE-13.1-DVD-i586-Build0091-Media.iso']},
     'ISO is scheduled'
 );
+
+# Schedule an iso that triggers a gru that fails
+$rsp = schedule_iso(
+    {
+        DISTRI  => 'opensuse',
+        VERSION => '13.1',
+        FLAVOR  => 'DVD',
+        ARCH    => 'i586',
+        ISO_URL => 'http://localhost/failure.iso'
+    });
+is $rsp->json->{count}, 10;
+my $gru = job_gru($rsp->json->{ids}->[0]);
+
+foreach my $j (@{$rsp->json->{ids}}) {
+    is job_state($j), 'scheduled';
+    is job_result($j), 'none', 'Job has no result';
+}
+
+$t->app->db->resultset("GruTasks")->search({id => $gru})->single->fail;
+
+foreach my $j (@{$rsp->json->{ids}}) {
+    is job_state($j), 'done';
+    like job_result($j), qr/incomplete|skipped/, 'Job skipped/incompleted';
+}
 
 done_testing();

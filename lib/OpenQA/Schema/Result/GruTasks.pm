@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2018 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 package OpenQA::Schema::Result::GruTasks;
 use base 'DBIx::Class::Core';
 use strict;
-
+use OpenQA::Schema::Result::Jobs ();
 use Cpanel::JSON::XS;
 use db_helpers;
 
@@ -74,6 +74,15 @@ sub encode_json_to_db {
         $args = {'_' => $args};
     }
     encode_json($args);
+}
+
+sub fail {
+    my ($self) = shift;
+    my $deps = $self->jobs->search;
+
+    while (my $d = $deps->next) {
+        $d->job->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE());
+    }
 }
 
 1;

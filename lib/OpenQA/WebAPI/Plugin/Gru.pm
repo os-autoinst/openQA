@@ -123,15 +123,22 @@ sub delete_gru {
     $gru->delete() if $gru;
 }
 
+sub fail_gru {
+    my ($self, $id) = @_;
+    my $gru = $self->app->db->resultset('GruTasks')->find($id);
+    $gru->fail() if $gru;
+}
+
 sub cmd_list { shift->job->run(@_) }
 
 sub execute_job {
     my ($self, $job) = @_;
 
-    if (my $err = $job->execute) { $job->fail($err) }
+    if (my $err = $job->execute) {
+        $self->fail_gru($job->info->{notes}{gru_id}) if $job->fail($err) && exists $job->info->{notes}{gru_id};
+    }
     else {
         $job->finish;
-        # Keep old behavior - openQA Jobs that deps on GRU tasks will be kept scheduled in case of failure
         $self->delete_gru($job->info->{notes}{gru_id}) if exists $job->info->{notes}{gru_id};
     }
 
