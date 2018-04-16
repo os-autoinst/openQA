@@ -2,6 +2,9 @@
     <span class="candidate_needles">
         Candidate needles and tags:
         <div class="btn-group candidates-selection dropdown">
+            <button type="button" class="btn btn-light btn-left" onclick="setNeedle($([]));" id="screenshot_button">
+                <i class="fas fa-image" title="Show only screenshot"></i>
+            </button>
             <button type="button" class="btn btn-light dropdown-toggle" aria-haspopup="true" aria-expanded="false" data-toggle="dropdown" id="candidatesMenu">
                 <span id="current_needle_label">
                     %= $default_label

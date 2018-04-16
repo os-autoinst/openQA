@@ -89,6 +89,12 @@
 .candidates-selection {
     min-width: 50%;
 
+    .btn-left {
+        border-width: 1px 0px 1px 1px;
+        border-style: solid;
+        border-color: #d8d9da;
+    }
+
     .dropdown-toggle:after {
         float: right;
         margin-top: 0.255rem;

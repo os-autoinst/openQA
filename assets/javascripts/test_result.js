@@ -166,11 +166,18 @@ function prevNeedle() {
     var newSelection = $('#needlediff_selector tbody tr.selected').prev();
     if (newSelection.length) {
         setNeedle(newSelection);
+    } else {
+        setNeedle($([]));
     }
 }
 
 function nextNeedle() {
-    var newSelection = $('#needlediff_selector tbody tr.selected').next();
+    var currentSelection = $('#needlediff_selector tbody tr.selected');
+    if (!currentSelection.length) {
+        var newSelection = $('#needlediff_selector tbody tr:first-child');
+    } else {
+        var newSelection = currentSelection.next();
+    }
     if (newSelection.length) {
         setNeedle(newSelection);
     }
@@ -251,7 +258,6 @@ function setupResult(state, jobid, status_url, details_url) {
   $(window).on("hashchange", checkResultHash);
   checkResultHash();
 
-  $(document).on("change", "#needlediff_selector", setNeedle);
   $("a[data-toggle='tab']").on("show.bs.tab", function(e) {
     var tabshown = $(e.target).attr("href");
     // now this is very special

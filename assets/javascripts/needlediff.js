@@ -340,7 +340,12 @@ function setNeedle(sel, kind) {
     // set needle for newly selected item
     currentSelection.removeClass('selected');
     sel.addClass('selected');
-    $('#current_needle_label').text(sel.data('label'));
+    // update label/button text
+    var label = sel.data('label');
+    if (!label) {
+        label = 'Screenshot';
+    }
+    $('#current_needle_label').text(label);
   } else {
     // set needle for current selection
     sel = currentSelection;
@@ -348,10 +353,14 @@ function setNeedle(sel, kind) {
 
   // set areas/matches
   if (sel.length) {
+    // show actual candidate
     window.differ.areas = sel.data('areas');
     window.differ.matches = sel.data('matches');
+    $('#screenshot_button').prop('disabled', false);
   } else {
+    // show only a screenshot
     window.differ.areas = window.differ.matches = [];
+    $('#screenshot_button').prop('disabled', true);
   }
 
   // set image
