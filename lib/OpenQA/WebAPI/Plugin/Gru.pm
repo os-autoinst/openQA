@@ -113,9 +113,11 @@ package OpenQA::WebAPI::Plugin::Gru::Command::gru;
 use Mojo::Base 'Mojolicious::Command';
 use Mojo::Pg;
 use Data::Dumper;
+use Minion::Command::minion::job;
 
 has usage       => "usage: $0 gru [-o]\n";
 has description => 'Run a gru to process jobs - give -o to exit _o_nce everything is done';
+has job         => sub { Minion::Command::minion::job->new(app => shift->app) };
 
 sub delete_gru {
     my ($self, $id) = @_;
@@ -123,13 +125,7 @@ sub delete_gru {
     $gru->delete() if $gru;
 }
 
-sub cmd_list {
-    my ($self) = @_;
-    my $tasks = $self->app->minion->backend->list_jobs();
-    foreach my $j (@{$tasks->{jobs}}) {
-        print $j->{task} . " " . Dumper($j->{args}) . " result: " . $j->{result} . "\n";
-    }
-}
+sub cmd_list { shift->job->run(@_) }
 
 sub execute_job {
     my ($self, $job) = @_;
