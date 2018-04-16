@@ -21,7 +21,6 @@ use strict;
 use warnings;
 use Cpanel::JSON::XS;
 use Minion;
-use Data::Dumper;
 use Scalar::Util ();
 
 use DBIx::Class::Timestamps 'now';
@@ -112,7 +111,6 @@ sub enqueue {
 package OpenQA::WebAPI::Plugin::Gru::Command::gru;
 use Mojo::Base 'Mojolicious::Command';
 use Mojo::Pg;
-use Data::Dumper;
 use Minion::Command::minion::job;
 
 has usage       => "usage: $0 gru [-o]\n";
