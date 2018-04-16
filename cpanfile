@@ -41,7 +41,7 @@ requires 'Cpanel::JSON::XS';
 requires 'JavaScript::Minifier::XS', '>= 0.11';
 requires 'LWP::UserAgent';
 requires 'List::MoreUtils';
-requires 'Minion';
+requires 'Minion', '9.0';
 requires 'Minion::Backend::Pg';
 requires 'MRO::Compat';
 requires 'Module::Implementation';

@@ -127,10 +127,14 @@ sub cmd_list { shift->job->run(@_) }
 
 sub execute_job {
     my ($self, $job) = @_;
-    unless (my $err = $job->_run) {
+
+    if (my $err = $job->execute) { $job->fail($err) }
+    else {
         $job->finish;
+        # Keep old behavior - openQA Jobs that deps on GRU tasks will be kept scheduled in case of failure
         $self->delete_gru($job->info->{notes}{gru_id}) if exists $job->info->{notes}{gru_id};
     }
+
 }
 
 sub cmd_run {
