@@ -60,6 +60,12 @@ function previewSuccess(data, force) {
       event.stopPropagation();
       handleKeyDownOnTestDetails(event);
   });
+  // handle click on the diff selection
+  $('.trigger-diff').on('click', function (event) {
+      var trigger = $(this);
+      setNeedle(trigger.parents('tr'), trigger.data('diff'));
+      event.stopPropagation();
+  });
 }
 
 function mapHash(hash) {

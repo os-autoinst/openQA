@@ -45,13 +45,13 @@
                                                 %= $needle->{name}
                                             </td>
                                             <td>
-                                                <i class="fas fa-images"
+                                                <i class="fas fa-images trigger-diff"
                                                     title="View area-only diff"
-                                                    onclick="setNeedle($(this).parents('tr'), 'area-only-diff');">
+                                                    data-diff="area-only-diff">
                                                 </i>
-                                                <i class="fas fa-eye"
+                                                <i class="fas fa-eye trigger-diff"
                                                     title="View full diff"
-                                                    onclick="setNeedle($(this).parents('tr'), 'full-diff');">
+                                                    data-diff="full-diff">
                                                 </i>
                                             </td>
                                         </tr>
