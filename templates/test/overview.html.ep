@@ -18,7 +18,7 @@
 
 <div>
     <h2>Test result overview</h2>
-    <div id="summary" class="card <%= ($aggregated->{failed} + $aggregated->{incomplete}) ? 'card-danger' : 'card-success' %>">
+    <div id="summary" class="card <%= ($aggregated->{failed} + $aggregated->{incomplete}) ? 'border-danger' : 'border-success' %>">
         <div class="card-header">
             Overall Summary of
             % if (@$groups) {
