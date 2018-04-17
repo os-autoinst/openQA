@@ -745,7 +745,20 @@ sub duplicate {
     while (my $cd = $children->next) {
         my $c = $cd->child;
         # ignore already cloned child, prevent loops in test definition
-        next if $duplicated_ids{$c->id};
+        # However we still need to add the relationship parent - kid
+
+        if ($duplicated_ids{$c->id}) {
+            if ($jobs_map->{$c->id}) {
+                if ($cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
+                    push @direct_deps_children_parallel, $jobs_map->{$c->id};
+                }
+                else {
+                    push @direct_deps_children_chained, $jobs_map->{$c->id};
+                }
+            }
+            next;
+        }
+
         # do not clone DONE children for PARALLEL deps
         next if ($c->state eq DONE and $cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL);
 
