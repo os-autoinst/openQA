@@ -20,7 +20,7 @@ use OpenQA::Utils;
 use Mojo::URL;
 use File::Spec::Functions 'catfile';
 use File::Basename qw(basename dirname);
-use OpenQA::Utils qw(log_debug log_warning);
+use OpenQA::Utils qw(log_debug log_warning log_fatal);
 
 sub register {
     my ($self, $app) = @_;
@@ -34,10 +34,9 @@ sub _list_images_subdir {
 
     my $subdir = catfile($OpenQA::Utils::imagesdir, $prefix, $dir);
     my $dh;
-    if (!opendir($dh, $subdir)) {
-        log_warning "Can't open $subdir: $!";
-        return;
-    }
+
+    log_fatal "Can't open $subdir: $!" unless opendir($dh, $subdir);
+
     my @ret;
     while (readdir $dh) {
         my $fn = catfile($subdir, $_);
@@ -56,10 +55,9 @@ sub _scan_images {
     return unless $args->{prefix};
     my $dh;
     my $prefixdir = catfile($OpenQA::Utils::imagesdir, $args->{prefix});
-    if (!opendir($dh, $prefixdir)) {
-        log_warning "Can't open $args->{prefix} in $OpenQA::Utils::imagesdir: $!";
-        return;
-    }
+
+    log_fatal "Can't open $args->{prefix} in $OpenQA::Utils::imagesdir: $!" unless opendir($dh, $prefixdir);
+
     my @files;
     my $now = DateTime->now;
     while (readdir $dh) {

@@ -38,14 +38,8 @@ sub _download {
     # are scheduled)
     return if (-e $assetpath);
     my $assetdir = (splitpath($assetpath))[1];
-    unless (-w $assetdir) {
-        OpenQA::Utils::log_error("download_asset: cannot write to $assetdir");
 
-        # we're not going to die because this is a gru task and we don't
-        # want to cause the Endless Gru Loop Of Despair, just return and
-        # let the jobs fail
-        return;
-    }
+    OpenQA::Utils::log_fatal("download_asset: cannot write to $assetdir") unless (-w $assetdir);
 
     # check URL is whitelisted for download. this should never fail;
     # if it does, it means this task has been created without going
@@ -55,13 +49,12 @@ sub _download {
     if (@check) {
         my ($status, $host) = @check;
         if ($status == 2) {
-            OpenQA::Utils::log_error("download_asset: no hosts are whitelisted for asset download!");
+            OpenQA::Utils::log_fatal("download_asset: no hosts are whitelisted for asset download!");
         }
         else {
-            OpenQA::Utils::log_error("download_asset: URL $url host $host is blacklisted!");
+            OpenQA::Utils::log_fatal("download_asset: URL $url host $host is blacklisted!");
         }
-        OpenQA::Utils::log_error("**API MAY HAVE BEEN BYPASSED TO CREATE THIS TASK!**");
-        return;
+        OpenQA::Utils::log_fatal("**API MAY HAVE BEEN BYPASSED TO CREATE THIS TASK!**");
     }
     if ($do_extract) {
         OpenQA::Utils::log_debug("Downloading $url, uncompressing to $assetpath...");
@@ -88,12 +81,11 @@ sub _download {
                 # Extract the temp archive file to the requested asset location
                 my $ae = Archive::Extract->new(archive => $tempfile);
                 my $ok = $ae->extract(to => $assetpath);
-                if (!$ok) {
-                    OpenQA::Utils::log_error("Extracting $tempfile to $assetpath failed!");
-                }
 
                 # Remove the temporary file
                 unlink($tempfile);
+
+                OpenQA::Utils::log_fatal("Extracting $tempfile to $assetpath failed!") unless $ok;
             }
             else {
                 # Just directly move the downloaded data to the requested
@@ -102,21 +94,17 @@ sub _download {
             }
         }
         catch {
-            # again, we're trying not to die here, but log and return on fail
-            OpenQA::Utils::log_error("Error renaming or extracting temporary file to $assetpath: $_");
-            return;
+            OpenQA::Utils::log_fatal("Error renaming or extracting temporary file to $assetpath: $_");
         };
     }
     else {
         # Clean up after ourselves. Probably won't exist, but just in case
-        OpenQA::Utils::log_error("Download of $url to $assetpath failed! Deleting files.");
         unlink($assetpath);
-        return;
+        OpenQA::Utils::log_fatal("Download of $url to $assetpath failed! Deleting files.");
     }
 
     # set proper permissions for downloaded asset
     chmod 0644, $assetpath;
-
 }
 
 1;

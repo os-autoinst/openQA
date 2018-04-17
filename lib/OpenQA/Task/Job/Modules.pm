@@ -36,10 +36,10 @@ sub _migrate_images {
     return unless $args->{prefix};
     my $dh;
     my $prefixdir = join('/', $OpenQA::Utils::imagesdir, $args->{prefix});
-    if (!opendir($dh, $prefixdir)) {
-        OpenQA::Utils::log_warning "Can't open $args->{prefix} in $OpenQA::Utils::imagesdir: $!";
-        return;
-    }
+
+    OpenQA::Utils::log_fatal "Can't open $args->{prefix} in $OpenQA::Utils::imagesdir: $!"
+      unless opendir($dh, $prefixdir);
+
     OpenQA::Utils::log_debug "moving files in $prefixdir";
     while (readdir $dh) {
         # only rename .pngs not symlinked
