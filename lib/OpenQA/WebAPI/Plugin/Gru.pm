@@ -134,11 +134,22 @@ sub cmd_list { shift->job->run(@_) }
 sub execute_job {
     my ($self, $job) = @_;
 
-    if (my $err = $job->execute) {
-        $self->fail_gru($job->info->{notes}{gru_id}) if $job->fail($err) && exists $job->info->{notes}{gru_id};
+    my $buffer;
+    my $err;
+    {
+        open my $handle, '>', \$buffer;
+        local *STDERR = $handle;
+        local *STDOUT = $handle;
+        $err = $job->execute;
+    };
+
+    if (defined $err) {
+        $self->fail_gru($job->info->{notes}{gru_id})
+          if $job->fail({(output => $buffer) x !!(defined $buffer), error => $err})
+          && exists $job->info->{notes}{gru_id};
     }
     else {
-        $job->finish;
+        $job->finish(defined $buffer ? $buffer : 'Job successfully executed');
         $self->delete_gru($job->info->{notes}{gru_id}) if exists $job->info->{notes}{gru_id};
     }
 
