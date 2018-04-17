@@ -1391,7 +1391,7 @@ send_key, wait_screen_change, &#8230;&#8203;)</p>
 </div>
 <div class="paragraph">
 <p>If this the first time, a test selects this console, the distribution
-will get a call into activate_console('root-console', $console_obj) to
+will get a call into activate_console('root-console', $console_obj, @args) to
 make sure to actually log in root. For the backend it&#8217;s just a <code>tty</code>
 object (in this example) - so it will ensure the console is active,
 but to setup the root shell on this console, the distribution needs
@@ -1776,7 +1776,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-04-16 14:38:34 UTC
+Last updated 2018-04-17 09:13:33 UTC
 </div>
 </div>
 </body>
