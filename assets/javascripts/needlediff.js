@@ -403,4 +403,12 @@ function setNeedle(sel, kind) {
     window.differ.fullNeedleImg = null;
     window.differ.draw();
   }
+
+  // close menu again, except user is selecting text to copy
+  var needleDiffSelector = document.getElementById('needlediff_selector');
+  var selection = window.getSelection();
+  var userSelectedText = !selection.isCollapsed && $.contains(needleDiffSelector, selection.anchorNode);
+  if (!userSelectedText && $(needleDiffSelector).is(":visible")) {
+    $('#candidatesMenu').dropdown('toggle');
+  }
 }
