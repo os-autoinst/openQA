@@ -61,12 +61,29 @@ sub disable_bootstrap_fade_animation {
 
 # returns the contents of the candidates combo box as hash (key: tag, value: array of needle names)
 sub find_candidate_needles {
-    my @tag_elements   = $driver->find_elements('#needlediff_selector optgroup');
-    my %needles_by_tag = map {
-        my @needle_elements = $driver->find_child_elements($_, 'option');
-        my @needles = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @needle_elements;
-        $_->get_attribute('label') => \@needles;
-    } @tag_elements;
+    $driver->find_element('#candidatesMenu')->click();
+    my @section_elements = $driver->find_elements('#needlediff_selector ul table');
+    my %needles_by_tag   = map {
+        # find tag name
+        my @tag_elements = $driver->find_child_elements($_, 'thead > tr');
+        is(scalar @tag_elements, 1, 'exactly one tag header present' . "\n");
+
+        # find needle names
+        my @needles;
+        my @needle_elements = $driver->find_child_elements($_, 'tbody > tr');
+        for my $needle_element (@needle_elements) {
+            my @needle_parts = $driver->find_child_elements($needle_element, 'td');
+            next unless @needle_parts;
+
+            is(scalar @needle_parts, 3, 'exactly three parts per needle present (percentage, name, diff buttons)');
+            push(@needles,
+                    OpenQA::Test::Case::trim_whitespace($needle_parts[0]->get_text()) . '%: '
+                  . OpenQA::Test::Case::trim_whitespace($needle_parts[1]->get_text()));
+        }
+
+        OpenQA::Test::Case::trim_whitespace($tag_elements[0]->get_text()) => \@needles;
+    } @section_elements;
+    $driver->find_element('#candidatesMenu')->click();
     return \%needles_by_tag;
 }
 
@@ -263,7 +280,6 @@ sub test_with_error {
     # check whether candidates are displayed as expected
     $driver->get('/tests/99946#step/yast2_lan/1');
     wait_for_ajax;
-    is($driver->find_element('#needlediff_selector > option')->get_text(), 'None', 'none always present');
     is_deeply(find_candidate_needles, $expect, $test_name // 'candidates displayed as expected');
 }
 
