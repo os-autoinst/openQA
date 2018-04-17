@@ -63,7 +63,7 @@ $driver->find_element_by_link_text('Logout')->click();
 # quit tour temporarly
 $driver->get('/login?user=nobody');
 ok($driver->find_element('#step-0')->is_displayed(), 'tour popover is displayed');
-my $text = $driver->find_element('h3.popover-title')->get_text();
+my $text = $driver->find_element('h3.popover-header')->get_text();
 is($text, 'All tests area');
 $driver->find_element_by_link_text('Logged in as nobody')->click();
 $driver->find_element_by_link_text('Logout')->click();

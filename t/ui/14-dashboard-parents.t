@@ -145,7 +145,7 @@ isnt(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, "child group 
 subtest 'filtering subgroups' => sub {
     $driver->get('/');
     my $url = $driver->get_current_url;
-    $driver->find_element('#filter-panel .panel-heading')->click();
+    $driver->find_element('#filter-panel .card-header')->click();
     $driver->find_element_by_id('filter-group')->send_keys('Test parent / .* test$');
     $driver->find_element_by_id('filter-default-expanded')->click();
     my $ele = $driver->find_element_by_id('filter-limit-builds');

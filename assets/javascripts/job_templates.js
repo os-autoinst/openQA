@@ -317,12 +317,12 @@ function submitProperties(form) {
            data: editorForm.serialize(),
            success: function() {
                var newJobName = $('#editor-name').val();
-               showSubmitResults(editorForm, '<span class="glyphicon glyphicon-floppy-saved" aria-hidden="true"></span> Changes applied');
+               showSubmitResults(editorForm, '<i class="fas fa-save"></i> Changes applied');
                $('#job-group-name').text(newJobName);
                document.title = document.title.substr(0, 17) + newJobName;
            },
            error: function(xhr, ajaxOptions, thrownError) {
-               showSubmitResults(editorForm, '<span class="glyphicon glyphicon-floppy-remove" aria-hidden="true"></span> Unable to apply changes');
+               showSubmitResults(editorForm, '<i class="fas fa-trash"></i> Unable to apply changes');
            }
     });
 

@@ -88,7 +88,7 @@ my $baseurl = $driver->get_current_url();
 
 # Test initial state of checkboxes and applying changes
 $driver->get($baseurl . 'tests/overview?distri=opensuse&version=Factory&build=0048&todo=1&result=passed');
-$driver->find_element('#filter-panel .panel-heading')->click();
+$driver->find_element('#filter-panel .card-header')->click();
 $driver->find_element_by_id('filter-todo')->click();
 $driver->find_element_by_id('filter-passed')->click();
 $driver->find_element_by_id('filter-failed')->click();
@@ -101,7 +101,7 @@ is(scalar @filtered_out, 0, 'result filter correctly applied');
 my $url_with_escaped_parameters
   = $baseurl . 'tests/overview?arch=&failed_modules=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
 $driver->get($url_with_escaped_parameters);
-$driver->find_element('#filter-panel .panel-heading')->click();
+$driver->find_element('#filter-panel .card-header')->click();
 $driver->find_element('#filter-form button')->click();
 is($driver->get_current_url(), $url_with_escaped_parameters . '#', 'escaped URL parameters are passed correctly');
 
@@ -116,7 +116,7 @@ like($driver->find_elements('.failedmodule a', 'css')->[1]->get_attribute('href'
 my @descriptions = $driver->find_elements('td.name a', 'css');
 is(scalar @descriptions, 2, 'only test suites with description content are shown as links');
 $descriptions[0]->click();
-is($driver->find_element('.popover-title')->get_text, 'kde', 'description popover shows content');
+is($driver->find_element('.popover-header')->get_text, 'kde', 'description popover shows content');
 
 # Test bug status
 my @closed_bugs = $driver->find_elements('#bug-99937 .bug_closed', 'css');

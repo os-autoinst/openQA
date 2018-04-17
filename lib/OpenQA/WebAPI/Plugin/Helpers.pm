@@ -115,8 +115,8 @@ sub register {
                 if ($job->group_id) {
                     $query->{groupid} = $job->group_id;
                     $crumbs .= "\n<li id='current-group-overview'>";
-                    $crumbs .= $c->link_to(
-                        ($job->group->name . ' (current)') => $c->url_for('group_overview', groupid => $job->group_id));
+                    $crumbs .= $c->link_to($c->url_for('group_overview', groupid => $job->group_id) =>
+                          (class => 'dropdown-item') => sub { return $job->group->name . ' (current)' });
                     $crumbs .= "</li>";
                     $overview_text = "Build " . $job->BUILD;
                 }
@@ -126,8 +126,8 @@ sub register {
                 my $overview_url = $c->url_for('tests_overview')->query(%$query);
 
                 $crumbs .= "\n<li id='current-build-overview'>";
-                $crumbs .= $c->link_to(
-                    $overview_url => sub { '<i class="glyphicon glyphicon-arrow-right"></i> ' . $overview_text });
+                $crumbs .= $c->link_to($overview_url =>
+                      (class => 'dropdown-item') => sub { '<i class="fas fa-arrow-right"></i> ' . $overview_text });
                 $crumbs .= "</li>";
                 $crumbs .= "\n<li role='separator' class='divider'></li>\n";
                 return Mojo::ByteStream->new($crumbs);
@@ -316,7 +316,11 @@ sub register {
     $app->helper(
         group_link_menu_entry => sub {
             my ($c, $group) = @_;
-            return $c->tag('li', $c->link_to($group->name => $c->url_for('group_overview', groupid => $group->id)));
+            return $c->tag(
+                'li',
+                $c->link_to(
+                    $group->name => $c->url_for('group_overview', groupid => $group->id) => class => 'dropdown-item'
+                ));
         });
 
     $app->helper(

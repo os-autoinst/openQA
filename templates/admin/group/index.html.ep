@@ -8,32 +8,34 @@
 <div class="modal fade" id="add_group_modal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title"></h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
             <form action="#" id="new_group_form" onsubmit="return createGroup(this);"
               data-post-job-group-url="<%= url_for('apiv1_post_job_group') %>"
               data-post-parent-group-url="<%= url_for('apiv1_post_parent_group') %>"
               data-job-group-row-url="<%= url_for('admin_job_group_row') %>"
               data-parent-group-row-url="<%= url_for('admin_parent_group_row') %>"
               class="form-horizontal">
-                <div class="modal-header">
-                    <button type="reset" class="close" id="x_delete" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title"></h4>
-                </div>
                 <div class="modal-body">
-                    <div class="form-group" id="new_group_name_group">
+                    <div class="form-group row" id="new_group_name_group">
                         <label for="new_group_name" class="col-sm-2 control-label">Name</label>
                         <div class="col-sm-10">
                             <input type="text" name="name" id="new_group_name" value="" class="form-control">
-                            <span class="help-block hidden">
+                            <span class="help-block" style="display: none;">
                                 <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                                 The group name must not be empty.
                             </span>
                         </div>
                     </div>
-                    <p id="new_group_creating" class="hidden">
+                    <p id="new_group_creating" style="display: none;">
                         <i class="fa fa-cog fa-spin fa-3x fa-fw"></i>
                         Creating group
                     </p>
-                    <p id="new_group_error" class="hidden">
+                    <p id="new_group_error" style="display: none;">
                         <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                         Unable to create group: <strong id="new_group_error_message"></strong>
                     </p>
@@ -60,14 +62,14 @@
                 <i class="fa fa-plus fa-stack-1x"></i>
             </a>
             <p>Drag & Drop job groups to order. Click on a group to edit group properties and jobs.</p>
-            <div id="reorganize_groups_panel" class="hidden">
-                <p id="reorganize_groups_progress" class="hidden">
+            <div id="reorganize_groups_panel" style="display: none;">
+                <p id="reorganize_groups_progress" style="display: none;">
                     <i class="fa fa-cog fa-spin fa-3x fa-fw"></i>
                     Committing changes
                 </p>
-                <div id="reorganize_groups_error" class="hidden panel panel-default">
-                    <div class="panel-heading">Saving</div>
-                    <div class="panel-body">
+                <div id="reorganize_groups_error" class="card" style="display: none;">
+                    <div class="card-header">Saving</div>
+                    <div class="card-body">
                         <p>
                             <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                             Unable to save: <strong id="reorganize_groups_error_message"></strong>

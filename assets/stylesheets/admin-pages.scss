@@ -1,0 +1,330 @@
+// audit log
+#auditlog {
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: none;
+    width: 100%;
+    height: 60em;
+    overflow-x: scroll;
+    overflow-y: scroll;
+}
+
+#audit_log_search_popover {
+    float: right;
+    margin-top: 5px;
+    margin-right: 20px;
+    margin-left: -25px;
+
+    .popover {
+        min-width: 30em;
+    }
+}
+
+// user info header
+#user-info {
+    text-align: right;
+}
+
+// form on top of the lists
+.list-form {
+    text-align: right;
+}
+
+// job setting table
+table#job_settings td {
+    padding: 2px;
+}
+
+table#settings_box {
+    padding-top: 9px;
+}
+
+.tab-pane table#results {
+    padding-top: 9px;
+}
+
+.tab-pane .comments {
+    padding-top: 9px;
+}
+
+// assets
+table#assets {
+    a.picked-group {
+        text-decoration: underline !important;
+    }
+    a.to-be-removed {
+        text-decoration: line-through !important;
+    }
+    td {
+        overflow:hidden; white-space: nowrap; text-overflow: ellipsis;
+    }
+}
+#assets-by-group {
+    span {
+        float: right;
+    }
+    & > li {
+        margin-top: 5px;
+        input[type="checkbox"] {
+            display: none;
+        }
+        label {
+            cursor: pointer;
+            font-weight: normal;
+        }
+        .fa {
+            padding-left: 3px;
+            opacity: 0.3;
+        }
+        & > span {
+            font-weight: bold;
+        }
+        input[type="checkbox"] ~ ul {
+            display: none;
+        }
+        input[type="checkbox"]:checked ~ ul {
+            display: block;
+        }
+    }
+}
+
+// needle manager (the table where you can delete, not the editor)
+#confirm_delete  table td {
+    vertical-align: top;
+}
+
+// job group manager (the Drag & Drop thing)
+#new_group_form button {
+    margin-top: 15px;
+}
+a.add-parent-group {
+    float: right;
+    margin-left: 10px;
+    padding: 5px;
+    text-decoration: none !important;
+    position: relative;
+
+    i {
+        font-size: 215%;
+        top: -10px;
+
+        & + i {
+            color: white;
+            margin-top: 2px;
+            font-size: 140%;
+        }
+    }
+}
+#job_group_list {
+    margin: 0px 0px 20px 0px;
+    padding: 0px;
+
+    li, div {
+        font-weight: 500;
+        font-size: 120%;
+        list-style-type: none;
+    }
+
+    li {
+        border: 1px solid #eee;
+        margin: 5px 0px;
+        padding: 5px;
+        font-weight: normal;
+        font-size: 115%;
+        clear: both;
+
+        &.dragover {
+            padding-bottom: 0px !important;
+            &:after {
+                top: 6px;
+            }
+        }
+    }
+
+    & > li {
+        padding-bottom: 4px !important;
+    }
+
+    ul {
+        margin: 0px;
+        padding: 0px;
+        margin-top: 1px;
+
+        li {
+            background-color: #fdfdfd;
+            font-size: 90%;
+
+            &.dragover {
+                padding-bottom: 1px !important;
+                &:after {
+                    top: 7px;
+                }
+            }
+        }
+    }
+    [draggable='true'] {
+        cursor: move;
+    }
+    [draggable='false'] span.glyphicon {
+        display: none;
+    }
+    span {
+        &.glyphicon, &.fa {
+            color: #aaa;
+            margin: 0px 5px;
+        }
+        &.glyphicon-menu-hamburger {
+            font-size: 80%;
+            margin: 3px;
+        }
+    }
+    a.fa-plus {
+        float: right;
+        display: inline-block;
+        margin: 5px;
+        text-decoration: none;
+    }
+    div.dragover {
+        margin-bottom: -3px;
+    }
+    .dragover:after {
+        border-bottom: 2px dashed #446E9B;
+        content: " ";
+        position: relative;
+        display: block;
+        margin: 1px 0px;
+    }
+    .parent-dragover {
+        margin-top: -4px;
+    }
+    .parent-dragover:before {
+        border-top: 2px dashed #446E9B;
+        content: " ";
+        position: relative;
+        display: block;
+        top: -6px;
+        margin: 1px 0px;
+    }
+    .enforce-parent-drop {
+        position: relative;
+        top: -15px;
+        height: 25px;
+        margin-bottom: -25px;
+    }
+}
+
+// needle editor
+a.restart-link {
+    color: blue;
+}
+.table-nonfluid {
+    width: auto;
+}
+.badge-all-passed {
+    color: $color-module-passed;
+}
+#needleeditor_tags label {
+    font-weight: normal;
+}
+
+// job templates
+#properties {
+    input[type='number'] {
+        width: 120px;
+        display: inline;
+    }
+    label[title] {
+        cursor: help;
+    }
+    .properties-progress-indication {
+        display: none;
+    }
+    #editor-description {
+        min-height: 5em;
+        min-width: 100%;
+        max-width: 100%;
+        height: 10em;
+    }
+}
+.jobtemplate-header {
+    font-size: 180%;
+    text-align: left;
+    margin-top: 10px;
+    padding-bottom: 5px;
+}
+#editor-info {
+    font-style: italic;
+    line-height: 240%;
+}
+h2 + * {
+    // ensure corner button doesn't influence elements after heading
+    clear: right;
+}
+.mediagroup {
+    th.arch, td.arch {
+        text-align: center;
+    }
+    th.prio {
+        width: 3em;
+    }
+    th.prio, td.prio {
+        text-align: center;
+    }
+}
+
+// users
+table#users {
+    td.role {
+        white-space: nowrap;
+    }
+    // hidding the radiobuttons & checkboxes
+    input[type="radio"] {
+        display: none;
+        &:checked {
+            + {
+                // styling the "check" status
+                label {
+                    .fa-circle {
+                        display: block;
+                        color: #690;
+                    }
+                    .far.fa-circle {
+                        display: none;
+                    }
+                }
+            }
+        }
+    }
+    label {
+        // styling radiobuttons
+        .fa-circle {
+            color: #C8D4AC;
+        }
+    }
+}
+
+// changelog
+.changelog {
+    ul {
+        font-weight: bold;
+
+        p {
+            margin-top: 10px;
+            margin-bottom: 0px;
+        }
+
+        ul, span {
+            font-weight: normal;
+        }
+    }
+}
+
+// status info (used on worker details)
+.status-info div span {
+    min-width: 20%;
+    display: inline-block;
+    text-align: right;
+    padding-right: 1rem;
+    font-weight: 500;
+}

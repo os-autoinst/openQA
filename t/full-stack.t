@@ -195,7 +195,7 @@ wait_for_ajax;
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
 $driver->find_element_by_link_text('core@coolone')->click();
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
-like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 1 is scheduled');
+like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 1 is scheduled');
 javascript_console_has_no_warnings_or_errors;
 
 sub start_worker {
@@ -212,12 +212,12 @@ sub wait_for_result_panel {
     my ($result_panel, $desc) = @_;
 
     for (my $count = 0; $count < 130; $count++) {
-        last if $driver->find_element('#result-row .panel-body')->get_text() =~ $result_panel;
+        last if $driver->find_element('#result-row .card-body')->get_text() =~ $result_panel;
         sleep 1;
     }
     javascript_console_has_no_warnings_or_errors;
     $driver->refresh();
-    like($driver->find_element('#result-row .panel-body')->get_text(), $result_panel, $desc);
+    like($driver->find_element('#result-row .card-body')->get_text(), $result_panel, $desc);
 }
 
 sub wait_for_job_running {
@@ -244,7 +244,7 @@ client_call('jobs/1', qr/group_id *=> *$group_id/, 'group has been altered corre
 
 client_call('jobs/1/restart post', qr{\Qtest_url => ["/tests/2\E}, 'client returned new test_url');
 $driver->refresh();
-like($driver->find_element('#result-row .panel-body')->get_text(), qr/Cloned as 2/, 'test 1 is restarted');
+like($driver->find_element('#result-row .card-body')->get_text(), qr/Cloned as 2/, 'test 1 is restarted');
 $driver->click_element_ok('2', 'link_text');
 
 wait_for_job_running;
@@ -253,7 +253,7 @@ kill_worker;
 
 wait_for_result_panel qr/Result: incomplete/, 'test 2 crashed';
 like(
-    $driver->find_element('#result-row .panel-body')->get_text(),
+    $driver->find_element('#result-row .card-body')->get_text(),
     qr/Cloned as 3/,
     'test 2 is restarted by killing worker'
 );
@@ -272,7 +272,7 @@ $driver->click_element_ok('core@noassets',  'link_text');
 
 $job_name = 'tinycore-1-flavor-i386-Build1-core@noassets';
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
-like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 4 is scheduled');
+like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 4 is scheduled');
 
 javascript_console_has_no_warnings_or_errors;
 start_worker;
@@ -337,7 +337,7 @@ subtest 'Cache tests' => sub {
     client_call('jobs/3/restart post', qr{\Qtest_url => ["/tests/5\E}, 'client returned new test_url');
 
     $driver->get('/tests/5');
-    like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled');
+    like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled');
     ok(!-e $db_file, "cache.sqlite is not present");
     start_worker;
     wait_for_job_running;
@@ -412,7 +412,7 @@ subtest 'Cache tests' => sub {
     #simple limit testing.
     client_call('jobs/5/restart post', qr{\Qtest_url => ["/tests/6\E}, 'client returned new test_url');
     $driver->get('/tests/6');
-    like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 6 is scheduled');
+    like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 6 is scheduled');
     start_worker;
     wait_for_result_panel qr/Result: passed/, 'test 6 is passed';
     kill_worker;
@@ -428,7 +428,7 @@ subtest 'Cache tests' => sub {
     #simple limit testing.
     client_call('jobs/6/restart post', qr{\Qtest_url => ["/tests/7\E}, 'client returned new test_url');
     $driver->get('/tests/7');
-    like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 7 is scheduled');
+    like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 7 is scheduled');
     start_worker;
     wait_for_result_panel qr/Result: passed/, 'test 7 is passed';
 

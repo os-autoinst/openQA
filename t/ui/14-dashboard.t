@@ -123,7 +123,7 @@ is(scalar @{$driver->find_elements('h2', 'css')}, 2, 'a single, empty group para
 subtest 'filter form' => sub {
     $driver->get('/');
     my $url = $driver->get_current_url;
-    $driver->find_element('#filter-panel .panel-heading')->click();
+    $driver->find_element('#filter-panel .card-header')->click();
     $driver->find_element_by_id('filter-group')->send_keys('SLE 12 SP2');
     my $ele = $driver->find_element_by_id('filter-limit-builds');
     $ele->click();

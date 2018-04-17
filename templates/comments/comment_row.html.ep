@@ -14,12 +14,12 @@
                 <form onsubmit="updateComment(this); return false;" onreset="hideCommentEditor(this); return true;" data-put-url="<%= url_for($put_action => ($context->{type}.'_id' => $context->{id}, comment_id => $comment_id)) %>">
                     % if (current_user && current_user->is_admin) {
                         <button class="btn btn-danger btn-circle btn-sm remove-edit-button" type="button" name="removeComment" onclick="deleteComment(this);" data-author="<%= $user->name %>" data-delete-url="<%= url_for($delete_action => ($context->{type}.'_id' => $context->{id}, comment_id => $comment_id)) %>">
-                            <span class="glyphicon glyphicon glyphicon-remove"></span>
+                            <i class="fas fa-trash"></i>
                         </button>
                     % }
                     % if (current_user && (current_user->id eq $user->id)) {
                         <button class="btn btn-info btn-circle btn-sm trigger-edit-button" type="button" name="editComment" onclick="showCommentEditor(this.form);">
-                            <span class="glyphicon glyphicon glyphicon-pencil"></span>
+                            <i class="fas fa-pencil-alt"></i>
                         </button>
                     % }
                     <h4 class="media-heading">
@@ -39,10 +39,10 @@
                     % if (current_user && ((current_user->id eq $user->id))) {
                         <textarea class="form-control comment-editing-control" name="text" rows="5"><%= $comment ? $comment->text : '' %></textarea>
                         <button class="btn btn-success btn-circle comment-editing-control" type="submit" name="applyChanges">
-                            <span class="glyphicon glyphicon glyphicon-ok"></span> Apply changes
+                            <i class="fas fa-check-circle"></i> Apply changes
                         </button>
                         <button class="btn btn-warning btn-circle comment-editing-control" type="reset" name="discardChanges">
-                            <span class="glyphicon glyphicon glyphicon-remove"></span> Discard changes
+                            <i class="fas fa-trash"></i> Discard changes
                         </button>
                     % }
                 </form>

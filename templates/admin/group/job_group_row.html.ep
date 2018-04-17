@@ -19,7 +19,7 @@
             >
             </div>
         % }
-        <span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
+        <i class="fas fa-bars"></i>
         <span>
             %= link_to $group->name => url_for('admin_job_templates', groupid => $group->id)
         </span>

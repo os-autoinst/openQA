@@ -74,10 +74,14 @@ $driver->find_element_by_link_text('Login')->click();
 $driver->title_is("openQA", "back on main page");
 
 sub goto_admin_needle_table {
-    is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
-    $driver->find_element('#user-action a')->click();
-    wait_for_ajax;
-    $driver->find_element_by_link_text('Needles')->click();
+    my $login_link = $driver->find_element('#user-action > a');
+    is($login_link->get_text(), 'Logged in as Demo', 'logged in as demo');
+    # the following should work, but apparently doesn't - at least when executing tests in Travis:
+    #   $login_link->click();
+    #   $driver->find_element_by_link_text('Needles')->click();
+    # see https://github.com/os-autoinst/openQA/pull/1619#issuecomment-381554863
+    # so navigate to admin needles page by using the URL directly
+    $driver->get('/admin/needles');
     wait_for_ajax;
 }
 goto_admin_needle_table();

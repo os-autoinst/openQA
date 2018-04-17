@@ -130,9 +130,9 @@ like($url[1], qr{progress.*new}, 'progress/redmine link for reporting test issue
 my $t   = Test::Mojo->new('OpenQA::WebAPI');
 my $get = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
 
-my @worker_text = $get->tx->res->dom->find('#info_box .panel-body div + div + div')->map('all_text')->each;
+my @worker_text = $get->tx->res->dom->find('#info_box .card-body div + div + div')->map('all_text')->each;
 like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker displayed when job running');
-my @worker_href = $get->tx->res->dom->find('#info_box .panel-body div + div + div a')->map(attr => 'href')->each;
+my @worker_href = $get->tx->res->dom->find('#info_box .card-body div + div + div a')->map(attr => 'href')->each;
 is($worker_href[0], '/admin/workers/1', 'link to worker correct');
 
 $t->element_count_is('.tab-pane.active', 1, 'only one tab visible at the same time when using step url');
@@ -174,22 +174,22 @@ subtest 'route to latest' => sub {
     $get
       = $t->get_ok('/tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit')
       ->status_is(200);
-    my $header = $t->tx->res->dom->at('#info_box .panel-heading a');
+    my $header = $t->tx->res->dom->at('#info_box .card-header a');
     is($header->text,   '99963',        'link shows correct test');
     is($header->{href}, '/tests/99963', 'latest link shows tests/99963');
     my $first_detail = $get->tx->res->dom->at('#details tbody > tr ~ tr');
     is($first_detail->at('.component a')->{href}, '/tests/99963/modules/isosize/steps/1/src', 'correct src link');
     is($first_detail->at('.links_a a')->{'data-url'}, '/tests/99963/modules/isosize/steps/1', 'correct needle link');
     $get    = $t->get_ok('/tests/latest?flavor=DVD&arch=x86_64&test=kde')->status_is(200);
-    $header = $t->tx->res->dom->at('#info_box .panel-heading a');
+    $header = $t->tx->res->dom->at('#info_box .card-header a');
     is($header->{href}, '/tests/99963', '... as long as it is unique');
     $get    = $t->get_ok('/tests/latest?version=13.1')->status_is(200);
-    $header = $t->tx->res->dom->at('#info_box .panel-heading a');
+    $header = $t->tx->res->dom->at('#info_box .card-header a');
     is($header->{href}, '/tests/99981', 'returns highest job nr of ambiguous group');
     $get    = $t->get_ok('/tests/latest?test=kde&machine=32bit')->status_is(200);
-    $header = $t->tx->res->dom->at('#info_box .panel-heading a');
+    $header = $t->tx->res->dom->at('#info_box .card-header a');
     is($header->{href}, '/tests/99937', 'also filter on machine');
-    my $job_groups_links = $t->tx->res->dom->find('.nav .dropdown a + ul.dropdown-menu li a');
+    my $job_groups_links = $t->tx->res->dom->find('.navbar .dropdown a + ul.dropdown-menu a');
     my ($job_group_text, $build_text) = $job_groups_links->map('text')->each;
     my ($job_group_href, $build_href) = $job_groups_links->map('attr', 'href')->each;
     is($job_group_text, 'opensuse (current)',   'link to current job group overview');
@@ -310,7 +310,7 @@ my $post
   ->status_is(200, 'set job as done');
 
 $get         = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
-@worker_text = $get->tx->res->dom->find('#info_box .panel-body div + div + div')->map('all_text')->each;
+@worker_text = $get->tx->res->dom->find('#info_box .card-body div + div + div')->map('all_text')->each;
 like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker still displayed when job set to done');
 
 # now test the details of a job with nearly no settings which should yield no

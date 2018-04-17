@@ -5,27 +5,27 @@
     loadWorkerTable();
 % end
 
+%# FIXME: move this from view to controller
 % my $percent_online         = $total ? int(($workers_online*100)/$total) : 0;
 % my $percent_busy           = $total ? int(($workers_busy*100)/$total) : 0;
 % my $percent_active_free    = $total ? int(($workers_active_free*100)/$total) : 0;
 % my $percent_busy_online    = $workers_online? int(($workers_active_free*100)/$workers_online) : 0;
 
-<div id="summary" class="panel panel-default">
-    <div class="panel-heading">
-        <h4><%= title %></h4>
-    </div>
-    <div class="panel-body row">
+<h2><%= title %></h2>
+<div id="summary" class="card">
+    <div class="card-header">Statistics</div>
+    <div class="card-body row">
         <div class="col-sm-3">
-            Online: <span class="badge"><%= $workers_online ? $workers_online : 0 %></span>
+            Online: <span class="badge badge-success"><%= $workers_online ? $workers_online : 0 %></span>
         </div>
         <div class="col-sm-3">
-            Busy: <span class="badge"><%= $workers_busy ? $workers_busy : 0 %></span>
+            Busy: <span class="badge badge-primary"><%= $workers_busy ? $workers_busy : 0 %></span>
         </div>
         <div class="col-sm-3">
-            Idle: <span class="badge"><%= $workers_active_free ? $workers_active_free : 0 %></span>
+            Idle: <span class="badge badge-secondary"><%= $workers_active_free ? $workers_active_free : 0 %></span>
         </div>
         <div class="col-sm-3">
-            Total: <span class="badge"><%= $total ? $total : 0 %></span>
+            Total: <span class="badge badge-dark"><%= $total ? $total : 0 %></span>
         </div>
     </div>
 </div>
@@ -74,7 +74,7 @@
                         </td>
                         <td class="version">
                             <%= exists $worker->{properties} && $worker->{properties}->{ISOTOVIDEO_INTERFACE_VERSION} ? $worker->{properties}->{ISOTOVIDEO_INTERFACE_VERSION} : 'unknown' %>
-                        </td>                        
+                        </td>
                     </tr>
                 % }
             </tbody>

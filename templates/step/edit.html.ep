@@ -16,12 +16,13 @@
 
 <div id="change-margin-form" title="Change search margin" class="modal" role="dialog" tabindex="-1">
     <div class="modal-dialog">
-
         <!-- Modal content-->
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
                 <h4 class="modal-title">Set Area Margin</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <div>The search for a needle area begins around its original position in the reference
@@ -29,7 +30,6 @@
                     it's useful to set a larger margin for the initial search. The default is 50, but as an example a value
                     of 500 will always search the full screen avoiding having to wait for timeouts.
                 </div>
-
                 <p></p>
                 <form>
                     <fieldset>
@@ -40,16 +40,13 @@
                         <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
                     </fieldset>
                 </form>
-
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" id="cancel_margin" data-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="set_margin">Set</button>
             </div>
         </div>
-
     </div>
-
 </div>
 
 <div id="change-match-form" title="Change match level" class="modal" role="dialog" tabindex="-1">
@@ -58,8 +55,10 @@
         <!-- Modal content-->
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
                 <h4 class="modal-title">Set Match Level</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <div>The needle area is matched using fuzzy image comparison. The pixels don't have to match
@@ -101,8 +100,10 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <h4 class="modal-title">title</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <p>There is already a needle with that name, be careful not to overwrite someone else's work.</p>
@@ -119,23 +120,24 @@
     <div class="row">
         %= include 'layouts/info'
         % if(@$error_messages) {
-            <div class="alert-warning alert fade in" id="editor_warnings">
-                <button class="close" data-dismiss="alert">x</button>
+            <div class="alert alert-warning alert-dismissible fade show" role="alert" id="editor_warnings">
                 <span><%== '<ul><li>'.join('</li><li>', @$error_messages).'</li></ul>' %></span>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
         % }
     </div>
 
-    <div class="row">
-
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                Basics of Needle
-            </div>
-            <div class="panel-body">
+    <div class="row card">
+        <div class="card-header">
+            Basics of Needle
+        </div>
+        <div class="card-body">
+            <div class="row">
                 <div class="col-md-6">
                     %= form_for save_needle_ajax => (id => 'save_needle_form') => (method => 'POST') => begin
-                        <div class="hidden">
+                        <div style="display: none;">
                             <label>JSON:</label><br/>
                             <textarea id="needleeditor_textarea" name="json" readOnly="yes"></textarea>
                             <input type="hidden" id="needleeditor_image" name="imagename"/>
@@ -144,11 +146,11 @@
                             <input type="hidden" id="needleeditor_imagedir" name="imagedir"/>
                         </div>
                         <div>
-                            <div>
+                            <p>
                                 <label for="needlename">Name:</label>
                                 <input type="input" name="needlename" id="needleeditor_name" class="form-control">
-                            </div>
-                            <div>
+                            </p>
+                            <p>
                                 <!-- lists the specific properties -->
                                 <input type="checkbox" name="workaround" id="property_workaround"
                                         %= 'checked' if $properties->{workaround}
@@ -159,24 +161,25 @@
                                     a \'soft-fail\'. It is suggested to mark the reason for this choice in either the
                                     name of the needle (e.g. my-name-bsc1234-20161224) or with special tags')
                                 %>
-                            </div>
+                            </p>
                         </div>
                         <button type="button" class="btn btn-default" id="review_json" title="Review JSON">Review JSON</button>
                         <button type="submit" class="btn btn-primary" id="save">Save</button>
                     % end
                 </div>
                 <div class="col-md-6">
-                    Needle based on:
-                    <select id="tags_select">
-                        <option value="screenshot">None</option>
-                        % for my $needle (@$needles) {
-                            % next if $needle->{name} eq 'screenshot';
-                            % my %attrs = ( value => $needle->{name} );
-                            % $attrs{selected} = undef if $needle->{selected};
-                            %= tag option => %attrs => $needle->{title}
-                        % }
-                    </select>
-
+                    <p>
+                        Needle based on:
+                        <select id="tags_select" class="form-control">
+                            <option value="screenshot">None</option>
+                            % for my $needle (@$needles) {
+                                % next if $needle->{name} eq 'screenshot';
+                                % my %attrs = ( value => $needle->{name} );
+                                % $attrs{selected} = undef if $needle->{selected};
+                                %= tag option => %attrs => $needle->{title}
+                            % }
+                        </select>
+                    </p>
                     <div>
                         <label>Tags:</label>
                         <div id="needleeditor_tags">
@@ -194,7 +197,7 @@
                                     <input type="text" class="form-control" id="newtag" placeholder="Add new tags here">
                                 </div>
                                 <div class="col-sm-2">
-                                    <button type="button" class="btn btn-default form-control" id="tag_add_button" disabled>Add</button>
+                                    <button type="button" class="btn btn-secondary form-control" id="tag_add_button" disabled>Add</button>
                                 </div>
                             </div>
                         % }
@@ -204,16 +207,14 @@
         </div>
     </div>
 
-    <div class="row">
-
-    <div class="panel panel-default">
-        <div class="panel-heading">Screenshot and Areas</div>
-        <div class="panel-body">
-
+    <div class="row card">
+        <div class="card-header">Screenshot and Areas</div>
+        <div class="card-body">
+            <div class="row">
                 <div class="col-lg-9">
-                    <div>
+                    <p>
                         Take image from:
-                        <select id="image_select">
+                        <select id="image_select" class="form-control" style="width: fit-content; display: inline;">
                             % for my $needle (@$needles) {
                                 <option value="<%= $needle->{name} %>">
                                     %= $needle->{title}
@@ -224,11 +225,10 @@
                             'Select either \'Screenshot\' to take the image as can be seen in the
                             current test or one of the images from the existing needle candidates')
                         %>
-                    </div>
-
-                    <div>
+                    </p>
+                    <p>
                         Copy areas from:
-                        <select id="area_select">
+                        <select id="area_select" class="form-control" style="width: fit-content; display: inline;">
                             <option value="screenshot">None</option>
                             % for my $needle (@$needles) {
                                 % next if $needle->{name} eq 'screenshot';
@@ -239,7 +239,7 @@
                         </select>
                         <input type="checkbox" id="take_matches" checked>
                         <label for="take_matches">Take matches</label>
-                    </div>
+                    </p>
                 </div>
 
                 <div class="col-lg-3">

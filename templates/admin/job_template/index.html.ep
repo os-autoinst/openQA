@@ -19,7 +19,7 @@
         <form action="<%= url_for('admin_groups') %>" class="corner-buttons">
             <button type="button" class="btn btn-default" onclick="toggleEdit();">
                 <span>
-                    <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+                    <i class="fas fa-edit"></i>
                     % if (is_admin) {
                         Edit job group properties
                     % }
@@ -30,7 +30,7 @@
             </button>
             <button type="submit" class="btn btn-default">
                 <span>
-                    <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span>
+                    <i class="fas fa-th-list"></i>
                     % if (is_admin) {
                         Manage all job groups
                     % }

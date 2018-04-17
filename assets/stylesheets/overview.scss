@@ -3,7 +3,7 @@
         text-align: left;
         word-break: break-word;
     }
-    
+
     .tooltip-inner {
         /* we need some more space for all the needles */
         max-width: 400px;
@@ -15,11 +15,15 @@
 }
 
 #summary .badge {
-    margin-right: 8px;
+    font-size: 90%;
+    padding: 4px 6px 4px;
+    border-radius: 0.5rem;
+    color: #fff;
+    background-color: #bbb;
 }
 
 #filter-panel, #live-log-panel, #live-terminal-panel {
-    .panel-heading {
+    .card-header {
         cursor: pointer;
 
         span {
@@ -28,7 +32,7 @@
             font-weight: 500;
         }
     }
-    .panel-body {
+    .card-body {
         display: none;
     }
 
@@ -36,20 +40,9 @@
         strong {
             display: block;
         }
-        .form-group {
-            label {
-                margin-left: 0px;
-                padding-left: 0px;
-                font-weight: normal;
-            }
-            input {
-                margin-left: 20px;
-                margin-right: 2px;
-                padding-right: 0px;
-            }
-            strong + input {
-                margin-left: 0px;
-            }
+        .form-group label {
+            margin-right: 3px;
+            font-weight: normal;
         }
     }
 }
