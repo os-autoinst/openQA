@@ -61,7 +61,10 @@ sub disable_bootstrap_fade_animation {
 
 # returns the contents of the candidates combo box as hash (key: tag, value: array of needle names)
 sub find_candidate_needles {
+    # ensure the candidates menu is visible
     $driver->find_element('#candidatesMenu')->click();
+
+    # read the tags/needles from the HTML strucutre
     my @section_elements = $driver->find_elements('#needlediff_selector ul table');
     my %needles_by_tag   = map {
         # find tag name
@@ -83,6 +86,12 @@ sub find_candidate_needles {
 
         OpenQA::Test::Case::trim_whitespace($tag_elements[0]->get_text()) => \@needles;
     } @section_elements;
+
+    # further assertions
+    my $selected_needle_count = scalar @{$driver->find_elements('#needlediff_selector tr.selected')};
+    ok($selected_needle_count <= 1, "at most one needle is selected at a time ($selected_needle_count selected)");
+
+    # close the candidates menu again, return results
     $driver->find_element('#candidatesMenu')->click();
     return \%needles_by_tag;
 }

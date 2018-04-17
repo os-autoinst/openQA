@@ -632,16 +632,19 @@ sub viewimg {
     }
 
     # sort needles by average similarity
-    my $has_selection = $primary_match;
+    my $has_selection = defined($primary_match);
     for my $tag (keys %needles_by_tag) {
         my @sorted_needles = sort { $b->{avg_similarity} <=> $a->{avg_similarity} || $a->{name} cmp $b->{name} }
           @{$needles_by_tag{$tag}};
         $needles_by_tag{$tag} = \@sorted_needles;
 
         # preselect a rather good needle
-        if (!$has_selection && $sorted_needles[0] && $sorted_needles[0]->{avg_similarity} > 70) {
-            $has_selection = $sorted_needles[0]->{selected} = 1;
-            $primary_match = $sorted_needles[0];
+        # note: the same needle can be shown under different tags, hence the selected flag might be occur twice
+        #       (even though we check for $has_selection here!)
+        my $best_match = $sorted_needles[0];
+        if (!$has_selection && $best_match && $best_match->{avg_similarity} > 70) {
+            $has_selection = $best_match->{selected} = 1;
+            $primary_match = $best_match;
         }
     }
 

@@ -13,6 +13,7 @@
             </button>
             <div id="needlediff_selector" class="dropdown-menu dropdown-persistent" aria-labelledby="candidatesMenu">
                 <ul>
+                    % my $has_selection;
                     % for my $tag (sort keys %$needles_by_tag) {
                         <li>
                             <table>
@@ -30,7 +31,8 @@
                                             data-areas="<%= Cpanel::JSON::XS::encode_json($needle->{areas})%>"
                                             data-matches="<%= Cpanel::JSON::XS::encode_json($needle->{matches}) %>"
                                             data-label="<%= $needle->{label} %>"
-                                        % if ($needle->{selected}) {
+                                        % if (!$has_selection && $needle->{selected}) {
+                                            % $has_selection = 1;
                                             class="selected"
                                         % }
                                         % if ($needle->{primary_match}) {

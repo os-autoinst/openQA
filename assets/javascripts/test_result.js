@@ -169,20 +169,28 @@ function checkResultHash() {
 }
 
 function prevNeedle() {
-    var newSelection = $('#needlediff_selector tbody tr.selected').prev();
-    if (newSelection.length) {
-        setNeedle(newSelection);
-    } else {
-        setNeedle($([]));
+    // select previous in current tag
+    var currentSelection = $('#needlediff_selector tbody tr.selected');
+    var newSelection = currentSelection.prev();
+    if (!newSelection.length) {
+        // select last in previous tag
+        newSelection = currentSelection.parents('li').prevAll().find('tbody tr').last();
     }
+    setNeedle(newSelection);
 }
 
 function nextNeedle() {
     var currentSelection = $('#needlediff_selector tbody tr.selected');
     if (!currentSelection.length) {
-        var newSelection = $('#needlediff_selector tbody tr:first-child');
+        // select first needle in first tag
+        var newSelection = $('#needlediff_selector tbody tr:first-child').first();
     } else {
+        // select next in current tag
         var newSelection = currentSelection.next();
+        if (!newSelection.length) {
+            // select first of next tag
+            newSelection = currentSelection.parents('li').nextAll().find('tbody tr').first();
+        }
     }
     if (newSelection.length) {
         setNeedle(newSelection);
