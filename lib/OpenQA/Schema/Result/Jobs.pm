@@ -1108,6 +1108,21 @@ sub insert_test_modules {
     }
 }
 
+sub custom_module {
+    my ($self, $module, $output) = @_;
+
+    my $parser = parser('Base');
+    $parser->include_results(1) if $parser->can("include_results");
+
+    $parser->results->add($module);
+    $parser->_add_output($output) if defined $output;
+
+    $self->insert_module($module->test->to_openqa);
+    $self->update_module($module->test->name, $module->to_openqa);
+
+    $parser->write_output($self->result_dir);
+}
+
 # check the group comments for tags
 sub part_of_important_build {
     my ($self) = @_;

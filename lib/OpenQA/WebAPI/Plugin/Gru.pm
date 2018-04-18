@@ -124,9 +124,9 @@ sub delete_gru {
 }
 
 sub fail_gru {
-    my ($self, $id) = @_;
+    my ($self, $id, $reason) = @_;
     my $gru = $self->app->db->resultset('GruTasks')->find($id);
-    $gru->fail() if $gru;
+    $gru->fail($reason) if $gru;
 }
 
 sub cmd_list { shift->job->run(@_) }
@@ -144,7 +144,7 @@ sub execute_job {
     };
 
     if (defined $err) {
-        $self->fail_gru($job->info->{notes}{gru_id})
+        $self->fail_gru($job->info->{notes}{gru_id} => $err)
           if $job->fail({(output => $buffer) x !!(defined $buffer), error => $err})
           && exists $job->info->{notes}{gru_id};
     }
