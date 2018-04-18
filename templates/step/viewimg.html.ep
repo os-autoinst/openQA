@@ -1,28 +1,70 @@
 <div class="aligncenter" data-image="<%= url_for('test_img', filename => $screenshot) %>" id="step_view">
     <span class="candidate_needles">
-        Candidate needle:
-        <select id="needlediff_selector">
-            <option data-areas="[]" data-matches="[]">None</option>
-            % for my $tag (sort keys %$needles_by_tag) {
-                <optgroup label="<%= $tag %>">
-                    % for my $needle (@{$needles_by_tag->{$tag}}) {
-                        % my $title = $needle->{avg_similarity} . "%: " . $needle->{name};
-                        <option data-image="<%= $needle->{image} %>"
-                                data-areas="<%= Cpanel::JSON::XS::encode_json($needle->{areas})%>"
-                                data-matches="<%= Cpanel::JSON::XS::encode_json($needle->{matches}) %>"
-                            % if ($needle->{selected}) {
-                                selected="selected"
-                            % }
-                            % if ($needle->{primary_match}) {
-                                style="font-style: italic;"
-                            % }
-                            >
-                            %= $title
-                        </option>
+        Candidate needles and tags:
+        <div class="btn-group candidates-selection dropdown">
+            <button type="button" class="btn btn-light btn-left" onclick="setNeedle($([]));" id="screenshot_button">
+                <i class="fas fa-image" title="Show only screenshot"></i>
+            </button>
+            <button type="button" class="btn btn-light dropdown-toggle" aria-haspopup="true" aria-expanded="false" data-toggle="dropdown" id="candidatesMenu">
+                <span id="current_needle_label">
+                    %= $default_label
+                </span>
+                <span class="caret"></span>
+            </button>
+            <div id="needlediff_selector" class="dropdown-menu dropdown-persistent" aria-labelledby="candidatesMenu">
+                <ul>
+                    % my $has_selection;
+                    % for my $tag (sort keys %$needles_by_tag) {
+                        <li>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th colspan="3">
+                                            <i class="fas fa-tag"></i>
+                                            %= $tag
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    % for my $needle (@{$needles_by_tag->{$tag}}) {
+                                        <tr data-image="<%= $needle->{image} %>"
+                                            data-areas="<%= Cpanel::JSON::XS::encode_json($needle->{areas})%>"
+                                            data-matches="<%= Cpanel::JSON::XS::encode_json($needle->{matches}) %>"
+                                            data-label="<%= $needle->{label} %>"
+                                        % if (!$has_selection && $needle->{selected}) {
+                                            % $has_selection = 1;
+                                            class="selected"
+                                        % }
+                                        % if ($needle->{primary_match}) {
+                                            style="font-style: italic;"
+                                        % }
+                                            onclick="setNeedle($(this));"
+                                        >
+                                            <td>
+                                                %= $needle->{avg_similarity}
+                                            </td>
+                                            <td>
+                                                %= $needle->{name}
+                                            </td>
+                                            <td>
+                                                <i class="fas fa-images trigger-diff"
+                                                    title="View area-only diff"
+                                                    data-diff="area-only-diff">
+                                                </i>
+                                                <i class="fas fa-eye trigger-diff"
+                                                    title="View full diff"
+                                                    data-diff="full-diff">
+                                                </i>
+                                            </td>
+                                        </tr>
+                                    % }
+                                </tbody>
+                            </table>
+                        </li>
                     % }
-                </optgroup>
-            % }
-        </select>
+                </ul>
+            </div>
+        </div>
     </span>
     <span class="step_actions">
         % if (is_operator) {

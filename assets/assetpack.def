@@ -17,7 +17,6 @@
 < stylesheets/openqa.scss
 < https://raw.githubusercontent.com/bootstrapthemesco/bootstrap-4-multi-dropdown-navbar/beta2.0/css/bootstrap-4-navbar.css
 < https://cdnjs.cloudflare.com/ajax/libs/chosen/1.7.0/chosen.css
-< stylesheets/result_preview.scss
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.0.0/scss/bootstrap.scss
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.0.0/scss/_functions.scss
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.0.0/scss/_variables.scss

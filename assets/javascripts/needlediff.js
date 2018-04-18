@@ -99,6 +99,11 @@ NeedleDiff.prototype.draw = function() {
     split = 1;
   }
 
+  // Show full diff
+  if (this.fullNeedleImg) {
+    this.ctx.drawImage(this.fullNeedleImg, 0, 0, split, this.height, 0, 0, split, this.height);
+  }
+
   // Draw all match boxes
   this.matches.forEach(function(a, idx) {
 
@@ -118,39 +123,53 @@ NeedleDiff.prototype.draw = function() {
       y_end = this.height;
     }
 
-    if (split > x) {
-
-      // ...fill that left part with the original needle's area
-
-      if (split - x < width) {
-        width = split - x;
+    // draw match/area frames
+    orig = this.areas[idx];
+    this.ctx.lineWidth = lineWidth;
+    if (split > x && !this.fullNeedleImg) {
+      // fill left part with original needle's area
+      var usedWith = width;
+      if (split - x < usedWith) {
+        usedWith = split - x;
       } else {
-        width += 1;
+        usedWith += 1;
       }
+      if (!this.fullNeedleImg) {
+        // draw matching part of needle image
+        this.ctx.strokeStyle = NeedleDiff.strokecolor(a.type);
+        this.ctx.drawImage(this.needleImg, orig.xpos, orig.ypos,
+                           usedWith, a.height, x, a.ypos, usedWith, a.height);
+        // draw frame of match area
+        this.ctx.lineWidth = lineWidth;
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + usedWith, y_start);
+        this.ctx.lineTo(x, y_start);
+        this.ctx.lineTo(x, y_end);
+        this.ctx.lineTo(x + usedWith, y_end);
+        this.ctx.lineTo(x + usedWith, y_start);
+        this.ctx.stroke();
+      }
+    }
 
-      this.ctx.strokeStyle = NeedleDiff.strokecolor(a.type);
-
-      orig = this.areas[idx];
-      this.ctx.drawImage(this.needleImg, orig['xpos'], orig['ypos'],
-                         width, a['height'], x, a['ypos'], width, a['height']);
-
-      this.ctx.lineWidth = lineWidth;
+    if (split > orig.xpos && this.fullNeedleImg) {
+      // draw frame of original area
+      this.ctx.strokeStyle = NeedleDiff.strokecolor('originalArea');
       this.ctx.beginPath();
-      this.ctx.moveTo(x + width, y_start);
-      this.ctx.lineTo(x, y_start);
-      this.ctx.lineTo(x, y_end);
-      this.ctx.lineTo(x + width, y_end);
-      this.ctx.lineTo(x + width, y_start);
+      var origX = orig.xpos;
+      var origY = orig.ypos - lineWidth;
+      var origYEnd = orig.ypos + orig.height + lineWidth;
+      var origWidth = split - origX < a.width ? split - origX : a.width + 1;
+      this.ctx.moveTo(origX + origWidth, origY);
+      this.ctx.lineTo(origX, origY);
+      this.ctx.lineTo(origX, origYEnd);
+      this.ctx.lineTo(origX + origWidth, origYEnd);
+      this.ctx.lineTo(origX + origWidth, origY);
       this.ctx.stroke();
     }
 
-    width = a['width'];
-
     if (split < x + width) {
-
-      // ...fill the right part with the new screenshot (not gray)
-
-      this.ctx.strokeStyle = NeedleDiff.shapecolor(a['type']);
+      // fill the right part with the new screenshot (not gray)
+      this.ctx.strokeStyle = NeedleDiff.shapecolor(a.type);
 
       var start = split;
       if (split < a['xpos'])
@@ -210,15 +229,16 @@ NeedleDiff.prototype.draw = function() {
         this.ctx.fillText(text, tx, ty);
       }
 
-      text = "Needle";
-      textSize = this.ctx.measureText(text);
-      if (a['xpos'] + textSize.width < split) {
-        tx = a['xpos'] + 1;
-        this.ctx.strokeText(text, tx, ty);
-        this.ctx.fillStyle = "rgb(64,224,208)";
-        this.ctx.fillText(text, tx, ty);
+      if (!this.fullNeedleImg) {
+        text = "Needle";
+        textSize = this.ctx.measureText(text);
+        if (a['xpos'] + textSize.width < split) {
+          tx = a['xpos'] + 1;
+          this.ctx.strokeText(text, tx, ty);
+          this.ctx.fillStyle = "rgb(64,224,208)";
+          this.ctx.fillText(text, tx, ty);
+        }
       }
-
     }
 
   }.bind(this));
@@ -265,9 +285,10 @@ NeedleDiff.prototype.mouseup = function(event) {
 }
 
 NeedleDiff.strokecolors = {
-    ok:      'rgb( 64, 224, 208)',
-    fail:    'rgb( 64, 224, 208)',
-    exclude: 'rgb(100, 100, 100)',
+    ok:           'rgb( 64, 224, 208)',
+    fail:         'rgb( 64, 224, 208)',
+    exclude:      'rgb(100, 100, 100)',
+    originalArea: 'rgb(200, 200, 200)',
 };
 
 NeedleDiff.strokecolor = function(type) {
@@ -325,22 +346,69 @@ function setDiffScreenshot(differ, screenshotSrc) {
   });
 }
 
-function setNeedle() {
-  var sel = $('#needlediff_selector').find('option:selected');
+function setNeedle(sel, kind) {
+  // default to the same mode which was used previously
+  if (!kind) {
+    kind = window.differ.fullNeedleImg ? 'full-diff' : 'area-only-diff';
+  }
+  // set parameter according to the selected kind of diff
+  if (kind === 'area-only-diff') {
+    var assignFullNeedleImg = false;
+  } else if (kind === 'full-diff') {
+    var assignFullNeedleImg = true;
+  } else {
+    window.alert(kind + ' is not available (yet)!');
+    return;
+  }
 
-  window.differ.areas = sel.data('areas');
-  window.differ.matches = sel.data('matches');
+  var currentSelection = $('#needlediff_selector tbody tr.selected');
+  if (sel) {
+    // set needle for newly selected item
+    currentSelection.removeClass('selected');
+    sel.addClass('selected');
+    // update label/button text
+    var label = sel.data('label');
+    if (!label) {
+        label = 'Screenshot';
+    }
+    $('#current_needle_label').text(label);
+  } else {
+    // set needle for current selection
+    sel = currentSelection;
+  }
 
+  // set areas/matches
+  if (sel.length) {
+    // show actual candidate
+    window.differ.areas = sel.data('areas');
+    window.differ.matches = sel.data('matches');
+    $('#screenshot_button').prop('disabled', false);
+  } else {
+    // show only a screenshot
+    window.differ.areas = window.differ.matches = [];
+    $('#screenshot_button').prop('disabled', true);
+  }
+
+  // set image
   var src = sel.data('image');
-
   if (src) {
     $('<img src="' + src + '">').on('load', function() {
       var image = $(this).get(0);
       window.differ.needleImg = image;
+      window.differ.fullNeedleImg = assignFullNeedleImg ? image : null;
       window.differ.draw();
     });
   } else {
     window.differ.needleImg = null;
+    window.differ.fullNeedleImg = null;
     window.differ.draw();
+  }
+
+  // close menu again, except user is selecting text to copy
+  var needleDiffSelector = document.getElementById('needlediff_selector');
+  var selection = window.getSelection();
+  var userSelectedText = !selection.isCollapsed && $.contains(needleDiffSelector, selection.anchorNode);
+  if (!userSelectedText && $(needleDiffSelector).is(":visible")) {
+    $('#candidatesMenu').dropdown('toggle');
   }
 }

@@ -51,6 +51,21 @@ function previewSuccess(data, force) {
     }
   });
   $('[data-toggle="popover"]').popover({html: true});
+  // make persistent dropdowns persistent by preventing click-event propagation
+  $('.dropdown-persistent').on('click', function (event) {
+      event.stopPropagation();
+  });
+  // ensure keydown event happening when button has focus is propagated to the right handler
+  $('.candidates-selection .dropdown-toggle').on('keydown', function (event) {
+      event.stopPropagation();
+      handleKeyDownOnTestDetails(event);
+  });
+  // handle click on the diff selection
+  $('.trigger-diff').on('click', function (event) {
+      var trigger = $(this);
+      setNeedle(trigger.parents('tr'), trigger.data('diff'));
+      event.stopPropagation();
+  });
 }
 
 function mapHash(hash) {
@@ -153,30 +168,73 @@ function checkResultHash() {
   }
 }
 
+function prevNeedle() {
+    // select previous in current tag
+    var currentSelection = $('#needlediff_selector tbody tr.selected');
+    var newSelection = currentSelection.prev();
+    if (!newSelection.length) {
+        // select last in previous tag
+        newSelection = currentSelection.parents('li').prevAll().find('tbody tr').last();
+    }
+    setNeedle(newSelection);
+}
+
+function nextNeedle() {
+    var currentSelection = $('#needlediff_selector tbody tr.selected');
+    if (!currentSelection.length) {
+        // select first needle in first tag
+        var newSelection = $('#needlediff_selector tbody tr:first-child').first();
+    } else {
+        // select next in current tag
+        var newSelection = currentSelection.next();
+        if (!newSelection.length) {
+            // select first of next tag
+            newSelection = currentSelection.parents('li').nextAll().find('tbody tr').first();
+        }
+    }
+    if (newSelection.length) {
+        setNeedle(newSelection);
+    }
+}
+
+function handleKeyDownOnTestDetails(e) {
+    var ftn = $(':focus').prop('tagName');
+    if (ftn === 'INPUT' || ftn === 'TEXTAREA') {
+        return;
+    }
+    if (e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) {
+        return;
+    }
+
+    switch(e.which) {
+        case KeyEvent.DOM_VK_LEFT:
+            prevPreview();
+            e.preventDefault();
+            break;
+        case KeyEvent.DOM_VK_RIGHT:
+            nextPreview();
+            e.preventDefault();
+            break;
+        case KeyEvent.DOM_VK_ESCAPE:
+            setCurrentPreview(null);
+            e.preventDefault();
+            break;
+        case KeyEvent.DOM_VK_UP:
+            prevNeedle();
+            e.preventDefault();
+            break;
+        case KeyEvent.DOM_VK_DOWN:
+            nextNeedle();
+            e.preventDefault();
+            break;
+    }
+}
+
 function setupResult(state, jobid, status_url, details_url) {
   setupAsyncFailedResult();
   $(".current_preview").removeClass("current_preview");
 
-  $(window).keydown(function(e) {
-    var ftn = $(":focus").prop("tagName");
-    if (ftn == "INPUT" || ftn == "TEXTAREA") {
-      return;
-    }
-    if (e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) {
-      return;
-    }
-    if (e.which == KeyEvent.DOM_VK_LEFT) {
-      prevPreview();
-      e.preventDefault();
-    }
-    else if (e.which == KeyEvent.DOM_VK_RIGHT) {
-      nextPreview();
-      e.preventDefault();
-    } else if (e.which == KeyEvent.DOM_VK_ESCAPE) {
-      setCurrentPreview(null);
-      e.preventDefault();
-    }
-  });
+  $(window).keydown(handleKeyDownOnTestDetails);
 
   $(window).resize(function() {
     if ($(".current_preview")) {
@@ -214,7 +272,6 @@ function setupResult(state, jobid, status_url, details_url) {
   $(window).on("hashchange", checkResultHash);
   checkResultHash();
 
-  $(document).on("change", "#needlediff_selector", setNeedle);
   $("a[data-toggle='tab']").on("show.bs.tab", function(e) {
     var tabshown = $(e.target).attr("href");
     // now this is very special
