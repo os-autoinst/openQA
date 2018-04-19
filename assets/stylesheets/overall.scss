@@ -20,6 +20,13 @@ body {
     // always show a scrollbar not to flicker on tabs / long drop downs
     overflow-y: scroll;
 }
+@include media-breakpoint-up(md) {
+    #content {
+        padding-left: 40px;
+        padding-right: 40px;
+        max-width: 1220px;
+    }
+}
 
 // footer
 .footer {

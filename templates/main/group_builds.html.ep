@@ -2,7 +2,7 @@
     % my $build = $build_res->{build};
     % my $group_id;
     <div class="row build-row <%= $children ? ($default_expanded ? 'children-expanded' : 'children-collapsed') : 'no-children' %>">
-        <div class="col-lg-4 text-nowrap">
+        <div class="col-xl-4 text-nowrap">
             <span class="h4">
                 % if ($children) {
                     % $group_id = "group$group->{id}_build$build_res->{escaped_id}";
@@ -25,7 +25,7 @@
                 </span>
             % }
         </div>
-        <div class="col-lg-8">
+        <div class="col-xl-8">
             % if ($max_jobs) {
                 %= include 'main/build_progressbar', max_jobs => $max_jobs, result => $build_res
             % }
@@ -38,13 +38,13 @@
                 % my $jobs = $child_res->{passed} + $child_res->{unfinished} + $child_res->{softfailed} + $child_res->{failed} + $child_res->{skipped};
                 % if ($jobs) {
                     <div class="row build-row">
-                        <div class="col-md-4 text-nowrap">
+                        <div class="col-lg-4 text-nowrap">
                             <span class="h4">
                                 %= link_to $child->{name} => url_for('tests_overview')->query(distri => [sort keys %{$child_res->{distris}}], version => $child_res->{version}, build => $build, groupid => $child->{id})
                                 %= include 'main/review_badge', group_build_id => $group_build_id, build_res => $child_res, id_prefix => 'child-'
                             </span>
                         </div>
-                        <div class="col-md-8">
+                        <div class="col-lg-8">
                             %= include 'main/build_progressbar', max_jobs => $jobs, result => $child_res
                         </div>
                     </div>
