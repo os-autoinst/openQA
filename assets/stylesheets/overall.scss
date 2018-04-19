@@ -167,6 +167,18 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     word-break: break-all;
 }
 
+// tooltips
+.tooltip .tooltip-inner {
+    max-width: 400px;
+    p {
+        margin-bottom: 2px;
+    }
+    p, ul {
+        text-align: left;
+        word-break: break-word;
+    }
+}
+
 // full screen mode
 #content_fullscreen {
     min-width: 100%;

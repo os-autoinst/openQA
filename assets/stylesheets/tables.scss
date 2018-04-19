@@ -116,20 +116,21 @@ table.admintable {
         min-width: 10em;
     }
 }
+
 table.overview {
     td {
         text-align: left;
-        overflow-x: hidden;
     }
     td.name {
         padding-top: .5em;
         padding-bottom: .5em;
         text-overflow: ellipsis;
+        overflow-x: hidden;
     }
+
     .failedmodule {
         background-color: #E9F7C9;
-        padding-left: 3px;
-        padding-right: 2px;
+        padding: 3px;
         margin-right: 1ex;
         border-radius: 3px;
         border: 1px solid #D2DFB5;

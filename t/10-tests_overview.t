@@ -84,7 +84,7 @@ $get->element_exists_not('#res_DVD_i586_doc');
 $get->element_exists_not('#res_DVD_i686_doc');
 
 my $failedmodules
-  = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#res_DVD_x86_64_doc .failedmodule a')->all_text);
+  = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#res_DVD_x86_64_doc .failedmodule')->all_text);
 like($failedmodules, qr/logpackages/i, "failed modules are listed");
 
 #

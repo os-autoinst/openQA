@@ -260,38 +260,44 @@ function setupResultButtons() {
     });
 }
 
-function getFailedSteps(failed_module) {
-    if (failed_module.has_failed_steps) {
-        return;
-    }
-    failed_module.has_failed_steps = true;
-    var failedModuleElement = $(failed_module);
-    var failedModuleLink = failedModuleElement.children('a');
-    $.getJSON(failedModuleElement.data('async'), function(fails) {
-        var new_href = failedModuleLink.attr('href').replace(/\/1$/, '/' + fails.first_failed_step);
-        failedModuleLink.replaceWith('<a href="' + new_href + '">' + failedModuleLink.text() + '</a>');
-        if (!fails.failed_needles.length) {
-            failedModuleElement.attr('data-original-title', "");
-            failedModuleElement.tooltip('hide');
+function setupLazyLoadingFailedSteps() {
+    // lazy-load failed steps when the tooltip is shown
+    $('.failedmodule').on('show.bs.tooltip', function() {
+        // skip if we have already loaded failed steps before
+        if (this.hasFailedSteps) {
             return;
         }
-        var new_title = '<p>Failed needles:</p><ul>';
-        $.each(fails.failed_needles, function(i, needle) {
-            new_title += '<li>' + needle + '</li>';
-        });
-        new_title += '</ul>';
-        failedModuleElement.attr('data-original-title', new_title);
-        if ($('.tooltip:visible').length) {
-            failedModuleElement.tooltip('show');
-        }
-    }).fail(function() {
-        failed_module.has_failed_steps = false;
-    });
-}
+        this.hasFailedSteps = true;
 
-function setupAsyncFailedResult() {
-    $(document).on('show.bs.tooltip', '.failedmodule', function() {
-        getFailedSteps(this);
+        // query failed steps via AJAX
+        var failedModuleElement = $(this);
+        $.getJSON(failedModuleElement.data('async'), function(fails) {
+            // adjust href
+            var newHref = failedModuleElement.attr('href').replace(/\/1$/, '/' + fails.first_failed_step);
+            failedModuleElement.attr('href', newHref);
+
+            // hide tooltip if we have nothing to show
+            if (!fails.failed_needles.length) {
+                failedModuleElement.attr('data-original-title', '');
+                failedModuleElement.tooltip('hide');
+                return;
+            }
+
+            // update data for tooltip
+            var newTitle = '<p>Failed needles:</p><ul>';
+            $.each(fails.failed_needles, function(i, needle) {
+                newTitle += '<li>' + needle + '</li>';
+            });
+            newTitle += '</ul>';
+            failedModuleElement.attr('data-original-title', newTitle);
+
+            // update existing tooltip
+            if (failedModuleElement.next('.tooltip').length) {
+                failedModuleElement.tooltip('show');
+            }
+        }).fail(function() {
+            this.hasFailedSteps = false;
+        });
     });
 }
 

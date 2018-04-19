@@ -1,15 +1,3 @@
-.overview {
-    .tooltip ul {
-        text-align: left;
-        word-break: break-word;
-    }
-
-    .tooltip-inner {
-        /* we need some more space for all the needles */
-        max-width: 400px;
-    }
-}
-
 .table.overview {
     table-layout: fixed;
 }
