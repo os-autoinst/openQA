@@ -33,6 +33,9 @@ use Test::Mojo;
 use Test::Warnings;
 use Mojo::IOLoop::ReadWriteProcess;
 use OpenQA::Test::Utils 'redirect_output';
+use OpenQA::Parser::Result::OpenQA;
+use OpenQA::Parser::Result::Test;
+use OpenQA::Parser::Result::Output;
 
 my $schema = OpenQA::Test::Case->new->init_data;
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
@@ -160,6 +163,28 @@ subtest 'job with at least one softfailed and rest passed => overall is softfail
     is($job->softfailed_module_count, 1, 'number of softfailed modules incremented');
     is($job->failed_module_count,     0, 'number of failed modules not incremented');
     is($job->skipped_module_count,    0, 'number of skipped modules not incremented');
+};
+
+subtest 'Create custom job module' => sub {
+    my %_settings = %settings;
+    $_settings{TEST} = 'TEST1';
+    my $job    = _job_create(\%_settings);
+    my $result = OpenQA::Parser::Result::OpenQA->new(
+        details => [{text => "Test-CUSTOM.txt", title => 'CUSTOM'}],
+        name    => 'random',
+        result  => 'fail',
+        test    => OpenQA::Parser::Result::Test->new(name => 'CUSTOM', category => 'w00t!'));
+    my $output = OpenQA::Parser::Result::Output->new(file => 'Test-CUSTOM.txt', content => 'Whatever!');
+
+    $job->custom_module($result => $output);
+    $job->update;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    $job->done;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
+
+    is(($job->failed_modules)->[0], 'CUSTOM');
 };
 
 subtest 'job with at least one failed module and one softfailed => overall is failed' => sub {
