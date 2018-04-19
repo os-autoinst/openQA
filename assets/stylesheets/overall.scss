@@ -80,20 +80,33 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     margin-bottom: 15px;
 }
 // colorful card headers (Bootstrap 4 only has colorful borders or fully colored cards)
-.card.border-danger .card-header {
-    background-color: rgba(255, 0, 0, 0.10);
+.card.border-danger {
+    border-color: #eed3d7;
+    .card-header {
+        color: #b94a48;
+        background-color: #f2dede;
+    }
 }
-.card.border-success .card-header {
-    background-color: rgba(2, 184, 117, 0.10);
+.card.border-success {
+    border-color: #d6e9c6;
+    .card-header {
+        color: #468847;
+        background-color: #dff0d8;
+    }
 }
-.card.border-warning .card-header {
-    background-color: rgba(240, 173, 78, 0.10);
+.card.border-warning {
+    border-color: #fbeed5;
+    .card-header {
+        color: #c09853;
+        background-color: #fcf8e3;
+    }
 }
 .card.border-info {
-    border-color: rgb(188, 232, 241) !important;
-}
-.card.border-info .card-header {
-    background-color: rgba(188, 232, 241, 0.30);
+    border-color: #bce8f1;
+    .card-header {
+        color: #3a87ad;
+        background-color: #d9edf7;
+    }
 }
 
 // big welcome box ("jumbtron")
