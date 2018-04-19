@@ -1,8 +1,15 @@
 // progress bars for dashboard
 div.progress {
-    // add margin to progress bars for correct vertical alignment
-    margin-top: 3px;
-    margin-bottom: 3px;
+    // add margin to progress bars for consistent vertical alignment with the
+    // build name left to the bar
+    margin-top: 9px;
+    margin-bottom: 9px;
+    height: 18px;
+}
+@include media-breakpoint-down(lg) {
+    div.progress {
+        margin-top: 0px !important;
+    }
 }
 td div.progress {
     // however, progress bars inside table cells, eg. under /tests should not have margin
@@ -37,20 +44,24 @@ td div.progress {
 }
 
 // expandible items on dashboard (mainly the BuildXXXX headings)
+.build-row .h4 {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    display: block;
+    margin-top: 7px;
+    margin-bottom: 10px;
+}
 .build_group_children {
     & > div {
         margin-left: 17px;
     }
 
-    .h4, .progress {
+    .h4 {
         margin-top: 0px;
-        margin-bottom: 10px;
     }
-}
-.build-row .h4 {
-    text-overflow: ellipsis;
-    overflow: hidden;
-
+    .progress {
+        margin-top: 2px;
+    }
 }
 .col-lg-4.text-nowrap {
     display: flex;
