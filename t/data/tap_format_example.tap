@@ -1,0 +1,356 @@
+t/05-scheduler-dependencies.t .. 
+[DEBUG] Attempt to find job 1/1
+[DEBUG] DB was updated to reflect system status
+[DEBUG] Got job 99983
+[DEBUG] [Job#99983] Prepare for being processed by worker 3
+ok 1 - lowest prio of jobs without parents
+ok 2 - same vlan for whole group
+[DEBUG] Attempt to find job 1/1
+[DEBUG] DB was updated to reflect system status
+[DEBUG] Got job 99984
+[DEBUG] [Job#99984] Prepare for being processed by worker 4
+ok 3 - direct child of B
+ok 4 - same vlan for whole group
+[DEBUG] Attempt to find job 1/1
+[DEBUG] DB was updated to reflect system status
+[DEBUG] Got job 99987
+[DEBUG] [Job#99987] Prepare for being processed by worker 5
+ok 5 - direct child of C
+ok 6 - same vlan for whole group
+[DEBUG] Attempt to find job 1/1
+[DEBUG] DB was updated to reflect system status
+[DEBUG] Got job 99982
+[DEBUG] [Job#99982] Prepare for being processed by worker 6
+ok 7 - E is direct child of C, but A and D must be started first
+ok 8 - same vlan for whole group
+[DEBUG] Attempt to find job 1/1
+[DEBUG] DB was updated to reflect system status
+[DEBUG] Got job 99985
+[DEBUG] [Job#99985] Prepare for being processed by worker 7
+ok 9 - direct child of A
+ok 10 - same vlan for whole group
+[DEBUG] Attempt to find job 1/1
+[DEBUG] DB was updated to reflect system status
+[DEBUG] Got job 99986
+[DEBUG] [Job#99986] Prepare for being processed by worker 8
+ok 11 - C and D are now running so we can start E
+ok 12 - same vlan for whole group
+[DEBUG] dispatching IPC ws_send to websockets: [7, "cancel", 99985]
+[DEBUG] IPC calling ws_send
+[DEBUG] IPC finished
+[DEBUG] dispatching IPC ws_send to websockets: [8, "cancel", 99986]
+[DEBUG] IPC calling ws_send
+[DEBUG] IPC finished
+ok 13 - job_set_done
+[DEBUG] dispatching IPC ws_send to websockets: [8, "cancel", 99986]
+[DEBUG] IPC calling ws_send
+[DEBUG] IPC finished
+ok 14 - job_set_done
+ok 15 - job_set_done
+ok 16 - job_set_done changed state
+ok 17 - job_set_done changed result
+ok 18 - job_set_done changed state
+ok 19 - job_set_done changed state
+ok 20 - job_set_done changed state
+ok 21 - job_set_done changed result, jobD failed because of jobA
+ok 22 - job_set_done changed state
+ok 23 - job_set_done changed result, jobE failed because of jobD
+ok 24 - job_set_done changed state
+[debug] GET "/api/v1/mm/children/running"
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1" and action "auth_jobtoken"
+[debug] Received JobToken: qjwJxfrJnuDdpqZ4
+[debug] Found associated job 99984
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1::Mm" and action "get_children_status"
+[debug] 200 OK (0.006909s, 144.739/s)
+ok 25 - GET /api/v1/mm/children/running
+ok 26 - 200 OK
+ok 27 - exact match for JSON Pointer "/jobs"
+[debug] GET "/api/v1/mm/children/scheduled"
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1" and action "auth_jobtoken"
+[debug] Received JobToken: qjwJxfrJnuDdpqZ4
+[debug] Found associated job 99984
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1::Mm" and action "get_children_status"
+[debug] 200 OK (0.00455s, 219.780/s)
+ok 28 - GET /api/v1/mm/children/scheduled
+ok 29 - 200 OK
+ok 30 - exact match for JSON Pointer "/jobs"
+[debug] GET "/api/v1/mm/children/done"
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1" and action "auth_jobtoken"
+[debug] Received JobToken: qjwJxfrJnuDdpqZ4
+[debug] Found associated job 99984
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1::Mm" and action "get_children_status"
+[debug] 200 OK (0.004425s, 225.989/s)
+ok 31 - GET /api/v1/mm/children/done
+ok 32 - 200 OK
+ok 33 - exact match for JSON Pointer "/jobs"
+[debug] enqueuing abort for 99984 4
+[debug] dispatching IPC ws_send to websockets: [4, "abort", 99984]
+[debug] IPC calling ws_send
+[debug] IPC finished
+[debug] enqueuing abort for 99983 3
+[debug] dispatching IPC ws_send to websockets: [3, "abort", 99983]
+[debug] IPC calling ws_send
+[debug] IPC finished
+[debug] new job 99990
+ok 34 - duplicate works
+ok 35 - no change
+ok 36 - no change
+ok 37 - no clones
+ok 38 - no change
+ok 39 - cloned
+ok 40 - no change
+ok 41 - cloned
+ok 42 - no change
+ok 43 - no change
+ok 44 - no clones
+ok 45 - no change
+ok 46 - no change
+ok 47 - no clones
+ok 48 - no change
+ok 49 - cloned
+ok 50 - cloned jobs are scheduled
+ok 51 - no clones
+ok 52 - cloned jobs are scheduled
+ok 53 - no clones
+ok 54 - cloned deps
+ok 55 - cloned jobs are scheduled
+ok 56 - no clones
+ok 57 - cloned deps
+[debug] GET "/api/v1/mm/children/running"
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1" and action "auth_jobtoken"
+[debug] Received JobToken: qjwJxfrJnuDdpqZ4
+[debug] Found associated job 99984
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1::Mm" and action "get_children_status"
+[debug] 200 OK (0.003718s, 268.962/s)
+ok 58 - GET /api/v1/mm/children/running
+ok 59 - 200 OK
+ok 60 - exact match for JSON Pointer "/jobs"
+[debug] GET "/api/v1/mm/children/scheduled"
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1" and action "auth_jobtoken"
+[debug] Received JobToken: qjwJxfrJnuDdpqZ4
+[debug] Found associated job 99984
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1::Mm" and action "get_children_status"
+[debug] 200 OK (0.003664s, 272.926/s)
+ok 61 - GET /api/v1/mm/children/scheduled
+ok 62 - 200 OK
+ok 63 - exact match for JSON Pointer "/jobs"
+[debug] GET "/api/v1/mm/children/done"
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1" and action "auth_jobtoken"
+[debug] Received JobToken: qjwJxfrJnuDdpqZ4
+[debug] Found associated job 99984
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1::Mm" and action "get_children_status"
+[debug] 200 OK (0.003662s, 273.075/s)
+ok 64 - GET /api/v1/mm/children/done
+ok 65 - 200 OK
+ok 66 - exact match for JSON Pointer "/jobs"
+[debug] new job 99993
+ok 67 - duplicate works
+ok 68 - no change
+ok 69 - no change
+ok 70 - cloned
+ok 71 - no change
+ok 72 - cloned
+ok 73 - no change
+ok 74 - cloned
+ok 75 - no change
+ok 76 - no change
+ok 77 - cloned
+ok 78 - no change
+ok 79 - no change
+ok 80 - cloned
+ok 81 - no change
+ok 82 - cloned
+ok 83 - no change
+ok 84 - no clones
+ok 85 - cloned deps
+ok 86 - no change
+ok 87 - no clones
+ok 88 - cloned deps
+ok 89 - no change
+ok 90 - no clones
+ok 91 - cloned deps
+ok 92 - no change
+ok 93 - no clones
+ok 94 - cloned deps
+ok 95 - no change
+ok 96 - no clones
+ok 97 - cloned deps
+ok 98 - no change
+ok 99 - no clones
+ok 100 - cloned deps
+[debug] GET "/api/v1/mm/children/running"
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1" and action "auth_jobtoken"
+[debug] Received JobToken: qjwJxfrJnuDdpqZ4
+[debug] Found associated job 99984
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1::Mm" and action "get_children_status"
+[debug] 200 OK (0.003561s, 280.820/s)
+ok 101 - GET /api/v1/mm/children/running
+ok 102 - 200 OK
+ok 103 - exact match for JSON Pointer "/jobs"
+[debug] GET "/api/v1/mm/children/scheduled"
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1" and action "auth_jobtoken"
+[debug] Received JobToken: qjwJxfrJnuDdpqZ4
+[debug] Found associated job 99984
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1::Mm" and action "get_children_status"
+[debug] 200 OK (0.003297s, 303.306/s)
+ok 104 - GET /api/v1/mm/children/scheduled
+ok 105 - 200 OK
+ok 106 - exact match for JSON Pointer "/jobs"
+[debug] GET "/api/v1/mm/children/done"
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1" and action "auth_jobtoken"
+[debug] Received JobToken: qjwJxfrJnuDdpqZ4
+[debug] Found associated job 99984
+[debug] Routing to controller "OpenQA::WebAPI::Controller::API::V1::Mm" and action "get_children_status"
+[debug] 200 OK (0.003353s, 298.240/s)
+ok 107 - GET /api/v1/mm/children/done
+ok 108 - 200 OK
+ok 109 - exact match for JSON Pointer "/jobs"
+[debug] Attempt to find job 1/1
+[debug] DB was updated to reflect system status
+[debug] Got job 99988
+[debug] [Job#99988] Prepare for being processed by worker 8
+ok 110 - jobB2
+ok 111 - different vlan
+ok 112 - jobX set to done
+[debug] new job 99996
+ok 113 - jobY parent is now jobX clone
+ok 114 - no clone
+ok 115 - no clone
+ok 116 - jobX2 set to done
+ok 117 - jobY set to done
+[debug] new job 99997
+ok 118 - jobY2 parent is now jobX2
+ok 119 - X no clone
+ok 120 - Y no clone
+ok 121 - jobY2 set to done
+[debug] new job 99999
+ok 122 - child job Y2 has been cloned together with parent X2
+ok 123 - jobY3 parent is now jobX3
+[debug] new job 100007
+ok 124 - jobL duplicated
+ok 125 - jobJ cloned
+ok 126 - jobH cloned
+ok 127 - jobK cloned
+ok 128 - J2 cloned with parallel parent dep
+ok 129 - H2 cloned with parallel parent dep
+ok 130 - K2 cloned with parallel children dep
+[debug] new job 100016
+ok 131 - jobU duplicated
+ok 132 - jobQ not cloned
+ok 133 - jobW cloned
+ok 134 - jobU cloned
+ok 135 - jobR cloned
+ok 136 - jobT cloned
+ok 137 - jobQ is chained parent to all jobs
+ok 138 - jobT is parallel child of all jobs except jobQ
+ok 139 - jobW2 has no child dependency to sibling
+ok 140 - jobU2 has no child dependency to sibling
+ok 141 - jobR2 has no child dependency to sibling
+ok 142 - jobW2 has no parent dependency to sibling
+ok 143 - jobU2 has no parent dependency to sibling
+ok 144 - jobR2 has no parent dependency to sibling
+[debug] new job 100021
+ok 145 - jobO duplicated
+ok 146 - jobP cloned
+ok 147 - jobO cloned
+ok 148 - jobI not cloned
+ok 149 - jobI retain its original parent
+ok 150 - clone jobO2 gets new parent jobP2
+[debug] new job 100024
+ok 151 - jobI duplicated
+ok 152 - jobP2 cloned
+ok 153 - jobO2 cloned
+ok 154 - jobI2 got new parent jobO3
+ok 155 - clone jobO3 gets new parent jobP3
+[debug] new job 100029
+ok 156 - jobB duplicated
+ok 157 - jobBc has jobA as chained parent
+ok 158 - jobBc test and jobB test are equal
+ok 159 - jobC was not cloned
+ok 160 - jobC has jobA as chained parent
+ok 161 - jobBc test and jobB test are equal
+ok 162 - jobD was not cloned
+ok 163 - jobD has jobA as chained parent
+ok 164 - jobBc test and jobB test are equal
+[debug] new job 100033
+ok 165 - jobA duplicated
+[debug] new job 100034
+ok 166 - jobA->clone duplicated
+ok 167 - jobB clone jobBc was cloned
+ok 168 - jobB2 has jobA2 as chained parent
+ok 169 - jobB2 test and jobB test are equal
+ok 170 - jobC was cloned
+ok 171 - jobC2 has jobA2 as chained parent
+ok 172 - jobC2 test and jobC test are equal
+ok 173 - jobD was cloned
+ok 174 - jobD2 has jobA2 as chained parent
+ok 175 - jobD2 test and jobD test are equal
+ok 176 - jobA2 has jobB2, jobC2 and jobD2 as children
+[debug] new job 100042
+ok 177 - job cloned
+ok 178 - job has jobA2 as parent
+ok 179 - job cloned
+ok 180 - job has jobA2 as parent
+ok 181 - job cloned
+ok 182 - job has jobA2 as parent
+ok 183 - jobA2 is indeed jobA clone
+[debug] new job 100043
+ok 184 - job correctly not cloned
+ok 185 - job has jobA3 as parent
+ok 186 - job correctly not cloned
+ok 187 - job has jobA3 as parent
+ok 188 - job correctly not cloned
+ok 189 - job has jobA3 as parent
+[debug] new job 100051
+ok 190 - job cloned
+ok 191 - job has jobA2 as parent
+ok 192 - job cloned
+ok 193 - job has jobA2 as parent
+ok 194 - job cloned
+ok 195 - job has jobA2 as parent
+ok 196 - job has jobB2 as parallel parent
+ok 197 - job has jobB2 as parallel parent
+# Subtest: slepos test workers
+    ok 1 - jobA has a clone
+    ok 2 - jobB has a clone
+    ok 3 - jobA is Parallel parent of jobB
+    ok 4 - cloneA is Parallel parent of cloneB
+    ok 5 - jobSUS and jobAS
+    ok 6 - jobA has a clone
+    ok 7 - jobB has a clone
+    ok 8 - jobA is Parallel parent of jobB
+    ok 9 - cloneA is Parallel parent of cloneB
+    ok 10 - jobSUS and jobIS
+    ok 11 - jobA has a clone
+    ok 12 - jobB has a clone
+    ok 13 - jobA is Parallel parent of jobB
+    ok 14 - cloneA is Parallel parent of cloneB
+    ok 15 - jobSUS and jobBS
+    ok 16 - jobA has a clone
+    ok 17 - jobB has a clone
+    ok 18 - jobA is Chained parent of jobB
+    ok 19 - cloneA is Chained parent of cloneB
+    ok 20 - jobAS and jobIS
+    ok 21 - jobA has a clone
+    ok 22 - jobB has a clone
+    ok 23 - jobA is Chained parent of jobB
+    ok 24 - cloneA is Chained parent of cloneB
+    ok 25 - jobAS and jobIS2
+    ok 26 - jobA has a clone
+    ok 27 - jobB has a clone
+    ok 28 - jobA is Parallel parent of jobB
+    ok 29 - cloneA is Parallel parent of cloneB
+    ok 30 - jobAS and jobBS
+    ok 31 - jobA has a clone
+    ok 32 - jobB has a clone
+    ok 33 - jobA is Parallel parent of jobB
+    ok 34 - cloneA is Parallel parent of cloneB
+    ok 35 - jobBS and jobT
+    1..35
+ok 198 - slepos test workers
+ok 199 - no (unexpected) warnings (via done_testing)
+1..199
+ok
+All tests successful.
+Files=1, Tests=199,  8 wallclock secs ( 0.04 usr  0.00 sys +  3.72 cusr  0.13 csys =  3.89 CPU)
+Result: PASS

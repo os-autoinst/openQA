@@ -25,6 +25,7 @@ use OpenQA::Parser qw(parser p);
 use OpenQA::Parser::Format::JUnit;
 use OpenQA::Parser::Format::LTP;
 use OpenQA::Parser::Format::XUnit;
+use OpenQA::Parser::Format::TAP;
 use Mojo::File qw(path tempdir);
 use Data::Dumper;
 use Mojo::JSON qw(decode_json encode_json);
@@ -547,7 +548,72 @@ subtest junit_parse => sub {
 
 };
 
+sub test_tap_file {
+    my $p = shift;
+    is $p->results->size, 200, 'Expected 200 results';
+    my $i = 2;
+    $p->results->each(
+        sub {
+            is $_->result, 'ok', 'Tests passed' or diag explain $_;
+            #ok !!$_->environment, 'Environment is present';
+            ok !!$_->test,        'Test information is present';
+            #is $_->environment->gcc, 'gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]',  'Environment information matches';
+            #is $_->test->result, 'TPASS', 'subtest result is TPASS' or diag explain $_;
+            is $_->test_fqn, "LTP:cpuhotplug:cpuhotplug0$i", "test_fqn matches and are different";
+            $i++;
+        });
+    #is $p->results->get(0)->environment->gcc, 'gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]', 'Environment information matches';
+}
 
+subtest tap_parse => sub {
+    my $parser = OpenQA::Parser::Format::TAP->new;
+
+    my $tap_test_file = path($FindBin::Bin, "data")->child("tap_format_example.tap");
+
+    $parser->load($tap_test_file);
+    my $expected_test_result = test_tap_file($parser);
+    diag $expected_test_result;
+    #$expected_test_result->{test} = undef;
+    #is_deeply $parser->results->last->TO_JSON(1), $expected_test_result,
+    #  'Expected test result match - with no include_results - forcing to output the test';
+    #$expected_test_result->{name} = '9_post-tests_audits';
+    #delete $expected_test_result->{test};
+
+    #is_deeply $parser->results->last->to_hash(), $expected_test_result,
+    #  'Expected test result match - with no include_results - forcing to output the test';
+    #delete $expected_test_result->{name};
+
+    $parser = OpenQA::Parser::Format::TAP->new;
+
+    $parser->include_results(1);
+    $parser->load($tap_test_file);
+
+    diag $parser->results->size;
+    diag $parser->results;
+    #  'Generated 9 openQA tests results';    # 9 testsuites with all cumulative results for openQA
+
+    #is_deeply $parser->results->last->TO_JSON(0), $expected_test_result, 'Test is hidden';
+
+    #$expected_test_result->{test} = {
+    #    'category' => 'tests-systemd',
+    #    'flags'    => {},
+    #    'name'     => '9_post-tests_audits',
+    #    'script'   => 'unk'
+    #};
+
+    #is_deeply $parser->results->last->TO_JSON(1), $expected_test_result, 'Test is showed';
+
+    #$parser = OpenQA::Parser::Format::JUnit->new;
+
+    #$junit_test_file = path($FindBin::Bin, "data")->child("slenkins_control-junit-results-fail.xml");
+
+    $parser->load($tap_test_file);
+
+    is $parser->results->first->result, 'fail', 'First testsuite fails as testcases are failing';
+    is scalar @{$parser->results->first->details}, 33, '33 test cases details';
+    is $_->{result}, 'fail', 'All testcases are failing' for @{$parser->results->first->details};
+
+};
 
 sub test_ltp_file {
     my $p = shift;
@@ -717,6 +783,7 @@ subtest 'serialize/deserialize' => sub {
     serialize_test("OpenQA::Parser::Format::LTP",   "new_ltp_result_array.json",          "test_ltp_file_v2");
     serialize_test("OpenQA::Parser::Format::JUnit", "slenkins_control-junit-results.xml", "test_junit_file");
     serialize_test("OpenQA::Parser::Format::XUnit", "xunit_format_example.xml",           "test_xunit_file");
+    serialize_test("OpenQA::Parser::Format::TAP",    "tap_format_example.tap",            "test_tap_file");
 };
 
 subtest 'Unstructured data' => sub {
