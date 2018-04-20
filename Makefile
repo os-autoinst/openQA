@@ -116,7 +116,7 @@ travis:
 	    $(MAKE) checkstyle ;\
 	    list=$$(find ./t/ -name *.t | grep -v t/ui | sort ) ;\
 	  fi ;\
-          prove --timer -r --jobs 2 $$list ;\
+          prove ${PROVE_ARGS} --timer -r --jobs 2 $$list ;\
 	fi
 
 # ignore tests and test related addons in coverage analysis
