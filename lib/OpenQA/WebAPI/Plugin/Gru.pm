@@ -71,7 +71,7 @@ sub register {
     $self->register_tasks;
 
     # Enable the Minion Admin interface under /minion
-    my $auth = $app->routes->under('/minion')->to("session#ensure_operator");
+    my $auth = $app->routes->under('/minion')->to('session#ensure_admin');
     $app->plugin('Minion::Admin' => {route => $auth});
 
     push @{$app->commands->namespaces}, 'OpenQA::WebAPI::Plugin::Gru::Command';
