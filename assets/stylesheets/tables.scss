@@ -134,5 +134,8 @@ table.overview {
         margin-right: 1ex;
         border-radius: 3px;
         border: 1px solid #D2DFB5;
+        @include media-breakpoint-down(sm) {
+            display: none;
+        }
     }
 }
