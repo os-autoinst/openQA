@@ -2,7 +2,7 @@
     % my $build = $build_res->{build};
     % my $group_id;
     <div class="row build-row <%= $children ? ($default_expanded ? 'children-expanded' : 'children-collapsed') : 'no-children' %>">
-        <div class="col-lg-4 text-nowrap">
+        <div class="col-xl-4 text-nowrap">
             <span class="h4">
                 % if ($children) {
                     % $group_id = "group$group->{id}_build$build_res->{escaped_id}";
@@ -16,16 +16,15 @@
                 </abbr>)
 
                 % my $group_build_id = $group->{id} . '-' . $build_res->{escaped_id};
-                % my $tag = $build_res->{tag};
+                %= include 'main/review_badge', group_build_id => $group_build_id, build_res => $build_res, id_prefix => ''
+                % if (my $tag = $build_res->{tag}) {
+                    <span id="tag-<%= $group_build_id %>">
+                        <i class="tag fa fa-tag" title="<%= $tag->{type}; %>"><%= $tag->{description} %></i>
+                    </span>
+                % }
             </span>
-            %= include 'main/review_badge', group_build_id => $group_build_id, build_res => $build_res, id_prefix => ''
-            % if ($tag) {
-                <span id="tag-<%= $group_build_id %>">
-                    <i class="tag fa fa-tag" title="<%= $tag->{type}; %>"><%= $tag->{description} %></i>
-                </span>
-            % }
         </div>
-        <div class="col-lg-8">
+        <div class="col-xl-8">
             % if ($max_jobs) {
                 %= include 'main/build_progressbar', max_jobs => $max_jobs, result => $build_res
             % }
@@ -38,13 +37,13 @@
                 % my $jobs = $child_res->{passed} + $child_res->{unfinished} + $child_res->{softfailed} + $child_res->{failed} + $child_res->{skipped};
                 % if ($jobs) {
                     <div class="row build-row">
-                        <div class="col-md-4 text-nowrap">
+                        <div class="col-lg-4 text-nowrap">
                             <span class="h4">
                                 %= link_to $child->{name} => url_for('tests_overview')->query(distri => [sort keys %{$child_res->{distris}}], version => $child_res->{version}, build => $build, groupid => $child->{id})
                                 %= include 'main/review_badge', group_build_id => $group_build_id, build_res => $child_res, id_prefix => 'child-'
                             </span>
                         </div>
-                        <div class="col-md-8">
+                        <div class="col-lg-8">
                             %= include 'main/build_progressbar', max_jobs => $jobs, result => $child_res
                         </div>
                     </div>

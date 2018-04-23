@@ -231,7 +231,7 @@ function handleKeyDownOnTestDetails(e) {
 }
 
 function setupResult(state, jobid, status_url, details_url) {
-  setupAsyncFailedResult();
+  setupLazyLoadingFailedSteps();
   $(".current_preview").removeClass("current_preview");
 
   $(window).keydown(handleKeyDownOnTestDetails);
