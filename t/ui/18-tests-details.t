@@ -62,7 +62,9 @@ sub disable_bootstrap_fade_animation {
 # returns the contents of the candidates combo box as hash (key: tag, value: array of needle names)
 sub find_candidate_needles {
     # ensure the candidates menu is visible
-    $driver->find_element('#candidatesMenu')->click();
+    my @candidates_menus = $driver->find_elements('#candidatesMenu');
+    is(scalar @candidates_menus, 1, 'exactly one candidates menu present at a time');
+    $candidates_menus[0]->click();
 
     # read the tags/needles from the HTML strucutre
     my @section_elements = $driver->find_elements('#needlediff_selector ul table');
@@ -287,7 +289,9 @@ sub test_with_error {
     }
 
     # check whether candidates are displayed as expected
-    $driver->get('/tests/99946#step/yast2_lan/1');
+    my $random_number = int(rand(100000));
+    $driver->get("/tests/99946?prevent_caching=$random_number#step/yast2_lan/1");
+    disable_bootstrap_fade_animation;
     wait_for_ajax;
     is_deeply(find_candidate_needles, $expect, $test_name // 'candidates displayed as expected');
 }
