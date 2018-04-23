@@ -790,7 +790,7 @@ $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
 for ($jobB, $jobC, $jobD) {
     ok($_->clone, 'job cloned');
     my $h = job_get_deps($_->clone->id);
-    is_deeply($h->{parents}{Chained}, [$jobA2->id], 'job has jobA2 as parent');
+    is_deeply($h->{parents}{Chained}, [$jobA2->id], 'job has jobA2 as parent') or explain($h->{parents}{Chained});
 }
 
 for ($jobC, $jobD) {
@@ -824,7 +824,7 @@ sub _job_cloned_and_related {
     }
     ok($rel, "jobA is $rel parent of jobB");
     my $res = grep { $_ eq $cloneB } @{$cloneA_hash->{children}{$rel}};
-    ok($res, "cloneA is $rel parent of cloneB");
+    ok($res, "cloneA is $rel parent of cloneB") or explain(@{$cloneA_hash->{children}{$rel}});
 }
 
 subtest 'slepos test workers' => sub {
