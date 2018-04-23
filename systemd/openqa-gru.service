@@ -7,6 +7,7 @@ Wants=openqa-setup-db.service
 User=geekotest
 ExecStart=/usr/share/openqa/script/openqa gru -m production run
 Nice=19
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target

@@ -228,22 +228,6 @@ sub find_jobs_with_expired_logs {
     ];
 }
 
-# gru task, added when scheduling new iso
-sub limit_results_and_logs {
-    my ($app) = @_;
-
-    my $groups = $app->db->resultset('JobGroups');
-    while (my $group = $groups->next) {
-        my $important_builds = $group->important_builds;
-        for my $job (@{$group->find_jobs_with_expired_results($important_builds)}) {
-            $job->delete;
-        }
-        for my $job (@{$group->find_jobs_with_expired_logs($important_builds)}) {
-            $job->delete_logs;
-        }
-    }
-}
-
 # parse comments and list the all builds mentioned
 sub tags {
     my ($self) = @_;

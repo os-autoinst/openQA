@@ -59,6 +59,7 @@
                       %= link_to('Users' => url_for('admin_users') => class => 'dropdown-item')
                       %= link_to('Needles' => url_for('admin_needles') => class => 'dropdown-item')
                       %= link_to('Audit log' => url_for('audit_log') => class => 'dropdown-item')
+                      %= link_to('Minion Dashboard' => url_for('minion_dashboard') => class => 'dropdown-item')
                   % }
                   %= tag 'div' => class => 'dropdown-divider'
                   % if (is_operator) {

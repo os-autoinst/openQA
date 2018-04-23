@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2018 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,9 +17,11 @@
 package OpenQA::Schema::Result::GruTasks;
 use base 'DBIx::Class::Core';
 use strict;
-
+use OpenQA::Schema::Result::Jobs ();
 use Cpanel::JSON::XS;
 use db_helpers;
+use OpenQA::Parser::Result::OpenQA;
+use OpenQA::Parser::Result::Test;
 
 __PACKAGE__->table('gru_tasks');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime FilterColumn Timestamps));
@@ -74,6 +76,29 @@ sub encode_json_to_db {
         $args = {'_' => $args};
     }
     encode_json($args);
+}
+
+sub fail {
+    my ($self, $reason) = @_;
+    $reason //= 'Unknown';
+    my $deps        = $self->jobs->search;
+    my $detail_text = 'Minion-GRU.txt';
+
+    my $result = OpenQA::Parser::Result::OpenQA->new(
+        details => [{text => $detail_text, title => 'GRU'}],
+        name    => 'background_process',
+        result  => 'fail',
+        test    => OpenQA::Parser::Result::Test->new(name => 'GRU', category => 'background_task'));
+    my $output
+      = OpenQA::Parser::Result::Output->new(file => $detail_text, content => "Gru job failed\nReason: $reason");
+
+    while (my $d = $deps->next) {
+        $d->job->custom_module($result => $output);
+        $d->job->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE());
+        $d->delete();
+    }
+
+    $self->delete();
 }
 
 1;

@@ -20,34 +20,64 @@ package OpenQA::WebAPI::Plugin::Gru;
 use strict;
 use warnings;
 use Cpanel::JSON::XS;
+use Minion;
+use Scalar::Util ();
 
 use DBIx::Class::Timestamps 'now';
-use base 'Mojolicious::Plugin';
+use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Pg;
+
+has [qw(app dsn)];
 
 sub new {
     my $class = shift;
     my $self  = $class->SUPER::new(@_);
-    $self->{tasks} = {};
-    my $app = shift;
-    $self->{app} = $app;
-    $self->{schema} = $app->db if $app;
+    my $app   = shift;
+    $self->app($app);
+    Scalar::Util::weaken $self->{app};
     return $self;
 }
 
-sub register {
+sub register_tasks {
+    my $self = shift;
+    my $app  = $self->app;
 
+    $app->plugin($_)
+      for (
+        qw(OpenQA::Task::Asset::Download OpenQA::Task::Asset::Limit),
+        qw(OpenQA::Task::Job::Limit OpenQA::Task::Job::Modules),
+        qw(OpenQA::Task::Needle::Scan),
+        qw(OpenQA::Task::Screenshot::Scan)
+      );
+}
+
+sub register {
     my ($self, $app, $config) = @_;
+    $self->app($app) unless $self->app;
+    $self->{schema} = $self->app->db if $self->app->db;
+
+    my $conn = Mojo::Pg->new;
+    if (ref $self->schema->storage->connect_info->[0] eq 'HASH') {
+        $self->dsn($self->schema->dsn);
+        $conn->username($self->schema->storage->connect_info->[0]->{user});
+        $conn->password($self->schema->storage->connect_info->[0]->{password});
+    }
+    else {
+        $self->dsn($self->schema->storage->connect_info->[0]);
+    }
+
+    $conn->dsn($self->dsn());
+    $app->plugin(Minion => {Pg => $conn});
+    $self->register_tasks;
+
+    # Enable the Minion Admin interface under /minion
+    my $auth = $app->routes->under('/minion')->to('session#ensure_admin');
+    $app->plugin('Minion::Admin' => {route => $auth});
 
     push @{$app->commands->namespaces}, 'OpenQA::WebAPI::Plugin::Gru::Command';
 
     my $gru = OpenQA::WebAPI::Plugin::Gru->new($app);
     $app->helper(gru => sub { $gru });
-}
-
-sub add_task {
-    my ($self, $taskname, $coderef) = @_;
-
-    $self->{tasks}->{$taskname} = $coderef;
 }
 
 sub schema {
@@ -59,65 +89,91 @@ sub enqueue {
     my ($self, $task) = (shift, shift);
     my $args = shift // [];
     my $options = shift // {};
+    my $jobs = shift // [];
 
-    $self->schema->resultset('GruTasks')->create(
+    $args = [$args] if ref $args eq 'HASH';
+
+    my $delay = $options->{run_at} && $options->{run_at} > now() ? $options->{run_at} - now() : 0;
+
+    my $gru = $self->schema->resultset('GruTasks')->create(
         {
             taskname => $task,
-            args     => $args,
             priority => $options->{priority} // 0,
-            run_at   => $options->{run_at} // now()});
+            args     => $args,
+            run_at   => $options->{run_at} // now(),
+            jobs     => $jobs,
+        });
+
+    $self->app->minion->enqueue(
+        $task => $args => {priority => $options->{priority} // 0, delay => $delay, notes => {gru_id => $gru->id}});
 }
 
 package OpenQA::WebAPI::Plugin::Gru::Command::gru;
 use Mojo::Base 'Mojolicious::Command';
+use Mojo::Pg;
+use Minion::Command::minion::job;
 
 has usage       => "usage: $0 gru [-o]\n";
 has description => 'Run a gru to process jobs - give -o to exit _o_nce everything is done';
+has job         => sub { Minion::Command::minion::job->new(app => shift->app) };
 
-sub cmd_list {
-    my ($self) = @_;
-
-    my $tasks = $self->app->schema->resultset('GruTasks');
-    while (my $task = $tasks->next) {
-        use Data::Dumper;
-        print $task->taskname . " " . Dumper($task->args) . "\n";
-    }
+sub delete_gru {
+    my ($self, $id) = @_;
+    my $gru = $self->app->db->resultset('GruTasks')->find($id);
+    $gru->delete() if $gru;
 }
 
-sub run_first {
-    my ($self) = @_;
+sub fail_gru {
+    my ($self, $id, $reason) = @_;
+    my $gru = $self->app->db->resultset('GruTasks')->find($id);
+    $gru->fail($reason) if $gru;
+}
 
-    my $dtf   = $self->app->schema->storage->datetime_parser;
-    my $where = {run_at => {'<=', $dtf->format_datetime(DBIx::Class::Timestamps::now())}};
-    my $first = $self->app->schema->resultset('GruTasks')
-      ->search($where, {order_by => [{-desc => 'priority'}, 'id'], rows => 1})->first;
+sub cmd_list { shift->job->run(@_) }
 
-    if ($first) {
-        $self->app->log->debug(sprintf("Running Gru task %d(%s)", $first->id, $first->taskname));
-        my $subref = $self->app->gru->{tasks}->{$first->taskname};
-        if ($subref) {
-            eval { &$subref($self->app, $first->args) };
-            if ($@) {
-                print $@ . "\n";
-                return;
-            }
-            $first->delete;
-            return 1;
-        }
+sub execute_job {
+    my ($self, $job) = @_;
+
+    my $buffer;
+    my $err;
+    {
+        open my $handle, '>', \$buffer;
+        local *STDERR = $handle;
+        local *STDOUT = $handle;
+        $err = $job->execute;
+    };
+
+    if (defined $err) {
+        $self->fail_gru($job->info->{notes}{gru_id} => $err)
+          if $job->fail({(output => $buffer) x !!(defined $buffer), error => $err})
+          && exists $job->info->{notes}{gru_id};
     }
+    else {
+        $job->finish(defined $buffer ? $buffer : 'Job successfully executed');
+        $self->delete_gru($job->info->{notes}{gru_id}) if exists $job->info->{notes}{gru_id};
+    }
+
 }
 
 sub cmd_run {
     my $self = shift;
     my $opt = $_[0] || '';
-    while (1) {
-        if (!$self->run_first) {
-            if ($opt eq '-o') {
-                return;
-            }
-            sleep(5);
+
+    my $worker = $self->app->minion->repair->worker->register;
+
+    if ($opt eq '-o') {
+        while (my $job = $worker->register->dequeue(0)) {
+            $self->execute_job($job);
         }
+        return $worker->unregister;
     }
+
+    while (1) {
+        next unless my $job = $worker->register->dequeue(5);
+        $self->execute_job($job);
+        sleep 5;
+    }
+    $worker->unregister;
 }
 
 sub run {
@@ -126,7 +182,7 @@ sub run {
     my $cmd  = shift;
 
     if (!$cmd) {
-        print "gru: [list|run|\n";
+        print "gru: [list|run]\n";
         return;
     }
     if ($cmd eq 'list') {

@@ -168,39 +168,6 @@ sub name() {
     return $name;
 }
 
-# gru task injected by migration - can be removed later
-sub scan_old_jobs() {
-    my ($app,   $args)  = @_;
-    my ($maxid, $minid) = @$args;
-
-    my $guard = $app->db->txn_scope_guard;
-
-    my $jobs = $app->db->resultset("Jobs")
-      ->search({-and => [{id => {'>', $minid}}, {id => {'<=', $maxid}}]}, {order_by => 'me.id ASC'});
-
-    my $job_modules = $app->db->resultset('JobModules')->search({job_id => {-in => $jobs->get_column('id')->as_query}})
-      ->get_column('id')->as_query;
-
-    # make sure we're not duplicating any previous data
-    $app->db->resultset('JobModuleNeedles')->search({job_module_id => {-in => $job_modules}})->delete;
-    my %needle_cache;
-
-    while (my $job = $jobs->next) {
-        my $modules = $job->modules->search({"me.result" => {'!=', OpenQA::Schema::Result::Jobs::NONE}},
-            {order_by => 'me.id ASC'});
-        while (my $module = $modules->next) {
-
-            $module->job($job);
-            my $details = $module->details();
-            next unless $details;
-
-            $module->store_needle_infos($details, \%needle_cache);
-        }
-    }
-    OpenQA::Schema::Result::Needles::update_needle_cache(\%needle_cache);
-    $guard->commit;
-}
-
 sub recalculate_matches {
     my ($self) = @_;
 
@@ -257,22 +224,6 @@ sub check_file {
     my ($self) = @_;
 
     return $self->file_present(-e $self->path ? 1 : 0);
-}
-
-# gru task to see if all needles are present
-sub scan_needles {
-    my ($app, $args) = @_;
-
-    my $dirs = $app->db->resultset('NeedleDirs');
-
-    while (my $dir = $dirs->next) {
-        my $needles = $dir->needles;
-        while (my $needle = $needles->next) {
-            $needle->check_file;
-            $needle->update;
-        }
-    }
-    return;
 }
 
 1;
