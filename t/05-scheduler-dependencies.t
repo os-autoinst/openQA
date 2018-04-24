@@ -774,29 +774,31 @@ for ($jobB, $jobC, $jobD) {
 %settingsC = (%settings, TEST => '360-C');
 %settingsD = (%settings, TEST => '360-D');
 
-$jobA = _job_create(\%settingsA);
-$jobB = _job_create(\%settingsB, undef, [$jobA->id]);
-$jobC = _job_create(\%settingsC, [$jobB->id], [$jobA->id]);
-$jobD = _job_create(\%settingsD, [$jobB->id], [$jobA->id]);
+my $duplicate_test = sub {
+    $jobA = _job_create(\%settingsA);
+    $jobB = _job_create(\%settingsB, undef, [$jobA->id]);
+    $jobC = _job_create(\%settingsC, [$jobB->id], [$jobA->id]);
+    $jobD = _job_create(\%settingsD, [$jobB->id], [$jobA->id]);
 
-# hack jobs to appear done to scheduler
-_jobs_update_state([$jobA], OpenQA::Schema::Result::Jobs::DONE, OpenQA::Schema::Result::Jobs::PASSED);
-_jobs_update_state([$jobB, $jobC, $jobD], OpenQA::Schema::Result::Jobs::DONE, OpenQA::Schema::Result::Jobs::FAILED);
+    # hack jobs to appear done to scheduler
+    _jobs_update_state([$jobA], OpenQA::Schema::Result::Jobs::DONE, OpenQA::Schema::Result::Jobs::PASSED);
+    _jobs_update_state([$jobB, $jobC, $jobD], OpenQA::Schema::Result::Jobs::DONE, OpenQA::Schema::Result::Jobs::FAILED);
 
-$jobA2 = $jobA->auto_duplicate;
-$_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
+    $jobA2 = $jobA->auto_duplicate;
+    $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
 
-# check all children were cloned and has $jobA as parent
-for ($jobB, $jobC, $jobD) {
-    ok($_->clone, 'job cloned');
-    my $h = job_get_deps($_->clone->id);
-    is_deeply($h->{parents}{Chained}, [$jobA2->id], 'job has jobA2 as parent') or explain($h->{parents}{Chained});
-}
+    # check all children were cloned and has $jobA as parent
+    for ($jobB, $jobC, $jobD) {
+        ok($_->clone, 'job cloned');
+        my $h = job_get_deps($_->clone->id);
+        is_deeply($h->{parents}{Chained}, [$jobA2->id], 'job has jobA2 as parent') or explain($h->{parents}{Chained});
+    }
 
-for ($jobC, $jobD) {
-    my $h = job_get_deps($_->clone->id);
-    is_deeply($h->{parents}{Parallel}, [$jobB->clone->id], 'job has jobB2 as parallel parent');
-}
+    for ($jobC, $jobD) {
+        my $h = job_get_deps($_->clone->id);
+        is_deeply($h->{parents}{Parallel}, [$jobB->clone->id], 'job has jobB2 as parallel parent');
+    }
+};
 
 sub _job_create_set_done {
     my ($settings, $state) = @_;
@@ -827,7 +829,7 @@ sub _job_cloned_and_related {
     ok($res, "cloneA is $rel parent of cloneB") or explain(@{$cloneA_hash->{children}{$rel}});
 }
 
-subtest 'slepos test workers' => sub {
+my $slepos_test_workers = sub {
     my %settingsSUS = %settings;
     $settingsSUS{TEST} = 'SupportServer';
     my %settingsAS = %settings;
@@ -871,5 +873,20 @@ subtest 'slepos test workers' => sub {
     ok(_job_cloned_and_related($jobAS,  $jobBS),  "jobAS and jobBS");
     ok(_job_cloned_and_related($jobBS,  $jobT),   "jobBS and jobT");
 };
+
+# This enforces order in the processing of the nodes, to test PR#1623
+my $unordered_sort = \&OpenQA::Schema::Result::Jobs::search_for;
+my $ordered_sort   = sub {
+    return $unordered_sort->(@_)->search(undef, {order_by => {-desc => 'id'}});
+};
+
+my %tests = ('duplicate' => $duplicate_test, 'slepos test workers' => $slepos_test_workers);
+while (my ($k, $v) = each %tests) {
+    no warnings 'redefine';
+    *OpenQA::Schema::Result::Jobs::search_for = $unordered_sort;
+    subtest "$k unordered" => $v;
+    *OpenQA::Schema::Result::Jobs::search_for = $ordered_sort;
+    subtest "$k ordered" => $v;
+}
 
 done_testing();

@@ -675,7 +675,8 @@ sub duplicate {
     # i.e. to preven cloned parent to clone its children
 
     ## now go and clone and recreate test dependencies - parents first
-    my $parents = $self->parents->search(
+    my $parents = $self->search_for(
+        'parents',
         {
             dependency => {
                 -in =>
@@ -685,6 +686,7 @@ sub duplicate {
         {
             join => 'parent',
         });
+
     while (my $pd = $parents->next) {
         my $p = $pd->parent;
         if (!exists $jobs_map->{$p->id}) {
@@ -732,7 +734,8 @@ sub duplicate {
     }
 
     ## go and clone and recreate test dependencies - running children tests, this cover also asset dependencies (use CHAINED dep)
-    my $children = $self->children->search(
+    my $children = $self->search_for(
+        'children',
         {
             dependency => {
                 -in =>
@@ -1930,6 +1933,11 @@ sub result_stats {
         failed     => $self->failed_module_count,
         none       => $self->skipped_module_count,
     };
+}
+
+sub search_for {
+    my ($self, $result_set, $condition, $attrs) = @_;
+    return $self->$result_set->search($condition, $attrs);
 }
 
 1;
