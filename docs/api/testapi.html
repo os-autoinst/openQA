@@ -662,7 +662,7 @@ screen which can change in a range faster than 1-2 seconds not to miss the
 screen to check for.</p>
 </div>
 <div class="paragraph">
-<p>Returns matched needle or throws <code>NeedleFailed</code> exception if $timeout timeout
+<p>Returns matched needle or throws <code>FailedNeedle</code> exception if $timeout timeout
 is hit. Default timeout is 30s.</p>
 </div>
 </div>
@@ -716,7 +716,7 @@ be string or <code>ARRAYREF</code> of strings (<code>['tag1', 'tag2']</code>).  
 default <code>'left'</code>. <code>'left'</code> and <code>'right'</code> is supported.</p>
 </div>
 <div class="paragraph">
-<p>Throws <code>NeedleFailed</code> exception if <code>$timeout</code> timeout is hit. Default timeout is 30s.</p>
+<p>Throws <code>FailedNeedle</code> exception if <code>$timeout</code> timeout is hit. Default timeout is 30s.</p>
 </div>
 </div>
 <div class="sect4">
@@ -1217,7 +1217,7 @@ MD5 algorithm and taking the first characters.</p>
 Default counter is 20 steps, default timeout is 1s</p>
 </div>
 <div class="paragraph">
-<p>Throws <code>NeedleFailed</code> exception if needle is not matched until <code>$counter</code> is 0.</p>
+<p>Throws <code>FailedNeedle</code> exception if needle is not matched until <code>$counter</code> is 0.</p>
 </div>
 </div>
 <div class="sect4">
@@ -1778,7 +1778,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-04-23 23:21:53 UTC
+Last updated 2018-04-24 16:12:54 UTC
 </div>
 </div>
 </body>
