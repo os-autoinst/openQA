@@ -22,6 +22,7 @@
   /tmp/** rw,
   /usr/bin/perl ix,
   /usr/bin/ssh rcx,
+  /usr/bin/unzip-plain rix,
   /usr/lib/git/git rix,
   /usr/share/openqa/dbicdh/** r,
   /usr/share/openqa/lib/** r,
