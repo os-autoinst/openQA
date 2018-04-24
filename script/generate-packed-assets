@@ -42,33 +42,12 @@
 
 set -e
 
-DIR=$(mktemp -d -t openqa.XXXXXXXXXX)
-function finish {
-    rm -rf "$DIR"
-}
-trap finish EXIT
-mkdir "$DIR/tmp"
+# Get Assetpack pipes from WebAPI.pm
+ASSETPACK_PLUGINS=$(grep 'AssetPack' lib/OpenQA/WebAPI.pm | awk -F '[()]' '{print $3}')
+[ -z "$ASSETPACK_PLUGINS" ] && echo "Can't get AssetPack pipes" && exit 1
 
-touch "$DIR/openqa.ini"
-cp etc/openqa/database.ini $DIR
+BUILD_CACHE="plugin AssetPack => { pipes => [qw(${ASSETPACK_PLUGINS})]} and app->asset->process()"
+BUILD_CACHE_OPTS='-Ilib/ -MMojolicious::Lite -MOpenQA::WebAPI::AssetPipe'
 
-# for locking
-mkdir -p $DIR/openqa/db
-
-export OPENQA_BASEDIR=$DIR
-export OPENQA_LOGFILE="$DIR/logfile"
-export MOJO_TMPDIR="$DIR/tmp"
-export OPENQA_DATABASE=test
-export OPENQA_TEST_IPC=1
-
-DBDIR=$(mktemp -d)
-./t/test_postgresql $DBDIR
-export TEST_PG="DBI:Pg:dbname=openqa_test;host=$DBDIR"
-
-# 'version' is the smallest codepath we can hit to produce the assets
-./script/openqa eval '1+0' -m test > /dev/null
-./script/openqa eval '1+0' -m development > /dev/null
-
-# asset/cache is now generated
-pg_ctl -D $DBDIR stop
-
+MOJO_MODE=test perl $BUILD_CACHE_OPTS -e "$BUILD_CACHE" > /dev/null
+MOJO_MODE=development perl $BUILD_CACHE_OPTS -e "$BUILD_CACHE" > /dev/null

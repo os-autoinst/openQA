@@ -99,6 +99,8 @@ sub startup {
 
     # Load plugins
     push @{$self->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
+
+# XXX: In case the following line is moved in another location, script/generate-packed-assets needs to be adapted as well
     $self->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Fetch OpenQA::WebAPI::AssetPipe Combine)]});
 
     foreach my $plugin (qw(Helpers CSRF REST HashedParams Gru)) {
