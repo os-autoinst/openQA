@@ -397,6 +397,20 @@ subtest 'labeled jobs considered important' => sub {
     ok(!-e $filename, 'file got cleaned');
 };
 
+subtest 'Gru tasks TTL' => sub {
+    my $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 1});
+    sleep 2;    # We need to fake time passing by.
+    $c->run('run', '-o');
+    my $result = $t->app->minion->job($job_id)->info->{result};
+    is $result->{error}, 'TTL Expired', 'TTL Expired - job discarded' or diag explain $result;
+
+    $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 10});
+    sleep 1;    # We need to fake time passing by.
+    $c->run('run', '-o');
+    $result = $t->app->minion->job($job_id)->info->{result};
+    like $result, qr/will delete in 14/i, 'TTL not Expired' or diag explain $result;
+};
+
 SKIP: {
     skip 'no network available', 1 if $ENV{OBS_RUN};
     subtest 'download assets with correct permissions' => sub {
