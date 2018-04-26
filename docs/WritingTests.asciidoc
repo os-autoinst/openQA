@@ -994,6 +994,19 @@ and the job will not appear as a job in any job group, e.g.:
 clone_job.pl --from localhost 42 _GROUP=0
 -------------
 
+==== Backend variables for faster test execution
+
+The +os-autoinst+ backend offers multiple test variables which are helpful for
+test development. For example:
+
+* Set +_EXIT_AFTER_SCHEDULE=1+ if you only want to evaluate the test schedule
+  before the test modules are executed
+
+* Use +_SKIP_POST_FAIL_HOOKS=1+ to prevent lengthy post_fail_hook execution in
+  case of expected and known test fails, for examples when you need to create
+  needles anyway
+
+
 === Using snapshots to speed up development of tests
 [id="snapshots"]
 
