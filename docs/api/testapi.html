@@ -1045,7 +1045,7 @@ See <code>wait_serial</code> for default timeout.</p>
 <h5 id="_script_output">script_output</h5>
 <div class="literalblock">
 <div class="content">
-<pre>script_output($script [, $wait, type_command =&gt; 1])</pre>
+<pre>script_output($script [, $wait, type_command =&gt; 1, proceed_on_failure =&gt; 1])</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1058,6 +1058,10 @@ the output <em>if</em>' the script exits with 0. Otherwise the test is set to fa
 and is typed or fetched through HTTP depending on various parameters. Typing
 can be forced by passing <code>type_command =</code> 1&gt; for example when the SUT does
 not provide a usable network connection.</p>
+</div>
+<div class="paragraph">
+<p><code>proceed_on_failure</code> - allows to proceed with validation when <code>$script</code> is
+failing (return non-zero exit code)</p>
 </div>
 <div class="paragraph">
 <p>The default timeout for the script is based on the default in <code>wait_serial</code>
@@ -1778,7 +1782,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-04-24 16:12:54 UTC
+Last updated 2018-04-26 14:39:38 UTC
 </div>
 </div>
 </body>
