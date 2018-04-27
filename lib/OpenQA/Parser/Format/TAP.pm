@@ -19,61 +19,59 @@ use Mojo::Base 'OpenQA::Parser::Format::Base';
 use Carp qw(croak confess);
 use OpenQA::Parser::Result::OpenQA;
 use TAP::Parser;
-use Data::Dumper;
 
-has include_results => 1;
 has [qw(test steps)];
 
 sub parse {
     my ($self, $TAP) = @_;
     confess "No TAP given/loaded" unless $TAP;
-    my $tap = TAP::Parser->new({ tap => $TAP });
-    confess "Failed ".$tap->parse_errors if $tap->parse_errors ;
-    my $test =
-        {
-            flags    => {},
-            category => "TAP",
-            name     =>  'Extra test from TAP',
-        };
+    my $tap = TAP::Parser->new({tap => $TAP});
+    confess "Failed " . $tap->parse_errors if $tap->parse_errors;
+    my $test = {
+        flags    => {},
+        category => "TAP",
+        name     => 'Extra test from TAP',
+    };
     my $details;
 
-    $self->steps(OpenQA::Parser::Result->new({
-        details => [],
-        dents   => 0,
-        result => 'unk'
-    }));
+    $self->steps(
+        OpenQA::Parser::Result->new(
+            {
+                details => [],
+                dents   => 0,
+                result  => 'unk'
+            }));
     my $m = 0;
     while (my $res = $tap->next) {
-        my $result =  $res;
-        # For the time being only load known types
-        # Tests are supported and comments too
-        # print Dumper($result);
-
-        if( $result->raw =~  m/^(.*\.tap) \.{2}/g)  {
+        my $result = $res;
+        if ($result->raw =~ m/^(.*\.(:?tap|t)) \.{2}/g) {
             # most cases, teh output of a prove run will contain
             # "/t/$filename.tap .." as name of the file
             # use this to get the filename
-            $test->{name} =$1;
-            $test->{name} =~ s/\//_/;
-            $self->steps->{result} = ($tap->failed)? 'failed' : 'passed';
+            $test->{name} = $1;
+            $test->{name} =~ s/[\/.]/_/g;
+            $self->steps->{result} = ($tap->failed) ? 'failed' : 'passed';
             $self->test(OpenQA::Parser::Result->new($test));
             $self->_add_test($self->test);
             next;
-        } else {
+        }
+        else {
             confess "A valid TAP starts with filename.tap, and got: '@{[$result->raw]}'" unless $self->test;
         }
 
+        # For the time being only load known types
+        # Tests are supported and comments too
         # stick for now to only test results.
-        next if $result->type eq 'plan'; # Skip plans for now
+        next if $result->type eq 'plan';    # Skip plans for now
         next if $result->type ne 'test';
 
-        my $t_filename = "TAP-@{[$test->{name}]}-$m.txt";
+        my $t_filename    = "TAP-@{[$test->{name}]}-$m.txt";
         my $t_description = $result->description;
         $t_description =~ s/^- //;
         $details = {
-            text  => $t_filename,
-            title => $t_description,
-            result => ($result->is_actual_ok)? 'ok' : 'fail',
+            text   => $t_filename,
+            title  => $t_description,
+            result => ($result->is_actual_ok) ? 'ok' : 'fail',
         };
 
         # Ensure that text files are going to be written

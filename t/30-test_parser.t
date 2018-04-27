@@ -707,7 +707,7 @@ sub serialize_test {
         diag("JSON serialization");
         $parser = $parser_name->new();
         $parser->load($test_result_file);
-        $obj_content  = $parser->to_json();
+        $obj_content = $parser->to_json();
         diag explain $obj_content;
         $deserialized = $parser_name->new()->json_decode($obj_content);
         diag explain $deserialized;
@@ -748,7 +748,7 @@ subtest 'serialize/deserialize' => sub {
     serialize_test("OpenQA::Parser::Format::LTP",   "new_ltp_result_array.json",          "test_ltp_file_v2");
     serialize_test("OpenQA::Parser::Format::JUnit", "slenkins_control-junit-results.xml", "test_junit_file");
     serialize_test("OpenQA::Parser::Format::XUnit", "xunit_format_example.xml",           "test_xunit_file");
-    serialize_test("OpenQA::Parser::Format::TAP",    "tap_format_example.tap",            "test_tap_file");
+    serialize_test("OpenQA::Parser::Format::TAP",   "tap_format_example.tap",             "test_tap_file");
 };
 
 subtest 'Unstructured data' => sub {
