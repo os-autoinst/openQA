@@ -101,7 +101,10 @@ function setCurrentPreview(a, force) {
             success: function(data) {
               previewSuccess(data, force);
             }
-          }).fail(function() { setCurrentPreview(null); });
+    }).fail(function() {
+        console.warn('Failed to load data from: '+link.data("url"));
+        setCurrentPreview(null);
+    });
   }
   else {
     // hide
