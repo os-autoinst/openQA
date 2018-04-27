@@ -550,19 +550,12 @@ subtest junit_parse => sub {
 
 sub test_tap_file {
     my $p = shift;
-    is $p->results->size, 200, 'Expected 200 results';
-    my $i = 2;
+    is $p->results->size, 6, 'Expected 6 results';
     $p->results->each(
         sub {
-            is $_->result, 'ok', 'Tests passed' or diag explain $_;
-            #ok !!$_->environment, 'Environment is present';
-            ok !!$_->test,        'Test information is present';
-            #is $_->environment->gcc, 'gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]',  'Environment information matches';
-            #is $_->test->result, 'TPASS', 'subtest result is TPASS' or diag explain $_;
-            is $_->test_fqn, "LTP:cpuhotplug:cpuhotplug0$i", "test_fqn matches and are different";
-            $i++;
+            is $_->result, 'pass', 'Tests passed';
+            is $_->details->[0]->{result}, 'pass', "Test has ok" or diag explain $_;
         });
-    #is $p->results->get(0)->environment->gcc, 'gcc (SUSE Linux) 7.2.1 20170927 [gcc-7-branch revision 253227]', 'Environment information matches';
 }
 
 subtest tap_parse => sub {
@@ -570,48 +563,18 @@ subtest tap_parse => sub {
 
     my $tap_test_file = path($FindBin::Bin, "data")->child("tap_format_example.tap");
 
-    $parser->load($tap_test_file);
-    my $expected_test_result = test_tap_file($parser);
-    diag $expected_test_result;
-    #$expected_test_result->{test} = undef;
-    #is_deeply $parser->results->last->TO_JSON(1), $expected_test_result,
-    #  'Expected test result match - with no include_results - forcing to output the test';
-    #$expected_test_result->{name} = '9_post-tests_audits';
-    #delete $expected_test_result->{test};
-
-    #is_deeply $parser->results->last->to_hash(), $expected_test_result,
-    #  'Expected test result match - with no include_results - forcing to output the test';
-    #delete $expected_test_result->{name};
-
     $parser = OpenQA::Parser::Format::TAP->new;
-
-    $parser->include_results(1);
     $parser->load($tap_test_file);
 
-    diag $parser->results->size;
-    diag $parser->results;
-    #  'Generated 9 openQA tests results';    # 9 testsuites with all cumulative results for openQA
+    is $parser->results->size, 6, "File has 6 test cases";
 
-    #is_deeply $parser->results->last->TO_JSON(0), $expected_test_result, 'Test is hidden';
+    is $parser->results->first->result, 'pass', 'First testsuite fails as testcases passing failing';
+    is scalar @{$parser->results->first->details}, 1, '1 test cases details';
 
-    #$expected_test_result->{test} = {
-    #    'category' => 'tests-systemd',
-    #    'flags'    => {},
-    #    'name'     => '9_post-tests_audits',
-    #    'script'   => 'unk'
-    #};
+    is $parser->results->last->result, 'pass', 'First testsuite fails as testcases passing failing';
+    is scalar @{$parser->results->last->details}, 1, '1 test cases details';
 
-    #is_deeply $parser->results->last->TO_JSON(1), $expected_test_result, 'Test is showed';
-
-    #$parser = OpenQA::Parser::Format::JUnit->new;
-
-    #$junit_test_file = path($FindBin::Bin, "data")->child("slenkins_control-junit-results-fail.xml");
-
-    $parser->load($tap_test_file);
-
-    is $parser->results->first->result, 'fail', 'First testsuite fails as testcases are failing';
-    is scalar @{$parser->results->first->details}, 33, '33 test cases details';
-    is $_->{result}, 'fail', 'All testcases are failing' for @{$parser->results->first->details};
+    is $_->{result}, 'pass', 'All testcases are failing' for @{$parser->results->first->details};
 
 };
 
@@ -745,7 +708,9 @@ sub serialize_test {
         $parser = $parser_name->new();
         $parser->load($test_result_file);
         $obj_content  = $parser->to_json();
-        $deserialized = $parser_name->new()->from_json($obj_content);
+        diag explain $obj_content;
+        $deserialized = $parser_name->new()->json_decode($obj_content);
+        diag explain $deserialized;
         ok "$deserialized" ne "$parser", "Different objects";
         $test_function->($parser);
         $test_function->($deserialized);
