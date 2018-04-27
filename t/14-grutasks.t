@@ -398,17 +398,27 @@ subtest 'labeled jobs considered important' => sub {
 };
 
 subtest 'Gru tasks TTL' => sub {
-    my $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 1});
-    sleep 2;    # We need to fake time passing by.
+    my $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -5});
     $c->run('run', '-o');
     my $result = $t->app->minion->job($job_id)->info->{result};
     is $result->{error}, 'TTL Expired', 'TTL Expired - job discarded' or diag explain $result;
 
-    $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 10});
-    sleep 1;    # We need to fake time passing by.
+    $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 20});
     $c->run('run', '-o');
     $result = $t->app->minion->job($job_id)->info->{result};
-    like $result, qr/will delete in 14/i, 'TTL not Expired' or diag explain $result;
+
+    # Depending on logging options, gru task output can differ
+    like $result, qr/will delete in 14|Job successfully executed/i, 'TTL not Expired - Job executed'
+      or diag explain $result;
+
+    my @ids;
+    for (1 .. 100) {
+        push @ids, $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -5});
+    }
+    $c->run('run', '-o');
+
+    is $t->app->minion->job($_)->info->{result}->{error}, 'TTL Expired', 'TTL Expired - job discarded' for @ids;
+
 };
 
 SKIP: {
