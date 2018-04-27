@@ -24,27 +24,6 @@ use Data::Dumper;
 has include_results => 1;
 has [qw(test steps)];
 
-# Override to use specific OpenQA Result class.
-# sub _add_single_result { shift->}
-
-sub _add_result {
-    my $self = shift;
-    my %opts = ref $_[0] eq 'HASH' ? %{$_[0]} : @_;
-    return $self->_add_single_result(@_) unless $self->include_results && $opts{name};
-
-    my $name = $opts{name};
-    my $tests = $self->generated_tests->search('name', qr/$name/);
-
-    if ($tests->size == 1) {
-        $self->_add_single_result(@_, test => $tests->first);
-    }
-    else {
-        $self->_add_single_result(@_);
-    }
-
-    return $self->generated_tests_results;
-}
-
 sub parse {
     my ($self, $TAP) = @_;
     confess "No TAP given/loaded" unless $TAP;
@@ -89,9 +68,11 @@ sub parse {
         next if $result->type ne 'test';
 
         my $t_filename = "TAP-@{[$test->{name}]}-$m.txt";
+        my $t_description = $result->description;
+        $t_description =~ s/^- //;
         $details = {
             text  => $t_filename,
-            title => $result->raw,
+            title => $t_description,
             result => ($result->is_actual_ok)? 'ok' : 'fail',
         };
 
