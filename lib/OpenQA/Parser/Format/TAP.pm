@@ -21,10 +21,11 @@ use OpenQA::Parser::Result::OpenQA;
 use TAP::Parser;
 use Data::Dumper;
 
+has include_results => 1;
 has [qw(test steps)];
 
 # Override to use specific OpenQA Result class.
-sub _add_single_result { shift->generated_tests_results->add(OpenQA::Parser::Result::OpenQA->new(@_)) }
+# sub _add_single_result { shift->}
 
 sub _add_result {
     my $self = shift;
@@ -55,8 +56,13 @@ sub parse {
             category => "TAP",
             name     =>  'Extra test from TAP',
         };
-    $self->steps(OpenQA::Parser::Results->new);
     my $details;
+
+    $self->steps(OpenQA::Parser::Result->new({
+        details => [],
+        dents   => 0,
+        result => 'unk'
+    }));
     my $m = 0;
     while (my $res = $tap->next) {
         my $result =  $res;
@@ -65,14 +71,14 @@ sub parse {
         # print Dumper($result);
 
         if( $result->raw =~  m/^(.*\.tap) \.{2}/g)  {
-            $details = { result => 'failed' };
             # most cases, teh output of a prove run will contain
             # "/t/$filename.tap .." as name of the file
             # use this to get the filename
             $test->{name} =$1;
             $test->{name} =~ s/\//_/;
-            $test->{result} = ($tap->failed)? 'failed' : 'passed';
+            $self->steps->{result} = ($tap->failed)? 'failed' : 'passed';
             $self->test(OpenQA::Parser::Result->new($test));
+            $self->_add_test($self->test);
             next;
         } else {
             confess "A valid TAP starts with filename.tap, and got: '@{[$result->raw]}'" unless $self->test;
@@ -86,23 +92,24 @@ sub parse {
         $details = {
             text  => $t_filename,
             title => $result->raw,
-            result => ($result->is_actual_ok)? 'passed' : 'fail',
+            result => ($result->is_actual_ok)? 'ok' : 'fail',
         };
 
         # Ensure that text files are going to be written
         # With the content that is relevant
+        my $data = {%$result, %$details};
+        push @{$self->steps->{details}}, $data;
         $self->_add_output(
             {
                 file    => $t_filename,
                 content => $res->raw
             });
-        #$result->{name} = $test->{name};
-        my $data = {%$result, %$details};
-        push @{$test->{steps}}, $details;
-        $self->_add_result($data);
         ++$m;
     }
-    $self->_add_test($self->test);
+
+    $self->steps->{name} = $self->tests->first->{name};
+    $self->steps->{test} = $self->tests->first;
+    $self->generated_tests_results->add(OpenQA::Parser::Result::OpenQA->new($self->steps));
 }
 
 =encoding utf-8
