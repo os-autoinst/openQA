@@ -360,13 +360,13 @@ subtest 'filtering' => sub {
     $driver->find_element('#details-name-filter')->send_keys('at');
     is($count_steps->('ok'),     3, 'number of passed steps only with name filter');
     is($count_steps->('failed'), 1, 'number of failed steps only with name filter');
-    is($count_headings->(),      3, 'number of module headings unaffected');
+    is($count_headings->(),      0, 'no module headings shown when filter active');
 
     # enable failed filter
     $driver->find_element('#details-only-failed-filter')->click();
     is($count_steps->('ok'),     0, 'number of passed steps with both filters');
     is($count_steps->('failed'), 1, 'number of failed steps with both filters');
-    is($count_headings->(),      3, 'number of module headings unaffected');
+    is($count_headings->(),      0, 'no module headings shown when filter active');
 
     # disable name filter
     $driver->find_element('#details-name-filter')->send_keys(
@@ -376,12 +376,13 @@ subtest 'filtering' => sub {
     );
     is($count_steps->('ok'),     0, 'number of passed steps only with failed filter');
     is($count_steps->('failed'), 3, 'number of failed steps only with failed filter');
-    is($count_headings->(),      3, 'number of module headings unaffected');
+    is($count_headings->(),      0, 'no module headings shown when filter active');
 
     # disable failed filter
     $driver->find_element('#details-only-failed-filter')->click();
     is($count_steps->('ok'),     47, 'same number of passed steps as initial');
     is($count_steps->('failed'), 3,  'same number of failed steps as initial');
+    is($count_headings->(),      3,  'module headings shown again');
 };
 
 # set job 99963 to done via API to tests whether worker is still displayed then

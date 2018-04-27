@@ -313,6 +313,9 @@ function setupResult(state, jobid, status_url, details_url) {
           return;
       }
 
+      // hide all categories
+      resultsTable.find('tbody tr td[colspan="3"]').parent('tr').hide();
+
       // show/hide table rows considering filter
       $.each(resultsTable.find('tbody .result'), function(index, td) {
           var tdElement = $(td);
