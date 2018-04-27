@@ -240,7 +240,7 @@ like(
     "on src page from details route"
 );
 
-# create 2 needle files, so they are there. The fixtures are deleted in other tests
+# create 2 additional needle files for this particular test; fixtures are deleted in other tests
 my $ntext = <<EOM;
 {
   "area": [
@@ -258,13 +258,13 @@ my $ntext = <<EOM;
   ]
 }
 EOM
-
-ok(open(my $fh, '>', 't/data/openqa/share/tests/opensuse/needles/sudo-passwordprompt-lxde.json'));
-print $fh $ntext;
-close($fh);
-ok(open($fh, '>', 't/data/openqa/share/tests/opensuse/needles/sudo-passwordprompt.json'));
-print $fh $ntext;
-close($fh);
+my $needle_dir = 't/data/openqa/share/tests/opensuse/needles';
+ok(-d $needle_dir || mkdir($needle_dir), 'create needle directory');
+for my $needle_name (qw(sudo-passwordprompt-lxde sudo-passwordprompt)) {
+    ok(open(my $fh, '>', "$needle_dir/$needle_name.json"));
+    print $fh $ntext;
+    close($fh);
+}
 
 sub test_with_error {
     my ($needle_to_modify, $error, $tags, $expect, $test_name) = @_;
