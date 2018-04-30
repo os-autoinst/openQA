@@ -1,7 +1,9 @@
 % if ($job->parents->first()) {
-<div class="box box-shadow" id="parents_info_box">
-    <div class="box-header aligncenter">Parents</div>
-    <table class="infotbl">
+<table class="infotbl table table-striped" id="parents_info_box">
+    <thead>
+        <tr><th colspan="2">Parents</th></tr>
+    </thead>
+    <tbody>
         <% for my $dep ($job->parents->all()) {  %>
         <tr>
             <td style="width: 40%;">
@@ -18,13 +20,15 @@
             </td>
         </tr>
         <% }  %>
-    </table>
-</div>
+    </tbody>
+</table>
 % }
 % if ($job->children->first()) {
-<div class="box box-shadow" id="parents_info_box">
-    <div class="box-header aligncenter">Children</div>
-    <table class="infotbl">
+<table class="infotbl table table-striped" id="childs_info_box">
+    <thead>
+        <tr><th colspan="2">Children</th></tr>
+    </thead>
+    <tbody>
         <% for my $dep ($job->children->all()) {  %>
         <tr>
             <td style="width: 40%;">
@@ -41,6 +45,6 @@
             </td>
         </tr>
         <% }  %>
-    </table>
-</div>
+    </tbody>
+</table>
 % }
