@@ -11,9 +11,7 @@
             </td>
             <td>
                 %if ($dep->parent->state eq 'cancelled' || $dep->parent->state eq 'done') {
-                    <span style="padding: 0 10%; display: inline-block;
-                        text-align: center;"
-                        class="<%= css_for({'result' => $dep->parent->result}) %>"><%= $dep->parent->result %></span>
+                    <span class="dependency_result <%= css_for({'result' => $dep->parent->result}) %>"><%= $dep->parent->result %></span>
                 % } else {
                     %= $dep->parent->state
                 % }
@@ -36,9 +34,7 @@
             </td>
             <td>
                 %if ($dep->child->state eq 'cancelled' || $dep->child->state eq 'done') {
-                    <span style="padding: 0 10%; display: inline-block;
-                        text-align: center;"
-                        class="<%= css_for({'result' => $dep->child->result}) %>"><%= $dep->child->result %></span>
+                    <span class="dependency_result <%= css_for({'result' => $dep->child->result}) %>"><%= $dep->child->result %></span>
                 % } else {
                     %= $dep->child->state
                 % }
