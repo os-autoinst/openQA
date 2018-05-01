@@ -115,6 +115,21 @@ sub list {
     $self->stash(scheduled => \@scheduled);
 }
 
+sub prefetch_comment_counts {
+    my ($self, $job_ids) = @_;
+
+    my $comments = $self->db->resultset("Comments")->search(
+        {'me.job_id' => {in => $job_ids}},
+        {
+            select   => ['job_id', {count => 'job_id', -as => 'count'}],
+            group_by => [qw(job_id)]});
+    my $comment_count;
+    while (my $count = $comments->next) {
+        $comment_count->{$count->job_id} = $count->get_column('count');
+    }
+    return $comment_count;
+}
+
 sub list_ajax {
     my ($self)  = @_;
     my $assetid = $self->param('assetid');
@@ -154,6 +169,9 @@ sub list_ajax {
             order_by => ['me.t_finished DESC, me.id DESC'],
             prefetch => [qw(children parents)],
         })->all;
+
+    my $comment_count = $self->prefetch_comment_counts(\@ids);
+
     # need to use all as the order is too complex for a cursor
     for my $job (@jobs) {
         push(
@@ -173,7 +191,7 @@ sub list_ajax {
                 testtime      => $job->t_finished . 'Z',
                 result        => $job->result,
                 group         => $job->group_id,
-                comment_count => $job->comments->count,
+                comment_count => $comment_count->{$job->id} // 0,
                 state         => $job->state
             });
     }
