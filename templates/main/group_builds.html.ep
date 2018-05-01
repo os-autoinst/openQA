@@ -11,9 +11,9 @@
                     %= link_to "Build$build" => url_for('tests_overview')->query(distri => [sort keys %{$build_res->{distris}}], version => $build_res->{version}, build => $build, groupid => $group->{id} )
                 % }
 
-                (<abbr class="timeago" title="<%= $build_res->{oldest}->datetime() %>Z">
+                <span class="smaller-font">(<abbr class="timeago" title="<%= $build_res->{oldest}->datetime() %>Z">
                     %= $build_res->{oldest}
-                </abbr>)
+                </abbr>)</span>
 
                 % my $group_build_id = $group->{id} . '-' . $build_res->{escaped_id};
                 %= include 'main/review_badge', group_build_id => $group_build_id, build_res => $build_res, id_prefix => ''

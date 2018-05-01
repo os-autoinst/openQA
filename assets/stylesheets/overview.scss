@@ -10,6 +10,11 @@
     background-color: #bbb;
 }
 
+/* dotted underline looks strange with default font size */
+.h4 {
+    .smaller-font { font-size: 90%; }
+}
+
 #filter-panel, #live-log-panel, #live-terminal-panel {
     .card-header {
         cursor: pointer;
