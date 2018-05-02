@@ -14,7 +14,7 @@ user networking which requires no further configuration.
 For more advanced setups or tests that require multiple jobs to be
 in the same networking the <<TAP based network,TAP>> or <<VDE Based Network,VDE>> based modes can be used.
 
-== Qemu user networking
+== Qemu User Networking
 :qemu-user-networking: http://wiki.qemu.org/Documentation/Networking#User_Networking_.28SLIRP.29[user networking]
 
 With Qemu {qemu-user-networking} each jobs gets it's own isolated network with
@@ -22,7 +22,7 @@ TCP and UDP routed to the outside. DHCP is provided by qemu. The MAC address of
 the machine can be controlled with the +NICMAC+ variable. If not set, it's
 +52:54:00:12:34:56+.
 
-== TAP based network
+=== TAP Based Network
 
 os-autoinst can connect qemu to TAP devices of the host system to
 leverage advanced network setups provided by the host by setting +NICTYPE=tap+.
@@ -48,130 +48,7 @@ automatically computed from $worker_id if not set.
 In TAP mode the system administrator is expected to configure the
 network, required internet access etc on the host manually.
 
-TAP devices need be owned by the +_openqa-worker+ user for openQA to
-be able to access them.
-
-[source,sh]
----------------
-tunctl -u _openqa-worker -p -t tap0
----------------
-
-If you want to use TAP device which doesn't exist on the system,
-you need to set CAP_NET_ADMIN capability on qemu binary file:
-
-[source,sh]
----------------
-zypper in libcap-progs
-setcap CAP_NET_ADMIN=ep /usr/bin/qemu-system-x86_64
----------------
-
-Network setup can be changed after qemu is started using network configure script
-specified in TAPSCRIPT variable.
-
-Sample script to add TAP device to existing bridge br0:
-[source,sh]
----------------
-sudo brctl addif br0 $1
-sudo ip link set $1 up
----------------
-
-== TAP with Open vSwitch
-
-The recommended way to configure the network for TAP devices is using Open vSwitch.
-There is a support service +os-autoinst-openvswitch.service+ which sets vlan number
-of Open vSwitch ports based on +NICVLAN+ variable - this separates the groups of
-tests from each other.
-
-+NICVLAN+ variable is dynamically assigned by OpenQA scheduler.
-
-Compared to VDE setup discussed later, Open vSwitch is more complicated to configure,
-but provides more robust and scalable network.
-
-Start Open vSwitch and add TAP devices:
-[source,sh]
----------------
-
-# start openvswitch.service
-systemctl start openvswitch.service
-systemctl enable openvswitch.service
-
-# create bridge
-ovs-vsctl add-br br0
-
-# add tap devices, use vlan 999 by default, the vlan number is supposed to be changed when the vm starts
-ovs-vsctl add-port br0 tap0 tag=999
-ovs-vsctl add-port br0 tap1 tag=999
-ovs-vsctl add-port br0 tap2 tag=999
-ovs-vsctl add-port br0 tap3 tag=999
-ovs-vsctl add-port br0 tap4 tag=999
-
----------------
-
-The virtual machines need access to os-autoinst webserver acessible
-via IP 10.0.2.2. The IP addresses of VMs are controlled by tests
-and are likely to conflict if more independent tests runs in parallel.
-
-The VMs have unique MAC that differs in the last 16 bits (see /usr/lib/os-autoinst/backend/qemu.pm).
-
-`os-autoinst-openvswitch.service` sets up filtering rules for the following translation scheme which
-provide non-conflicting addresses visible from host:
-
-[source,sh]
-----
-MAC 52:54:00:12:XX:YY -> IP 10.1.XX.YY
-----
-
-That means that the local port of the bridge must be configured to IP 10.0.2.2
-and netmask /15 that covers 10.0.0.0 and 10.1.0.0 ranges.
-
-[source,sh]
----------------
-ip addr add 10.0.2.2/15 dev br0
-ip route add 10.0.0.0/15 dev br0
-ip link set br0 up
----------------
-
-
-== Debugging Open vSwitch configuration
-
-Boot sequence with wicked < 0.6.23:
-
-1. wicked - creates tap devices
-2. openvswitch - creates the bridge +br0+, adds tap devices to it
-3. wicked handles +br0+ as hotplugged device, assignd the IP 10.0.2.2 to it, updates SuSEFirewall
-4. os-autoinst-openvswitch - installs openflow rules, handles vlan assignment
-
-Boot sequence with wicked 0.6.23 and newer:
-
-1. openvswitch
-2. wicked - creates the bridge +br0+ and tap devices, add tap devices to the bridge,
-3. SuSEFirewall
-4. os-autoinst-openvswitch - installs openflow rules, handles vlan assignment
-
-
-The configuration and operation can be checked by the following commands:
-
-[source,sh]
-----
-ovs-vsctl show # shows the bridge br0, the tap devices are assigned to it
-ovs-ofctl dump-flows br0 # shows the rules installed by os-autoinst-openvswitch in table=0
-----
-
-* packets from tapX to br0 create additional rules in table=1
-* packets from br0 to tapX increase packet counts in table=1
-* empty output indicates a problem with os-autoinst-openvswitch service
-* zero packet count or missing rules in table=1 indicate problem with tap devices
-
-[source,sh]
-----
-ipables -L -v
-----
-
-As long as the SUT has access to external network, there should be
-nonzero packet count in the forward chain between br0 and external
-interface.
-
-== VDE Based Network
+=== VDE Based Network
 
 Virtual Distributed Ethernet provides a software switch that runs in
 user space. It allows to connect several qemu instances without
@@ -180,7 +57,7 @@ affecting the system's network configuration.
 The openQA workers need a vde_switch instance running. The workers
 reconfigure the switch as needed by the job.
 
-=== Basic, single machine tests
+==== Basic, Single Machine Tests
 
 To start with a basic configuration like qemu user mode networking,
 create a machine with the following settings:
@@ -200,40 +77,72 @@ systemctl start openqa-slirpvde
 With this setting all jobs on the same host would be in the same
 network share the same SLIRP instance though.
 
-=== Multi machine tests
+== Multi Machine Tests Setup
 
-Create a machine like above but don't set NICVLAN. openQA will
-dynamically allocate a VLAN number for all jobs that have
-dependencies between each other. By default this VLAN is private and
-has no internet access. To enable user mode networking set
-`VDE_USE_SLIRP=1` on one of the machines. The worker running the job
-on such a machine will start slirpvde and put it in the correct VLAN
-then.
+The section provides one of the ways for setting up openQA environment to run tests that
+require network connection between several machines (e.g. client -- server tests).
 
-== Worker configuration
+The example of the configuration is applicable for openSUSE and will
+use _Open vSwitch_ for virtual switch, _SuSEfirewall2_ for NAT and _wicked_ as network manager.
 
-Requirements
-```bash
-zypper in openvswitch os-autoinst-openvswitch openQA-worker tunctl
+NOTE: Other way to setup the environment with _iptables_ and _firewalld_ is described
+on link:https://fedoraproject.org/wiki/OpenQA_advanced_network_guide[Fedora wiki].
 
-systemctl enable SuSEfirewall2              # Needed to create NAT to outside network
-systemctl enable openvswitch                # Needed for network creation
-systemctl enable os-autoinst-openvswitch    # Needed to separate networks for parallel clusters
-```
+*Set Up Open vSwitch*
 
-NOTE: In some cases (e.g. on Leap) can be needed to start the OpenvSwitch service before the Network service by modifying the OpenvSwitch service. For reference see https://en.opensuse.org/Portal:Wicked/OpenvSwitch#Wicked_0.6.23.2B[this].
+Compared to VDE setup, Open vSwitch is a little bit more complicated to configure, but provides more
+robust and scalable network.
 
+* Install and Run Open vSwitch:
+[source,sh]
+---------------
+zypper in openvswitch
+systemctl start openvswitch.service
+systemctl enable openvswitch.service
+---------------
 
-The os-autoinst-openvswitch.service uses +br0+ by default.
-Usually it's used by KVM, so we need to configure br1.
+*  Install and configure _os-autoinst-openvswitch.service_:
 
-```bash
+NOTE: _os-autoinst-openvswitch.service_ is a support service that sets vlan number
+of Open vSwitch ports based on +NICVLAN+ variable - this separates the groups of
+tests from each other. +NICVLAN+ variable is dynamically assigned by OpenQA scheduler.
+
+[source,sh]
+---------------
+zypper in os-autoinst-openvswitch
+systemctl start os-autoinst-openvswitch
+systemctl enable os-autoinst-openvswitch
+---------------
+
+_os-autoinst-openvswitch.service_ uses _br0_ bridge by default.
+As it might be used by KVM, configure _br1_ instead.
+
+[source,sh]
+---------------
 # /etc/sysconfig/os-autoinst-openvswitch
 OS_AUTOINST_USE_BRIDGE=br1
-```
+---------------
 
-For every MM worker you need tap device (tap0 tap1 tap2 ..)
-```bash
+* Create virtual bridge _br1_:
+[source,sh]
+---------------
+ovs-vsctl add-br br1
+---------------
+
+*Configure Virtual Interfaces*
+
+* Add tap interface for every multi-machine worker:
+
+NOTE: Create as many interfaces as needed for a test. The instructions are provided for three interfaces
+_tap0_, _tap1_, _tap2_ to be used by _worker@1_, _worker@2_, _worker@3_ workers. TAP interfaces have to be owned by the __openqa-worker_ user for openQA to
+be able to access them.
+
+To create tap interfaces automatically on startup, add appropriate configuration files to the
+`/etc/sysconfig/network/` directory. Files have to be named as `ifcfg-tap<N>`, replacing `<N>`
+with the number for the interface, such as `0`, `1`, `2` (e.g. `ifcfg-tap0`, `ifcfg-tap1`).
+
+[source,sh]
+---------------
 # /etc/sysconfig/network/ifcfg-tap0
 BOOTPROTO='none'
 IPADDR=''
@@ -243,10 +152,15 @@ STARTMODE='auto'
 TUNNEL='tap'
 TUNNEL_SET_GROUP='nogroup'
 TUNNEL_SET_OWNER='_openqa-worker'
-```
+---------------
 
-Add all tap devices to bridge config
-```bash
+* Add bridge config with all tap devices that should be connected to it:
+
+The file have to be located in `/etc/sysconfig/network/` directory. File name is
+`ifcfg-br<N>`, where `<N>` is the id of the bridge (e.g. `1`).
+
+[source,sh]
+---------------
 # /etc/sysconfig/network/ifcfg-br1
 BOOTPROTO='static'
 IPADDR='10.0.2.2/15'
@@ -255,30 +169,159 @@ OVS_BRIDGE='yes'
 OVS_BRIDGE_PORT_DEVICE_1='tap0'
 OVS_BRIDGE_PORT_DEVICE_2='tap1'
 OVS_BRIDGE_PORT_DEVICE_3='tap2'
-```
+---------------
 
-The IP 10.0.2.2 can also serve as a gateway to access outside
-network. For this, a NAT between br1 and eth0 must be configured
+*Configure NAT with SuSEfirewall*
+
+The IP 10.0.2.2 can be also served as a gateway to access outside
+network. For this, a NAT between _br1_ and _eth0_ must be configured
 with SuSEfirewall or iptables.
 
-```bash
+[source,sh]
+---------------
 # /etc/sysconfig/SuSEfirewall2
+FW_DEV_INT="br1"
 FW_ROUTE="yes"
 FW_MASQUERADE="yes"
-FW_DEV_INT="br1"
-```
+---------------
 
-Tell workers to run also multi-machine jobs
-```bash
+Start SuSEfirewall2 and allow to run on startup:
+
+[source,sh]
+---------------
+systemctl start SuSEfirewall2
+systemctl enable SuSEfirewall2
+---------------
+
+*Configure OpenQA Workers*
+
+* Allow workers to run multi-machine jobs:
+
+[source,sh]
+---------------
 # /etc/openqa/workers.ini
 [global]
 WORKER_CLASS = qemu_x86_64,tap
-```
+---------------
 
-REBOOT
+* Enable workers to be started on system boot:
+
+[source,sh]
+---------------
+systemctl enable openqa-worker@1
+systemctl enable openqa-worker@2
+systemctl enable openqa-worker@3
+---------------
+
+*Grant CAP_NET_ADMIN Capabilities to QEMU*
+
+In order to use TAP device which doesn’t exist on the system, it is required to set
+CAP_NET_ADMIN capability on qemu binary file:
+
+[source,sh]
+---------------
+zypper in libcap-progs
+setcap CAP_NET_ADMIN=ep /usr/bin/qemu-system-x86_64
+---------------
+
+*Configure Network Manager*
+
+* Check the configuration for the _eth0_ interface:
+
+IMPORTANT: Ensure, that _eth0_ interface is configured in `/etc/sysconfig/network/ifcfg-eth0`.
+Otherwise, wicked will not be able to bring up the interface on start and host will loose network
+connection.
+
+[source,sh]
+---------------
+# /etc/sysconfig/network/ifcfg-eth0
+BOOTPROTO='dhcp'
+BROADCAST=''
+ETHTOOL_OPTIONS=''
+IPADDR=''
+MTU=''
+NAME=''
+NETMASK=''
+REMOTE_IPADDR=''
+STARTMODE='auto'
+DHCLIENT_SET_DEFAULT_ROUTE='yes'
+---------------
+
+* Start _wicked_ as network service:
+
+Check the network service currently being used:
+
+[source,sh]
+---------------
+systemctl show -p Id network.service
+---------------
+
+If the result is different from `Id=wicked.service` (e.g. `NetworkManager.service`),
+stop the network service:
+
+[source,sh]
+---------------
+systemctl stop network.service
+systemctl disable network.service
+---------------
+
+Then switch to wicked:
+
+[source,sh]
+---------------
+systemctl enable --force wicked
+systemctl start wicked
+---------------
+
+* Bring up _br1_ interface:
+
+[source,sh]
+---------------
+wicked ifup br1
+---------------
+
+* REBOOT
+
+=== Debugging Open vSwitch Configuration
+
+Boot sequence with wicked < 0.6.23:
+
+1. wicked - creates tap devices
+2. openvswitch - creates the bridge +br1+, adds tap devices to it
+3. wicked handles +br1+ as hotplugged device, assignd the IP 10.0.2.2 to it, updates SuSEfirewall
+4. os-autoinst-openvswitch - installs openflow rules, handles vlan assignment
+
+Boot sequence with wicked 0.6.23 and newer:
+
+1. openvswitch
+2. wicked - creates the bridge +br1+ and tap devices, add tap devices to the bridge,
+3. SuSEfirewall
+4. os-autoinst-openvswitch - installs openflow rules, handles vlan assignment
 
 
-== GRE tunnels
+The configuration and operation can be checked by the following commands:
+
+[source,sh]
+----
+ovs-vsctl show # shows the bridge br1, the tap devices are assigned to it
+ovs-ofctl dump-flows br1 # shows the rules installed by os-autoinst-openvswitch in table=0
+----
+
+* packets from tapX to br1 create additional rules in table=1
+* packets from br1 to tapX increase packet counts in table=1
+* empty output indicates a problem with os-autoinst-openvswitch service
+* zero packet count or missing rules in table=1 indicate problem with tap devices
+
+[source,sh]
+----
+iptables -L -v
+----
+
+As long as the SUT has access to external network, there should be
+nonzero packet count in the forward chain between br1 and external
+interface.
+
+== GRE Tunnels
 
 By default all multi-machine workers have to be on single physical machine.
 You can join multiple physical machines and its ovs bridges together by GRE tunnel.
