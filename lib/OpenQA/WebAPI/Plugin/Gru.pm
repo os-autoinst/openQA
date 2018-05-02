@@ -90,7 +90,7 @@ sub enqueue {
     my $args = shift // [];
     my $options = shift // {};
     my $jobs = shift // [];
-
+    my $ttl = $options->{ttl} ? $options->{ttl} : undef;
     $args = [$args] if ref $args eq 'HASH';
 
     my $delay = $options->{run_at} && $options->{run_at} > now() ? $options->{run_at} - now() : 0;
@@ -105,7 +105,10 @@ sub enqueue {
         });
 
     $self->app->minion->enqueue(
-        $task => $args => {priority => $options->{priority} // 0, delay => $delay, notes => {gru_id => $gru->id}});
+        $task => $args => {
+            priority => $options->{priority} // 0,
+            delay    => $delay,
+            notes    => {gru_id => $gru->id, (ttl => $ttl) x !!(defined $ttl)}});
 }
 
 package OpenQA::WebAPI::Plugin::Gru::Command::gru;
@@ -133,6 +136,16 @@ sub cmd_list { shift->job->run(@_) }
 
 sub execute_job {
     my ($self, $job) = @_;
+
+    my $ttl       = $job->info->{notes}{ttl};
+    my $elapsed   = time - $job->info->{created};
+    my $ttl_error = 'TTL Expired';
+
+    return
+      exists $job->info->{notes}{gru_id} ?
+      $job->fail({error => $ttl_error}) && $self->fail_gru($job->info->{notes}{gru_id} => $ttl_error)
+      : $job->fail({error => $ttl_error})
+      if (defined $ttl && $elapsed > $ttl);
 
     my $buffer;
     my $err;

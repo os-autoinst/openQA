@@ -510,8 +510,8 @@ sub schedule_iso {
         @successful_job_ids = ();
     };
 
-    $self->gru->enqueue(limit_assets           => [] => {priority => 10});
-    $self->gru->enqueue(limit_results_and_logs => [] => {priority => 5});
+    $self->gru->enqueue(limit_assets           => [] => {priority => 10, ttl => 172800});
+    $self->gru->enqueue(limit_results_and_logs => [] => {priority => 5,  ttl => 172800});
 
     $self->emit_event('openqa_iso_create', $args);
     for my $succjob (@successful_job_ids) {
