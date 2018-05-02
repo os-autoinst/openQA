@@ -1,7 +1,9 @@
 % if ($job->parents->first()) {
-<div class="box box-shadow" id="parents_info_box">
-    <div class="box-header aligncenter">Parents</div>
-    <table class="infotbl">
+<table class="infotbl table table-striped" id="parents_info_box">
+    <thead>
+        <tr><th colspan="2">Parents</th></tr>
+    </thead>
+    <tbody>
         <% for my $dep ($job->parents->all()) {  %>
         <tr>
             <td style="width: 40%;">
@@ -9,22 +11,22 @@
             </td>
             <td>
                 %if ($dep->parent->state eq 'cancelled' || $dep->parent->state eq 'done') {
-                    <span style="padding: 0 10%; display: inline-block;
-                        text-align: center;"
-                        class="<%= css_for({'result' => $dep->parent->result}) %>"><%= $dep->parent->result %></span>
+                    <span class="dependency_result <%= css_for({'result' => $dep->parent->result}) %>"><%= $dep->parent->result %></span>
                 % } else {
                     %= $dep->parent->state
                 % }
             </td>
         </tr>
         <% }  %>
-    </table>
-</div>
+    </tbody>
+</table>
 % }
 % if ($job->children->first()) {
-<div class="box box-shadow" id="parents_info_box">
-    <div class="box-header aligncenter">Children</div>
-    <table class="infotbl">
+<table class="infotbl table table-striped" id="childs_info_box">
+    <thead>
+        <tr><th colspan="2">Children</th></tr>
+    </thead>
+    <tbody>
         <% for my $dep ($job->children->all()) {  %>
         <tr>
             <td style="width: 40%;">
@@ -32,15 +34,13 @@
             </td>
             <td>
                 %if ($dep->child->state eq 'cancelled' || $dep->child->state eq 'done') {
-                    <span style="padding: 0 10%; display: inline-block;
-                        text-align: center;"
-                        class="<%= css_for({'result' => $dep->child->result}) %>"><%= $dep->child->result %></span>
+                    <span class="dependency_result <%= css_for({'result' => $dep->child->result}) %>"><%= $dep->child->result %></span>
                 % } else {
                     %= $dep->child->state
                 % }
             </td>
         </tr>
         <% }  %>
-    </table>
-</div>
+    </tbody>
+</table>
 % }
