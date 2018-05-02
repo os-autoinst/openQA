@@ -68,6 +68,7 @@
   /usr/bin/flock rix,
   /usr/bin/git rix,
   /usr/bin/gzip rix,
+  /usr/bin/icewm rix,
   /usr/bin/ionice rix,
   /usr/bin/ipmitool rix,
   /usr/bin/isotovideo rix,
