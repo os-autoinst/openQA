@@ -106,7 +106,7 @@ OpenQA::Parser::Format::TAP - TAP file parser
     # Alternative interface
     use OpenQA::Parser qw(parser p);
 
-    my $parser = parser( TAP => 'test.tap' );
+    my $parser = p( TAP => 'test.tap' );
 
     my $result_collection = $parser->results();
     my $test_collection   = $parser->tests();
@@ -119,20 +119,50 @@ OpenQA::Parser::Format::TAP - TAP file parser
     my $passed_results = $parser->results->search( result => qr/ok/ );
     my $size = $passed_results->size;
 
-
 =head1 DESCRIPTION
 
 OpenQA::Parser::Format::TAP is the parser for Test Anything Protocol format.
 The parser is making use of the C<tests()>, C<results()> and C<output()> collections.
 
+The parser will store the information from each test step along with the test step details.
+
 =head1 ATTRIBUTES
 
-OpenQA::Parser::Format::TAP inherits all attributes from L<OpenQA::Parser::Format::Base>.
+OpenQA::Parser::Format::TAP inherits all attributes from L<OpenQA::Parser::Format::Base> and implements
+the following attributes.
+
+=head2 test
+
+Holds an instance of C<OpenQA::Parser::Result containing the details of the current test being parsed.
+
+=head2 steps
+
+Contains a list of the test lines provided by the TAP::Parser it is then combined and added as test results
+via C<OpenQA::Parser::Format::Base::generated_tests_results>.
 
 =head1 METHODS
 
 OpenQA::Parser::Format::TAP inherits all methods from L<OpenQA::Parser::Format::Base>, it only overrides
 C<parse()> to generate a simple tree of results.
+
+=head1 CAVEATS
+
+TAP parser will treat each file as a test case, with N steps, as such it expects C<filename.t ..>
+or C<filename.tap ..> as the first line in the file to be parsed, further parsing will not be done
+until this requirement is met.
+
+=over 4
+
+=item SUBTESTS
+
+Currently TAP::Harness does not properly parse subtests, therefore they are not supported by this TAP parser,
+
+=item NOT SUPPORTED ELEMENTS
+
+As this is a simple implementation elements from C<Comments>, C<Plans>, C<Directives> and C<Bails> are not supported, therefore
+are discarded by the parser.
+
+=back
 
 =cut
 
