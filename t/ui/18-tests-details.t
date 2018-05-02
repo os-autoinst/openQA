@@ -31,6 +31,7 @@ use JSON;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
+use Module::Load::Conditional qw(can_load);
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
@@ -239,7 +240,7 @@ like(
     "on src page from details route"
 );
 
-# create 2 needle files, so they are there. The fixtures are deleted in other tests
+# create 2 additional needle files for this particular test; fixtures are deleted in other tests
 my $ntext = <<EOM;
 {
   "area": [
@@ -257,13 +258,13 @@ my $ntext = <<EOM;
   ]
 }
 EOM
-
-ok(open(my $fh, '>', 't/data/openqa/share/tests/opensuse/needles/sudo-passwordprompt-lxde.json'));
-print $fh $ntext;
-close($fh);
-ok(open($fh, '>', 't/data/openqa/share/tests/opensuse/needles/sudo-passwordprompt.json'));
-print $fh $ntext;
-close($fh);
+my $needle_dir = 't/data/openqa/share/tests/opensuse/needles';
+ok(-d $needle_dir || mkdir($needle_dir), 'create needle directory');
+for my $needle_name (qw(sudo-passwordprompt-lxde sudo-passwordprompt)) {
+    ok(open(my $fh, '>', "$needle_dir/$needle_name.json"));
+    print $fh $ntext;
+    close($fh);
+}
 
 sub test_with_error {
     my ($needle_to_modify, $error, $tags, $expect, $test_name) = @_;
@@ -325,6 +326,63 @@ subtest 'test candidate list' => sub {
     );
     test_with_error(0, 0, ['sudo-passwordprompt', 'some-other-tag'],
         \%expected_candidates, 'needles appear twice, each time under different tag');
+};
+
+subtest 'filtering' => sub {
+    $driver->get('/tests/99937');
+
+    # load Selenium::Remote::WDKeys module or skip this test if not available
+    unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
+        plan skip_all => 'Install Selenium::Remote::WDKeys to run this test';
+        return;
+    }
+
+    # define test helper
+    my $count_steps = sub {
+        my ($result) = @_;
+        return $driver->execute_script("return \$('#results .result${result}:visible').length;");
+    };
+    my $count_headings = sub {
+        return $driver->execute_script("return \$('#results td[colspan=\"3\"]:visible').length;");
+    };
+
+    # check initial state (no filters enabled)
+    ok(!$driver->find_element('#details-name-filter')->is_displayed(),        'name filter initially not displayed');
+    ok(!$driver->find_element('#details-only-failed-filter')->is_displayed(), 'failed filter initially not displayed');
+    is($count_steps->('ok'),     47, 'number of passed steps without filter');
+    is($count_steps->('failed'), 3,  'number of failed steps without filter');
+    is($count_headings->(),      3,  'number of module headings without filter');
+
+    # show filter form
+    $driver->find_element('.details-filter-toggle a')->click();
+
+    # enable name filter
+    $driver->find_element('#details-name-filter')->send_keys('at');
+    is($count_steps->('ok'),     3, 'number of passed steps only with name filter');
+    is($count_steps->('failed'), 1, 'number of failed steps only with name filter');
+    is($count_headings->(),      0, 'no module headings shown when filter active');
+
+    # enable failed filter
+    $driver->find_element('#details-only-failed-filter')->click();
+    is($count_steps->('ok'),     0, 'number of passed steps with both filters');
+    is($count_steps->('failed'), 1, 'number of failed steps with both filters');
+    is($count_headings->(),      0, 'no module headings shown when filter active');
+
+    # disable name filter
+    $driver->find_element('#details-name-filter')->send_keys(
+        Selenium::Remote::WDKeys->KEYS->{end},
+        Selenium::Remote::WDKeys->KEYS->{backspace},
+        Selenium::Remote::WDKeys->KEYS->{backspace},
+    );
+    is($count_steps->('ok'),     0, 'number of passed steps only with failed filter');
+    is($count_steps->('failed'), 3, 'number of failed steps only with failed filter');
+    is($count_headings->(),      0, 'no module headings shown when filter active');
+
+    # disable failed filter
+    $driver->find_element('#details-only-failed-filter')->click();
+    is($count_steps->('ok'),     47, 'same number of passed steps as initial');
+    is($count_steps->('failed'), 3,  'same number of failed steps as initial');
+    is($count_headings->(),      3,  'module headings shown again');
 };
 
 # set job 99963 to done via API to tests whether worker is still displayed then

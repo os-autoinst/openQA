@@ -290,4 +290,53 @@ function setupResult(state, jobid, status_url, details_url) {
       pauseLiveView();
     }
   });
+
+  // setup result filter, define function to apply filter changes
+  var detailsFilter = $('.details-filter');
+  var detailsNameFilter = $('#details-name-filter');
+  var detailsFailedOnlyFilter = $('#details-only-failed-filter');
+  var resultsTable = $('#results');
+  var anyFilterEnabled = false;
+  var applyFilterChanges = function(event) {
+      // determine enabled filter
+      anyFilterEnabled = !detailsFilter.hasClass('hidden');
+      if (anyFilterEnabled) {
+          var nameFilter = detailsNameFilter.val();
+          var nameFilterEnabled = nameFilter.length !== 0;
+          var failedOnlyFilterEnabled = detailsFailedOnlyFilter.prop('checked');
+          anyFilterEnabled = nameFilterEnabled || failedOnlyFilterEnabled;
+      }
+
+      // show everything if no filter present
+      if (!anyFilterEnabled) {
+          resultsTable.find('tbody tr').show();
+          return;
+      }
+
+      // hide all categories
+      resultsTable.find('tbody tr td[colspan="3"]').parent('tr').hide();
+
+      // show/hide table rows considering filter
+      $.each(resultsTable.find('tbody .result'), function(index, td) {
+          var tdElement = $(td);
+          var trElement = tdElement.parent('tr');
+          var stepMaches = (
+              (!nameFilterEnabled
+              || trElement.find('td.component').text().indexOf(nameFilter) >= 0)
+              && (!failedOnlyFilterEnabled
+              || tdElement.hasClass('resultfailed')
+              || tdElement.hasClass('resultsoftfailed'))
+          );
+          trElement[stepMaches ? 'show' : 'hide']();
+      });
+  };
+  detailsNameFilter.keyup(applyFilterChanges);
+  detailsFailedOnlyFilter.change(applyFilterChanges);
+
+  // setup filter toggle
+  $('.details-filter-toggle').on('click', function(event) {
+      event.preventDefault();
+      detailsFilter.toggleClass('hidden');
+      applyFilterChanges();
+  });
 }

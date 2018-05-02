@@ -96,6 +96,7 @@ on 'test' => sub {
   requires 'Perl::Critic';
   requires 'Perl::Tidy', '>= 20180101, != 20180219';
   requires 'Selenium::Remote::Driver', '>= 1.23';
+  requires 'Selenium::Remote::WDKeys';
   requires 'Test::Compile';
   requires 'Test::Fatal';
   requires 'Test::MockModule';

@@ -198,3 +198,29 @@ ul.modcategory {
         color: green;
     }
 }
+
+// filter for test details
+.details-filter {
+    &.hidden {
+        display: none;
+    }
+    & > div {
+        margin-top: auto;
+        margin-bottom: auto;
+    }
+    .form-control {
+        display: inline-block !important;
+        width: auto !important;
+    }
+    label {
+        margin-bottom: 0px;
+    }
+    .result-filter-container {
+        text-align: right;
+    }
+}
+.details-filter-toggle {
+    display: inline-block;
+    float: right;
+    margin-top: -50px;
+}
