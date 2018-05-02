@@ -16,6 +16,8 @@
   #include <abstractions/nameservice>
   #include <abstractions/perl>
 
+  #include <abstractions/libvirt-qemu>
+
   /etc/openqa/database.ini r,
   /etc/openqa/openqa.ini r,
   /proc/meminfo r,
@@ -62,6 +64,8 @@
 
 
   profile /usr/bin/ssh {
+    /usr/bin/unzip-plain r,
+
     #include <abstractions/base>
     #include <abstractions/consoles>
     #include <abstractions/nameservice>
@@ -75,3 +79,17 @@
 
   }
 }
+
+  profile /usr/bin/ssh {
+    #include <abstractions/base>
+    #include <abstractions/consoles>
+    #include <abstractions/nameservice>
+
+    /etc/ssh/ssh_config r,
+    /etc/ssl/openssl.cnf r,
+    /proc/*/fd/ r,
+    /proc/filesystems r,
+    /usr/bin/ssh rix,
+    /var/lib/openqa/.ssh/* rw,
+
+  }
