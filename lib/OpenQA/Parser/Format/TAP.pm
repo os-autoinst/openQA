@@ -39,7 +39,7 @@ sub parse {
             {
                 details => [],
                 dents   => 0,
-                result  => 'unk'
+                result  => 'passed'
             }));
     my $m = 0;
     while (my $res = $tap->next) {
@@ -50,7 +50,6 @@ sub parse {
             # use this to get the filename
             $test->{name} = $1;
             $test->{name} =~ s/[\/.]/_/g;
-            $self->steps->{result} = ($tap->failed) ? 'failed' : 'passed';
             $self->test(OpenQA::Parser::Result->new($test));
             $self->_add_test($self->test);
             next;
@@ -73,6 +72,7 @@ sub parse {
             title  => $t_description,
             result => ($result->is_actual_ok) ? 'ok' : 'fail',
         };
+        $self->steps->{result} = 'fail' if !$result->is_actual_ok;    #Mark the suite as failed if it was not ok.
 
         # Ensure that text files are going to be written
         # With the content that is relevant
@@ -85,7 +85,6 @@ sub parse {
             });
         ++$m;
     }
-
     $self->steps->{name} = $self->tests->first->{name};
     $self->steps->{test} = $self->tests->first;
     $self->generated_tests_results->add(OpenQA::Parser::Result::OpenQA->new($self->steps));
