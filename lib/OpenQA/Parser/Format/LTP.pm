@@ -46,7 +46,7 @@ sub parse {
         # may be optional since format result_array:v2
         $result->{environment} = OpenQA::Parser::Result::LTP::Environment->new($result->{environment})
           if $res->{environment};
-
+        $t_name =~ s/[\/.]/_/g;    # dots in the filename confuse the web api routes
         $result->{name} = $t_name;
 
         my $details

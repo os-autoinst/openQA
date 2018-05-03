@@ -83,7 +83,9 @@ sub parse {
                 $tc_result = 'fail'
                   if ($tc->{failures} && $tc->{failures} > 0) || ($tc->{errors} && $tc->{errors} > 0);
 
-                my $text_fn = "$ts_category-$ts_name-$num.txt";
+                my $text_fn = "$ts_category-$ts_name-$num";
+                $text_fn =~ s/[\/.]/_/g;
+                $text_fn .= '.txt';
                 my $content = "# Test messages ";
                 $content .= "# $tc->{name}\n" if $tc->{name};
 
