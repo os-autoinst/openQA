@@ -50,8 +50,9 @@ parse_extra_log('XUnit','junit-logging.xml');
 
 Current parser formats:
 
-* OpenQA::Parser::Format::LTP
+* OpenQA::Parser::Format::TAP,
 * OpenQA::Parser::Format::JUnit
+* OpenQA::Parser::Format::LTP
 * OpenQA::Parser::Format::XUnit,
 
 == Extending the parser
@@ -120,4 +121,10 @@ my $json_serialization = $parser->to_json;
 my $from_json = OpenQA::Parser::Format::JUnit->from_json($json_serialization);
 -------------------------------------------------------------------------------
 
+=== openQA internal test result storage
 
+It is important to know that openQA's internal mapping for test results works operating almost
+entirely on the filesystem, leaving only the test modules to be registered into the database, this
+leads to the following relation: A test module's name is used to create a file with details
+(details-$testmodule.json), that will contain a reference to step details, which is a coolection of
+references to files, using a field "text" as tie in, and expecting a filename.
