@@ -100,8 +100,9 @@ sub parse {
             $result->{result} = 'fail' if $tc_result eq 'fail';
 
             my $details = {result => $tc_result};
-
-            my $text_fn = "$ts_category-$ts_name-$num.txt";
+            my $text_fn = "$ts_category-$ts_name-$num";
+            $text_fn =~ s/[\/.]/_/g;
+            $text_fn .= '.txt';
             my $content = "# $tc->{name}\n";
             for my $out ($tc->children('system-out, system-err, failure')->each) {
                 $content .= "# " . $out->tag . ": \n\n";
