@@ -132,7 +132,7 @@ the following attributes.
 
 =head2 test
 
-Holds an instance of C<OpenQA::Parser::Result containing the details of the current test being parsed.
+Holds an instance of C<OpenQA::Parser::Result> containing the details of the current test being parsed.
 
 =head2 steps
 

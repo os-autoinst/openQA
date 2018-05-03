@@ -19,7 +19,7 @@ package OpenQA::Parser::Format::LTP;
 # The parser results will be a collection of OpenQA::Parser::Result::LTP::Test
 use Mojo::Base 'OpenQA::Parser::Format::JUnit';
 use Carp qw(croak confess);
-use Cpanel::JSON::XS 'decode_json';
+use Cpanel::JSON::XS ();
 use Storable 'dclone';
 has include_results => 1;
 

@@ -550,11 +550,10 @@ subtest junit_parse => sub {
 
 sub test_tap_file {
     my $p = shift;
-    is $p->results->size, 6, 'Expected 6 results';
+    is $p->results->size, 1, 'Expected 1 results';
     $p->results->each(
         sub {
-            is $_->result, 'pass', 'Tests passed';
-            is $_->details->[0]->{result}, 'pass', "Test has ok" or diag explain $_;
+            is $_->details->[0]->{result}, 'ok', "Test has passed" or diag explain $_;
         });
 }
 
@@ -566,15 +565,15 @@ subtest tap_parse => sub {
     $parser = OpenQA::Parser::Format::TAP->new;
     $parser->load($tap_test_file);
 
-    is $parser->results->size, 6, "File has 6 test cases";
+    is $parser->results->size, 1, "File has 6 test cases";
 
-    is $parser->results->first->result, 'pass', 'First testsuite fails as testcases passing failing';
-    is scalar @{$parser->results->first->details}, 1, '1 test cases details';
+    is $parser->results->first->result, 'passed', 'First test passes';
+    is scalar @{$parser->results->first->details}, 6, '1 test cases details';
 
-    is $parser->results->last->result, 'pass', 'First testsuite fails as testcases passing failing';
-    is scalar @{$parser->results->last->details}, 1, '1 test cases details';
+    is $parser->results->last->result, 'passed', 'Last test passes';
+    is scalar @{$parser->results->last->details}, 6, '1 test cases details';
 
-    is $_->{result}, 'pass', 'All testcases are failing' for @{$parser->results->first->details};
+    is $_->{result}, 'ok', 'All testcases are passing' for @{$parser->results->first->details};
 
 };
 
@@ -709,7 +708,7 @@ sub serialize_test {
         $parser->load($test_result_file);
         $obj_content = $parser->to_json();
         diag explain $obj_content;
-        $deserialized = $parser_name->new()->json_decode($obj_content);
+        $deserialized = $parser_name->new()->from_json($obj_content);
         diag explain $deserialized;
         ok "$deserialized" ne "$parser", "Different objects";
         $test_function->($parser);

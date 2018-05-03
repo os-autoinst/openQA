@@ -10,12 +10,12 @@
 :api-endpoint: <<webapi-endpoint,Web Api endpoint>>
 
 From time to time, a test developer might want to use openQA to execute a test
-suite from different test harness than openQA, but still use openQA to setup test
-scenarios and prepare the environment for a test suite run;  for this case
-openQA console tests have support for parsing and displaying that the output that
-comes from external test harnesses in a compatible format.
+suite from a different test harness than openQA, but still use openQA to setup test
+scenarios and prepare the environment for a test suite run; for this case openQA has
+the hability to process logs from external harnesses, and display the results integrated
+within the job results of the webUI.
 
-One could say that a Test Harness is supported if it's output is compatible with
+One could say that a Test Harness is supported if its output is compatible with
 the available {parser-format}, such as LTP, and also xUnit or JUnit, but this can
 be easily extended to include more formats, such as RSpec or TAP.
 
@@ -25,7 +25,7 @@ The requirements to use this functionality, are quite simple:
 * The test results can be uploaded via +testapi::parse_extra_log+ within an openQA tests.
 * The test results can also be uploaded via web {api-endpoint}.
 
-openQA will store these results in it's own internal format for easier presentation,
+openQA will store these results in its own internal format for easier presentation,
 but still will allow the original file to be downloaded.
 
 == Usage
@@ -60,7 +60,7 @@ Current parser formats:
 === OOP Interface
 
 The parser is a base class that acts as a serializer/deserializer for the elements
-inside of it, it allows to be extended so new formats to can be easily added.
+inside of it, it allows to be extended so new formats can be easily added.
 
 The base class is exposing 4 Mojo::Collections available, according to what openQA
 would require to map the results correctly, 1 extra collection is provided for
@@ -70,12 +70,12 @@ test results, test definition and test output.
 === Structured data
 
 In structured data mode, elements of the collections are objects. They can be
-of any type, even tho subclassing or objects of type of +OpenQA::Parser::Result+
+of any type, even though subclassing or objects of type of +OpenQA::Parser::Result+
 are prefered.
 
 One thing to keep in mind, is that in case deeply nested objects need to be parsed
 like hash of hashes, array of hashes, they would need to subclass +OpenQA::Parser::Result+
-or +OpenQA::Parser::Results+ respectively
+or +OpenQA::Parser::Results+ respectively.
 
 As an example, JUnit format can be parsed this way:
 
@@ -126,5 +126,5 @@ my $from_json = OpenQA::Parser::Format::JUnit->from_json($json_serialization);
 It is important to know that openQA's internal mapping for test results works operating almost
 entirely on the filesystem, leaving only the test modules to be registered into the database, this
 leads to the following relation: A test module's name is used to create a file with details
-(details-$testmodule.json), that will contain a reference to step details, which is a coolection of
+(details-$testmodule.json), that will contain a reference to step details, which is a collection of
 references to files, using a field "text" as tie in, and expecting a filename.
