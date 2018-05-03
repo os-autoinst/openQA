@@ -581,6 +581,21 @@ subtest 'job timers are added after start job and removed after stop job' => sub
     _check_timers(0);
 };
 
+subtest 'Old logs are deleted when nocleanup is set' => sub {
+    use OpenQA::Worker::Pool 'clean_pool';
+    use OpenQA::Worker::Common qw($nocleanup $pooldir);
+    $nocleanup = 1;
+    $pooldir   = Mojo::File->tempdir('pool');
+
+    $pooldir->child('autoinst-log.txt')->spurt('Hello Mojo!');
+    $OpenQA::Worker::Jobs::job = {id => 1, settings => {NAME => 'test_job'}};
+    OpenQA::Worker::Jobs::start_job('example.host');
+    ok(!-e $pooldir->child('autoinst-log.txt'), 'autoinst-log.txt file has been deleted');
+    ok(-e $pooldir->child('worker-log.txt'),    'Worker log is there');
+    $nocleanup = 0;
+    $pooldir   = undef;
+};
+
 $t->get_ok('/t99946')->status_is(302)->header_like(Location => qr{tests/99946});
 
 subtest 'delete job assigned as last use for asset' => sub {
@@ -629,7 +644,6 @@ subtest 'check dead qemu' => sub {
     };
     ok(!$exception, 'dead qemu bogus exec');
 };
-
 
 subtest 'check dead children stop job' => sub {
     sub OpenQA::Worker::Jobs::api_call { 1; }
