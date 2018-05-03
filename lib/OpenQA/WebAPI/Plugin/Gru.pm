@@ -90,7 +90,14 @@ sub enqueue {
     my $args = shift // [];
     my $options = shift // {};
     my $jobs = shift // [];
-    my $ttl = $options->{ttl} ? $options->{ttl} : undef;
+    my $ttl   = $options->{ttl}   ? $options->{ttl}   : undef;
+    my $limit = $options->{limit} ? $options->{limit} : undef;
+
+    if (defined $limit) {
+        my $res = $self->app->minion->backend->list_jobs(0, undef, {tasks => [$task], states => ['inactive']});
+        return undef if defined $res && exists $res->{total} && $res->{total} >= $limit;
+    }
+
     $args = [$args] if ref $args eq 'HASH';
 
     my $delay = $options->{run_at} && $options->{run_at} > now() ? $options->{run_at} - now() : 0;
