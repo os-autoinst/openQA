@@ -695,6 +695,24 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 </ul>
 </li>
+<li><a href="#installing">openQA test harness result processing</a>
+<ul class="sectlevel1">
+<li><a href="#_introduction_5">Introduction</a></li>
+<li><a href="#_usage">Usage</a>
+<ul class="sectlevel2">
+<li><a href="#_openqa_test_distribution">openQA test distribution</a></li>
+</ul>
+</li>
+<li><a href="#parser-formats">Available parser formats</a></li>
+<li><a href="#_extending_the_parser">Extending the parser</a>
+<ul class="sectlevel2">
+<li><a href="#_oop_interface">OOP Interface</a></li>
+<li><a href="#_structured_data">Structured data</a></li>
+<li><a href="#_openqa_internal_test_result_storage">openQA internal test result storage</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a href="#pitfalls">openQA pitfalls</a>
 <ul class="sectlevel1">
 <li><a href="#_needle_editing">Needle editing</a></li>
@@ -722,7 +740,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#contributing">openQA developer guide</a>
 <ul class="sectlevel1">
-<li><a href="#_introduction_5">Introduction</a></li>
+<li><a href="#_introduction_6">Introduction</a></li>
 <li><a href="#_development_guidelines">Development guidelines</a>
 <ul class="sectlevel2">
 <li><a href="#_rules_for_commits">Rules for commits</a></li>
@@ -4392,6 +4410,177 @@ stop them outputting non-printable characters.</p>
 </div>
 </div>
 </div>
+<h1 id="installing" class="sect0">openQA test harness result processing</h1>
+<div class="sect1">
+<h2 id="_introduction_5">Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>From time to time, a test developer might want to use openQA to execute a test
+suite from a different test harness than openQA, but still use openQA to setup test
+scenarios and prepare the environment for a test suite run; for this case openQA has
+the hability to process logs from external harnesses, and display the results integrated
+within the job results of the webUI.</p>
+</div>
+<div class="paragraph">
+<p>One could say that a Test Harness is supported if its output is compatible with
+the available {parser-format}, such as LTP, and also xUnit or JUnit, but this can
+be easily extended to include more formats, such as RSpec or TAP.</p>
+</div>
+<div class="paragraph">
+<p>The requirements to use this functionality, are quite simple:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The test harness must produce a compatible format with supported {parser-format}.</p>
+</li>
+<li>
+<p>The test results can be uploaded via testapi::parse_extra_log within an openQA tests.</p>
+</li>
+<li>
+<p>The test results can also be uploaded via web <a href="#webapi-endpoint">Web Api endpoint</a>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>openQA will store these results in its own internal format for easier presentation,
+but still will allow the original file to be downloaded.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage">Usage</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If a test developer wishes to use the functional interface, after finishing the
+execution of the the testing too, calling testapi::parse_extra_log with the
+location to a the file generated.</p>
+</div>
+<div class="sect2">
+<h3 id="_openqa_test_distribution">openQA test distribution</h3>
+<div class="paragraph">
+<p>From within a common openQA test distribution, a developer can use parse_extra_log
+to upload a text file that contains a supported test output:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-n">script_run</span><span class="tok-p">(</span><span class="tok-s">&#39;prove --verbose --formatter=TAP::Formatter::JUnit t/28-logging.t &gt; junit-logging.xml&#39;</span><span class="tok-p">);</span>
+<span class="tok-n">parse_extra_log</span><span class="tok-p">(</span><span class="tok-s">&#39;XUnit&#39;</span><span class="tok-p">,</span><span class="tok-s">&#39;junit-logging.xml&#39;</span><span class="tok-p">);</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="parser-formats">Available parser formats</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Current parser formats:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>OpenQA::Parser::Format::TAP,</p>
+</li>
+<li>
+<p>OpenQA::Parser::Format::JUnit</p>
+</li>
+<li>
+<p>OpenQA::Parser::Format::LTP</p>
+</li>
+<li>
+<p>OpenQA::Parser::Format::XUnit,</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_extending_the_parser">Extending the parser</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_oop_interface">OOP Interface</h3>
+<div class="paragraph">
+<p>The parser is a base class that acts as a serializer/deserializer for the elements
+inside of it, it allows to be extended so new formats can be easily added.</p>
+</div>
+<div class="paragraph">
+<p>The base class is exposing 4 Mojo::Collections available, according to what openQA
+would require to map the results correctly, 1 extra collection is provided for
+arbitrary data that can be exposed. The collections represents respectively:
+test results, test definition and test output.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_structured_data">Structured data</h3>
+<div class="paragraph">
+<p>In structured data mode, elements of the collections are objects. They can be
+of any type, even though subclassing or objects of type of OpenQA::Parser::Result
+are prefered.</p>
+</div>
+<div class="paragraph">
+<p>One thing to keep in mind, is that in case deeply nested objects need to be parsed
+like hash of hashes, array of hashes, they would need to subclass OpenQA::Parser::Result
+or OpenQA::Parser::Results respectively.</p>
+</div>
+<div class="paragraph">
+<p>As an example, JUnit format can be parsed this way:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-k">use</span> <span class="tok-nn">OpenQA::Parser::Format::JUnit</span><span class="tok-p">;</span>
+
+<span class="tok-k">my</span> <span class="tok-nv">$parser_result</span> <span class="tok-o">=</span> <span class="tok-nn">OpenQA::Parser::Format::JUnit</span><span class="tok-o">-&gt;</span><span class="tok-k">new</span><span class="tok-o">-&gt;</span><span class="tok-n">load</span><span class="tok-p">(</span><span class="tok-s">&quot;file.xml&quot;</span><span class="tok-p">);</span>
+
+<span class="tok-c1"># Now we can access to parsed tests as seen by openQA:</span>
+
+<span class="tok-nv">$parser_result</span><span class="tok-o">-&gt;</span><span class="tok-nn">tests</span><span class="tok-o">-&gt;</span><span class="tok-nb">each</span><span class="tok-p">(</span><span class="tok-k">sub</span> <span class="tok-p">{</span>
+
+   <span class="tok-k">my</span> <span class="tok-nv">$test</span> <span class="tok-o">=</span> <span class="tok-nb">shift</span><span class="tok-p">;</span>
+   <span class="tok-k">print</span> <span class="tok-s">&quot;Test name: &quot;</span><span class="tok-o">.</span><span class="tok-nv">$test</span><span class="tok-o">-&gt;</span><span class="tok-n">name</span><span class="tok-p">;</span>
+
+<span class="tok-p">});</span>
+
+<span class="tok-k">my</span> <span class="tok-nv">@all</span> <span class="tok-o">=</span> <span class="tok-nv">$parser_result</span><span class="tok-o">-&gt;</span><span class="tok-nn">tests</span><span class="tok-o">-&gt;</span><span class="tok-nb">each</span><span class="tok-p">;</span>
+<span class="tok-k">my</span> <span class="tok-nv">@tests</span> <span class="tok-o">=</span> <span class="tok-nv">$parser</span><span class="tok-o">-&gt;</span><span class="tok-nn">tests</span><span class="tok-o">-&gt;</span><span class="tok-n">search</span><span class="tok-p">(</span><span class="tok-n">name</span> <span class="tok-o">=&gt;</span> <span class="tok-sx">qr/1_running_upstream_tests/</span><span class="tok-p">);</span>
+<span class="tok-k">my</span> <span class="tok-nv">$first</span> <span class="tok-o">=</span> <span class="tok-nv">$parser</span><span class="tok-o">-&gt;</span><span class="tok-nn">tests</span><span class="tok-o">-&gt;</span><span class="tok-n">search</span><span class="tok-p">(</span><span class="tok-n">name</span> <span class="tok-o">=&gt;</span> <span class="tok-sx">qr/1_running_upstream_tests/</span><span class="tok-p">)</span><span class="tok-o">-&gt;</span><span class="tok-n">first</span><span class="tok-p">();</span>
+
+<span class="tok-k">my</span> <span class="tok-nv">$binary_data</span> <span class="tok-o">=</span> <span class="tok-nv">$parser</span><span class="tok-o">-&gt;</span><span class="tok-n">serialize</span><span class="tok-p">();</span>
+
+<span class="tok-c1"># Now, we can also store $binary_data and retrieve it later.</span>
+
+<span class="tok-k">my</span> <span class="tok-nv">$new_parser_from_binary</span> <span class="tok-o">=</span> <span class="tok-nn">OpenQA::Parser::Format::JUnit</span><span class="tok-o">-&gt;</span><span class="tok-k">new</span><span class="tok-o">-&gt;</span><span class="tok-n">deserialize</span><span class="tok-p">(</span><span class="tok-nv">$binary_data</span><span class="tok-p">);</span>
+
+<span class="tok-c1"># thus this works as expected:</span>
+<span class="tok-nv">$new_parser_from_binary</span><span class="tok-o">-&gt;</span><span class="tok-nn">tests</span><span class="tok-o">-&gt;</span><span class="tok-nb">each</span><span class="tok-p">(</span> <span class="tok-k">sub</span> <span class="tok-p">{</span>
+
+   <span class="tok-k">my</span> <span class="tok-nv">$test</span> <span class="tok-o">=</span> <span class="tok-nb">shift</span><span class="tok-p">;</span>
+   <span class="tok-k">print</span> <span class="tok-s">&quot;Test name: &quot;</span><span class="tok-o">.</span><span class="tok-nv">$test</span><span class="tok-o">-&gt;</span><span class="tok-n">name</span><span class="tok-p">;</span>
+
+<span class="tok-p">});</span>
+
+<span class="tok-c1"># We can also serialize all to JSON</span>
+
+<span class="tok-k">my</span> <span class="tok-nv">$json_serialization</span> <span class="tok-o">=</span> <span class="tok-nv">$parser</span><span class="tok-o">-&gt;</span><span class="tok-n">to_json</span><span class="tok-p">;</span>
+
+<span class="tok-c1"># save it and access it later</span>
+
+<span class="tok-k">my</span> <span class="tok-nv">$from_json</span> <span class="tok-o">=</span> <span class="tok-nn">OpenQA::Parser::Format::JUnit</span><span class="tok-o">-&gt;</span><span class="tok-n">from_json</span><span class="tok-p">(</span><span class="tok-nv">$json_serialization</span><span class="tok-p">);</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_openqa_internal_test_result_storage">openQA internal test result storage</h3>
+<div class="paragraph">
+<p>It is important to know that openQA&#8217;s internal mapping for test results works operating almost
+entirely on the filesystem, leaving only the test modules to be registered into the database, this
+leads to the following relation: A test module&#8217;s name is used to create a file with details
+(details-$testmodule.json), that will contain a reference to step details, which is a collection of
+references to files, using a field "text" as tie in, and expecting a filename.</p>
+</div>
+</div>
+</div>
+</div>
 <h1 id="pitfalls" class="sect0">openQA pitfalls</h1>
 <div class="sect1">
 <h2 id="_needle_editing">Needle editing</h2>
@@ -4986,7 +5175,7 @@ When using GRE tunnels keep in mind that VMs inside the ovs bridges have to use 
 </div>
 <h1 id="contributing" class="sect0">openQA developer guide</h1>
 <div class="sect1">
-<h2 id="_introduction_5">Introduction</h2>
+<h2 id="_introduction_6">Introduction</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>openQA is an automated test tool that makes it possible to test the whole
@@ -5500,7 +5689,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-05-04 14:00:42 UTC
+Last updated 2018-05-04 14:28:08 UTC
 </div>
 </div>
 </body>
