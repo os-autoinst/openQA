@@ -1,4 +1,4 @@
-# Last Modified: Tue May  9 11:58:28 2017
+# Last Modified: Thu May  3 18:32:11 2018
 #include <tunables/global>
 
 # ------------------------------------------------------------------
@@ -20,6 +20,7 @@
   #include <abstractions/nameservice>
   #include <abstractions/openssl>
   #include <abstractions/perl>
+  #include <abstractions/python>
 
   capability sys_ptrace,
 
@@ -41,24 +42,27 @@
   /etc/udev/udev.conf r,
   /etc/vde2/vdecmd r,
   /proc/*/auxv r,
+  /proc/*/cmdline r,
   /proc/*/mountinfo r,
   /proc/*/net/psched r,
   /proc/*/stat r,
   /proc/*/status r,
   /proc/filesystems r,
-  /sys/**/ r,
   /proc/meminfo r,
   /proc/sys/vm/overcommit_memory r,
   /run/nscd/group r,
   /run/openqa/vde.ctl/* rw,
   /run/udev/queue.bin r,
+  /sys/**/ r,
   /sys/bus/ r,
   /sys/bus/usb/devices/ r,
   /sys/class/ r,
+  /sys/devices/system/node/node0/meminfo r,
   /sys/firmware/devicetree/base/ r,
   /tmp/* rwk,
   /usr/bin/Xvnc rCx,
   /usr/bin/cat rix,
+  /usr/bin/chattr rix,
   /usr/bin/cksum rix,
   /usr/bin/cp rix,
   /usr/bin/date rix,
@@ -68,6 +72,8 @@
   /usr/bin/flock rix,
   /usr/bin/git rix,
   /usr/bin/gzip rix,
+  /usr/bin/head rix,
+  /usr/bin/icewm-default rix,
   /usr/bin/ionice rix,
   /usr/bin/ipmitool rix,
   /usr/bin/isotovideo rix,
@@ -76,6 +82,7 @@
   /usr/bin/nice rix,
   /usr/bin/optipng rix,
   /usr/bin/pwd rix,
+  /usr/bin/python3.* ix,
   /usr/bin/qemu-img rix,
   /usr/bin/qemu-kvm rix,
   /usr/bin/qemu-system-* rix,
@@ -90,6 +97,7 @@
   /usr/bin/uname rix,
   /usr/bin/unixcmd rix,
   /usr/bin/x3270 cx,
+  /usr/bin/xterm-console rix,
   /usr/lib*/qemu/block-curl.so rix,
   /usr/lib*/qemu/block-iscsi.so mr,
   /usr/lib*/qemu/block-rbd.so mr,
@@ -98,9 +106,9 @@
   /usr/lib/os-autoinst/videoencoder rix,
   /usr/lib/utempter/utempter rix,
   /usr/sbin/ipmiconsole rix,
+  /usr/share/openqa/lib/** r,
   /usr/share/openqa/lib/DBIx/Class/Timestamps.pm r,
   /usr/share/openqa/lib/OpenQA/** r,
-  /usr/share/openqa/lib/** r,
   /usr/share/openqa/script/worker r,
   /usr/share/qemu/* r,
   /usr/share/qemu/keymaps/* r,
@@ -110,6 +118,7 @@
   /var/lib/openqa/pool/*/ r,
   /var/lib/openqa/pool/*/** rwk,
   /var/lib/openqa/share/* r,
+  /var/lib/openqa/share/factory/hdd/ r,
   /var/lib/openqa/share/factory/hdd/* r,
   /var/lib/openqa/share/factory/hdd/fixed/* r,
   /var/lib/openqa/share/factory/iso/* r,
@@ -140,6 +149,7 @@
     /proc/** r,
     /sys/devices/** r,
     /usr/bin/lscpu mr,
+
   }
 
   profile /usr/bin/x3270 {
@@ -157,8 +167,11 @@
     /proc/*/fd/ r,
     /proc/filesystems r,
     /proc/meminfo r,
+    /usr/bin/head rix,
+    /usr/bin/icewm rix,
     /usr/bin/ssh rix,
     /usr/bin/x3270 mr,
+    /usr/bin/xterm-console rix,
     /var/lib/openqa/pool/*/known_hosts w,
     /var/lib/openqa/pool/1/x3scr.*.txt w,
     /var/lib/openqa/pool/1/x3trc.* w,
