@@ -82,7 +82,7 @@
   /usr/bin/nice rix,
   /usr/bin/optipng rix,
   /usr/bin/pwd rix,
-  /usr/bin/python3.4 ix,
+  /usr/bin/python3.* ix,
   /usr/bin/qemu-img rix,
   /usr/bin/qemu-kvm rix,
   /usr/bin/qemu-system-* rix,
