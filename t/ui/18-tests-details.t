@@ -183,11 +183,32 @@ subtest 'render bugref links in thumbnail text windows' => sub {
     is((shift @a)->get_attribute('href'), 'https://fate.suse.com/321208', 'regular href correct');
 };
 
-subtest 'render video link if frametime is available' => sub {
+subtest 'render text results' => sub {
     $driver->get('/tests/99946');
+
+    # select a text result
+    $driver->find_element('[title="Some text result from external parser"]')->click();
+    like($driver->get_current_url(), qr/#step\/logpackages\/6/, 'url contains step');
+    is(
+        $driver->find_element('.current_preview .resborder')->get_text(),
+        'This is a dummy result to test rendering text results from external parsers.',
+        'text result rendered correctly'
+    );
+
+    # select another text result
+    $driver->find_element('[title="Another text result from external parser"]')->click();
+    like($driver->get_current_url(), qr/#step\/logpackages\/7/, 'url contains step');
+    my @lines = split(/\n/, $driver->find_element('.current_preview .resborder')->get_text());
+    is(scalar @lines, 11, 'correct number of lines');
+
+    # unselecting text result
+    $driver->find_element('[title="Another text result from external parser"]')->click();
+    unlike($driver->get_current_url(), qr/#step/, 'step removed from url');
+};
+
+subtest 'render video link if frametime is available' => sub {
     $driver->find_element('[href="#step/bootloader/1"]')->click();
     wait_for_ajax;
-    is(1, 1, 'dummy');
     my @links = $driver->find_elements('.step_actions .fa-file-video');
     is($#links, -1, 'no link without frametime');
 
