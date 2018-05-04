@@ -28,6 +28,7 @@ t/data/openqa/factory/hdd/hdd_image.qcow2
 t/diagram-v*.png
 assets/cache/
 assets/assetpack.db
+nytprof/
 .openqa-travis
 t/full-stack.d/config/database.ini
 t/full-stack.d/config/workers.ini
