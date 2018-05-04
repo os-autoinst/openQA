@@ -834,6 +834,9 @@ sub read_test_modules {
                     log_debug("Reading information from " . encode_json($step));
                     $step->{text_data} = $file->slurp;
                 }
+                else {
+                    log_debug("Cannot read file: $file");
+                }
             }
             push(@details, $step);
         }

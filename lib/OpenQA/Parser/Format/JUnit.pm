@@ -166,13 +166,16 @@ With the attribute C<include_result()> set to true, it will include inside the
 results the respective test that generated it (inside the C<test()> attribute).
 See also L<OpenQA::Parser::Result::OpenQA>.
 
+JUnit format is specific for slenkins tests. If you wish to use generic JUnit format,
+use XUnit format instead.
+
 =head1 ATTRIBUTES
 
 OpenQA::Parser::Format::JUnit inherits all attributes from L<OpenQA::Parser::Format::Base>.
 
 =head1 METHODS
 
-OpenQA::Parser::Format::Base inherits all methods from L<OpenQA::Parser::Format::Base>, it only overrides
+OpenQA::Parser::Format::JUnit inherits all methods from L<OpenQA::Parser::Format::Base>, it only overrides
 C<parse()> to generate a tree of results.
 
 =cut

@@ -524,7 +524,13 @@ sub start_job {
 
     # update settings with worker-specific stuff
     copy_job_settings($job, $worker_settings);
-
+    if ($pooldir) {
+        my $fd;
+        print $fd, "" if open($fd, '>', "$pooldir/worker-log.txt") or log_error "could not open worker log $!";
+        foreach my $file (qw(serial0.txt autoinst-log.txt serial_terminal.txt)) {
+            unlink("$pooldir/$file") or log_error "Could not unlink '$file': $!";
+        }
+    }
     my $name = $job->{settings}->{NAME};
     log_info(sprintf('got job %d: %s', $job->{id}, $name));
 
