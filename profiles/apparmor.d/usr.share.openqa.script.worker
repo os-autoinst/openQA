@@ -12,7 +12,7 @@
 # ------------------------------------------------------------------
 
 
-/usr/share/openqa/script/worker flags=(complain) {
+/usr/share/openqa/script/worker {
   #include <abstractions/X>
   #include <abstractions/authentication>
   #include <abstractions/base>
@@ -127,7 +127,7 @@
   /var/lib/openqa/share/tests/** r,
 
 
-  profile /usr/bin/Xvnc flags=(complain) {
+  profile /usr/bin/Xvnc {
     #include <abstractions/X>
     #include <abstractions/base>
     #include <abstractions/consoles>
@@ -143,7 +143,7 @@
 
   }
 
-  profile /usr/bin/lscpu flags=(complain) {
+  profile /usr/bin/lscpu {
     #include <abstractions/base>
 
     /proc/** r,
@@ -152,7 +152,7 @@
 
   }
 
-  profile /usr/bin/x3270 flags=(complain) {
+  profile /usr/bin/x3270 {
     #include <abstractions/X>
     #include <abstractions/base>
     #include <abstractions/consoles>
