@@ -365,8 +365,8 @@ sub startup {
     $job_r->post('/artefact')->name('apiv1_create_artefact')->to('job#create_artefact');
     $job_r->post('/upload_state')->to('job#upload_state');
 
-    # job_set_waiting, job_set_continue
-    my $command_r = $job_r->route('/set_:command', command => [qw(waiting running)]);
+    # job_set_continue
+    my $command_r = $job_r->route('/set_:command', command => [qw(running)]);
     push @api_routes, $command_r;
     $command_r->post('/')->name('apiv1_set_command')->to('job#set_command');
     $job_r->post('/restart')->name('apiv1_restart')->to('job#restart');

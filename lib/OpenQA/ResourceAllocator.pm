@@ -104,14 +104,6 @@ sub job_update_status {
     my ($self, $jobid, $status) = @_;
 }
 
-dbus_method('job_set_waiting', ['uint32'], ['uint32']);
-sub job_set_waiting {
-    my ($self, $args) = @_;
-    my $rs = safe_call 'OpenQA::Resource::Jobs' => job_set_waiting => $args;
-    return 0 if @$rs == 0;
-    return @$rs[0];
-}
-
 dbus_method('job_set_running', ['uint32'], ['uint32']);
 sub job_set_running {
     my ($self, $args) = @_;
