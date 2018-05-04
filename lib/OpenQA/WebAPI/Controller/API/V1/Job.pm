@@ -207,29 +207,6 @@ sub show {
 
 =over 4
 
-=item set_command()
-
-Sets a job as waiting or running.
-
-=back
-
-=cut
-
-# set_waiting and set_running
-sub set_command {
-    my $self    = shift;
-    my $jobid   = int($self->stash('jobid'));
-    my $command = 'job_set_' . $self->stash('command');
-    my $ipc     = OpenQA::IPC->ipc;
-    my $res     = $ipc->resourceallocator($command, $jobid);
-    $self->emit_event('openqa_' . $command, {id => $jobid}) if ($res);
-    # Referencing the scalar will result in true or false
-    # (see http://mojolicio.us/perldoc/Mojo/JSON)
-    $self->render(json => {result => \$res});
-}
-
-=over 4
-
 =item destroy()
 
 Deletes a job from the system.
@@ -262,7 +239,8 @@ sub prio {
     my $job = find_job($self, $self->stash('jobid')) or return;
     my $res = $job->set_prio($self->param('prio'));
 
-    # See comment in set_command
+    # Referencing the scalar will result in true or false
+    # (see http://mojolicio.us/perldoc/Mojo/JSON)
     $self->render(json => {result => \$res});
 }
 
@@ -284,7 +262,7 @@ sub result {
 
     my $res = $job->update({result => $result});
     $self->emit_event('openqa_job_update_result', {id => $job->id, result => $result}) if ($res);
-    # See comment in set_command
+    # See comment in prio
     $self->render(json => {result => \$res});
 }
 
@@ -539,7 +517,7 @@ sub done {
     # use $res as a result, it is recomputed result by scheduler
     $self->emit_event('openqa_job_done', {id => $job->id, result => $res, newbuild => $newbuild});
 
-    # See comment in set_command
+    # See comment in prio
     $self->render(json => {result => \$res});
 }
 

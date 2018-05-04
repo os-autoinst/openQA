@@ -36,26 +36,6 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 
 sub schema { OpenQA::ResourceAllocator->instance->schema }
 
-=head2 job_set_running
-
-mark job as running. No error check. Meant to be called from worker!
-
-=cut
-sub job_set_running {
-    my ($jobid) = @_;
-
-    my $r = schema->resultset("Jobs")->search(
-        {
-            id    => $jobid,
-            state => OpenQA::Schema::Result::Jobs::WAITING,
-        }
-    )->update(
-        {
-            state => OpenQA::Schema::Result::Jobs::RUNNING,
-        });
-    return $r;
-}
-
 =head2 job_restart
 
 =over
