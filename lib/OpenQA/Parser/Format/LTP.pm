@@ -19,7 +19,7 @@ package OpenQA::Parser::Format::LTP;
 # The parser results will be a collection of OpenQA::Parser::Result::LTP::Test
 use Mojo::Base 'OpenQA::Parser::Format::JUnit';
 use Carp qw(croak confess);
-use Mojo::JSON 'decode_json';
+use Cpanel::JSON::XS ();
 use Storable 'dclone';
 has include_results => 1;
 
@@ -29,7 +29,7 @@ sub _add_single_result { shift->results->add(OpenQA::Parser::Result::LTP::Test->
 sub parse {
     my ($self, $json) = @_;
     confess "No JSON given/loaded" unless $json;
-    my $decoded_json = decode_json $json;
+    my $decoded_json = Cpanel::JSON::XS->new->utf8(0)->decode($json);
 
     # may be optional since format result_array:v2
     $self->generated_tests_extra->add(OpenQA::Parser::Result::LTP::Environment->new($decoded_json->{environment}))

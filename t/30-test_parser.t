@@ -25,6 +25,7 @@ use OpenQA::Parser qw(parser p);
 use OpenQA::Parser::Format::JUnit;
 use OpenQA::Parser::Format::LTP;
 use OpenQA::Parser::Format::XUnit;
+use OpenQA::Parser::Format::TAP;
 use Mojo::File qw(path tempdir);
 use Data::Dumper;
 use Mojo::JSON qw(decode_json encode_json);
@@ -547,7 +548,34 @@ subtest junit_parse => sub {
 
 };
 
+sub test_tap_file {
+    my $p = shift;
+    is $p->results->size, 1, 'Expected 1 results';
+    $p->results->each(
+        sub {
+            is $_->details->[0]->{result}, 'ok', "Test has passed" or diag explain $_;
+        });
+}
 
+subtest tap_parse => sub {
+    my $parser = OpenQA::Parser::Format::TAP->new;
+
+    my $tap_test_file = path($FindBin::Bin, "data")->child("tap_format_example.tap");
+
+    $parser = OpenQA::Parser::Format::TAP->new;
+    $parser->load($tap_test_file);
+
+    is $parser->results->size, 1, "File has 6 test cases";
+
+    is $parser->results->first->result, 'passed', 'First test passes';
+    is scalar @{$parser->results->first->details}, 6, '1 test cases details';
+
+    is $parser->results->last->result, 'passed', 'Last test passes';
+    is scalar @{$parser->results->last->details}, 6, '1 test cases details';
+
+    is $_->{result}, 'ok', 'All testcases are passing' for @{$parser->results->first->details};
+
+};
 
 sub test_ltp_file {
     my $p = shift;
@@ -678,8 +706,10 @@ sub serialize_test {
         diag("JSON serialization");
         $parser = $parser_name->new();
         $parser->load($test_result_file);
-        $obj_content  = $parser->to_json();
+        $obj_content = $parser->to_json();
+        diag explain $obj_content;
         $deserialized = $parser_name->new()->from_json($obj_content);
+        diag explain $deserialized;
         ok "$deserialized" ne "$parser", "Different objects";
         $test_function->($parser);
         $test_function->($deserialized);
@@ -717,6 +747,7 @@ subtest 'serialize/deserialize' => sub {
     serialize_test("OpenQA::Parser::Format::LTP",   "new_ltp_result_array.json",          "test_ltp_file_v2");
     serialize_test("OpenQA::Parser::Format::JUnit", "slenkins_control-junit-results.xml", "test_junit_file");
     serialize_test("OpenQA::Parser::Format::XUnit", "xunit_format_example.xml",           "test_xunit_file");
+    serialize_test("OpenQA::Parser::Format::TAP",   "tap_format_example.tap",             "test_tap_file");
 };
 
 subtest 'Unstructured data' => sub {
