@@ -397,6 +397,28 @@ subtest 'labeled jobs considered important' => sub {
     ok(!-e $filename, 'file got cleaned');
 };
 
+subtest 'Gru tasks limit' => sub {
+    my $id  = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 1});
+    my $res = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 1});
+    ok defined $id, 'First task is scheduled';
+    is $res, undef, 'No new job scheduled';
+    $id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
+    ok defined $id, 'Second task is scheduled';
+    $res = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
+    is $res, undef, 'Second task is not scheduled anymore';
+
+    is $t->app->minion->backend->list_jobs(0, undef, {tasks => ['limit_assets'], states => ['inactive']})->{total}, 2;
+
+    $c->run('run', '-o');
+    $id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
+    ok defined $id, 'task is scheduled';
+    $id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
+    ok defined $id, 'task is scheduled';
+    $res = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
+    is $res, undef, 'Other tasks is not scheduled anymore';
+    $c->run('run', '-o');
+};
+
 subtest 'Gru tasks TTL' => sub {
     my $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -5});
     $c->run('run', '-o');
