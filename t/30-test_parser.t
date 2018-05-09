@@ -380,19 +380,22 @@ sub test_junit_file {
         dents   => 0,
         details => [
             {
-                result => 'ok',
-                text   => 'tests-systemd-9_post-tests_audits-1.txt',
-                title  => 'audit with systemd-analyze blame'
+                _source => 'parser',
+                result  => 'ok',
+                text    => 'tests-systemd-9_post-tests_audits-1.txt',
+                title   => 'audit with systemd-analyze blame'
             },
             {
-                result => 'ok',
-                text   => 'tests-systemd-9_post-tests_audits-2.txt',
-                title  => 'audit with systemd-analyze critical-chain'
+                _source => 'parser',
+                result  => 'ok',
+                text    => 'tests-systemd-9_post-tests_audits-2.txt',
+                title   => 'audit with systemd-analyze critical-chain'
             },
             {
-                result => 'ok',
-                text   => 'tests-systemd-9_post-tests_audits-3.txt',
-                title  => 'audit with systemd-cgls'
+                _source => 'parser',
+                result  => 'ok',
+                text    => 'tests-systemd-9_post-tests_audits-3.txt',
+                title   => 'audit with systemd-cgls'
             }
         ],
         result => 'ok'
@@ -466,9 +469,10 @@ sub test_xunit_file {
         'dents'   => 0,
         'details' => [
             {
-                'result' => 'ok',
-                'text'   => 'xunit-child_of_child_two-1.txt',
-                'title'  => 'child of child two test'
+                '_source' => 'parser',
+                'result'  => 'ok',
+                'text'    => 'xunit-child_of_child_two-1.txt',
+                'title'   => 'child of child two test'
             }
         ],
         'result' => 'ok'
@@ -583,6 +587,7 @@ sub test_ltp_file {
     my $i = 2;
     $p->results->each(
         sub {
+            is $_->details->[0]->{_source}, 'parser';
             is $_->result, 'ok', 'Tests passed' or diag explain $_;
             ok !!$_->environment, 'Environment is present';
             ok !!$_->test,        'Test information is present';
@@ -603,6 +608,7 @@ sub test_ltp_file_v2 {
     my $i = 2;
     $p->results->each(
         sub {
+            is $_->details->[0]->{_source}, 'parser';
             is $_->status, 'pass', 'Tests passed';
             ok !!$_->environment, 'Environment is present';
             ok !!$_->test,        'Test information is present';
