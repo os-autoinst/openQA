@@ -293,6 +293,10 @@ function setupResult(state, jobid, status_url, details_url) {
       pauseLiveView();
     }
   });
+  // start the live view if it's default link
+  if (window.location.hash === '#live') {
+    resumeLiveView();
+  }
 
   // setup result filter, define function to apply filter changes
   var detailsFilter = $('.details-filter');
