@@ -99,6 +99,10 @@ div.flags {
     color: $color-bug-closed;
     transform: rotate(180deg);
 }
+.label_bug.bug_0 {
+    color: $color-bolt;
+    transform: rotate(90deg);
+}
 
 // misc
 .component {

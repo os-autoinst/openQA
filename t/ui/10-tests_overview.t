@@ -56,6 +56,13 @@ sub schema_hook {
             job_id  => 99946,
         });
 
+    $comments->create(
+        {
+            text    => 'boo#0 (trick ttm)',
+            user_id => 1,
+            job_id  => 99937,
+        });
+
     $bugs->create(
         {
             bugid     => 'bsc#111111',
@@ -126,6 +133,9 @@ my @open_bugs = $driver->find_elements('#bug-99946 .label_bug', 'css');
 @closed_bugs = $driver->find_elements('#bug-99946 .bug_closed', 'css');
 is(scalar @open_bugs,   1, 'open bug correctly shown, and only once despite the 2 comments');
 is(scalar @closed_bugs, 0, 'open bug not shown as closed bug');
+
+my @special_bugs = $driver->find_elements('#bug-99937 .bug_0', 'css');
+is(scalar @special_bugs, 1, 'bug with reference id #0 is correctly shown');
 
 kill_driver();
 

@@ -61,6 +61,9 @@ sub register {
             if ($bug && !$bug->open) {
                 $css_class .= " bug_closed";
             }
+            elsif ($text =~ /(boo|bsc)#0/) {
+                $css_class .= " bug_0";
+            }
             return $css_class;
         });
 
