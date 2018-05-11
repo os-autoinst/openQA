@@ -25,6 +25,15 @@ has details => sub { [] };
 has dents => 0;
 has [qw(result name test)];
 
+sub new {
+    shift->SUPER::new(@_)->parsed_details;
+}
+
+# Adds _source => 'parser' to all the details of the result
+sub parsed_details {
+    $_[0]->details([map { $_->{_source} = 'parser'; $_ } @{$_[0]->details}]);
+}
+
 sub search_in_details {
     my ($self, $field, $re) = @_;
     my $results = OpenQA::Parser::Result::OpenQA::Results->new();
