@@ -5,6 +5,7 @@
 
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
+    alignBuildLabels();
 % end
 
 % if (is_admin) {
