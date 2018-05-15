@@ -1,11 +1,14 @@
-#!/bin/bash
+#!/bin/bash -xv
 
 echo "#######################################################"
 echo "#          Starting build tools installation          #"
 echo "#######################################################"
 
-zypper up -y
-zypper in -y automake \
+zypper ar -p 1 -f -G "https://download.opensuse.org/repositories/devel:/openQA:/Leap:/42.3/openSUSE_Leap_42.3/devel:openQA:Leap:42.3.repo"
+zypper ref
+zypper dup -y
+
+zypper in -y -C automake \
        curl \
        dbus-1-devel \
        fftw3-devel \
@@ -24,15 +27,20 @@ zypper in -y automake \
        make \
        opencv-devel \
        patch \
-       perl-App-cpanminus \
-       postgresql96-devel \
-       qemu-x86 \
+       postgresql-devel \
+       qemu \
        tar \
-       postgresql96-server \
+       optipng \
+       sqlite3 \
+       postgresql-server \
        which \
-       findutils\
-       ruby2.4-rubygem-sass \
-       chromedriver
+       chromedriver \
+       'rubygem(sass)' \
+       'perl(Module::CPANfile)' \
+       'perl(App::cpanminus)' \
+        perl \
+       emacs
+
 
 
 

@@ -89,15 +89,7 @@ test: checkstyle
 endif
 
 .PHONY: travis
-travis:
-	if test "x$$TRAVIS" != "xtrue"; then \
-	  echo "You shouldn't run this outside of travis-ci env" ;\
-	  exit 1 ;\
-	fi ;\
-	export MOJO_LOG_LEVEL=debug ;\
-	export MOJO_TMPDIR=$$(mktemp -d) ;\
-	export OPENQA_LOGFILE=/tmp/openqa-debug.log ;\
-	export TEST_PG=DBI:Pg:dbname=openqa_test ;\
+docker-tests:
 	if test "x$$FULLSTACK" = x1 || test "x$$SCHEDULER_FULLSTACK" = x1; then \
 		git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst ;\
 		(cd ../os-autoinst && SETUP_FOR_TRAVIS=1 sh autogen.sh && make ) ;\
@@ -111,12 +103,12 @@ travis:
 	else \
 	  list= ;\
 	  if test "x$$UITESTS" = x1; then \
-	    list=./t/ui ;\
+	    list=$$(find ./t/ui -name *.t | sort ) ;\
 	  else \
 	    $(MAKE) checkstyle ;\
 	    list=$$(find ./t/ -name *.t | grep -v t/ui | sort ) ;\
 	  fi ;\
-          prove ${PROVE_ARGS} --timer -r --jobs 2 $$list ;\
+          prove ${PROVE_ARGS} -r $$list ;\
 	fi
 
 # ignore tests and test related addons in coverage analysis

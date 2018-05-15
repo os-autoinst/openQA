@@ -1,18 +1,43 @@
-#!/bin/bash
+#!/bin/bash                                                                                                                                                                                                        
 
-mkdir -p /var/run/postgresql && chown -R postgres:postgres /var/run/postgresql
-chown -R postgres:postgres "$OPENQA_DIR" "$PGDATA" && chmod 777 "$OPENQA_DIR" "$PGDATA"
+mkdir -p /opt/testing_area
+cp -rd /opt/openqa /opt/testing_area
+chown -R $NORMAL_USER:users /opt/testing_area
 
-su postgres <<EOF
-initdb --auth-local=peer -N $PGDATA -U postgres
-echo "listen_addresses=''" >> $PGDATA/postgresql.conf
-echo "fsync=off" >> $PGDATA/postgresql.conf
-echo "full_page_writes=off" >> $PGDATA/postgresql.conf
+cd /opt/testing_area/openqa
 
-pg_ctl -D $PGDATA start -w
-createdb openqa_test
+function create_db {
+    set -e
+    export PGDATA=$(mktemp -d)
+    initdb --auth=trust -N $PGDATA
 
-export TEST_PG="DBI:Pg:dbname=openqa_test"
+cat >> $PGDATA/postgresql.conf <<HEREDOC
+listen_addresses='localhost'                                                                                                                                                                                       
+unix_socket_directories='$PGDATA'                                                                                                                                                                                  
+fsync=off                                                                                                                                                                                                          
+full_page_writes=off                                                                                                                                                                                               
+HEREDOC
 
-sh -c "$*"
-EOF
+    pg_ctl -D $PGDATA start -w
+    createdb -h $PGDATA openqa_test
+
+    export TEST_PG="DBI:Pg:dbname=openqa_test;host=localhost;port=5432"
+}
+
+
+function run_as_normal_user {
+    cpanm -n --mirror http://no.where/ --installdeps .
+    if [ $? -eq 0 ]; then
+        create_db
+        export MOJO_LOG_LEVEL=debug
+        export MOJO_TMPDIR=$(mktemp -d)
+        export OPENQA_LOGFILE=/tmp/openqa-debug.log
+        sh -c "$*"
+    else
+        echo "Missing depdencies. Please check output above"
+    fi
+}
+
+export -f create_db run_as_normal_user
+
+su $NORMAL_USER -c "run_as_normal_user $*"

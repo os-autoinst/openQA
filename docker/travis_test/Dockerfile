@@ -3,6 +3,8 @@ FROM opensuse:42.3
 
 # Define environment variable
 ENV NAME openQA test environment
+ENV LANG en_US.UTF-8
+RUN zypper in -y glibc-i18ndata glibc-locale
 
 # Set the working directory to /opt/prepare
 WORKDIR /opt/prepare
@@ -16,18 +18,19 @@ VOLUME ["/sys/fs/cgroup", "/run"]
 
 CMD ["/sbin/init"]
 
-ENV PGDATA /var/lib/pgsql/data
 ENV OPENQA_DIR /opt/openqa
+ENV NORMAL_USER dasantiago
+RUN mkdir -p /home/$NORMAL_USER
+RUN useradd -r -d /home/$NORMAL_USER -g users --uid=1000 $NORMAL_USER
+RUN chown $NORMAL_USER:users /home/$NORMAL_USER 
+VOLUME [ "/opt/openqa" ]
+
 
 # explicitly set user/group IDs
 
 RUN ["chmod","+x","./prepare.sh"]
 RUN ["./prepare.sh"]
-EXPOSE 5432
-# VOLUME ["/var/run/postgresql"]
 
-
-VOLUME ["/opt/openqa"]
 
 COPY entrypoint.sh /usr/bin/entrypoint
 RUN ["chmod","+x","/usr/bin/entrypoint"]

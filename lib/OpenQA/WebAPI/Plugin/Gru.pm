@@ -136,6 +136,7 @@ sub delete_gru {
 
 sub fail_gru {
     my ($self, $id, $reason) = @_;
+
     my $gru = $self->app->db->resultset('GruTasks')->find($id);
     $gru->fail($reason) if $gru;
 }
