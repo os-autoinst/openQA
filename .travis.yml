@@ -2,9 +2,6 @@ sudo: false
 dist: trusty
 services:
   - docker
-  - postgresql
-addons:
-  postgresql: "9.6"
 env:
   global:
     - COMMIT_AUTHOR_EMAIL=skynet@open.qa
@@ -16,10 +13,9 @@ env:
 before_install: yes
 install: yes
 before_script:
-  - psql -c 'create database openqa_test;' -U postgres
   - docker pull dasantiago/openqa-tests  
 script:
-  - docker run --name=openqa-tests -v $TRAVIS_BUILD_DIR:/opt/openqa -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v /var/run/dbus:/var/run/dbus -v /var/lib/pgsql/data:/var/lib/pgsql/data -v /var/run/postgresql:/var/run/postgresql dasantiago/openqa-tests make travis-codecov
+  - docker run --name=openqa-tests -v $TRAVIS_BUILD_DIR:/opt/openqa -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v /var/run/dbus:/var/run/dbus dasantiago/openqa-tests make travis-codecov
 after_failure:
   - cat /tmp/openqa-debug.log
 after_script: yes

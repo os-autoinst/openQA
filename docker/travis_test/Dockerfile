@@ -12,11 +12,11 @@ ADD . /opt/prepare
 RUN zypper install -y dbus-1 systemd-sysvinit
 RUN cp /usr/lib/systemd/system/dbus.service /etc/systemd/system/; \
     sed -i 's/OOMScoreAdjust=-900//' /etc/systemd/system/dbus.service
-VOLUME ["/sys/fs/cgroup", "/run", "/var/lib/pgsql/data", "/var/run/postgresql"]
+VOLUME ["/sys/fs/cgroup", "/run"]
 
 CMD ["/sbin/init"]
 
-ENV PG_DATA /var/lib/pgsql/data
+ENV PGDATA /var/lib/pgsql/data
 ENV OPENQA_DIR /opt/openqa
 
 # explicitly set user/group IDs
@@ -24,8 +24,10 @@ ENV OPENQA_DIR /opt/openqa
 RUN ["chmod","+x","./prepare.sh"]
 RUN ["./prepare.sh"]
 EXPOSE 5432
-# VOLUME ["/var/lib/pgsql/data"]
 # VOLUME ["/var/run/postgresql"]
+
+
+VOLUME ["/opt/openqa"]
 
 COPY entrypoint.sh /usr/bin/entrypoint
 RUN ["chmod","+x","/usr/bin/entrypoint"]
