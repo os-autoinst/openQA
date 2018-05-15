@@ -992,9 +992,13 @@ sub read_test_modules {
         my $num = 1;
 
         for my $step (@{$module->details}) {
+            my $text   = $step->{text};
+            my $source = $step->{_source};
+
             $step->{num} = $num++;
-            if ($step->{text}) {
-                my $file = path($job->result_dir(), $step->{text});
+            $step->{display_title} = ($text ? $step->{title} : $step->{name}) // '';
+            if ($text) {
+                my $file = path($job->result_dir(), $text);
                 if (-e $file) {
                     log_debug("Reading information from " . encode_json($step));
                     $step->{text_data} = $file->slurp;
@@ -1003,6 +1007,9 @@ sub read_test_modules {
                     log_debug("Cannot read file: $file");
                 }
             }
+            $step->{is_parser_text_result} = $source && $source eq 'parser' && $text && $step->{text_data};
+            $step->{resborder} = 'resborder_' . (($step->{result} && !(ref $step->{result})) ? $step->{result} : 'unk');
+
             push(@details, $step);
         }
 
