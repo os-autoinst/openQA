@@ -204,6 +204,16 @@ subtest 'render text results' => sub {
     # unselecting text result
     $driver->find_element('[title="Another text result from external parser"]')->click();
     unlike($driver->get_current_url(), qr/#step/, 'step removed from url');
+
+    # check whether other text results (not parser output) are unaffected
+    $driver->find_element('[title="One more text result"]')->click();
+    wait_for_ajax;
+    is(
+        $driver->find_element_by_id('preview_container_in')->get_text(),
+        "But this one doesn't come from parser so\n it should not be displayed in a special way.",
+        'text results not from parser shown in ordinary preview container'
+    );
+# note: check whether the softfailure is unaffected is already done in subtest 'render bugref links in thumbnail text windows'
 };
 
 subtest 'render video link if frametime is available' => sub {

@@ -637,7 +637,7 @@ subtest 'job details' => sub {
     $t->json_is('/job/testresults/0/category', => 'installation', 'Job category is "installation"');
 
     $t->json_is('/job/testresults/5/name', 'logpackages', 'logpackages test is present');
-    $t->json_like('/job/testresults/5/details/7/text_data', qr/fate/, 'logpackages has fate');
+    $t->json_like('/job/testresults/5/details/8/text_data', qr/fate/, 'logpackages has fate');
 
     $t->get_ok('/api/v1/jobs/99938/details')->status_is(200);
 

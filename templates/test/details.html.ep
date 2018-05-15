@@ -55,13 +55,12 @@
                     <td class="links">
                         % for my $step (@{$module->{details}}) {
                             % my $title = $step->{text} ? $step->{title} : $step->{name} // '';
-                            % my $is_wait_serial = $title eq 'wait_serial';
-                            % my $is_softfailure = $title eq 'Soft Failed';
-                            % my $is_text_data_only = !$is_wait_serial && !$is_softfailure && $step->{text} && $step->{text_data};
-                            <div class="links_a <%= $is_text_data_only ? 'text-result-container' : '' %>">
+                            % my $source = $step->{_source};
+                            % my $is_parser_result =  $source && $source eq 'parser' && $step->{text} && $step->{text_data};
+                            <div class="links_a <%= $is_parser_result ? 'text-result-container' : '' %>">
                                 % my $url   = url_for('step', moduleid => $module->{name}, stepid => $step->{num}, testid => $testid);
                                 % my $href  = "#step/$module->{name}/$step->{num}";
-                                % if ($is_text_data_only) {
+                                % if ($is_parser_result) {
                                     <span title="<%= $title %>" data-href="<%= $href %>" onclick="toggleTextPreview(this)" class="text-result">
                                         <span class="resborder <%= "resborder_\L$step->{result}" %>"><%= $step->{text_data} %></span>
                                     </span>
@@ -74,7 +73,7 @@
                                         % } elsif ($step->{audio}) {
                                             <img src="<%= icon_url 'audio.svg' %>" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
                                         % } elsif ($step->{text}) {
-                                            % if ($is_wait_serial) {
+                                            % if ($title eq 'wait_serial') {
                                                 <img src="<%= icon_url 'terminal.svg' %>" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
                                             % }
                                             % else {
