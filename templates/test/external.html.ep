@@ -1,0 +1,37 @@
+% return unless (@$modlist);
+<table id="external-table" class="display table table-striped" style="width: 100%">
+    <thead>
+        <tr>
+            <th class="name">Test suite</th>
+            <th>Test case</th>
+            <th>Log/output</th>
+            <th>Result</th>
+        </tr>
+    </thead>
+    <tbody>
+        % for my $module (@$modlist) {
+            % next unless ($module->{has_parser_text_result});
+            % if ($module->{category}) {
+                <tr>
+                    <td colspan="4">
+                        <i class="fas fa-folder-open"></i>&nbsp;
+                        %= $module->{category}
+                    </td>
+                    %# make DataTable happy
+                    <td style="display: none;"></td>
+                    <td style="display: none;"></td>
+                    <td style="display: none;"></td>
+                </tr>
+            % }
+            % for my $step (@{$module->{details}}) {
+                % next unless ($step->{is_parser_text_result});
+                <tr>
+                    <td><%= $module->{name} %></td>
+                    <td><%= $step->{display_title} %></td>
+                    <td><%= $step->{text_data} %></td>
+                    <td class="result-<%= $step->{result} %>"><%= $step->{result} %></td>
+                </tr>
+            % }
+        % }
+    </tbody>
+</table>

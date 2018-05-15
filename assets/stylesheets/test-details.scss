@@ -286,3 +286,30 @@ ul.modcategory {
     // ensure filter icon and last .nav-item for tabs don't overlap
     padding-right: 40px;
 }
+
+// table for external results
+#external-table {
+    td[colspan="4"] {
+        border-right: 1px solid $table-border-color;
+    }
+    td:nth-child(0n+3) {
+        height: auto;
+        font-family: monospace;
+        text-align: left;
+        background-color: #e8f1f1;
+        max-height: 3.5rem;
+        white-space: pre-wrap;
+    }
+    td.result {
+        text-align: center;
+    }
+    td.result-ok {
+        background-color: $color-ok;
+    }
+    td.result-fail {
+        background-color: $color-failed;
+    }
+    td.result-softfail {
+        background-color: $color-softfailed;
+    }
+}

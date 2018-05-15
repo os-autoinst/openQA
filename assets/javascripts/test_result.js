@@ -313,6 +313,8 @@ function handleKeyDownOnTestDetails(e) {
 function setupTab(tabHash) {
     if (tabHash === '#dependencies') {
         setupDependencyGraph();
+    } else if (tabHash === '#external') {
+        setupExternalResults();
     }
     if (tabHash === '#live') {
         setupDeveloperPanel();
@@ -320,6 +322,20 @@ function setupTab(tabHash) {
     } else {
         pauseLiveView();
     }
+}
+
+function setupExternalResults() {
+    var externalTable = $('#external-table');
+    // skip if table is not present (meaning no external results available) or if the table has
+    // already been initialized
+    if (!externalTable.length || externalTable.data('initialized')) {
+        return;
+    }
+    externalTable.data('initialized', true);
+    externalTable.DataTable({
+        lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+        order: [],
+    });
 }
 
 function setupResult(state, jobid, status_url, details_url) {

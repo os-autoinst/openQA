@@ -214,7 +214,8 @@ sub stash_module_list {
       )->first
       or return;
 
-    $self->stash(modlist => read_test_modules($job));
+    my $test_modules = read_test_modules($job);
+    $self->stash(modlist => ($test_modules ? $test_modules->{modules} : []));
     return 1;
 }
 
@@ -255,25 +256,26 @@ sub _show {
     my ($self, $job) = @_;
     return $self->reply->not_found unless $job;
 
-    my $modlist         = read_test_modules($job);
+    my $test_modules    = read_test_modules($job);
     my $worker          = $job->worker;
     my $clone_of        = $self->db->resultset('Jobs')->find({clone_id => $job->id});
     my $websocket_proxy = determine_web_ui_web_socket_url($job->id);
 
     $self->stash(
         {
-            job               => $job,
-            testname          => $job->name,
-            distri            => $job->DISTRI,
-            version           => $job->VERSION,
-            build             => $job->BUILD,
-            scenario          => $job->scenario,
-            worker            => $worker,
-            assigned_worker   => $job->assigned_worker,
-            show_dependencies => !defined($job->clone_id) && $job->has_dependencies,
-            clone_of          => $clone_of,
-            modlist           => $modlist,
-            ws_url            => $websocket_proxy,
+            job                     => $job,
+            testname                => $job->name,
+            distri                  => $job->DISTRI,
+            version                 => $job->VERSION,
+            build                   => $job->BUILD,
+            scenario                => $job->scenario,
+            worker                  => $worker,
+            assigned_worker         => $job->assigned_worker,
+            show_dependencies       => !defined($job->clone_id) && $job->has_dependencies,
+            clone_of                => $clone_of,
+            modlist                 => ($test_modules ? $test_modules->{modules} : []),
+            ws_url                  => $websocket_proxy,
+            has_parser_text_results => $test_modules->{has_parser_text_results},
         });
 
     my $rd = $job->result_dir();

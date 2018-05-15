@@ -562,7 +562,8 @@ sub to_hash {
         $j = {%$j, %{$job->deps_hash}};
     }
     if ($args{details}) {
-        $j->{testresults} = read_test_modules($job);
+        my $test_modules = read_test_modules($job);
+        $j->{testresults} = ($test_modules ? $test_modules->{modules} : []);
         $j->{logs}        = $job->test_resultfile_list;
         $j->{ulogs}       = $job->test_uploadlog_list;
     }
