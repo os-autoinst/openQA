@@ -141,6 +141,25 @@ sub list {
 
 =over 4
 
+=item overview()
+
+Returns the latest jobs matching the specified arch, build, distri, version, flavor and groupid.
+So this works in the same way as the test results overview in the GUI.
+
+=back
+
+=cut
+
+sub overview {
+    my $self = shift;
+    my ($search_args, $groups) = OpenQA::Utils::compose_job_overview_search_args($self);
+    my @jobs = map { {id => $_->id, name => $_->name} }
+      $self->db->resultset('Jobs')->complex_query(%$search_args)->latest_jobs;
+    $self->render(json => \@jobs);
+}
+
+=over 4
+
 =item create()
 
 Creates a job given a list of settings passed as parameters. TEST setting/parameter
