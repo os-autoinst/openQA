@@ -97,3 +97,9 @@ function renderDataSize(sizeInByte) {
     });
     return sizeWithUnit;
 }
+
+function alignBuildLabels() {
+  var values = $.map($('.build-label'), function(el, index) { return parseInt($(el).css('width')); });
+  var max = Math.max.apply(null, values);
+  $('.build-label').css('min-width', max + 'px');
+}
