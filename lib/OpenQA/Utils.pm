@@ -810,6 +810,60 @@ sub find_job {
     return $job;
 }
 
+# returns the search args for the job overview according to the parameter of the specified controller
+sub compose_job_overview_search_args {
+    my ($controller) = @_;
+    my %search_args;
+
+    # add simple query params to search args
+    for my $arg (qw(distri version flavor build)) {
+        my $param = $controller->param($arg) or next;
+        $search_args{$arg} = $param;
+    }
+    if ($controller->param('failed_modules')) {
+        $search_args{failed_modules} = $controller->every_param('failed_modules');
+    }
+
+    # add group query params to search args
+    # (By 'every_param' we make sure to use multiple values for groupid and
+    # group at the same time as a logical or, i.e. all specified groups are
+    # returned.)
+    my @groups;
+    if ($controller->param('groupid') or $controller->param('group')) {
+        my @group_id_search   = map { {id   => $_} } @{$controller->every_param('groupid')};
+        my @group_name_search = map { {name => $_} } @{$controller->every_param('group')};
+        my @search_terms = (@group_id_search, @group_name_search);
+        @groups = $controller->db->resultset('JobGroups')->search(\@search_terms)->all;
+    }
+    $search_args{groupid} = $groups[0]->id if (@groups);
+
+    # determine build number
+    if (!$search_args{build}) {
+        $search_args{build} = $controller->db->resultset('Jobs')->latest_build(%search_args);
+
+        # print debug output
+        if (@groups == 0) {
+            $controller->app->log->debug(
+                'No build and no group specified, will lookup build based on the other parameters');
+        }
+        elsif (@groups == 1) {
+            $controller->app->log->debug('Only one group but no build specified, searching for build');
+        }
+        else {
+            $controller->app->log->info('More than one group but no build specified, selecting build of first group');
+        }
+    }
+
+    # exclude jobs which are already cloned by setting scope for OpenQA::Jobs::complex_query()
+    $search_args{scope} = 'current';
+
+    # forward all query parameters to jobs query to allow specifying additional
+    # query parameters which are then properly shown on the overview
+    %search_args = (%search_args, %{$controller->req->params->to_hash});
+
+    return (\%search_args, \@groups);
+}
+
 sub read_test_modules {
     my ($job) = @_;
 
