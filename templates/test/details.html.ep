@@ -54,24 +54,34 @@
                     </td>
                     <td class="links">
                         % for my $step (@{$module->{details}}) {
-                            <div class="links_a">
-                                <div class="fa fa-caret-up"></div>
+                            % my $title = $step->{text} ? $step->{title} : $step->{name} // '';
+                            % my $source = $step->{_source};
+                            % my $is_parser_result =  $source && $source eq 'parser' && $step->{text} && $step->{text_data};
+                            <div class="links_a <%= $is_parser_result ? 'text-result-container' : '' %>">
                                 % my $url   = url_for('step', moduleid => $module->{name}, stepid => $step->{num}, testid => $testid);
                                 % my $href  = "#step/$module->{name}/$step->{num}";
-                                % my $title = $step->{text} ? $step->{title} : $step->{name};
-                                %= link_to $href => (class => 'no_hover') => (data => { url => $url }) => (title => $title) => begin
-                                    % if ($step->{screenshot}) {
-                                        %= step_thumbnail($step, 60, $testid, $module->{name}, $step->{num})
-                                    % } elsif ($step->{audio}) {
-                                        <img src="<%= icon_url 'audio.svg' %>" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
-                                    % } elsif ($step->{text}) {
-                                       % if($step->{title} eq "wait_serial") {
-                                           <img src="<%= icon_url 'terminal.svg' %>" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
-                                       % } else {
-                                           <span class="resborder <%= "resborder_\L$step->{result}" %>" ><%= $step->{title} || 'Text' %></span>
-                                       % }
-                                   % }
-                                % end
+                                % if ($is_parser_result) {
+                                    <span title="<%= $title %>" data-href="<%= $href %>" onclick="toggleTextPreview(this)" class="text-result">
+                                        <span class="resborder <%= "resborder_\L$step->{result}" %>"><%= $step->{text_data} %></span>
+                                    </span>
+                                % }
+                                % else {
+                                    <div class="fa fa-caret-up"></div>
+                                    <a class="no_hover" title="<%= $title %>" href="<%= $href %>" data-url="<%= $url %>">
+                                        % if ($step->{screenshot}) {
+                                            %= step_thumbnail($step, 60, $testid, $module->{name}, $step->{num})
+                                        % } elsif ($step->{audio}) {
+                                            <img src="<%= icon_url 'audio.svg' %>" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
+                                        % } elsif ($step->{text}) {
+                                            % if ($title eq 'wait_serial') {
+                                                <img src="<%= icon_url 'terminal.svg' %>" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
+                                            % }
+                                            % else {
+                                                <span class="resborder <%= "resborder_\L$step->{result}" %>" ><%= $step->{title} || 'Text' %></span>
+                                            % }
+                                        % }
+                                    </a>
+                                % }
                           </div>
                      % }
                    </td>

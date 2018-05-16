@@ -86,89 +86,136 @@ function setResultHash(hash, replace) {
   }
 }
 
-function setCurrentPreview(a, force) {
-  if ((a && a.length && !a.is(".current_preview")) || force) {
-    // show
-    $(".current_preview").removeClass("current_preview");
-
-    var link = a.find("a");
-    if (!link || !link.data("url")) {
-      return;
+function toggleTextPreview(textResultDomElement) {
+    var textResultElement = $(textResultDomElement).parent();
+    if (textResultElement.hasClass('current_preview')) {
+        // skip if current selection has selected text
+        var selection = window.getSelection();
+        if (!selection.isCollapsed && $.contains(textResultDomElement, selection.anchorNode)) {
+            return;
+        }
+        // hide current selection (selected element has been clicked again)
+        setCurrentPreview(undefined);
+    } else {
+        // show new selection, ensure current selection is hidden
+        setCurrentPreview(textResultElement);
     }
-    a.addClass("current_preview");
-    setResultHash(link.attr("href"), true);
-    $.get({ url: link.data("url"),
+}
+
+function hidePreviewContainer() {
+    var previewContainer = $('#preview_container_out');
+    if (previewContainer.is(':visible')) {
+        previewContainer.fadeOut(150);
+    }
+}
+
+function setCurrentPreview(a, force) {
+    // just hide current preview
+    if (!(a && a.length && !a.is('.current_preview')) && !force) {
+        $('.current_preview').removeClass('current_preview');
+        hidePreviewContainer();
+        setResultHash('', true);
+        return;
+    }
+
+    // unselect previous preview
+    $('.current_preview').removeClass('current_preview');
+
+    // show preview for results with text data
+    var textResultElement = a.find('span.text-result');
+    if (textResultElement.length) {
+        a.addClass('current_preview');
+        hidePreviewContainer();
+        setResultHash(textResultElement.data('href'), true);
+
+        // ensure element is in viewport
+        var aOffset = a.offset().top;
+        if (aOffset < window.scrollY || (aOffset + a.height()) > (window.scrollY + window.innerHeight)) {
+            $('html').animate({
+                scrollTop: aOffset
+            }, 500);
+        }
+        return;
+    }
+
+    // show preview for other/regular results
+    var link = a.find('a');
+    if (!link || !link.data('url')) {
+        return;
+    }
+    a.addClass('current_preview');
+    setResultHash(link.attr('href'), true);
+    $.get({ url: link.data('url'),
             success: function(data) {
               previewSuccess(data, force);
             }
     }).fail(function() {
-        console.warn('Failed to load data from: '+link.data("url"));
+        console.warn('Failed to load data from: ' + link.data('url'));
         setCurrentPreview(null);
     });
-  }
-  else {
-    // hide
-    if ($("#preview_container_out").is(":visible")) {
-      $("#preview_container_out").fadeOut(150);
-      $(".current_preview").removeClass("current_preview");
-      setResultHash("", true);
+}
+
+function selectPreview(which) {
+    var currentPreview = $('.current_preview');
+    var linkContainer = currentPreview[which]('.links_a');
+    // select next/prev detail in current step
+    if (linkContainer.length) {
+        setCurrentPreview(linkContainer);
+        return;
     }
-  }
+    // select first/last detail in next/prev module
+    var linkSelector = '.links_a:' + (which === 'next' ? 'first' : 'last');
+    var row = currentPreview.parents('tr');
+    for (;;) {
+        var row = row[which]();
+        if (!row.length) {
+            return;
+        }
+        linkContainer = row.find(linkSelector);
+        if (linkContainer.length) {
+            setCurrentPreview(linkContainer);
+            return;
+        }
+    }
 }
 
 function nextPreview() {
-  var a = $(".current_preview");
-  if(a) {
-    var table = $(".current_preview").parents("table");
-    var a_index = table.find(".links_a").index(a);
-    var next_a = a_index + 1;
-    var b = table.find(".links_a").eq(next_a);
-    if (b.length) {
-      setCurrentPreview(b);
-    }
-  }
+    selectPreview('next');
 }
 
 function prevPreview() {
-  var a = $(".current_preview");
-  if (a) {
-    var table = $(".current_preview").parents("table");
-    var a_index = table.find(".links_a").index(a);
-    var next_a = a_index - 1;
-    if (next_a >= 0) {
-      var b = table.find(".links_a").eq(next_a);
-      if (b.length) {
-        setCurrentPreview(b);
-      }
-    }
-  }
+    selectPreview('prev');
 }
 
 function checkResultHash() {
-  var hash = window.location.hash;
-  if (!hash || hash == "#") {
-    hash = "#details";
-  }
-  var link = $("[href='" + hash + "']");
-  if (link && link.attr("role") === "tab") {
-    if (!link.prop("aria-expanded")) {
-      link.tab("show");
+    var hash = window.location.hash;
+
+    // default to 'Details' tab
+    if (!hash || hash == '#') {
+        hash = '#details';
     }
-  }
-  if (hash.search("#step/") == 0) {
-    var detailstab = $("[href='#details']");
-    detailstab.tab("show");
-    if (link && !link.parent().is(".current_preview")) {
-      setCurrentPreview(link.parent());
-    } else if (!link) {
-      setCurrentPreview(null);
+
+    // check for links or text details matching the hash
+    var link = $("[href='" + hash + "'], [data-href='" + hash + "']");
+
+    if (link && link.attr("role") === 'tab' && !link.prop('aria-expanded')) {
+        link.tab('show');
+    } else if (hash.search('#step/') === 0) {
+        // show details tab for steps
+        $("[href='#details']").tab('show');
+        // show preview or text details
+        if (link && !link.parent().is(".current_preview")) {
+            setCurrentPreview(link.parent());
+        } else if (!link) {
+            setCurrentPreview(null);
+        }
+    } else if (hash.search('#comment-') === 0) {
+        // show comments tab if anchor contains specific comment
+        $("[href='#comments']").tab('show');
+    } else {
+        // reset
+        setCurrentPreview(null);
     }
-  } else if (hash.search("#comment-") == 0) {
-    $("[href='#comments']").tab("show");
-  } else {
-    // reset
-    setCurrentPreview(null);
-  }
 }
 
 function prevNeedle() {

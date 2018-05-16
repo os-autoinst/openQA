@@ -1,1 +1,1 @@
-Test bugref bsc#1234 https://fate.suse.com/321208
+This is a dummy result to test rendering text results from external parsers.
