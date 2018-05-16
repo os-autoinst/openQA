@@ -147,6 +147,9 @@
 < javascripts/needlediff.js
 < javascripts/running.js
 
+! job_next_previous.js
+< javascripts/job_next_previous.js
+
 ! logo-16.png
 < images/logo-16.png
 

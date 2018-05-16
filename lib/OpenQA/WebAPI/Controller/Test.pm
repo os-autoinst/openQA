@@ -216,7 +216,7 @@ sub details {
     $self->render('test/details');
 }
 
-sub show {
+sub get_current_job {
     my ($self) = @_;
 
     return $self->reply->not_found if (!defined $self->param('testid'));
@@ -226,6 +226,12 @@ sub show {
             id => $self->param('testid')
         },
         {prefetch => qw(jobs_assets)})->first;
+    return $job;
+}
+
+sub show {
+    my ($self) = @_;
+    my $job = $self->get_current_job;
     return $self->_show($job);
 }
 
@@ -267,34 +273,75 @@ sub _show {
         $self->stash(ulogs       => []);
     }
 
-    # search for previous jobs
-    my @conds;
-    push(@conds, {'me.state'  => 'done'});
-    push(@conds, {'me.result' => {-not_in => [OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS]}});
-    push(@conds, {id          => {'<', $job->id}});
-    for my $key (OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS) {
-        push(@conds, {"me.$key" => $job->get_column($key)});
-    }
-    # arbitrary limit of previous results to show
-    my $limit_previous = $self->param('limit_previous') // 10;
-    my %attrs          = (
-        rows     => $limit_previous,
-        order_by => ['me.id DESC']);
-    my $previous_jobs_rs = $self->db->resultset("Jobs")->search({-and => \@conds}, \%attrs);
-    my @previous_jobs;
-    while (my $prev = $previous_jobs_rs->next) {
-        $self->app->log->debug("Previous result job "
-              . $prev->id . ": "
-              . join('-', map { $prev->get_column($_) } OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS));
-        push(@previous_jobs, $prev);
-    }
-    my $job_labels = $self->_job_labels(\@previous_jobs);
-
-    $self->stash(previous        => \@previous_jobs);
-    $self->stash(previous_labels => $job_labels);
-    $self->stash(limit_previous  => $limit_previous);
-
     $self->render('test/result');
+}
+
+sub job_next_previous_ajax {
+    my ($self) = @_;
+
+    my $job     = $self->get_current_job;
+    my $jobid   = $job->id;
+    my $limit   = $self->param('limit') || 10;
+    my $jobs_rs = $self->db->resultset("Jobs")->next_previous_jobs_query($job, $jobid, limit => $limit);
+    my (@jobs, @data);
+    my $latest = 1;
+    while (my $each = $jobs_rs->next) {
+        # Output fetched job next and previous for future debug
+        $self->app->log->debug("Fetched job next and previous "
+              . $each->id . ": "
+              . join('-', map { $each->get_column($_) } OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS));
+
+        $latest = $each->id > $latest ? $each->id : $latest;
+        push @jobs, $each;
+        push(
+            @data,
+            {
+                DT_RowId      => 'job_result_' . $each->id,
+                id            => $each->id,
+                name          => $each->name,
+                distri        => $each->DISTRI,
+                version       => $each->VERSION,
+                build         => $each->BUILD,
+                deps          => $each->dependencies,
+                result        => $each->result,
+                result_stats  => $each->result_stats,
+                state         => $each->state,
+                clone         => $each->clone_id,
+                failedmodules => $each->failed_modules(),
+                iscurrent     => $each->id == $jobid ? 1 : undef,
+                islatest      => $each->id == $latest ? 1 : undef,
+                finished      => $each->t_finished ? $each->t_finished->datetime() . 'Z' : undef,
+                duration      => $each->t_started
+                  && $each->t_finished ? $self->format_time_duration($each->t_finished - $each->t_started) : 0,
+            });
+    }
+    my $labels = $self->_job_labels(\@jobs);
+    for my $data (@data) {
+        my $id         = $data->{id};
+        my $bugs       = $labels->{$id}{bugs};
+        my $bugdetails = $labels->{$id}{bugdetails};
+
+        my (@bugs, @bug_urls, @bug_icons);
+        for my $bug (sort { $b cmp $a } keys %$bugs) {
+            push @bugs,      $bug;
+            push @bug_urls,  $self->bugurl_for($bug);
+            push @bug_icons, $self->bugicon_for($bug, $bugdetails->{$bug});
+        }
+
+        $data->{bugs}      = \@bugs;
+        $data->{bug_urls}  = \@bug_urls;
+        $data->{bug_icons} = \@bug_icons;
+        $data->{label}     = $labels->{$id}{label};
+        my $comments = $labels->{$id}{comments};
+        if ($comments) {
+            $data->{comments} = $comments;
+            $data->{comment_icon} = $self->comment_icon($id, $comments);
+        }
+    }
+    $self->render(
+        json => {
+            data => \@data
+        });
 }
 
 sub _calculate_preferred_machines {

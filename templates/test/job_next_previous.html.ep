@@ -1,0 +1,57 @@
+% content_for 'head' => begin
+%= asset 'job_next_previous.js'
+% end
+
+% content_for 'ready_function' => begin
+    triggerJobNextPrevious();
+% end
+
+<div class="row" style="margin-bottom: 10px; margin-top: 10px;">
+    <div class="col-12 col-md-8 my-auto" id="scenario">
+        <div class="h5">Next &amp; previous results for <i><%= $scenario %></i></div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="float-right">
+            <span>Limit </span>
+            <select id="limit_num">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="400">400</option>
+            </select>
+            <span>for both next &amp; previous</span>
+            <% my $content = '
+                    <p>
+                        Select the limit number to customize job next & previous results search. The number is limited for both valid (eg. passed, failed and softfailed)
+                        next and previous results of current job. The limit is 10 by default.
+                    </p>
+                    <p>
+                        Next & previous results table presents in following form:
+                        <ul>
+                            <li>The latest job</li>
+                            <li>...</li>
+                            <li>...</li>
+                            <li>Next jobs if have</li>
+                            <li>Current job</li>
+                            <li>Previous jobs if have</li>
+                            <li>...</li>
+                            <li>...</li>
+                        </ul>
+                    </p>';
+                %>
+                %= help_popover 'Help for Next & previous results' => $content, undef, undef, 'top'
+        </div>
+    </div>
+</div>
+<div>
+    <table id="job_next_previous_table" class="overview table table-striped no-wrap" style="width: 100%"
+      data-ajax-url="<%= url_for('job_next_previous_ajax') %>">
+        <thead>
+            <th></th>
+            <th>Result</th>
+            <th>Build</th>
+            <th>Finished</th>
+        </thead>
+    </table>
+</div>

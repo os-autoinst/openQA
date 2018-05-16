@@ -415,5 +415,27 @@ sub _cancel_or_deprioritize {
     return $job->cancel($newbuild);
 }
 
+sub next_previous_jobs_query {
+    my ($self, $job, $jobid, %args) = @_;
+    my $limit = $args{limit};
+    my @params;
+
+    push @params, 'done';
+    push @params, OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS;
+    for (1 .. 2) {
+        for my $key (OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS) {
+            push @params, $job->get_column($key);
+        }
+    }
+    push @params, $jobid, $limit, $jobid, $limit, $jobid;
+
+    my $jobs_rs = $self->result_source->schema->resultset('JobNextPrevious')->search(
+        {},
+        {
+            bind => \@params
+        });
+    return $jobs_rs;
+}
+
 1;
 # vim: set sw=4 et:

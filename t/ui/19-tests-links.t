@@ -70,10 +70,10 @@ is(
 $driver->find_element('.navbar-brand')->click();
 $driver->title_is("openQA", "on main page");
 
-$driver->get("/tests/99938#previous");
+$driver->get("/tests/99938#next_previous");
 
 is($driver->find_element_by_id('scenario')->is_displayed(), 1, "Scenario header displayed");
-like($driver->find_element_by_id('scenario')->get_text(), qr/Results for.*/, "Scenario header text");
+like($driver->find_element_by_id('scenario')->get_text(), qr/Next & previous results for.*/, "Scenario header text");
 
 $driver->find_element_by_link_text('Settings')->click();
 like($driver->get_current_url(), qr(\Qtests/99938#settings\E$), "hash marks tab");

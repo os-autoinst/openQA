@@ -198,6 +198,7 @@ sub startup {
     $test_r = $test_r->under('/')->to('test#referer_check');
     my $test_auth = $auth->route('/tests/:testid', testid => qr/\d+/, format => 0);
     $test_r->get('/')->name('test')->to('test#show');
+    $test_r->get('/ajax')->name('job_next_previous_ajax')->to('test#job_next_previous_ajax');
     $test_r->get('/modules/:moduleid/fails')->name('test_module_fails')->to('test#module_fails');
 
     $test_r->get('/details')->name('details')->to('test#details');
