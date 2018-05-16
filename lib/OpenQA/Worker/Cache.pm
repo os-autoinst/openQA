@@ -29,7 +29,7 @@ use File::Path qw(remove_tree make_path);
 use Data::Dumper;
 use Cpanel::JSON::XS;
 use DBI;
-
+use Mojo::File 'path';
 
 require Exporter;
 our (@ISA, @EXPORT);
@@ -48,6 +48,14 @@ our $sleep_time = 5;
 
 END {
     $dbh->disconnect() if $dbh;
+}
+
+sub lock {
+    flock(path($db_file . ".cachelock")->open('>'), LOCK_EX) or die "Cannot lock database - $!\n";
+}
+
+sub unlock {
+    flock(path($db_file . ".cachelock")->open('>'), LOCK_UN) or die "Cannot unlock database - $!\n";
 }
 
 sub deploy_cache {
@@ -75,6 +83,7 @@ sub init {
     $dbh = DBI->connect($dsn, undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1})
       or die("Could not connect to the dbfile.");
     $cache_real_size = 0;
+    #  XXX: With autocommit enabled, rollback are useless, see: http://sqlite.org/lockingv3.html
     cache_cleanup();
     #Ideally we only need $limit, and $need no extra space
     check_limits(0);
@@ -216,18 +225,22 @@ sub get_asset {
 
 sub toggle_asset_lock {
     my ($asset, $toggle) = @_;
-    my $sql = "UPDATE assets set downloading = ?, filename = ?, last_use = strftime('%s','now') where filename = ?";
 
-    eval { $dbh->prepare($sql)->execute($toggle, $asset, $asset) or die $dbh->errstr; };
+    my $check = 1 - $toggle;
+    $dbh->begin_work;
+    my $sql
+      = "UPDATE assets set downloading = ?, filename = ?, last_use = strftime('%s','now') where filename = ? and downloading = ?";
+
+    eval { $dbh->prepare($sql)->execute($toggle, $asset, $asset, $check) or die $dbh->errstr; $dbh->commit };
 
     if ($@) {
         log_error "toggle_asset_lock: Rolling back $@";
-        $dbh->rollback;
-    }
-    else {
-        return 1;
+        eval { $dbh->rollback };
+        log_error "Rolling back failed: $@";
+        return 0;
     }
 
+    return 1;
 }
 
 sub try_lock_asset {
@@ -237,11 +250,13 @@ sub try_lock_asset {
     my $lock_granted;
     my $result;
 
+    $dbh->begin_work;
     eval {
         $sql
           = "SELECT (last_use > strftime('%s','now') - 60 and downloading = 1) as is_fresh, etag from assets where filename = ?";
         $sth = $dbh->prepare($sql);
         $result = $dbh->selectrow_hashref($sql, undef, $asset);
+        $dbh->commit;
         if (!$result) {
             add_asset($asset);
             $lock_granted = 1;
@@ -260,8 +275,11 @@ sub try_lock_asset {
     };
 
     if ($@) {
+        eval { $dbh->finish; };
+        log_error "Finish failed: $@";
         log_error "try_lock_asset: Rolling back $@";
-        $dbh->rollback;
+        eval { $dbh->rollback };
+        log_error "Rolling back failed: $@";
     }
     elsif ($lock_granted) {
         return $result;
@@ -277,7 +295,8 @@ sub add_asset {
 
     if ($@) {
         log_error "add_asset: Rolling back $@";
-        $dbh->rollback;
+        eval { $dbh->rollback };
+        log_error "Rolling back failed: $@";
     }
     else {
         return 1;
@@ -303,7 +322,8 @@ sub update_asset {
 
     if ($@) {
         log_error "Update asset failed. Rolling back $@";
-        $dbh->rollback;
+        eval { $dbh->rollback };
+        log_error "Rolling back failed: $@";
     }
     else {
         log_info "CACHE: updating the $asset with $etag and $size";
@@ -323,7 +343,8 @@ sub purge_asset {
 
     if ($@) {
         log_error "purge_asset: Rolling back $@";
-        $dbh->rollback;
+        eval { $dbh->rollback };
+        log_error "Rolling back failed: $@";
     }
     return 1;
 }
