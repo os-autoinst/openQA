@@ -516,53 +516,16 @@ sub prepare_job_results {
 # A generic query page showing test results in a configurable matrix
 sub overview {
     my ($self) = @_;
-    my %search_args;
-    my @groups;
-    for my $arg (qw(distri version flavor build)) {
-        next unless defined $self->param($arg);
-        $search_args{$arg} = $self->param($arg);
-    }
-    if ($self->param('failed_modules')) {
-        $search_args{failed_modules} = $self->every_param('failed_modules');
-    }
-
-    # By 'every_param' we make sure to use multiple values for groupid and
-    # group at the same time as a logical or, i.e. all specified groups are
-    # returned
-    if ($self->param('groupid') or $self->param('group')) {
-        my @group_id_search   = map { {id   => $_} } @{$self->every_param('groupid')};
-        my @group_name_search = map { {name => $_} } @{$self->every_param('group')};
-        my @search_terms = (@group_id_search, @group_name_search);
-        @groups = $self->db->resultset('JobGroups')->search(\@search_terms)->all;
-    }
-    if (!$search_args{build}) {
-        if (@groups == 0) {
-            $self->app->log->debug('No build and no group specified, will lookup build based on the other parameters');
-        }
-        elsif (@groups == 1) {
-            $self->app->log->debug('Only one group but no build specified, searching for build');
-            $search_args{groupid} = $groups[0]->id;
-        }
-        else {
-            $self->app->log->info('More than one group but no build specified, selecting build of first group');
-            $search_args{groupid} = $groups[0]->id;
-        }
-        $search_args{build} = $self->db->resultset('Jobs')->latest_build(%search_args);
-    }
+    my ($search_args, $groups) = OpenQA::Utils::compose_job_overview_search_args($self);
     my %stash = (
         # build, version, distri are not mandatory and therefore not
         # necessarily come from the search args so they can be undefined.
-        build   => $search_args{build},
-        version => $search_args{version},
-        distri  => $search_args{distri},
-        groups  => \@groups
+        build   => $search_args->{build},
+        version => $search_args->{version},
+        distri  => $search_args->{distri},
+        groups  => $groups,
     );
-    $search_args{scope} = 'current';
-    # Forward all query parameters to jobs query to allow specifying additional
-    # query parameters which are then properly shown on the overview.
-    my $req_params = $self->req->params->to_hash;
-    %search_args = (%search_args, %$req_params);
-    my @latest_jobs = $self->db->resultset('Jobs')->complex_query(%search_args)->latest_jobs;
+    my @latest_jobs = $self->db->resultset('Jobs')->complex_query(%$search_args)->latest_jobs;
     ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->prepare_job_results(\@latest_jobs);
     $self->stash(%stash);
     $self->respond_to(

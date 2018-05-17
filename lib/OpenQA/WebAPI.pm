@@ -350,6 +350,7 @@ sub startup {
 
     # api/v1/jobs
     $api_public_r->get('/jobs')->name('apiv1_jobs')->to('job#list');
+    $api_public_r->get('/jobs/overview')->name('apiv1_jobs_overview')->to('job#overview');
     $api_ro->post('/jobs')->name('apiv1_create_job')->to('job#create');
     $api_ro->post('/jobs/cancel')->name('apiv1_cancel_jobs')->to('job#cancel');
     $api_ro->post('/jobs/restart')->name('apiv1_restart_jobs')->to('job#restart');

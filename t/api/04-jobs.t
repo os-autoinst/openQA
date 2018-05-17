@@ -167,6 +167,50 @@ is(scalar(@{$get->tx->res->json->{jobs}}), 3);
 $get = $t->get_ok('/api/v1/jobs?ids=99981&ids=99963&ids=99926');
 is(scalar(@{$get->tx->res->json->{jobs}}), 3);
 
+subtest 'job overview' => sub {
+    my $query = Mojo::URL->new('/api/v1/jobs/overview');
+
+    # overview for latest build in group 1001
+    $query->query(
+        distri  => 'opensuse',
+        version => 'Factory',
+        groupid => '1001',
+    );
+    $get = $t->get_ok($query->path_query)->status_is(200);
+    is_deeply(
+        $get->tx->res->json,
+        [
+            {
+                id   => 99940,
+                name => 'opensuse-Factory-DVD-x86_64-Build0048@0815-doc@64bit',
+            }
+        ],
+        'latest build present'
+    );
+
+    # overview for build 0048
+    $query->query(build => '0048',);
+    $get = $t->get_ok($query->path_query)->status_is(200);
+    is_deeply(
+        $get->tx->res->json,
+        [
+            {
+                id   => 99939,
+                name => 'opensuse-Factory-DVD-x86_64-Build0048-kde@64bit',
+            },
+            {
+                id   => 99938,
+                name => 'opensuse-Factory-DVD-x86_64-Build0048-doc@64bit',
+            },
+            {
+                id   => 99936,
+                name => 'opensuse-Factory-DVD-x86_64-Build0048-kde@64bit-uefi',
+            },
+        ],
+        'latest build present'
+    );
+};
+
 # Test /jobs/restart
 my $post = $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927, 99939]})
   ->status_is(200);

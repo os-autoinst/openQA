@@ -95,6 +95,16 @@ Common top level entry points: jobs, workers, isos.
 List all jobs. Caution: this will take a very long time or even timeout on big
 productive instances.
 
+=item client --host openqa.example.com jobs groupid=135 distri=caasp version=3.0 latest=1
+
+List all jobs matching the specified search criteria.
+
+=item client --host openqa.example.com jobs/overview groupid=135 distri=caasp version=3.0
+
+List the latest jobs for the latest build in the given scenario.
+In contrast to the route above, this will limit the results to the latest build in the same
+way the test result overview in the web UI does.
+
 =item client --host openqa.example.com jobs/1
 
 Show details of job nr. B<1>.
@@ -146,6 +156,42 @@ sub usage($) {
     }
 }
 
+sub handle_result {
+    my $res = shift;
+
+    if ($res->code == 200) {
+        my $json = $res->json;
+        if ($options{'json-output'}) {
+            print JSON->new->pretty->encode($json);
+        }
+        else {
+            dd($json || $res->body);
+        }
+        return $json;
+    }
+
+    printf(STDERR "ERROR: %s - %s\n", $res->code, $res->{error}->{message});
+    if ($res->body) {
+        if ($options{json}) {
+            print JSON->new->pretty->encode($res->json);
+        }
+        else {
+            dd($res->json || $res->body);
+        }
+    }
+    exit(1);
+}
+
+# prepend the API-base if the specified path is relative
+sub prepend_api_base {
+    my $path = shift;
+
+    if ($path !~ m/^\//) {
+        $path = join('/', $options{apibase}, $path);
+    }
+    return $path;
+}
+
 GetOptions(
     \%options,            'host=s',      'apibase=s',   'json-output',
     'verbose|v',          'apikey:s',    'apisecret:s', 'params=s',
@@ -163,11 +209,9 @@ if ($options{form} && $options{'json-data'}) {
 $options{host}    ||= 'localhost';
 $options{apibase} ||= '/api/v1';
 
-my $path = shift @ARGV;
-# Relative paths are routed to v1
-if ($path !~ m/^\//) {
-    $path = join('/', $options{apibase}, $path);
-}
+# determine operation and path
+my $operation = shift @ARGV;
+my $path      = prepend_api_base($operation);
 
 my $method = 'get';
 my %params;
@@ -220,17 +264,17 @@ else {
 
 my $client = OpenQA::Client->new(apikey => $options{apikey}, apisecret => $options{apisecret}, api => $url->host);
 
-my $res;
 if ($options{form}) {
-    $res = $client->$method($url, form => \%params)->res;
+    handle_result($client->$method($url, form => \%params)->res);
 }
 elsif ($options{'json-data'}) {
-    $res = $client->$method($url, {'Content-Type' => 'application/json'} => $options{'json-data'})->res;
+    handle_result($client->$method($url, {'Content-Type' => 'application/json'} => $options{'json-data'})->res);
 }
 else {
     # Either the user wants to call a command or wants to interact with
     # the rest api directly.
     if ($options{archive}) {
+        my $res;
         $options{path}    = $path;
         $options{url}     = $url;
         $options{params}  = \%params;
@@ -239,30 +283,19 @@ else {
         die "ERROR: $@ \n", $@ if $@;
         exit(0);
     }
+    elsif ($operation eq 'jobs/overview/restart') {
+        $url->path(prepend_api_base('jobs/overview'));
+        my $relevant_jobs = handle_result($client->get($url)->res);
+        my @job_ids = map { $_->{id} } @$relevant_jobs;
+        $url->path(prepend_api_base('jobs/restart'));
+        $url->query(Mojo::Parameters->new);
+        $url->query(jobs => \@job_ids);
+        print("$url\n");
+        handle_result($client->post($url)->res);
+    }
     else {
-        $res = $client->$method($url)->res;
-        #exit(0);
+        handle_result($client->$method($url)->res);
     }
-}
-if ($res->code == 200) {
-    if ($options{'json-output'}) {
-        print JSON->new->pretty->encode($res->json);
-    }
-    else {
-        dd($res->json || $res->body);
-    }
-}
-else {
-    printf STDERR "ERROR: %s - %s\n", $res->code, $res->{error}->{message};
-    if ($res->body) {
-        if ($options{json}) {
-            print JSON->new->pretty->encode($res->json);
-        }
-        else {
-            dd($res->json || $res->body);
-        }
-    }
-    exit(1);
 }
 
 1;
