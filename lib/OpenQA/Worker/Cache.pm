@@ -30,67 +30,96 @@ use Data::Dumper;
 use Cpanel::JSON::XS;
 use DBI;
 use Mojo::File 'path';
+use Mojo::Base -base;
+use Cwd 'getcwd';
 
-require Exporter;
-our (@ISA, @EXPORT);
-@ISA    = qw(Exporter);
-@EXPORT = qw(get_asset);
+our @EXPORT = qw(get_asset);
+use Exporter 'import';
 
-my $cache;
-my $host;
-my $location;
-our $limit = 50 * (1024**3);
-my $db_file;
-my $dsn;
-my $dbh;
-my $cache_real_size;
-our $sleep_time = 5;
+has [qw(host cache location db_file dsn dbh cache_real_size)];
+has limit => 50 * (1024**3);
+has sleep_time => 5;
 
-END {
-    $dbh->disconnect() if $dbh;
+sub DESTROY {
+    my $self = shift;
+
+    $self->dbh->disconnect() if $self->dbh;
 }
 
 sub lock {
-    flock(path($db_file . ".cachelock")->open('>'), LOCK_EX) or die "Cannot lock database - $!\n";
+    my $self = shift;
+    flock(path($self->db_file . ".cachelock")->open('>>'), LOCK_EX) or die "Cannot lock database - $!\n";
 }
 
 sub unlock {
-    flock(path($db_file . ".cachelock")->open('>'), LOCK_UN) or die "Cannot unlock database - $!\n";
+    my $self = shift;
+
+    flock(path($self->db_file . ".cachelock")->open('>>'), LOCK_UN) or die "Cannot unlock database - $!\n";
 }
 
 sub deploy_cache {
+    my $self = shift;
     local $/;
     my $sql = <DATA>;
     print STDOUT "\n\n\n\nINIT\n";
-    log_info "Creating cache directory tree for $location";
-    remove_tree($location, {keep_root => 1});
-    make_path(File::Spec->catdir($location, Mojo::URL->new($host)->host || $host));
-    make_path(File::Spec->catdir($location, 'tmp'));
+    log_info "Creating cache directory tree for " . $self->location;
+    remove_tree($self->location, {keep_root => 1});
+    make_path(File::Spec->catdir($self->location, Mojo::URL->new($self->host)->host || $self->host));
+    make_path(File::Spec->catdir($self->location, 'tmp'));
 
     log_info "Deploying DB: $sql";
-    $dbh = DBI->connect($dsn, undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 0})
+
+    my $dbh = DBI->connect($self->dsn, undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 0})
       or die("Could not connect to the dbfile.");
     $dbh->do($sql);
     $dbh->commit;
     $dbh->disconnect;
+    $self->dbh($dbh);
 }
 
 sub init {
-    ($host, $location) = @_;
-    $db_file = catdir($location, 'cache.sqlite');
-    $dsn = "dbi:SQLite:dbname=$db_file";
-    deploy_cache unless (-e $db_file);
-    $dbh = DBI->connect($dsn, undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1})
-      or die("Could not connect to the dbfile.");
-    $cache_real_size = 0;
+    my $self = shift;
+    my ($host, $location) = @_;
+    $self->host($host);
+    $self->location($location);
+
+
+    my $db_file = catdir($location, 'cache.sqlite');
+
+    $self->db_file($db_file);
+    my $dsn = "dbi:SQLite:dbname=$db_file";
+    $self->dsn($dsn);
+    $self->deploy_cache unless -e $db_file;
+    $self->cache_real_size(0);
+    $self->dbh(
+        DBI->connect($dsn, undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1})
+          or die("Could not connect to the dbfile."));
     #  XXX: With autocommit enabled, rollback are useless, see: http://sqlite.org/lockingv3.html
-    cache_cleanup();
+    $self->cache_cleanup();
     #Ideally we only need $limit, and $need no extra space
-    check_limits(0);
-    log_info(__PACKAGE__ . ": Initialized with $host at $location, current size is $cache_real_size");
+    $self->check_limits(0);
+    log_info(__PACKAGE__ . ": Initialized with $host at $location, current size is " . $self->cache_real_size);
+    return 1;
+}
+
+sub cache_assets {
+
+    my ($self, $job, $vars, $assetkeys) = @_;
+
+    for my $this_asset (sort keys %$assetkeys) {
+        log_debug("Found $this_asset, caching " . $vars->{$this_asset});
+        my $asset = $self->get_asset($job, $assetkeys->{$this_asset}, $vars->{$this_asset});
+        return {error => "Can't download $vars->{$this_asset}"} unless $asset;
+        unlink basename($asset) if -l basename($asset);
+        symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";
+        $vars->{$this_asset} = catdir(getcwd, basename($asset));
+    }
+    return undef;
+
 }
 
 sub download_asset {
+    my $self = shift;
     my ($id, $type, $asset, $etag) = @_;
 
     if (get_channel_handle('autoinst')) {
@@ -102,7 +131,7 @@ sub download_asset {
 
     my $ua = Mojo::UserAgent->new(max_redirects => 2);
     $ua->max_response_size(0);
-    my $url = sprintf '%s/tests/%d/asset/%s/%s', $host, $id, $type, basename($asset);
+    my $url = sprintf '%s/tests/%d/asset/%s/%s', $self->host, $id, $type, basename($asset);
     log_info("Downloading " . basename($asset) . " from $url");
     my $tx = $ua->build_tx(GET => $url);
     my $headers;
@@ -127,7 +156,7 @@ sub download_asset {
                     # Don't spam the webui, update only every 5 seconds
                     if (time - $last_updated > 5) {
                         update_setup_status;
-                        toggle_asset_lock($asset, 1);
+                        $self->toggle_asset_lock($asset, 1);
                         $last_updated = time;
                         if ($progress < $current) {
                             $progress = $current;
@@ -141,7 +170,7 @@ sub download_asset {
     my $code = ($tx->res->code) ? $tx->res->code : 521;    # Used by cloudflare to indicate web server is down.
     my $size;
     if ($code eq 304) {
-        if (toggle_asset_lock($asset, 0)) {
+        if ($self->toggle_asset_lock($asset, 0)) {
             log_debug("CACHE: Content has not changed, not downloading the $asset but updating last use");
         }
         else {
@@ -150,7 +179,7 @@ sub download_asset {
         }
     }
     elsif ($tx->res->is_server_error) {
-        if (toggle_asset_lock($asset, 0)) {
+        if ($self->toggle_asset_lock($asset, 0)) {
             log_debug("CACHE: Could not download the asset, triggering a retry for $code.");
             $asset = $code;
         }
@@ -164,9 +193,9 @@ sub download_asset {
         unlink($asset);
         my $size = $tx->res->content->asset->move_to($asset)->size;
         if ($size == $headers->content_length) {
-            check_limits($size);
-            update_asset($asset, $etag, $size);
-            log_debug("CACHE: Asset download successful to $asset, Cache size is: $cache_real_size");
+            $self->check_limits($size);
+            $self->update_asset($asset, $etag, $size);
+            log_debug("CACHE: Asset download successful to $asset, Cache size is: " . $self->cache_real_size);
         }
         else {
             log_debug(
@@ -177,7 +206,7 @@ sub download_asset {
     else {
         my $message = $tx->res->error->{message};
         log_debug("CACHE: Download of $asset failed with: $code - $message");
-        purge_asset($asset);
+        $self->purge_asset($asset);
         $asset = undef;
     }
     remove_channel_from_defaults('autoinst');
@@ -185,32 +214,33 @@ sub download_asset {
 }
 
 sub get_asset {
+    my $self = shift;
     my ($job, $asset_type, $asset) = @_;
     my $type;
     my $result;
     my $ret;
-    $asset = catdir($location, basename($asset));
+    $asset = catdir($self->location, basename($asset));
     my $n = 5;
     while () {
 
         log_debug "CACHE: Aquiring lock for $asset in the database";
-        $result = try_lock_asset($asset);
+        $result = $self->try_lock_asset($asset);
         if (!$result) {
             update_setup_status;
-            log_debug "CACHE: Waiting $sleep_time seconds for the lock.";
-            sleep $sleep_time;
+            log_debug "CACHE: Waiting " . $self->sleep_time . " seconds for the lock.";
+            sleep $self->sleep_time;
             next;
         }
-        $ret = download_asset($job->{id}, lc($asset_type), $asset, ($result->{etag}) ? $result->{etag} : undef);
+        $ret = $self->download_asset($job->{id}, lc($asset_type), $asset, ($result->{etag}) ? $result->{etag} : undef);
         if (!$ret) {
             $asset = undef;
             last;
         }
         elsif ($ret =~ /^5[0-9]{2}$/ && --$n) {
             log_debug "CACHE: Error $ret, retrying download for $n more tries";
-            log_debug "CACHE: Waiting $sleep_time seconds for the next retry";
-            toggle_asset_lock($asset, 0);
-            sleep $sleep_time;
+            log_debug "CACHE: Waiting " . $self->sleep_time . " seconds for the next retry";
+            $self->toggle_asset_lock($asset, 0);
+            sleep $self->sleep_time;
             next;
         }
         elsif (!$n) {
@@ -224,14 +254,17 @@ sub get_asset {
 }
 
 sub toggle_asset_lock {
+    my $self = shift;
     my ($asset, $toggle) = @_;
 
     my $check = 1 - $toggle;
+    my $dbh   = $self->dbh;
     $dbh->begin_work;
-    my $sql
-      = "UPDATE assets set downloading = ?, filename = ?, last_use = strftime('%s','now') where filename = ? and downloading = ?";
+#    my $sql
+#      = "UPDATE assets set downloading = ?, filename = ?, last_use = strftime('%s','now') where filename = ? and downloading = ?";
+    my $sql = "UPDATE assets set downloading = ?, filename = ?, last_use = strftime('%s','now') where filename = ?";
 
-    eval { $dbh->prepare($sql)->execute($toggle, $asset, $asset, $check) or die $dbh->errstr; $dbh->commit };
+    eval { $dbh->prepare($sql)->execute($toggle, $asset, $asset) or die $dbh->errstr; $dbh->commit };
 
     if ($@) {
         log_error "toggle_asset_lock: Rolling back $@";
@@ -244,12 +277,13 @@ sub toggle_asset_lock {
 }
 
 sub try_lock_asset {
-    my ($asset) = @_;
+    my ($self, $asset) = @_;
     my $sth;
     my $sql;
     my $lock_granted;
     my $result;
 
+    my $dbh = $self->dbh;
     $dbh->begin_work;
     eval {
         $sql
@@ -258,12 +292,12 @@ sub try_lock_asset {
         $result = $dbh->selectrow_hashref($sql, undef, $asset);
         $dbh->commit;
         if (!$result) {
-            add_asset($asset);
+            $self->add_asset($asset);
             $lock_granted = 1;
             $result       = {};
         }
         elsif (!$result->{is_fresh}) {
-            $lock_granted = toggle_asset_lock($asset, 1);
+            $lock_granted = $self->toggle_asset_lock($asset, 1);
         }
         elsif ($result->{is_fresh} == 1) {
             log_info "CACHE: Being downloaded by another worker, sleeping.";
@@ -289,7 +323,8 @@ sub try_lock_asset {
 }
 
 sub add_asset {
-    my ($asset, $toggle) = @_;
+    my ($self, $asset, $toggle) = @_;
+    my $dbh = $self->dbh;
     my $sql = "INSERT INTO assets (downloading,filename, size, last_use) VALUES (1, ?, 0, strftime('%s','now'));";
     eval { $dbh->prepare($sql)->execute($asset) or die $dbh->errstr; };
 
@@ -305,7 +340,9 @@ sub add_asset {
 }
 
 sub update_asset {
-    my ($asset, $etag, $size) = @_;
+    my ($self, $asset, $etag, $size) = @_;
+
+    my $dbh = $self->dbh;
     my $sql
       = "UPDATE assets set downloading = 0, filename =?, etag =? , size = ?, last_use = strftime('%s','now') where filename = ?;";
     eval {
@@ -318,7 +355,7 @@ sub update_asset {
         $sth->execute;
     };
 
-    $cache_real_size += $size;
+    $self->cache_real_size($self->cache_real_size + $size);
 
     if ($@) {
         log_error "Update asset failed. Rolling back $@";
@@ -332,9 +369,9 @@ sub update_asset {
 }
 
 sub purge_asset {
-    my ($asset) = @_;
+    my ($self, $asset) = @_;
     my $sql = "DELETE FROM assets WHERE filename = ?";
-
+    my $dbh = $self->dbh;
     eval {
         $dbh->prepare($sql)->execute($asset) or die $dbh->errstr;
         unlink($asset) or eval { log_error "CACHE: Could not remove $asset" if -e $asset };
@@ -350,23 +387,25 @@ sub purge_asset {
 }
 
 sub cache_cleanup {
+    my $self     = shift;
+    my $location = $self->location;
     my @assets
       = `find $location -maxdepth 1 -type f -name '*.img' -o -name '*.qcow2' -o -name '*.iso' -o -name '*.vhd' -o -name '*.vhdx'`;
     chomp @assets;
     foreach my $file (@assets) {
         my $asset_size = (stat $file)[7];
         next if !defined $asset_size;
-        $cache_real_size += $asset_size if asset_lookup($file);
+        $self->cache_real_size($self->cache_real_size + $asset_size) if $self->asset_lookup($file);
     }
 }
 
 sub asset_lookup {
-    my ($asset) = @_;
+    my ($self, $asset) = @_;
     my $sth;
     my $sql;
     my $lock_granted;
     my $result;
-
+    my $dbh = $self->dbh;
     eval {
         $sql    = "SELECT filename, etag, last_use, size from assets where filename = ?";
         $sth    = $dbh->prepare($sql);
@@ -376,7 +415,7 @@ sub asset_lookup {
 
     if (!$result) {
         log_info "CACHE: Purging non registered $asset";
-        purge_asset($asset);
+        $self->purge_asset($asset);
         return 0;
     }
     else {
@@ -387,22 +426,27 @@ sub asset_lookup {
 
 sub check_limits {
     # Trust the filesystem.
-    my ($needed) = @_;
+    my ($self, $needed) = @_;
     my $sql;
     my $sth;
     my $result;
-
-    while ($cache_real_size + $needed > $limit) {
+    my $dbh = $self->dbh;
+    while ($self->cache_real_size + $needed > $self->limit) {
         $sql    = "SELECT size, filename FROM assets WHERE downloading = 0 ORDER BY last_use asc";
         $sth    = $dbh->prepare($sql);
         $result = $dbh->selectrow_hashref($sql);
         if ($result) {
             foreach my $asset ($result) {
-                if (purge_asset($asset->{filename})) {
-                    $cache_real_size -= $asset->{size};
-                    log_debug "Reclaiming " . $asset->{size} . " from $cache_real_size to make space for $limit";
+                if ($self->purge_asset($asset->{filename})) {
+                    $self->cache_real_size($self->cache_real_size - $asset->{size});
+                    log_debug "Reclaiming "
+                      . $asset->{size}
+                      . " from "
+                      . $self->cache_real_size
+                      . " to make space for "
+                      . $self->limit;
                 }    # purge asset will die anyway in case of failure.
-                last if ($cache_real_size < $limit);
+                last if ($self->cache_real_size < $self->limit);
             }
         }
         else {
@@ -411,7 +455,7 @@ sub check_limits {
         }
 
     }
-    log_debug "CACHE: Health: Real size: $cache_real_size, Configured limit: $limit";
+    log_debug "CACHE: Health: Real size: " . $self->cache_real_size . ", Configured limit: " . $self->limit;
 }
 
 1;
