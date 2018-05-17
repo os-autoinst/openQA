@@ -79,20 +79,6 @@ sub _save_vars($) {
     close($fd);
 }
 
-sub cache_assets {
-    my ($vars, $assetkeys) = @_;
-
-    for my $this_asset (sort keys %$assetkeys) {
-        log_debug("Found $this_asset, caching " . $vars->{$this_asset});
-        my $asset = get_asset($job, $assetkeys->{$this_asset}, $vars->{$this_asset});
-        return {error => "Can't download $vars->{$this_asset}"} unless $asset;
-        unlink basename($asset) if -l basename($asset);
-        symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";
-        $vars->{$this_asset} = catdir(getcwd, basename($asset));
-    }
-    return undef;
-}
-
 # runs in a subprocess, so don't rely on setting variables, but return
 sub cache_tests {
     my ($shared_cache, $testpoolserver) = @_;
@@ -188,8 +174,9 @@ sub engine_workit {
     # do asset caching if CACHEDIRECTORY is set
     if ($worker_settings->{CACHEDIRECTORY}) {
         my $host_to_cache = Mojo::URL->new($current_host)->host;
-        OpenQA::Worker::Cache::init($current_host, $worker_settings->{CACHEDIRECTORY});
-        my $error = cache_assets(\%vars, $assetkeys);
+        my $cache         = OpenQA::Worker::Cache->new;
+        $cache->init($current_host, $worker_settings->{CACHEDIRECTORY});
+        my $error = $cache->cache_assets($job => \%vars => $assetkeys);
         return $error if $error;
 
         # do test caching if TESTPOOLSERVER is set

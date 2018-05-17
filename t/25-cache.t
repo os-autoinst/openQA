@@ -79,15 +79,14 @@ sub read_log {
 }
 
 sub db_handle_connection {
-    my $disconnect = @_;
-    if ($dbh) {
-        $dbh->disconnect;
+    my ($cache, $disconnect) = @_;
+    if ($cache->dbh) {
+        $cache->dbh->disconnect;
         return if $disconnect;
     }
 
-    $dbh
-      = DBI->connect("dbi:SQLite:dbname=$db_file", undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1});
-
+    $cache->dbh(
+        DBI->connect("dbi:SQLite:dbname=$db_file", undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1}));
 }
 
 sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
@@ -164,7 +163,8 @@ sub stop_server {
     $serverpid = undef;
 }
 
-OpenQA::Worker::Cache::init($host, $cachedir);
+my $cache = OpenQA::Worker::Cache->new;
+is $cache->init($host, $cachedir), 1;
 $openqalogs = read_log($logfile);
 like $openqalogs, qr/Creating cache directory tree for/, "Cache directory tree created.";
 like $openqalogs, qr/Deploying DB/,                      "Cache deploys the database.";
@@ -173,7 +173,7 @@ ok(-e $db_file, "cache.sqlite is present");
 
 truncate_log $logfile;
 
-db_handle_connection;
+db_handle_connection($cache);
 
 for (1 .. 3) {
     $filename = "$cachedir/$_.qcow2";
@@ -185,7 +185,7 @@ for (1 .. 3) {
         log_info "Inserting $_";
         $sql = "INSERT INTO assets (downloading,filename,size, etag,last_use)
                 VALUES (0, ?, ?, 'Not valid', strftime('%s','now'));";
-        $sth = $dbh->prepare($sql);
+        $sth = $cache->dbh->prepare($sql);
         $sth->bind_param(1, $filename);
         $sth->bind_param(2, 84);
         $sth->execute();
@@ -195,8 +195,8 @@ for (1 .. 3) {
 
 chdir $ENV{LOGDIR};
 
-$OpenQA::Worker::Cache::sleep_time = 1;
-OpenQA::Worker::Cache::init($host, $cachedir);
+$cache->sleep_time(1);
+$cache->init($host, $cachedir);
 
 $openqalogs = read_log($logfile);
 unlike $openqalogs, qr/Deploying DB/, "Cache deploys the database.";
@@ -206,8 +206,8 @@ unlike $openqalogs, qr/CACHE: Purging non registered.*[13].qcow2/, "Registered a
 like $openqalogs,   qr/CACHE: Purging non registered.*2.qcow2/,    "Asset 2 was removed";
 truncate_log $logfile;
 
-$OpenQA::Worker::Cache::limit = 100;
-OpenQA::Worker::Cache::init($host, $cachedir);
+$cache->limit(100);
+$cache->init($host, $cachedir);
 
 $openqalogs = read_log($logfile);
 like $openqalogs, qr/CACHE: Health: Real size: 84, Configured limit: 100/,
@@ -217,7 +217,7 @@ like $openqalogs, qr/$host/, "Host was initialized correctly ($host).";
 ok(!-e "1.qcow2", "Oldest asset (1.qcow2) was sucessfully removed");
 truncate_log $logfile;
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-textmode@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-textmode@64bit.qcow2');
 my $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-textmode\@64bit.qcow2 from/, "Asset download attempt";
 like $autoinst_log, qr/failed with: 521/, "Asset download fails with: 521 - Connection refused";
@@ -227,22 +227,22 @@ $port = Mojo::IOLoop::Server->generate_port;
 $host = "http://127.0.0.1:$port";
 start_server;
 
-$OpenQA::Worker::Cache::limit = 1024;
-OpenQA::Worker::Cache::init($host, $cachedir);
+$cache->limit(1024);
+$cache->init($host, $cachedir);
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-404@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-404@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-404\@64bit.qcow2 from/, "Asset download attempt";
 like $autoinst_log, qr/failed with: 404/, "Asset download fails with: 404 - Not Found";
 truncate_log 'autoinst-log.txt';
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-400@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-400@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-400\@64bit.qcow2 from/, "Asset download attempt";
 like $autoinst_log, qr/failed with: 400/, "Asset download fails with 400 - Bad Request";
 truncate_log 'autoinst-log.txt';
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-589@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-589@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-589\@64bit.qcow2 from/, "Asset download attempt";
 like $autoinst_log, qr/Expected: 10 \/ Downloaded: 6/, "Incomplete download logged";
@@ -254,7 +254,7 @@ like $openqalogs, qr/CACHE: Waiting 1 seconds for the next retry/,          "1 s
 like $openqalogs, qr/CACHE: Too many download errors, aborting/,            "Bailing out after too many retries";
 truncate_log $logfile;
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-503@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-503@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-503\@64bit.qcow2 from/, "Asset download attempt";
 like $autoinst_log, qr/triggering a retry for 503/, "Asset download fails with 503 - Server not available";
@@ -266,14 +266,14 @@ like $openqalogs, qr/CACHE: Waiting 1 seconds for the next retry/,          "1 s
 like $openqalogs, qr/CACHE: Too many download errors, aborting/,            "Bailing out after too many retries";
 truncate_log $logfile;
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-200\@64bit.qcow2 from/, "Asset download attempt";
 like $autoinst_log, qr/CACHE: Asset download successful to .*sle-12-SP3-x86_64-0368-200.*, Cache size is: 1024/,
   "Full download logged";
 truncate_log 'autoinst-log.txt';
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-200\@64bit.qcow2 from/, "Asset download attempt";
 like $autoinst_log, qr/CACHE: Content has not changed, not downloading .* but updating last use/, "Upading last use";
@@ -283,13 +283,13 @@ $openqalogs = read_log($logfile);
 like $openqalogs, qr/ andi \$a3, \$t1, 41399 and 1024/, "Etag and size are logged";
 truncate_log $logfile;
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-200\@64bit.qcow2 from/,      "Asset download attempt";
 like $autoinst_log, qr/sle-12-SP3-x86_64-0368-200\@64bit.qcow2 but updating last use/, "last use gets updated";
 truncate_log 'autoinst-log.txt';
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200_256@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200_256@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-200_256\@64bit.qcow2 from/, "Asset download attempt";
 like $autoinst_log, qr/CACHE: Asset download successful to .*sle-12-SP3-x86_64-0368-200_256.*, Cache size is: 256/,
