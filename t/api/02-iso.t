@@ -158,9 +158,35 @@ subtest 'group filter' => sub {
             ARCH       => 'i586',
             BUILD      => '0091',
             PRECEDENCE => 'original',
-            _GROUP     => '1002',
+            _GROUP     => 'invalid group name',
+        });
+    is($res->json->{count}, 0, 'no jobs created if group invalid');
+
+    $res = schedule_iso(
+        {
+            ISO        => $iso,
+            DISTRI     => 'opensuse',
+            VERSION    => '13.1',
+            FLAVOR     => 'DVD',
+            ARCH       => 'i586',
+            BUILD      => '0091',
+            PRECEDENCE => 'original',
+            _GROUP     => 'opensuse test',
         });
     is($res->json->{count}, 1, 'only one job created due to group filter');
+
+    $res = schedule_iso(
+        {
+            ISO        => $iso,
+            DISTRI     => 'opensuse',
+            VERSION    => '13.1',
+            FLAVOR     => 'DVD',
+            ARCH       => 'i586',
+            BUILD      => '0091',
+            PRECEDENCE => 'original',
+            _GROUP_ID  => '1002',
+        });
+    is($res->json->{count}, 1, 'only one job created due to group filter (by ID)');
 
     # delete job template again so the remaining tests are unaffected
     $job_template->delete;
