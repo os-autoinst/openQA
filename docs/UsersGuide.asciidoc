@@ -224,6 +224,8 @@ mean existing jobs for earlier builds with the same DISTRI and VERSION are
 no longer interesting, but you still want to be able to re-submit jobs for a
 build and have existing jobs for the exact same build obsoleted.
 
+_GROUP:: Job templates *not* matching the given group ID are ignored.
+
 Example for `_DEPRIORITIZEBUILD` and `_DEPRIORITIZE_LIMIT`.
 
 [source,sh]

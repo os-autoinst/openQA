@@ -71,6 +71,7 @@
         ],
     },
     Products => {
+        id       => 1,
         name     => '',
         distri   => 'opensuse',
         version  => '13.1',

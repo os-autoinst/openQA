@@ -183,7 +183,12 @@ sub _generate_jobs {
     my @tests = $args->{TEST} ? split(/\s*,\s*/, $args->{TEST}) : ();
 
     for my $product (@products) {
-        my @templates = $product->job_templates;
+        my $templates = $product->job_templates;
+        my $group_id  = $args->{_GROUP};
+        if (defined $group_id) {
+            $templates = $templates->search({group_id => $group_id});
+        }
+        my @templates = $templates->all;
         unless (@templates) {
             carp "no templates found for " . join('-', map { $args->{$_} } qw(DISTRI VERSION FLAVOR ARCH));
         }
@@ -216,7 +221,7 @@ sub _generate_jobs {
                 next if $_ eq 'TEST' || $_ eq 'MACHINE';
                 $settings{uc $_} = $args->{$_};
             }
-            # Makes sure tha the DISTRI is lowercase
+            # make sure that the DISTRI is lowercase
             $settings{DISTRI} = lc($settings{DISTRI});
 
             $settings{PRIO}     = $job_template->prio;
