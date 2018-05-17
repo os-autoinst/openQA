@@ -229,7 +229,8 @@ for my $arg (@ARGV) {
         $method = lc $arg;
     }
     elsif ($arg =~ /^([[:alnum:]_\[\]\.]+)=(.+)/) {
-        $params{$1} = $2;
+        my $existing_value = $params{$1};
+        $params{$1} = $existing_value ? [$existing_value, $2] : $2;
     }
 }
 
@@ -247,7 +248,7 @@ else {
 $url->path($path);
 
 if (!$options{form}) {
-    $url->query([%params]) if %params;
+    $url->query(\%params) if %params;
 }
 else {
     my %form;
