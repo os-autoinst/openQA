@@ -103,7 +103,7 @@ Show details of job nr. B<1>.
 
 Delete job nr. B<1> (permissions read from config file).
 
-=item client --host openqa.example.com isos post iso=bar.iso tests=blah
+=item client --host openqa.example.com isos post ISO=bar.iso DISTRI=my-distri FLAVOR=my-flavor ARCH=my-arch VERSION=42 BUILD=1234
 
 Trigger jobs on iso B<bar.iso> matching test suite B<blah>.
 
