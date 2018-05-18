@@ -33,9 +33,6 @@ use Mojo::File 'path';
 use Mojo::Base -base;
 use Cwd 'getcwd';
 
-our @EXPORT = qw(get_asset);
-use Exporter 'import';
-
 has [qw(host cache location db_file dsn dbh cache_real_size)];
 has limit => 50 * (1024**3);
 has sleep_time => 5;
