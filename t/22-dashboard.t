@@ -151,7 +151,7 @@ check_test_parent('collapsed');
 # links are correct
 my @urls = $get->tx->res->dom->find('h2 a, .row a')->map('attr', 'href')->each;
 for my $url (@urls) {
-    next if ($url =~ /^#/);
+    next if ($url =~ /^#/ || $url =~ /^.*\:\//);
     $get = $t->get_ok($url)->status_is(200);
 }
 
