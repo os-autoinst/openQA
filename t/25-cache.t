@@ -298,6 +298,45 @@ like $openqalogs, qr/ andi \$a3, \$t1, 41399 and 256/, "Etag and size are logged
 like $openqalogs, qr/removed.*sle-12-SP3-x86_64-0368-200\@64bit.qcow2*/, "Reclaimed space for new smaller asset";
 truncate_log $logfile;
 
+subtest 'concurrent access' => sub {
+    my $tot_proc   = 80;
+    my $concurrent = 40;
+    my $q          = queue;
+    $q->pool->maximum_processes($concurrent);
+    $q->queue->maximum_processes($tot_proc);
+    my @test;
+    push(@test, int(rand(2000)) + 150) for 1 .. $tot_proc * 2;
+    @test = keys %{{map { $_ => 1 } @test}};
+    my $sum;
+    $sum += $_ for @test;
+    diag "Testing downloading " . (scalar @test) . " assets of ($sum) @test size";
+
+    $q->add(
+        process(
+            sub {
+                sleep rand int 2 for 1 .. 8;
+                $cache->limit($sum);
+                $cache->init;
+                $cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200_' . $_ . '@64bit.qcow2') for @test;
+            }
+        )->set_pipes(0)->internal_pipes(0)) for 1 .. $tot_proc;
+
+    $q->consume();
+    is $q->done->size, $tot_proc, 'Queue consumed ' . $tot_proc . ' processes';
+
+    $autoinst_log = read_log('autoinst-log.txt');
+
+    is((() = $autoinst_log =~ m/Asset download successful/g), scalar @test, 'Downloaded assets only once')
+      or diag $autoinst_log;
+    is((() = $autoinst_log =~ m/CACHE: Asset download successful to .*sle-12-SP3-x86_64-0368-200_$_\@/g),
+        1, "Successfully downloaded sle-12-SP3-x86_64-0368-200_$_")
+      for @test;
+    is((() = $autoinst_log =~ m/database is locked/ig), 0, '0 Database locks');
+    truncate_log 'autoinst-log.txt';
+};
+
 stop_server;
+
+sub END { stop_server; }
 
 done_testing();
