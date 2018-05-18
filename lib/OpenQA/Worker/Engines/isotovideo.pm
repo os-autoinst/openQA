@@ -175,7 +175,6 @@ sub engine_workit {
     if ($worker_settings->{CACHEDIRECTORY}) {
         my $host_to_cache = Mojo::URL->new($current_host)->host;
         my $cache = OpenQA::Worker::Cache->new(host => $current_host, location => $worker_settings->{CACHEDIRECTORY});
-        #  $cache->init($current_host, $worker_settings->{CACHEDIRECTORY});
         my $error = $cache->cache_assets($job => \%vars => $assetkeys);
         return $error if $error;
 
