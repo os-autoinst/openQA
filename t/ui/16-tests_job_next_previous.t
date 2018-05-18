@@ -163,5 +163,38 @@ is($state->get_attribute('title'), 'scheduled',          'job 99928 was schedule
 is((shift @tds)->get_text(),       '0091',               'build of 99928 is 0091');
 is((shift @tds)->get_text(),       'Not yet: scheduled', '99928 is not yet finished');
 
+# check job next and previous under tests/latest route
+$driver->get('/tests/latest');
+$driver->find_element_by_link_text('Next & previous results')->click();
+wait_for_ajax();
+$driver->find_element_by_class('dataTables_wrapper');
+is(scalar @{$driver->find_elements('#job_next_previous_table tbody tr', 'css')},
+    1, 'job next and previous of the latest job - 99981');
+my $job99981 = $driver->find_element('#job_next_previous_table #job_result_99981');
+@tds = $driver->find_child_elements($job99981, 'td');
+is((shift @tds)->get_text(), 'C&L', '99981 is current and the latest job');
+
+# check job next and previous with scenario latest url
+$driver->get('/tests/99945');
+$driver->find_element_by_link_text('Next & previous results')->click();
+wait_for_ajax();
+$driver->find_element_by_class('dataTables_wrapper');
+$driver->find_element_by_link_text('latest job for this scenario')->click();
+my $scenario_latest_url = $driver->get_current_url();
+like($scenario_latest_url, qr/latest?/,         'latest scenario URL includes latest');
+like($scenario_latest_url, qr/arch=i586/,       'latest scenario URL includes architecture');
+like($scenario_latest_url, qr/flavor=DVD/,      'latest scenario URL includes flavour');
+like($scenario_latest_url, qr/test=textmode/,   'latest scenario URL includes test');
+like($scenario_latest_url, qr/version=13.1/,    'latest scenario URL includes version');
+like($scenario_latest_url, qr/machine=32bit/,   'latest scenario URL includes machine');
+like($scenario_latest_url, qr/distri=opensuse/, 'latest scenario URL includes distri');
+$driver->find_element_by_link_text('Next & previous results')->click();
+wait_for_ajax();
+$driver->find_element_by_class('dataTables_wrapper');
+is(scalar @{$driver->find_elements('#job_next_previous_table tbody tr', 'css')}, 4, 'job next and previous of 99947');
+$job99947 = $driver->find_element('#job_next_previous_table #job_result_99947');
+@tds = $driver->find_child_elements($job99947, 'td');
+is((shift @tds)->get_text(), 'C&L', '99947 is current and the latest job');
+
 kill_driver();
 done_testing();
