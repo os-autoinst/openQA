@@ -40,6 +40,7 @@ use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
 use Mojo::File qw(path);
 use POSIX '_exit';
+use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 
 my $sql;
 my $sth;
@@ -92,79 +93,74 @@ sub db_handle_connection {
 sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
 
 my $daemon;
-my $mock = Mojolicious->new;
+my $mock            = Mojolicious->new;
+my $server_instance = process sub {
+    $mock->routes->get(
+        '/tests/:job/asset/:type/:filename' => sub {
+            my $c        = shift;
+            my $id       = $c->stash('job');
+            my $type     = $c->stash('type');
+            my $filename = $c->stash('filename');
+            return $c->render(status => 404, text => "Move along, nothing to see here")
+              if $filename =~ /sle-12-SP3-x86_64-0368-404/;
+            return $c->render(status => 400, text => "Move along, nothing to see here")
+              if $filename =~ /sle-12-SP3-x86_64-0368-400/;
+            return $c->render(status => 500, text => "Move along, nothing to see here")
+              if $filename =~ /sle-12-SP3-x86_64-0368-500/;
+            return $c->render(status => 503, text => "Move along, nothing to see here")
+              if $filename =~ /sle-12-SP3-x86_64-0368-503/;
 
-sub start_server {
-    $serverpid = fork();
-    if ($serverpid == 0) {
-        # setup mock
+            if ($filename =~ /sle-12-SP3-x86_64-0368-589/) {
+                $c->res->headers->content_length(10);
+                $c->inactivity_timeout(1);
+                $c->res->headers->content_type('text/plain');
+                $c->res->body('Six!!!');
+                $c->rendered(200);
+            }
 
-        $mock->routes->get(
-            '/tests/:job/asset/:type/:filename' => sub {
-                my $c        = shift;
-                my $id       = $c->stash('job');
-                my $type     = $c->stash('type');
-                my $filename = $c->stash('filename');
-                return $c->render(status => 404, text => "Move along, nothing to see here")
-                  if $filename =~ /sle-12-SP3-x86_64-0368-404/;
-                return $c->render(status => 400, text => "Move along, nothing to see here")
-                  if $filename =~ /sle-12-SP3-x86_64-0368-400/;
-                return $c->render(status => 500, text => "Move along, nothing to see here")
-                  if $filename =~ /sle-12-SP3-x86_64-0368-500/;
-                return $c->render(status => 503, text => "Move along, nothing to see here")
-                  if $filename =~ /sle-12-SP3-x86_64-0368-503/;
+            if (my ($size) = ($filename =~ /sle-12-SP3-x86_64-0368-200_?([0-9]+)?\@/)) {
+                my $our_etag = 'andi $a3, $t1, 41399';
 
-                if ($filename =~ /sle-12-SP3-x86_64-0368-589/) {
-                    $c->res->headers->content_length(10);
+                my $browser_etag = $c->req->headers->header('If-None-Match');
+                if ($browser_etag && $browser_etag eq $our_etag) {
+                    $c->res->body('');
+                    $c->rendered(304);
+                }
+                else {
+                    $c->res->headers->content_length($size // 1024);
                     $c->inactivity_timeout(1);
                     $c->res->headers->content_type('text/plain');
-                    $c->res->body('Six!!!');
+                    $c->res->headers->header('ETag' => $our_etag);
+                    $c->res->body("\0" x ($size // 1024));
                     $c->rendered(200);
                 }
+            }
+        });
 
-                if (my ($size) = ($filename =~ /sle-12-SP3-x86_64-0368-200_?([0-9]+)?\@/)) {
-                    my $our_etag = 'andi $a3, $t1, 41399';
+    $mock->routes->get(
+        '/' => sub {
+            my $c = shift;
+            return $c->render(status => 200, text => "server is running");
+        });
+    # Connect application with web server and start accepting connections
+    $daemon = Mojo::Server::Daemon->new(app => $mock, listen => [$host]);
+    $daemon->run;
+    _exit(0);
+};
 
-                    my $browser_etag = $c->req->headers->header('If-None-Match');
-                    if ($browser_etag && $browser_etag eq $our_etag) {
-                        $c->res->body('');
-                        $c->rendered(304);
-                    }
-                    else {
-                        $c->res->headers->content_length($size // 1024);
-                        $c->inactivity_timeout(1);
-                        $c->res->headers->content_type('text/plain');
-                        $c->res->headers->header('ETag' => $our_etag);
-                        $c->res->body("\0" x ($size // 1024));
-                        $c->rendered(200);
-                    }
-                }
-            });
-
-        $mock->routes->get(
-            '/' => sub {
-                my $c = shift;
-                return $c->render(status => 200, text => "server is running");
-            });
-        # Connect application with web server and start accepting connections
-        $daemon = Mojo::Server::Daemon->new(app => $mock, listen => [$host]);
-        $daemon->run;
-        _exit(0);
-    }
+sub start_server {
+    $server_instance->set_pipes(0)->start;
     sleep 1 while !_port($port);
     return;
 }
 
 sub stop_server {
     # now kill the worker
-    kill TERM => $serverpid;
-    sleep 1 while _port($port);
-    is(waitpid($serverpid, 0), $serverpid, 'Server is done');
-    $serverpid = undef;
+    $server_instance->stop();
 }
 
-my $cache = OpenQA::Worker::Cache->new;
-is $cache->init($host, $cachedir), 1;
+my $cache = OpenQA::Worker::Cache->new(host => $host, location => $cachedir);
+is $cache->init, $cache;
 $openqalogs = read_log($logfile);
 like $openqalogs, qr/Creating cache directory tree for/, "Cache directory tree created.";
 like $openqalogs, qr/Deploying DB/,                      "Cache deploys the database.";
@@ -196,7 +192,7 @@ for (1 .. 3) {
 chdir $ENV{LOGDIR};
 
 $cache->sleep_time(1);
-$cache->init($host, $cachedir);
+$cache->init;
 
 $openqalogs = read_log($logfile);
 unlike $openqalogs, qr/Deploying DB/, "Cache deploys the database.";
@@ -207,7 +203,7 @@ like $openqalogs,   qr/CACHE: Purging non registered.*2.qcow2/,    "Asset 2 was 
 truncate_log $logfile;
 
 $cache->limit(100);
-$cache->init($host, $cachedir);
+$cache->init;
 
 $openqalogs = read_log($logfile);
 like $openqalogs, qr/CACHE: Health: Real size: 84, Configured limit: 100/,
@@ -227,8 +223,9 @@ $port = Mojo::IOLoop::Server->generate_port;
 $host = "http://127.0.0.1:$port";
 start_server;
 
+$cache->host($host);
 $cache->limit(1024);
-$cache->init($host, $cachedir);
+$cache->init;
 
 $cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-404@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
@@ -300,6 +297,7 @@ $openqalogs = read_log($logfile);
 like $openqalogs, qr/ andi \$a3, \$t1, 41399 and 256/, "Etag and size are logged";
 like $openqalogs, qr/removed.*sle-12-SP3-x86_64-0368-200\@64bit.qcow2*/, "Reclaimed space for new smaller asset";
 truncate_log $logfile;
+
 stop_server;
 
 done_testing();

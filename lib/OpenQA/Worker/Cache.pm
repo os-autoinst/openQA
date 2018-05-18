@@ -37,6 +37,10 @@ has [qw(host cache location db_file dsn dbh cache_real_size)];
 has limit => 50 * (1024**3);
 has sleep_time => 5;
 
+sub new {
+    shift->SUPER::new(@_)->init;
+}
+
 sub DESTROY {
     my $self = shift;
 
@@ -76,11 +80,7 @@ sub deploy_cache {
 
 sub init {
     my $self = shift;
-    my ($host, $location) = @_;
-    $self->host($host);
-    $self->location($location);
-
-
+    my ($host, $location) = ($self->host, $self->location);
     my $db_file = catdir($location, 'cache.sqlite');
 
     $self->db_file($db_file);
@@ -96,7 +96,7 @@ sub init {
     #Ideally we only need $limit, and $need no extra space
     $self->check_limits(0);
     log_info(__PACKAGE__ . ": Initialized with $host at $location, current size is " . $self->cache_real_size);
-    return 1;
+    return $self;
 }
 
 sub cache_assets {
