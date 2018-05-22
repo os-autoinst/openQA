@@ -1,4 +1,4 @@
-# Copyright (C) 2017 SUSE LLC
+# Copyright (C) 2017-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -265,14 +265,12 @@ sub toggle_asset_lock {
     my $self = shift;
     my ($asset, $toggle) = @_;
 
-    my $dbh = $self->dbh;
+    my $dbh   = $self->dbh;
+    my $check = 1 - $toggle;
+    my $sql
+      = "UPDATE assets set downloading = ?, filename = ?, last_use = strftime('%s','now') where filename = ? and downloading = ?";
 
-    my $sql = "UPDATE assets set downloading = ?, filename = ?, last_use = strftime('%s','now') where filename = ?";
-
-    $self->lock_section(
-        sub {
-            $dbh->prepare($sql)->execute($toggle, $asset, $asset) or die $dbh->errstr;
-        });
+    eval { $dbh->prepare($sql)->execute($toggle, $asset, $asset, $check) or die $dbh->errstr; };
 
     if ($@) {
         log_error "toggle_asset_lock: Rolling back $@";
@@ -318,12 +316,11 @@ sub try_lock_asset {
             else {
                 die "CACHE: try_lock_asset: Abnormal situation.";
             }
-
         });
     if ($@) {
+        log_error "try_lock_asset: Rolling back $@";
         eval { $dbh->finish; };
         log_error "Finish failed: $@";
-        log_error "try_lock_asset: Rolling back $@";
         eval { $dbh->rollback };
         log_error "Rolling back failed: $@";
     }
@@ -356,8 +353,11 @@ sub update_asset {
     my ($self, $asset, $etag, $size) = @_;
 
     my $dbh = $self->dbh;
-    my $sql
-      = "UPDATE assets set downloading = 0, filename =?, etag =? , size = ?, last_use = strftime('%s','now') where filename = ?;";
+
+    $self->toggle_asset_lock($asset, 0);
+
+
+    my $sql = "UPDATE assets set filename =?, etag =? , size = ?, last_use = strftime('%s','now') where filename = ?;";
     $self->lock_section(
         sub {
             my $sth = $dbh->prepare($sql);
