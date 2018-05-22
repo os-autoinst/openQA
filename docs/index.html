@@ -724,18 +724,22 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#networking">Networking in OpenQA</a>
 <ul class="sectlevel1">
-<li><a href="#_qemu_user_networking">Qemu user networking</a></li>
-<li><a href="#_tap_based_network">TAP based network</a></li>
-<li><a href="#_tap_with_open_vswitch">TAP with Open vSwitch</a></li>
-<li><a href="#_debugging_open_vswitch_configuration">Debugging Open vSwitch configuration</a></li>
-<li><a href="#_vde_based_network">VDE Based Network</a>
+<li><a href="#_qemu_user_networking">Qemu User Networking</a>
 <ul class="sectlevel2">
-<li><a href="#_basic_single_machine_tests">Basic, single machine tests</a></li>
-<li><a href="#_multi_machine_tests">Multi machine tests</a></li>
+<li><a href="#_tap_based_network">TAP Based Network</a></li>
+<li><a href="#_vde_based_network">VDE Based Network</a>
+<ul class="sectlevel3">
+<li><a href="#_basic_single_machine_tests">Basic, Single Machine Tests</a></li>
 </ul>
 </li>
-<li><a href="#_worker_configuration">Worker configuration</a></li>
-<li><a href="#_gre_tunnels">GRE tunnels</a></li>
+</ul>
+</li>
+<li><a href="#_multi_machine_tests_setup">Multi Machine Tests Setup</a>
+<ul class="sectlevel2">
+<li><a href="#_debugging_open_vswitch_configuration">Debugging Open vSwitch Configuration</a></li>
+</ul>
+</li>
+<li><a href="#_gre_tunnels">GRE Tunnels</a></li>
 </ul>
 </li>
 <li><a href="#contributing">openQA developer guide</a>
@@ -4735,12 +4739,12 @@ user networking which requires no further configuration.</p>
 </div>
 <div class="paragraph">
 <p>For more advanced setups or tests that require multiple jobs to be
-in the same networking the <a href="#_tap_based_network">TAP</a> or <a href="#_vde_based_network">VDE</a> based modes can be used.</p>
+in the same networking the <a href="#TAP based network">TAP</a> or <a href="#_vde_based_network">VDE</a> based modes can be used.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_qemu_user_networking">Qemu user networking</h2>
+<h2 id="_qemu_user_networking">Qemu User Networking</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>With Qemu <a href="http://wiki.qemu.org/Documentation/Networking#User_Networking_.28SLIRP.29">user networking</a> each jobs gets it&#8217;s own isolated network with
@@ -4748,11 +4752,8 @@ TCP and UDP routed to the outside. DHCP is provided by qemu. The MAC address of
 the machine can be controlled with the NICMAC variable. If not set, it&#8217;s
 52:54:00:12:34:56.</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_tap_based_network">TAP based network</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_tap_based_network">TAP Based Network</h3>
 <div class="paragraph">
 <p>os-autoinst can connect qemu to TAP devices of the host system to
 leverage advanced network setups provided by the host by setting NICTYPE=tap.</p>
@@ -4782,188 +4783,9 @@ automatically computed from $worker_id if not set.</p>
 <p>In TAP mode the system administrator is expected to configure the
 network, required internet access etc on the host manually.</p>
 </div>
-<div class="paragraph">
-<p>TAP devices need be owned by the _openqa-worker user for openQA to
-be able to access them.</p>
 </div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>tunctl -u _openqa-worker -p -t tap0</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>If you want to use TAP device which doesn&#8217;t exist on the system,
-you need to set CAP_NET_ADMIN capability on qemu binary file:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper in libcap-progs
-setcap <span class="tok-nv">CAP_NET_ADMIN</span><span class="tok-o">=</span>ep /usr/bin/qemu-system-x86_64</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Network setup can be changed after qemu is started using network configure script
-specified in TAPSCRIPT variable.</p>
-</div>
-<div class="paragraph">
-<p>Sample script to add TAP device to existing bridge br0:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>sudo brctl addif br0 <span class="tok-nv">$1</span>
-sudo ip link <span class="tok-nb">set</span> <span class="tok-nv">$1</span> up</code></pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_tap_with_open_vswitch">TAP with Open vSwitch</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>The recommended way to configure the network for TAP devices is using Open vSwitch.
-There is a support service os-autoinst-openvswitch.service which sets vlan number
-of Open vSwitch ports based on NICVLAN variable - this separates the groups of
-tests from each other.</p>
-</div>
-<div class="paragraph">
-<p>NICVLAN variable is dynamically assigned by OpenQA scheduler.</p>
-</div>
-<div class="paragraph">
-<p>Compared to VDE setup discussed later, Open vSwitch is more complicated to configure,
-but provides more robust and scalable network.</p>
-</div>
-<div class="paragraph">
-<p>Start Open vSwitch and add TAP devices:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>
-<span class="tok-c1"># start openvswitch.service</span>
-systemctl start openvswitch.service
-systemctl <span class="tok-nb">enable</span> openvswitch.service
-
-<span class="tok-c1"># create bridge</span>
-ovs-vsctl add-br br0
-
-<span class="tok-c1"># add tap devices, use vlan 999 by default, the vlan number is supposed to be changed when the vm starts</span>
-ovs-vsctl add-port br0 tap0 <span class="tok-nv">tag</span><span class="tok-o">=</span><span class="tok-m">999</span>
-ovs-vsctl add-port br0 tap1 <span class="tok-nv">tag</span><span class="tok-o">=</span><span class="tok-m">999</span>
-ovs-vsctl add-port br0 tap2 <span class="tok-nv">tag</span><span class="tok-o">=</span><span class="tok-m">999</span>
-ovs-vsctl add-port br0 tap3 <span class="tok-nv">tag</span><span class="tok-o">=</span><span class="tok-m">999</span>
-ovs-vsctl add-port br0 tap4 <span class="tok-nv">tag</span><span class="tok-o">=</span><span class="tok-m">999</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The virtual machines need access to os-autoinst webserver acessible
-via IP 10.0.2.2. The IP addresses of VMs are controlled by tests
-and are likely to conflict if more independent tests runs in parallel.</p>
-</div>
-<div class="paragraph">
-<p>The VMs have unique MAC that differs in the last 16 bits (see /usr/lib/os-autoinst/backend/qemu.pm).</p>
-</div>
-<div class="paragraph">
-<p><code>os-autoinst-openvswitch.service</code> sets up filtering rules for the following translation scheme which
-provide non-conflicting addresses visible from host:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>MAC <span class="tok-m">52</span>:54:00:12:XX:YY -&gt; IP <span class="tok-m">10</span>.1.XX.YY</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>That means that the local port of the bridge must be configured to IP 10.0.2.2
-and netmask /15 that covers 10.0.0.0 and 10.1.0.0 ranges.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>ip addr add <span class="tok-m">10</span>.0.2.2/15 dev br0
-ip route add <span class="tok-m">10</span>.0.0.0/15 dev br0
-ip link <span class="tok-nb">set</span> br0 up</code></pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_debugging_open_vswitch_configuration">Debugging Open vSwitch configuration</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Boot sequence with wicked &lt; 0.6.23:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>wicked - creates tap devices</p>
-</li>
-<li>
-<p>openvswitch - creates the bridge br0, adds tap devices to it</p>
-</li>
-<li>
-<p>wicked handles br0 as hotplugged device, assignd the IP 10.0.2.2 to it, updates SuSEFirewall</p>
-</li>
-<li>
-<p>os-autoinst-openvswitch - installs openflow rules, handles vlan assignment</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>Boot sequence with wicked 0.6.23 and newer:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>openvswitch</p>
-</li>
-<li>
-<p>wicked - creates the bridge br0 and tap devices, add tap devices to the bridge,</p>
-</li>
-<li>
-<p>SuSEFirewall</p>
-</li>
-<li>
-<p>os-autoinst-openvswitch - installs openflow rules, handles vlan assignment</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>The configuration and operation can be checked by the following commands:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>ovs-vsctl show <span class="tok-c1"># shows the bridge br0, the tap devices are assigned to it</span>
-ovs-ofctl dump-flows br0 <span class="tok-c1"># shows the rules installed by os-autoinst-openvswitch in table=0</span></code></pre>
-</div>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>packets from tapX to br0 create additional rules in table=1</p>
-</li>
-<li>
-<p>packets from br0 to tapX increase packet counts in table=1</p>
-</li>
-<li>
-<p>empty output indicates a problem with os-autoinst-openvswitch service</p>
-</li>
-<li>
-<p>zero packet count or missing rules in table=1 indicate problem with tap devices</p>
-</li>
-</ul>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>ipables -L -v</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>As long as the SUT has access to external network, there should be
-nonzero packet count in the forward chain between br0 and external
-interface.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_vde_based_network">VDE Based Network</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_vde_based_network">VDE Based Network</h3>
 <div class="paragraph">
 <p>Virtual Distributed Ethernet provides a software switch that runs in
 user space. It allows to connect several qemu instances without
@@ -4973,8 +4795,8 @@ affecting the system&#8217;s network configuration.</p>
 <p>The openQA workers need a vde_switch instance running. The workers
 reconfigure the switch as needed by the job.</p>
 </div>
-<div class="sect2">
-<h3 id="_basic_single_machine_tests">Basic, single machine tests</h3>
+<div class="sect3">
+<h4 id="_basic_single_machine_tests">Basic, Single Machine Tests</h4>
 <div class="paragraph">
 <p>To start with a basic configuration like qemu user mode networking,
 create a machine with the following settings:</p>
@@ -5006,34 +4828,19 @@ systemctl start openqa-slirpvde</code></pre>
 network share the same SLIRP instance though.</p>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_multi_machine_tests">Multi machine tests</h3>
-<div class="paragraph">
-<p>Create a machine like above but don&#8217;t set NICVLAN. openQA will
-dynamically allocate a VLAN number for all jobs that have
-dependencies between each other. By default this VLAN is private and
-has no internet access. To enable user mode networking set
-<code>VDE_USE_SLIRP=1</code> on one of the machines. The worker running the job
-on such a machine will start slirpvde and put it in the correct VLAN
-then.</p>
-</div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_worker_configuration">Worker configuration</h2>
+<h2 id="_multi_machine_tests_setup">Multi Machine Tests Setup</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Requirements</p>
+<p>The section provides one of the ways for setting up openQA environment to run tests that
+require network connection between several machines (e.g. client&#8201;&#8212;&#8201;server tests).</p>
 </div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="bash"><span></span>zypper in openvswitch os-autoinst-openvswitch openQA-worker tunctl
-
-systemctl <span class="tok-nb">enable</span> SuSEfirewall2              <span class="tok-c1"># Needed to create NAT to outside network</span>
-systemctl <span class="tok-nb">enable</span> openvswitch                <span class="tok-c1"># Needed for network creation</span>
-systemctl <span class="tok-nb">enable</span> os-autoinst-openvswitch    <span class="tok-c1"># Needed to separate networks for parallel clusters</span></code></pre>
-</div>
+<div class="paragraph">
+<p>The example of the configuration is applicable for openSUSE and will
+use <em>Open vSwitch</em> for virtual switch, <em>SuSEfirewall2</em> for NAT and <em>wicked</em> as network manager.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -5042,27 +4849,115 @@ systemctl <span class="tok-nb">enable</span> os-autoinst-openvswitch    <span cl
 <div class="title">Note</div>
 </td>
 <td class="content">
-In some cases (e.g. on Leap) can be needed to start the OpenvSwitch service before the Network service by modifying the OpenvSwitch service. For reference see <a href="https://en.opensuse.org/Portal:Wicked/OpenvSwitch#Wicked_0.6.23.2B">this</a>.
+Other way to setup the environment with <em>iptables</em> and <em>firewalld</em> is described
+on <a href="https://fedoraproject.org/wiki/OpenQA_advanced_network_guide">Fedora wiki</a>.
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>The os-autoinst-openvswitch.service uses br0 by default.
-Usually it&#8217;s used by KVM, so we need to configure br1.</p>
+<p><strong>Set Up Open vSwitch</strong></p>
+</div>
+<div class="paragraph">
+<p>Compared to VDE setup, Open vSwitch is a little bit more complicated to configure, but provides more
+robust and scalable network.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Install and Run Open vSwitch:</p>
+</li>
+</ul>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="bash"><span></span><span class="tok-c1"># /etc/sysconfig/os-autoinst-openvswitch</span>
-<span class="tok-nv">OS_AUTOINST_USE_BRIDGE</span><span class="tok-o">=</span>br1</code></pre>
+<pre>zypper in openvswitch
+systemctl start openvswitch.service
+systemctl enable openvswitch.service</pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Install and configure <em>os-autoinst-openvswitch.service</em>:</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<em>os-autoinst-openvswitch.service</em> is a support service that sets vlan number
+of Open vSwitch ports based on NICVLAN variable - this separates the groups of
+tests from each other. NICVLAN variable is dynamically assigned by OpenQA scheduler.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper in os-autoinst-openvswitch
+systemctl start os-autoinst-openvswitch
+systemctl <span class="tok-nb">enable</span> os-autoinst-openvswitch</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>For every MM worker you need tap device (tap0 tap1 tap2 ..)</p>
+<p><em>os-autoinst-openvswitch.service</em> uses <em>br0</em> bridge by default.
+As it might be used by KVM, configure <em>br1</em> instead.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="bash"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-tap0</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/os-autoinst-openvswitch</span>
+<span class="tok-nv">OS_AUTOINST_USE_BRIDGE</span><span class="tok-o">=</span>br1</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Create virtual bridge <em>br1</em>:</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>ovs-vsctl add-br br1</pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Configure Virtual Interfaces</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Add tap interface for every multi-machine worker:</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Create as many interfaces as needed for a test. The instructions are provided for three interfaces
+<em>tap0</em>, <em>tap1</em>, <em>tap2</em> to be used by <em>worker@1</em>, <em>worker@2</em>, <em>worker@3</em> workers. TAP interfaces have to be owned by the <em>_openqa-worker</em> user for openQA to
+be able to access them.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>To create tap interfaces automatically on startup, add appropriate configuration files to the
+<code>/etc/sysconfig/network/</code> directory. Files have to be named as <code>ifcfg-tap&lt;N&gt;</code>, replacing <code>&lt;N&gt;</code>
+with the number for the interface, such as <code>0</code>, <code>1</code>, <code>2</code> (e.g. <code>ifcfg-tap0</code>, <code>ifcfg-tap1</code>).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-tap0</span>
 <span class="tok-nv">BOOTPROTO</span><span class="tok-o">=</span><span class="tok-s1">&#39;none&#39;</span>
 <span class="tok-nv">IPADDR</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
 <span class="tok-nv">NETMASK</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
@@ -5073,12 +4968,20 @@ Usually it&#8217;s used by KVM, so we need to configure br1.</p>
 <span class="tok-nv">TUNNEL_SET_OWNER</span><span class="tok-o">=</span><span class="tok-s1">&#39;_openqa-worker&#39;</span></code></pre>
 </div>
 </div>
+<div class="ulist">
+<ul>
+<li>
+<p>Add bridge config with all tap devices that should be connected to it:</p>
+</li>
+</ul>
+</div>
 <div class="paragraph">
-<p>Add all tap devices to bridge config</p>
+<p>The file have to be located in <code>/etc/sysconfig/network/</code> directory. File name is
+<code>ifcfg-br&lt;N&gt;</code>, where <code>&lt;N&gt;</code> is the id of the bridge (e.g. <code>1</code>).</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="bash"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-br1</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-br1</span>
 <span class="tok-nv">BOOTPROTO</span><span class="tok-o">=</span><span class="tok-s1">&#39;static&#39;</span>
 <span class="tok-nv">IPADDR</span><span class="tok-o">=</span><span class="tok-s1">&#39;10.0.2.2/15&#39;</span>
 <span class="tok-nv">STARTMODE</span><span class="tok-o">=</span><span class="tok-s1">&#39;auto&#39;</span>
@@ -5089,35 +4992,246 @@ Usually it&#8217;s used by KVM, so we need to configure br1.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The IP 10.0.2.2 can also serve as a gateway to access outside
-network. For this, a NAT between br1 and eth0 must be configured
+<p><strong>Configure NAT with SuSEfirewall</strong></p>
+</div>
+<div class="paragraph">
+<p>The IP 10.0.2.2 can be also served as a gateway to access outside
+network. For this, a NAT between <em>br1</em> and <em>eth0</em> must be configured
 with SuSEfirewall or iptables.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="bash"><span></span><span class="tok-c1"># /etc/sysconfig/SuSEfirewall2</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/SuSEfirewall2</span>
+<span class="tok-nv">FW_DEV_INT</span><span class="tok-o">=</span><span class="tok-s2">&quot;br1&quot;</span>
 <span class="tok-nv">FW_ROUTE</span><span class="tok-o">=</span><span class="tok-s2">&quot;yes&quot;</span>
-<span class="tok-nv">FW_MASQUERADE</span><span class="tok-o">=</span><span class="tok-s2">&quot;yes&quot;</span>
-<span class="tok-nv">FW_DEV_INT</span><span class="tok-o">=</span><span class="tok-s2">&quot;br1&quot;</span></code></pre>
+<span class="tok-nv">FW_MASQUERADE</span><span class="tok-o">=</span><span class="tok-s2">&quot;yes&quot;</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Tell workers to run also multi-machine jobs</p>
+<p>Start SuSEfirewall2 and allow to run on startup:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="bash"><span></span><span class="tok-c1"># /etc/openqa/workers.ini</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start SuSEfirewall2
+systemctl <span class="tok-nb">enable</span> SuSEfirewall2</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Configure OpenQA Workers</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Allow workers to run multi-machine jobs:</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/openqa/workers.ini</span>
 <span class="tok-o">[</span>global<span class="tok-o">]</span>
 <span class="tok-nv">WORKER_CLASS</span> <span class="tok-o">=</span> qemu_x86_64,tap</code></pre>
 </div>
 </div>
+<div class="ulist">
+<ul>
+<li>
+<p>Enable workers to be started on system boot:</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> openqa-worker@1
+systemctl <span class="tok-nb">enable</span> openqa-worker@2
+systemctl <span class="tok-nb">enable</span> openqa-worker@3</code></pre>
+</div>
+</div>
 <div class="paragraph">
+<p><strong>Grant CAP_NET_ADMIN Capabilities to QEMU</strong></p>
+</div>
+<div class="paragraph">
+<p>In order to use TAP device which doesn’t exist on the system, it is required to set
+CAP_NET_ADMIN capability on qemu binary file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper in libcap-progs
+setcap <span class="tok-nv">CAP_NET_ADMIN</span><span class="tok-o">=</span>ep /usr/bin/qemu-system-x86_64</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Configure Network Manager</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Check the configuration for the <em>eth0</em> interface:</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+Ensure, that <em>eth0</em> interface is configured in <code>/etc/sysconfig/network/ifcfg-eth0</code>.
+Otherwise, wicked will not be able to bring up the interface on start and host will loose network
+connection.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-eth0</span>
+<span class="tok-nv">BOOTPROTO</span><span class="tok-o">=</span><span class="tok-s1">&#39;dhcp&#39;</span>
+<span class="tok-nv">BROADCAST</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
+<span class="tok-nv">ETHTOOL_OPTIONS</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
+<span class="tok-nv">IPADDR</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
+<span class="tok-nv">MTU</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
+<span class="tok-nv">NAME</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
+<span class="tok-nv">NETMASK</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
+<span class="tok-nv">REMOTE_IPADDR</span><span class="tok-o">=</span><span class="tok-s1">&#39;&#39;</span>
+<span class="tok-nv">STARTMODE</span><span class="tok-o">=</span><span class="tok-s1">&#39;auto&#39;</span>
+<span class="tok-nv">DHCLIENT_SET_DEFAULT_ROUTE</span><span class="tok-o">=</span><span class="tok-s1">&#39;yes&#39;</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Start <em>wicked</em> as network service:</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Check the network service currently being used:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl show -p Id network.service</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If the result is different from <code>Id=wicked.service</code> (e.g. <code>NetworkManager.service</code>),
+stop the network service:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl stop network.service
+systemctl disable network.service</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then switch to wicked:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --force wicked
+systemctl start wicked</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Bring up <em>br1</em> interface:</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>wicked ifup br1</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
 <p>REBOOT</p>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_debugging_open_vswitch_configuration">Debugging Open vSwitch Configuration</h3>
+<div class="paragraph">
+<p>Boot sequence with wicked &lt; 0.6.23:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>wicked - creates tap devices</p>
+</li>
+<li>
+<p>openvswitch - creates the bridge br1, adds tap devices to it</p>
+</li>
+<li>
+<p>wicked handles br1 as hotplugged device, assignd the IP 10.0.2.2 to it, updates SuSEfirewall</p>
+</li>
+<li>
+<p>os-autoinst-openvswitch - installs openflow rules, handles vlan assignment</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Boot sequence with wicked 0.6.23 and newer:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>openvswitch</p>
+</li>
+<li>
+<p>wicked - creates the bridge br1 and tap devices, add tap devices to the bridge,</p>
+</li>
+<li>
+<p>SuSEfirewall</p>
+</li>
+<li>
+<p>os-autoinst-openvswitch - installs openflow rules, handles vlan assignment</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The configuration and operation can be checked by the following commands:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>ovs-vsctl show <span class="tok-c1"># shows the bridge br1, the tap devices are assigned to it</span>
+ovs-ofctl dump-flows br1 <span class="tok-c1"># shows the rules installed by os-autoinst-openvswitch in table=0</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>packets from tapX to br1 create additional rules in table=1</p>
+</li>
+<li>
+<p>packets from br1 to tapX increase packet counts in table=1</p>
+</li>
+<li>
+<p>empty output indicates a problem with os-autoinst-openvswitch service</p>
+</li>
+<li>
+<p>zero packet count or missing rules in table=1 indicate problem with tap devices</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>iptables -L -v</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As long as the SUT has access to external network, there should be
+nonzero packet count in the forward chain between br1 and external
+interface.</p>
+</div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_gre_tunnels">GRE tunnels</h2>
+<h2 id="_gre_tunnels">GRE Tunnels</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>By default all multi-machine workers have to be on single physical machine.
@@ -5689,7 +5803,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-05-20 14:49:51 UTC
+Last updated 2018-05-22 08:53:12 UTC
 </div>
 </div>
 </body>
