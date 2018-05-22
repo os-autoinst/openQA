@@ -32,7 +32,6 @@ use DBI;
 use Mojo::File 'path';
 use Mojo::Base -base;
 use Cwd 'getcwd';
-use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use POSIX;
 
 has [qw(host cache location db_file dsn dbh cache_real_size)];
@@ -47,26 +46,6 @@ sub DESTROY {
     my $self = shift;
 
     $self->dbh->disconnect() if $self->dbh;
-}
-
-# coolo wants flock ! :)
-sub lock {
-    my $self = shift;
-    flock(path($self->db_file . ".cachelock")->open('>>'), LOCK_EX) or die "Cannot lock database - $!\n";
-}
-
-sub unlock {
-    my $self = shift;
-    flock(path($self->db_file . ".cachelock")->open('>>'), LOCK_UN) or die "Cannot unlock database - $!\n";
-}
-
-sub lock_section {
-    my ($self, $fn) = @_;
-    $self->lock;
-    my $r = eval { $fn->() };
-    $self->unlock();
-    log_error "[$$] Error inside locked section : $@" if $@;
-    return $r;
 }
 
 sub deploy_cache {
@@ -100,7 +79,14 @@ sub init {
     $self->deploy_cache unless -e $db_file;
     $self->cache_real_size(0);
     $self->dbh(
-        DBI->connect($dsn, undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1})
+        DBI->connect(
+            $dsn, undef, undef,
+            {
+                RaiseError          => 1,
+                PrintError          => 1,
+                AutoCommit          => 1,
+                AutoInactiveDestroy => 1,
+            })
           or die("Could not connect to the dbfile."));
     #  XXX: With autocommit enabled, rollback are useless, see: http://sqlite.org/lockingv3.html
     $self->cache_cleanup();
@@ -123,7 +109,6 @@ sub cache_assets {
         $vars->{$this_asset} = catdir(getcwd, basename($asset));
     }
     return undef;
-
 }
 
 sub download_asset {
@@ -231,6 +216,8 @@ sub get_asset {
     my $n = 5;
     while () {
 
+        $self->add_asset($asset, 0);    # Track asset - make sure it's in DB
+
         log_debug "CACHE: Aquiring lock for $asset in the database";
         $result = $self->try_lock_asset($asset);
         if (!$result) {
@@ -265,88 +252,80 @@ sub toggle_asset_lock {
     my $self = shift;
     my ($asset, $toggle) = @_;
 
-    my $dbh   = $self->dbh;
+    my $dbh = $self->dbh;
+    $dbh->do("BEGIN EXCLUSIVE");
     my $check = 1 - $toggle;
     my $sql
       = "UPDATE assets set downloading = ?, filename = ?, last_use = strftime('%s','now') where filename = ? and downloading = ?";
-
-    eval { $dbh->prepare($sql)->execute($toggle, $asset, $asset, $check) or die $dbh->errstr; };
+    my $res;
+    eval { $res = $dbh->prepare($sql)->execute($toggle, $asset, $asset, $check); $dbh->commit or die $dbh->errstr; };
 
     if ($@) {
         log_error "toggle_asset_lock: Rolling back $@";
         eval { $dbh->rollback };
         log_error "Rolling back failed: $@" if $@;
-        return 0;
     }
 
-    return 1;
+    return 0 if !defined $res || $res == 0 || $@;
+    return 1 if defined $res && $res == 1;
 }
 
 sub try_lock_asset {
     my ($self, $asset) = @_;
     my $sth;
     my $sql;
-    my $lock_granted;
-    my $result;
+    my $lock_granted = 0;
+    my $result       = {};
 
     my $dbh = $self->dbh;
 
-
-    $self->lock_section(
-        sub {
-            $dbh->begin_work;
-
-            $sql
-              = "SELECT (last_use > strftime('%s','now') - 60 and downloading = 1) as is_fresh, etag from assets where filename = ?";
-            $sth = $dbh->prepare($sql);
+    eval {
+        if ($self->toggle_asset_lock($asset, 1)) {
+            $lock_granted = 1;
+            $sql          = "SELECT etag from assets where filename = ?";
+            $sth          = $dbh->prepare($sql);
+            $result       = $dbh->selectrow_hashref($sql, undef, $asset);
+            $result       = {} unless $result;
+        }
+        else {
+            $sql    = "SELECT downloading, etag from assets where filename = ?";
+            $sth    = $dbh->prepare($sql);
             $result = $dbh->selectrow_hashref($sql, undef, $asset);
-            $dbh->commit;
-            if (!$result) {
-                $self->add_asset($asset);
-                $lock_granted = 1;
-                $result       = {};
-            }
-            elsif (!$result->{is_fresh}) {
-                $lock_granted = $self->toggle_asset_lock($asset, 1);
-            }
-            elsif ($result->{is_fresh} == 1) {
-                log_info "CACHE: Being downloaded by another worker, sleeping.";
-                $lock_granted = 0;
-            }
-            else {
-                die "CACHE: try_lock_asset: Abnormal situation.";
-            }
-        });
-    if ($@) {
-        log_error "try_lock_asset: Rolling back $@";
-        eval { $dbh->finish; };
-        log_error "Finish failed: $@";
-        eval { $dbh->rollback };
-        log_error "Rolling back failed: $@";
-    }
-    elsif ($lock_granted) {
-        return $result;
-    }
+            $result = {} if !$result;
+            log_info "CACHE: Being downloaded by another worker, sleeping."
+              if exists $result->{downloading} && $result->{downloading} == 1;
+        }
+    };
 
-    return 0;
+    log_error "try_lock_asset: Failed $@" if $@;
+
+    return $result if $lock_granted;
+    return !!0;
 }
 
 sub add_asset {
     my ($self, $asset, $toggle) = @_;
-    my $dbh = $self->dbh;
-    my $sql = "INSERT INTO assets (downloading,filename, size, last_use) VALUES (1, ?, 0, strftime('%s','now'));";
+    $toggle = 1 unless defined $toggle;
 
-    $self->lock_section(sub { $dbh->prepare($sql)->execute($asset) or die $dbh->errstr; });
+    my $dbh = $self->dbh;
+    $dbh->do("BEGIN EXCLUSIVE");
+
+    my $res;
+    my $sql
+      = "INSERT OR IGNORE INTO assets (downloading,filename, size, last_use) VALUES (?, ?, 0,  strftime('%s','now'));";
+
+    eval {
+        $res = $dbh->prepare($sql)->execute($toggle, $asset) or die $dbh->errstr;
+        $dbh->commit or die $dbh->errstr;
+    };
 
     if ($@) {
-        log_error "add_asset: Rolling back $@";
+        log_error "add_asset: Failed: $@";
         eval { $dbh->rollback };
         log_error "Rolling back failed: $@";
     }
-    else {
-        return 1;
-    }
-
+    return 0 if !defined $res || $res == 0 || $@;
+    return 1 if defined $res;
 }
 
 sub update_asset {
@@ -354,20 +333,24 @@ sub update_asset {
 
     my $dbh = $self->dbh;
 
-    $self->toggle_asset_lock($asset, 0);
-
-
     my $sql = "UPDATE assets set filename =?, etag =? , size = ?, last_use = strftime('%s','now') where filename = ?;";
-    $self->lock_section(
-        sub {
-            my $sth = $dbh->prepare($sql);
-            $sth->bind_param(1, $asset);
-            $sth->bind_param(2, $etag);
-            $sth->bind_param(3, $size);
-            $sth->bind_param(4, $asset);
+    eval {
+        $dbh->begin_work;
+        my $sth = $dbh->prepare($sql);
+        $sth->bind_param(1, $asset);
+        $sth->bind_param(2, $etag);
+        $sth->bind_param(3, $size);
+        $sth->bind_param(4, $asset);
 
-            $sth->execute;
-        });
+        $sth->execute;
+        $dbh->commit;
+    };
+
+    {
+        local $@;
+        eval { $self->toggle_asset_lock($asset, 0) };
+        log_error "CACHE: Failed relasing lock $@" if $@;
+    };
 
     $self->cache_real_size($self->cache_real_size + $size);
 
@@ -386,12 +369,11 @@ sub purge_asset {
     my ($self, $asset) = @_;
     my $sql = "DELETE FROM assets WHERE filename = ?";
     my $dbh = $self->dbh;
-    $self->lock_section(
-        sub {
-            $dbh->prepare($sql)->execute($asset) or die $dbh->errstr;
-            unlink($asset) or eval { log_error "CACHE: Could not remove $asset" if -e $asset };
-            log_debug "CACHE: removed $asset";
-        });
+    eval {
+        $dbh->prepare($sql)->execute($asset) or die $dbh->errstr;
+        unlink($asset) or eval { log_error "CACHE: Could not remove $asset" if -e $asset };
+        log_debug "CACHE: removed $asset";
+    };
 
     if ($@) {
         log_error "purge_asset: Rolling back $@";
@@ -421,12 +403,11 @@ sub asset_lookup {
     my $lock_granted;
     my $result;
     my $dbh = $self->dbh;
-    $self->lock_section(
-        sub {
-            $sql    = "SELECT filename, etag, last_use, size from assets where filename = ?";
-            $sth    = $dbh->prepare($sql);
-            $result = $dbh->selectrow_hashref($sql, undef, $asset);
-        });
+    eval {
+        $sql    = "SELECT filename, etag, last_use, size from assets where filename = ?";
+        $sth    = $dbh->prepare($sql);
+        $result = $dbh->selectrow_hashref($sql, undef, $asset);
+    };
     log_error "Error while accessing database: $@" if $@;
 
     if (!$result) {
@@ -437,7 +418,6 @@ sub asset_lookup {
     else {
         return $result;
     }
-
 }
 
 sub check_limits {
@@ -447,33 +427,33 @@ sub check_limits {
     my $sth;
     my $result;
     my $dbh = $self->dbh;
-    $self->lock_section(
-        sub {
-            while ($self->cache_real_size + $needed > $self->limit) {
-                $sql    = "SELECT size, filename FROM assets WHERE downloading = 0 ORDER BY last_use asc";
-                $sth    = $dbh->prepare($sql);
-                $result = $dbh->selectrow_hashref($sql);
-                if ($result) {
-                    foreach my $asset ($result) {
-                        if ($self->purge_asset($asset->{filename})) {
-                            $self->cache_real_size($self->cache_real_size - $asset->{size});
-                            log_debug "Reclaiming "
-                              . $asset->{size}
-                              . " from "
-                              . $self->cache_real_size
-                              . " to make space for "
-                              . $self->limit;
-                        }    # purge asset will die anyway in case of failure.
-                        last if ($self->cache_real_size < $self->limit);
-                    }
+    eval {
+        while ($self->cache_real_size + $needed > $self->limit) {
+            $sql    = "SELECT size, filename FROM assets WHERE downloading = 0 ORDER BY last_use asc";
+            $sth    = $dbh->prepare($sql);
+            $result = $dbh->selectrow_hashref($sql);
+            if ($result) {
+                foreach my $asset ($result) {
+                    if ($self->purge_asset($asset->{filename})) {
+                        $self->cache_real_size($self->cache_real_size - $asset->{size});
+                        log_debug "Reclaiming "
+                          . $asset->{size}
+                          . " from "
+                          . $self->cache_real_size
+                          . " to make space for "
+                          . $self->limit;
+                    }    # purge asset will die anyway in case of failure.
+                    last if ($self->cache_real_size < $self->limit);
                 }
-                else {
-                    log_error "There are no more elements to remove";
-                    last;
-                }
-
             }
-        });
+            else {
+                log_error "There are no more elements to remove";
+                last;
+            }
+
+        }
+    };
+    log_error "CACHE: check_limit failed: $@" if $@;
     log_debug "CACHE: Health: Real size: " . $self->cache_real_size . ", Configured limit: " . $self->limit;
 }
 
