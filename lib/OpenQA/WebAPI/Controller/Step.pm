@@ -652,6 +652,7 @@ sub viewimg {
     $self->stash('frametime',      $module_detail->{frametime});
     $self->stash('default_label',  $primary_match ? $primary_match->{label} : 'Screenshot');
     $self->stash('needles_by_tag', \%needles_by_tag);
+    $self->stash('tag_count',      scalar %needles_by_tag);
     return $self->render('step/viewimg');
 }
 

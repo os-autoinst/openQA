@@ -89,13 +89,13 @@
 .candidates-selection {
     min-width: 50%;
 
-    .btn-left {
+    #screenshot_button {
         border-width: 1px 0px 1px 1px;
         border-style: solid;
         border-color: #d8d9da;
     }
 
-    .dropdown-toggle {
+    #candidatesMenu {
         font-weight: 400;
         border-radius: 4px;
         box-shadow: 0 0 0 1px rgba(34,36,38,.15) inset;
