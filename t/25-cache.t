@@ -41,6 +41,7 @@ use Mojo::IOLoop::Server;
 use Mojo::File qw(path);
 use POSIX '_exit';
 use Mojo::IOLoop::ReadWriteProcess qw(queue process);
+use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 
 my $sql;
 my $sth;
@@ -64,6 +65,10 @@ make_path($ENV{LOGDIR});
 open my $FD, '>>', $logfile;
 *STDOUT = $FD;
 *STDERR = $FD;
+
+$SIG{INT} = sub {
+    session->all->each(sub { shift->stop });
+};
 
 sub truncate_log {
     my ($new_log) = @_;
@@ -299,25 +304,27 @@ like $openqalogs, qr/removed.*sle-12-SP3-x86_64-0368-200\@64bit.qcow2*/, "Reclai
 truncate_log $logfile;
 
 subtest 'concurrent access' => sub {
-    my $tot_proc   = 80;
-    my $concurrent = 40;
+
+    use List::Util qw(shuffle uniq sum);
+
+    my $tot_proc   = $ENV{STRESS_TEST} ? 160 : 40;
+    my $concurrent = $ENV{STRESS_TEST} ? 40  : 20;
     my $q          = queue;
     $q->pool->maximum_processes($concurrent);
     $q->queue->maximum_processes($tot_proc);
-    my @test;
-    push(@test, int(rand(2000)) + 150) for 1 .. $tot_proc * 2;
-    @test = keys %{{map { $_ => 1 } @test}};
-    my $sum;
-    $sum += $_ for @test;
+    my @test = uniq(map { int(rand(2000)) + 150 } 1 .. ($tot_proc / 2));
+    my $sum = sum(@test) + 2000;
     diag "Testing downloading " . (scalar @test) . " assets of ($sum) @test size";
 
     $q->add(
         process(
             sub {
-                sleep rand int 2 for 1 .. 8;
+                srand int time;
+                sleep rand int 2 for 1 .. 4;
                 $cache->limit($sum);
                 $cache->init;
-                $cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200_' . $_ . '@64bit.qcow2') for @test;
+                $cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200_' . $_ . '@64bit.qcow2')
+                  for shuffle @test;
             }
         )->set_pipes(0)->internal_pipes(0)) for 1 .. $tot_proc;
 
@@ -331,12 +338,15 @@ subtest 'concurrent access' => sub {
     is((() = $autoinst_log =~ m/CACHE: Asset download successful to .*sle-12-SP3-x86_64-0368-200_$_\@/g),
         1, "Successfully downloaded sle-12-SP3-x86_64-0368-200_$_")
       for @test;
-    is((() = $autoinst_log =~ m/database is locked/ig), 0, '0 Database locks');
+    is((() = $autoinst_log =~ m/database is locked/ig), 0, '0 Database locks') or diag $autoinst_log;
     truncate_log 'autoinst-log.txt';
 };
 
 stop_server;
 
-sub END { stop_server; }
+sub END {
+    stop_server;
+    session->all->each(sub { shift->stop });
+}
 
 done_testing();
