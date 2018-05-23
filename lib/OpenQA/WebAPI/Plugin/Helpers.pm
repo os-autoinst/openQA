@@ -129,7 +129,7 @@ sub register {
                 $crumbs .= $c->link_to($overview_url =>
                       (class => 'dropdown-item') => sub { '<i class="fas fa-arrow-right"></i> ' . $overview_text });
                 $crumbs .= "</li>";
-                $crumbs .= "\n<li role='separator' class='divider'></li>\n";
+                $crumbs .= "\n<li role='separator' class='dropdown-divider'></li>\n";
                 return Mojo::ByteStream->new($crumbs);
             }
             return;
