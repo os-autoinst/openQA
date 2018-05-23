@@ -417,9 +417,10 @@ sub _cancel_or_deprioritize {
 
 sub next_previous_jobs_query {
     my ($self, $job, $jobid, %args) = @_;
-    my $limit = $args{limit};
-    my @params;
+    my $p_limit = $args{previous_limit};
+    my $n_limit = $args{next_limit};
 
+    my @params;
     push @params, 'done';
     push @params, OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS;
     for (1 .. 2) {
@@ -427,7 +428,7 @@ sub next_previous_jobs_query {
             push @params, $job->get_column($key);
         }
     }
-    push @params, $jobid, $limit, $jobid, $limit, $jobid;
+    push @params, $jobid, $n_limit, $jobid, $p_limit, $jobid;
 
     my $jobs_rs = $self->result_source->schema->resultset('JobNextPrevious')->search(
         {},
