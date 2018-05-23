@@ -1,0 +1,30 @@
+% layout 'bootstrap';
+% content_for 'head' => begin
+  %= asset 'ws_console.js'
+  %= asset 'ws_console.scss'
+% end
+% content_for 'ready_function' => begin
+    setupWebSocketContosle();
+% end
+% title 'WebSocket console';
+%= include 'layouts/info'
+
+<h2>WebSocket console for job <%= $job->name %></h2>
+<form id="ws_console_form" data-url="<%= $ws_url %>" action="#">
+% if ($ws_url) {
+    <p>
+        <input type="text" id="msg" placeholder="enter command">
+    </p>
+    <p>
+        <textarea id="log" readonly></textarea>
+    </p>
+    <p>
+        <input type="checkbox" id="follow_log" checked="checked" />
+        <label for="follow_log">Follow log</label>
+    </p>
+% }
+% else {
+    <p>The command server is not available.</p>
+% }
+</form>
+<p><a href="<%= url_for('test', testid => $job->id) %>">Back to test details</a></p>
