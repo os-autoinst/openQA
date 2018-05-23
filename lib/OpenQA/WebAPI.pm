@@ -217,6 +217,10 @@ sub startup {
     $test_r->get('/asset/#assettype/#assetname')->name('test_asset_name')->to('file#test_asset');
     $test_r->get('/asset/#assettype/#assetname/*subpath')->name('test_asset_name_path')->to('file#test_asset');
 
+    my $developer_auth = $test_r->under('/developer')->to('session#ensure_admin');
+    my $developer_r = $developer_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller');
+    $developer_r->get('/ws-console')->name('developer_ws_console')->to('developer#ws_console');
+
     my $step_r = $test_r->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/)->to(controller => 'step');
     my $step_auth = $test_auth->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/);
     $step_r->get('/view')->to(action => 'view');
