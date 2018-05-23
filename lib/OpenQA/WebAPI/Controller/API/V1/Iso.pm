@@ -182,8 +182,23 @@ sub _generate_jobs {
     # Allow a comma separated list of tests here; whitespaces allowed
     my @tests = $args->{TEST} ? split(/\s*,\s*/, $args->{TEST}) : ();
 
+    # allow filtering by group
+    my $group_id   = delete $args->{_GROUP_ID};
+    my $group_name = delete $args->{_GROUP};
+    if (!defined $group_id && defined $group_name) {
+        my $groups = $self->db->resultset('JobGroups')->search({name => $group_name});
+        my $group = $groups->next or return;
+        $group_id = $group->id;
+    }
+
     for my $product (@products) {
-        my @templates = $product->job_templates;
+        # find job templates
+        my $templates = $product->job_templates;
+        if (defined $group_id) {
+            $templates = $templates->search({group_id => $group_id});
+        }
+        my @templates = $templates->all;
+
         unless (@templates) {
             carp "no templates found for " . join('-', map { $args->{$_} } qw(DISTRI VERSION FLAVOR ARCH));
         }
@@ -216,7 +231,7 @@ sub _generate_jobs {
                 next if $_ eq 'TEST' || $_ eq 'MACHINE';
                 $settings{uc $_} = $args->{$_};
             }
-            # Makes sure tha the DISTRI is lowercase
+            # make sure that the DISTRI is lowercase
             $settings{DISTRI} = lc($settings{DISTRI});
 
             $settings{PRIO}     = $job_template->prio;
