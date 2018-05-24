@@ -163,12 +163,12 @@ Variables are accessible via the *get_var* and *check_var* functions.
 === Capturing kernel exceptions and/or any other exceptions from the serial console
 
 Soft and hard failures can be triggered on demand by regular expressions when they match the
-serial output which is done after the test is executed. To use this functionality the test 
-developer needs to define the patterns to look for in the serial output either in the main.pm 
-or in the test itself. Any pattern change done in a test it will be reflected in the next 
+serial output which is done after the test is executed. To use this functionality the test
+developer needs to define the patterns to look for in the serial output either in the main.pm
+or in the test itself. Any pattern change done in a test it will be reflected in the next
 tests.
 
-The patterns defined in the main.pm will be valid for all the tests. 
+The patterns defined in the main.pm will be valid for all the tests.
 
 [caption="Example: "]
 .Defining serial exception capture in the main.pm
@@ -547,7 +547,7 @@ sub run {
     # any job id can be queried for details with get_job_info()
     # it returns a hash ref containing these keys:
     #   name priority state result worker_id
-    #   retry_avbl t_started t_finished test
+    #   t_started t_finished test
     #   group_id group settings
     my $parent_info = get_job_info($parent_id);
 
@@ -1064,4 +1064,3 @@ avoid them by informing the shell that it is running on a 'dumb' terminal (see
 the SUSE distribution's serial terminal utility library). However some
 programs ignore this, but piping there output into +tee+ is usually enough to
 stop them outputting non-printable characters.
-

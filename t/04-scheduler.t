@@ -149,12 +149,11 @@ my $job_ref = {
     assets => {
         iso => ['whatever.iso'],
     },
-    t_started  => undef,
-    state      => "scheduled",
-    worker_id  => 0,
-    clone_id   => undef,
-    group_id   => undef,
-    retry_avbl => 3,
+    t_started => undef,
+    state     => "scheduled",
+    worker_id => 0,
+    clone_id  => undef,
+    group_id  => undef,
     # to be removed
     test => 'rainbow'
 };
@@ -192,7 +191,6 @@ my $jobs = [
         test       => 'rainbow',
         clone_id   => undef,
         group_id   => undef,
-        retry_avbl => 3,
         settings   => {
             DESKTOP     => "DESKTOP",
             DISTRI      => 'Unicorn',
@@ -222,7 +220,6 @@ my $jobs = [
         test       => 'rainbow',
         clone_id   => undef,
         group_id   => undef,
-        retry_avbl => 3,
         settings   => {
             DESKTOP     => "DESKTOP",
             DISTRI      => 'Unicorn',

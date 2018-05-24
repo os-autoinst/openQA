@@ -143,11 +143,9 @@ is_deeply($job1, $job2, "running job unchanged after cancel");
 my $job3 = job_get(99938)->{clone_id};
 job_get_rs($job3)->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
 $job3 = job_get($job3);
-is($job3->{retry_avbl}, 3, "the retry counter setup ");
 my $round1 = job_get_rs($job3->{id})->auto_duplicate({dup_type_auto => 1});
 ok(defined $round1, "auto-duplicate works");
 $job3 = job_get($round1->id);
-is($job3->{retry_avbl}, 2, "the retry counter decreased");
 # need to change state from scheduled
 $job3 = job_get($round1->id);
 job_get_rs($job3->{id})->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
@@ -155,28 +153,20 @@ $round1->discard_changes;
 my $round2 = $round1->auto_duplicate({dup_type_auto => 1});
 ok(defined $round2, "auto-duplicate works");
 $job3 = job_get($round2->id);
-is($job3->{retry_avbl}, 1, "the retry counter decreased");
 # need to change state from scheduled
 job_get_rs($job3->{id})->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
 $round2->discard_changes;
 my $round3 = $round2->auto_duplicate({dup_type_auto => 1});
 ok(defined $round3, "auto-duplicate works");
 $job3 = job_get($round3->id);
-is($job3->{retry_avbl}, 0, "the retry counter decreased");
 # need to change state from scheduled
 job_get_rs($job3->{id})->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
-my $round4_id;
-stderr_like {
-    $round4_id = job_get_rs($round3->id)->auto_duplicate({dup_type_auto => 1});
-}
-qr/Could not auto-duplicated! The job are auto-duplicated too many times/;
-ok(!defined $round4_id, "no longer auto-duplicating");
+
 # need to change state from scheduled
 $job3 = job_get($round3->id);
 job_get_rs($job3->{id})->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
 my $round5 = job_get_rs($round3->id)->auto_duplicate;
 ok(defined $round5, "manual-duplicate works");
 $job3 = job_get($round5->id);
-is($job3->{retry_avbl}, 1, "the retry counter increased");
 
 done_testing;

@@ -113,6 +113,7 @@ __PACKAGE__->add_columns(
         is_foreign_key => 1,
         is_nullable    => 1
     },
+    # TODO: kill, we no longer support it
     retry_avbl => {
         data_type     => 'integer',
         default_value => 3,
@@ -558,7 +559,7 @@ sub _hashref {
 
 sub to_hash {
     my ($job, %args) = @_;
-    my $j = _hashref($job, qw(id name priority state result clone_id retry_avbl t_started t_finished group_id));
+    my $j = _hashref($job, qw(id name priority state result clone_id t_started t_finished group_id));
     if ($j->{group_id}) {
         $j->{group} = $job->group->name;
     }
@@ -804,8 +805,6 @@ sub duplicate {
         }
     }
 
-    # Copied retry_avbl as default value if the input undefined
-    $args->{retry_avbl} = $self->retry_avbl unless defined $args->{retry_avbl};
     # Code to be executed in a transaction to perform optimistic locking on
     # clone_id
     my $coderef = sub {
@@ -831,8 +830,7 @@ sub duplicate {
                 group_id => $self->group_id,
                 settings => \@new_settings,
                 # assets are re-created in job_grab
-                priority => $args->{prio} || $self->priority,
-                retry_avbl => $args->{retry_avbl},
+                priority => $args->{prio} || $self->priority
             });
         # Perform optimistic locking on clone_id. If the job is not longer there
         # or it already has a clone, rollback the transaction (new_job should
@@ -904,7 +902,7 @@ sub duplicate {
 
 =over
 
-=item Arguments: HASHREF { dup_type_auto => SCALAR, retry_avbl => SCALAR }
+=item Arguments: HASHREF { dup_type_auto => SCALAR }
 
 =item Return value: ID of new job
 
@@ -922,25 +920,6 @@ sub auto_duplicate {
     $args //= {};
     # set this clone was triggered by manually if it's not auto-clone
     $args->{dup_type_auto} //= 0;
-
-    if ($args->{dup_type_auto}) {
-        if (int($self->retry_avbl // 0) > 0) {
-            $args->{retry_avbl} = int($self->retry_avbl) - 1;
-        }
-        else {
-            log_warning('Could not auto-duplicated! The job are auto-duplicated too many times.'
-                  . ' Please restart the job manually.');
-            return;
-        }
-    }
-    else {
-        if (int($self->retry_avbl // 0) > 0) {
-            $args->{retry_avbl} = int($self->retry_avbl);
-        }
-        else {
-            $args->{retry_avbl} = 1;    # set retry_avbl back to 1
-        }
-    }
 
     my %clones = $self->duplicate($args);
     unless (%clones) {
