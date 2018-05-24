@@ -32,7 +32,7 @@ function run_as_normal_user {
         export MOJO_LOG_LEVEL=debug
         export MOJO_TMPDIR=$(mktemp -d)
         export OPENQA_LOGFILE=/tmp/openqa-debug.log
-        sh -c "$*"
+        dbus-run-session -- sh -c "$*"
     else
         echo "Missing depdencies. Please check output above"
     fi

@@ -15,7 +15,7 @@ install: yes
 before_script:
   - docker pull dasantiago/openqa-tests  
 script:
-  - docker run --cap-add SYS_ADMIN -v $TRAVIS_BUILD_DIR:/opt/openqa -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v /var/run/dbus:/var/run/dbus -e FULLSTACK -e UITESTS -e SCHEDULER_FULL_STACK -e GH_PUBLISH dasantiago/openqa-tests make docker-tests
+  - docker run --cap-add SYS_ADMIN -v $TRAVIS_BUILD_DIR:/opt/openqa -v /sys/fs/cgroup:/sys/fs/cgroup:ro -v /var/run/dbus:/var/run/dbus -e FULLSTACK -e UITESTS -e SCHEDULER_FULL_STACK -e GH_PUBLISH dasantiago/openqa-tests "dbus-run-session make docker-tests"
 after_failure:
   - cat /tmp/openqa-debug.log
 after_script: yes
