@@ -42,6 +42,7 @@ use Mojo::File qw(path);
 use POSIX '_exit';
 use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
+use List::Util qw(shuffle uniq sum);
 
 my $sql;
 my $sth;
@@ -303,44 +304,37 @@ like $openqalogs, qr/ andi \$a3, \$t1, 41399 and 256/, "Etag and size are logged
 like $openqalogs, qr/removed.*sle-12-SP3-x86_64-0368-200\@64bit.qcow2*/, "Reclaimed space for new smaller asset";
 truncate_log $logfile;
 
-subtest 'concurrent access' => sub {
-    plan skip_all => "set STRESS_TEST=1 (be careful)" unless exists $ENV{STRESS_TEST} && $ENV{STRESS_TEST} == 1;
+my $tot_proc   = $ENV{STRESS_TEST} ? 60 : 10;
+my $concurrent = $ENV{STRESS_TEST} ? 30 : 2;
+my $q          = queue;
+$q->pool->maximum_processes($concurrent);
+$q->queue->maximum_processes($tot_proc);
+my @test = uniq(map { int(rand(2000)) + 150 } 1 .. ($tot_proc / 2));
+my $sum = sum(@test) + 2000;
+diag "Testing downloading " . (scalar @test) . " assets of ($sum) @test size";
 
-    use List::Util qw(shuffle uniq sum);
-
-    my $tot_proc   = 60;
-    my $concurrent = 30;
-    my $q          = queue;
-    $q->pool->maximum_processes($concurrent);
-    $q->queue->maximum_processes($tot_proc);
-    my @test = uniq(map { int(rand(2000)) + 150 } 1 .. ($tot_proc / 2));
-    my $sum = sum(@test) + 2000;
-    diag "Testing downloading " . (scalar @test) . " assets of ($sum) @test size";
-
-    $q->add(
-        process(
-            sub {
-                srand int time;
-                $cache->limit($sum);
-                $cache->init;
-                $cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200_' . $_ . '@64bit.qcow2')
-                  for shuffle @test;
-            }
-        )->set_pipes(0)->internal_pipes(0)) for 1 .. $tot_proc;
-
-    $q->consume();
-    is $q->done->size, $tot_proc, 'Queue consumed ' . $tot_proc . ' processes';
-
-    $autoinst_log = read_log('autoinst-log.txt');
-
-    is((() = $autoinst_log =~ m/Asset download successful/g), scalar @test, 'Downloaded assets only once')
-      or diag $autoinst_log;
-    is((() = $autoinst_log =~ m/CACHE: Asset download successful to .*sle-12-SP3-x86_64-0368-200_$_\@/g),
-        1, "Successfully downloaded sle-12-SP3-x86_64-0368-200_$_")
-      for @test;
-    is((() = $autoinst_log =~ m/database is locked/ig), 0, '0 Database locks') or diag $autoinst_log;
-    truncate_log 'autoinst-log.txt';
+my $concurrent_test = sub {
+    srand int time;
+    $cache->limit($sum);
+    $cache->init;
+    $cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200_' . $_ . '@64bit.qcow2') for shuffle @test;
 };
+
+$q->add(process($concurrent_test)->set_pipes(0)->internal_pipes(0)) for 1 .. $tot_proc;
+
+$q->consume();
+is $q->done->size, $tot_proc, 'Queue consumed ' . $tot_proc . ' processes';
+
+$autoinst_log = read_log('autoinst-log.txt');
+
+is((() = $autoinst_log =~ m/Asset download successful/g), scalar @test, 'Downloaded assets only once')
+  or diag $autoinst_log;
+is((() = $autoinst_log =~ m/CACHE: Asset download successful to .*sle-12-SP3-x86_64-0368-200_$_\@/g),
+    1, "Successfully downloaded sle-12-SP3-x86_64-0368-200_$_")
+  for @test;
+is((() = $autoinst_log =~ m/database is locked/ig), 0, '0 Database locks') or diag $autoinst_log;
+truncate_log 'autoinst-log.txt';
+
 
 stop_server;
 done_testing();
