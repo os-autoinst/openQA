@@ -122,6 +122,7 @@ package OpenQA::WebAPI::Plugin::Gru::Command::gru;
 use Mojo::Base 'Mojolicious::Command';
 use Mojo::Pg;
 use Minion::Command::minion::job;
+use OpenQA::Utils 'log_error';
 
 has usage       => "usage: $0 gru [-o]\n";
 has description => 'Run a gru to process jobs - give -o to exit _o_nce everything is done';
@@ -164,6 +165,7 @@ sub execute_job {
     };
 
     if (defined $err) {
+        log_error("Gru command issue: $err");
         $self->fail_gru($job->info->{notes}{gru_id} => $err)
           if $job->fail({(output => $buffer) x !!(defined $buffer), error => $err})
           && exists $job->info->{notes}{gru_id};
