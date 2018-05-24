@@ -304,11 +304,12 @@ like $openqalogs, qr/removed.*sle-12-SP3-x86_64-0368-200\@64bit.qcow2*/, "Reclai
 truncate_log $logfile;
 
 subtest 'concurrent access' => sub {
+    plan skip_all => "set STRESS_TEST=1 (be careful)" unless $ENV{STRESS_TEST};
 
     use List::Util qw(shuffle uniq sum);
 
-    my $tot_proc   = $ENV{STRESS_TEST} ? 160 : 40;
-    my $concurrent = $ENV{STRESS_TEST} ? 40  : 20;
+    my $tot_proc   = 60;
+    my $concurrent = 30;
     my $q          = queue;
     $q->pool->maximum_processes($concurrent);
     $q->queue->maximum_processes($tot_proc);
@@ -320,7 +321,6 @@ subtest 'concurrent access' => sub {
         process(
             sub {
                 srand int time;
-                sleep rand int 2 for 1 .. 4;
                 $cache->limit($sum);
                 $cache->init;
                 $cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200_' . $_ . '@64bit.qcow2')
