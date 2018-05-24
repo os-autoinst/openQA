@@ -31,7 +31,6 @@ use Cpanel::JSON::XS;
 use DBI;
 use Mojo::File 'path';
 use Mojo::Base -base;
-use Cwd 'getcwd';
 use POSIX;
 
 has [qw(host cache location db_file dsn dbh cache_real_size)];
