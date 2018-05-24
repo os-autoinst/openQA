@@ -304,7 +304,7 @@ like $openqalogs, qr/removed.*sle-12-SP3-x86_64-0368-200\@64bit.qcow2*/, "Reclai
 truncate_log $logfile;
 
 subtest 'concurrent access' => sub {
-    plan skip_all => "set STRESS_TEST=1 (be careful)" unless $ENV{STRESS_TEST};
+    plan skip_all => "set STRESS_TEST=1 (be careful)" unless exists $ENV{STRESS_TEST} && $ENV{STRESS_TEST} == 1;
 
     use List::Util qw(shuffle uniq sum);
 
@@ -343,10 +343,4 @@ subtest 'concurrent access' => sub {
 };
 
 stop_server;
-
-sub END {
-    stop_server;
-    session->all->each(sub { shift->stop });
-}
-
 done_testing();
