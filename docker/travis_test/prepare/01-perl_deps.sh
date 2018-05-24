@@ -29,7 +29,7 @@ zypper in -y -C 'perl(Archive::Extract)' \
        'perl(DateTime::Format::Pg)' \
        'perl(DateTime::Format::SQLite)' \
        'perl(Devel::Cover)' \
-       'perl(ExtUtils::MakeMaker)>=7.10' \
+       'perl(ExtUtils::MakeMaker)>=7.12' \
        'perl(Exception::Class)' \
        'perl(File::Copy::Recursive)' \
        'perl(IO::Socket::SSL)' \

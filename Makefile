@@ -92,14 +92,23 @@ endif
 docker-tests:
 	if test "x$$FULLSTACK" = x1 || test "x$$SCHEDULER_FULLSTACK" = x1; then \
 		git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst ;\
-		(cd ../os-autoinst && SETUP_FOR_TRAVIS=1 sh autogen.sh && make ) ;\
-					eval $$(dbus-launch --sh-syntax) ;\
-		export PERL5OPT="$$PERL5OPT $$HARNESS_PERL_SWITCHES"; \
+		cd ../os-autoinst ;\
+		cpanm -n --mirror http://no.where/ --installdeps . ;\
+		if [ $$? -eq 0 ]; then\
+			sh autogen.sh && make ;\
+			cd - ;\
+			eval $$(dbus-launch --sh-syntax) ;\
+			export PERL5OPT="$$PERL5OPT $$HARNESS_PERL_SWITCHES" ;\
+		else \
+			echo "OS autoinst dependencies not match. Please check output above" ;\
+			exit 1 ;\
+		fi ;\
 	fi ;\
+	tmp_file=$$(mktemp) ;\
 	if test "x$$FULLSTACK" = x1; then \
-	  perl t/full-stack.t ;\
+	  perl t/full-stack.t | tee $$tmp_file;\
 	elif test "x$$SCHEDULER_FULLSTACK" = x1; then \
-		perl t/05-scheduler-full.t ;\
+		perl t/05-scheduler-full.t | tee $$tmp_file ;\
 	else \
 	  list= ;\
 	  if test "x$$UITESTS" = x1; then \
@@ -108,8 +117,10 @@ docker-tests:
 	    $(MAKE) checkstyle ;\
 	    list=$$(find ./t/ -name *.t | grep -v t/ui | sort ) ;\
 	  fi ;\
-          prove ${PROVE_ARGS} -r $$list ;\
-	fi
+          prove ${PROVE_ARGS} -r $$list | tee $$tmp_file ;\
+	fi ;\
+	tail -n 1 $$tmp_file | grep -o -E "PASS|[[:digit:]]+..[[:digit:]]+" ;\
+	exit $(.SHELLSTATUS)
 
 # ignore tests and test related addons in coverage analysis
 COVER_OPTS ?= -select_re "^/lib" -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement

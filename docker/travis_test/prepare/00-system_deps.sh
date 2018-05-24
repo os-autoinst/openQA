@@ -29,6 +29,8 @@ zypper in -y -C automake \
        patch \
        postgresql-devel \
        qemu \
+       qemu-tools \
+       qemu-kvm \
        tar \
        optipng \
        sqlite3 \
