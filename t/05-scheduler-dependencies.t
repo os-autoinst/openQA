@@ -54,6 +54,7 @@ sub job_get_deps_rs {
     my ($id) = @_;
     my $job
       = $schema->resultset("Jobs")->search({'me.id' => $id}, {prefetch => ['settings', 'parents', 'children']})->first;
+    $job->discard_changes;
     return $job;
 }
 
@@ -146,6 +147,52 @@ for my $i (0 .. 5) {
     is($job->{settings}->{NICVLAN}, 1, 'same vlan for whole group');
 }
 
+my $exp_jobs_to_duplicate = {
+    $jobA->id => {
+        chained_children  => [],
+        chained_parents   => [],
+        parallel_children => [$jobD->id],
+        parallel_parents  => [],
+    },
+    $jobB->id => {
+        chained_children  => [],
+        chained_parents   => [],
+        parallel_children => [$jobC->id],
+        parallel_parents  => [],
+    },
+    $jobC->id => {
+        chained_children  => [],
+        chained_parents   => [],
+        parallel_children => [$jobE->id, $jobF->id],
+        parallel_parents  => [$jobB->id],
+    },
+    $jobD->id => {
+        chained_children  => [],
+        chained_parents   => [],
+        parallel_children => [$jobE->id],
+        parallel_parents  => [$jobA->id],
+    },
+    $jobE->id => {
+        chained_children  => [],
+        chained_parents   => [],
+        parallel_children => [],
+        parallel_parents  => [$jobC->id, $jobD->id],
+    },
+    $jobF->id => {
+        chained_children  => [],
+        chained_parents   => [],
+        parallel_children => [],
+        parallel_parents  => [$jobC->id],
+    },
+};
+# it shouldn't matter which job we ask - they should all restart the same cluster
+is_deeply($jobA->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job A has proper infos");
+is_deeply($jobB->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job B has proper infos");
+is_deeply($jobC->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job C has proper infos");
+is_deeply($jobD->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job D has proper infos");
+is_deeply($jobE->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job E has proper infos");
+is_deeply($jobF->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job F has proper infos");
+
 # jobA failed
 my $result = $jobA->done(result => 'failed');
 is($result, 'failed', 'job_set_done');
@@ -192,17 +239,17 @@ $t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$
 $t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => []);
 $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id]);
 
-# duplicate jobF, parents are duplicated too
+# duplicate jobF, the full cluster is duplicated too
 my $id = $jobF->auto_duplicate;
 ok(defined $id, "duplicate works");
 
-$job = job_get_deps($jobA->id);    #unchanged
-is($job->{state},    "done",   "no change");
-is($job->{result},   "failed", "no change");
-is($job->{clone_id}, undef,    "no clones");
+$job = job_get_deps($jobA->id);    # cloned
+is($job->{state},  "done",   "no change");
+is($job->{result}, "failed", "no change");
+ok(defined $job->{clone_id}, "cloned");
 
 $job = job_get_deps($jobB->id);    # cloned
-is($job->{state}, "running", "no change");
+is($job->{result}, "parallel_restarted", "B stopped");
 ok(defined $job->{clone_id}, "cloned");
 my $jobB2 = $job->{clone_id};
 
@@ -211,15 +258,15 @@ is($job->{state}, "running", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobC2 = $job->{clone_id};
 
-$job = job_get_deps($jobD->id);    #unchanged
-is($job->{state},    "done",            "no change");
-is($job->{result},   "parallel_failed", "no change");
-is($job->{clone_id}, undef,             "no clones");
+$job = job_get_deps($jobD->id);    # cloned
+is($job->{state},  "done",            "no change");
+is($job->{result}, "parallel_failed", "no change");
+ok(defined $job->{clone_id}, "cloned");
 
-$job = job_get_deps($jobE->id);    #unchanged
-is($job->{state},    "done",            "no change");
-is($job->{result},   "parallel_failed", "no change");
-is($job->{clone_id}, undef,             "no clones");
+$job = job_get_deps($jobE->id);    # cloned
+is($job->{state},  "done",            "no change");
+is($job->{result}, "parallel_failed", "no change");
+ok(defined $job->{clone_id}, "cloned");
 
 $job = job_get_deps($jobF->id);    # cloned
 is($job->{state}, "running", "no change");
@@ -245,38 +292,20 @@ $t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$
 $t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => []);
 $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id]);
 
-# now we have:
-# A <--- D <--- E
-# done   done   done
-#              /
-# B <--- C <--/
-# run    run
-#        ^
-#        \--- F
-#             run
-#
-# B2 <--- C2 <--- F2
-# sch     sch     sch
-
-# now duplicate jobE, parents A, D have to be duplicated,
-# C2 is scheduled so it can be used as parent of E2 without duplicating
-$id = $jobE->auto_duplicate;
-ok(defined $id, "duplicate works");
-
-$job = job_get_deps($jobA->id);    #cloned
+$job = job_get_deps($jobA->id);    # cloned
 is($job->{state},  "done",   "no change");
 is($job->{result}, "failed", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobA2 = $job->{clone_id};
 
 $job = job_get_deps($jobB->id);    # unchanged
-is($job->{state},    "running", "no change");
-is($job->{clone_id}, $jobB2,    "cloned");
-
+is($job->{result}, "parallel_restarted", "B is restarted");
+is($job->{clone_id}, $jobB2, "cloned");
 
 $job = job_get_deps($jobC->id);    # unchanged
-is($job->{state},    "running", "no change");
-is($job->{clone_id}, $jobC2,    "cloned");
+is($job->{state},    "running",            "no change");
+is($job->{result},   "parallel_restarted", "C is restarted");
+is($job->{clone_id}, $jobC2,               "cloned");
 
 $job = job_get_deps($jobD->id);    #cloned
 is($job->{state},  "done",            "no change");

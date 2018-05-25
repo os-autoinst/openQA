@@ -675,45 +675,46 @@ sub create_clones {
     my ($self, $jobs, $prio) = @_;
 
     my $rset = $self->result_source->resultset;
+    my %clones;
 
     # first create the clones
     for my $job (keys %$jobs) {
 
         my $res = $rset->find($job)->create_clone;
-        $jobs->{$job}->{clone} = $res;
+        $clones{$job} = $res;
     }
 
     # now create dependencies
     for my $job (keys %$jobs) {
         my $info = $jobs->{$job};
-        my $res  = $info->{clone};
+        my $res  = $clones{$job};
 
         # recreate dependencies if exists for cloned parents/children
-        for my $p (@{$info->{parents}}) {
+        for my $p (@{$info->{parallel_parents}}) {
             $res->parents->find_or_create(
                 {
-                    parent_job_id => $jobs->{$p}->{clone}->id,
+                    parent_job_id => $clones{$p}->id,
                     dependency    => OpenQA::Schema::Result::JobDependencies->PARALLEL,
                 });
         }
-        for my $p (@{$info->{TODO_not_parents_chained}}) {
+        for my $p (@{$info->{chained_parents}}) {
             $res->parents->find_or_create(
                 {
-                    parent_job_id => $jobs->{$p}->{clone}->id,
+                    parent_job_id => $clones{$p}->id,
                     dependency    => OpenQA::Schema::Result::JobDependencies->CHAINED,
                 });
         }
         for my $c (@{$info->{parallel_children}}) {
             $res->children->find_or_create(
                 {
-                    child_job_id => $jobs->{$c}->{clone}->id,
+                    child_job_id => $clones{$c}->id,
                     dependency   => OpenQA::Schema::Result::JobDependencies->PARALLEL,
                 });
         }
         for my $c (@{$info->{chained_children}}) {
             $res->children->find_or_create(
                 {
-                    child_job_id => $jobs->{$c}->{clone}->id,
+                    child_job_id => $clones{$c}->id,
                     dependency   => OpenQA::Schema::Result::JobDependencies->CHAINED,
                 });
         }
@@ -723,7 +724,7 @@ sub create_clones {
     }
     # reduce the clone object to ID (easier to use later on)
     for my $job (keys %$jobs) {
-        $jobs->{$job}->{clone} = $jobs->{$job}->{clone}->id;
+        $jobs->{$job}->{clone} = $clones{$job}->id;
     }
 }
 
@@ -734,7 +735,11 @@ sub jobs_to_duplicate {
 
     $jobs ||= {};
     return $jobs if defined $jobs->{$self->id};
-    $jobs->{$self->id} = {parents => [], chained_children => [], parallel_children => []};
+    $jobs->{$self->id} = {
+        parallel_parents  => [],
+        chained_parents   => [],
+        parallel_children => [],
+        chained_children  => []};
 
     ## if we have a parallel parent, go up recursively
     my $parents = $self->parents;
@@ -744,9 +749,10 @@ sub jobs_to_duplicate {
         while ($p->clone) {
             $p = $p->clone;
         }
+
+        push(@{$jobs->{$self->id}->{parallel_parents}}, $p->id);
         # we don't duplicate up the chain, only down
         next if $pd->dependency eq OpenQA::Schema::Result::JobDependencies->CHAINED;
-        push(@{$jobs->{$self->id}->{parents}}, $p->id);
         $p->jobs_to_duplicate($jobs);
     }
 
@@ -801,7 +807,6 @@ for PARALLEL dependencies:
  + if parent is clone, find the latest clone and clone it
 - clone children
  + if clone state is SCHEDULED, route child to us (remove original dependency)
- + if child is DONE, ignore. Dependency is transitivelly preserved by depending on parent's clone's origin
  + if child is clone, find the latest clone and clone it
 
 for CHAINED dependencies:
@@ -831,7 +836,7 @@ sub duplicate {
         log_debug("rollback duplicate: $error");
         die "Rollback failed during failed job cloning!"
           if ($error =~ /Rollback failed/);
-        return undef;
+        $jobs = undef;
     };
 
     return $jobs;
@@ -866,13 +871,11 @@ sub auto_duplicate {
         log_debug('duplication failed');
         return;
     }
-    print STDERR dump($clones) . "\n";
-    my @originals = keys %$clones;
-    # abort jobs restarted because of dependencies (exclude the original $args->{jobid})
+    # abort jobs in the old cluster
     my $rsource = $self->result_source;
     my $jobs    = $rsource->schema->resultset("Jobs")->search(
         {
-            id    => {'!=' => $self->id, '-in' => \@originals},
+            id    => {'-in' => [keys %$clones]},
             state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         });
 
