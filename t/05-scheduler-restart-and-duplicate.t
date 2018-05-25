@@ -69,6 +69,16 @@ ok(!defined $job, "duplication rejected");
 
 $job1 = job_get(99926);
 is($job1->{state}, OpenQA::Schema::Result::Jobs::DONE, 'trying to duplicate done job');
+is_deeply(
+    job_get_rs(99926)->jobs_to_duplicate,
+    {
+        '99926' => {
+            'parallel_children' => [],
+            'chained_children'  => [],
+            'parents'           => []}
+    },
+    '99926 has no siblings'
+);
 $job = job_get_rs(99926)->auto_duplicate;
 ok(defined $job, "duplication works");
 isnt($job->id, $job1->{id}, 'clone id is different than original job id');
@@ -107,8 +117,23 @@ $job1 = job_get(99927);
 job_get_rs(99927)->cancel;
 $job1 = job_get(99927);
 is($job1->{state}, 'cancelled', "scheduled job cancelled after cancel");
-
+is_deeply(
+    job_get_rs(99937)->jobs_to_duplicate,
+    {
+        '99937' => {
+            'chained_children'  => [99938],
+            'parents'           => [],
+            'parallel_children' => []
+        },
+        '99938' => {
+            'parallel_children' => [],
+            'parents'           => [],
+            'chained_children'  => []}
+    },
+    '99937 has one chained child'
+);
 $job1 = job_get(99937);
+
 @ret  = OpenQA::Resource::Jobs::job_restart(99937);
 $job2 = job_get(99937);
 
@@ -128,7 +153,21 @@ $jobs = list_jobs();
 is(@$jobs, @$current_jobs + 2, "two more job after restarting done job with chained child dependency");
 
 $current_jobs = $jobs;
-
+is_deeply(
+    job_get_rs(99963)->jobs_to_duplicate,
+    {
+        '99963' => {
+            'parents'           => [99961],
+            'chained_children'  => [],
+            'parallel_children' => []
+        },
+        '99961' => {
+            'parallel_children' => [99963],
+            'chained_children'  => [],
+            'parents'           => []}
+    },
+    '99963 has one parallel parent'
+);
 OpenQA::Resource::Jobs::job_restart(99963);
 
 $jobs = list_jobs();
