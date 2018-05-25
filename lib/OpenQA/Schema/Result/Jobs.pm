@@ -644,7 +644,8 @@ sub create_clone {
         }
     }
 
-    my $new_job = $self->result_source->resultset->create(
+    my $rset    = $self->result_source->resultset;
+    my $new_job = $rset->create(
         {
             TEST     => $self->TEST,
             VERSION  => $self->VERSION,
@@ -661,10 +662,11 @@ sub create_clone {
     # Perform optimistic locking on clone_id. If the job is not longer there
     # or it already has a clone, rollback the transaction (new_job should
     # not be created, somebody else was faster at cloning)
-    my $upd = $self->result_source->resultset->search({clone_id => undef, id => $self->id})
-      ->update({clone_id => $new_job->id});
+    my $upd = $rset->search({clone_id => undef, id => $self->id})->update({clone_id => $new_job->id});
 
     die('There is already a clone!') unless ($upd == 1);    # One row affected
+                                                            # Needed to load default values from DB
+    $new_job->discard_changes;
     return $new_job;
 }
 
@@ -706,8 +708,7 @@ for CHAINED dependencies:
 sub duplicate {
     my ($self, $args) = @_;
     $args ||= {};
-    my $rsource = $self->result_source;
-    my $schema  = $rsource->schema;
+    my $schema = $self->result_source->schema;
 
     # If the job already has a clone, none is created
     return unless $self->can_be_duplicated;
@@ -860,7 +861,6 @@ sub duplicate {
 
     try {
         $res = $schema->txn_do(sub { $self->create_clone($args->{prio}) });
-        $res->discard_changes;    # Needed to load default values from DB
     }
     catch {
         my $error = shift;
