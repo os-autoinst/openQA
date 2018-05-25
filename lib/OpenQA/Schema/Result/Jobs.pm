@@ -750,10 +750,15 @@ sub jobs_to_duplicate {
             $p = $p->clone;
         }
 
-        push(@{$jobs->{$self->id}->{parallel_parents}}, $p->id);
-        # we don't duplicate up the chain, only down
-        next if $pd->dependency eq OpenQA::Schema::Result::JobDependencies->CHAINED;
-        $p->jobs_to_duplicate($jobs);
+        if ($pd->dependency eq OpenQA::Schema::Result::JobDependencies->CHAINED) {
+            push(@{$jobs->{$self->id}->{chained_parents}}, $p->id);
+            # we don't duplicate up the chain, only down
+            next;
+        }
+        else {
+            push(@{$jobs->{$self->id}->{parallel_parents}}, $p->id);
+            $p->jobs_to_duplicate($jobs);
+        }
     }
 
     return $self->jobs_to_duplicate_children($jobs);
@@ -803,17 +808,14 @@ duplication detected by the optimistic locking), the method returns undef.
 Rules for dependencies cloning are:
 for PARALLEL dependencies:
 - clone parents
- + if parent state is SCHEDULED, just create dependency
  + if parent is clone, find the latest clone and clone it
 - clone children
- + if clone state is SCHEDULED, route child to us (remove original dependency)
  + if child is clone, find the latest clone and clone it
 
 for CHAINED dependencies:
 - do NOT clone parents
  + create new dependency - duplicit cloning is prevented by ignorelist, webui will show multiple chained deps though
 - clone children
- + if clone state is SCHEDULED, route child to us (remove original dependency)
  + if child is clone, find the latest clone and clone it
 
 =cut
@@ -876,22 +878,28 @@ sub auto_duplicate {
     my $jobs    = $rsource->schema->resultset("Jobs")->search(
         {
             id    => {'-in' => [keys %$clones]},
-            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
+            state => [PRE_EXECUTION_STATES, EXECUTION_STATES],
         });
 
     $jobs->search(
         {
-            result => OpenQA::Schema::Result::Jobs::NONE,
+            result => NONE,
         }
     )->update(
         {
-            result => OpenQA::Schema::Result::Jobs::PARALLEL_RESTARTED,
+            result => PARALLEL_RESTARTED,
         });
 
     while (my $j = $jobs->next) {
-        next unless $j->worker;
-        log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
-        $j->worker->send_command(command => 'abort', job_id => $j->id);
+        if ($j->worker) {
+            log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
+            $j->worker->send_command(command => 'abort', job_id => $j->id);
+        }
+        else {
+            if ($j->state eq SCHEDULED) {
+                $j->update({state => SKIPPED});
+            }
+        }
     }
 
     log_debug('new job ' . $clones->{$self->id}->{clone});

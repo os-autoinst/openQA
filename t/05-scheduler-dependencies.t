@@ -401,12 +401,17 @@ $jobX->discard_changes;
 # X <---- Y
 # done    sch.
 
-# when Y is scheduled and X is duplicated, Y must be rerouted to depend on X now
+is_deeply($jobY->to_hash(deps => 1)->{parents}, { Chained => [$jobX->id], Parallel => [] }, "JobY parents fit");
+# when Y is scheduled and X is duplicated, Y must be cancelled and Y2 needs to depend on X2
 my $jobX2 = $jobX->auto_duplicate;
 $jobY->discard_changes;
-is($jobX2->id,    $jobY->parents->single->parent_job_id, 'jobY parent is now jobX clone');
+is($jobY->state, "skipped", "jobY was skipped");
+my $jobY2 = $jobY->clone;
+ok(defined $jobY2, "jobY was cloned too");
+is_deeply($jobY2->to_hash(deps => 1)->{parents}, { Chained => [$jobX2->id], Parallel => [] }, "JobY parents fit");
+is($jobX2->id,    $jobY2->parents->single->parent_job_id, 'jobY2 parent is now jobX clone');
 is($jobX2->clone, undef,                                 "no clone");
-is($jobY->clone,  undef,                                 "no clone");
+is($jobY2->clone,  undef,                                 "no clone");
 
 # current state:
 # X
@@ -416,30 +421,14 @@ is($jobY->clone,  undef,                                 "no clone");
 # sch.    sch.
 
 ok($jobX2->done(result => 'passed'), 'jobX2 set to done');
-ok($jobY->done(result => 'passed'), 'jobY set to done');
+ok($jobY2->done(result => 'passed'), 'jobY set to done');
 
 # current state:
-# X
-# done
+# X <---- Y
+# done    skipped
 #
-# X2 <---- Y
-# done    done
-
-my $jobY2 = $jobY->auto_duplicate;
-
-# current state:
-# X
-# done
-#
-#       /-- Y done
-#    <-/
 # X2 <---- Y2
-# done    sch.
-
-is_deeply($jobY2->to_hash(deps => 1)->{parents}, {Chained => [$jobX2->id], Parallel => []},
-    'jobY2 parent is now jobX2');
-is($jobX2->{clone_id}, undef, "X no clone");
-is($jobY2->clone_id,   undef, "Y no clone");
+# done    done
 
 ok($jobY2->done(result => 'passed'), 'jobY2 set to done');
 
