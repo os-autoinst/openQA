@@ -34,9 +34,10 @@ use Test::Warnings;
 OpenQA::Test::Database->new->create();
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $minimalx = $t->app->db->resultset("Jobs")->find({id => 99926});
-my %clones   = $minimalx->duplicate();
-my $clone    = $clones{$minimalx->id};
+my $rset     = $t->app->db->resultset("Jobs");
+my $minimalx = $rset->find(99926);
+my $clones   = $minimalx->duplicate();
+my $clone    = $rset->find($clones->{$minimalx->id}->{clone});
 
 isnt($clone->id, $minimalx->id, "is not the same job");
 is($clone->TEST,     "minimalx",  "but is the same test");
@@ -60,8 +61,8 @@ is($minimalx->duplicate, undef, "cannot clone after reloading");
 
 # But cloning the clone should be possible after job state change
 $clone->state(OpenQA::Schema::Result::Jobs::CANCELLED);
-%clones = $clone->duplicate({prio => 35});
-my $second = $clones{$clone->id};
+$clones = $clone->duplicate({prio => 35});
+my $second = $rset->find($clones->{$clone->id}->{clone});
 is($second->TEST,     "minimalx", "same test again");
 is($second->priority, 35,         "with adjusted priority");
 

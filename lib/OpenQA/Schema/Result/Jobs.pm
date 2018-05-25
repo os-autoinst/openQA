@@ -678,14 +678,13 @@ sub create_clones {
     my %clones;
 
     # first create the clones
-    for my $job (keys %$jobs) {
-
-        my $res = $rset->find($job)->create_clone;
+    for my $job (sort keys %$jobs) {
+        my $res = $rset->find($job)->create_clone($prio);
         $clones{$job} = $res;
     }
 
     # now create dependencies
-    for my $job (keys %$jobs) {
+    for my $job (sort keys %$jobs) {
         my $info = $jobs->{$job};
         my $res  = $clones{$job};
 
@@ -698,9 +697,11 @@ sub create_clones {
                 });
         }
         for my $p (@{$info->{chained_parents}}) {
+            # normally we don't clone chained parents, but you never know
+            $p = $clones{$p}->id if defined $clones{$p};
             $res->parents->find_or_create(
                 {
-                    parent_job_id => $clones{$p}->id,
+                    parent_job_id => $p,
                     dependency    => OpenQA::Schema::Result::JobDependencies->CHAINED,
                 });
         }
@@ -829,7 +830,6 @@ sub duplicate {
 
     my $jobs = $self->jobs_to_duplicate;
     log_debug("Jobs to duplicate " . dump($jobs));
-
     try {
         $schema->txn_do(sub { $self->create_clones($jobs, $args->{prio}) });
     }
@@ -873,11 +873,11 @@ sub auto_duplicate {
         log_debug('duplication failed');
         return;
     }
-    # abort jobs in the old cluster
+    # abort jobs in the old cluster (exclude the original $args->{jobid})
     my $rsource = $self->result_source;
     my $jobs    = $rsource->schema->resultset("Jobs")->search(
         {
-            id    => {'-in' => [keys %$clones]},
+            id    => {'!=' => $self->id,    '-in' => [keys %$clones]},
             state => [PRE_EXECUTION_STATES, EXECUTION_STATES],
         });
 

@@ -73,9 +73,11 @@ is_deeply(
     job_get_rs(99926)->jobs_to_duplicate,
     {
         '99926' => {
+            'parallel_parents'  => [],
+            'chained_parents'   => [],
             'parallel_children' => [],
             'chained_children'  => [],
-            'parents'           => []}
+        }
     },
     '99926 has no siblings'
 );
@@ -122,12 +124,14 @@ is_deeply(
     {
         '99937' => {
             'chained_children'  => [99938],
-            'parents'           => [],
+            'parallel_parents'  => [],
+            'chained_parents'   => [],
             'parallel_children' => []
         },
         '99938' => {
             'parallel_children' => [],
-            'parents'           => [],
+            'parallel_parents'  => [],
+            'chained_parents'   => [99937],
             'chained_children'  => []}
     },
     '99937 has one chained child'
@@ -157,14 +161,16 @@ is_deeply(
     job_get_rs(99963)->jobs_to_duplicate,
     {
         '99963' => {
-            'parents'           => [99961],
+            'parallel_parents'  => [99961],
+            'chained_parents'   => [],
             'chained_children'  => [],
             'parallel_children' => []
         },
         '99961' => {
             'parallel_children' => [99963],
             'chained_children'  => [],
-            'parents'           => []}
+            'chained_parents'   => [],
+            'parallel_parents'  => []}
     },
     '99963 has one parallel parent'
 );
