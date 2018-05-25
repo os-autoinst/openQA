@@ -617,6 +617,57 @@ sub can_be_duplicated {
     return 1;
 }
 
+
+=head2 create_clone
+
+=over
+
+=item Arguments: none
+
+=item Return value: new job
+
+=back
+
+Internal function, needs to be executed in a transaction to perform
+optimistic locking on clone_id
+=cut
+sub create_clone {
+    my ($self, $prio) = @_;
+
+    # Duplicate settings (except NAME and TEST and JOBTOKEN)
+    my @new_settings;
+    my $settings = $self->settings;
+
+    while (my $js = $settings->next) {
+        unless ($js->key =~ /^(NAME|TEST|JOBTOKEN)$/) {
+            push @new_settings, {key => $js->key, value => $js->value};
+        }
+    }
+
+    my $new_job = $self->result_source->resultset->create(
+        {
+            TEST     => $self->TEST,
+            VERSION  => $self->VERSION,
+            ARCH     => $self->ARCH,
+            FLAVOR   => $self->FLAVOR,
+            MACHINE  => $self->MACHINE,
+            BUILD    => $self->BUILD,
+            DISTRI   => $self->DISTRI,
+            group_id => $self->group_id,
+            settings => \@new_settings,
+            # assets are re-created in job_grab
+            priority => $prio || $self->priority
+        });
+    # Perform optimistic locking on clone_id. If the job is not longer there
+    # or it already has a clone, rollback the transaction (new_job should
+    # not be created, somebody else was faster at cloning)
+    my $upd = $self->result_source->resultset->search({clone_id => undef, id => $self->id})
+      ->update({clone_id => $new_job->id});
+
+    die('There is already a clone!') unless ($upd == 1);    # One row affected
+    return $new_job;
+}
+
 =head2 duplicate
 
 =over
@@ -805,47 +856,11 @@ sub duplicate {
         }
     }
 
-    # Code to be executed in a transaction to perform optimistic locking on
-    # clone_id
-    my $coderef = sub {
-        # Duplicate settings (except NAME and TEST and JOBTOKEN)
-        my @new_settings;
-        my $settings = $self->settings;
-
-        while (my $js = $settings->next) {
-            unless ($js->key =~ /^(NAME|TEST|JOBTOKEN)$/) {
-                push @new_settings, {key => $js->key, value => $js->value};
-            }
-        }
-
-        my $new_job = $rsource->resultset->create(
-            {
-                TEST     => $self->TEST,
-                VERSION  => $self->VERSION,
-                ARCH     => $self->ARCH,
-                FLAVOR   => $self->FLAVOR,
-                MACHINE  => $self->MACHINE,
-                BUILD    => $self->BUILD,
-                DISTRI   => $self->DISTRI,
-                group_id => $self->group_id,
-                settings => \@new_settings,
-                # assets are re-created in job_grab
-                priority => $args->{prio} || $self->priority
-            });
-        # Perform optimistic locking on clone_id. If the job is not longer there
-        # or it already has a clone, rollback the transaction (new_job should
-        # not be created, somebody else was faster at cloning)
-        my $upd = $rsource->resultset->search({clone_id => undef, id => $self->id})->update({clone_id => $new_job->id});
-
-        die('There is already a clone!') unless ($upd == 1);    # One row affected
-        return $new_job;
-    };
-
     my $res;
 
     try {
-        $res = $schema->txn_do($coderef);
-        $res->discard_changes;                                  # Needed to load default values from DB
+        $res = $schema->txn_do(sub { $self->create_clone($args->{prio}) });
+        $res->discard_changes;    # Needed to load default values from DB
     }
     catch {
         my $error = shift;
