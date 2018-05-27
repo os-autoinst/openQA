@@ -703,7 +703,9 @@ for example <code>wait_screen_change</code> or <code>wait_still_screen</code>.</
 </div>
 </div>
 <div class="paragraph">
-<p>Returns true if last matched needle has <code>$tag</code> else return <code>undef</code>.</p>
+<p>Returns true (1) if last matched needle has <code>$tag</code>, false (0) if last
+matched needle does not have <code>$tag</code>, and <code>undef</code> if no needle has yet
+been matched at the time of the call.</p>
 </div>
 </div>
 <div class="sect4">
@@ -1787,7 +1789,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-05-25 14:57:34 UTC
+Last updated 2018-05-27 14:55:17 UTC
 </div>
 </div>
 </body>
