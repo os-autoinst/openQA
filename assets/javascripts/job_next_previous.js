@@ -1,9 +1,15 @@
 function setupJobNextPrevious() {
+    var params = parseQueryParams();
     var table = $('#job_next_previous_table').DataTable({
         ajax: {
             url: $('#job_next_previous_table').data('ajax-url'),
             data: function ( d ) {
-                d.limit = $('#limit_num').val();
+                if (typeof params.previous_limit != 'undefined') {
+                    d.previous_limit = params.previous_limit.toString();
+                }
+                if (typeof params.next_limit != 'undefined') {
+                    d.next_limit = params.next_limit.toString();
+                }
             }
         },
         paging: true,
@@ -28,7 +34,14 @@ function setupJobNextPrevious() {
             },
             {targets: 2, render: renderBuild},
             {targets: 3, render: renderFinishTime},
-        ]
+        ],
+        initComplete: function (settings, json) {
+            // Seems an issue in case of displayStart is not an integer multiple of the pageLength
+            // Caculate and start the page with current job
+            var current_index = json.data.map(function(n) {return n.iscurrent;}).indexOf(1);
+            var page = Math.min(Math.max(0, Math.floor(current_index / table.page.len())), table.page.info().pages);
+            table.page(page).draw('page');
+        }
     });
     $('#job_next_previous_table').on('draw.dt', function (){
         setupLazyLoadingFailedSteps();
@@ -144,12 +157,4 @@ function triggerJobNextPrevious() {
             setupJobNextPrevious();
         }
     }
-
-    $('#limit_num').on('change', function() {
-        if ($.fn.dataTable.isDataTable('#job_next_previous_table')) {
-            var table = $('#job_next_previous_table').DataTable();
-            table.destroy();
-        }
-        setupJobNextPrevious();
-    });
 }

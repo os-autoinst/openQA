@@ -12,20 +12,7 @@
     </div>
     <div class="col-6 col-md-4">
         <div class="float-right">
-            <span>Limit </span>
-            <select id="limit_num">
-                <option value="10">10</option>
-                <option value="20">20</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="400">400</option>
-            </select>
-            <span>for both next &amp; previous</span>
             <% my $content = '
-                    <p>
-                        Select the limit number to customize job next & previous results search. The number is limited for both valid (eg. passed, failed and softfailed)
-                        next and previous results of current job. The limit is 10 by default.
-                    </p>
                     <p>
                         Next & previous results table presents in following form:
                         <ul>
@@ -38,6 +25,9 @@
                             <li>...</li>
                             <li>...</li>
                         </ul>
+                    </p>
+                    <p>
+                        By default up to 400 previous jobs and 100 next jobs would be shown in the table.
                     </p>';
                 %>
                 %= help_popover 'Help for Next & previous results' => $content, undef, undef, 'top'

@@ -116,13 +116,6 @@ is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99946')
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99945')}, 1, 'found previous job 99945');
 is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99944')}, 1, 'found previous job 99944');
 
-# select limit from list for both of next and previous to render results table
-$driver->find_element_by_xpath("//select[\@id='limit_num']/option[2]")->click();
-wait_for_ajax();
-is(scalar @{$driver->find_elements('#job_next_previous_table tbody tr', 'css')},
-    4, 'job next and previous with limit list selected of 99947');
-is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99944')}, 1, 'found previous job 99944');
-
 #check build links to overview page
 $driver->find_element_by_link_text('0091')->click();
 is(
@@ -195,6 +188,34 @@ is(scalar @{$driver->find_elements('#job_next_previous_table tbody tr', 'css')},
 $job99947 = $driver->find_element('#job_next_previous_table #job_result_99947');
 @tds = $driver->find_child_elements($job99947, 'td');
 is((shift @tds)->get_text(), 'C&L', '99947 is current and the latest job');
+
+# check limit with query parameters of job next & previous
+$driver->get('/tests/99947?previous_limit=1#next_previous');
+wait_for_ajax();
+is(scalar @{$driver->find_elements('#job_next_previous_table tbody tr', 'css')},
+    2, 'only 1 previous of 99947 and itself shown');
+is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99947')}, 1, 'found current job 99947');
+is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99946')}, 1, 'found previous job 99946');
+
+$driver->get('/tests/99944?next_limit=1#next_previous');
+wait_for_ajax();
+is(scalar @{$driver->find_elements('#job_next_previous_table tbody tr', 'css')},
+    3, 'only 1 next, current and the latest shown');
+is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99944')}, 1, 'found current job 99944');
+is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99945')}, 1, 'found only 1 next job 99945');
+is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99947')}, 1, 'found the latest job 99947');
+
+$driver->get('/tests/99945?previous_limit=0&next_limit=0#next_previous');
+wait_for_ajax();
+is(scalar @{$driver->find_elements('#job_next_previous_table tbody tr', 'css')}, 2,
+    'only current and the latest shown');
+is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99945')}, 1, 'found current job 99945');
+is(scalar @{$driver->find_elements('#job_next_previous_table #job_result_99947')}, 1, 'found the latest job 99947');
+
+$driver->get('/tests/latest?previous_limit=1&next_limit=1#next_previous');
+wait_for_ajax();
+is(scalar @{$driver->find_elements('#job_next_previous_table tbody tr', 'css')},
+    1, 'job next and previous of the latest job - 99981');
 
 kill_driver();
 done_testing();

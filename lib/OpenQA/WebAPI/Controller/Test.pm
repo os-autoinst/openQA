@@ -281,8 +281,10 @@ sub job_next_previous_ajax {
 
     my $job     = $self->get_current_job;
     my $jobid   = $job->id;
-    my $limit   = $self->param('limit') || 10;
-    my $jobs_rs = $self->db->resultset("Jobs")->next_previous_jobs_query($job, $jobid, limit => $limit);
+    my $p_limit = $self->param('previous_limit') // 400;
+    my $n_limit = $self->param('next_limit') // 100;
+    my $jobs_rs = $self->db->resultset("Jobs")
+      ->next_previous_jobs_query($job, $jobid, previous_limit => $p_limit, next_limit => $n_limit);
     my (@jobs, @data);
     my $latest = 1;
     while (my $each = $jobs_rs->next) {
