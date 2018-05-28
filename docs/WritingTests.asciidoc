@@ -977,7 +977,7 @@ settings. This script is located at +/usr/share/openqa/script/+.
 --------------------------------------------------------------------------------
 
 If you do not want a cloned job to start up in the same job group as the job
-you cloned from, e.g. to not pollute build results you the job group can be
+you cloned from, e.g. to not pollute build results, the job group can be
 overwritten, too, using the special variable +_GROUP+. Add the quoted group
 name, e.g.:
 
