@@ -3822,7 +3822,7 @@ with given ID already finished, mutex_lock() calls die.</p>
     <span class="tok-c1"># any job id can be queried for details with get_job_info()</span>
     <span class="tok-c1"># it returns a hash ref containing these keys:</span>
     <span class="tok-c1">#   name priority state result worker_id</span>
-    <span class="tok-c1">#   retry_avbl t_started t_finished test</span>
+    <span class="tok-c1">#   t_started t_finished test</span>
     <span class="tok-c1">#   group_id group settings</span>
     <span class="tok-k">my</span> <span class="tok-nv">$parent_info</span> <span class="tok-o">=</span> <span class="tok-n">get_job_info</span><span class="tok-p">(</span><span class="tok-nv">$parent_id</span><span class="tok-p">);</span>
 
@@ -5820,7 +5820,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-05-27 14:54:07 UTC
+Last updated 2018-05-28 14:10:43 UTC
 </div>
 </div>
 </body>
