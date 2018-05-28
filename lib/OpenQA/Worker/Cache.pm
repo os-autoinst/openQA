@@ -148,7 +148,6 @@ sub download_asset {
                     # Don't spam the webui, update only every 5 seconds
                     if (time - $last_updated > 5) {
                         update_setup_status;
-                        $self->toggle_asset_lock($asset, 1);
                         $last_updated = time;
                         if ($progress < $current) {
                             $progress = $current;
@@ -162,7 +161,7 @@ sub download_asset {
     my $code = ($tx->res->code) ? $tx->res->code : 521;    # Used by cloudflare to indicate web server is down.
     my $size;
     if ($code eq 304) {
-        if ($self->toggle_asset_lock($asset, 0)) {
+        if ($self->_update_asset_last_use($asset)) {
             log_debug("CACHE: Content has not changed, not downloading the $asset but updating last use");
         }
         else {
@@ -171,14 +170,9 @@ sub download_asset {
         }
     }
     elsif ($tx->res->is_server_error) {
-        if ($self->toggle_asset_lock($asset, 0)) {
-            log_debug("CACHE: Could not download the asset, triggering a retry for $code.");
-            $asset = $code;
-        }
-        else {
-            log_debug("CACHE: Abnormal situation, server error. Retrying download");
-            $asset = $code;
-        }
+        log_debug("CACHE: Could not download the asset, triggering a retry for $code.");
+        log_debug("CACHE: Abnormal situation, server error. Retrying download");
+        $asset = $code;
     }
     elsif ($tx->res->is_success) {
         $etag = $headers->etag;
@@ -226,6 +220,7 @@ sub get_asset {
             next;
         }
         $ret = $self->download_asset($job->{id}, lc($asset_type), $asset, ($result->{etag}) ? $result->{etag} : undef);
+        $self->toggle_asset_lock($asset, 0);
         if (!$ret) {
             $asset = undef;
             last;
@@ -233,7 +228,7 @@ sub get_asset {
         elsif ($ret =~ /^5[0-9]{2}$/ && --$n) {
             log_debug "CACHE: Error $ret, retrying download for $n more tries";
             log_debug "CACHE: Waiting " . $self->sleep_time . " seconds for the next retry";
-            $self->toggle_asset_lock($asset, 0);
+
             sleep $self->sleep_time;
             next;
         }
@@ -291,6 +286,7 @@ sub try_lock_asset {
             $sth    = $dbh->prepare($sql);
             $result = $dbh->selectrow_hashref($sql, undef, $asset);
             $result = {} if !$result;
+            log_info "CACHE: Asset $asset locked";
             log_info "CACHE: Being downloaded by another worker, sleeping."
               if exists $result->{downloading} && $result->{downloading} == 1;
         }
@@ -327,6 +323,31 @@ sub add_asset {
     return 1 if defined $res;
 }
 
+sub _update_asset_last_use {
+    my ($self, $asset) = @_;
+
+    my $dbh = $self->dbh;
+    $dbh->do("BEGIN EXCLUSIVE");
+
+    my $sql = "UPDATE assets set last_use = strftime('%s','now') where filename = ?;";
+    eval {
+        my $sth = $dbh->prepare($sql);
+        $sth->bind_param(1, $asset);
+        $sth->execute;
+        $dbh->commit;
+    };
+
+    if ($@) {
+        log_error "Update asset failed. Rolling back $@";
+        eval { $dbh->rollback };
+        log_error "Rolling back failed: $@";
+    }
+    else {
+        log_info "CACHE: updating the $asset last usage";
+        return 1;
+    }
+}
+
 sub update_asset {
     my ($self, $asset, $etag, $size) = @_;
 
@@ -345,11 +366,6 @@ sub update_asset {
         $dbh->commit;
     };
 
-    {
-        local $@;
-        eval { $self->toggle_asset_lock($asset, 0) };
-        log_error "CACHE: Failed relasing lock $@" if $@;
-    };
 
     $self->cache_real_size($self->cache_real_size + $size);
 
