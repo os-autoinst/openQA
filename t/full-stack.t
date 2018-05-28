@@ -396,10 +396,6 @@ subtest 'Cache tests' => sub {
         sleep 1;    # so that last_use is not the same for every item
     }
 
-    # Mark the Core-7.2 iso as being downloaded to force the worker to wait for the lock later on.
-    $sql = "update assets set downloading = 1 where filename = ? ";
-    $dbh->prepare($sql)->execute($result->{filename});
-
     $sql    = "SELECT * from assets order by last_use desc";
     $sth    = $dbh->prepare($sql);
     $result = $dbh->selectrow_hashref($sql);
