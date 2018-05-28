@@ -195,6 +195,7 @@ wait_for_ajax;
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
 $driver->find_element_by_link_text('core@coolone')->click();
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
+my $job_page_url = $driver->get_current_url();
 like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 1 is scheduled');
 javascript_console_has_no_warnings_or_errors;
 
@@ -225,6 +226,67 @@ sub wait_for_job_running {
     $driver->find_element_by_link_text('Live View')->click();
 }
 wait_for_job_running;
+
+sub wait_for_developer_console_contains_log_message {
+    my ($message_regex, $diag_info) = @_;
+
+    # abort on javascript console errors
+    my $js_erro_check_suffix = ', waiting for ' . $diag_info;
+    javascript_console_has_no_warnings_or_errors($js_erro_check_suffix);
+
+    # get log
+    my $log_textarea = $driver->find_element('#log');
+    my $log          = $log_textarea->get_text();
+
+    while (!($log =~ $message_regex)) {
+        if ($log =~ qr/Connection closed/) {
+            fail('web socket connection closed prematurely, was waiting for ' . $diag_info);
+        }
+
+        # try again in 1 second
+        sleep 1;
+        wait_for_ajax;
+        javascript_console_has_no_warnings_or_errors($js_erro_check_suffix);
+        $log = $log_textarea->get_text();
+    }
+
+    pass('found ' . $diag_info);
+}
+
+subtest 'pause at certain test' => sub {
+    # load Selenium::Remote::WDKeys module or skip this test if not available
+    unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
+        plan skip_all => 'Install Selenium::Remote::WDKeys to run this test';
+        return;
+    }
+
+    # open developer console
+    $driver->get('/tests/1/developer/ws-console');
+    wait_for_ajax;
+
+    # find relevant elements on the page, check for initial connection
+    my $log_textarea  = $driver->find_element('#log');
+    my $command_input = $driver->find_element('#msg');
+    wait_for_developer_console_contains_log_message(qr/Connection opened/, 'connection opened');
+
+    # send command to pause at shutdown (hopefully the test wasn't so fast it is already in shutdown)
+    $command_input->send_keys('{"cmd":"set_pause_at_test","name":"shutdown"}');
+    $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    wait_for_ajax;
+    wait_for_developer_console_contains_log_message(qr/\"set_pause_at_test\":\"shutdown\"/,
+        'response to set_pause_at_test');
+
+    # wait until the shutdown test is started and hence the test execution paused
+    wait_for_developer_console_contains_log_message(qr/\"paused\":/, 'paused');
+
+    # resume the test execution again
+    $command_input->send_keys('{"cmd":"resume_test_execution"}');
+    $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    wait_for_ajax;
+    wait_for_developer_console_contains_log_message(qr/\"resume_test_execution\":/, 'resume');
+};
+
+$driver->get($job_page_url);
 wait_for_result_panel qr/Result: passed/, 'test 1 is passed';
 
 ok(-s path($resultdir, '00000', "00000001-$job_name")->make_path->child('autoinst-log.txt'), 'log file generated');

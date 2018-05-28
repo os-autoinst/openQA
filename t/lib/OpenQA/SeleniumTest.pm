@@ -163,6 +163,9 @@ sub wait_for_ajax {
 }
 
 sub javascript_console_has_no_warnings_or_errors {
+    my ($test_name_suffix) = @_;
+    $test_name_suffix //= '';
+
     my $log = $_driver->get_log('browser');
     my @errors;
     for my $log_entry (@$log) {
@@ -180,7 +183,7 @@ sub javascript_console_has_no_warnings_or_errors {
     }
 
     diag('javascript console output: ' . pp(\@errors)) if @errors;
-    is_deeply(\@errors, [], 'no errors or warnings on javascript console');
+    is_deeply(\@errors, [], 'no errors or warnings on javascript console' . $test_name_suffix);
 }
 
 sub kill_driver() {
