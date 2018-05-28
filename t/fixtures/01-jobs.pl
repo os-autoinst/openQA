@@ -491,7 +491,5 @@
             {key => 'ISO_MAXSIZE', value => '4700372992'},
             {key => 'ISO',         value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'},
             {key => 'DVD',         value => '1'},
-        ]
-    },
-]
+        ]}]
 # vim: set sw=4 et:
