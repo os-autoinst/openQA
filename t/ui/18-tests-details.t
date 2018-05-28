@@ -16,6 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+## no critic
 BEGIN {
     unshift @INC, 'lib';
     $ENV{OPENQA_TEST_IPC} = 1;
@@ -168,6 +169,21 @@ $t->element_count_is('.tab-pane.active', 1, 'only one tab visible at the same ti
 
 my $href_to_isosize = $t->tx->res->dom->at('.component a[href*=installer_timezone]')->{href};
 $t->get_ok($baseurl . ($href_to_isosize =~ s@^/@@r))->status_is(200);
+
+$t->app->schema->resultset('Jobs')->find(99963)->update({state => 'waiting'});
+$get         = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
+@worker_text = $get->tx->res->dom->find('#info_box .card-body div + div + div')->map('all_text')->each;
+diag explain Dumper(@worker_text);
+like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker displayed when job is waiting');
+like($worker_text[1], qr/[ \n]*localhost at 1[ \n]*/, 'Waiting for developer displayed') or diag explain @worker_text;
+
+$t->app->schema->resultset('Jobs')->find(99963)->update({state => 'running'});
+$get         = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
+@worker_text = $get->tx->res->dom->find('#info_box .card-body div + div + div')->map('all_text')->each;
+like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker displayed when job running');
+unlike($worker_text[1], qr/[ \n]*System is waiting for developer/, 'Waiting for developer is not displayed');
+
+
 
 subtest 'render bugref links in thumbnail text windows' => sub {
     $driver->get('/tests/99946');

@@ -85,6 +85,13 @@
                         <span title="VNC port: <%= 90 + $worker->instance %>">
                             %= link_to $worker->to_string => url_for('admin_worker_show', worker_id => $worker->id)
                         </span>
+                    % if ($job->state eq 'waiting') {
+                        <div>
+                            <span title="Developer mode available">
+                                System is waiting for developer, connect to <b><%= $worker->host %>  at port <%= 90 + $worker->instance %></b>
+                            </span>
+                        </div>
+                    % }
                     </div>
                 % }
             </div>
