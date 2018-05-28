@@ -304,6 +304,13 @@ like $openqalogs, qr/ andi \$a3, \$t1, 41399 and 256/, "Etag and size are logged
 like $openqalogs, qr/removed.*sle-12-SP3-x86_64-0368-200\@64bit.qcow2*/, "Reclaimed space for new smaller asset";
 truncate_log $logfile;
 
+$cache->add_asset("Foobar", 0);
+
+is $cache->toggle_asset_lock("Foobar", 1), 1, 'Could acquire lock';
+is $cache->toggle_asset_lock("Foobar", 0), 1, 'Could acquire lock';
+
+$cache->dbh->prepare("delete from assets")->execute();
+
 my $tot_proc   = $ENV{STRESS_TEST} ? 60 : 10;
 my $concurrent = $ENV{STRESS_TEST} ? 30 : 2;
 my $q          = queue;
