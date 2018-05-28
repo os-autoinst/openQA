@@ -157,7 +157,11 @@ function setCurrentPreview(a, force) {
 
 function selectPreview(which) {
     var currentPreview = $('.current_preview');
-    var linkContainer = currentPreview[which]('.links_a');
+    var linkContainer = currentPreview[which]();
+    // skip possibly existing elements between the preview links (eg. the preview container might be between)
+    while (linkContainer.length && !linkContainer.hasClass('links_a')) {
+        linkContainer = linkContainer[which]();
+    }
     // select next/prev detail in current step
     if (linkContainer.length) {
         setCurrentPreview(linkContainer);
