@@ -105,12 +105,10 @@ sub setup_log {
     }
 
     $self->log($log);
-    unless ($self->isa('OpenQA::Setup')) {
-        if ($ENV{OPENQA_SQL_DEBUG} // $self->config->{logging}->{sql_debug} // 'false' eq 'true') {
-            # avoid enabling the SQL debug unless we really want to see it
-            # it's rather expensive
-            db_profiler::enable_sql_debugging($self);
-        }
+    if ($ENV{OPENQA_SQL_DEBUG} // $self->config->{logging}->{sql_debug} // 'false' eq 'true') {
+        # avoid enabling the SQL debug unless we really want to see it
+        # it's rather expensive
+        db_profiler::enable_sql_debugging($self);
     }
 
     $OpenQA::Utils::app = $self;

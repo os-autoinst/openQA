@@ -38,12 +38,11 @@
     },
     Jobs => {
         # job with empty value settings as default
-        id         => 80000,
-        priority   => 50,
-        result     => "passed",
-        retry_avbl => 3,
-        TEST       => 'minimalx',
-        state      => "done",
+        id       => 80000,
+        priority => 50,
+        result   => "passed",
+        TEST     => 'minimalx',
+        state    => "done",
         # Really old
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 36000, 'UTC'),
         # Really long ago
@@ -51,12 +50,11 @@
         t_created => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
     },
     Jobs => {
-        id         => 99926,
-        group_id   => 1001,
-        priority   => 56,
-        result     => "incomplete",
-        retry_avbl => 3,
-        settings   => [
+        id       => 99926,
+        group_id => 1001,
+        priority => 56,
+        result   => "incomplete",
+        settings => [
             {key => 'DESKTOP',     value => 'minimalx'},
             {key => 'ISO',         value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'},
             {key => 'ISO_MAXSIZE', value => 737280000},
@@ -90,7 +88,6 @@
         t_finished => undef,
         t_started  => undef,
         TEST       => "RAID0",
-        retry_avbl => 3,
         ARCH       => 'i586',
         FLAVOR     => 'DVD',
         DISTRI     => 'opensuse',
@@ -119,7 +116,6 @@
         t_started  => undef,
         backend    => 'qemu',
         TEST       => "RAID1",
-        retry_avbl => 3,
         FLAVOR     => 'DVD',
         BUILD      => '0091',
         DISTRI     => 'opensuse',
@@ -147,7 +143,6 @@
         t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),      # Two hours ago
         TEST        => "kde",
         jobs_assets => [{asset_id => 1},],
-        retry_avbl  => 3,
         ARCH        => 'i586',
         VERSION     => '13.1',
         FLAVOR      => 'DVD',
@@ -182,7 +177,6 @@
         DISTRI     => 'opensuse',
         MACHINE    => '64bit',
         backend    => 'qemu',
-        retry_avbl => 3,
         result_dir => '00099938-opensuse-Factory-DVD-x86_64-Build0048-doc',
         settings   => [
             {key => 'DVD',         value => '1'},
@@ -209,7 +203,6 @@
         BUILD      => '0048',
         DISTRI     => 'opensuse',
         MACHINE    => '64bit-uefi',
-        retry_avbl => 3,
         settings   => [
             {key => 'DVD',         value => '1'},
             {key => 'DESKTOP',     value => 'kde'},
@@ -230,16 +223,15 @@
         # Two hours ago
         t_started => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
         # One hour ago
-        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
-        TEST       => "kde",
-        ARCH       => 'x86_64',
-        VERSION    => 'Factory',
-        backend    => 'qemu',
-        FLAVOR     => 'DVD',
-        BUILD      => '0048',
-        DISTRI     => 'opensuse',
-        MACHINE    => '64bit',
-        retry_avbl => 3,
+        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
+        TEST      => "kde",
+        ARCH      => 'x86_64',
+        VERSION   => 'Factory',
+        backend   => 'qemu',
+        FLAVOR    => 'DVD',
+        BUILD     => '0048',
+        DISTRI    => 'opensuse',
+        MACHINE   => '64bit',
         # no result dir, let us assume that this is an old test that has
         # already be pruned
         settings => [
@@ -271,7 +263,6 @@
         DISTRI     => 'opensuse',
         MACHINE    => '64bit',
         backend    => 'qemu',
-        retry_avbl => 3,
         result_dir => '00099938-opensuse-Factory-DVD-x86_64-Build0048-doc',
         settings   => [
             {key => 'DVD',         value => '1'},
@@ -301,7 +292,6 @@
         MACHINE     => '32bit',
         backend     => 'qemu',
         jobs_assets => [{asset_id => 1}, {asset_id => 5}],
-        retry_avbl  => 3,
         result_dir  => '00099946-opensuse-13.1-DVD-i586-Build0091-textmode',
         settings    => [
             {key => 'QEMUCPU',     value => 'qemu32'},
@@ -332,7 +322,6 @@
         MACHINE     => '32bit',
         ARCH        => 'i586',
         jobs_assets => [{asset_id => 1},],
-        retry_avbl  => 3,
         settings    => [
             {key => 'QEMUCPU',     value => 'qemu32'},
             {key => 'DVD',         value => '1'},
@@ -360,7 +349,6 @@
         MACHINE     => '32bit',
         ARCH        => 'i586',
         jobs_assets => [{asset_id => 1},],
-        retry_avbl  => 3,
         settings    => [
             {key => 'QEMUCPU',     value => 'qemu32'},
             {key => 'DVD',         value => '1'},
@@ -387,7 +375,6 @@
         MACHINE     => '32bit',
         ARCH        => 'i586',
         jobs_assets => [{asset_id => 1},],
-        retry_avbl  => 3,
         settings    => [
             {key => 'QEMUCPU',     value => 'qemu32'},
             {key => 'DVD',         value => '1'},
@@ -413,7 +400,6 @@
         VERSION     => '13.1',
         backend     => 'qemu',
         jobs_assets => [{asset_id => 2},],
-        retry_avbl  => 3,
         ARCH        => 'x86_64',
         settings    => [
             {key => 'DESKTOP',     value => 'kde'},
@@ -441,7 +427,6 @@
         VERSION     => '13.1',
         backend     => 'qemu',
         jobs_assets => [{asset_id => 2},],
-        retry_avbl  => 3,
         ARCH        => 'x86_64',
         result_dir  => '00099962-opensuse-13.1-DVD-x86_64-Build0091-kde',
         settings    => [
@@ -469,7 +454,6 @@
         BUILD       => '0091',
         DISTRI      => 'opensuse',
         jobs_assets => [{asset_id => 3},],
-        retry_avbl  => 3,
         settings    => [
             {key => 'DESKTOP',     value => 'gnome'},
             {key => 'ISO_MAXSIZE', value => '999999999'},
@@ -501,7 +485,6 @@
         MACHINE     => '64bit',
         VERSION     => '13.1',
         jobs_assets => [{asset_id => 2}, {asset_id => 6},],
-        retry_avbl  => 3,
         result_dir  => '00099961-opensuse-13.1-DVD-x86_64-Build0091-kde',
         settings    => [
             {key => 'DESKTOP',     value => 'kde'},

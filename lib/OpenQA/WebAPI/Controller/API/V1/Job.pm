@@ -371,7 +371,7 @@ sub update_status {
 =item update()
 
 Updates the settings of a job with information specified in a passed JSON argument.
-Columns group_id, priority and retry_avbl cannot be set.
+Columns group_id and priority cannot be set.
 
 =back
 
@@ -387,7 +387,7 @@ sub update {
     my $settings = delete $json->{settings};
 
     # validate specified columns (print error if at least one specified column does not exist)
-    my @allowed_cols = qw(group_id priority retry_avbl);
+    my @allowed_cols = qw(group_id priority);
     for my $key (keys %$json) {
         if (!grep $_ eq $key, @allowed_cols) {
             return $self->render(json => {error => "Column $key can not be set"}, status => 400);

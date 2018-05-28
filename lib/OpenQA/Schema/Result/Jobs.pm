@@ -34,6 +34,7 @@ use File::Path ();
 use DBIx::Class::Timestamps 'now';
 use File::Temp 'tempdir';
 use Mojo::File qw(tempfile path);
+use Data::Dump 'dump';
 use OpenQA::File;
 use OpenQA::Parser 'parser';
 # The state and results constants are duplicated in the Python client:
@@ -113,6 +114,7 @@ __PACKAGE__->add_columns(
         is_foreign_key => 1,
         is_nullable    => 1
     },
+    # TODO: kill, we no longer support it
     retry_avbl => {
         data_type     => 'integer',
         default_value => 3,
@@ -558,7 +560,7 @@ sub _hashref {
 
 sub to_hash {
     my ($job, %args) = @_;
-    my $j = _hashref($job, qw(id name priority state result clone_id retry_avbl t_started t_finished group_id));
+    my $j = _hashref($job, qw(id name priority state result clone_id t_started t_finished group_id));
     if ($j->{group_id}) {
         $j->{group} = $job->group->name;
     }
@@ -616,6 +618,177 @@ sub can_be_duplicated {
     return 1;
 }
 
+
+=head2 create_clone
+
+=over
+
+=item Arguments: none
+
+=item Return value: new job
+
+=back
+
+Internal function, needs to be executed in a transaction to perform
+optimistic locking on clone_id
+=cut
+sub create_clone {
+    my ($self, $prio) = @_;
+
+    # Duplicate settings (except NAME and TEST and JOBTOKEN)
+    my @new_settings;
+    my $settings = $self->settings;
+
+    while (my $js = $settings->next) {
+        unless ($js->key =~ /^(NAME|TEST|JOBTOKEN)$/) {
+            push @new_settings, {key => $js->key, value => $js->value};
+        }
+    }
+
+    my $rset    = $self->result_source->resultset;
+    my $new_job = $rset->create(
+        {
+            TEST     => $self->TEST,
+            VERSION  => $self->VERSION,
+            ARCH     => $self->ARCH,
+            FLAVOR   => $self->FLAVOR,
+            MACHINE  => $self->MACHINE,
+            BUILD    => $self->BUILD,
+            DISTRI   => $self->DISTRI,
+            group_id => $self->group_id,
+            settings => \@new_settings,
+            # assets are re-created in job_grab
+            priority => $prio || $self->priority
+        });
+    # Perform optimistic locking on clone_id. If the job is not longer there
+    # or it already has a clone, rollback the transaction (new_job should
+    # not be created, somebody else was faster at cloning)
+    my $upd = $rset->search({clone_id => undef, id => $self->id})->update({clone_id => $new_job->id});
+
+    die('There is already a clone!') unless ($upd == 1);    # One row affected
+                                                            # Needed to load default values from DB
+    $new_job->discard_changes;
+    return $new_job;
+}
+
+sub create_clones {
+    my ($self, $jobs, $prio) = @_;
+
+    my $rset = $self->result_source->resultset;
+    my %clones;
+
+    # first create the clones
+    for my $job (sort keys %$jobs) {
+        my $res = $rset->find($job)->create_clone($prio);
+        $clones{$job} = $res;
+    }
+
+    # now create dependencies
+    for my $job (sort keys %$jobs) {
+        my $info = $jobs->{$job};
+        my $res  = $clones{$job};
+
+        # recreate dependencies if exists for cloned parents/children
+        for my $p (@{$info->{parallel_parents}}) {
+            $res->parents->find_or_create(
+                {
+                    parent_job_id => $clones{$p}->id,
+                    dependency    => OpenQA::Schema::Result::JobDependencies->PARALLEL,
+                });
+        }
+        for my $p (@{$info->{chained_parents}}) {
+            # normally we don't clone chained parents, but you never know
+            $p = $clones{$p}->id if defined $clones{$p};
+            $res->parents->find_or_create(
+                {
+                    parent_job_id => $p,
+                    dependency    => OpenQA::Schema::Result::JobDependencies->CHAINED,
+                });
+        }
+        for my $c (@{$info->{parallel_children}}) {
+            $res->children->find_or_create(
+                {
+                    child_job_id => $clones{$c}->id,
+                    dependency   => OpenQA::Schema::Result::JobDependencies->PARALLEL,
+                });
+        }
+        for my $c (@{$info->{chained_children}}) {
+            $res->children->find_or_create(
+                {
+                    child_job_id => $clones{$c}->id,
+                    dependency   => OpenQA::Schema::Result::JobDependencies->CHAINED,
+                });
+        }
+
+        # when dependency network is recreated, associate assets
+        $res->register_assets_from_settings;
+    }
+    # reduce the clone object to ID (easier to use later on)
+    for my $job (keys %$jobs) {
+        $jobs->{$job}->{clone} = $clones{$job}->id;
+    }
+}
+
+# internal (recursive) function for duplicate - returns hash of all jobs in the
+# cluster of the current job (in no order but with relations)
+sub jobs_to_duplicate {
+    my ($self, $jobs) = @_;
+
+    $jobs ||= {};
+    return $jobs if defined $jobs->{$self->id};
+    $jobs->{$self->id} = {
+        parallel_parents  => [],
+        chained_parents   => [],
+        parallel_children => [],
+        chained_children  => []};
+
+    ## if we have a parallel parent, go up recursively
+    my $parents = $self->parents;
+    while (my $pd = $parents->next) {
+        my $p = $pd->parent;
+        # find the current clone
+        while ($p->clone) {
+            $p = $p->clone;
+        }
+
+        if ($pd->dependency eq OpenQA::Schema::Result::JobDependencies->CHAINED) {
+            push(@{$jobs->{$self->id}->{chained_parents}}, $p->id);
+            # we don't duplicate up the chain, only down
+            next;
+        }
+        else {
+            push(@{$jobs->{$self->id}->{parallel_parents}}, $p->id);
+            $p->jobs_to_duplicate($jobs);
+        }
+    }
+
+    return $self->jobs_to_duplicate_children($jobs);
+}
+
+# internal (recursive) function to jobs_to_duplicate
+sub jobs_to_duplicate_children {
+    my ($self, $jobs) = @_;
+
+    my $schema = $self->result_source->schema;
+
+    my $children = $self->children;
+    while (my $cd = $children->next) {
+        my $c = $cd->child;
+        while ($c->clone) {
+            $c = $c->clone;
+        }
+        # do not fear the recursion
+        $c->jobs_to_duplicate($jobs);
+        if ($cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
+            push(@{$jobs->{$self->id}->{parallel_children}}, $c->id);
+        }
+        else {
+            push(@{$jobs->{$self->id}->{chained_children}}, $c->id);
+        }
+    }
+    return $jobs;
+}
+
 =head2 duplicate
 
 =over
@@ -636,275 +809,46 @@ duplication detected by the optimistic locking), the method returns undef.
 Rules for dependencies cloning are:
 for PARALLEL dependencies:
 - clone parents
- + if parent state is SCHEDULED, just create dependency
  + if parent is clone, find the latest clone and clone it
 - clone children
- + if clone state is SCHEDULED, route child to us (remove original dependency)
- + if child is DONE, ignore. Dependency is transitivelly preserved by depending on parent's clone's origin
  + if child is clone, find the latest clone and clone it
 
 for CHAINED dependencies:
 - do NOT clone parents
  + create new dependency - duplicit cloning is prevented by ignorelist, webui will show multiple chained deps though
 - clone children
- + if clone state is SCHEDULED, route child to us (remove original dependency)
  + if child is clone, find the latest clone and clone it
 
 =cut
 sub duplicate {
     my ($self, $args) = @_;
     $args ||= {};
-    my $rsource = $self->result_source;
-    my $schema  = $rsource->schema;
+    my $schema = $self->result_source->schema;
 
     # If the job already has a clone, none is created
     return unless $self->can_be_duplicated;
-    # skip this job if encountered again
-    my $jobs_map = $args->{jobs_map} // {};
-    $jobs_map->{$self->id} = 0;
 
-    # store mapping of all duplications for return - need old job IDs for state mangling
-    my %duplicated_ids;
-    my @direct_deps_parents_parallel;
-    my @direct_deps_parents_chained;
-    my @direct_deps_children_parallel;
-    my @direct_deps_children_chained;
-
-    # we can start traversing clone graph anywhere, so first we travers upwards then downwards
-    # since we do this in each duplication, we need to prevent double cloning of ourselves
-    # i.e. to preven cloned parent to clone its children
-
-    ## now go and clone and recreate test dependencies - parents first
-    my $parents = $self->search_for(
-        'parents',
-        {
-            dependency => {
-                -in =>
-                  [OpenQA::Schema::Result::JobDependencies->PARALLEL, OpenQA::Schema::Result::JobDependencies->CHAINED]
-            },
-        },
-        {
-            join => 'parent',
-        });
-
-    while (my $pd = $parents->next) {
-        my $p = $pd->parent;
-        if (!exists $jobs_map->{$p->id}) {
-            # if jobs_map->{$p->id} doesn't exists, the job processing wasnt started yet, do it now
-            if ($pd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
-                my %dups = $p->duplicate({jobs_map => $jobs_map});
-                # if duplication failed, either there was a transaction conflict or more likely job failed
-                # can_be_duplicated check.
-                # That is either we are hooked to already cloned parent or
-                # parent is not in proper state - e.g. scheduled.
-                while (!%dups && !$p->can_be_duplicated) {
-                    if ($p->state eq SCHEDULED) {
-                        # we use SCHEDULED as is, just route dependencies
-                        %dups = ($p->id => $p);
-                        last;
-                    }
-                    else {
-                        # find the current clone and try to duplicate that one
-                        while ($p->clone) {
-                            $p = $p->clone;
-                        }
-                        %dups = $p->duplicate({jobs_map => $jobs_map});
-                    }
-                }
-                %duplicated_ids = (%duplicated_ids, %dups);
-                # we don't have our cloned id yet so store new immediate parent for
-                # dependency recreation
-                push @direct_deps_parents_parallel, $dups{$p->id};
-            }
-            else {
-                # reroute to CHAINED parents, those are not being cloned when child is restarted
-                push @direct_deps_parents_chained, $p;
-            }
-        }
-        elsif ($jobs_map->{$p->id}) {
-            # if $jobs_map->{$p->id} is true, job was already cloned, lets create the relationship
-            if ($pd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
-                push @direct_deps_parents_parallel, $jobs_map->{$p->id};
-            }
-            else {
-                push @direct_deps_parents_chained, $p;
-            }
-        }
-        # else ignore since the jobs is being processed and we are also indirect descendand
-    }
-
-    ## go and clone and recreate test dependencies - running children tests, this cover also asset dependencies (use CHAINED dep)
-    my $children = $self->search_for(
-        'children',
-        {
-            dependency => {
-                -in =>
-                  [OpenQA::Schema::Result::JobDependencies->PARALLEL, OpenQA::Schema::Result::JobDependencies->CHAINED]
-            },
-        },
-        {
-            join => 'child',
-        });
-    while (my $cd = $children->next) {
-        my $c = $cd->child;
-        # ignore already cloned child, prevent loops in test definition
-        # However we still need to add the relationship parent - kid
-
-        if ($duplicated_ids{$c->id}) {
-            if ($jobs_map->{$c->id}) {
-                if ($cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
-                    push @direct_deps_children_parallel, $jobs_map->{$c->id};
-                }
-                else {
-                    push @direct_deps_children_chained, $jobs_map->{$c->id};
-                }
-            }
-            next;
-        }
-
-        # do not clone DONE children for PARALLEL deps
-        next if ($c->state eq DONE and $cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL);
-
-        if (!exists $jobs_map->{$c->id}) {
-            # if jobs_map->{$p->id} doesn't exists, the job processing wasnt started yet, do it now
-            my %dups = $c->duplicate({jobs_map => $jobs_map});
-            # the same as in parent cloning, detect SCHEDULED and cloning already cloned child
-            while (!%dups && !$c->can_be_duplicated) {
-                if ($c->state eq SCHEDULED) {
-                    # we use SCHEDULED as is, just route dependencies - create new, remove existing
-                    %dups = ($c->id => $c);
-                    $cd->delete;
-                    last;
-                }
-                else {
-                    # find the current clone and try to duplicate that one
-                    while ($c->clone) {
-                        $c = $c->clone;
-                    }
-                    %dups = $c->duplicate({jobs_map => $jobs_map});
-                }
-            }
-            # we don't have our cloned id yet so store immediate child for
-            # dependency recreation
-            if ($cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
-                push @direct_deps_children_parallel, $dups{$c->id};
-            }
-            else {
-                push @direct_deps_children_chained, $dups{$c->id};
-            }
-            %duplicated_ids = (%duplicated_ids, %dups);
-        }
-        elsif ($jobs_map->{$c->id}) {
-            if ($cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
-                push @direct_deps_children_parallel, $jobs_map->{$c->id};
-            }
-            else {
-                push @direct_deps_children_chained, $jobs_map->{$c->id};
-            }
-        }
-    }
-
-    # Copied retry_avbl as default value if the input undefined
-    $args->{retry_avbl} = $self->retry_avbl unless defined $args->{retry_avbl};
-    # Code to be executed in a transaction to perform optimistic locking on
-    # clone_id
-    my $coderef = sub {
-        # Duplicate settings (except NAME and TEST and JOBTOKEN)
-        my @new_settings;
-        my $settings = $self->settings;
-
-        while (my $js = $settings->next) {
-            unless ($js->key =~ /^(NAME|TEST|JOBTOKEN)$/) {
-                push @new_settings, {key => $js->key, value => $js->value};
-            }
-        }
-
-        my $new_job = $rsource->resultset->create(
-            {
-                TEST     => $self->TEST,
-                VERSION  => $self->VERSION,
-                ARCH     => $self->ARCH,
-                FLAVOR   => $self->FLAVOR,
-                MACHINE  => $self->MACHINE,
-                BUILD    => $self->BUILD,
-                DISTRI   => $self->DISTRI,
-                group_id => $self->group_id,
-                settings => \@new_settings,
-                # assets are re-created in job_grab
-                priority => $args->{prio} || $self->priority,
-                retry_avbl => $args->{retry_avbl},
-            });
-        # Perform optimistic locking on clone_id. If the job is not longer there
-        # or it already has a clone, rollback the transaction (new_job should
-        # not be created, somebody else was faster at cloning)
-        my $upd = $rsource->resultset->search({clone_id => undef, id => $self->id})->update({clone_id => $new_job->id});
-
-        die('There is already a clone!') unless ($upd == 1);    # One row affected
-        return $new_job;
-    };
-
-    my $res;
-
+    my $jobs = $self->jobs_to_duplicate;
+    log_debug("Jobs to duplicate " . dump($jobs));
     try {
-        $res = $schema->txn_do($coderef);
-        $res->discard_changes;                                  # Needed to load default values from DB
+        $schema->txn_do(sub { $self->create_clones($jobs, $args->{prio}) });
     }
     catch {
         my $error = shift;
         log_debug("rollback duplicate: $error");
         die "Rollback failed during failed job cloning!"
           if ($error =~ /Rollback failed/);
-        $res = undef;
+        $jobs = undef;
     };
-    unless ($res) {
-        # if we didn't die, there is already a clone.
-        # TODO: why this wasn't catched by can_be_duplicated? Tests are testing this scenario
-        # return here may leave inconsistent job dependencies
-        return;
-    }
 
-    # recreate dependencies if exists for cloned parents/children
-    for my $p (@direct_deps_parents_parallel) {
-        $res->parents->find_or_create(
-            {
-                parent_job_id => $p->id,
-                dependency    => OpenQA::Schema::Result::JobDependencies->PARALLEL,
-            });
-    }
-    for my $p (@direct_deps_parents_chained) {
-        $res->parents->find_or_create(
-            {
-                parent_job_id => $p->id,
-                dependency    => OpenQA::Schema::Result::JobDependencies->CHAINED,
-            });
-    }
-    for my $c (@direct_deps_children_parallel) {
-        $res->children->find_or_create(
-            {
-                child_job_id => $c->id,
-                dependency   => OpenQA::Schema::Result::JobDependencies->PARALLEL,
-            });
-    }
-    for my $c (@direct_deps_children_chained) {
-        $res->children->find_or_create(
-            {
-                child_job_id => $c->id,
-                dependency   => OpenQA::Schema::Result::JobDependencies->CHAINED,
-            });
-    }
-
-    # when dependency network is recreated, associate assets
-    $res->register_assets_from_settings;
-    # we are done, mark it in jobs_map
-    $jobs_map->{$self->id} = $res;
-    return ($self->id => $res, %duplicated_ids);
+    return $jobs;
 }
 
 =head2 auto_duplicate
 
 =over
 
-=item Arguments: HASHREF { dup_type_auto => SCALAR, retry_avbl => SCALAR }
+=item Arguments: HASHREF { dup_type_auto => SCALAR }
 
 =item Return value: ID of new job
 
@@ -923,56 +867,44 @@ sub auto_duplicate {
     # set this clone was triggered by manually if it's not auto-clone
     $args->{dup_type_auto} //= 0;
 
-    if ($args->{dup_type_auto}) {
-        if (int($self->retry_avbl // 0) > 0) {
-            $args->{retry_avbl} = int($self->retry_avbl) - 1;
-        }
-        else {
-            log_warning('Could not auto-duplicated! The job are auto-duplicated too many times.'
-                  . ' Please restart the job manually.');
-            return;
-        }
-    }
-    else {
-        if (int($self->retry_avbl // 0) > 0) {
-            $args->{retry_avbl} = int($self->retry_avbl);
-        }
-        else {
-            $args->{retry_avbl} = 1;    # set retry_avbl back to 1
-        }
-    }
+    my $clones = $self->duplicate($args);
 
-    my %clones = $self->duplicate($args);
-    unless (%clones) {
+    unless ($clones) {
         log_debug('duplication failed');
         return;
     }
-    my @originals = keys %clones;
-    # abort jobs restarted because of dependencies (exclude the original $args->{jobid})
+    # abort jobs in the old cluster (exclude the original $args->{jobid})
     my $rsource = $self->result_source;
     my $jobs    = $rsource->schema->resultset("Jobs")->search(
         {
-            id    => {'!=' => $self->id, '-in' => \@originals},
-            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
+            id    => {'!=' => $self->id,    '-in' => [keys %$clones]},
+            state => [PRE_EXECUTION_STATES, EXECUTION_STATES],
         });
 
     $jobs->search(
         {
-            result => OpenQA::Schema::Result::Jobs::NONE,
+            result => NONE,
         }
     )->update(
         {
-            result => OpenQA::Schema::Result::Jobs::PARALLEL_RESTARTED,
+            result => PARALLEL_RESTARTED,
         });
 
     while (my $j = $jobs->next) {
-        next unless $j->worker;
-        log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
-        $j->worker->send_command(command => 'abort', job_id => $j->id);
+        if ($j->worker) {
+            log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
+            $j->worker->send_command(command => 'abort', job_id => $j->id);
+        }
+        else {
+            if ($j->state eq SCHEDULED) {
+                $j->update({state => SKIPPED});
+            }
+        }
     }
 
-    log_debug('new job ' . $clones{$self->id}->id);
-    return $clones{$self->id};
+    log_debug('new job ' . $clones->{$self->id}->{clone});
+    # TODO: better return a proper hash here
+    return $rsource->resultset->find($clones->{$self->id}->{clone});
 }
 
 sub abort {

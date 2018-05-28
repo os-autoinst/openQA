@@ -69,6 +69,18 @@ ok(!defined $job, "duplication rejected");
 
 $job1 = job_get(99926);
 is($job1->{state}, OpenQA::Schema::Result::Jobs::DONE, 'trying to duplicate done job');
+is_deeply(
+    job_get_rs(99926)->jobs_to_duplicate,
+    {
+        '99926' => {
+            'parallel_parents'  => [],
+            'chained_parents'   => [],
+            'parallel_children' => [],
+            'chained_children'  => [],
+        }
+    },
+    '99926 has no siblings'
+);
 $job = job_get_rs(99926)->auto_duplicate;
 ok(defined $job, "duplication works");
 isnt($job->id, $job1->{id}, 'clone id is different than original job id');
@@ -107,8 +119,25 @@ $job1 = job_get(99927);
 job_get_rs(99927)->cancel;
 $job1 = job_get(99927);
 is($job1->{state}, 'cancelled', "scheduled job cancelled after cancel");
-
+is_deeply(
+    job_get_rs(99937)->jobs_to_duplicate,
+    {
+        '99937' => {
+            'chained_children'  => [99938],
+            'parallel_parents'  => [],
+            'chained_parents'   => [],
+            'parallel_children' => []
+        },
+        '99938' => {
+            'parallel_children' => [],
+            'parallel_parents'  => [],
+            'chained_parents'   => [99937],
+            'chained_children'  => []}
+    },
+    '99937 has one chained child'
+);
 $job1 = job_get(99937);
+
 @ret  = OpenQA::Resource::Jobs::job_restart(99937);
 $job2 = job_get(99937);
 
@@ -128,7 +157,23 @@ $jobs = list_jobs();
 is(@$jobs, @$current_jobs + 2, "two more job after restarting done job with chained child dependency");
 
 $current_jobs = $jobs;
-
+is_deeply(
+    job_get_rs(99963)->jobs_to_duplicate,
+    {
+        '99963' => {
+            'parallel_parents'  => [99961],
+            'chained_parents'   => [],
+            'chained_children'  => [],
+            'parallel_children' => []
+        },
+        '99961' => {
+            'parallel_children' => [99963],
+            'chained_children'  => [],
+            'chained_parents'   => [],
+            'parallel_parents'  => []}
+    },
+    '99963 has one parallel parent'
+);
 OpenQA::Resource::Jobs::job_restart(99963);
 
 $jobs = list_jobs();
@@ -143,11 +188,9 @@ is_deeply($job1, $job2, "running job unchanged after cancel");
 my $job3 = job_get(99938)->{clone_id};
 job_get_rs($job3)->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
 $job3 = job_get($job3);
-is($job3->{retry_avbl}, 3, "the retry counter setup ");
 my $round1 = job_get_rs($job3->{id})->auto_duplicate({dup_type_auto => 1});
 ok(defined $round1, "auto-duplicate works");
 $job3 = job_get($round1->id);
-is($job3->{retry_avbl}, 2, "the retry counter decreased");
 # need to change state from scheduled
 $job3 = job_get($round1->id);
 job_get_rs($job3->{id})->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
@@ -155,28 +198,20 @@ $round1->discard_changes;
 my $round2 = $round1->auto_duplicate({dup_type_auto => 1});
 ok(defined $round2, "auto-duplicate works");
 $job3 = job_get($round2->id);
-is($job3->{retry_avbl}, 1, "the retry counter decreased");
 # need to change state from scheduled
 job_get_rs($job3->{id})->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
 $round2->discard_changes;
 my $round3 = $round2->auto_duplicate({dup_type_auto => 1});
 ok(defined $round3, "auto-duplicate works");
 $job3 = job_get($round3->id);
-is($job3->{retry_avbl}, 0, "the retry counter decreased");
 # need to change state from scheduled
 job_get_rs($job3->{id})->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
-my $round4_id;
-stderr_like {
-    $round4_id = job_get_rs($round3->id)->auto_duplicate({dup_type_auto => 1});
-}
-qr/Could not auto-duplicated! The job are auto-duplicated too many times/;
-ok(!defined $round4_id, "no longer auto-duplicating");
+
 # need to change state from scheduled
 $job3 = job_get($round3->id);
 job_get_rs($job3->{id})->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
 my $round5 = job_get_rs($round3->id)->auto_duplicate;
 ok(defined $round5, "manual-duplicate works");
 $job3 = job_get($round5->id);
-is($job3->{retry_avbl}, 1, "the retry counter increased");
 
 done_testing;

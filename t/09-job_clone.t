@@ -34,16 +34,16 @@ use Test::Warnings;
 OpenQA::Test::Database->new->create();
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $minimalx = $t->app->db->resultset("Jobs")->find({id => 99926});
-my %clones   = $minimalx->duplicate();
-my $clone    = $clones{$minimalx->id};
+my $rset     = $t->app->db->resultset("Jobs");
+my $minimalx = $rset->find(99926);
+my $clones   = $minimalx->duplicate();
+my $clone    = $rset->find($clones->{$minimalx->id}->{clone});
 
 isnt($clone->id, $minimalx->id, "is not the same job");
-is($clone->TEST,       "minimalx",  "but is the same test");
-is($clone->priority,   56,          "with the same priority");
-is($clone->retry_avbl, 3,           "with the same retry_avbl");
-is($minimalx->state,   "done",      "original test keeps its state");
-is($clone->state,      "scheduled", "the new job is scheduled");
+is($clone->TEST,     "minimalx",  "but is the same test");
+is($clone->priority, 56,          "with the same priority");
+is($minimalx->state, "done",      "original test keeps its state");
+is($clone->state,    "scheduled", "the new job is scheduled");
 
 # Second attempt
 ok($minimalx->can_be_duplicated, "looks cloneable");
@@ -61,10 +61,9 @@ is($minimalx->duplicate, undef, "cannot clone after reloading");
 
 # But cloning the clone should be possible after job state change
 $clone->state(OpenQA::Schema::Result::Jobs::CANCELLED);
-%clones = $clone->duplicate({prio => 35, retry_avbl => 2});
-my $second = $clones{$clone->id};
-is($second->TEST,       "minimalx", "same test again");
-is($second->priority,   35,         "with adjusted priority");
-is($second->retry_avbl, 2,          "with adjusted retry_avbl");
+$clones = $clone->duplicate({prio => 35});
+my $second = $rset->find($clones->{$clone->id}->{clone});
+is($second->TEST,     "minimalx", "same test again");
+is($second->priority, 35,         "with adjusted priority");
 
 done_testing();
