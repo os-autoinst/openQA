@@ -46,12 +46,86 @@ sub job_get {
     return $job;
 }
 
-my $new_job = job_get(99963)->auto_duplicate;
+my $job = job_get(99963);
+is_deeply(
+    $job->cluster_jobs,
+    {
+        99961 => {
+            chained_children  => [],
+            chained_parents   => [],
+            parallel_children => [99963],
+            parallel_parents  => [],
+        },
+        99963 => {
+            chained_children  => [],
+            chained_parents   => [],
+            parallel_children => [],
+            parallel_parents  => [99961],
+        },
+    },
+    "99963 is part of a duett"
+);
+my $new_job = $job->auto_duplicate;
 ok($new_job, "got new job id " . $new_job->id);
+$job->discard_changes;
+is_deeply(
+    $job->cluster_jobs,
+    {
+        99961 => {
+            chained_children  => [],
+            chained_parents   => [],
+            parallel_children => [99963],
+            parallel_parents  => [],
+        },
+        99963 => {
+            chained_children  => [],
+            chained_parents   => [],
+            parallel_children => [],
+            parallel_parents  => [99961],
+        },
+    },
+    "99963 is still part of a duett"
+);
 
 is($new_job->state, 'scheduled', "new job is scheduled");
+is_deeply(
+    $new_job->cluster_jobs,
+    {
+        99982 => {
+            chained_children  => [],
+            chained_parents   => [],
+            parallel_children => [99983],
+            parallel_parents  => [],
+        },
+        99983 => {
+            chained_children  => [],
+            chained_parents   => [],
+            parallel_children => [],
+            parallel_parents  => [99982],
+        },
+    },
+    "new job is part of a new duett"
+);
 
-my $job = job_get(99963);
+$job = job_get(99963);
+is_deeply(
+    $job->cluster_jobs,
+    {
+        99961 => {
+            chained_children  => [],
+            chained_parents   => [],
+            parallel_children => [99963],
+            parallel_parents  => [],
+        },
+        99963 => {
+            chained_children  => [],
+            chained_parents   => [],
+            parallel_children => [],
+            parallel_parents  => [99961],
+        },
+    },
+    "99963 is still part of a duett"
+);
 is($job->state,      'running', "old job is running");
 is($job->t_finished, undef,     "There is a no finish time yet");
 
@@ -68,7 +142,8 @@ lj;
 
 my $ret = $schema->resultset('Jobs')
   ->cancel_by_settings({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'x86_64'});
-is($ret, 2, "two jobs cancelled by hash");
+# 99963 and the new cluster of 2
+is($ret, 3, "two jobs cancelled by hash");
 
 $job = $new_job;
 
@@ -231,7 +306,7 @@ subtest 'chained parent fails -> parallel parents of children are cancelled (ski
     my $jobB = _job_create(\%settingsB);
     $settingsC{_START_AFTER_JOBS} = [$jobA->id];
     $settingsD{_START_AFTER_JOBS} = [$jobA->id];
-    $settingsC{_PARALLEL_JOBS} = [$jobB->id];
+    $settingsC{_PARALLEL_JOBS}    = [$jobB->id];
     my $jobC = _job_create(\%settingsC);
     $settingsC{_PARALLEL_JOBS} = [$jobB->id, $jobC->id];
     my $jobD = _job_create(\%settingsD);

@@ -249,7 +249,7 @@ is($job->{result}, "failed", "no change");
 ok(defined $job->{clone_id}, "cloned");
 
 $job = job_get_deps($jobB->id);    # cloned
-is($job->{result}, "parallel_restarted", "B stopped");
+is($job->{result}, "parallel_failed", "$job->{id} B stopped");
 ok(defined $job->{clone_id}, "cloned");
 my $jobB2 = $job->{clone_id};
 
@@ -299,13 +299,13 @@ ok(defined $job->{clone_id}, "cloned");
 my $jobA2 = $job->{clone_id};
 
 $job = job_get_deps($jobB->id);    # unchanged
-is($job->{result}, "parallel_restarted", "B is restarted");
-is($job->{clone_id}, $jobB2, "cloned");
+is($job->{result},   "parallel_failed", "B is unchanged");
+is($job->{clone_id}, $jobB2,            "cloned");
 
 $job = job_get_deps($jobC->id);    # unchanged
-is($job->{state},    "running",            "no change");
-is($job->{result},   "parallel_restarted", "C is restarted");
-is($job->{clone_id}, $jobC2,               "cloned");
+is($job->{state},    "running",         "no change");
+is($job->{result},   "parallel_failed", "C is restarted");
+is($job->{clone_id}, $jobC2,            "cloned");
 
 $job = job_get_deps($jobD->id);    #cloned
 is($job->{state},  "done",            "no change");
