@@ -325,6 +325,7 @@ my $concurrent_test = sub {
     $cache->limit($sum);
     $cache->init;
     $cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200_' . $_ . '@64bit.qcow2') for shuffle @test;
+    Devel::Cover::report() if Devel::Cover->can('report');
 };
 
 $q->add(process($concurrent_test)->set_pipes(0)->internal_pipes(0)) for 1 .. $tot_proc;
