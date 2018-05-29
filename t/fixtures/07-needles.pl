@@ -5,10 +5,14 @@
         name => 'fixtures'
     },
     Needles => {
-        dir_id                 => 1,
-        filename               => 'inst-timezone-text.json',
-        last_seen_module_id    => 10,
+        dir_id              => 1,
+        filename            => 'inst-timezone-text.json',
+        last_seen_module_id => 10,
+        # keep the timestamps aligned with 05-job_modules
+        # (and don't use UTC as we use it in browser tests)
+        last_seen_time         => time2str('%Y-%m-%d %H:%M:%S', time - 100000),
         last_matched_module_id => 9,
+        last_matched_time      => time2str('%Y-%m-%d %H:%M:%S', time - 50000),
         file_present           => 1,
       }
 

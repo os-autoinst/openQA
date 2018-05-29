@@ -27,6 +27,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
+use Date::Format 'time2str';
 use Test::Warnings ':all';
 use OpenQA::Test::Case;
 use Time::HiRes qw(sleep);
@@ -47,6 +48,7 @@ sub schema_hook {
             dir_id                 => 1,
             filename               => 'never-matched.json',
             last_seen_module_id    => 10,
+            last_seen_time         => time2str('%Y-%m-%d %H:%M:%S', time - 100000),
             last_matched_module_id => undef,
             file_present           => 1,
         });

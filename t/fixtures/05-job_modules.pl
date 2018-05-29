@@ -57,7 +57,7 @@
         result   => 'passed',
     },
     JobModules => {
-        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 50000, 'UTC'),
+        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 50000),
         script    => 'tests/installation/partitioning.pm',
         job_id    => 99937,
         category  => 'installation',
@@ -65,13 +65,12 @@
         result    => 'passed',
     },
     JobModules => {
-        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 100000, 'UTC'),
-
-        script   => 'tests/installation/partitioning_finish.pm',
-        job_id   => 99937,
-        category => 'installation',
-        name     => 'partitioning_finish',
-        result   => 'passed',
+        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 100000),
+        script    => 'tests/installation/partitioning_finish.pm',
+        job_id    => 99937,
+        category  => 'installation',
+        name      => 'partitioning_finish',
+        result    => 'passed',
     },
     JobModules => {
         script   => 'tests/installation/user_settings.pm',
