@@ -41,14 +41,14 @@ use constant FIND_JOB_ATTEMPTS => $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS} // 1;
 # that the scheduler took to perform the operations
 # if CONGESTION_CONTROL or BUSY_BACKOFF is enabled, scheduler will change the clock time
 # so it's really not needed to touch this value unless you observe a real performance degradation.
-use constant SCHEDULE_TICK_MS => $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} // 8000;
+use constant SCHEDULE_TICK_MS => $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} // 2000;
 
 # backoff to avoid congestion.
 # Enable it with 1, disable with 0. Following options depends on it.
 use constant CONGESTION_CONTROL => $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL} // 1;
 
 # Wakes up the scheduler on request
-use constant WAKEUP_ON_REQUEST => $ENV{OPENQA_SCHEDULER_WAKEUP_ON_REQUEST} // 0;
+use constant WAKEUP_ON_REQUEST => $ENV{OPENQA_SCHEDULER_WAKEUP_ON_REQUEST} // 1;
 
 # Timeslot. Defaults to SCHEDULE_TICK_MS
 use constant TIMESLOT => $ENV{OPENQA_SCHEDULER_TIMESLOT} // SCHEDULE_TICK_MS;
@@ -117,13 +117,6 @@ sub new {
 }
 
 # Scheduler ABI goes here
-
-#
-# dbus_method('job_grab', [['dict', 'string', ['variant']]], [['dict', 'string', ['variant']]]);
-# sub job_grab {
-#     my ($self, $args) = @_;
-#     return OpenQA::Scheduler::Scheduler::job_grab(%$args);
-# }
 
 dbus_method('wakeup_scheduler');
 sub wakeup_scheduler {
