@@ -709,6 +709,8 @@ $jobB->clone->state(OpenQA::Schema::Result::Jobs::RUNNING);
 $jobB->clone->update;
 
 # clone A
+$jobA->discard_changes;
+ok(!$jobA->clone, "jobA not yet cloned");
 $jobA2 = $jobA->auto_duplicate;
 ok($jobA2, 'jobA duplicated');
 $jobA->discard_changes;

@@ -748,10 +748,6 @@ sub cluster_jobs {
     my $parents = $self->parents;
     while (my $pd = $parents->next) {
         my $p = $pd->parent;
-        # find the current clone
-        while ($p->clone) {
-            $p = $p->clone;
-        }
 
         if ($pd->dependency eq OpenQA::Schema::Result::JobDependencies->CHAINED) {
             push(@{$jobs->{$self->id}->{chained_parents}}, $p->id);
@@ -776,9 +772,10 @@ sub cluster_children {
     my $children = $self->children;
     while (my $cd = $children->next) {
         my $c = $cd->child;
-        while ($c->clone) {
-            $c = $c->clone;
-        }
+
+        # if this is already cloned, ignore it (mostly chained children)
+        next if $c->clone_id;
+
         # do not fear the recursion
         $c->cluster_jobs($jobs);
         if ($cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
@@ -1803,13 +1800,14 @@ sub cancel {
         });
 
     my $count = 1;
-    if (grep { $state eq $_ } EXECUTION_STATES) {
+    if ($self->worker) {
         $self->worker->send_command(command => 'cancel', job_id => $self->id);
-        my $jobs = $self->cluster_jobs;
-        for my $job (sort keys %$jobs) {
-            $count += $self->_job_stop_child($job);
-        }
     }
+    my $jobs = $self->cluster_jobs;
+    for my $job (sort keys %$jobs) {
+        $count += $self->_job_stop_child($job);
+    }
+
     return $count;
 }
 

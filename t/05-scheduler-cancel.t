@@ -67,25 +67,6 @@ is_deeply(
 );
 my $new_job = $job->auto_duplicate;
 ok($new_job, "got new job id " . $new_job->id);
-$job->discard_changes;
-is_deeply(
-    $job->cluster_jobs,
-    {
-        99961 => {
-            chained_children  => [],
-            chained_parents   => [],
-            parallel_children => [99963],
-            parallel_parents  => [],
-        },
-        99963 => {
-            chained_children  => [],
-            chained_parents   => [],
-            parallel_children => [],
-            parallel_parents  => [99961],
-        },
-    },
-    "99963 is still part of a duett"
-);
 
 is($new_job->state, 'scheduled', "new job is scheduled");
 is_deeply(
@@ -108,24 +89,6 @@ is_deeply(
 );
 
 $job = job_get(99963);
-is_deeply(
-    $job->cluster_jobs,
-    {
-        99961 => {
-            chained_children  => [],
-            chained_parents   => [],
-            parallel_children => [99963],
-            parallel_parents  => [],
-        },
-        99963 => {
-            chained_children  => [],
-            chained_parents   => [],
-            parallel_children => [],
-            parallel_parents  => [99961],
-        },
-    },
-    "99963 is still part of a duett"
-);
 is($job->state,      'running', "old job is running");
 is($job->t_finished, undef,     "There is a no finish time yet");
 
@@ -155,6 +118,12 @@ ok($job->t_finished, "There is a finish time");
 
 $job = job_get(99963);
 is($job->state, 'cancelled', "old job cancelled as well");
+
+$job = job_get(99982);
+is($job->state, 'cancelled', "new job 99982 cancelled");
+
+$job = job_get(99983);
+is($job->state, 'cancelled', "new job 99983 cancelled");
 
 $job = job_get(99928);
 is($job->state, 'scheduled', "unrelated job 99928 still scheduled");
