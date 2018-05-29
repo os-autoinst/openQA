@@ -135,10 +135,12 @@ sub update_needle {
     # the *exact* last module as long as it's alive around the same time
     if (($needle->last_seen_module_id // 0) < $module->id) {
         $needle->last_seen_module_id($module->id);
+        $needle->last_seen_time(now());
     }
 
     if ($matched && ($needle->last_matched_module_id // 0) < $module->id) {
         $needle->last_matched_module_id($module->id);
+        $needle->last_matched_time(now());
     }
 
     if ($needle->in_storage) {

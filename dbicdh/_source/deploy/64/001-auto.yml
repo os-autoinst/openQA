@@ -2700,7 +2700,7 @@ schema:
           match_type: ''
           name: needles_fk_last_seen_module_id
           on_delete: SET NULL
-          on_update: CASCADE
+          on_update: ''
           options: []
           reference_fields:
             - id

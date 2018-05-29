@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Tue May 29 15:57:49 2018
+-- Created on Tue May 29 19:00:46 2018
 -- 
 ;
 --
@@ -608,7 +608,7 @@ ALTER TABLE needles ADD CONSTRAINT needles_fk_last_matched_module_id FOREIGN KEY
 
 ;
 ALTER TABLE needles ADD CONSTRAINT needles_fk_last_seen_module_id FOREIGN KEY (last_seen_module_id)
-  REFERENCES job_modules (id) ON DELETE SET NULL ON UPDATE CASCADE DEFERRABLE;
+  REFERENCES job_modules (id) ON DELETE SET NULL DEFERRABLE;
 
 ;
 ALTER TABLE jobs ADD CONSTRAINT jobs_fk_assigned_worker_id FOREIGN KEY (assigned_worker_id)
