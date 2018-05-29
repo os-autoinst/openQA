@@ -46,7 +46,6 @@ sub schema_hook {
         {
             dir_id                 => 1,
             filename               => 'never-matched.json',
-            first_seen_module_id   => 3,
             last_seen_module_id    => 10,
             last_matched_module_id => undef,
             file_present           => 1,

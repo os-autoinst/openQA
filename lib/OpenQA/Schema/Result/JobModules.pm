@@ -178,7 +178,6 @@ sub delete {
     my $schema = $self->result_source->schema;
     my @ors;
     push(@ors, {last_seen_module_id    => $self->id});
-    push(@ors, {first_seen_module_id   => $self->id});
     push(@ors, {last_matched_module_id => $self->id});
 
     my $needles = $schema->resultset('Needles')->search({-or => \@ors});
