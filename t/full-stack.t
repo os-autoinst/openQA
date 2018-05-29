@@ -16,6 +16,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+# possible reasons why this tests might fail if you run it locally:
+#  * the web UI or any other openQA daemons are still running in the background
+#  * a qemu instance is still running (maybe leftover from last failed test
+#    execution)
+
 BEGIN {
     unshift @INC, 'lib';
     use FindBin;
@@ -141,7 +146,7 @@ my $driver = call_driver(sub { });
 my $mojoport = OpenQA::SeleniumTest::get_mojoport;
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
-ok -d $resultdir;
+ok(-d $resultdir, "resultdir \"$resultdir\" exists");
 
 $driver->title_is("openQA", "on main page");
 is($driver->find_element('#user-action a')->get_text(), 'Login', "noone logged in");
@@ -210,10 +215,15 @@ sub start_worker {
 start_worker;
 
 sub wait_for_result_panel {
-    my ($result_panel, $desc) = @_;
+    my ($result_panel, $desc, $fail_on_incomplete) = @_;
 
     for (my $count = 0; $count < 130; $count++) {
-        last if $driver->find_element('#result-row .card-body')->get_text() =~ $result_panel;
+        my $status_text = $driver->find_element('#result-row .card-body')->get_text();
+        last if ($status_text =~ $result_panel);
+        if ($fail_on_incomplete && $status_text =~ qr/Result: incomplete/) {
+            fail('test result is incomplete but shouldn\'t');
+            return;
+        }
         sleep 1;
     }
     javascript_console_has_no_warnings_or_errors;
@@ -222,10 +232,11 @@ sub wait_for_result_panel {
 }
 
 sub wait_for_job_running {
-    wait_for_result_panel qr/State: running/, 'job is running';
+    my ($fail_on_incomplete) = @_;
+    wait_for_result_panel(qr/State: running/, 'job is running', $fail_on_incomplete);
     $driver->find_element_by_link_text('Live View')->click();
 }
-wait_for_job_running;
+wait_for_job_running('fail on incomplete');
 
 sub wait_for_developer_console_contains_log_message {
     my ($message_regex, $diag_info) = @_;
