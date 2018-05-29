@@ -656,16 +656,9 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </ul>
 </li>
 <li><a href="#_variables">Variables</a></li>
-<li><a href="#_test_development_tricks">Test Development tricks</a>
+<li><a href="#_advanced_test_features">Advanced test features</a>
 <ul class="sectlevel2">
 <li><a href="#_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console">Capturing kernel exceptions and/or any other exceptions from the serial console</a></li>
-<li><a href="#_modifying_setting_of_an_existing_test">Modifying setting of an existing test</a></li>
-<li><a href="#_using_snapshots_to_speed_up_development_of_tests">Using snapshots to speed up development of tests</a>
-<ul class="sectlevel3">
-<li><a href="#_enable_snapshots_for_each_module">Enable snapshots for each module</a></li>
-<li><a href="#_storing_only_the_last_sucessful_snapshot">Storing only the last sucessful snapshot</a></li>
-</ul>
-</li>
 <li><a href="#_assigning_jobs_to_workers">Assigning jobs to workers</a></li>
 <li><a href="#_writing_multi_machine_tests">Writing multi-machine tests</a>
 <ul class="sectlevel3">
@@ -689,6 +682,21 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_using_a_serial_terminal">Using a serial terminal</a></li>
 <li><a href="#_sending_signals_ctrl_c_and_ctrl_d">Sending signals - ctrl-c and ctrl-d</a></li>
 <li><a href="#_the_virtio_serial_terminal_implementation">The virtio serial terminal implementation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#_test_development_tricks">Test Development tricks</a>
+<ul class="sectlevel2">
+<li><a href="#_modifying_setting_of_an_existing_test">Modifying setting of an existing test</a>
+<ul class="sectlevel3">
+<li><a href="#_backend_variables_for_faster_test_execution">Backend variables for faster test execution</a></li>
+</ul>
+</li>
+<li><a href="#_using_snapshots_to_speed_up_development_of_tests">Using snapshots to speed up development of tests</a>
+<ul class="sectlevel3">
+<li><a href="#_enable_snapshots_for_each_module">Enable snapshots for each module</a></li>
+<li><a href="#_storing_only_the_last_sucessful_snapshot">Storing only the last sucessful snapshot</a></li>
 </ul>
 </li>
 </ul>
@@ -3309,7 +3317,7 @@ on GitHub</a> for examples.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_test_development_tricks">Test Development tricks</h2>
+<h2 id="_advanced_test_features">Advanced test features</h2>
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="_capturing_kernel_exceptions_andor_any_other_exceptions_from_the_serial_console">Capturing kernel exceptions and/or any other exceptions from the serial console</h3>
@@ -3337,167 +3345,6 @@ tests.</p>
     <span class="tok-nv">$self</span><span class="tok-o">-&gt;</span><span class="tok-n">set_serial_failures</span><span class="tok-p">(</span><span class="tok-n">soft</span><span class="tok-o">=&gt;</span><span class="tok-p">[</span><span class="tok-nb">quotemeta</span> <span class="tok-s">&#39;Error&#39;</span><span class="tok-p">],</span> <span class="tok-n">hard</span><span class="tok-o">=&gt;</span><span class="tok-p">[</span><span class="tok-sx">qr/exception/</span><span class="tok-p">]);</span>
     <span class="tok-o">...</span>
 <span class="tok-p">}</span></code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_modifying_setting_of_an_existing_test">Modifying setting of an existing test</h3>
-<div class="paragraph">
-<p>There is no interface to modify existing tests but the clone_job.pl script
-can be used to create a new job that adds, removes or changes
-settings. This script is located at /usr/share/openqa/script/.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>/usr/share/openqa/script/clone_job.pl --from localhost --host localhost <span class="tok-m">42</span> <span class="tok-nv">FOO</span><span class="tok-o">=</span>bar <span class="tok-nv">BAZ</span><span class="tok-o">=</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>If you do not want a cloned job to start up in the same job group as the job
-you cloned from, e.g. to not pollute build results you the job group can be
-overwritten, too, using the special variable _GROUP. Add the quoted group
-name, e.g.:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from localhost <span class="tok-m">42</span> <span class="tok-nv">_GROUP</span><span class="tok-o">=</span><span class="tok-s2">&quot;openSUSE Tumbleweed&quot;</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The special group value 0 means that the group connection will be separated
-and the job will not appear as a job in any job group, e.g.:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from localhost <span class="tok-m">42</span> <span class="tok-nv">_GROUP</span><span class="tok-o">=</span><span class="tok-m">0</span></code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_using_snapshots_to_speed_up_development_of_tests">Using snapshots to speed up development of tests</h3>
-<div id="snapshots" class="paragraph">
-<p>For lower turn-around times during test development based on virtual machines
-the QEMU backend provides a feature that allows a job to start from a
-snapshot which can help in this situation.</p>
-</div>
-<div class="paragraph">
-<p>Depending on the use case, there are two options to help:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Create and <strong>preserve</strong> snapshots for <strong>every test</strong> module run (MAKETESTSNAPSHOTS)</p>
-<div class="ulist">
-<ul>
-<li>
-<p>Offers more flexibility as the test can be resumed almost at any point.
-However disk space requirements are high (expect more than 30GB for one
-job)</p>
-</li>
-<li>
-<p>This mode is useful for fixing non-fatal issues in tests and debugging SUT
-as more than just the snapshot of the last failed module is saved.</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p>Create a snapshot <strong>after every successful</strong> test module while <strong>always
-overwriting</strong> the existing snapshot to preserve only the latest (TESTDEBUG)</p>
-<div class="ulist">
-<ul>
-<li>
-<p>Allows to skip just before the start of the first failed test module,
-which can be limiting, but preserves disk space in comparison to
-MAKETESTSNAPSHOTS.</p>
-</li>
-<li>
-<p>This mode is useful for iterative test development</p>
-</li>
-</ul>
-</div>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>In both modes there is no need to modify tests (i.e. adding milestone test
-flag as the behaviour  is implied). In the later mode every test module is
-also considered fatal. This means the job is aborted after the first failed
-test module.</p>
-</div>
-<div class="sect3">
-<h4 id="_enable_snapshots_for_each_module">Enable snapshots for each module</h4>
-<div class="ulist">
-<ul>
-<li>
-<p>Run the worker with --no-cleanup parameter. This will preserve the hard
-disks after test runs.</p>
-</li>
-<li>
-<p>Set MAKETESTSNAPSHOTS=1 on a job. This will make openQA save a
-snapshot for every test module run. One way to do that is by cloning an
-existing job and adding the setting:</p>
-</li>
-</ul>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">MAKETESTSNAPSHOTS</span><span class="tok-o">=</span><span class="tok-m">1</span></code></pre>
-</div>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Create a job again, this time setting the SKIPTO variable to the snapshot you need. Again, clone_job.pl comes handy here:</p>
-</li>
-</ul>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">SKIPTO</span><span class="tok-o">=</span>consoletest-yast2_i</code></pre>
-</div>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Use qemu-img snapshot -l something.img to find out what snapshots are in the image. Snapshots are named
-<code>"test module category"-"test module name"</code> (e.g. <code>installation-start_install</code>).</p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_storing_only_the_last_sucessful_snapshot">Storing only the last sucessful snapshot</h4>
-<div class="ulist">
-<ul>
-<li>
-<p>Run the worker with --no-cleanup parameter. This will preserve the hard disks after test runs.</p>
-</li>
-<li>
-<p>Set TESTDEBUG=1 on a job. This will make openQA save a snapshot after each
-successful test module run. Snapshots are overwritten. The snapshot is named <code>lastgood</code> in all cases.</p>
-</li>
-</ul>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">TESTDEBUG</span><span class="tok-o">=</span><span class="tok-m">1</span></code></pre>
-</div>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Create a job again, this time setting the SKIPTO variable to the snapshot
-which failed on previous run. Make sure the new job will also have
-TESTDEBUG=1 set. This can be ensured by the use of the clone_job script on
-the clone source job or specifying the variable explicitly:</p>
-</li>
-</ul>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">TESTDEBUG</span><span class="tok-o">=</span><span class="tok-m">1</span> <span class="tok-nv">SKIPTO</span><span class="tok-o">=</span>consoletest-yast2_i</code></pre>
-</div>
 </div>
 </div>
 </div>
@@ -4426,6 +4273,192 @@ avoid them by informing the shell that it is running on a 'dumb' terminal (see
 the SUSE distribution&#8217;s serial terminal utility library). However some
 programs ignore this, but piping there output into tee is usually enough to
 stop them outputting non-printable characters.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_test_development_tricks">Test Development tricks</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_modifying_setting_of_an_existing_test">Modifying setting of an existing test</h3>
+<div class="paragraph">
+<p>There is no interface to modify existing tests but the clone_job.pl script
+can be used to create a new job that adds, removes or changes
+settings. This script is located at /usr/share/openqa/script/.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>/usr/share/openqa/script/clone_job.pl --from localhost --host localhost <span class="tok-m">42</span> <span class="tok-nv">FOO</span><span class="tok-o">=</span>bar <span class="tok-nv">BAZ</span><span class="tok-o">=</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you do not want a cloned job to start up in the same job group as the job
+you cloned from, e.g. to not pollute build results, the job group can be
+overwritten, too, using the special variable _GROUP. Add the quoted group
+name, e.g.:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from localhost <span class="tok-m">42</span> <span class="tok-nv">_GROUP</span><span class="tok-o">=</span><span class="tok-s2">&quot;openSUSE Tumbleweed&quot;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The special group value 0 means that the group connection will be separated
+and the job will not appear as a job in any job group, e.g.:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from localhost <span class="tok-m">42</span> <span class="tok-nv">_GROUP</span><span class="tok-o">=</span><span class="tok-m">0</span></code></pre>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_backend_variables_for_faster_test_execution">Backend variables for faster test execution</h4>
+<div class="paragraph">
+<p>The os-autoinst backend offers multiple test variables which are helpful for
+test development. For example:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Set _EXIT_AFTER_SCHEDULE=1 if you only want to evaluate the test schedule
+before the test modules are executed</p>
+</li>
+<li>
+<p>Use _SKIP_POST_FAIL_HOOKS=1 to prevent lengthy post_fail_hook execution in
+case of expected and known test fails, for examples when you need to create
+needles anyway</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_using_snapshots_to_speed_up_development_of_tests">Using snapshots to speed up development of tests</h3>
+<div id="snapshots" class="paragraph">
+<p>For lower turn-around times during test development based on virtual machines
+the QEMU backend provides a feature that allows a job to start from a
+snapshot which can help in this situation.</p>
+</div>
+<div class="paragraph">
+<p>Depending on the use case, there are two options to help:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Create and <strong>preserve</strong> snapshots for <strong>every test</strong> module run (MAKETESTSNAPSHOTS)</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Offers more flexibility as the test can be resumed almost at any point.
+However disk space requirements are high (expect more than 30GB for one
+job)</p>
+</li>
+<li>
+<p>This mode is useful for fixing non-fatal issues in tests and debugging SUT
+as more than just the snapshot of the last failed module is saved.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Create a snapshot <strong>after every successful</strong> test module while <strong>always
+overwriting</strong> the existing snapshot to preserve only the latest (TESTDEBUG)</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Allows to skip just before the start of the first failed test module,
+which can be limiting, but preserves disk space in comparison to
+MAKETESTSNAPSHOTS.</p>
+</li>
+<li>
+<p>This mode is useful for iterative test development</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>In both modes there is no need to modify tests (i.e. adding milestone test
+flag as the behaviour  is implied). In the later mode every test module is
+also considered fatal. This means the job is aborted after the first failed
+test module.</p>
+</div>
+<div class="sect3">
+<h4 id="_enable_snapshots_for_each_module">Enable snapshots for each module</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>Run the worker with --no-cleanup parameter. This will preserve the hard
+disks after test runs.</p>
+</li>
+<li>
+<p>Set MAKETESTSNAPSHOTS=1 on a job. This will make openQA save a
+snapshot for every test module run. One way to do that is by cloning an
+existing job and adding the setting:</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">MAKETESTSNAPSHOTS</span><span class="tok-o">=</span><span class="tok-m">1</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Create a job again, this time setting the SKIPTO variable to the snapshot you need. Again, clone_job.pl comes handy here:</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">SKIPTO</span><span class="tok-o">=</span>consoletest-yast2_i</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Use qemu-img snapshot -l something.img to find out what snapshots are in the image. Snapshots are named
+<code>"test module category"-"test module name"</code> (e.g. <code>installation-start_install</code>).</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_storing_only_the_last_sucessful_snapshot">Storing only the last sucessful snapshot</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>Run the worker with --no-cleanup parameter. This will preserve the hard disks after test runs.</p>
+</li>
+<li>
+<p>Set TESTDEBUG=1 on a job. This will make openQA save a snapshot after each
+successful test module run. Snapshots are overwritten. The snapshot is named <code>lastgood</code> in all cases.</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">TESTDEBUG</span><span class="tok-o">=</span><span class="tok-m">1</span></code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Create a job again, this time setting the SKIPTO variable to the snapshot
+which failed on previous run. Make sure the new job will also have
+TESTDEBUG=1 set. This can be ensured by the use of the clone_job script on
+the clone source job or specifying the variable explicitly:</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">TESTDEBUG</span><span class="tok-o">=</span><span class="tok-m">1</span> <span class="tok-nv">SKIPTO</span><span class="tok-o">=</span>consoletest-yast2_i</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -5820,7 +5853,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-05-28 14:25:01 UTC
+Last updated 2018-05-29 05:07:15 UTC
 </div>
 </div>
 </body>
