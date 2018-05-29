@@ -214,4 +214,43 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
     is_deeply(\@OpenQA::WebSockets::Server::commands, [qw(cancel cancel)], 'both cancel commands issued');
 };
 
+subtest 'chained parent fails -> parallel parents of children are cancelled (skipped)' => sub {
+    my %settingsA = %settings;
+    my %settingsB = %settings;
+    my %settingsC = %settings;
+    my %settingsD = %settings;
+
+    # https://progress.opensuse.org/issues/36565 - A is install, B is support server,
+    # C and D are children to both and parallel to each other
+    $settingsA{TEST} = 'A';
+    $settingsB{TEST} = 'B';
+    $settingsC{TEST} = 'C';
+    $settingsD{TEST} = 'D';
+
+    my $jobA = _job_create(\%settingsA);
+    my $jobB = _job_create(\%settingsB);
+    $settingsC{_START_AFTER_JOBS} = [$jobA->id];
+    $settingsD{_START_AFTER_JOBS} = [$jobA->id];
+    $settingsC{_PARALLEL_JOBS} = [$jobB->id];
+    my $jobC = _job_create(\%settingsC);
+    $settingsC{_PARALLEL_JOBS} = [$jobB->id, $jobC->id];
+    my $jobD = _job_create(\%settingsD);
+
+    $jobA->state(OpenQA::Schema::Result::Jobs::RUNNING);
+    $jobA->update;
+
+    # set A as failed and reload B, C and D from database
+    $jobA->done(result => OpenQA::Schema::Result::Jobs::FAILED);
+    $jobB->discard_changes;
+    $jobC->discard_changes;
+    $jobD->discard_changes;
+
+    is($jobB->state,  OpenQA::Schema::Result::Jobs::CANCELLED, 'B state is cancelled');
+    is($jobC->state,  OpenQA::Schema::Result::Jobs::CANCELLED, 'C state is cancelled');
+    is($jobD->state,  OpenQA::Schema::Result::Jobs::CANCELLED, 'D state is cancelled');
+    is($jobB->result, OpenQA::Schema::Result::Jobs::SKIPPED,   'B result is skipped');
+    is($jobC->result, OpenQA::Schema::Result::Jobs::SKIPPED,   'C result is skipped');
+    is($jobD->result, OpenQA::Schema::Result::Jobs::SKIPPED,   'D result is skipped');
+};
+
 done_testing();
