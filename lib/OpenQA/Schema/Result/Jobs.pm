@@ -114,11 +114,6 @@ __PACKAGE__->add_columns(
         is_foreign_key => 1,
         is_nullable    => 1
     },
-    # TODO: kill, we no longer support it
-    retry_avbl => {
-        data_type     => 'integer',
-        default_value => 3,
-    },
     backend => {
         data_type   => 'varchar',
         is_nullable => 1,
