@@ -70,7 +70,7 @@ ok(!defined $job, "duplication rejected");
 $job1 = job_get(99926);
 is($job1->{state}, OpenQA::Schema::Result::Jobs::DONE, 'trying to duplicate done job');
 is_deeply(
-    job_get_rs(99926)->jobs_to_duplicate,
+    job_get_rs(99926)->cluster_jobs,
     {
         '99926' => {
             'parallel_parents'  => [],
@@ -120,7 +120,7 @@ job_get_rs(99927)->cancel;
 $job1 = job_get(99927);
 is($job1->{state}, 'cancelled', "scheduled job cancelled after cancel");
 is_deeply(
-    job_get_rs(99937)->jobs_to_duplicate,
+    job_get_rs(99937)->cluster_jobs,
     {
         '99937' => {
             'chained_children'  => [99938],
@@ -158,7 +158,7 @@ is(@$jobs, @$current_jobs + 2, "two more job after restarting done job with chai
 
 $current_jobs = $jobs;
 is_deeply(
-    job_get_rs(99963)->jobs_to_duplicate,
+    job_get_rs(99963)->cluster_jobs,
     {
         '99963' => {
             'parallel_parents'  => [99961],

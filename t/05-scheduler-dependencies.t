@@ -147,7 +147,7 @@ for my $i (0 .. 5) {
     is($job->{settings}->{NICVLAN}, 1, 'same vlan for whole group');
 }
 
-my $exp_jobs_to_duplicate = {
+my $exp_cluster_jobs = {
     $jobA->id => {
         chained_children  => [],
         chained_parents   => [],
@@ -186,12 +186,12 @@ my $exp_jobs_to_duplicate = {
     },
 };
 # it shouldn't matter which job we ask - they should all restart the same cluster
-is_deeply($jobA->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job A has proper infos");
-is_deeply($jobB->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job B has proper infos");
-is_deeply($jobC->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job C has proper infos");
-is_deeply($jobD->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job D has proper infos");
-is_deeply($jobE->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job E has proper infos");
-is_deeply($jobF->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job F has proper infos");
+is_deeply($jobA->cluster_jobs, $exp_cluster_jobs, "Job A has proper infos");
+is_deeply($jobB->cluster_jobs, $exp_cluster_jobs, "Job B has proper infos");
+is_deeply($jobC->cluster_jobs, $exp_cluster_jobs, "Job C has proper infos");
+is_deeply($jobD->cluster_jobs, $exp_cluster_jobs, "Job D has proper infos");
+is_deeply($jobE->cluster_jobs, $exp_cluster_jobs, "Job E has proper infos");
+is_deeply($jobF->cluster_jobs, $exp_cluster_jobs, "Job F has proper infos");
 
 # jobA failed
 my $result = $jobA->done(result => 'failed');

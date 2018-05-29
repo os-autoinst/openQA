@@ -731,7 +731,7 @@ sub create_clones {
 
 # internal (recursive) function for duplicate - returns hash of all jobs in the
 # cluster of the current job (in no order but with relations)
-sub jobs_to_duplicate {
+sub cluster_jobs {
     my ($self, $jobs) = @_;
 
     $jobs ||= {};
@@ -758,15 +758,15 @@ sub jobs_to_duplicate {
         }
         else {
             push(@{$jobs->{$self->id}->{parallel_parents}}, $p->id);
-            $p->jobs_to_duplicate($jobs);
+            $p->cluster_jobs($jobs);
         }
     }
 
-    return $self->jobs_to_duplicate_children($jobs);
+    return $self->cluster_children($jobs);
 }
 
-# internal (recursive) function to jobs_to_duplicate
-sub jobs_to_duplicate_children {
+# internal (recursive) function to cluster_jobs
+sub cluster_children {
     my ($self, $jobs) = @_;
 
     my $schema = $self->result_source->schema;
@@ -778,7 +778,7 @@ sub jobs_to_duplicate_children {
             $c = $c->clone;
         }
         # do not fear the recursion
-        $c->jobs_to_duplicate($jobs);
+        $c->cluster_jobs($jobs);
         if ($cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
             push(@{$jobs->{$self->id}->{parallel_children}}, $c->id);
         }
@@ -828,7 +828,7 @@ sub duplicate {
     # If the job already has a clone, none is created
     return unless $self->can_be_duplicated;
 
-    my $jobs = $self->jobs_to_duplicate;
+    my $jobs = $self->cluster_jobs;
     log_debug("Jobs to duplicate " . dump($jobs));
     try {
         $schema->txn_do(sub { $self->create_clones($jobs, $args->{prio}) });
