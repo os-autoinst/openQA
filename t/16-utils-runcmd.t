@@ -60,6 +60,10 @@ stderr_like {
     };
 }
 qr/fatal: Not a git repository.*\n.*cmd returned non-zero value/i;
-is($res, 'Unable to commit via Git: fatal: Not a git repository: \'/some/dir/.git\'', 'Git error message returned');
+like(
+    $res,
+    qr'^Unable to commit via Git: fatal: (N|n)ot a git repository: \'/some/dir/.git\'$',
+    'Git error message returned'
+);
 
 done_testing();
