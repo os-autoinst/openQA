@@ -83,7 +83,6 @@ __PACKAGE__->belongs_to(
         on_update     => "CASCADE",
     },
 );
-__PACKAGE__->has_many(needle_hits => 'OpenQA::Schema::Result::JobModuleNeedles', 'job_module_id');
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
@@ -175,9 +174,6 @@ sub insert {
 # override to straighten out needle references
 sub delete {
     my ($self) = @_;
-
-    # those are just there for tracking
-    $self->needle_hits->delete;
 
     my $schema = $self->result_source->schema;
     my @ors;

@@ -108,7 +108,6 @@ $rs->create(
     {
         dir_id                 => $drs->find({path => {like => '%fedora/needles'}})->id,
         filename               => "test-nonexistent.json",
-        first_seen_module_id   => $module->id,
         last_seen_module_id    => $module->id,
         last_matched_module_id => $module->id,
         file_present           => 1
