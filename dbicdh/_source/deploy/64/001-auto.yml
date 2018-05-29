@@ -2686,7 +2686,7 @@ schema:
             - last_matched_module_id
           match_type: ''
           name: needles_fk_last_matched_module_id
-          on_delete: ''
+          on_delete: SET NULL
           on_update: ''
           options: []
           reference_fields:
@@ -2699,8 +2699,8 @@ schema:
             - last_seen_module_id
           match_type: ''
           name: needles_fk_last_seen_module_id
-          on_delete: ''
-          on_update: ''
+          on_delete: SET NULL
+          on_update: CASCADE
           options: []
           reference_fields:
             - id
@@ -2748,16 +2748,6 @@ schema:
           order: 1
           size:
             - 0
-        last_matched:
-          data_type: timestamp
-          default_value: ~
-          is_nullable: 1
-          is_primary_key: 0
-          is_unique: 0
-          name: last_matched
-          order: 6
-          size:
-            - 0
         last_matched_module_id:
           data_type: integer
           default_value: ~
@@ -2768,14 +2758,14 @@ schema:
           order: 7
           size:
             - 0
-        last_seen:
+        last_matched_time:
           data_type: timestamp
           default_value: ~
           is_nullable: 1
           is_primary_key: 0
           is_unique: 0
-          name: last_seen
-          order: 4
+          name: last_matched_time
+          order: 6
           size:
             - 0
         last_seen_module_id:
@@ -2786,6 +2776,16 @@ schema:
           is_unique: 0
           name: last_seen_module_id
           order: 5
+          size:
+            - 0
+        last_seen_time:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: last_seen_time
+          order: 4
           size:
             - 0
         t_created:

@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Tue May 29 14:02:26 2018
+-- Created on Tue May 29 15:57:49 2018
 -- 
 ;
 --
@@ -368,9 +368,9 @@ CREATE TABLE needles (
   id serial NOT NULL,
   dir_id integer NOT NULL,
   filename text NOT NULL,
-  last_seen timestamp,
+  last_seen_time timestamp,
   last_seen_module_id integer,
-  last_matched timestamp,
+  last_matched_time timestamp,
   last_matched_module_id integer,
   file_present boolean DEFAULT '1' NOT NULL,
   tags text[],
@@ -604,11 +604,11 @@ ALTER TABLE needles ADD CONSTRAINT needles_fk_dir_id FOREIGN KEY (dir_id)
 
 ;
 ALTER TABLE needles ADD CONSTRAINT needles_fk_last_matched_module_id FOREIGN KEY (last_matched_module_id)
-  REFERENCES job_modules (id) DEFERRABLE;
+  REFERENCES job_modules (id) ON DELETE SET NULL DEFERRABLE;
 
 ;
 ALTER TABLE needles ADD CONSTRAINT needles_fk_last_seen_module_id FOREIGN KEY (last_seen_module_id)
-  REFERENCES job_modules (id) DEFERRABLE;
+  REFERENCES job_modules (id) ON DELETE SET NULL ON UPDATE CASCADE DEFERRABLE;
 
 ;
 ALTER TABLE jobs ADD CONSTRAINT jobs_fk_assigned_worker_id FOREIGN KEY (assigned_worker_id)
