@@ -712,7 +712,7 @@ sub serialize_test {
         diag("JSON serialization tests");
         $parser = $parser_name->new();
         $parser->load($test_result_file);
-        $obj_content = $parser->to_json();
+        $obj_content  = $parser->to_json();
         $deserialized = $parser_name->new()->from_json($obj_content);
         ok "$deserialized" ne "$parser", "Different objects";
         $test_function->($parser);
