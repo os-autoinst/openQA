@@ -46,12 +46,49 @@ sub job_get {
     return $job;
 }
 
-my $new_job = job_get(99963)->auto_duplicate;
+my $job = job_get(99963);
+is_deeply(
+    $job->cluster_jobs,
+    {
+        99961 => {
+            chained_children  => [],
+            chained_parents   => [],
+            parallel_children => [99963],
+            parallel_parents  => [],
+        },
+        99963 => {
+            chained_children  => [],
+            chained_parents   => [],
+            parallel_children => [],
+            parallel_parents  => [99961],
+        },
+    },
+    "99963 is part of a duett"
+);
+my $new_job = $job->auto_duplicate;
 ok($new_job, "got new job id " . $new_job->id);
 
 is($new_job->state, 'scheduled', "new job is scheduled");
+is_deeply(
+    $new_job->cluster_jobs,
+    {
+        99982 => {
+            chained_children  => [],
+            chained_parents   => [],
+            parallel_children => [99983],
+            parallel_parents  => [],
+        },
+        99983 => {
+            chained_children  => [],
+            chained_parents   => [],
+            parallel_children => [],
+            parallel_parents  => [99982],
+        },
+    },
+    "new job is part of a new duett"
+);
 
-my $job = job_get(99963);
+$job = job_get(99963);
 is($job->state,      'running', "old job is running");
 is($job->t_finished, undef,     "There is a no finish time yet");
 
@@ -68,7 +105,8 @@ lj;
 
 my $ret = $schema->resultset('Jobs')
   ->cancel_by_settings({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'x86_64'});
-is($ret, 2, "two jobs cancelled by hash");
+# 99963 and the new cluster of 2
+is($ret, 3, "two jobs cancelled by hash");
 
 $job = $new_job;
 
@@ -80,6 +118,12 @@ ok($job->t_finished, "There is a finish time");
 
 $job = job_get(99963);
 is($job->state, 'cancelled', "old job cancelled as well");
+
+$job = job_get(99982);
+is($job->state, 'cancelled', "new job 99982 cancelled");
+
+$job = job_get(99983);
+is($job->state, 'cancelled', "new job 99983 cancelled");
 
 $job = job_get(99928);
 is($job->state, 'scheduled', "unrelated job 99928 still scheduled");
@@ -212,6 +256,45 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
     is($jobB->result, OpenQA::Schema::Result::Jobs::PARALLEL_FAILED, 'B result is parallel failed');
     is($jobC->result, OpenQA::Schema::Result::Jobs::PARALLEL_FAILED, 'C result is parallel failed');
     is_deeply(\@OpenQA::WebSockets::Server::commands, [qw(cancel cancel)], 'both cancel commands issued');
+};
+
+subtest 'chained parent fails -> parallel parents of children are cancelled (skipped)' => sub {
+    my %settingsA = %settings;
+    my %settingsB = %settings;
+    my %settingsC = %settings;
+    my %settingsD = %settings;
+
+    # https://progress.opensuse.org/issues/36565 - A is install, B is support server,
+    # C and D are children to both and parallel to each other
+    $settingsA{TEST} = 'A';
+    $settingsB{TEST} = 'B';
+    $settingsC{TEST} = 'C';
+    $settingsD{TEST} = 'D';
+
+    my $jobA = _job_create(\%settingsA);
+    my $jobB = _job_create(\%settingsB);
+    $settingsC{_START_AFTER_JOBS} = [$jobA->id];
+    $settingsD{_START_AFTER_JOBS} = [$jobA->id];
+    $settingsC{_PARALLEL_JOBS}    = [$jobB->id];
+    my $jobC = _job_create(\%settingsC);
+    $settingsC{_PARALLEL_JOBS} = [$jobB->id, $jobC->id];
+    my $jobD = _job_create(\%settingsD);
+
+    $jobA->state(OpenQA::Schema::Result::Jobs::RUNNING);
+    $jobA->update;
+
+    # set A as failed and reload B, C and D from database
+    $jobA->done(result => OpenQA::Schema::Result::Jobs::FAILED);
+    $jobB->discard_changes;
+    $jobC->discard_changes;
+    $jobD->discard_changes;
+
+    is($jobB->state,  OpenQA::Schema::Result::Jobs::CANCELLED, 'B state is cancelled');
+    is($jobC->state,  OpenQA::Schema::Result::Jobs::CANCELLED, 'C state is cancelled');
+    is($jobD->state,  OpenQA::Schema::Result::Jobs::CANCELLED, 'D state is cancelled');
+    is($jobB->result, OpenQA::Schema::Result::Jobs::SKIPPED,   'B result is skipped');
+    is($jobC->result, OpenQA::Schema::Result::Jobs::SKIPPED,   'C result is skipped');
+    is($jobD->result, OpenQA::Schema::Result::Jobs::SKIPPED,   'D result is skipped');
 };
 
 done_testing();

@@ -147,7 +147,7 @@ for my $i (0 .. 5) {
     is($job->{settings}->{NICVLAN}, 1, 'same vlan for whole group');
 }
 
-my $exp_jobs_to_duplicate = {
+my $exp_cluster_jobs = {
     $jobA->id => {
         chained_children  => [],
         chained_parents   => [],
@@ -186,12 +186,12 @@ my $exp_jobs_to_duplicate = {
     },
 };
 # it shouldn't matter which job we ask - they should all restart the same cluster
-is_deeply($jobA->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job A has proper infos");
-is_deeply($jobB->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job B has proper infos");
-is_deeply($jobC->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job C has proper infos");
-is_deeply($jobD->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job D has proper infos");
-is_deeply($jobE->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job E has proper infos");
-is_deeply($jobF->jobs_to_duplicate, $exp_jobs_to_duplicate, "Job F has proper infos");
+is_deeply($jobA->cluster_jobs, $exp_cluster_jobs, "Job A has proper infos");
+is_deeply($jobB->cluster_jobs, $exp_cluster_jobs, "Job B has proper infos");
+is_deeply($jobC->cluster_jobs, $exp_cluster_jobs, "Job C has proper infos");
+is_deeply($jobD->cluster_jobs, $exp_cluster_jobs, "Job D has proper infos");
+is_deeply($jobE->cluster_jobs, $exp_cluster_jobs, "Job E has proper infos");
+is_deeply($jobF->cluster_jobs, $exp_cluster_jobs, "Job F has proper infos");
 
 # jobA failed
 my $result = $jobA->done(result => 'failed');
@@ -249,7 +249,7 @@ is($job->{result}, "failed", "no change");
 ok(defined $job->{clone_id}, "cloned");
 
 $job = job_get_deps($jobB->id);    # cloned
-is($job->{result}, "parallel_restarted", "B stopped");
+is($job->{result}, "parallel_failed", "$job->{id} B stopped");
 ok(defined $job->{clone_id}, "cloned");
 my $jobB2 = $job->{clone_id};
 
@@ -299,13 +299,13 @@ ok(defined $job->{clone_id}, "cloned");
 my $jobA2 = $job->{clone_id};
 
 $job = job_get_deps($jobB->id);    # unchanged
-is($job->{result}, "parallel_restarted", "B is restarted");
-is($job->{clone_id}, $jobB2, "cloned");
+is($job->{result},   "parallel_failed", "B is unchanged");
+is($job->{clone_id}, $jobB2,            "cloned");
 
 $job = job_get_deps($jobC->id);    # unchanged
-is($job->{state},    "running",            "no change");
-is($job->{result},   "parallel_restarted", "C is restarted");
-is($job->{clone_id}, $jobC2,               "cloned");
+is($job->{state},    "running",         "no change");
+is($job->{result},   "parallel_failed", "C is restarted");
+is($job->{clone_id}, $jobC2,            "cloned");
 
 $job = job_get_deps($jobD->id);    #cloned
 is($job->{state},  "done",            "no change");
@@ -709,6 +709,8 @@ $jobB->clone->state(OpenQA::Schema::Result::Jobs::RUNNING);
 $jobB->clone->update;
 
 # clone A
+$jobA->discard_changes;
+ok(!$jobA->clone, "jobA not yet cloned");
 $jobA2 = $jobA->auto_duplicate;
 ok($jobA2, 'jobA duplicated');
 $jobA->discard_changes;

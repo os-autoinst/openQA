@@ -665,8 +665,10 @@ sub create_clone {
     # not be created, somebody else was faster at cloning)
     my $upd = $rset->search({clone_id => undef, id => $self->id})->update({clone_id => $new_job->id});
 
-    die('There is already a clone!') unless ($upd == 1);    # One row affected
-                                                            # Needed to load default values from DB
+    # One row affected
+    die('There is already a clone!') unless ($upd == 1);
+
+    # Needed to load default values from DB
     $new_job->discard_changes;
     return $new_job;
 }
@@ -731,7 +733,7 @@ sub create_clones {
 
 # internal (recursive) function for duplicate - returns hash of all jobs in the
 # cluster of the current job (in no order but with relations)
-sub jobs_to_duplicate {
+sub cluster_jobs {
     my ($self, $jobs) = @_;
 
     $jobs ||= {};
@@ -746,10 +748,6 @@ sub jobs_to_duplicate {
     my $parents = $self->parents;
     while (my $pd = $parents->next) {
         my $p = $pd->parent;
-        # find the current clone
-        while ($p->clone) {
-            $p = $p->clone;
-        }
 
         if ($pd->dependency eq OpenQA::Schema::Result::JobDependencies->CHAINED) {
             push(@{$jobs->{$self->id}->{chained_parents}}, $p->id);
@@ -758,15 +756,15 @@ sub jobs_to_duplicate {
         }
         else {
             push(@{$jobs->{$self->id}->{parallel_parents}}, $p->id);
-            $p->jobs_to_duplicate($jobs);
+            $p->cluster_jobs($jobs);
         }
     }
 
-    return $self->jobs_to_duplicate_children($jobs);
+    return $self->cluster_children($jobs);
 }
 
-# internal (recursive) function to jobs_to_duplicate
-sub jobs_to_duplicate_children {
+# internal (recursive) function to cluster_jobs
+sub cluster_children {
     my ($self, $jobs) = @_;
 
     my $schema = $self->result_source->schema;
@@ -774,11 +772,12 @@ sub jobs_to_duplicate_children {
     my $children = $self->children;
     while (my $cd = $children->next) {
         my $c = $cd->child;
-        while ($c->clone) {
-            $c = $c->clone;
-        }
+
+        # if this is already cloned, ignore it (mostly chained children)
+        next if $c->clone_id;
+
         # do not fear the recursion
-        $c->jobs_to_duplicate($jobs);
+        $c->cluster_jobs($jobs);
         if ($cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
             push(@{$jobs->{$self->id}->{parallel_children}}, $c->id);
         }
@@ -828,7 +827,7 @@ sub duplicate {
     # If the job already has a clone, none is created
     return unless $self->can_be_duplicated;
 
-    my $jobs = $self->jobs_to_duplicate;
+    my $jobs = $self->cluster_jobs;
     log_debug("Jobs to duplicate " . dump($jobs));
     try {
         $schema->txn_do(sub { $self->create_clones($jobs, $args->{prio}) });
@@ -1146,7 +1145,7 @@ sub update_module {
     return $mod->save_details($result->{details}, $cleanup);
 }
 
-sub running_modinfo() {
+sub running_modinfo {
     my ($self) = @_;
 
     my @modules = OpenQA::Schema::Result::JobModules::job_modules($self);
@@ -1681,56 +1680,28 @@ sub store_column {
     return $self->SUPER::store_column(%args);
 }
 
-# parent job failed, handle scheduled children - set them to done incomplete immediately
-sub _job_skip_children {
-    my ($self) = @_;
-    my $jobs = $self->children->search(
-        {
-            'child.state' => SCHEDULED,
-        },
-        {join => 'child'});
-
-    my $count = 0;
-    while (my $j = $jobs->next) {
-        $j->child->update(
-            {
-                state  => CANCELLED,
-                result => SKIPPED,
-            });
-        $count += $j->child->_job_skip_children;
-    }
-    return $count;
-}
-
 # parent job failed, handle running children - send stop command
-sub _job_stop_children {
-    my ($self) = @_;
+sub _job_stop_child {
+    my ($self, $job) = @_;
 
-    my $children = $self->children->search(
-        {
-            dependency    => OpenQA::Schema::Result::JobDependencies->PARALLEL,
-            'child.state' => [EXECUTION_STATES],
-        },
-        {join => 'child'});
+    # skip ourselves
+    return 0 if $job == $self->id;
+    my $rset = $self->result_source->resultset;
 
-    my $count = 0;
-    my $jobs  = $children->search(
-        {
-            result => NONE,
-        });
-    while (my $j = $jobs->next) {
-        $j->child->update(
-            {
-                result => PARALLEL_FAILED,
-            });
-        $count += 1;
+    $job = $rset->search({id => $job, result => NONE})->first;
+    return 0 unless $job;
+
+    if ($job->state eq SCHEDULED) {
+        $job->update({result => SKIPPED, state => CANCELLED});
     }
-
-    while (my $j = $children->next) {
-        $j->child->worker->send_command(command => 'cancel', job_id => $j->child->id);
-        $count += $j->child->_job_stop_children;
+    else {
+        print STDERR "JOB State " . $job->id . " " . $job->state . "\n";
+        $job->update({result => PARALLEL_FAILED});
+        if ($job->worker) {
+            $job->worker->send_command(command => 'cancel', job_id => $job->id);
+        }
     }
-    return $count;
+    return 1;
 }
 
 sub test_uploadlog_list {
@@ -1804,9 +1775,11 @@ sub done {
 
     $self->update(\%new_val);
 
-    if (!grep { $result eq $_ } OK_RESULTS) {
-        $self->_job_skip_children;
-        $self->_job_stop_children;
+    if (defined $new_val{result} && !grep { $result eq $_ } OK_RESULTS) {
+        my $jobs = $self->cluster_jobs;
+        for my $job (sort keys %$jobs) {
+            $self->_job_stop_child($job);
+        }
     }
     # bugrefs are there to mark reasons of failure - the function checks itself though
     $self->carry_over_bugrefs;
@@ -1827,11 +1800,14 @@ sub cancel {
         });
 
     my $count = 1;
-    if (grep { $state eq $_ } EXECUTION_STATES) {
+    if ($self->worker) {
         $self->worker->send_command(command => 'cancel', job_id => $self->id);
-        $count += $self->_job_skip_children;
-        $count += $self->_job_stop_children;
     }
+    my $jobs = $self->cluster_jobs;
+    for my $job (sort keys %$jobs) {
+        $count += $self->_job_stop_child($job);
+    }
+
     return $count;
 }
 
