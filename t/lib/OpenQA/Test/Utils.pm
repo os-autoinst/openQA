@@ -91,10 +91,7 @@ sub create_webapi {
 }
 
 sub create_websocket_server {
-    my $port          = shift;
-    my $bogus         = shift;
-    my $nowait        = shift;
-    my $noworkercheck = shift;
+    my ($port, $bogus, $nowait, $noworkercheck) = @_;
 
     diag("Starting WebSocket service");
     diag("Bogus: $bogus | No wait: $nowait | No worker checks: $noworkercheck");

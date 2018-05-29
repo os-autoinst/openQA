@@ -154,7 +154,7 @@ $driver->click_element_ok('dont-notify', 'id');
 $driver->click_element_ok('confirm',     'id');
 
 my $wsport = $mojoport + 1;
-$wspid = create_websocket_server($wsport);
+$wspid = create_websocket_server($wsport, 0, 0, 0);
 
 my $connect_args = "--apikey=1234567890ABCDEF --apisecret=1234567890ABCDEF --host=http://localhost:$mojoport";
 
