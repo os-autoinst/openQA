@@ -86,9 +86,9 @@
                             %= link_to $worker->to_string => url_for('admin_worker_show', worker_id => $worker->id)
                         </span>
                     % if ($job->state eq 'waiting') {
-                        <div>
+                        <div class="developer-instructions">
                             <span title="Developer mode available">
-                                System is waiting for developer, connect to <b><%= $worker->host %>  at port <%= 90 + $worker->instance %></b>
+                                System is waiting for developer, connect to <b><%= $worker->host %> at port <%= 90 + $worker->instance %> with Shared mode (otherwise the job might be cancelled)</b>
                             </span>
                         </div>
                     % }
