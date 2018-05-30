@@ -131,26 +131,4 @@ sub job_restart {
     return @duplicated;
 }
 
-#
-# Assets API
-#
-
-sub asset_list {
-    my %args = @_;
-
-    my %cond;
-    my %attrs;
-
-    if ($args{limit}) {
-        $attrs{rows} = $args{limit};
-    }
-    $attrs{page} = $args{page} || 0;
-
-    if ($args{type}) {
-        $cond{type} = $args{type};
-    }
-
-    return schema->resultset("Assets")->search(\%cond, \%attrs);
-}
-
 1;

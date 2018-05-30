@@ -80,17 +80,6 @@ sub _is_method_allowed {
 }
 
 
-
-## Assets
-dbus_method('asset_list', [['dict', 'string', 'string']], [['array', ['dict', 'string', 'string']]]);
-sub asset_list {
-    my ($self, $args) = @_;
-    my $rs = safe_call 'OpenQA::Resource::Jobs' => asset_list => %$args;
-    return [] if @$rs == 0;
-    @$rs[0]->result_class('DBIx::Class::ResultClass::HashRefInflator');
-    return [@$rs[0]->all];
-}
-
 dbus_method('job_restart', [['array', 'uint32']], [['array', 'uint32']]);
 sub job_restart {
     my ($self, $args) = @_;
