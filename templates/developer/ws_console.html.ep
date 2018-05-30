@@ -13,6 +13,14 @@
 <form id="ws_console_form" data-url="<%= $ws_url %>" action="#">
 % if ($ws_url) {
     <p>
+        % if ($use_proxy) {
+            Connecting to os-autoinst command server via web UI because query parameter 'proxy' is present.
+        % }
+        % else {
+            Connecting directly from browser to os-autoinst command server because query parameter 'proxy' is absent.
+        % }
+    </p>
+    <p>
         <input type="text" id="msg" placeholder="enter command">
     </p>
     <p>

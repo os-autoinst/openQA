@@ -34,7 +34,7 @@ sub determine_web_socket_url {
 }
 
 # returns the job for the currently processed request
-sub find_job {
+sub find_current_job {
     my ($self) = @_;
 
     my $test_id = $self->param('testid') or return;
@@ -42,13 +42,25 @@ sub find_job {
     return $jobs->search({id => $test_id})->first;
 }
 
-# serves a simple HTML/JavaScript page to connect directly from browser to os-autoinst command server
+# serves a simple HTML/JavaScript page to connect either
+#  1. directly from browser to os-autoinst command server
+#  2. or to connect via ws_proxy route defined above
+# (option 1. is default; specify query parameter 'proxy=1' for 2.)
 sub ws_console {
     my ($self) = @_;
 
-    my $job = $self->find_job() or return $self->reply->not_found;
-    $self->stash(job    => $job);
-    $self->stash(ws_url => (determine_web_socket_url($job) // ''));
+    my $job = $self->find_current_job() or return $self->reply->not_found;
+    my $use_proxy = $self->param('proxy') // 0;
+
+    # determine web socket URL
+    my $ws_url = determine_web_socket_url($job);
+    if ($use_proxy) {
+        $ws_url = $ws_url ? $self->url_for('developer_ws_proxy', testid => $job->id) : undef;
+    }
+
+    $self->stash(job       => $job);
+    $self->stash(ws_url    => ($ws_url // ''));
+    $self->stash(use_proxy => $use_proxy);
     return $self->render;
 }
 

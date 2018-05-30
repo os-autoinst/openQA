@@ -5,6 +5,11 @@ function setupWebSocketContosle(url) {
         return;
     }
 
+    // handle relative URL
+    if (url.indexOf('ws:') !== 0) {
+        url = 'ws://' + window.location.host + (url.indexOf('/') !== 0 ? '/' : '') + url;
+    }
+
     var msg = $('#msg');
     var log = $('#log');
     var followLogCheckBox = $('#follow_log');
