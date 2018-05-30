@@ -304,13 +304,37 @@ like $openqalogs, qr/ andi \$a3, \$t1, 41399 and 256/, "Etag and size are logged
 like $openqalogs, qr/removed.*sle-12-SP3-x86_64-0368-200\@64bit.qcow2*/, "Reclaimed space for new smaller asset";
 truncate_log $logfile;
 
-$cache->add_asset("Foobar", 0);
+$cache->track_asset("Foobar", 0);
 
 is $cache->toggle_asset_lock("Foobar", 1), 1, 'Could acquire lock';
 is $cache->toggle_asset_lock("Foobar", 0), 1, 'Could acquire lock';
 
 $cache->dbh->prepare("delete from assets")->execute();
 
+my $fake_asset = "$cachedir/test.qcow";
+
+path($fake_asset)->spurt('');
+ok -e $fake_asset, 'Asset is there';
+$cache->asset_lookup($fake_asset);
+ok !-e $fake_asset, 'Asset was purged since was not tracked';
+
+path($fake_asset)->spurt('');
+ok -e $fake_asset, 'Asset is there';
+$cache->purge_asset($fake_asset);
+ok !-e $fake_asset, 'Asset was purged';
+
+$cache->track_asset($fake_asset);
+is $cache->_asset($fake_asset)->{downloading}, 0, 'Can get downloading state with _asset()';
+is_deeply $cache->_asset('foobar'), {}, '_asset() returns {} if asset is not present';
+ok my $res = $cache->try_lock_asset($fake_asset), 'Could lock asset';
+
+path($fake_asset)->spurt('');
+is $res->{downloading}, 1, 'Download lock acquired';
+is $cache->check_limits(2333), 0, 'Freed no space - locked assets are not removed';
+is $cache->toggle_asset_lock($fake_asset, 0), 1, 'Could release lock';
+is $cache->check_limits(2333), 1, '1 Asset purged to make space';
+
+# Concurrent test
 my $tot_proc   = $ENV{STRESS_TEST} ? 60 : 10;
 my $concurrent = $ENV{STRESS_TEST} ? 30 : 2;
 my $q          = queue;
