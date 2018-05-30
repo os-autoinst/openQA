@@ -42,12 +42,16 @@ __PACKAGE__->add_columns(
     filename => {
         data_type => 'text',
     },
-    first_seen_module_id => {
-        data_type   => 'integer',
+    last_seen_time => {
+        data_type   => 'timestamp',
         is_nullable => 1,
     },
     last_seen_module_id => {
         data_type   => 'integer',
+        is_nullable => 1,
+    },
+    last_matched_time => {
+        data_type   => 'timestamp',
         is_nullable => 1,
     },
     last_matched_module_id => {
@@ -69,17 +73,12 @@ __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw(dir_id filename)]);
 __PACKAGE__->belongs_to(
-    first_seen => 'OpenQA::Schema::Result::JobModules',
-    'first_seen_module_id', {join_type => 'LEFT'});
-__PACKAGE__->belongs_to(
     last_seen => 'OpenQA::Schema::Result::JobModules',
-    'last_seen_module_id', {join_type => 'LEFT'});
+    'last_seen_module_id', {join_type => 'LEFT', on_delete => 'SET NULL'});
 __PACKAGE__->belongs_to(
     last_match => 'OpenQA::Schema::Result::JobModules',
-    'last_matched_module_id', {join_type => 'LEFT'});
+    'last_matched_module_id', {join_type => 'LEFT', on_delete => 'SET NULL'});
 __PACKAGE__->belongs_to(directory => 'OpenQA::Schema::Result::NeedleDirs', 'dir_id');
-
-__PACKAGE__->has_many(job_modules => 'OpenQA::Schema::Result::JobModuleNeedles', 'needle_id');
 
 sub update_needle_cache {
     my ($needle_cache) = @_;
@@ -129,23 +128,19 @@ sub update_needle {
             $dir->set_name_from_job($module->job);
             $dir->insert;
         }
-        $needle ||= $dir->needles->find_or_new({filename => $basename, first_seen_module_id => $module->id},
-            {key => 'needles_dir_id_filename'});
-    }
-
-    # normally we would not need that, but the migration is working on the jobs from past backward
-    if (($needle->first_seen_module_id // 0) > $module->id) {
-        $needle->first_seen_module_id($module->id);
+        $needle ||= $dir->needles->find_or_new({filename => $basename}, {key => 'needles_dir_id_filename'});
     }
 
     # it's not impossible that two instances update this information independent of each other, but we don't mind
     # the *exact* last module as long as it's alive around the same time
     if (($needle->last_seen_module_id // 0) < $module->id) {
         $needle->last_seen_module_id($module->id);
+        $needle->last_seen_time(now());
     }
 
     if ($matched && ($needle->last_matched_module_id // 0) < $module->id) {
         $needle->last_matched_module_id($module->id);
+        $needle->last_matched_time(now());
     }
 
     if ($needle->in_storage) {
@@ -166,21 +161,6 @@ sub name() {
     my ($self) = @_;
     my ($name, $dir, $extension) = fileparse($self->filename, qw(.json));
     return $name;
-}
-
-sub recalculate_matches {
-    my ($self) = @_;
-
-    $self->last_matched_module_id($self->job_modules->search({matched => 1})->get_column('job_module_id')->max());
-    $self->first_seen_module_id($self->job_modules->get_column('job_module_id')->min());
-    $self->last_seen_module_id($self->job_modules->get_column('job_module_id')->max());
-    if ($self->first_seen_module_id) {
-        $self->update;
-    }
-    else {
-        # there is no point in having this
-        $self->delete;
-    }
 }
 
 sub path {

@@ -21,7 +21,6 @@ use Mojo::URL;
 
 sub register {
     my ($self, $app) = @_;
-    $app->minion->add_task(scan_old_jobs => sub { _old_jobs($app, @_) });
     $app->minion->add_task(scan_needles => sub { _needles($app, @_) });
 }
 
@@ -38,37 +37,6 @@ sub _needles {
         }
     }
     return;
-}
-
-sub _old_jobs {
-    my ($app,   $args)  = @_;
-    my ($maxid, $minid) = @$args;
-    my $guard = $app->db->txn_scope_guard;
-
-    my $jobs = $app->db->resultset("Jobs")
-      ->search({-and => [{id => {'>', $minid}}, {id => {'<=', $maxid}}]}, {order_by => 'me.id ASC'});
-
-    my $job_modules = $app->db->resultset('JobModules')->search({job_id => {-in => $jobs->get_column('id')->as_query}})
-      ->get_column('id')->as_query;
-
-    # make sure we're not duplicating any previous data
-    $app->db->resultset('JobModuleNeedles')->search({job_module_id => {-in => $job_modules}})->delete;
-    my %needle_cache;
-
-    while (my $job = $jobs->next) {
-        my $modules = $job->modules->search({"me.result" => {'!=', OpenQA::Schema::Result::Jobs::NONE}},
-            {order_by => 'me.id ASC'});
-        while (my $module = $modules->next) {
-
-            $module->job($job);
-            my $details = $module->details();
-            next unless $details;
-
-            $module->store_needle_infos($details, \%needle_cache);
-        }
-    }
-    OpenQA::Schema::Result::Needles::update_needle_cache(\%needle_cache);
-    $guard->commit;
 }
 
 1;

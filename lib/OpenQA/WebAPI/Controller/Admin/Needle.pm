@@ -46,7 +46,7 @@ sub _translate_cond($) {
 sub ajax {
     my ($self) = @_;
 
-    my @columns = qw(directory.name filename last_seen.t_created last_match.t_created);
+    my @columns = qw(directory.name filename last_seen_time last_matched_time);
 
     # conditions for search/filter
     my @filter_conds;
@@ -54,11 +54,11 @@ sub ajax {
     push(@filter_conds, {filename => {-like => '%' . $search_value . '%'}}) if $search_value;
     my $seen_query = $self->param('last_seen');
     if ($seen_query && $seen_query ne 'none') {
-        push(@filter_conds, {'last_seen.t_created' => _translate_cond($self->param('last_seen'))});
+        push(@filter_conds, {'last_seen_time' => _translate_cond($self->param('last_seen'))});
     }
     my $match_query = $self->param('last_match');
     if ($match_query && $match_query ne 'none') {
-        push(@filter_conds, {'last_match.t_created' => _translate_cond($self->param('last_match'))});
+        push(@filter_conds, {'last_matched_time' => _translate_cond($self->param('last_matched'))});
     }
 
     OpenQA::ServerSideDataTable::render_response(
@@ -69,10 +69,8 @@ sub ajax {
         filter_conds      => \@filter_conds,
         additional_params => {
             prefetch => ['directory'],
-            # Make columns directory.name, last_seen.t_created and last_match.t_created
-            # available by joining with JobModules
             # Required for ordering by those columns and also eases filtering
-            join => [qw(directory last_seen last_match)],
+            join => [qw(directory)],
         },
         prepare_data_function => sub {
             my ($needles) = @_;
@@ -81,37 +79,27 @@ sub ajax {
 
             while (my $n = $needles->next) {
                 my $hash = {
-                    id             => $n->id,
-                    directory      => $n->directory->name,
-                    filename       => $n->filename,
-                    last_seen      => $n->last_seen_module_id,
-                    last_seen_link => $self->url_for(
-                        'admin_needle_module',
-                        module_id => $n->last_seen_module_id,
-                        needle_id => $n->id
-                    )};
+                    id         => $n->id,
+                    directory  => $n->directory->name,
+                    filename   => $n->filename,
+                    last_seen  => $n->last_seen_time || 'never',
+                    last_match => $n->last_matched_time || 'never',
+                };
                 if (my $last_seen_module_id = $n->last_seen_module_id) {
-                    $modules{$n->last_seen_module_id} = undef;
+                    $hash->{last_seen_link} = $self->url_for(
+                        'admin_needle_module',
+                        module_id => $last_seen_module_id,
+                        needle_id => $n->id
+                    );
                 }
                 if (my $last_matched_module_id = $n->last_matched_module_id) {
-                    $hash->{last_match}      = $last_matched_module_id;
                     $hash->{last_match_link} = $self->url_for(
                         'admin_needle_module',
                         module_id => $last_matched_module_id,
-                        needle_id => $n->id,
+                        needle_id => $n->id
                     );
-                    $modules{$last_matched_module_id} = undef;
                 }
                 push(@data, $hash);
-            }
-            my $jobmodules = $self->db->resultset('JobModules')->search({id => {-in => [keys %modules]}});
-            # translate module id into time
-            while (my $m = $jobmodules->next) {
-                $modules{$m->id} = $m->t_created->datetime() . 'Z';
-            }
-            for my $d (@data) {
-                $d->{last_seen}  = $modules{$d->{last_seen}  || 0} || 'never';
-                $d->{last_match} = $modules{$d->{last_match} || 0} || 'never';
             }
             return \@data;
         },

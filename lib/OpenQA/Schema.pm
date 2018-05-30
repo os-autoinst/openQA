@@ -30,8 +30,7 @@ use OpenQA::Utils ();
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
-# TODO: kill jobs::retry_avbl on next bump
-our $VERSION = 63;
+our $VERSION = 64;
 
 __PACKAGE__->load_namespaces;
 

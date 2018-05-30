@@ -83,7 +83,6 @@ __PACKAGE__->belongs_to(
         on_update     => "CASCADE",
     },
 );
-__PACKAGE__->has_many(needle_hits => 'OpenQA::Schema::Result::JobModuleNeedles', 'job_module_id');
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
@@ -172,26 +171,6 @@ sub insert {
     return $self;
 }
 
-# override to straighten out needle references
-sub delete {
-    my ($self) = @_;
-
-    # those are just there for tracking
-    $self->needle_hits->delete;
-
-    my $schema = $self->result_source->schema;
-    my @ors;
-    push(@ors, {last_seen_module_id    => $self->id});
-    push(@ors, {first_seen_module_id   => $self->id});
-    push(@ors, {last_matched_module_id => $self->id});
-
-    my $needles = $schema->resultset('Needles')->search({-or => \@ors});
-    while (my $needle = $needles->next) {
-        $needle->recalculate_matches;
-    }
-    return $self->SUPER::delete;
-}
-
 sub details {
     my ($self) = @_;
 
@@ -274,8 +253,6 @@ sub store_needle_infos {
     # we often see the same needles in the same test, so avoid duplicated work
     my %hash;
     if (!$needle_cache) {
-        # if this is run outside of a global context, we need to avoid duplicates ourself
-        $schema->resultset('JobModuleNeedles')->search({job_module_id => $self->id})->delete;
         $needle_cache = \%hash;
     }
 
@@ -294,12 +271,6 @@ sub store_needle_infos {
             $needles{$needle->id} = -1;
         }
     }
-
-    my @val;
-    for my $nid (keys %needles) {
-        push(@val, {job_module_id => $self->id, needle_id => $nid, matched => $needles{$nid} > 1 ? 1 : 0});
-    }
-    $schema->resultset('JobModuleNeedles')->populate(\@val);
 
     # if it's someone else's cache, he has to be aware
     OpenQA::Schema::Result::Needles::update_needle_cache(\%hash);
