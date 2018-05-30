@@ -86,9 +86,13 @@ sub start_driver {
     # Connect to it
     eval {
         my %opts = (
-            base_url         => "http://localhost:$mojoport/",
-            default_finder   => 'css',
-            webelement_class => 'Test::Selenium::Remote::WebElement'
+            base_url           => "http://localhost:$mojoport/",
+            default_finder     => 'css',
+            webelement_class   => 'Test::Selenium::Remote::WebElement',
+            extra_capabilities => {
+                loggingPrefs  => {browser => 'ALL'},
+                chromeOptions => {args    => []}
+            },
         );
 
         # chromedriver is unfortunately hidden on openSUSE
@@ -100,7 +104,7 @@ sub start_driver {
         }
         $opts{custom_args} = "--log-path=t/log_chromedriver";
         unless ($ENV{NOT_HEADLESS}) {
-            $opts{extra_capabilities} = {chromeOptions => {args => ['--headless', '--disable-gpu']}};
+            push(@{$opts{extra_capabilities}{chromeOptions}{args}}, ('--headless', '--disable-gpu'));
         }
         $_driver = Test::Selenium::Chrome->new(%opts);
         $_driver->set_implicit_wait_timeout(2000);
