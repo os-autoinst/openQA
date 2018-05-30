@@ -32,6 +32,7 @@ use Test::Warnings ':all';
 use OpenQA::Test::Case;
 use Time::HiRes qw(sleep);
 use OpenQA::SeleniumTest;
+use Cpanel::JSON::XS 'decode_json';
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
@@ -171,6 +172,20 @@ subtest 'delete needle' => sub {
         }
         is($driver->find_element('#needles tbody tr')->get_text(), 'No data available in table', 'no needles left');
     };
+};
+
+# just to get some coverage abuse chromium to call an invalid ID
+# this is mere an experiment to test ajax functions in situations that
+# are hard to impossible to achieve using buttons and links
+subtest 'failing deletion' => sub {
+    # the route returns success with error, so check that
+    my $func = 'function(error) { window.deleteMsg = JSON.stringify(error); }';
+    ok(!$driver->execute_script("jQuery.ajax({url: '/admin/needles/delete?id=42', type: 'DELETE', success: $func});"),
+        "Delete ID 42");
+    wait_for_ajax;
+    my $error = decode_json($driver->execute_script('return window.deleteMsg;'));
+    is_deeply($error, {errors => [{display_name => "42", id => 42, message => "Unable to find 42"}], removed_ids => []},
+        'Proper error');
 };
 
 kill_driver();
