@@ -67,6 +67,12 @@ sub ws_console {
     return $self->render;
 }
 
+# define a whitelist of commands to be passed to os-autoinst via ws_proxy
+my %allowed_os_autoinst_commands = (
+    set_pause_at_test     => 1,
+    resume_test_execution => 1,
+);
+
 # provides a web socket connection acting as a proxy to interact with os-autoinst indirectly
 sub ws_proxy {
     my ($self) = @_;
@@ -96,10 +102,23 @@ sub ws_proxy {
                     what => $what,
                     data => $data,
                 }});
+
         OpenQA::Utils::log_debug("ws_proxy: $type: $what");
     };
     my $quit_development_session = sub {
+        my ($reason) = @_;
+
+        # notify the JavaScript client
+        $send_message_to_java_script->(
+            info => 'quitting development session',
+            {
+                reason => $reason
+            });
+
+        # finish all transactions
         $java_script_tx->finish();
+        $cmd_srv_tx->finish() if ($cmd_srv_tx);
+
         # TODO: unregister development session
     };
 
@@ -108,7 +127,7 @@ sub ws_proxy {
     if (!$cmd_srv_raw_url) {
         $app->log->debug('ws_proxy: attempt to open for job ' . $job->name . ' (' . $job->id . ')');
         $send_message_to_java_script->(error => 'os-autoinst command server not available, job is likely not running');
-        $quit_development_session->();
+        $quit_development_session->('os-autoinst command server not available');
     }
 
     # define function to start a websocket connection to os-autoinst for this developer session
@@ -154,8 +173,9 @@ sub ws_proxy {
                                 reason => $reason,
                                 code   => $code,
                             });
-                        # quit the development session; the user can just reopen the session to try again
-                        $quit_development_session->();
+                        # don't implement a re-connect here, just quit the development session
+                        # (the user can just reopen the session to try again manually)
+                        $quit_development_session->('disconnected from os-autoinst command server');
                     });
             });
     };
@@ -174,18 +194,36 @@ sub ws_proxy {
         $cmd_srv_tx->send({json => $msg});
     };
 
-    # TODO: handle messages from the JavaScript
+    # handle messages from the JavaScript
+    #  * expecting valid JSON here in 'os-autoinst' compatible form, eg.
+    #      {"cmd":"set_pause_at_test","name":"installation-welcome"}
+    #  * a selected set of commands is passed to os-autoinst backend
+    #  * some commands are handled internally
     $self->on(
         message => sub {
             my ($tx, $msg) = @_;
             try {
                 my $json = decode_json($msg);
-                # return a simple echo
-                $send_message_to_java_script->(info => 'echo', $json);
+                my $cmd  = $json->{cmd};
+                if (!$cmd) {
+                    $send_message_to_java_script->(warning => 'ignoring invalid command');
+                    return;
+                }
 
-                # TODO: handle some internal messages, eg. to quit the development session
+                # handle some internal messages, for now just allow to quit the development session
+                if ($cmd eq 'quit_development_session') {
+                    $quit_development_session->('user canceled');
+                    return;
+                }
 
-                # TODO: validate the messages before passing to command server
+                # validate the messages before passing to command server
+                if (!$allowed_os_autoinst_commands{$cmd}) {
+                    $send_message_to_java_script->(warning => 'ignoring invalid command', {cmd => $cmd});
+                    return;
+                }
+
+                # send message to os-autoinst; no need to send extra feedback to JavaScript client since
+                # we just pass the feedback from os-autoinst back
                 $send_message_to_os_autoinst->($json);
             }
             catch {
@@ -197,7 +235,7 @@ sub ws_proxy {
             };
         });
 
-    # TODO: handle development session being quit from the JavaScript-side
+    # handle web socket connection being quit from the JavaScript-side
     $self->on(
         finish => sub {
             $app->log->debug('ws_proxy: client disconnected: ' . $user->name);
