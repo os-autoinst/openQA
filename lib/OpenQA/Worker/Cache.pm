@@ -211,6 +211,7 @@ sub get_asset {
 
         $self->track_asset($asset);    # Track asset - make sure it's in DB
         log_debug "CACHE: Aquiring lock for $asset in the database";
+
         $result = $self->try_lock_asset($asset);
         if (!$result) {
             update_setup_status;
@@ -218,7 +219,12 @@ sub get_asset {
             sleep $self->sleep_time;
             next;
         }
-        $ret = $self->download_asset($job->{id}, lc($asset_type), $asset, ($result->{etag}) ? $result->{etag} : undef);
+        local $@;
+        eval {
+            $ret
+              = $self->download_asset($job->{id}, lc($asset_type), $asset, ($result->{etag}) ? $result->{etag} : undef);
+        };
+        eval { log_error "CACHE: Error inside critical section: $@" } if $@;
         $self->toggle_asset_lock($asset, 0);
         if (!$ret) {
             $asset = undef;
