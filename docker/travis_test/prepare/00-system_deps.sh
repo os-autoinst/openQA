@@ -38,8 +38,6 @@ zypper in -y -C automake \
        which \
        chromedriver \
        'rubygem(sass)' \
-       'perl(Module::CPANfile)' \
-       'perl(App::cpanminus)' \
         perl \
        emacs
 

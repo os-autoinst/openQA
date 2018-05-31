@@ -82,13 +82,13 @@ endif
 
 .PHONY: test
 ifeq ($(TRAVIS),true)
-test: travis
+test: docker-tests
 else
 test: checkstyle
 	OPENQA_CONFIG= prove ${PROVE_ARGS}
 endif
 
-.PHONY: travis
+.PHONY: docker-tests
 docker-tests:
 	if test "x$$FULLSTACK" = x1 || test "x$$SCHEDULER_FULLSTACK" = x1; then \
 		git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst ;\
@@ -120,7 +120,11 @@ docker-tests:
           prove ${PROVE_ARGS} -r $$list | tee $$tmp_file ;\
 	fi ;\
 	tail -n 1 $$tmp_file | grep -o -E "PASS|[[:digit:]]+..[[:digit:]]+" ;\
-	exit $(.SHELLSTATUS)
+	test_failed=$$? ;\
+	if [[ $$test_failed -ne 0 && $$TRAVIS ]]; then\
+		cat /tmp/openqa-debug.log ;\
+	fi ;\
+	exit $$test_failed
 
 # ignore tests and test related addons in coverage analysis
 COVER_OPTS ?= -select_re "^/lib" -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement

@@ -4,7 +4,8 @@ echo "#######################################################"
 echo "#      Starting perl and perl deps installation      #"
 echo "#######################################################"
 
-zypper in -y -C 'perl(Archive::Extract)' \
+zypper in -y -C 'perl(App::cpanminus)' \
+        'perl(Archive::Extract)' \
        'perl(BSD::Resource)' \
        'perl(CSS::Minifier::XS)' \
        'perl(Carp::Always)' \
@@ -29,6 +30,7 @@ zypper in -y -C 'perl(Archive::Extract)' \
        'perl(DateTime::Format::Pg)' \
        'perl(DateTime::Format::SQLite)' \
        'perl(Devel::Cover)' \
+       'perl(Devel::Cover::Report::Codecov)' \
        'perl(ExtUtils::MakeMaker)>=7.12' \
        'perl(Exception::Class)' \
        'perl(File::Copy::Recursive)' \
@@ -39,6 +41,7 @@ zypper in -y -C 'perl(Archive::Extract)' \
        'perl(JavaScript::Minifier::XS)' \
        'perl(LWP::Protocol::https)' \
        'perl(Minion)' \
+       'perl(Module::CPANfile)' \
        'perl(Mojo::IOLoop::ReadWriteProcess)' \
        'perl(Mojo::Pg)' \
        'perl(Mojo::RabbitMQ::Client)' \
@@ -73,6 +76,5 @@ zypper in -y -C 'perl(Archive::Extract)' \
        'TimeDate' \
        perl-Archive-Extract \
        perl-Test-Simple \
-        perl-Net-DBus \
        'perl(aliased)'
 
