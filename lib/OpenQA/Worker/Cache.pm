@@ -180,8 +180,13 @@ sub download_asset {
         my $size = $tx->res->content->asset->move_to($asset)->size;
         if ($size == $headers->content_length) {
             $self->check_limits($size);
-            $self->update_asset($asset, $etag, $size);
-            log_debug("CACHE: Asset download successful to $asset, Cache size is: " . $self->cache_real_size);
+            my $att = 0;
+            my $ok;
+            # This needs to go in to the database at any cost - we have the lock and we succeeded in download
+            # We can't just throw it away if database locks.
+            $att++ and sleep 1 until $ok = $self->update_asset($asset, $etag, $size) || $att > 5;
+            $self->purge_asset($asset) and $asset = undef unless $ok;
+            log_debug("CACHE: Asset download successful to $asset, Cache size is: " . $self->cache_real_size) if $ok;
         }
         else {
             log_debug(
@@ -356,30 +361,33 @@ sub update_asset {
     my $dbh = $self->dbh;
 
     my $sql = "UPDATE assets set filename =?, etag =? , size = ?, last_use = strftime('%s','now') where filename = ?;";
+    my $res;
 
     eval {
-        $dbh->begin_work;
+        $dbh->do('BEGIN EXCLUSIVE');
         my $sth = $dbh->prepare($sql);
         $sth->bind_param(1, $asset);
         $sth->bind_param(2, $etag);
         $sth->bind_param(3, $size);
         $sth->bind_param(4, $asset);
 
-        $sth->execute;
+        $res = $sth->execute;
         $dbh->commit;
     };
 
     $self->cache_real_size($self->cache_real_size + $size);
 
     if ($@) {
-        log_error "Update asset failed. Rolling back $@";
+        log_error "Update asset $asset failed. Rolling back $@";
         eval { $dbh->rollback };
         log_error "Rolling back failed: $@";
     }
     else {
         log_info "CACHE: updating the $asset with $etag and $size";
-        return 1;
     }
+
+    return !!0 if !defined $res || $res == 0 || $@;
+    return !!1 if defined $res && $res == 1;
 }
 
 sub purge_asset {
