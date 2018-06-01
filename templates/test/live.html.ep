@@ -5,7 +5,23 @@
     </div>
     <div id="running_module" class='col-sm-9'>Unknown</div>
   </div>
-
+  <div class='row'>
+    <div class='col-sm-3'>
+      Developer session:
+    </div>
+    <div id="running_module" class='col-sm-9'>
+        % if (my $developer_session = $job->developer_session) {
+            opened by <%= $developer_session->user->name %>
+            (started <abbr class="timeago" title="<%= $developer_session->t_created->datetime() %>Z"><%= format_time($developer_session->t_created) %></abbr>,
+                developer has <%= $developer_session->ws_connection_count %> browser tab(s) open)
+        % }
+        % else {
+            not enabled, <a href="<%= url_for('developer_ws_console')->query({proxy => 1}) %>" target="blank">open developer web socket console</a>
+        % }
+        <br>
+        note that this info is currently not auto-updated
+    </div>
+  </div>
 </div>
 
 <div id="canholder" data-url="<%= url_for('apiv1_create_command', workerid => 'WORKERID')%>">

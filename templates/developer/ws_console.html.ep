@@ -14,10 +14,10 @@
 % if ($ws_url) {
     <p>
         % if ($use_proxy) {
-            Connecting to os-autoinst command server via web UI because query parameter 'proxy' is present.
+            Connecting to os-autoinst command server via web UI. - <a href="<%= url_for('developer_ws_console')->query({proxy => 0}) %>">connect directly</a>
         % }
         % else {
-            Connecting directly from browser to os-autoinst command server because query parameter 'proxy' is absent.
+            Connecting directly from browser to os-autoinst command server. - <a href="<%= url_for('developer_ws_console')->query({proxy => 1}) %>">connect via web UI</a>
         % }
     </p>
     <p>

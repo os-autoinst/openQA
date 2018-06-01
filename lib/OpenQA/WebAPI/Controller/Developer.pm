@@ -73,6 +73,12 @@ my %allowed_os_autoinst_commands = (
     resume_test_execution => 1,
 );
 
+# define global variable to store ws connections (tx) to isotovideo cmd srv for each job
+my %cmd_srv_transactions_by_job;
+
+# define global variable to store ws connections (tx) to JavaScript clients for each job
+my %java_script_transactions_by_job;
+
 # provides a web socket connection acting as a proxy to interact with os-autoinst indirectly
 sub ws_proxy {
     my ($self) = @_;
@@ -81,20 +87,36 @@ sub ws_proxy {
     my $job  = $self->find_current_job() or return $self->reply->not_found;
     my $user = $self->current_user()     or return $self->reply->not_found;
     my $app  = $self->app;
+    my $job_id             = $job->id;
+    my $user_id            = $user->id;
+    my $developer_sessions = $app->schema->resultset('DeveloperSessions');
 
     $app->log->debug('ws_proxy: client connected: ' . $user->name);
 
     # define variables for transactions
     my $java_script_tx = $self->tx;    # for connection from browser/JavaScript to this server
     my $cmd_srv_tx;                    # for connection from this server to os-autoinst command server
+    my $java_script_tx_id = "$job_id-$java_script_tx";
+    push(@{$java_script_transactions_by_job{$job_id} //= []}, $java_script_tx);
 
-    # TODO: register development session, ensure only one development session is opened per job
-    # my $development_sessions = $app->schema->resultset('DevelopmentSessions');
-    # ...
+    # register development session, ensure only one development session is opened per job
+    my $developer_session = $developer_sessions->register($job_id, $user_id);
+    if (!$developer_session) {
+        return $self->render(
+            json => {
+                error => 'unable to create (further) development session'
+            },
+            status => 400
+        );
+    }
+
+    # mark session as active
+    $developer_session->update({ws_connection_count => \'ws_connection_count + 1'});    #'restore syntax highlighting
 
     # define functions to push information to the JavaScript client
     my $send_message_to_java_script = sub {
         my ($type, $what, $data) = @_;
+
         $java_script_tx->send(
             {
                 json => {
@@ -115,11 +137,28 @@ sub ws_proxy {
                 reason => $reason
             });
 
-        # finish all transactions
-        $java_script_tx->finish();
-        $cmd_srv_tx->finish() if ($cmd_srv_tx);
+        # unregister the developer session if the last JavaScript client disconnects
+        if (my $development_session = $developer_sessions->find({job_id => $job_id})) {
+            $app->log->debug('ws_proxy: removing development session ' . $job->name . ' (' . $job->id . ')');
+            $development_session->delete();
+        }
 
-        # TODO: unregister development session
+     # finish connections to all JavaScript clients
+     # TODO: Mojolicious might use multiple processes, right? So far we don't close the ws connections for clients which
+     #       possibly connected though another process.
+        my $java_script_transactions = delete $java_script_transactions_by_job{$job_id};
+        if ($java_script_transactions) {
+            for my $java_script_tx (@$java_script_transactions) {
+                $java_script_tx->finish();
+            }
+        }
+
+        # finish connection to os-autoinst cmd srv
+        if (my $cmd_srv_tx = $cmd_srv_transactions_by_job{$job_id}) {
+            $app->log->debug(
+                'ws_proxy: finishing connection to os-autoinst cmd srv for job ' . $job->name . ' (' . $job->id . ')');
+            $cmd_srv_tx->finish();
+        }
     };
 
     # determine url to os-autoinst command server
@@ -136,7 +175,16 @@ sub ws_proxy {
     $connect_to_cmd_srv = sub {
         $send_message_to_java_script->(info => 'connecting to os-autuinst command server at ' . $cmd_srv_raw_url);
 
-        return $app->ua->websocket(
+        # prevent opening the same connection to os-autoinst cmd srv twice
+        my $existing_cmd_srv_tx = $cmd_srv_transactions_by_job{$job_id};
+        if ($existing_cmd_srv_tx) {
+            $send_message_to_java_script->(
+                info => 'reusing previous connection to os-autuinst command server at ' . $cmd_srv_raw_url);
+            return $cmd_srv_tx = $existing_cmd_srv_tx;
+        }
+
+        # start a new connection to os-autoinst cmd srv
+        return $cmd_srv_transactions_by_job{$job_id} = $app->ua->websocket(
             $cmd_srv_url => {'Sec-WebSocket-Extensions' => 'permessage-deflate'} => sub {
                 my ($ua, $tx) = @_;
                 $cmd_srv_tx = $tx;
@@ -166,6 +214,8 @@ sub ws_proxy {
                 $tx->on(
                     finish => sub {
                         my (undef, $code, $reason) = @_;
+                        # prevent finishing the transaction again in $quit_development_session
+                        $cmd_srv_transactions_by_job{$job_id} = undef;
                         # inform the JavaScript client
                         $send_message_to_java_script->(
                             error => 'connection to os-autoinst command server lost',
@@ -239,9 +289,10 @@ sub ws_proxy {
     $self->on(
         finish => sub {
             $app->log->debug('ws_proxy: client disconnected: ' . $user->name);
-            # TODO: mark development session as inactive
-            # note: it is likely not useful to quit the development session instantly because the user
-            #       might just have pressed the reload button
+            $developer_sessions->find({job_id => $job_id})->update({ws_connection_count => \'ws_connection_count - 1'})
+              ;    #'restore syntax highlighting
+                   # note: it is likely not useful to quit the development session instantly because the user
+                   #       might just have pressed the reload button
         });
 }
 
