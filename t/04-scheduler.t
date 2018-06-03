@@ -419,22 +419,6 @@ ok($result && !defined $no_job_id, "job_delete");
 $current_jobs = list_jobs();
 is_deeply($current_jobs, [], "no jobs listed");
 
-my $rs = OpenQA::Resource::Jobs::asset_list();
-$rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-is_deeply(
-    nots($rs->all()),
-    {
-        id              => 1,
-        name            => "whatever.iso",
-        type            => "iso",
-        size            => undef,
-        checksum        => undef,
-        last_use_job_id => undef,
-        fixed           => 0,
-    },
-    "asset list"
-);
-
 my $asset = $schema->resultset('Assets')->register('iso', $settings{ISO});
 is($asset->name, $settings{ISO}, "asset register returns same");
 
