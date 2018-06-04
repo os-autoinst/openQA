@@ -117,7 +117,7 @@ sub mutex_lock {
     return 0;
 }
 
-dbus_method('mutex_unlock', ['string', 'uint32'], ['int32']);
+dbus_method('mutex_unlock', ['string', 'uint32', 'string'], ['int32']);
 sub mutex_unlock {
     my ($self, @args) = @_;
     my $res = safe_call 'OpenQA::Resource::Locks' => unlock => @args;
