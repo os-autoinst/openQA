@@ -142,5 +142,21 @@ sub _try_upgrade_db {
     return 0;
 }
 
+# read application secret from database
+sub read_application_secrets {
+    my ($self) = @_;
+    # we cannot use our own schema here as we must not actually
+    # initialize the db connection here. Would break for prefork.
+    my $secrets = $self->resultset('Secrets');
+    my @secrets = $secrets->all();
+    if (!@secrets) {
+        # create one if it doesn't exist
+        $secrets->create({});
+        @secrets = $secrets->all();
+    }
+    die "couldn't create secrets\n" unless @secrets;
+    return [map { $_->secret } @secrets];
+}
+
 1;
 # vim: set sw=4 et:

@@ -7,7 +7,11 @@ function setupWebSocketContosle(url) {
 
     // handle relative URL
     if (url.indexOf('ws:') !== 0) {
-        url = 'ws://' + window.location.host + (url.indexOf('/') !== 0 ? '/' : '') + url;
+        var port = Number.parseInt(window.location.port);
+        if (port !== 80 || port !== 443) {
+            port += 2;
+        }
+        url = 'ws://' + window.location.hostname + ':' + port + (url.indexOf('/') !== 0 ? '/' : '') + url;
     }
 
     var msg = $('#msg');

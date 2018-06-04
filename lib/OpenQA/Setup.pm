@@ -250,4 +250,95 @@ sub update_config {
     }
 }
 
+sub setup_app_defaults {
+    my ($server) = @_;
+    $server->defaults(appname         => $server->app->config->{global}->{appname});
+    $server->defaults(current_version => detect_current_version($server->app->home));
+}
+
+sub setup_template_search_path {
+    my ($server) = @_;
+    unshift @{$server->renderer->paths}, '/etc/openqa/templates';
+}
+
+sub setup_mojo_tmpdir {
+    unless ($ENV{MOJO_TMPDIR}) {
+        $ENV{MOJO_TMPDIR} = $OpenQA::Utils::assetdir . '/tmp';
+        # Try to create tmpdir if it doesn't exist but don't die if failed to create
+        if (!-e $ENV{MOJO_TMPDIR}) {
+            eval { make_path($ENV{MOJO_TMPDIR}); };
+            if ($@) {
+                print STDERR "Can not create MOJO_TMPDIR : $@\n";
+            }
+        }
+        delete $ENV{MOJO_TMPDIR} unless -w $ENV{MOJO_TMPDIR};
+    }
+}
+
+sub load_plugins {
+    my ($server) = @_;
+
+    push @{$server->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
+
+    foreach my $plugin (qw(Helpers CSRF REST HashedParams Gru)) {
+        $server->plugin($plugin);
+    }
+
+    if ($server->config->{global}{audit_enabled}) {
+        $server->plugin('AuditLog', Mojo::IOLoop->singleton);
+    }
+    # Load arbitrary plugins defined in config: 'plugins' in section
+    # '[global]' can be a space-separated list of plugins to load, by
+    # module name under OpenQA::WebAPI::Plugin::
+    if (defined $server->config->{global}->{plugins}) {
+        my @plugins = split(' ', $server->config->{global}->{plugins});
+        for my $plugin (@plugins) {
+            $server->log->info("Loading external plugin $plugin");
+            $server->plugin($plugin);
+        }
+    }
+    if ($server->config->{global}{profiling_enabled}) {
+        $server->plugin(NYTProf => {nytprof => {}});
+    }
+    # load auth module
+    my $auth_method = $server->config->{auth}->{method};
+    my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
+    eval "require $auth_module";    ## no critic
+    if ($@) {
+        die sprintf('Unable to load auth module %s for method %s', $auth_module, $auth_method);
+    }
+
+    # Read configurations expected by plugins.
+    OpenQA::Setup::update_config($server->config, @{$server->plugins->namespaces}, "OpenQA::WebAPI::Auth");
+}
+
+sub set_secure_flag_on_cookies {
+    my ($controller) = @_;
+    if ($controller->req->is_secure) {
+        $controller->app->sessions->secure(1);
+    }
+    if (my $days = $controller->app->config->{global}->{hsts}) {
+        $controller->res->headers->header(
+            'Strict-Transport-Security' => sprintf('max-age=%d; includeSubDomains', $days * 24 * 60 * 60));
+    }
+}
+
+sub set_secure_flag_on_cookies_of_https_connection {
+    my ($server) = @_;
+    $server->hook(before_dispatch => \&set_secure_flag_on_cookies);
+}
+
+sub setup_validator_check_for_datetime {
+    my ($server) = @_;
+    $server->validator->add_check(
+        datetime => sub {
+            my ($validation, $name, $value) = @_;
+            eval { DateTime::Format::Pg->parse_datetime($value); };
+            if ($@) {
+                return 1;
+            }
+            return;
+        });
+}
+
 1;
