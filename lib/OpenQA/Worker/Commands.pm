@@ -75,47 +75,6 @@ sub websocket_commands {
             log_debug("Population for $host is " . $hosts->{$host}{population});
             change_timer("workerstatus-$host", OpenQA::Worker::Common::calculate_status_timer($hosts, $host));
         }
-        elsif ($type eq 'stop_waitforneedle') {
-            if (backend_running) {
-                $ua->post("$joburl/isotovideo/stop_waitforneedle");
-                log_debug('stop_waitforneedle triggered');
-                ws_call('property_change', {waitforneedle => 1});
-            }
-        }
-        elsif ($type eq 'reload_needles_and_retry') {
-            if (backend_running) {
-                if ($hosts->{$current_host}{testpoolserver} && $hosts->{$host}{shared_cache}) {
-                    my $sync_child = fork();
-                    if (!$sync_child) {
-                        OpenQA::Worker::Engines::isotovideo::cache_tests($hosts->{$host}{shared_cache},
-                            $hosts->{$current_host}{testpoolserver});
-                    }
-                }
-                $ua->post("$joburl/isotovideo/reload_needles");
-                log_debug('needles will be reloaded');
-            }
-        }
-        elsif ($type eq 'enable_interactive_mode') {
-            if (backend_running) {
-                $ua->post("$joburl/isotovideo/interactive?state=1");
-                log_debug('interactive mode enabled');
-                ws_call('property_change', {interactive_mode => 1});
-            }
-        }
-        elsif ($type eq 'disable_interactive_mode') {
-            if (backend_running) {
-                $ua->post("$joburl/isotovideo/interactive?state=0");
-                log_debug('interactive mode disabled');
-                ws_call('property_change', {interactive_mode => 0});
-            }
-        }
-        elsif ($type eq 'continue_waitforneedle') {
-            if (backend_running) {
-                $ua->post("$joburl/isotovideo/continue_waitforneedle");
-                log_debug('waitforneedle will continue');
-                ws_call('property_change', {waitforneedle => 0});
-            }
-        }
         elsif ($type eq 'livelog_start') {
             # change update_status timer if $job running
             if (backend_running) {

@@ -4,9 +4,6 @@ var testStatus = {
     jobid: null,
     running: null,
     workerid: null,
-    interactive: null,
-    needinput: null,
-    stop_waitforneedle_requested: null,
     status_url: null,
     details_url: null,
     img_reload_time: 0
@@ -27,10 +24,6 @@ function updateTestStatus(newStatus) {
         return;
     }
     testStatus.workerid = newStatus.workerid;
-    testStatus.interactive = newStatus.interactive == true;
-    testStatus.needinput = newStatus.needinput == true;
-    testStatus.stop_waitforneedle_requested = newStatus.stop_waitforneedle_requested == true;
-    updateInteractiveIndicator();
     $('#running_module').text(newStatus.running);
 
     // Reload broken thumbnails (that didn't exist yet when being requested) every 7 sec
@@ -96,73 +89,6 @@ function updateTestStatus(newStatus) {
                 console.log("ERROR: modlist fail");
             });
     }
-}
-
-function updateInteractiveIndicator() {
-    var indicator = $("#interactive_indicator");
-    if (testStatus.interactive == null) {
-        indicator.html("Unknown");
-        $("#interactive_spinner").hide();
-        $("#interactive_enabled_button").hide();
-        $("#interactive_disabled_button").hide();
-    }
-    else if (testStatus.interactive == 1) {
-        indicator.text("Yes");
-        $("#interactive_enabled_button").hide();
-        $("#interactive_disabled_button").show();
-    }
-    else {
-        indicator.text("No");
-        $("#interactive_enabled_button").show();
-        $("#interactive_disabled_button").hide();
-    }
-    updateNeedinputIndicator();
-}
-
-function updateNeedinputIndicator() {
-    var indicator = $("#needinput_indicator");
-    if (testStatus.needinput) {
-        indicator.text("Yes");
-        $("#stop_waitforneedle_spinner").hide();
-        $("#crop_button").show();
-        $("#continue_button").show();
-        $("#retry_button").show();
-        $("#stop_button").hide();
-    }
-    else {
-        indicator.text("No");
-        if (testStatus.stop_waitforneedle_requested == 1) {
-            $("#stop_waitforneedle_spinner").show();
-            $("#crop_button").hide();
-            $("#continue_button").hide();
-            $("#retry_button").hide();
-            $("#stop_button").hide();
-        }
-        else {
-            $("#stop_waitforneedle_spinner").hide();
-            $("#crop_button").hide();
-            $("#continue_button").hide();
-            $("#retry_button").hide();
-            if (testStatus.interactive) {
-                $("#stop_button").show();
-            }
-            else {
-                $("#stop_button").hide();
-            }
-        }
-    }
-    //indicator.highlight();
-}
-
-function enableInteractive(e) {
-  e.preventDefault();
-  sendCommand("enable_interactive_mode");
-}
-
-function disableInteractive(e) {
-  e.preventDefault();
-  $("#stop_button").hide();
-  sendCommand("disable_interactive_mode");
 }
 
 function sendCommand(command) {
@@ -319,23 +245,6 @@ function setupRunning(jobid, status_url, details_url) {
   initLivelogAndTerminal();
   initLivestream();
   initStatus(jobid, status_url, details_url);
-
-  $('#interactive_enabled_button').click(enableInteractive);
-  $('#interactive_disabled_button').click(disableInteractive);
-
-  $('#continue_button').click(function(e) {
-    e.preventDefault();
-    sendCommand('continue_waitforneedle');
-  });
-  $('#retry_button').click(function(e) {
-    e.preventDefault();
-    sendCommand('reload_needles_and_retry');
-  });
-  $('#stop_button').click(function(e) {
-    e.preventDefault();
-    sendCommand('stop_waitforneedle');
-  });
-
   $('#scrolldown').change(setScrolldown);
 }
 

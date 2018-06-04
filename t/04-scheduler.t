@@ -319,19 +319,6 @@ is_deeply($grabbed->{settings}, $job_ref->{settings}, "settings correct");
 my $job3_id = $job->id;
 my $job_id  = $grabbed->{id};
 
-# Testing job_set_waiting
-$result = OpenQA::Resource::Jobs::job_set_waiting($job_id);
-$job    = job_get($job_id);
-ok($result == 1 && $job->state eq "waiting", "job_set_waiting");
-
-# Testing job_set_running
-$result = OpenQA::Resource::Jobs::job_set_running($job_id);
-$job    = job_get($job_id);
-ok($result == 1 && $job->state eq "running", "job_set_running");
-$result = OpenQA::Resource::Jobs::job_set_running($job_id);
-$job    = job_get($job_id);
-ok($result == 0 && $job->state eq "running", "Retry job_set_running");
-
 sleep 1;
 # Testing job_set_done
 $job = job_get($job_id);
@@ -356,17 +343,6 @@ is(scalar @{$current_jobs}, 1, "there is one passed job listed");
 #%args = (maxage => 1);
 #$current_jobs = list_jobs(%args);
 #is_deeply($current_jobs, [], "list_jobs with finish in future");
-
-# Testing job_set_waiting on job not in running state
-$result = OpenQA::Resource::Jobs::job_set_waiting($job_id);
-$job    = job_get($job_id);
-ok($result == 0 && $job->state eq "done", "job_set_waiting on done job");
-
-
-# Testing job_set_running on done job
-$result = OpenQA::Resource::Jobs::job_set_running($job_id);
-$job    = job_get($job_id);
-ok($result == 0 && $job->state eq "done", "job_set_running on done job");
 
 # Testing set_prio
 $schema->resultset('Jobs')->find($job_id)->set_prio(100);

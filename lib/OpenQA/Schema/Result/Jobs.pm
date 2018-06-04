@@ -427,7 +427,6 @@ sub prepare_for_work {
     my $job_hashref = {};
     $job_hashref = $self->to_hash(assets => 1);
 
-    $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', 0);
     # JOBTOKEN for test access to API
     my $token = db_helpers::rndstr;
     $worker->set_property('JOBTOKEN', $token);
@@ -1386,16 +1385,10 @@ sub update_status {
     }
     $ret->{known_images} = [sort keys %known];
 
-    $self->worker->set_property("INTERACTIVE", $status->{status}->{interactive} // 0);
     # mark the worker as alive
     $self->worker->seen;
 
-    if ($status->{status}->{needinput}) {
-        $self->state(WAITING) if $self->state eq RUNNING;
-    }
-    else {
-        $self->state(RUNNING) and $self->t_started(now()) if grep { $_ eq $self->state } (WAITING, ASSIGNED, SETUP);
-    }
+    $self->state(RUNNING) and $self->t_started(now()) if grep { $_ eq $self->state } (WAITING, ASSIGNED, SETUP);
     $self->update();
 
     # result=1 for the call, job_result for the current state
