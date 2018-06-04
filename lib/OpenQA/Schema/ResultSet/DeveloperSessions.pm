@@ -41,4 +41,14 @@ sub register {
         });
 }
 
+sub unregister {
+    my ($self, $job_id) = @_;
+
+    return $self->result_source->schema->txn_do(
+        sub {
+            my $session = $self->find({job_id => $job_id}) or return;
+            $session->delete();
+        });
+}
+
 1;

@@ -89,18 +89,7 @@ sub ws_proxy {
     my $quit_development_session = sub {
         my ($reason) = @_;
 
-        # notify the JavaScript client
-        $send_message_to_java_script->(
-            info => 'quitting development session',
-            {
-                reason => $reason
-            });
-
-        # unregister the developer session if the last JavaScript client disconnects
-        if (my $development_session = $developer_sessions->find({job_id => $job_id})) {
-            $app->log->debug('ws_proxy: removing development session ' . $job->name . ' (' . $job->id . ')');
-            $development_session->delete();
-        }
+        $developer_sessions->unregister($job_id);
 
       # finish connections to all JavaScript clients
       # note: we don't finish connections served by other prefork processes here, hence prefork musn't be used (for now)
