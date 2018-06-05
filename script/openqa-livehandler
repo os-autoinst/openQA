@@ -23,6 +23,9 @@ BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
 
 $ENV{MOJO_LISTEN} ||= 'http://localhost:9528/';
 
+# ensure the web socket connection won't timeout
+$ENV{MOJO_INACTIVITY_TIMEOUT} ||= 15 * 60;
+
 use OpenQA::LiveHandler;
 
 # prevent use of prefork command
