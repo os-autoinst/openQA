@@ -9,7 +9,7 @@ require Mojolicious::Commands;
 require OpenQA::Test::Database;
 
 our @EXPORT = qw($drivermissing check_driver_modules
-  call_driver kill_driver wait_for_ajax
+  start_driver call_driver kill_driver wait_for_ajax
   javascript_console_has_no_warnings_or_errors);
 
 use Data::Dump 'pp';
