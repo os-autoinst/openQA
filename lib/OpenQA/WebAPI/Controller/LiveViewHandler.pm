@@ -53,10 +53,10 @@ sub ws_proxy {
     $app->log->debug('ws_proxy: client connected: ' . $user->name);
 
     # define variables for transactions
-    my $java_script_tx = $self->tx;    # for connection from browser/JavaScript to this server
-    my $cmd_srv_tx;                    # for connection from this server to os-autoinst command server
-    my $java_script_tx_id = "$job_id-$java_script_tx";
-    push(@{$java_script_transactions_by_job{$job_id} //= []}, $java_script_tx);
+    my $java_script_tx                           = $self->tx;
+    my $java_script_tx_id                        = "$job_id-$java_script_tx";
+    my $java_script_transactions_for_current_job = ($java_script_transactions_by_job{$job_id} //= []);
+    push(@$java_script_transactions_for_current_job, $java_script_tx);
 
     # register development session, ensure only one development session is opened per job
     my $developer_session = $developer_sessions->register($job_id, $user_id);
@@ -76,15 +76,17 @@ sub ws_proxy {
     my $send_message_to_java_script = sub {
         my ($type, $what, $data) = @_;
 
-        $java_script_tx->send(
-            {
-                json => {
-                    type => $type,
-                    what => $what,
-                    data => $data,
-                }});
-
-        OpenQA::Utils::log_debug("ws_proxy: $type: $what");
+# broadcast message to all JavaScript clients
+# note: we don't broadcast to connections served by other prefork processes here, hence prefork musn't be used (for now)
+        for my $java_script_tx (@$java_script_transactions_for_current_job) {
+            $java_script_tx->send(
+                {
+                    json => {
+                        type => $type,
+                        what => $what,
+                        data => $data,
+                    }});
+        }
     };
     my $quit_development_session = sub {
         my ($reason) = @_;
@@ -93,15 +95,12 @@ sub ws_proxy {
 
       # finish connections to all JavaScript clients
       # note: we don't finish connections served by other prefork processes here, hence prefork musn't be used (for now)
-        my $java_script_transactions = delete $java_script_transactions_by_job{$job_id};
-        if ($java_script_transactions) {
-            for my $java_script_tx (@$java_script_transactions) {
-                $java_script_tx->finish();
-            }
+        if (my $java_script_transactions_for_current_job = delete $java_script_transactions_by_job{$job_id}) {
+            $_->finish() for (@$java_script_transactions_for_current_job);
         }
 
         # finish connection to os-autoinst cmd srv
-        if (my $cmd_srv_tx = $cmd_srv_transactions_by_job{$job_id}) {
+        if (my $cmd_srv_tx = delete $cmd_srv_transactions_by_job{$job_id}) {
             $app->log->debug(
                 'ws_proxy: finishing connection to os-autoinst cmd srv for job ' . $job->name . ' (' . $job->id . ')');
             $cmd_srv_tx->finish();
@@ -123,18 +122,16 @@ sub ws_proxy {
         $send_message_to_java_script->(info => 'connecting to os-autuinst command server at ' . $cmd_srv_raw_url);
 
         # prevent opening the same connection to os-autoinst cmd srv twice
-        my $existing_cmd_srv_tx = $cmd_srv_transactions_by_job{$job_id};
-        if ($existing_cmd_srv_tx) {
+        if ($cmd_srv_transactions_by_job{$job_id}) {
             $send_message_to_java_script->(
                 info => 'reusing previous connection to os-autuinst command server at ' . $cmd_srv_raw_url);
-            return $cmd_srv_tx = $existing_cmd_srv_tx;
         }
 
         # start a new connection to os-autoinst cmd srv
         return $cmd_srv_transactions_by_job{$job_id} = $app->ua->websocket(
             $cmd_srv_url => {'Sec-WebSocket-Extensions' => 'permessage-deflate'} => sub {
                 my ($ua, $tx) = @_;
-                $cmd_srv_tx = $tx;
+                $cmd_srv_transactions_by_job{$job_id} = $tx;
 
                 # upgrade to ws connection if not already a websocket connection
                 if (!$tx->is_websocket) {
@@ -183,6 +180,7 @@ sub ws_proxy {
     # define function to push information to the os-autoinst command server
     my $send_message_to_os_autoinst = sub {
         my ($msg) = @_;
+        my $cmd_srv_tx = $cmd_srv_transactions_by_job{$job_id};
         if (!$cmd_srv_tx) {
             $send_message_to_java_script->(
                 error => 'failed to pass message to os-autoinst command server because not connected yet');
