@@ -174,10 +174,17 @@ sub javascript_console_has_no_warnings_or_errors {
             next;
         }
 
-        # FIXME: loading thumbs during live run causes 404. ignore for now
-        if ($log_entry->{source} eq 'network') {
-            next if $log_entry->{message} =~ m,/thumb/,;
-            next if $log_entry->{message} =~ m,/.thumbs/,;
+        my $source = $log_entry->{source};
+        my $msg    = $log_entry->{message};
+        if ($source eq 'network') {
+            # ignore errors when gravatar not found
+            next if ($msg =~ m,/gravatar/,);
+            # FIXME: loading thumbs during live run causes 404. ignore for now
+            next if ($msg =~ m,/thumb/, || $msg =~ m,/.thumbs/,);
+        }
+        elsif ($source eq 'javascript') {
+            # FIXME: ignore WebSocket error for now (connection errors are tracked via devel console anyways)
+            next if ($msg =~ m/ws\-proxy.*Close received/);
         }
         push(@errors, $log_entry);
     }

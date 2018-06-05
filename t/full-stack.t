@@ -283,7 +283,6 @@ subtest 'pause at certain test' => sub {
     # send command to pause at shutdown (hopefully the test wasn't so fast it is already in shutdown)
     $command_input->send_keys('{"cmd":"set_pause_at_test","name":"shutdown"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_ajax;
     wait_for_developer_console_contains_log_message(qr/\"set_pause_at_test\":\"shutdown\"/,
         'response to set_pause_at_test');
 
@@ -293,7 +292,6 @@ subtest 'pause at certain test' => sub {
     # resume the test execution again
     $command_input->send_keys('{"cmd":"resume_test_execution"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_ajax;
     wait_for_developer_console_contains_log_message(qr/\"resume_test_execution\":/, 'resume');
 };
 
