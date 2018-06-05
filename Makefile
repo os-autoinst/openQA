@@ -54,6 +54,7 @@ install:
 		"$(DESTDIR)"/usr/lib/systemd/system/openqa-worker-no-cleanup@.service
 	install -m 644 systemd/openqa-worker.target "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-webui.service "$(DESTDIR)"/usr/lib/systemd/system
+	install -m 644 systemd/openqa-livehandler.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-gru.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-vde_switch.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-slirpvde.service "$(DESTDIR)"/usr/lib/systemd/system
