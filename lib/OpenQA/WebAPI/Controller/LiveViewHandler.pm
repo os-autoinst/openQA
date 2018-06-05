@@ -199,29 +199,11 @@ sub ws_proxy {
     $self->on(
         message => sub {
             my ($tx, $msg) = @_;
+
+            # decode JSON
+            my $json;
             try {
-                my $json = decode_json($msg);
-                my $cmd  = $json->{cmd};
-                if (!$cmd) {
-                    $send_message_to_java_script->(warning => 'ignoring invalid command');
-                    return;
-                }
-
-                # handle some internal messages, for now just allow to quit the development session
-                if ($cmd eq 'quit_development_session') {
-                    $quit_development_session->('user canceled');
-                    return;
-                }
-
-                # validate the messages before passing to command server
-                if (!$allowed_os_autoinst_commands{$cmd}) {
-                    $send_message_to_java_script->(warning => 'ignoring invalid command', {cmd => $cmd});
-                    return;
-                }
-
-                # send message to os-autoinst; no need to send extra feedback to JavaScript client since
-                # we just pass the feedback from os-autoinst back
-                $send_message_to_os_autoinst->($json);
+                $json = decode_json($msg);
             }
             catch {
                 $send_message_to_java_script->(
@@ -230,6 +212,30 @@ sub ws_proxy {
                         msg => $msg,
                     });
             };
+            return unless $json;
+
+            # check command
+            my $cmd = $json->{cmd};
+            if (!$cmd) {
+                $send_message_to_java_script->(warning => 'ignoring invalid command');
+                return;
+            }
+
+            # handle some internal messages, for now just allow to quit the development session
+            if ($cmd eq 'quit_development_session') {
+                $quit_development_session->('user canceled');
+                return;
+            }
+
+            # validate the messages before passing to command server
+            if (!$allowed_os_autoinst_commands{$cmd}) {
+                $send_message_to_java_script->(warning => 'ignoring invalid command', {cmd => $cmd});
+                return;
+            }
+
+            # send message to os-autoinst; no need to send extra feedback to JavaScript client since
+            # we just pass the feedback from os-autoinst back
+            $send_message_to_os_autoinst->($json);
         });
 
     # handle web socket connection being quit from the JavaScript-side
