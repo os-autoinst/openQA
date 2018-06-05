@@ -35,6 +35,9 @@ sub auth_login {
       = {fullname => 'Demo User', email => 'demo@user.org', admin => 1, operator => 1, key => '1234567890ABCDEF'};
     $users{nobody}
       = {fullname => 'Nobody', email => 'nobody@example.com', admin => 0, operator => 0, key => '1111111111111111'};
+    $users{otherdeveloper}
+      = {fullname => 'Other developer', email => 'dev@example.com', admin => 1, operator => 1,
+        key => '2222222222222222'};
 
     my $user     = $self->req->param('user') || 'Demo';
     my $userinfo = $users{$user}             || die "No such user";
