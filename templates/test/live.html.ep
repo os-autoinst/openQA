@@ -9,7 +9,7 @@
     <div class='col-sm-3'>
       Developer session:
     </div>
-    <div id="running_module" class='col-sm-9'>
+    <div id="developer_session" class='col-sm-9'>
         % if (my $developer_session = $job->developer_session) {
             opened by <%= $developer_session->user->name %>
             (started <abbr class="timeago" title="<%= $developer_session->t_created->datetime() %>Z"><%= format_time($developer_session->t_created) %></abbr>,
