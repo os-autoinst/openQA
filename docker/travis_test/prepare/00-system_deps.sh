@@ -37,5 +37,10 @@ zypper in -y -C automake \
        postgresql-server \
        which \
        chromedriver \
+       xorg-x11-fonts \
        'rubygem(sass)' \
-        perl
+       perl \
+       sudo
+
+echo "$NORMAL_USER ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+

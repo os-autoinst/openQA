@@ -2,9 +2,7 @@
 
 set -e
 
-mkdir -p /opt/testing_area
 cp -rd /opt/openqa /opt/testing_area
-chown -R $NORMAL_USER:users /opt/testing_area
 
 cd /opt/testing_area/openqa
 
@@ -34,7 +32,6 @@ function run_as_normal_user {
         export MOJO_LOG_LEVEL=debug
         export MOJO_TMPDIR=$(mktemp -d)
         export OPENQA_LOGFILE=/tmp/openqa-debug.log
-        dbus-run-session -- sh -c "$*"
     else
         echo "Missing depdencies. Please check output above"
     fi
@@ -42,4 +39,8 @@ function run_as_normal_user {
 
 export -f create_db run_as_normal_user
 
-su $NORMAL_USER -c "run_as_normal_user $*"
+
+
+run_as_normal_user;
+
+dbus-run-session -- sh -c "$*"
