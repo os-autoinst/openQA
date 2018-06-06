@@ -92,7 +92,7 @@ endif
 .PHONY: docker-tests
 docker-tests:
 	export OPENQA_LOGFILE=/opt/openqa/openqa-debug.log ;\
-	if test "x$$FULLSTACK" = x1 || test "x$$SCHEDULER_FULLSTACK" = x1; then \
+	if test "x$$FULLSTACK" = x1 || test "x$$SCHEDULER_FULLSTACK" = x1 || test "x$$DEVELOPER_FULLSTACK" = x1; then \
 		git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst ;\
 		cd ../os-autoinst ;\
 		cpanm -n --mirror http://no.where/ --installdeps . ;\
@@ -110,13 +110,15 @@ docker-tests:
 	  perl t/full-stack.t || touch tests_failed ;\
 	elif test "x$$SCHEDULER_FULLSTACK" = x1; then \
 	  perl t/05-scheduler-full.t || touch tests_failed ;\
+	elif test "x$$DEVELOPER_FULLSTACK" = x1; then \
+	  perl t/33-developer_mode.t ;\
 	else \
 	  list= ;\
 	  if test "x$$UITESTS" = x1; then \
 	    list=$$(find ./t/ui -name *.t | sort ) ;\
 	  else \
 	    $(MAKE) checkstyle || touch tests_failed ;\
-	    list=$$(find ./t/ -name *.t | grep -v t/ui | sort ) ;\
+	    list=$$(find ./t/ -name '*.t' -not -path './t/ui/*' | sort ) ;\
 	  fi ;\
           prove ${PROVE_ARGS} -r $$list || touch tests_failed ;\
 	fi 
