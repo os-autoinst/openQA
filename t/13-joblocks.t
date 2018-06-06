@@ -122,9 +122,12 @@ $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(20
 $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
 is($res->locked_by, $jobB, 'mutex is locked');
 
-### barriers
+
+#######################################
+### helpers
 my $last_worker_instance = 1;
 my $b_prefix             = '/api/v1/barrier';
+my $m_prefix             = '/api/v1/mutex';
 
 sub job_create_with_worker {
     my ($test, $parent) = @_;
@@ -179,6 +182,43 @@ sub set_token_header {
         });
 }
 
+#######################################
+## Lock & unlock mutex on sibling jobs
+my $jP  = job_create_with_worker('testA');
+my $jS1 = job_create_with_worker('testB', $jP);
+my $jS2 = job_create_with_worker('testC', $jP);
+
+# Happy path - create lock on sb1, lock & unlock on sb2
+# Create lock on sibling 1
+set_token_header($t->ua, 'token' . $jS1);
+$t->post_ok($m_prefix, form => {name => 'sblock1'})->status_is(200);
+$t->post_ok($m_prefix, form => {name => 'sblock2'})->status_is(200);
+# Use lock from sibling 2
+set_token_header($t->ua, 'token' . $jS2);
+# Lock & check in DB
+$t->post_ok($m_prefix . '/sblock1', form => {action => 'lock', where => $jS1})->status_is(200);
+$res = $schema->resultset('JobLocks')->find({owner => $jS1, name => 'sblock1'});
+is($res->locked_by, $jS2, 'mutex is locked');
+# Unlock & check in DB
+$t->post_ok($m_prefix . '/sblock1', form => {action => 'unlock', where => $jS1})->status_is(200);
+$res = $schema->resultset('JobLocks')->find({owner => $jS1, name => 'sblock1'});
+ok(!$res->locked_by, 'mutex is unlocked');
+
+# Unhappy path
+# Double unlock
+$t->post_ok($m_prefix . '/sblock1', form => {action => 'unlock', where => $jS1})->status_is(200);
+# Unlock nonexistent
+$t->post_ok($m_prefix . '/nonexistent', form => {action => 'unlock', where => $jS1})->status_is(409);
+# Unlock first, then lock
+$t->post_ok($m_prefix . '/sblock2', form => {action => 'unlock', where => $jS1})->status_is(200);
+$res = $schema->resultset('JobLocks')->find({owner => $jS1, name => 'sblock2'});
+ok(!$res->locked_by, 'mutex is unlocked');
+$t->post_ok($m_prefix . '/sblock2', form => {action => 'lock', where => $jS1})->status_is(200);
+$res = $schema->resultset('JobLocks')->find({owner => $jS1, name => 'sblock2'});
+is($res->locked_by, $jS2, 'mutex is locked');
+
+#######################################
+### barriers
 # create jobs we'll use
 my $jid = job_create_with_worker('test');
 

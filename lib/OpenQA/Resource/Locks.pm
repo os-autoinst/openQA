@@ -86,8 +86,8 @@ sub lock {
 }
 
 sub unlock {
-    my ($name, $jobid) = @_;
-    my $lock = _get_lock($name, $jobid, 'all');
+    my ($name, $jobid, $where) = @_;
+    my $lock = _get_lock($name, $jobid, $where // 'all');
     return 0 unless $lock;
     # return if not locked
     return 1 unless $lock->locked_by;

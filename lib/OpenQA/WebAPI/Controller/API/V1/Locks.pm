@@ -58,14 +58,8 @@ sub mutex_action {
     my $action = $validation->param('action');
     my $where  = $validation->param('where') // '';
     my $ipc    = OpenQA::IPC->ipc;
+    my $res    = $ipc->resourceallocator("mutex_$action", $name, $jobid, $where);
 
-    my $res;
-    if ($action eq 'lock') {
-        $res = $ipc->resourceallocator('mutex_lock', $name, $jobid, $where);
-    }
-    else {
-        $res = $ipc->resourceallocator('mutex_unlock', $name, $jobid);
-    }
     return $self->render(text => 'ack',  status => 200) if $res > 0;
     return $self->render(text => 'nack', status => 410) if $res < 0;
     return $self->render(text => 'nack', status => 409);
