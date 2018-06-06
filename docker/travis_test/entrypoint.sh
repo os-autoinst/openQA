@@ -1,5 +1,7 @@
 #!/bin/bash                                                                                                                                                                                                        
 
+set -e
+
 mkdir -p /opt/testing_area
 cp -rd /opt/openqa /opt/testing_area
 chown -R $NORMAL_USER:users /opt/testing_area

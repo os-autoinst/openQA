@@ -38,9 +38,4 @@ zypper in -y -C automake \
        which \
        chromedriver \
        'rubygem(sass)' \
-        perl \
-       emacs
-
-
-
-
+        perl
