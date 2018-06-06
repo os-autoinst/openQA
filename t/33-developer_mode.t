@@ -64,6 +64,7 @@ eval 'use Test::More::Color "foreground"';
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
 use OpenQA::Test::Utils qw(create_websocket_server create_resourceallocator start_resourceallocator setup_share_dir);
+use OpenQA::Test::FullstackUtils;
 
 plan skip_all => 'set DEVELOPER_FULLSTACK=1 (be careful)' unless $ENV{DEVELOPER_FULLSTACK};
 plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
@@ -103,23 +104,7 @@ unless (check_driver_modules) {
     exit(0);
 }
 
-# make database configuration
-path($ENV{OPENQA_CONFIG})->child('database.ini')->to_string;
-ok(-e path($ENV{OPENQA_BASEDIR}, 'openqa', 'db')->child('db.lock'));
-ok(open(my $conf, '>', path($ENV{OPENQA_CONFIG})->child('database.ini')->to_string));
-print $conf <<"EOC";
-[production]
-dsn = $ENV{TEST_PG}
-EOC
-close($conf);
-
-# drop the schema from the existant database, init a new, empty database
-my $dbh = DBI->connect($ENV{TEST_PG});
-$dbh->do('SET client_min_messages TO WARNING;');
-$dbh->do('drop schema if exists public cascade;');
-$dbh->do('CREATE SCHEMA public;');
-$dbh->disconnect;
-is(system('perl ./script/initdb --init_database'), 0, 'init empty database');
+OpenQA::Test::FullstackUtils::setup_database();
 
 # make sure the assets are prefetched
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
@@ -154,7 +139,8 @@ my $driver = call_driver(
                 });
         }
     });
-my $mojoport = OpenQA::SeleniumTest::get_mojoport;
+my $mojoport     = OpenQA::SeleniumTest::get_mojoport;
+my $connect_args = OpenQA::Test::FullstackUtils::get_connect_args();
 
 # make resultdir
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
@@ -169,7 +155,6 @@ $driver->title_is('openQA', 'back on main page');
 # setup websocket server
 my $wsport = $mojoport + 1;
 $wspid = create_websocket_server($wsport, 0, 0, 0);
-my $connect_args = "--apikey=1234567890ABCDEF --apisecret=1234567890ABCDEF --host=http://localhost:$mojoport";
 
 # start live view handler
 $livehandlerpid = fork();
@@ -185,33 +170,13 @@ if ($livehandlerpid == 0) {
     _exit(0);
 }
 
-sub client_output {
-    my ($args) = @_;
-    open(my $client, "-|", "perl ./script/client $connect_args $args");
-    my $out;
-    while (<$client>) {
-        $out .= $_;
-    }
-    close($client);
-    return $out;
-}
-
-sub client_call {
-    my ($args, $expected_out, $desc) = @_;
-    my $out = client_output $args;
-    is($?, 0, "Client $args succeeded");
-    if ($expected_out) {
-        like($out, $expected_out, $desc);
-    }
-}
-
 my $JOB_SETUP
   = 'ISO=Core-7.2.iso DISTRI=tinycore ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 '
   . 'FLAVOR=flavor BUILD=1 MACHINE=coolone QEMU_NO_TABLET=1 INTEGRATION_TESTS=1'
   . 'QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=core PUBLISH_HDD_1=core-hdd.qcow2';
 
 # schedule job
-client_call("jobs post $JOB_SETUP");
+OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP");
 
 # verify it's displayed scheduled
 $driver->click_element_ok('All Tests', 'link_text');
@@ -235,62 +200,7 @@ sub start_worker {
 }
 
 start_worker;
-
-sub wait_for_result_panel {
-    my ($driver, $result_panel, $desc, $fail_on_incomplete) = @_;
-
-    for (my $count = 0; $count < 130; $count++) {
-        my $status_text = $driver->find_element('#result-row .card-body')->get_text();
-        last if ($status_text =~ $result_panel);
-        if ($fail_on_incomplete && $status_text =~ qr/Result: incomplete/) {
-            fail('test result is incomplete but shouldn\'t');
-            return;
-        }
-        sleep 1;
-    }
-    javascript_console_has_no_warnings_or_errors;
-    $driver->refresh();
-    like($driver->find_element('#result-row .card-body')->get_text(), $result_panel, $desc);
-}
-
-sub wait_for_job_running {
-    my ($driver, $fail_on_incomplete) = @_;
-    wait_for_result_panel($driver, qr/State: running/, 'job is running', $fail_on_incomplete);
-    $driver->find_element_by_link_text('Live View')->click();
-}
-wait_for_job_running($driver, 'fail on incomplete');
-
-sub wait_for_developer_console_contains_log_message {
-    my ($driver, $message_regex, $diag_info, $assert_never_opened) = @_;
-
-    # abort on javascript console errors
-    my $js_erro_check_suffix = ', waiting for ' . $diag_info;
-    javascript_console_has_no_warnings_or_errors($js_erro_check_suffix);
-
-    # get log
-    my $log_textarea = $driver->find_element('#log');
-    my $log          = $log_textarea->get_text();
-
-    my $regex_opened = qr/Connection opened/;
-    my $regex_closed = qr/Connection closed/;
-    while (!($log =~ $message_regex)) {
-        # check whether connection has been unexpectedly closed/opened
-        if ($message_regex eq $regex_closed) {
-            fail('web socket connection closed prematurely, was waiting for ' . $diag_info) if ($log =~ $regex_closed);
-        }
-        elsif ($assert_never_opened) {
-            fail('web socket connection unexpectedly opened, was waiting for ' . $diag_info) if ($log =~ $regex_opened);
-        }
-
-        # try again in 1 second
-        sleep 1;
-        wait_for_ajax;
-        javascript_console_has_no_warnings_or_errors($js_erro_check_suffix);
-        $log = $log_textarea->get_text();
-    }
-
-    pass('found ' . $diag_info);
-}
+OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 'fail on incomplete');
 
 my $developer_console_url;
 sub open_developer_console_from_live_view {
@@ -305,20 +215,24 @@ subtest 'pause at certain test' => sub {
     open_developer_console_from_live_view();
 
     # find relevant elements on the page, check for initial connection
-    wait_for_developer_console_contains_log_message($driver, qr/Connection opened/, 'connection opened');
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+        $driver,
+        qr/Connection opened/,
+        'connection opened'
+    );
 
     # send command to pause at shutdown (hopefully the test wasn't so fast it is already in shutdown)
     my $command_input = $driver->find_element('#msg');
     $command_input->send_keys('{"cmd":"set_pause_at_test","name":"shutdown"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_developer_console_contains_log_message(
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
         $driver,
         qr/\"set_pause_at_test\":\"shutdown\"/,
         'response to set_pause_at_test'
     );
 
     # wait until the shutdown test is started and hence the test execution paused
-    wait_for_developer_console_contains_log_message($driver, qr/\"paused\":/, 'paused');
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message($driver, qr/\"paused\":/, 'paused');
 };
 
 subtest 'developer session visible in live view' => sub {
@@ -335,7 +249,8 @@ subtest 'session locked for other developers' => sub {
     is($driver->find_element('#user-action a')->get_text(), 'Logged in as otherdeveloper', 'otherdeveloper logged-in');
     $driver->get($developer_console_url);
 
-    wait_for_developer_console_contains_log_message($driver, qr/Connection closed/, 'closed', 'assert never opened');
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message($driver, qr/Connection closed/,
+        'closed', 'assert never opened');
 };
 
 my $driver2 = start_driver($mojoport);
@@ -343,8 +258,12 @@ subtest 'connect with 2 clients at the same time (use case: developer opens 2nd 
     $driver2->get('/login?user=Demo');
     $driver2->get($developer_console_url);
 
-    wait_for_developer_console_contains_log_message($driver2, qr/Connection opened/, 'connection opened');
-    wait_for_developer_console_contains_log_message(
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+        $driver2,
+        qr/Connection opened/,
+        'connection opened'
+    );
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
         $driver2,
         qr/reusing previous connection to os-autuinst/,
         'connection reused'
@@ -364,30 +283,44 @@ subtest 'resume test execution' => sub {
 
     # open developer console
     $driver->get($developer_console_url);
-    wait_for_developer_console_contains_log_message($driver, qr/Connection opened/, 'connection opened');
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+        $driver,
+        qr/Connection opened/,
+        'connection opened'
+    );
 
     my $command_input = $driver->find_element('#msg');
     $command_input->send_keys('{"cmd":"resume_test_execution"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_developer_console_contains_log_message($driver, qr/\"resume_test_execution\":/, 'resume');
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message($driver,
+        qr/\"resume_test_execution\":/, 'resume');
 
     # check whether info has also been distributed to 2nd tab
-    wait_for_developer_console_contains_log_message($driver2, qr/\"resume_test_execution\":/, 'resume (2nd tab)');
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+        $driver2,
+        qr/\"resume_test_execution\":/,
+        'resume (2nd tab)'
+    );
 };
 
 subtest 'quit_session' => sub {
     my $command_input = $driver->find_element('#msg');
     $command_input->send_keys('{"cmd":"quit_development_session"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    wait_for_developer_console_contains_log_message($driver, qr/Connection closed/, 'closed');
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message($driver, qr/Connection closed/,
+        'closed');
 
     # check whether 2nd client has been kicked out as well
-    wait_for_developer_console_contains_log_message($driver2, qr/Connection closed/, 'closed (2nd tab)');
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+        $driver2,
+        qr/Connection closed/,
+        'closed (2nd tab)'
+    );
 };
 
 subtest 'further test execution happens as usual' => sub {
     $driver->get($job_page_url);
-    wait_for_result_panel($driver, qr/Result: passed/, 'test 1 is passed');
+    OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/, 'test 1 is passed');
 
     ok(-s path($resultdir, '00000', "00000001-$job_name")->make_path->child('autoinst-log.txt'), 'log file generated');
     ok(-s path($sharedir, 'factory', 'hdd')->make_path->child('core-hdd.qcow2'), 'image of hdd uploaded');
@@ -396,12 +329,14 @@ subtest 'further test execution happens as usual' => sub {
 };
 
 kill_driver;
+kill_specific_driver($driver2);
 turn_down_stack;
 done_testing;
 
 # in case it dies
 END {
     kill_driver;
+    kill_specific_driver($driver2);
     turn_down_stack;
     $? = 0;
 }
