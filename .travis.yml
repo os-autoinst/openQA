@@ -17,5 +17,4 @@ before_script:
 script:
   - docker run --cap-add SYS_ADMIN -v $TRAVIS_BUILD_DIR:/opt/openqa -v /var/run/dbus:/var/run/dbus --env-file <(env | grep TRAVIS) -e TRAVIS=true -e FULLSTACK -e UITESTS -e SCHEDULER_FULLSTACK -e GH_PUBLISH dasantiago/openqa-tests make travis-codecov
 after_failure:
-  - cat /tmp/openqa-debug.log
-after_script: yes
+  - cat openqa-debug.log
