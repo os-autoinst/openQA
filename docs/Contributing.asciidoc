@@ -335,7 +335,57 @@ variable +OPENQA_BASEDIR+. The default value is +/var/lib+.
 
 == Running tests of openQA itself
 
-To execute the testsuite locally, use +make test+. It is also possible to run a
+There's two ways of executing the testsuite locally:
+
+1. with docker
+
+  The goal of running the tests with docker is to have consistent tests results (as sometimes the tests have different outcomes because 
+  missing packages or different package versions amongst other reasons). This is the preferred way if the user wants to run a full test
+  battery or if it needs to setup a test database
+
+2. without docker
+
+=== How to run tests with docker
+
+To run them in docker please be sure that docker is installed and the docker daemon is running.
+To launch the test suite first it's required to pull the docker image:
+
+> docker pull dasantiago/openqa-tests
+
+Then you can launch the tests:
+
+> docker run --cap-add SYS_ADMIN -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus -e VAR1=1 -e VAR2=1 dasantiago/openqa-tests make docker-tests
+
+Replace OPENQA_LOCAL_CODE to the location where you have the openqa code.
+
+Replace VAR1 and VAR2 in -e switch to match a test battery of the test matrix:
+|============================
+|FULLSTACK=0| UITESTS=0
+|FULLSTACK=0| UITESTS=1
+|GH_PUBLISH=true| FULLSTACK=1
+|SCHEDULER_FULLSTACK=1|
+|============================
+
+==== tips
+
+Running commands will be executed after the initialization script (database creation and so on..). So if there's the need to run an interactive
+session after it just do:
+
+> docker run --cap-add SYS_ADMIN -it -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus dasantiago/openqa-tests bash
+
+There's also the possibility to change the initialization scripts with the --entrypoint switch. This allows us to go into an interactive
+session without any initialization script run:
+
+> docker run --cap-add SYS_ADMIN -it --entrypoint /bin/bash -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus dasantiago/openqa-tests
+
+In case there's the need to follow what's happening in the current running docker (the execution will terminate the session):
+
+> docker exec -ti $(docker ps | awk '!/CONTAINER/{print $1}') /bin/bash
+
+
+=== How to run tests without docker
+
+To execute the testsuite locally without docker, use +make test+. It is also possible to run a
 particular test for example +prove t/api/01-workers.t+.
 
 To run UI tests the package +perl-Selenium-Remote-Driver+ is required. Note that
