@@ -184,8 +184,12 @@ sub download_asset {
             my $ok;
             # This needs to go in to the database at any cost - we have the lock and we succeeded in download
             # We can't just throw it away if database locks.
-            $att++ and sleep 1 until $ok = $self->update_asset($asset, $etag, $size) || $att > 5;
-            $self->purge_asset($asset) and $asset = undef unless $ok;
+            ++$att and sleep 1 and log_debug("CACHE: Error updating Cache: attempting again: $att")
+              until $ok = $self->update_asset($asset, $etag, $size) || $att > 5;
+            log_error("CACHE: FAIL Could not update DB - purging asset")
+              and $self->purge_asset($asset)
+              and $asset = undef
+              unless $ok;
             log_debug("CACHE: Asset download successful to $asset, Cache size is: " . $self->cache_real_size) if $ok;
         }
         else {
@@ -257,12 +261,16 @@ sub toggle_asset_lock {
     my ($asset, $toggle) = @_;
 
     my $dbh = $self->dbh;
-    $dbh->do("BEGIN EXCLUSIVE");
+
     my $check = 1 - $toggle;
     my $sql
       = "UPDATE assets set downloading = ?, filename = ?, last_use = strftime('%s','now') where filename = ? and downloading = ?";
     my $res;
-    eval { $res = $dbh->prepare($sql)->execute($toggle, $asset, $asset, $check); $dbh->commit or die $dbh->errstr; };
+    eval {
+        $dbh->do("BEGIN EXCLUSIVE");
+        $res = $dbh->prepare($sql)->execute($toggle, $asset, $asset, $check);
+        $dbh->commit or die $dbh->errstr;
+    };
 
     if ($@) {
         log_error "toggle_asset_lock: Rolling back $@";
@@ -394,9 +402,9 @@ sub purge_asset {
     my ($self, $asset) = @_;
     my $sql = "DELETE FROM assets WHERE filename = ?";
     my $dbh = $self->dbh;
-    $dbh->begin_work;
 
     eval {
+        $dbh->do("BEGIN EXCLUSIVE");
         $dbh->prepare($sql)->execute($asset) or die $dbh->errstr;
         $dbh->commit or die $dbh->errstr;
         unlink($asset) or eval { log_error "CACHE: Could not remove $asset" if -e $asset };
@@ -432,12 +440,21 @@ sub asset_lookup {
     my $lock_granted;
     my $result;
     my $dbh = $self->dbh;
+
     eval {
+        $dbh->do("BEGIN EXCLUSIVE");
         $sql    = "SELECT filename, etag, last_use, size from assets where filename = ?";
         $sth    = $dbh->prepare($sql);
         $result = $dbh->selectrow_hashref($sql, undef, $asset);
+        $dbh->commit or die $dbh->errstr;
     };
-    log_error "Error while accessing database: $@" if $@;
+
+    if ($@) {
+        log_error "asset_lookup: Rolling back $@";
+        eval { $dbh->rollback };
+        log_error "Rolling back failed: $@";
+        return !!0;
+    }
 
     if (!$result) {
         log_info "CACHE: Purging non registered $asset";
