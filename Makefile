@@ -119,8 +119,9 @@ docker-tests:
 	  fi ;\
           prove ${PROVE_ARGS} -r $$list | tee $$tmp_file ;\
 	fi ;\
-	tail -n 1 $$tmp_file | grep -o -E "PASS|[[:digit:]]+..[[:digit:]]+" ;\
+	grep -o -E -v "Looks like you failed [[:digit:]]+ test|not ok [[:digit:]]|Result: FAIL" $$tmp_file ;\
 	test_failed=$$? ;\
+	echo $$test_failed ;\
 	if [[ $$test_failed -ne 0 && $$TRAVIS ]]; then\
 		cat /tmp/openqa-debug.log ;\
 	fi ;\
