@@ -46,8 +46,9 @@ sub unregister {
 
     return $self->result_source->schema->txn_do(
         sub {
-            my $session = $self->find({job_id => $job_id}) or return;
+            my $session = $self->find({job_id => $job_id}) or return 0;
             $session->delete();
+            return 1;
         });
 }
 
