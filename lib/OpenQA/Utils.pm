@@ -295,7 +295,9 @@ sub _log_msg {
         $log_to_standard = 0;
     }
     else {
-
+        # TODO: We need to get rid of $app here :(
+        $msg = "[pid:$$] " . $msg
+          if defined $app && $app->can('log') && $app->log->can('level') && $app->log->level eq 'debug';
         if ($options{channels}) {
             if (ref($options{channels}) eq 'ARRAY') {
                 for my $channel (@{$options{channels}}) {
