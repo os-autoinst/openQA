@@ -8,10 +8,15 @@ function setupWebSocketContosle(url) {
     // handle relative URL
     if (url.indexOf('ws:') !== 0) {
         var port = Number.parseInt(window.location.port);
-        if (port !== 80 || port !== 443) {
-            port += 2;
+        if (Number.isNaN(port)) {
+            port = '';
+        } else {
+            if (port !== 80 || port !== 443) {
+                port += 2;
+            }
+            port = ':' + port;
         }
-        url = 'ws://' + window.location.hostname + ':' + port + (url.indexOf('/') !== 0 ? '/' : '') + url;
+        url = 'ws://' + window.location.hostname + port + (url.indexOf('/') !== 0 ? '/' : '') + url;
     }
 
     var msg = $('#msg');
