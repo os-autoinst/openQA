@@ -18,7 +18,7 @@ use strict;
 use warnings;
 
 use OpenQA::Worker::Common;
-use OpenQA::Utils qw(locate_asset log_error log_info log_debug get_channel_handle);
+use OpenQA::Utils qw(locate_asset log_error log_info log_debug log_warning get_channel_handle);
 
 use POSIX qw(:sys_wait_h strftime uname _exit);
 use Cpanel::JSON::XS 'encode_json';
@@ -238,8 +238,9 @@ sub engine_workit {
 
     local $@;
     eval { $cgroup = cgroupv2->from(CGROUP_SLICE // $proc_cgroup)->child($job->{id})->create; };
-    $cgroup = c() and log_error(
-"Failed creating CGroup subtree '$@', disabling them. You can define a custom slice with OPENQA_CGROUP_SLICE or indicating the base mount with MOJO_CGROUP_FS",
+    $cgroup = c() and log_warning(
+        "Failed creating CGroup subtree '$@', disabling them."
+          . "You can define a custom slice with OPENQA_CGROUP_SLICE or indicating the base mount with MOJO_CGROUP_FS",
         channels => 'worker'
     ) if $@;
 
