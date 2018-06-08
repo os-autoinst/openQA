@@ -90,6 +90,7 @@ endif
 
 .PHONY: docker-tests
 docker-tests:
+	export OPENQA_LOGFILE=/opt/openqa/openqa-debug.log ;\
 	if test "x$$FULLSTACK" = x1 || test "x$$SCHEDULER_FULLSTACK" = x1; then \
 		git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst ;\
 		cd ../os-autoinst ;\
@@ -120,6 +121,8 @@ docker-tests:
 	fi 
 	if test -r tests_failed; then \
 		exit 1 ;\
+	else \
+		cp -a assets/cache/* /opt/openqa/assets/cache ;\
         fi
     
 
