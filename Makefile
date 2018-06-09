@@ -90,6 +90,7 @@ endif
 
 .PHONY: docker-tests
 docker-tests:
+	export OPENQA_LOGFILE=/opt/openqa/openqa-debug.log ;\
 	if test "x$$FULLSTACK" = x1 || test "x$$SCHEDULER_FULLSTACK" = x1; then \
 		git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst ;\
 		cd ../os-autoinst ;\
@@ -104,28 +105,26 @@ docker-tests:
 			exit 1 ;\
 		fi ;\
 	fi ;\
-	tmp_file=$$(mktemp) ;\
 	if test "x$$FULLSTACK" = x1; then \
-	  perl t/full-stack.t | tee $$tmp_file;\
+	  perl t/full-stack.t || touch tests_failed ;\
 	elif test "x$$SCHEDULER_FULLSTACK" = x1; then \
-		perl t/05-scheduler-full.t | tee $$tmp_file ;\
+	  perl t/05-scheduler-full.t || touch tests_failed ;\
 	else \
 	  list= ;\
 	  if test "x$$UITESTS" = x1; then \
 	    list=$$(find ./t/ui -name *.t | sort ) ;\
 	  else \
-	    $(MAKE) checkstyle ;\
+	    $(MAKE) checkstyle || touch tests_failed ;\
 	    list=$$(find ./t/ -name *.t | grep -v t/ui | sort ) ;\
 	  fi ;\
-          prove ${PROVE_ARGS} -r $$list | tee $$tmp_file ;\
-	fi ;\
-	grep -o -E -v "Looks like you failed [[:digit:]]+ test|not ok [[:digit:]]|Result: FAIL" $$tmp_file ;\
-	test_failed=$$? ;\
-	echo $$test_failed ;\
-	if [[ $$test_failed -ne 0 && $$TRAVIS ]]; then\
-		cat /tmp/openqa-debug.log ;\
-	fi ;\
-	exit $$test_failed
+          prove ${PROVE_ARGS} -r $$list || touch tests_failed ;\
+	fi 
+	if test -r tests_failed; then \
+		exit 1 ;\
+	else \
+		cp -a assets/cache/* /opt/openqa/assets/cache ;\
+        fi
+    
 
 # ignore tests and test related addons in coverage analysis
 COVER_OPTS ?= -select_re "^/lib" -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
