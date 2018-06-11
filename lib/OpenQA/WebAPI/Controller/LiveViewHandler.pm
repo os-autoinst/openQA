@@ -21,7 +21,7 @@ use Mojo::URL;
 use Mojo::Base 'OpenQA::WebAPI::Controller::Developer';
 use OpenQA::Utils;
 use OpenQA::Schema::Result::Jobs;
-use JSON qw(decode_json);
+use JSON 'decode_json';
 
 # notes: * routes in this package are served by LiveViewHandler rather than the regular WebAPI server
 #        * using prefork is currently not possible (see notes in send_message_to_java_script_clients and
