@@ -364,6 +364,7 @@ Replace VAR1 and VAR2 in -e switch to match a test battery of the test matrix:
 |FULLSTACK=0| UITESTS=1
 |GH_PUBLISH=true| FULLSTACK=1
 |SCHEDULER_FULLSTACK=1|
+|DEVELOPER_FULLSTACK=1|
 |============================
 
 ==== tips

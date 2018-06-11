@@ -111,7 +111,7 @@ docker-tests:
 	elif test "x$$SCHEDULER_FULLSTACK" = x1; then \
 	  perl t/05-scheduler-full.t || touch tests_failed ;\
 	elif test "x$$DEVELOPER_FULLSTACK" = x1; then \
-	  perl t/33-developer_mode.t ;\
+	  perl t/33-developer_mode.t || touch tests_failed ;\
 	else \
 	  list= ;\
 	  if test "x$$UITESTS" = x1; then \
