@@ -24,7 +24,8 @@ use OpenQA::Schema::Result::Jobs;
 use JSON qw(decode_json);
 
 # notes: * routes in this package are served by LiveViewHandler rather than the regular WebAPI server
-#        * using prefork is currently not possible
+#        * using prefork is currently not possible (see notes in send_message_to_java_script_clients and
+#          quit_development_session)
 
 # define a whitelist of commands to be passed to os-autoinst via ws_proxy
 my %allowed_os_autoinst_commands = (
@@ -59,7 +60,7 @@ sub set_fake_java_script_transaction {
 # broadcasts a message to all JavaScript clients for the specified job ID
 # note: we don't broadcast to connections served by other prefork processes here, hence
 #       prefork musn't be used (for now)
-sub send_message_to_java_script_client {
+sub send_message_to_java_script_clients {
     my ($self, $job_id, $type, $what, $data, $quit_on_finished) = @_;
     my $java_script_transactions_for_current_job = $java_script_transactions_by_job{$job_id} or return;
     my $outstanding_transmissions = scalar @$java_script_transactions_for_current_job;
@@ -80,10 +81,34 @@ sub send_message_to_java_script_client {
     }
 }
 
-# same as send_message_to_java_script_client, but quits the session after everything is sent
-sub send_message_to_java_script_client_and_quit {
+# same as send_message_to_java_script_clients, but quits the development session after everything is sent
+# note: used to report fatal errors within ws_proxy which happen *after* the development session has been established
+#       and require the development session to be quit
+#       (eg. connection to os-autoinst lost)
+sub send_message_to_java_script_clients_and_quit {
     my ($self, $job_id, $type, $what, $data) = @_;
-    return $self->send_message_to_java_script_client($job_id, $type, $what, $data, 1);
+    return $self->send_message_to_java_script_clients($job_id, $type, $what, $data, 1);
+}
+
+# sends a message to a particular JavaScript client using the specified transaction and finishes the transaction if done
+# note: used to report fatal errors within ws_proxy which happen *before* the development session has been established
+#       (eg. invalid job/user or development session is locked by another user)
+sub send_message_to_java_script_client_and_finish {
+    my ($self, $java_script_tx, $type, $what, $data) = @_;
+    $java_script_tx->send(
+        {
+            json => {
+                type => $type,
+                what => $what,
+                data => $data,
+            }
+        },
+        sub {
+            $java_script_tx->finish();
+        });
+
+    # return the result of an 'on' call; otherwise Mojolicious expects a 'delayed response'
+    return $self->on(finish => sub { });
 }
 
 # quits the developments session for the specified job ID
@@ -116,7 +141,7 @@ sub handle_message_from_java_script {
         $json = decode_json($msg);
     }
     catch {
-        $self->send_message_to_java_script_client(
+        $self->send_message_to_java_script_clients(
             $job_id,
             warning => 'ignoring invalid json',
             {
@@ -128,7 +153,7 @@ sub handle_message_from_java_script {
     # check command
     my $cmd = $json->{cmd};
     if (!$cmd) {
-        $self->send_message_to_java_script_client($job_id, warning => 'ignoring invalid command');
+        $self->send_message_to_java_script_clients($job_id, warning => 'ignoring invalid command');
         return;
     }
 
@@ -140,7 +165,7 @@ sub handle_message_from_java_script {
 
     # validate the messages before passing to command server
     if (!$allowed_os_autoinst_commands{$cmd}) {
-        $self->send_message_to_java_script_client(
+        $self->send_message_to_java_script_clients(
             $job_id,
             warning => 'ignoring invalid command',
             {cmd => $cmd});
@@ -156,12 +181,12 @@ sub handle_message_from_java_script {
 sub connect_to_cmd_srv {
     my ($self, $job_id, $cmd_srv_raw_url, $cmd_srv_url) = @_;
 
-    $self->send_message_to_java_script_client($job_id,
+    $self->send_message_to_java_script_clients($job_id,
         info => 'connecting to os-autuinst command server at ' . $cmd_srv_raw_url);
 
     # prevent opening the same connection to os-autoinst cmd srv twice
     if (my $cmd_srv_tx = $cmd_srv_transactions_by_job{$job_id}) {
-        $self->send_message_to_java_script_client($job_id,
+        $self->send_message_to_java_script_clients($job_id,
             info => 'reusing previous connection to os-autuinst command server at ' . $cmd_srv_raw_url);
         return $cmd_srv_tx;
     }
@@ -179,7 +204,7 @@ sub connect_to_cmd_srv {
             if (!$tx->is_websocket) {
                 my $location_header = ($tx->completed ? $tx->res->headers->location : undef);
                 if (!$location_header) {
-                    $self->send_message_to_java_script_client_and_quit($job_id,
+                    $self->send_message_to_java_script_clients_and_quit($job_id,
                         error => 'unable to upgrade ws to command server');
                     return;
                 }
@@ -190,11 +215,11 @@ sub connect_to_cmd_srv {
             }
 
             # handle messages from os-autoinst command server
-            $self->send_message_to_java_script_client($job_id, info => 'connected to os-autoinst command server');
+            $self->send_message_to_java_script_clients($job_id, info => 'connected to os-autoinst command server');
             $tx->on(
                 json => sub {
                     my ($tx, $json) = @_;
-                    $self->send_message_to_java_script_client($job_id, info => 'cmdsrvmsg', $json);
+                    $self->send_message_to_java_script_clients($job_id, info => 'cmdsrvmsg', $json);
                 });
 
             # handle connection to os-autoinst command server being quit
@@ -204,7 +229,7 @@ sub connect_to_cmd_srv {
                     # prevent finishing the transaction again in $quit_development_session
                     $cmd_srv_transactions_by_job{$job_id} = undef;
                     # inform the JavaScript client
-                    $self->send_message_to_java_script_client_and_quit(
+                    $self->send_message_to_java_script_clients_and_quit(
                         $job_id,
                         error => 'connection to os-autoinst command server lost',
                         {
@@ -224,7 +249,7 @@ sub send_message_to_os_autoinst {
 
     my $cmd_srv_tx = $cmd_srv_transactions_by_job{$job_id};
     if (!$cmd_srv_tx) {
-        $self->send_message_to_java_script_client($job_id,
+        $self->send_message_to_java_script_clients($job_id,
             error => 'failed to pass message to os-autoinst command server because not connected yet');
         return;
     }
@@ -236,27 +261,28 @@ sub ws_proxy {
     my ($self) = @_;
 
     # determine basic variables
-    my $job  = $self->find_current_job() or return $self->reply->not_found;
-    my $user = $self->current_user()     or return $self->reply->not_found;
-    my $app  = $self->app;
+    my $java_script_tx = $self->tx;
+    my $job            = $self->find_current_job()
+      or return $self->send_message_to_java_script_client_and_finish($java_script_tx, error => 'job not found');
+    my $user = $self->current_user()
+      or return $self->send_message_to_java_script_client_and_finish($java_script_tx, error => 'user not found');
+    my $app                = $self->app;
     my $job_id             = $job->id;
     my $user_id            = $user->id;
     my $developer_sessions = $app->schema->resultset('DeveloperSessions');
 
     $app->log->debug('ws_proxy: client connected: ' . $user->name);
 
-    # define variables for transactions
-    my $java_script_tx                           = $self->tx;
-    my $java_script_tx_id                        = "$job_id-$java_script_tx";
+    # add JavaScript transaction to the list of JavaScript transactions for this job
+    # (needed for broadcasting to all clients)
     my $java_script_transactions_for_current_job = ($java_script_transactions_by_job{$job_id} //= []);
     push(@$java_script_transactions_for_current_job, $java_script_tx);
 
     # register development session, ensure only one development session is opened per job
     my $developer_session = $developer_sessions->register($job_id, $user_id);
     if (!$developer_session) {
-        $self->send_message_to_java_script_client_and_quit($job_id,
+        return $self->send_message_to_java_script_client_and_finish($java_script_tx,
             error => 'unable to create (further) development session');
-        return;
     }
 
     # mark session as active
@@ -266,7 +292,7 @@ sub ws_proxy {
     my $cmd_srv_raw_url = OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job);
     if (!$cmd_srv_raw_url) {
         $app->log->debug('ws_proxy: attempt to open for job ' . $job->name . ' (' . $job_id . ')');
-        $self->send_message_to_java_script_client_and_quit($job_id,
+        $self->send_message_to_java_script_clients_and_quit($job_id,
             error => 'os-autoinst command server not available, job is likely not running');
     }
 

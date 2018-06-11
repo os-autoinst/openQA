@@ -63,13 +63,13 @@ subtest 'send message to JavaScript clients' => sub {
 
     # send message for job 99960 (should be ignored, only assigned transactions for job 99961)
     my $live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
-    $live_view_handler->send_message_to_java_script_client(99960, foo => 'bar', {some => 'data'});
+    $live_view_handler->send_message_to_java_script_clients(99960, foo => 'bar', {some => 'data'});
     for my $tx (@fake_java_script_transactions) {
         is_deeply($tx->sent_messages, [], 'no messages for other jobs received');
     }
 
     # send message for job 99961 (should be broadcasted to all assigned transations)
-    $live_view_handler->send_message_to_java_script_client(99961, foo => 'bar', {some => 'data'});
+    $live_view_handler->send_message_to_java_script_clients(99961, foo => 'bar', {some => 'data'});
     for my $tx (@fake_java_script_transactions) {
         is_deeply(
             $tx->sent_messages,
@@ -237,6 +237,23 @@ subtest 'URLs for command server and livehandler' => sub {
 };
 
 subtest 'websocket proxy' => sub {
+    subtest 'job does not exist' => sub {
+        my $ws_monitoring = $t_livehandler->websocket_ok(
+            '/liveviewhandler/tests/54754/developer/ws-proxy',
+            'establish ws connection from JavaScript to livehandler'
+        );
+        Mojo::IOLoop->one_tick;
+        $ws_monitoring->message_ok('message received');
+        $ws_monitoring->json_message_is(
+            {
+                type => 'error',
+                what => 'job not found',
+                data => undef,
+            });
+
+        is($developer_sessions->count, 0, 'no developer session after all');
+    };
+
     subtest 'job without assigned worker' => sub {
         my $ws_monitoring = $t_livehandler->websocket_ok(
             '/liveviewhandler/tests/99962/developer/ws-proxy',
