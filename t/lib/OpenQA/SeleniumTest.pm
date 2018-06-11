@@ -10,6 +10,7 @@ require OpenQA::Test::Database;
 
 our @EXPORT = qw($drivermissing check_driver_modules
   start_driver call_driver kill_driver wait_for_ajax
+  open_new_tab
   javascript_console_has_no_warnings_or_errors);
 
 use Data::Dump 'pp';
@@ -125,6 +126,21 @@ sub make_screenshot($) {
     my $png_base64 = $_driver->screenshot();
     print($fh MIME::Base64::decode_base64($png_base64));
     close($fh);
+}
+
+# opens a new tab/window for the specified URL and returns its handle
+# remarks:
+#  * does not switch to the new tab, use $driver->switch_to_window() for that
+#  * see 33-developer_mode.t for an example
+sub open_new_tab {
+    my ($url) = @_;
+
+    # open new window using JavaScript API (Selenium::Remote::Driver doesn't seem to provide a method)
+    $url = $url ? "\"$url\"" : 'window.location';
+    $_driver->execute_script("window.open($url);");
+
+    # assume the last window handle is the one of the newly created window
+    return $_driver->get_window_handles()->[-1];
 }
 
 sub check_driver_modules {

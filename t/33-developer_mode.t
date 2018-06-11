@@ -249,29 +249,37 @@ subtest 'session locked for other developers' => sub {
     is($driver->find_element('#user-action a')->get_text(), 'Logged in as otherdeveloper', 'otherdeveloper logged-in');
     $driver->get($developer_console_url);
 
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+        $driver,
+        qr/unable to create \(further\) development session/,
+        'no further session'
+    );
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message($driver, qr/Connection closed/,
-        'closed', 'assert never opened');
+        'closed');
 };
 
-my $driver2 = start_driver($mojoport);
+my $first_tab  = $driver->get_current_window_handle();
+my $second_tab = open_new_tab('/login?user=Demo');
+
 subtest 'connect with 2 clients at the same time (use case: developer opens 2nd tab)' => sub {
-    $driver2->get('/login?user=Demo');
-    $driver2->get($developer_console_url);
+    $driver->switch_to_window($second_tab);
 
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
-        $driver2,
+        $driver,
         qr/Connection opened/,
         'connection opened'
     );
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
-        $driver2,
+        $driver,
         qr/reusing previous connection to os-autuinst/,
         'connection reused'
     );
 };
 
+
 subtest 'resume test execution' => sub {
     # login as demo again
+    $driver->switch_to_window($first_tab);
     $driver->get('/logout');
     $driver->get('/login?user=Demo');
 
@@ -296,14 +304,18 @@ subtest 'resume test execution' => sub {
         qr/\"resume_test_execution\":/, 'resume');
 
     # check whether info has also been distributed to 2nd tab
+    $driver->switch_to_window($second_tab);
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
-        $driver2,
+        $driver,
         qr/\"resume_test_execution\":/,
         'resume (2nd tab)'
     );
 };
 
+
 subtest 'quit_session' => sub {
+    $driver->switch_to_window($first_tab);
+
     my $command_input = $driver->find_element('#msg');
     $command_input->send_keys('{"cmd":"quit_development_session"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
@@ -311,14 +323,16 @@ subtest 'quit_session' => sub {
         'closed');
 
     # check whether 2nd client has been kicked out as well
+    $driver->switch_to_window($second_tab);
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
-        $driver2,
+        $driver,
         qr/Connection closed/,
         'closed (2nd tab)'
     );
 };
 
 subtest 'further test execution happens as usual' => sub {
+    $driver->switch_to_window($first_tab);
     $driver->get($job_page_url);
     OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/, 'test 1 is passed');
 
@@ -329,14 +343,12 @@ subtest 'further test execution happens as usual' => sub {
 };
 
 kill_driver;
-kill_specific_driver($driver2);
 turn_down_stack;
 done_testing;
 
 # in case it dies
 END {
     kill_driver;
-    kill_specific_driver($driver2);
     turn_down_stack;
     $? = 0;
 }

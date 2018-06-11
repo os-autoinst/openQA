@@ -124,12 +124,4 @@ sub wait_for_developer_console_contains_log_message {
     pass('found ' . $diag_info);
 }
 
-# kills the specified driver; used to kill a 2nd driver instance
-sub kill_specific_driver {
-    my ($driver) = @_;
-    return unless ($driver);
-    $driver->quit();
-    $driver->shutdown_binary;
-}
-
 1;
