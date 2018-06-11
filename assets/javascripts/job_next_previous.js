@@ -1,5 +1,14 @@
 function setupJobNextPrevious() {
     var params = parseQueryParams();
+
+    var setPage = function (json) {
+        // Seems an issue in case of displayStart is not an integer multiple of the pageLength
+        // Caculate and start the page with current job
+        var current_index = json.data.map(function(n) {return n.iscurrent;}).indexOf(1);
+        var page = Math.min(Math.max(0, Math.floor(current_index / table.page.len())), table.page.info().pages);
+        table.page(page).draw('page');
+    };
+
     var table = $('#job_next_previous_table').DataTable({
         ajax: {
             url: $('#job_next_previous_table').data('ajax-url'),
@@ -36,11 +45,7 @@ function setupJobNextPrevious() {
             {targets: 3, render: renderFinishTime},
         ],
         initComplete: function (settings, json) {
-            // Seems an issue in case of displayStart is not an integer multiple of the pageLength
-            // Caculate and start the page with current job
-            var current_index = json.data.map(function(n) {return n.iscurrent;}).indexOf(1);
-            var page = Math.min(Math.max(0, Math.floor(current_index / table.page.len())), table.page.info().pages);
-            table.page(page).draw('page');
+            setPage(json);
         }
     });
     $('#job_next_previous_table').on('draw.dt', function (){

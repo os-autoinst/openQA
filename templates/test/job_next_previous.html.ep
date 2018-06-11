@@ -27,7 +27,7 @@
                         </ul>
                     </p>
                     <p>
-                        By default up to 400 previous jobs and 100 next jobs would be shown in the table.
+                        By default up to 400 previous and 100 next jobs (include passed, softfailed, failed and incomplete) would be shown in the table.
                     </p>';
                 %>
                 %= help_popover 'Help for Next & previous results' => $content, undef, undef, 'top'
