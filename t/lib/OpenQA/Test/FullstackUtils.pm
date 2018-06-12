@@ -124,4 +124,32 @@ sub wait_for_developer_console_contains_log_message {
     pass('found ' . $diag_info);
 }
 
+sub wait_for_developer_console_available {
+    my ($driver) = @_;
+
+    my $console_form = $driver->find_element('#ws_console_form');
+    my $text         = $console_form->get_text();
+
+    # give the worker 10 seconds to tell us the URL for os-autoinst command server
+    my $seconds = 0;
+    while ($text =~ qr/The command server is not available./) {
+        if ($seconds >= 10) {
+            fail('worker did not propagate URL for os-autoinst cmd srv within 10 seconds');
+            return;
+        }
+
+        sleep 1;
+
+        $text = $console_form->get_text();
+        $seconds += 1;
+    }
+
+    # check initial connection
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+        $driver,
+        qr/Connection opened/,
+        'connection opened'
+    );
+}
+
 1;

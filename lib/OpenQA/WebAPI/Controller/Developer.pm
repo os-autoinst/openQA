@@ -25,13 +25,17 @@ use OpenQA::Schema::Result::Jobs;
 # returns the isotovideo command server web socket URL for the given job or undef if not available
 sub determine_os_autoinst_web_socket_url {
     my ($job) = @_;
-
     return unless $job->state eq OpenQA::Schema::Result::Jobs::RUNNING;
+
+    # determine job token and host from worker
     my $worker    = $job->assigned_worker             or return;
     my $job_token = $worker->get_property('JOBTOKEN') or return;
     my $host      = $worker->host                     or return;
-    my $port      = ($worker->get_property('QEMUPORT') // 20012) + 1;
-    # FIXME: don't hardcode port
+
+    # determine port
+    my $cmd_srv_raw_url = $worker->get_property('CMD_SRV_URL') or return;
+    my $cmd_srv_url     = Mojo::URL->new($cmd_srv_raw_url);
+    my $port            = $cmd_srv_url->port() or return;
     return "ws://$host:$port/$job_token/ws";
 }
 

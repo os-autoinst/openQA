@@ -181,6 +181,14 @@ sub start_worker {
 start_worker;
 OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 'fail on incomplete');
 
+subtest 'wait until developer console becomes available' => sub {
+    # open developer console
+    $driver->get('/tests/1/developer/ws-console');
+    wait_for_ajax;
+
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_available($driver);
+};
+
 subtest 'pause at certain test' => sub {
     # load Selenium::Remote::WDKeys module or skip this test if not available
     unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
@@ -188,18 +196,8 @@ subtest 'pause at certain test' => sub {
         return;
     }
 
-    # open developer console
-    $driver->get('/tests/1/developer/ws-console');
-    wait_for_ajax;
-
-    # find relevant elements on the page, check for initial connection
     my $log_textarea  = $driver->find_element('#log');
     my $command_input = $driver->find_element('#msg');
-    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
-        $driver,
-        qr/Connection opened/,
-        'connection opened'
-    );
 
     # send command to pause at shutdown (hopefully the test wasn't so fast it is already in shutdown)
     $command_input->send_keys('{"cmd":"set_pause_at_test","name":"shutdown"}');

@@ -1391,6 +1391,11 @@ sub update_status {
     # mark the worker as alive
     $self->worker->seen;
 
+    # update URL to os-autoinst command server
+    if (my $assigned_worker = $self->assigned_worker) {
+        $assigned_worker->set_property(CMD_SRV_URL => ($status->{cmd_srv_url} // ''));
+    }
+
     $self->state(RUNNING) and $self->t_started(now()) if grep { $_ eq $self->state } (WAITING, ASSIGNED, SETUP);
     $self->update();
 

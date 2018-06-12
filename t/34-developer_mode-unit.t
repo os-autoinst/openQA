@@ -223,6 +223,10 @@ subtest 'URLs for command server and livehandler' => sub {
         undef, 'no URL for job without assigned worker');
 
     $job->update({assigned_worker_id => $worker->id});
+    is(OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
+        undef, 'no URL for job when worker has not propagated the URL yet');
+
+    $worker->set_property(CMD_SRV_URL => 'http://remotehost:20013/token99964');
     is(
         OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
         'ws://remotehost:20013/token99961/ws',

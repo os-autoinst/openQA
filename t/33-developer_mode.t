@@ -211,16 +211,12 @@ sub open_developer_console_from_live_view {
     wait_for_ajax;
 }
 
-subtest 'pause at certain test' => sub {
+subtest 'wait until developer console becomes available' => sub {
     open_developer_console_from_live_view();
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_available($driver);
+};
 
-    # find relevant elements on the page, check for initial connection
-    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
-        $driver,
-        qr/Connection opened/,
-        'connection opened'
-    );
-
+subtest 'pause at certain test' => sub {
     # send command to pause at shutdown (hopefully the test wasn't so fast it is already in shutdown)
     my $command_input = $driver->find_element('#msg');
     $command_input->send_keys('{"cmd":"set_pause_at_test","name":"shutdown"}');
