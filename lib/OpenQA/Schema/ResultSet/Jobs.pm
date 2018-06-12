@@ -417,12 +417,14 @@ sub _cancel_or_deprioritize {
 
 sub next_previous_jobs_query {
     my ($self, $job, $jobid, %args) = @_;
-    my $p_limit = $args{previous_limit};
-    my $n_limit = $args{next_limit};
+    my $p_limit     = $args{previous_limit};
+    my $n_limit     = $args{next_limit};
+    my @inc_results = OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS;
+    $inc_results[0] = '';
 
     my @params;
     push @params, 'done';
-    push @params, OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS;
+    push @params, @inc_results;
     for (1 .. 2) {
         for my $key (OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS) {
             push @params, $job->get_column($key);
