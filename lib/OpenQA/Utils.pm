@@ -507,7 +507,7 @@ sub asset_type_from_setting {
     if ($setting eq 'ISO' || $setting =~ /^ISO_\d+$/) {
         return 'iso';
     }
-    if ($setting =~ /^HDD_\d+$/) {
+    if ($setting =~ /^HDD_\d+$/ || $setting =~ /^UEFI_PFLASH_\w+$/) {
         return 'hdd';
     }
     if ($setting =~ /^REPO_\d+$/) {
