@@ -83,7 +83,7 @@ The section provides one of the ways for setting up openQA environment to run te
 require network connection between several machines (e.g. client -- server tests).
 
 The example of the configuration is applicable for openSUSE and will
-use _Open vSwitch_ for virtual switch, _SuSEfirewall2_ for NAT and _wicked_ as network manager.
+use _Open vSwitch_ for virtual switch, _SuSEfirewall2_ or _firewalld_ for NAT and _wicked_ as network manager.
 
 NOTE: Other way to setup the environment with _iptables_ and _firewalld_ is described
 on link:https://fedoraproject.org/wiki/OpenQA_advanced_network_guide[Fedora wiki].
@@ -192,6 +192,40 @@ Start SuSEfirewall2 and allow to run on startup:
 systemctl start SuSEfirewall2
 systemctl enable SuSEfirewall2
 ---------------
+
+*Configure NAT with firewalld*
+
+To configure NAT with firewalld assign the bridge interface to the internal zone
+and the interface with access to the network to the external zone:
+```bash
+firewall-cmd --permanent --zone=external --add-interface=eth0
+firewall-cmd --permanent --zone=internal --add-interface=br1
+```
+Reload firewall configuration using `firewall-cmd --reload` command.
+To enable masquerade one can use the following command:
+```bash
+firewall-cmd --permanent --zone=external -add-masquerade
+```
+ip_forward is enabled automatically if masquerading is enabled:
+```bash
+cat /proc/sys/net/ipv4/ip_forward
+1
+```
+In case interface is in trusted network it is possible to accept connections by
+default by changing zone target:
+```bash
+firewall-cmd --permanent --zone=external --set-target=ACCEPT
+```
+Alternatively, you can assign interface to the `trusted` zone.
+
+If you do not have firewalld service running, you can use `firewall-cmd-offline`
+command for the configuration. Enable service to run on startup:
+```
+systemctl start firewalld
+systemctl enable firewalld
+```
+
+Also, the `firewall-config` GUI tool for firewalld can be used for configuration.
 
 *Configure OpenQA Workers*
 
