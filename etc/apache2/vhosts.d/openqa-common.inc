@@ -53,7 +53,7 @@ ProxyPass /error !
 ProxyPass "/api/v1/ws/" "ws://localhost:9527/ws/" keepalive=On
 
 # pass websocket server to handle live view to port 9528
-ProxyPass "/livehandler/" "ws://localhost:9528/livehandler/" keepalive=On
+ProxyPass "/liveviewhandler/" "ws://localhost:9528/liveviewhandler/" keepalive=On
 
 ProxyPass / http://localhost:9526/ keepalive=On
 ProxyPassReverse / http://localhost:9526/
