@@ -1,7 +1,7 @@
 % layout 'bootstrap';
 % content_for 'head' => begin
   %= asset 'ws_console.js'
-  %= asset 'ws_console.scss'
+  %= asset 'ws_console.css'
 % end
 % content_for 'ready_function' => begin
     setupWebSocketContosle();

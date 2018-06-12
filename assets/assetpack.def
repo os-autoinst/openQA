@@ -150,7 +150,7 @@
 ! job_next_previous.js
 < javascripts/job_next_previous.js
 
-! ws_console.scss
+! ws_console.css
 < stylesheets/ws_console.scss
 
 ! ws_console.js
