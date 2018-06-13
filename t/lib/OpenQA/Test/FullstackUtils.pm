@@ -130,19 +130,24 @@ sub wait_for_developer_console_available {
     my $console_form = $driver->find_element('#ws_console_form');
     my $text         = $console_form->get_text();
 
-    # give the worker 10 seconds to tell us the URL for os-autoinst command server
+    # give the worker 1 minute to tell us the URL for os-autoinst command server
     my $seconds = 0;
     while ($text =~ qr/The command server is not available./) {
-        if ($seconds >= 10) {
-            fail('worker did not propagate URL for os-autoinst cmd srv within 10 seconds');
+        if ($seconds >= 60) {
+            fail('worker did not propagate URL for os-autoinst cmd srv within 1 minute');
             return;
         }
 
-        sleep 1;
+        print(" - waiting for worker to propagate URL for os-autoinst cmd srv\n");
+        sleep 2;
 
-        $text = $console_form->get_text();
+        # reload the page, read text again
+        $driver->get($driver->get_current_url());
+        $console_form = $driver->find_element('#ws_console_form');
+        $text         = $console_form->get_text();
         $seconds += 1;
     }
+    pass("os-autoinst cmd srv available after $seconds seconds");
 
     # check initial connection
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
