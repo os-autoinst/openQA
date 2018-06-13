@@ -414,6 +414,68 @@ sub run {
 --------------------------------------------------------------------------------
 ====
 
+
+Mutexes are a way to wait for specific event from single job.
+When we need multiple jobs to reach required state we need to use barriers.
+
+Before first use barrier needs to be created with barrier_create with 2 parameters - name and count.
+Name behaves as ID (same as with mutexes), count is number of jobs needed to call barrier_wait to unlock barrier.
+
+There is optional barrier_wait parameter called check_dead_job.
+When used it will kill all jobs waiting in barrier_wait if one of cluster jobs die.
+
+It prevents waiting for state that will never be reached (and eventually die on job timeout).
+Should be set only on one of barrier_wait calls.
+
+Example is situation with 1 master and 3 worker jobs. We need to wait until 3 worker jobs perform initial setup.
+After that we can make cluster from them, but if one of them fails it makes no sense waiting.
+
+
+[caption="Example of barriers: "]
+.Check for dead jobs while waiting for barrier
+====
+[source,perl]
+--------------------------------------------------------------------------------
+use lockapi;
+
+# In main.pm
+barrier_create('NODES_CONFIGURED', 4);
+
+# On master job
+sub run {
+    assert_screen 'login', 300;
+
+    # Master is ready, waiting while workers are configured (check_dead_job is optional)
+    barrier_wait {name => "NODES_CONFIGURED", check_dead_job => 1};
+
+    # When 4 jobs called barrier_wait they are all unblocked
+    script_run 'create_cluster';
+    script_run 'test_cluster';
+
+    # Notify all nodes we are finished
+    mutex_create 'CLUSTER_CREATED';
+    wait_for_children;
+}
+
+# On 3 worker jobs
+sub run {
+    assert_screen 'login', 300;
+
+    # do initial worker setup
+    script_run 'zypper in HA';
+    script_run 'echo IP > /etc/HA/node_setup';
+
+    # Join the group of jobs waiting for each other
+    barrier_wait 'NODES_CONFIGURED';
+
+    # Don't finish until cluster is created & tested
+    mutex_wait 'CLUSTER_CREATED';
+}
+
+--------------------------------------------------------------------------------
+====
+
+
 Getting information about parents and children
 
 [caption="Example of mmapi: "]
