@@ -9,7 +9,7 @@ Requires=openqa-resource-allocator.service openqa-scheduler.service openqa-webso
 # TODO: define whether we want to run the web ui with the same user
 User=geekotest
 # Our API commands are very expensive, so the default timeouts are too tight
-ExecStart=/usr/share/openqa/script/openqa-livehandler daemon -m production --proxy -i 100 -H 400 -w 20 -G 800
+ExecStart=/usr/share/openqa/script/openqa-livehandler daemon -m production --proxy -i 100
 
 [Install]
 WantedBy=multi-user.target
