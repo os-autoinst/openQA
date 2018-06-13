@@ -30,7 +30,7 @@ use OpenQA::Utils ();
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
-our $VERSION = 64;
+our $VERSION = 65;
 
 __PACKAGE__->load_namespaces;
 
@@ -140,6 +140,22 @@ sub _try_upgrade_db {
         return 1;
     }
     return 0;
+}
+
+# read application secret from database
+sub read_application_secrets {
+    my ($self) = @_;
+    # we cannot use our own schema here as we must not actually
+    # initialize the db connection here. Would break for prefork.
+    my $secrets = $self->resultset('Secrets');
+    my @secrets = $secrets->all();
+    if (!@secrets) {
+        # create one if it doesn't exist
+        $secrets->create({});
+        @secrets = $secrets->all();
+    }
+    die "couldn't create secrets\n" unless @secrets;
+    return [map { $_->secret } @secrets];
 }
 
 1;

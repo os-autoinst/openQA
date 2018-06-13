@@ -22,11 +22,7 @@ use Test::More;
 plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
 sub create {
-    my $self    = shift;
-    my %options = (
-        skip_fixtures => 0,
-        @_
-    );
+    my ($self, %options) = @_;
 
     # New db
     my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);

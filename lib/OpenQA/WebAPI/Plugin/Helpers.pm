@@ -102,37 +102,41 @@ sub register {
         current_job_group => sub {
             my ($c) = @_;
 
-            if ($c->param('testid') || $c->stash('testid')) {
-                my $crumbs;
-                my $distri  = $c->stash('distri');
-                my $build   = $c->stash('build');
-                my $version = $c->stash('version');
-
-                my $query = {build => $build, distri => $distri, version => $version};
-                my $job = $c->stash('job');
-
-                my $overview_text;
-                if ($job->group_id) {
-                    $query->{groupid} = $job->group_id;
-                    $crumbs .= "\n<li id='current-group-overview'>";
-                    $crumbs .= $c->link_to($c->url_for('group_overview', groupid => $job->group_id) =>
-                          (class => 'dropdown-item') => sub { return $job->group->name . ' (current)' });
-                    $crumbs .= "</li>";
-                    $overview_text = "Build " . $job->BUILD;
-                }
-                else {
-                    $overview_text = "Build $build\@$distri $version";
-                }
-                my $overview_url = $c->url_for('tests_overview')->query(%$query);
-
-                $crumbs .= "\n<li id='current-build-overview'>";
-                $crumbs .= $c->link_to($overview_url =>
-                      (class => 'dropdown-item') => sub { '<i class="fas fa-arrow-right"></i> ' . $overview_text });
-                $crumbs .= "</li>";
-                $crumbs .= "\n<li role='separator' class='dropdown-divider'></li>\n";
-                return Mojo::ByteStream->new($crumbs);
+            if (!$c->param('testid') && !$c->stash('testid')) {
+                return;
             }
-            return;
+
+            my $distri   = $c->stash('distri');
+            my $build    = $c->stash('build');
+            my $version  = $c->stash('version');
+            my $job      = $c->stash('job');
+            my $group_id = $job->group_id;
+            if (!$group_id && !($distri && $build && $version)) {
+                return;
+            }
+
+            my %query = (build => $build, distri => $distri, version => $version);
+            my $crumbs;
+            my $overview_text;
+            if ($group_id) {
+                $query{groupid} = $group_id;
+                $crumbs .= "\n<li id='current-group-overview'>";
+                $crumbs .= $c->link_to($c->url_for('group_overview', groupid => $group_id) =>
+                      (class => 'dropdown-item') => sub { return $job->group->name . ' (current)' });
+                $crumbs .= "</li>";
+                $overview_text = 'Build ' . $job->BUILD;
+            }
+            else {
+                $overview_text = "Build $build\@$distri $version";
+            }
+            my $overview_url = $c->url_for('tests_overview')->query(%query);
+
+            $crumbs .= "\n<li id='current-build-overview'>";
+            $crumbs .= $c->link_to($overview_url =>
+                  (class => 'dropdown-item') => sub { '<i class="fas fa-arrow-right"></i> ' . $overview_text });
+            $crumbs .= "</li>";
+            $crumbs .= "\n<li role='separator' class='dropdown-divider'></li>\n";
+            return Mojo::ByteStream->new($crumbs);
         });
 
     $app->helper(db => sub { shift->app->schema });

@@ -10,6 +10,7 @@ env:
     - FULLSTACK=0 UITESTS=1
     - GH_PUBLISH=true FULLSTACK=1
     - SCHEDULER_FULLSTACK=1
+    - DEVELOPER_FULLSTACK=1
 before_install: yes
 install: yes
 before_script:
@@ -22,6 +23,6 @@ script:
   - chmod a+w assets/cache
   - touch openqa-debug.log
   - chmod a+w openqa-debug.log
-  - docker run --cap-add SYS_ADMIN -v $TRAVIS_BUILD_DIR:/opt/openqa -v /var/run/dbus:/var/run/dbus --env-file <(env | grep TRAVIS) -e TRAVIS=true -e FULLSTACK -e UITESTS -e SCHEDULER_FULLSTACK -e GH_PUBLISH dasantiago/openqa-tests make travis-codecov
+  - docker run --cap-add SYS_ADMIN -v $TRAVIS_BUILD_DIR:/opt/openqa -v /var/run/dbus:/var/run/dbus --env-file <(env | grep TRAVIS) -e TRAVIS=true -e FULLSTACK -e UITESTS -e SCHEDULER_FULLSTACK -e DEVELOPER_FULLSTACK -e GH_PUBLISH dasantiago/openqa-tests make travis-codecov
 after_failure:
   - cat openqa-debug.log

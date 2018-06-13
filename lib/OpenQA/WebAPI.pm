@@ -51,19 +51,8 @@ has schema => sub {
 };
 
 has secrets => sub {
-    my $self = shift;
-    # read application secret from database
-    # we cannot use our own schema here as we must not actually
-    # initialize the db connection here. Would break for prefork.
-    my @secrets = $self->schema->resultset('Secrets')->all();
-    if (!@secrets) {
-        # create one if it doesn't exist
-        $self->schema->resultset('Secrets')->create({});
-        @secrets = $self->schema->resultset('Secrets')->all();
-    }
-    die "couldn't create secrets\n" unless @secrets;
-    my $ret = [map { $_->secret } @secrets];
-    return $ret;
+    my ($self) = @_;
+    return $self->schema->read_application_secrets();
 };
 
 sub log_name {
@@ -75,89 +64,34 @@ sub startup {
     my $self = shift;
     OpenQA::Setup::read_config($self);
     OpenQA::Setup::setup_log($self);
-
-    # Set some application defaults
-    $self->defaults(appname         => $self->app->config->{global}->{appname});
-    $self->defaults(current_version => detect_current_version($self->app->home));
-
-    unless ($ENV{MOJO_TMPDIR}) {
-        $ENV{MOJO_TMPDIR} = $OpenQA::Utils::assetdir . '/tmp';
-        # Try to create tmpdir if it doesn't exist but don't die if failed to create
-        if (!-e $ENV{MOJO_TMPDIR}) {
-            eval { make_path($ENV{MOJO_TMPDIR}); };
-            if ($@) {
-                print STDERR "Can not create MOJO_TMPDIR : $@\n";
-            }
-        }
-        delete $ENV{MOJO_TMPDIR} unless -w $ENV{MOJO_TMPDIR};
-    }
+    OpenQA::Setup::setup_app_defaults($self);
+    OpenQA::Setup::setup_mojo_tmpdir();
 
     # take care of DB deployment or migration before starting the main app
     my $schema = OpenQA::Schema::connect_db;
 
-    unshift @{$self->renderer->paths}, '/etc/openqa/templates';
+    OpenQA::Setup::setup_template_search_path($self);
+    OpenQA::Setup::load_plugins($self);
+    OpenQA::Setup::set_secure_flag_on_cookies_of_https_connection($self);
 
-    # Load plugins
-    push @{$self->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
-
-# XXX: In case the following line is moved in another location, script/generate-packed-assets needs to be adapted as well
+ # setup asset pack
+ # -> in case the following line is moved in another location, script/generate-packed-assets needs to be adapted as well
     $self->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Fetch OpenQA::WebAPI::AssetPipe Combine)]});
-
-    foreach my $plugin (qw(Helpers CSRF REST HashedParams Gru)) {
-        $self->plugin($plugin);
-    }
-
-    if ($self->config->{global}{audit_enabled}) {
-        $self->plugin('AuditLog', Mojo::IOLoop->singleton);
-    }
-    # Load arbitrary plugins defined in config: 'plugins' in section
-    # '[global]' can be a space-separated list of plugins to load, by
-    # module name under OpenQA::WebAPI::Plugin::
-    if (defined $self->config->{global}->{plugins}) {
-        my @plugins = split(' ', $self->config->{global}->{plugins});
-        for my $plugin (@plugins) {
-            $self->log->info("Loading external plugin $plugin");
-            $self->plugin($plugin);
-        }
-    }
-    if ($self->config->{global}{profiling_enabled}) {
-        $self->plugin(NYTProf => {nytprof => {}});
-    }
-    # load auth module
-    my $auth_method = $self->config->{auth}->{method};
-    my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
-    eval "require $auth_module";    ## no critic
-    if ($@) {
-        die sprintf('Unable to load auth module %s for method %s', $auth_module, $auth_method);
-    }
-
-    # Read configurations expected by plugins.
-    OpenQA::Setup::update_config($self->config, @{$self->plugins->namespaces}, "OpenQA::WebAPI::Auth");
-
-    # End plugin loading/handling
-
-    # read assets/assetpack.def
+    # -> read assets/assetpack.def
     $self->asset->process;
 
     # set cookie timeout to 48 hours (will be updated on each request)
     $self->app->sessions->default_expiration(48 * 60 * 60);
 
-    # set secure flag on cookies of https connections
+    # add actions before dispatching page
     $self->hook(
         before_dispatch => sub {
-            my $c = shift;
-            #$c->app->log->debug(sprintf "this connection is %ssecure", $c->req->is_secure?'':'NOT ');
-            if ($c->req->is_secure) {
-                $c->app->sessions->secure(1);
-            }
-            if (my $days = $c->app->config->{global}->{hsts}) {
-                $c->res->headers->header(
-                    'Strict-Transport-Security' => sprintf('max-age=%d; includeSubDomains', $days * 24 * 60 * 60));
-            }
-            $c->stash('job_groups_and_parents', job_groups_and_parents);
+            my ($controller) = @_;
+            OpenQA::Setup::set_secure_flag_on_cookies($controller);
+            $controller->stash('job_groups_and_parents', job_groups_and_parents);
         });
 
-    # Mark build_tx time in the header for HMAC time stamp check
+    # mark build_tx time in the header for HMAC time stamp check
     # to avoid large timeouts on uploads
     $self->hook(
         after_build_tx => sub {
@@ -165,7 +99,7 @@ sub startup {
             $tx->req->headers->header('X-Build-Tx-Time' => time);
         });
 
-    # Router
+    # register routes
     my $r         = $self->routes;
     my $logged_in = $r->under('/')->to("session#ensure_user");
     my $auth      = $r->under('/')->to("session#ensure_operator");
@@ -176,6 +110,7 @@ sub startup {
     $r->get('/login')->name('login')->to('session#create');
     $r->post('/login')->to('session#create');
     $r->delete('/logout')->name('logout')->to('session#destroy');
+    $r->get('/logout')->to('session#destroy');
     $r->get('/response')->to('session#response');
     $auth->get('/session/test')->to('session#test');
 
@@ -216,6 +151,10 @@ sub startup {
     $test_r->get('/asset/#assetid')->name('test_asset_id')->to('file#test_asset');
     $test_r->get('/asset/#assettype/#assetname')->name('test_asset_name')->to('file#test_asset');
     $test_r->get('/asset/#assettype/#assetname/*subpath')->name('test_asset_name_path')->to('file#test_asset');
+
+    my $developer_auth = $test_r->under('/developer')->to('session#ensure_admin');
+    my $developer_r = $developer_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller');
+    $developer_r->get('/ws-console')->name('developer_ws_console')->to('developer#ws_console');
 
     my $step_r = $test_r->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/)->to(controller => 'step');
     my $step_auth = $test_auth->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/);
@@ -492,21 +431,13 @@ sub startup {
         set_api_desc(\%api_description, $api_rt);
     }
 
-    $self->validator->add_check(
-        datetime => sub {
-            my ($validation, $name, $value) = @_;
-            eval { DateTime::Format::Pg->parse_datetime($value); };
-            if ($@) {
-                return 1;
-            }
-            return;
-        });
+    OpenQA::Setup::setup_validator_check_for_datetime($self);
 
     $self->_add_memory_limit;
     $self->_init_rand;
 
     # run fake dbus services in case of test mode
-    if ($self->mode eq 'test' && !$ENV{FULLSTACK}) {
+    if ($self->mode eq 'test' && !$ENV{FULLSTACK} && !$ENV{DEVELOPER_FULLSTACK}) {
         log_warning('Running in test mode - dbus services mocked');
         require OpenQA::WebSockets;
         require OpenQA::Scheduler;

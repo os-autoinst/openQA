@@ -9,7 +9,8 @@ require Mojolicious::Commands;
 require OpenQA::Test::Database;
 
 our @EXPORT = qw($drivermissing check_driver_modules
-  call_driver kill_driver wait_for_ajax
+  start_driver call_driver kill_driver wait_for_ajax
+  open_new_tab
   javascript_console_has_no_warnings_or_errors);
 
 use Data::Dump 'pp';
@@ -127,6 +128,21 @@ sub make_screenshot($) {
     close($fh);
 }
 
+# opens a new tab/window for the specified URL and returns its handle
+# remarks:
+#  * does not switch to the new tab, use $driver->switch_to_window() for that
+#  * see 33-developer_mode.t for an example
+sub open_new_tab {
+    my ($url) = @_;
+
+    # open new window using JavaScript API (Selenium::Remote::Driver doesn't seem to provide a method)
+    $url = $url ? "\"$url\"" : 'window.location';
+    $_driver->execute_script("window.open($url);");
+
+    # assume the last window handle is the one of the newly created window
+    return $_driver->get_window_handles()->[-1];
+}
+
 sub check_driver_modules {
 
     # load required modules if possible. DO NOT EVER PUT THESE IN
@@ -163,6 +179,9 @@ sub wait_for_ajax {
 }
 
 sub javascript_console_has_no_warnings_or_errors {
+    my ($test_name_suffix) = @_;
+    $test_name_suffix //= '';
+
     my $log = $_driver->get_log('browser');
     my @errors;
     for my $log_entry (@$log) {
@@ -171,16 +190,23 @@ sub javascript_console_has_no_warnings_or_errors {
             next;
         }
 
-        # FIXME: loading thumbs during live run causes 404. ignore for now
-        if ($log_entry->{source} eq 'network') {
-            next if $log_entry->{message} =~ m,/thumb/,;
-            next if $log_entry->{message} =~ m,/.thumbs/,;
+        my $source = $log_entry->{source};
+        my $msg    = $log_entry->{message};
+        if ($source eq 'network') {
+            # ignore errors when gravatar not found
+            next if ($msg =~ m,/gravatar/,);
+            # FIXME: loading thumbs during live run causes 404. ignore for now
+            next if ($msg =~ m,/thumb/, || $msg =~ m,/.thumbs/,);
+        }
+        elsif ($source eq 'javascript') {
+            # FIXME: ignore WebSocket error for now (connection errors are tracked via devel console anyways)
+            next if ($msg =~ m/ws\-proxy.*Close received/);
         }
         push(@errors, $log_entry);
     }
 
     diag('javascript console output: ' . pp(\@errors)) if @errors;
-    is_deeply(\@errors, [], 'no errors or warnings on javascript console');
+    is_deeply(\@errors, [], 'no errors or warnings on javascript console' . $test_name_suffix);
 }
 
 sub kill_driver() {

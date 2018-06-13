@@ -204,6 +204,9 @@ __PACKAGE__->belongs_to(
     group => 'OpenQA::Schema::Result::JobGroups',
     'group_id', {join_type => 'left', on_delete => 'SET NULL'});
 __PACKAGE__->might_have(origin => 'OpenQA::Schema::Result::Jobs', 'clone_id', {cascade_delete => 0});
+__PACKAGE__->might_have(
+    developer_session => 'OpenQA::Schema::Result::DeveloperSessions',
+    'job_id', {cascade_delete => 1});
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'job_id');
 __PACKAGE__->many_to_many(assets => 'jobs_assets', 'asset');
 __PACKAGE__->has_many(last_use_assets => 'OpenQA::Schema::Result::Assets', 'last_use_job_id', {cascade_delete => 0});
@@ -1387,6 +1390,11 @@ sub update_status {
 
     # mark the worker as alive
     $self->worker->seen;
+
+    # update URL to os-autoinst command server
+    if (my $assigned_worker = $self->assigned_worker) {
+        $assigned_worker->set_property(CMD_SRV_URL => ($status->{cmd_srv_url} // ''));
+    }
 
     $self->state(RUNNING) and $self->t_started(now()) if grep { $_ eq $self->state } (WAITING, ASSIGNED, SETUP);
     $self->update();

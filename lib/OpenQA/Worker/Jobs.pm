@@ -666,7 +666,10 @@ sub upload_status {
         return;
     }
 
-    my $status = {worker_id => $workerid};
+    my $status = {
+        worker_id   => $workerid,
+        cmd_srv_url => $job->{URL},
+    };
 
     my $ua        = Mojo::UserAgent->new;
     my $os_status = $ua->get($job->{URL} . "/isotovideo/status")->res->json;
