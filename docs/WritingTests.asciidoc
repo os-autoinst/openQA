@@ -316,13 +316,15 @@ Children B, C, D can run and finish anytime, but A must run until all B, C, D fi
 === Test synchronization and locking API
 
 OpenQA provides locking server through lock API. To use lock API import +lockapi+ package (_use lockapi;_) in your test file.
-Lock API provides three functions: +mutex_create+, +mutex_lock+, +mutex_unlock+. Each of these functions take one parameter: name of the lock.
+Lock API provides functions: +mutex_create+, +mutex_lock+, +mutex_unlock+, +mutex_wait+. Each of these functions take at least one parameter: name of the lock. Note that lock name can't contain "-" character.
 Locks are associated with caller`s job - locks can't be unlocked by different job then the one who locked the lock.
 
 +mutex_lock+ tries to lock the mutex lock for caller`s job. If lock is unavailable or locked by someone else, +mutex_lock+ call blocks.
 
 +mutex_unlock+ tries to unlock the mutex lock. If lock is locked by different job, +mutex_unlock+ call blocks. When lock become available or if lock does not exist, call
 returns without doing anything.
+
++mutex_wait+ is combination of +mutex_lock+ & +mutex_unlock+ that displays more information about mutex state (time spent waiting, location of lock). Use this if you wait for specific action from single place (apache is running on master node)
 
 +mutex_create+ create new mutex lock. When lock is created by +mutex_create+,
  lock is automatically unlocked. When mutex lock already exists call returns without doing anything.
@@ -332,73 +334,69 @@ same time and the same lock name is used, these locks are independent of each ot
 
 The +mmapi+ package provides +wait_for_children+, which the parent can use to wait for the children to complete.
 
-[caption="Example of mmapi: Parent Job"]
-.Wait until login prompt appear, assume services are started
+[caption="Example of mutex usage"]
 ====
 [source,perl]
 --------------------------------------------------------------------------------
-use base "basetest";
-use strict;
-use testapi;
 use lockapi;
 use mmapi;
 
+# On parent job
 sub run {
-    assert_screen 'bootloader';
+    # ftp service started automatically on boot
     assert_screen 'login', 300;
 
-    # services start automatically
     # unlock by creating the lock
-    mutex_create('services_ready');
+    mutex_create 'ftp_service_ready';
 
     # wait until all children finish
     wait_for_children;
 }
---------------------------------------------------------------------------------
-====
 
-[caption="Example of mmapi: Child job"]
-.Check until parent is ready, then start testing services
-====
-[source,perl]
---------------------------------------------------------------------------------
-use base "basetest";
-use strict;
-use testapi;
-use lockapi;
-
+# On child we wait for ftp server to be ready
 sub run {
-    assert_screen 'bootloader';
-    assert_screen 'login', 300;
+    # wait until ftp service is ready
+    # performs mutex lock & unlock internally
+    mutex_wait 'ftp_service_ready'; 
 
-    # this blocks until lock is created then locks and immediately unlocks
-    mutex_lock('services_ready');
-    mutex_unlock('services_ready');
-
-    # login to continue
-    type_string("root\n");
-    sleep 1;
-    type_string("secret\n");
+    # connect to ftp and start downloading
+    script_run 'ftp parent.job.ip';
+    script_run 'get random_file';
 }
+
+# Mutexes can be used also for garanting exclusive access to resource
+# Example on child when only one job should access ftp at time
+sub run {
+    # wait until ftp service is ready
+    mutex_lock 'ftp_service_ready'; 
+
+    # Perform operation with exclusive access
+    script_run 'ftp parent.job.ip';
+    script_run 'put only_i_am_here';
+    script_run 'bye';
+
+    # Allow other jobs to connect afterwards
+    mutex_unlock 'ftp_service_ready'; 
+}
+
 --------------------------------------------------------------------------------
 ====
 
-Sometimes it is useful to let a parent wait for certain action on a child, for example to verify
-server state after completed request. In this scenario the child creates
-a mutex and the parent unlocks it.
+
+Sometimes it is useful to wait for certain action from child or sibling job, not parent.
+In this case child or sibling will create a mutex and any cluster job can lock/unlock it.
 
 The child can however die at any time. To prevent parent deadlock in this situation,
-parent has to pass child ID as a second parameter to mutex_lock(). If a child job
-with given ID already finished, mutex_lock() calls die.
+it's required to pass mutex owner job ID as a second parameter to mutex_lock and mutex_wait.
+Mutex owner is the job that creates the mutex.
+If a child job with given ID already finished, mutex_lock() calls die.
+Job ID is also required when unlocking such mutex.
 
 [caption="Example of mmapi: Parent Job"]
 .Wait until the child reaches given point
 ====
 [source,perl]
 --------------------------------------------------------------------------------
-use base "basetest";
-use strict;
-use testapi;
 use lockapi;
 use mmapi;
 
@@ -409,7 +407,7 @@ sub run {
     my $child_id = (keys %$children)[0];
 
     # this blocks until lock is available and then does nothing
-    mutex_unlock('child_reached_given_point', $child_id);
+    mutex_wait('child_reached_given_point', $child_id);
 
     # continue with the test
 }
