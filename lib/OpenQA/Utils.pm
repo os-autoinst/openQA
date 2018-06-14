@@ -117,8 +117,6 @@ our $sharedir  = "$prjdir/share";
 our $resultdir = "$prjdir/testresults";
 our $assetdir  = "$sharedir/factory";
 our $isodir    = "$assetdir/iso";
-our $hdddir    = "$assetdir/hdd";
-our $otherdir  = "$assetdir/other";
 our $imagesdir = "$prjdir/images";
 our $hostname  = $ENV{SERVER_NAME};
 our $app;
@@ -171,8 +169,6 @@ sub change_sharedir {
     $sharedir = shift;
     $assetdir = "$sharedir/factory";
     $isodir   = "$assetdir/iso";
-    $hdddir   = "$assetdir/hdd";
-    $otherdir = "$assetdir/other";
 }
 
 sub needledir {
