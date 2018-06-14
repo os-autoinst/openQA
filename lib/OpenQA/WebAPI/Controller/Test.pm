@@ -20,6 +20,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::WebAPI::Controller::Developer;
 use File::Basename;
 use POSIX 'strftime';
 use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);

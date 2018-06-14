@@ -274,11 +274,9 @@ sub send_message_to_os_autoinst {
 sub query_os_autoinst_status {
     my ($self, $job_id) = @_;
 
-    $self->send_message_to_os_autoinst(
-        $job_id,
-        {
-            cmd => 'status'
-        });
+    $self->send_message_to_os_autoinst($job_id, {
+        cmd => 'status'
+    });
 }
 
 # provides a web socket connection acting as a proxy to interact with os-autoinst indirectly
