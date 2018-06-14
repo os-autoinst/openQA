@@ -20,6 +20,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::WebAPI::Controller::Developer;
 use File::Basename;
 use POSIX 'strftime';
 
@@ -272,6 +273,14 @@ sub _show {
     else {
         $self->stash(resultfiles => []);
         $self->stash(ulogs       => []);
+    }
+
+    # stash URLs for web socker routes required by developer mode
+    if ($job->running_or_waiting) {
+        $self->stash({
+            ws_developer_url =>
+                OpenQA::WebAPI::Controller::Developer::determine_web_ui_web_socket_url($job->id),
+        ws_status_only_url => 'TODO'});
     }
 
     $self->render('test/result');

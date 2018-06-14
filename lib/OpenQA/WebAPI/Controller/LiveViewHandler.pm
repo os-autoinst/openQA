@@ -188,6 +188,7 @@ sub connect_to_cmd_srv {
 
     # prevent opening the same connection to os-autoinst cmd srv twice
     if (my $cmd_srv_tx = $cmd_srv_transactions_by_job{$job_id}) {
+        $self->query_os_autoinst_status($job_id);
         $self->send_message_to_java_script_clients($job_id,
             info => 'reusing previous connection to os-autuinst command server at ' . $cmd_srv_raw_url);
         return $cmd_srv_tx;
@@ -216,11 +217,21 @@ sub connect_to_cmd_srv {
                 return;
             }
 
+            # instantly query the os-autoinst status
+            $self->query_os_autoinst_status($job_id);
+
             # handle messages from os-autoinst command server
             $self->send_message_to_java_script_clients($job_id, info => 'connected to os-autoinst command server');
             $tx->on(
                 json => sub {
                     my ($tx, $json) = @_;
+                    # extend the status information from os-autoinst with the session info
+                    if ($json->{running}) {
+                        my $session = $self->developer_sessions->find($job_id);
+                        $json->{developer_name} = $session->user->name;
+                        $json->{developer_session_started_at} = $session->t_created;
+                        $json->{developer_session_tab_count} = $session->ws_connection_count;
+                    }
                     $self->send_message_to_java_script_clients($job_id, info => 'cmdsrvmsg', $json);
                 });
 
@@ -256,6 +267,15 @@ sub send_message_to_os_autoinst {
         return;
     }
     $cmd_srv_tx->send({json => $msg});
+}
+
+# queries the status from os-autoinst
+sub query_os_autoinst_status {
+    my ($self, $job_id) = @_;
+
+    $self->send_message_to_os_autoinst($job_id, {
+        cmd => 'status'
+    });
 }
 
 # provides a web socket connection acting as a proxy to interact with os-autoinst indirectly

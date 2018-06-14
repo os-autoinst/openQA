@@ -103,3 +103,32 @@ function alignBuildLabels() {
   var max = Math.max.apply(null, values);
   $('.build-label').css('min-width', max + 'px');
 }
+
+// returns an absolute "ws://" URL for the specified URL which might be relative
+function makeWsUrlAbsolute(url, servicePortDelta) {
+    // don't adjust URLs which are already absolute
+    if (url.indexOf('ws:') === 0) {
+        return url;
+    }
+
+    // read port from the page's current URL
+    var port = Number.parseInt(window.location.port);
+    if (Number.isNaN(port)) {
+        // don't put a port in the URL if there's no explicit port
+        port = '';
+    } else {
+        if (port !== 80 || port !== 443) {
+            // if not using default ports we assume we're not accessing the web UI via Apache/NGINX
+            // reverse proxy
+            // -> so if not specified otherwise, we're further assuming a connection to the livehandler
+            //    daemon which is supposed to run under the <web UI port> + 2
+            port += servicePortDelta ? servicePortDelta : 2;
+        }
+        port = ':' + port;
+    }
+
+    return 'ws://'
+        + window.location.hostname + port
+        + (url.indexOf('/') !== 0 ? '/' : '')
+        + url;
+}
