@@ -1,24 +1,88 @@
-<div class='container'>
-  <div class='row'>
-    <div class='col-sm-3'>
-      Running Module:
-    </div>
-    <div id="running_module" class='col-sm-9'>Unknown</div>
-  </div>
-  % if (my $developer_session = $job->developer_session) {
-    <div class='row'>
-        <div class='col-sm-3'>
-        Developer session:
-        </div>
-        <div id="developer_session" class='col-sm-9'>
+% content_for 'ready_function' => begin
+    setupDeveloperPanel();
+    window.isAdmin = <%= is_admin ? 'true' : 'false' %>;
+% end
+
+<div class="card card-outline-secondary filter-panel-bottom" id="developer-panel" data-developer-url="<%= $ws_developer_url %>" data-status-only-url="<%= $ws_status_only_url %>">
+    <div class="card-header">
+        <strong>Developer mode</strong>
+        <span>
+            <span class="developer-mode-element" data-hidden-on="isConnected">
+                retrieving status <i class="fas fa-spinner fa-spin fa-lg"></i>
+            </span>
+            <span class="developer-mode-element" id="developer-status-info" data-visible-on="isConnected">
+                unknown status
+            </span>
+        </span>
+        <div class="card-header-appendix" id="developer-session-info">
+            % if (my $developer_session = $job->developer_session) {
+                % my $tab_count = $developer_session->ws_connection_count;
                 opened by <%= $developer_session->user->name %>
-                (started <abbr class="timeago" title="<%= $developer_session->t_created->datetime() %>Z"><%= format_time($developer_session->t_created) %></abbr>,
-                    developer has <%= $developer_session->ws_connection_count %> browser tab(s) open)
-            <br>
-            note that this info is currently not auto-updated
+                (started
+                    <abbr class="timeago" title="<%= $developer_session->t_created->datetime() %>Z">
+                        %= format_time($developer_session->t_created)
+                    </abbr>,
+                developer has <%= $tab_count %> browser <%= $tab_count == 1 ? 'tab' : 'tabs' %> open)
+            % }
+            % else {
+                no developer session opended
+                % if (is_admin) {
+                    - click to open
+                % }
+            % }
         </div>
     </div>
-  % }
+    <div class="card-body">
+        <form action="#" method="get" id="developer-form" class="developer-mode-element" data-visible-on="ownSession">
+            <div class="form-group">
+                <p>
+                    <strong>
+                        Pause test execution at specific module
+                        <%= help_popover('Help for <i>pause</i>' => '
+                            <p>Pauses the test execution at a specific module. The test can then
+                            be accessed via VNC for further investigation.</p>')
+                        %>
+                    </strong>
+                    <select class="custom-select" name="pause-at-module" id="developer-pause-at-module">
+                        <option selected style="font-style: italic;">Don't pause at a module</option>
+                        % my $in_optgroup = 0;
+                        % for my $module (@$modlist) {
+                            % my $category = $module->{category};
+                            % if ($category) {
+                                % if ($in_optgroup) {
+                                    </optgroup>
+                                % }
+                                % $in_optgroup = 1;
+                                <optgroup label="<%= $module->{category} %>">
+                            % }
+                           <option><%= $module->{name} %></option>
+                        % }
+                        % if ($in_optgroup) {
+                            </optgroup>
+                        % }
+                    </select>
+                </p>
+            </div>
+            <hr>
+            <div>
+                <a href="#" onclick="quitDeveloperSession(); return false;" class="btn btn-warning">
+                    Quit developer session
+                </a>
+                <a href="#" onclick="resumeTestExecution(); return false;" class="btn btn-secondary developer-mode-element" data-visible-on="isPaused">
+                    Resume test execution
+                </a>
+                <a href="<%= url_for('developer_ws_console')->query({proxy => 1}) %>" target="blank" class="btn btn-secondary">
+                    Open web socket console
+                </a>
+            </div>
+        </form>
+        <div class="developer-mode-element" data-hidden-on="ownSession" data-visible-on="develSessionDeveloper">
+            The development session has already been started by <span class="developer-mode-user">another user</span>, so you can't claim it.
+        </div>
+        <div class="developer-mode-element" data-hidden-on="isConnected">
+            <i class="fas fa-spinner fa-spin fa-lg"></i> <span id="developer-loading-info">establishing connection to backend ...</span>
+        </div>
+    </div>
 </div>
 
 <div id="canholder" data-url="<%= url_for('apiv1_create_command', workerid => 'WORKERID')%>">

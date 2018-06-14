@@ -1,23 +1,11 @@
 function setupWebSocketContosle(url) {
+    // determine ws URL
     var form = $('#ws_console_form');
     var url = form.data('url');
     if (!url.length) {
         return;
     }
-
-    // handle relative URL
-    if (url.indexOf('ws:') !== 0) {
-        var port = Number.parseInt(window.location.port);
-        if (Number.isNaN(port)) {
-            port = '';
-        } else {
-            if (port !== 80 || port !== 443) {
-                port += 2;
-            }
-            port = ':' + port;
-        }
-        url = 'ws://' + window.location.hostname + port + (url.indexOf('/') !== 0 ? '/' : '') + url;
-    }
+    url = makeWsUrlAbsolute(url);
 
     var msg = $('#msg');
     var log = $('#log');
