@@ -179,6 +179,14 @@ sub handle_message_from_java_script {
     $self->send_message_to_os_autoinst($job_id, $json);
 }
 
+sub add_session_info_to_hash {
+    my ($self, $job_id, $hash) = @_;
+    my $session = $self->developer_sessions->find($job_id) or return;
+    $hash->{developer_name}               = $session->user->name;
+    $hash->{developer_session_started_at} = $session->t_created;
+    $hash->{developer_session_tab_count}  = $session->ws_connection_count;
+}
+
 # connects to the os-autoinst command server for the specified job ID; re-uses an existing connection
 sub connect_to_cmd_srv {
     my ($self, $job_id, $cmd_srv_raw_url, $cmd_srv_url) = @_;
@@ -226,13 +234,7 @@ sub connect_to_cmd_srv {
                 json => sub {
                     my ($tx, $json) = @_;
                     # extend the status information from os-autoinst with the session info
-                    if ($json->{running}) {
-                        if (my $session = $self->developer_sessions->find($job_id)) {
-                            $json->{developer_name}               = $session->user->name;
-                            $json->{developer_session_started_at} = $session->t_created;
-                            $json->{developer_session_tab_count}  = $session->ws_connection_count;
-                        }
-                    }
+                    $self->add_session_info_to_hash($job_id, $json) if ($json->{running});
                     $self->send_message_to_java_script_clients($job_id, info => 'cmdsrvmsg', $json);
                 });
 
@@ -325,7 +327,7 @@ sub ws_proxy {
     # start opening a websocket connection to os-autoinst instantly
     $self->connect_to_cmd_srv($job_id, $cmd_srv_raw_url) if ($cmd_srv_raw_url);
 
-
+    # don't react to any messages from the JavaScript client if serving the status-only route
     if ($status_only) {
         $self->on(
             message => sub {
@@ -333,6 +335,7 @@ sub ws_proxy {
             });
         return $self->on(finish => sub { });
     }
+
     # handle messages from the JavaScript
     #  * expecting valid JSON here in 'os-autoinst' compatible form, eg.
     #      {"cmd":"set_pause_at_test","name":"installation-welcome"}
@@ -352,6 +355,11 @@ sub ws_proxy {
             # note: it is likely not useful to quit the development session instantly because the user
             #       might just have pressed the reload button
             $session->update({ws_connection_count => \'ws_connection_count - 1'});    #'restore syntax highlighting
+
+            # send status update to JavaScript clients
+            my %status_info;
+            $self->add_session_info_to_hash($job_id, \%status_info);
+            $self->send_message_to_java_script_clients($job_id, info => 'cmdsrvmsg', \%status_info);
         });
 }
 

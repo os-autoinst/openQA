@@ -1,6 +1,6 @@
 % content_for 'ready_function' => begin
+    window.isAdmin = <%= (is_admin) ? ('true') : ('false') %>;
     setupDeveloperPanel();
-    window.isAdmin = <%= is_admin ? 'true' : 'false' %>;
 % end
 
 <div class="card card-outline-secondary filter-panel-bottom" id="developer-panel" data-developer-url="<%= $ws_developer_url %>" data-status-only-url="<%= $ws_status_only_url %>">
