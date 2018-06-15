@@ -20,10 +20,9 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
-use OpenQA::WebAPI::Controller::Developer;
 use File::Basename;
 use POSIX 'strftime';
-use OpenQA::WebAPI::Controller::Developer;
+use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
 
 sub referer_check {
     my ($self) = @_;
@@ -259,8 +258,8 @@ sub _show {
     $self->stash(job      => $job);
     $self->stash(clone_of => $clone_of);
     $self->stash(modlist  => $modlist);
-    # TODO: Move to Utils
-    my $websocket_proxy = OpenQA::WebAPI::Controller::Developer::determine_web_ui_web_socket_url($job->id);
+
+    my $websocket_proxy = determine_web_ui_web_socket_url($job->id);
     $self->stash(ws_url => $websocket_proxy);
     my $rd = $job->result_dir();
     if ($rd) {    # saved anything
@@ -282,8 +281,8 @@ sub _show {
     if ($job->running_or_waiting) {
         $self->stash(
             {
-                ws_developer_url   => OpenQA::WebAPI::Controller::Developer::determine_web_ui_web_socket_url($job->id),
-                ws_status_only_url => OpenQA::WebAPI::Controller::Developer::get_ws_status_only_url($job->id),
+                ws_developer_url   => determine_web_ui_web_socket_url($job->id),
+                ws_status_only_url => get_ws_status_only_url($job->id),
             });
     }
 

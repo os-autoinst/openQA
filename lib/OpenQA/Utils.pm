@@ -97,6 +97,8 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &ensure_timestamp_appended
 );
 
+@EXPORT_OK = qw(determine_web_ui_web_socket_url get_ws_status_only_url);
+
 if ($0 =~ /\.t$/) {
     # This should result in the 't' directory, even if $0 is in a subdirectory
     my ($tdirname) = $0 =~ qr/((.*\/t\/|^t\/)).+$/;
@@ -423,6 +425,18 @@ sub image_md5_filename {
     return (
         catfile($imagesdir, $prefix1, $prefix2, "$md5.png"),
         catfile($imagesdir, $prefix1, $prefix2, '.thumbs', "$md5.png"));
+}
+
+# returns the url to the web socket proxy started via openqa-livehandler
+sub determine_web_ui_web_socket_url {
+    my ($job_id) = @_;
+    return "liveviewhandler/tests/$job_id/developer/ws-proxy";
+}
+
+# returns the url for the status route over websocket proxy via openqa-livehandler
+sub get_ws_status_only_url {
+    my ($job_id) = @_;
+    return "liveviewhandler/tests/$job_id/developer/ws-proxy/status";
 }
 
 sub run_cmd_with_log($) {

@@ -40,17 +40,6 @@ sub determine_os_autoinst_web_socket_url {
     return "ws://$host:$port/$job_token/ws";
 }
 
-# returns the url to the own web socket server started via openqa-livehandler
-sub determine_web_ui_web_socket_url {
-    my ($job_id) = @_;
-    return "liveviewhandler/tests/$job_id/developer/ws-proxy";
-}
-
-sub get_ws_status_only_url {
-    my ($job_id) = @_;
-    return "liveviewhandler/tests/$job_id/developer/ws-proxy/status";
-}
-
 # returns the job for the currently processed request
 sub find_current_job {
     my ($self) = @_;
