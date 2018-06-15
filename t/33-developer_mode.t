@@ -202,17 +202,9 @@ sub start_worker {
 start_worker;
 OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 'fail on incomplete');
 
-my $developer_console_url;
-sub open_developer_console_from_live_view {
-    # don't just click because it would open a 2nd tab
-    $developer_console_url
-      = $driver->find_element_by_link_text('open developer web socket console')->get_attribute('href');
-    $driver->get($developer_console_url);
-    wait_for_ajax;
-}
-
+my $developer_console_url = '/tests/1/developer/ws-console?proxy=1';
 subtest 'wait until developer console becomes available' => sub {
-    open_developer_console_from_live_view();
+    $driver->get($developer_console_url);
     OpenQA::Test::FullstackUtils::wait_for_developer_console_available($driver);
 };
 
