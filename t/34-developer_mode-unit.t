@@ -31,6 +31,7 @@ use OpenQA::Test::Case;
 use OpenQA::Test::FakeWebSocketTransaction;
 use OpenQA::WebAPI::Controller::Developer;
 use OpenQA::WebAPI::Controller::LiveViewHandler;
+use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
 
 # init test case
 my $test_case = OpenQA::Test::Case->new;
@@ -233,11 +234,14 @@ subtest 'URLs for command server and livehandler' => sub {
         'URL for job with assigned worker'
     );
 
+    is(determine_web_ui_web_socket_url(99961), 'liveviewhandler/tests/99961/developer/ws-proxy', 'URL for livehandler');
+
     is(
-        OpenQA::WebAPI::Controller::Developer::determine_web_ui_web_socket_url(99961),
-        'liveviewhandler/tests/99961/developer/ws-proxy',
-        'URL for livehandler'
+        get_ws_status_only_url(99961),
+        'liveviewhandler/tests/99961/developer/ws-proxy/status',
+        'URL for livehandler status route'
     );
+
 };
 
 subtest 'websocket proxy' => sub {
