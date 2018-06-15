@@ -285,7 +285,7 @@ subtest 'websocket proxy' => sub {
         $ws_monitoring->json_message_is(
             {
                 type => 'info',
-                what => 'connecting to os-autuinst command server at ws://remotehost:20013/token99961/ws',
+                what => 'connecting to os-autoinst command server at ws://remotehost:20013/token99961/ws',
                 data => undef,
             });
         $ws_monitoring->message_ok('another message received');
@@ -314,7 +314,7 @@ subtest 'websocket proxy' => sub {
         $ws_monitoring->json_message_is(
             {
                 type => 'info',
-                what => 'connecting to os-autuinst command server at ws://remotehost:20013/token99961/ws',
+                what => 'connecting to os-autoinst command server at ws://remotehost:20013/token99961/ws',
                 data => undef,
             });
         $ws_monitoring->message_ok('another message received');
@@ -322,7 +322,7 @@ subtest 'websocket proxy' => sub {
             {
                 type => 'info',
                 what =>
-                  'reusing previous connection to os-autuinst command server at ws://remotehost:20013/token99961/ws',
+                  'reusing previous connection to os-autoinst command server at ws://remotehost:20013/token99961/ws',
                 data => undef,
             });
         is($fake_cmd_srv_tx->finish_called, 0, 'no attempt to close the connection again');
