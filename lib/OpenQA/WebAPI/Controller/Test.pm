@@ -280,10 +280,11 @@ sub _show {
 
     # stash URLs for web socker routes required by developer mode
     if ($job->running_or_waiting) {
-        $self->stash({
-            ws_developer_url =>
-                OpenQA::WebAPI::Controller::Developer::determine_web_ui_web_socket_url($job->id),
-        ws_status_only_url => 'TODO'});
+        $self->stash(
+            {
+                ws_developer_url   => OpenQA::WebAPI::Controller::Developer::determine_web_ui_web_socket_url($job->id),
+                ws_status_only_url => OpenQA::WebAPI::Controller::Developer::get_ws_status_only_url($job->id),
+            });
     }
 
     $self->render('test/result');

@@ -227,10 +227,11 @@ sub connect_to_cmd_srv {
                     my ($tx, $json) = @_;
                     # extend the status information from os-autoinst with the session info
                     if ($json->{running}) {
-                        my $session = $self->developer_sessions->find($job_id);
-                        $json->{developer_name} = $session->user->name;
-                        $json->{developer_session_started_at} = $session->t_created;
-                        $json->{developer_session_tab_count} = $session->ws_connection_count;
+                        if (my $session = $self->developer_sessions->find($job_id)) {
+                            $json->{developer_name}               = $session->user->name;
+                            $json->{developer_session_started_at} = $session->t_created;
+                            $json->{developer_session_tab_count}  = $session->ws_connection_count;
+                        }
                     }
                     $self->send_message_to_java_script_clients($job_id, info => 'cmdsrvmsg', $json);
                 });
@@ -273,27 +274,26 @@ sub send_message_to_os_autoinst {
 sub query_os_autoinst_status {
     my ($self, $job_id) = @_;
 
-    $self->send_message_to_os_autoinst($job_id, {
-        cmd => 'status'
-    });
+    $self->send_message_to_os_autoinst(
+        $job_id,
+        {
+            cmd => 'status'
+        });
 }
 
 # provides a web socket connection acting as a proxy to interact with os-autoinst indirectly
 sub ws_proxy {
-    my ($self) = @_;
+    my ($self, $status_only) = @_;
 
     # determine basic variables
     my $java_script_tx = $self->tx;
     my $job            = $self->find_current_job()
       or return $self->send_message_to_java_script_client_and_finish($java_script_tx, error => 'job not found');
-    my $user = $self->current_user()
-      or return $self->send_message_to_java_script_client_and_finish($java_script_tx, error => 'user not found');
+    my $user;
     my $app                = $self->app;
     my $job_id             = $job->id;
-    my $user_id            = $user->id;
     my $developer_sessions = $app->schema->resultset('DeveloperSessions');
 
-    $app->log->debug('ws_proxy: client connected: ' . $user->name);
 
     # add JavaScript transaction to the list of JavaScript transactions for this job
     # (needed for broadcasting to all clients)
@@ -301,14 +301,20 @@ sub ws_proxy {
     push(@$java_script_transactions_for_current_job, $java_script_tx);
 
     # register development session, ensure only one development session is opened per job
-    my $developer_session = $developer_sessions->register($job_id, $user_id);
-    if (!$developer_session) {
-        return $self->send_message_to_java_script_client_and_finish($java_script_tx,
-            error => 'unable to create (further) development session');
+    if (!$status_only) {
+        $user = $self->current_user()
+          or return $self->send_message_to_java_script_client_and_finish($java_script_tx, error => 'user not found');
+        my $developer_session = $developer_sessions->register($job_id, $user->id);
+        $app->log->debug('ws_proxy: client connected: ' . $user->name);
+        if (!$developer_session) {
+            return $self->send_message_to_java_script_client_and_finish($java_script_tx,
+                error => 'unable to create (further) development session');
+        }
+        # mark session as active
+        $developer_session->update({ws_connection_count => \'ws_connection_count + 1'});   #'restore syntax highlighting
+
     }
 
-    # mark session as active
-    $developer_session->update({ws_connection_count => \'ws_connection_count + 1'});    #'restore syntax highlighting
 
     # determine url to os-autoinst command server
     my $cmd_srv_raw_url = OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job);
@@ -321,6 +327,14 @@ sub ws_proxy {
     # start opening a websocket connection to os-autoinst instantly
     $self->connect_to_cmd_srv($job_id, $cmd_srv_raw_url) if ($cmd_srv_raw_url);
 
+
+    if ($status_only) {
+        $self->on(
+            message => sub {
+                $app->log->debug('');
+            });
+        return $self->on(finish => sub { });
+    }
     # handle messages from the JavaScript
     #  * expecting valid JSON here in 'os-autoinst' compatible form, eg.
     #      {"cmd":"set_pause_at_test","name":"installation-welcome"}
@@ -341,6 +355,12 @@ sub ws_proxy {
             #       might just have pressed the reload button
             $session->update({ws_connection_count => \'ws_connection_count - 1'});    #'restore syntax highlighting
         });
+}
+
+sub proxy_status {
+    my ($self) = @_;
+    #We just need status, but pass it anyways
+    return $self->ws_proxy('status');
 }
 
 1;

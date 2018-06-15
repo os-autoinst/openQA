@@ -1,4 +1,3 @@
-
 var testStatus = {
     modlist_initialized: 0,
     jobid: null,
@@ -422,7 +421,7 @@ function setupWebsocketConnection() {
     closeWebsocketConnection();
 
     // determine ws URL
-    if (true || (window.isAdmin && (developerMode.panelExpanded || developerMode.useDeveloperWsRoute))) {
+    if ((window.isAdmin && (developerMode.panelExpanded || developerMode.useDeveloperWsRoute))) {
         // use route for developer (establishing a developer session)
         developerMode.useDeveloperWsRoute = true;
         var url = developerMode.develWsUrl;
