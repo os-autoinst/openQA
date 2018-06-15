@@ -264,7 +264,7 @@ subtest 'connect with 2 clients at the same time (use case: developer opens 2nd 
     );
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
         $driver,
-        qr/reusing previous connection to os-autuinst/,
+        qr/reusing previous connection to os-autoinst/,
         'connection reused'
     );
 };

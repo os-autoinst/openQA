@@ -184,13 +184,13 @@ sub connect_to_cmd_srv {
     my ($self, $job_id, $cmd_srv_raw_url, $cmd_srv_url) = @_;
 
     $self->send_message_to_java_script_clients($job_id,
-        info => 'connecting to os-autuinst command server at ' . $cmd_srv_raw_url);
+        info => 'connecting to os-autoinst command server at ' . $cmd_srv_raw_url);
 
     # prevent opening the same connection to os-autoinst cmd srv twice
     if (my $cmd_srv_tx = $cmd_srv_transactions_by_job{$job_id}) {
         $self->query_os_autoinst_status($job_id);
         $self->send_message_to_java_script_clients($job_id,
-            info => 'reusing previous connection to os-autuinst command server at ' . $cmd_srv_raw_url);
+            info => 'reusing previous connection to os-autoinst command server at ' . $cmd_srv_raw_url);
         return $cmd_srv_tx;
     }
 

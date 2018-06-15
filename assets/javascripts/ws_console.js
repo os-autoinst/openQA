@@ -33,7 +33,7 @@ function establishWebSocketConnection() {
     };
 }
 
-function setupWebSocketContosle(url) {
+function setupWebSocketConsole(url) {
     // determine ws URL
     var form = $('#ws_console_form');
     var url = form.data('url');
