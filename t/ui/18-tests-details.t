@@ -46,34 +46,6 @@ sub schema_hook {
     # manually for PhantomJS test
     $jobs->find(99963)->update({assigned_worker_id => 1});
 
-    my $new_job = $jobs->create(
-        {
-            id                 => 100001,
-            group_id           => 1001,
-            result             => "none",
-            state              => "waiting",
-            priority           => 35,
-            t_finished         => undef,
-            backend            => 'qemu',
-            assigned_worker_id => 1,
-            # 10 minutes ago
-            t_started => '2018-06-07 08:20:57',
-            # Two hours ago
-            t_created  => '2018-06-07 06:30:57',
-            TEST       => "upgrade",
-            ARCH       => 'x86_64',
-            BUILD      => '0100',
-            DISTRI     => 'opensuse',
-            FLAVOR     => 'NET',
-            MACHINE    => '64bit',
-            VERSION    => '13.1',
-            result_dir => '00099961-opensuse-13.1-DVD-x86_64-Build0100-kde',
-            settings   => [
-                {key => 'DESKTOP',     value => 'kde'},
-                {key => 'ISO_MAXSIZE', value => '4700372992'},
-                {key => 'ISO',         value => 'openSUSE-13.1-DVD-x86_64-Build0100-Media.iso'},
-                {key => 'DVD',         value => '1'},
-            ]});
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -197,23 +169,6 @@ $t->element_count_is('.tab-pane.active', 1, 'only one tab visible at the same ti
 
 my $href_to_isosize = $t->tx->res->dom->at('.component a[href*=installer_timezone]')->{href};
 $t->get_ok($baseurl . ($href_to_isosize =~ s@^/@@r))->status_is(200);
-
-subtest 'Developer instructions' => sub {
-    # TODO: Actively check for the job state
-
-    my $element_search;
-    # find* will croak/warn, make sure we trap that
-    # https://metacpan.org/pod/Selenium::Remote::Driver#find_element
-    ok($driver->get($baseurl . 'tests/100001'));
-    my $warning = warning { $element_search = $driver->find_element_by_class_name("developer-instructions") };
-    ok($element_search, 'Developer instructions shown for waiting job');
-
-    ok($driver->get($baseurl . 'tests/99963'));
-    $warning
-      = warning { $element_search = $driver->find_element_by_class_name("developer-instructions") || 'It is not there' };
-    like($warning, qr/selector":".developer-instructions"/, 'Expected warning for .developer-instructions css class');
-    ok($element_search eq 'It is not there', 'Developer instructions not shown for running job');
-};
 
 subtest 'render bugref links in thumbnail text windows' => sub {
     $driver->get('/tests/99946');
