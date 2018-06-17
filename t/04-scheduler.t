@@ -158,7 +158,7 @@ my $job_ref = {
     test => 'rainbow'
 };
 
-my $iso = sprintf("%s/%s", $OpenQA::Utils::isodir, $settings{ISO});
+my $iso = sprintf("%s/iso/%s", $OpenQA::Utils::assetdir, $settings{ISO});
 my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
 is($job->id, 1, "job_create");
 

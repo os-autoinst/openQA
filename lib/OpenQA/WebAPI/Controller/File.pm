@@ -122,15 +122,6 @@ sub test_asset {
     return $self->redirect_to($path);
 }
 
-sub test_isoimage {
-    my $self = shift;
-
-    return $self->reply->not_found unless $self->_set_test;
-    push @{$self->{static}->paths}, $OpenQA::Utils::isodir;
-
-    return $self->serve_static_($self->{job}->settings_hash->{ISO});
-}
-
 sub serve_static_ {
     my ($self, $asset) = @_;
 

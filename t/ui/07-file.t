@@ -63,9 +63,6 @@ $t->get_ok('/tests/99938/file/y2logs.tar.bz2')->status_is(200);
 
 $t->get_ok('/tests/99938/file/ulogs/y2logs.tar.bz2')->status_is(404);
 
-$t->get_ok('/tests/99946/iso')->status_is(200)
-  ->header_is('Content-Disposition' => "attatchment; filename=openSUSE-13.1-DVD-i586-Build0091-Media.iso;");
-
 # check the download links
 my $req = $t->get_ok('/tests/99946')->status_is(200);
 $req->element_exists('#downloads #asset_1');
