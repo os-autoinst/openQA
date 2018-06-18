@@ -198,10 +198,17 @@ sub handle_message_from_java_script {
 
 sub add_session_info_to_hash {
     my ($self, $job_id, $hash) = @_;
-    my $session = $self->developer_sessions->find($job_id) or return;
-    $hash->{developer_name}               = $session->user->name;
-    $hash->{developer_session_started_at} = $session->t_created;
-    $hash->{developer_session_tab_count}  = $session->ws_connection_count;
+    my $session = $self->developer_sessions->find($job_id);
+    if ($session) {
+        $hash->{developer_name}               = $session->user->name;
+        $hash->{developer_session_started_at} = $session->t_created;
+        $hash->{developer_session_tab_count}  = $session->ws_connection_count;
+    }
+    else {
+        $hash->{developer_name}               = undef;
+        $hash->{developer_session_started_at} = undef;
+        $hash->{developer_session_tab_count}  = 0;
+    }
 }
 
 # connects to the os-autoinst command server for the specified job ID; re-uses an existing connection
