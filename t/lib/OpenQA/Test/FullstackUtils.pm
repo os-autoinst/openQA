@@ -102,23 +102,38 @@ sub wait_for_developer_console_contains_log_message {
     # get log
     my $log_textarea = $driver->find_element('#log');
     my $log          = $log_textarea->get_text();
+    my $previous_log = '';
 
     my $regex_opened = qr/Connection opened/;
     my $regex_closed = qr/Connection closed/;
     while (!($log =~ $message_regex)) {
         # check whether connection has been unexpectedly closed/opened
-        if ($message_regex eq $regex_closed) {
-            fail('web socket connection closed prematurely, was waiting for ' . $diag_info) if ($log =~ $regex_closed);
+        if ($message_regex ne $regex_closed && $log =~ $regex_closed) {
+            fail('web socket connection closed prematurely, was waiting for ' . $diag_info);
+            return;
         }
-        elsif ($assert_never_opened) {
-            fail('web socket connection unexpectedly opened, was waiting for ' . $diag_info) if ($log =~ $regex_opened);
+        elsif ($assert_never_opened && $log =~ $regex_opened) {
+            fail('web socket connection unexpectedly opened, was waiting for ' . $diag_info);
+            return;
         }
 
-        # try again in 1 second
-        sleep 1;
+        if ($diag_info eq 'paused') {
+            # when waiting for paused, we will have to wait at least a minute for the first test module to pass
+            # -> so let's try again only all 5 seconds here
+            sleep 5;
+            # -> print updated log so we see what's going on
+            if ($log ne $previous_log) {
+                print("developer console contains:\n$log\n");
+            }
+        }
+        else {
+            # try again in 1 second
+            sleep 1;
+        }
         wait_for_ajax;
         javascript_console_has_no_warnings_or_errors($js_erro_check_suffix);
-        $log = $log_textarea->get_text();
+        $previous_log = $log;
+        $log          = $log_textarea->get_text();
     }
 
     pass('found ' . $diag_info);
