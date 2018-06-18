@@ -281,6 +281,8 @@ var developerMode = {
     isConnected: false,
     ownSession: false,
     panelExpanded: false,
+    panelActuallyExpanded: false,
+    reconnectAttempts: 0,
 
     // variables which come from os-autoinst cmd srv through the openQA ws proxy
     currentModule: undefined,
@@ -298,11 +300,23 @@ function setupDeveloperPanel() {
     var panel = $('#developer-panel');
 
     // setup toggle for body
-    panel.find('.card-header').on('click', function() {
-        var panelBody = panel.find('.card-body');
-        panelBody.toggle(200);
-        developerMode.panelExpanded = panelBody.is(':visible');
-    });
+    var panelHeader = panel.find('.card-header');
+    if (window.isAdmin) {
+        panelHeader.on('click', function() {
+            var panelBody = panel.find('.card-body');
+            developerMode.panelExpanded = !developerMode.panelExpanded;
+            developerMode.panelActuallyExpanded = developerMode.panelExpanded;
+            panelBody.toggle(200);
+
+            // ensure the developer ws route is used
+            if (developerMode.panelExpanded && !developerMode.useDeveloperWsRoute) {
+                setupWebsocketConnection();
+            }
+        });
+    } else {
+        panelHeader.css('cursor', 'default');
+    }
+
 
     // ensure help popover doesn't toggle
     panel.find('.help_popover').on('click', function(event) {
@@ -339,9 +353,9 @@ function updateDeveloperPanel() {
     // set panel body visibility
     var panel = $('#developer-panel');
     var panelBody = panel.find('.card-body');
-    if (developerMode.panelExpanded != panelBody.is(':visible')) {
+    if (developerMode.panelExpanded !== developerMode.panelActuallyExpanded) {
+        developerMode.panelActuallyExpanded = developerMode.panelExpanded;
         panelBody.toggle(200);
-        developerMode.panelExpanded = panelBody.is(':visible');
     }
 
     // find modules
@@ -387,7 +401,7 @@ function updateDeveloperPanel() {
         var tabsOpenInfo = ', developer has ' + developerMode.develSessionTabCount + (developerMode.develSessionTabCount == 1 ? ' tab' : ' tabs') + ' open)';
         sessionInfoElement.append(document.createTextNode(tabsOpenInfo));
     } else {
-        var sessionInfo = 'no developer session opended';
+        var sessionInfo = 'no developer session opened';
         if (window.isAdmin && !developerMode.panelExpanded) {
             sessionInfo += ' - click to open';
         }
@@ -404,7 +418,13 @@ function updateDeveloperPanel() {
         var visibleOn = element.data('visible-on');
         var hiddenOn = element.data('hidden-on');
         var hide = (hiddenOn && developerMode[hiddenOn]) || (visibleOn && !developerMode[visibleOn]);
-        element[hide ? 'hide' : 'show']();
+        if (hide) {
+            element.hide();
+        } else if (element.hasClass('btn')) {
+            element.css('display', 'inline-block');
+        } else {
+            element.show();
+        }
     });
 }
 
@@ -433,29 +453,56 @@ function setupWebsocketConnection() {
     url = makeWsUrlAbsolute(url);
 
     // establish ws connection
-    developerMode.wsConnection = new WebSocket(url);
-    developerMode.wsConnection.onopen = function() {
+    console.log("Establishing ws connection to " + url);
+    developerMode.reconnectAttempts = 1;
+    var wsConnection = new WebSocket(url);
+    wsConnection.onopen = function() {
+        if (wsConnection !== developerMode.wsConnection) {
+            return;
+        }
+        developerMode.reconnectAttempts = 0;
         developerMode.isConnected = true;
         developerMode.hasWsError = false;
         developerMode.ownSession = developerMode.useDeveloperWsRoute;
         updateDeveloperPanel();
     };
-    developerMode.wsConnection.onerror = function(error) {
+    wsConnection.onerror = function(error) {
+        if (wsConnection !== developerMode.wsConnection) {
+            return;
+        }
         developerMode.hasWsError = true;
         // note: error doesn't contain very useful information, just set the error flag here
     };
-    developerMode.wsConnection.onclose = function() {
+    wsConnection.onclose = function() {
+        if (wsConnection !== developerMode.wsConnection) {
+            return;
+        }
+        console.log("Connection to livehandler lost");
         developerMode.wsConnection = undefined;
         developerMode.isConnected = false;
         developerMode.ownSession = false;
         updateDeveloperPanel();
-        // TODO: add some timer to re-establish connection
+
+        // reconnect instantly in first connection error
+        if (developerMode.reconnectAttempts === 0) {
+            setupWebsocketConnection();
+        } else {
+            // otherwise try to reconnect every 2 seconds
+            setTimeout(function() {
+                setupWebsocketConnection();
+            }, 2000);
+        }
     };
-    developerMode.wsConnection.onmessage = function(msg) {
+    wsConnection.onmessage = function(msg) {
+        if (wsConnection !== developerMode.wsConnection) {
+            return;
+        }
+
         // parse the message JSON
         if (!msg.data) {
             return;
         }
+        console.log("Received message via ws proxy: " + msg.data);
         try {
             var dataObj = JSON.parse(msg.data);
         } catch {
@@ -466,6 +513,8 @@ function setupWebsocketConnection() {
 
         processWsCommand(dataObj);
     };
+
+    developerMode.wsConnection = wsConnection;
 }
 
 // define mapping of backend messages to status variables
