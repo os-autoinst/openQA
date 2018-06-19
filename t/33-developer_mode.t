@@ -245,6 +245,9 @@ subtest 'developer session visible in live view' => sub {
     $driver->get($job_page_url);
     $driver->find_element_by_link_text('Live View')->click();
     wait_for_session_info(qr/opened by Demo/, 'user displayed');
+
+    my $developer_instructions_info = $driver->find_element('#developer-instructions')->get_text();
+    like($developer_instructions_info, qr/connect to .* at port 91/, 'developer instructions');
 };
 
 subtest 'session locked for other developers' => sub {
