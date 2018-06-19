@@ -294,27 +294,27 @@ function pauseLiveView() {
 
 // define state for developer mode
 var developerMode = {
-    // variables this JavaScript keeps track on its own
-    develWsUrl: undefined,
-    statusOnlyWsUrl: undefined,
-    wsConnection: false,
-    hasWsError: false,
-    useDeveloperWsRoute: undefined,
-    isConnected: false,
-    ownSession: false,
-    panelExpanded: false,
-    panelActuallyExpanded: false,
-    reconnectAttempts: 0,
+    // state of the page elements and the web socket connection to web UI
+    develWsUrl: undefined,                  // URL for developer session web socket connection
+    statusOnlyWsUrl: undefined,             // URL for status-only web socket connection
+    wsConnection: undefined,                // current WebSocket object
+    hasWsError: false,                      // whether an web socket error occured (cleared on reconnect)
+    useDeveloperWsRoute: undefined,         // whether the developer web socket route is used
+    isConnected: false,                     // whether connected to any web socket route
+    ownSession: false,                      // whether the development session belongs to us
+    panelExpanded: false,                   // whether the panel is supposed to be expanded
+    panelActuallyExpanded: false,           // whether the panel is currently expanded
+    reconnectAttempts: 0,                   // number of (re)connect attempts (reset after successful connect)
 
-    // variables which come from os-autoinst cmd srv through the openQA ws proxy
-    currentModule: undefined,
-    moduleToPauseAt: undefined,
-    isPaused: undefined,
+    // state of the test execution (comes from os-autoinst cmd srv through the openQA ws proxy)
+    currentModule: undefined,               // name of the current module, eg. "installation-welcome"
+    moduleToPauseAt: undefined,             // name of the module to pause at, eg. "installation-welcome"
+    isPaused: undefined,                    // whether the test execution is currently paused
 
-    // variables added by the openQA ws proxy
-    develSessionDeveloper: undefined,
-    develSessionStartedAt: undefined,
-    develSessionTabCount: undefined,
+    // state of development session (comes from the openQA ws proxy)
+    develSessionDeveloper: undefined,       // name of the user in possession the development session
+    develSessionStartedAt: undefined,       // time stamp when the development session was created
+    develSessionTabCount: undefined,        // number of open web socket connections by the developer
 };
 
 // initializes the developer panel
