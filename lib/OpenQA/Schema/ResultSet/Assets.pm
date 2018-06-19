@@ -18,6 +18,7 @@ package OpenQA::Schema::ResultSet::Assets;
 use strict;
 use base 'DBIx::Class::ResultSet';
 use OpenQA::Utils qw(log_warning locate_asset human_readable_size);
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use File::Basename;
 
@@ -182,7 +183,7 @@ END_SQL
     }
 
     my $pending
-      = $schema->resultset('Jobs')->search({state => [OpenQA::Schema::Result::Jobs::PENDING_STATES]})->get_column('id')
+      = $schema->resultset('Jobs')->search({state => [OpenQA::Jobs::Constants::PENDING_STATES]})->get_column('id')
       ->as_query;
     my @pendassets
       = $schema->resultset('JobsAssets')->search({job_id => {-in => $pending}})->get_column('asset_id')->all;

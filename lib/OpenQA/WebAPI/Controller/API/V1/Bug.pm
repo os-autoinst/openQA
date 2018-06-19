@@ -17,6 +17,7 @@ package OpenQA::WebAPI::Controller::API::V1::Bug;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::IPC;
 use OpenQA::Utils;
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use DBIx::Class::Timestamps 'now';
 use Date::Format 'time2str';

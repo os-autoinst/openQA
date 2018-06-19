@@ -18,6 +18,7 @@ package OpenQA::Schema::Result::DeveloperSessions;
 use base 'DBIx::Class::Core';
 use strict;
 
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use Date::Format;
 use Try::Tiny;

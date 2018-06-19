@@ -24,6 +24,7 @@ use diagnostics;
 use DBIx::Class 0.082801;
 
 use DBIx::Class::ResultClass::HashRefInflator;
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
 use OpenQA::Utils qw(wakeup_scheduler log_debug);
@@ -57,7 +58,7 @@ sub job_restart {
     my $jobs = schema->resultset("Jobs")->search(
         {
             id    => $jobids,
-            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES, OpenQA::Schema::Result::Jobs::FINAL_STATES],
+            state => [OpenQA::Jobs::Constants::EXECUTION_STATES, OpenQA::Jobs::Constants::FINAL_STATES],
         });
 
     my @duplicated;
@@ -70,16 +71,16 @@ sub job_restart {
     $jobs = schema->resultset("Jobs")->search(
         {
             id    => $jobids,
-            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
+            state => [OpenQA::Jobs::Constants::EXECUTION_STATES],
         });
 
     $jobs->search(
         {
-            result => OpenQA::Schema::Result::Jobs::NONE,
+            result => OpenQA::Jobs::Constants::NONE,
         }
     )->update(
         {
-            result => OpenQA::Schema::Result::Jobs::USER_RESTARTED,
+            result => OpenQA::Jobs::Constants::USER_RESTARTED,
         });
 
     while (my $j = $jobs->next) {

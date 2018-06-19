@@ -20,6 +20,7 @@ use base 'DBIx::Class::Core';
 use strict;
 use db_helpers;
 use OpenQA::Scheduler::Scheduler;
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use Cpanel::JSON::XS qw(decode_json encode_json);
 use File::Basename qw(dirname basename);
@@ -68,7 +69,7 @@ __PACKAGE__->add_columns(
     },
     result => {
         data_type     => 'varchar',
-        default_value => OpenQA::Schema::Result::Jobs::NONE,
+        default_value => OpenQA::Jobs::Constants::NONE,
     },
 );
 __PACKAGE__->add_timestamps;
@@ -91,10 +92,10 @@ sub sqlt_deploy_hook {
 }
 
 my %columns_by_result = (
-    OpenQA::Schema::Result::Jobs::PASSED     => 'passed_module_count',
-    OpenQA::Schema::Result::Jobs::SOFTFAILED => 'softfailed_module_count',
-    OpenQA::Schema::Result::Jobs::FAILED     => 'failed_module_count',
-    OpenQA::Schema::Result::Jobs::NONE       => 'skipped_module_count',
+    OpenQA::Jobs::Constants::PASSED     => 'passed_module_count',
+    OpenQA::Jobs::Constants::SOFTFAILED => 'softfailed_module_count',
+    OpenQA::Jobs::Constants::FAILED     => 'failed_module_count',
+    OpenQA::Jobs::Constants::NONE       => 'skipped_module_count',
 );
 
 # override to update job module stats in jobs table
@@ -107,7 +108,7 @@ sub store_column {
     }
 
     # set default result to 'none'
-    $value //= OpenQA::Schema::Result::Jobs::NONE if ($name eq 'result');
+    $value //= OpenQA::Jobs::Constants::NONE if ($name eq 'result');
 
     # remember previous value before updating
     my $previous_value = $self->get_column($name);
@@ -164,7 +165,7 @@ sub insert {
     # doing this explicitely is required because in this case store_column does not seem to be called
     my $job    = $self->job;
     my $result = $self->result;
-    if ($job && (!$result || $result eq OpenQA::Schema::Result::Jobs::NONE)) {
+    if ($job && (!$result || $result eq OpenQA::Jobs::Constants::NONE)) {
         $job->update({skipped_module_count => $job->skipped_module_count + 1});
     }
 

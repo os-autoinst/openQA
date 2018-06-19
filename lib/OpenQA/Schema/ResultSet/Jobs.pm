@@ -220,7 +220,7 @@ sub complex_query {
             @conds,
             {
                 'modules.name'   => {-in => $args{failed_modules}},
-                'modules.result' => OpenQA::Schema::Result::Jobs::FAILED,
+                'modules.result' => OpenQA::Jobs::Constants::FAILED,
             });
     }
 
@@ -243,7 +243,7 @@ sub complex_query {
         push(@conds, {'me.result' => {-in => $args{result}}});
     }
     if ($args{ignore_incomplete}) {
-        push(@conds, {'me.result' => {-not_in => [OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS]}});
+        push(@conds, {'me.result' => {-not_in => [OpenQA::Jobs::Constants::INCOMPLETE_RESULTS]}});
     }
     my $scope = $args{scope} || '';
     if ($scope eq 'relevant') {
@@ -253,12 +253,12 @@ sub complex_query {
             {
                 -or => [
                     'me.clone_id' => undef,
-                    'clone.state' => [OpenQA::Schema::Result::Jobs::PENDING_STATES],
+                    'clone.state' => [OpenQA::Jobs::Constants::PENDING_STATES],
                 ],
                 'me.result' => {    # these results should be hidden by default
                     -not_in => [
-                        OpenQA::Schema::Result::Jobs::OBSOLETED,
-                        # OpenQA::Schema::Result::Jobs::USER_CANCELLED
+                        OpenQA::Jobs::Constants::OBSOLETED,
+                        # OpenQA::Jobs::Constants::USER_CANCELLED
                         # I think USER_CANCELLED jobs should be available for restart
                     ]}});
     }
@@ -359,7 +359,7 @@ sub cancel_by_settings {
         my $subquery = $schema->resultset('JobSettings')->query_for_settings(\%precond);
         $cond{id} = {-in => $subquery->get_column('job_id')->as_query};
     }
-    $cond{state} = [OpenQA::Schema::Result::Jobs::PENDING_STATES];
+    $cond{state} = [OpenQA::Jobs::Constants::PENDING_STATES];
     my $jobs = $schema->resultset('Jobs')->search(\%cond);
     my $jobs_to_cancel;
     if ($newbuild) {
@@ -390,12 +390,12 @@ sub cancel_by_settings {
     }
     my $cancelled_jobs = 0;
     # first scheduled to avoid worker grab
-    $jobs = $jobs_to_cancel->search({state => OpenQA::Schema::Result::Jobs::SCHEDULED});
+    $jobs = $jobs_to_cancel->search({state => OpenQA::Jobs::Constants::SCHEDULED});
     while (my $j = $jobs->next) {
         $cancelled_jobs += _cancel_or_deprioritize($j, $newbuild, $deprioritize, $deprio_limit);
     }
     # then the rest
-    $jobs = $jobs_to_cancel->search({state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES]});
+    $jobs = $jobs_to_cancel->search({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
     while (my $j = $jobs->next) {
         $cancelled_jobs += _cancel_or_deprioritize($j, $newbuild, $deprioritize, $deprio_limit);
     }
@@ -419,7 +419,7 @@ sub next_previous_jobs_query {
     my ($self, $job, $jobid, %args) = @_;
     my $p_limit     = $args{previous_limit};
     my $n_limit     = $args{next_limit};
-    my @inc_results = OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS;
+    my @inc_results = OpenQA::Jobs::Constants::INCOMPLETE_RESULTS;
     $inc_results[0] = '';
 
     my @params;

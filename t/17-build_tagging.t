@@ -27,6 +27,7 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Schema::JobGroupDefaults;
 use Date::Format qw(time2str);
+use OpenQA::Jobs::Constants;
 
 =head2 acceptance criteria
 
@@ -58,8 +59,8 @@ my $job_hash = {
     ARCH     => 'x86_64',
     MACHINE  => 'xxx',
     TEST     => 'dummy',
-    state    => OpenQA::Schema::Result::Jobs::DONE,
-    result   => OpenQA::Schema::Result::Jobs::FAILED,
+    state    => OpenQA::Jobs::Constants::DONE,
+    result   => OpenQA::Jobs::Constants::FAILED,
     group_id => 1001
 };
 

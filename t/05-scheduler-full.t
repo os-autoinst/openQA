@@ -170,11 +170,11 @@ subtest 'Simulation of unstable workers' => sub {
     is @{$allocated}[0]->{worker}, 5;
 
     for (0 .. 100) {
-        last if $schema->resultset("Jobs")->find(99982)->state eq OpenQA::Schema::Result::Jobs::SCHEDULED;
+        last if $schema->resultset("Jobs")->find(99982)->state eq OpenQA::Jobs::Constants::SCHEDULED;
         sleep 2;
     }
 
-    is $schema->resultset("Jobs")->find(99982)->state, OpenQA::Schema::Result::Jobs::SCHEDULED,
+    is $schema->resultset("Jobs")->find(99982)->state, OpenQA::Jobs::Constants::SCHEDULED,
       "If worker declares to be free - reschedule assigned job to that worker";
     kill_service($unstable_w_pid, 1);
     sleep 5;
@@ -195,18 +195,18 @@ subtest 'Simulation of unstable workers' => sub {
     is @{$allocated}[0]->{worker}, 5;
 
     kill_service($unstable_w_pid, 1);
-    ok $schema->resultset("Jobs")->find(99982)->state eq OpenQA::Schema::Result::Jobs::ASSIGNED;
+    ok $schema->resultset("Jobs")->find(99982)->state eq OpenQA::Jobs::Constants::ASSIGNED;
 
     $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, 8);
 
     for (0 .. 100) {
-        last if $schema->resultset("Jobs")->find(99982)->state eq OpenQA::Schema::Result::Jobs::DONE;
+        last if $schema->resultset("Jobs")->find(99982)->state eq OpenQA::Jobs::Constants::DONE;
         sleep 2;
     }
 
-    is $schema->resultset("Jobs")->find(99982)->state, OpenQA::Schema::Result::Jobs::DONE,
+    is $schema->resultset("Jobs")->find(99982)->state, OpenQA::Jobs::Constants::DONE,
       "Job is done - worker re-connected";
-    is $schema->resultset("Jobs")->find(99982)->result, OpenQA::Schema::Result::Jobs::INCOMPLETE,
+    is $schema->resultset("Jobs")->find(99982)->result, OpenQA::Jobs::Constants::INCOMPLETE,
       "Job result is incomplete - worker re-connected";
 
     dead_workers($schema);
@@ -241,10 +241,10 @@ subtest 'Simulation of heavy unstable load' => sub {
 
     for my $dup (@duplicated) {
         for (0 .. 100) {
-            last if $dup->state eq OpenQA::Schema::Result::Jobs::SCHEDULED;
+            last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
             sleep 2;
         }
-        is $dup->state, OpenQA::Schema::Result::Jobs::SCHEDULED, "Job(" . $dup->id . ") back in scheduled state";
+        is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") back in scheduled state";
     }
     kill_service($_, 1) for @workers;
     dead_workers($schema);
@@ -263,10 +263,10 @@ subtest 'Simulation of heavy unstable load' => sub {
 
     for my $dup (@duplicated) {
         for (0 .. 100) {
-            last if $dup->state eq OpenQA::Schema::Result::Jobs::SCHEDULED;
+            last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
             sleep 2;
         }
-        is $dup->state, OpenQA::Schema::Result::Jobs::SCHEDULED, "Job(" . $dup->id . ") is still in scheduled state";
+        is $dup->state, OpenQA::Jobs::Constants::SCHEDULED, "Job(" . $dup->id . ") is still in scheduled state";
     }
 
     kill_service($_, 1) for @workers;

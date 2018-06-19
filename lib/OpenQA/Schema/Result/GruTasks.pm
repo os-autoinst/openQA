@@ -94,7 +94,7 @@ sub fail {
 
     while (my $d = $deps->next) {
         $d->job->custom_module($result => $output);
-        $d->job->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE());
+        $d->job->done(result => OpenQA::Jobs::Constants::INCOMPLETE());
         $d->delete();
     }
 

@@ -18,6 +18,7 @@ package OpenQA::WebAPI::Controller::API::V1::Worker;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::IPC;
 use OpenQA::Utils;
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use DBIx::Class::Timestamps 'now';
 use Try::Tiny;
@@ -114,8 +115,8 @@ sub _register {
         # .. set it incomplete
         $job->update(
             {
-                state  => OpenQA::Schema::Result::Jobs::DONE,
-                result => OpenQA::Schema::Result::Jobs::INCOMPLETE,
+                state  => OpenQA::Jobs::Constants::DONE,
+                result => OpenQA::Jobs::Constants::INCOMPLETE,
             });
         $worker->update({job_id => undef});
     }

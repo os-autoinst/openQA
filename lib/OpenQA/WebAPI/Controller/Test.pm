@@ -18,6 +18,7 @@ package OpenQA::WebAPI::Controller::Test;
 use strict;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use File::Basename;
 use POSIX 'strftime';
@@ -50,7 +51,7 @@ sub list {
     my $limit   = $self->param('limit') // 500;
 
     my $jobs = $self->db->resultset("Jobs")->complex_query(
-        state   => [OpenQA::Schema::Result::Jobs::FINAL_STATES],
+        state   => [OpenQA::Jobs::Constants::FINAL_STATES],
         match   => $match,
         scope   => $scope,
         assetid => $assetid,
@@ -61,7 +62,7 @@ sub list {
     $self->stash(jobs => $jobs);
 
     my $running = $self->db->resultset("Jobs")->complex_query(
-        state   => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
+        state   => [OpenQA::Jobs::Constants::EXECUTION_STATES],
         match   => $match,
         groupid => $groupid,
         assetid => $assetid
@@ -92,7 +93,7 @@ sub list {
     $self->stash(running => \@list);
 
     my @scheduled = $self->db->resultset("Jobs")->complex_query(
-        state   => [OpenQA::Schema::Result::Jobs::PRE_EXECUTION_STATES],
+        state   => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
         match   => $match,
         groupid => $groupid,
         assetid => $assetid
@@ -433,19 +434,19 @@ sub prepare_job_results {
 
         next
           if $self->param("failed_modules")
-          && $job->result ne OpenQA::Schema::Result::Jobs::FAILED;
+          && $job->result ne OpenQA::Jobs::Constants::FAILED;
 
-        if ($job->state eq OpenQA::Schema::Result::Jobs::DONE) {
+        if ($job->state eq OpenQA::Jobs::Constants::DONE) {
             my $result_stats = $job->result_stats;
             my $overall      = $job->result;
 
             if ($todo) {
                 # skip all jobs NOT needed to be labeled for the black certificate icon to show up
                 next
-                  if $job->result eq OpenQA::Schema::Result::Jobs::PASSED
+                  if $job->result eq OpenQA::Jobs::Constants::PASSED
                   || $job_labels->{$jobid}{bugs}
                   || $job_labels->{$jobid}{label}
-                  || ($job->result eq OpenQA::Schema::Result::Jobs::SOFTFAILED
+                  || ($job->result eq OpenQA::Jobs::Constants::SOFTFAILED
                     && ($job_labels->{$jobid}{label} || !$job->has_failed_modules));
             }
 
@@ -456,7 +457,7 @@ sub prepare_job_results {
                 failed     => $result_stats->{failed},
                 overall    => $overall,
                 jobid      => $jobid,
-                state      => OpenQA::Schema::Result::Jobs::DONE,
+                state      => OpenQA::Jobs::Constants::DONE,
                 failures   => $job->failed_modules(),
                 bugs       => $job_labels->{$jobid}{bugs},
                 bugdetails => $job_labels->{$jobid}{bugdetails},
@@ -465,10 +466,10 @@ sub prepare_job_results {
             };
             $aggregated->{$overall}++;
         }
-        elsif ($job->state eq OpenQA::Schema::Result::Jobs::RUNNING) {
+        elsif ($job->state eq OpenQA::Jobs::Constants::RUNNING) {
             next if $todo;
             $result = {
-                state => OpenQA::Schema::Result::Jobs::RUNNING,
+                state => OpenQA::Jobs::Constants::RUNNING,
                 jobid => $jobid,
             };
             $aggregated->{running}++;
@@ -480,7 +481,7 @@ sub prepare_job_results {
                 jobid    => $jobid,
                 priority => $job->priority,
             };
-            if ($job->state eq OpenQA::Schema::Result::Jobs::SCHEDULED) {
+            if ($job->state eq OpenQA::Jobs::Constants::SCHEDULED) {
                 $aggregated->{scheduled}++;
             }
             else {
@@ -570,11 +571,11 @@ sub export {
         }
         my $jobs = $group->jobs->search({-and => \@conds}, {order_by => 'id'});
         while (my $job = $jobs->next) {
-            next if ($job->result eq OpenQA::Schema::Result::Jobs::OBSOLETED);
+            next if ($job->result eq OpenQA::Jobs::Constants::OBSOLETED);
             $self->write_chunk(sprintf("Job %d: %s is %s\n", $job->id, $job->name, $job->result));
             my $modules = $job->modules->search(undef, {order_by => 'id'});
             while (my $m = $modules->next) {
-                next if ($m->result eq OpenQA::Schema::Result::Jobs::NONE);
+                next if ($m->result eq OpenQA::Jobs::Constants::NONE);
                 $self->write_chunk(sprintf("  %s/%s: %s\n", $m->category, $m->name, $m->result));
             }
         }

@@ -18,13 +18,14 @@ package OpenQA::Resource::Locks;
 use strict;
 use warnings;
 
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobLocks;
 use OpenQA::Resource::Jobs;
 use OpenQA::ResourceAllocator;
 use OpenQA::Utils qw(wakeup_scheduler log_debug);
 
-my %final_states = map { $_ => 1 } OpenQA::Schema::Result::Jobs::NOT_OK_RESULTS();
+my %final_states = map { $_ => 1 } OpenQA::Jobs::Constants::NOT_OK_RESULTS();
 
 # In normal situation the lock is created by the parent (server)
 # and released when a service becomes available and the child (client)
@@ -69,7 +70,7 @@ sub lock {
         my $schema = OpenQA::ResourceAllocator->instance->schema();
         # prevent deadlock - job that is supposed to create the lock already finished
         return -1
-          if $schema->resultset("Jobs")->count({id => $where, state => [OpenQA::Schema::Result::Jobs::FINAL_STATES]});
+          if $schema->resultset("Jobs")->count({id => $where, state => [OpenQA::Jobs::Constants::FINAL_STATES]});
     }
 
     # if no lock so far, there is no lock, return as locked

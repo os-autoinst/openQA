@@ -28,6 +28,7 @@ use OpenQA::Utils (
     qw(parse_assets_from_settings locate_asset),
     qw(send_job_to_worker read_test_modules)
 );
+use OpenQA::Jobs::Constants;
 use File::Basename qw(basename dirname);
 use File::Spec::Functions 'catfile';
 use File::Path ();
@@ -40,45 +41,6 @@ use OpenQA::Parser 'parser';
 # The state and results constants are duplicated in the Python client:
 # if you change them or add any, please also update const.py.
 
-# States
-use constant {
-    SCHEDULED => 'scheduled',
-    SETUP     => 'setup',
-    RUNNING   => 'running',
-    CANCELLED => 'cancelled',
-    DONE      => 'done',
-    UPLOADING => 'uploading',
-    ASSIGNED  => 'assigned'
-};
-
-use constant STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING, DONE, CANCELLED);
-use constant PENDING_STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING);
-use constant EXECUTION_STATES => (ASSIGNED, SETUP, RUNNING, UPLOADING);
-use constant PRE_EXECUTION_STATES => (SCHEDULED);    # Assigned belongs to pre execution, but makes no sense for now
-use constant FINAL_STATES => (DONE, CANCELLED);
-
-# Results
-use constant {
-    NONE               => 'none',
-    PASSED             => 'passed',
-    SOFTFAILED         => 'softfailed',
-    FAILED             => 'failed',
-    INCOMPLETE         => 'incomplete',              # worker died or reported some problem
-    SKIPPED            => 'skipped',                 # dependencies failed before starting this job
-    OBSOLETED          => 'obsoleted',               # new iso was posted
-    PARALLEL_FAILED    => 'parallel_failed',         # parallel job failed, this job can't continue
-    PARALLEL_RESTARTED => 'parallel_restarted',      # parallel job was restarted, this job has to be restarted too
-    USER_CANCELLED     => 'user_cancelled',          # cancelled by user via job_cancel
-    USER_RESTARTED     => 'user_restarted',          # restarted by user via job_restart
-};
-use constant RESULTS => (NONE, PASSED, SOFTFAILED, FAILED, INCOMPLETE, SKIPPED,
-    OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED
-);
-use constant COMPLETE_RESULTS => (PASSED, SOFTFAILED, FAILED);
-use constant OK_RESULTS => (PASSED, SOFTFAILED);
-use constant INCOMPLETE_RESULTS =>
-  (INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED);
-use constant NOT_OK_RESULTS => (INCOMPLETE_RESULTS, FAILED);
 
 # scenario keys w/o MACHINE. Add MACHINE when desired, commonly joined on
 # other keys with the '@' character
@@ -327,7 +289,7 @@ sub worker_id {
 
 sub reschedule_state {
     my $self  = shift;
-    my $state = shift // OpenQA::Schema::Result::Jobs::SCHEDULED;
+    my $state = shift // OpenQA::Jobs::Constants::SCHEDULED;
 
     # cleanup
     $self->set_property('JOBTOKEN');

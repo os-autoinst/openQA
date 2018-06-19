@@ -18,6 +18,7 @@ package OpenQA::Schema::Result::Assets;
 use base 'DBIx::Class::Core';
 use strict;
 
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
 use OpenQA::IPC;

@@ -44,7 +44,7 @@ OpenQA::WebSockets->new;
 sub _check_job_running {
     my ($jobid) = @_;
     my $job = $schema->resultset('Jobs')->find($jobid);
-    is($job->state, OpenQA::Schema::Result::Jobs::RUNNING, "job $jobid is running");
+    is($job->state, OpenQA::Jobs::Constants::RUNNING, "job $jobid is running");
     ok(!$job->clone, "job $jobid does not have a clone");
     return $job;
 }
@@ -52,8 +52,8 @@ sub _check_job_running {
 sub _check_job_incomplete {
     my ($jobid) = @_;
     my $job = $schema->resultset('Jobs')->find($jobid);
-    is($job->state,  OpenQA::Schema::Result::Jobs::DONE,       "job $jobid set as done");
-    is($job->result, OpenQA::Schema::Result::Jobs::INCOMPLETE, "job $jobid set as incomplete");
+    is($job->state,  OpenQA::Jobs::Constants::DONE,       "job $jobid set as done");
+    is($job->result, OpenQA::Jobs::Constants::INCOMPLETE, "job $jobid set as incomplete");
     ok($job->clone, "job $jobid was cloned");
     return $job;
 }

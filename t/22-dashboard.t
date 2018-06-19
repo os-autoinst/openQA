@@ -27,6 +27,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
+use OpenQA::Jobs::Constants;
 
 # init test case
 my $test_case = OpenQA::Test::Case->new;
@@ -212,8 +213,8 @@ my $job_hash = {
     ARCH     => 'x86_64',
     MACHINE  => 'xxx',
     TEST     => 'dummy',
-    state    => OpenQA::Schema::Result::Jobs::DONE,
-    result   => OpenQA::Schema::Result::Jobs::FAILED,
+    state    => OpenQA::Jobs::Constants::DONE,
+    result   => OpenQA::Jobs::Constants::FAILED,
     group_id => $opensuse_test_group->id
 };
 my $not_reviewed_job = $jobs->create($job_hash);
@@ -248,10 +249,10 @@ sub check_auto_badge {
 $get = $t->get_ok('/?limit_builds=20')->status_is(200);
 check_auto_badge(1);
 # all passed or softfailed
-$jobs->find({id => 99947})->update({result => OpenQA::Schema::Result::Jobs::SOFTFAILED});
+$jobs->find({id => 99947})->update({result => OpenQA::Jobs::Constants::SOFTFAILED});
 $get = $t->get_ok('/?limit_builds=20')->status_is(200);
 check_auto_badge(1);
-$jobs->find({id => 99947})->update({result => OpenQA::Schema::Result::Jobs::PASSED});
+$jobs->find({id => 99947})->update({result => OpenQA::Jobs::Constants::PASSED});
 
 sub check_badge {
     my ($reviewed_count, $msg, $build) = @_;

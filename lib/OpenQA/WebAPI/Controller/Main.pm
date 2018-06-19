@@ -19,6 +19,7 @@ use strict;
 use warnings;
 use Mojo::Base 'Mojolicious::Controller';
 use Date::Format;
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::BuildResults;
 use OpenQA::Utils;

@@ -16,6 +16,7 @@
 package OpenQA::WebAPI::Controller::API::V1::Mm;
 use Mojo::Base 'Mojolicious::Controller';
 
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
 
@@ -53,13 +54,13 @@ sub get_children_status {
     my ($self) = @_;
     my $status = $self->stash('status');
     if ($status eq 'running') {
-        $status = OpenQA::Schema::Result::Jobs::RUNNING;
+        $status = OpenQA::Jobs::Constants::RUNNING;
     }
     elsif ($status eq 'scheduled') {
-        $status = OpenQA::Schema::Result::Jobs::SCHEDULED;
+        $status = OpenQA::Jobs::Constants::SCHEDULED;
     }
     else {
-        $status = OpenQA::Schema::Result::Jobs::DONE;
+        $status = OpenQA::Jobs::Constants::DONE;
     }
     my $jobid = $self->stash('job_id');
 

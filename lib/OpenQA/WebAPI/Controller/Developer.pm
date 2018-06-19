@@ -20,12 +20,13 @@ use Try::Tiny;
 use Mojo::URL;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 
 # returns the isotovideo command server web socket URL for the given job or undef if not available
 sub determine_os_autoinst_web_socket_url {
     my ($job) = @_;
-    return unless $job->state eq OpenQA::Schema::Result::Jobs::RUNNING;
+    return unless $job->state eq OpenQA::Jobs::Constants::RUNNING;
 
     # determine job token and host from worker
     my $worker    = $job->assigned_worker             or return;

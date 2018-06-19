@@ -22,6 +22,7 @@ use parent 'Mojolicious::Plugin';
 use Cpanel::JSON::XS;
 use Mojo::IOLoop;
 use OpenQA::Utils;
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use Mojo::RabbitMQ::Client;
 
@@ -164,7 +165,7 @@ sub on_job_event {
     $event_data->{remaining} = $self->{app}->db->resultset('Jobs')->search(
         {
             'me.BUILD' => $build,
-            state      => [OpenQA::Schema::Result::Jobs::PENDING_STATES],
+            state      => [OpenQA::Jobs::Constants::PENDING_STATES],
         })->count;
     # add various useful properties for consumers if not there already
     for my $detail (qw(BUILD TEST ARCH MACHINE FLAVOR)) {
