@@ -65,7 +65,8 @@ eval 'use Test::More::Color "foreground"';
 
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
-use OpenQA::Test::Utils qw(create_websocket_server create_resourceallocator start_resourceallocator setup_share_dir);
+use OpenQA::Test::Utils
+  qw(create_websocket_server create_live_view_handler create_resourceallocator start_resourceallocator setup_share_dir);
 use OpenQA::Test::FullstackUtils;
 
 plan skip_all => 'set DEVELOPER_FULLSTACK=1 (be careful)' unless $ENV{DEVELOPER_FULLSTACK};
@@ -159,15 +160,7 @@ my $wsport = $mojoport + 1;
 $wspid = create_websocket_server($wsport, 0, 0, 0);
 
 # start live view handler
-$livehandlerpid = fork();
-if ($livehandlerpid == 0) {
-    use Mojolicious::Commands;
-    use OpenQA::LiveHandler;
-    my $livehandlerport = $mojoport + 2;
-    Mojolicious::Commands->start_app('OpenQA::LiveHandler', 'daemon', '-l', "http://localhost:$livehandlerport");
-    Devel::Cover::report() if Devel::Cover->can('report');
-    _exit(0);
-}
+$livehandlerpid = create_live_view_handler($mojoport);
 
 my $JOB_SETUP
   = 'ISO=Core-7.2.iso DISTRI=tinycore ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 '
@@ -201,6 +194,26 @@ sub start_worker {
 start_worker;
 OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 'fail on incomplete');
 
+sub wait_for_session_info {
+    my ($info_regex, $diag_info) = @_;
+
+    # give the session info 10 seconds to appear
+    my $developer_session_info = $driver->find_element('#developer-session-info')->get_text();
+    my $seconds_waited         = 0;
+    while (!$developer_session_info) {
+        if ($seconds_waited > 10) {
+            fail('no session info after 10 seconds, expected ' . $diag_info);
+            return;
+        }
+
+        sleep 1;
+        $developer_session_info = $driver->find_element('#developer-session-info')->get_text();
+        $seconds_waited += 1;
+    }
+
+    like($developer_session_info, $info_regex, $diag_info);
+}
+
 my $developer_console_url = '/tests/1/developer/ws-console?proxy=1';
 subtest 'wait until developer console becomes available' => sub {
     $driver->get($developer_console_url);
@@ -231,9 +244,7 @@ subtest 'pause at certain test' => sub {
 subtest 'developer session visible in live view' => sub {
     $driver->get($job_page_url);
     $driver->find_element_by_link_text('Live View')->click();
-
-    my $developer_session_info = $driver->find_element('#developer_session')->get_text();
-    like($developer_session_info, qr/opened by Demo/, 'user displayed');
+    wait_for_session_info(qr/opened by Demo/, 'user displayed');
 };
 
 subtest 'session locked for other developers' => sub {
@@ -279,8 +290,7 @@ subtest 'resume test execution' => sub {
     # go back to the live view
     $driver->get($job_page_url);
     $driver->find_element_by_link_text('Live View')->click();
-    my $developer_session_info = $driver->find_element('#developer_session')->get_text();
-    like($developer_session_info, qr/opened by Demo.*1 browser tab/, '1 browser tab open (from previous subtest)');
+    wait_for_session_info(qr/opened by Demo.*1 tab open/, '1 browser tab open (from previous subtest)');
 
     # open developer console
     $driver->get($developer_console_url);

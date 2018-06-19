@@ -65,7 +65,8 @@ eval 'use Test::More::Color "foreground"';
 
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
-use OpenQA::Test::Utils qw(create_websocket_server create_resourceallocator start_resourceallocator setup_share_dir);
+use OpenQA::Test::Utils
+  qw(create_websocket_server create_live_view_handler create_resourceallocator start_resourceallocator setup_share_dir);
 use OpenQA::Test::FullstackUtils;
 
 plan skip_all => "set FULLSTACK=1 (be careful)" unless $ENV{FULLSTACK};
@@ -74,29 +75,16 @@ plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' u
 
 my $workerpid;
 my $wspid;
+my $livehandlerpid;
 my $schedulerpid;
 my $resourceallocatorpid;
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 
 sub turn_down_stack {
-    if ($workerpid) {
-        kill TERM => $workerpid;
-        waitpid($workerpid, 0);
-    }
-
-    if ($wspid) {
-        kill TERM => $wspid;
-        waitpid($wspid, 0);
-    }
-
-    if ($schedulerpid) {
-        kill TERM => $schedulerpid;
-        waitpid($schedulerpid, 0);
-    }
-
-    if ($resourceallocatorpid) {
-        kill TERM => $resourceallocatorpid;
-        waitpid($resourceallocatorpid, 0);
+    for my $pid ($workerpid, $wspid, $livehandlerpid, $schedulerpid, $resourceallocatorpid) {
+        next unless $pid;
+        kill TERM => $pid;
+        waitpid($pid, 0);
     }
 }
 
@@ -150,6 +138,8 @@ $driver->click_element_ok('confirm',     'id');
 
 my $wsport = $mojoport + 1;
 $wspid = create_websocket_server($wsport, 0, 0, 0);
+
+$livehandlerpid = create_live_view_handler($mojoport);
 
 my $JOB_SETUP
   = 'ISO=Core-7.2.iso DISTRI=tinycore ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 '
