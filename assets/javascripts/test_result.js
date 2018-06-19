@@ -307,7 +307,6 @@ function setupResult(state, jobid, status_url, details_url) {
   }
   // This could be easily rewritten as $.inArray
   if ( state == "running"   ||
-       state == "waiting"   ||
        state == "uploading" ||
        state == "assigned"  ||
        state == "setup" ) {
@@ -388,6 +387,7 @@ function setupResult(state, jobid, status_url, details_url) {
           trElement[stepMaches ? 'show' : 'hide']();
       });
   };
+
   detailsNameFilter.keyup(applyFilterChanges);
   detailsFailedOnlyFilter.change(applyFilterChanges);
 
