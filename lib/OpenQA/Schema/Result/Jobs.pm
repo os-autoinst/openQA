@@ -46,15 +46,14 @@ use constant {
     SETUP     => 'setup',
     RUNNING   => 'running',
     CANCELLED => 'cancelled',
-    WAITING   => 'waiting',
     DONE      => 'done',
     UPLOADING => 'uploading',
     ASSIGNED  => 'assigned'
 };
 
-use constant STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING, WAITING, DONE, CANCELLED);
-use constant PENDING_STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, WAITING, UPLOADING);
-use constant EXECUTION_STATES => (ASSIGNED, SETUP, WAITING, RUNNING, UPLOADING);
+use constant STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING, DONE, CANCELLED);
+use constant PENDING_STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING);
+use constant EXECUTION_STATES => (ASSIGNED, SETUP, RUNNING, UPLOADING);
 use constant PRE_EXECUTION_STATES => (SCHEDULED);    # Assigned belongs to pre execution, but makes no sense for now
 use constant FINAL_STATES => (DONE, CANCELLED);
 
@@ -1396,7 +1395,7 @@ sub update_status {
         $assigned_worker->set_property(CMD_SRV_URL => ($status->{cmd_srv_url} // ''));
     }
 
-    $self->state(RUNNING) and $self->t_started(now()) if grep { $_ eq $self->state } (WAITING, ASSIGNED, SETUP);
+    $self->state(RUNNING) and $self->t_started(now()) if grep { $_ eq $self->state } (ASSIGNED, SETUP);
     $self->update();
 
     # result=1 for the call, job_result for the current state

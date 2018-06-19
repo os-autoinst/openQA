@@ -19,7 +19,7 @@ var logElements;
 
 // Update global variable testStatus
 function updateTestStatus(newStatus) {
-    if (newStatus.state != 'running' && newStatus.state != 'waiting') {
+    if (newStatus.state != 'running') {
         setTimeout(function() {location.reload();}, 2000);
         return;
     }
