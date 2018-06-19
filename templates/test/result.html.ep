@@ -26,7 +26,7 @@
                 <li role="presentation" class="nav-item">
                     <a href="#details" aria-controls="details" role="tab" data-toggle="tab" class="nav-link active">Details</a>
                 </li>
-                % if ($job->running_or_waiting) {
+                % if ($job->state eq 'running') {
                     <li role="presentation" class="nav-item">
                         <a href="#live" aria-controls="live" role="tab" data-toggle="tab" class="nav-link">Live View</a>
                     </li>
@@ -50,7 +50,7 @@
                     %= include 'test/details'
                 </div>
 
-                % if ($job->running_or_waiting) {
+                % if ($job->state eq 'running') {
                     <div role="tabpanel" class="tab-pane" id="live">
                         %= include 'test/live'
                     </div>

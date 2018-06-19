@@ -1654,11 +1654,6 @@ sub carry_over_bugrefs {
     return;
 }
 
-sub running_or_waiting {
-    my ($self) = @_;
-    return ($self->state eq 'running' || $self->state eq 'waiting');
-}
-
 # extend to finish
 sub store_column {
     my ($self, %args) = @_;
