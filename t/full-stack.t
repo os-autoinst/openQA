@@ -36,6 +36,8 @@ BEGIN {
     $ENV{OPENQA_SCHEDULER_BUSY_BACKOFF}       = 1;
     $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}        = 8000;
     $ENV{OPENQA_SCHEDULER_WAKEUP_ON_REQUEST}  = 0;
+    # ensure the web socket connection won't timeout
+    $ENV{MOJO_INACTIVITY_TIMEOUT} = 10 * 60;
     path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
     path($FindBin::Bin, "data")->child("database.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("database.ini"));
     path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));

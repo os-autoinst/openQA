@@ -36,6 +36,8 @@ BEGIN {
     $ENV{OPENQA_SCHEDULER_BUSY_BACKOFF}       = 1;
     $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}        = 8000;
     $ENV{OPENQA_SCHEDULER_WAKEUP_ON_REQUEST}  = 0;
+    # ensure the web socket connection won't timeout
+    $ENV{MOJO_INACTIVITY_TIMEOUT} = 10 * 60;
     path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
     path($FindBin::Bin, "data")->child("database.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("database.ini"));
     path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
@@ -159,9 +161,6 @@ $wspid = create_websocket_server($wsport, 0, 0, 0);
 # start live view handler
 $livehandlerpid = fork();
 if ($livehandlerpid == 0) {
-    # ensure the web socket connection won't timeout
-    $ENV{MOJO_INACTIVITY_TIMEOUT} = 15 * 60;
-
     use Mojolicious::Commands;
     use OpenQA::LiveHandler;
     my $livehandlerport = $mojoport + 2;
@@ -202,17 +201,9 @@ sub start_worker {
 start_worker;
 OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 'fail on incomplete');
 
-my $developer_console_url;
-sub open_developer_console_from_live_view {
-    # don't just click because it would open a 2nd tab
-    $developer_console_url
-      = $driver->find_element_by_link_text('open developer web socket console')->get_attribute('href');
-    $driver->get($developer_console_url);
-    wait_for_ajax;
-}
-
+my $developer_console_url = '/tests/1/developer/ws-console?proxy=1';
 subtest 'wait until developer console becomes available' => sub {
-    open_developer_console_from_live_view();
+    $driver->get($developer_console_url);
     OpenQA::Test::FullstackUtils::wait_for_developer_console_available($driver);
 };
 
