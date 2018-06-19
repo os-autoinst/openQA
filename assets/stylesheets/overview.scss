@@ -15,7 +15,7 @@
     .smaller-font { font-size: 90%; }
 }
 
-#filter-panel, #live-log-panel, #live-terminal-panel {
+#filter-panel, #developer-panel, #live-log-panel, #live-terminal-panel {
     .card-header {
         cursor: pointer;
 
@@ -24,6 +24,9 @@
             color: #555;
             font-weight: 500;
         }
+    }
+    .card-header-appendix {
+        font-weight: normal;
     }
     .card-body {
         display: none;

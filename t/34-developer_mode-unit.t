@@ -31,6 +31,7 @@ use OpenQA::Test::Case;
 use OpenQA::Test::FakeWebSocketTransaction;
 use OpenQA::WebAPI::Controller::Developer;
 use OpenQA::WebAPI::Controller::LiveViewHandler;
+use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
 
 # init test case
 my $test_case = OpenQA::Test::Case->new;
@@ -233,11 +234,14 @@ subtest 'URLs for command server and livehandler' => sub {
         'URL for job with assigned worker'
     );
 
+    is(determine_web_ui_web_socket_url(99961), 'liveviewhandler/tests/99961/developer/ws-proxy', 'URL for livehandler');
+
     is(
-        OpenQA::WebAPI::Controller::Developer::determine_web_ui_web_socket_url(99961),
-        'liveviewhandler/tests/99961/developer/ws-proxy',
-        'URL for livehandler'
+        get_ws_status_only_url(99961),
+        'liveviewhandler/tests/99961/developer/ws-proxy/status',
+        'URL for livehandler status route'
     );
+
 };
 
 subtest 'websocket proxy' => sub {
@@ -285,7 +289,7 @@ subtest 'websocket proxy' => sub {
         $ws_monitoring->json_message_is(
             {
                 type => 'info',
-                what => 'connecting to os-autuinst command server at ws://remotehost:20013/token99961/ws',
+                what => 'connecting to os-autoinst command server at ws://remotehost:20013/token99961/ws',
                 data => undef,
             });
         $ws_monitoring->message_ok('another message received');
@@ -314,7 +318,7 @@ subtest 'websocket proxy' => sub {
         $ws_monitoring->json_message_is(
             {
                 type => 'info',
-                what => 'connecting to os-autuinst command server at ws://remotehost:20013/token99961/ws',
+                what => 'connecting to os-autoinst command server at ws://remotehost:20013/token99961/ws',
                 data => undef,
             });
         $ws_monitoring->message_ok('another message received');
@@ -322,7 +326,7 @@ subtest 'websocket proxy' => sub {
             {
                 type => 'info',
                 what =>
-                  'reusing previous connection to os-autuinst command server at ws://remotehost:20013/token99961/ws',
+                  'reusing previous connection to os-autoinst command server at ws://remotehost:20013/token99961/ws',
                 data => undef,
             });
         is($fake_cmd_srv_tx->finish_called, 0, 'no attempt to close the connection again');

@@ -228,6 +228,9 @@ subtest 'developer session visible in live view' => sub {
 
     my $developer_session_info = $driver->find_element('#developer_session')->get_text();
     like($developer_session_info, qr/opened by Demo/, 'user displayed');
+
+    my $developer_instructions_info = $driver->find_element('#developer-instructions')->get_text();
+    like($developer_session_info, qr/localhost at 91/, 'Developer instructions');
 };
 
 subtest 'session locked for other developers' => sub {
@@ -258,7 +261,7 @@ subtest 'connect with 2 clients at the same time (use case: developer opens 2nd 
     );
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
         $driver,
-        qr/reusing previous connection to os-autuinst/,
+        qr/reusing previous connection to os-autoinst/,
         'connection reused'
     );
 };

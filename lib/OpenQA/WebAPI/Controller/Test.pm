@@ -21,6 +21,7 @@ use OpenQA::Utils;
 use OpenQA::Schema::Result::Jobs;
 use File::Basename;
 use POSIX 'strftime';
+use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
 
 sub referer_check {
     my ($self) = @_;
@@ -257,6 +258,8 @@ sub _show {
     $self->stash(clone_of => $clone_of);
     $self->stash(modlist  => $modlist);
 
+    my $websocket_proxy = determine_web_ui_web_socket_url($job->id);
+    $self->stash(ws_url => $websocket_proxy);
     my $rd = $job->result_dir();
     if ($rd) {    # saved anything
                   # result files box
@@ -271,6 +274,15 @@ sub _show {
     else {
         $self->stash(resultfiles => []);
         $self->stash(ulogs       => []);
+    }
+
+    # stash URLs for web socker routes required by developer mode
+    if ($job->running_or_waiting) {
+        $self->stash(
+            {
+                ws_developer_url   => determine_web_ui_web_socket_url($job->id),
+                ws_status_only_url => get_ws_status_only_url($job->id),
+            });
     }
 
     $self->render('test/result');

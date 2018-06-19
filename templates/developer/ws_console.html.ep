@@ -4,7 +4,7 @@
   %= asset 'ws_console.css'
 % end
 % content_for 'ready_function' => begin
-    setupWebSocketContosle();
+    setupWebSocketConsole();
 % end
 % title 'WebSocket console';
 %= include 'layouts/info'

@@ -45,6 +45,7 @@ sub schema_hook {
     # set assigned_worker_id to test whether worker still displayed when job set to done
     # manually for PhantomJS test
     $jobs->find(99963)->update({assigned_worker_id => 1});
+
 }
 
 my $driver = call_driver(\&schema_hook);
