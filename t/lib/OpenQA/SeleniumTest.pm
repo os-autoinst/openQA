@@ -207,6 +207,7 @@ sub javascript_console_has_no_warnings_or_errors {
 
     diag('javascript console output: ' . pp(\@errors)) if @errors;
     is_deeply(\@errors, [], 'no errors or warnings on javascript console' . $test_name_suffix);
+    return scalar @errors eq 0;
 }
 
 sub kill_driver() {

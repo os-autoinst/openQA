@@ -93,7 +93,7 @@ sub wait_for_job_running {
 
 # waits until the developer console content matches the specified regex
 sub wait_for_developer_console_contains_log_message {
-    my ($driver, $message_regex, $diag_info, $assert_never_opened) = @_;
+    my ($driver, $message_regex, $diag_info) = @_;
 
     # abort on javascript console errors
     my $js_erro_check_suffix = ', waiting for ' . $diag_info;
@@ -104,16 +104,14 @@ sub wait_for_developer_console_contains_log_message {
     my $log          = $log_textarea->get_text();
     my $previous_log = '';
 
-    my $regex_opened = qr/Connection opened/;
     my $regex_closed = qr/Connection closed/;
     while (!($log =~ $message_regex)) {
         # check whether connection has been unexpectedly closed/opened
-        if ($message_regex ne $regex_closed && $log =~ $regex_closed) {
+        if (   $message_regex ne $regex_closed
+            && $diag_info ne 'paused'
+            && $log =~ $regex_closed)
+        {
             fail('web socket connection closed prematurely, was waiting for ' . $diag_info);
-            return;
-        }
-        elsif ($assert_never_opened && $log =~ $regex_opened) {
-            fail('web socket connection unexpectedly opened, was waiting for ' . $diag_info);
             return;
         }
 
@@ -131,7 +129,7 @@ sub wait_for_developer_console_contains_log_message {
             sleep 1;
         }
         wait_for_ajax;
-        javascript_console_has_no_warnings_or_errors($js_erro_check_suffix);
+        javascript_console_has_no_warnings_or_errors($js_erro_check_suffix) or return;
         $previous_log = $log;
         $log          = $log_textarea->get_text();
     }

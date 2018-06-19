@@ -30,6 +30,7 @@ use JSON 'decode_json';
 # define a whitelist of commands to be passed to os-autoinst via ws_proxy
 my %allowed_os_autoinst_commands = (
     set_pause_at_test     => 1,
+    status                => 1,
     resume_test_execution => 1,
 );
 

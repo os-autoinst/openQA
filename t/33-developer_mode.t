@@ -205,6 +205,11 @@ my $developer_console_url = '/tests/1/developer/ws-console?proxy=1';
 subtest 'wait until developer console becomes available' => sub {
     $driver->get($developer_console_url);
     OpenQA::Test::FullstackUtils::wait_for_developer_console_available($driver);
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+        $driver,
+        qr/(connected to os-autoinst command server|reusing previous connection to os-autuinst command server)/,
+        'proxy says it is connected to os-autoinst cmd srv'
+    );
 };
 
 subtest 'pause at certain test' => sub {
@@ -219,7 +224,8 @@ subtest 'pause at certain test' => sub {
     );
 
     # wait until the shutdown test is started and hence the test execution paused
-    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message($driver, qr/\"paused\":/, 'paused');
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message($driver,
+        qr/(\"paused\":|\"test_execution_paused\":1)/, 'paused');
 };
 
 subtest 'developer session visible in live view' => sub {

@@ -211,7 +211,8 @@ subtest 'pause at certain test' => sub {
     );
 
     # wait until the shutdown test is started and hence the test execution paused
-    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message($driver, qr/\"paused\":/, 'paused');
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message($driver,
+        qr/(\"paused\":|\"test_execution_paused\":1)/, 'paused');
 
     # resume the test execution again
     $command_input->send_keys('{"cmd":"resume_test_execution"}');
