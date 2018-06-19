@@ -137,6 +137,7 @@ sub startup {
     $test_r->get('/modules/:moduleid/fails')->name('test_module_fails')->to('test#module_fails');
 
     $test_r->get('/details')->name('details')->to('test#details');
+    $test_r->get('/module_components')->name('module_components')->to('test#module_components');
     $test_r->get('/status')->name('status')->to('running#status');
     $test_r->get('/livelog')->name('livelog')->to('running#livelog');
     $test_r->get('/liveterminal')->name('liveterminal')->to('running#liveterminal');

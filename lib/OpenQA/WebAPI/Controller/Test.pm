@@ -201,22 +201,36 @@ sub list_ajax {
     $self->render(json => {data => \@list});
 }
 
+sub stash_module_list {
+    my ($self) = @_;
+
+    my $job_id = $self->param('testid') or return;
+    my $job = $self->app->schema->resultset('Jobs')->search(
+        {
+            id => $job_id
+        },
+        {
+            prefetch => qw(jobs_assets)
+        }
+      )->first
+      or return;
+
+    $self->stash(modlist => read_test_modules($job));
+    return 1;
+}
+
 sub details {
     my ($self) = @_;
 
-    return $self->reply->not_found if (!defined $self->param('testid'));
-
-    my $job = $self->app->schema->resultset("Jobs")->search(
-        {
-            id => $self->param('testid')
-        },
-        {prefetch => qw(jobs_assets)})->first;
-    return $self->reply->not_found unless $job;
-
-    my $modlist = read_test_modules($job);
-    $self->stash(modlist => $modlist);
-
+    $self->stash_module_list or return $self->reply->not_found;
     $self->render('test/details');
+}
+
+sub module_components {
+    my ($self) = @_;
+
+    $self->stash_module_list or return $self->reply->not_found;
+    $self->render('test/module_components');
 }
 
 sub get_current_job {

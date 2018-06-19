@@ -39,54 +39,74 @@ function updateTestStatus(newStatus) {
         });
     }
 
-    // If a new module have been started, redraw module list
-    if (testStatus.running != newStatus.running) {
-        $.ajax(testStatus.details_url).
-            done(function(data) {
-                if (data.length > 0) {
-                    // the result table must have a running row
-                    if ($(data).find('.resultrunning').length > 0) {
-                        // results table doesn't exist yet
-                        if ($("#results").length == 0) {
-                            $("#details").html(data);
-                            console.log("Missing results table created");
-                            testStatus.running = newStatus.running;
-                        }
-                        else {
-                            var running_tr = $('td.result.resultrunning').parent();
-                            var result_tbody = running_tr.parent();
-                            var first_tr_to_update = running_tr.index();
-                            var new_trs = $(data).find("tbody > tr");
-                            var printed_running = false;
-                            var missing_results = false;
-                            result_tbody.children().slice(first_tr_to_update).each(function() {
-                                var tr = $(this);
-                                var new_tr = new_trs.eq(tr.index());
-                                if (new_tr.find('.resultrunning').length == 1) {
-                                    printed_running = true;
-                                }
-                                // every row above running must have results
-                                if (!printed_running && new_tr.find('.links').length > 0 && new_tr.find('.links').children().length == 0) {
-                                    missing_results = true;
-                                    console.log("Missing results in row - trying again");
-                                }
-                            });
-                            if (!missing_results) {
-                                result_tbody.children().slice(first_tr_to_update).each(function() {
-                                    var tr = $(this);
-                                    tr.replaceWith(new_trs.eq(tr.index()));
-                                });
-                                testStatus.running = newStatus.running;
-                            }
-                        }
-                    }
-                } else {
-                    console.log("ERROR: modlist empty");
-                }
-            }).fail(function() {
-                console.log("ERROR: modlist fail");
-            });
+    // skip further updating if no 'running vs. not running' change
+    if (testStatus.running == newStatus.running) {
+        return;
     }
+
+    // redraw module list if a new module have been started
+    $.ajax(testStatus.details_url).done(function(data) {
+        if (data.length <= 0) {
+            console.log("ERROR: modlist empty");
+            return;
+        }
+
+        // create DOM elements from the HTML data
+        var dataDom = $(data);
+
+        // update module selection for developer mode
+        var moduleSelectOnPage = $('#developer-pause-at-module');
+        var newModuleSelect = dataDom.filter('#developer-pause-at-module');
+        if (moduleSelectOnPage.length && newModuleSelect.length) {
+            moduleSelectOnPage.replaceWith(newModuleSelect);
+            newModuleSelect.on('change', handleModuleToPauseAtSelected);
+        }
+
+        // skip if the row of the running module is not present in the result table
+        var runningRow = dataDom.find('.resultrunning');
+        if (!runningRow.length) {
+            return;
+        }
+
+        // handle case when the results table doesn't exist yet
+        var newResults = dataDom.filter('#results');
+        if (!$("#results").length) {
+            $("#details").append(newResults);
+            console.log("Missing results table created");
+            testStatus.running = newStatus.running;
+            return;
+        }
+
+        // update existing results table
+        var running_tr = $('td.result.resultrunning').parent();
+        var result_tbody = running_tr.parent();
+        var first_tr_to_update = running_tr.index();
+        var new_trs = newResults.find('tbody > tr');
+        var printed_running = false;
+        var missing_results = false;
+        result_tbody.children().slice(first_tr_to_update).each(function() {
+            var tr = $(this);
+            var new_tr = new_trs.eq(tr.index());
+            if (new_tr.find('.resultrunning').length == 1) {
+                printed_running = true;
+            }
+            // every row above running must have results
+            if (!printed_running && new_tr.find('.links').length > 0 && new_tr.find('.links').children().length == 0) {
+                missing_results = true;
+                console.log("Missing results in row - trying again");
+            }
+        });
+        if (!missing_results) {
+            result_tbody.children().slice(first_tr_to_update).each(function() {
+                var tr = $(this);
+                tr.replaceWith(new_trs.eq(tr.index()));
+            });
+            testStatus.running = newStatus.running;
+        }
+
+    }).fail(function() {
+        console.log("ERROR: modlist fail");
+    });
 }
 
 function sendCommand(command) {
@@ -324,21 +344,7 @@ function setupDeveloperPanel() {
     });
 
     // register handlers for controls
-    var moduleToPauseAtSelect = $('#developer-pause-at-module');
-    moduleToPauseAtSelect.on('change', function(event) {
-        var selectedModuleOption = moduleToPauseAtSelect.find('option:selected');
-        var category = selectedModuleOption.parent('optgroup').attr('label');
-        var selectedModuleName = undefined;
-        if (category) {
-            selectedModuleName = category + '-' + selectedModuleOption.text();
-        }
-        if (selectedModuleName !== developerMode.moduleToPauseAt) {
-            sendWsCommand({
-                cmd: 'set_pause_at_test',
-                name: selectedModuleName,
-            });
-        }
-    });
+    $('#developer-pause-at-module').on('change', handleModuleToPauseAtSelected);
 
     // find URLs for web socket connections
     developerMode.develWsUrl = panel.data('developer-url');
@@ -426,6 +432,21 @@ function updateDeveloperPanel() {
             element.show();
         }
     });
+}
+
+function handleModuleToPauseAtSelected() {
+    var selectedModuleOption = $('#developer-pause-at-module').find('option:selected');
+    var category = selectedModuleOption.parent('optgroup').attr('label');
+    var selectedModuleName = undefined;
+    if (category) {
+        selectedModuleName = category + '-' + selectedModuleOption.text();
+    }
+    if (selectedModuleName !== developerMode.moduleToPauseAt) {
+        sendWsCommand({
+            cmd: 'set_pause_at_test',
+            name: selectedModuleName,
+        });
+    }
 }
 
 function closeWebsocketConnection() {

@@ -43,24 +43,7 @@
                             be accessed via VNC for further investigation.</p>')
                         %>
                     </strong>
-                    <select class="custom-select" name="pause-at-module" id="developer-pause-at-module">
-                        <option selected style="font-style: italic;">Don't pause at a module</option>
-                        % my $in_optgroup = 0;
-                        % for my $module (@$modlist) {
-                            % my $category = $module->{category};
-                            % if ($category) {
-                                % if ($in_optgroup) {
-                                    </optgroup>
-                                % }
-                                % $in_optgroup = 1;
-                                <optgroup label="<%= $module->{category} %>">
-                            % }
-                           <option><%= $module->{name} %></option>
-                        % }
-                        % if ($in_optgroup) {
-                            </optgroup>
-                        % }
-                    </select>
+                    %= include 'test/module_select'
                 </p>
             </div>
             <hr>

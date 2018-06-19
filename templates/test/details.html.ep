@@ -1,92 +1,17 @@
-% if (@$modlist) {
-    <div class="details-filter-toggle">
-        <a href="#" aria-controls="previous" class="nav-link" title="Filter">
-            <i class="fas fa-filter"></i>
-        </a>
+% return unless (@$modlist);
+<div class="details-filter-toggle">
+    <a href="#" aria-controls="previous" class="nav-link" title="Filter">
+        <i class="fas fa-filter"></i>
+    </a>
+</div>
+<form class="row details-filter hidden">
+    <div class="col-sm-12 col-md-6">
+        Name:
+        <input type="search" class="form-control form-control-sm" placeholder="Filter by name" aria-controls="results" id="details-name-filter">
     </div>
-    <form class="row details-filter hidden">
-        <div class="col-sm-12 col-md-6">
-            Name:
-            <input type="search" class="form-control form-control-sm" placeholder="Filter by name" aria-controls="results" id="details-name-filter">
-        </div>
-        <div class="col-sm-12 col-md-6 result-filter-container">
-            <input id="details-only-failed-filter" name="relevant" type="checkbox" value="1">
-            <label for="details-only-failed-filter">Show only failures</label>
-        </div>
-    </form>
-    <table id="results" class="table table-striped">
-        <thead>
-            <tr>
-                <th>Test</th>
-                <th>Result</th>
-                <th style="width: 100%">References</th>
-            </tr>
-        </thead>
-        <tbody>
-            % for my $module (@$modlist) {
-                % if ($module->{category}) {
-                    <tr>
-                        <td colspan="3">
-                            <i class="fas fa-folder-open"></i>&nbsp;
-                            %= $module->{category}
-                        </td>
-                    </tr>
-                % }
-                <tr>
-                    <td class="component">
-                        <div>
-                            %= link_to $module->{name} => url_for('src_step', stepid => 1, moduleid => $module->{name}, testid => $testid)
-                        </div>
-                        <div class="flags">
-                            % if ($module->{fatal}) {
-                                <i class="flag fa fa-plug" title="Fatal: testsuite is aborted if this test fails"></i>
-                            % } elsif (!$module->{important})
-                            % {
-                                <i class="flag fa fa-minus" title="Ignore failure: failure or soft failure of this test does not impact overall job result"></i>
-                            % }
-                            % if  ($module->{milestone}) {
-                                <i class="flag fa fa-anchor" title="Milestone: snapshot the state after this test for restoring"></i>
-                            % }
-                        </div>
-                    </td>
-                    <td class="result <%= css_for($module) %>">
-                        %= format_result($module)
-                    </td>
-                    <td class="links">
-                        % for my $step (@{$module->{details}}) {
-                            % my $title = $step->{text} ? $step->{title} : $step->{name} // '';
-                            % my $source = $step->{_source};
-                            % my $is_parser_result =  $source && $source eq 'parser' && $step->{text} && $step->{text_data};
-                            <div class="links_a <%= $is_parser_result ? 'text-result-container' : '' %>">
-                                % my $url   = url_for('step', moduleid => $module->{name}, stepid => $step->{num}, testid => $testid);
-                                % my $href  = "#step/$module->{name}/$step->{num}";
-                                % if ($is_parser_result) {
-                                    <span title="<%= $title %>" data-href="<%= $href %>" onclick="toggleTextPreview(this)" class="text-result">
-                                        <span class="resborder <%= "resborder_\L$step->{result}" %>"><%= $step->{text_data} %></span>
-                                    </span>
-                                % }
-                                % else {
-                                    <div class="fa fa-caret-up"></div>
-                                    <a class="no_hover" title="<%= $title %>" href="<%= $href %>" data-url="<%= $url %>">
-                                        % if ($step->{screenshot}) {
-                                            %= step_thumbnail($step, 60, $testid, $module->{name}, $step->{num})
-                                        % } elsif ($step->{audio}) {
-                                            <img src="<%= icon_url 'audio.svg' %>" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
-                                        % } elsif ($step->{text}) {
-                                            % if ($title eq 'wait_serial') {
-                                                <img src="<%= icon_url 'terminal.svg' %>" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
-                                            % }
-                                            % else {
-                                                <span class="resborder <%= "resborder_\L$step->{result}" %>" ><%= $step->{title} || 'Text' %></span>
-                                            % }
-                                        % }
-                                    </a>
-                                % }
-                          </div>
-                     % }
-                   </td>
-                </tr>
-             % }
-        </tbody>
-    </table>
-% }
+    <div class="col-sm-12 col-md-6 result-filter-container">
+        <input id="details-only-failed-filter" name="relevant" type="checkbox" value="1">
+        <label for="details-only-failed-filter">Show only failures</label>
+    </div>
+</form>
+%= include 'test/module_table'

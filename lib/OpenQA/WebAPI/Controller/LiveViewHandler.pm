@@ -309,9 +309,11 @@ sub send_session_info {
 sub query_os_autoinst_status {
     my ($self, $job_id) = @_;
 
-    $self->send_message_to_os_autoinst($job_id, {
-        cmd => 'status'
-    });
+    $self->send_message_to_os_autoinst(
+        $job_id,
+        {
+            cmd => 'status'
+        });
 }
 
 # removes the specified JavaScript transaction from the specified container/job
