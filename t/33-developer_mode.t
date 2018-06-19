@@ -228,6 +228,9 @@ subtest 'developer session visible in live view' => sub {
 
     my $developer_session_info = $driver->find_element('#developer_session')->get_text();
     like($developer_session_info, qr/opened by Demo/, 'user displayed');
+
+    my $developer_instructions_info = $driver->find_element('#developer-instructions')->get_text();
+    like($developer_session_info, qr/localhost at 91/, 'Developer instructions');
 };
 
 subtest 'session locked for other developers' => sub {
