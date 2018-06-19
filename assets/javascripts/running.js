@@ -74,6 +74,7 @@ function updateTestStatus(newStatus) {
             $("#details").append(newResults);
             console.log("Missing results table created");
             testStatus.running = newStatus.running;
+            updateDeveloperPanel();
             return;
         }
 
@@ -102,6 +103,7 @@ function updateTestStatus(newStatus) {
                 tr.replaceWith(new_trs.eq(tr.index()));
             });
             testStatus.running = newStatus.running;
+            updateDeveloperPanel();
         }
 
     }).fail(function() {
@@ -356,8 +358,15 @@ function setupDeveloperPanel() {
 
 // updates the developer panel, must be called after modifying developerMode
 function updateDeveloperPanel() {
-    // set panel body visibility
+    // set panel visibility
     var panel = $('#developer-panel');
+    if (!testStatus.running) {
+        // hide entire panel if test is not running anymore
+        panel.hide();
+        return;
+    }
+    panel.show();
+    // toggle panel body if its current state doesn't match developerMode.panelExpanded
     var panelBody = panel.find('.card-body');
     if (developerMode.panelExpanded !== developerMode.panelActuallyExpanded) {
         developerMode.panelActuallyExpanded = developerMode.panelExpanded;
@@ -503,6 +512,11 @@ function setupWebsocketConnection() {
         developerMode.isConnected = false;
         developerMode.ownSession = false;
         updateDeveloperPanel();
+
+        // skip reconnect if test is just not running anymore
+        if (!testStatus.running) {
+            return;
+        }
 
         // reconnect instantly in first connection error
         if (developerMode.reconnectAttempts === 0) {
