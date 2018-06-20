@@ -58,9 +58,15 @@ sub set_fake_cmd_srv_transaction {
 }
 
 # assigns (fake) development session JavaScript transactions for the specified job ID, used in the unit tests
-sub set_fake_java_script_transaction {
+sub set_fake_devel_java_script_transactions {
     my ($job_id, $fake_transactions) = @_;
     $devel_java_script_transactions_by_job{$job_id} = $fake_transactions;
+}
+
+# assigns (fake) status-only JavaScript transactions for the specified job ID, used in the unit tests
+sub set_fake_status_java_script_transactions {
+    my ($job_id, $fake_transactions) = @_;
+    $status_java_script_transactions_by_job{$job_id} = $fake_transactions;
 }
 
 # broadcasts a message to all JavaScript clients for the specified job ID
