@@ -38,10 +38,12 @@
     <table id="job_next_previous_table" class="overview table table-striped no-wrap" style="width: 100%"
       data-ajax-url="<%= url_for('job_next_previous_ajax', testid => $testid) %>">
         <thead>
-            <th></th>
-            <th>Result</th>
-            <th>Build</th>
-            <th>Finished</th>
+            <tr>
+                <th></th>
+                <th>Result</th>
+                <th>Build</th>
+                <th>Finished</th>
+            </tr>
         </thead>
     </table>
 </div>
