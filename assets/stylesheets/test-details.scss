@@ -165,7 +165,11 @@ span.resborder_na {
     width: 100%;
 
     .resborder {
-        width: 100%;
+        min-width: -moz-available;
+        min-width: -webkit-fill-available;
+        min-width: fill-available;
+        min-width: stretch;
+        max-width: 100%;
         height: auto;
         font-family: monospace;
         text-align: left;
@@ -177,6 +181,7 @@ span.resborder_na {
         background-color: #e8f1f1;
         max-height: 3.5rem;
         white-space: pre-wrap;
+        overflow-wrap: break-word;
     }
 }
 .current_preview .text-result .resborder {
