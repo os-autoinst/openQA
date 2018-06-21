@@ -29,6 +29,7 @@ use OpenQA::Utils;
 use OpenQA::Test::Database;
 use OpenQA::ResourceAllocator;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
+use OpenQA::Jobs::Constants;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
@@ -316,7 +317,7 @@ sub test_barrier_destroy {
 test_barrier_destroy($_, "jA")
   && test_barrier_destroy($_, "jB")
   && test_barrier_destroy($_, "jC")
-  for OpenQA::Schema::Result::Jobs::NOT_OK_RESULTS();
+  for OpenQA::Jobs::Constants::NOT_OK_RESULTS();
 
 
 # create barrier succeeds with 3 expected tasks

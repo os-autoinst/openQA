@@ -186,18 +186,18 @@ subtest 'chained parent fails -> chilren are canceled (skipped)' => sub {
     $settingsC{_START_AFTER_JOBS} = [$jobB->id];
     my $jobC = _job_create(\%settingsC);
 
-    $jobA->state(OpenQA::Schema::Result::Jobs::RUNNING);
+    $jobA->state(OpenQA::Jobs::Constants::RUNNING);
     $jobA->update;
 
     # set A as failed and reload B, C from database
-    $jobA->done(result => OpenQA::Schema::Result::Jobs::FAILED);
+    $jobA->done(result => OpenQA::Jobs::Constants::FAILED);
     $jobB->discard_changes;
     $jobC->discard_changes;
 
-    is($jobB->state,  OpenQA::Schema::Result::Jobs::CANCELLED, 'B state is cancelled');
-    is($jobC->state,  OpenQA::Schema::Result::Jobs::CANCELLED, 'C state is cancelled');
-    is($jobB->result, OpenQA::Schema::Result::Jobs::SKIPPED,   'B result is skipped');
-    is($jobC->result, OpenQA::Schema::Result::Jobs::SKIPPED,   'C result is skipped');
+    is($jobB->state,  OpenQA::Jobs::Constants::CANCELLED, 'B state is cancelled');
+    is($jobC->state,  OpenQA::Jobs::Constants::CANCELLED, 'C state is cancelled');
+    is($jobB->result, OpenQA::Jobs::Constants::SKIPPED,   'B result is skipped');
+    is($jobC->result, OpenQA::Jobs::Constants::SKIPPED,   'C result is skipped');
 };
 
 subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => sub {
@@ -239,22 +239,22 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
     my $w2 = $schema->resultset('Workers')->find($c->_register($schema, "host", "2", $workercaps));
     my $w3 = $schema->resultset('Workers')->find($c->_register($schema, "host", "3", $workercaps));
 
-    $jobA->state(OpenQA::Schema::Result::Jobs::RUNNING);
+    $jobA->state(OpenQA::Jobs::Constants::RUNNING);
     $w1->job($jobA);
-    $jobB->state(OpenQA::Schema::Result::Jobs::RUNNING);
+    $jobB->state(OpenQA::Jobs::Constants::RUNNING);
     $w2->job($jobB);
-    $jobC->state(OpenQA::Schema::Result::Jobs::RUNNING);
+    $jobC->state(OpenQA::Jobs::Constants::RUNNING);
     $w3->job($jobC);
     $_->update for ($jobA, $jobB, $jobC, $w1, $w2, $w3);
 
     # set A as failed and reload B, C from database
     @OpenQA::WebSockets::Server::commands = ();
-    $jobA->done(result => OpenQA::Schema::Result::Jobs::FAILED);
+    $jobA->done(result => OpenQA::Jobs::Constants::FAILED);
     $jobB->discard_changes;
     $jobC->discard_changes;
 
-    is($jobB->result, OpenQA::Schema::Result::Jobs::PARALLEL_FAILED, 'B result is parallel failed');
-    is($jobC->result, OpenQA::Schema::Result::Jobs::PARALLEL_FAILED, 'C result is parallel failed');
+    is($jobB->result, OpenQA::Jobs::Constants::PARALLEL_FAILED, 'B result is parallel failed');
+    is($jobC->result, OpenQA::Jobs::Constants::PARALLEL_FAILED, 'C result is parallel failed');
     is_deeply(\@OpenQA::WebSockets::Server::commands, [qw(cancel cancel)], 'both cancel commands issued');
 };
 
@@ -280,21 +280,21 @@ subtest 'chained parent fails -> parallel parents of children are cancelled (ski
     $settingsC{_PARALLEL_JOBS} = [$jobB->id, $jobC->id];
     my $jobD = _job_create(\%settingsD);
 
-    $jobA->state(OpenQA::Schema::Result::Jobs::RUNNING);
+    $jobA->state(OpenQA::Jobs::Constants::RUNNING);
     $jobA->update;
 
     # set A as failed and reload B, C and D from database
-    $jobA->done(result => OpenQA::Schema::Result::Jobs::FAILED);
+    $jobA->done(result => OpenQA::Jobs::Constants::FAILED);
     $jobB->discard_changes;
     $jobC->discard_changes;
     $jobD->discard_changes;
 
-    is($jobB->state,  OpenQA::Schema::Result::Jobs::CANCELLED, 'B state is cancelled');
-    is($jobC->state,  OpenQA::Schema::Result::Jobs::CANCELLED, 'C state is cancelled');
-    is($jobD->state,  OpenQA::Schema::Result::Jobs::CANCELLED, 'D state is cancelled');
-    is($jobB->result, OpenQA::Schema::Result::Jobs::SKIPPED,   'B result is skipped');
-    is($jobC->result, OpenQA::Schema::Result::Jobs::SKIPPED,   'C result is skipped');
-    is($jobD->result, OpenQA::Schema::Result::Jobs::SKIPPED,   'D result is skipped');
+    is($jobB->state,  OpenQA::Jobs::Constants::CANCELLED, 'B state is cancelled');
+    is($jobC->state,  OpenQA::Jobs::Constants::CANCELLED, 'C state is cancelled');
+    is($jobD->state,  OpenQA::Jobs::Constants::CANCELLED, 'D state is cancelled');
+    is($jobB->result, OpenQA::Jobs::Constants::SKIPPED,   'B result is skipped');
+    is($jobC->result, OpenQA::Jobs::Constants::SKIPPED,   'C result is skipped');
+    is($jobD->result, OpenQA::Jobs::Constants::SKIPPED,   'D result is skipped');
 };
 
 done_testing();

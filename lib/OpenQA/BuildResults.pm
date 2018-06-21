@@ -16,6 +16,7 @@
 
 package OpenQA::BuildResults;
 use strict;
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
 use Date::Format;
@@ -41,35 +42,35 @@ sub count_job {
     my ($job, $jr, $labels) = @_;
 
     $jr->{total}++;
-    if ($job->state eq OpenQA::Schema::Result::Jobs::DONE) {
-        if ($job->result eq OpenQA::Schema::Result::Jobs::PASSED) {
+    if ($job->state eq OpenQA::Jobs::Constants::DONE) {
+        if ($job->result eq OpenQA::Jobs::Constants::PASSED) {
             $jr->{passed}++;
             return;
         }
-        if ($job->result eq OpenQA::Schema::Result::Jobs::SOFTFAILED) {
+        if ($job->result eq OpenQA::Jobs::Constants::SOFTFAILED) {
             $jr->{softfailed}++;
             return;
         }
-        if (   $job->result eq OpenQA::Schema::Result::Jobs::FAILED
-            || $job->result eq OpenQA::Schema::Result::Jobs::INCOMPLETE)
+        if (   $job->result eq OpenQA::Jobs::Constants::FAILED
+            || $job->result eq OpenQA::Jobs::Constants::INCOMPLETE)
         {
             $jr->{failed}++;
             $jr->{labeled}++ if $labels->{$job->id};
             return;
         }
-        if (grep { $job->result eq $_ } OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS) {
+        if (grep { $job->result eq $_ } OpenQA::Jobs::Constants::INCOMPLETE_RESULTS) {
             $jr->{skipped}++;
             return;
         }
     }
-    if (   $job->state eq OpenQA::Schema::Result::Jobs::CANCELLED
-        || $job->state eq OpenQA::Schema::Result::Jobs::OBSOLETED)
+    if (   $job->state eq OpenQA::Jobs::Constants::CANCELLED
+        || $job->state eq OpenQA::Jobs::Constants::OBSOLETED)
     {
         $jr->{skipped}++;
         return;
     }
     my $state = $job->state;
-    if (grep { /$state/ } (OpenQA::Schema::Result::Jobs::PENDING_STATES)) {
+    if (grep { /$state/ } (OpenQA::Jobs::Constants::PENDING_STATES)) {
         $jr->{unfinished}++;
         return;
     }

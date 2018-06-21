@@ -19,12 +19,13 @@
 use strict;
 use OpenQA::Schema;
 use DBIx::Class::DeploymentHandler;
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 
 sub {
     my $schema = shift;
 
-    my $jobs = $schema->resultset("Jobs")->search({state => [OpenQA::Schema::Result::Jobs::FINAL_STATES]});
+    my $jobs = $schema->resultset("Jobs")->search({state => [OpenQA::Jobs::Constants::FINAL_STATES]});
 
     while (my $job = $jobs->next) {
         if (!$job->t_finished) {

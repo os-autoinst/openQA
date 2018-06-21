@@ -27,6 +27,7 @@ use parent 'Mojolicious::Plugin';
 use IPC::Run;
 use Cpanel::JSON::XS;
 use Mojo::IOLoop;
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 
 my @job_events     = qw(job_create job_delete job_cancel job_duplicate job_restart job_update_result job_done);
@@ -84,7 +85,7 @@ sub on_job_event {
     $event_data->{remaining} = $app->db->resultset('Jobs')->search(
         {
             'me.BUILD' => $build,
-            state      => [OpenQA::Schema::Result::Jobs::PENDING_STATES],
+            state      => [OpenQA::Jobs::Constants::PENDING_STATES],
         })->count;
     # add various useful properties for consumers if not there already
     $event_data->{BUILD}   //= $build;

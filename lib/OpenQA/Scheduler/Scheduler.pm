@@ -33,6 +33,7 @@ use DateTime;
 use File::Temp 'tempdir';
 use Mojo::URL;
 use Try::Tiny;
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
 use Scalar::Util 'weaken';
@@ -102,11 +103,11 @@ sub _prefer_parallel {
           {
             -or => [
                 id    => {-in => $allocating},
-                state => OpenQA::Schema::Result::Jobs::RUNNING,
+                state => OpenQA::Jobs::Constants::RUNNING,
             ],
           }
         : {
-            state => OpenQA::Schema::Result::Jobs::RUNNING,
+            state => OpenQA::Jobs::Constants::RUNNING,
         })->get_column('id')->as_query;
 
     # get scheduled children of running jobs
@@ -114,7 +115,7 @@ sub _prefer_parallel {
         {
             dependency    => OpenQA::Schema::Result::JobDependencies::PARALLEL,
             parent_job_id => {-in => $running},
-            state         => OpenQA::Schema::Result::Jobs::SCHEDULED
+            state         => OpenQA::Jobs::Constants::SCHEDULED
         },
         {
             join => 'child',
@@ -138,7 +139,7 @@ sub _prefer_parallel {
         {
             dependency   => OpenQA::Schema::Result::JobDependencies::PARALLEL,
             child_job_id => {-in => $children->get_column('child_job_id')->as_query},
-            state        => OpenQA::Schema::Result::Jobs::SCHEDULED,
+            state        => OpenQA::Jobs::Constants::SCHEDULED,
             child_job_id => {-not_in => $allocating},
         },
         {
@@ -160,7 +161,7 @@ sub _prefer_parallel {
             {
                 dependency   => OpenQA::Schema::Result::JobDependencies::PARALLEL,
                 child_job_id => {-in => $parents->get_column('parent_job_id')->as_query},
-                state        => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                state        => OpenQA::Jobs::Constants::SCHEDULED,
             },
             {
                 join => 'parent',
@@ -486,11 +487,11 @@ sub _build_search_query {
             -or => [
                 -and => {
                     dependency => OpenQA::Schema::Result::JobDependencies::CHAINED,
-                    state      => {-not_in => [OpenQA::Schema::Result::Jobs::FINAL_STATES]},
+                    state      => {-not_in => [OpenQA::Jobs::Constants::FINAL_STATES]},
                 },
                 -and => {
                     dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
-                    state      => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                    state      => OpenQA::Jobs::Constants::SCHEDULED,
                     (parent_job_id => {-not_in => $allocating}) x !!(@$allocating > 0),
                 }
             ],
@@ -518,7 +519,7 @@ sub _build_search_query {
         # check all worker classes of scheduled jobs and filter out those not applying
         my $scheduled = schema->resultset("Jobs")->search(
             {
-                state => OpenQA::Schema::Result::Jobs::SCHEDULED
+                state => OpenQA::Jobs::Constants::SCHEDULED
             })->get_column('id');
 
         my $not_applying_jobs = schema->resultset("JobSettings")->search(
@@ -548,7 +549,7 @@ It accepts a worker id and a state to update along with the job.
 sub _job_allocate {
     my $jobid    = shift;
     my $workerid = shift;
-    my $state    = shift // OpenQA::Schema::Result::Jobs::RUNNING;
+    my $state    = shift // OpenQA::Jobs::Constants::RUNNING;
 
     my $job = schema->resultset("Jobs")->search(
         {
@@ -561,7 +562,7 @@ sub _job_allocate {
         $job->update(
             {
                 state => $state,
-                (t_started => now()) x !!($state eq OpenQA::Schema::Result::Jobs::RUNNING),
+                (t_started => now()) x !!($state eq OpenQA::Jobs::Constants::RUNNING),
                 assigned_worker_id => $worker->id,
             });
         $worker->job($job);
@@ -588,7 +589,7 @@ sub filter_jobs {
 
     try {
         my @running = map { $_->to_hash(assets => 1) }
-          schema->resultset("Jobs")->search({state => OpenQA::Schema::Result::Jobs::RUNNING})->all;
+          schema->resultset("Jobs")->search({state => OpenQA::Jobs::Constants::RUNNING})->all;
 
         # Build adjacent list with the tests that would have been assigned
         $allocated_tests->{$_->{test} . join(".", @{$_->{settings}}{@k})}++ for (@jobs, @running);
@@ -704,7 +705,7 @@ sub job_grab {
                     # Build the search query.
                     my $search = schema->resultset("Jobs")->search(
                         {
-                            state => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                            state => OpenQA::Jobs::Constants::SCHEDULED,
                             id    => [_build_search_query($worker, $allocating, $allocate)],
                         },
                         {order_by => {-asc => [qw(priority id)]}});
@@ -713,7 +714,7 @@ sub job_grab {
                     # Get first n results, first result or all of them.
                     @jobs = $job_n > 0 ? $search->slice(0, $job_n) : $job_n == 0 ? $search->all() : ($search->first());
 
-                    $worker = _job_allocate($jobs[0]->id, $worker->id(), OpenQA::Schema::Result::Jobs::RUNNING)
+                    $worker = _job_allocate($jobs[0]->id, $worker->id(), OpenQA::Jobs::Constants::RUNNING)
                       if ($allocate && $jobs[0]);
 
                 });
@@ -739,7 +740,7 @@ sub job_grab {
       unless ($allocate);
 #return scalar(@jobs) == 0 ? () : $job_n!=1 ? map {$_->to_hash(assets => 1)} @jobs : $jobs[0] ?  $jobs[0]->to_hash(assets => 1) : {}  unless ($allocate);
 
-    return {} unless ($worker && $worker->job && $worker->job->state eq OpenQA::Schema::Result::Jobs::RUNNING);
+    return {} unless ($worker && $worker->job && $worker->job->state eq OpenQA::Jobs::Constants::RUNNING);
 
     my $job = $worker->job;
     log_debug("Got job " . $job->id());

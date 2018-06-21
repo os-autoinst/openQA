@@ -20,6 +20,7 @@ use Try::Tiny;
 use Mojo::URL;
 use Mojo::Base 'OpenQA::WebAPI::Controller::Developer';
 use OpenQA::Utils;
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use JSON 'decode_json';
 

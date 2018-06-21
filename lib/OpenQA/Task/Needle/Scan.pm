@@ -15,6 +15,7 @@
 
 package OpenQA::Task::Needle::Scan;
 use Mojo::Base 'Mojolicious::Plugin';
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
 use Mojo::URL;

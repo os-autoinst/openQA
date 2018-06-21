@@ -23,6 +23,7 @@ use Mojo::File 'path';
 use Cpanel::JSON::XS qw(encode_json decode_json);
 use OpenQA::Utils;
 use OpenQA::IPC;
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 
 sub init {

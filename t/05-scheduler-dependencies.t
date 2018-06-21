@@ -34,6 +34,7 @@ use OpenQA::Test::Database;
 use Test::Mojo;
 use Test::More;
 use Test::Warnings;
+use OpenQA::Jobs::Constants;
 
 my $schema = OpenQA::Test::Database->new->create();
 
@@ -479,7 +480,7 @@ my $jobJ = _job_create(\%settingsJ, [$jobH->id]);
 my $jobL = _job_create(\%settingsL, [$jobJ->id]);
 
 # hack jobs to appear running to scheduler
-_jobs_update_state([$jobH, $jobJ, $jobK, $jobL], OpenQA::Schema::Result::Jobs::RUNNING);
+_jobs_update_state([$jobH, $jobJ, $jobK, $jobL], OpenQA::Jobs::Constants::RUNNING);
 
 # expected output after cloning D, all jobs scheduled
 # H2 <-(parallel) J2
@@ -528,8 +529,8 @@ my $jobR = _job_create(\%settingsR, undef, [$jobQ->id]);
 my $jobT = _job_create(\%settingsT, [$jobW->id, $jobU->id, $jobR->id], [$jobQ->id]);
 
 # hack jobs to appear to scheduler in desired state
-_jobs_update_state([$jobQ], OpenQA::Schema::Result::Jobs::DONE);
-_jobs_update_state([$jobW, $jobU, $jobR, $jobT], OpenQA::Schema::Result::Jobs::RUNNING);
+_jobs_update_state([$jobQ], OpenQA::Jobs::Constants::DONE);
+_jobs_update_state([$jobW, $jobU, $jobR, $jobT], OpenQA::Jobs::Constants::RUNNING);
 
 # duplicate U
 my $jobU2 = $jobU->auto_duplicate;
@@ -599,7 +600,7 @@ my $jobO = _job_create(\%settingsO, [$jobP->id]);
 my $jobI = _job_create(\%settingsI, [$jobO->id]);
 
 # hack jobs to appear to scheduler in desired state
-_jobs_update_state([$jobP, $jobO, $jobI], OpenQA::Schema::Result::Jobs::DONE);
+_jobs_update_state([$jobP, $jobO, $jobI], OpenQA::Jobs::Constants::DONE);
 
 # cloning O gets to expected state
 #
@@ -628,9 +629,9 @@ $jobO2 = $schema->resultset('Jobs')->search({id => $jobO2->{id}})->single;
 $jobP2 = $schema->resultset('Jobs')->search({id => $jobP2->{id}})->single;
 $jobI2 = $schema->resultset('Jobs')->search({id => $jobI2->{id}})->single;
 # set P2 running and O2 done
-_jobs_update_state([$jobP2], OpenQA::Schema::Result::Jobs::RUNNING);
-_jobs_update_state([$jobO2], OpenQA::Schema::Result::Jobs::DONE);
-_jobs_update_state([$jobI2], OpenQA::Schema::Result::Jobs::DONE);
+_jobs_update_state([$jobP2], OpenQA::Jobs::Constants::RUNNING);
+_jobs_update_state([$jobO2], OpenQA::Jobs::Constants::DONE);
+_jobs_update_state([$jobI2], OpenQA::Jobs::Constants::DONE);
 
 # cloning I gets to expected state:
 # P3 <-(parallel) O3 <-(parallel) I2
@@ -664,14 +665,10 @@ $jobC = _job_create(\%settingsC, undef, [$jobA->id]);
 $jobD = _job_create(\%settingsD, undef, [$jobA->id]);
 
 # hack jobs to appear done to scheduler
-_jobs_update_state(
-    [$jobA, $jobB, $jobC, $jobD],
-    OpenQA::Schema::Result::Jobs::DONE,
-    OpenQA::Schema::Result::Jobs::PASSED
-);
+_jobs_update_state([$jobA, $jobB, $jobC, $jobD], OpenQA::Jobs::Constants::DONE, OpenQA::Jobs::Constants::PASSED);
 
 # only job B failed as incomplete
-$jobB->result(OpenQA::Schema::Result::Jobs::INCOMPLETE);
+$jobB->result(OpenQA::Jobs::Constants::INCOMPLETE);
 $jobB->update;
 
 # situation, all chained and done, B is incomplete:
@@ -705,7 +702,7 @@ is_deeply($jobD_h->{parents}->{Chained}, [$jobA->id], 'jobD has jobA as chained 
 is($jobD_h->{settings}{TEST}, $jobD->TEST, 'jobBc test and jobB test are equal');
 
 # hack jobs to appear running to scheduler
-$jobB->clone->state(OpenQA::Schema::Result::Jobs::RUNNING);
+$jobB->clone->state(OpenQA::Jobs::Constants::RUNNING);
 $jobB->clone->update;
 
 # clone A
@@ -715,7 +712,7 @@ $jobA2 = $jobA->auto_duplicate;
 ok($jobA2, 'jobA duplicated');
 $jobA->discard_changes;
 
-$jobA->clone->state(OpenQA::Schema::Result::Jobs::RUNNING);
+$jobA->clone->state(OpenQA::Jobs::Constants::RUNNING);
 $jobA->clone->update;
 $jobA2 = $jobA->clone->auto_duplicate;
 ok($jobA2, 'jobA->clone duplicated');
@@ -765,8 +762,8 @@ $jobC = _job_create(\%settingsC, undef, [$jobA->id]);
 $jobD = _job_create(\%settingsD, undef, [$jobA->id]);
 
 # hack jobs to appear done to scheduler
-_jobs_update_state([$jobA], OpenQA::Schema::Result::Jobs::DONE, OpenQA::Schema::Result::Jobs::PASSED);
-_jobs_update_state([$jobB, $jobC, $jobD], OpenQA::Schema::Result::Jobs::RUNNING);
+_jobs_update_state([$jobA], OpenQA::Jobs::Constants::DONE, OpenQA::Jobs::Constants::PASSED);
+_jobs_update_state([$jobB, $jobC, $jobD], OpenQA::Jobs::Constants::RUNNING);
 
 $jobA2 = $jobA->auto_duplicate;
 $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
@@ -780,7 +777,7 @@ for ($jobB, $jobC, $jobD) {
 # set jobA2 as running and clone it
 $jobA2 = $jobA->clone;
 is($jobA2->id, $jobA2->id, 'jobA2 is indeed jobA clone');
-$jobA2->state(OpenQA::Schema::Result::Jobs::RUNNING);
+$jobA2->state(OpenQA::Jobs::Constants::RUNNING);
 $jobA2->update;
 my $jobA3 = $jobA2->auto_duplicate;
 ok($jobA3, "cloned A2");
@@ -811,8 +808,8 @@ my $duplicate_test = sub {
     $jobD = _job_create(\%settingsD, [$jobB->id], [$jobA->id]);
 
     # hack jobs to appear done to scheduler
-    _jobs_update_state([$jobA], OpenQA::Schema::Result::Jobs::DONE, OpenQA::Schema::Result::Jobs::PASSED);
-    _jobs_update_state([$jobB, $jobC, $jobD], OpenQA::Schema::Result::Jobs::DONE, OpenQA::Schema::Result::Jobs::FAILED);
+    _jobs_update_state([$jobA], OpenQA::Jobs::Constants::DONE, OpenQA::Jobs::Constants::PASSED);
+    _jobs_update_state([$jobB, $jobC, $jobD], OpenQA::Jobs::Constants::DONE, OpenQA::Jobs::Constants::FAILED);
 
     $jobA2 = $jobA->auto_duplicate;
     $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
@@ -834,7 +831,7 @@ sub _job_create_set_done {
     my ($settings, $state) = @_;
     my $job = _job_create($settings);
     # hack jobs to appear done to scheduler
-    _jobs_update_state([$job], $state, OpenQA::Schema::Result::Jobs::PASSED);
+    _jobs_update_state([$job], $state, OpenQA::Jobs::Constants::PASSED);
     return $job;
 }
 
@@ -874,23 +871,23 @@ my $slepos_test_workers = sub {
     $settingsT{TEST} = 'Terminal';
 
     # Support server
-    my $jobSUS = _job_create_set_done(\%settingsSUS, OpenQA::Schema::Result::Jobs::DONE);
+    my $jobSUS = _job_create_set_done(\%settingsSUS, OpenQA::Jobs::Constants::DONE);
     # Admin Server 1
     $settingsAS{_PARALLEL_JOBS} = [$jobSUS->id];
-    my $jobAS = _job_create_set_done(\%settingsAS, OpenQA::Schema::Result::Jobs::DONE);
+    my $jobAS = _job_create_set_done(\%settingsAS, OpenQA::Jobs::Constants::DONE);
     # Image server 2
     $settingsIS2{_START_AFTER_JOBS} = [$jobAS->id];
-    my $jobIS2 = _job_create_set_done(\%settingsIS2, OpenQA::Schema::Result::Jobs::DONE);
+    my $jobIS2 = _job_create_set_done(\%settingsIS2, OpenQA::Jobs::Constants::DONE);
     # Image server
     $settingsIS{_PARALLEL_JOBS}    = [$jobSUS->id];
     $settingsIS{_START_AFTER_JOBS} = [$jobAS->id];
-    my $jobIS = _job_create_set_done(\%settingsIS, OpenQA::Schema::Result::Jobs::CANCELLED);
+    my $jobIS = _job_create_set_done(\%settingsIS, OpenQA::Jobs::Constants::CANCELLED);
     # Branch server
     $settingsBS{_PARALLEL_JOBS} = [$jobAS->id, $jobSUS->id];
-    my $jobBS = _job_create_set_done(\%settingsBS, OpenQA::Schema::Result::Jobs::DONE);
+    my $jobBS = _job_create_set_done(\%settingsBS, OpenQA::Jobs::Constants::DONE);
     # Terminal
     $settingsT{_PARALLEL_JOBS} = [$jobBS->id];
-    my $jobT = _job_create_set_done(\%settingsT, OpenQA::Schema::Result::Jobs::DONE);
+    my $jobT = _job_create_set_done(\%settingsT, OpenQA::Jobs::Constants::DONE);
     # clone terminal
     $jobT->duplicate;
     $_->discard_changes for ($jobSUS, $jobAS, $jobIS, $jobIS2, $jobBS, $jobT);
@@ -905,7 +902,7 @@ my $slepos_test_workers = sub {
 };
 
 # This enforces order in the processing of the nodes, to test PR#1623
-my $unordered_sort = \&OpenQA::Schema::Result::Jobs::search_for;
+my $unordered_sort = \&OpenQA::Jobs::Constants::search_for;
 my $ordered_sort   = sub {
     return $unordered_sort->(@_)->search(undef, {order_by => {-desc => 'id'}});
 };
@@ -913,9 +910,9 @@ my $ordered_sort   = sub {
 my %tests = ('duplicate' => $duplicate_test, 'slepos test workers' => $slepos_test_workers);
 while (my ($k, $v) = each %tests) {
     no warnings 'redefine';
-    *OpenQA::Schema::Result::Jobs::search_for = $unordered_sort;
+    *OpenQA::Jobs::Constants::search_for = $unordered_sort;
     subtest "$k unordered" => $v;
-    *OpenQA::Schema::Result::Jobs::search_for = $ordered_sort;
+    *OpenQA::Jobs::Constants::search_for = $ordered_sort;
     subtest "$k ordered" => $v;
 }
 

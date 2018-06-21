@@ -19,6 +19,7 @@
 use strict;
 use OpenQA::Schema;
 use DBIx::Class::DeploymentHandler;
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 
 sub {
@@ -26,14 +27,14 @@ sub {
 
     my $jobswithfails = $schema->resultset('JobModules')->search(
         {
-            result    => OpenQA::Schema::Result::Jobs::FAILED,
+            result    => OpenQA::Jobs::Constants::FAILED,
             important => 0
         })->get_column('job_id');
     my $jobs = $schema->resultset('Jobs')->search(
         {
             id     => {-in => $jobswithfails->as_query},
-            result => OpenQA::Schema::Result::Jobs::PASSED
+            result => OpenQA::Jobs::Constants::PASSED
         });
-    $jobs->update({result => OpenQA::Schema::Result::Jobs::SOFTFAILED});
+    $jobs->update({result => OpenQA::Jobs::Constants::SOFTFAILED});
   }
 

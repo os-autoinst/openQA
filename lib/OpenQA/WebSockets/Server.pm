@@ -290,11 +290,11 @@ sub _message {
                     log_debug('Possibly worker ' . $w->id() . ' should be freed.');
                     return unless ($w && $w->job);
                     return $w->job->incomplete_and_duplicate
-                      if ( $w->job->result eq OpenQA::Schema::Result::Jobs::NONE
-                        && $w->job->state eq OpenQA::Schema::Result::Jobs::RUNNING
+                      if ( $w->job->result eq OpenQA::Jobs::Constants::NONE
+                        && $w->job->state eq OpenQA::Jobs::Constants::RUNNING
                         && $current_worker_status eq "free");
                     return $w->job->reschedule_state
-                      if ($w->job->state eq OpenQA::Schema::Result::Jobs::ASSIGNED);    # Was a stale job
+                      if ($w->job->state eq OpenQA::Jobs::Constants::ASSIGNED);    # Was a stale job
                 })
               if (
                 # Check if worker is doing a job for another WebUI
@@ -314,15 +314,15 @@ sub _message {
               # Or if it declares itself free.
               ($current_worker_status && $current_worker_status eq "free");
 
-            return unless $jobid && $job_status && $job_status eq OpenQA::Schema::Result::Jobs::RUNNING;
+            return unless $jobid && $job_status && $job_status eq OpenQA::Jobs::Constants::RUNNING;
             app->schema->txn_do(
                 sub {
                     my $job = app->schema->resultset("Jobs")->find($jobid);
                     return
                       if (
                         (
-                            $job && (($job->state eq OpenQA::Schema::Result::Jobs::RUNNING)
-                                || ($job->result ne OpenQA::Schema::Result::Jobs::NONE)))
+                            $job && (($job->state eq OpenQA::Jobs::Constants::RUNNING)
+                                || ($job->result ne OpenQA::Jobs::Constants::NONE)))
                         || !$job
                       );
                     $job->set_running();
@@ -359,7 +359,7 @@ sub _get_stale_worker_jobs {
     my $dt = DateTime->from_epoch(epoch => time() - $threshold, time_zone => 'UTC');
 
     my %cond = (
-        state              => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
+        state              => [OpenQA::Jobs::Constants::EXECUTION_STATES],
         'worker.t_updated' => {'<' => $dtf->format_datetime($dt)},
         'worker.id'        => {-not_in => [sort @ok_workers]});
     my %attrs = (join => 'worker', order_by => 'worker.id desc');
@@ -372,7 +372,7 @@ sub _is_job_considered_dead {
 
     # much bigger timeout for uploading jobs; while uploading files,
     # worker process is blocked and cannot send status updates
-    if ($job->state eq OpenQA::Schema::Result::Jobs::UPLOADING) {
+    if ($job->state eq OpenQA::Jobs::Constants::UPLOADING) {
         my $delta = DateTime->now()->epoch() - $job->worker->t_updated->epoch();
         log_debug("uploading worker not updated for $delta seconds " . $job->id);
         return ($delta > 1000);
@@ -395,7 +395,7 @@ sub _workers_checker {
                 for my $job ($stale_jobs->all) {
                     next unless _is_job_considered_dead($job);
 
-                    $job->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
+                    $job->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
                     # XXX: auto_duplicate was killing ws server in production
                     my $res = $job->auto_duplicate;
                     if ($res) {
@@ -419,7 +419,7 @@ sub _workers_checker {
    #                 # XXX: not needed as for now - check all job in running state with statuses received by the workers
    #                 my @running_jobs
    #                   = OpenQA::Schema::connect_db->resultset("Jobs")
-   #                   ->search({state => OpenQA::Schema::Result::Jobs::RUNNING}, {join => 'worker'})->all();
+   #                   ->search({state => OpenQA::Jobs::Constants::RUNNING}, {join => 'worker'})->all();
    #                 # If there is neither a worker assigned or we have a mismatch from the statuses
    #                 # received by the workers we set it as incomplete and duplicate it
    #                 foreach my $j (@running_jobs) {
@@ -434,7 +434,7 @@ sub _workers_checker {
    #                             && $worker_status->{$j->worker->id()}->{status} eq "free"))
    #                     {
    #                         log_warning(sprintf('Stale running job %d detected', $j->id));
-   #                         $j->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
+   #                         $j->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
    #                         my $res = $j->auto_duplicate;
    #                         if ($res) {
    #                             log_warning(

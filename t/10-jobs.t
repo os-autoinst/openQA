@@ -91,14 +91,14 @@ subtest 'job with all modules passed => overall is passsed' => sub {
     }
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
-    is($job->passed_module_count, 4, 'number of passed modules incremented');
-    is($job->softfailed_module_count, 0, 'number of softfailed modules not incremented');
-    is($job->failed_module_count,     0, 'number of failed modules not incremented');
-    is($job->skipped_module_count,    0, 'number of skipped modules not incremented');
+    is($job->result,                  OpenQA::Jobs::Constants::PASSED, 'job result is passed');
+    is($job->passed_module_count,     4,                               'number of passed modules incremented');
+    is($job->softfailed_module_count, 0,                               'number of softfailed modules not incremented');
+    is($job->failed_module_count,     0,                               'number of failed modules not incremented');
+    is($job->skipped_module_count,    0,                               'number of skipped modules not incremented');
 };
 
 subtest 'job with one skipped module => overall is failed' => sub {
@@ -113,14 +113,14 @@ subtest 'job with one skipped module => overall is failed' => sub {
     }
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
-    is($job->passed_module_count, 4, 'number of passed modules incremented');
-    is($job->softfailed_module_count, 0, 'number of softfailed modules not incremented');
-    is($job->failed_module_count,     0, 'number of failed modules not incremented');
-    is($job->skipped_module_count,    1, 'number of skipped modules incremented');
+    is($job->result,                  OpenQA::Jobs::Constants::FAILED, 'job result is failed');
+    is($job->passed_module_count,     4,                               'number of passed modules incremented');
+    is($job->softfailed_module_count, 0,                               'number of softfailed modules not incremented');
+    is($job->failed_module_count,     0,                               'number of failed modules not incremented');
+    is($job->skipped_module_count,    1,                               'number of skipped modules incremented');
 };
 
 subtest 'job with at least one module failed => overall is failed' => sub {
@@ -133,14 +133,14 @@ subtest 'job with at least one module failed => overall is failed' => sub {
     }
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
-    is($job->passed_module_count, 3, 'number of passed modules incremented');
-    is($job->softfailed_module_count, 0, 'number of softfailed modules not incremented');
-    is($job->failed_module_count,     1, 'number of failed modules incremented');
-    is($job->skipped_module_count,    0, 'number of skipped modules not incremented');
+    is($job->result,                  OpenQA::Jobs::Constants::FAILED, 'job result is failed');
+    is($job->passed_module_count,     3,                               'number of passed modules incremented');
+    is($job->softfailed_module_count, 0,                               'number of softfailed modules not incremented');
+    is($job->failed_module_count,     1,                               'number of failed modules incremented');
+    is($job->skipped_module_count,    0,                               'number of skipped modules not incremented');
 };
 
 subtest 'job with at least one softfailed and rest passed => overall is softfailed' => sub {
@@ -155,14 +155,14 @@ subtest 'job with at least one softfailed and rest passed => overall is softfail
     $job->update_module('d', {result => 'ok', details => [], dents => 1});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::SOFTFAILED, 'job result is softfailed');
-    is($job->passed_module_count, 3, 'number of passed modules incremented');
-    is($job->softfailed_module_count, 1, 'number of softfailed modules incremented');
-    is($job->failed_module_count,     0, 'number of failed modules not incremented');
-    is($job->skipped_module_count,    0, 'number of skipped modules not incremented');
+    is($job->result,                  OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
+    is($job->passed_module_count,     3,                                   'number of passed modules incremented');
+    is($job->softfailed_module_count, 1,                                   'number of softfailed modules incremented');
+    is($job->failed_module_count,     0,                                   'number of failed modules not incremented');
+    is($job->skipped_module_count,    0,                                   'number of skipped modules not incremented');
 };
 
 subtest 'Create custom job module' => sub {
@@ -179,10 +179,10 @@ subtest 'Create custom job module' => sub {
     $job->custom_module($result => $output);
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
+    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
 
     is(($job->failed_modules)->[0], 'CUSTOM');
 };
@@ -201,10 +201,10 @@ subtest 'job with at least one failed module and one softfailed => overall is fa
     $job->update_module('d', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
+    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
 };
 
 subtest 'job with all modules passed and at least one ignore_failure failed => overall passed' => sub {
@@ -219,10 +219,10 @@ subtest 'job with all modules passed and at least one ignore_failure failed => o
     $job->update_module('d', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
+    is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
 };
 
 subtest
@@ -241,10 +241,10 @@ subtest
     $job->update_module('d', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::SOFTFAILED, 'job result is softfailed');
+    is($job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
   };
 
 subtest
@@ -261,10 +261,10 @@ subtest
     $job->update_module('d', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
+    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
   };
 
 subtest 'job with first ignore_failure failed and rest softfails => overall is softfailed' => sub {
@@ -277,10 +277,10 @@ subtest 'job with first ignore_failure failed and rest softfails => overall is s
     $job->update_module('b', {result => 'ok', details => [], dents => 1});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::SOFTFAILED, 'job result is softfailed');
+    is($job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
 };
 
 subtest 'job with one ignore_failure pass => overall is passed' => sub {
@@ -291,10 +291,10 @@ subtest 'job with one ignore_failure pass => overall is passed' => sub {
     $job->update_module('a', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
+    is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
 };
 
 subtest 'job with one ignore_failure fail => overall is passed' => sub {
@@ -305,10 +305,10 @@ subtest 'job with one ignore_failure fail => overall is passed' => sub {
     $job->update_module('a', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
+    is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
 };
 
 subtest 'job with at least one softfailed => overall is softfailed' => sub {
@@ -326,10 +326,10 @@ subtest 'job with at least one softfailed => overall is softfailed' => sub {
     $job->update;
     $job->discard_changes;
 
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::SOFTFAILED, 'job result is softfailed');
+    is($job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
 };
 
 subtest 'job with no modules => overall is failed' => sub {
@@ -339,10 +339,10 @@ subtest 'job with no modules => overall is failed' => sub {
     $job->update;
     $job->discard_changes;
 
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
+    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
 };
 
 subtest 'carry over for soft-fails' => sub {
@@ -355,10 +355,10 @@ subtest 'carry over for soft-fails' => sub {
     $job->update_module('b', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::SOFTFAILED, 'job result is softfailed');
+    is($job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
     $job->comments->create({text => 'bsc#101', user_id => 99901});
 
     $_settings{BUILD} = '667';
@@ -369,11 +369,11 @@ subtest 'carry over for soft-fails' => sub {
     $job->update_module('b', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     is(0, $job->comments, 'no comment');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::SOFTFAILED, 'job result is softfailed');
+    is($job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
     is(1, $job->comments, 'one comment');
     like($job->comments->first->text, qr/\Qbsc#101\E/, 'right take over');
 
@@ -385,11 +385,11 @@ subtest 'carry over for soft-fails' => sub {
     $job->update_module('b', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     is(0, $job->comments, 'no comment');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
+    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
     is(0, $job->comments, 'no takeover');
 
 };
@@ -405,10 +405,10 @@ subtest 'carry over for ignore_failure modules' => sub {
     $job->update_module('b', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
+    is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
     $job->comments->create({text => 'bsc#101', user_id => 99901});
 
     $_settings{BUILD} = '670';
@@ -419,11 +419,11 @@ subtest 'carry over for ignore_failure modules' => sub {
     $job->update_module('b', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     is(0, $job->comments, 'no comment');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
+    is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
     is(1, $job->comments, 'one comment');
     like($job->comments->first->text, qr/\Qbsc#101\E/, 'right take over');
 
@@ -435,11 +435,11 @@ subtest 'carry over for ignore_failure modules' => sub {
     $job->update_module('b', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     is(0, $job->comments, 'no comment');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
+    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
     is(0, $job->comments, 'no takeover');
 
 };
@@ -459,10 +459,10 @@ subtest 'job with only important passes => overall is passed' => sub {
     $job->update;
     $job->discard_changes;
 
-    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
+    is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
 };
 
 sub job_is_linked {
@@ -519,12 +519,12 @@ subtest 'job set_running()' => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'L';
     my $job = _job_create(\%_settings);
-    $job->update({state => OpenQA::Schema::Result::Jobs::ASSIGNED});
+    $job->update({state => OpenQA::Jobs::Constants::ASSIGNED});
     is($job->set_running, 1, 'job was set to running');
-    is($job->state, OpenQA::Schema::Result::Jobs::RUNNING, 'job state is now on running');
-    $job->update({state => OpenQA::Schema::Result::Jobs::RUNNING});
+    is($job->state, OpenQA::Jobs::Constants::RUNNING, 'job state is now on running');
+    $job->update({state => OpenQA::Jobs::Constants::RUNNING});
     is($job->set_running, 1, 'job already running');
-    is($job->state, OpenQA::Schema::Result::Jobs::RUNNING, 'job state is now on running');
+    is($job->state, OpenQA::Jobs::Constants::RUNNING, 'job state is now on running');
     $job->update({state => 'foobar'});
     is($job->set_running, 0,        'job not set to running');
     is($job->state,       'foobar', 'job state is foobar');
@@ -809,7 +809,7 @@ subtest 'job PARALLEL_WITH' => sub {
     @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobJ->to_hash, $jobK->to_hash);
     is @res, 0 or die diag explain \@res;
 
-    $jobL->update({state => OpenQA::Schema::Result::Jobs::RUNNING});
+    $jobL->update({state => OpenQA::Jobs::Constants::RUNNING});
 
     @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobJ->to_hash, $jobK->to_hash);
     is @res, 2 or die diag explain \@res;

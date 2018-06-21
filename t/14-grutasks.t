@@ -25,6 +25,7 @@ use JSON::PP;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
+use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use File::Copy;
 use OpenQA::Test::Database;
@@ -269,7 +270,7 @@ is(
 # to test protection of assets for PENDING jobs which would otherwise
 # be removed.
 my $job99947 = $schema->resultset('Jobs')->find({id => 99947});
-$job99947->state(OpenQA::Schema::Result::Jobs::SCHEDULED);
+$job99947->state(OpenQA::Jobs::Constants::SCHEDULED);
 $job99947->update;
 
 # Now we run again with size 34GiB. This time asset #1 should again be
@@ -280,7 +281,7 @@ is(scalar @removed, 1, "only one asset should have been 'removed' at size 34GiB 
 is(scalar @deleted, 1, "only one asset should have been 'deleted' at size 34GiB with 99947 pending");
 
 # restore job 99947 to DONE state
-$job99947->state(OpenQA::Schema::Result::Jobs::DONE);
+$job99947->state(OpenQA::Jobs::Constants::DONE);
 $job99947->update;
 
 sub create_temp_job_log_file {

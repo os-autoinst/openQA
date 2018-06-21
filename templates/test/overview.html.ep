@@ -1,6 +1,6 @@
 % layout 'bootstrap';
 % title 'Test summary';
-% use OpenQA::Schema::Result::Jobs;
+% use OpenQA::Jobs::Constants;
 
 % content_for 'ready_function' => begin
   setupOverview();
@@ -89,13 +89,13 @@
             <form action="#" type="get" id="filter-form">
                 <div class="form-group" id="filter-results">
                     <strong>Result</strong>
-                    % for my $result (OpenQA::Schema::Result::Jobs::RESULTS) {
+                    % for my $result (OpenQA::Jobs::Constants::RESULTS) {
                         <label><input value="<%= $result %>" name="result" type="checkbox" id="filter-<%= $result %>"> <%= ucfirst $result =~ s/_/ /r %></label>
                     % }
                 </div>
                 <div class="form-group" id="filter-states">
                     <strong>State</strong>
-                    % for my $state (OpenQA::Schema::Result::Jobs::STATES) {
+                    % for my $state (OpenQA::Jobs::Constants::STATES) {
                         <label><input value="<%= $state %>" name="state" type="checkbox" id="filter-<%= $state %>"> <%= ucfirst $state =~ s/_/ /r %></label>
                     % }
                 </div>

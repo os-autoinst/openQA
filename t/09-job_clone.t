@@ -60,7 +60,7 @@ ok(!$minimalx->can_be_duplicated, "doesn't look cloneable after reloading");
 is($minimalx->duplicate, undef, "cannot clone after reloading");
 
 # But cloning the clone should be possible after job state change
-$clone->state(OpenQA::Schema::Result::Jobs::CANCELLED);
+$clone->state(OpenQA::Jobs::Constants::CANCELLED);
 $clones = $clone->duplicate({prio => 35});
 my $second = $rset->find($clones->{$clone->id}->{clone});
 is($second->TEST,     "minimalx", "same test again");
