@@ -401,7 +401,7 @@ subtest 'websocket proxy' => sub {
                 what => 'job not found',
                 data => undef,
             });
-        $t_livehandler->finished_ok(1005);
+        $t_livehandler->finished_ok(1011);
 
         is($developer_sessions->count, 0, 'no developer session after all');
     };
@@ -418,7 +418,7 @@ subtest 'websocket proxy' => sub {
                 what => 'os-autoinst command server not available, job is likely not running',
                 data => undef,
             });
-        $t_livehandler->finished_ok(1005);
+        $t_livehandler->finished_ok(1011);
 
         is($developer_sessions->count, 0, 'no developer session after all');
     };
@@ -442,7 +442,7 @@ subtest 'websocket proxy' => sub {
                 what => 'unable to upgrade ws to command server',
                 data => undef,
             });
-        $t_livehandler->finished_ok(1005);
+        $t_livehandler->finished_ok(1011);
 
         is($developer_sessions->count, 0, 'no developer session after all');
     };

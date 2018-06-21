@@ -73,7 +73,7 @@ sub set_fake_status_java_script_transactions {
 # note: we don't broadcast to connections served by other prefork processes here, hence
 #       prefork musn't be used (for now)
 sub send_message_to_java_script_clients {
-    my ($self, $job_id, $type, $what, $data, $quit_on_finished) = @_;
+    my ($self, $job_id, $type, $what, $data, $status_code_to_quit_on_finished) = @_;
     for my $java_script_transaction_container (\%devel_java_script_transactions_by_job,
         \%status_java_script_transactions_by_job)
     {
@@ -89,9 +89,9 @@ sub send_message_to_java_script_clients {
                     }
                 },
                 sub {
-                    return unless ($quit_on_finished);
+                    return unless ($status_code_to_quit_on_finished);
                     return if ($outstanding_transmissions -= 1);
-                    $self->quit_development_session($job_id, $what);
+                    $self->quit_development_session($job_id, $what, $status_code_to_quit_on_finished);
                 });
         }
     }
@@ -102,15 +102,23 @@ sub send_message_to_java_script_clients {
 #       and require the development session to be quit
 #       (eg. connection to os-autoinst lost)
 sub send_message_to_java_script_clients_and_quit {
-    my ($self, $job_id, $type, $what, $data) = @_;
-    return $self->send_message_to_java_script_clients($job_id, $type, $what, $data, 1);
+    my ($self, $job_id, $type, $what, $data, $status_code) = @_;
+
+    # set status code (errors or normal quit)
+    $status_code = ($type eq 'error' ? 1011 : 1000) unless ($status_code);
+
+    return $self->send_message_to_java_script_clients($job_id, $type, $what, $data, $status_code);
 }
 
 # sends a message to a particular JavaScript client using the specified transaction and finishes the transaction if done
 # note: used to report fatal errors within ws_proxy which happen *before* the development session has been established
 #       (eg. invalid job/user or development session is locked by another user)
 sub send_message_to_java_script_client_and_finish {
-    my ($self, $java_script_tx, $type, $what, $data) = @_;
+    my ($self, $java_script_tx, $type, $what, $data, $status_code) = @_;
+
+    # set status code (errors or normal quit)
+    $status_code = ($type eq 'error' ? 1011 : 1000) unless ($status_code);
+
     $java_script_tx->send(
         {
             json => {
@@ -120,7 +128,7 @@ sub send_message_to_java_script_client_and_finish {
             }
         },
         sub {
-            $java_script_tx->finish();
+            $java_script_tx->finish($status_code);
         });
 
     # return the result of an 'on' call; otherwise Mojolicious expects a 'delayed response'
@@ -131,14 +139,17 @@ sub send_message_to_java_script_client_and_finish {
 # note: we can not disconnect connections served by other prefork processes here, hence
 #       prefork musn't be used (for now)
 sub quit_development_session {
-    my ($self, $job_id, $reason) = @_;
+    my ($self, $job_id, $reason, $status_code) = @_;
+
+    # set default status code to "normal closure"
+    $status_code //= 1000;
 
     # remove the session from the database
     $self->developer_sessions->unregister($job_id);
 
     # finish connections to all development session JavaScript clients
     if (my $java_script_transactions_for_current_job = delete $devel_java_script_transactions_by_job{$job_id}) {
-        $_->finish() for (@$java_script_transactions_for_current_job);
+        $_->finish($status_code) for (@$java_script_transactions_for_current_job);
     }
 
     # prevent finishing connection to os-autoinst cmd srv if still serving status-only clients and update
@@ -153,7 +164,7 @@ sub quit_development_session {
     # finish connection to os-autoinst cmd srv
     if (my $cmd_srv_tx = delete $cmd_srv_transactions_by_job{$job_id}) {
         $self->app->log->debug('ws_proxy: finishing connection to os-autoinst cmd srv for job ' . $job_id);
-        $cmd_srv_tx->finish() if $cmd_srv_tx->is_websocket();
+        $cmd_srv_tx->finish($status_code) if $cmd_srv_tx->is_websocket();
     }
 }
 
@@ -272,7 +283,7 @@ sub connect_to_cmd_srv {
             $tx->on(
                 finish => sub {
                     my (undef, $code, $reason) = @_;
-                    # prevent finishing the transaction again in $quit_development_session
+                    # prevent finishing the transaction twice
                     $cmd_srv_transactions_by_job{$job_id} = undef;
                     # inform the JavaScript client
                     $self->send_message_to_java_script_clients_and_quit(
