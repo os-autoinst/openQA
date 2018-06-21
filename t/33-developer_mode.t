@@ -293,7 +293,8 @@ subtest 'resume test execution' => sub {
     # go back to the live view
     $driver->get($job_page_url);
     $driver->find_element_by_link_text('Live View')->click();
-    wait_for_session_info(qr/opened by Demo.*1 tab open/, '1 browser tab open (from previous subtest)');
+    wait_for_session_info(qr/opened by Demo.*2 tabs open/,
+        '2 browser tabs open (live view and tab from previous subtest)');
 
     # open developer console
     $driver->get($developer_console_url);

@@ -57,6 +57,7 @@ my $workers            = $db->resultset('Workers');
 
 # the data to expect when no developer session is present
 my %no_developer = (
+    developer_id                 => undef,
     developer_name               => undef,
     developer_session_started_at => undef,
     developer_session_tab_count  => 0,
@@ -122,6 +123,7 @@ subtest 'send message to JavaScript clients' => sub {
                     type => 'info',
                     what => 'cmdsrvmsg',
                     data => {
+                        developer_id                 => 99901,
                         developer_name               => 'artie',
                         developer_session_started_at => $session_t_created,
                         developer_session_tab_count  => 2,

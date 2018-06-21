@@ -1,5 +1,8 @@
 % content_for 'ready_function' => begin
-    window.isAdmin = <%= (is_admin) ? ('true') : ('false') %>;
+    % if (my $current_user = current_user) {
+        window.ownUserId = <%= $current_user->id %>;
+        window.isAdmin = <%= ($current_user->is_admin) ? ('true') : ('false') %>;
+    % }
     setupDeveloperPanel();
 % end
 
@@ -33,33 +36,50 @@
         </div>
     </div>
     <div class="card-body">
-        <form action="#" method="get" id="developer-form" class="developer-mode-element" data-visible-on="ownSession">
-            <div class="form-group">
-                <p>
-                    <strong>
-                        Pause test execution at specific module
-                        <%= help_popover('Help for <i>pause</i>' => '
-                            <p>Pauses the test execution at a specific module. The test can then
-                            be accessed via VNC for further investigation.</p>')
-                        %>
-                    </strong>
+        <form action="#" method="get" id="developer-form" class="developer-mode-element" data-hidden-on="lockedByOtherDeveloper">
+            <p class="developer-mode-element" data-hidden-on="ownSession">
+                Select what you want to do and confirm using the button below. This will start a developer
+                session which will lock those developer options for other users.
+            </p>
+            <p class="developer-mode-element" data-visible-on="ownSession">
+                You started a developer session. Use the controls above to control the test behavior.
+            </p>
+            <h3>
+                Pause test execution
+                <%= help_popover('Help for <i>pause test execution</i>' => '
+                        <p>Pauses the test execution. So far it is only possible to pause at a
+                        specific module. The test can then be accessed via VNC for further
+                        investigation.</p>
+                        <p>Resuming the job after it has been paused is possible.</p>')
+                %>
+            </h3>
+            <div class="form-group row">
+                <label for="developer-pause-at-module" class="col-sm-3 col-form-label">
+                    at specific module
+                </label>
+                <div class="col-sm-9">
                     %= include 'test/module_select'
-                </p>
+                </div>
             </div>
             <hr>
             <div>
-                <a href="#" onclick="quitDeveloperSession(); return false;" class="btn btn-warning">
-                    Quit developer session
+                <a href="#" onclick="startDeveloperSession(); return false;"
+                    class="btn btn-warning developer-mode-element" data-hidden-on="ownSession">
+                    <i class="fas fa-lock"></i> Confirm & start developer session
+                </a>
+                <a href="#" onclick="quitDeveloperSession(); return false;"
+                    class="btn btn-danger developer-mode-element" data-visible-on="ownSession">
+                    <i class="far fa-stop-circle"></i> Cancel job
                 </a>
                 <a href="#" onclick="resumeTestExecution(); return false;" class="btn btn-secondary developer-mode-element" data-visible-on="isPaused">
-                    Resume test execution
+                    <i class="far fa-play-circle"></i> Resume test execution
                 </a>
                 <a href="<%= url_for('developer_ws_console')->query({proxy => 1}) %>" target="blank" class="btn btn-secondary">
-                    Open web socket console
+                    <i class="fas fa-terminal"></i> Open console
                 </a>
             </div>
         </form>
-        <div class="developer-mode-element" data-hidden-on="ownSession" data-visible-on="develSessionDeveloper">
+        <div class="developer-mode-element" data-visible-on="lockedByOtherDeveloper">
             The development session has already been started by <span class="developer-mode-user">another user</span>, so you can't claim it.
         </div>
         <div class="developer-mode-element" data-hidden-on="isConnected">

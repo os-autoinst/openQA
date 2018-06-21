@@ -315,6 +315,17 @@ var developerMode = {
     develSessionDeveloper: undefined,       // name of the user in possession the development session
     develSessionStartedAt: undefined,       // time stamp when the development session was created
     develSessionTabCount: undefined,        // number of open web socket connections by the developer
+
+    // returns whether there's a development session but it doesn't belong to us
+    lockedByOtherDeveloper: function() {
+        return this.develSessionDeveloper && !this.ownSession;
+    },
+
+    // returns the specified property evaluating possibly assigned functions
+    prop: function(propertyName) {
+        var prop = this[propertyName];
+        return typeof prop === 'function' ? prop.apply(this) : prop;
+    },
 };
 
 // initializes the developer panel
@@ -329,11 +340,6 @@ function setupDeveloperPanel() {
             developerMode.panelExpanded = !developerMode.panelExpanded;
             developerMode.panelActuallyExpanded = developerMode.panelExpanded;
             panelBody.toggle(200);
-
-            // ensure the developer ws route is used
-            if (developerMode.panelExpanded && !developerMode.useDeveloperWsRoute) {
-                setupWebsocketConnection();
-            }
         });
     } else {
         panelHeader.css('cursor', 'default');
@@ -432,7 +438,8 @@ function updateDeveloperPanel() {
         var element = $(this);
         var visibleOn = element.data('visible-on');
         var hiddenOn = element.data('hidden-on');
-        var hide = (hiddenOn && developerMode[hiddenOn]) || (visibleOn && !developerMode[visibleOn]);
+        var hide = ((hiddenOn && developerMode.prop(hiddenOn))
+                 || (visibleOn && !developerMode.prop(visibleOn)));
         if (hide) {
             element.hide();
         } else if (element.hasClass('btn')) {
@@ -443,7 +450,14 @@ function updateDeveloperPanel() {
     });
 }
 
+// submits the selected module to pause at if it has changed
 function handleModuleToPauseAtSelected() {
+    // skip if development session not opened or it is not ours
+    if (!developerMode.ownSession) {
+        return;
+    }
+
+    // determine the selected module including the category, eg. "installation-welcome"
     var selectedModuleOption = $('#developer-pause-at-module').find('option:selected');
     var category = selectedModuleOption.parent('optgroup').attr('label');
     var selectedModuleName = undefined;
@@ -458,6 +472,12 @@ function handleModuleToPauseAtSelected() {
     }
 }
 
+// submits the selected values which differ from the server's state
+function submitCurrentSelection() {
+    handleModuleToPauseAtSelected();
+}
+
+// ensures the websocket connection is closed
 function closeWebsocketConnection() {
     if (developerMode.wsConnection) {
         developerMode.wsConnection.close();
@@ -471,7 +491,7 @@ function setupWebsocketConnection() {
     closeWebsocketConnection();
 
     // determine ws URL
-    if ((window.isAdmin && (developerMode.panelExpanded || developerMode.useDeveloperWsRoute))) {
+    if ((window.isAdmin && developerMode.useDeveloperWsRoute)) {
         // use route for developer (establishing a developer session)
         developerMode.useDeveloperWsRoute = true;
         var url = developerMode.develWsUrl;
@@ -484,32 +504,45 @@ function setupWebsocketConnection() {
 
     // establish ws connection
     console.log("Establishing ws connection to " + url);
-    developerMode.reconnectAttempts = 1;
+    developerMode.reconnectAttempts += 1;
     var wsConnection = new WebSocket(url);
     wsConnection.onopen = function() {
         if (wsConnection !== developerMode.wsConnection) {
             return;
         }
+
+        // update state
         developerMode.reconnectAttempts = 0;
         developerMode.isConnected = true;
         developerMode.hasWsError = false;
         developerMode.ownSession = developerMode.useDeveloperWsRoute;
+
+        // sync the current selection if it is our session
+        if (developerMode.ownSession) {
+            submitCurrentSelection();
+        }
+
         updateDeveloperPanel();
     };
     wsConnection.onerror = function(error) {
         if (wsConnection !== developerMode.wsConnection) {
             return;
         }
+
+        // set the error flag (FIXME: display error state somewhere)
         developerMode.hasWsError = true;
-        // note: error doesn't contain very useful information, just set the error flag here
     };
     wsConnection.onclose = function() {
         if (wsConnection !== developerMode.wsConnection) {
             return;
         }
         console.log("Connection to livehandler lost");
+
+        // update state
         developerMode.wsConnection = undefined;
         developerMode.isConnected = false;
+        developerMode.panelExpanded = false;
+        developerMode.useDeveloperWsRoute = false;
         developerMode.ownSession = false;
         updateDeveloperPanel();
 
@@ -575,6 +608,12 @@ var messageToStatusVariable = [
         statusVar: 'currentModule',
     },
     {
+        msg: 'developer_id',
+        action: function(value) {
+            developerMode.ownSession = (window.ownUserId == value);
+        },
+    },
+    {
         msg: 'developer_name',
         statusVar: 'develSessionDeveloper',
     },
@@ -587,8 +626,14 @@ var messageToStatusVariable = [
         statusVar: 'develSessionTabCount',
     },
     {
+        msg: 'developer_session_is_yours',
+        statusVar: 'ownSession',
+    },
+    {
         msg: 'resume_test_execution',
-        action: function() { developerMode.isPaused = false; },
+        action: function() {
+            developerMode.isPaused = false;
+        },
     }
 ];
 
@@ -629,6 +674,12 @@ function processWsCommand(obj) {
     }
 
     if (somethingChanged) {
+        // check whether the development session is ours and to change the proxy
+        if (!developerMode.useDeveloperWsRoute && developerMode.ownSession) {
+            developerMode.useDeveloperWsRoute = true;
+            setupWebsocketConnection();
+        }
+
         updateDeveloperPanel();
     }
 }
@@ -648,7 +699,15 @@ function resumeTestExecution() {
     sendWsCommand({ cmd: "resume_test_execution" });
 }
 
-// quits the developer session
+// starts the developer session (if not already done yet)
+function startDeveloperSession() {
+    if (!developerMode.useDeveloperWsRoute) {
+        developerMode.useDeveloperWsRoute = true;
+        setupWebsocketConnection();
+    }
+}
+
+// quits the developer session (will cancel the job)
 function quitDeveloperSession() {
     if (!developerMode.useDeveloperWsRoute) {
         return;

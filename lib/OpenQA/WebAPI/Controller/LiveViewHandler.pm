@@ -217,11 +217,14 @@ sub add_session_info_to_hash {
     my ($self, $job_id, $hash) = @_;
     my $session = $self->developer_sessions->find($job_id);
     if ($session) {
-        $hash->{developer_name}               = $session->user->name;
+        my $user = $session->user;
+        $hash->{developer_id}                 = $user->id;
+        $hash->{developer_name}               = $user->name;
         $hash->{developer_session_started_at} = $session->t_created;
         $hash->{developer_session_tab_count}  = $session->ws_connection_count;
     }
     else {
+        $hash->{developer_id}                 = undef;
         $hash->{developer_name}               = undef;
         $hash->{developer_session_started_at} = undef;
         $hash->{developer_session_tab_count}  = 0;
@@ -351,6 +354,7 @@ sub ws_proxy {
     my $job            = $self->find_current_job()
       or return $self->send_message_to_java_script_client_and_finish($java_script_tx, error => 'job not found');
     my $user;
+    my $user_id;
     my $app                = $self->app;
     my $job_id             = $job->id;
     my $developer_sessions = $app->schema->resultset('DeveloperSessions');
@@ -367,7 +371,9 @@ sub ws_proxy {
     if (!$status_only) {
         $user = $self->current_user()
           or return $self->send_message_to_java_script_client_and_finish($java_script_tx, error => 'user not found');
-        my $developer_session = $developer_sessions->register($job_id, $user->id);
+        $user_id = $user->id;
+        $java_script_tx->{user_id} = $user_id;
+        my $developer_session = $developer_sessions->register($job_id, $user_id);
         $app->log->debug('ws_proxy: client connected: ' . $user->name);
         if (!$developer_session) {
             return $self->send_message_to_java_script_client_and_finish($java_script_tx,
