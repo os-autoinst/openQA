@@ -132,7 +132,6 @@ A job goes through several states:
 * *running* In progress.
 * *cancelled* The job was explicitly cancelled by the user or was replaced by a
   clone (see below).
-* *waiting* The job is in 'interactive mode' (see below) and waiting for input.
 * *done* Execution finished.
 
 Jobs in state 'done' have typically gone through a whole sequence of steps
@@ -212,32 +211,6 @@ There are three kinds of areas:
   regular area into an exclude area within the needle editor, double click
   the concerning area.
   In the needle view exclude areas are displayed as gray boxes.
-
-=== Interactive mode
-
-There are several points in time during the execution of a job at which openQA
-tries to match the screen with the available needles, reacting to the result of
-that check. If the job is running in interactive mode it will stop the execution
-at that point, freezing the virtual machine and waiting for user input before
-proceeding. At that moment, the user can modify the existing needles or can
-create a new one using as a starting point either the current screen of the
-virtual machine or one of the existing needles. Once the needles are adjusted,
-the user can command the job to reload the list of needles and continue with the
-execution.
-
-* *enable interactive mode* Get into waiting for input automatically (ie. waitforneedle)
-  in case it can not find the matched needle and timeout.
-* *stop waiting for needle* Stop the waitforneedle call immediately without timeout.
-* *continue waiting for needle* Continue testing but will get into waitforneedle
-  in case it can not find the matched needle and timeout.
-* *reload needles and retry* Retries after 5 seconds and reloads needles. It helps if
-  a new needle is created before retry.
-* *open needle editor* Opens needle editor so the user can create a new needle or
-  modify the existing ones.
-
-The interactive mode is especially useful when creating needles for a new
-operating system or when the look & feel have changed and several needles need
-to be adjusted accordingly.
 
 
 === Access management

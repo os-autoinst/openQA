@@ -53,7 +53,7 @@ or done. Scheduled jobs can't be restarted.
 sub job_restart {
     my ($jobids) = @_ or die "missing name parameter\n";
 
-    # first, duplicate all jobs that are either running, waiting or done
+    # first, duplicate all jobs that are either running or done
     my $jobs = schema->resultset("Jobs")->search(
         {
             id    => $jobids,

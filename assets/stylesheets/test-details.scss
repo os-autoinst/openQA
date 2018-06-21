@@ -74,7 +74,7 @@ div.flags {
 .state_obsolete.fa, .state_cancelled.fa {
     color: $color-state-cancelled;
 }
-.state_running.fa, .state_waiting.fa, .state_uploading.fa {
+.state_running.fa, .state_uploading.fa {
     color: $color-state-running;
 }
 .far.module_failed { color: $color-failed; }
