@@ -293,7 +293,7 @@ sub _show {
     }
 
     # stash URLs for web socker routes required by developer mode
-    if ($job->running_or_waiting) {
+    if ($job->state eq 'running') {
         $self->stash(
             {
                 ws_developer_url   => determine_web_ui_web_socket_url($job->id),
