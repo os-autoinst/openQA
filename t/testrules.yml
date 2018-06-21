@@ -28,7 +28,6 @@ seq:
      - ./t/22-dashboard.t
      - ./t/23-amqp.t
      - ./t/24-worker.t
-     - ./t/25-cache.t
      - ./t/27-errorpages.t
      - ./t/30-test_parser.t
      - ./t/31-api_descriptions.t

@@ -297,13 +297,9 @@ if (!$ENV{MOJO_LOG_LEVEL} || $ENV{MOJO_LOG_LEVEL} =~ /DEBUG|INFO/i) {
 
     like($autoinst_log, qr/result: setup failure/, 'Test 4 state correct: setup failure');
 
-    like((split(/\n/, $autoinst_log))[0], qr/\[info\] \+\+\+ setup notes \+\+\+/,
-        'Test 4 correct autoinst setup notes');
-    like(
-        (split(/\n/, $autoinst_log))[-1],
-        qr/\[info\] uploading autoinst-log.txt/,
-        'Test 4 correct autoinst uploading autoinst'
-    );
+    like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 4 correct autoinst setup notes');
+    like((split(/\n/, $autoinst_log))[-1], qr/uploading autoinst-log.txt/,
+        'Test 4 correct autoinst uploading autoinst');
 }
 
 kill_worker;    # Ensure that the worker can be killed with TERM signal
@@ -370,15 +366,11 @@ subtest 'Cache tests' => sub {
 
         like($autoinst_log, qr/Downloading Core-7.2.iso/, 'Test 5, downloaded the right iso.');
         like($autoinst_log, qr/11116544/,                 'Test 5 Core-7.2.iso size is correct.');
-        like($autoinst_log, qr/\[info\] result: done/,    'Test 5 result done');
-        like(
-            (split(/\n/, $autoinst_log))[0],
-            qr/\[info\] \+\+\+ setup notes \+\+\+/,
-            'Test 5 correct autoinst setup notes'
-        );
+        like($autoinst_log, qr/result: done/,             'Test 5 result done');
+        like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 5 correct autoinst setup notes');
         like(
             (split(/\n/, $autoinst_log))[-1],
-            qr/\[info\] uploading autoinst-log.txt/,
+            qr/uploading autoinst-log.txt/,
             'Test 5 correct autoinst uploading autoinst'
         );
     }
@@ -402,10 +394,6 @@ subtest 'Cache tests' => sub {
         $sth->execute();
         sleep 1;    # so that last_use is not the same for every item
     }
-
-    # Mark the Core-7.2 iso as being downloaded to force the worker to wait for the lock later on.
-    $sql = "update assets set downloading = 1 where filename = ? ";
-    $dbh->prepare($sql)->execute($result->{filename});
 
     $sql    = "SELECT * from assets order by last_use desc";
     $sth    = $dbh->prepare($sql);
@@ -459,16 +447,12 @@ subtest 'Cache tests' => sub {
         my $autoinst_log = do { local ($/); <$f> };
         close($f);
 
-        like($autoinst_log, qr/Content has not changed/, 'Test 7 Core-7.2.iso has not changed.');
-        like($autoinst_log, qr/\[info\] \+\+\+\ worker notes \+\+\+/, 'Test 7 correct autoinst worker notes');
-        like(
-            (split(/\n/, $autoinst_log))[0],
-            qr/\[info\] \+\+\+ setup notes \+\+\+/,
-            'Test 7 correct autoinst setup notes'
-        );
+        like($autoinst_log, qr/Content has not changed/,     'Test 7 Core-7.2.iso has not changed.');
+        like($autoinst_log, qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 correct autoinst worker notes');
+        like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 7 correct autoinst setup notes');
         like(
             (split(/\n/, $autoinst_log))[-1],
-            qr/\[info\] uploading autoinst-log.txt/,
+            qr/uploading autoinst-log.txt/,
             'Test 7 correct autoinst uploading autoinst'
         );
     }
@@ -485,15 +469,11 @@ subtest 'Cache tests' => sub {
         my $autoinst_log = do { local ($/); <$f> };
         close($f);
 
-        like($autoinst_log, qr/\[info\] \+\+\+\ worker notes \+\+\+/, 'Test 7 correct autoinst worker notes');
-        like(
-            (split(/\n/, $autoinst_log))[0],
-            qr/\[info\] \+\+\+ setup notes \+\+\+/,
-            'Test 8 correct autoinst setup notes'
-        );
+        like($autoinst_log, qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 correct autoinst worker notes');
+        like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 8 correct autoinst setup notes');
         like(
             (split(/\n/, $autoinst_log))[-1],
-            qr/\[info\] uploading autoinst-log.txt/,
+            qr/uploading autoinst-log.txt/,
             'Test 8 correct autoinst uploading autoinst'
         );
 

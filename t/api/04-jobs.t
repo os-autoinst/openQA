@@ -515,7 +515,7 @@ subtest 'Check job status and output' => sub {
         }
         else {
             $post->status_is(400);
-            ok($output =~ /\[.*info\] Got status update for job .*? but does not contain a worker id!/,
+            ok($output =~ /Got status update for job .*? but does not contain a worker id!/,
                 "Check status update for job $job->{id}");
         }
     }
@@ -534,8 +534,8 @@ subtest 'Check job status and output' => sub {
 
     $bogus_job_post->status_is(400);
     $bogus_worker_post->status_is(400);
-    ok($output =~ /\[.*info\] Got status update for non-existing job/, 'Check status update for non-existing job');
-    ok($output =~ /\[.*info\] Got status update for job .* that does not belong to Worker/,
+    ok($output =~ /Got status update for non-existing job/, 'Check status update for non-existing job');
+    ok($output =~ /Got status update for job .* that does not belong to Worker/,
         'Got status update for job that doesnt belong to worker');
 };
 # Test /jobs/cancel

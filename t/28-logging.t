@@ -26,9 +26,9 @@ use File::Path qw(make_path remove_tree);
 use Sys::Hostname;
 use File::Spec::Functions 'catfile';
 
-my $reFile    = qr/\[.*?\] \[(.*?)\] (.*?) message/;
-my $reStdOut  = qr/(?:.*?)\[(.*?)\] (.*?) message/;
-my $reChannel = qr/\[.*?\] \[(.*?)\] (.*?) message/;
+my $reFile    = qr/\[.*?\] \[(.*?)\] (?:\[pid:\d+\]\s)?(.*?) message/;
+my $reStdOut  = qr/(?:.*?)\[(.*?)\] (?:\[pid:\d+\]\s)?(.*?) message/;
+my $reChannel = qr/\[.*?\] \[(.*?)\] (?:\[pid:\d+\]\s)?(.*?) message/;
 
 subtest 'load correct configs' => sub {
     local $ENV{OPENQA_CONFIG} = 't/data/logging/';
@@ -93,6 +93,8 @@ subtest 'Logging to stdout' => sub {
     close STDOUT;
     open(STDOUT, '>&', $oldSTDOUT) or die "Can't dup \$oldSTDOUT: $!";
     my @matches = ($output =~ m/$reStdOut/gm);
+
+    like $output, qr/$$/, 'Pid is printed in debug mode';
     ok(@matches / 2 == 3, 'Worker log matches');
     for (my $i = 0; $i < @matches; $i += 2) {
         ok($matches[$i] eq $matches[$i + 1], "OK $matches[$i]");

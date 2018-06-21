@@ -40,6 +40,9 @@ use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
 use Mojo::File qw(path);
 use POSIX '_exit';
+use Mojo::IOLoop::ReadWriteProcess qw(queue process);
+use Mojo::IOLoop::ReadWriteProcess::Session 'session';
+use List::Util qw(shuffle uniq sum);
 
 my $sql;
 my $sth;
@@ -64,6 +67,10 @@ open my $FD, '>>', $logfile;
 *STDOUT = $FD;
 *STDERR = $FD;
 
+$SIG{INT} = sub {
+    session->all->each(sub { shift->stop });
+};
+
 sub truncate_log {
     my ($new_log) = @_;
     my $logfile_ = ($new_log) ? $new_log : $logfile;
@@ -79,92 +86,87 @@ sub read_log {
 }
 
 sub db_handle_connection {
-    my $disconnect = @_;
-    if ($dbh) {
-        $dbh->disconnect;
+    my ($cache, $disconnect) = @_;
+    if ($cache->dbh) {
+        $cache->dbh->disconnect;
         return if $disconnect;
     }
 
-    $dbh
-      = DBI->connect("dbi:SQLite:dbname=$db_file", undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1});
-
+    $cache->dbh(
+        DBI->connect("dbi:SQLite:dbname=$db_file", undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1}));
 }
 
 sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
 
 my $daemon;
-my $mock = Mojolicious->new;
+my $mock            = Mojolicious->new;
+my $server_instance = process sub {
+    $mock->routes->get(
+        '/tests/:job/asset/:type/:filename' => sub {
+            my $c        = shift;
+            my $id       = $c->stash('job');
+            my $type     = $c->stash('type');
+            my $filename = $c->stash('filename');
+            return $c->render(status => 404, text => "Move along, nothing to see here")
+              if $filename =~ /sle-12-SP3-x86_64-0368-404/;
+            return $c->render(status => 400, text => "Move along, nothing to see here")
+              if $filename =~ /sle-12-SP3-x86_64-0368-400/;
+            return $c->render(status => 500, text => "Move along, nothing to see here")
+              if $filename =~ /sle-12-SP3-x86_64-0368-500/;
+            return $c->render(status => 503, text => "Move along, nothing to see here")
+              if $filename =~ /sle-12-SP3-x86_64-0368-503/;
 
-sub start_server {
-    $serverpid = fork();
-    if ($serverpid == 0) {
-        # setup mock
+            if ($filename =~ /sle-12-SP3-x86_64-0368-589/) {
+                $c->res->headers->content_length(10);
+                $c->inactivity_timeout(1);
+                $c->res->headers->content_type('text/plain');
+                $c->res->body('Six!!!');
+                $c->rendered(200);
+            }
 
-        $mock->routes->get(
-            '/tests/:job/asset/:type/:filename' => sub {
-                my $c        = shift;
-                my $id       = $c->stash('job');
-                my $type     = $c->stash('type');
-                my $filename = $c->stash('filename');
-                return $c->render(status => 404, text => "Move along, nothing to see here")
-                  if $filename =~ /sle-12-SP3-x86_64-0368-404/;
-                return $c->render(status => 400, text => "Move along, nothing to see here")
-                  if $filename =~ /sle-12-SP3-x86_64-0368-400/;
-                return $c->render(status => 500, text => "Move along, nothing to see here")
-                  if $filename =~ /sle-12-SP3-x86_64-0368-500/;
-                return $c->render(status => 503, text => "Move along, nothing to see here")
-                  if $filename =~ /sle-12-SP3-x86_64-0368-503/;
+            if (my ($size) = ($filename =~ /sle-12-SP3-x86_64-0368-200_?([0-9]+)?\@/)) {
+                my $our_etag = 'andi $a3, $t1, 41399';
 
-                if ($filename =~ /sle-12-SP3-x86_64-0368-589/) {
-                    $c->res->headers->content_length(10);
+                my $browser_etag = $c->req->headers->header('If-None-Match');
+                if ($browser_etag && $browser_etag eq $our_etag) {
+                    $c->res->body('');
+                    $c->rendered(304);
+                }
+                else {
+                    $c->res->headers->content_length($size // 1024);
                     $c->inactivity_timeout(1);
                     $c->res->headers->content_type('text/plain');
-                    $c->res->body('Six!!!');
+                    $c->res->headers->header('ETag' => $our_etag);
+                    $c->res->body("\0" x ($size // 1024));
                     $c->rendered(200);
                 }
+            }
+        });
 
-                if (my ($size) = ($filename =~ /sle-12-SP3-x86_64-0368-200_?([0-9]+)?\@/)) {
-                    my $our_etag = 'andi $a3, $t1, 41399';
+    $mock->routes->get(
+        '/' => sub {
+            my $c = shift;
+            return $c->render(status => 200, text => "server is running");
+        });
+    # Connect application with web server and start accepting connections
+    $daemon = Mojo::Server::Daemon->new(app => $mock, listen => [$host]);
+    $daemon->run;
+    _exit(0);
+};
 
-                    my $browser_etag = $c->req->headers->header('If-None-Match');
-                    if ($browser_etag && $browser_etag eq $our_etag) {
-                        $c->res->body('');
-                        $c->rendered(304);
-                    }
-                    else {
-                        $c->res->headers->content_length($size // 1024);
-                        $c->inactivity_timeout(1);
-                        $c->res->headers->content_type('text/plain');
-                        $c->res->headers->header('ETag' => $our_etag);
-                        $c->res->body("\0" x ($size // 1024));
-                        $c->rendered(200);
-                    }
-                }
-            });
-
-        $mock->routes->get(
-            '/' => sub {
-                my $c = shift;
-                return $c->render(status => 200, text => "server is running");
-            });
-        # Connect application with web server and start accepting connections
-        $daemon = Mojo::Server::Daemon->new(app => $mock, listen => [$host]);
-        $daemon->run;
-        _exit(0);
-    }
+sub start_server {
+    $server_instance->set_pipes(0)->start;
     sleep 1 while !_port($port);
     return;
 }
 
 sub stop_server {
     # now kill the worker
-    kill TERM => $serverpid;
-    sleep 1 while _port($port);
-    is(waitpid($serverpid, 0), $serverpid, 'Server is done');
-    $serverpid = undef;
+    $server_instance->stop();
 }
 
-OpenQA::Worker::Cache::init($host, $cachedir);
+my $cache = OpenQA::Worker::Cache->new(host => $host, location => $cachedir);
+is $cache->init, $cache;
 $openqalogs = read_log($logfile);
 like $openqalogs, qr/Creating cache directory tree for/, "Cache directory tree created.";
 like $openqalogs, qr/Deploying DB/,                      "Cache deploys the database.";
@@ -173,7 +175,7 @@ ok(-e $db_file, "cache.sqlite is present");
 
 truncate_log $logfile;
 
-db_handle_connection;
+db_handle_connection($cache);
 
 for (1 .. 3) {
     $filename = "$cachedir/$_.qcow2";
@@ -185,7 +187,7 @@ for (1 .. 3) {
         log_info "Inserting $_";
         $sql = "INSERT INTO assets (downloading,filename,size, etag,last_use)
                 VALUES (0, ?, ?, 'Not valid', strftime('%s','now'));";
-        $sth = $dbh->prepare($sql);
+        $sth = $cache->dbh->prepare($sql);
         $sth->bind_param(1, $filename);
         $sth->bind_param(2, 84);
         $sth->execute();
@@ -195,8 +197,8 @@ for (1 .. 3) {
 
 chdir $ENV{LOGDIR};
 
-$OpenQA::Worker::Cache::sleep_time = 1;
-OpenQA::Worker::Cache::init($host, $cachedir);
+$cache->sleep_time(1);
+$cache->init;
 
 $openqalogs = read_log($logfile);
 unlike $openqalogs, qr/Deploying DB/, "Cache deploys the database.";
@@ -206,8 +208,8 @@ unlike $openqalogs, qr/CACHE: Purging non registered.*[13].qcow2/, "Registered a
 like $openqalogs,   qr/CACHE: Purging non registered.*2.qcow2/,    "Asset 2 was removed";
 truncate_log $logfile;
 
-$OpenQA::Worker::Cache::limit = 100;
-OpenQA::Worker::Cache::init($host, $cachedir);
+$cache->limit(100);
+$cache->init;
 
 $openqalogs = read_log($logfile);
 like $openqalogs, qr/CACHE: Health: Real size: 84, Configured limit: 100/,
@@ -217,7 +219,7 @@ like $openqalogs, qr/$host/, "Host was initialized correctly ($host).";
 ok(!-e "1.qcow2", "Oldest asset (1.qcow2) was sucessfully removed");
 truncate_log $logfile;
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-textmode@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-textmode@64bit.qcow2');
 my $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-textmode\@64bit.qcow2 from/, "Asset download attempt";
 like $autoinst_log, qr/failed with: 521/, "Asset download fails with: 521 - Connection refused";
@@ -227,22 +229,23 @@ $port = Mojo::IOLoop::Server->generate_port;
 $host = "http://127.0.0.1:$port";
 start_server;
 
-$OpenQA::Worker::Cache::limit = 1024;
-OpenQA::Worker::Cache::init($host, $cachedir);
+$cache->host($host);
+$cache->limit(1024);
+$cache->init;
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-404@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-404@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-404\@64bit.qcow2 from/, "Asset download attempt";
 like $autoinst_log, qr/failed with: 404/, "Asset download fails with: 404 - Not Found";
 truncate_log 'autoinst-log.txt';
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-400@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-400@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-400\@64bit.qcow2 from/, "Asset download attempt";
 like $autoinst_log, qr/failed with: 400/, "Asset download fails with 400 - Bad Request";
 truncate_log 'autoinst-log.txt';
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-589@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-589@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-589\@64bit.qcow2 from/, "Asset download attempt";
 like $autoinst_log, qr/Expected: 10 \/ Downloaded: 6/, "Incomplete download logged";
@@ -254,7 +257,7 @@ like $openqalogs, qr/CACHE: Waiting 1 seconds for the next retry/,          "1 s
 like $openqalogs, qr/CACHE: Too many download errors, aborting/,            "Bailing out after too many retries";
 truncate_log $logfile;
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-503@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-503@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-503\@64bit.qcow2 from/, "Asset download attempt";
 like $autoinst_log, qr/triggering a retry for 503/, "Asset download fails with 503 - Server not available";
@@ -266,14 +269,14 @@ like $openqalogs, qr/CACHE: Waiting 1 seconds for the next retry/,          "1 s
 like $openqalogs, qr/CACHE: Too many download errors, aborting/,            "Bailing out after too many retries";
 truncate_log $logfile;
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-200\@64bit.qcow2 from/, "Asset download attempt";
 like $autoinst_log, qr/CACHE: Asset download successful to .*sle-12-SP3-x86_64-0368-200.*, Cache size is: 1024/,
   "Full download logged";
 truncate_log 'autoinst-log.txt';
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-200\@64bit.qcow2 from/, "Asset download attempt";
 like $autoinst_log, qr/CACHE: Content has not changed, not downloading .* but updating last use/, "Upading last use";
@@ -283,13 +286,13 @@ $openqalogs = read_log($logfile);
 like $openqalogs, qr/ andi \$a3, \$t1, 41399 and 1024/, "Etag and size are logged";
 truncate_log $logfile;
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-200\@64bit.qcow2 from/,      "Asset download attempt";
 like $autoinst_log, qr/sle-12-SP3-x86_64-0368-200\@64bit.qcow2 but updating last use/, "last use gets updated";
 truncate_log 'autoinst-log.txt';
 
-get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200_256@64bit.qcow2');
+$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200_256@64bit.qcow2');
 $autoinst_log = read_log('autoinst-log.txt');
 like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-200_256\@64bit.qcow2 from/, "Asset download attempt";
 like $autoinst_log, qr/CACHE: Asset download successful to .*sle-12-SP3-x86_64-0368-200_256.*, Cache size is: 256/,
@@ -300,6 +303,70 @@ $openqalogs = read_log($logfile);
 like $openqalogs, qr/ andi \$a3, \$t1, 41399 and 256/, "Etag and size are logged";
 like $openqalogs, qr/removed.*sle-12-SP3-x86_64-0368-200\@64bit.qcow2*/, "Reclaimed space for new smaller asset";
 truncate_log $logfile;
-stop_server;
 
+$cache->track_asset("Foobar", 0);
+
+is $cache->toggle_asset_lock("Foobar", 1), 1, 'Could acquire lock';
+is $cache->toggle_asset_lock("Foobar", 0), 1, 'Could acquire lock';
+
+$cache->dbh->prepare("delete from assets")->execute();
+
+my $fake_asset = "$cachedir/test.qcow";
+
+path($fake_asset)->spurt('');
+ok -e $fake_asset, 'Asset is there';
+$cache->asset_lookup($fake_asset);
+ok !-e $fake_asset, 'Asset was purged since was not tracked';
+
+path($fake_asset)->spurt('');
+ok -e $fake_asset, 'Asset is there';
+$cache->purge_asset($fake_asset);
+ok !-e $fake_asset, 'Asset was purged';
+
+$cache->track_asset($fake_asset);
+is $cache->_asset($fake_asset)->{downloading}, 0, 'Can get downloading state with _asset()';
+is_deeply $cache->_asset('foobar'), {}, '_asset() returns {} if asset is not present';
+ok my $res = $cache->try_lock_asset($fake_asset), 'Could lock asset';
+
+path($fake_asset)->spurt('');
+is $res->{downloading}, 1, 'Download lock acquired';
+is $cache->check_limits(2333), 0, 'Freed no space - locked assets are not removed';
+is $cache->toggle_asset_lock($fake_asset, 0), 1, 'Could release lock';
+is $cache->check_limits(2333), 1, '1 Asset purged to make space';
+
+# Concurrent test
+my $tot_proc   = $ENV{STRESS_TEST} ? 60 : 10;
+my $concurrent = $ENV{STRESS_TEST} ? 30 : 2;
+my $q          = queue;
+$q->pool->maximum_processes($concurrent);
+$q->queue->maximum_processes($tot_proc);
+my @test = uniq(map { int(rand(2000)) + 150 } 1 .. ($tot_proc / 2));
+my $sum = sum(@test) + 2000;
+diag "Testing downloading " . (scalar @test) . " assets of ($sum) @test size";
+
+my $concurrent_test = sub {
+    srand int time;
+    $cache->limit($sum);
+    $cache->init;
+    $cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200_' . $_ . '@64bit.qcow2') for shuffle @test;
+    Devel::Cover::report() if Devel::Cover->can('report');
+};
+
+$q->add(process($concurrent_test)->set_pipes(0)->internal_pipes(0)) for 1 .. $tot_proc;
+
+$q->consume();
+is $q->done->size, $tot_proc, 'Queue consumed ' . $tot_proc . ' processes';
+
+$autoinst_log = read_log('autoinst-log.txt');
+
+is((() = $autoinst_log =~ m/Asset download successful/g), scalar @test, 'Downloaded assets only once')
+  or diag $autoinst_log;
+is((() = $autoinst_log =~ m/CACHE: Asset download successful to .*sle-12-SP3-x86_64-0368-200_$_\@/g),
+    1, "Successfully downloaded sle-12-SP3-x86_64-0368-200_$_")
+  for @test;
+is((() = $autoinst_log =~ m/database is locked/ig), 0, '0 Database locks') or diag $autoinst_log;
+truncate_log 'autoinst-log.txt';
+
+
+stop_server;
 done_testing();
