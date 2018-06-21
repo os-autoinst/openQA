@@ -386,8 +386,8 @@ function updateDeveloperPanel() {
     if (toPauseAtIndex < 0) {
         toPauseAtIndex = 0;
     }
-    var moduleToPauseAtStillAhead = developerMode.moduleToPauseAt
-        && toPauseAtIndex > currentModuleIndex;
+    var moduleToPauseAtStillAhead = (developerMode.moduleToPauseAt
+        && toPauseAtIndex > currentModuleIndex);
 
     // update status info
     var statusInfo = 'unknown';

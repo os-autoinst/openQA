@@ -1,5 +1,5 @@
 <select class="custom-select" name="pause-at-module" id="developer-pause-at-module">
-    <option selected style="font-style: italic;">Don't pause at a module</option>
+    <option selected style="font-style: italic;">Do not pause</option>
     % my $in_optgroup = 0;
     % for my $module (@$modlist) {
         % my $category = $module->{category};
