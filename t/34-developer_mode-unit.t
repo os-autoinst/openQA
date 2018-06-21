@@ -381,60 +381,68 @@ subtest 'URLs for command server and livehandler' => sub {
 };
 
 subtest 'websocket proxy' => sub {
+    # dumps the state of the websocket connections established in the following subtests
+    # note: not actually used after all, but useful during development
+    sub dump_websocket_state {
+        use Data::Dumper;
+        print('finished: ' . Dumper($t_livehandler->{finished}) . "\n");
+        print('messages: ' . Dumper($t_livehandler->{messages}) . "\n");
+    }
+
     subtest 'job does not exist' => sub {
-        my $ws_monitoring = $t_livehandler->websocket_ok(
+        $t_livehandler->websocket_ok(
             '/liveviewhandler/tests/54754/developer/ws-proxy',
             'establish ws connection from JavaScript to livehandler'
         );
-        Mojo::IOLoop->one_tick;
-        $ws_monitoring->message_ok('message received');
-        $ws_monitoring->json_message_is(
+        $t_livehandler->message_ok('message received');
+        $t_livehandler->json_message_is(
             {
                 type => 'error',
                 what => 'job not found',
                 data => undef,
             });
+        $t_livehandler->finished_ok(1005);
 
         is($developer_sessions->count, 0, 'no developer session after all');
     };
 
     subtest 'job without assigned worker' => sub {
-        my $ws_monitoring = $t_livehandler->websocket_ok(
+        $t_livehandler->websocket_ok(
             '/liveviewhandler/tests/99962/developer/ws-proxy',
             'establish ws connection from JavaScript to livehandler'
         );
-        Mojo::IOLoop->one_tick;
-        $ws_monitoring->message_ok('message received');
-        $ws_monitoring->json_message_is(
+        $t_livehandler->message_ok('message received');
+        $t_livehandler->json_message_is(
             {
                 type => 'error',
                 what => 'os-autoinst command server not available, job is likely not running',
                 data => undef,
             });
+        $t_livehandler->finished_ok(1005);
 
         is($developer_sessions->count, 0, 'no developer session after all');
     };
 
     subtest 'job with assigned worker, but os-autoinst not reachable' => sub {
-        my $ws_monitoring = $t_livehandler->websocket_ok(
+        $t_livehandler->websocket_ok(
             '/liveviewhandler/tests/99961/developer/ws-proxy',
             'establish ws connection from JavaScript to livehandler'
         );
-        Mojo::IOLoop->one_tick;
-        $ws_monitoring->message_ok('message received');
-        $ws_monitoring->json_message_is(
+        $t_livehandler->message_ok('message received');
+        $t_livehandler->json_message_is(
             {
                 type => 'info',
                 what => 'connecting to os-autoinst command server at ws://remotehost:20013/token99961/ws',
                 data => undef,
             });
-        $ws_monitoring->message_ok('another message received');
-        $ws_monitoring->json_message_is(
+        $t_livehandler->message_ok('another message received');
+        $t_livehandler->json_message_is(
             {
                 type => 'error',
                 what => 'unable to upgrade ws to command server',
                 data => undef,
             });
+        $t_livehandler->finished_ok(1005);
 
         is($developer_sessions->count, 0, 'no developer session after all');
     };
@@ -445,20 +453,19 @@ subtest 'websocket proxy' => sub {
 
     subtest 'job with assigned worker, fake os-autoinst' => sub {
         # connect to ws proxy again, should use the fake connection now
-        my $developer_ws_monitoring = $t_livehandler->websocket_ok(
+        $t_livehandler->websocket_ok(
             '/liveviewhandler/tests/99961/developer/ws-proxy',
             'establish ws connection from JavaScript to livehandler'
         );
-        Mojo::IOLoop->one_tick;
-        $developer_ws_monitoring->message_ok('message received');
-        $developer_ws_monitoring->json_message_is(
+        $t_livehandler->message_ok('message received');
+        $t_livehandler->json_message_is(
             {
                 type => 'info',
                 what => 'connecting to os-autoinst command server at ws://remotehost:20013/token99961/ws',
                 data => undef,
             });
-        $developer_ws_monitoring->message_ok('another message received');
-        $developer_ws_monitoring->json_message_is(
+        $t_livehandler->message_ok('another message received');
+        $t_livehandler->json_message_is(
             {
                 type => 'info',
                 what =>
@@ -471,32 +478,31 @@ subtest 'websocket proxy' => sub {
         is($developer_sessions->count,                      1, 'developer session opened');
         is($developer_sessions->first->ws_connection_count, 1, 'one developer ws connection present');
 
-        $developer_ws_monitoring->finish_ok();
+        $t_livehandler->finish_ok();
     };
 
     subtest 'status-only route' => sub {
         # connect like in previous subtest, just use the status-only route this time
-        my $ws_monitoring = $t_livehandler->websocket_ok(
+        $t_livehandler->websocket_ok(
             '/liveviewhandler/tests/99961/developer/ws-proxy/status',
             'establish status-only ws connection from JavaScript to livehandler'
         );
-        Mojo::IOLoop->one_tick;
-        $ws_monitoring->message_ok('message received');
-        $ws_monitoring->json_message_is(
+        $t_livehandler->message_ok('message received');
+        $t_livehandler->json_message_is(
             {
                 type => 'info',
                 what => 'connecting to os-autoinst command server at ws://remotehost:20013/token99961/ws',
                 data => undef,
             });
-        $ws_monitoring->message_ok('another message received');
-        $ws_monitoring->json_message_is(
+        $t_livehandler->message_ok('another message received');
+        $t_livehandler->json_message_is(
             {
                 type => 'info',
                 what =>
                   'reusing previous connection to os-autoinst command server at ws://remotehost:20013/token99961/ws',
                 data => undef,
             });
-        $ws_monitoring->finish_ok();
+        $t_livehandler->finish_ok();
       }
 };
 
