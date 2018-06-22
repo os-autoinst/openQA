@@ -364,6 +364,23 @@ function setupDeveloperPanel() {
 
 // updates the developer panel, must be called after modifying developerMode
 function updateDeveloperPanel() {
+    // hide/show elements according to data-hidden and data-visible attributes
+    var developerModeElements = $('.developer-mode-element');
+    developerModeElements.each(function(index) {
+        var element = $(this);
+        var visibleOn = element.data('visible-on');
+        var hiddenOn = element.data('hidden-on');
+        var hide = ((hiddenOn && developerMode.prop(hiddenOn))
+                 || (visibleOn && !developerMode.prop(visibleOn)));
+        if (hide) {
+            element.hide();
+        } else if (element.hasClass('btn')) {
+            element.css('display', 'inline-block');
+        } else {
+            element.show();
+        }
+    });
+
     // set panel visibility
     var panel = $('#developer-panel');
     if (!testStatus.running) {
@@ -372,6 +389,7 @@ function updateDeveloperPanel() {
         return;
     }
     panel.show();
+
     // toggle panel body if its current state doesn't match developerMode.panelExpanded
     var panelBody = panel.find('.card-body');
     if (developerMode.panelExpanded !== developerMode.panelActuallyExpanded) {
@@ -431,23 +449,6 @@ function updateDeveloperPanel() {
 
     // update module to pause at
     moduleToPauseAtOptions[toPauseAtIndex].setAttribute('selected', true);
-
-    // hide/show elements according to data-hidden and data-visible attributes
-    var developerModeElements = $('.developer-mode-element');
-    developerModeElements.each(function(index) {
-        var element = $(this);
-        var visibleOn = element.data('visible-on');
-        var hiddenOn = element.data('hidden-on');
-        var hide = ((hiddenOn && developerMode.prop(hiddenOn))
-                 || (visibleOn && !developerMode.prop(visibleOn)));
-        if (hide) {
-            element.hide();
-        } else if (element.hasClass('btn')) {
-            element.css('display', 'inline-block');
-        } else {
-            element.show();
-        }
-    });
 }
 
 // submits the selected module to pause at if it has changed

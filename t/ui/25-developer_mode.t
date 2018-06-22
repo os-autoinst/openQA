@@ -1,0 +1,307 @@
+#! /usr/bin/perl
+
+# Copyright (C) 2018 SUSE LLC
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+# note: Tests the only the UI-layer of the developer mode. So no
+#       web socket connection to the live view handler is established here.
+#       Instead, the state is injected via JavaScript commands.
+
+BEGIN {
+    unshift @INC, 'lib';
+    $ENV{OPENQA_TEST_IPC} = 1;
+}
+
+use Module::Load::Conditional qw(can_load);
+use Mojo::Base -strict;
+use Mojo::File qw(path tempdir);
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use Test::More;
+use Test::Mojo;
+use Test::Warnings;
+use OpenQA::Test::Case;
+use OpenQA::SeleniumTest;
+
+OpenQA::Test::Case->new->init_data;
+
+sub schema_hook {
+    my $schema  = OpenQA::Test::Database->new->create;
+    my $workers = $schema->resultset('Workers');
+    my $jobs    = $schema->resultset('Jobs');
+
+    # assign a worker to job 99961
+    my $job_id = 99961;
+    my $worker = $workers->find({job_id => $job_id});
+    $jobs->find($job_id)->update({assigned_worker_id => $worker->id});
+
+    # set required worker properties
+    $worker->set_property(WORKER_TMPDIR => path(tempdir, 't', 'devel-mode-ui.d'));
+    $worker->set_property(CMD_SRV_URL => 'http://remotehost:20013/token99964');
+}
+
+my $t      = Test::Mojo->new('OpenQA::WebAPI');
+my $driver = call_driver(\&schema_hook);
+unless ($driver) {
+    plan skip_all => $OpenQA::SeleniumTest::drivermissing;
+    exit(0);
+}
+
+# asserts that an element is visible and optionally whether it does (not) contain the expected phrases
+sub element_visible {
+    my ($selector, $like, $unlike) = @_;
+
+    my @elements = $driver->find_elements($selector);
+    is(scalar @elements, 1, $selector . ' present exactly once');
+
+    my $element = $elements[0];
+    ok($element->is_displayed(), $selector . ' visible');
+
+    # assert the element's text
+    my $element_text = $element->get_text();
+    if ($like) {
+        if (ref $like eq 'ARRAY') {
+            like($element_text, $_, "$selector contains $_") for (@$like);
+        }
+        else {
+            like($element_text, $like, "$selector contains expected text");
+        }
+    }
+    if ($unlike) {
+        if (ref $unlike eq 'ARRAY') {
+            unlike($element_text, $_, "$selector does not contain $_") for (@$unlike);
+        }
+        else {
+            unlike($element_text, $unlike, "$selector does not contain text");
+        }
+    }
+}
+
+# asserts that an element is part of the page but hidden
+sub element_hidden {
+    my ($selector) = @_;
+
+    my @elements = $driver->find_elements($selector);
+    is(scalar @elements, 1, $selector . ' present exactly once');
+    ok(!$elements[0]->is_displayed(), $selector . ' hidden');
+}
+
+# sets the properties of the specified global JavaScript object and updates the developer panel
+sub fake_state {
+    my ($variable, $state) = @_;
+
+    my $java_script = '';
+    $java_script .= "$variable\['$_'\] = $state->{$_};" for (keys %$state);
+    $java_script .= 'updateDeveloperPanel();';
+
+    print("injecting JavaScript: $java_script\n");
+    $driver->execute_script($java_script);
+}
+
+# mocks the specified JavaScript functions (reverted when navigating to another page)
+sub mock_js_functions {
+    my (%functions_to_mock) = @_;
+
+    my $java_script = '';
+    $java_script .= "window.$_ = function(arg1, arg2) { $functions_to_mock{$_} };" for (keys %functions_to_mock);
+
+    print("injecting JavaScript: $java_script\n");
+    $driver->execute_script($java_script);
+}
+
+# checks whether the commands sent by the JavaScript since the last call matches the expected commands
+sub assert_sent_commands {
+    my ($expected, $test_name) = @_;
+
+    my $sent_cmds
+      = $driver->execute_script('var sentCmds = window.sentCmds; window.sentCmds = undefined; return sentCmds;');
+    is_deeply($sent_cmds, $expected, $test_name);
+}
+
+# clicks on the header of the developer panel
+sub click_header {
+    $driver->find_element('#developer-panel .card-header')->click();
+}
+
+# login an navigate to a running job with assigned worker
+$driver->get('/login');
+$driver->get('/tests/99961#live');
+
+# mock some JavaScript functions
+mock_js_functions(
+    updateStatus             => '',
+    setupWebsocketConnection => '',
+    startDeveloperSession =>
+      'developerMode.ownSession = true; developerMode.useDeveloperWsRoute = true; updateDeveloperPanel();',
+    sendWsCommand => 'if (!window.sentCmds) { window.sentCmds = [] } window.sentCmds.push(arg1);',
+);
+
+# fake module list (since we're not executing a real test here)
+$driver->execute_script(
+'$("#developer-pause-at-module").append("<optgroup label=\"installation\"><option>boot</option><option>welcome</option><option>foo</option><option>bar</option></optgroup>")'
+);
+
+subtest 'devel UI hidden when running, but modules not initialized' => sub {
+    my $info_panel = $driver->find_element('#info_box .card-body');
+    my $info_text  = $info_panel->get_text();
+    like($info_text, qr/State\: running.*\nAssigned worker\: remotehost\:1/, 'job is running');
+    element_hidden('#developer-instructions');
+    element_hidden('#developer-panel');
+};
+
+subtest 'devel UI shown when running module known' => sub {
+    fake_state(testStatus => {running => '"welcome"'});
+    element_hidden('#developer-instructions');
+    element_visible('#developer-panel');
+    element_visible(
+        '#developer-panel .card-header',
+        qr/Developer mode.*\nretrieving status.*\nno developer session opened - click to open/,
+    );
+    element_hidden('#developer-panel .card-body');
+};
+
+subtest 'state shown when connected' => sub {
+    # usual test execution, current module unknown
+    fake_state(developerMode => {isConnected => 'true'});
+    element_hidden('#developer-instructions');
+    element_visible('#developer-panel');
+    element_visible(
+        '#developer-panel .card-header',
+        qr/Developer mode.*\nusual test execution.*\nno developer session opened - click to open/,
+        [qr/paused/, qr/opened by/],
+    );
+    element_hidden('#developer-panel .card-body');
+
+    # usual test execution, current module known
+    fake_state(developerMode => {currentModule => '"installation-welcome"'});
+    element_hidden('#developer-instructions');
+    element_visible('#developer-panel .card-header', qr/usual test execution, at installation-welcome/, qr/paused/,);
+
+    # will pause at certain module
+    fake_state(developerMode => {moduleToPauseAt => '"installation-foo"'});
+    element_hidden('#developer-instructions');
+    element_visible('#developer-panel .card-header', qr/will pause at module installation-foo/, qr/paused/,);
+    my @options = $driver->find_elements('#developer-pause-at-module option');
+    is(scalar @options, 5, '5 options in module to pause at selection present');
+    is($_->is_selected(), $_->get_value() eq 'foo' ? 1 : 0, 'only foo selected') for (@options);
+
+    # has already completed the module to pause at
+    fake_state(developerMode => {moduleToPauseAt => '"installation-boot"'});
+    element_hidden('#developer-instructions');
+    element_visible('#developer-panel .card-header', qr/usual test execution, at installation-welcome/, qr/paused/,);
+    is($_->is_selected(), $_->get_value() eq 'boot' ? 1 : 0, 'only boot selected') for (@options);
+
+    # currently paused
+    fake_state(developerMode => {isPaused => 'true'});
+    element_visible('#developer-instructions',
+        qr/System is waiting for developer, connect to remotehost at port 91 with Shared mode/,
+    );
+    element_visible('#developer-panel .card-header', qr/paused/, qr/execution/,);
+
+    # developer session opened
+    fake_state(
+        developerMode => {
+            develSessionDeveloper => '"some developer"',
+            develSessionStartedAt => '"2018-06-22 12:00:00 +0000"',
+            develSessionTabCount  => '42',
+        });
+    element_visible(
+        '#developer-panel .card-header',
+        qr/opened by some developer \(.* ago, developer has 42 tabs open\)/,
+        qr/no developer session opened - click to open/,
+    );
+};
+
+# revert state changes from previous tests
+fake_state(
+    developerMode => {
+        moduleToPauseAt       => 'undefined',
+        isPaused              => 'false',
+        develSessionDeveloper => 'undefined',
+        develSessionStartedAt => 'undefined',
+        develSessionTabCount  => 'undefined',
+    });
+
+my @expected_text_on_initial_session_creation = (qr/Select what you/, qr/Confirm \& start developer session/,);
+my @expected_text_after_session_created = (qr/You started a developer session/, qr/Cancel job/, qr/Open console/,);
+
+subtest 'expand developer panel' => sub {
+    click_header();
+    element_visible(
+        '#developer-panel .card-body',
+        \@expected_text_on_initial_session_creation,
+        [@expected_text_after_session_created, qr/Resume/],
+    );
+};
+
+subtest 'collapse developer panel' => sub {
+    click_header();
+    element_hidden('#developer-panel .card-body');
+};
+
+subtest 'start developer session' => sub {
+    click_header();
+    $driver->find_element('Confirm & start developer session', 'link_text')->click();
+    element_visible(
+        '#developer-panel .card-body',
+        \@expected_text_after_session_created,
+        [@expected_text_on_initial_session_creation, qr/Resume/],
+    );
+
+    subtest 'resume paused test' => sub {
+        fake_state(developerMode => {isPaused => 'true'});
+        $driver->find_element('Resume test execution', 'link_text')->click();
+        assert_sent_commands([{cmd => 'resume_test_execution'}], 'command for resuming test execution sent');
+    };
+
+    subtest 'select module to pause at' => sub {
+        my @module_options = $driver->find_elements('#developer-pause-at-module option');
+        fake_state(developerMode => {moduleToPauseAt => '"installation-foo"'});
+
+        $module_options[3]->set_selected();    # select installation-foo
+        assert_sent_commands(undef, 'no command sent if nothing changes');
+
+        $module_options[4]->set_selected();    # select installation-bar
+        assert_sent_commands(
+            [
+                {
+                    cmd  => 'set_pause_at_test',
+                    name => 'installation-bar',
+                }
+            ],
+            'command to set module to pause at sent'
+        );
+
+        $module_options[0]->set_selected();    # select <don't pause>
+        assert_sent_commands(
+            [
+                {
+                    cmd => 'set_pause_at_test',
+                }
+            ],
+            'command to clear module to pause at sent'
+        );
+    };
+
+    subtest 'quit session' => sub {
+        $driver->find_element('Cancel job', 'link_text')->click();
+        assert_sent_commands([{cmd => 'quit_development_session'}], 'command for quitting session sent');
+        element_hidden('#developer-panel .card-body');
+    };
+};
+
+kill_driver();
+done_testing();
