@@ -19,7 +19,7 @@ use strict;
 use Try::Tiny;
 use Mojo::URL;
 use Mojo::Base 'Mojolicious::Controller';
-use OpenQA::Utils;
+use OpenQA::Utils 'determine_web_ui_web_socket_url';
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 
