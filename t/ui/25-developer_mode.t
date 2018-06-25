@@ -64,45 +64,6 @@ unless ($driver) {
     exit(0);
 }
 
-# asserts that an element is visible and optionally whether it does (not) contain the expected phrases
-sub element_visible {
-    my ($selector, $like, $unlike) = @_;
-
-    my @elements = $driver->find_elements($selector);
-    is(scalar @elements, 1, $selector . ' present exactly once');
-
-    my $element = $elements[0];
-    ok($element->is_displayed(), $selector . ' visible');
-
-    # assert the element's text
-    my $element_text = $element->get_text();
-    if ($like) {
-        if (ref $like eq 'ARRAY') {
-            like($element_text, $_, "$selector contains $_") for (@$like);
-        }
-        else {
-            like($element_text, $like, "$selector contains expected text");
-        }
-    }
-    if ($unlike) {
-        if (ref $unlike eq 'ARRAY') {
-            unlike($element_text, $_, "$selector does not contain $_") for (@$unlike);
-        }
-        else {
-            unlike($element_text, $unlike, "$selector does not contain text");
-        }
-    }
-}
-
-# asserts that an element is part of the page but hidden
-sub element_hidden {
-    my ($selector) = @_;
-
-    my @elements = $driver->find_elements($selector);
-    is(scalar @elements, 1, $selector . ' present exactly once');
-    ok(!$elements[0]->is_displayed(), $selector . ' hidden');
-}
-
 # sets the properties of the specified global JavaScript object and updates the developer panel
 sub fake_state {
     my ($variable, $state) = @_;
@@ -110,17 +71,6 @@ sub fake_state {
     my $java_script = '';
     $java_script .= "$variable\['$_'\] = $state->{$_};" for (keys %$state);
     $java_script .= 'updateDeveloperPanel();';
-
-    print("injecting JavaScript: $java_script\n");
-    $driver->execute_script($java_script);
-}
-
-# mocks the specified JavaScript functions (reverted when navigating to another page)
-sub mock_js_functions {
-    my (%functions_to_mock) = @_;
-
-    my $java_script = '';
-    $java_script .= "window.$_ = function(arg1, arg2) { $functions_to_mock{$_} };" for (keys %functions_to_mock);
 
     print("injecting JavaScript: $java_script\n");
     $driver->execute_script($java_script);

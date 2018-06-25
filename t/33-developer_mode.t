@@ -244,16 +244,66 @@ subtest 'pause at certain test' => sub {
 subtest 'developer session visible in live view' => sub {
     $driver->get($job_page_url);
     $driver->find_element_by_link_text('Live View')->click();
-    wait_for_session_info(qr/opened by Demo/, 'user displayed');
 
-    my $developer_instructions_info = $driver->find_element('#developer-instructions')->get_text();
-    like($developer_instructions_info, qr/connect to .* at port 91/, 'developer instructions');
+    subtest 'initial state of UI controls' => sub {
+        wait_for_session_info(qr/opened by Demo/, 'user displayed');
+        element_visible('#developer-instructions',       qr/connect to .* at port 91/);
+        element_visible('#developer-panel .card-header', qr/paused/);
+        element_hidden('#developer-panel .card-body');
+    };
+
+    subtest 'expand developer panel' => sub {
+        $driver->find_element('#developer-panel .card-header')->click();
+        element_visible(
+            '#developer-panel .card-body',
+            [
+                qr/You started a developer session/,
+                qr/Pause test execution/,
+                qr/Cancel job/, qr/Resume/, qr/Open console/
+            ],
+            [qr/Confirm \& start developer session/,],
+        );
+
+        my @module_options = $driver->find_elements('#developer-pause-at-module option');
+        my @module_names = map { $_->get_text() } @module_options;
+        is_deeply(\@module_names, ['Do not pause', 'boot', 'shutdown',], 'module');
+    };
 };
 
-subtest 'session locked for other developers' => sub {
+subtest 'status-only route accessible for other users' => sub {
     $driver->get('/logout');
     $driver->get('/login?user=otherdeveloper');
     is($driver->find_element('#user-action a')->get_text(), 'Logged in as otherdeveloper', 'otherdeveloper logged-in');
+
+    $driver->get($job_page_url);
+    $driver->find_element_by_link_text('Live View')->click();
+
+    subtest 'initial state of UI controls' => sub {
+        wait_for_session_info(qr/opened by Demo/, 'user displayed');
+        element_visible('#developer-instructions',       qr/connect to .* at port 91/);
+        element_visible('#developer-panel .card-header', qr/paused/);
+        element_hidden('#developer-panel .card-body');
+    };
+
+    subtest 'expand developer panel' => sub {
+        $driver->find_element('#developer-panel .card-header')->click();
+        element_visible(
+            '#developer-panel .card-body',
+            [qr/The development session has already been started by/],
+            [
+                qr/Select what you want/,
+                qr/You started a developer session/,
+                qr/Pause test execution/,
+                qr/Confirm \& start developer session/,
+                qr/Cancel job/,
+                qr/Resume/,
+                qr/Open console/
+            ],
+        );
+    };
+};
+
+subtest 'developer session locked for other developers' => sub {
     $driver->get($developer_console_url);
 
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
