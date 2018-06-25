@@ -454,5 +454,34 @@ sub proxy_status {
     return $self->ws_proxy('status');
 }
 
+sub not_found_ws {
+    my ($self) = @_;
+
+    my $transaction = $self->tx;
+    $transaction->send(
+        {
+            json => {
+                type => 'error',
+                what => 'route does not exist',
+            }
+        },
+        sub {
+            $transaction->finish(1011) unless ($transaction->is_finished);
+        });
+    $self->on(finish => sub { });
+}
+
+sub not_found_http {
+    my ($self) = @_;
+
+    print("not_found_http\n");
+
+    return $self->respond_to(
+        any => {
+            text   => "route does not exist\n",
+            status => 404,
+        });
+}
+
 1;
 # vim: set sw=4 et:

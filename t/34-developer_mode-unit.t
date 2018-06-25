@@ -546,7 +546,22 @@ subtest 'websocket proxy' => sub {
         is($developer_session->ws_connection_count, 0, 'status-only conection not counted');
 
         $t_livehandler->finish_ok();
-      }
+    };
+
+    subtest 'error handling' => sub {
+        $t_livehandler->websocket_ok('/some/route');
+        $t_livehandler->message_ok('message received');
+        $t_livehandler->json_message_is(
+            {
+                type => 'error',
+                what => 'route does not exist',
+            });
+        $t_livehandler->finished_ok(1011);
+
+        $t_livehandler->get_ok('/some/route')->status_is(404);
+        $t_livehandler->content_is("route does not exist\n", 'livehandler does not try to render a template');
+
+    };
 };
 
 done_testing();
