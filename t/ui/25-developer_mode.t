@@ -39,9 +39,10 @@ use OpenQA::SeleniumTest;
 OpenQA::Test::Case->new->init_data;
 
 sub schema_hook {
-    my $schema  = OpenQA::Test::Database->new->create;
-    my $workers = $schema->resultset('Workers');
-    my $jobs    = $schema->resultset('Jobs');
+    my $schema             = OpenQA::Test::Database->new->create;
+    my $workers            = $schema->resultset('Workers');
+    my $jobs               = $schema->resultset('Jobs');
+    my $developer_sessions = $schema->resultset('DeveloperSessions');
 
     # assign a worker to job 99961
     my $job_id = 99961;
@@ -51,6 +52,9 @@ sub schema_hook {
     # set required worker properties
     $worker->set_property(WORKER_TMPDIR => path(tempdir, 't', 'devel-mode-ui.d'));
     $worker->set_property(CMD_SRV_URL => 'http://remotehost:20013/token99964');
+
+    # add developer session for a finished job
+    $developer_sessions->register(99926, 99901);
 }
 
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
@@ -138,6 +142,16 @@ sub click_header {
 
 # login an navigate to a running job with assigned worker
 $driver->get('/login');
+
+# navigate to a finished test
+$driver->get('/tests/99926');
+like(
+    $driver->find_element('#info_box .card-body')->get_text(),
+    qr/Developer session was opened during testrun by artie/,
+    'responsible developer shown for finished test'
+);
+
+# navigate to live view of running test
 $driver->get('/tests/99961#live');
 
 # mock some JavaScript functions
@@ -302,6 +316,7 @@ subtest 'start developer session' => sub {
         element_hidden('#developer-panel .card-body');
     };
 };
+
 
 kill_driver();
 done_testing();

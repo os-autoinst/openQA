@@ -44,11 +44,17 @@ sub register {
 sub unregister {
     my ($self, $job_id) = @_;
 
+
+
+    # to keep track of the responsible developer, don't delete the database entry here
+    # (it is deleted when the associated job is delete anyways)
+
+    # however, we should cancel the job now
     return $self->result_source->schema->txn_do(
         sub {
             my $session = $self->find({job_id => $job_id}) or return 0;
-            $session->delete();
-            return 1;
+            my $job = $session->job or return 0;
+            return $job->cancel();
         });
 }
 

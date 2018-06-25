@@ -54,6 +54,13 @@
                         % end
                     % }
                 </div>
+                % if ($job->t_finished) {
+                    % if (my $developer_session = $job->developer_session) {
+                        <div>
+                            Developer session was opened during testrun by <%= $developer_session->user->name %>
+                        </div>
+                    % }
+                % }
                 <div>
                     % if ($clone_of) {
                         Clone of

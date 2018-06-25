@@ -320,7 +320,7 @@ subtest 'resume test execution' => sub {
 };
 
 
-subtest 'quit_session' => sub {
+subtest 'quit session' => sub {
     $driver->switch_to_window($first_tab);
 
     my $command_input = $driver->find_element('#msg');
@@ -338,15 +338,15 @@ subtest 'quit_session' => sub {
     );
 };
 
-subtest 'further test execution happens as usual' => sub {
+subtest 'test cancelled by quitting the session' => sub {
     $driver->switch_to_window($first_tab);
     $driver->get($job_page_url);
-    OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/, 'test 1 is passed');
-
+    OpenQA::Test::FullstackUtils::wait_for_result_panel(
+        $driver,
+        qr/Result: user_cancelled/,
+        'test 1 has been cancelled'
+    );
     ok(-s path($resultdir, '00000', "00000001-$job_name")->make_path->child('autoinst-log.txt'), 'log file generated');
-    ok(-s path($sharedir, 'factory', 'hdd')->make_path->child('core-hdd.qcow2'), 'image of hdd uploaded');
-    my $mode = S_IMODE((stat(path($sharedir, 'factory', 'hdd')->child('core-hdd.qcow2')))[2]);
-    is($mode, 420, 'exported image has correct permissions (420 -> 0644)');
 };
 
 kill_driver;

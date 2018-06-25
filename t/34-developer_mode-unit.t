@@ -26,12 +26,21 @@ use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
-use Test::MockObject;
+use Test::MockModule;
 use OpenQA::Test::Case;
 use OpenQA::Test::FakeWebSocketTransaction;
 use OpenQA::WebAPI::Controller::Developer;
 use OpenQA::WebAPI::Controller::LiveViewHandler;
 use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
+
+# mock OpenQA::Schema::Result::Jobs::cancel()
+my $jobs_mock_module = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+my @jobs_cancelled;
+$jobs_mock_module->redefine(
+    cancel => sub {
+        my ($job) = @_;
+        push(@jobs_cancelled, $job->id);
+    });
 
 # init test case
 my $test_case = OpenQA::Test::Case->new;
@@ -351,8 +360,10 @@ subtest 'register developer session' => sub {
 };
 
 subtest 'unregister developer session' => sub {
+    is_deeply(\@jobs_cancelled, [], 'no jobs cancelled so far');
     is($developer_sessions->unregister(99963, 99901), 1, 'returns 1 on successful deletion');
-    is($developer_sessions->count, 0, 'no sessions left');
+    is($developer_sessions->count, 1, 'session not completely deleted');
+    is_deeply(\@jobs_cancelled, [99963], 'but the job has been cancelled');
     is($developer_sessions->unregister(99962, 99902), 0, 'returns 0 if session has not existed anyways');
 };
 
