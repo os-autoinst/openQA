@@ -74,34 +74,37 @@ sub set_fake_status_java_script_transactions {
 #       prefork musn't be used (for now)
 sub send_message_to_java_script_clients {
     my ($self, $job_id, $type, $what, $data, $status_code_to_quit_on_finished) = @_;
+
+    my @all_java_script_transactions_for_job;
     for my $java_script_transaction_container (\%devel_java_script_transactions_by_job,
         \%status_java_script_transactions_by_job)
     {
-        my $java_script_transactions_for_current_job = $java_script_transaction_container->{$job_id} or next;
-        my $outstanding_transmissions = scalar @$java_script_transactions_for_current_job;
-        for my $java_script_tx (@$java_script_transactions_for_current_job) {
-            $java_script_tx->send(
-                {
-                    json => {
-                        type => $type,
-                        what => $what,
-                        data => $data,
-                    }
-                },
-                sub {
-                    return unless ($status_code_to_quit_on_finished);
-                    return if ($outstanding_transmissions -= 1);
-                    $self->quit_development_session($job_id, $what, $status_code_to_quit_on_finished);
-                });
+        if (my $java_script_transactions_for_job = $java_script_transaction_container->{$job_id}) {
+            push(@all_java_script_transactions_for_job, @$java_script_transactions_for_job);
         }
     }
+
+    my $outstanding_transmissions = scalar @all_java_script_transactions_for_job;
+    $_->send(
+        {
+            json => {
+                type => $type,
+                what => $what,
+                data => $data,
+            }
+        },
+        sub {
+            return unless ($status_code_to_quit_on_finished);
+            return if ($outstanding_transmissions -= 1);
+            $self->finish_all_connections($job_id, $status_code_to_quit_on_finished);
+        }) for (@all_java_script_transactions_for_job);
 }
 
 # same as send_message_to_java_script_clients, but quits the development session after everything is sent
 # note: used to report fatal errors within ws_proxy which happen *after* the development session has been established
 #       and require the development session to be quit
 #       (eg. connection to os-autoinst lost)
-sub send_message_to_java_script_clients_and_quit {
+sub send_message_to_java_script_clients_and_finish {
     my ($self, $job_id, $type, $what, $data, $status_code) = @_;
 
     # set status code (errors or normal quit)
@@ -133,6 +136,17 @@ sub send_message_to_java_script_client_and_finish {
 
     # return the result of an 'on' call; otherwise Mojolicious expects a 'delayed response'
     return $self->on(finish => sub { });
+}
+
+sub finish_all_connections {
+    my ($self, $job_id, $status_code) = @_;
+
+    for my $java_script_transaction_container (\%devel_java_script_transactions_by_job,
+        \%status_java_script_transactions_by_job)
+    {
+        my $java_script_transactions_for_current_job = delete $java_script_transaction_container->{$job_id} or next;
+        $_->finish($status_code) for (@$java_script_transactions_for_current_job);
+    }
 }
 
 # quits the developments session for the specified job ID
@@ -259,7 +273,7 @@ sub connect_to_cmd_srv {
             if (!$tx->is_websocket) {
                 my $location_header = ($tx->completed ? $tx->res->headers->location : undef);
                 if (!$location_header) {
-                    $self->send_message_to_java_script_clients_and_quit($job_id,
+                    $self->send_message_to_java_script_clients_and_finish($job_id,
                         error => 'unable to upgrade ws to command server');
                     return;
                 }
@@ -289,7 +303,7 @@ sub connect_to_cmd_srv {
                     # prevent finishing the transaction twice
                     $cmd_srv_transactions_by_job{$job_id} = undef;
                     # inform the JavaScript client
-                    $self->send_message_to_java_script_clients_and_quit(
+                    $self->send_message_to_java_script_clients_and_finish(
                         $job_id,
                         error => 'connection to os-autoinst command server lost',
                         {
@@ -387,7 +401,7 @@ sub ws_proxy {
     my $cmd_srv_raw_url = OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job);
     if (!$cmd_srv_raw_url) {
         $app->log->debug('ws_proxy: attempt to open for job ' . $job->name . ' (' . $job_id . ')');
-        $self->send_message_to_java_script_clients_and_quit($job_id,
+        $self->send_message_to_java_script_clients_and_finish($job_id,
             error => 'os-autoinst command server not available, job is likely not running');
     }
 

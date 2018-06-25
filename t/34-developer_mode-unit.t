@@ -90,7 +90,7 @@ subtest 'send message to JavaScript clients' => sub {
     # send session info when no session present (should be broadcasted to all assigned transations)
     $live_view_handler->send_session_info(99961);
 
-    # send session info when no session present (should be broadcasted to all assigned transations)
+    # send session info when session present (should be broadcasted to all assigned transations)
     my $session = $developer_sessions->create(
         {
             job_id              => 99961,
@@ -100,6 +100,13 @@ subtest 'send message to JavaScript clients' => sub {
     my $session_t_created = $session->t_created;
     $live_view_handler->send_session_info(99961);
     $session->delete();
+
+    # finish all clients
+    is($_->finish_called, 0, 'no transactions finished so far')
+      for (@fake_java_script_transactions, @fake_java_script_transactions2);
+    $live_view_handler->send_message_to_java_script_clients_and_finish(99961, error => 'test', {some => 'error'});
+    is($_->finish_called, 1, 'all transactions finished')
+      for (@fake_java_script_transactions, @fake_java_script_transactions2);
 
     # assert the messages we've got
     is_deeply(
@@ -127,6 +134,14 @@ subtest 'send message to JavaScript clients' => sub {
                         developer_name               => 'artie',
                         developer_session_started_at => $session_t_created,
                         developer_session_tab_count  => 2,
+                    }}
+            },
+            {
+                json => {
+                    type => 'error',
+                    what => 'test',
+                    data => {
+                        some => 'error',
                     }}
             },
         ],
@@ -422,7 +437,11 @@ subtest 'websocket proxy' => sub {
             });
         $t_livehandler->finished_ok(1011);
 
-        is($developer_sessions->count, 0, 'no developer session after all');
+        is($developer_sessions->count, 1, 'developer session opened');
+        my $developer_session = $developer_sessions->first;
+        is($developer_session->ws_connection_count, 0,     'all ws connections finished');
+        is($developer_session->job_id,              99962, 'job ID correct');
+        is($developer_session->user_id,             99901, 'user ID correct');
     };
 
     subtest 'job with assigned worker, but os-autoinst not reachable' => sub {
@@ -446,7 +465,10 @@ subtest 'websocket proxy' => sub {
             });
         $t_livehandler->finished_ok(1011);
 
-        is($developer_sessions->count, 0, 'no developer session after all');
+        my $developer_session = $developer_sessions->find(99961);
+        is($developer_sessions->count,              2,     'another developer session opened');
+        is($developer_session->ws_connection_count, 0,     'all ws connections finished');
+        is($developer_session->user_id,             99901, 'user ID correct');
     };
 
     # create fake web socket connection to os-autoinst for job 99961
@@ -477,10 +499,13 @@ subtest 'websocket proxy' => sub {
         is($fake_cmd_srv_tx->finish_called, 0, 'no attempt to close the connection again');
 
         # check whether we finally opened a developer session
-        is($developer_sessions->count,                      1, 'developer session opened');
-        is($developer_sessions->first->ws_connection_count, 1, 'one developer ws connection present');
+        my $developer_session = $developer_sessions->find(99961);
+        is($developer_sessions->count,              2,     'no new developer session opened');
+        is($developer_session->ws_connection_count, 1,     'ws connection finally kept open');
+        is($developer_session->user_id,             99901, 'user ID correct');
 
         $t_livehandler->finish_ok();
+        is($developer_sessions->find(99961)->ws_connection_count, 0, 'ws connection finished');
     };
 
     subtest 'status-only route' => sub {
@@ -504,6 +529,11 @@ subtest 'websocket proxy' => sub {
                   'reusing previous connection to os-autoinst command server at ws://remotehost:20013/token99961/ws',
                 data => undef,
             });
+
+        my $developer_session = $developer_sessions->find(99961);
+        is($developer_sessions->count,              2, 'no new developer session opened');
+        is($developer_session->ws_connection_count, 0, 'status-only conection not counted');
+
         $t_livehandler->finish_ok();
       }
 };
