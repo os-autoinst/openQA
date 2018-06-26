@@ -145,7 +145,7 @@ subtest 'state shown when connected' => sub {
     element_visible(
         '#developer-panel .card-header',
         qr/Developer mode.*\nusual test execution.*\nno developer session opened - click to open/,
-        [qr/paused/, qr/opened by/],
+        [qr/paused/, qr/owned by/],
     );
     element_hidden('#developer-panel .card-body');
 
@@ -184,7 +184,7 @@ subtest 'state shown when connected' => sub {
         });
     element_visible(
         '#developer-panel .card-header',
-        qr/opened by some developer \(.* ago, developer has 42 tabs open\)/,
+        qr/owned by some developer \(.* ago, developer has 42 tabs open\)/,
         qr/no developer session opened - click to open/,
     );
 };

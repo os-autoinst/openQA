@@ -20,7 +20,7 @@
         <div class="card-header-appendix" id="developer-session-info">
             % if (my $developer_session = $job->developer_session) {
                 % my $tab_count = $developer_session->ws_connection_count;
-                opened by <%= $developer_session->user->name %>
+                owned by <%= $developer_session->user->name %>
                 (started
                     <abbr class="timeago" title="<%= $developer_session->t_created->datetime() %>Z">
                         %= format_time($developer_session->t_created)

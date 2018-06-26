@@ -430,7 +430,7 @@ function updateDeveloperPanel() {
     // update session info
     var sessionInfoElement = $('#developer-session-info');
     if (developerMode.develSessionDeveloper) {
-        var sessionInfo = 'opened by ' + developerMode.develSessionDeveloper + ' (';
+        var sessionInfo = 'owned by ' + developerMode.develSessionDeveloper + ' (';
         sessionInfoElement.text(sessionInfo);
 
         var timeagoElement = $('<abbr class="timeago" title="' + developerMode.develSessionStartedAt + ' Z">' + developerMode.develSessionStartedAt + '</abbr>');

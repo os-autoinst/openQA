@@ -246,7 +246,7 @@ subtest 'developer session visible in live view' => sub {
     $driver->find_element_by_link_text('Live View')->click();
 
     subtest 'initial state of UI controls' => sub {
-        wait_for_session_info(qr/opened by Demo/, 'user displayed');
+        wait_for_session_info(qr/owned by Demo/, 'user displayed');
         element_visible('#developer-instructions',       qr/connect to .* at port 91/);
         element_visible('#developer-panel .card-header', qr/paused/);
         element_hidden('#developer-panel .card-body');
@@ -275,7 +275,7 @@ subtest 'status-only route accessible for other users' => sub {
     $driver->find_element_by_link_text('Live View')->click();
 
     subtest 'initial state of UI controls' => sub {
-        wait_for_session_info(qr/opened by Demo/, 'user displayed');
+        wait_for_session_info(qr/owned by Demo/, 'user displayed');
         element_visible('#developer-instructions',       qr/connect to .* at port 91/);
         element_visible('#developer-panel .card-header', qr/paused/);
         element_hidden('#developer-panel .card-body');
@@ -338,7 +338,7 @@ subtest 'resume test execution' => sub {
     # go back to the live view
     $driver->get($job_page_url);
     $driver->find_element_by_link_text('Live View')->click();
-    wait_for_session_info(qr/opened by Demo.*2 tabs open/,
+    wait_for_session_info(qr/owned by Demo.*2 tabs open/,
         '2 browser tabs open (live view and tab from previous subtest)');
 
     # open developer console
