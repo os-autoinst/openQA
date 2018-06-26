@@ -267,7 +267,11 @@ $driver->click_element_ok('core@coolone', 'link_text', 'clicked on 3');
 
 # it can happen that the test is assigned and needs to wait for the scheduler
 # to detect it as dead before it's moved back to scheduled
-OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/State: scheduled/, 'Test 3 is scheduled');
+OpenQA::Test::FullstackUtils::wait_for_result_panel(
+    $driver,
+    qr/State: (scheduled|assigned)/,
+    'Test 3 is scheduled or assigned'
+);
 $driver->click_element_ok('cancel_running', 'id', 'Caught cancel');
 $driver->click_element_ok('All Tests',      'link_text');
 $driver->click_element_ok('core@noassets',  'link_text');
