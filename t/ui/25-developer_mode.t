@@ -253,7 +253,8 @@ subtest 'start developer session' => sub {
         assert_sent_commands(
             [
                 {
-                    cmd => 'set_pause_at_test',
+                    cmd  => 'set_pause_at_test',
+                    name => undef,
                 }
             ],
             'command to clear module to pause at sent'

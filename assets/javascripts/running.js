@@ -454,14 +454,15 @@ function updateDeveloperPanel() {
 // submits the selected module to pause at if it has changed
 function handleModuleToPauseAtSelected() {
     // skip if development session not opened or it is not ours
-    if (!developerMode.ownSession) {
+    // skip if moduleToPauseAt is unknown (undefined)
+    if (!developerMode.ownSession || developerMode.moduleToPauseAt === undefined) {
         return;
     }
 
     // determine the selected module including the category, eg. "installation-welcome"
     var selectedModuleOption = $('#developer-pause-at-module').find('option:selected');
     var category = selectedModuleOption.parent('optgroup').attr('label');
-    var selectedModuleName = undefined;
+    var selectedModuleName = null;
     if (category) {
         selectedModuleName = category + '-' + selectedModuleOption.text();
     }
