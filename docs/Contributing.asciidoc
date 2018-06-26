@@ -383,6 +383,11 @@ In case there's the need to follow what's happening in the current running docke
 
 > docker exec -ti $(docker ps | awk '!/CONTAINER/{print $1}') /bin/bash
 
+Running UI tests in non-headless mode is also possible, eg.:
+
+> xhost +local:root
+> docker run --rm -ti --name openqa-testsuite --cap-add SYS_ADMIN -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY="$DISPLAY" -e NOT_HEADLESS=1 prove -v t/ui/14-dashboard.t
+> xhost -local:root
 
 === How to run tests without docker
 
