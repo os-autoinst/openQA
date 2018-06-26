@@ -36,7 +36,7 @@ use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
 # mock OpenQA::Schema::Result::Jobs::cancel()
 my $jobs_mock_module = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
 my @jobs_cancelled;
-$jobs_mock_module->redefine(
+$jobs_mock_module->mock(
     cancel => sub {
         my ($job) = @_;
         push(@jobs_cancelled, $job->id);
