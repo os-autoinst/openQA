@@ -337,8 +337,7 @@ variable +OPENQA_BASEDIR+. The default value is +/var/lib+.
 
 There's two ways of executing the testsuite locally:
 
-1. with docker
-
+1. with docker +
   The goal of running the tests with docker is to have consistent tests results (as sometimes the tests have different outcomes because 
   missing packages or different package versions amongst other reasons). This is the preferred way if the user wants to run a full test
   battery or if it needs to setup a test database
@@ -350,11 +349,11 @@ There's two ways of executing the testsuite locally:
 To run them in docker please be sure that docker is installed and the docker daemon is running.
 To launch the test suite first it's required to pull the docker image:
 
-> docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
+  docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
 
 Then you can launch the tests:
 
-> docker run --cap-add SYS_ADMIN -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus -e VAR1=1 -e VAR2=1 registry.opensuse.org/devel/openqa/containers/openqa_dev make docker-tests
+  docker run --cap-add SYS_ADMIN -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus -e VAR1=1 -e VAR2=1 registry.opensuse.org/devel/openqa/containers/openqa_dev make docker-tests
 
 Replace OPENQA_LOCAL_CODE to the location where you have the openqa code.
 
@@ -372,22 +371,22 @@ Replace VAR1 and VAR2 in -e switch to match a test battery of the test matrix:
 Running commands will be executed after the initialization script (database creation and so on..). So if there's the need to run an interactive
 session after it just do:
 
-> docker run --cap-add SYS_ADMIN -it -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus registry.opensuse.org/devel/openqa/containers/openqa_dev bash
+  docker run --cap-add SYS_ADMIN -it -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus registry.opensuse.org/devel/openqa/containers/openqa_dev bash
 
 There's also the possibility to change the initialization scripts with the --entrypoint switch. This allows us to go into an interactive
 session without any initialization script run:
 
-> docker run --cap-add SYS_ADMIN -it --entrypoint /bin/bash -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus registry.opensuse.org/devel/openqa/containers/openqa_dev
+  docker run --cap-add SYS_ADMIN -it --entrypoint /bin/bash -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus registry.opensuse.org/devel/openqa/containers/openqa_dev
 
 In case there's the need to follow what's happening in the current running docker (the execution will terminate the session):
 
-> docker exec -ti $(docker ps | awk '!/CONTAINER/{print $1}') /bin/bash
+  docker exec -ti $(docker ps | awk '!/CONTAINER/{print $1}') /bin/bash
 
 Running UI tests in non-headless mode is also possible, eg.:
 
-> xhost +local:root
-> docker run --rm -ti --name openqa-testsuite --cap-add SYS_ADMIN -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY="$DISPLAY" -e NOT_HEADLESS=1 prove -v t/ui/14-dashboard.t
-> xhost -local:root
+  xhost +local:root
+  docker run --rm -ti --name openqa-testsuite --cap-add SYS_ADMIN -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY="$DISPLAY" -e NOT_HEADLESS=1 prove -v t/ui/14-dashboard.t
+  xhost -local:root
 
 === How to run tests without docker
 
