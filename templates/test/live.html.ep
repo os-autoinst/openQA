@@ -74,10 +74,12 @@
                 <a href="#" onclick="resumeTestExecution(); return false;" class="btn btn-secondary developer-mode-element" data-visible-on="isPaused">
                     <i class="far fa-play-circle"></i> Resume test execution
                 </a>
-                <a href="<%= url_for('developer_ws_console')->query({proxy => 1}) %>" target="blank"
-                    class="btn btn-secondary developer-mode-element" data-visible-on="ownSession">
-                    <i class="fas fa-terminal"></i> Open console
-                </a>
+                % if (app->mode eq 'development') {
+                    <a href="<%= url_for('developer_ws_console')->query({proxy => 1}) %>" target="blank"
+                        class="btn btn-secondary developer-mode-element" data-visible-on="ownSession">
+                        <i class="fas fa-terminal"></i> Open console
+                    </a>
+                % }
             </div>
         </form>
         <div class="developer-mode-element" data-visible-on="lockedByOtherDeveloper">

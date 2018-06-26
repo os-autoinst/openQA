@@ -256,11 +256,7 @@ subtest 'developer session visible in live view' => sub {
         $driver->find_element('#developer-panel .card-header')->click();
         element_visible(
             '#developer-panel .card-body',
-            [
-                qr/You started a developer session/,
-                qr/Pause test execution/,
-                qr/Cancel job/, qr/Resume/, qr/Open console/
-            ],
+            [qr/You started a developer session/, qr/Pause test execution/, qr/Cancel job/, qr/Resume/,],
             [qr/Confirm \& start developer session/,],
         );
 
@@ -297,7 +293,6 @@ subtest 'status-only route accessible for other users' => sub {
                 qr/Confirm \& start developer session/,
                 qr/Cancel job/,
                 qr/Resume/,
-                qr/Open console/
             ],
         );
     };

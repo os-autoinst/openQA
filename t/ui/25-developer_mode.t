@@ -200,7 +200,7 @@ fake_state(
     });
 
 my @expected_text_on_initial_session_creation = (qr/Select what you/, qr/Confirm \& start developer session/,);
-my @expected_text_after_session_created = (qr/You started a developer session/, qr/Cancel job/, qr/Open console/,);
+my @expected_text_after_session_created = (qr/You started a developer session/, qr/Cancel job/,);
 
 subtest 'expand developer panel' => sub {
     click_header();
