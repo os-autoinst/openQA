@@ -410,10 +410,7 @@ sub ws_proxy {
 
     # don't react to any messages from the JavaScript client if serving the status-only route
     if ($status_only) {
-        $self->on(
-            message => sub {
-                $app->log->debug('');
-            });
+        $self->on(message => sub { });
         return $self->on(
             finish => sub {
                 $self->remove_java_script_transaction($job_id, \%status_java_script_transactions_by_job,
