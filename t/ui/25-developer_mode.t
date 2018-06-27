@@ -132,32 +132,32 @@ subtest 'devel UI shown when running module known' => sub {
     element_visible('#developer-panel');
     element_visible(
         '#developer-panel .card-header',
-        qr/Developer mode.*\nretrieving status.*\nno developer session opened - click to open/,
+        qr/Developer mode.*\nretrieving status.*\nregular test execution - click to expand/,
     );
     element_hidden('#developer-panel .card-body');
 };
 
 subtest 'state shown when connected' => sub {
-    # usual test execution, current module unknown
+    # running, current module unknown
     fake_state(developerMode => {isConnected => 'true'});
     element_hidden('#developer-instructions');
     element_visible('#developer-panel');
     element_visible(
         '#developer-panel .card-header',
-        qr/Developer mode.*\nusual test execution.*\nno developer session opened - click to open/,
+        qr/Developer mode.*\nrunning.*\nregular test execution - click to expand/,
         [qr/paused/, qr/owned by/],
     );
     element_hidden('#developer-panel .card-body');
 
-    # usual test execution, current module known
+    # running, current module known
     fake_state(developerMode => {currentModule => '"installation-welcome"'});
     element_hidden('#developer-instructions');
-    element_visible('#developer-panel .card-header', qr/usual test execution, at installation-welcome/, qr/paused/,);
+    element_visible('#developer-panel .card-header', qr/current module: installation-welcome/, qr/paused/,);
 
     # will pause at certain module
     fake_state(developerMode => {moduleToPauseAt => '"installation-foo"'});
     element_hidden('#developer-instructions');
-    element_visible('#developer-panel .card-header', qr/will pause at module installation-foo/, qr/paused/,);
+    element_visible('#developer-panel .card-header', qr/will pause at module: installation-foo/, qr/paused/,);
     my @options = $driver->find_elements('#developer-pause-at-module option');
     is(scalar @options, 5, '5 options in module to pause at selection present');
     is($_->is_selected(), $_->get_value() eq 'foo' ? 1 : 0, 'only foo selected') for (@options);
@@ -165,7 +165,7 @@ subtest 'state shown when connected' => sub {
     # has already completed the module to pause at
     fake_state(developerMode => {moduleToPauseAt => '"installation-boot"'});
     element_hidden('#developer-instructions');
-    element_visible('#developer-panel .card-header', qr/usual test execution, at installation-welcome/, qr/paused/,);
+    element_visible('#developer-panel .card-header', qr/current module: installation-welcome/, qr/paused/,);
     is($_->is_selected(), $_->get_value() eq 'boot' ? 1 : 0, 'only boot selected') for (@options);
 
     # currently paused
@@ -173,7 +173,7 @@ subtest 'state shown when connected' => sub {
     element_visible('#developer-instructions',
         qr/System is waiting for developer, connect to remotehost at port 91 with Shared mode/,
     );
-    element_visible('#developer-panel .card-header', qr/paused/, qr/execution/,);
+    element_visible('#developer-panel .card-header', qr/paused at module: installation-welcome/, qr/current module/,);
 
     # developer session opened
     fake_state(
@@ -185,7 +185,7 @@ subtest 'state shown when connected' => sub {
     element_visible(
         '#developer-panel .card-header',
         qr/owned by some developer \(.* ago, developer has 42 tabs open\)/,
-        qr/no developer session opened - click to open/,
+        qr/regular test execution - click to expand/,
     );
 };
 
@@ -199,8 +199,8 @@ fake_state(
         develSessionTabCount  => 'undefined',
     });
 
-my @expected_text_on_initial_session_creation = (qr/Select what you/, qr/Confirm \& start developer session/,);
-my @expected_text_after_session_created = (qr/You started a developer session/, qr/Cancel job/,);
+my @expected_text_on_initial_session_creation = (qr/and confirm to apply/, qr/Confirm to control this test/,);
+my @expected_text_after_session_created       = (qr/the controls below\./, qr/Cancel job/,);
 
 subtest 'expand developer panel' => sub {
     click_header();
@@ -218,7 +218,7 @@ subtest 'collapse developer panel' => sub {
 
 subtest 'start developer session' => sub {
     click_header();
-    $driver->find_element('Confirm & start developer session', 'link_text')->click();
+    $driver->find_element('Confirm to control this test', 'link_text')->click();
     element_visible(
         '#developer-panel .card-body',
         \@expected_text_after_session_created,

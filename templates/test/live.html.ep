@@ -28,9 +28,9 @@
                 developer has <%= $tab_count %> browser <%= $tab_count == 1 ? 'tab' : 'tabs' %> open)
             % }
             % else {
-                no developer session opended
+                regular test execution
                 % if (is_admin) {
-                    - click to open
+                    - click to expand
                 % }
             % }
         </div>
@@ -38,24 +38,23 @@
     <div class="card-body">
         <form action="#" method="get" id="developer-form" class="developer-mode-element" data-hidden-on="lockedByOtherDeveloper">
             <p class="developer-mode-element" data-hidden-on="ownSession">
-                Select what you want to do and confirm using the button below. This will start a developer
-                session which will lock those developer options for other users.
+                Change the test behaviour with the controls below and confirm to apply.
+                Taking control of this test will also forbid other users from doing so.
             </p>
             <p class="developer-mode-element" data-visible-on="ownSession">
-                You started a developer session. Use the controls above to control the test behavior.
+                Change the test behaviour with the controls below.
             </p>
-            <h3>
-                Pause test execution
-                <%= help_popover('Help for <i>pause test execution</i>' => '
-                        <p>Pauses the test execution. So far it is only possible to pause at a
-                        specific module. The test can then be accessed via VNC for further
-                        investigation.</p>
-                        <p>Resuming the job after it has been paused is possible.</p>')
-                %>
-            </h3>
             <div class="form-group row">
                 <label for="developer-pause-at-module" class="col-sm-3 col-form-label">
-                    at specific module
+                    Pause at module
+                    <%= help_popover('Help for <i>pause test execution</i>' => '
+                        <p>
+                            Pauses the test execution at a specific module.
+                            The test can then be accessed via VNC for further investigation.
+                        </p>
+                        <p>Resuming the job after it has been paused is possible.</p>
+                        <p>A paused job still has the <pre>MAX_JOB_TIME</pre> constraint to be applied.</p>')
+                    %>
                 </label>
                 <div class="col-sm-9">
                     %= include 'test/module_select'
@@ -65,7 +64,7 @@
             <div>
                 <a href="#" onclick="startDeveloperSession(); return false;"
                     class="btn btn-warning developer-mode-element" data-hidden-on="ownSession">
-                    <i class="fas fa-lock"></i> Confirm & start developer session
+                    <i class="fas fa-lock"></i> Confirm to control this test
                 </a>
                 <a href="#" onclick="quitDeveloperSession(); return false;"
                     class="btn btn-danger developer-mode-element" data-visible-on="ownSession">
@@ -83,7 +82,7 @@
             </div>
         </form>
         <div class="developer-mode-element" data-visible-on="lockedByOtherDeveloper">
-            The development session has already been started by <span class="developer-mode-user">another user</span>, so you can't claim it.
+            Another user has already locked this job.
         </div>
         <div class="developer-mode-element" data-hidden-on="isConnected">
             <i class="fas fa-spinner fa-spin fa-lg"></i> <span id="developer-loading-info">establishing connection to backend ...</span>

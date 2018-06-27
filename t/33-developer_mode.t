@@ -256,8 +256,12 @@ subtest 'developer session visible in live view' => sub {
         $driver->find_element('#developer-panel .card-header')->click();
         element_visible(
             '#developer-panel .card-body',
-            [qr/You started a developer session/, qr/Pause test execution/, qr/Cancel job/, qr/Resume/,],
-            [qr/Confirm \& start developer session/,],
+            [
+                qr/Change the test behaviour with the controls below\./,
+                qr/Resume test execution/,
+                qr/Cancel job/, qr/Resume/,
+            ],
+            [qr/Confirm to control this test/,],
         );
 
         my @module_options = $driver->find_elements('#developer-pause-at-module option');
@@ -285,12 +289,14 @@ subtest 'status-only route accessible for other users' => sub {
         $driver->find_element('#developer-panel .card-header')->click();
         element_visible(
             '#developer-panel .card-body',
-            [qr/The development session has already been started by/],
+            [qr/Another user has already locked this job./],
             [
-                qr/Select what you want/,
-                qr/You started a developer session/,
-                qr/Pause test execution/,
-                qr/Confirm \& start developer session/,
+                qr/below and confirm to apply/,
+                qr/with the controls below\./,
+                qr/Pause at module/,
+                qr/boot/,
+                qr/shutdown/,
+                qr/Confirm to control this test/,
                 qr/Cancel job/,
                 qr/Resume/,
             ],

@@ -414,16 +414,16 @@ function updateDeveloperPanel() {
         && toPauseAtIndex > currentModuleIndex);
 
     // update status info
-    var statusInfo = 'unknown';
+    var statusInfo = 'running';
     if (developerMode.isPaused) {
         statusInfo = 'paused';
+        if (developerMode.currentModule) {
+            statusInfo += ' at module: ' + developerMode.currentModule;
+        }
     } else if (moduleToPauseAtStillAhead) {
-        statusInfo = 'will pause at module ' + developerMode.moduleToPauseAt;
-    } else {
-        statusInfo = 'usual test execution';
-    }
-    if (developerMode.currentModule && !moduleToPauseAtStillAhead) {
-         statusInfo += ', at ' + developerMode.currentModule;
+        statusInfo = 'will pause at module: ' + developerMode.moduleToPauseAt;
+    } else if (developerMode.currentModule) {
+        statusInfo = 'current module: ' + developerMode.currentModule;
     }
     $('#developer-status-info').text(statusInfo);
 
@@ -440,9 +440,9 @@ function updateDeveloperPanel() {
         var tabsOpenInfo = ', developer has ' + developerMode.develSessionTabCount + (developerMode.develSessionTabCount == 1 ? ' tab' : ' tabs') + ' open)';
         sessionInfoElement.append(document.createTextNode(tabsOpenInfo));
     } else {
-        var sessionInfo = 'no developer session opened';
+        var sessionInfo = 'regular test execution';
         if (window.isAdmin && !developerMode.panelExpanded) {
-            sessionInfo += ' - click to open';
+            sessionInfo += ' - click to expand';
         }
         sessionInfoElement.text(sessionInfo);
     }
