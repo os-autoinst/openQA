@@ -622,7 +622,7 @@ var messageToStatusVariable = [
     {
         msg: 'developer_id',
         action: function(value) {
-            developerMode.ownSession = (window.ownUserId == value);
+            developerMode.ownSession = (window.ownUserId && window.ownUserId == value);
         },
     },
     {
