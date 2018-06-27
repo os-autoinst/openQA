@@ -109,7 +109,7 @@ mock_js_functions(
     updateStatus             => '',
     setupWebsocketConnection => '',
     startDeveloperSession =>
-      'developerMode.ownSession = true; developerMode.useDeveloperWsRoute = true; updateDeveloperPanel();',
+'developerMode.ownSession = true; developerMode.useDeveloperWsRoute = true; handleWebsocketConnectionOpened(developerMode.wsConnection);',
     sendWsCommand => 'if (!window.sentCmds) { window.sentCmds = [] } window.sentCmds.push(arg1);',
 );
 
@@ -192,6 +192,7 @@ subtest 'state shown when connected' => sub {
 # revert state changes from previous tests
 fake_state(
     developerMode => {
+        ownSession            => 'false',
         moduleToPauseAt       => 'undefined',
         isPaused              => 'false',
         develSessionDeveloper => 'undefined',
@@ -209,6 +210,18 @@ subtest 'expand developer panel' => sub {
         \@expected_text_on_initial_session_creation,
         [@expected_text_after_session_created, qr/Resume/],
     );
+
+    subtest 'behavior when changes have not been confirmed' => sub {
+        my @options = $driver->find_elements('#developer-pause-at-module option');
+
+        $options[4]->set_selected();
+        assert_sent_commands(undef, 'changes not instantly submitted');
+
+        subtest 'module to pause at not updated' => sub {
+            fake_state(developerMode => {moduleToPauseAt => '"installation-foo"'});
+            is($_->is_selected(), $_->get_value() eq 'bar' ? 1 : 0, 'still only bar selected') for (@options);
+        };
+    };
 };
 
 subtest 'collapse developer panel' => sub {
@@ -217,12 +230,23 @@ subtest 'collapse developer panel' => sub {
 };
 
 subtest 'start developer session' => sub {
+    # expand panel again
     click_header();
+
     $driver->find_element('Confirm to control this test', 'link_text')->click();
     element_visible(
         '#developer-panel .card-body',
         \@expected_text_after_session_created,
         [@expected_text_on_initial_session_creation, qr/Resume/],
+    );
+    assert_sent_commands(
+        [
+            {
+                cmd  => 'set_pause_at_test',
+                name => 'installation-bar',
+            }
+        ],
+        'changes from subtest "expand developer panel" submitted'
     );
 
     subtest 'resume paused test' => sub {
@@ -232,13 +256,14 @@ subtest 'start developer session' => sub {
     };
 
     subtest 'select module to pause at' => sub {
-        my @module_options = $driver->find_elements('#developer-pause-at-module option');
+        my @options = $driver->find_elements('#developer-pause-at-module option');
         fake_state(developerMode => {moduleToPauseAt => '"installation-foo"'});
+        is($_->is_selected(), $_->get_value() eq 'bar' ? 1 : 0, 'foo selected') for (@options);
 
-        $module_options[3]->set_selected();    # select installation-foo
+        $options[3]->set_selected();    # select installation-foo
         assert_sent_commands(undef, 'no command sent if nothing changes');
 
-        $module_options[4]->set_selected();    # select installation-bar
+        $options[4]->set_selected();    # select installation-bar
         assert_sent_commands(
             [
                 {
@@ -249,7 +274,7 @@ subtest 'start developer session' => sub {
             'command to set module to pause at sent'
         );
 
-        $module_options[0]->set_selected();    # select <don't pause>
+        $options[0]->set_selected();    # select <don't pause>
         assert_sent_commands(
             [
                 {

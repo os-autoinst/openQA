@@ -448,7 +448,9 @@ function updateDeveloperPanel() {
     }
 
     // update module to pause at
-    moduleToPauseAtOptions[toPauseAtIndex].setAttribute('selected', true);
+    if (developerMode.ownSession || !developerMode.panelExpanded) {
+        moduleToPauseAtOptions[toPauseAtIndex].setAttribute('selected', true);
+    }
 }
 
 // submits the selected module to pause at if it has changed
@@ -488,6 +490,55 @@ function closeWebsocketConnection() {
     developerMode.isConnected = false;
 }
 
+function handleWebsocketConnectionOpened(wsConnection) {
+    if (wsConnection !== developerMode.wsConnection) {
+        return;
+    }
+
+    // update state
+    developerMode.reconnectAttempts = 0;
+    developerMode.isConnected = true;
+    developerMode.hasWsError = false;
+    developerMode.ownSession = developerMode.useDeveloperWsRoute;
+
+    // sync the current selection if it is our session
+    if (developerMode.ownSession) {
+        submitCurrentSelection();
+    }
+
+    updateDeveloperPanel();
+}
+
+function handleWebsocketConnectionClosed(wsConnection) {
+    if (wsConnection !== developerMode.wsConnection) {
+        return;
+    }
+    console.log("Connection to livehandler lost");
+
+    // update state
+    developerMode.wsConnection = undefined;
+    developerMode.isConnected = false;
+    developerMode.panelExpanded = false;
+    developerMode.useDeveloperWsRoute = false;
+    developerMode.ownSession = false;
+    updateDeveloperPanel();
+
+    // skip reconnect if test is just not running anymore
+    if (!testStatus.running) {
+        return;
+    }
+
+    // reconnect instantly in first connection error
+    if (developerMode.reconnectAttempts === 0) {
+        setupWebsocketConnection();
+    } else {
+        // otherwise try to reconnect every 2 seconds
+        setTimeout(function() {
+            setupWebsocketConnection();
+        }, 2000);
+    }
+}
+
 function setupWebsocketConnection() {
     // ensure previously opened connections are closed
     closeWebsocketConnection();
@@ -509,22 +560,7 @@ function setupWebsocketConnection() {
     developerMode.reconnectAttempts += 1;
     var wsConnection = new WebSocket(url);
     wsConnection.onopen = function() {
-        if (wsConnection !== developerMode.wsConnection) {
-            return;
-        }
-
-        // update state
-        developerMode.reconnectAttempts = 0;
-        developerMode.isConnected = true;
-        developerMode.hasWsError = false;
-        developerMode.ownSession = developerMode.useDeveloperWsRoute;
-
-        // sync the current selection if it is our session
-        if (developerMode.ownSession) {
-            submitCurrentSelection();
-        }
-
-        updateDeveloperPanel();
+        handleWebsocketConnectionOpened(wsConnection);
     };
     wsConnection.onerror = function(error) {
         if (wsConnection !== developerMode.wsConnection) {
@@ -535,33 +571,7 @@ function setupWebsocketConnection() {
         developerMode.hasWsError = true;
     };
     wsConnection.onclose = function() {
-        if (wsConnection !== developerMode.wsConnection) {
-            return;
-        }
-        console.log("Connection to livehandler lost");
-
-        // update state
-        developerMode.wsConnection = undefined;
-        developerMode.isConnected = false;
-        developerMode.panelExpanded = false;
-        developerMode.useDeveloperWsRoute = false;
-        developerMode.ownSession = false;
-        updateDeveloperPanel();
-
-        // skip reconnect if test is just not running anymore
-        if (!testStatus.running) {
-            return;
-        }
-
-        // reconnect instantly in first connection error
-        if (developerMode.reconnectAttempts === 0) {
-            setupWebsocketConnection();
-        } else {
-            // otherwise try to reconnect every 2 seconds
-            setTimeout(function() {
-                setupWebsocketConnection();
-            }, 2000);
-        }
+        handleWebsocketConnectionClosed(wsConnection);
     };
     wsConnection.onmessage = function(msg) {
         if (wsConnection !== developerMode.wsConnection) {
