@@ -244,7 +244,7 @@ OpenQA::Test::FullstackUtils::client_call(
     qr{\Qtest_url => ["/tests/2\E},
     'client returned new test_url'
 );
-#] restore syntax highlighting
+#]} restore syntax highlighting
 $driver->refresh();
 like($driver->find_element('#result-row .card-body')->get_text(), qr/Cloned as 2/, 'test 1 is restarted');
 $driver->click_element_ok('2', 'link_text');
@@ -262,20 +262,29 @@ like(
 
 OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP MACHINE=noassets HDD_1=nihilist_disk.hda");
 
-$driver->click_element_ok('All Tests',    'link_text', 'All tests clicked');
-$driver->click_element_ok('core@coolone', 'link_text', 'clicked on 3');
+subtest 'cancel a scheduled job' => sub {
+    $driver->click_element_ok('All Tests',    'link_text', 'All tests clicked');
+    $driver->click_element_ok('core@coolone', 'link_text', 'clicked on 3');
 
-# it can happen that the test is assigned and needs to wait for the scheduler
-# to detect it as dead before it's moved back to scheduled
-OpenQA::Test::FullstackUtils::wait_for_result_panel(
-    $driver,
-    qr/State: (scheduled|assigned)/,
-    'Test 3 is scheduled or assigned'
-);
-$driver->click_element_ok('cancel_running', 'id', 'Caught cancel');
-$driver->click_element_ok('All Tests',      'link_text');
-$driver->click_element_ok('core@noassets',  'link_text');
+    # it can happen that the test is assigned and needs to wait for the scheduler
+    # to detect it as dead before it's moved back to scheduled
+    OpenQA::Test::FullstackUtils::wait_for_result_panel(
+        $driver,
+        qr/State: (scheduled|assigned)/,
+        'Test 3 is scheduled',
+        undef, 0.2,
+    );
 
+    my $cancel_button = $driver->find_element('cancel_running', 'id');
+    if (!$cancel_button) {
+        note('test is already assigned, can not test cancelling');
+        return;
+    }
+    $cancel_button->click();
+};
+
+$driver->click_element_ok('All Tests',     'link_text');
+$driver->click_element_ok('core@noassets', 'link_text');
 $job_name = 'tinycore-1-flavor-i386-Build1-core@noassets';
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 4 is scheduled');

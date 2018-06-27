@@ -69,16 +69,17 @@ sub client_call {
 }
 
 sub wait_for_result_panel {
-    my ($driver, $result_panel, $desc, $fail_on_incomplete) = @_;
+    my ($driver, $result_panel, $desc, $fail_on_incomplete, $refresh_interval) = @_;
+    $refresh_interval //= 1;
 
-    for (my $count = 0; $count < 130; $count++) {
+    for (my $count = 0; $count < (130 / $refresh_interval); $count++) {
         my $status_text = $driver->find_element('#result-row .card-body')->get_text();
         last if ($status_text =~ $result_panel);
         if ($fail_on_incomplete && $status_text =~ qr/Result: incomplete/) {
             fail('test result is incomplete but shouldn\'t');
             return;
         }
-        sleep 1;
+        sleep $refresh_interval;
     }
     javascript_console_has_no_warnings_or_errors;
     $driver->refresh();
