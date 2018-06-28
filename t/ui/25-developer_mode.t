@@ -266,7 +266,7 @@ subtest 'start developer session' => sub {
     subtest 'select module to pause at' => sub {
         my @options = $driver->find_elements('#developer-pause-at-module option');
         fake_state(developerMode => {moduleToPauseAt => '"installation-foo"'});
-        is($_->is_selected(), $_->get_value() eq 'bar' ? 1 : 0, 'foo selected') for (@options);
+        is($_->is_selected(), $_->get_value() eq 'foo' ? 1 : 0, 'foo selected') for (@options);
 
         $options[3]->set_selected();    # select installation-foo
         assert_sent_commands(undef, 'no command sent if nothing changes');

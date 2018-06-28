@@ -59,7 +59,6 @@ function updateTestStatus(newStatus) {
         var newModuleSelect = dataDom.filter('#developer-pause-at-module');
         if (moduleSelectOnPage.length && newModuleSelect.length) {
             moduleSelectOnPage.replaceWith(newModuleSelect);
-            newModuleSelect.on('change', handleModuleToPauseAtSelected);
         }
 
         // skip if the row of the running module is not present in the result table
@@ -351,9 +350,6 @@ function setupDeveloperPanel() {
         event.stopPropagation();
     });
 
-    // register handlers for controls
-    $('#developer-pause-at-module').on('change', handleModuleToPauseAtSelected);
-
     // find URLs for web socket connections
     developerMode.develWsUrl = panel.data('developer-url');
     developerMode.statusOnlyWsUrl = panel.data('status-only-url');
@@ -447,17 +443,26 @@ function updateDeveloperPanel() {
         sessionInfoElement.text(sessionInfo);
     }
 
-    // update module to pause at
-    if (moduleToPauseAtOptions.length
-            && (developerMode.ownSession || !developerMode.panelExpanded)) {
-        moduleToPauseAtOptions[toPauseAtIndex].setAttribute('selected', true);
+    // update form elements
+    // -> skip if the test hasn't been locked by anybody so far and we're just showing the form initially
+    if (!developerMode.ownSession && !developerMode.develSessionDeveloper && developerMode.panelExpanded) {
+        return;
+    }
+    // -> update module to pause at
+    if (moduleToPauseAtSelect.length) {
+        // update module to pause at and ensure handler is registered (element might be replaced in updateTestStatus())
+        var selectElement = moduleToPauseAtSelect[0];
+        selectElement.selectedIndex = toPauseAtIndex;
+        if (!selectElement.handlerRegistered) {
+            selectElement.onchange = handleModuleToPauseAtSelected;
+            selectElement.handlerRegistered = true;
+        }
     }
 }
 
 // submits the selected module to pause at if it has changed
 function handleModuleToPauseAtSelected() {
-    // skip if development session not opened or it is not ours
-    // skip if moduleToPauseAt is unknown (undefined)
+    // skip if not owning development session or moduleToPauseAt is unknown
     if (!developerMode.ownSession || developerMode.moduleToPauseAt === undefined) {
         return;
     }
@@ -502,8 +507,10 @@ function handleWebsocketConnectionOpened(wsConnection) {
     developerMode.hasWsError = false;
     developerMode.ownSession = developerMode.useDeveloperWsRoute;
 
-    // sync the current selection if it is our session
-    if (developerMode.ownSession) {
+    // sync the current selection if the test is running and it is our session
+    // note: the check for testStatus.running is important - otherwise we might override existing
+    //       configuration with the form defaults
+    if (testStatus.running && developerMode.ownSession) {
         submitCurrentSelection();
     }
 
@@ -692,7 +699,6 @@ function processWsCommand(obj) {
             developerMode.useDeveloperWsRoute = true;
             setupWebsocketConnection();
         }
-
         updateDeveloperPanel();
     }
 }
@@ -704,7 +710,9 @@ function sendWsCommand(obj) {
         // TODO: log errors visible on the page
         return;
     }
-    developerMode.wsConnection.send(JSON.stringify(obj));
+    var objAsString = JSON.stringify(obj);
+    console.log("Sending message via ws proxy: " + objAsString);
+    developerMode.wsConnection.send(objAsString);
 }
 
 // resumes the test execution (if currently paused)
