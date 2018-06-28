@@ -45,17 +45,19 @@
                 Change the test behaviour with the controls below.
             </p>
             <div class="form-group row">
-                <label for="developer-pause-at-module" class="col-sm-3 col-form-label">
-                    Pause at module
+                <div class="col-sm-3">
+                    <label for="developer-pause-at-module" class="col-form-label">
+                        Pause at module
+                    </label>
                     <%= help_popover('Help for <i>pause test execution</i>' => '
                         <p>
                             Pauses the test execution at a specific module.
                             The test can then be accessed via VNC for further investigation.
                         </p>
                         <p>Resuming the job after it has been paused is possible.</p>
-                        <p>A paused job still has the <pre>MAX_JOB_TIME</pre> constraint to be applied.</p>')
+                        <p>A paused job still has the <code>MAX_JOB_TIME</code> constraint to be applied.</p>')
                     %>
-                </label>
+                </div>
                 <div class="col-sm-9">
                     %= include 'test/module_select'
                 </div>
