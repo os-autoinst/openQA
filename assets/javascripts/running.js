@@ -448,7 +448,8 @@ function updateDeveloperPanel() {
     }
 
     // update module to pause at
-    if (developerMode.ownSession || !developerMode.panelExpanded) {
+    if (moduleToPauseAtOptions.length
+            && (developerMode.ownSession || !developerMode.panelExpanded)) {
         moduleToPauseAtOptions[toPauseAtIndex].setAttribute('selected', true);
     }
 }
