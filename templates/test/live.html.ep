@@ -36,7 +36,8 @@
         </div>
     </div>
     <div class="card-body">
-        <form action="#" method="get" id="developer-form" class="developer-mode-element" data-hidden-on="lockedByOtherDeveloper">
+        <form action="#" method="get" id="developer-form" class="developer-mode-element"
+            data-hidden-on="lockedByOtherDeveloper" data-visible-on="isConnected">
             <p class="developer-mode-element" data-hidden-on="ownSession">
                 Change the test behaviour with the controls below and confirm to apply.
                 Taking control of this test will also forbid other users from doing so.

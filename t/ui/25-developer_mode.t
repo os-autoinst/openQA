@@ -135,6 +135,14 @@ subtest 'devel UI shown when running module known' => sub {
         qr/Developer mode.*\nretrieving status.*\nregular test execution - click to expand/,
     );
     element_hidden('#developer-panel .card-body');
+
+    # expand
+    click_header();
+    element_visible('#developer-panel .card-body', qr/establishing connection/, qr/Pause at module/);
+
+    # collapse again
+    click_header();
+    element_hidden('#developer-panel .card-body');
 };
 
 subtest 'state shown when connected' => sub {
