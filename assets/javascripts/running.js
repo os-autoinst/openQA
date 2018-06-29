@@ -74,6 +74,9 @@ function updateTestStatus(newStatus) {
             console.log("Missing results table created");
             testStatus.running = newStatus.running;
             updateDeveloperPanel();
+            if (!developerMode.wsConnection) {
+                setupWebsocketConnection();
+            }
             return;
         }
 
@@ -103,6 +106,9 @@ function updateTestStatus(newStatus) {
             });
             testStatus.running = newStatus.running;
             updateDeveloperPanel();
+            if (!developerMode.wsConnection) {
+                setupWebsocketConnection();
+            }
         }
 
     }).fail(function() {
