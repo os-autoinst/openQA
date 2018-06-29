@@ -66,6 +66,12 @@ sub startup {
     my $developer_auth = $test_r->under('/developer')->to('session#ensure_admin');
     my $developer_r = $developer_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller');
     $developer_r->websocket('/ws-proxy')->name('developer_ws_proxy')->to('live_view_handler#ws_proxy');
+    $test_r->websocket('/developer/ws-proxy/status')->name('status_ws_proxy')->to('live_view_handler#proxy_status');
+
+    # don't try to render default 404 template, instead just render 'route not found' vis ws connection or regular HTTP
+    my $not_found_r = $r->route('/')->to(namespace => 'OpenQA::WebAPI::Controller');
+    $not_found_r->websocket('*')->to('live_view_handler#not_found_ws');
+    $not_found_r->any('*')->to('live_view_handler#not_found_http');
 
     OpenQA::Setup::setup_validator_check_for_datetime($self);
 }

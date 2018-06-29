@@ -1,4 +1,3 @@
-
 var testStatus = {
     modlist_initialized: 0,
     jobid: null,
@@ -24,7 +23,6 @@ function updateTestStatus(newStatus) {
         return;
     }
     testStatus.workerid = newStatus.workerid;
-    $('#running_module').text(newStatus.running);
 
     // Reload broken thumbnails (that didn't exist yet when being requested) every 7 sec
     if (testStatus.img_reload_time++ % 7 == 0) {
@@ -41,54 +39,81 @@ function updateTestStatus(newStatus) {
         });
     }
 
-    // If a new module have been started, redraw module list
-    if (testStatus.running != newStatus.running) {
-        $.ajax(testStatus.details_url).
-            done(function(data) {
-                if (data.length > 0) {
-                    // the result table must have a running row
-                    if ($(data).find('.resultrunning').length > 0) {
-                        // results table doesn't exist yet
-                        if ($("#results").length == 0) {
-                            $("#details").html(data);
-                            console.log("Missing results table created");
-                            testStatus.running = newStatus.running;
-                        }
-                        else {
-                            var running_tr = $('td.result.resultrunning').parent();
-                            var result_tbody = running_tr.parent();
-                            var first_tr_to_update = running_tr.index();
-                            var new_trs = $(data).find("tbody > tr");
-                            var printed_running = false;
-                            var missing_results = false;
-                            result_tbody.children().slice(first_tr_to_update).each(function() {
-                                var tr = $(this);
-                                var new_tr = new_trs.eq(tr.index());
-                                if (new_tr.find('.resultrunning').length == 1) {
-                                    printed_running = true;
-                                }
-                                // every row above running must have results
-                                if (!printed_running && new_tr.find('.links').length > 0 && new_tr.find('.links').children().length == 0) {
-                                    missing_results = true;
-                                    console.log("Missing results in row - trying again");
-                                }
-                            });
-                            if (!missing_results) {
-                                result_tbody.children().slice(first_tr_to_update).each(function() {
-                                    var tr = $(this);
-                                    tr.replaceWith(new_trs.eq(tr.index()));
-                                });
-                                testStatus.running = newStatus.running;
-                            }
-                        }
-                    }
-                } else {
-                    console.log("ERROR: modlist empty");
-                }
-            }).fail(function() {
-                console.log("ERROR: modlist fail");
-            });
+    // skip further updating if no 'running vs. not running' change
+    if (testStatus.running == newStatus.running) {
+        return;
     }
+
+    // redraw module list if a new module have been started
+    $.ajax(testStatus.details_url).done(function(data) {
+        if (data.length <= 0) {
+            console.log("ERROR: modlist empty");
+            return;
+        }
+
+        // create DOM elements from the HTML data
+        var dataDom = $(data);
+
+        // update module selection for developer mode
+        var moduleSelectOnPage = $('#developer-pause-at-module');
+        var newModuleSelect = dataDom.filter('#developer-pause-at-module');
+        if (moduleSelectOnPage.length && newModuleSelect.length) {
+            moduleSelectOnPage.replaceWith(newModuleSelect);
+        }
+
+        // skip if the row of the running module is not present in the result table
+        var runningRow = dataDom.find('.resultrunning');
+        if (!runningRow.length) {
+            return;
+        }
+
+        // handle case when the results table doesn't exist yet
+        var newResults = dataDom.filter('#results');
+        if (!$("#results").length) {
+            $("#details").append(newResults);
+            console.log("Missing results table created");
+            testStatus.running = newStatus.running;
+            updateDeveloperPanel();
+            if (!developerMode.wsConnection) {
+                setupWebsocketConnection();
+            }
+            return;
+        }
+
+        // update existing results table
+        var running_tr = $('td.result.resultrunning').parent();
+        var result_tbody = running_tr.parent();
+        var first_tr_to_update = running_tr.index();
+        var new_trs = newResults.find('tbody > tr');
+        var printed_running = false;
+        var missing_results = false;
+        result_tbody.children().slice(first_tr_to_update).each(function() {
+            var tr = $(this);
+            var new_tr = new_trs.eq(tr.index());
+            if (new_tr.find('.resultrunning').length == 1) {
+                printed_running = true;
+            }
+            // every row above running must have results
+            if (!printed_running && new_tr.find('.links').length > 0 && new_tr.find('.links').children().length == 0) {
+                missing_results = true;
+                console.log("Missing results in row - trying again");
+            }
+        });
+        if (!missing_results) {
+            result_tbody.children().slice(first_tr_to_update).each(function() {
+                var tr = $(this);
+                tr.replaceWith(new_trs.eq(tr.index()));
+            });
+            testStatus.running = newStatus.running;
+            updateDeveloperPanel();
+            if (!developerMode.wsConnection) {
+                setupWebsocketConnection();
+            }
+        }
+
+    }).fail(function() {
+        console.log("ERROR: modlist fail");
+    });
 }
 
 function sendCommand(command) {
@@ -266,6 +291,458 @@ function pauseLiveView() {
   $.each(liveViewElements, function(index, value) {
     removeDataListener(value.log);
   });
+}
+
+//
+// developer mode
+//
+
+// define state for developer mode
+var developerMode = {
+    // state of the page elements and the web socket connection to web UI
+    develWsUrl: undefined,                  // URL for developer session web socket connection
+    statusOnlyWsUrl: undefined,             // URL for status-only web socket connection
+    wsConnection: undefined,                // current WebSocket object
+    hasWsError: false,                      // whether an web socket error occured (cleared on reconnect)
+    useDeveloperWsRoute: undefined,         // whether the developer web socket route is used
+    isConnected: false,                     // whether connected to any web socket route
+    ownSession: false,                      // whether the development session belongs to us
+    panelExpanded: false,                   // whether the panel is supposed to be expanded
+    panelActuallyExpanded: false,           // whether the panel is currently expanded
+    reconnectAttempts: 0,                   // number of (re)connect attempts (reset after successful connect)
+
+    // state of the test execution (comes from os-autoinst cmd srv through the openQA ws proxy)
+    currentModule: undefined,               // name of the current module, eg. "installation-welcome"
+    moduleToPauseAt: undefined,             // name of the module to pause at, eg. "installation-welcome"
+    isPaused: undefined,                    // whether the test execution is currently paused
+
+    // state of development session (comes from the openQA ws proxy)
+    develSessionDeveloper: undefined,       // name of the user in possession the development session
+    develSessionStartedAt: undefined,       // time stamp when the development session was created
+    develSessionTabCount: undefined,        // number of open web socket connections by the developer
+
+    // returns whether there's a development session but it doesn't belong to us
+    lockedByOtherDeveloper: function() {
+        return this.develSessionDeveloper && !this.ownSession;
+    },
+
+    // returns the specified property evaluating possibly assigned functions
+    prop: function(propertyName) {
+        var prop = this[propertyName];
+        return typeof prop === 'function' ? prop.apply(this) : prop;
+    },
+};
+
+// initializes the developer panel
+function setupDeveloperPanel() {
+    var panel = $('#developer-panel');
+
+    // setup toggle for body
+    var panelHeader = panel.find('.card-header');
+    if (window.isAdmin) {
+        panelHeader.on('click', function() {
+            var panelBody = panel.find('.card-body');
+            developerMode.panelExpanded = !developerMode.panelExpanded;
+            developerMode.panelActuallyExpanded = developerMode.panelExpanded;
+            panelBody.toggle(200);
+        });
+    } else {
+        panelHeader.css('cursor', 'default');
+    }
+
+
+    // ensure help popover doesn't toggle
+    panel.find('.help_popover').on('click', function(event) {
+        event.stopPropagation();
+    });
+
+    // find URLs for web socket connections
+    developerMode.develWsUrl = panel.data('developer-url');
+    developerMode.statusOnlyWsUrl = panel.data('status-only-url');
+
+    updateDeveloperPanel();
+    setupWebsocketConnection();
+}
+
+// updates the developer panel, must be called after modifying developerMode
+function updateDeveloperPanel() {
+    // hide/show elements according to data-hidden and data-visible attributes
+    var developerModeElements = $('.developer-mode-element');
+    developerModeElements.each(function(index) {
+        var element = $(this);
+        var visibleOn = element.data('visible-on');
+        var hiddenOn = element.data('hidden-on');
+        var hide = ((hiddenOn && developerMode.prop(hiddenOn))
+                 || (visibleOn && !developerMode.prop(visibleOn)));
+        if (hide) {
+            element.hide();
+        } else if (element.hasClass('btn')) {
+            element.css('display', 'inline-block');
+        } else {
+            element.show();
+        }
+    });
+
+    // set panel visibility
+    var panel = $('#developer-panel');
+    if (!testStatus.running) {
+        // hide entire panel if test is not running anymore
+        panel.hide();
+        return;
+    }
+    panel.show();
+
+    // toggle panel body if its current state doesn't match developerMode.panelExpanded
+    var panelBody = panel.find('.card-body');
+    if (developerMode.panelExpanded !== developerMode.panelActuallyExpanded) {
+        developerMode.panelActuallyExpanded = developerMode.panelExpanded;
+        panelBody.toggle(200);
+    }
+
+    // find modules
+    var moduleToPauseAtSelect = $('#developer-pause-at-module');
+    var moduleToPauseAtOptions = moduleToPauseAtSelect.find('option');
+    var modules = moduleToPauseAtOptions.map(function() {
+        var option = $(this);
+        var category = option.parent('optgroup').attr('label');
+        return category ? (category + '-' + option.val()) : option.val();
+    }).get();
+    var currentModuleIndex = modules.indexOf(developerMode.currentModule);
+    var toPauseAtIndex = modules.indexOf(developerMode.moduleToPauseAt);
+    if (toPauseAtIndex < 0) {
+        toPauseAtIndex = 0;
+    }
+    var moduleToPauseAtStillAhead = (developerMode.moduleToPauseAt
+        && toPauseAtIndex > currentModuleIndex);
+
+    // update status info
+    var statusInfo = 'running';
+    if (developerMode.isPaused) {
+        statusInfo = 'paused';
+        if (developerMode.currentModule) {
+            statusInfo += ' at module: ' + developerMode.currentModule;
+        }
+    } else if (moduleToPauseAtStillAhead) {
+        statusInfo = 'will pause at module: ' + developerMode.moduleToPauseAt;
+    } else if (developerMode.currentModule) {
+        statusInfo = 'current module: ' + developerMode.currentModule;
+    }
+    $('#developer-status-info').text(statusInfo);
+
+    // update session info
+    var sessionInfoElement = $('#developer-session-info');
+    if (developerMode.develSessionDeveloper) {
+        var sessionInfo = 'owned by ' + developerMode.develSessionDeveloper + ' (';
+        sessionInfoElement.text(sessionInfo);
+
+        var timeagoElement = $('<abbr class="timeago" title="' + developerMode.develSessionStartedAt + ' Z">' + developerMode.develSessionStartedAt + '</abbr>');
+        sessionInfoElement.append(timeagoElement);
+        timeagoElement.timeago();
+
+        var tabsOpenInfo = ', developer has ' + developerMode.develSessionTabCount + (developerMode.develSessionTabCount == 1 ? ' tab' : ' tabs') + ' open)';
+        sessionInfoElement.append(document.createTextNode(tabsOpenInfo));
+    } else {
+        var sessionInfo = 'regular test execution';
+        if (window.isAdmin && !developerMode.panelExpanded) {
+            sessionInfo += ' - click to expand';
+        }
+        sessionInfoElement.text(sessionInfo);
+    }
+
+    // update form elements
+    // -> skip if the test hasn't been locked by anybody so far and we're just showing the form initially
+    if (!developerMode.ownSession && !developerMode.develSessionDeveloper && developerMode.panelExpanded) {
+        return;
+    }
+    // -> update module to pause at
+    if (moduleToPauseAtSelect.length) {
+        // update module to pause at and ensure handler is registered (element might be replaced in updateTestStatus())
+        var selectElement = moduleToPauseAtSelect[0];
+        selectElement.selectedIndex = toPauseAtIndex;
+        if (!selectElement.handlerRegistered) {
+            selectElement.onchange = handleModuleToPauseAtSelected;
+            selectElement.handlerRegistered = true;
+        }
+    }
+}
+
+// submits the selected module to pause at if it has changed
+function handleModuleToPauseAtSelected() {
+    // skip if not owning development session or moduleToPauseAt is unknown
+    if (!developerMode.ownSession || developerMode.moduleToPauseAt === undefined) {
+        return;
+    }
+
+    // determine the selected module including the category, eg. "installation-welcome"
+    var selectedModuleOption = $('#developer-pause-at-module').find('option:selected');
+    var category = selectedModuleOption.parent('optgroup').attr('label');
+    var selectedModuleName = null;
+    if (category) {
+        selectedModuleName = category + '-' + selectedModuleOption.text();
+    }
+    if (selectedModuleName !== developerMode.moduleToPauseAt) {
+        sendWsCommand({
+            cmd: 'set_pause_at_test',
+            name: selectedModuleName,
+        });
+    }
+}
+
+// submits the selected values which differ from the server's state
+function submitCurrentSelection() {
+    handleModuleToPauseAtSelected();
+}
+
+// ensures the websocket connection is closed
+function closeWebsocketConnection() {
+    if (developerMode.wsConnection) {
+        developerMode.wsConnection.close();
+        developerMode.wsConnection = undefined;
+    }
+    developerMode.isConnected = false;
+}
+
+function handleWebsocketConnectionOpened(wsConnection) {
+    if (wsConnection !== developerMode.wsConnection) {
+        return;
+    }
+
+    // update state
+    developerMode.reconnectAttempts = 0;
+    developerMode.isConnected = true;
+    developerMode.hasWsError = false;
+    developerMode.ownSession = developerMode.useDeveloperWsRoute;
+
+    // sync the current selection if the test is running and it is our session
+    // note: the check for testStatus.running is important - otherwise we might override existing
+    //       configuration with the form defaults
+    if (testStatus.running && developerMode.ownSession) {
+        submitCurrentSelection();
+    }
+
+    updateDeveloperPanel();
+}
+
+function handleWebsocketConnectionClosed(wsConnection) {
+    if (wsConnection !== developerMode.wsConnection) {
+        return;
+    }
+    console.log("Connection to livehandler lost");
+
+    // update state
+    developerMode.wsConnection = undefined;
+    developerMode.isConnected = false;
+    developerMode.panelExpanded = false;
+    developerMode.useDeveloperWsRoute = false;
+    developerMode.ownSession = false;
+    updateDeveloperPanel();
+
+    // skip reconnect if test is just not running anymore
+    if (!testStatus.running) {
+        return;
+    }
+
+    // reconnect instantly in first connection error
+    if (developerMode.reconnectAttempts === 0) {
+        setupWebsocketConnection();
+    } else {
+        // otherwise try to reconnect every 2 seconds
+        setTimeout(function() {
+            setupWebsocketConnection();
+        }, 2000);
+    }
+}
+
+function setupWebsocketConnection() {
+    // ensure previously opened connections are closed
+    closeWebsocketConnection();
+
+    // determine ws URL
+    if ((window.isAdmin && developerMode.useDeveloperWsRoute)) {
+        // use route for developer (establishing a developer session)
+        developerMode.useDeveloperWsRoute = true;
+        var url = developerMode.develWsUrl;
+    } else {
+        // use route for regular user (receiving only status information)
+        developerMode.useDeveloperWsRoute = false;
+        var url = developerMode.statusOnlyWsUrl;
+    }
+    url = makeWsUrlAbsolute(url);
+
+    // establish ws connection
+    console.log("Establishing ws connection to " + url);
+    developerMode.reconnectAttempts += 1;
+    var wsConnection = new WebSocket(url);
+    wsConnection.onopen = function() {
+        handleWebsocketConnectionOpened(wsConnection);
+    };
+    wsConnection.onerror = function(error) {
+        if (wsConnection !== developerMode.wsConnection) {
+            return;
+        }
+
+        // set the error flag (FIXME: display error state somewhere)
+        developerMode.hasWsError = true;
+    };
+    wsConnection.onclose = function() {
+        handleWebsocketConnectionClosed(wsConnection);
+    };
+    wsConnection.onmessage = function(msg) {
+        if (wsConnection !== developerMode.wsConnection) {
+            return;
+        }
+
+        // parse the message JSON
+        if (!msg.data) {
+            return;
+        }
+        console.log("Received message via ws proxy: " + msg.data);
+        try {
+            var dataObj = JSON.parse(msg.data);
+        } catch {
+            console.log("Unable to parse JSON from ws proxy: " + msg.data);
+            // TODO: log errors visible on the page
+            return;
+        }
+
+        processWsCommand(dataObj);
+    };
+
+    developerMode.wsConnection = wsConnection;
+}
+
+// define mapping of backend messages to status variables
+var messageToStatusVariable = [
+    {
+        msg: 'test_execution_paused',
+        statusVar: 'isPaused',
+    },
+    {
+        msg: 'paused',
+        statusVar: 'isPaused',
+    },
+    {
+        msg: 'pause_test_name',
+        statusVar: 'moduleToPauseAt',
+    },
+    {
+        msg: 'set_pause_at_test',
+        statusVar: 'moduleToPauseAt',
+    },
+    {
+        msg: 'current_test_full_name',
+        statusVar: 'currentModule',
+    },
+    {
+        msg: 'developer_id',
+        action: function(value) {
+            developerMode.ownSession = (window.ownUserId && window.ownUserId == value);
+        },
+    },
+    {
+        msg: 'developer_name',
+        statusVar: 'develSessionDeveloper',
+    },
+    {
+        msg: 'developer_session_started_at',
+        statusVar: 'develSessionStartedAt',
+    },
+    {
+        msg: 'developer_session_tab_count',
+        statusVar: 'develSessionTabCount',
+    },
+    {
+        msg: 'developer_session_is_yours',
+        statusVar: 'ownSession',
+    },
+    {
+        msg: 'resume_test_execution',
+        action: function() {
+            developerMode.isPaused = false;
+        },
+    }
+];
+
+// handles messages received via web socket connection
+function processWsCommand(obj) {
+    var somethingChanged = false;
+    var what = obj.what;
+    var data = obj.data;
+
+    switch(obj.type) {
+    case "error":
+        // handle errors
+        console.log("Error from ws proxy: " + what);
+        // TODO: log errors visible on the page
+        break;
+    case "info":
+        switch(what) {
+        case "cmdsrvmsg":
+            // handle messages from os-autoinst command server
+            $.each(messageToStatusVariable, function(index, msgToStatusValue) {
+                var msg = msgToStatusValue.msg;
+                if (!(msg in data)) {
+                    return;
+                }
+                var statusVar = msgToStatusValue.statusVar;
+                if (statusVar) {
+                    developerMode[statusVar] = data[msg];
+                }
+                var action = msgToStatusValue.action;
+                if (action) {
+                    action(data[msg]);
+                }
+                somethingChanged = true;
+            });
+            break;
+        }
+        break;
+    }
+
+    if (somethingChanged) {
+        // check whether the development session is ours and to change the proxy
+        if (!developerMode.useDeveloperWsRoute && developerMode.ownSession) {
+            developerMode.useDeveloperWsRoute = true;
+            setupWebsocketConnection();
+        }
+        updateDeveloperPanel();
+    }
+}
+
+// sends a command via web sockets to the web UI which will pass it to os-autoinst
+function sendWsCommand(obj) {
+    if (!developerMode.wsConnection) {
+        console.log("Attempt to send something via ws proxy but not connected.");
+        // TODO: log errors visible on the page
+        return;
+    }
+    var objAsString = JSON.stringify(obj);
+    console.log("Sending message via ws proxy: " + objAsString);
+    developerMode.wsConnection.send(objAsString);
+}
+
+// resumes the test execution (if currently paused)
+function resumeTestExecution() {
+    sendWsCommand({ cmd: "resume_test_execution" });
+}
+
+// starts the developer session (if not already done yet)
+function startDeveloperSession() {
+    if (!developerMode.useDeveloperWsRoute) {
+        developerMode.useDeveloperWsRoute = true;
+        setupWebsocketConnection();
+    }
+}
+
+// quits the developer session (will cancel the job)
+function quitDeveloperSession() {
+    if (!developerMode.useDeveloperWsRoute) {
+        return;
+    }
+    developerMode.useDeveloperWsRoute = undefined;
+    developerMode.panelExpanded = false;
+    updateDeveloperPanel();
+    sendWsCommand({ cmd: "quit_development_session" });
 }
 
 // vim: set sw=4 et:

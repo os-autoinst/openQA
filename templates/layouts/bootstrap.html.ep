@@ -51,10 +51,10 @@
       <footer class='footer'>
           <div class='container-fluid'>
               <div id="footer-links">
-                  <span id="footer-links" class="left">
+                  <span class="left">
                       %= include_branding 'links_footer_left'
                   </span>
-                  <span id="footer-links" class="right">
+                  <span class="right">
                       %= include_branding 'links_footer_right'
                   </span>
               </div>

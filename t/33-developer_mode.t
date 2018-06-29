@@ -65,7 +65,8 @@ eval 'use Test::More::Color "foreground"';
 
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
-use OpenQA::Test::Utils qw(create_websocket_server create_resourceallocator start_resourceallocator setup_share_dir);
+use OpenQA::Test::Utils
+  qw(create_websocket_server create_live_view_handler create_resourceallocator start_resourceallocator setup_share_dir);
 use OpenQA::Test::FullstackUtils;
 
 plan skip_all => 'set DEVELOPER_FULLSTACK=1 (be careful)' unless $ENV{DEVELOPER_FULLSTACK};
@@ -159,15 +160,7 @@ my $wsport = $mojoport + 1;
 $wspid = create_websocket_server($wsport, 0, 0, 0);
 
 # start live view handler
-$livehandlerpid = fork();
-if ($livehandlerpid == 0) {
-    use Mojolicious::Commands;
-    use OpenQA::LiveHandler;
-    my $livehandlerport = $mojoport + 2;
-    Mojolicious::Commands->start_app('OpenQA::LiveHandler', 'daemon', '-l', "http://localhost:$livehandlerport");
-    Devel::Cover::report() if Devel::Cover->can('report');
-    _exit(0);
-}
+$livehandlerpid = create_live_view_handler($mojoport);
 
 my $JOB_SETUP
   = 'ISO=Core-7.2.iso DISTRI=tinycore ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 '
@@ -201,6 +194,26 @@ sub start_worker {
 start_worker;
 OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 'fail on incomplete');
 
+sub wait_for_session_info {
+    my ($info_regex, $diag_info) = @_;
+
+    # give the session info 10 seconds to appear
+    my $developer_session_info = $driver->find_element('#developer-session-info')->get_text();
+    my $seconds_waited         = 0;
+    while (!$developer_session_info) {
+        if ($seconds_waited > 10) {
+            fail('no session info after 10 seconds, expected ' . $diag_info);
+            return;
+        }
+
+        sleep 1;
+        $developer_session_info = $driver->find_element('#developer-session-info')->get_text();
+        $seconds_waited += 1;
+    }
+
+    like($developer_session_info, $info_regex, $diag_info);
+}
+
 my $developer_console_url = '/tests/1/developer/ws-console?proxy=1';
 subtest 'wait until developer console becomes available' => sub {
     $driver->get($developer_console_url);
@@ -232,14 +245,66 @@ subtest 'developer session visible in live view' => sub {
     $driver->get($job_page_url);
     $driver->find_element_by_link_text('Live View')->click();
 
-    my $developer_session_info = $driver->find_element('#developer_session')->get_text();
-    like($developer_session_info, qr/opened by Demo/, 'user displayed');
+    subtest 'initial state of UI controls' => sub {
+        wait_for_session_info(qr/owned by Demo/, 'user displayed');
+        element_visible('#developer-instructions',       qr/connect to .* at port 91/);
+        element_visible('#developer-panel .card-header', qr/paused/);
+        element_hidden('#developer-panel .card-body');
+    };
+
+    subtest 'expand developer panel' => sub {
+        $driver->find_element('#developer-panel .card-header')->click();
+        element_visible(
+            '#developer-panel .card-body',
+            [
+                qr/Change the test behaviour with the controls below\./,
+                qr/Resume test execution/,
+                qr/Cancel job/, qr/Resume/,
+            ],
+            [qr/Confirm to control this test/,],
+        );
+
+        my @module_options = $driver->find_elements('#developer-pause-at-module option');
+        my @module_names = map { $_->get_text() } @module_options;
+        is_deeply(\@module_names, ['Do not pause', 'boot', 'shutdown',], 'module');
+    };
 };
 
-subtest 'session locked for other developers' => sub {
+subtest 'status-only route accessible for other users' => sub {
     $driver->get('/logout');
     $driver->get('/login?user=otherdeveloper');
     is($driver->find_element('#user-action a')->get_text(), 'Logged in as otherdeveloper', 'otherdeveloper logged-in');
+
+    $driver->get($job_page_url);
+    $driver->find_element_by_link_text('Live View')->click();
+
+    subtest 'initial state of UI controls' => sub {
+        wait_for_session_info(qr/owned by Demo/, 'user displayed');
+        element_visible('#developer-instructions',       qr/connect to .* at port 91/);
+        element_visible('#developer-panel .card-header', qr/paused/);
+        element_hidden('#developer-panel .card-body');
+    };
+
+    subtest 'expand developer panel' => sub {
+        $driver->find_element('#developer-panel .card-header')->click();
+        element_visible(
+            '#developer-panel .card-body',
+            [qr/Another user has already locked this job./],
+            [
+                qr/below and confirm to apply/,
+                qr/with the controls below\./,
+                qr/Pause at module/,
+                qr/boot/,
+                qr/shutdown/,
+                qr/Confirm to control this test/,
+                qr/Cancel job/,
+                qr/Resume/,
+            ],
+        );
+    };
+};
+
+subtest 'developer session locked for other developers' => sub {
     $driver->get($developer_console_url);
 
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
@@ -264,7 +329,7 @@ subtest 'connect with 2 clients at the same time (use case: developer opens 2nd 
     );
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
         $driver,
-        qr/reusing previous connection to os-autuinst/,
+        qr/reusing previous connection to os-autoinst/,
         'connection reused'
     );
 };
@@ -279,8 +344,8 @@ subtest 'resume test execution' => sub {
     # go back to the live view
     $driver->get($job_page_url);
     $driver->find_element_by_link_text('Live View')->click();
-    my $developer_session_info = $driver->find_element('#developer_session')->get_text();
-    like($developer_session_info, qr/opened by Demo.*1 browser tab/, '1 browser tab open (from previous subtest)');
+    wait_for_session_info(qr/owned by Demo.*2 tabs open/,
+        '2 browser tabs open (live view and tab from previous subtest)');
 
     # open developer console
     $driver->get($developer_console_url);
@@ -306,7 +371,7 @@ subtest 'resume test execution' => sub {
 };
 
 
-subtest 'quit_session' => sub {
+subtest 'quit session' => sub {
     $driver->switch_to_window($first_tab);
 
     my $command_input = $driver->find_element('#msg');
@@ -324,15 +389,15 @@ subtest 'quit_session' => sub {
     );
 };
 
-subtest 'further test execution happens as usual' => sub {
+subtest 'test cancelled by quitting the session' => sub {
     $driver->switch_to_window($first_tab);
     $driver->get($job_page_url);
-    OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/, 'test 1 is passed');
-
+    OpenQA::Test::FullstackUtils::wait_for_result_panel(
+        $driver,
+        qr/Result: user_cancelled/,
+        'test 1 has been cancelled'
+    );
     ok(-s path($resultdir, '00000', "00000001-$job_name")->make_path->child('autoinst-log.txt'), 'log file generated');
-    ok(-s path($sharedir, 'factory', 'hdd')->make_path->child('core-hdd.qcow2'), 'image of hdd uploaded');
-    my $mode = S_IMODE((stat(path($sharedir, 'factory', 'hdd')->child('core-hdd.qcow2')))[2]);
-    is($mode, 420, 'exported image has correct permissions (420 -> 0644)');
 };
 
 kill_driver;

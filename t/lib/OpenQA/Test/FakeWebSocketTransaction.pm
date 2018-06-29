@@ -32,8 +32,15 @@ sub is_websocket {
 }
 
 sub send {
-    my ($self, $message) = @_;
+    my ($self, $message, $callback) = @_;
+
+    if ($self->finish_called) {
+        fail('attempt to send message via finished connection');
+        return;
+    }
+
     push(@{$self->sent_messages}, $message);
+    $callback->() if ($callback);
     return 1;
 }
 

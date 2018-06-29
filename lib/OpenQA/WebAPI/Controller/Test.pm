@@ -20,8 +20,10 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::WebAPI::Controller::Developer;
 use File::Basename;
 use POSIX 'strftime';
+use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
 
 sub referer_check {
     my ($self) = @_;
@@ -199,22 +201,36 @@ sub list_ajax {
     $self->render(json => {data => \@list});
 }
 
+sub stash_module_list {
+    my ($self) = @_;
+
+    my $job_id = $self->param('testid') or return;
+    my $job = $self->app->schema->resultset('Jobs')->search(
+        {
+            id => $job_id
+        },
+        {
+            prefetch => qw(jobs_assets)
+        }
+      )->first
+      or return;
+
+    $self->stash(modlist => read_test_modules($job));
+    return 1;
+}
+
 sub details {
     my ($self) = @_;
 
-    return $self->reply->not_found if (!defined $self->param('testid'));
-
-    my $job = $self->app->schema->resultset("Jobs")->search(
-        {
-            id => $self->param('testid')
-        },
-        {prefetch => qw(jobs_assets)})->first;
-    return $self->reply->not_found unless $job;
-
-    my $modlist = read_test_modules($job);
-    $self->stash(modlist => $modlist);
-
+    $self->stash_module_list or return $self->reply->not_found;
     $self->render('test/details');
+}
+
+sub module_components {
+    my ($self) = @_;
+
+    $self->stash_module_list or return $self->reply->not_found;
+    $self->render('test/module_components');
 }
 
 sub get_current_job {
@@ -258,6 +274,8 @@ sub _show {
     $self->stash(clone_of => $clone_of);
     $self->stash(modlist  => $modlist);
 
+    my $websocket_proxy = determine_web_ui_web_socket_url($job->id);
+    $self->stash(ws_url => $websocket_proxy);
     my $rd = $job->result_dir();
     if ($rd) {    # saved anything
                   # result files box
@@ -272,6 +290,15 @@ sub _show {
     else {
         $self->stash(resultfiles => []);
         $self->stash(ulogs       => []);
+    }
+
+    # stash URLs for web socker routes required by developer mode
+    if ($job->state eq 'running') {
+        $self->stash(
+            {
+                ws_developer_url   => determine_web_ui_web_socket_url($job->id),
+                ws_status_only_url => get_ws_status_only_url($job->id),
+            });
     }
 
     $self->render('test/result');

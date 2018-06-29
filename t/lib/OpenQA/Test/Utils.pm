@@ -26,7 +26,7 @@ BEGIN {
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
     qw(redirect_output standard_worker),
-    qw(create_webapi create_websocket_server create_worker unresponsive_worker wait_for_worker setup_share_dir),
+    qw(create_webapi create_websocket_server create_live_view_handler create_worker unresponsive_worker wait_for_worker setup_share_dir),
     qw(kill_service unstable_worker job_create client_output create_resourceallocator start_resourceallocator)
 );
 
@@ -131,6 +131,20 @@ sub create_websocket_server {
         }
     }
     return $wspid;
+}
+
+sub create_live_view_handler {
+    my ($mojoport) = @_;
+    my $pid = fork();
+    if ($pid == 0) {
+        use Mojolicious::Commands;
+        use OpenQA::LiveHandler;
+        my $livehandlerport = $mojoport + 2;
+        Mojolicious::Commands->start_app('OpenQA::LiveHandler', 'daemon', '-l', "http://localhost:$livehandlerport");
+        Devel::Cover::report() if Devel::Cover->can('report');
+        _exit(0);
+    }
+    return $pid;
 }
 
 sub create_resourceallocator {

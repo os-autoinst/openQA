@@ -19,7 +19,7 @@ use strict;
 use Try::Tiny;
 use Mojo::URL;
 use Mojo::Base 'Mojolicious::Controller';
-use OpenQA::Utils;
+use OpenQA::Utils 'determine_web_ui_web_socket_url';
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 
@@ -38,12 +38,6 @@ sub determine_os_autoinst_web_socket_url {
     my $cmd_srv_url     = Mojo::URL->new($cmd_srv_raw_url);
     my $port            = $cmd_srv_url->port() or return;
     return "ws://$host:$port/$job_token/ws";
-}
-
-# returns the url to the own web socket server started via openqa-livehandler
-sub determine_web_ui_web_socket_url {
-    my ($job_id) = @_;
-    return "liveviewhandler/tests/$job_id/developer/ws-proxy";
 }
 
 # returns the job for the currently processed request
