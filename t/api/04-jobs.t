@@ -655,6 +655,14 @@ $get = $t->get_ok('/api/v1/jobs', form => $job_properties);
 is($get->tx->res->json->{jobs}->[1]->{group},    'opensuse test');
 is($get->tx->res->json->{jobs}->[1]->{priority}, 42);
 
+# post new job, specify group by ID
+delete $job_properties->{_GROUP};
+$job_properties->{_GROUP_ID} = 1002;
+$post = $t->post_ok('/api/v1/jobs', form => $job_properties)->status_is(200);
+$get = $t->get_ok('/api/v1/jobs', form => $job_properties);
+is($get->tx->res->json->{jobs}->[2]->{group},    'opensuse test');
+is($get->tx->res->json->{jobs}->[2]->{priority}, 42);
+
 $job_properties = {TEST => 'pretty_empty'};
 $post = $t->post_ok('/api/v1/jobs', form => $job_properties)->status_is(200);
 $t->get_ok('/api/v1/jobs/' . $post->tx->res->json->{id})->status_is(200);
