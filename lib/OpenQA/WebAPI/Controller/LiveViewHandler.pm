@@ -460,8 +460,6 @@ sub not_found_ws {
 sub not_found_http {
     my ($self) = @_;
 
-    print("not_found_http\n");
-
     return $self->respond_to(
         any => {
             text   => "route does not exist\n",
