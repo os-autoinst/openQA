@@ -161,12 +161,18 @@ subtest 'state shown when connected' => sub {
     fake_state(developerMode => {currentModule => '"installation-welcome"'});
     element_hidden('#developer-instructions');
     element_visible('#developer-panel .card-header', qr/current module: installation-welcome/, qr/paused/,);
+    my @options   = $driver->find_elements('#developer-pause-at-module option');
+    my @optgroups = $driver->find_elements('#developer-pause-at-module optgroup');
+    is(
+        $_->get_css_attribute('display'),
+        (($_->get_value() // '') =~ qr/boot|welcome/) ? 'none' : 'block',
+        'only modules after the current module displayed'
+    ) for (@options, @optgroups);
 
     # will pause at certain module
     fake_state(developerMode => {moduleToPauseAt => '"installation-foo"'});
     element_hidden('#developer-instructions');
     element_visible('#developer-panel .card-header', qr/will pause at module: installation-foo/, qr/paused/,);
-    my @options = $driver->find_elements('#developer-pause-at-module option');
     is(scalar @options, 5, '5 options in module to pause at selection present');
     is($_->is_selected(), $_->get_value() eq 'foo' ? 1 : 0, 'only foo selected') for (@options);
 
@@ -218,6 +224,7 @@ subtest 'expand developer panel' => sub {
         \@expected_text_on_initial_session_creation,
         [@expected_text_after_session_created, qr/Resume/],
     );
+    element_visible('#developer-pause-at-module');
 
     subtest 'behavior when changes have not been confirmed' => sub {
         my @options = $driver->find_elements('#developer-pause-at-module option');
