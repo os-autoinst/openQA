@@ -630,8 +630,7 @@ is_deeply(
     'Build 92 of opensuse'
 );
 
-# post new job and check default priority
-my $job_properties = {
+my %jobs_post_params = (
     iso     => 'openSUSE-Tumbleweed-DVD-x86_64-Current.iso',
     DISTRI  => 'opensuse',
     VERSION => 'Tumbleweed',
@@ -641,39 +640,46 @@ my $job_properties = {
     MACHINE => '64bit',
     BUILD   => '1234',
     _GROUP  => 'opensuse',
+);
+
+subtest 'default property correctly assigned when posting job' => sub {
+    # post new job and check default priority
+    $post = $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+    $t->get_ok('/api/v1/jobs/' . $post->tx->res->json->{id})->status_is(200);
+    $t->json_is('/job/group',    'opensuse');
+    $t->json_is('/job/priority', 50);
+
+    # post new job in job group with customized default priority
+    $t->app->db->resultset('JobGroups')->find({name => 'opensuse test'})->update({default_priority => 42});
+    $jobs_post_params{_GROUP} = 'opensuse test';
+    $post = $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+    $t->get_ok('/api/v1/jobs/' . $post->tx->res->json->{id})->status_is(200);
+    $t->json_is('/job/group',    'opensuse test');
+    $t->json_is('/job/priority', 42);
 };
-$post = $t->post_ok('/api/v1/jobs', form => $job_properties)->status_is(200);
-$get = $t->get_ok('/api/v1/jobs', form => $job_properties);
-is($get->tx->res->json->{jobs}->[0]->{group},    'opensuse');
-is($get->tx->res->json->{jobs}->[0]->{priority}, 50);
 
-# post new job in job group with customized default priority
-$t->app->db->resultset('JobGroups')->find({name => 'opensuse test'})->update({default_priority => 42});
-$job_properties->{_GROUP} = 'opensuse test';
-$post = $t->post_ok('/api/v1/jobs', form => $job_properties)->status_is(200);
-$get = $t->get_ok('/api/v1/jobs', form => $job_properties);
-is($get->tx->res->json->{jobs}->[1]->{group},    'opensuse test');
-is($get->tx->res->json->{jobs}->[1]->{priority}, 42);
+subtest 'specifying group by ID' => sub {
+    delete $jobs_post_params{_GROUP};
+    $jobs_post_params{_GROUP_ID} = 1002;
+    $post = $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+    $t->get_ok('/api/v1/jobs/' . $post->tx->res->json->{id})->status_is(200);
+    $t->json_is('/job/group',    'opensuse test');
+    $t->json_is('/job/priority', 42);
+};
 
-# post new job, specify group by ID
-delete $job_properties->{_GROUP};
-$job_properties->{_GROUP_ID} = 1002;
-$post = $t->post_ok('/api/v1/jobs', form => $job_properties)->status_is(200);
-$get = $t->get_ok('/api/v1/jobs', form => $job_properties);
-is($get->tx->res->json->{jobs}->[2]->{group},    'opensuse test');
-is($get->tx->res->json->{jobs}->[2]->{priority}, 42);
+subtest 'TEST is only mandatory parameter' => sub {
+    $post = $t->post_ok('/api/v1/jobs', form => {TEST => 'pretty_empty'})->status_is(200);
+    $t->get_ok('/api/v1/jobs/' . $post->tx->res->json->{id})->status_is(200);
+    $t->json_is('/job/settings/TEST'    => 'pretty_empty');
+    $t->json_is('/job/settings/MACHINE' => undef, 'machine was not set and is therefore undef');
+    $t->json_is('/job/settings/DISTRI'  => undef);
+};
 
-$job_properties = {TEST => 'pretty_empty'};
-$post = $t->post_ok('/api/v1/jobs', form => $job_properties)->status_is(200);
-$t->get_ok('/api/v1/jobs/' . $post->tx->res->json->{id})->status_is(200);
-$t->json_is('/job/settings/TEST'    => 'pretty_empty');
-$t->json_is('/job/settings/MACHINE' => undef, 'machine was not set and is therefore undef');
-$t->json_is('/job/settings/DISTRI'  => undef);
-
-$post = $t->post_ok('/api/v1/jobs', form => {})->status_is(400);
+subtest 'error on insufficient params' => sub {
+    $t->post_ok('/api/v1/jobs', form => {})->status_is(400);
+};
 
 subtest 'job details' => sub {
-
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);
     $t->json_is('/job/testresults' => undef, 'Test details are not present');
     $t->json_hasnt('/job/logs/0' => undef, 'Test result logs are empty');
