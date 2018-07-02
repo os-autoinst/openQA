@@ -362,14 +362,6 @@ sub ws_proxy {
     my $job_id             = $job->id;
     my $developer_sessions = $app->schema->resultset('DeveloperSessions');
 
-
-    # add JavaScript transaction to the list of JavaScript transactions for this job
-    # (needed for broadcasting to all clients)
-    my $java_script_transaction_container
-      = $status_only ? $self->status_java_script_transactions_by_job : $self->devel_java_script_transactions_by_job;
-    my $java_script_transactions_for_current_job = ($java_script_transaction_container->{$job_id} //= []);
-    push(@$java_script_transactions_for_current_job, $java_script_tx);
-
     # register development session, ensure only one development session is opened per job
     if (!$status_only) {
         $user = $self->current_user()
@@ -385,6 +377,13 @@ sub ws_proxy {
         # mark session as active
         $developer_session->update({ws_connection_count => \'ws_connection_count + 1'});   #'restore syntax highlighting
     }
+
+    # add JavaScript transaction to the list of JavaScript transactions for this job
+    # (needed for broadcasting to all clients)
+    my $java_script_transaction_container
+      = $status_only ? $self->status_java_script_transactions_by_job : $self->devel_java_script_transactions_by_job;
+    my $java_script_transactions_for_current_job = ($java_script_transaction_container->{$job_id} //= []);
+    push(@$java_script_transactions_for_current_job, $java_script_tx);
 
     # determine url to os-autoinst command server
     my $cmd_srv_raw_url = OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job);
