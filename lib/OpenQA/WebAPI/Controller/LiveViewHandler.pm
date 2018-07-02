@@ -30,44 +30,33 @@ use JSON 'decode_json';
 #          quit_development_session)
 
 # define a whitelist of commands to be passed to os-autoinst via ws_proxy
-my %allowed_os_autoinst_commands = (
+use constant ALLOWED_OS_AUTOINST_COMMANDS => {
     set_pause_at_test     => 1,
     status                => 1,
     resume_test_execution => 1,
-);
-
-# define global variable to store ws connections (tx) to isotovideo cmd srv for each job
-my %cmd_srv_transactions_by_job;
-
-# define global variable to store development session ws connections (tx) to JavaScript clients for each job
-my %devel_java_script_transactions_by_job;
-
-# define global variable to store status-only ws connections (tx) to JavaScript clients for each job
-my %status_java_script_transactions_by_job;
+};
 
 has(
     developer_sessions => sub {
-        my ($self) = @_;
-        return $self->app->schema->resultset('DeveloperSessions');
+        return shift->app->schema->resultset('DeveloperSessions');
     });
 
-# assigns a (fake) command server transaction for the specified job ID, used in the unit tests
-sub set_fake_cmd_srv_transaction {
-    my ($job_id, $fake_transaction) = @_;
-    $cmd_srv_transactions_by_job{$job_id} = $fake_transaction;
-}
-
-# assigns (fake) development session JavaScript transactions for the specified job ID, used in the unit tests
-sub set_fake_devel_java_script_transactions {
-    my ($job_id, $fake_transactions) = @_;
-    $devel_java_script_transactions_by_job{$job_id} = $fake_transactions;
-}
-
-# assigns (fake) status-only JavaScript transactions for the specified job ID, used in the unit tests
-sub set_fake_status_java_script_transactions {
-    my ($job_id, $fake_transactions) = @_;
-    $status_java_script_transactions_by_job{$job_id} = $fake_transactions;
-}
+# add attributes for accessing the applications' ws connections more conveniently
+# -> ws connections/transactions to isotovideo cmd srv
+has(
+    cmd_srv_transactions_by_job => sub {
+        return shift->app->cmd_srv_transactions_by_job;
+    });
+# -> development session ws connections/transactions to JavaScript clients for each job
+has(
+    devel_java_script_transactions_by_job => sub {
+        return shift->app->devel_java_script_transactions_by_job;
+    });
+# -> status-only ws connections/transactions to JavaScript clients for each job
+has(
+    status_java_script_transactions_by_job => sub {
+        return shift->app->status_java_script_transactions_by_job;
+    });
 
 # broadcasts a message to all JavaScript clients for the specified job ID
 # note: we don't broadcast to connections served by other prefork processes here, hence
@@ -76,8 +65,8 @@ sub send_message_to_java_script_clients {
     my ($self, $job_id, $type, $what, $data, $status_code_to_quit_on_finished) = @_;
 
     my @all_java_script_transactions_for_job;
-    for my $java_script_transaction_container (\%devel_java_script_transactions_by_job,
-        \%status_java_script_transactions_by_job)
+    for my $java_script_transaction_container ($self->devel_java_script_transactions_by_job,
+        $self->status_java_script_transactions_by_job)
     {
         if (my $java_script_transactions_for_job = $java_script_transaction_container->{$job_id}) {
             push(@all_java_script_transactions_for_job, @$java_script_transactions_for_job);
@@ -141,8 +130,8 @@ sub send_message_to_java_script_client_and_finish {
 sub finish_all_connections {
     my ($self, $job_id, $status_code) = @_;
 
-    for my $java_script_transaction_container (\%devel_java_script_transactions_by_job,
-        \%status_java_script_transactions_by_job)
+    for my $java_script_transaction_container ($self->devel_java_script_transactions_by_job,
+        $self->status_java_script_transactions_by_job)
     {
         my $java_script_transactions_for_current_job = delete $java_script_transaction_container->{$job_id} or next;
         $_->finish($status_code) for (@$java_script_transactions_for_current_job);
@@ -162,13 +151,13 @@ sub quit_development_session {
     $self->developer_sessions->unregister($job_id);
 
     # finish connections to all development session JavaScript clients
-    if (my $java_script_transactions_for_current_job = delete $devel_java_script_transactions_by_job{$job_id}) {
+    if (my $java_script_transactions_for_current_job = delete $self->devel_java_script_transactions_by_job->{$job_id}) {
         $_->finish($status_code) for (@$java_script_transactions_for_current_job);
     }
 
     # prevent finishing connection to os-autoinst cmd srv if still serving status-only clients and update
     #  the session info for those clients instead
-    if (my $status_only_java_script_transactions = $status_java_script_transactions_by_job{$job_id}) {
+    if (my $status_only_java_script_transactions = $self->status_java_script_transactions_by_job->{$job_id}) {
         if (@$status_only_java_script_transactions) {
             $self->send_session_info($job_id);
             return;
@@ -176,7 +165,7 @@ sub quit_development_session {
     }
 
     # finish connection to os-autoinst cmd srv
-    if (my $cmd_srv_tx = delete $cmd_srv_transactions_by_job{$job_id}) {
+    if (my $cmd_srv_tx = delete $self->cmd_srv_transactions_by_job->{$job_id}) {
         $self->app->log->debug('ws_proxy: finishing connection to os-autoinst cmd srv for job ' . $job_id);
         $cmd_srv_tx->finish($status_code) if $cmd_srv_tx->is_websocket();
     }
@@ -214,7 +203,7 @@ sub handle_message_from_java_script {
     }
 
     # validate the messages before passing to command server
-    if (!$allowed_os_autoinst_commands{$cmd}) {
+    if (!ALLOWED_OS_AUTOINST_COMMANDS->{$cmd}) {
         $self->send_message_to_java_script_clients(
             $job_id,
             warning => 'ignoring invalid command',
@@ -253,7 +242,7 @@ sub connect_to_cmd_srv {
         info => 'connecting to os-autoinst command server at ' . $cmd_srv_raw_url);
 
     # prevent opening the same connection to os-autoinst cmd srv twice
-    if (my $cmd_srv_tx = $cmd_srv_transactions_by_job{$job_id}) {
+    if (my $cmd_srv_tx = $self->cmd_srv_transactions_by_job->{$job_id}) {
         $self->query_os_autoinst_status($job_id);
         $self->send_message_to_java_script_clients($job_id,
             info => 'reusing previous connection to os-autoinst command server at ' . $cmd_srv_raw_url);
@@ -264,10 +253,10 @@ sub connect_to_cmd_srv {
     $cmd_srv_url = Mojo::URL->new($cmd_srv_raw_url) unless ($cmd_srv_url);
 
     # start a new connection to os-autoinst cmd srv
-    return $cmd_srv_transactions_by_job{$job_id} = $self->app->ua->websocket(
+    return $self->cmd_srv_transactions_by_job->{$job_id} = $self->app->ua->websocket(
         $cmd_srv_url => {'Sec-WebSocket-Extensions' => 'permessage-deflate'} => sub {
             my ($ua, $tx) = @_;
-            $cmd_srv_transactions_by_job{$job_id} = $tx;
+            $self->cmd_srv_transactions_by_job->{$job_id} = $tx;
 
             # upgrade to ws connection if not already a websocket connection
             if (!$tx->is_websocket) {
@@ -301,7 +290,7 @@ sub connect_to_cmd_srv {
                 finish => sub {
                     my (undef, $code, $reason) = @_;
                     # prevent finishing the transaction twice
-                    $cmd_srv_transactions_by_job{$job_id} = undef;
+                    $self->cmd_srv_transactions_by_job->{$job_id} = undef;
                     # inform the JavaScript client
                     $self->send_message_to_java_script_clients_and_finish(
                         $job_id,
@@ -321,7 +310,7 @@ sub connect_to_cmd_srv {
 sub send_message_to_os_autoinst {
     my ($self, $job_id, $msg) = @_;
 
-    my $cmd_srv_tx = $cmd_srv_transactions_by_job{$job_id};
+    my $cmd_srv_tx = $self->cmd_srv_transactions_by_job->{$job_id};
     if (!$cmd_srv_tx) {
         $self->send_message_to_java_script_clients($job_id,
             error => 'failed to pass message to os-autoinst command server because not connected yet');
@@ -377,7 +366,7 @@ sub ws_proxy {
     # add JavaScript transaction to the list of JavaScript transactions for this job
     # (needed for broadcasting to all clients)
     my $java_script_transaction_container
-      = $status_only ? \%status_java_script_transactions_by_job : \%devel_java_script_transactions_by_job;
+      = $status_only ? $self->status_java_script_transactions_by_job : $self->devel_java_script_transactions_by_job;
     my $java_script_transactions_for_current_job = ($java_script_transaction_container->{$job_id} //= []);
     push(@$java_script_transactions_for_current_job, $java_script_tx);
 
@@ -413,7 +402,7 @@ sub ws_proxy {
         $self->on(message => sub { });
         return $self->on(
             finish => sub {
-                $self->remove_java_script_transaction($job_id, \%status_java_script_transactions_by_job,
+                $self->remove_java_script_transaction($job_id, $self->status_java_script_transactions_by_job,
                     $java_script_tx);
             });
     }
@@ -432,7 +421,8 @@ sub ws_proxy {
     # handle web socket connection being quit from the JavaScript-side
     $self->on(
         finish => sub {
-            $self->remove_java_script_transaction($job_id, \%devel_java_script_transactions_by_job, $java_script_tx);
+            $self->remove_java_script_transaction($job_id, $self->devel_java_script_transactions_by_job,
+                $java_script_tx);
 
             $app->log->debug('ws_proxy: client disconnected: ' . $user->name);
             my $session = $developer_sessions->find({job_id => $job_id}) or return;
