@@ -156,9 +156,9 @@ NeedleEditor.prototype.DrawAreas = function() {
 NeedleEditor.prototype.LoadBackground = function(url) {
   var editor = this;
   var image = new Image();
+  editor.bgImage = image;
   image.src = url;
   image.onload = function() {
-    editor.bgImage = image;
     editor.init();
   };
 };
