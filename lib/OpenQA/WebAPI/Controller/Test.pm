@@ -292,12 +292,16 @@ sub _show {
         $self->stash(ulogs       => []);
     }
 
-    # stash URLs for web socker routes required by developer mode
+    # stash information for developer mode
     if ($job->state eq 'running') {
+        my $current_user = $self->current_user;
         $self->stash(
             {
-                ws_developer_url   => determine_web_ui_web_socket_url($job->id),
-                ws_status_only_url => get_ws_status_only_url($job->id),
+                ws_developer_url         => determine_web_ui_web_socket_url($job->id),
+                ws_status_only_url       => get_ws_status_only_url($job->id),
+                developer_session        => $job->developer_session,
+                is_devel_mode_accessible => $current_user && $current_user->is_operator,
+                current_user_id          => $current_user ? $current_user->id : 'undefined',
             });
     }
 

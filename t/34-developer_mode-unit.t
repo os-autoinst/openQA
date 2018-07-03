@@ -49,13 +49,19 @@ $test_case->init_data;
 my $t             = Test::Mojo->new('OpenQA::WebAPI');
 my $t_livehandler = Test::Mojo->new('OpenQA::LiveHandler');
 
-# login as arthur
-my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
+# get CSRF token for auth
 # note: since the openqa-livehandler daemon doesn't provide its own way to login, we
 #       just copy the cookie with the required token from the regular user agent
+my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
 $t_livehandler->ua->cookie_jar($t->ua->cookie_jar);
-$test_case->login($t,             'arthur');
-$test_case->login($t_livehandler, 'arthur');
+
+# login as arthur
+sub login {
+    my ($user_name) = @_;
+    $test_case->login($t,             $user_name);
+    $test_case->login($t_livehandler, $user_name);
+}
+login('arthur');
 
 # get resultset
 my $db                 = $t->app->db;
@@ -560,7 +566,36 @@ subtest 'websocket proxy' => sub {
 
         $t_livehandler->get_ok('/some/route')->status_is(404);
         $t_livehandler->content_is("route does not exist\n", 'livehandler does not try to render a template');
+    };
 
+    # note: all subtests above were conducted as admin
+
+    subtest 'access for regular users restricted' => sub {
+        login('https://openid.camelot.uk/lancelot');
+
+        # create and start ws transaction manually because Test::Mojo only provides websocket_ok() but
+        #  we want to check the opposite here
+        my $ua    = $t_livehandler->ua;
+        my $ws_tx = $ua->build_websocket_tx('/liveviewhandler/tests/99961/developer/ws-proxy',
+            'attempt to use proxy as regular user fails');
+        $ua->start($ws_tx, sub { Mojo::IOLoop->stop; });
+        Mojo::IOLoop->start;
+
+        ok(!$ws_tx->is_websocket, 'ws handshake fails for non-operator');
+        is($ws_tx->res->code, 403, 'instead we get 403');
+
+        $t_livehandler->websocket_ok('/liveviewhandler/tests/99961/developer/ws-proxy/status',
+            'status-only route accessible, though');
+        $t_livehandler->message_ok('message received');
+        $t_livehandler->finish_ok();
+    };
+
+    subtest 'access for operators granted' => sub {
+        login('percival');
+        $t_livehandler->websocket_ok('/liveviewhandler/tests/99961/developer/ws-proxy',
+            'accessing proxy as operator is ok');
+        $t_livehandler->message_ok('message received');
+        $t_livehandler->finish_ok();
     };
 };
 

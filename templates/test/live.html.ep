@@ -1,8 +1,6 @@
 % content_for 'ready_function' => begin
-    % if (my $current_user = current_user) {
-        window.ownUserId = <%= $current_user->id %>;
-        window.isAdmin = <%= ($current_user->is_admin) ? ('true') : ('false') %>;
-    % }
+    window.ownUserId = <%= $current_user_id %>;
+    window.isDevelModeAccessible = <%= ($is_devel_mode_accessible) ? ('true') : ('false') %>;
     setupDeveloperPanel();
 % end
 
@@ -18,7 +16,7 @@
             </span>
         </span>
         <div class="card-header-appendix" id="developer-session-info">
-            % if (my $developer_session = $job->developer_session) {
+            % if ($developer_session) {
                 % my $tab_count = $developer_session->ws_connection_count;
                 owned by <%= $developer_session->user->name %>
                 (started
@@ -29,7 +27,7 @@
             % }
             % else {
                 regular test execution
-                % if (is_admin) {
+                % if ($is_devel_mode_accessible) {
                     - click to expand
                 % }
             % }
