@@ -20,6 +20,7 @@ td div.progress {
     .progress-bar {
         // don' use flex box because it leads to undesired overflow behavior
         display: inline;
+        overflow: hidden;
     }
     .progress-bar-passed {
         background-color: $color-module-passed;
