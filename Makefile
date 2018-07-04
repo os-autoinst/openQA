@@ -93,17 +93,21 @@ endif
 docker-tests:
 	export OPENQA_LOGFILE=/opt/openqa/openqa-debug.log ;\
 	if test "x$$FULLSTACK" = x1 || test "x$$SCHEDULER_FULLSTACK" = x1 || test "x$$DEVELOPER_FULLSTACK" = x1; then \
-		git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst ;\
-		cd ../os-autoinst ;\
-		cpanm -n --mirror http://no.where/ --installdeps . ;\
-		if [ $$? -eq 0 ]; then\
-			sh autogen.sh && make ;\
-			cd - ;\
-			eval $$(dbus-launch --sh-syntax) ;\
-			export PERL5OPT="$$PERL5OPT $$HARNESS_PERL_SWITCHES" ;\
-		else \
-			echo "OS autoinst dependencies not match. Please check output above" ;\
-			exit 1 ;\
+		if test -z "$$CUSTOM_OS_AUTOINST"; then\
+			git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst ;\
+			cd ../os-autoinst ;\
+			cpanm -n --mirror http://no.where/ --installdeps . ;\
+			if [ $$? -eq 0 ]; then\
+				sh autogen.sh && make ;\
+				cd - ;\
+				eval $$(dbus-launch --sh-syntax) ;\
+				export PERL5OPT="$$PERL5OPT $$HARNESS_PERL_SWITCHES" ;\
+			else \
+				echo "OS autoinst dependencies not match. Please check output above" ;\
+				exit 1 ;\
+			fi ;\
+		else\
+			cp -rd /opt/os-autoinst /opt/testing_area ;\
 		fi ;\
 	fi ;\
 	if test "x$$FULLSTACK" = x1; then \
