@@ -373,7 +373,7 @@ sub test_junit_file {
     is $resultsdir->list_tree->size, 166, '166 test outputs were written';
     $resultsdir->list_tree->each(
         sub {
-            ok $_->slurp =~ /# system-out:|# running upstream test/, 'Output result was written correctly';
+            fail('Output result was written correctly') unless ($_->slurp =~ /# system-out:|# running upstream test/);
         });
 
     my $expected_test_result = {
@@ -408,11 +408,12 @@ sub test_junit_file {
     is $testdir->list_tree->size, 9, '9 test results were written' or diag explain $parser->generated_tests_results;
     $testdir->list_tree->each(
         sub {
+            fail 'json result: filename expected to be like result-\d_.*\.json but is ' . $_
+              unless $_ =~ qr/result-\d_.*\.json/;
             my $res = decode_json $_->slurp;
-            is ref $res, "HASH", 'JSON result can be decoded' or diag explain $_->slurp;
-            like $_, qr/result-\d_.*\.json/;
-            ok exists $res->{result}, 'JSON result can be decoded' or die diag explain $res;
-            ok !exists $res->{name},  'JSON result can be decoded' or die diag explain $res;
+            is ref $res, 'HASH', 'json result: can be decoded' or diag explain $_->slurp;
+            fail 'json result: exists $res->{result}' unless exists $res->{result};
+            fail 'json result: !exists $res->{name}'  unless !exists $res->{name};
         });
 
     $testdir->remove_tree;
@@ -461,7 +462,7 @@ sub test_xunit_file {
     is $resultsdir->list_tree->size, 23, '23 test outputs were written';
     $resultsdir->list_tree->each(
         sub {
-            ok $_->slurp =~ /^# Test messages /, 'Output result was written correctly';
+            fail('Output result was written correctly') unless ($_->slurp =~ /^# Test messages /);
         });
 
     my $expected_test_result = {
@@ -487,13 +488,14 @@ sub test_xunit_file {
     is $testdir->list_tree->size, 11, '11 test results were written' or diag explain $parser->generated_tests_results;
     $testdir->list_tree->each(
         sub {
+            fail 'json result: filename expected to be like result-.*\.json but is ' . $_
+              unless $_ =~ qr/result-.*\.json/;
             my $res = decode_json $_->slurp;
-            is ref $res, "HASH", 'JSON result can be decoded' or diag explain $_->slurp;
-            like $_, qr/result-.*\.json/;
-            ok exists $res->{result}, 'JSON result can be decoded';
-            like $res->{result}, qr/ok|fail/, 'result can be ok or fail';
-            ok !exists $res->{name},       'JSON result can be decoded';
-            ok !exists $res->{properties}, 'JSON result can be decoded';
+            is ref $res, 'HASH', 'json result: can be decoded' or diag explain $_->slurp;
+            fail 'json result: exists $res->{result}'                             unless exists $res->{result};
+            fail 'json result: result can be ok or fail but is ' . $res->{result} unless $res->{result} =~ qr/ok|fail/;
+            fail 'json result: !exists $res->{name}'                              unless !exists $res->{name};
+            fail 'json result: !exists $res->{properties}'                        unless !exists $res->{properties};
         });
 
     $testdir->remove_tree;
