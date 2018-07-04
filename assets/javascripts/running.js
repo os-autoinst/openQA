@@ -339,7 +339,7 @@ function setupDeveloperPanel() {
 
     // setup toggle for body
     var panelHeader = panel.find('.card-header');
-    if (window.isAdmin) {
+    if (window.isDevelModeAccessible) {
         panelHeader.on('click', function() {
             var panelBody = panel.find('.card-body');
             developerMode.panelExpanded = !developerMode.panelExpanded;
@@ -349,7 +349,6 @@ function setupDeveloperPanel() {
     } else {
         panelHeader.css('cursor', 'default');
     }
-
 
     // ensure help popover doesn't toggle
     panel.find('.help_popover').on('click', function(event) {
@@ -443,7 +442,7 @@ function updateDeveloperPanel() {
         sessionInfoElement.append(document.createTextNode(tabsOpenInfo));
     } else {
         var sessionInfo = 'regular test execution';
-        if (window.isAdmin && !developerMode.panelExpanded) {
+        if (window.isDevelModeAccessible && !developerMode.panelExpanded) {
             sessionInfo += ' - click to expand';
         }
         sessionInfoElement.text(sessionInfo);
@@ -558,7 +557,7 @@ function setupWebsocketConnection() {
     closeWebsocketConnection();
 
     // determine ws URL
-    if ((window.isAdmin && developerMode.useDeveloperWsRoute)) {
+    if ((window.isDevelModeAccessible && developerMode.useDeveloperWsRoute)) {
         // use route for developer (establishing a developer session)
         developerMode.useDeveloperWsRoute = true;
         var url = developerMode.develWsUrl;
