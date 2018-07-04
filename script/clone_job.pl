@@ -278,8 +278,8 @@ sub clone_job {
 
     my $url      = $local_url->clone;
     my %settings = %{$job->{settings}};
-    if ($job->{group}) {
-        $settings{_GROUP} = $job->{group};
+    if (my $group_id = $job->{group_id}) {
+        $settings{_GROUP_ID} = $group_id;
     }
     delete $settings{NAME};    # usually autocreated
     if ($depth == 0 or $options{'parental-inheritance'}) {
