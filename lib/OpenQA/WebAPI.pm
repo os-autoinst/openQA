@@ -414,6 +414,16 @@ sub startup {
     $api_ru->post('/groups/:group_id/comments')->name('apiv1_post_group_comment')->to('comment#create');
     $api_ru->put('/groups/:group_id/comments/:comment_id')->name('apiv1_put_group_comment')->to('comment#update');
     $api_ra->delete('/groups/:group_id/comments/:comment_id')->name('apiv1_delete_group_comment')->to('comment#delete');
+    $api_public_r->get('/parent_groups/:parent_group_id/comments')->name('apiv1_list_parent_group_comment')
+      ->to('comment#list');
+    $api_public_r->get('/parent_groups/:parent_group_id/comments/:comment_id')->name('apiv1_get_parent_group_comment')
+      ->to('comment#text');
+    $api_ru->post('/parent_groups/:parent_group_id/comments')->name('apiv1_post_parent_group_comment')
+      ->to('comment#create');
+    $api_ru->put('/parent_groups/:parent_group_id/comments/:comment_id')->name('apiv1_put_parent_group_comment')
+      ->to('comment#update');
+    $api_ra->delete('/parent_groups/:parent_group_id/comments/:comment_id')->name('apiv1_delete_parent_group_comment')
+      ->to('comment#delete');
 
     # json-rpc methods not migrated to this api: echo, list_commands
     ###

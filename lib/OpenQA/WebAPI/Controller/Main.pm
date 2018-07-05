@@ -103,42 +103,37 @@ sub group_overview {
     my @comments;
     my @pinned_comments;
     my $tags;
-    if ($group->can('comments')) {
-        # read paging parameter
-        my $page       = int($self->param('comments_page') // 1);
-        my $page_limit = int($self->param('comments_limit') // 5);
-        return $self->respond_to(json => sub { html => 'Invalid paging parameter specified.' })
-          unless $page && $page_limit;
 
-        # find comments
-        my $comments_resultset = $self->app->schema->resultset('Comments');
-        my $comments           = $comments_resultset->search(
-            {
-                group_id => $group->id
-            },
-            {
-                page     => $page,
-                rows     => $page_limit,
-                order_by => {-desc => 't_created'},
-            });
-        $self->stash('comments_pager', $comments->pager());
-        @comments = $comments->all;
+    # read paging parameter
+    my $page       = int($self->param('comments_page') // 1);
+    my $page_limit = int($self->param('comments_limit') // 5);
+    return $self->respond_to(json => sub { html => 'Invalid paging parameter specified.' })
+      unless $page && $page_limit;
 
-        # find "pinned descriptions" (comments by operators with the word 'pinned-description' in it)
-        # FIXME: use a join with the user table here to do the check for operator via the database
-        for my $comment (
-            $comments_resultset->search(
-                {
-                    group_id => $group->id,
-                    text     => {like => '%pinned-description%'},
-                }
-            )->all
-          )
+    # find comments
+    my $comments = $group->comments->search(
+        undef,
         {
-            push(@pinned_comments, $comment) if ($comment->user->is_operator);
-        }
+            page     => $page,
+            rows     => $page_limit,
+            order_by => {-desc => 't_created'},
+        });
+    $self->stash('comments_pager', $comments->pager());
+    @comments = $comments->all;
 
+    # find "pinned descriptions" (comments by operators with the word 'pinned-description' in it)
+    # FIXME: use a join with the user table here to do the check for operator via the database
+    for my $comment (
+        $group->comments->search(
+            {
+                text => {like => '%pinned-description%'},
+            }
+        )->all
+      )
+    {
+        push(@pinned_comments, $comment) if ($comment->user->is_operator);
     }
+
     $tags = $group->tags;
 
     my $cbr = OpenQA::BuildResults::compute_build_results(
@@ -152,25 +147,33 @@ sub group_overview {
     _map_tags_into_build($build_results, $tags);
     $self->stash('build_results', $build_results);
     $self->stash('max_jobs',      $max_jobs);
-    my $group_hash = {
-        id   => $group->id,
-        name => $group->name,
+
+    my $is_parent_group              = $group->can('children');
+    my $comment_context              = $is_parent_group ? 'parent_group' : 'group';
+    my $comment_context_route_suffix = $comment_context . '_comment';
+    my $group_hash                   = {
+        id                   => $group->id,
+        name                 => $group->name,
+        is_parent            => $is_parent_group,
+        rendered_description => $group->rendered_description // undef,
     };
+    if (!$is_parent_group) {
+        if (my $parent = $group->parent) {
+            $group_hash->{parent_id}   = $parent->id;
+            $group_hash->{parent_name} = $parent->name;
+        }
+    }
+    $self->stash('group',           $group_hash);
     $self->stash('limit_builds',    $limit_builds);
     $self->stash('only_tagged',     $only_tagged);
     $self->stash('comments',        \@comments);
     $self->stash('pinned_comments', \@pinned_comments);
-    if ($group->can('children')) {
-        my @child_groups = $group->children->all;
-        $self->stash('child_groups', \@child_groups);
-    }
-    elsif ($group->parent_id) {
-        $group_hash->{parent_id}   = $group->parent_id;
-        $group_hash->{parent_name} = $group->parent->name;
-    }
-    $self->stash('group', $group_hash);
-    my $desc = $group->rendered_description;
-    $self->stash('description', $desc);
+    $self->stash('child_groups', [$group->children->all]) if ($is_parent_group);
+    $self->stash('comment_context',       $comment_context);
+    $self->stash('comment_post_action',   'apiv1_post_' . $comment_context_route_suffix);
+    $self->stash('comment_put_action',    'apiv1_put_' . $comment_context_route_suffix);
+    $self->stash('comment_delete_action', 'apiv1_delete_' . $comment_context_route_suffix);
+
     $self->respond_to(
         json => sub {
             @comments        = map($_->hash, @comments);

@@ -77,6 +77,9 @@ sub comments {
     if ($self->param('job_id')) {
         return $self->obj_comments('job_id', 'Jobs', 'Job');
     }
+    elsif ($self->param('parent_group_id')) {
+        return $self->obj_comments('parent_group_id', 'JobGroupParents', 'Parent group');
+    }
     else {
         return $self->obj_comments('group_id', 'JobGroups', 'Job group');
     }

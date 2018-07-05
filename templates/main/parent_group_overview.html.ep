@@ -19,7 +19,7 @@
     Last Builds for <%= $group->{name} %>
 </h2>
 <div class="well well-lg" id="group_description">
-    % if($description) {
+    % if (my $description = $group->{rendered_description}) {
         %= $description
     % }
     <div id="child_groups">
@@ -37,3 +37,4 @@
 <div id="build-results"></div>
 %= include 'main/group_builds', build_results => $build_results, group => $group, children => $children, default_expanded => 1
 %= include 'main/more_builds', limit_builds => $limit_builds
+%= include 'main/comment_area'
