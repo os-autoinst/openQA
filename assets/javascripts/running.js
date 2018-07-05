@@ -310,6 +310,7 @@ var developerMode = {
     panelExpanded: false,                   // whether the panel is supposed to be expanded
     panelActuallyExpanded: false,           // whether the panel is currently expanded
     reconnectAttempts: 0,                   // number of (re)connect attempts (reset after successful connect)
+    currentModuleIndex: undefined,          // the index of the current module
 
     // state of the test execution (comes from os-autoinst cmd srv through the openQA ws proxy)
     currentModule: undefined,               // name of the current module, eg. "installation-welcome"
@@ -398,7 +399,7 @@ function updateDeveloperPanel() {
         panelBody.toggle(200);
     }
 
-    // find modules
+    // find modules and determine the index of the current module
     var moduleToPauseAtSelect = $('#developer-pause-at-module');
     var moduleToPauseAtOptions = moduleToPauseAtSelect.find('option');
     var modules = moduleToPauseAtOptions.map(function() {
@@ -407,6 +408,24 @@ function updateDeveloperPanel() {
         return category ? (category + '-' + option.val()) : option.val();
     }).get();
     var currentModuleIndex = modules.indexOf(developerMode.currentModule);
+
+    // hide modules which have already been executed when the current module index has changed
+    if (developerMode.currentModuleIndex !== currentModuleIndex) {
+        developerMode.currentModuleIndex = currentModuleIndex;
+        for (var i = 0; i <= currentModuleIndex; ++i) {
+            var optionElement = moduleToPauseAtOptions[i];
+            var optgroupElement = optionElement.parentNode;
+            if (!optgroupElement || optgroupElement.nodeName !== 'OPTGROUP') {
+                continue;
+            }
+            optionElement.style.display = 'none';
+            if (optgroupElement.lastElementChild.isEqualNode(optionElement)) {
+                optgroupElement.style.display = 'none';
+            }
+        }
+    }
+
+    // determine whether the module to pause at is still ahead
     var toPauseAtIndex = modules.indexOf(developerMode.moduleToPauseAt);
     if (toPauseAtIndex < 0) {
         toPauseAtIndex = 0;
