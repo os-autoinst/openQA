@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2016 SUSE LLC
+# Copyright (C) 2015-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ sub _is_method_allowed {
 }
 
 
-dbus_method('job_restart', [['array', 'uint32']], [['array', 'uint32']]);
+dbus_method('job_restart', [['array', 'uint32']], [['array', ['dict', 'uint32', 'uint32']]]);
 sub job_restart {
     my ($self, $args) = @_;
     my $rs = safe_call 'OpenQA::Resource::Jobs' => job_restart => $args;

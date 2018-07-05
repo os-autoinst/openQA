@@ -1,4 +1,4 @@
-# Copyright (c) 2017 SUSE LINUX GmbH, Nuernberg, Germany.
+# Copyright (c) 2017-2018 SUSE LINUX GmbH, Nuernberg, Germany.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -63,8 +63,8 @@ sub job_restart {
 
     my @duplicated;
     while (my $j = $jobs->next) {
-        my $job = $j->auto_duplicate;
-        push @duplicated, $job->id if $job;
+        my $dup = $j->auto_duplicate;
+        push @duplicated, $dup->{cluster_cloned} if $dup;
     }
 
     # then tell workers to abort

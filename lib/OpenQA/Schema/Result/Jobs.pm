@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2017 SUSE LLC
+# Copyright (C) 2015-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -860,8 +860,22 @@ sub auto_duplicate {
     }
 
     log_debug('new job ' . $clones->{$self->id}->{clone});
+
+    # Attach all clones mapping to new job object
     # TODO: better return a proper hash here
-    return $rsource->resultset->find($clones->{$self->id}->{clone});
+    my $dup = $rsource->resultset->find($clones->{$self->id}->{clone});
+    $dup->_cluster_cloned($clones);
+    return $dup;
+}
+
+sub _cluster_cloned {
+    my ($self, $clones) = @_;
+
+    my $cluster_cloned = {};
+    for my $c (sort keys %$clones) {
+        $cluster_cloned->{$c} = $clones->{$c}->{clone};
+    }
+    $self->{cluster_cloned} = $cluster_cloned;
 }
 
 sub abort {

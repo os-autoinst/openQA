@@ -12,7 +12,10 @@ function setupWorkerNeedles() {
             serverSide: true,
             order: [[2, "desc"]],
             columnDefs: [
-                {targets: 0, render: renderTestName},
+                { targets: 0,
+                  className: "test",
+                  render: renderTestName,
+                },
                 {targets: 1, render: renderTestResult},
                 {targets: 2, render: renderTimeAgo}
             ]

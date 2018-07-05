@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2015-2017 SUSE LLC
+# Copyright (C) 2015-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ $test_case->init_data;
 use OpenQA::SeleniumTest;
 
 sub schema_hook {
-    OpenQA::Test::Database->new->create->resultset('Jobs')->search({id => {-in => [99926, 99928]}})
+    OpenQA::Test::Database->new->create->resultset('Jobs')->search({id => {-in => [99926, 99961]}})
       ->update({assigned_worker_id => 1});
 }
 
@@ -111,7 +111,7 @@ is(scalar @entries, 6, 'two previous jobs shown (3 cols per row)');
 is_deeply(
     \@entries,
     [
-        'opensuse-13.1-DVD-i586-Build0091-RAID1@32bit',
+        'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
         '',
         'not finished yet',
         'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
@@ -120,7 +120,7 @@ is_deeply(
     'correct entries shown'
 );
 
-# restart job
+# restart running job assigned to a worker
 $driver->find_child_element($table, 'a.restart', 'css')->click();
 wait_for_ajax;
 $table = $driver->find_element_by_id('previous_jobs');
@@ -129,7 +129,7 @@ ok($table, 'still on same page (with table)');
 is_deeply(
     \@entries,
     [
-        'opensuse-13.1-DVD-i586-Build0091-RAID1@32bit (restarted)',
+        'opensuse-13.1-NET-x86_64-Build0091-kde@64bit (restarted)',
         '',
         'not finished yet',
         'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',

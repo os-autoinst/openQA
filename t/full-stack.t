@@ -231,7 +231,7 @@ OpenQA::Test::FullstackUtils::client_call('jobs/1', qr/group_id *=> *$group_id/,
 
 OpenQA::Test::FullstackUtils::client_call(
     'jobs/1/restart post',
-    qr{\Qtest_url => ["/tests/2\E},
+    qr|\Qtest_url => [{ 1 => "/tests/2\E|,
     'client returned new test_url'
 );
 #]} restore syntax highlighting
@@ -337,7 +337,7 @@ subtest 'Cache tests' => sub {
     my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
     OpenQA::Test::FullstackUtils::client_call(
         'jobs/3/restart post',
-        qr{\Qtest_url => ["/tests/5\E},
+        qr|\Qtest_url => [{ 3 => "/tests/5\E|,
         'client returned new test_url'
     );
     #] restore syntax highlighting in Kate
@@ -410,7 +410,7 @@ subtest 'Cache tests' => sub {
     #simple limit testing.
     OpenQA::Test::FullstackUtils::client_call(
         'jobs/5/restart post',
-        qr{\Qtest_url => ["/tests/6\E},
+        qr|\Qtest_url => [{ 5 => "/tests/6\E|,
         'client returned new test_url'
     );
     #] restore syntax highlighting in Kate
@@ -432,7 +432,7 @@ subtest 'Cache tests' => sub {
     #simple limit testing.
     OpenQA::Test::FullstackUtils::client_call(
         'jobs/6/restart post',
-        qr{\Qtest_url => ["/tests/7\E},
+        qr|\Qtest_url => [{ 6 => "/tests/7\E|,
         'client returned new test_url'
     );
     #] restore syntax highlighting in Kate

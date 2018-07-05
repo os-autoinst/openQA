@@ -14,27 +14,31 @@ function setupOverview() {
             var oldId = 0;
             var newId = xhr['result'][0];
 
-            $(this).text(''); // hide the icon
-            var icon = $(this).parents('td').find('.status');
-            icon.removeClass('state_done').removeClass('state_cancelled');
-            icon.addClass('state_scheduled');
-            icon.attr('title', 'Scheduled');
-            // remove the result class
-            $(this).parents('td').find('.result_passed').removeClass('result_passed');
-            $(this).parents('td').find('.result_failed').removeClass('result_failed');
-            $(this).parents('td').find('.result_softfailed').removeClass('result_softfailed');
+            $.each( newId, function( key, value ) {
+                if (!$('.restart[data-jobid="' + key + '"]').length) { return true };
+                var restarted = $('.restart[data-jobid="' + key + '"]');
+                restarted.text(''); // hide the icon
+                var icon = restarted.parents('td').find('.status');
+                icon.removeClass('state_done').removeClass('state_cancelled');
+                icon.addClass('state_scheduled');
+                icon.attr('title', 'Scheduled');
+                // remove the result class
+                restarted.parents('td').find('.result_passed').removeClass('result_passed');
+                restarted.parents('td').find('.result_failed').removeClass('result_failed');
+                restarted.parents('td').find('.result_softfailed').removeClass('result_softfailed');
 
-            // If the API call returns a new id, a new job have been created to replace
-            // the old one. In other case, the old job is being reused
-            if (newId) {
-                var link = icon.parents('a');
-                var oldId = $(this).data('jobid');
-                var newUrl = link.attr('href').replace(oldId, newId);
-                link.attr('href', newUrl);
-            }
+                // If the API call returns a new id, a new job have been created to replace
+                // the old one. In other case, the old job is being reused
+                if (value) {
+                    var link = icon.parents('a');
+                    var oldId = restarted.data('jobid');
+                    var newUrl = link.attr('href').replace(oldId, value);
+                    link.attr('href', newUrl);
+                    link.addClass('restarted');
+                }
 
-            icon.fadeTo('slow', 0.5).fadeTo('slow', 1.0);
-
+                icon.fadeTo('slow', 0.5).fadeTo('slow', 1.0);
+            });
         });
 
     setupFilterForm();

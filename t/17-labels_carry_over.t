@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2016-2017 SUSE LLC
+# Copyright (C) 2016-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ sub restart_with_result {
     my ($old_job, $result) = @_;
     my $get     = $t->post_ok("/api/v1/jobs/$old_job/restart", $auth)->status_is(200);
     my $res     = decode_json($get->tx->res->body);
-    my $new_job = $res->{result}[0];
+    my $new_job = $res->{result}[0]->{$old_job};
     $t->post_ok("/api/v1/jobs/$new_job/set_done", $auth => form => {result => $result})->status_is(200);
     return $res;
 }
@@ -83,25 +83,27 @@ subtest '"happy path": failed->failed carries over last issue reference' => sub 
     like($comments_current[0], qr/\Q$second_label/, 'last entered label found, it is expanded');
 };
 
-my $job;
+my ($job, $old_job);
 subtest 'failed->passed discards all labels' => sub {
     my $res = restart_with_result(99963, 'passed');
-    $job = $res->{result}[0];
-    my @comments_new = @{comments($res->{test_url}[0])};
+    $job = $res->{result}[0]->{99963};
+    my @comments_new = @{comments($res->{test_url}[0]->{99963})};
     is(scalar @comments_new, 0, 'no labels carried over to passed');
 };
 
 subtest 'passed->failed does not carry over old labels' => sub {
     my $res = restart_with_result($job, 'failed');
-    $job = $res->{result}[0];
-    my @comments_new = @{comments($res->{test_url}[0])};
+    $old_job = $job;
+    $job     = $res->{result}[0]->{$job};
+    my @comments_new = @{comments($res->{test_url}[0]->{$old_job})};
     is(scalar @comments_new, 0, 'no old labels on new failure');
 };
 
 subtest 'failed->failed without labels does not fail' => sub {
     my $res = restart_with_result($job, 'failed');
-    $job = $res->{result}[0];
-    my @comments_new = @{comments($res->{test_url}[0])};
+    $old_job = $job;
+    $job     = $res->{result}[0]->{$job};
+    my @comments_new = @{comments($res->{test_url}[0]->{$old_job})};
     is(scalar @comments_new, 0, 'nothing there, nothing appears');
 };
 
@@ -109,7 +111,8 @@ subtest 'failed->failed labels which are not bugrefs are *not* carried over' => 
     my $label = 'label:any_label';
     $t->post_ok("/api/v1/jobs/$job/comments", $auth => form => {text => $label})->status_is(200);
     my $res = restart_with_result($job, 'failed');
-    my @comments_new = @{comments($res->{test_url}[0])};
+    $old_job = $job;
+    my @comments_new = @{comments($res->{test_url}[0]->{$old_job})};
     is(join('', @comments_new), '', 'no simple labels are carried over');
     is(scalar @comments_new, 0, 'no simple label present in new result');
 };
