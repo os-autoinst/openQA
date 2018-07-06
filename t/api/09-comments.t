@@ -38,6 +38,9 @@ $t->ua(
     OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
+# create a parent group
+$app->schema->resultset('JobGroupParents')->create({id => 1, name => 'Test parent', sort_order => 0});
+
 sub test_get_comment {
     my ($in, $id, $comment_id, $supposed_text) = @_;
     my $get = $t->get_ok("/api/v1/$in/$id/comments/$comment_id");
@@ -89,6 +92,13 @@ sub test_comments {
     my ($in, $id) = @_;
     my $new_comment_id = test_create_comment($in, $id, $test_message);
 
+    my %expected_names = (
+        jobs          => 'Job',
+        groups        => 'Job group',
+        parent_groups => 'Parent group',
+    );
+    my $expected_name = $expected_names{$in};
+
     subtest 'get comment' => sub {
         test_get_comment($in, $id, $new_comment_id, $test_message);
         test_get_comment_invalid_job_or_group($in, 1234, 35);
@@ -104,7 +114,7 @@ sub test_comments {
     subtest 'create comment with invalid job or group' => sub {
         my $post = $t->post_ok("/api/v1/$in/1234/comments" => form => {text => $test_message})
           ->status_is(404, 'comment can not be created for invalid job/group');
-        is($post->tx->res->json->{error}, $in eq 'jobs' ? 'Job 1234 does not exist' : 'Job group 1234 does not exist');
+        is($post->tx->res->json->{error}, $expected_name . ' 1234 does not exist');
         test_get_comment_invalid_job_or_group($in, 1234, 35);
     };
 
@@ -117,7 +127,7 @@ sub test_comments {
     subtest 'update comment with invalid job or group' => sub {
         my $put = $t->put_ok("/api/v1/$in/1234/comments/$new_comment_id" => form => {text => $edited_test_message})
           ->status_is(404, 'comment can not be updated for invalid job/group');
-        is($put->tx->res->json->{error}, $in eq 'jobs' ? 'Job 1234 does not exist' : 'Job group 1234 does not exist');
+        is($put->tx->res->json->{error}, $expected_name . ' 1234 does not exist');
         test_get_comment_invalid_job_or_group('jobs', 1234, 35);
     };
 
@@ -155,6 +165,10 @@ subtest 'job comments' => sub {
 subtest 'group comments' => sub {
     test_comments(groups => 1001);
     test_get_comment_groups_json(1001, $edited_test_message);
+};
+
+subtest 'parent group comments' => sub {
+    test_comments(parent_groups => 1);
 };
 
 subtest 'admin can delete comments' => sub {
