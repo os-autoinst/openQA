@@ -31,13 +31,7 @@
         %= $description
     </div>
 % }
-% if ($pinned_comments) {
-    <div id="group_descriptions">
-    % for my $comment (@$pinned_comments) {
-        %= include 'comments/comment_row', comment_id => $comment->id, comment => $comment, user => $comment->user, context => {type => 'group', id => $group->{id}, pinned => 1}, put_action => 'apiv1_put_group_comment', delete_action => 'apiv1_delete_group_comment'
-    % }
-    </div>
-% }
+%= include 'main/pinned_comments'
 
 <div id="build-results">
     %= include 'main/group_builds', build_results => $build_results, group => $group, children => undef, default_expanded => 1

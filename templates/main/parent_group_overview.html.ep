@@ -33,6 +33,7 @@
         </ul>
     </div>
 </div>
+%= include 'main/pinned_comments'
 
 <div id="build-results"></div>
 %= include 'main/group_builds', build_results => $build_results, group => $group, children => $children, default_expanded => 1
