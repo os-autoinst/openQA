@@ -873,6 +873,30 @@ We choose to wait for the prompt just before sending a command, rather than
 after it, so that Step 5 can be deferred to a later time. In theory this
 allows the test script to perform some other work while the SUT is busy.
 
+==== Sending new lines and continuation characters
+
+The following command will timeout: +script_run("echo \"1\n2\"")+. The reason
+being +script_run+ will call +wait_serial("echo \"1\n2\"")+ to check that the
+command was entered successfully and echoed back (see above for explanation of
+serial terminal echo, note the echo shell command has not been executed
+yet). However the shell will translate the newline characters into a newline
+character plus '>', so we will get something similar to the following output.
+
+[source,shell]
+--------------------------------------------------------------------------------
+echo "1
+> 2"
+--------------------------------------------------------------------------------
+
+The '>' is unexpected and will cause the match to fail. One way to fix this is
+simply to do +echo -e \"1\\n2\"+. In this case Perl will not replace \n with a
+newline character, instead it will be passed to echo which will do the
+substitution instead (note the '-e' switch for echo).
+
+In general you should be aware that, Perl, the guest kernel and the shell may
+transform whatever character sequence you enter. Transformations can be
+spotted by comparing the input string with what +wait_serial+ actually finds.
+
 ==== Sending signals - ctrl-c and ctrl-d
 
 On a VNC based console you simply use +send_key+ like follows.
