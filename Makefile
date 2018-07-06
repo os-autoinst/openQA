@@ -91,47 +91,7 @@ endif
 
 .PHONY: docker-tests
 docker-tests:
-	export OPENQA_LOGFILE=/opt/openqa/openqa-debug.log ;\
-	if test "x$$FULLSTACK" = x1 || test "x$$SCHEDULER_FULLSTACK" = x1 || test "x$$DEVELOPER_FULLSTACK" = x1; then \
-		if test -z "$$CUSTOM_OS_AUTOINST"; then\
-			git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst ;\
-			cd ../os-autoinst ;\
-			cpanm -n --mirror http://no.where/ --installdeps . ;\
-			if [ $$? -eq 0 ]; then\
-				sh autogen.sh && make ;\
-				cd - ;\
-				eval $$(dbus-launch --sh-syntax) ;\
-				export PERL5OPT="$$PERL5OPT $$HARNESS_PERL_SWITCHES" ;\
-			else \
-				echo "OS autoinst dependencies not match. Please check output above" ;\
-				exit 1 ;\
-			fi ;\
-		else\
-			cp -rd /opt/os-autoinst /opt/testing_area ;\
-		fi ;\
-	fi ;\
-	if test "x$$FULLSTACK" = x1; then \
-	  perl t/full-stack.t || touch tests_failed ;\
-	elif test "x$$SCHEDULER_FULLSTACK" = x1; then \
-	  perl t/05-scheduler-full.t || touch tests_failed ;\
-	elif test "x$$DEVELOPER_FULLSTACK" = x1; then \
-	  perl t/33-developer_mode.t || touch tests_failed ;\
-	else \
-	  list= ;\
-	  if test "x$$UITESTS" = x1; then \
-	    list=$$(find ./t/ui -name *.t | sort ) ;\
-	  else \
-	    $(MAKE) checkstyle || touch tests_failed ;\
-	    list=$$(find ./t/ -name '*.t' -not -path './t/ui/*' | sort ) ;\
-	  fi ;\
-          prove ${PROVE_ARGS} -r $$list || touch tests_failed ;\
-	fi 
-	if test -r tests_failed; then \
-		exit 1 ;\
-	else \
-		cp -a assets/cache/* /opt/openqa/assets/cache ;\
-        fi
-    
+	script/docker-tests
 
 # ignore tests and test related addons in coverage analysis
 COVER_OPTS ?= -select_re "^/lib" -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement

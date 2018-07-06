@@ -1,0 +1,51 @@
+#!/bin/sh -ex
+
+export OPENQA_LOGFILE=/opt/openqa/openqa-debug.log
+
+function run_test {
+    prove ${PROVE_ARGS} "$@" || touch tests_failed
+}
+
+function prepare_fullstack_test {
+    if [ "$CUSTOM_OS_AUTOINST" ]; then
+        cp -rd /opt/os-autoinst /opt/testing_area
+        return
+    fi
+
+    git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst
+    cd ../os-autoinst
+    cpanm -n --mirror http://no.where/ --installdeps .
+    if ! [ $? -eq 0 ]; then
+        echo "OS autoinst dependencies not match. Please check output above"
+        exit 1
+    fi
+    sh autogen.sh && make
+    cd -
+}
+
+function run_fullstack_test {
+    prepare_fullstack_test
+
+    eval $(dbus-launch --sh-syntax)
+    export PERL5OPT="$PERL5OPT $HARNESS_PERL_SWITCHES"
+    perl "$@" || touch tests_failed
+}
+
+if [ "x$FULLSTACK" = x1 ]; then
+    run_fullstack_test t/full-stack.t
+elif [ "x$SCHEDULER_FULLSTACK" = x1 ]; then
+    run_fullstack_test t/05-scheduler-full.t
+elif [ "x$DEVELOPER_FULLSTACK" = x1 ]; then
+    run_fullstack_test t/33-developer_mode.t
+else
+    if [ "x$UITESTS" = x1 ]; then
+        list=$(find ./t/ui -name *.t | sort)
+    else
+        make checkstyle || touch tests_failed
+        list=$(find ./t/ -name '*.t' -not -path './t/ui/*' | sort)
+    fi
+    run_test -r $list
+fi
+
+[ -r tests_failed ] && exit 1
+cp -a assets/cache/* /opt/openqa/assets/cache
