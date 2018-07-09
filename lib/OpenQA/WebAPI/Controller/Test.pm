@@ -94,12 +94,14 @@ sub list {
     } @list;
     $self->stash(running => \@list);
 
-    my @scheduled = $self->db->resultset("Jobs")->complex_query(
+    my $scheduled = $self->db->resultset("Jobs")->complex_query(
         state   => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
         match   => $match,
         groupid => $groupid,
         assetid => $assetid
-    )->all;
+    );
+    $self->stash(blocked => $scheduled->search({-not => {blocked_by_id => undef}})->count);
+
     # @scheduled = sort {
     #     if ($b->{job} && $a->{job}) {
     #         $b->{job}->t_created <=> $a->{job}->t_created || $b->{job}->id <=> $a->{job}->id;
@@ -114,6 +116,7 @@ sub list {
     #         0;
     #     }
     # }
+    my @scheduled = $scheduled->search({blocked_by_id => undef})->all;
     @scheduled = sort { $b->t_created <=> $a->t_created || $b->id <=> $a->id } @scheduled;
     $self->stash(scheduled => \@scheduled);
 }

@@ -75,6 +75,11 @@ __PACKAGE__->add_columns(
         is_foreign_key => 1,
         is_nullable    => 1
     },
+    blocked_by_id => {
+        data_type      => 'integer',
+        is_foreign_key => 1,
+        is_nullable    => 1
+    },
     backend => {
         data_type   => 'varchar',
         is_nullable => 1,
@@ -161,6 +166,13 @@ __PACKAGE__->belongs_to(
 __PACKAGE__->belongs_to(
     clone => 'OpenQA::Schema::Result::Jobs',
     'clone_id', {join_type => 'left', on_delete => 'SET NULL'});
+__PACKAGE__->belongs_to(
+    blocked_by => 'OpenQA::Schema::Result::Jobs',
+    'blocked_by_id', {join_type => 'left'});
+__PACKAGE__->has_many(
+    blocking => 'OpenQA::Schema::Result::Jobs',
+    'blocked_by_id'
+);
 __PACKAGE__->belongs_to(
     group => 'OpenQA::Schema::Result::JobGroups',
     'group_id', {join_type => 'left', on_delete => 'SET NULL'});
@@ -1733,8 +1745,10 @@ sub done {
             $self->_job_stop_child($job);
         }
     }
+
     # bugrefs are there to mark reasons of failure - the function checks itself though
     $self->carry_over_bugrefs;
+    $self->unblock;
 
     return $result;
 }
@@ -1798,6 +1812,36 @@ sub result_stats {
 sub search_for {
     my ($self, $result_set, $condition, $attrs) = @_;
     return $self->$result_set->search($condition, $attrs);
+}
+
+sub blocked_by_parent_job {
+    my ($self) = @_;
+
+    my $parents = $self->parents->search(
+        {
+            dependency => OpenQA::Schema::Result::JobDependencies->CHAINED,
+        });
+    while (my $pd = $parents->next) {
+        my $p     = $pd->parent;
+        my $state = $p->state;
+
+        next if (grep { /$state/ } FINAL_STATES);
+        return $p->id;
+    }
+    return undef;
+}
+
+sub calculate_blocked_by {
+    my ($self) = @_;
+    $self->update({blocked_by_id => $self->blocked_by_parent_job});
+}
+
+sub unblock {
+    my ($self) = @_;
+
+    for my $j ($self->blocking) {
+        $j->calculate_blocked_by;
+    }
 }
 
 1;
