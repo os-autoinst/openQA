@@ -169,6 +169,30 @@ sub _prefer_parallel {
     return;
 }
 
+sub filter_jobs_without_matching_worker {
+    my ($scheduled_jobs, $free_workers) = @_;
+
+    my @filtered;
+    for my $job (@$scheduled_jobs) {
+        my $matched_one;
+        for my $worker (@$free_workers) {
+            my $matched_all = 1;
+            my $classes = $job->settings->search({key => 'WORKER_CLASS'});
+            while (my $class = $classes->next) {
+                next unless $worker->check_class($class);
+                $matched_all = 0;
+                last;
+            }
+            if ($matched_all) {
+                $matched_one = 1;
+                last;
+            }
+        }
+        push(@filtered, $job) if $matched_one;
+    }
+    return \@filtered;
+}
+
 =head2 schedule()
 
 Have no arguments. It's called by the main event loop every SCHEDULE_TICK_MS.
@@ -189,60 +213,74 @@ sub schedule {
     my @allocated_jobs;
 
     log_debug("-> Scheduling new jobs.");
-    try {
-        @allocated_jobs = schema->txn_do(
-            sub {
-                my $all_workers = schema->resultset("Workers")->count();
-                my @allocated_workers;
-                my @allocated_jobs;
+    my $all_workers = schema->resultset("Workers")->count();
+    my @allocated_workers;
 
-                # NOTE: $worker->connected is too much expensive since is over dbus, prefer dead.
-                # shuffle avoids starvation if a free worker keeps failing.
-                my @free_workers
-                  = shuffle(grep { !$_->dead && $_->get_websocket_api_version() == WEBSOCKET_API_VERSION }
-                      schema->resultset("Workers")->search({job_id => undef})->all());
+    # NOTE: $worker->connected is too much expensive since is over dbus, prefer dead.
+    # shuffle avoids starvation if a free worker keeps failing.
+    my @free_workers
+      = shuffle(grep { !$_->dead && ($_->websocket_api_version() || 0) == WEBSOCKET_API_VERSION }
+          schema->resultset("Workers")->search({job_id => undef})->all());
 
-                log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
+    log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
 
-                if (@free_workers == 0) {
-                    return ();
-                }
+    if (@free_workers == 0) {
+        return ();
+    }
 
-                my $allocating = {};
-                for my $w (@free_workers) {
-                    next if !$w->id();
-                    # Get possible jobs by priority that can be allocated
-                    # by checking workers capabilities
-                    my @possible_jobs = job_grab(
-                        workerid   => $w->id(),
-                        allocating => [keys %$allocating],
-                        blocking   => 0,
-                        allocate   => 0,
-                        jobs       => OpenQA::Scheduler::MAX_JOB_ALLOCATION());
-                    log_debug("[Worker#" . $w->id() . "] Possible jobs to allocate: " . scalar(@possible_jobs));
+    # Don't kick off jobs if GRU task they depend on is running
+    my $waiting_jobs = schema->resultset("GruDependencies")->get_column('job_id')->as_query;
 
-                    my $allocated_job;
-                    for my $p_job (@possible_jobs) {
-                        # Do not pick if we already wanted to allocate this job
-                        # to another worker
-                        next if exists $p_job->{id} && exists $allocating->{$p_job->{id}};
-                        # Stop if we already have the job
-                        last if $allocated_job;
-                        $allocated_job = $p_job;
-                    }
+    my $scheduled_jobs = [
+        schema->resultset("Jobs")->search(
+            {
+                blocked_by_id => undef,
+                state         => OpenQA::Jobs::Constants::SCHEDULED,
+                id            => {-not_in => $waiting_jobs},
+            },
+            {order_by => {-asc => [qw(priority id)]}}
+        )->all
+    ];
 
-                    next unless $allocated_job && exists $allocated_job->{id};
+    log_debug("\t Scheduled jobs: " . scalar(@$scheduled_jobs));
 
-                    log_debug("[Worker#" . $w->id() . "] Among them, we have chosen job: " . $allocated_job->{id});
-                    $allocated_job->{assigned_worker_id} = $w->id();    # Set the worker id
+    $scheduled_jobs = filter_jobs_without_matching_worker($scheduled_jobs, \@free_workers);
 
-                    # TODO: we need to be sure job_grab is not returning the same job
-                    # for different workers - for now do not push them into allocated array.
-                    push(@allocated_jobs, $allocated_job) if !exists $allocating->{$allocated_job->{id}};
-                    $allocating->{$allocated_job->{id}}++;    # Set as allocated in the current scheduling clock
-                }
-                return @allocated_jobs;
-            });
+    log_debug("\t Jobs with proper worker: " . scalar(@$scheduled_jobs));
+
+    my $allocating = {};
+    for my $w (@free_workers) {
+        next if !$w->id();
+        last if $quit;
+        # Get possible jobs by priority that can be allocated
+        # by checking workers capabilities
+        my @possible_jobs = job_grab(
+            workerid   => $w->id(),
+            allocating => [keys %$allocating],
+            blocking   => 0,
+            allocate   => 0,
+            jobs       => OpenQA::Scheduler::MAX_JOB_ALLOCATION());
+        log_debug("[Worker#" . $w->id() . "] Possible jobs to allocate: " . scalar(@possible_jobs));
+
+        my $allocated_job;
+        for my $p_job (@possible_jobs) {
+            # Do not pick if we already wanted to allocate this job
+            # to another worker
+            next if exists $p_job->{id} && exists $allocating->{$p_job->{id}};
+            # Stop if we already have the job
+            last if $allocated_job;
+            $allocated_job = $p_job;
+        }
+
+        next unless $allocated_job && exists $allocated_job->{id};
+
+        log_debug("[Worker#" . $w->id() . "] Among them, we have chosen job: " . $allocated_job->{id});
+        $allocated_job->{assigned_worker_id} = $w->id();    # Set the worker id
+
+        # TODO: we need to be sure job_grab is not returning the same job
+        # for different workers - for now do not push them into allocated array.
+        push(@allocated_jobs, $allocated_job) if !exists $allocating->{$allocated_job->{id}};
+        $allocating->{$allocated_job->{id}}++;    # Set as allocated in the current scheduling clock
     }
 
     # Cut the jobs if we have a limit set since we didn't performed any DB update yet
