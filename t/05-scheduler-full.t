@@ -29,7 +29,6 @@ BEGIN {
     $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL}     = 1;
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}       = 2000;
     $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}            = 4000;
-    $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} = 38000;
     $ENV{OPENQA_SCHEDULER_WAKEUP_ON_REQUEST}      = 0;
     $ENV{FULLSTACK}                               = 1 if $ENV{SCHEDULER_FULLSTACK};
     path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
@@ -350,7 +349,6 @@ sub remove_timers {
 
     $reactor->{timeouts} = [undef];                                # This is Net::DBus default...
     delete $reactor->{timer}->{no_actions_reset};
-    delete $reactor->{timer}->{capture_loop_avoidance};
 }
 
 sub trigger_capture_event_loop {

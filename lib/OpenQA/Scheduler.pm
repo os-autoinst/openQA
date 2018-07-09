@@ -53,9 +53,6 @@ use constant TIMESLOT => $ENV{OPENQA_SCHEDULER_TIMESLOT} // SCHEDULE_TICK_MS;
 # Maximum backoff. Defaults to 60s
 use constant MAX_BACKOFF => $ENV{OPENQA_SCHEDULER_MAX_BACKOFF} // 60000;
 
-# Timer reset to avoid starvation caused by CONGESTION_CONTROL/BUSY_BACKOFF. Defaults to 120s
-use constant CAPTURE_LOOP_AVOIDANCE => $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} // 120000;
-
 # set it to 1 if you want to backoff when no jobs can be assigned or we are really busy
 # Default is enabled as CONGESTION_CONTROL.
 use constant BUSY_BACKOFF => $ENV{OPENQA_SCHEDULER_BUSY_BACKOFF} // CONGESTION_CONTROL;
@@ -85,7 +82,6 @@ sub run {
     log_debug("\t Wakeup on request : " .                   (WAKEUP_ON_REQUEST  ? "enabled" : "disabled"));
     log_debug("\t Congestion control : " .                  (CONGESTION_CONTROL ? "enabled" : "disabled"));
     log_debug("\t Backoff when we can't schedule jobs : " . (BUSY_BACKOFF       ? "enabled" : "disabled"));
-    log_debug("\t Capture loop avoidance(ms) : " . CAPTURE_LOOP_AVOIDANCE);
     log_debug("\t Max backoff(ms) : " . MAX_BACKOFF);
 
     my $reactor = Net::DBus::Reactor->main;
