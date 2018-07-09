@@ -169,26 +169,20 @@ sub _prefer_parallel {
     return;
 }
 
-sub filter_jobs_without_matching_worker {
-    my ($scheduled_jobs, $free_workers) = @_;
+sub matching_workers {
+    my ($job, $free_workers) = @_;
+
+    my @classes = map { $_->value } $job->settings->search({key => 'WORKER_CLASS'})->all;
 
     my @filtered;
-    for my $job (@$scheduled_jobs) {
-        my $matched_one;
-        for my $worker (@$free_workers) {
-            my $matched_all = 1;
-            my $classes = $job->settings->search({key => 'WORKER_CLASS'});
-            while (my $class = $classes->next) {
-                next unless $worker->check_class($class);
-                $matched_all = 0;
-                last;
-            }
-            if ($matched_all) {
-                $matched_one = 1;
-                last;
-            }
-        }
-        push(@filtered, $job) if $matched_one;
+    for my $worker (@$free_workers) {
+      my $matched_all = 1;
+      for my $class (@classes) {
+          next unless $worker->check_class($class);
+          $matched_all = 0;
+          last;
+      }
+      push(@filtered, $worker) if $matched_all;
     }
     return \@filtered;
 }
@@ -231,22 +225,29 @@ sub schedule {
     # Don't kick off jobs if GRU task they depend on is running
     my $waiting_jobs = schema->resultset("GruDependencies")->get_column('job_id')->as_query;
 
-    my $scheduled_jobs = [
-        schema->resultset("Jobs")->search(
+    my $jobs = schema->resultset("Jobs")->search(
             {
                 blocked_by_id => undef,
                 state         => OpenQA::Jobs::Constants::SCHEDULED,
                 id            => {-not_in => $waiting_jobs},
             },
-            {order_by => {-asc => [qw(priority id)]}}
-        )->all
-    ];
+            {order_by => {-asc => [qw(priority id)]}});
 
-    log_debug("\t Scheduled jobs: " . scalar(@$scheduled_jobs));
+    my %scheduled_jobs;
+    while (my $job = $jobs->next) {
+      $scheduled_jobs{$job->id} = { job => $job, prio => $job->priority};
+      $scheduled_jobs{$job->id}->{matching_workers} =
+        matching_workers($job, \@free_workers);
+      if ($scheduled_jobs{$job->id}->{matching_workers}) {
+        $scheduled_jobs{$job->id}->{cluster_jobs} = $job->cluster_jobs;
+      } else {
+        # pretend - it's useless anyway
+        $scheduled_jobs{$job->id}->{cluster_jobs} = {};
+      }
+    }
+    log_debug("\t Scheduled jobs: " . scalar(%scheduled_jobs));
 
-    $scheduled_jobs = filter_jobs_without_matching_worker($scheduled_jobs, \@free_workers);
-
-    log_debug("\t Jobs with proper worker: " . scalar(@$scheduled_jobs));
+    exit(1);
 
     my $allocating = {};
     for my $w (@free_workers) {
