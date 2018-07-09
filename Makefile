@@ -12,7 +12,7 @@ install:
 	done
 
 # we didn't actually want to install these...
-	for i in tidy check_coverage generate-packed-assets generate-documentation generate-documentation-genapi.pl; do \
+	for i in tidy check_coverage generate-packed-assets generate-documentation generate-documentation-genapi.pl docker-tests; do \
 		rm "$(DESTDIR)"/usr/share/openqa/script/$$i ;\
 	done
 #
