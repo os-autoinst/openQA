@@ -26,7 +26,6 @@ BEGIN {
     # Since tests depends on timing, we require the scheduler to be fixed in its actions.
     $ENV{OPENQA_SCHEDULER_TIMESLOT}               = 1000;
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION}     = 10;
-    $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS}      = 2;
     $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL}     = 1;
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}       = 2000;
     $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}            = 4000;
