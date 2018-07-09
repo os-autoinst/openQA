@@ -256,12 +256,11 @@ sub schedule {
                     # Get possible jobs by priority that can be allocated
                     # by checking workers capabilities
                     my @possible_jobs = job_grab(
-                        workerid     => $w->id(),
-                        allocating   => [keys %$allocating],
-                        blocking     => 0,
-                        allocate     => 0,
-                        jobs         => OpenQA::Scheduler::MAX_JOB_ALLOCATION(),
-                        max_attempts => OpenQA::Scheduler::FIND_JOB_ATTEMPTS());
+                        workerid   => $w->id(),
+                        allocating => [keys %$allocating],
+                        blocking   => 0,
+                        allocate   => 0,
+                        jobs       => OpenQA::Scheduler::MAX_JOB_ALLOCATION());
                     log_debug("[Worker#" . $w->id() . "] Possible jobs to allocate: " . scalar(@possible_jobs));
 
                     my $allocated_job;
@@ -641,10 +640,6 @@ If enabled it will allocate the job in the DB before returning the result.
 How many jobs at maximum have to be found: if set to 0 it will return all possible
 jobs that can be allocated for the given worker
 
-  max_attempts => 30
-
-Maximum attempts to find a job.
-
 =cut
 
 sub job_grab {
@@ -659,20 +654,7 @@ sub job_grab {
     my $attempt = 0;
     my $matching_job;
 
-    # Avoid to get the scheduler stuck: give a maximum limit of tries ($limit_attempts)
-    # and blocking now just sets $max_attempts to 999.
-    # Defaults to 1 (were observed in tests 2 is sufficient) before returning no jobs.
-    my $limit_attempts = 2000;
     my @jobs;
-
-    my $max_attempts
-      = $blocking ?
-      999
-      : exists $args{max_attempts} ?
-      (int($args{max_attempts}) < $limit_attempts && int($args{max_attempts}) > 0) ?
-        int($args{max_attempts})
-        : $limit_attempts
-      : 1;
 
     try {
         $worker = exists_worker(schema(), $workerid);
@@ -693,37 +675,34 @@ sub job_grab {
         return {};
     };
 
-    do {
-        $attempt++;
-        log_debug("Attempt to find job $attempt/$max_attempts");
+    log_debug("Attempt to find job");
 
-        # we do this in a transaction if job_grab
-        # is called with the option 'allocate => 1'
-        try {
-            schema->txn_do(
-                sub {
-                    # Build the search query.
-                    my $search = schema->resultset("Jobs")->search(
-                        {
-                            state => OpenQA::Jobs::Constants::SCHEDULED,
-                            id    => [_build_search_query($worker, $allocating, $allocate)],
-                        },
-                        {order_by => {-asc => [qw(priority id)]}});
+    # we do this in a transaction if job_grab
+    # is called with the option 'allocate => 1'
+    try {
+        schema->txn_do(
+            sub {
+                # Build the search query.
+                my $search = schema->resultset("Jobs")->search(
+                    {
+                        state => OpenQA::Jobs::Constants::SCHEDULED,
+                        id    => [_build_search_query($worker, $allocating, $allocate)],
+                    },
+                    {order_by => {-asc => [qw(priority id)]}});
 
-                    # Depending on job_n:
-                    # Get first n results, first result or all of them.
-                    @jobs = $job_n > 0 ? $search->slice(0, $job_n) : $job_n == 0 ? $search->all() : ($search->first());
+                # Depending on job_n:
+                # Get first n results, first result or all of them.
+                @jobs = $job_n > 0 ? $search->slice(0, $job_n) : $job_n == 0 ? $search->all() : ($search->first());
 
-                    $worker = _job_allocate($jobs[0]->id, $worker->id(), OpenQA::Jobs::Constants::RUNNING)
-                      if ($allocate && $jobs[0]);
+                $worker = _job_allocate($jobs[0]->id, $worker->id(), OpenQA::Jobs::Constants::RUNNING)
+                  if ($allocate && $jobs[0]);
 
-                });
-        }
-        catch {
-            warn "Failed to grab job: $_";
-        };
+            });
+    }
+    catch {
+        warn "Failed to grab job: $_";
+    };
 
-    } until (($attempt >= $max_attempts) || scalar(@jobs) > 0);
 
     # If we are not asked to allocate we just want the results of the search.
     # Check if we had more than one result, if we had:
