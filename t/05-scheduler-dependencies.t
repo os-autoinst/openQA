@@ -188,11 +188,17 @@ my $exp_cluster_jobs = {
 };
 # it shouldn't matter which job we ask - they should all restart the same cluster
 is_deeply($jobA->cluster_jobs, $exp_cluster_jobs, "Job A has proper infos");
+is($jobA->blocked_by_id, undef, "JobA is unblocked");
 is_deeply($jobB->cluster_jobs, $exp_cluster_jobs, "Job B has proper infos");
+is($jobB->blocked_by_id, undef, "JobB is unblocked");
 is_deeply($jobC->cluster_jobs, $exp_cluster_jobs, "Job C has proper infos");
+is($jobC->blocked_by_id, undef, "JobC is unblocked");
 is_deeply($jobD->cluster_jobs, $exp_cluster_jobs, "Job D has proper infos");
+is($jobD->blocked_by_id, undef, "JobD is unblocked");
 is_deeply($jobE->cluster_jobs, $exp_cluster_jobs, "Job E has proper infos");
+is($jobE->blocked_by_id, undef, "JobE is unblocked");
 is_deeply($jobF->cluster_jobs, $exp_cluster_jobs, "Job F has proper infos");
+is($jobF->blocked_by_id, undef, "JobF is unblocked");
 
 # jobA failed
 my $result = $jobA->done(result => 'failed');
@@ -527,6 +533,8 @@ my $jobW = _job_create(\%settingsW, undef, [$jobQ->id]);
 my $jobU = _job_create(\%settingsU, undef, [$jobQ->id]);
 my $jobR = _job_create(\%settingsR, undef, [$jobQ->id]);
 my $jobT = _job_create(\%settingsT, [$jobW->id, $jobU->id, $jobR->id], [$jobQ->id]);
+
+is($jobW->blocked_by_id, $jobQ->id, "JobW is blocked");
 
 # hack jobs to appear to scheduler in desired state
 _jobs_update_state([$jobQ], OpenQA::Jobs::Constants::DONE);
