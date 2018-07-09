@@ -230,26 +230,75 @@ sub schedule {
                 blocked_by_id => undef,
                 state         => OpenQA::Jobs::Constants::SCHEDULED,
                 id            => {-not_in => $waiting_jobs},
-            },
-            {order_by => {-asc => [qw(priority id)]}});
+            });
 
     my %scheduled_jobs;
+
+    my %cluster_infos;
     while (my $job = $jobs->next) {
-      $scheduled_jobs{$job->id} = { job => $job, prio => $job->priority};
-      $scheduled_jobs{$job->id}->{matching_workers} =
-        matching_workers($job, \@free_workers);
-      if ($scheduled_jobs{$job->id}->{matching_workers}) {
-        $scheduled_jobs{$job->id}->{cluster_jobs} = $job->cluster_jobs;
-      } else {
-        # pretend - it's useless anyway
-        $scheduled_jobs{$job->id}->{cluster_jobs} = {};
+      my $info = $scheduled_jobs{$job->id} || {};
+      #$info->{job} = $job;
+      # for easier access
+      $info->{id} = $job->id;
+      $info->{priority} = $job->priority;
+      $info->{state} = $job->state;
+      $info->{matching_workers} = matching_workers($job, \@free_workers);
+      $info->{matching_workers} = { ha => 1 };
+      $info->{cluster_jobs} = $cluster_infos{$job->id};
+      
+      if (!$info->{cluster_jobs} && $info->{matching_workers}) {
+        $info->{cluster_jobs} = $job->cluster_jobs;
+        # it's the same cluster for all, so share
+        for my $j (%{$info->{cluster_jobs}}) {
+           $cluster_infos{$j} = $info->{cluster_jobs};
+        }
       }
+      $scheduled_jobs{$job->id} = $info;
     }
     log_debug("\t Scheduled jobs: " . scalar(%scheduled_jobs));
 
-    exit(1);
+    my @need;
+    # now fetch the remaining job states of cluster jobs
+    for my $jobinfo (values %scheduled_jobs) {
+      for my $j (keys %{$jobinfo->{cluster_jobs}}) {
+        next if defined $scheduled_jobs{$j};
+        push(@need, $j);
+      }
+    }
+
+    my %clusterjobs;
+    $jobs = schema->resultset('Jobs')->search({id => \@need, state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
+    while (my $j = $jobs->next) {
+      $clusterjobs{$j->id} = $j->state;
+    }
 
     my $allocating = {};
+    
+    # first pick cluster jobs with running siblings (prio doesn't matter)
+    for my $jobinfo (values %scheduled_jobs) {
+       for my $j (keys %{$jobinfo->{cluster_jobs}}) {
+          if (defined $clusterjobs{$j}) {
+            print "HAH $j\n";
+          }
+       }  
+    }
+
+    my @sorted = sort { $a->{priority} <=> $b->{priority} || $a->{id} <=> $b->{id} } values %scheduled_jobs;
+    for my $j (@sorted) {
+      my @workers;       
+      my $ci = $j->{cluster_jobs}->{$j};
+      my @tobescheduled = ($j->{id});
+      for my $s (@{$ci->{parallel_children}}) {
+         push(@tobescheduled, $s); 
+      }
+      for my $s (@{$ci->{parallel_parents}}) {
+         push(@tobescheduled, $s);
+      }
+      log_debug $j->{id};
+      log_debug pp(\@tobescheduled);
+    }
+    exit(1);
+
     for my $w (@free_workers) {
         next if !$w->id();
         last if $quit;
@@ -549,113 +598,7 @@ sub filter_jobs {
     return @filtered_jobs;
 }
 
-=head2 job_grab
-
-Search for matching jobs corresponding to a given worker id.
-It accepts an hash as list of options.
-
-  workerid     => $w->id(),
-
-The ID of the worker that from its capabilities should match the job requirements.
-
-  blocking     => 1
-
-If enabled, will retry 999 times before returning no jobs available.
-
-  allocate     => 1
-
-If enabled it will allocate the job in the DB before returning the result.
-
-  jobs         => 0
-
-How many jobs at maximum have to be found: if set to 0 it will return all possible
-jobs that can be allocated for the given worker
-
-=cut
-
-sub job_grab {
-    my %args       = @_;
-    my $workerid   = $args{workerid};
-    my $blocking   = int($args{blocking} || 0);
-    my $allocate   = int($args{allocate} || 0);
-    my $job_n      = $args{jobs} // 0;
-    my $allocating = $args{allocating} // [];
-
-    my $worker;
-    my $attempt = 0;
-    my $matching_job;
-
-    my @jobs;
-
-    try {
-        $worker = exists_worker(schema(), $workerid);
-
-        if ($worker->job && $allocate) {
-            my $job = $worker->job;
-            log_warning($worker->name . " wants to grab a new job - killing the old one: " . $job->id);
-            $job->done(result => 'incomplete');
-            $job->auto_duplicate;
-        }
-        # NOTE: In the old scheduler logic we used to relay on job_grab also
-        # to update workers capabilities. e.g. $worker->seen(%caps);
-        # We do not update caps anymore on schedule. Instead, we just do this on registration.
-        # That means if a worker change capabilities needs to be restarted.
-    }
-    catch {
-        log_warning("Invalid worker id '$workerid'");
-        return {};
-    };
-
-    log_debug("Attempt to find job");
-
-    # we do this in a transaction if job_grab
-    # is called with the option 'allocate => 1'
-    try {
-        schema->txn_do(
-            sub {
-                # Build the search query.
-                my $search = schema->resultset("Jobs")->search(
-                    {
-                        state => OpenQA::Jobs::Constants::SCHEDULED,
-                        id    => [_build_search_query($worker, $allocating, $allocate)],
-                    },
-                    {order_by => {-asc => [qw(priority id)]}});
-
-                # Depending on job_n:
-                # Get first n results, first result or all of them.
-                @jobs = $job_n > 0 ? $search->slice(0, $job_n) : $job_n == 0 ? $search->all() : ($search->first());
-
-                $worker = _job_allocate($jobs[0]->id, $worker->id(), OpenQA::Jobs::Constants::RUNNING)
-                  if ($allocate && $jobs[0]);
-
-            });
-    }
-    catch {
-        warn "Failed to grab job: $_";
-    };
-
-
-    # If we are not asked to allocate we just want the results of the search.
-    # Check if we had more than one result, if we had:
-    # convert them into hashrefs, otherwise return the single result
-    # or none if any.
-
-    return $job_n >= 0 ?
-      @jobs ?
-        map { $_->to_hash(assets => 1) } @jobs
-        : ()
-      : $jobs[0] ?
-      $jobs[0]->to_hash(assets => 1)
-      : {}
-      unless ($allocate);
-#return scalar(@jobs) == 0 ? () : $job_n!=1 ? map {$_->to_hash(assets => 1)} @jobs : $jobs[0] ?  $jobs[0]->to_hash(assets => 1) : {}  unless ($allocate);
-
-    return {} unless ($worker && $worker->job && $worker->job->state eq OpenQA::Jobs::Constants::RUNNING);
-
-    my $job = $worker->job;
-    log_debug("Got job " . $job->id());
-    return $job->prepare_for_work($worker);
-}
+#    return $job->prepare_for_work($worker);
 
 
 1;
