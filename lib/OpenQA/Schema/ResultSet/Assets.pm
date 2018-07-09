@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,15 +38,18 @@ sub register {
         }
         return;
     }
-    my $asset = $self->find_or_create(
-        {
-            type => $type,
-            name => $name,
-        },
-        {
-            key => 'assets_type_name',
+
+    return $self->result_source->schema->txn_do(
+        sub {
+            return $self->find_or_create(
+                {
+                    type => $type,
+                    name => $name,
+                },
+                {
+                    key => 'assets_type_name',
+                });
         });
-    return $asset;
 }
 
 sub scan_for_untracked_assets {
