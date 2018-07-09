@@ -281,12 +281,19 @@ sub clone_job {
     if (my $group_id = $job->{group_id}) {
         $settings{_GROUP_ID} = $group_id;
     }
+    my %overrides = (
+        _GROUP    => '_GROUP_ID',
+        _GROUP_ID => '_GROUP',
+    );
     delete $settings{NAME};    # usually autocreated
     if ($depth == 0 or $options{'parental-inheritance'}) {
         for my $arg (@ARGV) {
             if ($arg =~ /([A-Z0-9_]+)=(.*)/) {
                 if (defined $2) {
                     $settings{$1} = $2;
+                    if (my $override = $overrides{$1}) {
+                        delete $settings{$override};
+                    }
                 }
                 else {
                     delete $settings{$1};
