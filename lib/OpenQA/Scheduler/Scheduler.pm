@@ -55,7 +55,6 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA    = qw(Exporter);
 @EXPORT = qw(job_grab);
 
-CORE::state $failure    = 0;
 CORE::state $no_actions = 0;
 CORE::state $quit       = 0;
 
@@ -173,17 +172,12 @@ sub _prefer_parallel {
 =head2 schedule()
 
 Have no arguments. It's called by the main event loop every SCHEDULE_TICK_MS.
-If BUSY_BACKOFF or CONGESTION_CONTROL are enabled this is not granted
-and the tick will be dynamically adjusted according to errors occurred while
-performing operations (CONGESTION_CONTROL) or when we are overloaded (BUSY_BACKOFF).
 
 =cut
 
 sub schedule {
     my $allocated_worker;
     my $start_time = time;
-    my $hard_busy  = (OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::BUSY_BACKOFF());
-    my $soft_busy  = (OpenQA::Scheduler::CONGESTION_CONTROL() && OpenQA::Scheduler::BUSY_BACKOFF());
     log_debug("+=" . ("-" x 16) . "=+");
 
     # Exit only when database state is consistent.
@@ -209,14 +203,8 @@ sub schedule {
                       schema->resultset("Workers")->search({job_id => undef})->all());
 
                 log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
-                log_debug("\t Failure# ${failure}") if OpenQA::Scheduler::CONGESTION_CONTROL();
 
                 if (@free_workers == 0) {
-                    # Consider it a failure when either BUSY_BACKOFF or CONGESTION_CONTROL is enabled
-                    # so if there are no free workers but we still have
-                    # workers registered, scheduler will kick in later.
-                    $failure++
-                      if ($hard_busy && $all_workers > 0);
                     return ();
                 }
 
@@ -256,11 +244,6 @@ sub schedule {
                 return @allocated_jobs;
             });
     }
-    catch {
-        log_debug("Could not get new jobs to allocate: $_");
-        # we had a real failure
-        $failure++ if OpenQA::Scheduler::CONGESTION_CONTROL();
-    };
 
     # Cut the jobs if we have a limit set since we didn't performed any DB update yet
     @allocated_jobs = splice @allocated_jobs, 0, OpenQA::Scheduler::MAX_JOB_ALLOCATION()
@@ -281,9 +264,6 @@ sub schedule {
         }
         catch {
             log_debug("Failed to retrieve Job(" . $allocated->{id} . ") in the DB :( bummer! Reason: $_");
-
-            $failure++
-              if $soft_busy;
         };
 
         try {
@@ -292,9 +272,6 @@ sub schedule {
         catch {
             log_debug(
                 "Failed to retrieve Worker(" . $allocated->{assigned_worker_id} . ") in the DB :( bummer! Reason: $_");
-
-            $failure++
-              if $soft_busy;
         };
 
         next unless $job && $worker;
@@ -305,12 +282,6 @@ sub schedule {
         }
         catch {
             log_debug("Failed to send data to websocket :( bummer! Reason: $_");
-
-            # If we fail during dispatch to dbus service
-            # it's possible that websocket server is under heavy load.
-            # Hence increment the counter in both modes
-            $failure++
-              if $hard_busy;
         };
 
         # We succeded dispatching the message
@@ -330,10 +301,6 @@ sub schedule {
             }
             catch {
                 log_debug("Failed to set worker in scheduling state :( bummer! Reason: $_");
-
-                # If we see this, we are in a really bad state.
-                $failure++
-                  if $hard_busy;
             };
 
         }
@@ -343,17 +310,12 @@ sub schedule {
                   . "' to worker '"
                   . $allocated->{assigned_worker_id} . "' : "
                   . pp($res));
-            $failure++
-              if $soft_busy;    # We failed dispatching it. We might be under load, but it's not a big issue
 
             try {
                 $worker->unprepare_for_work;
             }
             catch {
                 log_debug("Failed resetting unprepare worker :( bummer! Reason: $_");
-                # Again: If we see this, we are in a really bad state.
-                $failure++
-                  if $hard_busy;
             };
 
             try {
@@ -363,66 +325,26 @@ sub schedule {
             catch {
                 # Again: If we see this, we are in a really bad state.
                 log_debug("Failed resetting job '$allocated->{id}' to scheduled state :( bummer! Reason: $_");
-                $failure++
-                  if $hard_busy;
             };
         }
     }
 
-    # update counters based on status
-    $failure--
-      if $failure > 0
-      && scalar(@successfully_allocated) > 0
-      && $hard_busy;
-
     $no_actions++
-      if scalar(@successfully_allocated) == 0
-      && $hard_busy;
+      if scalar(@successfully_allocated) == 0;
 
     $no_actions = 0
       if $no_actions > 0
-      && scalar(@successfully_allocated) > 0
-      && $hard_busy;
+      && scalar(@successfully_allocated) > 0;
 
     my $elapsed_rounded = sprintf("%.5f", (time - $start_time));
     log_debug "Scheduler took ${elapsed_rounded}s to perform operations and allocated "
       . scalar(@successfully_allocated) . " jobs";
 
     my $exceeded_timer = ((${elapsed_rounded} * 1000) > OpenQA::Scheduler::SCHEDULE_TICK_MS());
-    if ($exceeded_timer && $hard_busy) {
-        $failure += 2;
-        log_debug "Scheduling took too much time. Increasing failure count. ($failure)";
-    }
     log_debug "Allocated: " . pp($_) for @successfully_allocated;
 
-
-    my $rescheduled;
-    # Decide if we want to reschedule ourselves or not.
-    # we do that in two situations: either we had failures and CONGESTION_CONTROL is enabled,
-    # or when we take too much time to perform the operations and either CONGESTION_CONTROL or BUSY_BACKOFF is enabled
-    if (
-           ($no_actions > 0 && $hard_busy)
-        || ($failure > 0 && OpenQA::Scheduler::CONGESTION_CONTROL())
-        || (   $hard_busy
-            && $exceeded_timer))
-    {
-        my $backoff
-          = OpenQA::Scheduler::CONGESTION_CONTROL()
-          ?
-          ((2**(($failure + $no_actions) || 2)) - 1) * OpenQA::Scheduler::TIMESLOT()
-          : (((($failure + $no_actions)  || 2) / 2)**2) + OpenQA::Scheduler::SCHEDULE_TICK_MS();
-        $backoff = $backoff > OpenQA::Scheduler::MAX_BACKOFF() ? OpenQA::Scheduler::MAX_BACKOFF() : $backoff + 1000;
-        log_debug "[Congestion control] Calculated backoff: ${backoff}ms";
-        log_debug "[Congestion control] Rounds with no actions performed: ${no_actions}"
-          if $hard_busy;
-        log_debug "[Congestion control] Failures# ${failure}"
-          if $hard_busy;
-        _reschedule($backoff, 1);
-        $rescheduled++;
-    }
-
     log_debug("+=" . ("-" x 16) . "=+");
-    return (\@successfully_allocated, $failure, $no_actions, $rescheduled);
+    return (\@successfully_allocated, 0, $no_actions, undef);
 }
 
 =head2 _reschedule
