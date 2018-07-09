@@ -265,12 +265,12 @@ subtest 'cancel a scheduled job' => sub {
         undef, 0.2,
     );
 
-    my $cancel_button = $driver->find_element('cancel_running', 'id');
-    if (!$cancel_button) {
+    my @cancel_button = $driver->find_elements('cancel_running', 'id');
+    if (!@cancel_button) {
         note('test is already assigned, can not test cancelling');
         return;
     }
-    $cancel_button->click();
+    $cancel_button[0]->click();
 };
 
 $driver->click_element_ok('All Tests',     'link_text');

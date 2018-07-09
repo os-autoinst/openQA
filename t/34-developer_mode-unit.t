@@ -49,10 +49,28 @@ $test_case->init_data;
 my $t             = Test::Mojo->new('OpenQA::WebAPI');
 my $t_livehandler = Test::Mojo->new('OpenQA::LiveHandler');
 
+# assigns a (fake) command server transaction for the specified job ID
+sub set_fake_cmd_srv_transaction {
+    my ($job_id, $fake_transaction) = @_;
+    $t_livehandler->app->cmd_srv_transactions_by_job->{$job_id} = $fake_transaction;
+}
+
+# assigns (fake) development session JavaScript transactions for the specified job ID
+sub set_fake_devel_java_script_transactions {
+    my ($job_id, $fake_transactions) = @_;
+    $t_livehandler->app->devel_java_script_transactions_by_job->{$job_id} = $fake_transactions;
+}
+
+# assigns (fake) status-only JavaScript transactions for the specified job ID
+sub set_fake_status_java_script_transactions {
+    my ($job_id, $fake_transactions) = @_;
+    $t_livehandler->app->status_java_script_transactions_by_job->{$job_id} = $fake_transactions;
+}
+
 # get CSRF token for auth
+my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
 # note: since the openqa-livehandler daemon doesn't provide its own way to login, we
 #       just copy the cookie with the required token from the regular user agent
-my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
 $t_livehandler->ua->cookie_jar($t->ua->cookie_jar);
 
 # login as arthur
@@ -84,10 +102,8 @@ subtest 'send message to JavaScript clients' => sub {
       = (OpenQA::Test::FakeWebSocketTransaction->new(), OpenQA::Test::FakeWebSocketTransaction->new(),);
     my @fake_java_script_transactions2
       = (OpenQA::Test::FakeWebSocketTransaction->new(), OpenQA::Test::FakeWebSocketTransaction->new(),);
-    OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_devel_java_script_transactions(99961,
-        \@fake_java_script_transactions);
-    OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_status_java_script_transactions(99961,
-        \@fake_java_script_transactions2);
+    set_fake_devel_java_script_transactions(99961, \@fake_java_script_transactions);
+    set_fake_status_java_script_transactions(99961, \@fake_java_script_transactions2);
 
     # setup a new instance of the live view handler controller using the app from the test
     my $live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
@@ -165,18 +181,18 @@ subtest 'send message to JavaScript clients' => sub {
 };
 
 # remove fake transactions
-OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_devel_java_script_transactions(99961, undef);
-OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_status_java_script_transactions(99961, undef);
+set_fake_devel_java_script_transactions(99961, undef);
+set_fake_status_java_script_transactions(99961, undef);
 
 subtest 'send message to os-autoinst' => sub {
     # create fake java script connection for job 99961
     my $fake_java_script_tx = OpenQA::Test::FakeWebSocketTransaction->new();
-    OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_devel_java_script_transactions(99960, [$fake_java_script_tx]);
-    OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_devel_java_script_transactions(99961, [$fake_java_script_tx]);
+    set_fake_devel_java_script_transactions(99960, [$fake_java_script_tx]);
+    set_fake_devel_java_script_transactions(99961, [$fake_java_script_tx]);
 
     # create fake web socket connection to os-autoinst for job 99961
     my $fake_cmd_srv_tx = OpenQA::Test::FakeWebSocketTransaction->new();
-    OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_cmd_srv_transaction(99961, $fake_cmd_srv_tx);
+    set_fake_cmd_srv_transaction(99961, $fake_cmd_srv_tx);
 
     # setup a new instance of the live view handler controller using the app from the test
     my $live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
@@ -226,22 +242,21 @@ subtest 'send message to os-autoinst' => sub {
 };
 
 # remove fake transactions
-OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_devel_java_script_transactions(99960, undef);
-OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_devel_java_script_transactions(99961, undef);
-OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_cmd_srv_transaction(99961, undef);
+set_fake_devel_java_script_transactions(99960, undef);
+set_fake_devel_java_script_transactions(99961, undef);
+set_fake_cmd_srv_transaction(99961, undef);
 
 subtest 'handle messages from JavaScript clients' => sub {
     # create fake java script connections for job 99961
     my $fake_java_script_tx = OpenQA::Test::FakeWebSocketTransaction->new();
-    OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_devel_java_script_transactions(99961, [$fake_java_script_tx]);
+    set_fake_devel_java_script_transactions(99961, [$fake_java_script_tx]);
     my $fake_status_only_java_script_tx = OpenQA::Test::FakeWebSocketTransaction->new();
-    OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_status_java_script_transactions(99961,
-        [$fake_status_only_java_script_tx]);
+    set_fake_status_java_script_transactions(99961, [$fake_status_only_java_script_tx]);
     my @java_script_transactions = ($fake_java_script_tx, $fake_status_only_java_script_tx,);
 
     # create fake web socket connection to os-autoinst for job 99961
     my $fake_cmd_srv_tx = OpenQA::Test::FakeWebSocketTransaction->new();
-    OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_cmd_srv_transaction(99961, $fake_cmd_srv_tx);
+    set_fake_cmd_srv_transaction(99961, $fake_cmd_srv_tx);
 
     # setup a new instance of the live view handler controller using the app from the test
     my $live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
@@ -339,8 +354,8 @@ subtest 'handle messages from JavaScript clients' => sub {
         'connection to os-autoinst not closed because status-only client still connected');
 
     # send command to quit the session when status-only connections present
-    OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_devel_java_script_transactions(99961, [$fake_java_script_tx]);
-    OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_status_java_script_transactions(99961, undef);
+    set_fake_devel_java_script_transactions(99961, [$fake_java_script_tx]);
+    set_fake_status_java_script_transactions(99961, undef);
     $fake_java_script_tx->finish_called(0);
     $live_view_handler->handle_message_from_java_script(99961, '{"cmd":"quit_development_session"}');
     ok($fake_java_script_tx->finish_called, 'connection to JavaScript client closed');
@@ -349,8 +364,8 @@ subtest 'handle messages from JavaScript clients' => sub {
 };
 
 # remove fake transactions
-OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_devel_java_script_transactions(99961, undef);
-OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_cmd_srv_transaction(99961, undef);
+set_fake_devel_java_script_transactions(99961, undef);
+set_fake_cmd_srv_transaction(99961, undef);
 
 subtest 'register developer session' => sub {
     my $session = $developer_sessions->register(99963, 99901);
@@ -490,7 +505,7 @@ subtest 'websocket proxy' => sub {
 
     # create fake web socket connection to os-autoinst for job 99961
     my $fake_cmd_srv_tx = OpenQA::Test::FakeWebSocketTransaction->new();
-    OpenQA::WebAPI::Controller::LiveViewHandler::set_fake_cmd_srv_transaction(99961, $fake_cmd_srv_tx);
+    set_fake_cmd_srv_transaction(99961, $fake_cmd_srv_tx);
 
     subtest 'job with assigned worker, fake os-autoinst' => sub {
         # connect to ws proxy again, should use the fake connection now

@@ -38,6 +38,19 @@ has secrets => sub {
     return $self->schema->read_application_secrets();
 };
 
+# add attributes to store ws connections/transactions by job
+# (see LiveViewHandler.pm for further descriptions of the paricular attributes)
+has(
+    [
+        qw(cmd_srv_transactions_by_job
+          devel_java_script_transactions_by_job
+          status_java_script_transactions_by_job)
+    ],
+    sub {
+        return {};
+    },
+);
+
 sub log_name {
     return $$;
 }
