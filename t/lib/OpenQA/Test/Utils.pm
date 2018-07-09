@@ -176,14 +176,15 @@ sub setup_share_dir {
 
     path($sharedir, 'factory', 'iso')->make_path;
 
-    symlink(abs_path("../os-autoinst/t/data/Core-7.2.iso"),
-        path($sharedir, 'factory', 'iso')->child("Core-7.2.iso")->to_string)
-      || die "can't symlink";
+    my $iso_file_path = abs_path('../os-autoinst/t/data/Core-7.2.iso') or die 'Core-7.2.iso not found';
+    my $iso_link_path = path($sharedir, 'factory', 'iso')->child('Core-7.2.iso')->to_string();
+    symlink($iso_file_path, $iso_link_path) || die "can't symlink $iso_link_path -> $iso_file_path";
 
     path($sharedir, 'tests')->make_path;
 
-    symlink(abs_path('../os-autoinst/t/data/tests/'), path($sharedir, 'tests')->child("tinycore"))
-      || die "can't symlink";
+    my $tests_dir_path = abs_path('../os-autoinst/t/data/tests/') or die 'tests dir not found';
+    my $tests_link_path = path($sharedir, 'tests')->child('tinycore');
+    symlink($tests_dir_path, $tests_link_path) || die "can't symlink $tests_link_path -> $tests_dir_path";
 
     return $sharedir;
 }

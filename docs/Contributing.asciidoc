@@ -373,6 +373,8 @@ session after it just do:
 
   docker run --cap-add SYS_ADMIN -it -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus registry.opensuse.org/devel/openqa/containers/openqa_dev bash
 
+Of course you can also use +make docker-tests \; bash+ to run the tests first and then open a shell for further investigation.
+
 There's also the possibility to change the initialization scripts with the --entrypoint switch. This allows us to go into an interactive
 session without any initialization script run:
 
@@ -387,6 +389,12 @@ Running UI tests in non-headless mode is also possible, eg.:
   xhost +local:root
   docker run --rm -ti --name openqa-testsuite --cap-add SYS_ADMIN -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY="$DISPLAY" -e NOT_HEADLESS=1 prove -v t/ui/14-dashboard.t
   xhost -local:root
+
+It is also possible to use a custom os-autoinst checkout using the following arguments:
+
+  docker run ... -e CUSTOM_OS_AUTOINST=1 -v OS_AUTOINST_LOCAL_CODE:/opt/os-autoinst make docker-tests
+
+Note that in this case your checkout must be ready to use so +configure+ and +make+ need to be executed before.
 
 === How to run tests without docker
 
