@@ -186,36 +186,6 @@ sub schedule {
     my $soft_busy  = (OpenQA::Scheduler::CONGESTION_CONTROL() && OpenQA::Scheduler::BUSY_BACKOFF());
     log_debug("+=" . ("-" x 16) . "=+");
 
-    # Avoid to go into starvation - reset the scheduler tick counter.
-    reactor->{timer}->{capture_loop_avoidance} ||= reactor->add_timeout(
-        OpenQA::Scheduler::CAPTURE_LOOP_AVOIDANCE(),
-        Net::DBus::Callback->new(
-            method => sub {
-                return if $failure == 0;
-                $failure = 0;
-                log_debug("[Congestion control] Resetting failures count and rescheduling if necessary");
-                _reschedule(
-                    OpenQA::Scheduler::BUSY_BACKOFF() ?
-                      OpenQA::Scheduler::SCHEDULE_TICK_MS() + 1000
-                    : OpenQA::Scheduler::SCHEDULE_TICK_MS());
-            })) if $hard_busy;
-
-
-
-    # Avoid to go into starvation - reset the scheduler tick counter.
-    reactor->{timer}->{no_actions_reset} ||= reactor->add_timeout(
-        OpenQA::Scheduler::CAPTURE_LOOP_AVOIDANCE(),
-        Net::DBus::Callback->new(
-            method => sub {
-                return if $no_actions == 0;
-                $no_actions = 0;
-                log_debug("[Congestion control] Resetting no actions count and rescheduling if necessary");
-                _reschedule(
-                    OpenQA::Scheduler::BUSY_BACKOFF() ?
-                      OpenQA::Scheduler::SCHEDULE_TICK_MS() + 1000
-                    : OpenQA::Scheduler::SCHEDULE_TICK_MS());
-            })) if $hard_busy;
-
     # Exit only when database state is consistent.
     if ($quit) {
         log_debug("Exiting");
