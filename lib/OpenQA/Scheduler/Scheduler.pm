@@ -55,8 +55,8 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA    = qw(Exporter);
 @EXPORT = qw(job_grab);
 
-CORE::state $no_actions = 0;
-CORE::state $quit       = 0;
+CORE::state $summoned = 0;
+CORE::state $quit     = 0;
 
 sub normal_signals_handler {
     log_debug("Received signal to stop");
@@ -65,7 +65,7 @@ sub normal_signals_handler {
 }
 
 sub wakeup_scheduler {
-    log_debug("I've been summoned by the webui");
+    $summoned = 1;
     _reschedule(1);
 }
 
@@ -332,22 +332,20 @@ sub schedule {
         }
     }
 
-    $no_actions++
-      if scalar(@successfully_allocated) == 0;
-
-    $no_actions = 0
-      if $no_actions > 0
-      && scalar(@successfully_allocated) > 0;
-
     my $elapsed_rounded = sprintf("%.5f", (time - $start_time));
     log_debug "Scheduler took ${elapsed_rounded}s to perform operations and allocated "
       . scalar(@successfully_allocated) . " jobs";
-
-    my $exceeded_timer = ((${elapsed_rounded} * 1000) > OpenQA::Scheduler::SCHEDULE_TICK_MS());
     log_debug "Allocated: " . pp($_) for @successfully_allocated;
 
-    log_debug("+=" . ("-" x 16) . "=+");
-    return (\@successfully_allocated, $no_actions);
+    if ($summoned) {
+        log_debug("I've been summoned by the webui");
+        $summoned = 0;
+    }
+    else {
+        _reschedule(SCHEDULE_TICK_MS);
+    }
+
+    return (\@successfully_allocated);
 }
 
 =head2 _reschedule
