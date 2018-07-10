@@ -337,12 +337,12 @@ sub schedule {
       . scalar(@successfully_allocated) . " jobs";
     log_debug "Allocated: " . pp($_) for @successfully_allocated;
 
-    if ($summoned) {
+    if ($summoned || $quit) {
         log_debug("I've been summoned by the webui");
         $summoned = 0;
     }
     else {
-        _reschedule(SCHEDULE_TICK_MS);
+        _reschedule(OpenQA::Scheduler::SCHEDULE_TICK_MS);
     }
 
     return (\@successfully_allocated);
