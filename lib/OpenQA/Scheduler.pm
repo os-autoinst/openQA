@@ -36,16 +36,7 @@ use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 
 # we might consider touching this value, as we may have a very large cluster to deal with.
 # To have a good metric: you might raise it just above as the maximum observed time
 # that the scheduler took to perform the operations
-use constant SCHEDULE_TICK_MS => $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} // 2000;
-
-# Wakes up the scheduler on request
-use constant WAKEUP_ON_REQUEST => $ENV{OPENQA_SCHEDULER_WAKEUP_ON_REQUEST} // 1;
-
-# Timeslot. Defaults to SCHEDULE_TICK_MS
-use constant TIMESLOT => $ENV{OPENQA_SCHEDULER_TIMESLOT} // SCHEDULE_TICK_MS;
-
-# Maximum backoff. Defaults to 60s
-use constant MAX_BACKOFF => $ENV{OPENQA_SCHEDULER_MAX_BACKOFF} // 60000;
+use constant SCHEDULE_TICK_MS => $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} // 20000;
 
 # monkey patching for debugging IPC
 sub _is_method_allowed {
@@ -68,10 +59,9 @@ sub run {
     log_debug("Scheduler started");
     log_debug("\t Scheduler default interval(ms) : " . SCHEDULE_TICK_MS);
     log_debug("\t Max job allocation: " . MAX_JOB_ALLOCATION);
-    log_debug("\t Timeslot(ms) : " . TIMESLOT);
-    log_debug("\t Wakeup on request : " . (WAKEUP_ON_REQUEST ? "enabled" : "disabled"));
-    log_debug("\t Max backoff(ms) : " . MAX_BACKOFF);
 
+    # initial schedule
+    OpenQA::Scheduler::Scheduler::schedule();
     my $reactor = Net::DBus::Reactor->main;
     OpenQA::Scheduler::Scheduler::reactor($reactor);
     $reactor->{timer}->{schedule_jobs} = $reactor->add_timeout(
