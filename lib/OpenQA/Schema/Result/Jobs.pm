@@ -1834,8 +1834,9 @@ sub blocked_by_parent_job {
 
     my $parents = $self->result_source->schema->resultset('JobDependencies')->search(
         {
-            dependency   => OpenQA::Schema::Result::JobDependencies->CHAINED,
-            child_job_id => {-in => [keys %{$self->cluster_jobs}]}});
+            dependency    => OpenQA::Schema::Result::JobDependencies->CHAINED,
+            parent_job_id => {'!=' => $self->id},
+            child_job_id  => {-in => [keys %{$self->cluster_jobs}]}});
     while (my $pd = $parents->next) {
         my $p     = $pd->parent;
         my $state = $p->state;
