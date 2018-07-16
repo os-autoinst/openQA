@@ -124,7 +124,7 @@ function sendCommand(command) {
             type: 'POST',
             data: { command: command },
             success: function(resp) {
-                setTimeout("updateStatus()", 0);
+                setTimeout(function() { updateStatus(); }, 0);
             }});
 }
 
@@ -132,7 +132,7 @@ function updateStatus() {
     $.ajax(testStatus.status_url).
         done(function(status) {
             updateTestStatus(status);
-            setTimeout("updateStatus()", 5000);
+            setTimeout(function() { updateStatus(); }, 5000);
         }).fail(function() {
             setTimeout(function() {location.reload();}, 5000);
         });
@@ -372,8 +372,8 @@ function updateDeveloperPanel() {
         var element = $(this);
         var visibleOn = element.data('visible-on');
         var hiddenOn = element.data('hidden-on');
-        var hide = ((hiddenOn && developerMode.prop(hiddenOn))
-                 || (visibleOn && !developerMode.prop(visibleOn)));
+        var hide = ((hiddenOn && developerMode.prop(hiddenOn)) ||
+                    (visibleOn && !developerMode.prop(visibleOn)));
         if (hide) {
             element.hide();
         } else if (element.hasClass('btn')) {
@@ -430,8 +430,8 @@ function updateDeveloperPanel() {
     if (toPauseAtIndex < 0) {
         toPauseAtIndex = 0;
     }
-    var moduleToPauseAtStillAhead = (developerMode.moduleToPauseAt
-        && toPauseAtIndex > currentModuleIndex);
+    var moduleToPauseAtStillAhead = (developerMode.moduleToPauseAt &&
+          toPauseAtIndex > currentModuleIndex);
 
     // update status info
     var statusInfo = 'running';
@@ -449,8 +449,9 @@ function updateDeveloperPanel() {
 
     // update session info
     var sessionInfoElement = $('#developer-session-info');
+    var sessionInfo;
     if (developerMode.develSessionDeveloper) {
-        var sessionInfo = 'owned by ' + developerMode.develSessionDeveloper + ' (';
+        sessionInfo = 'owned by ' + developerMode.develSessionDeveloper + ' (';
         sessionInfoElement.text(sessionInfo);
 
         var timeagoElement = $('<abbr class="timeago" title="' + developerMode.develSessionStartedAt + ' Z">' + developerMode.develSessionStartedAt + '</abbr>');
@@ -460,7 +461,7 @@ function updateDeveloperPanel() {
         var tabsOpenInfo = ', developer has ' + developerMode.develSessionTabCount + (developerMode.develSessionTabCount == 1 ? ' tab' : ' tabs') + ' open)';
         sessionInfoElement.append(document.createTextNode(tabsOpenInfo));
     } else {
-        var sessionInfo = 'regular test execution';
+        sessionInfo = 'regular test execution';
         if (window.isDevelModeAccessible && !developerMode.panelExpanded) {
             sessionInfo += ' - click to expand';
         }
@@ -575,15 +576,16 @@ function setupWebsocketConnection() {
     // ensure previously opened connections are closed
     closeWebsocketConnection();
 
+    var url;
     // determine ws URL
     if ((window.isDevelModeAccessible && developerMode.useDeveloperWsRoute)) {
         // use route for developer (establishing a developer session)
         developerMode.useDeveloperWsRoute = true;
-        var url = developerMode.develWsUrl;
+        url = developerMode.develWsUrl;
     } else {
         // use route for regular user (receiving only status information)
         developerMode.useDeveloperWsRoute = false;
-        var url = developerMode.statusOnlyWsUrl;
+        url = developerMode.statusOnlyWsUrl;
     }
     url = makeWsUrlAbsolute(url);
 
@@ -617,13 +619,12 @@ function setupWebsocketConnection() {
         console.log("Received message via ws proxy: " + msg.data);
         try {
             var dataObj = JSON.parse(msg.data);
-        } catch {
+            processWsCommand(dataObj);
+        } catch (ex) {
             console.log("Unable to parse JSON from ws proxy: " + msg.data);
             // TODO: log errors visible on the page
             return;
         }
-
-        processWsCommand(dataObj);
     };
 
     developerMode.wsConnection = wsConnection;
