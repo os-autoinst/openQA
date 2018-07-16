@@ -90,7 +90,7 @@ eval { $w = $c->_register($schema, 'host', '1', $workercaps); };
 ok(!$@, 'Worker correct version');
 
 my $worker = $schema->resultset('Workers')->find($w);
-is($worker->get_websocket_api_version(), WEBSOCKET_API_VERSION, 'Worker version set correctly');
+is($worker->websocket_api_version(), WEBSOCKET_API_VERSION, 'Worker version set correctly');
 
 # grab job
 my $job = job_grab(workerid => $w, allocate => 1);

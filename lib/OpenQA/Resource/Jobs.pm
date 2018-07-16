@@ -27,7 +27,7 @@ use DBIx::Class::ResultClass::HashRefInflator;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
-use OpenQA::Utils qw(log_debug);
+use OpenQA::Utils 'log_debug';
 use OpenQA::ResourceAllocator;
 
 require Exporter;
