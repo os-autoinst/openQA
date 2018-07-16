@@ -112,7 +112,8 @@ function makeWsUrlAbsolute(url, servicePortDelta) {
     }
 
     // read port from the page's current URL
-    var port = Number.parseInt(window.location.port);
+    var location = window.location;
+    var port = Number.parseInt(location.port);
     if (Number.isNaN(port)) {
         // don't put a port in the URL if there's no explicit port
         port = '';
@@ -127,8 +128,8 @@ function makeWsUrlAbsolute(url, servicePortDelta) {
         port = ':' + port;
     }
 
-    return 'ws://'
-        + window.location.hostname + port
+    return (location.protocol == 'https:' ? 'wss://' : 'ws:/')
+        + location.hostname + port
         + (url.indexOf('/') !== 0 ? '/' : '')
         + url;
 }
