@@ -563,6 +563,7 @@ my %bugrefs = (
     kde => 'https://bugs.kde.org/show_bug.cgi?id=',
     fdo => 'https://bugs.freedesktop.org/show_bug.cgi?id=',
     jsc => 'https://jira.suse.de/browse/',
+    tr  => 'https://trello.com/c/',
 );
 my %bugurls = (
     'https://bugzilla.novell.com/show_bug.cgi?id=' => 'bsc',
@@ -576,6 +577,7 @@ my %bugurls = (
     $bugrefs{kde}                                  => 'kde',
     $bugrefs{fdo}                                  => 'fdo',
     $bugrefs{jsc}                                  => 'jsc',
+    $bugrefs{tr}                                   => 'tr',
 );
 
 sub bugref_regex {
