@@ -216,6 +216,7 @@ sub handle_message_from_java_script {
     $self->send_message_to_os_autoinst($job_id, $json);
 }
 
+# extends the status info hash from os-autoinst with the session info
 sub add_session_info_to_hash {
     my ($self, $job_id, $hash) = @_;
     my $session = $self->developer_sessions->find($job_id);
@@ -232,6 +233,31 @@ sub add_session_info_to_hash {
         $hash->{developer_session_started_at} = undef;
         $hash->{developer_session_tab_count}  = 0;
     }
+}
+
+# broadcasts a message from os-autoinst to js clients; adds the session info if the message is the status hash
+sub handle_message_from_os_autoinst {
+    my ($self, $job_id, $json) = @_;
+    $self->add_session_info_to_hash($job_id, $json) if ($json->{running});
+    $self->send_message_to_java_script_clients($job_id, info => 'cmdsrvmsg', $json);
+}
+
+# disconnects all js clients and resets the os-autoinst connection
+sub handle_disconnect_from_os_autoinst {
+    my ($self, $job_id, $code, $reason) = @_;
+
+    # prevent finishing the transaction twice
+    $self->cmd_srv_transactions_by_job->{$job_id} = undef;
+    # inform the JavaScript client
+    $self->send_message_to_java_script_clients_and_finish(
+        $job_id,
+        error => 'connection to os-autoinst command server lost',
+        {
+            reason => $reason,
+            code   => $code,
+        });
+    # don't implement a re-connect here, just quit the development session
+    # (the user can just reopen the session to try again manually)
 }
 
 # connects to the os-autoinst command server for the specified job ID; re-uses an existing connection
@@ -280,27 +306,14 @@ sub connect_to_cmd_srv {
             $tx->on(
                 json => sub {
                     my ($tx, $json) = @_;
-                    # extend the status information from os-autoinst with the session info
-                    $self->add_session_info_to_hash($job_id, $json) if ($json->{running});
-                    $self->send_message_to_java_script_clients($job_id, info => 'cmdsrvmsg', $json);
+                    $self->handle_message_from_os_autoinst($job_id, $json);
                 });
 
             # handle connection to os-autoinst command server being quit
             $tx->on(
                 finish => sub {
-                    my (undef, $code, $reason) = @_;
-                    # prevent finishing the transaction twice
-                    $self->cmd_srv_transactions_by_job->{$job_id} = undef;
-                    # inform the JavaScript client
-                    $self->send_message_to_java_script_clients_and_finish(
-                        $job_id,
-                        error => 'connection to os-autoinst command server lost',
-                        {
-                            reason => $reason,
-                            code   => $code,
-                        });
-                    # don't implement a re-connect here, just quit the development session
-                    # (the user can just reopen the session to try again manually)
+                    my ($tx, $code, $reason) = @_;
+                    $self->handle_disconnect_from_os_autoinst($job_id, $code, $reason);
                 });
         });
 }
@@ -347,6 +360,8 @@ sub remove_java_script_transaction {
     my $transaction_index = List::MoreUtils::first_index { $_ == $transaction } @$transactions;
     splice(@$transactions, $transaction_index, 1) if ($transaction_index >= 0);
 }
+
+# note: functions above are just helper, the methods which are actually registered routes start here
 
 # provides a web socket connection acting as a proxy to interact with os-autoinst indirectly
 sub ws_proxy {
@@ -434,12 +449,13 @@ sub ws_proxy {
         });
 }
 
+# provides a status-only version of ws_proxy defined above
 sub proxy_status {
     my ($self) = @_;
-    #We just need status, but pass it anyways
     return $self->ws_proxy('status');
 }
 
+# handles attempts to access a web socket route which does not exists ("404 for web sockets")
 sub not_found_ws {
     my ($self) = @_;
 
@@ -457,6 +473,7 @@ sub not_found_ws {
     $self->on(finish => sub { });
 }
 
+# provides a 404 error message for usual HTTP
 sub not_found_http {
     my ($self) = @_;
 
