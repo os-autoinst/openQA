@@ -1,6 +1,10 @@
 # sample apache config file for the ssl enabled openqa vhost.
 # At the very minimum you need to set the ServerName.
 
+# Note that this file will be ignored unless "SSL" is added to
+# APACHE_SERVER_FLAGS in /etc/sysconfig/apache2 (at least under
+# openSUSE).
+
 <IfDefine SSL>
 <IfDefine !NOSSL>
 
