@@ -429,7 +429,7 @@ subtest 'URLs for command server and livehandler' => sub {
 
 };
 
-subtest 'websocket proxy' => sub {
+subtest 'websocket proxy (connection from client to live view handler not mocked)' => sub {
     # dumps the state of the websocket connections established in the following subtests
     # note: not actually used after all, but useful during development
     sub dump_websocket_state {
@@ -528,6 +528,24 @@ subtest 'websocket proxy' => sub {
                   'reusing previous connection to os-autoinst command server at ws://remotehost:20013/token99961/ws',
                 data => undef,
             });
+
+        # handle test message from os-autoinst
+        $fake_cmd_srv_tx->on(
+            json => sub {
+                my ($tx, $json) = @_;
+                my $dummy_live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
+                $dummy_live_view_handler->app($t_livehandler->app);
+                $dummy_live_view_handler->handle_message_from_os_autoinst(99961, $json);
+            });
+        $fake_cmd_srv_tx->emit_json({foo => 'bar'});
+        $t_livehandler->message_ok('message from command server received');
+        $t_livehandler->json_message_is(
+            {
+                type => 'info',
+                what => 'cmdsrvmsg',
+                data => {foo => 'bar'},
+            });
+
         is($fake_cmd_srv_tx->finish_called, 0, 'no attempt to close the connection again');
 
         # check whether we finally opened a developer session
@@ -535,9 +553,16 @@ subtest 'websocket proxy' => sub {
         is($developer_sessions->count,              2,     'no new developer session opened');
         is($developer_session->ws_connection_count, 1,     'ws connection finally kept open');
         is($developer_session->user_id,             99901, 'user ID correct');
+        is(scalar @{$t_livehandler->app->devel_java_script_transactions_by_job->{99961} // []},
+            1, 'devel js transactions populated');
+        is(scalar @{$t_livehandler->app->status_java_script_transactions_by_job->{99961} // []},
+            0, 'status only js transactions not affected');
 
+        # closing connection will reset counter and bookkeeping of ongoing transations
         $t_livehandler->finish_ok();
         is($developer_sessions->find(99961)->ws_connection_count, 0, 'ws connection finished');
+        is(scalar @{$t_livehandler->app->devel_java_script_transactions_by_job->{99961} // []},
+            0, 'devel js transactions cleaned');
     };
 
     subtest 'status-only route' => sub {
@@ -565,8 +590,14 @@ subtest 'websocket proxy' => sub {
         my $developer_session = $developer_sessions->find(99961);
         is($developer_sessions->count,              2, 'no new developer session opened');
         is($developer_session->ws_connection_count, 0, 'status-only conection not counted');
+        is(scalar @{$t_livehandler->app->status_java_script_transactions_by_job->{99961} // []},
+            1, 'status only js transactions populated');
+        is(scalar @{$t_livehandler->app->devel_java_script_transactions_by_job->{99961} // []},
+            0, 'devel js transactions not affected');
 
         $t_livehandler->finish_ok();
+        is(scalar @{$t_livehandler->app->status_java_script_transactions_by_job->{99961} // []},
+            0, 'status only js transactions cleaned');
     };
 
     subtest 'error handling' => sub {

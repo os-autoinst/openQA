@@ -16,7 +16,7 @@
 package OpenQA::Test::FakeWebSocketTransaction;
 
 use strict;
-use Mojo::Base -base;
+use Mojo::Base 'Mojo::EventEmitter';
 
 has(finish_called => 0);
 has(sent_messages => sub { return []; });
@@ -48,6 +48,16 @@ sub finish {
     my ($self) = @_;
     $self->finish_called(1);
     return 1;
+}
+
+sub emit_json {
+    my ($self, $json) = @_;
+    return $self->emit(json => $json);
+}
+
+sub emit_finish {
+    my $self = shift;
+    return $self->emit(finish => @_);
 }
 
 1;
