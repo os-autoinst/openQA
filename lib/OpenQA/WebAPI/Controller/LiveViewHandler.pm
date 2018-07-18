@@ -166,7 +166,7 @@ sub quit_development_session {
 
     # finish connection to os-autoinst cmd srv
     if (my $cmd_srv_tx = delete $self->cmd_srv_transactions_by_job->{$job_id}) {
-        $self->app->log->debug('ws_proxy: finishing connection to os-autoinst cmd srv for job ' . $job_id);
+        $self->app->log->debug('finishing connection to os-autoinst cmd srv for job ' . $job_id);
         $cmd_srv_tx->finish($status_code) if $cmd_srv_tx->is_websocket();
     }
 }
@@ -264,6 +264,7 @@ sub handle_disconnect_from_os_autoinst {
 sub connect_to_cmd_srv {
     my ($self, $job_id, $cmd_srv_raw_url, $cmd_srv_url) = @_;
 
+    OpenQA::Utils::log_debug("connecting to os-autoinst command server for job $job_id at $cmd_srv_raw_url");
     $self->send_message_to_java_script_clients($job_id,
         info => 'connecting to os-autoinst command server at ' . $cmd_srv_raw_url);
 
@@ -291,7 +292,7 @@ sub connect_to_cmd_srv {
                         error => 'unable to upgrade ws to command server');
                     return;
                 }
-                OpenQA::Utils::log_debug('ws_proxy: following ws redirection to: ' . $location_header);
+                OpenQA::Utils::log_debug('following ws redirection to: ' . $location_header);
                 $cmd_srv_url = $cmd_srv_url->parse($location_header);
                 $self->connect_to_cmd_srv($job_id, $cmd_srv_raw_url, $cmd_srv_url);
                 return;
@@ -386,7 +387,7 @@ sub ws_proxy {
         $user_id = $user->id;
         $java_script_tx->{user_id} = $user_id;
         my $developer_session = $developer_sessions->register($job_id, $user_id);
-        $app->log->debug('ws_proxy: client connected: ' . $user->name);
+        $app->log->debug('client connected: ' . $user->name);
         if (!$developer_session) {
             return $self->send_message_to_java_script_client_and_finish($java_script_tx,
                 error => 'unable to create (further) development session');
@@ -405,7 +406,10 @@ sub ws_proxy {
     # determine url to os-autoinst command server
     my $cmd_srv_raw_url = OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job);
     if (!$cmd_srv_raw_url) {
-        $app->log->debug('ws_proxy: attempt to open for job ' . $job->name . ' (' . $job_id . ')');
+        $app->log->debug('attempt to open ws proxy for job '
+              . $job->name . ' ('
+              . $job_id
+              . ') where URL to os-autoinst command server is unknown');
         $self->send_message_to_java_script_clients_and_finish($job_id,
             error => 'os-autoinst command server not available, job is likely not running');
     }
@@ -440,7 +444,7 @@ sub ws_proxy {
             $self->remove_java_script_transaction($job_id, $self->devel_java_script_transactions_by_job,
                 $java_script_tx);
 
-            $app->log->debug('ws_proxy: client disconnected: ' . $user->name);
+            $app->log->debug('client disconnected: ' . $user->name);
             my $session = $developer_sessions->find({job_id => $job_id}) or return;
             # note: it is likely not useful to quit the development session instantly because the user
             #       might just have pressed the reload button
