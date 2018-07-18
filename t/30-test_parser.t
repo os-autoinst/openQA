@@ -26,6 +26,7 @@ use OpenQA::Parser::Format::JUnit;
 use OpenQA::Parser::Format::LTP;
 use OpenQA::Parser::Format::XUnit;
 use OpenQA::Parser::Format::TAP;
+use OpenQA::Parser::Format::IPA;
 use Mojo::File qw(path tempdir);
 use Data::Dumper;
 use Mojo::JSON qw(decode_json encode_json);
@@ -603,6 +604,25 @@ sub test_ltp_file {
       'Environment information matches';
 }
 
+sub test_ipa_file {
+    my $p = shift;
+    is $p->results->size, 15, 'Expected 15 results' or die diag explain $p->results;
+    is $p->tests->size,   15, 'Expected 15 tests'   or die diag explain $p->results;
+
+    $p->results->each(
+        sub {
+            is $_->details->[0]->{_source}, 'parser';
+            if ($_->name =~ /test_sles_repos|test_sles_guestregister|test_sles_smt_reg/) {
+                is $_->result, 'fail' or die;
+            }
+            else {
+                is $_->result, 'ok' or die diag explain $_;
+            }
+        });
+    is $p->extra->first->distro,   'sles', 'Sys info parsed correctly';
+    is $p->extra->first->platform, 'ec2',  'Platform info parsed correctly';
+}
+
 sub test_ltp_file_v2 {
     my $p = shift;
     is $p->results->size, 4, 'Expected 4 results';
@@ -749,6 +769,7 @@ sub serialize_test {
 }
 
 subtest 'serialize/deserialize' => sub {
+    serialize_test("OpenQA::Parser::Format::IPA",   "ipa.json",                           "test_ipa_file");
     serialize_test("OpenQA::Parser::Format::LTP",   "ltp_test_result_format.json",        "test_ltp_file");
     serialize_test("OpenQA::Parser::Format::LTP",   "new_ltp_result_array.json",          "test_ltp_file_v2");
     serialize_test("OpenQA::Parser::Format::JUnit", "slenkins_control-junit-results.xml", "test_junit_file");
