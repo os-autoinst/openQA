@@ -279,10 +279,9 @@ sub connect_to_cmd_srv {
     $cmd_srv_url = Mojo::URL->new($cmd_srv_raw_url) unless ($cmd_srv_url);
 
     # start a new connection to os-autoinst cmd srv
-    return $self->cmd_srv_transactions_by_job->{$job_id} = $self->app->ua->websocket(
+    return $self->app->ua->websocket(
         $cmd_srv_url => {'Sec-WebSocket-Extensions' => 'permessage-deflate'} => sub {
             my ($ua, $tx) = @_;
-            $self->cmd_srv_transactions_by_job->{$job_id} = $tx;
 
             # upgrade to ws connection if not already a websocket connection
             if (!$tx->is_websocket) {
@@ -297,6 +296,9 @@ sub connect_to_cmd_srv {
                 $self->connect_to_cmd_srv($job_id, $cmd_srv_raw_url, $cmd_srv_url);
                 return;
             }
+
+# assign transaction: don't do this before to prevent regular HTTP connections to be used in send_message_to_os_autoinst
+            $self->cmd_srv_transactions_by_job->{$job_id} = $tx;
 
             # instantly query the os-autoinst status
             $self->query_os_autoinst_status($job_id);
