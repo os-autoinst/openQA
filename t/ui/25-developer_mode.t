@@ -308,6 +308,44 @@ subtest 'start developer session' => sub {
     };
 };
 
+subtest 'process state changes from os-autoinst' => sub {
+    fake_state(
+        developerMode => {
+            currentModule   => '"installation-welcome"',
+            isPaused        => '"some reason"',
+            moduleToPauseAt => 'undefined',
+        });
+
+    # in contrast to the other subtests (which just fake the state via fake_state helper) this subtest will
+    # actually test processing of commands received via the websocket connection
+
+    subtest 'message not from current connection ignored' => sub {
+        $driver->execute_script(
+'handleMessageVisWebsocketConnection("foo", { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_test_full_name\":\"some test\",\"paused\":true}}" });'
+        );
+        element_visible(
+            '#developer-panel .card-header',
+            qr/paused at module: installation-welcome/,
+            qr/current module/,
+        );
+    };
+
+    subtest 'testname and paused state updated' => sub {
+        $driver->execute_script(
+'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"resume_test_execution\":\"foo\"}}" });'
+        );
+        element_visible(
+            '#developer-panel .card-header',
+            qr/current module: installation-welcome/,
+            qr/paused at module/,
+        );
+
+        $driver->execute_script(
+'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_test_full_name\":\"some test\",\"paused\":true}}" });'
+        );
+        element_visible('#developer-panel .card-header', qr/paused at module: some test/, qr/current module/,);
+    };
+};
 
 kill_driver();
 done_testing();

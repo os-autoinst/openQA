@@ -570,6 +570,28 @@ function handleWebsocketConnectionClosed(wsConnection) {
     }
 }
 
+function handleMessageVisWebsocketConnection(wsConnection, msg) {
+    if (wsConnection !== developerMode.wsConnection) {
+        return;
+    }
+
+    // parse the message JSON
+    if (!msg.data) {
+        return;
+    }
+    console.log("Received message via ws proxy: " + msg.data);
+    var dataObj;
+    try {
+        dataObj = JSON.parse(msg.data);
+    } catch (ex) {
+        console.log("Unable to parse JSON from ws proxy: " + msg.data);
+        addFlash('danger', '<strong>Unable to parse reply from livehandler daemon (responsible for developer mode).</strong>');
+        return;
+    }
+
+    processWsCommand(dataObj);
+}
+
 function setupWebsocketConnection() {
     // ensure previously opened connections are closed
     closeWebsocketConnection();
@@ -606,23 +628,7 @@ function setupWebsocketConnection() {
         handleWebsocketConnectionClosed(wsConnection);
     };
     wsConnection.onmessage = function(msg) {
-        if (wsConnection !== developerMode.wsConnection) {
-            return;
-        }
-
-        // parse the message JSON
-        if (!msg.data) {
-            return;
-        }
-        console.log("Received message via ws proxy: " + msg.data);
-        try {
-            var dataObj = JSON.parse(msg.data);
-            processWsCommand(dataObj);
-        } catch (ex) {
-            console.log("Unable to parse JSON from ws proxy: " + msg.data);
-            // TODO: log errors visible on the page
-            return;
-        }
+        handleMessageVisWebsocketConnection(wsConnection, msg);
     };
 
     developerMode.wsConnection = wsConnection;
