@@ -60,17 +60,11 @@ sub edit {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $job = $self->stash('job');
-    my $r = $job->modules->find({result => 'running'});
-
-    if ($r) {
-        my $details = $r->details();
-        my $stepid  = scalar(@{$details});
-        $self->redirect_to('edit_step', moduleid => $r->name(), stepid => $stepid);
-    }
-    else {
-        $self->reply->not_found;
-    }
+    my $job            = $self->stash('job');
+    my $running_module = $job->modules->find({result => 'running'}) or return $self->reply->not_found;
+    my $details        = $running_module->details();
+    my $stepid         = scalar(@{$details});
+    $self->redirect_to('edit_step', moduleid => $running_module->name(), stepid => $stepid);
 }
 
 sub streamtext {

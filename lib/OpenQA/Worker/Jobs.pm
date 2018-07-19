@@ -674,19 +674,12 @@ sub upload_status {
 
     my $ua        = Mojo::UserAgent->new;
     my $os_status = $ua->get($job->{URL} . "/isotovideo/status")->res->json;
+    $status->{status}->{test_execution_paused} = $os_status->{test_execution_paused};
 
     # $os_status->{running} is undef at the beginning or if read_json_file temporary failed
     # and contains empty string after the last test
 
-    # cherry-pick
-
-    for my $f (qw(interactive needinput)) {
-        if ($os_status->{$f} || has_logviewers()) {
-            $status->{status}->{$f} = $os_status->{$f};
-        }
-    }
     my $upload_up_to;
-
     if ($os_status->{running} || $final_upload) {
         if (!$current_running) {    # first test
             $test_order = read_json_file('test_order.json');
@@ -708,7 +701,7 @@ sub upload_status {
     # try to upload everything at the end, in case we missed the last $os_status->{running}
     $upload_up_to = '' if $final_upload;
 
-    if ($status->{status}->{needinput}) {
+    if ($status->{status}->{test_execution_paused}) {
         $status->{result} = {$current_running => read_module_result($os_status->{running})};
     }
     elsif (defined($upload_up_to)) {

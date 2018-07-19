@@ -86,8 +86,15 @@
                     class="btn btn-danger developer-mode-element" data-visible-on="ownSession">
                     <i class="far fa-stop-circle"></i> Cancel job
                 </a>
-                <a href="#" onclick="resumeTestExecution(); return false;" class="btn btn-secondary developer-mode-element" data-visible-on="isPaused">
+                <a href="#" onclick="resumeTestExecution(); return false;"
+                    class="btn btn-secondary developer-mode-element" data-visible-on="isPaused">
                     <i class="far fa-play-circle"></i> Resume test execution
+                </a>
+                <a href="<%= url_for('edit_test', testid => $testid) %>"
+                    class="btn btn-secondary developer-mode-element"
+                    data-visible-on="isPaused">
+                    <i class="fa fa-thumbtack"></i>
+                    Open needle editor
                 </a>
                 % if (app->mode eq 'development') {
                     <a href="<%= url_for('developer_ws_console')->query({proxy => 1}) %>" target="blank"
