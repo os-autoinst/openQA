@@ -315,6 +315,7 @@ var developerMode = {
     // state of the test execution (comes from os-autoinst cmd srv through the openQA ws proxy)
     currentModule: undefined,               // name of the current module, eg. "installation-welcome"
     moduleToPauseAt: undefined,             // name of the module to pause at, eg. "installation-welcome"
+    pauseAtTimeout: undefined,              // whether to pause on assert_screen timeout
     isPaused: undefined,                    // whether the test execution is currently paused
 
     // state of development session (comes from the openQA ws proxy)
@@ -359,6 +360,9 @@ function setupDeveloperPanel() {
     // find URLs for web socket connections
     developerMode.develWsUrl = panel.data('developer-url');
     developerMode.statusOnlyWsUrl = panel.data('status-only-url');
+
+    // add handler for static form elements
+    $('#developer-pause-on-timeout').on('click', handlePauseAtTimeoutToggled);
 
     updateDeveloperPanel();
     setupWebsocketConnection();
@@ -483,6 +487,10 @@ function updateDeveloperPanel() {
             selectElement.handlerRegistered = true;
         }
     }
+    // -> update whether the test will pause on assert screen timeout
+    if (developerMode.pauseAtTimeout !== undefined) {
+        $('#developer-pause-on-timeout').prop('checked', developerMode.pauseAtTimeout);
+    }
 }
 
 // submits the selected module to pause at if it has changed
@@ -507,9 +515,25 @@ function handleModuleToPauseAtSelected() {
     }
 }
 
+function handlePauseAtTimeoutToggled() {
+    // skip if not owning development session or pauseAtTimeout is unknown
+    if (!developerMode.ownSession || developerMode.pauseAtTimeout === undefined) {
+        return;
+    }
+
+    var pauseAtTimeoutCheckboxChecked = $('#developer-pause-on-timeout').prop('checked');
+    if (developerMode.pauseAtTimeout !== pauseAtTimeoutCheckboxChecked) {
+        sendWsCommand({
+            cmd: 'set_pause_on_assert_screen_timeout',
+            flag: pauseAtTimeoutCheckboxChecked,
+        });
+    }
+}
+
 // submits the selected values which differ from the server's state
 function submitCurrentSelection() {
     handleModuleToPauseAtSelected();
+    handlePauseAtTimeoutToggled();
 }
 
 // ensures the websocket connection is closed
@@ -652,6 +676,14 @@ var messageToStatusVariable = [
     {
         msg: 'set_pause_at_test',
         statusVar: 'moduleToPauseAt',
+    },
+    {
+        msg: 'pause_on_assert_screen_timeout',
+        statusVar: 'pauseAtTimeout',
+    },
+    {
+        msg: 'set_pause_on_assert_screen_timeout',
+        statusVar: 'pauseAtTimeout',
     },
     {
         msg: 'current_test_full_name',

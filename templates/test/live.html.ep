@@ -60,6 +60,21 @@
                 <div class="col-sm-9">
                     %= include 'test/module_select'
                 </div>
+                <div class="col-sm-3">
+                    <label for="developer-pause-on-timeout" class="col-form-label">
+                        Pause on <code>assert_screen</code> timeout
+                    </label>
+                    <%= help_popover('Help for <i>pause test execution</i>' => '
+                        <p>
+                            Pauses the test execution on the next <code>assert_screen</code> timeout.
+                        </p>
+                        <p>On resume, the needles will be reloaded and the assertion is tried again.</p>
+                        <p>A paused job still has the <code>MAX_JOB_TIME</code> constraint to be applied.</p>')
+                    %>
+                </div>
+                <div class="col-sm-9">
+                    <input type="checkbox" id="developer-pause-on-timeout" checked="checked">
+                </div>
             </div>
             <hr>
             <div>
