@@ -41,6 +41,27 @@ my $schema = OpenQA::Test::Database->new->create();
 # create Test DBus bus and service for fake WebSockets call
 my $ws = OpenQA::WebSockets->new;
 
+use Mojo::Util 'monkey_patch';
+
+my $sent = {};
+
+sub schedule {
+    my $id = OpenQA::Scheduler::Scheduler::schedule();
+    _jobs_update_state([$schema->resultset('Jobs')->find($_->{job})], OpenQA::Jobs::Constants::RUNNING) for @$id;
+}
+
+# Mangle worker websocket send, and record what was sent
+monkey_patch 'OpenQA::Schema::Result::Jobs', ws_send => sub {
+    my ($self, $worker) = @_;
+    my $hashref = $self->prepare_for_work($worker);
+    _jobs_update_state([$self], OpenQA::Jobs::Constants::RUNNING);
+
+    $hashref->{assigned_worker_id} = $worker->id;
+    $sent->{$worker->id} = {worker => $worker, job => $self};
+    $sent->{job}->{$self->id} = {worker => $worker, job => $self};
+    return {state => {msg_sent => 1}};
+};
+
 sub list_jobs {
     my %args = @_;
     [map { $_->to_hash(assets => 1) } $schema->resultset('Jobs')->complex_query(%args)->all];
@@ -138,15 +159,35 @@ my @jobs_in_expected_order = (
     $jobB => 'lowest prio of jobs without parents',
     $jobC => 'direct child of B',
     $jobF => 'direct child of C',
-    $jobA => 'E is direct child of C, but A and D must be started first',
-    $jobD => 'direct child of A',
-    $jobE => 'C and D are now running so we can start E',
+    $jobA => 'E is direct child of C, but A and D must be started first. A was picked',
+    $jobD => 'direct child of A. D is picked',
+    $jobE => 'C and D are now running so we can start E. E is picked',
 );
-for my $i (0 .. 5) {
-    my $job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $worker_ids[$i], allocate => 1);
-    is($job->{id}, ${jobs_in_expected_order [$i * 2]}->id, ${jobs_in_expected_order [$i * 2 + 1]});
+
+schedule();
+
+for my $i (3 .. 5) {
+    my $job = $sent->{job}->{$jobs_in_expected_order[$i * 2]->id}->{job};
+    ok(defined $job, $jobs_in_expected_order[$i * 2 + 1]) or die;
+    $job = $job->to_hash;
     is($job->{settings}->{NICVLAN}, 1, 'same vlan for whole group');
 }
+schedule();
+
+for my $i (1 .. 2) {
+    my $job = $sent->{job}->{$jobs_in_expected_order[$i * 2]->id}->{job};
+    ok(defined $job, $jobs_in_expected_order[$i * 2 + 1]) or die;
+    $job = $job->to_hash;
+    is($job->{settings}->{NICVLAN}, 1, 'same vlan for whole group');
+    schedule();
+}
+schedule();
+
+my $job = $sent->{job}->{$jobs_in_expected_order[0]->id}->{job};
+ok(defined $job, $jobs_in_expected_order[1]) or die;
+
+$job = $job->to_hash;
+is($job->{settings}->{NICVLAN}, 1, 'same vlan for whole group');
 
 my $exp_cluster_jobs = {
     $jobA->id => {
@@ -212,7 +253,7 @@ is($result, 'incomplete', 'job_set_done');
 $result = $jobE->done(result => 'incomplete');
 is($result, 'incomplete', 'job_set_done');
 
-my $job = job_get_deps($jobA->id);
+$job = job_get_deps($jobA->id);
 is($job->{state},  "done",   "job_set_done changed state");
 is($job->{result}, "failed", "job_set_done changed result");
 
@@ -385,7 +426,9 @@ $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$job
 
 # job_grab now should return jobs from clonned group
 # we already called job_set_done on jobE, so worker 6 is available
-$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $worker_ids[5], allocate => 1);
+schedule();
+ok($sent->{job}->{$jobB2}, " $jobB2 was assigned ") or die diag "$jobB2 wasn't scheduled";
+$job = $sent->{job}->{$jobB2}->{job}->to_hash;
 is($job->{id},                  $jobB2, "jobB2");            #lowest prio of jobs without parents
 is($job->{settings}->{NICVLAN}, 2,      "different vlan");
 
