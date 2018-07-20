@@ -1182,7 +1182,8 @@ sub parse_extra_tests {
 
     return unless ($type eq 'JUnit'
         || $type eq 'XUnit'
-        || $type eq 'LTP');
+        || $type eq 'LTP'
+        || $type eq 'IPA');
 
 
     local ($@);
