@@ -316,7 +316,7 @@ var developerMode = {
     currentModule: undefined,               // name of the current module, eg. "installation-welcome"
     moduleToPauseAt: undefined,             // name of the module to pause at, eg. "installation-welcome"
     pauseAtTimeout: undefined,              // whether to pause on assert_screen timeout
-    isPaused: undefined,                    // whether the test execution is currently paused
+    isPaused: undefined,                    // if paused the reason why as a string; otherwise something which evaluates to false
 
     // state of development session (comes from the openQA ws proxy)
     develSessionDeveloper: undefined,       // name of the user in possession the development session
@@ -444,6 +444,7 @@ function updateDeveloperPanel() {
         if (developerMode.currentModule) {
             statusInfo += ' at module: ' + developerMode.currentModule;
         }
+        $('#developer-pause-reason').text('(reason: ' + developerMode.isPaused + ')');
     } else if (moduleToPauseAtStillAhead) {
         statusInfo = 'will pause at module: ' + developerMode.moduleToPauseAt;
     } else if (developerMode.currentModule) {
@@ -667,7 +668,9 @@ var messageToStatusVariable = [
     },
     {
         msg: 'paused',
-        statusVar: 'isPaused',
+        action: function(value, wholeMessage) {
+            developerMode.isPaused = wholeMessage.reason ? wholeMessage.reason : 'unknown';
+        },
     },
     {
         msg: 'pause_test_name',
@@ -751,7 +754,7 @@ function processWsCommand(obj) {
                 }
                 var action = msgToStatusValue.action;
                 if (action) {
-                    action(data[msg]);
+                    action(data[msg], data);
                 }
                 somethingChanged = true;
             });
