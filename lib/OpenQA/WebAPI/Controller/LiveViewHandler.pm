@@ -166,7 +166,7 @@ sub quit_development_session {
 
     # finish connection to os-autoinst cmd srv
     if (my $cmd_srv_tx = delete $self->cmd_srv_transactions_by_job->{$job_id}) {
-        $self->app->log->debug('ws_proxy: finishing connection to os-autoinst cmd srv for job ' . $job_id);
+        $self->app->log->debug('finishing connection to os-autoinst cmd srv for job ' . $job_id);
         $cmd_srv_tx->finish($status_code) if $cmd_srv_tx->is_websocket();
     }
 }
@@ -216,6 +216,7 @@ sub handle_message_from_java_script {
     $self->send_message_to_os_autoinst($job_id, $json);
 }
 
+# extends the status info hash from os-autoinst with the session info
 sub add_session_info_to_hash {
     my ($self, $job_id, $hash) = @_;
     my $session = $self->developer_sessions->find($job_id);
@@ -234,10 +235,36 @@ sub add_session_info_to_hash {
     }
 }
 
+# broadcasts a message from os-autoinst to js clients; adds the session info if the message is the status hash
+sub handle_message_from_os_autoinst {
+    my ($self, $job_id, $json) = @_;
+    $self->add_session_info_to_hash($job_id, $json) if ($json->{running});
+    $self->send_message_to_java_script_clients($job_id, info => 'cmdsrvmsg', $json);
+}
+
+# disconnects all js clients and resets the os-autoinst connection
+sub handle_disconnect_from_os_autoinst {
+    my ($self, $job_id, $code, $reason) = @_;
+
+    # prevent finishing the transaction twice
+    $self->cmd_srv_transactions_by_job->{$job_id} = undef;
+    # inform the JavaScript client
+    $self->send_message_to_java_script_clients_and_finish(
+        $job_id,
+        error => 'connection to os-autoinst command server lost',
+        {
+            reason => $reason,
+            code   => $code,
+        });
+    # don't implement a re-connect here, just quit the development session
+    # (the user can just reopen the session to try again manually)
+}
+
 # connects to the os-autoinst command server for the specified job ID; re-uses an existing connection
 sub connect_to_cmd_srv {
     my ($self, $job_id, $cmd_srv_raw_url, $cmd_srv_url) = @_;
 
+    OpenQA::Utils::log_debug("connecting to os-autoinst command server for job $job_id at $cmd_srv_raw_url");
     $self->send_message_to_java_script_clients($job_id,
         info => 'connecting to os-autoinst command server at ' . $cmd_srv_raw_url);
 
@@ -253,10 +280,9 @@ sub connect_to_cmd_srv {
     $cmd_srv_url = Mojo::URL->new($cmd_srv_raw_url) unless ($cmd_srv_url);
 
     # start a new connection to os-autoinst cmd srv
-    return $self->cmd_srv_transactions_by_job->{$job_id} = $self->app->ua->websocket(
+    return $self->app->ua->websocket(
         $cmd_srv_url => {'Sec-WebSocket-Extensions' => 'permessage-deflate'} => sub {
             my ($ua, $tx) = @_;
-            $self->cmd_srv_transactions_by_job->{$job_id} = $tx;
 
             # upgrade to ws connection if not already a websocket connection
             if (!$tx->is_websocket) {
@@ -266,11 +292,14 @@ sub connect_to_cmd_srv {
                         error => 'unable to upgrade ws to command server');
                     return;
                 }
-                OpenQA::Utils::log_debug('ws_proxy: following ws redirection to: ' . $location_header);
+                OpenQA::Utils::log_debug('following ws redirection to: ' . $location_header);
                 $cmd_srv_url = $cmd_srv_url->parse($location_header);
                 $self->connect_to_cmd_srv($job_id, $cmd_srv_raw_url, $cmd_srv_url);
                 return;
             }
+
+# assign transaction: don't do this before to prevent regular HTTP connections to be used in send_message_to_os_autoinst
+            $self->cmd_srv_transactions_by_job->{$job_id} = $tx;
 
             # instantly query the os-autoinst status
             $self->query_os_autoinst_status($job_id);
@@ -280,27 +309,14 @@ sub connect_to_cmd_srv {
             $tx->on(
                 json => sub {
                     my ($tx, $json) = @_;
-                    # extend the status information from os-autoinst with the session info
-                    $self->add_session_info_to_hash($job_id, $json) if ($json->{running});
-                    $self->send_message_to_java_script_clients($job_id, info => 'cmdsrvmsg', $json);
+                    $self->handle_message_from_os_autoinst($job_id, $json);
                 });
 
             # handle connection to os-autoinst command server being quit
             $tx->on(
                 finish => sub {
-                    my (undef, $code, $reason) = @_;
-                    # prevent finishing the transaction twice
-                    $self->cmd_srv_transactions_by_job->{$job_id} = undef;
-                    # inform the JavaScript client
-                    $self->send_message_to_java_script_clients_and_finish(
-                        $job_id,
-                        error => 'connection to os-autoinst command server lost',
-                        {
-                            reason => $reason,
-                            code   => $code,
-                        });
-                    # don't implement a re-connect here, just quit the development session
-                    # (the user can just reopen the session to try again manually)
+                    my ($tx, $code, $reason) = @_;
+                    $self->handle_disconnect_from_os_autoinst($job_id, $code, $reason);
                 });
         });
 }
@@ -348,6 +364,8 @@ sub remove_java_script_transaction {
     splice(@$transactions, $transaction_index, 1) if ($transaction_index >= 0);
 }
 
+# note: functions above are just helper, the methods which are actually registered routes start here
+
 # provides a web socket connection acting as a proxy to interact with os-autoinst indirectly
 sub ws_proxy {
     my ($self, $status_only) = @_;
@@ -369,7 +387,7 @@ sub ws_proxy {
         $user_id = $user->id;
         $java_script_tx->{user_id} = $user_id;
         my $developer_session = $developer_sessions->register($job_id, $user_id);
-        $app->log->debug('ws_proxy: client connected: ' . $user->name);
+        $app->log->debug('client connected: ' . $user->name);
         if (!$developer_session) {
             return $self->send_message_to_java_script_client_and_finish($java_script_tx,
                 error => 'unable to create (further) development session');
@@ -388,7 +406,10 @@ sub ws_proxy {
     # determine url to os-autoinst command server
     my $cmd_srv_raw_url = OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job);
     if (!$cmd_srv_raw_url) {
-        $app->log->debug('ws_proxy: attempt to open for job ' . $job->name . ' (' . $job_id . ')');
+        $app->log->debug('attempt to open ws proxy for job '
+              . $job->name . ' ('
+              . $job_id
+              . ') where URL to os-autoinst command server is unknown');
         $self->send_message_to_java_script_clients_and_finish($job_id,
             error => 'os-autoinst command server not available, job is likely not running');
     }
@@ -423,7 +444,7 @@ sub ws_proxy {
             $self->remove_java_script_transaction($job_id, $self->devel_java_script_transactions_by_job,
                 $java_script_tx);
 
-            $app->log->debug('ws_proxy: client disconnected: ' . $user->name);
+            $app->log->debug('client disconnected: ' . $user->name);
             my $session = $developer_sessions->find({job_id => $job_id}) or return;
             # note: it is likely not useful to quit the development session instantly because the user
             #       might just have pressed the reload button
@@ -434,12 +455,13 @@ sub ws_proxy {
         });
 }
 
+# provides a status-only version of ws_proxy defined above
 sub proxy_status {
     my ($self) = @_;
-    #We just need status, but pass it anyways
     return $self->ws_proxy('status');
 }
 
+# handles attempts to access a web socket route which does not exists ("404 for web sockets")
 sub not_found_ws {
     my ($self) = @_;
 
@@ -457,6 +479,7 @@ sub not_found_ws {
     $self->on(finish => sub { });
 }
 
+# provides a 404 error message for usual HTTP
 sub not_found_http {
     my ($self) = @_;
 

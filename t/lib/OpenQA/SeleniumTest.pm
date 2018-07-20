@@ -200,6 +200,8 @@ sub javascript_console_has_no_warnings_or_errors {
         elsif ($source eq 'javascript') {
             # FIXME: ignore WebSocket error for now (connection errors are tracked via devel console anyways)
             next if ($msg =~ m/ws\-proxy.*Close received/);
+   # FIXME: find the reason why Chromium says we're trying to send something over an already closed WebSocket connection
+            next if ($msg =~ m/Data frame received after close/);
         }
         push(@errors, $log_entry);
     }

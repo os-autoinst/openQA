@@ -303,13 +303,13 @@ var developerMode = {
     develWsUrl: undefined,                  // URL for developer session web socket connection
     statusOnlyWsUrl: undefined,             // URL for status-only web socket connection
     wsConnection: undefined,                // current WebSocket object
-    hasWsError: false,                      // whether an web socket error occured (cleared on reconnect)
+    hasWsError: false,                      // whether an web socket error occured (cleared when we finally receive a message from os-autoinst)
     useDeveloperWsRoute: undefined,         // whether the developer web socket route is used
     isConnected: false,                     // whether connected to any web socket route
     ownSession: false,                      // whether the development session belongs to us
     panelExpanded: false,                   // whether the panel is supposed to be expanded
     panelActuallyExpanded: false,           // whether the panel is currently expanded
-    reconnectAttempts: 0,                   // number of (re)connect attempts (reset after successful connect)
+    reconnectAttempts: 0,                   // number of (re)connect attempts (reset to 0 when we finally receive a message from os-autoinst)
     currentModuleIndex: undefined,          // the index of the current module
 
     // state of the test execution (comes from os-autoinst cmd srv through the openQA ws proxy)
@@ -527,9 +527,7 @@ function handleWebsocketConnectionOpened(wsConnection) {
     }
 
     // update state
-    developerMode.reconnectAttempts = 0;
     developerMode.isConnected = true;
-    developerMode.hasWsError = false;
     developerMode.ownSession = developerMode.useDeveloperWsRoute;
 
     // sync the current selection if the test is running and it is our session
@@ -697,6 +695,10 @@ function processWsCommand(obj) {
     case "info":
         switch(what) {
         case "cmdsrvmsg":
+            // reset error state
+            developerMode.reconnectAttempts = 0;
+            developerMode.hasWsError = false;
+
             // handle messages from os-autoinst command server
             $.each(messageToStatusVariable, function(index, msgToStatusValue) {
                 var msg = msgToStatusValue.msg;
