@@ -59,6 +59,7 @@ function updateTestStatus(newStatus) {
         var newModuleSelect = dataDom.filter('#developer-pause-at-module');
         if (moduleSelectOnPage.length && newModuleSelect.length) {
             moduleSelectOnPage.replaceWith(newModuleSelect);
+            updateModuleSelection(newModuleSelect.find('option'), developerMode.currentModuleIndex);
         }
 
         // skip if the row of the running module is not present in the result table
@@ -368,6 +369,21 @@ function setupDeveloperPanel() {
     setupWebsocketConnection();
 }
 
+// hides the specified options up to the specified index
+function updateModuleSelection(moduleToPauseAtOptions, moduleIndex) {
+    for (var i = 0; i <= moduleIndex; ++i) {
+        var optionElement = moduleToPauseAtOptions[i];
+        var optgroupElement = optionElement.parentNode;
+        if (!optgroupElement || optgroupElement.nodeName !== 'OPTGROUP') {
+            continue;
+        }
+        optionElement.style.display = 'none';
+        if (optgroupElement.lastElementChild.isEqualNode(optionElement)) {
+            optgroupElement.style.display = 'none';
+        }
+    }
+}
+
 // updates the developer panel, must be called after modifying developerMode
 function updateDeveloperPanel() {
     // hide/show elements according to data-hidden and data-visible attributes
@@ -415,18 +431,7 @@ function updateDeveloperPanel() {
 
     // hide modules which have already been executed when the current module index has changed
     if (developerMode.currentModuleIndex !== currentModuleIndex) {
-        developerMode.currentModuleIndex = currentModuleIndex;
-        for (var i = 0; i <= currentModuleIndex; ++i) {
-            var optionElement = moduleToPauseAtOptions[i];
-            var optgroupElement = optionElement.parentNode;
-            if (!optgroupElement || optgroupElement.nodeName !== 'OPTGROUP') {
-                continue;
-            }
-            optionElement.style.display = 'none';
-            if (optgroupElement.lastElementChild.isEqualNode(optionElement)) {
-                optgroupElement.style.display = 'none';
-            }
-        }
+        updateModuleSelection(moduleToPauseAtOptions, developerMode.currentModuleIndex = currentModuleIndex);
     }
 
     // determine whether the module to pause at is still ahead
