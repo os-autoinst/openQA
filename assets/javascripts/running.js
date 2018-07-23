@@ -304,7 +304,7 @@ var developerMode = {
     develWsUrl: undefined,                  // URL for developer session web socket connection
     statusOnlyWsUrl: undefined,             // URL for status-only web socket connection
     wsConnection: undefined,                // current WebSocket object
-    hasWsError: false,                      // whether an web socket error occured (cleared when we finally receive a message from os-autoinst)
+    hasWsError: false,                      // whether an web socket error occurred (cleared when we finally receive a message from os-autoinst)
     useDeveloperWsRoute: undefined,         // whether the developer web socket route is used
     isConnected: false,                     // whether connected to any web socket route
     ownSession: false,                      // whether the development session belongs to us
