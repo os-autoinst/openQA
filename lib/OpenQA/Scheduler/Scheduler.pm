@@ -58,6 +58,14 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 CORE::state $summoned = 0;
 CORE::state $quit     = 0;
 
+my $shuffle_workers = 1;
+
+sub shuffle_workers {
+    my $want = shift;
+    $shuffle_workers = $want;
+    return $shuffle_workers;
+}
+
 sub normal_signals_handler {
     log_debug("Received signal to stop");
     $quit++;
@@ -143,11 +151,12 @@ sub schedule {
     log_debug("-> Scheduling new jobs.");
     my $all_workers = schema->resultset("Workers")->count();
 
+    my @f_w = grep { !$_->dead && ($_->websocket_api_version() || 0) == WEBSOCKET_API_VERSION }
+      schema->resultset("Workers")->search({job_id => undef})->all();
+
     # NOTE: $worker->connected is too much expensive since is over dbus, prefer dead.
     # shuffle avoids starvation if a free worker keeps failing.
-    my @free_workers
-      = shuffle(grep { !$_->dead && ($_->websocket_api_version() || 0) == WEBSOCKET_API_VERSION }
-          schema->resultset("Workers")->search({job_id => undef})->all());
+    my @free_workers = $shuffle_workers ? shuffle(@f_w) : @f_w;
 
     log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
 
