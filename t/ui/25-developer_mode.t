@@ -85,6 +85,25 @@ sub assert_sent_commands {
     is_deeply($sent_cmds, $expected, $test_name);
 }
 
+# checks whether the flash messages of the specified kind are present
+sub assert_flash_messages {
+    my ($kind, $expected_messages, $test_name) = @_;
+    my $kind_selector = $kind eq 'any' ? 'alert' : '.alert-' . $kind;
+
+    my @flash_messages = $driver->find_elements("#flash-messages $kind_selector > span");
+    is(
+        scalar @flash_messages,
+        scalar @$expected_messages,
+        "correct number of $kind flash messages present ($test_name)"
+    );
+
+    my $index = 0;
+    for my $expected_message (@$expected_messages) {
+        like($flash_messages[$index]->get_text(), $expected_message, $test_name,) if ($expected_message);
+        $index += 1;
+    }
+}
+
 # clicks on the header of the developer panel
 sub click_header {
     $driver->find_element('#developer-panel .card-header')->click();
@@ -344,6 +363,22 @@ subtest 'process state changes from os-autoinst' => sub {
 'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_test_full_name\":\"some test\",\"paused\":true}}" });'
         );
         element_visible('#developer-panel .card-header', qr/paused at module: some test/, qr/current module/,);
+    };
+
+    subtest 'error handling, flash messages' => sub {
+        $driver->execute_script(
+            'handleMessageVisWebsocketConnection("foo", { data: "{\"type\":\"error\",\"what\":\"some error\"}" });');
+        assert_flash_messages(any => [], 'messsages not from current connection ignored');
+
+        $driver->execute_script('handleMessageVisWebsocketConnection(developerMode.wsConnection, { });');
+        assert_flash_messages(any => [], 'messages with no data are ignored');
+
+        $driver->execute_script(
+            'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "invalid { json" });');
+        $driver->execute_script(
+'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"error\",\"what\":\"some error\"}" });'
+        );
+        assert_flash_messages(danger => [qr/Unable to parse/, qr/some error/], 'errors shown via flash messages');
     };
 };
 

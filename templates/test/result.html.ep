@@ -12,7 +12,7 @@
 % end
 
 <div class="row">
-    <div>
+    <div class="col-sm-12">
         %= include 'layouts/info'
     </div>
 </div>

@@ -621,7 +621,7 @@ function setupWebsocketConnection() {
             return;
         }
 
-        // set the error flag (FIXME: display error state somewhere)
+        // set the error flag
         developerMode.hasWsError = true;
     };
     wsConnection.onclose = function() {
@@ -696,7 +696,7 @@ function processWsCommand(obj) {
     case "error":
         // handle errors
         console.log("Error from ws proxy: " + what);
-        // TODO: log errors visible on the page
+        addFlash('danger', '<strong>Error from livehandler daemon (responsible for developer mode):</strong><p>' + what + '</p>');
         break;
     case "info":
         switch(what) {
@@ -740,7 +740,7 @@ function processWsCommand(obj) {
 function sendWsCommand(obj) {
     if (!developerMode.wsConnection) {
         console.log("Attempt to send something via ws proxy but not connected.");
-        // TODO: log errors visible on the page
+        addFlash('danger', '<strong>Internal error of developer mode:</strong><p>Attempt to send something via web socket proxy but not connected.</p>');
         return;
     }
     var objAsString = JSON.stringify(obj);
