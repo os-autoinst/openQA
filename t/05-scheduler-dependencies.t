@@ -19,6 +19,7 @@
 BEGIN {
     unshift @INC, 'lib';
     $ENV{OPENQA_TEST_IPC} = 1;
+    $ENV{MOJO_LOG_LEVEL}  = 'debug';
 }
 
 use strict;
@@ -45,6 +46,8 @@ use Mojo::Util 'monkey_patch';
 
 my $sent = {};
 
+my $s_w = OpenQA::Scheduler::Scheduler::shuffle_workers(0);
+diag "Scheduler shuffle_workers: $s_w\n";
 sub schedule {
     my $id = OpenQA::Scheduler::Scheduler::schedule();
     _jobs_update_state([$schema->resultset('Jobs')->find($_->{job})], OpenQA::Jobs::Constants::RUNNING) for @$id;
@@ -57,8 +60,8 @@ monkey_patch 'OpenQA::Schema::Result::Jobs', ws_send => sub {
     _jobs_update_state([$self], OpenQA::Jobs::Constants::RUNNING);
 
     $hashref->{assigned_worker_id} = $worker->id;
-    $sent->{$worker->id} = {worker => $worker, job => $self};
-    $sent->{job}->{$self->id} = {worker => $worker, job => $self};
+    $sent->{$worker->id} = {worker => $worker, job => $self, jobhash => $hashref};
+    $sent->{job}->{$self->id} = {worker => $worker, job => $self, jobhash => $hashref};
     return {state => {msg_sent => 1}};
 };
 
@@ -164,13 +167,21 @@ my @jobs_in_expected_order = (
     $jobE => 'C and D are now running so we can start E. E is picked',
 );
 
+diag "A : " . $jobA->id;
+diag "B : " . $jobB->id;
+diag "C : " . $jobC->id;
+diag "D : " . $jobD->id;
+diag "E : " . $jobE->id;
+diag "F : " . $jobF->id;
+
 schedule();
 
 for my $i (3 .. 5) {
     my $job = $sent->{job}->{$jobs_in_expected_order[$i * 2]->id}->{job};
     ok(defined $job, $jobs_in_expected_order[$i * 2 + 1]) or die;
     $job = $job->to_hash;
-    is($job->{settings}->{NICVLAN}, 1, 'same vlan for whole group');
+    is($sent->{job}->{$jobs_in_expected_order[$i * 2]->id}->{jobhash}->{settings}->{NICVLAN},
+        1, 'same vlan for whole group');
 }
 schedule();
 
@@ -178,7 +189,8 @@ for my $i (1 .. 2) {
     my $job = $sent->{job}->{$jobs_in_expected_order[$i * 2]->id}->{job};
     ok(defined $job, $jobs_in_expected_order[$i * 2 + 1]) or die;
     $job = $job->to_hash;
-    is($job->{settings}->{NICVLAN}, 1, 'same vlan for whole group');
+    is($sent->{job}->{$jobs_in_expected_order[$i * 2]->id}->{jobhash}->{settings}->{NICVLAN},
+        1, 'same vlan for whole group');
     schedule();
 }
 schedule();
@@ -249,9 +261,9 @@ is($result, 'failed', 'job_set_done');
 $_->discard_changes for ($jobD, $jobE);
 # this should not change the result which is parallel_failed due to failed jobA
 $result = $jobD->done(result => 'incomplete');
-is($result, 'incomplete', 'job_set_done');
+is($result, 'incomplete', 'job_set_done on D');
 $result = $jobE->done(result => 'incomplete');
-is($result, 'incomplete', 'job_set_done');
+is($result, 'incomplete', 'job_set_done on E');
 
 $job = job_get_deps($jobA->id);
 is($job->{state},  "done",   "job_set_done changed state");
@@ -278,14 +290,18 @@ is($job->{state}, "running", "job_set_done changed state");
 # check MM API for children status - available only for running jobs
 my $worker = $schema->resultset("Workers")->find($worker_ids[1]);
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
+
 $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
-        $tx->req->headers->add('X-API-JobToken' => $worker->get_property('JOBTOKEN'));
+        $tx->req->headers->add('X-API-JobToken' => $sent->{job}->{$jobC->id}->{worker}->get_property('JOBTOKEN'));
     });
-$t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$jobF->id]);
-$t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => []);
-$t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id]);
+$t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$jobF->id])
+  ->or(sub { diag explain $t->tx->res->content });
+$t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => [])
+  ->or(sub { diag explain $t->tx->res->content });
+$t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id])
+  ->or(sub { diag explain $t->tx->res->content });
 
 # duplicate jobF, the full cluster is duplicated too
 my $id = $jobF->auto_duplicate;
@@ -426,11 +442,39 @@ $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$job
 
 # job_grab now should return jobs from clonned group
 # we already called job_set_done on jobE, so worker 6 is available
+
+diag "A2 : $jobA2";
+diag "B2 : $jobB2";
+diag "C2 : $jobC2";
+diag "D2 : $jobD2";
+diag "E2 : $jobE2";
+diag "E2 : $jobF2";
+
+# First is going A2 -> D2 -> E2
 schedule();
-ok($sent->{job}->{$jobB2}, " $jobB2 was assigned ") or die diag "$jobB2 wasn't scheduled";
+ok(exists $sent->{job}->{$jobA2}, " $jobA2 was assigned ") or die diag "A2 $jobA2 wasn't scheduled";
+$job = $sent->{job}->{$jobA2}->{jobhash};
+diag explain $job;
+is($job->{id}, $jobA2, "jobA2");    #lowest prio of jobs without parents
+#is($job->{settings}->{NICVLAN}, 2,      "different vlan") or die diag explain $job;
+
+# Then B2, but since we took all the 3 left workers for A2, D2, E2, creating another one
+# XXX: Weirdly enough,
+my $new_worker_ids = $c->_register($schema, 'host', "10", \%workercaps);
+$c->_register($schema, 'host', "11", \%workercaps);
+$c->_register($schema, 'host', "12", \%workercaps);
+$c->_register($schema, 'host', "13", \%workercaps);
+$c->_register($schema, 'host', "14", \%workercaps);
+
+schedule();
+schedule();
+schedule();
+
+ok(exists $sent->{job}->{$jobB2}, " $jobB2 was assigned ") or die diag "B2 $jobB2 wasn't scheduled";
 $job = $sent->{job}->{$jobB2}->{job}->to_hash;
-is($job->{id},                  $jobB2, "jobB2");            #lowest prio of jobs without parents
-is($job->{settings}->{NICVLAN}, 2,      "different vlan");
+is($job->{id}, $jobB2, "jobB2");    #lowest prio of jobs without parents
+
+is($job->{settings}->{NICVLAN}, 2, "different vlan") or die diag explain $job;
 
 
 ## check CHAINED dependency cloning

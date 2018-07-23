@@ -40,6 +40,9 @@ my $schema = OpenQA::Test::Database->new->create;    #(skip_fixtures => 1);
 
 my $sent = {};
 
+my $s_w = OpenQA::Scheduler::Scheduler::shuffle_workers(0);
+diag "Scheduler shuffle_workers: $s_w\n";
+
 sub schedule {
     my $id = OpenQA::Scheduler::Scheduler::schedule();
     do {
@@ -65,10 +68,6 @@ monkey_patch 'OpenQA::Schema::Result::Jobs', ws_send => sub {
 
 # create Test DBus bus and service for fake WebSockets call
 my $ws = OpenQA::WebSockets->new;
-sub purge_jobs {
-    map { diag "Deleting " . $_->id; $_->delete } $schema->resultset('Jobs')->all;
-}
-purge_jobs;    # Try to avoid fixtures or other jobs to confuse scheduler
 
 sub list_jobs {
     my %args = @_;
