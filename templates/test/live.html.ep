@@ -83,7 +83,7 @@
                     %>
                 </div>
                 <div class="col-sm-7">
-                    <input type="checkbox" id="developer-pause-on-timeout" checked="checked">
+                    <input type="checkbox" id="developer-pause-on-timeout">
                 </div>
             </div>
             <hr>
