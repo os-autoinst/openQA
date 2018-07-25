@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2017 SUSE LLC
+# Copyright (C) 2015-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -87,6 +87,7 @@ sub previous_jobs_ajax {
                 push(
                     @data,
                     {
+                        DT_RowId     => "job_" . $job->id,
                         id           => $job->id,
                         name         => $job->name,
                         deps         => $job->dependencies,

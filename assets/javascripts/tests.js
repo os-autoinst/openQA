@@ -232,13 +232,18 @@ function renderTestsList(jobs) {
 function setupTestButtons() {
     $(document).on("click", '.restart', function(event) {
         event.preventDefault();
-        var restart_link = $(this);
-        var link = $(this).parent('td');
-        $.post(restart_link.attr("href")).done( function( data, res, xhr ) {
-            link.append(' <a href="' + xhr.responseJSON.test_url + '" title="new test">(restarted)</a>');
+        $.post($(this).attr("href")).done( function( data, res, xhr ) {
+            var urls = xhr.responseJSON.test_url[0];
+            $.each( urls , function( key, value ) {
+                // Skip to mark the job that is not shown in current page
+                if (!$('#job_' + key).length) { return true };
+                var td = $('#job_' + key).closest("tr").children('td.test');
+                var restart_link = td.children('a.restart');
+                var i = restart_link.find('i').removeClass('fa-redo');
+                td.append(' <a href="' + value + '" title="new test">(restarted)</a>');
+                restart_link.replaceWith(i);
+            });
         });
-        var i = $(this).find('i').removeClass('fa-redo');
-        $(this).replaceWith(i);
     });
 
     $(document).on('click', '.cancel', function(event) {
@@ -254,9 +259,13 @@ function setupTestButtons() {
 function setupResultButtons() {
     $( '#restart-result' ).click( function(event) {
         event.preventDefault();
+        var testid = $(this).data('jobid');
         $.post($(this).attr("href")).done( function( data, res, xhr ) {
-            window.location.replace(xhr.responseJSON.test_url);
+            var new_url = xhr.responseJSON.test_url[0][testid];
+            window.location.replace(new_url);
         });
+        // Add this to prevent twice post by clicking #restart-result
+        return false;
     });
 }
 

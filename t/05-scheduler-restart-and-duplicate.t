@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2018 SUSE Linux Products GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -147,7 +147,7 @@ delete $job2->{clone_id};
 is_deeply($job1, $job2, "done job unchanged after restart");
 
 is(@ret, 1, "one job id returned");
-$job2 = job_get($ret[0]);
+$job2 = job_get($ret[0]->{99937});
 
 isnt($job1->{id}, $job2->{id}, "new job has a different id");
 is($job2->{state}, 'scheduled', "new job is scheduled");

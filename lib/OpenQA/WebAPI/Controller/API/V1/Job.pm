@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2018 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -565,10 +565,19 @@ sub restart {
 
     my $ipc = OpenQA::IPC->ipc;
     my $res = $ipc->resourceallocator('job_restart', $jobs);
+
+    my @urls;
     for (my $i = 0; $i < @$res; $i++) {
-        $self->emit_event('openqa_job_restart', {id => $jobs->[$i], result => $res->[$i]});
+        my $r = $res->[$i];
+        $self->emit_event('openqa_job_restart', {id => $jobs->[$i], result => $r});
+
+        my $url = {};
+        for my $k (keys %$r) {
+            my $u = $self->url_for('test', testid => $r->{$k});
+            $url->{$k} = $u;
+        }
+        push @urls, $url;
     }
-    my @urls = map { $self->url_for('test', testid => $_) } @$res;
     $self->render(json => {result => $res, test_url => \@urls});
 }
 

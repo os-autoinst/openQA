@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (c) 2015 SUSE LINUX GmbH, Nuernberg, Germany.
+# Copyright (c) 2015-2018 SUSE LINUX GmbH, Nuernberg, Germany.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -101,10 +101,11 @@ is(scalar @assets, 1,         'job still has only one asset assigned after grabb
 is($assets[0],     $theasset, 'the assigned asset is the same');
 
 # test asset is not assigned to scheduled jobs after duping
-my ($cloneA) = job_restart($jobA->id);
+my $jobA_id = $jobA->id;
+my ($cloneA) = job_restart($jobA_id);
 $cloneA = $schema->resultset('Jobs')->find(
     {
-        id => $cloneA,
+        id => $cloneA->{$jobA_id},
     });
 @assets = $cloneA->jobs_assets;
 @assets = map { $_->asset_id } @assets;

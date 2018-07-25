@@ -387,7 +387,9 @@ function saveNeedle(e) {
 }
 
 function restartJobSuccess(data, res, xhr) {
-  window.location.replace(xhr.responseJSON.test_url);
+  $.each(xhr.responseJSON.test_url[0], function(key, val) {
+    window.location.replace(val);
+  });
 }
 
 // restart-link in flash message
