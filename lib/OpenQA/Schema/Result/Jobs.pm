@@ -1523,8 +1523,21 @@ sub _find_network {
 
 sub release_networks {
     my ($self) = @_;
-    log_debug("Releasing networks for " . $self->id . " : " . join(",", map { $_->vlan } $self->networks->all));
-    $self->networks->delete;
+
+    my @cluster = keys %{$self->cluster_jobs};
+    return $self->networks->delete unless @cluster;
+
+    my $jobs = $self->result_source->resultset;
+    @cluster = map { $jobs->find($_) } @cluster;
+
+    do {
+        return log_debug("Cannot release networks of " . $self->id . " Job " . $_->id . " is still running")
+          if $_->state eq RUNNING;
+      }
+      for grep { $_->id ne $self->id } @cluster;
+
+    $_->networks->delete for @cluster;
+
 }
 
 sub needle_dir() {

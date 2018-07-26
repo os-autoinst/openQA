@@ -47,7 +47,6 @@ use Mojo::Util 'monkey_patch';
 my $sent = {};
 
 my $s_w = OpenQA::Scheduler::Scheduler::shuffle_workers(0);
-diag "Scheduler shuffle_workers: $s_w\n";
 sub schedule {
     my $id = OpenQA::Scheduler::Scheduler::schedule();
     _jobs_update_state([$schema->resultset('Jobs')->find($_->{job})], OpenQA::Jobs::Constants::RUNNING) for @$id;
@@ -167,12 +166,12 @@ my @jobs_in_expected_order = (
     $jobE => 'C and D are now running so we can start E. E is picked',
 );
 
-diag "A : " . $jobA->id;
-diag "B : " . $jobB->id;
-diag "C : " . $jobC->id;
-diag "D : " . $jobD->id;
-diag "E : " . $jobE->id;
-diag "F : " . $jobF->id;
+# diag "A : " . $jobA->id;
+# diag "B : " . $jobB->id;
+# diag "C : " . $jobC->id;
+# diag "D : " . $jobD->id;
+# diag "E : " . $jobE->id;
+# diag "F : " . $jobF->id;
 
 schedule();
 
@@ -443,20 +442,19 @@ $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$job
 # job_grab now should return jobs from clonned group
 # we already called job_set_done on jobE, so worker 6 is available
 
-diag "A2 : $jobA2";
-diag "B2 : $jobB2";
-diag "C2 : $jobC2";
-diag "D2 : $jobD2";
-diag "E2 : $jobE2";
-diag "E2 : $jobF2";
+# diag "A2 : $jobA2";
+# diag "B2 : $jobB2";
+# diag "C2 : $jobC2";
+# diag "D2 : $jobD2";
+# diag "E2 : $jobE2";
+# diag "F2 : $jobF2";
 
 # First is going A2 -> D2 -> E2
 schedule();
 ok(exists $sent->{job}->{$jobA2}, " $jobA2 was assigned ") or die diag "A2 $jobA2 wasn't scheduled";
 $job = $sent->{job}->{$jobA2}->{jobhash};
-diag explain $job;
 is($job->{id}, $jobA2, "jobA2");    #lowest prio of jobs without parents
-#is($job->{settings}->{NICVLAN}, 2,      "different vlan") or die diag explain $job;
+is($job->{settings}->{NICVLAN}, 2, "different vlan") or die diag explain $job;
 
 # Then B2, but since we took all the 3 left workers for A2, D2, E2, creating another one
 # XXX: Weirdly enough,
@@ -475,6 +473,24 @@ $job = $sent->{job}->{$jobB2}->{job}->to_hash;
 is($job->{id}, $jobB2, "jobB2");    #lowest prio of jobs without parents
 
 is($job->{settings}->{NICVLAN}, 2, "different vlan") or die diag explain $job;
+
+job_get($_)->done(result => 'passed') for ($jobA2, $jobB2, $jobC2, $jobD2, $jobE2, $jobF2);
+
+$jobA = _job_create(\%settingsA);
+$jobB = _job_create(\%settingsB);
+$jobC = _job_create(\%settingsC, [$jobB->id]);
+$jobD = _job_create(\%settingsD, [$jobA->id]);
+$jobE = _job_create(\%settingsE, $jobC->id . ',' . $jobD->id);    # test also IDs passed as comma separated string
+$jobF = _job_create(\%settingsF, [$jobC->id]);
+$c->_register($schema, 'host', "15", \%workercaps);
+$c->_register($schema, 'host', "16", \%workercaps);
+$c->_register($schema, 'host', "17", \%workercaps);
+$c->_register($schema, 'host', "18", \%workercaps);
+schedule();
+$job = $sent->{job}->{$jobD->id}->{job}->to_hash;
+is($job->{settings}->{NICVLAN}, 2, "reused vlan") or die diag explain $job;
+
+
 
 
 ## check CHAINED dependency cloning
