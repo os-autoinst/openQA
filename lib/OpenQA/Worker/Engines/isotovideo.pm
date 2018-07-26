@@ -95,6 +95,7 @@ sub cache_tests {
     exit($res);
 }
 
+# When changing something here, also take a look at OpenQA::Utils::asset_type_from_setting
 sub detect_asset_keys {
     my ($vars) = @_;
 
@@ -112,6 +113,9 @@ sub detect_asset_keys {
         my $hddkey = "HDD_$i";
         $res{$hddkey} = 'hdd' if $vars->{$hddkey};
     }
+
+    $res{UEFI_PFLASH_VARS} = 'hdd' if $vars->{UEFI_PFLASH_VARS};
+
     return \%res;
 }
 
