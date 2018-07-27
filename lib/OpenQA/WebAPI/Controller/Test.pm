@@ -116,8 +116,8 @@ sub list {
     #         0;
     #     }
     # }
-    my @scheduled = $scheduled->search({blocked_by_id => undef})->all;
-    @scheduled = sort { $b->t_created <=> $a->t_created || $b->id <=> $a->id } @scheduled;
+    #  my @scheduled = $scheduled->search({blocked_by_id => undef})->all;
+    my @scheduled = sort { $b->t_created <=> $a->t_created || $b->id <=> $a->id } $scheduled->all;
     $self->stash(scheduled => \@scheduled);
 }
 
