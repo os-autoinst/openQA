@@ -37,13 +37,13 @@ sub parse {
     foreach my $res (@{$decoded_json->{tests}}) {
         my $result = {};
         my $t_name = $res->{name};
-        $t_name =~ s/\[.*\]//g;
-        $t_name =~ s/:|\/|\[|\]/_/g;
+        $t_name =~ s/\[\w+:\/\/(\d+\.){3}\d+//;
+        $t_name =~ s/\]$//;
 
         $result->{result} = 'fail';
         $result->{result} = 'ok' if $res->{outcome} =~ /passed/i;
 
-        $t_name =~ s/[\/.]/_/g;    # dots in the filename confuse the web api routes
+        $t_name =~ s/[:\/\[\]\.]/_/g;    # dots in the filename confuse the web api routes
         $result->{name} = $t_name;
 
         my $details = {result => $result->{result}};

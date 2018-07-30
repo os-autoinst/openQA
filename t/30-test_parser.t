@@ -606,11 +606,14 @@ sub test_ltp_file {
 
 sub test_ipa_file {
     my $p = shift;
+    my %names;
     is $p->results->size, 15, 'Expected 15 results' or die diag explain $p->results;
     is $p->tests->size,   15, 'Expected 15 tests'   or die diag explain $p->results;
 
     $p->results->each(
         sub {
+            ok !exists($names{$_->name}), 'Test name ' . $_->name;
+            $names{$_->name} = 1;
             is $_->details->[0]->{_source}, 'parser';
             if ($_->name =~ /test_sles_repos|test_sles_guestregister|test_sles_smt_reg/) {
                 is $_->result, 'fail' or die;
