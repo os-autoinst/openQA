@@ -116,6 +116,7 @@ use lib "$FindBin::RealBin/../lib";
 use OpenQA::Client;
 
 my %options;
+my @global_settings = ('WORKER_CLASS');
 
 sub usage($) {
     my $r = shift;
@@ -286,9 +287,9 @@ sub clone_job {
         _GROUP_ID => '_GROUP',
     );
     delete $settings{NAME};    # usually autocreated
-    if ($depth == 0 or $options{'parental-inheritance'}) {
-        for my $arg (@ARGV) {
-            if ($arg =~ /([A-Z0-9_]+)=(.*)/) {
+    for my $arg (@ARGV) {
+        if ($arg =~ /([A-Z0-9_]+)=(.*)/) {
+            if ((grep /^$1$/, @global_settings) or $depth == 0 or $options{'parental-inheritance'}) {
                 if (defined $2) {
                     $settings{$1} = $2;
                     if (my $override = $overrides{$1}) {
@@ -299,9 +300,9 @@ sub clone_job {
                     delete $settings{$1};
                 }
             }
-            else {
-                warn "arg $arg doesn't match";
-            }
+        }
+        else {
+            warn "arg $arg doesn't match";
         }
     }
     print JSON->new->pretty->encode(\%settings) if ($options{verbose});
