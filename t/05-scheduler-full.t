@@ -24,15 +24,9 @@ BEGIN {
     $ENV{OPENQA_BASEDIR} = path(tempdir, 't', 'scheduler');
     $ENV{OPENQA_CONFIG} = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
     # Since tests depends on timing, we require the scheduler to be fixed in its actions.
-    $ENV{OPENQA_SCHEDULER_TIMESLOT}               = 1000;
-    $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION}     = 10;
-    $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS}      = 2;
-    $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL}     = 1;
-    $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}       = 2000;
-    $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}            = 4000;
-    $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} = 38000;
-    $ENV{OPENQA_SCHEDULER_WAKEUP_ON_REQUEST}      = 0;
-    $ENV{FULLSTACK}                               = 1 if $ENV{SCHEDULER_FULLSTACK};
+    $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 10;
+    $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 2000;
+    $ENV{FULLSTACK}                           = 1 if $ENV{SCHEDULER_FULLSTACK};
     path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
     path($FindBin::Bin, "data")->child("database.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("database.ini"));
     path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
@@ -351,7 +345,6 @@ sub remove_timers {
 
     $reactor->{timeouts} = [undef];                                # This is Net::DBus default...
     delete $reactor->{timer}->{no_actions_reset};
-    delete $reactor->{timer}->{capture_loop_avoidance};
 }
 
 sub trigger_capture_event_loop {
