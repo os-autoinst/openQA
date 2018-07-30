@@ -19,7 +19,6 @@
 BEGIN {
     unshift @INC, 'lib';
     $ENV{OPENQA_TEST_IPC} = 1;
-    $ENV{MOJO_LOG_LEVEL}  = 'debug';
 }
 
 use strict;
