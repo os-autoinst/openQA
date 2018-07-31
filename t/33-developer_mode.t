@@ -233,6 +233,9 @@ subtest 'wait until developer console becomes available' => sub {
     );
 };
 
+my $first_tab = $driver->get_current_window_handle();
+my $second_tab;
+
 subtest 'pause at assert_screen timeout' => sub {
     # send command to pause on assert_screen timeout (hopefully the test wasn't so fast that it already failed)
     my $command_input = $driver->find_element('#msg');
@@ -264,11 +267,41 @@ subtest 'pause at assert_screen timeout' => sub {
         'paused after assert_screen timeout (again)'
     );
 
-    # rename needle back so assert_screen will succeed
-    for my $ext (qw(.json .png)) {
-        ok(rename($on_prompt_needle_renamed . $ext => $on_prompt_needle . $ext), 'can rename back needle ' . $ext);
+    # open needle editor in 2nd tab
+    my $needle_editor_url = '/tests/1/edit';
+    $second_tab = open_new_tab($needle_editor_url);
+    $driver->switch_to_window($second_tab);
+    $driver->title_is('openQA: Needle Editor');
+    # give uploading the results 15 seconds
+    my $content        = $driver->find_element_by_id('content')->get_text();
+    my $seconds_waited = 0;
+    while ($content =~ qr/upload is still in progress/) {
+        if ($seconds_waited > 15) {
+            fail('needle editor not accessible after 15 seconds');
+            return;
+        }
+        sleep 1;
+        $driver->get($needle_editor_url);
+        $content = $driver->find_element_by_id('content')->get_text();
+        $seconds_waited += 1;
     }
+    # check whether screenshot is present
+    my $screenshot_url = $driver->execute_script('return window.nEditor.bgImage.src;');
+    like($screenshot_url, qr/.*\/boot-[0-9]+\.png/, 'screenshot present');
+    $driver->get($screenshot_url);
+    is($driver->execute_script('return document.contentType;'), 'image/png', 'URL actually refers to an image');
 };
+
+# rename needle back so assert_screen will succeed
+for my $ext (qw(.json .png)) {
+    ok(rename($on_prompt_needle_renamed . $ext => $on_prompt_needle . $ext), 'can rename back needle ' . $ext);
+}
+
+# ensure we're back on the first tab
+if ($driver->get_current_window_handle() ne $first_tab) {
+    $driver->close();
+    $driver->switch_to_window($first_tab);
+}
 
 subtest 'pause at certain test' => sub {
     # send command to pause at shutdown (hopefully the test wasn't so fast it is already in shutdown)
@@ -367,8 +400,7 @@ subtest 'developer session locked for other developers' => sub {
         'closed');
 };
 
-my $first_tab  = $driver->get_current_window_handle();
-my $second_tab = open_new_tab('/login?user=Demo');
+$second_tab = open_new_tab('/login?user=Demo');
 
 subtest 'connect with 2 clients at the same time (use case: developer opens 2nd tab)' => sub {
     $driver->switch_to_window($second_tab);
