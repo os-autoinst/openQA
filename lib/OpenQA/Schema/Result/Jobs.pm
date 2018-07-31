@@ -26,7 +26,7 @@ use db_helpers;
 use OpenQA::Utils (
     qw(log_debug log_info log_warning log_error),
     qw(parse_assets_from_settings locate_asset),
-    qw(send_job_to_worker read_test_modules)
+    qw(send_job_to_worker read_test_modules find_bugref)
 );
 use OpenQA::Jobs::Constants;
 use File::Basename qw(basename dirname);
@@ -1559,17 +1559,24 @@ sub _failure_reason {
 
     my @failed_modules;
     my $modules = $self->modules;
+
     while (my $m = $modules->next) {
         if ($m->result eq FAILED || $m->result eq SOFTFAILED) {
+            # Look for serial failures which have bug reference
+            my @bugrefs = map { find_bugref($_->{title}) || '' } @{$m->details};
+            # If bug reference is in title, put it as a failure reason, otherwise use module name
+            if (my $failure_reason = join('', @bugrefs)) {
+                return $failure_reason;
+            }
             push(@failed_modules, $m->name . ':' . $m->result);
         }
     }
+
     if (@failed_modules) {
         return join(',', @failed_modules) || $self->result;
     }
-    else {
-        return 'GOOD';
-    }
+    # No failed modules found
+    return 'GOOD';
 }
 
 sub _carry_over_candidate {
