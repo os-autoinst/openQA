@@ -102,6 +102,11 @@ sub cache_assets {
     for my $this_asset (sort keys %$assetkeys) {
         log_debug("Found $this_asset, caching " . $vars->{$this_asset});
         my $asset = $self->get_asset($job, $assetkeys->{$this_asset}, $vars->{$this_asset});
+        if ($this_asset eq 'UEFI_PFLASH_VARS' && !defined $asset) {
+            log_error("Can't download $vars->{$this_asset}");
+            $vars->{$this_asset} = catdir(getcwd, basename($vars->{$this_asset}));
+            next;
+        }
         return {error => "Can't download $vars->{$this_asset}"} unless $asset;
         unlink basename($asset) if -l basename($asset);
         symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";
