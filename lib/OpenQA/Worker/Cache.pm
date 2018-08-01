@@ -104,7 +104,9 @@ sub cache_assets {
         my $asset = $self->get_asset($job, $assetkeys->{$this_asset}, $vars->{$this_asset});
         if ($this_asset eq 'UEFI_PFLASH_VARS' && !defined $asset) {
             log_error("Can't download $vars->{$this_asset}");
-            $vars->{$this_asset} = catdir(getcwd, basename($vars->{$this_asset}));
+            # assume that if we have a full path, that's what we should use
+            $vars->{$this_asset} = $vars->{$this_asset} if (-e $vars->{$this_asset});
+            # don't kill the job if the asset is not found
             next;
         }
         return {error => "Can't download $vars->{$this_asset}"} unless $asset;
