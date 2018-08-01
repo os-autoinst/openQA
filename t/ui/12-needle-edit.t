@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2014-2017 SUSE LLC
+# Copyright (C) 2014-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ use OpenQA::Test::Case;
 use Cwd 'abs_path';
 use Cpanel::JSON::XS 'decode_json';
 use File::Path qw(make_path remove_tree);
+use Date::Format 'time2str';
 use POSIX 'strftime';
 
 use OpenQA::WebSockets;
@@ -493,6 +494,38 @@ subtest 'show needle editor for screenshot (without any tags)' => sub {
     wait_for_ajax();
     is(OpenQA::Test::Case::trim_whitespace($driver->find_element_by_id('image_select')->get_text()),
         'Screenshot', 'images taken from screenshot');
+};
+
+subtest 'error handling when opening needle editor for running test' => sub {
+    my $t = Test::Mojo->new('OpenQA::WebAPI');
+
+    subtest 'no worker assigned' => sub {
+        $t->get_ok('/tests/99946/edit')->status_is(404);
+        $t->text_is(title => 'openQA: Needle Editor', 'title still the same');
+        $t->text_like(
+            '#content p',
+qr/The test opensuse-13\.1-DVD-i586-Build0091-textmode\@32bit has no worker assigned so the page \"Needle Editor\" is not available\./,
+            'error message'
+        );
+
+        # test error handling for other 'Running.pm' routes as well
+        $t->get_ok('/tests/99946/livelog')->status_is(404);
+        $t->text_is(title => 'openQA: Page not found', 'generic title present');
+        $t->text_like(
+            '#content p',
+qr/The test opensuse-13\.1-DVD-i586-Build0091-textmode\@32bit has no worker assigned so this route is not available\./,
+            'error message'
+        );
+    };
+
+    subtest 'no running module' => sub {
+        $t->get_ok('/tests/99963/edit')->status_is(404);
+        $t->text_like(
+            '#content p',
+qr/The test has no currently running module so opening the needle editor is not possible\. Likely results have not been uploaded yet so reloading the page might help\./,
+            'error message'
+        );
+    };
 };
 
 kill_driver();

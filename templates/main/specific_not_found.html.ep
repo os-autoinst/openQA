@@ -1,0 +1,11 @@
+% layout 'bootstrap';
+% title $title;
+
+%= include 'layouts/info'
+
+<h2>
+    %= $title
+</h2>
+<p>
+    %= $error_message
+</p>

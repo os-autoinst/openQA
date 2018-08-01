@@ -186,7 +186,7 @@ javascript_console_has_no_warnings_or_errors;
 
 my $os_autoinst_path = '../os-autoinst';
 my $isotovideo_path  = $os_autoinst_path . '/isotovideo';
-my $needle_dir = $sharedir . '/tests/tinycore/needles';
+my $needle_dir       = $sharedir . '/tests/tinycore/needles';
 
 # rename one of the required needle so a certain assert_screen will timeout later
 mkdir($needle_dir . '/../disabled_needles');
