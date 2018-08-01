@@ -46,7 +46,55 @@ $test_case->init_data;
 
 use OpenQA::SeleniumTest;
 
-my $driver = call_driver();
+sub create_running_job_for_needle_editor {
+    my ($schema) = @_;
+
+    $schema->resultset('Jobs')->create(
+        {
+            id          => 99980,
+            result      => 'none',
+            state       => 'running',
+            priority    => 35,
+            t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),
+            t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+            t_finished  => undef,
+            TEST        => 'kde',
+            BUILD       => '0091',
+            DISTRI      => 'opensuse',
+            FLAVOR      => 'DVD',
+            MACHINE     => '64bit',
+            VERSION     => '13.1',
+            backend     => 'qemu',
+            result_dir  => '00099963-opensuse-13.1-DVD-x86_64-Build0091-kde',
+            jobs_assets => [{asset_id => 2},],
+            modules     => [
+                {
+                    script   => 'tests/installation/installation_overview.pm',
+                    category => 'installation',
+                    name     => 'installation_overview',
+                    result   => 'passed',
+                },
+                {
+                    script   => 'tests/installation/installation_mode.pm',
+                    category => 'installation',
+                    name     => 'installation_mode',
+                    result   => 'running',
+                },
+            ]});
+    $schema->resultset('Workers')->create(
+        {
+            host       => 'dummy',
+            instance   => 1,
+            properties => [{key => 'JOBTOKEN', value => 'token99980'}],
+            job_id     => 99980,
+        });
+}
+
+sub schema_hook {
+    create_running_job_for_needle_editor(OpenQA::Test::Database->new->create);
+}
+
+my $driver = call_driver(\&schema_hook);
 unless ($driver) {
     plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
@@ -494,6 +542,23 @@ subtest 'show needle editor for screenshot (without any tags)' => sub {
     wait_for_ajax();
     is(OpenQA::Test::Case::trim_whitespace($driver->find_element_by_id('image_select')->get_text()),
         'Screenshot', 'images taken from screenshot');
+};
+
+subtest 'open needle editor for running test' => sub {
+    my $t = Test::Mojo->new('OpenQA::WebAPI');
+    create_running_job_for_needle_editor($t->app->schema);
+    $t->ua->max_redirects(1);
+    warnings { $t->get_ok('/tests/99980/edit') };
+    note(
+'ignoring warning "DateTime objects passed to search() are not supported properly" at lib/OpenQA/WebAPI/Controller/Step.pm line 211'
+    );
+    $t->status_is(200);
+    $t->text_is(title => 'openQA: Needle Editor', 'needle editor shown for running test');
+    is(
+        $t->tx->req->url->path->to_string,
+        '/tests/99980/modules/installation_mode/steps/2/edit',
+        'redirected to correct module/step'
+    );
 };
 
 subtest 'error handling when opening needle editor for running test' => sub {
