@@ -114,9 +114,9 @@ use JSON;
 use FindBin;
 use lib "$FindBin::RealBin/../lib";
 use OpenQA::Client;
+use OpenQA::Script;
 
 my %options;
-my @global_settings = ('WORKER_CLASS');
 
 sub usage($) {
     my $r = shift;
@@ -282,29 +282,8 @@ sub clone_job {
     if (my $group_id = $job->{group_id}) {
         $settings{_GROUP_ID} = $group_id;
     }
-    my %overrides = (
-        _GROUP    => '_GROUP_ID',
-        _GROUP_ID => '_GROUP',
-    );
-    delete $settings{NAME};    # usually autocreated
-    for my $arg (@ARGV) {
-        if ($arg =~ /([A-Z0-9_]+)=(.*)/) {
-            if ((grep /^$1$/, @global_settings) or $depth == 0 or $options{'parental-inheritance'}) {
-                if (defined $2) {
-                    $settings{$1} = $2;
-                    if (my $override = $overrides{$1}) {
-                        delete $settings{$override};
-                    }
-                }
-                else {
-                    delete $settings{$1};
-                }
-            }
-        }
-        else {
-            warn "arg $arg doesn't match";
-        }
-    }
+    clone_job_apply_settings(\@ARGV, $depth, \%settings, \%options);
+
     print JSON->new->pretty->encode(\%settings) if ($options{verbose});
     $url->query(%settings);
     my $tx = $local->max_redirects(3)->post($url);
