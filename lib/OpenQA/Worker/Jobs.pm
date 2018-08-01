@@ -877,8 +877,8 @@ sub read_result_file {
         my $test   = $test_order->[0]->{name};
         my $result = read_module_result($test);
 
-        my $is_last_test_to_be_uploaded = $remaining_test_count eq 1 || $test eq $upload_up_to;
-        my $test_not_running            = $test ne $current_running;
+        my $is_last_test_to_be_uploaded = $remaining_test_count eq 1    || $test eq $upload_up_to;
+        my $test_not_running            = !$current_running             || $test ne $current_running;
         my $test_is_completed           = !$is_last_test_to_be_uploaded || $test_not_running;
         if ($test_is_completed) {
             # remove completed tests from @$test_order so we don't upload those results twice
