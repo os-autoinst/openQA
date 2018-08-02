@@ -378,6 +378,7 @@ my $second_tab = open_new_tab('/login?user=Demo');
 
 subtest 'connect with 2 clients at the same time (use case: developer opens 2nd tab)' => sub {
     $driver->switch_to_window($second_tab);
+    $driver->get($developer_console_url);
 
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
         $driver,
