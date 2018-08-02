@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2016-2017 SUSE LLC
+# Copyright (C) 2016-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -96,12 +96,6 @@ unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
 }
 
 # don't tests basics here again, this is already done in t/22-dashboard.t and t/ui/14-dashboard.t
-
-sub disable_bootstrap_animations {
-    $driver->execute_script(
-"document.styleSheets[0].addRule('.collapsing', '-webkit-transition: none !important; transition: none !important;', 1);"
-    );
-}
 
 $driver->title_is('openQA', 'on main page');
 my $baseurl = $driver->get_current_url();
