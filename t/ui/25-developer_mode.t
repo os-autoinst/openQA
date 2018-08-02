@@ -373,12 +373,35 @@ subtest 'process state changes from os-autoinst' => sub {
         $driver->execute_script('handleMessageVisWebsocketConnection(developerMode.wsConnection, { });');
         assert_flash_messages(any => [], 'messages with no data are ignored');
 
+        my $handle_error
+          = 'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"error\",\"what\":\"some error\"}" });';
+        my $handle_another_error
+          = 'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"error\",\"what\":\"another error\"}" });';
         $driver->execute_script(
             'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "invalid { json" });');
-        $driver->execute_script(
-'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"error\",\"what\":\"some error\"}" });'
+        $driver->execute_script($handle_error);
+        $driver->execute_script($handle_error);
+        $driver->execute_script($handle_another_error);
+        assert_flash_messages(
+            danger => [qr/Unable to parse/, qr/some error/, qr/another error/],
+            'errors shown via flash messages, same error not shown twice'
         );
-        assert_flash_messages(danger => [qr/Unable to parse/, qr/some error/], 'errors shown via flash messages');
+
+        subtest 'dismissed message appears again' => sub {
+            # click "X" button of 2nd flash message
+            $driver->execute_script('$(".alert-danger").removeClass("fade")');    # prevent delay due to animation
+            $driver->execute_script('return $($(".alert-danger")[1]).find("button").click();');
+
+            assert_flash_messages(
+                danger => [qr/Unable to parse/, qr/another error/],
+                'flash message "some error" dismissed'
+            );
+            $driver->execute_script($handle_error);
+            assert_flash_messages(
+                danger => [qr/Unable to parse/, qr/another error/, qr/some error/],
+                'unique flash message appears again after dismissed'
+            );
+        };
     };
 };
 

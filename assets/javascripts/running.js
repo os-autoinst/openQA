@@ -585,7 +585,8 @@ function handleMessageVisWebsocketConnection(wsConnection, msg) {
         dataObj = JSON.parse(msg.data);
     } catch (ex) {
         console.log("Unable to parse JSON from ws proxy: " + msg.data);
-        addFlash('danger', '<strong>Unable to parse reply from livehandler daemon (responsible for developer mode).</strong>');
+        addUniqueFlash('danger', 'unable_to_pare_livehandler_reply',
+                       '<strong>Unable to parse reply from livehandler daemon (responsible for developer mode).</strong>');
         return;
     }
 
@@ -696,7 +697,8 @@ function processWsCommand(obj) {
     case "error":
         // handle errors
         console.log("Error from ws proxy: " + what);
-        addFlash('danger', '<strong>Error from livehandler daemon (responsible for developer mode):</strong><p>' + what + '</p>');
+        addUniqueFlash('danger', 'ws_proxy_error-' + what,
+                       '<strong>Error from livehandler daemon (responsible for developer mode):</strong><p>' + what + '</p>');
         break;
     case "info":
         switch(what) {
@@ -740,7 +742,8 @@ function processWsCommand(obj) {
 function sendWsCommand(obj) {
     if (!developerMode.wsConnection) {
         console.log("Attempt to send something via ws proxy but not connected.");
-        addFlash('danger', '<strong>Internal error of developer mode:</strong><p>Attempt to send something via web socket proxy but not connected.</p>');
+        addUniqueFlash('danger', 'try_to_send_but_not_connected',
+                       '<strong>Internal error of developer mode:</strong><p>Attempt to send something via web socket proxy but not connected.</p>');
         return;
     }
     var objAsString = JSON.stringify(obj);

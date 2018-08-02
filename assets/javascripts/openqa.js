@@ -39,6 +39,24 @@ function addFlash(status, text) {
     div.append($('<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'));
     div.addClass('alert-' + status);
     flash.append(div);
+    return div;
+}
+
+function addUniqueFlash(status, id, text) {
+    // add hash to store present flash messages
+    if (!window.uniqueFlashMessages) {
+        window.uniqueFlashMessages = {};
+    }
+    // skip if flash message already present
+    if (window.uniqueFlashMessages[id]) {
+        return;
+    }
+
+    var msgElement = addFlash(status, text);
+    window.uniqueFlashMessages[id] = msgElement;
+    msgElement.on('closed.bs.alert', function () {
+        delete window.uniqueFlashMessages[id];
+    });
 }
 
 function toggleChildGroups(link) {
