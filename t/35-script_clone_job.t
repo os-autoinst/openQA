@@ -57,4 +57,13 @@ subtest 'clone job apply settings tests' => sub {
     is_deeply(\%parent_settings, \%test_settings, 'cloned parent job only take global setting');
 };
 
+subtest '_GROUP and _GROUP_ID override each other' => sub {
+    my %settings = ();
+    clone_job_apply_settings([qw(_GROUP=foo _GROUP_ID=bar)], 0, \%settings, \%options);
+    is_deeply(\%settings, {_GROUP_ID => 'bar'}, '_GROUP_ID overrides _GROUP');
+    %settings = ();
+    clone_job_apply_settings([qw(_GROUP_ID=bar _GROUP=foo)], 0, \%settings, \%options);
+    is_deeply(\%settings, {_GROUP => 'foo'}, '_GROUP overrides _GROUP_ID');
+};
+
 done_testing();
