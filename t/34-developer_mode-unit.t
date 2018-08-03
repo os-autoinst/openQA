@@ -419,6 +419,13 @@ subtest 'URLs for command server and livehandler' => sub {
         'URL for job with assigned worker'
     );
 
+    $worker->set_property(WORKER_HOSTNAME => 'remotehost.qa');
+    is(
+        OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
+        'ws://remotehost.qa:20013/token99961/ws',
+        'URL for job with assigned worker and WORKER_HOSTNAME property'
+    );
+
     is(determine_web_ui_web_socket_url(99961), 'liveviewhandler/tests/99961/developer/ws-proxy', 'URL for livehandler');
 
     is(
@@ -485,7 +492,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
         $t_livehandler->json_message_is(
             {
                 type => 'info',
-                what => 'connecting to os-autoinst command server at ws://remotehost:20013/token99961/ws',
+                what => 'connecting to os-autoinst command server at ws://remotehost.qa:20013/token99961/ws',
                 data => undef,
             });
         $t_livehandler->message_ok('another message received');
@@ -517,7 +524,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
         $t_livehandler->json_message_is(
             {
                 type => 'info',
-                what => 'connecting to os-autoinst command server at ws://remotehost:20013/token99961/ws',
+                what => 'connecting to os-autoinst command server at ws://remotehost.qa:20013/token99961/ws',
                 data => undef,
             });
         $t_livehandler->message_ok('another message received');
@@ -525,7 +532,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             {
                 type => 'info',
                 what =>
-                  'reusing previous connection to os-autoinst command server at ws://remotehost:20013/token99961/ws',
+                  'reusing previous connection to os-autoinst command server at ws://remotehost.qa:20013/token99961/ws',
                 data => undef,
             });
 
@@ -575,7 +582,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
         $t_livehandler->json_message_is(
             {
                 type => 'info',
-                what => 'connecting to os-autoinst command server at ws://remotehost:20013/token99961/ws',
+                what => 'connecting to os-autoinst command server at ws://remotehost.qa:20013/token99961/ws',
                 data => undef,
             });
         $t_livehandler->message_ok('another message received');
@@ -583,7 +590,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             {
                 type => 'info',
                 what =>
-                  'reusing previous connection to os-autoinst command server at ws://remotehost:20013/token99961/ws',
+                  'reusing previous connection to os-autoinst command server at ws://remotehost.qa:20013/token99961/ws',
                 data => undef,
             });
 
