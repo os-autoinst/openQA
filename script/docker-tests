@@ -28,7 +28,11 @@ function run_fullstack_test {
 
     eval $(dbus-launch --sh-syntax)
     export PERL5OPT="$PERL5OPT $HARNESS_PERL_SWITCHES"
-    perl "$@" || touch tests_failed
+    if ! perl "$@"; then
+        touch tests_failed
+        find '/tmp' -path '*/t/full-stack.d/openqa/testresults/*/autoinst-log.txt' \
+            -exec echo 'contents of' {} \; -exec cat {} \; 2> /dev/null > '/opt/openqa/autoinst-log.txt'
+    fi
 }
 
 if [ "x$FULLSTACK" = x1 ]; then
