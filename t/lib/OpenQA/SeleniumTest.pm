@@ -9,8 +9,9 @@ require Mojolicious::Commands;
 require OpenQA::Test::Database;
 
 our @EXPORT = qw($drivermissing check_driver_modules start_driver
-  call_driver kill_driver wait_for_ajax open_new_tab mock_js_functions
-  element_visible element_hidden javascript_console_has_no_warnings_or_errors);
+  call_driver kill_driver wait_for_ajax disable_bootstrap_animations
+  open_new_tab mock_js_functions element_visible element_hidden
+  javascript_console_has_no_warnings_or_errors);
 
 use Data::Dump 'pp';
 use Test::More;
@@ -174,6 +175,16 @@ sub wait_for_ajax {
     my $check_interval = _default_check_interval(shift);
     while (!$_driver->execute_script("return jQuery.active == 0")) {
         sleep $check_interval;
+    }
+}
+
+sub disable_bootstrap_animations {
+    my @rules = (
+        "'.fade', '-webkit-transition: none !important; transition: none !important;'",
+        "'.collapsing', '-webkit-transition: none !important; transition: none !important;'",
+    );
+    for my $rule (@rules) {
+        $_driver->execute_script("document.styleSheets[0].addRule($rule, 1);");
     }
 }
 

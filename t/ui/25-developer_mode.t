@@ -85,6 +85,25 @@ sub assert_sent_commands {
     is_deeply($sent_cmds, $expected, $test_name);
 }
 
+# checks whether the flash messages of the specified kind are present
+sub assert_flash_messages {
+    my ($kind, $expected_messages, $test_name) = @_;
+    my $kind_selector = $kind eq 'any' ? 'alert' : '.alert-' . $kind;
+
+    my @flash_messages = $driver->find_elements("#flash-messages $kind_selector > span");
+    is(
+        scalar @flash_messages,
+        scalar @$expected_messages,
+        "correct number of $kind flash messages present ($test_name)"
+    );
+
+    my $index = 0;
+    for my $expected_message (@$expected_messages) {
+        like($flash_messages[$index]->get_text(), $expected_message, $test_name,) if ($expected_message);
+        $index += 1;
+    }
+}
+
 # clicks on the header of the developer panel
 sub click_header {
     $driver->find_element('#developer-panel .card-header')->click();
@@ -308,6 +327,83 @@ subtest 'start developer session' => sub {
     };
 };
 
+subtest 'process state changes from os-autoinst' => sub {
+    fake_state(
+        developerMode => {
+            currentModule   => '"installation-welcome"',
+            isPaused        => '"some reason"',
+            moduleToPauseAt => 'undefined',
+        });
+
+    # in contrast to the other subtests (which just fake the state via fake_state helper) this subtest will
+    # actually test processing of commands received via the websocket connection
+
+    subtest 'message not from current connection ignored' => sub {
+        $driver->execute_script(
+'handleMessageVisWebsocketConnection("foo", { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_test_full_name\":\"some test\",\"paused\":true}}" });'
+        );
+        element_visible(
+            '#developer-panel .card-header',
+            qr/paused at module: installation-welcome/,
+            qr/current module/,
+        );
+    };
+
+    subtest 'testname and paused state updated' => sub {
+        $driver->execute_script(
+'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"resume_test_execution\":\"foo\"}}" });'
+        );
+        element_visible(
+            '#developer-panel .card-header',
+            qr/current module: installation-welcome/,
+            qr/paused at module/,
+        );
+
+        $driver->execute_script(
+'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_test_full_name\":\"some test\",\"paused\":true}}" });'
+        );
+        element_visible('#developer-panel .card-header', qr/paused at module: some test/, qr/current module/,);
+    };
+
+    subtest 'error handling, flash messages' => sub {
+        $driver->execute_script(
+            'handleMessageVisWebsocketConnection("foo", { data: "{\"type\":\"error\",\"what\":\"some error\"}" });');
+        assert_flash_messages(any => [], 'messsages not from current connection ignored');
+
+        $driver->execute_script('handleMessageVisWebsocketConnection(developerMode.wsConnection, { });');
+        assert_flash_messages(any => [], 'messages with no data are ignored');
+
+        my $handle_error
+          = 'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"error\",\"what\":\"some error\"}" });';
+        my $handle_another_error
+          = 'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"error\",\"what\":\"another error\"}" });';
+        $driver->execute_script(
+            'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "invalid { json" });');
+        $driver->execute_script($handle_error);
+        $driver->execute_script($handle_error);
+        $driver->execute_script($handle_another_error);
+        assert_flash_messages(
+            danger => [qr/Unable to parse/, qr/some error/, qr/another error/],
+            'errors shown via flash messages, same error not shown twice'
+        );
+
+        subtest 'dismissed message appears again' => sub {
+            # click "X" button of 2nd flash message
+            $driver->execute_script('$(".alert-danger").removeClass("fade")');    # prevent delay due to animation
+            $driver->execute_script('return $($(".alert-danger")[1]).find("button").click();');
+
+            assert_flash_messages(
+                danger => [qr/Unable to parse/, qr/another error/],
+                'flash message "some error" dismissed'
+            );
+            $driver->execute_script($handle_error);
+            assert_flash_messages(
+                danger => [qr/Unable to parse/, qr/another error/, qr/some error/],
+                'unique flash message appears again after dismissed'
+            );
+        };
+    };
+};
 
 kill_driver();
 done_testing();

@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2014-2017 SUSE LLC
+# Copyright (C) 2014-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,12 +54,6 @@ unless ($driver) {
     exit(0);
 }
 my $baseurl = $driver->get_current_url;
-
-sub disable_bootstrap_fade_animation {
-    $driver->execute_script(
-"document.styleSheets[0].addRule('.fade', '-webkit-transition: none !important; transition: none !important;', 1);"
-    );
-}
 
 # returns the contents of the candidates combo box as hash (key: tag, value: array of needle names)
 sub find_candidate_needles {
@@ -120,7 +114,7 @@ like(
 is($driver->find_element('.cm-comment')->get_text(), '#!/usr/bin/perl -w', "we have a perl comment");
 
 $driver->get("/tests/99937");
-disable_bootstrap_fade_animation;
+disable_bootstrap_animations;
 sub current_tab {
     return $driver->find_element('.nav.nav-tabs .active')->get_text;
 }
@@ -324,7 +318,7 @@ sub test_with_error {
     # check whether candidates are displayed as expected
     my $random_number = int(rand(100000));
     $driver->get("/tests/99946?prevent_caching=$random_number#step/yast2_lan/1");
-    disable_bootstrap_fade_animation;
+    disable_bootstrap_animations;
     wait_for_ajax;
     is_deeply(find_candidate_needles, $expect, $test_name // 'candidates displayed as expected');
 }
