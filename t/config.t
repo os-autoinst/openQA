@@ -24,6 +24,7 @@ use Test::More;
 use Test::Warnings;
 use Mojolicious;
 use OpenQA::Setup;
+use OpenQA::Schema::JobGroupDefaults;
 
 subtest 'Test configuration default modes' => sub {
     local $ENV{OPENQA_CONFIG} = undef;
@@ -67,7 +68,15 @@ subtest 'Test configuration default modes' => sub {
             url               => 'amqp://guest:guest@localhost:5672/',
             exchange          => 'pubsub',
             topic_prefix      => 'suse',
-        }};
+        },
+        default_group_limits => {
+            asset_size_limit                  => OpenQA::Schema::JobGroupDefaults::SIZE_LIMIT_GB,
+            log_storage_duration              => OpenQA::Schema::JobGroupDefaults::KEEP_LOGS_IN_DAYS,
+            important_log_storage_duration    => OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS,
+            result_storage_duration           => OpenQA::Schema::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
+            important_result_storage_duration => OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
+        },
+    };
 
     # Test configuration generation with "test" mode
     $test_config->{_openid_secret} = $config->{_openid_secret};

@@ -90,44 +90,42 @@ __PACKAGE__->belongs_to(
     parent => 'OpenQA::Schema::Result::JobGroupParents',
     'parent_id', {join_type => 'left', on_delete => 'SET NULL'});
 
+sub _get_column_or_default {
+    my ($self, $column, $setting) = @_;
+
+    if (defined(my $own_value = $self->get_column($column))) {
+        return $own_value;
+    }
+    if (defined(my $parent = $self->parent)) {
+        my $parent_column = 'default_' . $column;
+        return $self->parent->$parent_column();
+    }
+    return $OpenQA::Utils::app->config->{default_group_limits}->{$setting};
+}
+
 around 'size_limit_gb' => sub {
     my ($orig, $self) = @_;
-    return $self->get_column('size_limit_gb')
-      // ($self->parent ? $self->parent->default_size_limit_gb : OpenQA::Schema::JobGroupDefaults::SIZE_LIMIT_GB);
+    return $self->_get_column_or_default('size_limit_gb', 'asset_size_limit');
 };
 
 around 'keep_logs_in_days' => sub {
     my ($orig, $self) = @_;
-    return $self->get_column('keep_logs_in_days')
-      // (
-        $self->parent ? $self->parent->default_keep_logs_in_days : OpenQA::Schema::JobGroupDefaults::KEEP_LOGS_IN_DAYS);
+    return $self->_get_column_or_default('keep_logs_in_days', 'log_storage_duration');
 };
 
 around 'keep_important_logs_in_days' => sub {
     my ($orig, $self) = @_;
-    return $self->get_column('keep_important_logs_in_days') // (
-        $self->parent ?
-          $self->parent->default_keep_important_logs_in_days
-        : OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS
-    );
+    return $self->_get_column_or_default('keep_important_logs_in_days', 'important_log_storage_duration');
 };
 
 around 'keep_results_in_days' => sub {
     my ($orig, $self) = @_;
-    return $self->get_column('keep_results_in_days') // (
-        $self->parent ?
-          $self->parent->default_keep_results_in_days
-        : OpenQA::Schema::JobGroupDefaults::KEEP_RESULTS_IN_DAYS
-    );
+    return $self->_get_column_or_default('keep_results_in_days', 'result_storage_duration');
 };
 
 around 'keep_important_results_in_days' => sub {
     my ($orig, $self) = @_;
-    return $self->get_column('keep_important_results_in_days') // (
-        $self->parent ?
-          $self->parent->default_keep_important_results_in_days
-        : OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS
-    );
+    return $self->_get_column_or_default('keep_important_results_in_days', 'important_result_storage_duration');
 };
 
 around 'default_priority' => sub {
