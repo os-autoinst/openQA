@@ -31,7 +31,7 @@ sub determine_os_autoinst_web_socket_url {
     # determine job token and host from worker
     my $worker    = $job->assigned_worker             or return;
     my $job_token = $worker->get_property('JOBTOKEN') or return;
-    my $host      = $worker->host                     or return;
+    my $host = $worker->get_property('WORKER_HOSTNAME') || $worker->host or return;
 
     # determine port
     my $cmd_srv_raw_url = $worker->get_property('CMD_SRV_URL') or return;

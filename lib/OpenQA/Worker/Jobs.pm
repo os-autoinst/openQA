@@ -667,8 +667,9 @@ sub upload_status {
     }
 
     my $status = {
-        worker_id   => $workerid,
-        cmd_srv_url => $job->{URL},
+        worker_id       => $workerid,
+        worker_hostname => $worker_settings->{WORKER_HOSTNAME},
+        cmd_srv_url     => $job->{URL},
     };
 
     my $ua        = Mojo::UserAgent->new;
