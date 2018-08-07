@@ -162,6 +162,7 @@ Requires:       perl(Config::IniFiles)
 Requires:       perl(Cpanel::JSON::XS)
 Requires:       perl(Data::Dump)
 Requires:       perl(Getopt::Long)
+Requires:       perl(IO::Socket::SSL) >= 2.009
 Requires:       perl(Mojolicious)
 
 %description client
@@ -319,7 +320,7 @@ fi
 %preun local-db
 %service_del_preun openqa-setup-db.service
 
-%postun local-db 
+%postun local-db
 %service_del_postun openqa-setup-db.service
 
 %files
