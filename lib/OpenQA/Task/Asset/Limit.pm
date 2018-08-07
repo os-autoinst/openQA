@@ -47,7 +47,9 @@ sub _limit {
     my $dbh        = $app->schema->storage->dbh;
     my $update_sth = $dbh->prepare('UPDATE assets SET last_use_job_id = ? WHERE id = ?');
 
-    # remove all assets older than 14 days which do not belong to a job group
+    # remove all assets older than a certain number of days which do not belong to a job group
+    my $untracked_assets_storage_duration
+      = $OpenQA::Utils::app->config->{misc_limits}->{untracked_assets_storage_duration};
     for my $asset (@$assets) {
         $update_sth->execute($asset->{max_job} ? $asset->{max_job} : undef, $asset->{id});
 
@@ -55,12 +57,14 @@ sub _limit {
 
         # age is in minutes
         my $delta = int($asset->{age} / 60 / 24);
-        if ($delta >= 14 || $asset->{size} == 0) {
+        if ($delta >= $untracked_assets_storage_duration || $asset->{size} == 0) {
             _remove_if($app->db, $asset);
         }
         else {
+            my $asset_name     = $asset->{name};
+            my $remaining_days = $untracked_assets_storage_duration - $delta;
             OpenQA::Utils::log_warning(
-                "Asset " . $asset->{name} . " is not in any job group, will delete in " . (14 - $delta) . " days");
+                "Asset $asset_name is not in any job group, will delete in $remaining_days days");
         }
     }
 

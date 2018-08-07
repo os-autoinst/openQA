@@ -76,6 +76,9 @@ subtest 'Test configuration default modes' => sub {
             result_storage_duration           => OpenQA::Schema::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
             important_result_storage_duration => OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
         },
+        misc_limits => {
+            untracked_assets_storage_duration => 14,
+        },
     };
 
     # Test configuration generation with "test" mode

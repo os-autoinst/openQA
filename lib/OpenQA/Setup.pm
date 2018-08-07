@@ -175,6 +175,9 @@ sub read_config {
             result_storage_duration           => OpenQA::Schema::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
             important_result_storage_duration => OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
         },
+        misc_limits => {
+            untracked_assets_storage_duration => 14,
+        },
     );
 
     # in development mode we use fake auth and log to stderr
