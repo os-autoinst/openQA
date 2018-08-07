@@ -25,6 +25,11 @@ our (@ISA, @EXPORT);
 
 use constant GLOBAL_SETTINGS => ('WORKER_CLASS');
 
+use constant JOB_SETTING_OVERRIDES => {
+    _GROUP    => '_GROUP_ID',
+    _GROUP_ID => '_GROUP',
+};
+
 sub is_global_setting {
     return grep /^$_[0]$/, GLOBAL_SETTINGS;
 }
@@ -32,28 +37,28 @@ sub is_global_setting {
 sub clone_job_apply_settings {
     my ($argv, $depth, $settings, $options) = @_;
 
-    my %overrides = (
-        _GROUP    => '_GROUP_ID',
-        _GROUP_ID => '_GROUP',
-    );
     delete $settings->{NAME};    # usually autocreated
 
     for my $arg (@$argv) {
-        if ($arg =~ /([A-Z0-9_]+)=(.*)/) {
-            if (is_global_setting($1) or $depth == 0 or $options->{'parental-inheritance'}) {
-                if (defined $2) {
-                    $settings->{$1} = $2;
-                    if (my $override = $overrides{$1}) {
-                        delete $settings->{$override};
-                    }
-                }
-                else {
-                    delete $settings->{$1};
-                }
-            }
-        }
-        else {
+        # split arg into key and value
+        unless ($arg =~ /([A-Z0-9_]+)=(.*)/) {
             warn "arg $arg doesn't match";
+            next;
+        }
+        my ($key, $value) = ($1, $2);
+
+        next unless (is_global_setting($key) or $depth == 0 or $options->{'parental-inheritance'});
+
+        # delete key if value empty
+        if (!defined $value) {
+            delete $settings->{$key};
+            next;
+        }
+
+        # assign value to key, delete overrides
+        $settings->{$key} = $value;
+        if (my $override = JOB_SETTING_OVERRIDES->{$key}) {
+            delete $settings->{$override};
         }
     }
 }
