@@ -170,11 +170,19 @@ tests.
 
 The patterns defined in the main.pm will be valid for all the tests.
 
+To simplify tests results review, if job fails with the same message, which is defined
+for the pattern, as previous job, automatic comment carryover will work even if
+test suites have failed due to different test modules.
+
 [caption="Example: "]
 .Defining serial exception capture in the main.pm
 [source,perl]
 --------------------------------------------------------------
-$testapi::distri->set_serial_failures(soft=>[quotemeta 'Error'], hard=>[qr/exception/]);
+$testapi::distri->set_expected_serial_failures([
+        {type => 'soft', message => 'known issue',  pattern => quotemeta 'Error'},
+        {type => 'hard', message => 'broken build', pattern => qr/exception/},
+    ]
+);
 --------------------------------------------------------------
 
 [caption="Example: "]
@@ -183,7 +191,20 @@ $testapi::distri->set_serial_failures(soft=>[quotemeta 'Error'], hard=>[qr/excep
 --------------------------------------------------------------
 sub run {
     my ($self) = @_;
-    $self->set_serial_failures(soft=>[quotemeta 'Error'], hard=>[qr/exception/]);
+    $self->{serial_failures} = [
+        {type => 'soft', message => 'known issue',  pattern => quotemeta 'Error'},
+        {type => 'hard', message => 'broken build', pattern => qr/exception/},
+    ];
+    ...
+}
+--------------------------------------------------------------
+[caption="Example: "]
+.Adding serial exception capture in the test
+[source,perl]
+--------------------------------------------------------------
+sub run {
+    my ($self) = @_;
+    push @$self->{serial_failures}, {type => 'soft', message => 'known issue',  pattern => quotemeta 'Error'};
     ...
 }
 --------------------------------------------------------------
@@ -357,7 +378,7 @@ sub run {
 sub run {
     # wait until ftp service is ready
     # performs mutex lock & unlock internally
-    mutex_wait 'ftp_service_ready'; 
+    mutex_wait 'ftp_service_ready';
 
     # connect to ftp and start downloading
     script_run 'ftp parent.job.ip';
@@ -368,7 +389,7 @@ sub run {
 # Example on child when only one job should access ftp at time
 sub run {
     # wait until ftp service is ready
-    mutex_lock 'ftp_service_ready'; 
+    mutex_lock 'ftp_service_ready';
 
     # Perform operation with exclusive access
     script_run 'ftp parent.job.ip';
@@ -376,7 +397,7 @@ sub run {
     script_run 'bye';
 
     # Allow other jobs to connect afterwards
-    mutex_unlock 'ftp_service_ready'; 
+    mutex_unlock 'ftp_service_ready';
 }
 
 --------------------------------------------------------------------------------
