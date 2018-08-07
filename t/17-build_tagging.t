@@ -26,6 +26,7 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Schema::JobGroupDefaults;
+use OpenQA::Schema::Result::JobGroupParents;
 use Date::Format qw(time2str);
 use OpenQA::Jobs::Constants;
 
@@ -41,12 +42,25 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
 $test_case->login($t, 'percival');
 
-my $jobs     = $t->app->db->resultset('Jobs');
-my $comments = $t->app->db->resultset('Comments');
+my $schema        = $t->app->db;
+my $jobs          = $schema->resultset('Jobs');
+my $job_groups    = $schema->resultset('JobGroups');
+my $parent_groups = $schema->resultset('JobGroupParents');
+my $comments      = $schema->resultset('Comments');
 
 sub post_comment_1001 {
     my ($comment) = @_;
     return $comments->create({group_id => 1001, user_id => 1, text => $comment});
+}
+
+sub post_parent_group_comment {
+    my ($parent_group_id, $comment) = @_;
+    return $comments->create(
+        {
+            parent_group_id => $parent_group_id,
+            user_id         => 1,
+            text            => $comment
+        });
 }
 
 # this and 'create_job_version_build' are for adding jobs on the fly,
@@ -168,6 +182,45 @@ subtest 'test tags for Fedora update-style BUILD values' => sub {
     is(scalar @tags, 3, 'three builds tagged');
     # this build will sort *before* the other Fedora build, so item 1
     is($tags[1], 'critpath', 'tag description shown');
+};
+
+subtest 'tagging builds via parent group comments' => sub {
+    # create a parent group and move all job groups into it
+    my $parent_group = $parent_groups->create({name => 'Test parent', sort_order => 0});
+    my $parent_group_id = $parent_group->id;
+    while (my $job_group = $job_groups->next) {
+        $job_group->update(
+            {
+                parent_id => $parent_group->id
+            });
+    }
+
+    # create job and tag it on parent-level
+    create_job_version_build('1', 'Arch-2018-08');
+    post_parent_group_comment($parent_group_id => 'tag:Arch-2018-08:important:fromparent');
+
+    $t->get_ok('/group_overview/1001')->status_is(200);
+    my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
+    is(scalar @tags, 4,            'four builds tagged');
+    is($tags[-1],    'fromparent', 'tag from parent visible on child-level');
+
+    $t->get_ok('/parent_group_overview/' . $parent_group_id)->status_is(200);
+    @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
+    is(scalar @tags, 4,            'four builds tagged');
+    is($tags[-1],    'fromparent', 'tag from parent visible on parent-level');
+
+    # create a tag for the same build on child level
+    post_comment_1001('tag:Arch-2018-08:important:fromchild');
+
+    $t->get_ok('/group_overview/1001')->status_is(200);
+    @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
+    is(scalar @tags, 4,           'still four builds tagged');
+    is($tags[-1],    'fromchild', 'overriding tag from parent on child-level visible on child-level');
+
+    $t->get_ok('/parent_group_overview/' . $parent_group_id)->status_is(200);
+    @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
+    is(scalar @tags, 4,           'still four builds tagged');
+    is($tags[-1],    'fromchild', 'overriding tag from parent on child-level visible on parent-level');
 };
 
 sub _map_expired {

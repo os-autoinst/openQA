@@ -1,4 +1,4 @@
-# Copyright (C) 2016 SUSE LLC
+# Copyright (C) 2016-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 
 package OpenQA::Schema::Result::JobGroupParents;
 use OpenQA::Schema::JobGroupDefaults;
+use OpenQA::Utils 'parse_tags_from_comments';
 use Class::Method::Modifiers;
 use base 'DBIx::Class::Core';
 use strict;
@@ -77,6 +78,7 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(
     children => 'OpenQA::Schema::Result::JobGroups',
     'parent_id', {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
+__PACKAGE__->has_many(comments => 'OpenQA::Schema::Result::Comments', 'parent_group_id', {order_by => 'id'});
 
 around 'default_size_limit_gb' => sub {
     my ($orig, $self) = @_;
@@ -146,11 +148,9 @@ sub tags {
     my ($self) = @_;
 
     my %res;
+    parse_tags_from_comments($self, \%res);
     for my $child ($self->children) {
-        my $tags = $child->tags;
-        for my $key (keys %$tags) {
-            $res{$key} = $tags->{$key};
-        }
+        parse_tags_from_comments($child, \%res);
     }
     return \%res;
 }

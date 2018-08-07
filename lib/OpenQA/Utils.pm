@@ -79,6 +79,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &detect_current_version
   wait_with_progress
   mark_job_linked
+  parse_tags_from_comments
   path_to_class
   loaded_modules
   loaded_plugins
@@ -966,6 +967,34 @@ sub mark_job_linked {
     }
     elsif ($referer) {
         log_debug("Unrecognized referer '$referer'");
+    }
+}
+
+# parse comments of the specified (parent) group and store all mentioned builds in $res (hashref)
+sub parse_tags_from_comments {
+    my ($group, $res) = @_;
+
+    my $comments = $group->comments;
+    return unless ($comments);
+
+    while (my $comment = $comments->next) {
+        my @tag   = $comment->tag;
+        my $build = $tag[0];
+        next unless $build;
+
+        my $version = $tag[3];
+        my $tag_id = $version ? "$version-$build" : $build;
+
+        log_debug('Tag found on build ' . $build . ' of type ' . $tag[1]);
+        log_debug('description: ' . $tag[2]) if $tag[2];
+        if ($tag[1] eq '-important') {
+            log_debug('Deleting tag on build ' . $build);
+            delete $res->{$tag_id};
+            next;
+        }
+
+        # ignore tags on non-existing builds
+        $res->{$tag_id} = {build => $build, type => $tag[1], description => $tag[2], version => $version};
     }
 }
 

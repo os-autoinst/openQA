@@ -570,34 +570,39 @@ sub find_build {
 my $delete = $t->delete_ok('/api/v1/jobs/99937')->status_is(200);
 $t->get_ok('/api/v1/jobs/99937')->status_is(404);
 
-# test .json routes of group overview (which are actually not part of the API)
-$get = $t->get_ok('/group_overview/1001.json')->status_is(200);
-$get = $get->tx->res->json;
-is_deeply({id => 1001, name => 'opensuse'}, $get->{group}, 'group info');
-my $b48 = find_build($get, 'Factory-0048');
-delete $b48->{oldest};
-is_deeply(
-    $b48,
-    {
-        reviewed        => '',
-        softfailed      => 1,
-        failed          => 1,
-        labeled         => 0,
-        all_passed      => '',
-        total           => 3,
-        passed          => 0,
-        skipped         => 0,
-        distris         => {'opensuse' => 1},
-        unfinished      => 1,
-        version         => 'Factory',
-        escaped_version => 'Factory',
-        build           => '0048',
-        escaped_build   => '0048',
-        escaped_id      => 'Factory-0048',
-        key             => 'Factory-0048',
-    },
-    'Build 0048 exported'
-);
+subtest 'json representation of group overview (actually not part of the API)' => sub {
+    $get = $t->get_ok('/group_overview/1001.json')->status_is(200);
+    my $json       = $get->tx->res->json;
+    my $group_info = $json->{group};
+    ok($group_info, 'group info present');
+    is($group_info->{id},   1001,       'group ID');
+    is($group_info->{name}, 'opensuse', 'group name');
+
+    my $b48 = find_build($json, 'Factory-0048');
+    delete $b48->{oldest};
+    is_deeply(
+        $b48,
+        {
+            reviewed        => '',
+            softfailed      => 1,
+            failed          => 1,
+            labeled         => 0,
+            all_passed      => '',
+            total           => 3,
+            passed          => 0,
+            skipped         => 0,
+            distris         => {'opensuse' => 1},
+            unfinished      => 1,
+            version         => 'Factory',
+            escaped_version => 'Factory',
+            build           => '0048',
+            escaped_build   => '0048',
+            escaped_id      => 'Factory-0048',
+            key             => 'Factory-0048',
+        },
+        'Build 0048 exported'
+    );
+};
 
 $get = $t->get_ok('/index.json?limit_builds=10')->status_is(200);
 $get = $get->tx->res->json;

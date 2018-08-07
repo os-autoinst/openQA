@@ -17,7 +17,7 @@ package OpenQA::Schema::Result::JobGroups;
 use OpenQA::Schema::JobGroupDefaults;
 use Class::Method::Modifiers;
 use base 'DBIx::Class::Core';
-use OpenQA::Utils 'log_debug';
+use OpenQA::Utils qw(log_debug parse_tags_from_comments);
 use Date::Format 'time2str';
 use strict;
 
@@ -228,31 +228,14 @@ sub find_jobs_with_expired_logs {
     ];
 }
 
-# parse comments and list the all builds mentioned
 sub tags {
     my ($self) = @_;
 
     my %res;
-    for my $comment ($self->comments) {
-        my @tag   = $comment->tag;
-        my $build = $tag[0];
-        next unless $build;
-
-        my $version = $tag[3];
-        my $tag_id = $version ? "$version-$build" : $build;
-
-        log_debug('Tag found on build ' . $build . ' of type ' . $tag[1]);
-        log_debug('description: ' . $tag[2]) if $tag[2];
-        if ($tag[1] eq '-important') {
-            log_debug('Deleting tag on build ' . $build);
-            delete $res{$tag_id};
-            next;
-        }
-
-        # ignore tags on non-existing builds
-        $res{$tag_id} = {build => $build, type => $tag[1], description => $tag[2], version => $version};
+    if (my $parent = $self->parent) {
+        parse_tags_from_comments($parent, \%res);
     }
-
+    parse_tags_from_comments($self, \%res);
     return \%res;
 }
 

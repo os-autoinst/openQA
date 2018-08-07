@@ -36,6 +36,11 @@ __PACKAGE__->add_columns(
         is_foreign_key => 1,
         is_nullable    => 1,
     },
+    parent_group_id => {
+        data_type      => 'integer',
+        is_foreign_key => 1,
+        is_nullable    => 1,
+    },
     text => {
         data_type => 'text'
     },
@@ -58,6 +63,18 @@ __PACKAGE__->belongs_to(
     "group",
     "OpenQA::Schema::Result::JobGroups",
     {'foreign.id' => "self.group_id"},
+    {
+        is_deferrable => 1,
+        join_type     => "LEFT",
+        on_delete     => "CASCADE",
+        on_update     => "CASCADE",
+    },
+);
+
+__PACKAGE__->belongs_to(
+    "parent_group",
+    "OpenQA::Schema::Result::JobGroupParents",
+    {'foreign.id' => "self.parent_group_id"},
     {
         is_deferrable => 1,
         join_type     => "LEFT",

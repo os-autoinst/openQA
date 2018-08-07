@@ -35,7 +35,13 @@ $test_case->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $driver = call_driver();
+sub schema_hook {
+    # create a parent group
+    my $schema = OpenQA::Test::Database->new->create;
+    $schema->resultset('JobGroupParents')->create({id => 1, name => 'Test parent', sort_order => 0});
+}
+
+my $driver = call_driver(\&schema_hook);
 
 unless ($driver) {
     plan skip_all => $OpenQA::SeleniumTest::drivermissing;
@@ -374,7 +380,21 @@ subtest 'commenting in test results including labels' => sub {
     };
 };
 
+subtest 'commenting on parent group overview' => sub {
+    $driver->get('/parent_group_overview/1');
+    test_comment_editing(0);
+
+    # add another comment to have an equal amount of comments in the parent group and in the job group
+    # to unify further checks for pagination between the group overview pages
+    # (the job group overview has one more so far because of subtest 'URL auto-replace')
+    $driver->find_element_by_id('text')->send_keys('yet another comment');
+    $driver->find_element_by_id('submitComment')->click();
+    wait_for_ajax;
+};
+
 subtest 'editing when logged in as regular user' => sub {
+    my @group_overview_urls = ('/group_overview/1001', '/parent_group_overview/1');
+
     sub no_edit_no_remove_on_other_comments_expected {
         is(@{$driver->find_elements('button.trigger-edit-button', 'css')},
             0, "edit not displayed for other users comments");
@@ -386,17 +406,19 @@ subtest 'editing when logged in as regular user' => sub {
             "no comments can be removed, even not own");
     }
 
-    subtest 'test pinned comments' => sub {
-        $driver->get('/group_overview/1001');
+    subtest 'test pinned comments: ' . $_ => sub {
+        my $group_url = $_;
+        $driver->get($group_url);
         $driver->find_element_by_id('text')->send_keys($description_test_message);
         $driver->find_element_by_id('submitComment')->click();
         # need to reload the page for the pinning to take effect
         # waiting for AJAX is required though to eliminate race condition
         wait_for_ajax;
-        $driver->get('/group_overview/1001');
+        $driver->get($group_url);
         is($driver->find_element('#group_descriptions .media-comment')->get_text(),
             $description_test_message, 'comment is pinned');
-    };
+      }
+      for (@group_overview_urls);
 
     $driver->get('/login?user=nobody');
     subtest 'test results' => sub {
@@ -409,8 +431,9 @@ subtest 'editing when logged in as regular user' => sub {
         only_edit_for_own_comments_expected;
     };
 
-    subtest 'group overview' => sub {
-        $driver->get('/group_overview/1001');
+    subtest 'group overview: ' . $_ => sub {
+        my $group_url = $_;
+        $driver->get($group_url);
         no_edit_no_remove_on_other_comments_expected;
         $driver->find_element_by_id('text')->send_keys('test by nobody');
         $driver->find_element_by_id('submitComment')->click();
@@ -420,18 +443,19 @@ subtest 'editing when logged in as regular user' => sub {
         # pinned comments are not shown (pinning is only possible when commentator is operator)
         $driver->find_element_by_id('text')->send_keys($description_test_message);
         $driver->find_element_by_id('submitComment')->click();
-        $driver->get('/group_overview/1001');
+        $driver->get($group_url);
         is(scalar @{$driver->find_elements('.pinned-comment-row')}, 1, 'there shouldn\'t appear more pinned comments');
 
         # pagination present
         is(scalar @{$driver->find_elements('.comments-pagination a')}, 1, 'one pagination button present');
-        $driver->get('/group_overview/1001?comments_limit=2');
+        $driver->get($group_url . '?comments_limit=2');
         my @pagination_buttons = $driver->find_elements('.comments-pagination a', 'css');
         is(scalar @pagination_buttons,                       4, 'four pagination buttons present (one is >>)');
         is(scalar @{$driver->find_elements('.comment-row')}, 2, 'only 2 comments present');
         $pagination_buttons[2]->click();
         is(scalar @{$driver->find_elements('.comment-row')}, 1, 'only 1 comment present on last page');
-    };
+      }
+      for (@group_overview_urls);
 };
 
 kill_driver();

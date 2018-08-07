@@ -1,0 +1,6 @@
+% return unless ($pinned_comments);
+<div id="group_descriptions">
+    % for my $comment (@$pinned_comments) {
+        %= include 'comments/comment_row', comment_id => $comment->id, comment => $comment, user => $comment->user, context => {type => $comment_context, id => $group->{id}, pinned => 1}, put_action => $comment_put_action, delete_action => $comment_delete_action
+    % }
+</div>
