@@ -84,6 +84,7 @@ sub job_restart {
         });
 
     while (my $j = $jobs->next) {
+        $j->calculate_blocked_by;
         log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
         $j->worker->send_command(command => 'abort', job_id => $j->id);
     }
