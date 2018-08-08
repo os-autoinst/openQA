@@ -446,8 +446,13 @@ sub create_artefact {
         $self->render_later;    # XXX: Not really needed, but in case of upstream changes
         my @ioloop_evs = qw(events);
         my @evs        = @{Mojo::IOLoop->singleton}{@ioloop_evs};
+
+        # See: https://mojolicious.org/perldoc/Mojolicious/Guides/FAQ#What-does-Connection-already-closed-mean
+        my $tx = $self->tx;     # NOTE: Keep tx around as long operations could make it disappear
+
         return Mojo::IOLoop->subprocess(
             sub {
+                $tx;
                 @{Mojo::IOLoop->singleton}{@ioloop_evs} = @evs;
                 Mojo::IOLoop->singleton->emit('chunk_upload.start' => $self);
                 my ($e, $fname, $type, $last) = $job->create_asset($self->param('file'), $self->param('asset'));
