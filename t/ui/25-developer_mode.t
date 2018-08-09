@@ -210,7 +210,11 @@ subtest 'state shown when connected' => sub {
     element_visible('#developer-instructions',
         qr/System is waiting for developer, connect to remotehost at port 91 with Shared mode/,
     );
-    element_visible('#developer-panel .card-header', qr/paused at module: installation-welcome/, qr/current module/,);
+    element_visible(
+        '#developer-panel .card-header',
+        qr/paused at module: installation-welcome/,
+        [qr/current module/, qr/uploading/],
+    );
     element_visible('#developer-pause-reason', qr/reason: some reason/);
 
     # developer session opened
@@ -288,8 +292,37 @@ subtest 'start developer session' => sub {
         'changes from subtest "expand developer panel" submitted'
     );
 
+    fake_state(developerMode => {isPaused => '"some reason"'});
+
+    subtest 'opening needle editor not proposed when not ready' => sub {
+        # the worker isn't uploading up to the current module
+        element_visible('#developer-panel .card-body', qr/Resume/, qr/Open needle editor/);
+
+        # uploading current module in progress
+        fake_state(
+            developerMode => {
+                uploadingUpToCurrentModule => 'true',
+                outstandingImagesToUpload  => '1',
+                outstandingFilesToUpload   => '0',
+            });
+        element_visible(
+            '#developer-panel .card-header',
+            qr/paused at module: installation-welcome, uploading/,
+            qr/current module/,
+        );
+        element_visible('#developer-panel .card-body', qr/Resume/, qr/Open needle editor/);
+    };
+
+    subtest 'opening needle editor proposed when current module has been uploaded' => sub {
+        fake_state(
+            developerMode => {
+                outstandingImagesToUpload => '0',
+            });
+        element_visible('#developer-panel .card-header', qr/paused at module: installation-welcome/, qr/uploading/,);
+        element_visible('#developer-panel .card-body', [qr/Resume/, qr/Open needle editor/]);
+    };
+
     subtest 'resume paused test' => sub {
-        fake_state(developerMode => {isPaused => '"some reason"'});
         $driver->find_element('Resume test execution', 'link_text')->click();
         assert_sent_commands([{cmd => 'resume_test_execution'}], 'command for resuming test execution sent');
     };
