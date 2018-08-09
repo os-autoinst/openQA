@@ -44,7 +44,8 @@ has(
     [
         qw(cmd_srv_transactions_by_job
           devel_java_script_transactions_by_job
-          status_java_script_transactions_by_job)
+          status_java_script_transactions_by_job
+          upload_progress_by_job)
     ],
     sub {
         return {};
@@ -80,6 +81,9 @@ sub startup {
     my $developer_r = $developer_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller');
     $developer_r->websocket('/ws-proxy')->name('developer_ws_proxy')->to('live_view_handler#ws_proxy');
     $test_r->websocket('/developer/ws-proxy/status')->name('status_ws_proxy')->to('live_view_handler#proxy_status');
+#$developer_r->post('/upload_progress')->name('developer_post_upload_progress')->to('live_view_handler#post_upload_progress');
+    $test_r->post('/developer/upload_progress')->name('developer_post_upload_progress')
+      ->to('live_view_handler#post_upload_progress');
 
     # don't try to render default 404 template, instead just render 'route not found' vis ws connection or regular HTTP
     my $not_found_r = $r->route('/')->to(namespace => 'OpenQA::WebAPI::Controller');
