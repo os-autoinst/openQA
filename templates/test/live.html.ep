@@ -102,7 +102,7 @@
                 </a>
                 <a href="<%= url_for('edit_test', testid => $testid) %>"
                     class="btn btn-secondary developer-mode-element"
-                    data-visible-on="isPaused">
+                    data-visible-on="needleEditorReady">
                     <i class="fa fa-thumbtack"></i>
                     Open needle editor
                 </a>
