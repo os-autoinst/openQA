@@ -1853,11 +1853,18 @@ sub search_for {
 sub blocked_by_parent_job {
     my ($self) = @_;
 
+    my $cluster_jobs = $self->cluster_jobs;
+    my @possibly_blocked_jobs;
+    for my $job_info (values %$cluster_jobs) {
+        push(@possibly_blocked_jobs, @{$job_info->{parallel_children}});
+        push(@possibly_blocked_jobs, @{$job_info->{parallel_parents}});
+        push(@possibly_blocked_jobs, $self->id);
+    }
     my $parents = $self->result_source->schema->resultset('JobDependencies')->search(
         {
             dependency    => OpenQA::Schema::Result::JobDependencies->CHAINED,
             parent_job_id => {'!=' => $self->id},
-            child_job_id  => {-in => [keys %{$self->cluster_jobs}]}});
+            child_job_id  => {-in => \@possibly_blocked_jobs}});
     while (my $pd = $parents->next) {
         my $p     = $pd->parent;
         my $state = $p->state;
