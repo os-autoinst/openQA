@@ -267,24 +267,28 @@ subtest 'pause at assert_screen timeout' => sub {
         'paused after assert_screen timeout (again)'
     );
 
+    # wait until upload progress received
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+        $driver,
+        qr/\"(outstanding_images)\":[1-9]*/,
+        'progress of image upload received'
+    );
+
+    # wait until upload has finished
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+        $driver,
+        qr/\"(outstanding_images)\":0/,
+        'image upload has finished'
+    );
+
     # open needle editor in 2nd tab
     my $needle_editor_url = '/tests/1/edit';
     $second_tab = open_new_tab($needle_editor_url);
     $driver->switch_to_window($second_tab);
     $driver->title_is('openQA: Needle Editor');
-    # give uploading the results 15 seconds
-    my $content        = $driver->find_element_by_id('content')->get_text();
-    my $seconds_waited = 0;
-    while ($content =~ qr/upload is still in progress/) {
-        if ($seconds_waited > 15) {
-            fail('needle editor not accessible after 15 seconds');
-            return;
-        }
-        sleep 1;
-        $driver->get($needle_editor_url);
-        $content = $driver->find_element_by_id('content')->get_text();
-        $seconds_waited += 1;
-    }
+    my $content = $driver->find_element_by_id('content')->get_text();
+    fail('needle editor not available (but should be according to upload progress)')
+      if ($content =~ qr/upload is still in progress/);
     # check whether screenshot is present
     my $screenshot_url = $driver->execute_script('return window.nEditor.bgImage.src;');
     like($screenshot_url, qr/.*\/boot-[0-9]+\.png/, 'screenshot present');
