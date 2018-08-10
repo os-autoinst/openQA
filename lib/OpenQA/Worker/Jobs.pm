@@ -773,7 +773,9 @@ sub post_upload_progress_to_liveviewhandler {
     # skip if the progress hasn't changed
     my $progress_changed;
     for my $key (qw(upload_up_to upload_up_to_current_module outstanding_files outstanding_images)) {
-        if ($new_progress_info{$key} ne $progress_info->{$key}) {
+        my $new_value = $new_progress_info{$key};
+        my $old_value = $progress_info->{$key};
+        if (defined($new_value) != defined($old_value) || (defined($new_value) && $new_value ne $old_value)) {
             $progress_changed = 1;
             last;
         }
