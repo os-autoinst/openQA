@@ -71,19 +71,31 @@ sub startup {
     OpenQA::Setup::load_plugins($self);
     OpenQA::Setup::set_secure_flag_on_cookies_of_https_connection($self);
 
-    # register routes
+    # register root routes: use same paths as the regular web UI but prefix everything with /liveviewhandler
     my $r = $self->routes;
     my $test_r
       = $r->route('/liveviewhandler/tests/:testid', testid => qr/\d+/)->to(namespace => 'OpenQA::WebAPI::Controller');
     $test_r = $test_r->under('/')->to('test#referer_check');
+    my $api_auth_operator = $r->under('/liveviewhandler/api/v1')->to(
+        namespace  => 'OpenQA::WebAPI::Controller',
+        controller => 'API::V1',
+        action     => 'auth_operator'
+    );
+    my $api_ro = $api_auth_operator->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
 
+    # register websocket routes
     my $developer_auth = $test_r->under('/developer')->to('session#ensure_operator');
     my $developer_r = $developer_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller');
     $developer_r->websocket('/ws-proxy')->name('developer_ws_proxy')->to('live_view_handler#ws_proxy');
     $test_r->websocket('/developer/ws-proxy/status')->name('status_ws_proxy')->to('live_view_handler#proxy_status');
-#$developer_r->post('/upload_progress')->name('developer_post_upload_progress')->to('live_view_handler#post_upload_progress');
-    $test_r->post('/developer/upload_progress')->name('developer_post_upload_progress')
-      ->to('live_view_handler#post_upload_progress');
+
+    # register API routes
+    my $job_r = $api_ro->route('/jobs/:testid', testid => qr/\d+/);
+    $job_r->post('/upload_progress')->name('developer_post_upload_progress')->to(
+        namespace  => 'OpenQA::WebAPI::Controller',
+        controller => 'LiveViewHandler',
+        action     => 'post_upload_progress'
+    );
 
     # don't try to render default 404 template, instead just render 'route not found' vis ws connection or regular HTTP
     my $not_found_r = $r->route('/')->to(namespace => 'OpenQA::WebAPI::Controller');

@@ -782,7 +782,7 @@ sub post_upload_progress_to_liveviewhandler {
     $progress_info = \%new_progress_info;
 
     api_call(
-        post => "/liveviewhandler/tests/$job_id/developer/upload_progress",
+        post => "/liveviewhandler/api/v1/jobs/$job_id/upload_progress",
         service_port_delta => 2,                # liveviewhandler is supposed to run on web UI port + 2
         json               => $progress_info,
         callback           => sub {
