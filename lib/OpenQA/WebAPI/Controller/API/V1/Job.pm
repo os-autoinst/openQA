@@ -452,7 +452,7 @@ sub create_artefact {
 
         return Mojo::IOLoop->subprocess(
             sub {
-                $tx;
+                die "Transaction empty" if $tx->is_empty;
                 @{Mojo::IOLoop->singleton}{@ioloop_evs} = @evs;
                 Mojo::IOLoop->singleton->emit('chunk_upload.start' => $self);
                 my ($e, $fname, $type, $last) = $job->create_asset($self->param('file'), $self->param('asset'));
