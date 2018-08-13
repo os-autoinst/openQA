@@ -572,7 +572,6 @@ sub restart {
 
     my $ipc = OpenQA::IPC->ipc;
     my $res = $ipc->resourceallocator('job_restart', $jobs);
-    wakeup_scheduler;
 
     my @urls;
     for (my $i = 0; $i < @$res; $i++) {
