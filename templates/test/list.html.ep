@@ -18,7 +18,7 @@
 % if (@$scheduled) {
     <div>
         % my $str = scalar(@$scheduled) . " scheduled jobs";
-        % $str .= " (@{[scalar(keys %$blocked)]} blocked by other jobs)" if $blocked && keys %$blocked > 0;
+        % $str .= " (@{[scalar(keys $blocked)]} blocked by other jobs)" if $blocked && keys %$blocked > 0;
         %= tag 'h2' => $str
         %= include 'test/scheduled_table'
     </div>
