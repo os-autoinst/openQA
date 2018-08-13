@@ -65,7 +65,7 @@ zypper ar -f obs://devel:openQA/openSUSE_Tumbleweed devel-openQA
 
 
 # openSUSE Leap 15
-zypper addrepo https://download.opensuse.org/repositories/devel:/openQA/openSUSE_Leap_15.0/
+zypper addrepo https://download.opensuse.org/repositories/devel:/openQA/openSUSE_Leap_15.0/ devel-openQA
 
 
 # openSUSE Leap 42.3
