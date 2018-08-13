@@ -458,8 +458,58 @@ subtest 'URLs for command server and livehandler' => sub {
         'liveviewhandler/tests/99961/developer/ws-proxy/status',
         'URL for livehandler status route'
     );
-
 };
+
+# save app and user agent to be able to restore
+my ($app, $ua) = ($t_livehandler->app, $t_livehandler->ua);
+
+subtest 'post upload progress' => sub {
+    my $path = '/liveviewhandler/api/v1/jobs/99961/upload_progress';
+    $t_livehandler->post_ok($path)->status_is(403, 'upload_progress route requires API authentification');
+
+    # use OpenQA::Client for authentification
+    $t_livehandler->ua(
+        OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
+    $t_livehandler->app($app);
+
+    # test error handling
+    $t_livehandler->post_ok('/liveviewhandler/api/v1/jobs/42/upload_progress', json => {})
+      ->status_is(400, 'job does not exist');
+
+    # test successful post
+    my %upload_progress = (
+        outstanding_images          => 3,
+        outstanding_files           => 0,
+        upload_up_to_current_module => 1,
+    );
+    $t_livehandler->post_ok($path, json => \%upload_progress)->status_is(200, 'post ok');
+    my $worker = $workers->find({job_id => 99961});
+    is_deeply($worker->upload_progress, \%upload_progress, 'progress stored on worker');
+
+    # test whether info is included in info hash
+    my $live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
+    my $hash              = {};
+    $live_view_handler->app($t_livehandler->app);
+    $live_view_handler->add_further_info_to_hash(99961, $hash);
+    is_deeply(
+        $hash,
+        {
+            developer_id                 => undef,
+            developer_name               => undef,
+            developer_session_started_at => undef,
+            developer_session_tab_count  => 0,
+            %upload_progress
+        },
+        'upload progress added to info hash'
+    );
+
+    # revert state
+    $worker->update({upload_progress => undef});
+};
+
+# restore app and user agent
+$t_livehandler->ua($ua);
+$t_livehandler->app($app);
 
 subtest 'websocket proxy (connection from client to live view handler not mocked)' => sub {
     # dumps the state of the websocket connections established in the following subtests
