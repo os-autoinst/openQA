@@ -1,5 +1,5 @@
 # Copyright (C) 2015 SUSE Linux GmbH
-#               2016 SUSE LLC
+#               2016-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ use OpenQA::Utils 'log_error';
 use OpenQA::IPC;
 use db_helpers;
 use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
+use JSON qw(encode_json decode_json);
 
 use constant COMMANDS => qw(quit abort scheduler_abort cancel obsolete livelog_stop livelog_start);
 
@@ -45,6 +46,10 @@ __PACKAGE__->add_columns(
         data_type      => 'integer',
         is_foreign_key => 1,
         is_nullable    => 1
+    },
+    upload_progress => {
+        data_type   => 'jsonb',
+        is_nullable => 1,
     });
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
@@ -58,6 +63,12 @@ __PACKAGE__->has_many(
     {
         order_by => {-desc => 't_created'}});
 __PACKAGE__->has_many(properties => 'OpenQA::Schema::Result::WorkerProperties', 'worker_id');
+
+__PACKAGE__->inflate_column(
+    upload_progress => {
+        inflate => sub { decode_json(shift) },
+        deflate => sub { encode_json(shift) },
+    });
 
 # TODO
 # INSERT INTO workers (id, t_created) VALUES(0, datetime('now'));
@@ -94,10 +105,10 @@ sub get_property {
     return $r ? $r->value : undef;
 }
 
-sub delete_property {
-    my ($self, $key) = @_;
+sub delete_properties {
+    my ($self, $keys) = @_;
 
-    return $self->properties->find({key => $key})->delete;
+    return $self->properties->search({key => {-in => $keys}})->delete;
 }
 
 sub set_property {
@@ -183,8 +194,8 @@ sub connected {
 sub unprepare_for_work {
     my $self = shift;
 
-    $self->delete_property('JOBTOKEN');
-    $self->delete_property('WORKER_TMPDIR');
+    $self->delete_properties([qw(JOBTOKEN WORKER_TMPDIR)]);
+    $self->update({upload_progress => undef});
 
     return $self;
 }

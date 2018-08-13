@@ -58,11 +58,6 @@ has(
     status_java_script_transactions_by_job => sub {
         return shift->app->status_java_script_transactions_by_job;
     });
-# -> upload progress by job (reported by the worker)
-has(
-    upload_progress_by_job => sub {
-        return shift->app->upload_progress_by_job;
-    });
 
 # broadcasts a message to all JavaScript clients for the specified job ID
 # note: we don't broadcast to connections served by other prefork processes here, hence
@@ -154,7 +149,7 @@ sub quit_development_session {
     # set default status code to "normal closure"
     $status_code //= 1000;
 
-    # remove the session from the database
+    # unregister session in the database
     $self->developer_sessions->unregister($job_id);
 
     # finish connections to all development session JavaScript clients
@@ -176,9 +171,6 @@ sub quit_development_session {
         $self->app->log->debug('finishing connection to os-autoinst cmd srv for job ' . $job_id);
         $cmd_srv_tx->finish($status_code) if $cmd_srv_tx->is_websocket();
     }
-
-    # remove upload progress
-    delete $self->upload_progress_by_job->{$job_id};
 }
 
 sub handle_message_from_java_script {
@@ -226,6 +218,14 @@ sub handle_message_from_java_script {
     $self->send_message_to_os_autoinst($job_id, $json);
 }
 
+sub find_upload_progress {
+    my ($self, $job_id) = @_;
+
+    my $workers = $self->app->schema->resultset('Workers');
+    my $worker = $workers->find({job_id => $job_id}) or return undef;
+    return $worker->upload_progress;
+}
+
 # extends the status info hash from os-autoinst with the session info and worker info
 sub add_further_info_to_hash {
     my ($self, $job_id, $hash) = @_;
@@ -242,10 +242,9 @@ sub add_further_info_to_hash {
         $hash->{developer_session_started_at} = undef;
         $hash->{developer_session_tab_count}  = 0;
     }
-    if (my $progress_info = $self->upload_progress_by_job->{$job_id}) {
-        for my $key (qw(outstanding_images outstanding_files upload_up_to_current_module)) {
-            $hash->{$key} = $progress_info->{$key};
-        }
+    my $progress_info = $self->find_upload_progress($job_id) // {};
+    for my $key (qw(outstanding_images outstanding_files upload_up_to_current_module)) {
+        $hash->{$key} = $progress_info->{$key};
     }
 }
 
@@ -485,10 +484,11 @@ sub post_upload_progress {
     my $job = $self->find_current_job()
       or return $self->render(json => {error => 'The job ID does not refer to a running job'}, status => 400);
     my $job_id = $job->id;
+    my $worker = $job->assigned_worker
+      or return $self->render(json => {error => 'The job as no assigned worker'}, status => 400);
 
     # save upload progress so it can be included in the status info which is emitted when a new client connects
-    # FIXME: use the database to store this info
-    $self->upload_progress_by_job->{$job_id} = $progress_info;
+    $worker->update({upload_progress => $progress_info});
 
     # broadcast the upload progress to all connected java script web socket clients for this job
     my $broadcast_count

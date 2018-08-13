@@ -44,8 +44,7 @@ has(
     [
         qw(cmd_srv_transactions_by_job
           devel_java_script_transactions_by_job
-          status_java_script_transactions_by_job
-          upload_progress_by_job)
+          status_java_script_transactions_by_job)
     ],
     sub {
         return {};

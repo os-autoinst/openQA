@@ -31,6 +31,8 @@ use OpenQA::Test::Case;
 use OpenQA::Test::FakeWebSocketTransaction;
 use OpenQA::WebAPI::Controller::Developer;
 use OpenQA::WebAPI::Controller::LiveViewHandler;
+use OpenQA::Client;
+use Mojo::IOLoop;
 use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
 
 # mock OpenQA::Schema::Result::Jobs::cancel()
@@ -94,7 +96,23 @@ my %no_developer = (
     developer_name               => undef,
     developer_session_started_at => undef,
     developer_session_tab_count  => 0,
+    outstanding_files            => undef,
+    outstanding_images           => undef,
+    upload_up_to_current_module  => undef,
 );
+
+subtest 'store upload progress as JSON in database on worker-level' => sub {
+    my $worker = $workers->find({job_id => 99961});
+    is($worker->upload_progress, undef, 'by default null');
+
+    $worker->update({upload_progress => {some => 'json'}});
+    $worker = $workers->find({job_id => 99961});
+    is_deeply($worker->upload_progress, {some => 'json'}, 'get and set json data');
+
+    $worker->unprepare_for_work();
+    $worker = $workers->find({job_id => 99961});
+    is($worker->upload_progress, undef, 'null after unpreparing');
+};
 
 subtest 'send message to JavaScript clients' => sub {
     # create fake java script connections for job 99961
@@ -165,6 +183,9 @@ subtest 'send message to JavaScript clients' => sub {
                         developer_name               => 'artie',
                         developer_session_started_at => $session_t_created,
                         developer_session_tab_count  => 2,
+                        outstanding_files            => undef,
+                        outstanding_images           => undef,
+                        upload_up_to_current_module  => undef,
                     }}
             },
             {
@@ -409,6 +430,10 @@ subtest 'URLs for command server and livehandler' => sub {
         undef, 'no URL for job without assigned worker');
 
     $job->update({assigned_worker_id => $worker->id});
+    is(OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
+        undef, 'no URL for job without JOBTOKEN');
+
+    $worker->set_property(JOBTOKEN => 'token99961');
     is(OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
         undef, 'no URL for job when worker has not propagated the URL yet');
 

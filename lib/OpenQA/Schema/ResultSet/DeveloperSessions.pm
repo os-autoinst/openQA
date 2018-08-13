@@ -43,9 +43,6 @@ sub register {
 
 sub unregister {
     my ($self, $job_id) = @_;
-
-
-
     # to keep track of the responsible developer, don't delete the database entry here
     # (it is deleted when the associated job is delete anyways)
 
