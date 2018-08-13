@@ -173,6 +173,11 @@ sub quit_development_session {
     }
 }
 
+# handles a message from the java script web socket connection (not status-only)
+#  * expecting valid JSON here in 'os-autoinst' compatible form, eg.
+#      {"cmd":"set_pause_at_test","name":"installation-welcome"}
+#  * a selected set of commands is passed to os-autoinst backend
+#  * some commands are handled internally
 sub handle_message_from_java_script {
     my ($self, $job_id, $msg) = @_;
 
@@ -216,6 +221,21 @@ sub handle_message_from_java_script {
     # send message to os-autoinst; no need to send extra feedback to JavaScript client since
     # we just pass the feedback from os-autoinst back
     $self->send_message_to_os_autoinst($job_id, $json);
+}
+
+# handles a disconnect of the web socket connection (not status-only)
+sub handle_disconnect_from_java_script_client {
+    my ($self, $job_id, $java_script_tx, $user_name) = @_;
+
+    $self->app->log->debug('client disconnected: ' . $user_name);
+
+    $self->remove_java_script_transaction($job_id, $self->devel_java_script_transactions_by_job, $java_script_tx);
+
+    my $session = $self->developer_sessions->find({job_id => $job_id}) or return;
+    $session->update({ws_connection_count => \'ws_connection_count - 1'});    #'restore syntax highlighting
+
+    # send status update to remaining JavaScript clients
+    $self->send_session_info($job_id);
 }
 
 sub find_upload_progress {
@@ -440,31 +460,15 @@ sub ws_proxy {
             });
     }
 
-    # handle messages from the JavaScript
-    #  * expecting valid JSON here in 'os-autoinst' compatible form, eg.
-    #      {"cmd":"set_pause_at_test","name":"installation-welcome"}
-    #  * a selected set of commands is passed to os-autoinst backend
-    #  * some commands are handled internally
+    # handle messages/disconnect from the JavaScript client (not status-only)
     $self->on(
         message => sub {
             my ($tx, $msg) = @_;
             $self->handle_message_from_java_script($job_id, $msg);
         });
-
-    # handle web socket connection being quit from the JavaScript-side
     $self->on(
         finish => sub {
-            $self->remove_java_script_transaction($job_id, $self->devel_java_script_transactions_by_job,
-                $java_script_tx);
-
-            $app->log->debug('client disconnected: ' . $user->name);
-            my $session = $developer_sessions->find({job_id => $job_id}) or return;
-            # note: it is likely not useful to quit the development session instantly because the user
-            #       might just have pressed the reload button
-            $session->update({ws_connection_count => \'ws_connection_count - 1'});    #'restore syntax highlighting
-
-            # send status update to remaining JavaScript clients
-            $self->send_session_info($job_id);
+            $self->handle_disconnect_from_java_script_client($job_id, $java_script_tx, $user->name);
         });
 }
 

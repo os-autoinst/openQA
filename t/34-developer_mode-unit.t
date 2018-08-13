@@ -69,6 +69,32 @@ sub set_fake_status_java_script_transactions {
     $t_livehandler->app->status_java_script_transactions_by_job->{$job_id} = $fake_transactions;
 }
 
+my $finished_handled_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::LiveViewHandler');
+my $finished_handled;
+sub prepare_waiting_for_finished_handled {
+    my $subroutine_name = 'handle_disconnect_from_java_script_client';
+    $finished_handled = 0;
+    $finished_handled_mock->mock(
+        $subroutine_name => sub {
+            $finished_handled_mock->original($subroutine_name)->(@_);
+            $finished_handled = 1;
+        });
+}
+sub wait_for_finished_handled {
+    # wait until the finished event is handled (but at most 5 seconds)
+    if (!$finished_handled) {
+        my $timer = Mojo::IOLoop->timer(
+            5.0 => sub {
+
+            });
+        Mojo::IOLoop->one_tick;
+        Mojo::IOLoop->remove($timer);
+    }
+
+    $finished_handled_mock->unmock_all();
+    fail('finished event not handled within 5 seconds') if (!$finished_handled);
+}
+
 # get CSRF token for auth
 my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
 # note: since the openqa-livehandler daemon doesn't provide its own way to login, we
@@ -538,6 +564,8 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
     };
 
     subtest 'job without assigned worker' => sub {
+        prepare_waiting_for_finished_handled();
+
         $t_livehandler->websocket_ok(
             '/liveviewhandler/tests/99962/developer/ws-proxy',
             'establish ws connection from JavaScript to livehandler'
@@ -551,6 +579,8 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             });
         $t_livehandler->finished_ok(1011);
 
+        wait_for_finished_handled();
+
         is($developer_sessions->count, 1, 'developer session opened');
         my $developer_session = $developer_sessions->first;
         is($developer_session->ws_connection_count, 0,     'all ws connections finished');
@@ -559,6 +589,8 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
     };
 
     subtest 'job with assigned worker, but os-autoinst not reachable' => sub {
+        prepare_waiting_for_finished_handled();
+
         $t_livehandler->websocket_ok(
             '/liveviewhandler/tests/99961/developer/ws-proxy',
             'establish ws connection from JavaScript to livehandler'
@@ -579,6 +611,8 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             });
         $t_livehandler->finished_ok(1011);
 
+        wait_for_finished_handled();
+
         my $developer_session = $developer_sessions->find(99961);
         is($developer_sessions->count,              2,     'another developer session opened');
         is($developer_session->ws_connection_count, 0,     'all ws connections finished');
@@ -590,6 +624,8 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
     set_fake_cmd_srv_transaction(99961, $fake_cmd_srv_tx);
 
     subtest 'job with assigned worker, fake os-autoinst' => sub {
+        prepare_waiting_for_finished_handled();
+
         # connect to ws proxy again, should use the fake connection now
         $t_livehandler->websocket_ok(
             '/liveviewhandler/tests/99961/developer/ws-proxy',
@@ -642,6 +678,8 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
 
         # closing connection will reset counter and bookkeeping of ongoing transations
         $t_livehandler->finish_ok();
+        wait_for_finished_handled();
+
         is($developer_sessions->find(99961)->ws_connection_count, 0, 'ws connection finished');
         is(scalar @{$t_livehandler->app->devel_java_script_transactions_by_job->{99961} // []},
             0, 'devel js transactions cleaned');
@@ -725,6 +763,9 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
         $t_livehandler->message_ok('message received');
         $t_livehandler->finish_ok();
     };
+
+    # note: This test might throw an exception at the end when using Mojo 7.83 - 7.91
+    #       (see https://github.com/kraih/mojo/commit/61f6cbf22c7bf8eb4787bd1014d91ee2416c73e7).
 };
 
 done_testing();
