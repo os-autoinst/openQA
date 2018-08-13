@@ -24,9 +24,15 @@ BEGIN {
     $ENV{OPENQA_BASEDIR} = path(tempdir, 't', 'scheduler');
     $ENV{OPENQA_CONFIG} = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
     # Since tests depends on timing, we require the scheduler to be fixed in its actions.
-    $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 10;
-    $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 2000;
-    $ENV{FULLSTACK}                           = 1 if $ENV{SCHEDULER_FULLSTACK};
+    $ENV{OPENQA_SCHEDULER_TIMESLOT}               = 1000;
+    $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION}     = 10;
+    $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS}      = 2;
+    $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL}     = 1;
+    $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}       = 2000;
+    $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}            = 4000;
+    $ENV{OPENQA_SCHEDULER_CAPTURE_LOOP_AVOIDANCE} = 38000;
+    $ENV{OPENQA_SCHEDULER_WAKEUP_ON_REQUEST}      = 0;
+    $ENV{FULLSTACK}                               = 1 if $ENV{SCHEDULER_FULLSTACK};
     path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
     path($FindBin::Bin, "data")->child("database.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("database.ini"));
     path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
@@ -76,29 +82,52 @@ ok -d $resultdir;
 
 my $k = $schema->resultset("ApiKeys")->create({user_id => "99903"});
 
+subtest 'Scheduler backoff timing calculations' => sub {
+    dead_workers($schema);
+
+    my $allocated;
+    my $failures;
+    my $no_actions;
+    my $c;
+
+    scheduler_step($reactor) for (0 .. 11);
+    trigger_capture_event_loop($reactor);
+
+    for (0 .. 8) {
+        $c++;
+        ($allocated, $failures, $no_actions) = scheduler_step($reactor);
+        is $failures, $c, "Expected failures: $c";
+        is @$allocated, 0, "Expected allocations: 0";
+        is $no_actions, $c, "No actions performed will match failures - since we have no free workers";
+    }
+
+};
 subtest 'Scheduler worker job allocation' => sub {
 
     my $allocated;
     my $failures;
     my $no_actions;
 
-    #dead_workers($schema);
+
+    trigger_capture_event_loop($reactor);
 
     #
     # Step 1
-    $allocated = scheduler_step($reactor);    # Will try to allocate to previous worker and fail!
+    ($allocated, $failures, $no_actions) = scheduler_step($reactor);
+    is $failures,   1;
+    is $no_actions, $failures;
     is @$allocated, 0;
-
 
     # GO GO GO GO GO!!! like crazy now
     my $w1_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 1);
     my $w2_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2);
-    wait_for_worker($schema, 3);
-    wait_for_worker($schema, 4);
+    sleep 5;
 
-    ($allocated) = scheduler_step($reactor);    # Will try to allocate to previous worker and fail!
+    # Step 1
+    ($allocated, $failures, $no_actions) = scheduler_step($reactor);
+    is $failures, 0;
+    is @$allocated, 2;
 
-    #($allocated) = scheduler_step($reactor);
     my $job_id1 = $allocated->[0]->{job};
     my $job_id2 = $allocated->[1]->{job};
     my $wr_id1  = $allocated->[0]->{worker};
@@ -107,7 +136,9 @@ subtest 'Scheduler worker job allocation' => sub {
     ok $job_id1 != $job_id2, "Jobs dispatched to different workers";
 
 
-    ($allocated) = scheduler_step($reactor);
+    ($allocated, $failures, $no_actions) = scheduler_step($reactor);
+    is $failures,   0;
+    is $no_actions, 1;
     is @$allocated, 0;
 
     dead_workers($schema);
@@ -117,20 +148,23 @@ subtest 'Scheduler worker job allocation' => sub {
 
 subtest 'Simulation of unstable workers' => sub {
     my $allocated;
+    my $failures;
+    my $no_actions;
 
 
     my @latest = $schema->resultset("Jobs")->latest_jobs;
 
     shift(@latest)->auto_duplicate();
 
-    ($allocated) = scheduler_step($reactor);    # Will try to allocate to previous worker and fail!
+    ($allocated, $failures, $no_actions) = scheduler_step($reactor); # Will try to allocate to previous worker and fail!
+    is $failures,   1;
+    is $no_actions, 2;
 
 # Now let's simulate unstable workers :)
 # In this way the worker will associate, will be registered but won't perform any operation - will just send statuses that is free.
     my $unstable_w_pid = unresponsive_worker($k->key, $k->secret, "http://localhost:$mojoport", 3);
-    wait_for_worker($schema, 4);
 
-    $allocated = scheduler_step($reactor);
+    ($allocated, $failures, $no_actions) = scheduler_step($reactor);
     is @$allocated, 1;
     is @{$allocated}[0]->{job},    99982;
     is @{$allocated}[0]->{worker}, 5;
@@ -146,14 +180,16 @@ subtest 'Simulation of unstable workers' => sub {
     sleep 5;
 
     scheduler_step($reactor);
+    reset_tick($reactor);
     dead_workers($schema);
 
     # Same job, since was put in scheduled state again.
     $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, 8);
     wait_for_worker($schema, 5);
 
-    ($allocated) = scheduler_step($reactor);
-
+    ($allocated, $failures, $no_actions) = scheduler_step($reactor);
+    is $failures,   0;
+    is $no_actions, 0;
     is @$allocated, 1;
     is @{$allocated}[0]->{job},    99982;
     is @{$allocated}[0]->{worker}, 5;
@@ -179,6 +215,8 @@ subtest 'Simulation of unstable workers' => sub {
 
 subtest 'Simulation of heavy unstable load' => sub {
     my $allocated;
+    my $failures;
+    my $no_actions;
     my @workers;
     dead_workers($schema);
     my @duplicated;
@@ -186,12 +224,12 @@ subtest 'Simulation of heavy unstable load' => sub {
     push(@duplicated, $_->auto_duplicate()) for $schema->resultset("Jobs")->latest_jobs;
 
     push(@workers, unresponsive_worker($k->key, $k->secret, "http://localhost:$mojoport", $_)) for (1 .. 50);
-    my $i = 4;
-    wait_for_worker($schema, ++$i) for 1 .. 10;
+    sleep 5;
 
-    ($allocated) = scheduler_step($reactor);    # Will try to allocate to previous worker and fail!
-    is @$allocated, 8,
-      "Allocated maximum number of jobs that could have been allocated";    # XXX: This, really should be 10
+    ($allocated, $failures, $no_actions) = scheduler_step($reactor); # Will try to allocate to previous worker and fail!
+    is @$allocated, 10, "Allocated maximum number of jobs that could have been allocated";
+    is $failures, 2, "Failure count should be to 2, since we took too much time to schedule";
+    is get_scheduler_tick($reactor), 2**$failures * $ENV{OPENQA_SCHEDULER_TIMESLOT}, "Tick is at the expected value";
     my %jobs;
     my %w;
     foreach my $j (@$allocated) {
@@ -214,11 +252,15 @@ subtest 'Simulation of heavy unstable load' => sub {
     @workers = ();
 
     push(@workers, unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", $_, 3)) for (1 .. 30);
-    $i = 5;
+    my $i = 5;
     wait_for_worker($schema, ++$i) for 0 .. 12;
+    trigger_capture_event_loop($reactor);
 
-    ($allocated) = scheduler_step($reactor);    # Will try to allocate to previous worker and fail!
+    ($allocated, $failures, $no_actions) = scheduler_step($reactor); # Will try to allocate to previous worker and fail!
     is @$allocated, 0, "All failed allocation on second step - workers were killed";
+    ok $failures >= 8, "Failure count($failures) should be >=8, since we took too much time to schedule";
+    is get_scheduler_tick($reactor), $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}, "Tick is at the expected value";
+
     for my $dup (@duplicated) {
         for (0 .. 100) {
             last if $dup->state eq OpenQA::Jobs::Constants::SCHEDULED;
@@ -253,30 +295,40 @@ subtest 'Websocket server - close connection test' => sub {
 };
 
 # This test destroys almost everything.
-# subtest 'Simulation of heavy failures' => sub {
-#     my $allocated;
-#     my @workers;
-#
-#     kill_service($wspid);
-#
-#     dead_workers($schema);
-#
-#     scheduler_step($reactor);
-#
-#     # Destroy db to achieve maximum failures - simulate when we can't reach db to update states.
-#     my $dbh = DBI->connect($ENV{TEST_PG});
-#     $dbh->do('DROP SCHEMA public CASCADE;');
-#     $dbh->do('CREATE SCHEMA public;');
-#     $dbh->disconnect;
-#
-#     ($allocated) = scheduler_step($reactor);    # Will try to allocate to previous worker and fail!
-#     is @$allocated, 0, "Everything is failing as expected - 0 allocations";
-#
-#     ($allocated) = scheduler_step($reactor);    # Will try to allocate to previous worker and fail!
-#     is @$allocated, 0, "Everything is failing as expected - 0 allocations";
-#
-#     kill_service($_, 1) for @workers;
-# };
+subtest 'Simulation of heavy failures' => sub {
+    my $allocated;
+    my $failures;
+    my $no_actions;
+    my @workers;
+
+    kill_service($wspid);
+
+    dead_workers($schema);
+
+    trigger_capture_event_loop($reactor);
+    scheduler_step($reactor);
+
+    # Destroy db to achieve maximum failures - simulate when we can't reach db to update states.
+    my $dbh = DBI->connect($ENV{TEST_PG});
+    $dbh->do('DROP SCHEMA public CASCADE;');
+    $dbh->do('CREATE SCHEMA public;');
+    $dbh->disconnect;
+
+    ($allocated, $failures, $no_actions) = scheduler_step($reactor); # Will try to allocate to previous worker and fail!
+    is @$allocated, 0, "Everything is failing as expected - 0 allocations";
+    is $failures , $no_actions, "Failure count should be 2";
+    is $no_actions, 2, '2 Actions were performed';
+    is get_scheduler_tick($reactor), $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}, "Tick is at the expected value";
+
+    ($allocated, $failures, $no_actions) = scheduler_step($reactor); # Will try to allocate to previous worker and fail!
+    is @$allocated, 0, "Everything is failing as expected - 0 allocations";
+    is $failures , $no_actions, "Failure count should be 3";
+    is $no_actions, 3, '3 Actions were performed';
+    is get_scheduler_tick($reactor), $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}, "Tick is at the expected value";
+
+
+    kill_service($_, 1) for @workers;
+};
 
 kill_service($_) for ($wspid, $webapi, $resourceallocatorpid);
 
@@ -285,11 +337,38 @@ sub dead_workers {
     $_->update({t_updated => DateTime->from_epoch(epoch => time - 10200)}) for $schema->resultset("Workers")->all();
 }
 
+sub reset_tick {
+    my $reactor = shift;
+
+    eval { $reactor->remove_timeout($reactor->{timer}->{schedule_jobs}) } if exists $reactor->{timer}->{schedule_jobs};
+    delete $reactor->{timer}->{schedule_jobs};
+    $reactor->{tick} = $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS};    # Reset to what we expect to be normal ticking
+    return $reactor;
+}
+
 sub remove_timers {
     my $reactor = shift;
 
-    $reactor->{timeouts} = [undef];    # This is Net::DBus default...
+    $reactor->{timeouts} = [undef];                                # This is Net::DBus default...
     delete $reactor->{timer}->{no_actions_reset};
+    delete $reactor->{timer}->{capture_loop_avoidance};
+}
+
+sub trigger_capture_event_loop {
+    my $reactor = shift;
+
+    # Capture loop avoidance timer fired. back to default
+    $reactor->{running} = 1;
+    $reactor->step;
+    $reactor->{running} = 0;
+
+    is $reactor->{timeouts}->[$reactor->{timer}->{schedule_jobs}]->{interval},
+      $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} + 1000, "Scheduler clock got reset";    #scheduler_step($reactor);
+
+    reset_tick($reactor);
+    remove_timers($reactor);
+
+    return $reactor;
 }
 
 sub get_reactor {
@@ -312,18 +391,53 @@ sub range_ok {
 }
 
 sub scheduler_step {
+    use Data::Dumper;
     my $reactor = shift;
     my $started = $reactor->_now;
-    my ($allocated);
-    my $current_tick = $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS};
+    my ($allocated, $failures, $no_actions, $rescheduled);
+    my $fired;
 
-    $allocated = OpenQA::Scheduler::Scheduler::schedule();
+    my $current_tick = $reactor->{tick} // $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS};
+    eval { $reactor->remove_timeout($reactor->{timer}->{schedule_jobs}) } if exists $reactor->{timer}->{schedule_jobs};
 
-    is get_scheduler_tick($reactor), $current_tick, "Tick is at the expected value ($current_tick)";
+    my $tid = $reactor->add_timeout(
+        $current_tick,
+        Net::DBus::Callback->new(
+            method => sub {
+                $fired = $reactor->_now;
+                ($allocated, $failures, $no_actions, $rescheduled) = OpenQA::Scheduler::Scheduler::schedule();
+                print STDERR Dumper($allocated) . "\n";
 
-    return $allocated;
+                $reactor->{tick} = $reactor->{timeouts}->[$reactor->{timer}->{schedule_jobs}]->{interval};
+                eval { $reactor->remove_timeout($reactor->{timer}->{schedule_jobs}) }
+                  if exists $reactor->{timer}->{schedule_jobs};    # Scheduler reallocate itself :)
+                                                                   #  $reactor->shutdown;
+
+            }));
+    $reactor->{timer}->{schedule_jobs} = $tid;
+    diag 'Running scheduler step';
+    $reactor->{running} = 1;
+    $reactor->step;
+    $reactor->{running} = 0;
+    $reactor->{timer}->{schedule_jobs} = $tid;
+    $failures   = 0 if !defined $failures;
+    $no_actions = 0 if !defined $no_actions;
+    $reactor->shutdown;
+
+    eval { $reactor->remove_timeout($reactor->{timer}->{schedule_jobs}) }
+      if exists $reactor->{timer}->{schedule_jobs};    # Scheduler reallocate itself :)
+
+    range_ok($current_tick, $started, $fired) if $fired;
+
+    my $backoff = ((2**((($failures ? $failures : 0) + ($no_actions ? $no_actions : 0)) || 2)) - 1)
+      * $ENV{OPENQA_SCHEDULER_TIMESLOT};
+    $backoff = $backoff > $ENV{OPENQA_SCHEDULER_MAX_BACKOFF} ? $ENV{OPENQA_SCHEDULER_MAX_BACKOFF} : $backoff + 1000;
+    is get_scheduler_tick($reactor), $backoff,
+      "Tick is at the expected value ($backoff) (failures $failures) (no_actions $no_actions)"
+      if $rescheduled;
+
+    return ($allocated, $failures, $no_actions);
 }
-
 sub get_scheduler_tick { shift->{tick} }
 
 sub init_db {

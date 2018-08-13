@@ -503,11 +503,6 @@ sub schedule_iso {
             }
         }
 
-        # now calculate blocked_by state
-        for my $job (@jobs) {
-            $job->calculate_blocked_by;
-        }
-
         # enqueue gru jobs
         if (%downloads and @successful_job_ids) {
             # array of hashrefs job_id => id; this is what create needs
@@ -537,7 +532,6 @@ sub schedule_iso {
     for my $succjob (@successful_job_ids) {
         $self->emit_event('openqa_job_create', {id => $succjob});
     }
-    wakeup_scheduler;
     return {
         successful_job_ids => \@successful_job_ids,
         failed_job_info    => \@failed_job_info,

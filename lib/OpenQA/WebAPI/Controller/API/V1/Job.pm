@@ -191,8 +191,6 @@ sub create {
 
         # enqueue gru job
         $self->gru->enqueue(limit_assets => [] => {priority => 10});
-        $job->calculate_blocked_by;
-        wakeup_scheduler;
     }
     catch {
         $status = 400;

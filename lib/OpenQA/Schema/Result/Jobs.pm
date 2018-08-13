@@ -1458,6 +1458,7 @@ sub allocate_network {
 
     my $vlan = $self->_find_network($name);
     return $vlan if $vlan;
+
     #allocate new
     my @used_rs = $self->result_source->schema->resultset('JobNetworks')->search(
         {},
@@ -1478,7 +1479,6 @@ sub allocate_network {
                     my $found = $self->networks->find_or_new({name => $name, vlan => $vlan});
                     unless ($found->in_storage) {
                         $found->insert;
-                        log_debug("Created network for " . $self->id . " : $vlan");
                         # return the vlan tag only if we are sure it is in the DB
                         $created = 1 if ($found->in_storage);
                     }
@@ -1525,20 +1525,7 @@ sub _find_network {
 sub release_networks {
     my ($self) = @_;
 
-    my @cluster = keys %{$self->cluster_jobs};
-    return $self->networks->delete unless @cluster;
-
-    my $jobs = $self->result_source->resultset;
-    @cluster = map { $jobs->find($_) } @cluster;
-
-    do {
-        return log_debug("Cannot release networks of " . $self->id . " Job " . $_->id . " is still running")
-          if $_->state eq RUNNING;
-      }
-      for grep { $_->id ne $self->id } @cluster;
-
-    $_->networks->delete for @cluster;
-
+    $self->networks->delete;
 }
 
 sub needle_dir() {
@@ -1853,11 +1840,10 @@ sub search_for {
 sub blocked_by_parent_job {
     my ($self) = @_;
 
-    my $parents = $self->result_source->schema->resultset('JobDependencies')->search(
+    my $parents = $self->parents->search(
         {
-            dependency    => OpenQA::Schema::Result::JobDependencies->CHAINED,
-            parent_job_id => {'!=' => $self->id},
-            child_job_id  => {-in => [keys %{$self->cluster_jobs}]}});
+            dependency => OpenQA::Schema::Result::JobDependencies->CHAINED,
+        });
     while (my $pd = $parents->next) {
         my $p     = $pd->parent;
         my $state = $p->state;

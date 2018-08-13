@@ -9,7 +9,6 @@
     </thead>
     <tbody>
     % for my $job (@$scheduled) {
-        % my $job_blocked = $blocked && exists $blocked->{$job->id};
         % my $prio = $job->priority;
         % my $state = $job->state;
         % my $build = $job->BUILD;
@@ -34,11 +33,7 @@
                   % end
                 % }
                 %= link_to url_for('test', 'testid' => $job->id) => begin
-                        % if ($job_blocked) {
-                        <i class="status state_blocked fa fa-circle" title="Blocked"></i>
-                        % } else {
-                        <i class="status state_scheduled fa fa-circle" title="Scheduled"></i>
-                        % }
+                       <i class="status state_scheduled fa fa-circle" title="Scheduled"></i>
                     % end
                     %= link_to url_for('test', 'testid' => $job->id) => begin
                        %= $test

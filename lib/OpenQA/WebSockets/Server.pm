@@ -209,7 +209,7 @@ sub _message {
     }
 
     # This is to make sure that no worker can skip the _registration.
-    if (($worker->{db}->websocket_api_version() || 0) != WEBSOCKET_API_VERSION) {
+    if (($worker->{db}->get_websocket_api_version() || 0) != WEBSOCKET_API_VERSION) {
         log_warning("Received a message from an incompatible worker " . $worker->{id});
         $ws->tx->send({json => {type => 'incompatible'}});
         $ws->finish("1008",

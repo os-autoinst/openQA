@@ -35,23 +35,10 @@ use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use Net::DBus;
 use Net::DBus::Test::MockObject;
-use Mojo::Util 'monkey_patch';
 
 use Test::More;
 use Test::Warnings;
 use Test::Output qw(stderr_like);
-use OpenQA::Schema::Result::Jobs;
-
-my $sent = {};
-
-# Mangle worker websocket send, and record what was sent
-monkey_patch 'OpenQA::Schema::Result::Jobs', ws_send => sub {
-    my ($self, $worker) = @_;
-    my $hashref = $self->prepare_for_work($worker);
-    $hashref->{assigned_worker_id} = $worker->id;
-    $sent->{$worker->id} = {worker => $worker, job => $self};
-    return {state => {msg_sent => 1}};
-};
 
 my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
@@ -295,21 +282,20 @@ is_deeply($current_jobs, [$jobs->[0]], "jobs with specified IDs (comma list)");
 # Testing job_grab
 %args = (workerid => $worker->{id}, allocate => 1);
 my $rjobs_before = list_jobs(state => 'running');
-OpenQA::Scheduler::Scheduler::schedule();
-my $grabbed = $sent->{$worker->{id}}->{job}->to_hash;
-my $rjobs_after = list_jobs(state => 'assigned');
+my $grabbed      = OpenQA::Scheduler::Scheduler::job_grab(%args);
+my $rjobs_after  = list_jobs(state => 'running');
 
 ## test and add JOBTOKEN to job_ref after job_grab
 ok($grabbed->{settings}->{JOBTOKEN}, "job token present");
 $job_ref->{settings}->{JOBTOKEN} = $grabbed->{settings}->{JOBTOKEN};
 is_deeply($grabbed->{settings}, $job_ref->{settings}, "settings correct");
-ok(!$grabbed->{t_started}, "job start timestamp not present as job is not started");
+ok($grabbed->{t_started} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job start timestamp updated");
 is(scalar(@{$rjobs_before}) + 1, scalar(@{$rjobs_after}), "number of running jobs");
 is($rjobs_after->[-1]->{assigned_worker_id}, 1, 'assigned worker set');
 
 $grabbed = job_get($job->id);
 is($grabbed->worker->id, $worker->{id}, "correct worker assigned");
-ok($grabbed->state eq "assigned", "Job is in assigned state");    # After job_grab the job is in running state.
+ok($grabbed->state eq "running", "Job is in running state");    # After job_grab the job is in running state.
 
 # register worker again while it has a running job
 $id2 = $c->_register($schema, "host", "1", $workercaps);
@@ -321,11 +307,9 @@ is($grabbed->state,  "done",       "Previous job is in done state");
 is($grabbed->result, "incomplete", "result is incomplete");
 ok(!$grabbed->settings_hash->{JOBTOKEN}, "job token no longer present");
 
-OpenQA::Scheduler::Scheduler::schedule();
-$grabbed = $sent->{$worker->{id}}->{job}->to_hash;
-isnt($job->id, $grabbed->{id}, "new job grabbed") or die diag explain $grabbed->to_hash;
-isnt($grabbed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, "job token differs")
-  or die diag explain $grabbed->to_hash;
+$grabbed = OpenQA::Scheduler::Scheduler::job_grab(%args);
+isnt($job->id, $grabbed->{id}, "new job grabbed");
+isnt($grabbed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, "job token differs");
 
 ## update refs for isdeeply compare
 $job_ref->{settings}->{JOBTOKEN} = $grabbed->{settings}->{JOBTOKEN};
@@ -369,7 +353,23 @@ $result = $schema->resultset('Jobs')->find($job_id)->delete;
 my $no_job_id = job_get($job_id);
 ok($result && !defined $no_job_id, "job_delete");
 
+# Testing double grab
+%args   = (workerid => $worker->{id}, allocate => 1);
+$job    = OpenQA::Scheduler::Scheduler::job_grab(%args);
+$job_id = $job->{id};
+$job    = job_get($job_id);
+is($job->state, 'running', 'grabbed job runs');
+
+my $job4;
+stderr_like {
+    $job4 = OpenQA::Scheduler::Scheduler::job_grab(%args);
+}
+qr/[WARN].*host.*wants to grab a new job - killing the old one: 2/;
+isnt($job4->{id}, $job_id, "grabbed another job");
 $job->discard_changes;
+is($job4->{state}, 'running',    'grabbed job 4 runs');
+is($job->state,    'done',       'job 2 no longer runs');
+is($job->result,   'incomplete', 'first job set to incomplete');
 
 # Testing job_restart
 # TBD
@@ -388,6 +388,9 @@ $result    = $schema->resultset('Jobs')->find($job3_id)->delete;
 $no_job_id = job_get($job3_id);
 ok($result && !defined $no_job_id, "job_delete");
 
+$result    = $schema->resultset('Jobs')->find($job4->{id})->delete;
+$no_job_id = job_get($job4->{id});
+ok($result && !defined $no_job_id, "job_delete");
 
 $current_jobs = list_jobs();
 is_deeply($current_jobs, [], "no jobs listed");

@@ -130,7 +130,7 @@ sub dead {
     $self->t_updated < $dt;
 }
 
-sub websocket_api_version {
+sub get_websocket_api_version {
     my ($self) = @_;
 
     # Cache this value. To avoid keeping querying the DB.
@@ -139,17 +139,6 @@ sub websocket_api_version {
     }
 
     return $self->{_websocket_api_version_};
-}
-
-sub check_class {
-    my ($self, $class) = @_;
-
-    unless ($self->{_worker_class_hash}) {
-        for my $k (split /,/, ($self->get_property('WORKER_CLASS') || 'NONE')) {
-            $self->{_worker_class_hash}->{$k} = 1;
-        }
-    }
-    return defined $self->{_worker_class_hash}->{$class};
 }
 
 sub currentstep {
