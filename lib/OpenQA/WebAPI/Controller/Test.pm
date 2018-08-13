@@ -100,7 +100,7 @@ sub list {
         groupid => $groupid,
         assetid => $assetid
     );
-    $self->stash(blocked => $scheduled->search({-not => {blocked_by_id => undef}})->count);
+    #    $self->stash(blocked => $scheduled->search({-not => {blocked_by_id => undef}})->count);
 
     # @scheduled = sort {
     #     if ($b->{job} && $a->{job}) {
@@ -116,7 +116,7 @@ sub list {
     #         0;
     #     }
     # }
-    my @scheduled = $scheduled->search({blocked_by_id => undef})->all;
+    my @scheduled = $scheduled->search({})->all;
     @scheduled = sort { $b->t_created <=> $a->t_created || $b->id <=> $a->id } @scheduled;
     $self->stash(scheduled => \@scheduled);
 }
