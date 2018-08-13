@@ -62,6 +62,7 @@ sub startup {
     OpenQA::Setup::setup_log($self);
     OpenQA::Setup::setup_app_defaults($self);
     OpenQA::Setup::setup_mojo_tmpdir();
+    OpenQA::Setup::add_build_tx_time_header($self);
 
     # take care of DB deployment or migration before starting the main app
     my $schema = OpenQA::Schema::connect_db;

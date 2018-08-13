@@ -356,4 +356,14 @@ sub setup_validator_check_for_datetime {
         });
 }
 
+# add build_tx time to the header for HMAC time stamp check to avoid large timeouts on uploads
+sub add_build_tx_time_header {
+    my ($app) = @_;
+    $app->hook(
+        after_build_tx => sub {
+            my ($tx, $app) = @_;
+            $tx->req->headers->header('X-Build-Tx-Time' => time);
+        });
+}
+
 1;

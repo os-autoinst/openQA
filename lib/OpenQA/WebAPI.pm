@@ -66,6 +66,7 @@ sub startup {
     OpenQA::Setup::setup_log($self);
     OpenQA::Setup::setup_app_defaults($self);
     OpenQA::Setup::setup_mojo_tmpdir();
+    OpenQA::Setup::add_build_tx_time_header($self);
 
     # take care of DB deployment or migration before starting the main app
     my $schema = OpenQA::Schema::connect_db;
@@ -94,14 +95,6 @@ sub startup {
             my ($controller) = @_;
             OpenQA::Setup::set_secure_flag_on_cookies($controller);
             $controller->stash('job_groups_and_parents', job_groups_and_parents);
-        });
-
-    # mark build_tx time in the header for HMAC time stamp check
-    # to avoid large timeouts on uploads
-    $self->hook(
-        after_build_tx => sub {
-            my ($tx, $app) = @_;
-            $tx->req->headers->header('X-Build-Tx-Time' => time);
         });
 
     # register routes
