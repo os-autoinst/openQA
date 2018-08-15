@@ -1771,7 +1771,6 @@ sub done {
 
     # bugrefs are there to mark reasons of failure - the function checks itself though
     $self->carry_over_bugrefs;
-    $self->unblock;
 
     return $result;
 }
