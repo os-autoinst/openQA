@@ -189,7 +189,6 @@ sub create_from_settings {
         OpenQA::Utils::log_warning(
             'Ignoring invalid group ' . encode_json(\%group_args) . ' when creating new job ' . $job->id);
     }
-    $job->calculate_blocked_by;
     $txn_guard->commit;
     wakeup_scheduler;
     return $job;
