@@ -19,10 +19,8 @@ cache:
   directories:
   - assets/cache
 script:
-- mkdir -p assets/cache
-- chmod a+w assets/cache
-- touch openqa-debug.log autoinst-log.txt
-- chmod a+w openqa-debug.log autoinst-log.txt
+- mkdir -p assets/cache && chmod a+w assets/cache
+- touch openqa-debug.log autoinst-log.txt && chmod a+w openqa-debug.log autoinst-log.txt
 - make docker-test
 after_failure:
 - cat openqa-debug.log

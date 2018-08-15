@@ -1,8 +1,11 @@
-#!/bin/bash                                                                                                                                                                                                        
+#!/bin/bash
 
-set -e
-
+DEBUG="${DEBUG:-0}"
 INSTALL_FROM_CPAN="${INSTALL_FROM_CPAN:-0}"
+export LANG="en_US.UTF-8"
+export LC_ALL="en_US.UTF-8"
+set -e
+[ "$DEBUG" -eq 1 ] && set -x
 
 # First, try to upgrade all container dependencies (or we won't catch bugs until a new docker image is built)
 sudo zypper --gpg-auto-import-keys -n ref --force && sudo zypper up -l -y
@@ -14,13 +17,14 @@ cd /opt/testing_area/openqa
 function create_db {
     set -e
     export PGDATA=$(mktemp -d)
+    echo ">> Creating fake database in ${PGDATA}"
     initdb --auth=trust -N $PGDATA
 
 cat >> $PGDATA/postgresql.conf <<HEREDOC
-listen_addresses='localhost'                                                                                                                                                                                       
-unix_socket_directories='$PGDATA'                                                                                                                                                                                  
-fsync=off                                                                                                                                                                                                          
-full_page_writes=off                                                                                                                                                                                               
+listen_addresses='localhost'
+unix_socket_directories='$PGDATA'
+fsync=off
+full_page_writes=off
 HEREDOC
 
     pg_ctl -D $PGDATA start -w
@@ -31,6 +35,8 @@ HEREDOC
 
 
 function run_as_normal_user {
+    echo ">> Trying to get dependencies from CPAN"
+
     [ "$INSTALL_FROM_CPAN" -eq 1 ] && \
 	      (cpanm --local-lib=~/perl5 local::lib && cpanm -n --installdeps . ) || \
 	      cpanm -n --mirror http://no.where/ --installdeps .
@@ -41,16 +47,16 @@ function run_as_normal_user {
         export MOJO_TMPDIR=$(mktemp -d)
         export OPENQA_LOGFILE=/tmp/openqa-debug.log
     else
-        echo "Missing depdencies. Please check output above"
+        echo ">> Dependencies missing. Please check output above"
     fi
 
-    [ "$INSTALL_FROM_CPAN" -eq 1 ] && eval $(perl -I ~/perl5/lib/perl5/ -Mlocal::lib)
+    [ "$INSTALL_FROM_CPAN" -eq 1 ] && eval $(perl -I ~/perl5/lib/perl5/ -Mlocal::lib) || true
 }
 
 export -f create_db run_as_normal_user
 
-
-
 run_as_normal_user;
+
+echo ">> Running tests"
 
 dbus-run-session -- sh -c "$*"

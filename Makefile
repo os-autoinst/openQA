@@ -2,6 +2,7 @@ PROVE_ARGS ?= -r -v
 DOCKER_IMG ?= openqa:latest
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
+docker_env := $(shell env | grep -v -E 'TERM|SHELL|LANG|LC_|HOME|USER|PWD|PATH' | cut -f1 -d= | sed 's/^/-e /')
 
 .PHONY: all
 all:
@@ -126,15 +127,15 @@ docker-test-build:
 
 .PHONY: docker-test-run
 docker-test-run:
-	docker run --cap-add SYS_ADMIN -v $(current_dir):/opt/openqa -v /var/run/dbus:/var/run/dbus \
-	  --env-file <(env) $(DOCKER_IMG) make travis-codecov
+	docker run -v $(current_dir):/opt/openqa -v /var/run/dbus:/var/run/dbus \
+	   $(docker_env) $(DOCKER_IMG) make travis-codecov
 
 .PHONY: docker-test-travis
 docker-test-travis:
-	docker run --cap-add SYS_ADMIN -v $(current_dir):/opt/openqa -v /var/run/dbus:/var/run/dbus \
-	  --env-file <(env | grep TRAVIS) -e TRAVIS=true -e FULLSTACK -e UITESTS -e SCHEDULER_FULLSTACK -e DEVELOPER_FULLSTACK \
+	docker run -v $(current_dir):/opt/openqa -v /var/run/dbus:/var/run/dbus \
+	    $(docker_env) -e TRAVIS=true -e FULLSTACK -e UITESTS -e SCHEDULER_FULLSTACK -e DEVELOPER_FULLSTACK \
 	  -e GH_PUBLISH $(DOCKER_IMG) make travis-codecov
 
 .PHONY: docker-test
-docker-test: docker-test-build docker-test-travis
+docker-test: docker-test-build docker-test-run
 	echo "Use docker-rm and docker-rmi to remove the container and image if necessary"
