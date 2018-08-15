@@ -507,8 +507,8 @@ sub save_needle_ajax {
     # commit needle in Git repository
     $self->app->gru->enqueue('scan_needles');
     if (($self->app->config->{global}->{scm} || '') eq 'git') {
-        if (!$needledir || !(-d "$needledir/.git")) {
-            return $self->render(json => {error => "$needledir is not a git repo"});
+        if (!$needledir || !(-d "$needledir")) {
+            return $self->render(json => {error => "$needledir is not a directory"});
         }
         try {
             $self->_commit_git($job, $needledir, $needlename);
