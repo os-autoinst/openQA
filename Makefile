@@ -1,4 +1,7 @@
 PROVE_ARGS ?= -r -v
+DOCKER_IMG ?= openqa:latest
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 
 .PHONY: all
 all:
@@ -116,3 +119,22 @@ public/favicon.ico: assets/images/logo.svg
 	done
 	convert assets/images/logo-16.png assets/images/logo-32.png assets/images/logo-64.png assets/images/logo-128.png -background white -alpha remove public/favicon.ico
 	rm assets/images/logo-128.png assets/images/logo-32.png assets/images/logo-64.png
+
+.PHONY: docker-test-build
+docker-test-build:
+	docker build --no-cache $(current_dir)/docker/openqa -t $(DOCKER_IMG)
+
+.PHONY: docker-test-run
+docker-test-run:
+	docker run --cap-add SYS_ADMIN -v $(current_dir):/opt/openqa -v /var/run/dbus:/var/run/dbus \
+	  --env-file <(env) $(DOCKER_IMG) make travis-codecov
+
+.PHONY: docker-test-travis
+docker-test-travis:
+	docker run --cap-add SYS_ADMIN -v $(current_dir):/opt/openqa -v /var/run/dbus:/var/run/dbus \
+	  --env-file <(env | grep TRAVIS) -e TRAVIS=true -e FULLSTACK -e UITESTS -e SCHEDULER_FULLSTACK -e DEVELOPER_FULLSTACK \
+	  -e GH_PUBLISH $(DOCKER_IMG) make travis-codecov
+
+.PHONY: docker-test
+docker-test: docker-test-build docker-test-travis
+	echo "Use docker-rm and docker-rmi to remove the container and image if necessary"
