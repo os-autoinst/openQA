@@ -1,4 +1,5 @@
 #!/bin/sh -ex
+INSTALL_FROM_CPAN="${INSTALL_FROM_CPAN:-1}"
 
 export OPENQA_LOGFILE=/opt/openqa/openqa-debug.log
 
@@ -14,13 +15,17 @@ function prepare_fullstack_test {
 
     git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst
     cd ../os-autoinst
-    cpanm -n --mirror http://no.where/ --installdeps .
+    [ "$INSTALL_FROM_CPAN" -eq 1 ] && \
+	      (cpanm --local-lib=~/perl5 local::lib && cpanm -n --installdeps . ) || \
+	      cpanm -n --mirror http://no.where/ --installdeps .
     if ! [ $? -eq 0 ]; then
         echo "OS autoinst dependencies not match. Please check output above"
         exit 1
     fi
     sh autogen.sh && make
     cd -
+
+    [ "$INSTALL_FROM_CPAN" -eq 1 ] && eval $(perl -I ~/perl5/lib/perl5/ -Mlocal::lib) || true
 }
 
 function run_fullstack_test {
