@@ -39,9 +39,15 @@ my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
+my $schema = $t->app->schema;
+$schema->resultset('Assets')->scan_for_untracked_assets();
+$schema->resultset('Assets')->refresh_assets();
+
 # prevent files being actually deleted
 my $mock_asset = new Test::MockModule('OpenQA::Schema::Result::Assets');
-$mock_asset->mock(remove_from_disk => sub { return 1; });
+$mock_asset->mock(remove_from_disk          => sub { return 1; });
+$mock_asset->mock(refresh_assets            => sub { });
+$mock_asset->mock(scan_for_untracked_assets => sub { });
 
 subtest 'limit for keeping untracked assets is overridable in settings' => sub {
     stdout_like(

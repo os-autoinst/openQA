@@ -103,6 +103,7 @@ sub disk_file {
 }
 
 # actually checking the file - will be updated to fixed in DB by limit_assets
+# (and NOT when rendering the admin assets table)
 sub is_fixed {
     my ($self) = @_;
     return (index($self->disk_file, catfile('fixed', $self->name)) > -1);
@@ -133,22 +134,30 @@ sub delete {
 
 sub ensure_size {
     my ($self) = @_;
+    my $size = $self->size;
+    return $size if (defined($size));
+    return $self->refresh_size($size);
+}
 
-    my $size = 0;
-    my @st   = stat($self->disk_file);
-    if (@st) {
+sub refresh_size {
+    my ($self, $current_size) = @_;
+    $current_size //= $self->size;
+
+    my $new_size = 0;
+    my @stat = stat(my $disk_file = $self->disk_file);
+    if (@stat) {
         if ($self->type eq 'repo') {
-            return $self->size if defined($self->size);
-            $size = _getDirSize($self->disk_file);
+            return $current_size if defined($current_size);
+            $new_size = _getDirSize($disk_file);
         }
         else {
-            $size = $st[7];
-            return $self->size
-              if defined($self->size) && $size == $self->size;
+            $new_size = $stat[7];
         }
     }
-    $self->update({size => $size});
-    return $size;
+    if (!defined($current_size) || $current_size != $new_size) {
+        $self->update({size => $new_size});
+    }
+    return $new_size;
 }
 
 sub hidden {

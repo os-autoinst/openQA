@@ -33,8 +33,15 @@ sub _remove_if {
 sub _limit {
     my ($app, $j, $job, $url) = @_;
 
-    my $asset_status = $app->db->resultset('Assets')->status();
-    my $assets       = $asset_status->{assets};
+    # scan for untracked assets, refresh the size of all assets
+    $app->db->resultset('Assets')->scan_for_untracked_assets();
+    $app->db->resultset('Assets')->refresh_assets();
+
+    my $asset_status = $app->db->resultset('Assets')->status(
+        compute_pending_state_and_max_job => 1,
+        compute_max_job_by_group          => 1,
+    );
+    my $assets = $asset_status->{assets};
 
     # first remove grouped assets
     for my $asset (@$assets) {
@@ -50,19 +57,18 @@ sub _limit {
     # remove all assets older than a certain number of days which do not belong to a job group
     my $untracked_assets_storage_duration
       = $OpenQA::Utils::app->config->{misc_limits}->{untracked_assets_storage_duration};
+    my $now = DateTime->now();
     for my $asset (@$assets) {
-        $update_sth->execute($asset->{max_job} ? $asset->{max_job} : undef, $asset->{id});
-
+        $update_sth->execute($asset->{max_job} && $asset->{max_job} >= 0 ? $asset->{max_job} : undef, $asset->{id});
         next if $asset->{fixed} || scalar(keys %{$asset->{groups}}) > 0;
 
-        # age is in minutes
-        my $delta = int($asset->{age} / 60 / 24);
-        if ($delta >= $untracked_assets_storage_duration || $asset->{size} == 0) {
+        my $age = int(DateTime::Format::Pg->parse_datetime($asset->{t_created})->delta_ms($now)->in_units('days'));
+        if ($age >= $untracked_assets_storage_duration || !$asset->{size}) {
             _remove_if($app->db, $asset);
         }
         else {
             my $asset_name     = $asset->{name};
-            my $remaining_days = $untracked_assets_storage_duration - $delta;
+            my $remaining_days = $untracked_assets_storage_duration - $age;
             OpenQA::Utils::log_warning(
                 "Asset $asset_name is not in any job group, will delete in $remaining_days days");
         }
