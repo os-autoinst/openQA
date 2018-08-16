@@ -133,8 +133,7 @@ docker-test-run:
 .PHONY: docker-test-travis
 docker-test-travis:
 	docker run -v $(current_dir):/opt/openqa -v /var/run/dbus:/var/run/dbus \
-	    $(docker_env) -e TRAVIS=true -e FULLSTACK -e UITESTS -e SCHEDULER_FULLSTACK -e DEVELOPER_FULLSTACK \
-	  -e GH_PUBLISH $(DOCKER_IMG) make travis-codecov
+	    $(docker_env) -e TRAVIS=true $(DOCKER_IMG) make travis-codecov
 
 .PHONY: docker-test
 docker-test: docker-test-build docker-test-run
