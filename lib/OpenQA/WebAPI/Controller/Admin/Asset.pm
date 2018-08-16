@@ -29,7 +29,10 @@ sub index {
     $self->stash('groups',     $status->{groups});
     $self->stash('total_size', $total_size);
 
-    $self->render('admin/asset/index');
+    $self->respond_to(
+        json => {json     => $status},
+        html => {template => 'admin/asset/index'},
+    );
 }
 
 1;
