@@ -663,4 +663,160 @@ subtest 'check dead children stop job' => sub {
     like($messages[2], qr/result: dead_children/, 'dead children match exception');
 };
 
+subtest 'job PARALLEL_WITH' => sub {
+
+    use OpenQA::Scheduler::Scheduler;
+    use OpenQA::Schema::Result::JobDependencies;
+
+    my %_settings = %settings;
+    $_settings{TEST} = 'A';
+    #  $_settings{PARALLEL_WITH}    = 'B,C,D';
+    my $jobA = _job_create(\%_settings);
+
+    %_settings                = %settings;
+    $_settings{TEST}          = 'B';
+    $_settings{PARALLEL_WITH} = 'A,C,D';
+    my $jobB = _job_create(\%_settings);
+
+    %_settings                = %settings;
+    $_settings{TEST}          = 'C';
+    $_settings{PARALLEL_WITH} = 'A,B,D';
+    my $jobC = _job_create(\%_settings);
+
+    %_settings                = %settings;
+    $_settings{TEST}          = 'D';
+    $_settings{PARALLEL_WITH} = 'A,B, C ';    # Let's commit an error on purpose :)
+    my $jobD = _job_create(\%_settings);
+
+    %_settings                = %settings;
+    $_settings{TEST}          = 'E';
+    $_settings{PARALLEL_WITH} = 'A,B,C';
+    my $jobE = _job_create(\%_settings);
+
+    %_settings                = %settings;
+    $_settings{TEST}          = 'H';
+    $_settings{PARALLEL_WITH} = 'B,C,D';
+    my $jobH = _job_create(\%_settings);
+
+    $jobA->children->create(
+        {
+            child_job_id => $jobB->id,
+            dependency   => OpenQA::Schema::Result::JobDependencies->PARALLEL,
+        });
+    $jobA->children->create(
+        {
+            child_job_id => $jobC->id,
+            dependency   => OpenQA::Schema::Result::JobDependencies->PARALLEL,
+        });
+    $jobA->children->create(
+        {
+            child_job_id => $jobD->id,
+            dependency   => OpenQA::Schema::Result::JobDependencies->PARALLEL,
+        });
+    $jobA->children->create(
+        {
+            child_job_id => $jobE->id,
+            dependency   => OpenQA::Schema::Result::JobDependencies->PARALLEL,
+        });
+    %_settings = %settings;
+    $_settings{TEST} = 'F';
+    my $jobF = _job_create(\%_settings);
+
+    %_settings = %settings;
+    $_settings{TEST} = 'G';
+    my $jobG = _job_create(\%_settings);
+
+    # A wants to be in the cluster while being assigned!
+    my @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobA->to_hash, $jobF->to_hash);
+    is @res, 1;
+    is $res[0]->{id}, $jobF->id() or die diag explain $jobA->to_hash;
+
+    # All are going
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobA->to_hash, $jobB->to_hash, $jobC->to_hash, $jobD->to_hash,
+        $jobE->to_hash, $jobF->to_hash);
+    is @res, 6;
+
+    # Only F doesn't belong to any cluster
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobA->to_hash, $jobC->to_hash, $jobD->to_hash, $jobE->to_hash,
+        $jobF->to_hash);
+    is @res, 1;
+    is $res[0]->{id}, $jobF->id();
+
+    # Only E and F doesn't care about clusters, and we are not about to start D
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobA->to_hash, $jobC->to_hash, $jobB->to_hash, $jobE->to_hash,
+        $jobF->to_hash);
+    is @res, 2;
+    is $res[0]->{id}, $jobE->id();
+    is $res[1]->{id}, $jobF->id();
+
+    # Only E and F doesn't care about clusters, and we are not about to start D
+    # G does care about clusters, but didn't specified PARALLEL_WITH tests to rely upon
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobA->to_hash, $jobC->to_hash, $jobB->to_hash, $jobE->to_hash,
+        $jobF->to_hash, $jobG->to_hash);
+    is @res, 3;
+    is $res[0]->{id}, $jobE->id();
+    is $res[1]->{id}, $jobF->id();
+    is $res[2]->{id}, $jobG->id();
+
+    # All are going
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs(
+        $jobA->to_hash, $jobB->to_hash, $jobC->to_hash, $jobD->to_hash,
+        $jobE->to_hash, $jobF->to_hash, $jobG->to_hash
+    );
+    is @res, 7;
+
+    # just few that requires cluster are going, but since they want to be together, they are not
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobA->to_hash, $jobB->to_hash, $jobC->to_hash);
+    is @res, 0;
+
+    # just few that requires cluster are going, but since they want to be together, they are not
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobH->to_hash, $jobC->to_hash);
+    is @res, 0;
+
+    # just few that requires cluster are going, but since they want to be together, they are not
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobH->to_hash, $jobC->to_hash, $jobB->to_hash);
+    is @res, 0;
+
+    # just few that requires cluster are going, but since they want to be together, they are not
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobH->to_hash, $jobB->to_hash, $jobD->to_hash);
+    is @res, 0;
+
+    # A requires E, so it is not going
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobH->to_hash, $jobC->to_hash, $jobB->to_hash, $jobA->to_hash,
+        $jobD->to_hash);
+    is @res, 4 or die diag explain \@res;
+
+
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobH->to_hash, $jobC->to_hash, $jobE->to_hash, $jobB->to_hash,
+        $jobA->to_hash, $jobD->to_hash);
+    is @res, 6 or die diag explain \@res;
+
+    %_settings                = %settings;
+    $_settings{TEST}          = 'J';
+    $_settings{PARALLEL_WITH} = 'K,L';
+    my $jobJ = _job_create(\%_settings);
+
+    %_settings                = %settings;
+    $_settings{TEST}          = 'K';
+    $_settings{PARALLEL_WITH} = 'J,L';
+    my $jobK = _job_create(\%_settings);
+
+    %_settings                = %settings;
+    $_settings{TEST}          = 'L';
+    $_settings{PARALLEL_WITH} = 'J,K';
+    my $jobL = _job_create(\%_settings);
+
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobJ->to_hash, $jobK->to_hash);
+    is @res, 0 or die diag explain \@res;
+
+    $jobL->update({state => OpenQA::Jobs::Constants::RUNNING});
+
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs($jobJ->to_hash, $jobK->to_hash);
+    is @res, 2 or die diag explain \@res;
+
+    my @e = ([], [qw(a b c)], [qw(d e f)]);
+    @res = OpenQA::Scheduler::Scheduler::filter_jobs(@e);
+    is_deeply \@res, \@e or die diag explain \@res;
+};
+
 done_testing();

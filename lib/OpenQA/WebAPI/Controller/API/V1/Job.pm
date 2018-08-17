@@ -191,8 +191,6 @@ sub create {
 
         # enqueue gru job
         $self->gru->enqueue(limit_assets => [] => {priority => 10});
-        $job->calculate_blocked_by;
-        wakeup_scheduler;
     }
     catch {
         $status = 400;
@@ -572,7 +570,6 @@ sub restart {
 
     my $ipc = OpenQA::IPC->ipc;
     my $res = $ipc->resourceallocator('job_restart', $jobs);
-    wakeup_scheduler;
 
     my @urls;
     for (my $i = 0; $i < @$res; $i++) {

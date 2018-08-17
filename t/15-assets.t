@@ -31,25 +31,14 @@ use File::Path qw(remove_tree);
 use File::Spec::Functions 'catfile';
 use Test::More;
 use Test::Warnings;
+use OpenQA::Scheduler::Scheduler 'job_grab';
 use OpenQA::Resource::Jobs 'job_restart';
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::WebSockets;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use OpenQA::Utils;
-use Mojo::Util 'monkey_patch';
 
-my $sent = {};
-
-# Mangle worker websocket send, and record what was sent
-monkey_patch 'OpenQA::Schema::Result::Jobs', ws_send => sub {
-    my ($self, $worker) = @_;
-    my $hashref = $self->prepare_for_work($worker);
-    $hashref->{assigned_worker_id} = $worker->id;
-    $sent->{$worker->id} = {worker => $worker, job => $self};
-    $sent->{job}->{$self->id} = {worker => $worker, job => $self};
-    return {state => {msg_sent => 1}};
-};
 # create Test DBus bus and service for fake WebSockets call
 my $ws = OpenQA::WebSockets->new;
 
@@ -101,11 +90,10 @@ eval { $w = $c->_register($schema, 'host', '1', $workercaps); };
 ok(!$@, 'Worker correct version');
 
 my $worker = $schema->resultset('Workers')->find($w);
-is($worker->websocket_api_version(), WEBSOCKET_API_VERSION, 'Worker version set correctly');
+is($worker->get_websocket_api_version(), WEBSOCKET_API_VERSION, 'Worker version set correctly');
 
 # grab job
-OpenQA::Scheduler::Scheduler::schedule();
-my $job = $sent->{$w}->{job}->to_hash;
+my $job = job_grab(workerid => $w, allocate => 1);
 is($job->{id}, $jobA->id, 'jobA grabbed');
 @assets = $jobA->jobs_assets;
 @assets = map { $_->asset_id } @assets;
@@ -162,8 +150,7 @@ $schema->resultset('JobsAssets')->create(
 
 # set jobB to running
 $jobB->set_prio(1);
-OpenQA::Scheduler::Scheduler::schedule();
-$job = $sent->{$w}->{job}->to_hash;
+$job = job_grab(workerid => $w, allocate => 1);
 is($job->{id}, $jobB->id, 'jobB grabbed');
 @assets = $jobB->jobs_assets;
 @assets = map { $_->asset_id } @assets;

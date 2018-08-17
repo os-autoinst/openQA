@@ -34,35 +34,8 @@ use OpenQA::Test::Database;
 use Test::Mojo;
 use Test::More;
 use Test::Warnings;
-use Mojo::Util 'monkey_patch';
 
 my $schema = OpenQA::Test::Database->new->create;    #(skip_fixtures => 1);
-
-my $sent = {};
-
-my $s_w = OpenQA::Scheduler::Scheduler::shuffle_workers(0);
-diag "Scheduler shuffle_workers: $s_w\n";
-
-sub schedule {
-    my $id = OpenQA::Scheduler::Scheduler::schedule();
-    do {
-        my $j = $schema->resultset('Jobs')->find($_->{job});
-        $j->state(OpenQA::Jobs::Constants::RUNNING);
-        $j->update();
-      }
-      for @$id;
-}
-
-# Mangle worker websocket send, and record what was sent
-monkey_patch 'OpenQA::Schema::Result::Jobs', ws_send => sub {
-    my ($self, $worker) = @_;
-    my $hashref = $self->prepare_for_work($worker);
-    $hashref->{assigned_worker_id} = $worker->id;
-    $sent->{$worker->id} = {worker => $worker, job => $self};
-    $sent->{job}->{$self->id} = {worker => $worker, job => $self};
-    return {state => {msg_sent => 1}};
-};
-
 
 #my $t = Test::Mojo->new('OpenQA::WebAPI');
 
@@ -198,37 +171,33 @@ my $w7_id = $c->_register($schema, "host", "7", \%workercaps64_server);
 my $w8_id = $c->_register($schema, "host", "8", \%workercaps64);
 my $w9_id = $c->_register($schema, "host", "9", \%workercaps64_client);
 
-schedule() for ($jobA, $jobB, $jobE, $jobF, $jobD, $jobC, $jobH, $jobJ, $jobI);
-ok exists $sent->{job}->{$_}, "$_ exists"
-  for (map { $_->id } $jobA, $jobB, $jobE, $jobF, $jobD, $jobC, $jobH, $jobJ, $jobI);
-
-my $job = $sent->{$w1_id}->{job}->to_hash;
+my $job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w1_id, allocate => 1);
 is($job->{id}, $jobA->id, "'client' worker should get 'client' job even though 'server' job has higher prio");
 
-$job = $sent->{$w2_id}->{job}->to_hash;
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w2_id, allocate => 1);
 is($job->{id}, $jobB->id, "'server' job for 'server' worker");
 
-$job = $sent->{$w3_id}->{job}->to_hash;
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w3_id, allocate => 1);
 is($job->{id}, $jobE->id, "32bit worker gets 32bit job with highest prio");
 
-$job = $sent->{$w4_id}->{job}->to_hash;
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w4_id, allocate => 1);
 is($job->{id}, $jobF->id, "next job by prio");
 
-$job = $sent->{$w5_id}->{job}->to_hash;
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w5_id, allocate => 1);
 is($job->{id}, $jobD->id, "next job by prio, 'client' worker can do jobs without class");
 
-$job = $sent->{$w6_id}->{job}->to_hash;
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w6_id, allocate => 1);
 is($job->{id}, $jobC->id, "next job by prio, 64bit worker can get 32bit job");
 
-$job = $sent->{$w7_id}->{job}->to_hash;
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w7_id, allocate => 1);
 is($job->{id}, $jobH->id, "next job by prio, parent - server");
 
-$job = $sent->{$w8_id}->{job}->to_hash;
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w8_id, allocate => 1);
 is($job->{id}, $jobJ->id,
 "I is a scheduled child of running H so it should have the highest prio, but this worker can't do it because of class -> take next job by prio instead"
 );
 
-$job = $sent->{$w9_id}->{job}->to_hash;
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w9_id, allocate => 1);
 is($job->{id}, $jobI->id, "this worker can do jobI, child - client");
 
 

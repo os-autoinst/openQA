@@ -3,7 +3,7 @@ Description=The openQA WebSockets server
 Wants=apache2.service network.target openqa-setup-db.service
 Before=apache2.service openqa-webui.service
 After=openqa-resource-allocator.service openqa-scheduler.service postgresql.service network.target openqa-setup-db.service
-Requires=openqa-resource-allocator.service
+Requires=openqa-resource-allocator.service openqa-scheduler.service
 
 [Service]
 # TODO: define whether we want to run the websockets with the same user
