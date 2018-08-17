@@ -139,10 +139,5 @@ VOLUME [ "/opt/openqa" ]
 RUN mkdir -p /opt/testing_area
 RUN chown -R $NORMAL_USER:users /opt/testing_area
 
-COPY entrypoint.sh /usr/bin/entrypoint
-RUN ["chmod","+x","/usr/bin/entrypoint"]
-USER ${NORMAL_USER}
-ENTRYPOINT ["entrypoint"]
+ENTRYPOINT ["/bin/bash"]
 WORKDIR $OPENQA_DIR
-                    
-

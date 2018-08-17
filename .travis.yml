@@ -19,13 +19,9 @@ cache:
   directories:
   - assets/cache
 script:
-- mkdir -p assets/cache
-- chmod a+w assets/cache
-- touch openqa-debug.log autoinst-log.txt
-- chmod a+w openqa-debug.log autoinst-log.txt
-- docker run --cap-add SYS_ADMIN -v $TRAVIS_BUILD_DIR:/opt/openqa -v /var/run/dbus:/var/run/dbus
-  --env-file <(env | grep TRAVIS) -e TRAVIS=true -e FULLSTACK -e UITESTS -e SCHEDULER_FULLSTACK -e DEVELOPER_FULLSTACK
-  -e GH_PUBLISH registry.opensuse.org/devel/openqa/containers/openqa_dev make travis-codecov
+- mkdir -p assets/cache && chmod a+w assets/cache
+- touch openqa-debug.log autoinst-log.txt && chmod a+w openqa-debug.log autoinst-log.txt
+- make docker-test
 after_failure:
 - cat openqa-debug.log
 - cat autoinst-log.txt
