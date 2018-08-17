@@ -2,7 +2,7 @@ PROVE_ARGS ?= -r -v
 DOCKER_IMG ?= openqa:latest
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
-docker_env := $(shell env | grep -v -E 'TERM|SHELL|LANG|LC_|HOME|USER|PWD|PATH' | cut -f1 -d= | sed 's/^/-e /')
+docker_env := $(shell env | grep -v -E 'COMMIT_MESSAGE|TERM|SHELL|LANG|LC_|HOME|USER|PWD|PATH' | cut -f1 -d= | sed 's/^/-e /')
 
 .PHONY: all
 all:
