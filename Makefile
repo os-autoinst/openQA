@@ -2,7 +2,7 @@ PROVE_ARGS ?= -r -v
 DOCKER_IMG ?= openqa:latest
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
-docker_env := $(shell env | grep -v -E '\s|COMMIT_MESSAGE|TERM|SHELL|LANG|LC_|HOME|USER|PWD|PATH' | cut -f1 -d= | sed 's/^/-e /')
+docker_env_file := "$(current_dir)/docker.env"
 
 .PHONY: all
 all:
@@ -125,15 +125,21 @@ public/favicon.ico: assets/images/logo.svg
 docker-test-build:
 	docker build --no-cache $(current_dir)/docker/openqa -t $(DOCKER_IMG)
 
+.PHONY: docker.env
+docker.env:
+	env | grep -E 'FULLSTACK|UITEST|GH|TRAVIS|CPAN|DEBUG|ZYPPER' > $(docker_env_file)
+
 .PHONY: docker-test-run
-docker-test-run:
-	docker run -v $(current_dir):/opt/openqa -v /var/run/dbus:/var/run/dbus \
-	   $(docker_env) $(DOCKER_IMG) make travis-codecov
+docker-test-run: docker.env
+	docker run --env-file $(docker_env_file) -v $(current_dir):/opt/openqa -v /var/run/dbus:/var/run/dbus \
+	   $(DOCKER_IMG) make travis-codecov
+	rm $(docker_env_file)
 
 .PHONY: docker-test-travis
-docker-test-travis:
-	docker run -v $(current_dir):/opt/openqa -v /var/run/dbus:/var/run/dbus \
-	    $(docker_env) -e TRAVIS=true $(DOCKER_IMG) make travis-codecov
+docker-test-travis: docker.env
+	docker run --env-file $(docker_env_file) -v $(current_dir):/opt/openqa -v /var/run/dbus:/var/run/dbus \
+		-e TRAVIS=true $(DOCKER_IMG) make travis-codecov
+	rm $(docker_env_file)
 
 .PHONY: docker-test
 docker-test: docker-test-build docker-test-run
