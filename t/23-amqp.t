@@ -37,6 +37,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use Mojo::File qw(tempdir path);
+use JSON qw(decode_json);
 
 my %client_context;
 
@@ -130,6 +131,14 @@ $t->ua(
     OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
+# create a parent group
+my $parent_groups = $app->schema->resultset('JobGroupParents');
+$parent_groups->create(
+    {
+        id   => 2000,
+        name => 'test',
+    });
+
 # create Test DBus bus and service for fake WebSockets
 my $ws = OpenQA::WebSockets->new();
 my $sh = OpenQA::Scheduler->new();
@@ -197,6 +206,32 @@ subtest 'duplicate and cancel job' => sub {
           . ',"remaining":0}',
         "job cancel triggers amqp"
     );
+};
+
+sub assert_common_comment_json {
+    my ($json) = @_;
+    ok($json->{id}, 'id');
+    is($json->{job_id}, undef,   'job id');
+    is($json->{text},   'test',  'text');
+    is($json->{user},   'perci', 'user');
+    ok($json->{created}, 't_created');
+    ok($json->{updated}, 't_updated');
+}
+
+subtest 'create job group comment' => sub {
+    my $post = $t->post_ok('/api/v1/groups/1001/comments' => form => {text => 'test'})->status_is(200);
+    my $json = decode_json($channel_context{last}{'suse.openqa.comment.create'});
+    assert_common_comment_json($json);
+    is($json->{group_id},        1001,  'job group id');
+    is($json->{parent_group_id}, undef, 'parent group id');
+};
+
+subtest 'create parent group comment' => sub {
+    my $post = $t->post_ok('/api/v1/parent_groups/2000/comments' => form => {text => 'test'})->status_is(200);
+    my $json = decode_json($channel_context{last}{'suse.openqa.comment.create'});
+    assert_common_comment_json($json);
+    is($json->{group_id},        undef, 'job group id');
+    is($json->{parent_group_id}, 2000,  'parent group id');
 };
 
 done_testing();
