@@ -56,7 +56,7 @@ requires 'Mojo::Pg';
 requires 'Mojo::RabbitMQ::Client';
 requires 'Mojo::URL';
 requires 'Mojo::Util';
-requires 'Mojolicious', '>= 7.24';
+requires 'Mojolicious', '>= 7.92';
 requires 'Mojolicious::Commands';
 requires 'Mojolicious::Plugin';
 requires 'Mojolicious::Plugin::AssetPack';

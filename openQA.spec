@@ -56,7 +56,7 @@ BuildRequires:  os-autoinst
 BuildRequires:  systemd
 # critical bug fix
 BuildRequires:  perl(DBIx::Class) >= 0.082801
-BuildRequires:  perl(Mojolicious) >= 7.24
+BuildRequires:  perl(Mojolicious) >= 7.92
 BuildRequires:  perl(Mojolicious::Plugin::AssetPack) >= 1.36
 BuildRequires:  perl(Minion) >= 9.02
 BuildRequires:  rubygem(sass)
@@ -129,7 +129,7 @@ operating system.
 Summary:        The openQA common tools for web-frontend and workers
 Group:          Development/Tools/Other
 Requires:       %{t_requires}
-Requires:       perl(Mojolicious) >= 7.24
+Requires:       perl(Mojolicious) >= 7.92
 
 %description common
 This package contain shared resources for openQA web-frontend and
