@@ -149,50 +149,54 @@ my $settings = {
 };
 
 # create a job via API
-my $post = $t->post_ok("/api/v1/jobs" => form => $settings)->status_is(200);
-my $job = $post->tx->res->json->{id};
-is(
-    $channel_context{last}{'suse.openqa.job.create'},
-    '{"ARCH":"x86_64","BUILD":"666","DESKTOP":"DESKTOP","DISTRI":"Unicorn","FLAVOR":"pink","ISO":"whatever.iso",'
-      . '"ISO_MAXSIZE":"1","KVM":"KVM","MACHINE":"RainbowPC","TEST":"rainbow","VERSION":"42","group_id":null,"id":'
-      . $job
-      . ',"remaining":1}',
-    "job create triggers amqp"
-);
+my $job;
+subtest 'create job' => sub {
+    my $post = $t->post_ok("/api/v1/jobs" => form => $settings)->status_is(200);
+    ok($job = $post->tx->res->json->{id}, 'got ID of new job');
+    is(
+        $channel_context{last}{'suse.openqa.job.create'},
+        '{"ARCH":"x86_64","BUILD":"666","DESKTOP":"DESKTOP","DISTRI":"Unicorn","FLAVOR":"pink","ISO":"whatever.iso",'
+          . '"ISO_MAXSIZE":"1","KVM":"KVM","MACHINE":"RainbowPC","TEST":"rainbow","VERSION":"42","group_id":null,"id":'
+          . $job
+          . ',"remaining":1}',
+        "job create triggers amqp"
+    );
+};
 
-# set the job as done via API
-$post = $t->post_ok("/api/v1/jobs/" . $job . "/set_done")->status_is(200);
-is(
-    $channel_context{last}{'suse.openqa.job.done'},
-    '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
-      . '"TEST":"rainbow","group_id":null,"id":'
-      . $job
-      . ',"newbuild":null,"remaining":0,"result":"failed"}',
-    "job done triggers amqp"
-);
+subtest 'mark job as done' => sub {
+    my $post = $t->post_ok("/api/v1/jobs/$job/set_done")->status_is(200);
+    is(
+        $channel_context{last}{'suse.openqa.job.done'},
+        '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
+          . '"TEST":"rainbow","group_id":null,"id":'
+          . $job
+          . ',"newbuild":null,"remaining":0,"result":"failed"}',
+        "job done triggers amqp"
+    );
+};
 
-# duplicate the job via API
-$post = $t->post_ok("/api/v1/jobs/" . $job . "/duplicate")->status_is(200);
-my $newjob = $post->tx->res->json->{id};
-is(
-    $channel_context{last}{'suse.openqa.job.duplicate'},
-    '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
-      . '"TEST":"rainbow","auto":0,"group_id":null,"id":'
-      . $job
-      . ',"remaining":1,"result":'
-      . $newjob . '}',
-    "job duplicate triggers amqp"
-);
+subtest 'duplicate and cancel job' => sub {
+    my $post   = $t->post_ok("/api/v1/jobs/$job/duplicate")->status_is(200);
+    my $newjob = $post->tx->res->json->{id};
+    is(
+        $channel_context{last}{'suse.openqa.job.duplicate'},
+        '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
+          . '"TEST":"rainbow","auto":0,"group_id":null,"id":'
+          . $job
+          . ',"remaining":1,"result":'
+          . $newjob . '}',
+        'job duplicate triggers amqp'
+    );
 
-# cancel the new job via API
-$post = $t->post_ok("/api/v1/jobs/" . $newjob . "/cancel")->status_is(200);
-is(
-    $channel_context{last}{'suse.openqa.job.cancel'},
-    '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
-      . '"TEST":"rainbow","group_id":null,"id":'
-      . $newjob
-      . ',"remaining":0}',
-    "job cancel triggers amqp"
-);
+    $post = $t->post_ok("/api/v1/jobs/$newjob/cancel")->status_is(200);
+    is(
+        $channel_context{last}{'suse.openqa.job.cancel'},
+        '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
+          . '"TEST":"rainbow","group_id":null,"id":'
+          . $newjob
+          . ',"remaining":0}',
+        "job cancel triggers amqp"
+    );
+};
 
 done_testing();
