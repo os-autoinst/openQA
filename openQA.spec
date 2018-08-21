@@ -49,7 +49,6 @@ Source1:        cache.txz
 Source100:      openQA-rpmlintrc
 Source101:      update-cache.sh
 Source102:      Dockerfile
-Source103:      entrypoint.sh
 BuildRequires:  %{t_requires}
 BuildRequires:  fdupes
 BuildRequires:  os-autoinst
