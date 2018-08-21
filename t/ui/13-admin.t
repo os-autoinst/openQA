@@ -500,14 +500,7 @@ subtest 'asset list' => sub {
     close($fh);
     ok(-e $asset_path, 'dummy asset present at ' . $asset_path);
 
-    # breaks test
-    ok(
-        !-e catfile($OpenQA::Utils::assetdir, 'iso', 'Core-7.2.iso'),
-        "no old iso/Core-7.2.iso in $OpenQA::Utils::assetdir"
-    );
-
-    $driver->find_element('#user-action a')->click();
-    $driver->find_element_by_link_text('Assets')->click();
+    $driver->get('/admin/assets?force_refresh=1');
     $driver->title_is("openQA: Assets", "on asset");
     wait_for_ajax;
 
@@ -527,9 +520,14 @@ subtest 'asset list' => sub {
     ok($driver->find_child_element($used_assets, 'tr#asset_2'), 'asset with last use part of used assets');
 
     # assets by group
+    my @assets_by_group = map { $_->get_text() } $driver->find_elements('#assets-by-group > li');
+    if (scalar(@assets_by_group) > 0 && $assets_by_group[0] =~ qr/Untracked.*/) {
+        note('ignoring untracked assets in your checkout (likely created by previous tests)');
+        splice(@assets_by_group, 0, 1);
+    }
     is_deeply(
-        [map { $_->get_text() } $driver->find_elements('#assets-by-group > li')],
-        ["opensuse\n16 Byte / 100 GiB", "opensuse test\n16 Byte / 100 GiB"],
+        \@assets_by_group,
+        ["opensuse\n16 Byte / 100 GiB", "opensuse test\n16 Byte / 100 GiB",],
         'groups of "assets by group"'
     );
     $driver->click_element_ok('#group-1001-checkbox + label', 'css');

@@ -59,6 +59,11 @@ $mock_limit->mock(_remove_if                => sub { return 0; });
 sub prepare_asset_status {
     my ($asset_status) = @_;
 
+    # ignore exact size of untracked assets since it depends on presence of other files (see %ignored_assets)
+    my $groups = $asset_status->{groups};
+    ok(delete $groups->{0}->{size},   'size of untracked assets');
+    ok(delete $groups->{0}->{picked}, 'untracked assets picked');
+
     my $assets_with_max_job       = $asset_status->{assets};
     my $assets_with_max_job_count = 0;
     my %assets_without_max_job;
@@ -70,6 +75,19 @@ sub prepare_asset_status {
         if ($asset->{max_job}) {
             $assets_with_max_job_count += 1;
             fail('assets without max_job should go last') if (%assets_without_max_job);
+            next;
+        }
+
+        # ignore 'Core-7.2.iso' and other assets which may or may not exist
+        #  (eg. 'Core-7.2.iso' is downloaded conditionally in 14-grutasks.t)
+        my %ignored_assets = (
+            'iso/Core-7.2.iso'              => 1,
+            'iso/whatever.iso'              => 1,
+            'hdd/hdd_image2.qcow'           => 1,
+            'hdd/hdd_image2.qcow2'          => 1,
+            'hdd/00099963-hdd_image3.qcow2' => 1,
+        );
+        if ($ignored_assets{$name}) {
             next;
         }
 
@@ -88,8 +106,6 @@ my %expected_groups = (
         id            => undef,
         group         => 'Untracked',
         size_limit_gb => 0,
-        size          => -41992375,     # remaining size considering limit so I suppose ok to be negative
-        picked        => 41992375,
     },
     1001 => {
         id            => 1001,
@@ -184,24 +200,6 @@ my %expected_assets_without_max_job = (
         size        => 0,
         max_job     => undef,
     },
-    'hdd/hdd_image2.qcow2' => {
-        groups      => {},
-        fixed       => 0,
-        picked_into => 0,
-        max_job     => undef,
-        pending     => 0,
-        type        => 'hdd',
-        size        => 20971521,
-    },
-    'hdd/00099963-hdd_image3.qcow2' => {
-        picked_into => 0,
-        groups      => {},
-        fixed       => 0,
-        pending     => 0,
-        type        => 'hdd',
-        size        => 20971521,
-        max_job     => undef,
-    },
     'hdd/openSUSE-12.2-x86_64.hda' => {
         picked_into => 0,
         groups      => {},
@@ -229,15 +227,6 @@ my %expected_assets_without_max_job = (
         groups      => {},
         picked_into => 0,
     },
-    'iso/whatever.iso' => {
-        max_job     => undef,
-        type        => 'iso',
-        pending     => 0,
-        size        => 0,
-        fixed       => 0,
-        groups      => {},
-        picked_into => 0,
-    },
     'hdd/openSUSE-12.1-x86_64.hda' => {
         max_job     => undef,
         type        => 'hdd',
@@ -246,15 +235,6 @@ my %expected_assets_without_max_job = (
         fixed       => 0,
         groups      => {},
         picked_into => 0,
-    },
-    'iso/Core-7.2.iso' => {
-        type        => 'iso',
-        pending     => 0,
-        size        => 49333,
-        max_job     => undef,
-        picked_into => 0,
-        fixed       => 0,
-        groups      => {},
     },
 );
 
@@ -301,7 +281,7 @@ subtest 'limit for keeping untracked assets is overridable in settings' => sub {
         sub {
             OpenQA::Task::Asset::Limit::_limit($t->app);
         },
-        qr/Asset iso\/Core-7.2.iso is not in any job group, will delete in 14 days/,
+        qr/Asset .* is not in any job group, will delete in 14 days/,
         'default is 14 days'
     );
 
@@ -310,7 +290,7 @@ subtest 'limit for keeping untracked assets is overridable in settings' => sub {
         sub {
             OpenQA::Task::Asset::Limit::_limit($t->app);
         },
-        qr/Asset iso\/Core-7.2.iso is not in any job group, will delete in 2 days/,
+        qr/Asset .* is not in any job group, will delete in 2 days/,
         'override works'
     );
 };
