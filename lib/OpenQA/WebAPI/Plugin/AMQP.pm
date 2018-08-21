@@ -189,9 +189,10 @@ sub on_comment_event {
     # just send the hash already used for JSON representation
     my $hash = $comment->hash;
     # also include comment id, job_id, and group_id
-    $hash->{id}       = $comment->id;
-    $hash->{job_id}   = $comment->job_id;
-    $hash->{group_id} = $comment->group_id;
+    $hash->{id}              = $comment->id;
+    $hash->{job_id}          = $comment->job_id;
+    $hash->{group_id}        = $comment->group_id;
+    $hash->{parent_group_id} = $comment->parent_group_id;
 
     $self->log_event($event, $hash);
 }
