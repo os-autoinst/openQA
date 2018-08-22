@@ -425,7 +425,7 @@ sub call_websocket {
                           . "\"$hosts->{$host}{url}{host}\""
                           . " to WebSocket: "
                           . ($err->{code} ? $err->{code} : "[no code]")
-                          . ". proxy_wstunnel enabled?";
+                          . ". Apache modules proxy_wstunnel and rewrite enabled?";
 
                         if ($err->{code} && $err->{code} eq '404' && $hosts->{$host}{workerid}) {
                             # worker id suddenly not known anymore. Abort. If workerid
