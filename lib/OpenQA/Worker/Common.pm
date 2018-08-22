@@ -186,6 +186,7 @@ sub api_call {
     my $callback      = $args{callback} // sub { };
     my $ignore_errors = $args{ignore_errors} // 0;
     my $tries         = $args{tries} // 3;
+    my $non_critical  = $args{non_critical} // 0;
 
     do { OpenQA::Worker::Jobs::_reset_state(); die 'No worker id or webui host set!'; } unless verify_workerid($host);
 
@@ -249,7 +250,7 @@ sub api_call {
         }
         log_error($msg . " (remaining tries: $tries)");
 
-        if (!$tries) {
+        if (!$tries && !$non_critical) {
             # abort the current job, we're in trouble - but keep running to grab the next
             OpenQA::Worker::Jobs::stop_job('api-failure');
             # stop accepting jobs and schedule reregistration - keep the rest running
