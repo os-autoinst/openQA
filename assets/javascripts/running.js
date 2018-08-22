@@ -59,6 +59,7 @@ function updateTestStatus(newStatus) {
         var newModuleSelect = dataDom.filter('#developer-pause-at-module');
         if (moduleSelectOnPage.length && newModuleSelect.length) {
             moduleSelectOnPage.replaceWith(newModuleSelect);
+            updateModuleSelection(newModuleSelect.find('option'), developerMode.currentModuleIndex);
         }
 
         // skip if the row of the running module is not present in the result table
@@ -303,7 +304,7 @@ var developerMode = {
     develWsUrl: undefined,                  // URL for developer session web socket connection
     statusOnlyWsUrl: undefined,             // URL for status-only web socket connection
     wsConnection: undefined,                // current WebSocket object
-    hasWsError: false,                      // whether an web socket error occured (cleared when we finally receive a message from os-autoinst)
+    hasWsError: false,                      // whether an web socket error occurred (cleared when we finally receive a message from os-autoinst)
     useDeveloperWsRoute: undefined,         // whether the developer web socket route is used
     isConnected: false,                     // whether connected to any web socket route
     ownSession: false,                      // whether the development session belongs to us
@@ -315,7 +316,8 @@ var developerMode = {
     // state of the test execution (comes from os-autoinst cmd srv through the openQA ws proxy)
     currentModule: undefined,               // name of the current module, eg. "installation-welcome"
     moduleToPauseAt: undefined,             // name of the module to pause at, eg. "installation-welcome"
-    isPaused: undefined,                    // whether the test execution is currently paused
+    pauseAtTimeout: undefined,              // whether to pause on assert_screen timeout
+    isPaused: undefined,                    // if paused the reason why as a string; otherwise something which evaluates to false
 
     // state of development session (comes from the openQA ws proxy)
     develSessionDeveloper: undefined,       // name of the user in possession the development session
@@ -360,8 +362,26 @@ function setupDeveloperPanel() {
     developerMode.develWsUrl = panel.data('developer-url');
     developerMode.statusOnlyWsUrl = panel.data('status-only-url');
 
+    // add handler for static form elements
+    $('#developer-pause-on-timeout').on('click', handlePauseAtTimeoutToggled);
+
     updateDeveloperPanel();
     setupWebsocketConnection();
+}
+
+// hides the specified options up to the specified index
+function updateModuleSelection(moduleToPauseAtOptions, moduleIndex) {
+    for (var i = 0; i <= moduleIndex; ++i) {
+        var optionElement = moduleToPauseAtOptions[i];
+        var optgroupElement = optionElement.parentNode;
+        if (!optgroupElement || optgroupElement.nodeName !== 'OPTGROUP') {
+            continue;
+        }
+        optionElement.style.display = 'none';
+        if (optgroupElement.lastElementChild.isEqualNode(optionElement)) {
+            optgroupElement.style.display = 'none';
+        }
+    }
 }
 
 // updates the developer panel, must be called after modifying developerMode
@@ -411,18 +431,7 @@ function updateDeveloperPanel() {
 
     // hide modules which have already been executed when the current module index has changed
     if (developerMode.currentModuleIndex !== currentModuleIndex) {
-        developerMode.currentModuleIndex = currentModuleIndex;
-        for (var i = 0; i <= currentModuleIndex; ++i) {
-            var optionElement = moduleToPauseAtOptions[i];
-            var optgroupElement = optionElement.parentNode;
-            if (!optgroupElement || optgroupElement.nodeName !== 'OPTGROUP') {
-                continue;
-            }
-            optionElement.style.display = 'none';
-            if (optgroupElement.lastElementChild.isEqualNode(optionElement)) {
-                optgroupElement.style.display = 'none';
-            }
-        }
+        updateModuleSelection(moduleToPauseAtOptions, developerMode.currentModuleIndex = currentModuleIndex);
     }
 
     // determine whether the module to pause at is still ahead
@@ -440,6 +449,7 @@ function updateDeveloperPanel() {
         if (developerMode.currentModule) {
             statusInfo += ' at module: ' + developerMode.currentModule;
         }
+        $('#developer-pause-reason').text('(reason: ' + developerMode.isPaused + ')');
     } else if (moduleToPauseAtStillAhead) {
         statusInfo = 'will pause at module: ' + developerMode.moduleToPauseAt;
     } else if (developerMode.currentModule) {
@@ -483,6 +493,10 @@ function updateDeveloperPanel() {
             selectElement.handlerRegistered = true;
         }
     }
+    // -> update whether the test will pause on assert screen timeout
+    if (developerMode.pauseAtTimeout !== undefined) {
+        $('#developer-pause-on-timeout').prop('checked', developerMode.pauseAtTimeout);
+    }
 }
 
 // submits the selected module to pause at if it has changed
@@ -507,9 +521,25 @@ function handleModuleToPauseAtSelected() {
     }
 }
 
+function handlePauseAtTimeoutToggled() {
+    // skip if not owning development session or pauseAtTimeout is unknown
+    if (!developerMode.ownSession || developerMode.pauseAtTimeout === undefined) {
+        return;
+    }
+
+    var pauseAtTimeoutCheckboxChecked = $('#developer-pause-on-timeout').prop('checked');
+    if (developerMode.pauseAtTimeout !== pauseAtTimeoutCheckboxChecked) {
+        sendWsCommand({
+            cmd: 'set_pause_on_assert_screen_timeout',
+            flag: pauseAtTimeoutCheckboxChecked,
+        });
+    }
+}
+
 // submits the selected values which differ from the server's state
 function submitCurrentSelection() {
     handleModuleToPauseAtSelected();
+    handlePauseAtTimeoutToggled();
 }
 
 // ensures the websocket connection is closed
@@ -643,7 +673,9 @@ var messageToStatusVariable = [
     },
     {
         msg: 'paused',
-        statusVar: 'isPaused',
+        action: function(value, wholeMessage) {
+            developerMode.isPaused = wholeMessage.reason ? wholeMessage.reason : 'unknown';
+        },
     },
     {
         msg: 'pause_test_name',
@@ -652,6 +684,14 @@ var messageToStatusVariable = [
     {
         msg: 'set_pause_at_test',
         statusVar: 'moduleToPauseAt',
+    },
+    {
+        msg: 'pause_on_assert_screen_timeout',
+        statusVar: 'pauseAtTimeout',
+    },
+    {
+        msg: 'set_pause_on_assert_screen_timeout',
+        statusVar: 'pauseAtTimeout',
     },
     {
         msg: 'current_test_full_name',
@@ -719,7 +759,7 @@ function processWsCommand(obj) {
                 }
                 var action = msgToStatusValue.action;
                 if (action) {
-                    action(data[msg]);
+                    action(data[msg], data);
                 }
                 somethingChanged = true;
             });

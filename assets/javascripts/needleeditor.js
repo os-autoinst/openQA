@@ -335,8 +335,8 @@ function reactToSaveNeedle(data) {
   }
   if (data.info) {
     var info = data.info;
-    if (data.interactive_job) { // FIXME: never set
-      info += " - <a href='/tests/" + data.interactive_job + "#live'>back to live view</a>";
+    if (data.developer_session_job_id) {
+      info += " - <a href='/tests/" + data.developer_session_job_id + "#live'>back to live view</a>";
     } else if (data.restart) {
       info += " - <a href='#' data-url='" + data.restart + "' class='restart-link'>restart job</a>";
     }

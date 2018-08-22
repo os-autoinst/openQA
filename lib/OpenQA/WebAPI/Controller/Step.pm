@@ -18,6 +18,7 @@ package OpenQA::WebAPI::Controller::Step;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::File 'path';
 use OpenQA::Utils;
+use OpenQA::Jobs::Constants;
 use File::Basename;
 use File::Copy;
 use File::Which 'which';
@@ -524,6 +525,9 @@ sub save_needle_ajax {
 
     $self->emit_event('openqa_needle_modify', {needle => "$baseneedle.png", tags => $json_data->{tags}, update => 0});
     my $info = {info => "Needle $needlename created/updated"};
+    if ($job->state eq OpenQA::Jobs::Constants::RUNNING && $job->developer_session) {
+        $info->{developer_session_job_id} = $job->id;
+    }
     if ($job->can_be_duplicated) {
         $info->{restart} = $self->url_for('apiv1_restart', jobid => $job->id);
     }

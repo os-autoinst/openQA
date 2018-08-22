@@ -164,8 +164,9 @@ $livehandlerpid = create_live_view_handler($mojoport);
 
 my $JOB_SETUP
   = 'ISO=Core-7.2.iso DISTRI=tinycore ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 '
-  . 'FLAVOR=flavor BUILD=1 MACHINE=coolone QEMU_NO_TABLET=1 INTEGRATION_TESTS=1'
-  . 'QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=core PUBLISH_HDD_1=core-hdd.qcow2';
+  . 'FLAVOR=flavor BUILD=1 MACHINE=coolone QEMU_NO_TABLET=1 INTEGRATION_TESTS=1 '
+  . 'QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=core PUBLISH_HDD_1=core-hdd.qcow2 '
+  . 'TESTING_ASSERT_SCREEN_TIMEOUT=1';
 
 # schedule job
 OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP");
@@ -183,10 +184,23 @@ my $job_page_url = $driver->get_current_url();
 like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 1 is scheduled');
 javascript_console_has_no_warnings_or_errors;
 
+my $os_autoinst_path = '../os-autoinst';
+my $isotovideo_path  = $os_autoinst_path . '/isotovideo';
+my $needle_dir       = $sharedir . '/tests/tinycore/needles';
+
+# rename one of the required needle so a certain assert_screen will timeout later
+mkdir($needle_dir . '/../disabled_needles');
+my $on_prompt_needle         = $needle_dir . '/boot-on_prompt';
+my $on_prompt_needle_renamed = $needle_dir . '/../disabled_needles/boot-on_prompt';
+note('renaming needles for on_prompt to ' . $on_prompt_needle_renamed . '.{json,png}');
+for my $ext (qw(.json .png)) {
+    ok(rename($on_prompt_needle . $ext => $on_prompt_needle_renamed . $ext), 'can rename needle ' . $ext);
+}
+
 sub start_worker {
     $workerpid = fork();
     if ($workerpid == 0) {
-        exec("perl ./script/worker --instance=1 $connect_args --isotovideo=../os-autoinst/isotovideo --verbose");
+        exec("perl ./script/worker --instance=1 $connect_args --isotovideo=$isotovideo_path --verbose");
         die "FAILED TO START WORKER";
     }
 }
@@ -220,9 +234,46 @@ subtest 'wait until developer console becomes available' => sub {
     OpenQA::Test::FullstackUtils::wait_for_developer_console_available($driver);
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
         $driver,
-        qr/(connected to os-autoinst command server|reusing previous connection to os-autuinst command server)/,
+        qr/(connected to os-autoinst command server|reusing previous connection to os-autoinst command server)/,
         'proxy says it is connected to os-autoinst cmd srv'
     );
+};
+
+subtest 'pause at assert_screen timeout' => sub {
+    # send command to pause on assert_screen timeout (hopefully the test wasn't so fast that it already failed)
+    my $command_input = $driver->find_element('#msg');
+    $command_input->send_keys('{"cmd":"set_pause_on_assert_screen_timeout","flag":true}');
+    $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+        $driver,
+        qr/\"set_pause_on_assert_screen_timeout\":true/,
+        'response to set_pause_on_assert_screen_timeout'
+    );
+
+    # wait until test paused
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+        $driver,
+        qr/\"(reason|test_execution_paused)\":\"match=on_prompt timed out/,
+        'paused after assert_screen timeout'
+    );
+
+    # try to resume
+    $command_input->send_keys('{"cmd":"resume_test_execution"}');
+    $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message($driver,
+        qr/\"resume_test_execution\":/, 'resume');
+
+    # wait until test is paused (again)
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+        $driver,
+        qr/\"(reason|test_execution_paused)\":\"match=on_prompt timed out/,
+        'paused after assert_screen timeout (again)'
+    );
+
+    # rename needle back so assert_screen will succeed
+    for my $ext (qw(.json .png)) {
+        ok(rename($on_prompt_needle_renamed . $ext => $on_prompt_needle . $ext), 'can rename back needle ' . $ext);
+    }
 };
 
 subtest 'pause at certain test' => sub {
@@ -236,9 +287,15 @@ subtest 'pause at certain test' => sub {
         'response to set_pause_at_test'
     );
 
+    # resume test execution (we're still paused from the previous subtest)
+    $command_input->send_keys('{"cmd":"resume_test_execution"}');
+    $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message($driver,
+        qr/\"resume_test_execution\":/, 'resume');
+
     # wait until the shutdown test is started and hence the test execution paused
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message($driver,
-        qr/(\"paused\":|\"test_execution_paused\":\".*\")/, 'paused');
+        qr/\"(reason|test_execution_paused)\":\"reached module shutdown\"/, 'paused');
 };
 
 subtest 'developer session visible in live view' => sub {
@@ -321,6 +378,7 @@ my $second_tab = open_new_tab('/login?user=Demo');
 
 subtest 'connect with 2 clients at the same time (use case: developer opens 2nd tab)' => sub {
     $driver->switch_to_window($second_tab);
+    $driver->get($developer_console_url);
 
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
         $driver,
@@ -335,7 +393,7 @@ subtest 'connect with 2 clients at the same time (use case: developer opens 2nd 
 };
 
 
-subtest 'resume test execution' => sub {
+subtest 'resume test execution and 2nd tab' => sub {
     # login as demo again
     $driver->switch_to_window($first_tab);
     $driver->get('/logout');

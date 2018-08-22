@@ -655,38 +655,28 @@ sub has_logviewers {
 sub upload_status {
     my ($final_upload, $callback) = @_;
 
-
+    # return if worker has setup failure
     return unless my $workerid = verify_workerid;
     return unless $job;
-
-    # If the worker has a setup failure, the $job object is not
-    # properly set, and URL is not set, so we return.
     if (!$job->{URL}) {
         return $callback->() if $callback && $final_upload;
         return;
     }
 
-    my $status = {
-        worker_id       => $workerid,
-        worker_hostname => $worker_settings->{WORKER_HOSTNAME},
-        cmd_srv_url     => $job->{URL},
+    # query status from isotovideo
+    my $ua        = Mojo::UserAgent->new;
+    my $os_status = $ua->get($job->{URL} . '/isotovideo/status')->res->json;
+    my $status    = {
+        worker_id             => $workerid,
+        cmd_srv_url           => $job->{URL},
+        worker_hostname       => $worker_settings->{WORKER_HOSTNAME},
+        test_execution_paused => $os_status->{test_execution_paused},
     };
 
-    my $ua        = Mojo::UserAgent->new;
-    my $os_status = $ua->get($job->{URL} . "/isotovideo/status")->res->json;
-
-    # $os_status->{running} is undef at the beginning or if read_json_file temporary failed
-    # and contains empty string after the last test
-
-    # cherry-pick
-
-    for my $f (qw(interactive needinput)) {
-        if ($os_status->{$f} || has_logviewers()) {
-            $status->{status}->{$f} = $os_status->{$f};
-        }
-    }
+    # determine up to which module the results should be uploaded
+    # note: $os_status->{running} is undef at the beginning or if read_json_file temporary
+    #       failed and contains empty string after the last test
     my $upload_up_to;
-
     if ($os_status->{running} || $final_upload) {
         if (!$current_running) {    # first test
             $test_order = read_json_file('test_order.json');
@@ -705,21 +695,22 @@ sub upload_status {
         $current_running = $os_status->{running};
     }
 
-    # try to upload everything at the end, in case we missed the last $os_status->{running}
-    $upload_up_to = '' if $final_upload;
-
-    if ($status->{status}->{needinput}) {
-        $status->{result} = {$current_running => read_module_result($os_status->{running})};
+    # adjust $upload_up_to to handle special cases
+    if ($final_upload) {
+        # try to upload everything at the end, in case we missed the last $os_status->{running}
+        $upload_up_to = '';
     }
-    elsif (defined($upload_up_to)) {
-        my $extra_test_order = [];
-        $status->{result} = read_result_file($upload_up_to, $extra_test_order);
-
-        if (@$extra_test_order) {
-            $status->{test_order} //= [];
-            push @{$status->{test_order}}, @$extra_test_order;
-        }
+    elsif ($status->{test_execution_paused}) {
+        # upload up to the current module when paused so it is possible to open the needle editor
+        $upload_up_to = $current_running;
     }
+
+    # upload all results up to $upload_up_to
+    if (defined($upload_up_to)) {
+        $status->{result} = read_result_file($upload_up_to, $status->{test_order} //= []);
+    }
+
+    # provide status variables for livelog
     if (has_logviewers()) {
         $status->{log}             = log_snippet("$pooldir/autoinst-log.txt",   \$log_offset);
         $status->{serial_log}      = log_snippet("$pooldir/serial0",            \$serial_offset);
@@ -728,10 +719,10 @@ sub upload_status {
         $status->{screen} = $screen if $screen;
     }
 
-    if ($os_status->{running}) {
-        $status->{result}->{$os_status->{running}}->{result} = 'running';
-    }
+    # mark the currently running test as running
+    $status->{result}->{$current_running}->{result} = 'running' if ($current_running);
 
+    # upload status to web UI
     if ($ENV{WORKER_USE_WEBSOCKETS}) {
         ws_call('status', $status);
     }
@@ -843,7 +834,7 @@ sub read_json_file {
     return $json;
 }
 
-sub read_module_result($) {
+sub read_module_result {
     my ($test) = @_;
 
     my $result = read_json_file("result-$test.json");
@@ -876,21 +867,28 @@ sub read_module_result($) {
     return $result;
 }
 
-sub read_result_file($$) {
+sub read_result_file {
     my ($upload_up_to, $extra_test_order) = @_;
-
     my $ret = {};
 
-    # we need to upload all results not yet uploaded - and stop at $upload_up_to
+    # upload all results not yet uploaded - and stop at $upload_up_to
     # if $upload_up_to is empty string, then upload everything
-    while (scalar(@$test_order)) {
-        my $test   = (shift @$test_order)->{name};
+    while (my $remaining_test_count = scalar(@$test_order)) {
+        my $test   = $test_order->[0]->{name};
         my $result = read_module_result($test);
-        last unless $result;
+
+        my $is_last_test_to_be_uploaded = $remaining_test_count eq 1    || $test eq $upload_up_to;
+        my $test_not_running            = !$current_running             || $test ne $current_running;
+        my $test_is_completed           = !$is_last_test_to_be_uploaded || $test_not_running;
+        if ($test_is_completed) {
+            # remove completed tests from @$test_order so we don't upload those results twice
+            shift(@$test_order);
+        }
+
+        last unless ($result);
         $ret->{$test} = $result;
 
         if ($result->{extra_test_results}) {
-
             for my $extra_test (@{$result->{extra_test_results}}) {
                 my $extra_result = read_module_result($extra_test->{name});
                 next unless $extra_result;
@@ -899,7 +897,7 @@ sub read_result_file($$) {
             push @{$extra_test_order}, @{$result->{extra_test_results}};
         }
 
-        last if ($test eq $upload_up_to);
+        last if $is_last_test_to_be_uploaded;
     }
     return $ret;
 }

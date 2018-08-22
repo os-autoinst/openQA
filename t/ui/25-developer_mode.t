@@ -166,7 +166,11 @@ subtest 'devel UI shown when running module known' => sub {
 
 subtest 'state shown when connected' => sub {
     # running, current module unknown
-    fake_state(developerMode => {isConnected => 'true'});
+    fake_state(
+        developerMode => {
+            isConnected    => 'true',
+            pauseAtTimeout => 'false',
+        });
     element_hidden('#developer-instructions');
     element_visible('#developer-panel');
     element_visible(
@@ -202,11 +206,12 @@ subtest 'state shown when connected' => sub {
     is($_->is_selected(), $_->get_value() eq 'boot' ? 1 : 0, 'only boot selected') for (@options);
 
     # currently paused
-    fake_state(developerMode => {isPaused => 'true'});
+    fake_state(developerMode => {isPaused => '"some reason"'});
     element_visible('#developer-instructions',
         qr/System is waiting for developer, connect to remotehost at port 91 with Shared mode/,
     );
     element_visible('#developer-panel .card-header', qr/paused at module: installation-welcome/, qr/current module/,);
+    element_visible('#developer-pause-reason', qr/reason: some reason/);
 
     # developer session opened
     fake_state(
@@ -284,7 +289,7 @@ subtest 'start developer session' => sub {
     );
 
     subtest 'resume paused test' => sub {
-        fake_state(developerMode => {isPaused => 'true'});
+        fake_state(developerMode => {isPaused => '"some reason"'});
         $driver->find_element('Resume test execution', 'link_text')->click();
         assert_sent_commands([{cmd => 'resume_test_execution'}], 'command for resuming test execution sent');
     };
@@ -317,6 +322,38 @@ subtest 'start developer session' => sub {
                 }
             ],
             'command to clear module to pause at sent'
+        );
+    };
+
+    subtest 'select whether to pause on assert_screen failure' => sub {
+        my $checkbox = $driver->find_element('#developer-pause-on-timeout');
+        is($checkbox->is_selected, 0, 'check box initially not selected');
+
+        # turn pausing on assert_screen on
+        $checkbox->click();
+        assert_sent_commands(
+            [
+                {
+                    cmd  => 'set_pause_on_assert_screen_timeout',
+                    flag => 1,
+                }
+            ],
+            'command to pause on assert_screen failure sent'
+        );
+
+        # fake the feedback from os-autoinst
+        fake_state(developerMode => {pauseAtTimeout => 1});
+
+        # turn pausing on assert_screen off
+        $checkbox->click();
+        assert_sent_commands(
+            [
+                {
+                    cmd  => 'set_pause_on_assert_screen_timeout',
+                    flag => 0,
+                }
+            ],
+            'command to unset pause on assert_screen failure sent'
         );
     };
 
@@ -360,9 +397,13 @@ subtest 'process state changes from os-autoinst' => sub {
         );
 
         $driver->execute_script(
-'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_test_full_name\":\"some test\",\"paused\":true}}" });'
+'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_test_full_name\":\"some test\",\"paused\":true, \"set_pause_on_assert_screen_timeout\": 1}}" });'
         );
         element_visible('#developer-panel .card-header', qr/paused at module: some test/, qr/current module/,);
+        is(
+            $driver->find_element('#developer-pause-on-timeout')->is_selected,
+            1, 'check box for pause on assert_screen timeout updated',
+        );
     };
 
     subtest 'error handling, flash messages' => sub {

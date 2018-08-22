@@ -102,14 +102,10 @@ sub register {
         current_job_group => sub {
             my ($c) = @_;
 
-            if (!$c->param('testid') && !$c->stash('testid')) {
-                return;
-            }
-
+            my $job      = $c->stash('job') or return;
             my $distri   = $c->stash('distri');
             my $build    = $c->stash('build');
             my $version  = $c->stash('version');
-            my $job      = $c->stash('job');
             my $group_id = $job->group_id;
             if (!$group_id && !($distri && $build && $version)) {
                 return;
@@ -341,6 +337,20 @@ sub register {
                       ),
                       ;
                 });
+        });
+
+    $app->helper(
+        render_specific_not_found => sub {
+            my ($c, $title, $error_message) = @_;
+
+            $c->stash(
+                title         => $title,
+                error_message => $error_message,
+            );
+            return $c->render(
+                template => 'main/specific_not_found',
+                status   => 404,
+            );
         });
 }
 

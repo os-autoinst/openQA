@@ -92,7 +92,18 @@ sub wait_for_job_running {
     $driver->find_element_by_link_text('Live View')->click();
 }
 
+# matches a regex; returns the index of the end of the match on success and otherwise -1
+# note: using a separate function here because $+[0] is not accessible from outer block when used in while
+sub match_regex_returning_index {
+    my ($regex, $message, $start_index) = @_;
+    $start_index //= 0;
+
+    return $+[0] if (substr($message, $start_index) =~ $regex);
+    return -1;
+}
+
 # waits until the developer console content matches the specified regex
+# note: only considers the console output since the last successful call
 sub wait_for_developer_console_contains_log_message {
     my ($driver, $message_regex, $diag_info) = @_;
 
@@ -101,12 +112,14 @@ sub wait_for_developer_console_contains_log_message {
     javascript_console_has_no_warnings_or_errors($js_erro_check_suffix);
 
     # get log
-    my $log_textarea = $driver->find_element('#log');
-    my $log          = $log_textarea->get_text();
-    my $previous_log = '';
+    my $position_of_last_match = $driver->execute_script('return window.lastWaitForDevelConsoleMsgMatch;') // 0;
+    my $log_textarea           = $driver->find_element('#log');
+    my $log                    = $log_textarea->get_text();
+    my $previous_log           = '';
 
     my $regex_closed = qr/Connection closed/;
-    while (!($log =~ $message_regex)) {
+    my $match_index;
+    while (($match_index = match_regex_returning_index($message_regex, $log, $position_of_last_match)) < 0) {
         # check whether connection has been unexpectedly closed/opened
         if (   $message_regex ne $regex_closed
             && $diag_info ne 'paused'
@@ -135,7 +148,9 @@ sub wait_for_developer_console_contains_log_message {
         $log          = $log_textarea->get_text();
     }
 
-    pass('found ' . $diag_info);
+    $position_of_last_match += $match_index;
+    $driver->execute_script("window.lastWaitForDevelConsoleMsgMatch = $position_of_last_match;");
+    pass("found $diag_info at $position_of_last_match");
 }
 
 sub wait_for_developer_console_available {

@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2014-2017 SUSE LLC
+# Copyright (C) 2014-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ use OpenQA::Test::Case;
 use Cwd 'abs_path';
 use Cpanel::JSON::XS 'decode_json';
 use File::Path qw(make_path remove_tree);
+use Date::Format 'time2str';
 use POSIX 'strftime';
 
 use OpenQA::WebSockets;
@@ -45,7 +46,55 @@ $test_case->init_data;
 
 use OpenQA::SeleniumTest;
 
-my $driver = call_driver();
+sub create_running_job_for_needle_editor {
+    my ($schema) = @_;
+
+    $schema->resultset('Jobs')->create(
+        {
+            id          => 99980,
+            result      => 'none',
+            state       => 'running',
+            priority    => 35,
+            t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),
+            t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+            t_finished  => undef,
+            TEST        => 'kde',
+            BUILD       => '0091',
+            DISTRI      => 'opensuse',
+            FLAVOR      => 'DVD',
+            MACHINE     => '64bit',
+            VERSION     => '13.1',
+            backend     => 'qemu',
+            result_dir  => '00099963-opensuse-13.1-DVD-x86_64-Build0091-kde',
+            jobs_assets => [{asset_id => 2},],
+            modules     => [
+                {
+                    script   => 'tests/installation/installation_overview.pm',
+                    category => 'installation',
+                    name     => 'installation_overview',
+                    result   => 'passed',
+                },
+                {
+                    script   => 'tests/installation/installation_mode.pm',
+                    category => 'installation',
+                    name     => 'installation_mode',
+                    result   => 'running',
+                },
+            ]});
+    $schema->resultset('Workers')->create(
+        {
+            host       => 'dummy',
+            instance   => 1,
+            properties => [{key => 'JOBTOKEN', value => 'token99980'}],
+            job_id     => 99980,
+        });
+}
+
+sub schema_hook {
+    create_running_job_for_needle_editor(OpenQA::Test::Database->new->create);
+}
+
+my $driver = call_driver(\&schema_hook);
 unless ($driver) {
     plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
@@ -493,6 +542,55 @@ subtest 'show needle editor for screenshot (without any tags)' => sub {
     wait_for_ajax();
     is(OpenQA::Test::Case::trim_whitespace($driver->find_element_by_id('image_select')->get_text()),
         'Screenshot', 'images taken from screenshot');
+};
+
+subtest 'open needle editor for running test' => sub {
+    my $t = Test::Mojo->new('OpenQA::WebAPI');
+    create_running_job_for_needle_editor($t->app->schema);
+    $t->ua->max_redirects(1);
+    warnings { $t->get_ok('/tests/99980/edit') };
+    note(
+'ignoring warning "DateTime objects passed to search() are not supported properly" at lib/OpenQA/WebAPI/Controller/Step.pm line 211'
+    );
+    $t->status_is(200);
+    $t->text_is(title => 'openQA: Needle Editor', 'needle editor shown for running test');
+    is(
+        $t->tx->req->url->path->to_string,
+        '/tests/99980/modules/installation_mode/steps/2/edit',
+        'redirected to correct module/step'
+    );
+};
+
+subtest 'error handling when opening needle editor for running test' => sub {
+    my $t = Test::Mojo->new('OpenQA::WebAPI');
+
+    subtest 'no worker assigned' => sub {
+        $t->get_ok('/tests/99946/edit')->status_is(404);
+        $t->text_is(title => 'openQA: Needle Editor', 'title still the same');
+        $t->text_like(
+            '#content p',
+qr/The test opensuse-13\.1-DVD-i586-Build0091-textmode\@32bit has no worker assigned so the page \"Needle Editor\" is not available\./,
+            'error message'
+        );
+
+        # test error handling for other 'Running.pm' routes as well
+        $t->get_ok('/tests/99946/livelog')->status_is(404);
+        $t->text_is(title => 'openQA: Page not found', 'generic title present');
+        $t->text_like(
+            '#content p',
+qr/The test opensuse-13\.1-DVD-i586-Build0091-textmode\@32bit has no worker assigned so this route is not available\./,
+            'error message'
+        );
+    };
+
+    subtest 'no running module' => sub {
+        $t->get_ok('/tests/99963/edit')->status_is(404);
+        $t->text_like(
+            '#content p',
+qr/The test has no currently running module so opening the needle editor is not possible\. Likely results have not been uploaded yet so reloading the page might help\./,
+            'error message'
+        );
+    };
 };
 
 kill_driver();

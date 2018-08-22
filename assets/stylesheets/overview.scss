@@ -20,13 +20,20 @@
         cursor: pointer;
 
         span {
-            float: right;
             color: #555;
             font-weight: 500;
+            float: right;
+        }
+        .row span {
+            text-align: right;
+            width: 100%;
+            display: inline-block;
+            float: none;
         }
     }
-    .card-header-appendix {
+    .card-header-appendix, .card-header-appendix span {
         font-weight: normal;
+        float: none;
     }
     .card-body, .developer-mode-element {
         display: none;

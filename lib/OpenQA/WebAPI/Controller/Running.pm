@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,26 +27,37 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 
 sub init {
-    my ($self) = @_;
+    my ($self, $page_name) = @_;
 
-    my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
-
+    my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
     unless (defined $job) {
         $self->reply->not_found;
         return 0;
     }
-    if (!$job->worker) {
+
+    # succeed if the job has a worker
+    if ($job->worker) {
+        $self->stash('job', $job);
+        return 1;
+    }
+
+    # return the state as JSON for status route
+    if ($page_name && $page_name eq 'status') {
         $self->render(json => {state => $job->state});
         return 0;
     }
-    $self->stash('job', $job);
 
-    1;
+    # render a 404 error page for other routes
+    my $test_name = $job->name;
+    my $what = $page_name ? "the page \"$page_name\"" : 'this route';
+    $self->render_specific_not_found($page_name // 'Page not found',
+        "The test $test_name has no worker assigned so $what is not available.");
+    return 0;
 }
 
 sub status {
     my $self = shift;
-    return 0 unless $self->init();
+    return 0 unless $self->init('status');
 
     my $job      = $self->stash('job');
     my $workerid = $job->worker_id;
@@ -57,20 +68,24 @@ sub status {
 }
 
 sub edit {
-    my $self = shift;
-    return 0 unless $self->init();
+    my $self      = shift;
+    my $page_name = 'Needle Editor';
+    return 0 unless $self->init($page_name);
 
     my $job = $self->stash('job');
-    my $r = $job->modules->find({result => 'running'});
+    my $running_module = $job->modules->find({result => 'running'});
+    return $self->render_specific_not_found(
+        $page_name,
+'The test has no currently running module so opening the needle editor is not possible. Likely results have not been uploaded yet so reloading the page might help.',
+    ) unless ($running_module);
 
-    if ($r) {
-        my $details = $r->details();
-        my $stepid  = scalar(@{$details});
-        $self->redirect_to('edit_step', moduleid => $r->name(), stepid => $stepid);
-    }
-    else {
-        $self->reply->not_found;
-    }
+    my $details = $running_module->details();
+    my $stepid  = scalar(@{$details});
+    return $self->render_specific_not_found(
+        $page_name,
+'The results for the currently running module have not been uploaded yet so opening the needle editor is not possible. Likely the upload is still in progress so reloading the page might help.',
+    ) unless ($stepid);
+    $self->redirect_to('edit_step', moduleid => $running_module->name(), stepid => $stepid);
 }
 
 sub streamtext {

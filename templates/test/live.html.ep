@@ -6,31 +6,41 @@
 
 <div class="card card-outline-secondary filter-panel-bottom" id="developer-panel" data-developer-url="<%= $ws_developer_url %>" data-status-only-url="<%= $ws_status_only_url %>">
     <div class="card-header">
-        <strong>Developer mode</strong>
-        <span>
-            <span class="developer-mode-element" data-hidden-on="isConnected">
+        <div class="row">
+            <div class="col-sm-7">
+                <strong>Developer mode</strong>
+            </div>
+            <div class="col-sm-5">
+                <span class="developer-mode-element" data-hidden-on="isConnected">
                 retrieving status <i class="fas fa-spinner fa-spin fa-lg"></i>
-            </span>
-            <span class="developer-mode-element" id="developer-status-info" data-visible-on="isConnected">
-                unknown status
-            </span>
-        </span>
-        <div class="card-header-appendix" id="developer-session-info">
-            % if ($developer_session) {
-                % my $tab_count = $developer_session->ws_connection_count;
-                owned by <%= $developer_session->user->name %>
-                (started
-                    <abbr class="timeago" title="<%= $developer_session->t_created->datetime() %>Z">
-                        %= format_time($developer_session->t_created)
-                    </abbr>,
-                developer has <%= $tab_count %> browser <%= $tab_count == 1 ? 'tab' : 'tabs' %> open)
-            % }
-            % else {
-                regular test execution
-                % if ($is_devel_mode_accessible) {
-                    - click to expand
+                </span>
+                <span class="developer-mode-element" id="developer-status-info" data-visible-on="isConnected">
+                    unknown status
+                </span>
+            </div>
+        </div>
+        <div class="row card-header-appendix">
+            <div class="col-sm-7" id="developer-session-info">
+                % if ($developer_session) {
+                    % my $tab_count = $developer_session->ws_connection_count;
+                    owned by <%= $developer_session->user->name %>
+                    (started
+                        <abbr class="timeago" title="<%= $developer_session->t_created->datetime() %>Z">
+                            %= format_time($developer_session->t_created)
+                        </abbr>,
+                    developer has <%= $tab_count %> browser <%= $tab_count == 1 ? 'tab' : 'tabs' %> open)
                 % }
-            % }
+                % else {
+                    regular test execution
+                    % if ($is_devel_mode_accessible) {
+                        - click to expand
+                    % }
+                % }
+            </div>
+            <div class="col-sm-5">
+                <span class="developer-mode-element" id="developer-pause-reason" data-visible-on="isPaused">
+                </span>
+            </div>
         </div>
     </div>
     <div class="card-body">
@@ -44,7 +54,7 @@
                 Change the test behaviour with the controls below.
             </p>
             <div class="form-group row">
-                <div class="col-sm-3">
+                <div class="col-sm-5">
                     <label for="developer-pause-at-module" class="col-form-label">
                         Pause at module
                     </label>
@@ -57,8 +67,23 @@
                         <p>A paused job still has the <code>MAX_JOB_TIME</code> constraint to be applied.</p>')
                     %>
                 </div>
-                <div class="col-sm-9">
+                <div class="col-sm-7">
                     %= include 'test/module_select'
+                </div>
+                <div class="col-sm-5">
+                    <label for="developer-pause-on-timeout" class="col-form-label">
+                        Pause on <code>assert_screen</code> timeout
+                    </label>
+                    <%= help_popover('Help for <i>pause test execution</i>' => '
+                        <p>
+                            Pauses the test execution on the next <code>assert_screen</code> timeout.
+                        </p>
+                        <p>On resume, the needles will be reloaded and the assertion is tried again.</p>
+                        <p>A paused job still has the <code>MAX_JOB_TIME</code> constraint to be applied.</p>')
+                    %>
+                </div>
+                <div class="col-sm-7">
+                    <input type="checkbox" id="developer-pause-on-timeout">
                 </div>
             </div>
             <hr>
@@ -71,8 +96,15 @@
                     class="btn btn-danger developer-mode-element" data-visible-on="ownSession">
                     <i class="far fa-stop-circle"></i> Cancel job
                 </a>
-                <a href="#" onclick="resumeTestExecution(); return false;" class="btn btn-secondary developer-mode-element" data-visible-on="isPaused">
+                <a href="#" onclick="resumeTestExecution(); return false;"
+                    class="btn btn-secondary developer-mode-element" data-visible-on="isPaused">
                     <i class="far fa-play-circle"></i> Resume test execution
+                </a>
+                <a href="<%= url_for('edit_test', testid => $testid) %>"
+                    class="btn btn-secondary developer-mode-element"
+                    data-visible-on="isPaused">
+                    <i class="fa fa-thumbtack"></i>
+                    Open needle editor
                 </a>
                 % if (app->mode eq 'development') {
                     <a href="<%= url_for('developer_ws_console')->query({proxy => 1}) %>" target="blank"

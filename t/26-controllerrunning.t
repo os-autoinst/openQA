@@ -1,5 +1,5 @@
 #!/usr/bin/env perl -w
-# Copyright (C) 2017 SUSE LLC
+# Copyright (C) 2017-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -89,10 +89,13 @@ subtest init => sub {
     my $app = Mojolicious->new();
     $app->attr("schema", sub { FakeSchema->new() });
     my $not_found;
+    my $render_specific_not_found;
     my $render;
     monkey_patch 'OpenQA::WebAPI::Controller::Running', not_found => sub { $not_found = 1 };
-    monkey_patch 'OpenQA::WebAPI::Controller::Running', reply     => sub { shift };
-    monkey_patch 'OpenQA::WebAPI::Controller::Running', render    => sub { $render    = 1 };
+    monkey_patch 'OpenQA::WebAPI::Controller::Running',
+      render_specific_not_found => sub { $render_specific_not_found = 1 };
+    monkey_patch 'OpenQA::WebAPI::Controller::Running', reply => sub { shift };
+    monkey_patch 'OpenQA::WebAPI::Controller::Running', render => sub { $render = 1 };
 
     my $c = OpenQA::WebAPI::Controller::Running->new(app => $app);
     $c->param('testid', "foobar");
@@ -112,9 +115,20 @@ subtest init => sub {
 
     # Job can be found, but with no worker
     monkey_patch 'Job', worker => sub { undef };
-    $ret = $c->init();
-    is $ret,    0, "Init returns 0";
-    is $render, 1, "Init returns 0 - no defined worker";
+    # status route
+    $render_specific_not_found = 0;
+    $render                    = 0;
+    $ret                       = $c->init('status');
+    is $ret,                       0, "Init returns 0";
+    is $render_specific_not_found, 0, "no 404 despite no worker";
+    is $render,                    1, "no worker but job state still rendered";
+    # other routes
+    $render_specific_not_found = 0;
+    $render                    = 0;
+    $ret                       = $c->init();
+    is $ret,                       0, "Init returns 0";
+    is $render_specific_not_found, 1, "specific 404 error rendered";
+    is $render,                    0, "not rendering job state";
 };
 
 subtest edit => sub {
@@ -123,18 +137,21 @@ subtest edit => sub {
     my $app = Mojolicious->new();
     $app->attr("schema", sub { FakeSchema->new() });
     my $not_found;
+    my $render_specific_not_found;
     my $found;
     monkey_patch 'OpenQA::WebAPI::Controller::Running', init      => sub { 1 };
     monkey_patch 'FakeSchema::Find',                    find      => sub { undef };
     monkey_patch 'OpenQA::WebAPI::Controller::Running', not_found => sub { $not_found = 1 };
-    monkey_patch 'OpenQA::WebAPI::Controller::Running', reply     => sub { shift };
+    monkey_patch 'OpenQA::WebAPI::Controller::Running',
+      render_specific_not_found => sub { $render_specific_not_found = 1 };
+    monkey_patch 'OpenQA::WebAPI::Controller::Running', reply => sub { shift };
 
     # No results
     my $c = OpenQA::WebAPI::Controller::Running->new(app => $app);
     $c->param('testid', "foobar");
     $c->stash("job", Job->new);
     $c->edit();
-    is $not_found, 1, "No results";
+    is $render_specific_not_found, 1, "No results";
 
     # Check if we can get the fake results
     my $details_count;
