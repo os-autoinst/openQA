@@ -116,7 +116,10 @@
             <div class="form-group row">
                 <label for="editor-default-priority" class="col-sm-2 control-label" data-toggle="tooltip" title="Default priority for jobs and job templates created in the group">Default priority</label>
                 <div class="col-sm-10">
-                    <input type="number" class="form-control" id="editor-default-priority" name="default_priority" value="<%= $group->default_priority %>">
+                    <input
+                        type="number" class="form-control"
+                        id="editor-default-priority" name="default_priority"
+                        value="<%= $group->default_priority %>" data-initial-value="<%= $group->default_priority %>">
                     <%= help_popover 'Default priority' =>
                         '<p>Specifies the default priority for jobs and job templates created in the group</p>
                         <ul>

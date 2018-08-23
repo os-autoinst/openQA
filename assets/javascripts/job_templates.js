@@ -146,7 +146,10 @@ function addTestRow() {
 
     select.show();
     select.change(testChanged);
-    $('<td class="prio">50</td>').appendTo(tr);
+    td = $('<td class="prio"></td>');
+    var defaultPrio = $('#editor-default-priority').data('initial-value');
+    td.text(defaultPrio ? defaultPrio : '50');
+    td.appendTo(tr);
 
     var archnames = table.data('archs');
     var archHeaders = table.find('thead th.arch');
@@ -316,10 +319,15 @@ function submitProperties(form) {
            method: 'PUT',
            data: editorForm.serialize(),
            success: function() {
-               var newJobName = $('#editor-name').val();
                showSubmitResults(editorForm, '<i class="fas fa-save"></i> Changes applied');
+
+               // show new name
+               var newJobName = $('#editor-name').val();
                $('#job-group-name').text(newJobName);
                document.title = document.title.substr(0, 17) + newJobName;
+               // update initial value for default priority (used when adding new job template)
+               var defaultPropertyInput = $('#editor-default-priority');
+               defaultPropertyInput.data('initial-value', defaultPropertyInput.val());
            },
            error: function(xhr, ajaxOptions, thrownError) {
                showSubmitResults(editorForm, '<i class="fas fa-trash"></i> Unable to apply changes');
