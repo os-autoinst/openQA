@@ -82,7 +82,7 @@ function templateAdded(chosen, selected) {
     var tr = chosen.parents('tr');
     finalizeTest(tr);
     var postData = {
-        prio: tr.find('.prio').text(),
+        prio: tr.find('.prio input').val(),
         group_id: job_group_id,
         product_id: chosen.data('product-id'),
         machine_id: chosen.find('option[value="' + selected + '"]').data('machine-id'),
@@ -96,6 +96,28 @@ function templateAdded(chosen, selected) {
         data: postData}).fail(addFailed).done(function(data) { addSucceeded(chosen, selected, data); });
 }
 
+function priorityChanged(priorityInput) {
+    var tr = priorityInput.parents('tr');
+
+    // just skip if there are no machines added anyways
+    var hasMachines = tr.find('td.arch select option:selected').length > 0;
+    if (!hasMachines) {
+        return;
+    }
+
+    $.ajax({
+        url: job_templates_url,
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            prio: priorityInput.val(),
+            prio_only: true,
+            group_id: job_group_id,
+            test_suite_id: tr.data('test-id'),
+        },
+    }).fail(addFailed);
+}
+
 function chosenChanged(evt, param) {
     if (param.deselected) {
         templateRemoved($(this), param.deselected);
@@ -105,9 +127,14 @@ function chosenChanged(evt, param) {
 }
 
 function testChanged() {
-    var selected = $(this).find('option:selected').val();
-    var chosens = $(this).parents('tr').find('.chosen-select');
-    chosens.prop('disabled', selected == '').trigger("chosen:updated");
+    var select = $(this);
+    var selectedValue = select.find('option:selected').val();
+    var noSelection = !selectedValue || selectedValue.length === 0;
+    var tr = select.parents('tr');
+    var chosens = tr.find('.chosen-select');
+    var inputs = tr.find('input');
+    chosens.prop('disabled', noSelection).trigger("chosen:updated");
+    inputs.prop('disabled', noSelection);
 }
 
 function findPresentTests(table) {
@@ -135,6 +162,27 @@ function filterTestSelection(select, presentTests) {
     });
 }
 
+function makePrioCell(prio) {
+    // use default priority if no prio passed; also disable the input in this case
+    var disableInput = !prio;
+    if (!prio) {
+        prio = $('#editor-default-priority').data('initial-value');
+    }
+    if (!prio) {
+        prio = 50;
+    }
+
+    var td = $('<td class="prio"></td>');
+    var prioInput = $('<input type="number"></input>');
+    prioInput.val(prio);
+    prioInput.change(function() {
+        priorityChanged($(this));
+    });
+    prioInput.prop('disabled', disableInput);
+    prioInput.appendTo(td);
+    return td;
+}
+
 function addTestRow() {
     var table = $(this).parents('table');
     var tbody = table.find('tbody');
@@ -146,10 +194,7 @@ function addTestRow() {
 
     select.show();
     select.change(testChanged);
-    td = $('<td class="prio"></td>');
-    var defaultPrio = $('#editor-default-priority').data('initial-value');
-    td.text(defaultPrio ? defaultPrio : '50');
-    td.appendTo(tr);
+    makePrioCell().appendTo(tr);
 
     var archnames = table.data('archs');
     var archHeaders = table.find('thead th.arch');
@@ -217,7 +262,7 @@ function buildMediumGroup(group, media) {
             shortname = '<span title='+test+'>' + test.substr(0,67) + '…</span>';
         }
         $('<td class="name">' + shortname + '</td>').appendTo(tr);
-        $('<td class="prio">' + tests[test]['prio'] + '</td>').appendTo(tr);
+        makePrioCell(tests[test].prio).appendTo(tr);
 
         $.each(archnames, function(archIndex, arch) {
             var td = $('<td class="arch"/>').appendTo(tr);
@@ -272,8 +317,7 @@ function fillEmptySpace(table, tableHead, headerWithAllArchs) {
 
 function alignCols() {
     // Set minimal width
-    $('th.name').width('0');
-    $('th.prio').width('0');
+    $('th.name,th.prio').width('0');
 
     // Find biggest minimal width
     var namewidth = 450;

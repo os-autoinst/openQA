@@ -161,6 +161,32 @@ sub create {
             $error = $@;
         }
     }
+    elsif ($self->param('prio_only')) {
+        $validation->required('group_id')->like(qr/^[0-9]+$/);
+        $validation->required('test_suite_id')->like(qr/^[0-9]+$/);
+        $validation->required('prio')->like(qr/^[0-9]+$/);
+
+        if ($validation->has_error) {
+            $error = "wrong parameter: ";
+            for my $k (qw(group_id test_suite_id prio)) {
+                $error .= $k if $validation->has_error($k);
+            }
+        }
+        else {
+            eval {
+                $id = $self->db->resultset("JobTemplates")->search(
+                    {
+                        group_id      => $self->param('group_id'),
+                        test_suite_id => $self->param('test_suite_id'),
+                    }
+                )->update(
+                    {
+                        prio => $self->param('prio'),
+                    });
+            };
+            $error = $@;
+        }
+    }
     else {
         $validation->required('group_name');
         $validation->required('machine_name');
