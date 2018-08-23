@@ -121,10 +121,18 @@
                         id="editor-default-priority" name="default_priority"
                         value="<%= $group->default_priority %>" data-initial-value="<%= $group->default_priority %>">
                     <%= help_popover 'Default priority' =>
-                        '<p>Specifies the default priority for jobs and job templates created in the group</p>
+                        '<p>
+                            Specifies the default priority for jobs and job templates created in the group.
+                        </p>
                         <ul>
-                            <li>Does not affect existing jobs</li>
-                            <li>When scheduling a new ISO the priority from the job template is taken, so this settings does not affect this directly</li>
+                            <li>
+                                Does not affect existing jobs.
+                            </li>
+                            <li>
+                                When scheduling a new ISO the priority from the job template is taken.
+                                So when the priority is explicitly overridden on job template level, the default set on
+                                job level has no effect.
+                            </li>
                         </ul>';
                 %>
                 </div>

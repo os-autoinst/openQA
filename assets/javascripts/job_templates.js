@@ -78,11 +78,15 @@ function finalizeTest(tr) {
     });
 }
 
+function formatPriority(prio) {
+    return (!prio || prio.length === 0) ? 'inherit' : prio;
+}
+
 function templateAdded(chosen, selected) {
     var tr = chosen.parents('tr');
     finalizeTest(tr);
     var postData = {
-        prio: tr.find('.prio input').val(),
+        prio: formatPriority(tr.find('.prio input').val()),
         group_id: job_group_id,
         product_id: chosen.data('product-id'),
         machine_id: chosen.find('option[value="' + selected + '"]').data('machine-id'),
@@ -110,7 +114,7 @@ function priorityChanged(priorityInput) {
         type: 'POST',
         dataType: 'json',
         data: {
-            prio: priorityInput.val(),
+            prio: formatPriority(priorityInput.val()),
             prio_only: true,
             group_id: job_group_id,
             test_suite_id: tr.data('test-id'),
@@ -162,23 +166,27 @@ function filterTestSelection(select, presentTests) {
     });
 }
 
-function makePrioCell(prio) {
+function makePrioCell(prio, disabled) {
     // use default priority if no prio passed; also disable the input in this case
-    var disableInput = !prio;
-    if (!prio) {
-        prio = $('#editor-default-priority').data('initial-value');
+    var useDefaultPrio = !prio;
+    var defaultPrio = $('#editor-default-priority').data('initial-value');
+    if (!defaultPrio) {
+        defaultPrio = 50;
     }
     if (!prio) {
-        prio = 50;
+        prio = defaultPrio;
     }
 
     var td = $('<td class="prio"></td>');
     var prioInput = $('<input type="number"></input>');
-    prioInput.val(prio);
+    if (!useDefaultPrio) {
+        prioInput.val(prio);
+    }
     prioInput.change(function() {
         priorityChanged($(this));
     });
-    prioInput.prop('disabled', disableInput);
+    prioInput.prop('disabled', disabled);
+    prioInput.attr('placeholder', defaultPrio);
     prioInput.appendTo(td);
     return td;
 }
@@ -194,7 +202,7 @@ function addTestRow() {
 
     select.show();
     select.change(testChanged);
-    makePrioCell().appendTo(tr);
+    makePrioCell(undefined, true).appendTo(tr);
 
     var archnames = table.data('archs');
     var archHeaders = table.find('thead th.arch');
@@ -262,7 +270,7 @@ function buildMediumGroup(group, media) {
             shortname = '<span title='+test+'>' + test.substr(0,67) + '…</span>';
         }
         $('<td class="name">' + shortname + '</td>').appendTo(tr);
-        makePrioCell(tests[test].prio).appendTo(tr);
+        makePrioCell(tests[test].prio, false).appendTo(tr);
 
         $.each(archnames, function(archIndex, arch) {
             var td = $('<td class="arch"/>').appendTo(tr);
@@ -370,8 +378,10 @@ function submitProperties(form) {
                $('#job-group-name').text(newJobName);
                document.title = document.title.substr(0, 17) + newJobName;
                // update initial value for default priority (used when adding new job template)
-               var defaultPropertyInput = $('#editor-default-priority');
-               defaultPropertyInput.data('initial-value', defaultPropertyInput.val());
+               var defaultPrioInput = $('#editor-default-priority');
+               var defaultPrio = defaultPrioInput.val();
+               defaultPrioInput.data('initial-value', defaultPrio);
+               $('td.prio input').attr('placeholder', defaultPrio);
            },
            error: function(xhr, ajaxOptions, thrownError) {
                showSubmitResults(editorForm, '<i class="fas fa-trash"></i> Unable to apply changes');
