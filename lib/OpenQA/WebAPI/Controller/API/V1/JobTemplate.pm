@@ -134,8 +134,10 @@ block on success.
 
 sub create {
     my $self = shift;
+
     my $error;
     my $id;
+    my $affected_rows;
 
     my $validation      = $self->validation;
     my $is_number_regex = qr/^[0-9]+$/;
@@ -159,9 +161,9 @@ sub create {
         }
 
         if ($validation->has_error) {
-            $error = "wrong parameter: ";
+            $error = "wrong parameter:";
             for my $k (qw(product_id machine_id test_suite_id group_id)) {
-                $error .= $k if $validation->has_error($k);
+                $error .= ' ' . $k if $validation->has_error($k);
             }
         }
         else {
@@ -181,14 +183,14 @@ sub create {
         }
 
         if ($validation->has_error) {
-            $error = "wrong parameter: ";
+            $error = "wrong parameter:";
             for my $k (qw(group_id test_suite_id prio)) {
-                $error .= $k if $validation->has_error($k);
+                $error .= ' ' . $k if $validation->has_error($k);
             }
         }
         else {
             eval {
-                $id = $self->db->resultset("JobTemplates")->search(
+                $affected_rows = $self->db->resultset("JobTemplates")->search(
                     {
                         group_id      => $self->param('group_id'),
                         test_suite_id => $self->param('test_suite_id'),
@@ -207,9 +209,9 @@ sub create {
         }
 
         if ($validation->has_error) {
-            $error = "wrong parameter: ";
+            $error = "wrong parameter:";
             for my $k (qw(group_name machine_name test_suite_name arch distri flavor version)) {
-                $error .= $k if $validation->has_error($k);
+                $error .= ' ' . $k if $validation->has_error($k);
             }
         }
         else {
@@ -238,8 +240,14 @@ sub create {
         $status = 400;
     }
     else {
-        $json->{id} = $id;
-        $self->emit_event('openqa_jobtemplate_create', {id => $id});
+        if (defined($affected_rows)) {
+            $json->{affected_rows} = $affected_rows;
+            $self->emit_event('openqa_jobtemplate_create', {affected_rows => $id});
+        }
+        else {
+            $json->{id} = $id;
+            $self->emit_event('openqa_jobtemplate_create', {id => $id});
+        }
     }
 
     $self->respond_to(
