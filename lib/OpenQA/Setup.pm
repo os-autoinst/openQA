@@ -135,6 +135,7 @@ sub read_config {
             audit_enabled       => 1,
             max_rss_limit       => 0,
             profiling_enabled   => 0,
+            monitoring_enabled  => 0,
             plugins             => undef,
             hide_asset_types    => 'repo',
             recognized_referers => '',
@@ -287,7 +288,7 @@ sub setup_mojo_tmpdir {
 }
 
 sub load_plugins {
-    my ($server) = @_;
+    my ($server, $monitoring_root_route) = @_;
 
     push @{$server->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
 
@@ -310,6 +311,9 @@ sub load_plugins {
     }
     if ($server->config->{global}{profiling_enabled}) {
         $server->plugin(NYTProf => {nytprof => {}});
+    }
+    if ($monitoring_root_route && $server->config->{global}{monitoring_enabled}) {
+        $server->plugin(Status => {route => $monitoring_root_route->get('/monitoring')});
     }
     # load auth module
     my $auth_method = $server->config->{auth}->{method};

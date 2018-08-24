@@ -70,8 +70,13 @@ sub startup {
     # take care of DB deployment or migration before starting the main app
     my $schema = OpenQA::Schema::connect_db;
 
+    # register basic routes
+    my $r         = $self->routes;
+    my $logged_in = $r->under('/')->to("session#ensure_user");
+    my $auth      = $r->under('/')->to("session#ensure_operator");
+
     OpenQA::Setup::setup_template_search_path($self);
-    OpenQA::Setup::load_plugins($self);
+    OpenQA::Setup::load_plugins($self, $auth);
     OpenQA::Setup::set_secure_flag_on_cookies_of_https_connection($self);
 
  # setup asset pack
@@ -100,11 +105,6 @@ sub startup {
         });
 
     # register routes
-    my $r         = $self->routes;
-    my $logged_in = $r->under('/')->to("session#ensure_user");
-    my $auth      = $r->under('/')->to("session#ensure_operator");
-    my %api_description;
-
     $r->post('/session')->to('session#create');
     $r->delete('/session')->to('session#destroy');
     $r->get('/login')->name('login')->to('session#create');
@@ -196,6 +196,7 @@ sub startup {
     #
     ## Admin area starts here
     ###
+    my %api_description;
     my $admin_auth  = $r->under('/admin')->to('session#ensure_admin');
     my $admin_r     = $admin_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
     my $op_auth     = $r->under('/admin')->to('session#ensure_operator');
