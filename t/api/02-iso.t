@@ -50,6 +50,9 @@ $t->ua(
     OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
+my $schema        = $t->app->schema;
+my $job_templates = $schema->resultset('JobTemplates');
+
 sub lj {
     return unless $ENV{HARNESS_IS_VERBOSE};
     my $ret  = $t->get_ok('/api/v1/jobs')->status_is(200);
@@ -131,16 +134,16 @@ is($ret->tx->res->json->{job}->{state}, 'scheduled', 'job $clone99981 is schedul
 lj;
 
 my @tasks;
-@tasks = $t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'});
+@tasks = $schema->resultset('GruTasks')->search({taskname => 'download_asset'});
 is(scalar @tasks, 0, 'we have no gru download tasks to start with');
 
 # add a random comment on a scheduled but not started job so that this one
 # later on is found as important and handled accordingly
-$t->app->db->resultset("Jobs")->find(99928)->comments->create({text => 'any text', user_id => 99901});
+$schema->resultset('Jobs')->find(99928)->comments->create({text => 'any text', user_id => 99901});
 
 subtest 'group filter' => sub {
     # add a job template for group 1002
-    my $job_template = $t->app->db->resultset('JobTemplates')->create(
+    my $job_template = $job_templates->create(
         {
             machine    => {name => '64bit'},
             test_suite => {name => 'textmode-2'},
@@ -191,6 +194,9 @@ subtest 'group filter' => sub {
     # delete job template again so the remaining tests are unaffected
     $job_template->delete;
 };
+
+# set prio of job template for $server_64 to undef so the prio is inherited from the job group
+$job_templates->find(9)->update({prio => undef});
 
 # schedule the iso, this should not actually be possible. Only isos
 # with different name should result in new tests...
@@ -261,7 +267,7 @@ eq_set(
 is($server_32->{group_id}, 1001, 'server_32 part of opensuse group');
 is($server_32->{priority}, 40,   'server_32 has priority according to job template');
 is($server_64->{group_id}, 1001, 'server_64 part of opensuse group');
-is($server_64->{priority}, 40,   'server_64 has priority according to job template');
+is($server_64->{priority}, 50,   'server_64 has default priority from job group');
 
 is($advanced_kde_32->{settings}->{PUBLISH_HDD_1},
     undef, 'variable expansion because kde is not created for 32 bit machine');
