@@ -478,7 +478,7 @@ sub commit_git_return_error {
         use Cwd 'abs_path';
         $dir = abs_path($dir);
     }
-    my @git = ('git', '--git-dir', "$dir/.git", '--work-tree', $dir);
+    my @git = ('git', '-C', $dir);
     my @files;
 
     for my $cmd (qw(add rm)) {
