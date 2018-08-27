@@ -228,8 +228,10 @@ sub get_asset {
         $self->track_asset($asset);    # Track asset - make sure it's in DB
         log_debug "CACHE: Aquiring lock for $asset in the database";
 
+        Mojo::IOLoop->singleton->once('catch_exit' => sub { $self->toggle_asset_lock($asset, 0) });
         $result = $self->try_lock_asset($asset);
         if (!$result) {
+            Mojo::IOLoop->singleton->unsubscribe('catch_exit');
             update_setup_status;
             log_debug "CACHE: Waiting " . $self->sleep_time . " seconds for the lock.";
             sleep $self->sleep_time;
@@ -242,6 +244,7 @@ sub get_asset {
         };
         eval { log_error "CACHE: Error inside critical section: $@" } if $@;
         $self->toggle_asset_lock($asset, 0);
+        Mojo::IOLoop->singleton->unsubscribe('catch_exit');
         if (!$ret) {
             $asset = undef;
             last;

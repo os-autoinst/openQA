@@ -108,6 +108,7 @@ sub prepare_cache_directory {
 sub catch_exit {
     my ($sig) = @_;
     log_info("quit due to signal $sig");
+    Mojo::IOLoop->singleton->emit('catch_exit');
     if ($job) {
         Mojo::IOLoop->next_tick(
             sub {
