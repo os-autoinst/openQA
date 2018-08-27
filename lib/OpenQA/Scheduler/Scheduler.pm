@@ -59,13 +59,13 @@ CORE::state $no_actions = 0;
 CORE::state $quit       = 0;
 
 sub normal_signals_handler {
-    log_debug("Received signal to stop");
+    log_info("Received signal to stop");
     $quit++;
     _reschedule(1, 1);
 }
 
 sub wakeup_scheduler {
-    log_debug("I've been summoned by the webui");
+    log_info("I've been summoned by the webui");
     _reschedule(OpenQA::Scheduler::SCHEDULE_TICK_MS()) if OpenQA::Scheduler::WAKEUP_ON_REQUEST();
 }
 
@@ -192,7 +192,7 @@ sub schedule {
             method => sub {
                 return if $failure == 0;
                 $failure = 0;
-                log_debug("[Congestion control] Resetting failures count and rescheduling if necessary");
+                log_warning("[Congestion control] Resetting failures count and rescheduling if necessary");
                 _reschedule(
                     OpenQA::Scheduler::BUSY_BACKOFF() ?
                       OpenQA::Scheduler::SCHEDULE_TICK_MS() + 1000
@@ -208,7 +208,7 @@ sub schedule {
             method => sub {
                 return if $no_actions == 0;
                 $no_actions = 0;
-                log_debug("[Congestion control] Resetting no actions count and rescheduling if necessary");
+                log_warning("[Congestion control] Resetting no actions count and rescheduling if necessary");
                 _reschedule(
                     OpenQA::Scheduler::BUSY_BACKOFF() ?
                       OpenQA::Scheduler::SCHEDULE_TICK_MS() + 1000
