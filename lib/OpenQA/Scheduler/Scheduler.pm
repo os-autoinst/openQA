@@ -183,7 +183,7 @@ sub schedule {
     my $start_time = time;
     my $hard_busy  = (OpenQA::Scheduler::CONGESTION_CONTROL() || OpenQA::Scheduler::BUSY_BACKOFF());
     my $soft_busy  = (OpenQA::Scheduler::CONGESTION_CONTROL() && OpenQA::Scheduler::BUSY_BACKOFF());
-    log_debug("+=" . ("-" x 16) . "=+");
+    log_info("+=" . ("-" x 16) . "=+");
 
     # Avoid to go into starvation - reset the scheduler tick counter.
     reactor->{timer}->{capture_loop_avoidance} ||= reactor->add_timeout(
@@ -237,8 +237,8 @@ sub schedule {
                   = shuffle(grep { !$_->dead && $_->get_websocket_api_version() == WEBSOCKET_API_VERSION }
                       schema->resultset("Workers")->search({job_id => undef})->all());
 
-                log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
-                log_debug("\t Failure# ${failure}") if OpenQA::Scheduler::CONGESTION_CONTROL();
+                log_info("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
+                log_info("\t Failure# ${failure}") if OpenQA::Scheduler::CONGESTION_CONTROL();
 
                 if (@free_workers == 0) {
                     # Consider it a failure when either BUSY_BACKOFF or CONGESTION_CONTROL is enabled
