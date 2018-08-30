@@ -239,6 +239,38 @@ openqa-client isos post ISO=my_iso.iso DISTRI=my_distri FLAVOR=sweet \
 --------------------------------------------------------------------------------
 
 
+==== Asset handling ====
+
+Multiple parameters exist to reference assets to be used by tests, for example
+`ISO`, `HDD`, `ASSET`, `KERNEL`, `INITRD`. Corresponding files must be
+provided within the path +/var/lib/openqa/share/factory+ local to the openQA
+web-UI. All assets specified in this way in any job are tracked by openQA and
+removed from the filesystem as soon as the corresponding job group disk usage
+quota is depleted and no scheduled or running jobs are relying on the assets.
+Therefore it is useful for production instances to make sure that all provided
+assets are tracked this way to prevent disk space depletion. Still, other
+assets found but not mentioned by any jobs are deleted after a fixed, longer
+time.
+
+Multiple options can be used based on special suffix types. These types can
+also be combined, for example ISO_1_DECOMPRESS_URL.
+
+[horizontal]
+.The following options exist
+
+_<NR>:: To specify multiple assets of the same type use a number digit, for
+example `ISO_1`, `ISO_2`.
+
+_URL:: Before starting these jobs try to download these assets into the asset
+directory of the openQA web-UI from trusted domains specified in
++/etc/openqa/openqa.ini+.
+
+_DECOMPRESS_URL:: Specify a compressed asset to be downloaded that will be
+uncompressed by openQA. Specify the non-suffixed parameter additionally to
+provide a rename target, for example
+ISO_1_DECOMPRESS_URL=http://host/foo2.iso.xz and ISO_1=foo.iso
+
+
 == Where to now?
 
 For test developers it is recommended to continue with the
