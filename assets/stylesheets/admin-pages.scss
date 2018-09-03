@@ -217,6 +217,7 @@ a.add-parent-group {
 // job templates
 .prio input {
     width: 35pt;
+    border: 1px solid #aaa; // setting the border prevents Firefox to misalign arrows for increment/decrement
 }
 
 // needle editor
