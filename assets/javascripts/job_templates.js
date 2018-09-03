@@ -185,7 +185,7 @@ function makePrioCell(prio, disabled) {
     prioInput.change(function() {
         priorityChanged($(this));
     });
-    prioInput.prop('disabled', disabled);
+    prioInput.prop('disabled', !window.user_is_admin || disabled);
     prioInput.attr('placeholder', defaultPrio);
     prioInput.appendTo(td);
     return td;
