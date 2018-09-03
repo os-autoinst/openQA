@@ -114,7 +114,7 @@
                 </div>
             % }
             <div class="form-group row">
-                <label for="editor-default-priority" class="col-sm-2 control-label" data-toggle="tooltip" title="Default priority for jobs and job templates created in the group">Default priority</label>
+                <label for="editor-default-priority" class="col-sm-2 control-label" data-toggle="tooltip" title="Default priority for jobs created in the group">Default priority</label>
                 <div class="col-sm-10">
                     <input
                         type="number" class="form-control"
@@ -122,16 +122,15 @@
                         value="<%= $group->default_priority %>" data-initial-value="<%= $group->default_priority %>">
                     <%= help_popover 'Default priority' =>
                         '<p>
-                            Specifies the default priority for jobs and job templates created in the group.
+                            Specifies the default priority for jobs created in the group.
                         </p>
                         <ul>
                             <li>
                                 Does not affect existing jobs.
                             </li>
                             <li>
-                                When scheduling a new ISO the priority from the job template is taken.
-                                So when the priority is explicitly overridden on job template level, the default set on
-                                job level has no effect.
+                                It is possible to override this priority on job template level (the rows in the table above).
+                                In this case the default set here has no effect.
                             </li>
                         </ul>';
                 %>

@@ -237,7 +237,15 @@ function buildMediumGroup(group, media) {
     var tname = tr.append($('<th class="name">Test'
         + (user_is_admin ? ' <a href="#" class="plus-sign"><i class="fa fa-plus"></i></a>' : '')
         + '</th>'));
-    tr.append($('<th class="prio">Prio</th>'));
+    var prioHeading = $('<th class="prio">Prio</th>');
+    prioHeading.css('white-space', 'nowrap');
+    var prioHelpPopover = $('<a href="#" class="help_popover fa fa-question-circle"" data-content="'
+        + 'The priority can be set for each row specificly. However, the priority might be left empty as well. '
+        + 'In this case default priority for the whole job group is used (displayed in grey color)." data-toggle="popover" '
+        + 'data-trigger="focus" role="button"></a>');
+    prioHelpPopover.popover({html: true});
+    prioHeading.append(prioHelpPopover);
+    tr.append(prioHeading);
     var archs = {};
     var tests = {};
     var prio = 444;
