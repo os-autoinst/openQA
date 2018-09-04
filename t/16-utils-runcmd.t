@@ -27,6 +27,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
 use OpenQA::Test::Case;
+use Mojo::File 'tempdir';
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
@@ -51,9 +52,10 @@ stderr_like {
 qr/.*\[ERROR\] cmd returned non-zero value/i;
 ok(!$res->{status}, 'status not ok (non-zero status returned)');
 
+my $empty_tmp_dir = tempdir();
 stderr_like {
     $res = commit_git_return_error {
-        dir     => '/some/dir',
+        dir     => $empty_tmp_dir,
         cmd     => 'status',
         message => 'test',
         user    => $schema->resultset('Users')->first
@@ -62,7 +64,7 @@ stderr_like {
 qr/fatal: Not a git repository.*\n.*cmd returned non-zero value/i;
 like(
     $res,
-    qr'^Unable to commit via Git: fatal: (N|n)ot a git repository: \'/some/dir/.git\'$',
+    qr'^Unable to commit via Git: fatal: (N|n)ot a git repository \(or any of the parent directories\): \.git$',
     'Git error message returned'
 );
 
