@@ -217,11 +217,9 @@ sub javascript_console_has_no_warnings_or_errors {
         push(@errors, $log_entry);
     }
 
-    if (@errors) {
-        diag('javascript console output: ' . pp(\@errors));
-        ok(scalar @errors eq 0, 'no errors or warnings on javascript console' . $test_name_suffix);
-    }
-    return scalar @errors eq 0;    #TODO: fix this return value
+    diag('javascript console output: ' . pp(\@errors)) if @errors;
+    is_deeply(\@errors, [], 'no errors or warnings on javascript console' . $test_name_suffix);
+    return scalar @errors eq 0;
 }
 
 # mocks the specified JavaScript functions (reverted when navigating to another page)
