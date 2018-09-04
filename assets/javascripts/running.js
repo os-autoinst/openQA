@@ -19,7 +19,7 @@ var logElements;
 // Update global variable testStatus
 function updateTestStatus(newStatus) {
     if (newStatus.state != 'running') {
-        setTimeout(function() {location.reload();}, 2000);
+        setTimeout(reloadPage, 2000);
         return;
     }
     testStatus.workerid = newStatus.workerid;
@@ -135,7 +135,7 @@ function updateStatus() {
             updateTestStatus(status);
             setTimeout(function() { updateStatus(); }, 5000);
         }).fail(function() {
-            setTimeout(function() {location.reload();}, 5000);
+            setTimeout(reloadPage, 5000);
         });
 }
 
