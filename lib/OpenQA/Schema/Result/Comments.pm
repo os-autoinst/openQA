@@ -162,7 +162,7 @@ sub extended_hash {
     return {
         id               => $self->id,
         text             => $self->text,
-        renderedMarkdown => $self->rendered_markdown,
+        renderedMarkdown => $self->rendered_markdown->to_string,
         bugrefs          => $self->bugrefs,
         created          => $self->t_created->strftime("%Y-%m-%d %H:%M:%S %z"),
         updated          => $self->t_updated->strftime("%Y-%m-%d %H:%M:%S %z"),
