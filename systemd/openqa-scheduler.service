@@ -1,7 +1,6 @@
 [Unit]
 Description=The openQA Scheduler
-Before=openqa-webui.service openqa-websockets.service
-After=postgresql.service openqa-setup-db.service
+After=postgresql.service openqa-setup-db.service openqa-websockets.service
 Wants=openqa-setup-db.service
 
 [Service]
