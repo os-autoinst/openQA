@@ -342,7 +342,7 @@ subtest 'Cache tests' => sub {
     #] restore syntax highlighting in Kate
 
     $driver->get('/tests/5');
-    like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled');
+    like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled') or die;
     ok(!-e $db_file, "cache.sqlite is not present");
     start_worker;
     OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 1);
