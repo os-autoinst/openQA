@@ -351,9 +351,17 @@ To launch the test suite first it's required to pull the docker image:
 
   docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
 
-Then you can launch the tests:
+Build the image using Makefile target:
 
-  docker run --cap-add SYS_ADMIN -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus -e VAR1=1 -e VAR2=1 registry.opensuse.org/devel/openqa/containers/openqa_dev make docker-tests
+  make docker-test-build
+
+Launch the tests using Makefile target:
+
+  make docker-test-run
+
+Run tests by invoking Docker manually:
+
+  docker run --cap-add SYS_ADMIN -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus -e VAR1=1 -e VAR2=1 openqa:latest make docker-tests
 
 Replace OPENQA_LOCAL_CODE to the location where you have the openqa code.
 
@@ -392,9 +400,16 @@ Running UI tests in non-headless mode is also possible, eg.:
 
 It is also possible to use a custom os-autoinst checkout using the following arguments:
 
-  docker run ... -e CUSTOM_OS_AUTOINST=1 -v OS_AUTOINST_LOCAL_CODE:/opt/os-autoinst make docker-tests
+  docker run ... -e CUSTOM_OS_AUTOINST=1 -v /path/to/your/os-autoinst:/opt/os-autoinst make docker-tests
 
-Note that in this case your checkout must be ready to use so +configure+ and +make+ need to be executed before.
+By default, +configure+ and +make+ are still executed (so a clean checkout is expected). If your checkout is already prepared to use, set +CUSTOM_OS_AUTOINST_SKIP_BUILD+ to
+prevent this. Be aware that the build produced outside of the container might not work inside the container if both environments provide different, incompatible library
+versions (eg. OpenCV).
+
+It is also important to mention that your local repositories will be copied into the container. This can take very long if those are big, eg. when the openQA repo contains a lot of
+profiling data because you enabled +Mojolicious::Plugin::NYTProf+.
+
+In general, if starting the tests via Docker seems to hang, it is a good idea to inspect the process tree to see which command is currently executed.
 
 === How to run tests without docker
 
