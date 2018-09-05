@@ -68,9 +68,37 @@ sub client_call {
     }
 }
 
+# prevents the page to reload itself (useful because elements are invalidated on reload which is hard to handle)
+sub prevent_reload {
+    my ($driver) = @_;
+
+    $driver->execute_script(
+        q/
+        window.reloadPage = function() {
+            window.wouldHaveReloaded = true;
+            console.log("Page reload prevented");
+        };
+    /
+    );
+}
+
+# reloads the page manually and prevents further automatic reloads
+sub reload_manually {
+    my ($driver, $desc, $delay) = @_;
+
+    sleep($delay) if $delay;
+    if ($driver->execute_script('return window.wouldHaveReloaded;')) {
+        note("reloading manually ($desc)");
+        $driver->refresh();
+    }
+    prevent_reload($driver);
+}
+
 sub wait_for_result_panel {
     my ($driver, $result_panel, $desc, $fail_on_incomplete, $refresh_interval) = @_;
     $refresh_interval //= 1;
+
+    prevent_reload($driver);
 
     for (my $count = 0; $count < (130 / $refresh_interval); $count++) {
         my $status_text = $driver->find_element('#result-row .card-body')->get_text();
@@ -79,10 +107,10 @@ sub wait_for_result_panel {
             fail('test result is incomplete but shouldn\'t');
             return;
         }
-        sleep $refresh_interval;
+        reload_manually($driver, $desc, $refresh_interval);
     }
     javascript_console_has_no_warnings_or_errors;
-    $driver->refresh();
+    reload_manually($driver, $desc);
     like($driver->find_element('#result-row .card-body')->get_text(), $result_panel, $desc);
 }
 
