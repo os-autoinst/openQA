@@ -259,16 +259,12 @@ subtest 'cancel a scheduled job' => sub {
     # to detect it as dead before it's moved back to scheduled
     OpenQA::Test::FullstackUtils::wait_for_result_panel(
         $driver,
-        qr/State: (scheduled|assigned)/,
+        qr/State: scheduled/,
         'Test 3 is scheduled',
         undef, 0.2,
     );
 
     my @cancel_button = $driver->find_elements('cancel_running', 'id');
-    if (!@cancel_button) {
-        note('test is already assigned, can not test cancelling');
-        return;
-    }
     $cancel_button[0]->click();
 };
 
