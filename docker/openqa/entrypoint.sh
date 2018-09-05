@@ -39,9 +39,8 @@ HEREDOC
 
 
 function run_as_normal_user {
-    echo ">> Trying to get dependencies from CPAN"
-
     [ "$INSTALL_FROM_CPAN" -eq 1 ] && \
+             echo ">> Trying to get dependencies from CPAN"
 	      (cpanm --local-lib=~/perl5 local::lib && cpanm -n --installdeps . ) || \
 	      cpanm -n --mirror http://no.where/ --installdeps .
 
