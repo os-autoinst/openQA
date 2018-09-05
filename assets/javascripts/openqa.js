@@ -122,6 +122,11 @@ function alignBuildLabels() {
   $('.build-label').css('min-width', max + 'px');
 }
 
+// reloads the page - this wrapper exists to be able to disable the reload during tests
+function reloadPage() {
+    location.reload();
+}
+
 // returns an absolute "ws://" URL for the specified URL which might be relative
 function makeWsUrlAbsolute(url, servicePortDelta) {
     // don't adjust URLs which are already absolute
