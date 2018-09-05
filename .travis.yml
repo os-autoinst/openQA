@@ -6,11 +6,7 @@ env:
   global:
   - COMMIT_AUTHOR_EMAIL=skynet@open.qa
   matrix:
-  - FULLSTACK=0 UITESTS=0
-  - FULLSTACK=0 UITESTS=1
   - GH_PUBLISH=true FULLSTACK=1
-  - SCHEDULER_FULLSTACK=1
-  - DEVELOPER_FULLSTACK=1
 before_install: true
 install: true
 before_script:
