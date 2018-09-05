@@ -164,6 +164,9 @@ sub start_worker {
         exec("perl ./script/worker --instance=1 $connect_args --isotovideo=../os-autoinst/isotovideo --verbose");
         die "FAILED TO START WORKER";
     }
+    else {
+        ok($workerpid, "Worker started as $workerpid");
+    }
 }
 
 start_worker;
@@ -342,7 +345,7 @@ subtest 'Cache tests' => sub {
     like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled');
     ok(!-e $db_file, "cache.sqlite is not present");
     start_worker;
-    OpenQA::Test::FullstackUtils::wait_for_job_running($driver);
+    OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 1);
     ok(-e $db_file, "cache.sqlite file created");
     ok(!-d path($cache_location, "test_directory"), "Directory within cache, not present after deploy");
     ok(!-e $cache_location->child("test.file"), "File within cache, not present after deploy");
