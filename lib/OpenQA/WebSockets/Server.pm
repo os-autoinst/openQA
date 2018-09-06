@@ -391,6 +391,7 @@ sub _workers_checker {
     try {
         $schema->txn_do(
             sub {
+                log_info "Checking stale jobs";
                 my $stale_jobs = _get_stale_worker_jobs(WORKERS_CHECKER_THRESHOLD);
                 for my $job ($stale_jobs->all) {
                     next unless _is_job_considered_dead($job);
