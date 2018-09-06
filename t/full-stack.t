@@ -31,6 +31,7 @@ BEGIN {
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 4000;
     $ENV{OPENQA_SCHEDULER_TIMESLOT}           = $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS};
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 1;
+    $ENV{OPENQA_WS_WORKER_CHECK_INTERVAL}     = 2;
     # ensure the web socket connection won't timeout
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 10 * 60;
     path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
@@ -338,7 +339,8 @@ subtest 'Cache tests' => sub {
     #] restore syntax highlighting in Kate
 
     $driver->get('/tests/5');
-    like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled') or die;
+    like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled')
+      or die;
     ok(!-e $db_file, "cache.sqlite is not present");
     start_worker;
     OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 1);

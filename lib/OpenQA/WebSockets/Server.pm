@@ -29,6 +29,9 @@ use db_profiler;
 use OpenQA::Schema::Result::Workers ();
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKERS_CHECKER_THRESHOLD);
 
+# to be overwritten in full-stack
+use constant OPENQA_WS_WORKER_CHECK_INTERVAL => $ENV{OPENQA_WS_WORKER_CHECK_INTERVAL} // 120;
+
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
 
@@ -484,7 +487,7 @@ sub setup {
     app->secrets(['nosecretshere']);
 
     # start worker checker - check workers each 2 minutes
-    Mojo::IOLoop->recurring(120 => \&_workers_checker);
+    Mojo::IOLoop->recurring(=> \&_workers_checker);
 
     Mojo::IOLoop->recurring(
         380 => sub {
