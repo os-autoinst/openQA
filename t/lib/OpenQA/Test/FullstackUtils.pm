@@ -214,4 +214,12 @@ sub wait_for_developer_console_available {
     );
 }
 
+sub schedule_one_job {
+    while (1) {
+        my @scheduled_jobs = OpenQA::Scheduler::Scheduler::schedule();
+        return if @scheduled_jobs;
+        sleep 1;
+    }
+}
+
 1;
