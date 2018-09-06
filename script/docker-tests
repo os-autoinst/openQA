@@ -60,4 +60,6 @@ else
 fi
 
 [ -r tests_failed ] && exit 1
-cp -a assets/cache/* /opt/openqa/assets/cache
+if test -n "$TRAVIS"; then
+  cp -a assets/cache/* /opt/openqa/assets/cache
+fi
