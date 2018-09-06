@@ -134,25 +134,41 @@ block on success.
 
 sub create {
     my $self = shift;
+
     my $error;
     my $id;
-    my $validation = $self->validation;
+    my $affected_rows;
 
-    if ($validation->optional('product_id')->like(qr/^[0-9]+$/)->is_valid) {
-        $validation->required('machine_id')->like(qr/^[0-9]+$/);
-        $validation->required('group_id')->like(qr/^[0-9]+$/);
-        $validation->required('test_suite_id')->like(qr/^[0-9]+$/);
-        $validation->optional('prio')->like(qr/^[0-9]+$/);
+    my $validation      = $self->validation;
+    my $is_number_regex = qr/^[0-9]+$/;
+    my $has_product_id  = $validation->optional('product_id')->like($is_number_regex)->is_valid;
+
+    # validate/read priority
+    my $prio_regex = qr/^(inherit|[0-9]+)$/;
+    if ($has_product_id) {
+        $validation->optional('prio')->like($prio_regex);
+    }
+    else {
+        $validation->required('prio')->like($prio_regex);
+    }
+    my $prio = $self->param('prio');
+    $prio = ((!$prio || $prio eq 'inherit') ? undef : $prio);
+
+
+    if ($has_product_id) {
+        for my $param (qw(machine_id group_id test_suite_id)) {
+            $validation->required($param)->like($is_number_regex);
+        }
 
         if ($validation->has_error) {
-            $error = "wrong parameter: ";
+            $error = "wrong parameter:";
             for my $k (qw(product_id machine_id test_suite_id group_id)) {
-                $error .= $k if $validation->has_error($k);
+                $error .= ' ' . $k if $validation->has_error($k);
             }
         }
         else {
             my $values = {
-                prio          => $self->param('prio'),
+                prio          => $prio,
                 product_id    => $self->param('product_id'),
                 machine_id    => $self->param('machine_id'),
                 group_id      => $self->param('group_id'),
@@ -161,20 +177,41 @@ sub create {
             $error = $@;
         }
     }
-    else {
-        $validation->required('group_name');
-        $validation->required('machine_name');
-        $validation->required('test_suite_name');
-        $validation->required('arch');
-        $validation->required('distri');
-        $validation->required('flavor');
-        $validation->required('version');
-        $validation->required('prio')->like(qr/^[0-9]+$/);
+    elsif ($self->param('prio_only')) {
+        for my $param (qw(group_id test_suite_id)) {
+            $validation->required($param)->like($is_number_regex);
+        }
 
         if ($validation->has_error) {
-            $error = "wrong parameter: ";
+            $error = "wrong parameter:";
+            for my $k (qw(group_id test_suite_id prio)) {
+                $error .= ' ' . $k if $validation->has_error($k);
+            }
+        }
+        else {
+            eval {
+                $affected_rows = $self->db->resultset("JobTemplates")->search(
+                    {
+                        group_id      => $self->param('group_id'),
+                        test_suite_id => $self->param('test_suite_id'),
+                    }
+                )->update(
+                    {
+                        prio => $prio,
+                    });
+            };
+            $error = $@;
+        }
+    }
+    else {
+        for my $param (qw(group_name machine_name test_suite_name arch distri flavor version)) {
+            $validation->required($param);
+        }
+
+        if ($validation->has_error) {
+            $error = "wrong parameter:";
             for my $k (qw(group_name machine_name test_suite_name arch distri flavor version)) {
-                $error .= $k if $validation->has_error($k);
+                $error .= ' ' . $k if $validation->has_error($k);
             }
         }
         else {
@@ -187,7 +224,7 @@ sub create {
                 },
                 group      => {name => $self->param('group_name')},
                 machine    => {name => $self->param('machine_name')},
-                prio       => $self->param('prio'),
+                prio       => $prio,
                 test_suite => {name => $self->param('test_suite_name')}};
             eval { $id = $self->db->resultset("JobTemplates")->create($values)->id };
             $error = $@;
@@ -203,8 +240,14 @@ sub create {
         $status = 400;
     }
     else {
-        $json->{id} = $id;
-        $self->emit_event('openqa_jobtemplate_create', {id => $id});
+        if (defined($affected_rows)) {
+            $json->{affected_rows} = $affected_rows;
+            $self->emit_event('openqa_jobtemplate_create', {affected_rows => $id});
+        }
+        else {
+            $json->{id} = $id;
+            $self->emit_event('openqa_jobtemplate_create', {id => $id});
+        }
     }
 
     $self->respond_to(

@@ -37,7 +37,8 @@ __PACKAGE__->add_columns(
         data_type => 'integer',
     },
     prio => {
-        data_type => 'integer',
+        data_type   => 'integer',
+        is_nullable => 1,
     },
     group_id => {
         data_type      => 'integer',

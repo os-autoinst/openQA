@@ -78,11 +78,15 @@ function finalizeTest(tr) {
     });
 }
 
+function formatPriority(prio) {
+    return (!prio || prio.length === 0) ? 'inherit' : prio;
+}
+
 function templateAdded(chosen, selected) {
     var tr = chosen.parents('tr');
     finalizeTest(tr);
     var postData = {
-        prio: tr.find('.prio').text(),
+        prio: formatPriority(tr.find('.prio input').val()),
         group_id: job_group_id,
         product_id: chosen.data('product-id'),
         machine_id: chosen.find('option[value="' + selected + '"]').data('machine-id'),
@@ -96,6 +100,28 @@ function templateAdded(chosen, selected) {
         data: postData}).fail(addFailed).done(function(data) { addSucceeded(chosen, selected, data); });
 }
 
+function priorityChanged(priorityInput) {
+    var tr = priorityInput.parents('tr');
+
+    // just skip if there are no machines added anyways
+    var hasMachines = tr.find('td.arch select option:selected').length > 0;
+    if (!hasMachines) {
+        return;
+    }
+
+    $.ajax({
+        url: job_templates_url,
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            prio: formatPriority(priorityInput.val()),
+            prio_only: true,
+            group_id: job_group_id,
+            test_suite_id: tr.data('test-id'),
+        },
+    }).fail(addFailed);
+}
+
 function chosenChanged(evt, param) {
     if (param.deselected) {
         templateRemoved($(this), param.deselected);
@@ -105,9 +131,14 @@ function chosenChanged(evt, param) {
 }
 
 function testChanged() {
-    var selected = $(this).find('option:selected').val();
-    var chosens = $(this).parents('tr').find('.chosen-select');
-    chosens.prop('disabled', selected == '').trigger("chosen:updated");
+    var select = $(this);
+    var selectedValue = select.find('option:selected').val();
+    var noSelection = !selectedValue || selectedValue.length === 0;
+    var tr = select.parents('tr');
+    var chosens = tr.find('.chosen-select');
+    var inputs = tr.find('input');
+    chosens.prop('disabled', noSelection).trigger("chosen:updated");
+    inputs.prop('disabled', noSelection);
 }
 
 function findPresentTests(table) {
@@ -135,6 +166,31 @@ function filterTestSelection(select, presentTests) {
     });
 }
 
+function makePrioCell(prio, disabled) {
+    // use default priority if no prio passed; also disable the input in this case
+    var useDefaultPrio = !prio;
+    var defaultPrio = $('#editor-default-priority').data('initial-value');
+    if (!defaultPrio) {
+        defaultPrio = 50;
+    }
+    if (!prio) {
+        prio = defaultPrio;
+    }
+
+    var td = $('<td class="prio"></td>');
+    var prioInput = $('<input type="number"></input>');
+    if (!useDefaultPrio) {
+        prioInput.val(prio);
+    }
+    prioInput.change(function() {
+        priorityChanged($(this));
+    });
+    prioInput.prop('disabled', !window.user_is_admin || disabled);
+    prioInput.attr('placeholder', defaultPrio);
+    prioInput.appendTo(td);
+    return td;
+}
+
 function addTestRow() {
     var table = $(this).parents('table');
     var tbody = table.find('tbody');
@@ -146,7 +202,7 @@ function addTestRow() {
 
     select.show();
     select.change(testChanged);
-    $('<td class="prio">50</td>').appendTo(tr);
+    makePrioCell(undefined, true).appendTo(tr);
 
     var archnames = table.data('archs');
     var archHeaders = table.find('thead th.arch');
@@ -181,7 +237,15 @@ function buildMediumGroup(group, media) {
     var tname = tr.append($('<th class="name">Test'
         + (user_is_admin ? ' <a href="#" class="plus-sign"><i class="fa fa-plus"></i></a>' : '')
         + '</th>'));
-    tr.append($('<th class="prio">Prio</th>'));
+    var prioHeading = $('<th class="prio">Prio</th>');
+    prioHeading.css('white-space', 'nowrap');
+    var prioHelpPopover = $('<a href="#" class="help_popover fa fa-question-circle"" data-content="'
+        + 'The priority can be set for each row specificly. However, the priority might be left empty as well. '
+        + 'In this case default priority for the whole job group is used (displayed in grey color)." data-toggle="popover" '
+        + 'data-trigger="focus" role="button"></a>');
+    prioHelpPopover.popover({html: true});
+    prioHeading.append(prioHelpPopover);
+    tr.append(prioHeading);
     var archs = {};
     var tests = {};
     var prio = 444;
@@ -214,7 +278,7 @@ function buildMediumGroup(group, media) {
             shortname = '<span title='+test+'>' + test.substr(0,67) + '…</span>';
         }
         $('<td class="name">' + shortname + '</td>').appendTo(tr);
-        $('<td class="prio">' + tests[test]['prio'] + '</td>').appendTo(tr);
+        makePrioCell(tests[test].prio, false).appendTo(tr);
 
         $.each(archnames, function(archIndex, arch) {
             var td = $('<td class="arch"/>').appendTo(tr);
@@ -269,8 +333,7 @@ function fillEmptySpace(table, tableHead, headerWithAllArchs) {
 
 function alignCols() {
     // Set minimal width
-    $('th.name').width('0');
-    $('th.prio').width('0');
+    $('th.name,th.prio').width('0');
 
     // Find biggest minimal width
     var namewidth = 450;
@@ -316,10 +379,17 @@ function submitProperties(form) {
            method: 'PUT',
            data: editorForm.serialize(),
            success: function() {
-               var newJobName = $('#editor-name').val();
                showSubmitResults(editorForm, '<i class="fas fa-save"></i> Changes applied');
+
+               // show new name
+               var newJobName = $('#editor-name').val();
                $('#job-group-name').text(newJobName);
                document.title = document.title.substr(0, 17) + newJobName;
+               // update initial value for default priority (used when adding new job template)
+               var defaultPrioInput = $('#editor-default-priority');
+               var defaultPrio = defaultPrioInput.val();
+               defaultPrioInput.data('initial-value', defaultPrio);
+               $('td.prio input').attr('placeholder', defaultPrio);
            },
            error: function(xhr, ajaxOptions, thrownError) {
                showSubmitResults(editorForm, '<i class="fas fa-trash"></i> Unable to apply changes');

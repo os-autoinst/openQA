@@ -39,6 +39,8 @@ my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
+my $job_templates = $app->schema->resultset('JobTemplates');
+
 my $get = $t->get_ok('/api/v1/job_templates')->status_is(200);
 is_deeply(
     $get->tx->res->json,
@@ -269,6 +271,7 @@ my $res = $t->post_ok(
         prio          => 30
     })->status_is(200);
 my $job_template_id1 = $res->tx->res->json->{id};
+ok($job_template_id1, 'got ID (1)');
 
 $res = $t->post_ok(
     '/api/v1/job_templates',
@@ -283,6 +286,7 @@ $res = $t->post_ok(
         prio            => 20
     })->status_is(200);
 my $job_template_id2 = $res->tx->res->json->{id};
+ok($job_template_id2, 'got ID (2)');
 
 $get = $t->get_ok("/api/v1/job_templates/$job_template_id1")->status_is(200);
 is_deeply(
@@ -434,6 +438,74 @@ is_deeply(
     "Initial job templates"
 ) || diag explain $get->tx->res->json;
 
+# need to specify 'prio_only' for setting prio of job tempaltes by group and testsuite
+$t->post_ok(
+    '/api/v1/job_templates',
+    form => {
+        group_id      => 1001,
+        test_suite_id => 1002,
+        prio          => 15,
+    }
+)->status_is(400)->json_is(
+    '' => {
+        error_status => 400,
+        error        => 'wrong parameter: group_name machine_name test_suite_name arch distri flavor version'
+    },
+    'setting prio for group/testsuite requires prio-only parameter'
+);
+is($job_templates->search({prio => 15})->count, 0, 'no rows affected');
+
+# set priority for particular test suite
+$t->post_ok(
+    '/api/v1/job_templates',
+    form => {
+        group_id      => 1001,
+        test_suite_id => 1002,
+        prio          => 15,
+        prio_only     => 1,
+    }
+)->status_is(200)->json_is(
+    '' => {
+        affected_rows => 2,
+    },
+    'two rows affected'
+);
+is($job_templates->search({prio => 15})->count, 2, 'two rows have now prio 15');
+
+# set priority to undef for inheriting from job group
+$t->post_ok(
+    '/api/v1/job_templates',
+    form => {
+        group_id      => 1001,
+        test_suite_id => 1002,
+        prio          => 'inherit',
+        prio_only     => 1,
+    }
+)->status_is(200)->json_is(
+    '' => {
+        affected_rows => 2,
+    },
+    'two rows affected'
+);
+is($job_templates->search({prio => undef})->count, 2, 'two rows have now prio undef');
+
+# priority is validated
+$t->post_ok(
+    '/api/v1/job_templates',
+    form => {
+        group_id      => 1001,
+        test_suite_id => 1002,
+        prio          => '-5',
+        prio_only     => 1,
+    }
+)->status_is(400)->json_is(
+    '' => {
+        error_status => 400,
+        error        => 'wrong parameter: prio'
+    },
+    'setting invalid priority results in error'
+);
+is($job_templates->search({prio => -5})->count, 0, 'no rows affected');
 
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(200);
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(404);    #not found
