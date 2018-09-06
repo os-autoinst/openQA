@@ -20,7 +20,7 @@ use Mojo::Util 'hmac_sha1_sum';
 use Try::Tiny;
 
 use OpenQA::IPC;
-use OpenQA::Utils qw(log_debug log_warning log_error);
+use OpenQA::Utils qw(log_debug log_warning log_info log_error);
 use OpenQA::Schema;
 use OpenQA::Setup;
 use Data::Dumper;
