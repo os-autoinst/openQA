@@ -183,7 +183,7 @@ sub _finish {
         log_error('Worker not found for given connection during connection close');
         return;
     }
-    log_debug(sprintf("Worker %u websocket connection closed - $code", $worker->{id}));
+    log_info(sprintf("Worker %u websocket connection closed - $code", $worker->{id}));
     # if the server disconnected from web socket, mark it dead so it doesn't get new
     # jobs assigned from scheduler (which will check DB and not WS state)
     my $dt = DateTime->now(time_zone => 'UTC');
@@ -408,7 +408,7 @@ sub _workers_checker {
             });
     }
     catch {
-        log_debug("Failed dead job detection : $_");
+        log_info("Failed dead job detection : $_");
     };
 
 
