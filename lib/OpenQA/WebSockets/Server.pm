@@ -20,7 +20,7 @@ use Mojo::Util 'hmac_sha1_sum';
 use Try::Tiny;
 
 use OpenQA::IPC;
-use OpenQA::Utils qw(log_debug log_warning log_error);
+use OpenQA::Utils qw(log_debug log_warning log_info log_error);
 use OpenQA::Schema;
 use OpenQA::Setup;
 use Data::Dumper;
@@ -183,7 +183,7 @@ sub _finish {
         log_error('Worker not found for given connection during connection close');
         return;
     }
-    log_debug(sprintf("Worker %u websocket connection closed - $code", $worker->{id}));
+    log_info(sprintf("Worker %u websocket connection closed - $code", $worker->{id}));
     # if the server disconnected from web socket, mark it dead so it doesn't get new
     # jobs assigned from scheduler (which will check DB and not WS state)
     my $dt = DateTime->now(time_zone => 'UTC');
@@ -391,6 +391,7 @@ sub _workers_checker {
     try {
         $schema->txn_do(
             sub {
+                log_info "Checking stale jobs";
                 my $stale_jobs = _get_stale_worker_jobs(WORKERS_CHECKER_THRESHOLD);
                 for my $job ($stale_jobs->all) {
                     next unless _is_job_considered_dead($job);
@@ -408,7 +409,7 @@ sub _workers_checker {
             });
     }
     catch {
-        log_debug("Failed dead job detection : $_");
+        log_info("Failed dead job detection : $_");
     };
 
 
@@ -483,8 +484,9 @@ sub setup {
     # no cookies for worker, no secrets to protect
     app->secrets(['nosecretshere']);
 
-    # start worker checker - check workers each 2 minutes
-    Mojo::IOLoop->recurring(120 => \&_workers_checker);
+    # start worker checker - check workers each 2 minutes (to be overwritten in fullstack)
+    my $check_interval = $ENV{OPENQA_WS_WORKER_CHECK_INTERVAL} || 120;
+    Mojo::IOLoop->recurring(int($check_interval) => \&_workers_checker);
 
     Mojo::IOLoop->recurring(
         380 => sub {

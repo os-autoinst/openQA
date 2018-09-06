@@ -105,7 +105,7 @@ sub start_driver {
         }
         $opts{custom_args} = "--log-path=t/log_chromedriver";
         unless ($ENV{NOT_HEADLESS}) {
-            push(@{$opts{extra_capabilities}{chromeOptions}{args}}, ('--headless', '--disable-gpu'));
+            push(@{$opts{extra_capabilities}{chromeOptions}{args}}, ('--headless', '--disable-gpu', '--no-sandbox'));
         }
         $_driver = Test::Selenium::Chrome->new(%opts);
         $_driver->set_implicit_wait_timeout(2000);
@@ -217,9 +217,11 @@ sub javascript_console_has_no_warnings_or_errors {
         push(@errors, $log_entry);
     }
 
-    diag('javascript console output: ' . pp(\@errors)) if @errors;
-    is_deeply(\@errors, [], 'no errors or warnings on javascript console' . $test_name_suffix);
-    return scalar @errors eq 0;
+    if (@errors) {
+        diag('javascript console output: ' . pp(\@errors));
+        ok(scalar @errors eq 0, 'no errors or warnings on javascript console' . $test_name_suffix);
+    }
+    return scalar @errors eq 0;    #TODO: fix this return value
 }
 
 # mocks the specified JavaScript functions (reverted when navigating to another page)

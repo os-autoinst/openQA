@@ -137,7 +137,6 @@ Have no arguments. It's called by the main event loop every SCHEDULE_TICK_MS.
 sub schedule {
     my $allocated_worker;
     my $start_time = time;
-    log_debug("+=" . ("-" x 16) . "=+");
 
     # Exit only when database state is consistent.
     if ($quit) {
@@ -147,7 +146,6 @@ sub schedule {
 
     my @allocated_jobs;
 
-    log_debug("-> Scheduling new jobs.");
     my $all_workers = schema->resultset("Workers")->count();
 
     my @f_w = grep { !$_->dead && ($_->websocket_api_version() || 0) == WEBSOCKET_API_VERSION }
@@ -157,11 +155,13 @@ sub schedule {
     # shuffle avoids starvation if a free worker keeps failing.
     my @free_workers = $shuffle_workers ? shuffle(@f_w) : @f_w;
 
-    log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
-
     if (@free_workers == 0) {
         return ();
     }
+
+    log_debug("+=" . ("-" x 16) . "=+");
+    log_debug("-> Scheduling new jobs.");
+    log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
 
     # Don't kick off jobs if GRU task they depend on is running
     my $waiting_jobs = schema->resultset("GruDependencies")->get_column('job_id')->as_query;

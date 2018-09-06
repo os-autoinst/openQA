@@ -29,8 +29,8 @@ BEGIN {
     $ENV{OPENQA_CONFIG} = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
     # Since tests depends on timing, we require the scheduler to be fixed in its actions.
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 4000;
-    $ENV{OPENQA_SCHEDULER_TIMESLOT}           = $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS};
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 1;
+    $ENV{OPENQA_WS_WORKER_CHECK_INTERVAL}     = 2;
     # ensure the web socket connection won't timeout
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 10 * 60;
     path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
@@ -164,6 +164,9 @@ sub start_worker {
         exec("perl ./script/worker --instance=1 $connect_args --isotovideo=../os-autoinst/isotovideo --verbose");
         die "FAILED TO START WORKER";
     }
+    else {
+        ok($workerpid, "Worker started as $workerpid");
+    }
 }
 
 start_worker;
@@ -256,16 +259,12 @@ subtest 'cancel a scheduled job' => sub {
     # to detect it as dead before it's moved back to scheduled
     OpenQA::Test::FullstackUtils::wait_for_result_panel(
         $driver,
-        qr/State: (scheduled|assigned)/,
+        qr/State: scheduled/,
         'Test 3 is scheduled',
         undef, 0.2,
     );
 
     my @cancel_button = $driver->find_elements('cancel_running', 'id');
-    if (!@cancel_button) {
-        note('test is already assigned, can not test cancelling');
-        return;
-    }
     $cancel_button[0]->click();
 };
 
@@ -339,10 +338,11 @@ subtest 'Cache tests' => sub {
     #] restore syntax highlighting in Kate
 
     $driver->get('/tests/5');
-    like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled');
+    like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled')
+      or die;
     ok(!-e $db_file, "cache.sqlite is not present");
     start_worker;
-    OpenQA::Test::FullstackUtils::wait_for_job_running($driver);
+    OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 1);
     ok(-e $db_file, "cache.sqlite file created");
     ok(!-d path($cache_location, "test_directory"), "Directory within cache, not present after deploy");
     ok(!-e $cache_location->child("test.file"), "File within cache, not present after deploy");
