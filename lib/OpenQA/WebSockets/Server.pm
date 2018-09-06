@@ -20,7 +20,7 @@ use Mojo::Util 'hmac_sha1_sum';
 use Try::Tiny;
 
 use OpenQA::IPC;
-use OpenQA::Utils qw(log_debug log_warning log_error);
+use OpenQA::Utils qw(log_debug log_warning log_info log_error);
 use OpenQA::Schema;
 use OpenQA::Setup;
 use Data::Dumper;
@@ -30,7 +30,7 @@ use OpenQA::Schema::Result::Workers ();
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKERS_CHECKER_THRESHOLD);
 
 # to be overwritten in full-stack
-use constant OPENQA_WS_WORKER_CHECK_INTERVAL => $ENV{OPENQA_WS_WORKER_CHECK_INTERVAL} // 120;
+use constant OPENQA_WS_WORKER_CHECK_INTERVAL => (0 + ($ENV{OPENQA_WS_WORKER_CHECK_INTERVAL} || '')) || 120;
 
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
@@ -487,7 +487,7 @@ sub setup {
     app->secrets(['nosecretshere']);
 
     # start worker checker - check workers each 2 minutes
-    Mojo::IOLoop->recurring(=> \&_workers_checker);
+    Mojo::IOLoop->recurring(OPENQA_WS_WORKER_CHECK_INTERVAL => \&_workers_checker);
 
     Mojo::IOLoop->recurring(
         380 => sub {

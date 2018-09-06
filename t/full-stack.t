@@ -29,7 +29,6 @@ BEGIN {
     $ENV{OPENQA_CONFIG} = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
     # Since tests depends on timing, we require the scheduler to be fixed in its actions.
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 4000;
-    $ENV{OPENQA_SCHEDULER_TIMESLOT}           = $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS};
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 1;
     $ENV{OPENQA_WS_WORKER_CHECK_INTERVAL}     = 2;
     # ensure the web socket connection won't timeout
