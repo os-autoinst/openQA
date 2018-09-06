@@ -5,15 +5,29 @@
 #
 
 check=
+only_changed=
 if test "$1"  = '--check'; then
     shift
     check=1
+fi
+if test "$1"  = '--only-changed'; then
+    shift
+    only_changed=1
 fi
 
 if ! which perltidy > /dev/null 2>&1; then
     echo "No perltidy found, install it first!"
     exit 1
 fi
+
+function find_changed_files() {
+    changed_files=()
+    for file in "${files[@]}"; do
+        if ! [[ $only_changed ]] || [ "$(git diff --name-only "$file")" ]; then
+            changed_files+=("$file")
+        fi
+    done
+}
 
 cd "${0%/*}/.."
 
@@ -24,9 +38,13 @@ find -name '*.tdy' -delete
 
 # .pc directory is used for "quilt" patch system (in Debian/Ubuntu)
 # it contains pre-patched files and should be ignored
-find . ! -path '*/.pc/*' \( -name '*.p[lm]' -o -name '*.t' \) -print0 | xargs -0 perltidy --pro=.../.perltidyrc
+files=($(find . ! -path '*/.pc/*' \( -name '*.p[lm]' -o -name '*.t' \)))
+find_changed_files
+[[ $changed_files ]] && perltidy --pro=.../.perltidyrc "${changed_files[@]}"
 
-find script/{check_dependencies,client,initdb,openqa,worker,upgradedb,load_templates,dump_templates,clean_needles,openqa-scheduler,openqa-websockets} -print0 | xargs -0 perltidy $TIDY_ARGS
+files=(script/{check_dependencies,client,initdb,openqa,worker,upgradedb,load_templates,dump_templates,clean_needles,openqa-scheduler,openqa-websockets})
+find_changed_files
+[[ $changed_files ]] && perltidy $TIDY_ARGS "${changed_files[@]}"
 
 while read file; do
     if ! diff -u ${file%.tdy} $file; then
