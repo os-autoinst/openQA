@@ -10,10 +10,13 @@ function run_test {
 function prepare_fullstack_test {
     if [ "$CUSTOM_OS_AUTOINST" ]; then
         cp -rd /opt/os-autoinst /opt/testing_area
-        return
+        if [ "$CUSTOM_OS_AUTOINST_SKIP_BUILD" ]; then
+            return
+        fi
+    else
+        git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst
     fi
 
-    git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst
     cd ../os-autoinst
     [ "$INSTALL_FROM_CPAN" -eq 1 ] && \
 	      (cpanm --local-lib=~/perl5 local::lib && cpanm -n --installdeps . ) || \

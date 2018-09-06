@@ -204,15 +204,16 @@ sub javascript_console_has_no_warnings_or_errors {
         my $msg    = $log_entry->{message};
         if ($source eq 'network') {
             # ignore errors when gravatar not found
-            next if ($msg =~ m,/gravatar/,);
+            next if ($msg =~ qr/gravatar/);
             # FIXME: loading thumbs during live run causes 404. ignore for now
-            next if ($msg =~ m,/thumb/, || $msg =~ m,/.thumbs/,);
+            # (',' is a quotation mark here and '/' part of expression to match)
+            next if ($msg =~ qr,/thumb/, || $msg =~ qr,/.thumbs/,);
         }
         elsif ($source eq 'javascript') {
             # FIXME: ignore WebSocket error for now (connection errors are tracked via devel console anyways)
-            next if ($msg =~ m/ws\-proxy.*Close received/);
+            next if ($msg =~ qr/ws\-proxy.*Close received/);
    # FIXME: find the reason why Chromium says we're trying to send something over an already closed WebSocket connection
-            next if ($msg =~ m/Data frame received after close/);
+            next if ($msg =~ qr/Data frame received after close/);
         }
         push(@errors, $log_entry);
     }
