@@ -54,12 +54,14 @@ sub deploy_cache {
     print STDOUT "\n\n\n\nINIT\n";
     log_info "Creating cache directory tree for " . $self->location;
     remove_tree($self->location, {keep_root => 1});
-    make_path(File::Spec->catdir($self->location, Mojo::URL->new($self->host)->host || $self->host));
-    make_path(File::Spec->catdir($self->location, 'tmp'));
+    path($self->location)->make_path;
+    path($self->location, Mojo::URL->new($self->host)->host || $self->host)->make_path;
+    path($self->location, 'tmp')->make_path;
 
-    log_info "Deploying DB: $sql";
+    log_info "Deploying DB: $sql (dsn " . $self->dsn . ")";
 
-    my $dbh = DBI->connect($self->dsn, undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 0})
+    my $dbh
+      = DBI->connect($self->dsn, undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 0, sqlite_unicode => 1})
       or die("Could not connect to the dbfile.");
     $dbh->do($sql);
     $dbh->commit;
@@ -70,7 +72,7 @@ sub deploy_cache {
 sub init {
     my $self = shift;
     my ($host, $location) = ($self->host, $self->location);
-    my $db_file = catdir($location, 'cache.sqlite');
+    my $db_file = path($location, 'cache.sqlite');
 
     $self->db_file($db_file);
     my $dsn = "dbi:SQLite:dbname=$db_file";
@@ -81,6 +83,7 @@ sub init {
         DBI->connect(
             $dsn, undef, undef,
             {
+                sqlite_unicode      => 1,
                 RaiseError          => 1,
                 PrintError          => 1,
                 AutoCommit          => 1,
@@ -224,24 +227,26 @@ sub get_asset {
     $asset = catdir($self->location, basename($asset));
     my $n = 5;
     while () {
-
         $self->track_asset($asset);    # Track asset - make sure it's in DB
-        log_debug "CACHE: Aquiring lock for $asset in the database";
+                                       #  log_debug "CACHE: Aquiring lock for $asset in the database";
 
-        $result = $self->try_lock_asset($asset);
-        if (!$result) {
-            update_setup_status;
-            log_debug "CACHE: Waiting " . $self->sleep_time . " seconds for the lock.";
-            sleep $self->sleep_time;
-            next;
-        }
+        # $result = $self->try_lock_asset($asset);
+        # if (!$result) {
+        #     update_setup_status;
+        #     log_debug "CACHE: Waiting " . $self->sleep_time . " seconds for the lock.";
+        #     sleep $self->sleep_time;
+        #     next;
+        # }
+        $result = $self->_asset($asset);
+
         local $@;
+
         eval {
             $ret
               = $self->download_asset($job->{id}, lc($asset_type), $asset, ($result->{etag}) ? $result->{etag} : undef);
         };
-        eval { log_error "CACHE: Error inside critical section: $@" } if $@;
-        $self->toggle_asset_lock($asset, 0);
+        # eval { log_error "CACHE: Error inside critical section: $@" } if $@;
+        # $self->toggle_asset_lock($asset, 0);
         if (!$ret) {
             $asset = undef;
             last;
