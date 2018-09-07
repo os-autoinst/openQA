@@ -48,7 +48,9 @@ my $sent = {};
 my $s_w = OpenQA::Scheduler::Scheduler::shuffle_workers(0);
 sub schedule {
     my $id = OpenQA::Scheduler::Scheduler::schedule();
-    _jobs_update_state([$schema->resultset('Jobs')->find($_->{job})], OpenQA::Jobs::Constants::RUNNING) for @$id;
+    for my $i (@$id) {
+        _jobs_update_state([$schema->resultset('Jobs')->find($i->{job})], OpenQA::Jobs::Constants::RUNNING);
+    }
 }
 
 # Mangle worker websocket send, and record what was sent
@@ -85,8 +87,13 @@ sub job_get_deps {
     return job_get_deps_rs(@_)->to_hash(deps => 1);
 }
 
-my $current_jobs = list_jobs();
-my %settings     = (
+# clean up fixture scheduled - we want our owns
+job_get_deps_rs(99927)->delete;
+job_get_deps_rs(99928)->delete;
+# remove unrelated workers from fixtures
+$schema->resultset('Workers')->delete;
+
+my %settings = (
     DISTRI      => 'Unicorn',
     FLAVOR      => 'pink',
     VERSION     => '42',
@@ -165,39 +172,22 @@ my @jobs_in_expected_order = (
     $jobE => 'C and D are now running so we can start E. E is picked',
 );
 
-# diag "A : " . $jobA->id;
-# diag "B : " . $jobB->id;
-# diag "C : " . $jobC->id;
-# diag "D : " . $jobD->id;
-# diag "E : " . $jobE->id;
-# diag "F : " . $jobF->id;
+#diag "A : " . $jobA->id;
+#diag "B : " . $jobB->id;
+#diag "C : " . $jobC->id;
+#diag "D : " . $jobD->id;
+#diag "E : " . $jobE->id;
+#diag "F : " . $jobF->id;
 
 schedule();
 
-for my $i (3 .. 5) {
+for my $i (0 .. 5) {
     my $job = $sent->{job}->{$jobs_in_expected_order[$i * 2]->id}->{job};
     ok(defined $job, $jobs_in_expected_order[$i * 2 + 1]) or die;
     $job = $job->to_hash;
     is($sent->{job}->{$jobs_in_expected_order[$i * 2]->id}->{jobhash}->{settings}->{NICVLAN},
         1, 'same vlan for whole group');
 }
-schedule();
-
-for my $i (1 .. 2) {
-    my $job = $sent->{job}->{$jobs_in_expected_order[$i * 2]->id}->{job};
-    ok(defined $job, $jobs_in_expected_order[$i * 2 + 1]) or die;
-    $job = $job->to_hash;
-    is($sent->{job}->{$jobs_in_expected_order[$i * 2]->id}->{jobhash}->{settings}->{NICVLAN},
-        1, 'same vlan for whole group');
-    schedule();
-}
-schedule();
-
-my $job = $sent->{job}->{$jobs_in_expected_order[0]->id}->{job};
-ok(defined $job, $jobs_in_expected_order[1]) or die;
-
-$job = $job->to_hash;
-is($job->{settings}->{NICVLAN}, 1, 'same vlan for whole group');
 
 my $exp_cluster_jobs = {
     $jobA->id => {
@@ -263,7 +253,7 @@ is($result, 'incomplete', 'job_set_done on D');
 $result = $jobE->done(result => 'incomplete');
 is($result, 'incomplete', 'job_set_done on E');
 
-$job = job_get_deps($jobA->id);
+my $job = job_get_deps($jobA->id);
 is($job->{state},  "done",   "job_set_done changed state");
 is($job->{result}, "failed", "job_set_done changed result");
 
@@ -438,36 +428,31 @@ $t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$
 $t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => []);
 $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id]);
 
-# job_grab now should return jobs from clonned group
+# now the cloned group should be scheduled
 # we already called job_set_done on jobE, so worker 6 is available
 
-# diag "A2 : $jobA2";
-# diag "B2 : $jobB2";
-# diag "C2 : $jobC2";
-# diag "D2 : $jobD2";
-# diag "E2 : $jobE2";
-# diag "F2 : $jobF2";
+#diag "A2 : $jobA2";
+#diag "B2 : $jobB2";
+#diag "C2 : $jobC2";
+#diag "D2 : $jobD2";
+#diag "E2 : $jobE2";
+#diag "F2 : $jobF2";
 
-# First is going A2 -> D2 -> E2
+# We have 3 free workers (as B,C and F are still running)
+# and the cluster is 6, so we expect nothing to be SCHEDULED
 schedule();
-ok(exists $sent->{job}->{$jobA2}, " $jobA2 was assigned ") or die diag "A2 $jobA2 wasn't scheduled";
+is(job_get_deps($jobA2)->{state}, "scheduled", "no change");
+
+# now free those
+$_->done(result => 'passed') for ($jobB, $jobC, $jobF);
+schedule();
+
+ok(exists $sent->{job}->{$jobA2}, " $jobA2 was assigned ") or die "A2 $jobA2 wasn't scheduled";
 $job = $sent->{job}->{$jobA2}->{jobhash};
 is($job->{id}, $jobA2, "jobA2");    #lowest prio of jobs without parents
 is($job->{settings}->{NICVLAN}, 2, "different vlan") or die diag explain $job;
 
-# Then B2, but since we took all the 3 left workers for A2, D2, E2, creating another one
-# XXX: Weirdly enough,
-my $new_worker_ids = $c->_register($schema, 'host', "10", \%workercaps);
-$c->_register($schema, 'host', "11", \%workercaps);
-$c->_register($schema, 'host', "12", \%workercaps);
-$c->_register($schema, 'host', "13", \%workercaps);
-$c->_register($schema, 'host', "14", \%workercaps);
-
-schedule();
-schedule();
-schedule();
-
-ok(exists $sent->{job}->{$jobB2}, " $jobB2 was assigned ") or die diag "B2 $jobB2 wasn't scheduled";
+ok(exists $sent->{job}->{$jobB2}, " $jobB2 was assigned ") or die "B2 $jobB2 wasn't scheduled";
 $job = $sent->{job}->{$jobB2}->{job}->to_hash;
 is($job->{id}, $jobB2, "jobB2");    #lowest prio of jobs without parents
 
