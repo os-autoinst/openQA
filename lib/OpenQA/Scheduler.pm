@@ -25,7 +25,7 @@ use Data::Dump 'pp';
 use OpenQA::IPC;
 use OpenQA::Setup;
 
-use OpenQA::Utils 'log_debug';
+use OpenQA::Utils qw(log_debug log_info);
 
 # How many jobs to allocate in one tick. Defaults to 80 ( set it to 0 for as much as possible)
 use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 80;
@@ -81,16 +81,16 @@ sub run {
     OpenQA::Setup::setup_log($setup);
 
     OpenQA::Scheduler->new();
-    log_debug("Scheduler started");
-    log_debug("\t Scheduler default interval(ms) : " . SCHEDULE_TICK_MS);
-    log_debug("\t Max job allocation: " . MAX_JOB_ALLOCATION);
-    log_debug("\t Timeslot(ms) : " . TIMESLOT);
-    log_debug("\t Wakeup on request : " . (WAKEUP_ON_REQUEST ? "enabled" : "disabled"));
-    log_debug("\t Find job retries : " . FIND_JOB_ATTEMPTS);
-    log_debug("\t Congestion control : " .                  (CONGESTION_CONTROL ? "enabled" : "disabled"));
-    log_debug("\t Backoff when we can't schedule jobs : " . (BUSY_BACKOFF       ? "enabled" : "disabled"));
-    log_debug("\t Capture loop avoidance(ms) : " . CAPTURE_LOOP_AVOIDANCE);
-    log_debug("\t Max backoff(ms) : " . MAX_BACKOFF);
+    log_info("Scheduler started");
+    log_info("\t Scheduler default interval(ms) : " . SCHEDULE_TICK_MS);
+    log_info("\t Max job allocation: " . MAX_JOB_ALLOCATION);
+    log_info("\t Timeslot(ms) : " . TIMESLOT);
+    log_info("\t Wakeup on request : " . (WAKEUP_ON_REQUEST ? "enabled" : "disabled"));
+    log_info("\t Find job retries : " . FIND_JOB_ATTEMPTS);
+    log_info("\t Congestion control : " .                  (CONGESTION_CONTROL ? "enabled" : "disabled"));
+    log_info("\t Backoff when we can't schedule jobs : " . (BUSY_BACKOFF       ? "enabled" : "disabled"));
+    log_info("\t Capture loop avoidance(ms) : " . CAPTURE_LOOP_AVOIDANCE);
+    log_info("\t Max backoff(ms) : " . MAX_BACKOFF);
 
     my $reactor = Net::DBus::Reactor->main;
     OpenQA::Scheduler::Scheduler::reactor($reactor);
