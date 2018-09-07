@@ -1,0 +1,46 @@
+#!/usr/bin/env perl
+
+# Copyright (C) 2018 SUSE Linux GmbH
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>.
+
+use strict;
+use warnings;
+use Mojolicious::Commands;
+use OpenQA::Worker::Cache::Service;
+use Getopt::Long;
+Getopt::Long::Configure("no_ignore_case");
+
+my %options;
+
+sub usage($) {
+    my $r = shift;
+    eval "use Pod::Usage; pod2usage($r);";
+    if ($@) {
+        die "cannot display help, install perl(Pod::Usage)\n";
+    }
+}
+
+GetOptions(
+    \%options,    "instance=i", "isotovideo=s", "host=s", "apikey:s",
+    "apisecret:s", "verbose|v|debug|d", "help|h",
+) or usage(1);
+
+usage(0) if ($options{help});
+
+# count workers from 1 if not set - if tap devices are used worker would try to use tap -1
+$options{instance} ||= 1;
+
+
+Mojolicious::Commands->start_app('OpenQA::Worker::Cache::Service');
