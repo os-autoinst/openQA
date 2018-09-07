@@ -481,6 +481,12 @@ $jobC = _job_create(\%settingsC, [$jobB->id]);
 $jobD = _job_create(\%settingsD, [$jobA->id]);
 $jobE = _job_create(\%settingsE, $jobC->id . ',' . $jobD->id);    # test also IDs passed as comma separated string
 $jobF = _job_create(\%settingsF, [$jobC->id]);
+is($jobA->blocked_by_id, undef, "JobA is unblocked");
+is($jobB->blocked_by_id, undef, "JobB is unblocked");
+is($jobC->blocked_by_id, undef, "JobC is unblocked");
+is($jobD->blocked_by_id, undef, "JobD is unblocked");
+is($jobE->blocked_by_id, undef, "JobE is unblocked");
+is($jobF->blocked_by_id, undef, "JobF is unblocked");
 $c->_register($schema, 'host', "15", \%workercaps);
 $c->_register($schema, 'host', "16", \%workercaps);
 $c->_register($schema, 'host', "17", \%workercaps);
@@ -517,6 +523,7 @@ $jobY->discard_changes;
 is($jobY->state, "skipped", "jobY was skipped");
 my $jobY2 = $jobY->clone;
 ok(defined $jobY2, "jobY was cloned too");
+is($jobY2->blocked_by_id, $jobX2->id, "JobY2 is blocked");
 is_deeply($jobY2->to_hash(deps => 1)->{parents}, {Chained => [$jobX2->id], Parallel => []}, "JobY parents fit");
 is($jobX2->id,    $jobY2->parents->single->parent_job_id, 'jobY2 parent is now jobX clone');
 is($jobX2->clone, undef,                                  "no clone");
@@ -569,6 +576,7 @@ isnt($jobY2->clone_id, undef, "child job Y2 has been cloned together with parent
 
 my $jobY3_id = $jobY2->clone_id;
 my $jobY3    = job_get_deps($jobY3_id);
+is($jobY2->clone->blocked_by_id, $jobX3->id, "jobY3 blocked");
 is_deeply($jobY3->{parents}, {Chained => [$jobX3->id], Parallel => []}, 'jobY3 parent is now jobX3');
 
 # checking siblings scenario
@@ -636,6 +644,7 @@ my $jobU = _job_create(\%settingsU, undef, [$jobQ->id]);
 my $jobR = _job_create(\%settingsR, undef, [$jobQ->id]);
 my $jobT = _job_create(\%settingsT, [$jobW->id, $jobU->id, $jobR->id], [$jobQ->id]);
 
+is($jobT->blocked_by_id, $jobQ->id, "JobT is blocked");
 is($jobW->blocked_by_id, $jobQ->id, "JobW is blocked");
 
 # hack jobs to appear to scheduler in desired state
