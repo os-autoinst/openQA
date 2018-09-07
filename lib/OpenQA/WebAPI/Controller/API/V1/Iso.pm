@@ -304,6 +304,16 @@ sub _generate_jobs {
     return $ret;
 }
 
+# make sure the job dependencies do not create cycles
+sub _check_for_cycle {
+    my ($child, $parent, $jobs) = @_;
+    $jobs->{$parent} = $child;
+    return unless $jobs->{$child};
+    die "CYCLE" if $jobs->{$child} == $parent;
+    # go deeper into the graph
+    _check_for_cycle($jobs->{$child}, $parent, $jobs);
+}
+
 =over 4
 
 =item job_create_dependencies()
@@ -316,7 +326,7 @@ defined. Internal method used by the B<schedule_iso()> method.
 =cut
 
 sub job_create_dependencies {
-    my ($self, $job, $testsuite_mapping) = @_;
+    my ($self, $job, $testsuite_mapping, $created_jobs) = @_;
 
     my @error_messages;
     my $settings = $job->settings_hash;
@@ -334,6 +344,12 @@ sub job_create_dependencies {
             }
             else {
                 for my $parent (@{$testsuite_mapping->{$testsuite}}) {
+                    try {
+                        _check_for_cycle($job->id, $parent, $created_jobs);
+                    }
+                    catch {
+                        die "There is a cycle in the dependencies of $settings->{TEST}";
+                    };
                     $self->db->resultset('JobDependencies')->create(
                         {
                             child_job_id  => $job->id,
@@ -487,9 +503,11 @@ sub schedule_iso {
             $job->update;
         }
 
+        # for cycle detection
+        my %created_jobs;
         # jobs are created, now recreate dependencies and extract ids
         for my $job (@jobs) {
-            my $error_messages = $self->job_create_dependencies($job, \%testsuite_ids);
+            my $error_messages = $self->job_create_dependencies($job, \%testsuite_ids, \%created_jobs);
             if (!@$error_messages) {
                 push(@successful_job_ids, $job->id);
             }

@@ -623,4 +623,73 @@ foreach my $j (@{$rsp->json->{ids}}) {
     like job_result($j), qr/incomplete|skipped/, 'Job skipped/incompleted';
 }
 
+
+subtest 'Catch multimachine cycles' => sub {
+
+    $t->app->db->resultset('TestSuites')->create(
+        {
+            name        => "Algol-a",
+            description => 'algol a test',
+            settings    => [{key => "DESKTOP", value => "kde"}, {key => "PARALLEL_WITH", value => "Algol-b"},],
+        });
+    $t->app->db->resultset('TestSuites')->create(
+        {
+            name        => "Algol-b",
+            description => 'Bad test suite',
+            settings    => [{key => "DESKTOP", value => "kde"}, {key => "PARALLEL_WITH", value => "Algol-c"},],
+        });
+    $t->app->db->resultset('TestSuites')->create(
+        {
+            name        => "Algol-c",
+            description => 'Algol c test suite',
+            settings    => [{key => "DESKTOP", value => "kde"}, {key => "PARALLEL_WITH", value => "Algol-a,Algol-b"},],
+        });
+
+    my $master_job = $t->app->db->resultset('JobTemplates')->create(
+        {
+            machine    => {name => '64bit'},
+            test_suite => {name => 'Algol-a'},
+            prio       => 42,
+            group_id   => 1002,
+            product_id => 1,
+        });
+
+    my $slave_job = $t->app->db->resultset('JobTemplates')->create(
+        {
+            machine    => {name => '64bit'},
+            test_suite => {name => 'Algol-b'},
+            prio       => 42,
+            group_id   => 1002,
+            product_id => 1,
+        });
+
+    my $master_slave = $t->app->db->resultset('JobTemplates')->create(
+        {
+            machine    => {name => '64bit'},
+            test_suite => {name => 'Algol-c'},
+            group_id   => 1002,
+            product_id => 1,
+        });
+
+    my $res = schedule_iso(
+        {
+            ISO        => $iso,
+            DISTRI     => 'opensuse',
+            VERSION    => '13.1',
+            FLAVOR     => 'DVD',
+            ARCH       => 'i586',
+            BUILD      => '0091',
+            PRECEDENCE => 'original',
+            _GROUP     => 'opensuse test',
+        });
+
+    is($res->json->{count}, 0, 'Cycle found');
+    like(
+        $res->json->{failed}->[0]->{error_messages}->[0],
+        qr/There is a cycle in the dependencies of Algol-c/,
+        "Cycle reported"
+    );
+
+};
+
 done_testing();
