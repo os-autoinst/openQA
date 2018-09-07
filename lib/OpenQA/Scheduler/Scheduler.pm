@@ -112,20 +112,32 @@ sub matching_workers {
     return \@filtered;
 }
 
+sub to_be_scheduled_recurse {
+    my ($j, $scheduled, $taken) = @_;
+
+    return if $taken->{$j->{id}};
+    # if we were called with undef, this is a sign that
+    # the cluster is not fully scheduled (e.g. blocked_by), so
+    # take that as mark but return
+    $taken->{$j->{id}} = $j;
+
+    my $ci = $j->{cluster_jobs}->{$j->{id}};
+    return unless $ci;
+    for my $s (@{$ci->{parallel_children}}) {
+        to_be_scheduled_recurse($scheduled->{$s}, $scheduled, $taken);
+    }
+    for my $s (@{$ci->{parallel_parents}}) {
+        to_be_scheduled_recurse($scheduled->{$s}, $scheduled, $taken);
+    }
+}
+
 sub to_be_scheduled {
     my ($j, $scheduled) = @_;
 
-    my $ci  = $j->{cluster_jobs}->{$j->{id}};
-    my @ret = ($j);
-    for my $s (@{$ci->{parallel_children}}) {
-        return undef unless $scheduled->{$s};
-        push(@ret, $scheduled->{$s});
-    }
-    for my $s (@{$ci->{parallel_parents}}) {
-        return undef unless $scheduled->{$s};
-        push(@ret, $scheduled->{$s});
-    }
-    return \@ret;
+    my %taken;
+    to_be_scheduled_recurse($j, $scheduled, \%taken);
+    return undef if defined $taken{undef};
+    return [values %taken];
 }
 
 =head2 schedule()
