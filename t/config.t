@@ -42,6 +42,7 @@ subtest 'Test configuration default modes' => sub {
             audit_enabled       => 1,
             max_rss_limit       => 0,
             profiling_enabled   => 0,
+            monitoring_enabled  => 0,
             hide_asset_types    => 'repo',
             recognized_referers => [],
             changelog_file      => '/usr/share/openqa/public/Changelog',
