@@ -695,6 +695,12 @@ sub create_clones {
         # when dependency network is recreated, associate assets
         $res->register_assets_from_settings;
     }
+
+    # calculate blocked_by
+    for my $job (keys %$jobs) {
+        $clones{$job}->calculate_blocked_by;
+    }
+
     # reduce the clone object to ID (easier to use later on)
     for my $job (keys %$jobs) {
         $jobs->{$job}->{clone} = $clones{$job}->id;
