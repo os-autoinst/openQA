@@ -144,7 +144,7 @@ sub schedule {
         exit(0);
     }
 
-    my @allocated_jobs;
+    my %allocated_jobs;
 
     my $all_workers = schema->resultset("Workers")->count();
 
@@ -228,7 +228,7 @@ sub schedule {
             for my $w (@{$jobinfo->{matching_workers}}) {
                 next if $allocating->{$w->id};
                 $allocating->{$w->id} = $jobinfo->{id};
-                push(@allocated_jobs, {job => $jobinfo->{id}, worker => $w->id});
+                $allocated_jobs{$jobinfo->{id}} = {job => $jobinfo->{id}, worker => $w->id};
             }
         }
     }
@@ -236,6 +236,7 @@ sub schedule {
     my @sorted = sort { $a->{priority} <=> $b->{priority} || $a->{id} <=> $b->{id} } values %scheduled_jobs;
     for my $j (@sorted) {
         my $tobescheduled = to_be_scheduled($j, \%scheduled_jobs);
+        next if defined $allocated_jobs{$j->{id}};
         next unless $tobescheduled;
         my %taken;
         for my $l (@$tobescheduled) {
@@ -255,7 +256,7 @@ sub schedule {
         for my $w (keys %taken) {
             my $l = $taken{$w};
             $allocating->{$w} = $l->{id};
-            push(@allocated_jobs, {job => $l->{id}, worker => $w});
+            $allocated_jobs{$l->{id}} = {job => $l->{id}, worker => $w};
         }
         # we make sure we schedule clusters no matter what, but we stop if we're over
         # the limit
@@ -264,7 +265,7 @@ sub schedule {
 
     my @successfully_allocated;
 
-    foreach my $allocated (@allocated_jobs) {
+    for my $allocated (values %allocated_jobs) {
         #  Now we need to set the worker in the job, with the state in SCHEDULED.
         my $job;
         my $worker;

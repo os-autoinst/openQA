@@ -190,8 +190,7 @@ subtest 'Simulation of heavy unstable load' => sub {
     wait_for_worker($schema, ++$i) for 1 .. 10;
 
     ($allocated) = scheduler_step($reactor);    # Will try to allocate to previous worker and fail!
-    is @$allocated, 8,
-      "Allocated maximum number of jobs that could have been allocated";    # XXX: This, really should be 10
+    is(@$allocated, 10, "Allocated maximum number of jobs that could have been allocated") or die;
     my %jobs;
     my %w;
     foreach my $j (@$allocated) {
