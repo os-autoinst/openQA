@@ -172,12 +172,12 @@ my @jobs_in_expected_order = (
     $jobE => 'C and D are now running so we can start E. E is picked',
 );
 
-#diag "A : " . $jobA->id;
-#diag "B : " . $jobB->id;
-#diag "C : " . $jobC->id;
-#diag "D : " . $jobD->id;
-#diag "E : " . $jobE->id;
-#diag "F : " . $jobF->id;
+# diag "A : " . $jobA->id;
+# diag "B : " . $jobB->id;
+# diag "C : " . $jobC->id;
+# diag "D : " . $jobD->id;
+# diag "E : " . $jobE->id;
+# diag "F : " . $jobF->id;
 
 schedule();
 
@@ -443,21 +443,24 @@ $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$job
 schedule();
 is(job_get_deps($jobA2)->{state}, "scheduled", "no change");
 
-# now free those
-$_->done(result => 'passed') for ($jobB, $jobC, $jobF);
+# now free two of them and create one more worker. So that we
+# have 6 free, but have vlan 1 still busy
+$_->done(result => 'passed') for ($jobC, $jobF);
+$c->_register($schema, 'host', "10", \%workercaps);
 schedule();
 
 ok(exists $sent->{job}->{$jobA2}, " $jobA2 was assigned ") or die "A2 $jobA2 wasn't scheduled";
 $job = $sent->{job}->{$jobA2}->{jobhash};
 is($job->{id}, $jobA2, "jobA2");    #lowest prio of jobs without parents
-is($job->{settings}->{NICVLAN}, 2, "different vlan") or die diag explain $job;
+is($job->{settings}->{NICVLAN}, 2, "different vlan") or die explain $job;
 
 ok(exists $sent->{job}->{$jobB2}, " $jobB2 was assigned ") or die "B2 $jobB2 wasn't scheduled";
 $job = $sent->{job}->{$jobB2}->{job}->to_hash;
 is($job->{id}, $jobB2, "jobB2");    #lowest prio of jobs without parents
 
-is($job->{settings}->{NICVLAN}, 2, "different vlan") or die diag explain $job;
+is($job->{settings}->{NICVLAN}, 2, "different vlan") or die explain $job;
 
+$jobB->done(result => 'passed');
 job_get($_)->done(result => 'passed') for ($jobA2, $jobB2, $jobC2, $jobD2, $jobE2, $jobF2);
 
 $jobA = _job_create(\%settingsA);
@@ -478,7 +481,8 @@ $c->_register($schema, 'host', "17", \%workercaps);
 $c->_register($schema, 'host', "18", \%workercaps);
 schedule();
 $job = $sent->{job}->{$jobD->id}->{job}->to_hash;
-is($job->{settings}->{NICVLAN}, 2, "reused vlan") or die diag explain $job;
+# all vlans are free so we take the first
+is($job->{settings}->{NICVLAN}, 1, "reused vlan") or die explain $job;
 
 
 

@@ -35,6 +35,6 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key('name', 'job_id');
 
-__PACKAGE__->belongs_to(job_id => 'OpenQA::Schema::Result::Jobs', 'job_id');
+__PACKAGE__->belongs_to(job => 'OpenQA::Schema::Result::Jobs', 'job_id');
 
 1;

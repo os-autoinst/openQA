@@ -1494,7 +1494,17 @@ sub allocate_network {
             log_debug("Failed to create new vlan tag: $vlan");
             next;
         };
-        return $vlan if $created;
+        if ($created) {
+            # mark it for the whole cluster - so that the vlan only appears
+            # if all of the cluster is gone.
+            for my $cj (keys %{$self->cluster_jobs}) {
+                next if $cj == $self->id;
+                $self->result_source->schema->resultset('JobNetworks')
+                  ->create({name => $name, vlan => $vlan, job_id => $cj});
+            }
+
+            return $vlan;
+        }
     }
 }
 
@@ -1531,20 +1541,7 @@ sub _find_network {
 sub release_networks {
     my ($self) = @_;
 
-    my @cluster = keys %{$self->cluster_jobs};
-    return $self->networks->delete unless @cluster;
-
-    my $jobs = $self->result_source->resultset;
-    @cluster = map { $jobs->find($_) } @cluster;
-
-    do {
-        return log_debug("Cannot release networks of " . $self->id . " Job " . $_->id . " is still running")
-          if $_->state eq RUNNING;
-      }
-      for grep { $_->id ne $self->id } @cluster;
-
-    $_->networks->delete for @cluster;
-
+    $self->networks->delete;
 }
 
 sub needle_dir() {
