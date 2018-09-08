@@ -1701,7 +1701,6 @@ sub _job_stop_child {
         $job->update({result => SKIPPED, state => CANCELLED});
     }
     else {
-        print STDERR "JOB State " . $job->id . " " . $job->state . "\n";
         $job->update({result => PARALLEL_FAILED});
         if ($job->worker) {
             $job->worker->send_command(command => 'cancel', job_id => $job->id);
