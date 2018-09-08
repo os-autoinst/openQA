@@ -443,8 +443,10 @@ $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$job
 schedule();
 is(job_get_deps($jobA2)->{state}, "scheduled", "no change");
 
-# now free those
-$_->done(result => 'passed') for ($jobB, $jobC, $jobF);
+# now free two of them and create one more worker. So that we
+# have 6 free, but have vlan 1 still busy
+$_->done(result => 'passed') for ($jobC, $jobF);
+$c->_register($schema, 'host', "10", \%workercaps);
 schedule();
 
 ok(exists $sent->{job}->{$jobA2}, " $jobA2 was assigned ") or die "A2 $jobA2 wasn't scheduled";
@@ -458,6 +460,7 @@ is($job->{id}, $jobB2, "jobB2");    #lowest prio of jobs without parents
 
 is($job->{settings}->{NICVLAN}, 2, "different vlan") or die diag explain $job;
 
+$jobB->done(result => 'passed');
 job_get($_)->done(result => 'passed') for ($jobA2, $jobB2, $jobC2, $jobD2, $jobE2, $jobF2);
 
 $jobA = _job_create(\%settingsA);
