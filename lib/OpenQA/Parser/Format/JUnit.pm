@@ -104,7 +104,7 @@ sub parse {
             $text_fn =~ s/[\/.]/_/g;
             $text_fn .= '.txt';
             my $content = "# $tc->{name}\n";
-            for my $out ($tc->children('system-out, system-err, failure')->each) {
+            for my $out ($tc->children('system-out, system-err, failure, error, skipped')->each) {
                 $content .= "# " . $out->tag . ": \n\n";
                 $content .= $out->text . "\n";
             }
