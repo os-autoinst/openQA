@@ -85,18 +85,32 @@ sub switch_to_comments_tab {
 sub check_comment {
     my ($supposed_text, $edited) = @_;
 
+    javascript_console_has_no_warnings_or_errors;
+
+    # check number of elements
+    my @comment_headings = $driver->find_elements('h4.media-heading');
+    my @comment_bodies   = $driver->find_elements('div.media-comment');
+    is(scalar @comment_headings, 1, 'exactly one comment heading present');
+    is(scalar @comment_bodies,   1, 'exactly one comment body present');
+
+    # check heading
+    my $first_heading_text = $comment_headings[0]->get_text();
     if ($edited) {
-        is($driver->find_element('h4.media-heading')->get_text(),
-            "$user_name wrote less than a minute ago (last edited less than a minute ago)", "heading");
+        is($first_heading_text, "$user_name wrote less than a minute ago (last edited less than a minute ago)",
+            'heading text');
     }
     else {
-        is($driver->find_element('h4.media-heading')->get_text(), "$user_name wrote less than a minute ago", "heading");
+        is($first_heading_text, "$user_name wrote less than a minute ago", 'heading text');
     }
-    is($driver->find_element('div.media-comment')->get_text(), $supposed_text, "body");
-    my $anchor = $driver->find_element('h4.media-heading .comment-anchor')->get_attribute('href');
+
+    # check body
+    is($comment_bodies[0]->get_text(), $supposed_text, 'body text');
+
+    # check anchor
+    my $anchor = $driver->find_child_element($comment_headings[0], '.comment-anchor')->get_attribute('href');
     $anchor =~ s/[^#]*#/#/;
     like($anchor, qr/#comment-[0-9]+/, "anchor matches expected format");
-    is($driver->find_element("$anchor div.media-comment")->get_text(), $supposed_text, "body by anchor ref");
+    is($driver->find_element("$anchor div.media-comment")->get_text(), $supposed_text, 'body found via anchor ref');
 }
 
 # tests adding, editing and removing comments
@@ -137,21 +151,21 @@ sub test_comment_editing {
     };
 
     subtest 'remove' => sub {
-        # try to remove the first displayed comment (wthe one which has just been edited)
+        # try to remove the first displayed comment (the one which has just been edited)
         $driver->find_element('button.remove-edit-button')->click();
 
-        is($driver->get_alert_text, "Do you really want to delete the comment written by Demo?", "Alert opened");
         # check confirmation and dismiss in the first place
+        $driver->alert_text_is('Do you really want to delete the comment written by Demo?');
         $driver->dismiss_alert;
+        wait_for_ajax;
 
-        # the comment musn't be deleted yet
+        # the comment mustn't be deleted yet
         is($driver->find_element('div.media-comment')->get_text(),
             $edited_test_message, "comment is still there after dismissing removal");
 
         # try to remove the first displayed comment again (and accept this time);
         $driver->find_element('button.remove-edit-button')->click();
-
-        $driver->alert_text_is("Do you really want to delete the comment written by Demo?");
+        $driver->alert_text_is('Do you really want to delete the comment written by Demo?');
         $driver->accept_alert;
         wait_for_ajax;
 
@@ -159,20 +173,18 @@ sub test_comment_editing {
         my @comments = $driver->find_elements('div.media-comment', 'css');
         is(scalar @comments, 0, 'removed comment is actually gone');
 
-        if ($in_test_results) {
-            switch_to_comments_tab(0);
-        }
+        # check whether the counter in the comments tab has been decreased to zero
+        switch_to_comments_tab(0) if ($in_test_results);
+
+        javascript_console_has_no_warnings_or_errors;
 
         # re-add a comment with the original message
         $driver->find_element_by_id('text')->send_keys($test_message);
         $driver->find_element_by_id('submitComment')->click();
         wait_for_ajax;
 
-        # check whether heading and comment text is displayed correctly
-        if ($in_test_results) {
-            switch_to_comments_tab(1);
-        }
-
+        # check whether the new comment is displayed correctly
+        switch_to_comments_tab(1) if ($in_test_results);
         check_comment($test_message, 0);
     };
 }
@@ -457,6 +469,8 @@ subtest 'editing when logged in as regular user' => sub {
       }
       for (@group_overview_urls);
 };
+
+javascript_console_has_no_warnings_or_errors;
 
 kill_driver();
 

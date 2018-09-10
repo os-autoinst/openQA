@@ -217,8 +217,10 @@ OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/,
 
 ok(-s path($resultdir, '00000', "00000001-$job_name")->make_path->child('autoinst-log.txt'), 'log file generated');
 ok(-s path($sharedir, 'factory', 'hdd')->make_path->child('core-hdd.qcow2'), 'image of hdd uploaded');
-my $mode = S_IMODE((stat(path($sharedir, 'factory', 'hdd')->child('core-hdd.qcow2')))[2]);
-is($mode, 420, 'exported image has correct permissions (420 -> 0644)');
+my $core_hdd_path = path($sharedir, 'factory', 'hdd')->child('core-hdd.qcow2');
+my @core_hdd_stat = stat($core_hdd_path);
+ok(@core_hdd_stat, 'can stat ' . $core_hdd_path);
+is(S_IMODE($core_hdd_stat[2]), 420, 'exported image has correct permissions (420 -> 0644)');
 
 my $post_group_res = OpenQA::Test::FullstackUtils::client_output "job_groups post name='New job group'";
 my $group_id       = ($post_group_res =~ qr/{ *id *=> *([0-9]*) *}\n/);
