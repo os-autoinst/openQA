@@ -379,18 +379,10 @@ and a boolean that makes bypass constraints checks about rescheduling.
 
 sub _reschedule {
     my ($time, $force) = @_;
-    my $current_interval = 0;
-    if (reactor && reactor->{timeouts} && ref(reactor->{timeouts}) eq "ARRAY" && reactor->{timer}->{schedule_jobs}) {
-        $current_interval = reactor->{timeouts}->[reactor->{timer}->{schedule_jobs}]->{interval};
-    }
-    return unless (reactor && (($current_interval != $time) || $force));
+    return unless reactor;
+    my $current_interval = reactor->{timeouts}->[reactor->{timer}->{schedule_jobs}]->{interval};
     log_debug "[rescheduling] Current tick is at ${current_interval}ms. New tick will be in: ${time}ms";
-    reactor->remove_timeout(reactor->{timer}->{schedule_jobs}) if reactor->{timer}->{schedule_jobs};
-    reactor->{timer}->{schedule_jobs} = reactor->add_timeout(
-        $time,
-        Net::DBus::Callback->new(
-            method => \&OpenQA::Scheduler::Scheduler::schedule
-        ));
+    reactor->toggle_timeout(reactor->{timer}->{schedule_jobs}, 1, $time);
 }
 
 1;

@@ -60,8 +60,6 @@ sub run {
     log_debug("\t Scheduler default interval(ms) : " . SCHEDULE_TICK_MS);
     log_debug("\t Max job allocation: " . MAX_JOB_ALLOCATION);
 
-    # initial schedule
-    OpenQA::Scheduler::Scheduler::schedule();
     my $reactor = Net::DBus::Reactor->main;
     OpenQA::Scheduler::Scheduler::reactor($reactor);
     $reactor->{timer}->{schedule_jobs} = $reactor->add_timeout(
@@ -69,6 +67,9 @@ sub run {
         Net::DBus::Callback->new(
             method => \&OpenQA::Scheduler::Scheduler::schedule
         ));
+    # initial schedule
+    OpenQA::Scheduler::Scheduler::schedule();
+
     $reactor->run;
 }
 
