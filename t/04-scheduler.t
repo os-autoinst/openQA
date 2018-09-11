@@ -162,11 +162,12 @@ my $job_ref = {
     assets => {
         iso => ['whatever.iso'],
     },
-    t_started => undef,
-    state     => "scheduled",
-    worker_id => 0,
-    clone_id  => undef,
-    group_id  => undef,
+    t_started     => undef,
+    blocked_by_id => undef,
+    state         => "scheduled",
+    worker_id     => 0,
+    clone_id      => undef,
+    group_id      => undef,
     # to be removed
     test => 'rainbow'
 };
@@ -194,17 +195,18 @@ is_deeply($new_job, $job_ref, "job_get");
 # Testing list_jobs
 my $jobs = [
     {
-        t_finished => undef,
-        id         => 2,
-        name       => 'Unicorn-42-pink-x86_64-Build44-rainbow@RainbowPC',
-        priority   => 50,
-        result     => 'none',
-        t_started  => undef,
-        state      => "scheduled",
-        test       => 'rainbow',
-        clone_id   => undef,
-        group_id   => undef,
-        settings   => {
+        t_finished    => undef,
+        blocked_by_id => undef,
+        id            => 2,
+        name          => 'Unicorn-42-pink-x86_64-Build44-rainbow@RainbowPC',
+        priority      => 50,
+        result        => 'none',
+        t_started     => undef,
+        state         => "scheduled",
+        test          => 'rainbow',
+        clone_id      => undef,
+        group_id      => undef,
+        settings      => {
             DESKTOP     => "DESKTOP",
             DISTRI      => 'Unicorn',
             FLAVOR      => 'pink',
@@ -223,17 +225,18 @@ my $jobs = [
         },
     },
     {
-        t_finished => undef,
-        id         => 1,
-        name       => 'Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
-        priority   => 40,
-        result     => 'none',
-        t_started  => undef,
-        state      => "scheduled",
-        test       => 'rainbow',
-        clone_id   => undef,
-        group_id   => undef,
-        settings   => {
+        t_finished    => undef,
+        blocked_by_id => undef,
+        id            => 1,
+        name          => 'Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
+        priority      => 40,
+        result        => 'none',
+        t_started     => undef,
+        state         => "scheduled",
+        test          => 'rainbow',
+        clone_id      => undef,
+        group_id      => undef,
+        settings      => {
             DESKTOP     => "DESKTOP",
             DISTRI      => 'Unicorn',
             FLAVOR      => 'pink',
