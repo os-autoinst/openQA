@@ -10,7 +10,7 @@ run curl http://stephan.kulow.org/phantomjs-2.1.1-linux-x86_64.tar.bz2 | tar xvj
 run mv phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/bin
 run rm -r phantomjs-2.1.1-linux-x86_64
 run git clone https://github.com/os-autoinst/openQA.git
-run git clone https://github.com/os-autoinst/os-autoinst.git
+run git clone -b isotovideo_cmdsrv_ipc https://github.com/Martchus/os-autoinst.git
 run curl -L https://install.perlbrew.pl | bash
 run ~/perl5/perlbrew/bin/perlbrew install -n perl-5.18.2
 run curl -L https://cpanmin.us | ~/perl5/perlbrew/bin/perlbrew exec perl - App::cpanminus  
