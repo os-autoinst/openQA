@@ -35,7 +35,7 @@ use File::Path ();
 use DBIx::Class::Timestamps 'now';
 use File::Temp 'tempdir';
 use Mojo::File qw(tempfile path);
-use Data::Dump 'dump';
+use Data::Dump qw(dump pp);
 use OpenQA::File;
 use OpenQA::Parser 'parser';
 # The state and results constants are duplicated in the Python client:
@@ -530,7 +530,7 @@ sub _hashref {
 
 sub to_hash {
     my ($job, %args) = @_;
-    my $j = _hashref($job, qw(id name priority state result clone_id t_started t_finished group_id));
+    my $j = _hashref($job, qw(id name priority state result clone_id t_started t_finished group_id blocked_by_id));
     if ($j->{group_id}) {
         $j->{group} = $job->group->name;
     }
@@ -1852,10 +1852,26 @@ sub search_for {
     return $self->$result_set->search($condition, $attrs);
 }
 
+# if the job is not blocked by chains or parallels
+sub is_edge_in_cluster {
+    my ($self, $cluster_info) = @_;
+
+    for my $key (qw(parallel_children parallel_parents chained_parents)) {
+        return 0 if scalar(@{$cluster_info->{$self->id}->{$key}}) > 0;
+    }
+    return 1;
+}
+
 sub blocked_by_parent_job {
     my ($self) = @_;
 
     my $cluster_jobs = $self->cluster_jobs;
+
+    # chained parents are part of the cluster, but don't
+    # normally become blocked_by, so make this extra step
+    return undef if $self->is_edge_in_cluster($cluster_jobs);
+
+    # now the complicated part
     my @possibly_blocked_jobs;
     for my $job_info (values %$cluster_jobs) {
         push(@possibly_blocked_jobs, @{$job_info->{parallel_children}});
@@ -1866,7 +1882,10 @@ sub blocked_by_parent_job {
         {
             dependency    => OpenQA::Schema::Result::JobDependencies->CHAINED,
             parent_job_id => {'!=' => $self->id},
-            child_job_id  => {-in => \@possibly_blocked_jobs}});
+            child_job_id  => {-in => \@possibly_blocked_jobs}
+        },
+        {order_by => ['parent_job_id', 'child_job_id']});
+
     while (my $pd = $parents->next) {
         my $p     = $pd->parent;
         my $state = $p->state;

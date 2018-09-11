@@ -623,64 +623,43 @@ foreach my $j (@{$rsp->json->{ids}}) {
     like job_result($j), qr/incomplete|skipped/, 'Job skipped/incompleted';
 }
 
+sub add_opensuse_test {
+    my ($name, %settings) = @_;
+    my @mapped_settings;
+    for my $key (keys %settings) {
+        push(@mapped_settings, {key => $key, value => $settings{$key}});
+    }
+    $t->app->db->resultset('TestSuites')->create(
+        {
+            name     => $name,
+            settings => \@mapped_settings
+        });
+    $t->app->db->resultset('JobTemplates')->create(
+        {
+            machine    => {name => '64bit'},
+            test_suite => {name => $name},
+            group_id   => 1002,
+            product_id => 1,
+        });
+}
 
 subtest 'Catch multimachine cycles' => sub {
 
-    $t->app->db->resultset('TestSuites')->create(
-        {
-            name        => "Algol-a",
-            description => 'algol a test',
-            settings    => [{key => "DESKTOP", value => "kde"}, {key => "PARALLEL_WITH", value => "Algol-b"},],
-        });
-    $t->app->db->resultset('TestSuites')->create(
-        {
-            name        => "Algol-b",
-            description => 'Bad test suite',
-            settings    => [{key => "DESKTOP", value => "kde"}, {key => "PARALLEL_WITH", value => "Algol-c"},],
-        });
-    $t->app->db->resultset('TestSuites')->create(
-        {
-            name        => "Algol-c",
-            description => 'Algol c test suite',
-            settings    => [{key => "DESKTOP", value => "kde"}, {key => "PARALLEL_WITH", value => "Algol-a,Algol-b"},],
-        });
-
-    my $master_job = $t->app->db->resultset('JobTemplates')->create(
-        {
-            machine    => {name => '64bit'},
-            test_suite => {name => 'Algol-a'},
-            prio       => 42,
-            group_id   => 1002,
-            product_id => 1,
-        });
-
-    my $slave_job = $t->app->db->resultset('JobTemplates')->create(
-        {
-            machine    => {name => '64bit'},
-            test_suite => {name => 'Algol-b'},
-            prio       => 42,
-            group_id   => 1002,
-            product_id => 1,
-        });
-
-    my $master_slave = $t->app->db->resultset('JobTemplates')->create(
-        {
-            machine    => {name => '64bit'},
-            test_suite => {name => 'Algol-c'},
-            group_id   => 1002,
-            product_id => 1,
-        });
+    # we want the data to be transient
+    $schema->txn_begin;
+    add_opensuse_test('Algol-a', PARALLEL_WITH => "Algol-b");
+    add_opensuse_test('Algol-b', PARALLEL_WITH => "Algol-c");
+    add_opensuse_test('Algol-c', PARALLEL_WITH => "Algol-a,Algol-b");
 
     my $res = schedule_iso(
         {
-            ISO        => $iso,
-            DISTRI     => 'opensuse',
-            VERSION    => '13.1',
-            FLAVOR     => 'DVD',
-            ARCH       => 'i586',
-            BUILD      => '0091',
-            PRECEDENCE => 'original',
-            _GROUP     => 'opensuse test',
+            ISO     => $iso,
+            DISTRI  => 'opensuse',
+            VERSION => '13.1',
+            FLAVOR  => 'DVD',
+            ARCH    => 'i586',
+            BUILD   => '0091',
+            _GROUP  => 'opensuse test',
         });
 
     is($res->json->{count}, 0, 'Cycle found');
@@ -689,7 +668,60 @@ subtest 'Catch multimachine cycles' => sub {
         qr/There is a cycle in the dependencies of Algol-c/,
         "Cycle reported"
     );
+    $schema->txn_rollback;
+};
 
+subtest 'Catch blocked_by cycles' => sub {
+
+    # we want the data to be transient
+    $schema->txn_begin;
+    add_opensuse_test "ha_alpha_node01_upgrade";
+    add_opensuse_test "ha_alpha_node02_upgrade";
+    add_opensuse_test "ha_supportserver_upgraded";
+    add_opensuse_test 'ha_alpha_node01_upgraded',
+      PARALLEL_WITH    => 'ha_supportserver_upgraded',
+      START_AFTER_TEST => 'ha_alpha_node01_upgrade';
+    add_opensuse_test 'ha_alpha_node02_upgraded',
+      PARALLEL_WITH    => 'ha_supportserver_upgraded',
+      START_AFTER_TEST => 'ha_alpha_node02_upgrade';
+
+    my $res = schedule_iso(
+        {
+            ISO     => $iso,
+            DISTRI  => 'opensuse',
+            VERSION => '13.1',
+            FLAVOR  => 'DVD',
+            ARCH    => 'i586',
+            BUILD   => '0091',
+            _GROUP  => 'opensuse test',
+        });
+
+    is($res->json->{count}, 5, 'All jobs scheduled');
+
+    # this kind of functional test makes it a little harder to verify data
+    my %block_hash;
+    my %id_hash;
+    for my $id (@{$res->json->{ids}}) {
+        my $job = $schema->resultset('Jobs')->find($id)->to_hash;
+        $block_hash{$job->{settings}->{TEST}} = $job->{blocked_by_id};
+        $id_hash{$job->{id}} = $job->{settings}->{TEST};
+    }
+    for my $name (keys %block_hash) {
+        $block_hash{$name} = $id_hash{$block_hash{$name} || ''};
+    }
+    is_deeply(
+        \%block_hash,
+        {
+            ha_alpha_node01_upgrade   => undef,
+            ha_alpha_node01_upgraded  => "ha_alpha_node01_upgrade",
+            ha_alpha_node02_upgrade   => undef,
+            ha_alpha_node02_upgraded  => "ha_alpha_node01_upgrade",
+            ha_supportserver_upgraded => "ha_alpha_node01_upgrade",
+        },
+        "Upgrads not blocked"
+    );
+
+    $schema->txn_rollback;
 };
 
 done_testing();
