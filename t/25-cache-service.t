@@ -46,6 +46,8 @@ use Mojolicious::Commands;
 use Mojo::UserAgent;
 use OpenQA::Test::Utils qw(fake_asset_server);
 use Mojo::Util qw(md5_sum);
+
+use constant DEBUG => $ENV{DEBUG} // 0;
 my $sql;
 my $sth;
 my $result;
@@ -63,7 +65,9 @@ my $host               = "http://localhost:$port";
 my $cache_service_host = "http://localhost:3000";
 
 make_path($ENV{LOGDIR});
+use OpenQA::Worker::Cache::Client;
 
+my $cache_client = OpenQA::Worker::Cache::Client->new(host => $cache_service_host);
 BEGIN {
     my $cachedir = path('t', 'cache.d', 'cache');
     remove_tree($cachedir);
@@ -79,54 +83,54 @@ my $daemon;
 my $cache_service = process sub {
     use OpenQA::Worker::Cache::Service;
     diag 'Starting Cache service';
-    Mojolicious::Commands->start_app('OpenQA::Worker::Cache::Service' => qw(daemon));
+    Mojolicious::Commands->start_app('OpenQA::Worker::Cache::Service' => (qw(daemon), qw(-m production) x !(DEBUG)));
     _exit(0);
 };
 
 my $worker_cache_service = process sub {
     use OpenQA::Worker::Cache::Service;
     diag 'Starting Cache Worker';
-    Mojolicious::Commands->start_app('OpenQA::Worker::Cache::Service' => qw(minion worker));
+    Mojolicious::Commands->start_app(
+        'OpenQA::Worker::Cache::Service' => (qw(minion worker), qw(-m production) x !(DEBUG)));
     _exit(0);
 };
 
 my $server_instance = process sub {
     # Connect application with web server and start accepting connections
-    $daemon = Mojo::Server::Daemon->new(app => fake_asset_server, listen => [$host]);
+    $daemon = Mojo::Server::Daemon->new(app => fake_asset_server, listen => [$host])->silent(!DEBUG);
     $daemon->run;
     _exit(0);
 };
 
-sub avl { Mojo::UserAgent->new->get(join('/', $cache_service_host, "info"))->success }
-sub _q  { Mojo::UserAgent->new->get(join('/', $cache_service_host, shift))->result->json }
-sub _p { Mojo::UserAgent->new->post(join('/', $cache_service_host, shift) => json => pop)->result->json }
-
 sub start_server {
+
+
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $worker_cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
-    sleep .5 until avl;
+    sleep .5 until $cache_client->available;
     return;
 }
 
 sub test_download {
     my ($id, $a) = @_;
-    my $resp = _p("download", {id => $id, asset => $a, type => "hdd", host => $host});
-    is($resp->{status}, OpenQA::Worker::Cache::Service::ASSET_STATUS_ENQUEUED) or die diag explain $resp;
-    # Create double request
-    $resp = _p("download", {id => $id, asset => $a, type => "hdd", host => $host});
-    is($resp->{status}, OpenQA::Worker::Cache::Service::ASSET_STATUS_IGNORE) or die diag explain $resp;
 
-    sleep .5 until (_q('status/' . $a)->{status} ne OpenQA::Worker::Cache::Service::ASSET_STATUS_IGNORE);
+    my $resp = $cache_client->asset_download({id => $id, asset => $a, type => "hdd", host => $host});
+    is($resp, OpenQA::Worker::Cache::Service::ASSET_STATUS_ENQUEUED) or die diag explain $resp;
+    # Create double request
+    $resp = $cache_client->asset_download({id => $id, asset => $a, type => "hdd", host => $host});
+    is($resp, OpenQA::Worker::Cache::Service::ASSET_STATUS_IGNORE) or die diag explain $resp;
+
+    sleep .5 until ($cache_client->asset_download_info($a) ne OpenQA::Worker::Cache::Service::ASSET_STATUS_IGNORE);
 
     #At some point, should start download
-    $resp = _q('status/' . $a);
-    is($resp->{status}, OpenQA::Worker::Cache::Service::ASSET_STATUS_DOWNLOADING) or die diag explain $resp;
+    $resp = $cache_client->asset_download_info($a);
+    is($resp, OpenQA::Worker::Cache::Service::ASSET_STATUS_DOWNLOADING) or die diag explain $resp;
 
-    sleep .5 until (_q('status/' . $a)->{status} ne OpenQA::Worker::Cache::Service::ASSET_STATUS_DOWNLOADING);
+    sleep .5 until ($cache_client->asset_download_info($a) ne OpenQA::Worker::Cache::Service::ASSET_STATUS_DOWNLOADING);
 
-    $resp = _q('status/' . $a);
-    is($resp->{status}, OpenQA::Worker::Cache::Service::ASSET_STATUS_PROCESSED) or die diag explain $resp;
+    $resp = $cache_client->asset_download_info($a);
+    is($resp, OpenQA::Worker::Cache::Service::ASSET_STATUS_PROCESSED) or die diag explain $resp;
 
     ok(-e path($cachedir)->child($a), 'Asset downloaded');
 }
@@ -134,15 +138,15 @@ sub test_download {
 start_server;
 
 subtest 'different token between restarts' => sub {
-    my $token = _q('session_token');
+    my $token = $cache_client->session_token;
     ok(defined $token);
     ok($token ne "");
+    diag "Session token: $token";
 
     start_server;
+    isnt($cache_client->session_token, $token) or die diag $cache_client->session_token;
 
-    isnt(_q('session_token'), $token);
-
-    $token = _q('session_token');
+    $token = $cache_client->session_token;
     ok(defined $token);
     ok($token ne "");
 };
@@ -156,12 +160,11 @@ subtest 'Asset download' => sub {
     test_download(922756, 'sle-12-SP3-x86_64-0368-200_123200@64bit.qcow2');
 };
 
-
 subtest 'Race for same asset' => sub {
     my $a   = 'sle-12-SP3-x86_64-0368-200_123200@64bit.qcow2';
     my $sum = md5_sum(path($cachedir)->child($a)->slurp);
     unlink path($cachedir)->child($a);
-    ok(!-e path($cachedir)->child($a), 'Asset absent');
+    ok(!-e path($cachedir)->child($a), 'Asset absent') or die diag "Asset already exists - abort test";
 
     my $tot_proc   = $ENV{STRESS_TEST} ? 100 : 10;
     my $concurrent = $ENV{STRESS_TEST} ? 30  : 2;
@@ -173,8 +176,8 @@ subtest 'Race for same asset' => sub {
     #diag "Testing downloading " . (scalar @test) . " assets of ($sum) @test size";
 
     my $concurrent_test = sub {
-        _p("download", {id => 922756, asset => $a, type => "hdd", host => $host});
-        sleep .5 until (_q('status/' . $a)->{status} ne OpenQA::Worker::Cache::Service::ASSET_STATUS_DOWNLOADING);
+        $cache_client->asset_download("download", {id => 922756, asset => $a, type => "hdd", host => $host});
+        sleep .5 until ($cache_client->asset_download_info($a) ne OpenQA::Worker::Cache::Service::ASSET_STATUS_IGNORE);
     };
 
     $q->add(process($concurrent_test)->set_pipes(0)->internal_pipes(0)) for 1 .. $tot_proc;
@@ -182,7 +185,7 @@ subtest 'Race for same asset' => sub {
     $q->consume();
     is $q->done->size, $tot_proc, 'Queue consumed ' . $tot_proc . ' processes';
 
-    ok(-e path($cachedir)->child($a), 'Asset downloaded');
+    ok(-e path($cachedir)->child($a), 'Asset downloaded') or die diag "Failed - no asset is there``";
     is($sum, md5_sum(path($cachedir)->child($a)->slurp), 'Download not corrupted');
 };
 

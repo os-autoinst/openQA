@@ -19,28 +19,29 @@ use Mojolicious::Lite;
 use OpenQA::Worker::Cache::Task::Asset;
 use Mojolicious::Plugin::Minion;
 
+BEGIN { srand(time) }
+use constant CACHE_FAILED => 000;
+
 use constant ASSET_STATUS_PROCESSED   => 001;
 use constant ASSET_STATUS_ENQUEUED    => 002;
 use constant ASSET_STATUS_DOWNLOADING => 003;
 use constant ASSET_STATUS_IGNORE      => 004;
 use constant ASSET_STATUS_ERROR       => 005;
-use constant SESSION_TOKEN            => int(rand(999999999999));
+my $tk;
+app->hook(
+    before_server_start => sub {
+        $tk = int(rand(999999999999));
+    });
 
+sub SESSION_TOKEN { $tk }
 plugin 'OpenQA::Worker::Cache::Task::Asset';
 
-get '/session_token' => sub {
-    my $c = shift;
-    $c->render(json => {session_token => SESSION_TOKEN()});
-};
-
-get '/info' => sub {
-    my $c = shift;
-    $c->render(json => $c->minion->stats);
-};
+get '/session_token' => sub { shift->render(json => {session_token => SESSION_TOKEN()}) };
+get '/info' => sub { $_[0]->render(json => shift->minion->stats) };
 
 sub _gen_guard_name { join('.', SESSION_TOKEN, pop) }
 
-sub _exists { !!defined $_[0] && exists $_[0]->{total} && $_[0]->{total} > 0 }
+sub _exists { !!(defined $_[0] && exists $_[0]->{total} && $_[0]->{total} > 0) }
 
 sub enqueued { _exists(app->minion->backend->list_jobs(0, 1, {states => ['inactive'], notes => {token => shift}})) }
 
