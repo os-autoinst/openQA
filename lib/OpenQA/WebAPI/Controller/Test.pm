@@ -100,25 +100,9 @@ sub list {
         groupid => $groupid,
         assetid => $assetid
     );
-    #    $self->stash(blocked => $scheduled->search({-not => {blocked_by_id => undef}})->count);
-
-    # @scheduled = sort {
-    #     if ($b->{job} && $a->{job}) {
-    #         $b->{job}->t_created <=> $a->{job}->t_created || $b->{job}->id <=> $a->{job}->id;
-    #     }
-    #     elsif ($b->{job}) {
-    #         1;
-    #     }
-    #     elsif ($a->{job}) {
-    #         -1;
-    #     }
-    #     else {
-    #         0;
-    #     }
-    # }
-    my @scheduled = $scheduled->search({})->all;
-    @scheduled = sort { $b->t_created <=> $a->t_created || $b->id <=> $a->id } @scheduled;
-    $self->stash(scheduled => \@scheduled);
+    $self->stash(blocked => {map { $_->id => \undef } $scheduled->search({-not => {blocked_by_id => undef}})->all});
+    $self->stash(
+        scheduled => [$scheduled->search(undef, {order_by => [{-desc => 'me.t_created'}, {-desc => 'me.id'}]})->all]);
 }
 
 sub prefetch_comment_counts {

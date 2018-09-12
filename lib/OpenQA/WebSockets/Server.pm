@@ -20,7 +20,7 @@ use Mojo::Util 'hmac_sha1_sum';
 use Try::Tiny;
 
 use OpenQA::IPC;
-use OpenQA::Utils qw(log_debug log_warning log_error);
+use OpenQA::Utils qw(log_debug log_warning log_info log_error);
 use OpenQA::Schema;
 use OpenQA::Setup;
 use Data::Dumper;
@@ -183,7 +183,7 @@ sub _finish {
         log_error('Worker not found for given connection during connection close');
         return;
     }
-    log_debug(sprintf("Worker %u websocket connection closed - $code", $worker->{id}));
+    log_info(sprintf("Worker %u websocket connection closed - $code", $worker->{id}));
     # if the server disconnected from web socket, mark it dead so it doesn't get new
     # jobs assigned from scheduler (which will check DB and not WS state)
     my $dt = DateTime->now(time_zone => 'UTC');
@@ -209,7 +209,7 @@ sub _message {
     }
 
     # This is to make sure that no worker can skip the _registration.
-    if (($worker->{db}->get_websocket_api_version() || 0) != WEBSOCKET_API_VERSION) {
+    if (($worker->{db}->websocket_api_version() || 0) != WEBSOCKET_API_VERSION) {
         log_warning("Received a message from an incompatible worker " . $worker->{id});
         $ws->tx->send({json => {type => 'incompatible'}});
         $ws->finish("1008",
@@ -408,7 +408,7 @@ sub _workers_checker {
             });
     }
     catch {
-        log_debug("Failed dead job detection : $_");
+        log_info("Failed dead job detection : $_");
     };
 
 

@@ -35,7 +35,7 @@ use File::Path ();
 use DBIx::Class::Timestamps 'now';
 use File::Temp 'tempdir';
 use Mojo::File qw(tempfile path);
-use Data::Dump 'dump';
+use Data::Dump qw(dump pp);
 use OpenQA::File;
 use OpenQA::Parser 'parser';
 # The state and results constants are duplicated in the Python client:
@@ -530,7 +530,7 @@ sub _hashref {
 
 sub to_hash {
     my ($job, %args) = @_;
-    my $j = _hashref($job, qw(id name priority state result clone_id t_started t_finished group_id));
+    my $j = _hashref($job, qw(id name priority state result clone_id t_started t_finished group_id blocked_by_id));
     if ($j->{group_id}) {
         $j->{group} = $job->group->name;
     }
@@ -695,6 +695,12 @@ sub create_clones {
         # when dependency network is recreated, associate assets
         $res->register_assets_from_settings;
     }
+
+    # calculate blocked_by
+    for my $job (keys %$jobs) {
+        $clones{$job}->calculate_blocked_by;
+    }
+
     # reduce the clone object to ID (easier to use later on)
     for my $job (keys %$jobs) {
         $jobs->{$job}->{clone} = $clones{$job}->id;
@@ -1458,7 +1464,6 @@ sub allocate_network {
 
     my $vlan = $self->_find_network($name);
     return $vlan if $vlan;
-
     #allocate new
     my @used_rs = $self->result_source->schema->resultset('JobNetworks')->search(
         {},
@@ -1479,6 +1484,7 @@ sub allocate_network {
                     my $found = $self->networks->find_or_new({name => $name, vlan => $vlan});
                     unless ($found->in_storage) {
                         $found->insert;
+                        log_debug("Created network for " . $self->id . " : $vlan");
                         # return the vlan tag only if we are sure it is in the DB
                         $created = 1 if ($found->in_storage);
                     }
@@ -1488,7 +1494,17 @@ sub allocate_network {
             log_debug("Failed to create new vlan tag: $vlan");
             next;
         };
-        return $vlan if $created;
+        if ($created) {
+            # mark it for the whole cluster - so that the vlan only appears
+            # if all of the cluster is gone.
+            for my $cj (keys %{$self->cluster_jobs}) {
+                next if $cj == $self->id;
+                $self->result_source->schema->resultset('JobNetworks')
+                  ->create({name => $name, vlan => $vlan, job_id => $cj});
+            }
+
+            return $vlan;
+        }
     }
 }
 
@@ -1682,7 +1698,6 @@ sub _job_stop_child {
         $job->update({result => SKIPPED, state => CANCELLED});
     }
     else {
-        print STDERR "JOB State " . $job->id . " " . $job->state . "\n";
         $job->update({result => PARALLEL_FAILED});
         if ($job->worker) {
             $job->worker->send_command(command => 'cancel', job_id => $job->id);
@@ -1771,6 +1786,7 @@ sub done {
 
     # bugrefs are there to mark reasons of failure - the function checks itself though
     $self->carry_over_bugrefs;
+    $self->unblock;
 
     return $result;
 }
@@ -1836,13 +1852,40 @@ sub search_for {
     return $self->$result_set->search($condition, $attrs);
 }
 
+# if the job is not blocked by chains or parallels
+sub is_edge_in_cluster {
+    my ($self, $cluster_info) = @_;
+
+    for my $key (qw(parallel_children parallel_parents chained_parents)) {
+        return 0 if scalar(@{$cluster_info->{$self->id}->{$key}}) > 0;
+    }
+    return 1;
+}
+
 sub blocked_by_parent_job {
     my ($self) = @_;
 
-    my $parents = $self->parents->search(
+    my $cluster_jobs = $self->cluster_jobs;
+
+    # chained parents are part of the cluster, but don't
+    # normally become blocked_by, so make this extra step
+    return undef if $self->is_edge_in_cluster($cluster_jobs);
+
+    # now the complicated part
+    my @possibly_blocked_jobs;
+    for my $job_info (values %$cluster_jobs) {
+        push(@possibly_blocked_jobs, @{$job_info->{parallel_children}});
+        push(@possibly_blocked_jobs, @{$job_info->{parallel_parents}});
+        push(@possibly_blocked_jobs, $self->id);
+    }
+    my $parents = $self->result_source->schema->resultset('JobDependencies')->search(
         {
-            dependency => OpenQA::Schema::Result::JobDependencies->CHAINED,
-        });
+            dependency    => OpenQA::Schema::Result::JobDependencies->CHAINED,
+            parent_job_id => {'!=' => $self->id},
+            child_job_id  => {-in => \@possibly_blocked_jobs}
+        },
+        {order_by => ['parent_job_id', 'child_job_id']});
+
     while (my $pd = $parents->next) {
         my $p     = $pd->parent;
         my $state = $p->state;

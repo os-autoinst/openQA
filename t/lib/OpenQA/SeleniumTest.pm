@@ -105,7 +105,7 @@ sub start_driver {
         }
         $opts{custom_args} = "--log-path=t/log_chromedriver";
         unless ($ENV{NOT_HEADLESS}) {
-            push(@{$opts{extra_capabilities}{chromeOptions}{args}}, ('--headless', '--disable-gpu'));
+            push(@{$opts{extra_capabilities}{chromeOptions}{args}}, ('--headless', '--disable-gpu', '--no-sandbox'));
         }
         $_driver = Test::Selenium::Chrome->new(%opts);
         $_driver->set_implicit_wait_timeout(2000);

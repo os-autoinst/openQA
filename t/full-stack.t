@@ -29,13 +29,7 @@ BEGIN {
     $ENV{OPENQA_CONFIG} = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
     # Since tests depends on timing, we require the scheduler to be fixed in its actions.
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 4000;
-    $ENV{OPENQA_SCHEDULER_TIMESLOT}           = $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS};
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 1;
-    $ENV{OPENQA_SCHEDULER_FIND_JOB_ATTEMPTS}  = 1;
-    $ENV{OPENQA_SCHEDULER_CONGESTION_CONTROL} = 1;
-    $ENV{OPENQA_SCHEDULER_BUSY_BACKOFF}       = 1;
-    $ENV{OPENQA_SCHEDULER_MAX_BACKOFF}        = 8000;
-    $ENV{OPENQA_SCHEDULER_WAKEUP_ON_REQUEST}  = 0;
     # ensure the web socket connection won't timeout
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 10 * 60;
     path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
@@ -76,12 +70,11 @@ plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' u
 my $workerpid;
 my $wspid;
 my $livehandlerpid;
-my $schedulerpid;
 my $resourceallocatorpid;
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 
 sub turn_down_stack {
-    for my $pid ($workerpid, $wspid, $livehandlerpid, $schedulerpid, $resourceallocatorpid) {
+    for my $pid ($workerpid, $wspid, $livehandlerpid, $resourceallocatorpid) {
         next unless $pid;
         kill TERM => $pid;
         waitpid($pid, 0);
@@ -107,14 +100,6 @@ OpenQA::Test::FullstackUtils::setup_database();
 
 # make sure the assets are prefetched
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
-
-$schedulerpid = fork();
-if ($schedulerpid == 0) {
-    use OpenQA::Scheduler;
-    OpenQA::Scheduler::run;
-    Devel::Cover::report() if Devel::Cover->can('report');
-    _exit(0);
-}
 
 $resourceallocatorpid = start_resourceallocator;
 
@@ -168,6 +153,10 @@ sub start_worker {
     if ($workerpid == 0) {
         exec("perl ./script/worker --instance=1 $connect_args --isotovideo=../os-autoinst/isotovideo --verbose");
         die "FAILED TO START WORKER";
+    }
+    else {
+        ok($workerpid, "Worker started as $workerpid");
+        OpenQA::Test::FullstackUtils::schedule_one_job;
     }
 }
 
@@ -242,6 +231,7 @@ $driver->refresh();
 like($driver->find_element('#result-row .card-body')->get_text(), qr/Cloned as 2/, 'test 1 is restarted');
 $driver->click_element_ok('2', 'link_text');
 
+OpenQA::Test::FullstackUtils::schedule_one_job;
 OpenQA::Test::FullstackUtils::wait_for_job_running($driver);
 
 kill_worker;
@@ -263,16 +253,12 @@ subtest 'cancel a scheduled job' => sub {
     # to detect it as dead before it's moved back to scheduled
     OpenQA::Test::FullstackUtils::wait_for_result_panel(
         $driver,
-        qr/State: (scheduled|assigned)/,
+        qr/State: scheduled/,
         'Test 3 is scheduled',
         undef, 0.2,
     );
 
     my @cancel_button = $driver->find_elements('cancel_running', 'id');
-    if (!@cancel_button) {
-        note('test is already assigned, can not test cancelling');
-        return;
-    }
     $cancel_button[0]->click();
 };
 
@@ -346,10 +332,11 @@ subtest 'Cache tests' => sub {
     #] restore syntax highlighting in Kate
 
     $driver->get('/tests/5');
-    like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled');
+    like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled')
+      or die;
     ok(!-e $db_file, "cache.sqlite is not present");
     start_worker;
-    OpenQA::Test::FullstackUtils::wait_for_job_running($driver);
+    OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 1);
     ok(-e $db_file, "cache.sqlite file created");
     ok(!-d path($cache_location, "test_directory"), "Directory within cache, not present after deploy");
     ok(!-e $cache_location->child("test.file"), "File within cache, not present after deploy");
@@ -463,6 +450,7 @@ subtest 'Cache tests' => sub {
         );
     }
     OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP HDD_1=non-existent.qcow2");
+    OpenQA::Test::FullstackUtils::schedule_one_job;
     $driver->get('/tests/8');
     OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: incomplete/, 'test 8 is incomplete');
 
