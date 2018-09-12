@@ -31,6 +31,8 @@ use OpenQA::Test::Case;
 use OpenQA::Test::FakeWebSocketTransaction;
 use OpenQA::WebAPI::Controller::Developer;
 use OpenQA::WebAPI::Controller::LiveViewHandler;
+use OpenQA::Client;
+use Mojo::IOLoop;
 use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
 
 # mock OpenQA::Schema::Result::Jobs::cancel()
@@ -67,6 +69,32 @@ sub set_fake_status_java_script_transactions {
     $t_livehandler->app->status_java_script_transactions_by_job->{$job_id} = $fake_transactions;
 }
 
+my $finished_handled_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::LiveViewHandler');
+my $finished_handled;
+sub prepare_waiting_for_finished_handled {
+    my $subroutine_name = 'handle_disconnect_from_java_script_client';
+    $finished_handled = 0;
+    $finished_handled_mock->mock(
+        $subroutine_name => sub {
+            $finished_handled_mock->original($subroutine_name)->(@_);
+            $finished_handled = 1;
+        });
+}
+sub wait_for_finished_handled {
+    # wait until the finished event is handled (but at most 5 seconds)
+    if (!$finished_handled) {
+        my $timer = Mojo::IOLoop->timer(
+            5.0 => sub {
+
+            });
+        Mojo::IOLoop->one_tick;
+        Mojo::IOLoop->remove($timer);
+    }
+
+    $finished_handled_mock->unmock_all();
+    fail('finished event not handled within 5 seconds') if (!$finished_handled);
+}
+
 # get CSRF token for auth
 my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
 # note: since the openqa-livehandler daemon doesn't provide its own way to login, we
@@ -94,7 +122,23 @@ my %no_developer = (
     developer_name               => undef,
     developer_session_started_at => undef,
     developer_session_tab_count  => 0,
+    outstanding_files            => undef,
+    outstanding_images           => undef,
+    upload_up_to_current_module  => undef,
 );
+
+subtest 'store upload progress as JSON in database on worker-level' => sub {
+    my $worker = $workers->find({job_id => 99961});
+    is($worker->upload_progress, undef, 'by default null');
+
+    $worker->update({upload_progress => {some => 'json'}});
+    $worker = $workers->find({job_id => 99961});
+    is_deeply($worker->upload_progress, {some => 'json'}, 'get and set json data');
+
+    $worker->unprepare_for_work();
+    $worker = $workers->find({job_id => 99961});
+    is($worker->upload_progress, undef, 'null after unpreparing');
+};
 
 subtest 'send message to JavaScript clients' => sub {
     # create fake java script connections for job 99961
@@ -165,6 +209,9 @@ subtest 'send message to JavaScript clients' => sub {
                         developer_name               => 'artie',
                         developer_session_started_at => $session_t_created,
                         developer_session_tab_count  => 2,
+                        outstanding_files            => undef,
+                        outstanding_images           => undef,
+                        upload_up_to_current_module  => undef,
                     }}
             },
             {
@@ -410,6 +457,10 @@ subtest 'URLs for command server and livehandler' => sub {
 
     $job->update({assigned_worker_id => $worker->id});
     is(OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
+        undef, 'no URL for job without JOBTOKEN');
+
+    $worker->set_property(JOBTOKEN => 'token99961');
+    is(OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),
         undef, 'no URL for job when worker has not propagated the URL yet');
 
     $worker->set_property(CMD_SRV_URL => 'http://remotehost:20013/token99964');
@@ -433,8 +484,58 @@ subtest 'URLs for command server and livehandler' => sub {
         'liveviewhandler/tests/99961/developer/ws-proxy/status',
         'URL for livehandler status route'
     );
-
 };
+
+# save app and user agent to be able to restore
+my ($app, $ua) = ($t_livehandler->app, $t_livehandler->ua);
+
+subtest 'post upload progress' => sub {
+    my $path = '/liveviewhandler/api/v1/jobs/99961/upload_progress';
+    $t_livehandler->post_ok($path)->status_is(403, 'upload_progress route requires API authentification');
+
+    # use OpenQA::Client for authentification
+    $t_livehandler->ua(
+        OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
+    $t_livehandler->app($app);
+
+    # test error handling
+    $t_livehandler->post_ok('/liveviewhandler/api/v1/jobs/42/upload_progress', json => {})
+      ->status_is(400, 'job does not exist');
+
+    # test successful post
+    my %upload_progress = (
+        outstanding_images          => 3,
+        outstanding_files           => 0,
+        upload_up_to_current_module => 1,
+    );
+    $t_livehandler->post_ok($path, json => \%upload_progress)->status_is(200, 'post ok');
+    my $worker = $workers->find({job_id => 99961});
+    is_deeply($worker->upload_progress, \%upload_progress, 'progress stored on worker');
+
+    # test whether info is included in info hash
+    my $live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
+    my $hash              = {};
+    $live_view_handler->app($t_livehandler->app);
+    $live_view_handler->add_further_info_to_hash(99961, $hash);
+    is_deeply(
+        $hash,
+        {
+            developer_id                 => undef,
+            developer_name               => undef,
+            developer_session_started_at => undef,
+            developer_session_tab_count  => 0,
+            %upload_progress
+        },
+        'upload progress added to info hash'
+    );
+
+    # revert state
+    $worker->update({upload_progress => undef});
+};
+
+# restore app and user agent
+$t_livehandler->ua($ua);
+$t_livehandler->app($app);
 
 subtest 'websocket proxy (connection from client to live view handler not mocked)' => sub {
     # dumps the state of the websocket connections established in the following subtests
@@ -463,6 +564,8 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
     };
 
     subtest 'job without assigned worker' => sub {
+        prepare_waiting_for_finished_handled();
+
         $t_livehandler->websocket_ok(
             '/liveviewhandler/tests/99962/developer/ws-proxy',
             'establish ws connection from JavaScript to livehandler'
@@ -476,6 +579,8 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             });
         $t_livehandler->finished_ok(1011);
 
+        wait_for_finished_handled();
+
         is($developer_sessions->count, 1, 'developer session opened');
         my $developer_session = $developer_sessions->first;
         is($developer_session->ws_connection_count, 0,     'all ws connections finished');
@@ -484,6 +589,8 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
     };
 
     subtest 'job with assigned worker, but os-autoinst not reachable' => sub {
+        prepare_waiting_for_finished_handled();
+
         $t_livehandler->websocket_ok(
             '/liveviewhandler/tests/99961/developer/ws-proxy',
             'establish ws connection from JavaScript to livehandler'
@@ -504,6 +611,8 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             });
         $t_livehandler->finished_ok(1011);
 
+        wait_for_finished_handled();
+
         my $developer_session = $developer_sessions->find(99961);
         is($developer_sessions->count,              2,     'another developer session opened');
         is($developer_session->ws_connection_count, 0,     'all ws connections finished');
@@ -515,6 +624,8 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
     set_fake_cmd_srv_transaction(99961, $fake_cmd_srv_tx);
 
     subtest 'job with assigned worker, fake os-autoinst' => sub {
+        prepare_waiting_for_finished_handled();
+
         # connect to ws proxy again, should use the fake connection now
         $t_livehandler->websocket_ok(
             '/liveviewhandler/tests/99961/developer/ws-proxy',
@@ -567,6 +678,8 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
 
         # closing connection will reset counter and bookkeeping of ongoing transations
         $t_livehandler->finish_ok();
+        wait_for_finished_handled();
+
         is($developer_sessions->find(99961)->ws_connection_count, 0, 'ws connection finished');
         is(scalar @{$t_livehandler->app->devel_java_script_transactions_by_job->{99961} // []},
             0, 'devel js transactions cleaned');
@@ -650,6 +763,9 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
         $t_livehandler->message_ok('message received');
         $t_livehandler->finish_ok();
     };
+
+    # note: This test might throw an exception at the end when using Mojo 7.83 - 7.91
+    #       (see https://github.com/kraih/mojo/commit/61f6cbf22c7bf8eb4787bd1014d91ee2416c73e7).
 };
 
 done_testing();

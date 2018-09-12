@@ -88,6 +88,7 @@ sub send_message_to_java_script_clients {
             return if ($outstanding_transmissions -= 1);
             $self->finish_all_connections($job_id, $status_code_to_quit_on_finished);
         }) for (@all_java_script_transactions_for_job);
+    return $outstanding_transmissions;
 }
 
 # same as send_message_to_java_script_clients, but quits the development session after everything is sent
@@ -148,7 +149,7 @@ sub quit_development_session {
     # set default status code to "normal closure"
     $status_code //= 1000;
 
-    # remove the session from the database
+    # unregister session in the database
     $self->developer_sessions->unregister($job_id);
 
     # finish connections to all development session JavaScript clients
@@ -172,6 +173,11 @@ sub quit_development_session {
     }
 }
 
+# handles a message from the java script web socket connection (not status-only)
+#  * expecting valid JSON here in 'os-autoinst' compatible form, eg.
+#      {"cmd":"set_pause_at_test","name":"installation-welcome"}
+#  * a selected set of commands is passed to os-autoinst backend
+#  * some commands are handled internally
 sub handle_message_from_java_script {
     my ($self, $job_id, $msg) = @_;
 
@@ -217,11 +223,33 @@ sub handle_message_from_java_script {
     $self->send_message_to_os_autoinst($job_id, $json);
 }
 
-# extends the status info hash from os-autoinst with the session info
-sub add_session_info_to_hash {
+# handles a disconnect of the web socket connection (not status-only)
+sub handle_disconnect_from_java_script_client {
+    my ($self, $job_id, $java_script_tx, $user_name) = @_;
+
+    $self->app->log->debug('client disconnected: ' . $user_name);
+
+    $self->remove_java_script_transaction($job_id, $self->devel_java_script_transactions_by_job, $java_script_tx);
+
+    my $session = $self->developer_sessions->find({job_id => $job_id}) or return;
+    $session->update({ws_connection_count => \'ws_connection_count - 1'});    #'restore syntax highlighting
+
+    # send status update to remaining JavaScript clients
+    $self->send_session_info($job_id);
+}
+
+sub find_upload_progress {
+    my ($self, $job_id) = @_;
+
+    my $workers = $self->app->schema->resultset('Workers');
+    my $worker = $workers->find({job_id => $job_id}) or return undef;
+    return $worker->upload_progress;
+}
+
+# extends the status info hash from os-autoinst with the session info and worker info
+sub add_further_info_to_hash {
     my ($self, $job_id, $hash) = @_;
-    my $session = $self->developer_sessions->find($job_id);
-    if ($session) {
+    if (my $session = $self->developer_sessions->find($job_id)) {
         my $user = $session->user;
         $hash->{developer_id}                 = $user->id;
         $hash->{developer_name}               = $user->name;
@@ -234,12 +262,16 @@ sub add_session_info_to_hash {
         $hash->{developer_session_started_at} = undef;
         $hash->{developer_session_tab_count}  = 0;
     }
+    my $progress_info = $self->find_upload_progress($job_id) // {};
+    for my $key (qw(outstanding_images outstanding_files upload_up_to_current_module)) {
+        $hash->{$key} = $progress_info->{$key};
+    }
 }
 
 # broadcasts a message from os-autoinst to js clients; adds the session info if the message is the status hash
 sub handle_message_from_os_autoinst {
     my ($self, $job_id, $json) = @_;
-    $self->add_session_info_to_hash($job_id, $json) if ($json->{running});
+    $self->add_further_info_to_hash($job_id, $json) if ($json->{running});
     $self->send_message_to_java_script_clients($job_id, info => 'cmdsrvmsg', $json);
 }
 
@@ -341,7 +373,7 @@ sub send_session_info {
     my ($self, $job_id) = @_;
 
     my %status_info;
-    $self->add_session_info_to_hash($job_id, \%status_info);
+    $self->add_further_info_to_hash($job_id, \%status_info);
     $self->send_message_to_java_script_clients($job_id, info => 'cmdsrvmsg', \%status_info);
 }
 
@@ -428,31 +460,15 @@ sub ws_proxy {
             });
     }
 
-    # handle messages from the JavaScript
-    #  * expecting valid JSON here in 'os-autoinst' compatible form, eg.
-    #      {"cmd":"set_pause_at_test","name":"installation-welcome"}
-    #  * a selected set of commands is passed to os-autoinst backend
-    #  * some commands are handled internally
+    # handle messages/disconnect from the JavaScript client (not status-only)
     $self->on(
         message => sub {
             my ($tx, $msg) = @_;
             $self->handle_message_from_java_script($job_id, $msg);
         });
-
-    # handle web socket connection being quit from the JavaScript-side
     $self->on(
         finish => sub {
-            $self->remove_java_script_transaction($job_id, $self->devel_java_script_transactions_by_job,
-                $java_script_tx);
-
-            $app->log->debug('client disconnected: ' . $user->name);
-            my $session = $developer_sessions->find({job_id => $job_id}) or return;
-            # note: it is likely not useful to quit the development session instantly because the user
-            #       might just have pressed the reload button
-            $session->update({ws_connection_count => \'ws_connection_count - 1'});    #'restore syntax highlighting
-
-            # send status update to remaining JavaScript clients
-            $self->send_session_info($job_id);
+            $self->handle_disconnect_from_java_script_client($job_id, $java_script_tx, $user->name);
         });
 }
 
@@ -460,6 +476,28 @@ sub ws_proxy {
 sub proxy_status {
     my ($self) = @_;
     return $self->ws_proxy('status');
+}
+
+# handles the request by the worker to post the upload progress
+sub post_upload_progress {
+    my ($self) = @_;
+
+    # handle errors
+    my $progress_info = $self->req->json
+      or return $self->render(json => {error => 'No progress information provided'}, status => 400);
+    my $job = $self->find_current_job()
+      or return $self->render(json => {error => 'The job ID does not refer to a running job'}, status => 400);
+    my $job_id = $job->id;
+    my $worker = $job->assigned_worker
+      or return $self->render(json => {error => 'The job as no assigned worker'}, status => 400);
+
+    # save upload progress so it can be included in the status info which is emitted when a new client connects
+    $worker->update({upload_progress => $progress_info});
+
+    # broadcast the upload progress to all connected java script web socket clients for this job
+    my $broadcast_count
+      = $self->send_message_to_java_script_clients($job_id, info => 'upload progress', $progress_info);
+    return $self->render(json => {broadcast_count => $broadcast_count}, status => 200);
 }
 
 # handles attempts to access a web socket route which does not exists ("404 for web sockets")

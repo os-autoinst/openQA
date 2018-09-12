@@ -33,7 +33,7 @@ our @EXPORT = qw($job $instance $worker_settings $pooldir $nocleanup
   $worker_caps $testresults update_setup_status
   STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
   add_timer remove_timer change_timer get_timer
-  api_call verify_workerid register_worker ws_call);
+  api_call verify_workerid register_worker);
 
 # Exported variables
 our $job;
@@ -186,20 +186,26 @@ sub api_call {
     my $callback      = $args{callback} // sub { };
     my $ignore_errors = $args{ignore_errors} // 0;
     my $tries         = $args{tries} // 3;
+    my $non_critical  = $args{non_critical} // 0;
 
     do { OpenQA::Worker::Jobs::_reset_state(); die 'No worker id or webui host set!'; } unless verify_workerid($host);
 
+    # build URL
     $method = uc $method;
     my $ua_url = $hosts->{$host}{url}->clone;
     my $ua     = $hosts->{$host}{ua};
-
-    $ua_url->path($path =~ s/^\///r);
+    $ua_url->path($path);
     $ua_url->query($params) if $params;
-
+    # adjust port for separate daemons like the liveviewhandler
+    # (see also makeWsUrlAbsolute() in openqa.js)
+    if (my $service_port_delta = $args{service_port_delta}) {
+        if (my $webui_port = $ua_url->port()) {
+            $ua_url->port($webui_port + $service_port_delta);
+        }
+    }
     log_debug("$method $ua_url");
 
     my @args = ($method, $ua_url);
-
     if ($json_data) {
         push @args, 'json', $json_data;
     }
@@ -244,7 +250,7 @@ sub api_call {
         }
         log_error($msg . " (remaining tries: $tries)");
 
-        if (!$tries) {
+        if (!$tries && !$non_critical) {
             # abort the current job, we're in trouble - but keep running to grab the next
             OpenQA::Worker::Jobs::stop_job('api-failure');
             # stop accepting jobs and schedule reregistration - keep the rest running
@@ -264,16 +270,6 @@ sub api_call {
         );
     };
     $ua->start($tx => sub { $cb->(@_, $tries) });
-}
-
-sub ws_call {
-    my ($type, $data) = @_;
-    die 'Current host not set!' unless $current_host;
-
-    # this call is also non blocking, result and image upload is handled by json handles
-    log_debug("WEBSOCKET: $type");
-    my $ws = $hosts->{$current_host}{ws};
-    $ws->send({json => {type => $type, jobid => $job->{id} || '', data => $data}});
 }
 
 sub _get_capabilities {
@@ -430,7 +426,7 @@ sub call_websocket {
                           . "\"$hosts->{$host}{url}{host}\""
                           . " to WebSocket: "
                           . ($err->{code} ? $err->{code} : "[no code]")
-                          . ". proxy_wstunnel enabled?";
+                          . ". Apache modules proxy_wstunnel and rewrite enabled?";
 
                         if ($err->{code} && $err->{code} eq '404' && $hosts->{$host}{workerid}) {
                             # worker id suddenly not known anymore. Abort. If workerid

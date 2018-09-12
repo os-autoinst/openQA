@@ -318,6 +318,9 @@ var developerMode = {
     moduleToPauseAt: undefined,             // name of the module to pause at, eg. "installation-welcome"
     pauseAtTimeout: undefined,              // whether to pause on assert_screen timeout
     isPaused: undefined,                    // if paused the reason why as a string; otherwise something which evaluates to false
+    outstandingImagesToUpload: undefined,   // number of images which still need to be uploaded by the worker
+    outstandingFilesToUpload: undefined,    // number of other files which still need to be uploaded by the worker
+    uploadingUpToCurrentModule: undefined,  // whether the worker will upload up to the current module (happens when paused in the middle of a module)
 
     // state of development session (comes from the openQA ws proxy)
     develSessionDeveloper: undefined,       // name of the user in possession the development session
@@ -327,6 +330,12 @@ var developerMode = {
     // returns whether there's a development session but it doesn't belong to us
     lockedByOtherDeveloper: function() {
         return this.develSessionDeveloper && !this.ownSession;
+    },
+
+    // returns whether the needle editor is ready
+    // (results for the current module must have been uploaded yet)
+    needleEditorReady: function() {
+        return this.isPaused && this.uploadingUpToCurrentModule && this.outstandingImagesToUpload === 0 && this.outstandingFilesToUpload === 0;
     },
 
     // returns the specified property evaluating possibly assigned functions
@@ -448,6 +457,9 @@ function updateDeveloperPanel() {
         statusInfo = 'paused';
         if (developerMode.currentModule) {
             statusInfo += ' at module: ' + developerMode.currentModule;
+        }
+        if (developerMode.outstandingImagesToUpload || developerMode.outstandingFilesToUpload) {
+            statusInfo += ', uploading results';
         }
         $('#developer-pause-reason').text('(reason: ' + developerMode.isPaused + ')');
     } else if (moduleToPauseAtStillAhead) {
@@ -724,7 +736,19 @@ var messageToStatusVariable = [
         action: function() {
             developerMode.isPaused = false;
         },
-    }
+    },
+    {
+        msg: 'outstanding_images',
+        statusVar: 'outstandingImagesToUpload',
+    },
+    {
+        msg: 'outstanding_files',
+        statusVar: 'outstandingFilesToUpload',
+    },
+    {
+        msg: 'upload_up_to_current_module',
+        statusVar: 'uploadingUpToCurrentModule',
+    },
 ];
 
 // handles messages received via web socket connection
@@ -743,6 +767,7 @@ function processWsCommand(obj) {
     case "info":
         switch(what) {
         case "cmdsrvmsg":
+        case "upload progress":
             // reset error state
             developerMode.reconnectAttempts = 0;
             developerMode.hasWsError = false;

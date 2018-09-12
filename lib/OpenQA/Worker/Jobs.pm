@@ -55,7 +55,9 @@ my $update_status_running;
 my $boundary = '--a_sTrinG-thAt_wIll_n0t_apPEar_iN_openQA_uPloads-61020111';
 
 my $tosend_images = {};
+my $known_images  = undef;
 my $tosend_files  = [];
+my $progress_info = {};
 
 our $do_livelog;
 
@@ -723,32 +725,76 @@ sub upload_status {
     $status->{result}->{$current_running}->{result} = 'running' if ($current_running);
 
     # upload status to web UI
-    if ($ENV{WORKER_USE_WEBSOCKETS}) {
-        ws_call('status', $status);
+    my $job_id = $job->{id};
+    ignore_known_images();
+    post_upload_progress_to_liveviewhandler($job_id, $upload_up_to);
+    api_call(
+        'post',
+        "jobs/$job_id/status",
+        json     => {status => $status},
+        callback => sub {
+            handle_status_upload_finished($job_id, $upload_up_to, $callback, @_);
+        });
+    return 1;
+}
+
+sub handle_status_upload_finished {
+    my ($job_id, $upload_up_to, $callback, $res) = @_;
+
+    # continue uploading images, except web UI considers this worker already dead
+    if (!$res) {
+        log_error('Job aborted because web UI doesn\'t accept updates anymore (likely considers this job dead)');
     }
     else {
-        api_call(
-            'post',
-            'jobs/' . $job->{id} . '/status',
-            json     => {status => $status},
-            callback => sub {
-                my ($res) = @_;
-                if (!$res) {
-                    # web UI considers this worker already dead anyways, so just exit here
-                    log_error(
-                        'Job aborted because web UI doesn\'t accept updates anymore (likely considers this job dead)');
-                }
-                elsif (!upload_images($res->{known_images})) {
-                    log_error(
-                        'Job aborted because web UI doesn\'t accept new images anymore (likely considers this job dead)'
-                    );
-                }
-                $update_status_running = 0;
-                return $callback->() if $callback;
-                return;
-            });
+        $known_images = $res->{known_images};
+        ignore_known_images();
+        if (!upload_images()) {
+            log_error('Job aborted because web UI doesn\'t accept new images anymore (likely considers this job dead)');
+        }
     }
-    return 1;
+
+    post_upload_progress_to_liveviewhandler($job_id, $upload_up_to);
+
+    $update_status_running = 0;
+    return $callback->() if $callback;
+    return;
+}
+
+sub post_upload_progress_to_liveviewhandler {
+    my ($job_id, $upload_up_to) = @_;
+
+    my %new_progress_info = (
+        upload_up_to                => $upload_up_to,
+        upload_up_to_current_module => $current_running && $upload_up_to && $current_running eq $upload_up_to,
+        outstanding_files           => scalar(@$tosend_files),
+        outstanding_images          => scalar(%$tosend_images),
+    );
+
+    # skip if the progress hasn't changed
+    my $progress_changed;
+    for my $key (qw(upload_up_to upload_up_to_current_module outstanding_files outstanding_images)) {
+        my $new_value = $new_progress_info{$key};
+        my $old_value = $progress_info->{$key};
+        if (defined($new_value) != defined($old_value) || (defined($new_value) && $new_value ne $old_value)) {
+            $progress_changed = 1;
+            last;
+        }
+    }
+    return unless $progress_changed;
+    $progress_info = \%new_progress_info;
+
+    api_call(
+        post => "/liveviewhandler/api/v1/jobs/$job_id/upload_progress",
+        service_port_delta => 2,                # liveviewhandler is supposed to run on web UI port + 2
+        json               => $progress_info,
+        non_critical       => 1,
+        callback           => sub {
+            my ($res) = @_;
+            if (!$res) {
+                log_error('Failed to post upload progress to liveviewhandler.');
+                return;
+            }
+        });
 }
 
 sub optimize_image {
@@ -763,12 +809,13 @@ sub optimize_image {
     return;
 }
 
-sub upload_images {
-    my ($known_images) = @_;
-
+sub ignore_known_images {
     for my $md5 (@$known_images) {
         delete $tosend_images->{$md5};
     }
+}
+
+sub upload_images {
     my $tx;
     my $ua_url = $hosts->{$current_host}{url}->clone;
     $ua_url->path("jobs/" . $job->{id} . "/artefact");

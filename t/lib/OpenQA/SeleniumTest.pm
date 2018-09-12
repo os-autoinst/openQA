@@ -205,6 +205,8 @@ sub javascript_console_has_no_warnings_or_errors {
         if ($source eq 'network') {
             # ignore errors when gravatar not found
             next if ($msg =~ qr/gravatar/);
+            # ignore that needle editor in 33-developer_mode.t is not instantly available
+            next if ($msg =~ qr/tests\/1\/edit.*404/);
             # FIXME: loading thumbs during live run causes 404. ignore for now
             # (',' is a quotation mark here and '/' part of expression to match)
             next if ($msg =~ qr,/thumb/, || $msg =~ qr,/.thumbs/,);
