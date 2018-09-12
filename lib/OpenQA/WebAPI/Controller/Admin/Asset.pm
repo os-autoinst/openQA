@@ -19,17 +19,30 @@ use Mojo::Base 'Mojolicious::Controller';
 use List::Util 'sum';
 
 sub index {
-    my $self = shift;
+    my ($self) = @_;
 
-    my $status = $self->db->resultset('Assets')->status();
+    # allow to force scan for untracked assets and refresh
+    my $force_refresh = $self->param('force_refresh');
+    if ($force_refresh) {
+        my $assets = $self->app->schema->resultset('Assets');
+        $assets->scan_for_untracked_assets();
+        $assets->refresh_assets();
+    }
 
+    my $status = $self->db->resultset('Assets')->status(
+        compute_pending_state_and_max_job => $force_refresh,
+        compute_max_job_by_group          => 0,
+    );
     my $total_size = sum(map { $_->{picked} } values(%{$status->{groups}}));
 
     $self->stash('assets',     $status->{assets});
     $self->stash('groups',     $status->{groups});
     $self->stash('total_size', $total_size);
 
-    $self->render('admin/asset/index');
+    $self->respond_to(
+        json => {json     => $status},
+        html => {template => 'admin/asset/index'},
+    );
 }
 
 1;

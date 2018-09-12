@@ -36,6 +36,7 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use File::Which 'which';
 use File::Path ();
+use Data::Dumper;
 use Date::Format 'time2str';
 use Fcntl ':mode';
 
@@ -58,40 +59,33 @@ sub mock_remove {
     push @removed, $self->name;
 }
 
-# a series of mock 'ensure_size' methods for the Assets class which
-# return different sizes (in GiB), for testing limit_assets
-my $gib = 1024 * 1024 * 1024;
-sub mock_size_18 {
-    return 18 * $gib;
-}
-
-sub mock_size_24 {
-    return 24 * $gib;
-}
-
-sub mock_size_26 {
-    return 26 * $gib;
-}
-
-sub mock_size_34 {
-    return 34 * $gib;
-}
-
-
 my $module = new Test::MockModule('OpenQA::Schema::Result::Assets');
 $module->mock(delete           => \&mock_delete);
 $module->mock(remove_from_disk => \&mock_remove);
+$module->mock(refresh_size     => sub { });
 
 my $schema     = OpenQA::Test::Case->new->init_data;
 my $jobs       = $schema->resultset('Jobs');
 my $job_groups = $schema->resultset('JobGroups');
 my $assets     = $schema->resultset('Assets');
 
+# refresh assets only once and prevent adding untracked assets
+my $assets_mock = new Test::MockModule('OpenQA::Schema::ResultSet::Assets');
+$schema->resultset('Assets')->refresh_assets();
+$assets_mock->mock(scan_for_untracked_assets => sub { });
+$assets_mock->mock(refresh_assets            => sub { });
+
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # now to something completely different: testing limit_assets
 my $c = OpenQA::WebAPI::Plugin::Gru::Command::gru->new();
 $c->app($t->app);
+
+# list initially existing assets
+my $dbh             = $schema->storage->dbh;
+my $initial_aessets = $dbh->selectall_arrayref('select * from assets order by id;');
+note('initially existing assets:');
+note(Dumper($initial_aessets));
 
 sub find_kept_assets_with_last_jobs {
     my $last_used_jobs = $assets->search(
@@ -113,7 +107,6 @@ is($job_groups->find(1001)->exclusively_kept_asset_size,
 
 sub run_gru {
     my ($task, $args) = @_;
-
     $t->app->gru->enqueue($task => $args);
     $c->run('run', '-o');
 }
@@ -139,13 +132,11 @@ sub run_gru {
 # scheduled for deletion after both groups 1001 and 1002 are checked,
 # it should never actually get deleted.
 #
-# We test by mocking out the `ensure_size` sub with the various
-# `mock_size` subs above, which cause every asset to be seen as the
-# size in the sub's name.
-#
-# So if each asset's 'size' is reported as 18GiB, both groups should
-# be under the size limit, and no deletion should occur.
-$module->mock(ensure_size => \&mock_size_18);
+# For this test we update the size of all assets to be 18 GiB
+# so both groups should be under the size limit, and no deletion
+# should occur.
+my $gib = 1024 * 1024 * 1024;
+$assets->update({size => 18 * $gib});
 run_gru('limit_assets');
 
 is_deeply(\@removed, [], "nothing should have been 'removed' at size 18GiB");
@@ -172,7 +163,7 @@ is($job_groups->find(1002)->exclusively_kept_asset_size,
 
 # at size 24GiB, group 1001 is over the 80% threshold but under the 100GiB
 # limit - still no removal should occur.
-$module->mock(ensure_size => \&mock_size_24);
+$assets->update({size => 24 * $gib});
 run_gru('limit_assets');
 
 is_deeply(\@removed, [], "nothing should have been 'removed' at size 24GiB");
@@ -195,7 +186,7 @@ is(
 
 # at size 26GiB, 1001 is over the limit, so removal should occur. Removing
 # just one asset - #4 - will get under the 80GiB threshold.
-$module->mock(ensure_size => \&mock_size_26);
+$assets->update({size => 26 * $gib});
 run_gru('limit_assets');
 
 is(scalar @removed, 1, "one asset should have been 'removed' at size 26GiB");
@@ -231,7 +222,7 @@ is(
 @deleted = ();
 
 # at size 34GiB, 1001 is over the limit, so removal should occur.
-$module->mock(ensure_size => \&mock_size_34);
+$assets->update({size => 34 * $gib});
 run_gru('limit_assets');
 
 is(scalar @removed, 1, "two assets should have been 'removed' at size 34GiB");
@@ -270,8 +261,9 @@ is(
 # to test protection of assets for PENDING jobs which would otherwise
 # be removed.
 my $job99947 = $schema->resultset('Jobs')->find({id => 99947});
-$job99947->state(OpenQA::Jobs::Constants::SCHEDULED);
-$job99947->update;
+#$job99947->state(OpenQA::Jobs::Constants::SCHEDULED);
+my $job99947_t_finished = $job99947->t_finished;
+$job99947->update({t_finished => undef});
 
 # Now we run again with size 34GiB. This time asset #1 should again be
 # selected for removal, but reprieved at the last minute due to its
@@ -281,8 +273,9 @@ is(scalar @removed, 1, "only one asset should have been 'removed' at size 34GiB 
 is(scalar @deleted, 1, "only one asset should have been 'deleted' at size 34GiB with 99947 pending");
 
 # restore job 99947 to DONE state
-$job99947->state(OpenQA::Jobs::Constants::DONE);
-$job99947->update;
+#$job99947->state(OpenQA::Jobs::Constants::DONE);
+#$job99947->update;
+$job99947->update({t_finished => $job99947_t_finished});
 
 sub create_temp_job_log_file {
     my ($resultdir) = @_;

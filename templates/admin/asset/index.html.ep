@@ -76,13 +76,13 @@
                     % }
                     <span>
                         %= OpenQA::Utils::human_readable_size($group->{picked})
-                        /
-                        %= $group->{size_limit_gb}
-                        GiB
+                        % if (my $size_limit = $group->{size_limit_gb}) {
+                            / <%= $size_limit %> GiB
+                        % }
                     </span>
                     <ul>
                         % for my $asset (sort { $b->{name} cmp $a->{name} } @$assets) {
-                            % next unless $asset->{size} && $asset->{picked_into} == $group->{id};
+                            % next unless $asset->{size} && $asset->{picked_into} == ($group->{id} // 0);
                             <li>
                                 %= $asset->{name}
                                 <span>

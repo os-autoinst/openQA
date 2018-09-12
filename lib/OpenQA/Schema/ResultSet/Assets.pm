@@ -109,112 +109,154 @@ sub scan_for_untracked_assets {
     }
 }
 
-sub status {
+# refreshes 'fixed' and 'size' of all assets
+sub refresh_assets {
     my ($self) = @_;
 
-    $self->scan_for_untracked_assets();
+    while (my $asset = $self->next) {
+        if ($asset->is_fixed) {
+            $asset->update({fixed => 1});
+        }
+        else {
+            $asset->update({fixed => 0});
+        }
 
+        $asset->refresh_size;
+    }
+}
+
+sub status {
+    my ($self, %options) = @_;
     my $rsource = $self->result_source;
     my $schema  = $rsource->schema;
+    my $dbh     = $schema->storage->dbh;
+
+    # define query for prefetching the assets - note the sort order here:
+    # We sort the assets in descending order by highest related job ID,
+    # so assets for recent jobs are considered first (and most likely to be kept).
+    # Use of coalesce is required; otherwise assets without any job would end up
+    # at the top.
+    my $prioritized_assets_query;
+    if ($options{compute_pending_state_and_max_job}) {
+        $prioritized_assets_query = <<'END_SQL';
+            select
+                a.id as id, a.name as name, a.t_created as t_created, a.size as size, a.type as type,
+                a.fixed as fixed,
+                coalesce(max(j.id), -1) as max_job,
+                max(case when j.id is not null and j.t_finished is null then 1 else 0 end) as pending
+            from assets a
+                left join jobs_assets ja on a.id=ja.asset_id
+                left join jobs j on j.id=ja.job_id
+            group by a.id
+            order by max_job desc, a.t_created desc;
+END_SQL
+    }
+    else {
+        $prioritized_assets_query = <<'END_SQL';
+            select
+                id, name, t_created, size, type, fixed,
+                coalesce(last_use_job_id, -1) as max_job
+            from assets
+            order by max_job desc, t_created desc;
+END_SQL
+    }
 
     # prefetch all assets
     my %asset_info;
-    while (my $as = $self->next) {
-        if ($as->is_fixed) {
-            $as->update({fixed => 1});
-        }
-        else {
-            $as->update({fixed => 0});
-        }
-        my $age     = $as->t_created->delta_ms(DateTime->now)->in_units('minutes');
-        my $dirname = $as->type . '/';
-        if ($as->fixed) { $dirname .= 'fixed/'; }
-        $asset_info{$as->id} = {
-            id      => $as->id,
-            fixed   => $as->fixed,
-            pending => 0,
-            size    => $as->ensure_size,
-            name    => $dirname . $as->name,
-            age     => $age,
-            max_job => 0,
-            groups  => {}};
+    my @assets;
+    my $assets_arrayref = $dbh->selectall_arrayref($prioritized_assets_query);
+    for my $asset_array (@$assets_arrayref) {
+        my $id      = $asset_array->[0];
+        my $type    = $asset_array->[4];
+        my $fixed   = $asset_array->[5];
+        my $dirname = ($fixed ? $type . '/fixed/' : $type . '/');
+        my $max_job = $asset_array->[6];
+        my %asset   = (
+            id        => $id,
+            name      => ($dirname . $asset_array->[1]),
+            t_created => $asset_array->[2],
+            size      => $asset_array->[3],
+            type      => $type,
+            fixed     => $fixed,
+            max_job   => ($max_job >= 0 ? $max_job : undef),
+            pending   => $asset_array->[7],
+            groups    => {},
+        );
+        $asset_info{$id} = \%asset;
+        push(@assets, \%asset);
     }
 
-    # these queries are just too much for dbix. note the sort order here:
-    # we sort the assets in descending order by highest related job ID,
-    # so assets for recent jobs are considered first (and most likely to be kept)
-    my $stm = <<'END_SQL';
-         select a.*,max(j.id) from jobs_assets ja
+    # define a query to find the latest job for each asset by group
+    my $max_job_by_group_query;
+    if ($options{compute_max_job_by_group}) {
+        $max_job_by_group_query = <<'END_SQL';
+         select a.id as asset_id, max(j.id) as max_job
+            from jobs_assets ja
               join jobs j on j.id=ja.job_id
               join assets a on a.id=ja.asset_id
-           where j.group_id=?
-           group by a.id
-           order by max desc;
+              where group_id = ?
+           group by a.id;
 END_SQL
-    my $dbh            = $schema->storage->dbh;
-    my $job_assets_sth = $dbh->prepare($stm);
+    }
+    else {
+        $max_job_by_group_query = <<'END_SQL';
+         select a.id as asset_id
+            from jobs_assets ja
+              join jobs j on j.id=ja.job_id
+              join assets a on a.id=ja.asset_id
+              where group_id = ?
+           group by a.id;
+END_SQL
+    }
+    my $max_job_by_group_prepared_query = $dbh->prepare($max_job_by_group_query);
 
     # query list of job groups to show assets by job group
     # We collect data required for /admin/assets *and* the limit_assets task
     my $groups = $schema->resultset('JobGroups');
     my %group_infos;
-    $group_infos{0} = {size_limit_gb => 0, size => 0, group => 'Untracked', id => undef};
+    $group_infos{0} = {
+        size_limit_gb => 0,
+        size          => 0,
+        group         => 'Untracked',
+        id            => undef,
+        picked        => 0,
+    };
 
     # find relevant assets which belong to a job group
-    while (my $g = $groups->next) {
-        my $group_id = $g->id;
+    while (my $group = $groups->next) {
+        my $group_id      = $group->id;
+        my $size_limit_gb = $group->size_limit_gb;
+        $group_infos{$group_id} = {
+            id            => $group_id,
+            size_limit_gb => $size_limit_gb,
+            size          => $size_limit_gb * 1024 * 1024 * 1024,
+            picked        => 0,
+            group         => $group->full_name,
+        };
 
-        $group_infos{$g->id}->{size_limit_gb} = $g->size_limit_gb;
-        $group_infos{$g->id}->{size}          = $g->size_limit_gb * 1024 * 1024 * 1024;
-        $group_infos{$g->id}->{picked}        = 0;
-        $group_infos{$g->id}->{id}            = $g->id;
-        $group_infos{$g->id}->{group}         = $g->full_name;
-
-        $job_assets_sth->execute($group_id);
-
-        while (my $a = $job_assets_sth->fetchrow_hashref) {
-            my $ai = $asset_info{$a->{id}};
-
-            # ignore assets arriving in between - API can register new ones
-            next unless $ai;
-
-            $ai->{groups}->{$group_id} = $a->{max};
-            if ($a->{max} > $ai->{max_job}) {
-                $ai->{max_job} = $a->{max};
-            }
+        # add the max job ID for this group to
+        $max_job_by_group_prepared_query->execute($group_id);
+        while (my $result = $max_job_by_group_prepared_query->fetchrow_hashref) {
+            my $asset_info = $asset_info{$result->{asset_id}} or next;
+            $asset_info->{groups}->{$group_id} = $result->{max_job};
         }
     }
 
-    my $pending
-      = $schema->resultset('Jobs')->search({state => [OpenQA::Jobs::Constants::PENDING_STATES]})->get_column('id')
-      ->as_query;
-    my @pendassets
-      = $schema->resultset('JobsAssets')->search({job_id => {-in => $pending}})->get_column('asset_id')->all;
-    for my $id (@pendassets) {
-        my $ai = $asset_info{$id};
-
-        # ignore assets arriving in between - API can register new ones
-        next unless $ai;
-        $ai->{pending} = 1;
-    }
-
-    # sort the assets by importance
-    my @assets = values(%asset_info);
-    @assets = sort { $b->{max_job} <=> $a->{max_job} || $a->{age} <=> $b->{age} } @assets;
-
+    # compute group sizes
     for my $asset (@assets) {
         my $largest_group = 0;
         my $largest_size  = 0;
         my @groups        = sort { $a <=> $b } keys %{$asset->{groups}};
+        my $size          = $asset->{size} // 0;
         for my $g (@groups) {
-            if ($largest_size < $group_infos{$g}->{size} && $group_infos{$g}->{size} >= $asset->{size}) {
+            if ($largest_size < $group_infos{$g}->{size} && $group_infos{$g}->{size} >= $size) {
                 $largest_size  = $group_infos{$g}->{size};
                 $largest_group = $g;
             }
         }
         $asset->{picked_into} = $largest_group;
-        $group_infos{$largest_group}->{size} -= $asset->{size};
-        $group_infos{$largest_group}->{picked} += $asset->{size};
+        $group_infos{$largest_group}->{size} -= $size;
+        $group_infos{$largest_group}->{picked} += $size;
     }
 
     return {assets => \@assets, groups => \%group_infos};
