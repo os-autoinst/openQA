@@ -105,7 +105,7 @@ sub connect {
         });
     $self->{client}->on(
         close => sub {
-            OpenQA::Utils::log_warning("AMQP connection closed");
+            OpenQA::Utils::log_warning("AMQP connection closed (pid $$)");
             $self->reconnect();
         });
     $self->{client}->on(
@@ -116,12 +116,12 @@ sub connect {
         });
     $self->{client}->on(
         disconnect => sub {
-            OpenQA::Utils::log_warning("AMQP connection closed");
+            OpenQA::Utils::log_warning("AMQP connection closed due disconnect (pid $$)");
             $self->reconnect();
         });
     $self->{client}->on(
         timeout => sub {
-            OpenQA::Utils::log_warning("AMQP connection closed");
+            OpenQA::Utils::log_warning("AMQP connection timeout (pid $$)");
             $self->reconnect();
         });
     $self->{client}->connect();
