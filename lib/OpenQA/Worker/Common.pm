@@ -180,13 +180,17 @@ sub api_init {
 sub api_call {
     my ($method, $path, %args) = @_;
 
-    my $host          = $args{host} // $current_host;
-    my $params        = $args{params};
-    my $json_data     = $args{json};
-    my $callback      = $args{callback} // sub { };
+    my $host      = $args{host} // $current_host;
+    my $params    = $args{params};
+    my $json_data = $args{json};
+    my $callback  = $args{callback} // sub { };
+    my $tries     = $args{tries} // 3;
+
+    # if set ignore errors completely and don't retry
     my $ignore_errors = $args{ignore_errors} // 0;
-    my $tries         = $args{tries} // 3;
-    my $non_critical  = $args{non_critical} // 0;
+
+    # if set apply usual error handling (retry attempts) but treat failure as non-critical
+    my $non_critical = $args{non_critical} // 0;
 
     do { OpenQA::Worker::Jobs::_reset_state(); die 'No worker id or webui host set!'; } unless verify_workerid($host);
 
@@ -250,7 +254,8 @@ sub api_call {
         }
         log_error($msg . " (remaining tries: $tries)");
 
-        if (!$tries && !$non_critical) {
+        # handle critical error when no more attempts remain
+        if ($tries <= 0 && !$non_critical) {
             # abort the current job, we're in trouble - but keep running to grab the next
             OpenQA::Worker::Jobs::stop_job('api-failure');
             # stop accepting jobs and schedule reregistration - keep the rest running
@@ -260,6 +265,13 @@ sub api_call {
             return;
         }
 
+        # handle non-critical error when no more attempts remain
+        if ($tries <= 0) {
+            $callback->();
+            return;
+        }
+
+        # retry in 5 seconds if there are remaining attempts
         $tx = $ua->build_tx(@args);
         add_timer(
             '', 5,
