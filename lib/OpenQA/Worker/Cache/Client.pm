@@ -16,8 +16,10 @@
 package OpenQA::Worker::Cache::Client;
 
 use Mojo::Base 'Mojo::UserAgent';
+use OpenQA::Worker::Cache;
 
 has 'host';
+has retrials => 5;
 
 sub _status {
     return !!0 unless my $st = $_[0]->result->json->{status} // shift->result->json->{session_token};
@@ -40,18 +42,44 @@ sub asset_status { my ($self, $asset) = @_; }
 sub asset_download { shift->_p("download", pop) }
 sub asset_download_info { shift->_q(join('/', "status", pop)) }
 
+sub enqueue_download {
+    my ($self, $what) = @_;
+
+    my $reply = $self->asset_download($what);
+
+    # Safe states: Cache service is handling it
+    return !!1
+      if ($reply eq OpenQA::Worker::Cache::ASSET_STATUS_ENQUEUED)
+      || ($reply eq OpenQA::Worker::Cache::ASSET_STATUS_DOWNLOADING)
+      || ($reply eq OpenQA::Worker::Cache::ASSET_STATUS_IGNORE);
+
+    return !!0;
+}
+
+sub processed {
+# When it is finished, it's done from the Cache service point of view, as it's not in the queues anymore. But
+# from the client point of view, or the file is there (successed), or is not there (failed processing)
+# FIXME: Note, on service (re)start we need to prune the queues from pending requests.
+# as Clients needs to refill requests with new session token and we do not want to make minion workers do useless downloads.
+
+
+    # Safe states
+    return !!1 if shift->asset_download_info(shift) eq OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED;
+    return !!0;
+}
+
 sub info { $_[0]->get(join('/', shift->host, "info")) }
 sub available { shift->info->success }
 
 sub session_token { shift->_q('session_token') }
 
 sub _q {
-    my @a = @_;
-    _status(_retry(sub { $a[0]->get(join('/', shift(@a)->host, pop(@a))) } => 5));
+    my ($self, $q) = @_;
+    _status(_retry(sub { $self->get(join('/', $self->host, $q)) } => $self->retrials));
 }
 sub _p {
-    my @a = @_;
-    _status(_retry(sub { $a[0]->post(join('/', shift(@a)->host, shift(@a)) => json => pop(@a)) } => 5));
+    my ($self, $q, $j) = @_;
+    _status(_retry(sub { $self->post(join('/', $self->host, $q) => json => $j) } => $self->retrials));
 }
 
 !!42;

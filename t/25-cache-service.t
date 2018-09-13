@@ -116,21 +116,21 @@ sub test_download {
     my ($id, $a) = @_;
 
     my $resp = $cache_client->asset_download({id => $id, asset => $a, type => "hdd", host => $host});
-    is($resp, OpenQA::Worker::Cache::Service::ASSET_STATUS_ENQUEUED) or die diag explain $resp;
+    is($resp, OpenQA::Worker::Cache::ASSET_STATUS_ENQUEUED) or die diag explain $resp;
     # Create double request
     $resp = $cache_client->asset_download({id => $id, asset => $a, type => "hdd", host => $host});
-    is($resp, OpenQA::Worker::Cache::Service::ASSET_STATUS_IGNORE) or die diag explain $resp;
+    is($resp, OpenQA::Worker::Cache::ASSET_STATUS_IGNORE) or die diag explain $resp;
 
-    sleep .5 until ($cache_client->asset_download_info($a) ne OpenQA::Worker::Cache::Service::ASSET_STATUS_IGNORE);
+    1 until ($cache_client->asset_download_info($a) ne OpenQA::Worker::Cache::ASSET_STATUS_IGNORE);
 
     #At some point, should start download
     $resp = $cache_client->asset_download_info($a);
-    is($resp, OpenQA::Worker::Cache::Service::ASSET_STATUS_DOWNLOADING) or die diag explain $resp;
+    is($resp, OpenQA::Worker::Cache::ASSET_STATUS_DOWNLOADING) or die diag explain $resp;
 
-    sleep .5 until ($cache_client->asset_download_info($a) ne OpenQA::Worker::Cache::Service::ASSET_STATUS_DOWNLOADING);
+    1 until ($cache_client->asset_download_info($a) ne OpenQA::Worker::Cache::ASSET_STATUS_DOWNLOADING);
 
     $resp = $cache_client->asset_download_info($a);
-    is($resp, OpenQA::Worker::Cache::Service::ASSET_STATUS_PROCESSED) or die diag explain $resp;
+    is($resp, OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED) or die diag explain $resp;
 
     ok(-e path($cachedir)->child($a), 'Asset downloaded');
 }
@@ -176,8 +176,9 @@ subtest 'Race for same asset' => sub {
     #diag "Testing downloading " . (scalar @test) . " assets of ($sum) @test size";
 
     my $concurrent_test = sub {
-        $cache_client->asset_download("download", {id => 922756, asset => $a, type => "hdd", host => $host});
-        sleep .5 until ($cache_client->asset_download_info($a) ne OpenQA::Worker::Cache::Service::ASSET_STATUS_IGNORE);
+        if ($cache_client->enqueue_download({id => 922756, asset => $a, type => "hdd", host => $host})) {
+            1 until $cache_client->processed($a);
+        }
     };
 
     $q->add(process($concurrent_test)->set_pipes(0)->internal_pipes(0)) for 1 .. $tot_proc;
@@ -185,8 +186,24 @@ subtest 'Race for same asset' => sub {
     $q->consume();
     is $q->done->size, $tot_proc, 'Queue consumed ' . $tot_proc . ' processes';
 
-    ok(-e path($cachedir)->child($a), 'Asset downloaded') or die diag "Failed - no asset is there``";
+    ok(-e path($cachedir)->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
     is($sum, md5_sum(path($cachedir)->child($a)->slurp), 'Download not corrupted');
+};
+
+subtest 'Default usage' => sub {
+    my $a = 'sle-12-SP3-x86_64-0368-200_10@64bit.qcow2';
+    unlink path($cachedir)->child($a);
+    ok(!-e path($cachedir)->child($a), 'Asset absent') or die diag "Asset already exists - abort test";
+
+    if ($cache_client->enqueue_download({id => 922756, asset => $a, type => "hdd", host => $host})) {
+        1 until $cache_client->processed($a);
+        ok(-e path($cachedir)->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
+    }
+    else {
+        fail("Failed enqueuing download");
+    }
+
+    ok(-e path($cachedir)->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
 };
 
 

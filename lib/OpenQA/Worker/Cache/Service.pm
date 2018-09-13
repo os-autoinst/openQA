@@ -18,15 +18,10 @@ package OpenQA::Worker::Cache::Service;
 use Mojolicious::Lite;
 use OpenQA::Worker::Cache::Task::Asset;
 use Mojolicious::Plugin::Minion;
+use OpenQA::Worker::Cache;
 
 BEGIN { srand(time) }
-use constant CACHE_FAILED => 000;
 
-use constant ASSET_STATUS_PROCESSED   => 001;
-use constant ASSET_STATUS_ENQUEUED    => 002;
-use constant ASSET_STATUS_DOWNLOADING => 003;
-use constant ASSET_STATUS_IGNORE      => 004;
-use constant ASSET_STATUS_ERROR       => 005;
 my $tk;
 app->hook(
     before_server_start => sub {
@@ -57,19 +52,23 @@ post '/download' => sub {
     my $asset = $data->{'asset'};
     my $host  = $data->{'host'};
     # Specific error cases for missing fields
-    return $c->render(json => {status => ASSET_STATUS_ERROR, error => "No ID defined"})          unless defined $id;
-    return $c->render(json => {status => ASSET_STATUS_ERROR, error => "No Asset defined"})       unless defined $asset;
-    return $c->render(json => {status => ASSET_STATUS_ERROR, error => "No Asset  type defined"}) unless defined $type;
-    return $c->render(json => {status => ASSET_STATUS_ERROR, error => "No Host defined"})        unless defined $host;
+    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => "No ID defined"})
+      unless defined $id;
+    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => "No Asset defined"})
+      unless defined $asset;
+    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => "No Asset  type defined"})
+      unless defined $type;
+    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => "No Host defined"})
+      unless defined $host;
     app->log->debug("Requested: ID: $id Type: $type Asset: $asset Host: $host ");
 
     my $lock = _gen_guard_name($asset);
 
-    return $c->render(json => {status => ASSET_STATUS_DOWNLOADING}) if active($lock);
-    return $c->render(json => {status => ASSET_STATUS_IGNORE})      if enqueued($lock);
+    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_DOWNLOADING}) if active($lock);
+    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_IGNORE})      if enqueued($lock);
 
     $c->minion->enqueue(cache_asset => [$id, $type, $asset, $host] => {notes => {token => $lock}});
-    $c->render(json => {status => ASSET_STATUS_ENQUEUED});
+    $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ENQUEUED});
 };
 
 get '/status/#asset' => sub {
@@ -77,9 +76,9 @@ get '/status/#asset' => sub {
     my $asset = $c->param('asset');
     my $lock  = _gen_guard_name($asset);
 
-    return $c->render(json => {status => ASSET_STATUS_DOWNLOADING}) if active($lock);
-    return $c->render(json => {status => ASSET_STATUS_IGNORE})      if enqueued($lock);
-    $c->render(json => {status => ASSET_STATUS_PROCESSED});
+    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_DOWNLOADING}) if active($lock);
+    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_IGNORE})      if enqueued($lock);
+    $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED});
 };
 
 # Start the Mojolicious command system

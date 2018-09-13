@@ -33,6 +33,12 @@ use Mojo::File 'path';
 use Mojo::Base -base;
 use POSIX;
 
+use constant ASSET_STATUS_PROCESSED   => 001;
+use constant ASSET_STATUS_ENQUEUED    => 002;
+use constant ASSET_STATUS_DOWNLOADING => 003;
+use constant ASSET_STATUS_IGNORE      => 004;
+use constant ASSET_STATUS_ERROR       => 005;
+
 has [qw(host cache location db_file dsn dbh cache_real_size)];
 has limit => 50 * (1024**3);
 has sleep_time => 5;
@@ -228,25 +234,12 @@ sub get_asset {
     my $n = 5;
     while () {
         $self->track_asset($asset);    # Track asset - make sure it's in DB
-                                       #  log_debug "CACHE: Aquiring lock for $asset in the database";
-
-        # $result = $self->try_lock_asset($asset);
-        # if (!$result) {
-        #     update_setup_status;
-        #     log_debug "CACHE: Waiting " . $self->sleep_time . " seconds for the lock.";
-        #     sleep $self->sleep_time;
-        #     next;
-        # }
         $result = $self->_asset($asset);
-
         local $@;
-
         eval {
             $ret
               = $self->download_asset($job->{id}, lc($asset_type), $asset, ($result->{etag}) ? $result->{etag} : undef);
         };
-        # eval { log_error "CACHE: Error inside critical section: $@" } if $@;
-        # $self->toggle_asset_lock($asset, 0);
         if (!$ret) {
             $asset = undef;
             last;
