@@ -35,7 +35,9 @@ BEGIN {
     }
 }
 
-$ENV{MOJO_LISTEN} ||= 'http://localhost:9527/';
+# listen only locally on port 9527 (preferably on both - IPv4 and IPv6)
+use OpenQA::Utils;
+set_listen_address(9527);
 
 # allow up to 20GB - hdd images
 $ENV{MOJO_MAX_MESSAGE_SIZE} = 1024 * 1024 * 1024 * 20;
