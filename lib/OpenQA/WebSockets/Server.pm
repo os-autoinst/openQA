@@ -474,9 +474,6 @@ sub setup {
     app->plugin("Helpers");
     app->asset->process;
 
-    # use port one higher than WebAPI
-    my $listen = $ENV{MOJO_LISTEN} || "http://localhost:9527";
-
     my $ca = under \&check_authorized;
     $ca->websocket('/ws/:workerid' => [workerid => qr/\d+/] => \&ws_create);
 
@@ -493,7 +490,7 @@ sub setup {
         });
 
 
-    return Mojo::Server::Daemon->new(app => app, listen => ["$listen"]);
+    return Mojo::Server::Daemon->new(app => app);
 }
 
 

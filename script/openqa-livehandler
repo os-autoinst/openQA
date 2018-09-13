@@ -21,7 +21,9 @@ use warnings;
 use FindBin;
 BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
 
-$ENV{MOJO_LISTEN} ||= 'http://localhost:9528/';
+# listen only locally on port 9528 (preferably on both - IPv4 and IPv6)
+use OpenQA::Utils;
+set_listen_address(9528);
 
 # ensure the web socket connection won't timeout
 $ENV{MOJO_INACTIVITY_TIMEOUT} ||= 15 * 60;

@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2017 SUSE LLC
+# Copyright (C) 2012-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ use Regexp::Common 'URI';
 use Try::Tiny;
 use Mojo::File 'path';
 use IO::Handle;
+use IO::Socket::IP;
 use Time::HiRes 'gettimeofday';
 use POSIX 'strftime';
 use Scalar::Util 'blessed';
@@ -96,6 +97,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   in_range
   walker
   &ensure_timestamp_appended
+  set_listen_address
 );
 
 @EXPORT_OK = qw(determine_web_ui_web_socket_url get_ws_status_only_url);
@@ -1141,6 +1143,20 @@ sub logistic_map_steps {
 sub rand_range { $_[0] + rand($_[1] - $_[0]) }
 sub in_range { $_[0] >= $_[1] && $_[0] <= $_[2] ? 1 : 0 }
 
+sub set_listen_address {
+    my ($port) = @_;
+
+    if ($ENV{MOJO_LISTEN}) {
+        return;
+    }
+
+    my @listen_addresses = ("http://127.0.0.1:$port");
+    if (IO::Socket::IP->new(Listen => 5, LocalAddr => '::1')) {
+        push(@listen_addresses, "http://[::1]:$port");
+    }
+
+    $ENV{MOJO_LISTEN} = join(',', @listen_addresses);
+}
 
 1;
 # vim: set sw=4 et:
