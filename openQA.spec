@@ -229,11 +229,11 @@ ln -s %{_datadir}/openqa/script/load_templates %{buildroot}%{_bindir}/openqa-loa
 
 cd %{buildroot}
 grep -rl %{_bindir}/env . | while read file; do
-  sed -e 's,%{_bindir}/env perl,%{_bindir}/perl,' -i $file
+    sed -e 's,%{_bindir}/env perl,%{_bindir}/perl,' -i $file
 done
 mkdir -p %{buildroot}%{_sbindir}
-for i in webui gru worker resource-allocator scheduler websockets slirpvde vde_switch; do
-	ln -s ../sbin/service %{buildroot}%{_sbindir}/rcopenqa-$i
+for i in webui gru worker resource-allocator scheduler websockets slirpvde vde_switch livehandler; do
+    ln -s ../sbin/service %{buildroot}%{_sbindir}/rcopenqa-$i
 done
 #
 install -D -m 644 /dev/null %{buildroot}%{_localstatedir}/log/openqa
@@ -246,8 +246,8 @@ mkdir %{buildroot}%{_localstatedir}/lib/openqa/cache
 
 %pre
 if ! getent passwd geekotest > /dev/null; then
-  %{_sbindir}/useradd -r -g nogroup -c "openQA user" \
-    -d %{_localstatedir}/lib/openqa geekotest 2>/dev/null || :
+    %{_sbindir}/useradd -r -g nogroup -c "openQA user" \
+        -d %{_localstatedir}/lib/openqa geekotest 2>/dev/null || :
 fi
 
 %service_add_pre %{openqa_services}
@@ -283,15 +283,20 @@ if [ ! -e %{_localstatedir}/log/openqa ]; then
 fi
 
 if [ $1 -eq 1 ]; then
-        echo "### copy and edit %{_sysconfdir}/apache2/vhosts.d/openqa.conf.template!"
-        echo "### run sudo %{_datadir}/openqa/script/fetchneedles"
-
+    echo "### copy and edit %{_sysconfdir}/apache2/vhosts.d/openqa.conf.template!"
+    echo "### run sudo %{_datadir}/openqa/script/fetchneedles"
 else
-	if [ -d "%{_localstatedir}/lib/openqa/share/testresults" ]; then
-           # remove the symlink
-           rm "%{_localstatedir}/lib/openqa/testresults"
-           mv "%{_localstatedir}/lib/openqa/share/testresults" "%{_localstatedir}/lib/openqa/"
-        fi
+    if [ -d "%{_localstatedir}/lib/openqa/share/testresults" ]; then
+        # remove the symlink
+        rm "%{_localstatedir}/lib/openqa/testresults"
+        mv "%{_localstatedir}/lib/openqa/share/testresults" "%{_localstatedir}/lib/openqa/"
+    fi
+
+    # we don't want to require the scheduler for the webui (so we can stop it independent)
+    # but it should be enabled together with the webui
+    if test "$(systemctl is-enabled openqa-webui.service)" = "enabled"; then
+        systemctl enable openqa-scheduler.service
+    fi
 fi
 
 %service_add_post %{openqa_services}
@@ -329,6 +334,7 @@ fi
 %{_sbindir}/rcopenqa-resource-allocator
 %{_sbindir}/rcopenqa-websockets
 %{_sbindir}/rcopenqa-webui
+%{_sbindir}/rcopenqa-livehandler
 %dir %{_sysconfdir}/openqa
 %config(noreplace) %attr(-,geekotest,root) %{_sysconfdir}/openqa/openqa.ini
 %config(noreplace) %attr(-,geekotest,root) %{_sysconfdir}/openqa/database.ini
