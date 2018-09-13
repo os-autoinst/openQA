@@ -37,9 +37,9 @@
 %define t_requires perl(DBD::Pg) perl(DBIx::Class) perl(Config::IniFiles) perl(SQL::Translator) perl(Date::Format) perl(File::Copy::Recursive) perl(DateTime::Format::Pg) perl(Net::OpenID::Consumer) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) perl(aliased) perl(Config::Tiny) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(IO::Socket::SSL) perl(Data::Dump) perl(DBIx::Class::OptimisticLocking) perl(Text::Markdown) perl(Net::DBus) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(Mojo::RabbitMQ::Client) perl(BSD::Resource) perl(Cpanel::JSON::XS) perl(Pod::POM) perl(Mojo::IOLoop::ReadWriteProcess) perl(Minion) perl(Mojo::Pg)
 Name:           openQA
 Version:        4.6
-Release:        5
+Release:        0
 Summary:        The openQA web-frontend, scheduler and tools
-License:        GPL-2.0+
+License:        GPL-2.0-or-later
 Group:          Development/Tools/Other
 Url:            http://os-autoinst.github.io/openQA/
 Source0:        %{name}-%{version}.tar.xz
@@ -55,12 +55,13 @@ BuildRequires:  os-autoinst
 BuildRequires:  systemd
 # critical bug fix
 BuildRequires:  perl(DBIx::Class) >= 0.082801
+BuildRequires:  perl(Minion) >= 9.02
 BuildRequires:  perl(Mojolicious) >= 7.92
 BuildRequires:  perl(Mojolicious::Plugin::AssetPack) >= 1.36
-BuildRequires:  perl(Minion) >= 9.02
 BuildRequires:  rubygem(sass)
-Requires:       perl(Minion) >= 9.02
 Requires:       dbus-1
+Requires:       perl(Minion) >= 9.02
+Requires:       perl(Mojo::RabbitMQ::Client) >= 0.2
 # needed for test suite
 Requires:       git-core
 Requires:       openQA-client = %{version}
@@ -87,13 +88,14 @@ ExcludeArch:    i586
 %{?systemd_requires}
 %if %{with tests}
 BuildRequires:  chromedriver
-BuildRequires:  chromium glibc-locale
+BuildRequires:  chromium
+BuildRequires:  glibc-locale
 # pick a font so chromium has something to render - doesn't matter so much
 BuildRequires:  dejavu-fonts
 BuildRequires:  google-roboto-fonts
 BuildRequires:  perl-App-cpanminus
 BuildRequires:  perl(DBD::SQLite)
-BuildRequires:  perl(Mojo::RabbitMQ::Client)
+BuildRequires:  perl(Mojo::RabbitMQ::Client) >= 0.2
 BuildRequires:  perl(Perl::Critic)
 BuildRequires:  perl(Perl::Tidy)
 BuildRequires:  perl(Selenium::Remote::Driver) >= 1.20
@@ -140,8 +142,8 @@ Group:          Development/Tools/Other
 Requires:       openQA-client = %{version}
 Requires:       os-autoinst < 5
 Requires:       perl(DBD::SQLite)
-Requires:       perl(SQL::SplitStatement)
 Requires:       perl(Mojo::IOLoop::ReadWriteProcess) > 0.19
+Requires:       perl(SQL::SplitStatement)
 # FIXME: use proper Requires(pre/post/preun/...)
 PreReq:         openQA-common = %{version}
 Requires(post): coreutils
