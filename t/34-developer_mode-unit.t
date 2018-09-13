@@ -22,6 +22,7 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
+use Date::Format;
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
@@ -124,6 +125,7 @@ my $jobs               = $db->resultset('Jobs');
 my $users              = $db->resultset('Users');
 my $developer_sessions = $db->resultset('DeveloperSessions');
 my $workers            = $db->resultset('Workers');
+my $needles            = $db->resultset('Needles');
 
 # the data to expect when no developer session is present
 my %no_developer = (
@@ -135,6 +137,45 @@ my %no_developer = (
     outstanding_images           => undef,
     upload_up_to_current_module  => undef,
 );
+
+subtest 'generate needle JSON for passing needles via websockets to command server' => sub {
+    my $new_needle = $needles->create(
+        {
+            dir_id       => 1,
+            filename     => 'new_needle.json',
+            file_present => 1,
+            t_created    => time2str('%Y-%m-%d %H:%M:%S', time - 300, 'UTC'),
+            t_updated    => time2str('%Y-%m-%d %H:%M:%S', time - 300, 'UTC'),
+            tags         => [qw(foo bar)],
+        });
+    my $needle_id = $new_needle->id;
+
+    my %expected_json = (
+        id         => $needle_id,
+        name       => 'new_needle',
+        directory  => 'fixtures',
+        tags       => [qw(foo bar)],
+        json_path  => "/needles/$needle_id/json",
+        image_path => "/needles/$needle_id/image",
+    );
+
+    my $needle_dir = 't/data/openqa/share/tests/opensuse/needles';
+
+    # test direct use of to_json
+    my $actual_json = $new_needle->to_json;
+    ok($expected_json{t_created} = $actual_json->{t_created}, 'needle json has t_created');
+    ok($expected_json{t_updated} = $actual_json->{t_updated}, 'needle json has t_updated');
+    is_deeply($actual_json, \%expected_json, 'needle json as expected')
+      or diag explain $actual_json;
+
+    # test call via LiveViewHandler
+    my $live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
+    my %command_json      = ();
+    $live_view_handler->app($t_livehandler->app);
+    $live_view_handler->_handle_command_resume_test_execution(99963, \%command_json);
+    is_deeply(\%command_json, {new_needles => [\%expected_json]}, 'attach JSON in livehandler')
+      or diag explain \%command_json;
+};
 
 subtest 'store upload progress as JSON in database on worker-level' => sub {
     my $worker = $workers->find({job_id => 99961});

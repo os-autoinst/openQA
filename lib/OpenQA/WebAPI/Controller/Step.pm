@@ -207,7 +207,7 @@ sub edit {
 
     # check whether new needles with matching tags have already been created since the job has been started
     if (@$tags) {
-        my $new_needles = $self->app->schema->resultset('Needles')->new_needles_since($job->t_started, $tags);
+        my $new_needles = $self->app->schema->resultset('Needles')->new_needles_since($job->t_started, $tags, 5);
         while (my $new_needle = $new_needles->next) {
             my $new_needle_tags = $new_needle->tags;
             my $joined_tags = $new_needle_tags ? join(', ', @$new_needle_tags) : 'none';

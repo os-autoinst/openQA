@@ -55,6 +55,29 @@ sub needle {
     return $self->serve_static_($name . $format);
 }
 
+sub _needle_by_id_and_extension {
+    my ($self, $extension) = @_;
+
+    my $needle_id = $self->param('needle_id') or return $self->reply->not_found;
+    my $needle = $self->db->resultset('Needles')->find($needle_id) or return $self->reply->not_found;
+    my $needle_dir      = $needle->directory->path;
+    my $needle_filename = $needle->name . $extension;
+
+    $self->{static} = Mojolicious::Static->new;
+    push(@{$self->{static}->paths}, $needle_dir);
+    return $self->serve_static_($needle_filename);
+}
+
+sub needle_image_by_id {
+    my ($self) = @_;
+    return $self->_needle_by_id_and_extension('.png');
+}
+
+sub needle_json_by_id {
+    my ($self) = @_;
+    return $self->_needle_by_id_and_extension('.json');
+}
+
 sub _set_test($) {
     my $self = shift;
 
