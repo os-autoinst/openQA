@@ -30,89 +30,21 @@ use OpenQA::Client;
 use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
-use Net::DBus;
-use Net::DBus::Test::MockObject;
-use Test::MockObject;
+use Test::MockModule;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use Mojo::File qw(tempdir path);
 use JSON qw(decode_json);
+use OpenQA::WebAPI::Plugin::AMQP;
 
-my %client_context;
+my %published;
 
-my $client_mock = Test::MockObject->new();
-$client_mock->fake_module(
-    'Mojo::RabbitMQ::Client',
-    new => sub {
-        my $self = shift;
-        my %args = @_;
-        $client_context{url} = $args{url};
-
-        return $self;
-    },
-    heartbeat_timeout => sub { },
-    catch             => sub { },
-    on                => sub {
-        my $self  = shift;
-        my $event = shift;
-        my $sub   = shift;
-        $client_context{on}{$event} = $sub;
-    },
-    connect => sub {
-        my $self = shift;
-        $client_context{on}{open}($self);
-    },
-    open_channel => sub {
-        my $self    = shift;
-        my $channel = shift;
-        $channel->connect();
-    });
-
-my %channel_context;
-my $channel_mock = Test::MockObject->new();
-$channel_mock->fake_module(
-    'Mojo::RabbitMQ::Client::Channel',
-    new => sub {
-        my $self = shift;
-        $channel_context{is_open} = 0;
-        return $self;
-    },
-    catch => sub { },
-    on    => sub {
-        my $self  = shift;
-        my $event = shift;
-        my $sub   = shift;
-        $channel_context{on}{$event} = $sub;
-    },
-    connect => sub {
-        my $self = shift;
-        $channel_context{on}{open}($self);
-    },
-    declare_exchange => sub {
-        my $self = shift;
-        my %args = @_;
-        is($args{exchange}, 'pubsub', 'declare the right exchange');
-        is($args{type},     'topic',  'declare the right exchange type');
-        $channel_context{is_open}   = 1;
-        $channel_context{delivered} = 0;
-        return $self;
-    },
-    publish => sub {
-        my $self = shift;
-        my %args = @_;
-        ok($channel_context{delivered}, 'previous command was delivered');
-        $channel_context{delivered} = 0;
-        $channel_context{last}{$args{routing_key}} = $args{body};
-        return $self;
-    },
-    deliver => sub {
-        my $self = shift;
-        $channel_context{delivered} = 1;
-    },
-    is_open => sub {
-        my $self = shift;
-        return $channel_context{is_open};
+my $plugin_mock = Test::MockModule->new('OpenQA::WebAPI::Plugin::AMQP');
+$plugin_mock->mock(
+    publish_amqp => sub {
+        my ($self, $topic, $data) = @_;
+        $published{$topic} = $data;
     });
 
 my $schema = OpenQA::Test::Database->new->create();
@@ -163,7 +95,7 @@ subtest 'create job' => sub {
     my $post = $t->post_ok("/api/v1/jobs" => form => $settings)->status_is(200);
     ok($job = $post->tx->res->json->{id}, 'got ID of new job');
     is(
-        $channel_context{last}{'suse.openqa.job.create'},
+        $published{'suse.openqa.job.create'},
         '{"ARCH":"x86_64","BUILD":"666","DESKTOP":"DESKTOP","DISTRI":"Unicorn","FLAVOR":"pink","ISO":"whatever.iso",'
           . '"ISO_MAXSIZE":"1","KVM":"KVM","MACHINE":"RainbowPC","TEST":"rainbow","VERSION":"42","group_id":null,"id":'
           . $job
@@ -175,7 +107,7 @@ subtest 'create job' => sub {
 subtest 'mark job as done' => sub {
     my $post = $t->post_ok("/api/v1/jobs/$job/set_done")->status_is(200);
     is(
-        $channel_context{last}{'suse.openqa.job.done'},
+        $published{'suse.openqa.job.done'},
         '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
           . '"TEST":"rainbow","group_id":null,"id":'
           . $job
@@ -188,7 +120,7 @@ subtest 'duplicate and cancel job' => sub {
     my $post   = $t->post_ok("/api/v1/jobs/$job/duplicate")->status_is(200);
     my $newjob = $post->tx->res->json->{id};
     is(
-        $channel_context{last}{'suse.openqa.job.duplicate'},
+        $published{'suse.openqa.job.duplicate'},
         '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
           . '"TEST":"rainbow","auto":0,"group_id":null,"id":'
           . $job
@@ -199,7 +131,7 @@ subtest 'duplicate and cancel job' => sub {
 
     $post = $t->post_ok("/api/v1/jobs/$newjob/cancel")->status_is(200);
     is(
-        $channel_context{last}{'suse.openqa.job.cancel'},
+        $published{'suse.openqa.job.cancel'},
         '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
           . '"TEST":"rainbow","group_id":null,"id":'
           . $newjob
@@ -220,7 +152,7 @@ sub assert_common_comment_json {
 
 subtest 'create job group comment' => sub {
     my $post = $t->post_ok('/api/v1/groups/1001/comments' => form => {text => 'test'})->status_is(200);
-    my $json = decode_json($channel_context{last}{'suse.openqa.comment.create'});
+    my $json = decode_json($published{'suse.openqa.comment.create'});
     assert_common_comment_json($json);
     is($json->{group_id},        1001,  'job group id');
     is($json->{parent_group_id}, undef, 'parent group id');
@@ -228,7 +160,7 @@ subtest 'create job group comment' => sub {
 
 subtest 'create parent group comment' => sub {
     my $post = $t->post_ok('/api/v1/parent_groups/2000/comments' => form => {text => 'test'})->status_is(200);
-    my $json = decode_json($channel_context{last}{'suse.openqa.comment.create'});
+    my $json = decode_json($published{'suse.openqa.comment.create'});
     assert_common_comment_json($json);
     is($json->{group_id},        undef, 'job group id');
     is($json->{parent_group_id}, 2000,  'parent group id');

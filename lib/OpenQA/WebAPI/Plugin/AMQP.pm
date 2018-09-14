@@ -24,7 +24,7 @@ use Mojo::IOLoop;
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
-use Mojo::RabbitMQ::Client;
+use Mojo::RabbitMQ::Client::Publisher;
 
 my @job_events     = qw(job_create job_delete job_cancel job_duplicate job_restart job_update_result job_done);
 my @comment_events = qw(comment_create comment_update comment_delete);
@@ -32,11 +32,10 @@ my @comment_events = qw(comment_create comment_update comment_delete);
 sub new {
     my $class = shift;
     my $self  = $class->SUPER::new(@_);
-    $self->{app}          = undef;
-    $self->{config}       = undef;
-    $self->{client}       = undef;
-    $self->{channel}      = undef;
-    $self->{reconnecting} = 0;
+    $self->{app}     = undef;
+    $self->{config}  = undef;
+    $self->{client}  = undef;
+    $self->{channel} = undef;
     return $self;
 }
 
@@ -48,8 +47,6 @@ sub register {
 
     $ioloop->next_tick(
         sub {
-            $self->connect();
-
             # register for events
             for my $e (@job_events) {
                 $ioloop->on("openqa_$e" => sub { shift; $self->on_job_event(@_) });
@@ -60,80 +57,8 @@ sub register {
         });
 }
 
-sub reconnect {
-    my $self = shift;
-
-    return if $self->{reconnecting};
-    $self->{reconnecting} = 1;
-    OpenQA::Utils::log_info("AMQP reconnecting in $self->{config}->{amqp}{reconnect_timeout} seconds");
-    Mojo::IOLoop->timer(
-        $self->{config}->{amqp}{reconnect_timeout} => sub {
-            $self->{reconnecting} = 0;
-            $self->connect();
-        });
-}
-
-sub connect {
-    my $self = shift;
-
-    OpenQA::Utils::log_info("Connecting to AMQP server");
-    $self->{client} = Mojo::RabbitMQ::Client->new(url => $self->{config}->{amqp}{url});
-    $self->{client}->heartbeat_timeout($self->{config}->{amqp}{heartbeat_timeout} // 60);
-    $self->{client}->on(
-        open => sub {
-            OpenQA::Utils::log_info("AMQP connection established");
-            my ($client) = @_;
-
-            $self->{channel} = Mojo::RabbitMQ::Client::Channel->new();
-            $self->{channel}->catch(sub { OpenQA::Utils::log_warning("Error on AMQP channel received: " . $_[1]); });
-
-            $self->{channel}->on(
-                open => sub {
-                    my ($channel) = @_;
-                    $channel->declare_exchange(
-                        exchange => $self->{config}->{amqp}{exchange},
-                        type     => 'topic',
-                        passive  => 1,
-                        durable  => 1
-                    )->deliver();
-                });
-            $self->{channel}->on(
-                close => sub {
-                    OpenQA::Utils::log_warning("AMQP channel closed");
-                });
-            $client->open_channel($self->{channel});
-        });
-    $self->{client}->on(
-        close => sub {
-            OpenQA::Utils::log_warning("AMQP connection closed (pid $$)");
-            $self->reconnect();
-        });
-    $self->{client}->on(
-        error => sub {
-            my ($client, $error) = @_;
-            OpenQA::Utils::log_warning("AMQP connection error: $error");
-            $self->reconnect();
-        });
-    $self->{client}->on(
-        disconnect => sub {
-            OpenQA::Utils::log_warning("AMQP connection closed due disconnect (pid $$)");
-            $self->reconnect();
-        });
-    $self->{client}->on(
-        timeout => sub {
-            OpenQA::Utils::log_warning("AMQP connection timeout (pid $$)");
-            $self->reconnect();
-        });
-    $self->{client}->connect();
-}
-
 sub log_event {
     my ($self, $event, $event_data) = @_;
-
-    unless ($self->{channel} && $self->{channel}->is_open) {
-        OpenQA::Utils::log_warning("Error sending AMQP event: Channel is not open");
-        return;
-    }
 
     # use dot separators
     $event =~ s/_/\./;
@@ -144,13 +69,25 @@ sub log_event {
     # convert data to JSON, with reliable key ordering (helps the tests)
     $event_data = Cpanel::JSON::XS->new->canonical(1)->allow_blessed(1)->ascii(1)->encode($event_data);
 
-    OpenQA::Utils::log_debug("Sending AMQP event: $topic");
+    # seperate function for tests
+    $self->publish_amqp($topic, $event_data);
+}
 
-    $self->{channel}->publish(
-        exchange    => $self->{config}->{amqp}{exchange},
-        routing_key => $topic,
-        body        => $event_data
-    )->deliver();
+sub publish_amqp {
+    my ($self, $topic, $event_data) = @_;
+
+    log_debug("Sending AMQP event: $topic");
+    my $publisher = Mojo::RabbitMQ::Client::Publisher->new(
+        url => $self->{config}->{amqp}{url} . "?exchange=" . $self->{config}->{amqp}{exchange});
+
+    $publisher->publish_p($event_data, routing_key => $topic)->then(
+        sub {
+            log_debug "$topic published";
+        }
+    )->catch(
+        sub {
+            die "Publishing $topic failed";
+        });
 }
 
 sub on_job_event {
