@@ -98,10 +98,14 @@ subtest 'worker accepted ws commands' => sub {
 
     $OpenQA::Worker::Common::job = {id => 'job', URL => '127.0.0.1/nojob'};
     $OpenQA::Worker::Common::pooldir = 't';
+    is(OpenQA::Worker::Jobs::is_developer_session_started(), 0, 'worker initially assumes no devel session');
     OpenQA::Worker::Commands::websocket_commands($ws, {type => 'livelog_start'});
     is($OpenQA::Worker::Jobs::do_livelog, 1, 'livelog is started');
     OpenQA::Worker::Commands::websocket_commands($ws, {type => 'livelog_stop'});
     is($OpenQA::Worker::Jobs::do_livelog, 0, 'livelog is stopped');
+
+    OpenQA::Worker::Commands::websocket_commands($ws, {type => 'developer_session_start'});
+    is(OpenQA::Worker::Jobs::is_developer_session_started(), 1, 'worker aware of devel session');
 
     my $buf;
     redirect_output(\$buf);

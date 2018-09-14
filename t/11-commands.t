@@ -50,7 +50,7 @@ package main;
 
 my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
 #issue valid commands for worker 1
-my @valid_commands = qw(quit abort cancel obsolete livelog_stop livelog_start);
+my @valid_commands = qw(quit abort cancel obsolete livelog_stop livelog_start developer_session_start);
 
 my $worker = $schema->resultset('Workers')->find(1);
 

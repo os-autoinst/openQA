@@ -93,6 +93,9 @@ sub websocket_commands {
                 }
             }
         }
+        elsif ($type eq 'developer_session_start') {
+            OpenQA::Worker::Jobs::report_developer_session_started();
+        }
         elsif ($type eq 'grab_job') {
             state $check_job_running;
             state $job_in_progress;
