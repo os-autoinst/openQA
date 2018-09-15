@@ -12,7 +12,7 @@
 From time to time, a test developer might want to use openQA to execute a test
 suite from a different test harness than openQA, but still use openQA to setup test
 scenarios and prepare the environment for a test suite run; for this case openQA has
-the hability to process logs from external harnesses, and display the results integrated
+the ability to process logs from external harnesses, and display the results integrated
 within the job results of the webUI.
 
 One could say that a Test Harness is supported if its output is compatible with
