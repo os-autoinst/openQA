@@ -224,7 +224,10 @@ sub engine_workit {
     my $cgroup;
     mkdir($tmpdir) unless (-d $tmpdir);
 
-    eval { $proc_cgroup = (split(/\n/, path("/proc", $$, "cgroup")->slurp))[-1]; $proc_cgroup =~ s/1:name=|://g; };
+    eval {
+        $proc_cgroup = (grep { /name=systemd:/ } split(/\n/, path("/proc", $$, "cgroup")->slurp))[0];
+        $proc_cgroup =~ s/^.*name=systemd:/systemd/g if defined $proc_cgroup;
+    };
 
     local $@;
     eval { $cgroup = cgroupv2->from(CGROUP_SLICE // $proc_cgroup)->child($job->{id})->create; };
