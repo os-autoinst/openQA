@@ -64,14 +64,12 @@ To add the development repository to your system, you can use these commands.
 zypper ar -f obs://devel:openQA/openSUSE_Tumbleweed devel-openQA
 
 
-# openSUSE Leap 15
-zypper addrepo https://download.opensuse.org/repositories/devel:/openQA/openSUSE_Leap_15.0/ devel-openQA
-
-
-# openSUSE Leap 42.3
-zypper ar -f obs://devel:openQA/openSUSE_Leap_42.3 devel-openQA
-zypper ar -f obs://devel:openQA:Leap:42.3/openSUSE_Leap_42.3 devel-openQA-perl-modules
+LEAP_VERSION=15.0
+zypper ar -f obs://devel:openQA/openSUSE_Leap_$LEAP_VERSION devel-openQA
+zypper ar -f obs://devel:openQA:Leap:<version>/openSUSE_Leap_$LEAP_VERSION devel-openQA-perl-modules
 -------------------------------------------------------------------------------
+
+As required change +LEAP_VERSION+ to the version of openSUSE Leap you have installed.
 
 Then you can install them using this command.
 
