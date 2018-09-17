@@ -33,6 +33,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
+use Test::MockModule;
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 
@@ -44,6 +45,10 @@ sub schema_hook {
     my $jobs               = $schema->resultset('Jobs');
     my $developer_sessions = $schema->resultset('DeveloperSessions');
 
+    # make OpenQA::IPC::websockets() a noop (tested in ../34-developer_mode-unit.t anyways)
+    my $ipc_mock_module = Test::MockModule->new('OpenQA::IPC');
+    $ipc_mock_module->mock(websockets => sub { });
+
     # assign a worker to job 99961
     my $job_id = 99961;
     my $worker = $workers->find({job_id => $job_id});
@@ -54,7 +59,14 @@ sub schema_hook {
     $worker->set_property(CMD_SRV_URL => 'http://remotehost:20013/token99964');
 
     # add developer session for a finished job
-    $developer_sessions->register(99926, 99901);
+    $workers->create(
+        {
+            job_id   => 99926,
+            host     => 'bar',
+            instance => 42,
+        });
+    $developer_sessions->register(99926, 99901)
+      or note 'unable to register developer session for finished job';
 }
 
 my $t      = Test::Mojo->new('OpenQA::WebAPI');

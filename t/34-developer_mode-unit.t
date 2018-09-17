@@ -44,6 +44,15 @@ $jobs_mock_module->mock(
         push(@jobs_cancelled, $job->id);
     });
 
+# mock OpenQA::IPC::websockets()
+my $ipc_mock_module = Test::MockModule->new('OpenQA::IPC');
+my @ipc_messages_for_websocket_server;
+$ipc_mock_module->mock(
+    websockets => sub {
+        my $ipc_instance = shift;
+        push(@ipc_messages_for_websocket_server, [@_]);
+    });
+
 # init test case
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
@@ -415,6 +424,9 @@ set_fake_devel_java_script_transactions(99961, undef);
 set_fake_cmd_srv_transaction(99961, undef);
 
 subtest 'register developer session' => sub {
+    is_deeply(\@ipc_messages_for_websocket_server, [], 'so far no IPC messages for worker')
+      or diag explain \@ipc_messages_for_websocket_server;
+
     my $session = $developer_sessions->register(99963, 99901);
     ok($session, 'session created');
     is($session->job_id,  99963, 'job correctly passed');
@@ -423,6 +435,13 @@ subtest 'register developer session' => sub {
     my $session2 = $developer_sessions->register(99963, 99901);
     ok($session2, 'session created');
     is($developer_sessions->count, 1, 'existing session returned, no new row');
+
+    is_deeply(
+        \@ipc_messages_for_websocket_server,
+        [['ws_send', 1, 'developer_session_start', 99963]],
+        'worker notified exactly once about developer session'
+    ) or diag explain \@ipc_messages_for_websocket_server;
+    @ipc_messages_for_websocket_server = ();
 
     ok(!$developer_sessions->register(99963, 99902), 'locked for other users');
 };
@@ -564,7 +583,35 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
     };
 
     subtest 'job without assigned worker' => sub {
+        $t_livehandler->websocket_ok(
+            '/liveviewhandler/tests/99962/developer/ws-proxy',
+            'establish ws connection from JavaScript to livehandler'
+        );
+        $t_livehandler->message_ok('message received');
+        $t_livehandler->json_message_is(
+            {
+                type => 'error',
+                what => 'unable to create (further) development session',
+                data => undef,
+            });
+        $t_livehandler->finished_ok(1011);
+
+        is($developer_sessions->count, 0, 'refuse to open developer session without assigned worker');
+    };
+
+    subtest 'job with assigned worker but no jobtoken' => sub {
         prepare_waiting_for_finished_handled();
+
+        is_deeply(\@ipc_messages_for_websocket_server, [], 'so far no IPC messages for worker')
+          or diag explain \@ipc_messages_for_websocket_server;
+
+        my $worker = $workers->create(
+            {
+                job_id   => 99962,
+                host     => 'foo',
+                instance => 42
+            });
+        my $worker_id = $worker->id;
 
         $t_livehandler->websocket_ok(
             '/liveviewhandler/tests/99962/developer/ws-proxy',
@@ -581,11 +628,18 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
 
         wait_for_finished_handled();
 
+        $worker->delete();
+
         is($developer_sessions->count, 1, 'developer session opened');
         my $developer_session = $developer_sessions->first;
         is($developer_session->ws_connection_count, 0,     'all ws connections finished');
         is($developer_session->job_id,              99962, 'job ID correct');
         is($developer_session->user_id,             99901, 'user ID correct');
+        is_deeply(
+            \@ipc_messages_for_websocket_server,
+            [['ws_send', $worker_id, 'developer_session_start', 99962]],
+            'worker about devel session notified'
+        ) or diag explain \@ipc_messages_for_websocket_server;
     };
 
     subtest 'job with assigned worker, but os-autoinst not reachable' => sub {

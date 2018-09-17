@@ -54,10 +54,11 @@ my $update_status_running;
 
 my $boundary = '--a_sTrinG-thAt_wIll_n0t_apPEar_iN_openQA_uPloads-61020111';
 
-my $tosend_images = {};
-my $known_images  = undef;
-my $tosend_files  = [];
-my $progress_info = {};
+my $tosend_images         = {};
+my $known_images          = undef;
+my $tosend_files          = [];
+my $progress_info         = {};
+my $has_developer_session = 0;
 
 our $do_livelog;
 
@@ -541,6 +542,7 @@ sub start_job {
     $serial_terminal_offset = 0;
     $current_running        = undef;
     $do_livelog             = 0;
+    $has_developer_session  = 0;
     $tosend_images          = {};
     $tosend_files           = [];
     $current_host           = $host;
@@ -653,6 +655,15 @@ sub has_logviewers {
     return $do_livelog // 0;
 }
 
+sub report_developer_session_started {
+    $has_developer_session = 1;
+    log_debug('Worker got notified that developer session has been started');
+}
+
+sub is_developer_session_started {
+    return $has_developer_session;
+}
+
 # uploads current data
 sub upload_status {
     my ($final_upload, $callback) = @_;
@@ -727,7 +738,9 @@ sub upload_status {
     # upload status to web UI
     my $job_id = $job->{id};
     ignore_known_images();
-    post_upload_progress_to_liveviewhandler($job_id, $upload_up_to);
+    if (is_developer_session_started()) {
+        post_upload_progress_to_liveviewhandler($job_id, $upload_up_to);
+    }
     api_call(
         'post',
         "jobs/$job_id/status",
@@ -753,7 +766,9 @@ sub handle_status_upload_finished {
         }
     }
 
-    post_upload_progress_to_liveviewhandler($job_id, $upload_up_to);
+    if (is_developer_session_started()) {
+        post_upload_progress_to_liveviewhandler($job_id, $upload_up_to);
+    }
 
     $update_status_running = 0;
     return $callback->() if $callback;

@@ -27,7 +27,8 @@ use db_helpers;
 use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
 use JSON qw(encode_json decode_json);
 
-use constant COMMANDS => qw(quit abort scheduler_abort cancel obsolete livelog_stop livelog_start);
+use constant COMMANDS =>
+  qw(quit abort scheduler_abort cancel obsolete livelog_stop livelog_start developer_session_start);
 
 __PACKAGE__->table('workers');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
