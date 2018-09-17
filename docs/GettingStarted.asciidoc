@@ -585,7 +585,8 @@ If your openQA is not running on port 80 on 'localhost', you can add option
 
 WARNING: Use only the ISO filename in the 'client' command. You must place the
 file in +/var/lib/openqa/share/factory/iso+. You cannot place the file elsewhere and
-specify its path in the command.
+specify its path in the command. However, openQA also supports a
+remote-download feature of assets from trusted domains.
 
 For Fedora, a sample run might be:
 

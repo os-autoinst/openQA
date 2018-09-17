@@ -19,7 +19,6 @@ use OpenQA::Utils;
 use OpenQA::IPC;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
-use OpenQA::Utils 'find_job';
 use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
 use Mojo::Asset::Memory;
@@ -189,7 +188,9 @@ sub create {
         $self->emit_event('openqa_job_create', {id => $job->id, %params});
         $json->{id} = $job->id;
 
-        # enqueue gru job
+        # enqueue gru jobs
+        my $downloads = create_downloads_list(\%params);
+        enqueue_download_jobs($self->gru, $downloads, [$job->id]);
         $self->gru->enqueue(limit_assets => [] => {priority => 10});
         $job->calculate_blocked_by;
         wakeup_scheduler;

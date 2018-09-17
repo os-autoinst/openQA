@@ -718,7 +718,7 @@ subtest 'Catch blocked_by cycles' => sub {
             ha_alpha_node02_upgraded  => "ha_alpha_node01_upgrade",
             ha_supportserver_upgraded => "ha_alpha_node01_upgrade",
         },
-        "Upgrads not blocked"
+        "Upgrades not blocked"
     );
 
     $schema->txn_rollback;
