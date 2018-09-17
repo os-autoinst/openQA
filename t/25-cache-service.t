@@ -112,6 +112,14 @@ sub start_server {
     return;
 }
 
+sub test_default_usage {
+    my ($id, $a) = @_;
+    if ($cache_client->enqueue_download({id => $id, asset => $a, type => "hdd", host => $host})) {
+        1 until $cache_client->processed($a);
+    }
+    ok(-e path($cachedir)->child($a), 'Asset downloaded');
+}
+
 sub test_download {
     my ($id, $a) = @_;
 
@@ -121,16 +129,15 @@ sub test_download {
     $resp = $cache_client->asset_download({id => $id, asset => $a, type => "hdd", host => $host});
     is($resp, OpenQA::Worker::Cache::ASSET_STATUS_IGNORE) or die diag explain $resp;
 
-    1 until ($cache_client->asset_download_info($a) ne OpenQA::Worker::Cache::ASSET_STATUS_IGNORE);
+    my $state = $cache_client->asset_download_info($a);
+    $state = $cache_client->asset_download_info($a) until ($state ne OpenQA::Worker::Cache::ASSET_STATUS_IGNORE);
 
-    #At some point, should start download
-    $resp = $cache_client->asset_download_info($a);
-    is($resp, OpenQA::Worker::Cache::ASSET_STATUS_DOWNLOADING) or die diag explain $resp;
+    # After IGNORE, only DOWNLOAD status could follow, but it could be fast enough to not catch it
+    $state = $cache_client->asset_download_info($a);
+    $state = $cache_client->asset_download_info($a) until ($state ne OpenQA::Worker::Cache::ASSET_STATUS_DOWNLOADING);
 
-    1 until ($cache_client->asset_download_info($a) ne OpenQA::Worker::Cache::ASSET_STATUS_DOWNLOADING);
-
-    $resp = $cache_client->asset_download_info($a);
-    is($resp, OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED) or die diag explain $resp;
+    # And then goes to PROCESSED state
+    is($state, OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED) or die diag explain $resp;
 
     ok(-e path($cachedir)->child($a), 'Asset downloaded');
 }
@@ -152,11 +159,11 @@ subtest 'different token between restarts' => sub {
 };
 
 subtest 'Asset download' => sub {
-    test_download(922756, 'sle-12-SP3-x86_64-0368-200_200@64bit.qcow2');
-    test_download(922756, 'sle-12-SP3-x86_64-0368-200_200@64bit.qcow2');
-    test_download(922756, 'sle-12-SP3-x86_64-0368-200_500@64bit.qcow2');
+    test_download(922756, 'sle-12-SP3-x86_64-0368-200_2900@64bit.qcow2');
+    test_download(922756, 'sle-12-SP3-x86_64-0368-200_2700@64bit.qcow2');
+    test_download(922756, 'sle-12-SP3-x86_64-0368-200_5500@64bit.qcow2');
     test_download(922756, 'sle-12-SP3-x86_64-0368-200_12200@64bit.qcow2');
-    test_download(922756, 'sle-12-SP3-x86_64-0368-200_1200@64bit.qcow2');
+    test_download(922756, 'sle-12-SP3-x86_64-0368-200_15200@64bit.qcow2');
     test_download(922756, 'sle-12-SP3-x86_64-0368-200_123200@64bit.qcow2');
 };
 
@@ -191,7 +198,7 @@ subtest 'Race for same asset' => sub {
 };
 
 subtest 'Default usage' => sub {
-    my $a = 'sle-12-SP3-x86_64-0368-200_10@64bit.qcow2';
+    my $a = 'sle-12-SP3-x86_64-0368-200_1000@64bit.qcow2';
     unlink path($cachedir)->child($a);
     ok(!-e path($cachedir)->child($a), 'Asset absent') or die diag "Asset already exists - abort test";
 
@@ -206,5 +213,30 @@ subtest 'Default usage' => sub {
     ok(-e path($cachedir)->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
 };
 
+subtest 'Small assets causes racing when releasing locks' => sub {
+    my $a = 'sle-12-SP3-x86_64-0368-200_1@64bit.qcow2';
+    unlink path($cachedir)->child($a);
+    ok(!-e path($cachedir)->child($a), 'Asset absent') or die diag "Asset already exists - abort test";
+
+    if ($cache_client->enqueue_download({id => 922756, asset => $a, type => "hdd", host => $host})) {
+        1 until $cache_client->processed($a);
+        ok(-e path($cachedir)->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
+    }
+    else {
+        fail("Failed enqueuing download");
+    }
+
+    ok(-e path($cachedir)->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
+};
+
+
+subtest 'Asset download with default usage' => sub {
+    test_default_usage(922756, 'sle-12-SP3-x86_64-0368-200_2@64bit.qcow2');
+    test_default_usage(922756, 'sle-12-SP3-x86_64-0368-200_3@64bit.qcow2');
+    test_default_usage(922756, 'sle-12-SP3-x86_64-0368-200_4@64bit.qcow2');
+    test_default_usage(922756, 'sle-12-SP3-x86_64-0368-200_5@64bit.qcow2');
+    test_default_usage(922756, 'sle-12-SP3-x86_64-0368-200_8@64bit.qcow2');
+    test_default_usage(922756, 'sle-12-SP3-x86_64-0368-200_9@64bit.qcow2');
+};
 
 done_testing();

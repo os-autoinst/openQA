@@ -62,7 +62,6 @@ sub processed {
 # FIXME: Note, on service (re)start we need to prune the queues from pending requests.
 # as Clients needs to refill requests with new session token and we do not want to make minion workers do useless downloads.
 
-
     # Safe states
     return !!1 if shift->asset_download_info(shift) eq OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED;
     return !!0;

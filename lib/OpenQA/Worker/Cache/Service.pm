@@ -30,7 +30,7 @@ app->hook(
 
 sub SESSION_TOKEN { $tk }
 plugin 'OpenQA::Worker::Cache::Task::Asset';
-
+app->minion->backend->reset;
 get '/session_token' => sub { shift->render(json => {session_token => SESSION_TOKEN()}) };
 get '/info' => sub { $_[0]->render(json => shift->minion->stats) };
 
@@ -39,8 +39,8 @@ sub _gen_guard_name { join('.', SESSION_TOKEN, pop) }
 sub _exists { !!(defined $_[0] && exists $_[0]->{total} && $_[0]->{total} > 0) }
 
 sub enqueued { _exists(app->minion->backend->list_jobs(0, 1, {states => ['inactive'], notes => {token => shift}})) }
-
-sub active { _exists(app->minion->backend->list_jobs(0, 1, {states => ['active'], notes => {token => shift}})) }
+sub running  { _exists(app->minion->backend->list_jobs(0, 1, {states => ['active'],   notes => {token => shift}})) }
+sub active { running($_[0]) // !app->minion->lock(shift, 0) }
 
 post '/download' => sub {
     my $c = shift;
