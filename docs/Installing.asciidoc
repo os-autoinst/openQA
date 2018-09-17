@@ -233,6 +233,7 @@ You may be vulnerable for up to a day until Fake API key expires.
 systemctl start postgresql
 systemctl start openqa-gru
 systemctl start openqa-webui
+systemctl start openqa-scheduler
 # openSUSE
 systemctl restart apache2
 # Fedora
@@ -249,6 +250,7 @@ openQA runs on each boot, you should also +systemctl enable+ the same services.
 systemctl enable postgresql
 systemctl enable openqa-gru
 systemctl enable openqa-webui
+systemctl enable openqa-scheduler
 --------------------------------------------------------------------------------
 
 == Run workers
