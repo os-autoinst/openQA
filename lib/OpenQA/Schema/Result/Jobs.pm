@@ -1185,13 +1185,14 @@ sub store_image {
 
     if (!$thumb) {
         my $dbpath = OpenQA::Utils::image_md5_filename($md5, 1);
-        try {
-            $self->result_source->schema->resultset('Screenshots')->create({filename => $dbpath, t_created => now()});
-        }
-        catch {
-            # this is actually meant to fail - the worker uploads symlinks first. But to be sure we have a DB entry
-            # in case this was missed, we still force create it
-        };
+        my $dbh = $self->result_source->schema->storage->dbh;
+        # this is actually meant to cause a conflict - the worker uploads symlinks first.
+        # But to be sure we have a DB entry in case this was missed, we still force create it
+        # using postgresql's "do nothing"
+        my $statement
+          = $dbh->prepare('INSERT INTO screenshots (filename, t_created) VALUES(?, now()) ON CONFLICT DO NOTHING');
+
+        $statement->execute($dbpath);
         log_debug("store_image: $storepath");
     }
     return $storepath;
