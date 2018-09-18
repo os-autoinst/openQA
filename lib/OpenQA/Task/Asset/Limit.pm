@@ -62,7 +62,7 @@ sub _limit {
         $update_sth->execute($asset->{max_job} && $asset->{max_job} >= 0 ? $asset->{max_job} : undef, $asset->{id});
         next if $asset->{fixed} || scalar(keys %{$asset->{groups}}) > 0;
 
-        my $age = int(DateTime::Format::Pg->parse_datetime($asset->{t_created})->delta_ms($now)->in_units('days'));
+        my $age = $now->delta_days(DateTime::Format::Pg->parse_datetime($asset->{t_created}))->in_units('days');
         if ($age >= $untracked_assets_storage_duration || !$asset->{size}) {
             _remove_if($app->db, $asset);
         }
