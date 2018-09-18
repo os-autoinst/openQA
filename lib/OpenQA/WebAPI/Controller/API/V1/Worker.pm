@@ -113,11 +113,7 @@ sub _register {
         $job->auto_duplicate;
 
         # .. set it incomplete
-        $job->update(
-            {
-                state  => OpenQA::Jobs::Constants::DONE,
-                result => OpenQA::Jobs::Constants::INCOMPLETE,
-            });
+        $job->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
         $worker->update({job_id => undef});
     }
 

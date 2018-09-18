@@ -872,6 +872,7 @@ sub auto_duplicate {
         }
         else {
             if ($j->state eq SCHEDULED) {
+                $j->release_networks;
                 $j->update({state => SKIPPED});
             }
         }
@@ -1696,6 +1697,7 @@ sub _job_stop_child {
     return 0 unless $job;
 
     if ($job->state eq SCHEDULED) {
+        $job->release_networks;
         $job->update({result => SKIPPED, state => CANCELLED});
     }
     else {
@@ -1798,6 +1800,7 @@ sub cancel {
     my $result = $obsoleted ? OBSOLETED : USER_CANCELLED;
     return if ($self->result ne NONE);
     my $state = $self->state;
+    $self->release_networks;
     $self->update(
         {
             state  => CANCELLED,
