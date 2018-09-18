@@ -5,7 +5,7 @@
   is_operator = <%= (is_operator) ? 'true' : 'false' %>;
   restart_url = "<%= url_for("apiv1_restart", jobid => 'REPLACEIT') %>";
   setupRunningAndScheduledTables();
-  renderTestsList([ <%= join(',', @$jobs) %> ]);
+  renderTestsList();
 % end
 
 % if (@$running) {
@@ -28,7 +28,7 @@
 % }
 
 <div>
-  <h2>Last <%= scalar @$jobs %> finished jobs</h2>
+  <h2>Finished jobs</h2>
     <div class="row" style="margin-bottom: 10px;">
             <div class="col-sm-12 col-md-6">
                 %= check_box relevant => '1', 'checked' => 'checked' => (id => 'relevantfilter')

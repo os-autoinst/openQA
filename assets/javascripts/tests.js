@@ -117,7 +117,7 @@ function renderTestResult( data, type, row ) {
     }
 }
 
-function renderTestsList(jobs) {
+function renderTestsList() {
 
     var table = $('#results').DataTable( {
         "lengthMenu": [[10, 25, 50], [10, 25, 50]],
@@ -128,12 +128,6 @@ function renderTestsList(jobs) {
                 var ret = {
                     "relevant": $('#relevantfilter').prop('checked')
                 };
-                if (jobs != null) {
-                    ret['jobs'] = jobs;
-                    ret['initial'] = 1;
-                }
-                // reset for reload
-                jobs = null;
                 return ret;
             }
         },

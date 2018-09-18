@@ -50,18 +50,6 @@ sub list {
 
     my $assetid = $self->param('assetid');
     my $groupid = $self->param('groupid');
-    my $limit   = $self->param('limit') // 500;
-
-    my $jobs = $self->db->resultset("Jobs")->complex_query(
-        state   => [OpenQA::Jobs::Constants::FINAL_STATES],
-        match   => $match,
-        scope   => $scope,
-        assetid => $assetid,
-        groupid => $groupid,
-        limit   => $limit,
-        idsonly => 1
-    );
-    $self->stash(jobs => [map { $_->id } $jobs->all]);
 
     my $running = $self->db->resultset("Jobs")->complex_query(
         state   => [OpenQA::Jobs::Constants::EXECUTION_STATES],
@@ -112,45 +100,28 @@ sub list_ajax {
     my ($self)  = @_;
     my $assetid = $self->param('assetid');
     my $groupid = $self->param('groupid');
+    my $limit   = $self->param('limit') // 500;
 
-    my @ids;
-    # we have to seperate the initial loading and the reload
-    if ($self->param('initial')) {
-        @ids = map { scalar($_) } @{$self->every_param('jobs[]')};
-    }
-    else {
-        my $scope = '';
-        $scope = 'relevant' if $self->param('relevant') ne 'false';
-        my $jobs = $self->db->resultset("Jobs")->complex_query(
-            state   => 'done,cancelled',
-            scope   => $scope,
-            assetid => $assetid,
-            groupid => $groupid,
-            limit   => 500,
-            idsonly => 1
-        );
-        while (my $j = $jobs->next) { push(@ids, $j->id); }
-    }
-
-    # complete response
-    my @list;
-    my @jobs = $self->db->resultset("Jobs")->search(
-        {'me.id' => {in => \@ids}},
-        {
-            columns => [
+    my $scope = ($self->param('relevant') ne 'false' ? 'relevant' : '');
+    my @jobs = $self->db->resultset("Jobs")->complex_query(
+        state   => [OpenQA::Jobs::Constants::FINAL_STATES],
+        scope   => $scope,
+        assetid => $assetid,
+        groupid => $groupid,
+        limit   => $limit,
+        order_by => ['me.t_finished DESC, me.id DESC'],
+        columns => [
                 qw(me.id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
                   state clone_id test result group_id t_finished
                   passed_module_count softfailed_module_count
                   failed_module_count skipped_module_count
                   )
             ],
-            order_by => ['me.t_finished DESC, me.id DESC'],
-            prefetch => [qw(children parents)],
-        })->all;
-
-    my $comment_count = $self->prefetch_comment_counts(\@ids);
+    )->all;
 
     # need to use all as the order is too complex for a cursor
+    my $comment_count = $self->prefetch_comment_counts([map { $_->id } @jobs]);
+    my @list;
     for my $job (@jobs) {
         push(
             @list,

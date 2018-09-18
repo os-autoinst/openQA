@@ -207,10 +207,14 @@ sub complex_query {
     my %attrs;
     my @joins;
 
-    unless ($args{idsonly}) {
+    my $columns = $args{columns};
+    if (!$args{idsonly} && !$columns) {
         push @{$attrs{prefetch}}, 'settings';
         push @{$attrs{prefetch}}, 'parents';
         push @{$attrs{prefetch}}, 'children';
+    }
+    if ($columns) {
+        $attrs{columns} = $columns;
     }
 
     if ($args{failed_modules}) {
