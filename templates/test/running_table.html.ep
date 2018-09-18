@@ -39,7 +39,6 @@
                     %= link_to url_for('test', 'testid' => $job->id) => begin
                         %= $testname
                     % end
-                    %= comment_icon($job->id, $job->comments->count);
                 </td>
                 <td style="padding: 7px 4px;" class="tprogress">
                     <div class="progress">

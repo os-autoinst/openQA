@@ -168,7 +168,7 @@ OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP");
 # verify it's displayed scheduled
 $driver->click_element_ok('All Tests', 'link_text');
 $driver->title_is('openQA: Test results', 'tests followed');
-like($driver->get_page_source(), qr/\Q<h2>1 scheduled jobs<\/h2>\E/, '1 job scheduled');
+like($driver->get_page_source(), qr/\Q<h2>\s*1 scheduled jobs\s*<\/h2>\E/, '1 job scheduled');
 wait_for_ajax;
 
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';

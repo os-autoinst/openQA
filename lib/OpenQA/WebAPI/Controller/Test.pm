@@ -61,48 +61,36 @@ sub list {
         limit   => $limit,
         idsonly => 1
     );
-    $self->stash(jobs => $jobs);
+    $self->stash(jobs => [map { $_->id } $jobs->all]);
 
     my $running = $self->db->resultset("Jobs")->complex_query(
         state   => [OpenQA::Jobs::Constants::EXECUTION_STATES],
         match   => $match,
         groupid => $groupid,
         assetid => $assetid
-    );
-    my @list;
-    while (my $job = $running->next) {
-        my $data = {
-            job          => $job,
-            result_stats => $job->result_stats,
-            run_stat     => $job->running_modinfo(),
-        };
-        push @list, $data;
-    }
-    @list = sort {
-        if ($b->{job} && $a->{job}) {
-            $b->{job}->t_started <=> $a->{job}->t_started || $b->{job}->id <=> $a->{job}->id;
-        }
-        elsif ($b->{job}) {
-            1;
-        }
-        elsif ($a->{job}) {
-            -1;
-        }
-        else {
-            0;
-        }
-    } @list;
-    $self->stash(running => \@list);
+    )->search(undef, {order_by => [{-desc => 'me.t_started'}, {-desc => 'me.id'}]});
+    $self->stash(
+        running => [
+            map { {job => $_, result_stats => $_->result_stats, run_stat => $_->running_modinfo,} } $running->all
+        ]);
 
     my $scheduled = $self->db->resultset("Jobs")->complex_query(
-        state   => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
-        match   => $match,
-        groupid => $groupid,
-        assetid => $assetid
+        state    => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
+        match    => $match,
+        groupid  => $groupid,
+        assetid  => $assetid,
+        order_by => [{-desc => 'me.t_created'}, {-desc => 'me.id'}],
     );
-    $self->stash(blocked => {map { $_->id => \undef } $scheduled->search({-not => {blocked_by_id => undef}})->all});
-    $self->stash(
-        scheduled => [$scheduled->search(undef, {order_by => [{-desc => 'me.t_created'}, {-desc => 'me.id'}]})->all]);
+    my $blocked = $self->db->resultset("Jobs")->complex_query(
+        state            => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
+        match            => $match,
+        groupid          => $groupid,
+        assetid          => $assetid,
+        additional_conds => [{-not => {blocked_by_id => undef}}],
+        order_by         => undef,
+    );
+    $self->stash(blocked_count => $blocked->count);
+    $self->stash(scheduled     => [$scheduled->all]);
 }
 
 sub prefetch_comment_counts {

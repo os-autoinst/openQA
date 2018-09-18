@@ -331,7 +331,15 @@ sub complex_query {
         }
     }
 
-    $attrs{order_by} = ['me.id DESC'];
+    push(@conds, @{$args{additional_conds}}) if $args{additional_conds};
+    if (exists $args{order_by}) {
+        if (my $order_by = $args{order_by}) {
+            $attrs{order_by} = $order_by;
+        }
+    }
+    else {
+        $attrs{order_by} = ['me.id DESC'];
+    }
 
     $attrs{join} = \@joins if @joins;
     my $jobs = $self->search({-and => \@conds}, \%attrs);

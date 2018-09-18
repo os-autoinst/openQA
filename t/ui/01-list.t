@@ -99,7 +99,11 @@ $time->attribute_like('title', qr/.*Z/, 'right time title for running');
 $time->text_like(qr/1[01] minutes ago/, 'right time for running');
 
 $get = $t->get_ok('/tests')->status_is(200);
-my @header = $t->tx->res->dom->find('h2')->map('text')->each;
+my @header = $t->tx->res->dom->find('h2')->map('text')->each(
+    sub {
+        my ($element, $index) = @_;
+        OpenQA::Test::Case::trim_whitespace($element);
+    });
 my @expected = ('2 jobs are running', '2 scheduled jobs', 'Last 11 finished jobs');
 is_deeply(\@header, \@expected, 'all job summaries correct with defaults');
 
