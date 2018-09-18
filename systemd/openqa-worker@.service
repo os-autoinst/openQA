@@ -17,6 +17,7 @@ User=_openqa-worker
 KillMode=mixed
 Restart=on-failure
 Delegate=yes
+Slice=openqa-worker.slice
 
 [Install]
 WantedBy=multi-user.target
