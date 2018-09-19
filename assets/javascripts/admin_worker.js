@@ -3,7 +3,7 @@ function setupWorkerNeedles() {
     var table = $('#previous_jobs').DataTable(
         {ajax: $('#previous_jobs').data('ajax-url'),
             deferRender: true,
-            "columns": [
+            columns: [
                 {data: "name"},
                 {data: "result_stats"},
                 {data: "finished"}
@@ -17,7 +17,7 @@ function setupWorkerNeedles() {
                   render: renderTestName,
                 },
                 {targets: 1, render: renderTestResult},
-                {targets: 2, render: renderTimeAgo}
+                {targets: 2, render: renderTimeAgoForFinished}
             ]
         });
     table.on('draw.dt', setupTestButtons);

@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2014-2017 SUSE LLC
+# Copyright (C) 2014-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,72 +67,73 @@ unless ($driver) {
     exit(0);
 }
 
-#
-# List with no parameters
-#
 $driver->title_is("openQA", "on main page");
-my $get;
-
-#
-# Test the legacy redirection
-#
 is($driver->get("/results"), 1, "/results gets");
-like($driver->get_current_url(), qr{.*/tests}, "/results redirects to /tests ");
+like($driver->get_current_url(), qr{.*/tests}, 'legacy redirection from /results to /tests');
 
 wait_for_ajax();
 
 # Test 99946 is successful (29/0/1)
 my $job99946 = $driver->find_element('#results #job_99946');
-my @tds = $driver->find_child_elements($job99946, "td");
-is((shift @tds)->get_text(), 'Build0091 of opensuse-13.1-DVD.i586', "medium of 99946");
-is((shift @tds)->get_text(), 'textmode@32bit',                      "test of 99946");
-is((shift @tds)->get_text(), '28 1 1',                              "result of 99946 (passed, softfailed, failed)");
+my @tds = $driver->find_child_elements($job99946, 'td');
+is(scalar @tds,              4,                                     '4 columns displayed');
+is((shift @tds)->get_text(), 'Build0091 of opensuse-13.1-DVD.i586', 'medium of 99946');
+is((shift @tds)->get_text(), 'textmode@32bit',                      'test of 99946');
+is((shift @tds)->get_text(), '28 1 1',                              'result of 99946 (passed, softfailed, failed)');
 my $time = $driver->find_child_element(shift @tds, 'span');
 $time->attribute_like('title', qr/.*Z/, 'finish time title of 99946');
-$time->text_like(qr/about 3 hours ago/, "finish time of 99946");
+$time->text_like(qr/about 3 hours ago/, 'finish time of 99946');
 
 # Test 99963 is still running
 isnt($driver->find_element('#running #job_99963'), undef, '99963 still running');
 like($driver->find_element('#running #job_99963 td.test a')->get_attribute('href'), qr{.*/tests/99963}, 'right link');
-$time = $driver->find_element('#running #job_99963 td.time');
+$time = $driver->find_element('#running #job_99963 td.time span');
 $time->attribute_like('title', qr/.*Z/, 'right time title for running');
 $time->text_like(qr/1[01] minutes ago/, 'right time for running');
 
-$get = $t->get_ok('/tests')->status_is(200);
-my @header = $t->tx->res->dom->find('h2')->map('text')->each(
-    sub {
-        my ($element, $index) = @_;
-        OpenQA::Test::Case::trim_whitespace($element);
-    });
-my @expected = ('2 jobs are running', '2 scheduled jobs', 'Last 11 finished jobs');
-is_deeply(\@header, \@expected, 'all job summaries correct with defaults');
+$driver->get('/tests');
+wait_for_ajax;
+my @header       = $driver->find_elements('h2');
+my @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
+my @expected     = ('2 jobs are running', '2 scheduled jobs', 'Last 10 finished jobs');
+is_deeply(\@header_texts, \@expected, 'all headings correctly displayed');
 
-$get      = $t->get_ok('/tests?limit=1')->status_is(200);
-@header   = $t->tx->res->dom->find('h2')->map('text')->each;
-@expected = ('2 jobs are running', '2 scheduled jobs', 'Last 1 finished jobs');
-is_deeply(\@header, \@expected, 'test report can be adjusted with query parameter');
+$driver->get('/tests?limit=1');
+wait_for_ajax;
+@header       = $driver->find_elements('h2');
+@header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
+@expected     = ('2 jobs are running', '2 scheduled jobs', 'Last 1 finished jobs');
+is_deeply(\@header_texts, \@expected, 'limit for finished tests can be adjusted with query parameter');
 
-$get = $t->get_ok('/tests/99963')->status_is(200);
+my $get = $t->get_ok('/tests/99963')->status_is(200);
 $t->content_like(qr/State.*running/, "Running jobs are marked");
 
-# Available comments shown
-is(
-    $driver->find_element('#job_99963 .fa-comment')->get_attribute('title'),
-    '2 comments available',
-    'available comments shown for running jobs'
-);
-is(@{$driver->find_elements('#job_99961 .fa-comment')},
-    0, 'available comments only shown if at least one comment available');
-is(
-    $driver->find_element('#job_99928 .fa-comment')->get_attribute('title'),
-    '1 comment available',
-    'available comments shown for scheduled jobs'
-);
-is(
-    $driver->find_element('#job_99946 .fa-comment')->get_attribute('title'),
-    '2 comments available',
-    'available comments shown for finished jobs'
-);
+subtest 'available comments shown' => sub {
+    $driver->get('/tests');
+    wait_for_ajax;
+
+    is(
+        $driver->find_element('#job_99946 .fa-comment')->get_attribute('title'),
+        '2 comments available',
+        'available comments shown for finished jobs'
+    );
+    is(@{$driver->find_elements('#job_99962 .fa-comment')},
+        0, 'available comments only shown if at least one comment available');
+
+  SKIP: {
+        skip 'comment icon for running and scheduled jobs skipped to imporove performance', 2;
+        is(
+            $driver->find_element('#job_99963 .fa-comment')->get_attribute('title'),
+            '2 comments available',
+            'available comments shown for running jobs'
+        );
+        is(
+            $driver->find_element('#job_99928 .fa-comment')->get_attribute('title'),
+            '1 comment available',
+            'available comments shown for scheduled jobs'
+        );
+    }
+};
 
 $driver->find_element_by_link_text('Build0091')->click();
 like(
@@ -147,7 +148,7 @@ is($driver->get("/tests"), 1, "/tests gets");
 # Test 99928 is scheduled
 isnt($driver->find_element('#scheduled #job_99928'), undef, '99928 scheduled');
 like($driver->find_element('#scheduled #job_99928 td.test a')->get_attribute('href'), qr{.*/tests/99928}, 'right link');
-$time = $driver->find_element('#scheduled #job_99928 td.time');
+$time = $driver->find_element('#scheduled #job_99928 td.time span');
 $time->attribute_like('title', qr/.*Z/, 'right time title for scheduled');
 $time->text_like(qr/2 hours ago/, 'right time for scheduled');
 $driver->find_element('#scheduled #job_99928 td.test a')->click();
@@ -254,31 +255,36 @@ is_deeply(
     '99945 again hidden'
 );
 
-$driver->get("/tests?match=staging_e");
+$driver->get('/tests?match=staging_e');
 wait_for_ajax();
 
-#print $driver->get_page_source();
-@jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
-is_deeply(\@jobs, [qw(job_99926)], '1 matching job');
-is(@{$driver->find_elements('table.dataTable', 'css')}, 1, 'no scheduled, no running matching');
+@jobs = map { $_->get_attribute('id') } @{$driver->find_elements('tbody tr', 'css')};
+is_deeply(\@jobs, ['', '', 'job_99926'], '1 job matching');
+# note: the first 2 empty IDs are the 'not found' row of the data tables for running and
+#       scheduled jobs
+
+$driver->get('/tests');
+wait_for_ajax();
+my @cancel_links = $driver->find_elements('#job_99928 a.cancel');
+is(scalar @cancel_links, 0, 'no cancel link when not logged in');
 
 # now login to test restart links
 $driver->find_element_by_link_text('Login')->click();
-is($driver->get("/tests"), 1, "/tests gets");
+is($driver->get('/tests'), 1, 'back on /tests');
 wait_for_ajax();
 
-my $td = $driver->find_element('#results #job_99946 td.test');
+@cancel_links = $driver->find_elements('#job_99928 a.cancel');
+is(scalar @cancel_links, 1, 'cancel link displayed when logged in');
+
+my $td = $driver->find_element('#job_99946 td.test');
 is($td->get_text(), 'textmode@32bit', 'correct test name');
 
-# click restart
 $driver->find_child_element($td, '.restart', 'css')->click();
 wait_for_ajax();
 
 $driver->title_is('openQA: Test results', 'restart stays on page');
-$td = $driver->find_element('#results #job_99946 td.test');
+$td = $driver->find_element('#job_99946 td.test');
 is($td->get_text(), 'textmode@32bit (restarted)', 'restart removes link');
-
-#OpenQA::SeleniumTest::make_screenshot('mojoResults.png');
 
 kill_driver();
 done_testing();

@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,16 +39,9 @@ unless ($driver) {
     exit(0);
 }
 
-#
-# List with no parameters
-#
 $driver->title_is("openQA", "on main page");
-#
-# Test the legacy redirection
-#
-is($driver->get("/tests"), 1, "/tests");
-
-is($driver->get("/tests?groupid=0"), 1, "list jobs without group");
+ok($driver->get('/tests?groupid=0'), 'list jobs without group');
+wait_for_ajax();
 
 my @rows = $driver->find_child_elements($driver->find_element('#scheduled tbody'), "tr");
 is(@rows, 1, 'one sheduled job without group');
@@ -57,8 +50,6 @@ ok($driver->get("/tests?groupid=1001"), "list jobs without group 1001");
 @rows = $driver->find_child_elements($driver->find_element('#running tbody'), "tr");
 is(@rows, 1, 'one running job with this group');
 isnt($driver->find_element('#running #job_99963'), undef, '99963 listed');
-#OpenQA::SeleniumTest::make_screenshot('mojoResults.png');
-
 
 kill_driver();
 done_testing();

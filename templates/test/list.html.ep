@@ -4,31 +4,44 @@
 % content_for 'ready_function' => begin
   is_operator = <%= (is_operator) ? 'true' : 'false' %>;
   restart_url = "<%= url_for("apiv1_restart", jobid => 'REPLACEIT') %>";
-  setupRunningAndScheduledTables();
-  renderTestsList();
+  cancel_url = "<%= url_for("apiv1_cancel", jobid => 'REPLACEIT') %>";
+  renderTestLists();
 % end
 
-% if (@$running) {
-    <div>
-        <h2><%= @$running %> jobs are running</h2>
-        %= include 'test/running_table'
-    </div>
-% }
-
-% if (@$scheduled) {
-    <div>
-        <h2>
-            <%= scalar(@$scheduled) %> scheduled jobs
-            % if ($blocked_count) {
-                (<%= $blocked_count %> blocked by other jobs)
-            % }
-        </h2>
-        %= include 'test/scheduled_table'
-    </div>
-% }
+<div>
+    <h2 id="running_jobs_heading">Running jobs</h2>
+    <table id="running" class="display table table-striped" style="width: 100%">
+        <thead>
+            <tr>
+                <th class="name">Medium</th>
+                <th class="test">Test</th>
+                <th>Progress</th>
+                <th class="time">Started</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
 
 <div>
-  <h2>Finished jobs</h2>
+    <h2 id="scheduled_jobs_heading">Scheduled jobs</h2>
+    <table id="scheduled" class="display table table-striped" style="width: 100%">
+        <thead>
+            <tr>
+            <th class="name">Medium</th>
+            <th class="name">Test</th>
+            <th>Priority</th>
+            <th class="time">Created</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+
+<div>
+  <h2 id="finished_jobs_heading">Finished jobs</h2>
     <div class="row" style="margin-bottom: 10px;">
             <div class="col-sm-12 col-md-6">
                 %= check_box relevant => '1', 'checked' => 'checked' => (id => 'relevantfilter')

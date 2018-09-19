@@ -45,9 +45,6 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $get   = $t->ua->get('/');
 my $token = $get->res->dom->at('meta[name=csrf-token]')->attr('content');
 
-# look for the cancel link without logging in
-$t->get_ok('/tests')->element_exists_not('#results #job_99928 .cancel a');
-
 # test cancel and restart without logging in
 $t->post_ok('/api/v1/jobs/99928/cancel'       => {'X-CSRF-Token' => $token} => form => {})->status_is(403);
 $t->post_ok('/api/v1/jobs/99928/restart'      => {'X-CSRF-Token' => $token} => form => {})->status_is(403);
@@ -64,9 +61,6 @@ ok($get->res->dom->at('meta[name=csrf-param]')->attr('content') eq 'csrf_token',
 #say "csrf token is $token";
 
 is($token, $get->res->dom->at('form input[name=csrf_token]')->{value}, "token is the same in form");
-
-# Test 99928 is scheduled, so can be canceled
-$t->get_ok('/tests')->element_exists('#scheduled #job_99928 a.cancel');
 
 # test cancel with and without CSRF token
 $t->post_ok('/api/v1/jobs/99928/cancel' => form => {csrf_token => 'foobar'})->status_is(403);

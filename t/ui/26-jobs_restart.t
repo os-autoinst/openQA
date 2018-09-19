@@ -97,7 +97,7 @@ wait_for_ajax();
 
 subtest 'check single job restart in /tests page' => sub {
     # Restart a single job
-    my $td = $driver->find_element('#results #job_99936 td.test');
+    my $td = $driver->find_element('#job_99936 td.test');
     is($td->get_text(), 'kde@64bit-uefi', '99936 is kde@64bit-uefi');
     $driver->find_child_element($td, '.restart', 'css')->click();
     wait_for_ajax();
@@ -110,17 +110,18 @@ subtest 'check single job restart in /tests page' => sub {
     # Open restart link then verify its test name
     $driver->find_child_element($td, "./a[\@title='new test']", 'xpath')->click();
     like($driver->find_element('#info_box .card-header')->get_text(), qr/kde\@64bit-uefi/, 'restarted job is correct');
-
-    is($driver->get('/tests'), 1, 'back to /tests page');
 };
+
+ok($driver->get('/tests'), 'back on /tests page');
+wait_for_ajax();
 
 my $first_tab = $driver->get_current_window_handle();
 my $second_tab;
 
 subtest 'check cluster jobs restart in /tests page' => sub {
     # Check chain jobs restart
-    my $chained_parent = $driver->find_element('#results #job_99937 td.test');
-    my $chained_child  = $driver->find_element('#results #job_99938 td.test');
+    my $chained_parent = $driver->find_element('#job_99937 td.test');
+    my $chained_child  = $driver->find_element('#job_99938 td.test');
     is($chained_parent->get_text(), 'kde@32bit', 'chained parent is kde@32bit');
     is($chained_child->get_text(),  'doc@64bit', 'chained child is doc@64bit');
 
@@ -160,9 +161,9 @@ subtest 'check cluster jobs restart in /tests page' => sub {
     (shift(@page_next))->click();
     wait_for_ajax();
 
-    my $master_node    = $driver->find_element('#results #job_99902 td.test');
-    my $slave_node     = $driver->find_element('#results #job_99903 td.test');
-    my $support_server = $driver->find_element('#results #job_99901 td.test');
+    my $master_node    = $driver->find_element('#job_99902 td.test');
+    my $slave_node     = $driver->find_element('#job_99903 td.test');
+    my $support_server = $driver->find_element('#job_99901 td.test');
     is($master_node->get_text(),    'master_node@32bit',    'a parallel child is master_node@32bit');
     is($slave_node->get_text(),     'slave_node@32bit',     'a parallel child is slave_node@32bit');
     is($support_server->get_text(), 'support_server@32bit', 'a parallel parent is support_server@32bit');
@@ -215,7 +216,8 @@ subtest 'check cluster jobs restart in /tests page' => sub {
 
 subtest 'check cluster jobs restart in test overview page' => sub {
     # Refresh /tests page and cancel all 6 restarted jobs in previous tests
-    is($driver->get('/tests'), 1, 'back to /tests page');
+    ok($driver->get('/tests'), 'back on /tests page');
+    wait_for_ajax();
     my @scheduled_tds = $driver->find_elements('#scheduled td.test');
     for my $i (0 .. 5) {
         $driver->find_child_element($scheduled_tds[$i], '.cancel', 'css')->click();

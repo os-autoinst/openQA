@@ -73,17 +73,13 @@
                 </div>
                 % if ($job->state eq 'scheduled') {
                     <div>
-                        Priority:
-                        %  my $prio = $job->priority;
-                        <span>
-                            %= link_post url_for('apiv1_job_prio', 'jobid' => $job->id)->query(prio => $prio-10) => (class => 'prio-down') =>  ('data-remote' => 'true') => begin
-                                <i class="far fa-minus-square"></i>
-                            % end
-                            <span data-prio="<%= $prio %>"><%= $prio %></span>
-                            %= link_post url_for('apiv1_job_prio', 'jobid' => $job->id)->query(prio => $prio+10) => (class => 'prio-up') => ('data-remote' => 'true') => begin
-                                <i class="far fa-plus-square"></i>
-                            % end
-                        </span>
+                        <a class="prio-down" data-method="post" href="javascript:void(0);" onclick="decreaseJobPrio(<%= $job->id %>, this);">
+                            <i class="far fa-minus-square"></i>
+                        </a>
+                        <span class="prio-value"><%= $job->priority %></span>
+                        <a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio(<%= $job->id %>, this);">
+                            <i class="far fa-plus-square"></i>
+                        </a>
                     </div>
                 % }
                 % if ($worker) {

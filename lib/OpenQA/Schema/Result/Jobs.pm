@@ -1137,9 +1137,9 @@ sub update_module {
 }
 
 sub running_modinfo {
-    my ($self) = @_;
+    my ($self, $modules) = @_;
 
-    my @modules = OpenQA::Schema::Result::JobModules::job_modules($self);
+    my @modules = ($modules ? $modules->all : OpenQA::Schema::Result::JobModules::job_modules($self));
 
     my $modlist   = [];
     my $donecount = 0;
