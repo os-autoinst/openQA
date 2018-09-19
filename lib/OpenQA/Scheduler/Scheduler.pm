@@ -99,14 +99,18 @@ sub schema {
     return $schema;
 }
 
-sub matching_workers {
-    my ($job, $free_workers) = @_;
+sub scheduled_jobs {
+    CORE::state $scheduled_jobs;
+    $scheduled_jobs = {} unless $scheduled_jobs;
+    return $scheduled_jobs;
+}
 
-    my @classes = map { $_->value } $job->settings->search({key => 'WORKER_CLASS'})->all;
+sub matching_workers {
+    my ($jobinfo, $free_workers) = @_;
 
     my @filtered;
     for my $worker (@$free_workers) {
-        my $matched_all = all { $worker->check_class($_) } @classes;
+        my $matched_all = all { $worker->check_class($_) } @{$jobinfo->{worker_classes}};
         push(@filtered, $worker) if $matched_all;
     }
     return \@filtered;
@@ -140,6 +144,54 @@ sub to_be_scheduled {
     return [values %taken];
 }
 
+sub update_scheduled_jobs {
+    # Don't kick off jobs if GRU task they depend on is running
+    my $waiting_jobs = schema->resultset("GruDependencies")->get_column('job_id')->as_query;
+
+    my $jobs = schema->resultset("Jobs")->search(
+        {
+            blocked_by_id => undef,
+            state         => OpenQA::Jobs::Constants::SCHEDULED,
+            id            => {-not_in => $waiting_jobs},
+        });
+
+    my %currently_scheduled;
+    my %cluster_infos;
+    my @missing_worker_class;
+    while (my $job = $jobs->next) {
+        my $info = scheduled_jobs->{$job->id} || {};
+        $currently_scheduled{$job->id} = 1;
+        # for easier access
+        $info->{id}       = $job->id;
+        $info->{priority} = $job->priority;
+        $info->{state}    = $job->state;
+        if (!$info->{worker_classes}) {
+            push(@missing_worker_class, $job->id);
+            $info->{worker_classes} = [];
+        }
+        $info->{cluster_jobs} ||= $cluster_infos{$job->id};
+
+        if (!$info->{cluster_jobs}) {
+            $info->{cluster_jobs} = $job->cluster_jobs;
+            # it's the same cluster for all, so share
+            for my $j (%{$info->{cluster_jobs}}) {
+                $cluster_infos{$j} = $info->{cluster_jobs};
+            }
+        }
+        scheduled_jobs->{$job->id} = $info;
+    }
+    # fetch worker classes
+    my $settings
+      = schema->resultset("JobSettings")->search({key => 'WORKER_CLASS', job_id => {-in => \@missing_worker_class}});
+    while (my $line = $settings->next) {
+        push(@{scheduled_jobs->{$line->job_id}->{worker_classes}}, $line->value);
+    }
+    # delete stale entries
+    for my $id (keys %{scheduled_jobs()}) {
+        delete scheduled_jobs->{$id} unless $currently_scheduled{$id};
+    }
+}
+
 =head2 schedule()
 
 Have no arguments. It's called by the main event loop every SCHEDULE_TICK_MS.
@@ -147,7 +199,6 @@ Have no arguments. It's called by the main event loop every SCHEDULE_TICK_MS.
 =cut
 
 sub schedule {
-    my $allocated_worker;
     my $start_time = time;
 
     # Exit only when database state is consistent.
@@ -166,7 +217,6 @@ sub schedule {
     # NOTE: $worker->connected is too much expensive since is over dbus, prefer dead.
     # shuffle avoids starvation if a free worker keeps failing.
     my @free_workers = $shuffle_workers ? shuffle(@f_w) : @f_w;
-
     if (@free_workers == 0) {
         return ();
     }
@@ -175,51 +225,22 @@ sub schedule {
     log_debug("-> Scheduling new jobs.");
     log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
 
-    # Don't kick off jobs if GRU task they depend on is running
-    my $waiting_jobs = schema->resultset("GruDependencies")->get_column('job_id')->as_query;
-
-    my $jobs = schema->resultset("Jobs")->search(
-        {
-            blocked_by_id => undef,
-            state         => OpenQA::Jobs::Constants::SCHEDULED,
-            id            => {-not_in => $waiting_jobs},
-        });
-
-    my %scheduled_jobs;
-
-    my %cluster_infos;
-    while (my $job = $jobs->next) {
-        my $info = $scheduled_jobs{$job->id} || {};
-        #$info->{job} = $job;
-        # for easier access
-        $info->{id}               = $job->id;
-        $info->{priority}         = $job->priority;
-        $info->{state}            = $job->state;
-        $info->{matching_workers} = matching_workers($job, \@free_workers);
-        $info->{cluster_jobs}     = $cluster_infos{$job->id};
-
-        if (!$info->{cluster_jobs} && $info->{matching_workers}) {
-            $info->{cluster_jobs} = $job->cluster_jobs;
-            # it's the same cluster for all, so share
-            for my $j (%{$info->{cluster_jobs}}) {
-                $cluster_infos{$j} = $info->{cluster_jobs};
-            }
-        }
-        $scheduled_jobs{$job->id} = $info;
-    }
-    log_debug("\t Scheduled jobs: " . scalar(keys %scheduled_jobs));
+    update_scheduled_jobs;
+    log_debug("\t Scheduled jobs: " . scalar(keys %{scheduled_jobs()}));
 
     my @need;
     # now fetch the remaining job states of cluster jobs
-    for my $jobinfo (values %scheduled_jobs) {
+    for my $jobinfo (values %{scheduled_jobs()}) {
+        $jobinfo->{matching_workers} = matching_workers($jobinfo, \@free_workers);
         for my $j (keys %{$jobinfo->{cluster_jobs}}) {
-            next if defined $scheduled_jobs{$j};
+            next if defined scheduled_jobs->{$j};
             push(@need, $j);
         }
     }
 
     my %clusterjobs;
-    $jobs = schema->resultset('Jobs')->search({id => \@need, state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
+    my $jobs = schema->resultset('Jobs')
+      ->search({id => {-in => \@need}, state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
     while (my $j = $jobs->next) {
         $clusterjobs{$j->id} = $j->state;
     }
@@ -228,7 +249,7 @@ sub schedule {
     my $allocating = {};
 
     # first pick cluster jobs with running siblings (prio doesn't matter)
-    for my $jobinfo (values %scheduled_jobs) {
+    for my $jobinfo (values %{scheduled_jobs()}) {
         my $has_cluster_running = 0;
         for my $j (keys %{$jobinfo->{cluster_jobs}}) {
             if (defined $clusterjobs{$j}) {
@@ -245,9 +266,9 @@ sub schedule {
         }
     }
 
-    my @sorted = sort { $a->{priority} <=> $b->{priority} || $a->{id} <=> $b->{id} } values %scheduled_jobs;
+    my @sorted = sort { $a->{priority} <=> $b->{priority} || $a->{id} <=> $b->{id} } values %{scheduled_jobs()};
     for my $j (@sorted) {
-        my $tobescheduled = to_be_scheduled($j, \%scheduled_jobs);
+        my $tobescheduled = to_be_scheduled($j, scheduled_jobs);
         next if defined $allocated_jobs{$j->{id}};
         next unless $tobescheduled;
         my %taken;
@@ -274,7 +295,6 @@ sub schedule {
         # the limit
         last if scalar(keys %$allocating) >= OpenQA::Scheduler::MAX_JOB_ALLOCATION;
     }
-
     my @successfully_allocated;
 
     for my $allocated (values %allocated_jobs) {
