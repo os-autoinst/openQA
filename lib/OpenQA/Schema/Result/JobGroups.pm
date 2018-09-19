@@ -185,14 +185,21 @@ sub _find_expired_jobs {
     # 0 means forever
     return [] unless $keep_in_days;
 
+    my $schema = $self->result_source->schema;
+
     # all jobs not in important builds that are expired
     my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $keep_in_days, 'UTC')};
 
-    # filter out linked jobs
-    my $expired_jobs
-      = $self->jobs->search(
-        {BUILD    => {-not_in => $important_builds}, t_finished => $timecond, text => {like => 'label:linked%'}},
-        {order_by => 'me.id',                        join       => 'comments'});
+    # filter out linked jobs. As we use this function also for the homeless
+    # group (with id=null), we can't use $self->jobs, but need to add it directly
+    my $expired_jobs = $schema->resultset('Jobs')->search(
+        {
+            BUILD         => {-not_in => $important_builds},
+            'me.group_id' => $self->id,
+            t_finished    => $timecond,
+            text          => {like => 'label:linked%'}
+        },
+        {order_by => 'me.id', join => 'comments'});
     my @linked_jobs = map { $_->id } $expired_jobs->all;
     push(@ors, {BUILD => {-not_in => $important_builds}, t_finished => $timecond, id => {-not_in => \@linked_jobs}});
 
@@ -203,7 +210,8 @@ sub _find_expired_jobs {
             {-or => [{BUILD => {-in => $important_builds}}, {id => {-in => \@linked_jobs}}], t_finished => $timecond},
         );
     }
-    return $self->jobs->search({-or => \@ors}, {order_by => qw(id)});
+    return $schema->resultset('Jobs')
+      ->search({-and => {'me.group_id' => $self->id, -or => \@ors}}, {order_by => qw(id)});
 }
 
 sub find_jobs_with_expired_results {
@@ -224,6 +232,18 @@ sub find_jobs_with_expired_logs {
     return [$self->_find_expired_jobs($important_builds, $self->keep_logs_in_days, $self->keep_important_logs_in_days)
           ->search({logs_present => 1})->all
     ];
+}
+
+# helper function for cleanup task
+sub limit_results_and_logs {
+    my ($self) = @_;
+    my $important_builds = $self->important_builds;
+    for my $job (@{$self->find_jobs_with_expired_results($important_builds)}) {
+        $job->delete;
+    }
+    for my $job (@{$self->find_jobs_with_expired_logs($important_builds)}) {
+        $job->delete_logs;
+    }
 }
 
 sub tags {

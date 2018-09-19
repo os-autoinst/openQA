@@ -27,15 +27,13 @@ sub register {
 sub _limit {
     my ($app, $job) = @_;
 
+    # create temporary job group outside of DB to collect
+    # jobs without job_group_id
+    $app->db->resultset('JobGroups')->new({})->limit_results_and_logs;
+
     my $groups = $app->db->resultset('JobGroups');
     while (my $group = $groups->next) {
-        my $important_builds = $group->important_builds;
-        for my $job (@{$group->find_jobs_with_expired_results($important_builds)}) {
-            $job->delete;
-        }
-        for my $job (@{$group->find_jobs_with_expired_logs($important_builds)}) {
-            $job->delete_logs;
-        }
+        $group->limit_results_and_logs;
     }
 }
 
