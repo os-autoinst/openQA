@@ -35,6 +35,12 @@ sub token {
     shift->ua->get('http://localhost:3000/session_token')->result->json->{session_token};
 }
 
+sub dequeue {
+    !!(
+        shift->ua->get('http://localhost:3000/dequeue/' . shift)->result->json->{status} eq
+        OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED);
+}
+
 sub _gen_guard_name { join('.', shift->token, pop) }
 
 sub register {
@@ -54,11 +60,12 @@ sub register {
               unless my $guard = $app->minion->guard($guard_name, MINION_LOCK_EXPIRE);
             $app->log->debug("[$$] [Job #" . $job->id . "] Guard: $guard_name Download: $asset_name");
 
+            $app->log->debug("[$$] Job dequeued ") if $self->dequeue($asset_name);
+
             # Do the real download
             $self->cache->host($host);
             $self->cache->get_asset({id => $id}, $type, $asset_name);
             $app->log->debug("[$$] [Job #" . $job->id . "] Finished");
-            $job->remove;
         });
 }
 

@@ -19,34 +19,36 @@ use Mojolicious::Lite;
 use OpenQA::Worker::Cache::Task::Asset;
 use Mojolicious::Plugin::Minion;
 use OpenQA::Worker::Cache;
+use Mojo::Collection;
 
 BEGIN { srand(time) }
 
-my $tk;
+my ($tk, $enqueued);
 app->hook(
     before_server_start => sub {
-        $tk = int(rand(999999999999));
+        $tk       = int(rand(999999999999));
+        $enqueued = Mojo::Collection->new;
     });
 
 sub SESSION_TOKEN { $tk }
+
 plugin 'OpenQA::Worker::Cache::Task::Asset';
-app->minion->backend->reset;
+
 get '/session_token' => sub { shift->render(json => {session_token => SESSION_TOKEN()}) };
 get '/info' => sub { $_[0]->render(json => shift->minion->stats) };
 
 sub _gen_guard_name { join('.', SESSION_TOKEN, pop) }
-
 sub _exists { !!(defined $_[0] && exists $_[0]->{total} && $_[0]->{total} > 0) }
 
-sub enqueued { _exists(app->minion->backend->list_jobs(0, 1, {states => ['inactive'], notes => {token => shift}})) }
-sub running  { _exists(app->minion->backend->list_jobs(0, 1, {states => ['active'],   notes => {token => shift}})) }
-sub active { running($_[0]) // !app->minion->lock(shift, 0) }
+sub active { !app->minion->lock(shift, 0) }
+sub enqueued {
+    !!($enqueued->grep(sub { $_ eq shift })->size == 1);
+}
 
 post '/download' => sub {
     my $c = shift;
 
-    my $data = $c->req->json;
-
+    my $data  = $c->req->json;
     my $id    = $data->{'id'};
     my $type  = $data->{'type'};
     my $asset = $data->{'asset'};
@@ -56,7 +58,7 @@ post '/download' => sub {
       unless defined $id;
     return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => "No Asset defined"})
       unless defined $asset;
-    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => "No Asset  type defined"})
+    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => "No Asset type defined"})
       unless defined $type;
     return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => "No Host defined"})
       unless defined $host;
@@ -68,6 +70,8 @@ post '/download' => sub {
     return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_IGNORE})      if enqueued($lock);
 
     $c->minion->enqueue(cache_asset => [$id, $type, $asset, $host] => {notes => {token => $lock}});
+    push @$enqueued, $lock;
+
     $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ENQUEUED});
 };
 
@@ -78,9 +82,19 @@ get '/status/#asset' => sub {
 
     return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_DOWNLOADING}) if active($lock);
     return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_IGNORE})      if enqueued($lock);
+    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED});
+};
+
+get '/dequeue/#asset' => sub {
+    my $c     = shift;
+    my $asset = $c->param('asset');
+    my $lock  = _gen_guard_name($asset);
+
+    $enqueued = $enqueued->grep(sub { $_ ne $lock });
     $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED});
 };
 
+app->minion->backend->reset;
 # Start the Mojolicious command system
 app->start;
 

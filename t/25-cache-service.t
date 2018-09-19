@@ -117,17 +117,15 @@ sub test_default_usage {
     if ($cache_client->enqueue_download({id => $id, asset => $a, type => "hdd", host => $host})) {
         1 until $cache_client->processed($a);
     }
-    ok(-e path($cachedir)->child($a), 'Asset downloaded');
+    ok(-e path($cachedir)->child($a), "Asset $a downloaded");
 }
 
 sub test_download {
     my ($id, $a) = @_;
+    unlink path($cachedir)->child($a);
 
     my $resp = $cache_client->asset_download({id => $id, asset => $a, type => "hdd", host => $host});
     is($resp, OpenQA::Worker::Cache::ASSET_STATUS_ENQUEUED) or die diag explain $resp;
-    # Create double request
-    $resp = $cache_client->asset_download({id => $id, asset => $a, type => "hdd", host => $host});
-    is($resp, OpenQA::Worker::Cache::ASSET_STATUS_IGNORE) or die diag explain $resp;
 
     my $state = $cache_client->asset_download_info($a);
     $state = $cache_client->asset_download_info($a) until ($state ne OpenQA::Worker::Cache::ASSET_STATUS_IGNORE);
@@ -178,9 +176,6 @@ subtest 'Race for same asset' => sub {
     my $q          = queue;
     $q->pool->maximum_processes($concurrent);
     $q->queue->maximum_processes($tot_proc);
-    my @test = uniq(map { int(rand(2000)) + 150 } 1 .. ($tot_proc / 2));
-    #my $sum = sum(@test) + 2000;
-    #diag "Testing downloading " . (scalar @test) . " assets of ($sum) @test size";
 
     my $concurrent_test = sub {
         if ($cache_client->enqueue_download({id => 922756, asset => $a, type => "hdd", host => $host})) {
@@ -231,12 +226,8 @@ subtest 'Small assets causes racing when releasing locks' => sub {
 
 
 subtest 'Asset download with default usage' => sub {
-    test_default_usage(922756, 'sle-12-SP3-x86_64-0368-200_2@64bit.qcow2');
-    test_default_usage(922756, 'sle-12-SP3-x86_64-0368-200_3@64bit.qcow2');
-    test_default_usage(922756, 'sle-12-SP3-x86_64-0368-200_4@64bit.qcow2');
-    test_default_usage(922756, 'sle-12-SP3-x86_64-0368-200_5@64bit.qcow2');
-    test_default_usage(922756, 'sle-12-SP3-x86_64-0368-200_8@64bit.qcow2');
-    test_default_usage(922756, 'sle-12-SP3-x86_64-0368-200_9@64bit.qcow2');
+    my $tot_proc = $ENV{STRESS_TEST} ? 100 : 10;
+    test_default_usage(922756, "sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2") for 1 .. $tot_proc;
 };
 
 done_testing();
