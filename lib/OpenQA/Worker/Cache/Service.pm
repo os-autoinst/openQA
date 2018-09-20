@@ -23,7 +23,8 @@ use Mojo::Collection;
 
 BEGIN { srand(time) }
 
-my ($tk, $enqueued);
+my $tk;
+my $enqueued = Mojo::Collection->new;
 app->hook(
     before_server_start => sub {
         $tk       = int(rand(999999999999));
@@ -42,7 +43,12 @@ sub _exists { !!(defined $_[0] && exists $_[0]->{total} && $_[0]->{total} > 0) }
 
 sub active { !app->minion->lock(shift, 0) }
 sub enqueued {
-    !!($enqueued->grep(sub { $_ eq shift })->size == 1);
+    my $token = shift;
+    !!($enqueued->grep(sub { $_ eq $token })->size == 1);
+}
+
+sub enqueue {
+    push @$enqueued, shift;
 }
 
 post '/download' => sub {
@@ -69,8 +75,8 @@ post '/download' => sub {
     return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_DOWNLOADING}) if active($lock);
     return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_IGNORE})      if enqueued($lock);
 
-    $c->minion->enqueue(cache_asset => [$id, $type, $asset, $host] => {notes => {token => $lock}});
-    push @$enqueued, $lock;
+    $c->minion->enqueue(cache_asset => [$id, $type, $asset, $host]);
+    enqueue($lock);
 
     $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ENQUEUED});
 };
@@ -80,9 +86,13 @@ get '/status/#asset' => sub {
     my $asset = $c->param('asset');
     my $lock  = _gen_guard_name($asset);
 
-    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_DOWNLOADING}) if active($lock);
-    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_IGNORE})      if enqueued($lock);
-    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED});
+    $c->render(
+        json => {
+            status => (
+                  active($lock)   ? OpenQA::Worker::Cache::ASSET_STATUS_DOWNLOADING
+                : enqueued($lock) ? OpenQA::Worker::Cache::ASSET_STATUS_IGNORE
+                :                   OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED
+            )});
 };
 
 get '/dequeue/#asset' => sub {

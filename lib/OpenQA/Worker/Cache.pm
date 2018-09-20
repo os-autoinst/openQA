@@ -163,7 +163,8 @@ sub download_asset {
                     my $current = int($size / ($len / 100));
                     # Don't spam the webui, update only every 5 seconds
                     if (time - $last_updated > 5) {
-                        update_setup_status;
+                        #        update_setup_status;
+                        # XXX: This now needs to be done while waiting on client side for asset to be processed
                         $last_updated = time;
                         if ($progress < $current) {
                             $progress = $current;

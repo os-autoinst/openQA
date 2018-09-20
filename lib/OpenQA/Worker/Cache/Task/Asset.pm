@@ -29,8 +29,6 @@ has cache => sub {
         location => ($ENV{CACHE_DIR} || $worker_settings->{CACHEDIRECTORY}));
 };
 
-#has token => sub { int(rand(999999999999)) };
-
 sub token {
     shift->ua->get('http://localhost:3000/session_token')->result->json->{session_token};
 }
