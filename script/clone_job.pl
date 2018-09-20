@@ -62,6 +62,10 @@ do not clone parent jobs of type chained. This makes the job use the downloaded 
 
 do not try any download. You need to ensure all required assets are provided yourself.
 
+=item B<--show-progress>
+
+display a progress bar of downloading asset
+
 =item B<--parental-inheritance>
 
 provide parental job with variables from command line (they go to child job by default).
@@ -130,6 +134,7 @@ GetOptions(
     \%options,           "from=s",        "host=s",               "dir=s",
     "apikey:s",          "apisecret:s",   "verbose|v",            "skip-deps",
     "skip-chained-deps", "skip-download", "parental-inheritance", "help|h",
+    "show-progress",
 ) or usage(1);
 
 usage(1) unless @ARGV;
@@ -142,6 +147,7 @@ $options{'dir'} ||= '/var/lib/openqa/factory';
 my $ua = LWP::UserAgent->new;
 $ua->timeout(10);
 $ua->env_proxy;
+$ua->show_progress(1) if ($options{'show-progress'});
 
 $options{'host'} ||= 'localhost';
 
