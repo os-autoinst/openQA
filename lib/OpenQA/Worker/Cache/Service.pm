@@ -35,21 +35,27 @@ sub SESSION_TOKEN { $tk }
 
 plugin 'OpenQA::Worker::Cache::Task::Asset';
 
-get '/session_token' => sub { shift->render(json => {session_token => SESSION_TOKEN()}) };
-get '/info' => sub { $_[0]->render(json => shift->minion->stats) };
-
 sub _gen_guard_name { join('.', SESSION_TOKEN, pop) }
 sub _exists { !!(defined $_[0] && exists $_[0]->{total} && $_[0]->{total} > 0) }
 
 sub active { !app->minion->lock(shift, 0) }
+
 sub enqueued {
-    my $token = shift;
-    !!($enqueued->grep(sub { $_ eq $token })->size == 1);
+    my $lock = shift;
+    !!($enqueued->grep(sub { $_ eq $lock })->size == 1);
+}
+
+sub dequeue {
+    my $lock = shift;
+    $enqueued = $enqueued->grep(sub { $_ ne $lock });
 }
 
 sub enqueue {
     push @$enqueued, shift;
 }
+
+get '/session_token' => sub { shift->render(json => {session_token => SESSION_TOKEN()}) };
+get '/info' => sub { $_[0]->render(json => shift->minion->stats) };
 
 post '/download' => sub {
     my $c = shift;
@@ -100,7 +106,7 @@ get '/dequeue/#asset' => sub {
     my $asset = $c->param('asset');
     my $lock  = _gen_guard_name($asset);
 
-    $enqueued = $enqueued->grep(sub { $_ ne $lock });
+    dequeue($lock);
     $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED});
 };
 

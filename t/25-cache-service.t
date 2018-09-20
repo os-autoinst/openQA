@@ -145,13 +145,13 @@ start_server;
 
 subtest 'enqueued' => sub {
     use OpenQA::Worker::Cache::Service;
+
     OpenQA::Worker::Cache::Service::enqueue('bar');
-
     ok !OpenQA::Worker::Cache::Service::enqueued('foo'), "Queue works" or die;
-
     OpenQA::Worker::Cache::Service::enqueue('foo');
     ok OpenQA::Worker::Cache::Service::enqueued('foo'), "Queue works";
-
+    OpenQA::Worker::Cache::Service::dequeue('foo');
+    ok !OpenQA::Worker::Cache::Service::enqueued('foo'), "Dequeue works";
 };
 
 subtest 'Asset exists' => sub {
