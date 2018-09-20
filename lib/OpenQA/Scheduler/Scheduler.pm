@@ -192,6 +192,44 @@ sub update_scheduled_jobs {
     }
 }
 
+sub pick_siblings_of_running {
+    my ($allocated_jobs, $allocating) = @_;
+
+    my @need;
+    # now fetch the remaining job states of cluster jobs
+    for my $jobinfo (values %{scheduled_jobs()}) {
+        for my $j (keys %{$jobinfo->{cluster_jobs}}) {
+            next if defined scheduled_jobs->{$j};
+            push(@need, $j);
+        }
+    }
+
+    my %clusterjobs;
+    my $jobs = schema->resultset('Jobs')
+      ->search({id => {-in => \@need}, state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
+    while (my $j = $jobs->next) {
+        $clusterjobs{$j->id} = $j->state;
+    }
+
+    # first pick cluster jobs with running siblings (prio doesn't matter)
+    for my $jobinfo (values %{scheduled_jobs()}) {
+        my $has_cluster_running = 0;
+        for my $j (keys %{$jobinfo->{cluster_jobs}}) {
+            if (defined $clusterjobs{$j}) {
+                $has_cluster_running = 1;
+                last;
+            }
+        }
+        if ($has_cluster_running) {
+            for my $w (@{$jobinfo->{matching_workers}}) {
+                next if $allocating->{$w->id};
+                $allocating->{$w->id} = $jobinfo->{id};
+                $allocated_jobs->{$jobinfo->{id}} = {job => $jobinfo->{id}, worker => $w->id};
+            }
+        }
+    }
+}
+
 =head2 schedule()
 
 Have no arguments. It's called by the main event loop every SCHEDULE_TICK_MS.
@@ -206,8 +244,6 @@ sub schedule {
         log_debug("Exiting");
         exit(0);
     }
-
-    my %allocated_jobs;
 
     my $all_workers = schema->resultset("Workers")->count();
 
@@ -228,43 +264,20 @@ sub schedule {
     update_scheduled_jobs;
     log_debug("\t Scheduled jobs: " . scalar(keys %{scheduled_jobs()}));
 
-    my @need;
-    # now fetch the remaining job states of cluster jobs
+    # update the matching workers to the current free
     for my $jobinfo (values %{scheduled_jobs()}) {
         $jobinfo->{matching_workers} = matching_workers($jobinfo, \@free_workers);
-        for my $j (keys %{$jobinfo->{cluster_jobs}}) {
-            next if defined scheduled_jobs->{$j};
-            push(@need, $j);
-        }
     }
 
-    my %clusterjobs;
-    my $jobs = schema->resultset('Jobs')
-      ->search({id => {-in => \@need}, state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
-    while (my $j = $jobs->next) {
-        $clusterjobs{$j->id} = $j->state;
-    }
+    my %allocated_jobs;
 
     # keep count on workers
     my $allocating = {};
 
-    # first pick cluster jobs with running siblings (prio doesn't matter)
-    for my $jobinfo (values %{scheduled_jobs()}) {
-        my $has_cluster_running = 0;
-        for my $j (keys %{$jobinfo->{cluster_jobs}}) {
-            if (defined $clusterjobs{$j}) {
-                $has_cluster_running = 1;
-                last;
-            }
-        }
-        if ($has_cluster_running) {
-            for my $w (@{$jobinfo->{matching_workers}}) {
-                next if $allocating->{$w->id};
-                $allocating->{$w->id} = $jobinfo->{id};
-                $allocated_jobs{$jobinfo->{id}} = {job => $jobinfo->{id}, worker => $w->id};
-            }
-        }
-    }
+    # before we start looking at sorted jobs, we try to repair half
+    # scheduled clusters. This can happen e.g. with workers connected to
+    # multiple webuis
+    pick_siblings_of_running(\%allocated_jobs, $allocating);
 
     my @sorted = sort { $a->{priority} <=> $b->{priority} || $a->{id} <=> $b->{id} } values %{scheduled_jobs()};
     for my $j (@sorted) {
@@ -272,29 +285,32 @@ sub schedule {
         next if defined $allocated_jobs{$j->{id}};
         next unless $tobescheduled;
         my %taken;
-        for my $l (@$tobescheduled) {
-            my $tw;
-            for my $w (@{$l->{matching_workers}}) {
-                next if $allocating->{$w->id};
-                next if $taken{$w->id};
-                $tw = $w;
+        for my $sub_job (@$tobescheduled) {
+            my $picked_worker;
+            for my $worker (@{$sub_job->{matching_workers}}) {
+                next if $allocating->{$worker->id};
+                next if $taken{$worker->id};
+                $picked_worker = $worker;
                 last;
             }
-            if (!$tw) {
+            if (!$picked_worker) {
                 %taken = ();
                 last;
             }
-            $taken{$tw->id} = $l;
+            $taken{$picked_worker->id} = $sub_job;
         }
-        for my $w (keys %taken) {
-            my $l = $taken{$w};
-            $allocating->{$w} = $l->{id};
-            $allocated_jobs{$l->{id}} = {job => $l->{id}, worker => $w};
+        for my $worker (keys %taken) {
+            my $ji = $taken{$worker};
+            $allocating->{$worker} = $ji->{id};
+            $allocated_jobs{$ji->{id}} = {job => $ji->{id}, worker => $worker};
         }
         # we make sure we schedule clusters no matter what, but we stop if we're over
         # the limit
         last if scalar(keys %$allocating) >= OpenQA::Scheduler::MAX_JOB_ALLOCATION;
     }
+    dd \%allocated_jobs;
+    return;
+
     my @successfully_allocated;
 
     for my $allocated (values %allocated_jobs) {
