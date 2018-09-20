@@ -66,4 +66,10 @@ subtest '_GROUP and _GROUP_ID override each other' => sub {
     is_deeply(\%settings, {_GROUP => 'foo'}, '_GROUP overrides _GROUP_ID');
 };
 
+subtest 'delete empty setting' => sub {
+    my %settings = ();
+    clone_job_apply_settings([qw(ISO_1= ADDONS=)], 0, \%settings, \%options);
+    is_deeply(\%settings, {}, 'all empty settings removed');
+};
+
 done_testing();

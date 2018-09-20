@@ -50,7 +50,7 @@ sub clone_job_apply_settings {
         next unless (is_global_setting($key) or $depth == 0 or $options->{'parental-inheritance'});
 
         # delete key if value empty
-        if (!defined $value) {
+        if (!defined $value || $value eq '') {
             delete $settings->{$key};
             next;
         }
