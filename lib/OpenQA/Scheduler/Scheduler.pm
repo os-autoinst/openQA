@@ -99,14 +99,18 @@ sub schema {
     return $schema;
 }
 
-sub matching_workers {
-    my ($job, $free_workers) = @_;
+sub scheduled_jobs {
+    CORE::state $scheduled_jobs;
+    $scheduled_jobs = {} unless $scheduled_jobs;
+    return $scheduled_jobs;
+}
 
-    my @classes = map { $_->value } $job->settings->search({key => 'WORKER_CLASS'})->all;
+sub matching_workers {
+    my ($jobinfo, $free_workers) = @_;
 
     my @filtered;
     for my $worker (@$free_workers) {
-        my $matched_all = all { $worker->check_class($_) } @classes;
+        my $matched_all = all { $worker->check_class($_) } @{$jobinfo->{worker_classes}};
         push(@filtered, $worker) if $matched_all;
     }
     return \@filtered;
@@ -140,41 +144,7 @@ sub to_be_scheduled {
     return [values %taken];
 }
 
-=head2 schedule()
-
-Have no arguments. It's called by the main event loop every SCHEDULE_TICK_MS.
-
-=cut
-
-sub schedule {
-    my $allocated_worker;
-    my $start_time = time;
-
-    # Exit only when database state is consistent.
-    if ($quit) {
-        log_debug("Exiting");
-        exit(0);
-    }
-
-    my %allocated_jobs;
-
-    my $all_workers = schema->resultset("Workers")->count();
-
-    my @f_w = grep { !$_->dead && ($_->websocket_api_version() || 0) == WEBSOCKET_API_VERSION }
-      schema->resultset("Workers")->search({job_id => undef})->all();
-
-    # NOTE: $worker->connected is too much expensive since is over dbus, prefer dead.
-    # shuffle avoids starvation if a free worker keeps failing.
-    my @free_workers = $shuffle_workers ? shuffle(@f_w) : @f_w;
-
-    if (@free_workers == 0) {
-        return ();
-    }
-
-    log_debug("+=" . ("-" x 16) . "=+");
-    log_debug("-> Scheduling new jobs.");
-    log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
-
+sub update_scheduled_jobs {
     # Don't kick off jobs if GRU task they depend on is running
     my $waiting_jobs = schema->resultset("GruDependencies")->get_column('job_id')->as_query;
 
@@ -185,50 +155,68 @@ sub schedule {
             id            => {-not_in => $waiting_jobs},
         });
 
-    my %scheduled_jobs;
-
+    my %currently_scheduled;
     my %cluster_infos;
+    my @missing_worker_class;
     while (my $job = $jobs->next) {
-        my $info = $scheduled_jobs{$job->id} || {};
-        #$info->{job} = $job;
+        # the priority_offset stays in the hash for the next round
+        # and is increased whenever a cluster job has to give up its
+        # worker because its siblings failed to find a worker on their
+        # own. Once the combined priority reaches 0, the worker pick is sticky
+        my $info = scheduled_jobs->{$job->id} || {priority_offset => 0};
+        $currently_scheduled{$job->id} = 1;
         # for easier access
-        $info->{id}               = $job->id;
-        $info->{priority}         = $job->priority;
-        $info->{state}            = $job->state;
-        $info->{matching_workers} = matching_workers($job, \@free_workers);
-        $info->{cluster_jobs}     = $cluster_infos{$job->id};
+        $info->{id}       = $job->id;
+        $info->{priority} = $job->priority - $info->{priority_offset};
+        $info->{state}    = $job->state;
+        if (!$info->{worker_classes}) {
+            push(@missing_worker_class, $job->id);
+            $info->{worker_classes} = [];
+        }
+        $info->{cluster_jobs} ||= $cluster_infos{$job->id};
 
-        if (!$info->{cluster_jobs} && $info->{matching_workers}) {
+        if (!$info->{cluster_jobs}) {
             $info->{cluster_jobs} = $job->cluster_jobs;
             # it's the same cluster for all, so share
             for my $j (%{$info->{cluster_jobs}}) {
                 $cluster_infos{$j} = $info->{cluster_jobs};
             }
         }
-        $scheduled_jobs{$job->id} = $info;
+        scheduled_jobs->{$job->id} = $info;
     }
-    log_debug("\t Scheduled jobs: " . scalar(keys %scheduled_jobs));
+    # fetch worker classes
+    my $settings
+      = schema->resultset("JobSettings")->search({key => 'WORKER_CLASS', job_id => {-in => \@missing_worker_class}});
+    while (my $line = $settings->next) {
+        push(@{scheduled_jobs->{$line->job_id}->{worker_classes}}, $line->value);
+    }
+    # delete stale entries
+    for my $id (keys %{scheduled_jobs()}) {
+        delete scheduled_jobs->{$id} unless $currently_scheduled{$id};
+    }
+}
+
+sub pick_siblings_of_running {
+    my ($allocated_jobs, $allocated_workers) = @_;
 
     my @need;
     # now fetch the remaining job states of cluster jobs
-    for my $jobinfo (values %scheduled_jobs) {
+    for my $jobinfo (values %{scheduled_jobs()}) {
         for my $j (keys %{$jobinfo->{cluster_jobs}}) {
-            next if defined $scheduled_jobs{$j};
+            next if defined scheduled_jobs->{$j};
             push(@need, $j);
         }
     }
 
     my %clusterjobs;
-    $jobs = schema->resultset('Jobs')->search({id => \@need, state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
+    my $jobs = schema->resultset('Jobs')
+      ->search({id => {-in => \@need}, state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
     while (my $j = $jobs->next) {
         $clusterjobs{$j->id} = $j->state;
     }
 
-    # keep count on workers
-    my $allocating = {};
-
     # first pick cluster jobs with running siblings (prio doesn't matter)
-    for my $jobinfo (values %scheduled_jobs) {
+    for my $jobinfo (values %{scheduled_jobs()}) {
         my $has_cluster_running = 0;
         for my $j (keys %{$jobinfo->{cluster_jobs}}) {
             if (defined $clusterjobs{$j}) {
@@ -238,46 +226,122 @@ sub schedule {
         }
         if ($has_cluster_running) {
             for my $w (@{$jobinfo->{matching_workers}}) {
-                next if $allocating->{$w->id};
-                $allocating->{$w->id} = $jobinfo->{id};
-                $allocated_jobs{$jobinfo->{id}} = {job => $jobinfo->{id}, worker => $w->id};
+                next if $allocated_workers->{$w->id};
+                $allocated_workers->{$w->id} = $jobinfo->{id};
+                $allocated_jobs->{$jobinfo->{id}} = {job => $jobinfo->{id}, worker => $w->id};
             }
         }
     }
+}
 
-    my @sorted = sort { $a->{priority} <=> $b->{priority} || $a->{id} <=> $b->{id} } values %scheduled_jobs;
+=head2 schedule()
+
+Have no arguments. It's called by the main event loop every SCHEDULE_TICK_MS.
+
+=cut
+
+sub schedule {
+    my $start_time = time;
+
+    # Exit only when database state is consistent.
+    if ($quit) {
+        log_debug("Exiting");
+        exit(0);
+    }
+
+    my $all_workers = schema->resultset("Workers")->count();
+
+    my @f_w = grep { !$_->dead && ($_->websocket_api_version() || 0) == WEBSOCKET_API_VERSION }
+      schema->resultset("Workers")->search({job_id => undef})->all();
+
+    # NOTE: $worker->connected is too much expensive since is over dbus, prefer dead.
+    # shuffle avoids starvation if a free worker keeps failing.
+    my @free_workers = $shuffle_workers ? shuffle(@f_w) : @f_w;
+    if (@free_workers == 0) {
+        return ();
+    }
+
+    log_debug("+=" . ("-" x 16) . "=+");
+    log_debug("-> Scheduling new jobs.");
+    log_debug("\t Free workers: " . scalar(@free_workers) . "/$all_workers");
+
+    update_scheduled_jobs;
+    log_debug("\t Scheduled jobs: " . scalar(keys %{scheduled_jobs()}));
+
+    # update the matching workers to the current free
+    for my $jobinfo (values %{scheduled_jobs()}) {
+        $jobinfo->{matching_workers} = matching_workers($jobinfo, \@free_workers);
+    }
+
+    my $allocated_jobs    = {};
+    my $allocated_workers = {};
+
+    # before we start looking at sorted jobs, we try to repair half
+    # scheduled clusters. This can happen e.g. with workers connected to
+    # multiple webuis
+    pick_siblings_of_running($allocated_jobs, $allocated_workers);
+
+    my @sorted = sort { $a->{priority} <=> $b->{priority} || $a->{id} <=> $b->{id} } values %{scheduled_jobs()};
+    my %checked_jobs;
     for my $j (@sorted) {
-        my $tobescheduled = to_be_scheduled($j, \%scheduled_jobs);
-        next if defined $allocated_jobs{$j->{id}};
+        next if $checked_jobs{$j->{id}};
+        next unless @{$j->{matching_workers}};
+        my $tobescheduled = to_be_scheduled($j, scheduled_jobs);
+        log_debug "need to schedule " . scalar(@$tobescheduled) . " jobs for $j->{id}($j->{priority})";
+        next if defined $allocated_jobs->{$j->{id}};
         next unless $tobescheduled;
         my %taken;
-        for my $l (@$tobescheduled) {
-            my $tw;
-            for my $w (@{$l->{matching_workers}}) {
-                next if $allocating->{$w->id};
-                next if $taken{$w->id};
-                $tw = $w;
+        for my $sub_job (sort { $a->{id} <=> $b->{id} } @$tobescheduled) {
+            $checked_jobs{$sub_job->{id}} = 1;
+            my $picked_worker;
+            for my $worker (@{$sub_job->{matching_workers}}) {
+                next if $allocated_workers->{$worker->id};
+                next if $taken{$worker->id};
+                $picked_worker = $worker;
                 last;
             }
-            if (!$tw) {
+            if (!$picked_worker) {
+                # we failed to allocate a worker for all jobs in the
+                # cluster, so discard all of them. But as it would be
+                # their turn, give the jobs which already got a worker
+                # a bonus on their priority
+                for my $worker (keys %taken) {
+                    my $ji = $taken{$worker};
+                    # we only consider the priority of the main job
+                    if ($j->{priority} > 0) {
+                        # this means we will increase the offset per half-assigned job,
+                        # so if we miss 1/25 jobs, we'll bump by +24
+                        log_debug "Discarding $ji->{id}($j->{priority}) due to incomplete cluster";
+                        $j->{priority_offset} += 1;
+                    }
+                    else {
+                        # don't "take" the worker, but make sure it's not
+                        # used for another job and stays around
+                        log_debug "Holding worker $worker for $ji->{id} to avoid starvation";
+                        $allocated_workers->{$worker} = $ji->{id};
+                    }
+
+                }
                 %taken = ();
                 last;
             }
-            $taken{$tw->id} = $l;
+            $taken{$picked_worker->id} = $sub_job;
         }
-        for my $w (keys %taken) {
-            my $l = $taken{$w};
-            $allocating->{$w} = $l->{id};
-            $allocated_jobs{$l->{id}} = {job => $l->{id}, worker => $w};
+        for my $worker (keys %taken) {
+            my $ji = $taken{$worker};
+            $allocated_workers->{$worker} = $ji->{id};
+            $allocated_jobs->{$ji->{id}} = {job => $ji->{id}, worker => $worker};
         }
-        # we make sure we schedule clusters no matter what, but we stop if we're over
-        # the limit
-        last if scalar(keys %$allocating) >= OpenQA::Scheduler::MAX_JOB_ALLOCATION;
+        # we make sure we schedule clusters no matter what,
+        # but we stop if we're over the limit
+        my $busy = scalar(keys %$allocated_workers);
+        last if $busy >= OpenQA::Scheduler::MAX_JOB_ALLOCATION;
+        last if $busy >= scalar(@free_workers);
     }
 
     my @successfully_allocated;
 
-    for my $allocated (values %allocated_jobs) {
+    for my $allocated (values %$allocated_jobs) {
         #  Now we need to set the worker in the job, with the state in SCHEDULED.
         my $job;
         my $worker;
