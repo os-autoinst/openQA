@@ -26,27 +26,59 @@ function highlightJobsHtml (children, parents) {
     return ' data-children="[' + children.toString() + ']" data-parents="[' + parents.toString() + ']" class="parent_child"';
 }
 
-function renderTestName ( data, type, row ) {
-    if (type === 'display') {
-        var html = '';
-        if (is_operator) {
+function renderMediumName(data, type, row) {
+    var link = '/tests/overview?build=' + row.build + '&distri=' + row.distri + '&version=' + row.version;
+    if (row.group) {
+        link += '&groupid=' + row.group;
+    }
+
+    var name = "<a href='" + link + "'>" + 'Build' + row.build + '</a>';
+    name += " of ";
+    return name + row.distri + "-" + row.version + "-" + row.flavor + "." + row.arch;
+}
+
+function renderTestName(data, type, row) {
+    if (type !== 'display') {
+        return data;
+    }
+
+    var html = '';
+    if (is_operator) {
+        if (row.result) {
+            // allow to restart finished jobs
             if (!row.clone) {
                 var url = restart_url.replace('REPLACEIT', row.id);
-                html += ' <a class="restart"';
-                html += ' href="' + url + '">';
-                html += '<i class="action fa fa-fw fa-redo" title="Restart Job"></i></a>';
+                html += ' <a class="restart" href="' + url + '">';
+                html += '<i class="action fa fa-fw fa-redo" title="Restart job"></i></a>';
             } else {
                 html += '<i class="fa fa-fw"></i>';
             }
+        } else {
+            // allow to cancel scheduled and running jobs
+            var url = cancel_url.replace('REPLACEIT', row.id);
+            html += ' <a class="cancel" href="' + url + '">';
+            html += '<i class="action far fa-fw fa-times-circle" title="Cancel job"></i></a>';
         }
-        html += '<a href="/tests/' + row.id + '">';
+    }
+    html += '<a href="/tests/' + row.id + '">';
+    if (row.result) {
         html += '<i class="status fa fa-circle result_' + row.result + '" title="Done: ' + row.result + '"></i>';
-        html += '</a> ';
-        // the name
-        html += '<a href="/tests/' + row.id + '" class="name">' + data + '</a>';
+    } else if (row.state === 'scheduled') {
+        if (typeof row.blocked_by_id === "number") {
+            html += '<i class="status fa fa-circle state_blocked" title="Blocked"></i>';
+        } else {
+            html += '<i class="status fa fa-circle state_scheduled" title="Scheduled"></i>';
+        }
+    } else {
+        html += '<i class="status fa fa-circle state_running" title="Running"></i>';
+    }
+    html += '</a> ';
+    html += '<a href="/tests/' + row.id + '" class="name">' + data + '</a>';
 
-        var parents = row.deps.parents;
-        var children = row.deps.children;
+    var deps = row.deps;
+    if (deps) {
+        var parents = deps.parents;
+        var children = deps.children;
         var depsTooltip = [];
         depsTooltip.quantify = function(quandity, singular, plural) {
             if (quandity) {
@@ -62,123 +94,264 @@ function renderTestName ( data, type, row ) {
             + highlightJobsHtml(children.Parallel.concat(children.Chained), parents.Parallel.concat(parents.Chained))
             + '><i class="fa fa-code-branch"></i></a>';
         }
-        if (row.comment_count) {
-            html += ' <a href="/tests/' + row.id + '#comments"><i class="test-label label_comment fa fa-comment" title="' + row.comment_count + (row.comment_count != 1 ? ' comments' : ' comment') + ' available"'
-            + '></i></a>';
-        }
+    }
+    if (row.comment_count) {
+        html += ' <a href="/tests/' + row.id + '#comments"><i class="test-label label_comment fa fa-comment" title="' + row.comment_count + (row.comment_count != 1 ? ' comments' : ' comment') + ' available"'
+        + '></i></a>';
+    }
+    if (row.clone) {
+        html += ' <a href="/tests/' + row.clone + '">(restarted)</a>';
+    }
 
-        if (row.clone)
-            html += ' <a href="/tests/' + row.clone + '">(restarted)</a>';
+    return html;
+}
 
-        return html;
+function renderTimeAgo(data, type, row, notAvailableMessage) {
+    var haveData = data && data !== 'Z';
+    if(type === 'display') {
+        return (haveData
+            ? ('<span title="' + data + '">' + jQuery.timeago(data) + '</span>')
+            : (notAvailableMessage ? notAvailableMessage : 'not yet'));
     } else {
-        return data;
+        return haveData ? data : 0;
     }
 }
 
-function renderTimeAgo(data, type, row) {
-    if(type === 'display') {
-        return data ? ('<span title="' + data + '">' + jQuery.timeago(data) + '</span>') : 'not finished yet';
-    } else {
-        return data ? data : 0;
+function renderTimeAgoForFinished(data, type, row) {
+    return renderTimeAgo(data, type, row, 'never started');
+}
+
+function renderProgress(data, type, row) {
+    var progress = data.modcount > 0 ? Math.round(data.moddone / data.modcount * 100) : undefined;
+    if (type !== 'display') {
+        return progress ? progress : 0;
     }
+    var progressText = progress === undefined ? 'running' : (progress + ' %');
+    var progressClass = progress === undefined ? 'progress-bar progress-bar-striped active' : 'progress-bar';
+    var progressWidth = progress === undefined ? 100 : progress;
+    var progressBar = '<div class="' + progressClass + '" role="progressbar" style="width: ' + progressWidth
+        + '%; min-width: 2em;" aria-valuemax="100" aria-valuemin="0" aria-valuenow="' + progress + '">'
+        + progressText + '</div>';
+    return '<div class="progress">' + progressBar + '</div>';
+}
+
+function renderPriority(data, type, row) {
+    if (type !== 'display' || !is_operator) {
+        return data;
+    }
+    var jobId = row.id;
+    var decreasePrioLink = ('<a class="prio-down" data-method="post" href="javascript:void(0);" onclick="decreaseJobPrio('
+        + jobId + ', this); return false;"><i class="far fa-minus-square"></i></a>');
+    var increasePrioLink = ('<a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio('
+        + jobId + ', this); return false;"><i class="far fa-plus-square"></i></a>');
+    var text = ' <span class="prio-value">' + data + '</span> ';
+    return decreasePrioLink + text + increasePrioLink;
+}
+
+// define functions to increase/decrease a job priority and update the UI accordingly
+// note: These functions are also used by the info panel on the test details page.
+function increaseJobPrio(jobId, linkElement) {
+    changeJobPrio(jobId, 10, linkElement);
+}
+function decreaseJobPrio(jobId, linkElement) {
+    changeJobPrio(jobId, -10, linkElement);
+}
+function changeJobPrio(jobId, delta, linkElement) {
+    var prioValueElement = $(linkElement).parent().find('.prio-value');
+    var currentPrio = parseInt(prioValueElement.text());
+    if (!currentPrio) {
+        console.warning('unable to set prio');
+        return;
+    }
+
+    var newPrio = currentPrio + delta;
+    $.ajax({
+        url: '/api/v1/jobs/' + jobId + '/prio?prio=' + newPrio,
+        method: 'POST',
+        success: function(result) {
+            prioValueElement.text(newPrio);
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            window.alert('Unable to set the priority of job ' + jobId + '.');
+        },
+    });
 }
 
 function renderTestResult( data, type, row ) {
-    if (type === 'display') {
-        var html = '';
-        if (row['state'] === 'done') {
-            html += data['passed'] + "<i class='fa module_passed fa-star' title='modules passed'></i>";
-            if (data['softfailed']) {
-                html += " " + data['softfailed'] + "<i class='fa module_softfailed fa-star-half' title='modules with warnings'></i>";
-            }
-            if (data['failed']) {
-                html += " " + data['failed'] + "<i class='far module_failed fa-star' title='modules failed'></i>";
-            }
-            if (data['none']) {
-                html += " " + data['none'] + "<i class='fa module_none fa-ban' title='modules skipped'></i>";
-            }
-        }
-        if (row['state'] === 'cancelled') {
-            html += "<i class='fa fa-times' title='canceled'></i>";
-        }
-        if (row['deps']['parents']['Parallel'].length + row['deps']['parents']['Chained'].length > 0) {
-            if (row['result'] === 'skipped' ||
-                row['result'] === 'parallel_failed') {
-                html += " <i class='fa fa-unlink' title='dependency failed'></i>";
-            }
-            else {
-                html += " <i class='fa fa-link' title='dependency passed'></i>";
-            }
-        }
-        return '<a href="/tests/' + row['id'] + '">' + html + '</a>';
-    } else {
-        return (parseInt(data['passed']) * 10000) + (parseInt(data['softfailed']) * 100) + parseInt(data['failed']);
+    if (type !== 'display') {
+        return (parseInt(data.passed) * 10000) + (parseInt(data.softfailed) * 100) + parseInt(data.failed);
     }
+
+    var html = '';
+    if (row.state === 'done') {
+        html += data.passed + "<i class='fa module_passed fa-star' title='modules passed'></i>";
+        if (data.softfailed) {
+            html += " " + data.softfailed + "<i class='fa module_softfailed fa-star-half' title='modules with warnings'></i>";
+        }
+        if (data.failed) {
+            html += " " + data.failed + "<i class='far module_failed fa-star' title='modules failed'></i>";
+        }
+        if (data.none) {
+            html += " " + data.none + "<i class='fa module_none fa-ban' title='modules skipped'></i>";
+        }
+    }
+    if (row.state === 'cancelled') {
+        html += "<i class='fa fa-times' title='canceled'></i>";
+    }
+    if (row.deps.parents.Parallel.length + row.deps.parents.Chained.length > 0) {
+        if (row.result === 'skipped' || row.result === 'parallel_failed') {
+            html += " <i class='fa fa-unlink' title='dependency failed'></i>";
+        }
+        else {
+            html += " <i class='fa fa-link' title='dependency passed'></i>";
+        }
+    }
+    return '<a href="/tests/' + row.id + '">' + html + '</a>';
 }
 
-function renderTestsList(jobs) {
+function renderTestLists() {
+    // determine params for AJAX queries
+    var pageQueryParams = parseQueryParams();
+    var ajaxQueryParams = {};
+    ajaxQueryParams.addFirstParam = function(paramName) {
+        var paramValues = pageQueryParams[paramName];
+        if (paramValues && paramValues.length > 0) {
+            this[paramName] = paramValues[0];
+        }
+    };
+    jQuery.each(['limit', 'groupid', 'assetid', 'match'], function(index, paramName) {
+        ajaxQueryParams.addFirstParam(paramName);
+    });
+    delete ajaxQueryParams.addFirstParam;
 
-    var table = $('#results').DataTable( {
-        "lengthMenu": [[10, 25, 50], [10, 25, 50]],
-        "ajax": {
-            "url": "/tests/list_ajax",
-            "type": "POST", // we use POST as the URLs can get long
-            "data": function(d) {
-                var ret = {
-                    "relevant": $('#relevantfilter').prop('checked')
-                };
-                if (jobs != null) {
-                    ret['jobs'] = jobs;
-                    ret['initial'] = 1;
-                }
-                // reset for reload
-                jobs = null;
-                return ret;
+    // initialize data tables for running, scheduled and finished jobs
+    var runningTable = $('#running').DataTable({
+        order: [], // no initial resorting
+        ajax: {
+            url: "/tests/list_running_ajax",
+            data: ajaxQueryParams,
+            dataSrc: function(json) {
+                // update heading when JSON is available
+                $('#running_jobs_heading').text(json.data.length + ' jobs are running');
+                return json.data;
             }
         },
-        // no initial resorting
-        "order": [],
-        "columns": [
-            { "data": "name" },
-            { "data": "test" },
-            { "data": "result_stats" },
-            { "data": "testtime" },
+        columns: [
+            { data: "name" },
+            { data: "test" },
+            { data: "progress" },
+            { data: "testtime" },
         ],
-        "columnDefs": [
+        columnDefs: [
             { targets: 0,
               className: "name",
-              "render": function ( data, type, row ) {
-                  var link = '/tests/overview?build=' + row['build'] + '&distri=' + row['distri'] + '&version=' + row['version'];
-                  if (row['group'])
-                      link += '&groupid=' + row['group'];
-
-                  var name = "<a href='" + link + "'>" + 'Build' + row['build'] + '</a>';
-                  name += " of ";
-                  return name + row['distri'] + "-" + row['version'] + "-" + row['flavor'] + "." + row['arch'];
-              }
+              render: renderMediumName
             },
             { targets: 1,
               className: "test",
-              "render": renderTestName
+              render: renderTestName
+            },
+            { targets: 2,
+              render: renderProgress
             },
             { targets: 3,
               className: "time",
-              "render": renderTimeAgo
+              render: renderTimeAgo
+            },
+        ],
+    });
+    var scheduledTable = $('#scheduled').DataTable({
+        order: [], // no initial resorting
+        ajax: {
+            url: "/tests/list_scheduled_ajax",
+            data: ajaxQueryParams,
+            dataSrc: function(json) {
+                // update heading when JSON is available
+                var blockedCount = 0;
+                jQuery.each(json.data, function(index, row) {
+                    if (typeof row.blocked_by_id === 'number') {
+                        ++blockedCount;
+                    }
+                });
+                var text = json.data.length + ' scheduled jobs';
+                if (blockedCount > 0) {
+                    text += ' (' + blockedCount + ' blocked by other jobs)';
+                }
+                $('#scheduled_jobs_heading').text(text);
+                return json.data;
+            }
+        },
+        columns: [
+            { data: "name" },
+            { data: "test" },
+            { data: "prio" },
+            { data: "testtime" },
+        ],
+        columnDefs: [
+            { targets: 0,
+              className: "name",
+              render: renderMediumName
+            },
+            { targets: 1,
+              className: "test",
+              render: renderTestName
             },
             { targets: 2,
-              "render": renderTestResult
+              render: renderPriority
+            },
+            { targets: 3,
+              className: "time",
+              render: renderTimeAgo
+            },
+        ],
+    });
+    var table = $('#results').DataTable({
+        lengthMenu: [[10, 25, 50], [10, 25, 50]],
+        ajax: {
+            url: "/tests/list_ajax",
+            data: function() {
+                ajaxQueryParams.relevant = $('#relevantfilter').prop('checked');
+                return ajaxQueryParams;
+            },
+            dataSrc: function(json) {
+                // update heading when JSON is available
+                $('#finished_jobs_heading').text('Last ' + json.data.length + ' finished jobs');
+                return json.data;
             }
+        },
+        order: [], // no initial resorting
+        columns: [
+            { data: "name" },
+            { data: "test" },
+            { data: "result_stats" },
+            { data: "testtime" },
+        ],
+        columnDefs: [
+            { targets: 0,
+              className: "name",
+              render: renderMediumName
+            },
+            { targets: 1,
+              className: "test",
+              render: renderTestName
+            },
+            { targets: 2,
+              render: renderTestResult
+            },
+            { targets: 3,
+              className: "time",
+              render: renderTimeAgoForFinished
+            },
         ]
-    } );
+    });
 
     // register event listener to the two range filtering inputs to redraw on input
-    $('#relevantfilter').change( function() {
+    $('#relevantfilter').change(function() {
         $('#relevantbox').css('color', 'cyan');
         table.ajax.reload(function() {
             $('#relevantbox').css('color', 'inherit');
         } );
-    } );
+    });
 
     // initialize filter for result (of finished jobs) as chosen
     var finishedJobsResultFilter = $('#finished-jobs-result-filter');
@@ -192,6 +365,7 @@ function renderTestsList(jobs) {
         params.resultfilter = finishedJobsResultFilter.val();
         updateQueryParams(params);
     });
+
     // add a handler for the actual filtering
     $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
         var selectedResults = finishedJobsResultFilter.find('option:selected');
@@ -215,6 +389,7 @@ function renderTestsList(jobs) {
         }
         return false;
     });
+
     // apply filter from query params
     var filter = parseQueryParams().resultfilter;
     if (filter) {
@@ -307,25 +482,5 @@ function setupLazyLoadingFailedSteps() {
         }).fail(function() {
             this.hasFailedSteps = false;
         });
-    });
-}
-
-function setupRunningAndScheduledTables() {
-    $('#scheduled, #running').DataTable({
-        order: [],
-        columnDefs: [{
-            targets: 0,
-            className: "name"
-        },
-        {
-            targets: "time",
-            render: function ( data, type, row ) {
-                if (type === 'display') {
-                    return data !== '0Z' ? jQuery.timeago(new Date(data)) : 'not yet';
-                } else {
-                    return data;
-                }
-            }
-        }],
     });
 }

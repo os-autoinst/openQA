@@ -222,4 +222,17 @@ sub schedule_one_job {
     }
 }
 
+sub verify_one_job_displayed_as_scheduled {
+    my ($driver) = @_;
+
+    $driver->click_element_ok('All Tests', 'link_text');
+    $driver->title_is('openQA: Test results', 'tests followed');
+    wait_for_ajax;
+    is(
+        $driver->find_element_by_id('scheduled_jobs_heading')->get_text(),
+        '1 scheduled jobs',
+        'test displayed as scheduled',
+    );
+}
+
 1;

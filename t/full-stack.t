@@ -132,14 +132,10 @@ my $JOB_SETUP
   . 'QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=core PUBLISH_HDD_1=core-hdd.qcow2 '
   . 'UEFI_PFLASH_VARS=/usr/share/qemu/ovmf-x86_64.bin';
 
-# schedule job
-OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP");
-
-# verify it's displayed scheduled
-$driver->click_element_ok('All Tests', 'link_text');
-$driver->title_is('openQA: Test results', 'tests followed');
-like($driver->get_page_source(), qr/\Q<h2>1 scheduled jobs<\/h2>\E/, '1 job scheduled');
-wait_for_ajax;
+subtest 'schedule job' => sub {
+    OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP");
+    OpenQA::Test::FullstackUtils::verify_one_job_displayed_as_scheduled($driver);
+};
 
 my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
 $driver->find_element_by_link_text('core@coolone')->click();

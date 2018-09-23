@@ -37,72 +37,6 @@ sub referer_check {
 
 sub list {
     my ($self) = @_;
-
-    my $match;
-    if (defined($self->param('match'))) {
-        $match = $self->param('match');
-        $match =~ s/[^\w\[\]\{\}\(\),:.+*?\\\$^|-]//g;    # sanitize
-    }
-
-    my $scope = $self->param('scope');
-    $scope = 'relevant' unless defined($scope);
-    $self->param(scope => $scope);
-
-    my $assetid = $self->param('assetid');
-    my $groupid = $self->param('groupid');
-    my $limit   = $self->param('limit') // 500;
-
-    my $jobs = $self->db->resultset("Jobs")->complex_query(
-        state   => [OpenQA::Jobs::Constants::FINAL_STATES],
-        match   => $match,
-        scope   => $scope,
-        assetid => $assetid,
-        groupid => $groupid,
-        limit   => $limit,
-        idsonly => 1
-    );
-    $self->stash(jobs => $jobs);
-
-    my $running = $self->db->resultset("Jobs")->complex_query(
-        state   => [OpenQA::Jobs::Constants::EXECUTION_STATES],
-        match   => $match,
-        groupid => $groupid,
-        assetid => $assetid
-    );
-    my @list;
-    while (my $job = $running->next) {
-        my $data = {
-            job          => $job,
-            result_stats => $job->result_stats,
-            run_stat     => $job->running_modinfo(),
-        };
-        push @list, $data;
-    }
-    @list = sort {
-        if ($b->{job} && $a->{job}) {
-            $b->{job}->t_started <=> $a->{job}->t_started || $b->{job}->id <=> $a->{job}->id;
-        }
-        elsif ($b->{job}) {
-            1;
-        }
-        elsif ($a->{job}) {
-            -1;
-        }
-        else {
-            0;
-        }
-    } @list;
-    $self->stash(running => \@list);
-
-    my $scheduled = $self->db->resultset("Jobs")->complex_query(
-        state   => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
-        match   => $match,
-        groupid => $groupid,
-        assetid => $assetid
-    );
-    $self->stash(blocked => {map { $_->id => \undef } $scheduled->search({-not => {blocked_by_id => undef}})->all});
-    $self->stash(
-        scheduled => [$scheduled->search(undef, {order_by => [{-desc => 'me.t_created'}, {-desc => 'me.id'}]})->all]);
 }
 
 sub prefetch_comment_counts {
@@ -120,72 +54,151 @@ sub prefetch_comment_counts {
     return $comment_count;
 }
 
+sub get_match_param {
+    my ($self) = @_;
+
+    my $match;
+    if (defined($self->param('match'))) {
+        $match = $self->param('match');
+        $match =~ s/[^\w\[\]\{\}\(\),:.+*?\\\$^|-]//g;    # sanitize
+    }
+    return $match;
+}
+
 sub list_ajax {
-    my ($self)  = @_;
-    my $assetid = $self->param('assetid');
-    my $groupid = $self->param('groupid');
+    my ($self) = @_;
 
-    my @ids;
-    # we have to seperate the initial loading and the reload
-    if ($self->param('initial')) {
-        @ids = map { scalar($_) } @{$self->every_param('jobs[]')};
-    }
-    else {
-        my $scope = '';
-        $scope = 'relevant' if $self->param('relevant') ne 'false';
-        my $jobs = $self->db->resultset("Jobs")->complex_query(
-            state   => 'done,cancelled',
-            scope   => $scope,
-            assetid => $assetid,
-            groupid => $groupid,
-            limit   => 500,
-            idsonly => 1
-        );
-        while (my $j = $jobs->next) { push(@ids, $j->id); }
-    }
-
-    # complete response
-    my @list;
-    my @jobs = $self->db->resultset("Jobs")->search(
-        {'me.id' => {in => \@ids}},
-        {
-            columns => [
-                qw(me.id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
-                  state clone_id test result group_id t_finished
-                  passed_module_count softfailed_module_count
-                  failed_module_count skipped_module_count
-                  )
-            ],
-            order_by => ['me.t_finished DESC, me.id DESC'],
-            prefetch => [qw(children parents)],
-        })->all;
-
-    my $comment_count = $self->prefetch_comment_counts(\@ids);
+    my $scope = ($self->param('relevant') ne 'false' ? 'relevant' : '');
+    my @jobs = $self->db->resultset('Jobs')->complex_query(
+        state    => [OpenQA::Jobs::Constants::FINAL_STATES],
+        scope    => $scope,
+        match    => $self->get_match_param,
+        assetid  => $self->param('assetid'),
+        groupid  => $self->param('groupid'),
+        limit    => ($self->param('limit') // 500),
+        order_by => [{-desc => 'me.t_finished'}, {-desc => 'me.id'}],
+        columns  => [
+            qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
+              state clone_id result group_id t_finished
+              passed_module_count softfailed_module_count
+              failed_module_count skipped_module_count
+              )
+        ],
+        prefetch => [qw(children parents)],
+    )->all;
 
     # need to use all as the order is too complex for a cursor
+    my $comment_count = $self->prefetch_comment_counts([map { $_->id } @jobs]);
+    my @list;
     for my $job (@jobs) {
+        my $job_id = $job->id;
         push(
             @list,
             {
-                DT_RowId      => "job_" . $job->id,
-                id            => $job->id,
+                DT_RowId      => 'job_' . $job_id,
+                id            => $job_id,
                 result_stats  => $job->result_stats,
                 deps          => $job->dependencies,
                 clone         => $job->clone_id,
-                test          => $job->TEST . "@" . ($job->MACHINE // ''),
+                test          => $job->TEST . '@' . ($job->MACHINE // ''),
                 distri        => $job->DISTRI // '',
                 version       => $job->VERSION // '',
                 flavor        => $job->FLAVOR // '',
                 arch          => $job->ARCH // '',
                 build         => $job->BUILD // '',
-                testtime      => $job->t_finished . 'Z',
+                testtime      => ($job->t_finished // '') . 'Z',
                 result        => $job->result,
                 group         => $job->group_id,
-                comment_count => $comment_count->{$job->id} // 0,
-                state         => $job->state
+                comment_count => $comment_count->{$job_id} // 0,
+                state         => $job->state,
             });
     }
     $self->render(json => {data => \@list});
+}
+
+sub list_running_ajax {
+    my ($self) = @_;
+
+    my $running = $self->db->resultset('Jobs')->complex_query(
+        state    => [OpenQA::Jobs::Constants::EXECUTION_STATES],
+        match    => $self->get_match_param,
+        groupid  => $self->param('groupid'),
+        assetid  => $self->param('assetid'),
+        order_by => [{-desc => 'me.t_started'}, {-desc => 'me.id'}],
+        columns  => [
+            qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
+              state clone_id result group_id t_started
+              blocked_by_id priority
+              )
+        ],
+        prefetch => [qw(modules)],
+    );
+
+    my @running;
+    while (my $job = $running->next) {
+        my $job_id      = $job->id;
+        my $job_modules = $job->modules;
+        push(
+            @running,
+            {
+                DT_RowId => 'job_' . $job_id,
+                id       => $job_id,
+                clone    => $job->clone_id,
+                test     => $job->TEST . '@' . ($job->MACHINE // ''),
+                distri   => $job->DISTRI // '',
+                version  => $job->VERSION // '',
+                flavor   => $job->FLAVOR // '',
+                arch     => $job->ARCH // '',
+                build    => $job->BUILD // '',
+                testtime => $job->t_started . 'Z',
+                group    => $job->group_id,
+                state    => $job->state,
+                progress => $job->running_modinfo($job_modules),
+            });
+    }
+    $self->render(json => {data => \@running});
+}
+
+sub list_scheduled_ajax {
+    my ($self) = @_;
+
+    my $scheduled = $self->db->resultset('Jobs')->complex_query(
+        state    => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
+        match    => $self->get_match_param,
+        groupid  => $self->param('groupid'),
+        assetid  => $self->param('assetid'),
+        order_by => [{-desc => 'me.t_created'}, {-desc => 'me.id'}],
+        columns  => [
+            qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
+              state clone_id result group_id t_created
+              blocked_by_id priority
+              )
+        ],
+    );
+
+    my @scheduled;
+    while (my $job = $scheduled->next) {
+        my $job_id = $job->id;
+        push(
+            @scheduled,
+            {
+                DT_RowId      => 'job_' . $job_id,
+                id            => $job_id,
+                clone         => $job->clone_id,
+                test          => $job->TEST . '@' . ($job->MACHINE // ''),
+                distri        => $job->DISTRI // '',
+                version       => $job->VERSION // '',
+                flavor        => $job->FLAVOR // '',
+                arch          => $job->ARCH // '',
+                build         => $job->BUILD // '',
+                testtime      => $job->t_created . 'Z',
+                group         => $job->group_id,
+                state         => $job->state,
+                blocked_by_id => $job->blocked_by_id,
+                prio          => $job->priority,
+            });
+    }
+    $self->render(json => {data => \@scheduled});
 }
 
 sub stash_module_list {

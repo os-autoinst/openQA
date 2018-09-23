@@ -117,7 +117,9 @@ sub startup {
     $r->get('/tests/latest')->name('latest')->to('test#latest');
 
     $r->get('/tests/export')->name('tests_export')->to('test#export');
-    $r->post('/tests/list_ajax')->name('tests_ajax')->to('test#list_ajax');
+    $r->get('/tests/list_ajax')->name('tests_ajax')->to('test#list_ajax');
+    $r->get('/tests/list_running_ajax')->name('tests_ajax')->to('test#list_running_ajax');
+    $r->get('/tests/list_scheduled_ajax')->name('tests_ajax')->to('test#list_scheduled_ajax');
 
     # only provide a URL helper - this is overtaken by apache
     $r->get('/assets/*assetpath')->name('download_asset')->to('file#download_asset');

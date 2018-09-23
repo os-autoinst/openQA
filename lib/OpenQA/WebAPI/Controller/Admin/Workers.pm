@@ -82,21 +82,21 @@ sub previous_jobs_ajax {
         prepare_data_function => sub {
             my ($results) = @_;
             my @jobs = $results->all;
-            my @ids = map { $_->id } @jobs;
             my @data;
             for my $job (@jobs) {
+                my $job_id = $job->id;
                 push(
                     @data,
                     {
-                        DT_RowId     => "job_" . $job->id,
-                        id           => $job->id,
+                        DT_RowId     => 'job_' . $job_id,
+                        id           => $job_id,
                         name         => $job->name,
                         deps         => $job->dependencies,
                         result       => $job->result,
                         result_stats => $job->result_stats,
                         state        => $job->state,
                         clone        => $job->clone_id,
-                        finished     => $job->t_finished ? $job->t_finished->datetime() . 'Z' : undef,
+                        finished     => ($job->t_finished ? ($job->t_finished->datetime() . 'Z') : undef),
                     });
             }
             return \@data;

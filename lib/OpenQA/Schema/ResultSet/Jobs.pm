@@ -207,10 +207,11 @@ sub complex_query {
     my %attrs;
     my @joins;
 
-    unless ($args{idsonly}) {
-        push @{$attrs{prefetch}}, 'settings';
-        push @{$attrs{prefetch}}, 'parents';
-        push @{$attrs{prefetch}}, 'children';
+    if (my $columns = $args{columns}) {
+        $attrs{columns} = $columns;
+    }
+    if (my $prefetch = $args{prefetch}) {
+        $attrs{prefetch} = $prefetch;
     }
 
     if ($args{failed_modules}) {
@@ -331,7 +332,15 @@ sub complex_query {
         }
     }
 
-    $attrs{order_by} = ['me.id DESC'];
+    push(@conds, @{$args{additional_conds}}) if $args{additional_conds};
+    if (exists $args{order_by}) {
+        if (my $order_by = $args{order_by}) {
+            $attrs{order_by} = $order_by;
+        }
+    }
+    else {
+        $attrs{order_by} = ['me.id DESC'];
+    }
 
     $attrs{join} = \@joins if @joins;
     my $jobs = $self->search({-and => \@conds}, \%attrs);

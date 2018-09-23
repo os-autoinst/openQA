@@ -92,34 +92,7 @@ document.observe('dom:loaded', function() {
       new Effect.Fade(element);
     });
   }
-
-  $$('a.prio-down').each(function(element) {
-    element.on('click', function(event) {
-      window.adjustPriority($(this), -10);
-      event.stop(); // Don't follow the link
-    });
-  });
-
-  $$('a.prio-up').each(function(element) {
-    element.on('click', function(event) {
-      window.adjustPriority($(this), 10);
-      event.stop(); // Don't follow the link
-    });
-  });
-
-
 });
-
-// Before sending the AJAX request, the updated priority must be calculated.
-function adjustPriority(element, amount) {
-  var prioHolder = element.up(1).select('[data-prio]')[0];
-  var prio = parseInt(prioHolder.dataset.prio) + amount;
-  var url = element.href.substring(0, element.href.lastIndexOf("?") + 1) + 'prio='+prio;
-  new Ajax.Request(url, {
-    method: 'post',
-    onSuccess: function(r) { prioHolder.replace('<span data-prio="'+prio+'">'+prio+'</span> '); }
-  });
-}
 
 // Update the counter of selected items in the jobs list
 function updateListCounter() {

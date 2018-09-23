@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -57,19 +57,16 @@ $get->content_like(qr/is_operator = false;/, "test list rendered without is_oper
 # now the same for scheduled jobs
 $t->delete_ok('/logout')->status_is(302);
 
-# List with no login
+# List with no login (absence of cancel button already checked in 01-list.t)
 $get = $t->get_ok('/tests')->status_is(200);
-$get->element_exists_not('#scheduled #job_99928 a.cancel');
 
-# List with an authorized user
+# List with an authorized user (presence of cancel button already checked in 01-list.t)
 $test_case->login($t, 'percival');
 $get = $t->get_ok('/tests')->status_is(200);
-$get->element_exists('#scheduled #job_99928 a.cancel');
 
 # List with a not authorized user
 $test_case->login($t, 'lancelot', email => 'lancelot@example.com');
 $get = $t->get_ok('/tests')->status_is(200);
-$get->element_exists_not('#scheduled #job_99928 a.cancel');
 
 # operator has access to part of admin menu - using phantomjs
 $driver->title_is("openQA", "on main page");

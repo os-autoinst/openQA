@@ -113,7 +113,7 @@ is_deeply(
     [
         'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
         '',
-        'not finished yet',
+        'never started',
         'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
         '0', 'about an hour ago',
     ],
@@ -131,7 +131,7 @@ is_deeply(
     [
         'opensuse-13.1-NET-x86_64-Build0091-kde@64bit (restarted)',
         '',
-        'not finished yet',
+        'never started',
         'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
         '0', 'about an hour ago',
     ],
