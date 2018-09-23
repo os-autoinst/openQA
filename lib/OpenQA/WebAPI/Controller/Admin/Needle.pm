@@ -54,11 +54,11 @@ sub ajax {
     push(@filter_conds, {filename => {-like => '%' . $search_value . '%'}}) if $search_value;
     my $seen_query = $self->param('last_seen');
     if ($seen_query && $seen_query ne 'none') {
-        push(@filter_conds, {'last_seen_time' => _translate_cond($self->param('last_seen'))});
+        push(@filter_conds, {last_seen_time => _translate_cond($seen_query)});
     }
     my $match_query = $self->param('last_match');
     if ($match_query && $match_query ne 'none') {
-        push(@filter_conds, {'last_matched_time' => _translate_cond($self->param('last_matched'))});
+        push(@filter_conds, {last_matched_time => _translate_cond($match_query)});
     }
 
     OpenQA::ServerSideDataTable::render_response(
