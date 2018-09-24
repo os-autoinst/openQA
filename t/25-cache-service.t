@@ -203,6 +203,8 @@ subtest 'Race for same asset' => sub {
     my $concurrent_test = sub {
         if ($cache_client->enqueue_download({id => 922756, asset => $a, type => "hdd", host => $host})) {
             1 until $cache_client->processed($a);
+            Devel::Cover::report() if Devel::Cover->can('report');
+
             return 1 if $cache_client->asset_exists($a);
             return 0;
         }
