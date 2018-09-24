@@ -28,7 +28,7 @@ use File::Spec::Functions 'catdir';
 use File::Path qw(remove_tree make_path);
 use Data::Dumper;
 use Cpanel::JSON::XS;
-use DBI;
+use Mojo::SQLite;
 use Mojo::File 'path';
 use Mojo::Base -base;
 use POSIX;
@@ -50,7 +50,7 @@ sub new {
 sub DESTROY {
     my $self = shift;
 
-    $self->dbh->disconnect() if $self->dbh;
+    $self->dbh->db->disconnect() if $self->dbh;
 }
 
 sub deploy_cache {
@@ -66,36 +66,23 @@ sub deploy_cache {
 
     log_info "Deploying DB: $sql (dsn " . $self->dsn . ")";
 
-    my $dbh
-      = DBI->connect($self->dsn, undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 0, sqlite_unicode => 1})
-      or die("Could not connect to the dbfile.");
-    $dbh->do($sql);
-    $dbh->commit;
-    $dbh->disconnect;
-    $self->dbh($dbh);
+    $self->dbh(Mojo::SQLite->new($self->dsn)) or die("Could not connect to the dbfile.");
+    my $tx = $self->dbh->db->begin;
+    $self->dbh->db->query($sql);
+    $tx->commit;
+
+    $self->dbh->db->disconnect;
 }
 
 sub init {
     my $self = shift;
     my ($host, $location) = ($self->host, $self->location);
-    my $db_file = path($location, 'cache.sqlite');
 
-    $self->db_file($db_file);
-    my $dsn = "dbi:SQLite:dbname=$db_file";
-    $self->dsn($dsn);
-    $self->deploy_cache unless -e $db_file;
+    $self->db_file(path($location, 'cache.sqlite'));
+    $self->dsn("sqlite:" . $self->db_file);
+    $self->deploy_cache unless -e $self->db_file;
     $self->cache_real_size(0);
-    $self->dbh(
-        DBI->connect(
-            $dsn, undef, undef,
-            {
-                sqlite_unicode      => 1,
-                RaiseError          => 1,
-                PrintError          => 1,
-                AutoCommit          => 1,
-                AutoInactiveDestroy => 1,
-            })
-          or die("Could not connect to the dbfile."));
+    $self->dbh(Mojo::SQLite->new($self->dsn));
     #  XXX: With autocommit enabled, rollback are useless, see: http://sqlite.org/lockingv3.html
     $self->cache_cleanup();
     #Ideally we only need $limit, and $need no extra space
@@ -262,106 +249,49 @@ sub get_asset {
     return $asset;
 }
 
-sub toggle_asset_lock {
-    my $self = shift;
-    my ($asset, $toggle) = @_;
-
-    my $dbh = $self->dbh;
-
-    my $check = 1 - $toggle;
-    my $sql
-      = "UPDATE assets set downloading = ?, filename = ?, last_use = strftime('%s','now') where filename = ? and downloading = ?";
-    my $res;
-    eval {
-        $dbh->do("BEGIN EXCLUSIVE");
-        $res = $dbh->prepare($sql)->execute($toggle, $asset, $asset, $check);
-        $dbh->commit or die $dbh->errstr;
-    };
-
-    if ($@) {
-        log_error "toggle_asset_lock: Rolling back $@";
-        eval { $dbh->rollback };
-        log_error "Rolling back failed: $@" if $@;
-    }
-
-    return 0 if !defined $res || $res == 0 || $@;
-    return 1 if defined $res && $res == 1;
-}
-
 sub _asset {
     my ($self, $asset) = @_;
 
     my $sql = "SELECT downloading, etag from assets where filename = ?";
-    $self->dbh->prepare($sql);
-    my $result = $self->dbh->selectrow_hashref($sql, undef, $asset);
+    my $result = $self->dbh->db->query($sql, $asset);
 
-    return {} unless $result;
-    return $result;
-}
-
-sub try_lock_asset {
-    my ($self, $asset) = @_;
-    my $sth;
-    my $sql;
-    my $lock_granted = 0;
-    my $result;
-
-    my $dbh = $self->dbh;
-
-    eval {
-        $lock_granted = 1 if $self->toggle_asset_lock($asset, 1);
-        $result = $self->_asset($asset);
-        log_info "CACHE: Being downloaded by another worker, sleeping."
-          if exists $result->{downloading} && $result->{downloading} == 1 && $lock_granted == 0;
-    };
-    log_error "try_lock_asset: Failed $@" if $@;
-
-    return $result if $lock_granted;
-    return !!0;
+    return {} unless $result->arrays->size > 0;
+    return $result->hash;
 }
 
 sub track_asset {
     my ($self, $asset) = @_;
 
-    my $dbh = $self->dbh;
     my $res;
     my $sql
       = "INSERT OR IGNORE INTO assets (downloading,filename, size, last_use) VALUES (0, ?, 0,  strftime('%s','now'));";
 
     eval {
-        $dbh->do("BEGIN EXCLUSIVE");
-        $res = $dbh->prepare($sql)->execute($asset) or die $dbh->errstr;
-        $dbh->commit or die $dbh->errstr;
+        my $tx = $self->dbh->db->begin('exclusive');
+        $res = $self->dbh->db->query($sql, $asset);
+        $tx->commit;
     };
 
     if ($@) {
         log_error "track_asset: Failed: $@";
-        eval { $dbh->rollback };
-        log_error "Rolling back failed: $@";
     }
 
-    return !!0 if !defined $res || $res == 0 || $@;
-    return !!1 if defined $res;
+    return !!0 if !defined $res || $res->arrays->size == 0 || $@;
+    return !!1 if $res->arrays->size > 0;
 }
 
 sub _update_asset_last_use {
     my ($self, $asset) = @_;
 
-    my $dbh = $self->dbh;
-    $dbh->do("BEGIN EXCLUSIVE");
-
     my $sql = "UPDATE assets set last_use = strftime('%s','now') where filename = ?;";
     eval {
-        my $sth = $dbh->prepare($sql);
-        $sth->bind_param(1, $asset);
-        $sth->execute;
-        $dbh->commit;
+        my $tx = $self->dbh->db->begin('exclusive');
+        $self->dbh->db->query($sql, $asset);
+        $tx->commit;
     };
 
     if ($@) {
         log_error "Update asset failed. Rolling back $@";
-        eval { $dbh->rollback };
-        log_error "Rolling back failed: $@";
         return !!0;
     }
 
@@ -371,56 +301,42 @@ sub _update_asset_last_use {
 
 sub update_asset {
     my ($self, $asset, $etag, $size) = @_;
-
-    my $dbh = $self->dbh;
-
-    my $sql = "UPDATE assets set filename =?, etag =? , size = ?, last_use = strftime('%s','now') where filename = ?;";
     my $res;
 
     eval {
-        $dbh->do('BEGIN EXCLUSIVE');
-        my $sth = $dbh->prepare($sql);
-        $sth->bind_param(1, $asset);
-        $sth->bind_param(2, $etag);
-        $sth->bind_param(3, $size);
-        $sth->bind_param(4, $asset);
-
-        $res = $sth->execute;
-        $dbh->commit;
+        my $tx = $self->dbh->db->begin('exclusive');
+        $res = $self->dbh->db->update(
+            'assets',
+            {filename => $asset, etag => $etag, size => $size, last_use => q(strftime('%s','now'))},
+            {filename => $asset});    # $self->dbh->db->query($sql,$asset,$etag,$size,$asset);
+        $tx->commit;
     };
 
     $self->cache_real_size($self->cache_real_size + $size);
 
     if ($@) {
         log_error "Update asset $asset failed. Rolling back $@";
-        eval { $dbh->rollback };
-        log_error "Rolling back failed: $@";
     }
     else {
         log_info "CACHE: updating the $asset with $etag and $size";
     }
 
-    return !!0 if !defined $res || $res == 0 || $@;
-    return !!1 if defined $res && $res == 1;
+    return !!0 if !defined $res || $@;
+    return !!1;
 }
 
 sub purge_asset {
     my ($self, $asset) = @_;
-    my $sql = "DELETE FROM assets WHERE filename = ?";
-    my $dbh = $self->dbh;
-
     eval {
-        $dbh->do("BEGIN EXCLUSIVE");
-        $dbh->prepare($sql)->execute($asset) or die $dbh->errstr;
-        $dbh->commit or die $dbh->errstr;
+        my $tx = $self->dbh->db->begin();
+        $self->dbh->db->delete('assets', {filename => $asset});
+        $tx->commit;
         unlink($asset) or eval { log_error "CACHE: Could not remove $asset" if -e $asset };
         log_debug "CACHE: removed $asset";
     };
 
     if ($@) {
-        log_error "purge_asset: Rolling back $@";
-        eval { $dbh->rollback };
-        log_error "Rolling back failed: $@";
+        log_error "purge_asset: $@";
         return !!0;
     }
     return !!1;
@@ -442,33 +358,25 @@ sub cache_cleanup {
 sub asset_lookup {
     my ($self, $asset) = @_;
     my $sth;
-    my $sql;
-    my $lock_granted;
     my $result;
-    my $dbh = $self->dbh;
-
     eval {
-        $dbh->do("BEGIN EXCLUSIVE");
-        $sql    = "SELECT filename, etag, last_use, size from assets where filename = ?";
-        $sth    = $dbh->prepare($sql);
-        $result = $dbh->selectrow_hashref($sql, undef, $asset);
-        $dbh->commit or die $dbh->errstr;
+        my $tx = $self->dbh->db->begin('exclusive');
+        $result = $self->dbh->db->select('assets', [qw(downloading filename etag last_use size)], {filename => $asset});
+        $tx->commit;
     };
 
     if ($@) {
         log_error "asset_lookup: Rolling back $@";
-        eval { $dbh->rollback };
-        log_error "Rolling back failed: $@";
         return !!0;
     }
 
-    if (!$result) {
+    if ($result->arrays->size == 0) {    ## Note: ->rows is not accurate
         log_info "CACHE: Purging non registered $asset";
         $self->purge_asset($asset);
         return !!0;
     }
 
-    return $result;
+    return $result->hash;
 }
 
 sub check_limits {
@@ -477,17 +385,14 @@ sub check_limits {
     my $sql;
     my $sth;
     my $result;
-    my $dbh = $self->dbh;
+    my $dbh = $self->dbh->db;
 
     my $ret = 0;
     eval {
         while ($self->cache_real_size + $needed > $self->limit) {
-            $sql    = "SELECT size, filename FROM assets WHERE downloading = 0 ORDER BY last_use asc";
-            $sth    = $dbh->prepare($sql);
-            $result = $dbh->selectrow_hashref($sql);
-            do { log_error "There are no more elements to remove"; last } unless $result;
-
-            foreach my $asset ($result) {
+            $sth = $dbh->select('assets', [qw(filename size)], {downloading => 0}, {-asc => 'last_use'});
+            do { log_error "There are no more elements to remove"; last } unless $sth->arrays->size > 0;
+            while (my $asset = $sth->hash) {
                 if ($self->purge_asset($asset->{filename})) {
                     $self->cache_real_size($self->cache_real_size - $asset->{size});
                     log_debug "Reclaiming "
@@ -500,7 +405,6 @@ sub check_limits {
                 }    # purge asset will die anyway in case of failure.
                 last if ($self->cache_real_size < $self->limit);
             }
-
         }
     };
     log_error "CACHE: check_limit failed: $@" if $@;
