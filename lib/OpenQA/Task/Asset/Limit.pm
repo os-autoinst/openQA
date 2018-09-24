@@ -25,8 +25,16 @@ sub register {
 }
 
 sub _remove_if {
-    my ($db, $asset) = @_;
+    my ($db, $asset, $reason) = @_;
     return if $asset->{fixed} || $asset->{pending};
+
+    if (!$reason) {
+        my $asset_name = $asset->{name};
+        my $groups = join(', ', keys %{$asset->{groups}});
+        $reason = "Removing asset $asset_name (assigned to groups: $groups)";
+    }
+    OpenQA::Utils::log_info($reason);
+
     $db->resultset('Assets')->single({id => $asset->{id}})->delete;
 }
 
@@ -54,21 +62,26 @@ sub _limit {
     my $dbh        = $app->schema->storage->dbh;
     my $update_sth = $dbh->prepare('UPDATE assets SET last_use_job_id = ? WHERE id = ?');
 
-    # remove all assets older than a certain number of days which do not belong to a job group
+    # remove all assets older than a certain duration which do not belong to a job group
+    my $seconds_per_day = 24 * 3600;
     my $untracked_assets_storage_duration
-      = $OpenQA::Utils::app->config->{misc_limits}->{untracked_assets_storage_duration};
+      = $OpenQA::Utils::app->config->{misc_limits}->{untracked_assets_storage_duration} * $seconds_per_day;
     my $now = DateTime->now();
     for my $asset (@$assets) {
         $update_sth->execute($asset->{max_job} && $asset->{max_job} >= 0 ? $asset->{max_job} : undef, $asset->{id});
         next if $asset->{fixed} || scalar(keys %{$asset->{groups}}) > 0;
 
-        my $age = $now->delta_days(DateTime::Format::Pg->parse_datetime($asset->{t_created}))->in_units('days');
-        if ($age >= $untracked_assets_storage_duration || !$asset->{size}) {
-            _remove_if($app->db, $asset);
+        my $age_in_seconds = ($now->epoch() - DateTime::Format::Pg->parse_datetime($asset->{t_created})->epoch());
+        my $asset_name     = $asset->{name};
+        if ($age_in_seconds >= $untracked_assets_storage_duration || !$asset->{size}) {
+            my $age_in_days   = $age_in_seconds / $seconds_per_day;
+            my $limit_in_days = $untracked_assets_storage_duration / $seconds_per_day;
+            _remove_if($app->db, $asset,
+"Removing asset $asset_name (not in any group, age ($age_in_days days) exceeds limit ($limit_in_days days)"
+            );
         }
         else {
-            my $asset_name     = $asset->{name};
-            my $remaining_days = $untracked_assets_storage_duration - $age;
+            my $remaining_days = ($untracked_assets_storage_duration - $age_in_seconds) / $seconds_per_day;
             OpenQA::Utils::log_warning(
                 "Asset $asset_name is not in any job group, will delete in $remaining_days days");
         }
