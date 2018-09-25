@@ -190,6 +190,9 @@ sub _generate_jobs {
         $group_id = $group->id;
     }
 
+    # allow overriding the priority
+    my $priority = delete $args->{_PRIORITY};
+
     for my $product (@products) {
         # find job templates
         my $templates = $product->job_templates;
@@ -233,7 +236,7 @@ sub _generate_jobs {
             # make sure that the DISTRI is lowercase
             $settings{DISTRI} = lc($settings{DISTRI});
 
-            $settings{PRIO}     = $job_template->prio;
+            $settings{PRIO} = defined($priority) ? $priority : $job_template->prio;
             $settings{GROUP_ID} = $job_template->group_id;
 
             # allow some messing with the usual precedence order. If anything
