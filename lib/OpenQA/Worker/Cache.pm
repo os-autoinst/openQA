@@ -252,8 +252,7 @@ sub get_asset {
 sub _asset {
     my ($self, $asset) = @_;
 
-    my $sql = "SELECT downloading, etag from assets where filename = ?";
-    my $result = $self->dbh->db->query($sql, $asset);
+    my $result = $self->dbh->db->select('assets', [qw(etag)], {filename => $asset});
 
     return {} unless $result->arrays->size > 0;
     return $result->hash;
@@ -263,8 +262,7 @@ sub track_asset {
     my ($self, $asset) = @_;
 
     my $res;
-    my $sql
-      = "INSERT OR IGNORE INTO assets (downloading,filename, size, last_use) VALUES (0, ?, 0,  strftime('%s','now'));";
+    my $sql = "INSERT OR IGNORE INTO assets (filename, size, last_use) VALUES (?, 0,  strftime('%s','now'));";
 
     eval {
         my $tx = $self->dbh->db->begin('exclusive');
@@ -283,15 +281,14 @@ sub track_asset {
 sub _update_asset_last_use {
     my ($self, $asset) = @_;
 
-    my $sql = "UPDATE assets set last_use = strftime('%s','now') where filename = ?;";
     eval {
         my $tx = $self->dbh->db->begin('exclusive');
-        $self->dbh->db->query($sql, $asset);
+        $self->dbh->db->update('assets', {last_use => q(strftime('%s','now'))}, {filename => $asset});
         $tx->commit;
     };
 
     if ($@) {
-        log_error "Update asset failed. Rolling back $@";
+        log_error "Update asset failed: $@";
         return !!0;
     }
 
@@ -308,7 +305,7 @@ sub update_asset {
         $res = $self->dbh->db->update(
             'assets',
             {filename => $asset, etag => $etag, size => $size, last_use => q(strftime('%s','now'))},
-            {filename => $asset});    # $self->dbh->db->query($sql,$asset,$etag,$size,$asset);
+            {filename => $asset});
         $tx->commit;
     };
 
@@ -361,7 +358,7 @@ sub asset_lookup {
     my $result;
     eval {
         my $tx = $self->dbh->db->begin('exclusive');
-        $result = $self->dbh->db->select('assets', [qw(downloading filename etag last_use size)], {filename => $asset});
+        $result = $self->dbh->db->select('assets', [qw(filename etag last_use size)], {filename => $asset});
         $tx->commit;
     };
 
@@ -390,7 +387,7 @@ sub check_limits {
     my $ret = 0;
     eval {
         while ($self->cache_real_size + $needed > $self->limit) {
-            $sth = $dbh->select('assets', [qw(filename size)], {downloading => 0}, {-asc => 'last_use'});
+            $sth = $dbh->select('assets', [qw(filename size)], undef, {-asc => 'last_use'});
             do { log_error "There are no more elements to remove"; last } unless $sth->arrays->size > 0;
             while (my $asset = $sth->hash) {
                 if ($self->purge_asset($asset->{filename})) {
@@ -415,4 +412,4 @@ sub check_limits {
 1;
 
 __DATA__
-CREATE TABLE "assets" ( `etag` TEXT, `size` INTEGER, `last_use` DATETIME NOT NULL, `downloading` boolean NOT NULL, `filename` TEXT NOT NULL UNIQUE, PRIMARY KEY(`filename`) );
+CREATE TABLE "assets" ( `etag` TEXT, `size` INTEGER, `last_use` DATETIME NOT NULL, `filename` TEXT NOT NULL UNIQUE, PRIMARY KEY(`filename`) );

@@ -69,8 +69,10 @@ open my $FD, '>>', $logfile;
 *STDERR = $FD;
 
 $SIG{INT} = sub {
-    session->all->each(sub { shift->stop });
+    session->clean;
 };
+
+END { session->clean }
 
 sub truncate_log {
     my ($new_log) = @_;
@@ -124,7 +126,6 @@ like $openqalogs, qr/Creating cache directory tree for/, "Cache directory tree c
 like $openqalogs, qr/Deploying DB/,                      "Cache deploys the database.";
 like $openqalogs, qr/Configured limit: 53687091200/,     "Cache limit is default (50GB).";
 ok(-e $db_file, "cache.sqlite is present");
-#diag $openqalogs;
 truncate_log $logfile;
 
 db_handle_connection($cache);
@@ -137,9 +138,8 @@ for (1 .. 3) {
 
     if ($_ % 2) {
         log_info "Inserting $_";
-        #  $cache->track_asset
-        $sql = "INSERT INTO assets (downloading,filename,size, etag,last_use)
-                VALUES (0, ?, ?, 'Not valid', strftime('\%s','now'));";
+        $sql = "INSERT INTO assets (filename,size, etag,last_use)
+                VALUES ( ?, ?, 'Not valid', strftime('\%s','now'));";
         $cache->dbh->db->query($sql, $filename, 84);
     }
 }
@@ -256,9 +256,6 @@ truncate_log $logfile;
 
 $cache->track_asset("Foobar", 0);
 
-#is $cache->toggle_asset_lock("Foobar", 1), 1, 'Could acquire lock';
-#is $cache->toggle_asset_lock("Foobar", 0), 1, 'Could acquire lock';
-
 $cache->dbh->db->query("delete from assets");
 
 my $fake_asset = "$cachedir/test.qcow";
@@ -274,49 +271,12 @@ $cache->purge_asset($fake_asset);
 ok !-e $fake_asset, 'Asset was purged';
 
 $cache->track_asset($fake_asset);
-is $cache->_asset($fake_asset)->{downloading}, 0, 'Can get downloading state with _asset()';
+is $cache->_asset($fake_asset)->{etag}, 0, 'Can get downloading state with _asset()';
 is_deeply $cache->_asset('foobar'), {}, '_asset() returns {} if asset is not present';
-#ok my $res = $cache->try_lock_asset($fake_asset), 'Could lock asset';
 
 path($fake_asset)->spurt('');
-#is $res->{downloading}, 1, 'Download lock acquired';
 is $cache->check_limits(2333), 0, 'Freed no space - locked assets are not removed';
-#is $cache->toggle_asset_lock($fake_asset, 0), 1, 'Could release lock';
 is $cache->check_limits(2333), 1, '1 Asset purged to make space';
-
-# Concurrent test
-my $tot_proc   = $ENV{STRESS_TEST} ? 60 : 10;
-my $concurrent = $ENV{STRESS_TEST} ? 30 : 2;
-my $q          = queue;
-$q->pool->maximum_processes($concurrent);
-$q->queue->maximum_processes($tot_proc);
-my @test = uniq(map { int(rand(2000)) + 150 } 1 .. ($tot_proc / 2));
-my $sum = sum(@test) + 2000;
-diag "Testing downloading " . (scalar @test) . " assets of ($sum) @test size";
-
-my $concurrent_test = sub {
-    srand int time;
-    $cache->limit($sum);
-    $cache->init;
-    $cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200_' . $_ . '@64bit.qcow2') for shuffle @test;
-    Devel::Cover::report() if Devel::Cover->can('report');
-};
-
-$q->add(process($concurrent_test)->set_pipes(0)->internal_pipes(0)) for 1 .. $tot_proc;
-
-$q->consume();
-is $q->done->size, $tot_proc, 'Queue consumed ' . $tot_proc . ' processes';
-
-$autoinst_log = read_log('autoinst-log.txt');
-
-is((() = $autoinst_log =~ m/Asset download successful/g), scalar @test, 'Downloaded assets only once')
-  or diag $autoinst_log;
-is((() = $autoinst_log =~ m/CACHE: Asset download successful to .*sle-12-SP3-x86_64-0368-200_$_\@/g),
-    1, "Successfully downloaded sle-12-SP3-x86_64-0368-200_$_")
-  for @test;
-is((() = $autoinst_log =~ m/database is locked/ig), 0, '0 Database locks') or diag $autoinst_log;
-truncate_log 'autoinst-log.txt';
-
 
 stop_server;
 done_testing();
