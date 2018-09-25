@@ -440,7 +440,7 @@
         id         => 99981,
         group_id   => 1001,
         priority   => 50,
-        result     => "none",
+        result     => "skipped",
         state      => "cancelled",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3000100, 'UTC'),
         t_started  => undef,
