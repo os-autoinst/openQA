@@ -57,7 +57,6 @@ sub deploy_cache {
     my $self = shift;
     local $/;
     my $sql = <DATA>;
-    print STDOUT "\n\n\n\nINIT\n";
     log_info "Creating cache directory tree for " . $self->location;
     remove_tree($self->location, {keep_root => 1});
     path($self->location)->make_path;
@@ -83,8 +82,7 @@ sub init {
     $self->deploy_cache unless -e $self->db_file;
     $self->cache_real_size(0);
     $self->dbh(Mojo::SQLite->new($self->dsn));
-    #  XXX: With autocommit enabled, rollback are useless, see: http://sqlite.org/lockingv3.html
-    $self->cache_cleanup();
+    $self->cache_sync();
     #Ideally we only need $limit, and $need no extra space
     $self->check_limits(0);
     log_info(__PACKAGE__ . ": Initialized with $host at $location, current size is " . $self->cache_real_size);
@@ -181,9 +179,11 @@ sub download_asset {
     elsif ($tx->res->is_success) {
         $etag = $headers->etag;
         unlink($asset);
+        #  $self->cache_sync;
         my $size = $tx->res->content->asset->move_to($asset)->size;
         if ($size == $headers->content_length) {
             $self->check_limits($size);
+
             my $att = 0;
             my $ok;
             # This needs to go in to the database at any cost - we have the lock and we succeeded in download
@@ -223,6 +223,8 @@ sub get_asset {
     while () {
         $self->track_asset($asset);    # Track asset - make sure it's in DB
         $result = $self->_asset($asset);
+        use Data::Dumper;
+        log_debug "Result " . Dumper($result);
         local $@;
         eval {
             $ret
@@ -253,7 +255,6 @@ sub _asset {
     my ($self, $asset) = @_;
 
     my $result = $self->dbh->db->select('assets', [qw(etag)], {filename => $asset});
-
     return {} unless $result->arrays->size > 0;
     return $result->hash;
 }
@@ -297,18 +298,23 @@ sub _update_asset_last_use {
 }
 
 sub update_asset {
+    # XXX: This is wrong
     my ($self, $asset, $etag, $size) = @_;
     my $res;
 
     eval {
         my $tx = $self->dbh->db->begin('exclusive');
-        $res = $self->dbh->db->update(
-            'assets',
-            {filename => $asset, etag => $etag, size => $size, last_use => q(strftime('%s','now'))},
-            {filename => $asset});
+        my $sql
+          = "UPDATE assets set filename =?, etag =? , size = ?, last_use = strftime('%s','now') where filename = ?;";
+        $res = $self->dbh->db->query($sql, $asset, $etag, $size, $asset);
+        #      $res = $self->dbh->db->update(
+        #          'assets',
+        #          {etag     => $etag, size => $size, last_use => q(strftime('%s','now'))},
+        #          {filename =>  $asset});
         $tx->commit;
     };
-
+    use Data::Dumper;
+    log_debug Dumper($res->hashes);
     $self->cache_real_size($self->cache_real_size + $size);
 
     if ($@) {
@@ -319,7 +325,7 @@ sub update_asset {
     }
 
     return !!0 if !defined $res || $@;
-    return !!1;
+    return !!1 if $res->hashes->size == 1;
 }
 
 sub purge_asset {
@@ -339,14 +345,18 @@ sub purge_asset {
     return !!1;
 }
 
-sub cache_cleanup {
+sub file_size { (stat(pop))[7] }
+
+sub cache_sync {
     my $self     = shift;
     my $location = $self->location;
-    my @assets
-      = `find $location -maxdepth 1 -type f -name '*.img' -o -name '*.qcow2' -o -name '*.iso' -o -name '*.vhd' -o -name '*.vhdx'`;
+    my $ext;
+    $ext .= "-o -name '*.$_' " for qw(qcow2 iso vhd vhdx);
+    my @assets = `find $location -maxdepth 1 -type f -name '*.img' $ext`;
     chomp @assets;
+    $self->cache_real_size(0);
     foreach my $file (@assets) {
-        my $asset_size = (stat $file)[7];
+        my $asset_size = $self->file_size($file);
         next if !defined $asset_size;
         $self->cache_real_size($self->cache_real_size + $asset_size) if $self->asset_lookup($file);
     }
@@ -361,52 +371,61 @@ sub asset_lookup {
         $result = $self->dbh->db->select('assets', [qw(filename etag last_use size)], {filename => $asset});
         $tx->commit;
     };
-
     if ($@) {
-        log_error "asset_lookup: Rolling back $@";
         return !!0;
     }
 
-    if ($result->arrays->size == 0) {    ## Note: ->rows is not accurate
+    if ($result->arrays->size == 0) {
         log_info "CACHE: Purging non registered $asset";
         $self->purge_asset($asset);
         return !!0;
     }
 
-    return $result->hash;
+    return !!1;
+}
+
+sub exceeds_limit { !!($_[0]->cache_real_size + $_[1] > $_[0]->limit) }
+sub limit_reached { !!($_[0]->cache_real_size > shift->limit) }
+sub decrease {
+    my ($self, $size) = @_;
+    log_debug "Current cache size: " . $self->cache_real_size;
+    $self->cache_real_size($size > $self->cache_real_size ? 0 : $self->cache_real_size - $size);
+    log_debug "Reclaiming " . $size . " from " . $self->cache_real_size . " to make space for " . $self->limit;
+}
+
+sub expire {
+    my ($self, $asset) = @_;
+    eval {
+        my $tx = $self->dbh->db->begin('exclusive');
+        $self->dbh->db->update('assets', {last_use => 0}, {filename => $asset});
+        $tx->commit;
+    };
+
+    if ($@) {
+        log_error "Update asset $asset failed. Rolling back $@";
+    }
 }
 
 sub check_limits {
-    # Trust the filesystem.
     my ($self, $needed) = @_;
-    my $sql;
-    my $sth;
-    my $result;
     my $dbh = $self->dbh->db;
-
-    my $ret = 0;
+    $self->cache_sync;
     eval {
-        while ($self->cache_real_size + $needed > $self->limit) {
-            $sth = $dbh->select('assets', [qw(filename size)], undef, {-asc => 'last_use'});
-            do { log_error "There are no more elements to remove"; last } unless $sth->arrays->size > 0;
-            while (my $asset = $sth->hash) {
-                if ($self->purge_asset($asset->{filename})) {
-                    $self->cache_real_size($self->cache_real_size - $asset->{size});
-                    log_debug "Reclaiming "
-                      . $asset->{size}
-                      . " from "
-                      . $self->cache_real_size
-                      . " to make space for "
-                      . $self->limit;
-                    $ret++;
-                }    # purge asset will die anyway in case of failure.
-                last if ($self->cache_real_size < $self->limit);
+        my $sth = $dbh->select('assets', [qw(filename size last_use)], undef, {-asc => 'last_use'});
+        while (my $asset = $sth->hash) {
+            my $asset_size = $asset->{size};
+            $asset_size = $self->file_size($asset->{filename}) if $asset_size == 0;
+            if ($self->exceeds_limit($needed) && $self->purge_asset($asset->{filename})) {
+                $self->decrease($asset_size);
+            }
+            else {
+                $sth->finish;
+                last;
             }
         }
-    };
+    } if $self->exceeds_limit($needed) || $self->limit_reached;
     log_error "CACHE: check_limit failed: $@" if $@;
     log_debug "CACHE: Health: Real size: " . $self->cache_real_size . ", Configured limit: " . $self->limit;
-    return $ret;
 }
 
 1;
