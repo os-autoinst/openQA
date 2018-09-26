@@ -106,7 +106,7 @@ function renderTestName(data, type, row) {
     return html;
 }
 
-function renderTimeAgo(data, type, row, notAvailableMessage) {
+function renderTimeAgo(data, type, row, position, notAvailableMessage) {
     var haveData = data && data !== 'Z';
     if(type === 'display') {
         return (haveData
@@ -117,8 +117,8 @@ function renderTimeAgo(data, type, row, notAvailableMessage) {
     }
 }
 
-function renderTimeAgoForFinished(data, type, row) {
-    return renderTimeAgo(data, type, row, 'never started');
+function renderTimeAgoForFinished(data, type, row, position) {
+    return renderTimeAgo(data, type, row, position, 'never started');
 }
 
 function renderProgress(data, type, row) {
