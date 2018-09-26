@@ -20,6 +20,7 @@ use OpenQA::Worker::Cache::Task::Asset;
 use Mojolicious::Plugin::Minion;
 use OpenQA::Worker::Cache;
 use Mojo::Collection;
+use Mojolicious::Plugin::Minion::Admin;
 
 BEGIN { srand(time) }
 
@@ -34,6 +35,7 @@ app->hook(
 sub SESSION_TOKEN { $tk }
 
 plugin 'OpenQA::Worker::Cache::Task::Asset';
+plugin 'Minion::Admin';
 
 sub _gen_guard_name { join('.', SESSION_TOKEN, pop) }
 sub _exists { !!(defined $_[0] && exists $_[0]->{total} && $_[0]->{total} > 0) }
