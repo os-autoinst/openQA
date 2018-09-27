@@ -1,4 +1,4 @@
-# Last Modified: Thu May  3 18:32:11 2018
+# Last Modified: Thu Sep 27 15:25:16 2018
 #include <tunables/global>
 
 # ------------------------------------------------------------------
@@ -58,9 +58,10 @@
   /sys/bus/ r,
   /sys/bus/usb/devices/ r,
   /sys/class/ r,
-  /sys/devices/system/node/node0/meminfo r,
-  /sys/fs/cgroup/systemd/openqa.slice/** rw,
+  /sys/devices/system/cpu/** r,
+  /sys/devices/system/node/** r,
   /sys/firmware/devicetree/base/ r,
+  /sys/fs/cgroup/systemd/openqa.slice/** rw,
   /tmp/* rwk,
   /usr/bin/Xvnc rCx,
   /usr/bin/cat rix,
@@ -112,7 +113,7 @@
   /usr/share/openqa/lib/DBIx/Class/Timestamps.pm r,
   /usr/share/openqa/lib/OpenQA/** r,
   /usr/share/openqa/script/worker r,
-  /usr/share/qemu/* r,
+  /usr/share/qemu/* rk,
   /usr/share/qemu/keymaps/* r,
   /var/lib/openqa/cache/ r,
   /var/lib/openqa/cache/** rwk,
