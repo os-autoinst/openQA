@@ -228,6 +228,8 @@ _GROUP:: Job templates *not* matching the given group name are ignored. Does *no
          affect obsoletion behavior, so you might want to combine with `_NO_OBSOLETE`.
 
 _GROUP_ID:: Same as `_GROUP` but allows to specify the group directly by ID.
+_PRIORITY:: Sets the priority for the new jobs (which otherwise defaults to the priority
+            of the job template)
 
 Example for `_DEPRIORITIZEBUILD` and `_DEPRIORITIZE_LIMIT`.
 

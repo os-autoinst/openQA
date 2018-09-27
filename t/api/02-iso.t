@@ -52,6 +52,7 @@ $t->app($app);
 
 my $schema        = $t->app->schema;
 my $job_templates = $schema->resultset('JobTemplates');
+my $jobs          = $schema->resultset('Jobs');
 
 sub lj {
     return unless $ENV{HARNESS_IS_VERBOSE};
@@ -139,9 +140,9 @@ is(scalar @tasks, 0, 'we have no gru download tasks to start with');
 
 # add a random comment on a scheduled but not started job so that this one
 # later on is found as important and handled accordingly
-$schema->resultset('Jobs')->find(99928)->comments->create({text => 'any text', user_id => 99901});
+$jobs->find(99928)->comments->create({text => 'any text', user_id => 99901});
 
-subtest 'group filter' => sub {
+subtest 'group filter and priority override' => sub {
     # add a job template for group 1002
     my $job_template = $job_templates->create(
         {
@@ -176,7 +177,8 @@ subtest 'group filter' => sub {
             PRECEDENCE => 'original',
             _GROUP     => 'opensuse test',
         });
-    is($res->json->{count}, 1, 'only one job created due to group filter');
+    is($res->json->{count},                           1,  'only one job created due to group filter');
+    is($jobs->find($res->json->{ids}->[0])->priority, 42, 'prio from job template used');
 
     $res = schedule_iso(
         {
@@ -188,8 +190,10 @@ subtest 'group filter' => sub {
             BUILD      => '0091',
             PRECEDENCE => 'original',
             _GROUP_ID  => '1002',
+            _PRIORITY  => 43,
         });
-    is($res->json->{count}, 1, 'only one job created due to group filter (by ID)');
+    is($res->json->{count},                           1,  'only one job created due to group filter (by ID)');
+    is($jobs->find($res->json->{ids}->[0])->priority, 43, 'prio overridden via _PRIORITY');
 
     # delete job template again so the remaining tests are unaffected
     $job_template->delete;
