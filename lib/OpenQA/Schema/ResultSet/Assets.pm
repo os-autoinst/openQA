@@ -17,7 +17,7 @@
 package OpenQA::Schema::ResultSet::Assets;
 use strict;
 use base 'DBIx::Class::ResultSet';
-use OpenQA::Utils qw(log_warning locate_asset human_readable_size);
+use OpenQA::Utils qw(log_warning locate_asset human_readable_size log_debug);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use File::Basename;
@@ -143,7 +143,7 @@ sub status {
                 a.id as id, a.name as name, a.t_created as t_created, a.size as size, a.type as type,
                 a.fixed as fixed,
                 coalesce(max(j.id), -1) as max_job,
-                max(case when j.id is not null and j.t_finished is null then 1 else 0 end) as pending
+                max(case when j.id is not null and j.result='none' then 1 else 0 end) as pending
             from assets a
                 left join jobs_assets ja on a.id=ja.asset_id
                 left join jobs j on j.id=ja.job_id
@@ -249,9 +249,11 @@ END_SQL
         my @groups        = sort { $a <=> $b } keys %{$asset->{groups}};
         my $size          = $asset->{size} // 0;
         for my $g (@groups) {
+            log_debug("Asset $asset->{type}/$asset->{name} ($size) fits into $g: $group_infos{$g}->{size}?");
             if ($largest_size < $group_infos{$g}->{size} && $group_infos{$g}->{size} >= $size) {
                 $largest_size  = $group_infos{$g}->{size};
                 $largest_group = $g;
+                log_debug("Asset $asset->{name} ($size) picked into $g");
             }
         }
         $asset->{picked_into} = $largest_group;

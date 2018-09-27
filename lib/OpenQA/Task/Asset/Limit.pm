@@ -18,6 +18,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 use OpenQA::Utils;
 use Mojo::URL;
+use Data::Dump 'pp';
 
 sub register {
     my ($self, $app) = @_;
@@ -49,6 +50,7 @@ sub _limit {
         compute_pending_state_and_max_job => 1,
         compute_max_job_by_group          => 1,
     );
+    log_debug pp($asset_status);
     my $assets = $asset_status->{assets};
 
     # first remove grouped assets
