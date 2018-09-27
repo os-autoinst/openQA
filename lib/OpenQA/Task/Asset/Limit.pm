@@ -81,7 +81,8 @@ sub _limit {
             );
         }
         else {
-            my $remaining_days = ($untracked_assets_storage_duration - $age_in_seconds) / $seconds_per_day;
+            my $remaining_days
+              = sprintf('%.0f', ($untracked_assets_storage_duration - $age_in_seconds) / $seconds_per_day);
             OpenQA::Utils::log_warning(
                 "Asset $asset_name is not in any job group, will delete in $remaining_days days");
         }

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014-2017 SUSE LLC
+# Copyright (C) 2014-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -509,7 +509,8 @@ is_deeply($jobY->to_hash(deps => 1)->{parents}, {Chained => [$jobX->id], Paralle
 # when Y is scheduled and X is duplicated, Y must be cancelled and Y2 needs to depend on X2
 my $jobX2 = $jobX->auto_duplicate;
 $jobY->discard_changes;
-is($jobY->state, "skipped", "jobY was skipped");
+is($jobY->state,  OpenQA::Jobs::Constants::CANCELLED,          'jobY was cancelled');
+is($jobY->result, OpenQA::Jobs::Constants::PARALLEL_RESTARTED, 'jobY was skipped');
 my $jobY2 = $jobY->clone;
 ok(defined $jobY2, "jobY was cloned too");
 is($jobY2->blocked_by_id, $jobX2->id, "JobY2 is blocked");

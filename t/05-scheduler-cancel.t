@@ -31,6 +31,7 @@ use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
+use DBIx::Class::Timestamps 'now';
 use Net::DBus;
 use Test::More;
 use Test::Warnings;
@@ -249,13 +250,21 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
 
     # set A as failed and reload B, C from database
     @OpenQA::WebSockets::Server::commands = ();
+    my $now = now();
     $jobA->done(result => OpenQA::Jobs::Constants::FAILED);
     $jobB->discard_changes;
     $jobC->discard_changes;
 
     is($jobB->result, OpenQA::Jobs::Constants::PARALLEL_FAILED, 'B result is parallel failed');
+    is($jobB->state, OpenQA::Jobs::Constants::RUNNING, 'B is still running');
+    is($jobB->t_finished, undef, 'B does not has t_finished set since it is still running');
     is($jobC->result, OpenQA::Jobs::Constants::PARALLEL_FAILED, 'C result is parallel failed');
     is_deeply(\@OpenQA::WebSockets::Server::commands, [qw(cancel cancel)], 'both cancel commands issued');
+
+    # assume B has actually been cancelled
+    $jobB->update({state => OpenQA::Jobs::Constants::DONE});
+    ok($jobB->t_finished, 'B has t_finished set after being actually cancelled')
+      and ok($jobB->t_finished ge $now, 'B has t_finished set to a sane value');
 };
 
 subtest 'chained parent fails -> parallel parents of children are cancelled (skipped)' => sub {

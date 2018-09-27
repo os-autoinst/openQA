@@ -873,7 +873,7 @@ sub auto_duplicate {
         else {
             if ($j->state eq SCHEDULED) {
                 $j->release_networks;
-                $j->update({state => SKIPPED});
+                $j->update({state => CANCELLED});
             }
         }
     }
