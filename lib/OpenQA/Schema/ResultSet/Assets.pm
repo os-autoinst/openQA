@@ -239,6 +239,9 @@ END_SQL
         while (my $result = $max_job_by_group_prepared_query->fetchrow_hashref) {
             my $asset_info = $asset_info{$result->{asset_id}} or next;
             $asset_info->{groups}->{$group_id} = $result->{max_job};
+            if ($result->{max_job} > ($asset_info->{max_job} || 0)) {
+                die "$asset_info->{name} was scheduled during cleanup, we are in troubled water";
+            }
         }
     }
 
@@ -249,7 +252,7 @@ END_SQL
         my @groups        = sort { $a <=> $b } keys %{$asset->{groups}};
         my $size          = $asset->{size} // 0;
         for my $g (@groups) {
-            log_debug("Asset $asset->{type}/$asset->{name} ($size) fits into $g: $group_infos{$g}->{size}?");
+            log_debug("Asset $asset->{name} ($size) fits into $g: $group_infos{$g}->{size}?");
             if ($largest_size < $group_infos{$g}->{size} && $group_infos{$g}->{size} >= $size) {
                 $largest_size  = $group_infos{$g}->{size};
                 $largest_group = $g;
