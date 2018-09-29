@@ -109,7 +109,7 @@ $cell->click();
 wait_for_ajax;
 like(
     $driver->find_element('#flash-messages span')->get_text(),
-qr/ISO rescheduled - 9 new jobs but 1 failed\s*START_AFTER_TEST=kda:64bit not found - check for typos and dependency cycles/,
+qr/ISO rescheduled - 9 new jobs but 2 failed\s*START_AFTER_TEST=kda:64bit not found - check for dependency typos and dependency cycles\s*textmode:32bit has no child, check its machine placed or dependency setting typos/,
     'flash with error messages occurs'
 );
 $driver->refresh;
