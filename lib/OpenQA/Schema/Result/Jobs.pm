@@ -1032,9 +1032,10 @@ sub insert_module {
         {
             # we have 'important' in the db but 'ignore_failure' in the flags
             # for historical reasons...see #1266
-            milestone => $tm->{flags}->{milestone}      ? 1 : 0,
-            important => $tm->{flags}->{ignore_failure} ? 0 : 1,
-            fatal     => $tm->{flags}->{fatal}          ? 1 : 0,
+            milestone       => $tm->{flags}->{milestone}       ? 1 : 0,
+            important       => $tm->{flags}->{ignore_failure}  ? 0 : 1,
+            fatal           => $tm->{flags}->{fatal}           ? 1 : 0,
+            always_rollback => $tm->{flags}->{always_rollback} ? 1 : 0,
         });
     return $r;
 }

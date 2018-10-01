@@ -999,12 +999,13 @@ sub read_test_modules {
         push(
             @modlist,
             {
-                name      => $module->name,
-                result    => $module->result,
-                details   => \@details,
-                milestone => $module->milestone,
-                important => $module->important,
-                fatal     => $module->fatal
+                name            => $module->name,
+                result          => $module->result,
+                details         => \@details,
+                milestone       => $module->milestone,
+                important       => $module->important,
+                fatal           => $module->fatal,
+                always_rollback => $module->always_rollback,
             });
 
         if (!$category || $category ne $module->category) {

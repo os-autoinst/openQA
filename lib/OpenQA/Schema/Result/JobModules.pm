@@ -67,6 +67,11 @@ __PACKAGE__->add_columns(
         is_nullable   => 0,
         default_value => 0
     },
+    always_rollback => {
+        data_type     => 'integer',
+        is_nullable   => 0,
+        default_value => 0
+    },
     result => {
         data_type     => 'varchar',
         default_value => OpenQA::Jobs::Constants::NONE,
