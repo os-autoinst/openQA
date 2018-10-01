@@ -156,6 +156,61 @@ the same page of the table.
 
 image::images/highlighting_job_dependencies.png[highlighted child jobs]
 
+
+== Asset cleanup ==
+
+Assets like ISO files consume a huge amount of disk space. Therefore openQA
+removes assets automatically according to configurable limits.
+
+This section provides an overall description of the cleanup strategy and
+how to configure the limits. Cleanup-related parameter for the REST API can
+be found in the 'Asset handling' section under 'Use of the REST API'.
+
+=== Cleanup strategy ===
+
+openQA frequently checks whether assets need to be removed according to
+the configured limits.
+
+To find out whether an asset should be removed, openQA determines by which
+job groups the asset is used. If at least one job within a certain job group
+is using an asset, the asset is considered to be used by that group.
+
+So an asset can be accounted to multiple groups. The assets table which is
+accessible via the admin menu shows these groups for each asset and also
+the latest job.
+
+If the size limit for assets by a certain group is exceeded, openQA will
+remove assets accounted to that group:
+
+* Assets belonging to old jobs are preferred.
+* Assets belonging to jobs which are still scheduled or running are not
+  considered.
+* Assets which are also accounted to another group that has still space
+  left are not considered.
+
+Assets which do _not_ belong to any group are removed after a configurable
+duration. Keep in mind that this behavior is also enabled on local instances
+and affects all cloned jobs (unless cloned into a job group).
+
+=== Configure limit for assets within groups ===
+
+To configure the maximum size for the assets of a group, open 'Job groups'
+in the operators menu and select a group. The size limit for assets can be
+configured under 'Edit job group properties'. It also shows the size of
+assets which belong to that group and not to any other group.
+
+Job groups inherit the size limit from their parent group unless the limit
+is set explicitely. The default size limit for groups can be adjusted in
+the +default_group_limits+ section of the openQA config file.
+
+=== Configure limit for groupless assets ===
+
+Assets not belonging to jobs within a group are deleted automatically
+after a certain number of days. That duration can be adjusted by setting
++untracked_assets_storage_duration+ in the +misc_limits+ section of the
+openQA config to the desired number of days.
+
+
 == Use of the REST API
 
 openQA includes a _client_ script which - depending on the distribution - is
@@ -219,7 +274,7 @@ _DEPRIORITIZE_LIMIT:: The configurable limit of priority up to which jobs
 should be deprioritized. Needs `_DEPRIORITIZEBUILD`. Default 100.
 
 _ONLY_OBSOLETE_SAME_BUILD:: Only obsolete (or deprioritize) jobs for the same BUILD.
-This is useful for cases where a new build appearing doesn't necessarily
+This is useful for cases where a new build appearing does not necessarily
 mean existing jobs for earlier builds with the same DISTRI and VERSION are
 no longer interesting, but you still want to be able to re-submit jobs for a
 build and have existing jobs for the exact same build obsoleted.
@@ -247,12 +302,7 @@ Multiple parameters exist to reference assets to be used by tests, for example
 `ISO`, `HDD`, `ASSET`, `KERNEL`, `INITRD`. Corresponding files must be
 provided within the path +/var/lib/openqa/share/factory+ local to the openQA
 web-UI. All assets specified in this way in any job are tracked by openQA and
-removed from the filesystem as soon as the corresponding job group disk usage
-quota is depleted and no scheduled or running jobs are relying on the assets.
-Therefore it is useful for production instances to make sure that all provided
-assets are tracked this way to prevent disk space depletion. Still, other
-assets found but not mentioned by any jobs are deleted after a fixed, longer
-time.
+considered by the automatic cleanup described under 'Asset cleanup'.
 
 Multiple options can be used based on special suffix types. These types can
 also be combined, for example ISO_1_DECOMPRESS_URL.
