@@ -271,12 +271,11 @@ $cache->purge_asset($fake_asset);
 ok !-e $fake_asset, 'Asset was purged';
 
 $cache->track_asset($fake_asset);
-is $cache->_asset($fake_asset)->{etag}, 0, 'Can get downloading state with _asset()';
-is_deeply $cache->_asset('foobar'), {}, '_asset() returns {} if asset is not present';
+is(ref($cache->_asset($fake_asset)), 'HASH', 'Asset was just inserted, so it must be there')
+  or die diag explain $cache->_asset($fake_asset);
 
-path($fake_asset)->spurt('');
-is $cache->check_limits(2333), 0, 'Freed no space - locked assets are not removed';
-is $cache->check_limits(2333), 1, '1 Asset purged to make space';
+is $cache->_asset($fake_asset)->{etag}, undef, 'Can get downloading state with _asset()';
+is_deeply $cache->_asset('foobar'), {}, '_asset() returns {} if asset is not present';
 
 stop_server;
 done_testing();

@@ -179,17 +179,16 @@ sub download_asset {
     elsif ($tx->res->is_success) {
         $etag = $headers->etag;
         unlink($asset);
-        #  $self->cache_sync;
+        $self->cache_sync;
         my $size = $tx->res->content->asset->move_to($asset)->size;
         if ($size == $headers->content_length) {
             $self->check_limits($size);
-
             my $att = 0;
             my $ok;
             # This needs to go in to the database at any cost - we have the lock and we succeeded in download
             # We can't just throw it away if database locks.
             ++$att and sleep 1 and log_debug("CACHE: Error updating Cache: attempting again: $att")
-              until $ok = $self->update_asset($asset, $etag, $size) || $att > 5;
+              until ($ok = $self->update_asset($asset, $etag, $size)) || $att > 5;
             log_error("CACHE: FAIL Could not update DB - purging asset")
               and $self->purge_asset($asset)
               and $asset = undef
@@ -223,8 +222,6 @@ sub get_asset {
     while () {
         $self->track_asset($asset);    # Track asset - make sure it's in DB
         $result = $self->_asset($asset);
-        use Data::Dumper;
-        log_debug "Result " . Dumper($result);
         local $@;
         eval {
             $ret
@@ -253,10 +250,10 @@ sub get_asset {
 
 sub _asset {
     my ($self, $asset) = @_;
+    my $result = $self->dbh->db->select('assets', [qw(etag size last_use)], {filename => $asset})->hashes;
 
-    my $result = $self->dbh->db->select('assets', [qw(etag)], {filename => $asset});
-    return {} unless $result->arrays->size > 0;
-    return $result->hash;
+    return {} if $result->size == 0 || $@;
+    return $result->first;
 }
 
 sub track_asset {
@@ -267,24 +264,25 @@ sub track_asset {
 
     eval {
         my $tx = $self->dbh->db->begin('exclusive');
-        $res = $self->dbh->db->query($sql, $asset);
+        $res = $self->dbh->db->query($sql, $asset)->arrays;
         $tx->commit;
     };
-
     if ($@) {
         log_error "track_asset: Failed: $@";
     }
 
-    return !!0 if !defined $res || $res->arrays->size == 0 || $@;
-    return !!1 if $res->arrays->size > 0;
+    return !!0 if $res->size == 0 || $@;
+    return !!1 if $res->size > 0;
 }
 
 sub _update_asset_last_use {
     my ($self, $asset) = @_;
 
     eval {
-        my $tx = $self->dbh->db->begin('exclusive');
-        $self->dbh->db->update('assets', {last_use => q(strftime('%s','now'))}, {filename => $asset});
+        my $tx  = $self->dbh->db->begin('exclusive');
+        my $sql = q(UPDATE assets set last_use = strftime('%s','now') where filename = ?;);
+        $tx->commit;
+        $self->dbh->db->query($sql, $asset);
         $tx->commit;
     };
 
@@ -298,25 +296,13 @@ sub _update_asset_last_use {
 }
 
 sub update_asset {
-    # XXX: This is wrong
     my ($self, $asset, $etag, $size) = @_;
-    my $res;
-
     eval {
-        my $tx = $self->dbh->db->begin('exclusive');
-        my $sql
-          = "UPDATE assets set filename =?, etag =? , size = ?, last_use = strftime('%s','now') where filename = ?;";
-        $res = $self->dbh->db->query($sql, $asset, $etag, $size, $asset);
-        #      $res = $self->dbh->db->update(
-        #          'assets',
-        #          {etag     => $etag, size => $size, last_use => q(strftime('%s','now'))},
-        #          {filename =>  $asset});
+        my $tx  = $self->dbh->db->begin('exclusive');
+        my $sql = q(UPDATE assets set etag =? , size = ?, last_use = strftime('%s','now') where filename = ?;);
+        $self->dbh->db->query($sql, $etag, $size, $asset);
         $tx->commit;
     };
-    use Data::Dumper;
-    log_debug Dumper($res->hashes);
-    $self->cache_real_size($self->cache_real_size + $size);
-
     if ($@) {
         log_error "Update asset $asset failed. Rolling back $@";
     }
@@ -324,8 +310,10 @@ sub update_asset {
         log_info "CACHE: updating the $asset with $etag and $size";
     }
 
-    return !!0 if !defined $res || $@;
-    return !!1 if $res->hashes->size == 1;
+    my $result = $self->dbh->db->select('assets', [qw(etag size last_use filename)], {filename => $asset})->arrays;
+
+    return !!0 if $result->size == 0 || $@;
+    $self->increase($size) and return !!1 if $result->size == 1;
 }
 
 sub purge_asset {
@@ -334,8 +322,13 @@ sub purge_asset {
         my $tx = $self->dbh->db->begin();
         $self->dbh->db->delete('assets', {filename => $asset});
         $tx->commit;
-        unlink($asset) or eval { log_error "CACHE: Could not remove $asset" if -e $asset };
-        log_debug "CACHE: removed $asset";
+        if (-e $asset) {
+            unlink($asset) or eval { log_error "CACHE: Could not remove $asset" if -e $asset };
+            log_debug "CACHE: removed $asset";
+        }
+        else {
+            log_debug "CACHE: requested to remove unnexistant asset $asset";
+        }
     };
 
     if ($@) {
@@ -389,9 +382,12 @@ sub limit_reached { !!($_[0]->cache_real_size > shift->limit) }
 sub decrease {
     my ($self, $size) = @_;
     log_debug "Current cache size: " . $self->cache_real_size;
-    $self->cache_real_size($size > $self->cache_real_size ? 0 : $self->cache_real_size - $size);
+    $self->cache_real_size(
+        !defined $size ? $self->cache_real_size : $size > $self->cache_real_size ? 0 : $self->cache_real_size - $size);
     log_debug "Reclaiming " . $size . " from " . $self->cache_real_size . " to make space for " . $self->limit;
 }
+
+sub increase { $_[0]->cache_real_size($_[0]->cache_real_size + pop) }
 
 sub expire {
     my ($self, $asset) = @_;
@@ -409,18 +405,14 @@ sub expire {
 sub check_limits {
     my ($self, $needed) = @_;
     my $dbh = $self->dbh->db;
-    $self->cache_sync;
+    log_debug "Cleanup to make room for $needed";
     eval {
         my $sth = $dbh->select('assets', [qw(filename size last_use)], undef, {-asc => 'last_use'});
         while (my $asset = $sth->hash) {
             my $asset_size = $asset->{size};
-            $asset_size = $self->file_size($asset->{filename}) if $asset_size == 0;
-            if ($self->exceeds_limit($needed) && $self->purge_asset($asset->{filename})) {
+            $asset_size = $self->file_size($asset->{filename}) if $asset_size == 0 || !defined $asset_size;
+            if ($self->exceeds_limit($needed) && $self->purge_asset($asset->{filename}) && defined $asset_size) {
                 $self->decrease($asset_size);
-            }
-            else {
-                $sth->finish;
-                last;
             }
         }
     } if $self->exceeds_limit($needed) || $self->limit_reached;
