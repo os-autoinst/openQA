@@ -248,7 +248,7 @@ sub _handle_command_resume_test_execution {
     }
 
     # add new needles since the job has been started
-    $json->{new_needles} = [map { $_->to_json } $needles->new_needles_since($job_t_started)->all];
+    $json->{new_needles} = [map { $_->to_json } $needles->new_needles_since($job_t_started, undef, 100)->all];
 
     return 1;
 }

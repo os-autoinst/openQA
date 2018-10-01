@@ -139,13 +139,14 @@ my %no_developer = (
 );
 
 subtest 'generate needle JSON for passing needles via websockets to command server' => sub {
+    my $now        = time;
     my $new_needle = $needles->create(
         {
             dir_id       => 1,
             filename     => 'new_needle.json',
             file_present => 1,
-            t_created    => time2str('%Y-%m-%d %H:%M:%S', time - 300, 'UTC'),
-            t_updated    => time2str('%Y-%m-%d %H:%M:%S', time - 300, 'UTC'),
+            t_created    => time2str('%Y-%m-%d %H:%M:%S', $now - 300, 'UTC'),
+            t_updated    => time2str('%Y-%m-%d %H:%M:%S', $now - 300, 'UTC'),
             tags         => [qw(foo bar)],
         });
     my $needle_id = $new_needle->id;
@@ -175,6 +176,26 @@ subtest 'generate needle JSON for passing needles via websockets to command serv
     $live_view_handler->_handle_command_resume_test_execution(99963, \%command_json);
     is_deeply(\%command_json, {new_needles => [\%expected_json]}, 'attach JSON in livehandler')
       or diag explain \%command_json;
+
+    subtest 'limit' => sub {
+        for my $i (002 ... 120) {
+            $needles->create(
+                {
+                    dir_id       => 1,
+                    filename     => "new_needle-$i.json",
+                    file_present => 1,
+                    t_created    => time2str('%Y-%m-%d %H:%M:%S', $now - 300 + $i, 'UTC'),
+                    t_updated    => time2str('%Y-%m-%d %H:%M:%S', $now - 300 + $i, 'UTC'),
+                    tags         => [qw(foo bar)],
+                });
+        }
+        my %command_json;
+        $live_view_handler->_handle_command_resume_test_execution(99963, \%command_json);
+        my $new_needles = $command_json{new_needles};
+        is(ref $new_needles,     'ARRAY', 'new needles array present')  or diag explain \%command_json;
+        is(scalar @$new_needles, 100,     'new needles limited to 100') or diag explain \%command_json;
+        is($new_needles->[0]->{name}, 'new_needle-120', 'most recently changed needle is first');
+    };
 };
 
 subtest 'store upload progress as JSON in database on worker-level' => sub {
