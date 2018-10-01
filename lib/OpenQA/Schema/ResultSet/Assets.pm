@@ -161,31 +161,6 @@ END_SQL
 END_SQL
     }
 
-    # prefetch all assets
-    my %asset_info;
-    my @assets;
-    my $assets_arrayref = $dbh->selectall_arrayref($prioritized_assets_query);
-    for my $asset_array (@$assets_arrayref) {
-        my $id      = $asset_array->[0];
-        my $type    = $asset_array->[4];
-        my $fixed   = $asset_array->[5];
-        my $dirname = ($fixed ? $type . '/fixed/' : $type . '/');
-        my $max_job = $asset_array->[6];
-        my %asset   = (
-            id        => $id,
-            name      => ($dirname . $asset_array->[1]),
-            t_created => $asset_array->[2],
-            size      => $asset_array->[3],
-            type      => $type,
-            fixed     => $fixed,
-            max_job   => ($max_job >= 0 ? $max_job : undef),
-            pending   => $asset_array->[7],
-            groups    => {},
-        );
-        $asset_info{$id} = \%asset;
-        push(@assets, \%asset);
-    }
-
     # define a query to find the latest job for each asset by group
     my $max_job_by_group_query;
     if ($options{compute_max_job_by_group}) {
@@ -210,37 +185,74 @@ END_SQL
     }
     my $max_job_by_group_prepared_query = $dbh->prepare($max_job_by_group_query);
 
-    # query list of job groups to show assets by job group
-    # We collect data required for /admin/assets *and* the limit_assets task
-    my $groups = $schema->resultset('JobGroups');
-    my %group_infos;
-    $group_infos{0} = {
-        size_limit_gb => 0,
-        size          => 0,
-        group         => 'Untracked',
-        id            => undef,
-        picked        => 0,
-    };
+    # query the database in one transaction
+    my (@assets, %asset_info, %group_info);
+    $schema->txn_do(
+        sub {
+            # prefetch all assets
+            my $assets_arrayref = $dbh->selectall_arrayref($prioritized_assets_query);
+            for my $asset_array (@$assets_arrayref) {
+                my $id      = $asset_array->[0];
+                my $type    = $asset_array->[4];
+                my $fixed   = $asset_array->[5];
+                my $dirname = ($fixed ? $type . '/fixed/' : $type . '/');
+                my $max_job = $asset_array->[6];
+                my %asset   = (
+                    id        => $id,
+                    name      => ($dirname . $asset_array->[1]),
+                    t_created => $asset_array->[2],
+                    size      => $asset_array->[3],
+                    type      => $type,
+                    fixed     => $fixed,
+                    max_job   => ($max_job >= 0 ? $max_job : undef),
+                    pending   => $asset_array->[7],
+                    groups    => {},
+                );
+                $asset_info{$id} = \%asset;
+                push(@assets, \%asset);
+            }
 
-    # find relevant assets which belong to a job group
-    while (my $group = $groups->next) {
-        my $group_id      = $group->id;
-        my $size_limit_gb = $group->size_limit_gb;
-        $group_infos{$group_id} = {
-            id            => $group_id,
-            size_limit_gb => $size_limit_gb,
-            size          => $size_limit_gb * 1024 * 1024 * 1024,
-            picked        => 0,
-            group         => $group->full_name,
-        };
+            # query list of job groups to show assets by job group
+            # We collect data required for /admin/assets *and* the limit_assets task
+            my $groups = $schema->resultset('JobGroups');
+            $group_info{0} = {
+                size_limit_gb => 0,
+                size          => 0,
+                group         => 'Untracked',
+                id            => undef,
+                picked        => 0,
+            };
 
-        # add the max job ID for this group to
-        $max_job_by_group_prepared_query->execute($group_id);
-        while (my $result = $max_job_by_group_prepared_query->fetchrow_hashref) {
-            my $asset_info = $asset_info{$result->{asset_id}} or next;
-            $asset_info->{groups}->{$group_id} = $result->{max_job};
-        }
-    }
+            # find relevant assets which belong to a job group
+            my $fail_on_inconsistent_status = $options{fail_on_inconsistent_status};
+            while (my $group = $groups->next) {
+                my $group_id      = $group->id;
+                my $size_limit_gb = $group->size_limit_gb;
+                $group_info{$group_id} = {
+                    id            => $group_id,
+                    size_limit_gb => $size_limit_gb,
+                    size          => $size_limit_gb * 1024 * 1024 * 1024,
+                    picked        => 0,
+                    group         => $group->full_name,
+                };
+
+                # add the max job ID for this group to
+                $max_job_by_group_prepared_query->execute($group_id);
+                while (my $result = $max_job_by_group_prepared_query->fetchrow_hashref) {
+                    my $asset_info = $asset_info{$result->{asset_id}} or next;
+                    my $init_max_job = $asset_info->{max_job} || 0;
+                    my $res_max_job = $result->{max_job};
+                    $asset_info->{groups}->{$group_id} = $res_max_job;
+
+                    # check whether the data from the 2nd select is inconsistent with what we've got from the 1st
+                    # (pure pre-caution, shouldn't happen due to the transaction)
+                    if ($fail_on_inconsistent_status && ($res_max_job > $init_max_job)) {
+                        die
+"$asset_info->{name} was scheduled during cleanup (max job initially $init_max_job, now $res_max_job)";
+                    }
+                }
+            }
+        });
 
     # compute group sizes
     for my $asset (@assets) {
@@ -249,19 +261,19 @@ END_SQL
         my @groups        = sort { $a <=> $b } keys %{$asset->{groups}};
         my $size          = $asset->{size} // 0;
         for my $g (@groups) {
-            log_debug("Asset $asset->{type}/$asset->{name} ($size) fits into $g: $group_infos{$g}->{size}?");
-            if ($largest_size < $group_infos{$g}->{size} && $group_infos{$g}->{size} >= $size) {
-                $largest_size  = $group_infos{$g}->{size};
+            log_debug("Asset $asset->{name} ($size) fits into $g: $group_info{$g}->{size}?");
+            if ($largest_size < $group_info{$g}->{size} && $group_info{$g}->{size} >= $size) {
+                $largest_size  = $group_info{$g}->{size};
                 $largest_group = $g;
                 log_debug("Asset $asset->{name} ($size) picked into $g");
             }
         }
         $asset->{picked_into} = $largest_group;
-        $group_infos{$largest_group}->{size} -= $size;
-        $group_infos{$largest_group}->{picked} += $size;
+        $group_info{$largest_group}->{size} -= $size;
+        $group_info{$largest_group}->{picked} += $size;
     }
 
-    return {assets => \@assets, groups => \%group_infos};
+    return {assets => \@assets, groups => \%group_info};
 }
 
 1;
