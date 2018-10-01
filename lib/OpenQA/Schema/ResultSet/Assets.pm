@@ -223,6 +223,7 @@ END_SQL
     };
 
     # find relevant assets which belong to a job group
+    my $fail_on_inconsistent_status = $options{fail_on_inconsistent_status};
     while (my $group = $groups->next) {
         my $group_id      = $group->id;
         my $size_limit_gb = $group->size_limit_gb;
@@ -240,6 +241,7 @@ END_SQL
             my $asset_info = $asset_info{$result->{asset_id}} or next;
             my $initial_max_job = $asset_info->{max_job} || 0;
             $asset_info->{groups}->{$group_id} = $result->{max_job};
+            if ($fail_on_inconsistent_status && ($result->{max_job} > $initial_max_job)) {
                 die
 "$asset_info->{name} was scheduled during cleanup (max job initially $initial_max_job, now $result->{max_job}), we are in troubled water";
             }

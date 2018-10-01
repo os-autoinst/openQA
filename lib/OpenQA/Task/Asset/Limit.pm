@@ -49,6 +49,7 @@ sub _limit {
     my $asset_status = $app->db->resultset('Assets')->status(
         compute_pending_state_and_max_job => 1,
         compute_max_job_by_group          => 1,
+        fail_on_inconsistent_status       => 1,
     );
     log_debug pp($asset_status);
     my $assets = $asset_status->{assets};
