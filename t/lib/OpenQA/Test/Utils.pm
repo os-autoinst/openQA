@@ -269,6 +269,7 @@ sub c_worker {
         use Mojo::IOLoop;
         my ($worker_settings, $host_settings)
           = read_worker_config($instance, $host);    # It will read from config file, so watch out
+        $worker_settings->{LOG_LEVEL}            = 'debug';
         $OpenQA::Worker::Common::worker_settings = $worker_settings;
         $OpenQA::Worker::Common::instance        = $instance;
 

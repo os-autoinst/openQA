@@ -1,4 +1,4 @@
-# Copyright (C) 2017 SUSE LLC
+# Copyright (C) 2017-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,13 +39,13 @@ use Mojo::File qw(tempfile path);
 
 subtest 'Setup logging to file' => sub {
     local $ENV{OPENQA_LOGFILE} = undef;
-    local $ENV{MOJO_LOG_LEVEL} = 'debug';
     my $tempfile = tempfile;
     my $app = Mojolicious->new(config => {logging => {file => $tempfile}});
     OpenQA::Setup::setup_log($app);
     $app->attr('log_name', sub { return "test"; });
 
     my $log = $app->log;
+    $log->level('debug');
     $log->error('Just works');
     $log->fatal('Fatal error');
     $log->debug('It works');
@@ -60,7 +60,6 @@ subtest 'Setup logging to file' => sub {
 
 subtest 'Setup logging to STDOUT' => sub {
     local $ENV{OPENQA_LOGFILE} = undef;
-    local $ENV{MOJO_LOG_LEVEL} = 'debug';
     my $buffer = '';
     my $app    = Mojolicious->new();
     OpenQA::Setup::setup_log($app);
@@ -69,6 +68,7 @@ subtest 'Setup logging to STDOUT' => sub {
         open my $handle, '>', \$buffer;
         local *STDOUT = $handle;
         my $log = $app->log;
+        $log->level('debug');
         $log->error('Just works');
         $log->fatal('Fatal error');
         $log->debug('It works');
@@ -82,12 +82,12 @@ subtest 'Setup logging to STDOUT' => sub {
 
 subtest 'Setup logging to file (ENV)' => sub {
     local $ENV{OPENQA_LOGFILE} = tempfile;
-    local $ENV{MOJO_LOG_LEVEL} = 'debug';
     my $app = Mojolicious->new(config => {logging => {file => "/tmp/ignored_foo_bar"}});
     OpenQA::Setup::setup_log($app);
     $app->attr('log_name', sub { return "test"; });
 
     my $log = $app->log;
+    $log->level('debug');
     $log->error('Just works');
     $log->fatal('Fatal error');
     $log->debug('It works');
@@ -105,6 +105,7 @@ subtest 'Setup logging to file (ENV)' => sub {
     $app->attr('log_name', sub { return "test"; });
 
     $log = $app->log;
+    $log->level('debug');
     $log->error('Just works');
     $log->fatal('Fatal error');
     $log->debug('It works');
