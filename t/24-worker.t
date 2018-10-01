@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2017 SUSE LLC
+# Copyright (C) 2016-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -411,13 +411,14 @@ subtest 'Worker logs' => sub {
     use OpenQA::Test::Utils qw(redirect_output standard_worker kill_service setup_share_dir);
     use Mojo::File qw(path tempdir);
     use OpenQA::Utils;
-    local $ENV{OPENQA_LOGFILE};
-    #local $ENV{MOJO_LOG_LEVEL};
     path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
 
+    local $ENV{OPENQA_LOGFILE} = undef;
+    local $ENV{MOJO_LOG_LEVEL} = 'debug';
+
     my @re = (
-        '\[debug\] Found possible working directory for .*?: .*',
-        '\[error\] Ignoring host .*: Working directory does not exist'
+        '\[debug\]( \[pid:\d+\])? Found possible working directory for .*?: .*',
+        '\[error\]( \[pid:\d+\])? Ignoring host .*: Working directory does not exist'
     );
     my $c = join('\n', @re);
 
@@ -431,10 +432,10 @@ subtest 'Worker logs' => sub {
     $OpenQA::Utils::prjdir = path(tempdir(), 'openqa');
 
     @re = (
-        '\[info\] Project dir for host .*? is .*',
-        '\[info\] registering worker .*? version \d+ with openQA .*? using protocol version .*',
-        '\[error\] unable to connect to host .* retry in .*',
-        '\[debug\] ## adding timer register_worker-.*'
+        '\[info\]( \[pid:\d+\])? Project dir for host .*? is .*',
+        '\[info\]( \[pid:\d+\])? registering worker .*? version \d+ with openQA .*? using protocol version .*',
+        '\[error\]( \[pid:\d+\])? unable to connect to host .* retry in .*',
+        '\[debug\]( \[pid:\d+\])? ## adding timer register_worker-.*'
     );
 
     $c = join('\n', @re);
