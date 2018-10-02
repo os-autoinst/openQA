@@ -405,15 +405,12 @@ sub expire {
 sub check_limits {
     my ($self, $needed) = @_;
     my $dbh = $self->dbh->db;
-    log_debug "Cleanup to make room for $needed";
     eval {
         my $sth = $dbh->select('assets', [qw(filename size last_use)], undef, {-asc => 'last_use'});
         while (my $asset = $sth->hash) {
-            my $asset_size = $asset->{size};
-            $asset_size = $self->file_size($asset->{filename}) if $asset_size == 0 || !defined $asset_size;
-            if ($self->exceeds_limit($needed) && $self->purge_asset($asset->{filename}) && defined $asset_size) {
-                $self->decrease($asset_size);
-            }
+            my $asset_size = $asset->{size} || $self->file_size($asset->{filename});
+            $self->decrease($asset_size)
+              if $self->exceeds_limit($needed) && $self->purge_asset($asset->{filename}) && defined $asset_size;
         }
     } if $self->exceeds_limit($needed) || $self->limit_reached;
     log_error "CACHE: check_limit failed: $@" if $@;
