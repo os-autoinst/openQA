@@ -158,7 +158,7 @@ $driver->get('/tests');
 wait_for_ajax;
 my @header       = $driver->find_elements('h2');
 my @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
-my @expected     = ('3 jobs are running', '2 scheduled jobs', 'Last 10 finished jobs');
+my @expected     = ('3 jobs are running', '2 scheduled jobs', 'Last 11 finished jobs');
 is_deeply(\@header_texts, \@expected, 'all headings correctly displayed');
 
 $driver->get('/tests?limit=1');
@@ -322,7 +322,7 @@ $driver->find_element('#finished_jobs_result_filter_chosen .active-result', 'css
 # actually this does not use AJAX, but be sure all JavaScript processing is done anyways
 wait_for_ajax();
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
-is_deeply(\@jobs, [qw(job_99947 job_99946 job_99945 job_80000 job_99937)], 'only passed jobs displayed');
+is_deeply(\@jobs, [qw(job_99947 job_99946 job_99945 job_80000 job_99937 job_99764)], 'only passed jobs displayed');
 $driver->find_element('#finished_jobs_result_filter_chosen .search-choice-close', 'css')->click();
 # enable filter via query parameter, this time disable relevantfilter
 $driver->get('/tests?resultfilter=Failed&foo=bar&resultfilter=Softfailed');

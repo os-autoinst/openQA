@@ -43,7 +43,7 @@ $get->status_is(200);
 
 my $summary = get_summary;
 like($summary, qr/Overall Summary of opensuse 13\.1 build 0091/i);
-like($summary, qr/Passed: 2 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
+like($summary, qr/Passed: 3 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
 
 # Check the headers
 $get->element_exists('#flavor_DVD_arch_i586');
@@ -94,7 +94,7 @@ $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version =>
 $get->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse 13\.1 build 0091/i);
-like($summary, qr/Passed: 2 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
+like($summary, qr/Passed: 3 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
 
 $form = {distri => 'opensuse', version => '13.1', groupid => 1001};
 $get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
@@ -128,7 +128,7 @@ $form = {distri => 'opensuse', version => '13.1', result => 'passed'};
 $get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse 13\.1 build 0091/i, "Still references the last build");
-like($summary, qr/Passed: 2 Failed: 0/i, "Only passed are shown");
+like($summary, qr/Passed: 3 Failed: 0/i, "Only passed are shown");
 $get->element_exists('#res_DVD_i586_kde .result_passed');
 $get->element_exists('#res_DVD_i586_textmode .result_passed');
 $get->element_exists_not('#res_DVD_i586_RAID0 .state_scheduled');
@@ -210,7 +210,7 @@ $summary = get_summary;
 like($summary, qr/Summary of opensuse/i, 'shows all available latest jobs for the only present distri');
 like(
     $summary,
-    qr/Passed: 2 Failed: 0 Scheduled: 2 Running: 2 None: 1/i,
+    qr/Passed: 3 Failed: 0 Scheduled: 2 Running: 2 None: 1/i,
     'shows latest jobs from all distri, version, build, flavor, arch'
 );
 $get->element_exists('#res_DVD_i586_kde');

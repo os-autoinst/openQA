@@ -92,7 +92,7 @@ $t->app->schema->resultset('Jobs')->find(99963)->update({assigned_worker_id => 1
 my $get        = $t->get_ok('/api/v1/jobs');
 my @jobs       = @{$get->tx->res->json->{jobs}};
 my $jobs_count = scalar @jobs;
-is($jobs_count, 17);
+is($jobs_count, 18);
 my %jobs = map { $_->{id} => $_ } @jobs;
 is($jobs{99981}->{state},              'cancelled');
 is($jobs{99981}->{origin_id},          undef, 'no original job');
@@ -106,9 +106,9 @@ is($jobs{99963}->{clone_id},           undef, 'no clone');
 
 # That means that only 9 are current and only 10 are relevant
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
-is(scalar(@{$get->tx->res->json->{jobs}}), 14);
-$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
 is(scalar(@{$get->tx->res->json->{jobs}}), 15);
+$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
+is(scalar(@{$get->tx->res->json->{jobs}}), 16);
 
 # check limit quantity
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 5});
@@ -129,7 +129,7 @@ is(scalar(@{$get->tx->res->json->{jobs}}), 6);
 
 # query for existing jobs by build
 $get = $t->get_ok('/api/v1/jobs?build=0091');
-is(scalar(@{$get->tx->res->json->{jobs}}), 10);
+is(scalar(@{$get->tx->res->json->{jobs}}), 11);
 
 # query for existing jobs by hdd_1
 $get = $t->get_ok('/api/v1/jobs?hdd_1=openSUSE-13.1-x86_64.hda');
@@ -157,7 +157,7 @@ $get = $t->get_ok('/api/v1/jobs?limit=1&page=2');
 is(scalar(@{$get->tx->res->json->{jobs}}), 1);
 is($get->tx->res->json->{jobs}->[0]->{id}, 99963);
 $get = $t->get_ok('/api/v1/jobs?before=99928');
-is(scalar(@{$get->tx->res->json->{jobs}}), 3);
+is(scalar(@{$get->tx->res->json->{jobs}}), 4);
 $get = $t->get_ok('/api/v1/jobs?after=99945');
 is(scalar(@{$get->tx->res->json->{jobs}}), 6);
 
@@ -229,7 +229,7 @@ my $cloned = $new_jobs{$new_jobs{99939}->{clone_id}};
 
 # The number of current jobs doesn't change
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
-is(scalar(@{$get->tx->res->json->{jobs}}), 14, 'job count stay the same');
+is(scalar(@{$get->tx->res->json->{jobs}}), 15, 'job count stay the same');
 
 # Test /jobs/X/restart and /jobs/X
 $get = $t->get_ok('/api/v1/jobs/99926')->status_is(200);
