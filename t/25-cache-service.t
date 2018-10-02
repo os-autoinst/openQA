@@ -44,7 +44,7 @@ use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use List::Util qw(shuffle uniq sum);
 use Mojolicious::Commands;
 use Mojo::UserAgent;
-use OpenQA::Test::Utils qw(fake_asset_server);
+use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service);
 use Mojo::Util qw(md5_sum);
 use constant DEBUG => $ENV{DEBUG} // 0;
 my $sql;
@@ -79,22 +79,8 @@ END { session->clean }
 sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
 
 my $daemon;
-my $cache_service = process sub {
-    use OpenQA::Worker::Cache::Service;
-    diag 'Starting Cache service';
-    Mojolicious::Commands->start_app('OpenQA::Worker::Cache::Service' => (qw(daemon), qw(-m production) x !(DEBUG)));
-    _exit(0);
-};
-
-my $minion_worker = sub {
-    use OpenQA::Worker::Cache::Service;
-    diag 'Starting Cache Worker';
-    Mojolicious::Commands->start_app(
-        'OpenQA::Worker::Cache::Service' => (qw(minion worker), qw(-m production) x !(DEBUG)));
-    _exit(0);
-};
-
-my $worker_cache_service = process $minion_worker;
+my $cache_service = cache_worker_service;
+my $worker_cache_service = cache_minion_worker;
 
 my $server_instance = process sub {
     # Connect application with web server and start accepting connections
@@ -107,8 +93,8 @@ sub start_server {
 
 
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
-    $worker_cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
-    $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
+    $worker_cache_service->restart;
+    $cache_service->restart;
     sleep .5 until $cache_client->available;
     return;
 }
@@ -265,11 +251,11 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     my $tot_proc = $ENV{STRESS_TEST} ? 100 : 10;
 
     # We want 3 parallel downloads
-    my $worker_2 = process $minion_worker;
-    my $worker_3 = process $minion_worker;
-    my $worker_4 = process $minion_worker;
+    my $worker_2 = cache_minion_worker;
+    my $worker_3 = cache_minion_worker;
+    my $worker_4 = cache_minion_worker;
 
-    $_->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->start for ($worker_2, $worker_3, $worker_4);
+    $_->start for ($worker_2, $worker_3, $worker_4);
 
     my @assets = map { "sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2" } 1 .. $tot_proc;
     unlink path($cachedir)->child($_) for @assets;

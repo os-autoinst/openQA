@@ -11,6 +11,7 @@ use Mojo::Home;
 use Mojo::File qw(path tempdir);
 use Cwd qw(abs_path getcwd);
 use Test::More;
+use Mojo::IOLoop::ReadWriteProcess 'process';
 
 BEGIN {
     if (!$ENV{MOJO_HOME}) {
@@ -27,8 +28,28 @@ our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
     qw(redirect_output standard_worker),
     qw(create_webapi create_websocket_server create_live_view_handler create_worker unresponsive_worker wait_for_worker setup_share_dir),
-    qw(kill_service unstable_worker job_create client_output fake_asset_server create_resourceallocator start_resourceallocator)
+    qw(kill_service unstable_worker job_create client_output fake_asset_server create_resourceallocator start_resourceallocator),
+    qw(cache_minion_worker cache_worker_service)
 );
+
+sub cache_minion_worker {
+  process(sub {
+    require OpenQA::Worker::Cache::Service;
+    OpenQA::Worker::Cache::Service->import();
+    Mojolicious::Commands->start_app(
+          'OpenQA::Worker::Cache::Service' => (qw(minion worker), qw(-m production) x !(DEBUG)));
+      _exit(0);
+  })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
+}
+
+sub cache_worker_service {
+  process(sub {
+      require OpenQA::Worker::Cache::Service;
+      OpenQA::Worker::Cache::Service->import();
+      Mojolicious::Commands->start_app('OpenQA::Worker::Cache::Service' => (qw(daemon), qw(-m production) x !(DEBUG)));
+      _exit(0);
+  })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
+}
 
 sub fake_asset_server {
     my $mock = Mojolicious->new;
