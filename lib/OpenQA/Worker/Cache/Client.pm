@@ -45,7 +45,8 @@ sub _retry {
 sub asset_status { my ($self, $asset) = @_; }
 sub asset_download { shift->_p("download", pop) }
 sub asset_download_info { shift->_q(join('/', "status", pop)) }
-sub asset_exists { !!-e path(shift->cache_dir)->child(shift) }
+sub asset_path { path(shift->cache_dir, @_ > 2 ? shift : ())->child(shift) }
+sub asset_exists { !!(-e shift->asset_path(@_)) }
 
 sub enqueue_download {
     my ($self, $what) = @_;
