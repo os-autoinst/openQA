@@ -278,65 +278,79 @@ sub log_fatal {
     die $_[0];
 }
 
+sub _current_log_level {
+    # FIXME: avoid use of $app here
+    return defined $app && $app->can('log') && $app->log->can('level') && $app->log->level;
+}
+
 # The %options parameter is used to control which destinations the message should go.
 # Accepted parameters: channels, standard.
 #  - channels. Scalar or a arrayref containing the name of the channels to log to.
-#  - standard. Boolean to indicate if it should use the *defaults*  to log.
+#  - standard. Boolean to indicate if it should use the *defaults* to log.
 #
-#  This function is used together with _log, and if any of parameters above don't exist,
-#  then it will log to the defaults (by default is $app) - the standard option need to be
-#  set to true. Please check the function add_log_channel to learn on how to set a
-#  channel as default
+# If any of parameters above don't exist, this function will log to the defaults (by
+# default it is $app). The standard option need to be set to true. Please check the function
+# add_log_channel to learn on how to set a channel as default.
 sub _log_msg {
     my ($level, $msg, %options) = @_;
-    my $log_to_standard = 0;
 
+    # use default options
     if (!%options) {
-        # set defaults
-        _log_msg($level, $msg, channels => $log_defaults{CHANNELS}, standard => $log_defaults{LOG_TO_STANDARD_CHANNEL});
-        $log_to_standard = 0;
+        return _log_msg(
+            $level, $msg,
+            channels => $log_defaults{CHANNELS},
+            standard => $log_defaults{LOG_TO_STANDARD_CHANNEL});
     }
-    else {
-        # TODO: We need to get rid of $app here :(
-        $msg = "[pid:$$] " . $msg
-          if defined $app && $app->can('log') && $app->log->can('level') && $app->log->level eq 'debug';
-        if ($options{channels}) {
-            if (ref($options{channels}) eq 'ARRAY') {
-                for my $channel (@{$options{channels}}) {
-                    _log($level, $msg, $channel);
-                }
-            }
-            else {
 
-                _log($level, $msg, $options{channels});
-            }
+    # prepend process ID on debug level
+    if (_current_log_level eq 'debug') {
+        $msg = "[pid:$$] $msg";
+    }
+
+    # log to channels
+    my $wrote_to_at_least_one_channel = 0;
+    if (my $channels = $options{channels}) {
+        for my $channel (ref($channels) eq 'ARRAY' ? @$channels : $channels) {
+            $wrote_to_at_least_one_channel |= _log_to_channel_by_name($level, $msg, $channel);
         }
-        $log_to_standard = $options{standard} // $log_defaults{LOG_TO_STANDARD_CHANNEL};
     }
 
-    _log($level, $msg) if $log_to_standard;
+    # log to standard (as fallback or when explicitely requested)
+    if (!$wrote_to_at_least_one_channel || ($options{standard} // $log_defaults{LOG_TO_STANDARD_CHANNEL})) {
+        # use Mojolicious app if available and otherwise just STDERR/STDOUT
+        _log_via_mojo_app($level, $msg) or _log_to_stderr_or_stdout($level, $msg);
+    }
 }
 
-# There are three possibilities for logging:
-# 1- Logging to a channel
-# 2- Logging to the default destination
-# 3- Logging to the STDERR/STDOUT as a fallback in case of none of the above are set
-sub _log {
+sub _log_to_channel_by_name {
+    my ($level, $msg, $channel_name) = @_;
+
+    return 0 unless ($channel_name);
+    my $channel = $channels{$channel_name} or return 0;
+    return _try_logging_to_channel($level, $msg, $channel);
+}
+
+sub _log_via_mojo_app {
+    my ($level, $msg) = @_;
+
+    return 0 unless ($app && $app->log);
+    return _try_logging_to_channel($level, $msg, $app->log);
+}
+
+sub _try_logging_to_channel {
     my ($level, $msg, $channel) = @_;
 
-    if ($channel && $channels{$channel}) {
-        $channels{$channel}->$level($msg);
-    }
-    elsif ($app && $app->log) {
-        $app->log->$level($msg);
+    eval { $channel->$level($msg); };
+    return ($@ ? 0 : 1);
+}
+
+sub _log_to_stderr_or_stdout {
+    my ($level, $msg) = @_;
+    if ($level =~ /warn|error|fatal/) {
+        STDERR->printflush("[@{[uc $level]}] $msg\n");
     }
     else {
-        if ($level =~ /warn|error|fatal/) {
-            STDERR->printflush("[@{[uc $level]}] $msg\n");
-        }
-        else {
-            STDOUT->printflush("[@{[uc $level]}] $msg\n");
-        }
+        STDOUT->printflush("[@{[uc $level]}] $msg\n");
     }
 }
 
@@ -345,10 +359,9 @@ sub _log {
 # This parameter can have two values:
 # - "append". This value will append the channel to the defaults, so the simple call to the log_*
 #   functions will try to log to the channels set as default.
-
 # - "set". This value will replace all the defaults with the channel being created.
-
-# All the parameters set in %options are passed to the Mojo::Log constructor
+#
+# All the parameters set in %options are passed to the Mojo::Log constructor.
 sub add_log_channel {
     my ($channel, %options) = @_;
     if ($options{default}) {
@@ -365,6 +378,7 @@ sub add_log_channel {
 
     $channels{$channel}->format(\&log_format_callback);
 }
+
 # The default format for logging
 sub log_format_callback {
     my ($time, $level, @lines) = @_;
