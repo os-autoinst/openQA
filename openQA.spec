@@ -164,7 +164,10 @@ Requires:       perl(Cpanel::JSON::XS)
 Requires:       perl(Data::Dump)
 Requires:       perl(Getopt::Long)
 Requires:       perl(IO::Socket::SSL) >= 2.009
+Requires:       perl(JSON)
+Requires:       perl(LWP::UserAgent)
 Requires:       perl(Mojolicious)
+Requires:       perl(Try::Tiny)
 
 %description client
 Tools and support files for openQA client script. Client script is
