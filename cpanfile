@@ -54,6 +54,7 @@ requires 'Mojo::IOLoop::ReadWriteProcess', '0.20';
 requires 'Mojo::JSON';
 requires 'Mojo::Pg';
 requires 'Mojo::RabbitMQ::Client', '>= v0.2';
+requires 'Mojo::SQLite';
 requires 'Mojo::URL';
 requires 'Mojo::Util';
 requires 'Mojolicious', '>= 7.92';
