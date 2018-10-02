@@ -201,9 +201,11 @@ function checkResultHash() {
 
     // check for links or text details matching the hash
     var link = $("[href='" + hash + "'], [data-href='" + hash + "']");
-
     if (link && link.attr("role") === 'tab' && !link.prop('aria-expanded')) {
         link.tab('show');
+        if (hash === '#dependencies') {
+            setupDependencyGraph();
+        }
     } else if (hash.search('#step/') === 0) {
         // show details tab for steps
         $("[href='#details']").tab('show');
@@ -397,4 +399,96 @@ function setupResult(state, jobid, status_url, details_url) {
       detailsFilter.toggleClass('hidden');
       applyFilterChanges();
   });
+}
+
+function renderDependencyGraph(container, nodes, edges) {
+    // create a new directed graph
+    var g = new dagreD3.graphlib.Graph().setGraph({});
+
+    // set left-to-right layout
+    g.setGraph({
+        nodesep: 70,
+        ranksep: 50,
+        rankdir: "LR",
+        marginx: 20,
+        marginy: 20
+    });
+
+    /*
+    g.setNode("root", {
+        label: function() {
+            var table = document.createElement("table"),
+                tr = d3.select(table).append("tr");
+            tr.append("td").text("A");
+            tr.append("td").text("B");
+            return table;
+        },
+        padding: 0,
+        rx: 5,
+        ry: 5
+    });
+    g.setNode("A", { label: "A", fill: "#afa" });
+    g.setNode("B", { label: "B", fill: "#faa" });
+    g.setEdge("root", "A", {});
+    g.setEdge("root", "B", {});
+    */
+
+    // insert nodes
+    var maxLabelLength = 15;
+    nodes.forEach(node => {
+        var label = node.label;
+        if (label.length > maxLabelLength) {
+            label = "…" + label.substr(label.length - maxLabelLength);
+        }
+        g.setNode(node.id, {
+            label: label,
+            fill: "#afa",
+        });
+    });
+
+    // insert edges
+    edges.forEach(edge => {
+        g.setEdge(edge.from, edge.to, {});
+    });
+
+    // create the renderer
+    var render = new dagreD3.render();
+
+    // set up an SVG group so that we can translate the final graph.
+    var svg = d3.select('svg'), svgGroup = svg.append('g');
+
+    // run the renderer (this is what draws the final graph)
+    render(svgGroup, g);
+
+    // center the graph
+    var xCenterOffset = (svg.attr('width') - g.graph().width) / 2;
+    svgGroup.attr('transform', 'translate(' + xCenterOffset + ', 20)');
+    svg.attr('height', g.graph().height + 40);
+}
+
+function setupDependencyGraph() {
+    if (window.dependencyGraphInitiated) {
+        return;
+    }
+    window.dependencyGraphInitiated = true;
+
+    var statusElement = document.getElementById('dependencygraph_status');
+    var containerElement = document.getElementById('dependencygraph');
+    $.ajax({
+        url: containerElement.dataset.url,
+        method: 'GET',
+        success: function(dependencyInfo) {
+            var nodes = dependencyInfo.nodes;
+            var edges = dependencyInfo.edges;
+            if (!nodes || !edges) {
+                $(statusElement).text('Unable to query dependency info: no nodes/edges received');
+                return;
+            }
+            $(statusElement).remove();
+            renderDependencyGraph(containerElement, nodes, edges);
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            $(statusElement).text('Unable to query dependency info: ' + thrownError);
+        }
+    });
 }

@@ -265,6 +265,7 @@ sub _show {
             scenario        => $job->scenario,
             worker          => $job->worker,
             assigned_worker => $job->assigned_worker,
+            part_of_cluster => $job->is_part_of_cluster,
         });
 
     my $clone_of = $self->db->resultset("Jobs")->find({clone_id => $job->id});
@@ -651,6 +652,64 @@ sub module_fails {
         json => {
             first_failed_step => $first_failed_step,
             failed_needles    => \@needles
+        });
+}
+
+sub _add_relation {
+    my ($edges, $parent_job_id, $child_job_id) = @_;
+
+    push(
+        @$edges,
+        {
+            from => $parent_job_id,
+            to   => $child_job_id,
+        });
+}
+
+sub _add_job {
+    my ($visited, $nodes, $edges, $job) = @_;
+
+    # add current job; return if already visited
+    my $job_id = $job->id;
+    return $job_id if $visited->{$job_id};
+    $visited->{$job_id} = 1;
+    push(
+        @$nodes,
+        {
+            id    => $job_id,
+            label => $job->name,
+        });
+
+    # add parents
+    for my $parent ($job->parents->all) {
+        if (my $parent_job_id = _add_job($visited, $nodes, $edges, $parent->parent)) {
+            _add_relation($edges, $parent_job_id, $job_id);
+        }
+    }
+
+    # add children
+    for my $child ($job->children->all) {
+        if (my $child_job_id = _add_job($visited, $nodes, $edges, $child->child)) {
+            # FIXME: should be enough to do that for parents XOR for children
+            #_add_relation($edges, $job_id, $child_job_id);
+        }
+    }
+
+    return $job_id;
+}
+
+sub dependencies {
+    my ($self) = @_;
+
+    # build dependency graph starting from the current job
+    my $job = $self->get_current_job or return $self->reply->not_found;
+    my (%visited, @nodes, @edges);
+    _add_job(\%visited, \@nodes, \@edges, $job);
+
+    $self->render(
+        json => {
+            nodes => \@nodes,
+            edges => \@edges,
         });
 }
 

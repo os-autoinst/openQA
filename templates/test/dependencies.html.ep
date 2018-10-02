@@ -1,0 +1,7 @@
+% content_for 'head' => begin
+  %= asset 'd3.js'
+  %= asset 'dependency_graph.css'
+% end
+<p id="dependencygraph_status">Loading dependency graph ...</p>
+<svg id="dependencygraph" data-url="<%= url_for('test_dependencies', testid => $job->id) %>"  width="960" height="600">
+</svg>
