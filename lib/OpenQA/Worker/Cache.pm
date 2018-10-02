@@ -89,28 +89,6 @@ sub init {
     return $self;
 }
 
-sub cache_assets {
-
-    my ($self, $job, $vars, $assetkeys) = @_;
-
-    for my $this_asset (sort keys %$assetkeys) {
-        log_debug("Found $this_asset, caching " . $vars->{$this_asset});
-        my $asset = $self->get_asset($job, $assetkeys->{$this_asset}, $vars->{$this_asset});
-        if ($this_asset eq 'UEFI_PFLASH_VARS' && !defined $asset) {
-            log_error("Can't download $vars->{$this_asset}");
-            # assume that if we have a full path, that's what we should use
-            $vars->{$this_asset} = $vars->{$this_asset} if (-e $vars->{$this_asset});
-            # don't kill the job if the asset is not found
-            next;
-        }
-        return {error => "Can't download $vars->{$this_asset}"} unless $asset;
-        unlink basename($asset) if -l basename($asset);
-        symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";
-        $vars->{$this_asset} = catdir(getcwd, basename($asset));
-    }
-    return undef;
-}
-
 sub download_asset {
     my $self = shift;
     my ($id, $type, $asset, $etag) = @_;

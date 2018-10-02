@@ -28,6 +28,8 @@ use File::Basename;
 use Errno;
 use Cwd qw(abs_path getcwd);
 use OpenQA::Worker::Cache;
+use OpenQA::Worker::Cache::Client;
+use OpenQA::Worker::Common;
 use Time::HiRes 'sleep';
 use IO::Handle;
 use Mojo::IOLoop::ReadWriteProcess 'process';
@@ -119,6 +121,43 @@ sub detect_asset_keys {
     return \%res;
 }
 
+sub cache_assets {
+    my ($job, $vars, $assetkeys) = @_;
+    my $cache_client = OpenQA::Worker::Cache::Client->new(host => "http://localhost:3000");
+    for my $this_asset (sort keys %$assetkeys) {
+        my $asset;
+        log_debug("Found $this_asset, caching " . $vars->{$this_asset});
+
+        if (
+            $cache_client->enqueue_download(
+                {
+                    id    => $job->{id},
+                    asset => $vars->{$this_asset},
+                    type  => $assetkeys->{$this_asset},
+                    host  => $current_host
+                }))
+        {
+            update_setup_status and sleep 5 until $cache_client->processed($vars->{$this_asset});
+        }
+
+        $asset = $cache_client->asset_path($current_host, $vars->{$this_asset})
+          if $cache_client->asset_exists($current_host, $vars->{$this_asset});
+
+        if ($this_asset eq 'UEFI_PFLASH_VARS' && !defined $asset) {
+            log_error("Can't download $vars->{$this_asset}");
+            # assume that if we have a full path, that's what we should use
+            $vars->{$this_asset} = $vars->{$this_asset} if (-e $vars->{$this_asset});
+            # don't kill the job if the asset is not found
+            next;
+        }
+        return {error => "Can't download $vars->{$this_asset}"} unless $asset;
+        unlink basename($asset) if -l basename($asset);
+        symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";
+        $vars->{$this_asset} = path(getcwd, basename($asset));
+    }
+    return undef;
+}
+
 sub engine_workit {
     my ($job) = @_;
 
@@ -178,8 +217,7 @@ sub engine_workit {
     # do asset caching if CACHEDIRECTORY is set
     if ($worker_settings->{CACHEDIRECTORY}) {
         my $host_to_cache = Mojo::URL->new($current_host)->host;
-        my $cache = OpenQA::Worker::Cache->new(host => $current_host, location => $worker_settings->{CACHEDIRECTORY});
-        my $error = $cache->cache_assets($job => \%vars => $assetkeys);
+        my $error = cache_assets($job => \%vars => $assetkeys);
         return $error if $error;
 
         # do test caching if TESTPOOLSERVER is set
