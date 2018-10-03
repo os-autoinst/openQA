@@ -33,22 +33,25 @@ our (@EXPORT, @EXPORT_OK);
 );
 
 sub cache_minion_worker {
-  process(sub {
-    require OpenQA::Worker::Cache::Service;
-    OpenQA::Worker::Cache::Service->import();
-    Mojolicious::Commands->start_app(
-          'OpenQA::Worker::Cache::Service' => (qw(minion worker), qw(-m production) x !(DEBUG)));
-      _exit(0);
-  })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
+    process(
+        sub {
+            require OpenQA::Worker::Cache::Service;
+            OpenQA::Worker::Cache::Service->import();
+            Mojolicious::Commands->start_app(
+                'OpenQA::Worker::Cache::Service' => (qw(minion worker), qw(-m production) x !(DEBUG)));
+            _exit(0);
+        })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
 }
 
 sub cache_worker_service {
-  process(sub {
-      require OpenQA::Worker::Cache::Service;
-      OpenQA::Worker::Cache::Service->import();
-      Mojolicious::Commands->start_app('OpenQA::Worker::Cache::Service' => (qw(daemon), qw(-m production) x !(DEBUG)));
-      _exit(0);
-  })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
+    process(
+        sub {
+            require OpenQA::Worker::Cache::Service;
+            OpenQA::Worker::Cache::Service->import();
+            Mojolicious::Commands->start_app(
+                'OpenQA::Worker::Cache::Service' => (qw(daemon), qw(-m production) x !(DEBUG)));
+            _exit(0);
+        })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
 }
 
 sub fake_asset_server {

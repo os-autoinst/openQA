@@ -33,11 +33,11 @@ use Mojo::File 'path';
 use Mojo::Base -base;
 use POSIX;
 
-use constant ASSET_STATUS_PROCESSED   => 001;
-use constant ASSET_STATUS_ENQUEUED    => 002;
-use constant ASSET_STATUS_DOWNLOADING => 003;
-use constant ASSET_STATUS_IGNORE      => 004;
-use constant ASSET_STATUS_ERROR       => 005;
+use constant ASSET_STATUS_PROCESSED   => 1;
+use constant ASSET_STATUS_ENQUEUED    => 2;
+use constant ASSET_STATUS_DOWNLOADING => 3;
+use constant ASSET_STATUS_IGNORE      => 4;
+use constant ASSET_STATUS_ERROR       => 5;
 
 has [qw(host cache location db_file dsn dbh cache_real_size)];
 has limit => 50 * (1024**3);

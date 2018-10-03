@@ -63,18 +63,18 @@ post '/download' => sub {
     my $c = shift;
 
     my $data  = $c->req->json;
-    my $id    = $data->{'id'};
-    my $type  = $data->{'type'};
-    my $asset = $data->{'asset'};
-    my $host  = $data->{'host'};
+    my $id    = $data->{id};
+    my $type  = $data->{type};
+    my $asset = $data->{asset};
+    my $host  = $data->{host};
     # Specific error cases for missing fields
-    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => "No ID defined"})
+    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => 'No ID defined'})
       unless defined $id;
-    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => "No Asset defined"})
+    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => 'No Asset defined'})
       unless defined $asset;
-    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => "No Asset type defined"})
+    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => 'No Asset type defined'})
       unless defined $type;
-    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => "No Host defined"})
+    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => 'No Host defined'})
       unless defined $host;
     app->log->debug("Requested: ID: $id Type: $type Asset: $asset Host: $host ");
 

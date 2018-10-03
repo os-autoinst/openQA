@@ -79,7 +79,7 @@ END { session->clean }
 sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
 
 my $daemon;
-my $cache_service = cache_worker_service;
+my $cache_service        = cache_worker_service;
 my $worker_cache_service = cache_minion_worker;
 
 my $server_instance = process sub {
