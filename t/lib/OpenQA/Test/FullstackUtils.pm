@@ -62,7 +62,6 @@ sub client_output {
 sub client_call {
     my ($args, $expected_out, $desc) = @_;
     my $out = client_output $args;
-    is($?, 0, "Client $args succeeded") or die;
     if ($expected_out) {
         like($out, $expected_out, $desc) or die;
     }

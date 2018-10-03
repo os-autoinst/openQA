@@ -52,7 +52,8 @@ use IO::Socket::INET;
 use POSIX '_exit';
 use Fcntl ':mode';
 use DBI;
-
+use Mojo::IOLoop::ReadWriteProcess::Session 'session';
+session->enable;
 # optional but very useful
 eval 'use Test::More::Color';
 eval 'use Test::More::Color "foreground"';
@@ -60,18 +61,21 @@ eval 'use Test::More::Color "foreground"';
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
 use OpenQA::Test::Utils
-  qw(create_websocket_server create_live_view_handler create_resourceallocator start_resourceallocator setup_share_dir);
+  qw(create_websocket_server create_live_view_handler create_resourceallocator start_resourceallocator setup_share_dir),
+  qw(cache_minion_worker cache_worker_service);
 use OpenQA::Test::FullstackUtils;
 
 plan skip_all => "set FULLSTACK=1 (be careful)" unless $ENV{FULLSTACK};
 plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
-
+my $cache_service        = cache_worker_service;
+my $worker_cache_service = cache_minion_worker;
 my $workerpid;
 my $wspid;
 my $livehandlerpid;
 my $resourceallocatorpid;
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
+
 
 sub turn_down_stack {
     for my $pid ($workerpid, $wspid, $livehandlerpid, $resourceallocatorpid) {
@@ -308,6 +312,9 @@ close($conf);
 
 ok(-e path($ENV{OPENQA_CONFIG})->child("workers.ini"), "Config file created.");
 
+$worker_cache_service->start;
+$cache_service->start;
+
 # For now let's repeat the cache tests before extracting to separate test
 subtest 'Cache tests' => sub {
 
@@ -376,8 +383,7 @@ subtest 'Cache tests' => sub {
         $filename = $cache_location->child("$_.qcow2");
         open(my $tmpfile, '>', $filename);
         print $tmpfile $filename;
-        $sql
-          = "INSERT INTO assets (downloading,filename,etag,last_use) VALUES (0, ?, 'Not valid', strftime('%s','now'));";
+        $sql = "INSERT INTO assets (filename,etag,last_use) VALUES (0, ?, 'Not valid', strftime('%s','now'));";
         $sth = $dbh->prepare($sql);
         $sth->bind_param(1, $filename);
         $sth->execute();
@@ -511,5 +517,6 @@ done_testing;
 END {
     kill_driver;
     turn_down_stack;
+    session->clean;
     $? = 0;
 }

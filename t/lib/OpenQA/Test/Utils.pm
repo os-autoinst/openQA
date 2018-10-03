@@ -23,6 +23,7 @@ BEGIN {
         $ENV{MOJO_HOME} = Mojo::Home->new->detect('OpenQA::Utils');
     }
 }
+use constant DEBUG => $ENV{DEBUG} // 0;
 
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
