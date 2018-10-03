@@ -34,7 +34,7 @@
 %bcond_with tests
 %endif
 # runtime requirements that also the testsuite needs
-%define t_requires perl(DBD::Pg) perl(DBIx::Class) perl(Config::IniFiles) perl(SQL::Translator) perl(Date::Format) perl(File::Copy::Recursive) perl(DateTime::Format::Pg) perl(Net::OpenID::Consumer) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) perl(aliased) perl(Config::Tiny) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(IO::Socket::SSL) perl(Data::Dump) perl(DBIx::Class::OptimisticLocking) perl(Text::Markdown) perl(Net::DBus) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(Mojo::RabbitMQ::Client) perl(BSD::Resource) perl(Cpanel::JSON::XS) perl(Pod::POM) perl(Mojo::IOLoop::ReadWriteProcess) perl(Minion) perl(Mojo::Pg) perl(Mojo::SQLite)
+%define t_requires perl(DBD::Pg) perl(DBIx::Class) perl(Config::IniFiles) perl(SQL::Translator) perl(Date::Format) perl(File::Copy::Recursive) perl(DateTime::Format::Pg) perl(Net::OpenID::Consumer) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) perl(aliased) perl(Config::Tiny) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(IO::Socket::SSL) perl(Data::Dump) perl(DBIx::Class::OptimisticLocking) perl(Text::Markdown) perl(Net::DBus) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(Mojo::RabbitMQ::Client) perl(BSD::Resource) perl(Cpanel::JSON::XS) perl(Pod::POM) perl(Mojo::IOLoop::ReadWriteProcess) perl(Minion) perl(Mojo::Pg) perl(Mojo::SQLite) perl(Minion::Backend::SQLite)
 Name:           openQA
 Version:        4.6
 Release:        0
@@ -142,6 +142,7 @@ Group:          Development/Tools/Other
 Requires:       openQA-client = %{version}
 Requires:       os-autoinst < 5
 Requires:       perl(DBD::SQLite)
+Requires:       perl(Minion::Backend::SQLite)
 Requires:       perl(Mojo::SQLite)
 Requires:       perl(Mojo::IOLoop::ReadWriteProcess) > 0.19
 Requires:       perl(SQL::SplitStatement)

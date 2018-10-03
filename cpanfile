@@ -43,6 +43,7 @@ requires 'LWP::UserAgent';
 requires 'List::MoreUtils';
 requires 'Minion', '9.0';
 requires 'Minion::Backend::Pg';
+requires 'Minion::Backend::SQLite';
 requires 'MRO::Compat';
 requires 'Module::Implementation';
 requires 'Module::Load::Conditional';
