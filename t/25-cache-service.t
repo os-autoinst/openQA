@@ -47,6 +47,7 @@ use Mojo::UserAgent;
 use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service);
 use Mojo::Util qw(md5_sum);
 use constant DEBUG => $ENV{DEBUG} // 0;
+
 my $sql;
 my $sth;
 my $result;
@@ -58,15 +59,14 @@ my $cachedir = $ENV{CACHE_DIR};
 
 my $db_file = "$cachedir/cache.sqlite";
 $ENV{LOGDIR} = catdir(getcwd(), 't', 'cache.d', 'logs');
-my $logfile            = catdir($ENV{LOGDIR}, 'cache.log');
-my $port               = Mojo::IOLoop::Server->generate_port;
-my $host               = "http://localhost:$port";
-my $cache_service_host = "http://localhost:3000";
+my $logfile = catdir($ENV{LOGDIR}, 'cache.log');
+my $port    = Mojo::IOLoop::Server->generate_port;
+my $host    = "http://localhost:$port";
 
 make_path($ENV{LOGDIR});
 use OpenQA::Worker::Cache::Client;
 
-my $cache_client = OpenQA::Worker::Cache::Client->new(host => $cache_service_host);
+my $cache_client = OpenQA::Worker::Cache::Client->new();
 BEGIN {
     my $cachedir = path('t', 'cache.d', 'cache');
     remove_tree($cachedir);
