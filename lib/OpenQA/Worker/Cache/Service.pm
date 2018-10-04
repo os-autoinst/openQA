@@ -62,8 +62,6 @@ sub run {
     shift;
     $ENV{'MOJO_LISTEN'} ||= 'http://localhost:7844/';
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 300;
-    # the default is EV, and this heavily screws with our children handling
-    #$ENV{MOJO_REACTOR} = 'Mojo::Reactor::Poll';
     require Mojolicious::Commands;
     Mojolicious::Commands->start_app('OpenQA::Worker::Cache::Service', @_);
 }
