@@ -406,9 +406,9 @@ function setupResult(state, jobid, status_url, details_url) {
   });
 }
 
-function renderDependencyGraph(container, nodes, edges, currentNode) {
+function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
     // create a new directed graph
-    var g = new dagreD3.graphlib.Graph().setGraph({});
+    var g = new dagreD3.graphlib.Graph({ compound:true }).setGraph({});
 
     // set left-to-right layout and spacing
     g.setGraph({
@@ -424,7 +424,7 @@ function renderDependencyGraph(container, nodes, edges, currentNode) {
     nodes.forEach(node => {
         var label = node.label;
         if (label.length > maxLabelLength) {
-            label = "…" + label.substr(label.length - maxLabelLength);
+            label = label.substr(0, maxLabelLength) + "…";
         }
         g.setNode(node.id, {
             label: function() {
@@ -457,7 +457,7 @@ function renderDependencyGraph(container, nodes, edges, currentNode) {
                 return table;
             },
             padding: 0,
-            fullLabel: node.label,
+            tooltipText: node.tooltipText,
             fill: "#afa",
         });
     });
@@ -466,6 +466,16 @@ function renderDependencyGraph(container, nodes, edges, currentNode) {
     edges.forEach(edge => {
         g.setEdge(edge.from, edge.to, {});
     });
+
+    // insert clusters
+    for (var clusterId in cluster) {
+        g.setNode(clusterId, {
+            style: 'fill: #d0f0ff',
+        });
+        cluster[clusterId].forEach(child => {
+            g.setParent(child, clusterId);
+        });
+    }
 
     // create the renderer
     var render = new dagreD3.render();
@@ -479,11 +489,12 @@ function renderDependencyGraph(container, nodes, edges, currentNode) {
     // add tooltips
     svgGroup.selectAll("g.node")
         .attr("title", function(v) {
-            return "<p class='name'>" + g.node(v).fullLabel + "</p>";
+            return "<p>" + g.node(v).tooltipText + "</p>";
         })
         .each(function(v) {
             $(this).tooltip({
                 html: true,
+                placement: 'right',
             });
         });
 
@@ -511,12 +522,13 @@ function setupDependencyGraph() {
         success: function(dependencyInfo) {
             var nodes = dependencyInfo.nodes;
             var edges = dependencyInfo.edges;
-            if (!nodes || !edges) {
+            var cluster = dependencyInfo.cluster;
+            if (!nodes || !edges || !cluster) {
                 $(statusElement).text('Unable to query dependency info: no nodes/edges received');
                 return;
             }
             $(statusElement).remove();
-            renderDependencyGraph(containerElement, nodes, edges, containerElement.dataset.currentJobId);
+            renderDependencyGraph(containerElement, nodes, edges, cluster, containerElement.dataset.currentJobId);
         },
         error: function(xhr, ajaxOptions, thrownError) {
             $(statusElement).text('Unable to query dependency info: ' + thrownError);
