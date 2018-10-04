@@ -6,6 +6,11 @@ $grid-breakpoints: (
     xl: 1000px
 );
 
+// include and use Roboto font
+$web-font-path: "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" !default;
+@import url($web-font-path);
+
+$default-font:                "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
 $icon-font-path:              '/fonts/';
 $default-font-color:          #666666;
 $default-bg-color:            #ffffff;

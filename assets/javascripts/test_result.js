@@ -203,9 +203,6 @@ function checkResultHash() {
     var link = $("[href='" + hash + "'], [data-href='" + hash + "']");
     if (link && link.attr("role") === 'tab' && !link.prop('aria-expanded')) {
         link.tab('show');
-        if (hash === '#dependencies') {
-            setupDependencyGraph();
-        }
     } else if (hash.search('#step/') === 0) {
         // show details tab for steps
         $("[href='#details']").tab('show');
@@ -337,17 +334,25 @@ function setupResult(state, jobid, status_url, details_url) {
   });
 
   // define handler for tab switch to resume/pause live view depending on whether it is the
-  // current tab
+  // current tab and to lazy-load dependencies
   $('#result-row a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
-    if (e.target.hash === '#live') {
+    var hash = e.target.hash;
+    if (hash === '#dependencies') {
+      setupDependencyGraph();
+    }
+    if (hash === '#live') {
       resumeLiveView();
     } else {
       pauseLiveView();
     }
   });
-  // start the live view if it's default link
+  // start the live view if it's default tab
   if (window.location.hash === '#live') {
     resumeLiveView();
+  }
+  // setup dependency graph if it's the default tab
+  if (window.location.hash === '#dependencies') {
+    setupDependencyGraph();
   }
 
   // setup result filter, define function to apply filter changes
@@ -401,47 +406,58 @@ function setupResult(state, jobid, status_url, details_url) {
   });
 }
 
-function renderDependencyGraph(container, nodes, edges) {
+function renderDependencyGraph(container, nodes, edges, currentNode) {
     // create a new directed graph
     var g = new dagreD3.graphlib.Graph().setGraph({});
 
-    // set left-to-right layout
+    // set left-to-right layout and spacing
     g.setGraph({
-        nodesep: 70,
-        ranksep: 50,
         rankdir: "LR",
-        marginx: 20,
-        marginy: 20
+        nodesep: 10,
+        ranksep: 50,
+        marginx: 10,
+        marginy: 10,
     });
-
-    /*
-    g.setNode("root", {
-        label: function() {
-            var table = document.createElement("table"),
-                tr = d3.select(table).append("tr");
-            tr.append("td").text("A");
-            tr.append("td").text("B");
-            return table;
-        },
-        padding: 0,
-        rx: 5,
-        ry: 5
-    });
-    g.setNode("A", { label: "A", fill: "#afa" });
-    g.setNode("B", { label: "B", fill: "#faa" });
-    g.setEdge("root", "A", {});
-    g.setEdge("root", "B", {});
-    */
 
     // insert nodes
-    var maxLabelLength = 15;
+    var maxLabelLength = 30;
     nodes.forEach(node => {
         var label = node.label;
         if (label.length > maxLabelLength) {
             label = "…" + label.substr(label.length - maxLabelLength);
         }
         g.setNode(node.id, {
-            label: label,
+            label: function() {
+                var table = document.createElement("table");
+                var tr = d3.select(table).append("tr");
+
+                var testNameTd = tr.append("td");
+                if (node.id == currentNode) {
+                    testNameTd.text(label);
+                    tr.node().className = 'current';
+                } else {
+                    var testNameLink = testNameTd.append("a");
+                    testNameLink.attr('href', '/tests/' + node.id);
+                    testNameLink.text(label);
+                }
+
+                var testResultTd = tr.append("td");
+                var testResultId;
+                if (node.result !== 'none') {
+                    testResultId = node.result;
+                } else {
+                    testResultId = node.state;
+                    if (testResultId === 'scheduled' && node.blocked_by_id) {
+                        testResultId = 'blocked';
+                    }
+                }
+                testResultTd.text(testResultId);
+                testResultTd.node().className = testResultId;
+
+                return table;
+            },
+            padding: 0,
+            fullLabel: node.label,
             fill: "#afa",
         });
     });
@@ -459,6 +475,17 @@ function renderDependencyGraph(container, nodes, edges) {
 
     // run the renderer (this is what draws the final graph)
     render(svgGroup, g);
+
+    // add tooltips
+    svgGroup.selectAll("g.node")
+        .attr("title", function(v) {
+            return "<p class='name'>" + g.node(v).fullLabel + "</p>";
+        })
+        .each(function(v) {
+            $(this).tooltip({
+                html: true,
+            });
+        });
 
     // center the graph
     var xCenterOffset = (svg.attr('width') - g.graph().width) / 2;
@@ -485,7 +512,7 @@ function setupDependencyGraph() {
                 return;
             }
             $(statusElement).remove();
-            renderDependencyGraph(containerElement, nodes, edges);
+            renderDependencyGraph(containerElement, nodes, edges, containerElement.dataset.currentJobId);
         },
         error: function(xhr, ajaxOptions, thrownError) {
             $(statusElement).text('Unable to query dependency info: ' + thrownError);

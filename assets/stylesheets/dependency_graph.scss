@@ -1,9 +1,18 @@
+@import "openqa_theme.scss";
+
+#dependencygraph_status {
+    text-align: center;
+}
 
 #dependencygraph {
     text {
         font-weight: 300;
-        font-family: "Helvetica Neue", Helvetica, Arial, sans-serf;
-        font-size: 14px;
+        font-family: $default-font;
+        line-height: 1.428571429;
+        -webkit-font-smoothing: antialiased;
+        font-size: $font-size-base;
+        letter-spacing: .1px;
+        width: 300px;
     }
 
     .node rect {
@@ -19,25 +28,51 @@
 
     table {
         border-spacing: 0;
-    }
 
-    table td {
-        padding: 7px;
-    }
+        tr {
+            border: 1px solid #999;
 
-    table td:first-child {
-        background-color: #afa;
-        border-top: 1px solid #333;
-        border-left: 1px solid #333;
-        border-bottom: 1px solid #333;
-        border-radius: 5px 0 0 5px;
-    }
+            &.current {
+                border: 2px solid #222;
+            }
+        }
 
-    table td:last-child {
-        background-color: #faa;
-        border-top: 1px solid #333;
-        border-right: 1px solid #333;
-        border-bottom: 1px solid #333;
-        border-radius: 0 5px 5px 0;
+        td {
+            padding: 7px;
+
+            &:first-child {
+
+            }
+            &:last-child {
+                background-color: #efefef;
+            }
+
+            &.passed {
+                background-color: $color-ok;
+            }
+            &.failed {
+                background-color: $color-result-failed;
+            }
+            &.softfailed {
+                background-color: $color-softfailed;
+            }
+            &.incomplete {
+                color: white;
+                background-color: $color-incomplete;
+            }
+            &.blocked {
+                background-color: $color-state-blocked;
+            }
+            &.scheduled {
+                color: white;
+                background-color: $color-state-scheduled;
+            }
+            &.cancelled {
+                background-color: $color-state-cancelled;
+            }
+            &.assigned, &.running, &.uploading {
+                background-color: $color-state-running;
+            }
+        }
     }
 }

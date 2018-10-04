@@ -676,8 +676,11 @@ sub _add_job {
     push(
         @$nodes,
         {
-            id    => $job_id,
-            label => $job->name,
+            id            => $job_id,
+            label         => $job->name,
+            state         => $job->state,
+            result        => $job->result,
+            blocked_by_id => $job->blocked_by_id,
         });
 
     # add parents

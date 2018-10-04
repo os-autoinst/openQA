@@ -2,6 +2,13 @@
   %= asset 'd3.js'
   %= asset 'dependency_graph.css'
 % end
-<p id="dependencygraph_status">Loading dependency graph ...</p>
-<svg id="dependencygraph" data-url="<%= url_for('test_dependencies', testid => $job->id) %>"  width="960" height="600">
+<p id="dependencygraph_status">
+    <i class="fas fa-spinner fa-spin fa-lg"></i>
+    Loading dependency graph ...
+</p>
+<svg
+    id="dependencygraph"
+    data-url="<%= url_for('test_dependencies', testid => $job->id) %>"
+    data-current-job-id="<%= $job->id %>"
+    width="960" height="600">
 </svg>
