@@ -487,10 +487,14 @@ function renderDependencyGraph(container, nodes, edges, currentNode) {
             });
         });
 
-    // center the graph
-    var xCenterOffset = (svg.attr('width') - g.graph().width) / 2;
-    svgGroup.attr('transform', 'translate(' + xCenterOffset + ', 20)');
+    // move the graph a bit to the bottom so lines at the top are not clipped
+    svgGroup.attr("transform", "translate(0, 20)");
+
+    // set width and height of the svg element to the graph's size plus a bit extra spacing
+    svg.attr('width', g.graph().width + 40);
     svg.attr('height', g.graph().height + 40);
+
+    // note: centering is achieved by centering the svg element itself like any other html block element
 }
 
 function setupDependencyGraph() {

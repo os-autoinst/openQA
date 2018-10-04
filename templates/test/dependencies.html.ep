@@ -9,6 +9,5 @@
 <svg
     id="dependencygraph"
     data-url="<%= url_for('test_dependencies', testid => $job->id) %>"
-    data-current-job-id="<%= $job->id %>"
-    width="960" height="600">
+    data-current-job-id="<%= $job->id %>">
 </svg>
