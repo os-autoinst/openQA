@@ -24,6 +24,8 @@ use Mojo::IOLoop;
 use File::Spec::Functions 'catdir';
 use Mojo::File 'path';
 
+use Try::Tiny;
+
 use OpenQA::Client;
 use OpenQA::Utils qw(log_error log_info log_debug);
 use OpenQA::Worker::Common;
@@ -58,7 +60,28 @@ sub main {
     my $dir;
     my $shared_cache;
     clean_pool();
-    ## register worker at startup to all webuis
+
+    # register error handler
+    Mojo::IOLoop->singleton->reactor->on(
+        error => sub {
+            my ($reactor, $err) = @_;
+
+            try {
+                # log error using print because logging utils might have caused the exception
+                # (no need to repeat $err, it is printed anyways)
+                print("stopping because a critical error occurred.\n");
+
+                # try to stop the job nicely
+                stop('exception');
+                Mojo::IOLoop->stop();
+            }
+            catch {
+                # stop even if another error occurs when trying to stop nicely
+                Mojo::IOLoop->stop();
+            };
+        });
+
+    # register worker at startup to all webuis
     for my $h (@{$host_settings->{HOSTS}}) {
         # check if host`s working directory exists
         # if caching is not enabled
@@ -105,18 +128,24 @@ sub prepare_cache_directory {
     return $shared_cache;
 }
 
-sub catch_exit {
-    my ($sig) = @_;
-    log_info("quit due to signal $sig");
+sub stop {
+    my ($reason) = @_;
+
     if ($job) {
         Mojo::IOLoop->next_tick(
             sub {
-                stop_job('quit');
+                stop_job($reason);
             });
     }
     else {
         Mojo::IOLoop->stop;
     }
+}
+
+sub catch_exit {
+    my ($sig) = @_;
+    log_info("quit due to signal $sig");
+    stop('quit');
 }
 
 $SIG{HUP}  = \*catch_exit;
