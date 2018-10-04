@@ -50,6 +50,7 @@ use Test::Output 'stderr_like';
 use Data::Dumper;
 use IO::Socket::INET;
 use POSIX '_exit';
+use OpenQA::Worker::Cache::Client;
 use Fcntl ':mode';
 use DBI;
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
@@ -76,6 +77,7 @@ my $livehandlerpid;
 my $resourceallocatorpid;
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 
+my $cache_client = OpenQA::Worker::Cache::Client->new;
 
 sub turn_down_stack {
     for my $pid ($workerpid, $wspid, $livehandlerpid, $resourceallocatorpid) {
@@ -312,9 +314,10 @@ close($conf);
 
 ok(-e path($ENV{OPENQA_CONFIG})->child("workers.ini"), "Config file created.");
 
+
 $worker_cache_service->start;
 $cache_service->start;
-
+ diag "Waiting for cache service to be available" and sleep 5 until $cache_client->available;
 # For now let's repeat the cache tests before extracting to separate test
 subtest 'Cache tests' => sub {
 
