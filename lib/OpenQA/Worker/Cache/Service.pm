@@ -32,10 +32,12 @@ app->hook(
         $enqueued = Mojo::Collection->new;
     });
 
+
 sub SESSION_TOKEN { $tk }
 
-plugin 'OpenQA::Worker::Cache::Task::Asset';
+plugin 'Minion' => {SQLite => 'sqlite:' . OpenQA::Worker::Cache->from_worker->db_file};
 plugin 'Minion::Admin';
+plugin 'OpenQA::Worker::Cache::Task::Asset';
 
 sub _gen_guard_name { join('.', SESSION_TOKEN, pop) }
 sub _exists { !!(defined $_[0] && exists $_[0]->{total} && $_[0]->{total} > 0) }
@@ -54,6 +56,16 @@ sub dequeue {
 
 sub enqueue {
     push @$enqueued, shift;
+}
+
+sub run {
+    shift;
+    $ENV{'MOJO_LISTEN'} ||= 'http://localhost:7844/';
+    $ENV{MOJO_INACTIVITY_TIMEOUT} = 300;
+    # the default is EV, and this heavily screws with our children handling
+    #$ENV{MOJO_REACTOR} = 'Mojo::Reactor::Poll';
+    require Mojolicious::Commands;
+    Mojolicious::Commands->start_app('OpenQA::Worker::Cache::Service', @_);
 }
 
 get '/session_token' => sub { shift->render(json => {session_token => SESSION_TOKEN()}) };
@@ -113,7 +125,5 @@ get '/dequeue/#asset' => sub {
 };
 
 app->minion->backend->reset;
-# Start the Mojolicious command system
-app->start;
 
 !!42;

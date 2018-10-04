@@ -17,30 +17,6 @@
 
 use strict;
 use warnings;
-use Mojolicious::Commands;
-use OpenQA::Worker::Cache::Service;
-use Getopt::Long;
-Getopt::Long::Configure("no_ignore_case");
 
-my %options;
-
-sub usage($) {
-    my $r = shift;
-    eval "use Pod::Usage; pod2usage($r);";
-    if ($@) {
-        die "cannot display help, install perl(Pod::Usage)\n";
-    }
-}
-
-GetOptions(
-    \%options,    "instance=i", "isotovideo=s", "host=s", "apikey:s",
-    "apisecret:s", "verbose|v|debug|d", "help|h",
-) or usage(1);
-
-usage(0) if ($options{help});
-
-# count workers from 1 if not set - if tap devices are used worker would try to use tap -1
-$options{instance} ||= 1;
-
-
-Mojolicious::Commands->start_app('OpenQA::Worker::Cache::Service');
+require OpenQA::Worker::Cache::Service;
+OpenQA::Worker::Cache::Service->run(@ARGV);

@@ -16,35 +16,22 @@
 package OpenQA::Worker::Cache::Task::Asset;
 
 use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::URL;
 use constant LOCK_RETRY_DELAY   => 30;
 use constant MINION_LOCK_EXPIRE => 999999999;
 
+use OpenQA::Worker::Cache::Client;
 use OpenQA::Worker::Cache;
-use OpenQA::Worker::Common;    # FIXME: This import needs to disappear.
-has ua => sub { Mojo::UserAgent->new };
-has cache => sub {
-    my ($worker_settings, undef) = OpenQA::Worker::Common::read_worker_config(undef, undef);
-    OpenQA::Worker::Cache->new(
-        host     => 'localhost',
-        location => ($ENV{CACHE_DIR} || $worker_settings->{CACHEDIRECTORY}));
-};
 
-sub token {
-    shift->ua->get('http://localhost:3000/session_token')->result->json->{session_token};
-}
+has ua     => sub { Mojo::UserAgent->new };
+has cache  => sub { OpenQA::Worker::Cache->from_worker };
+has client => sub { OpenQA::Worker::Cache::Client->new };
 
-sub dequeue {
-    !!(
-        shift->ua->get('http://localhost:3000/dequeue/' . shift)->result->json->{status} eq
-        OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED);
-}
-
-sub _gen_guard_name { join('.', shift->token, pop) }
+sub dequeue { shift->client->dequeue_job(pop) }
+sub _gen_guard_name { join('.', shift->client->session_token, pop) }
 
 sub register {
     my ($self, $app) = @_;
-    $app->plugin(Minion => {SQLite => 'sqlite:' . $self->cache->db_file});
-
     # Make it a helper
     $app->helper(asset_task => sub { $self });
 

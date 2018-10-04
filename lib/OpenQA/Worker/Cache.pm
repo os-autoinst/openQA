@@ -47,6 +47,11 @@ sub new {
     shift->SUPER::new(@_)->init;
 }
 
+sub from_worker {
+    my ($worker_settings, undef) = OpenQA::Worker::Common::read_worker_config(undef, undef);
+    __PACKAGE__->new(host => 'localhost', location => ($ENV{CACHE_DIR} || $worker_settings->{CACHEDIRECTORY}));
+}
+
 sub DESTROY {
     my $self = shift;
 
