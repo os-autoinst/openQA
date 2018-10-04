@@ -218,9 +218,39 @@ sub handle_message_from_java_script {
         return;
     }
 
+    # invoke special handler for the command before passing it to the command server
+    if (my $handler = $self->can('_handle_command_' . $cmd)) {
+        $handler->($self, $job_id, $json) or return;
+    }
+
     # send message to os-autoinst; no need to send extra feedback to JavaScript client since
     # we just pass the feedback from os-autoinst back
     $self->send_message_to_os_autoinst($job_id, $json);
+}
+
+# attachs new needles to the resume command before passing it to the command server (called in handle_message_from_java_script)
+sub _handle_command_resume_test_execution {
+    my ($self, $job_id, $json) = @_;
+
+    # find job and needles
+    my $schema  = $self->app->schema;
+    my $jobs    = $schema->resultset('Jobs');
+    my $needles = $schema->resultset('Needles');
+    my $job     = $jobs->find($job_id);
+    if (!$job) {
+        $self->app->log->warning('trying to resume job which does not exist: ' . $job_id);
+        return;
+    }
+    my $job_t_started = $job->t_started;
+    if (!$job_t_started) {
+        $self->app->log->warning('trying to resume job which has not been started yet: ' . $job_id);
+        return;
+    }
+
+    # add new needles since the job has been started
+    $json->{new_needles} = [map { $_->to_json } $needles->new_needles_since($job_t_started, undef, 100)->all];
+
+    return 1;
 }
 
 # handles a disconnect of the web socket connection (not status-only)

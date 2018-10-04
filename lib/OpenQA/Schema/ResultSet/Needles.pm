@@ -19,6 +19,7 @@ use strict;
 use base 'DBIx::Class::ResultSet';
 use OpenQA::Schema::Result::Needles;
 use OpenQA::Schema::Result::NeedleDirs;
+use DateTime::Format::Pg;
 
 # updates needle information with data from needle editor
 sub update_needle_from_editor {
@@ -51,22 +52,27 @@ sub update_needle_from_editor {
 }
 
 sub new_needles_since {
-    my ($self, $since, $tags) = @_;
+    my ($self, $since, $tags, $row_limit) = @_;
 
-    my @new_needle_conds;
-    for my $tag (@$tags) {
-        push(@new_needle_conds, \["? = ANY (tags)", $tag]);
+    my %new_needle_conds = (
+        t_updated    => {'>=' => DateTime::Format::Pg->format_datetime($since)},
+        file_present => 1,
+    );
+    if ($tags && @$tags) {
+        my @tags_conds;
+        for my $tag (@$tags) {
+            push(@tags_conds, \["? = ANY (tags)", $tag]);
+        }
+        $new_needle_conds{-or} = \@tags_conds;
     }
 
-    return $self->search(
-        {
-            t_created => {'>' => $since},
-            -or       => \@new_needle_conds,
-        },
-        {
-            order_by => {-desc => 'id'},
-            rows     => 5,
-        });
+    my %new_needle_params = (
+        order_by => {-desc => [qw(me.t_updated me.t_created me.id)]},
+        prefetch => ['directory'],
+    );
+    $new_needle_params{rows} = $row_limit if ($row_limit);
+
+    return $self->search(\%new_needle_conds, \%new_needle_params);
 }
 
 1;

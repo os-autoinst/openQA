@@ -207,4 +207,20 @@ sub check_file {
     return $self->file_present(-e $self->path ? 1 : 0);
 }
 
+sub to_json {
+    my ($self, $controller) = @_;
+
+    my $needle_id = $self->id;
+    return {
+        id         => $needle_id,
+        name       => $self->name,
+        directory  => $self->directory->name,
+        tags       => $self->tags,
+        t_created  => $self->t_created->datetime() . 'Z',
+        t_updated  => $self->t_updated->datetime() . 'Z',
+        json_path  => "/needles/$needle_id/json",
+        image_path => "/needles/$needle_id/image",
+    };
+}
+
 1;

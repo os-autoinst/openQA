@@ -73,6 +73,7 @@ RUN zypper in -y -C \
        'perl(ExtUtils::MakeMaker) >= 7.12' \
        'perl(Exception::Class)' \
        'perl(File::Copy::Recursive)' \
+       'perl(File::Touch)' \
        'perl(IO::Socket::SSL)' \
        'perl(IPC::Run)' \
        'perl(IPC::System::Simple)' \

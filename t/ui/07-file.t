@@ -25,6 +25,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
+use Mojo::File;
 use OpenQA::Test::Case;
 
 use OpenQA::WebSockets;
@@ -62,6 +63,38 @@ $t->get_ok('/tests/99938/file/serial0.txt')->status_is(200)->content_type_is('te
 $t->get_ok('/tests/99938/file/y2logs.tar.bz2')->status_is(200);
 
 $t->get_ok('/tests/99938/file/ulogs/y2logs.tar.bz2')->status_is(404);
+
+sub write_file {
+    my ($path, $content) = @_;
+    local $/;    # enable 'slurp' mode
+    open my $fh, ">", $path;
+    print $fh $content;
+    close $fh;
+}
+
+subtest 'needle download' => sub {
+    # clean leftovers from previous run
+    my $needle_dir = Mojo::File->new('t/data/openqa/share/tests/opensuse/needles');
+    $needle_dir->remove_tree();
+
+    $t->get_ok('/needles/opensuse/inst-timezone-text.png')->status_is(404, '404 if image not present');
+    $t->get_ok('/needles/1/image')->status_is(404, '404 if image not present');
+    $t->get_ok('/needles/1/json')->status_is(404, '404 if json not present');
+
+    # create fake json file and image
+
+    $needle_dir->make_path();
+    my $json
+      = '{"area" : [{"height": 217, "type": "match", "width": 384, "xpos": 0, "ypos": 0},{"height": 60, "type": "exclude", "width": 160, "xpos": 175, "ypos": 45}], "tags": ["inst-timezone"]}';
+    write_file("$needle_dir/inst-timezone-text.png",  "png\n");
+    write_file("$needle_dir/inst-timezone-text.json", $json);
+
+    $t->get_ok('/needles/opensuse/inst-timezone-text.png')->status_is(200)->content_type_is('image/png')
+      ->content_is("png\n");
+    $t->get_ok('/needles/1/image')->status_is(200)->content_type_is('image/png')->content_is("png\n");
+    $t->get_ok('/needles/1/json')->status_is(200)->content_type_is('application/json;charset=UTF-8')->content_is($json);
+};
+
 
 # check the download links
 my $req = $t->get_ok('/tests/99946')->status_is(200);

@@ -507,7 +507,8 @@ subtest 'Showing new needles limited to the 5 most recent ones' => sub {
 
     $driver->get($driver->get_current_url);
     my @needle_names = map { $_->get_text() } $driver->find_elements('#tags_select option');
-    is_deeply(\@needle_names, \@expected_needle_names, 'new needles limited to 5 most recent');
+    is_deeply(\@needle_names, \@expected_needle_names, 'new needles limited to 5 most recent')
+      or diag explain \@needle_names;
 };
 
 subtest 'Deletion of needle is handled gracefully' => sub {
