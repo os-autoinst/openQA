@@ -406,6 +406,7 @@ fi
 %dir %{_datadir}/openqa
 %{_datadir}/openqa/lib
 %exclude %{_datadir}/openqa/lib/OpenQA/Client.pm
+%exclude %{_datadir}/openqa/lib/OpenQA/UserAgent.pm
 %dir %{_localstatedir}/lib/openqa
 %ghost %dir %{_localstatedir}/lib/openqa/share/
 %{_localstatedir}/lib/openqa/factory
@@ -450,6 +451,7 @@ fi
 %{_datadir}/openqa/script/load_templates
 %dir %{_datadir}/openqa/lib
 %{_datadir}/openqa/lib/OpenQA/Client.pm
+%{_datadir}/openqa/lib/OpenQA/UserAgent.pm
 %{_bindir}/openqa-client
 %{_bindir}/openqa-clone-job
 %{_bindir}/openqa-dump-templates
