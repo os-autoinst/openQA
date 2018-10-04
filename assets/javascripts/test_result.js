@@ -420,12 +420,18 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
     });
 
     // insert nodes
-    var maxLabelLength = 30;
     nodes.forEach(node => {
-        var label = node.label;
-        if (label.length > maxLabelLength) {
-            label = label.substr(0, maxLabelLength) + "…";
+        var testResultId;
+        if (node.result !== 'none') {
+            testResultId = node.result;
+        } else {
+            testResultId = node.state;
+            if (testResultId === 'scheduled' && node.blocked_by_id) {
+                testResultId = 'blocked';
+            }
         }
+        var testResultName = testResultId.replace(/_/g, ' ');
+
         g.setNode(node.id, {
             label: function() {
                 var table = document.createElement("table");
@@ -433,31 +439,24 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
 
                 var testNameTd = tr.append("td");
                 if (node.id == currentNode) {
-                    testNameTd.text(label);
+                    testNameTd.text(node.label);
                     tr.node().className = 'current';
                 } else {
                     var testNameLink = testNameTd.append("a");
                     testNameLink.attr('href', '/tests/' + node.id);
-                    testNameLink.text(label);
+                    testNameLink.text(node.label);
                 }
 
                 var testResultTd = tr.append("td");
-                var testResultId;
-                if (node.result !== 'none') {
-                    testResultId = node.result;
-                } else {
-                    testResultId = node.state;
-                    if (testResultId === 'scheduled' && node.blocked_by_id) {
-                        testResultId = 'blocked';
-                    }
-                }
-                testResultTd.text(testResultId);
+                testResultTd.text(testResultName);
                 testResultTd.node().className = testResultId;
 
                 return table;
             },
             padding: 0,
             tooltipText: node.tooltipText,
+            testResultId: testResultId,
+            testResultName: testResultName,
             fill: "#afa",
         });
     });

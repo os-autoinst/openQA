@@ -36,18 +36,28 @@
             border: 1px solid #999;
 
             &.current {
-                border: 2px solid #222;
+                border: 3px solid #222;
+
+                td:first-child {
+                    background-color: #f6ffb2;
+                }
             }
         }
 
         td {
             padding: 7px;
+            text-overflow: ellipsis;
+            overflow: hidden;
 
             &:first-child {
-
+                width: 200px;
+                max-width: 200px;
             }
             &:last-child {
                 background-color: #efefef;
+                width: 80px;
+                max-width: 80px;
+                text-align: center;
             }
 
             &.passed {
