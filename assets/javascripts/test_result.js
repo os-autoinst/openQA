@@ -526,7 +526,10 @@ function setupDependencyGraph() {
                 $(statusElement).text('Unable to query dependency info: no nodes/edges received');
                 return;
             }
-            $(statusElement).remove();
+            statusElement.style.textAlign = 'left';
+            statusElement.innerHTML = 'Arrows visualize chained dependencies specified via <code>START_AFTER_TEST</code>. \
+                                       Blue boxes visualize parallel dependencies specified via <code>PARALLEL_WITH</code>. \
+                                       The current job is highlighted with a bolder border and yellow background.';
             renderDependencyGraph(containerElement, nodes, edges, cluster, containerElement.dataset.currentJobId);
         },
         error: function(xhr, ajaxOptions, thrownError) {
