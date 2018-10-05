@@ -51,8 +51,7 @@ sub _retry {
 
     do { ++$att and $res = $cb->() } until $res->success || $att >= $times;
 
-    return $res if $res->success;
-    return !!0;
+    return $res;
 }
 
 sub asset_status { my ($self, $asset) = @_; }
