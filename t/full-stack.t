@@ -69,15 +69,11 @@ use OpenQA::Test::FullstackUtils;
 plan skip_all => "set FULLSTACK=1 (be careful)" unless $ENV{FULLSTACK};
 plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
-my $cache_service        = cache_worker_service;
-my $worker_cache_service = cache_minion_worker;
 my $workerpid;
 my $wspid;
 my $livehandlerpid;
 my $resourceallocatorpid;
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
-
-my $cache_client = OpenQA::Worker::Cache::Client->new;
 
 sub turn_down_stack {
     for my $pid ($workerpid, $wspid, $livehandlerpid, $resourceallocatorpid) {
@@ -314,16 +310,14 @@ close($conf);
 
 ok(-e path($ENV{OPENQA_CONFIG})->child("workers.ini"), "Config file created.");
 
-my $db_file = $cache_location->child('cache.sqlite');
-ok(!-e $db_file, "cache.sqlite is not present");
-
-$worker_cache_service->start;
-$cache_service->start;
-sleep 5 and diag "Waiting for cache service to be available"        until $cache_client->available;
-sleep 5 and diag "Waiting for cache service worker to be available" until $cache_client->available_workers;
-
 # For now let's repeat the cache tests before extracting to separate test
 subtest 'Cache tests' => sub {
+
+    my $cache_service        = cache_worker_service;
+    my $worker_cache_service = cache_minion_worker;
+
+    my $db_file = $cache_location->child('cache.sqlite');
+    ok(!-e $db_file, "cache.sqlite is not present");
 
     my $filename;
     open($filename, '>', $cache_location->child("test.file"));
@@ -331,6 +325,14 @@ subtest 'Cache tests' => sub {
     close($filename);
 
     path($cache_location, "test_directory")->make_path;
+
+    $worker_cache_service->start;
+    $cache_service->start;
+
+    my $cache_client = OpenQA::Worker::Cache::Client->new;
+
+    sleep 5 and diag "Waiting for cache service to be available"        until $cache_client->available;
+    sleep 5 and diag "Waiting for cache service worker to be available" until $cache_client->available_workers;
 
     my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
     OpenQA::Test::FullstackUtils::client_call(
@@ -351,7 +353,7 @@ subtest 'Cache tests' => sub {
 
     like(
         readlink(path($ENV{OPENQA_BASEDIR}, 'openqa', 'pool', '1')->child("Core-7.2.iso")),
-        qr($cache_location/Core-7.2.iso),
+        qr($cache_location/localhost/Core-7.2.iso),
         "iso is symlinked to cache"
     );
 
@@ -388,7 +390,7 @@ subtest 'Cache tests' => sub {
         $filename = $cache_location->child("$_.qcow2");
         open(my $tmpfile, '>', $filename);
         print $tmpfile $filename;
-        $sql = "INSERT INTO assets (filename,etag,last_use) VALUES (0, ?, 'Not valid', strftime('%s','now'));";
+        $sql = "INSERT INTO assets (filename,etag,last_use) VALUES ( ?, 'Not valid', strftime('%s','now'));";
         $sth = $dbh->prepare($sql);
         $sth->bind_param(1, $filename);
         $sth->execute();
