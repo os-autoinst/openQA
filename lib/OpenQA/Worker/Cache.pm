@@ -65,7 +65,6 @@ sub deploy_cache {
     log_info "Creating cache directory tree for " . $self->location;
     remove_tree($self->location, {keep_root => 1});
     path($self->location)->make_path;
-    path($self->location, Mojo::URL->new($self->host)->host || $self->host)->make_path;
     path($self->location, 'tmp')->make_path;
 
     log_info "Deploying DB: $sql (dsn " . $self->dsn . ")";
@@ -194,13 +193,17 @@ sub download_asset {
     return $asset;
 }
 
+sub _host { Mojo::URL->new($_[0]->host)->host || $_[0]->host }
+
 sub get_asset {
     my $self = shift;
     my ($job, $asset_type, $asset) = @_;
     my $type;
     my $result;
     my $ret;
-    $asset = catdir($self->location, basename($asset));
+    path($self->location, $self->_host)->make_path unless -d path($self->location, $self->_host);
+
+    $asset = catdir($self->location, $self->_host, basename($asset));
     my $n = 5;
     while () {
         $self->track_asset($asset);    # Track asset - make sure it's in DB
@@ -328,13 +331,13 @@ sub cache_sync {
     my $location = $self->location;
     my $ext;
     $ext .= "-o -name '*.$_' " for qw(qcow2 iso vhd vhdx);
-    my @assets = `find $location -maxdepth 1 -type f -name '*.img' $ext`;
+    my @assets = `find $location -maxdepth 2 -type f -name '*.img' $ext`;
     chomp @assets;
     $self->cache_real_size(0);
     foreach my $file (@assets) {
         my $asset_size = $self->file_size($file);
         next if !defined $asset_size;
-        $self->cache_real_size($self->cache_real_size + $asset_size) if $self->asset_lookup($file);
+        $self->increase($asset_size) if $self->asset_lookup($file);
     }
 }
 
