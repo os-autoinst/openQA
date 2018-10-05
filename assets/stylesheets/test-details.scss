@@ -270,3 +270,7 @@ ul.modcategory {
     float: right;
     margin-top: -50px;
 }
+#result_tabs {
+    // ensure filter icon and last .nav-item for tabs don't overlap
+    padding: 40px;
+}
