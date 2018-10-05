@@ -67,7 +67,6 @@
 
                 <div role="tabpanel" class="tab-pane" id="settings">
                     %= include 'test/settings'
-                    %= include 'layouts/dependencies'
                 </div>
                 % if ($part_of_cluster) {
                     <div role="tabpanel" class="tab-pane" id="dependencies">
