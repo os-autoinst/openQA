@@ -319,7 +319,9 @@ ok(!-e $db_file, "cache.sqlite is not present");
 
 $worker_cache_service->start;
 $cache_service->start;
-diag "Waiting for cache service to be available" and sleep 5 until $cache_client->available;
+sleep 5 and diag "Waiting for cache service to be available"        until $cache_client->available;
+sleep 5 and diag "Waiting for cache service worker to be available" until $cache_client->available_workers;
+
 # For now let's repeat the cache tests before extracting to separate test
 subtest 'Cache tests' => sub {
 
