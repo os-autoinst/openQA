@@ -129,9 +129,10 @@ ok(-e $db_file, "cache.sqlite is present");
 truncate_log $logfile;
 
 db_handle_connection($cache);
+make_path("$cachedir/127.0.0.1/");
 
 for (1 .. 3) {
-    $filename = "$cachedir/$_.qcow2";
+    $filename = "$cachedir/127.0.0.1/$_.qcow2";
     open(my $tmpfd, '>:raw', $filename);
     print $tmpfd "\0" x 84 or die($filename);
     close $tmpfd;

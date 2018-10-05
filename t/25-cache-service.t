@@ -104,7 +104,7 @@ sub test_default_usage {
     if ($cache_client->enqueue_download({id => $id, asset => $a, type => "hdd", host => $host})) {
         1 until $cache_client->processed($a);
     }
-    ok($cache_client->asset_exists($a), "Asset $a downloaded");
+    ok($cache_client->asset_exists('localhost', $a), "Asset $a downloaded");
 }
 
 sub test_download {
@@ -124,7 +124,7 @@ sub test_download {
     # And then goes to PROCESSED state
     is($state, OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED) or die diag explain $resp;
 
-    ok($cache_client->asset_exists($a), 'Asset downloaded');
+    ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded');
 }
 
 start_server;
@@ -142,12 +142,13 @@ subtest 'enqueued' => sub {
 
 subtest 'Asset exists' => sub {
 
-    ok(!$cache_client->asset_exists('foobar'), 'Asset absent');
-    path($cachedir)->child('foobar')->spurt('test');
+    ok(!$cache_client->asset_exists('localhost', 'foobar'), 'Asset absent');
+    path($cachedir, 'localhost')->make_path->child('foobar')->spurt('test');
 
-    ok($cache_client->asset_exists('foobar'), 'Asset exists');
-    unlink path($cachedir)->child('foobar');
-    ok(!$cache_client->asset_exists('foobar'), 'Asset absent');
+    ok($cache_client->asset_exists('localhost', 'foobar'), 'Asset exists');
+    unlink path($cachedir, 'localhost')->child('foobar')->to_string;
+    ok(!$cache_client->asset_exists('localhost', 'foobar'), 'Asset absent')
+      or die diag explain path($cachedir, 'localhost')->list_tree;
 
 };
 
@@ -187,10 +188,10 @@ subtest 'Asset download' => sub {
 };
 
 subtest 'Race for same asset' => sub {
-    my $a   = 'sle-12-SP3-x86_64-0368-200_123200@64bit.qcow2';
-    my $sum = md5_sum(path($cachedir)->child($a)->slurp);
-    unlink path($cachedir)->child($a);
-    ok(!$cache_client->asset_exists($a), 'Asset absent') or die diag "Asset already exists - abort test";
+    my $a = 'sle-12-SP3-x86_64-0368-200_123200@64bit.qcow2';
+    my $sum = md5_sum(path($cachedir, 'localhost')->child($a)->slurp);
+    unlink path($cachedir, 'localhost')->child($a)->to_string;
+    ok(!$cache_client->asset_exists('localhost', $a), 'Asset absent') or die diag "Asset already exists - abort test";
 
     my $tot_proc   = $ENV{STRESS_TEST} ? 100 : 10;
     my $concurrent = $ENV{STRESS_TEST} ? 30  : 2;
@@ -203,7 +204,7 @@ subtest 'Race for same asset' => sub {
             1 until $cache_client->processed($a);
             Devel::Cover::report() if Devel::Cover->can('report');
 
-            return 1 if $cache_client->asset_exists($a);
+            return 1 if $cache_client->asset_exists('localhost', $a);
             return 0;
         }
     };
@@ -217,40 +218,40 @@ subtest 'Race for same asset' => sub {
             is $_->return_status, 1, "Asset exists after worker got released from cache service" or die diag explain $_;
         });
 
-    ok($cache_client->asset_exists($a), 'Asset downloaded') or die diag "Failed - no asset is there";
-    is($sum, md5_sum(path($cachedir)->child($a)->slurp), 'Download not corrupted');
+    ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded') or die diag "Failed - no asset is there";
+    is($sum, md5_sum(path($cachedir, 'localhost')->child($a)->slurp), 'Download not corrupted');
 };
 
 subtest 'Default usage' => sub {
     my $a = 'sle-12-SP3-x86_64-0368-200_1000@64bit.qcow2';
     unlink path($cachedir)->child($a);
-    ok(!$cache_client->asset_exists($a), 'Asset absent') or die diag "Asset already exists - abort test";
+    ok(!$cache_client->asset_exists('localhost', $a), 'Asset absent') or die diag "Asset already exists - abort test";
 
     if ($cache_client->enqueue_download({id => 922756, asset => $a, type => "hdd", host => $host})) {
         1 until $cache_client->processed($a);
-        ok(-e path($cachedir)->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
+        ok(-e path($cachedir, 'localhost')->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
     }
     else {
         fail("Failed enqueuing download");
     }
 
-    ok(-e path($cachedir)->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
+    ok(-e path($cachedir, 'localhost')->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
 };
 
 subtest 'Small assets causes racing when releasing locks' => sub {
     my $a = 'sle-12-SP3-x86_64-0368-200_1@64bit.qcow2';
     unlink path($cachedir)->child($a);
-    ok(!$cache_client->asset_exists($a), 'Asset absent') or die diag "Asset already exists - abort test";
+    ok(!$cache_client->asset_exists('localhost', $a), 'Asset absent') or die diag "Asset already exists - abort test";
 
     if ($cache_client->enqueue_download({id => 922756, asset => $a, type => "hdd", host => $host})) {
         1 until $cache_client->processed($a);
-        ok($cache_client->asset_exists($a), 'Asset downloaded') or die diag "Failed - no asset is there";
+        ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded') or die diag "Failed - no asset is there";
     }
     else {
         fail("Failed enqueuing download");
     }
 
-    ok($cache_client->asset_exists($a), 'Asset downloaded') or die diag "Failed - no asset is there";
+    ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded') or die diag "Failed - no asset is there";
 };
 
 
@@ -277,7 +278,7 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
 
     sleep 1 until (grep { $_ == 1 } map { $cache_client->processed($_) } @assets) == @assets;
 
-    ok($cache_client->asset_exists($_), "Asset $_ downloaded correctly") for @assets;
+    ok($cache_client->asset_exists('localhost', $_), "Asset $_ downloaded correctly") for @assets;
 
 
     @assets = map { "sle-12-SP3-x86_64-0368-200_88888\@64bit.qcow2" } 1 .. $tot_proc;
@@ -288,7 +289,8 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
 
     sleep 1 until (grep { $_ == 1 } map { $cache_client->processed($_) } @assets) == @assets;
 
-    ok($cache_client->asset_exists("sle-12-SP3-x86_64-0368-200_88888\@64bit.qcow2"), "Asset $_ downloaded correctly")
+    ok($cache_client->asset_exists('localhost', "sle-12-SP3-x86_64-0368-200_88888\@64bit.qcow2"),
+        "Asset $_ downloaded correctly")
       for @assets;
 
 };
