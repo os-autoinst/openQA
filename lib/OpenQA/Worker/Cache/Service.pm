@@ -99,9 +99,10 @@ post '/download' => sub {
     $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ENQUEUED});
 };
 
-get '/status/#asset' => sub {
+post '/status' => sub {
     my $c     = shift;
-    my $asset = $c->param('asset');
+    my $data  = $c->req->json;
+    my $asset = $data->{asset};
     my $lock  = _gen_guard_name($asset);
 
     $c->render(
@@ -113,9 +114,10 @@ get '/status/#asset' => sub {
             )});
 };
 
-get '/dequeue/#asset' => sub {
+post '/dequeue' => sub {
     my $c     = shift;
-    my $asset = $c->param('asset');
+    my $data  = $c->req->json;
+    my $asset = $data->{asset};
     my $lock  = _gen_guard_name($asset);
 
     dequeue($lock);
