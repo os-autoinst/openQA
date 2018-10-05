@@ -165,6 +165,18 @@ subtest 'different token between restarts' => sub {
     ok($token ne "");
 };
 
+
+subtest 'Client can check if there are available workers' => sub {
+    $cache_client->session_token;
+    $worker_cache_service->stop;
+    $cache_service->restart;
+    sleep .5 until $cache_client->available;
+    ok $cache_client->available;
+    $worker_cache_service->start;
+    sleep 5 and diag "waiting for minion worker to be available" until $cache_client->available_workers;
+    ok $cache_client->available_workers;
+};
+
 subtest 'Asset download' => sub {
     test_download(922756, 'sle-12-SP3-x86_64-0368-200_2900@64bit.qcow2');
     test_download(922756, 'sle-12-SP3-x86_64-0368-200_2700@64bit.qcow2');
