@@ -218,6 +218,19 @@ a.add-parent-group {
 .prio input {
     width: 35pt;
     border: 1px solid #aaa; // setting the border prevents Firefox to misalign arrows for increment/decrement
+
+    &::-webkit-input-placeholder {
+        color: #000;
+        font-style: italic;
+    }
+    &::-moz-placeholder {
+        color: #000;
+        font-style: italic;
+    }
+    &::placeholder {
+        color: #000;
+        font-style: italic;
+    }
 }
 
 // needle editor
