@@ -60,7 +60,7 @@ sub enqueue {
 
 sub run {
     shift;
-    $ENV{'MOJO_LISTEN'} ||= 'http://localhost:7844/';
+    $ENV{'MOJO_LISTEN'} ||= 'http://127.0.0.1:7844/';
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 300;
     require Mojolicious::Commands;
     Mojolicious::Commands->start_app('OpenQA::Worker::Cache::Service', @_);

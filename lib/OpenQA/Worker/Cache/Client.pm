@@ -21,7 +21,7 @@ use OpenQA::Worker::Common;
 
 use Mojo::URL;
 use Mojo::File 'path';
-has host     => 'http://localhost:7844';
+has host     => 'http://127.0.0.1:7844';
 has retrials => 5;
 has cache_dir =>
   sub { $ENV{CACHE_DIR} || (OpenQA::Worker::Common::read_worker_config(undef, undef))[0]->{CACHEDIRECTORY} };
@@ -54,7 +54,6 @@ sub _retry {
     return $res;
 }
 
-sub asset_status { my ($self, $asset) = @_; }
 sub asset_download { shift->_p("download", pop) }
 sub asset_download_info { shift->_q(join('/', "status", pop)) }
 sub asset_path { path(shift->cache_dir, @_ > 2 ? shift : ())->child(shift) }
@@ -89,5 +88,7 @@ sub available_workers {
       && ($_[0]->info->result->json->{active_workers} != 0 || $_[0]->info->result->json->{inactive_workers} != 0);
 }
 sub session_token { shift->_q('session_token') }
+
+*asset_status = \&asset_download;
 
 !!42;
