@@ -123,7 +123,7 @@ sub detect_asset_keys {
 
 sub cache_assets {
     my ($job, $vars, $assetkeys) = @_;
-    my $cache_client = OpenQA::Worker::Cache::Client->new(host => "http://localhost:3000");
+    my $cache_client = OpenQA::Worker::Cache::Client->new;
     for my $this_asset (sort keys %$assetkeys) {
         my $asset;
         log_debug("Found $this_asset, caching " . $vars->{$this_asset});
