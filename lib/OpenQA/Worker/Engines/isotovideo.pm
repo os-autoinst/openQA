@@ -127,6 +127,8 @@ sub cache_assets {
     for my $this_asset (sort keys %$assetkeys) {
         my $asset;
         log_debug("Found $this_asset, caching " . $vars->{$this_asset});
+        return {error => "Cache service not available."}            unless $cache_client->available;
+        return {error => "No workers active in the cache service."} unless $cache_client->available_workers;
 
         if (
             $cache_client->enqueue_download(
@@ -150,7 +152,9 @@ sub cache_assets {
             # don't kill the job if the asset is not found
             next;
         }
-        return {error => "Can't download $vars->{$this_asset}"} unless $asset;
+        return {error => "Can't download $vars->{$this_asset} to "
+              . $cache_client->asset_path($current_host, $vars->{$this_asset})}
+          unless $asset;
         unlink basename($asset) if -l basename($asset);
         symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";
         $vars->{$this_asset} = path(getcwd, basename($asset));
