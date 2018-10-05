@@ -259,14 +259,14 @@ sub _show {
 
     $self->stash(
         {
-            testname        => $job->name,
-            distri          => $job->DISTRI,
-            version         => $job->VERSION,
-            build           => $job->BUILD,
-            scenario        => $job->scenario,
-            worker          => $job->worker,
-            assigned_worker => $job->assigned_worker,
-            part_of_cluster => $job->is_part_of_cluster,
+            testname         => $job->name,
+            distri           => $job->DISTRI,
+            version          => $job->VERSION,
+            build            => $job->BUILD,
+            scenario         => $job->scenario,
+            worker           => $job->worker,
+            assigned_worker  => $job->assigned_worker,
+            has_dependencies => $job->has_dependencies,
         });
 
     my $clone_of = $self->db->resultset("Jobs")->find({clone_id => $job->id});

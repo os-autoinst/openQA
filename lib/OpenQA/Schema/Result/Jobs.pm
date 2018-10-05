@@ -1913,7 +1913,7 @@ sub unblock {
     }
 }
 
-sub is_part_of_cluster {
+sub has_dependencies {
     my ($self) = @_;
 
     my $id           = $self->id;

@@ -37,7 +37,7 @@
                 <li role="presentation" class="nav-item">
                     <a href="#settings" aria-controls="settings" role="tab" data-toggle="tab" class="nav-link">Settings</a>
                 </li>
-                % if ($part_of_cluster) {
+                % if ($has_dependencies) {
                     <li role="presentation" class="nav-item">
                         <a href="#dependencies" aria-controls="dependencies" role="tab" data-toggle="tab" class="nav-link">Dependencies</a>
                     </li>
@@ -68,7 +68,7 @@
                 <div role="tabpanel" class="tab-pane" id="settings">
                     %= include 'test/settings'
                 </div>
-                % if ($part_of_cluster) {
+                % if ($has_dependencies) {
                     <div role="tabpanel" class="tab-pane" id="dependencies">
                         %= include 'test/dependencies'
                     </div>
