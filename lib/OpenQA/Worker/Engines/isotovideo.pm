@@ -157,7 +157,7 @@ sub cache_assets {
           unless $asset;
         unlink basename($asset) if -l basename($asset);
         symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";
-        $vars->{$this_asset} = path(getcwd, basename($asset));
+        $vars->{$this_asset} = path(getcwd, basename($asset))->to_string;
     }
     return undef;
 }
