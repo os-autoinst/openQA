@@ -314,10 +314,12 @@ close($conf);
 
 ok(-e path($ENV{OPENQA_CONFIG})->child("workers.ini"), "Config file created.");
 
+my $db_file = $cache_location->child('cache.sqlite');
+ok(!-e $db_file, "cache.sqlite is not present");
 
 $worker_cache_service->start;
 $cache_service->start;
- diag "Waiting for cache service to be available" and sleep 5 until $cache_client->available;
+diag "Waiting for cache service to be available" and sleep 5 until $cache_client->available;
 # For now let's repeat the cache tests before extracting to separate test
 subtest 'Cache tests' => sub {
 
@@ -328,7 +330,6 @@ subtest 'Cache tests' => sub {
 
     path($cache_location, "test_directory")->make_path;
 
-    my $db_file  = $cache_location->child('cache.sqlite');
     my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
     OpenQA::Test::FullstackUtils::client_call(
         'jobs/3/restart post',
@@ -340,7 +341,6 @@ subtest 'Cache tests' => sub {
     $driver->get('/tests/5');
     like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled')
       or die;
-    ok(!-e $db_file, "cache.sqlite is not present");
     start_worker;
     OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 1);
     ok(-e $db_file, "cache.sqlite file created");
