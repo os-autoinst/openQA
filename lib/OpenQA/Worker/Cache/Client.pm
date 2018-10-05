@@ -54,9 +54,10 @@ sub _retry {
     return $res;
 }
 
+# TODO: This can go in a separate object.
 sub asset_download { shift->_p("download", pop) }
 sub asset_download_info { shift->_q(join('/', "status", pop)) }
-sub asset_path { path(shift->cache_dir, @_ > 1 ? shift : ())->child(shift) }
+sub asset_path { path(shift->cache_dir, @_ > 1 ? (OpenQA::Worker::Cache::_base_host($_[0]) || shift) : ())->child(pop) }
 sub asset_exists { !!(-e shift->asset_path(@_)) }
 
 sub dequeue_job {
