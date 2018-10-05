@@ -82,8 +82,12 @@ sub processed {
     shift->asset_download_info(shift) eq OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED ? !!1 : !!0;
 }
 
-sub info          { $_[0]->get($_[0]->_url("info")) }
-sub available     { shift->info->success }
+sub info      { $_[0]->get($_[0]->_url("info")) }
+sub available { shift->info->success }
+sub available_workers {
+    $_[0]->available
+      && ($_[0]->info->result->json->{active_workers} != 0 || $_[0]->info->result->json->{inactive_workers} != 0);
+}
 sub session_token { shift->_q('session_token') }
 
 !!42;
