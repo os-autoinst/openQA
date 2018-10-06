@@ -23,6 +23,8 @@ use Mojo::File qw(tempdir tempfile);
 use OpenQA::Utils qw(log_error log_warning log_fatal log_info log_debug add_log_channel remove_log_channel);
 use OpenQA::Setup;
 use File::Path qw(make_path remove_tree);
+use Test::MockModule;
+use Test::Output qw(stdout_like stderr_like);
 use Sys::Hostname;
 use File::Spec::Functions 'catfile';
 
@@ -532,6 +534,95 @@ subtest 'Logs to defaults channels' => sub {
     remove_tree $ENV{OPENQA_WORKER_LOGDIR};
     delete $ENV{OPENQA_WORKER_LOGDIR};
 
+};
+
+subtest 'Fallback to stderr/stdout' => sub {
+    delete $ENV{OPENQA_LOGFILE};
+    $ENV{OPENQA_WORKER_LOGDIR} = tempdir;
+    make_path $ENV{OPENQA_WORKER_LOGDIR};
+
+    # let _log_to_channel_by_name and _log_via_mojo_app fail
+    my $utils_mock             = new Test::MockModule('OpenQA::Utils');
+    my $log_via_channel_tried  = 0;
+    my $log_via_mojo_app_tried = 0;
+    $utils_mock->mock(
+        _log_to_channel_by_name => sub {
+            ++$log_via_channel_tried;
+            return 0;
+        });
+    $utils_mock->mock(
+        _log_via_mojo_app => sub {
+            ++$log_via_mojo_app_tried;
+            return 0;
+        });
+
+    # add a channel (which shouldn't be used, though)
+    my $logging_test_file1 = tempfile;
+    add_log_channel('channel 1', path => $logging_test_file1, level => $level, default => 'set');
+
+    # write some messages which should be printed to stdout/stderr
+    stdout_like(
+        sub {
+            log_debug('debug message');
+            log_info('info message');
+        },
+        qr/.*debug message.*\n.*info message.*/,
+        'debug/info written to stdout'
+    );
+    stderr_like(
+        sub {
+            log_warning('warning message');
+            log_error('error message');
+        },
+        qr/.*warning message.*\n.*error message.*/,
+        'warning/error written to stderr'
+    );
+
+    # check whether _log_msg attempted to use all ways to log before falling back
+    is($log_via_channel_tried,                      4,  'tried to log all four messages via the default channel');
+    is($log_via_mojo_app_tried,                     4,  'tried to log all four messages via Mojolicious app');
+    is(Mojo::File->new($logging_test_file1)->slurp, '', 'nothing written to logfile');
+
+    # check fallback on attempt to log to invalid channel
+    $utils_mock->mock(
+        _log_to_channel_by_name => sub {
+            ++$log_via_channel_tried;
+            return $utils_mock->original('_log_to_channel_by_name')->(@_);
+        });
+    stderr_like(
+        sub {
+            log_error('goes to stderr after all', channels => [qw(foo bar)]);
+        },
+        qr/.*goes to stderr after all.*/,
+        'logging to invalid channel ends up on stderr'
+    );
+    is($log_via_channel_tried,  6, 'tried to log the message via the 2 channels');
+    is($log_via_mojo_app_tried, 5, 'tried to log via Mojolicious app');
+
+    # check fallback when logging to channel throws an exception
+    $utils_mock->unmock('_log_to_channel_by_name');
+    my $log_mock = new Test::MockModule('Mojo::Log');
+    $log_mock->mock(
+        error => sub {
+            ++$log_via_channel_tried;
+            die 'not enough disk space or whatever';
+        });
+    stderr_like(
+        sub {
+            log_error('goes to stderr after all');
+        },
+        qr/.*goes to stderr after all.*/,
+        'logging to invalid channel ends up on stderr'
+    );
+    is($log_via_channel_tried,  7, 'tried to log via the default channel');
+    is($log_via_mojo_app_tried, 6, 'tried to log via Mojolicious app');
+
+    # clear the system
+    $utils_mock->unmock_all();
+    $log_mock->unmock_all();
+    remove_log_channel('channel 1');
+    remove_tree $ENV{OPENQA_WORKER_LOGDIR};
+    delete $ENV{OPENQA_WORKER_LOGDIR};
 };
 
 done_testing;
