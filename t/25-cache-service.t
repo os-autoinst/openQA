@@ -229,6 +229,9 @@ subtest 'Default usage' => sub {
 
     if ($cache_client->enqueue_download({id => 922756, asset => $a, type => "hdd", host => $host})) {
         1 until $cache_client->processed($a);
+        my $out = $cache_client->asset_download_output($a);
+        ok($out, 'Output should be present') or die diag $out;
+        like $out, qr/Downloading $a from/, "Asset download attempt logged";
         ok(-e path($cachedir, 'localhost')->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
     }
     else {

@@ -43,6 +43,11 @@ sub _gen_guard_name { join('.', SESSION_TOKEN, pop) }
 sub _exists { !!(defined $_[0] && exists $_[0]->{total} && $_[0]->{total} > 0) }
 
 sub active { !app->minion->lock(shift, 0) }
+sub get_job_by_token {
+    eval {
+        { app->minion->backend->list_jobs(0, 1, {note => {token => shift}})->{jobs}[0] }
+    }
+}
 
 sub enqueued {
     my $lock = shift;
@@ -104,14 +109,15 @@ post '/status' => sub {
     my $data  = $c->req->json;
     my $asset = $data->{asset};
     my $lock  = _gen_guard_name($asset);
-
+    my $j     = get_job_by_token($lock);
     $c->render(
         json => {
             status => (
                   active($lock)   ? OpenQA::Worker::Cache::ASSET_STATUS_DOWNLOADING
                 : enqueued($lock) ? OpenQA::Worker::Cache::ASSET_STATUS_IGNORE
                 :                   OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED
-            )});
+            ),
+            (output => $j->{notes}->{output}) x !!($j)});
 };
 
 post '/dequeue' => sub {

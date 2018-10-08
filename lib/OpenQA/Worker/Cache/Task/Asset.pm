@@ -46,10 +46,19 @@ sub register {
             $app->log->debug("[$$] [Job #" . $job->id . "] Guard: $guard_name Download: $asset_name");
 
             $app->log->debug("[$$] Job dequeued ") if $self->dequeue($asset_name);
+            $OpenQA::Utils::app = undef;
+            {
+                my $output;
+                open my $handle, '>', \$output;
+                local *STDERR = $handle;
+                local *STDOUT = $handle;
+                # Do the real download
+                $self->cache->host($host);
+                $self->cache->get_asset({id => $id}, $type, $asset_name);
+                $job->note(output => $output);
+                print $output;
+            }
 
-            # Do the real download
-            $self->cache->host($host);
-            $self->cache->get_asset({id => $id}, $type, $asset_name);
             $app->log->debug("[$$] [Job #" . $job->id . "] Finished");
         });
 }

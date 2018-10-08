@@ -82,6 +82,10 @@ sub processed {
     shift->asset_download_info(shift) eq OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED ? !!1 : !!0;
 }
 
+sub asset_download_output {
+    eval { $_[0]->post($_[0]->_url('status') => json => {asset => pop})->result->json->{output} }
+}
+
 sub info      { $_[0]->get($_[0]->_url("info")) }
 sub available { shift->info->success }
 sub available_workers {
