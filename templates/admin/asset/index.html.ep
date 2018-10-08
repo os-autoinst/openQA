@@ -1,19 +1,26 @@
 % layout 'bootstrap';
 % title 'Assets';
-
 % content_for 'ready_function' => begin
-    setup_asset_table();
+    window.isAdmin =
+    % if(is_admin) {
+        true
+    % }
+    % else {
+        false
+    % }
+    ;
+    setupAdminAssets();
 % end
 
 <div class="row">
     <div class="col-sm-12">
         <h2><%= title %></h2>
-
         %= include 'layouts/info'
 
         <h3>Used assets</h3>
         <p>The following assets are used by at least one job which is part of a group.</p>
-        <table id="assets" class="display table table-striped">
+        <table id="assets" class="display table table-striped"
+            data-status-url="<%= url_for('admin_asset_status_json') %>">
             <thead>
                 <tr>
                     <th>Asset</th>
@@ -23,77 +30,10 @@
                 </tr>
             </thead>
             <tbody>
-            % for my $asset (@$assets) {
-            % next unless $asset->{size};
-
-            <tr id="asset_<%= $asset->{id} %>">
-                <td class="name">
-                    %= $asset->{name}
-                    <a href="#" onclick="deleteAsset(<%= $asset->{id} %>);">
-                        <i class="action far fa-fw fa-times-circle" title="Delete asset"></i>
-                    </a>
-                </td>
-                <td class="t_created">
-                    % if ($asset->{max_job}) {
-                       %= link_to($asset->{max_job} => url_for('test', testid => $asset->{max_job}))
-                    % } else {
-                      0
-                    % }
-                </td>
-                <td class="size"><%= $asset->{size} %></td>
-                <td class="last_use">
-                   % for my $group (sort { $a <=> $b } keys(%{$asset->{groups}})) {
-                     % my $class = 'not-picked';
-                     % if ($asset->{picked_into} == $group) {
-                       % $class = 'picked-group';
-                     % }
-                     % if ($asset->{picked_into} == 0) {
-                       % $class = 'to-be-removed';
-                     % }
-                     %=  link_to $group => url_for('test', testid => $asset->{groups}->{$group}) => (class => $class)
-                   % }
-                </td>
-            </tr>
-            % }
             </tbody>
         </table>
 
-        <h3>Assets by group (Total <%= OpenQA::Utils::human_readable_size($total_size) %>) </h3>
-
-        <ul id="assets-by-group">
-            % for my $group (sort { $b->{picked} <=> $a->{picked} || $a->{group} cmp $b->{group} } values(%$groups)) {
-                % # ignore those groups without picked assets
-                % next unless $group->{picked};
-                <li>
-                    <input id="group-<%= $group->{id} %>-checkbox" type="checkbox">
-                    <label for="group-<%= $group->{id} %>-checkbox">
-                        %= $group->{group}
-                    </label>
-                    % if (is_admin && defined($group->{id})) {
-                        <a href="<%= $c->url_for('admin_job_templates', groupid => $group->{id}) %>">
-                            <i class="fa fa-wrench" title="Configure"></i>
-                        </a>
-                    % }
-                    <span>
-                        %= OpenQA::Utils::human_readable_size($group->{picked})
-                        % if (my $size_limit = $group->{size_limit_gb}) {
-                            / <%= $size_limit %> GiB
-                        % }
-                    </span>
-                    <ul>
-                        % for my $asset (sort { $b->{name} cmp $a->{name} } @$assets) {
-                            % next unless $asset->{size} && $asset->{picked_into} == ($group->{id} // 0);
-                            <li>
-                                %= $asset->{name}
-                                <span>
-                                    %= ($asset->{size} ? OpenQA::Utils::human_readable_size($asset->{size}) : 'unknown')
-                                </span>
-                            </li>
-                        % }
-                    </ul>
-                </li>
-            % }
-        </ul>
-
+        <h3 id="assets-by-group-heading">Assets by group</h3>
+        <ul id="assets-by-group"></ul>
     </div>
 </div>

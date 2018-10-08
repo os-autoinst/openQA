@@ -16,33 +16,52 @@
 
 package OpenQA::WebAPI::Controller::Admin::Asset;
 use Mojo::Base 'Mojolicious::Controller';
-use List::Util 'sum';
+use Mojolicious::Static;
+use Mojo::File;
 
 sub index {
     my ($self) = @_;
 
+    $self->render('admin/asset/index');
+}
+
+sub _serve_status_json_from_cache {
+    my ($self) = @_;
+
+    my $cache_file = OpenQA::Schema::ResultSet::Assets::status_cache_file();
+    return unless (-f $cache_file);
+
+    OpenQA::Utils::log_debug('Serving static asset status: ' . $cache_file);
+    $self->{static} = Mojolicious::Static->new;
+    $self->{static}->extra({'cache.json' => $cache_file});
+    $self->{static}->serve($self, 'cache.json');
+    return 1;
+}
+
+sub status_json {
+    my ($self) = @_;
+
     # allow to force scan for untracked assets and refresh
     my $force_refresh = $self->param('force_refresh');
+    my $assets        = $self->app->schema->resultset('Assets');
     if ($force_refresh) {
-        my $assets = $self->app->schema->resultset('Assets');
         $assets->scan_for_untracked_assets();
         $assets->refresh_assets();
     }
 
-    my $status = $self->db->resultset('Assets')->status(
+    # serve previously cached, static JSON file unless $force_refresh has been specified
+    if (!$force_refresh) {
+        return !!$self->rendered if $self->_serve_status_json_from_cache;
+    }
+
+    # generate new static JSON file
+    $assets->status(
         compute_pending_state_and_max_job => $force_refresh,
         compute_max_job_by_group          => 0,
     );
-    my $total_size = sum(map { $_->{picked} } values(%{$status->{groups}}));
 
-    $self->stash('assets',     $status->{assets});
-    $self->stash('groups',     $status->{groups});
-    $self->stash('total_size', $total_size);
-
-    $self->respond_to(
-        json => {json     => $status},
-        html => {template => 'admin/asset/index'},
-    );
+    return !!$self->rendered if $self->_serve_status_json_from_cache;
+    return $self->render(json => {error => 'cache file for asset status not found'}, status => 500);
 }
 
 1;

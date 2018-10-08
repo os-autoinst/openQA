@@ -500,24 +500,24 @@ subtest 'asset list' => sub {
     close($fh);
     ok(-e $asset_path, 'dummy asset present at ' . $asset_path);
 
-    $driver->get('/admin/assets?force_refresh=1');
+    my $asset_table_url = '/admin/assets?force_refresh=1';
+    $driver->get($asset_table_url);
     $driver->title_is("openQA: Assets", "on asset");
     wait_for_ajax;
 
+    ok(-f 't/data/openqa/cache/asset-status.json', 'cache file created');
+
     # table of assets
     is_deeply(
-        get_cell_contents('tr#asset_1'),
+        get_cell_contents('tr:nth-child(4)'),
         ['iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso', '99947', '4 byte', '1001'],
         'asset with unknown last use and size'
     );
     is_deeply(
-        get_cell_contents('tr#asset_2'),
+        get_cell_contents('tr:nth-child(2)'),
         ['iso/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso', '99963', '4 byte', '1001 1002'],
         'asset with last use'
     );
-
-    my $used_assets = $driver->find_element('#assets');
-    ok($driver->find_child_element($used_assets, 'tr#asset_2'), 'asset with last use part of used assets');
 
     # assets by group
     my @assets_by_group = map { $_->get_text() } $driver->find_elements('#assets-by-group > li');
@@ -527,28 +527,30 @@ subtest 'asset list' => sub {
     }
     is_deeply(
         \@assets_by_group,
-        ["opensuse\n16 Byte / 100 GiB", "opensuse test\n16 Byte / 100 GiB",],
+        ["opensuse test\n16 byte / 100 GiB", "opensuse\n16 byte / 100 GiB"],
         'groups of "assets by group"'
     );
     $driver->click_element_ok('#group-1001-checkbox + label', 'css');
     is_deeply(
         [map { $_->get_text() } $driver->find_elements('#group-1001-checkbox ~ ul li')],
         [
-            "iso/openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso\n4 Byte",
-            "iso/openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso\n4 Byte",
-            "iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso\n4 Byte",
-            "hdd/fixed/openSUSE-13.1-x86_64.hda\n4 Byte"
+            "iso/openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso\n4 byte",
+            "iso/openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso\n4 byte",
+            "iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso\n4 byte",
+            "hdd/fixed/openSUSE-13.1-x86_64.hda\n4 byte"
         ],
         'assets of "assets by group"'
     );
 
     # delete one of the assets
-    $driver->click_element_ok('#asset_4 .name a', 'css');
+    my $asset4_td = $driver->find_element('tr:nth-child(6) td:first-child');
+    my $asset4_a = $driver->find_child_element($asset4_td, 'a');
+    is($asset4_td->get_text(), 'iso/openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso')
+      and $asset4_a->click();
     wait_for_ajax;
-    is(scalar @{$driver->find_elements('#asset_4')}, 0, 'asset gone');
-    $driver->get($driver->get_current_url());
-    wait_for_ajax;
-    is(scalar @{$driver->find_elements('#asset_4')}, 0, 'asset gone forever');
+
+    # FIXME/caveat: since the table doesn't show livedata the deletion is currently immediately
+    #               visible
 
     ok(!-e $asset_path, 'dummy asset should have been removed');
     unlink($asset_path);

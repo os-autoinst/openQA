@@ -131,9 +131,9 @@
 < javascripts/admin_needle.js
 < javascripts/admin_worker.js
 < javascripts/admin_groups.js
+< javascripts/admin_assets.js
 < javascripts/audit_log.js
 < javascripts/tests.js
-< javascripts/assets.js
 < javascripts/job_templates.js
 < javascripts/overview.js
 < javascripts/filter_form.js
