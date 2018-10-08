@@ -376,19 +376,6 @@ sub decrease {
 
 sub increase { $_[0]->cache_real_size($_[0]->cache_real_size + pop) }
 
-sub expire {
-    my ($self, $asset) = @_;
-    eval {
-        my $tx = $self->dbh->db->begin('exclusive');
-        $self->dbh->db->update('assets', {last_use => 0}, {filename => $asset});
-        $tx->commit;
-    };
-
-    if ($@) {
-        log_error "Update asset $asset failed. Rolling back $@";
-    }
-}
-
 sub check_limits {
     my ($self, $needed) = @_;
     my $dbh = $self->dbh->db;
