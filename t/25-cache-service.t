@@ -17,33 +17,38 @@
 
 BEGIN {
     unshift @INC, 'lib', 't/lib';
+    use Mojo::File qw(path tempdir);
+    use FindBin;
+    use File::Path qw(remove_tree make_path);
+
+    my $basedir = path(tempdir, 't', 'cache.d');
+    remove_tree($basedir);
+    $ENV{CACHE_DIR}      = path($basedir, 'cache');
+    $ENV{OPENQA_BASEDIR} = $basedir;
+    $ENV{OPENQA_CONFIG}  = path($basedir, 'config')->make_path;
+    path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt("
+[global]
+CACHEDIRECTORY = $cachedir
+CACHELIMIT = 50");
 }
 
 use strict;
 use warnings;
-
+# Avoid warning error: Name "Config::IniFiles::t/cache.d/cache/config/workers.ini" used only once
+use OpenQA::Worker::Cache;
+OpenQA::Worker::Cache->from_worker;
 use Test::More;
 use Test::Warnings;
-use Test::MockModule;
 use OpenQA::Utils;
-use OpenQA::Worker::Cache;
-use DBI;
-use File::Path qw(remove_tree make_path);
 use File::Spec::Functions qw(catdir catfile);
-use Digest::MD5 qw(md5);
 use Cwd qw(abs_path getcwd);
-
 use Mojolicious;
 use IO::Socket::INET;
 use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
-use Mojo::File qw(path tempdir);
 use POSIX '_exit';
 use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
-use List::Util qw(shuffle uniq sum);
-use Mojolicious::Commands;
-use Mojo::UserAgent;
 use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service);
 use Mojo::Util qw(md5_sum);
 use constant DEBUG => $ENV{DEBUG} // 0;
@@ -67,11 +72,6 @@ make_path($ENV{LOGDIR});
 use OpenQA::Worker::Cache::Client;
 
 my $cache_client = OpenQA::Worker::Cache::Client->new();
-BEGIN {
-    my $cachedir = path('t', 'cache.d', 'cache');
-    remove_tree($cachedir);
-    $ENV{CACHE_DIR} = $cachedir;
-}
 
 END { session->clean }
 
