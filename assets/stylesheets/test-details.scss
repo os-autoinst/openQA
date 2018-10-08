@@ -270,9 +270,7 @@ ul.modcategory {
     float: right;
     margin-top: -50px;
 }
-
-.dependency_result {
-    width: 14em;
-    display: inline-block;
-    text-align: center;
+#result_tabs {
+    // ensure filter icon and last .nav-item for tabs don't overlap
+    padding: 40px;
 }

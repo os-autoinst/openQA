@@ -37,6 +37,11 @@
                 <li role="presentation" class="nav-item">
                     <a href="#settings" aria-controls="settings" role="tab" data-toggle="tab" class="nav-link">Settings</a>
                 </li>
+                % if ($has_dependencies) {
+                    <li role="presentation" class="nav-item">
+                        <a href="#dependencies" aria-controls="dependencies" role="tab" data-toggle="tab" class="nav-link">Dependencies</a>
+                    </li>
+                % }
                 <li role="presentation" class="nav-item">
                     <a href="#comments" aria-controls="comments" role="tab" data-toggle="tab" class="nav-link">Comments (<%= scalar($job->comments) %>)</a>
                 </li>
@@ -62,8 +67,12 @@
 
                 <div role="tabpanel" class="tab-pane" id="settings">
                     %= include 'test/settings'
-                    %= include 'layouts/dependencies'
                 </div>
+                % if ($has_dependencies) {
+                    <div role="tabpanel" class="tab-pane" id="dependencies">
+                        %= include 'test/dependencies'
+                    </div>
+                % }
                 <div role="tabpanel" class="tab-pane" id="comments">
                     <div class="comments">
                         %= include 'test/comments'

@@ -3,6 +3,9 @@
 @import "bootswatch_litera_theme.scss";
 @import "openqa_theme.scss";
 
+// include Roboto font
+@import url($web-font-path);
+
 // include Bootstrap 4
 @import "../cache/raw.githubusercontent.com/twbs/bootstrap/v4.1.1/scss/bootstrap.scss";
 

@@ -1,8 +1,5 @@
-// include and use Roboto font
-$web-font-path: "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" !default;
-@import url($web-font-path);
 body {
-    font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: $default-font;
     line-height: 1.428571429;
     -webkit-font-smoothing: antialiased;
 }

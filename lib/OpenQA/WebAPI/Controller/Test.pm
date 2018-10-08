@@ -20,6 +20,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::Schema::Result::JobDependencies;
 use OpenQA::WebAPI::Controller::Developer;
 use File::Basename;
 use POSIX 'strftime';
@@ -258,13 +259,14 @@ sub _show {
 
     $self->stash(
         {
-            testname        => $job->name,
-            distri          => $job->DISTRI,
-            version         => $job->VERSION,
-            build           => $job->BUILD,
-            scenario        => $job->scenario,
-            worker          => $job->worker,
-            assigned_worker => $job->assigned_worker,
+            testname         => $job->name,
+            distri           => $job->DISTRI,
+            version          => $job->VERSION,
+            build            => $job->BUILD,
+            scenario         => $job->scenario,
+            worker           => $job->worker,
+            assigned_worker  => $job->assigned_worker,
+            has_dependencies => $job->has_dependencies,
         });
 
     my $clone_of = $self->db->resultset("Jobs")->find({clone_id => $job->id});
@@ -651,6 +653,103 @@ sub module_fails {
         json => {
             first_failed_step => $first_failed_step,
             failed_needles    => \@needles
+        });
+}
+
+sub _add_dependency {
+    my ($edges, $cluster, $cluster_by_job, $parent_job_id, $child_job_id, $dependency_type) = @_;
+
+    # add edge for chained dependencies
+    if ($dependency_type eq OpenQA::Schema::Result::JobDependencies::CHAINED) {
+        push(
+            @$edges,
+            {
+                from => $parent_job_id,
+                to   => $child_job_id,
+            });
+        return;
+    }
+
+    # add job to a cluster if dependency is parallel with
+    return unless ($dependency_type eq OpenQA::Schema::Result::JobDependencies::PARALLEL);
+
+    # check whether the jobs are already parted of a cluster
+    my $job1_cluster_id = $cluster_by_job->{$child_job_id};
+    my $job2_cluster_id = $cluster_by_job->{$parent_job_id};
+
+    # merge existing cluster, extend existing cluster or create new cluster
+    if ($job1_cluster_id && $job2_cluster_id) {
+        # both jobs are already part of a cluster: merge clusters unless they're already the same
+        push(@{$cluster->{$job1_cluster_id}}, @{delete $cluster_by_job->{$job2_cluster_id}})
+          unless $job1_cluster_id == $job2_cluster_id;
+    }
+    elsif ($job1_cluster_id) {
+        # only job1 is already in a cluster: move job2 into that cluster, too
+        my $cluster = $cluster->{$job1_cluster_id};
+        push(@$cluster, $parent_job_id);
+        $cluster_by_job->{$parent_job_id} = $job1_cluster_id;
+    }
+    elsif ($job2_cluster_id) {
+        # only job2 is already in a cluster: move job1 into that cluster, too
+        my $cluster = $cluster->{$job2_cluster_id};
+        push(@$cluster, $child_job_id);
+        $cluster_by_job->{$child_job_id} = $job2_cluster_id;
+    }
+    else {
+        # none of the jobs is already in a cluster: create a new one
+        my $new_cluster_id = 'cluster_' . $child_job_id;
+        $cluster->{$new_cluster_id}       = [$child_job_id, $parent_job_id];
+        $cluster_by_job->{$child_job_id}  = $new_cluster_id;
+        $cluster_by_job->{$parent_job_id} = $new_cluster_id;
+    }
+}
+
+sub _add_job {
+    my ($visited, $nodes, $edges, $cluster, $cluster_by_job, $job) = @_;
+
+    # add current job; return if already visited
+    my $job_id = $job->id;
+    return $job_id if $visited->{$job_id};
+    $visited->{$job_id} = 1;
+
+    push(
+        @$nodes,
+        {
+            id            => $job_id,
+            label         => $job->TEST,
+            tooltipText   => $job->name,
+            state         => $job->state,
+            result        => $job->result,
+            blocked_by_id => $job->blocked_by_id,
+        });
+
+    # add parents
+    for my $parent ($job->parents->all) {
+        my $parent_job_id = _add_job($visited, $nodes, $edges, $cluster, $cluster_by_job, $parent->parent) or next;
+        _add_dependency($edges, $cluster, $cluster_by_job, $parent_job_id, $job_id, $parent->dependency);
+    }
+
+    # add children
+    for my $child ($job->children->all) {
+        _add_job($visited, $nodes, $edges, $cluster, $cluster_by_job, $child->child);
+    }
+
+    return $job_id;
+}
+
+sub dependencies {
+    my ($self) = @_;
+
+    # build dependency graph starting from the current job
+    my $job = $self->get_current_job or return $self->reply->not_found;
+    my (%visited, @nodes, @edges, %cluster, %cluster_by_job);
+    _add_job(\%visited, \@nodes, \@edges, \%cluster, \%cluster_by_job, $job);
+
+    $self->render(
+        json => {
+            nodes   => \@nodes,
+            edges   => \@edges,
+            cluster => \%cluster,
         });
 }
 

@@ -1913,6 +1913,14 @@ sub unblock {
     }
 }
 
+sub has_dependencies {
+    my ($self) = @_;
+
+    my $id           = $self->id;
+    my $dependencies = $self->result_source->schema->resultset('JobDependencies');
+    return $dependencies->search({-or => {child_job_id => $id, parent_job_id => $id}}, {rows => 1})->count;
+}
+
 1;
 
 # vim: set sw=4 et:

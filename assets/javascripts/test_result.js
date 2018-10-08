@@ -201,7 +201,6 @@ function checkResultHash() {
 
     // check for links or text details matching the hash
     var link = $("[href='" + hash + "'], [data-href='" + hash + "']");
-
     if (link && link.attr("role") === 'tab' && !link.prop('aria-expanded')) {
         link.tab('show');
     } else if (hash.search('#step/') === 0) {
@@ -284,6 +283,17 @@ function handleKeyDownOnTestDetails(e) {
     }
 }
 
+function setupTab(tabHash) {
+    if (tabHash === '#dependencies') {
+        setupDependencyGraph();
+    }
+    if (tabHash === '#live') {
+        resumeLiveView();
+    } else {
+        pauseLiveView();
+    }
+}
+
 function setupResult(state, jobid, status_url, details_url) {
   setupLazyLoadingFailedSteps();
   $(".current_preview").removeClass("current_preview");
@@ -334,19 +344,11 @@ function setupResult(state, jobid, status_url, details_url) {
     setResultHash(tabshown);
   });
 
-  // define handler for tab switch to resume/pause live view depending on whether it is the
-  // current tab
+  // setup lazy-loading for tabs
+  setupTab(window.location.hash);
   $('#result-row a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
-    if (e.target.hash === '#live') {
-      resumeLiveView();
-    } else {
-      pauseLiveView();
-    }
+    setupTab(e.target.hash);
   });
-  // start the live view if it's default link
-  if (window.location.hash === '#live') {
-    resumeLiveView();
-  }
 
   // setup result filter, define function to apply filter changes
   var detailsFilter = $('.details-filter');
@@ -397,4 +399,133 @@ function setupResult(state, jobid, status_url, details_url) {
       detailsFilter.toggleClass('hidden');
       applyFilterChanges();
   });
+}
+
+function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
+    // create a new directed graph
+    var g = new dagreD3.graphlib.Graph({ compound:true }).setGraph({});
+
+    // set left-to-right layout and spacing
+    g.setGraph({
+        rankdir: "LR",
+        nodesep: 10,
+        ranksep: 50,
+        marginx: 10,
+        marginy: 10,
+    });
+
+    // insert nodes
+    nodes.forEach(node => {
+        var testResultId;
+        if (node.result !== 'none') {
+            testResultId = node.result;
+        } else {
+            testResultId = node.state;
+            if (testResultId === 'scheduled' && node.blocked_by_id) {
+                testResultId = 'blocked';
+            }
+        }
+        var testResultName = testResultId.replace(/_/g, ' ');
+
+        g.setNode(node.id, {
+            label: function() {
+                var table = document.createElement("table");
+                var tr = d3.select(table).append("tr");
+
+                var testNameTd = tr.append("td");
+                if (node.id == currentNode) {
+                    testNameTd.text(node.label);
+                    tr.node().className = 'current';
+                } else {
+                    var testNameLink = testNameTd.append("a");
+                    testNameLink.attr('href', '/tests/' + node.id);
+                    testNameLink.text(node.label);
+                }
+
+                var testResultTd = tr.append("td");
+                testResultTd.text(testResultName);
+                testResultTd.node().className = testResultId;
+
+                return table;
+            },
+            padding: 0,
+            tooltipText: node.tooltipText,
+            testResultId: testResultId,
+            testResultName: testResultName,
+        });
+    });
+
+    // insert edges
+    edges.forEach(edge => {
+        g.setEdge(edge.from, edge.to, {});
+    });
+
+    // insert clusters
+    for (var clusterId in cluster) {
+        g.setNode(clusterId, {});
+        cluster[clusterId].forEach(child => {
+            g.setParent(child, clusterId);
+        });
+    }
+
+    // create the renderer
+    var render = new dagreD3.render();
+
+    // set up an SVG group so that we can translate the final graph.
+    var svg = d3.select('svg'), svgGroup = svg.append('g');
+
+    // run the renderer (this is what draws the final graph)
+    render(svgGroup, g);
+
+    // add tooltips
+    svgGroup.selectAll("g.node")
+        .attr("title", function(v) {
+            return "<p>" + g.node(v).tooltipText + "</p>";
+        })
+        .each(function(v) {
+            $(this).tooltip({
+                html: true,
+                placement: 'right',
+            });
+        });
+
+    // move the graph a bit to the bottom so lines at the top are not clipped
+    svgGroup.attr("transform", "translate(0, 20)");
+
+    // set width and height of the svg element to the graph's size plus a bit extra spacing
+    svg.attr('width', g.graph().width + 40);
+    svg.attr('height', g.graph().height + 40);
+
+    // note: centering is achieved by centering the svg element itself like any other html block element
+}
+
+function setupDependencyGraph() {
+    if (window.dependencyGraphInitiated) {
+        return;
+    }
+    window.dependencyGraphInitiated = true;
+
+    var statusElement = document.getElementById('dependencygraph_status');
+    var containerElement = document.getElementById('dependencygraph');
+    $.ajax({
+        url: containerElement.dataset.url,
+        method: 'GET',
+        success: function(dependencyInfo) {
+            var nodes = dependencyInfo.nodes;
+            var edges = dependencyInfo.edges;
+            var cluster = dependencyInfo.cluster;
+            if (!nodes || !edges || !cluster) {
+                $(statusElement).text('Unable to query dependency info: no nodes/edges received');
+                return;
+            }
+            statusElement.style.textAlign = 'left';
+            statusElement.innerHTML = 'Arrows visualize chained dependencies specified via <code>START_AFTER_TEST</code>. \
+                                       Blue boxes visualize parallel dependencies specified via <code>PARALLEL_WITH</code>. \
+                                       The current job is highlighted with a bolder border and yellow background.';
+            renderDependencyGraph(containerElement, nodes, edges, cluster, containerElement.dataset.currentJobId);
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            $(statusElement).text('Unable to query dependency info: ' + thrownError);
+        }
+    });
 }
