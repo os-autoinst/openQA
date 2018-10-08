@@ -90,8 +90,6 @@ my $server_instance = process sub {
 };
 
 sub start_server {
-
-
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $worker_cache_service->restart;
     $cache_service->restart;
@@ -165,7 +163,6 @@ subtest 'different token between restarts' => sub {
     ok(defined $token);
     ok($token ne "");
 };
-
 
 subtest 'Client can check if there are available workers' => sub {
     $cache_client->session_token;
@@ -248,6 +245,9 @@ subtest 'Small assets causes racing when releasing locks' => sub {
 
     if ($cache_client->enqueue_download({id => 922756, asset => $a, type => "hdd", host => $host})) {
         1 until $cache_client->processed($a);
+        my $out = $cache_client->asset_download_output($a);
+        ok($out, 'Output should be present') or die diag $out;
+        like $out, qr/Downloading $a from/, "Asset download attempt logged";
         ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded') or die diag "Failed - no asset is there";
     }
     else {
@@ -256,7 +256,6 @@ subtest 'Small assets causes racing when releasing locks' => sub {
 
     ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded') or die diag "Failed - no asset is there";
 };
-
 
 subtest 'Asset download with default usage' => sub {
     my $tot_proc = $ENV{STRESS_TEST} ? 100 : 10;
@@ -282,7 +281,6 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     sleep 1 until (grep { $_ == 1 } map { $cache_client->processed($_) } @assets) == @assets;
 
     ok($cache_client->asset_exists('localhost', $_), "Asset $_ downloaded correctly") for @assets;
-
 
     @assets = map { "sle-12-SP3-x86_64-0368-200_88888\@64bit.qcow2" } 1 .. $tot_proc;
     unlink path($cachedir)->child($_) for @assets;

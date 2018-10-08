@@ -21,8 +21,8 @@ use OpenQA::Worker::Common;
 
 use Mojo::URL;
 use Mojo::File 'path';
-has host     => 'http://127.0.0.1:7844';
-has retrials => 5;
+has host  => 'http://127.0.0.1:7844';
+has retry => 5;
 has cache_dir =>
   sub { $ENV{CACHE_DIR} || (OpenQA::Worker::Common::read_worker_config(undef, undef))[0]->{CACHEDIRECTORY} };
 
@@ -33,14 +33,14 @@ sub _status {
     return $st;
 }
 
-sub _q {
+sub _query {
     my ($self, $q) = @_;
-    _status(_retry(sub { $self->get($self->_url($q)) } => $self->retrials));
+    _status(_retry(sub { $self->get($self->_url($q)) } => $self->retry));
 }
 
-sub _p {
+sub _post {
     my ($self, $q, $j) = @_;
-    _status(_retry(sub { $self->post($self->_url($q) => json => $j) } => $self->retrials));
+    _status(_retry(sub { $self->post($self->_url($q) => json => $j) } => $self->retry));
 }
 
 sub _retry {
@@ -55,13 +55,13 @@ sub _retry {
 }
 
 # TODO: This can go in a separate object.
-sub asset_download { shift->_p("download", pop) }
-sub asset_download_info { shift->_p(status => {asset => pop}) }
+sub asset_download { shift->_post("download", pop) }
+sub asset_download_info { shift->_post(status => {asset => pop}) }
 sub asset_path { path(shift->cache_dir, @_ > 1 ? (OpenQA::Worker::Cache::_base_host($_[0]) || shift) : ())->child(pop) }
 sub asset_exists { !!(-e shift->asset_path(@_)) }
 
 sub dequeue_job {
-    !!(shift->_p(dequeue => {asset => pop}) eq OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED);
+    !!(shift->_post(dequeue => {asset => pop}) eq OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED);
 }
 
 sub enqueue_download {
@@ -92,7 +92,7 @@ sub available_workers {
     $_[0]->available
       && ($_[0]->info->result->json->{active_workers} != 0 || $_[0]->info->result->json->{inactive_workers} != 0);
 }
-sub session_token { shift->_q('session_token') }
+sub session_token { shift->_query('session_token') }
 
 *asset_status = \&asset_download;
 

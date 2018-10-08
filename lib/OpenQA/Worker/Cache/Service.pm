@@ -24,16 +24,16 @@ use Mojolicious::Plugin::Minion::Admin;
 
 BEGIN { srand(time) }
 
-my $tk;
+my $_token;
 my $enqueued = Mojo::Collection->new;
 app->hook(
     before_server_start => sub {
-        $tk       = int(rand(999999999999));
+        $_token   = int(rand(999999999999));
         $enqueued = Mojo::Collection->new;
     });
 
 
-sub SESSION_TOKEN { $tk }
+sub SESSION_TOKEN { $_token }
 
 plugin 'Minion' => {SQLite => 'sqlite:' . OpenQA::Worker::Cache->from_worker->db_file};
 plugin 'Minion::Admin';
@@ -65,7 +65,8 @@ sub enqueue {
 
 sub run {
     shift;
-    $ENV{'MOJO_LISTEN'} ||= 'http://127.0.0.1:7844/';
+    require OpenQA::Utils;
+    OpenQA::Utils::set_listen_address(7844);
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 300;
     require Mojolicious::Commands;
     Mojolicious::Commands->start_app('OpenQA::Worker::Cache::Service', @_);
