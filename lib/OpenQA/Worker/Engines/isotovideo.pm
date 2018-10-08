@@ -142,7 +142,8 @@ sub cache_assets {
             log_debug("Downloading " . $vars->{$this_asset} . " - request sent to Cache Service.",
                 channels => 'autoinst');
             update_setup_status and sleep 5 until $cache_client->processed($vars->{$this_asset});
-            log_debug("Download of " . $vars->{$this_asset} . " processed", channels => 'autoinst');
+            log_debug("Download of " . $vars->{$this_asset} . " processed",       channels => 'autoinst');
+            log_debug($cache_client->asset_download_output($vars->{$this_asset}), channels => 'autoinst');
         }
 
         $asset = $cache_client->asset_path($current_host, $vars->{$this_asset})
