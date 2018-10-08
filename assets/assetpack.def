@@ -100,7 +100,7 @@
 << https://raw.githubusercontent.com/twbs/bootstrap/v4.1.1/scss/_print.scss
 < https://raw.githubusercontent.com/sorich87/bootstrap-tour/6a1028fb562f9aa68c451f0901f8cfeb43cad140/build/css/bootstrap-tour.css
 
-! d3.js
+! dagre-d3.js
 < https://d3js.org/d3.v4.js
 < https://raw.githubusercontent.com/dagrejs/dagre-d3/v0.5.0/dist/dagre-d3.js
 

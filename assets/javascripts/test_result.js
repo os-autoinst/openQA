@@ -283,6 +283,17 @@ function handleKeyDownOnTestDetails(e) {
     }
 }
 
+function setupTab(tabHash) {
+    if (tabHash === '#dependencies') {
+        setupDependencyGraph();
+    }
+    if (tabHash === '#live') {
+        resumeLiveView();
+    } else {
+        pauseLiveView();
+    }
+}
+
 function setupResult(state, jobid, status_url, details_url) {
   setupLazyLoadingFailedSteps();
   $(".current_preview").removeClass("current_preview");
@@ -333,27 +344,11 @@ function setupResult(state, jobid, status_url, details_url) {
     setResultHash(tabshown);
   });
 
-  // define handler for tab switch to resume/pause live view depending on whether it is the
-  // current tab and to lazy-load dependencies
+  // setup lazy-loading for tabs
+  setupTab(window.location.hash);
   $('#result-row a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
-    var hash = e.target.hash;
-    if (hash === '#dependencies') {
-      setupDependencyGraph();
-    }
-    if (hash === '#live') {
-      resumeLiveView();
-    } else {
-      pauseLiveView();
-    }
+    setupTab(e.target.hash);
   });
-  // start the live view if it's default tab
-  if (window.location.hash === '#live') {
-    resumeLiveView();
-  }
-  // setup dependency graph if it's the default tab
-  if (window.location.hash === '#dependencies') {
-    setupDependencyGraph();
-  }
 
   // setup result filter, define function to apply filter changes
   var detailsFilter = $('.details-filter');
@@ -457,7 +452,6 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
             tooltipText: node.tooltipText,
             testResultId: testResultId,
             testResultName: testResultName,
-            fill: "#afa",
         });
     });
 
@@ -468,9 +462,7 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
 
     // insert clusters
     for (var clusterId in cluster) {
-        g.setNode(clusterId, {
-            style: 'fill: #d0f0ff',
-        });
+        g.setNode(clusterId, {});
         cluster[clusterId].forEach(child => {
             g.setParent(child, clusterId);
         });

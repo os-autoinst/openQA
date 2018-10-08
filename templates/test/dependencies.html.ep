@@ -1,5 +1,5 @@
 % content_for 'head' => begin
-  %= asset 'd3.js'
+  %= asset 'dagre-d3.js'
   %= asset 'dependency_graph.css'
 % end
 <p id="dependencygraph_status">
