@@ -14,7 +14,7 @@
 
 <div class="row">
     <div class="col-sm-12">
-        <h2><%= title %></h2>
+        <h2><%= title %> (<span id="assets-status">loading</span>)</h2>
         %= include 'layouts/info'
 
         <h3>Used assets</h3>

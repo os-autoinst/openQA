@@ -17,6 +17,7 @@
 package OpenQA::Schema::ResultSet::Assets;
 use strict;
 use base 'DBIx::Class::ResultSet';
+use DBIx::Class::Timestamps 'now';
 use OpenQA::Utils qw(log_warning locate_asset human_readable_size log_debug);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
@@ -291,8 +292,9 @@ END_SQL
         $cache_file->spurt(
             encode_json(
                 {
-                    data   => \@assets,
-                    groups => \%group_info,
+                    data        => \@assets,
+                    groups      => \%group_info,
+                    last_update => now() . 'Z',
                 }));
     }
     catch {

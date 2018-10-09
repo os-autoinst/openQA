@@ -14,6 +14,7 @@ function setupAdminAssets() {
                 url: assetsTable.data('status-url'),
                 data: ajaxQueryParams,
                 dataSrc: function(json) {
+                    showLastAssetStatusUpdate(json);
                     makeAssetsByGroup(json);
                     return json.data;
                 }
@@ -105,6 +106,12 @@ function deleteAsset(assetId) {
             window.alert('The asset couldn\'t be deleted: ' + thrownError);
         }
     });
+}
+
+function showLastAssetStatusUpdate(assetStatus) {
+    if (assetStatus.last_update) {
+        $('#assets-status').html('last update: ' + renderTimeAgo(assetStatus.last_update, 'display'));
+    }
 }
 
 function makeAssetsByGroup(assetStatus) {
