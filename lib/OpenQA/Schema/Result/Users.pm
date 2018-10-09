@@ -84,7 +84,7 @@ sub gravatar {
     $size //= 40;
 
     if (my $email = $self->email) {
-        return "//www.gravatar.com/avatar/" . md5_hex(lc $email) . "?d=monsterid&s=$size";
+        return "//www.gravatar.com/avatar/" . md5_hex(lc $email) . "?d=wavatar&s=$size";
     }
     else {
         return "//www.gravatar.com/avatar?s=$size";
