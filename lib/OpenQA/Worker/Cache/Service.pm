@@ -35,7 +35,7 @@ app->hook(
 
 sub SESSION_TOKEN { $_token }
 
-plugin 'Minion' => {SQLite => 'sqlite:' . OpenQA::Worker::Cache->from_worker->db_file};
+plugin Minion => {SQLite => 'sqlite:' . OpenQA::Worker::Cache->from_worker->db_file};
 plugin 'Minion::Admin';
 plugin 'OpenQA::Worker::Cache::Task::Asset';
 
