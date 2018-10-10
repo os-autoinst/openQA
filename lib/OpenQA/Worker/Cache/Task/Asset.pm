@@ -23,29 +23,24 @@ use constant MINION_LOCK_EXPIRE => 999999999;
 use OpenQA::Worker::Cache::Client;
 use OpenQA::Worker::Cache;
 
-has ua     => sub { Mojo::UserAgent->new };
 has cache  => sub { OpenQA::Worker::Cache->from_worker };
 has client => sub { OpenQA::Worker::Cache::Client->new };
 
-sub dequeue { shift->client->dequeue_job(pop) }
+sub _dequeue { shift->client->_dequeue_job(pop) }
 sub _gen_guard_name { join('.', shift->client->session_token, pop) }
 
 sub register {
     my ($self, $app) = @_;
-    # Make it a helper
-    $app->helper(asset_task => sub { $self });
 
     $app->minion->add_task(
         cache_asset => sub {
             my ($job, $id, $type, $asset_name, $host) = @_;
             my $guard_name = $self->_gen_guard_name($asset_name);
             return $job->remove unless defined $asset_name && defined $type && defined $host;
-
             return $job->retry({delay => LOCK_RETRY_DELAY})
               unless my $guard = $app->minion->guard($guard_name, MINION_LOCK_EXPIRE);
             $app->log->debug("[$$] [Job #" . $job->id . "] Guard: $guard_name Download: $asset_name");
-
-            $app->log->debug("[$$] Job dequeued ") if $self->dequeue($asset_name);
+            $app->log->debug("[$$] Job dequeued ") if $self->_dequeue($asset_name);
             $OpenQA::Utils::app = undef;
             {
                 my $output;
@@ -58,9 +53,39 @@ sub register {
                 $job->note(output => $output);
                 print $output;
             }
-
             $app->log->debug("[$$] [Job #" . $job->id . "] Finished");
         });
 }
+
+=encoding utf-8
+
+=head1 NAME
+
+OpenQA::Worker::Cache::Task::Asset - Cache Service task
+
+=head1 SYNOPSIS
+
+    use Mojolicious::Lite;
+    use Mojolicious::Plugin::Minion::Admin;
+    use OpenQA::Worker::Cache::Task::Asset;
+
+    plugin Minion => { SQLite => ':memory:' };
+    plugin 'OpenQA::Worker::Cache::Task::Asset';
+
+=head1 DESCRIPTION
+
+OpenQA::Worker::Cache::Task::Asset is the task that minions of the OpenQA Cache Service
+are executing to handle the asset download.
+
+=head1 METHODS
+
+OpenQA::Worker::Cache::Task::Asset inherits all methods from L<Mojolicious::Plugin>
+and implements the following new ones:
+
+=head2 register()
+
+Registers the task inside L<Minion>.
+
+=cut
 
 1;

@@ -32,17 +32,19 @@ app->hook(
         $enqueued = Mojo::Collection->new;
     });
 
-
-sub SESSION_TOKEN { $_token }
-
 plugin Minion => {SQLite => 'sqlite:' . OpenQA::Worker::Cache->from_worker->db_file};
 plugin 'Minion::Admin';
 plugin 'OpenQA::Worker::Cache::Task::Asset';
 
+sub SESSION_TOKEN { $_token }
+
 sub _gen_guard_name { join('.', SESSION_TOKEN, pop) }
+
 sub _exists { !!(defined $_[0] && exists $_[0]->{total} && $_[0]->{total} > 0) }
 
+
 sub active { !app->minion->lock(shift, 0) }
+
 sub get_job_by_token {
     eval {
         { app->minion->backend->list_jobs(0, 1, {note => {token => shift}})->{jobs}[0] }
@@ -73,6 +75,7 @@ sub run {
 }
 
 get '/session_token' => sub { shift->render(json => {session_token => SESSION_TOKEN()}) };
+
 get '/info' => sub { $_[0]->render(json => shift->minion->stats) };
 
 post '/download' => sub {
@@ -132,5 +135,66 @@ post '/dequeue' => sub {
 };
 
 app->minion->backend->reset;
+
+=encoding utf-8
+
+=head1 NAME
+
+OpenQA::Worker::Cache::Service - OpenQA Cache Service
+
+=head1 SYNOPSIS
+
+    use OpenQA::Worker::Cache::Service;
+
+    # Start the daemon
+    OpenQA::Worker::Cache::Service->run(qw(daemon));
+
+    # Start one or more Minions with:
+    OpenQA::Worker::Cache::Service->run(qw(minion worker))
+
+=head1 DESCRIPTION
+
+OpenQA::Worker::Cache::Service is the OpenQA Cache Service, which is meant to be run
+standalone.
+
+=head1 GET ROUTES
+
+OpenQA::Worker::Cache::Service is a L<Mojolicious::Lite> application, and it is exposing the following GET routes.
+
+=head2 /minion
+
+Redirects to the L<Mojolicious::Plugin::Minion::Admin> Dashboard.
+
+=head2 /info
+
+Returns Minon statistics, see L<https://metacpan.org/pod/Minion#stats>.
+
+=head2 /session_token
+
+Returns the current session token.
+
+=head1 POST ROUTES
+
+OpenQA::Worker::Cache::Service is exposing the following POST routes.
+
+=head2 /download
+
+Enqueue the asset download. It acceps a POST JSON payload of the form:
+
+      { id => 9999, type => 'hdd', asset=> 'default.qcow2', host=> 'openqa.opensuse.org' }
+
+=head2 /status
+
+Retrieve download asset status. It acceps a POST JSON payload of the form:
+
+      { asset=> 'default.qcow2' }
+
+=head2 /dequeue
+
+Dequeues a job from the queue of jobs which are still inactive. It acceps a POST JSON payload of the form:
+
+      { asset=> 'default.qcow2' }
+
+=cut
 
 !!42;

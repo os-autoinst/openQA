@@ -475,6 +475,25 @@ might want to consider to enable caching in your remote workers. To enable cachi
 'geekotest' user. If you install openQA through the repositories, said directory
 will be created for you.
 
+Start and enable the Cache Service:
+[source,sh]
+--------------------------------------------------------------------------------
+systemctl start openqa-worker-cacheservice.service
+systemctl enable openqa-worker-cacheservice.service
+--------------------------------------------------------------------------------
+
+To start the Cache service workers you can use the provided systemd files via +systemctl
+start openqa-worker-cacheservice-minion@1+. This will start a single cache worker. You can start as
+many workers as you dare to achieve parallel downloads, you just need to supply different 'id' (number
+after @).
+
+Enable (at least one) Cache Worker:
+[source,sh]
+--------------------------------------------------------------------------------
+systemctl start openqa-worker-cacheservice-minion@1.service
+systemctl enable openqa-worker-cacheservice-minion@1.service
+--------------------------------------------------------------------------------
+
 In the +/etc/openqa/workers.ini+
 
 [source,ini]
