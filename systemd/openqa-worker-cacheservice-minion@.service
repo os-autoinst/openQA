@@ -1,0 +1,11 @@
+[Unit]
+Description=OpenQA Worker Cache Service Minion
+After=openqa-worker-cacheservice.service
+Requires=openqa-worker-cacheservice.service
+
+[Service]
+User=_openqa-worker
+ExecStart=/usr/share/openqa/script/openqa-workercache minion worker
+
+[Install]
+WantedBy=multi-user.target

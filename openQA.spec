@@ -18,7 +18,7 @@
 
 # can't use linebreaks here!
 %define openqa_services openqa-webui.service openqa-gru.service openqa-websockets.service openqa-scheduler.service openqa-resource-allocator.service
-%define openqa_worker_services openqa-worker.target openqa-slirpvde.service openqa-vde_switch.service
+%define openqa_worker_services openqa-worker.target openqa-slirpvde.service openqa-vde_switch.service openqa-worker-cacheservice.service
 %if %{undefined tmpfiles_create}
 %define tmpfiles_create() \
 %{_bindir}/systemd-tmpfiles --create %{?*} || : \
@@ -435,6 +435,8 @@ fi
 %{_libexecdir}/systemd/system-generators
 %{_unitdir}/openqa-worker.target
 %{_unitdir}/openqa-worker@.service
+%{_unitdir}/openqa-worker-cacheservice-minion@.service
+%{_unitdir}/openqa-worker-cacheservice.service
 %{_unitdir}/openqa-worker-no-cleanup@.service
 %{_unitdir}/openqa-slirpvde.service
 %{_unitdir}/openqa-vde_switch.service

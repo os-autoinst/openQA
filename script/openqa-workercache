@@ -17,6 +17,11 @@
 
 use strict;
 use warnings;
+use FindBin;
+
+BEGIN {
+    unshift @INC, "$FindBin::Bin/../lib";
+}
 
 require OpenQA::Worker::Cache::Service;
 OpenQA::Worker::Cache::Service->run(@ARGV);
