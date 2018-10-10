@@ -184,6 +184,17 @@ $ret = $t->post_ok('/api/v1/assets', form => {type => 'iso', name => 'foo.iso'})
 $ret = $t->get_ok('/api/v1/assets/iso')->status_is(404);
 $ret = $t->delete_ok('/api/v1/assets/iso')->status_is(404);
 
+# trigger cleanup task
+$t->app->minion->reset;    # be sure no 'limit_assets' tasks have already been enqueued
+my $gru_tasks = $t->app->schema->resultset('GruTasks');
+is($gru_tasks->count, 0, 'no gru tasks present so far');
+$t->post_ok('/api/v1/assets/cleanup')->status_is(200)->json_is('/status' => 'ok', 'status ok');
+is($gru_tasks->count, 1, 'gru task added')
+  and is($gru_tasks->first->taskname, 'limit_assets', 'right gru task added');
+$t->post_ok('/api/v1/assets/cleanup')->status_is(200)->json_is('/status' => 'ok', 'status ok')
+  ->json_is('/gru_id' => undef);
+is($gru_tasks->count, 1, 'no further task if one was already enqueued');
+
 # switch to operator (percival) and try some modifications
 $app = $t->app;
 $t->ua(

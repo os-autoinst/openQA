@@ -110,12 +110,14 @@ sub enqueue {
             run_at   => $options->{run_at} // now(),
             jobs     => $jobs,
         });
+    my $gru_id = $gru->id;
 
     $self->app->minion->enqueue(
         $task => $args => {
             priority => $options->{priority} // 0,
             delay    => $delay,
-            notes    => {gru_id => $gru->id, (ttl => $ttl) x !!(defined $ttl)}});
+            notes    => {gru_id => $gru_id, (ttl => $ttl) x !!(defined $ttl)}});
+    return $gru_id;
 }
 
 package OpenQA::WebAPI::Plugin::Gru::Command::gru;

@@ -14,6 +14,14 @@
 
 <div class="row">
     <div class="col-sm-12">
+        % if (is_admin) {
+            <form action="<%= url_for('apiv1_trigger_asset_cleanup') %>" method="post" onsubmit="triggerAssetCleanup(this); return false;" class="corner-buttons">
+                <button type="submit" class="btn btn-default" title="Enqueues a new asset cleanup task if none is outstanding anyways">
+                    <i class="fas fa-sync-alt"></i> Trigger asset cleanup</span>
+                </button>
+            </form>
+        % }
+
         <h2><%= title %> (<span id="assets-status">loading</span>)</h2>
         %= include 'layouts/info'
 

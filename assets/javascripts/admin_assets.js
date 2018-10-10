@@ -110,6 +110,19 @@ function deleteAsset(assetId) {
     });
 }
 
+function triggerAssetCleanup(form) {
+    $.ajax({
+        url: form.action,
+        method: form.method,
+        success: function() {
+            addFlash('info', 'Asset cleanup has been triggered. Open the <a href="/minion">Minion dashboard</a> to keep track of the task.');
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            addFlash('danger', 'Unable to trigger the asset cleanup: ' + thrownError);
+        }
+    });
+}
+
 function showLastAssetStatusUpdate(assetStatus) {
     if (assetStatus.last_update) {
         $('#assets-status').html('last update: ' + renderTimeAgo(assetStatus.last_update, 'display'));
