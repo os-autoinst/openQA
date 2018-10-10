@@ -151,7 +151,7 @@ sub list_running_ajax {
                 flavor   => $job->FLAVOR // '',
                 arch     => $job->ARCH // '',
                 build    => $job->BUILD // '',
-                testtime => $job->t_started . 'Z',
+                testtime => ($job->t_started // '') . 'Z',
                 group    => $job->group_id,
                 state    => $job->state,
                 progress => $job->running_modinfo($job_modules),
