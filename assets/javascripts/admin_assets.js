@@ -136,6 +136,8 @@ function makeAssetsByGroup(assetStatus) {
     var groups = assetStatus.groups;
     var assets = assetStatus.data;
 
+    $('#assets-by-group-loading').remove();
+
     // make the asset list for the particular groups
     var assetsByGroup = {};
     assets.sort(function(b, a) {
@@ -189,7 +191,7 @@ function makeAssetsByGroup(assetStatus) {
         groupLi.append(label);
 
         // add configure button
-        if (window.isAdmin && groupId !== undefined) {
+        if (window.isAdmin && groupId !== undefined && groupId !== "0") {
             groupLi.append('<a href="/admin/job_templates/' + groupId +
                 '"><i class="fa fa-wrench" title="Configure"></i></a>');
         }

@@ -42,6 +42,7 @@
         </table>
 
         <h3 id="assets-by-group-heading">Assets by group</h3>
+        <p id="assets-by-group-loading"><i class="fa fa-spinner fa-spin"></i> Loading…</p>
         <ul id="assets-by-group"></ul>
     </div>
 </div>
