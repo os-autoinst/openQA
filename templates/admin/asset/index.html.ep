@@ -19,7 +19,7 @@
 
         <h3>Used assets</h3>
         <p>The following assets are used by at least one job which is part of a group.</p>
-        <table id="assets" class="display table table-striped"
+        <table id="assets" class="table table-striped"  style="width: 100%"
             data-status-url="<%= url_for('admin_asset_status_json') %>">
             <thead>
                 <tr>
