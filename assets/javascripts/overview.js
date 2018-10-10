@@ -12,10 +12,12 @@ function setupOverview() {
     $('.restart')
         .bind("ajax:success", function(event, xhr, status) {
             var oldId = 0;
-            var newId = xhr['result'][0];
+            var newId = xhr.result[0];
 
             $.each( newId, function( key, value ) {
-                if (!$('.restart[data-jobid="' + key + '"]').length) { return true };
+                if (!$('.restart[data-jobid="' + key + '"]').length) {
+                    return true;
+                }
                 var restarted = $('.restart[data-jobid="' + key + '"]');
                 restarted.text(''); // hide the icon
                 var icon = restarted.parents('td').find('.status');

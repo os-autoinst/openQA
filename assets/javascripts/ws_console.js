@@ -20,14 +20,14 @@ function establishWebSocketConnection() {
     };
     ws.onerror = function(error) {
         logLine('Connection error: ' + error.type + " (check JavaScript console for details)");
-    }
+    };
     ws.onclose = function() {
         logLine('Connection closed, trying to reconnect in 2 seconds');
         window.ws = undefined;
         setTimeout(function() {
             establishWebSocketConnection();
         }, 2000);
-    }
+    };
     ws.onmessage = function(msg) {
         logLine(msg.data);
     };
@@ -36,7 +36,7 @@ function establishWebSocketConnection() {
 function setupWebSocketConsole(url) {
     // determine ws URL
     var form = $('#ws_console_form');
-    var url = form.data('url');
+    url = form.data('url');
     if (!url.length) {
         return;
     }

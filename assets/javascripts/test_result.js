@@ -1,3 +1,6 @@
+/* jshint multistr: true */
+/* jshint esversion: 6 */
+
 function checkPreviewVisible(a, preview) {
   // scroll the element to the top if the preview is not in view
   if (a.offset().top + preview.height() > $(window).scrollTop() + $(window).height()) {
@@ -171,7 +174,7 @@ function selectPreview(which) {
     var linkSelector = '.links_a:' + (which === 'next' ? 'first' : 'last');
     var row = currentPreview.parents('tr');
     for (;;) {
-        var row = row[which]();
+        row = row[which]();
         if (!row.length) {
             return;
         }
@@ -234,12 +237,13 @@ function prevNeedle() {
 
 function nextNeedle() {
     var currentSelection = $('#needlediff_selector tbody tr.selected');
+    var newSelection;
     if (!currentSelection.length) {
         // select first needle in first tag
-        var newSelection = $('#needlediff_selector tbody tr:first-child').first();
+        newSelection = $('#needlediff_selector tbody tr:first-child').first();
     } else {
         // select next in current tag
-        var newSelection = currentSelection.next();
+        newSelection = currentSelection.next();
         if (!newSelection.length) {
             // select first of next tag
             newSelection = currentSelection.parents('li').nextAll().find('tbody tr').first();
@@ -380,11 +384,11 @@ function setupResult(state, jobid, status_url, details_url) {
           var tdElement = $(td);
           var trElement = tdElement.parent('tr');
           var stepMaches = (
-              (!nameFilterEnabled
-              || trElement.find('td.component').text().indexOf(nameFilter) >= 0)
-              && (!failedOnlyFilterEnabled
-              || tdElement.hasClass('resultfailed')
-              || tdElement.hasClass('resultsoftfailed'))
+              (!nameFilterEnabled ||
+                trElement.find('td.component').text().indexOf(nameFilter) >= 0) &&
+                (!failedOnlyFilterEnabled ||
+                    tdElement.hasClass('resultfailed') ||
+                    tdElement.hasClass('resultsoftfailed'))
           );
           trElement[stepMaches ? 'show' : 'hide']();
       });

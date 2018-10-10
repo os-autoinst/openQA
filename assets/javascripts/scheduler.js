@@ -19,41 +19,43 @@ document.observe('dom:loaded', function() {
   window.updateListCounter();
 
   $$('#results input[name=jobs]').each(function(element) {
-    element.on('click', window.updateListCounter)
+    element.on('click', window.updateListCounter);
   });
 
-  if (target = $('list-restart')) {
+  if ((target = $('list-restart'))) {
     target.on('click', function(event) {
       event.stop(); // Don't follow the link
       // Submit the form, but using AJAX, and reload afterwards
       // (assign window.location instead of reload() to reset forms)
       $('list-form').request({
-        onComplete: function() { window.location = document.URL }
+        onComplete: function() {
+          window.location = document.URL;
+        }
       });
     });
   }
 
-  if (target = $('list-select')) {
+  if ((target = $('list-select'))) {
     target.on('click', function(event) {
       event.stop(); // Don't follow the link
       $$('#results tbody tr').select(Element.visible).each(function(e) {
-        e.select('input[name=jobs]')[0].checked=true
+        e.select('input[name=jobs]')[0].checked = true;
       });
       window.updateListCounter();
     });
   }
 
-  if (target = $('list-unselect')) {
+  if ((target = $('list-unselect'))) {
     target.on('click', function(event) {
       event.stop(); // Don't follow the link
       $$('#results tbody tr').select(Element.visible).each(function(e) {
-        e.select('input[name=jobs]')[0].checked=false
+        e.select('input[name=jobs]')[0].checked = false;
       });
       window.updateListCounter();
     });
   }
 
-  if (target = $('cancel_running')) {
+  if ((target = $('cancel_running'))) {
     target.on('ajax:success', function(event) {
       // Let's bother the user to have time to really cancel
       alert('Job canceled. Postprocessing. You will be redirected to the results page in a few seconds.');
@@ -62,7 +64,7 @@ document.observe('dom:loaded', function() {
     });
   }
 
-  if (target = $('restart_running')) {
+  if ((target = $('restart_running'))) {
     target.on('ajax:success', function(event) {
       var jobid = event.memo.responseJSON.result[0];
       var c = confirm('Job cloned into #'+jobid+'. Confirm to visit that job. Cancel to be redirected to the results of the interrupted one.');
@@ -76,15 +78,15 @@ document.observe('dom:loaded', function() {
     });
   }
 
-  if (target = $('restart-result')) {
+  if ((target = $('restart-result'))) {
     target.on('ajax:success', 'a', function(event, element) {
       var jobid = event.memo.responseJSON.result[0];
       event.stop(); // Don't follow the link
       // If the API call returns a id, a new job have been created.
       // If not, nothing happened (or the old job is being reused).
       if (jobid) {
-        var cell;
-        if (cell = $('clone')) {
+        var cell = $('clone');
+        if (cell) {
           cell.update('<a href="/tests/'+jobid+'">'+jobid+'</a>');
           new Effect.Highlight(cell);
         }
@@ -96,8 +98,8 @@ document.observe('dom:loaded', function() {
 
 // Update the counter of selected items in the jobs list
 function updateListCounter() {
-  var counter;
-  if (counter = $('list-counter')) {
+  var counter = $('list-counter');
+  if (counter) {
     counter.update($$('input[name=jobs]:checked').length);
   }
 }

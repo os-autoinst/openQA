@@ -1,3 +1,5 @@
+/* jshint multistr: true */
+
 function setupAdminAssets() {
     // determine params for AJAX queries
     var pageQueryParams = parseQueryParams();
@@ -91,7 +93,7 @@ function setupAdminAssets() {
 
             ],
             order: [[1, 'desc']],
-        },
+        }
     );
 }
 
@@ -144,14 +146,15 @@ function makeAssetsByGroup(assetStatus) {
                     assetLi.append('<span>' + renderDataSize(asset.size) + '</span>');
                     assetUl.append(assetLi);
                 });
-            }
+            };
         }
         assetUl.assets.push(asset);
     });
 
     // add li element for each group, sorted by used asset size and group name
     Object.keys(groups).sort(function(b, a) {
-        var a = groups[a], b = groups[b];
+        a = groups[a];
+        b = groups[b];
         if (a.picked < b.picked) {
             return -1;
         } else if (b.picked < a.picked) {
