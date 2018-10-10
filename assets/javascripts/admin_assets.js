@@ -121,8 +121,36 @@ function makeAssetsByGroup(assetStatus) {
     var groups = assetStatus.groups;
     var assets = assetStatus.data;
 
-    // sort groups
-    var groupIds = Object.keys(groups).sort(function(b, a) {
+    // make the asset list for the particular groups
+    var assetsByGroup = {};
+    assets.sort(function(b, a) {
+        return a.name.localeCompare(b.name);
+    }).forEach(function(asset) {
+        if (!asset.size || asset.picked_into === undefined) {
+            return;
+        }
+
+        // make the ul element but don't populate the li elements already
+        var assetUl = assetsByGroup[asset.picked_into];
+        if (!assetUl) {
+            assetsByGroup[asset.picked_into] = assetUl = $('<ul></ul>');
+            assetUl.assets = [];
+
+            // add method lazy-initialize the ul element
+            assetUl.populate = function() {
+                this.assets.forEach(function(asset) {
+                    var assetLi = $('<li></li>');
+                    assetLi.text(asset.name);
+                    assetLi.append('<span>' + renderDataSize(asset.size) + '</span>');
+                    assetUl.append(assetLi);
+                });
+            }
+        }
+        assetUl.assets.push(asset);
+    });
+
+    // add li element for each group, sorted by used asset size and group name
+    Object.keys(groups).sort(function(b, a) {
         var a = groups[a], b = groups[b];
         if (a.picked < b.picked) {
             return -1;
@@ -130,41 +158,19 @@ function makeAssetsByGroup(assetStatus) {
             return 1;
         }
         return a.group.localeCompare(b.group);
-    });
-
-    // make asset lists
-    var assetsByGroup = {};
-    var assetsSortedByName = assets.sort(function(b, a) {
-        return a.name.localeCompare(b.name);
-    });
-    for (var assetIndex in assetsSortedByName) {
-        var asset = assets[assetIndex];
-        if (!asset.size || asset.picked_into === undefined) {
-            continue;
-        }
-        var assetUl = assetsByGroup[asset.picked_into];
-        if (!assetUl) {
-            assetsByGroup[asset.picked_into] = assetUl = $('<ul></ul>');;
-        }
-        var assetLi = $('<li></li>');
-        assetLi.text(asset.name);
-        assetLi.append('<span>' + renderDataSize(asset.size) + '</span>');
-        assetUl.append(assetLi);
-    }
-
-    // add li element for each group
-    for (var groupIndex in groupIds) {
-        var groupId = parseInt(groupIds[groupIndex]);
+    }).forEach(function(groupId) {
         var groupInfo = groups[groupId];
         if (!groupInfo.picked) {
-            continue;
+            return;
         }
 
         var groupLi = $('<li></li>');
 
         // add input for expanding/collapsing
-        groupLi.append('<input id="group-' + groupId + '-checkbox" type="checkbox"></input>');
-        groupLi.append('<label for="group-' + groupId + '-checkbox">' + groupInfo.group + '</label>');
+        var groupCheckbox = $('<input id="group-' + groupId + '-checkbox" type="checkbox"></input>');
+        groupLi.append(groupCheckbox);
+        var label = $('<label for="group-' + groupId + '-checkbox">' + groupInfo.group + '</label>');
+        groupLi.append(label);
 
         // add configure button
         if (window.isAdmin && groupId !== undefined) {
@@ -181,14 +187,21 @@ function makeAssetsByGroup(assetStatus) {
         }
         groupLi.append('<span>' + sizeString + '</span>');
 
-        // add list for assets
+        // setup lazy-loading for list of assets
         var assetUl = assetsByGroup[groupId];
         if (assetUl) {
-            groupLi.append(assetUl);
+            groupCheckbox.change(function() {
+                if (assetUl.initialized) {
+                    return;
+                }
+                assetUl.populate();
+                groupLi.append(assetUl);
+                assetUl.initialized = true;
+            });
         }
 
         assetsByGroupList.append(groupLi);
-    }
+    });
 
     assetsByGroupHeading.text('Assets by group (total ' + renderDataSize(totalSize) + ')');
 }
