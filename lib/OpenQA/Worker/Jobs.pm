@@ -754,16 +754,21 @@ sub upload_status {
 sub handle_status_upload_finished {
     my ($job_id, $upload_up_to, $callback, $res) = @_;
 
-    # continue uploading images, except web UI considers this worker already dead
+    # stop if web UI considers this worker already dead
     if (!$res) {
         log_error('Job aborted because web UI doesn\'t accept updates anymore (likely considers this job dead)');
+        stop_job('status upload failed');
+        return;
     }
-    else {
-        $known_images = $res->{known_images};
-        ignore_known_images();
-        if (!upload_images()) {
-            log_error('Job aborted because web UI doesn\'t accept new images anymore (likely considers this job dead)');
-        }
+
+    # continue uploading images
+    $known_images = $res->{known_images};
+    ignore_known_images();
+    # stop if web UI considers this worker already dead
+    if (!upload_images()) {
+        log_error('Job aborted because web UI doesn\'t accept new images anymore (likely considers this job dead)');
+        stop_job('image upload failed');
+        return;
     }
 
     if (is_developer_session_started()) {
