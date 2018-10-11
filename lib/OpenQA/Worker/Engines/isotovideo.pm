@@ -294,9 +294,10 @@ sub locate_local_assets {
     for my $key (keys %$assetkeys) {
         my $file = locate_asset($assetkeys->{$key}, $vars->{$key}, mustexist => 1);
         unless ($file) {
+            next if (($key eq 'UEFI_PFLASH_VARS') and !$vars->{UEFI});
             my $error = "Cannot find $key asset $assetkeys->{$key}/$vars->{$key}!";
             log_error("$key handling $error", channels => 'autoinst');
-            return {error => $error} unless $key eq 'UEFI_PFLASH_VARS';
+            return {error => $error};
         }
         $vars->{$key} = $file;
     }
