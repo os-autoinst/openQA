@@ -63,6 +63,8 @@ install:
 	install -m 644 systemd/openqa-vde_switch.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-slirpvde.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-websockets.service "$(DESTDIR)"/usr/lib/systemd/system
+	install -m 644 systemd/openqa-worker-cacheservice.service "$(DESTDIR)"/usr/lib/systemd/system
+	install -m 644 systemd/openqa-worker-cacheservice-minion@.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-scheduler.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-resource-allocator.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-setup-db.service "$(DESTDIR)"/usr/lib/systemd/system

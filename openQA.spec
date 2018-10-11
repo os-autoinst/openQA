@@ -446,6 +446,7 @@ fi
 %dir %{_datadir}/openqa
 %dir %{_datadir}/openqa/script
 %{_datadir}/openqa/script/worker
+%{_datadir}/openqa/script/openqa-workercache
 %dir %{_localstatedir}/lib/openqa/pool
 %defattr(-,_openqa-worker,root)
 %dir %{_localstatedir}/lib/openqa/cache
