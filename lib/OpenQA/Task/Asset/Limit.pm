@@ -42,6 +42,10 @@ sub _remove_if {
 sub _limit {
     my ($app, $j, $job, $url) = @_;
 
+    # prevent multiple limit_assets tasks to run in parallel
+    return $job->finish('Previous limit_assets job is still active')
+      unless my $guard = $app->minion->guard('limit_assets_task', 3600);
+
     # scan for untracked assets, refresh the size of all assets
     $app->db->resultset('Assets')->scan_for_untracked_assets();
     $app->db->resultset('Assets')->refresh_assets();
