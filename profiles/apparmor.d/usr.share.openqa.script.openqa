@@ -57,6 +57,7 @@
   /var/lib/openqa/share/tests/*/needles/.git/objects/*/* rwl,
   /var/lib/openqa/testresults/ r,
   /var/lib/openqa/testresults/** rw,
+  /var/lib/openqa/webui/** rw,
   /var/log/openqa rwk,
   /var/tmp/* rw,
 

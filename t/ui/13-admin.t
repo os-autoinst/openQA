@@ -505,7 +505,7 @@ subtest 'asset list' => sub {
     $driver->title_is("openQA: Assets", "on asset");
     wait_for_ajax;
 
-    ok(-f 't/data/openqa/cache/asset-status.json', 'cache file created');
+    ok(-f 't/data/openqa/webui/cache/asset-status.json', 'cache file created');
 
     # table of assets
     is_deeply(

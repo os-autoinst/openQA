@@ -25,7 +25,7 @@ use Cpanel::JSON::XS 'encode_json';
 use File::Basename;
 use Try::Tiny;
 
-use constant {STATUS_CACHE_FILE => '/cache/asset-status.json',};
+use constant {STATUS_CACHE_FILE => '/webui/cache/asset-status.json'};
 
 sub status_cache_file {
     return $OpenQA::Utils::prjdir . STATUS_CACHE_FILE;
