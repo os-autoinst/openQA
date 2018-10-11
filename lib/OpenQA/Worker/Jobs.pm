@@ -756,8 +756,9 @@ sub handle_status_upload_finished {
 
     # stop if web UI considers this worker already dead
     if (!$res) {
+        $update_status_running = 0;
         log_error('Job aborted because web UI doesn\'t accept updates anymore (likely considers this job dead)');
-        stop_job('status upload failed');
+        stop_job('abort');
         return;
     }
 
@@ -766,8 +767,9 @@ sub handle_status_upload_finished {
     ignore_known_images();
     # stop if web UI considers this worker already dead
     if (!upload_images()) {
+        $update_status_running = 0;
         log_error('Job aborted because web UI doesn\'t accept new images anymore (likely considers this job dead)');
-        stop_job('image upload failed');
+        stop_job('abort');
         return;
     }
 
