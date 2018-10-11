@@ -191,7 +191,7 @@ sub create {
         # enqueue gru jobs
         my $downloads = create_downloads_list(\%params);
         enqueue_download_jobs($self->gru, $downloads, [$job->id]);
-        $self->gru->enqueue(limit_assets => [] => {priority => 10});
+        $self->gru->enqueue_limit_assets;
         $job->calculate_blocked_by;
         wakeup_scheduler;
     }

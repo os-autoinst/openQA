@@ -87,11 +87,7 @@ sub list {
 sub trigger_cleanup {
     my ($self) = @_;
 
-    my $gru_id = $self->app->gru->enqueue(
-        limit_assets => [] => {
-            priority => 10,
-            limit    => 1,
-        });
+    my $gru_id = $self->gru->enqueue_limit_assets();
     $self->render(
         json => {
             status => 'ok',

@@ -120,6 +120,12 @@ sub enqueue {
     return $gru_id;
 }
 
+# enqueues the limit_assets task with the default parameters
+sub enqueue_limit_assets {
+    my ($self) = @_;
+    return $self->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 172800, limit => 1});
+}
+
 package OpenQA::WebAPI::Plugin::Gru::Command::gru;
 use Mojo::Base 'Mojolicious::Command';
 use Mojo::Pg;
