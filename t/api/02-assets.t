@@ -185,12 +185,15 @@ $ret = $t->get_ok('/api/v1/assets/iso')->status_is(404);
 $ret = $t->delete_ok('/api/v1/assets/iso')->status_is(404);
 
 # trigger cleanup task
-$t->app->minion->reset;    # be sure no 'limit_assets' tasks have already been enqueued
+my $gru       = $t->app->gru;
 my $gru_tasks = $t->app->schema->resultset('GruTasks');
+$t->app->minion->reset;    # be sure no 'limit_assets' tasks have already been enqueued
+is($gru->count_jobs(limit_assets => ['inactive']), 0, 'is_task_active returns 0 if not tasks enqueued');
 is($gru_tasks->count, 0, 'no gru tasks present so far');
 $t->post_ok('/api/v1/assets/cleanup')->status_is(200)->json_is('/status' => 'ok', 'status ok');
 is($gru_tasks->count, 1, 'gru task added')
   and is($gru_tasks->first->taskname, 'limit_assets', 'right gru task added');
+is($gru->count_jobs(limit_assets => ['inactive']), 1, 'is_task_active returns 1 after task enqueued');
 $t->post_ok('/api/v1/assets/cleanup')->status_is(200)->json_is('/status' => 'ok', 'status ok')
   ->json_is('/gru_id' => undef);
 is($gru_tasks->count, 1, 'no further task if one was already enqueued');

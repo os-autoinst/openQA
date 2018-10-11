@@ -41,6 +41,11 @@ sub _serve_status_json_from_cache {
 sub status_json {
     my ($self) = @_;
 
+    # fail if cleanup is currently ongoing (the static JSON file might be written right now)
+    if ($self->gru->is_task_active('limit_assets')) {
+        return $self->render(json => {error => 'Asset cleanup is currently ongoing.'}, status => 400);
+    }
+
     # allow to force scan for untracked assets and refresh
     my $force_refresh = $self->param('force_refresh');
     my $assets        = $self->app->schema->resultset('Assets');

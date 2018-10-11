@@ -85,6 +85,21 @@ sub schema {
     $self->{schema} ||= OpenQA::Schema::connect_db();
 }
 
+# counts the number of jobs for a certain task in the specified states
+sub count_jobs {
+    my ($self, $task, $states) = @_;
+
+    my $res = $self->app->minion->backend->list_jobs(0, undef, {tasks => [$task], states => $states});
+    return ($res && exists $res->{total}) ? $res->{total} : 0;
+}
+
+# checks whether at least on job for the specified task is active
+sub is_task_active {
+    my ($self, $task) = @_;
+
+    return $self->count_jobs($task, ['active']) > 0;
+}
+
 sub enqueue {
     my ($self, $task) = (shift, shift);
     my $args = shift // [];
@@ -93,10 +108,7 @@ sub enqueue {
     my $ttl   = $options->{ttl}   ? $options->{ttl}   : undef;
     my $limit = $options->{limit} ? $options->{limit} : undef;
 
-    if (defined $limit) {
-        my $res = $self->app->minion->backend->list_jobs(0, undef, {tasks => [$task], states => ['inactive']});
-        return undef if defined $res && exists $res->{total} && $res->{total} >= $limit;
-    }
+    return if defined $limit && $self->count_jobs($task, ['inactive']) >= $limit;
 
     $args = [$args] if ref $args eq 'HASH';
 
@@ -123,7 +135,7 @@ sub enqueue {
 # enqueues the limit_assets task with the default parameters
 sub enqueue_limit_assets {
     my ($self) = @_;
-    return $self->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 172800, limit => 1});
+    return $self->enqueue(limit_assets => [] => {priority => 10, ttl => 172800, limit => 1});
 }
 
 package OpenQA::WebAPI::Plugin::Gru::Command::gru;

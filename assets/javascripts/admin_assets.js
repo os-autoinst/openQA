@@ -11,7 +11,7 @@ function setupAdminAssets() {
 
     // setup data table
     var assetsTable = $('#assets');
-    assetsTable.DataTable({
+    window.assetsTable = assetsTable.DataTable({
             ajax: {
                 url: assetsTable.data('status-url'),
                 data: ajaxQueryParams,
@@ -19,6 +19,15 @@ function setupAdminAssets() {
                     showLastAssetStatusUpdate(json);
                     makeAssetsByGroup(json);
                     return json.data;
+                },
+                error: function (xhr, error, thrown) {
+                    var response = xhr.responseJSON;
+                    var errorMsg = 'Unable to request asset status: ' +
+                        (response && response.error ? response.error : thrown) +
+                        ' <a class="btn btn-primary" href="javascript: reloadAssetsTable();">Retry</a>';
+                    addFlash('danger', errorMsg);
+                    $('#assets-by-group-loading').hide();
+                    $('#assets-status').text('failed to load');
                 }
             },
             columns: [
@@ -97,6 +106,13 @@ function setupAdminAssets() {
     );
 }
 
+function reloadAssetsTable() {
+    $('#assets-by-group-loading').show();
+    $('#assets-status').text('loading');
+    $('#flash-messages div.alert').remove();
+    window.assetsTable.ajax.reload();
+}
+
 function deleteAsset(assetId) {
     $.ajax({
         url: '/api/v1/assets/' + assetId,
@@ -136,7 +152,7 @@ function makeAssetsByGroup(assetStatus) {
     var groups = assetStatus.groups;
     var assets = assetStatus.data;
 
-    $('#assets-by-group-loading').remove();
+    $('#assets-by-group-loading').hide();
 
     // make the asset list for the particular groups
     var assetsByGroup = {};
