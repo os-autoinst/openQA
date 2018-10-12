@@ -283,23 +283,25 @@ END_SQL
     }
 
     # produce cache file for /admin/assets
-    my $cache_file_path = status_cache_file;
-    try {
-        my $cache_file = Mojo::File->new($cache_file_path);
-        # ensure parent directory exists
-        $cache_file->dirname->make_path();
-        # write JSON file, replacing possibly existing one
-        $cache_file->spurt(
-            encode_json(
-                {
-                    data        => \@assets,
-                    groups      => \%group_info,
-                    last_update => now() . 'Z',
-                }));
+    unless ($options{skip_cache_file}) {
+        my $cache_file_path = status_cache_file;
+        try {
+            my $cache_file = Mojo::File->new($cache_file_path);
+            # ensure parent directory exists
+            $cache_file->dirname->make_path();
+            # write JSON file, replacing possibly existing one
+            $cache_file->spurt(
+                encode_json(
+                    {
+                        data        => \@assets,
+                        groups      => \%group_info,
+                        last_update => now() . 'Z',
+                    }));
+        }
+        catch {
+            OpenQA::Utils::log_warning("Unable to create cache file $cache_file_path: $@");
+        };
     }
-    catch {
-        OpenQA::Utils::log_warning("Unable to create cache file $cache_file_path: $@");
-    };
 
     return {assets => \@assets, groups => \%group_info};
 }

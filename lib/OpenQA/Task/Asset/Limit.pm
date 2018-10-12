@@ -54,6 +54,7 @@ sub _limit {
         compute_pending_state_and_max_job => 1,
         compute_max_job_by_group          => 1,
         fail_on_inconsistent_status       => 1,
+        skip_cache_file                   => 1,
     );
     log_debug pp($asset_status);
     my $assets = $asset_status->{assets};
@@ -101,6 +102,12 @@ sub _limit {
     for my $group (values %{$asset_status->{groups}}) {
         $update_sth->execute($group->{picked}, $group->{id});
     }
+
+    # recompute the status (after the cleanup) and produce cache file for /admin/assets
+    $app->db->resultset('Assets')->status(
+        compute_pending_state_and_max_job => 0,
+        compute_max_job_by_group          => 0,
+    );
 }
 
 1;
