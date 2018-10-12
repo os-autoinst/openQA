@@ -25,10 +25,13 @@ use Mojolicious::Plugin::Minion::Admin;
 BEGIN { srand(time) }
 
 my $_token;
+
+sub _gen_session_token { $_token = int(rand(999999999999)) }
+
 my $enqueued = Mojo::Collection->new;
 app->hook(
     before_server_start => sub {
-        $_token   = int(rand(999999999999));
+        _gen_session_token();
         $enqueued = Mojo::Collection->new;
     });
 
@@ -41,7 +44,6 @@ sub SESSION_TOKEN { $_token }
 sub _gen_guard_name { join('.', SESSION_TOKEN, pop) }
 
 sub _exists { !!(defined $_[0] && exists $_[0]->{total} && $_[0]->{total} > 0) }
-
 
 sub active { !app->minion->lock(shift, 0) }
 
