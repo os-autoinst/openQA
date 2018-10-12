@@ -1,4 +1,4 @@
-# Last Modified: Thu Sep 27 15:25:16 2018
+# Last Modified: Thu Oct 11 20:03:23 2018
 #include <tunables/global>
 
 # ------------------------------------------------------------------
@@ -124,10 +124,11 @@
   /var/lib/openqa/share/factory/hdd/ r,
   /var/lib/openqa/share/factory/hdd/* r,
   /var/lib/openqa/share/factory/hdd/fixed/* r,
-  /var/lib/openqa/share/factory/iso/* r,
+  /var/lib/openqa/share/factory/iso/* rk,
   /var/lib/openqa/share/factory/iso/fixed/* r,
   /var/lib/openqa/share/factory/other/* r,
   /var/lib/openqa/share/tests/** r,
+  owner /sys/**/ rw,
 
 
   profile /usr/bin/Xvnc {
