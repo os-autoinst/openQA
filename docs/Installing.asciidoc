@@ -501,7 +501,7 @@ In the +/etc/openqa/workers.ini+
 [global]
 HOST=http://webui
 CACHEDIRECTORY = $cache_location
-CACHELIMIT = 50 # This is currently noop. Cache supports limiting, but is not enabled.
+CACHELIMIT = 50 # GB, default is 50.
 
 [http://webui]
 TESTPOOLSERVER = rsync://yourlocation/tests

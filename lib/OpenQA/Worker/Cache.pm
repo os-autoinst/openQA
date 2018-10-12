@@ -49,7 +49,10 @@ sub new {
 
 sub from_worker {
     my ($worker_settings, undef) = OpenQA::Worker::Common::read_worker_config(undef, undef);
-    __PACKAGE__->new(host => 'localhost', location => ($ENV{CACHE_DIR} || $worker_settings->{CACHEDIRECTORY}));
+    __PACKAGE__->new(
+        host     => 'localhost',
+        location => ($ENV{CACHE_DIR} || $worker_settings->{CACHEDIRECTORY}),
+        (limit => int($worker_settings->{CACHELIMIT}) * (1024**3)) x !!($worker_settings->{CACHELIMIT}));
 }
 
 sub DESTROY {
@@ -130,8 +133,6 @@ sub download_asset {
                     my $current = int($size / ($len / 100));
                     # Don't spam the webui, update only every 5 seconds
                     if (time - $last_updated > 5) {
-                        #        update_setup_status;
-                        # XXX: This now needs to be done while waiting on client side for asset to be processed
                         $last_updated = time;
                         if ($progress < $current) {
                             $progress = $current;
