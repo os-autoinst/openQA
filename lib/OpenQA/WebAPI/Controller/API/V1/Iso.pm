@@ -62,9 +62,8 @@ sub _settings_key {
 
 =item _parse_dep_variable()
 
-Parse dependency variable in format like "suite1,suite2,suite3"
-and return settings key for each entry. Internal method. B<TODO>:
-allow inter-machine dependency.
+Parse dependency variable in format like "suite1,suite2,suite3[:machine]"
+and return settings key for each entry. Internal method.
 
 =back
 
@@ -75,9 +74,14 @@ sub _parse_dep_variable {
 
     return unless defined $value;
 
+    my $machine = $settings->{MACHINE};
+    if ($value =~ /^(.+):([^:]+)$/) {
+        $value   = $1;
+        $machine = $2;
+    }
     my @after = split(/\s*,\s*/, $value);
 
-    return map { $_ . ':' . $settings->{MACHINE} } @after;
+    return map { $_ . ':' . $machine } @after;
 }
 
 =over 4
