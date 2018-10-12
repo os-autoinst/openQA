@@ -29,7 +29,7 @@ BEGIN {
     path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt("
 [global]
 CACHEDIRECTORY = $cachedir
-CACHELIMIT = 50");
+CACHELIMIT = 100");
 }
 
 use strict;
@@ -73,10 +73,13 @@ use OpenQA::Worker::Cache::Client;
 
 my $cache_client = OpenQA::Worker::Cache::Client->new();
 
-END { session->clean }
-
 # reassign STDOUT, STDERR
 sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
+sub _cover {
+    session->all->each(sub { $_->signal(POSIX::SIGUSR1) });
+}
+
+END { _cover; session->clean }
 
 my $daemon;
 my $cache_service        = cache_worker_service;
@@ -91,9 +94,9 @@ my $server_instance = process sub {
 
 sub start_server {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
-    $worker_cache_service->restart;
     $cache_service->restart;
-    sleep .5 until $cache_client->available;
+    $worker_cache_service->restart;
+    sleep 2 and diag "Wait server to be available" until $cache_client->available;
     return;
 }
 
@@ -127,17 +130,6 @@ sub test_download {
 
 start_server;
 
-subtest 'enqueued' => sub {
-    use OpenQA::Worker::Cache::Service;
-
-    OpenQA::Worker::Cache::Service::enqueue('bar');
-    ok !OpenQA::Worker::Cache::Service::enqueued('foo'), "Queue works" or die;
-    OpenQA::Worker::Cache::Service::enqueue('foo');
-    ok OpenQA::Worker::Cache::Service::enqueued('foo'), "Queue works";
-    OpenQA::Worker::Cache::Service::dequeue('foo');
-    ok !OpenQA::Worker::Cache::Service::enqueued('foo'), "Dequeue works";
-};
-
 subtest 'Asset exists' => sub {
 
     ok(!$cache_client->asset_exists('localhost', 'foobar'), 'Asset absent');
@@ -164,6 +156,37 @@ subtest 'different token between restarts' => sub {
     ok($token ne "");
 };
 
+subtest 'enqueued' => sub {
+    require OpenQA::Worker::Cache::Service;
+
+    OpenQA::Worker::Cache::Service::enqueue('bar');
+    ok !OpenQA::Worker::Cache::Service::enqueued('foo'), "Queue works" or die;
+    OpenQA::Worker::Cache::Service::enqueue('foo');
+    ok OpenQA::Worker::Cache::Service::enqueued('foo'), "Queue works";
+    OpenQA::Worker::Cache::Service::dequeue('foo');
+    ok !OpenQA::Worker::Cache::Service::enqueued('foo'), "Dequeue works";
+};
+
+subtest '_gen_guard_name' => sub {
+    require OpenQA::Worker::Cache::Service;
+
+    ok !OpenQA::Worker::Cache::Service::SESSION_TOKEN(), "Session token is not there" or die;
+    OpenQA::Worker::Cache::Service::_gen_session_token();
+    ok OpenQA::Worker::Cache::Service::SESSION_TOKEN(), "Session token is there" or die;
+    is OpenQA::Worker::Cache::Service::_gen_guard_name('foo'),
+      OpenQA::Worker::Cache::Service::SESSION_TOKEN() . '.foo', "Session token is there"
+      or die;
+};
+
+subtest '_exists' => sub {
+    require OpenQA::Worker::Cache::Service;
+
+    ok !OpenQA::Worker::Cache::Service::_exists();
+    ok !OpenQA::Worker::Cache::Service::_exists({total => 0});
+    ok OpenQA::Worker::Cache::Service::_exists({total => 1});
+    ok OpenQA::Worker::Cache::Service::_exists({total => 100});
+};
+
 subtest 'Client can check if there are available workers' => sub {
     $cache_client->session_token;
     $worker_cache_service->stop;
@@ -173,6 +196,7 @@ subtest 'Client can check if there are available workers' => sub {
     $worker_cache_service->start;
     sleep 5 and diag "waiting for minion worker to be available" until $cache_client->available_workers;
     ok $cache_client->available_workers;
+    #  _cover;
 };
 
 subtest 'Asset download' => sub {

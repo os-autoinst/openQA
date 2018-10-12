@@ -36,8 +36,10 @@ our (@EXPORT, @EXPORT_OK);
 sub cache_minion_worker {
     process(
         sub {
+            $SIG{USR1} = sub { require Devel::Cover; Devel::Cover::report() if Devel::Cover->can('report') };
             require OpenQA::Worker::Cache::Service;
             OpenQA::Worker::Cache::Service->run(qw(minion worker), qw(-m production) x !(DEBUG));
+            Devel::Cover::report() if Devel::Cover->can('report');
             _exit(0);
         })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
 }
@@ -45,8 +47,10 @@ sub cache_minion_worker {
 sub cache_worker_service {
     process(
         sub {
+            $SIG{USR1} = sub { require Devel::Cover; Devel::Cover::report() if Devel::Cover->can('report') };
             require OpenQA::Worker::Cache::Service;
             OpenQA::Worker::Cache::Service->run(qw(daemon -l http://*:7844), qw(-m production) x !(DEBUG));
+            Devel::Cover::report() if Devel::Cover->can('report');
             _exit(0);
         })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
 }
