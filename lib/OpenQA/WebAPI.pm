@@ -237,6 +237,9 @@ sub startup {
 
     # Workers list as default option
     $op_r->get('/')->name('admin')->to('workers#index');
+
+    $pub_admin_r->get('/influxdb/jobs')->to('influxdb#jobs');
+
     ###
     ## Admin area ends here
     #
