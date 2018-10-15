@@ -2,7 +2,7 @@
 % title 'Test suites';
 
 % content_for 'ready_function' => begin
-    populate_admin_table(<%= is_admin %>);
+    populate_admin_table(<%= is_admin %>, true);
 % end
 
 <div class="row">
@@ -10,6 +10,21 @@
         <h2><%= title %></h2>
 
         %= include 'layouts/info'
+
+        <span id="audit_log_search_popover">
+            <%= help_popover('Search' => '
+                <p>Allows to filter the testsuites.</p>
+                <p>
+                    The filter will only consider the <em>Name</em> column.
+                    You can use regular expressions for searching.
+                </p>
+                <p>
+                    <strong>Example</strong><br>
+                    <code>^textmode$</code>
+                </p>
+                ', undef, undef, 'left');
+            %>
+        </span>
 
         <table class="admintable table table-striped" id='test-suites'>
             <thead>
