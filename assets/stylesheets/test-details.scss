@@ -158,7 +158,7 @@ td .resborder {
 .resborder_unk, .resborder_missing {
     border-color: $color-resborder-unk;
 }
-.resborder_softfailed {
+.resborder_softfailed, .resborder_softfail {
     border-color: $color-softfailed;
 }
 img.resborder_na {
