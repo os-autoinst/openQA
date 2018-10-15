@@ -114,6 +114,16 @@ div.flags {
         margin: 12px 0px;
     }
 }
+#developer-flash-messages {
+    &:first-child {
+        margin-top: 20px;
+    }
+    .alert span {
+        text-align: left !important;
+        font-weight: normal !important;
+        cursor: default !important;
+    }
+}
 
 // misc
 .component {

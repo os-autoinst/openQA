@@ -348,11 +348,18 @@ var developerMode = {
 // initializes the developer panel
 function setupDeveloperPanel() {
     var panel = $('#developer-panel');
+    var flashMessages = document.getElementById('developer-flash-messages');
 
     // setup toggle for body
     var panelHeader = panel.find('.card-header');
     if (window.isDevelModeAccessible) {
-        panelHeader.on('click', function() {
+        panelHeader.on('click', function(event) {
+            // skip if flash message clicked
+            if ($.contains(flashMessages, event.target)) {
+                return;
+            }
+
+            // toggle visibility of body
             var panelBody = panel.find('.card-body');
             developerMode.panelExpanded = !developerMode.panelExpanded;
             developerMode.panelActuallyExpanded = developerMode.panelExpanded;
@@ -563,6 +570,20 @@ function closeWebsocketConnection() {
     developerMode.isConnected = false;
 }
 
+function clearLivehandlerFlashMessages() {
+    if (!window.uniqueFlashMessages) {
+        return;
+    }
+
+    for (var id in window.uniqueFlashMessages) {
+        if (id === 'unable_to_pare_livehandler_reply' ||
+            id.indexOf('ws_proxy_error-') === 0) {
+            window.uniqueFlashMessages[id].remove();
+            delete window.uniqueFlashMessages[id];
+        }
+    }
+}
+
 function handleWebsocketConnectionOpened(wsConnection) {
     if (wsConnection !== developerMode.wsConnection) {
         return;
@@ -578,6 +599,8 @@ function handleWebsocketConnectionOpened(wsConnection) {
     if (testStatus.running && developerMode.ownSession) {
         submitCurrentSelection();
     }
+
+    clearLivehandlerFlashMessages();
 
     updateDeveloperPanel();
 }
@@ -612,6 +635,10 @@ function handleWebsocketConnectionClosed(wsConnection) {
     }
 }
 
+function addLivehandlerFlash(status, id, text) {
+    addUniqueFlash(status, id, text, $('#developer-flash-messages'));
+}
+
 function handleMessageVisWebsocketConnection(wsConnection, msg) {
     if (wsConnection !== developerMode.wsConnection) {
         return;
@@ -627,8 +654,8 @@ function handleMessageVisWebsocketConnection(wsConnection, msg) {
         dataObj = JSON.parse(msg.data);
     } catch (ex) {
         console.log("Unable to parse JSON from ws proxy: " + msg.data);
-        addUniqueFlash('danger', 'unable_to_pare_livehandler_reply',
-                       '<strong>Unable to parse reply from livehandler daemon (responsible for developer mode).</strong>');
+        addLivehandlerFlash('danger', 'unable_to_pare_livehandler_reply',
+                            '<strong>Unable to parse reply from livehandler daemon.</strong>');
         return;
     }
 
@@ -761,8 +788,8 @@ function processWsCommand(obj) {
     case "error":
         // handle errors
         console.log("Error from ws proxy: " + what);
-        addUniqueFlash('danger', 'ws_proxy_error-' + what,
-                       '<strong>Error from livehandler daemon (responsible for developer mode):</strong><p>' + what + '</p>');
+        addLivehandlerFlash('danger', 'ws_proxy_error-' + what,
+                            '<strong>Error from livehandler daemon:</strong><p>' + what + '</p>');
         break;
     case "info":
         switch(what) {
@@ -807,8 +834,8 @@ function processWsCommand(obj) {
 function sendWsCommand(obj) {
     if (!developerMode.wsConnection) {
         console.log("Attempt to send something via ws proxy but not connected.");
-        addUniqueFlash('danger', 'try_to_send_but_not_connected',
-                       '<strong>Internal error of developer mode:</strong><p>Attempt to send something via web socket proxy but not connected.</p>');
+        addLivehandlerFlash('danger', 'try_to_send_but_not_connected',
+                            '<strong>Internal error:</strong><p>Attempt to send something via web socket proxy but not connected.</p>');
         return;
     }
     var objAsString = JSON.stringify(obj);

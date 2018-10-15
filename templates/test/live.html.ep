@@ -42,6 +42,10 @@
                 </span>
             </div>
         </div>
+        <div class="row">
+            <div class="col-sm-12" id="developer-flash-messages">
+            </div>
+        </div>
     </div>
     <div class="card-body">
         <form action="#" method="get" id="developer-form" class="developer-mode-element"

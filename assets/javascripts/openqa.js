@@ -31,18 +31,21 @@ function setupForAll() {
     });
 }
 
-function addFlash(status, text) {
-    // keep design in line with the static in layouts/info
-    var flash = $('#flash-messages');
+function addFlash(status, text, container) {
+    // add flash messages by default on top of the page
+    if (!container) {
+        container = $('#flash-messages');
+    }
+
     var div = $('<div class="alert alert-primary alert-dismissible fade show" role="alert"></div>');
     div.append($('<span>' + text + '</span>'));
     div.append($('<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>'));
     div.addClass('alert-' + status);
-    flash.append(div);
+    container.append(div);
     return div;
 }
 
-function addUniqueFlash(status, id, text) {
+function addUniqueFlash(status, id, text, container) {
     // add hash to store present flash messages
     if (!window.uniqueFlashMessages) {
         window.uniqueFlashMessages = {};
@@ -52,7 +55,7 @@ function addUniqueFlash(status, id, text) {
         return;
     }
 
-    var msgElement = addFlash(status, text);
+    var msgElement = addFlash(status, text, container);
     window.uniqueFlashMessages[id] = msgElement;
     msgElement.on('closed.bs.alert', function () {
         delete window.uniqueFlashMessages[id];
