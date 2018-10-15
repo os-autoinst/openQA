@@ -141,7 +141,7 @@ Summary:        The openQA worker
 Group:          Development/Tools/Other
 Requires:       openQA-client = %{version}
 Requires:       os-autoinst < 5
-Requires:       perl(DBD::SQLite)
+Requires:       perl(DBD::SQLite) > 1.51
 Requires:       perl(Minion::Backend::SQLite)
 Requires:       perl(Mojo::SQLite)
 Requires:       perl(Mojo::IOLoop::ReadWriteProcess) > 0.19
