@@ -17,10 +17,19 @@
 package OpenQA::Schema::ResultSet::Assets;
 use strict;
 use base 'DBIx::Class::ResultSet';
+use DBIx::Class::Timestamps 'now';
 use OpenQA::Utils qw(log_warning locate_asset human_readable_size log_debug);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
+use Cpanel::JSON::XS 'encode_json';
 use File::Basename;
+use Try::Tiny;
+
+use constant {STATUS_CACHE_FILE => '/webui/cache/asset-status.json'};
+
+sub status_cache_file {
+    return $OpenQA::Utils::prjdir . STATUS_CACHE_FILE;
+}
 
 # called when uploading an asset or finding one in scanning
 sub register {
@@ -271,6 +280,27 @@ END_SQL
         $asset->{picked_into} = $largest_group;
         $group_info{$largest_group}->{size} -= $size;
         $group_info{$largest_group}->{picked} += $size;
+    }
+
+    # produce cache file for /admin/assets
+    unless ($options{skip_cache_file}) {
+        my $cache_file_path = status_cache_file;
+        try {
+            my $cache_file = Mojo::File->new($cache_file_path);
+            # ensure parent directory exists
+            $cache_file->dirname->make_path();
+            # write JSON file, replacing possibly existing one
+            $cache_file->spurt(
+                encode_json(
+                    {
+                        data        => \@assets,
+                        groups      => \%group_info,
+                        last_update => now() . 'Z',
+                    }));
+        }
+        catch {
+            OpenQA::Utils::log_warning("Unable to create cache file $cache_file_path: $@");
+        };
     }
 
     return {assets => \@assets, groups => \%group_info};

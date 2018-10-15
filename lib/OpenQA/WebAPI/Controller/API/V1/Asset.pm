@@ -84,6 +84,17 @@ sub list {
     $self->render(json => {assets => [$rs->all]});
 }
 
+sub trigger_cleanup {
+    my ($self) = @_;
+
+    my $gru_id = $self->gru->enqueue_limit_assets();
+    $self->render(
+        json => {
+            status => 'ok',
+            gru_id => $gru_id,
+        });
+}
+
 =over 4
 
 =item get()

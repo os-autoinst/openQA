@@ -247,6 +247,8 @@ install -m 0644 %{_sourcedir}/openQA.changes %{buildroot}%{_datadir}/openqa/publ
 #
 mkdir %{buildroot}%{_localstatedir}/lib/openqa/pool/1
 mkdir %{buildroot}%{_localstatedir}/lib/openqa/cache
+mkdir %{buildroot}%{_localstatedir}/lib/openqa/webui
+mkdir %{buildroot}%{_localstatedir}/lib/openqa/webui/cache
 #
 %fdupes %{buildroot}/%{_prefix}
 
@@ -392,6 +394,8 @@ fi
 # than root as that opens a security hole!
 %dir %{_localstatedir}/lib/openqa/db
 %dir %{_localstatedir}/lib/openqa/images
+%dir %{_localstatedir}/lib/openqa/webui
+%dir %{_localstatedir}/lib/openqa/webui/cache
 %{_localstatedir}/lib/openqa/testresults
 %dir %{_localstatedir}/lib/openqa/share/tests
 %dir %{_localstatedir}/lib/openqa/share/factory

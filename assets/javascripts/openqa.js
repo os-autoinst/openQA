@@ -73,12 +73,13 @@ function parseQueryParams() {
     var params = {};
     $.each(window.location.search.substr(1).split('&'), function(index, param) {
         var equationSignIndex = param.indexOf('=');
+        var key, value;
         if (equationSignIndex < 0) {
-            var key = decodeURIComponent(param);
-            var value = undefined;
+            key = decodeURIComponent(param);
+            value = undefined;
         } else {
-            var key = decodeURIComponent(param.substr(0, equationSignIndex));
-            var value = decodeURIComponent(param.substr(equationSignIndex + 1));
+            key = decodeURIComponent(param.substr(0, equationSignIndex));
+            value = decodeURIComponent(param.substr(equationSignIndex + 1));
         }
         if (Array.isArray(params[key])) {
             params[key].push(value);
@@ -154,8 +155,8 @@ function makeWsUrlAbsolute(url, servicePortDelta) {
         port = ':' + port;
     }
 
-    return (location.protocol == 'https:' ? 'wss://' : 'ws:/')
-        + location.hostname + port
-        + (url.indexOf('/') !== 0 ? '/' : '')
-        + url;
+    return (location.protocol == 'https:' ? 'wss://' : 'ws:/') +
+        location.hostname + port +
+        (url.indexOf('/') !== 0 ? '/' : '') +
+        url;
 }

@@ -1,3 +1,5 @@
+/* jshint esversion: 6 */
+
 var is_operator;
 var restart_url;
 
@@ -47,7 +49,7 @@ function renderTestName(data, type, row) {
         if (row.result) {
             // allow to restart finished jobs
             if (!row.clone) {
-                var url = restart_url.replace('REPLACEIT', row.id);
+                let url = restart_url.replace('REPLACEIT', row.id);
                 html += ' <a class="restart" href="' + url + '">';
                 html += '<i class="action fa fa-fw fa-redo" title="Restart job"></i></a>';
             } else {
@@ -55,7 +57,7 @@ function renderTestName(data, type, row) {
             }
         } else {
             // allow to cancel scheduled and running jobs
-            var url = cancel_url.replace('REPLACEIT', row.id);
+            let url = cancel_url.replace('REPLACEIT', row.id);
             html += ' <a class="cancel" href="' + url + '">';
             html += '<i class="action far fa-fw fa-times-circle" title="Cancel job"></i></a>';
         }
@@ -84,20 +86,20 @@ function renderTestName(data, type, row) {
             if (quandity) {
                 this.push([quandity, quandity === 1 ? singular : plural].join(' '));
             }
-        }
+        };
         depsTooltip.quantify(parents.Chained.length, 'chained parent', 'chained parents');
         depsTooltip.quantify(parents.Parallel.length, 'parallel parent', 'parallel parents');
         depsTooltip.quantify(children.Chained.length, 'chained child', 'chained children');
         depsTooltip.quantify(children.Parallel.length, 'parallel child', 'parallel children');
         if (depsTooltip.length) {
-            html += ' <a href="/tests/' + row.id + '" title="' + depsTooltip.join(', ') + '"'
-            + highlightJobsHtml(children.Parallel.concat(children.Chained), parents.Parallel.concat(parents.Chained))
-            + '><i class="fa fa-code-branch"></i></a>';
+            html += ' <a href="/tests/' + row.id + '" title="' + depsTooltip.join(', ') + '"' +
+                highlightJobsHtml(children.Parallel.concat(children.Chained), parents.Parallel.concat(parents.Chained)) +
+                '><i class="fa fa-code-branch"></i></a>';
         }
     }
     if (row.comment_count) {
-        html += ' <a href="/tests/' + row.id + '#comments"><i class="test-label label_comment fa fa-comment" title="' + row.comment_count + (row.comment_count != 1 ? ' comments' : ' comment') + ' available"'
-        + '></i></a>';
+        html += ' <a href="/tests/' + row.id + '#comments"><i class="test-label label_comment fa fa-comment" title="' +
+            row.comment_count + (row.comment_count != 1 ? ' comments' : ' comment') + ' available"' + '></i></a>';
     }
     if (row.clone) {
         html += ' <a href="/tests/' + row.clone + '">(restarted)</a>';
@@ -109,9 +111,9 @@ function renderTestName(data, type, row) {
 function renderTimeAgo(data, type, row, position, notAvailableMessage) {
     var haveData = data && data !== 'Z';
     if(type === 'display') {
-        return (haveData
-            ? ('<span title="' + data + '">' + jQuery.timeago(data) + '</span>')
-            : (notAvailableMessage ? notAvailableMessage : 'not yet'));
+        return (haveData ?
+            ('<span title="' + data + '">' + jQuery.timeago(data) + '</span>') :
+            (notAvailableMessage ? notAvailableMessage : 'not yet'));
     } else {
         return haveData ? data : 0;
     }
@@ -129,9 +131,9 @@ function renderProgress(data, type, row) {
     var progressText = progress === undefined ? 'running' : (progress + ' %');
     var progressClass = progress === undefined ? 'progress-bar progress-bar-striped active' : 'progress-bar';
     var progressWidth = progress === undefined ? 100 : progress;
-    var progressBar = '<div class="' + progressClass + '" role="progressbar" style="width: ' + progressWidth
-        + '%; min-width: 2em;" aria-valuemax="100" aria-valuemin="0" aria-valuenow="' + progress + '">'
-        + progressText + '</div>';
+    var progressBar = '<div class="' + progressClass + '" role="progressbar" style="width: ' + progressWidth +
+        '%; min-width: 2em;" aria-valuemax="100" aria-valuemin="0" aria-valuenow="' + progress + '">' +
+        progressText + '</div>';
     return '<div class="progress">' + progressBar + '</div>';
 }
 
@@ -140,10 +142,10 @@ function renderPriority(data, type, row) {
         return data;
     }
     var jobId = row.id;
-    var decreasePrioLink = ('<a class="prio-down" data-method="post" href="javascript:void(0);" onclick="decreaseJobPrio('
-        + jobId + ', this); return false;"><i class="far fa-minus-square"></i></a>');
-    var increasePrioLink = ('<a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio('
-        + jobId + ', this); return false;"><i class="far fa-plus-square"></i></a>');
+    var decreasePrioLink = ('<a class="prio-down" data-method="post" href="javascript:void(0);" onclick="decreaseJobPrio(' +
+        jobId + ', this); return false;"><i class="far fa-minus-square"></i></a>');
+    var increasePrioLink = ('<a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio(' *
+        jobId + ', this); return false;"><i class="far fa-plus-square"></i></a>');
     var text = ' <span class="prio-value">' + data + '</span> ';
     return decreasePrioLink + text + increasePrioLink;
 }
@@ -374,7 +376,7 @@ function renderTestLists() {
             return true;
         }
         // check whether actual result is contained by list of results to be filtered
-        var data = table.row(dataIndex).data();
+        data = table.row(dataIndex).data();
         if (!data) {
             return false;
         }
@@ -411,7 +413,9 @@ function setupTestButtons() {
             var urls = xhr.responseJSON.test_url[0];
             $.each( urls , function( key, value ) {
                 // Skip to mark the job that is not shown in current page
-                if (!$('#job_' + key).length) { return true };
+                if (!$('#job_' + key).length) {
+                    return true;
+                }
                 var td = $('#job_' + key).closest("tr").children('td.test');
                 var restart_link = td.children('a.restart');
                 var i = restart_link.find('i').removeClass('fa-redo');

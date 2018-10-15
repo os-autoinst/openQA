@@ -216,6 +216,7 @@ sub startup {
     $pub_admin_r->get('/groups/connect/:groupid')->name('job_group_new_media')->to('job_group#connect');
 
     $pub_admin_r->get('/assets')->name('admin_assets')->to('asset#index');
+    $pub_admin_r->get('/assets/status')->name('admin_asset_status_json')->to('asset#status_json');
 
     $pub_admin_r->get('/workers')->name('admin_workers')->to('workers#index');
     $pub_admin_r->get('/workers/:worker_id')->name('admin_worker_show')->to('workers#show');
@@ -367,6 +368,7 @@ sub startup {
     # api/v1/assets
     $api_ro->post('/assets')->name('apiv1_post_asset')->to('asset#register');
     $api_public_r->get('/assets')->name('apiv1_get_asset')->to('asset#list');
+    $api_ra->post('/assets/cleanup')->name('apiv1_trigger_asset_cleanup')->to('asset#trigger_cleanup');
     $api_public_r->get('/assets/#id')->name('apiv1_get_asset_id')->to('asset#get');
     $api_public_r->get('/assets/#type/#name')->name('apiv1_get_asset_name')->to('asset#get');
     $api_ra->delete('/assets/#id')->name('apiv1_delete_asset')->to('asset#delete');

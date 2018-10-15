@@ -31,6 +31,8 @@ use File::Path qw(remove_tree);
 use File::Spec::Functions 'catfile';
 use Test::More;
 use Test::Warnings;
+use Test::MockModule;
+use Test::Mojo;
 use OpenQA::Resource::Jobs 'job_restart';
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::WebSockets;
@@ -249,4 +251,23 @@ ok(!-e $repopath,  "repo asset should have been removed");
 unlink($japath);
 unlink($fixedpath);
 remove_tree($repopath);
+
+# asset status
+my $t                   = Test::Mojo->new('OpenQA::WebAPI');
+my $gru_mock            = Test::MockModule->new('OpenQA::WebAPI::Plugin::Gru');
+my $limit_assets_active = 1;
+$gru_mock->mock(
+    is_task_active => sub {
+        my ($self, $task) = @_;
+        return $limit_assets_active if ($task eq 'limit_assets');
+        fail("is_task_active called for unexpected task $task");
+    });
+$t->get_ok('/admin/assets/status')->status_is(400)->json_is('/error' => 'Asset cleanup is currently ongoing.');
+$limit_assets_active = 0;
+$t->get_ok('/admin/assets/status')->status_is(200);
+my $json = $t->tx->res->json;
+is(ref $json,           'HASH',  'asset status JSON present');
+is(ref $json->{data},   'ARRAY', 'assets array present');
+is(ref $json->{groups}, 'HASH',  'groups hash present');
+
 done_testing();
