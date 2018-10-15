@@ -28,6 +28,7 @@ use OpenQA::Test::Case;
 use OpenQA::Client;
 use Test::More;
 use Test::Mojo;
+use Test::MockModule;
 use Test::Warnings;
 use Test::Output 'combined_like';
 use Test::Fatal;
@@ -458,6 +459,111 @@ subtest 'Worker websocket messages' => sub {
       qr/Received WS message without type!/;
     combined_like sub { OpenQA::Worker::Commands::websocket_commands(FakeTx->new, {type => 'foo'}) },
       qr/got unknown command/;
+};
+
+subtest 'handling upload finished' => sub {
+    # setup mocking for stop_job and upload_images
+    my $worker_jobs_mock = new Test::MockModule('OpenQA::Worker::Jobs');
+    my $stop_job_aborted = 0;
+    $worker_jobs_mock->mock(
+        stop_job => sub {
+            my ($aborted) = @_;
+            fail('stop_job called while upload status still running')
+              if (OpenQA::Worker::Jobs::is_upload_status_running);
+            fail('stop_job unexpectedly called multiple times') if ($stop_job_aborted);
+            $stop_job_aborted = $aborted;
+        });
+    my $upload_images_called = 0;
+    my $upload_images_result = 0;
+    $worker_jobs_mock->mock(
+        upload_images => sub {
+            fail('image upload called after job already aborted')    if ($stop_job_aborted);
+            fail('upload_images unexpectedly called multiple times') if ($upload_images_called);
+            $upload_images_called = 1;
+            return $upload_images_result;
+        });
+    # manipulate whether the developer session has been started
+    my $is_developer_session_started_res = 0;
+    $worker_jobs_mock->mock(
+        is_developer_session_started => sub {
+            return $is_developer_session_started_res;
+        });
+    # assert that post to livehandler only happens if developer session has been started
+    $worker_jobs_mock->mock(
+        post_upload_progress_to_liveviewhandler => sub {
+            fail('post_upload_progress_to_liveviewhandler unexpectedly called');
+        });
+
+    # define arguments to pass
+    my ($job_id, $upload_up_to) = (42, 'some module');
+    my $callback_called = 0;
+    my $callback        = sub {
+        fail('callback unexpectedly called');
+    };
+
+    subtest 'behavor when result for status upload is undef' => sub {
+        OpenQA::Worker::Jobs::handle_status_upload_finished($job_id, $upload_up_to, $callback, undef);
+        is($stop_job_aborted,     'abort', 'job aborted if status upload result is undef');
+        is($upload_images_called, 0,       'no image upload if status upload result is undef');
+    };
+
+    subtest 'behavior when image upload fails' => sub {
+        $stop_job_aborted = 0;
+        OpenQA::Worker::Jobs::handle_status_upload_finished($job_id, $upload_up_to, $callback, {});
+        is($upload_images_called, 1,       'image upload attempted');
+        is($stop_job_aborted,     'abort', 'job aborted if image upload fails');
+    };
+
+    subtest 'successful upload' => sub {
+        $stop_job_aborted = $upload_images_called = 0;
+        $upload_images_result = 1;
+        $callback             = sub {
+            $callback_called = 1;
+        };
+        OpenQA::Worker::Jobs::handle_status_upload_finished($job_id, $upload_up_to, $callback, {});
+        is($upload_images_called, 1, 'image upload attempted');
+        is($stop_job_aborted,     0, 'job not aborted');
+        is($callback_called,      1, 'callback called');
+    };
+
+    subtest 'post upload progress to liveviewhandler' => sub {
+        $stop_job_aborted = $upload_images_called = $callback_called = 0;
+        $is_developer_session_started_res = 1;
+        $worker_jobs_mock->unmock('post_upload_progress_to_liveviewhandler');
+
+        my $upload_progress;
+        $worker_jobs_mock->mock(
+            api_call => sub {
+                my ($method, $path, %args) = @_;
+                print("api_call done\n");
+                is($method,             'post', 'upload progress posted');
+                is($args{non_critical}, 1,      'uploading progress to livehandler not considered critical');
+                $upload_progress = $args{json};
+            });
+        OpenQA::Worker::Jobs::handle_status_upload_finished($job_id, $upload_up_to, $callback, {});
+        is($upload_images_called, 1, 'image upload attempted');
+        is($stop_job_aborted,     0, 'job not aborted');
+        is_deeply(
+            $upload_progress,
+            {
+                outstanding_files           => 0,
+                outstanding_images          => 0,
+                upload_up_to                => 'some module',
+                upload_up_to_current_module => undef,
+            },
+            'progress uploaded'
+        ) or diag explain $upload_progress;
+
+        $stop_job_aborted = $upload_images_called = 0;
+        $upload_progress = undef;
+        OpenQA::Worker::Jobs::handle_status_upload_finished($job_id, $upload_up_to, $callback, {});
+        is($upload_images_called, 1,     'image upload attempted');
+        is($stop_job_aborted,     0,     'job not aborted');
+        is($upload_progress,      undef, 'no upload progress posted if nothing changed');
+        is($callback_called,      1,     'callback called');
+    };
+
+    $worker_jobs_mock->unmock_all();
 };
 
 done_testing();
