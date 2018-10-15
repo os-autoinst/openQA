@@ -102,7 +102,7 @@ sub assert_flash_messages {
     my ($kind, $expected_messages, $test_name) = @_;
     my $kind_selector = $kind eq 'any' ? 'alert' : '.alert-' . $kind;
 
-    my @flash_messages = $driver->find_elements("#flash-messages $kind_selector > span");
+    my @flash_messages = $driver->find_elements("#developer-flash-messages $kind_selector > span");
     is(
         scalar @flash_messages,
         scalar @$expected_messages,
@@ -488,6 +488,9 @@ subtest 'process state changes from os-autoinst' => sub {
                 'unique flash message appears again after dismissed'
             );
         };
+
+        $driver->execute_script('handleWebsocketConnectionOpened();');
+        assert_flash_messages(any => [], 'obsolete messages cleared after successful connect');
     };
 };
 
