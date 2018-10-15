@@ -72,6 +72,10 @@ sub _kill_worker($) {
 # method prototypes
 sub start_job;
 
+sub is_upload_status_running {
+    return $update_status_running;
+}
+
 sub check_job {
     my (@todo) = @_;
     state $check_job_running;
