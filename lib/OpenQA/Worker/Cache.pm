@@ -73,11 +73,15 @@ sub deploy_cache {
     log_info "Deploying DB: $sql (dsn " . $self->dsn . ")";
 
     $self->dbh(Mojo::SQLite->new($self->dsn)) or die("Could not connect to the dbfile.");
-    my $tx = $self->dbh->db->begin;
-    $self->dbh->db->query($sql);
-    $tx->commit;
 
-    $self->dbh->db->disconnect;
+    eval {
+        my $db = $self->dbh->db;
+        my $tx = $db->begin;
+        $db->query($sql);
+        $tx->commit;
+        $db->disconnect;
+    };
+    log_error "Deploying DB failed: $@" if ($@);
 }
 
 sub init {
@@ -251,8 +255,9 @@ sub track_asset {
     my $sql = "INSERT OR IGNORE INTO assets (filename, size, last_use) VALUES (?, 0,  strftime('%s','now'));";
 
     eval {
-        my $tx = $self->dbh->db->begin('exclusive');
-        $res = $self->dbh->db->query($sql, $asset)->arrays;
+        my $db = $self->dbh->db;
+        my $tx = $db->begin('exclusive');
+        $res = $db->query($sql, $asset)->arrays;
         $tx->commit;
     };
     if ($@) {
@@ -267,10 +272,10 @@ sub _update_asset_last_use {
     my ($self, $asset) = @_;
 
     eval {
-        my $tx  = $self->dbh->db->begin('exclusive');
+        my $db  = $self->dbh->db;
+        my $tx  = $db->begin('exclusive');
         my $sql = q(UPDATE assets set last_use = strftime('%s','now') where filename = ?;);
-        $tx->commit;
-        $self->dbh->db->query($sql, $asset);
+        $db->query($sql, $asset);
         $tx->commit;
     };
 
@@ -286,29 +291,29 @@ sub _update_asset_last_use {
 sub update_asset {
     my ($self, $asset, $etag, $size) = @_;
     eval {
-        my $tx  = $self->dbh->db->begin('exclusive');
+        my $db  = $self->dbh->db;
+        my $tx  = $db->begin('exclusive');
         my $sql = q(UPDATE assets set etag =? , size = ?, last_use = strftime('%s','now') where filename = ?;);
-        $self->dbh->db->query($sql, $etag, $size, $asset);
+        $tx->db->query($sql, $etag, $size, $asset);
         $tx->commit;
     };
     if ($@) {
         log_error "Update asset $asset failed. Rolling back $@";
+        return !!0;
     }
     else {
         log_info "CACHE: updating the $asset with $etag and $size";
     }
 
-    my $result = $self->dbh->db->select('assets', [qw(etag size last_use filename)], {filename => $asset})->arrays;
-
-    return !!0 if $result->size == 0 || $@;
-    $self->increase($size) and return !!1 if $result->size == 1;
+    $self->increase($size) and return !!1;
 }
 
 sub purge_asset {
     my ($self, $asset) = @_;
     eval {
-        my $tx = $self->dbh->db->begin();
-        $self->dbh->db->delete('assets', {filename => $asset});
+        my $db = $self->dbh->db;
+        my $tx = $db->begin();
+        $db->delete('assets', {filename => $asset});
         $tx->commit;
         if (-e $asset) {
             unlink($asset) or eval { log_error "CACHE: Could not remove $asset" if -e $asset };
@@ -348,8 +353,9 @@ sub asset_lookup {
     my $sth;
     my $result;
     eval {
-        my $tx = $self->dbh->db->begin('exclusive');
-        $result = $self->dbh->db->select('assets', [qw(filename etag last_use size)], {filename => $asset});
+        my $db = $self->dbh->db;
+        my $tx = $db->begin('exclusive');
+        $result = $db->select('assets', [qw(filename etag last_use size)], {filename => $asset});
         $tx->commit;
     };
     if ($@) {
