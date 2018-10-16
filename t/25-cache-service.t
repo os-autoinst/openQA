@@ -75,11 +75,8 @@ my $cache_client = OpenQA::Worker::Cache::Client->new();
 
 # reassign STDOUT, STDERR
 sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
-sub _cover {
-    session->all->each(sub { $_->signal(POSIX::SIGUSR1) });
-}
 
-END { _cover; session->clean }
+END { session->clean }
 
 my $daemon;
 my $cache_service        = cache_worker_service;
@@ -196,7 +193,6 @@ subtest 'Client can check if there are available workers' => sub {
     $worker_cache_service->start;
     sleep 5 and diag "waiting for minion worker to be available" until $cache_client->available_workers;
     ok $cache_client->available_workers;
-    #  _cover;
 };
 
 subtest 'Asset download' => sub {
@@ -318,6 +314,28 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
         "Asset $_ downloaded correctly")
       for @assets;
 
+    $_->stop for ($worker_2, $worker_3, $worker_4);
+};
+
+subtest 'Test Minion task registration and execution' => sub {
+    my $a = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
+
+    use Minion;
+    my $minion = Minion->new(SQLite => "sqlite:" . OpenQA::Worker::Cache->from_worker->db_file);
+    use Mojolicious;
+    my $app = Mojolicious->new;
+    $app->attr(minion => sub { $minion });
+
+    my $task = OpenQA::Worker::Cache::Task::Asset->new();
+    $task->register($app);
+
+    $cache_client->enqueue_download({id => 922756, asset => $a, type => "hdd", host => $host});
+    my $worker = $app->minion->repair->worker->register;
+    $worker->dequeue(0)->execute;
+    ok $cache_client->processed($a);
+    ok $cache_client->asset_exists('localhost', $a);
 };
 
 done_testing();
+
+1;
