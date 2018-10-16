@@ -259,14 +259,14 @@ sub _show {
 
     $self->stash(
         {
-            testname         => $job->name,
-            distri           => $job->DISTRI,
-            version          => $job->VERSION,
-            build            => $job->BUILD,
-            scenario         => $job->scenario,
-            worker           => $job->worker,
-            assigned_worker  => $job->assigned_worker,
-            has_dependencies => $job->has_dependencies,
+            testname          => $job->name,
+            distri            => $job->DISTRI,
+            version           => $job->VERSION,
+            build             => $job->BUILD,
+            scenario          => $job->scenario,
+            worker            => $job->worker,
+            assigned_worker   => $job->assigned_worker,
+            show_dependencies => !defined($job->clone_id) && $job->has_dependencies,
         });
 
     my $clone_of = $self->db->resultset("Jobs")->find({clone_id => $job->id});
@@ -711,6 +711,11 @@ sub _add_job {
     my $job_id = $job->id;
     return $job_id if $visited->{$job_id};
     $visited->{$job_id} = 1;
+
+    # skip if the job has been cloned and the clone is also part of the dependency tree
+    if (my $clone = $job->clone) {
+        return _add_job($visited, $nodes, $edges, $cluster, $cluster_by_job, $clone);
+    }
 
     push(
         @$nodes,
