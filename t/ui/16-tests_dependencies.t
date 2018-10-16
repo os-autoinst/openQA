@@ -39,14 +39,27 @@ sub schema_hook {
     my $jobs         = $schema->resultset('Jobs');
     my $dependencies = $schema->resultset('JobDependencies');
 
-    # insert a dependency to get:
-    # kde (99937) => doc (99938) => kde (99963)
-    #                               kde (99961)
+    # make doc job a clone of the textmode job
+    my $doc_job_id   = 99938;
+    my $textmode_job = $jobs->find(99945);
+    $textmode_job->update({clone_id => $doc_job_id});
+
+    # insert dependencies to get:
+    #             => textmode (99945)
+    # kde (99937) => doc (99938)      => kde (99963)
+    #                                    kde (99961)
     # (99963 and 99961 are a cluster/parallel)
+    # (99945 is hidden because it is a clone of 99938)
     $dependencies->create(
         {
             child_job_id  => 99963,
             parent_job_id => 99938,
+            dependency    => OpenQA::Schema::Result::JobDependencies::CHAINED,
+        });
+    $dependencies->create(
+        {
+            child_job_id  => 99945,
+            parent_job_id => 99937,
             dependency    => OpenQA::Schema::Result::JobDependencies::CHAINED,
         });
 }
@@ -139,6 +152,10 @@ subtest 'job without dependencies' => sub {
     $driver->get('/tests/99981');
     my @dependencies_links = $driver->find_elements('Dependencies', 'link_text');
     is_deeply(\@dependencies_links, [], 'no dependency tab if no dependencies present');
+
+    $driver->get('/tests/99945');
+    @dependencies_links = $driver->find_elements('Dependencies', 'link_text');
+    is_deeply(\@dependencies_links, [], 'no dependency tab if job has been cloned');
 };
 
 subtest 'graph rendering' => sub {

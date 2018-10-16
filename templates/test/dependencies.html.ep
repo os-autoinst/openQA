@@ -2,10 +2,12 @@
   %= asset 'dagre-d3.js'
   %= asset 'dependency_graph.css'
 % end
-<p id="dependencygraph_status">
-    <i class="fas fa-spinner fa-spin fa-lg"></i>
-    Loading dependency graph ...
-</p>
+<div id="dependencygraph_status">
+    <p>
+        <i class="fas fa-spinner fa-spin fa-lg"></i>
+        Loading dependency graph ...
+    </p>
+</div>
 <svg
     id="dependencygraph"
     data-url="<%= url_for('test_dependencies', testid => $job->id) %>"
