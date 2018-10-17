@@ -1136,27 +1136,18 @@ sub update_module {
     return $mod->save_details($result->{details}, $cleanup);
 }
 
-sub running_modinfo {
-    my ($self, $modules) = @_;
+# computes the progress info for the current job
+# important: modules need to be prefetched before in ascending order
+sub progress_info {
+    my ($self) = @_;
+    my @modules = $self->modules->all;
 
-    my @modules = ($modules ? $modules->all : OpenQA::Schema::Result::JobModules::job_modules($self));
-
-    my $modlist   = [];
     my $donecount = 0;
-    my $count     = int(@modules);
     my $modstate  = 'done';
-    my $running;
-    my $category;
     for my $module (@modules) {
-        my $name   = $module->name;
         my $result = $module->result;
-        if (!$category || $category ne $module->category) {
-            $category = $module->category;
-            push @$modlist, {category => $category, modules => []};
-        }
         if ($result eq 'running') {
             $modstate = 'current';
-            $running  = $name;
         }
         elsif ($modstate eq 'current') {
             $modstate = 'todo';
@@ -1164,14 +1155,11 @@ sub running_modinfo {
         elsif ($modstate eq 'done') {
             $donecount++;
         }
-        my $moditem = {name => $name, state => $modstate, result => $result};
-        push @{$modlist->[scalar(@$modlist) - 1]->{modules}}, $moditem;
     }
+
     return {
-        modlist  => $modlist,
-        modcount => $count,
+        modcount => int(@modules),
         moddone  => $donecount,
-        running  => $running
     };
 }
 
