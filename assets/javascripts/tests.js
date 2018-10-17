@@ -144,7 +144,7 @@ function renderPriority(data, type, row) {
     var jobId = row.id;
     var decreasePrioLink = ('<a class="prio-down" data-method="post" href="javascript:void(0);" onclick="decreaseJobPrio(' +
         jobId + ', this); return false;"><i class="far fa-minus-square"></i></a>');
-    var increasePrioLink = ('<a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio(' *
+    var increasePrioLink = ('<a class="prio-up" data-method="post" href="javascript:void(0);" onclick="increaseJobPrio(' +
         jobId + ', this); return false;"><i class="far fa-plus-square"></i></a>');
     var text = ' <span class="prio-value">' + data + '</span> ';
     return decreasePrioLink + text + increasePrioLink;

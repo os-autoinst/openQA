@@ -176,6 +176,36 @@ is(@links, 3, 'only three links (icon, name and comments but no restart)');
 # Test 99926 is displayed
 is($driver->find_element('#results #job_99926 .test .status.result_incomplete')->get_text(), '', '99926 incomplete');
 
+subtest 'priority of scheduled jobs' => sub {
+    # displayed when not logged in
+    is($driver->find_element('#job_99928 td + td + td')->get_text(), '46', 'priority displayed');
+    my @prio_links = $driver->find_elements('#job_99928 td + td + td a');
+    is_deeply(\@prio_links, [], 'no links to increase/decrease prio');
+
+    # displayed and adjustable when logged in as admin
+    $driver->find_element_by_link_text('Login')->click();
+    $driver->get('/tests');
+    wait_for_ajax;
+    is($driver->find_element('#job_99928 .prio-value')->get_text(), '46', 'priority displayed');
+    $driver->find_element('#job_99928 .prio-down')->click();
+    wait_for_ajax;
+    is($driver->find_element('#job_99928 .prio-value')->get_text(), '36', 'priority decreased');
+    $driver->find_element('#job_99928 .prio-down')->click();
+    wait_for_ajax;
+    is($driver->find_element('#job_99928 .prio-value')->get_text(), '26', 'priority further decreased');
+    $driver->find_element('#job_99928 .prio-up')->click();
+    wait_for_ajax;
+    is($driver->find_element('#job_99928 .prio-value')->get_text(), '36', 'priority further increased');
+
+    $driver->get('/tests');
+    wait_for_ajax;
+    is($driver->find_element('#job_99928 .prio-value')->get_text(), '36', 'adjustment persists after reload');
+    is($driver->find_element('#job_99927 .prio-value')->get_text(), '45', 'priority of other job not affected');
+};
+
+$driver->get('/logout');
+$driver->get('/tests');
+
 # parent-child
 my $child_e = $driver->find_element('#results #job_99938 .parent_child');
 is($child_e->get_attribute('title'),         "1 chained parent", "dep info");
