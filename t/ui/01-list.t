@@ -25,12 +25,12 @@ use Mojo::Base -strict;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
+use Date::Format 'time2str';
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Test::Database;
-
 use OpenQA::WebSockets;
 use OpenQA::Scheduler;
 
@@ -51,6 +51,8 @@ sub schema_hook {
     my $schema = OpenQA::Test::Database->new->create;
     my $jobs   = $schema->resultset('Jobs');
     $jobs->find(99981)->delete;
+
+    # add a few comments
     my $job99946_comments = $jobs->find(99946)->comments;
     $job99946_comments->create({text => 'test1', user_id => 99901});
     $job99946_comments->create({text => 'test2', user_id => 99901});
@@ -59,6 +61,58 @@ sub schema_hook {
     $job99963_comments->create({text => 'test2', user_id => 99901});
     my $job99928_comments = $jobs->find(99928)->comments;
     $job99928_comments->create({text => 'test1', user_id => 99901});
+
+    # add another running job which is half done
+    my $running_job = $jobs->create(
+        {
+            id         => 99970,
+            group_id   => 1002,
+            priority   => 35,
+            result     => OpenQA::Jobs::Constants::NONE,
+            state      => OpenQA::Jobs::Constants::RUNNING,
+            t_finished => undef,
+            backend    => 'qemu',
+            # 5 minutes ago
+            t_started => time2str('%Y-%m-%d %H:%M:%S', time - 300, 'UTC'),
+            # 1 hour ago
+            t_created => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
+            TEST      => 'kde',
+            ARCH      => 'x86_64',
+            BUILD     => '0092',
+            DISTRI    => 'opensuse',
+            FLAVOR    => 'NET',
+            MACHINE   => '64bit',
+            VERSION   => '13.1'
+        });
+    my $running_job_modules = $running_job->modules;
+    $running_job_modules->create(
+        {
+            script   => 'tests/installation/start_install.pm',
+            category => 'installation',
+            name     => 'start_install',
+            result   => 'passed',
+        });
+    $running_job_modules->create(
+        {
+            script   => 'tests/installation/livecdreboot.pm',
+            category => 'installation',
+            name     => 'livecdreboot',
+            result   => 'passed',
+        });
+    $running_job_modules->create(
+        {
+            script   => 'tests/console/aplay.pm',
+            category => 'console',
+            name     => 'aplay',
+            result   => 'running',
+        });
+    $running_job_modules->create(
+        {
+            script   => 'tests/console/glibc_i686.pm',
+            category => 'console',
+            name     => 'glibc_i686',
+            result   => 'none',
+        });
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -84,25 +138,34 @@ my $time = $driver->find_child_element(shift @tds, 'span');
 $time->attribute_like('title', qr/.*Z/, 'finish time title of 99946');
 $time->text_like(qr/about 3 hours ago/, 'finish time of 99946');
 
-# Test 99963 is still running
-isnt($driver->find_element('#running #job_99963'), undef, '99963 still running');
-like($driver->find_element('#running #job_99963 td.test a')->get_attribute('href'), qr{.*/tests/99963}, 'right link');
-$time = $driver->find_element('#running #job_99963 td.time span');
-$time->attribute_like('title', qr/.*Z/, 'right time title for running');
-$time->text_like(qr/1[01] minutes ago/, 'right time for running');
+subtest 'running jobs, progress bars' => sub {
+    is($driver->find_element('#job_99961 .progress-bar-striped')->get_text(),
+        'running', 'striped progress bar if not modules');
+    is($driver->find_element('#job_99970 .progress-bar')->get_text(),
+        '50 %', 'progress is 50 % if module 3 of 4 is currently executed');
+
+    # job which is still running but all modules are completed or skipped after failure
+    isnt($driver->find_element('#running #job_99963'), undef, '99963 still running');
+    like($driver->find_element('#job_99963 td.test a')->get_attribute('href'), qr{.*/tests/99963}, 'right link');
+    is($driver->find_element('#job_99963 .progress-bar')->get_text(),
+        '100 %', 'progress is 100 % if all modules completed');
+    $time = $driver->find_element('#job_99963 td.time span');
+    $time->attribute_like('title', qr/.*Z/, 'right time title for running');
+    $time->text_like(qr/1[01] minutes ago/, 'right time for running');
+};
 
 $driver->get('/tests');
 wait_for_ajax;
 my @header       = $driver->find_elements('h2');
 my @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
-my @expected     = ('2 jobs are running', '2 scheduled jobs', 'Last 10 finished jobs');
+my @expected     = ('3 jobs are running', '2 scheduled jobs', 'Last 10 finished jobs');
 is_deeply(\@header_texts, \@expected, 'all headings correctly displayed');
 
 $driver->get('/tests?limit=1');
 wait_for_ajax;
 @header       = $driver->find_elements('h2');
 @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
-@expected     = ('2 jobs are running', '2 scheduled jobs', 'Last 1 finished jobs');
+@expected     = ('3 jobs are running', '2 scheduled jobs', 'Last 1 finished jobs');
 is_deeply(\@header_texts, \@expected, 'limit for finished tests can be adjusted with query parameter');
 
 my $get = $t->get_ok('/tests/99963')->status_is(200);
