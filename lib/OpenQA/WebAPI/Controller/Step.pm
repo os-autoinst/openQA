@@ -40,8 +40,6 @@ sub init {
     my $module = OpenQA::Schema::Result::JobModules::job_module($job, $self->param('moduleid'));
     $self->stash('job',    $job);
     $self->stash('module', $module);
-
-    $self->stash('modinfo', $job->running_modinfo());
 }
 
 sub check_tabmode {

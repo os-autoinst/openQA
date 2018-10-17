@@ -1136,35 +1136,18 @@ sub update_module {
     return $mod->save_details($result->{details}, $cleanup);
 }
 
-sub running_modinfo {
-    my ($self, %options) = @_;
+# computes the progress info for the current job
+# important: modules need to be prefetched before in ascending order
+sub progress_info {
+    my ($self) = @_;
+    my @modules = $self->modules->all;
 
-    # allow using prefetched modules instead of doing an extra query
-    # important: Prefetched modules must be provided in ascending order!
-    my @modules = (
-        $options{use_prefetched_modules} ?
-          ($self->modules->all)
-        : OpenQA::Schema::Result::JobModules::job_modules($self));
-
-    # allow to skip the module list (and just compute overall progress which is sufficient for /tests)
-    my $modlist = ($options{no_module_list} ? undef : []);
-
-    # count modules which are done (all modules before the currently running module) and make module list
     my $donecount = 0;
     my $modstate  = 'done';
-    my $running;
-    my $category;
     for my $module (@modules) {
-        my $name      = $module->name;
-        my $result    = $module->result;
-        my $module_id = $module->id;
-        if ($modlist && (!$category || $category ne $module->category)) {
-            $category = $module->category;
-            push(@$modlist, {category => $category, modules => []});
-        }
+        my $result = $module->result;
         if ($result eq 'running') {
             $modstate = 'current';
-            $running  = $name;
         }
         elsif ($modstate eq 'current') {
             $modstate = 'todo';
@@ -1172,20 +1155,11 @@ sub running_modinfo {
         elsif ($modstate eq 'done') {
             $donecount++;
         }
-        push(
-            @{$modlist->[-1]->{modules}},
-            {
-                name   => $name,
-                state  => $modstate,
-                result => $result
-            }) if ($modlist);
     }
 
     return {
-        modlist  => $modlist,
         modcount => int(@modules),
         moddone  => $donecount,
-        running  => $running
     };
 }
 

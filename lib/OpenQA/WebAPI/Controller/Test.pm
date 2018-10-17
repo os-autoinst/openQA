@@ -152,10 +152,7 @@ sub list_running_ajax {
                 testtime => ($job->t_started // '') . 'Z',
                 group    => $job->group_id,
                 state    => $job->state,
-                progress => $job->running_modinfo(
-                    use_prefetched_modules => 1,
-                    no_module_list         => 1,
-                ),
+                progress => $job->progress_info,
             });
     }
     $self->render(json => {data => \@running});
