@@ -30,7 +30,7 @@ use OpenQA::Utils ();
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
-our $VERSION = 70;
+our $VERSION = 71;
 
 __PACKAGE__->load_namespaces;
 
