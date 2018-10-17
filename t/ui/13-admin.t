@@ -278,6 +278,11 @@ subtest 'add test suite' => sub() {
     wait_for_ajax;
     $elem = $driver->find_element('.admintable tbody tr:last-child');
     is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
+
+    $elem = $driver->find_element('input[type=search]');
+    $elem->send_keys("^kde");
+    @fields = $driver->find_elements('.admintable tbody tr');
+    is(@fields, 1, "search using regex");
 };
 
 subtest 'add job group' => sub() {

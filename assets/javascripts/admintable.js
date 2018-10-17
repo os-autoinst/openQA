@@ -299,7 +299,7 @@ function add_table_row_button ()
     table.find('tr:last').after(html);
 }
 
-function populate_admin_table (is_admin)
+function populate_admin_table (is_admin, filter_regex_first_column)
 {
     var url = $("#admintable_api_url").val();
     if (url) {
@@ -317,11 +317,18 @@ function populate_admin_table (is_admin)
                 }
                 table.find('tbody').html(html);
                 // a really stupid datatable
-                table.DataTable( {
+                var tbl = table.DataTable( {
                     "paging" : false,
                     "lengthChange": false,
                     "ordering": false
                 } );
+                if (filter_regex_first_column) {
+                    var search_box = $('.dataTables_filter input[type=search]');
+                    var search_events = 'cut input keypress keyup paste search';
+                    search_box.off(search_events).on(search_events, function() {
+                        tbl.columns(0).search(search_box.val(), true, false).draw();
+                    });
+                }
             },
             error: admintable_api_error
         });
