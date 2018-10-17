@@ -253,6 +253,14 @@ subtest safe_call => sub {
     like $@, qr/Can't locate object method "not_existant" via package "foo"/;
 };
 
+subtest trim => sub {
+    use OpenQA::Utils 'trim';
+
+    is trim(' a b c '),      'a b c';
+    is trim('ab      '),     'ab';
+    is trim('          ba'), 'ba';
+
+};
 
 done_testing;
 

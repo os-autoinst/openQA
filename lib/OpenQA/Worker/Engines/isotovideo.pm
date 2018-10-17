@@ -18,7 +18,7 @@ use strict;
 use warnings;
 
 use OpenQA::Worker::Common;
-use OpenQA::Utils qw(locate_asset log_error log_info log_debug log_warning get_channel_handle);
+use OpenQA::Utils qw(locate_asset log_error log_info log_debug log_warning get_channel_handle trim);
 
 use POSIX qw(:sys_wait_h strftime uname _exit);
 use Cpanel::JSON::XS 'encode_json';
@@ -126,6 +126,7 @@ sub cache_assets {
     my $cache_client = OpenQA::Worker::Cache::Client->new;
     for my $this_asset (sort keys %$assetkeys) {
         my $asset;
+        my $asset_uri = trim($vars->{$this_asset});
         log_debug("Found $this_asset, caching " . $vars->{$this_asset});
         return {error => "Cache service not available."}            unless $cache_client->available;
         return {error => "No workers active in the cache service."} unless $cache_client->available_workers;
@@ -134,30 +135,28 @@ sub cache_assets {
             $cache_client->enqueue_download(
                 {
                     id    => $job->{id},
-                    asset => $vars->{$this_asset},
+                    asset => $asset_uri,
                     type  => $assetkeys->{$this_asset},
                     host  => $current_host
                 }))
         {
-            log_debug("Downloading " . $vars->{$this_asset} . " - request sent to Cache Service.",
-                channels => 'autoinst');
-            update_setup_status and sleep 5 until $cache_client->processed($vars->{$this_asset});
-            log_debug("Download of " . $vars->{$this_asset} . " processed",       channels => 'autoinst');
-            log_debug($cache_client->asset_download_output($vars->{$this_asset}), channels => 'autoinst');
+            log_debug("Downloading " . $asset_uri . " - request sent to Cache Service.", channels => 'autoinst');
+            update_setup_status and sleep 5 until $cache_client->processed($asset_uri);
+            log_debug("Download of " . $asset_uri . " processed",       channels => 'autoinst');
+            log_debug($cache_client->asset_download_output($asset_uri), channels => 'autoinst');
         }
 
-        $asset = $cache_client->asset_path($current_host, $vars->{$this_asset})
-          if $cache_client->asset_exists($current_host, $vars->{$this_asset});
+        $asset = $cache_client->asset_path($current_host, $asset_uri)
+          if $cache_client->asset_exists($current_host, $asset_uri);
 
         if ($this_asset eq 'UEFI_PFLASH_VARS' && !defined $asset) {
-            log_error("Can't download $vars->{$this_asset}");
+            log_error("Can't download $asset_uri");
             # assume that if we have a full path, that's what we should use
-            $vars->{$this_asset} = $vars->{$this_asset} if (-e $vars->{$this_asset});
+            $vars->{$this_asset} = $asset_uri if -e $asset_uri;
             # don't kill the job if the asset is not found
             next;
         }
-        return {error => "Can't download $vars->{$this_asset} to "
-              . $cache_client->asset_path($current_host, $vars->{$this_asset})}
+        return {error => "Can't download $asset_uri to " . $cache_client->asset_path($current_host, $asset_uri)}
           unless $asset;
         unlink basename($asset) if -l basename($asset);
         symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";

@@ -103,7 +103,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   set_listen_address
 );
 
-@EXPORT_OK = qw(determine_web_ui_web_socket_url get_ws_status_only_url);
+@EXPORT_OK = qw(determine_web_ui_web_socket_url get_ws_status_only_url trim);
 
 if ($0 =~ /\.t$/) {
     # This should result in the 't' directory, even if $0 is in a subdirectory
@@ -1246,6 +1246,8 @@ sub set_listen_address {
 
     $ENV{MOJO_LISTEN} = join(',', @listen_addresses);
 }
+
+sub trim { my $string = shift; $string =~ s/^\s+|\s+$//g; $string }
 
 1;
 # vim: set sw=4 et:
