@@ -125,11 +125,10 @@ sub list_running_ajax {
         match    => $self->get_match_param,
         groupid  => $self->param('groupid'),
         assetid  => $self->param('assetid'),
-        order_by => [{-desc => 'me.t_started'}, {-desc => 'me.id'}],
+        order_by => [{-desc => 'me.t_started'}, {-desc => 'me.id'}, {-asc => 'modules.id'},],
         columns  => [
             qw(id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST
-              state clone_id result group_id t_started
-              blocked_by_id priority
+              state result clone_id group_id t_started blocked_by_id priority
               )
         ],
         prefetch => [qw(modules)],
@@ -137,8 +136,7 @@ sub list_running_ajax {
 
     my @running;
     while (my $job = $running->next) {
-        my $job_id      = $job->id;
-        my $job_modules = $job->modules;
+        my $job_id = $job->id;
         push(
             @running,
             {
@@ -154,7 +152,10 @@ sub list_running_ajax {
                 testtime => ($job->t_started // '') . 'Z',
                 group    => $job->group_id,
                 state    => $job->state,
-                progress => $job->running_modinfo($job_modules),
+                progress => $job->running_modinfo(
+                    use_prefetched_modules => 1,
+                    no_module_list         => 1,
+                ),
             });
     }
     $self->render(json => {data => \@running});

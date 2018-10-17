@@ -1137,22 +1137,30 @@ sub update_module {
 }
 
 sub running_modinfo {
-    my ($self, $modules) = @_;
+    my ($self, %options) = @_;
 
-    my @modules = ($modules ? $modules->all : OpenQA::Schema::Result::JobModules::job_modules($self));
+    # allow using prefetched modules instead of doing an extra query
+    # important: Prefetched modules must be provided in ascending order!
+    my @modules = (
+        $options{use_prefetched_modules} ?
+          ($self->modules->all)
+        : OpenQA::Schema::Result::JobModules::job_modules($self));
 
-    my $modlist   = [];
+    # allow to skip the module list (and just compute overall progress which is sufficient for /tests)
+    my $modlist = ($options{no_module_list} ? undef : []);
+
+    # count modules which are done (all modules before the currently running module) and make module list
     my $donecount = 0;
-    my $count     = int(@modules);
     my $modstate  = 'done';
     my $running;
     my $category;
     for my $module (@modules) {
-        my $name   = $module->name;
-        my $result = $module->result;
-        if (!$category || $category ne $module->category) {
+        my $name      = $module->name;
+        my $result    = $module->result;
+        my $module_id = $module->id;
+        if ($modlist && (!$category || $category ne $module->category)) {
             $category = $module->category;
-            push @$modlist, {category => $category, modules => []};
+            push(@$modlist, {category => $category, modules => []});
         }
         if ($result eq 'running') {
             $modstate = 'current';
@@ -1164,12 +1172,18 @@ sub running_modinfo {
         elsif ($modstate eq 'done') {
             $donecount++;
         }
-        my $moditem = {name => $name, state => $modstate, result => $result};
-        push @{$modlist->[scalar(@$modlist) - 1]->{modules}}, $moditem;
+        push(
+            @{$modlist->[-1]->{modules}},
+            {
+                name   => $name,
+                state  => $modstate,
+                result => $result
+            }) if ($modlist);
     }
+
     return {
         modlist  => $modlist,
-        modcount => $count,
+        modcount => int(@modules),
         moddone  => $donecount,
         running  => $running
     };
