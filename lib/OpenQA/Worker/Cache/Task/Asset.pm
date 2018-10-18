@@ -18,7 +18,7 @@ package OpenQA::Worker::Cache::Task::Asset;
 use Mojo::Base 'Mojolicious::Plugin';
 use Mojo::URL;
 use constant LOCK_RETRY_DELAY   => 30;
-use constant MINION_LOCK_EXPIRE => 999999999;
+use constant MINION_LOCK_EXPIRE => 99999;    # ~27 hours
 
 use OpenQA::Worker::Cache::Client;
 use OpenQA::Worker::Cache;
