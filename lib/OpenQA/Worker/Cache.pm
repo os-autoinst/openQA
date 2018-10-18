@@ -198,8 +198,8 @@ sub download_asset {
     return $asset;
 }
 
-sub _base_host { Mojo::URL->new(shift)->host }
-sub _host { _base_host($_[0]->host) || $_[0]->host }
+sub _base_host { Mojo::URL->new($_[0])->host || shift }
+sub _host { _base_host(shift->host) }
 
 sub get_asset {
     my $self = shift;

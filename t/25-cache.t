@@ -120,6 +120,23 @@ sub stop_server {
 }
 
 my $cache = OpenQA::Worker::Cache->new(host => $host, location => $cachedir);
+
+subtest '_base_host' => sub {
+    is OpenQA::Worker::Cache::_base_host('http://opensuse.org'),             'opensuse.org';
+    is OpenQA::Worker::Cache::_base_host('www.opensuse.org'),                'www.opensuse.org';
+    is OpenQA::Worker::Cache::_base_host('test'),                            'test';
+    is OpenQA::Worker::Cache::_base_host('https://opensuse.org/test/1/2/3'), 'opensuse.org';
+
+    my $cache_test = OpenQA::Worker::Cache->new(host => $host, location => $cachedir);
+    is $cache_test->_host, 'localhost';
+
+    $cache_test->host('http://opensuse.org');
+    is $cache_test->_host, 'opensuse.org';
+
+    $cache_test->host('foo');
+    is $cache_test->_host, 'foo';
+};
+
 is $cache->init, $cache;
 $openqalogs = read_log($logfile);
 like $openqalogs, qr/Creating cache directory tree for/, "Cache directory tree created.";

@@ -223,7 +223,7 @@ sub engine_workit {
 
     # do asset caching if CACHEDIRECTORY is set
     if ($worker_settings->{CACHEDIRECTORY}) {
-        my $host_to_cache = Mojo::URL->new($current_host)->host;
+        my $host_to_cache = OpenQA::Worker::Cache::_base_host($current_host);
         my $error = cache_assets($job => \%vars => $assetkeys);
         return $error if $error;
 
