@@ -1,4 +1,4 @@
-# Copyright (C) 2016 SUSE LLC
+# Copyright (C) 2016-2018 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ __PACKAGE__->has_many(
     'screenshot_id',
     {join_type => 'left outer', cascade_delete => 0});
 
-# overload to remove on disk too
+# override to remove on disk too
 sub delete {
     my ($self) = @_;
 
@@ -61,11 +61,11 @@ sub delete {
 
     log_debug("removing screenshot " . $self->filename);
     if (!unlink(catfile($OpenQA::Utils::imagesdir, $self->filename))) {
-        log_warning "can't remove " . $self->filename;
+        log_debug("can't remove " . $self->filename);
     }
     my $thumb = catfile($OpenQA::Utils::imagesdir, dirname($self->filename), '.thumbs', basename($self->filename));
     if (!unlink($thumb)) {
-        log_warning "can't remove $thumb";
+        log_debug("can't remove $thumb");
     }
     return $ret;
 }
