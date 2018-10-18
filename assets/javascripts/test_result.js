@@ -292,6 +292,7 @@ function setupTab(tabHash) {
         setupDependencyGraph();
     }
     if (tabHash === '#live') {
+        setupDeveloperPanel();
         resumeLiveView();
     } else {
         pauseLiveView();

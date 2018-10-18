@@ -74,10 +74,7 @@ function updateTestStatus(newStatus) {
             $("#details").append(newResults);
             console.log("Missing results table created");
             testStatus.running = newStatus.running;
-            updateDeveloperPanel();
-            if (!developerMode.wsConnection) {
-                setupWebsocketConnection();
-            }
+            updateDeveloperMode();
             return;
         }
 
@@ -106,10 +103,7 @@ function updateTestStatus(newStatus) {
                 tr.replaceWith(new_trs.eq(tr.index()));
             });
             testStatus.running = newStatus.running;
-            updateDeveloperPanel();
-            if (!developerMode.wsConnection) {
-                setupWebsocketConnection();
-            }
+            updateDeveloperMode();
         }
 
     }).fail(function() {
@@ -345,14 +339,39 @@ var developerMode = {
     },
 };
 
+// updates the developer mode if initialized (update panel, ensure connected)
+function updateDeveloperMode() {
+    if (!window.developerPanelInitialized) {
+        return;
+    }
+    updateDeveloperPanel();
+    if (!developerMode.wsConnection) {
+        setupWebsocketConnection();
+    }
+}
+
 // initializes the developer panel
 function setupDeveloperPanel() {
+    // skip if already initialized
+    if (window.developerPanelInitialized) {
+        return;
+    }
+    window.developerPanelInitialized = true;
+
     var panel = $('#developer-panel');
     var flashMessages = document.getElementById('developer-flash-messages');
 
+    // set overall status variables
+    developerMode.ownUserId = panel.data('own-user-id');
+    developerMode.isAccessible = panel.data('is-accessible'); // actually assigns a boolean (and not eg. the string 'false')
+
+    // find URLs for web socket connections
+    developerMode.develWsUrl = panel.data('developer-url');
+    developerMode.statusOnlyWsUrl = panel.data('status-only-url');
+
     // setup toggle for body
     var panelHeader = panel.find('.card-header');
-    if (window.isDevelModeAccessible) {
+    if (developerMode.isAccessible) {
         panelHeader.on('click', function(event) {
             // skip if flash message clicked
             if ($.contains(flashMessages, event.target)) {
@@ -373,10 +392,6 @@ function setupDeveloperPanel() {
     panel.find('.help_popover').on('click', function(event) {
         event.stopPropagation();
     });
-
-    // find URLs for web socket connections
-    developerMode.develWsUrl = panel.data('developer-url');
-    developerMode.statusOnlyWsUrl = panel.data('status-only-url');
 
     // add handler for static form elements
     $('#developer-pause-on-timeout').on('click', handlePauseAtTimeoutToggled);
@@ -491,7 +506,7 @@ function updateDeveloperPanel() {
         sessionInfoElement.append(document.createTextNode(tabsOpenInfo));
     } else {
         sessionInfo = 'regular test execution';
-        if (window.isDevelModeAccessible && !developerMode.panelExpanded) {
+        if (developerMode.isAccessible && !developerMode.panelExpanded) {
             sessionInfo += ' - click to expand';
         }
         sessionInfoElement.text(sessionInfo);
@@ -668,7 +683,7 @@ function setupWebsocketConnection() {
 
     var url;
     // determine ws URL
-    if ((window.isDevelModeAccessible && developerMode.useDeveloperWsRoute)) {
+    if ((developerMode.isAccessible && developerMode.useDeveloperWsRoute)) {
         // use route for developer (establishing a developer session)
         developerMode.useDeveloperWsRoute = true;
         url = developerMode.develWsUrl;
@@ -739,7 +754,7 @@ var messageToStatusVariable = [
     {
         msg: 'developer_id',
         action: function(value) {
-            developerMode.ownSession = (window.ownUserId && window.ownUserId == value);
+            developerMode.ownSession = (developerMode.ownUserId && developerMode.ownUserId == value);
         },
     },
     {

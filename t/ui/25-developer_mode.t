@@ -159,6 +159,7 @@ subtest 'devel UI hidden when running, but modules not initialized' => sub {
 
 subtest 'devel UI shown when running module known' => sub {
     fake_state(testStatus => {running => '"welcome"'});
+
     element_hidden('#developer-instructions');
     element_visible('#developer-panel');
     element_visible(
