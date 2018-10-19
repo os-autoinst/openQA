@@ -423,7 +423,7 @@ subtest 'process state changes from os-autoinst' => sub {
 
     subtest 'message not from current connection ignored' => sub {
         $driver->execute_script(
-'handleMessageVisWebsocketConnection("foo", { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_test_full_name\":\"some test\",\"paused\":true}}" });'
+'handleMessageFromWebsocketConnection("foo", { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_test_full_name\":\"some test\",\"paused\":true}}" });'
         );
         element_visible(
             '#developer-panel .card-header',
@@ -434,7 +434,7 @@ subtest 'process state changes from os-autoinst' => sub {
 
     subtest 'testname and paused state updated' => sub {
         $driver->execute_script(
-'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"resume_test_execution\":\"foo\"}}" });'
+'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"resume_test_execution\":\"foo\"}}" });'
         );
         element_visible(
             '#developer-panel .card-header',
@@ -443,7 +443,7 @@ subtest 'process state changes from os-autoinst' => sub {
         );
 
         $driver->execute_script(
-'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_test_full_name\":\"some test\",\"paused\":true, \"set_pause_on_assert_screen_timeout\": 1}}" });'
+'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_test_full_name\":\"some test\",\"paused\":true, \"set_pause_on_assert_screen_timeout\": 1}}" });'
         );
         element_visible('#developer-panel .card-header', qr/paused at module: some test/, qr/current module/,);
         is(
@@ -454,18 +454,18 @@ subtest 'process state changes from os-autoinst' => sub {
 
     subtest 'error handling, flash messages' => sub {
         $driver->execute_script(
-            'handleMessageVisWebsocketConnection("foo", { data: "{\"type\":\"error\",\"what\":\"some error\"}" });');
+            'handleMessageFromWebsocketConnection("foo", { data: "{\"type\":\"error\",\"what\":\"some error\"}" });');
         assert_flash_messages(any => [], 'messsages not from current connection ignored');
 
-        $driver->execute_script('handleMessageVisWebsocketConnection(developerMode.wsConnection, { });');
+        $driver->execute_script('handleMessageFromWebsocketConnection(developerMode.wsConnection, { });');
         assert_flash_messages(any => [], 'messages with no data are ignored');
 
         my $handle_error
-          = 'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"error\",\"what\":\"some error\"}" });';
+          = 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"error\",\"what\":\"some error\"}" });';
         my $handle_another_error
-          = 'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"error\",\"what\":\"another error\"}" });';
+          = 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"error\",\"what\":\"another error\"}" });';
         $driver->execute_script(
-            'handleMessageVisWebsocketConnection(developerMode.wsConnection, { data: "invalid { json" });');
+            'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "invalid { json" });');
         $driver->execute_script($handle_error);
         $driver->execute_script($handle_error);
         $driver->execute_script($handle_another_error);
