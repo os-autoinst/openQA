@@ -100,10 +100,35 @@ function updateTestStatus(newStatus) {
                 console.log("Missing results in row - trying again");
             }
         });
+
         if (!missing_results) {
+            var previewContainer = $('#preview_container_out');
+
             result_tbody.children().slice(first_tr_to_update).each(function() {
                 var tr = $(this);
+
+                // detatch the preview container if it is contained by the row to be relaced
+                var previewLinkIndex = -1;
+                if ($.contains(this, previewContainer[0])) {
+                    previewLinkIndex = $('.current_preview').index();
+                    previewContainer.detach();
+                }
+
+                // replace the old tr element with the new one
                 tr.replaceWith(new_trs.eq(tr.index()));
+
+                // re-attach the preview container if possible
+                if (previewLinkIndex < 0) {
+                    return;
+                }
+                var newPreviewLinks = new_trs.find('.links_a');
+                if (previewLinkIndex < newPreviewLinks.length) {
+                    var newPreviewLink = newPreviewLinks.eq(previewLinkIndex);
+                    newPreviewLink.addClass('current_preview');
+                    previewContainer.insertAfter(newPreviewLink);
+                } else {
+                    previewContainer.hide().appendTo('body');
+                }
             });
             testStatus.running = newStatus.running;
             developerMode.detailsForCurrentModuleUploaded = false;
