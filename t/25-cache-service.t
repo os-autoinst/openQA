@@ -105,6 +105,28 @@ sub test_default_usage {
     ok($cache_client->asset_exists('localhost', $a), "Asset $a downloaded");
 }
 
+sub test_sync {
+    my $dir  = tempdir;
+    my $dir2 = tempdir;
+
+    my @rsync_from_to = ($dir, $dir2);
+
+    my $t_dir = int(rand(13432432));
+    my $data  = int(rand(348394280934820842093));
+    path($dir)->child($t_dir)->spurt($data);
+    my $expected = path($dir2)->child('tests')->child($t_dir);
+
+    ok $cache_client->tests_sync(@rsync_from_to);
+
+    1 until $cache_client->tests_sync_processed(@rsync_from_to);
+
+    is $cache_client->tests_sync_result(@rsync_from_to), 0;
+    diag $cache_client->tests_sync_output(@rsync_from_to);
+
+    ok -e $expected;
+    is $expected->slurp, $data;
+}
+
 sub test_download {
     my ($id, $a) = @_;
     unlink path($cachedir)->child($a);
@@ -334,6 +356,47 @@ subtest 'Test Minion task registration and execution' => sub {
     $worker->dequeue(0)->execute;
     ok $cache_client->processed($a);
     ok $cache_client->asset_exists('localhost', $a);
+};
+
+subtest 'Test Minion Sync task' => sub {
+    my $a = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
+
+    use Minion;
+    use OpenQA::Worker::Cache::Task::Sync;
+    my $minion = Minion->new(SQLite => "sqlite:" . OpenQA::Worker::Cache->from_worker->db_file);
+    use Mojolicious;
+    my $app = Mojolicious->new;
+    $app->attr(minion => sub { $minion });
+    my $dir  = tempdir;
+    my $dir2 = tempdir;
+
+    path($dir)->child('test')->spurt('foobar');
+    my $expected = path($dir2)->child('tests')->child('test');
+
+    my $task = OpenQA::Worker::Cache::Task::Sync->new();
+    $task->register($app);
+    ok $cache_client->tests_sync($dir, $dir2);
+    my $worker = $app->minion->repair->worker->register;
+    $worker->dequeue(0)->execute;
+    ok $cache_client->tests_sync_processed($dir, $dir2);
+    is $cache_client->tests_sync_result($dir, $dir2), 0;
+    diag $cache_client->tests_sync_output($dir, $dir2);
+
+    ok -e $expected;
+    is $expected->slurp, 'foobar';
+};
+
+subtest 'OpenQA::Worker::Cache::Task::Sync' => sub {
+    my $worker_2 = cache_minion_worker;
+    my $worker_3 = cache_minion_worker;
+    my $worker_4 = cache_minion_worker;
+
+    $_->start for ($worker_2, $worker_3, $worker_4);
+
+    test_sync;
+    test_sync;
+    test_sync;
+    test_sync;
 };
 
 done_testing();

@@ -38,6 +38,7 @@ app->hook(
 plugin Minion => {SQLite => 'sqlite:' . OpenQA::Worker::Cache->from_worker->db_file};
 plugin 'Minion::Admin';
 plugin 'OpenQA::Worker::Cache::Task::Asset';
+plugin 'OpenQA::Worker::Cache::Task::Sync';
 
 sub SESSION_TOKEN { $_token }
 
@@ -111,11 +112,11 @@ post '/download' => sub {
 };
 
 post '/status' => sub {
-    my $c     = shift;
-    my $data  = $c->req->json;
-    my $asset = $data->{asset};
-    my $lock  = _gen_guard_name($asset);
-    my $j     = get_job_by_token($lock);
+    my $c    = shift;
+    my $data = $c->req->json;
+    my $lock = _gen_guard_name($data->{lock});
+    my $j    = get_job_by_token($lock);
+
     $c->render(
         json => {
             status => (
@@ -123,14 +124,32 @@ post '/status' => sub {
                 : enqueued($lock) ? OpenQA::Worker::Cache::ASSET_STATUS_IGNORE
                 :                   OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED
             ),
-            (output => $j->{notes}->{output}) x !!($j)});
+            (result => $j->{result}, output => $j->{notes}->{output}) x !!($j)});
+};
+
+# NOTE: Bit more generic - Specfic assets routes calls for refactoring wrt this implementation
+post '/execute_task' => sub {
+    my $c    = shift;
+    my $data = $c->req->json;
+    my $lock = _gen_guard_name($data->{lock});
+    my $task = $data->{task};
+    my $args = $data->{args};
+
+    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => 'No Task defined'})
+      unless defined $task;
+    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => 'No Arguments defined'})
+      unless defined $args;
+
+    $c->minion->enqueue($task => $args);
+    enqueue($lock);
+
+    $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ENQUEUED});
 };
 
 post '/dequeue' => sub {
-    my $c     = shift;
-    my $data  = $c->req->json;
-    my $asset = $data->{asset};
-    my $lock  = _gen_guard_name($asset);
+    my $c    = shift;
+    my $data = $c->req->json;
+    my $lock = _gen_guard_name($data->{lock});
 
     dequeue($lock);
     $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED});
