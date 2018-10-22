@@ -17,7 +17,7 @@ function setupWorkerNeedles() {
                   render: renderTestName,
                 },
                 {targets: 1, render: renderTestResult},
-                {targets: 2, render: renderTimeAgoForFinished}
+                {targets: 2, render: renderTimeAgo}
             ]
         });
     table.on('draw.dt', setupTestButtons);

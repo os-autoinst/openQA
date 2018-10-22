@@ -112,9 +112,7 @@ is_deeply(
     \@entries,
     [
         'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
-        '',
-        'never started',
-        'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
+        '', 'not yet', 'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
         '0', 'about an hour ago',
     ],
     'correct entries shown'
@@ -130,9 +128,7 @@ is_deeply(
     \@entries,
     [
         'opensuse-13.1-NET-x86_64-Build0091-kde@64bit (restarted)',
-        '',
-        'never started',
-        'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
+        '', 'not yet', 'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
         '0', 'about an hour ago',
     ],
     'the first job has been restarted'
