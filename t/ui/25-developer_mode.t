@@ -116,6 +116,11 @@ sub assert_flash_messages {
     }
 }
 
+sub js_variable {
+    my ($variable_name) = @_;
+    return $driver->execute_script("return $variable_name;");
+}
+
 # clicks on the header of the developer panel
 sub click_header {
     $driver->find_element('#developer-panel .card-header')->click();
@@ -410,7 +415,7 @@ subtest 'start developer session' => sub {
     };
 };
 
-subtest 'process state changes from os-autoinst' => sub {
+subtest 'process state changes from os-autoinst/worker' => sub {
     fake_state(
         developerMode => {
             currentModule   => '"installation-welcome"',
@@ -450,6 +455,44 @@ subtest 'process state changes from os-autoinst' => sub {
             $driver->find_element('#developer-pause-on-timeout')->is_selected,
             1, 'check box for pause on assert_screen timeout updated',
         );
+    };
+
+    subtest 'upload progress handled' => sub {
+        is(js_variable('developerMode.detailsForCurrentModuleUploaded'),
+            0, 'details for current module initially not considered uploaded');
+
+        fake_state(
+            developerMode => {
+                uploadingUpToCurrentModule => 'false',
+                outstandingImagesToUpload  => '0',
+                outstandingFilesToUpload   => '0',
+            });
+
+        $driver->execute_script(
+'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"upload progress\",\"data\":{\"outstanding_images\":5,\"outstanding_files\":7,\"upload_up_to_current_module\":true}}" });'
+        );
+
+        is(js_variable('developerMode.outstandingImagesToUpload'),  5, 'outstanding images updated');
+        is(js_variable('developerMode.outstandingFilesToUpload'),   7, 'outstanding files updated');
+        is(js_variable('developerMode.uploadingUpToCurrentModule'), 1, 'uploading up to current module updated');
+        is(js_variable('developerMode.detailsForCurrentModuleUploaded'),
+            0, 'details for current module still not considered uploaded');
+
+        $driver->execute_script(
+'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"upload progress\",\"data\":{\"outstanding_files\":0}}" });'
+        );
+        is(js_variable('developerMode.outstandingImagesToUpload'), 5, 'outstanding images not changed');
+        is(js_variable('developerMode.outstandingFilesToUpload'),  0, 'outstanding files updated');
+        is(js_variable('developerMode.detailsForCurrentModuleUploaded'),
+            0, 'details for current module still not considered uploaded');
+
+        $driver->execute_script(
+'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"upload progress\",\"data\":{\"outstanding_images\":0,\"outstanding_files\":0,\"upload_up_to_current_module\":true}}" });'
+        );
+        is(js_variable('developerMode.outstandingImagesToUpload'), 0, 'outstanding images updated');
+        is(js_variable('developerMode.outstandingFilesToUpload'),  0, 'outstanding files has bot changed');
+        is(js_variable('developerMode.detailsForCurrentModuleUploaded'),
+            1, 'details for current module considered uploaded');
     };
 
     subtest 'error handling, flash messages' => sub {
