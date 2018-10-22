@@ -434,6 +434,7 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
         g.setNode(node.id, {
             label: function() {
                 var table = document.createElement("table");
+                table.id = 'nodeTable' + node.id;
                 var tr = d3.select(table).append("tr");
 
                 var testNameTd = tr.append("td");
@@ -453,9 +454,11 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
                 return table;
             },
             padding: 0,
-            tooltipText: node.tooltipText,
+            name: node.name,
             testResultId: testResultId,
             testResultName: testResultName,
+            startAfter: node.start_after,
+            parallelWith: node.parallel_with,
         });
     });
 
@@ -482,9 +485,22 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
     render(svgGroup, g);
 
     // add tooltips
-    svgGroup.selectAll("g.node")
-        .attr("title", function(v) {
-            return "<p>" + g.node(v).tooltipText + "</p>";
+    svgGroup.selectAll('g.node')
+        .attr('title', function(v) {
+            var node = g.node(v);
+            var tooltipText = '<p>' + node.name + '</p>';
+            var startAfter = node.startAfter;
+            var parallelWith = node.parallelWith;
+            if (startAfter.length || parallelWith.length) {
+                tooltipText += '<div style="border-top: 1px solid rgba(100, 100, 100, 30); margin: 5px 0px;"></div>';
+                if (startAfter.length) {
+                    tooltipText += '<p><code>START_AFTER_TEST=' + startAfter.join(',') + '</code></p>';
+                }
+                if (parallelWith.length) {
+                    tooltipText += '<p><code>PARALLEL_WITH=' + parallelWith.join(',') + '</code></p>';
+                }
+            }
+            return tooltipText;
         })
         .each(function(v) {
             $(this).tooltip({
