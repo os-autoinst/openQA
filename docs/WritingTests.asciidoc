@@ -40,8 +40,10 @@ openQA tests need to implement at least the *run* subroutine to
 contain the actual test code and the test needs to be loaded in the distribution's
 main.pm.
 
-The *test_flags* subroutine specifies what happens when the test
-fails.
+The *test_flags* subroutine specifies what should happen when test execution of the
+current test module is finished depending on the result.
+If we should skip execution of the following test modules if current one failed, or it
+should be used to create a snapshot of SUT to rollback to. See example below.
 
 There are several callbacks defined:
 
@@ -78,7 +80,8 @@ sub test_flags {
     # 'fatal'          - abort whole test suite if this fails (and set overall state 'failed')
     # 'ignore_failure' - if this module fails, it will not affect the overall result at all
     # 'milestone'      - after this test succeeds, update 'lastgood'
-    # 'norollback'     - don't roll back to 'lastgood' snapshot if this fails
+    # 'no_rollback'     - don't roll back to 'lastgood' snapshot if this fails
+    # 'always_rollback'    - roll back to 'lastgood' snapshot even if test was successful (supported on QEMU backend only)
     return { fatal => 1 };
 }
 

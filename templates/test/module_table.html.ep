@@ -31,6 +31,9 @@
                         % if  ($module->{milestone}) {
                             <i class="flag fa fa-anchor" title="Milestone: snapshot the state after this test for restoring"></i>
                         % }
+                        % if  ($module->{always_rollback}) {
+                            <i class="flag fa fa-redo" title="Always rollback: revert to the last milestone snapshot even if test module is successful"></i>
+                        % }
                     </div>
                 </td>
                 <td class="result <%= css_for($module) %>">

@@ -430,5 +430,44 @@ like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker
 # warnings
 $get = $t->get_ok('/tests/80000')->status_is(200);
 
+subtest 'test module flags are displayed correctly' => sub {
+    # for this job we have exactly each flag set once, so check that not to rely on the order of the test modules
+    $driver->get('/tests/99764');
+    my $flags = $driver->find_elements("//div[\@class='flags']/i[(starts-with(\@class, 'flag fa fa-'))]", 'xpath');
+    is(scalar(@{$flags}), 4, 'Expect 4 flags in the job 99764');
+
+    my $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-minus']", 'xpath');
+    ok($flag, 'Ignore failure flag is displayed for test modules which are not important, neither fatal');
+    is(
+        $flag->get_attribute('title'),
+        'Ignore failure: failure or soft failure of this test does not impact overall job result',
+        'Description of Ignore failure flag is correct'
+    );
+
+    $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-redo']", 'xpath');
+    ok($flag, 'Always rollback flag is displayed correctly');
+    is(
+        $flag->get_attribute('title'),
+        'Always rollback: revert to the last milestone snapshot even if test module is successful',
+        'Description of always_rollback flag is correct'
+    );
+
+    $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-anchor']", 'xpath');
+    ok($flag, 'Milestone flag is displayed correctly');
+    is(
+        $flag->get_attribute('title'),
+        'Milestone: snapshot the state after this test for restoring',
+        'Description of milestone flag is correct'
+    );
+
+    $flag = $driver->find_element("//div[\@class='flags']/i[\@class='flag fa fa-plug']", 'xpath');
+    ok($flag, 'Fatal flag is displayed correctly');
+    is(
+        $flag->get_attribute('title'),
+        'Fatal: testsuite is aborted if this test fails',
+        'Description of fatal flag is correct'
+    );
+};
+
 kill_driver();
 done_testing();

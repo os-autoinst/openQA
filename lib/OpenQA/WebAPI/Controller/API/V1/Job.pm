@@ -127,7 +127,7 @@ sub list {
                 category => $module->category,
                 result   => $module->result,
                 flags    => []};
-            for my $flag (qw(important fatal milestone)) {
+            for my $flag (qw(important fatal milestone always_rollback)) {
                 if ($module->get_column($flag)) {
                     push(@{$modulehash->{flags}}, $flag);
                 }

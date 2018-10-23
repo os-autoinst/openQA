@@ -491,5 +491,33 @@
             {key => 'ISO_MAXSIZE', value => '4700372992'},
             {key => 'ISO',         value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'},
             {key => 'DVD',         value => '1'},
-        ]}]
+        ]
+    },
+    ## Job 99764 is used to test test module flags (milestone, fatal, etc.)
+    Jobs => {
+        id          => 99764,
+        priority    => 35,
+        result      => "passed",
+        state       => "done",
+        t_finished  => time2str('%Y-%m-%d %H:%M:%S', time - 542400, 'UTC'),    # 149 hours ago
+        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 546000, 'UTC'),    # 150 hours ago
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7800, 'UTC'),      # Two hours ago
+        TEST        => "console tests",
+        BUILD       => '0091',
+        DISTRI      => 'opensuse',
+        FLAVOR      => 'DVD',
+        MACHINE     => '64bit',
+        VERSION     => '13.1',
+        backend     => 'qemu',
+        jobs_assets => [{asset_id => 2},],
+        ARCH        => 'x86_64',
+        settings    => [
+            {key => 'DESKTOP',     value => 'textmode'},
+            {key => 'ISO_MAXSIZE', value => '4700372992'},
+            {key => 'ISO',         value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'},
+            {key => 'DVD',         value => '1'}
+        ],
+        result_dir => '00099764-opensuse-13.1-DVD-x86_64-Build0091-kde',
+    },
+]
 # vim: set sw=4 et:
