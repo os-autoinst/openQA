@@ -39,8 +39,11 @@ function updateTestStatus(newStatus) {
         });
     }
 
-    // skip further updating if no 'running vs. not running' change
-    if (testStatus.running == newStatus.running) {
+    // skip further updating if the currently running module didn't change and there
+    // are no details for the currently running module are available
+    // note: use of '==' (rather than '===') makes a difference here to consider null and undefined as equal
+    if (testStatus.running == newStatus.running &&
+        !developerMode.detailsForCurrentModuleUploaded) {
         return;
     }
 
@@ -91,18 +94,44 @@ function updateTestStatus(newStatus) {
             if (new_tr.find('.resultrunning').length == 1) {
                 printed_running = true;
             }
-            // every row above running must have results
+            // every row above the currently running module must have results
             if (!printed_running && new_tr.find('.links').length > 0 && new_tr.find('.links').children().length == 0) {
                 missing_results = true;
                 console.log("Missing results in row - trying again");
             }
         });
+
         if (!missing_results) {
+            var previewContainer = $('#preview_container_out');
+
             result_tbody.children().slice(first_tr_to_update).each(function() {
                 var tr = $(this);
+
+                // detatch the preview container if it is contained by the row to be relaced
+                var previewLinkIndex = -1;
+                if ($.contains(this, previewContainer[0])) {
+                    previewLinkIndex = $('.current_preview').index();
+                    previewContainer.detach();
+                }
+
+                // replace the old tr element with the new one
                 tr.replaceWith(new_trs.eq(tr.index()));
+
+                // re-attach the preview container if possible
+                if (previewLinkIndex < 0) {
+                    return;
+                }
+                var newPreviewLinks = new_trs.find('.links_a');
+                if (previewLinkIndex < newPreviewLinks.length) {
+                    var newPreviewLink = newPreviewLinks.eq(previewLinkIndex);
+                    newPreviewLink.addClass('current_preview');
+                    previewContainer.insertAfter(newPreviewLink);
+                } else {
+                    previewContainer.hide().appendTo('body');
+                }
             });
             testStatus.running = newStatus.running;
+            developerMode.detailsForCurrentModuleUploaded = false;
             updateDeveloperMode();
         }
 
@@ -315,6 +344,7 @@ var developerMode = {
     outstandingImagesToUpload: undefined,   // number of images which still need to be uploaded by the worker
     outstandingFilesToUpload: undefined,    // number of other files which still need to be uploaded by the worker
     uploadingUpToCurrentModule: undefined,  // whether the worker will upload up to the current module (happens when paused in the middle of a module)
+    detailsForCurrentModuleUploaded: false, // whether new test details for the currently running module have been uploaded
 
     // state of development session (comes from the openQA ws proxy)
     develSessionDeveloper: undefined,       // name of the user in possession the development session
@@ -329,7 +359,10 @@ var developerMode = {
     // returns whether the needle editor is ready
     // (results for the current module must have been uploaded yet)
     needleEditorReady: function() {
-        return this.isPaused && this.uploadingUpToCurrentModule && this.outstandingImagesToUpload === 0 && this.outstandingFilesToUpload === 0;
+        return this.isPaused &&
+            this.uploadingUpToCurrentModule &&
+            this.outstandingImagesToUpload === 0 &&
+            this.outstandingFilesToUpload === 0;
     },
 
     // returns the specified property evaluating possibly assigned functions
@@ -654,7 +687,7 @@ function addLivehandlerFlash(status, id, text) {
     addUniqueFlash(status, id, text, $('#developer-flash-messages'));
 }
 
-function handleMessageVisWebsocketConnection(wsConnection, msg) {
+function handleMessageFromWebsocketConnection(wsConnection, msg) {
     if (wsConnection !== developerMode.wsConnection) {
         return;
     }
@@ -713,7 +746,7 @@ function setupWebsocketConnection() {
         handleWebsocketConnectionClosed(wsConnection);
     };
     wsConnection.onmessage = function(msg) {
-        handleMessageVisWebsocketConnection(wsConnection, msg);
+        handleMessageFromWebsocketConnection(wsConnection, msg);
     };
 
     developerMode.wsConnection = wsConnection;
@@ -807,7 +840,8 @@ function processWsCommand(obj) {
                             '<strong>Error from livehandler daemon:</strong><p>' + what + '</p>');
         break;
     case "info":
-        switch(what) {
+        // map info message to internal status variables
+        switch (what) {
         case "cmdsrvmsg":
         case "upload progress":
             // reset error state
@@ -821,15 +855,31 @@ function processWsCommand(obj) {
                     return;
                 }
                 var statusVar = msgToStatusValue.statusVar;
+                var value = data[msg];
                 if (statusVar) {
-                    developerMode[statusVar] = data[msg];
+                    developerMode[statusVar] = value;
                 }
                 var action = msgToStatusValue.action;
                 if (action) {
-                    action(data[msg], data);
+                    action(value, data);
                 }
                 somethingChanged = true;
             });
+
+            break;
+        }
+
+        // handle specific info messages
+        switch (what) {
+        case "upload progress":
+            if (developerMode.uploadingUpToCurrentModule &&
+                    developerMode.outstandingImagesToUpload === 0 &&
+                    developerMode.outstandingFilesToUpload === 0) {
+                // receiving an upload progress event with these values means the upload
+                // has been concluded
+                // -> set flag so the next updateTestStatus() will request these details
+                developerMode.detailsForCurrentModuleUploaded = true;
+            }
             break;
         }
         break;

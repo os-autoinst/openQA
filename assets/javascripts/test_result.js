@@ -19,30 +19,43 @@ function checkPreviewVisible(a, preview) {
   }
 }
 
-function previewSuccess(data, force) {
-  $("#preview_container_in").html(data);
-  var a = $(".current_preview");
-  var td = a.parent();
-
-  var a_index = td.children(".links_a").index(a);
-
-  // a width = 64
-  var as_per_row = Math.floor(td.width() / 64);
+function insertPreviewContainer(previewContainer, previewLink) {
+  var td = previewLink.parent();
+  var links = td.children(".links_a");
+  var a_index = links.index(previewLink);
+  var as_per_row = Math.floor(td.width() / 64); // previewLink width is 64
   var full_top_rows = Math.ceil((a_index+1) / as_per_row);
   var preview_offset = (as_per_row * full_top_rows) - 1;
-  var as_count = td.children(".links_a").length - 1;
+  var as_count = links.length - 1;
   if (as_count < preview_offset) {
     preview_offset = as_count;
   }
+  previewContainer.insertAfter(links.eq(preview_offset));
+}
 
-  var pout = $("#preview_container_out");
-  // make it visible so jquery gets the props right
-  pout.insertAfter(td.children(".links_a").eq(preview_offset));
-
+function previewSuccess(data, force) {
+  // find the outher and inner preview container
   var pin = $("#preview_container_in");
+  var pout = $("#preview_container_out");
+  if (!pin.length || !pout.length) {
+      console.error('showing preview/needle diff: Preview container not found');
+      return;
+  }
+
+  pin.html(data);
+
+  // insert the outher preview container after the right preview link
+  var previewLink = $(".current_preview");
+  insertPreviewContainer(pout, previewLink);
+
   if (!(pin.find("pre").length || pin.find("audio").length)) {
     window.differ = new NeedleDiff("needle_diff", 1024, 768);
-    setDiffScreenshot(window.differ, $("#preview_container_in #step_view").data("image"));
+    var imageSource = pin.find("#step_view").data("image");
+    if (!imageSource) {
+        console.error('showing preview/needle diff: No image source found');
+        return;
+    }
+    setDiffScreenshot(window.differ, imageSource);
     setNeedle();
   }
   pin.css("left", -($(".result").width()+$(".component").width()+2*16));
@@ -50,7 +63,7 @@ function previewSuccess(data, force) {
   pout.width(tdWidth).hide().fadeIn({
     duration: (force?0:150),
     complete: function() {
-      checkPreviewVisible(a, pin);
+      checkPreviewVisible(previewLink, pin);
     }
   });
   $('[data-toggle="popover"]').popover({html: true});
