@@ -70,15 +70,19 @@ unless ($driver) {
     exit(0);
 }
 
+sub get_tooltip {
+    my ($job_id) = @_;
+    return $driver->execute_script("return \$('#nodeTable$job_id').closest('.node').data('original-title');");
+}
+
 subtest 'dependency json' => sub {
     my $baseurl = $driver->get_current_url;
     my $t_api   = Test::Mojo->new;
     my $app     = $t_api->app;
-    my $get;
     $t_api->ua(OpenQA::Client->new->ioloop(Mojo::IOLoop->singleton));
     $t_api->app($app);
 
-    $get = $t->get_ok($baseurl . 'tests/99981/dependencies')->status_is(200)->json_is(
+    $t->get_ok($baseurl . 'tests/99981/dependencies')->status_is(200)->json_is(
         undef => {
             cluster => {},
             edges   => [],
@@ -89,13 +93,16 @@ subtest 'dependency json' => sub {
                     label         => 'RAID0',
                     result        => 'skipped',
                     state         => 'cancelled',
-                    tooltipText   => 'opensuse-13.1-GNOME-Live-i686-Build0091-RAID0@32bit',
+                    name          => 'opensuse-13.1-GNOME-Live-i686-Build0091-RAID0@32bit',
+                    start_after   => [],
+                    parallel_with => [],
                 }]
         },
         'single node for job without dependencies'
-    ) or diag explain $get->tx->res->json;
+    );
+    diag explain $t->tx->res->json unless $t->success;
 
-    $get = $t->get_ok($baseurl . 'tests/99938/dependencies')->status_is(200)->json_is(
+    $t->get_ok($baseurl . 'tests/99938/dependencies')->status_is(200)->json_is(
         undef => {
             cluster => {
                 cluster_99963 => [99963, 99961]
@@ -117,7 +124,11 @@ subtest 'dependency json' => sub {
                     label         => 'doc',
                     result        => 'failed',
                     state         => 'done',
-                    tooltipText   => 'opensuse-Factory-DVD-x86_64-Build0048-doc@64bit',
+                    name          => 'opensuse-Factory-DVD-x86_64-Build0048-doc@64bit',
+                    start_after   => ['kde'],
+                    parallel_with => [],
+
+
                 },
                 {
                     blocked_by_id => undef,
@@ -125,7 +136,9 @@ subtest 'dependency json' => sub {
                     label         => 'kde',
                     result        => 'passed',
                     state         => 'done',
-                    tooltipText   => 'opensuse-13.1-DVD-i586-Build0091-kde@32bit',
+                    name          => 'opensuse-13.1-DVD-i586-Build0091-kde@32bit',
+                    start_after   => [],
+                    parallel_with => [],
                 },
                 {
                     blocked_by_id => undef,
@@ -133,7 +146,9 @@ subtest 'dependency json' => sub {
                     label         => 'kde',
                     result        => 'none',
                     state         => 'running',
-                    tooltipText   => 'opensuse-13.1-DVD-x86_64-Build0091-kde@64bit',
+                    name          => 'opensuse-13.1-DVD-x86_64-Build0091-kde@64bit',
+                    start_after   => ['doc'],
+                    parallel_with => ['kde'],
                 },
                 {
                     blocked_by_id => undef,
@@ -141,11 +156,14 @@ subtest 'dependency json' => sub {
                     label         => 'kde',
                     result        => 'none',
                     state         => 'running',
-                    tooltipText   => 'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
+                    name          => 'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
+                    start_after   => [],
+                    parallel_with => [],
                 }]
         },
         'nodes, edges and cluster computed'
-    ) or diag explain $get->tx->res->json;
+    );
+    diag explain $t->tx->res->json unless $t->success;
 };
 
 subtest 'job without dependencies' => sub {
@@ -173,6 +191,18 @@ subtest 'graph rendering' => sub {
     $check_element_quandity->('.cluster',  1, 'one cluster present');
     $check_element_quandity->('.edgePath', 2, 'two edges present');
     $check_element_quandity->('.node',     4, 'four nodes present');
+
+    like(
+        get_tooltip(99938),
+        qr/.*opensuse-Factory-DVD-x86_64-Build0048-doc\@64bit.*START_AFTER_TEST=kde.*/,
+        'tooltip for doc job'
+    );
+    like(
+        get_tooltip(99963),
+        qr/.*opensuse-13.1-DVD-x86_64-Build0091-kde\@64bit.*START_AFTER_TEST=doc.*PARALLEL_WITH=kde.*/,
+        'tooltip for kde job 99963'
+    );
+    like(get_tooltip(99961), qr/.*opensuse-13.1-NET-x86_64-Build0091-kde\@64bit<\/p>/, 'tooltip for kde job 99963');
 };
 
 kill_driver();

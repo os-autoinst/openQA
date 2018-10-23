@@ -654,7 +654,7 @@ sub module_fails {
         });
 }
 
-sub _add_dependency {
+sub _add_dependency_to_graph {
     my ($edges, $cluster, $cluster_by_job, $parent_job_id, $child_job_id, $dependency_type) = @_;
 
     # add edge for chained dependencies
@@ -702,6 +702,23 @@ sub _add_dependency {
     }
 }
 
+sub _add_dependency_to_node {
+    my ($node, $parent, $dependency_type) = @_;
+
+    my $key;
+    if ($dependency_type eq OpenQA::Schema::Result::JobDependencies::CHAINED) {
+        $key = 'start_after';
+    }
+    elsif ($dependency_type eq OpenQA::Schema::Result::JobDependencies::PARALLEL) {
+        $key = 'parallel_with';
+    }
+    else {
+        return;
+    }
+
+    push(@{$node->{$key}}, $parent->TEST);
+}
+
 sub _add_job {
     my ($visited, $nodes, $edges, $cluster, $cluster_by_job, $job) = @_;
 
@@ -715,21 +732,24 @@ sub _add_job {
         return _add_job($visited, $nodes, $edges, $cluster, $cluster_by_job, $clone);
     }
 
-    push(
-        @$nodes,
-        {
-            id            => $job_id,
-            label         => $job->TEST,
-            tooltipText   => $job->name,
-            state         => $job->state,
-            result        => $job->result,
-            blocked_by_id => $job->blocked_by_id,
-        });
+    my %node = (
+        id            => $job_id,
+        label         => $job->TEST,
+        name          => $job->name,
+        state         => $job->state,
+        result        => $job->result,
+        blocked_by_id => $job->blocked_by_id,
+        start_after   => [],
+        parallel_with => [],
+    );
+    push(@$nodes, \%node);
 
     # add parents
     for my $parent ($job->parents->all) {
-        my $parent_job_id = _add_job($visited, $nodes, $edges, $cluster, $cluster_by_job, $parent->parent) or next;
-        _add_dependency($edges, $cluster, $cluster_by_job, $parent_job_id, $job_id, $parent->dependency);
+        my ($parent_job, $dependency_type) = ($parent->parent, $parent->dependency);
+        my $parent_job_id = _add_job($visited, $nodes, $edges, $cluster, $cluster_by_job, $parent_job) or next;
+        _add_dependency_to_graph($edges, $cluster, $cluster_by_job, $parent_job_id, $job_id, $dependency_type);
+        _add_dependency_to_node(\%node, $parent_job, $dependency_type);
     }
 
     # add children
