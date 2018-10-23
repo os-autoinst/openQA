@@ -259,30 +259,40 @@ function handleKeyDownOnTestDetails(e) {
     if (ftn === 'INPUT' || ftn === 'TEXTAREA') {
         return;
     }
-    if (e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) {
+    if (e.metaKey || e.ctrlKey || e.altKey) {
         return;
     }
 
     switch(e.which) {
         case KeyEvent.DOM_VK_LEFT:
-            prevPreview();
-            e.preventDefault();
+            if (!e.shiftKey) {
+                prevPreview();
+                e.preventDefault();
+            }
             break;
         case KeyEvent.DOM_VK_RIGHT:
-            nextPreview();
-            e.preventDefault();
+            if (!e.shiftKey) {
+                nextPreview();
+                e.preventDefault();
+            }
             break;
         case KeyEvent.DOM_VK_ESCAPE:
-            setCurrentPreview(null);
-            e.preventDefault();
+            if (!e.shiftKey) {
+                setCurrentPreview(null);
+                e.preventDefault();
+            }
             break;
         case KeyEvent.DOM_VK_UP:
-            prevNeedle();
-            e.preventDefault();
+            if (e.shiftKey) {
+                prevNeedle();
+                e.preventDefault();
+            }
             break;
         case KeyEvent.DOM_VK_DOWN:
-            nextNeedle();
-            e.preventDefault();
+            if (e.shiftKey) {
+                nextNeedle();
+                e.preventDefault();
+            }
             break;
     }
 }
