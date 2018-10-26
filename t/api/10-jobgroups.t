@@ -157,6 +157,7 @@ subtest 'update job group' => sub() {
     my $put = $t->put_ok(
         '/api/v1/job_groups/1001',
         form => {
+            name                        => 'opensuse',
             size_limit_gb               => 101,
             build_version_sort          => 0,
             description                 => 'Test',
@@ -239,6 +240,7 @@ subtest 'prevent create/update duplicate job group on top level' => sub() {
     $t->put_ok(
         '/api/v1/job_groups/1003',
         form => {
+            name                        => 'Cool group',
             size_limit_gb               => 300,
             description                 => 'Updated group without parent',
             keep_important_logs_in_days => 100
@@ -265,6 +267,38 @@ subtest 'prevent create/update duplicate job group on top level' => sub() {
         ],
         'Update Cool group without parent'
     );
+};
+
+subtest 'prevent create parent/job group with empty or blank name' => sub() {
+    for my $group (qw(parent_groups job_groups)) {
+        for my $name (undef, '   ') {
+            my $post = $t->post_ok("/api/v1/$group", form => {name => $name})->status_is(400);
+            is(
+                $post->tx->res->json->{error},
+                'The group name must not be empty or blank',
+                'Unable to create parent/job group with empty or blank name'
+            );
+        }
+    }
+};
+
+subtest 'prevent update parent/job group with empty or blank name' => sub() {
+    for my $name (undef, '   ') {
+        my $put = $t->put_ok('/api/v1/parent_groups/1', form => {name => $name})->status_is(400);
+        is(
+            $put->tx->res->json->{error},
+            'The group name must not be empty or blank',
+            'Unable to update parent group with empty or blank name'
+        );
+    }
+    for my $name (undef, '   ') {
+        my $put = $t->put_ok('/api/v1/job_groups/1003', form => {name => $name})->status_is(400);
+        is(
+            $put->tx->res->json->{error},
+            'The group name must not be empty or blank',
+            'Unable to update job group with empty or blank name'
+        );
+    }
 };
 
 done_testing();

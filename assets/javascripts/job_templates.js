@@ -362,6 +362,7 @@ function alignCols() {
 
 function toggleEdit() {
     $('#properties').toggle(250);
+    checkJobGroupForm('#group_properties_form');
 }
 
 function showSubmitResults(form, result) {
@@ -392,7 +393,11 @@ function submitProperties(form) {
                $('td.prio input').attr('placeholder', defaultPrio);
            },
            error: function(xhr, ajaxOptions, thrownError) {
-               showSubmitResults(editorForm, '<i class="fas fa-trash"></i> Unable to apply changes');
+               var errmsg = '';
+               if (xhr.responseJSON.error) {
+                    errmsg = xhr.responseJSON.error;
+               }
+               showSubmitResults(editorForm, '<i class="fas fa-trash"></i> Unable to apply changes ' + '<strong>' + errmsg + '</strong>');
            }
     });
 

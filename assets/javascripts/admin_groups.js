@@ -20,6 +20,7 @@ function showAddJobGroup(plusElement) {
 
     addGroupElement.find('.modal-title').text(title);
     addGroupElement.modal();
+    checkJobGroupForm('#new_group_form');
     return false;
 }
 
@@ -31,6 +32,7 @@ function showAddParentGroup() {
     var addGroupElement = $('#add_group_modal');
     addGroupElement.find('.modal-title').text('Add new folder');
     addGroupElement.modal();
+    checkJobGroupForm('#new_group_form');
     return false;
 }
 
@@ -58,20 +60,38 @@ function fetchHtmlEntry(url, targetElement) {
     });
 }
 
+function _checkJobGroupInputs(formID) {
+    var empty = false;
+    $('.form-group input', formID).each(function() {
+        var trimmed = jQuery.trim($(this).val());
+        if (!trimmed.length) {
+            empty = true;
+        }
+    });
+    return empty;
+}
+
+function checkJobGroupForm(formID) {
+    var empty = _checkJobGroupInputs(formID);
+    if (empty) {
+        $('button[type=submit]', formID).attr('disabled', 'disabled');
+    }
+    $('.form-group input', formID).on('keyup change', function() {
+        var trimmed = jQuery.trim($(this).val());
+        if (!trimmed.length) {
+            $(this).addClass('is-invalid');
+            $('button[type=submit]', formID).attr('disabled', 'disabled');
+        } else {
+            $(this).removeClass('is-invalid');
+            $('button[type=submit]', formID).removeAttr('disabled');
+        }
+    });
+}
+
 function createGroup(form) {
     var editorForm = $(form);
-
     $('#new_group_error').hide();
-
-    if(!$('#new_group_name').val().length) {
-        $('#new_group_name_group').addClass('has-error');
-        $('#new_group_name_group .help-block').show();
-        return false;
-    }
-
     $('#new_group_creating').show();
-    $('#new_group_name_group').removeClass('has-error');
-    $('#new_group_name_group .help-block').hide();
 
     var data = editorForm.serialize();
     if(editorForm.data('create-parent')) {
@@ -107,7 +127,12 @@ function createGroup(form) {
             fetchHtmlEntry(rowUrl + response.id, targetElement);
         },
         error: function(xhr, ajaxOptions, thrownError) {
-            showError(thrownError);
+            if(xhr.responseJSON.error) {
+                showError(xhr.responseJSON.error);
+            }
+            else {
+                showError(thrownError);
+            }
         }
     });
 
