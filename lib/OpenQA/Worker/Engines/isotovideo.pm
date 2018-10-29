@@ -81,22 +81,6 @@ sub _save_vars($) {
     close($fd);
 }
 
-# runs in a subprocess, so don't rely on setting variables, but return
-sub cache_tests {
-    my ($shared_cache, $testpoolserver) = @_;
-
-    my $start = time;
-    # Do an flock to ensure only one worker is trying to synchronize at a time.
-    my @cmd = ('flock', "$shared_cache/needleslock");
-    push @cmd, (qw(rsync -avHP), "$testpoolserver/", qw(--delete));
-    push @cmd, "$shared_cache/tests/";
-
-    log_debug("Calling " . join(' ', @cmd));
-    my $res = system(@cmd);
-    log_debug(sprintf("RSYNC: Synchronization of tests directory took %.2f seconds", time - $start));
-    exit($res);
-}
-
 # When changing something here, also take a look at OpenQA::Utils::asset_type_from_setting
 sub detect_asset_keys {
     my ($vars) = @_;
@@ -229,22 +213,18 @@ sub engine_workit {
 
         # do test caching if TESTPOOLSERVER is set
         if ($hosts->{$current_host}{testpoolserver}) {
+            my $cache_client = OpenQA::Worker::Cache::Client->new;
             $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
             $vars{PRJDIR} = $shared_cache;
 
-            my $rsync = process(sub { cache_tests($shared_cache, $hosts->{$current_host}{testpoolserver}) })->start;
-            my $last_update = time;
-            while (defined(my $line = $rsync->getline)) {
-                log_info("rsync: " . $line, channels => 'autoinst');
-                if (time - $last_update > 5) {
-                    update_setup_status;
-                    $last_update = time;
-                }
-            }
+            my @rsync = ($hosts->{$current_host}{testpoolserver}, $shared_cache);
+            return {error => "Failed to send rsync cache request"} unless $cache_client->tests_sync(@rsync);
 
-            $rsync->wait_stop;
+            sleep 5 and update_setup_status until $cache_client->tests_sync_processed(@rsync);
+            my $exit = $cache_client->tests_sync_result(@rsync);
 
-            return {error => "Failed to rsync tests: exit " . $rsync->exit_status} unless $rsync->exit_status == 0;
+            log_info("rsync: " . $cache_client->tests_sync_output(@rsync), channels => 'autoinst');
+            return {error => "Failed to rsync tests: exit " . $exit} unless $exit == 0;
 
             $shared_cache = catdir($shared_cache, 'tests');
         }
