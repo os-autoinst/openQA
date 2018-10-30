@@ -204,7 +204,7 @@ firewall-cmd --permanent --zone=internal --add-interface=br1
 Reload firewall configuration using `firewall-cmd --reload` command.
 To enable masquerade one can use the following command:
 ```bash
-firewall-cmd --permanent --zone=external -add-masquerade
+firewall-cmd --permanent --zone=external --add-masquerade
 ```
 ip_forward is enabled automatically if masquerading is enabled:
 ```bash
