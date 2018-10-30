@@ -37,6 +37,9 @@ use constant ALLOWED_OS_AUTOINST_COMMANDS => {
     resume_test_execution              => 1,
 };
 
+# define error categories
+use constant {ERROR_CATEGORY_CMDSRV_CONNECTION => 'cmdsrv-connection',};
+
 has(
     developer_sessions => sub {
         return shift->app->schema->resultset('DeveloperSessions');
@@ -316,8 +319,9 @@ sub handle_disconnect_from_os_autoinst {
         $job_id,
         error => 'connection to os-autoinst command server lost',
         {
-            reason => $reason,
-            code   => $code,
+            reason   => $reason,
+            code     => $code,
+            category => ERROR_CATEGORY_CMDSRV_CONNECTION,
         });
     # don't implement a re-connect here, just quit the development session
     # (the user can just reopen the session to try again manually)
@@ -473,8 +477,13 @@ sub ws_proxy {
               . $job->name . ' ('
               . $job_id
               . ') where URL to os-autoinst command server is unknown');
-        $self->send_message_to_java_script_clients_and_finish($job_id,
-            error => 'os-autoinst command server not available, job is likely not running');
+        $self->send_message_to_java_script_clients_and_finish(
+            $job_id,
+            error => 'os-autoinst command server not available, job is likely not running',
+            {
+                reason   => 'URL to command server unknown',
+                category => ERROR_CATEGORY_CMDSRV_CONNECTION,
+            });
     }
 
     # start opening a websocket connection to os-autoinst instantly

@@ -684,7 +684,10 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
             {
                 type => 'error',
                 what => 'os-autoinst command server not available, job is likely not running',
-                data => undef,
+                data => {
+                    reason   => 'URL to command server unknown',
+                    category => 'cmdsrv-connection',
+                },
             });
         $t_livehandler->finished_ok(1011);
 

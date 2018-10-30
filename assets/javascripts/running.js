@@ -831,10 +831,21 @@ function processWsCommand(obj) {
     var somethingChanged = false;
     var what = obj.what;
     var data = obj.data;
+    var category;
+    if (data) {
+        category = data.category;
+    }
 
     switch(obj.type) {
     case "error":
         // handle errors
+
+        // ignore connection errors if there's no running module according to OpenQA::WebAPI::Controller::Running::status
+        if (!testStatus.running && category === 'cmdsrv-connection') {
+            console.log('ignoring error from ws proxy: ' + what);
+            break;
+        }
+
         console.log("Error from ws proxy: " + what);
         addLivehandlerFlash('danger', 'ws_proxy_error-' + what,
                             '<strong>Error from livehandler daemon:</strong><p>' + what + '</p>');
