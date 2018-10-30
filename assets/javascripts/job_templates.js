@@ -144,12 +144,12 @@ function testChanged() {
 function findPresentTests(table) {
     var presentTests = [];
     table.find('td.name').each(function(index, td) {
-        var test = td.innerText.trim();
-        if(!test) {
-            var select = $(td).find('select');
-            if(select && select.prop('disabled')) {
-                test = select.val();
-            }
+        var test;
+        var select = $(td).find('select');
+        if(select.length && select.prop('disabled')) {
+            test = select.val();
+        } else {
+            test = td.innerText.trim();
         }
         if(test) {
             presentTests.push(test);
