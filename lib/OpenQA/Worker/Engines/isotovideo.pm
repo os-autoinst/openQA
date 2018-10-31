@@ -29,6 +29,7 @@ use Errno;
 use Cwd qw(abs_path getcwd);
 use OpenQA::Worker::Cache;
 use OpenQA::Worker::Cache::Client;
+use OpenQA::Worker::Cache::Request;
 use OpenQA::Worker::Common;
 use Time::HiRes 'sleep';
 use IO::Handle;
@@ -115,19 +116,18 @@ sub cache_assets {
         return {error => "Cache service not available."}            unless $cache_client->available;
         return {error => "No workers active in the cache service."} unless $cache_client->available_workers;
 
-        if (
-            $cache_client->enqueue_download(
-                {
-                    id    => $job->{id},
-                    asset => $asset_uri,
-                    type  => $assetkeys->{$this_asset},
-                    host  => $current_host
-                }))
-        {
+        my $asset_request = OpenQA::Worker::Cache::Request->asset(
+            id    => $job->{id},
+            asset => $asset_uri,
+            type  => $assetkeys->{$this_asset},
+            host  => $current_host
+        );
+
+        if ($cache_client->enqueue($asset_request)) {
             log_debug("Downloading " . $asset_uri . " - request sent to Cache Service.", channels => 'autoinst');
-            update_setup_status and sleep 5 until $cache_client->processed($asset_uri);
-            log_debug("Download of " . $asset_uri . " processed",       channels => 'autoinst');
-            log_debug($cache_client->asset_download_output($asset_uri), channels => 'autoinst');
+            update_setup_status and sleep 5 until $cache_client->processed($asset_request);
+            log_debug("Download of " . $asset_uri . " processed", channels => 'autoinst');
+            log_debug($cache_client->output($asset_request),      channels => 'autoinst');
         }
 
         $asset = $cache_client->asset_path($current_host, $asset_uri)
@@ -213,17 +213,21 @@ sub engine_workit {
 
         # do test caching if TESTPOOLSERVER is set
         if ($hosts->{$current_host}{testpoolserver}) {
-            my $cache_client = OpenQA::Worker::Cache::Client->new;
+            my $cache_client  = OpenQA::Worker::Cache::Client->new;
+            my $rsync_request = OpenQA::Worker::Cache::Request->rsync(
+                from => $hosts->{$current_host}{testpoolserver},
+                to   => $shared_cache
+            );
+
             $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
             $vars{PRJDIR} = $shared_cache;
 
-            my @rsync = ($hosts->{$current_host}{testpoolserver}, $shared_cache);
-            return {error => "Failed to send rsync cache request"} unless $cache_client->tests_sync(@rsync);
+            return {error => "Failed to send rsync cache request"} unless $cache_client->enqueue($rsync_request);
 
-            sleep 5 and update_setup_status until $cache_client->tests_sync_processed(@rsync);
-            my $exit = $cache_client->tests_sync_result(@rsync);
+            sleep 5 and update_setup_status until $cache_client->processed($rsync_request);
+            my $exit = $cache_client->result($rsync_request);
 
-            log_info("rsync: " . $cache_client->tests_sync_output(@rsync), channels => 'autoinst');
+            log_info("rsync: " . $cache_client->output($rsync_request), channels => 'autoinst');
             return {error => "Failed to rsync tests: exit " . $exit} unless $exit == 0;
 
             $shared_cache = catdir($shared_cache, 'tests');

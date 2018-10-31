@@ -81,36 +81,6 @@ get '/session_token' => sub { shift->render(json => {session_token => SESSION_TO
 
 get '/info' => sub { $_[0]->render(json => shift->minion->stats) };
 
-post '/download' => sub {
-    my $c = shift;
-
-    my $data  = $c->req->json;
-    my $id    = $data->{id};
-    my $type  = $data->{type};
-    my $asset = $data->{asset};
-    my $host  = $data->{host};
-    # Specific error cases for missing fields
-    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => 'No ID defined'})
-      unless defined $id;
-    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => 'No Asset defined'})
-      unless defined $asset;
-    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => 'No Asset type defined'})
-      unless defined $type;
-    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => 'No Host defined'})
-      unless defined $host;
-    app->log->debug("Requested: ID: $id Type: $type Asset: $asset Host: $host ");
-
-    my $lock = _gen_guard_name($asset);
-
-    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_DOWNLOADING}) if active($lock);
-    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_IGNORE})      if enqueued($lock);
-
-    $c->minion->enqueue(cache_asset => [$id, $type, $asset, $host]);
-    enqueue($lock);
-
-    $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ENQUEUED});
-};
-
 post '/status' => sub {
     my $c    = shift;
     my $data = $c->req->json;
@@ -120,9 +90,9 @@ post '/status' => sub {
     $c->render(
         json => {
             status => (
-                  active($lock)   ? OpenQA::Worker::Cache::ASSET_STATUS_DOWNLOADING
-                : enqueued($lock) ? OpenQA::Worker::Cache::ASSET_STATUS_IGNORE
-                :                   OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED
+                  active($lock)   ? OpenQA::Worker::Cache::STATUS_DOWNLOADING()
+                : enqueued($lock) ? OpenQA::Worker::Cache::STATUS_IGNORE()
+                :                   OpenQA::Worker::Cache::STATUS_PROCESSED()
             ),
             (result => $j->{result}, output => $j->{notes}->{output}) x !!($j)});
 };
@@ -131,28 +101,33 @@ post '/status' => sub {
 post '/execute_task' => sub {
     my $c    = shift;
     my $data = $c->req->json;
-    my $lock = _gen_guard_name($data->{lock});
     my $task = $data->{task};
     my $args = $data->{args};
 
-    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => 'No Task defined'})
+    return $c->render(json => {status => OpenQA::Worker::Cache::STATUS_ERROR, error => 'No Task defined'})
       unless defined $task;
-    return $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ERROR, error => 'No Arguments defined'})
+    return $c->render(json => {status => OpenQA::Worker::Cache::STATUS_ERROR, error => 'No Arguments defined'})
       unless defined $args;
 
-    $c->minion->enqueue($task => $args);
-    enqueue($lock);
+    my $lock = $data->{lock} ? _gen_guard_name($data->{lock}) : _gen_guard_name(@$args);
+    app->log->debug("Requested [$task] Args: @{$args} Lock: $lock");
 
-    $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_ENQUEUED});
+    return $c->render(json => {status => OpenQA::Worker::Cache::STATUS_DOWNLOADING()}) if active($lock);
+    return $c->render(json => {status => OpenQA::Worker::Cache::STATUS_IGNORE()})      if enqueued($lock);
+
+    enqueue($lock);
+    $c->minion->enqueue($task => $args);
+
+    $c->render(json => {status => OpenQA::Worker::Cache::STATUS_ENQUEUED});
 };
+
+get '/' => sub { shift->redirect_to('/minion') };
 
 post '/dequeue' => sub {
     my $c    = shift;
     my $data = $c->req->json;
-    my $lock = _gen_guard_name($data->{lock});
-
-    dequeue($lock);
-    $c->render(json => {status => OpenQA::Worker::Cache::ASSET_STATUS_PROCESSED});
+    dequeue(_gen_guard_name($data->{lock}));
+    $c->render(json => {status => OpenQA::Worker::Cache::STATUS_PROCESSED});
 };
 
 app->minion->backend->reset;
@@ -198,11 +173,11 @@ Returns the current session token.
 
 OpenQA::Worker::Cache::Service is exposing the following POST routes.
 
-=head2 /download
+=head2 /execute_task
 
-Enqueue the asset download. It acceps a POST JSON payload of the form:
+Enqueue the task. It acceps a POST JSON payload of the form:
 
-      { id => 9999, type => 'hdd', asset=> 'default.qcow2', host=> 'openqa.opensuse.org' }
+      { task => 'cache_assets', args => [qw(42 test hdd open.qa)] }
 
 =head2 /status
 

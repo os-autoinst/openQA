@@ -15,19 +15,14 @@
 
 package OpenQA::Worker::Cache::Task::Sync;
 
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'OpenQA::Worker::Cache::Task';
 use Mojo::URL;
 use constant LOCK_RETRY_DELAY   => 30;
 use constant MINION_LOCK_EXPIRE => 99999;    # ~27 hours
 
 use OpenQA::Worker::Cache::Client;
 use OpenQA::Worker::Cache;
-
-# TODO: extract common function/attributes from tasks.
-has client => sub { OpenQA::Worker::Cache::Client->new };
-
-sub _dequeue { shift->client->_dequeue_job(pop) }
-sub _gen_guard_name { join('.', shift->client->session_token, pop) }
+use OpenQA::Worker::Cache::Request;
 
 sub register {
     my ($self, $app) = @_;
@@ -35,14 +30,14 @@ sub register {
     $app->minion->add_task(
         cache_tests => sub {
             my ($job, $from, $to) = @_;
-            my $_guard = join('.', $from, $to);
-            my $guard_name = $self->_gen_guard_name($_guard);
+            my $req = OpenQA::Worker::Cache::Request->new->rsync(from => $from, to => $to);
+            my $guard_name = $self->_gen_guard_name($req->lock);
 
             return $job->remove unless defined $from && defined $to;
             return $job->retry({delay => LOCK_RETRY_DELAY})
               unless my $guard = $app->minion->guard($guard_name, MINION_LOCK_EXPIRE);
             $app->log->debug("[$$] [Job #" . $job->id . "] Guard: $guard_name Sync: $from to $to");
-            $app->log->debug("[$$] Job dequeued ") if $self->_dequeue($_guard);
+            $app->log->debug("[$$] Job dequeued ") if $self->_dequeue($req->lock);
             $OpenQA::Utils::app = undef;
             {
                 my $output;

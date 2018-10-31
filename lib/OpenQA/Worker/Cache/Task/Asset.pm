@@ -15,32 +15,37 @@
 
 package OpenQA::Worker::Cache::Task::Asset;
 
-use Mojo::Base 'Mojolicious::Plugin';
+use Mojo::Base 'OpenQA::Worker::Cache::Task';
 use Mojo::URL;
 use constant LOCK_RETRY_DELAY   => 30;
 use constant MINION_LOCK_EXPIRE => 99999;    # ~27 hours
 
 use OpenQA::Worker::Cache::Client;
 use OpenQA::Worker::Cache;
+use OpenQA::Worker::Cache::Request;
 
-has cache  => sub { OpenQA::Worker::Cache->from_worker };
-has client => sub { OpenQA::Worker::Cache::Client->new };
-
-sub _dequeue { shift->client->_dequeue_job(pop) }
-sub _gen_guard_name { join('.', shift->client->session_token, pop) }
+has cache => sub { OpenQA::Worker::Cache->from_worker };
 
 sub register {
     my ($self, $app) = @_;
 
     $app->minion->add_task(
         cache_asset => sub {
-            my ($job, $id, $type, $asset_name, $host) = @_;
-            my $guard_name = $self->_gen_guard_name($asset_name);
+            my $job = shift;
+            my ($id, $type, $asset_name, $host) = @_;
+            my $req = OpenQA::Worker::Cache::Request->new->asset(
+                id    => $id,
+                type  => $type,
+                asset => $asset_name,
+                host  => $host
+            );
+            my $guard_name = $self->_gen_guard_name($req->lock);
+
             return $job->remove unless defined $asset_name && defined $type && defined $host;
             return $job->retry({delay => LOCK_RETRY_DELAY})
               unless my $guard = $app->minion->guard($guard_name, MINION_LOCK_EXPIRE);
             $app->log->debug("[$$] [Job #" . $job->id . "] Guard: $guard_name Download: $asset_name");
-            $app->log->debug("[$$] Job dequeued ") if $self->_dequeue($asset_name);
+            $app->log->debug("[$$] Job dequeued " . $req->lock) if $self->_dequeue($req->lock);
             $OpenQA::Utils::app = undef;
             {
                 my $output;
