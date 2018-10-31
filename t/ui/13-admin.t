@@ -413,7 +413,7 @@ sub is_element_text {
         $text =~ s/^\s+|\s+$//g;
         $text;
     } @$elements;
-    is_deeply(\@texts, $expected, $message);
+    is_deeply(\@texts, $expected, $message) or diag explain \@texts;
 }
 
 subtest 'edit mediums' => sub() {
@@ -471,6 +471,7 @@ subtest 'edit mediums' => sub() {
     wait_for_ajax;
     $driver->send_keys_to_active_element('64bit');
     $driver->send_keys_to_active_element(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    javascript_console_has_no_warnings_or_errors;
     # the test should not be selectable in the first select (which is now second) anymore
     @options = $driver->find_elements('#sle-13-DVD tr:nth-of-type(2) td:first-of-type option');
     is_element_text(
@@ -487,6 +488,7 @@ subtest 'edit mediums' => sub() {
     $driver->find_element_by_link('Cool Group has been edited!')->click();
 
     wait_for_ajax;
+    javascript_console_has_no_warnings_or_errors;
     my @picks = $driver->find_elements('.search-choice');
     is_element_text(\@picks, [qw(64bit 64bit HURRA)], 'chosen tests present');
 };
