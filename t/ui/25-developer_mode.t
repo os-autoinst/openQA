@@ -76,6 +76,14 @@ unless ($driver) {
     exit(0);
 }
 
+# executes JavaScript code taking a note
+sub inject_java_script {
+    my ($java_script) = @_;
+
+    note("injecting JavaScript: $java_script\n");
+    $driver->execute_script($java_script);
+}
+
 # sets the properties of the specified global JavaScript object and updates the developer panel
 sub fake_state {
     my ($variable, $state) = @_;
@@ -83,9 +91,14 @@ sub fake_state {
     my $java_script = '';
     $java_script .= "$variable\['$_'\] = $state->{$_};" for (keys %$state);
     $java_script .= 'updateDeveloperPanel();';
+    inject_java_script($java_script);
+}
 
-    print("injecting JavaScript: $java_script\n");
-    $driver->execute_script($java_script);
+# invokes the handler for messages from ws connection
+sub fake_message_from_ws_connection {
+    my ($message) = @_;
+
+    inject_java_script("handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: \"$message\" });");
 }
 
 # checks whether the commands sent by the JavaScript since the last call matches the expected commands
@@ -503,17 +516,31 @@ subtest 'process state changes from os-autoinst/worker' => sub {
         $driver->execute_script('handleMessageFromWebsocketConnection(developerMode.wsConnection, { });');
         assert_flash_messages(any => [], 'messages with no data are ignored');
 
-        my $handle_error
-          = 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"error\",\"what\":\"some error\"}" });';
-        my $handle_another_error
-          = 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"error\",\"what\":\"another error\"}" });';
-        $driver->execute_script(
-            'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "invalid { json" });');
-        $driver->execute_script($handle_error);
-        $driver->execute_script($handle_error);
-        $driver->execute_script($handle_another_error);
+        # define messages which should lead to errors
+        my $invalid_message = 'invalid { json';
+        my $error           = '{\"type\":\"error\",\"what\":\"some error\"}';
+        my $another_error   = '{\"type\":\"error\",\"what\":\"another error\"}';
+        my $not_ignored_connection_error
+          = '{\"type\":\"error\",\"what\":\"not ignored error\",\"data\":{\"category\":\"cmdsrv-connection\"}}';
+        my $ignored_connection_error
+          = '{\"type\":\"error\",\"what\":\"ignored error\",\"data\":{\"category\":\"cmdsrv-connection\"}}';
+
+ # assume there's no running module (so connection issues with os-autoinst are expected and errors regarding it ignored)
+        fake_state(testStatus => {running => 'null'});
+
+        # let the JavaScript code process those errors
+        fake_message_from_ws_connection($invalid_message);
+        fake_message_from_ws_connection($error);
+        fake_message_from_ws_connection($error);    # should not be shown twice
+        fake_message_from_ws_connection($another_error);
+        fake_message_from_ws_connection($ignored_connection_error);
+
+        # assume there's a running module (so connection issues with os-autoinst are treated as errors)
+        fake_state(testStatus => {running => '"foo"'});
+        fake_message_from_ws_connection($not_ignored_connection_error);
+
         assert_flash_messages(
-            danger => [qr/Unable to parse/, qr/some error/, qr/another error/],
+            danger => [qr/Unable to parse/, qr/some error/, qr/another error/, qr/not ignored error/],
             'errors shown via flash messages, same error not shown twice'
         );
 
@@ -523,12 +550,12 @@ subtest 'process state changes from os-autoinst/worker' => sub {
             $driver->execute_script('return $($(".alert-danger")[1]).find("button").click();');
 
             assert_flash_messages(
-                danger => [qr/Unable to parse/, qr/another error/],
+                danger => [qr/Unable to parse/, qr/another error/, qr/not ignored error/],
                 'flash message "some error" dismissed'
             );
-            $driver->execute_script($handle_error);
+            fake_message_from_ws_connection($error);
             assert_flash_messages(
-                danger => [qr/Unable to parse/, qr/another error/, qr/some error/],
+                danger => [qr/Unable to parse/, qr/another error/, qr/not ignored error/, qr/some error/],
                 'unique flash message appears again after dismissed'
             );
         };
