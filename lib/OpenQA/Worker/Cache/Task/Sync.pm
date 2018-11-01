@@ -39,19 +39,14 @@ sub register {
             $app->log->debug("[$$] [Job #" . $job->id . "] Guard: $guard_name Sync: $from to $to");
             $app->log->debug("[$$] Job dequeued ") if $self->_dequeue($req->lock);
             $OpenQA::Utils::app = undef;
-            {
-                my $output;
-                open my $handle, '>', \$output;
-                local *STDERR = $handle;
-                local *STDOUT = $handle;
 
-                my @cmd = (qw(rsync -avHP), "$from/", qw(--delete), "$to/tests/");
-                $app->log->debug("[$$] [Job #" . $job->id . "] Calling " . join(' ', @cmd));
-                system(@cmd);
-                $job->finish($? >> 8);
-                $job->note(output => $output);
-                print $output;
-            }
+            my @cmd = (qw(rsync -avHP), "$from/", qw(--delete), "$to/tests/");
+            $app->log->debug("[$$] [Job #" . $job->id . "] Calling " . join(' ', @cmd));
+            my $output = `@cmd`;
+            $job->finish($? >> 8);
+            $job->note(output => $output);
+            print $output;
+
             $app->log->debug("[$$] [Job #" . $job->id . "] Finished");
         });
 }

@@ -326,8 +326,8 @@ subtest 'Cache tests' => sub {
 
     path($cache_location, "test_directory")->make_path;
 
-    $worker_cache_service->start;
-    $cache_service->start;
+    $worker_cache_service->restart->restart;
+    $cache_service->restart->restart;
 
     my $cache_client = OpenQA::Worker::Cache::Client->new;
 

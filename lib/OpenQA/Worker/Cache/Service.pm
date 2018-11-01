@@ -97,7 +97,6 @@ post '/status' => sub {
             (result => $j->{result}, output => $j->{notes}->{output}) x !!($j)});
 };
 
-# NOTE: Bit more generic - Specfic assets routes calls for refactoring wrt this implementation
 post '/execute_task' => sub {
     my $c    = shift;
     my $data = $c->req->json;

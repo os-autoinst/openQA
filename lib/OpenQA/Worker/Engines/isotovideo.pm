@@ -116,18 +116,18 @@ sub cache_assets {
         return {error => "Cache service not available."}            unless $cache_client->available;
         return {error => "No workers active in the cache service."} unless $cache_client->available_workers;
 
-        my $asset_request = OpenQA::Worker::Cache::Request->asset(
+        my $asset_request = $cache_client->request->asset(
             id    => $job->{id},
             asset => $asset_uri,
             type  => $assetkeys->{$this_asset},
             host  => $current_host
         );
 
-        if ($cache_client->enqueue($asset_request)) {
+        if ($asset_request->enqueue) {
             log_debug("Downloading " . $asset_uri . " - request sent to Cache Service.", channels => 'autoinst');
-            update_setup_status and sleep 5 until $cache_client->processed($asset_request);
+            update_setup_status and sleep 5 until $asset_request->processed;
             log_debug("Download of " . $asset_uri . " processed", channels => 'autoinst');
-            log_debug($cache_client->output($asset_request),      channels => 'autoinst');
+            log_debug($asset_request->output,                     channels => 'autoinst');
         }
 
         $asset = $cache_client->asset_path($current_host, $asset_uri)
@@ -213,21 +213,22 @@ sub engine_workit {
 
         # do test caching if TESTPOOLSERVER is set
         if ($hosts->{$current_host}{testpoolserver}) {
+            $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
+
             my $cache_client  = OpenQA::Worker::Cache::Client->new;
-            my $rsync_request = OpenQA::Worker::Cache::Request->rsync(
+            my $rsync_request = $cache_client->request->rsync(
                 from => $hosts->{$current_host}{testpoolserver},
                 to   => $shared_cache
             );
 
-            $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
             $vars{PRJDIR} = $shared_cache;
 
-            return {error => "Failed to send rsync cache request"} unless $cache_client->enqueue($rsync_request);
+            return {error => "Failed to send rsync cache request"} unless $rsync_request->enqueue;
 
-            sleep 5 and update_setup_status until $cache_client->processed($rsync_request);
-            my $exit = $cache_client->result($rsync_request);
+            sleep 5 and update_setup_status until $rsync_request->processed;
+            my $exit = $rsync_request->result;
 
-            log_info("rsync: " . $cache_client->output($rsync_request), channels => 'autoinst');
+            log_info("rsync: " . $rsync_request->output, channels => 'autoinst');
             return {error => "Failed to rsync tests: exit " . $exit} unless $exit == 0;
 
             $shared_cache = catdir($shared_cache, 'tests');

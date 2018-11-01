@@ -47,8 +47,8 @@ sub register {
             $app->log->debug("[$$] [Job #" . $job->id . "] Guard: $guard_name Download: $asset_name");
             $app->log->debug("[$$] Job dequeued " . $req->lock) if $self->_dequeue($req->lock);
             $OpenQA::Utils::app = undef;
+            my $output;
             {
-                my $output;
                 open my $handle, '>', \$output;
                 local *STDERR = $handle;
                 local *STDOUT = $handle;
@@ -56,8 +56,8 @@ sub register {
                 $self->cache->host($host);
                 $self->cache->get_asset({id => $id}, $type, $asset_name);
                 $job->note(output => $output);
-                print $output;
             }
+            print $output;
             $app->log->debug("[$$] [Job #" . $job->id . "] Finished");
         });
 }

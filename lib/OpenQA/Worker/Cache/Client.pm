@@ -15,12 +15,13 @@
 
 package OpenQA::Worker::Cache::Client;
 
-use Mojo::Base 'Mojo::UserAgent';
 use OpenQA::Worker::Cache;
 use OpenQA::Worker::Common;
 
+use Mojo::Base 'Mojo::UserAgent';
 use Mojo::URL;
 use Mojo::File 'path';
+
 has host  => 'http://127.0.0.1:7844';
 has retry => 5;
 has cache_dir =>
@@ -68,10 +69,7 @@ sub _dequeue_lock {
     !!(shift->_post(dequeue => {lock => pop}) eq OpenQA::Worker::Cache::STATUS_PROCESSED);
 }
 
-# TODO:
-# Some of following methods should be inside the request objects and OpenQA::Worker::Cache::Request
-# should handle a reference to the client.
-# E.g. $request->status and $request->output instead of $client->status($request)
+# See also OpenQA::Cache::Request
 
 sub execute_task { shift->_post(execute_task => {task => $_[0]->task, args => [$_[0]->to_array], lock => $_[0]->lock}) }
 sub status { $_[0]->_post(status => {lock => pop->lock}) }
@@ -91,6 +89,8 @@ sub enqueue       { _reply(shift->execute_task(@_)) }
 sub asset_path { path(shift->cache_dir, @_ > 1 ? (OpenQA::Worker::Cache::_base_host($_[0]) || shift) : ())->child(pop) }
 sub asset_exists { !!(-e shift->asset_path(@_)) }
 
+sub request { OpenQA::Worker::Cache::Request->new(client => shift) }
+
 =encoding utf-8
 
 =head1 NAME
@@ -102,7 +102,7 @@ OpenQA::Worker::Cache::Client - OpenQA Cache Service Client
     use OpenQA::Worker::Cache::Client;
 
     my $client = OpenQA::Worker::Cache::Client->new( host=> 'http://127.0.0.1:7844', retry => 5, cache_dir => '/tmp/cache/path' );
-    my $request = OpenQA::Worker::Cache::Request->asset( id => 9999, asset => 'asset_name.qcow2', type  => 'hdd', host  => 'openqa.opensuse.org' );
+    my $request = $client->request->asset( id => 9999, asset => 'asset_name.qcow2', type  => 'hdd', host  => 'openqa.opensuse.org' );
     $client->enqueue($request)
 
     if ($client->processed($request) && $client->asset_exists('asset_name.qcow2')) {
@@ -133,8 +133,9 @@ and return resulting L<Mojo::Transaction::HTTP> object.
     use OpenQA::Worker::Cache::Client;
     use OpenQA::Worker::Cache::Request;
 
-    my $request = OpenQA::Worker::Cache::Request->asset( id => 9999, asset => 'asset_name.qcow2', type  => 'hdd', host  => 'openqa.opensuse.org' );
-    my $bool = OpenQA::Worker::Cache::Client->new->enqueue($request);
+    my $client = OpenQA::Worker::Cache::Client->new;
+    my $request = $client->request->asset( id => 9999, asset => 'asset_name.qcow2', type  => 'hdd', host  => 'openqa.opensuse.org' );
+    my $bool = $request->enqueue($request);
 
 Perform blocking request to download the asset to the Cache Service
 and returns a boolean indicating the success or the failure of dispatching
@@ -143,18 +144,20 @@ the request to it.
 =head2 processed()
 
     use OpenQA::Worker::Cache::Client;
-    my $request = OpenQA::Worker::Cache::Request->asset( id => 9999, asset => 'asset_name.qcow2', type  => 'hdd', host  => 'openqa.opensuse.org' );
+    my $client = OpenQA::Worker::Cache::Client->new;
 
-    my $bool = OpenQA::Worker::Cache::Client->new->processed($request);
+    my $request = $client->request->asset( id => 9999, asset => 'asset_name.qcow2', type  => 'hdd', host  => 'openqa.opensuse.org' );
+    my $bool = $request->processed;
 
 Perform blocking request, it returns true if the request was processed by the Cache Service, false otherwise.
 
 =head2 status()
 
     use OpenQA::Worker::Cache::Client;
-    my $request = OpenQA::Worker::Cache::Request->asset( id => 9999, asset => 'asset_name.qcow2', type  => 'hdd', host  => 'openqa.opensuse.org' );
 
-    my $status = OpenQA::Worker::Cache::Client->new->status({
+    my $client = OpenQA::Worker::Cache::Client->new;
+    my $request = $client->request->asset( id => 9999, asset => 'asset_name.qcow2', type  => 'hdd', host  => 'openqa.opensuse.org' );
+    my $status = $client->status({
         id    => 9999,
         asset => 'asset_name.qcow2',
         type  => 'hdd',
@@ -187,8 +190,10 @@ Returns true if the asset can be resolved, false otherwise.
 
     use OpenQA::Worker::Cache::Client;
 
-    my $request = OpenQA::Worker::Cache::Request->asset( id => 9999, asset => 'asset_name.qcow2', type  => 'hdd', host  => 'openqa.opensuse.org' );
-    my $output = OpenQA::Worker::Cache::Client->new->output( $request );
+    my $client = OpenQA::Worker::Cache::Client->new;
+
+    my $request = $client->request->asset( id => 9999, asset => 'asset_name.qcow2', type  => 'hdd', host  => 'openqa.opensuse.org' );
+    my $output = $request->output;
 
 Returns a string which is the output of the Cache process inside the Minion worker.
 
@@ -196,8 +201,9 @@ Returns a string which is the output of the Cache process inside the Minion work
 
     use OpenQA::Worker::Cache::Client;
 
-    my $request = OpenQA::Worker::Cache::Request->asset( id => 9999, asset => 'asset_name.qcow2', type  => 'hdd', host  => 'openqa.opensuse.org' );
-    my $result = OpenQA::Worker::Cache::Client->new->result( $request );
+    my $client = OpenQA::Worker::Cache::Client->new;
+    my $request = $client->request->asset( id => 9999, asset => 'asset_name.qcow2', type  => 'hdd', host  => 'openqa.opensuse.org' );
+    my $result = $request->result;
 
 Returns the task result of the Cache process inside the Minion worker.
 
