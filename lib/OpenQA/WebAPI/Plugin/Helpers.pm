@@ -64,6 +64,16 @@ sub register {
             return $css_class;
         });
 
+    $app->helper(
+        bugtitle_for => sub {
+            my ($c, $bugid, $bug) = @_;
+            my $text = "Bug referenced: $bugid";
+            if ($bug && $bug->existing && $bug->title) {
+                $text .= "\n" . $bug->title;
+            }
+            return $text;
+        });
+
     $app->helper(bug_report_actions => sub { shift->include_branding('external_reporting') });
 
     $app->helper(
