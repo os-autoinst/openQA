@@ -42,6 +42,7 @@ sub parse {
 
         $result->{result} = 'fail';
         $result->{result} = 'ok' if $res->{outcome} =~ /passed/i;
+        $result->{result} = 'skip' if $res->{outcome} =~ /skipped/i;
 
         $t_name =~ s/[:\/\[\]\.]/_/g;    # dots in the filename confuse the web api routes
         $result->{name} = $t_name;

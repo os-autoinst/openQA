@@ -607,8 +607,8 @@ sub test_ltp_file {
 sub test_ipa_file {
     my $p = shift;
     my %names;
-    is $p->results->size, 15, 'Expected 15 results' or die diag explain $p->results;
-    is $p->tests->size,   15, 'Expected 15 tests'   or die diag explain $p->results;
+    is $p->results->size, 16, 'Expected 16 results' or die diag explain $p->results;
+    is $p->tests->size,   16, 'Expected 16 tests'   or die diag explain $p->results;
 
     $p->results->each(
         sub {
@@ -617,6 +617,9 @@ sub test_ipa_file {
             is $_->details->[0]->{_source}, 'parser';
             if ($_->name =~ /test_sles_repos|test_sles_guestregister|test_sles_smt_reg/) {
                 is $_->result, 'fail' or die;
+            }
+            elsif ($_->name =~ /test_sles_ec2_network/) {
+                is $_->result, 'skip' or die;
             }
             else {
                 is $_->result, 'ok' or die diag explain $_;
