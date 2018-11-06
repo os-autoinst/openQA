@@ -154,7 +154,7 @@ sub test_download {
 subtest 'Cache Requests' => sub {
     use OpenQA::Worker::Cache::Request;
     my $asset_request = $cache_client->request->asset(id => 922756, asset => 'test', type => 'hdd', host => 'open.qa');
-    is $asset_request->lock, join('.', 922756,, 'hdd', 'test', 'open.qa');
+    is $asset_request->lock, join('.', 'test', 'open.qa');
 
     my $rsync_request = $cache_client->request->rsync(from => 'foo', to => 'bar');
     is $rsync_request->lock, join('.', 'foo', 'bar');

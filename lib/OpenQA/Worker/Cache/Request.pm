@@ -47,7 +47,8 @@ package OpenQA::Worker::Cache::Request::Asset {
 
     sub lock {
         my $self = shift;
-        join('.', map { $self->$_ } @FIELDS);
+        # Generate same lock for asset/host
+        join('.', map { $self->$_ } qw(asset host));
     }
     sub to_hash { {id => $_[0]->id, type => $_[0]->type, asset => $_[0]->asset, host => $_[0]->host} }
     sub to_array { $_[0]->id, $_[0]->type, $_[0]->asset, $_[0]->host }
