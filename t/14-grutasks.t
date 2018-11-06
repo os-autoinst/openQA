@@ -414,27 +414,34 @@ subtest 'Gru tasks limit' => sub {
 };
 
 subtest 'Gru tasks TTL' => sub {
-    my $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -5});
+    $t->app->minion->reset;
+    my $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -20});
     $c->run('run', '-o');
     my $result = $t->app->minion->job($job_id)->info->{result};
+    is ref $result, 'HASH', 'We have a result' or diag explain $result;
     is $result->{error}, 'TTL Expired', 'TTL Expired - job discarded' or diag explain $result;
 
     $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 20});
     $c->run('run', '-o');
     $result = $t->app->minion->job($job_id)->info->{result};
 
+    is ref $result, '', 'Result is the output';
     # Depending on logging options, gru task output can differ
-    like $result, qr/will delete in 14|Job successfully executed/i, 'TTL not Expired - Job executed'
+    like $result, qr/Removing asset|Job successfully executed/i, 'TTL not Expired - Job executed'
       or diag explain $result;
 
     my @ids;
     for (1 .. 100) {
-        push @ids, $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -5});
+        push @ids, ($t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -50}))[0];
     }
     $c->run('run', '-o');
 
     is $t->app->minion->job($_)->info->{result}->{error}, 'TTL Expired', 'TTL Expired - job discarded' for @ids;
 
+    my ($minion_id, $gru_id) = $t->app->gru->enqueue_limit_assets;
+    ok $minion_id;
+    ok $gru_id;
+    isnt $minion_id, $gru_id;
 };
 
 SKIP: {

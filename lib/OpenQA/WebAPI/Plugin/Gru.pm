@@ -122,14 +122,14 @@ sub enqueue {
             run_at   => $options->{run_at} // now(),
             jobs     => $jobs,
         });
-    my $gru_id = $gru->id;
-
-    $self->app->minion->enqueue(
+    my $gru_id    = $gru->id;
+    my $minion_id = $self->app->minion->enqueue(
         $task => $args => {
             priority => $options->{priority} // 0,
             delay    => $delay,
             notes    => {gru_id => $gru_id, (ttl => $ttl) x !!(defined $ttl)}});
-    return $gru_id;
+
+    return wantarray ? ($minion_id, $gru_id) : $minion_id;
 }
 
 # enqueues the limit_assets task with the default parameters

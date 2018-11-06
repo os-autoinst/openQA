@@ -109,6 +109,7 @@ sub detect_asset_keys {
 sub cache_assets {
     my ($job, $vars, $assetkeys) = @_;
     my $cache_client = OpenQA::Worker::Cache::Client->new;
+    # TODO: Enqueue all, and then wait
     for my $this_asset (sort keys %$assetkeys) {
         my $asset;
         my $asset_uri = trim($vars->{$this_asset});
@@ -223,6 +224,7 @@ sub engine_workit {
 
             $vars{PRJDIR} = $shared_cache;
 
+            # TODO: Enqueue all requests in one place
             return {error => "Failed to send rsync cache request"} unless $rsync_request->enqueue;
 
             sleep 5 and update_setup_status until $rsync_request->processed;

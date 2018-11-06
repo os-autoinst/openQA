@@ -5,7 +5,7 @@ Requires=openqa-worker-cacheservice.service
 
 [Service]
 User=_openqa-worker
-ExecStart=/usr/share/openqa/script/openqa-workercache minion worker
+ExecStart=/usr/share/openqa/script/openqa-workercache minion worker -m production -j 1
 
 [Install]
 WantedBy=multi-user.target

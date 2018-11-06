@@ -52,6 +52,7 @@ use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service);
 use Mojo::Util qw(md5_sum);
 use constant DEBUG => $ENV{DEBUG} // 0;
+use OpenQA::Worker::Cache::Request;
 
 my $sql;
 my $sth;
@@ -152,7 +153,6 @@ sub test_download {
 }
 
 subtest 'Cache Requests' => sub {
-    use OpenQA::Worker::Cache::Request;
     my $asset_request = $cache_client->request->asset(id => 922756, asset => 'test', type => 'hdd', host => 'open.qa');
     is $asset_request->lock, join('.', 'test', 'open.qa');
 
@@ -437,15 +437,16 @@ subtest 'Test Minion Sync task' => sub {
 
 subtest 'OpenQA::Worker::Cache::Task::Sync' => sub {
     my $worker_2 = cache_minion_worker;
-    my $worker_3 = cache_minion_worker;
-    my $worker_4 = cache_minion_worker;
+    $worker_cache_service->stop;
 
-    $_->start for ($worker_2, $worker_3, $worker_4);
+    $worker_2->start;
 
     test_sync;
     test_sync;
     test_sync;
     test_sync;
+
+    $worker_2->stop;
 };
 
 done_testing();

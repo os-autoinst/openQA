@@ -13,65 +13,28 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Worker::Cache::Request {
+package OpenQA::Worker::Cache::Request;
+use OpenQA::Worker::Cache::Request::Sync;
+use OpenQA::Worker::Cache::Request::Asset;
+use Mojo::Base -base;
+use Carp 'croak';
+use OpenQA::Worker::Cache::Client;
 
-    use Mojo::Base -base;
-    use Carp 'croak';
-    use OpenQA::Worker::Cache::Client;
+has 'task';
+has client => sub { OpenQA::Worker::Cache::Client->new };
 
-    has 'task';
-    has client => sub { OpenQA::Worker::Cache::Client->new };
+sub asset { OpenQA::Worker::Cache::Request::Asset->new(client => shift->client, @_,) }
+sub rsync { OpenQA::Worker::Cache::Request::Sync->new(client => shift->client, @_,) }
 
-    sub asset { OpenQA::Worker::Cache::Request::Asset->new(client => shift->client, @_,) }
-    sub rsync { OpenQA::Worker::Cache::Request::Sync->new(client => shift->client, @_,) }
+sub execute_task { $_[0]->client->execute_task(shift) }
+sub status       { $_[0]->client->status(shift) }
+sub processed    { $_[0]->client->processed(shift) }
+sub output       { $_[0]->client->output(shift) }
+sub result       { $_[0]->client->result(shift) }
+sub enqueue      { $_[0]->client->enqueue(shift) }
 
-    sub execute_task { $_[0]->client->execute_task(shift) }
-    sub status       { $_[0]->client->status(shift) }
-    sub processed    { $_[0]->client->processed(shift) }
-    sub output       { $_[0]->client->output(shift) }
-    sub result       { $_[0]->client->result(shift) }
-    sub enqueue      { $_[0]->client->enqueue(shift) }
-
-    sub lock    { croak 'Not implemented in ' . __PACKAGE__ }
-    sub to_hash { croak 'Not implemented in ' . __PACKAGE__ }
-};
-
-package OpenQA::Worker::Cache::Request::Asset {
-
-    use Mojo::Base 'OpenQA::Worker::Cache::Request';
-
-    # See task OpenQA::Cache::Task::Asset
-    my @FIELDS = qw(id type asset host);
-    has [@FIELDS];
-    has task => 'cache_asset';
-
-    sub lock {
-        my $self = shift;
-        # Generate same lock for asset/host
-        join('.', map { $self->$_ } qw(asset host));
-    }
-    sub to_hash { {id => $_[0]->id, type => $_[0]->type, asset => $_[0]->asset, host => $_[0]->host} }
-    sub to_array { $_[0]->id, $_[0]->type, $_[0]->asset, $_[0]->host }
-
-};
-
-package OpenQA::Worker::Cache::Request::Sync {
-
-    use Mojo::Base 'OpenQA::Worker::Cache::Request';
-
-    # See task OpenQA::Cache::Task::Sync
-    my @FIELDS = qw(from to);
-    has [@FIELDS];
-    has task => 'cache_tests';
-
-    sub lock {
-        my $self = shift;
-        join('.', map { $self->$_ } @FIELDS);
-    }
-    sub to_hash { {from => $_[0]->from, to => $_[0]->to} }
-    sub to_array { $_[0]->from, $_[0]->to }
-
-};
+sub lock    { croak 'Not implemented in ' . __PACKAGE__ }
+sub to_hash { croak 'Not implemented in ' . __PACKAGE__ }
 
 =encoding utf-8
 
@@ -99,7 +62,7 @@ OpenQA::Worker::Cache::Request - OpenQA Cache Service Request Object
 =head1 DESCRIPTION
 
 OpenQA::Worker::Cache::Request is the OpenQA Cache Service Request object, which is holding
-the Minion Tasks information to dispatch a remote
+the Minion Tasks information to dispatch a remote request to the Cache Service.
 
 =cut
 

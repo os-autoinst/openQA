@@ -18,6 +18,10 @@ package OpenQA::Worker::Cache::Client;
 use OpenQA::Worker::Cache;
 use OpenQA::Worker::Common;
 
+use OpenQA::Worker::Cache::Request;
+use OpenQA::Worker::Cache::Request::Asset;
+use OpenQA::Worker::Cache::Request::Sync;
+
 use Mojo::Base 'Mojo::UserAgent';
 use Mojo::URL;
 use Mojo::File 'path';
