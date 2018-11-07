@@ -320,7 +320,7 @@ sub purge_asset {
             log_debug "CACHE: removed $asset";
         }
         else {
-            log_debug "CACHE: requested to remove unnexistant asset $asset";
+            log_debug "CACHE: requested to remove nonexisting asset $asset";
         }
     };
 
