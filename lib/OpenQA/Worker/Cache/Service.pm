@@ -22,6 +22,8 @@ use OpenQA::Worker::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING
 use Mojo::Collection;
 use Mojolicious::Plugin::Minion::Admin;
 
+use constant DEFAULT_MINION_WORKERS => 5;
+
 BEGIN { srand(time) }
 
 my $_token;
@@ -62,13 +64,28 @@ sub enqueue {
     push @$enqueued, shift;
 }
 
+sub _setup_workers {
+    return @_ unless grep { /worker/i } @_;
+
+    require OpenQA::Worker::Common;
+    my @args = @_;
+    my ($worker_settings, undef) = OpenQA::Worker::Common::read_worker_config(undef, undef);
+    my $cache_workers
+      = exists $worker_settings->{CACHEWORKERS} ? $worker_settings->{CACHEWORKERS} : DEFAULT_MINION_WORKERS;
+    push(@args, '-j', $cache_workers);
+    return @args;
+}
+
 sub run {
     shift;
     require OpenQA::Utils;
+    app->log->short(1);
     OpenQA::Utils::set_listen_address(7844);
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 300;
     require Mojolicious::Commands;
-    Mojolicious::Commands->start_app('OpenQA::Worker::Cache::Service', @_);
+    my @args = _setup_workers(@_);
+    app->log->debug("Starting cache service: $0 @args");
+    Mojolicious::Commands->start_app('OpenQA::Worker::Cache::Service', @args);
 }
 
 get '/session_token' => sub { shift->render(json => {session_token => SESSION_TOKEN()}) };

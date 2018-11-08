@@ -482,16 +482,11 @@ systemctl start openqa-worker-cacheservice.service
 systemctl enable openqa-worker-cacheservice.service
 --------------------------------------------------------------------------------
 
-To start the Cache service workers you can use the provided systemd files via +systemctl
-start openqa-worker-cacheservice-minion@1+. This will start a single cache worker. You can start as
-many workers as you dare to achieve parallel downloads, you just need to supply different 'id' (number
-after @).
-
-Enable (at least one) Cache Worker:
+Enable and start the Cache Worker:
 [source,sh]
 --------------------------------------------------------------------------------
-systemctl start openqa-worker-cacheservice-minion@1.service
-systemctl enable openqa-worker-cacheservice-minion@1.service
+systemctl start openqa-worker-cacheservice-minion.service
+systemctl enable openqa-worker-cacheservice-minion.service
 --------------------------------------------------------------------------------
 
 In the +/etc/openqa/workers.ini+
@@ -502,6 +497,7 @@ In the +/etc/openqa/workers.ini+
 HOST=http://webui
 CACHEDIRECTORY = $cache_location
 CACHELIMIT = 50 # GB, default is 50.
+CACHEWORKERS = 5 # Number of parallel cache minion workers, defaults to 5
 
 [http://webui]
 TESTPOOLSERVER = rsync://yourlocation/tests

@@ -26,10 +26,11 @@ BEGIN {
     $ENV{CACHE_DIR}      = path($basedir, 'cache');
     $ENV{OPENQA_BASEDIR} = $basedir;
     $ENV{OPENQA_CONFIG}  = path($basedir, 'config')->make_path;
-    path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt("
+    path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt('
 [global]
-CACHEDIRECTORY = $cachedir
-CACHELIMIT = 100");
+CACHEDIRECTORY = ' . $ENV{CACHE_DIR} . '
+CACHEWORKERS = 10
+CACHELIMIT = 100');
 }
 
 use strict;
@@ -152,9 +153,23 @@ sub test_download {
     is($state, OpenQA::Worker::Cache::STATUS_PROCESSED) or die diag explain $state;
 
     ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded');
-
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
 }
+
+subtest 'Configurable minion workers' => sub {
+    require OpenQA::Worker::Cache::Service;
+
+    is_deeply([OpenQA::Worker::Cache::Service::_setup_workers(qw(minion test))],   [qw(minion test)]);
+    is_deeply([OpenQA::Worker::Cache::Service::_setup_workers(qw(minion worker))], [qw(minion worker -j 10)]);
+    is_deeply([OpenQA::Worker::Cache::Service::_setup_workers(qw(minion daemon))], [qw(minion daemon)]);
+
+    path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt("
+[global]
+CACHEDIRECTORY = $cachedir
+CACHELIMIT = 100");
+
+    is_deeply([OpenQA::Worker::Cache::Service::_setup_workers(qw(minion worker))], [qw(minion worker -j 5)]);
+};
 
 subtest 'Cache Requests' => sub {
     my $asset_request = $cache_client->request->asset(id => 922756, asset => 'test', type => 'hdd', host => 'open.qa');
