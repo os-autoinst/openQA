@@ -109,10 +109,10 @@ function renderJobResults(data, type, row) {
 
     // job bugs, comments and label
     if (row.bugs != []) {
-        for (var i in row.bugs) {
+        for (var bug of row.bugs) {
             html += '<span id="bug-' + row.id + '">';
-            html += '<a href="' + row.bug_urls[i] + '">';
-            html += '<i class="test-label ' + row.bug_icons[i] + '" title="Bug referenced: ' + row.bugs[i] + '"></i>';
+            html += '<a href="' + bug.url + '">';
+            html += '<i class="test-label ' + bug.icon + '" title="' + bug.title + '"></i>';
             html += '</a></span>';
         }
     }

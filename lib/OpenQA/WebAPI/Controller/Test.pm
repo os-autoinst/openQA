@@ -359,17 +359,18 @@ sub job_next_previous_ajax {
         my $bugs       = $labels->{$id}{bugs};
         my $bugdetails = $labels->{$id}{bugdetails};
 
-        my (@bugs, @bug_urls, @bug_icons);
+        my @bugs;
         for my $bug (sort { $b cmp $a } keys %$bugs) {
-            push @bugs,      $bug;
-            push @bug_urls,  $self->bugurl_for($bug);
-            push @bug_icons, $self->bugicon_for($bug, $bugdetails->{$bug});
+            push @bugs,
+              {
+                bug   => $bug,
+                url   => $self->bugurl_for($bug),
+                icon  => $self->bugicon_for($bug, $bugdetails->{$bug}),
+                title => $self->bugtitle_for($bug, $bugdetails->{$bug})};
         }
 
-        $data->{bugs}      = \@bugs;
-        $data->{bug_urls}  = \@bug_urls;
-        $data->{bug_icons} = \@bug_icons;
-        $data->{label}     = $labels->{$id}{label};
+        $data->{bugs}  = \@bugs;
+        $data->{label} = $labels->{$id}{label};
         my $comments = $labels->{$id}{comments};
         if ($comments) {
             $data->{comments} = $comments;

@@ -3,7 +3,7 @@
 % for my $bug (sort {$b cmp $a} keys %{$res->{bugs}}) {
     <span id="bug-<%= $jobid %>">
         <a href="<%= bugurl_for $bug %>">
-            <i class="test-label <%= bugicon_for $bug, $res->{bugdetails}->{$bug} %>" title="Bug referenced: <%= $bug %>"></i>
+            <i class="test-label <%= bugicon_for $bug, $res->{bugdetails}->{$bug} %>" title="<%= bugtitle_for $bug, $res->{bugdetails}->{$bug} %>"></i>
         </a>
     </span>
 % }
