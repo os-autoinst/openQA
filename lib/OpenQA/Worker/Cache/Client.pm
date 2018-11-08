@@ -15,14 +15,14 @@
 
 package OpenQA::Worker::Cache::Client;
 
-use OpenQA::Worker::Cache;
+use OpenQA::Worker::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE);
 use OpenQA::Worker::Common;
 
 use OpenQA::Worker::Cache::Request;
 use OpenQA::Worker::Cache::Request::Asset;
 use OpenQA::Worker::Cache::Request::Sync;
 
-use Mojo::Base 'Mojo::UserAgent';
+use Mojo::Base -base;
 use Mojo::URL;
 use Mojo::File 'path';
 
@@ -30,26 +30,32 @@ has host  => 'http://127.0.0.1:7844';
 has retry => 5;
 has cache_dir =>
   sub { $ENV{CACHE_DIR} || (OpenQA::Worker::Common::read_worker_config(undef, undef))[0]->{CACHEDIRECTORY} };
+has ua => sub { Mojo::UserAgent->new };
 
 sub _url { Mojo::URL->new(shift->host)->path(shift)->to_string }
 
 sub _status {
-    return !!0 unless my $st = $_[0]->result->json->{status} // shift->result->json->{session_token};
+    my $request = shift;
+    return !!0 unless my $st = $request->result->json->{status} // $request->result->json->{session_token};
     return $st;
 }
 
 sub _result {
-    eval { $_[0]->post($_[0]->_url('status') => json => {lock => pop})->result->json->{+pop()} }
+    my ($self, $field, $request) = @_;
+    eval {
+        $self->ua->post($self->_url('status') => json => {lock => $request->lock, id => $request->minion_id})
+          ->result->json->{$field};
+    };
 }
 
 sub _query {
     my ($self, $q) = @_;
-    _status(_retry(sub { $self->get($self->_url($q)) } => $self->retry));
+    return _status(_retry(sub { $self->ua->get($self->_url($q)) } => $self->retry));
 }
 
 sub _post {
     my ($self, $q, $j) = @_;
-    _status(_retry(sub { $self->post($self->_url($q) => json => $j) } => $self->retry));
+    return _status(_retry(sub { $self->ua->post($self->_url($q) => json => $j) } => $self->retry));
 }
 
 sub _retry {
@@ -64,23 +70,34 @@ sub _retry {
 }
 
 sub _reply {
-    (        ($_[0] eq OpenQA::Worker::Cache::STATUS_ENQUEUED)
-          || ($_[0] eq OpenQA::Worker::Cache::STATUS_DOWNLOADING)
-          || ($_[0] eq OpenQA::Worker::Cache::STATUS_IGNORE)) ? !!1 : !!0;
+    (($_[0] eq STATUS_ENQUEUED) || ($_[0] eq STATUS_DOWNLOADING) || ($_[0] eq STATUS_IGNORE)) ?
+      !!1
+      : !!0;
 }
 
 sub _dequeue_lock {
-    !!(shift->_post(dequeue => {lock => pop}) eq OpenQA::Worker::Cache::STATUS_PROCESSED);
+    !!(shift->_post(dequeue => {lock => pop}) eq STATUS_PROCESSED);
 }
 
-# See also OpenQA::Cache::Request
+# See also OpenQA::Cache::Request, as it's being consumed in the following methods
+sub execute_task {
+    my ($self, $request) = @_;
+    my $response = _retry(
+        sub {
+            $self->ua->post($self->_url('execute_task') => json =>
+                  {task => $request->task, args => [$request->to_array], lock => $request->lock});
+        } => $self->retry
+    );
+    my $json = $response->result->json;
+    $request->minion_id($json->{id}) if exists $json->{id};
+    return _status($response);
+}
 
-sub execute_task { shift->_post(execute_task => {task => $_[0]->task, args => [$_[0]->to_array], lock => $_[0]->lock}) }
-sub status { $_[0]->_post(status => {lock => pop->lock}) }
-sub processed { shift->status(shift) eq OpenQA::Worker::Cache::STATUS_PROCESSED ? !!1 : !!0 }
-sub output { shift->_result(output => pop->lock) }
-sub result { shift->_result(result => pop->lock) }
-sub info   { $_[0]->get($_[0]->_url("info")) }
+sub status { $_[0]->_post(status => {lock => $_[1]->lock, id => $_[1]->minion_id}) }
+sub processed { shift->status(shift) eq STATUS_PROCESSED ? !!1 : !!0 }
+sub output { shift->_result(output => pop) }
+sub result { shift->_result(result => pop) }
+sub info   { $_[0]->ua->get($_[0]->_url("info")) }
 sub available { shift->info->success }
 sub available_workers {
     $_[0]->available

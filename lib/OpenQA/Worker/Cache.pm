@@ -39,9 +39,13 @@ use constant STATUS_DOWNLOADING => 3;
 use constant STATUS_IGNORE      => 4;
 use constant STATUS_ERROR       => 5;
 
+our @EXPORT_OK = qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE STATUS_ERROR);
+use Exporter 'import';
+
 has [qw(host cache location db_file dsn dbh cache_real_size)];
-has limit => 50 * (1024**3);
+has limit      => 50 * (1024**3);
 has sleep_time => 5;
+has sqlite     => sub { Mojo::SQLite->new(shift->dsn) };
 
 sub new {
     shift->SUPER::new(@_)->init;
@@ -58,7 +62,7 @@ sub from_worker {
 sub DESTROY {
     my $self = shift;
 
-    $self->dbh->db->disconnect() if $self->dbh;
+    $self->sqlite->db->disconnect() if $self->sqlite;
 }
 
 sub deploy_cache {
@@ -72,10 +76,8 @@ sub deploy_cache {
 
     log_info "Deploying DB: $sql (dsn " . $self->dsn . ")";
 
-    $self->dbh(Mojo::SQLite->new($self->dsn)) or die("Could not connect to the dbfile.");
-
     eval {
-        my $db = $self->dbh->db;
+        my $db = $self->sqlite->db;
         my $tx = $db->begin;
         $db->query($sql);
         $tx->commit;
@@ -92,7 +94,6 @@ sub init {
     $self->dsn("sqlite:" . $self->db_file);
     $self->deploy_cache unless -e $self->db_file;
     $self->cache_real_size(0);
-    $self->dbh(Mojo::SQLite->new($self->dsn));
     $self->cache_sync();
     #Ideally we only need $limit, and $need no extra space
     $self->check_limits(0);
@@ -242,7 +243,7 @@ sub get_asset {
 
 sub _asset {
     my ($self, $asset) = @_;
-    my $result = $self->dbh->db->select('assets', [qw(etag size last_use)], {filename => $asset})->hashes;
+    my $result = $self->sqlite->db->select('assets', [qw(etag size last_use)], {filename => $asset})->hashes;
 
     return {} if $result->size == 0 || $@;
     return $result->first;
@@ -255,7 +256,7 @@ sub track_asset {
     my $sql = "INSERT OR IGNORE INTO assets (filename, size, last_use) VALUES (?, 0,  strftime('%s','now'));";
 
     eval {
-        my $db = $self->dbh->db;
+        my $db = $self->sqlite->db;
         my $tx = $db->begin('exclusive');
         $res = $db->query($sql, $asset)->arrays;
         $tx->commit;
@@ -272,7 +273,7 @@ sub _update_asset_last_use {
     my ($self, $asset) = @_;
 
     eval {
-        my $db  = $self->dbh->db;
+        my $db  = $self->sqlite->db;
         my $tx  = $db->begin('exclusive');
         my $sql = q(UPDATE assets set last_use = strftime('%s','now') where filename = ?;);
         $db->query($sql, $asset);
@@ -291,10 +292,10 @@ sub _update_asset_last_use {
 sub update_asset {
     my ($self, $asset, $etag, $size) = @_;
     eval {
-        my $db  = $self->dbh->db;
+        my $db  = $self->sqlite->db;
         my $tx  = $db->begin('exclusive');
         my $sql = q(UPDATE assets set etag =? , size = ?, last_use = strftime('%s','now') where filename = ?;);
-        $tx->db->query($sql, $etag, $size, $asset);
+        $db->query($sql, $etag, $size, $asset);
         $tx->commit;
     };
     if ($@) {
@@ -311,7 +312,7 @@ sub update_asset {
 sub purge_asset {
     my ($self, $asset) = @_;
     eval {
-        my $db = $self->dbh->db;
+        my $db = $self->sqlite->db;
         my $tx = $db->begin();
         $db->delete('assets', {filename => $asset});
         $tx->commit;
@@ -353,7 +354,7 @@ sub asset_lookup {
     my $sth;
     my $result;
     eval {
-        my $db = $self->dbh->db;
+        my $db = $self->sqlite->db;
         my $tx = $db->begin('exclusive');
         $result = $db->select('assets', [qw(filename etag last_use size)], {filename => $asset});
         $tx->commit;
@@ -385,9 +386,9 @@ sub increase { $_[0]->cache_real_size($_[0]->cache_real_size + pop) }
 
 sub check_limits {
     my ($self, $needed) = @_;
-    my $dbh = $self->dbh->db;
+    my $db = $self->sqlite->db;
     eval {
-        my $sth = $dbh->select('assets', [qw(filename size last_use)], undef, {-asc => 'last_use'});
+        my $sth = $db->select('assets', [qw(filename size last_use)], undef, {-asc => 'last_use'});
         while (my $asset = $sth->hash) {
             my $asset_size = $asset->{size} || $self->file_size($asset->{filename});
             $self->decrease($asset_size)

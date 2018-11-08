@@ -18,7 +18,7 @@ package OpenQA::Worker::Cache::Service;
 use Mojolicious::Lite;
 use OpenQA::Worker::Cache::Task::Asset;
 use Mojolicious::Plugin::Minion;
-use OpenQA::Worker::Cache;
+use OpenQA::Worker::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE STATUS_ERROR);
 use Mojo::Collection;
 use Mojolicious::Plugin::Minion::Admin;
 
@@ -47,12 +47,6 @@ sub _gen_guard_name { join('.', SESSION_TOKEN, pop) }
 sub _exists { !!(defined $_[0] && exists $_[0]->{total} && $_[0]->{total} > 0) }
 
 sub active { !app->minion->lock(shift, 0) }
-
-sub get_job_by_token {
-    eval {
-        { app->minion->backend->list_jobs(0, 1, {note => {token => shift}})->{jobs}[0] }
-    }
-}
 
 sub enqueued {
     my $lock = shift;
@@ -85,14 +79,14 @@ post '/status' => sub {
     my $c    = shift;
     my $data = $c->req->json;
     my $lock = _gen_guard_name($data->{lock});
-    my $j    = get_job_by_token($lock);
+    my $j    = $data->{id} ? app->minion->job($data->{id})->info : ();
 
     $c->render(
         json => {
             status => (
-                  active($lock)   ? OpenQA::Worker::Cache::STATUS_DOWNLOADING()
-                : enqueued($lock) ? OpenQA::Worker::Cache::STATUS_IGNORE()
-                :                   OpenQA::Worker::Cache::STATUS_PROCESSED()
+                  active($lock)   ? STATUS_DOWNLOADING
+                : enqueued($lock) ? STATUS_IGNORE
+                :                   STATUS_PROCESSED
             ),
             (result => $j->{result}, output => $j->{notes}->{output}) x !!($j)});
 };
@@ -103,21 +97,21 @@ post '/execute_task' => sub {
     my $task = $data->{task};
     my $args = $data->{args};
 
-    return $c->render(json => {status => OpenQA::Worker::Cache::STATUS_ERROR, error => 'No Task defined'})
+    return $c->render(json => {status => STATUS_ERROR, error => 'No Task defined'})
       unless defined $task;
-    return $c->render(json => {status => OpenQA::Worker::Cache::STATUS_ERROR, error => 'No Arguments defined'})
+    return $c->render(json => {status => STATUS_ERROR, error => 'No Arguments defined'})
       unless defined $args;
 
-    my $lock = $data->{lock} ? _gen_guard_name($data->{lock}) : _gen_guard_name(@$args);
+    my $lock = _gen_guard_name($data->{lock} ? $data->{lock} : @$args);
     app->log->debug("Requested [$task] Args: @{$args} Lock: $lock");
 
-    return $c->render(json => {status => OpenQA::Worker::Cache::STATUS_DOWNLOADING()}) if active($lock);
-    return $c->render(json => {status => OpenQA::Worker::Cache::STATUS_IGNORE()})      if enqueued($lock);
+    return $c->render(json => {status => STATUS_DOWNLOADING()}) if active($lock);
+    return $c->render(json => {status => STATUS_IGNORE()})      if enqueued($lock);
 
     enqueue($lock);
-    $c->minion->enqueue($task => $args);
+    my $id = $c->minion->enqueue($task => $args);
 
-    $c->render(json => {status => OpenQA::Worker::Cache::STATUS_ENQUEUED});
+    $c->render(json => {status => STATUS_ENQUEUED, id => $id});
 };
 
 get '/' => sub { shift->redirect_to('/minion') };
@@ -126,7 +120,7 @@ post '/dequeue' => sub {
     my $c    = shift;
     my $data = $c->req->json;
     dequeue(_gen_guard_name($data->{lock}));
-    $c->render(json => {status => OpenQA::Worker::Cache::STATUS_PROCESSED});
+    $c->render(json => {status => STATUS_PROCESSED});
 };
 
 app->minion->backend->reset;

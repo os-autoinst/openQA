@@ -18,7 +18,7 @@ use strict;
 use warnings;
 
 use OpenQA::Worker::Common;
-use OpenQA::Utils qw(locate_asset log_error log_info log_debug log_warning get_channel_handle trim);
+use OpenQA::Utils qw(locate_asset log_error log_info log_debug log_warning get_channel_handle);
 
 use POSIX qw(:sys_wait_h strftime uname _exit);
 use Cpanel::JSON::XS 'encode_json';
@@ -39,6 +39,7 @@ use Mojo::IOLoop::ReadWriteProcess::Container 'container';
 use Mojo::IOLoop::ReadWriteProcess::CGroup 'cgroupv2';
 use Mojo::Collection 'c';
 use Mojo::File 'path';
+use Mojo::Util 'trim';
 
 use constant CGROUP_SLICE => $ENV{OPENQA_CGROUP_SLICE};
 

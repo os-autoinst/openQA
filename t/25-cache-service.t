@@ -34,9 +34,11 @@ CACHELIMIT = 100");
 
 use strict;
 use warnings;
+
 # Avoid warning error: Name "Config::IniFiles::t/cache.d/cache/config/workers.ini" used only once
 use OpenQA::Worker::Cache;
 OpenQA::Worker::Cache->from_worker;
+
 use Test::More;
 use Test::Warnings;
 use OpenQA::Utils;
@@ -74,7 +76,6 @@ use OpenQA::Worker::Cache::Client;
 
 my $cache_client = OpenQA::Worker::Cache::Client->new();
 
-# reassign STDOUT, STDERR
 sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
 
 END { session->clean }
@@ -103,9 +104,10 @@ sub test_default_usage {
     my $asset_request = $cache_client->request->asset(id => $id, asset => $a, type => 'hdd', host => $host);
 
     if ($asset_request->enqueue) {
-        1 until $asset_request->processed;
+        sleep .5 until $asset_request->processed;
     }
     ok($cache_client->asset_exists('localhost', $a), "Asset $a downloaded");
+    ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
 }
 
 sub test_sync {
@@ -120,7 +122,7 @@ sub test_sync {
 
     ok $rsync_request->enqueue;
 
-    1 until $rsync_request->processed;
+    sleep .5 until $rsync_request->processed;
 
     is $rsync_request->result, 0;
     ok $rsync_request->output;
@@ -150,6 +152,8 @@ sub test_download {
     is($state, OpenQA::Worker::Cache::STATUS_PROCESSED) or die diag explain $state;
 
     ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded');
+
+    ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
 }
 
 subtest 'Cache Requests' => sub {
@@ -262,7 +266,7 @@ subtest 'Race for same asset' => sub {
 
     my $concurrent_test = sub {
         if ($cache_client->enqueue($asset_request)) {
-            1 until $cache_client->processed($asset_request);
+            sleep .5 until $cache_client->processed($asset_request);
             Devel::Cover::report() if Devel::Cover->can('report');
 
             return 1 if $cache_client->asset_exists('localhost', $a);
@@ -291,7 +295,7 @@ subtest 'Default usage' => sub {
     ok(!$cache_client->asset_exists('localhost', $a), 'Asset absent') or die diag "Asset already exists - abort test";
 
     if ($asset_request->enqueue) {
-        1 until $asset_request->processed;
+        sleep .5 until $asset_request->processed;
         my $out = $asset_request->output();
         ok($out, 'Output should be present') or die diag $out;
         like $out, qr/Downloading $a from/, "Asset download attempt logged";
@@ -415,7 +419,7 @@ subtest 'Test Minion Sync task' => sub {
     my $minion = Minion->new(SQLite => "sqlite:" . OpenQA::Worker::Cache->from_worker->db_file);
     use Mojolicious;
     my $app = Mojolicious->new;
-    $app->attr(minion => sub { $minion });
+    $app->helper(minion => sub { $minion });
     my $dir  = tempdir;
     my $dir2 = tempdir;
 

@@ -20,7 +20,7 @@ use Mojo::Base -base;
 use Carp 'croak';
 use OpenQA::Worker::Cache::Client;
 
-has 'task';
+has [qw(task minion_id)];
 has client => sub { OpenQA::Worker::Cache::Client->new };
 
 sub asset { OpenQA::Worker::Cache::Request::Asset->new(client => shift->client, @_,) }
@@ -33,8 +33,9 @@ sub output       { $_[0]->client->output(shift) }
 sub result       { $_[0]->client->result(shift) }
 sub enqueue      { $_[0]->client->enqueue(shift) }
 
-sub lock    { croak 'Not implemented in ' . __PACKAGE__ }
-sub to_hash { croak 'Not implemented in ' . __PACKAGE__ }
+sub lock     { croak 'lock() not implemented in ' . __PACKAGE__ }
+sub to_hash  { croak 'to_hash() not implemented in ' . __PACKAGE__ }
+sub to_array { croak 'to_array() not implemented in ' . __PACKAGE__ }
 
 =encoding utf-8
 
