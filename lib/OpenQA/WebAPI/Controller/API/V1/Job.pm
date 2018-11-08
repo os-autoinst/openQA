@@ -153,9 +153,28 @@ So this works in the same way as the test results overview in the GUI.
 sub overview {
     my $self = shift;
     my ($search_args, $groups) = OpenQA::Utils::compose_job_overview_search_args($self);
-    my @jobs = map { {id => $_->id, name => $_->name} }
-      $self->db->resultset('Jobs')->complex_query(%$search_args)->latest_jobs;
-    $self->render(json => \@jobs);
+    my $failed_modules = OpenQA::Utils::param_hash($self, 'failed_modules');
+    my $states         = OpenQA::Utils::param_hash($self, 'state');
+    my $results        = OpenQA::Utils::param_hash($self, 'result');
+
+    my @jobs = $self->db->resultset('Jobs')->complex_query(%$search_args)->latest_jobs;
+
+    my @job_hashes;
+    for my $job (@jobs) {
+        next if $states  && !$states->{$job->state};
+        next if $results && !$results->{$job->result};
+        if ($failed_modules) {
+            next if $job->result ne OpenQA::Jobs::Constants::FAILED;
+            next unless OpenQA::Utils::any_array_item_contained_by_hash($job->failed_modules, $failed_modules);
+        }
+        push(
+            @job_hashes,
+            {
+                id   => $job->id,
+                name => $job->name,
+            });
+    }
+    $self->render(json => \@job_hashes);
 }
 
 =over 4

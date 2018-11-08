@@ -105,6 +105,7 @@ sub schema_hook {
                 },
             ],
         });
+    $jobs->find(99946)->update({result => OpenQA::Jobs::Constants::FAILED});
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -160,8 +161,15 @@ is(scalar @closed_bugs, 0, 'open bug not shown as closed bug');
 
 subtest 'filtering does not reveal old jobs' => sub {
     $driver->get('/tests/overview?arch=&result=failed&distri=opensuse&version=13.1&build=0091&groupid=1001');
-    is($driver->find_element('#summary .badge-danger')->get_text(), '0',
-        'filtering for result does not reveal old job');
+    is($driver->find_element('#summary .badge-danger')->get_text(), '1', 'filtering for failures gives only one job');
+    is(scalar @{$driver->find_elements('#res-99946')},              1,   'textmode job still shown');
+    is(scalar @{$driver->find_elements('#res-99920')},              0,   'and old kde job not revealed');
+
+    $driver->get('/tests/overview?arch=&failed_modules=zypper_up&distri=opensuse&version=13.1&build=0091&groupid=1001');
+    is($driver->find_element('#summary .badge-danger')->get_text(),
+        '1', 'filtering for failed modules works for latest job');
+    is(scalar @{$driver->find_elements('#res-99946')}, 1, 'textmode job matches failed modules filter');
+
     $driver->get('/tests/overview?arch=&failed_modules=bar&distri=opensuse&version=13.1&build=0091&groupid=1001');
     is($driver->find_element('#summary .badge-danger')->get_text(),
         '0', 'filtering for failed modules does not reveal old job');
