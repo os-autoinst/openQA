@@ -44,8 +44,10 @@ sub register {
             return $job->remove unless defined $asset_name && defined $type && defined $host;
             return $job->retry({delay => LOCK_RETRY_DELAY})
               unless my $guard = $app->minion->guard($guard_name, MINION_LOCK_EXPIRE);
-            $app->log->debug("[$$] [Job #" . $job->id . "] Guard: $guard_name Download: $asset_name");
-            $app->log->debug("[$$] Job dequeued " . $req->lock) if $self->_dequeue($req->lock);
+
+            my $job_prefix = "[Job #" . $job->id . "]";
+            $app->log->debug("${job_prefix} Guard: $guard_name Download: $asset_name");
+            $app->log->debug("${job_prefix} Dequeued " . $req->lock) if $self->_dequeue($req->lock);
             $OpenQA::Utils::app = undef;
             my $output;
             {
@@ -57,8 +59,7 @@ sub register {
                 $self->cache->get_asset({id => $id}, $type, $asset_name);
                 $job->note(output => $output);
             }
-            print $output;
-            $app->log->debug("[$$] [Job #" . $job->id . "] Finished");
+            $app->log->debug("${job_prefix} Finished");
         });
 }
 

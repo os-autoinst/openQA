@@ -36,18 +36,18 @@ sub register {
             return $job->remove unless defined $from && defined $to;
             return $job->retry({delay => LOCK_RETRY_DELAY})
               unless my $guard = $app->minion->guard($guard_name, MINION_LOCK_EXPIRE);
-            $app->log->debug("[$$] [Job #" . $job->id . "] Guard: $guard_name Sync: $from to $to");
-            $app->log->debug("[$$] Job dequeued ") if $self->_dequeue($req->lock);
+
+            my $job_prefix = "[Job #" . $job->id . "]";
+            $app->log->debug("${job_prefix} Guard: $guard_name Sync: $from to $to");
+            $app->log->debug("${job_prefix} Dequeued ") if $self->_dequeue($req->lock);
             $OpenQA::Utils::app = undef;
 
             my @cmd = (qw(rsync -avHP), "$from/", qw(--delete), "$to/tests/");
-            $app->log->debug("[$$] [Job #" . $job->id . "] Calling " . join(' ', @cmd));
+            $app->log->debug("${job_prefix} Calling " . join(' ', @cmd));
             my $output = `@cmd`;
             $job->finish($? >> 8);
             $job->note(output => $output);
-            print $output;
-
-            $app->log->debug("[$$] [Job #" . $job->id . "] Finished");
+            $app->log->debug("${job_prefix} Finished");
         });
 }
 
