@@ -69,15 +69,9 @@ sub _retry {
     return $res;
 }
 
-sub _reply {
-    (($_[0] eq STATUS_ENQUEUED) || ($_[0] eq STATUS_DOWNLOADING) || ($_[0] eq STATUS_IGNORE)) ?
-      !!1
-      : !!0;
-}
+sub _reply { !!(($_[0] eq STATUS_ENQUEUED) || ($_[0] eq STATUS_DOWNLOADING) || ($_[0] eq STATUS_IGNORE)) }
 
-sub _dequeue_lock {
-    !!(shift->_post(dequeue => {lock => pop}) eq STATUS_PROCESSED);
-}
+sub _dequeue_lock { !!(shift->_post(dequeue => {lock => pop}) eq STATUS_PROCESSED) }
 
 # See also OpenQA::Cache::Request, as it's being consumed in the following methods
 sub execute_task {
@@ -94,14 +88,15 @@ sub execute_task {
 }
 
 sub status { $_[0]->_post(status => {lock => $_[1]->lock, id => $_[1]->minion_id}) }
-sub processed { shift->status(shift) eq STATUS_PROCESSED ? !!1 : !!0 }
-sub output { shift->_result(output => pop) }
-sub result { shift->_result(result => pop) }
-sub info   { $_[0]->ua->get($_[0]->_url("info")) }
+sub processed { !!(shift->status(shift) eq STATUS_PROCESSED) }
+sub output    { shift->_result(output => pop) }
+sub result    { shift->_result(result => pop) }
+sub info      { $_[0]->ua->get($_[0]->_url("info")) }
 sub available { shift->info->success }
 sub available_workers {
-    $_[0]->available
-      && ($_[0]->info->result->json->{active_workers} != 0 || $_[0]->info->result->json->{inactive_workers} != 0);
+    return unless $_[0]->available;
+    return unless my $res = $_[0]->info->result->json;
+    return !!($res->{active_workers} != 0 || $res->{inactive_workers} != 0);
 }
 sub session_token { shift->_query('session_token') }
 sub enqueue       { _reply(shift->execute_task(@_)) }

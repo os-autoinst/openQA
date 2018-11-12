@@ -246,12 +246,15 @@ subtest '_exists' => sub {
 subtest 'Client can check if there are available workers' => sub {
     $cache_client->session_token;
     $worker_cache_service->stop;
+    $cache_service->stop;
+    ok !$cache_client->available, 'Cache server is not available';
     $cache_service->restart;
     sleep .5 until $cache_client->available;
-    ok $cache_client->available;
+    ok $cache_client->available, 'Cache server is available';
+    ok !$cache_client->available_workers, 'No available workers at the moment';
     $worker_cache_service->start;
     sleep 5 and diag "waiting for minion worker to be available" until $cache_client->available_workers;
-    ok $cache_client->available_workers;
+    ok $cache_client->available_workers, 'Workers are available now';
 };
 
 subtest 'Asset download' => sub {
