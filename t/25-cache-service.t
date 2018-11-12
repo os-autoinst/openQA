@@ -173,15 +173,32 @@ CACHELIMIT = 100");
 
 subtest 'Cache Requests' => sub {
     my $asset_request = $cache_client->request->asset(id => 922756, asset => 'test', type => 'hdd', host => 'open.qa');
-    is $asset_request->lock, join('.', 'test', 'open.qa');
-
     my $rsync_request = $cache_client->request->rsync(from => 'foo', to => 'bar');
-    is $rsync_request->lock, join('.', 'foo', 'bar');
+
+    is $rsync_request->lock, join('.', 'foo',  'bar');
+    is $asset_request->lock, join('.', 'test', 'open.qa');
 
     my $req = $cache_client->request;
     is $cache_client, $req->client;
     my $asset_req = $req->asset();
     is $cache_client, $asset_req->client;
+
+    is_deeply $rsync_request->to_hash, {from => 'foo', to => 'bar'};
+    is_deeply $asset_request->to_hash, {id => 922756, asset => 'test', type => 'hdd', host => 'open.qa'};
+
+    is_deeply [$rsync_request->to_array], [qw(foo bar)];
+    is_deeply [$asset_request->to_array], [qw(922756 hdd test open.qa)];
+
+    my $base = $cache_client->request;
+    local $@;
+    eval { $base->lock };
+    like $@, qr/lock\(\) not implemented in OpenQA::Worker::Cache::Request/, 'lock() not implemented in base request';
+    eval { $base->to_hash };
+    like $@, qr/to_hash\(\) not implemented in OpenQA::Worker::Cache::Request/,
+      'to_hash() not implemented in base request';
+    eval { $base->to_array };
+    like $@, qr/to_array\(\) not implemented in OpenQA::Worker::Cache::Request/,
+      'to_array() not implemented in base request';
 };
 
 start_server;

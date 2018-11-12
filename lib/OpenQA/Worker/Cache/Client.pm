@@ -119,9 +119,9 @@ OpenQA::Worker::Cache::Client - OpenQA Cache Service Client
 
     my $client = OpenQA::Worker::Cache::Client->new( host=> 'http://127.0.0.1:7844', retry => 5, cache_dir => '/tmp/cache/path' );
     my $request = $client->request->asset( id => 9999, asset => 'asset_name.qcow2', type  => 'hdd', host  => 'openqa.opensuse.org' );
-    $client->enqueue($request)
+    $request->enqueue()
 
-    if ($client->processed($request) && $client->asset_exists('asset_name.qcow2')) {
+    if ($request->processed && $client->asset_exists('asset_name.qcow2')) {
       print "Success";
     }
 
@@ -151,7 +151,7 @@ and return resulting L<Mojo::Transaction::HTTP> object.
 
     my $client = OpenQA::Worker::Cache::Client->new;
     my $request = $client->request->asset( id => 9999, asset => 'asset_name.qcow2', type  => 'hdd', host  => 'openqa.opensuse.org' );
-    my $bool = $request->enqueue($request);
+    my $bool = $request->enqueue;
 
 Perform blocking request to download the asset to the Cache Service
 and returns a boolean indicating the success or the failure of dispatching
