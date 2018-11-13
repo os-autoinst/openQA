@@ -629,6 +629,7 @@ foreach my $j (@{$rsp->json->{ids}}) {
 
 sub add_opensuse_test {
     my ($name, %settings) = @_;
+    $settings{MACHINE} //= ['64bit'];
     my @mapped_settings;
     for my $key (keys %settings) {
         push(@mapped_settings, {key => $key, value => $settings{$key}});
@@ -638,13 +639,15 @@ sub add_opensuse_test {
             name     => $name,
             settings => \@mapped_settings
         });
-    $t->app->db->resultset('JobTemplates')->create(
-        {
-            machine    => {name => '64bit'},
-            test_suite => {name => $name},
-            group_id   => 1002,
-            product_id => 1,
-        });
+    for my $machine (@{$settings{MACHINE}}) {
+        $t->app->db->resultset('JobTemplates')->create(
+            {
+                machine    => {name => $machine},
+                test_suite => {name => $name},
+                group_id   => 1002,
+                product_id => 1,
+            });
+    }
 }
 
 subtest 'Catch multimachine cycles' => sub {
@@ -724,6 +727,176 @@ subtest 'Catch blocked_by cycles' => sub {
         },
         "Upgrades not blocked"
     );
+
+    $schema->txn_rollback;
+};
+
+subtest 'Create dependency for jobs on different machines - dependency setting are correct' => sub {
+    $schema->txn_begin;
+    $t->post_ok('/api/v1/machines', form => {name => '64bit-ipmi', backend => 'ipmi', 'settings[TEST]' => 'ipmi'})
+      ->status_is(200);
+    add_opensuse_test('supportserver1');
+    add_opensuse_test('supportserver2', MACHINE => ['64bit-ipmi']);
+    add_opensuse_test(
+        'client',
+        PARALLEL_WITH => 'supportserver1:64bit,supportserver2:64bit-ipmi',
+        MACHINE       => ['Laptop_64']);
+
+    add_opensuse_test('test1');
+    add_opensuse_test('test2', MACHINE          => ['64bit-ipmi']);
+    add_opensuse_test('test3', START_AFTER_TEST => 'test1,test2:64bit-ipmi');
+
+    my $res = schedule_iso(
+        {
+            ISO     => $iso,
+            DISTRI  => 'opensuse',
+            VERSION => '13.1',
+            FLAVOR  => 'DVD',
+            ARCH    => 'i586',
+            BUILD   => '0091',
+            _GROUP  => 'opensuse test',
+        });
+
+    is($res->json->{count}, 6, '6 jobs scheduled');
+    my @newids = @{$res->json->{ids}};
+    my $newid  = $newids[0];
+
+    $ret = $t->get_ok('/api/v1/jobs');
+    my @jobs = @{$ret->tx->res->json->{jobs}};
+
+    my $server1_64    = find_job(\@jobs, \@newids, 'supportserver1', '64bit');
+    my $server2_ipmi  = find_job(\@jobs, \@newids, 'supportserver2', '64bit-ipmi');
+    my $client_laptop = find_job(\@jobs, \@newids, 'client',         'Laptop_64');
+    is_deeply(
+        $client_laptop->{parents},
+        {Parallel => [$server1_64->{id}, $server2_ipmi->{id}], Chained => []},
+        "server1_64 and server2_ipmi are the parents of client_laptop"
+    );
+
+    my $test1_64   = find_job(\@jobs, \@newids, 'test1', '64bit');
+    my $test2_ipmi = find_job(\@jobs, \@newids, 'test2', '64bit-ipmi');
+    my $test3_64   = find_job(\@jobs, \@newids, 'test3', '64bit');
+    is_deeply(
+        $test3_64->{parents},
+        {Parallel => [], Chained => [$test1_64->{id}, $test2_ipmi->{id}]},
+        "test1_64 and test2_ipmi are the parents of test3"
+    );
+
+    $schema->txn_rollback;
+};
+
+subtest 'Create dependency for jobs on different machines - best match and log error dependency' => sub {
+    $schema->txn_begin;
+    $t->post_ok('/api/v1/machines', form => {name => 'powerpc', backend => 'qemu', 'settings[TEST]' => 'power'})
+      ->status_is(200);
+
+    add_opensuse_test('install_ltp', MACHINE => ['powerpc']);
+    add_opensuse_test('use_ltp', START_AFTER_TEST => 'install_ltp', MACHINE => ['powerpc', '64bit']);
+
+    add_opensuse_test('install_kde', MACHINE => ['powerpc', '64bit']);
+    add_opensuse_test('use_kde', START_AFTER_TEST => 'install_kde', MACHINE => ['powerpc', '64bit']);
+
+    my $res = schedule_iso(
+        {
+            ISO     => $iso,
+            DISTRI  => 'opensuse',
+            VERSION => '13.1',
+            FLAVOR  => 'DVD',
+            ARCH    => 'i586',
+            BUILD   => '0091',
+            _GROUP  => 'opensuse test',
+        });
+
+    is($res->json->{count}, 6, '6 jobs scheduled');
+    my @newids = @{$res->json->{ids}};
+    my $newid  = $newids[0];
+
+    $ret = $t->get_ok('/api/v1/jobs');
+    my @jobs = @{$ret->tx->res->json->{jobs}};
+
+    my $install_ltp   = find_job(\@jobs, \@newids, 'install_ltp', 'powerpc');
+    my $use_ltp_64    = find_job(\@jobs, \@newids, 'use_ltp',     '64bit');
+    my $use_ltp_power = find_job(\@jobs, \@newids, 'use_ltp',     'powerpc');
+    is_deeply($use_ltp_64->{parents}, undef, "not found parent for use_ltp on 64bit, check for dependency typos");
+    like(
+        $res->json->{failed}->[0]->{error_messages}->[0],
+        qr/START_AFTER_TEST=install_ltp:64bit not found - check for dependency typos and dependency cycles/,
+        "install_ltp:64bit not exist, check for dependency typos"
+    );
+    is_deeply(
+        $use_ltp_power->{parents},
+        {Parallel => [], Chained => [$install_ltp->{id}]},
+        "install_ltp is parent of use_ltp_power"
+    );
+
+    my $install_kde_64    = find_job(\@jobs, \@newids, 'install_kde', '64bit');
+    my $install_kde_power = find_job(\@jobs, \@newids, 'install_kde', 'powerpc');
+    my $use_kde_64        = find_job(\@jobs, \@newids, 'use_kde',     '64bit');
+    my $use_kde_power     = find_job(\@jobs, \@newids, 'use_kde',     'powerpc');
+    is_deeply(
+        $use_kde_64->{parents},
+        {Parallel => [], Chained => [$install_kde_64->{id}]},
+        "install_kde_64 is only parent of use_kde_64"
+    );
+    is_deeply(
+        $use_kde_power->{parents},
+        {Parallel => [], Chained => [$install_kde_power->{id}]},
+        "install_kde_power is only parent of use_kde_power"
+    );
+
+    $schema->txn_rollback;
+};
+
+subtest 'Create dependency for jobs on different machines - log error parents' => sub {
+    $schema->txn_begin;
+    my @machines = qw(ppc ppc-6G ppc-1G ppc-2G s390x);
+    for my $m (@machines) {
+        $t->post_ok('/api/v1/machines', form => {name => $m, backend => 'qemu', 'settings[TEST]' => 'test'})
+          ->status_is(200);
+    }
+    add_opensuse_test('supportserver', MACHINE => ['ppc', '64bit', 's390x']);
+    add_opensuse_test('server1', PARALLEL_WITH => 'supportserver:ppc', MACHINE => ['ppc-6G']);
+    add_opensuse_test('slave1',  PARALLEL_WITH => 'supportserver:ppc', MACHINE => ['ppc-1G']);
+    add_opensuse_test('slave2',  PARALLEL_WITH => 'supportserver:ppc', MACHINE => ['ppc-2G']);
+
+    my $res = schedule_iso(
+        {
+            ISO     => $iso,
+            DISTRI  => 'opensuse',
+            VERSION => '13.1',
+            FLAVOR  => 'DVD',
+            ARCH    => 'i586',
+            BUILD   => '0091',
+            _GROUP  => 'opensuse test',
+        });
+
+    is($res->json->{count}, 6, '6 jobs scheduled');
+    my @newids = @{$res->json->{ids}};
+    my $newid  = $newids[0];
+
+    $ret = $t->get_ok('/api/v1/jobs');
+    my @jobs = @{$ret->tx->res->json->{jobs}};
+
+    my $supportserver_ppc   = find_job(\@jobs, \@newids, 'supportserver', 'ppc');
+    my $supportserver_64    = find_job(\@jobs, \@newids, 'supportserver', '64bit');
+    my $supportserver_s390x = find_job(\@jobs, \@newids, 'supportserver', 's390x');
+    my $server1_ppc         = find_job(\@jobs, \@newids, 'server1',       'ppc-6G');
+    my $slave1_ppc          = find_job(\@jobs, \@newids, 'slave1',        'ppc-1G');
+    my $slave2_ppc          = find_job(\@jobs, \@newids, 'slave2',        'ppc-2G');
+
+    for my $c (my @children = ($server1_ppc, $slave1_ppc, $slave2_ppc)) {
+        is_deeply(
+            $c->{parents},
+            {Parallel => [$supportserver_ppc->{id}], Chained => []},
+            "supportserver_ppc is only parent of " . $c->{name});
+    }
+    for (0 .. 1) {
+        like(
+            $res->json->{failed}->[$_]->{error_messages}->[0],
+            qr/supportserver:(.*?) has no child, check its machine placed or dependency setting typos/,
+            "supportserver placed on 64bit/s390x machine, but no child"
+        );
+    }
 
     $schema->txn_rollback;
 };

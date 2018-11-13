@@ -22,7 +22,6 @@ use OpenQA::IPC;
 use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema::Result::JobDependencies;
-
 use Carp;
 
 =pod
@@ -62,9 +61,11 @@ sub _settings_key {
 
 =item _parse_dep_variable()
 
-Parse dependency variable in format like "suite1,suite2,suite3"
-and return settings key for each entry. Internal method. B<TODO>:
-allow inter-machine dependency.
+Parse dependency variable in format like "suite1:64bit,suite2,suite3:uefi"
+and return settings arrayref for each entry. With machine explicitly defined
+that allow inter-machine dependency and without specifying machine means
+the dependency tests that are scheduled for the same machine.
+Internal method.
 
 =back
 
@@ -77,7 +78,14 @@ sub _parse_dep_variable {
 
     my @after = split(/\s*,\s*/, $value);
 
-    return map { $_ . ':' . $settings->{MACHINE} } @after;
+    return map {
+        if ($_ =~ /^(.+):([^:]+)$/) {
+            [$1, $2];
+        }
+        else {
+            [$_, $settings->{MACHINE}];
+        }
+    } @after;
 }
 
 =over 4
@@ -103,19 +111,19 @@ sub _sort_dep {
         $count{_settings_key($job)}++;
     }
 
-
     my $added;
     do {
         $added = 0;
         for my $job (@$list) {
             next if $done{$job};
-            my @after;
-            push @after, _parse_dep_variable($job->{START_AFTER_TEST}, $job);
-            push @after, _parse_dep_variable($job->{PARALLEL_WITH},    $job);
+            my @parents;
+            push @parents, _parse_dep_variable($job->{START_AFTER_TEST}, $job);
+            push @parents, _parse_dep_variable($job->{PARALLEL_WITH},    $job);
 
-            my $c = 0;    # number of parens that must go to @out before this job
-            foreach my $a (@after) {
-                $c += $count{$a} if defined $count{$a};
+            my $c = 0;    # number of parents that must go to @out before this job
+            foreach my $parent (@parents) {
+                my $parent_test_machine = join(':', @$parent);
+                $c += $count{$parent_test_machine} if defined $count{$parent_test_machine};
             }
 
             if ($c == 0) {    # no parents, we can do this job
@@ -295,8 +303,9 @@ sub _generate_jobs {
             my @parents;
             push @parents, _parse_dep_variable($ret->[$i]->{START_AFTER_TEST}, $ret->[$i]);
             push @parents, _parse_dep_variable($ret->[$i]->{PARALLEL_WITH},    $ret->[$i]);
-            for my $p (@parents) {
-                $wanted{$p} = 1;
+            for my $parent (@parents) {
+                my $parent_test_machine = join(':', @$parent);
+                $wanted{$parent_test_machine} = 1;
             }
         }
         else {
@@ -328,7 +337,7 @@ defined. Internal method used by the B<schedule_iso()> method.
 =cut
 
 sub job_create_dependencies {
-    my ($self, $job, $testsuite_mapping, $created_jobs) = @_;
+    my ($self, $job, $testsuite_mapping, $created_jobs, $cluster_parents) = @_;
 
     my @error_messages;
     my $settings = $job->settings_hash;
@@ -339,30 +348,54 @@ sub job_create_dependencies {
         my ($depname, $deptype) = @$dependency;
         next unless defined $settings->{$depname};
         for my $testsuite (_parse_dep_variable($settings->{$depname}, $settings)) {
-            if (!defined $testsuite_mapping->{$testsuite}) {
-                my $error_msg = "$depname=$testsuite not found - check for typos and dependency cycles";
+            my ($test, $machine) = @$testsuite;
+            for my $mach (keys %{$testsuite_mapping->{$test}}) {
+                if (!exists $cluster_parents->{$test . ':' . $mach}) {
+                    $cluster_parents->{$test . ':' . $mach} = $testsuite_mapping->{$test}->{$mach};
+                }
+            }
+            if (!defined $testsuite_mapping->{$test}->{$machine}) {
+                my $error_msg = "$depname=$test:$machine not found - check for dependency typos and dependency cycles";
                 OpenQA::Utils::log_warning($error_msg);
                 push(@error_messages, $error_msg);
             }
             else {
-                for my $parent (@{$testsuite_mapping->{$testsuite}}) {
-                    try {
-                        _check_for_cycle($job->id, $parent, $created_jobs);
-                    }
-                    catch {
-                        die "There is a cycle in the dependencies of $settings->{TEST}";
-                    };
-                    $self->db->resultset('JobDependencies')->create(
-                        {
-                            child_job_id  => $job->id,
-                            parent_job_id => $parent,
-                            dependency    => $deptype,
-                        });
-                }
+                my @parents = @{$testsuite_mapping->{$test}->{$machine}};
+                $self->_create_dependencies($job, $created_jobs, $deptype, \@parents);
+                $cluster_parents->{$test . ':' . $machine} = 'depended';
             }
         }
     }
     return \@error_messages;
+}
+
+=over 4
+
+=item _create_dependencies()
+
+Internal method used by the B<job_create_dependencies()> method
+
+=back
+
+=cut
+
+sub _create_dependencies {
+    my ($self, $job, $created_jobs, $deptype, $parents) = @_;
+
+    for my $parent (@$parents) {
+        try {
+            _check_for_cycle($job->id, $parent, $created_jobs);
+        }
+        catch {
+            die "There is a cycle in the dependencies of " . $job->settings_hash->{TEST};
+        };
+        $self->db->resultset('JobDependencies')->create(
+            {
+                child_job_id  => $job->id,
+                parent_job_id => $parent,
+                dependency    => $deptype,
+            });
+    }
 }
 
 =over 4
@@ -432,7 +465,7 @@ sub schedule_iso {
     my $coderef = sub {
         my @jobs;
         # remember ids of created parents
-        my %testsuite_ids;    # key: "suite:machine", value: array of job ids
+        my %testsuite_ids;    # key: "suite", value: {key: "machine" value: "array of job ids"}
 
         for my $settings (@{$jobs || []}) {
             my $prio = delete $settings->{PRIO};
@@ -442,8 +475,8 @@ sub schedule_iso {
             my $job = $self->db->resultset('Jobs')->create_from_settings($settings);
             push @jobs, $job;
 
-            $testsuite_ids{_settings_key($settings)} //= [];
-            push @{$testsuite_ids{_settings_key($settings)}}, $job->id;
+            $testsuite_ids{$settings->{TEST}}->{$settings->{MACHINE}} //= [];
+            push @{$testsuite_ids{$settings->{TEST}}->{$settings->{MACHINE}}}, $job->id;
 
             # set prio if defined explicitely (otherwise default prio is used)
             if (defined($prio)) {
@@ -454,9 +487,12 @@ sub schedule_iso {
 
         # for cycle detection
         my %created_jobs;
+        # for checking wrong parents
+        my %cluster_parents;
         # jobs are created, now recreate dependencies and extract ids
         for my $job (@jobs) {
-            my $error_messages = $self->job_create_dependencies($job, \%testsuite_ids, \%created_jobs);
+            my $error_messages
+              = $self->job_create_dependencies($job, \%testsuite_ids, \%created_jobs, \%cluster_parents);
             if (!@$error_messages) {
                 push(@successful_job_ids, $job->id);
             }
@@ -467,6 +503,20 @@ sub schedule_iso {
                         job_id         => $job->id,
                         error_messages => $error_messages
                     });
+            }
+        }
+
+        # log wrong parents
+        for my $parent_test_machine (keys %cluster_parents) {
+            if ($cluster_parents{$parent_test_machine} ne 'depended') {
+                my $error_msg
+                  = "$parent_test_machine has no child, check its machine placed or dependency setting typos";
+                OpenQA::Utils::log_warning($error_msg);
+                push(
+                    @failed_job_info,
+                    {
+                        job_id         => $cluster_parents{$parent_test_machine},
+                        error_messages => [$error_msg]});
             }
         }
 
