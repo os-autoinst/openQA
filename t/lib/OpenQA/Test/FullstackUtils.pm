@@ -18,7 +18,7 @@ package OpenQA::Test::FullstackUtils;
 use base 'Exporter';
 use Mojolicious;
 use Mojo::Home;
-use Mojo::File qw(path tempdir);
+use Mojo::File 'path';
 use Test::More;
 use OpenQA::SeleniumTest;
 

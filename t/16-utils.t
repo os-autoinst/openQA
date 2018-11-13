@@ -27,6 +27,7 @@ use OpenQA::Utils;
 use OpenQA::Test::Utils 'redirect_output';
 use Test::More;
 use Scalar::Util 'reftype';
+use Mojo::File qw(path tempdir tempfile);
 
 is bugurl('bsc#1234'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bug url is properly expanded';
 ok find_bugref('gh#os-autoinst/openQA#1234'), 'github bugref is recognized';
@@ -109,16 +110,15 @@ is_deeply $t3,
     }};
 
 subtest 'get current version' => sub {
-    use Mojo::File qw(path tempdir tempfile);
     # Let's check that the version matches our versioning scheme.
     # If it's a git version it should be in the form: git-tag-sha1
     # otherwise is a group of 3 decimals followed by a partial sha1: a.b.c.sha1
 
     my $changelog_dir  = tempdir;
     my $git_dir        = tempdir;
-    my $changelog_file = path($changelog_dir, "public")->make_path->child("Changelog");
-    my $refs_file      = path($git_dir, ".git")->make_path->child("packed-refs");
-    my $head_file      = path($git_dir, ".git", "refs", "heads")->make_path->child("master");
+    my $changelog_file = $changelog_dir->child('public')->make_path->child('Changelog');
+    my $refs_file      = $git_dir->child('.git')->make_path->child('packed-refs');
+    my $head_file      = $git_dir->child('.git', 'refs', 'heads')->make_path->child('master');
     my $sha_regex      = qr/\b[0-9a-f]{5,40}\b/;
 
     my $changelog_content = <<'EOT';

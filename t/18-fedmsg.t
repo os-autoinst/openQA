@@ -54,7 +54,8 @@ my $schema = OpenQA::Test::Database->new->create();
 
 # this test also serves to test plugin loading via config file
 my @conf = ("[global]\n", "plugins=Fedmsg\n", "base_url=https://openqa.stg.fedoraproject.org\n");
-$ENV{OPENQA_CONFIG} = tempdir;
+my $tempdir = tempdir;
+$ENV{OPENQA_CONFIG} = $tempdir;
 path($ENV{OPENQA_CONFIG})->make_path->child("openqa.ini")->spurt(@conf);
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');

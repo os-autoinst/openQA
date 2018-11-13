@@ -8,7 +8,7 @@ use OpenQA::Worker::Common;
 use Config::IniFiles;
 use OpenQA::Utils qw(log_error log_info log_debug);
 use Mojo::Home;
-use Mojo::File qw(path tempdir);
+use Mojo::File 'path';
 use Cwd qw(abs_path getcwd);
 use Test::More;
 use Mojo::IOLoop::ReadWriteProcess 'process';

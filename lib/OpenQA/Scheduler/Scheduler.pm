@@ -30,7 +30,6 @@ use Data::Dump qw(dd pp);
 use Date::Format 'time2str';
 use DBIx::Class::Timestamps 'now';
 use DateTime;
-use File::Temp 'tempdir';
 use Mojo::URL;
 use Try::Tiny;
 use OpenQA::Jobs::Constants;

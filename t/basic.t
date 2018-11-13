@@ -29,12 +29,14 @@ OpenQA::Test::Database->new->create(skip_fixtures => 1);
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 $t->get_ok('/')->status_is(200)->content_like(qr/Welcome to openQA/i);
 
+my $tempdir = tempdir;
+
 sub test_auth_method_startup {
     my $auth = shift;
 
     my @conf = ("[auth]\n", "method = \t  $auth \t\n");
-    $ENV{OPENQA_CONFIG} = tempdir;
-    path($ENV{OPENQA_CONFIG})->make_path->child("openqa.ini")->spurt(@conf);
+    $ENV{OPENQA_CONFIG} = $tempdir;
+    $tempdir->child("openqa.ini")->spurt(@conf);
 
     no warnings 'redefine';
     my $t = Test::Mojo->new('OpenQA::WebAPI');

@@ -21,11 +21,13 @@
 #  * a qemu instance is still running (maybe leftover from last failed test
 #    execution)
 
+my $tempdir;
 BEGIN {
     unshift @INC, 'lib';
     use FindBin;
     use Mojo::File qw(path tempdir);
-    $ENV{OPENQA_BASEDIR} = path(tempdir, 't', 'full-stack.d');
+    $tempdir = tempdir;
+    $ENV{OPENQA_BASEDIR} = $tempdir->child('t', 'full-stack.d');
     $ENV{OPENQA_CONFIG} = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
     # Since tests depends on timing, we require the scheduler to be fixed in its actions.
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 4000;

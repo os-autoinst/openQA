@@ -25,6 +25,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
 use OpenQA::Test::Case;
+use OpenQA::Test::Utils qw(redirect_output standard_worker kill_service setup_share_dir);
 use OpenQA::Client;
 use Test::More;
 use Test::Mojo;
@@ -133,7 +134,8 @@ test_via_io_loop sub {
 };
 
 my @conf = ("[global]\n", "plugins=AMQP\n");
-$ENV{OPENQA_CONFIG} = tempdir;
+my $tempdir = tempdir;
+$ENV{OPENQA_CONFIG} = $tempdir;
 path($FindBin::Bin, "data")->child("client.conf")->copy_to(path($ENV{OPENQA_CONFIG})->make_path->child("client.conf"));
 ok -e path($ENV{OPENQA_CONFIG})->child('client.conf')->to_string;
 open(my $fh, '>>', path($ENV{OPENQA_CONFIG})->child('client.conf')->to_string)
@@ -284,7 +286,6 @@ subtest 'mock test stop_job' => sub {
 };
 
 subtest 'worker configuration reading' => sub {
-    use Mojo::File qw(tempdir path);
     my $configdir = tempdir();
     local $ENV{OPENQA_CONFIG} = $configdir;
     my $ini = $configdir->child('workers.ini');
@@ -409,9 +410,6 @@ subtest 'mock test send_status' => sub {
 
 
 subtest 'Worker logs' => sub {
-    use OpenQA::Test::Utils qw(redirect_output standard_worker kill_service setup_share_dir);
-    use Mojo::File qw(path tempdir);
-    use OpenQA::Utils;
     path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
 
     local $ENV{OPENQA_LOGFILE} = undef;
@@ -430,7 +428,8 @@ subtest 'Worker logs' => sub {
     }, qr/$c/;
 
     path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt("");
-    $OpenQA::Utils::prjdir = path(tempdir(), 'openqa');
+    my $prjdir = tempdir;
+    $OpenQA::Utils::prjdir = $prjdir->child('openqa');
 
     @re = (
         '\[info\]( \[pid:\d+\])? Project dir for host .*? is .*',

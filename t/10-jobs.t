@@ -31,6 +31,7 @@ use OpenQA::Test::Case;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
+use Mojo::File 'tempdir';
 use Mojo::IOLoop::ReadWriteProcess;
 use OpenQA::Test::Utils 'redirect_output';
 use OpenQA::Parser::Result::OpenQA;
@@ -585,7 +586,7 @@ subtest 'Old logs are deleted when nocleanup is set' => sub {
     use OpenQA::Worker::Pool 'clean_pool';
     use OpenQA::Worker::Common qw($nocleanup $pooldir);
     $nocleanup = 1;
-    $pooldir   = Mojo::File->tempdir('pool');
+    $pooldir   = tempdir('poolXXXX');
 
     $pooldir->child('autoinst-log.txt')->spurt('Hello Mojo!');
     $OpenQA::Worker::Jobs::job = {id => 1, settings => {NAME => 'test_job'}};
@@ -622,10 +623,8 @@ subtest 'check dead qemu' => sub {
     use OpenQA::Worker::Common qw($nocleanup $pooldir);
     $nocleanup = 0;
 
-    $pooldir = Mojo::File->tempdir('pool');
-    my $qemu_pid_fh = Mojo::File->new(catfile($pooldir), 'qemu.pid')->open('>');
-    print $qemu_pid_fh '999999999999999999';
-    close $qemu_pid_fh;
+    $pooldir = tempdir('poolXXXX');
+    my $qemu_pid_fh = $pooldir->child('qemu.pid')->spurt('999999999999999999');
 
     my $exception = 1;
     eval {
@@ -634,10 +633,8 @@ subtest 'check dead qemu' => sub {
     };
     ok(!$exception, 'dead qemu bogus pid');
 
-    $qemu_pid_fh = Mojo::File->new(catfile($pooldir), 'qemu.pid')->open('>');
-    print $qemu_pid_fh $$;
-    close $qemu_pid_fh;
-    $exception = 1;
+    $qemu_pid_fh = $pooldir->child('qemu.pid')->spurt($$);
+    $exception   = 1;
     eval {
         clean_pool();
         $exception = 0;
