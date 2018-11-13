@@ -667,10 +667,19 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_assigning_jobs_to_workers">Assigning jobs to workers</a></li>
 <li><a href="#_writing_multi_machine_tests">Writing multi-machine tests</a>
 <ul class="sectlevel3">
-<li><a href="#_job_dependencies">Job dependencies</a></li>
+<li><a href="#_job_dependencies">Job dependencies</a>
+<ul class="sectlevel4">
+<li><a href="#_inter_machine_dependencies">Inter-machine dependencies</a>
+<ul class="sectlevel5">
+<li><a href="#_example_best_match_with_correct_dependency_and_machine_placed">Example: best match with correct dependency and machine placed</a></li>
+<li><a href="#_example_wrong_dependency_or_wrong_machine_placed">Example: wrong dependency or wrong machine placed</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a href="#_openqa_worker_requirements">OpenQA worker requirements</a>
 <ul class="sectlevel4">
-<li><a href="#_examples">Examples:</a></li>
+<li><a href="#_examples">Examples</a></li>
 </ul>
 </li>
 </ul>
@@ -3586,9 +3595,91 @@ Keep in mind that parent job <em>must be running until all children finish</em>,
 create new jobs from job templates. Posting individual jobs manually
 won&#8217;t work.</p>
 </div>
+<div class="sect4">
+<h5 id="_inter_machine_dependencies">Inter-machine dependencies</h5>
 <div class="paragraph">
-<p>Job dependencies are currently only possible between tests that are
-scheduled for the same machine.</p>
+<p>Those dependencies make it possible to create job dependencies between tests which are scheduled for the different machines.
+To use it, simply append the machine name for each dependent test suite with colon separated.
+If machine is not explicitly defined, the variable %MACHINE% of the current job is used for the dependent test suite.
+Eg.
+ START_AFTER_TEST="kde:64bit-1G,dhcp-server:64bit-8G"
+or
+ PARALLEL_WITH="web-server:ipmi-fly,dhcp-server:ipmi-bee",http-server
+Then, in job templates, add test suite(s) and all of its dependent test suite(s). Keep in mind to place the machines which
+have been explicitly defined in a variable for each dependent test suite.
+Checkout the example sections to get a better understanding:
+====== Example: correct dependency and machine placed</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>There is a test suite A placed on machine 64bit-8G,
+then test suite B placed on machine 64bit-1G with variable START_AFTER_TEST=A:64bit-8G</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This results in the following dependency:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>A:64bit-8G &lt;- B:64bit-1G</pre>
+</div>
+</div>
+<div class="sect5">
+<h6 id="_example_best_match_with_correct_dependency_and_machine_placed">Example: best match with correct dependency and machine placed</h6>
+<div class="listingblock">
+<div class="content">
+<pre>If test suite A placed on both of machines 64bit and ppc
+then test suite B placed on same machines 64bit and ppc with variable START_AFTER_TEST=A
+openQA take the best matches.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This results in the following dependency:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>A:64bit &lt;- B:64bit
+A:ppc &lt;- B:ppc</pre>
+</div>
+</div>
+</div>
+<div class="sect5">
+<h6 id="_example_wrong_dependency_or_wrong_machine_placed">Example: wrong dependency or wrong machine placed</h6>
+<div class="listingblock">
+<div class="content">
+<pre>If test suite A placed on machine 64bit-8G,
+then test suite B placed on machine 64bit-1G with variable START_AFTER_TEST=A
+openQA won't create job dependency and give an error message unless you have been explicitly define variable as START_AFTER_TEST=A:64bit-8G
+If test suite A placed on machine ppc, 64bit and s390x
+then there are 3 testsuites B on ppc-1G, C on ppc-2G, D on ppc64le with same variable PARALLEL_WITH=A:ppc</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This results in the following dependency:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>            A:ppc
+              ^
+           /  |  \
+         /    |    \
+B:ppc-1G  C:ppc-2G  D:ppc64le</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>openQA will also show errors to inform users that test suite A on machines 64bit and s390x are not necessary.
+====== Example: dependency on same machine</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>If variable START_AFTER_TEST or PARALLEL_WITH *only* with name(s) of test suite(s).
+START_AFTER_TEST=A,B or PARALLEL_WITH=A,B</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>openQA will create job dependencies that are scheduled on the same machine if all test suites are placed on the same machine.</p>
+</div>
+</div>
 </div>
 </div>
 <div class="sect3">
@@ -3598,7 +3689,7 @@ scheduled for the same machine.</p>
 On the other hand PARALLEL dependency requires at <em>least 2 workers</em> for simple scenarios.</p>
 </div>
 <div class="sect4">
-<h5 id="_examples">Examples:</h5>
+<h5 id="_examples">Examples</h5>
 <div class="listingblock">
 <div class="title">Listing 1. CHAINED - i.e. test basic functionality before going advanced - requires 1 worker</div>
 <div class="content">
@@ -6280,7 +6371,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-11-12 09:14:46 UTC
+Last updated 2018-11-13 13:01:29 UTC
 </div>
 </div>
 </body>
