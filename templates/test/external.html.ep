@@ -4,8 +4,8 @@
         <tr>
             <th class="name">Test suite</th>
             <th>Test case</th>
-            <th>Log/output</th>
             <th>Result</th>
+            <th>Log/output</th>
         </tr>
     </thead>
     <tbody>
@@ -28,8 +28,8 @@
                 <tr>
                     <td><%= $module->{name} %></td>
                     <td><%= $step->{display_title} %></td>
+                    <td><i class="status result_<%= $step->{result} %> fa fa-circle" title="<%= $step->{result} %>"></i></td>
                     <td><%= $step->{text_data} %></td>
-                    <td class="result-<%= $step->{result} %>"><%= $step->{result} %></td>
                 </tr>
             % }
         % }
