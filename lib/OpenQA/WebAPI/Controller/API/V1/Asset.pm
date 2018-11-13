@@ -87,11 +87,11 @@ sub list {
 sub trigger_cleanup {
     my ($self) = @_;
 
-    my ($minion_id, $gru_id) = $self->gru->enqueue_limit_assets();
+    my $res = $self->gru->enqueue_limit_assets();
     $self->render(
         json => {
             status => 'ok',
-            gru_id => $gru_id,
+            gru_id => $res->{gru_id},
         });
 }
 

@@ -129,7 +129,7 @@ sub enqueue {
             delay    => $delay,
             notes    => {gru_id => $gru_id, (ttl => $ttl) x !!(defined $ttl)}});
 
-    return wantarray ? ($minion_id, $gru_id) : $minion_id;
+    return {minion_id => $minion_id, gru_id => $gru_id};
 }
 
 # enqueues the limit_assets task with the default parameters

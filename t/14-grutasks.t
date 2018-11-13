@@ -415,13 +415,13 @@ subtest 'Gru tasks limit' => sub {
 
 subtest 'Gru tasks TTL' => sub {
     $t->app->minion->reset;
-    my $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -20});
+    my $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -20})->{minion_id};
     $c->run('run', '-o');
     my $result = $t->app->minion->job($job_id)->info->{result};
     is ref $result, 'HASH', 'We have a result' or diag explain $result;
     is $result->{error}, 'TTL Expired', 'TTL Expired - job discarded' or diag explain $result;
 
-    $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 20});
+    $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 20})->{minion_id};
     $c->run('run', '-o');
     $result = $t->app->minion->job($job_id)->info->{result};
 
@@ -432,16 +432,16 @@ subtest 'Gru tasks TTL' => sub {
 
     my @ids;
     for (1 .. 100) {
-        push @ids, ($t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -50}))[0];
+        push @ids, $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -50})->{minion_id};
     }
     $c->run('run', '-o');
 
     is $t->app->minion->job($_)->info->{result}->{error}, 'TTL Expired', 'TTL Expired - job discarded' for @ids;
 
-    my ($minion_id, $gru_id) = $t->app->gru->enqueue_limit_assets;
-    ok $minion_id;
-    ok $gru_id;
-    isnt $minion_id, $gru_id;
+    $result = $t->app->gru->enqueue_limit_assets;
+    ok exists $result->{minion_id};
+    ok exists $result->{gru_id};
+    isnt $result->{gru_id}, $result->{minion_id};
 };
 
 SKIP: {
