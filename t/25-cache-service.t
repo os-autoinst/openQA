@@ -15,14 +15,17 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
+use strict;
+use warnings;
+
+my $tempdir;
 BEGIN {
     unshift @INC, 'lib', 't/lib';
     use Mojo::File qw(path tempdir);
     use FindBin;
-    use File::Path qw(remove_tree make_path);
 
-    my $basedir = path(tempdir, 't', 'cache.d');
-    remove_tree($basedir);
+    $tempdir = tempdir;
+    my $basedir = $tempdir->child('t', 'cache.d');
     $ENV{OPENQA_CACHE_DIR} = path($basedir, 'cache');
     $ENV{OPENQA_BASEDIR}   = $basedir;
     $ENV{OPENQA_CONFIG}    = path($basedir, 'config')->make_path;
@@ -32,9 +35,6 @@ CACHEDIRECTORY = ' . $ENV{OPENQA_CACHE_DIR} . '
 CACHEWORKERS = 10
 CACHELIMIT = 100');
 }
-
-use strict;
-use warnings;
 
 # Avoid warning error: Name "Config::IniFiles::t/cache.d/cache/config/workers.ini" used only once
 use OpenQA::Worker::Cache;
@@ -72,7 +72,7 @@ my $logfile = catdir($ENV{LOGDIR}, 'cache.log');
 my $port    = Mojo::IOLoop::Server->generate_port;
 my $host    = "http://localhost:$port";
 
-make_path($ENV{LOGDIR});
+path($ENV{LOGDIR})->make_path;
 use OpenQA::Worker::Cache::Client;
 
 my $cache_client = OpenQA::Worker::Cache::Client->new();
@@ -118,8 +118,8 @@ sub test_sync {
 
     my $t_dir = int(rand(13432432));
     my $data  = int(rand(348394280934820842093));
-    path($dir)->child($t_dir)->spurt($data);
-    my $expected = path($dir2)->child('tests')->child($t_dir);
+    $dir->child($t_dir)->spurt($data);
+    my $expected = $dir2->child('tests')->child($t_dir);
 
     ok $rsync_request->enqueue;
 
@@ -458,8 +458,8 @@ subtest 'Test Minion Sync task' => sub {
     my $dir  = tempdir;
     my $dir2 = tempdir;
 
-    path($dir)->child('test')->spurt('foobar');
-    my $expected = path($dir2)->child('tests')->child('test');
+    $dir->child('test')->spurt('foobar');
+    my $expected = $dir2->child('tests')->child('test');
     my $req      = $cache_client->request->rsync(from => $dir, to => $dir2);
     my $task     = OpenQA::Worker::Cache::Task::Sync->new();
     $task->register($app);
