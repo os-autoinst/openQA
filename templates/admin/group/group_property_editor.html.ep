@@ -12,7 +12,7 @@
         % }
     </div>
     <div class="card-body">
-        <form action="#" class="form-horizontal" onsubmit="return submitProperties(this);"
+        <form action="#" id="group_properties_form" class="form-horizontal" onsubmit="return submitProperties(this);"
           data-put-url="<%= url_for(($is_parent ? 'apiv1_put_parent_group' : 'apiv1_put_job_group') => (group_id => $group->id)) %>">
             % if (!is_admin) {
                 <fieldset disabled>

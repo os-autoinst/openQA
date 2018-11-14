@@ -4,6 +4,7 @@
 
 % content_for 'ready_function' => begin
     setupJobTemplates("<%= url_for('apiv1_job_templates') %>", <%= $group->id %>, <%= is_admin %>);
+    checkJobGroupForm('#group_properties_form');
 % end
 
 <div class="row">

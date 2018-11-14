@@ -303,6 +303,19 @@ subtest 'add job group' => sub() {
 
     # add new parentless group, leave name empty (which should lead to error)
     $driver->find_element_by_xpath('//a[@title="Add new job group on top-level"]')->click();
+    is($driver->find_element('#create_group_button')->get_attribute('disabled'),
+        'true', 'create group submit button is disabled if leave name is empty');
+    # now leave group name with blank which also lead to error
+    my $groupname = $driver->find_element_by_id('new_group_name');
+    $groupname->send_keys('   ');
+    is($driver->find_element('#create_group_button')->get_attribute('disabled'),
+        'true', 'create group submit button is disabled if leave name as blank');
+    is(
+        $driver->find_element('#new_group_name')->get_attribute('class'),
+        'form-control is-invalid',
+        'group name input marked as invalid'
+    );
+    $groupname->clear();
     $driver->find_element_by_id('create_group_button')->click();
     wait_for_ajax;
     $list_element = $driver->find_element_by_id('job_group_list');
@@ -310,11 +323,6 @@ subtest 'add job group' => sub() {
     is((shift @parent_group_entries)->get_text(), 'opensuse',      'first parentless group present');
     is((shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group present');
     is(@parent_group_entries,                     0,               'and also no more parent groups');
-    like(
-        $driver->find_element('#new_group_name_group ')->get_text(),
-        qr/The group name must not be empty/,
-        'refuse creating group with empty name'
-    );
 
     # add new parentless group (dialog should still be open), this time enter a name
     $driver->find_element_by_id('new_group_name')->send_keys('Cool Group');
@@ -379,6 +387,36 @@ subtest 'job property editor' => sub() {
         is($driver->find_element_by_id('editor-description')->get_value(),      '',   'no description yet');
     };
 
+    subtest 'update group name with empty or blank' => sub {
+        my $groupname = $driver->find_element_by_id('editor-name');
+        # update group name with empty
+        $groupname->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
+        $groupname->send_keys(Selenium::Remote::WDKeys->KEYS->{backspace});
+        is($driver->find_element('p.buttons button.btn-primary')->get_attribute('disabled'),
+            'true', 'group properties save button is disabled if leave name is empty');
+        is(
+            $driver->find_element('#editor-name')->get_attribute('class'),
+            'form-control is-invalid',
+            'editor name input marked as invalid'
+        );
+        $driver->refresh();
+        $driver->find_element('.corner-buttons button')->click();
+
+        # update group name with blank
+        $groupname = $driver->find_element_by_id('editor-name');
+        $groupname->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
+        $groupname->send_keys('   ');
+        is($driver->find_element('p.buttons button.btn-primary')->get_attribute('disabled'),
+            'true', 'group properties save button is disabled if leave name is empty');
+        is(
+            $driver->find_element('#editor-name')->get_attribute('class'),
+            'form-control is-invalid',
+            'editor name input marked as invalid'
+        );
+        $driver->refresh();
+        $driver->find_element('.corner-buttons button')->click();
+    };
+
     subtest 'edit some properties' => sub() {
         # those keys will be appended
         $driver->find_element_by_id('editor-name')->send_keys(' has been edited!');
@@ -389,6 +427,8 @@ subtest 'job property editor' => sub() {
         $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
         $ele->send_keys('500');
         $driver->find_element_by_id('editor-description')->send_keys('Test group');
+        is($driver->find_element('p.buttons button.btn-primary')->get_attribute('disabled'),
+            undef, 'group properties save button is enabled');
         $driver->find_element('p.buttons button.btn-primary')->click();
         # ensure there is no race condition, even though the page is reloaded
         wait_for_ajax;

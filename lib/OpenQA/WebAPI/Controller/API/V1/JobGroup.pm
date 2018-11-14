@@ -185,6 +185,24 @@ sub check_top_level_group {
 
 =over 4
 
+=item check_group_name()
+
+Check group name to prevent create/update with empty or blank
+
+=back
+
+=cut
+
+sub check_group_name {
+    my ($self) = @_;
+
+    my $group_name = $self->param('name');
+    return 0 if (!defined $group_name || $group_name =~ /^\s*$/);
+    return 1;
+}
+
+=over 4
+
 =item create()
 
 Creates a new job group given a name. Prevents the creation of job groups with the same name.
@@ -196,10 +214,11 @@ Creates a new job group given a name. Prevents the creation of job groups with t
 sub create {
     my ($self) = @_;
 
-    my $group_name = $self->param('name');
-    return $self->render(json => {error => 'No group name specified'}, status => 400) unless $group_name;
+    my $check = $self->check_group_name;
+    return $self->render(json => {error => 'The group name must not be empty or blank'}, status => 400)
+      if ($check == 0);
 
-    my $check = $self->check_top_level_group;
+    $check = $self->check_top_level_group;
     if ($check != 0) {
         return $self->render(
             json   => {error => 'Unable to create group due to not allow duplicated job group on top level'},
@@ -230,7 +249,11 @@ sub update {
     my $group = $self->find_group;
     return unless $group;
 
-    my $check = $self->check_top_level_group($group->id);
+    my $check = $self->check_group_name;
+    return $self->render(json => {error => 'The group name must not be empty or blank'}, status => 400)
+      if ($check == 0);
+
+    $check = $self->check_top_level_group($group->id);
     if ($check != 0) {
         return $self->render(
             json   => {error => 'Unable to update group due to not allow duplicated job group on top level'},
