@@ -30,6 +30,7 @@
   /bin/pkill rix,
   /dev/ r,
   /dev/bus/usb/ r,
+  /dev/hugepages/** rwk,
   /dev/kvm rw,
   /dev/net/tun rw,
   /dev/ptmx rw,
