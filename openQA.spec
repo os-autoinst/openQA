@@ -18,7 +18,7 @@
 
 # can't use linebreaks here!
 %define openqa_services openqa-webui.service openqa-gru.service openqa-websockets.service openqa-scheduler.service openqa-resource-allocator.service
-%define openqa_worker_services openqa-worker.target openqa-slirpvde.service openqa-vde_switch.service
+%define openqa_worker_services openqa-worker.target openqa-slirpvde.service openqa-vde_switch.service openqa-worker-cacheservice.service openqa-worker-cacheservice-minion.service
 %if %{undefined tmpfiles_create}
 %define tmpfiles_create() \
 %{_bindir}/systemd-tmpfiles --create %{?*} || : \
@@ -34,7 +34,7 @@
 %bcond_with tests
 %endif
 # runtime requirements that also the testsuite needs
-%define t_requires perl(DBD::Pg) perl(DBIx::Class) perl(Config::IniFiles) perl(SQL::Translator) perl(Date::Format) perl(File::Copy::Recursive) perl(DateTime::Format::Pg) perl(Net::OpenID::Consumer) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) perl(aliased) perl(Config::Tiny) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(IO::Socket::SSL) perl(Data::Dump) perl(DBIx::Class::OptimisticLocking) perl(Text::Markdown) perl(Net::DBus) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(Mojo::RabbitMQ::Client) perl(BSD::Resource) perl(Cpanel::JSON::XS) perl(Pod::POM) perl(Mojo::IOLoop::ReadWriteProcess) perl(Minion) perl(Mojo::Pg)
+%define t_requires perl(DBD::Pg) perl(DBIx::Class) perl(Config::IniFiles) perl(SQL::Translator) perl(Date::Format) perl(File::Copy::Recursive) perl(DateTime::Format::Pg) perl(Net::OpenID::Consumer) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) perl(aliased) perl(Config::Tiny) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(IO::Socket::SSL) perl(Data::Dump) perl(DBIx::Class::OptimisticLocking) perl(Text::Markdown) perl(Net::DBus) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(Mojo::RabbitMQ::Client) perl(BSD::Resource) perl(Cpanel::JSON::XS) perl(Pod::POM) perl(Mojo::IOLoop::ReadWriteProcess) perl(Minion) perl(Mojo::Pg) perl(Mojo::SQLite) perl(Minion::Backend::SQLite)
 Name:           openQA
 Version:        4.6
 Release:        0
@@ -141,7 +141,9 @@ Summary:        The openQA worker
 Group:          Development/Tools/Other
 Requires:       openQA-client = %{version}
 Requires:       os-autoinst < 5
-Requires:       perl(DBD::SQLite)
+Requires:       perl(DBD::SQLite) > 1.51
+Requires:       perl(Minion::Backend::SQLite)
+Requires:       perl(Mojo::SQLite)
 Requires:       perl(Mojo::IOLoop::ReadWriteProcess) > 0.19
 Requires:       perl(SQL::SplitStatement)
 # FIXME: use proper Requires(pre/post/preun/...)
@@ -433,6 +435,8 @@ fi
 %{_libexecdir}/systemd/system-generators
 %{_unitdir}/openqa-worker.target
 %{_unitdir}/openqa-worker@.service
+%{_unitdir}/openqa-worker-cacheservice-minion.service
+%{_unitdir}/openqa-worker-cacheservice.service
 %{_unitdir}/openqa-worker-no-cleanup@.service
 %{_unitdir}/openqa-slirpvde.service
 %{_unitdir}/openqa-vde_switch.service
@@ -442,6 +446,7 @@ fi
 %dir %{_datadir}/openqa
 %dir %{_datadir}/openqa/script
 %{_datadir}/openqa/script/worker
+%{_datadir}/openqa/script/openqa-workercache
 %dir %{_localstatedir}/lib/openqa/pool
 %defattr(-,_openqa-worker,root)
 %dir %{_localstatedir}/lib/openqa/cache

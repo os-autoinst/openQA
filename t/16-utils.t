@@ -253,7 +253,6 @@ subtest safe_call => sub {
     like $@, qr/Can't locate object method "not_existant" via package "foo"/;
 };
 
-
 done_testing;
 
 {

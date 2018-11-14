@@ -1,0 +1,9 @@
+[Unit]
+Description=OpenQA Worker Cache Service
+
+[Service]
+User=_openqa-worker
+ExecStart=/usr/share/openqa/script/openqa-workercache daemon -m production
+
+[Install]
+WantedBy=multi-user.target

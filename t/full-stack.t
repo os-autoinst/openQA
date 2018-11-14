@@ -50,9 +50,11 @@ use Test::Output 'stderr_like';
 use Data::Dumper;
 use IO::Socket::INET;
 use POSIX '_exit';
+use OpenQA::Worker::Cache::Client;
 use Fcntl ':mode';
 use DBI;
-
+use Mojo::IOLoop::ReadWriteProcess::Session 'session';
+session->enable;
 # optional but very useful
 eval 'use Test::More::Color';
 eval 'use Test::More::Color "foreground"';
@@ -60,12 +62,12 @@ eval 'use Test::More::Color "foreground"';
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
 use OpenQA::Test::Utils
-  qw(create_websocket_server create_live_view_handler create_resourceallocator start_resourceallocator setup_share_dir);
+  qw(create_websocket_server create_live_view_handler create_resourceallocator start_resourceallocator setup_share_dir),
+  qw(cache_minion_worker cache_worker_service);
 use OpenQA::Test::FullstackUtils;
 
 plan skip_all => "set FULLSTACK=1 (be careful)" unless $ENV{FULLSTACK};
 plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
-
 
 my $workerpid;
 my $wspid;
@@ -311,6 +313,12 @@ ok(-e path($ENV{OPENQA_CONFIG})->child("workers.ini"), "Config file created.");
 # For now let's repeat the cache tests before extracting to separate test
 subtest 'Cache tests' => sub {
 
+    my $cache_service        = cache_worker_service;
+    my $worker_cache_service = cache_minion_worker;
+
+    my $db_file = $cache_location->child('cache.sqlite');
+    ok(!-e $db_file, "cache.sqlite is not present");
+
     my $filename;
     open($filename, '>', $cache_location->child("test.file"));
     print $filename "Hello World";
@@ -318,7 +326,14 @@ subtest 'Cache tests' => sub {
 
     path($cache_location, "test_directory")->make_path;
 
-    my $db_file  = $cache_location->child('cache.sqlite');
+    $worker_cache_service->restart->restart;
+    $cache_service->restart->restart;
+
+    my $cache_client = OpenQA::Worker::Cache::Client->new;
+
+    sleep 5 and diag "Waiting for cache service to be available"        until $cache_client->available;
+    sleep 5 and diag "Waiting for cache service worker to be available" until $cache_client->available_workers;
+
     my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
     OpenQA::Test::FullstackUtils::client_call(
         'jobs/3/restart post',
@@ -330,7 +345,6 @@ subtest 'Cache tests' => sub {
     $driver->get('/tests/5');
     like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled')
       or die;
-    ok(!-e $db_file, "cache.sqlite is not present");
     start_worker;
     OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 1);
     ok(-e $db_file, "cache.sqlite file created");
@@ -339,7 +353,7 @@ subtest 'Cache tests' => sub {
 
     like(
         readlink(path($ENV{OPENQA_BASEDIR}, 'openqa', 'pool', '1')->child("Core-7.2.iso")),
-        qr($cache_location/Core-7.2.iso),
+        qr($cache_location/localhost/Core-7.2.iso),
         "iso is symlinked to cache"
     );
 
@@ -376,8 +390,7 @@ subtest 'Cache tests' => sub {
         $filename = $cache_location->child("$_.qcow2");
         open(my $tmpfile, '>', $filename);
         print $tmpfile $filename;
-        $sql
-          = "INSERT INTO assets (downloading,filename,etag,last_use) VALUES (0, ?, 'Not valid', strftime('%s','now'));";
+        $sql = "INSERT INTO assets (filename,etag,last_use) VALUES ( ?, 'Not valid', strftime('%s','now'));";
         $sth = $dbh->prepare($sql);
         $sth->bind_param(1, $filename);
         $sth->execute();
@@ -511,5 +524,6 @@ done_testing;
 END {
     kill_driver;
     turn_down_stack;
+    session->clean;
     $? = 0;
 }

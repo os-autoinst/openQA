@@ -977,7 +977,9 @@ sub read_result_file {
 }
 
 sub backend_running {
-    return $worker->{child}->is_running;
+    # If we fail to cache assets, there is no $worker->{child}
+    # and we did not created a process for it.
+    !exists $worker->{child} ? !!0 : $worker->{child}->is_running;
 }
 
 1;

@@ -87,11 +87,11 @@ sub list {
 sub trigger_cleanup {
     my ($self) = @_;
 
-    my $gru_id = $self->gru->enqueue_limit_assets();
+    my $res = $self->gru->enqueue_limit_assets();
     $self->render(
         json => {
             status => 'ok',
-            gru_id => $gru_id,
+            gru_id => $res->{gru_id},
         });
 }
 
@@ -137,7 +137,7 @@ sub get {
 =item delete()
 
 Removes an asset from the system given its id or its type and name. Returns the
-number of assets removed. 
+number of assets removed.
 
 =back
 

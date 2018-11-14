@@ -28,6 +28,9 @@ use File::Basename;
 use Errno;
 use Cwd qw(abs_path getcwd);
 use OpenQA::Worker::Cache;
+use OpenQA::Worker::Cache::Client;
+use OpenQA::Worker::Cache::Request;
+use OpenQA::Worker::Common;
 use Time::HiRes 'sleep';
 use IO::Handle;
 use Mojo::IOLoop::ReadWriteProcess 'process';
@@ -36,6 +39,7 @@ use Mojo::IOLoop::ReadWriteProcess::Container 'container';
 use Mojo::IOLoop::ReadWriteProcess::CGroup 'cgroupv2';
 use Mojo::Collection 'c';
 use Mojo::File 'path';
+use Mojo::Util 'trim';
 
 use constant CGROUP_SLICE => $ENV{OPENQA_CGROUP_SLICE};
 
@@ -79,22 +83,6 @@ sub _save_vars($) {
     close($fd);
 }
 
-# runs in a subprocess, so don't rely on setting variables, but return
-sub cache_tests {
-    my ($shared_cache, $testpoolserver) = @_;
-
-    my $start = time;
-    # Do an flock to ensure only one worker is trying to synchronize at a time.
-    my @cmd = ('flock', "$shared_cache/needleslock");
-    push @cmd, (qw(rsync -avHP), "$testpoolserver/", qw(--delete));
-    push @cmd, "$shared_cache/tests/";
-
-    log_debug("Calling " . join(' ', @cmd));
-    my $res = system(@cmd);
-    log_debug(sprintf("RSYNC: Synchronization of tests directory took %.2f seconds", time - $start));
-    exit($res);
-}
-
 # When changing something here, also take a look at OpenQA::Utils::asset_type_from_setting
 sub detect_asset_keys {
     my ($vars) = @_;
@@ -117,6 +105,50 @@ sub detect_asset_keys {
     $res{UEFI_PFLASH_VARS} = 'hdd' if $vars->{UEFI_PFLASH_VARS};
 
     return \%res;
+}
+
+sub cache_assets {
+    my ($job, $vars, $assetkeys) = @_;
+    my $cache_client = OpenQA::Worker::Cache::Client->new;
+    # TODO: Enqueue all, and then wait
+    for my $this_asset (sort keys %$assetkeys) {
+        my $asset;
+        my $asset_uri = trim($vars->{$this_asset});
+        log_debug("Found $this_asset, caching " . $vars->{$this_asset});
+        return {error => "Cache service not available."}            unless $cache_client->available;
+        return {error => "No workers active in the cache service."} unless $cache_client->available_workers;
+
+        my $asset_request = $cache_client->request->asset(
+            id    => $job->{id},
+            asset => $asset_uri,
+            type  => $assetkeys->{$this_asset},
+            host  => $current_host
+        );
+
+        if ($asset_request->enqueue) {
+            log_debug("Downloading " . $asset_uri . " - request sent to Cache Service.", channels => 'autoinst');
+            update_setup_status and sleep 5 until $asset_request->processed;
+            log_debug("Download of " . $asset_uri . " processed", channels => 'autoinst');
+            log_debug($asset_request->output,                     channels => 'autoinst');
+        }
+
+        $asset = $cache_client->asset_path($current_host, $asset_uri)
+          if $cache_client->asset_exists($current_host, $asset_uri);
+
+        if ($this_asset eq 'UEFI_PFLASH_VARS' && !defined $asset) {
+            log_error("Can't download $asset_uri");
+            # assume that if we have a full path, that's what we should use
+            $vars->{$this_asset} = $asset_uri if -e $asset_uri;
+            # don't kill the job if the asset is not found
+            next;
+        }
+        return {error => "Can't download $asset_uri to " . $cache_client->asset_path($current_host, $asset_uri)}
+          unless $asset;
+        unlink basename($asset) if -l basename($asset);
+        symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";
+        $vars->{$this_asset} = path(getcwd, basename($asset))->to_string;
+    }
+    return;
 }
 
 sub engine_workit {
@@ -177,29 +209,30 @@ sub engine_workit {
 
     # do asset caching if CACHEDIRECTORY is set
     if ($worker_settings->{CACHEDIRECTORY}) {
-        my $host_to_cache = Mojo::URL->new($current_host)->host;
-        my $cache = OpenQA::Worker::Cache->new(host => $current_host, location => $worker_settings->{CACHEDIRECTORY});
-        my $error = $cache->cache_assets($job => \%vars => $assetkeys);
+        my $host_to_cache = OpenQA::Worker::Cache::_base_host($current_host);
+        my $error = cache_assets($job => \%vars => $assetkeys);
         return $error if $error;
 
         # do test caching if TESTPOOLSERVER is set
         if ($hosts->{$current_host}{testpoolserver}) {
             $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
+
+            my $cache_client  = OpenQA::Worker::Cache::Client->new;
+            my $rsync_request = $cache_client->request->rsync(
+                from => $hosts->{$current_host}{testpoolserver},
+                to   => $shared_cache
+            );
+
             $vars{PRJDIR} = $shared_cache;
 
-            my $rsync = process(sub { cache_tests($shared_cache, $hosts->{$current_host}{testpoolserver}) })->start;
-            my $last_update = time;
-            while (defined(my $line = $rsync->getline)) {
-                log_info("rsync: " . $line, channels => 'autoinst');
-                if (time - $last_update > 5) {
-                    update_setup_status;
-                    $last_update = time;
-                }
-            }
+            # TODO: Enqueue all requests in one place
+            return {error => "Failed to send rsync cache request"} unless $rsync_request->enqueue;
 
-            $rsync->wait_stop;
+            sleep 5 and update_setup_status until $rsync_request->processed;
+            my $exit = $rsync_request->result;
 
-            return {error => "Failed to rsync tests: exit " . $rsync->exit_status} unless $rsync->exit_status == 0;
+            log_info("rsync: " . $rsync_request->output, channels => 'autoinst');
+            return {error => "Failed to rsync tests: exit " . $exit} unless $exit == 0;
 
             $shared_cache = catdir($shared_cache, 'tests');
         }

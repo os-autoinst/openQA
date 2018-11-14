@@ -17,6 +17,13 @@
 
 BEGIN {
     unshift @INC, 'lib';
+
+    # FIXME: Requiring OpenQA::Worker::Cache::Service
+    # Sets up Minion with Mojo::SQLite, that on DESTROY automatically disconnects from the database.
+    # If the database is not existant or can't be accessed we get a warning, that translates to test failure.
+
+    use Mojo::File 'tempdir';
+    $ENV{OPENQA_CACHE_DIR} = tempdir;
 }
 
 use strict;

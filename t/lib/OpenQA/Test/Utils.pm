@@ -11,6 +11,7 @@ use Mojo::Home;
 use Mojo::File qw(path tempdir);
 use Cwd qw(abs_path getcwd);
 use Test::More;
+use Mojo::IOLoop::ReadWriteProcess 'process';
 
 BEGIN {
     if (!$ENV{MOJO_HOME}) {
@@ -22,13 +23,87 @@ BEGIN {
         $ENV{MOJO_HOME} = Mojo::Home->new->detect('OpenQA::Utils');
     }
 }
+use constant DEBUG => $ENV{DEBUG} // 0;
 
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
     qw(redirect_output standard_worker),
     qw(create_webapi create_websocket_server create_live_view_handler create_worker unresponsive_worker wait_for_worker setup_share_dir),
-    qw(kill_service unstable_worker job_create client_output create_resourceallocator start_resourceallocator)
+    qw(kill_service unstable_worker job_create client_output fake_asset_server create_resourceallocator start_resourceallocator),
+    qw(cache_minion_worker cache_worker_service)
 );
+
+sub cache_minion_worker {
+    process(
+        sub {
+            require OpenQA::Worker::Cache::Service;
+            OpenQA::Worker::Cache::Service->run(qw(minion worker), qw(-m production) x !(DEBUG));
+            Devel::Cover::report() if Devel::Cover->can('report');
+            _exit(0);
+        })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
+}
+
+sub cache_worker_service {
+    process(
+        sub {
+            require OpenQA::Worker::Cache::Service;
+            OpenQA::Worker::Cache::Service->run(qw(daemon -l http://*:7844), qw(-m production) x !(DEBUG));
+            Devel::Cover::report() if Devel::Cover->can('report');
+            _exit(0);
+        })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
+}
+
+sub fake_asset_server {
+    my $mock = Mojolicious->new;
+    $mock->routes->get(
+        '/tests/:job/asset/:type/:filename' => sub {
+            my $c        = shift;
+            my $id       = $c->stash('job');
+            my $type     = $c->stash('type');
+            my $filename = $c->stash('filename');
+            return $c->render(status => 404, text => "Move along, nothing to see here")
+              if $filename =~ /sle-12-SP3-x86_64-0368-404/;
+            return $c->render(status => 400, text => "Move along, nothing to see here")
+              if $filename =~ /sle-12-SP3-x86_64-0368-400/;
+            return $c->render(status => 500, text => "Move along, nothing to see here")
+              if $filename =~ /sle-12-SP3-x86_64-0368-500/;
+            return $c->render(status => 503, text => "Move along, nothing to see here")
+              if $filename =~ /sle-12-SP3-x86_64-0368-503/;
+
+            if ($filename =~ /sle-12-SP3-x86_64-0368-589/) {
+                $c->res->headers->content_length(10);
+                $c->inactivity_timeout(1);
+                $c->res->headers->content_type('text/plain');
+                $c->res->body('Six!!!');
+                $c->rendered(200);
+            }
+
+            if (my ($size) = ($filename =~ /sle-12-SP3-x86_64-0368-200_?([0-9]+)?\@/)) {
+                my $our_etag = 'andi $a3, $t1, 41399';
+
+                my $browser_etag = $c->req->headers->header('If-None-Match');
+                if ($browser_etag && $browser_etag eq $our_etag) {
+                    $c->res->body('');
+                    $c->rendered(304);
+                }
+                else {
+                    $c->res->headers->content_length($size // 1024);
+                    $c->inactivity_timeout(1);
+                    $c->res->headers->content_type('text/plain');
+                    $c->res->headers->header('ETag' => $our_etag);
+                    $c->res->body("\0" x ($size // 1024));
+                    $c->rendered(200);
+                }
+            }
+        });
+
+    $mock->routes->get(
+        '/' => sub {
+            my $c = shift;
+            return $c->render(status => 200, text => "server is running");
+        });
+    return $mock;
+}
 
 sub redirect_output {
     my ($buf) = @_;
