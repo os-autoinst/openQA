@@ -288,13 +288,16 @@ won't work.
 Those dependencies make it possible to create job dependencies between tests which are scheduled for the different machines.
 To use it, simply append the machine name for each dependent test suite with colon separated.
 If machine is not explicitly defined, the variable %MACHINE% of the current job is used for the dependent test suite.
+
 Eg.
  START_AFTER_TEST="kde:64bit-1G,dhcp-server:64bit-8G"
 or
- PARALLEL_WITH="web-server:ipmi-fly,dhcp-server:ipmi-bee",http-server
+ PARALLEL_WITH="web-server:ipmi-fly,dhcp-server:ipmi-bee,http-server"
+
 Then, in job templates, add test suite(s) and all of its dependent test suite(s). Keep in mind to place the machines which
 have been explicitly defined in a variable for each dependent test suite.
 Checkout the example sections to get a better understanding:
+
 ====== Example: correct dependency and machine placed
 ----
 There is a test suite A placed on machine 64bit-8G,
