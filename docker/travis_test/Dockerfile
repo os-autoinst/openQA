@@ -85,6 +85,8 @@ RUN zypper in -y -C \
        'perl(Mojo::IOLoop::ReadWriteProcess)' \
        'perl(Mojo::Pg)' \
        'perl(Mojo::RabbitMQ::Client)' \
+       'perl(Mojo::SQLite)' \
+       'perl(Minion::Backend::SQLite)' \
        'perl(Mojolicious)' \
        'perl(Mojolicious::Plugin::AssetPack)' \
        'perl(Mojolicious::Plugin::RenderFile)' \
