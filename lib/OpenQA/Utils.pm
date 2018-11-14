@@ -921,9 +921,6 @@ sub compose_job_overview_search_args {
         my $param = $controller->param($arg) or next;
         $search_args{$arg} = $param;
     }
-    if ($controller->param('failed_modules')) {
-        $search_args{failed_modules} = $controller->every_param('failed_modules');
-    }
 
     # add group query params to search args
     # (By 'every_param' we make sure to use multiple values for groupid and
@@ -936,10 +933,13 @@ sub compose_job_overview_search_args {
         my @search_terms = (@group_id_search, @group_name_search);
         @groups = $controller->db->resultset('JobGroups')->search(\@search_terms)->all;
     }
-    $search_args{groupid} = $groups[0]->id if (@groups);
 
     # determine build number
     if (!$search_args{build}) {
+        # yield the latest build of the first group if (multiple) groups but not build specified
+        # note: the search arg 'groupid' is ignored by complex_query() because we later assign 'groupids'
+        $search_args{groupid} = $groups[0]->id if (@groups);
+
         $search_args{build} = $controller->db->resultset('Jobs')->latest_build(%search_args);
 
         # print debug output
@@ -958,9 +958,14 @@ sub compose_job_overview_search_args {
     # exclude jobs which are already cloned by setting scope for OpenQA::Jobs::complex_query()
     $search_args{scope} = 'current';
 
-    # forward all query parameters to jobs query to allow specifying additional
-    # query parameters which are then properly shown on the overview
-    %search_args = (%search_args, %{$controller->req->params->to_hash});
+    # allow filtering by job ID
+    my $ids = $controller->every_param('id');
+    $search_args{id} = $ids if ($ids && @$ids);
+    # note: filter for results, states and failed modules are applied after the initial search
+    #       so old jobs are not revealed by applying those filters
+
+    # allow filtering by group ID or group name
+    $search_args{groupids} = [map { $_->id } @groups] if (@groups);
 
     return (\%search_args, \@groups);
 }
@@ -1245,6 +1250,30 @@ sub set_listen_address {
     }
 
     $ENV{MOJO_LISTEN} = join(',', @listen_addresses);
+}
+
+sub param_hash {
+    my ($controller, $param_name) = @_;
+
+    my $params = $controller->every_param($param_name) or return;
+    my %hash;
+    for my $param (@$params) {
+        # ignore empty params
+        next unless $param;
+        # allow passing multiple values by separating them with comma
+        $hash{$_} = 1 for split(',', $param);
+    }
+    return unless (%hash);
+    return \%hash;
+}
+
+sub any_array_item_contained_by_hash {
+    my ($array, $hash) = @_;
+
+    for my $array_item (@$array) {
+        return 1 if ($hash->{$array_item});
+    }
+    return 0;
 }
 
 1;

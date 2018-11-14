@@ -446,6 +446,11 @@ sub prepare_job_results {
     my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, scheduled => 0, running => 0, unknown => 0};
     my $preferred_machines = _calculate_preferred_machines($jobs);
 
+    # read parameter for additional filtering
+    my $failed_modules = OpenQA::Utils::param_hash($self, 'failed_modules');
+    my $states         = OpenQA::Utils::param_hash($self, 'state');
+    my $results        = OpenQA::Utils::param_hash($self, 'result');
+
     # prefetch the number of available labels for those jobs
     my $job_labels = $self->_job_labels($jobs);
     my @job_names = map { $_->TEST } @$jobs;
@@ -457,18 +462,21 @@ sub prepare_job_results {
 
     my $todo = $self->param('todo');
     foreach my $job (@$jobs) {
+        next if $states         && !$states->{$job->state};
+        next if $results        && !$results->{$job->result};
+        next if $failed_modules && $job->result ne OpenQA::Jobs::Constants::FAILED;
+
         my $jobid  = $job->id;
         my $test   = $job->TEST;
         my $flavor = $job->FLAVOR || 'sweet';
         my $arch   = $job->ARCH || 'noarch';
-
         my $result;
-
-        next
-          if $self->param("failed_modules")
-          && $job->result ne OpenQA::Jobs::Constants::FAILED;
-
         if ($job->state eq OpenQA::Jobs::Constants::DONE) {
+            my $actually_failed_modules = $job->failed_modules;
+            next
+              unless !$failed_modules
+              || OpenQA::Utils::any_array_item_contained_by_hash($actually_failed_modules, $failed_modules);
+
             my $result_stats = $job->result_stats;
             my $overall      = $job->result;
 
@@ -490,7 +498,7 @@ sub prepare_job_results {
                 overall    => $overall,
                 jobid      => $jobid,
                 state      => OpenQA::Jobs::Constants::DONE,
-                failures   => $job->failed_modules(),
+                failures   => $actually_failed_modules,
                 bugs       => $job_labels->{$jobid}{bugs},
                 bugdetails => $job_labels->{$jobid}{bugdetails},
                 label      => $job_labels->{$jobid}{label},

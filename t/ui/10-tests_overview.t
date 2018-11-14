@@ -21,11 +21,13 @@ BEGIN {
 use Mojo::Base -strict;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
+use Date::Format 'time2str';
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
+use OpenQA::Jobs::Constants;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
@@ -74,6 +76,36 @@ sub schema_hook {
     $new->{TEST}    = 'kde+workarounds';
     $new->{MACHINE} = '64bit';
     $jobs->create_from_settings($new);
+
+    # add a previous job to 99937 (opensuse-13.1-DVD-i586-kde@32bit)
+    # (for subtest 'filtering does not reveal old jobs')
+    $jobs->create(
+        {
+            id         => 99920,
+            group_id   => 1001,
+            priority   => 50,
+            result     => OpenQA::Jobs::Constants::FAILED,
+            state      => OpenQA::Jobs::Constants::DONE,
+            TEST       => 'kde',
+            VERSION    => '13.1',
+            BUILD      => '0091',
+            ARCH       => 'i586',
+            MACHINE    => '32bit',
+            DISTRI     => 'opensuse',
+            FLAVOR     => 'DVD',
+            t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 36000, 'UTC'),
+            t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
+            t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
+            modules    => [
+                {
+                    script   => 'tests/foo/bar.pm',
+                    category => 'foo',
+                    name     => 'bar',
+                    result   => 'failed',
+                },
+            ],
+        });
+    $jobs->find(99946)->update({result => OpenQA::Jobs::Constants::FAILED});
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -126,6 +158,22 @@ my @open_bugs = $driver->find_elements('#bug-99946 .label_bug', 'css');
 @closed_bugs = $driver->find_elements('#bug-99946 .bug_closed', 'css');
 is(scalar @open_bugs,   1, 'open bug correctly shown, and only once despite the 2 comments');
 is(scalar @closed_bugs, 0, 'open bug not shown as closed bug');
+
+subtest 'filtering does not reveal old jobs' => sub {
+    $driver->get('/tests/overview?arch=&result=failed&distri=opensuse&version=13.1&build=0091&groupid=1001');
+    is($driver->find_element('#summary .badge-danger')->get_text(), '1', 'filtering for failures gives only one job');
+    is(scalar @{$driver->find_elements('#res-99946')},              1,   'textmode job still shown');
+    is(scalar @{$driver->find_elements('#res-99920')},              0,   'and old kde job not revealed');
+
+    $driver->get('/tests/overview?arch=&failed_modules=zypper_up&distri=opensuse&version=13.1&build=0091&groupid=1001');
+    is($driver->find_element('#summary .badge-danger')->get_text(),
+        '1', 'filtering for failed modules works for latest job');
+    is(scalar @{$driver->find_elements('#res-99946')}, 1, 'textmode job matches failed modules filter');
+
+    $driver->get('/tests/overview?arch=&failed_modules=bar&distri=opensuse&version=13.1&build=0091&groupid=1001');
+    is($driver->find_element('#summary .badge-danger')->get_text(),
+        '0', 'filtering for failed modules does not reveal old job');
+};
 
 kill_driver();
 

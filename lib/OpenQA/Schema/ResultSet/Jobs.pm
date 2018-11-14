@@ -286,7 +286,10 @@ sub complex_query {
     my $rsource = $self->result_source;
     my $schema  = $rsource->schema;
 
-    if (defined $args{groupid}) {
+    if (defined $args{groupids}) {
+        push(@conds, {'me.group_id' => {-in => $args{groupids}}});
+    }
+    elsif (defined $args{groupid}) {
         push(
             @conds,
             {
