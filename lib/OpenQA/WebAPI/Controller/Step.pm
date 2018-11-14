@@ -29,17 +29,16 @@ use Cpanel::JSON::XS;
 sub init {
     my ($self) = @_;
 
-    my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
-
-    return $self->reply->not_found unless $job;
+    my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid')) or return;
+    my $module = OpenQA::Schema::Result::JobModules::job_module($job, $self->param('moduleid'));
+    $self->stash(job      => $job);
     $self->stash(testname => $job->name);
     $self->stash(distri   => $job->DISTRI);
     $self->stash(version  => $job->VERSION);
     $self->stash(build    => $job->BUILD);
+    $self->stash(module   => $module);
 
-    my $module = OpenQA::Schema::Result::JobModules::job_module($job, $self->param('moduleid'));
-    $self->stash('job',    $job);
-    $self->stash('module', $module);
+    return 1;
 }
 
 sub check_tabmode {
@@ -49,34 +48,27 @@ sub check_tabmode {
     my $module    = $self->stash('module');
     my $details   = $module->details();
     my $testindex = $self->param('stepid');
+    return if ($testindex > @$details);
 
-    $self->stash('imglist', $details);
-
-    my $tabmode = 'screenshot';    # Default
-    if ($testindex > @$details) {
-        # This means that the module have no details at all
-        $self->reply->not_found;
-        return 0;
+    my $tabmode       = 'screenshot';                 # default
+    my $module_detail = $details->[$testindex - 1];
+    if ($module_detail->{audio}) {
+        $tabmode = 'audio';
     }
-    else {
-        my $module_detail = $details->[$testindex - 1];
-        if ($module_detail->{audio}) {
-            $tabmode = 'audio';
+    elsif ($module_detail->{text}) {
+        my $file = path($job->result_dir(), $module_detail->{text})->open('<:encoding(UTF-8)');
+        my @file_content;
+        if (defined $file) {
+            @file_content = <$file>;
         }
-        elsif ($module_detail->{text}) {
-            my $file = path($job->result_dir(), $module_detail->{text})->open('<:encoding(UTF-8)');
-            my @file_content;
-            if (defined $file) {
-                @file_content = <$file>;
-            }
-            $self->stash('textresult', "@file_content");
-            $tabmode = 'text';
-        }
-        $self->stash('module_detail', $module_detail);
+        $self->stash('textresult', "@file_content");
+        $tabmode = 'text';
     }
-    $self->stash('tabmode', $tabmode);
+    $self->stash('imglist',       $details);
+    $self->stash('module_detail', $module_detail);
+    $self->stash('tabmode',       $tabmode);
 
-    1;
+    return 1;
 }
 
 # Helper function to generate the needle url, with an optional version
@@ -113,7 +105,7 @@ sub view {
         return $self->redirect_to($target_url . $anchor);
     }
 
-    return 0 unless $self->init() && $self->check_tabmode();
+    return $self->reply->not_found unless $self->init() && $self->check_tabmode();
 
     if ('audio' eq $self->stash('tabmode')) {
         $self->render('step/viewaudio');
@@ -129,14 +121,13 @@ sub view {
 # Needle editor
 sub edit {
     my ($self) = @_;
-    return 0 unless $self->init() && $self->check_tabmode();
+    return $self->reply->not_found unless $self->init() && $self->check_tabmode();
 
     my $module_detail = $self->stash('module_detail');
+    my $job           = $self->stash('job');
     my $imgname       = $module_detail->{screenshot};
-    my $job           = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
-    return $self->reply->not_found unless $job;
-    my $distribution = $job->DISTRI;
-    my $dversion = $job->VERSION || '';
+    my $distribution  = $job->DISTRI;
+    my $dversion      = $job->VERSION || '';
 
     # Each object in @needles will contain the name, both the url and the local path
     # of the image and 2 lists of areas: 'area' and 'matches'.
@@ -348,7 +339,7 @@ sub _extended_needle_info {
 sub src {
     my ($self) = @_;
 
-    return 0 unless $self->init();
+    return $self->reply->not_found unless $self->init();
 
     my $job    = $self->stash('job');
     my $module = $self->stash('module');
@@ -418,7 +409,7 @@ sub _json_validation($) {
 
 sub save_needle_ajax {
     my ($self) = @_;
-    return 0 unless $self->init();
+    return $self->reply->not_found unless $self->init();
 
     # validate parameter
     my $validation = $self->validation;
