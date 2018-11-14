@@ -222,8 +222,8 @@ sub api_call {
     my $cb;
     $cb = sub {
         my ($ua, $tx, $tries) = @_;
-        if ($tx->success && $tx->success->json) {
-            my $res = $tx->success->json;
+        if (!$tx->error && $tx->res->json) {
+            my $res = $tx->res->json;
             return $callback->($res);
         }
         elsif ($ignore_errors) {

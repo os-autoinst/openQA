@@ -889,7 +889,7 @@ sub upload_images {
         $tx = $hosts->{$current_host}{ua}->post($ua_url => form => $form);
     }
     $tosend_files = [];
-    return !$tx || $tx->success;
+    return !$tx || !$tx->error;
 }
 
 sub read_json_file {

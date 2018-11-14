@@ -55,7 +55,7 @@ sub ws_send {
     if ($tx) {
         $res = $tx->send({json => {type => $msg, jobid => $jobid}});
     }
-    unless ($res && $res->success) {
+    unless ($res && !$res->error) {
         $retry ||= 0;
         if ($retry < 3) {
             Mojo::IOLoop->timer(2 => sub { ws_send($workerid, $msg, $jobid, ++$retry); });
@@ -86,7 +86,7 @@ sub ws_send_job {
     if ($tx) {
         $res = $tx->send({json => {type => 'grab_job', job => $job}});
     }
-    unless ($res && $res->success) {
+    unless ($res && !$res->error) {
         # Since it is used by scheduler, it's fine to let it fail,
         # will be rescheduled on next round
         log_debug("Unable to allocate job to worker $job->{assigned_worker_id}");
