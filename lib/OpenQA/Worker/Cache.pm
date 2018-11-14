@@ -24,13 +24,11 @@ use OpenQA::Utils
   qw(log_error log_info log_debug get_channel_handle add_log_channel append_channel_to_defaults remove_channel_from_defaults);
 use OpenQA::Worker::Common;
 use List::MoreUtils;
-use File::Spec::Functions 'catdir';
-use File::Path qw(remove_tree make_path);
-use Data::Dumper;
 use Cpanel::JSON::XS;
 use Mojo::SQLite;
 use Mojo::File 'path';
 use Mojo::Base -base;
+use Exporter 'import';
 use POSIX;
 
 use constant STATUS_PROCESSED   => 1;
@@ -40,7 +38,6 @@ use constant STATUS_IGNORE      => 4;
 use constant STATUS_ERROR       => 5;
 
 our @EXPORT_OK = qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE STATUS_ERROR);
-use Exporter 'import';
 
 has [qw(host cache location db_file dsn dbh cache_real_size)];
 has limit      => 50 * (1024**3);
@@ -55,8 +52,8 @@ sub from_worker {
     my ($worker_settings, undef) = OpenQA::Worker::Common::read_worker_config(undef, undef);
     __PACKAGE__->new(
         host     => 'localhost',
-        location => ($ENV{CACHE_DIR} || $worker_settings->{CACHEDIRECTORY}),
-        (limit => int($worker_settings->{CACHELIMIT}) * (1024**3)) x !!($worker_settings->{CACHELIMIT}));
+        location => ($ENV{OPENQA_CACHE_DIR} || $worker_settings->{CACHEDIRECTORY}),
+        exists $worker_settings->{CACHELIMIT} ? (limit => int($worker_settings->{CACHELIMIT}) * (1024**3)) : ());
 }
 
 sub DESTROY {
@@ -70,7 +67,7 @@ sub deploy_cache {
     local $/;
     my $sql = <DATA>;
     log_info "Creating cache directory tree for " . $self->location;
-    remove_tree($self->location, {keep_root => 1});
+    path($self->location)->remove_tree({keep_root => 1});
     path($self->location)->make_path;
     path($self->location, 'tmp')->make_path;
 
@@ -208,9 +205,11 @@ sub get_asset {
     my $type;
     my $result;
     my $ret;
-    path($self->location, $self->_host)->make_path unless -d path($self->location, $self->_host);
 
-    $asset = catdir($self->location, $self->_host, basename($asset));
+    my $location = path($self->location, $self->_host);
+    $location->make_path unless -d $location;
+    $asset = $location->child(path($asset)->basename);
+
     my $n = 5;
     while () {
         $self->track_asset($asset);    # Track asset - make sure it's in DB
@@ -306,7 +305,8 @@ sub update_asset {
         log_info "CACHE: updating the $asset with $etag and $size";
     }
 
-    $self->increase($size) and return !!1;
+    $self->increase($size);
+    return !!1;
 }
 
 sub purge_asset {

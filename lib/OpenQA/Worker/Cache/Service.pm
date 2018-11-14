@@ -21,6 +21,7 @@ use Mojolicious::Plugin::Minion;
 use OpenQA::Worker::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE STATUS_ERROR);
 use Mojo::Collection;
 use Mojolicious::Plugin::Minion::Admin;
+use Mojo::Util 'md5_sum';
 
 use constant DEFAULT_MINION_WORKERS => 5;
 
@@ -28,7 +29,7 @@ BEGIN { srand(time) }
 
 my $_token;
 
-sub _gen_session_token { $_token = int(rand(999999999999)) }
+sub _gen_session_token { $_token = md5_sum($$ . time . rand) }
 
 my $enqueued = Mojo::Collection->new;
 app->hook(
@@ -81,7 +82,7 @@ sub run {
     require OpenQA::Utils;
     app->log->short(1);
     OpenQA::Utils::set_listen_address(7844);
-    $ENV{MOJO_INACTIVITY_TIMEOUT} = 300;
+    $ENV{MOJO_INACTIVITY_TIMEOUT} //= 300;
     require Mojolicious::Commands;
     my @args = _setup_workers(@_);
     app->log->debug("Starting cache service: $0 @args");
@@ -105,7 +106,7 @@ post '/status' => sub {
                 : enqueued($lock) ? STATUS_IGNORE
                 :                   STATUS_PROCESSED
             ),
-            (result => $j->{result}, output => $j->{notes}->{output}) x !!($j)});
+            $j ? (result => $j->{result}, output => $j->{notes}->{output}) : ()});
 };
 
 post '/execute_task' => sub {
@@ -140,7 +141,7 @@ post '/dequeue' => sub {
     $c->render(json => {status => STATUS_PROCESSED});
 };
 
-app->minion->backend->reset;
+app->minion->reset;
 
 =encoding utf-8
 

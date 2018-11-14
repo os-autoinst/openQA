@@ -25,9 +25,9 @@ has task => 'cache_asset';
 sub lock {
     my $self = shift;
     # Generate same lock for asset/host
-    join('.', map { $self->$_ } qw(asset host));
+    return join('.', map { $self->$_ } qw(asset host));
 }
 sub to_hash { {id => $_[0]->id, type => $_[0]->type, asset => $_[0]->asset, host => $_[0]->host} }
-sub to_array { $_[0]->id, $_[0]->type, $_[0]->asset, $_[0]->host }
+sub to_array { [$_[0]->id, $_[0]->type, $_[0]->asset, $_[0]->host] }
 
 !!42;

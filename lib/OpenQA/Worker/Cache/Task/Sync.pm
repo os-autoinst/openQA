@@ -38,8 +38,8 @@ sub register {
               unless my $guard = $app->minion->guard($guard_name, MINION_LOCK_EXPIRE);
 
             my $job_prefix = "[Job #" . $job->id . "]";
-            $app->log->debug("${job_prefix} Guard: $guard_name Sync: $from to $to");
-            $app->log->debug("${job_prefix} Dequeued ") if $self->_dequeue($req->lock);
+            $app->log->debug("$job_prefix Guard: $guard_name Sync: $from to $to");
+            $app->log->debug("$job_prefix Dequeued ") if $self->_dequeue($req->lock);
             $OpenQA::Utils::app = undef;
 
             my @cmd = (qw(rsync -avHP), "$from/", qw(--delete), "$to/tests/");

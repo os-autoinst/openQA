@@ -36,16 +36,19 @@ sub _url { Mojo::URL->new(shift->host)->path(shift)->to_string }
 
 sub _status {
     my $request = shift;
-    return !!0 unless my $st = $request->result->json->{status} // $request->result->json->{session_token};
+    my $status  = $request->result->json;
+    return !!0 unless my $st = $status->{status} // $status->{session_token};
     return $st;
 }
 
 sub _result {
     my ($self, $field, $request) = @_;
-    eval {
+    my $res = eval {
         $self->ua->post($self->_url('status') => json => {lock => $request->lock, id => $request->minion_id})
           ->result->json->{$field};
     };
+    return "Field $field not present in the Cache Service response: $@" if $@;
+    return $res;
 }
 
 sub _query {
@@ -69,9 +72,9 @@ sub _retry {
     return $res;
 }
 
-sub _reply { !!(($_[0] eq STATUS_ENQUEUED) || ($_[0] eq STATUS_DOWNLOADING) || ($_[0] eq STATUS_IGNORE)) }
+sub _reply { !!(($_[0] == STATUS_ENQUEUED) || ($_[0] == STATUS_DOWNLOADING) || ($_[0] == STATUS_IGNORE)) }
 
-sub _dequeue_lock { !!(shift->_post(dequeue => {lock => pop}) eq STATUS_PROCESSED) }
+sub _dequeue_lock { !!(shift->_post(dequeue => {lock => pop}) == STATUS_PROCESSED) }
 
 # See also OpenQA::Cache::Request, as it's being consumed in the following methods
 sub execute_task {
@@ -79,7 +82,7 @@ sub execute_task {
     my $response = _retry(
         sub {
             $self->ua->post($self->_url('execute_task') => json =>
-                  {task => $request->task, args => [$request->to_array], lock => $request->lock});
+                  {task => $request->task, args => $request->to_array, lock => $request->lock});
         } => $self->retry
     );
     my $json = $response->result->json;
@@ -88,7 +91,7 @@ sub execute_task {
 }
 
 sub status { $_[0]->_post(status => {lock => $_[1]->lock, id => $_[1]->minion_id}) }
-sub processed { !!(shift->status(shift) eq STATUS_PROCESSED) }
+sub processed { !!(shift->status(shift) == STATUS_PROCESSED) }
 sub output    { shift->_result(output => pop) }
 sub result    { shift->_result(result => pop) }
 sub info      { $_[0]->ua->get($_[0]->_url("info")) }

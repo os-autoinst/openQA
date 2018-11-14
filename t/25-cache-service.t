@@ -23,12 +23,12 @@ BEGIN {
 
     my $basedir = path(tempdir, 't', 'cache.d');
     remove_tree($basedir);
-    $ENV{CACHE_DIR}      = path($basedir, 'cache');
-    $ENV{OPENQA_BASEDIR} = $basedir;
-    $ENV{OPENQA_CONFIG}  = path($basedir, 'config')->make_path;
+    $ENV{OPENQA_CACHE_DIR} = path($basedir, 'cache');
+    $ENV{OPENQA_BASEDIR}   = $basedir;
+    $ENV{OPENQA_CONFIG}    = path($basedir, 'config')->make_path;
     path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt('
 [global]
-CACHEDIRECTORY = ' . $ENV{CACHE_DIR} . '
+CACHEDIRECTORY = ' . $ENV{OPENQA_CACHE_DIR} . '
 CACHEWORKERS = 10
 CACHELIMIT = 100');
 }
@@ -64,7 +64,7 @@ my $dbh;
 my $filename;
 my $serverpid;
 my $openqalogs;
-my $cachedir = $ENV{CACHE_DIR};
+my $cachedir = $ENV{OPENQA_CACHE_DIR};
 
 my $db_file = "$cachedir/cache.sqlite";
 $ENV{LOGDIR} = catdir(getcwd(), 't', 'cache.d', 'logs');
@@ -186,8 +186,8 @@ subtest 'Cache Requests' => sub {
     is_deeply $rsync_request->to_hash, {from => 'foo', to => 'bar'};
     is_deeply $asset_request->to_hash, {id => 922756, asset => 'test', type => 'hdd', host => 'open.qa'};
 
-    is_deeply [$rsync_request->to_array], [qw(foo bar)];
-    is_deeply [$asset_request->to_array], [qw(922756 hdd test open.qa)];
+    is_deeply $rsync_request->to_array, [qw(foo bar)];
+    is_deeply $asset_request->to_array, [qw(922756 hdd test open.qa)];
 
     my $base = $cache_client->request;
     local $@;

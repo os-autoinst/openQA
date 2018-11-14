@@ -27,6 +27,6 @@ sub lock {
     join('.', map { $self->$_ } @FIELDS);
 }
 sub to_hash { {from => $_[0]->from, to => $_[0]->to} }
-sub to_array { $_[0]->from, $_[0]->to }
+sub to_array { [$_[0]->from, $_[0]->to] }
 
 !!42;

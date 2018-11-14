@@ -46,8 +46,8 @@ sub register {
               unless my $guard = $app->minion->guard($guard_name, MINION_LOCK_EXPIRE);
 
             my $job_prefix = "[Job #" . $job->id . "]";
-            $app->log->debug("${job_prefix} Guard: $guard_name Download: $asset_name");
-            $app->log->debug("${job_prefix} Dequeued " . $req->lock) if $self->_dequeue($req->lock);
+            $app->log->debug("$job_prefix Guard: $guard_name Download: $asset_name");
+            $app->log->debug("$job_prefix Dequeued " . $req->lock) if $self->_dequeue($req->lock);
             $OpenQA::Utils::app = undef;
             my $output;
             {
