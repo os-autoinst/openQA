@@ -2394,6 +2394,24 @@ might want to consider to enable caching in your remote workers. To enable cachi
 will be created for you.</p>
 </div>
 <div class="paragraph">
+<p>Start and enable the Cache Service:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start openqa-worker-cacheservice.service
+systemctl <span class="tok-nb">enable</span> openqa-worker-cacheservice.service</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Enable and start the Cache Worker:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start openqa-worker-cacheservice-minion.service
+systemctl <span class="tok-nb">enable</span> openqa-worker-cacheservice-minion.service</code></pre>
+</div>
+</div>
+<div class="paragraph">
 <p>In the /etc/openqa/workers.ini</p>
 </div>
 <div class="listingblock">
@@ -2401,7 +2419,8 @@ will be created for you.</p>
 <pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[global]</span>
 <span class="tok-na">HOST</span><span class="tok-o">=</span><span class="tok-s">http://webui</span>
 <span class="tok-na">CACHEDIRECTORY</span> <span class="tok-o">=</span> <span class="tok-s">$cache_location</span>
-<span class="tok-na">CACHELIMIT</span> <span class="tok-o">=</span> <span class="tok-s">50 # This is currently noop. Cache supports limiting, but is not enabled.</span>
+<span class="tok-na">CACHELIMIT</span> <span class="tok-o">=</span> <span class="tok-s">50 # GB, default is 50.</span>
+<span class="tok-na">CACHEWORKERS</span> <span class="tok-o">=</span> <span class="tok-s">5 # Number of parallel cache minion workers, defaults to 5</span>
 
 <span class="tok-k">[http://webui]</span>
 <span class="tok-na">TESTPOOLSERVER</span> <span class="tok-o">=</span> <span class="tok-s">rsync://yourlocation/tests</span></code></pre>
@@ -6371,7 +6390,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-11-13 13:01:29 UTC
+Last updated 2018-11-14 10:09:44 UTC
 </div>
 </div>
 </body>
