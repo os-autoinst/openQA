@@ -671,6 +671,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <ul class="sectlevel4">
 <li><a href="#_inter_machine_dependencies">Inter-machine dependencies</a>
 <ul class="sectlevel5">
+<li><a href="#_example_correct_dependency_and_machine_placed">Example: correct dependency and machine placed</a></li>
 <li><a href="#_example_best_match_with_correct_dependency_and_machine_placed">Example: best match with correct dependency and machine placed</a></li>
 <li><a href="#_example_wrong_dependency_or_wrong_machine_placed">Example: wrong dependency or wrong machine placed</a></li>
 </ul>
@@ -1074,7 +1075,7 @@ following list.</p>
 <p><strong>none</strong> For jobs that have not reached the 'done' state.</p>
 </li>
 <li>
-<p><strong>passed</strong> No critical check failed during the process. It doesn&#8217;t necessarily
+<p><strong>passed</strong> No critical check failed during the process. It does not necessarily
 mean that all testmodules were successful or that no single assertion failed.</p>
 </li>
 <li>
@@ -1082,9 +1083,10 @@ mean that all testmodules were successful or that no single assertion failed.</p
 point.</p>
 </li>
 <li>
-<p><strong>softfailed</strong> At least one non-critical assertion was not satisfied at some
-point (eg. a softfailure has been recorded explicitly via record_soft_failure)
-or workaround needles are in place.</p>
+<p><strong>softfailed</strong> At least one known, non-critical issue has been found. That could be
+that workaround needles are in place, a softfailure has been recorded explicitly
+via record_soft_failure (from os-autoinst) or a job failure has been ignored
+explicitly via a <a href="#https://github.com/os-autoinst/openQA/blob/master/docs/UsersGuide.asciidoc#show-bug-or-label-icon-on-overview-if-labeled-gh550">job label</a>.</p>
 </li>
 <li>
 <p><strong>incomplete</strong> The job is no longer running but no result was provided. Either
@@ -3619,16 +3621,21 @@ won&#8217;t work.</p>
 <div class="paragraph">
 <p>Those dependencies make it possible to create job dependencies between tests which are scheduled for the different machines.
 To use it, simply append the machine name for each dependent test suite with colon separated.
-If machine is not explicitly defined, the variable %MACHINE% of the current job is used for the dependent test suite.
-Eg.
+If machine is not explicitly defined, the variable %MACHINE% of the current job is used for the dependent test suite.</p>
+</div>
+<div class="paragraph">
+<p>Eg.
  START_AFTER_TEST="kde:64bit-1G,dhcp-server:64bit-8G"
 or
- PARALLEL_WITH="web-server:ipmi-fly,dhcp-server:ipmi-bee",http-server
-Then, in job templates, add test suite(s) and all of its dependent test suite(s). Keep in mind to place the machines which
-have been explicitly defined in a variable for each dependent test suite.
-Checkout the example sections to get a better understanding:
-====== Example: correct dependency and machine placed</p>
+ PARALLEL_WITH="web-server:ipmi-fly,dhcp-server:ipmi-bee,http-server"</p>
 </div>
+<div class="paragraph">
+<p>Then, in job templates, add test suite(s) and all of its dependent test suite(s). Keep in mind to place the machines which
+have been explicitly defined in a variable for each dependent test suite.
+Checkout the example sections to get a better understanding:</p>
+</div>
+<div class="sect5">
+<h6 id="_example_correct_dependency_and_machine_placed">Example: correct dependency and machine placed</h6>
 <div class="listingblock">
 <div class="content">
 <pre>There is a test suite A placed on machine 64bit-8G,
@@ -3641,6 +3648,7 @@ then test suite B placed on machine 64bit-1G with variable START_AFTER_TEST=A:64
 <div class="listingblock">
 <div class="content">
 <pre>A:64bit-8G &lt;- B:64bit-1G</pre>
+</div>
 </div>
 </div>
 <div class="sect5">
@@ -6390,7 +6398,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-11-14 10:09:44 UTC
+Last updated 2018-11-14 10:25:37 UTC
 </div>
 </div>
 </body>
