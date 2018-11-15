@@ -17,6 +17,7 @@
 package OpenQA::WebAPI::Controller::Step;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::File 'path';
+use Mojo::Util 'decode';
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use File::Basename;
@@ -56,12 +57,8 @@ sub check_tabmode {
         $tabmode = 'audio';
     }
     elsif ($module_detail->{text}) {
-        my $file = path($job->result_dir(), $module_detail->{text})->open('<:encoding(UTF-8)');
-        my @file_content;
-        if (defined $file) {
-            @file_content = <$file>;
-        }
-        $self->stash('textresult', "@file_content");
+        my $file_content = decode('UTF-8', path($job->result_dir(), $module_detail->{text})->slurp);
+        $self->stash('textresult', $file_content);
         $tabmode = 'text';
     }
     $self->stash('imglist',       $details);

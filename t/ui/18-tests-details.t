@@ -205,7 +205,7 @@ subtest 'render text results' => sub {
     wait_for_ajax;
     is(
         $driver->find_element_by_id('preview_container_in')->get_text(),
-        "But this one doesn't come from parser so\n it should not be displayed in a special way.",
+        "But this one doesn't come from parser so\nit should not be displayed in a special way.",
         'text results not from parser shown in ordinary preview container'
     );
 # note: check whether the softfailure is unaffected is already done in subtest 'render bugref links in thumbnail text windows'
