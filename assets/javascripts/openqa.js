@@ -50,8 +50,10 @@ function addUniqueFlash(status, id, text, container) {
     if (!window.uniqueFlashMessages) {
         window.uniqueFlashMessages = {};
     }
-    // skip if flash message already present
-    if (window.uniqueFlashMessages[id]) {
+    // update existing flash message
+    var existingFlashMessage = window.uniqueFlashMessages[id];
+    if (existingFlashMessage) {
+        existingFlashMessage.find('span').first().text(text);
         return;
     }
 
