@@ -100,7 +100,7 @@ subtest 'dependency json' => sub {
         },
         'single node for job without dependencies'
     );
-    diag explain $t->tx->res->json unless $t->success;
+    diag explain $t->tx->res->json unless !$t->error;
 
     $t->get_ok($baseurl . 'tests/99938/dependencies')->status_is(200)->json_is(
         undef => {
@@ -163,7 +163,7 @@ subtest 'dependency json' => sub {
         },
         'nodes, edges and cluster computed'
     );
-    diag explain $t->tx->res->json unless $t->success;
+    diag explain $t->tx->res->json unless !$t->error;
 };
 
 subtest 'job without dependencies' => sub {
