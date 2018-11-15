@@ -335,6 +335,7 @@ This results in the following dependency:
 B:ppc-1G  C:ppc-2G  D:ppc64le
 ----
 openQA will also show errors to inform users that test suite A on machines 64bit and s390x are not necessary.
+
 ====== Example: dependency on same machine
 ----
 If variable START_AFTER_TEST or PARALLEL_WITH *only* with name(s) of test suite(s).
@@ -401,9 +402,9 @@ Children B, C, D can run and finish anytime, but A must run until all B, C, D fi
 
 OpenQA provides locking server through lock API. To use lock API import +lockapi+ package (_use lockapi;_) in your test file.
 Lock API provides functions: +mutex_create+, +mutex_lock+, +mutex_unlock+, +mutex_wait+. Each of these functions take at least one parameter: name of the lock. Note that lock name can't contain "-" character.
-Locks are associated with caller`s job - locks can't be unlocked by different job then the one who locked the lock.
+Locks are associated with caller's job - locks can't be unlocked by different job then the one who locked the lock.
 
-+mutex_lock+ tries to lock the mutex lock for caller`s job. If lock is unavailable or locked by someone else, +mutex_lock+ call blocks.
++mutex_lock+ tries to lock the mutex lock for caller's job. If lock is unavailable or locked by someone else, +mutex_lock+ call blocks.
 
 +mutex_unlock+ tries to unlock the mutex lock. If lock is locked by different job, +mutex_unlock+ call blocks. When lock become available or if lock does not exist, call
 returns without doing anything.
