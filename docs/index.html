@@ -674,6 +674,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_example_correct_dependency_and_machine_placed">Example: correct dependency and machine placed</a></li>
 <li><a href="#_example_best_match_with_correct_dependency_and_machine_placed">Example: best match with correct dependency and machine placed</a></li>
 <li><a href="#_example_wrong_dependency_or_wrong_machine_placed">Example: wrong dependency or wrong machine placed</a></li>
+<li><a href="#_example_dependency_on_same_machine">Example: dependency on same machine</a></li>
 </ul>
 </li>
 </ul>
@@ -3694,9 +3695,11 @@ B:ppc-1G  C:ppc-2G  D:ppc64le</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>openQA will also show errors to inform users that test suite A on machines 64bit and s390x are not necessary.
-====== Example: dependency on same machine</p>
+<p>openQA will also show errors to inform users that test suite A on machines 64bit and s390x are not necessary.</p>
 </div>
+</div>
+<div class="sect5">
+<h6 id="_example_dependency_on_same_machine">Example: dependency on same machine</h6>
 <div class="listingblock">
 <div class="content">
 <pre>If variable START_AFTER_TEST or PARALLEL_WITH *only* with name(s) of test suite(s).
@@ -3780,10 +3783,10 @@ Children B, C, D can run and finish anytime, but A must run until all B, C, D fi
 <div class="paragraph">
 <p>OpenQA provides locking server through lock API. To use lock API import lockapi package (<em>use lockapi;</em>) in your test file.
 Lock API provides functions: mutex_create, mutex_lock, mutex_unlock, mutex_wait. Each of these functions take at least one parameter: name of the lock. Note that lock name can&#8217;t contain "-" character.
-Locks are associated with caller`s job - locks can&#8217;t be unlocked by different job then the one who locked the lock.</p>
+Locks are associated with caller&#8217;s job - locks can&#8217;t be unlocked by different job then the one who locked the lock.</p>
 </div>
 <div class="paragraph">
-<p>mutex_lock tries to lock the mutex lock for caller`s job. If lock is unavailable or locked by someone else, mutex_lock call blocks.</p>
+<p>mutex_lock tries to lock the mutex lock for caller&#8217;s job. If lock is unavailable or locked by someone else, mutex_lock call blocks.</p>
 </div>
 <div class="paragraph">
 <p>mutex_unlock tries to unlock the mutex lock. If lock is locked by different job, mutex_unlock call blocks. When lock become available or if lock does not exist, call
@@ -6398,7 +6401,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-11-14 15:46:21 UTC
+Last updated 2018-11-15 05:50:51 UTC
 </div>
 </div>
 </body>

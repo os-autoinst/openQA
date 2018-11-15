@@ -453,6 +453,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_save_screenshot">save_screenshot</a></li>
 <li><a href="#_record_soft_failure">record_soft_failure</a></li>
 <li><a href="#_record_info">record_info</a></li>
+<li><a href="#_force_soft_failure">force_soft_failure</a></li>
 <li><a href="#_assert_screen">assert_screen</a></li>
 <li><a href="#_check_screen">check_screen</a></li>
 <li><a href="#_match_has_tag">match_has_tag</a></li>
@@ -618,7 +619,10 @@ prevent false positive timeouts based on differing worker performance.</p>
 <div class="paragraph">
 <p>Record a soft failure on the current test modules result. The result will
 still be counted as a success. Use this to mark where workarounds are applied.
-Takes an optional <code>$reason</code> string which is recorded in the log file.</p>
+Takes an optional <code>$reason</code> string which is recorded in the log file. See
+<code>force_soft_failure</code> to forcefully override a failed test module status from
+a <code>post_fail_hook</code> or <code>record_info</code> when the status should not be
+influenced.</p>
 </div>
 </div>
 <div class="sect4">
@@ -644,6 +648,19 @@ instead of <code>record_soft_failure</code> for example when you do not want to 
 job as a softfail. The optional value <code>$result</code> can be 'ok' (default),
 'fail', 'softfail'. <code>$resultname</code> can be specified for the additional name
 tag on the result file.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_force_soft_failure">force_soft_failure</h5>
+<div class="literalblock">
+<div class="content">
+<pre>force_soft_failure([$reason]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Like <code>record_soft_failure</code> but overrides the test module status to a softfail
+status even if the module would be set to fail otherwise. This can be used for
+easier tracking of known issues without needing to handle failed tests a lot.</p>
 </div>
 </div>
 <div class="sect4">
@@ -1813,7 +1830,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-11-14 16:08:04 UTC
+Last updated 2018-11-15 06:12:11 UTC
 </div>
 </div>
 </body>
