@@ -154,9 +154,9 @@ like($url[1], qr{progress.*new}, 'progress/redmine link for reporting test issue
 my $t   = Test::Mojo->new('OpenQA::WebAPI');
 my $get = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
 
-my @worker_text = $get->tx->res->dom->find('#info_box .card-body div + div + div')->map('all_text')->each;
+my @worker_text = $get->tx->res->dom->find('#assigned-worker')->map('all_text')->each;
 like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker displayed when job running');
-my @worker_href = $get->tx->res->dom->find('#info_box .card-body div + div + div a')->map(attr => 'href')->each;
+my @worker_href = $get->tx->res->dom->find('#assigned-worker a')->map(attr => 'href')->each;
 is($worker_href[0], '/admin/workers/1', 'link to worker correct');
 
 $t->element_count_is('.tab-pane.active', 1, 'only one tab visible at the same time when using step url');
@@ -423,7 +423,7 @@ my $post
   ->status_is(200, 'set job as done');
 
 $get         = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
-@worker_text = $get->tx->res->dom->find('#info_box .card-body div + div + div')->map('all_text')->each;
+@worker_text = $get->tx->res->dom->find('#assigned-worker')->map('all_text')->each;
 like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker still displayed when job set to done');
 
 # now test the details of a job with nearly no settings which should yield no

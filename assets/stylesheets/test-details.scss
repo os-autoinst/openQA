@@ -118,10 +118,12 @@ div.flags {
     &:first-child {
         margin-top: 20px;
     }
-    .alert span {
-        text-align: left !important;
-        font-weight: normal !important;
+    .alert {
         cursor: default !important;
+        span {
+            text-align: left !important;
+            font-weight: normal !important;
+        }
     }
 }
 

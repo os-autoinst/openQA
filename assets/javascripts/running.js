@@ -546,6 +546,12 @@ function updateDeveloperPanel() {
 
         var tabsOpenInfo = ', developer has ' + developerMode.develSessionTabCount + (developerMode.develSessionTabCount == 1 ? ' tab' : ' tabs') + ' open)';
         sessionInfoElement.append(document.createTextNode(tabsOpenInfo));
+
+        var globalSessionInfoElement = $('#developer-global-session-info:hidden');
+        if (globalSessionInfoElement.length) {
+            globalSessionInfoElement.text('Developer session has been opened by ' + developerMode.develSessionDeveloper);
+            globalSessionInfoElement.show();
+        }
     } else {
         sessionInfo = 'regular test execution';
         if (developerMode.isAccessible && !developerMode.panelExpanded) {

@@ -255,27 +255,27 @@ sub _show {
     my ($self, $job) = @_;
     return $self->reply->not_found unless $job;
 
+    my $modlist         = read_test_modules($job);
+    my $worker          = $job->worker;
+    my $clone_of        = $self->db->resultset('Jobs')->find({clone_id => $job->id});
+    my $websocket_proxy = determine_web_ui_web_socket_url($job->id);
+
     $self->stash(
         {
+            job               => $job,
             testname          => $job->name,
             distri            => $job->DISTRI,
             version           => $job->VERSION,
             build             => $job->BUILD,
             scenario          => $job->scenario,
-            worker            => $job->worker,
+            worker            => $worker,
             assigned_worker   => $job->assigned_worker,
             show_dependencies => !defined($job->clone_id) && $job->has_dependencies,
+            clone_of          => $clone_of,
+            modlist           => $modlist,
+            ws_url            => $websocket_proxy,
         });
 
-    my $clone_of = $self->db->resultset("Jobs")->find({clone_id => $job->id});
-
-    my $modlist = read_test_modules($job);
-    $self->stash(job      => $job);
-    $self->stash(clone_of => $clone_of);
-    $self->stash(modlist  => $modlist);
-
-    my $websocket_proxy = determine_web_ui_web_socket_url($job->id);
-    $self->stash(ws_url => $websocket_proxy);
     my $rd = $job->result_dir();
     if ($rd) {    # saved anything
                   # result files box
@@ -295,6 +295,7 @@ sub _show {
     # stash information for developer mode
     if ($job->state eq 'running') {
         my $current_user = $self->current_user;
+        my $worker_vnc = ($worker ? $worker->host . ':' . (90 + $worker->instance) : undef);
         $self->stash(
             {
                 ws_developer_url         => determine_web_ui_web_socket_url($job->id),
@@ -302,6 +303,7 @@ sub _show {
                 developer_session        => $job->developer_session,
                 is_devel_mode_accessible => $current_user && $current_user->is_operator,
                 current_user_id          => $current_user ? $current_user->id : 'undefined',
+                worker_vnc               => $worker_vnc,
             });
     }
 
