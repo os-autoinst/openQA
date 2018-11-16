@@ -333,7 +333,8 @@ function saveReorganizedGroups() {
                 method: 'PUT',
                 data: {
                     sort_order: groupIndex,
-                    parent_id: 'none'
+                    parent_id: 'none',
+                    drag : 1
                 },
                 success: function(response) {
                     handleSuccess(response, groupLi, groupIndex);
@@ -355,7 +356,8 @@ function saveReorganizedGroups() {
                         method: 'PUT',
                         data: {
                             sort_order: childGroupIndex,
-                            parent_id: groupId
+                            parent_id: groupId,
+                            drag : 1
                         },
                         success: function(response) {
                             handleSuccess(response, jobGroupLi, childGroupIndex, groupId);
