@@ -58,8 +58,10 @@ subtest streamtext => sub {
 
     my $stream = Mojo::IOLoop::Stream->new($handle);
     $id = Mojo::IOLoop->stream($stream);
-    my $controller = OpenQA::WebAPI::Controller::Running->new(app => Mojolicious->new);
-    $controller->tx(Mojo::Transaction::Fake->new(fakestream => $id));
+    my $contapp = Mojolicious->new;
+    my $controller = OpenQA::WebAPI::Controller::Running->new(app => $contapp);
+    my $faketx = Mojo::Transaction::Fake->new(fakestream => $id);
+    $controller->tx($faketx);
     $controller->stash("job", Job->new);
 
     my @fake_data = ("Foo bar\n", "Foo baz\n", "bar\n");
