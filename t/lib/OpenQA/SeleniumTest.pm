@@ -11,7 +11,7 @@ require OpenQA::Test::Database;
 our @EXPORT = qw($drivermissing check_driver_modules start_driver
   call_driver kill_driver wait_for_ajax disable_bootstrap_animations
   open_new_tab mock_js_functions element_visible element_hidden
-  javascript_console_has_no_warnings_or_errors);
+  element_not_present javascript_console_has_no_warnings_or_errors);
 
 use Data::Dump 'pp';
 use Test::More;
@@ -275,6 +275,14 @@ sub element_hidden {
     my @elements = $_driver->find_elements($selector);
     is(scalar @elements, 1, $selector . ' present exactly once');
     ok(!$elements[0]->is_displayed(), $selector . ' hidden');
+}
+
+# asserts that an element is not part of the page
+sub element_not_present {
+    my ($selector) = @_;
+
+    my @elements = $_driver->find_elements($selector);
+    is(scalar @elements, 0, $selector . ' not present');
 }
 
 sub kill_driver() {
