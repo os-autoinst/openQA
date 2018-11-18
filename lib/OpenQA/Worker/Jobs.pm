@@ -423,7 +423,7 @@ sub _stop_job_2 {
                 }
             }
         }
-        for my $file (qw(video.ogv vars.json serial0 autoinst-log.txt virtio_console.log worker-log.txt)) {
+        for my $file (qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt virtio_console.log worker-log.txt)) {
             next unless -e $file;
             # default serial output file called serial0
             my $ofile = $file;
