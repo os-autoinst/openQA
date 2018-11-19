@@ -89,7 +89,7 @@ my $workers = [
     }];
 
 $ret = $t->get_ok('/api/v1/workers?live=1');
-ok($ret->tx->success, 'listing workers works');
+ok(!$ret->tx->error, 'listing workers works');
 is(ref $ret->tx->res->json, 'HASH', 'workers returned hash');
 is_deeply(
     $ret->tx->res->json,
@@ -103,7 +103,7 @@ $workers->[0]->{connected} = 1;
 $workers->[1]->{connected} = 1;
 
 $ret = $t->get_ok('/api/v1/workers');
-ok($ret->tx->success, 'listing workers works');
+ok(!$ret->tx->error, 'listing workers works');
 is(ref $ret->tx->res->json, 'HASH', 'workers returned hash');
 is_deeply(
     $ret->tx->res->json,

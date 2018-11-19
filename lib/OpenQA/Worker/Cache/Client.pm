@@ -67,7 +67,7 @@ sub _retry {
     my $att = 0;
     $times ||= 0;
 
-    do { ++$att and $res = $cb->() } until $res->success || $att >= $times;
+    do { ++$att and $res = $cb->() } until !$res->error || $att >= $times;
 
     return $res;
 }
@@ -95,7 +95,7 @@ sub processed { !!(shift->status(shift) == STATUS_PROCESSED) }
 sub output    { shift->_result(output => pop) }
 sub result    { shift->_result(result => pop) }
 sub info      { $_[0]->ua->get($_[0]->_url("info")) }
-sub available { shift->info->success }
+sub available { !shift->info->error }
 sub available_workers {
     return unless $_[0]->available;
     return unless my $res = $_[0]->info->result->json;

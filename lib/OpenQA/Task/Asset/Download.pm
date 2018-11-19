@@ -69,7 +69,7 @@ sub _download {
     # http://mojolicio.us/perldoc/Mojolicious/Guides/Cookbook#Large-file-downloads
     $tx->res->max_message_size(0);
     $tx = $ua->start($tx);
-    if ($tx->success) {
+    if (!$tx->error) {
         try {
             if ($do_extract) {
 
