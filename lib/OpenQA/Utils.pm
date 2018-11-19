@@ -918,8 +918,14 @@ sub compose_job_overview_search_args {
 
     # add simple query params to search args
     for my $arg (qw(distri version flavor build)) {
-        my $param = $controller->param($arg) or next;
-        $search_args{$arg} = $param;
+        my $params = $controller->every_param($arg) or next;
+        my $param_count = scalar @$params;
+        if ($param_count == 1) {
+            $search_args{$arg} = $params->[0];
+        }
+        elsif ($param_count > 1) {
+            $search_args{$arg} = {-in => $params};
+        }
     }
 
     # add group query params to search args

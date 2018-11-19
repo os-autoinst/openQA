@@ -246,6 +246,7 @@ sub element_visible {
     is(scalar @elements, 1, $selector . ' present exactly once');
 
     my $element = $elements[0];
+    ok($element, $selector . ' exists') or return;
     ok($element->is_displayed(), $selector . ' visible');
 
     # assert the element's text
