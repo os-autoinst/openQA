@@ -68,7 +68,7 @@ sub shuffle_workers {
 sub normal_signals_handler {
     log_debug("Received signal to stop");
     $quit++;
-    _reschedule(1, 1);
+    _reschedule(1);
 }
 
 sub wakeup_scheduler {
@@ -442,7 +442,7 @@ and a boolean that makes bypass constraints checks about rescheduling.
 =cut
 
 sub _reschedule {
-    my ($time, $force) = @_;
+    my ($time) = @_;
     return unless reactor;
     my $current_interval = reactor->{timeouts}->[reactor->{timer}->{schedule_jobs}]->{interval};
     log_debug "[rescheduling] Current tick is at ${current_interval}ms. New tick will be in: ${time}ms";
