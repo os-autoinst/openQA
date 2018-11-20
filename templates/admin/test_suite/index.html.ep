@@ -2,7 +2,7 @@
 % title 'Test suites';
 
 % content_for 'ready_function' => begin
-    populate_admin_table(<%= is_admin %>, true);
+    populate_admin_table(<%= is_admin ? 'true' : 'false' %>, true);
 % end
 
 <div class="row">
