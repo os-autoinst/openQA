@@ -249,11 +249,15 @@ sub update {
     my $group = $self->find_group;
     return unless $group;
 
-    my $check = $self->check_group_name;
-    return $self->render(json => {error => 'The group name must not be empty or blank'}, status => 400)
-      if ($check == 0);
+    # Don't check group name if sorting group by dragging
+    my $drag_update = $self->param('drag');
+    if (!defined $drag_update) {
+        my $check = $self->check_group_name;
+        return $self->render(json => {error => 'The group name must not be empty or blank'}, status => 400)
+          if ($check == 0);
+    }
 
-    $check = $self->check_top_level_group($group->id);
+    my $check = $self->check_top_level_group($group->id);
     if ($check != 0) {
         return $self->render(
             json   => {error => 'Unable to update group due to not allow duplicated job group on top level'},
