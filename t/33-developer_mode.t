@@ -374,7 +374,7 @@ subtest 'status-only route accessible for other users' => sub {
     subtest 'expand developer panel' => sub {
         element_hidden('#developer-panel .card-body');
 
-        $driver->find_element('#developer-panel .card-header')->click();
+        $driver->find_element('#developer-status')->click();
         element_visible(
             '#developer-panel .card-body',
             [qr/Another user has already locked this job./],

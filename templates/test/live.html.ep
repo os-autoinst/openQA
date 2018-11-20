@@ -6,7 +6,7 @@
      data-is-accessible="<%= ($is_devel_mode_accessible) ? ('true') : ('false') %>"
      data-own-user-id="<%= $current_user_id %>">
     <div class="card-header">
-        <div class="row">
+        <div class="row" id="developer-status">
             <div class="col-sm-7">
                 <strong>Developer mode</strong>
             </div>
