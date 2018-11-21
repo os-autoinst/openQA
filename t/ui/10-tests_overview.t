@@ -159,6 +159,52 @@ my @open_bugs = $driver->find_elements('#bug-99946 .label_bug', 'css');
 is(scalar @open_bugs,   1, 'open bug correctly shown, and only once despite the 2 comments');
 is(scalar @closed_bugs, 0, 'open bug not shown as closed bug');
 
+sub check_build_0091_defaults {
+    element_visible('#flavor_DVD_arch_i586',        qr/i586/);
+    element_visible('#flavor_DVD_arch_x86_64',      qr/x86_64/);
+    element_visible('#flavor_GNOME-Live_arch_i686', qr/i686/);
+    element_visible('#flavor_NET_arch_x86_64',      qr/x86_64/);
+}
+
+subtest 'filtering by architecture' => sub {
+    $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091');
+
+    subtest 'by default, all archs for all flavors present' => sub {
+        check_build_0091_defaults;
+    };
+
+    subtest 'filter for specific archs' => sub {
+        $driver->find_element('#filter-panel .card-header')->click();
+        $driver->find_element('#filter-arch')->send_keys('i586,i686');
+        $driver->find_element('#filter-panel .btn-default')->click();
+
+        element_visible('#flavor_DVD_arch_i586', qr/i586/);
+        element_not_present('#flavor_DVD_arch_x86_64');
+        element_visible('#flavor_GNOME-Live_arch_i686', qr/i686/);
+        element_not_present('#flavor_NET_arch_x86_64');
+    };
+};
+
+subtest 'filtering by distri' => sub {
+    subtest 'no distri filter yields everything' => sub {
+        $driver->get('/tests/overview?version=13.1&build=0091');
+        check_build_0091_defaults;
+    };
+
+    subtest 'distri filters are ORed' => sub {
+        $driver->get('/tests/overview?distri=foo&distri=opensuse&distri=bar&version=13.1&build=0091');
+        check_build_0091_defaults;
+    };
+
+    subtest 'everything filtered out' => sub {
+        $driver->get('/tests/overview?distri=foo&distri=bar&version=13.1&build=0091');
+        element_not_present('#flavor_DVD_arch_i586');
+        element_not_present('#flavor_DVD_arch_x86_64');
+        element_not_present('#flavor_GNOME-Live_arch_i686');
+        element_not_present('#flavor_NET_arch_x86_64');
+    };
+};
+
 subtest 'filtering does not reveal old jobs' => sub {
     $driver->get('/tests/overview?arch=&result=failed&distri=opensuse&version=13.1&build=0091&groupid=1001');
     is($driver->find_element('#summary .badge-danger')->get_text(), '1', 'filtering for failures gives only one job');
