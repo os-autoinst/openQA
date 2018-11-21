@@ -107,7 +107,11 @@ sub detect_asset_keys {
         $res{$hddkey} = 'hdd' if $vars->{$hddkey};
     }
 
-    $res{UEFI_PFLASH_VARS} = 'hdd' if $vars->{UEFI_PFLASH_VARS};
+    # UEFI_PFLASH_VARS may point to an image uploaded by a previous
+    # test (which we should treat as an hdd asset), or it may point
+    # to an absolute filesystem location of e.g. a template file from
+    # edk2 (which we shouldn't).
+    $res{UEFI_PFLASH_VARS} = 'hdd' if ($vars->{UEFI_PFLASH_VARS} && $vars->{UEFI_PFLASH_VARS} !~ m,^/,);
 
     return \%res;
 }

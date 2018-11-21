@@ -532,11 +532,18 @@ sub commit_git_return_error {
 }
 
 sub asset_type_from_setting {
-    my ($setting) = @_;
+    # passing $value is optional but makes the result more accurate
+    # (it affects only UEFI_PFLASH_VARS currently).
+    my ($setting, $value) = @_;
+    $value //= '';
     if ($setting eq 'ISO' || $setting =~ /^ISO_\d+$/) {
         return 'iso';
     }
-    if ($setting =~ /^HDD_\d+$/ || $setting =~ /^UEFI_PFLASH_\w+$/) {
+    if ($setting =~ /^HDD_\d+$/) {
+        return 'hdd';
+    }
+    # non-absolute-path value of UEFI_PFLASH_VARS treated as HDD asset
+    if ($setting eq 'UEFI_PFLASH_VARS' && $value !~ m,^/,) {
         return 'hdd';
     }
     if ($setting =~ /^REPO_\d+$/) {
@@ -554,7 +561,7 @@ sub parse_assets_from_settings {
     my $assets = {};
 
     for my $k (keys %$settings) {
-        my $type = asset_type_from_setting($k);
+        my $type = asset_type_from_setting($k, $settings->{$k});
         if ($type) {
             $assets->{$k} = {type => $type, name => $settings->{$k}};
         }
@@ -756,13 +763,6 @@ sub create_downloads_list {
         else {
             $short = substr($arg, 0, -4);    # remove _URL substring
         }
-        # We're only going to allow downloading of asset types. We also
-        # need this to determine the download location later
-        my $assettype = asset_type_from_setting($short);
-        unless ($assettype) {
-            OpenQA::Utils::log_debug("_URL downloading only allowed for asset types! $short is not an asset type");
-            next;
-        }
         if (!$args->{$short}) {
             $filename = Mojo::URL->new($url)->path->parts->[-1];
             if ($do_extract) {
@@ -779,6 +779,13 @@ sub create_downloads_list {
         }
         else {
             $filename = $args->{$short};
+        }
+        # We're only going to allow downloading of asset types. We also
+        # need this to determine the download location later
+        my $assettype = asset_type_from_setting($short, $args->{$short});
+        unless ($assettype) {
+            OpenQA::Utils::log_debug("_URL downloading only allowed for asset types! $short is not an asset type");
+            next;
         }
         # Find where we should download the file to
         my $fullpath = locate_asset($assettype, $filename, mustexist => 0);
