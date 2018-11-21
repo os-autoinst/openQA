@@ -2,7 +2,7 @@
 % title 'Machines';
 
 % content_for 'ready_function' => begin
-    populate_admin_table(<%= is_admin ? 'true' : 'false' %>, true);
+    populate_admin_table(<%= is_admin_js %>, true);
 % end
 
 <div class="row">
