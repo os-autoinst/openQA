@@ -29,10 +29,10 @@ use Test::More;
 use Test::Warnings;
 use OpenQA::WebAPI::Controller::Running;
 use Mojolicious;
+use Mojo::File 'path';
+use Mojo::IOLoop;
 
 subtest streamtext => sub {
-    use Mojo::File qw(tempdir path);
-    use Mojo::IOLoop;
     my $buffer = '';
     my $id     = Mojo::IOLoop->server(
         (address => '127.0.0.1') => sub {

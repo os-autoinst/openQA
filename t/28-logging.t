@@ -105,8 +105,8 @@ subtest 'Logging to stdout' => sub {
 
 subtest 'Logging to file' => sub {
     delete $ENV{OPENQA_LOGFILE};
-    $ENV{OPENQA_WORKER_LOGDIR} = tempdir;
-    make_path $ENV{OPENQA_WORKER_LOGDIR};
+    my $tempdir = tempdir;
+    local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
     my $app = OpenQA::Setup->new(
         mode     => 'production',
@@ -127,10 +127,6 @@ subtest 'Logging to file' => sub {
     for (my $i = 0; $i < @matches; $i += 2) {
         ok($matches[$i] eq $matches[$i + 1], "OK $matches[$i]");
     }
-
-    # clear the system
-    remove_tree $ENV{OPENQA_WORKER_LOGDIR};
-    delete $ENV{OPENQA_WORKER_LOGDIR};
 };
 
 subtest 'log fatal to stderr' => sub {
@@ -169,10 +165,10 @@ subtest 'log fatal to stderr' => sub {
 };
 
 subtest 'Checking log level' => sub {
-    $ENV{OPENQA_WORKER_LOGDIR} = tempdir;
+    my $tempdir = tempdir;
+    local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
     delete $ENV{MOJO_LOG_LEVEL};    # The Makefile is overriding this variable
     delete $ENV{OPENQA_LOGFILE};
-    make_path $ENV{OPENQA_WORKER_LOGDIR};
 
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
 
@@ -245,16 +241,12 @@ subtest 'Checking log level' => sub {
         truncate $output_logfile, 0;
     }
     ok($deathcounter == (@loglevels * 2 + @channels * @loglevels), "Worker dies when logs fatal");
-
-    # clear the system
-    remove_tree $ENV{OPENQA_WORKER_LOGDIR};
-    delete $ENV{OPENQA_WORKER_LOGDIR};
 };
 
 subtest 'Logging to right place' => sub {
     delete $ENV{OPENQA_LOGFILE};
-    $ENV{OPENQA_WORKER_LOGDIR} = tempdir;
-    make_path $ENV{OPENQA_WORKER_LOGDIR};
+    my $tempdir = tempdir;
+    local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
     my $app = OpenQA::Setup->new(
         mode     => 'production',
@@ -300,16 +292,12 @@ subtest 'Logging to right place' => sub {
     log_error('error message');
     log_info('info message');
     ok(-f $ENV{OPENQA_LOGFILE}, 'Log file created defined in environment');
-
-    # clear the system
-    remove_tree $ENV{OPENQA_WORKER_LOGDIR};
-    delete $ENV{OPENQA_WORKER_LOGDIR};
 };
 
 subtest 'Logs to multiple channels' => sub {
     delete $ENV{OPENQA_LOGFILE};
-    $ENV{OPENQA_WORKER_LOGDIR} = tempdir;
-    make_path $ENV{OPENQA_WORKER_LOGDIR};
+    my $tempdir = tempdir;
+    local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
     my $output_logfile  = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
     my @loglevels       = qw(debug info warn error fatal);
@@ -354,17 +342,12 @@ subtest 'Logs to multiple channels' => sub {
         }
         $counterChannel--;
     }
-
-    # clear the system
-    remove_tree $ENV{OPENQA_WORKER_LOGDIR};
-    delete $ENV{OPENQA_WORKER_LOGDIR};
-
 };
 
 subtest 'Logs to bogus channels' => sub {
     delete $ENV{OPENQA_LOGFILE};
-    $ENV{OPENQA_WORKER_LOGDIR} = tempdir;
-    make_path $ENV{OPENQA_WORKER_LOGDIR};
+    my $tempdir = tempdir;
+    local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
     my $output_logfile  = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
     my @loglevels       = qw(debug info warn error fatal);
@@ -408,18 +391,13 @@ subtest 'Logs to bogus channels' => sub {
         }
         $counterChannel--;
     }
-
-    # clear the system
-    remove_tree $ENV{OPENQA_WORKER_LOGDIR};
-    delete $ENV{OPENQA_WORKER_LOGDIR};
-
 };
 
 
 subtest 'Logs to defaults channels' => sub {
     delete $ENV{OPENQA_LOGFILE};
-    $ENV{OPENQA_WORKER_LOGDIR} = tempdir;
-    make_path $ENV{OPENQA_WORKER_LOGDIR};
+    my $tempdir = tempdir;
+    local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
     my @loglevels      = qw(debug info warn error fatal);
@@ -529,17 +507,12 @@ subtest 'Logs to defaults channels' => sub {
 
         $counterChannel--;
     }
-
-    # clear the system
-    remove_tree $ENV{OPENQA_WORKER_LOGDIR};
-    delete $ENV{OPENQA_WORKER_LOGDIR};
-
 };
 
 subtest 'Fallback to stderr/stdout' => sub {
     delete $ENV{OPENQA_LOGFILE};
-    $ENV{OPENQA_WORKER_LOGDIR} = tempdir;
-    make_path $ENV{OPENQA_WORKER_LOGDIR};
+    my $tempdir = tempdir;
+    local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
     # let _log_to_channel_by_name and _log_via_mojo_app fail
     my $utils_mock             = new Test::MockModule('OpenQA::Utils');
@@ -621,8 +594,6 @@ subtest 'Fallback to stderr/stdout' => sub {
     $utils_mock->unmock_all();
     $log_mock->unmock_all();
     remove_log_channel('channel 1');
-    remove_tree $ENV{OPENQA_WORKER_LOGDIR};
-    delete $ENV{OPENQA_WORKER_LOGDIR};
 };
 
 done_testing;

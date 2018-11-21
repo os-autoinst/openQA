@@ -22,7 +22,7 @@ use Test::More;
 use OpenQA::Client;
 use Test::Mojo;
 use OpenQA::WebAPI;
-use Mojo::File qw(tempfile tempdir path);
+use Mojo::File qw(tempfile path);
 use OpenQA::Client;
 
 use OpenQA::Test::Case;

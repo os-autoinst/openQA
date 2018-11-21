@@ -38,6 +38,7 @@ use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 
 OpenQA::Test::Case->new->init_data;
+my $tempdir = tempdir;
 
 sub schema_hook {
     my $schema             = OpenQA::Test::Database->new->create;
@@ -55,7 +56,7 @@ sub schema_hook {
     $jobs->find($job_id)->update({assigned_worker_id => $worker->id});
 
     # set required worker properties
-    $worker->set_property(WORKER_TMPDIR => path(tempdir, 't', 'devel-mode-ui.d'));
+    $worker->set_property(WORKER_TMPDIR => $tempdir->child('t', 'devel-mode-ui.d'));
     $worker->set_property(CMD_SRV_URL => 'http://remotehost:20013/token99964');
 
     # add developer session for a finished job

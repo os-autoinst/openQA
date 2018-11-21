@@ -25,6 +25,7 @@ use Test::Warnings;
 use Mojolicious;
 use OpenQA::Setup;
 use OpenQA::Schema::JobGroupDefaults;
+use Mojo::File 'tempdir';
 
 subtest 'Test configuration default modes' => sub {
     local $ENV{OPENQA_CONFIG} = undef;
@@ -119,7 +120,6 @@ subtest 'Test configuration default modes' => sub {
 };
 
 subtest 'Test configuration override from file' => sub {
-    use Mojo::File 'tempdir';
 
     my $t_dir = tempdir;
     local $ENV{OPENQA_CONFIG} = $t_dir;

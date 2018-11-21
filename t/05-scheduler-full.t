@@ -17,11 +17,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 use Mojo::File qw(path tempdir);
+
+my $tempdir;
 BEGIN {
     unshift @INC, 'lib';
     #  push @INC, '.';
     use FindBin;
-    $ENV{OPENQA_BASEDIR} = path(tempdir, 't', 'scheduler');
+    $tempdir = tempdir;
+    $ENV{OPENQA_BASEDIR} = $tempdir->child('t', 'scheduler');
     $ENV{OPENQA_CONFIG} = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
     # Since tests depends on timing, we require the scheduler to be fixed in its actions.
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 10;

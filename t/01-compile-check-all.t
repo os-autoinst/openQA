@@ -15,6 +15,12 @@
 
 # require all modules to check if they even load
 
+use strict;
+use warnings;
+use Test::Compile;
+use Mojo::File 'tempdir';
+
+my $tempdir;
 BEGIN {
     unshift @INC, 'lib';
 
@@ -22,13 +28,10 @@ BEGIN {
     # Sets up Minion with Mojo::SQLite, that on DESTROY automatically disconnects from the database.
     # If the database is not existant or can't be accessed we get a warning, that translates to test failure.
 
-    use Mojo::File 'tempdir';
-    $ENV{OPENQA_CACHE_DIR} = tempdir;
+    $tempdir = tempdir;
+    $ENV{OPENQA_CACHE_DIR} = $tempdir;
 }
 
-use strict;
-use warnings;
-use Test::Compile;
 my $test = Test::Compile->new();
 $test->verbose(0);
 
