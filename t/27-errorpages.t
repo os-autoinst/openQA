@@ -31,10 +31,31 @@ my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $get = $t->get_ok('/unavailable_page')->status_is(404);
-my $dom = $get->tx->res->dom;
-is_deeply([$dom->find('h1')->map('text')->each], ['Page not found'],   'correct page');
-is_deeply([$dom->find('h2')->map('text')->each], ['Available routes'], 'available routes shown');
-ok(index($get->tx->res->text, 'Each entry contains the') >= 0, 'description shown');
+subtest '404 error page' => sub {
+    my $get = $t->get_ok('/unavailable_page')->status_is(404);
+    my $dom = $get->tx->res->dom;
+    is_deeply([$dom->find('h1')->map('text')->each], ['Page not found'],   'correct page');
+    is_deeply([$dom->find('h2')->map('text')->each], ['Available routes'], 'available routes shown');
+    ok(index($get->tx->res->text, 'Each entry contains the') >= 0, 'description shown');
+};
+
+subtest 'error pages shown for OpenQA::WebAPI::Controller::Step' => sub {
+    my $existing_job = 99946;
+    $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1")->status_is(302, 'redirection');
+    $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1", {'X-Requested-With' => 'XMLHttpRequest'})
+      ->status_is(200);
+    $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1/src")->status_is(200);
+    $t->get_ok("/tests/$existing_job/modules/installer_timezone/steps/1/edit")->status_is(200);
+
+    subtest 'get error 404 if job not found (instead of 500 and Perl warnings)' => sub {
+        my $non_existing_job = 99999;
+        $t->get_ok("/tests/$non_existing_job/modules/installer_timezone/steps/1")->status_is(302, 'redirection');
+        $t->get_ok("/tests/$non_existing_job/modules/installer_timezone/steps/1",
+            {'X-Requested-With' => 'XMLHttpRequest'})->status_is(404);
+        $t->get_ok("/tests/$non_existing_job/modules/installer_timezone/steps/1/src")->status_is(404);
+        $t->get_ok("/tests/$non_existing_job/modules/installer_timezone/steps/1/edit")->status_is(404);
+    };
+};
+
 
 done_testing;
