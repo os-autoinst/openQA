@@ -67,7 +67,7 @@ sub shuffle_workers {
 sub normal_signals_handler {
     log_debug("Received signal to stop");
     $quit++;
-    _reschedule(1, 1);
+    _reschedule(1);
 }
 
 sub wakeup_scheduler {
@@ -233,6 +233,20 @@ sub pick_siblings_of_running {
     }
 }
 
+=head2 _conclude_scheduling()
+
+Resets the summoned-state and the reactor interval.
+
+The reactor interval might be set to 1 ms in case the scheduler has been woken up by the
+web UI. In this case it is important to set it back to OpenQA::Scheduler::SCHEDULE_TICK_MS.
+
+=cut
+
+sub _conclude_scheduling {
+    $summoned = 0;
+    _reschedule(OpenQA::Scheduler::SCHEDULE_TICK_MS);
+}
+
 =head2 schedule()
 
 Have no arguments. It's called by the main event loop every SCHEDULE_TICK_MS.
@@ -248,6 +262,8 @@ sub schedule {
         exit(0);
     }
 
+    log_debug("I've been summoned by the webui") if ($summoned);
+
     my $all_workers = schema->resultset("Workers")->count();
 
     my @f_w = grep { !$_->dead && ($_->websocket_api_version() || 0) == WEBSOCKET_API_VERSION }
@@ -257,6 +273,7 @@ sub schedule {
     # shuffle avoids starvation if a free worker keeps failing.
     my @free_workers = $shuffle_workers ? shuffle(@f_w) : @f_w;
     if (@free_workers == 0) {
+        _conclude_scheduling;
         return ();
     }
 
@@ -420,14 +437,7 @@ sub schedule {
     log_debug "Scheduler took ${elapsed_rounded}s to perform operations and allocated "
       . scalar(@successfully_allocated) . " jobs";
     log_debug "Allocated: " . pp($_) for @successfully_allocated;
-
-    if ($summoned || $quit) {
-        log_debug("I've been summoned by the webui");
-        $summoned = 0;
-    }
-    else {
-        _reschedule(OpenQA::Scheduler::SCHEDULE_TICK_MS);
-    }
+    _conclude_scheduling;
 
     return (\@successfully_allocated);
 }
@@ -441,10 +451,10 @@ and a boolean that makes bypass constraints checks about rescheduling.
 =cut
 
 sub _reschedule {
-    my ($time, $force) = @_;
+    my ($time) = @_;
     return unless reactor;
     my $current_interval = reactor->{timeouts}->[reactor->{timer}->{schedule_jobs}]->{interval};
-    log_debug "[rescheduling] Current tick is at ${current_interval}ms. New tick will be in: ${time}ms";
+    log_debug("[rescheduling] Current tick is at $current_interval ms. New tick will be in: $time ms");
     reactor->toggle_timeout(reactor->{timer}->{schedule_jobs}, 1, $time);
 }
 

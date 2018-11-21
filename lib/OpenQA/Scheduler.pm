@@ -30,7 +30,7 @@ use OpenQA::Utils 'log_debug';
 # How many jobs to allocate in one tick. Defaults to 80 ( set it to 0 for as much as possible)
 use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 80;
 
-# Scheduler default clock. Defaults to 2s
+# Scheduler default clock. Defaults to 20 s
 # Optimization rule of thumb is:
 # if we see a enough big number of messages while in debug mode stating "Congestion control"
 # we might consider touching this value, as we may have a very large cluster to deal with.
