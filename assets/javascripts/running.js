@@ -333,6 +333,7 @@ var developerMode = {
     ownSession: false,                      // whether the development session belongs to us
     panelExpanded: false,                   // whether the panel is supposed to be expanded
     panelActuallyExpanded: false,           // whether the panel is currently expanded
+    panelExplicitelyCollapsed: false,          // whether the panel has been explicitely collapsed since the page has been opened
     reconnectAttempts: 0,                   // number of (re)connect attempts (reset to 0 when we finally receive a message from os-autoinst)
     currentModuleIndex: undefined,          // the index of the current module
 
@@ -415,6 +416,9 @@ function setupDeveloperPanel() {
             var panelBody = panel.find('.card-body');
             developerMode.panelExpanded = !developerMode.panelExpanded;
             developerMode.panelActuallyExpanded = developerMode.panelExpanded;
+            if (!developerMode.panelExpanded) {
+                developerMode.panelExplicitelyCollapsed = true;
+            }
             panelBody.toggle(200);
         });
     } else {
@@ -475,6 +479,11 @@ function updateDeveloperPanel() {
         return;
     }
     panel.show();
+
+    // expand the controls if the test is paused (unless previously manually collapsed)
+    if (developerMode.ownSession && developerMode.isPaused && !developerMode.panelExplicitelyCollapsed) {
+        developerMode.panelExpanded = true;
+    }
 
     // toggle panel body if its current state doesn't match developerMode.panelExpanded
     var panelBody = panel.find('.card-body');
@@ -897,7 +906,7 @@ function processWsCommand(obj) {
     }
 
     if (somethingChanged) {
-        // check whether the development session is ours and to change the proxy
+        // check whether the development session is ours to change to the proxy with write-access
         if (!developerMode.useDeveloperWsRoute && developerMode.ownSession) {
             developerMode.useDeveloperWsRoute = true;
             setupWebsocketConnection();
@@ -938,6 +947,7 @@ function quitDeveloperSession() {
         return;
     }
     developerMode.useDeveloperWsRoute = undefined;
+    developerMode.panelExplicitelyCollapsed = true;
     developerMode.panelExpanded = false;
     updateDeveloperPanel();
     sendWsCommand({ cmd: "quit_development_session" });
