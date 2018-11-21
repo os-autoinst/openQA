@@ -2,6 +2,7 @@
 Description=OpenQA Worker Cache Service
 
 [Service]
+Restart=on-failure
 User=_openqa-worker
 ExecStart=/usr/share/openqa/script/openqa-workercache daemon -m production
 

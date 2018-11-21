@@ -4,6 +4,7 @@ After=openqa-worker-cacheservice.service
 Requires=openqa-worker-cacheservice.service
 
 [Service]
+Restart=on-failure
 User=_openqa-worker
 ExecStart=/usr/share/openqa/script/openqa-workercache minion worker -m production
 
