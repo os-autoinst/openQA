@@ -448,6 +448,14 @@ subtest 'job parent groups with multiple version and builds' => sub {
     check_builds(\@build_names, $test_parent, 'parent group builds shown sorted by dotted versions',
         'parent_group_overview');
 
+    my @entire_build_url_list  = $get->tx->res->dom->find('.h4 a:first-child')->each();
+    my $first_entire_build_url = $entire_build_url_list[0]->attr('href');
+    is(
+        $first_entire_build_url,
+        '/tests/overview?distri=suse&version=14.2&build=87.5011&groupid=1001&groupid=1002',
+        'entire build url contains all the child group ids'
+    );
+
     $test_parent->update({build_version_sort => 0});
 
     $get = $t->get_ok('/parent_group_overview/' . $test_parent->id)->status_is(200);
