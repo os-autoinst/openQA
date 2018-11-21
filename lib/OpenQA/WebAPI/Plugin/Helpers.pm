@@ -15,14 +15,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::WebAPI::Plugin::Helpers;
+use Mojo::Base 'Mojolicious::Plugin';
 
-use strict;
-use warnings;
 use Mojo::ByteStream;
 use OpenQA::Utils qw(bugurl render_escaped_refs href_to_bugref);
 use db_helpers;
-
-use base 'Mojolicious::Plugin';
 
 sub register {
 
@@ -179,6 +176,8 @@ sub register {
 
             return ($user && $user->is_admin);
         });
+
+    $app->helper(is_admin_js => sub { Mojo::ByteStream->new(shift->helpers->is_admin ? 'true' : 'false') });
 
     $app->helper(
         # CSS class for a job or module based on its result

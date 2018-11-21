@@ -2,7 +2,7 @@
 % title 'Medium types';
 
 % content_for 'ready_function' => begin
-   populate_admin_table(<%= is_admin %>, false);
+   populate_admin_table(<%= is_admin_js %>, false);
 % end
 
 <div class="row">

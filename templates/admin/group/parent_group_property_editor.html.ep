@@ -3,7 +3,7 @@
 % title 'Parent group ' . $group->name;
 
 % content_for 'ready_function' => begin
-    setupJobTemplates("<%= url_for('apiv1_job_templates') %>", <%= $group->id %>, <%= is_admin %>);
+    setupJobTemplates("<%= url_for('apiv1_job_templates') %>", <%= $group->id %>);
     checkJobGroupForm('#group_properties_form');
 % end
 
