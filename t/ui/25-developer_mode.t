@@ -302,12 +302,42 @@ subtest 'expand developer panel' => sub {
 subtest 'collapse developer panel' => sub {
     click_header();
     element_hidden('#developer-panel .card-body');
+
+    subtest 'panel stays collapsed if test is paused and it is the own session when collapsed manually' => sub {
+        fake_state(
+            developerMode => {
+                ownSession => 'true',
+                isPaused   => 'true',
+            });
+        element_hidden('#developer-panel .card-body');
+    };
+};
+
+subtest 'panel is automatically expanded if test is paused and it is the own session' => sub {
+    fake_state(
+        developerMode => {
+            panelExplicitelyCollapsed => 'false',
+        });
+    element_visible('#developer-panel .card-body');
+};
+
+subtest 'revert state changes from previous subtests (not supposed to collapse the panel)' => sub {
+    fake_state(
+        developerMode => {
+            ownSession => 'false',
+            isPaused   => 'false',
+        });
+    element_visible('#developer-panel .card-body');
 };
 
 subtest 'start developer session' => sub {
-    # expand panel again
-    click_header();
+    assert_sent_commands(undef, 'no changes submitted so far');
 
+    # select to pause at 'installation-bar'
+    my @options = $driver->find_elements('#developer-pause-at-module option');
+    $options[4]->set_selected();
+
+    # start developer session by submitting the changes
     $driver->find_element('Confirm to control this test', 'link_text')->click();
     element_visible(
         '#developer-panel .card-body',
@@ -321,7 +351,7 @@ subtest 'start developer session' => sub {
                 name => 'installation-bar',
             }
         ],
-        'changes from subtest "expand developer panel" submitted'
+        'changes submitted'
     );
 
     fake_state(developerMode => {isPaused => '"some reason"'});

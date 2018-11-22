@@ -334,29 +334,25 @@ subtest 'developer session visible in live view' => sub {
     $driver->get($job_page_url);
     $driver->find_element_by_link_text('Live View')->click();
 
-    subtest 'initial state of UI controls' => sub {
-        wait_for_session_info(qr/owned by Demo/, 'user displayed');
-        element_visible('#developer-instructions',       qr/connect to .* at port 91/);
-        element_visible('#developer-panel .card-header', qr/paused/);
-        element_hidden('#developer-panel .card-body');
-    };
+    wait_for_session_info(qr/owned by Demo/, 'user displayed');
+    element_visible('#developer-instructions',       qr/connect to .* at port 91/);
+    element_visible('#developer-panel .card-header', qr/paused/);
 
-    subtest 'expand developer panel' => sub {
-        $driver->find_element('#developer-panel .card-header')->click();
-        element_visible(
-            '#developer-panel .card-body',
-            [
-                qr/Change the test behaviour with the controls below\./,
-                qr/Resume test execution/,
-                qr/Cancel job/, qr/Resume/,
-            ],
-            [qr/Confirm to control this test/,],
-        );
+    # panel should be expaned by default because we're already owning the session through the developer console
+    # and the test is paused
+    element_visible(
+        '#developer-panel .card-body',
+        [
+            qr/Change the test behaviour with the controls below\./,
+            qr/Resume test execution/,
+            qr/Cancel job/, qr/Resume/,
+        ],
+        [qr/Confirm to control this test/,],
+    );
 
-        my @module_options = $driver->find_elements('#developer-pause-at-module option');
-        my @module_names = map { $_->get_text() } @module_options;
-        is_deeply(\@module_names, ['Do not pause', 'boot', 'shutdown',], 'module');
-    };
+    my @module_options = $driver->find_elements('#developer-pause-at-module option');
+    my @module_names = map { $_->get_text() } @module_options;
+    is_deeply(\@module_names, ['Do not pause', 'boot', 'shutdown',], 'module');
 };
 
 subtest 'status-only route accessible for other users' => sub {
