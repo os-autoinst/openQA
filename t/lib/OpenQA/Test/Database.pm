@@ -4,16 +4,14 @@
 #
 
 package OpenQA::Test::Database;
+use Mojo::Base -base;
 
-use strict;
-use warnings;
 use Date::Format;    # To allow fixtures with relative dates
 use DateTime;        # To allow fixtures using InflateColumn::DateTime
 use Carp;
 use Cwd qw( abs_path getcwd );
 use OpenQA::Schema;
 use OpenQA::Utils;
-use Mojo::Base -base;
 use Mojo::File 'path';
 use db_helpers 'rndstr';
 has fixture_path => 't/fixtures';

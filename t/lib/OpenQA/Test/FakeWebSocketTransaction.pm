@@ -14,12 +14,10 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Test::FakeWebSocketTransaction;
-
-use strict;
 use Mojo::Base 'Mojo::EventEmitter';
 
-has(finish_called => 0);
-has(sent_messages => sub { return []; });
+has finish_called => 0;
+has sent_messages => sub { return []; };
 
 sub clear_messages {
     my ($self) = @_;

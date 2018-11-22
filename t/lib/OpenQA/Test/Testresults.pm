@@ -15,11 +15,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Test::Testresults;
+use Mojo::Base -base;
 
 use File::Copy::Recursive 'dircopy';
 use File::Path 'remove_tree';
 use OpenQA::Utils;
-use Mojo::Base -base;
 
 sub create {
     my $self    = shift;
