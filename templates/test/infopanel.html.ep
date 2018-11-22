@@ -54,12 +54,18 @@
                         % end
                     % }
                 </div>
-                % if ($job->t_finished) {
-                    % if (my $developer_session = $job->developer_session) {
-                        <div>
-                            Developer session was opened during testrun by <%= $developer_session->user->name %>
-                        </div>
-                    % }
+                % if (my $developer_session = $job->developer_session) {
+                    <div id="developer-global-session-info">
+                        % if ($job->t_finished) {
+                            Developer session was opened during testrun by
+                        % }
+                        % else {
+                            Developer session has been opened by
+                        % }
+                        %= $developer_session->user->name
+                    </div>
+                % } else {
+                     <div id="developer-global-session-info" style="display: none;"></div>
                 % }
                 <div>
                     % if ($clone_of) {
@@ -83,18 +89,11 @@
                     </div>
                 % }
                 % if ($worker) {
-                    <div>
+                    <div id="assigned-worker">
                         Assigned worker:
                         <span title="VNC port: <%= 90 + $worker->instance %>">
                             %= link_to $worker->to_string => url_for('admin_worker_show', worker_id => $worker->id)
                         </span>
-                        % if ($job->state eq 'running') {
-                            <div id="developer-instructions" class="developer-mode-element" data-visible-on="isPaused">
-                                <span title="Developer mode available">
-                                    System is waiting for developer, connect to <b><%= $worker->host %> at port <%= 90 + $worker->instance %> with Shared mode (otherwise the job might be cancelled)</b>
-                                </span>
-                            </div>
-                        % }
                     </div>
                 % }
             </div>

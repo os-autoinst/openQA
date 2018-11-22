@@ -106,6 +106,7 @@ sub wait_for_result_panel {
             fail('test result is incomplete but shouldn\'t');
             return;
         }
+        javascript_console_has_no_warnings_or_errors;
         reload_manually($driver, $desc, $refresh_interval);
     }
     javascript_console_has_no_warnings_or_errors;

@@ -172,14 +172,16 @@ subtest 'devel UI hidden when running, but modules not initialized' => sub {
     my $info_panel = $driver->find_element('#info_box .card-body');
     my $info_text  = $info_panel->get_text();
     like($info_text, qr/State\: running.*\nAssigned worker\: remotehost\:1/, 'job is running');
-    element_hidden('#developer-instructions');
+    element_hidden('#developer-global-session-info');
+    element_hidden('#developer-vnc-notice');
     element_hidden('#developer-panel');
 };
 
 subtest 'devel UI shown when running module known' => sub {
     fake_state(testStatus => {running => '"welcome"'});
 
-    element_hidden('#developer-instructions');
+    element_hidden('#developer-global-session-info');
+    element_hidden('#developer-vnc-notice');
     element_visible('#developer-panel');
     element_visible(
         '#developer-panel .card-header',
@@ -203,7 +205,8 @@ subtest 'state shown when connected' => sub {
             isConnected    => 'true',
             pauseAtTimeout => 'false',
         });
-    element_hidden('#developer-instructions');
+    element_hidden('#developer-global-session-info');
+    element_hidden('#developer-vnc-notice');
     element_visible('#developer-panel');
     element_visible(
         '#developer-panel .card-header',
@@ -214,7 +217,7 @@ subtest 'state shown when connected' => sub {
 
     # running, current module known
     fake_state(developerMode => {currentModule => '"installation-welcome"'});
-    element_hidden('#developer-instructions');
+    element_hidden('#developer-vnc-notice');
     element_visible('#developer-panel .card-header', qr/current module: installation-welcome/, qr/paused/,);
     my @options   = $driver->find_elements('#developer-pause-at-module option');
     my @optgroups = $driver->find_elements('#developer-pause-at-module optgroup');
@@ -226,21 +229,22 @@ subtest 'state shown when connected' => sub {
 
     # will pause at certain module
     fake_state(developerMode => {moduleToPauseAt => '"installation-foo"'});
-    element_hidden('#developer-instructions');
+    element_hidden('#developer-vnc-notice');
     element_visible('#developer-panel .card-header', qr/will pause at module: installation-foo/, qr/paused/,);
     is(scalar @options, 5, '5 options in module to pause at selection present');
     is($_->is_selected(), $_->get_value() eq 'foo' ? 1 : 0, 'only foo selected') for (@options);
 
     # has already completed the module to pause at
     fake_state(developerMode => {moduleToPauseAt => '"installation-boot"'});
-    element_hidden('#developer-instructions');
+    element_hidden('#developer-vnc-notice');
     element_visible('#developer-panel .card-header', qr/current module: installation-welcome/, qr/paused/,);
     is($_->is_selected(), $_->get_value() eq 'boot' ? 1 : 0, 'only boot selected') for (@options);
 
     # currently paused
     fake_state(developerMode => {isPaused => '"some reason"'});
-    element_visible('#developer-instructions',
-        qr/System is waiting for developer, connect to remotehost at port 91 with Shared mode/,
+    element_visible(
+        '#developer-vnc-notice',
+qr/You might be able to connect to the SUT at remotehost:91 via VNC with shared mode enabled \(eg\. vncviewer remotehost:91 -Shared for TigerVNC\)\./,
     );
     element_visible(
         '#developer-panel .card-header',
@@ -256,6 +260,7 @@ subtest 'state shown when connected' => sub {
             develSessionStartedAt => '"2018-06-22 12:00:00 +0000"',
             develSessionTabCount  => '42',
         });
+    element_visible('#developer-global-session-info', qr/Developer session has been opened by some developer/,);
     element_visible(
         '#developer-panel .card-header',
         qr/owned by some developer \(.* ago, developer has 42 tabs open\)/,
