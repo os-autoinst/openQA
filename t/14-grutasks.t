@@ -440,6 +440,9 @@ subtest 'Gru tasks TTL' => sub {
     ok exists $result->{minion_id};
     ok exists $result->{gru_id};
     isnt $result->{gru_id}, $result->{minion_id};
+    # clear the task queue: otherwise, if the next test is skipped due
+    # to OBS_RUN, limit_assets may run in a later test and wipe stuff
+    $t->app->minion->reset;
 };
 
 SKIP: {
@@ -457,3 +460,10 @@ SKIP: {
 }
 
 done_testing();
+
+# clear gru task queue at end of execution so no 'dangling' tasks
+# break subsequent tests; can happen if a subtest creates a task but
+# does not execute it, or we crash partway through a subtest...
+END {
+    $t->app->minion->reset;
+}
