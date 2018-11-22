@@ -34,18 +34,6 @@ use Cwd 'abs_path';
 use File::Path 'make_path';
 use BSD::Resource 'getrusage';
 
-# reinit pseudo random number generator in every child to avoid
-# starting off with the same state.
-sub _init_rand {
-    my $self = shift;
-    return unless $ENV{HYPNOTOAD_APP};
-    Mojo::IOLoop->timer(
-        0 => sub {
-            srand;
-            $self->app->log->debug("initialized random number generator in $$");
-        });
-}
-
 has schema => sub {
     return OpenQA::Schema::connect_db();
 };
@@ -448,7 +436,6 @@ sub startup {
     OpenQA::Setup::setup_validator_check_for_datetime($self);
 
     $self->_add_memory_limit;
-    $self->_init_rand;
 
     # run fake dbus services in case of test mode
     if ($self->mode eq 'test' && !$ENV{FULLSTACK} && !$ENV{DEVELOPER_FULLSTACK}) {
