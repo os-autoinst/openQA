@@ -139,3 +139,11 @@ table.overview {
         }
     }
 }
+
+table.fixedheader {
+    th {
+        position: sticky;
+        top: 0px;
+        background: white; // prevent transparent during scrolling
+    }
+}
