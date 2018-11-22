@@ -82,6 +82,8 @@ Recommends:     apache2
 Recommends:     apparmor-profiles
 Recommends:     apparmor-utils
 Recommends:     logrotate
+# server needs to run an rsync server if worker caching is used
+Recommends:     rsync
 BuildRequires:  postgresql-server
 BuildArch:      noarch
 ExcludeArch:    i586
@@ -102,6 +104,7 @@ BuildRequires:  perl(Selenium::Remote::Driver) >= 1.20
 BuildRequires:  perl(Test::Compile)
 BuildRequires:  perl(Test::MockObject)
 BuildRequires:  perl(Test::Warnings)
+BuildRequires:  rsync
 %endif
 %if 0%{?suse_version} >= 1330
 Requires(pre):  group(nogroup)
@@ -151,6 +154,8 @@ PreReq:         openQA-common = %{version}
 Requires(post): coreutils
 Requires(post): os-autoinst >= 4.4
 Recommends:     qemu
+# Needed for caching - not required if caching not used...
+Recommends:     rsync
 %if 0%{?suse_version} >= 1330
 Requires(pre):  group(nogroup)
 %endif
