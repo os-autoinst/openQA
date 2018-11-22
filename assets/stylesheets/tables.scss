@@ -137,5 +137,8 @@ table.overview {
         @include media-breakpoint-down(sm) {
             display: none;
         }
+        span {
+            word-wrap: break-word;
+        }
     }
 }
