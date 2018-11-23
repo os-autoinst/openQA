@@ -1,6 +1,6 @@
 % layout 'bootstrap';
 % title "Needle Editor";
-% use Mojo::JSON 'encode_json';
+% use Mojo::JSON 'encode_json';    # booleans
 % use Cpanel::JSON::XS ();
 
 % content_for 'head' => begin

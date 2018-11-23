@@ -21,7 +21,7 @@ use OpenQA::Worker::Common;
 use OpenQA::Utils qw(locate_asset log_error log_info log_debug log_warning get_channel_handle);
 
 use POSIX qw(:sys_wait_h strftime uname _exit);
-use Mojo::JSON 'encode_json';
+use Mojo::JSON 'encode_json';    # booleans
 use Cpanel::JSON::XS ();
 use Fcntl;
 use File::Spec::Functions 'catdir';

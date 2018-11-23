@@ -256,6 +256,7 @@ for my $table (keys %result) {
 }
 
 if ($options{json}) {
+    use Mojo::JSON;    # booleans
     use Cpanel::JSON::XS;
     print Cpanel::JSON::XS->new->ascii->pretty->encode(\%result);
 }
