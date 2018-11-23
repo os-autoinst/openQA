@@ -19,7 +19,7 @@ package OpenQA::Parser::Format::IPA;
 # The parser results will be a collection of OpenQA::Parser::Result::IPA::Test
 use Mojo::Base 'OpenQA::Parser::Format::Base';
 use Carp qw(croak confess);
-use Mojo::JSON;   # booleans
+use Mojo::JSON;    # booleans
 use Cpanel::JSON::XS ();
 use OpenQA::Parser::Result::Test;
 
