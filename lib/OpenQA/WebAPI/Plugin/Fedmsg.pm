@@ -25,7 +25,7 @@ use warnings;
 
 use parent 'Mojolicious::Plugin';
 use IPC::Run;
-use Cpanel::JSON::XS;
+use Mojo::JSON 'to_json';
 use Mojo::IOLoop;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
@@ -64,7 +64,7 @@ sub log_event {
     $event =~ s/_/\./g;
 
     # convert data to JSON, with reliable key ordering (helps the tests)
-    $event_data = Cpanel::JSON::XS->new->canonical(1)->allow_blessed(1)->encode($event_data);
+    $event_data = to_json($event_data);
 
     OpenQA::Utils::log_debug("Sending fedmsg for $event");
 
@@ -207,7 +207,7 @@ sub log_event_ci_standard {
     $msg_data{body}{artifact}{hdd_1} = $job->settings_hash->{HDD_1} if ($job->settings_hash->{HDD_1});
 
     # convert data to JSON, with reliable key ordering (helps the tests)
-    my $msg_json = Cpanel::JSON::XS->new->canonical(1)->allow_blessed(1)->encode(\%msg_data);
+    my $msg_json = to_json(\%msg_data);
 
     # create the topic
     my $topic = "$artifact.test.$stdevent";

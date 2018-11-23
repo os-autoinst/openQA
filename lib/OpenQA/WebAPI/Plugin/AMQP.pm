@@ -19,7 +19,8 @@ use strict;
 use warnings;
 
 use parent 'Mojolicious::Plugin';
-use Cpanel::JSON::XS;
+use Mojo::JSON;    # booleans
+use Cpanel::JSON::XS ();
 use Mojo::IOLoop;
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;

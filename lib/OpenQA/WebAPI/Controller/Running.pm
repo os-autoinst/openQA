@@ -20,7 +20,7 @@ use warnings;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'b64_encode';
 use Mojo::File 'path';
-use Cpanel::JSON::XS qw(encode_json decode_json);
+use Mojo::JSON qw(encode_json decode_json);
 use OpenQA::Utils;
 use OpenQA::IPC;
 use OpenQA::Jobs::Constants;

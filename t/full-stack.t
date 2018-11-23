@@ -21,6 +21,8 @@
 #  * a qemu instance is still running (maybe leftover from last failed test
 #    execution)
 
+use Mojo::Base -strict;
+
 my $tempdir;
 BEGIN {
     unshift @INC, 'lib';
@@ -41,10 +43,6 @@ BEGIN {
     # DO NOT SET OPENQA_IPC_TEST HERE
 }
 
-# https://github.com/rurban/Cpanel-JSON-XS/issues/65
-use JSON::PP;
-
-use Mojo::Base -strict;
 use lib "$FindBin::Bin/lib";
 use Test::More;
 use Test::Mojo;

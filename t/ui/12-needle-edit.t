@@ -29,7 +29,7 @@ use Test::Mojo;
 use Test::Warnings ':all';
 use OpenQA::Test::Case;
 use Cwd 'abs_path';
-use Cpanel::JSON::XS 'decode_json';
+use Mojo::JSON 'decode_json';
 use File::Path qw(make_path remove_tree);
 use Date::Format 'time2str';
 use POSIX 'strftime';

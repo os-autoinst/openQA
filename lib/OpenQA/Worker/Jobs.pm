@@ -27,7 +27,7 @@ use OpenQA::Utils
 use POSIX qw(strftime SIGTERM);
 use File::Copy qw(copy move);
 use File::Path 'remove_tree';
-use Cpanel::JSON::XS 'decode_json';
+use Mojo::JSON 'decode_json';
 use Fcntl;
 use MIME::Base64;
 use File::Basename 'basename';

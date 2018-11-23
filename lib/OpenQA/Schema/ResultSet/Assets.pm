@@ -21,7 +21,7 @@ use DBIx::Class::Timestamps 'now';
 use OpenQA::Utils qw(log_warning locate_asset human_readable_size log_debug);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
-use Cpanel::JSON::XS 'encode_json';
+use Mojo::JSON 'encode_json';
 use File::Basename;
 use Try::Tiny;
 

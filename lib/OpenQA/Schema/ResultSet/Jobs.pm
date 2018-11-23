@@ -20,7 +20,7 @@ use base 'DBIx::Class::ResultSet';
 use DBIx::Class::Timestamps 'now';
 use Date::Format 'time2str';
 use OpenQA::Schema::Result::JobDependencies;
-use Cpanel::JSON::XS;
+use Mojo::JSON 'encode_json';
 
 =head2 latest_build
 

@@ -32,7 +32,7 @@ use Test::Warnings ':all';
 use OpenQA::Test::Case;
 use Time::HiRes qw(sleep);
 use OpenQA::SeleniumTest;
-use Cpanel::JSON::XS 'decode_json';
+use Mojo::JSON 'decode_json';
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;

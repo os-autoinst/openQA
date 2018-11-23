@@ -18,7 +18,7 @@ package OpenQA::Schema::Result::GruTasks;
 use base 'DBIx::Class::Core';
 use strict;
 use OpenQA::Schema::Result::Jobs ();
-use Cpanel::JSON::XS;
+use Mojo::JSON qw(decode_json encode_json);
 use db_helpers;
 use OpenQA::Parser::Result::OpenQA;
 use OpenQA::Parser::Result::Test;

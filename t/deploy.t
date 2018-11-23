@@ -19,8 +19,6 @@
 use strict;
 BEGIN { unshift @INC, 'lib'; }
 
-# https://github.com/rurban/Cpanel-JSON-XS/issues/65
-use JSON::PP;
 use Test::More;
 use Test::Warnings;
 use DBIx::Class::DeploymentHandler;

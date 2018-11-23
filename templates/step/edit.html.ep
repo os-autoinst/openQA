@@ -1,5 +1,7 @@
 % layout 'bootstrap';
 % title "Needle Editor";
+% use Mojo::JSON 'encode_json';
+% use Cpanel::JSON::XS ();
 
 % content_for 'head' => begin
     %= asset 'step_edit.js'
@@ -10,7 +12,7 @@
     % for my $needle (@$needles) {
         window.needles['<%= $needle->{name} %>'] = <%= b(Cpanel::JSON::XS->new->pretty->encode($needle)) %>;
     % }
-    setup_needle_editor( <%= b(Cpanel::JSON::XS::encode_json($default_needle)) %> );
+    setup_needle_editor( <%= b(encode_json($default_needle)) %> );
     setupResultButtons();
 % end
 

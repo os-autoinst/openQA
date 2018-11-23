@@ -116,7 +116,7 @@ use File::Basename;
 use File::Spec;
 use File::Spec::Functions qw(catfile catdir);
 use Fcntl;
-use Cpanel::JSON::XS qw(encode_json decode_json);
+use Mojo::JSON qw(encode_json decode_json);
 use Mojo::Util 'xml_escape';
 our $basedir   = $ENV{OPENQA_BASEDIR} || "/var/lib";
 our $prj       = "openqa";
