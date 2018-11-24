@@ -200,6 +200,19 @@ Group:          Development/Tools/Other
 This can automatically setup openQA - either directly on your system
 or within a systemd-nspawn container.
 
+%package single-instance
+Summary:        Helper package to provide a single instance convenience setup
+Group:          Development/Tools/Other
+Requires:       %name-local-db
+Requires:       %name-worker
+Requires:       apache2
+Requires:       hostname
+
+%description single-instance
+Install this package to coveniently setup a single instance with local postgres
+server, apache proxy and a single worker. Only suitable for machines that do
+not already provide a web server on the default http port.
+
 %package doc
 Summary:        The openQA documentation
 Group:          Development/Tools/Other
@@ -352,6 +365,16 @@ fi
 %postun local-db
 %service_del_postun openqa-setup-db.service
 
+%post single-instance
+%service_add_post openqa-setup-single-instance.service
+
+%preun single-instance
+%service_del_preun openqa-setup-single-instance.service
+
+%postun single-instance
+%service_del_postun openqa-setup-single-instance.service
+
+
 %files
 %doc README.asciidoc
 %{_sbindir}/rcopenqa-gru
@@ -491,5 +514,8 @@ fi
 %files bootstrap
 %{_datadir}/openqa/script/openqa-bootstrap
 %{_datadir}/openqa/script/openqa-bootstrap-container
+
+%files single-instance
+%{_unitdir}/openqa-setup-single-instance.service
 
 %changelog

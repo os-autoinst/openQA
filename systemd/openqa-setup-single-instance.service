@@ -1,0 +1,25 @@
+[Unit]
+Description=Setup a local instance with all dependencies including a single worker, good for single-user use-cases
+Requires=openqa-local-db.service
+After=openqa-local-db.service
+Requires=openqa-worker@1.service
+Requires=openqa-gru.service
+Requires=openqa-livehandler.service
+Requires=openqa-resource-allocator.service
+Before=openqa-resource-allocator.service
+Requires=openqa-scheduler.service
+Before=openqa-scheduler.service
+Requires=openqa-websockets.service
+Before=openqa-websockets.service
+Requires=openqa-webui.service
+Before=openqa-webui.service
+Requires=apache2.service
+Before=apache2.service
+
+[Service]
+User=root
+Type=oneshot
+ExecStart=-/usr/share/openqa/script/setup-single-instance
+
+[Install]
+WantedBy=multi-user.target

@@ -112,8 +112,28 @@ zypper dup --from devel-openQA-perl-modules --allow-vendor-change
 -------------------------------------------------------------------------------
 
 
+=== Single-user instance installation and setup on openSUSE
+
+
+For a single instance with a single worker preconfigured on a host where port
+80 is available just enable the systemd service +openqa-setup-single-instance+:
+
+[source,sh]
+--------------------------------------------------------------------------------
+zypper in openQA && systemctl enable --now openqa-setup-single-instance
+--------------------------------------------------------------------------------
+
+A webUI should be reachable on +http://localhost+ and a worker is ready to
+work on tests.
+
+From here you can continue with <<GettingStarted.asciidoc#get-testing,Getting
+Started>> or read on for more detailed or advanced configuration. All steps
+further described here have been setup automatically if you called the above
+service.
+
 === Installation
-You can install the packages using these commands.
+
+You can install the main packages using these commands.
 
 [source,sh]
 -------------------------------------------------------------------------------
