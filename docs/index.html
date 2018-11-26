@@ -745,6 +745,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_mixed_production_and_development_environment">Mixed production and development environment</a></li>
 <li><a href="#_performance_impact">Performance impact</a></li>
 <li><a href="#db-migration">DB migration from SQlite to postgreSQL</a></li>
+<li><a href="#_steps_to_debug_developer_mode_setup">Steps to debug developer mode setup</a></li>
 </ul>
 </li>
 <li><a href="#networking">Networking in OpenQA</a>
@@ -5108,6 +5109,66 @@ load_templates scripts accordingly.</p>
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_steps_to_debug_developer_mode_setup">Steps to debug developer mode setup</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is basically a checklist to go through in case the developer mode is broken in your setup:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Be sure to have everything up to date. That includes relevant packages on the
+machine hosting the web UI and on the worker.</p>
+</li>
+<li>
+<p>Check whether the web browser can reach the livehandler daemon. Go to a running test and open
+the live view. Then open the JavaScript console of the web browser. If it contains messages
+like Received message via ws proxy: ... the livehandler daemon can be reached. Otherwise,
+try the following sub-steps:</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>The installation guide has been updated to cover the developer mode. In case you installed
+your instance before the developer mode has been introduced, make sure that the Apache module
+rewrite is enabled (via a2enmod rewrite). Also be sure the vhost configuration looks
+like the one found in the openQA Git repository (especially the part for the reverse proxies).</p>
+</li>
+<li>
+<p>Check whether openqa-livehandler.service is running. It is supposed to be run on
+the same machine as the web UI and should actually be started automatically as a dependency of
+openqa-webui.service.</p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>Check whether the livehandler can reach the os-autoinst command server. Go to a running test
+and open the live view. Then open the JavaScript console of the web browser. If it contains messages
+like Received message via ws proxy: {...,"type":"info","what":"cmdsrvmsg"} + the os-autoinst command
+server can be reached. Otherwise there should be at least a message like
++Received message via ws proxy: {"what":"connecting to os-autoinst command server at ws:\/\/hostname:20053\/xhB84lUuPlMfhDEF\/ws",...}
+which contains the URL the livehandler is attempting to query. In this case
+try the following sub-steps:</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>If the hostname is wrong, add WORKER_HOSTNAME = correcthostname to workers.ini. The worker
+should then tell the web UI that it is reachable via correcthostname resulting in a correct URL
+for the os-autoinst command server.</p>
+</li>
+<li>
+<p>It might also be the case that the firewall is blocking the HTTP/websocket connection on the required
+port. The required port is QEMUPORT plus 1.
+By default, QEMUPORT is $worker_instance_number \* 10 \ 20002+.</p>
+</li>
+</ol>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
 <h1 id="networking" class="sect0">Networking in OpenQA</h1>
 <div class="openblock partintro">
 <div class="content">
@@ -6401,7 +6462,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-11-25 16:31:45 UTC
+Last updated 2018-11-26 16:15:58 UTC
 </div>
 </div>
 </body>
