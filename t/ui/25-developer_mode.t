@@ -347,7 +347,7 @@ subtest 'start developer session' => sub {
     element_visible(
         '#developer-panel .card-body',
         \@expected_text_after_session_created,
-        [@expected_text_on_initial_session_creation, qr/Resume/],
+        [@expected_text_on_initial_session_creation, qr/Skip timeout/, qr/Resume/],
     );
     assert_sent_commands(
         [
@@ -359,11 +359,32 @@ subtest 'start developer session' => sub {
         'changes submitted'
     );
 
+    subtest 'skipping timeout' => sub {
+        fake_state(developerMode => {currentApiFunction => '"assert_screen"'});
+        element_visible(
+            '#developer-panel .card-body',
+            [@expected_text_after_session_created,       qr/Skip timeout/],
+            [@expected_text_on_initial_session_creation, qr/Resume/],
+        );
+        $driver->find_element('Skip timeout', 'link_text')->click();
+        assert_sent_commands(
+            [
+                {
+                    cmd     => 'set_assert_screen_timeout',
+                    timeout => 0,
+                }
+            ],
+            'timeout set to zero'
+        );
+    };
+
+    # assume we're paused for the next subtests
     fake_state(developerMode => {isPaused => '"some reason"'});
 
     subtest 'opening needle editor not proposed when not ready' => sub {
-        # the worker isn't uploading up to the current module
-        element_visible('#developer-panel .card-body', qr/Resume/, qr/Open needle editor/);
+        # the worker isn't uploading up to the current module so 'Open needle editor' should not be shown
+        # besides, skipping the timeout should no longer be offered because we're paused now
+        element_visible('#developer-panel .card-body', qr/Resume/, [qr/Open needle editor/, qr/Skip timeout/]);
 
         # uploading current module in progress
         fake_state(
@@ -467,9 +488,10 @@ subtest 'start developer session' => sub {
 subtest 'process state changes from os-autoinst/worker' => sub {
     fake_state(
         developerMode => {
-            currentModule   => '"installation-welcome"',
-            isPaused        => '"some reason"',
-            moduleToPauseAt => 'undefined',
+            currentModule      => '"installation-welcome"',
+            isPaused           => '"some reason"',
+            moduleToPauseAt    => 'undefined',
+            currentApiFunction => 'undefined',
         });
 
     # in contrast to the other subtests (which just fake the state via fake_state helper) this subtest will
@@ -542,6 +564,15 @@ subtest 'process state changes from os-autoinst/worker' => sub {
         is(js_variable('developerMode.outstandingFilesToUpload'),  0, 'outstanding files has bot changed');
         is(js_variable('developerMode.detailsForCurrentModuleUploaded'),
             1, 'details for current module considered uploaded');
+    };
+
+    subtest 'curent API function handled' => sub {
+        is(js_variable('developerMode.currentApiFunction'), undef, 'current API function not set so far');
+
+        $driver->execute_script(
+'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_api_function\":\"assert_screen\"}}" });'
+        );
+        is(js_variable('developerMode.currentApiFunction'), 'assert_screen', 'current API function set');
     };
 
     subtest 'error handling, flash messages' => sub {

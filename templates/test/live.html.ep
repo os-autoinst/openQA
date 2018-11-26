@@ -109,6 +109,11 @@
                     class="btn btn-secondary developer-mode-element" data-visible-on="isPaused">
                     <i class="far fa-play-circle"></i> Resume test execution
                 </a>
+                <a href="#" onclick="skipTimeout(); return false;"
+                    class="btn btn-warning developer-mode-element" data-visible-on="canSkipTimeout"
+                    data-toggle="tooltip" data-placement="bottom" title="Causes the current assert_screen/check_screen to fail immediately (supposed to be combined with pause on assert_screen)">
+                    <i class="far fa-play-circle"></i> Skip timeout
+                </a>
                 <a href="<%= url_for('edit_test', testid => $testid) %>"
                     class="btn btn-secondary developer-mode-element"
                     data-visible-on="needleEditorReady">
