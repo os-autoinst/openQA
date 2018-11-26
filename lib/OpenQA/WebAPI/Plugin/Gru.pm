@@ -19,7 +19,6 @@ package OpenQA::WebAPI::Plugin::Gru;
 
 use strict;
 use warnings;
-use Cpanel::JSON::XS;
 use Minion;
 use Scalar::Util ();
 

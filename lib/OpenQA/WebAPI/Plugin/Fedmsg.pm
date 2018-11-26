@@ -25,7 +25,8 @@ use warnings;
 
 use parent 'Mojolicious::Plugin';
 use IPC::Run;
-use Cpanel::JSON::XS;
+use Mojo::JSON;    # booleans
+use Cpanel::JSON::XS ();
 use Mojo::IOLoop;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;

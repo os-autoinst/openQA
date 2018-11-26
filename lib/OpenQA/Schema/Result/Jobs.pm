@@ -19,7 +19,7 @@ use strict;
 use warnings;
 use base 'DBIx::Class::Core';
 use Try::Tiny;
-use Cpanel::JSON::XS;
+use Mojo::JSON 'encode_json';
 use Fcntl;
 use DateTime;
 use db_helpers;

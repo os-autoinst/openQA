@@ -24,8 +24,6 @@ use strict;
 use warnings;
 use FindBin;
 use lib "$FindBin::Bin/lib";
-# https://github.com/rurban/Cpanel-JSON-XS/issues/65
-use JSON::PP;
 use Data::Dump qw(pp dd);
 use File::Path qw(remove_tree);
 use File::Spec::Functions 'catfile';

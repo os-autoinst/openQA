@@ -19,7 +19,7 @@ package OpenQA::Parser::Format::IPA;
 # The parser results will be a collection of OpenQA::Parser::Result::IPA::Test
 use Mojo::Base 'OpenQA::Parser::Format::Base';
 use Carp qw(croak confess);
-use Cpanel::JSON::XS ();
+use Mojo::JSON;
 use OpenQA::Parser::Result::Test;
 
 sub _add_single_result { shift->results->add(OpenQA::Parser::Result::OpenQA->new(@_)) }
@@ -28,7 +28,7 @@ sub _add_single_result { shift->results->add(OpenQA::Parser::Result::OpenQA->new
 sub parse {
     my ($self, $json) = @_;
     confess "No JSON given/loaded" unless $json;
-    my $decoded_json = Cpanel::JSON::XS->new->utf8(0)->decode($json);
+    my $decoded_json = Mojo::JSON::from_json($json);
 
     # may be optional since format result_array:v2
     $self->generated_tests_extra->add(OpenQA::Parser::Result::IPA::Info->new($decoded_json->{info}))

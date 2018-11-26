@@ -25,7 +25,7 @@ use File::Copy;
 use File::Which 'which';
 use POSIX 'strftime';
 use Try::Tiny;
-use Cpanel::JSON::XS;
+use Mojo::JSON 'decode_json';
 
 sub init {
     my ($self) = @_;

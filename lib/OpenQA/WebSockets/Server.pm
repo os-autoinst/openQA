@@ -14,11 +14,10 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebSockets::Server;
-use Cpanel::JSON::XS;
 use Mojolicious::Lite;
+
 use Mojo::Util 'hmac_sha1_sum';
 use Try::Tiny;
-
 use OpenQA::IPC;
 use OpenQA::Utils qw(log_debug log_warning log_info log_error);
 use OpenQA::Schema;

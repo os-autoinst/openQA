@@ -22,7 +22,7 @@ use db_helpers;
 use OpenQA::Scheduler::Scheduler;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
-use Cpanel::JSON::XS qw(decode_json encode_json);
+use Mojo::JSON qw(decode_json encode_json);
 use File::Basename qw(dirname basename);
 use File::Path 'remove_tree';
 use Cwd 'abs_path';
