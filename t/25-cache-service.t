@@ -439,7 +439,10 @@ subtest 'Test Minion task registration and execution' => sub {
       ->asset(id => 922756, asset => $a, type => 'hdd', host => $host);
     $req->enqueue;
     my $worker = $app->minion->repair->worker->register;
-    $worker->dequeue(0)->execute;
+    ok($worker->id, 'worker has an ID');
+    my $job = $worker->dequeue(0);
+    ok($job, 'job enqueued');
+    $job->execute;
     ok $req->processed;
     ok $req->output;
     like $req->output, qr/Initialized with localhost/;
@@ -465,7 +468,10 @@ subtest 'Test Minion Sync task' => sub {
     $task->register($app);
     ok $req->enqueue;
     my $worker = $app->minion->repair->worker->register;
-    $worker->dequeue(0)->execute;
+    ok($worker->id, 'worker has an ID');
+    my $job = $worker->dequeue(0);
+    ok($job, 'job enqueued');
+    $job->execute;
     ok $req->processed;
     is $req->result, 0;
     diag $req->output;
