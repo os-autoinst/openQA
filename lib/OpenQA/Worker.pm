@@ -59,6 +59,7 @@ sub main {
     my $lockfd = lockit();
     my $dir;
     my $shared_cache;
+    my $return_code = 0;
     clean_pool();
 
     # register error handler
@@ -66,10 +67,11 @@ sub main {
         error => sub {
             my ($reactor, $err) = @_;
 
+            $return_code = 1;
             try {
                 # log error using print because logging utils might have caused the exception
                 # (no need to repeat $err, it is printed anyways)
-                print("stopping because a critical error occurred.\n");
+                log_error('stopping because a critical error occurred');
 
                 # try to stop the job nicely
                 stop('exception');
@@ -108,7 +110,7 @@ sub main {
     # start event loop - this will block until stop is called
     Mojo::IOLoop->start;
 
-    return 0;
+    return $return_code;
 }
 
 sub prepare_cache_directory {
