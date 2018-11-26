@@ -134,6 +134,6 @@ $ENV{QEMUPORT} = ($options{instance}) * 10 + 20002;
 $ENV{VNC}      = ($options{instance}) + 90;
 
 OpenQA::Worker::init($host_settings, \%options);
-OpenQA::Worker::main($host_settings);
+exit OpenQA::Worker::main($host_settings);
 
 # vim: set sw=4 sts=4 et:
