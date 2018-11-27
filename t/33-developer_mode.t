@@ -184,7 +184,9 @@ my $on_prompt_needle         = $needle_dir . '/boot-on_prompt';
 my $on_prompt_needle_renamed = $needle_dir . '/../disabled_needles/boot-on_prompt';
 note('renaming needles for on_prompt to ' . $on_prompt_needle_renamed . '.{json,png}');
 for my $ext (qw(.json .png)) {
-    ok(rename($on_prompt_needle . $ext => $on_prompt_needle_renamed . $ext), 'can rename needle ' . $ext);
+    ok(-f $on_prompt_needle_renamed . $ext
+          or rename($on_prompt_needle . $ext => $on_prompt_needle_renamed . $ext),
+        'can rename needle ' . $ext);
 }
 
 sub start_worker {
