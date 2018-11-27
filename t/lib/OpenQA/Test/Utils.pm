@@ -23,7 +23,6 @@ BEGIN {
         $ENV{MOJO_HOME} = Mojo::Home->new->detect('OpenQA::Utils');
     }
 }
-use constant DEBUG => $ENV{DEBUG} // 0;
 
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
@@ -36,8 +35,11 @@ our (@EXPORT, @EXPORT_OK);
 sub cache_minion_worker {
     process(
         sub {
+
+            # this service can be very noisy
             require OpenQA::Worker::Cache::Service;
-            OpenQA::Worker::Cache::Service->run(qw(minion worker), qw(-m production) x !(DEBUG));
+            local $ENV{MOJO_MODE} = 'test';
+            OpenQA::Worker::Cache::Service->run(qw(minion worker));
             Devel::Cover::report() if Devel::Cover->can('report');
             _exit(0);
         })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
@@ -46,8 +48,11 @@ sub cache_minion_worker {
 sub cache_worker_service {
     process(
         sub {
+
+            # this service can be very noisy
             require OpenQA::Worker::Cache::Service;
-            OpenQA::Worker::Cache::Service->run(qw(daemon -l http://*:7844), qw(-m production) x !(DEBUG));
+            local $ENV{MOJO_MODE} = 'test';
+            OpenQA::Worker::Cache::Service->run(qw(daemon -l http://*:7844));
             Devel::Cover::report() if Devel::Cover->can('report');
             _exit(0);
         })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
@@ -55,6 +60,7 @@ sub cache_worker_service {
 
 sub fake_asset_server {
     my $mock = Mojolicious->new;
+    $mock->mode('test');
     $mock->routes->get(
         '/tests/:job/asset/:type/:filename' => sub {
             my $c        = shift;
