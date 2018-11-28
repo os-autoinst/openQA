@@ -1,7 +1,10 @@
 [Unit]
 Description=OpenQA Worker Cache Service
+After=network.target
+Wants=network.target
 
 [Service]
+Restart=on-failure
 User=_openqa-worker
 ExecStart=/usr/share/openqa/script/openqa-workercache daemon -m production
 
