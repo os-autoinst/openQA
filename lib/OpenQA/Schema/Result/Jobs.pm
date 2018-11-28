@@ -15,9 +15,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::Jobs;
+
 use strict;
 use warnings;
+
 use base 'DBIx::Class::Core';
+
 use Try::Tiny;
 use Mojo::JSON 'encode_json';
 use Fcntl;

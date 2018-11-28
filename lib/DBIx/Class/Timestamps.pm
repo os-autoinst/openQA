@@ -1,12 +1,14 @@
 package DBIx::Class::Timestamps;
-use base 'DBIx::Class';
-use DateTime;
-use strict;
 
-require Exporter;
-our (@ISA, @EXPORT_OK);
-@ISA       = qw(Exporter);
-@EXPORT_OK = qw(now);
+use strict;
+use warnings;
+
+use base 'DBIx::Class';
+
+use DateTime;
+use Exporter 'import';
+
+our @EXPORT_OK = qw(now);
 
 sub add_timestamps {
     my $self = shift;

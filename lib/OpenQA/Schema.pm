@@ -14,9 +14,11 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema;
-use parent 'DBIx::Class::Schema';
+
 use strict;
 use warnings;
+
+use parent 'DBIx::Class::Schema';
 
 use DBIx::Class::DeploymentHandler;
 use Config::IniFiles;
@@ -25,7 +27,6 @@ use Try::Tiny;
 use FindBin '$Bin';
 use Fcntl ':flock';
 use File::Spec::Functions 'catfile';
-
 use OpenQA::Utils ();
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file

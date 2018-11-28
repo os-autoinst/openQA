@@ -16,14 +16,11 @@
 
 # a lot of this is inspired (and even in parts copied) from Minion (Artistic-2.0)
 package OpenQA::WebAPI::Plugin::Gru;
+use Mojo::Base 'Mojolicious::Plugin';
 
-use strict;
-use warnings;
 use Minion;
 use Scalar::Util ();
-
 use DBIx::Class::Timestamps 'now';
-use Mojo::Base 'Mojolicious::Plugin';
 use Mojo::Pg;
 
 has [qw(app dsn)];

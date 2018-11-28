@@ -15,8 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::WebAPI::Controller::Admin::Machine;
-use strict;
-use parent 'OpenQA::WebAPI::Controller::Admin::Table';
+use Mojo::Base 'OpenQA::WebAPI::Controller::Admin::Table';
 
 sub index {
     shift->SUPER::admintable('machine');

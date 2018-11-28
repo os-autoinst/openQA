@@ -14,8 +14,12 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema::Result::ScreenshotLinks;
-use base 'DBIx::Class::Core';
+
 use strict;
+use warnings;
+
+use base 'DBIx::Class::Core';
+
 use File::Spec::Functions 'catfile';
 use OpenQA::Utils qw(log_debug log_warning);
 use Try::Tiny;

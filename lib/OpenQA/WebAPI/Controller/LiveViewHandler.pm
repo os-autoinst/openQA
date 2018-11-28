@@ -15,10 +15,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::WebAPI::Controller::LiveViewHandler;
-use strict;
+use Mojo::Base 'OpenQA::WebAPI::Controller::Developer';
+
 use Try::Tiny;
 use Mojo::URL;
-use Mojo::Base 'OpenQA::WebAPI::Controller::Developer';
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;

@@ -15,11 +15,15 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::JobGroupParents;
+
+use strict;
+use warnings;
+
+use base 'DBIx::Class::Core';
+
 use OpenQA::Schema::JobGroupDefaults;
 use OpenQA::Utils 'parse_tags_from_comments';
 use Class::Method::Modifiers;
-use base 'DBIx::Class::Core';
-use strict;
 
 __PACKAGE__->table('job_group_parents');
 __PACKAGE__->load_components(qw(Timestamps));

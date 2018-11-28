@@ -15,6 +15,7 @@
 
 package OpenQA::WebAPI::Controller::API::V1::Asset;
 use Mojo::Base 'Mojolicious::Controller';
+
 use OpenQA::Utils;
 use OpenQA::IPC;
 

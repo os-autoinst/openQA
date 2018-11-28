@@ -19,11 +19,8 @@
 # fedmsg-logger.
 
 package OpenQA::WebAPI::Plugin::Fedmsg;
+use Mojo::Base 'Mojolicious::Plugin';
 
-use strict;
-use warnings;
-
-use parent 'Mojolicious::Plugin';
 use IPC::Run;
 use Mojo::JSON;    # booleans
 use Cpanel::JSON::XS ();

@@ -16,6 +16,8 @@
 package db_profiler;
 
 use strict;
+use warnings;
+
 use base 'DBIx::Class::Storage::Statistics';
 
 use Time::HiRes 'time';

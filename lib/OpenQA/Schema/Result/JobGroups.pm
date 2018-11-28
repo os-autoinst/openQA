@@ -14,12 +14,16 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema::Result::JobGroups;
+
+use strict;
+use warnings;
+
+use base 'DBIx::Class::Core';
+
 use OpenQA::Schema::JobGroupDefaults;
 use Class::Method::Modifiers;
-use base 'DBIx::Class::Core';
 use OpenQA::Utils qw(log_debug parse_tags_from_comments);
 use Date::Format 'time2str';
-use strict;
 
 __PACKAGE__->table('job_groups');
 __PACKAGE__->load_components(qw(Timestamps));

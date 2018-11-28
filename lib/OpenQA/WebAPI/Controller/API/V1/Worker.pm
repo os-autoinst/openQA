@@ -16,6 +16,7 @@
 
 package OpenQA::WebAPI::Controller::API::V1::Worker;
 use Mojo::Base 'Mojolicious::Controller';
+
 use OpenQA::IPC;
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
@@ -24,6 +25,7 @@ use DBIx::Class::Timestamps 'now';
 use Try::Tiny;
 use Scalar::Util 'looks_like_number';
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
+
 =pod
 
 =head1 NAME

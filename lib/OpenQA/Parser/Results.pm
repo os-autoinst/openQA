@@ -14,9 +14,10 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Parser::Results;
+use Mojo::Base 'Mojo::Collection';
+
 # Generic result class.
 
-use Mojo::Base 'Mojo::Collection';
 use Scalar::Util 'blessed';
 use OpenQA::Parser;
 use Mojo::JSON qw(encode_json decode_json);

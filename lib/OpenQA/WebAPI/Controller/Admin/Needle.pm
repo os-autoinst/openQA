@@ -16,6 +16,7 @@
 
 package OpenQA::WebAPI::Controller::Admin::Needle;
 use Mojo::Base 'Mojolicious::Controller';
+
 use OpenQA::Utils;
 use OpenQA::ServerSideDataTable;
 use Date::Format 'time2str';

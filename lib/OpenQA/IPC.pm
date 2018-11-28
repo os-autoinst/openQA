@@ -21,12 +21,10 @@ use warnings;
 use Net::DBus;
 use Net::DBus::Callback;
 use Net::DBus::Binding::Watch;
-
 use Mojo::IOLoop;
 use Data::Dump 'pp';
 use Try::Tiny;
 use Carp;
-
 use Scalar::Util 'weaken';
 use OpenQA::Utils qw(log_debug log_warning log_error);
 

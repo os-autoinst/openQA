@@ -14,13 +14,13 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Parser::Result;
+use Mojo::Base -base;
+
 # Base class that holds the test result
 # Used while parsing from format X to Whatever
 
-use Mojo::Base -base;
 use OpenQA::Parser::Results;
 use OpenQA::Parser;
-
 use Mojo::JSON qw(decode_json encode_json);
 use Carp 'croak';
 use Mojo::File 'path';

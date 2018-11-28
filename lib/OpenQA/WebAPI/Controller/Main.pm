@@ -15,9 +15,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::WebAPI::Controller::Main;
-use strict;
-use warnings;
 use Mojo::Base 'Mojolicious::Controller';
+
 use Date::Format;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;

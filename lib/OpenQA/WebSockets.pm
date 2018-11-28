@@ -14,11 +14,14 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebSockets;
+
+use strict;
+use warnings;
+
 use base 'Net::DBus::Object';
+
 use Net::DBus::Exporter 'org.opensuse.openqa.WebSockets';
 use Mojo::IOLoop;
-use strict;
-
 use OpenQA::IPC;
 use OpenQA::WebSockets::Server ();
 use OpenQA::Utils 'log_debug';

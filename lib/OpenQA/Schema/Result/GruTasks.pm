@@ -15,8 +15,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::GruTasks;
-use base 'DBIx::Class::Core';
+
 use strict;
+use warnings;
+
+use base 'DBIx::Class::Core';
+
 use OpenQA::Schema::Result::Jobs ();
 use Mojo::JSON qw(decode_json encode_json);
 use db_helpers;

@@ -15,9 +15,10 @@
 
 
 package OpenQA::WebAPI::Controller::Admin::AuditLog;
+use Mojo::Base 'Mojolicious::Controller';
+
 use 5.018;
-use warnings;
-use parent 'Mojolicious::Controller';
+
 use Time::Piece;
 use Time::Seconds;
 use Time::ParseDate;

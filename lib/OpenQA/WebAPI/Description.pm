@@ -13,17 +13,17 @@
 # You should have received a copy of the GNU General Public License
 
 package OpenQA::WebAPI::Description;
+
 use strict;
+use warnings;
 
 use OpenQA::Utils 'log_warning';
 use Mojo::File 'path';
 use Pod::POM;
+use Exporter 'import';
 
-require Exporter;
-our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-$VERSION = sprintf "%d.%03d", q$Revision: 0.01 $ =~ /(\d+)/g;
-@ISA     = qw(Exporter);
-@EXPORT  = qw(
+our $VERSION = sprintf "%d.%03d", q$Revision: 0.01 $ =~ /(\d+)/g;
+our @EXPORT = qw(
   get_pod_from_controllers
   set_api_desc
 );

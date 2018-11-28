@@ -16,6 +16,7 @@
 
 package OpenQA::WebAPI::Controller::ApiKey;
 use Mojo::Base 'Mojolicious::Controller';
+
 use DateTime::Format::Pg;
 
 sub index {

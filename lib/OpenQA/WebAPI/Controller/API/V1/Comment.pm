@@ -14,8 +14,9 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI::Controller::API::V1::Comment;
-use Date::Format;
 use Mojo::Base 'Mojolicious::Controller';
+
+use Date::Format;
 use OpenQA::Utils;
 use OpenQA::IPC;
 use OpenQA::Utils 'href_to_bugref';

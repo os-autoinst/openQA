@@ -14,7 +14,10 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema::Result::AuditEvents;
+
 use strict;
+use warnings;
+
 use base 'DBIx::Class::Core';
 
 # use db_helpers;

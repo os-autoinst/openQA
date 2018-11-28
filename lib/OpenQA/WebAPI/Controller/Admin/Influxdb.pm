@@ -1,8 +1,8 @@
 package OpenQA::WebAPI::Controller::Admin::Influxdb;
+use Mojo::Base 'Mojolicious::Controller';
 
 use 5.018;
-use warnings;
-use parent 'Mojolicious::Controller';
+
 use OpenQA::Jobs::Constants;
 
 =over 4

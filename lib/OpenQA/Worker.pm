@@ -14,18 +14,17 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker;
+
 use 5.018;
+use strict;
 use warnings;
 
 use Mojolicious::Lite;
 use Mojo::Server::Daemon;
 use Mojo::IOLoop;
-
 use File::Spec::Functions 'catdir';
 use Mojo::File 'path';
-
 use Try::Tiny;
-
 use OpenQA::Client;
 use OpenQA::Utils qw(log_error log_info log_debug);
 use OpenQA::Worker::Common;

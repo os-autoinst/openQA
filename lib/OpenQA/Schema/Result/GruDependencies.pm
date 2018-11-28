@@ -20,8 +20,11 @@
 # completes, the entry will be deleted.
 
 package OpenQA::Schema::Result::GruDependencies;
-use base 'DBIx::Class::Core';
+
 use strict;
+use warnings;
+
+use base 'DBIx::Class::Core';
 
 use db_helpers;
 

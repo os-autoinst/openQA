@@ -1,5 +1,4 @@
 package OpenQA::WebAPI::Plugin::HashedParams;
-
 use Mojo::Base 'Mojolicious::Plugin';
 
 our $VERSION = '0.04';

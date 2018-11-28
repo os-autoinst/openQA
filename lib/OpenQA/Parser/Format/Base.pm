@@ -14,8 +14,8 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Parser::Format::Base;
-
 use Mojo::Base 'OpenQA::Parser';
+
 use Carp 'croak';
 use OpenQA::Parser::Result::Test;
 use OpenQA::Parser::Result;

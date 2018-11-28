@@ -17,14 +17,14 @@ package OpenQA::Scheduler;
 
 use strict;
 use warnings;
+
 use base 'Net::DBus::Object';
+
 use Net::DBus::Exporter 'org.opensuse.openqa.Scheduler';
 use Net::DBus::Reactor;
 use Data::Dump 'pp';
-
 use OpenQA::IPC;
 use OpenQA::Setup;
-
 use OpenQA::Utils 'log_debug';
 
 # How many jobs to allocate in one tick. Defaults to 80 ( set it to 0 for as much as possible)

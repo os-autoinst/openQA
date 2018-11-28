@@ -17,7 +17,6 @@ package OpenQA::Scheduler::Scheduler;
 
 use strict;
 use warnings;
-use diagnostics;
 
 # we need the critical fix for update
 # see https://github.com/dbsrgits/dbix-class/commit/31160673f390e178ee347e7ebee1f56b3f54ba7a
@@ -47,11 +46,9 @@ use sigtrap handler => \&normal_signals_handler, 'normal-signals';
 use OpenQA::Scheduler;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use Carp;
+use Exporter 'import';
 
-require Exporter;
-our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-@ISA    = qw(Exporter);
-@EXPORT = qw(job_grab);
+our @EXPORT = qw(job_grab);
 
 CORE::state $summoned = 0;
 CORE::state $quit     = 0;

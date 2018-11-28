@@ -14,10 +14,9 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI;
-use strict;
+use Mojo::Base 'Mojolicious';
 
 use Mojolicious 7.18;
-use Mojo::Base 'Mojolicious';
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::IPC;

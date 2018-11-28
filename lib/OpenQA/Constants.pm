@@ -1,5 +1,9 @@
 package OpenQA::Constants;
+
 use strict;
+use warnings;
+
+use Exporter 'import';
 
 # Minimal worker version that allows them to connect;
 # To be modified manuallly when we want to break compability and force workers to update
@@ -16,12 +20,7 @@ use constant MAX_TIMER => 100;
 # Time verification to be use with WORKERS_CHECKER_THRESHOLD.
 use constant MIN_TIMER => 20;
 
-require Exporter;
-our (@ISA, @EXPORT, @EXPORT_OK);
-
-@ISA       = qw(Exporter);
-@EXPORT    = ();
-@EXPORT_OK = qw(
+our @EXPORT_OK = qw(
   WEBSOCKET_API_VERSION
   WORKERS_CHECKER_THRESHOLD
   MAX_TIMER

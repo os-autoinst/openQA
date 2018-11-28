@@ -14,7 +14,9 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::Jobs;
+
 use 5.018;
+use strict;
 use warnings;
 use feature 'state';
 
@@ -23,7 +25,6 @@ use OpenQA::Worker::Pool 'clean_pool';
 use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Utils
   qw(wait_with_progress log_error log_warning log_debug log_info add_log_channel remove_log_channel get_channel_handle);
-
 use POSIX qw(strftime SIGTERM);
 use File::Copy qw(copy move);
 use File::Path 'remove_tree';
@@ -36,10 +37,9 @@ use Mojo::File 'path';
 use Mojo::IOLoop;
 use OpenQA::File;
 use Mojo::IOLoop::ReadWriteProcess;
-
 use POSIX ':sys_wait_h';
+use Exporter 'import';
 
-use base 'Exporter';
 our @EXPORT = qw(start_job stop_job check_job backend_running);
 
 my $worker;

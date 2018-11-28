@@ -14,7 +14,9 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::ServerSideDataTable;
+
 use strict;
+use warnings;
 
 sub render_response {
     my (%args) = @_;

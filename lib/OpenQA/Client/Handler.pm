@@ -16,6 +16,7 @@
 
 package OpenQA::Client::Handler;
 use Mojo::Base 'Mojo::EventEmitter';
+
 use OpenQA::Client;
 
 has client => sub { OpenQA::Client->new };
