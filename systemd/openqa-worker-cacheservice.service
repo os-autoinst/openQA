@@ -1,5 +1,7 @@
 [Unit]
 Description=OpenQA Worker Cache Service
+After=network.target
+Wants=network.target
 
 [Service]
 Restart=on-failure
