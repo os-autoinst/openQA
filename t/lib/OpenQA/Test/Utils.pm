@@ -1,5 +1,10 @@
 package OpenQA::Test::Utils;
+
+use strict;
+use warnings;
+
 use base 'Exporter';
+
 use IO::Socket::INET;
 use Mojolicious;
 use POSIX '_exit';
@@ -12,6 +17,7 @@ use Mojo::File 'path';
 use Cwd qw(abs_path getcwd);
 use Test::More;
 use Mojo::IOLoop::ReadWriteProcess 'process';
+use Mojo::Server::Daemon;
 
 BEGIN {
     if (!$ENV{MOJO_HOME}) {
@@ -136,14 +142,14 @@ sub create_webapi {
     my $mojoport = shift;
     diag("Starting WebUI service. Port: $mojoport");
 
-    $startingpid = $$;
-    my $mojopid = fork();
+    my $startingpid = $$;
+    my $mojopid     = fork();
     if ($mojopid == 0) {
-        # TODO: start the server manually - and make it silent
         # Run openQA in test mode - it will mock Scheduler and Websockets DBus services
-        $ENV{MOJO_MODE}   = 'test';
-        $ENV{MOJO_LISTEN} = "127.0.0.1:$mojoport";
-        Mojolicious::Commands->start_app('OpenQA::WebAPI', 'daemon', '-l', "http://127.0.0.1:$mojoport/");
+        $ENV{MOJO_MODE} = 'test';
+        my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$mojoport"], silent => 1);
+        $daemon->build_app('OpenQA::WebAPI');
+        $daemon->run;
         Devel::Cover::report() if Devel::Cover->can('report');
         _exit(0);
     }
@@ -198,7 +204,7 @@ sub create_websocket_server {
             my $t      = time;
             my $socket = IO::Socket::INET->new(
                 PeerHost => '127.0.0.1',
-                PeerPort => $wsport,
+                PeerPort => $port,
                 Proto    => 'tcp'
             );
             last if $socket;
@@ -212,10 +218,10 @@ sub create_live_view_handler {
     my ($mojoport) = @_;
     my $pid = fork();
     if ($pid == 0) {
-        use Mojolicious::Commands;
-        use OpenQA::LiveHandler;
         my $livehandlerport = $mojoport + 2;
-        Mojolicious::Commands->start_app('OpenQA::LiveHandler', 'daemon', '-l', "http://localhost:$livehandlerport");
+        my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$livehandlerport"], silent => 1);
+        $daemon->build_app('OpenQA::LiveHandler');
+        $daemon->run;
         Devel::Cover::report() if Devel::Cover->can('report');
         _exit(0);
     }

@@ -1,11 +1,9 @@
 package OpenQA::SeleniumTest;
 use base 'Exporter';
 
-use Mojo::IOLoop::Server;
 use strict;
+use warnings;
 
-# Start command line interface for application
-require Mojolicious::Commands;
 require OpenQA::Test::Database;
 
 our @EXPORT = qw($drivermissing check_driver_modules start_driver
@@ -14,6 +12,8 @@ our @EXPORT = qw($drivermissing check_driver_modules start_driver
   element_not_present javascript_console_has_no_warnings_or_errors);
 
 use Data::Dump 'pp';
+use Mojo::IOLoop::Server;
+use Mojo::Server::Daemon;
 use Test::More;
 use Try::Tiny;
 use Time::HiRes 'time';
@@ -56,11 +56,11 @@ sub start_app {
             OpenQA::Test::Database->new->create;
         }
 
-        # TODO: start the server manually - and make it silent
         # Run openQA in test mode - it will mock Scheduler and Websockets DBus services
-        $ENV{MOJO_MODE}   = 'test';
-        $ENV{MOJO_LISTEN} = "127.0.0.1:$mojoport";
-        Mojolicious::Commands->start_app('OpenQA::WebAPI', 'daemon', '-l', "http://127.0.0.1:$mojoport/");
+        $ENV{MOJO_MODE} = 'test';
+        my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$mojoport"], silent => 1);
+        $daemon->build_app('OpenQA::WebAPI');
+        $daemon->run;
         exit(0);
     }
     else {

@@ -15,7 +15,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Test::FullstackUtils;
+
+use strict;
+use warnings;
+
 use base 'Exporter';
+
 use Mojolicious;
 use Mojo::Home;
 use Mojo::File 'path';

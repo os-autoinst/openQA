@@ -15,11 +15,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Test::Case;
+use Mojo::Base -base;
 
 use OpenQA::Test::Database;
 use OpenQA::Test::Testresults;
 use OpenQA::Schema::Result::Users;
-use Mojo::Base -base;
 use Date::Format 'time2str';
 use Mojo::JSON 'j';
 use Mojo::Util qw(b64_decode b64_encode hmac_sha1_sum);
