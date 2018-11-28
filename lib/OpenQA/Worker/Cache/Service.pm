@@ -34,6 +34,8 @@ sub _gen_session_token { $_token = md5_sum($$ . time . rand) }
 my $enqueued = Mojo::Collection->new;
 app->hook(
     before_server_start => sub {
+        my ($server, $app) = @_;
+        $server->silent(1) if $app->mode eq 'test';
         _gen_session_token();
         $enqueued = Mojo::Collection->new;
     });
@@ -78,15 +80,14 @@ sub _setup_workers {
 }
 
 sub run {
-    shift;
-    require OpenQA::Utils;
+    my $self = shift;
     app->log->short(1);
+    require OpenQA::Utils;
     OpenQA::Utils::set_listen_address(7844);
     $ENV{MOJO_INACTIVITY_TIMEOUT} //= 300;
-    require Mojolicious::Commands;
     my @args = _setup_workers(@_);
     app->log->debug("Starting cache service: $0 @args");
-    Mojolicious::Commands->start_app('OpenQA::Worker::Cache::Service', @args);
+    app->start(@args);
 }
 
 get '/session_token' => sub { shift->render(json => {session_token => SESSION_TOKEN()}) };

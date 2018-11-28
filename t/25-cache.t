@@ -54,14 +54,14 @@ my $serverpid;
 my $openqalogs;
 
 my $cachedir = catdir(getcwd(), 't', 'cache.d', 'cache');
-my $db_file = "$cachedir/cache.sqlite";
-$ENV{LOGDIR} = catdir(getcwd(), 't', 'cache.d', 'logs');
-my $logfile = catdir($ENV{LOGDIR}, 'cache.log');
-my $port    = Mojo::IOLoop::Server->generate_port;
-my $host    = "http://localhost:$port";
+my $db_file  = "$cachedir/cache.sqlite";
+my $logdir   = path(getcwd(), 't', 'cache.d', 'logs');
+my $logfile  = $logdir->child('cache.log');
+my $port     = Mojo::IOLoop::Server->generate_port;
+my $host     = "http://localhost:$port";
 
 remove_tree($cachedir);
-make_path($ENV{LOGDIR});
+$logdir->make_path;
 
 # reassign STDOUT, STDERR
 open my $FD, '>>', $logfile;
@@ -163,7 +163,7 @@ for (1 .. 3) {
 }
 
 
-chdir $ENV{LOGDIR};
+chdir $logdir;
 
 $cache->sleep_time(1);
 $cache->init;

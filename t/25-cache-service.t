@@ -54,7 +54,6 @@ use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service);
 use Mojo::Util qw(md5_sum);
-use constant DEBUG => $ENV{DEBUG} // 0;
 use OpenQA::Worker::Cache::Request;
 
 my $sql;
@@ -67,12 +66,11 @@ my $openqalogs;
 my $cachedir = $ENV{OPENQA_CACHE_DIR};
 
 my $db_file = "$cachedir/cache.sqlite";
-$ENV{LOGDIR} = catdir(getcwd(), 't', 'cache.d', 'logs');
-my $logfile = catdir($ENV{LOGDIR}, 'cache.log');
+my $logdir  = path(getcwd(), 't', 'cache.d', 'logs')->make_path;
+my $logfile = $logdir->child('cache.log');
 my $port    = Mojo::IOLoop::Server->generate_port;
 my $host    = "http://localhost:$port";
 
-path($ENV{LOGDIR})->make_path;
 use OpenQA::Worker::Cache::Client;
 
 my $cache_client = OpenQA::Worker::Cache::Client->new();
@@ -87,7 +85,7 @@ my $worker_cache_service = cache_minion_worker;
 
 my $server_instance = process sub {
     # Connect application with web server and start accepting connections
-    $daemon = Mojo::Server::Daemon->new(app => fake_asset_server, listen => [$host])->silent(!DEBUG);
+    $daemon = Mojo::Server::Daemon->new(app => fake_asset_server, listen => [$host])->silent(1);
     $daemon->run;
     _exit(0);
 };
