@@ -15,8 +15,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::ResultSet::DeveloperSessions;
+
 use strict;
+use warnings;
+
 use base 'DBIx::Class::ResultSet';
+
 use OpenQA::Schema::Result::DeveloperSessions;
 use OpenQA::IPC;
 

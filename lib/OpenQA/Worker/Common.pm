@@ -14,7 +14,9 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::Common;
+
 use 5.018;
+use strict;
 use warnings;
 use feature 'state';
 

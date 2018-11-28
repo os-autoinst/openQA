@@ -3,8 +3,9 @@ package Perl::Critic::Policy::ConsistentQuoteLikeWords;
 use strict;
 use warnings;
 
-use Perl::Critic::Utils qw( :severities :classification :ppi );
 use base 'Perl::Critic::Policy';
+
+use Perl::Critic::Utils qw( :severities :classification :ppi );
 
 our $VERSION = '0.0.1';
 

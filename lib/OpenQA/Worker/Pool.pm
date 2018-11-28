@@ -14,18 +14,17 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::Pool;
+
 use strict;
 use warnings;
 
 use Fcntl;
 use File::Path qw(make_path remove_tree);
-
 use OpenQA::Worker::Common qw($nocleanup $pooldir);
 use OpenQA::Utils 'log_error';
+use Exporter 'import';
 
-use base 'Exporter';
-our (@EXPORT_OK);
-@EXPORT_OK = qw(lockit clean_pool);
+our @EXPORT_OK = qw(lockit clean_pool);
 
 sub lockit() {
     if (!-e $pooldir) {

@@ -14,10 +14,12 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Parser::Result::Output;
+use Mojo::Base 'OpenQA::Parser::Result';
+
 # OpenQA test result class - this is how openQA internally draws the output results
 # Used while parsing from format X to OpenQA test modules.
-use Mojo::Base 'OpenQA::Parser::Result';
 use Mojo::File 'path';
+
 has 'file';
 has 'content';
 

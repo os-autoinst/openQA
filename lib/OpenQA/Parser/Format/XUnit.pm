@@ -14,8 +14,8 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Parser::Format::XUnit;
-
 use Mojo::Base 'OpenQA::Parser::Format::JUnit';
+
 use Carp qw(croak confess);
 use Mojo::DOM;
 

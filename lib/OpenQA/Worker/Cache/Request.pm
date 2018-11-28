@@ -14,9 +14,10 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::Cache::Request;
+use Mojo::Base -base;
+
 use OpenQA::Worker::Cache::Request::Sync;
 use OpenQA::Worker::Cache::Request::Asset;
-use Mojo::Base -base;
 use Carp 'croak';
 use OpenQA::Worker::Cache::Client;
 

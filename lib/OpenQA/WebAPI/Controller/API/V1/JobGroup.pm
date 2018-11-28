@@ -15,6 +15,7 @@
 
 package OpenQA::WebAPI::Controller::API::V1::JobGroup;
 use Mojo::Base 'Mojolicious::Controller';
+
 use OpenQA::Schema::Result::JobGroups;
 
 =pod

@@ -15,8 +15,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::ResultSet::Assets;
+
 use strict;
+use warnings;
+
 use base 'DBIx::Class::ResultSet';
+
 use DBIx::Class::Timestamps 'now';
 use OpenQA::Utils qw(log_warning locate_asset human_readable_size log_debug);
 use OpenQA::Jobs::Constants;

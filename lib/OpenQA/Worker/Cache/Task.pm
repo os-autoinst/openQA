@@ -14,7 +14,6 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::Cache::Task;
-
 use Mojo::Base 'Mojolicious::Plugin';
 
 has client => sub { OpenQA::Worker::Cache::Client->new };

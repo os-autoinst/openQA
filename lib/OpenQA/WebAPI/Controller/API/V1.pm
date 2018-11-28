@@ -16,6 +16,7 @@
 
 package OpenQA::WebAPI::Controller::API::V1;
 use Mojo::Base 'Mojolicious::Controller';
+
 use Mojo::Util 'hmac_sha1_sum';
 
 sub auth {

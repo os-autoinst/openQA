@@ -15,8 +15,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::ResultSet::Needles;
+
 use strict;
+use warnings;
+
 use base 'DBIx::Class::ResultSet';
+
 use OpenQA::Schema::Result::Needles;
 use OpenQA::Schema::Result::NeedleDirs;
 use DateTime::Format::Pg;

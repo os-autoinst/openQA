@@ -13,13 +13,13 @@
 # You should have received a copy of the GNU General Public License
 
 package OpenQA::Script;
+
 use strict;
 use warnings;
 
-require Exporter;
-our (@ISA, @EXPORT);
-@ISA    = qw(Exporter);
-@EXPORT = qw(
+use Exporter 'import';
+
+our @EXPORT = qw(
   clone_job_apply_settings
 );
 

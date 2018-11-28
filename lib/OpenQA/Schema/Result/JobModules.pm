@@ -15,9 +15,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::JobModules;
-use base 'DBIx::Class::Core';
 
 use strict;
+use warnings;
+
+use 5.012;    # so readdir assigns to $_ in a lone while test
+use base 'DBIx::Class::Core';
+
 use db_helpers;
 use OpenQA::Scheduler::Scheduler;
 use OpenQA::Jobs::Constants;
@@ -27,7 +31,6 @@ use File::Basename qw(dirname basename);
 use File::Path 'remove_tree';
 use Cwd 'abs_path';
 use Try::Tiny;
-use 5.012;    # so readdir assigns to $_ in a lone while test
 
 __PACKAGE__->table('job_modules');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));

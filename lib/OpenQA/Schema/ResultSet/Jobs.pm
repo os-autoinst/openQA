@@ -15,8 +15,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::ResultSet::Jobs;
+
 use strict;
+use warnings;
+
 use base 'DBIx::Class::ResultSet';
+
 use DBIx::Class::Timestamps 'now';
 use Date::Format 'time2str';
 use OpenQA::Schema::Result::JobDependencies;

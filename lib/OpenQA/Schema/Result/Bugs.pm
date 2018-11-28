@@ -14,8 +14,12 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema::Result::Bugs;
+
 use strict;
+use warnings;
+
 use base 'DBIx::Class::Core';
+
 use Mojo::UserAgent;
 use OpenQA::Utils;
 use DBIx::Class::Timestamps 'now';

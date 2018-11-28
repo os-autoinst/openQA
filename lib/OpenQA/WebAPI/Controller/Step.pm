@@ -16,6 +16,7 @@
 
 package OpenQA::WebAPI::Controller::Step;
 use Mojo::Base 'Mojolicious::Controller';
+
 use Mojo::File 'path';
 use Mojo::Util 'decode';
 use OpenQA::Utils;

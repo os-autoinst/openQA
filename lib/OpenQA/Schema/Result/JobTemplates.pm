@@ -15,8 +15,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::JobTemplates;
-use base 'DBIx::Class::Core';
+
 use strict;
+use warnings;
+
+use base 'DBIx::Class::Core';
 
 use db_helpers;
 

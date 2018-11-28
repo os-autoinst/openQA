@@ -14,8 +14,9 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Parser::Format::JUnit;
-# Translates to JUnit -> openQA internal
 use Mojo::Base 'OpenQA::Parser::Format::Base';
+
+# Translates to JUnit -> openQA internal
 use Carp qw(croak confess);
 use OpenQA::Parser::Result::OpenQA;
 use Mojo::DOM;

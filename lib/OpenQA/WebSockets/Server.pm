@@ -27,13 +27,10 @@ use Data::Dump 'pp';
 use db_profiler;
 use OpenQA::Schema::Result::Workers ();
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKERS_CHECKER_THRESHOLD);
+use Exporter 'import';
 
-require Exporter;
-our (@ISA, @EXPORT, @EXPORT_OK);
-
-@ISA       = qw(Exporter);
-@EXPORT    = qw(ws_send ws_send_all ws_send_job);
-@EXPORT_OK = qw(ws_create ws_is_worker_connected);
+our @EXPORT    = qw(ws_send ws_send_all ws_send_job);
+our @EXPORT_OK = qw(ws_create ws_is_worker_connected);
 
 # id->worker mapping
 my $workers;

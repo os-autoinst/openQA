@@ -16,6 +16,7 @@
 
 package OpenQA::File;
 use Mojo::Base 'OpenQA::Parser::Result';
+
 use OpenQA::Parser::Results;
 use Exporter 'import';
 use Carp 'croak';

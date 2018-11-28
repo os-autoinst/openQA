@@ -15,8 +15,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::UserAgent;
-
 use Mojo::Base 'Mojo::UserAgent';
+
 use Mojo::Util 'hmac_sha1_sum';
 use Config::IniFiles;
 use Scalar::Util ();

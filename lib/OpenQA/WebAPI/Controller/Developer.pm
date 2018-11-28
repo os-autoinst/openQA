@@ -15,10 +15,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::WebAPI::Controller::Developer;
-use strict;
+use Mojo::Base 'Mojolicious::Controller';
+
 use Try::Tiny;
 use Mojo::URL;
-use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils 'determine_web_ui_web_socket_url';
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;

@@ -14,7 +14,9 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::Commands;
+
 use 5.018;
+use strict;
 use warnings;
 
 use OpenQA::Utils qw(log_error log_warning log_debug add_log_channel remove_log_channel);

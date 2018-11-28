@@ -14,6 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema::JobGroupDefaults;
+
 use strict;
 use warnings;
 

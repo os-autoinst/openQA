@@ -1,5 +1,6 @@
 package OpenQA::WebAPI::AssetPipe;
 use Mojo::Base "Mojolicious::Plugin::AssetPack::Pipe";
+
 use Mojolicious::Plugin::AssetPack::Util qw(diag DEBUG);
 
 # rewrite links to chosen images - actually something that the

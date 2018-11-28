@@ -14,9 +14,10 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Parser::Result::Test;
+use Mojo::Base 'OpenQA::Parser::Result';
+
 # OpenQA test result class - this is how test modules are represented in openQA
 # Used while parsing from format X to OpenQA test modules.
-use Mojo::Base 'OpenQA::Parser::Result';
 
 has flags => sub { {} };
 has [qw(category name script)];

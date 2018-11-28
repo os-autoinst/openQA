@@ -14,10 +14,10 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Parser::Format::IPA;
+use Mojo::Base 'OpenQA::Parser::Format::Base';
 
 # Translates to JSON IPA format -> OpenQA internal representation
 # The parser results will be a collection of OpenQA::Parser::Result::IPA::Test
-use Mojo::Base 'OpenQA::Parser::Format::Base';
 use Carp qw(croak confess);
 use Mojo::JSON;
 use OpenQA::Parser::Result::Test;

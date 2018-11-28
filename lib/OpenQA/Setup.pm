@@ -14,11 +14,10 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Setup;
-use Mojo::Log;
-use Mojo::Home;
-use strict;
-use warnings;
 use Mojo::Base -base;
+
+use Mojo::Home;
+use Mojo::Log;
 use Sys::Hostname;
 use File::Spec::Functions 'catfile';
 use Mojo::File 'path';

@@ -15,8 +15,8 @@
 
 package OpenQA::WebAPI::Controller::API::V1::Iso;
 use Mojo::Base 'Mojolicious::Controller';
-use File::Basename;
 
+use File::Basename;
 use OpenQA::Utils;
 use OpenQA::IPC;
 use Try::Tiny;

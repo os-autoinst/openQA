@@ -14,18 +14,15 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI::Controller::File;
-
-use strict;
-use warnings;
 use Mojo::Base 'Mojolicious::Controller';
+
 BEGIN { $ENV{MAGICK_THREAD_LIMIT} = 1; }
+
 use OpenQA::Utils;
 use File::Basename;
 use File::Spec;
 use File::Spec::Functions 'catfile';
-
 use Data::Dump 'pp';
-
 use Mojolicious::Static;
 
 sub needle {

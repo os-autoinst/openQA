@@ -1,7 +1,7 @@
 package OpenQA::Jobs::Constants;
-
 use Mojo::Base -base;
-our @ISA = qw(Exporter);
+
+use Exporter 'import';
 
 # States
 use constant {

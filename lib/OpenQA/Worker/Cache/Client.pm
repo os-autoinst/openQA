@@ -14,15 +14,13 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::Cache::Client;
+use Mojo::Base -base;
 
 use OpenQA::Worker::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE);
 use OpenQA::Worker::Common;
-
 use OpenQA::Worker::Cache::Request;
 use OpenQA::Worker::Cache::Request::Asset;
 use OpenQA::Worker::Cache::Request::Sync;
-
-use Mojo::Base -base;
 use Mojo::URL;
 use Mojo::File 'path';
 

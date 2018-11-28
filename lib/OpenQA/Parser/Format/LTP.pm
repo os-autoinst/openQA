@@ -14,13 +14,14 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Parser::Format::LTP;
+use Mojo::Base 'OpenQA::Parser::Format::JUnit';
 
 # Translates to JSON LTP format -> LTP internal representation
 # The parser results will be a collection of OpenQA::Parser::Result::LTP::Test
-use Mojo::Base 'OpenQA::Parser::Format::JUnit';
 use Carp qw(croak confess);
 use Mojo::JSON;
 use Storable 'dclone';
+
 has include_results => 1;
 
 sub _add_single_result { shift->results->add(OpenQA::Parser::Result::LTP::Test->new(@_)) }

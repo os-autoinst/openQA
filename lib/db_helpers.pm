@@ -15,8 +15,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package db_helpers;
-
 use Mojo::Base 'Exporter';
+
 our @EXPORT_OK = qw(create_auto_timestamps rndstr rndhex rndstrU rndhexU);
 
 use Carp;

@@ -14,8 +14,8 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Parser;
-
 use Mojo::Base -base;
+
 use Carp qw(croak confess);
 use Mojo::File 'path';
 use Mojo::Collection;
@@ -30,9 +30,9 @@ use Scalar::Util qw(blessed reftype);
 use constant DATA_FIELD => '__data__';
 use constant TYPE_FIELD => '__type__';
 use OpenQA::Utils 'walker';
+use Exporter 'import';
 
 our @EXPORT_OK = qw(parser p);
-use Exporter 'import';
 
 has include_content => 0;
 has 'content';

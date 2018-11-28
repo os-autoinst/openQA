@@ -16,6 +16,7 @@
 
 package OpenQA::WebAPI::Controller::Admin::Asset;
 use Mojo::Base 'Mojolicious::Controller';
+
 use Mojolicious::Static;
 use Mojo::File;
 

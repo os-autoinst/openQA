@@ -15,7 +15,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::ResultSet::JobSettings;
+
 use strict;
+use warnings;
+
 use base 'DBIx::Class::ResultSet';
 
 =head2 query_for_settings

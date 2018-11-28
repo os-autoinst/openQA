@@ -14,11 +14,8 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI::Plugin::AMQP;
+use Mojo::Base 'Mojolicious::Plugin';
 
-use strict;
-use warnings;
-
-use parent 'Mojolicious::Plugin';
 use Mojo::JSON;    # booleans
 use Cpanel::JSON::XS ();
 use Mojo::IOLoop;

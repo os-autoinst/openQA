@@ -17,7 +17,6 @@ package OpenQA::Resource::Jobs;
 
 use strict;
 use warnings;
-use diagnostics;
 
 # we need the critical fix for update
 # see https://github.com/dbsrgits/dbix-class/commit/31160673f390e178ee347e7ebee1f56b3f54ba7a
@@ -29,11 +28,9 @@ use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
 use OpenQA::Utils 'log_debug';
 use OpenQA::ResourceAllocator;
+use Exporter 'import';
 
-require Exporter;
-our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
-@ISA    = qw(Exporter);
-@EXPORT = qw(job_restart job_create);
+our @EXPORT = qw(job_restart job_create);
 
 sub schema { OpenQA::ResourceAllocator->instance->schema }
 

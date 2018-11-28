@@ -14,16 +14,16 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI::Auth::OpenID;
-use OpenQA::Schema::Result::Users;
-use strict;
 
+use strict;
+use warnings;
+
+use OpenQA::Schema::Result::Users;
 use LWP::UserAgent;
 use Net::OpenID::Consumer;
+use Exporter 'import';
 
-require Exporter;
-our (@ISA, @EXPORT_OK);
-@ISA       = qw(Exporter);
-@EXPORT_OK = qw(auth_login auth_response);
+our @EXPORT_OK = qw(auth_login auth_response);
 
 sub auth_login {
     my ($self) = @_;

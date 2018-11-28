@@ -17,12 +17,13 @@ package OpenQA::ResourceAllocator;
 
 use strict;
 use warnings;
+
 use base 'Net::DBus::Object';
+
 use Net::DBus::Exporter 'org.opensuse.openqa.ResourceAllocator';
 use Net::DBus::Reactor;
 use Data::Dump 'pp';
 use Scalar::Util 'blessed';
-
 use OpenQA::IPC;
 use OpenQA::Utils qw(log_debug wakeup_scheduler exists_worker safe_call);
 use OpenQA::Resource::Jobs  ();

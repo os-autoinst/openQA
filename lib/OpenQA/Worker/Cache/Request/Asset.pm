@@ -14,7 +14,6 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::Cache::Request::Asset;
-
 use Mojo::Base 'OpenQA::Worker::Cache::Request';
 
 # See task OpenQA::Cache::Task::Asset

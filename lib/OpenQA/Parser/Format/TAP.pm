@@ -14,8 +14,9 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Parser::Format::TAP;
-# Translates to TAP -> openQA internal
 use Mojo::Base 'OpenQA::Parser::Format::Base';
+
+# Translates to TAP -> openQA internal
 use Carp qw(croak confess);
 use OpenQA::Parser::Result::OpenQA;
 use TAP::Parser;

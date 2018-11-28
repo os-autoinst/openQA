@@ -16,6 +16,7 @@
 
 package OpenQA::WebAPI::Controller::Admin::Workers;
 use Mojo::Base 'Mojolicious::Controller';
+
 use OpenQA::Utils;
 use OpenQA::ServerSideDataTable;
 use Scalar::Util 'looks_like_number';
