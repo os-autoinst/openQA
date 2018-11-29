@@ -117,22 +117,22 @@ sub _manage_watch_on {
     my ($self, $reactor, $watch) = @_;
     my $flags = $watch->get_flags;
 
-    if ($flags & &Net::DBus::Binding::Watch::READABLE) {
+    if ($flags & Net::DBus::Binding::Watch::READABLE()) {
         my $fh = $self->_get_fh_from_fd($watch->get_fileno);
         my $cb = Net::DBus::Callback->new(
             object => $watch,
             method => "handle",
-            args   => [&Net::DBus::Binding::Watch::READABLE]);
+            args   => [Net::DBus::Binding::Watch::READABLE()]);
         # Net::DBus calls dispatch each time some event wakes it up, Mojo::Reactor does not support this kind of hooks
         $reactor->io($fh => sub { my ($self, $writable) = @_; $cb->invoke; $self->emit('dbus-dispatch') });
         $reactor->watch($fh, $watch->is_enabled, 0);
     }
-    if ($flags & &Net::DBus::Binding::Watch::WRITABLE) {
+    if ($flags & Net::DBus::Binding::Watch::WRITABLE()) {
         my $fh = $self->_get_fh_from_fd($watch->get_fileno, 1);
         my $cb = Net::DBus::Callback->new(
             object => $watch,
             method => "handle",
-            args   => [&Net::DBus::Binding::Watch::WRITABLE]);
+            args   => [Net::DBus::Binding::Watch::WRITABLE()]);
        # Net::DBus calls flush event each time some event wakes it up, Mojo::Reactor does not support this kind of hooks
         $reactor->io($fh => sub { my ($self, $writable) = @_; $cb->invoke; $self->emit('dbus-flush') });
         $reactor->watch($fh, 0, $watch->is_enabled);
@@ -144,12 +144,12 @@ sub _manage_watch_off {
     my $flags = $watch->get_flags;
     my ($fh, $rw);
 
-    if ($flags & &Net::DBus::Binding::Watch::READABLE) {
+    if ($flags & Net::DBus::Binding::Watch::READABLE()) {
         $fh = $self->_get_fh_from_fd($watch->get_fileno);
         $rw = '<';
         $reactor->remove($fh);
     }
-    if ($flags & &Net::DBus::Binding::Watch::WRITABLE) {
+    if ($flags & Net::DBus::Binding::Watch::WRITABLE()) {
         $fh = $self->_get_fh_from_fd($watch->get_fileno, 1);
         $rw = '>';
         $reactor->remove($fh);
@@ -162,13 +162,13 @@ sub _manage_watch_toggle {
     my ($self, $reactor, $watch) = @_;
     my $flags = $watch->get_flags;
 
-    if ($flags & &Net::DBus::Binding::Watch::READABLE) {
+    if ($flags & Net::DBus::Binding::Watch::READABLE()) {
         my $fh = $self->{handles}{'<'}{$watch->get_fileno};
         if (defined $fh) {
             $reactor->watch($fh, $watch->is_enabled, 0);
         }
     }
-    if ($flags & &Net::DBus::Binding::Watch::WRITABLE) {
+    if ($flags & Net::DBus::Binding::Watch::WRITABLE()) {
         my $fh = $self->{handles}{'>'}{$watch->get_fileno};
         if (defined $fh) {
             $reactor->watch($fh, 0, $watch->is_enabled);

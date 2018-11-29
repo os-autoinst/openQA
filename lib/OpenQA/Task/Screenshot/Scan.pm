@@ -38,10 +38,10 @@ sub _list_images_subdir {
     log_fatal "Can't open $subdir: $!" unless opendir($dh, $subdir);
 
     my @ret;
-    while (readdir $dh) {
-        my $fn = catfile($subdir, $_);
+    for my $file (readdir $dh) {
+        my $fn = catfile($subdir, $file);
         if ($fn =~ /.png$/ && -f $fn) {
-            push(@ret, catfile($prefix, $dir, $_));
+            push(@ret, catfile($prefix, $dir, $file));
         }
     }
     closedir($dh);
@@ -60,9 +60,9 @@ sub _scan_images {
 
     my @files;
     my $now = DateTime->now;
-    while (readdir $dh) {
-        if ($_ !~ /^\./ && -d "$prefixdir/$_") {
-            push(@files, map { [$_, $now] } @{_list_images_subdir($app, $args->{prefix}, $_)});
+    for my $file (readdir $dh) {
+        if ($file !~ /^\./ && -d "$prefixdir/$file") {
+            push(@files, map { [$_, $now] } @{_list_images_subdir($app, $args->{prefix}, $file)});
         }
     }
     closedir($dh);
@@ -112,8 +112,8 @@ sub _scan_images_links {
             next;
         }
         my @imgs;
-        while (readdir $dh) {
-            my $fn = catfile($rd, $_);
+        for my $file (readdir $dh) {
+            my $fn = catfile($rd, $file);
             if ($fn =~ /\.png$/ && -l $fn) {
                 my $lt = readlink($fn);
                 $lt =~ s,.*/images/,,;

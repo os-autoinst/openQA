@@ -194,21 +194,21 @@ sub compute_build_results {
 
     my $max_jobs = 0;
     my $buildnr  = 0;
-    for my $b (@builds) {
+    for my $build (@builds) {
         last if defined($limit) && (--$limit < 0);
 
         my $jobs = $jobs_resultset->search(
             {
-                VERSION  => $b->VERSION,
-                BUILD    => $b->BUILD,
+                VERSION  => $build->VERSION,
+                BUILD    => $build->BUILD,
                 group_id => {in => $group_ids},
                 clone_id => undef,
             },
             {order_by => 'me.id DESC'});
         my %jr = (
-            key     => $b->{key},
-            build   => $b->BUILD,
-            version => $b->VERSION,
+            key     => $build->{key},
+            build   => $build->BUILD,
+            version => $build->VERSION,
             oldest  => DateTime->now
         );
         init_job_figures(\%jr);

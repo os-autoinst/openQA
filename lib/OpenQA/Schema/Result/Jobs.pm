@@ -548,13 +548,13 @@ sub to_hash {
     $j->{test} = $job->TEST;
     if ($args{assets}) {
         if (defined $job->{_assets}) {
-            for my $a (@{$job->{_assets}}) {
-                push @{$j->{assets}->{$a->type}}, $a->name;
+            for my $asset (@{$job->{_assets}}) {
+                push @{$j->{assets}->{$asset->type}}, $asset->name;
             }
         }
         else {
-            for my $a ($job->jobs_assets->all()) {
-                push @{$j->{assets}->{$a->asset->type}}, $a->asset->name;
+            for my $asset ($job->jobs_assets->all()) {
+                push @{$j->{assets}->{$asset->asset->type}}, $asset->asset->name;
             }
         }
     }
