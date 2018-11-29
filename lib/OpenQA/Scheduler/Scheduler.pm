@@ -174,7 +174,7 @@ sub update_scheduled_jobs {
         if (!$info->{cluster_jobs}) {
             $info->{cluster_jobs} = $job->cluster_jobs;
             # it's the same cluster for all, so share
-            for my $j (%{$info->{cluster_jobs}}) {
+            for my $j (keys %{$info->{cluster_jobs}}) {
                 $cluster_infos{$j} = $info->{cluster_jobs};
             }
         }

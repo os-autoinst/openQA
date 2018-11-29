@@ -49,10 +49,10 @@ sub _list_images_subdir {
         return;
     }
     my @ret;
-    while (readdir $dh) {
-        my $fn = catfile($subdir, $_);
+    for my $file (readdir $dh) {
+        my $fn = catfile($subdir, $file);
         if (-f $fn) {
-            push(@ret, catfile($prefix, $dir, $_));
+            push(@ret, catfile($prefix, $dir, $file));
         }
     }
     closedir($dh);
@@ -73,9 +73,9 @@ sub scan_images {
     my @files;
     my $now = DateTime->now;
     push(@files, [qw(filename t_created)]);
-    while (readdir $dh) {
-        if ($_ !~ /^\./ && -d "$prefixdir/$_") {
-            push(@files, map { [$_, $now] } @{_list_images_subdir($app, $args->{prefix}, $_)});
+    for my $file (readdir $dh) {
+        if ($file !~ /^\./ && -d "$prefixdir/$file") {
+            push(@files, map { [$_, $now] } @{_list_images_subdir($app, $args->{prefix}, $file)});
         }
     }
     closedir($dh);

@@ -35,10 +35,10 @@ sub rndhex {
 
 sub _rb {
     my ($fd, $max) = @_;
-    my $b;
+    my $byte;
     # uncoverable branch true
-    read($fd, $b, 1) || croak "can't read random byte: $!";
-    return int($max * ord($b) / 256.0);
+    read($fd, $byte, 1) || croak "can't read random byte: $!";
+    return int($max * ord($byte) / 256.0);
 }
 
 sub rndstrU {

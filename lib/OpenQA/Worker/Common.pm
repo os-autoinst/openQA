@@ -295,24 +295,24 @@ sub _get_capabilities {
     }
     else {
         open(my $LSCPU, "-|", "LC_ALL=C lscpu");
-        while (<$LSCPU>) {
-            chomp;
-            if (m/Model name:\s+(.+)$/) {
+        for my $line (<$LSCPU>) {
+            chomp $line;
+            if ($line =~ m/Model name:\s+(.+)$/) {
                 $caps->{cpu_modelname} = $1;
             }
-            if (m/Architecture:\s+(.+)$/) {
+            if ($line =~ m/Architecture:\s+(.+)$/) {
                 $caps->{cpu_arch} = $1;
             }
-            if (m/CPU op-mode\(s\):\s+(.+)$/) {
+            if ($line =~ m/CPU op-mode\(s\):\s+(.+)$/) {
                 $caps->{cpu_opmode} = $1;
             }
         }
         close($LSCPU);
     }
     open(my $MEMINFO, "<", "/proc/meminfo");
-    while (<$MEMINFO>) {
-        chomp;
-        if (m/MemTotal:\s+(\d+).+kB/) {
+    for my $line (<$MEMINFO>) {
+        chomp $line;
+        if ($line =~ m/MemTotal:\s+(\d+).+kB/) {
             my $mem_max = $1 ? $1 : '';
             $caps->{mem_max} = int($mem_max / 1024) if $mem_max;
         }

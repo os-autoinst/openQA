@@ -74,16 +74,16 @@ sub scan_for_untracked_assets {
         next unless opendir($dh, $OpenQA::Utils::assetdir . "/$type");
         my %assets;
         my @paths;
-        while (readdir($dh)) {
-            unless ($_ eq 'fixed' or $_ eq '.' or $_ eq '..') {
-                push(@paths, "$OpenQA::Utils::assetdir/$type/$_");
+        for my $file (readdir($dh)) {
+            unless ($file eq 'fixed' or $file eq '.' or $file eq '..') {
+                push(@paths, "$OpenQA::Utils::assetdir/$type/$file");
             }
         }
         closedir($dh);
         if (opendir($dh, $OpenQA::Utils::assetdir . "/$type" . "/fixed")) {
-            while (readdir($dh)) {
-                unless ($_ eq 'fixed' or $_ eq '.' or $_ eq '..') {
-                    push(@paths, "$OpenQA::Utils::assetdir/$type/fixed/$_");
+            for my $file (readdir($dh)) {
+                unless ($file eq 'fixed' or $file eq '.' or $file eq '..') {
+                    push(@paths, "$OpenQA::Utils::assetdir/$type/fixed/$file");
                 }
             }
             closedir($dh);

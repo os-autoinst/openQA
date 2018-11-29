@@ -41,10 +41,10 @@ sub _migrate_images {
       unless opendir($dh, $prefixdir);
 
     OpenQA::Utils::log_debug "moving files in $prefixdir";
-    while (readdir $dh) {
+    for my $file (readdir $dh) {
         # only rename .pngs not symlinked
-        if (-f "$prefixdir/$_" && !-l "$prefixdir/$_" && m/^(.*)\.png/) {
-            my $old = $_;
+        if (-f "$prefixdir/$file" && !-l "$prefixdir/$file" && $file =~ m/^(.*)\.png/) {
+            my $old = $file;
             my $md5 = $args->{prefix} . $1;
             my ($img, $thumb) = OpenQA::Utils::image_md5_filename($md5);
 
@@ -71,10 +71,10 @@ sub _relink_dir {
         return;
     }
     OpenQA::Utils::log_debug "relinking images in $dir";
-    while (readdir $dh) {
+    for my $file (readdir $dh) {
         # only relink symlinked .pngs
-        if (-l "$dir/$_" && m/^(.*)\.png/) {
-            my $old     = "$dir/$_";
+        if (-l "$dir/$file" && $file =~ m/^(.*)\.png/) {
+            my $old     = "$dir/$file";
             my $md5path = abs_path($old);
             # skip stale symlinks
             next unless $md5path;
@@ -115,9 +115,9 @@ sub _rm_compat_symlinks {
     my ($app, $args) = @_;
 
     opendir(my $dh, $OpenQA::Utils::imagesdir) || die "Can't open /images: $!";
-    while (readdir $dh) {
-        if (m/^([^.].)$/) {
-            remove_tree("$OpenQA::Utils::imagesdir/$_");
+    for my $file (readdir $dh) {
+        if ($file =~ m/^([^.].)$/) {
+            remove_tree("$OpenQA::Utils::imagesdir/$file");
         }
     }
     closedir $dh;
