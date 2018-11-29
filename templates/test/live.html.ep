@@ -55,12 +55,15 @@
     <div class="card-body">
         <form action="#" method="get" id="developer-form" class="developer-mode-element"
             data-hidden-on="lockedByOtherDeveloper" data-visible-on="isConnected">
-            <p class="developer-mode-element" data-hidden-on="ownSession">
-                Change the test behaviour with the controls below and confirm to apply.
-                Taking control of this test will also forbid other users from doing so.
-            </p>
-            <p class="developer-mode-element" data-visible-on="ownSession">
-                Change the test behaviour with the controls below.
+            <p>
+                <span class="developer-mode-element" data-hidden-on="ownSession">
+                    Change the test behaviour with the controls below and confirm to apply.
+                    Taking control of this test will also forbid other users from doing so.
+                </span>
+                <span class="developer-mode-element" data-visible-on="ownSession">
+                    Change the test behaviour with the controls below.
+                </span>
+                For more information, checkout the <a href="https://github.com/os-autoinst/openQA/blob/master/docs/UsersGuide.asciidoc#developer-mode" target="blank">documentation</a>.
             </p>
             <div class="form-group row">
                 <div class="col-sm-5">
@@ -70,7 +73,8 @@
                     <%= help_popover('Help for <i>pause test execution</i>' => '
                         <p>
                             Pauses the test execution at a specific module.
-                            The test can then be accessed via VNC for further investigation.
+                            The SUT/VM itself is not paused. So it can be accessed via
+                            VNC for further investigation.
                         </p>
                         <p>Resuming the job after it has been paused is possible.</p>
                         <p>A paused job still has the <code>MAX_JOB_TIME</code> constraint to be applied.</p>')
@@ -86,6 +90,7 @@
                     <%= help_popover('Help for <i>pause test execution</i>' => '
                         <p>
                             Pauses the test execution on the next <code>assert_screen</code> timeout.
+                            The SUT/VM itself is not paused.
                         </p>
                         <p>On resume, the needles will be reloaded and the assertion is tried again.</p>
                         <p>A paused job still has the <code>MAX_JOB_TIME</code> constraint to be applied.</p>')
@@ -106,18 +111,21 @@
                     <i class="far fa-stop-circle"></i> Cancel job
                 </a>
                 <a href="#" onclick="resumeTestExecution(); return false;"
-                    class="btn btn-secondary developer-mode-element" data-visible-on="isPaused">
+                    class="btn btn-secondary developer-mode-element" data-visible-on="isPaused"
+                    data-toggle="tooltip" data-placement="bottom" title="Resumes the test execution; new/updated needles are loaded before continuing">
                     <i class="far fa-play-circle"></i> Resume test execution
                 </a>
                 <a href="<%= url_for('edit_test', testid => $testid) %>"
                     class="btn btn-secondary developer-mode-element"
-                    data-visible-on="needleEditorReady">
+                    data-visible-on="needleEditorReady"
+                    data-toggle="tooltip" data-placement="bottom" title="Allows creating/updating a needle from the latest screenshot/match (going back to the details to select a particlar screenshot is of course possible as well)">
                     <i class="fa fa-thumbtack"></i>
                     Open needle editor
                 </a>
                 % if (app->mode eq 'development') {
                     <a href="<%= url_for('developer_ws_console')->query({proxy => 1}) %>" target="blank"
-                        class="btn btn-secondary developer-mode-element" data-visible-on="ownSession">
+                       class="btn btn-secondary developer-mode-element" data-visible-on="ownSession"
+                       data-toggle="tooltip" data-placement="bottom" title="Opens a console intended for developing the developer mode itself">
                         <i class="fas fa-terminal"></i> Open console
                     </a>
                 % }
