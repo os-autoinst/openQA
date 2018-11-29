@@ -81,6 +81,7 @@ In case you need to migrate job groups, test suites, use dump_templates and
 load_templates scripts accordingly.
 
 == Steps to debug developer mode setup
+[id="debugdevelmode"]
 This is basically a checklist to go through in case the developer mode is broken in your setup:
 
 . Be sure to have everything up to date. That includes relevant packages on the
