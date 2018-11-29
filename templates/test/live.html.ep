@@ -85,19 +85,23 @@
                 </div>
                 <div class="col-sm-5">
                     <label for="developer-pause-on-timeout" class="col-form-label">
-                        Pause on <code>assert_screen</code> timeout
+                        Pause on screen mismatch
                     </label>
                     <%= help_popover('Help for <i>pause test execution</i>' => '
                         <p>
-                            Pauses the test execution on the next <code>assert_screen</code> timeout.
-                            The SUT/VM itself is not paused.
+                            Pauses the test execution on the next <code>assert_screen</code> or <code>check_screen</code>
+                            timeout. The SUT/VM itself is not paused.
                         </p>
                         <p>On resume, the needles will be reloaded and the assertion is tried again.</p>
                         <p>A paused job still has the <code>MAX_JOB_TIME</code> constraint to be applied.</p>')
                     %>
                 </div>
                 <div class="col-sm-7">
-                    <input type="checkbox" id="developer-pause-on-timeout">
+                    <select class="custom-select" id="developer-pause-on-mismatch">
+                        <option value="fail" selected style="font-style: italic;">Fail on mismatch as usual</option>
+                        <option value="assert_screen"><code>assert_screen</code> timeout</option>
+                        <option value="check_screen"><code>assert_screen</code> and <code>check_screen</code> timeout</option>
+                    </select>
                 </div>
             </div>
             <hr>

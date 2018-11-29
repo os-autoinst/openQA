@@ -248,12 +248,12 @@ subtest 'pause at assert_screen timeout' => sub {
 
     # send command to pause on assert_screen timeout
     my $command_input = $driver->find_element('#msg');
-    $command_input->send_keys('{"cmd":"set_pause_on_assert_screen_timeout","flag":true}');
+    $command_input->send_keys('{"cmd":"set_pause_on_screen_mismatch","pause_on":"assert_screen"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
         $driver,
-        qr/\"set_pause_on_assert_screen_timeout\":true/,
-        'response to set_pause_on_assert_screen_timeout'
+        qr/\"set_pause_on_screen_mismatch\":\"assert_screen\"/,
+        'response to set_pause_on_screen_mismatch'
     );
 
     # skip timeout
@@ -384,7 +384,7 @@ subtest 'developer session visible in live view' => sub {
 
     my @module_options = $driver->find_elements('#developer-pause-at-module option');
     my @module_names   = map { $_->get_text() } @module_options;
-    is_deeply(\@module_names, ['Do not pause', 'boot', 'shutdown',], 'module');
+    is_deeply(\@module_names, ['Do not pause at a certain module', 'boot', 'shutdown'], 'module');
 };
 
 subtest 'status-only route accessible for other users' => sub {

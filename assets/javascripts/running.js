@@ -340,7 +340,7 @@ var developerMode = {
     // state of the test execution (comes from os-autoinst cmd srv through the openQA ws proxy)
     currentModule: undefined,               // name of the current module, eg. "installation-welcome"
     moduleToPauseAt: undefined,             // name of the module to pause at, eg. "installation-welcome"
-    pauseAtTimeout: undefined,              // whether to pause on assert_screen timeout
+    pauseOnScreenMismatch: undefined,       // 'assert_screen' (to pause on assert_screen) or 'check_screen' (to pause on assert/check_screen)
     isPaused: undefined,                    // if paused the reason why as a string; otherwise something which evaluates to false
     currentApiFunction: undefined,          // the currently executed API function (eg. assert_screen)
     outstandingImagesToUpload: undefined,   // number of images which still need to be uploaded by the worker
@@ -437,7 +437,7 @@ function setupDeveloperPanel() {
     });
 
     // add handler for static form elements
-    $('#developer-pause-on-timeout').on('click', handlePauseAtTimeoutToggled);
+    document.getElementById('developer-pause-on-mismatch').onchange = handlePauseOnMismatchSelected;
 
     updateDeveloperPanel();
     setupWebsocketConnection();
@@ -582,8 +582,13 @@ function updateDeveloperPanel() {
         }
     }
     // -> update whether the test will pause on assert screen timeout
-    if (developerMode.pauseAtTimeout !== undefined) {
-        $('#developer-pause-on-timeout').prop('checked', developerMode.pauseAtTimeout);
+    var pauseOnMismatchSelect = document.getElementById('developer-pause-on-mismatch');
+    if (developerMode.pauseOnScreenMismatch === 'assert_screen') {
+        pauseOnMismatchSelect.selectedIndex = 1; // "assert_screen timeout" option
+    } else if (developerMode.pauseOnScreenMismatch === 'check_screen') {
+        pauseOnMismatchSelect.selectedIndex = 2; // "assert_screen and check_screen timeout" option
+    } else if (developerMode.pauseOnScreenMismatch === false) {
+        pauseOnMismatchSelect.selectedIndex = 0; // "Fail on mismatch as usual" option
     }
 }
 
@@ -609,25 +614,33 @@ function handleModuleToPauseAtSelected() {
     }
 }
 
-function handlePauseAtTimeoutToggled() {
-    // skip if not owning development session or pauseAtTimeout is unknown
-    if (!developerMode.ownSession || developerMode.pauseAtTimeout === undefined) {
+function handlePauseOnMismatchSelected() {
+    // skip if not owning development session or pauseOnScreenMismatch is unknown
+    if (!developerMode.ownSession || developerMode.pauseOnScreenMismatch === undefined) {
         return;
     }
 
-    var pauseAtTimeoutCheckboxChecked = $('#developer-pause-on-timeout').prop('checked');
-    if (developerMode.pauseAtTimeout !== pauseAtTimeoutCheckboxChecked) {
-        sendWsCommand({
-            cmd: 'set_pause_on_assert_screen_timeout',
-            flag: pauseAtTimeoutCheckboxChecked,
-        });
+    var selectedValue = $('#developer-pause-on-mismatch').val();
+    var pauseOn = undefined;
+    switch(selectedValue) {
+        case "fail":
+            pauseOn = null;
+            break;
+        case "check_screen":
+        case "assert_screen":
+            pauseOn = selectedValue;
+            break;
     }
+    sendWsCommand({
+        cmd: 'set_pause_on_screen_mismatch',
+        pause_on: pauseOn,
+    });
 }
 
 // submits the selected values which differ from the server's state
 function submitCurrentSelection() {
     handleModuleToPauseAtSelected();
-    handlePauseAtTimeoutToggled();
+    handlePauseOnMismatchSelected();
 }
 
 // ensures the websocket connection is closed
@@ -794,12 +807,12 @@ var messageToStatusVariable = [
         statusVar: 'moduleToPauseAt',
     },
     {
-        msg: 'pause_on_assert_screen_timeout',
-        statusVar: 'pauseAtTimeout',
+        msg: 'pause_on_screen_mismatch',
+        statusVar: 'pauseOnScreenMismatch',
     },
     {
-        msg: 'set_pause_on_assert_screen_timeout',
-        statusVar: 'pauseAtTimeout',
+        msg: 'set_pause_on_screen_mismatch',
+        statusVar: 'pauseOnScreenMismatch',
     },
     {
         msg: 'current_test_full_name',
