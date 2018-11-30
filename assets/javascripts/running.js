@@ -342,6 +342,7 @@ var developerMode = {
     moduleToPauseAt: undefined,             // name of the module to pause at, eg. "installation-welcome"
     pauseAtTimeout: undefined,              // whether to pause on assert_screen timeout
     isPaused: undefined,                    // if paused the reason why as a string; otherwise something which evaluates to false
+    currentApiFunction: undefined,          // the currently executed API function (eg. assert_screen)
     outstandingImagesToUpload: undefined,   // number of images which still need to be uploaded by the worker
     outstandingFilesToUpload: undefined,    // number of other files which still need to be uploaded by the worker
     uploadingUpToCurrentModule: undefined,  // whether the worker will upload up to the current module (happens when paused in the middle of a module)
@@ -364,6 +365,11 @@ var developerMode = {
             this.uploadingUpToCurrentModule &&
             this.outstandingImagesToUpload === 0 &&
             this.outstandingFilesToUpload === 0;
+    },
+
+    // returns whether it is possible to skip the timeout
+    canSkipTimeout: function() {
+        return this.ownSession && !this.isPaused && (this.currentApiFunction === 'assert_screen' || this.currentApiFunction === 'check_screen');
     },
 
     // returns the specified property evaluating possibly assigned functions
@@ -839,6 +845,10 @@ var messageToStatusVariable = [
         msg: 'upload_up_to_current_module',
         statusVar: 'uploadingUpToCurrentModule',
     },
+    {
+        msg: 'current_api_function',
+        statusVar: 'currentApiFunction',
+    },
 ];
 
 // handles messages received via web socket connection
@@ -937,6 +947,14 @@ function sendWsCommand(obj) {
 // resumes the test execution (if currently paused)
 function resumeTestExecution() {
     sendWsCommand({ cmd: "resume_test_execution" });
+}
+
+// sets the timeout of the currently ongoing assert/check_screen to zero
+function skipTimeout() {
+    sendWsCommand({
+        cmd: "set_assert_screen_timeout",
+        timeout: 0,
+    });
 }
 
 // starts the developer session (if not already done yet)

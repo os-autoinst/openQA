@@ -161,6 +161,7 @@ my $JOB_SETUP
   . 'FLAVOR=flavor BUILD=1 MACHINE=coolone QEMU_NO_TABLET=1 INTEGRATION_TESTS=1 '
   . 'QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=core PUBLISH_HDD_1=core-hdd.qcow2 '
   . 'TESTING_ASSERT_SCREEN_TIMEOUT=1';
+# setting TESTING_ASSERT_SCREEN_TIMEOUT is important here (see os-autoinst/t/data/tests/tests/boot.pm)
 
 subtest 'schedule job' => sub {
     OpenQA::Test::FullstackUtils::client_call("jobs post $JOB_SETUP");
@@ -184,7 +185,9 @@ my $on_prompt_needle         = $needle_dir . '/boot-on_prompt';
 my $on_prompt_needle_renamed = $needle_dir . '/../disabled_needles/boot-on_prompt';
 note('renaming needles for on_prompt to ' . $on_prompt_needle_renamed . '.{json,png}');
 for my $ext (qw(.json .png)) {
-    ok(rename($on_prompt_needle . $ext => $on_prompt_needle_renamed . $ext), 'can rename needle ' . $ext);
+    ok(-f $on_prompt_needle_renamed . $ext
+          or rename($on_prompt_needle . $ext => $on_prompt_needle_renamed . $ext),
+        'can rename needle ' . $ext);
 }
 
 sub start_worker {
@@ -236,7 +239,7 @@ my $first_tab = $driver->get_current_window_handle();
 my $second_tab;
 
 subtest 'pause at assert_screen timeout' => sub {
-    # send command to pause on assert_screen timeout (hopefully the test wasn't so fast that it already failed)
+    # send command to pause on assert_screen timeout
     my $command_input = $driver->find_element('#msg');
     $command_input->send_keys('{"cmd":"set_pause_on_assert_screen_timeout","flag":true}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
@@ -244,6 +247,15 @@ subtest 'pause at assert_screen timeout' => sub {
         $driver,
         qr/\"set_pause_on_assert_screen_timeout\":true/,
         'response to set_pause_on_assert_screen_timeout'
+    );
+
+    # skip timeout
+    $command_input->send_keys('{"cmd":"set_assert_screen_timeout","timeout":0}');
+    $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+        $driver,
+        qr/\"set_assert_screen_timeout\":0/,
+        'response to set_assert_screen_timeout'
     );
 
     # wait until test paused
@@ -258,6 +270,15 @@ subtest 'pause at assert_screen timeout' => sub {
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message($driver,
         qr/\"resume_test_execution\":/, 'resume');
+
+    # skip timeout (again)
+    $command_input->send_keys('{"cmd":"set_assert_screen_timeout","timeout":0}');
+    $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+        $driver,
+        qr/\"set_assert_screen_timeout\":0/,
+        'response to set_assert_screen_timeout'
+    );
 
     # wait until test is paused (again)
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
