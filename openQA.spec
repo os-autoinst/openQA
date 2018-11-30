@@ -34,7 +34,7 @@
 %bcond_with tests
 %endif
 # runtime requirements that also the testsuite needs
-%define t_requires perl(DBD::Pg) perl(DBIx::Class) perl(Config::IniFiles) perl(SQL::Translator) perl(Date::Format) perl(File::Copy::Recursive) perl(DateTime::Format::Pg) perl(Net::OpenID::Consumer) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) perl(aliased) perl(Config::Tiny) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(IO::Socket::SSL) perl(Data::Dump) perl(DBIx::Class::OptimisticLocking) perl(Text::Markdown) perl(Net::DBus) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(Mojo::RabbitMQ::Client) perl(BSD::Resource) perl(Cpanel::JSON::XS) perl(Pod::POM) perl(Mojo::IOLoop::ReadWriteProcess) perl(Minion) perl(Mojo::Pg) perl(Mojo::SQLite) perl(Minion::Backend::SQLite)
+%define t_requires perl(DBD::Pg) perl(DBIx::Class) perl(Config::IniFiles) perl(SQL::Translator) perl(Date::Format) perl(File::Copy::Recursive) perl(DateTime::Format::Pg) perl(Net::OpenID::Consumer) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) perl(aliased) perl(Config::Tiny) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(IO::Socket::SSL) perl(Data::Dump) perl(DBIx::Class::OptimisticLocking) perl(Text::Markdown) perl(Net::DBus) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(Mojo::RabbitMQ::Client) perl(BSD::Resource) perl(Cpanel::JSON::XS) perl(Pod::POM) perl(Mojo::IOLoop::ReadWriteProcess) perl(Minion) perl(Mojo::Pg) perl(Mojo::SQLite) perl(Minion::Backend::SQLite) perl(Perl::Critic::Freenode)
 Name:           openQA
 Version:        4.6
 Release:        0
@@ -172,7 +172,6 @@ Requires:       perl(Cpanel::JSON::XS)
 Requires:       perl(Data::Dump)
 Requires:       perl(Getopt::Long)
 Requires:       perl(IO::Socket::SSL) >= 2.009
-Requires:       perl(JSON)
 Requires:       perl(LWP::UserAgent)
 Requires:       perl(Mojolicious)
 Requires:       perl(Try::Tiny)
