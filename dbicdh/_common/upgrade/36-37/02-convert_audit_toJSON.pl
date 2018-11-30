@@ -17,7 +17,8 @@ use strict;
 use warnings;
 use OpenQA::Schema;
 use Safe;
-use JSON ();
+use Mojo::JSON;    # booleans
+use Cpanel::JSON::XS ();
 
 sub {
     my $schema = shift;
@@ -30,7 +31,7 @@ sub {
     $cpt->permit_only(':base_core', ':base_mem', ':base_orig');
 
     # allow nonref to allow encoding of scalars
-    my $json = JSON->new();
+    my $json = Cpanel::JSON::XS->new();
     $json->allow_nonref(1);
 
     while (my $event = $event_data->next) {

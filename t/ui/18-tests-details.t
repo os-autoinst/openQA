@@ -27,7 +27,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
 use Test::Warnings ':all';
-use JSON;
+use Mojo::JSON qw(decode_json encode_json);
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;

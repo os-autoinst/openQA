@@ -31,7 +31,7 @@ use OpenQA::Test::Case;
 use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::ResourceAllocator;
-use JSON qw(decode_json);
+use Mojo::JSON qw(decode_json);
 
 my $test_case;
 my $t;

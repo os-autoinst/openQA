@@ -70,6 +70,8 @@ use Data::Dump qw(dd pp);
 use Mojo::Util qw(decamelize);
 use Mojo::URL;
 use OpenQA::Client;
+use Mojo::JSON;    # booleans
+use Cpanel::JSON::XS ();
 
 use Getopt::Long;
 
@@ -95,10 +97,9 @@ die "Data file not found\n" unless $datafile && -r $datafile;
 my $info;
 
 if ($datafile =~ /\.json$/) {
-    use JSON;
     local $/;
     open(my $fh, '<', $datafile);
-    $info = JSON->new->relaxed->decode(<$fh>);
+    $info = Cpanel::JSON::XS->new->relaxed->decode(<$fh>);
     close $fh;
     dd $info;
 }
