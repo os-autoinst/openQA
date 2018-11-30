@@ -13,10 +13,9 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-# An openQA plugin that emits fedmsgs for certain openQA events (by shadowing
-# fedmsg internal events). See http://www.fedmsg.com for more on fedmsg.
-# Currently quite specific to Fedora usage. Requires daemonize and
-# fedmsg-logger.
+# An openQA plugin that emits fedmsgs for certain openQA Mojo events.
+# See http://www.fedmsg.com for more on fedmsg. Currently quite
+# specific to Fedora usage. Requires daemonize and fedmsg-logger-3.
 
 package OpenQA::WebAPI::Plugin::Fedmsg;
 use Mojo::Base 'Mojolicious::Plugin';
@@ -73,8 +72,8 @@ sub log_event {
     # and we daemonize so we don't block until the message is sent (which can
     # cause problems when sending hundreds of messages on ISO post)
     my @command = (
-        "/usr/sbin/daemonize", "/usr/bin/fedmsg-logger", "--cert-prefix=openqa", "--modname=openqa",
-        "--topic=$event",      "--json-input",           "--message=$event_data"
+        "/usr/sbin/daemonize", "/usr/bin/fedmsg-logger-3", "--cert-prefix=openqa", "--modname=openqa",
+        "--topic=$event",      "--json-input",             "--message=$event_data"
     );
     my ($stdin, $stderr, $output) = (undef, undef, undef);
     IPC::Run::run(\@command, \$stdin, \$output, \$stderr);
@@ -213,8 +212,8 @@ sub log_event_ci_standard {
     # finally, send the message
     OpenQA::Utils::log_debug("Sending standardized fedmsg for $event");
     my @command = (
-        "/usr/sbin/daemonize", "/usr/bin/fedmsg-logger", "--cert-prefix=ci", "--modname=ci",
-        "--topic=$topic",      "--json-input",           "--message=$msg_json"
+        "/usr/sbin/daemonize", "/usr/bin/fedmsg-logger-3", "--cert-prefix=ci", "--modname=ci",
+        "--topic=$topic",      "--json-input",             "--message=$msg_json"
     );
     my ($stdin, $stderr, $output) = (undef, undef, undef);
     IPC::Run::run(\@command, \$stdin, \$output, \$stderr);

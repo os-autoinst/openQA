@@ -85,8 +85,8 @@ my $settings = {
     ARCH        => 'x86_64'
 };
 
-my $commonexpr = '/usr/sbin/daemonize /usr/bin/fedmsg-logger --cert-prefix=openqa --modname=openqa';
-my $commonci   = '/usr/sbin/daemonize /usr/bin/fedmsg-logger --cert-prefix=ci --modname=ci';
+my $commonexpr = '/usr/sbin/daemonize /usr/bin/fedmsg-logger-3 --cert-prefix=openqa --modname=openqa';
+my $commonci   = '/usr/sbin/daemonize /usr/bin/fedmsg-logger-3 --cert-prefix=ci --modname=ci';
 # create a job via API
 my $post = $t->post_ok("/api/v1/jobs" => form => $settings)->status_is(200);
 my $job = $post->tx->res->json->{id};
@@ -124,7 +124,7 @@ is(
 
 # set the job as done (implicit failed, it seems) via API
 $post = $t->post_ok("/api/v1/jobs/" . $job . "/set_done")->status_is(200);
-# check plugin called fedmsg-logger correctly
+# check plugin called fedmsg-logger-3 correctly
 is(
     $args[0],
     $commonexpr
@@ -160,7 +160,7 @@ is(
 # duplicate the job via API
 $post = $t->post_ok("/api/v1/jobs/" . $job . "/duplicate")->status_is(200);
 my $newjob = $post->tx->res->json->{id};
-# check plugin called fedmsg-logger correctly
+# check plugin called fedmsg-logger-3 correctly
 is(
     $args[0],
     $commonexpr
@@ -196,7 +196,7 @@ is(
 
 # cancel the new job via API
 $post = $t->post_ok("/api/v1/jobs/" . $newjob . "/cancel")->status_is(200);
-# check plugin called fedmsg-logger correctly
+# check plugin called fedmsg-logger-3 correctly
 is(
     $args[0],
     $commonexpr
@@ -234,7 +234,7 @@ my $newerjob = $post->tx->res->json->{id};
 
 # set the job as done (explicit passed) via API
 $post = $t->post_ok("/api/v1/jobs/" . $newerjob . "/set_done?result=passed")->status_is(200);
-# check plugin called fedmsg-logger correctly
+# check plugin called fedmsg-logger-3 correctly
 is(
     $args[0],
     $commonexpr
@@ -271,7 +271,7 @@ is(
 $post = $t->post_ok("/api/v1/jobs/$job/comments" => form => {text => "test comment"})->status_is(200);
 # stash the comment ID
 my $comment = $post->tx->res->json->{id};
-# check plugin called fedmsg-logger correctly
+# check plugin called fedmsg-logger-3 correctly
 my $dateexpr = '\d{4}-\d{1,2}-\d{1,2}T\d{2}:\d{2}:\d{2}Z';
 like(
     $args[0],
@@ -283,7 +283,7 @@ qr/$commonexpr --topic=comment.create --json-input --message=\{"created":"$datee
 
 # update job comment via API
 my $put = $t->put_ok("/api/v1/jobs/$job/comments/$comment" => form => {text => "updated comment"})->status_is(200);
-# check plugin called fedmsg-logger correctly
+# check plugin called fedmsg-logger-3 correctly
 like(
     $args[0],
 qr/$commonexpr --topic=comment.update --json-input --message=\{"created":"$dateexpr","group_id":null,"id":$comment,"job_id":$job,"text":"updated comment","updated":"$dateexpr","user":"perci"\}/,
