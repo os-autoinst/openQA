@@ -647,6 +647,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 </ul>
 </li>
+<li><a href="#_developer_mode">Developer mode</a>
+<ul class="sectlevel2">
+<li><a href="#_workflow_for_creating_or_updating_needles">Workflow for creating or updating needles</a></li>
+</ul>
+</li>
 <li><a href="#_where_to_now_2">Where to now?</a></li>
 </ul>
 </li>
@@ -3257,6 +3262,68 @@ ISO_1_DECOMPRESS_URL=http://host/foo2.iso.xz and ISO_1=foo.iso</p>
 </div>
 </div>
 <div class="sect1">
+<h2 id="_developer_mode">Developer mode</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The developer mode allows to:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Create or update needles from assert_screen mismatches ("re-needling")</p>
+</li>
+<li>
+<p>Pause the test execution (at a certain module) for manual investigation of the SUT</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>It can be accessed via the "Live View" tab of a running test. Only registered
+users can take control over a tests. Basic instructions and buttons providing further
+information about the different options are already contained on the web page itself.
+So I am not repeating that information here and rather explain the overall workflow.</p>
+</div>
+<div class="paragraph">
+<p>In case the developer mode in not working on your instance, try to follow the
+<a href="#debugdevelmode">steps for debugging the developer mode under 'Pitfalls'</a>.</p>
+</div>
+<div class="sect2">
+<h3 id="_workflow_for_creating_or_updating_needles">Workflow for creating or updating needles</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>In case a new needles should be created, add the corresponding +assert_screen+s to
+your test.</p>
+</li>
+<li>
+<p>Start the test with the +assert_screen+s which are supposed to fail.</p>
+</li>
+<li>
+<p>Select "Pause on assert_screen failure and confirm.</p>
+</li>
+<li>
+<p>Wait until the test has paused. There is a button to skip the current timeout to speed
+this up.</p>
+</li>
+<li>
+<p>A button for acessing the needle editor should occour. It may take a few seconds till
+it occurs because the screenshots created so far need to be uploaded from the worker to
+the web UI. Of course it is also possible to go back to the "Details" tab to create a new
+needle from any previous screenshot/match available.</p>
+</li>
+<li>
+<p>After creating the new needle, click the resume button to test whether it worked.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Steps 4. to 6. can be repeated for further +assert_screen+s/needles without restarting the
+test.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_where_to_now_2">Where to now?</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -5186,7 +5253,7 @@ load_templates scripts accordingly.</p>
 <div class="sect1">
 <h2 id="_steps_to_debug_developer_mode_setup">Steps to debug developer mode setup</h2>
 <div class="sectionbody">
-<div class="paragraph">
+<div id="debugdevelmode" class="paragraph">
 <p>This is basically a checklist to go through in case the developer mode is broken in your setup:</p>
 </div>
 <div class="olist arabic">
@@ -6536,7 +6603,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-12-03 22:26:24 UTC
+Last updated 2018-12-03 22:45:46 UTC
 </div>
 </div>
 </body>
