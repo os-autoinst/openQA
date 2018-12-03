@@ -4310,6 +4310,28 @@ from a virtio serial port. A distribution specific call back will be made
 which allows os-autoinst to log into a serial terminal session running on the
 SUT. Once select_console returns you should be logged into a TTY as root.</p>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+for <a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">os-autoinst-distri-opensuse</a>
+tests instead of using <code>select_console('root-virtio-terminal')</code> directly is
+the preferred way to use wrapper <code>select_serial_terminal()</code>, which handles all
+backends:
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="perl"><span></span><span class="tok-c1"># Selects a virtio based serial terminal if available or fallback to the best suitable console</span>
+<span class="tok-c1"># for the current backend.</span>
+<span class="tok-n">select_serial_terminal</span><span class="tok-p">();</span></code></pre>
+</div>
+</div>
 <div class="paragraph">
 <p>If you are struggling to visualise what is happening, imagine SSH-ing into a
 remote machine as root, you can then type in commands and read the results as
@@ -6514,7 +6536,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-12-03 09:49:25 UTC
+Last updated 2018-12-03 22:26:24 UTC
 </div>
 </div>
 </body>
