@@ -322,6 +322,37 @@ uncompressed by openQA. Specify the non-suffixed parameter additionally to
 provide a rename target, for example
 ISO_1_DECOMPRESS_URL=http://host/foo2.iso.xz and ISO_1=foo.iso
 
+== Developer mode ==
+
+The developer mode allows to:
+
+* Create or update needles from +assert_screen+ mismatches ("re-needling")
+* Pause the test execution (at a certain module) for manual investigation of the SUT
+
+It can be accessed via the "Live View" tab of a running test. Only registered
+users can take control over a tests. Basic instructions and buttons providing further
+information about the different options are already contained on the web page itself.
+So I am not repeating that information here and rather explain the overall workflow.
+
+In case the developer mode in not working on your instance, try to follow the
+<<Pitfalls.asciidoc#debugdevelmode,steps for debugging the developer mode under 'Pitfalls'>>.
+
+=== Workflow for creating or updating needles ===
+
+1. In case a new needles should be created, add the corresponding +assert_screen+s to
+   your test.
+2. Start the test with the +assert_screen+s which are supposed to fail.
+3. Select "Pause on +assert_screen+ failure and confirm.
+4. Wait until the test has paused. There is a button to skip the current timeout to speed
+   this up.
+5. A button for acessing the needle editor should occour. It may take a few seconds till
+   it occurs because the screenshots created so far need to be uploaded from the worker to
+   the web UI. Of course it is also possible to go back to the "Details" tab to create a new
+   needle from any previous screenshot/match available.
+6. After creating the new needle, click the resume button to test whether it worked.
+
+Steps 4. to 6. can be repeated for further +assert_screen+s/needles without restarting the
+test.
 
 == Where to now?
 
