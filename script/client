@@ -137,7 +137,8 @@ use warnings;
 use FindBin;
 BEGIN { unshift @INC, "$FindBin::RealBin/../lib" }
 
-use JSON;
+use Mojo::JSON;    # booleans
+use Cpanel::JSON::XS ();
 use Data::Dump;
 use Mojo::URL;
 use OpenQA::Client;
@@ -162,7 +163,7 @@ sub handle_result {
     if ($res->code == 200) {
         my $json = $res->json;
         if ($options{'json-output'}) {
-            print JSON->new->pretty->encode($json);
+            print Cpanel::JSON::XS->new->pretty->encode($json);
         }
         else {
             dd($json || $res->body);
@@ -173,7 +174,7 @@ sub handle_result {
     printf(STDERR "ERROR: %s - %s\n", $res->code, $res->{error}->{message});
     if ($res->body) {
         if ($options{json}) {
-            print JSON->new->pretty->encode($res->json);
+            print Cpanel::JSON::XS->new->pretty->encode($res->json);
         }
         else {
             dd($res->json || $res->body);

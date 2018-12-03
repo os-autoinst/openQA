@@ -22,8 +22,7 @@ use Mojo::URL;
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
-use List::MoreUtils;
-use JSON 'decode_json';
+use Mojo::JSON 'decode_json';
 
 # notes: * routes in this package are served by LiveViewHandler rather than the regular WebAPI server
 #        * using prefork is currently not possible (see notes in send_message_to_java_script_clients and
@@ -428,8 +427,7 @@ sub remove_java_script_transaction {
     my ($self, $job_id, $container, $transaction) = @_;
 
     my $transactions = $container->{$job_id} or return;
-    my $transaction_index = List::MoreUtils::first_index { $_ == $transaction } @$transactions;
-    splice(@$transactions, $transaction_index, 1) if ($transaction_index >= 0);
+    @$transactions = map { $_ == $transaction ? () : $_ } @$transactions;
 }
 
 # note: functions above are just helper, the methods which are actually registered routes start here

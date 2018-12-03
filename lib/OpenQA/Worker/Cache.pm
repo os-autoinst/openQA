@@ -24,7 +24,6 @@ use Mojo::UserAgent;
 use OpenQA::Utils
   qw(log_error log_info log_debug get_channel_handle add_log_channel append_channel_to_defaults remove_channel_from_defaults);
 use OpenQA::Worker::Common;
-use List::MoreUtils;
 use Mojo::SQLite;
 use Mojo::File 'path';
 use Mojo::Base -base;

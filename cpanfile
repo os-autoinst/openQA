@@ -40,7 +40,6 @@ requires 'IPC::Run';
 requires 'Cpanel::JSON::XS';
 requires 'JavaScript::Minifier::XS', '>= 0.11';
 requires 'LWP::UserAgent';
-requires 'List::MoreUtils';
 requires 'Minion', '9.0';
 requires 'Minion::Backend::Pg';
 requires 'Minion::Backend::SQLite';
@@ -96,6 +95,7 @@ requires 'POSIX';
 
 on 'test' => sub {
   requires 'Perl::Critic';
+  requires 'Perl::Critic::Freenode';
   requires 'Perl::Tidy', '>= 20180101, != 20180219';
   requires 'Selenium::Remote::Driver', '>= 1.23';
   requires 'Selenium::Remote::WDKeys';

@@ -84,7 +84,7 @@ install:
 .PHONY: checkstyle
 checkstyle:
 ifneq ($(CHECKSTYLE),0)
-	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic --gentle lib
+	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic lib
 endif
 
 .PHONY: test

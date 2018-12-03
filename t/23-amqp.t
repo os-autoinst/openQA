@@ -35,7 +35,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use Mojo::File qw(tempdir path);
-use JSON qw(decode_json);
+use Mojo::JSON qw(decode_json);
 use OpenQA::WebAPI::Plugin::AMQP;
 
 my %published;

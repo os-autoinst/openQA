@@ -114,7 +114,8 @@ use Getopt::Long;
 use LWP::UserAgent;
 Getopt::Long::Configure("no_ignore_case");
 use Mojo::URL;
-use JSON;
+use Mojo::JSON;    # booleans
+use Cpanel::JSON::XS;
 use FindBin;
 use lib "$FindBin::RealBin/../lib";
 use OpenQA::Client;
@@ -204,7 +205,7 @@ sub get_job {
         exit 1;
     }
 
-    print JSON->new->pretty->encode($job) if ($options{verbose});
+    print Cpanel::JSON::XS->new->pretty->encode($job) if ($options{verbose});
     return $job;
 }
 
@@ -290,7 +291,7 @@ sub clone_job {
     }
     clone_job_apply_settings(\@ARGV, $depth, \%settings, \%options);
 
-    print JSON->new->pretty->encode(\%settings) if ($options{verbose});
+    print Cpanel::JSON::XS->new->pretty->encode(\%settings) if ($options{verbose});
     $url->query(%settings);
     my $tx = $local->max_redirects(3)->post($url);
     if (!$tx->error) {

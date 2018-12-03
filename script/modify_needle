@@ -43,7 +43,9 @@ print help
 
 use strict;
 use warnings;
-use JSON;
+
+use Mojo::JSON;    # booleans
+use Cpanel::JSON::XS ();
 use Getopt::Long;
 
 sub usage($) {
@@ -65,7 +67,7 @@ for my $needle (@ARGV) {
 
     local $/;
     open(my $fh, '<', $needle) || die "can't open $needle";
-    my $info = JSON->new->relaxed->decode(<$fh>);
+    my $info = Cpanel::JSON::XS->new->relaxed->decode(<$fh>);
     close $fh;
 
     my $changed = 0;
@@ -78,6 +80,6 @@ for my $needle (@ARGV) {
     next unless $changed;
     
     open($fh, '>', $needle) || die "can't open $needle";
-    print $fh JSON->new->pretty->encode($info);
+    print $fh Cpanel::JSON::XS->new->pretty->encode($info);
     close $fh;
 }

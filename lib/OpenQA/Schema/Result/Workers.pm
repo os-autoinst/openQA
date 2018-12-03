@@ -28,7 +28,7 @@ use OpenQA::Utils 'log_error';
 use OpenQA::IPC;
 use db_helpers;
 use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
-use JSON qw(encode_json decode_json);
+use Mojo::JSON qw(encode_json decode_json);
 
 use constant COMMANDS =>
   qw(quit abort scheduler_abort cancel obsolete livelog_stop livelog_start developer_session_start);
