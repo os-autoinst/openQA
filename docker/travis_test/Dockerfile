@@ -95,6 +95,7 @@ RUN zypper in -y -C \
        'perl(Net::SNMP)' \
        'perl(Net::SSH2)' \
        'perl(Perl::Critic)' \
+       'perl(Perl::Critic::Freenode)' \
        'perl(Perl::Tidy)' \
        'perl(Pod::POM)' \
        'perl(Pod::Coverage)' \
