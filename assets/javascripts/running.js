@@ -330,6 +330,7 @@ var developerMode = {
     hasWsError: false,                      // whether an web socket error occurred (cleared when we finally receive a message from os-autoinst)
     useDeveloperWsRoute: undefined,         // whether the developer web socket route is used
     isConnected: false,                     // whether connected to any web socket route
+    badConfiguration: false,                // whether there's a bad/unrecoverable configuration issue so it makes no sense to continue re-connecting
     ownSession: false,                      // whether the development session belongs to us
     panelExpanded: false,                   // whether the panel is supposed to be expanded
     panelActuallyExpanded: false,           // whether the panel is currently expanded
@@ -352,6 +353,11 @@ var developerMode = {
     develSessionDeveloper: undefined,       // name of the user in possession the development session
     develSessionStartedAt: undefined,       // time stamp when the development session was created
     develSessionTabCount: undefined,        // number of open web socket connections by the developer
+
+    // returns whether we're currently connecting
+    isConnecting: function() {
+        return !this.badConfiguration && !this.isConnected;
+    },
 
     // returns whether there's a development session but it doesn't belong to us
     lockedByOtherDeveloper: function() {
@@ -523,7 +529,9 @@ function updateDeveloperPanel() {
 
     // update status info
     var statusInfo = 'running';
-    if (developerMode.isPaused) {
+    if (developerMode.badConfiguration) {
+        statusInfo = 'configuration issue';
+    } else if (developerMode.isPaused) {
         statusInfo = 'paused';
         if (developerMode.currentModule) {
             statusInfo += ' at module: ' + developerMode.currentModule;
@@ -558,7 +566,7 @@ function updateDeveloperPanel() {
             globalSessionInfoElement.text('Developer session has been opened by ' + developerMode.develSessionDeveloper);
             globalSessionInfoElement.show();
         }
-    } else {
+    } else if (!developerMode.badConfiguration) {
         sessionInfo = 'regular test execution';
         if (developerMode.isAccessible && !developerMode.panelExpanded) {
             sessionInfo += ' - click to expand';
@@ -748,6 +756,11 @@ function setupWebsocketConnection() {
     // ensure previously opened connections are closed
     closeWebsocketConnection();
 
+    // give up re-connecting if there's a configuration issue we can not recover from
+    if (developerMode.badConfiguration) {
+        return;
+    }
+
     var url;
     // determine ws URL
     if ((developerMode.isAccessible && developerMode.useDeveloperWsRoute)) {
@@ -882,6 +895,10 @@ function processWsCommand(obj) {
         if (!testStatus.running && category === 'cmdsrv-connection') {
             console.log('ignoring error from ws proxy: ' + what);
             break;
+        }
+        if (category === 'bad-configuration') {
+            developerMode.badConfiguration = true;
+            somethingChanged = true;
         }
 
         console.log("Error from ws proxy: " + what);

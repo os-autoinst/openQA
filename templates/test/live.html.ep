@@ -11,10 +11,10 @@
                 <strong>Developer mode</strong>
             </div>
             <div class="col-sm-5">
-                <span class="developer-mode-element" data-hidden-on="isConnected">
+                <span class="developer-mode-element" data-visible-on="isConnecting">
                 retrieving status <i class="fas fa-spinner fa-spin fa-lg"></i>
                 </span>
-                <span class="developer-mode-element" id="developer-status-info" data-visible-on="isConnected">
+                <span class="developer-mode-element" id="developer-status-info" data-hidden-on="isConnecting">
                     unknown status
                 </span>
             </div>
@@ -143,8 +143,16 @@
         <div class="developer-mode-element" data-visible-on="lockedByOtherDeveloper">
             Another user has already locked this job.
         </div>
-        <div class="developer-mode-element" data-hidden-on="isConnected">
+        <div class="developer-mode-element" data-visible-on="isConnecting">
             <i class="fas fa-spinner fa-spin fa-lg"></i> <span id="developer-loading-info">establishing connection to backend ...</span>
+            <p>
+                See <a href="http://open.qa/docs/#_steps_to_debug_developer_mode_setup" target="blank">steps to debug developer mode setup</a> if the the connection can
+                not be established in reasonable time.
+            </p>
+        </div>
+        <div id="developer-config-issue-note" class="developer-mode-element" data-visible-on="badConfiguration">
+            The developer mode is not available because of a configuration isse.
+            See <a href="http://open.qa/docs/#_steps_to_debug_developer_mode_setup" target="blank">steps to debug developer mode setup</a>.
         </div>
     </div>
 </div>
