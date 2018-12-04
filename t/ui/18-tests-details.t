@@ -209,9 +209,30 @@ subtest 'render text results' => sub {
         'text results not from parser shown in ordinary preview container'
     );
 # note: check whether the softfailure is unaffected is already done in subtest 'render bugref links in thumbnail text windows'
+
+    subtest 'external table' => sub {
+        my $external_table = $driver->find_element_by_id('external-table');
+        is($external_table->is_displayed(), 0, 'external table not visible by default');
+        $driver->find_element_by_link_text('External results')->click();
+        is($external_table->is_displayed(), 1, 'external table visible after clicking its tab header');
+        my @rows = $driver->find_child_elements($external_table, 'tr');
+        is(scalar @rows, 3, 'external table has 3 rows (heading and 2 results)');
+        my $res1
+          = 'logpackages Some text result from external parser This is a dummy result to test rendering text results from external parsers.';
+        my $res2
+          = qr/logpackages Another text result from external parser Another dummy result to test rendering text results from external parsers\..*/;
+        is($rows[1]->get_text(), $res1, 'first result displayed');
+        like($rows[2]->get_text(), $res2, 'second result displayed');
+
+        $driver->find_element_by_id('external-only-failed-filter')->click();
+        @rows = $driver->find_child_elements($external_table, 'tr');
+        is(scalar @rows,         2,     'passed results filtered out');
+        is($rows[1]->get_text(), $res1, 'softfailure still displayed');
+    };
 };
 
 subtest 'render video link if frametime is available' => sub {
+    $driver->find_element_by_link_text('Details')->click();
     $driver->find_element('[href="#step/bootloader/1"]')->click();
     wait_for_ajax;
     my @links = $driver->find_elements('.step_actions .fa-file-video');

@@ -313,6 +313,8 @@ function handleKeyDownOnTestDetails(e) {
 function setupTab(tabHash) {
     if (tabHash === '#dependencies') {
         setupDependencyGraph();
+    } else if (tabHash === '#external') {
+        setupExternalResults();
     }
     if (tabHash === '#live') {
         setupDeveloperPanel();
@@ -320,6 +322,41 @@ function setupTab(tabHash) {
     } else {
         pauseLiveView();
     }
+}
+
+function setupExternalResults() {
+    var externalTable = $('#external-table');
+    // skip if table is not present (meaning no external results available) or if the table has
+    // already been initialized
+    if (!externalTable.length || externalTable.data('initialized')) {
+        return;
+    }
+
+    // make the table use DataTable
+    externalTable.data('initialized', true);
+    externalTable = externalTable.DataTable({
+        lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+        order: [],
+    });
+
+    // setup filtering
+    var onlyFailedCheckbox = $('#external-only-failed-filter');
+    onlyFailedCheckbox.change(function(event) {
+        externalTable.draw();
+    });
+    $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+        // don't apply filter if checkbox not checked
+        if (!onlyFailedCheckbox.prop('checked')) {
+            return true;
+        }
+        // filter out everything but failures and softfailures
+        var data = externalTable.row(dataIndex).data();
+        if (!data) {
+            return false;
+        }
+        var result = data[2];
+        return result && (result.indexOf('result_fail') > 0 || result.indexOf('result_softfail') > 0);
+    });
 }
 
 function setupResult(state, jobid, status_url, details_url) {
@@ -379,7 +416,7 @@ function setupResult(state, jobid, status_url, details_url) {
   });
 
   // setup result filter, define function to apply filter changes
-  var detailsFilter = $('.details-filter');
+  var detailsFilter = $('#details-filter');
   var detailsNameFilter = $('#details-name-filter');
   var detailsFailedOnlyFilter = $('#details-only-failed-filter');
   var resultsTable = $('#results');

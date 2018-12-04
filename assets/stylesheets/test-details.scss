@@ -84,15 +84,15 @@ div.flags {
 .fa.module_none { color: $color-module-none; }
 .fa.module_passed { color: $color-module-passed !important; }
 .fa.module_softfailed { color: $color-softfailed; }
-.fa.result_failed {color: $color-failed; }
+.fa.result_failed, .fa.result_fail {color: $color-failed; }
 .fa.result_incomplete { color: $color-incomplete; }
 .fa.result_none { color: $color-module-none; }
 .fa.result_obsoleted { color: $color-module-none; }
 .fa.result_parallel_failed { color: $color-module-none; }
 .fa.result_parallel_restarted { color: $color-module-none; }
-.fa.result_passed { color: $color-module-passed !important; }
+.fa.result_passed, .fa.result_ok { color: $color-module-passed !important; }
 .fa.result_skipped { color: $color-module-none; }
-.fa.result_softfailed { color: $color-softfailed; }
+.fa.result_softfailed, .fa.result_softfail { color: $color-softfailed; }
 .fa.result_unknown { color:$color-warning; }
 .fa.result_user_cancelled { color: $color-module-none; }
 .fa.result_user_restarted { color: $color-module-none; }
@@ -285,4 +285,31 @@ ul.modcategory {
 #result_tabs {
     // ensure filter icon and last .nav-item for tabs don't overlap
     padding-right: 40px;
+}
+
+// table for external results
+#external-table {
+    td[colspan="4"] {
+        border-right: 1px solid $table-border-color;
+    }
+    td:nth-child(0n+4) {
+        height: auto;
+        font-family: monospace;
+        text-align: left;
+        background-color: #e8f1f1;
+        max-height: 3.5rem;
+        white-space: pre-wrap;
+    }
+    td.result {
+        text-align: center;
+    }
+    td.result-ok {
+        background-color: $color-ok;
+    }
+    td.result-fail {
+        background-color: $color-failed;
+    }
+    td.result-softfail {
+        background-color: $color-softfailed;
+    }
 }

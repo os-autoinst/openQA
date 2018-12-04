@@ -979,9 +979,10 @@ sub read_test_modules {
     my ($job) = @_;
 
     my $testresultdir = $job->result_dir();
-    return [] unless $testresultdir;
+    return unless $testresultdir;
 
     my $category;
+    my $has_parser_text_results = 0;
     my @modlist;
 
     for my $module (OpenQA::Schema::Result::JobModules::job_modules($job)) {
@@ -989,12 +990,17 @@ sub read_test_modules {
         # add link to $testresultdir/$name*.png via png CGI
         my @details;
 
-        my $num = 1;
+        my $num                           = 1;
+        my $has_module_parser_text_result = 0;
 
         for my $step (@{$module->details}) {
+            my $text   = $step->{text};
+            my $source = $step->{_source};
+
             $step->{num} = $num++;
-            if ($step->{text}) {
-                my $file = path($job->result_dir(), $step->{text});
+            $step->{display_title} = ($text ? $step->{title} : $step->{name}) // '';
+            if ($text) {
+                my $file = path($job->result_dir(), $text);
                 if (-e $file) {
                     log_debug("Reading information from " . encode_json($step));
                     $step->{text_data} = $file->slurp;
@@ -1003,19 +1009,31 @@ sub read_test_modules {
                     log_debug("Cannot read file: $file");
                 }
             }
+
+            $step->{is_parser_text_result} = 0;
+            if ($source && $source eq 'parser' && $text && $step->{text_data}) {
+                $step->{is_parser_text_result} = 1;
+                $has_module_parser_text_result = 1;
+            }
+
+            $step->{resborder} = 'resborder_' . (($step->{result} && !(ref $step->{result})) ? $step->{result} : 'unk');
+
             push(@details, $step);
         }
+
+        $has_parser_text_results = 1 if ($has_module_parser_text_result);
 
         push(
             @modlist,
             {
-                name            => $module->name,
-                result          => $module->result,
-                details         => \@details,
-                milestone       => $module->milestone,
-                important       => $module->important,
-                fatal           => $module->fatal,
-                always_rollback => $module->always_rollback,
+                name                   => $module->name,
+                result                 => $module->result,
+                details                => \@details,
+                milestone              => $module->milestone,
+                important              => $module->important,
+                fatal                  => $module->fatal,
+                always_rollback        => $module->always_rollback,
+                has_parser_text_result => $has_module_parser_text_result,
             });
 
         if (!$category || $category ne $module->category) {
@@ -1025,7 +1043,10 @@ sub read_test_modules {
 
     }
 
-    return \@modlist;
+    return {
+        modules                 => \@modlist,
+        has_parser_text_results => $has_parser_text_results,
+    };
 }
 
 sub wait_with_progress {
