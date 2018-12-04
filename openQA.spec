@@ -174,6 +174,7 @@ Requires:       perl(Getopt::Long)
 Requires:       perl(IO::Socket::SSL) >= 2.009
 Requires:       perl(LWP::UserAgent)
 Requires:       perl(Mojolicious)
+Requires:       perl(Regexp::Common)
 Requires:       perl(Try::Tiny)
 
 %description client
