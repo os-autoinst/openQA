@@ -159,22 +159,18 @@ sub wait_for_developer_console_contains_log_message {
             && $log =~ $regex_closed)
         {
             fail('web socket connection closed prematurely, was waiting for ' . $diag_info);
+            note("developer console contained at this point:\n$log");
             return;
         }
 
-        if ($diag_info eq 'paused') {
-            # when waiting for paused, we will have to wait at least a minute for the first test module to pass
-            # -> so let's try again only all 5 seconds here
-            sleep 5;
-            # -> print updated log so we see what's going on
-            if ($log ne $previous_log) {
-                print("developer console contains:\n$log\n");
-            }
+        # poll less frequently when waiting for paused (might take a minute for the first test module to pass)
+        sleep($diag_info eq 'paused' ? 5 : 1);
+
+        # print updated log so we see what's going on
+        if ($log ne $previous_log) {
+            note("waiting for $diag_info, developer console contains:\n$log");
         }
-        else {
-            # try again in 1 second
-            sleep 1;
-        }
+
         wait_for_ajax;
         javascript_console_has_no_warnings_or_errors($js_erro_check_suffix) or return;
         $previous_log = $log;

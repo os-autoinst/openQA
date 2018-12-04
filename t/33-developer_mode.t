@@ -239,6 +239,13 @@ my $first_tab = $driver->get_current_window_handle();
 my $second_tab;
 
 subtest 'pause at assert_screen timeout' => sub {
+    # wait until asserting 'on_prompt'
+    OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
+        $driver,
+        qr/(\"tags\":\[\"on_prompt\"\]|\"mustmatch\":\"on_prompt\")/,
+        'asserting on_prompt'
+    );
+
     # send command to pause on assert_screen timeout
     my $command_input = $driver->find_element('#msg');
     $command_input->send_keys('{"cmd":"set_pause_on_assert_screen_timeout","flag":true}');
