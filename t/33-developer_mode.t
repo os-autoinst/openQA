@@ -508,8 +508,8 @@ subtest 'test cancelled by quitting the session' => sub {
     $driver->get($job_page_url);
     OpenQA::Test::FullstackUtils::wait_for_result_panel(
         $driver,
-        qr/Result: user_cancelled/,
-        'test 1 has been cancelled'
+        qr/Result: (user_cancelled|passed)/,
+        'test 1 has been cancelled (if it was fast enough to actually pass that is ok, too)'
     );
     ok(-s path($resultdir, '00000', "00000001-$job_name")->make_path->child('autoinst-log.txt'), 'log file generated');
 };
