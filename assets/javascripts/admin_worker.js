@@ -26,7 +26,7 @@ function setupWorkerNeedles() {
 
 function loadWorkerTable() {
   $('#workers').DataTable( {
-      initComplete:  function () {
+      initComplete: function () {
         this.api().columns().every( function () {
             var column = this;
             var colheader = this.header();
@@ -47,9 +47,10 @@ function loadWorkerTable() {
                         .draw();
                 } );
 
-            select.append( '<option value="Online">Online</option>' );
-            select.append( '<option value="Offline">Offline</option>' );
-            select.append( '<option value="Working">Working</option>' );
+            select.append('<option value="Online">Online</option>');
+            select.append('<option value="Offline">Offline</option>');
+            select.append('<option value="Working">Working</option>');
+            select.append('<option value="Broken">Broken</option>');
             select.val('Online');
         } );
         this.api().column(4).search("Online").draw();

@@ -229,6 +229,7 @@ sub _message {
     }
     elsif ($json->{type} eq 'worker_status') {
         my $current_worker_status = $json->{status};
+        my $current_worker_error  = $current_worker_status eq 'broken' ? $json->{reason} : undef;
         my $job_status            = $json->{job}->{state};
         my $jobid                 = $json->{job}->{id};
         my $wid                   = $worker->{id};
@@ -239,14 +240,14 @@ sub _message {
         try {
             app->schema->txn_do(
                 sub {
-                    my $w = app->schema->resultset("Workers")->find($wid);
-                    return unless $w;
-                    log_debug("Updated worker seen from worker_status");
+                    return unless my $w = app->schema->resultset("Workers")->find($wid);
+                    log_debug("Updating worker seen from worker_status");
                     $w->seen;
+                    $w->update({error => $current_worker_error});
                 });
         }
         catch {
-            log_error("Failed updating worker seen status: $_");
+            log_error("Failed updating worker seen and error status: $_");
         };
 
         my $registered_job_id;
@@ -265,7 +266,7 @@ sub _message {
             $ws->tx->send({json => $msg} => sub { log_debug("Sent population to worker: " . pp($msg)) });
         }
         catch {
-            log_debug("Could not be able to send population number to worker: $_");
+            log_debug("Could not send the population number to worker: $_");
         };
 
         try {

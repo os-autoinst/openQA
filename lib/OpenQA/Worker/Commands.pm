@@ -102,11 +102,11 @@ sub websocket_commands {
             state $check_job_running;
             state $job_in_progress;
 
-            # refuse new jobs if caching is not available (this will leave the job in assigned state)
-            my $cache_client = OpenQA::Worker::Cache::Client->new;
-            my $error        = $cache_client->availability_error;
-            if ($error) {
-                log_debug("Refusing 'grab_job', caching not available: $error");
+            # refuse new if worker is in error state (this will leave the job in assigned state)
+            if ($OpenQA::Worker::Common::current_error) {
+                log_debug(
+"Refusing 'grab_job', we are currently unable to do any work: $OpenQA::Worker::Common::current_error"
+                );
                 return;
             }
 

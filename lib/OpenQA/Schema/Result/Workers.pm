@@ -54,6 +54,10 @@ __PACKAGE__->add_columns(
     upload_progress => {
         data_type   => 'jsonb',
         is_nullable => 1,
+    },
+    error => {
+        data_type   => 'text',
+        is_nullable => 1,
     });
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
@@ -83,7 +87,7 @@ sub name {
 }
 
 sub seen {
-    my ($self, $workercaps) = @_;
+    my ($self, $workercaps, $error) = @_;
     $self->update({t_updated => now()});
     $self->update_caps($workercaps) if $workercaps;
 }
@@ -178,15 +182,10 @@ sub currentstep {
 sub status {
     my ($self) = @_;
 
-    return "dead" if ($self->dead);
-
-    my $job = $self->job;
-    if ($job) {
-        return "running";
-    }
-    else {
-        return "idle";
-    }
+    return 'dead'    if ($self->dead);
+    return 'broken'  if ($self->error);
+    return 'running' if ($self->job);
+    return 'idle';
 }
 
 sub connected {
@@ -213,6 +212,7 @@ sub info {
         host     => $self->host,
         instance => $self->instance,
         status   => $self->status,
+        error    => $self->error,
     };
     $settings->{properties} = {};
     for my $p ($self->properties->all) {

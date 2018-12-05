@@ -67,6 +67,7 @@ my $workers = [
         id         => 1,
         instance   => 1,
         connected  => 0,
+        error      => undef,
         websocket  => 0,
         alive      => 1,
         jobid      => 99963,
@@ -75,17 +76,18 @@ my $workers = [
         status     => 'running'
     },
     {
-        'jobid'      => 99961,
-        'properties' => {
-            'JOBTOKEN' => 'token99961'
+        jobid      => 99961,
+        properties => {
+            JOBTOKEN => 'token99961'
         },
-        'id'        => 2,
-        'connected' => 0,
-        'websocket' => 0,
-        'alive'     => 1,
-        'status'    => 'running',
-        'host'      => 'remotehost',
-        'instance'  => 1
+        id        => 2,
+        connected => 0,
+        error     => undef,
+        websocket => 0,
+        alive     => 1,
+        status    => 'running',
+        host      => 'remotehost',
+        instance  => 1
     }];
 
 $ret = $t->get_ok('/api/v1/workers?live=1');
@@ -97,7 +99,7 @@ is_deeply(
         workers => $workers,
     },
     'worker present'
-);
+) or diag explain $ret->tx->res->json;
 
 $workers->[0]->{connected} = 1;
 $workers->[1]->{connected} = 1;
@@ -111,7 +113,7 @@ is_deeply(
         workers => $workers,
     },
     'worker present'
-);
+) or diag explain $ret->tx->res->json;
 
 
 my $worker_caps = {

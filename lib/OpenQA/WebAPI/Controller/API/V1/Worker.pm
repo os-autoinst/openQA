@@ -119,7 +119,6 @@ sub _register {
         $worker->update({job_id => undef});
     }
 
-    # $worker->seen();
     die "got invalid id" unless $worker->id;
     return $worker->id;
 }

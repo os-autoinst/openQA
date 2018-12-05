@@ -39,6 +39,7 @@ our @EXPORT = qw($job $instance $worker_settings $pooldir $nocleanup
 
 # Exported variables
 our $job;
+our $current_error;
 our $instance = 'manual';
 our $worker_settings;
 our $pooldir;
@@ -344,24 +345,41 @@ sub setup_websocket {
     call_websocket($host, $ua_url);
 }
 
+# checks whether the worker is available
+sub check_availability {
+    # clear previously detected errors (which might be gone)
+    $OpenQA::Worker::Common::current_error = undef;
+
+    # check whether the cache service is available if caching enabled
+    if ($worker_settings->{CACHEDIRECTORY}) {
+        if ($OpenQA::Worker::Common::current_error = OpenQA::Worker::Cache::Client->new->availability_error) {
+            log_debug('Worker cache not available: ' . $OpenQA::Worker::Common::current_error);
+        }
+        else {
+            log_debug('Worker cache seems available.');
+        }
+    }
+}
+
 sub send_status {
-    my $tx = shift;
+    my ($tx) = @_;
 
-    my $status_message = {
-        json => {
-            type => 'worker_status'
+    my $has_job = defined $job && ref($job) eq 'HASH' && exists $job->{id};
+    check_availability() unless $has_job;
 
-        }};
-
-    if (defined $job && ref($job) eq "HASH" && exists $job->{id}) {
-        $status_message->{json}->{status} = "working";
-        $status_message->{json}->{job}    = $job;
+    my %status_message = (type => 'worker_status');
+    if ($has_job) {
+        $status_message{status} = 'working';
+        $status_message{job}    = $job;
+    }
+    elsif ($current_error) {
+        $status_message{status} = 'broken';
+        $status_message{reason} = $current_error;
     }
     else {
-        $status_message->{json}->{status} = "free";
+        $status_message{status} = 'free';
     }
-
-    $tx->send($status_message);
+    $tx->send({json => \%status_message});
 }
 
 sub calculate_status_timer {
@@ -404,8 +422,8 @@ sub call_websocket {
                     "workerstatus-$host",
                     $status_timer,
                     sub {
-                        send_status($tx);
                         log_debug("Sending worker status to $host (workerstatus timer)");
+                        send_status($tx);
                     });
 
                 $tx->on(json => \&OpenQA::Worker::Commands::websocket_commands);
@@ -425,6 +443,9 @@ sub call_websocket {
                 $ws_to_host->{$hosts->{$host}{ws}} = $host;
 
                 $hosts->{$host}{accepting_jobs} = 1;
+
+                # send status immediately
+                send_status($tx);
             }
             else {
                 delete $ws_to_host->{$hosts->{$host}{ws}} if ($hosts->{$host}{ws});

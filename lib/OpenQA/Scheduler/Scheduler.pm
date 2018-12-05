@@ -264,7 +264,7 @@ sub schedule {
     my $all_workers = schema->resultset("Workers")->count();
 
     my @f_w = grep { !$_->dead && ($_->websocket_api_version() || 0) == WEBSOCKET_API_VERSION }
-      schema->resultset("Workers")->search({job_id => undef})->all();
+      schema->resultset("Workers")->search({job_id => undef, error => undef})->all();
 
     # NOTE: $worker->connected is too much expensive since is over dbus, prefer dead.
     # shuffle avoids starvation if a free worker keeps failing.
