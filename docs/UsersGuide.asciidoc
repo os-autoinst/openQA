@@ -159,6 +159,8 @@ image::images/highlighting_job_dependencies.png[highlighted child jobs]
 
 == Asset cleanup ==
 
+For more information on assets, see 'Asset handling' below.
+
 Assets like ISO files consume a huge amount of disk space. Therefore openQA
 removes assets automatically according to configurable limits.
 
@@ -191,6 +193,11 @@ remove assets accounted to that group:
 Assets which do _not_ belong to any group are removed after a configurable
 duration. Keep in mind that this behavior is also enabled on local instances
 and affects all cloned jobs (unless cloned into a job group).
+
+'Fixed' assets - those placed in the +fixed+ subdirectory of the relevant
+asset directory - are counted against the group size limit, but are never
+cleaned up. This is intended for things like base disk images which must
+always be available for a test to work.
 
 === Configure limit for assets within groups ===
 
@@ -298,29 +305,91 @@ openqa-client isos post ISO=my_iso.iso DISTRI=my_distri FLAVOR=sweet \
 
 ==== Asset handling ====
 
-Multiple parameters exist to reference assets to be used by tests, for example
-`ISO`, `HDD`, `ASSET`, `KERNEL`, `INITRD`. Corresponding files must be
-provided within the path +/var/lib/openqa/share/factory+ local to the openQA
-web-UI. All assets specified in this way in any job are tracked by openQA and
-considered by the automatic cleanup described under 'Asset cleanup'.
+Multiple parameters exist to reference "assets" to be used by tests. "Assets" are essentially
+content that is stored by the openQA web-UI and provided to the workers; when sending jobs to
+os-autoinst on the workers, openQA adjusts the parameter values to refer to an absolute path
+where the worker will be able to access the content. Things that are typically assets include the
+ISOs and other images that are tested, for example.
 
-Multiple options can be used based on special suffix types. These types can
-also be combined, for example ISO_1_DECOMPRESS_URL.
+Some assets can also be produced by a job, sent back to the web-UI, and used by a later job (see
+explanation of 'storing' and 'publishing' assets, below). Assets can also be seen in the web-UI
+and downloaded directly (though there is a configuration option to hide some or all asset types
+from public view in the web-UI).
+
+The parameters treated as assets are as follows. Where you see e.g. `ISO_n`, that means `ISO_1`,
+`ISO_2` etc. will all be treated as assets.
+
+* `ISO` (type `iso`)
+* `ISO_n` (type `iso`)
+* `HDD_n` (type `hdd`)
+* `UEFI_PFLASH_VARS` (type `hdd`) (in some cases, see below)
+* `REPO_n` (type `repo`)
+* `ASSET_n` (type `other`)
+* `KERNEL` (type `other`)
+* `INITRD` (type `other`)
+
+The values of the above parameters are expected to be the name of a file - or, in the case of
+`REPO_n`, a directory - that exists under the path +/var/lib/openqa/share/factory+ on the openQA
+web-UI. That path has subdirectories for each of the asset types, and the file or directory must
+be in the correct subdirectory, so e.g. the file for an asset `HDD_1` must be under
++/var/lib/openqa/share/factory/hdd+. You may create a subdirectory called +fixed+ for any asset
+type and place assets there (e.g. in +/var/lib/openqa/share/factory/hdd/fixed+ for `hdd`-type
+assets): this exempts them from the automatic cleanup described under 'Asset cleanup' above.
+Non-fixed assets are always subject to the cleanup.
+
+`UEFI_PFLASH_VARS` is a special case: whether it is treated as an asset depends on the value. If
+the value looks like an absolute path (starts with `/`), it will not be treated as an asset (and
+so the value should be an absolute path for a file which exists on the relevant worker system(s)).
+Otherwise, it is treated as an `hdd`-type asset. This allows tests to use a stock base image
+(like the ones provided by edk2) for a simple case, but also allows a job to upload its image on
+completion - including any changes made to the UEFI variables during the execution of the job -
+for use by a child job which needs to inherit those changes.
+
+You can also use special suffixes to the basic parameter forms to access some special handling for
+assets.
 
 [horizontal]
-.The following options exist
+.The following suffixes exist:
 
-_<NR>:: To specify multiple assets of the same type use a number digit, for
-example `ISO_1`, `ISO_2`.
+_URL:: Before starting these jobs, try to download these assets into the relevant asset directory
+of the openQA web-UI from trusted domains specified in +/etc/openqa/openqa.ini+. For e.g.,
+`ISO_1_URL=http://trusted.com/foo.iso` would, if `trusted.com` is set as a trusted domain, cause
+openQA to download the file `foo.iso` to +/var/lib/openqa/share/factory/iso+ and set
+`ISO_1=foo.iso`. If you set both `ISO_1` and `ISO_1_URL`, the file pointed to by `ISO_1_URL` will
+be downloaded and renamed to the name set as `ISO_1`.
 
-_URL:: Before starting these jobs try to download these assets into the asset
-directory of the openQA web-UI from trusted domains specified in
-+/etc/openqa/openqa.ini+.
+_DECOMPRESS_URL:: Specify a compressed asset to be downloaded that will be uncompressed by openQA.
+For e.g. `ISO_1_DECOMPRESS_URL=http://host/foo2.iso.xz` will download the file `foo2.iso.xz`,
+uncompress it to `foo2.iso`, store it in +/var/lib/openqa/share/factory/iso+ and set
+`ISO_1=foo2.iso`. Again, you can also set `ISO_1` to change the name the file will be downloaded
+and uncompressed as.
 
-_DECOMPRESS_URL:: Specify a compressed asset to be downloaded that will be
-uncompressed by openQA. Specify the non-suffixed parameter additionally to
-provide a rename target, for example
-ISO_1_DECOMPRESS_URL=http://host/foo2.iso.xz and ISO_1=foo.iso
+Assets may be shared between the web-UI and the workers by having them literally use a shared
+filesystem (this used to be the only option), or by having the workers download them from the
+server when needed and cache them locally. See 'Asset Caching' in the<<Installing.asciidoc,Installing>>
+guide for more on this.
+
+`HDD_n` assets can be 'stored' or 'published' by a job, and `UEFI_PFLASH_VARS` assets can be
+'published'. These both mean that if the job completes successfully, the resulting state of those
+disk assets will be sent back to the web-UI and made available as an `hdd`-type asset. To 'store'
+an asset, you can specify e.g. `STORE_HDD_1`. To 'publish' it, you can specify e.g.
+`PUBLISH_HDD_1` or `PUBLISH_PFLASH_VARS`. If you specify `PUBLISH_HDD_1=updated.qcow2`, the
+`HDD_1` disk image as it exists at the end of the test will be uploaded back to the web-UI and
+stored under the name `updated.qcow2`; any other job can then specify `HDD_1=updated.qcow2` to use
+this published image as its `HDD_1`.
+
+The difference between 'storing' and 'publishing' is that when 'storing' an asset, it will be
+altered in some way (currently, by prepending the job ID to the filename) to associate it with
+the particular job that produced it. That means that many jobs can 'store' an asset under "the
+same name" without conflicting. Of course, that would seem to make it hard for other jobs to use
+the 'stored' image - but for "chained" jobs, the reverse operation is done transparently. This
+all means that a 'parent' job template can specify `STORE_HDD_1=somename.qcow2` and its 'child'
+job template(s) can specify `HDD_1=somename.qcow2`, and everything will work, without multiple
+runs of the same jobs overwriting the asset. For more on "chained" jobs, see  'Job dependencies'
+in the <<WritingTests.asciidoc,Writing Tests>> guide.
+
+When using this mechanism you will often also want to use the 'Variable expansion' mechanism
+described in the <<GettingStarted.asciidoc,Getting Started>> guide.
 
 == Developer mode ==
 
