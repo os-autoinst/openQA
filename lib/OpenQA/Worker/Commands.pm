@@ -102,9 +102,18 @@ sub websocket_commands {
             state $check_job_running;
             state $job_in_progress;
 
+            # refuse new jobs if caching is not available (this will leave the job in assigned state)
+            my $cache_client = OpenQA::Worker::Cache::Client->new;
+            my $error        = $cache_client->availability_error;
+            if ($error) {
+                log_debug("Refusing 'grab_job', caching not available: $error");
+                return;
+            }
+
+            # refuse new jobs if already busy (this will leave the job in assigned state)
             my $job = $json->{job};
             if ($job_in_progress) {
-                log_debug("Refusing, we are already performing another job");
+                log_debug("Refusing 'grab_job', we are already performing another job");
                 return;
             }
 
@@ -139,7 +148,6 @@ sub websocket_commands {
                         OpenQA::Worker::Common::send_status($tx);
                         log_debug("Sent worker status to $host (start_job)");
                     });
-                # Mojo::IOLoop->singleton->once("stop_job" => sub { OpenQA::Worker::Common::send_status($tx); });
                 $tx->send({json => {type => "accepted", jobid => $job->{id}}} => sub { start_job($host); });
             }
             else {
