@@ -902,8 +902,7 @@ function processWsCommand(obj) {
         }
 
         console.log("Error from ws proxy: " + what);
-        addLivehandlerFlash('danger', 'ws_proxy_error-' + what,
-                            '<strong>Error from livehandler daemon:</strong><p>' + what + '</p>');
+        addLivehandlerFlash('danger', 'ws_proxy_error-' + what, '<p>' + what + '</p>');
         break;
     case "info":
         // map info message to internal status variables
