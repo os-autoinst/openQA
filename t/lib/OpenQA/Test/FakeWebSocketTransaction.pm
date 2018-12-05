@@ -16,6 +16,8 @@
 package OpenQA::Test::FakeWebSocketTransaction;
 use Mojo::Base 'Mojo::EventEmitter';
 
+use Test::More;
+
 has finish_called => 0;
 has sent_messages => sub { return []; };
 

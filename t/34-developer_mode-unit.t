@@ -139,6 +139,34 @@ my %no_developer = (
     upload_up_to_current_module  => undef,
 );
 
+subtest 'version check' => sub {
+    my $live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
+    my %status_info = (running => 'installation-welcome');
+
+    is($live_view_handler->check_os_autoinst_devel_mode_version(\%status_info), 0, 'no version at all not accepted');
+
+    $status_info{devel_mode_major_version}
+      = OpenQA::WebAPI::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MAJOR_VERSION + 1;
+    $status_info{devel_mode_minor_version}
+      = OpenQA::WebAPI::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MINOR_VERSION;
+    is($live_view_handler->check_os_autoinst_devel_mode_version(\%status_info),
+        0, 'different major version not accepted');
+
+    $status_info{devel_mode_major_version}
+      = OpenQA::WebAPI::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MAJOR_VERSION;
+    $status_info{devel_mode_minor_version}
+      = OpenQA::WebAPI::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MINOR_VERSION - 1;
+    is($live_view_handler->check_os_autoinst_devel_mode_version(\%status_info), 0, 'lower minor version not accepted');
+
+    $status_info{devel_mode_minor_version}
+      = OpenQA::WebAPI::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MINOR_VERSION;
+    is($live_view_handler->check_os_autoinst_devel_mode_version(\%status_info), 1, 'exact version match accepted');
+
+    $status_info{devel_mode_minor_version}
+      = OpenQA::WebAPI::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MINOR_VERSION + 1;
+    is($live_view_handler->check_os_autoinst_devel_mode_version(\%status_info), 1, 'higher minor version accepted');
+};
+
 subtest 'generate needle JSON for passing needles via websockets to command server' => sub {
     my $now        = time;
     my $new_needle = $needles->create(
@@ -743,6 +771,15 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
     my $fake_cmd_srv_tx = OpenQA::Test::FakeWebSocketTransaction->new();
     set_fake_cmd_srv_transaction(99961, $fake_cmd_srv_tx);
 
+    # handle test message from os-autoinst
+    $fake_cmd_srv_tx->on(
+        json => sub {
+            my ($tx, $json) = @_;
+            my $dummy_live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
+            $dummy_live_view_handler->app($t_livehandler->app);
+            $dummy_live_view_handler->handle_message_from_os_autoinst(99961, $json);
+        });
+
     subtest 'job with assigned worker, fake os-autoinst' => sub {
         prepare_waiting_for_finished_handled();
 
@@ -767,14 +804,6 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
                 data => undef,
             });
 
-        # handle test message from os-autoinst
-        $fake_cmd_srv_tx->on(
-            json => sub {
-                my ($tx, $json) = @_;
-                my $dummy_live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
-                $dummy_live_view_handler->app($t_livehandler->app);
-                $dummy_live_view_handler->handle_message_from_os_autoinst(99961, $json);
-            });
         $fake_cmd_srv_tx->emit_json({foo => 'bar'});
         $t_livehandler->message_ok('message from command server received');
         $t_livehandler->json_message_is(
@@ -784,7 +813,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
                 data => {foo => 'bar'},
             });
 
-        is($fake_cmd_srv_tx->finish_called, 0, 'no attempt to close the connection again');
+        is($fake_cmd_srv_tx->finish_called, 0, 'command server transaction kept open after js client disconnects');
 
         # check whether we finally opened a developer session
         my $developer_session = $developer_sessions->find(99961);
@@ -803,7 +832,81 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
         is($developer_sessions->find(99961)->ws_connection_count, 0, 'ws connection finished');
         is(scalar @{$t_livehandler->app->devel_java_script_transactions_by_job->{99961} // []},
             0, 'devel js transactions cleaned');
+        is($t_livehandler->app->cmd_srv_transactions_by_job->{99961},
+            $fake_cmd_srv_tx, 'command server transaction not cleaned up after js client disconnects');
     };
+
+    subtest 'disconnect on version mismatch' => sub {
+        # connect again through ws-proxy
+        prepare_waiting_for_finished_handled();
+        $t_livehandler->websocket_ok(
+            '/liveviewhandler/tests/99961/developer/ws-proxy',
+            'establish ws connection from JavaScript to livehandler'
+        );
+        $t_livehandler->message_ok('message received');
+        $t_livehandler->json_message_is(
+            {
+                type => 'info',
+                what => 'connecting to os-autoinst command server at ws://remotehost.qa:20013/token99961/ws',
+                data => undef,
+            });
+        $t_livehandler->message_ok('another message received');
+        $t_livehandler->json_message_is(
+            {
+                type => 'info',
+                what =>
+                  'reusing previous connection to os-autoinst command server at ws://remotehost.qa:20013/token99961/ws',
+                data => undef,
+            });
+
+        # send status info where version is supposed to be accepted
+        my $required_major_version = OpenQA::WebAPI::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MAJOR_VERSION;
+        my $required_minor_version = OpenQA::WebAPI::Controller::LiveViewHandler::OS_AUTOINST_DEVEL_MODE_MINOR_VERSION;
+        my %status_info            = (
+            running                  => 'installation-welcome',
+            foo                      => 'bar',
+            devel_mode_major_version => $required_major_version,
+            devel_mode_minor_version => $required_minor_version,
+        );
+        $fake_cmd_srv_tx->emit_json(\%status_info);
+        $t_livehandler->message_ok('message from command server received');
+        $t_livehandler->json_message_is(
+            {
+                type => 'info',
+                what => 'cmdsrvmsg',
+                data => \%status_info,
+            });
+        is($fake_cmd_srv_tx->finish_called, 0, 'no attempt to close connection so far');
+
+        # send status info with incompatible version which should cause a disconnect
+        my $actual_major_version = $status_info{devel_mode_major_version} = $required_major_version + 1;
+        my $expected_error
+          = "os-autoinst version \"$actual_major_version.$required_minor_version\" is incompatible, version \"$required_major_version.$required_minor_version\" is required";
+        $fake_cmd_srv_tx->emit_json(\%status_info);
+        $t_livehandler->message_ok('message from command server received');
+        $t_livehandler->json_message_is(
+            {
+                type => 'error',
+                what => $expected_error,
+                data => {
+                    code     => 1011,
+                    category => OpenQA::WebAPI::Controller::LiveViewHandler::ERROR_CATEGORY_BAD_CONFIGURATION,
+                },
+            });
+        $t_livehandler->finished_ok(1011);
+        is($fake_cmd_srv_tx->finish_called, 1, 'connection to os-autoinst closed');
+
+        # check whether usual cleanup happended here, too
+        wait_for_finished_handled();
+        is($developer_sessions->find(99961)->ws_connection_count, 0, 'ws connection finished');
+        is(scalar @{$t_livehandler->app->devel_java_script_transactions_by_job->{99961} // []},
+            0, 'devel js transactions cleaned');
+        is($t_livehandler->app->cmd_srv_transactions_by_job->{99961},
+            undef, 'command server transaction cleaned up after version mismatch');
+    };
+
+    # restore fake transaction for job 99961
+    set_fake_cmd_srv_transaction(99961, $fake_cmd_srv_tx = OpenQA::Test::FakeWebSocketTransaction->new());
 
     subtest 'status-only route' => sub {
         # connect like in previous subtest, just use the status-only route this time

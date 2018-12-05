@@ -137,7 +137,7 @@ sub js_variable {
 
 # clicks on the header of the developer panel
 sub click_header {
-    $driver->find_element('#developer-panel .card-header')->click();
+    $driver->find_element('#developer-status')->click();
 }
 
 # login an navigate to a running job with assigned worker
@@ -268,7 +268,20 @@ qr/You might be able to connect to the SUT at remotehost:91 via VNC with shared 
     );
 };
 
+subtest 'configuration issue shown' => sub {
+    fake_state(developerMode => {badConfiguration => 'true'});
+
+    element_visible(
+        '#developer-panel .card-header',
+        qr/configuration issue/,
+        [qr/retrieving/, qr/current module/, qr/uploading/],
+    );
+    click_header();
+    element_visible('#developer-config-issue-note', qr/steps to debug developer mode setup/,);
+};
+
 # revert state changes from previous tests
+click_header();
 fake_state(
     developerMode => {
         ownSession            => 'false',
@@ -277,6 +290,7 @@ fake_state(
         develSessionDeveloper => 'undefined',
         develSessionStartedAt => 'undefined',
         develSessionTabCount  => 'undefined',
+        badConfiguration      => 'false',
     });
 
 my @expected_text_on_initial_session_creation = (qr/and confirm to apply/, qr/Confirm to control this test/,);
@@ -290,6 +304,7 @@ subtest 'expand developer panel' => sub {
         [@expected_text_after_session_created, qr/Resume/],
     );
     element_visible('#developer-pause-at-module');
+    element_hidden('#developer-config-issue-note');
 
     subtest 'behavior when changes have not been confirmed' => sub {
         my @options = $driver->find_elements('#developer-pause-at-module option');
@@ -333,6 +348,7 @@ subtest 'revert state changes from previous subtests (not supposed to collapse t
             isPaused   => 'false',
         });
     element_visible('#developer-panel .card-body');
+    element_hidden('#developer-config-issue-note');
 };
 
 subtest 'start developer session' => sub {
@@ -448,7 +464,7 @@ subtest 'start developer session' => sub {
 
     subtest 'select whether to pause on assert_screen failure' => sub {
         my @options = $driver->find_elements('#developer-pause-on-mismatch option');
-        is(scalar @options, 3, 'three options for pausing on screen mismatch');
+        is(scalar @options,            3, 'three options for pausing on screen mismatch');
         is($options[0]->is_selected(), 1, 'pausing on screen mismatch disabled by default');
 
         # attempt to turn pausing on assert_screen on when current state unknown
@@ -456,7 +472,7 @@ subtest 'start developer session' => sub {
         assert_sent_commands(undef, 'prevent overriding pause on mismatch with form defaults if unknown');
 
         # assume we know the pausing on screen match is disabled
-        fake_state(developerMode => { pauseOnScreenMismatch => 'false' });
+        fake_state(developerMode => {pauseOnScreenMismatch => 'false'});
         is($options[0]->is_selected(), 1, 'pausing on screen mismatch still disabled');
 
         # turn pausing on assert_screen on
@@ -549,10 +565,7 @@ subtest 'process state changes from os-autoinst/worker' => sub {
         );
         element_visible('#developer-panel .card-header', qr/paused at module: some test/, qr/current module/,);
         my @pause_on_mismatch_options = $driver->find_elements('#developer-pause-on-mismatch option');
-        is(
-            $pause_on_mismatch_options[1]->is_selected(),
-            1, 'selection for pausing on screen mismatch updated',
-        );
+        is($pause_on_mismatch_options[1]->is_selected(), 1, 'selection for pausing on screen mismatch updated',);
     };
 
     subtest 'upload progress handled' => sub {
