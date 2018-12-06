@@ -322,6 +322,13 @@ uncompressed by openQA. Specify the non-suffixed parameter additionally to
 provide a rename target, for example
 ISO_1_DECOMPRESS_URL=http://host/foo2.iso.xz and ISO_1=foo.iso
 
+TIP: It is possible to provide a custom test module as an external asset combining settings *SCHEDULE* and *ASSET_<NR>_URL*. +
+ +
+e.g. for https://github.com/os-autoinst/os-autoinst-distri-opensuse: +
+SCHEDULE=tests/boot/boot_to_desktop,systemd_testsuite,mod2 ASSET_1_URL=http://server.org/openqa-tests/console/systemd_testsuite.pm ASSET_2_URL=http://server.org/openqa-tests/console/mod2.pm +
+ +
+The test modules systemd_testsuite.pm and mod2.pm will be downloaded on the root of *CASEDIR*, and *SCHEDULE* will schedule them.
+
 == Developer mode ==
 
 The developer mode allows to:
