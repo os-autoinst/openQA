@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DEBUG="${DEBUG:-0}"
-INSTALL_FROM_CPAN="${INSTALL_FROM_CPAN:-1}"
+INSTALL_FROM_CPAN="${INSTALL_FROM_CPAN:-0}"
 UPGRADE_FROM_ZYPPER="${UPGRADE_FROM_ZYPPER:-0}"
 
 export LANG="en_US.UTF-8"
@@ -39,10 +39,12 @@ HEREDOC
 
 
 function run_as_normal_user {
-    [ "$INSTALL_FROM_CPAN" -eq 1 ] && \
-             echo ">> Trying to get dependencies from CPAN"
-	      (cpanm --local-lib=~/perl5 local::lib && cpanm -n --installdeps . ) || \
-	      cpanm -n --mirror http://no.where/ --installdeps .
+    if [ "$INSTALL_FROM_CPAN" -eq 1 ]; then
+       echo ">> Trying to get dependencies from CPAN"
+           cpanm --local-lib=~/perl5 local::lib && cpanm -n --installdeps .
+    else
+           cpanm -n --mirror http://no.where/ --installdeps .
+    fi
 
     if [ $? -eq 0 ]; then
         create_db
