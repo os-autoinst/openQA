@@ -40,15 +40,19 @@ sub register {
     my ($self, $type, $name, $missingok) = @_;
     $missingok //= 0;
 
+    unless ($name) {
+        log_warning "attempt to register asset with empty name";
+        return;
+    }
     our %types = map { $_ => 1 } qw(iso repo hdd other);
     unless ($types{$type}) {
         log_warning "asset type '$type' invalid";
         return;
     }
     unless (locate_asset $type, $name, mustexist => 1) {
-        if (!$missingok) {
-            log_warning "no file found for asset '$name' type '$type'";
-        }
+        return 'missing' if ($missingok);
+
+        log_warning "no file found for asset '$name' type '$type'";
         return;
     }
 

@@ -50,19 +50,28 @@ sub register {
 
     my $type = $self->param('type');
     my $name = $self->param('name');
+    return $self->render(
+        json => {
+            error => 'type and name must not be empty'
+        },
+        status => 400,
+    ) unless $type && $name;
 
-    my $asset = $self->app->schema->resultset("Assets")->register($type, $name);
+    my $asset = $self->app->schema->resultset('Assets')->register($type, $name);
+    return $self->render(
+        json => {
+            error => 'registering asset failed',
+        },
+        status => 400
+    ) unless $asset;
 
-    my $status = 200;
-    my $json   = {};
-    if ($asset) {
-        $json->{id} = $asset->id;
-        $self->emit_event('openqa_asset_register', {id => $asset->id, type => $type, name => $name});
-    }
-    else {
-        $status = 400;
-    }
-    $self->render(json => $json, status => $status);
+    $self->emit_event('openqa_asset_register', {id => $asset->id, type => $type, name => $name});
+    $self->render(
+        json => {
+            id => $asset->id,
+        },
+        status => 200,
+    );
 }
 
 =over 4
