@@ -31,6 +31,7 @@ use Test::Output qw(stdout_like);
 use OpenQA::Test::Case;
 use OpenQA::Task::Asset::Limit;
 use OpenQA::Utils;
+use OpenQA::WebAPI::Controller::API::V1::Iso;
 
 # allow catching log messages via stdout_like
 delete $ENV{OPENQA_LOGFILE};
@@ -54,11 +55,6 @@ $mock_asset->mock(remove_from_disk          => sub { return 1; });
 $mock_asset->mock(refresh_assets            => sub { });
 $mock_asset->mock(scan_for_untracked_assets => sub { });
 $mock_limit->mock(_remove_if                => sub { return 0; });
-
-# add asset with empty name (should be ignored)
-my $empty_asset = $schema->resultset('Assets')->register(repo => '');
-my $empty_asset_id = $empty_asset->id;
-ok($empty_asset, 'asset with empty name registered');
 
 # define helper to prepare the returned asset status for checks
 # * remove timestamps
@@ -246,6 +242,59 @@ my %expected_assets_without_max_job = (
         picked_into => 0,
     },
 );
+
+my $empty_asset_id;
+subtest 'handling assets with invalid name' => sub {
+    my $asset_count = $schema->resultset('Assets')->count;
+
+    # check whether registering an asset with empty name is prevented
+    is($schema->resultset('Assets')->register(repo => ''), undef, 'registering an empty asset prevented');
+
+    # handling within OpenQA::WebAPI::Controller::API::V1::Iso::schedule_iso
+    my $iso_api_controller_mock = new Test::MockModule('OpenQA::WebAPI::Controller::API::V1::Iso');
+    $iso_api_controller_mock->mock(_generate_jobs => sub { return undef; });
+    $iso_api_controller_mock->mock(emit_event     => sub { return undef; });
+    my $iso_api_controller = OpenQA::WebAPI::Controller::API::V1::Iso->new;
+    $iso_api_controller->app($t->app);
+    is_deeply(
+        $iso_api_controller->schedule_iso({REPO_0 => ''}),
+        {error => 'Asset type and name must not be empty.'},
+        'schedule_iso prevents adding assets with empty name',
+    );
+    is_deeply(
+        $iso_api_controller->schedule_iso({REPO_0 => 'invalid'}),
+        {
+            successful_job_ids => [],
+            failed_job_info    => [],
+        },
+        'schedule_iso allows non-existant assets though',
+    );
+
+    # handling within OpenQA::Schema::Result::Jobs::register_assets_from_settings
+    my $job = $schema->resultset('Jobs')->first;
+    my $job_settings = $job->{_settings} = {REPO_0 => ''};
+    stdout_like(
+        sub {
+            $job->register_assets_from_settings();
+        },
+        qr/not registering asset with empty name or type/,
+        'warning on attempt to register asset with empty name/type from settings',
+    );
+    $job_settings->{REPO_0} = 'in/valid';
+    stdout_like(
+        sub {
+            $job->register_assets_from_settings();
+        },
+        qr/not registering asset in\/valid containing \//,
+        'warning on attempt to register asset with invalid name from settings',
+    );
+    is($schema->resultset('Assets')->count, $asset_count, 'no further assets registered');
+
+    # add an asset with empty name nevertheless to test that it is ignored (in subsequent subtest)
+    my $empty_asset = $schema->resultset('Assets')->create({type => 'repo', name => ''});
+    ok($empty_asset, 'asset with empty name registered (to test ignoring it)');
+    $empty_asset_id = $empty_asset->id;
+};
 
 subtest 'asset status with pending state, max_job and max_job by group' => sub {
     my $asset_status;
