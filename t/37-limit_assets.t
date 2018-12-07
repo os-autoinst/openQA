@@ -30,6 +30,7 @@ use Test::MockModule;
 use Test::Output qw(stdout_like);
 use OpenQA::Test::Case;
 use OpenQA::Task::Asset::Limit;
+use OpenQA::Utils;
 
 # allow catching log messages via stdout_like
 delete $ENV{OPENQA_LOGFILE};
@@ -38,6 +39,8 @@ delete $ENV{OPENQA_LOGFILE};
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
+
+note("Asset directory: $OpenQA::Utils::assetdir");
 
 # scan initially for untracked assets and refresh
 my $schema = $t->app->schema;
@@ -52,6 +55,11 @@ $mock_asset->mock(refresh_assets            => sub { });
 $mock_asset->mock(scan_for_untracked_assets => sub { });
 $mock_limit->mock(_remove_if                => sub { return 0; });
 
+# add asset with empty name (should be ignored)
+my $empty_asset = $schema->resultset('Assets')->register(repo => '');
+my $empty_asset_id = $empty_asset->id;
+ok($empty_asset, 'asset with empty name registered');
+
 # define helper to prepare the returned asset status for checks
 # * remove timestamps
 # * split into assets without max_job and assets with max_job because the ones
@@ -61,6 +69,7 @@ sub prepare_asset_status {
 
     # ignore exact size of untracked assets since it depends on presence of other files (see %ignored_assets)
     my $groups = $asset_status->{groups};
+    is_deeply([sort keys %$groups], [0, 1001, 1002], 'groups present');
     ok(delete $groups->{0}->{size},   'size of untracked assets');
     ok(delete $groups->{0}->{picked}, 'untracked assets picked');
 
@@ -239,9 +248,16 @@ my %expected_assets_without_max_job = (
 );
 
 subtest 'asset status with pending state, max_job and max_job by group' => sub {
-    my $asset_status = $schema->resultset('Assets')->status(
-        compute_pending_state_and_max_job => 1,
-        compute_max_job_by_group          => 1,
+    my $asset_status;
+    stdout_like(
+        sub {
+            $asset_status = $schema->resultset('Assets')->status(
+                compute_pending_state_and_max_job => 1,
+                compute_max_job_by_group          => 1,
+            );
+        },
+        qr/Skipping asset $empty_asset_id because its name is empty/,
+        'warning about skipped asset',
     );
     my ($assets_with_max_job, $assets_without_max_job) = prepare_asset_status($asset_status);
     is_deeply($asset_status->{groups}, \%expected_groups,                 'groups');
