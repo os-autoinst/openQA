@@ -40,15 +40,19 @@ sub register {
     my ($self, $type, $name, $missingok) = @_;
     $missingok //= 0;
 
+    unless ($name) {
+        log_warning "attempt to register asset with empty name";
+        return;
+    }
     our %types = map { $_ => 1 } qw(iso repo hdd other);
     unless ($types{$type}) {
         log_warning "asset type '$type' invalid";
         return;
     }
     unless (locate_asset $type, $name, mustexist => 1) {
-        if (!$missingok) {
-            log_warning "no file found for asset '$name' type '$type'";
-        }
+        return 'missing' if ($missingok);
+
+        log_warning "no file found for asset '$name' type '$type'";
         return;
     }
 
@@ -205,14 +209,20 @@ END_SQL
             # prefetch all assets
             my $assets_arrayref = $dbh->selectall_arrayref($prioritized_assets_query);
             for my $asset_array (@$assets_arrayref) {
-                my $id      = $asset_array->[0];
+                my $id   = $asset_array->[0];
+                my $name = $asset_array->[1];
+                if (!$name) {
+                    OpenQA::Utils::log_warning("asset cleanup: Skipping asset $id because its name is empty.");
+                    next;
+                }
+
                 my $type    = $asset_array->[4];
                 my $fixed   = $asset_array->[5];
                 my $dirname = ($fixed ? $type . '/fixed/' : $type . '/');
                 my $max_job = $asset_array->[6];
                 my %asset   = (
                     id        => $id,
-                    name      => ($dirname . $asset_array->[1]),
+                    name      => ($dirname . $name),
                     t_created => $asset_array->[2],
                     size      => $asset_array->[3],
                     type      => $type,

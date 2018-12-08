@@ -177,6 +177,9 @@ la;
 # try to register with invalid type
 $ret = $t->post_ok('/api/v1/assets', form => {type => 'foo', name => $iso1})->status_is(400);
 
+# try to register with invalid name
+$ret = $t->post_ok('/api/v1/assets', form => {type => 'iso', name => ''})->status_is(400);
+
 # try to register non existing asset
 $ret = $t->post_ok('/api/v1/assets', form => {type => 'iso', name => 'foo.iso'})->status_is(400);
 

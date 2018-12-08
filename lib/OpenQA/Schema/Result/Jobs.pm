@@ -1417,26 +1417,32 @@ sub register_assets_from_settings {
 
     # check assets and fix the file names
     for my $k (keys %assets) {
-        my $a = $assets{$k};
-        if ($a->{name} =~ /\//) {
-            log_info "not registering asset $a->{name} containing /";
+        my $asset = $assets{$k};
+        my ($name, $type) = ($asset->{name}, $asset->{type});
+        unless ($name && $type) {
+            log_info 'not registering asset with empty name or type';
             delete $assets{$k};
             next;
         }
-        my $f_asset = _asset_find($a->{name}, $a->{type}, \@parents);
+        if ($name =~ /\//) {
+            log_info "not registering asset $name containing /";
+            delete $assets{$k};
+            next;
+        }
+        my $f_asset = _asset_find($name, $type, \@parents);
         unless (defined $f_asset) {
             # don't register asset not yet available
             delete $assets{$k};
             next;
         }
-        $a->{name} = $f_asset;
+        $asset->{name} = $f_asset;
         $updated{$k} = $f_asset;
     }
 
-    for my $a (values %assets) {
+    for my $asset (values %assets) {
         # avoid plain create or we will get unique constraint problems
         # in case ISO_1 and ISO_2 point to the same ISO
-        my $aid = $self->result_source->schema->resultset('Assets')->find_or_create($a);
+        my $aid = $self->result_source->schema->resultset('Assets')->find_or_create($asset);
         $self->jobs_assets->find_or_create({asset_id => $aid->id});
     }
 

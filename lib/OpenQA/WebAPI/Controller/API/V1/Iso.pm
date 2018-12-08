@@ -416,8 +416,11 @@ sub schedule_iso {
     my ($self, $args) = @_;
     # register assets posted here right away, in case no job
     # templates produce jobs.
-    for my $a (values %{parse_assets_from_settings($args)}) {
-        $self->app->schema->resultset("Assets")->register($a->{type}, $a->{name}, 1);
+    my $assets = $self->app->schema->resultset('Assets');
+    for my $asset (values %{parse_assets_from_settings($args)}) {
+        my ($name, $type) = ($asset->{name}, $asset->{type});
+        return {error => 'Asset type and name must not be empty.'} unless $name && $type;
+        return {error => "Failed to register asset $name."} unless $assets->register($type, $name, 1);
     }
     my $deprioritize       = delete $args->{_DEPRIORITIZEBUILD} // 0;
     my $deprioritize_limit = delete $args->{_DEPRIORITIZE_LIMIT};
@@ -604,7 +607,18 @@ sub create {
         }
     }
 
-    my $scheduled_jobs     = $self->schedule_iso(\%params);
+    my $scheduled_jobs = $self->schedule_iso(\%params);
+    my $error          = $scheduled_jobs->{error};
+    return $self->render(
+        json => {
+            error  => $error,
+            count  => 0,
+            ids    => [],
+            failed => {},
+        },
+        status => 400,
+    ) if $error;
+
     my $successful_job_ids = $scheduled_jobs->{successful_job_ids};
     my $failed_job_info    = $scheduled_jobs->{failed_job_info};
     my $created_job_count  = scalar(@$successful_job_ids);
