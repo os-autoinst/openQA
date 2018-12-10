@@ -386,4 +386,4 @@ It returns the Parser object with the original data.
 
 =cut
 
-!!42;
+1;

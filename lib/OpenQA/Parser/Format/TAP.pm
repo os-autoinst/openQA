@@ -166,4 +166,4 @@ are discarded by the parser.
 
 =cut
 
-!!42;
+1;

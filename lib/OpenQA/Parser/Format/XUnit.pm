@@ -188,4 +188,4 @@ C<parse()> to generate a tree of results.
 
 =cut
 
-!!42;
+1;
