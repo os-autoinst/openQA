@@ -21,4 +21,4 @@ has client => sub { OpenQA::Worker::Cache::Client->new };
 sub _dequeue { shift->client->_dequeue_lock(pop) }
 sub _gen_guard_name { join('.', shift->client->session_token, pop) }
 
-!!42;
+1;

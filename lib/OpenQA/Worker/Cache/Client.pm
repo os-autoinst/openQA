@@ -289,4 +289,4 @@ Sets the default cache directory.
 
 =cut
 
-!!42;
+1;

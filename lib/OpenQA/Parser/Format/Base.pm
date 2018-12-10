@@ -205,4 +205,4 @@ It merely calls write() on each element of the C<output()> collection.
 
 =cut
 
-!!42;
+1;

@@ -68,4 +68,4 @@ the Minion Tasks information to dispatch a remote request to the Cache Service.
 
 =cut
 
-!!42;
+1;

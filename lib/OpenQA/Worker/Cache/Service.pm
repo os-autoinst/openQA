@@ -205,4 +205,4 @@ Dequeues a job from the queue of jobs which are still inactive. It acceps a POST
 
 =cut
 
-!!42;
+1;
