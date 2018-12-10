@@ -102,7 +102,7 @@ sub websocket_commands {
             state $check_job_running;
             state $job_in_progress;
 
-            # refuse new if worker is in error state (this will leave the job in assigned state)
+            # refuse new if worker is in error state (this will leave the job to be grabbed in assigned state)
             if ($OpenQA::Worker::Common::current_error) {
                 log_debug(
 "Refusing 'grab_job', we are currently unable to do any work: $OpenQA::Worker::Common::current_error"
@@ -113,7 +113,13 @@ sub websocket_commands {
             # refuse new jobs if already busy (this will leave the job in assigned state)
             my $job = $json->{job};
             if ($job_in_progress) {
-                log_debug("Refusing 'grab_job', we are already performing another job");
+                my $current_job = $OpenQA::Worker::Common::job;
+                $current_job = (
+                    $current_job && $current_job->{id} ?
+                      "$current_job->{id}"
+                    : 'another job'
+                );
+                log_debug("Refusing 'grab_job', we are already performing $current_job");
                 return;
             }
 
