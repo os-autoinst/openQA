@@ -45,9 +45,27 @@ $test_case->init_data;
 
 use OpenQA::SeleniumTest;
 
+my $broken_worker_id = 3;
 sub schema_hook {
-    OpenQA::Test::Database->new->create->resultset('Jobs')->search({id => {-in => [99926, 99961]}})
-      ->update({assigned_worker_id => 1});
+    my $schema  = OpenQA::Test::Database->new->create;
+    my $jobs    = $schema->resultset('Jobs');
+    my $workers = $schema->resultset('Workers');
+
+    $jobs->search({id => {-in => [99926, 99961]}})->update({assigned_worker_id => 1});
+
+    $workers->create(
+        {
+            id       => $broken_worker_id,
+            host     => 'foo',
+            instance => 42,
+            error    => 'out of order',
+        });
+
+    # ensure workers are not considered dead too soon
+    $workers->update(
+        {
+            t_updated => time2str('%Y-%m-%d %H:%M:%S', time + 7200, 'UTC'),
+        });
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -71,25 +89,35 @@ $driver->title_is("openQA", "back on main page");
 
 is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
 
-# Demo is admin, so go there
-$driver->find_element('#user-action a')->click();
-$driver->find_element_by_link_text('Workers')->click();
+subtest 'worker overview' => sub {
+    $driver->find_element('#user-action a')->click();
+    $driver->find_element_by_link_text('Workers')->click();
+    $driver->title_is('openQA: Workers', 'on workers overview');
 
-$driver->title_is("openQA: Workers", "on workers overview");
+    # show all worker regardless of their state
+    $driver->find_element_by_xpath("//select[\@id='workers_online']/option[1]")->click();
 
-$driver->find_element_by_xpath("//select[\@id='workers_online']/option[1]")->click();
+    # check worker 1
+    is($driver->find_element('tr#worker_1 .worker')->get_text(), 'localhost:1', 'localhost:1');
+    $driver->find_element('tr#worker_1 .help_popover')->click();
+    like($driver->find_element('.popover')->get_text(), qr/Worker status\nJob: 99963/, 'on 99963');
+    $driver->find_element('.paginate_button')->click();
 
-is($driver->find_element('tr#worker_1 .worker')->get_text(), 'localhost:1',  'localhost:1');
-is($driver->find_element('tr#worker_2 .worker')->get_text(), 'remotehost:1', 'remotehost:1');
+    # check worker 2
+    is($driver->find_element('tr#worker_2 .worker')->get_text(), 'remotehost:1', 'remotehost:1');
+    $driver->find_element('tr#worker_2 .help_popover')->click();
+    like($driver->find_element('.popover')->get_text(), qr/Worker status\nJob: 99961/, 'working 99961');
+    $driver->find_element('.paginate_button')->click();
 
-# we can't check if it's "working" as after 10s the worker is 'dead'
-$driver->find_element('tr#worker_1 .help_popover')->click();
-like($driver->find_element('.popover')->get_text(), qr/Worker status\nJob: 99963/, 'on 99963');
-$driver->find_element('.paginate_button')->click();
-$driver->find_element('tr#worker_2 .help_popover')->click();
-# FIXME: select right .popover element
-# it works when testing manually, you can actually see the right popover when using NOT_HEADLESS=1
-#like($driver->find_element('.popover')->get_text(), qr/Worker status\nJob: 99961/, 'working 99961');
+    # check worker 3 (broken one added in schema hook)
+    is($driver->find_element("tr#worker_$broken_worker_id .worker")->get_text(), 'foo:42', 'foo');
+    $driver->find_element("tr#worker_$broken_worker_id .help_popover")->click();
+    is(
+        $driver->find_element("tr#worker_$broken_worker_id .status")->get_text(),
+        'Broken', "worker $broken_worker_id is broken",
+    );
+    like($driver->find_element('.popover')->get_text(), qr/Error\nout of order/, 'reason for brokenness shown',);
+};
 
 $driver->find_element('tr#worker_1 .worker a')->click();
 
