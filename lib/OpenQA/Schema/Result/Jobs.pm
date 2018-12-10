@@ -414,10 +414,9 @@ sub prepare_for_work {
     $job_hashref->{settings}->{JOBTOKEN} = $token;
 
     my $updated_settings = $self->register_assets_from_settings();
-    my @k = keys %$updated_settings; #better don't rely on random key hashes - even if we don't touch the hash meanwhile
 
-    @{$job_hashref->{settings}}{@k} = @{$updated_settings}{@k}
-      if ($updated_settings);
+    @{$job_hashref->{settings}}{keys %$updated_settings} = values %$updated_settings
+      if $updated_settings;
 
     if (   $job_hashref->{settings}->{NICTYPE}
         && !defined $job_hashref->{settings}->{NICVLAN}

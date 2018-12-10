@@ -517,8 +517,7 @@ sub _stop_job_finish {
 
 sub copy_job_settings {
     my ($j, $worker_settings) = @_;
-    my @worker_settings_key = keys %$worker_settings;
-    @{$j->{settings}}{@worker_settings_key} = @{$worker_settings}{@worker_settings_key};
+    @{$j->{settings}}{keys %$worker_settings} = values %$worker_settings;
 }
 
 sub start_job {
