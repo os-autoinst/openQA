@@ -98,25 +98,29 @@ subtest 'worker overview' => sub {
     $driver->find_element_by_xpath("//select[\@id='workers_online']/option[1]")->click();
 
     # check worker 1
-    is($driver->find_element('tr#worker_1 .worker')->get_text(), 'localhost:1', 'localhost:1');
+    is($driver->find_element('tr#worker_1 .worker')->get_text(), 'localhost:1', 'localhost:1 shown');
     $driver->find_element('tr#worker_1 .help_popover')->click();
     like($driver->find_element('.popover')->get_text(), qr/Worker status\nJob: 99963/, 'on 99963');
+
+    # close the popover and wait until it is actually gone (seems to have a very short animation)
     $driver->find_element('.paginate_button')->click();
+    wait_until_element_gone('.popover');
 
     # check worker 2
-    is($driver->find_element('tr#worker_2 .worker')->get_text(), 'remotehost:1', 'remotehost:1');
+    is($driver->find_element('tr#worker_2 .worker')->get_text(), 'remotehost:1', 'remotehost:1 shown');
     $driver->find_element('tr#worker_2 .help_popover')->click();
     like($driver->find_element('.popover')->get_text(), qr/Worker status\nJob: 99961/, 'working 99961');
     $driver->find_element('.paginate_button')->click();
+    wait_until_element_gone('.popover');
 
     # check worker 3 (broken one added in schema hook)
-    is($driver->find_element("tr#worker_$broken_worker_id .worker")->get_text(), 'foo:42', 'foo');
+    is($driver->find_element("tr#worker_$broken_worker_id .worker")->get_text(), 'foo:42', 'foo shown');
     $driver->find_element("tr#worker_$broken_worker_id .help_popover")->click();
     is(
         $driver->find_element("tr#worker_$broken_worker_id .status")->get_text(),
         'Broken', "worker $broken_worker_id is broken",
     );
-    like($driver->find_element('.popover')->get_text(), qr/Error\nout of order/, 'reason for brokenness shown',);
+    like($driver->find_element('.popover')->get_text(), qr/Error\nout of order/, 'reason for brokenness shown');
 };
 
 $driver->find_element('tr#worker_1 .worker a')->click();

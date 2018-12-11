@@ -9,7 +9,8 @@ require OpenQA::Test::Database;
 our @EXPORT = qw($drivermissing check_driver_modules start_driver
   call_driver kill_driver wait_for_ajax disable_bootstrap_animations
   open_new_tab mock_js_functions element_visible element_hidden
-  element_not_present javascript_console_has_no_warnings_or_errors);
+  element_not_present javascript_console_has_no_warnings_or_errors
+  wait_until wait_until_element_gone);
 
 use Data::Dump 'pp';
 use Mojo::IOLoop::Server;
@@ -284,6 +285,37 @@ sub element_not_present {
 
     my @elements = $_driver->find_elements($selector);
     is(scalar @elements, 0, $selector . ' not present');
+}
+
+sub wait_until {
+    my ($check_function, $check_description, $timeout, $check_interval) = @_;
+    $timeout        //= 10;
+    $check_interval //= 0.2;
+
+    while (1) {
+        if ($check_function->()) {
+            pass($check_description);
+            return 1;
+        }
+        if ($timeout <= 0) {
+            fail($check_description);
+            return 0;
+        }
+        $timeout -= $check_interval;
+        sleep $check_interval;
+    }
+}
+
+sub wait_until_element_gone {
+    my ($selector) = shift;
+
+    wait_until(
+        sub {
+            return scalar(@{$_driver->find_elements($selector)}) == 0;
+        },
+        $selector . ' gone',
+        @_,
+    );
 }
 
 sub kill_driver() {
