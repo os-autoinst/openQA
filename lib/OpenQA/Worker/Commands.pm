@@ -124,43 +124,43 @@ sub websocket_commands {
                 return;
             }
 
-            return unless $job;
+            # refuse new job if it is invalid
+            if (!$job || ref($job) ne 'HASH' || !$job->{id} || !$job->{settings}) {
+                $check_job_running->{$host} = 0;
+                log_error("Refusing 'grab_job' because job is invalid: " . pp($job));
+                return;
+            }
+
             return if $check_job_running->{$host};
 
             $job_in_progress = 1;
             $check_job_running->{$host} = 1;
             OpenQA::Events->singleton->once(
-                "stop_job" => sub {
-                    log_debug("Build finished, setting us free to pick up new jobs",);
+                stop_job => sub {
+                    log_debug('Build finished, setting us free to pick up new jobs');
                     $job_in_progress = 0;
                     $check_job_running->{$host} = 0;
                 });
 
-            if ($job && $job->{id}) {
-                $OpenQA::Worker::Common::job = $job;
-                remove_log_channel('autoinst');
-                remove_log_channel('worker');
-                add_log_channel('autoinst', path => 'autoinst-log.txt', level => 'debug');
-                add_log_channel(
-                    'worker',
-                    path    => 'worker-log.txt',
-                    level   => $worker_settings->{LOG_LEVEL} // 'info',
-                    default => 'append'
-                );
+            $OpenQA::Worker::Common::job = $job;
+            remove_log_channel('autoinst');
+            remove_log_channel('worker');
+            add_log_channel('autoinst', path => 'autoinst-log.txt', level => 'debug');
+            add_log_channel(
+                'worker',
+                path    => 'worker-log.txt',
+                level   => $worker_settings->{LOG_LEVEL} // 'info',
+                default => 'append'
+            );
 
-                log_debug("Job " . $job->{id} . " scheduled for next cycle");
-                OpenQA::Events->singleton->once(
-                    "start_job" => sub {
-                        $OpenQA::Worker::Common::job->{state} = "running";
-                        OpenQA::Worker::Common::send_status($tx);
-                        log_debug("Sent worker status to $host (start_job)");
-                    });
-                $tx->send({json => {type => "accepted", jobid => $job->{id}}} => sub { start_job($host); });
-            }
-            else {
-                $job_in_progress = 0;
-                $check_job_running->{$host} = 0;
-            }
+            log_debug("Job $job->{id} scheduled for next cycle");
+            OpenQA::Events->singleton->once(
+                start_job => sub {
+                    $OpenQA::Worker::Common::job->{state} = 'running';
+                    OpenQA::Worker::Common::send_status($tx);
+                    log_debug("Sent worker status to $host (start_job)");
+                });
+            $tx->send({json => {type => "accepted", jobid => $job->{id}}} => sub { start_job($host); });
         }
         elsif ($type eq 'incompatible') {
             log_error("The worker is running an incompatible version");
