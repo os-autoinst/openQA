@@ -3,7 +3,7 @@ Name:           %{short_name}-test
 Version:        4.6
 Release:        0
 Summary:        Test package for openQA
-License:        GPL-2.0+
+License:        GPL-2.0-or-later
 BuildRequires:  %{short_name} == %{version}
 BuildRequires:  openQA-local-db
 ExcludeArch:    i586
