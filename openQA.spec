@@ -329,7 +329,7 @@ fi
 
 %postun
 %service_del_postun %{openqa_services}
-%restart_on_update boot.apparmor
+%restart_on_update apparmor
 
 %postun worker
 %service_del_postun %{openqa_worker_services}
