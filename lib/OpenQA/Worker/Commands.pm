@@ -102,9 +102,24 @@ sub websocket_commands {
             state $check_job_running;
             state $job_in_progress;
 
+            # refuse new if worker is in error state (this will leave the job to be grabbed in assigned state)
+            if ($OpenQA::Worker::Common::current_error) {
+                log_debug(
+"Refusing 'grab_job', we are currently unable to do any work: $OpenQA::Worker::Common::current_error"
+                );
+                return;
+            }
+
+            # refuse new jobs if already busy (this will leave the job in assigned state)
             my $job = $json->{job};
             if ($job_in_progress) {
-                log_debug("Refusing, we are already performing another job");
+                my $current_job = $OpenQA::Worker::Common::job;
+                $current_job = (
+                    $current_job && $current_job->{id} ?
+                      "$current_job->{id}"
+                    : 'another job'
+                );
+                log_debug("Refusing 'grab_job', we are already performing $current_job");
                 return;
             }
 
@@ -139,7 +154,6 @@ sub websocket_commands {
                         OpenQA::Worker::Common::send_status($tx);
                         log_debug("Sent worker status to $host (start_job)");
                     });
-                # Mojo::IOLoop->singleton->once("stop_job" => sub { OpenQA::Worker::Common::send_status($tx); });
                 $tx->send({json => {type => "accepted", jobid => $job->{id}}} => sub { start_job($host); });
             }
             else {

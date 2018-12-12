@@ -36,8 +36,11 @@ sub index {
     my $workers_db          = $self->db->resultset('Workers');
     my $total_online        = grep { !$_->dead } $workers_db->all();
     my $total               = $workers_db->count;
-    my $free_active_workers = grep { !$_->dead } $workers_db->search({job_id => undef})->all();
-    my $busy_workers        = grep { !$_->dead } $workers_db->search({job_id => {'!=', undef}})->all();
+    my $free_active_workers = grep { !$_->dead } $workers_db->search({job_id => undef, error => undef})->all();
+    my $free_broken_workers
+      = grep { !$_->dead } $workers_db->search({job_id => undef, error => {'!=' => undef}})->all();
+    my $busy_workers = grep { !$_->dead } $workers_db->search({job_id => {'!=' => undef}})->all();
+    # possible performance improvement: do check for dead via database
 
     my %workers;
     while (my $w = $workers_db->next) {
@@ -48,6 +51,7 @@ sub index {
         workers_online      => $total_online,
         total               => $total,
         workers_active_free => $free_active_workers,
+        workers_broken_free => $free_broken_workers,
         workers_busy        => $busy_workers,
         workers             => \%workers
     );

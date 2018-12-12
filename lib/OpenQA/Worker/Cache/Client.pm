@@ -108,6 +108,14 @@ sub asset_exists { !!(-e shift->asset_path(@_)) }
 
 sub request { OpenQA::Worker::Cache::Request->new(client => shift) }
 
+sub availability_error {
+    my ($self) = @_;
+
+    return 'Cache service not available.'            unless $self->available;
+    return 'No workers active in the cache service.' unless $self->available_workers;
+    return undef;
+}
+
 =encoding utf-8
 
 =head1 NAME

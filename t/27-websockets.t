@@ -75,16 +75,19 @@ subtest "WebSocket Server _message()" => sub {
 
     monkey_patch "Mojo::Transaction::Websocket", send => sub { undef };
     $fake_tx->OpenQA::WebSockets::Server::_message({type => 'worker_status'});
-    like $buf, qr/Could not be able to send population number to worker/ or diag explain $buf;
+    like($buf, qr/Could not send the population number to worker/, 'worker population unavailable')
+      or diag explain $buf;
 
     monkey_patch "OpenQA::WebAPI", schema => sub { undef };
     $fake_tx->OpenQA::WebSockets::Server::_message({type => 'worker_status'});
-    like $buf, qr/Failed updating worker seen status/ or diag explain $buf;
+    like($buf, qr/Failed updating worker seen and error status/, 'seen/error not available')
+      or diag explain $buf;
 
     no warnings 'redefine';
     *FooBarWorker::websocket_api_version = sub { };
     $fake_tx->OpenQA::WebSockets::Server::_message({type => 'worker_status'});
-    like $buf, qr/Received a message from an incompatible worker/ or diag explain $buf;
+    like($buf, qr/Received a message from an incompatible worker/, 'worker incompatible')
+      or diag explain $buf;
     is @{$fake_tx->{out}}[1],
       "1008,Connection terminated from WebSocket server - incompatible communication protocol version";
 

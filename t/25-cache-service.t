@@ -53,8 +53,10 @@ use POSIX '_exit';
 use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service);
+use OpenQA::Test::FakeWebSocketTransaction;
 use Mojo::Util qw(md5_sum);
 use OpenQA::Worker::Cache::Request;
+use Test::MockModule;
 
 my $sql;
 my $sth;
@@ -153,6 +155,49 @@ sub test_download {
     ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded');
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
 }
+
+subtest 'Availability check and worker status' => sub {
+    my $client_mock = new Test::MockModule('OpenQA::Worker::Cache::Client');
+
+    is($cache_client->availability_error, 'Cache service not available.', 'cache service not available');
+
+    $client_mock->mock(available         => sub { return 1; });
+    $client_mock->mock(available_workers => sub { return 0; });
+    is($cache_client->availability_error, 'No workers active in the cache service.', 'nor workers active');
+
+    $client_mock->mock(available_workers => sub { return 1; });
+    is($cache_client->availability_error, undef, 'no error');
+
+    $client_mock->mock(available => sub { return 0; });
+    OpenQA::Worker::Common::check_availability();
+    is($OpenQA::Worker::Common::current_error, undef, 'no error if worker cache not configured');
+
+    $OpenQA::Worker::Common::worker_settings = {CACHEDIRECTORY => 'FOO'};
+    OpenQA::Worker::Common::check_availability();
+    is($OpenQA::Worker::Common::current_error, 'Cache service not available.', 'error set if cache configured');
+
+    my $tx = OpenQA::Test::FakeWebSocketTransaction->new();
+    OpenQA::Worker::Common::send_status($tx);
+    is_deeply(
+        $tx->sent_messages,
+        [
+            {
+                json => {
+                    type   => 'worker_status',
+                    status => 'broken',
+                    reason => 'Cache service not available.',
+                },
+            },
+        ],
+        'brokenness communicated to web UI'
+    ) or diag explain $tx->sent_messages;
+
+    $client_mock->mock(available => sub { return 1; });
+    OpenQA::Worker::Common::check_availability();
+    is($OpenQA::Worker::Common::current_error, undef, 'error state cleared');
+
+    $client_mock->unmock_all();
+};
 
 subtest 'Configurable minion workers' => sub {
     require OpenQA::Worker::Cache::Service;

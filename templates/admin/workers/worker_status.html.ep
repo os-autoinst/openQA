@@ -7,14 +7,15 @@
           '<br> Step: '. $worker->{currentstep} : '' )
         )
     %>
-% } elsif ($worker->{status} eq 'dead' && $worker->{job})
-% {
+% } elsif ($worker->{status} eq 'dead' && $worker->{job}) {
     Dead
     <%= help_popover('Worker status' =>
           'Dead with job: ' .
           link_to($worker->{jobid}, url_for('test', testid => $worker->{jobid}))
         )
     %>
+% } elsif ($worker->{status} eq 'broken') {
+    Broken <%= help_popover(Error => $worker->{error}) %>
 % } elsif ($worker->{connected}) {
     Online
 % } else {

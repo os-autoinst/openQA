@@ -87,6 +87,7 @@ sub init {
     my ($host, $location) = ($self->host, $self->location);
 
     $self->db_file(path($location, 'cache.sqlite'));
+    log_info(__PACKAGE__ . ': loading database from ' . $self->db_file);
     $self->dsn("sqlite:" . $self->db_file);
     $self->deploy_cache unless -e $self->db_file;
     $self->cache_real_size(0);

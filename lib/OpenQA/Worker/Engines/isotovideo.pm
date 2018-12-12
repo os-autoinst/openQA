@@ -120,8 +120,10 @@ sub cache_assets {
         my $asset;
         my $asset_uri = trim($vars->{$this_asset});
         log_debug("Found $this_asset, caching " . $vars->{$this_asset});
-        return {error => "Cache service not available."}            unless $cache_client->available;
-        return {error => "No workers active in the cache service."} unless $cache_client->available_workers;
+
+        # check cache availability
+        my $error = $cache_client->availability_error;
+        return {error => $error} if $error;
 
         my $asset_request = $cache_client->request->asset(
             id    => $job->{id},
