@@ -206,6 +206,13 @@ END_SQL
     my (@assets, %asset_info, %group_info);
     $schema->txn_do(
         sub {
+            # set transaction-level so "all statements of the current transaction can only see rows committed
+            # before the first query [...] statement was executed in this transaction"
+            # (quote from https://www.postgresql.org/docs/9.6/sql-set-transaction.html)
+            $schema->storage->dbh->prepare('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY DEFERRABLE;')
+              ->execute();
+            # note: only affects the current transaction (so no reason to reset again)
+
             # prefetch all assets
             my $assets_arrayref = $dbh->selectall_arrayref($prioritized_assets_query);
             for my $asset_array (@$assets_arrayref) {
