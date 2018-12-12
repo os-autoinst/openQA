@@ -26,6 +26,7 @@ use Cpanel::JSON::XS ();
 use Mojo::IOLoop;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::Events;
 
 # note: there is also job_cancel_by_settings, but that is quite an odd one;
 # it basically does a search by the specified settings and cancels all
@@ -41,14 +42,13 @@ my @comment_events = qw(comment_create comment_update comment_delete);
 
 sub register {
     my ($self, $app) = @_;
-    my $reactor = Mojo::IOLoop->singleton;
 
     # register for events
     for my $e (@job_events) {
-        $reactor->on("openqa_$e" => sub { shift; $self->on_job_event($app, @_) });
+        OpenQA::Events->singleton->on("openqa_$e" => sub { shift; $self->on_job_event($app, @_) });
     }
     for my $e (@comment_events) {
-        $reactor->on("openqa_$e" => sub { shift; $self->on_comment_event($app, @_) });
+        OpenQA::Events->singleton->on("openqa_$e" => sub { shift; $self->on_comment_event($app, @_) });
     }
 }
 

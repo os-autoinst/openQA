@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 use Mojo::ByteStream;
 use OpenQA::Utils qw(bugurl render_escaped_refs href_to_bugref);
+use OpenQA::Events;
 use db_helpers;
 
 sub register {
@@ -289,7 +290,7 @@ sub register {
             my ($self, $event, $data) = @_;
             die 'Missing event name' unless $event;
             my $user = $self->current_user ? $self->current_user->id : undef;
-            return Mojo::IOLoop->singleton->emit($event, [$user, $self->tx->connection, $event, $data]);
+            return OpenQA::Events->singleton->emit($event, [$user, $self->tx->connection, $event, $data]);
         });
 
     $app->helper(

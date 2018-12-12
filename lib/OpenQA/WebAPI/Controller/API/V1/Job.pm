@@ -20,6 +20,7 @@ use OpenQA::Utils;
 use OpenQA::IPC;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::Events;
 use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
 use Mojo::Asset::Memory;
@@ -475,9 +476,9 @@ sub create_artefact {
             sub {
                 die "Transaction empty" if $tx->is_empty;
                 @{Mojo::IOLoop->singleton}{@ioloop_evs} = @evs;
-                Mojo::IOLoop->singleton->emit('chunk_upload.start' => $self);
+                OpenQA::Events->singleton->emit('chunk_upload.start' => $self);
                 my ($e, $fname, $type, $last) = $job->create_asset($self->param('file'), $self->param('asset'));
-                Mojo::IOLoop->singleton->emit('chunk_upload.end' => ($self, $e, $fname, $type, $last));
+                OpenQA::Events->singleton->emit('chunk_upload.end' => ($self, $e, $fname, $type, $last));
                 die "$e" if $e;
                 return $fname, $type, $last;
             },

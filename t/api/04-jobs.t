@@ -34,6 +34,7 @@ use Digest::MD5;
 use OpenQA::WebSockets;
 use OpenQA::Scheduler;
 use OpenQA::ResourceAllocator;
+use OpenQA::Events;
 
 require OpenQA::Schema::Result::Jobs;
 
@@ -46,7 +47,7 @@ my $ra = OpenQA::ResourceAllocator->new;
 
 my $chunk_size = 10000000;
 
-Mojo::IOLoop->singleton->on('chunk_upload.end' => sub { Devel::Cover::report() if Devel::Cover->can('report'); });
+OpenQA::Events->singleton->on('chunk_upload.end' => sub { Devel::Cover::report() if Devel::Cover->can('report'); });
 
 sub calculate_file_md5($) {
     my ($file) = @_;

@@ -22,6 +22,7 @@ use Mojo::IOLoop;
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::Events;
 use Mojo::RabbitMQ::Client::Publisher;
 
 my @job_events     = qw(job_create job_delete job_cancel job_duplicate job_restart job_update_result job_done);
@@ -41,16 +42,14 @@ sub register {
     my $self = shift;
     $self->{app}    = shift;
     $self->{config} = $self->{app}->config;
-    my $ioloop = Mojo::IOLoop->singleton;
-
-    $ioloop->next_tick(
+    Mojo::IOLoop->singleton->next_tick(
         sub {
             # register for events
             for my $e (@job_events) {
-                $ioloop->on("openqa_$e" => sub { shift; $self->on_job_event(@_) });
+                OpenQA::Events->singleton->on("openqa_$e" => sub { shift; $self->on_job_event(@_) });
             }
             for my $e (@comment_events) {
-                $ioloop->on("openqa_$e" => sub { shift; $self->on_comment_event(@_) });
+                OpenQA::Events->singleton->on("openqa_$e" => sub { shift; $self->on_comment_event(@_) });
             }
         });
 }
