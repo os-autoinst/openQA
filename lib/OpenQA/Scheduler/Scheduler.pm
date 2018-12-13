@@ -14,9 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Scheduler::Scheduler;
-
-use strict;
-use warnings;
+use Mojo::Base -strict;
 
 # we need the critical fix for update
 # see https://github.com/dbsrgits/dbix-class/commit/31160673f390e178ee347e7ebee1f56b3f54ba7a
@@ -42,7 +40,6 @@ use db_helpers 'rndstr';
 use Time::HiRes 'time';
 use List::Util qw(all shuffle);
 use OpenQA::IPC;
-use sigtrap handler => \&normal_signals_handler, 'normal-signals';
 use OpenQA::Scheduler;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use Carp;
@@ -50,8 +47,8 @@ use Exporter 'import';
 
 our @EXPORT = qw(job_grab);
 
-CORE::state $summoned = 0;
-CORE::state $quit     = 0;
+state $summoned = 0;
+state $quit     = 0;
 
 my $shuffle_workers = 1;
 
@@ -61,7 +58,7 @@ sub shuffle_workers {
     return $shuffle_workers;
 }
 
-sub normal_signals_handler {
+sub quit {
     log_debug("Received signal to stop");
     $quit++;
     _reschedule(1);
@@ -82,7 +79,7 @@ Getter/Setter for the main Net::DBus::Reactor in the current loop:
 =cut
 
 sub reactor {
-    CORE::state $reactor;
+    state $reactor;
     return $reactor if $reactor;
     $reactor = shift;
     weaken $reactor;
@@ -90,13 +87,13 @@ sub reactor {
 }
 
 sub schema {
-    CORE::state $schema;
+    state $schema;
     $schema = OpenQA::Schema::connect_db() unless $schema;
     return $schema;
 }
 
 sub scheduled_jobs {
-    CORE::state $scheduled_jobs;
+    state $scheduled_jobs;
     $scheduled_jobs = {} unless $scheduled_jobs;
     return $scheduled_jobs;
 }

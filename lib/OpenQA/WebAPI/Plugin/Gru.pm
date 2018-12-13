@@ -209,7 +209,6 @@ sub cmd_run {
     while (1) {
         next unless my $job = $worker->register->dequeue(5);
         $self->execute_job($job);
-        sleep 5;
     }
     $worker->unregister;
 }
