@@ -32,7 +32,7 @@ use OpenQA::Jobs::Constants;
 # init test case
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $t    = Test::Mojo->new('OpenQA::WebAPI');
 my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
 $test_case->login($t, 'percival');
 my $job_groups    = $t->app->db->resultset('JobGroups');
@@ -458,7 +458,7 @@ subtest 'job parent groups with multiple version and builds' => sub {
 
     $test_parent->update({build_version_sort => 0});
 
-    $get = $t->get_ok('/parent_group_overview/' . $test_parent->id)->status_is(200);
+    $get         = $t->get_ok('/parent_group_overview/' . $test_parent->id)->status_is(200);
     @build_names = map { 'Build' . $_ } qw(0091 0091 0092 0048@0815 0048 87.5011);
     check_builds(\@build_names, $test_parent, 'parent group builds shown sorted by time', 'parent_group_overview');
 

@@ -34,7 +34,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 subtest 'new users are not ops and admins' => sub {
     my $mordred_id = 'https://openid.badguys.uk/mordred';
-    my $user = $t->app->db->resultset('Users')->create({username => $mordred_id});
+    my $user       = $t->app->db->resultset('Users')->create({username => $mordred_id});
     ok(!$user->is_admin,    'new users are not admin by default');
     ok(!$user->is_operator, 'new users are not operator by default');
 };

@@ -35,7 +35,7 @@ use Scalar::Util qw(blessed reftype);
 use Exporter 'import';
 
 our $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
-our @EXPORT = qw(
+our @EXPORT  = qw(
   $prj
   $basedir
   $prjdir
@@ -126,7 +126,7 @@ our $assetdir  = "$sharedir/factory";
 our $imagesdir = "$prjdir/images";
 our $hostname  = $ENV{SERVER_NAME};
 our $app;
-my %channels = ();
+my %channels     = ();
 my %log_defaults = (LOG_TO_STANDARD_CHANNEL => 1, CHANNELS => []);
 
 # the desired new folder structure is
@@ -193,7 +193,7 @@ sub needle_info {
         $fn = "$needledir/$name.json";
     }
     elsif (!-f $fn) {
-        $fn = catfile($sharedir, $fn);
+        $fn        = catfile($sharedir, $fn);
         $needledir = dirname($fn);
     }
     else {
@@ -221,7 +221,7 @@ sub needle_info {
     return unless $needle;
 
     my $png_fname = basename($fn, '.json') . '.png';
-    my $pngfile = File::Spec->catpath('', $needledir, $png_fname);
+    my $pngfile   = File::Spec->catpath('', $needledir, $png_fname);
 
     $needle->{needledir} = $needledir;
     $needle->{image}     = $pngfile;
@@ -618,7 +618,7 @@ my %bugurls = (
 );
 
 sub bugref_regex {
-    my $marker = join('|', keys %bugrefs);
+    my $marker  = join('|', keys %bugrefs);
     my $repo_re = qr{[a-zA-Z/-]+};
     # <marker>[#<project/repo>]#<id>
     return qr{(?<![\(\[\"\>])(?<match>(?<marker>$marker)\#?(?<repo>$repo_re)?\#(?<id>\d+))(?![\w\"])};
@@ -730,7 +730,7 @@ sub check_download_whitelist {
     }
     for my $param (keys %$params) {
         next unless ($param =~ /_URL$/);
-        my $url = $$params{$param};
+        my $url   = $$params{$param};
         my @check = check_download_url($url, $whitelist);
         next unless (@check);
         # if we get here, we got a failure
@@ -758,10 +758,10 @@ sub create_downloads_list {
         # generate_jobs so the jobs have FOO set
         if ($arg =~ /_DECOMPRESS_URL$/) {
             $do_extract = 1;
-            $short = substr($arg, 0, -15);    # remove whole _DECOMPRESS_URL substring
+            $short      = substr($arg, 0, -15);    # remove whole _DECOMPRESS_URL substring
         }
         else {
-            $short = substr($arg, 0, -4);    # remove _URL substring
+            $short = substr($arg, 0, -4);          # remove _URL substring
         }
         if (!$args->{$short}) {
             $filename = Mojo::URL->new($url)->path->parts->[-1];
@@ -1004,7 +1004,7 @@ sub read_test_modules {
             my $text   = $step->{text};
             my $source = $step->{_source};
 
-            $step->{num} = $num++;
+            $step->{num}           = $num++;
             $step->{display_title} = ($text ? $step->{title} : $step->{name}) // '';
             if ($text) {
                 my $file = path($job->result_dir(), $text);
@@ -1112,7 +1112,7 @@ sub parse_tags_from_comments {
         next unless $build;
 
         my $version = $tag[3];
-        my $tag_id = $version ? "$version-$build" : $build;
+        my $tag_id  = $version ? "$version-$build" : $build;
 
         log_debug('Tag found on build ' . $build . ' of type ' . $tag[1]);
         log_debug('description: ' . $tag[2]) if $tag[2];
@@ -1151,7 +1151,7 @@ sub detect_current_version {
         # This method have its limits while checking out different branches
         # but emulates git-describe output without executing commands.
         if ($master_head && $packed_refs) {
-            my $latest_ref = (grep(/tags/, split(/\s/, $packed_refs)))[-1];
+            my $latest_ref   = (grep(/tags/, split(/\s/, $packed_refs)))[-1];
             my $partial_hash = substr($master_head, 0, 8);
             if ($latest_ref && $partial_hash) {
                 my $tag = (split(/\//, $latest_ref))[-1];

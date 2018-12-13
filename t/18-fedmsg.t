@@ -53,7 +53,7 @@ $module->mock('run', \&mock_ipc_run);
 my $schema = OpenQA::Test::Database->new->create();
 
 # this test also serves to test plugin loading via config file
-my @conf = ("[global]\n", "plugins=Fedmsg\n", "base_url=https://openqa.stg.fedoraproject.org\n");
+my @conf    = ("[global]\n", "plugins=Fedmsg\n", "base_url=https://openqa.stg.fedoraproject.org\n");
 my $tempdir = tempdir;
 $ENV{OPENQA_CONFIG} = $tempdir;
 path($ENV{OPENQA_CONFIG})->make_path->child("openqa.ini")->spurt(@conf);
@@ -89,7 +89,7 @@ my $commonexpr = '/usr/sbin/daemonize /usr/bin/fedmsg-logger-3 --cert-prefix=ope
 my $commonci   = '/usr/sbin/daemonize /usr/bin/fedmsg-logger-3 --cert-prefix=ci --modname=ci';
 # create a job via API
 my $post = $t->post_ok("/api/v1/jobs" => form => $settings)->status_is(200);
-my $job = $post->tx->res->json->{id};
+my $job  = $post->tx->res->json->{id};
 is(
     $args[0],
     $commonexpr

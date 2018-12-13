@@ -30,7 +30,7 @@ BEGIN {
     use Mojo::File qw(path tempdir);
     $tempdir = tempdir;
     $ENV{OPENQA_BASEDIR} = $tempdir->child('t', 'full-stack.d');
-    $ENV{OPENQA_CONFIG} = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
+    $ENV{OPENQA_CONFIG}  = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
     # Since tests depends on timing, we require the scheduler to be fixed in its actions.
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 4000;
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 1;
@@ -122,7 +122,7 @@ $resourceallocatorpid = start_resourceallocator;
 my $driver = call_driver(
     sub {
         my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1, skip_schema => 1);
-        my $users = $schema->resultset('Users');
+        my $users  = $schema->resultset('Users');
 
         # create the admins 'Demo' and 'otherdeveloper'
         for my $user_name (qw(Demo otherdeveloper)) {
@@ -383,7 +383,7 @@ subtest 'developer session visible in live view' => sub {
     );
 
     my @module_options = $driver->find_elements('#developer-pause-at-module option');
-    my @module_names = map { $_->get_text() } @module_options;
+    my @module_names   = map { $_->get_text() } @module_options;
     is_deeply(\@module_names, ['Do not pause', 'boot', 'shutdown',], 'module');
 };
 

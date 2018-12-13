@@ -136,7 +136,7 @@ my %seen_needles;
 while (my $j = $jobs->next) {
     for my $module (OpenQA::Schema::Result::JobModules::job_modules($j)) {
         my $job = OpenQA::Scheduler::Scheduler::job_get($j->id);
-        my $fn = join('/', $OpenQA::Utils::resultdir, $job->{settings}->{NAME}, 'details-' . $module->name . '.json');
+        my $fn  = join('/', $OpenQA::Utils::resultdir, $job->{settings}->{NAME}, 'details-' . $module->name . '.json');
         next unless -e $fn;
         open(my $fd, '<', $fn);
         next unless $fd;
@@ -148,7 +148,7 @@ while (my $j = $jobs->next) {
             warn "failed to parse $fn";
             next;
         }
-        my $distri = $job->{settings}->{DISTRI};
+        my $distri  = $job->{settings}->{DISTRI};
         my $version = map_version($distri, $job->{settings}->{VERSION});
 
         load_needles($distri, $version);
@@ -157,7 +157,7 @@ while (my $j = $jobs->next) {
             next unless $detail->{result} eq 'ok';
             next unless $detail->{needle};
             next unless $detail->{tags};
-            my $needle = $needles_by_name{$distri}{$version}{$detail->{needle}};
+            my $needle      = $needles_by_name{$distri}{$version}{$detail->{needle}};
             my %needle_tags = map { $_ => 1 } @{$needle->{tags}};
             for my $tag (@{$detail->{tags}}) {
                 next unless $needle_tags{$tag};

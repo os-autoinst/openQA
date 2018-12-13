@@ -147,7 +147,7 @@ sub refresh_size {
     $current_size //= $self->size;
 
     my $new_size = 0;
-    my @stat = stat(my $disk_file = $self->disk_file);
+    my @stat     = stat(my $disk_file = $self->disk_file);
     if (@stat) {
         if ($self->type eq 'repo') {
             return $current_size if defined($current_size);

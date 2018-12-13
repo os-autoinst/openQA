@@ -49,10 +49,10 @@ sub parse {
 
         $ts_category =~ s/[^A-Za-z0-9._-]/_/g;
         $ts_category =~ s/\..*$//;
-        $ts_name =~ s/\..*$//;
-        $ts_name =~ s/[^A-Za-z0-9._-]/_/g;
-        $ts_name =~ s/^[^.]*\.//;
-        $ts_name =~ s/\./_/;
+        $ts_name     =~ s/\..*$//;
+        $ts_name     =~ s/[^A-Za-z0-9._-]/_/g;
+        $ts_name     =~ s/^[^.]*\.//;
+        $ts_name     =~ s/\./_/;
         if (exists $ts->{id} && $ts->{id} =~ /^[0-9]+$/) {
             # make sure that the name is unique
             # prepend numeric $ts->{id}, start counting from 1

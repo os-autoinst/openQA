@@ -70,7 +70,7 @@ sub setup_log {
 
     if ($logfile && $logdir) {
         $logfile = catfile($logdir, $logfile);
-        $log = Mojo::Log->new(
+        $log     = Mojo::Log->new(
             handle => path($logfile)->open('>>'),
             level  => $self->level,
             format => \&log_format_callback
@@ -219,8 +219,8 @@ sub read_config {
         for my $k (sort keys %{$defaults{$section}}) {
             my $v = $cfg && $cfg->val($section, $k);
             $v //=
-              exists $mode_defaults{$app->mode}{$section}->{$k} ?
-              $mode_defaults{$app->mode}{$section}->{$k}
+              exists $mode_defaults{$app->mode}{$section}->{$k}
+              ? $mode_defaults{$app->mode}{$section}->{$k}
               : $defaults{$section}->{$k};
             $app->config->{$section}->{$k} = $v if defined $v;
         }
@@ -244,8 +244,8 @@ sub update_config {
         # If it is a Mojo::Base class, it requires to be instantiated
         # because the attributes are not populated until creation.
         my $fields
-          = UNIVERSAL::isa($plugin, "Mojo::Base") ?
-          do { $plugin->new->configuration_fields() }
+          = UNIVERSAL::isa($plugin, "Mojo::Base")
+          ? do { $plugin->new->configuration_fields() }
           : $plugin->configuration_fields();
 
         # We expect just hashrefs

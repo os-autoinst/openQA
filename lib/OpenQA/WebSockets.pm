@@ -53,7 +53,7 @@ sub new {
     my $ipc = OpenQA::IPC->ipc(1);
     return unless $ipc;
     my $service = $ipc->register_service('websockets');
-    my $self = $class->SUPER::new($service, '/WebSockets');
+    my $self    = $class->SUPER::new($service, '/WebSockets');
     $self->{ipc} = $ipc;
     bless $self, $class;
     # hook DBus to Mojo reactor

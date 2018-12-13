@@ -126,7 +126,7 @@ like($summary, qr/Passed: 0 Incomplete: 1 Failed: 0/);
 
 # Advanced query parameters can be forwarded
 $form = {distri => 'opensuse', version => '13.1', result => 'passed'};
-$get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+$get     = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse 13\.1 build 0091/i, "Still references the last build");
 like($summary, qr/Passed: 3 Failed: 0/i, "Only passed are shown");

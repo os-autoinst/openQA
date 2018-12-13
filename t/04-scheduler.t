@@ -261,35 +261,35 @@ my %args = (state => "scheduled");
 $current_jobs = list_jobs(%args);
 is_deeply($current_jobs, $jobs, "All list_jobs with state scheduled");
 
-%args = (state => "running");
+%args         = (state => "running");
 $current_jobs = list_jobs(%args);
 is_deeply($current_jobs, [], "All list_jobs with state running");
 
-%args = (build => "666");
+%args         = (build => "666");
 $current_jobs = list_jobs(%args);
 is_deeply($current_jobs, [$jobs->[1]], "list_jobs with build");
 
-%args = (iso => "whatever.iso");
+%args         = (iso => "whatever.iso");
 $current_jobs = list_jobs(%args);
 is_deeply($current_jobs, $jobs, "list_jobs with iso");
 
-%args = (build => "666", state => "scheduled");
+%args         = (build => "666", state => "scheduled");
 $current_jobs = list_jobs(%args);
 is_deeply($current_jobs, [$jobs->[1]], "list_jobs combining a setting (BUILD) and state");
 
-%args = (iso => "whatever.iso", build => "666");
+%args         = (iso => "whatever.iso", build => "666");
 $current_jobs = list_jobs(%args);
 is_deeply($current_jobs, [$jobs->[1]], "list_jobs combining two settings (ISO and BUILD)");
 
-%args = (build => "whatever.iso", iso => "666");
+%args         = (build => "whatever.iso", iso => "666");
 $current_jobs = list_jobs(%args);
 is_deeply($current_jobs, [], "list_jobs messing two settings up");
 
-%args = (ids => [1, 2], state => ["scheduled", "done"]);
+%args         = (ids => [1, 2], state => ["scheduled", "done"]);
 $current_jobs = list_jobs(%args);
 is_deeply($current_jobs, $jobs, "jobs with specified IDs and states (array ref)");
 
-%args = (ids => "2,3", state => "scheduled,done");
+%args         = (ids => "2,3", state => "scheduled,done");
 $current_jobs = list_jobs(%args);
 is_deeply($current_jobs, [$jobs->[0]], "jobs with specified IDs (comma list)");
 
@@ -297,7 +297,7 @@ is_deeply($current_jobs, [$jobs->[0]], "jobs with specified IDs (comma list)");
 %args = (workerid => $worker->{id}, allocate => 1);
 my $rjobs_before = list_jobs(state => 'running');
 OpenQA::Scheduler::Scheduler::schedule();
-my $grabbed = $sent->{$worker->{id}}->{job}->to_hash;
+my $grabbed     = $sent->{$worker->{id}}->{job}->to_hash;
 my $rjobs_after = list_jobs(state => 'assigned');
 
 ## test and add JOBTOKEN to job_ref after job_grab
@@ -338,16 +338,16 @@ my $job_id  = $grabbed->{id};
 
 sleep 1;
 # Testing job_set_done
-$job = job_get($job_id);
+$job    = job_get($job_id);
 $result = $job->done(result => 'passed');
 is($result, 'passed', "job_set_done");
 $job = job_get($job_id);
 is($job->state,  "done",   "job_set_done changed state");
 is($job->result, "passed", "job_set_done changed result");
 ok($job->t_finished =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job end timestamp updated");
-ok(!$job->settings_hash->{JOBTOKEN},                          "job token not present after job done");
+ok(!$job->settings_hash->{JOBTOKEN}, "job token not present after job done");
 
-%args = (result => "passed");
+%args         = (result => "passed");
 $current_jobs = list_jobs(%args);
 is(scalar @{$current_jobs}, 1, "there is one passed job listed");
 

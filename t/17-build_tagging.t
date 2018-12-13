@@ -38,7 +38,7 @@ use OpenQA::Jobs::Constants;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $t    = Test::Mojo->new('OpenQA::WebAPI');
 my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
 $test_case->login($t, 'percival');
 
@@ -186,7 +186,7 @@ subtest 'test tags for Fedora update-style BUILD values' => sub {
 
 subtest 'tagging builds via parent group comments' => sub {
     # create a parent group and move all job groups into it
-    my $parent_group = $parent_groups->create({name => 'Test parent', sort_order => 0});
+    my $parent_group    = $parent_groups->create({name => 'Test parent', sort_order => 0});
     my $parent_group_id = $parent_group->id;
     while (my $job_group = $job_groups->next) {
         $job_group->update(
@@ -278,7 +278,7 @@ subtest 'no cleanup of important builds' => sub {
     my $c = OpenQA::WebAPI::Plugin::Gru::Command::gru->new(app => $t->app);
 
     # build 0048 has already been tagged as important before
-    my $job = $jobs->search({id => 99938, state => 'done', group_id => 1001, BUILD => '0048'})->first;
+    my $job      = $jobs->search({id => 99938, state => 'done', group_id => 1001, BUILD => '0048'})->first;
     my $filename = $job->result_dir . '/autoinst-log.txt';
     $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
     $job->group->update(

@@ -41,7 +41,7 @@ sub _get_lock {
     my ($name, $jobid, $where) = @_;
     return 0 unless defined $name && defined $jobid;
     my $schema = OpenQA::ResourceAllocator->instance->schema();
-    my $job = $schema->resultset('Jobs')->single({id => $jobid});
+    my $job    = $schema->resultset('Jobs')->single({id => $jobid});
     return 0 unless $job;
 
     # We need to get owner of the lock
@@ -133,7 +133,7 @@ sub barrier_wait {
     my $barrier = _get_lock($name, $jobid, $where);
     return -1 unless $barrier;
     my $jobschema = OpenQA::ResourceAllocator->instance->schema()->resultset("Jobs");
-    my @jobs = split(/,/, $barrier->locked_by // '');
+    my @jobs      = split(/,/, $barrier->locked_by // '');
 
     do { $barrier->delete; return -1 }
       if $check_dead_job

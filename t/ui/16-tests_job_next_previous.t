@@ -41,7 +41,7 @@ sub schema_hook {
     # Populate more jobs to test page setting and inlcude incompletes
     for my $n (1 .. 15) {
         my $result = $n < 8 ? 'passed' : 'incomplete';
-        my $new = {
+        my $new    = {
             id          => 99900 + $n,
             group_id    => 1001,
             priority    => 35,
@@ -102,7 +102,7 @@ $driver->find_element_by_class('dataTables_wrapper');
 my ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
 is($entries, 19, '19 entries found for 99946');
 my $job99946 = $driver->find_element('#job_next_previous_table #job_result_99946');
-my @tds = $driver->find_child_elements($job99946, 'td');
+my @tds      = $driver->find_child_elements($job99946, 'td');
 is((shift @tds)->get_text(), 'C',                                 '99946 is current job');
 is((shift @tds)->get_text(), 'zypper_up',                         'failed module of 99946');
 is((shift @tds)->get_text(), '0091',                              'build of 99946 is 0091');
@@ -154,7 +154,7 @@ $driver->find_element_by_class('dataTables_wrapper');
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
 is($entries, 19, '19 entries found for 99947');
 $job99947 = $driver->find_element('#job_next_previous_table #job_result_99947');
-@tds = $driver->find_child_elements($job99947, 'td');
+@tds      = $driver->find_child_elements($job99947, 'td');
 is((shift @tds)->get_text(), 'C&L', '99947 is current and the latest job');
 $state = $driver->find_child_element(shift @tds, '.status', 'css');
 is($state->get_attribute('title'), 'Done: passed',                      'the latest job 99947 was passed');
@@ -239,7 +239,7 @@ $driver->find_element_by_class('dataTables_wrapper');
 ($entries) = $driver->get_text('#job_next_previous_table_info') =~ /of (\d+) entries$/;
 is($entries, 19, '19 entries found for 99947');
 $job99947 = $driver->find_element('#job_next_previous_table #job_result_99947');
-@tds = $driver->find_child_elements($job99947, 'td');
+@tds      = $driver->find_child_elements($job99947, 'td');
 is((shift @tds)->get_text(), 'C&L', '99947 is current and the latest job');
 
 # check limit with query parameters of job next & previous

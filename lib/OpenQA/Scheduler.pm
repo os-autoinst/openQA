@@ -86,7 +86,7 @@ sub new {
     my $ipc = OpenQA::IPC->ipc;
     return unless $ipc;
     my $service = $ipc->register_service('scheduler');
-    my $self = $class->SUPER::new($service, '/Scheduler');
+    my $self    = $class->SUPER::new($service, '/Scheduler');
     $self->{ipc} = $ipc;
     bless $self, $class;
 

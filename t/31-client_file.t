@@ -178,12 +178,12 @@ subtest 'verify_chunks' => sub {
 sub compare {
     my ($file, $chunk_size) = @_;
     my $original = path($FindBin::Bin, "data")->child($file);
-    my $pieces = $original->split($chunk_size);
+    my $pieces   = $original->split($chunk_size);
 
     is(OpenQA::File::_chunk_size($original->size, $chunk_size), $pieces->size, 'Size and pieces matches!');
 
     for (my $i = 1; $i <= $pieces->size; $i++) {
-        my $piece = $original->get_piece($i => $chunk_size);
+        my $piece      = $original->get_piece($i => $chunk_size);
         my $from_split = $pieces->get($i - 1);
         is_deeply $piece, $from_split, 'Structs are matching';
 

@@ -49,7 +49,7 @@ my $needledir_fedora    = "t/data/openqa/share/tests/fedora/needles";
 my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
 # create dummy module
 my $module = $job->insert_module({name => "a", category => "a", script => "a", flags => {}});
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $t      = Test::Mojo->new('OpenQA::WebAPI');
 
 sub process {
     return unless (m/.json$/);

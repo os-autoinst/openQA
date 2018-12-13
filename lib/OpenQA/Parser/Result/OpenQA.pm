@@ -22,7 +22,7 @@ use OpenQA::Parser::Results;
 use Mojo::File 'path';
 
 has details => sub { [] };
-has dents => 0;
+has dents   => 0;
 has [qw(result name test)];
 
 sub new {

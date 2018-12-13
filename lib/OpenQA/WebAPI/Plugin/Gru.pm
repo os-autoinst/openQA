@@ -98,9 +98,9 @@ sub is_task_active {
 
 sub enqueue {
     my ($self, $task) = (shift, shift);
-    my $args = shift // [];
+    my $args    = shift // [];
     my $options = shift // {};
-    my $jobs = shift // [];
+    my $jobs    = shift // [];
     my $ttl   = $options->{ttl}   ? $options->{ttl}   : undef;
     my $limit = $options->{limit} ? $options->{limit} : undef;
 
@@ -166,8 +166,8 @@ sub execute_job {
     my $ttl_error = 'TTL Expired';
 
     return
-      exists $job->info->{notes}{gru_id} ?
-      $job->fail({error => $ttl_error}) && $self->fail_gru($job->info->{notes}{gru_id} => $ttl_error)
+      exists $job->info->{notes}{gru_id}
+      ? $job->fail({error => $ttl_error}) && $self->fail_gru($job->info->{notes}{gru_id} => $ttl_error)
       : $job->fail({error => $ttl_error})
       if (defined $ttl && $elapsed > $ttl);
 
@@ -195,7 +195,7 @@ sub execute_job {
 
 sub cmd_run {
     my $self = shift;
-    my $opt = $_[0] || '';
+    my $opt  = $_[0] || '';
 
     my $worker = $self->app->minion->repair->worker->register;
 

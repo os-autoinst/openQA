@@ -55,7 +55,7 @@ sub connect_db {
         }
         else {
             my %ini;
-            my $cfgpath = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
+            my $cfgpath       = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
             my $database_file = $cfgpath . '/database.ini';
             tie %ini, 'Config::IniFiles', (-file => $database_file);
             die 'Could not find database section \'' . $mode . '\' in ' . $database_file unless $ini{$mode};

@@ -275,7 +275,7 @@ sub find_upload_progress {
     my ($self, $job_id) = @_;
 
     my $workers = $self->app->schema->resultset('Workers');
-    my $worker = $workers->find({job_id => $job_id}) or return undef;
+    my $worker  = $workers->find({job_id => $job_id}) or return undef;
     return $worker->upload_progress;
 }
 

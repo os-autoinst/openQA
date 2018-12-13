@@ -173,13 +173,13 @@ sub compute_build_results {
             push(@builds,   $tag->{build})   if $tag->{build};
             push(@versions, $tag->{version}) if $tag->{version};
         }
-        $search_filter{BUILD} = {-in => \@builds};
+        $search_filter{BUILD}   = {-in => \@builds};
         $search_filter{VERSION} = {-in => \@versions} if @versions;
     }
 
     # find relevant builds
     my $jobs_resultset = $group->result_source->schema->resultset('Jobs');
-    my @builds = $jobs_resultset->search(\%search_filter, \%search_opts)->all;
+    my @builds         = $jobs_resultset->search(\%search_filter, \%search_opts)->all;
     for my $build (@builds) {
         $build->{key} = join('-', $build->VERSION, $build->BUILD);
     }

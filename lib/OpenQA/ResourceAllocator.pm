@@ -45,7 +45,7 @@ sub new {
     my $ipc = OpenQA::IPC->ipc;
     return unless $ipc;
     my $service = $ipc->register_service('resourceallocator');
-    my $self = $class->SUPER::new($service, '/ResourceAllocator');
+    my $self    = $class->SUPER::new($service, '/ResourceAllocator');
     $self->{ipc} = $ipc;
     bless $self, $class;
     $singleton = $self;

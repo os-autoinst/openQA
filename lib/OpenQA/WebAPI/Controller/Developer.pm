@@ -45,7 +45,7 @@ sub find_current_job {
     my ($self) = @_;
 
     my $test_id = $self->param('testid') or return;
-    my $jobs = $self->app->schema->resultset('Jobs');
+    my $jobs    = $self->app->schema->resultset('Jobs');
     return $jobs->search({id => $test_id})->first;
 }
 
@@ -56,7 +56,7 @@ sub find_current_job {
 sub ws_console {
     my ($self) = @_;
 
-    my $job = $self->find_current_job() or return $self->reply->not_found;
+    my $job       = $self->find_current_job() or return $self->reply->not_found;
     my $use_proxy = $self->param('proxy') // 0;
 
     # determine web socket URL

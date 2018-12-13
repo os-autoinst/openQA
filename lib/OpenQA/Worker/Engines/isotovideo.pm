@@ -221,7 +221,7 @@ sub engine_workit {
     # do asset caching if CACHEDIRECTORY is set
     if ($worker_settings->{CACHEDIRECTORY}) {
         my $host_to_cache = OpenQA::Worker::Cache::_base_host($current_host);
-        my $error = cache_assets($job => \%vars => $assetkeys);
+        my $error         = cache_assets($job => \%vars => $assetkeys);
         return $error if $error;
 
         # do test caching if TESTPOOLSERVER is set

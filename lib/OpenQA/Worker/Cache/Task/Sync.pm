@@ -31,7 +31,7 @@ sub register {
     $app->minion->add_task(
         cache_tests => sub {
             my ($job, $from, $to) = @_;
-            my $req = OpenQA::Worker::Cache::Request->new->rsync(from => $from, to => $to);
+            my $req        = OpenQA::Worker::Cache::Request->new->rsync(from => $from, to => $to);
             my $guard_name = $self->_gen_guard_name($req->lock);
 
             return $job->remove unless defined $from && defined $to;

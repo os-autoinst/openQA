@@ -84,7 +84,7 @@ sub startup {
 
     # register websocket routes
     my $developer_auth = $test_r->under('/developer')->to('session#ensure_operator');
-    my $developer_r = $developer_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller');
+    my $developer_r    = $developer_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller');
     $developer_r->websocket('/ws-proxy')->name('developer_ws_proxy')->to('live_view_handler#ws_proxy');
     $test_r->websocket('/developer/ws-proxy/status')->name('status_ws_proxy')->to('live_view_handler#proxy_status');
 

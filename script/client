@@ -287,7 +287,7 @@ else {
     elsif ($operation eq 'jobs/overview/restart') {
         $url->path(prepend_api_base('jobs/overview'));
         my $relevant_jobs = handle_result($client->get($url)->res);
-        my @job_ids = map { $_->{id} } @$relevant_jobs;
+        my @job_ids       = map { $_->{id} } @$relevant_jobs;
         $url->path(prepend_api_base('jobs/restart'));
         $url->query(Mojo::Parameters->new);
         $url->query(jobs => \@job_ids);

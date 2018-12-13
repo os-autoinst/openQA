@@ -49,9 +49,9 @@ sub index {
     my $time_limit_days = $self->param('time_limit_days');
     $time_limit_days = 14 unless looks_like_number($time_limit_days);
     $self->app->log->debug("Retrieving results for up to $limit_builds builds up to $time_limit_days days old");
-    my $only_tagged      = $self->param('only_tagged') // 0;
+    my $only_tagged      = $self->param('only_tagged')      // 0;
     my $default_expanded = $self->param('default_expanded') // 0;
-    my $show_tags        = $self->param('show_tags') // $only_tagged;
+    my $show_tags        = $self->param('show_tags')        // $only_tagged;
     my $group_params     = $self->every_param('group');
     my @results;
     my $groups = $self->stash('job_groups_and_parents');
@@ -104,7 +104,7 @@ sub group_overview {
     my $tags;
 
     # read paging parameter
-    my $page       = int($self->param('comments_page') // 1);
+    my $page       = int($self->param('comments_page')  // 1);
     my $page_limit = int($self->param('comments_limit') // 5);
     return $self->respond_to(json => sub { html => 'Invalid paging parameter specified.' })
       unless $page && $page_limit;

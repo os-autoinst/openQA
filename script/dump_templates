@@ -144,11 +144,11 @@ if (@ARGV) {
 }
 
 if ($options{group}) {
-    $options{group} = {map { $_ => 1 } @{$options{group}}};
+    $options{group}       = {map { $_ => 1 } @{$options{group}}};
     $tables{JobTemplates} = 1;
 }
 if ($options{test}) {
-    $options{test} = {map { $_ => 1 } @{$options{test}}};
+    $options{test}      = {map { $_ => 1 } @{$options{test}}};
     $tables{TestSuites} = 1;
 }
 if ($options{machine}) {

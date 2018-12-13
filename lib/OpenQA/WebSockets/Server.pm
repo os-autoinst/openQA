@@ -116,7 +116,7 @@ sub check_authorized {
     my $user;
     log_debug($key ? "API key from client: *$key*" : "No API key from client.");
 
-    my $schema = OpenQA::Schema::connect_db;
+    my $schema  = OpenQA::Schema::connect_db;
     my $api_key = $schema->resultset("ApiKeys")->find({key => $key});
     if ($api_key) {
         if (time - $timestamp <= 300) {
@@ -262,7 +262,7 @@ sub _message {
 
         try {
             my $workers_population = app->schema->resultset("Workers")->count();
-            my $msg = {type => 'info', population => $workers_population};
+            my $msg                = {type => 'info', population => $workers_population};
             $ws->tx->send({json => $msg} => sub { log_debug("Sent population to worker: " . pp($msg)) });
         }
         catch {
@@ -353,7 +353,7 @@ sub _get_stale_worker_jobs {
         }
     }
     my $dtf = $schema->storage->datetime_parser;
-    my $dt = DateTime->from_epoch(epoch => time() - $threshold, time_zone => 'UTC');
+    my $dt  = DateTime->from_epoch(epoch => time() - $threshold, time_zone => 'UTC');
 
     my %cond = (
         state              => [OpenQA::Jobs::Constants::EXECUTION_STATES],

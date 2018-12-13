@@ -31,7 +31,7 @@ use Mojo::JSON 'decode_json';
 sub init {
     my ($self) = @_;
 
-    my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid')) or return;
+    my $job    = $self->app->schema->resultset('Jobs')->find($self->param('testid')) or return;
     my $module = OpenQA::Schema::Result::JobModules::job_module($job, $self->param('moduleid'));
     $self->stash(job      => $job);
     $self->stash(testname => $job->name);
@@ -98,7 +98,7 @@ sub view {
 
     # Redirect users with the old preview link
     if (!$self->req->is_xhr) {
-        my $anchor = "#step/" . $self->param('moduleid') . "/" . $self->param('stepid');
+        my $anchor     = "#step/" . $self->param('moduleid') . "/" . $self->param('stepid');
         my $target_url = $self->url_for('test', testid => $self->param('testid'));
         return $self->redirect_to($target_url . $anchor);
     }
@@ -197,7 +197,7 @@ sub edit {
         my $new_needles = $self->app->schema->resultset('Needles')->new_needles_since($job->t_started, $tags, 5);
         while (my $new_needle = $new_needles->next) {
             my $new_needle_tags = $new_needle->tags;
-            my $joined_tags = $new_needle_tags ? join(', ', @$new_needle_tags) : 'none';
+            my $joined_tags     = $new_needle_tags ? join(', ', @$new_needle_tags) : 'none';
             # show warning for new needle with matching tags
             push(
                 @error_messages,
@@ -343,7 +343,7 @@ sub src {
     my $module = $self->stash('module');
 
     my $testcasedir = testcasedir($job->DISTRI, $job->VERSION);
-    my $scriptpath = "$testcasedir/" . $module->script;
+    my $scriptpath  = "$testcasedir/" . $module->script;
     if (!$scriptpath || !-e $scriptpath) {
         $scriptpath ||= "";
         return $self->reply->not_found;
@@ -553,7 +553,7 @@ sub viewimg {
     my $job           = $self->stash('job');
     return $self->reply->not_found unless $job;
     my $distribution = $job->DISTRI;
-    my $dversion = $job->VERSION || '';
+    my $dversion     = $job->VERSION || '';
 
     # initialize hash to store needle lists by tags
     my %needles_by_tag;

@@ -23,7 +23,7 @@ use Pod::POM;
 use Exporter 'import';
 
 our $VERSION = sprintf "%d.%03d", q$Revision: 0.01 $ =~ /(\d+)/g;
-our @EXPORT = qw(
+our @EXPORT  = qw(
   get_pod_from_controllers
   set_api_desc
 );
@@ -119,7 +119,7 @@ sub _itemize {
             $desc       = $s->text;
             $methodname =~ s/\s+//g;
             $methodname =~ s/\(\)//;
-            $desc =~ s/[\r\n]/ /g;
+            $desc       =~ s/[\r\n]/ /g;
             my $key = $controller . '#' . $methodname;
             $methods_description{$key} = $desc;
         }

@@ -74,7 +74,7 @@ sub _add_auth_headers {
         'X-API-Microtime' => $timestamp
     );
     if ($self->apisecret && $self->apikey) {
-        $headers{'X-API-Key'} = $self->apikey;
+        $headers{'X-API-Key'}  = $self->apikey;
         $headers{'X-API-Hash'} = hmac_sha1_sum($self->_path_query($tx) . $timestamp, $self->apisecret);
     }
 

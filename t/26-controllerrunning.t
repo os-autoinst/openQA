@@ -63,7 +63,7 @@ subtest streamtext => sub {
     $controller->stash("job", Job->new);
 
     my @fake_data = ("Foo bar\n", "Foo baz\n", "bar\n");
-    my $t_file = path($controller->stash("job")->worker->{WORKER_TMPDIR})->child("test.txt");
+    my $t_file    = path($controller->stash("job")->worker->{WORKER_TMPDIR})->child("test.txt");
 
     # Fill our fake data to stream
     $t_file->spurt(@fake_data);

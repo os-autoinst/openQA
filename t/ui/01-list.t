@@ -129,7 +129,7 @@ wait_for_ajax();
 
 # Test 99946 is successful (29/0/1)
 my $job99946 = $driver->find_element('#results #job_99946');
-my @tds = $driver->find_child_elements($job99946, 'td');
+my @tds      = $driver->find_child_elements($job99946, 'td');
 is(scalar @tds,              4,                                     '4 columns displayed');
 is((shift @tds)->get_text(), 'Build0091 of opensuse-13.1-DVD.i586', 'medium of 99946');
 is((shift @tds)->get_text(), 'textmode@32bit',                      'test of 99946');

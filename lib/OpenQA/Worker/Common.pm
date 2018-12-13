@@ -384,7 +384,7 @@ sub send_status {
 
 sub calculate_status_timer {
     my ($hosts, $host) = @_;
-    my $i = $hosts->{$host}{workerid} ? $hosts->{$host}{workerid} : looks_like_number($instance) ? $instance : 1;
+    my $i    = $hosts->{$host}{workerid}   ? $hosts->{$host}{workerid}   : looks_like_number($instance) ? $instance : 1;
     my $imax = $hosts->{$host}{population} ? $hosts->{$host}{population} : 1;
     my $scale_factor = $imax;
     my $steps        = 215;
@@ -410,7 +410,7 @@ sub calculate_status_timer {
 
 sub call_websocket {
     my ($host, $ua_url) = @_;
-    my $ua = $hosts->{$host}{ua};
+    my $ua           = $hosts->{$host}{ua};
     my $status_timer = calculate_status_timer($hosts, $host, $instance, $worker_settings);
 
     log_debug("worker_status timer time window: $status_timer");
@@ -574,7 +574,7 @@ sub register_worker {
 
 sub update_setup_status {
     my $workerid = verify_workerid();
-    my $status = {setup => 1, worker_id => $workerid};
+    my $status   = {setup => 1, worker_id => $workerid};
     api_call(
         'post',
         'jobs/' . $job->{id} . '/status',

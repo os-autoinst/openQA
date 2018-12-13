@@ -131,7 +131,7 @@ test_via_io_loop sub {
     Mojo::IOLoop->stop;
 };
 
-my @conf = ("[global]\n", "plugins=AMQP\n");
+my @conf    = ("[global]\n", "plugins=AMQP\n");
 my $tempdir = tempdir;
 $ENV{OPENQA_CONFIG} = $tempdir;
 path($FindBin::Bin, "data")->child("client.conf")->copy_to(path($ENV{OPENQA_CONFIG})->make_path->child("client.conf"));
@@ -512,7 +512,7 @@ subtest 'handling upload finished' => sub {
     };
 
     subtest 'successful upload' => sub {
-        $stop_job_aborted = $upload_images_called = 0;
+        $stop_job_aborted     = $upload_images_called = 0;
         $upload_images_result = 1;
         $callback             = sub {
             $callback_called = 1;
@@ -524,7 +524,7 @@ subtest 'handling upload finished' => sub {
     };
 
     subtest 'post upload progress to liveviewhandler' => sub {
-        $stop_job_aborted = $upload_images_called = $callback_called = 0;
+        $stop_job_aborted                 = $upload_images_called = $callback_called = 0;
         $is_developer_session_started_res = 1;
         $worker_jobs_mock->unmock('post_upload_progress_to_liveviewhandler');
 
@@ -552,7 +552,7 @@ subtest 'handling upload finished' => sub {
         ) or diag explain $upload_progress;
 
         $stop_job_aborted = $upload_images_called = 0;
-        $upload_progress = undef;
+        $upload_progress  = undef;
         OpenQA::Worker::Jobs::handle_status_upload_finished($job_id, $upload_up_to, $callback, {});
         is($upload_images_called, 1,     'image upload attempted');
         is($stop_job_aborted,     0,     'job not aborted');

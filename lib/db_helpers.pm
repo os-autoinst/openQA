@@ -24,7 +24,7 @@ use Carp;
 sub rndstr {
     my ($length, $chars) = @_;
     $length //= 16;
-    $chars //= ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
+    $chars  //= ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
     return join('', map { $chars->[rand @$chars] } 1 .. $length);
 }
 
@@ -44,7 +44,7 @@ sub _rb {
 sub rndstrU {
     my ($length, $chars) = @_;
     $length //= 16;
-    $chars //= ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
+    $chars  //= ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
     # uncoverable branch true
     open(my $fd, '<:raw:bytes', '/dev/urandom') || croak "can't open /dev/urandom: $!";
     my $str = join('', map { $chars->[_rb($fd, scalar @$chars)] } 1 .. $length);

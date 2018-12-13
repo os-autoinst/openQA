@@ -314,7 +314,7 @@ subtest 'upload internal errors' => sub {
     # Moar Sabotage!
     my $fail_chunk;
     my $e;
-    $t->ua->upload->on('upload_chunk.response' => sub { die("Subdly") });
+    $t->ua->upload->on('upload_chunk.response'    => sub { die("Subdly") });
     $t->ua->upload->on('upload_chunk.request_err' => sub { $fail_chunk++; $e = pop(); });
 
     local $@;

@@ -142,7 +142,7 @@ wait_for_ajax;
 is_deeply(find_candidate_needles, {'inst-bootmenu' => []}, 'correct tags displayed');
 
 my @report_links = $driver->find_elements('#preview_container_in .report', 'css');
-my @title = map { $_->get_attribute('title') } @report_links;
+my @title        = map { $_->get_attribute('title') } @report_links;
 is($title[0], 'Report product bug', 'product bug report URL available');
 is($title[1], 'Report test issue',  'test issue report URL available');
 my @url = map { $_->get_attribute('href') } @report_links;

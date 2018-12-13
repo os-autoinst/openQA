@@ -116,8 +116,8 @@ sub websocket_commands {
             if ($job_in_progress) {
                 my $current_job = $OpenQA::Worker::Common::job;
                 $current_job = (
-                    $current_job && $current_job->{id} ?
-                      "$current_job->{id}"
+                    $current_job && $current_job->{id}
+                    ? "$current_job->{id}"
                     : 'another job'
                 );
                 log_debug("Refusing 'grab_job', we are already performing $current_job");

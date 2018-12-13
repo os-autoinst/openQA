@@ -225,7 +225,7 @@ sub create_live_view_handler {
     my $pid = fork();
     if ($pid == 0) {
         my $livehandlerport = $mojoport + 2;
-        my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$livehandlerport"], silent => 1);
+        my $daemon          = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$livehandlerport"], silent => 1);
         $daemon->build_app('OpenQA::LiveHandler');
         $daemon->run;
         Devel::Cover::report() if Devel::Cover->can('report');
@@ -269,7 +269,7 @@ sub setup_share_dir {
 
     path($sharedir, 'tests')->make_path;
 
-    my $tests_dir_path = abs_path('../os-autoinst/t/data/tests/') or die 'tests dir not found';
+    my $tests_dir_path  = abs_path('../os-autoinst/t/data/tests/') or die 'tests dir not found';
     my $tests_link_path = path($sharedir, 'tests')->child('tinycore');
     symlink($tests_dir_path, $tests_link_path) || die "can't symlink $tests_link_path -> $tests_dir_path";
 

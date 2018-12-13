@@ -34,8 +34,8 @@ sub render_response {
 
     # determine total count
     my $total_count
-      = $initial_conds ?
-      $resultset->search({-and => $initial_conds})->count
+      = $initial_conds
+      ? $resultset->search({-and => $initial_conds})->count
       : $resultset->count;
 
     # determine filtered count
@@ -70,7 +70,7 @@ sub render_response {
     # get results and compute data for JSON serialization using
     # provided function
     my $results = $resultset->search({-and => $filter_conds}, $params);
-    my $data = $prepare_data_function->($results);
+    my $data    = $prepare_data_function->($results);
 
     $controller->render(
         json => {

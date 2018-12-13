@@ -114,7 +114,7 @@ sub test_asset {
     my ($self) = @_;
 
     my $jobid = $self->param('testid');
-    my %cond = ('me.id' => $jobid);
+    my %cond  = ('me.id' => $jobid);
     if ($self->param('assetid')) { $cond{'asset.id'} = $self->param('assetid') }
     elsif ($self->param('assettype') and $self->param('assetname')) {
         $cond{name} = $self->param('assetname');
@@ -124,7 +124,7 @@ sub test_asset {
 
     my %asset;
     my $attrs = {join => {jobs_assets => 'asset'}, +select => [qw(asset.name asset.type)], +as => [qw(name type)]};
-    my $res = $self->db->resultset('Jobs')->search(\%cond, $attrs);
+    my $res   = $self->db->resultset('Jobs')->search(\%cond, $attrs);
     if ($res and $res->first) { %asset = $res->first->get_columns }
     else                      { return $self->reply->not_found }
 
