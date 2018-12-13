@@ -206,6 +206,13 @@ END_SQL
     my (@assets, %asset_info, %group_info);
     $schema->txn_do(
         sub {
+            # set transaction-level so "all statements of the current transaction can only see rows committed
+            # before the first query [...] statement was executed in this transaction"
+            # (quote from https://www.postgresql.org/docs/9.6/sql-set-transaction.html)
+            $schema->storage->dbh->prepare('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY DEFERRABLE;')
+              ->execute();
+            # note: only affects the current transaction (so no reason to reset again)
+
             # prefetch all assets
             my $assets_arrayref = $dbh->selectall_arrayref($prioritized_assets_query);
             for my $asset_array (@$assets_arrayref) {
@@ -269,7 +276,7 @@ END_SQL
 
                     # check whether the data from the 2nd select is inconsistent with what we've got from the 1st
                     # (pure pre-caution, shouldn't happen due to the transaction)
-                    if ($fail_on_inconsistent_status && ($res_max_job > $init_max_job)) {
+                    if ($fail_on_inconsistent_status && $res_max_job && ($res_max_job > $init_max_job)) {
                         die
 "$asset_info->{name} was scheduled during cleanup (max job initially $init_max_job, now $res_max_job)";
                     }
