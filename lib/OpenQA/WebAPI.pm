@@ -28,7 +28,6 @@ use Mojolicious::Commands;
 use DateTime;
 use Cwd 'abs_path';
 use File::Path 'make_path';
-use BSD::Resource 'getrusage';
 
 has schema => sub {
     return OpenQA::Schema::connect_db();
@@ -431,7 +430,7 @@ sub startup {
 
     OpenQA::Setup::setup_validator_check_for_datetime($self);
 
-    $self->_add_memory_limit;
+    $self->plugin('OpenQA::WebAPI::Plugin::MemoryLimit');
 
     # run fake dbus services in case of test mode
     if ($self->mode eq 'test' && !$ENV{FULLSTACK} && !$ENV{DEVELOPER_FULLSTACK}) {
@@ -454,27 +453,6 @@ sub startup {
                 (($args->{json} //= {})->{error_status}) = $args->{status};
             }
             $c->stash('api_description', \%api_description);
-        });
-}
-
-# Stop prefork workers gracefully once they reach a certain size
-sub _add_memory_limit {
-    my ($self) = @_;
-
-    my $max = $self->config->{global}{max_rss_limit};
-    return unless $max && $max > 0;
-
-    my $parent = $$;
-    Mojo::IOLoop->next_tick(
-        sub {
-            Mojo::IOLoop->recurring(
-                5 => sub {
-                    my $rss = (getrusage())[2];
-                    # RSS is in KB under Linux
-                    return unless $rss > $max;
-                    $self->log->debug(qq{Worker exceeded RSS limit "$rss > $max", restarting});
-                    Mojo::IOLoop->stop_gracefully;
-                }) if $parent ne $$;
         });
 }
 

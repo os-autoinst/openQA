@@ -27,6 +27,7 @@ use Try::Tiny;
 use Carp;
 use Scalar::Util 'weaken';
 use OpenQA::Utils qw(log_debug log_warning log_error);
+use OpenQA::Events;
 
 my $openqa_prefix = 'org.opensuse.openqa';
 my %services      = (
@@ -105,11 +106,11 @@ sub manage_events {
     #             );
     if ($c->can("dispatch")) {
         my $cb = Net::DBus::Callback->new(object => $c, method => "dispatch", args => []);
-        $reactor->on('dbus-dispatch' => sub { $cb->invoke });
+        OpenQA::Events->singleton->on('dbus-dispatch' => sub { $cb->invoke });
     }
     if ($c->can("flush")) {
         my $cb = Net::DBus::Callback->new(object => $c, method => "flush", args => []);
-        $reactor->on('dbus-flush' => sub { $cb->invoke });
+        OpenQA::Events->singleton->on('dbus-flush' => sub { $cb->invoke });
     }
 }
 
@@ -124,7 +125,8 @@ sub _manage_watch_on {
             method => "handle",
             args   => [Net::DBus::Binding::Watch::READABLE()]);
         # Net::DBus calls dispatch each time some event wakes it up, Mojo::Reactor does not support this kind of hooks
-        $reactor->io($fh => sub { my ($self, $writable) = @_; $cb->invoke; $self->emit('dbus-dispatch') });
+        $reactor->io(
+            $fh => sub { my ($self, $writable) = @_; $cb->invoke; OpenQA::Events->singleton->emit('dbus-dispatch') });
         $reactor->watch($fh, $watch->is_enabled, 0);
     }
     if ($flags & Net::DBus::Binding::Watch::WRITABLE()) {
@@ -134,7 +136,8 @@ sub _manage_watch_on {
             method => "handle",
             args   => [Net::DBus::Binding::Watch::WRITABLE()]);
        # Net::DBus calls flush event each time some event wakes it up, Mojo::Reactor does not support this kind of hooks
-        $reactor->io($fh => sub { my ($self, $writable) = @_; $cb->invoke; $self->emit('dbus-flush') });
+        $reactor->io(
+            $fh => sub { my ($self, $writable) = @_; $cb->invoke; OpenQA::Events->singleton->emit('dbus-flush') });
         $reactor->watch($fh, 0, $watch->is_enabled);
     }
 }

@@ -36,6 +36,7 @@ use File::Which 'which';
 use Mojo::File 'path';
 use Mojo::IOLoop;
 use OpenQA::File;
+use OpenQA::Events;
 use Mojo::IOLoop::ReadWriteProcess;
 use POSIX ':sys_wait_h';
 use Exporter 'import';
@@ -163,7 +164,7 @@ sub _reset_state {
     $worker           = undef;
     $stop_job_running = 0;
     $current_host     = undef;
-    Mojo::IOLoop->singleton->emit("stop_job");
+    OpenQA::Events->singleton->emit("stop_job");
 }
 
 sub _upload_state {
@@ -585,7 +586,7 @@ sub start_job {
         },
         1
     );
-    Mojo::IOLoop->singleton->emit("start_job");
+    OpenQA::Events->singleton->emit("start_job");
 }
 
 sub log_snippet {

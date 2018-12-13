@@ -22,6 +22,7 @@ use warnings;
 use OpenQA::Utils qw(log_error log_warning log_debug add_log_channel remove_log_channel);
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Jobs;
+use OpenQA::Events;
 use POSIX ':sys_wait_h';
 use OpenQA::Worker::Engines::isotovideo;
 use Data::Dump 'pp';
@@ -128,7 +129,7 @@ sub websocket_commands {
 
             $job_in_progress = 1;
             $check_job_running->{$host} = 1;
-            Mojo::IOLoop->singleton->once(
+            OpenQA::Events->singleton->once(
                 "stop_job" => sub {
                     log_debug("Build finished, setting us free to pick up new jobs",);
                     $job_in_progress = 0;
@@ -148,7 +149,7 @@ sub websocket_commands {
                 );
 
                 log_debug("Job " . $job->{id} . " scheduled for next cycle");
-                Mojo::IOLoop->singleton->once(
+                OpenQA::Events->singleton->once(
                     "start_job" => sub {
                         $OpenQA::Worker::Common::job->{state} = "running";
                         OpenQA::Worker::Common::send_status($tx);

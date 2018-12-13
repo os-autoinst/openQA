@@ -24,7 +24,7 @@ use Test::Mojo;
 use OpenQA::WebAPI;
 use Mojo::File qw(tempfile path);
 use OpenQA::Client;
-
+use OpenQA::Events;
 use OpenQA::Test::Case;
 
 require OpenQA::Schema::Result::Jobs;
@@ -37,7 +37,7 @@ $ENV{MOJO_MAX_MESSAGE_SIZE} = 207741824;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-Mojo::IOLoop->singleton->on(
+OpenQA::Events->singleton->on(
     'chunk_upload.end' => sub {
         Devel::Cover::report() if Devel::Cover->can('report');
     });

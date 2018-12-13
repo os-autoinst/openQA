@@ -296,7 +296,7 @@ sub load_plugins {
     }
 
     if ($server->config->{global}{audit_enabled}) {
-        $server->plugin('AuditLog', Mojo::IOLoop->singleton);
+        $server->plugin('AuditLog');
     }
     # Load arbitrary plugins defined in config: 'plugins' in section
     # '[global]' can be a space-separated list of plugins to load, by

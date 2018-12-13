@@ -18,6 +18,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 use Mojo::IOLoop;
 use Mojo::JSON 'to_json';
+use OpenQA::Events;
 
 my @table_events = qw(table_create table_update table_delete);
 my @job_events   = qw(job_create job_delete job_cancel job_duplicate job_restart jobs_restart job_update_result
@@ -34,7 +35,7 @@ my @needle_events      = qw(needle_modify needle_delete);
 # job_grab
 
 sub register {
-    my ($self, $app, $reactor) = @_;
+    my ($self, $app) = @_;
 
     # register for events
     my @events = (
@@ -47,7 +48,7 @@ sub register {
         @events = grep { $_ ne $e } @events;
     }
     for my $e (@events) {
-        $reactor->on("openqa_$e" => sub { shift; $self->on_event($app, @_) });
+        OpenQA::Events->singleton->on("openqa_$e" => sub { shift; $self->on_event($app, @_) });
     }
 
     my $user = $app->db->resultset('Users')->find({username => 'system'});
