@@ -19,3 +19,36 @@ use Mojo::Base 'Mojo::EventEmitter';
 sub singleton { state $events = shift->SUPER::new }
 
 1;
+
+=encoding utf8
+
+=head1 NAME
+
+OpenQA::Events - A global event emitter for openQA
+
+=head1 SYNOPSIS
+
+  use OpenQA::Events;
+
+  # Emit events
+  OpenQA::Events->singleton->emit(some_event => ['some', 'argument']);
+
+  # Do something whenever an event occurs
+  OpenQA::Events->singleton->on(some_event => sub {
+    my ($events, @args) = @_;
+    ...
+  });
+
+  # Do something only once if an event occurs
+  OpenQA::Events->singleton->once(some_event => sub {
+    my ($events, @args) = @_;
+    ...
+  });
+
+=head1 DESCRIPTION
+
+L<OpenQA::Events> is a global event emitter for L<OpenQA> that is usually used
+as a singleton object. It is based on L<Mojo::EventEmitter> and can be used from
+anywhere inside the same process.
+
+=cut
