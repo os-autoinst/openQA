@@ -17,6 +17,7 @@ package OpenQA::Schema;
 
 use strict;
 use warnings;
+use feature ':5.10';
 
 use parent 'DBIx::Class::Schema';
 
@@ -36,7 +37,7 @@ our $VERSION = 72;
 __PACKAGE__->load_namespaces;
 
 sub _get_schema {
-    CORE::state $schema;
+    state $schema;
     return \$schema;
 }
 

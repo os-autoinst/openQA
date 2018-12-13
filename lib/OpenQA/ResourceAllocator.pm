@@ -29,11 +29,10 @@ use OpenQA::Utils qw(log_debug wakeup_scheduler exists_worker safe_call);
 use OpenQA::Resource::Jobs  ();
 use OpenQA::Resource::Locks ();
 use OpenQA::Setup;
-use sigtrap handler => \&normal_signals_handler, 'normal-signals';
 
 my $singleton;
 
-sub normal_signals_handler {
+sub quit {
     log_debug("Received abort signal");
     exit 0;
 }
@@ -59,6 +58,12 @@ sub new {
 
 sub run {
     my $self = shift;
+
+    # Catch normal signals
+    local $SIG{HUP} = local $SIG{INT} = local $SIG{PIPE} = local $SIG{TERM} = sub {
+        quit();
+    };
+
     my $setup = OpenQA::Setup->new(log_name => 'resource-allocator');
     OpenQA::Setup::read_config($setup);
     OpenQA::Setup::setup_log($setup);

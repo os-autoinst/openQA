@@ -51,6 +51,12 @@ sub _is_method_allowed {
 
 our $setup;
 sub run {
+
+    # Catch normal signals
+    local $SIG{HUP} = local $SIG{INT} = local $SIG{PIPE} = local $SIG{TERM} = sub {
+        OpenQA::Scheduler::Scheduler::quit();
+    };
+
     $setup = OpenQA::Setup->new(log_name => 'scheduler');
     OpenQA::Setup::read_config($setup);
     OpenQA::Setup::setup_log($setup);
