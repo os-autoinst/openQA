@@ -54,16 +54,21 @@ my $expected = {
 };
 
 my $got = OpenQA::Worker::Engines::isotovideo::detect_asset_keys($settings);
+is_deeply($got, $expected, 'Asset settings are correct (relative PFLASH)') or diag explain $got;
 
-is_deeply($got, $expected, 'Asset settings are correct') or diag explain $got;
-
+# if UEFI_PFLASH_VARS is an absolute path, we should not treat it as an asset
+$settings->{UEFI_PFLASH_VARS} = '/absolute/path/OVMF_VARS.fd';
 delete($expected->{UEFI_PFLASH_VARS});
+
+$got = OpenQA::Worker::Engines::isotovideo::detect_asset_keys($settings);
+is_deeply($got, $expected, 'Asset settings are correct (absolute PFLASH)') or diag explain $got;
+
 delete($expected->{NUMDISKS});
 
 delete($settings->{UEFI_PFLASH_VARS});
 delete($settings->{NUMDISKS});
 
 $got = OpenQA::Worker::Engines::isotovideo::detect_asset_keys($settings);
-is_deeply($got, $expected, 'Asset settings are correct') or diag explain $got;
+is_deeply($got, $expected, 'Asset settings are correct (no UEFI or NUMDISKS)') or diag explain $got;
 
 done_testing();

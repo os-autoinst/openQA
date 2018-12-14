@@ -253,6 +253,57 @@ subtest safe_call => sub {
     like $@, qr/Can't locate object method "not_existant" via package "foo"/;
 };
 
+subtest asset_type_from_setting => sub {
+    use OpenQA::Utils 'asset_type_from_setting';
+    is asset_type_from_setting('ISO'),              'iso', 'simple from ISO';
+    is asset_type_from_setting('UEFI_PFLASH_VARS'), 'hdd', "simple from UEFI_PFLASH_VARS";
+    is asset_type_from_setting('UEFI_PFLASH_VARS', 'relative'),  'hdd', "relative from UEFI_PFLASH_VARS";
+    is asset_type_from_setting('UEFI_PFLASH_VARS', '/absolute'), '',    "absolute from UEFI_PFLASH_VARS";
+};
+
+subtest parse_assets_from_settings => sub {
+    use OpenQA::Utils 'parse_assets_from_settings';
+    my $settings = {
+        ISO   => "foo.iso",
+        ISO_2 => "foo_2.iso",
+        # this is a trap: shouldn't be treated as an asset
+        HDD   => "hdd.qcow2",
+        HDD_1 => "hdd_1.qcow2",
+        HDD_2 => "hdd_2.qcow2",
+        # shouldn't be treated as asset *yet* as it's absolute
+        UEFI_PFLASH_VARS => "/absolute/path/uefi_pflash_vars.qcow2",
+        # trap
+        REPO   => "repo",
+        REPO_1 => "repo_1",
+        REPO_2 => "repo_2",
+        # trap
+        ASSET   => "asset.pm",
+        ASSET_1 => "asset_1.pm",
+        ASSET_2 => "asset_2.pm",
+        KERNEL  => "vmlinuz",
+        INITRD  => "initrd.img",
+    };
+    my $assets    = parse_assets_from_settings($settings);
+    my $refassets = {
+        ISO     => {type => "iso",   name => "foo.iso"},
+        ISO_2   => {type => "iso",   name => "foo_2.iso"},
+        HDD_1   => {type => "hdd",   name => "hdd_1.qcow2"},
+        HDD_2   => {type => "hdd",   name => "hdd_2.qcow2"},
+        REPO_1  => {type => "repo",  name => "repo_1"},
+        REPO_2  => {type => "repo",  name => "repo_2"},
+        ASSET_1 => {type => "other", name => "asset_1.pm"},
+        ASSET_2 => {type => "other", name => "asset_2.pm"},
+        KERNEL  => {type => "other", name => "vmlinuz"},
+        INITRD  => {type => "other", name => "initrd.img"},
+    };
+    is_deeply $assets, $refassets, "correct with absolute UEFI_PFLASH_VARS";
+    # now make this relative: it should now be seen as an asset type
+    $settings->{UEFI_PFLASH_VARS}  = "uefi_pflash_vars.qcow2";
+    $assets                        = parse_assets_from_settings($settings);
+    $refassets->{UEFI_PFLASH_VARS} = {type => "hdd", name => "uefi_pflash_vars.qcow2"};
+    is_deeply $assets, $refassets, "correct with relative UEFI_PFLASH_VARS";
+};
+
 done_testing;
 
 {
