@@ -523,12 +523,12 @@ sub copy_job_settings {
 
 sub start_job {
     my ($host) = @_;
-
     return _reset_state unless verify_job;
+
     # block the job from having dangerous settings (isotovideo specific though)
     # it needs to come from worker_settings
-    delete $job->{settings}->{GENERAL_HW_CMD_DIR};
-    # add_log_channel('worker', path => 'worker-log.txt', level => $worker_settings->{LOG_LEVEL} // 'info');
+    my $job_settings = $job->{settings};
+    delete $job_settings->{GENERAL_HW_CMD_DIR};
 
     # update settings with worker-specific stuff
     copy_job_settings($job, $worker_settings);
@@ -540,7 +540,7 @@ sub start_job {
             unlink("$pooldir/$file") or log_error "Could not unlink '$file': $!";
         }
     }
-    my $name = $job->{settings}->{NAME};
+    my $name = $job_settings->{NAME};
     log_info(sprintf('got job %d: %s', $job->{id}, $name));
 
     # for the status call
@@ -571,7 +571,7 @@ sub start_job {
     # create job timeout timer
     add_timer(
         'job_timeout',
-        $job->{settings}->{MAX_JOB_TIME} || $max_job_time,
+        $job_settings->{MAX_JOB_TIME} || $max_job_time,
         sub {
             # Prevent to determine status of job from exit_status
             eval {
