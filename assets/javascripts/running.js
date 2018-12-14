@@ -341,7 +341,7 @@ var developerMode = {
     // state of the test execution (comes from os-autoinst cmd srv through the openQA ws proxy)
     currentModule: undefined,               // name of the current module, eg. "installation-welcome"
     moduleToPauseAt: undefined,             // name of the module to pause at, eg. "installation-welcome"
-    pauseOnScreenMismatch: undefined,       // 'assert_screen' (to pause on assert_screen) or 'check_screen' (to pause on assert/check_screen)
+    pauseOnScreenMismatch: undefined,       // 'assert_screen' (to pause on assert_screen timeout) or 'check_screen' (to pause on assert/check_screen timeout)
     isPaused: undefined,                    // if paused the reason why as a string; otherwise something which evaluates to false
     currentApiFunction: undefined,          // the currently executed API function (eg. assert_screen)
     outstandingImagesToUpload: undefined,   // number of images which still need to be uploaded by the worker
