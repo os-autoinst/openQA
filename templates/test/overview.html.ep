@@ -6,26 +6,13 @@
   setupOverview();
 % end
 
-% my @distris = keys %$results;
-% my $only_distri = scalar @distris == 1;
-% if (!defined $distri and $only_distri) {
-    % $distri = $distris[0];
-    % if (!defined $version) {
-        % my @versions = keys %{$results->{$distri}};
-        % $version = $versions[0] if (scalar @versions == 1);
-    % }
-% }
-
 <div>
     <h2>Test result overview</h2>
     <div id="summary" class="card <%= ($aggregated->{failed} + $aggregated->{incomplete}) ? 'border-danger' : 'border-success' %>">
         <div class="card-header">
             Overall Summary of
-            % if (@$groups) {
-                <b><%= b join(', ', map { link_to $_->name => url_for('group_overview', groupid => $_->id) } @$groups) %></b>
-            % }
-            % elsif ($distri or $version) {
-                <b><%= $distri %> <%= $version %></b>
+            % if ($summary_name) {
+                <b><%= b $summary_name %></b>
             % }
             % else {
                 multiple distri/version
