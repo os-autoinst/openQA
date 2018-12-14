@@ -14,9 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::IPC;
-
-use strict;
-use warnings;
+use Mojo::Base -strict;
 
 use Net::DBus;
 use Net::DBus::Callback;
@@ -62,7 +60,7 @@ sub new {
 }
 
 sub ipc {
-    CORE::state $ipc = shift->new(@_);
+    state $ipc = shift->new(@_);
 }
 
 sub register_service {
