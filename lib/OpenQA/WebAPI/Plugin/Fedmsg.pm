@@ -229,7 +229,7 @@ sub on_job_event {
     my $job = $app->db->resultset('Jobs')->find({id => $event_data->{id}});
     # Get app baseurl, as the ci_standard logger needs it
     my $baseurl = $app->config->{global}->{base_url} || "http://UNKNOWN";
-    my $build = $job->BUILD;
+    my $build   = $job->BUILD;
     $event_data->{remaining} = $app->db->resultset('Jobs')->search(
         {
             'me.BUILD' => $build,

@@ -28,7 +28,7 @@ sub {
     use OpenQA::WebAPI::Plugin::Gru;
     my $gru = OpenQA::WebAPI::Plugin::Gru->new;
 
-    my $max = $schema->resultset('Jobs')->get_column('id')->max || 0;
+    my $max   = $schema->resultset('Jobs')->get_column('id')->max || 0;
     my $delta = 1000;
     while ($max > $delta) {
         $gru->enqueue(scan_images_links => {max_job => $max, min_job => $max - $delta}, {priority => -8});

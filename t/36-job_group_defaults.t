@@ -41,12 +41,12 @@ my $parent_groups = $db->resultset('JobGroupParents');
 
 # create new parent group
 my $new_parent_group_id = $parent_groups->create({name => 'new parent group'})->id;
-my $new_parent_group = $parent_groups->find($new_parent_group_id);
+my $new_parent_group    = $parent_groups->find($new_parent_group_id);
 ok($new_parent_group, 'create new parent group');
 
 # create new job group
 my $new_job_group_id = $job_groups->create({name => 'new job group'})->id;
-my $new_job_group = $job_groups->find($new_job_group_id);
+my $new_job_group    = $job_groups->find($new_job_group_id);
 ok($new_job_group, 'create new job group');
 
 subtest 'defaults of parent group' => sub {

@@ -89,7 +89,7 @@ sub register {
             my ($c, $testid, $frametime) = @_;
             my $url = $c->url_for('test_file', testid => $testid, filename => 'video.ogv');
             $url .= sprintf("#t=%s,%s", ${$frametime}[0], ${$frametime}[1]);
-            my $icon = $c->t(i => (class => "step_action far fa-video-file fa-lg"));
+            my $icon  = $c->t(i => (class => "step_action far fa-video-file fa-lg"));
             my $class = "step_action far fa-file-video fa-lg";
             return $c->link_to($url => (title => "Jump to video", class => $class) => sub { "" });
         });
@@ -152,7 +152,7 @@ sub register {
             # If the value is not in the stash
             my $current_user = $c->stash('current_user');
             unless ($current_user && ($current_user->{no_user} || defined $current_user->{user})) {
-                my $id = $c->session->{user};
+                my $id   = $c->session->{user};
                 my $user = $id ? $c->db->resultset("Users")->find({username => $id}) : undef;
                 $c->stash(current_user => $current_user = $user ? {user => $user} : {no_user => 1});
             }
@@ -164,7 +164,7 @@ sub register {
 
     $app->helper(
         is_operator => sub {
-            my $c = shift;
+            my $c    = shift;
             my $user = shift || $c->current_user;
 
             return ($user && $user->is_operator);
@@ -172,7 +172,7 @@ sub register {
 
     $app->helper(
         is_admin => sub {
-            my $c = shift;
+            my $c    = shift;
             my $user = shift || $c->current_user;
 
             return ($user && $user->is_admin);

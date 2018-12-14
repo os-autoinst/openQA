@@ -50,7 +50,7 @@ $plugin_mock->mock(
 my $schema = OpenQA::Test::Database->new->create();
 
 # this test also serves to test plugin loading via config file
-my @conf = ("[global]\n", "plugins=AMQP\n");
+my @conf    = ("[global]\n", "plugins=AMQP\n");
 my $tempdir = tempdir;
 $ENV{OPENQA_CONFIG} = $tempdir;
 path($ENV{OPENQA_CONFIG})->make_path->child("openqa.ini")->spurt(@conf);

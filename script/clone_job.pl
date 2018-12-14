@@ -259,7 +259,7 @@ sub openqa_baseurl {
 sub clone_job {
     my ($jobid, $clone_map, $depth) = @_;
     $clone_map //= {};
-    $depth //= 0;
+    $depth     //= 0;
     return $clone_map->{$jobid} if defined $clone_map->{$jobid};
 
     my $job = get_job($jobid);

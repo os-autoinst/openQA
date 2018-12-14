@@ -35,7 +35,7 @@ sub register {
             my $worker = $schema->resultset('Workers')->search({job_id => $job_id})->first;
             return unless ($worker);
 
-            my $session = $self->find({job_id => $job_id});
+            my $session                     = $self->find({job_id => $job_id});
             my $is_session_already_existing = defined($session);
             if ($is_session_already_existing) {
                 # allow only one session per job

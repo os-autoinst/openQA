@@ -119,7 +119,7 @@ sub update_needle {
         my $dir;
         my $basename;
         if (index($realpath, $needledir_path) != 0) {    # leave old behaviour as it is
-            $dir = $schema->resultset('NeedleDirs')->find_or_new({path => dirname($realpath)});
+            $dir      = $schema->resultset('NeedleDirs')->find_or_new({path => dirname($realpath)});
             $basename = basename($realpath);
         }
         else {

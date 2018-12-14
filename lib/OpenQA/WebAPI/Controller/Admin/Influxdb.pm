@@ -85,7 +85,7 @@ sub jobs {
         $result->{openqa_jobs_by_group}->{"group=No Group"} = $result->{by_group}->{0};
     }
 
-    my $url = $self->app->config->{global}->{base_url} || $self->req->url->base->to_string;
+    my $url  = $self->app->config->{global}->{base_url} || $self->req->url->base->to_string;
     my $text = '';
     $text .= _queue_output_measure($url, 'openqa_jobs', undef, $result->{openqa_jobs});
     for my $key (qw(openqa_jobs_by_group openqa_jobs_by_worker openqa_jobs_by_arch)) {

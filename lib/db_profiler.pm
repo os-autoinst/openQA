@@ -30,7 +30,7 @@ sub query_start {
     my $sql    = shift();
     my @params = @_;
 
-    $msg = "$sql: " . join(', ', @params);
+    $msg   = "$sql: " . join(', ', @params);
     $start = time();
 }
 

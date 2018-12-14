@@ -57,7 +57,7 @@ sub schema_hook {
 
     # set required worker properties
     $worker->set_property(WORKER_TMPDIR => $tempdir->child('t', 'devel-mode-ui.d'));
-    $worker->set_property(CMD_SRV_URL => 'http://remotehost:20013/token99964');
+    $worker->set_property(CMD_SRV_URL   => 'http://remotehost:20013/token99964');
 
     # add developer session for a finished job
     $workers->create(

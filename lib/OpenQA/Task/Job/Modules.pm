@@ -25,7 +25,7 @@ use Cwd 'abs_path';
 
 sub register {
     my ($self, $app) = @_;
-    $app->minion->add_task(migrate_images => sub { _migrate_images($app, @_) });
+    $app->minion->add_task(migrate_images     => sub { _migrate_images($app, @_) });
     $app->minion->add_task(relink_testresults => sub { _relink_testresults($app, @_) });
     $app->minion->add_task(rm_compat_symlinks => sub { _rm_compat_symlinks($app, @_) });
 }

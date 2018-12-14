@@ -194,7 +194,7 @@ sub _generate_jobs {
     my $group_name = delete $args->{_GROUP};
     if (!defined $group_id && defined $group_name) {
         my $groups = $self->db->resultset('JobGroups')->search({name => $group_name});
-        my $group = $groups->next or return;
+        my $group  = $groups->next or return;
         $group_id = $group->id;
     }
 
@@ -244,7 +244,7 @@ sub _generate_jobs {
             # make sure that the DISTRI is lowercase
             $settings{DISTRI} = lc($settings{DISTRI});
 
-            $settings{PRIO} = defined($priority) ? $priority : $job_template->prio;
+            $settings{PRIO}     = defined($priority) ? $priority : $job_template->prio;
             $settings{GROUP_ID} = $job_template->group_id;
 
             # allow some messing with the usual precedence order. If anything

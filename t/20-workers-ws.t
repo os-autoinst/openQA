@@ -60,7 +60,7 @@ subtest 'worker with job and not updated in last 120s is considered dead' => sub
     _check_job_running($_) for (99961, 99963);
     # move the updated timestamp of the workers to avoid sleeping
     my $dtf = $schema->storage->datetime_parser;
-    my $dt = DateTime->from_epoch(epoch => time() - 121, time_zone => 'UTC');
+    my $dt  = DateTime->from_epoch(epoch => time() - 121, time_zone => 'UTC');
 
     $schema->resultset('Workers')->update_all({t_updated => $dtf->format_datetime($dt)});
     stderr_like {
@@ -94,7 +94,7 @@ subtest 'worker accepted ws commands' => sub {
         is($OpenQA::Worker::Common::job, $c, "job aborted as $c");
     }
 
-    $OpenQA::Worker::Common::job = {id => 'job', URL => '127.0.0.1/nojob'};
+    $OpenQA::Worker::Common::job     = {id => 'job', URL => '127.0.0.1/nojob'};
     $OpenQA::Worker::Common::pooldir = 't';
     is(OpenQA::Worker::Jobs::is_developer_session_started(), 0, 'worker initially assumes no devel session');
     OpenQA::Worker::Commands::websocket_commands($ws, {type => 'livelog_start'});

@@ -328,7 +328,7 @@ subtest 'Needle editor layout' => sub {
 };
 
 my $needlename = 'test-newneedle';
-my $xoffset = my $yoffset = 200;
+my $xoffset    = my $yoffset = 200;
 
 subtest 'Create new needle' => sub {
     add_needle_tag();
@@ -433,7 +433,7 @@ subtest 'Verify new needle\'s JSON' => sub {
 sub assert_needle_appears_in_selection {
     my ($selection_id, $needlename) = @_;
 
-    my $selection = $driver->find_element_by_id($selection_id);
+    my $selection          = $driver->find_element_by_id($selection_id);
     my $new_needle_options = $driver->find_child_elements($selection, "./option[\@value='$needlename']", 'xpath');
     is(scalar @$new_needle_options, 1, "needle appears in $selection_id selection");
     is(

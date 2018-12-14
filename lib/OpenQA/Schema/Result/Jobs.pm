@@ -47,7 +47,7 @@ use OpenQA::Parser 'parser';
 
 # scenario keys w/o MACHINE. Add MACHINE when desired, commonly joined on
 # other keys with the '@' character
-use constant SCENARIO_KEYS => (qw(DISTRI VERSION FLAVOR ARCH TEST));
+use constant SCENARIO_KEYS              => (qw(DISTRI VERSION FLAVOR ARCH TEST));
 use constant SCENARIO_WITH_MACHINE_KEYS => (SCENARIO_KEYS, 'MACHINE');
 
 __PACKAGE__->table('jobs');
@@ -186,8 +186,8 @@ __PACKAGE__->might_have(
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'job_id');
 __PACKAGE__->many_to_many(assets => 'jobs_assets', 'asset');
 __PACKAGE__->has_many(last_use_assets => 'OpenQA::Schema::Result::Assets', 'last_use_job_id', {cascade_delete => 0});
-__PACKAGE__->has_many(children => 'OpenQA::Schema::Result::JobDependencies', 'parent_job_id');
-__PACKAGE__->has_many(parents  => 'OpenQA::Schema::Result::JobDependencies', 'child_job_id');
+__PACKAGE__->has_many(children        => 'OpenQA::Schema::Result::JobDependencies', 'parent_job_id');
+__PACKAGE__->has_many(parents => 'OpenQA::Schema::Result::JobDependencies', 'child_job_id');
 __PACKAGE__->has_many(
     modules => 'OpenQA::Schema::Result::JobModules',
     'job_id', {cascade_delete => 0, order_by => 'id'});
@@ -1178,7 +1178,7 @@ sub store_image {
 
     if (!$thumb) {
         my $dbpath = OpenQA::Utils::image_md5_filename($md5, 1);
-        my $dbh = $self->result_source->schema->storage->dbh;
+        my $dbh    = $self->result_source->schema->storage->dbh;
         # this is actually meant to cause a conflict - the worker uploads symlinks first.
         # But to be sure we have a DB entry in case this was missed, we still force create it
         # using postgresql's "do nothing"
@@ -1258,7 +1258,7 @@ sub create_asset {
 
     $fname = sprintf("%08d-%s", $self->id, $fname) if $scope ne 'public';
 
-    my $fpath = path($OpenQA::Utils::assetdir, $type);
+    my $fpath     = path($OpenQA::Utils::assetdir, $type);
     my $temp_path = path($OpenQA::Utils::assetdir, 'tmp', $scope);
 
     my $temp_chunk_folder = path($temp_path,         join('.', $fname, 'CHUNKS'));
@@ -1381,7 +1381,7 @@ sub update_status {
 
     # update info used to compose the URL to os-autoinst command server
     if (my $assigned_worker = $self->assigned_worker) {
-        $assigned_worker->set_property(CMD_SRV_URL     => ($status->{cmd_srv_url} // ''));
+        $assigned_worker->set_property(CMD_SRV_URL     => ($status->{cmd_srv_url}     // ''));
         $assigned_worker->set_property(WORKER_HOSTNAME => ($status->{worker_hostname} // ''));
     }
 
@@ -1559,7 +1559,7 @@ sub _previous_scenario_jobs {
     my ($self, $rows) = @_;
 
     my $schema = $self->result_source->schema;
-    my $conds = [{'me.state' => 'done'}, {'me.result' => [COMPLETE_RESULTS]}, {'me.id' => {'<', $self->id}}];
+    my $conds  = [{'me.state' => 'done'}, {'me.result' => [COMPLETE_RESULTS]}, {'me.id' => {'<', $self->id}}];
     for my $key (SCENARIO_WITH_MACHINE_KEYS) {
         push(@$conds, {"me.$key" => $self->get_column($key)});
     }

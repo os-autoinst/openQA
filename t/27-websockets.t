@@ -91,14 +91,14 @@ subtest "WebSocket Server _message()" => sub {
     is @{$fake_tx->{out}}[1],
       "1008,Connection terminated from WebSocket server - incompatible communication protocol version";
 
-    $buf = undef;
+    $buf                                 = undef;
     *FooBarWorker::websocket_api_version = sub { 0 };
     $fake_tx->OpenQA::WebSockets::Server::_message({type => 'property_change'});
     like $buf, qr/Received a message from an incompatible worker/ or diag explain $buf;
     is @{$fake_tx->{out}}[2],
       "1008,Connection terminated from WebSocket server - incompatible communication protocol version";
 
-    $buf = undef;
+    $buf                                 = undef;
     *FooBarWorker::websocket_api_version = sub { WEBSOCKET_API_VERSION + 1 };
     $fake_tx->OpenQA::WebSockets::Server::_message({type => 'accepted'});
     like $buf, qr/Received a message from an incompatible worker/ or diag explain $buf;

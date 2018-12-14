@@ -120,7 +120,7 @@ sub store_column {
 
     # remember previous value before updating
     my $previous_value = $self->get_column($name);
-    my $res = $self->next::method($name, $value);
+    my $res            = $self->next::method($name, $value);
 
     # skip this when the value does not change
     if ($value && $previous_value && $value eq $previous_value) {
@@ -269,12 +269,12 @@ sub store_needle_infos {
 
     for my $detail (@{$details}) {
         if ($detail->{needle}) {
-            my $nfn = $detail->{json};
+            my $nfn    = $detail->{json};
             my $needle = OpenQA::Schema::Result::Needles::update_needle($nfn, $self, 1, $needle_cache);
             $needles{$needle->id} ||= 1;
         }
         for my $needle (@{$detail->{needles} || []}) {
-            my $nfn = $needle->{json};
+            my $nfn    = $needle->{json};
             my $needle = OpenQA::Schema::Result::Needles::update_needle($nfn, $self, 0, $needle_cache);
             # failing needles are more interesting than succeeding, so ignore previous values
             $needles{$needle->id} = -1;

@@ -24,7 +24,7 @@ use OpenQA::Utils qw(log_debug log_warning log_fatal);
 
 sub register {
     my ($self, $app) = @_;
-    $app->minion->add_task(scan_images => sub { _scan_images($app, @_) });
+    $app->minion->add_task(scan_images       => sub { _scan_images($app, @_) });
     $app->minion->add_task(scan_images_links => sub { _scan_images_links($app, @_) });
 }
 

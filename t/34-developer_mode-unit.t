@@ -531,7 +531,7 @@ subtest 'delete job or user deletes session' => sub {
 };
 
 subtest 'URLs for command server and livehandler' => sub {
-    my $job = $jobs->find(99961);
+    my $job    = $jobs->find(99961);
     my $worker = $workers->find({job_id => 99961});
 
     is(OpenQA::WebAPI::Controller::Developer::determine_os_autoinst_web_socket_url($job),

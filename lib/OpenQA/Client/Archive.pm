@@ -74,7 +74,7 @@ sub _download_test_result_details {
         $url->path("/image/$dir/" . $module->{md5_basename});
 
         my $destination = $path->path('testresults/', $module->{screenshot});
-        my $tx = $ua->get($url)->res->content->asset->move_to($destination);
+        my $tx          = $ua->get($url)->res->content->asset->move_to($destination);
 
         if ($options->{'with-thumbnails'}) {
             $url->path('/image/', $dir, '/.thumbs/', $module->{md5_basename});
@@ -139,7 +139,7 @@ sub _download_handler {
 sub download_test_results {
 
     my ($self) = shift;
-    my $resultdir = path($path, 'testresults')->make_path;
+    my $resultdir       = path($path, 'testresults')->make_path;
     my $resultdir_ulogs = $resultdir->path('ulogs')->make_path;
 
     print "Downloading test details and screenshots to $resultdir\n";

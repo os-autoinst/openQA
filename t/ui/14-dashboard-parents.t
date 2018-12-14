@@ -53,7 +53,7 @@ sub schema_hook {
     # add data to test same name job group within different parent group
     my $parent_group2 = $parent_groups->create({name => 'Test parent 2', sort_order => 1});
     my $new_job_group = $job_groups->create({name => 'opensuse', parent_id => $parent_group2->id});
-    my $new_job = $jobs->create(
+    my $new_job       = $jobs->create(
         {
             id         => 100001,
             group_id   => $new_job_group->id,

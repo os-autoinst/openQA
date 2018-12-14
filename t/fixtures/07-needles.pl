@@ -16,6 +16,6 @@
         file_present           => 1,
         t_created              => time2str('%Y-%m-%d %H:%M:%S', time - 200000),
         t_updated              => time2str('%Y-%m-%d %H:%M:%S', time - 200000),
-      }
+    }
 
 ]

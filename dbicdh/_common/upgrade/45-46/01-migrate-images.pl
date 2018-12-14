@@ -37,7 +37,7 @@ sub {
         }
     }
     closedir $dh;
-    my $max = $schema->resultset('Jobs')->get_column('id')->max || 0;
+    my $max   = $schema->resultset('Jobs')->get_column('id')->max || 0;
     my $delta = 1000;
     while ($max > $delta) {
         $gru->enqueue(relink_testresults => {max_job => $max, min_job => $max - $delta}, {priority => -4});

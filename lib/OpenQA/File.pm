@@ -75,9 +75,8 @@ sub _chunk {
     my $seek_start = ($index - 1) * $chunk_size;
     my $prev       = ($index - 2) * $chunk_size + $chunk_size;
     my ($chunk_start, $chunk_end)
-      = $index == $n_chunks
-      && $residual ?
-      ($prev, $prev + $residual)
+      = $index == $n_chunks && $residual
+      ? ($prev, $prev + $residual)
       : ($seek_start, $seek_start + $chunk_size);
 
     return $self->new(

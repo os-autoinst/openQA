@@ -379,7 +379,7 @@ subtest 'labeled jobs considered important' => sub {
     $job->group->update({"keep_logs_in_days"           => 5});
     $job->group->update({"keep_important_logs_in_days" => 20});
     my $filename = create_temp_job_log_file($job->result_dir);
-    my $user = $t->app->db->resultset('Users')->find({username => 'system'});
+    my $user     = $t->app->db->resultset('Users')->find({username => 'system'});
     $job->comments->create({text => 'label:linked from test.domain', user_id => $user->id});
     run_gru('limit_results_and_logs');
     ok(-e $filename, 'file did not get cleaned');

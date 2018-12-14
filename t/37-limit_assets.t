@@ -271,7 +271,7 @@ subtest 'handling assets with invalid name' => sub {
     );
 
     # handling within OpenQA::Schema::Result::Jobs::register_assets_from_settings
-    my $job = $schema->resultset('Jobs')->first;
+    my $job          = $schema->resultset('Jobs')->first;
     my $job_settings = $job->{_settings} = {REPO_0 => ''};
     stdout_like(
         sub {

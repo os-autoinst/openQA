@@ -70,7 +70,7 @@ sub list_ajax {
     my ($self) = @_;
 
     my $scope = ($self->param('relevant') ne 'false' ? 'relevant' : '');
-    my @jobs = $self->db->resultset('Jobs')->complex_query(
+    my @jobs  = $self->db->resultset('Jobs')->complex_query(
         state    => [OpenQA::Jobs::Constants::FINAL_STATES],
         scope    => $scope,
         match    => $self->get_match_param,
@@ -204,7 +204,7 @@ sub stash_module_list {
     my ($self) = @_;
 
     my $job_id = $self->param('testid') or return;
-    my $job = $self->app->schema->resultset('Jobs')->search(
+    my $job    = $self->app->schema->resultset('Jobs')->search(
         {
             id => $job_id
         },
@@ -297,7 +297,7 @@ sub _show {
     # stash information for developer mode
     if ($job->state eq 'running') {
         my $current_user = $self->current_user;
-        my $worker_vnc = ($worker ? $worker->host . ':' . (90 + $worker->instance) : undef);
+        my $worker_vnc   = ($worker ? $worker->host . ':' . (90 + $worker->instance) : undef);
         $self->stash(
             {
                 ws_developer_url         => determine_web_ui_web_socket_url($job->id),
@@ -377,7 +377,7 @@ sub job_next_previous_ajax {
         $data->{label} = $labels->{$id}{label};
         my $comments = $labels->{$id}{comments};
         if ($comments) {
-            $data->{comments} = $comments;
+            $data->{comments}     = $comments;
             $data->{comment_icon} = $self->comment_icon($id, $comments);
         }
     }
@@ -458,7 +458,7 @@ sub prepare_job_results {
 
     # prefetch the number of available labels for those jobs
     my $job_labels = $self->_job_labels($jobs);
-    my @job_names = map { $_->TEST } @$jobs;
+    my @job_names  = map { $_->TEST } @$jobs;
 
     # prefetch descriptions from test suites
     my %desc_args = (name => {in => \@job_names});

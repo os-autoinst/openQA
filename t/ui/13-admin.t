@@ -102,7 +102,7 @@ subtest 'add product' => sub() {
 
     $driver->title_is("openQA: Medium types", "on products");
     wait_for_ajax;
-    my $elem = $driver->find_element('.admintable thead tr');
+    my $elem    = $driver->find_element('.admintable thead tr');
     my @headers = $driver->find_child_elements($elem, 'th');
     is(@headers, 6, "6 columns");
 
@@ -115,7 +115,7 @@ subtest 'add product' => sub() {
     is((shift @headers)->get_text(), "Actions",  "6th column");
 
     # now check one row by example
-    $elem = $driver->find_element('.admintable tbody tr:nth-child(1)');
+    $elem    = $driver->find_element('.admintable tbody tr:nth-child(1)');
     @headers = $driver->find_child_elements($elem, 'td');
 
     # the headers are specific to our fixtures - if they change, we have to adapt
@@ -169,7 +169,7 @@ subtest 'add machine' => sub() {
 
     $driver->title_is("openQA: Machines", "on machines list");
     wait_for_ajax;
-    my $elem = $driver->find_element('.admintable thead tr');
+    my $elem    = $driver->find_element('.admintable thead tr');
     my @headers = $driver->find_child_elements($elem, 'th');
     is(@headers, 4, "4 columns");
 
@@ -180,7 +180,7 @@ subtest 'add machine' => sub() {
     is((shift @headers)->get_text(), "Actions",  "4th column");
 
     # now check one row by example
-    $elem = $driver->find_element('.admintable tbody tr:nth-child(3)');
+    $elem    = $driver->find_element('.admintable tbody tr:nth-child(3)');
     @headers = $driver->find_child_elements($elem, 'td');
     # the headers are specific to our fixtures - if they change, we have to adapt
     is((shift @headers)->get_text(), "Laptop_64",                "name");
@@ -213,7 +213,7 @@ subtest 'add test suite' => sub() {
 
     $driver->title_is("openQA: Test suites", "on test suites");
     wait_for_ajax;
-    my $elem = $driver->find_element('.admintable thead tr');
+    my $elem    = $driver->find_element('.admintable thead tr');
     my @headers = $driver->find_child_elements($elem, 'th');
     is(@headers, 4, 'all columns');
 
@@ -224,7 +224,7 @@ subtest 'add test suite' => sub() {
     is((shift @headers)->get_text(), "Actions",     "4th column");
 
     # now check one row by example
-    $elem = $driver->find_element('.admintable tbody tr:nth-child(3)');
+    $elem    = $driver->find_element('.admintable tbody tr:nth-child(3)');
     @headers = $driver->find_child_elements($elem, 'td');
 
     # the headers are specific to our fixtures - if they change, we have to adapt
@@ -292,7 +292,7 @@ subtest 'add job group' => sub() {
     $driver->title_is("openQA: Job groups", "on groups");
 
     # check whether all job groups from fixtures are displayed
-    my $list_element = $driver->find_element_by_id('job_group_list');
+    my $list_element         = $driver->find_element_by_id('job_group_list');
     my @parent_group_entries = $driver->find_child_elements($list_element, 'li');
     is((shift @parent_group_entries)->get_text(), 'opensuse',      'first parentless group present');
     is((shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group present');
@@ -318,7 +318,7 @@ subtest 'add job group' => sub() {
     $groupname->clear();
     $driver->find_element_by_id('create_group_button')->click();
     wait_for_ajax;
-    $list_element = $driver->find_element_by_id('job_group_list');
+    $list_element         = $driver->find_element_by_id('job_group_list');
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
     is((shift @parent_group_entries)->get_text(), 'opensuse',      'first parentless group present');
     is((shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group present');
@@ -330,7 +330,7 @@ subtest 'add job group' => sub() {
     wait_for_ajax;
 
     # new group should be present
-    $list_element = $driver->find_element_by_id('job_group_list');
+    $list_element         = $driver->find_element_by_id('job_group_list');
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
     is((shift @parent_group_entries)->get_text(), 'Cool Group',    'new parentless group present');
     is((shift @parent_group_entries)->get_text(), 'opensuse',      'first parentless group from fixtures present');
@@ -344,7 +344,7 @@ subtest 'add job group' => sub() {
     wait_for_ajax;
 
     # check whether parent is present
-    $list_element = $driver->find_element_by_id('job_group_list');
+    $list_element         = $driver->find_element_by_id('job_group_list');
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
     is(@parent_group_entries, 4,
         'now 4 top-level groups present (one is new parent, remaining are parentless job groups)');
@@ -357,7 +357,7 @@ subtest 'add job group' => sub() {
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Job groups')->click();
 
-    $list_element = $driver->find_element_by_id('job_group_list');
+    $list_element         = $driver->find_element_by_id('job_group_list');
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
     is(@parent_group_entries, 4,
         'now 4 top-level groups present (one is new parent, remaining are parentless job groups)');
@@ -591,7 +591,7 @@ subtest 'asset list' => sub {
 
     # delete one of the assets
     my $asset4_td = $driver->find_element('tr:nth-child(6) td:first-child');
-    my $asset4_a = $driver->find_child_element($asset4_td, 'a');
+    my $asset4_a  = $driver->find_child_element($asset4_td, 'a');
     is($asset4_td->get_text(), 'iso/openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso')
       and $asset4_a->click();
     wait_for_ajax;

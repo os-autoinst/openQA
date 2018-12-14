@@ -40,7 +40,7 @@ use Mojo::File qw(tempfile path);
 subtest 'Setup logging to file' => sub {
     local $ENV{OPENQA_LOGFILE} = undef;
     my $tempfile = tempfile;
-    my $app = Mojolicious->new(config => {logging => {file => $tempfile}});
+    my $app      = Mojolicious->new(config => {logging => {file => $tempfile}});
     OpenQA::Setup::setup_log($app);
     $app->attr('log_name', sub { return "test"; });
 

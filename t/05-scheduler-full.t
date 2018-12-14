@@ -25,7 +25,7 @@ BEGIN {
     use FindBin;
     $tempdir = tempdir;
     $ENV{OPENQA_BASEDIR} = $tempdir->child('t', 'scheduler');
-    $ENV{OPENQA_CONFIG} = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
+    $ENV{OPENQA_CONFIG}  = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
     # Since tests depends on timing, we require the scheduler to be fixed in its actions.
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 10;
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 2000;
@@ -236,8 +236,8 @@ subtest 'Websocket server - close connection test' => sub {
     local $ENV{OPENQA_LOGFILE};
     local $ENV{MOJO_LOG_LEVEL};
     my $unstable_ws_pid = create_websocket_server($mojoport + 1, 1, 0, 1);
-    my $w2_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2, $log_file);
-    my $re = qr/\[.*?\]\sConnection turned off from .*?\- (.*?)\s\:(.*?) dead/;
+    my $w2_pid          = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2, $log_file);
+    my $re              = qr/\[.*?\]\sConnection turned off from .*?\- (.*?)\s\:(.*?) dead/;
 
     my $attempts = 800;
     do {

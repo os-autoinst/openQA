@@ -31,7 +31,7 @@ sub _remove_if {
 
     if (!$reason) {
         my $asset_name = $asset->{name};
-        my $groups = join(', ', keys %{$asset->{groups}});
+        my $groups     = join(', ', keys %{$asset->{groups}});
         $reason = "Removing asset $asset_name (assigned to groups: $groups)";
     }
     OpenQA::Utils::log_info($reason);

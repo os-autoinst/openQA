@@ -618,7 +618,7 @@ sub read_base64_file($) {
 # reads the content of a file below pooldir and returns its md5
 sub calculate_file_md5($) {
     my ($file) = @_;
-    my $c = path($pooldir, $file)->slurp;
+    my $c   = path($pooldir, $file)->slurp;
     my $md5 = Digest::MD5->new;
     $md5->add($c);
     return $md5->clone->hexdigest;

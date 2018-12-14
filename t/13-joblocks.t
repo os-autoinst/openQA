@@ -158,7 +158,7 @@ sub job_create_with_worker {
     );
 
     use OpenQA::WebAPI::Controller::API::V1::Worker;
-    my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
+    my $c    = OpenQA::WebAPI::Controller::API::V1::Worker->new;
     my $w_id = $c->_register($schema, "host", $last_worker_instance, \%worker);
     ok($w_id, "Worker instance $last_worker_instance created");
     $last_worker_instance++;

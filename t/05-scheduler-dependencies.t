@@ -160,7 +160,7 @@ $_->set_prio(1) for ($jobD, $jobE, $jobF);
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
 
-my @worker_ids = map { $c->_register($schema, 'host', "$_", \%workercaps) } (1 .. 6);
+my @worker_ids             = map { $c->_register($schema, 'host', "$_", \%workercaps) } (1 .. 6);
 my @jobs_in_expected_order = (
     $jobB => 'lowest prio of jobs without parents',
     $jobC => 'direct child of B',
@@ -851,7 +851,7 @@ my $jobA2_h = job_get_deps($jobA2->id);
 # We are sorting here because is_deeply needs the elements to be with the same order
 # and the DB query doesn't enforce any order
 my @clone_deps = sort { $a <=> $b } @{$jobA2_h->{children}->{Chained}};
-my @deps = sort { $a <=> $b } ($jobB2_h->{id}, $jobC2_h->{id}, $jobD2_h->{id});
+my @deps       = sort { $a <=> $b } ($jobB2_h->{id}, $jobC2_h->{id}, $jobD2_h->{id});
 is_deeply(\@clone_deps, \@deps, 'jobA2 has jobB2, jobC2 and jobD2 as children');
 
 # situation parent is done, children running -> parent is cloned -> parent is running -> parent is cloned. Check all children has new parent:

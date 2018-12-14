@@ -366,7 +366,7 @@ subtest 'Race for same asset' => sub {
 };
 
 subtest 'Default usage' => sub {
-    my $a = 'sle-12-SP3-x86_64-0368-200_1000@64bit.qcow2';
+    my $a             = 'sle-12-SP3-x86_64-0368-200_1000@64bit.qcow2';
     my $asset_request = $cache_client->request->asset(id => 922756, asset => $a, type => 'hdd', host => $host);
 
     unlink path($cachedir)->child($a);
@@ -387,7 +387,7 @@ subtest 'Default usage' => sub {
 };
 
 subtest 'Small assets causes racing when releasing locks' => sub {
-    my $a = 'sle-12-SP3-x86_64-0368-200_1@64bit.qcow2';
+    my $a             = 'sle-12-SP3-x86_64-0368-200_1@64bit.qcow2';
     my $asset_request = $cache_client->request->asset(id => 922756, asset => $a, type => 'hdd', host => $host);
 
     unlink path($cachedir)->child($a);

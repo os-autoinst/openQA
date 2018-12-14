@@ -48,7 +48,7 @@ sub init {
 
     # render a 404 error page for other routes
     my $test_name = $job->name;
-    my $what = $page_name ? "the page \"$page_name\"" : 'this route';
+    my $what      = $page_name ? "the page \"$page_name\"" : 'this route';
     $self->render_specific_not_found($page_name // 'Page not found',
         "The test $test_name has no worker assigned so $what is not available.");
     return 0;
@@ -71,7 +71,7 @@ sub edit {
     my $page_name = 'Needle Editor';
     return 0 unless $self->init($page_name);
 
-    my $job = $self->stash('job');
+    my $job            = $self->stash('job');
     my $running_module = $job->modules->find({result => 'running'});
     return $self->render_specific_not_found(
         $page_name,

@@ -120,7 +120,7 @@ sub list {
 
     my @results;
     for my $id (sort keys %jobs) {
-        my $job = $jobs{$id};
+        my $job     = $jobs{$id};
         my $jobhash = $job->to_hash(assets => 1, deps => 1);
         $jobhash->{modules} = [];
         for my $module (@{$job->{_modules}}) {
@@ -383,7 +383,7 @@ Columns group_id and priority cannot be set.
 sub update {
     my ($self) = @_;
 
-    my $job = find_job($self, $self->stash('jobid')) or return;
+    my $job  = find_job($self, $self->stash('jobid')) or return;
     my $json = $self->req->json;
     return $self->render(json => {error => 'No updates provided (must be provided as JSON)'}, status => 400)
       unless $json;
@@ -440,7 +440,7 @@ sub create_artefact {
     my ($self) = @_;
 
     my $jobid = int($self->stash('jobid'));
-    my $job = find_job($self, $jobid);
+    my $job   = find_job($self, $jobid);
     if (!$job) {
         OpenQA::Utils::log_info('Got artefact for non-existing job: ' . $jobid);
         return;
@@ -550,7 +550,7 @@ Updates result of a job in the system.
 sub done {
     my ($self) = @_;
 
-    my $job = find_job($self, $self->stash('jobid')) or return;
+    my $job    = find_job($self, $self->stash('jobid')) or return;
     my $result = $self->param('result');
     my $newbuild;
     $newbuild = 1 if defined $self->param('newbuild');
@@ -655,7 +655,7 @@ sub duplicate {
     my ($self) = @_;
 
     my $jobid = int($self->param('jobid'));
-    my $job = find_job($self, $self->stash('jobid')) or return;
+    my $job   = find_job($self, $self->stash('jobid')) or return;
     my $args;
     if (defined $self->param('prio')) {
         $args->{prio} = int($self->param('prio'));

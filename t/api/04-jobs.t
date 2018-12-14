@@ -377,7 +377,7 @@ $first_chunk = $pieces->first;
 $first_chunk->prepare;
 
 $chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
-$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+$post        = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
       {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'private'});
 
 is $post->tx->res->json->{status}, 'ok';
@@ -435,7 +435,7 @@ $first_chunk = $pieces->first;
 $first_chunk->prepare;
 
 $chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
-$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+$post        = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
       {file => {file => $chunk_asset, filename => 'new_ltp_result_array.json'}, asset => 'other'});
 
 is $post->tx->res->json->{status}, 'ok';
@@ -507,7 +507,7 @@ subtest 'Check job status and output' => sub {
         open STDOUT, '>', \$output;
 
 
-        $post = $t->post_ok("/api/v1/jobs/$job->{id}/status", json => $json);
+        $post      = $t->post_ok("/api/v1/jobs/$job->{id}/status", json => $json);
         $worker_id = 0;
         close STDOUT;
         open(STDOUT, '>&', $oldSTDOUT) or die "Can't dup \$oldSTDOUT: $!";
