@@ -62,6 +62,10 @@ do not clone parent jobs of type chained. This makes the job use the downloaded 
 
 do not try any download. You need to ensure all required assets are provided yourself.
 
+=item B<--within-instance> HOST
+
+a shortcut for C<--skip-download --from HOST --host HOST> to clone a job on a remote instance.
+
 =item B<--show-progress>
 
 display a progress bar of downloading asset
@@ -135,13 +139,17 @@ GetOptions(
     \%options,           "from=s",        "host=s",               "dir=s",
     "apikey:s",          "apisecret:s",   "verbose|v",            "skip-deps",
     "skip-chained-deps", "skip-download", "parental-inheritance", "help|h",
-    "show-progress",
+    "show-progress",     "within-instance|w=s",
 ) or usage(1);
 
 usage(1) unless @ARGV;
-usage(1) unless exists $options{'from'};
-
 my $jobid = shift @ARGV || die "missing jobid\n";
+if ($options{'within-instance'}) {
+    $options{'skip-download'} = 1;
+    $options{'from'}          = $options{'within-instance'};
+    $options{'host'}          = $options{'within-instance'};
+}
+usage(1) unless exists $options{'from'};
 
 $options{'dir'} ||= '/var/lib/openqa/factory';
 
