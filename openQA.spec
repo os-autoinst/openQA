@@ -222,7 +222,7 @@ rm -rf %{buildroot}/DB
 export LC_ALL=en_US.UTF-8
 ./t/test_postgresql %{buildroot}/DB
 export TEST_PG="DBI:Pg:dbname=openqa_test;host=%{buildroot}/DB"
-MOJO_LOG_LEVEL=debug OBS_RUN=1 prove -rv || true
+OBS_RUN=1 prove -rv || true
 pg_ctl -D %{buildroot}/DB stop
 rm -rf %{buildroot}/DB
 %endif
