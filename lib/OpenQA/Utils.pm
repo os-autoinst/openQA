@@ -923,8 +923,8 @@ sub compose_job_overview_search_args {
     my %search_args;
 
     # add simple query params to search args
-    for my $arg (qw(distri version flavor build)) {
-        my $params = $controller->every_param($arg) or next;
+    for my $arg (qw(distri version flavor build test)) {
+        my $params      = $controller->every_param($arg) or next;
         my $param_count = scalar @$params;
         if ($param_count == 1) {
             $search_args{$arg} = $params->[0];

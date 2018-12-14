@@ -185,6 +185,14 @@ subtest 'filtering by architecture' => sub {
     };
 };
 
+subtest 'filtering by test' => sub {
+    $driver->get('/tests/overview?test=textmode');
+
+    my @rows = $driver->find_elements('#content tbody tr');
+    is(scalar @rows, 1, 'exactly one row present');
+    like($rows[0]->get_text(), qr/textmode/, 'test is textmode');
+};
+
 subtest 'filtering by distri' => sub {
     subtest 'no distri filter yields everything' => sub {
         $driver->get('/tests/overview?version=13.1&build=0091');
