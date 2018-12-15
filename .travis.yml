@@ -11,8 +11,6 @@ env:
   - GH_PUBLISH=true FULLSTACK=1
   - SCHEDULER_FULLSTACK=1
   - DEVELOPER_FULLSTACK=1
-before_install: true
-install: true
 before_script:
 - docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
 cache:
