@@ -137,12 +137,6 @@ docker-test-run: docker.env
 	   $(DOCKER_IMG) make travis-codecov
 	rm $(docker_env_file)
 
-.PHONY: docker-test-travis
-docker-test-travis: docker.env
-	docker run --env-file $(docker_env_file) -v $(current_dir):/opt/openqa -v /var/run/dbus:/var/run/dbus \
-		-e TRAVIS=true $(DOCKER_IMG) make travis-codecov
-	rm $(docker_env_file)
-
 .PHONY: docker-test
 docker-test: docker-test-build docker-test-run
 	echo "Use docker-rm and docker-rmi to remove the container and image if necessary"
