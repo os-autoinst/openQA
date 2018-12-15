@@ -67,7 +67,7 @@ make test
 
 for unit and integration tests.
 
-To execute a single test, one can use +prove+. You must set +TEST_PG+ so the database
+To execute a single test, one can use `prove`. You must set +TEST_PG+ so the database
 can be found. If you set a custom base directory, be sure to unset it when running tests.
 Example:
 [source,sh]
@@ -75,7 +75,7 @@ Example:
 TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_BASEDIR= prove -v t/14-grutasks.t
 ----
 
-To speed up the test initialization, start PostgreSQL using +t/test_postgresql+
+To speed up the test initialization, start PostgreSQL using `t/test_postgresql`
 instead of using the system service. Eg.
 [source,sh]
 ----
@@ -163,7 +163,7 @@ http://perltidy.sourceforge.net/[Perltidy] to ensure that the contributed code
 follows the most common Perl style conventions.
 
 == Starting the webserver from local Git checkout
-* To start the webserver for development, use the +scripts/openqa daemon+.
+* To start the webserver for development, use the `scripts/openqa daemon`.
 * openQA will pull the required asssets on the first run.
 * openQA uses SASS, so Ruby development files are required. Under openSUSE,
   installing the packages +devel_C_C+++ and +ruby-devel+ should be sufficient.
@@ -173,8 +173,8 @@ follows the most common Perl style conventions.
   suffix so openQA could find them.
 * It is also useful to start openQA with morbo which allows applying changes
   without restarting the server:
-  +morbo -m development -w assets -w lib -w templates
-    -l http://localhost:9526 script/openqa daemon+
+  `morbo -m development -w assets -w lib -w templates
+    -l http://localhost:9526 script/openqa daemon`
 
 
 == Managing the database
@@ -200,10 +200,10 @@ mentioned above.
    version number at the same time.
 
 2. Then you need to generate the deployment files for new installations,
-   this is done by running +./script/initdb --prepare_init+.
+   this is done by running `./script/initdb --prepare_init`.
 
 3. Afterwards you need to generate the deployment files for existing installations,
-   this is done by running +./script/upgradedb --prepare_upgrade+.
+   this is done by running `./script/upgradedb --prepare_upgrade`.
    After doing so, the directories +dbicdh/$ENGINE/deploy/<new version>+ and
    +dbicdh/$ENGINE/upgrade/<prev version>-<new version>+ for PosgreSQL
    should have been created with some SQL files inside containing the statements to
@@ -226,8 +226,8 @@ createdb -O ownername -T originaldb newdb
 ----
 
 To actually create or update the database (after creating a backup as described),
-you should run either +./script/initdb --init_database+ or
-+./script/upgradedb --upgrade_database+. This is also required when the changes
+you should run either `./script/initdb --init_database` or
+`./script/upgradedb --upgrade_database`. This is also required when the changes
 are installed in a production server.
 
 === How to add fixtures to the database
@@ -280,18 +280,18 @@ client.conf and workers.ini.
 1. Install PosgreSQL - under openSUSE the following package are required:
    +postgresql-server postgresql-init+
 
-2. Start the server: +systemctl start postgresql+
+2. Start the server: `systemctl start postgresql`
 
-3. The following steps need to be done by the user postgres: +su - postgres+
+3. The following steps need to be done by the user postgres: `su - postgres`
 
-4. Create user: +createuser your_username+ where +your_username+ must be the same
+4. Create user: `createuser your_username` where +your_username+ must be the same
    as the UNIX user you start your local openQA instance with.
 
-5. Create database: +createdb -O your_username openqa+
+5. Create database: `createdb -O your_username openqa`
 
 6. The next steps must be done by the user you start your local openQA instance with.
 
-7. Import dump: +pg_restore -c -d openqa path/to/dump+
+7. Import dump: `pg_restore -c -d openqa path/to/dump`
 
 8. Configure openQA to use PostgreSQL as described in the section <<Installing.asciidoc#database,Database>> of the installation guide.
  User name and password are not required.
@@ -381,7 +381,7 @@ session after it just do:
 
   docker run -it -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus registry.opensuse.org/devel/openqa/containers/openqa_dev bash
 
-Of course you can also use +make docker-tests \; bash+ to run the tests first and then open a shell for further investigation.
+Of course you can also use `make docker-tests \; bash` to run the tests first and then open a shell for further investigation.
 
 There's also the possibility to change the initialization scripts with the --entrypoint switch. This allows us to go into an interactive
 session without any initialization script run:
@@ -402,7 +402,7 @@ It is also possible to use a custom os-autoinst checkout using the following arg
 
   docker run ... -e CUSTOM_OS_AUTOINST=1 -v /path/to/your/os-autoinst:/opt/os-autoinst make docker-tests
 
-By default, +configure+ and +make+ are still executed (so a clean checkout is expected). If your checkout is already prepared to use, set +CUSTOM_OS_AUTOINST_SKIP_BUILD+ to
+By default, `configure` and `make` are still executed (so a clean checkout is expected). If your checkout is already prepared to use, set +CUSTOM_OS_AUTOINST_SKIP_BUILD+ to
 prevent this. Be aware that the build produced outside of the container might not work inside the container if both environments provide different, incompatible library
 versions (eg. OpenCV).
 
@@ -413,8 +413,8 @@ In general, if starting the tests via Docker seems to hang, it is a good idea to
 
 === How to run tests without docker
 
-To execute the testsuite locally without docker, use +make test+. It is also possible to run a
-particular test for example +prove t/api/01-workers.t+.
+To execute the testsuite locally without docker, use `make test`. It is also possible to run a
+particular test for example `prove t/api/01-workers.t`.
 
 To run UI tests the package +perl-Selenium-Remote-Driver+ is required. Note that
 the version provided by Leap 42.2 is too old. The version from the repository
