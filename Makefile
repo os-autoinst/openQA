@@ -110,8 +110,8 @@ coverage:
 
 COVER_REPORT_OPTS ?= -select_re ^lib/
 
-.PHONY: travis-codecov
-travis-codecov: coverage
+.PHONY: coverage-codecov
+coverage-codecov: coverage
 	cover $(COVER_REPORT_OPTS) -report codecov
 
 .PHONY: coverage-html
@@ -136,7 +136,7 @@ docker.env:
 .PHONY: launch-docker-to-run-tests-within
 launch-docker-to-run-tests-within: docker.env
 	docker run --env-file $(docker_env_file) -v $(current_dir):/opt/openqa \
-	   $(DOCKER_IMG) make travis-codecov
+	   $(DOCKER_IMG) make coverage-codecov
 	rm $(docker_env_file)
 
 .PHONY: prepare-and-launch-docker-to-run-tests-within
