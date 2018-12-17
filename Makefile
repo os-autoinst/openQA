@@ -138,5 +138,6 @@ docker-test-run: docker.env
 	rm $(docker_env_file)
 
 .PHONY: docker-test
+.NOTPARALLEL: docker-test
 docker-test: docker-test-build docker-test-run
 	echo "Use docker-rm and docker-rmi to remove the container and image if necessary"
