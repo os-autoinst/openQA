@@ -95,6 +95,10 @@ test: checkstyle
 	OPENQA_CONFIG= prove ${PROVE_ARGS}
 endif
 
+# prepares running the tests within Docker (eg. pulls os-autoinst) and then runs the tests considering
+# the test matrix environment variables
+# note: This is supposed to run within the Docker container unlike `docker-test` which launches the
+#       container.
 .PHONY: docker-tests
 docker-tests:
 	script/docker-tests
@@ -131,12 +135,14 @@ docker-test-build:
 docker.env:
 	env | grep -E 'FULLSTACK|UITEST|GH|TRAVIS|CPAN|DEBUG|ZYPPER' > $(docker_env_file)
 
+# launches a Docker container and runs the testsuite within, does NOT ensure that container is built
 .PHONY: docker-test-run
 docker-test-run: docker.env
 	docker run --env-file $(docker_env_file) -v $(current_dir):/opt/openqa -v /var/run/dbus:/var/run/dbus \
 	   $(DOCKER_IMG) make travis-codecov
 	rm $(docker_env_file)
 
+# launches a Docker container and runs the testsuite within (used on Travis)
 .PHONY: docker-test
 .NOTPARALLEL: docker-test
 docker-test: docker-test-build docker-test-run

@@ -346,26 +346,36 @@ There's two ways of executing the testsuite locally:
 
 === How to run tests with docker
 
-To run them in docker please be sure that docker is installed and the docker daemon is running.
+To run tests in Docker please be sure that Docker is installed and the Docker daemon is running.
 To launch the test suite first it's required to pull the docker image:
 
   docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
+
+This Docker image is provided by the OBS repository https://build.opensuse.org/package/show/devel:openQA/openqa_dev
+and based on the `Dockerfile` within the `docker/travis_tests` sub directory of the openQA repository.
 
 Build the image using Makefile target:
 
   make docker-test-build
 
+Note that the image created by that target is called `openqa:latest` while the raw container
+pulled from OBS is called `openqa_dev:latest`.
+
 Launch the tests using Makefile target:
 
   make docker-test-run
 
-Run tests by invoking Docker manually:
+Run tests by invoking Docker manually, e.g.:
 
   docker run -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus -e VAR1=1 -e VAR2=1 openqa:latest make docker-tests
 
-Replace OPENQA_LOCAL_CODE to the location where you have the openqa code.
+Replace `OPENQA_LOCAL_CODE` with the location where you have the openQA code.
 
-Replace VAR1 and VAR2 in -e switch to match a test battery of the test matrix:
+The command line to run tests manually reveals that the Makefile target `docker-tests` (with an `s` at the end) is
+used to run the tests *inside* the container (unlike the other `docker-…` targets which launch the container itself).
+The `docker-tests` target does some preparations to be able to run the full stack test within Docker and considers a few
+environment variables defining our test matrix:
+
 |============================
 |FULLSTACK=0| UITESTS=0
 |FULLSTACK=0| UITESTS=1
@@ -374,12 +384,15 @@ Replace VAR1 and VAR2 in -e switch to match a test battery of the test matrix:
 |DEVELOPER_FULLSTACK=1|
 |============================
 
-==== tips
+So by replacing VAR1 and VAR2 with those values one can trigger the different tests of the matrix.
 
-Running commands will be executed after the initialization script (database creation and so on..). So if there's the need to run an interactive
-session after it just do:
+Of course it is also possible to run (specific) tests directly via `prove` instead of using the Makefile targets.
 
-  docker run -it -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus registry.opensuse.org/devel/openqa/containers/openqa_dev bash
+==== Tips
+
+Running commands will be executed after the initialization script (database creation and so on..). So if there is the need to run an interactive session after it just do:
+
+  docker run -it -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus openqa:latest bash
 
 Of course you can also use `make docker-tests \; bash` to run the tests first and then open a shell for further investigation.
 
@@ -395,16 +408,15 @@ In case there's the need to follow what's happening in the current running docke
 Running UI tests in non-headless mode is also possible, eg.:
 
   xhost +local:root
-  docker run --rm -ti --name openqa-testsuite -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY="$DISPLAY" -e NOT_HEADLESS=1 prove -v t/ui/14-dashboard.t
+  docker run --rm -ti --name openqa-testsuite -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY="$DISPLAY" -e NOT_HEADLESS=1 openqa:latest prove -v t/ui/14-dashboard.t
   xhost -local:root
 
 It is also possible to use a custom os-autoinst checkout using the following arguments:
 
-  docker run ... -e CUSTOM_OS_AUTOINST=1 -v /path/to/your/os-autoinst:/opt/os-autoinst make docker-tests
+  docker run … -e CUSTOM_OS_AUTOINST=1 -v /path/to/your/os-autoinst:/opt/os-autoinst make docker-tests
 
-By default, `configure` and `make` are still executed (so a clean checkout is expected). If your checkout is already prepared to use, set +CUSTOM_OS_AUTOINST_SKIP_BUILD+ to
-prevent this. Be aware that the build produced outside of the container might not work inside the container if both environments provide different, incompatible library
-versions (eg. OpenCV).
+By default, `configure` and `make` are still executed (so a clean checkout is expected). If your checkout is already prepared to use, set +CUSTOM_OS_AUTOINST_SKIP_BUILD+ to prevent this. Be aware that the build produced outside of the container might not work inside the container
+if both environments provide different, incompatible library versions (eg. OpenCV).
 
 It is also important to mention that your local repositories will be copied into the container. This can take very long if those are big, eg. when the openQA repo contains a lot of
 profiling data because you enabled +Mojolicious::Plugin::NYTProf+.
