@@ -471,8 +471,8 @@ remote instances.
 
 If your network is slow or you experience long time to load needles you
 might want to consider to enable caching in your remote workers. To enable caching,
-+/var/lib/openqa/cache+ must be created, and right permissions given to the
-'geekotest' user. If you install openQA through the repositories, said directory
++/var/lib/openqa/cache+ must exist, and right permissions given to the
+'_openqa-worker' user. If you install openQA through the repositories, said directory
 will be created for you.
 
 Start and enable the Cache Service:
