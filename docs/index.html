@@ -718,7 +718,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_storing_only_the_last_sucessful_snapshot">Storing only the last sucessful snapshot</a></li>
 </ul>
 </li>
-<li><a href="#_defining_a_custom_test_schedule_or_custom_test_modules">Defining a custom test schedule or custom test modules</a></li>
+<li><a href="#_defining_a_custom_test_schedule_or_custom_test_modules">Defining a custom test schedule or custom test modules</a>
+<ul class="sectlevel4">
+<li><a href="#_exclude_modules">EXCLUDE_MODULES</a></li>
+<li><a href="#_include_modules">INCLUDE_MODULES</a></li>
+<li><a href="#_schedule">SCHEDULE</a></li>
+<li><a href="#_schedule_asset_nr_url">SCHEDULE + ASSET_&lt;NR&gt;_URL</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -4997,6 +5004,139 @@ well as define a custom schedule using the test variable SCHEDULE.
 Also test modules can be defined and overridden on-the-fly using a
 downloadable asset.</p>
 </div>
+<div class="sect4">
+<h5 id="_exclude_modules">EXCLUDE_MODULES</h5>
+<div class="paragraph">
+<p>If a job has the following schedule:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>boot/boot_to_desktop</p>
+</li>
+<li>
+<p>console/systemd_testsuite</p>
+</li>
+<li>
+<p>console/docker</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The module console/docker can be excluded with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>openqa-clone-job --from https://openqa.opensuse.org --host https://openqa.opensuse.org 24 EXCLUDE_MODULES=docker</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The schedule would be:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>boot/boot_to_desktop</p>
+</li>
+<li>
+<p>console/systemd_testsuite</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Excluding modules that are not scheduled does not raise an error.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_include_modules">INCLUDE_MODULES</h5>
+<div class="paragraph">
+<p>If a job has the following schedule:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>boot/boot_to_desktop</p>
+</li>
+<li>
+<p>console/systemd_testsuite</p>
+</li>
+<li>
+<p>console/docker</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The module console/docker can be excluded with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>openqa-clone-job --from https://openqa.opensuse.org --host https://openqa.opensuse.org 24 INCLUDE_MODULES=boot_to_desktop,systemd_testsuite</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The schedule would be:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>boot/boot_to_desktop</p>
+</li>
+<li>
+<p>console/systemd_testsuite</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Including modules that are not scheduled does not raise an error, but they are not scheduled.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_schedule">SCHEDULE</h5>
+<div class="paragraph">
+<p>Additionally it is possible to define a custom schedule using the test variable SCHEDULE.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>openqa-clone-job --from https://openqa.opensuse.org --host https://openqa.opensuse.org 24 SCHEDULE=tests/boot/boot_to_desktop,tests/console/consoletest_setup</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Any existing test module within <strong>CASEDIR</strong> can be scheduled.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_schedule_asset_nr_url">SCHEDULE + ASSET_&lt;NR&gt;_URL</h5>
+<div class="paragraph">
+<p>Test modules can be defined and overridden on-the-fly using a
+downloadable asset (combining <strong>ASSET_&lt;NR&gt;_URL</strong> and <strong>SCHEDULE</strong>).</p>
+</div>
 <div class="paragraph">
 <p>For example one can schedule a job on a production instance with a custom
 schedule consisting of two modules from the provided test distribution plus
@@ -5005,11 +5145,24 @@ an external trusted download domain:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>openqa-clone-job --from https://openqa.opensuse.org --host https://openqa.opensuse.org 24 SCHEDULE=tests/boot/boot_to_desktop,tests/console/consoletest_setup,foo ASSET_1_URL=https://example.org/my/test/foo.pm</pre>
+<pre>openqa-clone-job --from https://openqa.opensuse.org --host https://openqa.opensuse.org 24 SCHEDULE=tests/boot/boot_to_desktop,tests/console/consoletest_setup,foo,bar ASSET_1_URL=https://example.org/my/test/bar.pm  ASSET_2_URL=https://example.org/my/test/foo.pm</pre>
 </div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The asset number doesn&#8217;t affect the schedule order.<br>
+The test modules foo.pm and bar.pm will be downloaded into the root of the pool diretory where tests an assets are used by isotovideo. For this reason, to schedule them, no path is needed.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
-<p>where "foo.pm" is a file in test module format, e.g. the following content:</p>
+<p>A valid test module format looks like this:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -5035,6 +5188,7 @@ section "Asset handling" in the <a href="#usersguide">Users Guide</a>
 describes how downloadable assets can be specified. It is important to note
 that the specified asset is only downloaded once. New versions must be
 supplied as new, unambiguous download target file names.</p>
+</div>
 </div>
 </div>
 </div>
@@ -6123,7 +6277,7 @@ environment to verify everything works as expected. Call:</p>
 <p>for unit and integration tests.</p>
 </div>
 <div class="paragraph">
-<p>To execute a single test, one can use prove. You must set TEST_PG so the database
+<p>To execute a single test, one can use <code>prove</code>. You must set TEST_PG so the database
 can be found. If you set a custom base directory, be sure to unset it when running tests.
 Example:</p>
 </div>
@@ -6133,7 +6287,7 @@ Example:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>To speed up the test initialization, start PostgreSQL using t/test_postgresql
+<p>To speed up the test initialization, start PostgreSQL using <code>t/test_postgresql</code>
 instead of using the system service. Eg.</p>
 </div>
 <div class="listingblock">
@@ -6251,7 +6405,7 @@ follows the most common Perl style conventions.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>To start the webserver for development, use the scripts/openqa daemon.</p>
+<p>To start the webserver for development, use the <code>scripts/openqa daemon</code>.</p>
 </li>
 <li>
 <p>openQA will pull the required asssets on the first run.</p>
@@ -6267,8 +6421,8 @@ suffix so openQA could find them.</p>
 <li>
 <p>It is also useful to start openQA with morbo which allows applying changes
 without restarting the server:
-morbo -m development -w assets -w lib -w templates
-  -l http://localhost:9526 script/openqa daemon</p>
+<code>morbo -m development -w assets -w lib -w templates
+  -l <a href="http://localhost:9526" class="bare">http://localhost:9526</a> script/openqa daemon</code></p>
 </li>
 </ul>
 </div>
@@ -6306,11 +6460,11 @@ version number at the same time.</p>
 </li>
 <li>
 <p>Then you need to generate the deployment files for new installations,
-this is done by running ./script/initdb --prepare_init.</p>
+this is done by running <code>./script/initdb --prepare_init</code>.</p>
 </li>
 <li>
 <p>Afterwards you need to generate the deployment files for existing installations,
-this is done by running ./script/upgradedb --prepare_upgrade.
+this is done by running <code>./script/upgradedb --prepare_upgrade</code>.
 After doing so, the directories dbicdh/$ENGINE/deploy/&lt;new version&gt; and
 dbicdh/$ENGINE/upgrade/&lt;prev version&gt;-&lt;new version&gt; for PosgreSQL
 should have been created with some SQL files inside containing the statements to
@@ -6339,8 +6493,8 @@ used to create a copy:</p>
 </div>
 <div class="paragraph">
 <p>To actually create or update the database (after creating a backup as described),
-you should run either ./script/initdb --init_database or
-./script/upgradedb --upgrade_database. This is also required when the changes
+you should run either <code>./script/initdb --init_database</code> or
+<code>./script/upgradedb --upgrade_database</code>. This is also required when the changes
 are installed in a production server.</p>
 </div>
 </div>
@@ -6411,23 +6565,23 @@ client.conf and workers.ini.</p>
 postgresql-server postgresql-init</p>
 </li>
 <li>
-<p>Start the server: systemctl start postgresql</p>
+<p>Start the server: <code>systemctl start postgresql</code></p>
 </li>
 <li>
-<p>The following steps need to be done by the user postgres: su - postgres</p>
+<p>The following steps need to be done by the user postgres: <code>su - postgres</code></p>
 </li>
 <li>
-<p>Create user: createuser your_username where your_username must be the same
+<p>Create user: <code>createuser your_username</code> where your_username must be the same
 as the UNIX user you start your local openQA instance with.</p>
 </li>
 <li>
-<p>Create database: createdb -O your_username openqa</p>
+<p>Create database: <code>createdb -O your_username openqa</code></p>
 </li>
 <li>
 <p>The next steps must be done by the user you start your local openQA instance with.</p>
 </li>
 <li>
-<p>Import dump: pg_restore -c -d openqa path/to/dump</p>
+<p>Import dump: <code>pg_restore -c -d openqa path/to/dump</code></p>
 </li>
 <li>
 <p>Configure openQA to use PostgreSQL as described in the section <a href="#database">Database</a> of the installation guide.
@@ -6587,7 +6741,7 @@ session after it just do:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Of course you can also use make docker-tests \; bash to run the tests first and then open a shell for further investigation.</p>
+<p>Of course you can also use <code>make docker-tests \; bash</code> to run the tests first and then open a shell for further investigation.</p>
 </div>
 <div class="paragraph">
 <p>There&#8217;s also the possibility to change the initialization scripts with the --entrypoint switch. This allows us to go into an interactive
@@ -6625,7 +6779,7 @@ xhost -local:root</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>By default, configure and make are still executed (so a clean checkout is expected). If your checkout is already prepared to use, set CUSTOM_OS_AUTOINST_SKIP_BUILD to
+<p>By default, <code>configure</code> and <code>make</code> are still executed (so a clean checkout is expected). If your checkout is already prepared to use, set CUSTOM_OS_AUTOINST_SKIP_BUILD to
 prevent this. Be aware that the build produced outside of the container might not work inside the container if both environments provide different, incompatible library
 versions (eg. OpenCV).</p>
 </div>
@@ -6641,8 +6795,8 @@ profiling data because you enabled Mojolicious::Plugin::NYTProf.</p>
 <div class="sect2">
 <h3 id="_how_to_run_tests_without_docker">How to run tests without docker</h3>
 <div class="paragraph">
-<p>To execute the testsuite locally without docker, use make test. It is also possible to run a
-particular test for example prove t/api/01-workers.t.</p>
+<p>To execute the testsuite locally without docker, use <code>make test</code>. It is also possible to run a
+particular test for example <code>prove t/api/01-workers.t</code>.</p>
 </div>
 <div class="paragraph">
 <p>To run UI tests the package perl-Selenium-Remote-Driver is required. Note that
@@ -6695,7 +6849,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-12-15 16:41:36 UTC
+Last updated 2018-12-17 11:05:51 UTC
 </div>
 </div>
 </body>
