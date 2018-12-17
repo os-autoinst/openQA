@@ -48,7 +48,6 @@ function run_as_normal_user {
 
     if [ $? -eq 0 ]; then
         create_db
-        export MOJO_LOG_LEVEL=debug
         export MOJO_TMPDIR=$(mktemp -d)
         export OPENQA_LOGFILE=/tmp/openqa-debug.log
     else
