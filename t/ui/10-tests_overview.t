@@ -191,6 +191,11 @@ subtest 'filtering by test' => sub {
     my @rows = $driver->find_elements('#content tbody tr');
     is(scalar @rows, 1, 'exactly one row present');
     like($rows[0]->get_text(), qr/textmode/, 'test is textmode');
+    is(
+        OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header')->get_text()),
+        'Overall Summary of opensuse 13.1 build 0092',
+        'summary states "opensuse 13.1" although no explicit search params',
+    );
 };
 
 subtest 'filtering by distri' => sub {
@@ -202,6 +207,11 @@ subtest 'filtering by distri' => sub {
     subtest 'distri filters are ORed' => sub {
         $driver->get('/tests/overview?distri=foo&distri=opensuse&distri=bar&version=13.1&build=0091');
         check_build_0091_defaults;
+        is(
+            OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header b')->get_text()),
+            'foo/opensuse/bar 13.1',
+            'filter also visible in summary'
+        );
     };
 
     subtest 'everything filtered out' => sub {
