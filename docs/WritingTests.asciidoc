@@ -1274,16 +1274,75 @@ well as define a custom schedule using the test variable +SCHEDULE+.
 Also test modules can be defined and overridden on-the-fly using a
 downloadable asset.
 
+===== EXCLUDE_MODULES
+
+If a job has the following schedule:
+
+- boot/boot_to_desktop
+- console/systemd_testsuite
+- console/docker
+
+The module console/docker can be excluded with:
+
+----
+openqa-clone-job --from https://openqa.opensuse.org --host https://openqa.opensuse.org 24 EXCLUDE_MODULES=docker
+----
+
+The schedule would be:
+
+- boot/boot_to_desktop
+- console/systemd_testsuite
+
+NOTE: Excluding modules that are not scheduled does not raise an error.
+
+===== INCLUDE_MODULES
+
+If a job has the following schedule:
+
+- boot/boot_to_desktop
+- console/systemd_testsuite
+- console/docker
+
+The module console/docker can be excluded with:
+
+----
+openqa-clone-job --from https://openqa.opensuse.org --host https://openqa.opensuse.org 24 INCLUDE_MODULES=boot_to_desktop,systemd_testsuite
+----
+
+The schedule would be:
+
+- boot/boot_to_desktop
+- console/systemd_testsuite
+
+NOTE: Including modules that are not scheduled does not raise an error, but they are not scheduled.
+
+===== SCHEDULE
+
+Additionally it is possible to define a custom schedule using the test variable +SCHEDULE+.
+
+----
+openqa-clone-job --from https://openqa.opensuse.org --host https://openqa.opensuse.org 24 SCHEDULE=tests/boot/boot_to_desktop,tests/console/consoletest_setup
+----
+
+NOTE: Any existing test module within *CASEDIR* can be scheduled.
+
+===== SCHEDULE + ASSET_<NR>_URL
+Test modules can be defined and overridden on-the-fly using a
+downloadable asset (combining *ASSET_<NR>_URL* and *SCHEDULE*).
+
 For example one can schedule a job on a production instance with a custom
 schedule consisting of two modules from the provided test distribution plus
 one test module which is defined dynamically and downloaded as an asset from
 an external trusted download domain:
 
 ----
-openqa-clone-job --from https://openqa.opensuse.org --host https://openqa.opensuse.org 24 SCHEDULE=tests/boot/boot_to_desktop,tests/console/consoletest_setup,foo ASSET_1_URL=https://example.org/my/test/foo.pm
+openqa-clone-job --from https://openqa.opensuse.org --host https://openqa.opensuse.org 24 SCHEDULE=tests/boot/boot_to_desktop,tests/console/consoletest_setup,foo,bar ASSET_1_URL=https://example.org/my/test/bar.pm  ASSET_2_URL=https://example.org/my/test/foo.pm
 ----
 
-where "foo.pm" is a file in test module format, e.g. the following content:
+NOTE: The asset number doesn't affect the schedule order. +
+The test modules foo.pm and bar.pm will be downloaded into the root of the pool diretory where tests an assets are used by isotovideo. For this reason, to schedule them, no path is needed.
+
+A valid test module format looks like this:
 
 ----
 use base 'consoletest';
