@@ -110,10 +110,6 @@
                     class="btn btn-warning developer-mode-element" data-hidden-on="ownSession">
                     <i class="fas fa-lock"></i> Confirm to control this test
                 </a>
-                <a href="#" onclick="quitDeveloperSession(); return false;"
-                    class="btn btn-danger developer-mode-element" data-visible-on="ownSession">
-                    <i class="far fa-stop-circle"></i> Cancel job
-                </a>
                 <a href="#" onclick="resumeTestExecution(); return false;"
                     class="btn btn-secondary developer-mode-element" data-visible-on="isPaused"
                     data-toggle="tooltip" data-placement="bottom" title="Resumes the test execution; new/updated needles are loaded before continuing">
