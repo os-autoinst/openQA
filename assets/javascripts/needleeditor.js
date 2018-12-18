@@ -404,6 +404,18 @@ function restartJob(event) {
 
 var nEditor;
 
+function submitMargin() {
+    setMargin();
+    $('#change-margin-form').modal('hide');
+    return false;
+}
+
+function submitMatch() {
+    setMatch();
+    $('#change-match-form').modal('hide');
+    return false;
+}
+
 function setup_needle_editor(imageurl, default_needle)
 {
   nEditor = new NeedleEditor(imageurl, default_needle);
@@ -428,9 +440,9 @@ function setup_needle_editor(imageurl, default_needle)
   loadTagsAndName();
   $('#area_select').change(loadAreas);
   $('#take_matches').change(loadAreas);
+  $('#match_form').submit(submitMatch);
+  $('#margin_form').submit(submitMargin);
 
-  $('#set_margin').click(function() { setMargin(); $('#change-margin-form').modal('hide'); } );
-  $('#set_match').click(function() { setMatch(); $('#change-match-form').modal('hide'); } );
   $('#change-margin-form').on('show.bs.modal', function() {
     var idx = nEditor.cv.get_selection_idx();
     if (idx == -1) {
