@@ -141,7 +141,7 @@ my %no_developer = (
 
 subtest 'version check' => sub {
     my $live_view_handler = OpenQA::WebAPI::Controller::LiveViewHandler->new();
-    my %status_info = (running => 'installation-welcome');
+    my %status_info       = (running => 'installation-welcome');
 
     is($live_view_handler->check_os_autoinst_devel_mode_version(\%status_info), 0, 'no version at all not accepted');
 
