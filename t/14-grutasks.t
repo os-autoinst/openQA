@@ -75,10 +75,6 @@ $assets_mock->mock(refresh_assets            => sub { });
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-# now to something completely different: testing limit_assets
-my $c = OpenQA::WebAPI::Plugin::Gru::Command::gru->new();
-$c->app($t->app);
-
 # list initially existing assets
 my $dbh             = $schema->storage->dbh;
 my $initial_aessets = $dbh->selectall_arrayref('select * from assets order by id;');
@@ -106,7 +102,7 @@ is($job_groups->find(1001)->exclusively_kept_asset_size,
 sub run_gru {
     my ($task, $args) = @_;
     $t->app->gru->enqueue($task => $args);
-    $c->run('run', '-o');
+    $t->app->start('gru', 'run', '-o');
 }
 
 # understanding / revising these tests requires understanding the
@@ -401,26 +397,26 @@ subtest 'Gru tasks limit' => sub {
 
     is $t->app->minion->backend->list_jobs(0, undef, {tasks => ['limit_assets'], states => ['inactive']})->{total}, 2;
 
-    $c->run('run', '-o');
+    $t->app->start('gru', 'run', '-o');
     $id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
     ok defined $id, 'task is scheduled';
     $id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
     ok defined $id, 'task is scheduled';
     $res = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
     is $res, undef, 'Other tasks is not scheduled anymore';
-    $c->run('run', '-o');
+    $t->app->start('gru', 'run', '-o');
 };
 
 subtest 'Gru tasks TTL' => sub {
     $t->app->minion->reset;
     my $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -20})->{minion_id};
-    $c->run('run', '-o');
+    $t->app->start('gru', 'run', '-o');
     my $result = $t->app->minion->job($job_id)->info->{result};
     is ref $result, 'HASH', 'We have a result' or diag explain $result;
     is $result->{error}, 'TTL Expired', 'TTL Expired - job discarded' or diag explain $result;
 
     $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 20})->{minion_id};
-    $c->run('run', '-o');
+    $t->app->start('gru', 'run', '-o');
     $result = $t->app->minion->job($job_id)->info->{result};
 
     is ref $result, '', 'Result is the output';
@@ -432,7 +428,7 @@ subtest 'Gru tasks TTL' => sub {
     for (1 .. 100) {
         push @ids, $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -50})->{minion_id};
     }
-    $c->run('run', '-o');
+    $t->app->start('gru', 'run', '-o');
 
     is $t->app->minion->job($_)->info->{result}->{error}, 'TTL Expired', 'TTL Expired - job discarded' for @ids;
 
