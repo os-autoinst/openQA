@@ -162,3 +162,34 @@ function makeWsUrlAbsolute(url, servicePortDelta) {
         (url.indexOf('/') !== 0 ? '/' : '') +
         url;
 }
+
+function restartJob(url, jobId) {
+    var showError = function(reason) {
+        var errorMessage = '<strong>Unable to restart job';
+        if (reason) {
+            errorMessage += ':</strong> ' + reason;
+        } else {
+            errorMessage += '.</strong>';
+        }
+        addFlash('danger', errorMessage);
+    };
+
+    $.ajax({
+        type: 'POST',
+        url: url,
+        success: function(data, res, xhr) {
+            try {
+                var url = xhr.responseJSON.test_url[0][jobId];
+                if (!url) {
+                    throw url;
+                }
+                window.location.replace(url);
+            } catch {
+                showError('URL for new job not available');
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            showError(xhr.responseJSON ? xhr.responseJSON.error : undefined);
+        },
+    });
+}
