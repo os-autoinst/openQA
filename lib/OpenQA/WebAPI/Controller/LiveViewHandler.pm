@@ -30,15 +30,22 @@ use Mojo::JSON 'decode_json';
 
 # define a whitelist of commands to be passed to os-autoinst via ws_proxy
 use constant ALLOWED_OS_AUTOINST_COMMANDS => {
-    set_pause_at_test                  => 1,
-    set_pause_on_assert_screen_timeout => 1,
-    set_assert_screen_timeout          => 1,
-    status                             => 1,
-    resume_test_execution              => 1,
+    set_pause_at_test            => 1,
+    set_pause_on_screen_mismatch => 1,
+    set_assert_screen_timeout    => 1,
+    status                       => 1,
+    resume_test_execution        => 1,
 };
 
 # define error categories
-use constant {ERROR_CATEGORY_CMDSRV_CONNECTION => 'cmdsrv-connection',};
+use constant {
+    ERROR_CATEGORY_CMDSRV_CONNECTION => 'cmdsrv-connection',
+    ERROR_CATEGORY_BAD_CONFIGURATION => 'bad-configuration',
+};
+
+# define required major version and minimum minor version for os-autoinst command server's developer mode API
+use constant OS_AUTOINST_DEVEL_MODE_MAJOR_VERSION => 1;
+use constant OS_AUTOINST_DEVEL_MODE_MINOR_VERSION => 0;
 
 has(
     developer_sessions => sub {
@@ -176,6 +183,17 @@ sub quit_development_session {
     }
 }
 
+# checks whether the os-autoinst developer mode version reported by the specified status info it compatible
+sub check_os_autoinst_devel_mode_version {
+    my ($self, $status_info) = @_;
+
+    my $major_version = $status_info->{devel_mode_major_version} //= 0;
+    my $minor_version = $status_info->{devel_mode_minor_version} //= 0;
+    return 0 if ($major_version ne OS_AUTOINST_DEVEL_MODE_MAJOR_VERSION);
+    return 0 if ($minor_version lt OS_AUTOINST_DEVEL_MODE_MINOR_VERSION);
+    return 1;
+}
+
 # handles a message from the java script web socket connection (not status-only)
 #  * expecting valid JSON here in 'os-autoinst' compatible form, eg.
 #      {"cmd":"set_pause_at_test","name":"installation-welcome"}
@@ -231,7 +249,7 @@ sub handle_message_from_java_script {
     $self->send_message_to_os_autoinst($job_id, $json);
 }
 
-# attachs new needles to the resume command before passing it to the command server (called in handle_message_from_java_script)
+# attaches new needles to the resume command before passing it to the command server (called in handle_message_from_java_script)
 sub _handle_command_resume_test_execution {
     my ($self, $job_id, $json) = @_;
 
@@ -301,10 +319,23 @@ sub add_further_info_to_hash {
     }
 }
 
-# broadcasts a message from os-autoinst to js clients; adds the session info if the message is the status hash
+# broadcasts a message from os-autoinst to js clients; checks the version and adds the session info if the message is the status hash
 sub handle_message_from_os_autoinst {
     my ($self, $job_id, $json) = @_;
-    $self->add_further_info_to_hash($job_id, $json) if ($json->{running});
+
+    my $is_status_message = defined($json->{running});
+    if ($is_status_message) {
+        if (!$self->check_os_autoinst_devel_mode_version($json)) {
+            my $actual_version_str = "$json->{devel_mode_major_version}.$json->{devel_mode_minor_version}";
+            my $required_version_str
+              = OS_AUTOINST_DEVEL_MODE_MAJOR_VERSION . '.' . OS_AUTOINST_DEVEL_MODE_MINOR_VERSION;
+            my $disconnect_reason
+              = "os-autoinst version \"$actual_version_str\" is incompatible, version \"$required_version_str\" is required";
+            $self->disconnect_from_os_autoinst($job_id, $disconnect_reason);
+            return;
+        }
+        $self->add_further_info_to_hash($job_id, $json);
+    }
     $self->send_message_to_java_script_clients($job_id, info => 'cmdsrvmsg', $json);
 }
 
@@ -400,6 +431,35 @@ sub send_message_to_os_autoinst {
         return;
     }
     $cmd_srv_tx->send({json => $msg});
+}
+
+# disconnects explicitely from os-autoinst command server, supressing the usual handling when disconnecting from
+# os-autoinst
+# note: This connection is actually not supposed to be cancelled from the liveviewhandler's side. The only exception
+#       is when a bad configuration (such as an incompatible version) is detected.
+sub disconnect_from_os_autoinst {
+    my ($self, $job_id, $reason, $status_code) = @_;
+
+    # find relevant transaction and skip if there nothing to do if already disconnected
+    my $cmd_srv_tx = $self->cmd_srv_transactions_by_job->{$job_id};
+    return unless ($cmd_srv_tx);
+
+    # assume disconnecting due to an error by default
+    $status_code //= 1011;
+
+    # prevent the usual handling when disconnecting from os-autoinst
+    $self->cmd_srv_transactions_by_job->{$job_id} = undef;
+
+    $cmd_srv_tx->finish($status_code);
+
+    # inform the JavaScript clients and disconnect from them as well
+    $self->send_message_to_java_script_clients_and_finish(
+        $job_id,
+        error => $reason,
+        {
+            code     => $status_code,
+            category => ERROR_CATEGORY_BAD_CONFIGURATION,
+        });
 }
 
 # sends information about the developer session to all JavaScript clients

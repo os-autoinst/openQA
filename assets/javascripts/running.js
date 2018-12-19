@@ -330,6 +330,7 @@ var developerMode = {
     hasWsError: false,                      // whether an web socket error occurred (cleared when we finally receive a message from os-autoinst)
     useDeveloperWsRoute: undefined,         // whether the developer web socket route is used
     isConnected: false,                     // whether connected to any web socket route
+    badConfiguration: false,                // whether there's a bad/unrecoverable configuration issue so it makes no sense to continue re-connecting
     ownSession: false,                      // whether the development session belongs to us
     panelExpanded: false,                   // whether the panel is supposed to be expanded
     panelActuallyExpanded: false,           // whether the panel is currently expanded
@@ -340,7 +341,7 @@ var developerMode = {
     // state of the test execution (comes from os-autoinst cmd srv through the openQA ws proxy)
     currentModule: undefined,               // name of the current module, eg. "installation-welcome"
     moduleToPauseAt: undefined,             // name of the module to pause at, eg. "installation-welcome"
-    pauseAtTimeout: undefined,              // whether to pause on assert_screen timeout
+    pauseOnScreenMismatch: undefined,       // 'assert_screen' (to pause on assert_screen timeout) or 'check_screen' (to pause on assert/check_screen timeout)
     isPaused: undefined,                    // if paused the reason why as a string; otherwise something which evaluates to false
     currentApiFunction: undefined,          // the currently executed API function (eg. assert_screen)
     outstandingImagesToUpload: undefined,   // number of images which still need to be uploaded by the worker
@@ -352,6 +353,11 @@ var developerMode = {
     develSessionDeveloper: undefined,       // name of the user in possession the development session
     develSessionStartedAt: undefined,       // time stamp when the development session was created
     develSessionTabCount: undefined,        // number of open web socket connections by the developer
+
+    // returns whether we're currently connecting
+    isConnecting: function() {
+        return !this.badConfiguration && !this.isConnected;
+    },
 
     // returns whether there's a development session but it doesn't belong to us
     lockedByOtherDeveloper: function() {
@@ -437,7 +443,7 @@ function setupDeveloperPanel() {
     });
 
     // add handler for static form elements
-    $('#developer-pause-on-timeout').on('click', handlePauseAtTimeoutToggled);
+    document.getElementById('developer-pause-on-mismatch').onchange = handlePauseOnMismatchSelected;
 
     updateDeveloperPanel();
     setupWebsocketConnection();
@@ -523,7 +529,9 @@ function updateDeveloperPanel() {
 
     // update status info
     var statusInfo = 'running';
-    if (developerMode.isPaused) {
+    if (developerMode.badConfiguration) {
+        statusInfo = 'configuration issue';
+    } else if (developerMode.isPaused) {
         statusInfo = 'paused';
         if (developerMode.currentModule) {
             statusInfo += ' at module: ' + developerMode.currentModule;
@@ -558,7 +566,7 @@ function updateDeveloperPanel() {
             globalSessionInfoElement.text('Developer session has been opened by ' + developerMode.develSessionDeveloper);
             globalSessionInfoElement.show();
         }
-    } else {
+    } else if (!developerMode.badConfiguration) {
         sessionInfo = 'regular test execution';
         if (developerMode.isAccessible && !developerMode.panelExpanded) {
             sessionInfo += ' - click to expand';
@@ -582,8 +590,13 @@ function updateDeveloperPanel() {
         }
     }
     // -> update whether the test will pause on assert screen timeout
-    if (developerMode.pauseAtTimeout !== undefined) {
-        $('#developer-pause-on-timeout').prop('checked', developerMode.pauseAtTimeout);
+    var pauseOnMismatchSelect = document.getElementById('developer-pause-on-mismatch');
+    if (developerMode.pauseOnScreenMismatch === 'assert_screen') {
+        pauseOnMismatchSelect.selectedIndex = 1; // "assert_screen timeout" option
+    } else if (developerMode.pauseOnScreenMismatch === 'check_screen') {
+        pauseOnMismatchSelect.selectedIndex = 2; // "assert_screen and check_screen timeout" option
+    } else if (developerMode.pauseOnScreenMismatch === false) {
+        pauseOnMismatchSelect.selectedIndex = 0; // "Fail on mismatch as usual" option
     }
 }
 
@@ -609,25 +622,33 @@ function handleModuleToPauseAtSelected() {
     }
 }
 
-function handlePauseAtTimeoutToggled() {
-    // skip if not owning development session or pauseAtTimeout is unknown
-    if (!developerMode.ownSession || developerMode.pauseAtTimeout === undefined) {
+function handlePauseOnMismatchSelected() {
+    // skip if not owning development session or pauseOnScreenMismatch is unknown
+    if (!developerMode.ownSession || developerMode.pauseOnScreenMismatch === undefined) {
         return;
     }
 
-    var pauseAtTimeoutCheckboxChecked = $('#developer-pause-on-timeout').prop('checked');
-    if (developerMode.pauseAtTimeout !== pauseAtTimeoutCheckboxChecked) {
-        sendWsCommand({
-            cmd: 'set_pause_on_assert_screen_timeout',
-            flag: pauseAtTimeoutCheckboxChecked,
-        });
+    var selectedValue = $('#developer-pause-on-mismatch').val();
+    var pauseOn = undefined;
+    switch(selectedValue) {
+        case "fail":
+            pauseOn = null;
+            break;
+        case "check_screen":
+        case "assert_screen":
+            pauseOn = selectedValue;
+            break;
     }
+    sendWsCommand({
+        cmd: 'set_pause_on_screen_mismatch',
+        pause_on: pauseOn,
+    });
 }
 
 // submits the selected values which differ from the server's state
 function submitCurrentSelection() {
     handleModuleToPauseAtSelected();
-    handlePauseAtTimeoutToggled();
+    handlePauseOnMismatchSelected();
 }
 
 // ensures the websocket connection is closed
@@ -735,6 +756,11 @@ function setupWebsocketConnection() {
     // ensure previously opened connections are closed
     closeWebsocketConnection();
 
+    // give up re-connecting if there's a configuration issue we can not recover from
+    if (developerMode.badConfiguration) {
+        return;
+    }
+
     var url;
     // determine ws URL
     if ((developerMode.isAccessible && developerMode.useDeveloperWsRoute)) {
@@ -794,12 +820,12 @@ var messageToStatusVariable = [
         statusVar: 'moduleToPauseAt',
     },
     {
-        msg: 'pause_on_assert_screen_timeout',
-        statusVar: 'pauseAtTimeout',
+        msg: 'pause_on_screen_mismatch',
+        statusVar: 'pauseOnScreenMismatch',
     },
     {
-        msg: 'set_pause_on_assert_screen_timeout',
-        statusVar: 'pauseAtTimeout',
+        msg: 'set_pause_on_screen_mismatch',
+        statusVar: 'pauseOnScreenMismatch',
     },
     {
         msg: 'current_test_full_name',
@@ -870,10 +896,13 @@ function processWsCommand(obj) {
             console.log('ignoring error from ws proxy: ' + what);
             break;
         }
+        if (category === 'bad-configuration') {
+            developerMode.badConfiguration = true;
+            somethingChanged = true;
+        }
 
         console.log("Error from ws proxy: " + what);
-        addLivehandlerFlash('danger', 'ws_proxy_error-' + what,
-                            '<strong>Error from livehandler daemon:</strong><p>' + what + '</p>');
+        addLivehandlerFlash('danger', 'ws_proxy_error-' + what, '<p>' + what + '</p>');
         break;
     case "info":
         // map info message to internal status variables

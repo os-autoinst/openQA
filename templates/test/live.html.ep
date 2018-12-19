@@ -11,10 +11,10 @@
                 <strong>Developer mode</strong>
             </div>
             <div class="col-sm-5">
-                <span class="developer-mode-element" data-hidden-on="isConnected">
+                <span class="developer-mode-element" data-visible-on="isConnecting">
                 retrieving status <i class="fas fa-spinner fa-spin fa-lg"></i>
                 </span>
-                <span class="developer-mode-element" id="developer-status-info" data-visible-on="isConnected">
+                <span class="developer-mode-element" id="developer-status-info" data-hidden-on="isConnecting">
                     unknown status
                 </span>
             </div>
@@ -85,19 +85,23 @@
                 </div>
                 <div class="col-sm-5">
                     <label for="developer-pause-on-timeout" class="col-form-label">
-                        Pause on <code>assert_screen</code> timeout
+                        Pause on screen mismatch
                     </label>
                     <%= help_popover('Help for <i>pause test execution</i>' => '
                         <p>
-                            Pauses the test execution on the next <code>assert_screen</code> timeout.
-                            The SUT/VM itself is not paused.
+                            Pauses the test execution on the next <code>assert_screen</code> or <code>check_screen</code>
+                            timeout. The SUT/VM itself is not paused.
                         </p>
                         <p>On resume, the needles will be reloaded and the assertion is tried again.</p>
                         <p>A paused job still has the <code>MAX_JOB_TIME</code> constraint to be applied.</p>')
                     %>
                 </div>
                 <div class="col-sm-7">
-                    <input type="checkbox" id="developer-pause-on-timeout">
+                    <select class="custom-select" id="developer-pause-on-mismatch">
+                        <option value="fail" selected style="font-style: italic;">Fail on mismatch as usual</option>
+                        <option value="assert_screen"><code>assert_screen</code> timeout</option>
+                        <option value="check_screen"><code>assert_screen</code> and <code>check_screen</code> timeout</option>
+                    </select>
                 </div>
             </div>
             <hr>
@@ -139,8 +143,16 @@
         <div class="developer-mode-element" data-visible-on="lockedByOtherDeveloper">
             Another user has already locked this job.
         </div>
-        <div class="developer-mode-element" data-hidden-on="isConnected">
+        <div class="developer-mode-element" data-visible-on="isConnecting">
             <i class="fas fa-spinner fa-spin fa-lg"></i> <span id="developer-loading-info">establishing connection to backend ...</span>
+            <p>
+                See <a href="http://open.qa/docs/#_steps_to_debug_developer_mode_setup" target="blank">steps to debug developer mode setup</a> if the the connection can
+                not be established in reasonable time.
+            </p>
+        </div>
+        <div id="developer-config-issue-note" class="developer-mode-element" data-visible-on="badConfiguration">
+            The developer mode is not available because of a configuration isse.
+            See <a href="http://open.qa/docs/#_steps_to_debug_developer_mode_setup" target="blank">steps to debug developer mode setup</a>.
         </div>
     </div>
 </div>

@@ -137,7 +137,7 @@ sub js_variable {
 
 # clicks on the header of the developer panel
 sub click_header {
-    $driver->find_element('#developer-panel .card-header')->click();
+    $driver->find_element('#developer-status')->click();
 }
 
 # login an navigate to a running job with assigned worker
@@ -268,7 +268,20 @@ qr/You might be able to connect to the SUT at remotehost:91 via VNC with shared 
     );
 };
 
+subtest 'configuration issue shown' => sub {
+    fake_state(developerMode => {badConfiguration => 'true'});
+
+    element_visible(
+        '#developer-panel .card-header',
+        qr/configuration issue/,
+        [qr/retrieving/, qr/current module/, qr/uploading/],
+    );
+    click_header();
+    element_visible('#developer-config-issue-note', qr/steps to debug developer mode setup/,);
+};
+
 # revert state changes from previous tests
+click_header();
 fake_state(
     developerMode => {
         ownSession            => 'false',
@@ -277,6 +290,7 @@ fake_state(
         develSessionDeveloper => 'undefined',
         develSessionStartedAt => 'undefined',
         develSessionTabCount  => 'undefined',
+        badConfiguration      => 'false',
     });
 
 my @expected_text_on_initial_session_creation = (qr/and confirm to apply/, qr/Confirm to control this test/,);
@@ -290,6 +304,7 @@ subtest 'expand developer panel' => sub {
         [@expected_text_after_session_created, qr/Resume/],
     );
     element_visible('#developer-pause-at-module');
+    element_hidden('#developer-config-issue-note');
 
     subtest 'behavior when changes have not been confirmed' => sub {
         my @options = $driver->find_elements('#developer-pause-at-module option');
@@ -333,6 +348,7 @@ subtest 'revert state changes from previous subtests (not supposed to collapse t
             isPaused   => 'false',
         });
     element_visible('#developer-panel .card-body');
+    element_hidden('#developer-config-issue-note');
 };
 
 subtest 'start developer session' => sub {
@@ -447,34 +463,60 @@ subtest 'start developer session' => sub {
     };
 
     subtest 'select whether to pause on assert_screen failure' => sub {
-        my $checkbox = $driver->find_element('#developer-pause-on-timeout');
-        is($checkbox->is_selected, 0, 'check box initially not selected');
+        my @options = $driver->find_elements('#developer-pause-on-mismatch option');
+        is(scalar @options,            3, 'three options for pausing on screen mismatch');
+        is($options[0]->is_selected(), 1, 'pausing on screen mismatch disabled by default');
+
+        # attempt to turn pausing on assert_screen on when current state unknown
+        $options[1]->set_selected();
+        assert_sent_commands(undef, 'prevent overriding pause on mismatch with form defaults if unknown');
+
+        # assume we know the pausing on screen match is disabled
+        fake_state(developerMode => {pauseOnScreenMismatch => 'false'});
+        is($options[0]->is_selected(), 1, 'pausing on screen mismatch still disabled');
 
         # turn pausing on assert_screen on
-        $checkbox->click();
+        $options[1]->set_selected();
         assert_sent_commands(
             [
                 {
-                    cmd  => 'set_pause_on_assert_screen_timeout',
-                    flag => 1,
+                    cmd      => 'set_pause_on_screen_mismatch',
+                    pause_on => 'assert_screen',
                 }
             ],
             'command to pause on assert_screen failure sent'
         );
 
         # fake the feedback from os-autoinst
-        fake_state(developerMode => {pauseAtTimeout => 1});
+        fake_state(developerMode => {pauseOnScreenMismatch => '"assert_screen"'});
+        is($options[1]->is_selected(), 1, 'still right option selected');
 
-        # turn pausing on assert_screen off
-        $checkbox->click();
+        # turn pausing on check_screen on
+        $options[2]->set_selected();
         assert_sent_commands(
             [
                 {
-                    cmd  => 'set_pause_on_assert_screen_timeout',
-                    flag => 0,
+                    cmd      => 'set_pause_on_screen_mismatch',
+                    pause_on => 'check_screen',
                 }
             ],
-            'command to unset pause on assert_screen failure sent'
+            'command to pause on check_screen failure sent'
+        );
+
+        # fake the feedback from os-autoinst
+        fake_state(developerMode => {pauseOnScreenMismatch => '"check_screen"'});
+        is($options[2]->is_selected(), 1, 'still right option selected');
+
+        # turn pausing on screen mismatch off
+        $options[0]->set_selected();
+        assert_sent_commands(
+            [
+                {
+                    cmd      => 'set_pause_on_screen_mismatch',
+                    pause_on => undef,
+                }
+            ],
+            'command to turn pausing on screen mismatch off sent'
         );
     };
 
@@ -519,13 +561,11 @@ subtest 'process state changes from os-autoinst/worker' => sub {
         );
 
         $driver->execute_script(
-'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_test_full_name\":\"some test\",\"paused\":true, \"set_pause_on_assert_screen_timeout\": 1}}" });'
+'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_test_full_name\":\"some test\",\"paused\":true, \"set_pause_on_screen_mismatch\":\"assert_screen\"}}" });'
         );
         element_visible('#developer-panel .card-header', qr/paused at module: some test/, qr/current module/,);
-        is(
-            $driver->find_element('#developer-pause-on-timeout')->is_selected,
-            1, 'check box for pause on assert_screen timeout updated',
-        );
+        my @pause_on_mismatch_options = $driver->find_elements('#developer-pause-on-mismatch option');
+        is($pause_on_mismatch_options[1]->is_selected(), 1, 'selection for pausing on screen mismatch updated',);
     };
 
     subtest 'upload progress handled' => sub {
