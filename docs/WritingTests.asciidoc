@@ -1340,7 +1340,7 @@ openqa-clone-job --from https://openqa.opensuse.org --host https://openqa.opensu
 ----
 
 NOTE: The asset number doesn't affect the schedule order. +
-The test modules foo.pm and bar.pm will be downloaded into the root of the pool diretory where tests an assets are used by isotovideo. For this reason, to schedule them, no path is needed.
+The test modules foo.pm and bar.pm will be downloaded into the root of the pool directory where tests and assets are used by isotovideo. For this reason, to schedule them, no path is needed.
 
 A valid test module format looks like this:
 
