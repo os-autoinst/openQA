@@ -2403,8 +2403,8 @@ remote instances.</p>
 <div class="paragraph">
 <p>If your network is slow or you experience long time to load needles you
 might want to consider to enable caching in your remote workers. To enable caching,
-/var/lib/openqa/cache must be created, and right permissions given to the
-'geekotest' user. If you install openQA through the repositories, said directory
+/var/lib/openqa/cache must exist, and right permissions given to the
+'_openqa-worker' user. If you install openQA through the repositories, said directory
 will be created for you.</p>
 </div>
 <div class="paragraph">
@@ -5156,7 +5156,7 @@ an external trusted download domain:</p>
 </td>
 <td class="content">
 The asset number doesn&#8217;t affect the schedule order.<br>
-The test modules foo.pm and bar.pm will be downloaded into the root of the pool diretory where tests an assets are used by isotovideo. For this reason, to schedule them, no path is needed.
+The test modules foo.pm and bar.pm will be downloaded into the root of the pool directory where tests and assets are used by isotovideo. For this reason, to schedule them, no path is needed.
 </td>
 </tr>
 </table>
@@ -6849,7 +6849,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-12-19 13:45:24 UTC
+Last updated 2018-12-19 14:31:22 UTC
 </div>
 </div>
 </body>
