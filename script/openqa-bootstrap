@@ -1,0 +1,90 @@
+#!/bin/bash -x
+
+
+# add extra repos for leap
+source /etc/os-release
+if $NAME == "openSUSE Leap" ; then
+	zypper -n addrepo obs://devel:openQA devel:openQA
+	zypper -n addrepo obs://devel:openQA:Leap:${VERSION} devel:openQA:Leap:${VERSION}
+	zypper -n  --gpg-auto-import-keys refresh
+fi
+
+
+# install packages
+zypper -n install --no-recommends openQA-local-db apache2 openQA-worker qemu-kvm sudo
+
+
+# setup database
+systemctl enable --now postgresql
+su postgres -c "createuser -D geekotest"
+su postgres -c "createdb -O geekotest openqa"
+
+
+# setup webserver and fake-auth
+# from script/setup-single-instance (https://github.com/os-autoinst/openQA/pull/1933)
+for i in headers proxy proxy_http proxy_wstunnel rewrite ; do a2enmod $i ; done
+sed -i -e 's/^.*httpsonly.*$/httpsonly = 0/g' /etc/openqa/openqa.ini
+sed -i -e 's/#.*method.*OpenID.*$/&\nmethod = Fake/' /etc/openqa/openqa.ini
+sed "s/#ServerName.*$/ServerName $(hostname)/" /etc/apache2/vhosts.d/openqa.conf.template > /etc/apache2/vhosts.d/openqa.conf
+
+
+if ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse) ; then
+	# add internal CA if executed within suse network
+	if ! zypper info ca-certificates-suse | grep -q ':' ; then
+		# add suse ca repo if needed
+		# use this way of adding the repo to be distro agnostic
+		zypper -n addrepo obs://SUSE:CA SUSE:CA
+		sed -i -e 's#download.opensuse.org/repositories#download.suse.de/ibs#' /etc/zypp/repos.d/SUSE\:CA.repo
+		sed -i -e 's/https/http/' /etc/zypp/repos.d/SUSE\:CA.repo
+		zypper -n --gpg-auto-import-keys refresh
+	fi
+	zypper -n install --no-recommends -ly ca-certificates-suse
+fi
+
+# fetch tests and needles
+if ping -c1 gitlab.suse.de. ; then
+	# use faster local mirror if run from within SUSE network
+	export needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-opensuse-mirror.git"
+fi
+/usr/share/openqa/script/fetchneedles
+
+if ping -c1 gitlab.suse.de. ; then
+	# clone SLE needles if run from within SUSE network
+	git clone https://gitlab.suse.de/openqa/os-autoinst-needles-sles.git /var/lib/openqa/tests/opensuse/products/sle/needles
+	chown -R geekotest: /var/lib/openqa/tests/opensuse/products/sle/needles
+fi
+
+
+# ensure that the hostname is mapped to 127.0.0.1 (needed for livehandler)
+grep -q $(hostname) /etc/hosts || echo "127.0.0.1 $(hostname)" >> /etc/hosts
+
+
+# start daemons
+systemctl enable --now apache2.service
+systemctl enable --now openqa-webui.service
+systemctl enable --now openqa-websockets.service
+systemctl enable --now openqa-scheduler.service
+systemctl enable --now openqa-resource-allocator.service
+systemctl enable --now openqa-livehandler.service
+systemctl enable --now openqa-gru.service
+
+# wait for webui to become available
+while ! curl -sI http://localhost/ | grep 200 ; do
+	sleep 3
+done
+
+# create api key
+curl http://localhost/login # create demo user (id=2)
+API_KEY=$(hexdump -n 8 -e '2/4 "%08X" 1 "\n"' /dev/random)
+API_SECRET=$(hexdump -n 8 -e '2/4 "%08X" 1 "\n"' /dev/random)
+echo "INSERT INTO api_keys (key, secret, user_id, t_created, t_updated) VALUES ('${API_KEY}', '${API_SECRET}', 2, NOW(), NOW());" | su postgres -c 'psql openqa'
+
+cat >> /etc/openqa/client.conf <<EOF
+[localhost]
+key = ${API_KEY}
+secret = ${API_SECRET}
+EOF
+
+
+# start worker
+systemctl enable --now openqa-worker@1.service
