@@ -112,7 +112,7 @@ is($job_groups->find(1001)->exclusively_kept_asset_size,
 sub run_gru {
     my ($task, $args) = @_;
     $t->app->gru->enqueue($task => $args);
-    $t->app->start('gru', 'run', '-o');
+    $t->app->start('gru', 'run', '--oneshot');
 }
 
 # understanding / revising these tests requires understanding the
@@ -407,26 +407,26 @@ subtest 'Gru tasks limit' => sub {
 
     is $t->app->minion->backend->list_jobs(0, undef, {tasks => ['limit_assets'], states => ['inactive']})->{total}, 2;
 
-    $t->app->start('gru', 'run', '-o');
+    $t->app->start('gru', 'run', '--oneshot');
     $id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
     ok defined $id, 'task is scheduled';
     $id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
     ok defined $id, 'task is scheduled';
     $res = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
     is $res, undef, 'Other tasks is not scheduled anymore';
-    $t->app->start('gru', 'run', '-o');
+    $t->app->start('gru', 'run', '--oneshot');
 };
 
 subtest 'Gru tasks TTL' => sub {
     $t->app->minion->reset;
     my $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -20})->{minion_id};
-    $t->app->start('gru', 'run', '-o');
+    $t->app->start('gru', 'run', '--oneshot');
     my $result = $t->app->minion->job($job_id)->info->{result};
     is ref $result, 'HASH', 'We have a result' or diag explain $result;
     is $result->{error}, 'TTL Expired', 'TTL Expired - job discarded' or diag explain $result;
 
     $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 20})->{minion_id};
-    $t->app->start('gru', 'run', '-o');
+    $t->app->start('gru', 'run', '--oneshot');
     $result = $t->app->minion->job($job_id)->info->{result};
 
     is ref $result, '', 'Result is the output';
@@ -438,7 +438,7 @@ subtest 'Gru tasks TTL' => sub {
     for (1 .. 100) {
         push @ids, $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -50})->{minion_id};
     }
-    $t->app->start('gru', 'run', '-o');
+    $t->app->start('gru', 'run', '--oneshot');
 
     is $t->app->minion->job($_)->info->{result}->{error}, 'TTL Expired', 'TTL Expired - job discarded' for @ids;
 
