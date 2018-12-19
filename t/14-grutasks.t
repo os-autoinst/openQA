@@ -37,24 +37,34 @@ use File::Path ();
 use Data::Dumper;
 use Date::Format 'time2str';
 use Fcntl ':mode';
+use Mojo::File 'tempdir';
+use Storable qw(store retrieve);
 
 # these are used to track assets being 'removed from disk' and 'deleted'
 # by mock methods (so we don't *actually* lose them)
-my @removed;
-my @deleted;
+my $tempdir = tempdir;
+my $deleted = $tempdir->child('deleted');
+my $removed = $tempdir->child('removed');
+sub mock_deleted { -e $deleted ? retrieve($deleted) : [] }
+sub mock_removed { -e $removed ? retrieve($removed) : [] }
 
-# a mock 'delete' method for Assets which just appends the name to the
-# @deleted array
 sub mock_delete {
-    my ($self) = @_;
+    my $self = shift;
+
     $self->remove_from_disk;
-    push @deleted, $self->name;
+
+    store([], $deleted) unless -e $deleted;
+    my $array = retrieve($deleted);
+    push @$array, $self->name;
+    store($array, $deleted);
 }
 
-# a mock 'remove_from_disk' which just appends the name to @removed
 sub mock_remove {
-    my ($self) = @_;
-    push @removed, $self->name;
+    my $self = shift;
+    store([], $removed) unless -e $removed;
+    my $array = retrieve($removed);
+    push @$array, $self->name;
+    store($array, $removed);
 }
 
 my $module = new Test::MockModule('OpenQA::Schema::Result::Assets');
@@ -86,7 +96,7 @@ sub find_kept_assets_with_last_jobs {
         {
             -not => {
                 -or => {
-                    name            => {-in => \@removed},
+                    name            => {-in => mock_removed()},
                     last_use_job_id => undef
                 },
             }
@@ -133,8 +143,8 @@ my $gib = 1024 * 1024 * 1024;
 $assets->update({size => 18 * $gib});
 run_gru('limit_assets');
 
-is_deeply(\@removed, [], "nothing should have been 'removed' at size 18GiB");
-is_deeply(\@deleted, [], "nothing should have been 'deleted' at size 18GiB");
+is_deeply(mock_removed(), [], "nothing should have been 'removed' at size 18GiB");
+is_deeply(mock_deleted(), [], "nothing should have been 'deleted' at size 18GiB");
 
 my @expected_last_jobs_no_removal = (
     {asset => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso', job => 99926},
@@ -160,8 +170,8 @@ is($job_groups->find(1002)->exclusively_kept_asset_size,
 $assets->update({size => 24 * $gib});
 run_gru('limit_assets');
 
-is_deeply(\@removed, [], "nothing should have been 'removed' at size 24GiB");
-is_deeply(\@deleted, [], "nothing should have been 'deleted' at size 24GiB");
+is_deeply(mock_removed(), [], "nothing should have been 'removed' at size 24GiB");
+is_deeply(mock_deleted(), [], "nothing should have been 'deleted' at size 24GiB");
 
 is_deeply(find_kept_assets_with_last_jobs, \@expected_last_jobs_no_removal, 'last jobs have not been altered');
 
@@ -183,8 +193,8 @@ is(
 $assets->update({size => 26 * $gib});
 run_gru('limit_assets');
 
-is(scalar @removed, 1, "one asset should have been 'removed' at size 26GiB");
-is(scalar @deleted, 1, "one asset should have been 'deleted' at size 26GiB");
+is(scalar @{mock_removed()}, 1, "one asset should have been 'removed' at size 26GiB");
+is(scalar @{mock_deleted()}, 1, "one asset should have been 'deleted' at size 26GiB");
 
 is_deeply(
     find_kept_assets_with_last_jobs,
@@ -212,15 +222,15 @@ is(
 );
 
 # empty the tracking arrays before next test
-@removed = ();
-@deleted = ();
+unlink $tempdir->child('removed');
+unlink $tempdir->child('deleted');
 
 # at size 34GiB, 1001 is over the limit, so removal should occur.
 $assets->update({size => 34 * $gib});
 run_gru('limit_assets');
 
-is(scalar @removed, 1, "two assets should have been 'removed' at size 34GiB");
-is(scalar @deleted, 1, "two assets should have been 'deleted' at size 34GiB");
+is(scalar @{mock_removed()}, 1, "two assets should have been 'removed' at size 34GiB");
+is(scalar @{mock_deleted()}, 1, "two assets should have been 'deleted' at size 34GiB");
 
 is_deeply(
     find_kept_assets_with_last_jobs,
@@ -248,8 +258,8 @@ is(
 );
 
 # empty the tracking arrays before next test
-@removed = ();
-@deleted = ();
+unlink $tempdir->child('removed');
+unlink $tempdir->child('deleted');
 
 # now we set the most recent job for asset #1 (99947) to PENDING state,
 # to test protection of assets for PENDING jobs which would otherwise
@@ -263,8 +273,8 @@ $job99947->update({t_finished => undef});
 # selected for removal, but reprieved at the last minute due to its
 # association with a PENDING job.
 run_gru('limit_assets');
-is(scalar @removed, 1, "only one asset should have been 'removed' at size 34GiB with 99947 pending");
-is(scalar @deleted, 1, "only one asset should have been 'deleted' at size 34GiB with 99947 pending");
+is(scalar @{mock_removed()}, 1, "only one asset should have been 'removed' at size 34GiB with 99947 pending");
+is(scalar @{mock_deleted()}, 1, "only one asset should have been 'deleted' at size 34GiB with 99947 pending");
 
 # restore job 99947 to DONE state
 #$job99947->state(OpenQA::Jobs::Constants::DONE);
