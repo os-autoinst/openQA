@@ -85,6 +85,13 @@ $assets_mock->mock(refresh_assets            => sub { });
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
+# Non-Gru task
+$t->app->minion->add_task(
+    some_random_task => sub {
+        my ($job, @args) = @_;
+        $job->finish({pid => $$, args => \@args});
+    });
+
 # list initially existing assets
 my $dbh             = $schema->storage->dbh;
 my $initial_aessets = $dbh->selectall_arrayref('select * from assets order by id;');
@@ -393,6 +400,27 @@ subtest 'labeled jobs considered important' => sub {
     $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 22, 'UTC')});
     run_gru('limit_results_and_logs');
     ok(!-e $filename, 'file got cleaned');
+};
+
+subtest 'Non-Gru task' => sub {
+    my $id = $t->app->minion->enqueue(some_random_task => [23]);
+    ok defined $id, 'Job enqueued';
+    $t->app->start('gru', 'run', '--oneshot');
+    is $t->app->minion->job($id)->info->{state}, 'finished', 'job is finished';
+    isnt $t->app->minion->job($id)->info->{result}{pid}, $$, 'job was processed in a different process';
+    is_deeply $t->app->minion->job($id)->info->{result}{args}, [23], 'arguments have been passed along';
+
+    my $id2 = $t->app->minion->enqueue(some_random_task => [24, 25]);
+    my $id3 = $t->app->minion->enqueue(some_random_task => [26]);
+    ok defined $id2, 'Job enqueued';
+    ok defined $id3, 'Job enqueued';
+    $t->app->start('gru', 'run', '--oneshot');
+    is $t->app->minion->job($id2)->info->{state}, 'finished', 'job is finished';
+    is $t->app->minion->job($id3)->info->{state}, 'finished', 'job is finished';
+    isnt $t->app->minion->job($id2)->info->{result}{pid}, $$, 'job was processed in a differetn process';
+    isnt $t->app->minion->job($id3)->info->{result}{pid}, $$, 'job was processed in a differetn process';
+    is_deeply $t->app->minion->job($id2)->info->{result}{args}, [24, 25], 'arguments have been passed along';
+    is_deeply $t->app->minion->job($id3)->info->{result}{args}, [26], 'arguments have been passed along';
 };
 
 subtest 'Gru tasks limit' => sub {

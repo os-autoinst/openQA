@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI::Command::gru::run;
-use Mojo::Base 'Mojolicious::Command';
+use Mojo::Base 'Minion::Command::minion::worker';
 
 use Mojo::Util 'getopt';
 use OpenQA::WebAPI::GruJob;
@@ -46,7 +46,7 @@ sub run {
         });
 
     if   ($oneshot) { $minion->perform_jobs }
-    else            { $minion->worker->run }
+    else            { $self->SUPER::run(@args) }
 }
 
 1;
@@ -64,11 +64,35 @@ OpenQA::WebAPI::Command::gru::run - Gru run command
     script/openqa gru run
 
   Options:
-    -o, --oneshot   Perform all currently enqueued jobs and then exit
+    -C, --command-interval <seconds>     Worker remote control command interval,
+                                         defaults to 10
+    -D, dequeue-timeout <seconds>        Maximum amount of time to wait for
+                                         jobs, defaults to 5
+    -h, --help                           Show this summary of available options
+        --home <path>                    Path to home directory of your
+                                         application, defaults to the value of
+                                         MOJO_HOME or auto-detection
+    -I, --heartbeat-interval <seconds>   Heartbeat interval, defaults to 300
+    -j, --jobs <number>                  Maximum number of jobs to perform
+                                         parallel in forked worker processes,
+                                         defaults to 4
+    -m, --mode <name>                    Operating mode for your application,
+                                         defaults to the value of
+                                         MOJO_MODE/PLACK_ENV or "development"
+    -o, --oneshot                        Perform all currently enqueued jobs and
+                                         then exit
+    -q, --queue <name>                   One or more queues to get jobs from,
+                                         defaults to "default"
+    -R, --repair-interval <seconds>      Repair interval, up to half of this
+                                         value can be subtracted randomly to
+                                         make sure not all workers repair at the
+                                         same time, defaults to 21600 (6 hours)
+
 
 =head1 DESCRIPTION
 
-L<OpenQA::WebAPI::Command::gru::run> is a wrapper around L<Minion::Worker> that
-runs a L<Minion> worker with some Gru extensions.
+L<OpenQA::WebAPI::Command::gru::run> is a subclass of
+L<Minion::Command::minion::worker> that adds Gru features with
+L<OpenQA::WebAPI::GruJob>.
 
 =cut
