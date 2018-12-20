@@ -30,6 +30,7 @@ use File::Find;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
+use Date::Format 'time2str';
 
 my %settings = (
     TEST    => 'test',
@@ -67,6 +68,45 @@ my $needle_dirs = $schema->resultset('NeedleDirs');
 
 # there should be two files called test-rootneedle, that shouldn't be problem, because they have different needledir
 is($needles->count({filename => "test-rootneedle.json"}), 2);
+
+subtest 'handling of last update' => sub {
+    is($needles->count({last_updated => undef}), 0, 'all needles should have last_updated set');
+
+    my $needle = $needles->find(1);
+    is($needle->last_updated, $needle->t_created, 'last_updated initialized on creation');
+
+    # fake timestamps to be in the past to observe a difference if the test runs inside the same wall-clock second
+    my $seconds_per_day = 60 * 60 * 24;
+    $needle->update(
+        {
+            t_created    => time2str('%Y-%m-%dT%H:%M:%S', time - ($seconds_per_day * 5)),
+            last_updated => time2str('%Y-%m-%dT%H:%M:%S', time - ($seconds_per_day * 5)),
+            t_updated    => time2str('%Y-%m-%dT%H:%M:%S', time - ($seconds_per_day * 2.5)),
+        });
+
+    $needle = $needles->find(1);
+    my $t_created          = $needle->t_created;
+    my $t_updated          = $needle->t_updated;
+    my $last_actual_update = $needle->last_updated;
+    my $new_last_match     = time2str('%Y-%m-%dT%H:%M:%S', time);
+
+    $needle->update({last_matched_time => $new_last_match});
+
+    $needle = $needles->find(1);
+    is($needle->last_updated, $t_created, 'last_updated not altered');
+    ok($t_updated lt $needle->t_updated, 't_updated still updated');
+    is($needle->last_matched_time, $new_last_match, 'last match updated');
+
+    $needles->update_needle_from_editor($needle->directory->path, 'test-rootneedle', {tags => [qw(foo bar)]},);
+
+    $needle = $needles->find(1);
+    my $last_actual_update2 = $needle->last_updated;
+    ok(
+        $last_actual_update lt $last_actual_update2,
+        "last_updated changed after updating needle from editor ($last_actual_update < $last_actual_update2)",
+    );
+};
+
 # there should be one test-rootneedle needle in fedora/needles needledir
 is(
     $needles->search({filename => "test-rootneedle.json"})
