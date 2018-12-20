@@ -62,6 +62,9 @@ OpenQA::WebAPI::Command::gru::run - Gru run command
   Usage: APPLICATION gru run [OPTIONS]
 
     script/openqa gru run
+    script/openqa gru run -o
+    script/openqa gru run -m production -I 15 -C 5 -R 3600 -j 10
+    script/openqa gru run -q important -q default
 
   Options:
     -C, --command-interval <seconds>     Worker remote control command interval,
