@@ -62,63 +62,63 @@ find({wanted => \&process, follow => 1, no_chdir => 1}, $needledir_fedora);
 # read needles from another needledir
 find({wanted => \&process, follow => 1, no_chdir => 1}, $needledir_archlinux);
 
-my $rs  = $schema->resultset('Needles');
-my $drs = $schema->resultset('NeedleDirs');
+my $needles     = $schema->resultset('Needles');
+my $needle_dirs = $schema->resultset('NeedleDirs');
 
 # there should be two files called test-rootneedle, that shouldn't be problem, because they have different needledir
-is($rs->count({filename => "test-rootneedle.json"}), 2);
+is($needles->count({filename => "test-rootneedle.json"}), 2);
 # there should be one test-rootneedle needle in fedora/needles needledir
 is(
-    $rs->search({filename => "test-rootneedle.json"})
+    $needles->search({filename => "test-rootneedle.json"})
       ->search_related('directory', {path => {like => '%fedora/needles'}})->count(),
     1
 );
 # there should be one needle that has fedora/needles needledir and it has relative path in its filename
 is(
-    $rs->search({filename => "gnome/browser/test-nestedneedle-2.json"})
+    $needles->search({filename => "gnome/browser/test-nestedneedle-2.json"})
       ->search_related('directory', {path => {like => '%fedora/needles'}})->count(),
     1
 );
 # this tests that there can be two needles with the same names in different directories
 is(
-    $rs->search({filename => "test-duplicate-needle.json"})
+    $needles->search({filename => "test-duplicate-needle.json"})
       ->search_related('directory', {path => {like => '%fedora/needles'}})->count(),
     1
 );
 is(
-    $rs->search({filename => "installer/test-duplicate-needle.json"})
+    $needles->search({filename => "installer/test-duplicate-needle.json"})
       ->search_related('directory', {path => {like => '%fedora/needles'}})->count(),
     1
 );
 # this tests needledir for nested needles placed under non-project needledir
 is(
-    $rs->search({filename => "test-kdeneedle.json"})
+    $needles->search({filename => "test-kdeneedle.json"})
       ->search_related('directory', {path => {like => '%archlinux/needles/kde'}})->count(),
     1
 );
 # all those needles should have file_present set to 1
-if (my $needle = $rs->next) {
+if (my $needle = $needles->next) {
     is($needle->file_present, 1);
 }
 
 # create record in DB about non-existent needle
-$rs->create(
+$needles->create(
     {
-        dir_id                 => $drs->find({path => {like => '%fedora/needles'}})->id,
+        dir_id                 => $needle_dirs->find({path => {like => '%fedora/needles'}})->id,
         filename               => "test-nonexistent.json",
         last_seen_module_id    => $module->id,
         last_matched_module_id => $module->id,
         file_present           => 1
     });
 # check that it was created
-is($rs->count({filename => "test-nonexistent.json"}), 1);
+is($needles->count({filename => "test-nonexistent.json"}), 1);
 # check that DB indicates that file is present
-is($rs->find({filename => "test-nonexistent.json"})->file_present, 1);
+is($needles->find({filename => "test-nonexistent.json"})->file_present, 1);
 # update info about whether needles are present
 OpenQA::Task::Needle::Scan::_needles($t->app);
 # this needle actually doesn't exist, so it should have file_present set to 0
-is($rs->find({filename => "test-nonexistent.json"})->file_present, 0);
+is($needles->find({filename => "test-nonexistent.json"})->file_present, 0);
 # this needle exists, so it should have file_present set to 1
-is($rs->find({filename => "installer/test-nestedneedle-1.json"})->file_present, 1);
+is($needles->find({filename => "installer/test-nestedneedle-1.json"})->file_present, 1);
 
 done_testing;
