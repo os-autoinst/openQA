@@ -372,17 +372,16 @@ pulled from OBS is called `openqa_dev:latest`.
 
 Launch the tests using Makefile target:
 
-  make docker-test-run
+  make launch-docker-to-run-tests-within
 
 Run tests by invoking Docker manually, e.g.:
 
-  docker run -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus -e VAR1=1 -e VAR2=1 openqa:latest make docker-tests
+  docker run -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus -e VAR1=1 -e VAR2=1 openqa:latest make run-tests-within-container
 
 Replace `OPENQA_LOCAL_CODE` with the location where you have the openQA code.
 
-The command line to run tests manually reveals that the Makefile target `docker-tests` (with an `s` at the end) is
-used to run the tests *inside* the container (unlike the other `docker-…` targets which launch the container itself).
-The `docker-tests` target does some preparations to be able to run the full stack test within Docker and considers a few
+The command line to run tests manually reveals that the Makefile target `run-tests-within-container` is used to run the tests *inside* the
+container. It does some preparations to be able to run the full stack test within Docker and considers a few
 environment variables defining our test matrix:
 
 |============================
@@ -403,7 +402,7 @@ Running commands will be executed after the initialization script (database crea
 
   docker run -it -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus openqa:latest bash
 
-Of course you can also use `make docker-tests \; bash` to run the tests first and then open a shell for further investigation.
+Of course you can also use `make run-tests-within-container \; bash` to run the tests first and then open a shell for further investigation.
 
 There's also the possibility to change the initialization scripts with the --entrypoint switch. This allows us to go into an interactive
 session without any initialization script run:
@@ -422,7 +421,7 @@ Running UI tests in non-headless mode is also possible, eg.:
 
 It is also possible to use a custom os-autoinst checkout using the following arguments:
 
-  docker run … -e CUSTOM_OS_AUTOINST=1 -v /path/to/your/os-autoinst:/opt/os-autoinst make docker-tests
+  docker run … -e CUSTOM_OS_AUTOINST=1 -v /path/to/your/os-autoinst:/opt/os-autoinst make run-tests-within-container
 
 By default, `configure` and `make` are still executed (so a clean checkout is expected). If your checkout is already prepared to use, set +CUSTOM_OS_AUTOINST_SKIP_BUILD+ to prevent this. Be aware that the build produced outside of the container might not work inside the container
 if both environments provide different, incompatible library versions (eg. OpenCV).
