@@ -553,6 +553,12 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#installing">openQA installation guide</a>
 <ul class="sectlevel1">
 <li><a href="#_introduction_2">Introduction</a></li>
+<li><a href="#_openqa_quick_bootstrap">openQA quick bootstrap</a>
+<ul class="sectlevel2">
+<li><a href="#_directly_on_your_machine">Directly on your machine</a></li>
+<li><a href="#_openqa_in_a_container">openQA in a container</a></li>
+</ul>
+</li>
 <li><a href="#_repositories_and_installation">Repositories and installation</a>
 <ul class="sectlevel2">
 <li><a href="#_official_repositories">Official repositories</a></li>
@@ -1841,6 +1847,44 @@ well as information useful for everyday administration of the system. It&#8217;s
 assumed that the reader is already familiar with openQA and has already read the
 Starter Guide, available at the
 <a href="https://github.com/os-autoinst/openQA">official repository</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_openqa_quick_bootstrap">openQA quick bootstrap</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To quickly get a working openQA installation, you can use openQA-bootstrap.</p>
+</div>
+<div class="sect2">
+<h3 id="_directly_on_your_machine">Directly on your machine</h3>
+<div class="paragraph">
+<p>This should work on openSUSE Leap and openSUSE Tumbleweed and will setup openQA
+on your machine.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper in openQA-bootstrap
+/usr/share/openqa/script/openqa-bootstrap</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_openqa_in_a_container">openQA in a container</h3>
+<div class="paragraph">
+<p>You can also setup a systemd-nspawn container with openQA with the following
+commands. This will only work on Tumbleweed and you need to have no application
+listening on port 80 yet because the container will share the host systems
+network stack.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>zypper in openQA-bootstrap
+/usr/share/openqa/script/openqa-bootstrap-container
+
+systemd-run -tM openqa1 /bin/bash <span class="tok-c1"># start a shell in the container</span></code></pre>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -6860,7 +6904,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-12-21 12:35:08 UTC
+Last updated 2018-12-21 14:21:17 UTC
 </div>
 </div>
 </body>
