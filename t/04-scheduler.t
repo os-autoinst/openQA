@@ -16,12 +16,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+use strict;
+use warnings;
+
 BEGIN {
     unshift @INC, 'lib';
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
-use strict;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Scheduler;

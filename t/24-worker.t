@@ -460,7 +460,7 @@ subtest 'Worker websocket messages' => sub {
 
 subtest 'handling upload finished' => sub {
     # setup mocking for stop_job and upload_images
-    my $worker_jobs_mock = new Test::MockModule('OpenQA::Worker::Jobs');
+    my $worker_jobs_mock = Test::MockModule->new('OpenQA::Worker::Jobs');
     my $stop_job_aborted = 0;
     $worker_jobs_mock->mock(
         stop_job => sub {

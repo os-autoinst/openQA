@@ -157,7 +157,7 @@ sub test_download {
 }
 
 subtest 'Availability check and worker status' => sub {
-    my $client_mock = new Test::MockModule('OpenQA::Worker::Cache::Client');
+    my $client_mock = Test::MockModule->new('OpenQA::Worker::Cache::Client');
 
     is($cache_client->availability_error, 'Cache service not available.', 'cache service not available');
 

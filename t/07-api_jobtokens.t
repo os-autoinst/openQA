@@ -15,11 +15,13 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
+use strict;
+use warnings;
+
 BEGIN {
     unshift @INC, 'lib';
 }
 
-use strict;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
