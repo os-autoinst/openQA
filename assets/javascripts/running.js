@@ -532,6 +532,7 @@ function updateDeveloperPanel() {
 
     // update status info
     var statusInfo = 'running';
+    var statusAppendix = '';
     if (developerMode.badConfiguration) {
         statusInfo = 'configuration issue';
     } else if (developerMode.isPaused) {
@@ -542,13 +543,26 @@ function updateDeveloperPanel() {
         if (developerMode.outstandingImagesToUpload || developerMode.outstandingFilesToUpload) {
             statusInfo += ', uploading results';
         }
-        $('#developer-pause-reason').text('(reason: ' + developerMode.isPaused + ')');
+        statusAppendix = 'reason: ' + developerMode.isPaused;
     } else if (moduleToPauseAtStillAhead) {
         statusInfo = 'will pause at module: ' + developerMode.moduleToPauseAt;
+        if (developerMode.currentModule) {
+            statusAppendix = 'currently at: ' + developerMode.currentModule;
+            if (developerMode.currentApiFunction) {
+                statusAppendix += ', ' + developerMode.currentApiFunction;
+            }
+        }
     } else if (developerMode.currentModule) {
         statusInfo = 'current module: ' + developerMode.currentModule;
+        if (developerMode.currentApiFunction) {
+            statusAppendix += 'at ' + developerMode.currentApiFunction;
+        }
+    }
+    if (!developerMode.badConfiguration && developerMode.currentApiFunction) {
+        $('#developer-current-api-function').text('(' + developerMode.isPaused + ')');
     }
     $('#developer-status-info').text(statusInfo);
+    $('#developer-status-appendix').text(statusAppendix);
 
     // update session info
     var sessionInfoElement = $('#developer-session-info');

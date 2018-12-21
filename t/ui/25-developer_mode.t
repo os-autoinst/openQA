@@ -251,7 +251,7 @@ qr/You might be able to connect to the SUT at remotehost:91 via VNC with shared 
         qr/paused at module: installation-welcome/,
         [qr/current module/, qr/uploading/],
     );
-    element_visible('#developer-pause-reason', qr/reason: some reason/);
+    element_visible('#developer-status-appendix', qr/reason: some reason/);
 
     # developer session opened
     fake_state(

@@ -38,7 +38,7 @@
                 % }
             </div>
             <div class="col-sm-5">
-                <span class="developer-mode-element" id="developer-pause-reason" data-visible-on="isPaused">
+                <span class="developer-mode-element" id="developer-status-appendix" data-visible-on="isConnected">
                 </span>
             </div>
         </div>
