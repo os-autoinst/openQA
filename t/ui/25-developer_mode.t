@@ -520,6 +520,38 @@ subtest 'start developer session' => sub {
         );
     };
 
+    subtest 'select whether to pause on next command' => sub {
+        my $checkbox = $driver->find_element_by_id('developer-pause-on-next-command');
+        is($checkbox->is_selected, 0, 'checkbox not checked yet');
+
+        $checkbox->click();
+        assert_sent_commands(undef, 'nothing happens unless the current state is known');
+
+        fake_state(developerMode => {pauseOnNextCommand => '0'});
+
+        $checkbox->click();
+        assert_sent_commands(
+            [
+                {
+                    cmd  => 'set_pause_on_next_command',
+                    flag => 1,
+                }
+            ],
+            'command to pause on next command sent'
+        );
+
+        # fake feedback from os-autoinst
+        fake_state(developerMode => {pauseOnNextCommand => '1'});
+        is($checkbox->is_selected, 1, 'pause on next command is checked now');
+
+        # test command processing
+        $driver->execute_script(
+'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"pause_on_next_command\":0}}" });'
+        );
+        is(js_variable('developerMode.pauseOnNextCommand'), 0, 'pauseOnNextCommand unset again');
+        is($checkbox->is_selected,                          0, 'pause on next command is disabled again');
+    };
+
     subtest 'quit session' => sub {
         $driver->execute_script('quitDeveloperSession();');
         assert_sent_commands([{cmd => 'quit_development_session'}], 'command for quitting session sent');
@@ -565,7 +597,7 @@ subtest 'process state changes from os-autoinst/worker' => sub {
         );
         element_visible('#developer-panel .card-header', qr/paused at module: some test/, qr/current module/,);
         my @pause_on_mismatch_options = $driver->find_elements('#developer-pause-on-mismatch option');
-        is($pause_on_mismatch_options[1]->is_selected(), 1, 'selection for pausing on screen mismatch updated',);
+        is($pause_on_mismatch_options[1]->is_selected(), 1, 'selection for pausing on screen mismatch updated');
     };
 
     subtest 'upload progress handled' => sub {

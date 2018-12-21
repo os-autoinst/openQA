@@ -342,6 +342,7 @@ var developerMode = {
     currentModule: undefined,               // name of the current module, eg. "installation-welcome"
     moduleToPauseAt: undefined,             // name of the module to pause at, eg. "installation-welcome"
     pauseOnScreenMismatch: undefined,       // 'assert_screen' (to pause on assert_screen timeout) or 'check_screen' (to pause on assert/check_screen timeout)
+    pauseOnNextCommand: undefined,          // whether to pause on the next command (current command *not* affected, eg. *no* timeouts skipped or failures suppressed)
     isPaused: undefined,                    // if paused the reason why as a string; otherwise something which evaluates to false
     currentApiFunction: undefined,          // the currently executed API function (eg. assert_screen)
     outstandingImagesToUpload: undefined,   // number of images which still need to be uploaded by the worker
@@ -444,6 +445,7 @@ function setupDeveloperPanel() {
 
     // add handler for static form elements
     document.getElementById('developer-pause-on-mismatch').onchange = handlePauseOnMismatchSelected;
+    document.getElementById('developer-pause-on-next-command').onchange = handlePauseOnNextCommandToggled;
 
     updateDeveloperPanel();
     setupWebsocketConnection();
@@ -599,6 +601,11 @@ function updateDeveloperPanel() {
     } else if (developerMode.pauseOnScreenMismatch === false) {
         pauseOnMismatchSelect.selectedIndex = 0; // "Fail on mismatch as usual" option
     }
+    // -> update whether to pause at the next command
+    if (developerMode.pauseOnNextCommand !== undefined) {
+        $('#developer-pause-on-next-command').prop('checked', developerMode.pauseOnNextCommand);
+    }
+
 }
 
 // submits the selected module to pause at if it has changed
@@ -643,6 +650,17 @@ function handlePauseOnMismatchSelected() {
     sendWsCommand({
         cmd: 'set_pause_on_screen_mismatch',
         pause_on: pauseOn,
+    });
+}
+
+function handlePauseOnNextCommandToggled() {
+    // skip if not owning development session or pauseOnNextCommand is unknown
+    if (!developerMode.ownSession || developerMode.pauseOnNextCommand === undefined) {
+        return;
+    }
+    sendWsCommand({
+        cmd: 'set_pause_on_next_command',
+        flag: $('#developer-pause-on-next-command').prop('checked'),
     });
 }
 
@@ -827,6 +845,14 @@ var messageToStatusVariable = [
     {
         msg: 'set_pause_on_screen_mismatch',
         statusVar: 'pauseOnScreenMismatch',
+    },
+    {
+        msg: 'pause_on_next_command',
+        statusVar: 'pauseOnNextCommand',
+    },
+    {
+        msg: 'set_pause_on_next_command',
+        statusVar: 'pauseOnNextCommand',
     },
     {
         msg: 'current_test_full_name',
