@@ -50,7 +50,8 @@ sub update_needle_from_editor {
         });
     $needle->update(
         {
-            tags => $needlejson->{tags},
+            tags         => $needlejson->{tags},
+            last_updated => $needle->t_updated,
         });
     return $needle;
 }
@@ -59,7 +60,7 @@ sub new_needles_since {
     my ($self, $since, $tags, $row_limit) = @_;
 
     my %new_needle_conds = (
-        t_updated    => {'>=' => DateTime::Format::Pg->format_datetime($since)},
+        last_updated => {'>=' => DateTime::Format::Pg->format_datetime($since)},
         file_present => 1,
     );
     if ($tags && @$tags) {
@@ -71,7 +72,7 @@ sub new_needles_since {
     }
 
     my %new_needle_params = (
-        order_by => {-desc => [qw(me.t_updated me.t_created me.id)]},
+        order_by => {-desc => [qw(me.last_updated me.t_created me.id)]},
         prefetch => ['directory'],
     );
     $new_needle_params{rows} = $row_limit if ($row_limit);

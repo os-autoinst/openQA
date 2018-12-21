@@ -62,6 +62,11 @@ __PACKAGE__->add_columns(
         data_type   => 'integer',
         is_nullable => 1,
     },
+    # last time the needle itself was actually updated (and not just some column modified)
+    last_updated => {
+        data_type   => 'timestamp',
+        is_nullable => 1,
+    },
     file_present => {
         data_type     => 'boolean',
         is_nullable   => 0,
@@ -83,6 +88,13 @@ __PACKAGE__->belongs_to(
     last_match => 'OpenQA::Schema::Result::JobModules',
     'last_matched_module_id', {join_type => 'LEFT', on_delete => 'SET NULL'});
 __PACKAGE__->belongs_to(directory => 'OpenQA::Schema::Result::NeedleDirs', 'dir_id');
+
+# override insert to ensure new needles have 'last_updated' set
+sub insert {
+    my ($self, @args) = @_;
+    $self->next::method(@args);
+    $self->update({last_updated => $self->t_updated});
+}
 
 sub update_needle_cache {
     my ($needle_cache) = @_;
