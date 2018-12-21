@@ -134,19 +134,16 @@ sub stop_job {
     remove_timer('update_status');
     remove_timer('job_timeout');
 
-    # XXX: we need to wait if there is an update_status in progress.
-    # we should have an event emitter that subscribes to update_status done
+    # postpone stopping until possibly ongoing status update is concluded
     my $stop_job_check_status;
     $stop_job_check_status = sub {
-        if ($update_status_running) {
-            log_debug("waiting for update_status to finish");
-            Mojo::IOLoop->timer(1 => $stop_job_check_status);
-        }
-        else {
+        if (!$update_status_running) {
             _stop_job($aborted, $job_id);
+            return undef;
         }
+        log_debug('postpone stopping until ongoing status update is concluded');
+        Mojo::IOLoop->timer(1 => $stop_job_check_status);
     };
-
     $stop_job_check_status->();
 }
 
@@ -764,7 +761,7 @@ sub handle_status_upload_finished {
     if (!$res) {
         $update_status_running = 0;
         log_error('Job aborted because web UI doesn\'t accept updates anymore (likely considers this job dead)');
-        stop_job('abort');
+        stop_job('api-failure');
         return;
     }
 
@@ -775,7 +772,7 @@ sub handle_status_upload_finished {
     if (!upload_images()) {
         $update_status_running = 0;
         log_error('Job aborted because web UI doesn\'t accept new images anymore (likely considers this job dead)');
-        stop_job('abort');
+        stop_job('api-failure');
         return;
     }
 
