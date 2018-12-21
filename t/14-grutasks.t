@@ -15,11 +15,13 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
+use strict;
+use warnings;
+
 BEGIN {
     unshift @INC, 'lib';
 }
 
-use strict;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
@@ -67,7 +69,7 @@ sub mock_remove {
     store($array, $removed);
 }
 
-my $module = new Test::MockModule('OpenQA::Schema::Result::Assets');
+my $module = Test::MockModule->new('OpenQA::Schema::Result::Assets');
 $module->mock(delete           => \&mock_delete);
 $module->mock(remove_from_disk => \&mock_remove);
 $module->mock(refresh_size     => sub { });
@@ -78,7 +80,7 @@ my $job_groups = $schema->resultset('JobGroups');
 my $assets     = $schema->resultset('Assets');
 
 # refresh assets only once and prevent adding untracked assets
-my $assets_mock = new Test::MockModule('OpenQA::Schema::ResultSet::Assets');
+my $assets_mock = Test::MockModule->new('OpenQA::Schema::ResultSet::Assets');
 $schema->resultset('Assets')->refresh_assets();
 $assets_mock->mock(scan_for_untracked_assets => sub { });
 $assets_mock->mock(refresh_assets            => sub { });

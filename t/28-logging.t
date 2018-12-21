@@ -15,9 +15,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+use strict;
+use warnings;
+
 BEGIN {
     unshift @INC, 'lib';
 }
+
 use Test::More;
 use Mojo::File qw(tempdir tempfile);
 use OpenQA::Utils qw(log_error log_warning log_fatal log_info log_debug add_log_channel remove_log_channel);
@@ -427,7 +432,7 @@ subtest 'Logs to defaults channels' => sub {
 
         eval { log_fatal('fatal message'); };
 
-        %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file1)->slurp =~ m/$reChannel/gm);
+        my %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file1)->slurp =~ m/$reChannel/gm);
         ok(keys(%matches) == $counterChannel, "Worker default channel 1 log level $level entry");
 
         %matches = map { $_ => 1 } (Mojo::File->new($logging_test_file2)->slurp =~ m/$reChannel/gm);
@@ -515,7 +520,7 @@ subtest 'Fallback to stderr/stdout' => sub {
     local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
     # let _log_to_channel_by_name and _log_via_mojo_app fail
-    my $utils_mock             = new Test::MockModule('OpenQA::Utils');
+    my $utils_mock             = Test::MockModule->new('OpenQA::Utils');
     my $log_via_channel_tried  = 0;
     my $log_via_mojo_app_tried = 0;
     $utils_mock->mock(
@@ -531,7 +536,7 @@ subtest 'Fallback to stderr/stdout' => sub {
 
     # add a channel (which shouldn't be used, though)
     my $logging_test_file1 = tempfile;
-    add_log_channel('channel 1', path => $logging_test_file1, level => $level, default => 'set');
+    add_log_channel('channel 1', path => $logging_test_file1, level => undef, default => 'set');
 
     # write some messages which should be printed to stdout/stderr
     stdout_like(
@@ -574,7 +579,7 @@ subtest 'Fallback to stderr/stdout' => sub {
 
     # check fallback when logging to channel throws an exception
     $utils_mock->unmock('_log_to_channel_by_name');
-    my $log_mock = new Test::MockModule('Mojo::Log');
+    my $log_mock = Test::MockModule->new('Mojo::Log');
     $log_mock->mock(
         error => sub {
             ++$log_via_channel_tried;

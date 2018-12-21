@@ -16,6 +16,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+use strict;
+use warnings;
+
 use Mojo::File qw(path tempdir);
 
 my $tempdir;
@@ -36,7 +39,6 @@ BEGIN {
     path($ENV{OPENQA_BASEDIR}, 'openqa', 'db')->make_path->child("db.lock")->spurt;
 }
 
-use strict;
 use lib "$FindBin::Bin/lib";
 use Data::Dump qw(pp dd);
 use OpenQA::Scheduler;

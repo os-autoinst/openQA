@@ -50,8 +50,8 @@ $schema->resultset('Assets')->scan_for_untracked_assets();
 $schema->resultset('Assets')->refresh_assets();
 
 # prevent files being actually deleted
-my $mock_asset = new Test::MockModule('OpenQA::Schema::Result::Assets');
-my $mock_limit = new Test::MockModule('OpenQA::Task::Asset::Limit');
+my $mock_asset = Test::MockModule->new('OpenQA::Schema::Result::Assets');
+my $mock_limit = Test::MockModule->new('OpenQA::Task::Asset::Limit');
 $mock_asset->mock(remove_from_disk          => sub { return 1; });
 $mock_asset->mock(refresh_assets            => sub { });
 $mock_asset->mock(scan_for_untracked_assets => sub { });
@@ -252,7 +252,7 @@ subtest 'handling assets with invalid name' => sub {
     is($schema->resultset('Assets')->register(repo => ''), undef, 'registering an empty asset prevented');
 
     # handling within OpenQA::WebAPI::Controller::API::V1::Iso::schedule_iso
-    my $iso_api_controller_mock = new Test::MockModule('OpenQA::WebAPI::Controller::API::V1::Iso');
+    my $iso_api_controller_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::API::V1::Iso');
     $iso_api_controller_mock->mock(_generate_jobs => sub { return undef; });
     $iso_api_controller_mock->mock(emit_event     => sub { return undef; });
     my $iso_api_controller = OpenQA::WebAPI::Controller::API::V1::Iso->new;

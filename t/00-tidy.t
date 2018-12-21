@@ -1,5 +1,3 @@
-BEGIN { unshift @INC, 'lib'; }
-
 # Copyright (C) 2014 SUSE Linux Products GmbH
 #
 # This program is free software; you can redistribute it and/or modify
@@ -15,6 +13,11 @@ BEGIN { unshift @INC, 'lib'; }
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+use strict;
+use warnings;
+
+BEGIN { unshift @INC, 'lib'; }
 
 use Test::More;
 use Test::Warnings;
