@@ -293,8 +293,8 @@ fake_state(
         badConfiguration      => 'false',
     });
 
-my @expected_text_on_initial_session_creation = (qr/and confirm to apply/, qr/Confirm to control this test/,);
-my @expected_text_after_session_created       = (qr/the controls below\./, qr/Cancel job/,);
+my @expected_text_on_initial_session_creation = (qr/and confirm to apply/, qr/Confirm to control this test/);
+my @expected_text_after_session_created       = (qr/the controls below\./);
 
 subtest 'expand developer panel' => sub {
     click_header();
@@ -521,7 +521,7 @@ subtest 'start developer session' => sub {
     };
 
     subtest 'quit session' => sub {
-        $driver->find_element('Cancel job', 'link_text')->click();
+        $driver->execute_script('quitDeveloperSession();');
         assert_sent_commands([{cmd => 'quit_development_session'}], 'command for quitting session sent');
         element_hidden('#developer-panel .card-body');
     };

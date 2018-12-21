@@ -386,23 +386,19 @@ function saveNeedle(e) {
   return false;
 }
 
-function restartJobSuccess(data, res, xhr) {
-  $.each(xhr.responseJSON.test_url[0], function(key, val) {
-    window.location.replace(val);
-  });
-}
-
-// restart-link in flash message
-function restartJob(event) {
-  $.ajax({
-    type: 'POST',
-    url: $(this).data('url'),
-    success: restartJobSuccess
-  });
-  event.preventDefault();
-}
-
 var nEditor;
+
+function submitMargin() {
+    setMargin();
+    $('#change-margin-form').modal('hide');
+    return false;
+}
+
+function submitMatch() {
+    setMatch();
+    $('#change-match-form').modal('hide');
+    return false;
+}
 
 function setup_needle_editor(imageurl, default_needle)
 {
@@ -428,9 +424,9 @@ function setup_needle_editor(imageurl, default_needle)
   loadTagsAndName();
   $('#area_select').change(loadAreas);
   $('#take_matches').change(loadAreas);
+  $('#match_form').submit(submitMatch);
+  $('#margin_form').submit(submitMargin);
 
-  $('#set_margin').click(function() { setMargin(); $('#change-margin-form').modal('hide'); } );
-  $('#set_match').click(function() { setMatch(); $('#change-match-form').modal('hide'); } );
   $('#change-margin-form').on('show.bs.modal', function() {
     var idx = nEditor.cv.get_selection_idx();
     if (idx == -1) {
@@ -479,7 +475,10 @@ function setup_needle_editor(imageurl, default_needle)
   );
 
   $('#save_needle_form').submit(saveNeedle);
-  $(document).on('click', '.restart-link', restartJob);
+  $(document).on('click', '.restart-link', function(event) {
+      restartJob(event.target.dataset.url, window.jobId);
+      event.preventDefault();
+  });
 }
 
 

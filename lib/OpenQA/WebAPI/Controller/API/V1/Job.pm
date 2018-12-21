@@ -594,6 +594,11 @@ sub restart {
 
     my $ipc = OpenQA::IPC->ipc;
     my $res = $ipc->resourceallocator('job_restart', $jobs);
+    return $self->render(
+        json   => {error => 'unable to request restart via resource allocator'},
+        status => 500,
+    ) unless $res;
+
     wakeup_scheduler;
 
     my @urls;

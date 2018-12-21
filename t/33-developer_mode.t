@@ -374,12 +374,8 @@ subtest 'developer session visible in live view' => sub {
     # and the test is paused
     element_visible(
         '#developer-panel .card-body',
-        [
-            qr/Change the test behaviour with the controls below\./,
-            qr/Resume test execution/,
-            qr/Cancel job/, qr/Resume/,
-        ],
-        [qr/Confirm to control this test/,],
+        [qr/Change the test behaviour with the controls below\./, qr/Resume test execution/, qr/Resume/],
+        [qr/Confirm to control this test/],
     );
 
     my @module_options = $driver->find_elements('#developer-pause-at-module option');
@@ -411,7 +407,6 @@ subtest 'status-only route accessible for other users' => sub {
                 qr/boot/,
                 qr/shutdown/,
                 qr/Confirm to control this test/,
-                qr/Cancel job/,
                 qr/Resume/,
             ],
         );

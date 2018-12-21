@@ -436,14 +436,10 @@ function setupTestButtons() {
 }
 
 function setupResultButtons() {
-    $( '#restart-result' ).click( function(event) {
+    $('#restart-result').click( function(event) {
         event.preventDefault();
-        var testid = $(this).data('jobid');
-        $.post($(this).attr("href")).done( function( data, res, xhr ) {
-            var new_url = xhr.responseJSON.test_url[0][testid];
-            window.location.replace(new_url);
-        });
-        // Add this to prevent twice post by clicking #restart-result
+        restartJob($(this).attr('href'), $(this).data('jobid'));
+        // prevent posting twice by clicking #restart-result
         return false;
     });
 }

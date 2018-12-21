@@ -476,6 +476,7 @@ function updateDeveloperPanel() {
                     (visibleOn && !developerMode.prop(visibleOn)));
         if (hide) {
             element.hide();
+            element.tooltip('hide');
         } else if (element.hasClass('btn')) {
             element.css('display', 'inline-block');
         } else {
