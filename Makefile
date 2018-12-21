@@ -16,7 +16,7 @@ install:
 	done
 
 # we didn't actually want to install these...
-	for i in tidy check_coverage generate-packed-assets generate-documentation generate-documentation-genapi.pl docker-tests; do \
+	for i in tidy check_coverage generate-packed-assets generate-documentation generate-documentation-genapi.pl run-tests-within-container; do \
 		rm "$(DESTDIR)"/usr/share/openqa/script/$$i ;\
 	done
 #
@@ -89,15 +89,19 @@ endif
 
 .PHONY: test
 ifeq ($(TRAVIS),true)
-test: docker-tests
+test: run-tests-within-container
 else
 test: checkstyle
 	OPENQA_CONFIG= prove ${PROVE_ARGS}
 endif
 
-.PHONY: docker-tests
-docker-tests:
-	script/docker-tests
+# prepares running the tests within Docker (eg. pulls os-autoinst) and then runs the tests considering
+# the test matrix environment variables
+# note: This is supposed to run within the Docker container unlike `launch-docker-to-run-tests-within`
+#       which launches the container.
+.PHONY: run-tests-within-container
+run-tests-within-container:
+	script/run-tests-within-container
 
 # ignore tests and test related addons in coverage analysis
 COVER_OPTS ?= -select_re "^/lib" -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
@@ -131,13 +135,13 @@ docker-test-build:
 docker.env:
 	env | grep -E 'FULLSTACK|UITEST|GH|TRAVIS|CPAN|DEBUG|ZYPPER' > $(docker_env_file)
 
-.PHONY: docker-test-run
-docker-test-run: docker.env
+.PHONY: launch-docker-to-run-tests-within
+launch-docker-to-run-tests-within: docker.env
 	docker run --env-file $(docker_env_file) -v $(current_dir):/opt/openqa -v /var/run/dbus:/var/run/dbus \
 	   $(DOCKER_IMG) make travis-codecov
 	rm $(docker_env_file)
 
-.PHONY: docker-test
-.NOTPARALLEL: docker-test
-docker-test: docker-test-build docker-test-run
+.PHONY: prepare-and-launch-docker-to-run-tests-within
+.NOTPARALLEL: prepare-and-launch-docker-to-run-tests-within
+prepare-and-launch-docker-to-run-tests-within: docker-test-build launch-docker-to-run-tests-within
 	echo "Use docker-rm and docker-rmi to remove the container and image if necessary"
