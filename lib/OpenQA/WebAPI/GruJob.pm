@@ -21,7 +21,6 @@ use OpenQA::Utils 'log_error';
 sub execute {
     my $self = shift;
 
-    # TTL
     my $ttl     = $self->info->{notes}{ttl};
     my $elapsed = time - $self->info->{created};
     if (defined $ttl && $elapsed > $ttl) {

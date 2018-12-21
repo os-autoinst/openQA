@@ -228,7 +228,7 @@ is(
     'kept assets for group 1002 accumulated (26 GiB per asset)'
 );
 
-# empty the tracking arrays before next test
+# remove mock tracking data
 unlink $tempdir->child('removed');
 unlink $tempdir->child('deleted');
 
@@ -264,7 +264,7 @@ is(
     'kept assets for group 1002 accumulated (34 GiB per asset)'
 );
 
-# empty the tracking arrays before next test
+# remove mock tracking data
 unlink $tempdir->child('removed');
 unlink $tempdir->child('deleted');
 

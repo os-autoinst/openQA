@@ -63,33 +63,11 @@ OpenQA::WebAPI::Command::gru::run - Gru run command
 
     script/openqa gru run
     script/openqa gru run -o
-    script/openqa gru run -m production -I 15 -C 5 -R 3600 -j 10
-    script/openqa gru run -q important -q default
 
   Options:
-    -C, --command-interval <seconds>     Worker remote control command interval,
-                                         defaults to 10
-    -D, dequeue-timeout <seconds>        Maximum amount of time to wait for
-                                         jobs, defaults to 5
-    -h, --help                           Show this summary of available options
-        --home <path>                    Path to home directory of your
-                                         application, defaults to the value of
-                                         MOJO_HOME or auto-detection
-    -I, --heartbeat-interval <seconds>   Heartbeat interval, defaults to 300
-    -j, --jobs <number>                  Maximum number of jobs to perform
-                                         parallel in forked worker processes,
-                                         defaults to 4
-    -m, --mode <name>                    Operating mode for your application,
-                                         defaults to the value of
-                                         MOJO_MODE/PLACK_ENV or "development"
-    -o, --oneshot                        Perform all currently enqueued jobs and
-                                         then exit
-    -q, --queue <name>                   One or more queues to get jobs from,
-                                         defaults to "default"
-    -R, --repair-interval <seconds>      Repair interval, up to half of this
-                                         value can be subtracted randomly to
-                                         make sure not all workers repair at the
-                                         same time, defaults to 21600 (6 hours)
+    -o, --oneshot   Perform all currently enqueued jobs and then exit
+
+    See 'script/openqa minion worker -h' for all available options.
 
 
 =head1 DESCRIPTION
