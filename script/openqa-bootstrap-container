@@ -1,0 +1,61 @@
+#!/bin/bash -x
+
+# This script doesn't work on Leap 15.0 as it makes use of the -P option of systemd-run
+# which is not available there
+
+
+CONTAINER_NAME="openqa1"
+CONTANER_PATH="/var/lib/machines/${CONTAINER_NAME}"
+
+DEFAULT_REPO="http://download.opensuse.org/tumbleweed/repo/oss/"
+PKGS_TO_INSTALL="aaa_base systemd shadow zypper openSUSE-release vim iproute2 iputils openQA-local-db openQA-worker sudo apache2 net-tools curl wget ca-certificates-mozilla qemu-kvm openQA-bootstrap"
+
+zypper -n install systemd-container
+mkdir -p /var/lib/machines/
+
+cat > /etc/systemd/system/systemd-nspawn-openqa@.service <<EOF
+[Unit]
+Description=Container %i
+Documentation=man:systemd-nspawn(1)
+PartOf=machines.target
+Before=machines.target
+After=network.target systemd-resolved.service
+RequiresMountsFor=/var/lib/machines
+
+[Service]
+ExecStart=/usr/bin/systemd-nspawn --quiet --keep-unit --boot --link-journal=try-guest --bind /dev/kvm --settings=override --machine=%i
+KillMode=mixed
+Type=notify
+RestartForceExitStatus=133
+SuccessExitStatus=133
+Slice=machine.slice
+Delegate=yes
+TasksMax=16384
+
+DevicePolicy=closed
+DeviceAllow=/dev/net/tun rwm
+DeviceAllow=char-pts rw
+
+# nspawn itself needs access to /dev/loop-control and /dev/loop, to
+# implement the --image= option. Add these here, too.
+DeviceAllow=/dev/loop-control rw
+DeviceAllow=/dev/kvm rw
+DeviceAllow=block-loop rw
+DeviceAllow=block-blkext rw
+
+[Install]
+WantedBy=machines.target
+EOF
+
+mkdir $CONTANER_PATH
+zypper -n --root $CONTANER_PATH addrepo $DEFAULT_REPO defaultrepo
+zypper -n --root $CONTANER_PATH --gpg-auto-import-keys refresh
+zypper -n --root $CONTANER_PATH install --no-recommends -ly $PKGS_TO_INSTALL
+
+systemctl daemon-reload
+systemctl start systemd-nspawn-openqa@$CONTAINER_NAME
+# ensure that the container is really running
+while ! timeout -s9 2 systemd-run -qPM $CONTAINER_NAME /bin/bash -c whoami ; do systemctl restart systemd-nspawn-openqa@$CONTAINER_NAME.service ; sleep 3 ; done
+systemd-run -qPM $CONTAINER_NAME /bin/bash -c '/usr/share/openqa/script/openqa-bootstrap'
+
+echo -e "$(tput setaf 2;tput bold)Your openQA container has been created. Run 'systemd-run -tM $CONTAINER_NAME /bin/bash' to get a shell in the container$(tput sgr0)"

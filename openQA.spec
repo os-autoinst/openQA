@@ -193,6 +193,14 @@ Supplements:    packageand(%name:postgresql-server)
 You only need this package if you have a local postgresql server
 next to the webui.
 
+%package bootstrap
+Summary:        Automated openQA setup
+Group:          Development/Tools/Other
+
+%description bootstrap
+This can automatically setup openQA - either directly on your system
+or within a systemd-nspawn container.
+
 %package doc
 Summary:        The openQA documentation
 Group:          Development/Tools/Other
@@ -480,5 +488,9 @@ fi
 
 %files local-db
 %{_unitdir}/openqa-setup-db.service
+
+%files bootstrap
+%{_datadir}/openqa/script/openqa-bootstrap
+%{_datadir}/openqa/script/openqa-bootstrap-container
 
 %changelog

@@ -19,6 +19,36 @@ assumed that the reader is already familiar with openQA and has already read the
 Starter Guide, available at the
 https://github.com/os-autoinst/openQA[official repository].
 
+== openQA quick bootstrap
+
+To quickly get a working openQA installation, you can use openQA-bootstrap.
+
+=== Directly on your machine
+
+This should work on openSUSE Leap and openSUSE Tumbleweed and will setup openQA
+on your machine.
+
+[source,sh]
+-------------------------------------------------------------------------------
+zypper in openQA-bootstrap
+/usr/share/openqa/script/openqa-bootstrap
+-------------------------------------------------------------------------------
+
+=== openQA in a container
+
+You can also setup a systemd-nspawn container with openQA with the following
+commands. This will only work on Tumbleweed and you need to have no application
+listening on port 80 yet because the container will share the host systems
+network stack.
+
+[source,sh]
+-------------------------------------------------------------------------------
+zypper in openQA-bootstrap
+/usr/share/openqa/script/openqa-bootstrap-container
+
+systemd-run -tM openqa1 /bin/bash # start a shell in the container
+-------------------------------------------------------------------------------
+
 == Repositories and installation
 
 Keep in mind that there can be disruptive changes between openQA versions.
