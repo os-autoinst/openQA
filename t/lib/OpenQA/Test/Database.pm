@@ -28,6 +28,9 @@ sub create {
         $schema->{tmp_schema} = 'tmp_' . rndstr();
         $schema->storage->dbh->do("create schema $schema->{tmp_schema}");
         $schema->storage->dbh->do("SET search_path TO $schema->{tmp_schema}");
+
+        # Handle reconnects
+        $schema->storage->on_connect_do("SET search_path TO $schema->{tmp_schema}");
     }
 
     OpenQA::Schema::deployment_check($schema);

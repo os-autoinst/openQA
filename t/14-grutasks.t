@@ -37,24 +37,34 @@ use File::Path ();
 use Data::Dumper;
 use Date::Format 'time2str';
 use Fcntl ':mode';
+use Mojo::File 'tempdir';
+use Storable qw(store retrieve);
 
 # these are used to track assets being 'removed from disk' and 'deleted'
 # by mock methods (so we don't *actually* lose them)
-my @removed;
-my @deleted;
+my $tempdir = tempdir;
+my $deleted = $tempdir->child('deleted');
+my $removed = $tempdir->child('removed');
+sub mock_deleted { -e $deleted ? retrieve($deleted) : [] }
+sub mock_removed { -e $removed ? retrieve($removed) : [] }
 
-# a mock 'delete' method for Assets which just appends the name to the
-# @deleted array
 sub mock_delete {
-    my ($self) = @_;
+    my $self = shift;
+
     $self->remove_from_disk;
-    push @deleted, $self->name;
+
+    store([], $deleted) unless -e $deleted;
+    my $array = retrieve($deleted);
+    push @$array, $self->name;
+    store($array, $deleted);
 }
 
-# a mock 'remove_from_disk' which just appends the name to @removed
 sub mock_remove {
-    my ($self) = @_;
-    push @removed, $self->name;
+    my $self = shift;
+    store([], $removed) unless -e $removed;
+    my $array = retrieve($removed);
+    push @$array, $self->name;
+    store($array, $removed);
 }
 
 my $module = new Test::MockModule('OpenQA::Schema::Result::Assets');
@@ -75,9 +85,12 @@ $assets_mock->mock(refresh_assets            => sub { });
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-# now to something completely different: testing limit_assets
-my $c = OpenQA::WebAPI::Plugin::Gru::Command::gru->new();
-$c->app($t->app);
+# Non-Gru task
+$t->app->minion->add_task(
+    some_random_task => sub {
+        my ($job, @args) = @_;
+        $job->finish({pid => $$, args => \@args});
+    });
 
 # list initially existing assets
 my $dbh             = $schema->storage->dbh;
@@ -90,7 +103,7 @@ sub find_kept_assets_with_last_jobs {
         {
             -not => {
                 -or => {
-                    name            => {-in => \@removed},
+                    name            => {-in => mock_removed()},
                     last_use_job_id => undef
                 },
             }
@@ -106,7 +119,7 @@ is($job_groups->find(1001)->exclusively_kept_asset_size,
 sub run_gru {
     my ($task, $args) = @_;
     $t->app->gru->enqueue($task => $args);
-    $c->run('run', '-o');
+    $t->app->start('gru', 'run', '--oneshot');
 }
 
 # understanding / revising these tests requires understanding the
@@ -137,8 +150,8 @@ my $gib = 1024 * 1024 * 1024;
 $assets->update({size => 18 * $gib});
 run_gru('limit_assets');
 
-is_deeply(\@removed, [], "nothing should have been 'removed' at size 18GiB");
-is_deeply(\@deleted, [], "nothing should have been 'deleted' at size 18GiB");
+is_deeply(mock_removed(), [], "nothing should have been 'removed' at size 18GiB");
+is_deeply(mock_deleted(), [], "nothing should have been 'deleted' at size 18GiB");
 
 my @expected_last_jobs_no_removal = (
     {asset => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso', job => 99926},
@@ -164,8 +177,8 @@ is($job_groups->find(1002)->exclusively_kept_asset_size,
 $assets->update({size => 24 * $gib});
 run_gru('limit_assets');
 
-is_deeply(\@removed, [], "nothing should have been 'removed' at size 24GiB");
-is_deeply(\@deleted, [], "nothing should have been 'deleted' at size 24GiB");
+is_deeply(mock_removed(), [], "nothing should have been 'removed' at size 24GiB");
+is_deeply(mock_deleted(), [], "nothing should have been 'deleted' at size 24GiB");
 
 is_deeply(find_kept_assets_with_last_jobs, \@expected_last_jobs_no_removal, 'last jobs have not been altered');
 
@@ -187,8 +200,8 @@ is(
 $assets->update({size => 26 * $gib});
 run_gru('limit_assets');
 
-is(scalar @removed, 1, "one asset should have been 'removed' at size 26GiB");
-is(scalar @deleted, 1, "one asset should have been 'deleted' at size 26GiB");
+is(scalar @{mock_removed()}, 1, "one asset should have been 'removed' at size 26GiB");
+is(scalar @{mock_deleted()}, 1, "one asset should have been 'deleted' at size 26GiB");
 
 is_deeply(
     find_kept_assets_with_last_jobs,
@@ -215,16 +228,16 @@ is(
     'kept assets for group 1002 accumulated (26 GiB per asset)'
 );
 
-# empty the tracking arrays before next test
-@removed = ();
-@deleted = ();
+# remove mock tracking data
+unlink $tempdir->child('removed');
+unlink $tempdir->child('deleted');
 
 # at size 34GiB, 1001 is over the limit, so removal should occur.
 $assets->update({size => 34 * $gib});
 run_gru('limit_assets');
 
-is(scalar @removed, 1, "two assets should have been 'removed' at size 34GiB");
-is(scalar @deleted, 1, "two assets should have been 'deleted' at size 34GiB");
+is(scalar @{mock_removed()}, 1, "two assets should have been 'removed' at size 34GiB");
+is(scalar @{mock_deleted()}, 1, "two assets should have been 'deleted' at size 34GiB");
 
 is_deeply(
     find_kept_assets_with_last_jobs,
@@ -251,9 +264,9 @@ is(
     'kept assets for group 1002 accumulated (34 GiB per asset)'
 );
 
-# empty the tracking arrays before next test
-@removed = ();
-@deleted = ();
+# remove mock tracking data
+unlink $tempdir->child('removed');
+unlink $tempdir->child('deleted');
 
 # now we set the most recent job for asset #1 (99947) to PENDING state,
 # to test protection of assets for PENDING jobs which would otherwise
@@ -267,8 +280,8 @@ $job99947->update({t_finished => undef});
 # selected for removal, but reprieved at the last minute due to its
 # association with a PENDING job.
 run_gru('limit_assets');
-is(scalar @removed, 1, "only one asset should have been 'removed' at size 34GiB with 99947 pending");
-is(scalar @deleted, 1, "only one asset should have been 'deleted' at size 34GiB with 99947 pending");
+is(scalar @{mock_removed()}, 1, "only one asset should have been 'removed' at size 34GiB with 99947 pending");
+is(scalar @{mock_deleted()}, 1, "only one asset should have been 'deleted' at size 34GiB with 99947 pending");
 
 # restore job 99947 to DONE state
 #$job99947->state(OpenQA::Jobs::Constants::DONE);
@@ -389,6 +402,27 @@ subtest 'labeled jobs considered important' => sub {
     ok(!-e $filename, 'file got cleaned');
 };
 
+subtest 'Non-Gru task' => sub {
+    my $id = $t->app->minion->enqueue(some_random_task => [23]);
+    ok defined $id, 'Job enqueued';
+    $t->app->start('gru', 'run', '--oneshot');
+    is $t->app->minion->job($id)->info->{state}, 'finished', 'job is finished';
+    isnt $t->app->minion->job($id)->info->{result}{pid}, $$, 'job was processed in a different process';
+    is_deeply $t->app->minion->job($id)->info->{result}{args}, [23], 'arguments have been passed along';
+
+    my $id2 = $t->app->minion->enqueue(some_random_task => [24, 25]);
+    my $id3 = $t->app->minion->enqueue(some_random_task => [26]);
+    ok defined $id2, 'Job enqueued';
+    ok defined $id3, 'Job enqueued';
+    $t->app->start('gru', 'run', '--oneshot');
+    is $t->app->minion->job($id2)->info->{state}, 'finished', 'job is finished';
+    is $t->app->minion->job($id3)->info->{state}, 'finished', 'job is finished';
+    isnt $t->app->minion->job($id2)->info->{result}{pid}, $$, 'job was processed in a differetn process';
+    isnt $t->app->minion->job($id3)->info->{result}{pid}, $$, 'job was processed in a differetn process';
+    is_deeply $t->app->minion->job($id2)->info->{result}{args}, [24, 25], 'arguments have been passed along';
+    is_deeply $t->app->minion->job($id3)->info->{result}{args}, [26], 'arguments have been passed along';
+};
+
 subtest 'Gru tasks limit' => sub {
     my $id  = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 1});
     my $res = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 1});
@@ -401,26 +435,26 @@ subtest 'Gru tasks limit' => sub {
 
     is $t->app->minion->backend->list_jobs(0, undef, {tasks => ['limit_assets'], states => ['inactive']})->{total}, 2;
 
-    $c->run('run', '-o');
+    $t->app->start('gru', 'run', '--oneshot');
     $id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
     ok defined $id, 'task is scheduled';
     $id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
     ok defined $id, 'task is scheduled';
     $res = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, limit => 2});
     is $res, undef, 'Other tasks is not scheduled anymore';
-    $c->run('run', '-o');
+    $t->app->start('gru', 'run', '--oneshot');
 };
 
 subtest 'Gru tasks TTL' => sub {
     $t->app->minion->reset;
     my $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -20})->{minion_id};
-    $c->run('run', '-o');
+    $t->app->start('gru', 'run', '--oneshot');
     my $result = $t->app->minion->job($job_id)->info->{result};
     is ref $result, 'HASH', 'We have a result' or diag explain $result;
     is $result->{error}, 'TTL Expired', 'TTL Expired - job discarded' or diag explain $result;
 
     $job_id = $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => 20})->{minion_id};
-    $c->run('run', '-o');
+    $t->app->start('gru', 'run', '--oneshot');
     $result = $t->app->minion->job($job_id)->info->{result};
 
     is ref $result, '', 'Result is the output';
@@ -432,7 +466,7 @@ subtest 'Gru tasks TTL' => sub {
     for (1 .. 100) {
         push @ids, $t->app->gru->enqueue(limit_assets => [] => {priority => 10, ttl => -50})->{minion_id};
     }
-    $c->run('run', '-o');
+    $t->app->start('gru', 'run', '--oneshot');
 
     is $t->app->minion->job($_)->info->{result}->{error}, 'TTL Expired', 'TTL Expired - job discarded' for @ids;
 

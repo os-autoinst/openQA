@@ -72,6 +72,9 @@ sub startup {
     # set cookie timeout to 48 hours (will be updated on each request)
     $self->app->sessions->default_expiration(48 * 60 * 60);
 
+    # commands
+    push @{$self->commands->namespaces}, 'OpenQA::WebAPI::Command';
+
     # add actions before dispatching page
     $self->hook(
         before_dispatch => sub {
