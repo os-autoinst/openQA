@@ -111,18 +111,21 @@ sub check_job {
 
 sub stop_job {
     my ($aborted, $job_id, $host) = @_;
-    # we call this function in all situations, so better check
+
+    # skip if no job running or stop_job has already been called; stop event loop "forcefully" if called to quit
     if (!$job || $stop_job_running) {
-        # In case there is no job, or if the job was asked to stop
-        # we stop the worker asap, otherwise wait for the actual
-        # stop to finish before, or run into a condition where the job
-        # runs forever and worker Mojo::IOLoop->stop is never called
-        my $job_state = ($stop_job_running) ? "$stop_job_running" : 'No job was asked to stop|';
-        $job_state .= ($aborted) ? "|Reason: $aborted" : ' $aborted is empty';
-        log_debug("Either there is no job running or we were asked to stop: ($job_state)");
+        my $reason = $aborted ? $aborted : 'no reason';
+        if ($stop_job_running) {
+            log_debug("stop_job called after job has already been asked to stop (reason: $reason)");
+        }
+        else {
+            log_debug("stop_job called while no job was running (reason: $reason)");
+        }
         Mojo::IOLoop->stop if $aborted eq 'quit';
         return;
     }
+
+    # skip if (already) executing a different job
     return if $job_id && $job_id != $job->{id};
 
     $job_id = $job->{id};
@@ -512,26 +515,22 @@ sub _stop_accepting_jobs_and_register_again {
 
 sub _stop_job_finish {
     my ($params, $quit) = @_;
-    log_debug("update status running $update_status_running")
-      if $update_status_running;
+
+    # try again in 1 second if still updating status
     if ($update_status_running) {
+        log_debug("waiting for update status running: $update_status_running");
         add_timer('', 1, sub { _stop_job_finish($params, $quit) }, 1);
         return;
     }
+
     api_call(
-        'post',
-        'jobs/' . $job->{id} . '/set_done',
+        post     => "jobs/$job->{id}/set_done",
         params   => $params,
         callback => sub {
             _reset_state;
-            if ($quit) {
-                Mojo::IOLoop->stop;
-            }
-            #  else {
-            # immediatelly check for already scheduled job
-            #Mojo::IOLoop->next_tick(sub { check_job(keys %$hosts) });
-            #  }
-        });
+            Mojo::IOLoop->stop if ($quit);
+        },
+    );
 }
 
 sub copy_job_settings {

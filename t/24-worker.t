@@ -109,7 +109,7 @@ test_via_io_loop sub {
                 callback => sub { my $res = shift; is($res, undef, 'error handled'); Mojo::IOLoop->stop() });
             while (Mojo::IOLoop->is_running) { Mojo::IOLoop->singleton->reactor->one_tick }
         },
-        qr/.*\[ERROR\] Connection error:.*(remaining tries: 0).*\[DEBUG\] .* no job running.*/s,
+        qr/.*\[ERROR\] Connection error:.*(remaining tries: 0).*\[DEBUG\].*no job was running.*/s,
         'warning about 503 error'
     );
 };
