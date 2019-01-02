@@ -260,10 +260,7 @@ sub api_call {
         # handle critical error when no more attempts remain
         if ($tries <= 0 && !$non_critical) {
             # abort the current job, we're in trouble - but keep running to grab the next
-            OpenQA::Worker::Jobs::stop_job('api-failure');
-            # stop accepting jobs and schedule reregistration - keep the rest running
-            $hosts->{$host}{accepting_jobs} = 0;
-            add_timer("register_worker-$host", 10, sub { register_worker($host) }, 1);
+            OpenQA::Worker::Jobs::stop_job('api-failure', undef, $host);
             $callback->();
             return;
         }
@@ -467,9 +464,7 @@ sub call_websocket {
                             # worker id suddenly not known anymore. Abort. If workerid
                             # is unset we already detected that in api_call
                             $hosts->{$host}{workerid} = undef;
-                            OpenQA::Worker::Jobs::stop_job('api-failure');
-                            $hosts->{$host}{timers}{register_worker}
-                              = add_timer("register_worker-$host", 10, sub { register_worker($host) }, 1);
+                            OpenQA::Worker::Jobs::stop_job('api-failure', undef, $host);
                             return;
                         }
                     }

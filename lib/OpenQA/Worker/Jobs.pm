@@ -110,7 +110,7 @@ sub check_job {
 }
 
 sub stop_job {
-    my ($aborted, $job_id) = @_;
+    my ($aborted, $job_id, $host) = @_;
     # we call this function in all situations, so better check
     if (!$job || $stop_job_running) {
         # In case there is no job, or if the job was asked to stop
@@ -126,6 +126,7 @@ sub stop_job {
     return if $job_id && $job_id != $job->{id};
 
     $job_id = $job->{id};
+    $host //= $current_host;
 
     log_debug("stop_job $aborted");
     $stop_job_running = 1;
@@ -138,7 +139,7 @@ sub stop_job {
     my $stop_job_check_status;
     $stop_job_check_status = sub {
         if (!$update_status_running) {
-            _stop_job($aborted, $job_id);
+            _stop_job($aborted, $job_id, $host);
             return undef;
         }
         log_debug('postpone stopping until ongoing status update is concluded');
@@ -344,7 +345,7 @@ sub upload {
 }
 
 sub _stop_job {
-    my ($aborted, $job_id) = @_;
+    my ($aborted, $job_id, $host) = @_;
     my $workerid = verify_workerid;
 
     # now tell the webui that we're about to finish, but the following
@@ -365,11 +366,11 @@ sub _stop_job {
     api_call(
         'post', "jobs/$job_id/status",
         json     => {status => $status},
-        callback => sub { _stop_job_2($aborted, $job_id); });
+        callback => sub { _stop_job_2($aborted, $job_id, $host); });
 }
 
 sub _stop_job_2 {
-    my ($aborted, $job_id) = @_;
+    my ($aborted, $job_id, $host) = @_;
     _kill_worker($worker);
 
     my $name = $job->{settings}->{NAME};
@@ -468,7 +469,7 @@ sub _stop_job_2 {
             );
         }
     }
-    unless ($job_done || $aborted eq 'api-failure') {
+    if (!$job_done && $aborted ne 'api-failure') {
         log_debug(sprintf 'job %d incomplete', $job->{id});
         if ($aborted eq 'quit') {
             log_debug(sprintf "duplicating job %d\n", $job->{id});
@@ -485,8 +486,28 @@ sub _stop_job_2 {
         }
     }
     elsif ($aborted eq 'api-failure') {
-        _reset_state;
+        # give the API one last try to incomplete the job at least
+        # note: Setting 'ignore_errors' here is important. Otherwise we would endlessly repeat
+        #       that API call.
+        api_call(
+            post          => "jobs/$job->{id}/set_done",
+            params        => {result => 'incomplete'},
+            ignore_errors => 1,
+            callback      => sub {
+                _reset_state;
+                _stop_accepting_jobs_and_register_again($host);
+            },
+        );
     }
+}
+
+sub _stop_accepting_jobs_and_register_again {
+    my ($host_name) = @_;
+    my $host = $hosts->{$host_name};
+
+    $host->{accepting_jobs} = 0;
+    $host->{timers}{register_worker}
+      = add_timer("register_worker-$host_name", 10, sub { register_worker($host_name) }, 1);
 }
 
 sub _stop_job_finish {
