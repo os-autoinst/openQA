@@ -535,9 +535,12 @@ subtest 'Check job status and output' => sub {
 
     $bogus_job_post->status_is(400);
     $bogus_worker_post->status_is(400);
-    ok($output =~ /Got status update for non-existing job/, 'Check status update for non-existing job');
-    ok($output =~ /Got status update for job .* that does not belong to Worker/,
-        'Got status update for job that doesnt belong to worker');
+    like($output, qr/Got status update for non-existing job/, 'Check status update for non-existing job');
+    like(
+        $output,
+        qr/Got status update for job .* with unexpected worker ID 999999/,
+        'Got status update for job that doesnt belong to worker'
+    );
 };
 # Test /jobs/cancel
 # TODO: cancelling jobs via API in tests doesn't work for some reason
