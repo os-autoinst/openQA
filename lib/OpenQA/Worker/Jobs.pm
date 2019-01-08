@@ -110,22 +110,26 @@ sub check_job {
 }
 
 sub stop_job {
-    my ($aborted, $job_id) = @_;
-    # we call this function in all situations, so better check
+    my ($aborted, $job_id, $host) = @_;
+
+    # skip if no job running or stop_job has already been called; stop event loop "forcefully" if called to quit
     if (!$job || $stop_job_running) {
-        # In case there is no job, or if the job was asked to stop
-        # we stop the worker asap, otherwise wait for the actual
-        # stop to finish before, or run into a condition where the job
-        # runs forever and worker Mojo::IOLoop->stop is never called
-        my $job_state = ($stop_job_running) ? "$stop_job_running" : 'No job was asked to stop|';
-        $job_state .= ($aborted) ? "|Reason: $aborted" : ' $aborted is empty';
-        log_debug("Either there is no job running or we were asked to stop: ($job_state)");
+        my $reason = $aborted ? $aborted : 'no reason';
+        if ($stop_job_running) {
+            log_debug("stop_job called after job has already been asked to stop (reason: $reason)");
+        }
+        else {
+            log_debug("stop_job called while no job was running (reason: $reason)");
+        }
         Mojo::IOLoop->stop if $aborted eq 'quit';
         return;
     }
+
+    # skip if (already) executing a different job
     return if $job_id && $job_id != $job->{id};
 
     $job_id = $job->{id};
+    $host //= $current_host;
 
     log_debug("stop_job $aborted");
     $stop_job_running = 1;
@@ -134,19 +138,16 @@ sub stop_job {
     remove_timer('update_status');
     remove_timer('job_timeout');
 
-    # XXX: we need to wait if there is an update_status in progress.
-    # we should have an event emitter that subscribes to update_status done
+    # postpone stopping until possibly ongoing status update is concluded
     my $stop_job_check_status;
     $stop_job_check_status = sub {
-        if ($update_status_running) {
-            log_debug("waiting for update_status to finish");
-            Mojo::IOLoop->timer(1 => $stop_job_check_status);
+        if (!$update_status_running) {
+            _stop_job($aborted, $job_id, $host);
+            return undef;
         }
-        else {
-            _stop_job($aborted, $job_id);
-        }
+        log_debug('postpone stopping until ongoing status update is concluded');
+        Mojo::IOLoop->timer(1 => $stop_job_check_status);
     };
-
     $stop_job_check_status->();
 }
 
@@ -347,7 +348,7 @@ sub upload {
 }
 
 sub _stop_job {
-    my ($aborted, $job_id) = @_;
+    my ($aborted, $job_id, $host) = @_;
     my $workerid = verify_workerid;
 
     # now tell the webui that we're about to finish, but the following
@@ -368,11 +369,11 @@ sub _stop_job {
     api_call(
         'post', "jobs/$job_id/status",
         json     => {status => $status},
-        callback => sub { _stop_job_2($aborted, $job_id); });
+        callback => sub { _stop_job_2($aborted, $job_id, $host); });
 }
 
 sub _stop_job_2 {
-    my ($aborted, $job_id) = @_;
+    my ($aborted, $job_id, $host) = @_;
     _kill_worker($worker);
 
     my $name = $job->{settings}->{NAME};
@@ -471,7 +472,7 @@ sub _stop_job_2 {
             );
         }
     }
-    unless ($job_done || $aborted eq 'api-failure') {
+    if (!$job_done && $aborted ne 'api-failure') {
         log_debug(sprintf 'job %d incomplete', $job->{id});
         if ($aborted eq 'quit') {
             log_debug(sprintf "duplicating job %d\n", $job->{id});
@@ -488,32 +489,48 @@ sub _stop_job_2 {
         }
     }
     elsif ($aborted eq 'api-failure') {
-        _reset_state;
+        # give the API one last try to incomplete the job at least
+        # note: Setting 'ignore_errors' here is important. Otherwise we would endlessly repeat
+        #       that API call.
+        api_call(
+            post          => "jobs/$job->{id}/set_done",
+            params        => {result => 'incomplete'},
+            ignore_errors => 1,
+            callback      => sub {
+                _reset_state;
+                _stop_accepting_jobs_and_register_again($host);
+            },
+        );
     }
+}
+
+sub _stop_accepting_jobs_and_register_again {
+    my ($host_name) = @_;
+    my $host = $hosts->{$host_name};
+
+    $host->{accepting_jobs} = 0;
+    $host->{timers}{register_worker}
+      = add_timer("register_worker-$host_name", 10, sub { register_worker($host_name) }, 1);
 }
 
 sub _stop_job_finish {
     my ($params, $quit) = @_;
-    log_debug("update status running $update_status_running")
-      if $update_status_running;
+
+    # try again in 1 second if still updating status
     if ($update_status_running) {
+        log_debug("waiting for update status running: $update_status_running");
         add_timer('', 1, sub { _stop_job_finish($params, $quit) }, 1);
         return;
     }
+
     api_call(
-        'post',
-        'jobs/' . $job->{id} . '/set_done',
+        post     => "jobs/$job->{id}/set_done",
         params   => $params,
         callback => sub {
             _reset_state;
-            if ($quit) {
-                Mojo::IOLoop->stop;
-            }
-            #  else {
-            # immediatelly check for already scheduled job
-            #Mojo::IOLoop->next_tick(sub { check_job(keys %$hosts) });
-            #  }
-        });
+            Mojo::IOLoop->stop if ($quit);
+        },
+    );
 }
 
 sub copy_job_settings {
@@ -764,7 +781,7 @@ sub handle_status_upload_finished {
     if (!$res) {
         $update_status_running = 0;
         log_error('Job aborted because web UI doesn\'t accept updates anymore (likely considers this job dead)');
-        stop_job('abort');
+        stop_job('api-failure');
         return;
     }
 
@@ -775,7 +792,7 @@ sub handle_status_upload_finished {
     if (!upload_images()) {
         $update_status_running = 0;
         log_error('Job aborted because web UI doesn\'t accept new images anymore (likely considers this job dead)');
-        stop_job('abort');
+        stop_job('api-failure');
         return;
     }
 

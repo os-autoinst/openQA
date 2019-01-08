@@ -330,35 +330,46 @@ sub update_status {
         $self->render(json => {error => 'No status information provided'}, status => 400);
         return;
     }
-    my $status = $self->req->json->{status};
 
-    my $job = find_job($self, $self->stash('jobid'));
+    my $status = $self->req->json->{status};
+    my $job_id = $self->stash('jobid');
+    my $job    = find_job($self, $job_id);
     if (!$job) {
-        my $err = 'Got status update for non-existing job: ' . $self->stash('jobid');
+        my $err = 'Got status update for non-existing job: ' . $job_id;
         OpenQA::Utils::log_info($err);
         $self->render(json => {error => $err}, status => 400);
         return;
     }
 
     if (!exists $status->{worker_id}) {
-        my $err = 'Got status update for job ' . $self->stash('jobid') . ' but does not contain a worker id!';
+        my $err = 'Got status update for job ' . $job_id . ' but does not contain a worker id!';
         OpenQA::Utils::log_info($err);
         $self->render(json => {error => $err}, status => 400);
         return;
     }
 
-    if (!$job->worker || $job->worker->id != $status->{worker_id}) {
+    my $worker = $job->worker;
+    if (!$worker || $worker->id != $status->{worker_id}) {
         my $err
-          = 'Got status update for job '
-          . $self->stash('jobid')
-          . ' that does not belong to Worker '
-          . $status->{worker_id};
+          = "Got status update for job $job_id with unexpected worker ID $status->{worker_id}"
+          . ' (expected '
+          . ($worker ? $worker->id : 'none') . ')';
         OpenQA::Utils::log_info($err);
         $self->render(json => {error => $err}, status => 400);
         return;
     }
 
-    my $ret = $job->update_status($status);
+    my $ret;
+    try {
+        $ret = $job->update_status($status);
+    }
+    catch {
+        my $error_message = $_;
+        my $worker_name   = $worker->name;
+        $ret = {error => $error_message};
+        OpenQA::Utils::log_error(
+            "Unexpected error when updating job $job_id executed by worker $worker_name: $error_message");
+    };
     if (!$ret || $ret->{error} || $ret->{error_status}) {
         $ret = {} unless $ret;
         $ret->{error}        //= 'Unable to update status';

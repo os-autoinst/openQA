@@ -109,7 +109,7 @@ test_via_io_loop sub {
                 callback => sub { my $res = shift; is($res, undef, 'error handled'); Mojo::IOLoop->stop() });
             while (Mojo::IOLoop->is_running) { Mojo::IOLoop->singleton->reactor->one_tick }
         },
-        qr/.*\[ERROR\] Connection error:.*(remaining tries: 0).*\[DEBUG\] .* no job running.*/s,
+        qr/.*\[ERROR\] Connection error:.*(remaining tries: 0).*\[DEBUG\].*no job was running.*/s,
         'warning about 503 error'
     );
 };
@@ -268,16 +268,17 @@ subtest 'mock test stop_job' => sub {
     OpenQA::Worker::Jobs::update_status;
 
     OpenQA::Worker::Jobs::stop_job(0, 9999);
-    is $stop_job, 1, "stop_job() reached";
+    is($stop_job, 1, "stop_job() reached");
     print STDERR $stdout;
     my @matches = ($stdout =~ m/\[DEBUG\] updating status/g);
-    ok(@matches == 1, 'Updating status log');
+    my $ok      = is(scalar @matches, 1, 'Updating status log');
     @matches = ($stdout =~ m/\[DEBUG\] stop_job/g);
-    ok(@matches == 1, 'Stop job log');
+    $ok      = is(scalar @matches, 1, 'Stop job log') && $ok;
     @matches = ($stdout =~ m/\[DEBUG\] ## removing timer/g);
-    ok(@matches == 2, 'Changing timer log');
-    @matches = ($stdout =~ m/\[DEBUG\] waiting for update_status/g);
-    ok(@matches == 1, 'Waiting for update status log');
+    $ok      = is(scalar @matches, 2, 'Changing timer log') && $ok;
+    @matches = ($stdout =~ m/\[DEBUG\] postpone stopping until ongoing status update is concluded/g);
+    $ok      = is(scalar @matches, 1, 'Waiting for update status log') && $ok;
+    diag explain $stdout unless $ok;
 
     close STDOUT;
     open(STDOUT, '>&', $oldSTDOUT) or die "Can't dup \$oldSTDOUT: $!";
@@ -500,15 +501,15 @@ subtest 'handling upload finished' => sub {
 
     subtest 'behavor when result for status upload is undef' => sub {
         OpenQA::Worker::Jobs::handle_status_upload_finished($job_id, $upload_up_to, $callback, undef);
-        is($stop_job_aborted,     'abort', 'job aborted if status upload result is undef');
-        is($upload_images_called, 0,       'no image upload if status upload result is undef');
+        is($stop_job_aborted,     'api-failure', 'undefined status upload result is considered an API failure');
+        is($upload_images_called, 0,             'no image upload if status upload result is undef');
     };
 
     subtest 'behavior when image upload fails' => sub {
         $stop_job_aborted = 0;
         OpenQA::Worker::Jobs::handle_status_upload_finished($job_id, $upload_up_to, $callback, {});
-        is($upload_images_called, 1,       'image upload attempted');
-        is($stop_job_aborted,     'abort', 'job aborted if image upload fails');
+        is($upload_images_called, 1,             'image upload attempted');
+        is($stop_job_aborted,     'api-failure', 'failing image upload is considered an API failure');
     };
 
     subtest 'successful upload' => sub {
