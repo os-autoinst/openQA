@@ -3,9 +3,9 @@
 
 # add extra repos for leap
 source /etc/os-release
-if $NAME == "openSUSE Leap" ; then
-	zypper -n addrepo obs://devel:openQA devel:openQA
-	zypper -n addrepo obs://devel:openQA:Leap:${VERSION} devel:openQA:Leap:${VERSION}
+if [[ "$NAME" == "openSUSE Leap" ]] ; then
+	zypper -n addrepo -p 90 obs://devel:openQA devel:openQA
+	zypper -n addrepo -p 91 obs://devel:openQA:Leap:${VERSION} devel:openQA:Leap:${VERSION}
 	zypper -n  --gpg-auto-import-keys refresh
 fi
 
