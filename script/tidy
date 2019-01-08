@@ -20,6 +20,13 @@ if ! which perltidy > /dev/null 2>&1; then
     exit 1
 fi
 
+perltidy_version_found=$(perltidy -version | sed -n '1s/^.*perltidy, v\([0-9]*\)\s*$/\1/p')
+perltidy_version_expected=$(sed -n "s/^.*Tidy[^0-9]*\([0-9]*\)['];$/\1/p" ${0%/*}/../cpanfile)
+if [ "$perltidy_version_found" != "$perltidy_version_expected" ]; then
+    echo "Wrong version of perltidy. Found '$perltidy_version_found', expected '$perltidy_version_expected'"
+    exit 1
+fi
+
 function find_changed_files() {
     changed_files=()
     for file in "${files[@]}"; do
