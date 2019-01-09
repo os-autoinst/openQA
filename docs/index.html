@@ -1868,14 +1868,25 @@ on your machine.</p>
 /usr/share/openqa/script/openqa-bootstrap</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>If you happen to be using an old Leap 15.0 system which does not already have the
+openQA-bootstrap RPM in the repo you can simply download the openqa-bootstrap
+script - it will do the rest for you:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># get root</span>
+curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openqa-bootstrap <span class="tok-p">|</span> bash -x</code></pre>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_openqa_in_a_container">openQA in a container</h3>
 <div class="paragraph">
 <p>You can also setup a systemd-nspawn container with openQA with the following
-commands. This will only work on Tumbleweed and you need to have no application
-listening on port 80 yet because the container will share the host systems
-network stack.</p>
+commands. <strong>This will only work on Tumbleweed</strong> (or at least not before Leap 15.1)
+and you need to have no application listening on port 80 yet because the container
+will share the host system&#8217;s network stack.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -6904,7 +6915,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-01-09 10:02:23 UTC
+Last updated 2019-01-09 12:49:59 UTC
 </div>
 </div>
 </body>
