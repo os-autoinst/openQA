@@ -220,7 +220,7 @@ my %params;
 if ($options{params}) {
     local $/;
     open(my $fh, '<', $options{params});
-    my $info = JSON->new->relaxed->decode(<$fh>);
+    my $info = Cpanel::JSON::XS->new->relaxed->decode(<$fh>);
     close $fh;
     %params = %{$info};
 }
