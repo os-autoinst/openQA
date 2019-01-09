@@ -38,7 +38,7 @@
                 % }
             </div>
             <div class="col-sm-5">
-                <span class="developer-mode-element" id="developer-pause-reason" data-visible-on="isPaused">
+                <span class="developer-mode-element" id="developer-status-appendix" data-visible-on="isConnected">
                 </span>
             </div>
         </div>
@@ -102,6 +102,21 @@
                         <option value="assert_screen"><code>assert_screen</code> timeout</option>
                         <option value="check_screen"><code>assert_screen</code> and <code>check_screen</code> timeout</option>
                     </select>
+                </div>
+                <div class="col-sm-5">
+                    <label for="developer-pause-on-timeout" class="col-form-label">
+                        Pause on next command
+                    </label>
+                    <%= help_popover('Help for <i>pause on next command</i>' => '
+                        <p>
+                            Pauses the test execution on the next command. Failures/timeouts are not suppressed,
+                            though.
+                        </p>
+                        <p>A paused job still has the <code>MAX_JOB_TIME</code> constraint to be applied.</p>')
+                    %>
+                </div>
+                <div class="col-sm-7">
+                    <input type="checkbox" id="developer-pause-on-next-command">
                 </div>
             </div>
             <hr>
