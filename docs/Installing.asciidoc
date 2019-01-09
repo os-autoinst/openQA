@@ -34,12 +34,22 @@ zypper in openQA-bootstrap
 /usr/share/openqa/script/openqa-bootstrap
 -------------------------------------------------------------------------------
 
+If you happen to be using an old Leap 15.0 system which does not already have the
+openQA-bootstrap RPM in the repo you can simply download the openqa-bootstrap
+script - it will do the rest for you:
+
+[source,sh]
+-------------------------------------------------------------------------------
+# get root
+curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openqa-bootstrap | bash -x
+-------------------------------------------------------------------------------
+
 === openQA in a container
 
 You can also setup a systemd-nspawn container with openQA with the following
-commands. This will only work on Tumbleweed and you need to have no application
-listening on port 80 yet because the container will share the host systems
-network stack.
+commands. *This will only work on Tumbleweed* (or at least not before Leap 15.1)
+and you need to have no application listening on port 80 yet because the container
+will share the host system's network stack.
 
 [source,sh]
 -------------------------------------------------------------------------------
