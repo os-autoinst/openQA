@@ -320,8 +320,17 @@ sub engine_workit {
             eval { log_debug("Registered process:" . shift->pid, channels => 'worker'); };
         });
 
-    $child->_default_kill_signal(-POSIX::SIGTERM())->_default_blocking_signal(-POSIX::SIGKILL());
-    $child->set_pipes(0)->internal_pipes(0)->blocking_stop(1);
+    # disable additional pipes for process communication and retrieving process return/errors
+    $child->set_pipes(0);
+    $child->internal_pipes(0);
+
+    # configure how to stop the process again: attempt to send SIGTERM 5 times, fall back to SIGKILL
+    # after 5 seconds
+    $child->_default_kill_signal(-POSIX::SIGTERM());
+    $child->_default_blocking_signal(-POSIX::SIGKILL());
+    $child->max_kill_attempts(5);
+    $child->blocking_stop(1);
+    $child->kill_sleeptime(5);
 
     my $container
       = container(clean_cgroup => 1, pre_migrate => 1, cgroups => $cgroup, process => $child, subreaper => 0);
