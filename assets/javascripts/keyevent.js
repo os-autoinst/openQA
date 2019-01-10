@@ -1,8 +1,8 @@
-http://stackoverflow.com/questions/5681146/chrome-10-keyevent-or-something-similar-to-firefoxs-keyevent
+// http://stackoverflow.com/questions/5681146/chrome-10-keyevent-or-something-similar-to-firefoxs-keyevent
 
 // FIXME: key events may be differnt in other browsers:
 // http://www.javascripter.net/faq/keyeventconstantsfirefox.htm
-if (typeof KeyEvent == "undefined") {
+if (typeof KeyEvent === "undefined") {
     var KeyEvent = {
         DOM_VK_CANCEL: 3,
         DOM_VK_HELP: 6,

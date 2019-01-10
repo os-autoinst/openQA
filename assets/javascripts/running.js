@@ -672,7 +672,7 @@ function handlePauseOnMismatchSelected() {
     }
 
     var selectedValue = $('#developer-pause-on-mismatch').val();
-    var pauseOn = undefined;
+    var pauseOn;
     switch(selectedValue) {
         case "fail":
             pauseOn = null;

@@ -31,8 +31,8 @@ function loadWorkerTable() {
             var column = this;
             var colheader = this.header();
             var title = $(colheader).text().trim();
-            if ( title != "Status") {
-              return false
+            if (title !== "Status") {
+              return false;
             }
 
             var select = $('<select id="workers_online"><option value="">All</option></select>')

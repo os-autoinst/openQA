@@ -41,7 +41,7 @@ function renderCommentHeading(comment, commentId) {
 }
 
 function deleteComment(deleteButton) {
-    var deleteButton = $(deleteButton);
+    deleteButton = $(deleteButton);
     var author = deleteButton.data('author');
     var url = deleteButton.data('delete-url');
 
