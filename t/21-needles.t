@@ -86,7 +86,7 @@ subtest 'handling of last update' => sub {
             t_updated    => time2str('%Y-%m-%dT%H:%M:%S', time - ($seconds_per_day * 2.5)),
         });
 
-    $needle = $needles->find(1);
+    $needle->discard_changes;
     my $t_created          = $needle->t_created;
     my $t_updated          = $needle->t_updated;
     my $last_actual_update = $needle->last_updated;
@@ -94,14 +94,14 @@ subtest 'handling of last update' => sub {
 
     $needle->update({last_matched_time => $new_last_match});
 
-    $needle = $needles->find(1);
+    $needle->discard_changes;
     is($needle->last_updated, $t_created, 'last_updated not altered');
     ok($t_updated lt $needle->t_updated, 't_updated still updated');
     is($needle->last_matched_time, $new_last_match, 'last match updated');
 
     $needles->update_needle_from_editor($needle->directory->path, 'test-rootneedle', {tags => [qw(foo bar)]},);
 
-    $needle = $needles->find(1);
+    $needle->discard_changes;
     my $last_actual_update2 = $needle->last_updated;
     ok(
         $last_actual_update lt $last_actual_update2,
