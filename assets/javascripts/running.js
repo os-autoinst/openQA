@@ -200,10 +200,31 @@ function addDataListener(elem, callback) {
     // ensure any previously added event source is removed
     removeDataListener(elem);
 
-    // define callback function
+    // define callback function for response of OpenQA::WebAPI::Controller::Running::streamtext
     if (!elem.eventCallback) {
         elem.eventCallback = function(event) {
-            elem[0].innerHTML += JSON.parse(event.data)[0];
+            // define max size of the live log
+            // note: If not preventing the livelog from becoming too long the page would become unresponsive at a
+            //       certain length.
+            var maxLiveLogLength = 50 * 1024;
+
+            var firstElement = elem[0];
+            var currentData = firstElement.innerHTML;
+            var newData = JSON.parse(event.data)[0];
+            var newLength = currentData.length + newData.length;
+
+            // append if not exceeding the limit; otherwise cut the front
+            if (newLength < maxLiveLogLength) {
+                firstElement.innerHTML += newData;
+            } else {
+                var catData = currentData + newData;
+                var newStartIndex = newLength - maxLiveLogLength;
+
+                // discard one (probably) partial line (in accordance with OpenQA::WebAPI::Controller::Running::streamtext)
+                for (; catData[newStartIndex] !== "\n"; ++newStartIndex);
+
+                firstElement.innerHTML = catData.substr(newStartIndex);
+            }
             if (callback) {
                 callback();
             }
