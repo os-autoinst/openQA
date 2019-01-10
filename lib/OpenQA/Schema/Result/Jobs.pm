@@ -1694,16 +1694,17 @@ sub _job_stop_child {
     $job = $rset->search({id => $job, result => NONE})->first;
     return 0 unless $job;
 
-    if ($job->state eq SCHEDULED) {
+    if ($job->state eq SCHEDULED || $job->state eq ASSIGNED) {
         $job->release_networks;
         $job->update({result => SKIPPED, state => CANCELLED});
     }
     else {
         $job->update({result => PARALLEL_FAILED});
-        if ($job->worker) {
-            $job->worker->send_command(command => 'cancel', job_id => $job->id);
-        }
     }
+    if ($job->worker) {
+        $job->worker->send_command(command => 'cancel', job_id => $job->id);
+    }
+
     return 1;
 }
 
