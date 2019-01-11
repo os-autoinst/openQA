@@ -72,6 +72,7 @@
   /usr/bin/date rix,
   /usr/bin/dirname rix,
   /usr/bin/eatmydata rix,
+  /usr/bin/env rix,
   /usr/bin/find rix,
   /usr/bin/flock rix,
   /usr/bin/git rix,
