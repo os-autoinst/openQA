@@ -253,9 +253,9 @@ sub engine_workit {
         return $error if $error;
     }
 
-    $vars{ASSETDIR}   = $OpenQA::Utils::assetdir;
-    $vars{CASEDIR}    = OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
-    $vars{PRODUCTDIR} = OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+    $vars{ASSETDIR}   //= $OpenQA::Utils::assetdir;
+    $vars{CASEDIR}    //= OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+    $vars{PRODUCTDIR} //= OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
 
     _save_vars(\%vars);
 
