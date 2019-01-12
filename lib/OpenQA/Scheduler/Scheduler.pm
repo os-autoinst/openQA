@@ -25,6 +25,7 @@ use DateTime;
 use Mojo::URL;
 use Try::Tiny;
 use OpenQA::Jobs::Constants;
+use OpenQA::Schema::JobGroupDefaults;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
 use Scalar::Util 'weaken';
@@ -33,7 +34,7 @@ use lib $FindBin::Bin;
 use OpenQA::Utils qw(log_debug log_warning send_job_to_worker exists_worker);
 use db_helpers 'rndstr';
 use Time::HiRes 'time';
-use List::Util qw(all shuffle);
+use List::Util qw(all shuffle min max);
 use OpenQA::IPC;
 use OpenQA::Scheduler;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
@@ -41,6 +42,8 @@ use Carp;
 use Exporter 'import';
 
 our @EXPORT = qw(job_grab);
+# for unit tests (is there a better way?)
+our @EXPORT_OK = qw(offset_from_prio);
 
 state $summoned = 0;
 state $quit     = 0;
@@ -218,6 +221,22 @@ sub pick_siblings_of_running {
     }
 }
 
+# 50 is the default (at the moment of writing :)
+# we want a 1 for prio 50, a 0.1 for prio 100
+# and 10 for prio 0 so that high prio jobs get quicker
+# a multi machine peer
+sub offset_from_prio {
+    my $priority = shift;
+    $priority -= OpenQA::Schema::JobGroupDefaults::PRIORITY;
+
+    return 1 unless $priority;
+    if ($priority > 0) {
+        # low prio - low offset
+        return int(max(1, 10 - 0.18 * $priority)) / 10;
+    }
+    return int(min(100, 10 - 1.8 * $priority)) / 10;
+}
+
 =head2 _conclude_scheduling()
 
 Resets the summoned-state and the reactor interval.
@@ -251,10 +270,10 @@ sub schedule {
 
     my $all_workers = schema->resultset("Workers")->count();
 
+    # NOTE: $worker->connected is too expensive since it is over dbus, prefer dead.
     my @f_w = grep { !$_->dead && ($_->websocket_api_version() || 0) == WEBSOCKET_API_VERSION }
       schema->resultset("Workers")->search({job_id => undef, error => undef})->all();
 
-    # NOTE: $worker->connected is too much expensive since is over dbus, prefer dead.
     # shuffle avoids starvation if a free worker keeps failing.
     my @free_workers = $shuffle_workers ? shuffle(@f_w) : @f_w;
     if (@free_workers == 0) {
@@ -311,9 +330,9 @@ sub schedule {
                     # we only consider the priority of the main job
                     if ($j->{priority} > 0) {
                         # this means we will increase the offset per half-assigned job,
-                        # so if we miss 1/25 jobs, we'll bump by +24
+                        # so if we miss 1/25 jobs, we'll bump by +24 (on default prios)
                         log_debug "Discarding $ji->{id}($j->{priority}) due to incomplete cluster";
-                        $j->{priority_offset} += 1;
+                        $j->{priority_offset} += offset_from_prio($j->{priority});
                     }
                     else {
                         # don't "take" the worker, but make sure it's not
