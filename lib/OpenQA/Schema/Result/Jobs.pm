@@ -293,6 +293,12 @@ sub scenario {
     return $scenario;
 }
 
+sub scenario_description {
+    my ($self) = @_;
+    my $description = $self->result_source->schema->resultset('TestSuites')->find({ name => $self->TEST})->description;
+    return $description;
+}
+
 # return 0 if we have no worker
 sub worker_id {
     my ($self) = @_;
