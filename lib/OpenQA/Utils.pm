@@ -626,12 +626,14 @@ sub bugref_regex {
 
 sub find_bugref {
     my ($text) = @_;
+    $text //= '';
     $text =~ bugref_regex;
     return $+{match};
 }
 
 sub find_bugrefs {
     my ($text) = @_;
+    $text //= '';
     my @bugrefs;
     my $bugref_regex = bugref_regex;
 
