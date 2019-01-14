@@ -59,7 +59,7 @@
 %     my ($job) = @_;
 %     return '[' . $job->BUILD . '](' . url_for('test', testid => $job->id)->to_abs .  ')';
 % }
-% my $scenario = $job->scenario;
+% my $scenario = $job->scenario_name;
 % my $first_known_bad = build_link($job) . ' (current job)';
 % my $last_good = '(unknown)';
 % for my $prev ($job->_previous_scenario_jobs) {

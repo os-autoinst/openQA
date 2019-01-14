@@ -268,7 +268,7 @@ sub _show {
             distri                  => $job->DISTRI,
             version                 => $job->VERSION,
             build                   => $job->BUILD,
-            scenario                => $job->scenario,
+            scenario                => $job->scenario_name,
             worker                  => $worker,
             assigned_worker         => $job->assigned_worker,
             show_dependencies       => !defined($job->clone_id) && $job->has_dependencies,

@@ -69,6 +69,19 @@ sub _job_create {
     return $job;
 }
 
+subtest 'scenario description' => sub {
+    my $minimalx_job = $schema->resultset('Jobs')->find(99926);
+    is($minimalx_job->scenario_description, undef, 'return undef if no description');
+
+    my $minimalx_testsuite = $schema->resultset('TestSuites')->create(
+        {
+            name        => 'minimalx',
+            description => 'foobar',
+        });
+    is($minimalx_job->scenario_description, 'foobar', 'description returned');
+    $minimalx_testsuite->delete;
+};
+
 subtest 'initial job module statistics' => sub {
     # Those counters are not directly hardcoded in the jobs table of the fixtures.
     # Instead, the counters are automatically incremented when initializing the
