@@ -2,6 +2,7 @@
 % my $step_url = url_for('step')->to_abs;
 % my $module = stash('moduleid');
 % my %product_details = ();
+% my $scenario_description = $job->scenario_description // '';
 
 <% my %distri_to_product_url_new = (
     sle => 'https://bugzilla.suse.com/enter_bug.cgi',
@@ -58,7 +59,7 @@
 %     my ($job) = @_;
 %     return '[' . $job->BUILD . '](' . url_for('test', testid => $job->id)->to_abs .  ')';
 % }
-% my $scenario = $job->scenario;
+% my $scenario = $job->scenario_name;
 % my $first_known_bad = build_link($job) . ' (current job)';
 % my $last_good = '(unknown)';
 % for my $prev ($job->_previous_scenario_jobs) {
@@ -73,6 +74,9 @@
 
 openQA test in scenario $scenario fails in
 [$module]($step_url)
+
+## Test suite description
+$scenario_description
 
 
 ## Reproducible
