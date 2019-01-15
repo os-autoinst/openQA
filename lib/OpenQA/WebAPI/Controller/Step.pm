@@ -362,17 +362,14 @@ sub src {
 sub _commit_git {
     my ($self, $job, $dir, $name) = @_;
 
-    my @files = ($dir . '/' . $name . '.json', $dir . '/' . $name . '.png');
+    my $error = commit_git(
+        {
+            dir     => $dir,
+            add     => ["$dir/$name.json", "$dir/$name.png"],
+            user    => $self->current_user,
+            message => sprintf("%s for %s", $name, $job->name)}) or return undef;
 
-    my $args = {
-        dir     => $dir,
-        add     => \@files,
-        user    => $self->current_user,
-        message => sprintf("%s for %s", $name, $job->name)};
-    if (!commit_git($args)) {
-        die "failed to git commit $name";
-    }
-    return;
+    die "failed to git commit $name: $error";
 }
 
 sub _json_validation($) {

@@ -61,7 +61,6 @@ our @EXPORT  = qw(
   &run_cmd_with_log
   &run_cmd_with_log_return_error
   &commit_git
-  &commit_git_return_error
   &parse_assets_from_settings
   &find_bugref
   &find_bugrefs
@@ -484,11 +483,6 @@ sub run_cmd_with_log_return_error($) {
 }
 
 sub commit_git {
-    my ($args) = @_;
-    return commit_git_return_error($args) ? undef : 1;
-}
-
-sub commit_git_return_error {
     my ($args) = @_;
 
     my $dir = $args->{dir};
