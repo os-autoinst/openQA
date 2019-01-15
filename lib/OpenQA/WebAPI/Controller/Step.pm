@@ -461,6 +461,22 @@ sub save_needle_ajax {
         return $self->render(json => {error => "Image $imagename could not be found!"});
     }
 
+    # check whether needle directory actually exists
+    if (!$needledir || !(-d $needledir)) {
+        return $self->render(
+            json => {
+                error => $needledir ? "$needledir is not a directory" : 'no needle directory'
+            });
+    }
+
+    # ensure needle dir is up-to-date
+    my $push_to_git_repository = ($self->app->config->{global}->{scm} || '') eq 'git';
+    if ($push_to_git_repository) {
+        if (my $error = set_to_latest_git_master({dir => $needledir})) {
+            return $self->render(json => {error => $error});
+        }
+    }
+
     # do not overwrite the exist needle if disallow to overwrite
     my $baseneedle = "$needledir/$needlename";
     if (-e "$baseneedle.png" && !$self->param('overwrite')) {
@@ -491,10 +507,7 @@ sub save_needle_ajax {
 
     # commit needle in Git repository
     $self->app->gru->enqueue('scan_needles');
-    if (($self->app->config->{global}->{scm} || '') eq 'git') {
-        if (!$needledir || !(-d "$needledir")) {
-            return $self->render(json => {error => "$needledir is not a directory"});
-        }
+    if ($push_to_git_repository) {
         try {
             $self->_commit_git($job, $needledir, $needlename);
         }

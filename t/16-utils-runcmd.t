@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2015-2016 SUSE LLC
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,43 +29,128 @@ use OpenQA::Utils;
 use OpenQA::Test::Case;
 use Mojo::File 'tempdir';
 use Test::More;
+use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings;
 use Test::Output qw(stderr_like);
 
-my $schema = OpenQA::Test::Case->new->init_data;
+# allow catching log messages via stdout_like
+delete $ENV{OPENQA_LOGFILE};
 
-ok(run_cmd_with_log([qw(echo Hallo Welt)]), 'run simple command');
+my $schema     = OpenQA::Test::Database->new->create();
+my $first_user = $schema->resultset('Users')->first;
 
-stderr_like {
-    is(run_cmd_with_log([qw(false)]), '');
-}
-qr/[WARN].*[ERROR]/i;    # error printed on stderr
+subtest 'run (arbitrary) command' => sub {
+    ok(run_cmd_with_log([qw(echo Hallo Welt)]), 'run simple command');
+    stderr_like(
+        sub {
+            is(run_cmd_with_log([qw(false)]), '');
+        },
+        qr/[WARN].*[ERROR]/i
+    );
 
-my $res = run_cmd_with_log_return_error([qw(echo Hallo Welt)]);
-ok($res->{status}, 'status ok');
-is($res->{stderr}, 'Hallo Welt', 'cmd output returned');
+    my $res = run_cmd_with_log_return_error([qw(echo Hallo Welt)]);
+    ok($res->{status}, 'status ok');
+    is($res->{stderr}, 'Hallo Welt', 'cmd output returned');
 
-stderr_like {
-    $res = run_cmd_with_log_return_error([qw(false)]);
-}
-qr/.*\[ERROR\] cmd returned non-zero value/i;
-ok(!$res->{status}, 'status not ok (non-zero status returned)');
+    stderr_like(
+        sub {
+            $res = run_cmd_with_log_return_error([qw(false)]);
+        },
+        qr/.*\[error\].*cmd returned [1-9][0-9]*/i
+    );
+    ok(!$res->{status}, 'status not ok (non-zero status returned)');
+};
 
-my $empty_tmp_dir = tempdir();
-stderr_like {
-    $res = commit_git_return_error {
-        dir     => $empty_tmp_dir,
-        cmd     => 'status',
-        message => 'test',
-        user    => $schema->resultset('Users')->first
-    };
-}
-qr/fatal: Not a git repository.*\n.*cmd returned non-zero value/i;
-like(
-    $res,
-    qr'^Unable to commit via Git: fatal: (N|n)ot a git repository \(or any of the parent directories\): \.git$',
-    'Git error message returned'
-);
+subtest 'make git commit (error handling)' => sub {
+    my $empty_tmp_dir = tempdir();
+    my $res;
+    stderr_like(
+        sub {
+            $res = commit_git {
+                dir     => $empty_tmp_dir,
+                user    => $first_user,
+                cmd     => 'status',
+                message => 'test',
+            };
+        },
+        qr/.*\[warn\].*fatal: Not a git repository.*\n.*cmd returned [1-9][0-9]*/i
+    );
+    like(
+        $res,
+        qr'^Unable to commit via Git: fatal: (N|n)ot a git repository \(or any of the parent directories\): \.git$',
+        'Git error message returned'
+    );
+};
+
+# setup a Mojo app after all because the git commands need it
+my $t = Test::Mojo->new('OpenQA::WebAPI');
+
+subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
+    # setup mocking
+    my @executed_commands;
+    my $utils_mock        = Test::MockModule->new('OpenQA::Utils');
+    my %mock_return_value = (
+        status => 1,
+        stderr => undef,
+    );
+    $utils_mock->mock(
+        run_cmd_with_log_return_error => sub {
+            my ($cmd) = @_;
+            push(@executed_commands, $cmd);
+            return \%mock_return_value;
+        });
+
+    # test set_to_latest_git_master (non-error case)
+    is(set_to_latest_git_master({dir => 'foo/bar'}), undef, 'no error occured');
+    is_deeply(
+        \@executed_commands,
+        [[qw(git -C foo/bar fetch origin master:master)], [qw(git -C foo/bar rebase origin/master)],],
+        'git fetch and reset executed',
+    ) or diag explain \@executed_commands;
+
+    # test set_to_latest_git_master (error case)
+    @executed_commands         = ();
+    $mock_return_value{status} = 0;
+    $mock_return_value{stderr} = 'mocked error';
+    is(
+        set_to_latest_git_master({dir => 'foo/bar'}),
+        'Unable to fetch from origin master: mocked error',
+        'an error occured on fetch'
+    );
+    is_deeply(\@executed_commands, [[qw(git -C foo/bar fetch origin master:master)],], 'git reset not attempted',)
+      or diag explain \@executed_commands;
+
+    # test commit_git
+    @executed_commands = ();
+    $mock_return_value{status} = 1;
+    is(
+        commit_git(
+            {
+                dir     => '/repo/path',
+                user    => $first_user,
+                message => 'some test',
+                add     => [qw(foo.png foo.json)],
+                rm      => [qw(bar.png bar.json)],
+            }
+        ),
+        undef,
+        'no error occured'
+    );
+    is_deeply(
+        \@executed_commands,
+        [
+            [qw(git -C /repo/path add foo.png foo.json)],
+            [qw(git -C /repo/path rm bar.png bar.json)],
+            [
+                qw(git -C /repo/path commit -q -m),
+                'some test',
+                '--author=openQA system user <noemail@open.qa>',
+                qw(foo.png foo.json bar.png bar.json)
+            ],
+        ],
+        'changes staged and committed',
+    ) or diag explain \@executed_commands;
+};
 
 done_testing();
