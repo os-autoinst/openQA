@@ -245,7 +245,7 @@ NeedleDiff.prototype.draw = function() {
   // Draw the handle
   this.ctx.fillStyle = "rgb(255, 145, 75)";
   this.ctx.fillRect(split - 1, 0, 2, this.height);
-}
+};
 
 NeedleDiff.prototype.mousedown = function(event) {
   event._x *= (this.width/event.currentTarget.clientWidth);
@@ -282,7 +282,7 @@ NeedleDiff.prototype.mousemove = function(event) {
 
 NeedleDiff.prototype.mouseup = function(event) {
   this.dragstart = false;
-}
+};
 
 NeedleDiff.strokecolors = {
     ok:           'rgb( 64, 224, 208)',
@@ -352,10 +352,11 @@ function setNeedle(sel, kind) {
     kind = window.differ.fullNeedleImg ? 'full-diff' : 'area-only-diff';
   }
   // set parameter according to the selected kind of diff
+  var assignFullNeedleImg;
   if (kind === 'area-only-diff') {
-    var assignFullNeedleImg = false;
+    assignFullNeedleImg = false;
   } else if (kind === 'full-diff') {
-    var assignFullNeedleImg = true;
+    assignFullNeedleImg = true;
   } else {
     window.alert(kind + ' is not available (yet)!');
     return;

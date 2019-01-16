@@ -1,5 +1,4 @@
 function newFeature(featureVersion) {
-
     var currentFeature;
 
     //Create variable for each tour
@@ -8,7 +7,9 @@ function newFeature(featureVersion) {
         //Enable to save progress local, necessary for multipage traversal
         storage: window.localStorage,
         template: changeTemplate(),
-        onShown: function(){return dontShow(), currentFeature = 2, quitTour(currentFeature)}
+        onShown: function() {
+            return dontShow(), currentFeature = 2, quitTour(currentFeature);
+        },
     });
 
     //Add steps to the tour
@@ -43,12 +44,14 @@ function newFeature(featureVersion) {
                 "<button class='btn btn-default' data-role='next'id='next'>Next »</button>"+
                 "<button class='btn btn-default' data-role='end' id='end'>Quit</button>"+
                 "</div>"+
-                "</div>")
-    };
+                "</div>");
+    }
 
     function quitTour(currentFeature){
-        $('#end').on('click', function(){return endTour(currentFeature)});
-    };
+        $('#end').on('click', function(){
+            return endTour(currentFeature);
+        });
+    }
 
     function initTour(featureVersion) {
         if ((2 > featureVersion) && (featureVersion != 0)) {
@@ -57,20 +60,17 @@ function newFeature(featureVersion) {
             tour01._current = null;
             //Start the tour
             tour01.start();
-        };
-    };
+        }
+    }
 
     //Return progress (seen features) to database
     function endTour(currentFeature) {
         $.ajax({
             url: '/api/v1/feature',
             method: 'POST',
-            data:
-                {
-                  'version' : currentFeature,
-                }
+            data: { version: currentFeature },
         });
-    };
+    }
 
     //Give user the opportunity to disable feature notfications
     function dontShow() {
@@ -84,10 +84,10 @@ function newFeature(featureVersion) {
                 $("#confirm").attr('id', 'end');
                 $("#end").text('Quit');
             }
-
-        $('#confirm').on('click', function(){
-          currentFeature = 0;
-          return endTour(currentFeature);
+            $('#confirm').on('click', function() {
+                currentFeature = 0;
+                return endTour(currentFeature);
+            });
         });
-    })};
-};
+    }
+}

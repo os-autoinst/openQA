@@ -26,14 +26,14 @@ NeedleEditor.prototype.init = function() {
   if (this.tags) {
     // If tags is empty, we must populate it with a checkbox for every tag
     if (this.tags.getElementsByTagName('input').length == 0) {
-      this.needle['tags'].forEach(function(tag) {
+      this.needle.tags.forEach(function(tag) {
         this.AddTag(tag, true);
       }.bind(this));
       // If the checkboxes are already there, we simply check them all
     } else {
       var inputs = this.tags.getElementsByTagName('input');
       for (var i = 0; i < inputs.length; i++) {
-        if (this.needle['tags'].indexOf(inputs[i].value) >= 0) {
+        if (this.needle.tags.indexOf(inputs[i].value) >= 0) {
           inputs[i].checked = true;
         } else {
           inputs[i].checked = false;
@@ -52,8 +52,8 @@ NeedleEditor.prototype.init = function() {
     }
     var shape = cv.get_shape(idx);
     var a = editor.needle.area[idx];
-    a['type'] = NeedleEditor.nexttype(a['type']);
-    shape.fill = NeedleEditor.areacolor(a['type']);
+    a.type = NeedleEditor.nexttype(a.type);
+    shape.fill = NeedleEditor.areacolor(a.type);
     editor.UpdateTextArea();
     cv.redraw();
   }, true);
@@ -63,7 +63,7 @@ NeedleEditor.prototype.init = function() {
     if (e.keyCode == KeyEvent.DOM_VK_DELETE) {
       var idx = cv.get_selection_idx();
       if (idx != -1) {
-        editor.needle['area'].splice(idx, 1);
+        editor.needle.area.splice(idx, 1);
         cv.delete_shape_idx(idx);
         editor.UpdateTextArea();
       }
@@ -77,10 +77,10 @@ NeedleEditor.prototype.init = function() {
   cv.shape_changed_cb = function(shape) {
     var idx = cv.get_shape_idx(shape);
     var a = editor.needle.area[idx];
-    a['xpos'] = shape.x;
-    a['ypos'] = shape.y;
-    a['width'] = shape.w;
-    a['height'] = shape.h;
+    a.xpos = shape.x;
+    a.ypos = shape.y;
+    a.width = shape.w;
+    a.height = shape.h;
     editor.UpdateTextArea();
   };
   cv.new_shape_cb = function(x, y) {
@@ -105,7 +105,7 @@ NeedleEditor.prototype.UpdateTextArea = function() {
   if (this.textarea) {
     this.textarea.value = JSON.stringify(this.needle, null, "  ");
   }
-}
+};
 
 NeedleEditor.prototype.AddTag = function(tag, checked) {
   var input = document.createElement('input');
@@ -126,7 +126,7 @@ NeedleEditor.prototype.AddTag = function(tag, checked) {
   div.appendChild(label);
   this.tags.appendChild(div);
   return input;
-}
+};
 
 NeedleEditor.nexttype = function(type) {
   if (type == 'match') {
@@ -138,7 +138,7 @@ NeedleEditor.nexttype = function(type) {
 };
 
 NeedleEditor.ShapeFromArea = function(a) {
-  return new Shape(a['xpos'], a['ypos'], a['width'], a['height'], NeedleEditor.areacolor(a['type']));
+  return new Shape(a.xpos, a.ypos, a.width, a.height, NeedleEditor.areacolor(a.type));
 };
 
 NeedleEditor.prototype.DrawAreas = function() {
@@ -147,7 +147,7 @@ NeedleEditor.prototype.DrawAreas = function() {
   if (!editor.cv)
     return false;
 
-  jQuery.each(editor.needle['area'], function(index, area) {
+  jQuery.each(editor.needle.area, function(index, area) {
     editor.cv.addShape(NeedleEditor.ShapeFromArea(area));
   });
   return true;
@@ -164,9 +164,9 @@ NeedleEditor.prototype.LoadBackground = function(url) {
 };
 
 NeedleEditor.prototype.LoadTags = function(tags) {
-  this.needle['tags'] = tags;
+  this.needle.tags = tags;
   this.UpdateTextArea();
-}
+};
 
 NeedleEditor.prototype.LoadNeedle = function(url) {
   var editor = this;
@@ -176,15 +176,11 @@ NeedleEditor.prototype.LoadNeedle = function(url) {
     if (this.readyState != 4) {
       return;
     }
-    if (this.status == 200)
-    {
-      var needle = JSON.parse(this.responseText);
-      editor.needle = needle;
+    if (this.status == 200) {
+      editor.needle = JSON.parse(this.responseText);
       editor.init();
-    } else if (this.status == 404)
-    {
-      var needle = JSON.parse('{ "area": [], "tags": [] , "properties": [] }');
-      editor.needle = needle;
+    } else if (this.status == 404) {
+      editor.needle = JSON.parse('{ "area": [], "tags": [] , "properties": [] }');
       editor.init();
     } else {
       var ctx = editor.canvas.getContext("2d");
@@ -194,23 +190,23 @@ NeedleEditor.prototype.LoadNeedle = function(url) {
   };
   x.open("GET", url, true);
   x.send();
-}
+};
 
 NeedleEditor.prototype.LoadAreas = function(areas) {
   var editor = this;
 
-  editor.needle["area"] = areas;
+  editor.needle.area = areas;
   if (this.cv) {
     this.cv.delete_shapes();
   }
   this.DrawAreas();
   this.UpdateTextArea();
-}
+};
 
 NeedleEditor.areacolors = {
-  'match':   'rgba(  0, 255, 0, .5)',
-  'exclude': 'rgba(255,   0, 0, .5)',
-  'ocr':     'rgba(255, 255, 0, .5)',
+  match:   'rgba(  0, 255, 0, .5)',
+  exclude: 'rgba(255,   0, 0, .5)',
+  ocr:     'rgba(255, 255, 0, .5)',
 };
 
 NeedleEditor.areacolor = function(type) {
@@ -218,10 +214,10 @@ NeedleEditor.areacolor = function(type) {
     return NeedleEditor.areacolors[type];
   }
   return "pink";
-}
+};
 
 NeedleEditor.prototype.changeTag = function(name, enabled) {
-  var tags = this.needle['tags'];
+  var tags = this.needle.tags;
   if (enabled) {
     tags.push(name);
     tags.sort();
@@ -230,10 +226,10 @@ NeedleEditor.prototype.changeTag = function(name, enabled) {
     tags.splice(idx, 1);
   }
   this.UpdateTextArea();
-}
+};
 
 NeedleEditor.prototype.changeProperty = function(name, enabled) {
-  var properties = this.needle['properties'];
+  var properties = this.needle.properties;
   if (enabled) {
     properties.push(name);
     properties.sort();
@@ -242,51 +238,51 @@ NeedleEditor.prototype.changeProperty = function(name, enabled) {
     properties.splice(idx, 1);
   }
   this.UpdateTextArea();
-}
+};
 
 NeedleEditor.prototype.setMargin = function(value) {
   var idx = this.cv.get_selection_idx();
   if (idx == -1) {
-    if (!this.needle["area"].length) {
+    if (!this.needle.area.length) {
       return;
     }
     idx = 0;
   }
-  this.needle['area'][idx].margin = parseInt(value);
+  this.needle.area[idx].margin = parseInt(value);
   this.UpdateTextArea();
-}
+};
 
 NeedleEditor.prototype.setMatch = function(value) {
   var idx = this.cv.get_selection_idx();
-  if (idx == -1) {
-    if (!this.needle["area"].length) {
+  if (idx === -1) {
+    if (!this.needle.area.length) {
       return;
     }
     idx = 0;
   }
 
-  this.needle['area'][idx].match = parseFloat(value);
+  this.needle.area[idx].match = parseFloat(value);
   this.UpdateTextArea();
-}
+};
 
 function loadBackground() {
   var needle = window.needles[$('#image_select option:selected').val()];
-  nEditor.LoadBackground(needle['imageurl']);
-  $("#needleeditor_image").val(needle['imagename']);
-  $("#needleeditor_imagedistri").val(needle['imagedistri']);
-  $("#needleeditor_imageversion").val(needle['imageversion']);
-  $("#needleeditor_imagedir").val(needle['imagedir']);
+  nEditor.LoadBackground(needle.imageurl);
+  $("#needleeditor_image").val(needle.imagename);
+  $("#needleeditor_imagedistri").val(needle.imagedistri);
+  $("#needleeditor_imageversion").val(needle.imageversion);
+  $("#needleeditor_imagedir").val(needle.imagedir);
 }
 
 function loadTagsAndName() {
   var needle = window.needles[$('#tags_select option:selected').val()];
-  var tags = needle['tags'];
+  var tags = needle.tags;
   $("#needleeditor_tags").find('input').each(function() {
-    $(this).prop('checked', tags.indexOf($(this).val()) != -1);
+    $(this).prop('checked', tags.indexOf($(this).val()) !== -1);
   });
   $("#property_workaround").prop('checked', $.inArray('workaround', needle.properties) !== -1);
-  $("#needleeditor_name").val(needle['suggested_name']);
-  $("#area_select").val(needle['name']);
+  $("#needleeditor_name").val(needle.suggested_name);
+  $("#area_select").val(needle.name);
   loadAreas();
   nEditor.LoadTags(tags);
 }
@@ -368,8 +364,7 @@ function saveNeedle(e) {
   }
   var areaSelection = window.needles[$('#area_select').val()];
   var takeMatches = $('#take_matches').prop('checked');
-  if((!takeMatches && !areaSelection.area.length)
-      || (takeMatches && !areaSelection.matches.length)) {
+  if((!takeMatches && !areaSelection.area.length) || (takeMatches && !areaSelection.matches.length)) {
       errors.push('No areas defined.');
   }
   if(errors.length) {
@@ -429,23 +424,23 @@ function setup_needle_editor(imageurl, default_needle)
 
   $('#change-margin-form').on('show.bs.modal', function() {
     var idx = nEditor.cv.get_selection_idx();
-    if (idx == -1) {
-      if (!this.needle["area"].length) {
+    if (idx === -1) {
+      if (!this.needle.area.length) {
         return;
       }
       idx = 0;
     }
-    $('#margin').val(nEditor.needle['area'][idx].margin || 50);
+    $('#margin').val(nEditor.needle.area[idx].margin || 50);
   });
   $('#change-match-form').on('show.bs.modal', function() {
     var idx = nEditor.cv.get_selection_idx();
     if (idx == -1) {
-      if (!this.needle["area"].length) {
+      if (!this.needle.area.length) {
         return;
       }
       idx = 0;
     }
-    $('#match').val(nEditor.needle['area'][idx].match || 96);
+    $('#match').val(nEditor.needle.area[idx].match || 96);
   });
 
   $('#review_json').popover({

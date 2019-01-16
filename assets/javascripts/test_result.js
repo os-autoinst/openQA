@@ -350,11 +350,11 @@ function setupExternalResults() {
             return true;
         }
         // filter out everything but failures and softfailures
-        var data = externalTable.row(dataIndex).data();
-        if (!data) {
+        var rowData = externalTable.row(dataIndex).data();
+        if (!rowData) {
             return false;
         }
-        var result = data[2];
+        var result = rowData[2];
         return result && (result.indexOf('result_fail') > 0 || result.indexOf('result_softfail') > 0);
     });
 }

@@ -25,15 +25,16 @@ function hideNavbar(fullscreen) {
             navbar.hide();
         }
     }, false);
-};
+}
 
 function autoRefresh(fullscreen, interval) {
-    if (fullscreen == 1) {
-        $($(document).ready(function() {
-            setInterval(function() {
-                $("#build-results").load(location.href + " #build-results");
-                $("#comments-preview").load(location.href + " #comments-preview");
-            }, interval*1000);
-        }));
-    };
-};
+    if (fullscreen != 1) {
+        return;
+    }
+    $($(document).ready(function() {
+        setInterval(function() {
+            $("#build-results").load(location.href + " #build-results");
+            $("#comments-preview").load(location.href + " #comments-preview");
+        }, interval * 1000);
+    }));
+}
