@@ -1,4 +1,7 @@
 #!/bin/bash -x
+set -e
+: ${dbname:="openqa"}
+: ${dbuser:="geekotest"}
 
 
 # add extra repos for leap
@@ -16,15 +19,15 @@ zypper -n install --no-recommends openQA-local-db apache2 openQA-worker qemu-kvm
 
 # setup database
 systemctl enable --now postgresql
-su postgres -c "createuser -D geekotest"
-su postgres -c "createdb -O geekotest openqa"
+getent passwd $dbuser || su postgres -c "createuser -D $dbuser"
+su postgres -c "psql -lqt" | cut -d \| -f 1 | grep -qw $dbname || su postgres -c "createdb -O $dbuser $dbname"
 
 
 # setup webserver and fake-auth
 # from script/setup-single-instance (https://github.com/os-autoinst/openQA/pull/1933)
 for i in headers proxy proxy_http proxy_wstunnel rewrite ; do a2enmod $i ; done
 sed -i -e 's/^.*httpsonly.*$/httpsonly = 0/g' /etc/openqa/openqa.ini
-sed -i -e 's/#.*method.*OpenID.*$/&\nmethod = Fake/' /etc/openqa/openqa.ini
+sed -i -e 's/#*.*method.*=.*$/method = Fake/' /etc/openqa/openqa.ini
 sed "s/#ServerName.*$/ServerName $(hostname)/" /etc/apache2/vhosts.d/openqa.conf.template > /etc/apache2/vhosts.d/openqa.conf
 
 
@@ -50,8 +53,8 @@ fi
 
 if ping -c1 gitlab.suse.de. ; then
 	# clone SLE needles if run from within SUSE network
-	git clone https://gitlab.suse.de/openqa/os-autoinst-needles-sles.git /var/lib/openqa/tests/opensuse/products/sle/needles
-	chown -R geekotest: /var/lib/openqa/tests/opensuse/products/sle/needles
+	[ -d /var/lib/openqa/tests/opensuse/products/sle/needles ] || git clone https://gitlab.suse.de/openqa/os-autoinst-needles-sles.git /var/lib/openqa/tests/opensuse/products/sle/needles
+	chown -R $dbuser: /var/lib/openqa/tests/opensuse/products/sle/needles
 fi
 
 
@@ -77,7 +80,7 @@ done
 curl http://localhost/login # create demo user (id=2)
 API_KEY=$(hexdump -n 8 -e '2/4 "%08X" 1 "\n"' /dev/random)
 API_SECRET=$(hexdump -n 8 -e '2/4 "%08X" 1 "\n"' /dev/random)
-echo "INSERT INTO api_keys (key, secret, user_id, t_created, t_updated) VALUES ('${API_KEY}', '${API_SECRET}', 2, NOW(), NOW());" | su postgres -c 'psql openqa'
+echo "INSERT INTO api_keys (key, secret, user_id, t_created, t_updated) VALUES ('${API_KEY}', '${API_SECRET}', 2, NOW(), NOW());" | su postgres -c "psql $dbname"
 
 cat >> /etc/openqa/client.conf <<EOF
 [localhost]
