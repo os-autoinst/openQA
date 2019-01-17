@@ -195,7 +195,7 @@ sub get_job {
     my $job;
     my $url = $remote_url->clone;
     $url->path("jobs/$jobid");
-    my $tx = $remote->max_redirects(3)->get($url);
+    my $tx = $remote->max_redirects(3)->connect_timeout(3)->get($url);
     if (!$tx->error) {
         if ($tx->res->code == 200) {
             $job = $tx->res->json->{job};

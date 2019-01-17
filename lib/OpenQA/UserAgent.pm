@@ -65,6 +65,27 @@ sub new {
     return $self;
 }
 
+sub get {
+    my ($self, $url) = @_;
+
+    my $tx;
+
+    # Resolve the URL manually in case one of the routes doesn't work
+    use Socket;
+    my ($err, @addrs) = Socket::getaddrinfo($url->host);
+    for my $addr (@addrs) {
+        my ($err, $host) = Socket::getnameinfo($addr->{addr}, Socket::NI_NUMERICHOST);
+        $url->host($host);
+        $tx = $self->SUPER::get($url);
+        if (!$tx->error) {
+          last;
+        }
+        warn "failed to resolve $host: ".$tx->error->{message};
+    }
+
+    return $tx;
+};
+
 sub _add_auth_headers {
     my ($self, $ua, $tx) = @_;
 
