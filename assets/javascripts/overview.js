@@ -46,9 +46,21 @@ function setupOverview() {
     setupFilterForm();
     $('#filter-todo').prop('checked', false);
 
+    // initialize filter for modules results
+    var modulesResultFilter = $('#modules_result');
+    modulesResultFilter.chosen({width: "100%"});
+    modulesResultFilter.change(function(event) {
+        // update query params
+        var params = parseQueryParams();
+        params.modules_results = modulesResultFilter.val();
+    });
+
+    modulesResultFilter.chosen({width: "100%"});
+
     // find specified results
     var results = {};
     var states = {};
+    var modules_results = [];
 
     var formatFilter = function(filter) {
         return filter.replace(/_/g, ' ');
@@ -69,6 +81,13 @@ function setupOverview() {
         } else if (key === 'failed_modules') {
             $('#filter-failed_modules').prop('value', val);
             return val;
+        } else if (key === 'modules') {
+            $('#modules').prop('value', val);
+            return val;
+        } else if (key === 'modules_result') {
+            modules_results.push(val);
+            modulesResultFilter.val(modules_results).trigger('chosen:updated').trigger('change');
+            return formatFilter(val);
         }
     });
 
