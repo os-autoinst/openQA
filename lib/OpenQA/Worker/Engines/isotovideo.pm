@@ -160,6 +160,46 @@ sub cache_assets {
     return undef;
 }
 
+# do asset caching if CACHEDIRECTORY is set
+sub do_asset_caching {
+    my ($vars, $shared_cache) = @_;
+    my $assetkeys = detect_asset_keys($vars);
+    if (!$worker_settings->{CACHEDIRECTORY}) {
+        my $error = locate_local_assets($vars, $assetkeys);
+        return $error if $error;
+        return;
+    }
+
+    my $host_to_cache = OpenQA::Worker::Cache::_base_host($current_host);
+    my $error         = cache_assets($job => $vars => $assetkeys);
+    return $error if $error;
+
+    # do test caching if TESTPOOLSERVER is set
+    if ($hosts->{$current_host}{testpoolserver}) {
+        $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
+
+        my $cache_client  = OpenQA::Worker::Cache::Client->new;
+        my $rsync_request = $cache_client->request->rsync(
+            from => $hosts->{$current_host}{testpoolserver},
+            to   => $shared_cache
+        );
+
+        $vars->{PRJDIR} = $shared_cache;
+
+        # TODO: Enqueue all requests in one place
+        return {error => "Failed to send rsync cache request"} unless $rsync_request->enqueue;
+
+        sleep 5 and update_setup_status until $rsync_request->processed;
+        # treat "no sync necessary" as success as well
+        my $exit = $rsync_request->result // 0;
+
+        if (my $output = $rsync_request->output) { log_info("rsync: " . $output, channels => 'autoinst') }
+        return {error => "Failed to rsync tests: exit code: $exit"} unless (defined $exit && $exit == 0);
+
+        $shared_cache = catdir($shared_cache, 'tests');
+    }
+}
+
 sub engine_workit {
     my ($job)           = @_;
     my $worker          = $job->worker;
@@ -211,7 +251,6 @@ sub engine_workit {
     log_debug(join("\n", '', map { "    $_=$vars{$_}" } sort keys %vars));
 
     my $shared_cache;
-
     my $assetkeys = detect_asset_keys(\%vars);
 
     # do asset caching if CACHEDIRECTORY is set
