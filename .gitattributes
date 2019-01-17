@@ -1,0 +1,3 @@
+*.pm linguist-language=Perl
+*.t linguist-language=Perl
+*.pl linguist-language=Perl
