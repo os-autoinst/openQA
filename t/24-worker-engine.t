@@ -20,6 +20,7 @@ use FindBin;
 use lib ("$FindBin::Bin/lib", "$FindBin::Bin/../lib");
 use Test::Fatal;
 use Test::More;
+use Test::Output qw(stdout_like stderr_like);
 use Test::Warnings;
 use OpenQA::Worker;
 use Test::MockModule;
@@ -101,5 +102,19 @@ subtest 'caching' => sub {
     );
     my $cache_client = Test::MockModule->new('OpenQA::Worker::Cache::Client');
 };
+
+$got = OpenQA::Worker::Engines::isotovideo::do_asset_caching($settings);
+like($got->{error}, qr/Cannot find .* asset/, 'Local assets are tried to be found on no caching') or diag explain $got;
+$OpenQA::Worker::Common::worker_settings = {CACHEDIRECTORY => 'FOO'};
+$OpenQA::Worker::Common::current_host    = 'host1';
+my $asset_mock = Test::MockModule->new('OpenQA::Worker::Engines::isotovideo');
+$asset_mock->mock(cache_assets => sub { });
+$got = OpenQA::Worker::Engines::isotovideo::do_asset_caching($settings);
+is($got, undef, 'Assets cached but not tests');
+$OpenQA::Worker::Common::hosts->{host1} = {testpoolserver => 'foo'};
+$asset_mock->mock(sync_tests => sub { 0 });
+$got = OpenQA::Worker::Engines::isotovideo::do_asset_caching($settings);
+is($got,                'FOO/host1/tests', 'Cache directory updated');
+is($settings->{PRJDIR}, 'FOO/host1',       'Project dir was updated to cache');
 
 done_testing();
