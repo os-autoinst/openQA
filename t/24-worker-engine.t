@@ -63,8 +63,6 @@ delete($expected->{UEFI_PFLASH_VARS});
 $got = OpenQA::Worker::Engines::isotovideo::detect_asset_keys($settings);
 is_deeply($got, $expected, 'Asset settings are correct (absolute PFLASH)') or diag explain $got;
 
-delete($expected->{NUMDISKS});
-
 delete($settings->{UEFI_PFLASH_VARS});
 delete($settings->{NUMDISKS});
 
