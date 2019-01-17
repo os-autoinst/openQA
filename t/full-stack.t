@@ -47,6 +47,7 @@ use lib "$FindBin::Bin/lib";
 use Test::More;
 use Test::Mojo;
 use Test::Output 'stderr_like';
+use autodie ':all';
 use IO::Socket::INET;
 use POSIX '_exit';
 use OpenQA::Worker::Cache::Client;
@@ -521,4 +522,5 @@ END {
     turn_down_stack;
     session->clean;
     $? = 0;
+    $tempdir->list_tree->grep(qr/\.txt$/)->each(sub { print "$_:\n" . $_->slurp });
 }
