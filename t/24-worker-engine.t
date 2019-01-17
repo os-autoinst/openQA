@@ -22,9 +22,12 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use Test::More;
+use Test::Output qw(combined_like);
 use Test::Warnings;
 use Test::MockModule;
 use OpenQA::Worker::Engines::isotovideo;
+
+$OpenQA::Worker::Common::current_host = 'this_host_should_not_exist';
 
 my $settings = {
     DISTRI           => 'Unicorn',
@@ -72,6 +75,39 @@ is_deeply($got, $expected, 'Asset settings are correct (no UEFI or NUMDISKS)') o
 
 subtest 'caching' => sub {
     is(OpenQA::Worker::Engines::isotovideo::cache_assets, undef, 'cache_assets has nothing to do without assets');
+    combined_like(
+        sub { $got = OpenQA::Worker::Engines::isotovideo::do_asset_caching($settings) },
+        qr/^.*Cannot find.*asset.*$/,
+        'Expected information about not found local asset'
+    );
+    like($got->{error}, qr/Cannot find .* asset/, 'Local assets are tried to be found on no caching')
+      or diag explain $got;
+    $OpenQA::Worker::Common::worker_settings = {CACHEDIRECTORY => 'FOO'};
+    $OpenQA::Worker::Common::current_host    = 'host1';
+    my $asset_mock = Test::MockModule->new('OpenQA::Worker::Engines::isotovideo');
+    $asset_mock->mock(cache_assets        => sub { });
+    $asset_mock->mock(locate_local_assets => sub { });
+    $got = OpenQA::Worker::Engines::isotovideo::do_asset_caching($settings);
+    is($got, undef, 'Assets cached but not tests');
+    $OpenQA::Worker::Common::hosts->{host1} = {testpoolserver => 'foo'};
+    $asset_mock->mock(sync_tests => sub { });
+    my $shared_cache;
+    ($got, $shared_cache) = OpenQA::Worker::Engines::isotovideo::do_asset_caching($settings);
+    is($got,          undef,             'No error reported');
+    is($shared_cache, 'FOO/host1/tests', 'Cache directory updated');
+    $asset_mock->unmock('cache_assets');
+    my %assets       = (ISO => 'foo.iso',);
+    my $cache_client = Test::MockModule->new('OpenQA::Worker::Cache::Client');
+    $cache_client->mock(availability_error => undef);
+    $cache_client->mock(asset_exists       => undef);
+    $cache_client->mock(path               => undef);
+    $cache_client->mock(asset_path         => '/path/to/asset');
+    my $cache_request = Test::MockModule->new('OpenQA::Worker::Cache::Request');
+    $cache_request->mock(enqueue => undef);
+    $cache_request->mock(asset   => sub { return OpenQA::Worker::Cache::Request->new });
+    $got = OpenQA::Worker::Engines::isotovideo::cache_assets(undef, $settings, \%assets);
+    like($got->{error}, qr/Failed to download/, 'cache_assets can not pick up supplied assets when not found')
+      or diag explain $got;
 };
 
 done_testing();
