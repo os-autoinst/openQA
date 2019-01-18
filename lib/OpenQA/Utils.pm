@@ -935,7 +935,12 @@ sub compose_job_overview_search_args {
             $search_args{$arg} = {-in => $params};
         }
     }
-
+    if ($controller->param('modules')) {
+        $search_args{modules} = $controller->every_param('modules');
+    }
+    if ($controller->param('modules_result')) {
+        $search_args{modules_result} = $controller->every_param('modules_result');
+    }
     # add group query params to search args
     # (By 'every_param' we make sure to use multiple values for groupid and
     # group at the same time as a logical or, i.e. all specified groups are

@@ -131,7 +131,7 @@ is(scalar @filtered_out, 0, 'result filter correctly applied');
 
 # Test whether all URL parameter are passed correctly
 my $url_with_escaped_parameters
-  = $baseurl . 'tests/overview?arch=&failed_modules=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
+  = $baseurl . 'tests/overview?arch=&modules=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
 $driver->get($url_with_escaped_parameters);
 $driver->find_element('#filter-panel .card-header')->click();
 $driver->find_element('#filter-form button')->click();
@@ -237,6 +237,44 @@ subtest 'filtering does not reveal old jobs' => sub {
     $driver->get('/tests/overview?arch=&failed_modules=bar&distri=opensuse&version=13.1&build=0091&groupid=1001');
     is($driver->find_element('#summary .badge-danger')->get_text(),
         '0', 'filtering for failed modules does not reveal old job');
+};
+
+subtest 'filtering by module' => sub {
+    my $module            = 'kate';
+    my $JOB_ICON_SELECTOR = 'td[id^="res_DVD_"]';
+    my $result            = 'failed';
+
+    subtest "jobs containing the module with any result are present" => sub {
+        my $number_of_found_jobs = 3;
+        $driver->get("/tests/overview?arch=&distri=opensuse&modules=$module");
+        my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
+        # Assert that all the jobs with the specified module are shown in the results
+        is(scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module\" module found");
+        element_visible('#res_DVD_i586_kde');
+        element_visible('#res_DVD_x86_64_kde');
+        element_visible('#res_DVD_x86_64_doc');
+    };
+
+    subtest "jobs containing the module with the specified result are present" => sub {
+        my $number_of_found_jobs = 1;
+        $driver->get("/tests/overview?arch=&distri=opensuse&modules=$module&modules_result=$result");
+        my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
+        # Assert that all the jobs with the specified module and result are shown in the results
+        is(scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$module\" module found");
+        element_visible('#res_DVD_i586_kde');
+    };
+    subtest "jobs containing all the modules with the specified result are present" => sub {
+        my $number_of_found_jobs = 4;
+        $driver->get("/tests/overview?arch=&distri=opensuse&modules_result=$result");
+        my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
+        # Assert that all the jobs with the specified module and result are shown in the results
+        is(scalar @jobs, $number_of_found_jobs,
+            "$number_of_found_jobs jobs where modules with \"$result\" result found");
+        element_visible('#res_DVD_i586_kde');
+        element_visible('#res_DVD_x86_64_kde');
+        element_visible('#res_DVD_i586_textmode');
+        element_visible('#res_DVD_x86_64_doc');
+    }
 };
 
 kill_driver();

@@ -90,14 +90,30 @@
                     <strong>Architecture</strong>
                     <input type="text" class="form-control" name="arch" placeholder="any" id="filter-arch">
                 </div>
-                <div class="form-group">
-                    <strong>Failed modules</strong>
-                    <input name="failed_modules" type="text" id="filter-failed_modules"
-                        placeholder="failed modules, comma separated, e.g. mod1,mod2"
-                        class="form-control"
-                        style="display: inline; width: 85%;">
-                    <%= help_popover('Help for the <em>Failed Modules</em> filter' => '
-                        <p>Shows only the jobs that failed in the specified modules</p>') %>
+                <div class="row" id="filter-modules">
+                    <div class="col-8">
+                        <div class="form-group">
+                            <label for="filter-modules"><strong>Module</strong></label>
+                            <input name="modules" type="text" id="modules"
+                            placeholder="modules, comma separated, e.g. mod1,mod2"
+                            class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-2">
+                        <div class="form-group">
+                            <label for="modules_result"><strong>Module Result</strong></label>
+                            <select name="modules_result" id="modules_result" data-placeholder="any" class="chosen-select" multiple>
+                                % for my $modules_result (OpenQA::Jobs::Constants::MODULE_RESULTS) {
+                                    <option><%= $modules_result %></option>
+                                % }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-2 align-self-center">
+                         <%= help_popover('Help for the <em>Module</em> filter' => '
+                         <p>Shows jobs that contain the specified modules and allows also to filter them by the results.</p>
+                         <p>If module result is not selected, shows all the specified modules regardless of the results.</p>') %>
+                    </div>
                 </div>
                 <div class="form-group">
                     <strong>Misc</strong>
