@@ -19,8 +19,14 @@ zypper -n install --no-recommends openQA-local-db apache2 openQA-worker qemu-kvm
 
 # setup database
 systemctl enable --now postgresql
-getent passwd $dbuser || su postgres -c "createuser -D $dbuser"
-su postgres -c "psql -lqt" | cut -d \| -f 1 | grep -qw $dbname || su postgres -c "createdb -O $dbuser $dbname"
+if ! su postgres -c "psql -qt <<< '\du'" | cut -d '|' -f1 | grep -q $dbuser ; then
+	# create db user if not existing
+	su postgres -c "createuser -D $dbuser"
+fi
+if ! su postgres -c "psql -lqt" | cut -d '|' -f1 | grep -q $dbname ; then
+	# create db if not existing
+	su postgres -c "createdb -O $dbuser $dbname"
+fi
 
 
 # setup webserver and fake-auth
