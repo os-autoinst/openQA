@@ -159,7 +159,7 @@ sub cache_assets {
         symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";
         $vars->{$this_asset} = path(getcwd, basename($asset))->to_string;
     }
-    return;
+    return undef;
 }
 
 sub engine_workit {
