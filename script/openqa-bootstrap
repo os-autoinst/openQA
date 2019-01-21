@@ -1,8 +1,8 @@
 #!/bin/bash -x
 set -e
-: ${dbname:="openqa"}
-: ${dbuser:="geekotest"}
 
+dbname="${dbname:="openqa"}"
+dbuser="${dbuser:="geekotest"}"
 
 # add extra repos for leap
 source /etc/os-release

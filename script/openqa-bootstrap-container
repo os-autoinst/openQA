@@ -7,7 +7,7 @@
 CONTAINER_NAME="openqa1"
 CONTANER_PATH="/var/lib/machines/${CONTAINER_NAME}"
 
-: ${DEFAULT_REPO:="http://download.opensuse.org/tumbleweed/repo/oss/"}
+DEFAULT_REPO="${DEFAULT_REPO:="http://download.opensuse.org/tumbleweed/repo/oss/"}"
 PKGS_TO_INSTALL="aaa_base systemd shadow zypper openSUSE-release vim iproute2 iputils openQA-local-db openQA-worker sudo apache2 net-tools curl wget ca-certificates-mozilla qemu-kvm openQA-bootstrap"
 
 zypper -n install systemd-container
