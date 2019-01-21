@@ -187,7 +187,7 @@ sub do_asset_caching {
     if (!$worker_settings->{CACHEDIRECTORY}) {
         my $error = locate_local_assets($vars, $assetkeys);
         return $error if $error;
-        return;
+        return undef;
     }
 
     my $host_to_cache = OpenQA::Worker::Cache::_base_host($current_host);
