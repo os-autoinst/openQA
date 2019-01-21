@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2016-2017 SUSE LLC
+# Copyright (C) 2016-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Client;
 use OpenQA::Scheduler;
+use OpenQA::Jobs::Constants;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use Test::MockModule;
@@ -65,7 +66,8 @@ $t->ua(
 $t->app($app);
 
 # create a parent group
-my $parent_groups = $app->schema->resultset('JobGroupParents');
+my $schema        = $app->schema;
+my $parent_groups = $schema->resultset('JobGroupParents');
 $parent_groups->create(
     {
         id   => 2000,
@@ -101,7 +103,7 @@ subtest 'create job' => sub {
           . '"ISO_MAXSIZE":"1","KVM":"KVM","MACHINE":"RainbowPC","TEST":"rainbow","VERSION":"42","group_id":null,"id":'
           . $job
           . ',"remaining":1}',
-        "job create triggers amqp"
+        'job create triggers amqp'
     );
 };
 
@@ -110,10 +112,36 @@ subtest 'mark job as done' => sub {
     is(
         $published{'suse.openqa.job.done'},
         '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
-          . '"TEST":"rainbow","group_id":null,"id":'
+          . '"TEST":"rainbow","bugref":null,"group_id":null,"id":'
           . $job
           . ',"newbuild":null,"remaining":0,"result":"failed"}',
-        "job done triggers amqp"
+        'job done triggers amqp'
+    );
+};
+
+subtest 'mark job with taken over bugref as done' => sub {
+    # prepare previous job of 99963 to test carry over
+    my $jobs         = $schema->resultset('Jobs');
+    my $previous_job = $jobs->find(99962);
+    $previous_job->comments->create(
+        {
+            text    => 'bsc#123',
+            user_id => $schema->resultset('Users')->first->id,
+        });
+    is($previous_job->bugref, 'bsc#123', 'added bugref recognized');
+
+    # mark so far running job 99963 as failed which should trigger bug carry over
+    my $post = $t->post_ok(
+        "/api/v1/jobs/99963/set_done",
+        form => {
+            result => OpenQA::Jobs::Constants::FAILED
+        })->status_is(200);
+    is(
+        $published{'suse.openqa.job.done'},
+        '{"ARCH":"x86_64","BUILD":"0091","FLAVOR":"DVD","ISO":"openSUSE-13.1-DVD-x86_64-Build0091-Media.iso",'
+          . '"MACHINE":"64bit","TEST":"kde","bugref":"bsc#123","bugurl":"https://bugzilla.suse.com/show_bug.cgi?id=123",'
+          . '"group_id":1001,"id":99963,"newbuild":null,"remaining":3,"result":"failed"}',
+        'carried over bugref and resolved URL present in AMQP event'
     );
 };
 
@@ -123,7 +151,7 @@ subtest 'duplicate and cancel job' => sub {
     is(
         $published{'suse.openqa.job.duplicate'},
         '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
-          . '"TEST":"rainbow","auto":0,"group_id":null,"id":'
+          . '"TEST":"rainbow","auto":0,"bugref":null,"group_id":null,"id":'
           . $job
           . ',"remaining":1,"result":'
           . $newjob . '}',

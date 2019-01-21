@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2018 SUSE LLC
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1674,6 +1674,18 @@ sub carry_over_bugrefs {
         last;
     }
     return;
+}
+
+sub bugref {
+    my ($self) = @_;
+
+    my $comments = $self->comments->search({}, {order_by => {-desc => 'me.id'}});
+    while (my $comment = $comments->next) {
+        if (my $bugref = $comment->bugref) {
+            return $bugref;
+        }
+    }
+    return undef;
 }
 
 # extend to finish
