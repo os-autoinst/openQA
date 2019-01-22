@@ -370,6 +370,7 @@ var developerMode = {
     outstandingFilesToUpload: undefined,    // number of other files which still need to be uploaded by the worker
     uploadingUpToCurrentModule: undefined,  // whether the worker will upload up to the current module (happens when paused in the middle of a module)
     detailsForCurrentModuleUploaded: false, // whether new test details for the currently running module have been uploaded
+    stoppingTestExecution: undefined,       // if the test execution is being stopped the reason for that; otherwise undefined
 
     // state of development session (comes from the openQA ws proxy)
     develSessionDeveloper: undefined,       // name of the user in possession the development session
@@ -378,12 +379,12 @@ var developerMode = {
 
     // returns whether we're currently connecting
     isConnecting: function() {
-        return !this.badConfiguration && !this.isConnected;
+        return !this.badConfiguration && !this.isConnected && !this.stoppingTestExecution;
     },
 
     // returns whether there's a development session but it doesn't belong to us
     lockedByOtherDeveloper: function() {
-        return this.develSessionDeveloper && !this.ownSession;
+        return this.develSessionDeveloper && !this.ownSession && !this.stoppingTestExecution;
     },
 
     // returns whether the needle editor is ready
@@ -554,7 +555,9 @@ function updateDeveloperPanel() {
     // update status info
     var statusInfo = 'running';
     var statusAppendix = '';
-    if (developerMode.badConfiguration) {
+    if (developerMode.stoppingTestExecution) {
+        statusInfo = 'stopping';
+    } else if (developerMode.badConfiguration) {
         statusInfo = 'configuration issue';
     } else if (developerMode.isPaused) {
         statusInfo = 'paused';
@@ -763,8 +766,8 @@ function handleWebsocketConnectionClosed(wsConnection) {
     developerMode.ownSession = false;
     updateDeveloperPanel();
 
-    // skip reconnect if test is just not running anymore
-    if (!testStatus.running) {
+    // skip reconnect if test is just not running (anymore)
+    if (!testStatus.running || developerMode.stoppingTestExecution) {
         return;
     }
 
@@ -937,6 +940,10 @@ var messageToStatusVariable = [
         msg: 'current_api_function',
         statusVar: 'currentApiFunction',
     },
+    {
+        msg: 'stopping_test_execution',
+        statusVar: 'stoppingTestExecution',
+    },
 ];
 
 // handles messages received via web socket connection
@@ -954,7 +961,8 @@ function processWsCommand(obj) {
         // handle errors
 
         // ignore connection errors if there's no running module according to OpenQA::WebAPI::Controller::Running::status
-        if (!testStatus.running && category === 'cmdsrv-connection') {
+        // or the test execution is stopped
+        if ((!testStatus.running || developerMode.stoppingTestExecution) && category === 'cmdsrv-connection') {
             console.log('ignoring error from ws proxy: ' + what);
             break;
         }

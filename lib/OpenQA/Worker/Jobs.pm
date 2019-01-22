@@ -357,19 +357,58 @@ sub _stop_job {
 
     if ($aborted eq "scheduler_abort") {
         log_debug('stop_job called by the scheduler. do not send logs');
-        _kill_worker($worker);
-        _reset_state;
+        _stop_job_1(
+            $aborted, $job_id,
+            sub {
+                _kill_worker($worker);
+                _reset_state;
+            });
         return;
     }
 
-    # the update_status timers and such are gone by now (1st part), so we're
-    # basically "single threaded" and can block
-
     my $status = {uploading => 1, worker_id => $workerid};
-    api_call(
-        'post', "jobs/$job_id/status",
-        json     => {status => $status},
-        callback => sub { _stop_job_2($aborted, $job_id, $host); });
+    _stop_job_1(
+        $aborted, $job_id,
+        sub {
+            api_call(
+                post     => "jobs/$job_id/status",
+                json     => {status => $status},
+                callback => sub {
+                    _stop_job_2($aborted, $job_id, $host);
+                });
+        });
+
+}
+
+sub _stop_job_1 {
+    my ($aborted, $job_id, $callback) = @_;
+
+    my $ua = Mojo::UserAgent->new;
+    $ua->request_timeout(10);
+
+    my $url = "$job->{URL}/broadcast";
+    my $tx  = $ua->build_tx(
+        POST => $url,
+        json => {
+            stopping_test_execution => $aborted,
+        },
+    );
+
+    log_info('trying to stop job gracefully by announcing it to command server via ' . $url);
+    my $mojo_loop_running = Mojo::IOLoop->is_running;
+    $ua->start(
+        $tx,
+        sub {
+            my ($ua_from_callback, $tx) = @_;
+            my $keep_ref_to_ua = $ua;
+            my $res            = $tx->res;
+
+            if (!$res->is_success) {
+                log_error('unable to stop the command server gracefully: ');
+                log_error($res->code ? $res->to_string : 'command server likely not reachable at all');
+            }
+            $callback->();
+        });
 }
 
 sub _stop_job_2 {
