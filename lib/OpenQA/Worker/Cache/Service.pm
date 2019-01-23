@@ -95,19 +95,25 @@ get '/session_token' => sub { shift->render(json => {session_token => SESSION_TO
 get '/info' => sub { $_[0]->render(json => shift->minion->stats) };
 
 post '/status' => sub {
-    my $c    = shift;
-    my $data = $c->req->json;
-    my $lock = _gen_guard_name($data->{lock});
-    my $j    = $data->{id} ? app->minion->job($data->{id})->info : ();
+    my $c         = shift;
+    my $data      = $c->req->json;
+    my $lock_name = $data->{lock};
+    return $c->render(json => {error => 'No lock specified.'}, status => 400) unless $lock_name;
 
-    $c->render(
-        json => {
-            status => (
-                  active($lock)   ? STATUS_DOWNLOADING
-                : enqueued($lock) ? STATUS_IGNORE
-                :                   STATUS_PROCESSED
-            ),
-            $j ? (result => $j->{result}, output => $j->{notes}->{output}) : ()});
+    my $lock = _gen_guard_name($lock_name);
+    my %res  = (status => (active($lock) ? STATUS_DOWNLOADING : enqueued($lock) ? STATUS_IGNORE : STATUS_PROCESSED));
+
+    if ($data->{id}) {
+        my $job = app->minion->job($data->{id});
+        return $c->render(json => {error => 'Specified job ID is invalid.'}, status => 404) unless $job;
+
+        my $job_info = $job->info;
+        return $c->render(json => {error => 'Job info not available.'}, status => 404) unless $job_info;
+        $res{result} = $job_info->{result};
+        $res{output} = $job_info->{notes}->{output};
+    }
+
+    $c->render(json => \%res);
 };
 
 post '/execute_task' => sub {
