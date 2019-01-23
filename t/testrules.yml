@@ -4,7 +4,7 @@
 seq:
   - par:
      - ./t/00-tidy.t
-     - ./t/01-compile-check-all}.t
+     - ./t/01-compile-check-all.t
      - ./t/02-pod.t
      - ./t/04-scheduler.t
      - ./t/05-scheduler-cancel.t
