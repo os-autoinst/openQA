@@ -146,8 +146,9 @@ my @title        = map { $_->get_attribute('title') } @report_links;
 is($title[0], 'Report product bug', 'product bug report URL available');
 is($title[1], 'Report test issue',  'test issue report URL available');
 my @url = map { $_->get_attribute('href') } @report_links;
-like($url[0], qr{bugzilla.*enter_bug.*tests%2F99937}, 'bugzilla link referencing current test');
-like($url[1], qr{progress.*new}, 'progress/redmine link for reporting test issues');
+like($url[0], qr{bugzilla.*enter_bug.*tests%2F99937},        'bugzilla link referencing current test');
+like($url[0], qr{in\+scenario\+opensuse-13\.1-DVD-i586-kde}, 'bugzilla link contains scenario');
+like($url[1], qr{progress.*new},                             'progress/redmine link for reporting test issues');
 
 # test running view with Test::Mojo as phantomjs would get stuck on the
 # liveview/livelog forever
