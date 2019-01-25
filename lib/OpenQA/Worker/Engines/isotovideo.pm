@@ -243,7 +243,7 @@ sub engine_workit {
             my $exit = $rsync_request->result;
 
             if (my $output = $rsync_request->output) { log_info("rsync: " . $output, channels => 'autoinst') }
-            return {error => "Failed to rsync tests: exit " . $exit} unless ($exit && $exit == 0);
+            return {error => "Failed to rsync tests: exit " . $exit} unless (defined $exit && $exit == 0);
 
             $shared_cache = catdir($shared_cache, 'tests');
         }
