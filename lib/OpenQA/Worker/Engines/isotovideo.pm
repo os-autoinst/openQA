@@ -240,10 +240,11 @@ sub engine_workit {
             return {error => "Failed to send rsync cache request"} unless $rsync_request->enqueue;
 
             sleep 5 and update_setup_status until $rsync_request->processed;
-            my $exit = $rsync_request->result;
+            # treat "no sync necessary" as success as well
+            my $exit = $rsync_request->result // 0;
 
             if (my $output = $rsync_request->output) { log_info("rsync: " . $output, channels => 'autoinst') }
-            return {error => "Failed to rsync tests: exit " . $exit} unless (defined $exit && $exit == 0);
+            return {error => "Failed to rsync tests: exit code: $exit"} unless (defined $exit && $exit == 0);
 
             $shared_cache = catdir($shared_cache, 'tests');
         }
