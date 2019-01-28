@@ -166,16 +166,28 @@ sub matches_nested {
 sub important_builds {
     my ($self) = @_;
 
+    # determine relevant comments including those on the parent-level
+    # note: Assigning to scalar first because ->comments would return all results at once when
+    #       called in an array-context.
+    my $not_an_array = $self->comments;
+    my @comments     = ($not_an_array);
+    if (my $parent = $self->parent) {
+        my $not_an_array = $parent->comments;
+        push(@comments, $not_an_array);
+    }
+
+    # look for "important" tags in the comments
     my %importants;
-    my $comments = $self->comments;
-    while (my $comment = $comments->next) {
-        my @tag = $comment->tag;
-        next unless $tag[0];
-        if ($tag[1] eq 'important') {
-            $importants{$tag[0]} = 1;
-        }
-        elsif ($tag[1] eq '-important') {
-            delete $importants{$tag[0]};
+    for my $comments (@comments) {
+        while (my $comment = $comments->next) {
+            my @tag = $comment->tag;
+            next unless $tag[0];
+            if ($tag[1] eq 'important') {
+                $importants{$tag[0]} = 1;
+            }
+            elsif ($tag[1] eq '-important') {
+                delete $importants{$tag[0]};
+            }
         }
     }
     return [sort keys %importants];
