@@ -74,7 +74,12 @@ is($needles->count({filename => "test-rootneedle.json"}), 2);
 subtest 'handling of last update' => sub {
     is($needles->count({last_updated => undef}), 0, 'all needles should have last_updated set');
 
-    my $needle = $needles->find(1);
+    my $needle = $needles->find(
+        {
+            filename         => 'test-rootneedle.json',
+            'directory.path' => {-like => '%' . $needledir_archlinux},
+        },
+        {prefetch => 'directory'});
     is($needle->last_updated, $needle->t_created, 'last_updated initialized on creation');
 
     # fake timestamps to be in the past to observe a difference if the test runs inside the same wall-clock second
@@ -99,7 +104,11 @@ subtest 'handling of last update' => sub {
     ok($t_updated lt $needle->t_updated, 't_updated still updated');
     is($needle->last_matched_time, $new_last_match, 'last match updated');
 
-    $needles->update_needle_from_editor($needle->directory->path, 'test-rootneedle', {tags => [qw(foo bar)]},);
+    my $other_needle
+      = $needles->update_needle_from_editor($needle->directory->path, 'test-rootneedle', {tags => [qw(foo bar)]},);
+    is($other_needle->dir_id,   $needle->dir_id,   "directory hasn't changed");
+    is($other_needle->filename, $needle->filename, "filename hasn't changed");
+    is($other_needle->id,       $needle->id,       "updated the same needle");
 
     $needle->discard_changes;
     my $last_actual_update2 = $needle->last_updated;
