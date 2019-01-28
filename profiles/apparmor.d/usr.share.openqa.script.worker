@@ -116,7 +116,7 @@
   /usr/share/openqa/lib/DBIx/Class/Timestamps.pm r,
   /usr/share/openqa/lib/OpenQA/** r,
   /usr/share/openqa/script/worker r,
-  /usr/share/git-core/templates/* r,
+  /usr/share/git-core/templates/** r,
   /usr/share/qemu/* rk,
   /usr/share/qemu/keymaps/* r,
   /var/lib/openqa/cache/ r,
