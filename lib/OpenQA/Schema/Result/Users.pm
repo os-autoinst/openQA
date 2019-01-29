@@ -63,7 +63,7 @@ __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(api_keys => 'OpenQA::Schema::Result::ApiKeys', 'user_id');
 __PACKAGE__->has_many(
-    development_sessions => 'OpenQA::Schema::Result::DevelopmentSessions',
+    developer_sessions => 'OpenQA::Schema::Result::DeveloperSessions',
     'user_id', {cascade_delete => 1});
 __PACKAGE__->add_unique_constraint([qw(username)]);
 

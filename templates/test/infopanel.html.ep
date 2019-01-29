@@ -96,5 +96,10 @@
                         </span>
                     </div>
                 % }
+                % if (my $scenario_description = $job->scenario_description) {
+                    <div id="scenario-description">
+                            %= $scenario_description 
+                    </div>
+                % }
             </div>
         </div>
