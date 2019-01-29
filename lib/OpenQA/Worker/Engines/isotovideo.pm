@@ -151,6 +151,7 @@ sub cache_assets {
             # assume that if we have a full path, that's what we should use
             $vars->{$this_asset} = $asset_uri if -e $asset_uri;
             # don't kill the job if the asset is not found
+            # TODO: This seems to leave the job stuck in some cases (observed in production on openqaworker3).
             next;
         }
         return {error => "Can't download $asset_uri to " . $cache_client->asset_path($current_host, $asset_uri)}
