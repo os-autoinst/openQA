@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -506,7 +506,8 @@ subtest 'test cancelled by quitting the session' => sub {
         qr/Result: (user_cancelled|passed)/,
         'test 1 has been cancelled (if it was fast enough to actually pass that is ok, too)'
     );
-    ok(-s path($resultdir, '00000', "00000001-$job_name")->make_path->child('autoinst-log.txt'), 'log file generated');
+    my $log_file_path = path($resultdir, '00000', "00000001-$job_name")->make_path->child('autoinst-log.txt');
+    ok(-s $log_file_path, "log file generated under $log_file_path");
 };
 
 kill_driver;

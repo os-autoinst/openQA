@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2017 SUSE LLC
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -142,7 +142,7 @@ sub stop_job {
     my $stop_job_check_status;
     $stop_job_check_status = sub {
         if (!$update_status_running) {
-            _stop_job($aborted, $job_id, $host);
+            _stop_job_init($aborted, $job_id, $host);
             return undef;
         }
         log_debug('postpone stopping until ongoing status update is concluded');
@@ -347,7 +347,7 @@ sub upload {
     return _multichunk_upload($job_id, $form);
 }
 
-sub _stop_job {
+sub _stop_job_init {
     my ($aborted, $job_id, $host) = @_;
     my $workerid = verify_workerid;
 
@@ -357,7 +357,7 @@ sub _stop_job {
 
     if ($aborted eq "scheduler_abort") {
         log_debug('stop_job called by the scheduler. do not send logs');
-        _stop_job_1(
+        _stop_job_announce(
             $aborted, $job_id,
             sub {
                 _kill_worker($worker);
@@ -366,26 +366,28 @@ sub _stop_job {
         return;
     }
 
-    my $status = {uploading => 1, worker_id => $workerid};
-    _stop_job_1(
-        $aborted, $job_id,
-        sub {
-            api_call(
-                post     => "jobs/$job_id/status",
-                json     => {status => $status},
-                callback => sub {
-                    _stop_job_2($aborted, $job_id, $host);
+    api_call(
+        post => "jobs/$job_id/status",
+        json => {
+            status => {
+                uploading => 1,
+                worker_id => $workerid,
+            },
+        },
+        callback => sub {
+            _stop_job_announce(
+                $aborted, $job_id,
+                sub {
+                    _stop_job_kill_and_upload($aborted, $job_id, $host);
                 });
-        });
-
+        },
+    );
 }
 
-sub _stop_job_1 {
+sub _stop_job_announce {
     my ($aborted, $job_id, $callback) = @_;
 
-    my $ua = Mojo::UserAgent->new;
-    $ua->request_timeout(10);
-
+    my $ua  = Mojo::UserAgent->new(request_timeout => 10);
     my $url = "$job->{URL}/broadcast";
     my $tx  = $ua->build_tx(
         POST => $url,
@@ -411,7 +413,7 @@ sub _stop_job_1 {
         });
 }
 
-sub _stop_job_2 {
+sub _stop_job_kill_and_upload {
     my ($aborted, $job_id, $host) = @_;
     _kill_worker($worker);
 
