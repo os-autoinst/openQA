@@ -177,6 +177,7 @@ Requires:       perl(LWP::UserAgent)
 Requires:       perl(Mojolicious)
 Requires:       perl(Regexp::Common)
 Requires:       perl(Try::Tiny)
+Recommends:     jq
 
 %description client
 Tools and support files for openQA client script. Client script is
@@ -248,6 +249,7 @@ ln -s %{_datadir}/openqa/script/client %{buildroot}%{_bindir}/openqa-client
 ln -s %{_datadir}/openqa/script/clone_job.pl %{buildroot}%{_bindir}/openqa-clone-job
 ln -s %{_datadir}/openqa/script/dump_templates %{buildroot}%{_bindir}/openqa-dump-templates
 ln -s %{_datadir}/openqa/script/load_templates %{buildroot}%{_bindir}/openqa-load-templates
+ln -s %{_datadir}/openqa/script/openqa-clone-custom-git-refspec %{buildroot}%{_bindir}/openqa-clone-custom-git-refspec
 
 cd %{buildroot}
 grep -rl %{_bindir}/env . | while read file; do
@@ -482,6 +484,7 @@ fi
 %{_bindir}/openqa-clone-job
 %{_bindir}/openqa-dump-templates
 %{_bindir}/openqa-load-templates
+%{_bindir}/openqa-clone-custom-git-refspec
 
 %files doc
 %doc docs/*
