@@ -33,6 +33,7 @@ use Fcntl;
 use MIME::Base64;
 use File::Basename 'basename';
 use File::Which 'which';
+use Try::Tiny;
 use Mojo::File 'path';
 use Mojo::IOLoop;
 use OpenQA::File;
@@ -387,30 +388,40 @@ sub _stop_job_init {
 sub _stop_job_announce {
     my ($aborted, $job_id, $callback) = @_;
 
-    my $ua  = Mojo::UserAgent->new(request_timeout => 10);
-    my $url = "$job->{URL}/broadcast";
-    my $tx  = $ua->build_tx(
-        POST => $url,
-        json => {
-            stopping_test_execution => $aborted,
-        },
-    );
+    my $ua      = Mojo::UserAgent->new(request_timeout => 10);
+    my $job_url = $job->{URL};
+    return $callback->() unless $job_url;
 
-    log_info('trying to stop job gracefully by announcing it to command server via ' . $url);
-    my $mojo_loop_running = Mojo::IOLoop->is_running;
-    $ua->start(
-        $tx,
-        sub {
-            my ($ua_from_callback, $tx) = @_;
-            my $keep_ref_to_ua = $ua;
-            my $res            = $tx->res;
+    try {
+        my $url = "$job_url/broadcast";
+        my $tx  = $ua->build_tx(
+            POST => $url,
+            json => {
+                stopping_test_execution => $aborted,
+            },
+        );
 
-            if (!$res->is_success) {
-                log_error('unable to stop the command server gracefully: ');
-                log_error($res->code ? $res->to_string : 'command server likely not reachable at all');
-            }
-            $callback->();
-        });
+        log_info('trying to stop job gracefully by announcing it to command server via ' . $url);
+        $ua->start(
+            $tx,
+            sub {
+                my ($ua_from_callback, $tx) = @_;
+                my $keep_ref_to_ua = $ua;
+                my $res            = $tx->res;
+
+                if (!$res->is_success) {
+                    log_error('unable to stop the command server gracefully: ');
+                    log_error($res->code ? $res->to_string : 'command server likely not reachable at all');
+                }
+                $callback->();
+            });
+    }
+    catch {
+        log_error('unable to stop the command server gracefully: ' . $_);
+
+        # ensure stopping is proceeded (failing announcement is not critical)
+        $callback->();
+    };
 }
 
 sub _stop_job_kill_and_upload {
