@@ -466,23 +466,33 @@ sub run_cmd_with_log($) {
 
 sub run_cmd_with_log_return_error($) {
     my ($cmd) = @_;
-    my ($stdin, $stdout_err);
+
     log_info('Running cmd: ' . join(' ', @$cmd));
-    my $ipc_run_succeeded = IPC::Run::run($cmd, \$stdin, '>&', \$stdout_err);
-    my $return_code       = $?;
-    chomp $stdout_err;
-    if ($ipc_run_succeeded) {
-        log_debug($stdout_err);
-        log_info("cmd returned $return_code");
+    try {
+        my ($stdin, $stdout_err);
+        my $ipc_run_succeeded = IPC::Run::run($cmd, \$stdin, '>&', \$stdout_err);
+        my $return_code       = $?;
+        chomp $stdout_err;
+        if ($ipc_run_succeeded) {
+            log_debug($stdout_err);
+            log_info("cmd returned $return_code");
+        }
+        else {
+            log_warning($stdout_err);
+            log_error("cmd returned $return_code");
+        }
+        return {
+            status      => $ipc_run_succeeded,
+            return_code => $return_code,
+            stderr      => $stdout_err,
+        };
     }
-    else {
-        log_warning($stdout_err);
-        log_error("cmd returned $return_code");
-    }
-    return {
-        status      => $ipc_run_succeeded,
-        return_code => $return_code,
-        stderr      => $stdout_err,
+    catch {
+        return {
+            status      => 0,
+            return_code => undef,
+            stderr      => "an internal error occured",
+        };
     };
 }
 

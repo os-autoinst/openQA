@@ -359,17 +359,20 @@ sub src {
     $self->stash('scriptpath', $scriptpath);
 }
 
+sub _format_git_error {
+    my ($name, $error) = @_;
+    return "<strong>Failed to save $name.</strong><br><pre>$error</pre>";
+}
+
 sub _commit_git {
     my ($self, $job, $dir, $name) = @_;
 
-    my $error = commit_git(
+    return commit_git(
         {
             dir     => $dir,
             add     => ["$dir/$name.json", "$dir/$name.png"],
             user    => $self->current_user,
-            message => sprintf("%s for %s", $name, $job->name)}) or return undef;
-
-    die "failed to git commit $name: $error";
+            message => sprintf("%s for %s", $name, $job->name)});
 }
 
 sub _json_validation($) {
@@ -420,7 +423,7 @@ sub save_needle_ajax {
             $self->app->log->error($k . ' ' . join(' ', @{$validation->error($k)})) if $validation->has_error($k);
             $error .= ' ' . $k if $validation->has_error($k);
         }
-        return $self->render(json => {error => "Error creating/updating needle: $error"});
+        return $self->render(json => {error => "<strong>Error creating/updating needle</strong>.<br>$error"});
     }
 
     # read parameter
@@ -473,7 +476,7 @@ sub save_needle_ajax {
     my $push_to_git_repository = ($self->app->config->{global}->{scm} || '') eq 'git';
     if ($push_to_git_repository) {
         if (my $error = set_to_latest_git_master({dir => $needledir})) {
-            return $self->render(json => {error => $error});
+            return $self->render(json => {error => _format_git_error($needlename, $error)});
         }
     }
 
@@ -508,13 +511,10 @@ sub save_needle_ajax {
     # commit needle in Git repository
     $self->app->gru->enqueue('scan_needles');
     if ($push_to_git_repository) {
-        try {
-            $self->_commit_git($job, $needledir, $needlename);
+        if (my $error = $self->_commit_git($job, $needledir, $needlename)) {
+            $self->app->log->error($error);
+            return $self->render(json => {error => _format_git_error($needlename, $error)});
         }
-        catch {
-            $self->app->log->error($_);
-            return $self->render(json => {error => $_});
-        };
     }
 
     # create/update needle in database
