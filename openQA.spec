@@ -476,6 +476,7 @@ fi
 %{_datadir}/openqa/script/clone_job.pl
 %{_datadir}/openqa/script/dump_templates
 %{_datadir}/openqa/script/load_templates
+%{_datadir}/openqa/script/openqa-clone-custom-git-refspec
 %dir %{_datadir}/openqa/lib
 %{_datadir}/openqa/lib/OpenQA/Client.pm
 %{_datadir}/openqa/lib/OpenQA/Client
