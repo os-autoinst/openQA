@@ -33,6 +33,10 @@ sub register {
 sub _migrate_images {
     my ($app, $job, $args) = @_;
 
+    # prevent multiple image migration tasks to run in parallel
+    return $job->retry({delay => 30})
+      unless my $guard = $app->minion->guard('limit_migrate_images_group', 3600);
+
     return unless $args->{prefix};
     my $dh;
     my $prefixdir = join('/', $OpenQA::Utils::imagesdir, $args->{prefix});
@@ -95,6 +99,10 @@ sub _relink_dir {
 sub _relink_testresults {
     my ($app, $job, $args) = @_;
 
+    # prevent multiple image migration tasks to run in parallel
+    return $job->retry({delay => 30})
+      unless my $guard = $app->minion->guard('limit_migrate_images_group', 3600);
+
     my $schema = OpenQA::Scheduler::Scheduler::schema();
     my $jobs   = $schema->resultset("Jobs")->search(
         {
@@ -112,7 +120,11 @@ sub _relink_testresults {
 
 # last gru task in the image migration
 sub _rm_compat_symlinks {
-    my ($app, $args) = @_;
+    my ($app, $job, $args) = @_;
+
+    # prevent multiple image migration tasks to run in parallel
+    return $job->retry({delay => 30})
+      unless my $guard = $app->minion->guard('limit_migrate_images_group', 3600);
 
     opendir(my $dh, $OpenQA::Utils::imagesdir) || die "Can't open /images: $!";
     for my $file (readdir $dh) {

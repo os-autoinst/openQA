@@ -50,7 +50,11 @@ sub _list_images_subdir {
 
 # gru task to scan XXX subdirectory
 sub _scan_images {
-    my ($app, $minion, $args) = @_;
+    my ($app, $job, $args) = @_;
+
+    # prevent multiple scan_images* tasks to run in parallel
+    return $job->retry({delay => 30})
+      unless my $guard = $app->minion->guard('limit_scan_images_task', 3600);
 
     return unless $args->{prefix};
     my $dh;
@@ -92,8 +96,11 @@ sub _scan_images {
 
 # gru task - scan testresults and add them to Screenshotlinks
 sub _scan_images_links {
-    my ($app, $minion, $args) = @_;
+    my ($app, $job, $args) = @_;
 
+    # prevent multiple scan_images* tasks to run in parallel
+    return $job->retry({delay => 30})
+      unless my $guard = $app->minion->guard('limit_scan_images_task', 3600);
 
     my $schema = OpenQA::Scheduler::Scheduler::schema();
     my $jobs   = $schema->resultset("Jobs")->search(

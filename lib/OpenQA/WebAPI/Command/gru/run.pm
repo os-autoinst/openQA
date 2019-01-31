@@ -31,10 +31,6 @@ sub run {
     $minion->on(
         worker => sub {
             my ($minion, $worker) = @_;
-
-            # Only one job can run at a time for now (until all Gru tasks are parallelism safe)
-            $worker->status->{jobs} = 1;
-
             $worker->on(
                 dequeue => sub {
                     my ($worker, $job) = @_;
