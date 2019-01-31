@@ -395,7 +395,10 @@ sub job_create {
 sub read_worker_config {
     my ($instance, $host) = @_;
     my $worker_dir = $ENV{OPENQA_CONFIG} || '/etc/openqa';
-    my $cfg = Config::IniFiles->new(-file => $worker_dir . '/workers.ini');
+    my $cfg;
+    if (-f $worker_dir . '/worker.ini' || !$ENV{OPENQA_USE_DEFAULTS}) {
+        $cfg = Config::IniFiles->new(-file => $worker_dir . '/workers.ini');
+    }
 
     my $sets = {};
     for my $section ('global', $instance) {

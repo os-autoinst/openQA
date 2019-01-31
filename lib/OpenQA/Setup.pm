@@ -211,7 +211,7 @@ sub read_config {
         $cfg = Config::IniFiles->new(-file => $cfgfile->to_string) || undef;
         $app->config->{ini_config} = $cfg;
     }
-    else {
+    elsif (!$ENV{OPENQA_USE_DEFAULTS}) {
         $app->log->warn("No configuration file supplied, will fallback to default configuration");
     }
 

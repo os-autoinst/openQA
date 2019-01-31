@@ -409,7 +409,9 @@ subtest 'mock test send_status' => sub {
 
 
 subtest 'Worker logs' => sub {
-    path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
+    if (-e path($FindBin::Bin, "data")->child("workers.ini")) {
+        path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
+    }
 
     local $ENV{OPENQA_LOGFILE} = undef;
     local $ENV{MOJO_LOG_LEVEL} = 'debug';

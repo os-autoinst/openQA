@@ -33,9 +33,11 @@ BEGIN {
     $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} = 10;
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 2000;
     $ENV{FULLSTACK}                           = 1 if $ENV{SCHEDULER_FULLSTACK};
-    path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
-    path($FindBin::Bin, "data")->child("database.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("database.ini"));
-    path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
+    if (-e path($FindBin::Bin, "data")->child("openqa.ini") || !$ENV{OPENQA_USE_DEFAULTS}) {
+        path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
+        path($FindBin::Bin, "data")->child("database.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("database.ini"));
+        path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
+    }
     path($ENV{OPENQA_BASEDIR}, 'openqa', 'db')->make_path->child("db.lock")->spurt;
 }
 
@@ -152,12 +154,16 @@ subtest 'Simulation of unstable workers' => sub {
     dead_workers($schema);
 
     # Same job, since was put in scheduled state again.
-    $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, 8);
+    $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, 20);
     wait_for_worker($schema, 5);
 
     ($allocated) = scheduler_step($reactor);
 
     is @$allocated, 1;
+    if (!@$allocated) {
+        return;
+    }
+
     is @{$allocated}[0]->{job},    99982;
     is @{$allocated}[0]->{worker}, 5;
 
