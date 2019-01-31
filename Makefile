@@ -145,3 +145,10 @@ launch-docker-to-run-tests-within: docker.env
 .NOTPARALLEL: prepare-and-launch-docker-to-run-tests-within
 prepare-and-launch-docker-to-run-tests-within: docker-test-build launch-docker-to-run-tests-within
 	echo "Use docker-rm and docker-rmi to remove the container and image if necessary"
+
+
+.PHONY: direct-test-dockerfiles
+direct-test-dockerfiles:
+	m4 -P -D M4_TEST=t/ui/*.t docker/direct_test.m4 > docker/direct_tests_ui.Dockerfile
+	m4 -P -D M4_TEST=t/*.t docker/direct_test.m4 > docker/direct_tests.Dockerfile 
+	for t in `grep -l FULLSTACK t/*.t` ; do m4 -P -D M4_TEST=$${t} -D FULLSTACK=1 docker/direct_test.m4 > docker/direct_test`basename $${t%.*}`.Dockerfile ; done
