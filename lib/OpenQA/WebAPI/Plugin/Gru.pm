@@ -35,8 +35,10 @@ sub register_tasks {
 
     my $app = $self->app;
     $app->plugin($_)
-      for (qw(OpenQA::Task::Asset::Download OpenQA::Task::Asset::Limit OpenQA::Task::Job::Limit),
-        qw(OpenQA::Task::Needle::Scan OpenQA::Task::Screenshot::Scan));
+      for (
+        qw(OpenQA::Task::Asset::Download OpenQA::Task::Asset::Limit OpenQA::Task::Job::Limit),
+        qw(OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Screenshot::Scan)
+      );
 }
 
 sub register {
