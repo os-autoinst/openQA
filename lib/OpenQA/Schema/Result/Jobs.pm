@@ -986,6 +986,9 @@ sub calculate_result {
                 $overall = SOFTFAILED;
             }
         }
+        elsif ($m->result eq SKIPPED) {
+            $overall ||= PASSED;
+        }
         else {
             $overall = FAILED;
         }
