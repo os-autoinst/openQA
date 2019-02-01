@@ -243,7 +243,7 @@ subtest 'Websocket server - close connection test' => sub {
     my $log_file = tempfile;
     local $ENV{OPENQA_LOGFILE};
     local $ENV{MOJO_LOG_LEVEL};
-    my $unstable_ws_pid = create_websocket_server($mojoport + 1, 1, 0, 1);
+    my $unstable_ws_pid = create_websocket_server($mojoport + 1, 1, undef, 1);
     my $w2_pid          = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2, $log_file);
     my $re              = qr/\[.*?\]\sConnection turned off from .*?\- (.*?)\s\:(.*?) dead/;
 
