@@ -913,7 +913,7 @@ suite.
 
 [source,perl]
 --------------------------------------------------------------------------------
-if (select_virtio_console()) {
+if (select_serial_terminal()) {
         # Do something which only works, or is necessary, on a serial terminal
 }
 --------------------------------------------------------------------------------
