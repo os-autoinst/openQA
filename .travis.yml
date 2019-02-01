@@ -14,4 +14,5 @@ env:
 before_script:
 - docker pull anikitinsuse/openqabuildcache:latest
 script:
+- make direct-test-dockerfiles
 - docker build -f docker/${DOCKERFILE}.Dockerfile --cache-from anikitinsuse/openqabuildcache:latest .
