@@ -69,6 +69,9 @@ sub startup {
     # set cookie timeout to 48 hours (will be updated on each request)
     $self->app->sessions->default_expiration(48 * 60 * 60);
 
+    # register YAML output type
+    $self->app->types->type(yaml => 'text/yaml');
+
     # commands
     push @{$self->commands->namespaces}, 'OpenQA::WebAPI::Command';
 
@@ -392,6 +395,10 @@ sub startup {
     $api_ra->post('job_templates')->to('job_template#create');
     $api_public_r->get('job_templates/:job_template_id')->name('apiv1_job_template')->to('job_template#list');
     $api_ra->delete('job_templates/:job_template_id')->to('job_template#destroy');
+
+    # api/v1/job_templates_scheduling
+    $api_public_r->get('job_templates_scheduling/:id')->name('apiv1_job_templates_schedules')
+      ->to('job_template#schedules', id => undef);
 
     # api/v1/comments
     $api_public_r->get('/jobs/<job_id:num>/comments')->name('apiv1_list_comments')->to('comment#list');

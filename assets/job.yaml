@@ -1,0 +1,80 @@
+$id: http://open.qa/api/jobs/schema
+$schema: http://json-schema.org/draft-04/schema#
+description: openQA job template
+type: object
+additionalProperties: false
+patternProperties:
+  "^.*$":
+    type: object
+    additionalProperties: false
+    patternProperties:
+      "^.*$":
+        type: object
+        description: The name of a job group
+        properties:
+          architectures:
+            description: A set of architectures with a list of test suite(s) eg. ppc64le
+            type: object
+            additionalProperties: false
+            patternProperties:
+              "^[a-z0-9_]+$":
+                type: object
+                description: The architecture of the test suite(s) eg. ppc64le
+                patternProperties:
+                  "^.*$":
+                    type: array
+                    description: The product to run the test suite(s) on
+                    items:
+                      anyOf:
+                      - type: string
+                        description: Name of a test suite name
+                      - type: object
+                        description: A test suite with machine and/ or prio specified
+                        additionalProperties: false
+                        patternProperties:
+                          "^[A-Za-z0-9_+]+$":
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              machine:
+                                type: string
+                              prio:
+                                type: number
+          defaults:
+            description: A set of architectures with default configurations
+            type: object
+            additionalProperties: false
+            patternProperties:
+              "^[a-z0-9_]+$":
+                type: object
+                description: The architecture to define a default configuration for eg. ppc64le
+                additionalProperties: false
+                patternProperties:
+                  "^[A-Za-z0-9_+]+$":
+                    type: object
+                    required:
+                    - machine
+                    - prio
+                    additionalProperties: false
+                    properties:
+                      machine:
+                        type: string
+                      prio:
+                        type: number
+          products:
+            patternProperties:
+              "^[a-z0-9_]+$":
+                type: object
+                description: The name of a product (medium)
+                required:
+                  - distri
+                  - flavor
+                  - version
+                additionalProperties: false
+                properties:
+                  distri:
+                    type: string
+                  flavor:
+                    type: string
+                  version:
+                    type: string

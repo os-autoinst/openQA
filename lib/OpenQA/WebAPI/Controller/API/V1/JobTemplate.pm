@@ -16,6 +16,8 @@
 
 package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller';
+use JSON::Validator;
+use YAML::XS;
 
 =pod
 
@@ -116,6 +118,113 @@ sub list {
     } @templates;
 
     $self->render(json => {JobTemplates => \@templates});
+}
+
+sub validate_yaml {
+    my ($self, $yaml, $validate_schema) = shift;
+
+    # Note: Using the schema filename; slurp'ed text isn't detected as YAML
+    my $schema_yaml = $self->app->home->child('assets', 'job.yaml')->to_string;
+    my $validator   = JSON::Validator->new;
+    my $schema;
+    my @errors;
+    if ($validate_schema) {
+        # Validate the schema: catches errors in type names and definitions
+        $validator = $validator->load_and_validate_schema($schema_yaml);
+        $schema    = $validator->schema;
+    }
+    else {
+        $schema = $validator->schema($schema_yaml);
+    }
+    if ($schema) {
+        # Note: Don't pass $schema here, that won't work
+        push @errors, $validator->validate(\%{$yaml});
+    }
+    else {
+        push @errors, "Failed to load schema";
+    }
+    @errors;
+}
+
+sub schedules {
+    my $self = shift;
+
+    my %yaml;
+    my $groups = $self->db->resultset("JobGroups")
+      ->search($self->param('id') ? {id => $self->param('id')} : undef, {select => [qw(id name)]});
+    while (my $group = $groups->next) {
+        my %group;
+        my $templates
+          = $self->db->resultset("JobTemplates")->search({group_id => $group->id}, {order_by => 'me.test_suite_id'});
+
+        # Always set the hash of test suites to account for empty groups
+        $group{architectures} = {};
+
+        my %machines;
+        my %prios;
+        # Extract products and tests per architecture
+        while (my $template = $templates->next) {
+            $group{products}{$template->product->name} = {
+                distri  => $template->product->distri,
+                flavor  => $template->product->flavor,
+                version => $template->product->version
+            };
+            my %test_suite;
+            $test_suite{machine} = $template->machine->name;
+            $machines{$template->product->arch}{$template->machine->name}++;
+            if ($template->prio) {
+                $test_suite{prio} = $template->prio;
+                $prios{$template->product->arch}{$template->prio}++;
+            }
+            my $test_suites = $group{architectures}{$template->product->arch}{$template->product->name};
+            my @test_suites;
+            if ($test_suites) {
+                @test_suites = @{$test_suites};
+            }
+            push @test_suites, {$template->test_suite->name => \%test_suite};
+            $group{architectures}{$template->product->arch}{$template->product->name} = \@test_suites;
+        }
+
+        # Split off defaults
+        foreach my $arch (keys %{$group{architectures}}) {
+            # Ensure prios hash is defined for this architecture
+            $prios{$arch}{0} = 0;
+            my %_prios       = %{$prios{$arch}};
+            my $default_prio = (sort { $_prios{$b} <=> $_prios{$a} or $b cmp $a } keys %_prios)[0] + 0;
+            $group{defaults}{$arch}{prio} = $default_prio;
+            my %_machines       = %{$machines{$arch}};
+            my $default_machine = (sort { $_machines{$b} <=> $_machines{$a} or $b cmp $a } keys %_machines)[0];
+            $group{defaults}{$arch}{machine} = $default_machine;
+
+            foreach my $product (keys %{$group{architectures}->{$arch}}) {
+                my @_test_suites;
+                foreach my $test_suite (@{$group{architectures}->{$arch}->{$product}}) {
+                    my %test_suite = %{$test_suite};
+                    while (my ($name, $attr) = each %test_suite) {
+                        my %attr = %{$attr};
+                        if ($attr{machine} eq $default_machine) {
+                            delete $attr{machine};
+                        }
+                        if ($attr{prio} && $attr{prio} == $default_prio) {
+                            delete $attr{prio};
+                        }
+                        if (%attr) {
+                            ${test_suite}{$name} = \%attr;
+                            push @_test_suites, \%test_suite;
+                        }
+                        else {
+                            push @_test_suites, $name;
+                        }
+                    }
+                }
+                $group{architectures}{$arch}{$product} = \@_test_suites;
+            }
+        }
+
+        $yaml{$group->name} = \%group;
+    }
+
+    $self->render(data => YAML::XS::Dump(\%yaml), format => 'yaml');
 }
 
 =over 4

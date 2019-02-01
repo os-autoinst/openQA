@@ -27,6 +27,7 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
+use OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 
 OpenQA::Test::Case->new->init_data;
 
@@ -515,6 +516,80 @@ $t->post_ok(
     'setting invalid priority results in error'
 );
 is($job_templates->search({prio => -5})->count, 0, 'no rows affected');
+
+# test the YAML export
+# Get all groups
+$get = $t->get_ok("/api/v1/job_templates_scheduling")->status_is(200);
+is(OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, $get, 1), 0, 'YAML of all groups is valid');
+is(YAML::XS::Load($get->tx->res->body)->{opensuse}{products}{'opensuse-13.1-DVD-i586'}{version},
+    '13.1', 'Version of opensuse group')
+  || diag explain $get->tx->res->body;
+# Get one group with defined architectures, products and defaults
+$get = $t->get_ok("/api/v1/job_templates_scheduling/1001")->status_is(200);
+is(OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, $get, 1), 0, 'YAML of single group is valid');
+is_deeply(
+    YAML::XS::Load($get->tx->res->body),
+    {
+        opensuse => {
+            architectures => {
+                i586 => {
+                    'opensuse-13.1-DVD-i586' => [
+                        'textmode',
+                        {
+                            textmode => {
+                                machine => '32bit',
+                            }
+                        },
+                        {
+                            kde => {
+                                machine => '32bit',
+                            }
+                        },
+                        'kde',
+                        {
+                            RAID0 => {
+                                prio => 20,
+                            }
+                        },
+                        {
+                            client1 => {
+                                machine => '32bit',
+                            }
+                        },
+                        'client1',
+                        'server',
+                        {
+                            server => {
+                                machine => '32bit',
+                            }
+                        },
+                        {
+                            client2 => {
+                                machine => '32bit',
+                            }
+                        },
+                        'client2',
+                        'advanced_kde',
+                    ],
+                },
+            },
+            defaults => {
+                i586 => {
+                    machine => '64bit',
+                    prio    => 40,
+                },
+            },
+            products => {
+                'opensuse-13.1-DVD-i586' => {
+                    distri  => 'opensuse',
+                    flavor  => 'DVD',
+                    version => '13.1',
+                },
+            },
+        },
+    },
+    'YAML for opensuse group'
+) || diag explain $get->tx->res->body;
 
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(200);
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(404);    #not found
