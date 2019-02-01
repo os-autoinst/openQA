@@ -6,22 +6,12 @@ env:
   global:
   - COMMIT_AUTHOR_EMAIL=skynet@open.qa
   matrix:
-  - FULLSTACK=0 UITESTS=0
-  - FULLSTACK=0 UITESTS=1
-  - GH_PUBLISH=true FULLSTACK=1
-  - SCHEDULER_FULLSTACK=1
-  - DEVELOPER_FULLSTACK=1
+  - DOCKERFILE=direct_tests
+  - DOCKERFILE=direct_tests_ui
+  - DOCKERFILE=direct_testfull-stack
+  - DOCKERFILE=direct_test05-scheduler-full
+  - DOCKERFILE=direct_test33-developer_mode
 before_script:
-- docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
-cache:
-  directories:
-  - assets/cache
+- docker pull anikitinsuse/openqabuildcache:latest
 script:
-- mkdir -p assets/cache && chmod a+w assets/cache
-- touch openqa-debug.log autoinst-log.txt && chmod a+w openqa-debug.log autoinst-log.txt
-- make prepare-and-launch-docker-to-run-tests-within
-after_script:
-- bash script/generate-documentation $encrypted_e2c381aa6b8c_key $encrypted_e2c381aa6b8c_iv
-after_failure:
-- cat openqa-debug.log
-- cat autoinst-log.txt
+- docker build -f docker/${DOCKERFILE}.Dockerfile --cache-from anikitinsuse/openqabuildcache:latest .
