@@ -18,9 +18,12 @@ use Mojo::Server::Daemon;
 use Test::More;
 use Try::Tiny;
 use Time::HiRes 'time';
+use OpenQA::WebAPI;
+use OpenQA::Utils;
 
 our $_driver;
 our $mojopid;
+our $gru_pid;
 our $mojoport;
 our $startingpid   = 0;
 our $drivermissing = 'Install Selenium::Remote::Driver and Selenium::Chrome to run these tests';
@@ -44,12 +47,13 @@ The optional parameter C<$schema_hook> allows to provide a custom way of creatin
 =cut
 
 sub start_app {
-    my ($schema_hook) = @_;
+    my ($schema_hook, $args) = @_;
     $mojoport = $ENV{MOJO_PORT} // Mojo::IOLoop::Server->generate_port;
 
     $startingpid = $$;
     $mojopid     = fork();
     if ($mojopid == 0) {
+        log_info("inserting fixtures into database\n");
         if ($schema_hook) {
             $schema_hook->();
         }
@@ -58,28 +62,42 @@ sub start_app {
         }
 
         # Run openQA in test mode - it will mock Scheduler and Websockets DBus services
+        log_info("starting web UI\n");
         $ENV{MOJO_MODE} = 'test';
-        my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$mojoport"], silent => 1);
+        my $daemon = Mojo::Server::Daemon->new(
+            listen => ["http://127.0.0.1:$mojoport"],
+            silent => 1,
+        );
         $daemon->build_app('OpenQA::WebAPI');
         $daemon->run;
         exit(0);
     }
-    else {
-        #$SIG{__DIE__} = sub { kill('TERM', $mojopid); };
-        # as this might download assets on first test, we need to wait a while
-        my $wait = time + 50;
-        while (time < $wait) {
-            my $t      = time;
-            my $socket = IO::Socket::INET->new(
-                PeerHost => '127.0.0.1',
-                PeerPort => $mojoport,
-                Proto    => 'tcp',
-            );
-            last if $socket;
-            sleep 1 if time - $t < 1;
-        }
+
+    # as this might download assets on first test, we need to wait a while
+    my $wait = time + 50;
+    while (time < $wait) {
+        my $t      = time;
+        my $socket = IO::Socket::INET->new(
+            PeerHost => '127.0.0.1',
+            PeerPort => $mojoport,
+            Proto    => 'tcp',
+        );
+        last if $socket;
+        sleep 1 if time - $t < 1;
     }
+    start_gru() if ($args->{with_gru});
     return $mojoport;
+}
+
+sub start_gru {
+    $gru_pid = fork();
+    if ($gru_pid == 0) {
+        log_info("starting gru\n");
+        $ENV{MOJO_MODE} = 'test';
+        Mojolicious::Commands->start_app('OpenQA::WebAPI', 'gru', 'run', '-m', 'test', '--check', '0');
+        exit(0);
+    }
+    return $gru_pid;
 }
 
 sub start_driver {
@@ -159,12 +177,11 @@ sub check_driver_modules {
 }
 
 sub call_driver {
-
     # return a omjs driver using specified schema hook if modules
     # are available, otherwise return undef
     return undef unless check_driver_modules;
-    my ($schema_hook) = @_;
-    my $mojoport = start_app($schema_hook);
+    my ($schema_hook, $args) = @_;
+    my $mojoport = start_app($schema_hook, $args);
     return start_driver($mojoport);
 }
 
@@ -329,6 +346,11 @@ sub kill_driver() {
         kill('TERM', $mojopid);
         waitpid($mojopid, 0);
         $mojopid = undef;
+    }
+    if ($gru_pid) {
+        kill('TERM', $gru_pid);
+        waitpid($gru_pid, 0);
+        $gru_pid = undef;
     }
 }
 

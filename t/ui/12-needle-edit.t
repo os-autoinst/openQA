@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2014-2018 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,14 +41,14 @@ use OpenQA::Scheduler;
 my $ws = OpenQA::WebSockets->new;
 my $sh = OpenQA::Scheduler->new;
 
-my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+my $test_case   = OpenQA::Test::Case->new;
+my $schema_name = OpenQA::Test::Database->generate_schema_name;
+my $schema      = $test_case->init_data(schema_name => $schema_name);
+$ENV{TEST_PG_SEARCH_PATH} = $schema_name;
 
 use OpenQA::SeleniumTest;
 
 sub create_running_job_for_needle_editor {
-    my ($schema) = @_;
-
     $schema->resultset('Jobs')->create(
         {
             id          => 99980,
@@ -90,11 +90,7 @@ sub create_running_job_for_needle_editor {
         });
 }
 
-sub schema_hook {
-    create_running_job_for_needle_editor(OpenQA::Test::Database->new->create);
-}
-
-my $driver = call_driver(\&schema_hook);
+my $driver = call_driver(\&create_running_job_for_needle_editor, {with_gru => 1});
 unless ($driver) {
     plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
@@ -231,7 +227,7 @@ sub overwrite_needle($) {
     wait_for_ajax;
     my $diag;
     $diag = $driver->find_element_by_id('modal-overwrite');
-    is($driver->find_child_element($diag, '.modal-title', 'css')->is_displayed(), 1, "We can see the overwrite dialog");
+    is($driver->find_child_element($diag, '.modal-title', 'css')->is_displayed(), 1, "overwrite dialog shown");
     is(
         $driver->find_child_element($diag, '.modal-title', 'css')->get_text(),
         "Sure to overwrite test-newneedle?",
@@ -547,7 +543,6 @@ subtest 'show needle editor for screenshot (without any tags)' => sub {
 
 subtest 'open needle editor for running test' => sub {
     my $t = Test::Mojo->new('OpenQA::WebAPI');
-    create_running_job_for_needle_editor($t->app->schema);
     $t->ua->max_redirects(1);
     warnings { $t->get_ok('/tests/99980/edit') };
     note(

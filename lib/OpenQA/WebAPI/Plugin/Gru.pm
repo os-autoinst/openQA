@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 use Minion;
 use DBIx::Class::Timestamps 'now';
+use OpenQA::Utils;
 use Mojo::Pg;
 
 has app => undef, weak => 1;
@@ -56,9 +57,16 @@ sub register {
     else {
         $self->dsn($self->schema->storage->connect_info->[0]);
     }
-
     $conn->dsn($self->dsn());
+
+    # set the search path in accordance with the test setup done in OpenQA::Test::Database
+    if (my $search_path = $ENV{TEST_PG_SEARCH_PATH}) {
+        log_info("setting database search path to $search_path when registering Minion plugin\n");
+        $conn->search_path([$search_path]);
+    }
+
     $app->plugin(Minion => {Pg => $conn});
+
     $self->register_tasks;
 
     # Enable the Minion Admin interface under /minion

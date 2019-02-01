@@ -19,18 +19,25 @@ has fixture_path => 't/fixtures';
 use Test::More;
 plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
+sub generate_schema_name {
+    return 'tmp_' . rndstr();
+}
+
 sub create {
     my ($self, %options) = @_;
 
-    # New db
+    # create new database connection
     my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
-    unless (defined $options{skip_schema}) {
-        $schema->{tmp_schema} = 'tmp_' . rndstr();
-        $schema->storage->dbh->do("create schema $schema->{tmp_schema}");
-        $schema->storage->dbh->do("SET search_path TO $schema->{tmp_schema}");
 
-        # Handle reconnects
-        $schema->storage->on_connect_do("SET search_path TO $schema->{tmp_schema}");
+    # create a new schema or use an existing one
+    unless (defined $options{skip_schema}) {
+        my $schema_name = $options{schema_name} // generate_schema_name();
+        log_info("using database schema \"$schema_name\"\n");
+        $schema->{tmp_schema} = $schema_name;
+        $schema->storage->dbh->do("create schema \"$schema_name\"");
+        $schema->storage->dbh->do("SET search_path TO \"$schema_name\"");
+        # handle reconnects
+        $schema->storage->on_connect_do("SET search_path TO \"$schema_name\"");
     }
 
     OpenQA::Schema::deployment_check($schema);
