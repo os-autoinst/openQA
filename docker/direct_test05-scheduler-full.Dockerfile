@@ -148,7 +148,7 @@ COPY script ./script
 COPY t/ ./t
 COPY templates/ ./templates
 # must retry because it uses external resourses which sporadically return 404
-RUN ( ./script/generate-packed-assets ./ || ./script/generate-packed-assets ./ || ./script/generate-packed-assets ./ )
+RUN ( ./script/generate-packed-assets ./ || ( sleep 3; ./script/generate-packed-assets ./ ) || ( sleep 15; ./script/generate-packed-assets ./ ) )
 # postgres is not smart to start with root, so will use their user for testing
 ENV USER postgres
 ENV NORMAL_USER $USER
