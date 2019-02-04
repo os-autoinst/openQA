@@ -489,18 +489,27 @@ subtest 'job with skipped modules' => sub {
         ['skip',     'fail',     OpenQA::Jobs::Constants::FAILED],
         ['skip',     undef,      OpenQA::Jobs::Constants::FAILED],
     ];
+
     for my $tm (@{$test_matrix}) {
-        my %_settings = %settings;
-        my @tm_str = map { $_ // 'undef' } @{$tm};
+        my %_settings    = %settings;
+        my @tm_str       = map { $_ // 'undef' } @{$tm};
+        my %module_count = (ok => 0, softfail => 0, fail => 0, undef => 0, skip => 0);
+        $module_count{$tm_str[0]} = $module_count{$tm_str[0]} + 1;
+        $module_count{$tm_str[1]} = $module_count{$tm_str[1]} + 1;
         $_settings{TEST} = 'SKIP_TEST_' . join('_', @tm_str);
         my $job = _job_create(\%_settings);
         $job->insert_module({name => 'a', category => 'a', script => 'a'});
         $job->update_module('a', {result => $tm->[0], details => []});
         $job->insert_module({name => 'b', category => 'b', script => 'b'});
         $job->update_module('b', {result => $tm->[1], details => []});
-        $job->update;
         $job->done;
+        $job->discard_changes;
         is($job->result, $tm->[2], sprintf('job result: %s + %s => %s', @tm_str));
+        is($job->passed_module_count,     $module_count{ok},       'check number of passed modules');
+        is($job->softfailed_module_count, $module_count{softfail}, 'check number of softfailed modules');
+        is($job->failed_module_count,     $module_count{fail},     'check number of failed modules');
+        is($job->skipped_module_count,    $module_count{undef},    'check number of skipped modules');
+        is($job->externally_skipped_module_count, $module_count{skip}, 'check number of externally skipped modules');
     }
 };
 

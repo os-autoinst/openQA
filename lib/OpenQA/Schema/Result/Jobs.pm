@@ -157,6 +157,10 @@ __PACKAGE__->add_columns(
         data_type     => 'integer',
         default_value => 0,
     },
+    externally_skipped_module_count => {
+        data_type     => 'integer',
+        default_value => 0,
+    },
 );
 __PACKAGE__->add_timestamps;
 
@@ -1871,6 +1875,7 @@ sub result_stats {
         softfailed => $self->softfailed_module_count,
         failed     => $self->failed_module_count,
         none       => $self->skipped_module_count,
+        skipped    => $self->externally_skipped_module_count,
     };
 }
 
