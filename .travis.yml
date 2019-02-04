@@ -11,8 +11,16 @@ env:
   - DOCKERFILE=direct_testfull-stack
   - DOCKERFILE=direct_test05-scheduler-full
   - DOCKERFILE=direct_test33-developer_mode
+  - DOCKERFILE=direct_tests.Codecov
+  - DOCKERFILE=direct_tests_ui.Codecov
+  - DOCKERFILE=direct_testfull-stack.Codecov
+  - DOCKERFILE=direct_test05-scheduler-full.Codecov
+  - DOCKERFILE=direct_test33-developer_mode.Codecov
 before_script:
-- docker pull anikitinsuse/openqabuildcache:latest
-script:
 - make direct-test-dockerfiles
-- docker build -f docker/${DOCKERFILE}.Dockerfile --cache-from anikitinsuse/openqabuildcache:latest .
+- echo "START CONTENT OF GENERATED DOCKERFILE"
+- cat docker/${DOCKERFILE}.Dockerfile
+- echo "END CONTENT OF GENERATED DOCKERFILE"
+- docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
+script:
+- docker build -f docker/${DOCKERFILE}.Dockerfile .

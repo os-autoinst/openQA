@@ -47,3 +47,4 @@ t/data/openqa/share/factory/hdd/hdd_image.qcow2
 t/data/openqa/share/factory/iso/Core-7.2.iso
 t/log_chromedriver
 docker.env
+docker/direct*.Dockerfile

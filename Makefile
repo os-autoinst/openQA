@@ -149,6 +149,9 @@ prepare-and-launch-docker-to-run-tests-within: docker-test-build launch-docker-t
 
 .PHONY: direct-test-dockerfiles
 direct-test-dockerfiles:
-	m4 -P -D M4_TEST=t/ui/*.t docker/direct_test.m4 > docker/direct_tests_ui.Dockerfile
-	m4 -P -D M4_TEST=t/*.t docker/direct_test.m4 > docker/direct_tests.Dockerfile 
-	for t in `grep -l FULLSTACK t/*.t` ; do m4 -P -D M4_TEST=$${t} -D FULLSTACK=1 docker/direct_test.m4 > docker/direct_test`basename $${t%.*}`.Dockerfile ; done
+	m4 -P -D M4_TEST=t/ui/*.t -D M4_BASEIMAGE=$(DIRECT_TEST_BASEIMAGE) docker/direct_test.m4 > docker/direct_tests_ui.Dockerfile
+	m4 -P -D M4_TEST=t/ui/*.t -D M4_BASEIMAGE=$(DIRECT_TEST_BASEIMAGE) -D CODECOV docker/direct_test.m4 > docker/direct_tests_ui.Codecov.Dockerfile
+	m4 -P -D M4_TEST=t/*.t -D M4_BASEIMAGE=$(DIRECT_TEST_BASEIMAGE) docker/direct_test.m4 > docker/direct_tests.Dockerfile 
+	m4 -P -D M4_TEST=t/*.t -D M4_BASEIMAGE=$(DIRECT_TEST_BASEIMAGE) -D CODECOV docker/direct_test.m4 > docker/direct_tests.Codecov.Dockerfile 
+	for t in `grep -l FULLSTACK t/*.t` ; do m4 -P -D M4_TEST=$${t} -D FULLSTACK=1 -D M4_BASEIMAGE=$(DIRECT_TEST_BASEIMAGE) docker/direct_test.m4 > docker/direct_test`basename $${t%.*}`.Dockerfile ; done
+	for t in `grep -l FULLSTACK t/*.t` ; do m4 -P -D M4_TEST=$${t} -D FULLSTACK=1 -D M4_BASEIMAGE=$(DIRECT_TEST_BASEIMAGE) -D CODECOV docker/direct_test.m4 > docker/direct_test`basename $${t%.*}`.Codecov.Dockerfile ; done

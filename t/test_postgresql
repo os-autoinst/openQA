@@ -4,9 +4,9 @@ set -e
 
 DIR=$1
 if test -z "$DIR"; then
-	DIR=$(mktemp -d)
+	DIR=$(mktemp -d || ( >&2 echo Couldn\'t create tmpdir; exit 1 ) )
 else
-	DIR=$(readlink -f $DIR)
+	DIR=$(readlink -f $DIR || ( >&2 echo Couldn\'t find path "'$DIR'"; exit 1 ) )
 fi
 if test -e $DIR/postmaster.pid; then
   pg_ctl -D $DIR stop -w
