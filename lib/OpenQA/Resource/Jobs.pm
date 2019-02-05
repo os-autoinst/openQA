@@ -18,16 +18,15 @@ package OpenQA::Resource::Jobs;
 use strict;
 use warnings;
 
-# we need the critical fix for update
-# see https://github.com/dbsrgits/dbix-class/commit/31160673f390e178ee347e7ebee1f56b3f54ba7a
-use DBIx::Class 0.082801;
-
 use DBIx::Class::ResultClass::HashRefInflator;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
 use OpenQA::Utils 'log_debug';
+use Exporter 'import';
+
+our @EXPORT_OK = qw(job_restart);
 
 =head2 job_restart
 
@@ -48,7 +47,7 @@ sub job_restart {
 
     # first, duplicate all jobs that are either running or done
     my $schema = OpenQA::Schema::connect_db;
-    my $jobs = $schema->resultset("Jobs")->search(
+    my $jobs   = $schema->resultset("Jobs")->search(
         {
             id    => $jobids,
             state => [OpenQA::Jobs::Constants::EXECUTION_STATES, OpenQA::Jobs::Constants::FINAL_STATES],

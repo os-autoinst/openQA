@@ -16,10 +16,6 @@
 package OpenQA::Scheduler::Scheduler;
 use Mojo::Base -strict;
 
-# we need the critical fix for update
-# see https://github.com/dbsrgits/dbix-class/commit/31160673f390e178ee347e7ebee1f56b3f54ba7a
-use DBIx::Class 0.082801;
-
 use DBIx::Class::ResultClass::HashRefInflator;
 use Digest::MD5;
 use Data::Dumper;
