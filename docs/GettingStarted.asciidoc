@@ -59,6 +59,11 @@ application takes care of distributing test jobs among workers. Web
 application and workers don't have to run on the same machine but
 can be connected via network instead.
 
+Note that the diagram shown above is simplified. There exists
+link:images/architecture.svg[a more sophisticated version]
+which is more complete and detailed. (The diagram can be edited via
+its underlying link:images/architecture.graphml[GraphML file].)
+
 == Basic concepts
 [id="concepts"]
 
