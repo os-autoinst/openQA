@@ -387,6 +387,14 @@ sub save_needle_ajax {
     my $needledir  = needledir($job->DISTRI, $job->VERSION);
     my $needlename = $validation->param('needlename');
 
+    # check whether Minion worker are available to get a nice error message instead of an inactive job
+    my $gru = $self->gru;
+    if (!$gru->has_workers) {
+        return $self->render(
+            json => {error => 'No Minion worker available. The <code>openqa-gru</code> service is likely not running.'}
+        );
+    }
+
     # enqueue Minion job to copy the image and (if configured) run Git commands
     my %minion_args = (
         job_id       => $job_id,
@@ -402,15 +410,15 @@ sub save_needle_ajax {
     );
     my %minion_options = (
         priority => 10,
-        ttl      => 300,
-        limit    => 1,
+        ttl      => 60,
     );
-    my $ids = $self->gru->enqueue(save_needle => \%minion_args, \%minion_options);
+    my $ids = $gru->enqueue(save_needle => \%minion_args, \%minion_options);
     my $minion_id;
     if (ref $ids eq 'HASH') {
         $minion_id = $ids->{minion_id};
     }
-    my $minion_job = $app->minion->job($minion_id);
+    my $minion     = $app->minion;
+    my $minion_job = $minion->job($minion_id);
     if (!$minion_job) {
         return $self->render(json => {error => 'Unable to enqueue Minion job for saving needle.'});
     }
@@ -422,7 +430,7 @@ sub save_needle_ajax {
 
         eval {
             # find the minion job
-            my $minion_job = $app->minion->job($minion_id);
+            my $minion_job = $minion->job($minion_id);
             if (!$minion_job) {
                 $loop->remove($timer_id);
                 return $self->render(json => {error => 'Minion job for saving needle has been removed.'});

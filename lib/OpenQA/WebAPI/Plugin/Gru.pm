@@ -92,6 +92,11 @@ sub is_task_active {
     return $self->count_jobs($task, ['active']) > 0;
 }
 
+# checks if there are worker registered
+sub has_workers {
+    return !!shift->app->minion->backend->list_workers(0, 1)->{total};
+}
+
 sub enqueue {
     my ($self, $task, $args, $options, $jobs) = (shift, shift, shift // [], shift // {}, shift // []);
 
