@@ -23,7 +23,6 @@ use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobLocks;
 use OpenQA::Resource::Jobs;
 use OpenQA::ResourceAllocator;
-use OpenQA::Utils qw(wakeup_scheduler log_debug);
 
 my %final_states = map { $_ => 1 } OpenQA::Jobs::Constants::NOT_OK_RESULTS();
 

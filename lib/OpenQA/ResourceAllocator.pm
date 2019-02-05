@@ -24,9 +24,9 @@ use Net::DBus::Exporter 'org.opensuse.openqa.ResourceAllocator';
 use Net::DBus::Reactor;
 use Data::Dump 'pp';
 use Scalar::Util 'blessed';
+use Try::Tiny;
 use OpenQA::IPC;
-use OpenQA::Utils qw(log_debug wakeup_scheduler exists_worker safe_call);
-use OpenQA::Resource::Jobs  ();
+use OpenQA::Utils qw(log_debug wakeup_scheduler safe_call);
 use OpenQA::Resource::Locks ();
 use OpenQA::Setup;
 
@@ -89,22 +89,6 @@ sub _is_method_allowed {
 dbus_method('job_restart', [['array', 'uint32']], [['array', ['dict', 'uint32', 'uint32']]]);
 sub job_restart {
     my ($self, $args) = @_;
-    my $rs = safe_call 'OpenQA::Resource::Jobs' => job_restart => $args;
-    return [] if @$rs == 0;
-    return $rs;
-}
-
-dbus_method('job_update_status', ['uint32', ['dict', 'string', ['variant']]], ['uint32']);
-sub job_update_status {
-    my ($self, $jobid, $status) = @_;
-}
-
-## Worker auth
-dbus_method('validate_workerid', ['uint32'], ['bool']);
-sub validate_workerid {
-    my ($self, $args) = @_;
-    my $res = exists_worker($self->schema, $args);
-    !!$res;
 }
 
 ## Lock API

@@ -24,15 +24,10 @@ use DBIx::Class 0.082801;
 
 use DBIx::Class::ResultClass::HashRefInflator;
 use OpenQA::Jobs::Constants;
+use OpenQA::Schema;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
 use OpenQA::Utils 'log_debug';
-use OpenQA::ResourceAllocator;
-use Exporter 'import';
-
-our @EXPORT = qw(job_restart job_create);
-
-sub schema { OpenQA::ResourceAllocator->instance->schema }
 
 =head2 job_restart
 
@@ -52,7 +47,8 @@ sub job_restart {
     my ($jobids) = @_ or die "missing name parameter\n";
 
     # first, duplicate all jobs that are either running or done
-    my $jobs = schema->resultset("Jobs")->search(
+    my $schema = OpenQA::Schema::connect_db;
+    my $jobs = $schema->resultset("Jobs")->search(
         {
             id    => $jobids,
             state => [OpenQA::Jobs::Constants::EXECUTION_STATES, OpenQA::Jobs::Constants::FINAL_STATES],
@@ -65,7 +61,7 @@ sub job_restart {
     }
 
     # then tell workers to abort
-    $jobs = schema->resultset("Jobs")->search(
+    $jobs = $schema->resultset("Jobs")->search(
         {
             id    => $jobids,
             state => [OpenQA::Jobs::Constants::EXECUTION_STATES],
