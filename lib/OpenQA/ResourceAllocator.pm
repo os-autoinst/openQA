@@ -86,11 +86,6 @@ sub _is_method_allowed {
 }
 
 
-dbus_method('job_restart', [['array', 'uint32']], [['array', ['dict', 'uint32', 'uint32']]]);
-sub job_restart {
-    my ($self, $args) = @_;
-}
-
 ## Lock API
 dbus_method('mutex_create', ['string', 'uint32'], ['bool']);
 sub mutex_create {
