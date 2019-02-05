@@ -603,7 +603,7 @@ sub read_worker_config {
     my $host_settings;
     $host ||= $sets->{HOST} ||= 'localhost';
     delete $sets->{HOST};
-    my @hosts = split / /, $host;
+    my @hosts = split ' ', $host;
     for my $section (@hosts) {
         if ($cfg && $cfg->SectionExists($section)) {
             for my $set ($cfg->Parameters($section)) {
