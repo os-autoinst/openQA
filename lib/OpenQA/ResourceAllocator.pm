@@ -90,24 +90,16 @@ sub _is_method_allowed {
 dbus_method('mutex_create', ['string', 'uint32'], ['bool']);
 sub mutex_create {
     my ($self, @args) = @_;
-    my $res = safe_call 'OpenQA::Resource::Locks' => create => @args;
-    !!@$res[0];
 }
 
 dbus_method('mutex_lock', ['string', 'uint32', 'string'], ['int32']);
 sub mutex_lock {
     my ($self, @args) = @_;
-    my $res = safe_call 'OpenQA::Resource::Locks' => lock => @args;
-    return @$res[0] if !!@$res[0];
-    return 0;
 }
 
 dbus_method('mutex_unlock', ['string', 'uint32', 'string'], ['int32']);
 sub mutex_unlock {
     my ($self, @args) = @_;
-    my $res = safe_call 'OpenQA::Resource::Locks' => unlock => @args;
-    return @$res[0] if !!@$res[0];
-    return 0;
 }
 
 dbus_method('barrier_create', ['string', 'uint32', 'uint32'], ['bool']);

@@ -131,7 +131,7 @@ sub barrier_wait {
     return -1 unless $name && $jobid;
     my $barrier = _get_lock($name, $jobid, $where);
     return -1 unless $barrier;
-    my $schema = OpenQA::Schema::connect_db;
+    my $schema    = OpenQA::Schema::connect_db;
     my $jobschema = $schema->resultset("Jobs");
     my @jobs      = split(/,/, $barrier->locked_by // '');
 

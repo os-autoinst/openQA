@@ -17,6 +17,7 @@ package OpenQA::WebAPI::Controller::API::V1::Locks;
 use Mojo::Base 'Mojolicious::Controller';
 
 use OpenQA::IPC;
+use OpenQA::Resource::Locks;
 
 =pod
 
@@ -57,8 +58,9 @@ sub mutex_action {
 
     my $action = $validation->param('action');
     my $where  = $validation->param('where') // '';
-    my $ipc    = OpenQA::IPC->ipc;
-    my $res    = $ipc->resourceallocator("mutex_$action", $name, $jobid, $where);
+    my $res;
+    if ($action eq 'lock') { $res = OpenQA::Resource::Locks::lock($name, $jobid, $where) }
+    else                   { $res = OpenQA::Resource::Locks::unlock($name, $jobid, $where) }
 
     return $self->render(text => 'ack',  status => 200) if $res > 0;
     return $self->render(text => 'nack', status => 410) if $res < 0;
@@ -88,8 +90,7 @@ sub mutex_create {
 
     my $name = $validation->param('name');
 
-    my $ipc = OpenQA::IPC->ipc;
-    my $res = $ipc->resourceallocator('mutex_create', $name, $jobid);
+    my $res = OpenQA::Resource::Locks::create($name, $jobid);
     return $self->render(text => 'ack', status => 200) if $res;
     return $self->render(text => 'nack', status => 409);
 }
