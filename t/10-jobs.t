@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -666,7 +666,7 @@ subtest 'check dead children stop job' => sub {
 
     $alive = 0;
 
-    eval { OpenQA::Worker::Jobs::_stop_job_2('dead_children'); };
+    eval { OpenQA::Worker::Jobs::_stop_job_kill_and_upload('dead_children'); };
 
     like($messages[2], qr/result: dead_children/, 'dead children match exception');
 };
