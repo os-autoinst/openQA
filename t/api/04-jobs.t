@@ -33,7 +33,6 @@ use Mojo::File 'path';
 use Digest::MD5;
 use OpenQA::WebSockets;
 use OpenQA::Scheduler;
-use OpenQA::ResourceAllocator;
 use OpenQA::Events;
 
 require OpenQA::Schema::Result::Jobs;
@@ -43,7 +42,6 @@ OpenQA::Test::Case->new->init_data;
 # create Test DBus bus and service for fake WebSockets and Scheduler call
 my $ws = OpenQA::WebSockets->new;
 my $sh = OpenQA::Scheduler->new;
-my $ra = OpenQA::ResourceAllocator->new;
 
 my $chunk_size = 10000000;
 

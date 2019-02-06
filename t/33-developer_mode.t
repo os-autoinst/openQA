@@ -59,8 +59,7 @@ eval 'use Test::More::Color "foreground"';
 
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
-use OpenQA::Test::Utils
-  qw(create_websocket_server create_live_view_handler create_resourceallocator start_resourceallocator setup_share_dir);
+use OpenQA::Test::Utils qw(create_websocket_server create_live_view_handler setup_share_dir);
 use OpenQA::Test::FullstackUtils;
 
 plan skip_all => 'set DEVELOPER_FULLSTACK=1 (be careful)' unless $ENV{DEVELOPER_FULLSTACK};
@@ -76,11 +75,10 @@ my $workerpid;
 my $wspid;
 my $livehandlerpid;
 my $schedulerpid;
-my $resourceallocatorpid;
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 
 sub turn_down_stack {
-    for my $pid ($workerpid, $wspid, $livehandlerpid, $schedulerpid, $resourceallocatorpid) {
+    for my $pid ($workerpid, $wspid, $livehandlerpid, $schedulerpid) {
         next unless $pid;
         kill TERM => $pid;
         waitpid($pid, 0);
@@ -114,9 +112,6 @@ if ($schedulerpid == 0) {
     Devel::Cover::report() if Devel::Cover->can('report');
     _exit(0);
 }
-
-# start resource allocator
-$resourceallocatorpid = start_resourceallocator;
 
 # start Selenium test driver without fixtures usual fixtures but an additional admin user
 my $driver = call_driver(

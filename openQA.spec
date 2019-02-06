@@ -17,7 +17,7 @@
 
 
 # can't use linebreaks here!
-%define openqa_services openqa-webui.service openqa-gru.service openqa-websockets.service openqa-scheduler.service openqa-resource-allocator.service
+%define openqa_services openqa-webui.service openqa-gru.service openqa-websockets.service openqa-scheduler.service
 %define openqa_worker_services openqa-worker.target openqa-slirpvde.service openqa-vde_switch.service openqa-worker-cacheservice.service openqa-worker-cacheservice-minion.service
 %if %{undefined tmpfiles_create}
 %define tmpfiles_create() \
@@ -256,7 +256,7 @@ grep -rl %{_bindir}/env . | while read file; do
     sed -e 's,%{_bindir}/env perl,%{_bindir}/perl,' -i $file
 done
 mkdir -p %{buildroot}%{_sbindir}
-for i in webui gru worker resource-allocator scheduler websockets slirpvde vde_switch livehandler; do
+for i in webui gru worker scheduler websockets slirpvde vde_switch livehandler; do
     ln -s ../sbin/service %{buildroot}%{_sbindir}/rcopenqa-$i
 done
 #
@@ -357,7 +357,6 @@ fi
 %doc README.asciidoc
 %{_sbindir}/rcopenqa-gru
 %{_sbindir}/rcopenqa-scheduler
-%{_sbindir}/rcopenqa-resource-allocator
 %{_sbindir}/rcopenqa-websockets
 %{_sbindir}/rcopenqa-webui
 %{_sbindir}/rcopenqa-livehandler
@@ -386,7 +385,6 @@ fi
 %{_unitdir}/openqa-livehandler.service
 %{_unitdir}/openqa-gru.service
 %{_unitdir}/openqa-scheduler.service
-%{_unitdir}/openqa-resource-allocator.service
 %{_unitdir}/openqa-websockets.service
 # web libs
 %dir %{_datadir}/openqa
@@ -401,7 +399,6 @@ fi
 %{_datadir}/openqa/script/initdb
 %{_datadir}/openqa/script/openqa
 %{_datadir}/openqa/script/openqa-scheduler
-%{_datadir}/openqa/script/openqa-resource-allocator
 %{_datadir}/openqa/script/openqa-websockets
 %{_datadir}/openqa/script/openqa-livehandler
 %{_datadir}/openqa/script/upgradedb

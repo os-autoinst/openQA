@@ -73,7 +73,6 @@ systemctl enable --now apache2.service
 systemctl enable --now openqa-webui.service
 systemctl enable --now openqa-websockets.service
 systemctl enable --now openqa-scheduler.service
-systemctl enable --now openqa-resource-allocator.service
 systemctl enable --now openqa-livehandler.service
 systemctl enable --now openqa-gru.service
 

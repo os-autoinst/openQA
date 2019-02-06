@@ -62,7 +62,7 @@ eval 'use Test::More::Color "foreground"';
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
 use OpenQA::Test::Utils
-  qw(create_websocket_server create_live_view_handler create_resourceallocator start_resourceallocator setup_share_dir),
+  qw(create_websocket_server create_live_view_handler setup_share_dir),
   qw(cache_minion_worker cache_worker_service);
 use OpenQA::Test::FullstackUtils;
 
@@ -72,11 +72,10 @@ plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' u
 my $workerpid;
 my $wspid;
 my $livehandlerpid;
-my $resourceallocatorpid;
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
 
 sub turn_down_stack {
-    for my $pid ($workerpid, $wspid, $livehandlerpid, $resourceallocatorpid) {
+    for my $pid ($workerpid, $wspid, $livehandlerpid) {
         next unless $pid;
         kill TERM => $pid;
         waitpid($pid, 0);
@@ -102,8 +101,6 @@ OpenQA::Test::FullstackUtils::setup_database();
 
 # make sure the assets are prefetched
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
-
-$resourceallocatorpid = start_resourceallocator;
 
 # we don't want no fixtures
 my $driver       = call_driver(sub { });

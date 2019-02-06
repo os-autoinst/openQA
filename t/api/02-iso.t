@@ -35,7 +35,6 @@ use Data::Dump;
 
 use OpenQA::WebSockets;
 use OpenQA::Scheduler;
-use OpenQA::ResourceAllocator;
 
 use OpenQA::Utils 'locate_asset';
 
@@ -108,7 +107,6 @@ sub schedule_iso {
 # create Test DBus bus and service for fake WebSockets and Scheduler call
 my $ws = OpenQA::WebSockets->new;
 my $sh = OpenQA::Scheduler->new;
-my $ra = OpenQA::ResourceAllocator->new;
 
 my $ret;
 
