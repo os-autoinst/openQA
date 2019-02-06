@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Tue Feb  5 11:19:40 2019
+-- Created on Wed Feb  6 11:27:16 2019
 -- 
 ;
 --
@@ -679,7 +679,7 @@ ALTER TABLE developer_sessions ADD CONSTRAINT developer_sessions_fk_job_id FOREI
 
 ;
 ALTER TABLE developer_sessions ADD CONSTRAINT developer_sessions_fk_user_id FOREIGN KEY (user_id)
-  REFERENCES users (id) DEFERRABLE;
+  REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE;
 
 ;
 ALTER TABLE gru_dependencies ADD CONSTRAINT gru_dependencies_fk_gru_task_id FOREIGN KEY (gru_task_id)

@@ -748,8 +748,8 @@ schema:
             - user_id
           match_type: ''
           name: developer_sessions_fk_user_id
-          on_delete: ''
-          on_update: ''
+          on_delete: CASCADE
+          on_update: CASCADE
           options: []
           reference_fields:
             - id
@@ -2362,7 +2362,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: t_created
-          order: 26
+          order: 27
           size:
             - 0
         t_finished:
@@ -2392,7 +2392,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: t_updated
-          order: 27
+          order: 28
           size:
             - 0
       indices:
