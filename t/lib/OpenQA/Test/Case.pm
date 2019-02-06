@@ -37,9 +37,11 @@ sub new {
     my $schema;
 
     sub init_data {
+        my ($self, %options) = @_;
+
         # This should result in the 't' directory, even if $0 is in a subdirectory
         my ($tdirname) = $0 =~ qr/((.*\/t\/|^t\/)).+$/;
-        $schema = OpenQA::Test::Database->new->create();
+        $schema = OpenQA::Test::Database->new->create(%options);
 
         # ARGL, we can't fake the current time and the db manages
         # t_started so we have to override it manually

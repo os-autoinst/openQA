@@ -28,7 +28,7 @@ use Cwd 'realpath';
 use File::Spec::Functions 'catdir';
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
-use OpenQA::Utils qw(log_error commit_git_return_error);
+use OpenQA::Utils qw(log_error commit_git);
 
 use db_helpers;
 
@@ -198,7 +198,7 @@ sub remove {
             rm      => [$fname, $screenshot],
             user    => $user,
             message => sprintf("admin remove of %s/%s", $self->directory->name, $self->filename)};
-        my $error = commit_git_return_error($args);
+        my $error = commit_git($args);
         return $error if $error;
     }
     else {

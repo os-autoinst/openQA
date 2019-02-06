@@ -324,35 +324,44 @@ function setMatch() {
 }
 
 function reactToSaveNeedle(data) {
-  if (data.status != 200 && (!data.responseJSON || !data.responseJSON.error)) {
-    data = {error: "Fatal error on saving needle"};
+  var failed = data.status !== 200 ||
+    !data.responseJSON ||
+    (!data.responseJSON.success && !data.responseJSON.requires_overwrite);
+  var defaultErrorMessage = '<strong>Fatal error when saving needle.</strong>';
+  if (failed && (!data.responseJSON || typeof data.responseJSON.error !== 'string')) {
+    data = {error: defaultErrorMessage};
   } else {
     data = data.responseJSON;
   }
-  if (data.info) {
-    var info = data.info;
+
+  var successMessage = data.success;
+  var requiresOverwrite = data.requires_overwrite;
+  var errorMessage = data.error;
+  if (successMessage) {
+    // add note to go back or restart
     if (data.developer_session_job_id) {
-      info += " - <a href='/tests/" + data.developer_session_job_id + "#live'>back to live view</a>";
+      successMessage += " - <a href='/tests/" + data.developer_session_job_id + "#live'>back to live view</a>";
     } else if (data.restart) {
-      info += " - <a href='#' data-url='" + data.restart + "' class='restart-link'>restart job</a>";
+      successMessage += " - <a href='#' data-url='" + data.restart + "' class='restart-link'>restart job</a>";
     }
-    addFlash('info', info);
-    $('#save').prop('disabled', false);
-    return;
-  }
-  if (data.error) {
-    addFlash('warning', data.error);
-    $('#save').prop('disabled', false);
-    return;
-  }
-  if (data.requires_overwrite) {
+    addFlash('info', successMessage);
+
+  } else if (errorMessage) {
+    // add context to the error message unless it starts with an HTML tag (and is therefore assumed to be
+    // already nicely formatted)
+    if (errorMessage.indexOf('<') !== 0) {
+      errorMessage = [defaultErrorMessage, errorMessage].join('<br>');
+    }
+    addFlash('danger', errorMessage);
+
+  } else if (requiresOverwrite) {
     delete data.requires_overwrite;
     $('#modal-overwrite .modal-title').text("Sure to overwrite " + data.needlename + "?");
     $('#modal-overwrite').data('formdata', data);
     $('#modal-overwrite').modal();
-  } else {
-    $('#save').prop('disabled', false);
   }
+
+  $('#save').prop('disabled', false);
 }
 
 function saveNeedle(e) {
