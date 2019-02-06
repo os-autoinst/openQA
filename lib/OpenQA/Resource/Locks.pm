@@ -1,4 +1,4 @@
-# Copyright (c) 2015 SUSE LINUX GmbH, Nuernberg, Germany.
+# Copyright (c) 2015-2019 SUSE LINUX GmbH, Nuernberg, Germany.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,6 @@ use warnings;
 
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema;
-use OpenQA::Schema::Result::Jobs;
-use OpenQA::Schema::Result::JobLocks;
-use OpenQA::Resource::Jobs;
 
 my %final_states = map { $_ => 1 } OpenQA::Jobs::Constants::NOT_OK_RESULTS();
 
@@ -69,7 +66,7 @@ sub lock {
         my $schema = OpenQA::Schema::connect_db;
         # prevent deadlock - job that is supposed to create the lock already finished
         return -1
-          if $schema->resultset("Jobs")->count({id => $where, state => [OpenQA::Jobs::Constants::FINAL_STATES]});
+          if $schema->resultset('Jobs')->count({id => $where, state => [OpenQA::Jobs::Constants::FINAL_STATES]});
     }
 
     # if no lock so far, there is no lock, return as locked
@@ -132,7 +129,7 @@ sub barrier_wait {
     my $barrier = _get_lock($name, $jobid, $where);
     return -1 unless $barrier;
     my $schema    = OpenQA::Schema::connect_db;
-    my $jobschema = $schema->resultset("Jobs");
+    my $jobschema = $schema->resultset('Jobs');
     my @jobs      = split(/,/, $barrier->locked_by // '');
 
     do { $barrier->delete; return -1 }

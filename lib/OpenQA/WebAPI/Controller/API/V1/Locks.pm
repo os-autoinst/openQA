@@ -1,4 +1,4 @@
-# Copyright (c) 2015 SUSE LINUX GmbH, Nuernberg, Germany.
+# Copyright (c) 2015-2019 SUSE LINUX GmbH, Nuernberg, Germany.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
 package OpenQA::WebAPI::Controller::API::V1::Locks;
 use Mojo::Base 'Mojolicious::Controller';
 
-use OpenQA::IPC;
 use OpenQA::Resource::Locks;
 
 =pod
@@ -120,8 +119,7 @@ sub barrier_wait {
     my $where          = $validation->param('where')          // '';
     my $check_dead_job = $validation->param('check_dead_job') // 0;
 
-    my $ipc = OpenQA::IPC->ipc;
-    my $res = $ipc->resourceallocator('barrier_wait', $name, $jobid, $where, $check_dead_job);
+    my $res = OpenQA::Resource::Locks::barrier_wait($name, $jobid, $where, $check_dead_job);
 
     return $self->render(text => 'ack',  status => 200) if $res > 0;
     return $self->render(text => 'nack', status => 410) if $res < 0;
@@ -150,8 +148,7 @@ sub barrier_create {
     my $tasks = $validation->param('tasks');
     my $name  = $validation->param('name');
 
-    my $ipc = OpenQA::IPC->ipc;
-    my $res = $ipc->resourceallocator('barrier_create', $name, $jobid, $tasks);
+    my $res = OpenQA::Resource::Locks::barrier_create($name, $jobid, $tasks);
     return $self->render(text => 'ack', status => 200) if $res;
     return $self->render(text => 'nack', status => 409);
 }
@@ -176,8 +173,7 @@ sub barrier_destroy {
     return $self->render(text => 'Bad request', status => 400) if ($validation->has_error);
     my $where = $validation->param('where') // '';
 
-    my $ipc = OpenQA::IPC->ipc;
-    my $res = $ipc->resourceallocator('barrier_destroy', $name, $jobid, $where);
+    my $res = OpenQA::Resource::Locks::barrier_destroy($name, $jobid, $where);
 
     return $self->render(text => 'ack', status => 200);
 }
