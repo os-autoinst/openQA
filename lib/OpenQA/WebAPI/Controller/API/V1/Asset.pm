@@ -16,6 +16,7 @@
 package OpenQA::WebAPI::Controller::API::V1::Asset;
 use Mojo::Base 'Mojolicious::Controller';
 
+use DBIx::Class::ResultClass::HashRefInflator;
 use OpenQA::Utils;
 use OpenQA::IPC;
 

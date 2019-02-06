@@ -16,7 +16,6 @@
 package OpenQA::Scheduler::Scheduler;
 use Mojo::Base -strict;
 
-use DBIx::Class::ResultClass::HashRefInflator;
 use Digest::MD5;
 use Data::Dumper;
 use Data::Dump qw(dd pp);

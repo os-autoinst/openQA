@@ -18,11 +18,8 @@ package OpenQA::Resource::Jobs;
 use strict;
 use warnings;
 
-use DBIx::Class::ResultClass::HashRefInflator;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema;
-use OpenQA::Schema::Result::Jobs;
-use OpenQA::Schema::Result::JobDependencies;
 use OpenQA::Utils 'log_debug';
 use Exporter 'import';
 

@@ -18,7 +18,6 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use File::Basename;
 use OpenQA::Utils;
-use OpenQA::IPC;
 use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema::Result::JobDependencies;
@@ -678,7 +677,6 @@ Return number of cancelled jobs within a JSON block.
 sub cancel {
     my $self = shift;
     my $iso  = $self->stash('name');
-    my $ipc  = OpenQA::IPC->ipc;
     $self->emit_event('openqa_iso_cancel', {iso => $iso});
 
     my $res = $self->db->resultset('Jobs')->cancel_by_settings({ISO => $iso}, 0);
