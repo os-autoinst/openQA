@@ -196,6 +196,9 @@ function renderTestResult( data, type, row ) {
         if (data.none) {
             html += " " + data.none + "<i class='fa module_none fa-ban' title='modules skipped'></i>";
         }
+        if (data.skipped) {
+            html += " " + data.skipped + "<i class='fa module_skipped fa-angle-double-right' title='modules externally skipped'></i>";
+        }
     }
     if (row.state === 'cancelled') {
         html += "<i class='fa fa-times' title='canceled'></i>";

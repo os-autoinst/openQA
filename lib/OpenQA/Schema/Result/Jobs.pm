@@ -157,6 +157,10 @@ __PACKAGE__->add_columns(
         data_type     => 'integer',
         default_value => 0,
     },
+    externally_skipped_module_count => {
+        data_type     => 'integer',
+        default_value => 0,
+    },
 );
 __PACKAGE__->add_timestamps;
 
@@ -184,9 +188,6 @@ __PACKAGE__->might_have(
     developer_session => 'OpenQA::Schema::Result::DeveloperSessions',
     'job_id', {cascade_delete => 1});
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'job_id');
-__PACKAGE__->might_have(
-    scenario => 'OpenQA::Schema::Result::TestSuites',
-    {'foreign.name' => 'self.TEST'}, {cascade_delete => 0});
 __PACKAGE__->many_to_many(assets => 'jobs_assets', 'asset');
 __PACKAGE__->has_many(last_use_assets => 'OpenQA::Schema::Result::Assets', 'last_use_job_id', {cascade_delete => 0});
 __PACKAGE__->has_many(children        => 'OpenQA::Schema::Result::JobDependencies', 'parent_job_id');
@@ -281,6 +282,12 @@ sub name {
         $self->{_name} = $name;
     }
     return $self->{_name};
+}
+
+sub scenario {
+    my ($self) = @_;
+
+    return $self->result_source->schema->resultset('TestSuites')->find({name => $self->TEST});
 }
 
 sub scenario_hash {
@@ -985,6 +992,9 @@ sub calculate_result {
             if (!defined $overall || $overall eq PASSED) {
                 $overall = SOFTFAILED;
             }
+        }
+        elsif ($m->result eq SKIPPED) {
+            $overall ||= PASSED;
         }
         else {
             $overall = FAILED;
@@ -1868,6 +1878,7 @@ sub result_stats {
         softfailed => $self->softfailed_module_count,
         failed     => $self->failed_module_count,
         none       => $self->skipped_module_count,
+        skipped    => $self->externally_skipped_module_count,
     };
 }
 

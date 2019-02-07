@@ -104,6 +104,7 @@ my %columns_by_result = (
     OpenQA::Jobs::Constants::SOFTFAILED => 'softfailed_module_count',
     OpenQA::Jobs::Constants::FAILED     => 'failed_module_count',
     OpenQA::Jobs::Constants::NONE       => 'skipped_module_count',
+    OpenQA::Jobs::Constants::SKIPPED    => 'externally_skipped_module_count',
 );
 
 # override to update job module stats in jobs table

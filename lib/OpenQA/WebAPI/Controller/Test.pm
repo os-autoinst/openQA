@@ -83,6 +83,7 @@ sub list_ajax {
               state clone_id result group_id t_finished
               passed_module_count softfailed_module_count
               failed_module_count skipped_module_count
+              externally_skipped_module_count
               )
         ],
         prefetch => [qw(children parents)],
