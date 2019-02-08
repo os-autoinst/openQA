@@ -161,8 +161,8 @@ function decreaseJobPrio(jobId, linkElement) {
 function changeJobPrio(jobId, delta, linkElement) {
     var prioValueElement = $(linkElement).parent().find('.prio-value');
     var currentPrio = parseInt(prioValueElement.text());
-    if (!currentPrio) {
-        console.warning('unable to set prio');
+    if (Number.isNaN(currentPrio)) {
+        addFlash('danger', 'Unable to set prio.');
         return;
     }
 
@@ -174,7 +174,7 @@ function changeJobPrio(jobId, delta, linkElement) {
             prioValueElement.text(newPrio);
         },
         error: function(xhr, ajaxOptions, thrownError) {
-            window.alert('Unable to set the priority of job ' + jobId + '.');
+            addFlash('danger', 'Unable to set the priority of job ' + jobId + '.');
         },
     });
 }
