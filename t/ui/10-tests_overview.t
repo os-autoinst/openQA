@@ -267,14 +267,24 @@ subtest 'filtering by module' => sub {
         my $number_of_found_jobs = 4;
         $driver->get("/tests/overview?arch=&distri=opensuse&modules_result=$result");
         my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
-        # Assert that all the jobs with the specified module and result are shown in the results
+        # Assert that all the jobs with the specified result are shown in the results
         is(scalar @jobs, $number_of_found_jobs,
             "$number_of_found_jobs jobs where modules with \"$result\" result found");
         element_visible('#res_DVD_i586_kde');
         element_visible('#res_DVD_x86_64_kde');
         element_visible('#res_DVD_i586_textmode');
         element_visible('#res_DVD_x86_64_doc');
-    }
+    };
+    subtest "jobs containing all the modules separated by comma are present" => sub {
+        my $modules              = 'kate,zypper_up';
+        my $number_of_found_jobs = 2;
+        $driver->get("/tests/overview?arch=&distri=opensuse&modules=$modules&modules_result=$result");
+        my @jobs = $driver->find_elements($JOB_ICON_SELECTOR);
+        # Assert that all the jobs with the specified modules and result are shown in the results
+        is(scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$modules\" modules found");
+        element_visible('#res_DVD_i586_kde');
+        element_visible('#res_DVD_i586_textmode');
+    };
 };
 
 kill_driver();
