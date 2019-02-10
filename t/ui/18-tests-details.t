@@ -141,14 +141,37 @@ $driver->find_element('[href="#step/bootloader/1"]')->click();
 wait_for_ajax;
 is_deeply(find_candidate_needles, {'inst-bootmenu' => []}, 'correct tags displayed');
 
-my @report_links = $driver->find_elements('#preview_container_in .report', 'css');
-my @title        = map { $_->get_attribute('title') } @report_links;
-is($title[0], 'Report product bug', 'product bug report URL available');
-is($title[1], 'Report test issue',  'test issue report URL available');
-my @url = map { $_->get_attribute('href') } @report_links;
-like($url[0], qr{bugzilla.*enter_bug.*tests%2F99937},        'bugzilla link referencing current test');
-like($url[0], qr{in\+scenario\+opensuse-13\.1-DVD-i586-kde}, 'bugzilla link contains scenario');
-like($url[1], qr{progress.*new},                             'progress/redmine link for reporting test issues');
+sub check_report_links {
+    my ($failed_module, $failed_step) = @_;
+
+    my @report_links = $driver->find_elements('#preview_container_in .report', 'css');
+    my @title        = map { $_->get_attribute('title') } @report_links;
+    is($title[0], 'Report product bug', 'product bug report URL available');
+    is($title[1], 'Report test issue',  'test issue report URL available');
+    my @url = map { $_->get_attribute('href') } @report_links;
+    like($url[0], qr{bugzilla.*enter_bug.*tests%2F99937},        'bugzilla link referencing current test');
+    like($url[0], qr{in\+scenario\+opensuse-13\.1-DVD-i586-kde}, 'bugzilla link contains scenario');
+    like($url[1], qr{progress.*new},                             'progress/redmine link for reporting test issues');
+    like($url[1], qr{in\+scenario\+opensuse-13\.1-DVD-i586-kde}, 'progress/redmine link contains scenario');
+    like(
+        $url[1],
+        qr{in.*$failed_module.*$failed_module%2Fsteps%2F$failed_step},
+        'progress/redmine link refers to right module/step'
+    );
+}
+
+subtest 'bug reporting' => sub {
+    subtest 'screenshot' => sub {
+        # note: image of bootloader step from previous test 'correct tags displayed' is still shown
+        check_report_links(bootloader => 1);
+    };
+
+    subtest 'text output' => sub {
+        $driver->find_element('[href="#step/sshfs/2"]')->click();
+        wait_for_ajax;
+        check_report_links(sshfs => 2);
+    };
+};
 
 # test running view with Test::Mojo as phantomjs would get stuck on the
 # liveview/livelog forever
@@ -180,7 +203,7 @@ subtest 'render bugref links in thumbnail text windows' => sub {
         'Test bugref bsc#1234 https://fate.suse.com/321208',
         'bugref text correct'
     );
-    my @a = $driver->find_elements('#preview_container_in a', 'css');
+    my @a = $driver->find_elements('#preview_container_in pre a', 'css');
     is((shift @a)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bugref href correct');
     is((shift @a)->get_attribute('href'), 'https://fate.suse.com/321208', 'regular href correct');
 };
