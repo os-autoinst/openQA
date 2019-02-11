@@ -63,23 +63,11 @@ sub DESTROY {
 
 sub deploy_cache {
     my $self = shift;
-    local $/;
-    my $sql = <DATA>;
+
     log_info "Creating cache directory tree for " . $self->location;
     path($self->location)->remove_tree({keep_root => 1});
     path($self->location)->make_path;
     path($self->location, 'tmp')->make_path;
-
-    log_info "Deploying DB: $sql (dsn " . $self->dsn . ")";
-
-    eval {
-        my $db = $self->sqlite->db;
-        my $tx = $db->begin;
-        $db->query($sql);
-        $tx->commit;
-        $db->disconnect;
-    };
-    log_error "Deploying DB failed: $@" if ($@);
 }
 
 sub init {
@@ -90,9 +78,13 @@ sub init {
     log_info(__PACKAGE__ . ': loading database from ' . $self->db_file);
     $self->dsn("sqlite:" . $self->db_file);
     $self->deploy_cache unless -e $self->db_file;
+    eval { $self->sqlite->migrations->name('cache_service')->from_data->migrate };
+    log_error "Deploying DB failed: $@" if $@;
+
     $self->cache_real_size(0);
     $self->cache_sync();
-    #Ideally we only need $limit, and $need no extra space
+
+    # Ideally we only need $limit, and $need no extra space
     $self->check_limits(0);
     log_info(__PACKAGE__ . ": Initialized with $host at $location, current size is " . $self->cache_real_size);
     return $self;
@@ -402,4 +394,9 @@ sub check_limits {
 1;
 
 __DATA__
-CREATE TABLE "assets" ( `etag` TEXT, `size` INTEGER, `last_use` DATETIME NOT NULL, `filename` TEXT NOT NULL UNIQUE, PRIMARY KEY(`filename`) );
+@@ cache_service
+-- 1 up
+CREATE TABLE assets ( `etag` TEXT, `size` INTEGER, `last_use` DATETIME NOT NULL, `filename` TEXT NOT NULL UNIQUE, PRIMARY KEY(`filename`) );
+
+-- 1 down
+DROP TABLE assets;
