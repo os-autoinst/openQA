@@ -18,6 +18,7 @@ package OpenQA::Worker::Cache;
 use strict;
 use warnings;
 
+use Carp 'croak';
 use File::Basename;
 use Fcntl ':flock';
 use Mojo::UserAgent;
@@ -74,12 +75,13 @@ sub init {
     my $self = shift;
     my ($host, $location) = ($self->host, $self->location);
 
-    $self->db_file(path($location, 'cache.sqlite'));
-    log_info(__PACKAGE__ . ': loading database from ' . $self->db_file);
-    $self->dsn("sqlite:" . $self->db_file);
-    $self->deploy_cache unless -e $self->db_file;
+    my $db_file = path($location, 'cache.sqlite');
+    $self->db_file($db_file);
+    log_info(__PACKAGE__ . ': loading database from ' . $db_file);
+    $self->dsn("sqlite:$db_file");
+    $self->deploy_cache unless -e $db_file;
     eval { $self->sqlite->migrations->name('cache_service')->from_data->migrate };
-    log_error "Deploying DB failed: $@" if $@;
+    croak qq{Deploying SQLite "$db_file" failed (Maybe the file is corrupted and needs to be deleted?): $@} if $@;
 
     $self->cache_real_size(0);
     $self->cache_sync();
@@ -396,7 +398,13 @@ sub check_limits {
 __DATA__
 @@ cache_service
 -- 1 up
-CREATE TABLE assets ( `etag` TEXT, `size` INTEGER, `last_use` DATETIME NOT NULL, `filename` TEXT NOT NULL UNIQUE, PRIMARY KEY(`filename`) );
+CREATE TABLE IF NOT EXISTS assets (
+    `etag` TEXT,
+    `size` INTEGER,
+    `last_use` DATETIME NOT NULL,
+    `filename` TEXT NOT NULL UNIQUE,
+    PRIMARY KEY(`filename`)
+);
 
 -- 1 down
 DROP TABLE assets;
