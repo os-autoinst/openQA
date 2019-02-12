@@ -148,8 +148,6 @@ post '/dequeue' => sub {
     $c->render(json => {status => STATUS_PROCESSED});
 };
 
-app->minion->reset;
-
 =encoding utf-8
 
 =head1 NAME
