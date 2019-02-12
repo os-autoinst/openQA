@@ -93,10 +93,6 @@ sub detect_asset_keys {
         $res{$isokey} = 'iso' if $vars->{$isokey};
     }
 
-    for my $otherkey (grep { /ASSET_\d+$/ } keys %{$vars}) {
-        $res{$otherkey} = 'other';
-    }
-
     for my $otherkey (qw(KERNEL INITRD)) {
         $res{$otherkey} = 'other' if $vars->{$otherkey};
     }
