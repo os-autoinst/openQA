@@ -39,4 +39,4 @@ build="${build:-"$repo_name#$pr"}"
 casedir="${casedir:-"$repo#$branch"}"
 GROUP="${GROUP:-0}"
 dry_run="${dry_run:-""}"
-$dry_run openqa-clone-job --skip-chained-deps --within-instance $host $job _GROUP=0 TEST=$test BUILD=$build CASEDIR=$casedir PRODUCTDIR=$productdir NEEDLES_DIR=$needles_dir
+$dry_run openqa-clone-job --skip-chained-deps --within-instance $host $job _GROUP=$GROUP TEST=$test BUILD=$build CASEDIR=$casedir PRODUCTDIR=$productdir NEEDLES_DIR=$needles_dir
