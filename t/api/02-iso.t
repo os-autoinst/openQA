@@ -52,6 +52,7 @@ $t->app($app);
 
 my $schema        = $t->app->schema;
 my $job_templates = $schema->resultset('JobTemplates');
+my $test_suites   = $schema->resultset('TestSuites');
 my $jobs          = $schema->resultset('Jobs');
 
 sub lj {
@@ -216,6 +217,7 @@ my $res = schedule_iso(
     });
 
 is($res->json->{count}, 10, '10 new jobs created');
+
 my @newids = @{$res->json->{ids}};
 my $newid  = $newids[0];
 
@@ -899,6 +901,43 @@ subtest 'Create dependency for jobs on different machines - log error parents' =
     }
 
     $schema->txn_rollback;
+};
+
+subtest 'setting WORKER_CLASS and assigning default WORKER_CLASS' => sub {
+    # assign a WORKER_CLASS to one of the testsuites
+    my $worker_class                = 'advanced_worker';
+    my $test_with_worker_class      = 'advanced_kde';
+    my $testsuite_with_worker_class = $test_suites->find({name => $test_with_worker_class});
+    $testsuite_with_worker_class->settings->create(
+        {
+            key   => 'WORKER_CLASS',
+            value => $worker_class,
+        });
+
+    my $res = schedule_iso(
+        {
+            ISO        => $iso,
+            DISTRI     => 'opensuse',
+            VERSION    => '13.1',
+            FLAVOR     => 'DVD',
+            ARCH       => 'i586',
+            BUILD      => '0091',
+            PRECEDENCE => 'original',
+        });
+    is($res->json->{count}, 10, '10 jobs scheduled');
+
+    # check whether the assignment of the WORKER_CLASS had effect and that all other jobs still have the default applied
+    for my $job_id (@{$res->json->{ids}}) {
+        my $job_settings        = $jobs->find($job_id)->settings_hash;
+        my $test_name           = $job_settings->{TEST};
+        my $actual_worker_class = $job_settings->{WORKER_CLASS};
+        if ($test_name eq $test_with_worker_class) {
+            is($actual_worker_class, $worker_class, "test $test_name with explicit WORKER_CLASS actually has it");
+        }
+        else {
+            is($actual_worker_class, 'qemu_i586', "default WORKER_CLASS assigned to $test_name");
+        }
+    }
 };
 
 done_testing();
