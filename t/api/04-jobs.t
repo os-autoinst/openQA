@@ -69,7 +69,10 @@ $t->ua(
     OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-$t->app->schema->resultset('Jobs')->find(99963)->update({assigned_worker_id => 1});
+my $schema = $t->app->schema;
+my $jobs   = $schema->resultset('Jobs');
+
+$jobs->find(99963)->update({assigned_worker_id => 1});
 
 # INITIAL JOB LIST (from fixtures)
 # 99981 cancelled  no clone
@@ -644,14 +647,29 @@ my %jobs_post_params = (
     DISTRI  => 'opensuse',
     VERSION => 'Tumbleweed',
     FLAVOR  => 'DVD',
-    ARCH    => 'X86_64',
     TEST    => 'awesome',
     MACHINE => '64bit',
     BUILD   => '1234',
     _GROUP  => 'opensuse',
 );
 
-subtest 'default property correctly assigned when posting job' => sub {
+subtest 'WORKER_CLASS correctly assigned when posting job' => sub {
+    $post = $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+    is($jobs->find($post->tx->res->json->{id})->settings_hash->{WORKER_CLASS},
+        'qemu_x86_64', 'default WORKER_CLASS assigned (with arch fallback)');
+
+    $jobs_post_params{ARCH} = 'aarch64';
+    $post = $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+    is($jobs->find($post->tx->res->json->{id})->settings_hash->{WORKER_CLASS},
+        'qemu_aarch64', 'default WORKER_CLASS assigned');
+
+    $jobs_post_params{WORKER_CLASS} = 'svirt';
+    $post = $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+    is($jobs->find($post->tx->res->json->{id})->settings_hash->{WORKER_CLASS},
+        'svirt', 'specified WORKER_CLASS assigned');
+};
+
+subtest 'default priority correctly assigned when posting job' => sub {
     # post new job and check default priority
     $post = $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
     $t->get_ok('/api/v1/jobs/' . $post->tx->res->json->{id})->status_is(200);
