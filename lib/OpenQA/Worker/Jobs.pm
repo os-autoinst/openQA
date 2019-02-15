@@ -632,6 +632,8 @@ sub start_job {
         log_warning('job errored. Releasing job', channels => ['worker', 'autoinst'], default => 1);
         return stop_job("job run failure");
     }
+    my $isotovideo_pid = $worker->{child}->pid() // 'unknown';
+    log_info("isotovideo has been started (PID: $isotovideo_pid)");
 
     my $jobid = $job->{id};
 
