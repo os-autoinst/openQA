@@ -948,7 +948,7 @@ over serial or VNC.</p>
 <h5 id="_wait_serial">wait_serial</h5>
 <div class="literalblock">
 <div class="content">
-<pre>wait_serial($regex or ARRAYREF of $regexes [[, $timeout], $expect_not_found]);</pre>
+<pre>wait_serial($regex or ARRAYREF of $regexes [, $timeout [, $expect_not_found [, @args ]]]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -960,7 +960,10 @@ over serial or VNC.</p>
 </div>
 <div class="paragraph">
 <p>Returns <code>undef</code> or (after timeout) the string that <em>did _not</em> match_' if
-<code>$expect_not_found</code> is true.</p>
+<code>$expect_not_found</code> is true. The default timeout is 90 seconds.</p>
+</div>
+<div class="paragraph">
+<p>Setting <code>$no_regex</code> will cause it to do a plain string search.</p>
 </div>
 </div>
 <div class="sect4">
@@ -1831,7 +1834,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-02-16 17:34:39 UTC
+Last updated 2019-02-18 17:42:48 UTC
 </div>
 </div>
 </body>
