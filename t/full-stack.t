@@ -303,6 +303,9 @@ print $conf <<EOC;
 CACHEDIRECTORY = $cache_location
 CACHELIMIT = 50;
 
+[1]
+WORKER_CLASS = qemu_i386,qemu_x86_64
+
 [http://localhost:$mojoport]
 TESTPOOLSERVER = $sharedir/tests
 EOC
