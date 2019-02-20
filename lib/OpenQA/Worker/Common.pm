@@ -245,7 +245,7 @@ sub api_call {
         }
         $msg //= $err->{message};
         if ($err->{code}) {
-            $msg = "$err->{code} response: $err->{message}";
+            $msg = "$err->{code} response: $msg";
             if ($err->{code} == 404) {
                 # don't retry on 404 errors (in this case we can't expect different
                 # results on further attempts)
@@ -253,7 +253,7 @@ sub api_call {
             }
         }
         else {
-            $msg = "Connection error: $err->{message}";
+            $msg = "Connection error: $msg";
         }
         log_error($msg . " (remaining tries: $tries)");
 
