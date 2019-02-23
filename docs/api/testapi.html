@@ -1261,7 +1261,8 @@ Default counter is 20 steps, default timeout is 1s</p>
 <h5 id="_type_string">type_string</h5>
 <div class="literalblock">
 <div class="content">
-<pre>type_string($string [, max_interval =&gt; &lt;num&gt; ] [, wait_screen_changes =&gt; &lt;num&gt; ] [, wait_still_screen =&gt; &lt;num&gt; ] [, secret =&gt; 1 ] );</pre>
+<pre>type_string($string [, max_interval =&gt; &lt;num&gt; ] [, wait_screen_changes =&gt; &lt;num&gt; ] [, wait_still_screen =&gt; &lt;num&gt; ] [, secret =&gt; 1 ]
+[, timeout =&gt; &lt;num&gt;] [, similarity_level =&gt; &lt;num&gt;] );</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1279,8 +1280,13 @@ Default counter is 20 steps, default timeout is 1s</p>
 <code>wait_screen_change</code> and wait for the screen to change between sets.</p>
 </div>
 <div class="paragraph">
-<p><code>wait_still_screen</code> if set, <code>wait_still_screen</code> for the given seconds
-after the whole string is typed.</p>
+<p><code>wait_still_screen</code> if set, <code>wait_still_screen</code> returns true if screen is not
+changed for given <code>$wait_still_screen</code> seconds or false if the screen is not still
+for the given seconds within defined <code>timeout</code> after the whole string is typed.
+Default timeout is 30s, default stilltime is 0s.</p>
+</div>
+<div class="paragraph">
+<p><code>similarity_level</code> can be passed as argument for wrapped <code>wait_still_screen</code> calls.</p>
 </div>
 <div class="paragraph">
 <p><code>secret (bool)</code> suppresses logging of the actual string typed.</p>
@@ -1834,7 +1840,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-02-22 17:40:10 UTC
+Last updated 2019-02-23 17:39:39 UTC
 </div>
 </div>
 </body>
