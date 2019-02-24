@@ -52,16 +52,31 @@ sub connect_db {
         my $mode = $args{mode} || $ENV{OPENQA_DATABASE} || 'production';
         if ($mode eq 'test') {
             $$schema = __PACKAGE__->connect($ENV{TEST_PG});
+            printf "Connected to : TEST_PG=$ENV{TEST_PG}\n";
         }
         else {
             my %ini;
             my $cfgpath       = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
             my $database_file = $cfgpath . '/database.ini';
             if (-e $database_file || !$ENV{OPENQA_USE_DEFAULTS}) {
+                printf 'Opening ' . $database_file . "\n";
                 tie %ini, 'Config::IniFiles', (-file => $database_file);
                 die 'Could not find database section \'' . $mode . '\' in ' . $database_file unless $ini{$mode};
             }
             $$schema = __PACKAGE__->connect($ini{$mode});
+            printf "Connected to : ";
+            my $size = keys %{$ini{$mode}};
+            if (!$size) {
+                printf "defaults\n";
+            }
+            else {
+                my %x = %{$ini{$mode}};
+                for my $ks (keys %x) {
+                    if ($x{$ks}) {
+                        printf "$ks : $x{$ks}\n";
+                    }
+                }
+            }
         }
         deployment_check $$schema if ($check);
     }
