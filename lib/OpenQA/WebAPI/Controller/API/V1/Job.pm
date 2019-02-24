@@ -455,7 +455,7 @@ sub create_artefact {
     my $job   = find_job($self, $jobid);
     if (!$job) {
         OpenQA::Utils::log_info('Got artefact for non-existing job: ' . $jobid);
-        return;
+        return $self->render(json => {error => "Specified job $jobid does not exist"}, status => 404);
     }
     if (!$job->worker) {
         OpenQA::Utils::log_info(

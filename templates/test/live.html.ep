@@ -53,6 +53,9 @@
         </div>
     </div>
     <div class="card-body">
+        <p id="developer-stopping-note" class="developer-mode-element" data-visible-on="stoppingTestExecution">
+            The test is about to stop.
+        </p>
         <form action="#" method="get" id="developer-form" class="developer-mode-element"
             data-hidden-on="lockedByOtherDeveloper" data-visible-on="isConnected">
             <p>

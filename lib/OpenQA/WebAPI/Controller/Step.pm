@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@ use Mojo::Util 'decode';
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use File::Basename;
-use File::Copy;
 use File::Which 'which';
 use POSIX 'strftime';
 use Try::Tiny;
@@ -359,57 +358,12 @@ sub src {
     $self->stash('scriptpath', $scriptpath);
 }
 
-sub _commit_git {
-    my ($self, $job, $dir, $name) = @_;
-
-    my @files = ($dir . '/' . $name . '.json', $dir . '/' . $name . '.png');
-
-    my $args = {
-        dir     => $dir,
-        add     => \@files,
-        user    => $self->current_user,
-        message => sprintf("%s for %s", $name, $job->name)};
-    if (!commit_git($args)) {
-        die "failed to git commit $name";
-    }
-    return;
-}
-
-sub _json_validation($) {
-
-    my $self  = shift;
-    my $json  = shift;
-    my $djson = eval { decode_json($json) };
-    if (!$djson) {
-        my $err = $@;
-        $err =~ s@at /usr/.*$@@;    #do not print perl module reference
-        die "syntax error: $err";
-    }
-
-    if (!exists $djson->{area} || !exists $djson->{area}[0]) {
-        die 'no area defined';
-    }
-    if (!exists $djson->{tags} || !exists $djson->{tags}[0]) {
-        die 'no tag defined';
-    }
-    my $areas = $djson->{area};
-    foreach my $area (@$areas) {
-        die 'area without xpos'   unless exists $area->{xpos};
-        die 'area without ypos'   unless exists $area->{ypos};
-        die 'area without type'   unless exists $area->{type};
-        die 'area without height' unless exists $area->{height};
-        die 'area without width'  unless exists $area->{width};
-    }
-
-    return $djson;
-
-}
-
 sub save_needle_ajax {
     my ($self) = @_;
     return $self->reply->not_found unless $self->init();
 
     # validate parameter
+    my $app        = $self->app;
     my $validation = $self->validation;
     $validation->required('json');
     $validation->required('imagename')->like(qr/^[^.\/][^\/]{3,}\.png$/);
@@ -420,105 +374,107 @@ sub save_needle_ajax {
     if ($validation->has_error) {
         my $error = 'wrong parameters:';
         for my $k (qw(json imagename imagedistri imageversion needlename)) {
-            $self->app->log->error($k . ' ' . join(' ', @{$validation->error($k)})) if $validation->has_error($k);
+            $app->log->error($k . ' ' . join(' ', @{$validation->error($k)})) if $validation->has_error($k);
             $error .= ' ' . $k if $validation->has_error($k);
         }
-        return $self->render(json => {error => "Error creating/updating needle: $error"});
+        return $self->render(json => {error => $error});
     }
 
     # read parameter
-    my $job          = find_job($self, $self->param('testid')) or return;
-    my $distribution = $job->DISTRI;
-    my $dversion     = $job->VERSION || '';
-    my $json         = $validation->param('json');
-    my $imagename    = $validation->param('imagename');
-    my $imagedistri  = $validation->param('imagedistri');
-    my $imageversion = $validation->param('imageversion');
-    my $imagedir     = $self->param('imagedir') || "";
-    my $needlename   = $validation->param('needlename');
-    my $needledir    = needledir($job->DISTRI, $job->VERSION);
+    my $job = find_job($self, $self->param('testid'))
+      or return $self->render(json => {error => 'The specified job ID is invalid.'});
+    my $job_id     = $job->id;
+    my $needledir  = needledir($job->DISTRI, $job->VERSION);
+    my $needlename = $validation->param('needlename');
 
-    # read JSON data
-    my $json_data;
-    eval { $json_data = $self->_json_validation($json); };
-    if ($@) {
-        my $message = 'Error validating needle: ' . $@;
-        $self->app->log->error($message);
-        return $self->render(json => {error => $message});
+    # check whether Minion worker are available to get a nice error message instead of an inactive job
+    my $gru = $self->gru;
+    if (!$gru->has_workers) {
+        return $self->render(
+            json => {error => 'No Minion worker available. The <code>openqa-gru</code> service is likely not running.'}
+        );
     }
 
-    # determine imagepath
-    my $success = 1;
-    my $imagepath;
-    if ($imagedir) {
-        $imagepath = join('/', $imagedir, $imagename);
+    # enqueue Minion job to copy the image and (if configured) run Git commands
+    my %minion_args = (
+        job_id       => $job_id,
+        user_id      => $self->current_user->id,
+        needle_json  => $validation->param('json'),
+        overwrite    => $self->param('overwrite'),
+        imagedir     => $self->param('imagedir') // '',
+        imagedistri  => $validation->param('imagedistri'),
+        imagename    => $validation->param('imagename'),
+        imageversion => $validation->param('imageversion'),
+        needledir    => $needledir,
+        needlename   => $needlename,
+    );
+    my %minion_options = (
+        priority => 10,
+        ttl      => 60,
+    );
+    my $ids = $gru->enqueue(save_needle => \%minion_args, \%minion_options);
+    my $minion_id;
+    if (ref $ids eq 'HASH') {
+        $minion_id = $ids->{minion_id};
     }
-    elsif ($imagedistri) {
-        $imagepath = join('/', needledir($imagedistri, $imageversion), $imagename);
-    }
-    else {
-        $imagepath = join('/', $job->result_dir(), $imagename);
-    }
-    if (!-f $imagepath) {
-        $self->app->log->error("$imagepath is not a file");
-        return $self->render(json => {error => "Image $imagename could not be found!"});
-    }
-
-    # do not overwrite the exist needle if disallow to overwrite
-    my $baseneedle = "$needledir/$needlename";
-    if (-e "$baseneedle.png" && !$self->param('overwrite')) {
-        $success = 0;
-        my $returned_data = $self->req->params->to_hash;
-        $returned_data->{requires_overwrite} = 1;
-        return $self->render(json => $returned_data);
-    }
-
-    # copy image
-    if (!($imagepath eq "$baseneedle.png") && !copy($imagepath, "$baseneedle.png")) {
-        $self->app->log->error("Copy $imagepath -> $baseneedle.png failed: $!");
-        $success = 0;
-    }
-    if ($success) {
-        open(my $J, ">", "$baseneedle.json") or $success = 0;
-        if ($success) {
-            print $J $json;
-            close($J);
-        }
-        else {
-            $self->app->log->error("Writing needle $baseneedle.json failed: $!");
-        }
-    }
-    if (!$success) {
-        return $self->render(json => {error => "Error creating/updating needle: $!."});
+    my $minion     = $app->minion;
+    my $minion_job = $minion->job($minion_id);
+    if (!$minion_job) {
+        return $self->render(json => {error => 'Unable to enqueue Minion job for saving needle.'});
     }
 
-    # commit needle in Git repository
-    $self->app->gru->enqueue('scan_needles');
-    if (($self->app->config->{global}->{scm} || '') eq 'git') {
-        if (!$needledir || !(-d "$needledir")) {
-            return $self->render(json => {error => "$needledir is not a directory"});
-        }
-        try {
-            $self->_commit_git($job, $needledir, $needlename);
-        }
-        catch {
-            $self->app->log->error($_);
-            return $self->render(json => {error => $_});
+    # keep track of the Minion job and continue rendering if it has completed
+    my $timer_id;
+    my $check_results = sub {
+        my ($loop) = @_;
+
+        eval {
+            # find the minion job
+            my $minion_job = $minion->job($minion_id);
+            if (!$minion_job) {
+                $loop->remove($timer_id);
+                return $self->render(json => {error => 'Minion job for saving needle has been removed.'});
+            }
+            my $info  = $minion_job->info;
+            my $state = $info->{state};
+
+            # retry on next tick if the job is still running
+            return unless $state && ($state eq 'finished' || $state eq 'failed');
+            $loop->remove($timer_id);
+
+            # handle request for overwrite
+            my $result = $info->{result};
+            if ($result->{requires_overwrite}) {
+                my $initial_request = $self->req->params->to_hash;
+                $initial_request->{requires_overwrite} = 1;
+                return $self->render(json => $initial_request);
+            }
+
+            # trigger needle scan and emit event on success
+            if (my $json_data = $result->{json_data}) {
+                $app->gru->enqueue('scan_needles');
+                $app->emit_event(
+                    'openqa_needle_modify',
+                    {
+                        needle => "$needledir/$needlename.png",
+                        tags   => $json_data->{tags},
+                        update => 0,
+                    });
+            }
+
+            # add the URL to restart if that should be proposed to the user
+            $result->{restart} = $self->url_for('apiv1_restart', jobid => $job_id) if ($result->{propose_restart});
+
+            return $self->render(json => $result);
         };
-    }
 
-    # create/update needle in database
-    $self->app->schema->resultset('Needles')->update_needle_from_editor($needledir, $needlename, $json_data, $job);
-
-    $self->emit_event('openqa_needle_modify', {needle => "$baseneedle.png", tags => $json_data->{tags}, update => 0});
-    my $info = {info => "Needle $needlename created/updated"};
-    if ($job->state eq OpenQA::Jobs::Constants::RUNNING && $job->developer_session) {
-        $info->{developer_session_job_id} = $job->id;
-    }
-    if ($job->can_be_duplicated) {
-        $info->{restart} = $self->url_for('apiv1_restart', jobid => $job->id);
-    }
-    return $self->render(json => $info);
+        # ensure the timer is removed and something rendered in any case
+        if ($@) {
+            $loop->remove($timer_id);
+            return $self->render(json => {error => 'An internal error occured.'}, status => 500);
+        }
+    };
+    $timer_id = Mojo::IOLoop->recurring(0.5 => $check_results);
 }
 
 sub map_error_to_avg {

@@ -113,6 +113,13 @@ sub schema_hook {
             name     => 'glibc_i686',
             result   => 'none',
         });
+
+    my $job99940 = $jobs->find(99940);
+    my %modules  = (a => 'skip', b => 'ok', c => 'none', d => 'softfail', e => 'fail');
+    while (my ($k, $v) = each %modules) {
+        $job99940->insert_module({name => $k, category => $k, script => $k});
+        $job99940->update_module($k, {result => $v, details => []});
+    }
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -378,6 +385,20 @@ wait_for_ajax();
 $driver->title_is('openQA: Test results', 'restart stays on page');
 $td = $driver->find_element('#job_99946 td.test');
 is($td->get_text(), 'textmode@32bit (restarted)', 'restart removes link');
+
+subtest 'check test results of job99940' => sub {
+    $driver->get('/tests');
+    wait_for_ajax;
+    my $results = $driver->find_elements('#job_99940 > td')->[2];
+    $results = $driver->find_child_element($results, 'a');
+    my @count = split(/\s+/, $results->get_text());
+    my @types = $driver->find_child_elements($results, 'i');
+    is(@count, @types, "each number has a type");
+    for my $class (qw(module_passed module_failed module_softfailed module_none module_skipped)) {
+        is(scalar(@{$driver->find_child_elements($results, 'i.' . $class)}), 1, "$class displayed");
+    }
+};
+
 
 kill_driver();
 done_testing();

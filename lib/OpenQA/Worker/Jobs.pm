@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2017 SUSE LLC
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ use Fcntl;
 use MIME::Base64;
 use File::Basename 'basename';
 use File::Which 'which';
+use Try::Tiny;
 use Mojo::File 'path';
 use Mojo::IOLoop;
 use OpenQA::File;
@@ -142,7 +143,7 @@ sub stop_job {
     my $stop_job_check_status;
     $stop_job_check_status = sub {
         if (!$update_status_running) {
-            _stop_job($aborted, $job_id, $host);
+            _stop_job_init($aborted, $job_id, $host);
             return undef;
         }
         log_debug('postpone stopping until ongoing status update is concluded');
@@ -347,7 +348,7 @@ sub upload {
     return _multichunk_upload($job_id, $form);
 }
 
-sub _stop_job {
+sub _stop_job_init {
     my ($aborted, $job_id, $host) = @_;
     my $workerid = verify_workerid;
 
@@ -357,22 +358,73 @@ sub _stop_job {
 
     if ($aborted eq "scheduler_abort") {
         log_debug('stop_job called by the scheduler. do not send logs');
-        _kill_worker($worker);
-        _reset_state;
+        _stop_job_announce(
+            $aborted, $job_id,
+            sub {
+                _kill_worker($worker);
+                _reset_state;
+            });
         return;
     }
 
-    # the update_status timers and such are gone by now (1st part), so we're
-    # basically "single threaded" and can block
-
-    my $status = {uploading => 1, worker_id => $workerid};
     api_call(
-        'post', "jobs/$job_id/status",
-        json     => {status => $status},
-        callback => sub { _stop_job_2($aborted, $job_id, $host); });
+        post => "jobs/$job_id/status",
+        json => {
+            status => {
+                uploading => 1,
+                worker_id => $workerid,
+            },
+        },
+        callback => sub {
+            _stop_job_announce(
+                $aborted, $job_id,
+                sub {
+                    _stop_job_kill_and_upload($aborted, $job_id, $host);
+                });
+        },
+    );
 }
 
-sub _stop_job_2 {
+sub _stop_job_announce {
+    my ($aborted, $job_id, $callback) = @_;
+
+    my $ua      = Mojo::UserAgent->new(request_timeout => 10);
+    my $job_url = $job->{URL};
+    return $callback->() unless $job_url;
+
+    try {
+        my $url = "$job_url/broadcast";
+        my $tx  = $ua->build_tx(
+            POST => $url,
+            json => {
+                stopping_test_execution => $aborted,
+            },
+        );
+
+        log_info('trying to stop job gracefully by announcing it to command server via ' . $url);
+        $ua->start(
+            $tx,
+            sub {
+                my ($ua_from_callback, $tx) = @_;
+                my $keep_ref_to_ua = $ua;
+                my $res            = $tx->res;
+
+                if (!$res->is_success) {
+                    log_error('unable to stop the command server gracefully: ');
+                    log_error($res->code ? $res->to_string : 'command server likely not reachable at all');
+                }
+                $callback->();
+            });
+    }
+    catch {
+        log_error('unable to stop the command server gracefully: ' . $_);
+
+        # ensure stopping is proceeded (failing announcement is not critical)
+        $callback->();
+    };
+}
+
+sub _stop_job_kill_and_upload {
     my ($aborted, $job_id, $host) = @_;
     _kill_worker($worker);
 
@@ -580,6 +632,8 @@ sub start_job {
         log_warning('job errored. Releasing job', channels => ['worker', 'autoinst'], default => 1);
         return stop_job("job run failure");
     }
+    my $isotovideo_pid = $worker->{child}->pid() // 'unknown';
+    log_info("isotovideo has been started (PID: $isotovideo_pid)");
 
     my $jobid = $job->{id};
 

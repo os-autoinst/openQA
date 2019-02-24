@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 use Minion;
 use DBIx::Class::Timestamps 'now';
+use OpenQA::Utils;
 use Mojo::Pg;
 
 has app => undef, weak => 1;
@@ -36,10 +37,8 @@ sub register_tasks {
     my $app = $self->app;
     $app->plugin($_)
       for (
-        qw(OpenQA::Task::Asset::Download OpenQA::Task::Asset::Limit),
-        qw(OpenQA::Task::Job::Limit OpenQA::Task::Job::Modules),
-        qw(OpenQA::Task::Needle::Scan),
-        qw(OpenQA::Task::Screenshot::Scan)
+        qw(OpenQA::Task::Asset::Download OpenQA::Task::Asset::Limit OpenQA::Task::Job::Limit),
+        qw(OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Screenshot::Scan)
       );
 }
 
@@ -58,9 +57,16 @@ sub register {
     else {
         $self->dsn($self->schema->storage->connect_info->[0]);
     }
-
     $conn->dsn($self->dsn());
+
+    # set the search path in accordance with the test setup done in OpenQA::Test::Database
+    if (my $search_path = $ENV{TEST_PG_SEARCH_PATH}) {
+        log_info("setting database search path to $search_path when registering Minion plugin\n");
+        $conn->search_path([$search_path]);
+    }
+
     $app->plugin(Minion => {Pg => $conn});
+
     $self->register_tasks;
 
     # Enable the Minion Admin interface under /minion
@@ -84,6 +90,11 @@ sub count_jobs {
 sub is_task_active {
     my ($self, $task) = @_;
     return $self->count_jobs($task, ['active']) > 0;
+}
+
+# checks if there are worker registered
+sub has_workers {
+    return !!shift->app->minion->backend->list_workers(0, 1)->{total};
 }
 
 sub enqueue {

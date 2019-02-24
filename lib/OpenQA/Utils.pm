@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2018 SUSE LLC
+# Copyright (C) 2012-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Cwd 'abs_path';
 use IPC::Run();
 use Mojo::URL;
 use Mojo::Util 'url_unescape';
@@ -60,8 +61,8 @@ our @EXPORT  = qw(
   &save_base64_png
   &run_cmd_with_log
   &run_cmd_with_log_return_error
+  &set_to_latest_git_master
   &commit_git
-  &commit_git_return_error
   &parse_assets_from_settings
   &find_bugref
   &find_bugrefs
@@ -465,70 +466,96 @@ sub run_cmd_with_log($) {
 
 sub run_cmd_with_log_return_error($) {
     my ($cmd) = @_;
-    my ($stdin, $stdout_err, $ret);
+
     log_info('Running cmd: ' . join(' ', @$cmd));
-    $ret = IPC::Run::run($cmd, \$stdin, '>&', \$stdout_err);
-    chomp $stdout_err;
-    if ($ret) {
-        log_debug($stdout_err);
-        log_info('cmd returned 0');
+    try {
+        my ($stdin, $stdout_err);
+        my $ipc_run_succeeded = IPC::Run::run($cmd, \$stdin, '>&', \$stdout_err);
+        my $return_code       = $?;
+        chomp $stdout_err;
+        if ($ipc_run_succeeded) {
+            log_debug($stdout_err);
+            log_info("cmd returned $return_code");
+        }
+        else {
+            log_warning($stdout_err);
+            log_error("cmd returned $return_code");
+        }
+        return {
+            status      => $ipc_run_succeeded,
+            return_code => $return_code,
+            stderr      => $stdout_err,
+        };
     }
-    else {
-        log_warning($stdout_err);
-        log_error('cmd returned non-zero value');
-    }
-    return {
-        status => $ret,
-        stderr => $stdout_err
+    catch {
+        return {
+            status      => 0,
+            return_code => undef,
+            stderr      => "an internal error occured",
+        };
     };
 }
 
-sub commit_git {
-    my ($args) = @_;
-    return commit_git_return_error($args) ? undef : 1;
-}
-
-sub commit_git_return_error {
+sub _prepare_git_command {
     my ($args) = @_;
 
     my $dir = $args->{dir};
     if ($dir !~ /^\//) {
-        use Cwd 'abs_path';
-        $dir = abs_path($dir);
+        my $absolute_path = abs_path($dir);
+        $dir = $absolute_path if ($absolute_path);
     }
-    my @git = ('git', '-C', $dir);
+    return ('git', '-C', $dir);
+}
+
+sub _format_git_error {
+    my ($git_result, $error_message) = @_;
+
+    if ($git_result->{stderr}) {
+        $error_message .= ': ' . $git_result->{stderr};
+    }
+    return $error_message;
+}
+
+sub set_to_latest_git_master {
+    my ($args) = @_;
+
+    my @git = _prepare_git_command($args);
+
+    my $res = run_cmd_with_log_return_error([@git, 'fetch', 'origin', 'master:master']);
+    return _format_git_error($res, 'Unable to fetch from origin master') unless $res->{status};
+
+    $res = run_cmd_with_log_return_error([@git, 'rebase', 'origin/master']);
+    return _format_git_error($res, 'Unable to reset repository to origin/master') unless $res->{status};
+    return undef;
+}
+
+sub commit_git {
+    my ($args) = @_;
+
+    my @git = _prepare_git_command($args);
     my @files;
 
+    # stage changes
     for my $cmd (qw(add rm)) {
         next unless $args->{$cmd};
         push(@files, @{$args->{$cmd}});
         my $res = run_cmd_with_log_return_error([@git, $cmd, @{$args->{$cmd}}]);
-        if (!$res->{status}) {
-            my $error = 'Unable to add/rm via Git';
-            $error .= ': ' . $res->{stderr} if $res->{stderr};
-            return $error;
-        }
+        return _format_git_error($res, "Unable to $cmd via Git") unless $res->{status};
     }
 
+    # commit changes
     my $message = $args->{message};
     my $user    = $args->{user};
     my $author  = sprintf('--author=%s <%s>', $user->fullname, $user->email);
     my $res     = run_cmd_with_log_return_error([@git, 'commit', '-q', '-m', $message, $author, @files]);
-    if (!$res->{status}) {
-        my $error = 'Unable to commit via Git';
-        $error .= ': ' . $res->{stderr} if $res->{stderr};
-        return $error;
-    }
+    return _format_git_error($res, 'Unable to commit via Git') unless $res->{status};
 
+    # push changes
     if (($app->config->{'scm git'}->{do_push} || '') eq 'yes') {
         $res = run_cmd_with_log_return_error([@git, 'push']);
-        if (!$res->{status}) {
-            my $error = 'Unable to push Git commit';
-            $error .= ': ' . $res->{stderr} if $res->{stderr};
-            return $error;
-        }
+        return _format_git_error($res, 'Unable to push Git commit') unless $res->{status};
     }
-    return 0;
+    return undef;
 }
 
 sub asset_type_from_setting {
@@ -935,8 +962,8 @@ sub compose_job_overview_search_args {
             $search_args{$arg} = {-in => $params};
         }
     }
-    if ($controller->param('modules')) {
-        $search_args{modules} = $controller->every_param('modules');
+    if (my $modules = param_hash($controller, 'modules')) {
+        $search_args{modules} = [keys %$modules];
     }
     if ($controller->param('modules_result')) {
         $search_args{modules_result} = $controller->every_param('modules_result');

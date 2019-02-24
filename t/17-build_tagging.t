@@ -184,7 +184,22 @@ subtest 'test tags for Fedora update-style BUILD values' => sub {
     is($tags[1], 'critpath', 'tag description shown');
 };
 
+sub query_important_builds {
+    my %important_builds_by_group = (0 => $job_groups->new({})->important_builds);
+    my $job_groups                = $schema->resultset('JobGroups');
+    while (my $job_group = $job_groups->next) {
+        $important_builds_by_group{$job_group->id} = $job_group->important_builds;
+    }
+    return \%important_builds_by_group;
+}
+
 subtest 'tagging builds via parent group comments' => sub {
+    my %expected_important_builds = (
+        0    => [],
+        1001 => [qw(0048 0066 20170329.n.0 3456ba4c93)],
+        1002 => [],
+    );
+
     # create a parent group and move all job groups into it
     my $parent_group    = $parent_groups->create({name => 'Test parent', sort_order => 0});
     my $parent_group_id = $parent_group->id;
@@ -195,32 +210,50 @@ subtest 'tagging builds via parent group comments' => sub {
             });
     }
 
-    # create job and tag it on parent-level
+    # create job with DISTRI=Arch, VERSION=2018 and BUILD=08
     create_job_version_build('1', 'Arch-2018-08');
+
+    # check whether the build is not considered important yet
+    my $important_builds = query_important_builds;
+    is_deeply($important_builds, \%expected_important_builds, 'build initially not considered important')
+      or diag explain $important_builds;
+
+    # create a tag for the job via parent group comments to mark it as important
     post_parent_group_comment($parent_group_id => 'tag:Arch-2018-08:important:fromparent');
 
+    # check whether the tag is visible on both - parent- and child-level
     $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
     is(scalar @tags, 4,            'four builds tagged');
     is($tags[-1],    'fromparent', 'tag from parent visible on child-level');
-
     $t->get_ok('/parent_group_overview/' . $parent_group_id)->status_is(200);
     @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
     is(scalar @tags, 4,            'four builds tagged');
     is($tags[-1],    'fromparent', 'tag from parent visible on parent-level');
 
+    # check whether the build is considered important now
+    $expected_important_builds{1001} = [qw(0048 0066 08 20170329.n.0 3456ba4c93)];
+    $expected_important_builds{1002} = [qw(08)];
+    $important_builds                = query_important_builds;
+    is_deeply($important_builds, \%expected_important_builds, 'tag on parent level marks build as important')
+      or diag explain $important_builds;
+
     # create a tag for the same build on child level
     post_comment_1001('tag:Arch-2018-08:important:fromchild');
 
+    # check whether the tag on child-level could override the previous tag on parent-level
     $t->get_ok('/group_overview/1001')->status_is(200);
     @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
     is(scalar @tags, 4,           'still four builds tagged');
     is($tags[-1],    'fromchild', 'overriding tag from parent on child-level visible on child-level');
-
     $t->get_ok('/parent_group_overview/' . $parent_group_id)->status_is(200);
     @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
     is(scalar @tags, 4,           'still four builds tagged');
     is($tags[-1],    'fromchild', 'overriding tag from parent on child-level visible on parent-level');
+
+    $important_builds = query_important_builds;
+    is_deeply($important_builds, \%expected_important_builds, 'build is still considered important')
+      or diag explain $important_builds;
 };
 
 sub _map_expired {

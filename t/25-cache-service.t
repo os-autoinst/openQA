@@ -246,6 +246,23 @@ subtest 'Cache Requests' => sub {
 
 start_server;
 
+subtest 'Invalid requests' => sub {
+    my $url             = $cache_client->_url('/status');
+    my $invalid_request = $cache_client->ua->post($url => json => {lock => "some lock"});
+    my $json            = $invalid_request->result->json;
+    is_deeply($json, {status => 1}, 'no job ID accepted') or diag explain $json;
+
+    $url             = $cache_client->_url('/status');
+    $invalid_request = $cache_client->ua->post($url => json => {id => "foo", lock => "some lock"});
+    $json            = $invalid_request->result->json;
+    is_deeply($json, {error => 'Specified job ID is invalid.'}, 'invalid job ID') or diag explain $json;
+
+    $url             = $cache_client->_url('/status');
+    $invalid_request = $cache_client->ua->post($url => json => {});
+    $json            = $invalid_request->result->json;
+    is_deeply($json, {error => 'No lock specified.'}, 'no lock') or diag explain $json;
+};
+
 subtest 'Asset exists' => sub {
 
     ok(!$cache_client->asset_exists('localhost', 'foobar'), 'Asset absent');

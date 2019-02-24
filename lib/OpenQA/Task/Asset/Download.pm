@@ -32,6 +32,11 @@ sub register {
 sub _download {
     my ($app, $job, $url, $assetpath, $do_extract) = @_;
 
+    # prevent multiple asset download tasks for the same asset to run
+    # in parallel
+    return $job->retry({delay => 30})
+      unless my $guard = $app->minion->guard("limit_asset_download_${assetpath}_task", 3600);
+
     my $ipc = OpenQA::IPC->ipc;
 
     # Bail if the dest file exists (in case multiple downloads of same ISO

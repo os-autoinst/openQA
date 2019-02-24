@@ -277,7 +277,17 @@ subtest 'configuration issue shown' => sub {
         [qr/retrieving/, qr/current module/, qr/uploading/],
     );
     click_header();
-    element_visible('#developer-config-issue-note', qr/steps to debug developer mode setup/,);
+    element_visible('#developer-config-issue-note', qr/steps to debug developer mode setup/);
+};
+
+subtest 'stopping shown' => sub {
+    fake_state(developerMode => {stoppingTestExecution => 'true'});
+
+    element_visible(
+        '#developer-panel .card-header',
+        qr/stopping/, [qr/retrieving/, qr/current module/, qr/uploading/, qr/configuration issue/],
+    );
+    element_visible('#developer-stopping-note', qr/test is about to stop/);
 };
 
 # revert state changes from previous tests
@@ -291,6 +301,7 @@ fake_state(
         develSessionStartedAt => 'undefined',
         develSessionTabCount  => 'undefined',
         badConfiguration      => 'false',
+        stoppingTestExecution => 'false',
     });
 
 my @expected_text_on_initial_session_creation = (qr/and confirm to apply/, qr/Confirm to control this test/);
@@ -304,6 +315,7 @@ subtest 'expand developer panel' => sub {
         [@expected_text_after_session_created, qr/Resume/],
     );
     element_visible('#developer-pause-at-module');
+    element_hidden('#developer-stopping-note');
     element_hidden('#developer-config-issue-note');
 
     subtest 'behavior when changes have not been confirmed' => sub {

@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,11 @@ sub register {
 }
 
 sub _needles {
-    my ($app, $minion, $args) = @_;
+    my ($app, $job, $args) = @_;
+
+    # prevent multiple scan_needles tasks to run in parallel
+    return $job->finish('Previous scan_needles job is still active')
+      unless my $guard = $app->minion->guard('limit_scan_needles_task', 7200);
 
     my $dirs = $app->db->resultset('NeedleDirs');
 

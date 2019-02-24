@@ -1,11 +1,19 @@
-#!/bin/bash -x
+#!/bin/bash
+set -e
 
 # This script doesn't work on Leap 15.0 as it makes use of the -P option of systemd-run
 # which is not available there
 
+if [ $(id -ru) -ne 0 ]; then
+    echo "$0 must be run as root"
+    exit 1
+fi
+
+# Enable -x only here to show above error message cleanly
+set -x
 
 CONTAINER_NAME="openqa1"
-CONTANER_PATH="/var/lib/machines/${CONTAINER_NAME}"
+CONTAINER_PATH="/var/lib/machines/${CONTAINER_NAME}"
 
 DEFAULT_REPO="${DEFAULT_REPO:="http://download.opensuse.org/tumbleweed/repo/oss/"}"
 PKGS_TO_INSTALL="aaa_base systemd shadow zypper openSUSE-release vim iproute2 iputils openQA-local-db openQA-worker sudo apache2 net-tools curl wget ca-certificates-mozilla qemu-kvm openQA-bootstrap"
@@ -47,15 +55,22 @@ DeviceAllow=block-blkext rw
 WantedBy=machines.target
 EOF
 
-mkdir $CONTANER_PATH
-zypper -n --root $CONTANER_PATH addrepo $DEFAULT_REPO defaultrepo
-zypper -n --root $CONTANER_PATH --gpg-auto-import-keys refresh
-zypper -n --root $CONTANER_PATH install --no-recommends -ly $PKGS_TO_INSTALL
+if [ ! -d $CONTAINER_PATH ] ; then
+    mkdir -p $CONTAINER_PATH
+    zypper -n --root $CONTAINER_PATH addrepo $DEFAULT_REPO defaultrepo
+    zypper -n --root $CONTAINER_PATH --gpg-auto-import-keys refresh
+    # There are non-fatal errors when zyppering inside chroot, so ignoring errors on the next line
+    zypper -n --root $CONTAINER_PATH install --no-recommends -ly $PKGS_TO_INSTALL || test $? == 107
+else
+    echo Container path $CONTAINER_PATH already exists, stopping here. Please clean manually and rerun.
+    exit 1
+fi
 
 systemctl daemon-reload
 systemctl start systemd-nspawn-openqa@$CONTAINER_NAME
 # ensure that the container is really running
-while ! timeout -s9 2 systemd-run -qPM $CONTAINER_NAME /bin/bash -c whoami ; do systemctl restart systemd-nspawn-openqa@$CONTAINER_NAME.service ; sleep 3 ; done
+# ignore expected errors about 'Failed to create bus connection: Protocol error' and restarting error
+while ! timeout -s9 2 systemd-run -qPM $CONTAINER_NAME /bin/bash -c whoami >& /dev/null ; do systemctl restart systemd-nspawn-openqa@$CONTAINER_NAME.service || true ; sleep 3 ; done
 systemd-run -qPM $CONTAINER_NAME /bin/bash -c '/usr/share/openqa/script/openqa-bootstrap'
 
 echo -e "$(tput setaf 2;tput bold)Your openQA container has been created. Run 'systemd-run -tM $CONTAINER_NAME /bin/bash' to get a shell in the container$(tput sgr0)"

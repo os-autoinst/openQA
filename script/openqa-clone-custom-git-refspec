@@ -1,0 +1,42 @@
+#!/bin/sh -e
+
+# Usage:
+#  openqa-clone-custom-git-refspec GITHUB_PR_URL OPENQA_JOB_URL
+#
+# Example:
+#  openqa-clone-custom-git-refspec https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/6529 https://openqa.opensuse.org/tests/835060
+#
+set -o pipefail
+if [ -z ${repo_name+x} ] || [ -z ${pr+x} ]; then
+    pr_url="${1:?"Need 'pr_url' as parameter pointing to a github pull request or 'repo_name' (sending repo) and 'pr' variables, e.g. either 'https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/1234' 'me/os-autoinst-distri-opensuse' and '1234'"}"
+    target_repo_part=${pr_url%%/pull*}
+    pr="${pr_url##*/}"
+fi
+if [ -z ${host+x} ] || [ -z ${job+x} ]; then
+    job_url="${2:?"Need 'job_url' as parameter pointing to the openQA job to clone or 'host' and 'job' variables, e.g. either 'https://openqa.opensuse.org/tests/123456' or 'https://openqa.opensuse.org' and '123456'"}"
+    host=${job_url%%/t*}
+    job=${job_url##*/}
+fi
+
+if [ -z ${branch+x} ] || [ -z ${repo_name+x} ]; then
+    pr_content=$(curl -s ${target_repo_part/github.com/api.github.com/repos}/pulls/$pr)
+    label=$(echo $pr_content | jq -r '.head.label')
+    repo_name="${repo_name:-"${label%:*}/${target_repo_part##*/}"}"
+    branch="${branch:-"${label##*:}"}"
+    repo="${repo:-"https://github.com/${repo_name}.git"}"
+fi
+if [ -z ${testsuite+x} ] || [ -z ${needles_dir+x} ] || [ -z ${productdir+x} ]; then
+    old_job=$(curl -s ${host}/tests/${job}/file/vars.json)
+    testsuite="${testsuite:-"$(echo $old_job | jq -r '.TEST')"}"
+    needles_dir="${needles_dir:-"$(echo $old_job | jq -r '.NEEDLES_DIR')"}"
+    old_productdir=$(echo $old_job | jq -r '.PRODUCTDIR')
+    old_casedir=$(echo $old_job | jq -r '.CASEDIR')
+    productdir="${productdir:-"${repo_name##*/}${old_productdir##$old_casedir}"}"
+fi
+repo_branch="${repo_branch:-"$repo_name#$branch"}"
+test="${test:-"$testsuite@$repo_branch"}"
+build="${build:-"$repo_name#$pr"}"
+casedir="${casedir:-"$repo#$branch"}"
+GROUP="${GROUP:-0}"
+dry_run="${dry_run:-""}"
+$dry_run openqa-clone-job --skip-chained-deps --within-instance $host $job _GROUP=$GROUP TEST=$test BUILD=$build CASEDIR=$casedir PRODUCTDIR=$productdir NEEDLES_DIR=$needles_dir

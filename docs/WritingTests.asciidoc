@@ -913,7 +913,7 @@ suite.
 
 [source,perl]
 --------------------------------------------------------------------------------
-if (select_virtio_console()) {
+if (select_serial_terminal()) {
         # Do something which only works, or is necessary, on a serial terminal
 }
 --------------------------------------------------------------------------------
@@ -1366,3 +1366,38 @@ section "Asset handling" in the <<UsersGuide.asciidoc#usersguide,Users Guide>>
 describes how downloadable assets can be specified. It is important to note
 that the specified asset is only downloaded once. New versions must be
 supplied as new, unambiguous download target file names.
+
+===== Triggering tests based on an any remote git refspec or open github pull request
+
+openQA also supports to trigger tests using test code from an open pull
+request on github or any branch or git refspec. That means that code changes
+that are not yet available on a production instance of openQA can be tested
+safely to ensure the code changes work as expected before merging the code
+intro a production repository and branch. This works by setting the
++CASEDIR+ parameter of os-autoinst to a valid git repository path including
+an optional branch/refspec specifier.
+See
+https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc
+for details.
+
+A helper script +openqa-clone-custom-git-refspec+ is available for
+convenience that supports some combinations.
+
+To clone one job within a remote instance based on an open github pull request
+the following syntax can be used:
+
+----
+openqa-clone-custom-git-refspec $GITHUB_PR_URL $OPENQA_TEST_URL
+----
+
+For example:
+
+----
+openqa-clone-custom-git-refspec https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/6649 https://openqa.opensuse.org/tests/839191
+----
+
+Keep in mind that if +PRODUCTDIR+ is overwritten it might not relate to the
+state of the specified git refspec. For example the asset caching
+functionality will override the +PRODUCTDIR+ variable. The above method can
+still be used in this case in the common case that the test schedule does not
+need to be changed or in case a custom schedule is defined by +SCHEDULE+.

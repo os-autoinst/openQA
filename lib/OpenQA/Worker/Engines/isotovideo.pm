@@ -93,10 +93,6 @@ sub detect_asset_keys {
         $res{$isokey} = 'iso' if $vars->{$isokey};
     }
 
-    for my $otherkey (grep { /ASSET_\d+$/ } keys %{$vars}) {
-        $res{$otherkey} = 'other';
-    }
-
     for my $otherkey (qw(KERNEL INITRD)) {
         $res{$otherkey} = 'other' if $vars->{$otherkey};
     }
@@ -151,6 +147,7 @@ sub cache_assets {
             # assume that if we have a full path, that's what we should use
             $vars->{$this_asset} = $asset_uri if -e $asset_uri;
             # don't kill the job if the asset is not found
+            # TODO: This seems to leave the job stuck in some cases (observed in production on openqaworker3).
             next;
         }
         return {error => "Can't download $asset_uri to " . $cache_client->asset_path($current_host, $asset_uri)}
@@ -225,25 +222,29 @@ sub engine_workit {
         return $error if $error;
 
         # do test caching if TESTPOOLSERVER is set
-        if ($hosts->{$current_host}{testpoolserver}) {
+        if (my $rsync_source = $hosts->{$current_host}{testpoolserver}) {
             $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
 
             my $cache_client  = OpenQA::Worker::Cache::Client->new;
             my $rsync_request = $cache_client->request->rsync(
-                from => $hosts->{$current_host}{testpoolserver},
+                from => $rsync_source,
                 to   => $shared_cache
             );
+            my $rsync_request_description = "rsync cache request from '$rsync_source' to '$shared_cache'";
 
             $vars{PRJDIR} = $shared_cache;
 
             # TODO: Enqueue all requests in one place
-            return {error => "Failed to send rsync cache request"} unless $rsync_request->enqueue;
+            return {error => "Failed to send $rsync_request_description"} unless $rsync_request->enqueue;
+            log_info("Enqueued $rsync_request_description");
 
             sleep 5 and update_setup_status until $rsync_request->processed;
-            my $exit = $rsync_request->result;
+            # treat "no sync necessary" as success as well
+            my $exit = $rsync_request->result // 0;
 
-            log_info("rsync: " . $rsync_request->output, channels => 'autoinst');
-            return {error => "Failed to rsync tests: exit " . $exit} unless $exit == 0;
+            if (my $output = $rsync_request->output) { log_info("rsync: " . $output, channels => 'autoinst') }
+            return {error => "Failed to rsync tests: exit code: $exit"} unless (defined $exit && $exit == 0);
+            log_info('Finished to rsync tests');
 
             $shared_cache = catdir($shared_cache, 'tests');
         }
@@ -268,6 +269,7 @@ sub engine_workit {
     my $cgroup;
     mkdir($tmpdir) unless (-d $tmpdir);
 
+    log_info('preparing cgroups to start isotovideo');
     eval {
         $proc_cgroup = (grep { /name=systemd:/ } split(/\n/, path("/proc", $$, "cgroup")->slurp))[0];
         $proc_cgroup =~ s/^.*name=systemd:/systemd/g if defined $proc_cgroup;
@@ -318,8 +320,17 @@ sub engine_workit {
             eval { log_debug("Registered process:" . shift->pid, channels => 'worker'); };
         });
 
-    $child->_default_kill_signal(-POSIX::SIGTERM())->_default_blocking_signal(-POSIX::SIGKILL());
-    $child->set_pipes(0)->internal_pipes(0)->blocking_stop(1);
+    # disable additional pipes for process communication and retrieving process return/errors
+    $child->set_pipes(0);
+    $child->internal_pipes(0);
+
+    # configure how to stop the process again: attempt to send SIGTERM 5 times, fall back to SIGKILL
+    # after 5 seconds
+    $child->_default_kill_signal(-POSIX::SIGTERM());
+    $child->_default_blocking_signal(-POSIX::SIGKILL());
+    $child->max_kill_attempts(5);
+    $child->blocking_stop(1);
+    $child->kill_sleeptime(5);
 
     my $container
       = container(clean_cgroup => 1, pre_migrate => 1, cgroups => $cgroup, process => $child, subreaper => 0);
@@ -327,6 +338,7 @@ sub engine_workit {
     $container->on(
         container_error => sub { shift; my $e = shift; log_error("Container error: @{$e}", channels => 'worker') });
 
+    log_info('starting isotovideo container');
     $container->start();
     $workerpid = $child->pid();
     return {child => $child};

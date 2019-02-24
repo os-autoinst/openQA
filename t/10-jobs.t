@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -477,6 +477,42 @@ subtest 'job with only important passes => overall is passed' => sub {
     is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
 };
 
+subtest 'job with skipped modules' => sub {
+    my $test_matrix = [
+        ['ok',       'skip',     OpenQA::Jobs::Constants::PASSED],
+        ['softfail', 'skip',     OpenQA::Jobs::Constants::SOFTFAILED],
+        ['fail',     'skip',     OpenQA::Jobs::Constants::FAILED],
+        [undef,      'skip',     OpenQA::Jobs::Constants::FAILED],
+        ['skip',     'skip',     OpenQA::Jobs::Constants::PASSED],
+        ['skip',     'ok',       OpenQA::Jobs::Constants::PASSED],
+        ['skip',     'softfail', OpenQA::Jobs::Constants::SOFTFAILED],
+        ['skip',     'fail',     OpenQA::Jobs::Constants::FAILED],
+        ['skip',     undef,      OpenQA::Jobs::Constants::FAILED],
+    ];
+
+    for my $tm (@{$test_matrix}) {
+        my %_settings    = %settings;
+        my @tm_str       = map { $_ // 'undef' } @{$tm};
+        my %module_count = (ok => 0, softfail => 0, fail => 0, undef => 0, skip => 0);
+        $module_count{$tm_str[0]} = $module_count{$tm_str[0]} + 1;
+        $module_count{$tm_str[1]} = $module_count{$tm_str[1]} + 1;
+        $_settings{TEST} = 'SKIP_TEST_' . join('_', @tm_str);
+        my $job = _job_create(\%_settings);
+        $job->insert_module({name => 'a', category => 'a', script => 'a'});
+        $job->update_module('a', {result => $tm->[0], details => []});
+        $job->insert_module({name => 'b', category => 'b', script => 'b'});
+        $job->update_module('b', {result => $tm->[1], details => []});
+        $job->done;
+        $job->discard_changes;
+        is($job->result, $tm->[2], sprintf('job result: %s + %s => %s', @tm_str));
+        is($job->passed_module_count,     $module_count{ok},       'check number of passed modules');
+        is($job->softfailed_module_count, $module_count{softfail}, 'check number of softfailed modules');
+        is($job->failed_module_count,     $module_count{fail},     'check number of failed modules');
+        is($job->skipped_module_count,    $module_count{undef},    'check number of skipped modules');
+        is($job->externally_skipped_module_count, $module_count{skip}, 'check number of externally skipped modules');
+    }
+};
+
 sub job_is_linked {
     my ($job) = @_;
     $job->discard_changes;
@@ -666,7 +702,7 @@ subtest 'check dead children stop job' => sub {
 
     $alive = 0;
 
-    eval { OpenQA::Worker::Jobs::_stop_job_2('dead_children'); };
+    eval { OpenQA::Worker::Jobs::_stop_job_kill_and_upload('dead_children'); };
 
     like($messages[2], qr/result: dead_children/, 'dead children match exception');
 };

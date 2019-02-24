@@ -27,6 +27,10 @@ sub register {
 sub _limit {
     my ($app, $job) = @_;
 
+    # prevent multiple limit_results_and_logs tasks to run in parallel
+    return $job->finish('Previous limit_results_and_logs job is still active')
+      unless my $guard = $app->minion->guard('limit_results_and_logs_task', 7200);
+
     # create temporary job group outside of DB to collect
     # jobs without job_group_id
     $app->db->resultset('JobGroups')->new({})->limit_results_and_logs;
