@@ -17,8 +17,7 @@ ENV FULL`'`'STACK 1
 ENV DEVELOPER_FULLSTACK 1
 ENV SCHEDULER_FULLSTACK 1')
 WORKDIR /opt/testing_area
-m4_ifdef(`CODECOV',`COPY . .'
-ENV COVER_OPTS "-select_re '^/lib' -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement -no-summary"
+m4_ifdef(`COVER_OPTS',`COPY . .'
 `RUN mkdir covers',`
 COPY assets ./assets
 COPY cpanfile ./
@@ -54,7 +53,7 @@ m4_divert(-1)
 m4_define(`foreach',`m4_ifelse(m4_eval($#>2),1,
 `m4_pushdef(`$1',`$3')$2`'m4_popdef(`$1')m4_dnl
 `'m4_ifelse(m4_eval($#>3),1,`$0(`$1',`$2',m4_shift(m4_shift(m4_shift($@))))')')')
-m4_changecom(BC,EC)m4_define(`TCMD',m4_ifdef(`CODECOV',`cover $COVER_OPTS -test -make "prove -v Xfile # " covers/``''M4_COUNT',`prove -v Xfile'))
+m4_changecom(BC,EC)m4_define(`TCMD',m4_ifdef(`COVER_OPTS',`cover COVER_OPTS --no-summary -test -make "prove -v Xfile # " covers/``''M4_COUNT',`prove -v Xfile'))
 m4_define(`RUNCMD',RUN TCMD
 )
 m4_define(`RUNDBCMD',RUN ( $STARTDB && TCMD )
@@ -62,6 +61,9 @@ m4_define(`RUNDBCMD',RUN ( $STARTDB && TCMD )
 m4_define(`RUNDBBUSCMD',RUN ( $STARTDB && bus_start && TCMD )
 )
 m4_define(M4_COUNT,1)
+m4_divert(0)
+m4_ifdef(`COVER_OPTS',m4_ifelse(FULLSTACK,1,`',m4_define(`Xfile',t/01-compile-check-all.t)RUN TCMD`'m4_define(`M4_COUNT',m4_incr(M4_COUNT))))
+m4_divert(-1)
 m4_define(`GREP_NO_DB_PATTERN',`grep -L -E DB_PATTERN M4_TEST | tr "\n"' ``, | head -c -1'')
 m4_define(`GREP_DB_PATTERN',`grep -l -E DB_PATTERN M4_TEST | tr "\n"' ``, | head -c -1'')
 m4_syscmd(test $(GREP_NO_DB_PATTERN | wc -c) -gt 3)
@@ -70,4 +72,4 @@ foreach(`Xfile',`RUNCMD`'m4_define(`M4_COUNT',m4_incr(M4_COUNT))', m4_esyscmd(GR
 m4_syscmd(test $(GREP_DB_PATTERN | wc -c) -gt 3)
 m4_divert(-m4_sysval)
 foreach(`Xfile',`m4_ifelse(FULLSTACK,1,RUNDBBUSCMD,Xfile,t/14-grutasks.t,RUNDBBUSCMD,RUNDBCMD)'`m4_define(`M4_COUNT',m4_incr(M4_COUNT))', m4_esyscmd(GREP_DB_PATTERN))
-m4_ifdef(`CODECOV',`RUN ( cover -select_re ^lib/ -report codecov covers/* || true )',`')
+m4_ifdef(`COVER_REPORT_OPTS',`RUN ( cover COVER_REPORT_OPTS -report codecov covers/* || true )',`')

@@ -146,12 +146,13 @@ launch-docker-to-run-tests-within: docker.env
 prepare-and-launch-docker-to-run-tests-within: docker-test-build launch-docker-to-run-tests-within
 	echo "Use docker-rm and docker-rmi to remove the container and image if necessary"
 
+DIRECT_TEST_BASEIMAGE=registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
 
 .PHONY: direct-test-dockerfiles
 direct-test-dockerfiles:
 	m4 -P -D M4_TEST=t/ui/*.t -D M4_BASEIMAGE=$(DIRECT_TEST_BASEIMAGE) docker/direct_test.m4 > docker/direct_tests_ui.Dockerfile
-	m4 -P -D M4_TEST=t/ui/*.t -D M4_BASEIMAGE=$(DIRECT_TEST_BASEIMAGE) -D CODECOV docker/direct_test.m4 > docker/direct_tests_ui.Codecov.Dockerfile
+	m4 -P -D M4_TEST=t/ui/*.t -D M4_BASEIMAGE=$(DIRECT_TEST_BASEIMAGE) -D COVER_OPTS="$(COVER_OPTS)" -D COVER_REPORT_OPTS="$(COVER_REPORT_OPTS)" docker/direct_test.m4 > docker/direct_tests_ui.Codecov.Dockerfile
 	m4 -P -D M4_TEST=t/*.t -D M4_BASEIMAGE=$(DIRECT_TEST_BASEIMAGE) docker/direct_test.m4 > docker/direct_tests.Dockerfile 
-	m4 -P -D M4_TEST=t/*.t -D M4_BASEIMAGE=$(DIRECT_TEST_BASEIMAGE) -D CODECOV docker/direct_test.m4 > docker/direct_tests.Codecov.Dockerfile 
+	m4 -P -D M4_TEST=t/*.t -D M4_BASEIMAGE=$(DIRECT_TEST_BASEIMAGE) -D COVER_OPTS="$(COVER_OPTS)" -D COVER_REPORT_OPTS="$(COVER_REPORT_OPTS)" docker/direct_test.m4 > docker/direct_tests.Codecov.Dockerfile 
 	for t in `grep -l FULLSTACK t/*.t` ; do m4 -P -D M4_TEST=$${t} -D FULLSTACK=1 -D M4_BASEIMAGE=$(DIRECT_TEST_BASEIMAGE) docker/direct_test.m4 > docker/direct_test`basename $${t%.*}`.Dockerfile ; done
-	for t in `grep -l FULLSTACK t/*.t` ; do m4 -P -D M4_TEST=$${t} -D FULLSTACK=1 -D M4_BASEIMAGE=$(DIRECT_TEST_BASEIMAGE) -D CODECOV docker/direct_test.m4 > docker/direct_test`basename $${t%.*}`.Codecov.Dockerfile ; done
+	for t in `grep -l FULLSTACK t/*.t` ; do m4 -P -D M4_TEST=$${t} -D FULLSTACK=1 -D M4_BASEIMAGE=$(DIRECT_TEST_BASEIMAGE) -D COVER_OPTS="$(COVER_OPTS)" -D COVER_REPORT_OPTS="$(COVER_REPORT_OPTS)" docker/direct_test.m4 > docker/direct_test`basename $${t%.*}`.Codecov.Dockerfile ; done
