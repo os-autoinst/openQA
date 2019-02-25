@@ -235,7 +235,7 @@ sub _generate_jobs {
             $settings{TEST}               = $job_template->test_suite->name;
             $settings{MACHINE}            = $job_template->machine->name;
             $settings{BACKEND}            = $job_template->machine->backend;
-            $settings{WORKER_CLASS} = join(',', sort(@classes));
+            $settings{WORKER_CLASS} = @classes ? join(',', sort(@classes)) : "qemu_$args->{ARCH}";
 
             for (keys %$args) {
                 next if $_ eq 'TEST' || $_ eq 'MACHINE';

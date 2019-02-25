@@ -169,6 +169,11 @@ sub create_from_settings {
         $new_job_args{$key} = $value;
     }
 
+    # assign default for WORKER_CLASS
+    if (!$settings{WORKER_CLASS}) {
+        $settings{WORKER_CLASS} = 'qemu_' . ($new_job_args{ARCH} // 'x86_64');
+    }
+
     my $job = $self->create(\%new_job_args);
     my @job_settings;
 

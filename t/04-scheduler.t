@@ -114,7 +114,8 @@ my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
 # this really should be an integration test
 my $id = $c->_register($schema, "host", "1", $workercaps);
 ok($id == 1, "New worker registered");
-my $worker = $schema->resultset("Workers")->find($id)->info();
+my $worker_db_obj = $schema->resultset("Workers")->find($id);
+my $worker        = $worker_db_obj->info();
 ok($worker->{id} == $id && $worker->{host} eq "host" && $worker->{instance} eq "1", "New worker_get");
 
 # Update worker
@@ -146,18 +147,19 @@ my $job_ref = {
     priority   => 40,
     result     => 'none',
     settings   => {
-        DESKTOP     => "DESKTOP",
-        DISTRI      => 'Unicorn',
-        FLAVOR      => 'pink',
-        VERSION     => '42',
-        BUILD       => '666',
-        TEST        => 'rainbow',
-        ISO         => 'whatever.iso',
-        ISO_MAXSIZE => 1,
-        KVM         => "KVM",
-        MACHINE     => "RainbowPC",
-        ARCH        => 'x86_64',
-        NAME        => '00000001-Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
+        DESKTOP      => "DESKTOP",
+        DISTRI       => 'Unicorn',
+        FLAVOR       => 'pink',
+        VERSION      => '42',
+        BUILD        => '666',
+        TEST         => 'rainbow',
+        ISO          => 'whatever.iso',
+        ISO_MAXSIZE  => 1,
+        KVM          => "KVM",
+        MACHINE      => "RainbowPC",
+        ARCH         => 'x86_64',
+        NAME         => '00000001-Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
+        WORKER_CLASS => 'qemu_x86_64',
     },
     assets => {
         iso => ['whatever.iso'],
@@ -207,18 +209,19 @@ my $jobs = [
         clone_id      => undef,
         group_id      => undef,
         settings      => {
-            DESKTOP     => "DESKTOP",
-            DISTRI      => 'Unicorn',
-            FLAVOR      => 'pink',
-            VERSION     => '42',
-            BUILD       => '44',
-            TEST        => 'rainbow',
-            ISO         => 'whatever.iso',
-            ISO_MAXSIZE => 1,
-            KVM         => "KVM",
-            MACHINE     => "RainbowPC",
-            ARCH        => 'x86_64',
-            NAME        => '00000002-Unicorn-42-pink-x86_64-Build44-rainbow@RainbowPC',
+            DESKTOP      => "DESKTOP",
+            DISTRI       => 'Unicorn',
+            FLAVOR       => 'pink',
+            VERSION      => '42',
+            BUILD        => '44',
+            TEST         => 'rainbow',
+            ISO          => 'whatever.iso',
+            ISO_MAXSIZE  => 1,
+            KVM          => "KVM",
+            MACHINE      => "RainbowPC",
+            ARCH         => 'x86_64',
+            NAME         => '00000002-Unicorn-42-pink-x86_64-Build44-rainbow@RainbowPC',
+            WORKER_CLASS => 'qemu_x86_64',
         },
         assets => {
             iso => ['whatever.iso'],
@@ -237,18 +240,19 @@ my $jobs = [
         clone_id      => undef,
         group_id      => undef,
         settings      => {
-            DESKTOP     => "DESKTOP",
-            DISTRI      => 'Unicorn',
-            FLAVOR      => 'pink',
-            VERSION     => '42',
-            BUILD       => '666',
-            TEST        => 'rainbow',
-            ISO         => 'whatever.iso',
-            ISO_MAXSIZE => 1,
-            KVM         => "KVM",
-            MACHINE     => "RainbowPC",
-            ARCH        => 'x86_64',
-            NAME        => '00000001-Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
+            DESKTOP      => "DESKTOP",
+            DISTRI       => 'Unicorn',
+            FLAVOR       => 'pink',
+            VERSION      => '42',
+            BUILD        => '666',
+            TEST         => 'rainbow',
+            ISO          => 'whatever.iso',
+            ISO_MAXSIZE  => 1,
+            KVM          => "KVM",
+            MACHINE      => "RainbowPC",
+            ARCH         => 'x86_64',
+            NAME         => '00000001-Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
+            WORKER_CLASS => 'qemu_x86_64',
         },
         assets => {
             iso => ['whatever.iso'],
@@ -295,9 +299,14 @@ is_deeply($current_jobs, $jobs, "jobs with specified IDs and states (array ref)"
 $current_jobs = list_jobs(%args);
 is_deeply($current_jobs, [$jobs->[0]], "jobs with specified IDs (comma list)");
 
-# Testing job_grab
+# Testing job_grab (WORKER_CLASS mismatch)
 %args = (workerid => $worker->{id}, allocate => 1);
 my $rjobs_before = list_jobs(state => 'running');
+OpenQA::Scheduler::Scheduler::schedule();
+is(undef, $sent->{$worker->{id}}->{job}, 'job not grabbed due to default WORKER_CLASS');
+
+# Testing job_grab
+$worker_db_obj->set_property(WORKER_CLASS => 'qemu_x86_64');
 OpenQA::Scheduler::Scheduler::schedule();
 my $grabbed     = $sent->{$worker->{id}}->{job}->to_hash;
 my $rjobs_after = list_jobs(state => 'assigned');

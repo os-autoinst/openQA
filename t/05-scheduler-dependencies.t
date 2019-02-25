@@ -112,7 +112,8 @@ my %workercaps = (
     cpu_opmode                   => '32-bit, 64-bit',
     mem_max                      => '4096',
     isotovideo_interface_version => WEBSOCKET_API_VERSION,
-    websocket_api_version        => WEBSOCKET_API_VERSION
+    websocket_api_version        => WEBSOCKET_API_VERSION,
+    worker_class                 => 'qemu_x86_64',
 );
 
 # parallel dependencies:
