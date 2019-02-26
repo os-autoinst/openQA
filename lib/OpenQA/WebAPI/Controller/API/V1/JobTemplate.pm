@@ -121,7 +121,7 @@ sub list {
 }
 
 sub validate_yaml {
-    my ($self, $yaml, $validate_schema) = shift;
+    my ($self, $yaml, $validate_schema) = @_;
 
     # Note: Using the schema filename; slurp'ed text isn't detected as YAML
     my $schema_yaml = $self->app->home->child('assets', 'job.yaml')->to_string;

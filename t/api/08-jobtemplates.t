@@ -520,15 +520,16 @@ is($job_templates->search({prio => -5})->count, 0, 'no rows affected');
 # test the YAML export
 # Get all groups
 $get = $t->get_ok("/api/v1/job_templates_scheduling")->status_is(200);
-is(OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, $get, 1), 0, 'YAML of all groups is valid');
-is(YAML::XS::Load($get->tx->res->body)->{opensuse}{products}{'opensuse-13.1-DVD-i586'}{version},
-    '13.1', 'Version of opensuse group')
+my $yaml = YAML::XS::Load($get->tx->res->body);
+is(OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, $yaml, 1), 0, 'YAML of all groups is valid');
+is($yaml->{opensuse}{products}{'opensuse-13.1-DVD-i586'}{version}, '13.1', 'Version of opensuse group')
   || diag explain $get->tx->res->body;
 # Get one group with defined architectures, products and defaults
-$get = $t->get_ok("/api/v1/job_templates_scheduling/1001")->status_is(200);
-is(OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, $get, 1), 0, 'YAML of single group is valid');
+$get  = $t->get_ok("/api/v1/job_templates_scheduling/1001")->status_is(200);
+$yaml = YAML::XS::Load($get->tx->res->body);
+is(OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, $yaml, 1), 0, 'YAML of single group is valid');
 is_deeply(
-    YAML::XS::Load($get->tx->res->body),
+    $yaml,
     {
         opensuse => {
             architectures => {
