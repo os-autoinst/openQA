@@ -518,16 +518,49 @@ $t->post_ok(
 is($job_templates->search({prio => -5})->count, 0, 'no rows affected');
 
 # test the YAML export
+# Test validation
+my %yaml;
+is_deeply(OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, \%yaml, 1), [], 'Empty YAML is fine')
+  or diag explain YAML::XS::Dump(\%yaml);
+${yaml}{groupname}{architectures}{'x86_64'}{opensuse} = ['spam', 'eggs'];
+is_deeply(
+    OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, \%yaml, 1),
+    ["/groupname/products: Missing property."],
+    'No products defined'
+) or diag explain YAML::XS::Dump(\%yaml);
+${yaml}{groupname}{products}{'opensuse'} = {};
+is_deeply(
+    @{OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, \%yaml, 1)}[0],
+    '/groupname/products/opensuse/distri: Missing property.',
+    'No distri specified'
+) or diag explain YAML::XS::Dump(\%yaml);
+${yaml}{groupname}{products}{'opensuse'}{distri} = 'sle';
+is_deeply(
+    @{OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, \%yaml, 1)}[0],
+    '/groupname/products/opensuse/flavor: Missing property.',
+    'No flavor specified'
+) or diag explain YAML::XS::Dump(\%yaml);
+${yaml}{groupname}{products}{'opensuse'}{flavor} = 'DVD';
+is_deeply(
+    OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, \%yaml, 1),
+    ['/groupname/products/opensuse/version: Missing property.'],
+    'No version specified'
+) or diag explain YAML::XS::Dump(\%yaml);
+${yaml}{groupname}{products}{'opensuse'}{version} = '42.1';
+is_deeply(OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, \%yaml, 1), [], 'YAML valid as expected')
+  or diag explain YAML::XS::Dump(\%yaml);
 # Get all groups
 $get = $t->get_ok("/api/v1/job_templates_scheduling")->status_is(200);
 my $yaml = YAML::XS::Load($get->tx->res->body);
-is(OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, $yaml, 1), 0, 'YAML of all groups is valid');
+is_deeply(OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, $yaml, 1),
+    [], 'YAML of all groups is valid');
 is($yaml->{opensuse}{products}{'opensuse-13.1-DVD-i586'}{version}, '13.1', 'Version of opensuse group')
   || diag explain $get->tx->res->body;
 # Get one group with defined architectures, products and defaults
 $get  = $t->get_ok("/api/v1/job_templates_scheduling/1001")->status_is(200);
 $yaml = YAML::XS::Load($get->tx->res->body);
-is(OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, $yaml, 1), 0, 'YAML of single group is valid');
+is_deeply(OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, $yaml, 1),
+    [], 'YAML of single group is valid');
 is_deeply(
     $yaml,
     {

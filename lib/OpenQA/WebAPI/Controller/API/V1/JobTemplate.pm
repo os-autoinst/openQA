@@ -138,12 +138,12 @@ sub validate_yaml {
     }
     if ($schema) {
         # Note: Don't pass $schema here, that won't work
-        push @errors, $validator->validate(\%{$yaml});
+        push @errors, $validator->validate($yaml);
     }
     else {
         push @errors, "Failed to load schema";
     }
-    @errors;
+    \@errors;
 }
 
 sub schedules {
@@ -159,6 +159,7 @@ sub schedules {
 
         # Always set the hash of test suites to account for empty groups
         $group{architectures} = {};
+        $group{products}      = {};
 
         my %machines;
         my %prios;
