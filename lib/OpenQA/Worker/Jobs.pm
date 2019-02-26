@@ -451,7 +451,7 @@ sub _stop_job_kill_and_upload {
                         ulog => 1
                     }))
             {
-                $aborted = "failed to upload $file";
+                $aborted = 'api-failure';
                 last;
             }
         }
@@ -471,7 +471,7 @@ sub _stop_job_kill_and_upload {
                                 asset => $dir
                             }))
                     {
-                        $aborted = 'failed to upload asset';
+                        $aborted = 'api-failure';
                         last ASSET_UPLOAD;
                     }
                 }
@@ -490,7 +490,7 @@ sub _stop_job_kill_and_upload {
                     {
                         file => {file => "$pooldir/$file", filename => $ofile}}))
             {
-                $aborted = "failed to upload $file";
+                $aborted = 'api-failure';
                 last;
             }
         }
