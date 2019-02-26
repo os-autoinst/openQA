@@ -514,15 +514,6 @@ sub _stop_job_kill_and_upload {
             upload_status(1, \&_stop_job_finish);
             $job_done = 1;
         }
-        elsif ($aborted eq 'dead_children') {
-            log_debug('Dead children found.');
-
-            api_call(
-                'post', 'jobs/' . $job->{id} . '/set_done',
-                params   => {result => 'incomplete'},
-                callback => 'no'
-            );
-        }
     }
     if (!$job_done && $aborted ne 'api-failure') {
         log_debug(sprintf 'job %d incomplete', $job->{id});
