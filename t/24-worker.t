@@ -498,27 +498,38 @@ subtest 'handling upload finished' => sub {
     my $callback        = sub {
         fail('callback unexpectedly called');
     };
+    my $callback2 = sub {
+        $callback_called = 1;
+    };
 
     subtest 'behavor when result for status upload is undef' => sub {
-        OpenQA::Worker::Jobs::handle_status_upload_finished($job_id, $upload_up_to, $callback, undef);
+        OpenQA::Worker::Jobs::handle_status_upload_finished(1, $job_id, $upload_up_to, $callback2, undef);
+        is($stop_job_aborted, 0, 'undefined status upload result on final status update is ignored');
+        is($callback_called,  1, 'callback also in the error case called');
+
+        OpenQA::Worker::Jobs::handle_status_upload_finished(0, $job_id, $upload_up_to, $callback, undef);
         is($stop_job_aborted,     'api-failure', 'undefined status upload result is considered an API failure');
         is($upload_images_called, 0,             'no image upload if status upload result is undef');
     };
 
     subtest 'behavior when image upload fails' => sub {
-        $stop_job_aborted = 0;
-        OpenQA::Worker::Jobs::handle_status_upload_finished($job_id, $upload_up_to, $callback, {});
-        is($upload_images_called, 1,             'image upload attempted');
-        is($stop_job_aborted,     'api-failure', 'failing image upload is considered an API failure');
+        $callback_called = $stop_job_aborted = 0;
+
+        OpenQA::Worker::Jobs::handle_status_upload_finished(1, $job_id, $upload_up_to, $callback2, {});
+        is($stop_job_aborted,     0, 'undefined status upload result on final status update is ignored');
+        is($upload_images_called, 1, 'image upload attempted');
+        is($callback_called,      1, 'callback also in the error case called');
+
+        $upload_images_called = 0;
+        OpenQA::Worker::Jobs::handle_status_upload_finished(0, $job_id, $upload_up_to, $callback, {});
+        is($stop_job_aborted, 'api-failure', 'failing image upload is considered an API failure');
     };
 
     subtest 'successful upload' => sub {
-        $stop_job_aborted     = $upload_images_called = 0;
+        $callback_called      = $stop_job_aborted = $upload_images_called = 0;
         $upload_images_result = 1;
-        $callback             = sub {
-            $callback_called = 1;
-        };
-        OpenQA::Worker::Jobs::handle_status_upload_finished($job_id, $upload_up_to, $callback, {});
+
+        OpenQA::Worker::Jobs::handle_status_upload_finished(0, $job_id, $upload_up_to, $callback2, {});
         is($upload_images_called, 1, 'image upload attempted');
         is($stop_job_aborted,     0, 'job not aborted');
         is($callback_called,      1, 'callback called');
@@ -538,7 +549,7 @@ subtest 'handling upload finished' => sub {
                 is($args{non_critical}, 1,      'uploading progress to livehandler not considered critical');
                 $upload_progress = $args{json};
             });
-        OpenQA::Worker::Jobs::handle_status_upload_finished($job_id, $upload_up_to, $callback, {});
+        OpenQA::Worker::Jobs::handle_status_upload_finished(0, $job_id, $upload_up_to, $callback2, {});
         is($upload_images_called, 1, 'image upload attempted');
         is($stop_job_aborted,     0, 'job not aborted');
         is_deeply(
@@ -554,7 +565,7 @@ subtest 'handling upload finished' => sub {
 
         $stop_job_aborted = $upload_images_called = 0;
         $upload_progress  = undef;
-        OpenQA::Worker::Jobs::handle_status_upload_finished($job_id, $upload_up_to, $callback, {});
+        OpenQA::Worker::Jobs::handle_status_upload_finished(0, $job_id, $upload_up_to, $callback2, {});
         is($upload_images_called, 1,     'image upload attempted');
         is($stop_job_aborted,     0,     'job not aborted');
         is($upload_progress,      undef, 'no upload progress posted if nothing changed');

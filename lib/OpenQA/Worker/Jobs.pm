@@ -738,6 +738,9 @@ sub is_developer_session_started {
 }
 
 # uploads current data
+# note: This is also called when stopping/finalizing the current job. In this case $final_upload
+#       is set to 1. We can't query isotovideo anymore in this case and API calls must be treated
+#       as non-critical to prevent the usual error handling.
 sub upload_status {
     my ($final_upload, $callback) = @_;
 
@@ -749,21 +752,27 @@ sub upload_status {
         return;
     }
 
-    # query status from isotovideo
-    my $ua        = Mojo::UserAgent->new;
-    my $os_status = $ua->get($job->{URL} . '/isotovideo/status')->res->json;
-    my $status    = {
+    # query status from isotovideo (unless it is the final status upload because isotovideo
+    # has already been stopped in this case)
+    my $os_status;
+    if (!$final_upload) {
+        $os_status = Mojo::UserAgent->new->get($job->{URL} . '/isotovideo/status')->res->json;
+    }
+    else {
+        $os_status = {};
+    }
+    my $status = {
         worker_id             => $workerid,
         cmd_srv_url           => $job->{URL},
         worker_hostname       => $worker_settings->{WORKER_HOSTNAME},
-        test_execution_paused => $os_status->{test_execution_paused},
+        test_execution_paused => $os_status->{test_execution_paused} // 0,
     };
 
     # determine up to which module the results should be uploaded
     # note: $os_status->{running} is undef at the beginning or if read_json_file temporary
     #       failed and contains empty string after the last test
     my $upload_up_to;
-    if ($os_status->{running} || $final_upload) {
+    if ($final_upload || $os_status->{running}) {
         if (!$current_running) {    # first test
             $test_order = read_json_file('test_order.json');
             if (!$test_order) {
@@ -811,27 +820,33 @@ sub upload_status {
     # upload status to web UI
     my $job_id = $job->{id};
     ignore_known_images();
-    if (is_developer_session_started()) {
+    if (!$final_upload && is_developer_session_started()) {
         post_upload_progress_to_liveviewhandler($job_id, $upload_up_to);
     }
     api_call(
-        'post',
-        "jobs/$job_id/status",
-        json     => {status => $status},
-        callback => sub {
-            handle_status_upload_finished($job_id, $upload_up_to, $callback, @_);
+        post         => "jobs/$job_id/status",
+        json         => {status => $status},
+        non_critical => $final_upload,
+        callback     => sub {
+            handle_status_upload_finished($final_upload, $job_id, $upload_up_to, $callback, @_);
         });
     return 1;
 }
 
 sub handle_status_upload_finished {
-    my ($job_id, $upload_up_to, $callback, $res) = @_;
+    my ($final_upload, $job_id, $upload_up_to, $callback, $res) = @_;
 
     # stop if web UI considers this worker already dead
     if (!$res) {
         $update_status_running = 0;
-        log_error('Job aborted because web UI doesn\'t accept updates anymore (likely considers this job dead)');
-        stop_job('api-failure');
+        if ($final_upload) {
+            log_error('Unable to make final status update. Maybe the web UI considers this job already dead.');
+            return $callback->() if $callback;
+        }
+        else {
+            log_error('Aborting job because web UI doesn\'t accept updates anymore (likely considers this job dead)');
+            stop_job('api-failure');
+        }
         return;
     }
 
@@ -841,12 +856,19 @@ sub handle_status_upload_finished {
     # stop if web UI considers this worker already dead
     if (!upload_images()) {
         $update_status_running = 0;
-        log_error('Job aborted because web UI doesn\'t accept new images anymore (likely considers this job dead)');
-        stop_job('api-failure');
+        if ($final_upload) {
+            log_error('Unable to make final image uploads. Maybe the web UI considers this job already dead.');
+            return $callback->() if $callback;
+        }
+        else {
+            log_error(
+                'Aborting job because web UI doesn\'t accept new images anymore (likely considers this job dead)');
+            stop_job('api-failure');
+        }
         return;
     }
 
-    if (is_developer_session_started()) {
+    if (!$final_upload && is_developer_session_started()) {
         post_upload_progress_to_liveviewhandler($job_id, $upload_up_to);
     }
 
