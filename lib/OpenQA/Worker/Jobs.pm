@@ -426,112 +426,92 @@ sub _stop_job_announce {
 
 sub _stop_job_kill_and_upload {
     my ($aborted, $job_id, $host) = @_;
-    _kill_worker($worker);
-
-    my $name = $job->{settings}->{NAME};
     $aborted ||= 'done';
 
-    my $job_done;    # undef
+    # stop isotovideo (does nothing if we're here because isotovideo exited on its own)
+    _kill_worker($worker);
+
+    # add notes
     log_info("+++ worker notes +++", channels => 'autoinst');
     log_info(sprintf("end time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
     log_info("result: $aborted", channels => 'autoinst');
+
+    # upload logs and assets
     if ($aborted ne 'quit' && $aborted ne 'abort' && $aborted ne 'api-failure') {
-        # collect uploaded logs
+        # upload ulogs
         my @uploaded_logfiles = glob "$pooldir/ulogs/*";
         for my $file (@uploaded_logfiles) {
             next unless -f $file;
 
-            # don't use api_call as it retries and does not allow form data
-            # (refactor at some point)
-            unless (
-                upload(
-                    $job_id,
-                    {
-                        file => {file => $file, filename => basename($file)},
-                        ulog => 1
-                    }))
-            {
+            my %upload_parameter = (
+                file => {file => $file, filename => basename($file)},
+                ulog => 1,
+            );
+            if (!upload($job_id, \%upload_parameter)) {
                 $aborted = 'api-failure';
                 last;
             }
         }
 
+        # upload assets created by successfull jobs
         if ($aborted eq 'done' || $aborted eq 'cancel') {
-            # job succeeded, upload assets created by the job
+            for my $dir (qw(private public)) {
+                my @assets        = glob "$pooldir/assets_$dir/*";
+                my $upload_result = 1;
 
-          ASSET_UPLOAD: for my $dir (qw(private public)) {
-                my @assets = glob "$pooldir/assets_$dir/*";
                 for my $file (@assets) {
                     next unless -f $file;
-                    unless (
-                        upload(
-                            $job_id,
-                            {
-                                file  => {file => $file, filename => basename($file)},
-                                asset => $dir
-                            }))
-                    {
-                        $aborted = 'api-failure';
-                        last ASSET_UPLOAD;
-                    }
+
+                    my %upload_parameter = (
+                        file  => {file => $file, filename => basename($file)},
+                        asset => $dir,
+                    );
+                    last unless ($upload_result = upload($job_id, \%upload_parameter));
+                }
+                if (!$upload_result) {
+                    $aborted = 'api-failure';
+                    last;
                 }
             }
         }
+
+        # upload other logs and files
         for my $file (qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt virtio_console.log worker-log.txt))
         {
             next unless -e $file;
-            # default serial output file called serial0
+
+            # replace some file names
             my $ofile = $file;
             $ofile =~ s/serial0/serial0.txt/;
             $ofile =~ s/virtio_console.log/serial_terminal.txt/;
-            unless (
-                upload(
-                    $job_id,
-                    {
-                        file => {file => "$pooldir/$file", filename => $ofile}}))
-            {
+
+            my %upload_parameter = (file => {file => "$pooldir/$file", filename => $ofile},);
+            if (!upload($job_id, \%upload_parameter)) {
                 $aborted = 'api-failure';
                 last;
             }
         }
 
+        # do final status upload for selected $aborted reasons
         if ($aborted eq 'obsolete') {
             log_debug('setting job ' . $job->{id} . ' to incomplete (obsolete)');
             upload_status(1, sub { _stop_job_finish({result => 'incomplete', newbuild => 1}) });
-            $job_done = 1;
+            return;
         }
         elsif ($aborted eq 'cancel') {
             # not using job_incomplete here to avoid duplicate
             log_debug('setting job ' . $job->{id} . ' to incomplete (cancel)');
             upload_status(1, sub { _stop_job_finish({result => 'incomplete'}) });
-            $job_done = 1;
+            return;
         }
-        elsif ($aborted eq 'timeout') {
-            log_warning('job ' . $job->{id} . ' spent more time than MAX_JOB_TIME');
-        }
-        elsif ($aborted eq 'done') {    # not aborted
+        elsif ($aborted eq 'done') {
             log_debug('setting job ' . $job->{id} . ' to done');
             upload_status(1, \&_stop_job_finish);
-            $job_done = 1;
+            return;
         }
     }
-    if (!$job_done && $aborted ne 'api-failure') {
-        log_debug(sprintf 'job %d incomplete', $job->{id});
-        if ($aborted eq 'quit') {
-            log_debug(sprintf "duplicating job %d\n", $job->{id});
-            api_call(
-                'post',
-                'jobs/' . $job->{id} . '/duplicate',
-                params   => {dup_type_auto => 1},
-                callback => sub {
-                    upload_status(1, sub { _stop_job_finish({result => 'incomplete'}, 1) });
-                });
-        }
-        else {
-            upload_status(1, sub { _stop_job_finish({result => 'incomplete'}, 0) });
-        }
-    }
-    elsif ($aborted eq 'api-failure') {
+
+    if ($aborted eq 'api-failure') {
         # give the API one last try to incomplete the job at least
         # note: Setting 'ignore_errors' here is important. Otherwise we would endlessly repeat
         #       that API call.
@@ -545,7 +525,30 @@ sub _stop_job_kill_and_upload {
                 _stop_accepting_jobs_and_register_again($host);
             },
         );
+        return;
     }
+
+    if ($aborted eq 'timeout') {
+        log_warning("job $job->{id} spent more time than MAX_JOB_TIME");
+    }
+    else {
+        log_debug("job $job->{id} incomplete");
+    }
+
+    # do final status upload and incomplete job ...
+    if ($aborted ne 'quit') {
+        upload_status(1, sub { _stop_job_finish({result => 'incomplete'}, 0) });
+        return;
+    }
+
+    # ... and duplicate the job before if abort reason is "quit"
+    log_debug("duplicating job $job->{id}");
+    api_call(
+        post     => "jobs/$job->{id}/duplicate",
+        params   => {dup_type_auto => 1},
+        callback => sub {
+            upload_status(1, sub { _stop_job_finish({result => 'incomplete'}, 1) });
+        });
 }
 
 sub _stop_accepting_jobs_and_register_again {
