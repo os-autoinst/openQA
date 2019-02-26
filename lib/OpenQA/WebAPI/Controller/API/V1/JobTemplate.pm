@@ -200,8 +200,8 @@ sub schedules {
                 my @_test_suites;
                 foreach my $test_suite (@{$group{architectures}->{$arch}->{$product}}) {
                     my %test_suite = %{$test_suite};
-                    while (my ($name, $attr) = each %test_suite) {
-                        my %attr = %{$attr};
+                    foreach my $name (keys %test_suite) {
+                        my %attr = %{$test_suite{$name}};
                         if ($attr{machine} eq $default_machine) {
                             delete $attr{machine};
                         }
