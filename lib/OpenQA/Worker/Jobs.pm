@@ -388,6 +388,11 @@ sub _stop_job_init {
 sub _stop_job_announce {
     my ($aborted, $job_id, $callback) = @_;
 
+    # skip if isotovideo not running anymore (e.g. when isotovideo just exited on its own)
+    if (!$worker->{child} || !$worker->{child}->is_running) {
+        return $callback->();
+    }
+
     my $ua      = Mojo::UserAgent->new(request_timeout => 10);
     my $job_url = $job->{URL};
     return $callback->() unless $job_url;
