@@ -547,6 +547,7 @@ sub _stop_job_kill_and_upload {
         api_call(
             post          => "jobs/$job->{id}/set_done",
             params        => {result => 'incomplete'},
+            non_critical  => 1,
             ignore_errors => 1,
             callback      => sub {
                 _reset_state;
@@ -576,9 +577,10 @@ sub _stop_job_finish {
     }
 
     api_call(
-        post     => "jobs/$job->{id}/set_done",
-        params   => $params,
-        callback => sub {
+        post         => "jobs/$job->{id}/set_done",
+        params       => $params,
+        non_critical => 1,
+        callback     => sub {
             _reset_state;
             Mojo::IOLoop->stop if ($quit);
         },
