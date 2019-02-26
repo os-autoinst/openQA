@@ -550,14 +550,14 @@ ${yaml}{groupname}{products}{'opensuse'}{version} = '42.1';
 is_deeply(OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, \%yaml, 1), [], 'YAML valid as expected')
   or diag explain YAML::XS::Dump(\%yaml);
 # Get all groups
-$get = $t->get_ok("/api/v1/job_templates_scheduling")->status_is(200);
+$get = $t->get_ok("/api/v1/experimental/job_templates_scheduling")->status_is(200);
 my $yaml = YAML::XS::Load($get->tx->res->body);
 is_deeply(OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, $yaml, 1),
     [], 'YAML of all groups is valid');
 is($yaml->{opensuse}{products}{'opensuse-13.1-DVD-i586'}{version}, '13.1', 'Version of opensuse group')
   || diag explain $get->tx->res->body;
 # Get one group with defined architectures, products and defaults
-$get  = $t->get_ok("/api/v1/job_templates_scheduling/1001")->status_is(200);
+$get  = $t->get_ok("/api/v1/experimental/job_templates_scheduling/1001")->status_is(200);
 $yaml = YAML::XS::Load($get->tx->res->body);
 is_deeply(OpenQA::WebAPI::Controller::API::V1::JobTemplate::validate_yaml($t, $yaml, 1),
     [], 'YAML of single group is valid');
