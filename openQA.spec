@@ -63,6 +63,8 @@ BuildRequires:  rubygem(sass)
 Requires:       dbus-1
 Requires:       perl(Minion) >= 9.02
 Requires:       perl(Mojo::RabbitMQ::Client) >= 0.2
+Requires:       perl(JSON::Validator)
+Requires:       perl(YAML::XS)
 # needed for test suite
 Requires:       git-core
 Requires:       openQA-client = %{version}
