@@ -39,8 +39,6 @@ requires 'IPC::Cmd';
 requires 'IPC::Run';
 requires 'Cpanel::JSON::XS';
 requires 'JavaScript::Minifier::XS', '>= 0.11';
-requires 'JSON::Validator';
-requires 'YAML::XS';
 requires 'LWP::UserAgent';
 requires 'Minion', '9.0';
 requires 'Minion::Backend::Pg';
