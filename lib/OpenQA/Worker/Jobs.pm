@@ -388,6 +388,11 @@ sub _stop_job_init {
 sub _stop_job_announce {
     my ($aborted, $job_id, $callback) = @_;
 
+    # skip if isotovideo not running anymore (e.g. when isotovideo just exited on its own)
+    if (!$worker->{child} || !$worker->{child}->is_running) {
+        return $callback->();
+    }
+
     my $ua      = Mojo::UserAgent->new(request_timeout => 10);
     my $job_url = $job->{URL};
     return $callback->() unless $job_url;
@@ -426,134 +431,129 @@ sub _stop_job_announce {
 
 sub _stop_job_kill_and_upload {
     my ($aborted, $job_id, $host) = @_;
-    _kill_worker($worker);
-
-    my $name = $job->{settings}->{NAME};
     $aborted ||= 'done';
 
-    my $job_done;    # undef
+    # stop isotovideo (does nothing if we're here because isotovideo exited on its own)
+    _kill_worker($worker);
+
+    # add notes
     log_info("+++ worker notes +++", channels => 'autoinst');
     log_info(sprintf("end time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
     log_info("result: $aborted", channels => 'autoinst');
+
+    # upload logs and assets
     if ($aborted ne 'quit' && $aborted ne 'abort' && $aborted ne 'api-failure') {
-        # collect uploaded logs
+        # upload ulogs
         my @uploaded_logfiles = glob "$pooldir/ulogs/*";
         for my $file (@uploaded_logfiles) {
             next unless -f $file;
 
-            # don't use api_call as it retries and does not allow form data
-            # (refactor at some point)
-            unless (
-                upload(
-                    $job_id,
-                    {
-                        file => {file => $file, filename => basename($file)},
-                        ulog => 1
-                    }))
-            {
-                $aborted = "failed to upload $file";
+            my %upload_parameter = (
+                file => {file => $file, filename => basename($file)},
+                ulog => 1,
+            );
+            if (!upload($job_id, \%upload_parameter)) {
+                $aborted = 'api-failure';
                 last;
             }
         }
 
+        # upload assets created by successfull jobs
         if ($aborted eq 'done' || $aborted eq 'cancel') {
-            # job succeeded, upload assets created by the job
+            for my $dir (qw(private public)) {
+                my @assets        = glob "$pooldir/assets_$dir/*";
+                my $upload_result = 1;
 
-          ASSET_UPLOAD: for my $dir (qw(private public)) {
-                my @assets = glob "$pooldir/assets_$dir/*";
                 for my $file (@assets) {
                     next unless -f $file;
-                    unless (
-                        upload(
-                            $job_id,
-                            {
-                                file  => {file => $file, filename => basename($file)},
-                                asset => $dir
-                            }))
-                    {
-                        $aborted = 'failed to upload asset';
-                        last ASSET_UPLOAD;
-                    }
+
+                    my %upload_parameter = (
+                        file  => {file => $file, filename => basename($file)},
+                        asset => $dir,
+                    );
+                    last unless ($upload_result = upload($job_id, \%upload_parameter));
+                }
+                if (!$upload_result) {
+                    $aborted = 'api-failure';
+                    last;
                 }
             }
         }
+
+        # upload other logs and files
         for my $file (qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt virtio_console.log worker-log.txt))
         {
             next unless -e $file;
-            # default serial output file called serial0
+
+            # replace some file names
             my $ofile = $file;
             $ofile =~ s/serial0/serial0.txt/;
             $ofile =~ s/virtio_console.log/serial_terminal.txt/;
-            unless (
-                upload(
-                    $job_id,
-                    {
-                        file => {file => "$pooldir/$file", filename => $ofile}}))
-            {
-                $aborted = "failed to upload $file";
+
+            my %upload_parameter = (file => {file => "$pooldir/$file", filename => $ofile},);
+            if (!upload($job_id, \%upload_parameter)) {
+                $aborted = 'api-failure';
                 last;
             }
         }
 
+        # do final status upload for selected $aborted reasons
         if ($aborted eq 'obsolete') {
             log_debug('setting job ' . $job->{id} . ' to incomplete (obsolete)');
             upload_status(1, sub { _stop_job_finish({result => 'incomplete', newbuild => 1}) });
-            $job_done = 1;
+            return;
         }
         elsif ($aborted eq 'cancel') {
             # not using job_incomplete here to avoid duplicate
             log_debug('setting job ' . $job->{id} . ' to incomplete (cancel)');
             upload_status(1, sub { _stop_job_finish({result => 'incomplete'}) });
-            $job_done = 1;
+            return;
         }
-        elsif ($aborted eq 'timeout') {
-            log_warning('job ' . $job->{id} . ' spent more time than MAX_JOB_TIME');
-        }
-        elsif ($aborted eq 'done') {    # not aborted
+        elsif ($aborted eq 'done') {
             log_debug('setting job ' . $job->{id} . ' to done');
             upload_status(1, \&_stop_job_finish);
-            $job_done = 1;
+            return;
         }
-        elsif ($aborted eq 'dead_children') {
-            log_debug('Dead children found.');
+    }
 
-            api_call(
-                'post', 'jobs/' . $job->{id} . '/set_done',
-                params   => {result => 'incomplete'},
-                callback => 'no'
-            );
-        }
-    }
-    if (!$job_done && $aborted ne 'api-failure') {
-        log_debug(sprintf 'job %d incomplete', $job->{id});
-        if ($aborted eq 'quit') {
-            log_debug(sprintf "duplicating job %d\n", $job->{id});
-            api_call(
-                'post',
-                'jobs/' . $job->{id} . '/duplicate',
-                params   => {dup_type_auto => 1},
-                callback => sub {
-                    upload_status(1, sub { _stop_job_finish({result => 'incomplete'}, 1) });
-                });
-        }
-        else {
-            upload_status(1, sub { _stop_job_finish({result => 'incomplete'}, 0) });
-        }
-    }
-    elsif ($aborted eq 'api-failure') {
+    if ($aborted eq 'api-failure') {
         # give the API one last try to incomplete the job at least
         # note: Setting 'ignore_errors' here is important. Otherwise we would endlessly repeat
         #       that API call.
         api_call(
             post          => "jobs/$job->{id}/set_done",
             params        => {result => 'incomplete'},
+            non_critical  => 1,
             ignore_errors => 1,
             callback      => sub {
                 _reset_state;
                 _stop_accepting_jobs_and_register_again($host);
             },
         );
+        return;
     }
+
+    if ($aborted eq 'timeout') {
+        log_warning("job $job->{id} spent more time than MAX_JOB_TIME");
+    }
+    else {
+        log_debug("job $job->{id} incomplete");
+    }
+
+    # do final status upload and incomplete job ...
+    if ($aborted ne 'quit') {
+        upload_status(1, sub { _stop_job_finish({result => 'incomplete'}, 0) });
+        return;
+    }
+
+    # ... and duplicate the job before if abort reason is "quit"
+    log_debug("duplicating job $job->{id}");
+    api_call(
+        post     => "jobs/$job->{id}/duplicate",
+        params   => {dup_type_auto => 1},
+        callback => sub {
+            upload_status(1, sub { _stop_job_finish({result => 'incomplete'}, 1) });
+        });
 }
 
 sub _stop_accepting_jobs_and_register_again {
@@ -576,9 +576,10 @@ sub _stop_job_finish {
     }
 
     api_call(
-        post     => "jobs/$job->{id}/set_done",
-        params   => $params,
-        callback => sub {
+        post         => "jobs/$job->{id}/set_done",
+        params       => $params,
+        non_critical => 1,
+        callback     => sub {
             _reset_state;
             Mojo::IOLoop->stop if ($quit);
         },
@@ -742,6 +743,9 @@ sub is_developer_session_started {
 }
 
 # uploads current data
+# note: This is also called when stopping/finalizing the current job. In this case $final_upload
+#       is set to 1. We can't query isotovideo anymore in this case and API calls must be treated
+#       as non-critical to prevent the usual error handling.
 sub upload_status {
     my ($final_upload, $callback) = @_;
 
@@ -753,21 +757,27 @@ sub upload_status {
         return;
     }
 
-    # query status from isotovideo
-    my $ua        = Mojo::UserAgent->new;
-    my $os_status = $ua->get($job->{URL} . '/isotovideo/status')->res->json;
-    my $status    = {
+    # query status from isotovideo (unless it is the final status upload because isotovideo
+    # has already been stopped in this case)
+    my $os_status;
+    if (!$final_upload) {
+        $os_status = Mojo::UserAgent->new->get($job->{URL} . '/isotovideo/status')->res->json;
+    }
+    else {
+        $os_status = {};
+    }
+    my $status = {
         worker_id             => $workerid,
         cmd_srv_url           => $job->{URL},
         worker_hostname       => $worker_settings->{WORKER_HOSTNAME},
-        test_execution_paused => $os_status->{test_execution_paused},
+        test_execution_paused => $os_status->{test_execution_paused} // 0,
     };
 
     # determine up to which module the results should be uploaded
     # note: $os_status->{running} is undef at the beginning or if read_json_file temporary
     #       failed and contains empty string after the last test
     my $upload_up_to;
-    if ($os_status->{running} || $final_upload) {
+    if ($final_upload || $os_status->{running}) {
         if (!$current_running) {    # first test
             $test_order = read_json_file('test_order.json');
             if (!$test_order) {
@@ -815,27 +825,33 @@ sub upload_status {
     # upload status to web UI
     my $job_id = $job->{id};
     ignore_known_images();
-    if (is_developer_session_started()) {
+    if (!$final_upload && is_developer_session_started()) {
         post_upload_progress_to_liveviewhandler($job_id, $upload_up_to);
     }
     api_call(
-        'post',
-        "jobs/$job_id/status",
-        json     => {status => $status},
-        callback => sub {
-            handle_status_upload_finished($job_id, $upload_up_to, $callback, @_);
+        post         => "jobs/$job_id/status",
+        json         => {status => $status},
+        non_critical => $final_upload,
+        callback     => sub {
+            handle_status_upload_finished($final_upload, $job_id, $upload_up_to, $callback, @_);
         });
     return 1;
 }
 
 sub handle_status_upload_finished {
-    my ($job_id, $upload_up_to, $callback, $res) = @_;
+    my ($final_upload, $job_id, $upload_up_to, $callback, $res) = @_;
 
     # stop if web UI considers this worker already dead
     if (!$res) {
         $update_status_running = 0;
-        log_error('Job aborted because web UI doesn\'t accept updates anymore (likely considers this job dead)');
-        stop_job('api-failure');
+        if ($final_upload) {
+            log_error('Unable to make final status update. Maybe the web UI considers this job already dead.');
+            return $callback->() if $callback;
+        }
+        else {
+            log_error('Aborting job because web UI doesn\'t accept updates anymore (likely considers this job dead)');
+            stop_job('api-failure');
+        }
         return;
     }
 
@@ -845,12 +861,19 @@ sub handle_status_upload_finished {
     # stop if web UI considers this worker already dead
     if (!upload_images()) {
         $update_status_running = 0;
-        log_error('Job aborted because web UI doesn\'t accept new images anymore (likely considers this job dead)');
-        stop_job('api-failure');
+        if ($final_upload) {
+            log_error('Unable to make final image uploads. Maybe the web UI considers this job already dead.');
+            return $callback->() if $callback;
+        }
+        else {
+            log_error(
+                'Aborting job because web UI doesn\'t accept new images anymore (likely considers this job dead)');
+            stop_job('api-failure');
+        }
         return;
     }
 
-    if (is_developer_session_started()) {
+    if (!$final_upload && is_developer_session_started()) {
         post_upload_progress_to_liveviewhandler($job_id, $upload_up_to);
     }
 
