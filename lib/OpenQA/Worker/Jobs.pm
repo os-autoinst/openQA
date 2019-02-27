@@ -481,7 +481,9 @@ sub _stop_job_kill_and_upload {
         }
 
         # upload other logs and files
-        for my $file (qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt virtio_console.log worker-log.txt))
+        for my $file (
+            qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt serial_terminal.txt virtio_console.log worker-log.txt)
+          )
         {
             next unless -e $file;
 
