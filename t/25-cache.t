@@ -139,8 +139,9 @@ subtest '_base_host' => sub {
 
 is $cache->init, $cache;
 $openqalogs = read_log($logfile);
+is $cache->sqlite->migrations->latest, 1, 'version 1 is the latest version';
+is $cache->sqlite->migrations->active, 1, 'version 1 is the active version';
 like $openqalogs, qr/Creating cache directory tree for/, "Cache directory tree created.";
-like $openqalogs, qr/Deploying DB/,                      "Cache deploys the database.";
 like $openqalogs, qr/Configured limit: 53687091200/,     "Cache limit is default (50GB).";
 ok(-e $db_file, "cache.sqlite is present");
 truncate_log $logfile;
@@ -167,9 +168,8 @@ chdir $logdir;
 
 $cache->sleep_time(1);
 $cache->init;
-
+is $cache->sqlite->migrations->active, 1, 'version 1 is still the active version';
 $openqalogs = read_log($logfile);
-unlike $openqalogs, qr/Deploying DB/, "Cache deploys the database.";
 like $openqalogs, qr/CACHE: Health: Real size: 168, Configured limit: 53687091200/,
   "Cache limit/size match the expected 100GB/168)";
 unlike $openqalogs, qr/CACHE: Purging non registered.*[13].qcow2/, "Registered assets 1 and 3 were kept";
