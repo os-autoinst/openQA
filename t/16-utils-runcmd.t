@@ -105,8 +105,8 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     is(set_to_latest_git_master({dir => 'foo/bar'}), undef, 'no error occured');
     is_deeply(
         \@executed_commands,
-        [[qw(git -C foo/bar fetch origin master:master)], [qw(git -C foo/bar rebase origin/master)],],
-        'git fetch and reset executed',
+        [[qw(git -C foo/bar remote update origin)], [qw(git -C foo/bar rebase origin/master)],],
+        'git remote update and rebase executed',
     ) or diag explain \@executed_commands;
 
     # test set_to_latest_git_master (error case)
@@ -116,9 +116,9 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     is(
         set_to_latest_git_master({dir => 'foo/bar'}),
         'Unable to fetch from origin master: mocked error',
-        'an error occured on fetch'
+        'an error occured on remote update'
     );
-    is_deeply(\@executed_commands, [[qw(git -C foo/bar fetch origin master:master)],], 'git reset not attempted',)
+    is_deeply(\@executed_commands, [[qw(git -C foo/bar remote update origin)],], 'git reset not attempted',)
       or diag explain \@executed_commands;
 
     # test commit_git

@@ -521,7 +521,7 @@ sub set_to_latest_git_master {
 
     my @git = _prepare_git_command($args);
 
-    my $res = run_cmd_with_log_return_error([@git, 'fetch', 'origin', 'master:master']);
+    my $res = run_cmd_with_log_return_error([@git, 'remote', 'update', 'origin']);
     return _format_git_error($res, 'Unable to fetch from origin master') unless $res->{status};
 
     $res = run_cmd_with_log_return_error([@git, 'rebase', 'origin/master']);
