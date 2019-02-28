@@ -205,12 +205,8 @@ sub schedules {
                 $prios{$template->product->arch}{$template->prio}++;
             }
             my $test_suites = $group{architectures}{$template->product->arch}{$template->product->name};
-            my @test_suites;
-            if ($test_suites) {
-                @test_suites = @{$test_suites};
-            }
-            push @test_suites, {$template->test_suite->name => \%test_suite};
-            $group{architectures}{$template->product->arch}{$template->product->name} = \@test_suites;
+            push @$test_suites, {$template->test_suite->name => \%test_suite};
+            $group{architectures}{$template->product->arch}{$template->product->name} = $test_suites;
         }
 
         # Split off defaults
@@ -227,9 +223,8 @@ sub schedules {
             foreach my $product (keys %{$group{architectures}->{$arch}}) {
                 my @_test_suites;
                 foreach my $test_suite (@{$group{architectures}->{$arch}->{$product}}) {
-                    my %test_suite = %{$test_suite};
-                    foreach my $name (keys %test_suite) {
-                        my %attr = %{$test_suite{$name}};
+                    foreach my $name (keys %$test_suite) {
+                        my %attr = %{$test_suite->{$name}};
                         if ($attr{machine} eq $default_machine) {
                             delete $attr{machine};
                         }
@@ -237,8 +232,8 @@ sub schedules {
                             delete $attr{prio};
                         }
                         if (%attr) {
-                            ${test_suite}{$name} = \%attr;
-                            push @_test_suites, \%test_suite;
+                            ${test_suite}->{$name} = \%attr;
+                            push @_test_suites, $test_suite;
                         }
                         else {
                             push @_test_suites, $name;
