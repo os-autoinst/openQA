@@ -120,6 +120,19 @@ sub list {
     $self->render(json => {JobTemplates => \@templates});
 }
 
+=over 4
+
+=item validate_yaml()
+
+Validates the given YAML job group template using JSON schema. The parameter validate_schema enables
+validation of the schema itself which can be useful for development and testing. 
+
+Returns an array of errors found during validation or otherwise an empty array.
+
+=back
+
+=cut
+
 sub validate_yaml {
     my ($self, $yaml, $validate_schema) = @_;
 
@@ -145,6 +158,20 @@ sub validate_yaml {
     }
     \@errors;
 }
+
+=over 4
+
+=item schedules()
+
+Serializes the given job group with relevant test suites by architecture and products (mediums), or all available
+groups defined in the system if no group id is specified.
+Common defaults for prio and machine are represented in the defaults key.
+
+Returns a YAML template representing the job groups(s).
+
+=back
+
+=cut
 
 sub schedules {
     my $self = shift;
