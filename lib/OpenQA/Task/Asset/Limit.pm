@@ -40,7 +40,7 @@ sub _remove_if {
 }
 
 sub _limit {
-    my ($app, $j, $job, $url) = @_;
+    my ($app, $job) = @_;
 
     # prevent multiple limit_assets tasks to run in parallel
     return $job->finish('Previous limit_assets job is still active')
