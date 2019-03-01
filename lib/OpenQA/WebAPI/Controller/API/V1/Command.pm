@@ -18,7 +18,6 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use OpenQA::Utils;
 use OpenQA::IPC;
-use Try::Tiny;
 
 =pod
 

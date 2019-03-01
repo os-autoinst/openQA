@@ -8,7 +8,7 @@ requires 'Crypt::DH::GMP';
 requires 'Cwd';
 requires 'DBD::SQLite';
 requires 'DBD::Pg';
-requires 'DBIx::Class';
+requires 'DBIx::Class', '>= 0.082801';
 requires 'DBIx::Class::Core';
 requires 'DBIx::Class::DeploymentHandler';
 requires 'DBIx::Class::DynamicDefault';

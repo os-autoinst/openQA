@@ -1,4 +1,4 @@
-# Copyright (c) 2015 SUSE LINUX GmbH, Nuernberg, Germany.
+# Copyright (c) 2015-2019 SUSE LINUX GmbH, Nuernberg, Germany.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,11 +19,7 @@ use strict;
 use warnings;
 
 use OpenQA::Jobs::Constants;
-use OpenQA::Schema::Result::Jobs;
-use OpenQA::Schema::Result::JobLocks;
-use OpenQA::Resource::Jobs;
-use OpenQA::ResourceAllocator;
-use OpenQA::Utils qw(wakeup_scheduler log_debug);
+use OpenQA::Schema;
 
 my %final_states = map { $_ => 1 } OpenQA::Jobs::Constants::NOT_OK_RESULTS();
 
@@ -40,7 +36,7 @@ my %final_states = map { $_ => 1 } OpenQA::Jobs::Constants::NOT_OK_RESULTS();
 sub _get_lock {
     my ($name, $jobid, $where) = @_;
     return 0 unless defined $name && defined $jobid;
-    my $schema = OpenQA::ResourceAllocator->instance->schema();
+    my $schema = OpenQA::Schema::connect_db;
     my $job    = $schema->resultset('Jobs')->single({id => $jobid});
     return 0 unless $job;
 
@@ -67,10 +63,10 @@ sub lock {
     my $lock = _get_lock($name, $jobid, $where);
 
     if (!$lock and $where =~ /^\d+$/) {
-        my $schema = OpenQA::ResourceAllocator->instance->schema();
+        my $schema = OpenQA::Schema::connect_db;
         # prevent deadlock - job that is supposed to create the lock already finished
         return -1
-          if $schema->resultset("Jobs")->count({id => $where, state => [OpenQA::Jobs::Constants::FINAL_STATES]});
+          if $schema->resultset('Jobs')->count({id => $where, state => [OpenQA::Jobs::Constants::FINAL_STATES]});
     }
 
     # if no lock so far, there is no lock, return as locked
@@ -106,7 +102,7 @@ sub create {
     return 0 unless defined $name && defined $jobid;
 
     # if no lock so far, there is no lock, create one as unlocked
-    my $schema = OpenQA::ResourceAllocator->instance->schema();
+    my $schema = OpenQA::Schema::connect_db;
     $lock = $schema->resultset('JobLocks')->create({name => $name, owner => $jobid});
     return 0 unless $lock;
     return 1;
@@ -121,7 +117,7 @@ sub barrier_create {
     my $barrier = _get_lock($name, $jobid, 'all');
     return 0 if $barrier;
 
-    my $schema = OpenQA::ResourceAllocator->instance->schema();
+    my $schema = OpenQA::Schema::connect_db;
     $barrier = $schema->resultset('JobLocks')->create({name => $name, owner => $jobid, count => $expected_jobs});
     return 0 unless $barrier;
     return $barrier;
@@ -132,7 +128,8 @@ sub barrier_wait {
     return -1 unless $name && $jobid;
     my $barrier = _get_lock($name, $jobid, $where);
     return -1 unless $barrier;
-    my $jobschema = OpenQA::ResourceAllocator->instance->schema()->resultset("Jobs");
+    my $schema    = OpenQA::Schema::connect_db;
+    my $jobschema = $schema->resultset('Jobs');
     my @jobs      = split(/,/, $barrier->locked_by // '');
 
     do { $barrier->delete; return -1 }

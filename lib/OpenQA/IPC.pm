@@ -29,10 +29,9 @@ use OpenQA::Events;
 
 my $openqa_prefix = 'org.opensuse.openqa';
 my %services      = (
-    scheduler         => 'Scheduler',
-    websockets        => 'WebSockets',
-    webapi            => 'WebAPI',
-    resourceallocator => 'ResourceAllocator'
+    scheduler  => 'Scheduler',
+    websockets => 'WebSockets',
+    webapi     => 'WebAPI'
 );
 
 my %handles;
@@ -254,12 +253,6 @@ sub webapi {
     my ($self, @param) = @_;
     return $self->_dispatch('webapi', @param);
 }
-
-sub resourceallocator {
-    my ($self, @param) = @_;
-    return $self->_dispatch('resourceallocator', @param);
-}
-
 
 1;
 # vim: set sw=4 et:

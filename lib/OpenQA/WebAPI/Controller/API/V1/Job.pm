@@ -17,8 +17,8 @@ package OpenQA::WebAPI::Controller::API::V1::Job;
 use Mojo::Base 'Mojolicious::Controller';
 
 use OpenQA::Utils;
-use OpenQA::IPC;
 use OpenQA::Jobs::Constants;
+use OpenQA::Resource::Jobs;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Events;
 use Try::Tiny;
@@ -303,7 +303,6 @@ sub result {
     my ($self) = @_;
     my $job    = find_job($self, $self->stash('jobid')) or return;
     my $result = $self->param('result');
-    my $ipc    = OpenQA::IPC->ipc;
 
     my $res = $job->update({result => $result});
     $self->emit_event('openqa_job_update_result', {id => $job->id, result => $result}) if ($res);
@@ -604,18 +603,12 @@ sub restart {
         $self->app->log->debug("Restarting jobs @$jobs");
     }
 
-    my $ipc = OpenQA::IPC->ipc;
-    my $res = $ipc->resourceallocator('job_restart', $jobs);
-    return $self->render(
-        json   => {error => 'unable to request restart via resource allocator'},
-        status => 500,
-    ) unless $res;
-
+    my @res = OpenQA::Resource::Jobs::job_restart($jobs);
     wakeup_scheduler;
 
     my @urls;
-    for (my $i = 0; $i < @$res; $i++) {
-        my $r = $res->[$i];
+    for (my $i = 0; $i < @res; $i++) {
+        my $r = $res[$i];
         $self->emit_event('openqa_job_restart', {id => $jobs->[$i], result => $r});
 
         my $url = {};
@@ -625,7 +618,7 @@ sub restart {
         }
         push @urls, $url;
     }
-    $self->render(json => {result => $res, test_url => \@urls});
+    $self->render(json => {result => \@res, test_url => \@urls});
 }
 
 =over 4
@@ -642,7 +635,6 @@ sub cancel {
     my ($self) = @_;
     my $jobid = $self->param('jobid');
 
-    my $ipc = OpenQA::IPC->ipc;
     my $res;
     if ($jobid) {
         my $job = find_job($self, $self->stash('jobid')) or return;

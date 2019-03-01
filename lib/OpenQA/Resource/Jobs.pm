@@ -18,21 +18,12 @@ package OpenQA::Resource::Jobs;
 use strict;
 use warnings;
 
-# we need the critical fix for update
-# see https://github.com/dbsrgits/dbix-class/commit/31160673f390e178ee347e7ebee1f56b3f54ba7a
-use DBIx::Class 0.082801;
-
-use DBIx::Class::ResultClass::HashRefInflator;
 use OpenQA::Jobs::Constants;
-use OpenQA::Schema::Result::Jobs;
-use OpenQA::Schema::Result::JobDependencies;
+use OpenQA::Schema;
 use OpenQA::Utils 'log_debug';
-use OpenQA::ResourceAllocator;
 use Exporter 'import';
 
-our @EXPORT = qw(job_restart job_create);
-
-sub schema { OpenQA::ResourceAllocator->instance->schema }
+our @EXPORT_OK = qw(job_restart);
 
 =head2 job_restart
 
@@ -52,7 +43,8 @@ sub job_restart {
     my ($jobids) = @_ or die "missing name parameter\n";
 
     # first, duplicate all jobs that are either running or done
-    my $jobs = schema->resultset("Jobs")->search(
+    my $schema = OpenQA::Schema::connect_db;
+    my $jobs   = $schema->resultset("Jobs")->search(
         {
             id    => $jobids,
             state => [OpenQA::Jobs::Constants::EXECUTION_STATES, OpenQA::Jobs::Constants::FINAL_STATES],
@@ -65,7 +57,7 @@ sub job_restart {
     }
 
     # then tell workers to abort
-    $jobs = schema->resultset("Jobs")->search(
+    $jobs = $schema->resultset("Jobs")->search(
         {
             id    => $jobids,
             state => [OpenQA::Jobs::Constants::EXECUTION_STATES],

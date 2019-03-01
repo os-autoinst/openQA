@@ -51,7 +51,7 @@ use Mojo::IOLoop::Server;
 use Mojo::File 'tempfile';
 use OpenQA::Test::Utils qw(
   create_webapi wait_for_worker setup_share_dir
-  create_resourceallocator start_resourceallocator create_websocket_server create_worker
+  create_websocket_server create_worker
   kill_service unstable_worker client_output unresponsive_worker
 );
 use Mojolicious;
@@ -64,10 +64,9 @@ init_db();
 my $schema = OpenQA::Test::Database->new->create(skip_schema => 1);
 
 # Create webapi and websocket server services.
-my $mojoport             = Mojo::IOLoop::Server->generate_port();
-my $webapi               = create_webapi($mojoport);
-my $resourceallocatorpid = start_resourceallocator;
-my $wspid                = create_websocket_server($mojoport + 1, 0, 1, 1);
+my $mojoport = Mojo::IOLoop::Server->generate_port();
+my $webapi   = create_webapi($mojoport);
+my $wspid    = create_websocket_server($mojoport + 1, 0, 1, 1);
 
 my $reactor = get_reactor();
 # Setup needed files for workers.
@@ -280,7 +279,7 @@ subtest 'Websocket server - close connection test' => sub {
 #     kill_service($_, 1) for @workers;
 # };
 
-kill_service($_) for ($wspid, $webapi, $resourceallocatorpid);
+kill_service($_) for ($wspid, $webapi);
 
 sub dead_workers {
     my $schema = shift;

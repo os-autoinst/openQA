@@ -34,7 +34,7 @@ our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
     qw(redirect_output standard_worker),
     qw(create_webapi create_websocket_server create_live_view_handler create_worker unresponsive_worker wait_for_worker setup_share_dir),
-    qw(kill_service unstable_worker job_create client_output fake_asset_server create_resourceallocator start_resourceallocator),
+    qw(kill_service unstable_worker job_create client_output fake_asset_server),
     qw(cache_minion_worker cache_worker_service)
 );
 
@@ -232,29 +232,6 @@ sub create_live_view_handler {
         _exit(0);
     }
     return $pid;
-}
-
-sub create_resourceallocator {
-    my $resourceallocatorpid = fork();
-    if ($resourceallocatorpid == 0) {
-        use OpenQA::ResourceAllocator;
-        OpenQA::ResourceAllocator->new->run;
-        Devel::Cover::report() if Devel::Cover->can('report');
-        _exit(0);
-    }
-
-    return $resourceallocatorpid;
-}
-
-sub start_resourceallocator {
-    diag("Starting ResourceAllocator service");
-    my $resourceallocatorpid = fork();
-    if ($resourceallocatorpid == 0) {
-        exec("perl ./script/openqa-resource-allocator");
-        die "FAILED TO START ResourceAllocator";
-    }
-
-    return $resourceallocatorpid;
 }
 
 sub setup_share_dir {

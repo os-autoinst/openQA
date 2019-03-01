@@ -24,13 +24,11 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
-use Test::Warnings ':all';
 use OpenQA::Test::Case;
 use Data::Dumper;
 
 use OpenQA::WebSockets;
 use OpenQA::Scheduler;
-use OpenQA::ResourceAllocator;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
@@ -38,7 +36,6 @@ $test_case->init_data;
 # create Test DBus bus and service for fake WebSockets and Scheduler call
 my $ws = OpenQA::WebSockets->new;
 my $sh = OpenQA::Scheduler->new;
-my $ra = OpenQA::ResourceAllocator->new;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
@@ -70,11 +67,6 @@ $t->post_ok('/api/v1/jobs/99928/cancel' => form => {csrf_token => $token})->stat
 # test restart with and without CSRF token
 $t->post_ok('/api/v1/jobs/99928/restart' => form => {csrf_token => 'foobar'})->status_is(403);
 $t->post_ok('/api/v1/jobs/99928/restart' => {'X-CSRF-Token' => $token} => form => {})->status_is(200);
-# TODO why is this warning acceptable?
-my $expected = qr/Use of uninitialized value \$(array_type|type) in numeric (eq|ne)/;
-my @warnings = warnings { $t->post_ok('/api/v1/jobs/99928/restart' => form => {csrf_token => $token})->status_is(200) };
-is(scalar @warnings, 2, 'two warnings expected');
-map { like($_, $expected) } @warnings;
 
 # test prio with and without CSRF token
 $t->post_ok('/api/v1/jobs/99928/prio?prio=33' => form => {csrf_token => 'foobar'})->status_is(403);
