@@ -17,6 +17,7 @@ package OpenQA::WebAPI::GruJob;
 use Mojo::Base 'Minion::Job';
 
 use OpenQA::Utils 'log_error';
+use OpenQA::Utils 'log_debug';
 
 sub execute {
     my $self = shift;
@@ -49,8 +50,23 @@ sub execute {
           && exists $self->info->{notes}{gru_id};
     }
     else {
+        # here we call finish, which will either actually finish the job or
+        # retry it
         $self->finish(defined $buffer ? $buffer : 'Job successfully executed');
-        $self->_delete_gru($self->info->{notes}{gru_id}) if exists $self->info->{notes}{gru_id};
+        my $state = $self->info->{state};
+        my $jobid = $self->id;
+        my $gruid;
+        $gruid = $self->info->{notes}{gru_id} if exists $self->info->{notes}{gru_id};
+        log_debug("After execution and finish of minion job $jobid / gru task $gruid, state is $state");
+        # if the job is retried at this point, its state will be 'inactive'
+        # and we do *not* want to delete the corresponding entry from the gru
+        # task database. We only want to delete that if the job is really done
+        if (grep { /$state/ } ('failed', 'finished')) {
+            if ($gruid) {
+                log_debug("Deleting gru task $gruid from db");
+                $self->_delete_gru($gruid);
+            }
+        }
     }
 
     return undef;
