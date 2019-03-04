@@ -422,7 +422,7 @@ subtest 'Gru tasks TTL' => sub {
 };
 
 subtest 'Gru tasks retry' => sub {
-    my $ids   = $t->app->gru->enqueue('scan_images' => {prefix => '347'});
+    my $ids   = $t->app->gru->enqueue('scan_images' => {prefix => '34'});
     my $guard = $t->app->minion->guard('limit_scan_images_task', 3600);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';

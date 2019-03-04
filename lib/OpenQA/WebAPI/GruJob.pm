@@ -49,8 +49,10 @@ sub execute {
         $self->fail({defined $buffer ? (output => $buffer) : (), error => $err});
         $self->_fail_gru($gru_id => $err);
     }
-    elsif ($gru_id && ($state eq 'active' || $state eq 'finished')) {
-        $self->finish(defined $buffer ? $buffer : 'Job successfully executed');
+    elsif ($gru_id && $state eq 'active') {
+        $self->_delete_gru($gru_id) if $self->finish(defined $buffer ? $buffer : 'Job successfully executed');
+    }
+    elsif ($gru_id && $state eq 'finished') {
         $self->_delete_gru($gru_id);
     }
 
