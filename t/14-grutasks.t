@@ -94,6 +94,14 @@ $t->app->minion->add_task(
         $job->finish({pid => $$, args => \@args});
     });
 
+# Gru retry task
+$t->app->minion->add_task(
+    gru_retry_task => sub {
+        my ($job, @args) = @_;
+        return $job->retry({delay => 30})
+          unless my $guard = $job->minion->guard('limit_gru_retry_task', 3600);
+    });
+
 # list initially existing assets
 my $dbh             = $schema->storage->dbh;
 my $initial_aessets = $dbh->selectall_arrayref('select * from assets order by id;');
@@ -422,8 +430,8 @@ subtest 'Gru tasks TTL' => sub {
 };
 
 subtest 'Gru tasks retry' => sub {
-    my $ids   = $t->app->gru->enqueue('scan_images' => {prefix => '34'});
-    my $guard = $t->app->minion->guard('limit_scan_images_task', 3600);
+    my $ids   = $t->app->gru->enqueue('gru_retry_task');
+    my $guard = $t->app->minion->guard('limit_gru_retry_task', 3600);
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
     $t->app->start('gru', 'run', '--oneshot');
