@@ -98,6 +98,20 @@ zypper ar -f obs://devel:openQA:Leap:$LEAP_VERSION/openSUSE_Leap_$LEAP_VERSION d
 
 As required change +LEAP_VERSION+ to the version of openSUSE Leap you have installed.
 
+[NOTE]
+If you installed openQA from the official repository first, you may need to change the vendor of the dependencies.
+
+[source,sh]
+-------------------------------------------------------------------------------
+# openSUSE Tumbleweed and Leap
+zypper dup --from devel-openQA --allow-vendor-change
+
+
+# openSUSE Leap
+zypper dup --from devel-openQA-perl-modules --allow-vendor-change
+-------------------------------------------------------------------------------
+
+
 === Installation
 You can install the packages using these commands.
 
