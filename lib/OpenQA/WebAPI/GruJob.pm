@@ -43,15 +43,15 @@ sub execute {
 
     $info = $self->info;
     my $state = $info->{state};
-    if ($state eq 'failed' || defined $err) {
+    if ($gru_id && ($state eq 'failed' || defined $err)) {
         $err //= $info->{result};
         log_error("Gru command issue: $err");
         $self->fail({defined $buffer ? (output => $buffer) : (), error => $err});
-        $self->_fail_gru($gru_id => $err) if $gru_id;
+        $self->_fail_gru($gru_id => $err);
     }
-    elsif ($state eq 'active' || $state eq 'finished') {
+    elsif ($gru_id && ($state eq 'active' || $state eq 'finished')) {
         $self->finish(defined $buffer ? $buffer : 'Job successfully executed');
-        $self->_delete_gru($gru_id) if $gru_id;
+        $self->_delete_gru($gru_id);
     }
 
     return undef;
