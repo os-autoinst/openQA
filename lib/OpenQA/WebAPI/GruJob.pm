@@ -25,6 +25,7 @@ sub execute {
     my $gru_id = $info->{notes}{gru_id};
     my $ttl    = $info->{notes}{ttl};
 
+    # TTL handling applies to all tasks
     my $elapsed = time - $info->{created};
     if (defined $ttl && $elapsed > $ttl) {
         my $ttl_error = 'TTL Expired';
@@ -41,18 +42,21 @@ sub execute {
         $err = $self->SUPER::execute;
     };
 
+    # Non-Gru tasks
+    return $err unless $gru_id;
+
     $info = $self->info;
     my $state = $info->{state};
-    if ($gru_id && ($state eq 'failed' || defined $err)) {
+    if ($state eq 'failed' || defined $err) {
         $err //= $info->{result};
         log_error("Gru command issue: $err");
         $self->fail({defined $buffer ? (output => $buffer) : (), error => $err});
         $self->_fail_gru($gru_id => $err);
     }
-    elsif ($gru_id && $state eq 'active') {
+    elsif ($state eq 'active') {
         $self->_delete_gru($gru_id) if $self->finish(defined $buffer ? $buffer : 'Job successfully executed');
     }
-    elsif ($gru_id && $state eq 'finished') {
+    elsif ($state eq 'finished') {
         $self->_delete_gru($gru_id);
     }
 
