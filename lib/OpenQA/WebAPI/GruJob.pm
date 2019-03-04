@@ -53,12 +53,15 @@ sub execute {
         $self->fail({defined $buffer ? (output => $buffer) : (), error => $err});
         $self->_fail_gru($gru_id => $err);
     }
+
+    # Avoid a possible race condition where the task retries the job and it gets
+    # picked up by a new worker before we reach this line (by checking the
+    # "finish" return value)
     elsif ($state eq 'active') {
         $self->_delete_gru($gru_id) if $self->finish(defined $buffer ? $buffer : 'Job successfully executed');
     }
-    elsif ($state eq 'finished') {
-        $self->_delete_gru($gru_id);
-    }
+
+    elsif ($state eq 'finished') { $self->_delete_gru($gru_id) }
 
     return undef;
 }
