@@ -359,8 +359,8 @@ subtest 'Non-Gru task' => sub {
     $t->app->start('gru', 'run', '--oneshot');
     is $t->app->minion->job($id2)->info->{state}, 'finished', 'job is finished';
     is $t->app->minion->job($id3)->info->{state}, 'finished', 'job is finished';
-    isnt $t->app->minion->job($id2)->info->{result}{pid}, $$, 'job was processed in a differetn process';
-    isnt $t->app->minion->job($id3)->info->{result}{pid}, $$, 'job was processed in a differetn process';
+    isnt $t->app->minion->job($id2)->info->{result}{pid}, $$, 'job was processed in a different process';
+    isnt $t->app->minion->job($id3)->info->{result}{pid}, $$, 'job was processed in a different process';
     is_deeply $t->app->minion->job($id2)->info->{result}{args}, [24, 25], 'arguments have been passed along';
     is_deeply $t->app->minion->job($id3)->info->{result}{args}, [26], 'arguments have been passed along';
 };
@@ -419,6 +419,21 @@ subtest 'Gru tasks TTL' => sub {
     # clear the task queue: otherwise, if the next test is skipped due
     # to OBS_RUN, limit_assets may run in a later test and wipe stuff
     $t->app->minion->reset;
+};
+
+subtest 'Gru tasks retry' => sub {
+    my $ids   = $t->app->gru->enqueue('scan_images' => {prefix => '347'});
+    my $guard = $t->app->minion->guard('limit_scan_images_task', 3600);
+    ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
+    $t->app->start('gru', 'run', '--oneshot');
+    ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task still exists';
+    is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is still inactive';
+    $t->app->minion->job($ids->{minion_id})->retry({delay => 0});
+    undef $guard;
+    $t->app->start('gru', 'run', '--oneshot');
+    ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
+    is $t->app->minion->job($ids->{minion_id})->info->{state}, 'finished', 'minion job is finished';
 };
 
 SKIP: {
