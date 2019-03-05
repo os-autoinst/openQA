@@ -102,6 +102,22 @@ $t->app->minion->add_task(
           unless my $guard = $job->minion->guard('limit_gru_retry_task', 3600);
     });
 
+# Gru task that reached failed/finished manually
+$t->app->minion->add_task(
+    gru_manual_task => sub {
+        my ($job, $todo) = @_;
+        if ($todo eq 'fail') {
+            $job->fail('Manual fail');
+        }
+        elsif ($todo eq 'finish') {
+            $job->finish('Manual finish');
+        }
+        elsif ($todo eq 'die') {
+            warn 'About to throw';
+            die 'Thrown fail';
+        }
+    });
+
 # list initially existing assets
 my $dbh             = $schema->storage->dbh;
 my $initial_aessets = $dbh->selectall_arrayref('select * from assets order by id;');
@@ -435,13 +451,44 @@ subtest 'Gru tasks retry' => sub {
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
     $t->app->start('gru', 'run', '--oneshot');
+
     ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task still exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is still inactive';
     $t->app->minion->job($ids->{minion_id})->retry({delay => 0});
     undef $guard;
     $t->app->start('gru', 'run', '--oneshot');
+
     ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
     is $t->app->minion->job($ids->{minion_id})->info->{state}, 'finished', 'minion job is finished';
+};
+
+subtest 'Gru manual task' => sub {
+    my $ids = $t->app->gru->enqueue('gru_manual_task', ['fail']);
+    ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
+    $t->app->start('gru', 'run', '--oneshot');
+    ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
+    is $t->app->minion->job($ids->{minion_id})->info->{state},  'failed',      'minion job is failed';
+    is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual fail', 'minion job has the right result';
+
+    $ids = $t->app->gru->enqueue('gru_manual_task', ['finish']);
+    ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
+    $t->app->start('gru', 'run', '--oneshot');
+    ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
+    is $t->app->minion->job($ids->{minion_id})->info->{state},  'finished',      'minion job is finished';
+    is $t->app->minion->job($ids->{minion_id})->info->{result}, 'Manual finish', 'minion job has the right result';
+
+    $ids = $t->app->gru->enqueue('gru_manual_task', ['die']);
+    ok $schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task exists';
+    is $t->app->minion->job($ids->{minion_id})->info->{state}, 'inactive', 'minion job is inactive';
+    $t->app->start('gru', 'run', '--oneshot');
+    ok !$schema->resultset('GruTasks')->find($ids->{gru_id}), 'gru task no longer exists';
+    is $t->app->minion->job($ids->{minion_id})->info->{state}, 'failed', 'minion job is finished';
+    like $t->app->minion->job($ids->{minion_id})->info->{result}{output}, qr/About to throw/,
+      'minion job has the right output';
+    like $t->app->minion->job($ids->{minion_id})->info->{result}{error}, qr/Thrown fail/,
+      'minion job has the right error message';
 };
 
 SKIP: {
