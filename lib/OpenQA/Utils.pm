@@ -518,13 +518,21 @@ sub _format_git_error {
 sub set_to_latest_git_master {
     my ($args) = @_;
 
+    my $git_config = $app->config->{'scm git'};
+    return undef unless $git_config;
+
     my @git = _prepare_git_command($args);
 
-    my $res = run_cmd_with_log_return_error([@git, 'remote', 'update', 'origin']);
-    return _format_git_error($res, 'Unable to fetch from origin master') unless $res->{status};
+    if (my $update_remote = $git_config->{update_remote}) {
+        my $res = run_cmd_with_log_return_error([@git, 'remote', 'update', $update_remote]);
+        return _format_git_error($res, 'Unable to fetch from origin master') unless $res->{status};
+    }
 
-    $res = run_cmd_with_log_return_error([@git, 'rebase', 'origin/master']);
-    return _format_git_error($res, 'Unable to reset repository to origin/master') unless $res->{status};
+    if (my $update_branch = $git_config->{update_branch}) {
+        my $res = run_cmd_with_log_return_error([@git, 'rebase', $update_branch]);
+        return _format_git_error($res, 'Unable to reset repository to origin/master') unless $res->{status};
+    }
+
     return undef;
 }
 

@@ -380,6 +380,16 @@ do_push = yes
 Depending on your setup, you might need to generate and propagate
 ssh keys for user 'geekotest' to be able to push.
 
+It might also be useful to rebase first. To enable that, add the remote to get the
+latest updates from and the branch to rebase against to your openqa.ini:
+
+[source,ini]
+--------------------------------------------------------------------------------
+[scm git]
+update_remote = origin
+update_branch = origin/master
+--------------------------------------------------------------------------------
+
 === Referer settings to auto-mark important jobs
 
 Automatic cleanup of old results (see GRU jobs) can sometimes render important
