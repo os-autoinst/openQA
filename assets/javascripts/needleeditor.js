@@ -324,6 +324,9 @@ function setMatch() {
 }
 
 function reactToSaveNeedle(data) {
+  $('#needle_editor_loading_indication').hide();
+  $('#needle_editor_save_buttons').show();
+
   var failed = data.status !== 200 ||
     !data.responseJSON ||
     (!data.responseJSON.success && !data.responseJSON.requires_overwrite);
@@ -381,6 +384,8 @@ function saveNeedle(e) {
       return false;
   }
   $('#save').prop('disabled', true);
+  $('#needle_editor_save_buttons').hide();
+  $('#needle_editor_loading_indication').show();
   $.ajax({
     type: "POST",
     url: form.attr('action'),
