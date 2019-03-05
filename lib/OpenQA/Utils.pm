@@ -92,7 +92,6 @@ our @EXPORT  = qw(
   wakeup_scheduler
   read_test_modules
   exists_worker
-  safe_call
   feature_scaling
   logistic_map_steps
   logistic_map
@@ -1270,24 +1269,6 @@ sub walker {
     }
 }
 
-
-sub safe_call {
-    # no critic is for symbol de/reference
-    no strict 'refs';    ## no critic
-    my $ret;
-    log_debug("Safe call: " . pp(@_));
-    eval {
-        $ret
-          = blessed $_[0] ? [+shift->${\+shift()}(splice @_, 1)]
-          : *{"$_[0]::$_[1]"}{CODE} ? [*{"$_[0]::$_[1]"}{CODE}(splice @_, 2)]
-          :                           die(qq|Can't locate object method "$_[1]" via package "$_[0]"|);
-    };
-    if ($@) {
-        log_error("Safe call error: $@");
-        return [];
-    }
-    return $ret;
-}
 
 # Args:
 # First is i-th element, Second is maximum element number, Third and Fourth are the range limit (lower and upper)
