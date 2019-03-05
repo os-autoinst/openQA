@@ -21,16 +21,16 @@ use OpenQA::Utils 'log_error';
 sub execute {
     my $self = shift;
 
-    my $ttl     = $self->info->{notes}{ttl};
-    my $elapsed = time - $self->info->{created};
+    my $info   = $self->info;
+    my $gru_id = $info->{notes}{gru_id};
+    my $ttl    = $info->{notes}{ttl};
+
+    # TTL handling applies to all tasks
+    my $elapsed = time - $info->{created};
     if (defined $ttl && $elapsed > $ttl) {
         my $ttl_error = 'TTL Expired';
-        if (exists $self->info->{notes}{gru_id}) {
-            $self->_fail_gru($self->info->{notes}{gru_id} => $ttl_error) if $self->fail({error => $ttl_error});
-        }
-        else {
-            $self->fail({error => $ttl_error});
-        }
+        $self->fail({error => $ttl_error});
+        $self->_fail_gru($gru_id => $ttl_error) if $gru_id;
         return undef;
     }
 
@@ -42,16 +42,26 @@ sub execute {
         $err = $self->SUPER::execute;
     };
 
-    if (defined $err) {
+    # Non-Gru tasks
+    return $err unless $gru_id;
+
+    $info = $self->info;
+    my $state = $info->{state};
+    if ($state eq 'failed' || defined $err) {
+        $err //= $info->{result};
         log_error("Gru command issue: $err");
-        $self->_fail_gru($self->info->{notes}{gru_id} => $err)
-          if $self->fail({(output => $buffer) x !!(defined $buffer), error => $err})
-          && exists $self->info->{notes}{gru_id};
+        $self->fail({defined $buffer ? (output => $buffer) : (), error => $err});
+        $self->_fail_gru($gru_id => $err);
     }
-    else {
-        $self->finish(defined $buffer ? $buffer : 'Job successfully executed');
-        $self->_delete_gru($self->info->{notes}{gru_id}) if exists $self->info->{notes}{gru_id};
+
+    # Avoid a possible race condition where the task retries the job and it gets
+    # picked up by a new worker before we reach this line (by checking the
+    # "finish" return value)
+    elsif ($state eq 'active') {
+        $self->_delete_gru($gru_id) if $self->finish(defined $buffer ? $buffer : 'Job successfully executed');
     }
+
+    elsif ($state eq 'finished') { $self->_delete_gru($gru_id) }
 
     return undef;
 }
