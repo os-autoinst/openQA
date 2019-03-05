@@ -577,10 +577,6 @@
     </g>
     <g font-size="14px" stroke-linecap="butt" transform="matrix(1,0,0,1,12,88)" text-rendering="geometricPrecision" font-family="'Liberation Sans'" shape-rendering="geometricPrecision" stroke-miterlimit="1.45">
       <text x="71" xml:space="preserve" y="496.1468" clip-path="url(#clipPath2)" stroke="none">Job starting</text>
-      <rect fill="none" x="91" width="333" height="61.946" y="509" clip-path="url(#clipPath2)"/>
-      <text x="178.1177" xml:space="preserve" y="527.6738" clip-path="url(#clipPath2)" stroke="none">openqa-resourceallocator</text>
-      <text x="151.3721" xml:space="preserve" y="543.3145" clip-path="url(#clipPath2)" stroke="none">(actually a "helper" for the web UI)</text>
-      <text x="113.0957" xml:space="preserve" font-size="12px" y="562.403" clip-path="url(#clipPath2)" stroke="none">provides D-Bus service org.openqa.ResourceAllocator</text>
       <rect fill="none" x="91" width="333" height="61.946" y="570.946" clip-path="url(#clipPath2)"/>
       <text x="201.459" xml:space="preserve" y="589.6198" clip-path="url(#clipPath2)" stroke="none">openqa-scheduler</text>
       <text x="135.1006" xml:space="preserve" font-size="12px" y="624.349" clip-path="url(#clipPath2)" stroke="none">provides D-Bus service org.openqa.Scheduler</text>
