@@ -20,46 +20,32 @@ use Mojo::Base -base;
 # Used while parsing from format X to Whatever
 
 use OpenQA::Parser::Results;
+use OpenQA::Parser::Result::Node;
 use OpenQA::Parser;
 use Mojo::JSON qw(decode_json encode_json);
 use Carp 'croak';
 use Mojo::File 'path';
-use Scalar::Util qw(blessed reftype);
+use Scalar::Util 'blessed';
 
 sub new {
-    return shift->SUPER::new(@_) unless @_ > 1 && reftype $_[1] && reftype $_[1] eq 'HASH' && !blessed $_[1];
-
     my ($class, @args) = @_;
-    OpenQA::Parser::_restore_tree_section($args[0]);
-    $class->SUPER::new(@args);
+    OpenQA::Parser::restore_tree_section($args[0]) if @args && ref $args[0] eq 'HASH';
+    return $class->SUPER::new(@args);
 }
 
 sub get { OpenQA::Parser::Result::Node->new(val => shift->{shift()}) }
 
-sub to_json   { encode_json shift }
+sub to_json   { encode_json shift() }
 sub from_json { shift->new(decode_json shift()) }
+
 sub to_hash {
     my $self = shift;
-    return {
-        map {
-                $_ => blessed $self->{$_} && $self->{$_}->can("to_hash") ? $self->{$_}->to_hash
-              : blessed $self->{$_} && $self->{$_}->can("to_array") ? $self->{$_}->to_array
-              : $self->{$_}
-          }
-          sort keys %{$self}};
+    return {map { $_ => OpenQA::Parser::Results::maybe_convert_to_hash_or_array($self->{$_}) } sort keys %$self};
 }
 
 sub to_el {
     my $self = shift;
-
-    return {
-        map { $_ => blessed $self->{$_} && $self->{$_}->can("_gen_tree_el") ? $self->{$_}->_gen_tree_el : $self->{$_} }
-        sort keys %{$self}};
-}
-
-sub _gen_tree_el {
-    my $el = shift;
-    return {OpenQA::Parser::DATA_FIELD() => $el->to_el, OpenQA::Parser::TYPE_FIELD() => ref $el};
+    return {map { $_ => OpenQA::Parser::Results::maybe_convert_to_el($self->{$_}) } sort keys %$self};
 }
 
 sub write {
@@ -68,28 +54,19 @@ sub write {
     path($path)->spurt($self->to_json);
 }
 
+sub write_json { shift->write(@_) }
+
 sub serialize   { Storable::freeze(shift->to_el) }
-sub deserialize { shift()->new(_restore_el(Storable::thaw(shift))) }
+sub deserialize { shift()->new(OpenQA::Parser::restore_el(Storable::thaw(shift))) }
 
-*TO_JSON     = \&to_hash;
-*write_json  = \&write;
-*_restore_el = \&OpenQA::Parser::_restore_el;
+sub TO_JSON { shift->to_hash }
 
-# Separate package is done to avoid unpleasant AUTOLOAD situations
-{
-    package OpenQA::Parser::Result::Node;
-    use Mojo::Base 'OpenQA::Parser::Result';
-    has 'val';
-    sub get { $_[0]->new(val => $_[0]->val->{$_[1]}) }
-
-    sub AUTOLOAD {
-        our $AUTOLOAD;
-        my $fn = $AUTOLOAD;
-        $fn =~ s/.*:://;
-        return if $fn eq "DESTROY";
-        return shift->get($fn);
-    }
+sub gen_tree_el {
+    my $self = shift;
+    return {OpenQA::Parser::DATA_FIELD() => $self->to_el, OpenQA::Parser::TYPE_FIELD() => ref $self};
 }
+
+1;
 
 =encoding utf-8
 
@@ -180,5 +157,3 @@ Turn object into hash reference.
 It will encode the result and return a parser tree leaf representation.
 
 =cut
-
-1;

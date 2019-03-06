@@ -260,7 +260,7 @@ subtest 'Nested results' => sub {
 
     is_deeply(NestedResult->deserialize($r->serialize()), $r);
 
-    is_deeply $r->_gen_tree_el,
+    is_deeply $r->gen_tree_el,
       {
         '__data__' => {
             'result1' => {
@@ -278,8 +278,8 @@ subtest 'Nested results' => sub {
         },
         '__type__' => 'NestedResult'
       },
-      '_gen_tree_el is working correctly'
-      or die diag explain $r->_gen_tree_el;
+      'gen_tree_el is working correctly'
+      or die diag explain $r->gen_tree_el;
 
     $deep_p->results->add(
         NestedResult->new(

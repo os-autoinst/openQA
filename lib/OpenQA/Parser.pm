@@ -84,7 +84,7 @@ sub reset {
 }
 
 # Serialization - tree building functions
-sub _gen_tree_el {
+sub gen_tree_el {
     my $el = shift;
     return {DATA_FIELD() => $el} unless blessed $el;
 
@@ -92,8 +92,8 @@ sub _gen_tree_el {
     if ($el->isa('OpenQA::Parser')) {
         $el_ref = $el;
     }
-    elsif ($el->can("_gen_tree_el")) {
-        return $el->_gen_tree_el;
+    elsif ($el->can("gen_tree_el")) {
+        return $el->gen_tree_el;
     }
     elsif ($el->can("to_hash")) {
         $el_ref = $el->to_hash;
@@ -127,17 +127,17 @@ sub _build_tree {
         if (blessed $self->{$collection} && $self->{$collection}->can('each')) {
             $self->$collection->each(
                 sub {
-                    push(@{$tree->{$collection}}, _gen_tree_el($_));
+                    push(@{$tree->{$collection}}, gen_tree_el($_));
                 });
         }
         else {
-            $tree->{$collection} = _gen_tree_el($self->{$collection});
+            $tree->{$collection} = gen_tree_el($self->{$collection});
         }
     }
     return $tree;
 }
 
-sub _restore_el {
+sub restore_el {
     my $obj = shift;
     return $obj if blessed $obj;
     return $obj if ref $obj eq 'ARRAY';
@@ -153,7 +153,7 @@ sub _restore_el {
     };
 }
 
-sub _restore_tree_section {
+sub restore_tree_section {
     my $ref = shift;
     eval {
         walker $ref => sub {
@@ -166,8 +166,8 @@ sub _restore_tree_section {
             }
 
 
-            $hash->{$key} = _restore_el($value) if reftype $hash eq 'HASH';
-            $hash->[$key] = _restore_el($value) if reftype $hash eq 'ARRAY';
+            $hash->{$key} = restore_el($value) if reftype $hash eq 'HASH';
+            $hash->[$key] = restore_el($value) if reftype $hash eq 'ARRAY';
         };
     };
     confess $@ if $@;
@@ -185,10 +185,10 @@ sub _load_tree {
         eval {
             foreach my $collection (@coll) {
                 if (ref $tree->{$collection} eq 'ARRAY') {
-                    $self->$collection->add(_restore_el($_)) for @{$tree->{$collection}};
+                    $self->$collection->add(restore_el($_)) for @{$tree->{$collection}};
                 }
                 else {
-                    $self->{$collection} = _restore_el($tree->{$collection});
+                    $self->{$collection} = restore_el($tree->{$collection});
                 }
             }
         };

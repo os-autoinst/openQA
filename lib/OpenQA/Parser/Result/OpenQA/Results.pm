@@ -25,7 +25,8 @@ sub search_in_details {
     my ($self, $field, $re) = @_;
     return $self->new(
         map { $_->search_in_details($field, $re) }
-        grep { blessed($_) && $_->isa("OpenQA::Parser::Result") } @{$self})->flatten;
+        grep { blessed($_) && $_->isa('OpenQA::Parser::Result') } @$self
+    )->flatten;
 }
 
 sub search {

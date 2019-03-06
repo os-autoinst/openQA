@@ -24,9 +24,9 @@ use Mojo::JSON qw(encode_json decode_json);
 use Storable;
 
 sub add {
-    my $self = shift;
-    push @{$self}, @_;
-    $self;
+    my ($self, @results) = @_;
+    push @$self, @results;
+    return $self;
 }
 
 sub get    { @{$_[0]}[$_[1]] }
@@ -34,37 +34,50 @@ sub remove { delete @{$_[0]}[$_[1]] }
 
 sub new {
     my ($class, @args) = @_;
-
-    OpenQA::Parser::_restore_tree_section(\@args);
-
-    return $class->SUPER::new(map { _restore_el($_); $_ } @args);
+    OpenQA::Parser::restore_tree_section(\@args);
+    return $class->SUPER::new(map { OpenQA::Parser::restore_el($_); $_ } @args);
 }
 
-sub to_json   { encode_json shift() }                      # Mojo will call TO_JSON
-sub from_json { __PACKAGE__->new(@{decode_json $_[1]}) }
+# Mojo will call TO_JSON
+sub to_json   { encode_json shift() }
+sub from_json { shift->new(@{decode_json shift()}) }
 
 sub to_array {
-    [map { blessed $_ && $_->can("to_hash") ? $_->to_hash : blessed $_ && $_->can("to_array") ? $_->to_array : $_ }
-          @{shift()}];
+    my $self = shift;
+    return [map { maybe_convert_to_hash_or_array($_) } @$self];
 }
 
 sub to_el {
-    [map { blessed $_ && $_->can("_gen_tree_el") ? $_->_gen_tree_el : $_ } @{shift()}];
-}
-
-sub _gen_tree_el {
     my $self = shift;
-    return {OpenQA::Parser::DATA_FIELD() => $self->to_el, OpenQA::Parser::TYPE_FIELD() => ref $self};
+    return [map { maybe_convert_to_el($_) } @$self];
 }
 
-sub serialize   { Storable::freeze($_[0]) }
+sub serialize   { Storable::freeze(shift) }
 sub deserialize { shift->new(@{Storable::thaw(shift)}) }
 
 sub reset { @{$_[0]} = () }
 
-*_restore_el = \&OpenQA::Parser::_restore_el;
-*TO_JSON     = \&to_array;
+sub TO_JSON { shift->to_array }
 
+sub maybe_convert_to_el {
+    my $value = shift;
+    return $value->gen_tree_el if blessed $value && $value->can('gen_tree_el');
+    return $value;
+}
+
+sub maybe_convert_to_hash_or_array {
+    my $value = shift;
+    return $value->to_hash  if blessed $value && $value->can('to_hash');
+    return $value->to_array if blessed $value && $value->can('to_array');
+    return $value;
+}
+
+sub gen_tree_el {
+    my $self = shift;
+    return {OpenQA::Parser::DATA_FIELD() => $self->to_el, OpenQA::Parser::TYPE_FIELD() => ref $self};
+}
+
+1;
 
 =encoding utf-8
 
@@ -197,5 +210,3 @@ Restore the object with the data provided. It expects a storable data blob.
 Alias for L</"to_array">.
 
 =cut
-
-1;
