@@ -101,8 +101,22 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
             return \%mock_return_value;
         });
 
+    # check default config
+    my $git_config = $t->app->config->{'scm git'};
+    is($git_config->{update_remote}, '', 'by default no remote configured');
+    is($git_config->{update_branch}, '', 'by default no branch configured');
+
+    # test set_to_latest_git_master effectively being a no-op because not update remove and branch have been configured
+    is(set_to_latest_git_master({dir => 'foo/bar'}), undef, 'no error if no update remote and branch configured');
+    is_deeply(\@executed_commands, [], 'no commands executed if no update remote and branch configured')
+      or diag explain \@executed_commands;
+
+    # configure update branch and remote
+    $git_config->{update_remote} = 'origin';
+    $git_config->{update_branch} = 'origin/master';
+
     # test set_to_latest_git_master (non-error case)
-    is(set_to_latest_git_master({dir => 'foo/bar'}), undef, 'no error occured');
+    is(set_to_latest_git_master({dir => 'foo/bar'}), undef, 'no error');
     is_deeply(
         \@executed_commands,
         [[qw(git -C foo/bar remote update origin)], [qw(git -C foo/bar rebase origin/master)],],

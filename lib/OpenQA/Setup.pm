@@ -144,7 +144,9 @@ sub read_config {
             method => 'OpenID',
         },
         'scm git' => {
-            do_push => 'no',
+            update_remote => '',
+            update_branch => '',
+            do_push       => 'no',
         },
         logging => {
             level     => undef,

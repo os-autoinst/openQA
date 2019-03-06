@@ -52,7 +52,9 @@ subtest 'Test configuration default modes' => sub {
             method => 'Fake',
         },
         'scm git' => {
-            do_push => 'no',
+            update_remote => '',
+            update_branch => '',
+            do_push       => 'no',
         },
         openid => {
             provider  => 'https://www.opensuse.org/openid/user/',
