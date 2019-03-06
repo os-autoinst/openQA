@@ -2291,6 +2291,17 @@ to your openqa.ini:</p>
 <p>Depending on your setup, you might need to generate and propagate
 ssh keys for user 'geekotest' to be able to push.</p>
 </div>
+<div class="paragraph">
+<p>It might also be useful to rebase first. To enable that, add the remote to get the
+latest updates from and the branch to rebase against to your openqa.ini:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[scm git]</span>
+<span class="tok-na">update_remote</span> <span class="tok-o">=</span> <span class="tok-s">origin</span>
+<span class="tok-na">update_branch</span> <span class="tok-o">=</span> <span class="tok-s">origin/master</span></code></pre>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_referer_settings_to_auto_mark_important_jobs">Referer settings to auto-mark important jobs</h3>
@@ -6965,7 +6976,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-03-05 14:59:43 UTC
+Last updated 2019-03-06 09:56:33 UTC
 </div>
 </div>
 </body>
