@@ -64,7 +64,7 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw(host instance)]);
 # only one worker can work on a job
 __PACKAGE__->add_unique_constraint([qw(job_id)]);
-__PACKAGE__->belongs_to(job => 'OpenQA::Schema::Result::Jobs', 'job_id');
+__PACKAGE__->belongs_to(job => 'OpenQA::Schema::Result::Jobs', 'job_id', {on_delete => 'SET NULL'});
 __PACKAGE__->has_many(
     previous_jobs => 'OpenQA::Schema::Result::Jobs',
     'assigned_worker_id',
