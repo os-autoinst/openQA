@@ -50,6 +50,8 @@ like bugref_to_href('bsc#2345 poo#3456 and more'),
 like bugref_to_href('boo#2345,poo#3456'),
   qr{a href="https://bugzilla.opensuse.org/show_bug.cgi\?id=2345">boo\#2345</a>,<a href=.*3456.*},
   'interpunctation is not consumed by href';
+is bugref_to_href('jsc#SLE-3275'), '<a href="https://jira.suse.de/browse/SLE-3275">jsc#SLE-3275</a>';
+is href_to_bugref('https://jira.suse.de/browse/FOOBAR-1234'), 'jsc#FOOBAR-1234', 'jira tickets url to bugref';
 
 my $t3 = {
     bar => {
