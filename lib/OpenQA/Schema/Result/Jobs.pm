@@ -166,7 +166,7 @@ __PACKAGE__->add_timestamps;
 
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(settings => 'OpenQA::Schema::Result::JobSettings', 'job_id');
-__PACKAGE__->has_one(worker => 'OpenQA::Schema::Result::Workers', 'job_id');
+__PACKAGE__->has_one(worker => 'OpenQA::Schema::Result::Workers', 'job_id', {cascade_delete => 0});
 __PACKAGE__->belongs_to(
     assigned_worker => 'OpenQA::Schema::Result::Workers',
     'assigned_worker_id', {join_type => 'left', on_delete => 'SET NULL'});
