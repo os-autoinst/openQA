@@ -104,10 +104,11 @@ sub view {
 
     return $self->reply->not_found unless $self->init() && $self->check_tabmode();
 
-    if ('audio' eq $self->stash('tabmode')) {
+    my $tabmode = $self->stash('tabmode');
+    if ($tabmode eq 'audio') {
         $self->render('step/viewaudio');
     }
-    elsif ('text' eq $self->stash('tabmode')) {
+    elsif ($tabmode eq 'text') {
         $self->render('step/viewtext');
     }
     else {
@@ -592,7 +593,14 @@ sub viewimg {
         }
     }
 
-    $self->stash('screenshot',     $module_detail->{screenshot});
+    # render error message if there's nothing to show
+    my $screenshot = $module_detail->{screenshot};
+    if (!$screenshot && !%needles_by_tag) {
+        $self->stash(textresult => 'Seems like os-autoinst has produced a result which openQA can not display.');
+        return $self->render('step/viewtext');
+    }
+
+    $self->stash('screenshot',     $screenshot);
     $self->stash('frametime',      $module_detail->{frametime});
     $self->stash('default_label',  $primary_match ? $primary_match->{label} : 'Screenshot');
     $self->stash('needles_by_tag', \%needles_by_tag);

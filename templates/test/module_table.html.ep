@@ -66,6 +66,15 @@
                                         % else {
                                             <span class="resborder <%= $resborder %>"><%= $step->{title} || 'Text' %></span>
                                         % }
+                                    % } else {
+                                        <span class="resborder <%= $resborder %>">
+                                        % if (my $step_title = $step->{title}) {
+                                            %= $step->{title}
+                                        % }
+                                        % else {
+                                            <i class="fas fa-2x fa-question"></i>
+                                        % }
+                                        </span>
                                     % }
                                 </a>
                             % }
