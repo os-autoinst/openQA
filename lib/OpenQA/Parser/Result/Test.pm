@@ -23,23 +23,27 @@ has flags => sub { {} };
 has [qw(category name script)];
 
 sub to_openqa {
+    my $self = shift;
     return {
-        category => $_[0]->category(),
-        name     => $_[0]->name(),
-        flags    => $_[0]->flags(),
-        script   => $_[0]->script() // 'unk',
+        category => $self->category(),
+        name     => $self->name(),
+        flags    => $self->flags(),
+        script   => $self->script() // 'unk',
     };
 }
 
 # Fix JSON encoding only to those fields
 sub TO_JSON {
+    my $self = shift;
     return {
-        category => $_[0]->category(),
-        name     => $_[0]->name(),
-        flags    => $_[0]->flags(),
-        script   => $_[0]->script() // 'unk',
+        category => $self->category(),
+        name     => $self->name(),
+        flags    => $self->flags(),
+        script   => $self->script() // 'unk',
     };
 }
+
+1;
 
 =encoding utf-8
 
@@ -98,5 +102,3 @@ It will return a hashref which contains as elements the only one strictly requir
 to parse the test.
 
 =cut
-
-1;

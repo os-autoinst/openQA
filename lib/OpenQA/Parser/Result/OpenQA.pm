@@ -19,72 +19,59 @@ use Mojo::Base 'OpenQA::Parser::Result';
 # Basic class that holds the tests details and results as seen by openQA
 # Used while parsing from format X to OpenQA test modules.
 use OpenQA::Parser::Results;
+use OpenQA::Parser::Result::OpenQA::Results;
 use Mojo::File 'path';
 
 has details => sub { [] };
 has dents   => 0;
 has [qw(result name test)];
 
-sub new {
-    shift->SUPER::new(@_)->parsed_details;
-}
+sub new { shift->SUPER::new(@_)->parsed_details }
 
 # Adds _source => 'parser' to all the details of the result
 sub parsed_details {
-    $_[0]->details([map { $_->{_source} = 'parser'; $_ } @{$_[0]->details}]);
+    my $self = shift;
+    return $self->details([map { $_->{_source} = 'parser'; $_ } @{$self->details}]);
 }
 
 sub search_in_details {
     my ($self, $field, $re) = @_;
     my $results = OpenQA::Parser::Result::OpenQA::Results->new();
     $results->add($_) for grep { $_->{$field} =~ $re } @{$self->details};
-    $results;
+    return $results;
 }
 
 # For internal use
 sub to_openqa {
+    my $self = shift;
     return {
-        result  => $_[0]->result(),
-        dents   => $_[0]->dents(),
-        details => $_[0]->details()};
+        result  => $self->result,
+        dents   => $self->dents,
+        details => $self->details
+    };
 }
 
 # For generating files that can be read by openQA
 sub TO_JSON {
+    my ($self, $test) = @_;
+
+    my @test = $test ? (test => $self->test ? $self->test->TO_JSON : undef) : ();
     return {
-        result  => $_[0]->result(),
-        dents   => $_[0]->dents(),
-        details => $_[0]->details(),
-        (test => $_[0]->test ? $_[0]->test->TO_JSON : undef) x !!($_[1])};
+        result  => $self->result,
+        dents   => $self->dents,
+        details => $self->details,
+        @test
+    };
 }
 
 # Override to get automatically the file name
-sub write { $_[0]->SUPER::write(path($_[1], join('.', join('-', 'result', $_[0]->name), 'json'))) }
-
-{
-    package OpenQA::Parser::Result::OpenQA::Results;
-    # Basic class that holds the tests details and results as seen by openQA
-    # Used while parsing from format X to OpenQA test modules.
-
-    use Mojo::Base 'OpenQA::Parser::Results';
-    use Scalar::Util 'blessed';
-
-    # Returns a new flattened OpenQA::Parser::Results which is a cumulative result of
-    # the other collections inside it
-    sub search_in_details {
-        my ($self, $field, $re) = @_;
-        __PACKAGE__->new(
-            map { $_->search_in_details($field, $re) }
-            grep { blessed($_) && $_->isa("OpenQA::Parser::Result") } @{$self})->flatten;
-    }
-
-    sub search {
-        my ($self, $field, $re) = @_;
-        my $results = $self->new();
-        $self->each(sub { $results->add($_) if $_->{$field} =~ $re });
-        $results;
-    }
+sub write {
+    my ($self, $name) = @_;
+    my $path = path($name, 'result-' . $self->name . '.json');
+    return $self->SUPER::write($path);
 }
+
+1;
 
 =encoding utf-8
 
@@ -171,5 +158,3 @@ It will return a hashref which contains as elements the only one strictly requir
 to parse the result.
 
 =cut
-
-1;

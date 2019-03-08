@@ -26,8 +26,10 @@ has 'content';
 sub write {
     my ($self, $dir) = @_;
     path($dir, $self->file)->spurt($self->content);
-    $self;
+    return $self;
 }
+
+1;
 
 =encoding utf-8
 
@@ -98,5 +100,3 @@ and implements the following new ones:
 It will write the file content in the supplied directory.
 
 =cut
-
-1;

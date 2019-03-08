@@ -27,8 +27,9 @@ has app => undef, weak => 1;
 has 'dsn';
 
 sub new {
-    my $self = shift->SUPER::new;
-    return $self->app(shift);
+    my ($class, $app) = @_;
+    my $self = $class->SUPER::new;
+    return $self->app($app);
 }
 
 sub register_tasks {
@@ -94,7 +95,8 @@ sub is_task_active {
 
 # checks if there are worker registered
 sub has_workers {
-    return !!shift->app->minion->backend->list_workers(0, 1)->{total};
+    my $self = shift;
+    return !!$self->app->minion->backend->list_workers(0, 1)->{total};
 }
 
 sub enqueue {
@@ -117,23 +119,23 @@ sub enqueue {
             jobs     => $jobs,
         });
     my $gru_id    = $gru->id;
+    my @ttl       = defined $ttl ? (ttl => $ttl) : ();
     my $minion_id = $self->app->minion->enqueue(
         $task => $args => {
             priority => $options->{priority} // 0,
             delay    => $delay,
-            notes    => {gru_id => $gru_id, (ttl => $ttl) x !!(defined $ttl)}});
+            notes    => {gru_id => $gru_id, @ttl}});
 
     return {minion_id => $minion_id, gru_id => $gru_id};
 }
 
 # enqueues the limit_assets task with the default parameters
 sub enqueue_limit_assets {
-    my ($self) = @_;
+    my $self = shift;
     return $self->enqueue(limit_assets => [] => {priority => 10, ttl => 172800, limit => 1});
 }
 
 1;
-
 
 =encoding utf8
 
