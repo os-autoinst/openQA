@@ -424,7 +424,7 @@ sub _job_labels {
             my $bugs_of_job = ($labels{$comment->job_id}{bugs} //= {});
             for my $bug (@$bugrefs) {
                 if (!exists $bugdetails{$bug}) {
-                    $bugdetails{$bug} = OpenQA::Schema::Result::Bugs->get_bug($bug, $self->db);
+                    $bugdetails{$bug} = OpenQA::Schema::Result::Bugs::get_bug($bug, $self->db);
                 }
                 $bugs_of_job->{$bug} = 1;
             }

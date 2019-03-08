@@ -40,7 +40,7 @@ $t->ua(
     OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-my $bug  = OpenQA::Schema::Result::Bugs->get_bug('poo#200', $t->app->db);
+my $bug  = OpenQA::Schema::Result::Bugs::get_bug('poo#200', $t->app->db);
 my $get  = $t->get_ok('/api/v1/bugs');
 my %bugs = %{$get->tx->res->json->{bugs}};
 is($bugs{1}, 'poo#200', 'Bug entry exists');
@@ -70,5 +70,9 @@ $t->delete_ok('/api/v1/bugs/2');
 $t->get_ok('/api/v1/bugs/2')->status_is(404, 'Bug #2 deleted');
 
 $t->delete_ok('/api/v1/bugs/2')->status_is(404, 'Bug #2 already deleted');
+
+$t->post_ok('/api/v1/jobs/99926/comments', form => {text => 'wicked bug: jsc#SLE-42999'});
+$get = $t->get_ok('/api/v1/bugs/3');
+is($get->tx->res->json->{bugid}, 'jsc#SLE-42999', 'Bug was created by comment post');
 
 done_testing();

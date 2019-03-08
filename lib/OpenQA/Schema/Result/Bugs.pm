@@ -78,7 +78,7 @@ __PACKAGE__->add_unique_constraint([qw(bugid)]);
 
 # this method returns the bug if it has already been refreshed and exists (and undef otherwise)
 sub get_bug {
-    my ($self, $bugid, $db, %attrs) = @_;
+    my ($bugid, $db, %attrs) = @_;
 
     return unless $bugid;
     my $bug = $db->resultset("Bugs")->find_or_new({bugid => $bugid, %attrs});
