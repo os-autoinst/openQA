@@ -151,8 +151,13 @@
                                 %>
                             </p>
                         </div>
-                        <button type="button" class="btn btn-default" id="review_json" title="Review JSON">Review JSON</button>
-                        <button type="submit" class="btn btn-primary" id="save">Save</button>
+                        <div id="needle_editor_save_buttons">
+                            <button type="button" class="btn btn-default" id="review_json" title="Review JSON">Review JSON</button>
+                            <button type="submit" class="btn btn-primary" id="save">Save</button>
+                        </div>
+                        <div id="needle_editor_loading_indication" class="properties-progress-indication" style="display: none;">
+                            <i class="fa fa-cog fa-spin fa-1x fa-fw"></i> Saving needle, this might take a few seconds.
+                        </div>
                     % end
                 </div>
                 <div class="col-md-6">
