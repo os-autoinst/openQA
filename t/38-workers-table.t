@@ -50,4 +50,16 @@ subtest 'delete job which is currently assigned to worker' => sub {
       and is($worker_1->job, undef, 'job has been unassigned');
 };
 
+subtest 'delete job from worker history' => sub {
+    my $worker_1 = $workers->find({host => 'localhost', instance => 1});
+    my $job      = $jobs->find(99926);
+    $job->update({assigned_worker_id => $worker_1->id});
+    is_deeply([map { $_->id } $worker_1->previous_jobs->all], [99926], 'previous job assigned');
+
+    $job->delete;
+    $worker_1 = $workers->find({host => 'localhost', instance => 1});
+    ok($worker_1, 'worker 1 still exists')
+      and is_deeply([map { $_->id } $worker_1->previous_jobs->all], [], 'previous jobs empty again');
+};
+
 done_testing();
