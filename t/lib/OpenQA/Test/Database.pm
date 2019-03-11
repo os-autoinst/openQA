@@ -33,7 +33,7 @@ sub create {
     unless (defined $options{skip_schema}) {
         my $schema_name = $options{schema_name} // generate_schema_name();
         log_info("using database schema \"$schema_name\"\n");
-        $schema->{tmp_schema} = $schema_name;
+        $schema->tmp_schema($schema_name);
         $schema->storage->dbh->do("create schema \"$schema_name\"");
         $schema->storage->dbh->do("SET search_path TO \"$schema_name\"");
         # handle reconnects
@@ -93,7 +93,7 @@ sub insert_fixtures {
 sub disconnect {
     my $schema = shift;
     my $dbh    = $schema->storage->dbh;
-    $dbh->do("drop schema $schema->{tmp_schema}");
+    if (my $tmp = $schema->tmp_schema) { $dbh->do("drop schema $tmp") }
     return $dbh->disconnect;
 }
 

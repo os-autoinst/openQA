@@ -36,22 +36,17 @@ our $VERSION = 75;
 
 __PACKAGE__->load_namespaces;
 
-sub _get_schema {
-    state $schema;
-    return \$schema;
-}
-
+my $SINGLETON;
 
 sub connect_db {
     my %args  = @_;
     my $check = $args{check};
     $check //= 1;
-    my $schema = _get_schema;
-    unless ($$schema) {
+    unless ($SINGLETON) {
 
         my $mode = $args{mode} || $ENV{OPENQA_DATABASE} || 'production';
         if ($mode eq 'test') {
-            $$schema = __PACKAGE__->connect($ENV{TEST_PG});
+            $SINGLETON = __PACKAGE__->connect($ENV{TEST_PG});
         }
         else {
             my %ini;
@@ -59,18 +54,17 @@ sub connect_db {
             my $database_file = $cfgpath . '/database.ini';
             tie %ini, 'Config::IniFiles', (-file => $database_file);
             die 'Could not find database section \'' . $mode . '\' in ' . $database_file unless $ini{$mode};
-            $$schema = __PACKAGE__->connect($ini{$mode});
+            $SINGLETON = __PACKAGE__->connect($ini{$mode});
         }
-        deployment_check $$schema if ($check);
+        deployment_check $SINGLETON if $check;
     }
-    return $$schema;
+    return $SINGLETON;
 }
 
 sub disconnect_db {
-    my $schema = _get_schema;
-    if ($$schema) {
-        $$schema->storage->disconnect;
-        undef $$schema;
+    if ($SINGLETON) {
+        $SINGLETON->storage->disconnect;
+        $SINGLETON = undef;
     }
 }
 
@@ -111,6 +105,14 @@ sub deployment_check {
     $ret = 1 if (!$ret && _try_upgrade_db($dh));
     close($dblock) or die "Can't close database lock file ${dblockfile}!";
     return $ret;
+}
+
+# Class attribute used for testing with OpenQA::Test::Database
+sub tmp_schema {
+    my $class = shift;
+    state $tmp_schema;
+    $tmp_schema = shift if @_;
+    return $tmp_schema;
 }
 
 sub _try_deploy_db {

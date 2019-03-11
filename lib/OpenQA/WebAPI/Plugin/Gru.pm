@@ -61,7 +61,7 @@ sub register {
     $conn->dsn($self->dsn());
 
     # set the search path in accordance with the test setup done in OpenQA::Test::Database
-    if (my $search_path = $ENV{TEST_PG_SEARCH_PATH}) {
+    if (my $search_path = $self->schema->tmp_schema) {
         log_info("setting database search path to $search_path when registering Minion plugin\n");
         $conn->search_path([$search_path]);
     }
