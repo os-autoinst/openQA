@@ -82,6 +82,10 @@ __PACKAGE__->add_columns(
         data_type     => 'boolean',
         default_value => 1,
         is_nullable   => 0,
+    },
+    carry_over_bugrefs => {
+        data_type   => 'boolean',
+        is_nullable => 1,
     });
 
 __PACKAGE__->add_unique_constraint([qw(name parent_id)]);
@@ -136,6 +140,12 @@ around 'default_priority' => sub {
     my ($orig, $self) = @_;
     return $self->get_column('default_priority')
       // ($self->parent ? $self->parent->default_priority : OpenQA::Schema::JobGroupDefaults::PRIORITY);
+};
+
+around 'carry_over_bugrefs' => sub {
+    my ($orig, $self) = @_;
+    return $self->get_column('carry_over_bugrefs')
+      // ($self->parent ? $self->parent->carry_over_bugrefs : OpenQA::Schema::JobGroupDefaults::CARRY_OVER_BUGREFS);
 };
 
 sub rendered_description {

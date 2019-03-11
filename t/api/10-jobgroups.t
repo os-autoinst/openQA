@@ -1,4 +1,4 @@
-# Copyright (C) 2016 SUSE LLC
+# Copyright (C) 2016-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -68,6 +68,7 @@ subtest 'list job groups' => sub() {
                 keep_logs_in_days              => 30,
                 keep_important_logs_in_days    => 120,
                 default_priority               => 50,
+                carry_over_bugrefs             => 1,
                 description                    => "##Test description\n\nwith bugref bsc#1234",
                 keep_results_in_days           => 365,
                 keep_important_results_in_days => 0,
@@ -89,6 +90,7 @@ subtest 'list job groups' => sub() {
                 sort_order                     => 0,
                 keep_logs_in_days              => 30,
                 default_priority               => 50,
+                carry_over_bugrefs             => 1,
                 exclusively_kept_asset_size    => undef,
             }]);
 };
@@ -113,6 +115,7 @@ subtest 'create parent group' => sub() {
                 default_keep_logs_in_days              => 30,
                 default_keep_important_logs_in_days    => 45,
                 default_priority                       => 50,
+                carry_over_bugrefs                     => 1,
                 default_keep_results_in_days           => 365,
                 default_keep_important_results_in_days => 0,
                 default_size_limit_gb                  => 200,
@@ -149,6 +152,7 @@ subtest 'create job group' => sub() {
                 keep_logs_in_days              => 30,
                 keep_important_logs_in_days    => 45,
                 default_priority               => 50,
+                carry_over_bugrefs             => 1,
                 description                    => 'Test2',
                 keep_results_in_days           => 365,
                 keep_important_results_in_days => 0,
@@ -201,6 +205,7 @@ subtest 'update job group' => sub() {
                 keep_logs_in_days              => 30,
                 keep_important_logs_in_days    => 45,           # inherited value overridden
                 default_priority               => 50,
+                carry_over_bugrefs             => 1,
                 description                    => 'Test',
                 keep_results_in_days           => 365,
                 keep_important_results_in_days => 366,          # changed through inheritance
@@ -282,6 +287,7 @@ subtest 'prevent create/update duplicate job group on top level' => sub() {
                 keep_logs_in_days              => 30,
                 keep_important_logs_in_days    => 100,
                 default_priority               => 50,
+                carry_over_bugrefs             => 1,
                 description                    => 'Updated group without parent',
                 keep_results_in_days           => 365,
                 keep_important_results_in_days => 0,

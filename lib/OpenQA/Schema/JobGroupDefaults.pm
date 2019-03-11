@@ -1,4 +1,4 @@
-# Copyright (C) 2016 SUSE LLC
+# Copyright (C) 2016-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ use constant {
     KEEP_RESULTS_IN_DAYS           => 365,
     KEEP_IMPORTANT_RESULTS_IN_DAYS => 0,
     PRIORITY                       => 50,
+    CARRY_OVER_BUGREFS             => 1,
 };
 
 1;
