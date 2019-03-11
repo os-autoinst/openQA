@@ -108,11 +108,11 @@ sub deployment_check {
 }
 
 # Class attribute used for testing with OpenQA::Test::Database
-sub tmp_schema {
+sub search_path_for_tests {
     my $class = shift;
-    state $tmp_schema;
-    $tmp_schema = shift if @_;
-    return $tmp_schema;
+    state $search_path;
+    $search_path = shift if @_;
+    return $search_path;
 }
 
 sub _try_deploy_db {
