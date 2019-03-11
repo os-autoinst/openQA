@@ -1,4 +1,4 @@
-# Copyright (C) 2016 SUSE LLC
+# Copyright (C) 2016-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -100,7 +100,8 @@ sub find_group {
 
 =item load_properties()
 
-Returns an indexed list of properties for a job group.
+Returns the specified parameter which match job group columns as a hash. The has is used to
+create or update a job group via DBIx.
 
 =back
 
@@ -108,6 +109,10 @@ Returns an indexed list of properties for a job group.
 
 sub load_properties {
     my ($self) = @_;
+
+    if (my $cached_properties = $self->{cached_properties}) {
+        return $cached_properties;
+    }
 
     my %properties;
     for my $param ($self->resultset->result_source->columns) {
@@ -121,7 +126,8 @@ sub load_properties {
             }
         }
     }
-    return \%properties;
+
+    return $self->{cached_properties} = \%properties;
 }
 
 # Actual API entry points
