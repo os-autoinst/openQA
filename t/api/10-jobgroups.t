@@ -26,6 +26,7 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
+use Mojo::JSON 'decode_json';
 
 OpenQA::Test::Case->new->init_data;
 
@@ -36,6 +37,24 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
+
+my $db           = $app->db;
+my $audit_events = $db->resultset('AuditEvents');
+
+sub check_for_event {
+    my ($event_name, $expectations) = @_;
+
+    my @events     = $audit_events->search({event => $event_name}, {order_by => {-desc => 'id'}, rows => 1})->all;
+    my $event      = $events[0];
+    my $event_data = decode_json($event->event_data);
+    is($event->user_id, 99901, 'user logged');
+    if (my $group_name = $expectations->{group_name}) {
+        is($event_data->{name}, $group_name, 'event data contains group name');
+    }
+    if (my $group_id = $expectations->{group_id}) {
+        is($event_data->{id}, $group_id, 'event data contains group ID');
+    }
+}
 
 subtest 'list job groups' => sub() {
     my $get = $t->get_ok('/api/v1/job_groups')->status_is(200);
@@ -104,6 +123,8 @@ subtest 'create parent group' => sub() {
         ],
         'list created parent group'
     );
+
+    check_for_event(jobgroup_create => {group_name => 'Cool parent group'});
 };
 
 subtest 'create job group' => sub() {
@@ -143,6 +164,8 @@ subtest 'create job group' => sub() {
     $get = $t->get_ok('/index.json')->status_is(200);
     $get = $get->tx->res->json;
     is(@{$get->{results}}, 2, 'empty job groups are not shown on index page');
+
+    check_for_event(jobgroup_create => {group_name => 'Cool group'});
 };
 
 subtest 'update job group' => sub() {
@@ -164,6 +187,8 @@ subtest 'update job group' => sub() {
             keep_important_logs_in_days => 45,
             parent_id                   => $new_id,
         });
+
+    check_for_event(jobgroup_update => {group_name => 'opensuse'});
 
     my $get = $t->get_ok('/api/v1/job_groups/1001')->status_is(200);
     is_deeply(
@@ -195,6 +220,7 @@ subtest 'delete job/parent group and error when listing non-existing group' => s
         my $new_id = $t->post_ok("/api/v1/$variant", form => {name => 'To delete'})->tx->res->json->{id};
         my $delete = $t->delete_ok("/api/v1/$variant/$new_id")->status_is(200);
         is($delete->tx->res->json->{id}, $new_id, 'correct ID returned');
+        check_for_event(jobgroup_delete => {group_id => $new_id});
         my $get = $t->get_ok("/api/v1/$variant/$new_id")->status_is(404);
         is_deeply(
             $get->tx->res->json,

@@ -227,10 +227,12 @@ sub create {
         );
     }
 
-    my $group = $self->resultset->create($self->load_properties);
+    my $properties = $self->load_properties;
+    my $group      = $self->resultset->create($properties);
     return $self->render(json => {error => 'Unable to create group with specified properties'}, status => 400)
       unless $group;
 
+    $self->emit_event(openqa_jobgroup_create => $properties);
     $self->render(json => {id => $group->id});
 }
 
@@ -266,9 +268,11 @@ sub update {
         );
     }
 
-    my $res = $group->update($self->load_properties);
+    my $properties = $self->load_properties;
+    my $res        = $group->update($properties);
     return $self->render(json => {error => 'Specified job group ' . $group->id . ' exist but unable to update, though'})
       unless $res;
+    $self->emit_event(openqa_jobgroup_update => $properties);
     $self->render(json => {id => $res->id});
 }
 
@@ -322,7 +326,9 @@ sub delete {
     return $self->render(
         json => {error => 'Specified job group ' . $group->id . ' exist but can not be deleted, though'})
       unless $res;
-    $self->render(json => {id => $res->id});
+    my $event_data = {id => $res->id};
+    $self->emit_event(openqa_jobgroup_delete => $event_data);
+    $self->render(json => $event_data);
 }
 
 1;
