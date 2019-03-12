@@ -47,12 +47,17 @@ sub index {
         next unless $w->id;
         $workers{$w->name} = _extend_info($w);
     }
+
+    my $is_admin = 0;
+    $is_admin = 1 if ($self->is_admin);
+
     $self->stash(
         workers_online      => $total_online,
         total               => $total,
         workers_active_free => $free_active_workers,
         workers_broken_free => $free_broken_workers,
         workers_busy        => $busy_workers,
+        is_admin            => $is_admin,
         workers             => \%workers
     );
 

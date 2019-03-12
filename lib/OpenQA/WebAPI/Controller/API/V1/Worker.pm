@@ -206,5 +206,39 @@ sub show {
     }
 }
 
+=over 4
+
+=item delete()
+
+Deletes a worker which currently has the status "dead" and no job assigned to it. 
+An error is returned if the worker doesn't exist or has a different status.
+
+=back
+
+=cut
+
+sub delete {
+    my ($self) = @_;
+    my $message;
+    my $worker_id = $self->param('worker_id');
+    my $worker    = $self->schema->resultset("Workers")->find($worker_id);
+
+    if (!$worker) {
+        return $self->render(json => {error => "Worker not found."}, status => 404);
+    }
+    if ($worker->status ne 'dead' || $worker->job) {
+        $message = "Worker " . $worker->name . " status is not offline.";
+        return $self->render(json => {error => $message}, status => 400);
+    }
+
+    eval { $worker->delete };
+    if ($@) {
+        return $self->render(json => {error => $@}, status => 402);
+    }
+    $message = "Delete worker " . $worker->name . " successfully.";
+    $self->emit_event('openqa_worker_delete', {id => $worker->id, name => $worker->name});
+    $self->render(json => {message => $message});
+}
+
 1;
 # vim: set sw=4 et:

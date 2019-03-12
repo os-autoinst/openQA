@@ -45,7 +45,10 @@ $test_case->init_data;
 
 use OpenQA::SeleniumTest;
 
-my $broken_worker_id = 3;
+my $broken_worker_id  = 5;
+my $online_worker_id  = 6;
+my $offline_worker_id = 8;
+
 sub schema_hook {
     my $schema  = OpenQA::Test::Database->new->create;
     my $jobs    = $schema->resultset('Jobs');
@@ -65,6 +68,20 @@ sub schema_hook {
     $workers->update(
         {
             t_updated => time2str('%Y-%m-%d %H:%M:%S', time + 7200, 'UTC'),
+        });
+
+    $workers->create(
+        {
+            id       => $online_worker_id,
+            host     => 'online_test',
+            instance => 1,
+        });
+    $workers->create(
+        {
+            id        => $offline_worker_id,
+            host      => 'offline_test',
+            instance  => 1,
+            t_updated => time2str('%Y-%m-%d %H:%M:%S', time - 1200, 'UTC'),
         });
 }
 
@@ -97,6 +114,15 @@ subtest 'worker overview' => sub {
     # show all worker regardless of their state
     $driver->find_element_by_xpath("//select[\@id='workers_online']/option[1]")->click();
 
+    # check delete link only shown on offline worker
+    is($driver->find_element('tr#worker_1 .action')->get_text(), '', 'localhost:1 do not show delete button');
+    is($driver->find_element('tr#worker_2 .action')->get_text(), '', 'remotehost:1 do not show delete button');
+    is($driver->find_element("tr#worker_$broken_worker_id .action")->get_text(), '', 'foo do not show delete button');
+    is($driver->find_element("tr#worker_$online_worker_id .action")->get_text(),
+        '', 'online_test do not show delete button');
+    is($driver->find_element("tr#worker_$offline_worker_id .action")->get_text(),
+        'Delete', 'offline worker show delete button');
+
     # check worker 1
     is($driver->find_element('tr#worker_1 .worker')->get_text(), 'localhost:1', 'localhost:1 shown');
     $driver->find_element('tr#worker_1 .help_popover')->click();
@@ -121,6 +147,18 @@ subtest 'worker overview' => sub {
         'Broken', "worker $broken_worker_id is broken",
     );
     like($driver->find_element('.popover')->get_text(), qr/Error\nout of order/, 'reason for brokenness shown');
+};
+
+# test delete offline worker function
+subtest 'delete offline worker' => sub {
+    $driver->find_element("tr#worker_$offline_worker_id .action a")->click();
+    is(
+        $driver->find_element("div#flash-messages .alert span")->get_text(),
+        'Delete worker offline_test:1 successfully.',
+        'delete offline worker successfully'
+    );
+
+    is(scalar @{$driver->find_elements('table#workers tbody tr')}, 4, 'worker deleted not shown');
 };
 
 $driver->find_element('tr#worker_1 .worker a')->click();

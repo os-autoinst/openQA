@@ -33,6 +33,7 @@ use OpenQA::Client;
 use OpenQA::WebSockets;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Scheduler;
+use Date::Format 'time2str';
 
 # create Test DBus bus and service for fake WebSockets and Scheduler call
 my $ws = OpenQA::WebSockets->new;
@@ -147,5 +148,31 @@ $ret = $t->post_ok('/api/v1/workers', form => $worker_caps);
 is($ret->tx->res->code,       200, "register new worker");
 is($ret->tx->res->json->{id}, 3,   "new worker id is 3");
 
+subtest 'delete offline worker' => sub {
+    my $offline_worker_id = 9;
+    my $database_workers  = $t->app->schema->resultset("Workers");
+    $database_workers->create(
+        {
+            id        => $offline_worker_id,
+            host      => 'offline_test',
+            instance  => 5,
+            t_updated => time2str('%Y-%m-%d %H:%M:%S', time - 1200, 'UTC'),
+        });
+
+    $ret = $t->delete_ok("/api/v1/workers/$offline_worker_id")->status_is(200, "delete offline worker successfully.");
+
+    is_deeply(
+        OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'worker_delete'),
+        {
+            id   => $offline_worker_id,
+            name => "offline_test:5"
+        },
+        "Delete worker was logged correctly."
+    );
+
+    $ret = $t->delete_ok("/api/v1/workers/99")->status_is(404, "The offline worker not found.");
+
+    $ret = $t->delete_ok("/api/v1/workers/1")->status_is(400, "The worker status is not offline.");
+};
 
 done_testing();
