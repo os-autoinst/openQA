@@ -5,16 +5,6 @@ use 5.018;
 
 use OpenQA::Jobs::Constants;
 
-=over 4
-
-=item queue_stats()
-
-Renders a summary of jobs scheduled and running for monitoring
-
-=back
-
-=cut
-
 sub _queue_sub_stats {
     my ($query, $state, $result) = @_;
     $result->{openqa_jobs}->{$state} = $query->count;
@@ -41,6 +31,7 @@ sub _queue_output_measure {
     return $line . "\n";
 }
 
+# Renders a summary of jobs scheduled and running for monitoring
 sub jobs {
     my $self = shift;
 
@@ -93,6 +84,25 @@ sub jobs {
             $text .= _queue_output_measure($url, $key, $tag, $result->{$key}->{$tag});
         }
     }
+
+    $self->render(text => $text);
+}
+
+sub minion {
+    my $self = shift;
+
+    my $stats = $self->app->minion->stats;
+    my $jobs  = {
+        active   => $stats->{active_jobs},
+        delayed  => $stats->{delayed_jobs},
+        failed   => $stats->{failed_jobs},
+        inactive => $stats->{inactive_jobs}};
+    my $workers = {active => $stats->{active_workers}, inactive => $stats->{inactive_workers}};
+
+    my $url  = $self->app->config->{global}->{base_url} || $self->req->url->base->to_string;
+    my $text = '';
+    $text .= _queue_output_measure($url, 'openqa_minion_jobs',    undef, $jobs);
+    $text .= _queue_output_measure($url, 'openqa_minion_workers', undef, $workers);
 
     $self->render(text => $text);
 }

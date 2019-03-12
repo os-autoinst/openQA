@@ -226,6 +226,7 @@ sub startup {
     $op_r->get('/')->name('admin')->to('workers#index');
 
     $pub_admin_r->get('/influxdb/jobs')->to('influxdb#jobs');
+    $pub_admin_r->get('/influxdb/minion')->to('influxdb#minion');
 
     ###
     ## Admin area ends here
