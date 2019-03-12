@@ -66,14 +66,12 @@ sub edit_parent_group {
 sub connect {
     my ($self) = @_;
 
-    $self->validation->required('groupid')->like(qr/^[0-9]+$/);
-    $self->stash('group', $self->db->resultset("JobGroups")->find($self->param('groupid')));
-
-    my $products = $self->db->resultset("Products")->search(undef, {order_by => 'name'});
+    $self->stash('group', $self->db->resultset('JobGroups')->find($self->param('groupid')));
+    my $products = $self->db->resultset('Products')->search(undef, {order_by => 'name'});
     $self->stash('products', $products);
-    my $tests = $self->db->resultset("TestSuites")->search(undef, {order_by => 'name'});
+    my $tests = $self->db->resultset('TestSuites')->search(undef, {order_by => 'name'});
     $self->stash('tests', $tests);
-    my $machines = $self->db->resultset("Machines")->search(undef, {order_by => 'name'});
+    my $machines = $self->db->resultset('Machines')->search(undef, {order_by => 'name'});
     $self->stash('machines', $machines);
 
     $self->render('admin/group/connect');
@@ -82,11 +80,10 @@ sub connect {
 sub save_connect {
     my ($self) = @_;
 
-    $self->validation->required('groupid')->like(qr/^[0-9]+$/);
     my $group = $self->db->resultset("JobGroups")->find($self->param('groupid'));
     if (!$group) {
         $self->flash(error => 'Specified group ID ' . $self->param('groupid') . 'doesn\'t exist.');
-        $self->redirect_to('admin_groups');
+        return $self->redirect_to('admin_groups');
     }
 
     my $values = {
@@ -98,11 +95,11 @@ sub save_connect {
     eval { $self->db->resultset("JobTemplates")->create($values)->id };
     if ($@) {
         $self->flash(error => $@);
-        $self->redirect_to('job_group_new_media', groupid => $group->id);
+        return $self->redirect_to('job_group_new_media', groupid => $group->id);
     }
     else {
         $self->emit_event('openqa_jobgroup_connect', $values);
-        $self->redirect_to('admin_job_templates', groupid => $group->id);
+        return $self->redirect_to('admin_job_templates', groupid => $group->id);
     }
 }
 

@@ -362,6 +362,8 @@ sub register {
                 status   => 404,
             );
         });
+
+    $app->helper('reply.validation_error' => \&_validation_error);
 }
 
 sub _step_thumbnail {
@@ -388,6 +390,13 @@ sub _step_thumbnail {
         class   => "resborder resborder_$result"
     );
     return $content;
+}
+
+sub _validation_error {
+    my $c      = shift;
+    my $failed = join ', ', @{$c->validation->failed};
+    my $error  = "Invalid request parameters ($failed)";
+    $c->render(text => $error, status => 400);
 }
 
 1;

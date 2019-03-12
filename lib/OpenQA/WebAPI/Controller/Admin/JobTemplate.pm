@@ -19,7 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 sub index {
     my ($self) = @_;
-    $self->validation->required('groupid')->like(qr/^[0-9]+$/);
+
     $self->stash('group', $self->db->resultset("JobGroups")->find($self->param('groupid')));
 
     my @machines = $self->db->resultset("Machines")->search(undef, {order_by => 'name'});

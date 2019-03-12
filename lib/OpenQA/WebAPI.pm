@@ -155,8 +155,8 @@ sub startup {
     # due to the split md5_dirname having a /
     $r->get('/image/:md5_1/:md5_2/.thumbs/#md5_basename')->to('file#thumb_image');
 
-    $r->get('/group_overview/:groupid')->name('group_overview')->to('main#job_group_overview');
-    $r->get('/parent_group_overview/:groupid')->name('parent_group_overview')->to('main#parent_group_overview');
+    $r->get('/group_overview/<groupid:num>')->name('group_overview')->to('main#job_group_overview');
+    $r->get('/parent_group_overview/<groupid:num>')->name('parent_group_overview')->to('main#parent_group_overview');
 
     # Favicon
     $r->get('/favicon.ico' => sub { my $c = shift; $c->render_static('favicon.ico') });
@@ -192,14 +192,14 @@ sub startup {
     $pub_admin_r->get('/machines')->name('admin_machines')->to('machine#index');
     $pub_admin_r->get('/test_suites')->name('admin_test_suites')->to('test_suite#index');
 
-    $pub_admin_r->get('/job_templates/:groupid')->name('admin_job_templates')->to('job_template#index');
+    $pub_admin_r->get('/job_templates/<groupid:num>')->name('admin_job_templates')->to('job_template#index');
 
     $pub_admin_r->get('/groups')->name('admin_groups')->to('job_group#index');
-    $pub_admin_r->get('/job_group/:groupid')->name('admin_job_group_row')->to('job_group#job_group_row');
-    $pub_admin_r->get('/parent_group/:groupid')->name('admin_parent_group_row')->to('job_group#parent_group_row');
-    $pub_admin_r->get('/edit_parent_group/:groupid')->name('admin_edit_parent_group')
+    $pub_admin_r->get('/job_group/<groupid:num>')->name('admin_job_group_row')->to('job_group#job_group_row');
+    $pub_admin_r->get('/parent_group/<groupid:num>')->name('admin_parent_group_row')->to('job_group#parent_group_row');
+    $pub_admin_r->get('/edit_parent_group/<groupid:num>')->name('admin_edit_parent_group')
       ->to('job_group#edit_parent_group');
-    $pub_admin_r->get('/groups/connect/:groupid')->name('job_group_new_media')->to('job_group#connect');
+    $pub_admin_r->get('/groups/connect/<groupid:num>')->name('job_group_new_media')->to('job_group#connect');
 
     $pub_admin_r->get('/assets')->name('admin_assets')->to('asset#index');
     $pub_admin_r->get('/assets/status')->name('admin_asset_status_json')->to('asset#status_json');
@@ -220,7 +220,7 @@ sub startup {
     $admin_r->delete('/needles/delete')->name('admin_needle_delete')->to('needle#delete');
     $admin_r->get('/auditlog')->name('audit_log')->to('audit_log#index');
     $admin_r->get('/auditlog/ajax')->name('audit_ajax')->to('audit_log#ajax');
-    $admin_r->post('/groups/connect/:groupid')->name('job_group_save_media')->to('job_group#save_connect');
+    $admin_r->post('/groups/connect/<groupid:num>')->name('job_group_save_media')->to('job_group#save_connect');
 
     # Workers list as default option
     $op_r->get('/')->name('admin')->to('workers#index');
@@ -264,18 +264,18 @@ sub startup {
 
     # api/v1/job_groups
     $api_public_r->get('/job_groups')->name('apiv1_list_job_groups')->to('job_group#list');
-    $api_public_r->get('/job_groups/:group_id')->name('apiv1_get_job_group')->to('job_group#list');
-    $api_public_r->get('/job_groups/:group_id/jobs')->name('apiv1_get_job_group_jobs')->to('job_group#list_jobs');
+    $api_public_r->get('/job_groups/<group_id:num>')->name('apiv1_get_job_group')->to('job_group#list');
+    $api_public_r->get('/job_groups/<group_id:num>/jobs')->name('apiv1_get_job_group_jobs')->to('job_group#list_jobs');
     $api_ra->post('/job_groups')->name('apiv1_post_job_group')->to('job_group#create');
-    $api_ra->put('/job_groups/:group_id')->name('apiv1_put_job_group')->to('job_group#update');
-    $api_ra->delete('/job_groups/:group_id')->name('apiv1_delete_job_group')->to('job_group#delete');
+    $api_ra->put('/job_groups/<group_id:num>')->name('apiv1_put_job_group')->to('job_group#update');
+    $api_ra->delete('/job_groups/<group_id:num>')->name('apiv1_delete_job_group')->to('job_group#delete');
 
     # api/v1/parent_groups
     $api_public_r->get('/parent_groups')->name('apiv1_list_parent_groups')->to('job_group#list');
-    $api_public_r->get('/parent_groups/:group_id')->name('apiv1_get_parent_group')->to('job_group#list');
+    $api_public_r->get('/parent_groups/<group_id:num>')->name('apiv1_get_parent_group')->to('job_group#list');
     $api_ra->post('/parent_groups')->name('apiv1_post_parent_group')->to('job_group#create');
-    $api_ra->put('/parent_groups/:group_id')->name('apiv1_put_parent_group')->to('job_group#update');
-    $api_ra->delete('/parent_groups/:group_id')->name('apiv1_delete_parent_group')->to('job_group#delete');
+    $api_ra->put('/parent_groups/<group_id:num>')->name('apiv1_put_parent_group')->to('job_group#update');
+    $api_ra->delete('/parent_groups/<group_id:num>')->name('apiv1_delete_parent_group')->to('job_group#delete');
 
     # api/v1/jobs
     $api_public_r->get('/jobs')->name('apiv1_jobs')->to('job#list');
@@ -395,26 +395,28 @@ sub startup {
     $api_ra->delete('job_templates/:job_template_id')->to('job_template#destroy');
 
     # api/v1/comments
-    $api_public_r->get('/jobs/:job_id/comments')->name('apiv1_list_comments')->to('comment#list');
-    $api_public_r->get('/jobs/:job_id/comments/:comment_id')->name('apiv1_get_comment')->to('comment#text');
-    $api_ru->post('/jobs/:job_id/comments')->name('apiv1_post_comment')->to('comment#create');
-    $api_ru->put('/jobs/:job_id/comments/:comment_id')->name('apiv1_put_comment')->to('comment#update');
-    $api_ra->delete('/jobs/:job_id/comments/:comment_id')->name('apiv1_delete_comment')->to('comment#delete');
-    $api_public_r->get('/groups/:group_id/comments')->name('apiv1_list_group_comment')->to('comment#list');
-    $api_public_r->get('/groups/:group_id/comments/:comment_id')->name('apiv1_get_group_comment')->to('comment#text');
-    $api_ru->post('/groups/:group_id/comments')->name('apiv1_post_group_comment')->to('comment#create');
-    $api_ru->put('/groups/:group_id/comments/:comment_id')->name('apiv1_put_group_comment')->to('comment#update');
-    $api_ra->delete('/groups/:group_id/comments/:comment_id')->name('apiv1_delete_group_comment')->to('comment#delete');
-    $api_public_r->get('/parent_groups/:parent_group_id/comments')->name('apiv1_list_parent_group_comment')
-      ->to('comment#list');
-    $api_public_r->get('/parent_groups/:parent_group_id/comments/:comment_id')->name('apiv1_get_parent_group_comment')
+    $api_public_r->get('/jobs/<job_id:num>/comments')->name('apiv1_list_comments')->to('comment#list');
+    $api_public_r->get('/jobs/<job_id:num>/comments/:comment_id')->name('apiv1_get_comment')->to('comment#text');
+    $api_ru->post('/jobs/<job_id:num>/comments')->name('apiv1_post_comment')->to('comment#create');
+    $api_ru->put('/jobs/<job_id:num>/comments/:comment_id')->name('apiv1_put_comment')->to('comment#update');
+    $api_ra->delete('/jobs/<job_id:num>/comments/:comment_id')->name('apiv1_delete_comment')->to('comment#delete');
+    $api_public_r->get('/groups/<group_id:num>/comments')->name('apiv1_list_group_comment')->to('comment#list');
+    $api_public_r->get('/groups/<group_id:num>/comments/:comment_id')->name('apiv1_get_group_comment')
       ->to('comment#text');
-    $api_ru->post('/parent_groups/:parent_group_id/comments')->name('apiv1_post_parent_group_comment')
-      ->to('comment#create');
-    $api_ru->put('/parent_groups/:parent_group_id/comments/:comment_id')->name('apiv1_put_parent_group_comment')
-      ->to('comment#update');
-    $api_ra->delete('/parent_groups/:parent_group_id/comments/:comment_id')->name('apiv1_delete_parent_group_comment')
+    $api_ru->post('/groups/<group_id:num>/comments')->name('apiv1_post_group_comment')->to('comment#create');
+    $api_ru->put('/groups/<group_id:num>/comments/:comment_id')->name('apiv1_put_group_comment')->to('comment#update');
+    $api_ra->delete('/groups/<group_id:num>/comments/:comment_id')->name('apiv1_delete_group_comment')
       ->to('comment#delete');
+    $api_public_r->get('/parent_groups/<parent_group_id:num>/comments')->name('apiv1_list_parent_group_comment')
+      ->to('comment#list');
+    $api_public_r->get('/parent_groups/<parent_group_id:num>/comments/:comment_id')
+      ->name('apiv1_get_parent_group_comment')->to('comment#text');
+    $api_ru->post('/parent_groups/<parent_group_id:num>/comments')->name('apiv1_post_parent_group_comment')
+      ->to('comment#create');
+    $api_ru->put('/parent_groups/<parent_group_id:num>/comments/:comment_id')->name('apiv1_put_parent_group_comment')
+      ->to('comment#update');
+    $api_ra->delete('/parent_groups/<parent_group_id:num>/comments/:comment_id')
+      ->name('apiv1_delete_parent_group_comment')->to('comment#delete');
 
     # json-rpc methods not migrated to this api: echo, list_commands
     ###

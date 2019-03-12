@@ -46,14 +46,15 @@ code of 200 on success, 410 on error and 409 on mutex unavailable.
 =cut
 
 sub mutex_action {
-    my ($self)     = @_;
-    my $name       = $self->stash('name');
-    my $jobid      = $self->stash('job_id');
-    my $validation = $self->validation;
+    my ($self) = @_;
 
+    my $name  = $self->stash('name');
+    my $jobid = $self->stash('job_id');
+
+    my $validation = $self->validation;
     $validation->required('action')->in(qw(lock unlock));
     $validation->optional('where')->like(qr/^[0-9]+$/);
-    return $self->render(text => 'Bad request', status => 400) if ($validation->has_error);
+    return $self->reply->validation_error if $validation->has_error;
 
     my $action = $validation->param('action');
     my $where  = $validation->param('where') // '';
@@ -83,9 +84,8 @@ sub mutex_create {
     my $jobid = $self->stash('job_id');
 
     my $validation = $self->validation;
-
     $validation->required('name')->like(qr/^[0-9a-zA-Z_]+$/);
-    return $self->render(text => 'Bad request', status => 400) if ($validation->has_error);
+    return $self->reply->validation_error if $validation->has_error;
 
     my $name = $validation->param('name');
 
@@ -108,14 +108,15 @@ on error on 409 when the referenced barrier does not exist.
 
 sub barrier_wait {
     my ($self) = @_;
-    my $jobid  = $self->stash('job_id');
-    my $name   = $self->stash('name');
+
+    my $jobid = $self->stash('job_id');
+    my $name  = $self->stash('name');
 
     my $validation = $self->validation;
     $validation->optional('where')->like(qr/^[0-9]+$/);
     $validation->optional('check_dead_job')->like(qr/^[0-9]+$/);
+    return $self->reply->validation_error if $validation->has_error;
 
-    return $self->render(text => 'Bad request', status => 400) if ($validation->has_error);
     my $where          = $validation->param('where')          // '';
     my $check_dead_job = $validation->param('check_dead_job') // 0;
 
@@ -139,12 +140,14 @@ Returns a code of 200 on success or of 409 on error.
 
 sub barrier_create {
     my ($self) = @_;
+
     my $jobid = $self->stash('job_id');
 
     my $validation = $self->validation;
     $validation->required('name')->like(qr/^[0-9a-zA-Z_]+$/);
     $validation->required('tasks')->like(qr/^[0-9]+$/);
-    return $self->render(text => 'Bad request', status => 400) if ($validation->has_error);
+    return $self->reply->validation_error if $validation->has_error;
+
     my $tasks = $validation->param('tasks');
     my $name  = $validation->param('name');
 
@@ -165,15 +168,16 @@ Removes a barrier given its name.
 
 sub barrier_destroy {
     my ($self) = @_;
-    my $jobid  = $self->stash('job_id');
-    my $name   = $self->stash('name');
+
+    my $jobid = $self->stash('job_id');
+    my $name  = $self->stash('name');
 
     my $validation = $self->validation;
     $validation->optional('where')->like(qr/^[0-9]+$/);
-    return $self->render(text => 'Bad request', status => 400) if ($validation->has_error);
-    my $where = $validation->param('where') // '';
+    return $self->reply->validation_error if $validation->has_error;
 
-    my $res = OpenQA::Resource::Locks::barrier_destroy($name, $jobid, $where);
+    my $where = $validation->param('where') // '';
+    my $res   = OpenQA::Resource::Locks::barrier_destroy($name, $jobid, $where);
 
     return $self->render(text => 'ack', status => 200);
 }

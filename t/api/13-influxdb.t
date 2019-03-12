@@ -33,11 +33,7 @@ use OpenQA::WebSockets;
 OpenQA::Test::Case->new->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-my $app = $t->app;
-# we don't need API keys for this route
-$t->app($app);
-$app->config->{global}->{base_url} = 'http://example.com';
+$t->app->config->{global}->{base_url} = 'http://example.com';
 
 $t->get_ok('/admin/influxdb/jobs')->status_is(200)->content_is(
     "openqa_jobs,url=http://example.com blocked=0i,running=2i,scheduled=2i
