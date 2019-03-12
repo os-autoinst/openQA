@@ -133,6 +133,17 @@ sub text {
     $self->render(json => $comment->extended_hash);
 }
 
+sub _insert_bugs_for_comment {
+    my ($self, $comment) = @_;
+
+    my $bugs = $self->app->db->resultset('Bugs');
+    if (my $bugrefs = $comment->bugrefs) {
+        for my $bug (@$bugrefs) {
+            $bugs->get_bug($bug);
+        }
+    }
+}
+
 =over 4
 
 =item create()
@@ -157,6 +168,8 @@ sub create {
             text    => href_to_bugref($text),
             user_id => $self->current_user->id
         });
+
+    $self->_insert_bugs_for_comment($res);
     $self->emit_event('openqa_comment_create', {id => $res->id});
     $self->render(json => {id => $res->id});
 }
@@ -188,6 +201,7 @@ sub update {
     return $self->render(json => {error => "Forbidden (must be author)"},         status => 403)
       unless ($comment->user_id == $self->current_user->id);
     my $res = $comment->update({text => href_to_bugref($text)});
+    $self->_insert_bugs_for_comment($comment);
     $self->emit_event('openqa_comment_update', {id => $comment->id});
     $self->render(json => {id => $res->id});
 }

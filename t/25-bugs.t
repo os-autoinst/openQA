@@ -31,14 +31,15 @@ use Test::Mojo;
 use Test::Warnings;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $t    = Test::Mojo->new('OpenQA::WebAPI');
+my $app  = $t->app;
+my $bugs = $app->db->resultset('Bugs');
 
-
-my $bug = OpenQA::Schema::Result::Bugs->get_bug('poo#200', $t->app->db);
+my $bug = $bugs->get_bug('poo#200');
 ok(!defined $bug, 'bug not refreshed');
 
 $t->app->schema->resultset('Bugs')->find(1)->update({refreshed => 1});
-$bug = OpenQA::Schema::Result::Bugs->get_bug('poo#200', $t->app->db);
+$bug = $bugs->get_bug('poo#200');
 ok($bug->refreshed, 'bug refreshed');
 ok($bug->bugid,     'bugid matched');
 

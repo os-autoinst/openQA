@@ -415,8 +415,10 @@ sub _job_labels {
 
     my %labels;
     my %bugdetails;
+    my $db   = $self->db;
+    my $bugs = $db->resultset('Bugs');
     my $comments
-      = $self->db->resultset('Comments')->search({job_id => {in => [map { $_->id } @$jobs]}}, {order_by => 'me.id'});
+      = $db->resultset('Comments')->search({job_id => {in => [map { $_->id } @$jobs]}}, {order_by => 'me.id'});
     # previous occurences of bug or label are overwritten here.
     while (my $comment = $comments->next()) {
         my $bugrefs = $comment->bugrefs;
@@ -424,7 +426,7 @@ sub _job_labels {
             my $bugs_of_job = ($labels{$comment->job_id}{bugs} //= {});
             for my $bug (@$bugrefs) {
                 if (!exists $bugdetails{$bug}) {
-                    $bugdetails{$bug} = OpenQA::Schema::Result::Bugs->get_bug($bug, $self->db);
+                    $bugdetails{$bug} = $bugs->get_bug($bug);
                 }
                 $bugs_of_job->{$bug} = 1;
             }

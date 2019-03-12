@@ -637,6 +637,7 @@ my %bugrefs = (
     gh  => 'https://github.com/',
     kde => 'https://bugs.kde.org/show_bug.cgi?id=',
     fdo => 'https://bugs.freedesktop.org/show_bug.cgi?id=',
+    jsc => 'https://jira.suse.de/browse/',
 );
 my %bugurls = (
     'https://bugzilla.novell.com/show_bug.cgi?id=' => 'bsc',
@@ -649,13 +650,14 @@ my %bugurls = (
     $bugrefs{gh}                                   => 'gh',
     $bugrefs{kde}                                  => 'kde',
     $bugrefs{fdo}                                  => 'fdo',
+    $bugrefs{jsc}                                  => 'jsc',
 );
 
 sub bugref_regex {
     my $marker  = join('|', keys %bugrefs);
     my $repo_re = qr{[a-zA-Z/-]+};
     # <marker>[#<project/repo>]#<id>
-    return qr{(?<![\(\[\"\>])(?<match>(?<marker>$marker)\#?(?<repo>$repo_re)?\#(?<id>\d+))(?![\w\"])};
+    return qr{(?<![\(\[\"\>])(?<match>(?<marker>$marker)\#?(?<repo>$repo_re)?\#(?<id>([A-Z]+-)?\d+))(?![\w\"])};
 }
 
 sub find_bugref {
@@ -699,7 +701,7 @@ sub href_to_bugref {
     my $regex = join('|', keys %bugurls) =~ s/\?/\\\?/gr;
     # <repo> is optional, e.g. for github. For github issues and pull are
     # interchangeable, see comment in 'bugurl', too
-    $regex = qr{(?<!["\(\[])(?<url_root>$regex)((?<repo>.*)/(issues|pull)/)?(?<id>\d+)(?![\w])};
+    $regex = qr{(?<!["\(\[])(?<url_root>$regex)((?<repo>.*)/(issues|pull)/)?(?<id>([A-Z]+-)?\d+)(?![\w])};
     $text =~ s{$regex}{@{[$bugurls{$+{url_root}} . ($+{repo} ? '#' . $+{repo} : '')]}#$+{id}}gi;
     return $text;
 }
