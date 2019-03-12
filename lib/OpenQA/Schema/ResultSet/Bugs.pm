@@ -30,10 +30,7 @@ sub get_bug {
 
     if (!$bug->in_storage) {
         $bug->insert;
-        # somehow tests doesnt have this set up
-        if (defined $OpenQA::Utils::app) {
-            $OpenQA::Utils::app->emit_event('openqa_bug_create', {id => $bug->id, bugid => $bug->bugid, implicit => 1});
-        }
+        $OpenQA::Utils::app->emit_event(openqa_bug_create => {id => $bug->id, bugid => $bug->bugid, implicit => 1});
     }
     elsif ($bug->refreshed && $bug->existing) {
         return $bug;

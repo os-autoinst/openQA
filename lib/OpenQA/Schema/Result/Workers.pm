@@ -244,13 +244,9 @@ sub send_command {
         return;
     }
 
-    # somehow tests doesnt have this set up
-    if (defined $OpenQA::Utils::app) {
-        try {
-            $OpenQA::Utils::app->emit_event('openqa_command_enqueue',
-                {workerid => $self->id, command => $args{command}});
-        };
-    }
+    try {
+        $OpenQA::Utils::app->emit_event(openqa_command_enqueue => {workerid => $self->id, command => $args{command}});
+    };
 
     OpenQA::IPC->ipc->websockets('ws_send', $self->id, $args{command}, $args{job_id});
     if ($@) {
