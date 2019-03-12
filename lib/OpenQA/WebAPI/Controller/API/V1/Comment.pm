@@ -136,9 +136,10 @@ sub text {
 sub _insert_bugs_for_comment {
     my ($self, $comment) = @_;
 
+    my $bugs = $self->app->db->resultset('Bugs');
     if (my $bugrefs = $comment->bugrefs) {
         for my $bug (@$bugrefs) {
-            OpenQA::Schema::Result::Bugs::get_bug($bug, $self->app->db);
+            $bugs->get_bug($bug);
         }
     }
 }
