@@ -213,15 +213,15 @@ sub schedules {
         foreach my $arch (keys %{$group{architectures}}) {
             # Ensure prios hash is defined for this architecture
             $prios{$arch}{0} = 0;
-            my %_prios       = %{$prios{$arch}};
-            my $default_prio = (sort { $_prios{$b} <=> $_prios{$a} or $b cmp $a } keys %_prios)[0] + 0;
+            my $default_prio
+              = (sort { $prios{$arch}->{$b} <=> $prios{$arch}->{$a} or $b cmp $a } keys %{$prios{$arch}})[0] + 0;
             $group{defaults}{$arch}{prio} = $default_prio;
-            my %_machines       = %{$machines{$arch}};
-            my $default_machine = (sort { $_machines{$b} <=> $_machines{$a} or $b cmp $a } keys %_machines)[0];
+            my $default_machine
+              = (sort { $machines{$arch}->{$b} <=> $machines{$arch}->{$a} or $b cmp $a } keys %{$machines{$arch}})[0];
             $group{defaults}{$arch}{machine} = $default_machine;
 
             foreach my $product (keys %{$group{architectures}->{$arch}}) {
-                my @_test_suites;
+                my @test_suites;
                 foreach my $test_suite (@{$group{architectures}->{$arch}->{$product}}) {
                     foreach my $name (keys %$test_suite) {
                         my $attr = $test_suite->{$name};
@@ -233,14 +233,14 @@ sub schedules {
                         }
                         if (%$attr) {
                             $test_suite->{$name} = $attr;
-                            push @_test_suites, $test_suite;
+                            push @test_suites, $test_suite;
                         }
                         else {
-                            push @_test_suites, $name;
+                            push @test_suites, $name;
                         }
                     }
                 }
-                $group{architectures}{$arch}{$product} = \@_test_suites;
+                $group{architectures}{$arch}{$product} = \@test_suites;
             }
         }
 
