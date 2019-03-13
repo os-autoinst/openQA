@@ -28,10 +28,6 @@ use Cwd 'abs_path';
 use File::Path 'make_path';
 use BSD::Resource 'getrusage';
 
-has schema => sub {
-    return OpenQA::Schema::connect_db();
-};
-
 has secrets => sub {
     my ($self) = @_;
     return $self->schema->read_application_secrets();
@@ -39,16 +35,8 @@ has secrets => sub {
 
 # add attributes to store ws connections/transactions by job
 # (see LiveViewHandler.pm for further descriptions of the paricular attributes)
-has(
-    [
-        qw(cmd_srv_transactions_by_job
-          devel_java_script_transactions_by_job
-          status_java_script_transactions_by_job)
-    ],
-    sub {
-        return {};
-    },
-);
+has [qw(cmd_srv_transactions_by_job devel_java_script_transactions_by_job status_java_script_transactions_by_job)] =>
+  sub { {} };
 
 sub log_name {
     return $$;
@@ -57,6 +45,7 @@ sub log_name {
 # This method will run once at server start
 sub startup {
     my $self = shift;
+
     OpenQA::Setup::read_config($self);
     OpenQA::Setup::setup_log($self);
     OpenQA::Setup::setup_app_defaults($self);
@@ -64,7 +53,7 @@ sub startup {
     OpenQA::Setup::add_build_tx_time_header($self);
 
     # take care of DB deployment or migration before starting the main app
-    my $schema = OpenQA::Schema::connect_db;
+    my $schema = $self->schema;
 
     OpenQA::Setup::setup_template_search_path($self);
     OpenQA::Setup::load_plugins($self);
@@ -107,5 +96,7 @@ sub startup {
 sub run {
     Mojolicious::Commands->start_app('OpenQA::LiveHandler');
 }
+
+sub schema { OpenQA::Schema->singleton }
 
 1;

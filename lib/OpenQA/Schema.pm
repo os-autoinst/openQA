@@ -42,6 +42,7 @@ sub connect_db {
     my %args  = @_;
     my $check = $args{check};
     $check //= 1;
+
     unless ($SINGLETON) {
 
         my $mode = $args{mode} || $ENV{OPENQA_DATABASE} || 'production';
@@ -58,6 +59,7 @@ sub connect_db {
         }
         deployment_check $SINGLETON if $check;
     }
+
     return $SINGLETON;
 }
 
@@ -70,15 +72,17 @@ sub disconnect_db {
 
 sub dsn {
     my $self = shift;
-    $self->storage->connect_info->[0]->{dsn};
+    return $self->storage->connect_info->[0]->{dsn};
 }
 
 sub deployment_check {
+
     # lock config file to ensure only one thing will deploy/upgrade DB at once
     # we use a file in prjdir/db as the lock file as the install process and
     # packages make this directory writeable by openQA user by default
     my $dblockfile = catfile($OpenQA::Utils::prjdir, 'db', 'db.lock');
     my $dblock;
+
     # LOCK_EX works most reliably if the file is open with write intent
     open($dblock, '>>', $dblockfile) or die "Can't open database lock file ${dblockfile}!";
     flock($dblock, LOCK_EX) or die "Can't lock database lock file ${dblockfile}!";
@@ -115,8 +119,12 @@ sub search_path_for_tests {
     return $search_path;
 }
 
+# Class method everyone should use to access the schema
+sub singleton { $SINGLETON || connect_db() }
+
 sub _try_deploy_db {
     my ($dh) = @_;
+
     my $schema = $dh->schema;
     my $version;
     try {
@@ -133,32 +141,38 @@ sub _try_deploy_db {
                 nickname => 'system'
             });
     };
+
     return !$version;
 }
 
 sub _try_upgrade_db {
     my ($dh) = @_;
+
     my $schema = $dh->schema;
     if ($dh->schema_version > $dh->version_storage->database_version) {
         $dh->upgrade;
         return 1;
     }
+
     return 0;
 }
 
 # read application secret from database
 sub read_application_secrets {
     my ($self) = @_;
+
     # we cannot use our own schema here as we must not actually
     # initialize the db connection here. Would break for prefork.
     my $secrets = $self->resultset('Secrets');
     my @secrets = $secrets->all();
     if (!@secrets) {
+
         # create one if it doesn't exist
         $secrets->create({});
         @secrets = $secrets->all();
     }
     die "couldn't create secrets\n" unless @secrets;
+
     return [map { $_->secret } @secrets];
 }
 

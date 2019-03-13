@@ -27,20 +27,20 @@ use OpenQA::Schema::Result::Users;
 use OpenQA::Schema;
 use Getopt::Long;
 
-my $email       = 'admin@example.com';
-my $nickname    = 'admin';
-my $fullname    = 'Administrator';
-my $key         = "";
-my $secret      = "";
-my $help        = 0;
+my $email    = 'admin@example.com';
+my $nickname = 'admin';
+my $fullname = 'Administrator';
+my $key      = "";
+my $secret   = "";
+my $help     = 0;
 
 my $result = GetOptions(
-    "email=s"       => \$email,
-    "nickname=s"    => \$nickname,
-    "fullname=s"    => \$fullname,
-    "key=s"         => \$key,
-    "secret=s"      => \$secret,
-    "help"          => \$help,
+    "email=s"    => \$email,
+    "nickname=s" => \$nickname,
+    "fullname=s" => \$fullname,
+    "key=s"      => \$key,
+    "secret=s"   => \$secret,
+    "help"       => \$help,
 );
 
 my $user = $ARGV[0];
@@ -60,8 +60,9 @@ if ($help) {
     exit;
 }
 
-if (($key || $secret) &&
-    !($key =~ /^[[:xdigit:]]{16}$/ && $secret =~ /^[[:xdigit:]]{16}$/)) {
+if (($key || $secret)
+    && !($key =~ /^[[:xdigit:]]{16}$/ && $secret =~ /^[[:xdigit:]]{16}$/))
+{
     warn "--key and --secret must both be 16 digit hexadecimals.\n";
     exit 1;
 }
@@ -73,13 +74,19 @@ unless ($key) {
     print "Secret: $secret\n";
 }
 
-my $schema = OpenQA::Schema::connect_db();
-my $users = $schema->resultset('Users')->find({ is_admin => 1 });
+my $schema = OpenQA::Schema->singleton;
+my $users  = $schema->resultset('Users')->find({is_admin => 1});
 if ($users != 0) {
     warn "An admin user already exists! Use client or web UI to create further users.\n";
     exit 1;
 }
-my $account = OpenQA::Schema::Result::Users->create_user($user, $schema, email => $email, nickname => $nickname, fullname => $fullname, is_admin => 1);
+my $account = OpenQA::Schema::Result::Users->create_user(
+    $user, $schema,
+    email    => $email,
+    nickname => $nickname,
+    fullname => $fullname,
+    is_admin => 1
+);
 
 $schema->resultset("ApiKeys")->create({user_id => $account->id, key => $key, secret => $secret});
 

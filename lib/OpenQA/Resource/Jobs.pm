@@ -43,7 +43,7 @@ sub job_restart {
     my ($jobids) = @_ or die "missing name parameter\n";
 
     # first, duplicate all jobs that are either running or done
-    my $schema = OpenQA::Schema::connect_db;
+    my $schema = OpenQA::Schema->singleton;
     my $jobs   = $schema->resultset("Jobs")->search(
         {
             id    => $jobids,

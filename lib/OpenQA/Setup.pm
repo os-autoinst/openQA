@@ -46,8 +46,6 @@ has 'instance';
 
 has 'log_dir';
 
-has schema => sub { OpenQA::Schema::connect_db() };
-
 sub setup_log {
     my ($self) = @_;
     my ($logfile, $logdir, $level, $log);
@@ -262,6 +260,8 @@ sub update_config {
         };
     }
 }
+
+sub schema { OpenQA::Schema->singleton }
 
 sub setup_app_defaults {
     my ($server) = @_;

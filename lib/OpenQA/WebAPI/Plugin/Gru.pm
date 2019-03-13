@@ -20,6 +20,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 use Minion;
 use DBIx::Class::Timestamps 'now';
+use OpenQA::Schema;
 use OpenQA::Utils;
 use Mojo::Pg;
 
@@ -47,21 +48,21 @@ sub register {
     my ($self, $app, $config) = @_;
 
     $self->app($app) unless $self->app;
-    $self->{schema} = $self->app->db if $self->app->db;
+    my $schema = $app->schema;
 
     my $conn = Mojo::Pg->new;
-    if (ref $self->schema->storage->connect_info->[0] eq 'HASH') {
-        $self->dsn($self->schema->dsn);
-        $conn->username($self->schema->storage->connect_info->[0]->{user});
-        $conn->password($self->schema->storage->connect_info->[0]->{password});
+    if (ref $schema->storage->connect_info->[0] eq 'HASH') {
+        $self->dsn($schema->dsn);
+        $conn->username($schema->storage->connect_info->[0]->{user});
+        $conn->password($schema->storage->connect_info->[0]->{password});
     }
     else {
-        $self->dsn($self->schema->storage->connect_info->[0]);
+        $self->dsn($schema->storage->connect_info->[0]);
     }
     $conn->dsn($self->dsn());
 
     # set the search path in accordance with the test setup done in OpenQA::Test::Database
-    if (my $search_path = $self->schema->search_path_for_tests) {
+    if (my $search_path = $schema->search_path_for_tests) {
         log_info("setting database search path to $search_path when registering Minion plugin\n");
         $conn->search_path([$search_path]);
     }
@@ -77,8 +78,6 @@ sub register {
     my $gru = OpenQA::WebAPI::Plugin::Gru->new($app);
     $app->helper(gru => sub { $gru });
 }
-
-sub schema { shift->{schema} ||= OpenQA::Schema::connect_db() }
 
 # counts the number of jobs for a certain task in the specified states
 sub count_jobs {
@@ -110,7 +109,8 @@ sub enqueue {
 
     my $delay = $options->{run_at} && $options->{run_at} > now() ? $options->{run_at} - now() : 0;
 
-    my $gru = $self->schema->resultset('GruTasks')->create(
+    my $schema = OpenQA::Schema->singleton;
+    my $gru    = $schema->resultset('GruTasks')->create(
         {
             taskname => $task,
             priority => $options->{priority} // 0,
