@@ -83,6 +83,10 @@ sub startup {
             $controller->stash('job_groups_and_parents', job_groups_and_parents);
         });
 
+    # placeholder types
+    $r->add_type(step    => qr/[1-9]\d*/);
+    $r->add_type(barrier => qr/[0-9a-zA-Z_]+/);
+
     # register routes
     $r->post('/session')->to('session#create');
     $r->delete('/session')->to('session#destroy');
@@ -110,9 +114,9 @@ sub startup {
     # only provide a URL helper - this is overtaken by apache
     $r->get('/assets/*assetpath')->name('download_asset')->to('file#download_asset');
 
-    my $test_r = $r->route('/tests/:testid', testid => qr/\d+/);
+    my $test_r = $r->route('/tests/<testid:num>');
     $test_r = $test_r->under('/')->to('test#referer_check');
-    my $test_auth = $auth->route('/tests/:testid', testid => qr/\d+/, format => 0);
+    my $test_auth = $auth->route('/tests/<testid:num>', format => 0);
     $test_r->get('/')->name('test')->to('test#show');
     $test_r->get('/ajax')->name('job_next_previous_ajax')->to('test#job_next_previous_ajax');
     $test_r->get('/modules/:moduleid/fails')->name('test_module_fails')->to('test#module_fails');
@@ -138,8 +142,8 @@ sub startup {
     my $developer_r    = $developer_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller');
     $developer_r->get('/ws-console')->name('developer_ws_console')->to('developer#ws_console');
 
-    my $step_r = $test_r->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/)->to(controller => 'step');
-    my $step_auth = $test_auth->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/);
+    my $step_r    = $test_r->route('/modules/:moduleid/steps/<stepid:step>')->to(controller => 'step');
+    my $step_auth = $test_auth->route('/modules/:moduleid/steps/<stepid:step>');
     $step_r->get('/view')->to(action => 'view');
     $step_r->get('/edit')->name('edit_step')->to(action => 'edit');
     $step_r->get('/src')->name('src_step')->to(action => 'src');
@@ -168,7 +172,7 @@ sub startup {
     $r->get('/changelog')->name('changelog')->to('main#changelog');
 
     # shorter version of route to individual job results
-    $r->get('/t:testid' => sub { shift->redirect_to('test') });
+    $r->get('/t<testid:num>' => sub { shift->redirect_to('test') });
 
     # Redirection for old links to openQAv1
     $r->get(
@@ -205,8 +209,8 @@ sub startup {
     $pub_admin_r->get('/assets/status')->name('admin_asset_status_json')->to('asset#status_json');
 
     $pub_admin_r->get('/workers')->name('admin_workers')->to('workers#index');
-    $pub_admin_r->get('/workers/:worker_id')->name('admin_worker_show')->to('workers#show');
-    $pub_admin_r->get('/workers/:worker_id/ajax')->name('admin_worker_previous_jobs_ajax')
+    $pub_admin_r->get('/workers/<worker_id:num>')->name('admin_worker_show')->to('workers#show');
+    $pub_admin_r->get('/workers/<worker_id:num>/ajax')->name('admin_worker_previous_jobs_ajax')
       ->to('workers#previous_jobs_ajax');
 
     $pub_admin_r->get('/productlog')->name('admin_product_log')->to('audit_log#productlog');
@@ -247,7 +251,7 @@ sub startup {
     push @api_routes, $api_ru, $api_ro, $api_ra, $api_public_r;
     # this is fallback redirect if one does not use apache
     $api_public_r->websocket(
-        '/ws/:workerid' => sub {
+        '/ws/<workerid:num>' => sub {
             my $c        = shift;
             my $workerid = $c->param('workerid');
             # use port one higher than WebAPI
@@ -284,10 +288,10 @@ sub startup {
     $api_ro->post('/jobs/cancel')->name('apiv1_cancel_jobs')->to('job#cancel');
     $api_ro->post('/jobs/restart')->name('apiv1_restart_jobs')->to('job#restart');
 
-    my $job_r = $api_ro->route('/jobs/:jobid', jobid => qr/\d+/);
+    my $job_r = $api_ro->route('/jobs/<jobid:num>');
     push @api_routes, $job_r;
-    $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->name('apiv1_job')->to('job#show');
-    $api_public_r->route('/jobs/:jobid/details', jobid => qr/\d+/)->name('apiv1_job')->to('job#show', details => 1);
+    $api_public_r->route('/jobs/<jobid:num>')->name('apiv1_job')->to('job#show');
+    $api_public_r->route('/jobs/<jobid:num>/details')->name('apiv1_job')->to('job#show', details => 1);
     $job_r->put('/')->name('apiv1_put_job')->to('job#update');
     $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');
     $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio');
@@ -303,7 +307,7 @@ sub startup {
     # api/v1/bugs
     $api_public_r->get('/bugs')->name('apiv1_bugs')->to('bug#list');
     $api_ro->post('/bugs')->name('apiv1_create_bug')->to('bug#create');
-    my $bug_r = $api_ro->route('/bugs/:id', bid => qr/\d+/);
+    my $bug_r = $api_ro->route('/bugs/<id:num>');
     push @api_routes, $bug_r;
     $bug_r->get('/')->name('apiv1_show_bug')->to('bug#show');
     $bug_r->put('/')->name('apiv1_put_bug')->to('bug#update');
@@ -314,9 +318,9 @@ sub startup {
     $api_description{'apiv1_worker'}
       = 'Each entry contains the "hostname", the boolean flag "connected" which can be 0 or 1 depending on the connection to the websockets server and the field "status" which can be "dead", "idle", "running". A worker can be considered "up" when "connected=1" and "status!=dead"';
     $api_ro->post('/workers')->name('apiv1_create_worker')->to('worker#create');
-    my $worker_r = $api_ro->route('/workers/:workerid', workerid => qr/\d+/);
+    my $worker_r = $api_ro->route('/workers/<workerid:num>');
     push @api_routes, $worker_r;
-    $api_public_r->route('/workers/:workerid', workerid => qr/\d+/)->get('/')->name('apiv1_worker')->to('worker#show');
+    $api_public_r->route('/workers/<workerid:num>')->get('/')->name('apiv1_worker')->to('worker#show');
     $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');
 
     # redirect for older workers
@@ -337,10 +341,8 @@ sub startup {
     $api_r_job->post('/mutex/:name')->name('apiv1_mutex_action')->to('locks#mutex_action');
     # api/v1/barriers/
     $api_r_job->post('/barrier')->name('apiv1_barrier_create')->to('locks#barrier_create');
-    $api_r_job->post('/barrier/:name', [name => qr/[0-9a-zA-Z_]+/])->name('apiv1_barrier_wait')
-      ->to('locks#barrier_wait');
-    $api_r_job->delete('/barrier/:name', [name => qr/[0-9a-zA-Z_]+/])->name('apiv1_barrier_destroy')
-      ->to('locks#barrier_destroy');
+    $api_r_job->post('/barrier/<name:barrier>')->name('apiv1_barrier_wait')->to('locks#barrier_wait');
+    $api_r_job->delete('/barrier/<name:barrier>')->name('apiv1_barrier_destroy')->to('locks#barrier_destroy');
 
     # api/v1/mm
     my $mm_api = $api_r_job->route('/mm');
@@ -396,26 +398,27 @@ sub startup {
 
     # api/v1/comments
     $api_public_r->get('/jobs/<job_id:num>/comments')->name('apiv1_list_comments')->to('comment#list');
-    $api_public_r->get('/jobs/<job_id:num>/comments/:comment_id')->name('apiv1_get_comment')->to('comment#text');
+    $api_public_r->get('/jobs/<job_id:num>/comments/<comment_id:num>')->name('apiv1_get_comment')->to('comment#text');
     $api_ru->post('/jobs/<job_id:num>/comments')->name('apiv1_post_comment')->to('comment#create');
-    $api_ru->put('/jobs/<job_id:num>/comments/:comment_id')->name('apiv1_put_comment')->to('comment#update');
-    $api_ra->delete('/jobs/<job_id:num>/comments/:comment_id')->name('apiv1_delete_comment')->to('comment#delete');
+    $api_ru->put('/jobs/<job_id:num>/comments/<comment_id:num>')->name('apiv1_put_comment')->to('comment#update');
+    $api_ra->delete('/jobs/<job_id:num>/comments/<comment_id:num>')->name('apiv1_delete_comment')->to('comment#delete');
     $api_public_r->get('/groups/<group_id:num>/comments')->name('apiv1_list_group_comment')->to('comment#list');
-    $api_public_r->get('/groups/<group_id:num>/comments/:comment_id')->name('apiv1_get_group_comment')
+    $api_public_r->get('/groups/<group_id:num>/comments/<comment_id:num>')->name('apiv1_get_group_comment')
       ->to('comment#text');
     $api_ru->post('/groups/<group_id:num>/comments')->name('apiv1_post_group_comment')->to('comment#create');
-    $api_ru->put('/groups/<group_id:num>/comments/:comment_id')->name('apiv1_put_group_comment')->to('comment#update');
-    $api_ra->delete('/groups/<group_id:num>/comments/:comment_id')->name('apiv1_delete_group_comment')
+    $api_ru->put('/groups/<group_id:num>/comments/<comment_id:num>')->name('apiv1_put_group_comment')
+      ->to('comment#update');
+    $api_ra->delete('/groups/<group_id:num>/comments/<comment_id:num>')->name('apiv1_delete_group_comment')
       ->to('comment#delete');
     $api_public_r->get('/parent_groups/<parent_group_id:num>/comments')->name('apiv1_list_parent_group_comment')
       ->to('comment#list');
-    $api_public_r->get('/parent_groups/<parent_group_id:num>/comments/:comment_id')
+    $api_public_r->get('/parent_groups/<parent_group_id:num>/comments/<comment_id:num>')
       ->name('apiv1_get_parent_group_comment')->to('comment#text');
     $api_ru->post('/parent_groups/<parent_group_id:num>/comments')->name('apiv1_post_parent_group_comment')
       ->to('comment#create');
-    $api_ru->put('/parent_groups/<parent_group_id:num>/comments/:comment_id')->name('apiv1_put_parent_group_comment')
-      ->to('comment#update');
-    $api_ra->delete('/parent_groups/<parent_group_id:num>/comments/:comment_id')
+    $api_ru->put('/parent_groups/<parent_group_id:num>/comments/<comment_id:num>')
+      ->name('apiv1_put_parent_group_comment')->to('comment#update');
+    $api_ra->delete('/parent_groups/<parent_group_id:num>/comments/<comment_id:num>')
       ->name('apiv1_delete_parent_group_comment')->to('comment#delete');
 
     # json-rpc methods not migrated to this api: echo, list_commands
