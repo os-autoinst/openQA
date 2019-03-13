@@ -124,41 +124,70 @@ sub module {
 
 sub delete {
     my ($self) = @_;
-    my @removed_ids;
-    my @errors;
-    for my $needle_id (@{$self->every_param('id')}) {
-        my $needle = $self->db->resultset('Needles')->find($needle_id);
-        if (!$needle) {
-            push(
-                @errors,
-                {
-                    id           => $needle_id,
-                    display_name => $needle_id,
-                    message      => "Unable to find $needle_id"
-                });
-            next;
-        }
 
-        my $error = $needle->remove($self->current_user);
-        if ($error) {
-            push(
-                @errors,
-                {
-                    id           => $needle_id,
-                    display_name => $needle->filename,
-                    message      => $error
-                });
-        }
-        else {
-            push(@removed_ids, $needle_id);
-        }
+    # check whether Minion worker are available to get a nice error message instead of an inactive job
+    my $gru = $self->gru;
+    if (!$gru->has_workers) {
+        return $self->render(
+            json => {error => 'No Minion worker available. The <code>openqa-gru</code> service is likely not running.'}
+        );
     }
-    $self->emit_event('openqa_needle_delete', {id => \@removed_ids});
-    $self->render(
-        json => {
-            removed_ids => \@removed_ids,
-            errors      => \@errors
-        });
+
+    # enqueue Minion job delete needles with specified IDs
+    my %minion_args = (
+        needle_ids => $self->every_param('id'),
+        user_id    => $self->current_user->id,
+    );
+    my %minion_options = (
+        priority => 10,
+        ttl      => 60,
+    );
+    my $ids = $gru->enqueue(delete_needles => \%minion_args, \%minion_options);
+    my $minion_id;
+    if (ref $ids eq 'HASH') {
+        $minion_id = $ids->{minion_id};
+    }
+    my $minion     = $self->app->minion;
+    my $minion_job = $minion->job($minion_id);
+    if (!$minion_job) {
+        return $self->render(json => {error => 'Unable to enqueue Minion job for deleting needles.'});
+    }
+
+    # keep track of the Minion job and continue rendering if it has completed
+    my $timer_id;
+    my $check_results = sub {
+        my ($loop) = @_;
+
+        eval {
+            # find the minion job
+            my $minion_job = $minion->job($minion_id);
+            if (!$minion_job) {
+                $loop->remove($timer_id);
+                return $self->render(json => {error => 'Minion job for deleting needles has been removed.'});
+            }
+            my $info  = $minion_job->info;
+            my $state = $info->{state};
+
+            # retry on next tick if the job is still running
+            return unless $state && ($state eq 'finished' || $state eq 'failed');
+            $loop->remove($timer_id);
+
+            # ensure resulting data structure contains all required fields, even in the error case
+            my $result      = $info->{result};
+            my $removed_ids = ($result->{removed_ids} //= []);
+
+            # return result
+            $self->emit_event(openqa_needle_delete => {id => $removed_ids}) if (@$removed_ids);
+            return $self->render(json => $result);
+        };
+
+        # ensure the timer is removed and something rendered in any case
+        if ($@) {
+            $loop->remove($timer_id);
+            return $self->render(json => {error => 'An internal error occured.'}, status => 500);
+        }
+    };
+    $timer_id = Mojo::IOLoop->recurring(0.5 => $check_results);
 }
 
 1;

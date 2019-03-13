@@ -40,7 +40,8 @@ sub register_tasks {
     $app->plugin($_)
       for (
         qw(OpenQA::Task::Asset::Download OpenQA::Task::Asset::Limit OpenQA::Task::Job::Limit),
-        qw(OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Screenshot::Scan)
+        qw(OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Needle::Delete),
+        qw(OpenQA::Task::Screenshot::Scan),
       );
 }
 
