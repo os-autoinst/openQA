@@ -224,15 +224,15 @@ sub schedules {
                 my @_test_suites;
                 foreach my $test_suite (@{$group{architectures}->{$arch}->{$product}}) {
                     foreach my $name (keys %$test_suite) {
-                        my %attr = %{$test_suite->{$name}};
-                        if ($attr{machine} eq $default_machine) {
-                            delete $attr{machine};
+                        my $attr = $test_suite->{$name};
+                        if ($attr->{machine} eq $default_machine) {
+                            delete $attr->{machine};
                         }
-                        if ($attr{prio} && $attr{prio} == $default_prio) {
-                            delete $attr{prio};
+                        if ($attr->{prio} && $attr->{prio} == $default_prio) {
+                            delete $attr->{prio};
                         }
-                        if (%attr) {
-                            ${test_suite}->{$name} = \%attr;
+                        if (%$attr) {
+                            $test_suite->{$name} = $attr;
                             push @_test_suites, $test_suite;
                         }
                         else {
