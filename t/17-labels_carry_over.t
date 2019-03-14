@@ -77,10 +77,23 @@ subtest '"happy path": failed->failed carries over last issue reference' => sub 
     is(scalar @comments_previous, 3,               'all entered comments found');
     is($comments_previous[0],     $label,          'comment present on previous test result');
     is($comments_previous[2],     $simple_comment, 'another comment present');
-    $t->post_ok('/api/v1/jobs/99963/set_done', $auth => form => {result => 'failed'})->status_is(200);
-    my @comments_current = @{comments('/tests/99963')};
-    is(join('', @comments_current), $comment_must, 'only one label is carried over');
-    like($comments_current[0], qr/\Q$second_label/, 'last entered label found, it is expanded');
+
+    my $group = $t->app->db->resultset('JobGroups')->find(1001);
+
+    subtest 'carry over prevented via job group settings' => sub {
+        $group->update({carry_over_bugrefs => 0});
+        $t->post_ok('/api/v1/jobs/99963/set_done', $auth => form => {result => 'failed'})->status_is(200);
+        is_deeply(comments('/tests/99963'), [], 'no bugrefs carried over');
+    };
+
+    subtest 'carry over enabled in job group settings' => sub {
+        $group->update({carry_over_bugrefs => 1});
+        $t->post_ok('/api/v1/jobs/99963/set_done', $auth => form => {result => 'failed'})->status_is(200);
+
+        my @comments_current = @{comments('/tests/99963')};
+        is(join('', @comments_current), $comment_must, 'only one bugref is carried over');
+        like($comments_current[0], qr/\Q$second_label/, 'last entered bugref found, it is expanded');
+    };
 };
 
 my ($job, $old_job);

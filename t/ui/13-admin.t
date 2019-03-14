@@ -384,7 +384,9 @@ subtest 'job property editor' => sub() {
         is($driver->find_element_by_id('editor-keep-important-results-in-days')->get_value(),
             '0', 'keep important results in days');
         is($driver->find_element_by_id('editor-default-priority')->get_value(), '50', 'default priority');
-        is($driver->find_element_by_id('editor-description')->get_value(),      '',   'no description yet');
+        is($driver->find_element_by_id('editor-carry-over-bugrefs')->is_selected(),
+            1, 'bug carry over by default enabled');
+        is($driver->find_element_by_id('editor-description')->get_value(), '', 'no description yet');
     };
 
     subtest 'update group name with empty or blank' => sub {
@@ -429,6 +431,7 @@ subtest 'job property editor' => sub() {
         $driver->find_element_by_id('editor-description')->send_keys('Test group');
         is($driver->find_element('p.buttons button.btn-primary')->get_attribute('disabled'),
             undef, 'group properties save button is enabled');
+        $driver->find_element_by_id('editor-carry-over-bugrefs')->click();
         $driver->find_element('p.buttons button.btn-primary')->click();
         # ensure there is no race condition, even though the page is reloaded
         wait_for_ajax;
@@ -442,6 +445,7 @@ subtest 'job property editor' => sub() {
             '500', 'keep important results in days edited');
         is($driver->find_element_by_id('editor-default-priority')->get_value(),
             '50', 'default priority should be the same');
+        is($driver->find_element_by_id('editor-carry-over-bugrefs')->is_selected(), 0, 'bug carry over disabled');
         is($driver->find_element_by_id('editor-description')->get_value(), 'Test group', 'description added');
     };
 };

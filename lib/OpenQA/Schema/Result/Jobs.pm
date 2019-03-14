@@ -1663,6 +1663,10 @@ result in the same scenario.
 sub carry_over_bugrefs {
     my ($self) = @_;
 
+    if (my $group = $self->group) {
+        return unless $group->carry_over_bugrefs;
+    }
+
     my $prev = $self->_carry_over_candidate;
     return if !$prev;
 
