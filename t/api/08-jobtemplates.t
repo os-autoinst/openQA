@@ -287,6 +287,11 @@ $res = $t->post_ok(
     })->status_is(200);
 my $job_template_id2 = $res->tx->res->json->{id};
 ok($job_template_id2, 'got ID (2)');
+is_deeply(
+    OpenQA::Test::Case::find_most_recent_event($app->schema, 'jobtemplate_create'),
+    {id => $job_template_id2},
+    'Create was logged correctly'
+);
 
 $get = $t->get_ok("/api/v1/job_templates/$job_template_id1")->status_is(200);
 is_deeply(
@@ -471,6 +476,11 @@ $t->post_ok(
     'two rows affected'
 );
 is($job_templates->search({prio => 15})->count, 2, 'two rows have now prio 15');
+is_deeply(
+    OpenQA::Test::Case::find_most_recent_event($app->schema, 'jobtemplate_create'),
+    {affected_rows => 2},
+    'Create was logged correctly'
+);
 
 # set priority to undef for inheriting from job group
 $t->post_ok(
@@ -512,6 +522,11 @@ $res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(404);
 
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id2")->status_is(200);
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id2")->status_is(404);    #not found
+is_deeply(
+    OpenQA::Test::Case::find_most_recent_event($app->schema, 'jobtemplate_delete'),
+    {id => "$job_template_id2"},
+    'Delete was logged correctly'
+);
 
 # switch to operator (percival) and try some modifications
 $app = $t->app;

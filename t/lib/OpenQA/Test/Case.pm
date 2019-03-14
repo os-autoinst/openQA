@@ -21,7 +21,7 @@ use OpenQA::Test::Database;
 use OpenQA::Test::Testresults;
 use OpenQA::Schema::Result::Users;
 use Date::Format 'time2str';
-use Mojo::JSON 'j';
+use Mojo::JSON qw(decode_json j);
 use Mojo::Util qw(b64_decode b64_encode hmac_sha1_sum);
 
 sub new {
@@ -95,6 +95,14 @@ sub new {
 sub trim_whitespace {
     my ($str) = @_;
     return $str =~ s/\s+/ /gr =~ s/(^\s)|(\s$)//gr;
+}
+
+sub find_most_recent_event {
+    my ($schema, $event) = @_;
+
+    my $results
+      = $schema->resultset('AuditEvents')->search({event => $event}, {limit => 1, order_by => {-desc => 'id'}});
+    return $results ? decode_json($results->next->event_data) : undef;
 }
 
 1;

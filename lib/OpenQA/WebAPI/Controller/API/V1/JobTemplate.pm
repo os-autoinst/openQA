@@ -242,7 +242,7 @@ sub create {
     else {
         if (defined($affected_rows)) {
             $json->{affected_rows} = $affected_rows;
-            $self->emit_event('openqa_jobtemplate_create', {affected_rows => $id});
+            $self->emit_event('openqa_jobtemplate_create', {affected_rows => $affected_rows});
         }
         else {
             $json->{id} = $id;
