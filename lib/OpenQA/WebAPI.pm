@@ -29,10 +29,6 @@ use DateTime;
 use Cwd 'abs_path';
 use File::Path 'make_path';
 
-has schema => sub {
-    return OpenQA::Schema::connect_db();
-};
-
 has secrets => sub {
     my ($self) = @_;
     return $self->schema->read_application_secrets();
@@ -45,6 +41,7 @@ sub log_name {
 # This method will run once at server start
 sub startup {
     my $self = shift;
+
     OpenQA::Setup::read_config($self);
     OpenQA::Setup::setup_log($self);
     OpenQA::Setup::setup_app_defaults($self);
@@ -52,7 +49,7 @@ sub startup {
     OpenQA::Setup::add_build_tx_time_header($self);
 
     # take care of DB deployment or migration before starting the main app
-    my $schema = OpenQA::Schema::connect_db;
+    my $schema = $self->schema;
 
     # register basic routes
     my $r         = $self->routes;
@@ -467,6 +464,8 @@ sub run {
     # Start command line interface for application
     Mojolicious::Commands->start_app('OpenQA::WebAPI');
 }
+
+sub schema { OpenQA::Schema->singleton }
 
 1;
 # vim: set sw=4 et:

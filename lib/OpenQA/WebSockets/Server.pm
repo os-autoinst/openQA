@@ -116,7 +116,7 @@ sub check_authorized {
     my $user;
     log_debug($key ? "API key from client: *$key*" : "No API key from client.");
 
-    my $schema  = OpenQA::Schema::connect_db;
+    my $schema  = OpenQA::Schema->singleton;
     my $api_key = $schema->resultset("ApiKeys")->find({key => $key});
     if ($api_key) {
         if (time - $timestamp <= 300) {
@@ -340,7 +340,7 @@ sub _message {
 sub _get_stale_worker_jobs {
     my ($threshold) = @_;
 
-    my $schema = OpenQA::Schema::connect_db;
+    my $schema = OpenQA::Schema->singleton;
 
     # grab the workers we've seen lately
     my @ok_workers;
@@ -384,7 +384,7 @@ sub _is_job_considered_dead {
 # Check if worker with job has been updated recently; if not, assume it
 # got stuck somehow and duplicate or incomplete the job
 sub _workers_checker {
-    my $schema = OpenQA::Schema::connect_db;
+    my $schema = OpenQA::Schema->singleton;
     try {
         $schema->txn_do(
             sub {
@@ -457,7 +457,7 @@ sub setup {
 
 
     app->helper(log_name => sub { return 'websockets' });
-    app->helper(schema   => sub { return OpenQA::Schema::connect_db; });
+    app->helper(schema   => sub { return OpenQA::Schema->singleton });
     app->defaults(appname => "openQA Websocket Server");
     app->mode('production');
 

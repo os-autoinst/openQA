@@ -81,11 +81,7 @@ sub reactor {
     return $reactor;
 }
 
-sub schema {
-    state $schema;
-    $schema = OpenQA::Schema::connect_db() unless $schema;
-    return $schema;
-}
+sub schema { OpenQA::Schema->singleton }
 
 sub scheduled_jobs {
     state $scheduled_jobs;
