@@ -136,6 +136,70 @@ sub enqueue_limit_assets {
     return $self->enqueue(limit_assets => [] => {priority => 10, ttl => 172800, limit => 1});
 }
 
+sub enqueue_and_keep_track {
+    my ($self, %args) = @_;
+
+    my $task_name        = $args{task_name};
+    my $task_description = $args{task_description};
+    my $task_args        = $args{task_args};
+    my $task_options     = $args{task_options};
+    my $success_callback = $args{on_success};
+    my $error_callback   = $args{on_error};
+
+    # set default gru task options
+    $task_options = {
+        priority => 10,
+        ttl      => 60,
+    } unless ($task_options);
+
+    # check whether Minion worker are available to get a nice error message instead of an inactive job
+    if (!$self->has_workers) {
+        return $error_callback->(
+            {error => 'No Minion worker available. The <code>openqa-gru</code> service is likely not running.'});
+    }
+
+    # enqueue Minion job
+    my $ids    = $self->enqueue($task_name => $task_args, $task_options);
+    my $minion = $self->app->minion;
+    my $minion_id;
+    if (ref $ids eq 'HASH') {
+        $minion_id = $ids->{minion_id};
+    }
+
+    # keep track of the Minion job and continue rendering if it has completed
+    # TODO: use https://mojolicious.org/perldoc/Minion#result_p here
+    my $timer_id;
+    my $check_results = sub {
+        my ($loop) = @_;
+
+        eval {
+            # find the minion job
+            my $minion_job = $minion->job($minion_id);
+            if (!$minion_job) {
+                $loop->remove($timer_id);
+                return $error_callback->({error => "Minion job for $task_description has been removed."});
+            }
+            my $info  = $minion_job->info;
+            my $state = $info->{state};
+
+            # retry on next tick if the job is still running
+            return unless $state && ($state eq 'finished' || $state eq 'failed');
+            $loop->remove($timer_id);
+
+            return $success_callback->($info->{result});
+        };
+
+        # ensure the timer is removed and something rendered in any case
+        if ($@) {
+            $loop->remove($timer_id);
+            return $error_callback->(
+                {error => "An internal error occured while keeping track of the task for $task_description."}, 500
+            );
+        }
+    };
+    $timer_id = Mojo::IOLoop->recurring(0.5 => $check_results);
+}
+
 1;
 
 =encoding utf8
