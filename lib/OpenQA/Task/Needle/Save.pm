@@ -62,7 +62,7 @@ sub _save_needle {
     my ($app, $minion_job, $args) = @_;
 
     # prevent multiple save_needle and delete_needles tasks to run in parallel
-    return $minion_job->fail({error => 'Another save or delete needle job is ongoing. Try again later.'})
+    return $minion_job->finish({error => 'Another save or delete needle job is ongoing. Try again later.'})
       unless my $guard = $app->minion->guard('limit_needle_task', 300);
 
     my $schema       = $app->schema;
@@ -82,7 +82,7 @@ sub _save_needle {
     if ($@) {
         my $error = $@;
         $app->log->error("Error validating needle: $error");
-        return $minion_job->fail({error => "<strong>Failed to validate $needlename.</strong><br>$error"});
+        return $minion_job->finish({error => "<strong>Failed to validate $needlename.</strong><br>$error"});
     }
 
     # determine imagepath
@@ -122,7 +122,7 @@ sub _save_needle {
     if (-e "$baseneedle.png" && !$args->{overwrite}) {
         #my $returned_data = $self->req->params->to_hash;
         #$returned_data->{requires_overwrite} = 1;
-        return $minion_job->fail({requires_overwrite => 1});
+        return $minion_job->finish({requires_overwrite => 1});
     }
 
     # copy image

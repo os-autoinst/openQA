@@ -28,7 +28,7 @@ sub _delete_needles {
     my ($app, $minion_job, $args) = @_;
 
     # prevent multiple save_needle and delete_needles tasks to run in parallel
-    return $minion_job->fail({error => 'Another save or delete needle job is ongoing. Try again later.'})
+    return $minion_job->finish({error => 'Another save or delete needle job is ongoing. Try again later.'})
       unless my $guard = $app->minion->guard('limit_needle_task', 300);
 
     my $schema     = $app->schema;
