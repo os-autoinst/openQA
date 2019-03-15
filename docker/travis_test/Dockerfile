@@ -74,6 +74,7 @@ RUN zypper in -y -C \
        'perl(Exception::Class)' \
        'perl(File::Copy::Recursive)' \
        'perl(File::Touch)' \
+       'perl(IO::Scalar)' \
        'perl(IO::Socket::SSL)' \
        'perl(IPC::Run)' \
        'perl(IPC::System::Simple)' \
