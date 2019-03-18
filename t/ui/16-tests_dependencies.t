@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,12 +30,11 @@ use OpenQA::Client;
 use OpenQA::SeleniumTest;
 use OpenQA::Schema::Result::JobDependencies;
 
-OpenQA::Test::Case->new->init_data;
-
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $test_case   = OpenQA::Test::Case->new;
+my $schema_name = OpenQA::Test::Database->generate_schema_name;
+my $schema      = $test_case->init_data(schema_name => $schema_name);
 
 sub schema_hook {
-    my $schema       = OpenQA::Test::Database->new->create;
     my $jobs         = $schema->resultset('Jobs');
     my $dependencies = $schema->resultset('JobDependencies');
 
@@ -77,13 +76,13 @@ sub get_tooltip {
 
 subtest 'dependency json' => sub {
     my $baseurl = $driver->get_current_url;
-    my $t_api   = Test::Mojo->new;
-    my $app     = $t_api->app;
-    $t_api->ua(OpenQA::Client->new->ioloop(Mojo::IOLoop->singleton));
-    $t_api->app($app);
+    my $t       = Test::Mojo->new;
+    my $app     = $t->app;
+    $t->ua(OpenQA::Client->new->ioloop(Mojo::IOLoop->singleton));
+    $t->app($app);
 
     $t->get_ok($baseurl . 'tests/99981/dependencies')->status_is(200)->json_is(
-        undef => {
+        '' => {
             cluster => {},
             edges   => [],
             nodes   => [
@@ -103,7 +102,7 @@ subtest 'dependency json' => sub {
     diag explain $t->tx->res->json unless $t->success;
 
     $t->get_ok($baseurl . 'tests/99938/dependencies')->status_is(200)->json_is(
-        undef => {
+        '' => {
             cluster => {
                 cluster_99963 => [99963, 99961]
             },
@@ -163,6 +162,7 @@ subtest 'dependency json' => sub {
         },
         'nodes, edges and cluster computed'
     );
+
     diag explain $t->tx->res->json unless $t->success;
 };
 
