@@ -402,8 +402,9 @@ sub save_needle_ajax {
             imageversion => $validation->param('imageversion'),
             needledir    => $needledir,
             needlename   => $needlename,
-        },
-        on_success => sub {
+        }
+    )->then(
+        sub {
             my ($result) = @_;
 
             # handle request for overwrite
@@ -427,12 +428,12 @@ sub save_needle_ajax {
             # add the URL to restart if that should be proposed to the user
             $result->{restart} = $self->url_for('apiv1_restart', jobid => $job_id) if ($result->{propose_restart});
 
-            return $self->render(json => $result);
-        },
-        on_error => sub {
+            $self->render(json => $result);
+        }
+    )->catch(
+        sub {
             $self->reply->gru_result(@_);
-        },
-    );
+        });
 }
 
 sub map_error_to_avg {

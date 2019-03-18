@@ -23,6 +23,7 @@ use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema;
 use OpenQA::Utils;
 use Mojo::Pg;
+use Mojo::Promise;
 
 has app => undef, weak => 1;
 has 'dsn';
@@ -143,8 +144,6 @@ sub enqueue_and_keep_track {
     my $task_description = $args{task_description};
     my $task_args        = $args{task_args};
     my $task_options     = $args{task_options};
-    my $success_callback = $args{on_success};
-    my $error_callback   = $args{on_error};
 
     # set default gru task options
     $task_options = {
@@ -154,7 +153,7 @@ sub enqueue_and_keep_track {
 
     # check whether Minion worker are available to get a nice error message instead of an inactive job
     if (!$self->has_workers) {
-        return $error_callback->(
+        return Mojo::Promise->reject(
             {error => 'No Minion worker available. The <code>openqa-gru</code> service is likely not running.'});
     }
 
@@ -166,14 +165,14 @@ sub enqueue_and_keep_track {
     }
 
     # keep track of the Minion job and continue rendering if it has completed
-    $self->app->minion->result_p($minion_id, {interval => 0.5})->then(
+    return $self->app->minion->result_p($minion_id, {interval => 0.5})->then(
         sub {
             my ($info) = @_;
 
             unless (ref $info) {
-                return $error_callback->({error => "Minion job for $task_description has been removed."});
+                return Mojo::Promise->reject({error => "Minion job for $task_description has been removed."});
             }
-            return $success_callback->($info->{result});
+            return $info->{result};
         }
     )->catch(
         sub {
@@ -182,7 +181,7 @@ sub enqueue_and_keep_track {
             # pass result hash with error message (used by save/delete needle tasks)
             my $result = $info->{result};
             if (ref $result eq 'HASH' && $result->{error}) {
-                return $error_callback->($result, 500);
+                return Mojo::Promise->reject($result, 500);
             }
 
             # format error message (fallback for general case)
@@ -193,7 +192,7 @@ sub enqueue_and_keep_track {
             else {
                 $error_message = "Task for $task_description failed: Checkout Minion dashboard for further details.";
             }
-            return $error_callback->({error => $error_message, result => $result}, 500);
+            return Mojo::Promise->reject({error => $error_message, result => $result}, 500);
         });
 }
 

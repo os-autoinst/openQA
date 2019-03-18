@@ -131,18 +131,19 @@ sub delete {
         task_args        => {
             needle_ids => $self->every_param('id'),
             user_id    => $self->current_user->id,
-        },
-        on_success => sub {
+        }
+    )->then(
+        sub {
             my ($result) = @_;
 
             my $removed_ids = ($result->{removed_ids} //= []);
             $self->emit_event(openqa_needle_delete => {id => $removed_ids}) if (@$removed_ids);
-            return $self->render(json => $result);
-        },
-        on_error => sub {
+            $self->render(json => $result);
+        }
+    )->catch(
+        sub {
             $self->reply->gru_result(@_);
-        },
-    );
+        });
 }
 
 1;
