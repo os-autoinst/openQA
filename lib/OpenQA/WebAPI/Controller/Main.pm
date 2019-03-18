@@ -93,7 +93,7 @@ sub group_overview {
     my $only_tagged = $self->param('only_tagged') // 0;
     my $group_id    = $self->param('groupid');
     return $self->reply->not_found unless looks_like_number($group_id);
-    my $group = $self->db->resultset($resultset)->find($group_id);
+    my $group = $self->schema->resultset($resultset)->find($group_id);
     return $self->reply->not_found unless $group;
     $self->stash('fullscreen', $self->param('fullscreen') // 0);
     my $interval = $self->param('interval') // 60;

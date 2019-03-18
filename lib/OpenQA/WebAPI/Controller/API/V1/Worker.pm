@@ -57,7 +57,7 @@ websocket status.
 sub list {
     my ($self) = @_;
     my $live    = !looks_like_number($self->param('live')) ? 0 : !!$self->param('live');
-    my $workers = $self->db->resultset("Workers");
+    my $workers = $self->schema->resultset("Workers");
     my $ret     = [];
 
     while (my $w = $workers->next) {
@@ -164,7 +164,7 @@ sub create {
 
     my $id;
     try {
-        $id = $self->_register($self->db, $host, $instance, $caps);
+        $id = $self->_register($self->schema, $host, $instance, $caps);
     }
     catch {
         if (/Incompatible/) {
@@ -197,7 +197,7 @@ A worker can be considered "up" when "connected=1" and "status!=dead"'
 
 sub show {
     my ($self) = @_;
-    my $worker = $self->db->resultset("Workers")->find($self->param('workerid'));
+    my $worker = $self->schema->resultset("Workers")->find($self->param('workerid'));
     if ($worker) {
         $self->render(json => {worker => $worker->info(1)});
     }

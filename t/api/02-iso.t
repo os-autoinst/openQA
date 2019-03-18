@@ -77,7 +77,7 @@ sub job_result {
 
 sub job_gru {
     my $job_id = shift;
-    return $t->app->db->resultset("GruDependencies")->search({job_id => $job_id})->single->gru_task->id;
+    return $t->app->schema->resultset("GruDependencies")->search({job_id => $job_id})->single->gru_task->id;
 }
 
 sub find_job {
@@ -342,7 +342,7 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     $ret = $t->get_ok('/api/v1/jobs/99963')->status_is(200);
     is($ret->tx->res->json->{job}->{state}, 'running', 'job in build 0091 running');
     my $tag = 'tag:0091:important';
-    $t->app->db->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
+    $t->app->schema->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
     $res = schedule_iso(
         {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091'});
     is($res->json->{count}, 10, '10 jobs created');
@@ -362,7 +362,7 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     is(scalar @jobs, 21, 'only the important jobs, jobs from the current build and the important build are scheduled');
     # now test with a VERSION-BUILD format tag
     $tag = 'tag:13.1-0093:important';
-    $t->app->db->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
+    $t->app->schema->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
     $res = schedule_iso(
         {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0094'});
     $ret  = $t->get_ok('/api/v1/jobs?state=scheduled');
@@ -431,7 +431,7 @@ my $rsp;
 # the test description so you know which one failed, if it fails.
 sub check_download_asset {
     my ($desc, $expectargs) = @_;
-    my $rs = $t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'});
+    my $rs = $t->app->schema->resultset("GruTasks")->search({taskname => 'download_asset'});
     if ($expectargs) {
         is($rs->count, 1, "gru task should be created: $desc");
         my $args = $rs->first->args;
@@ -620,7 +620,7 @@ foreach my $j (@{$rsp->json->{ids}}) {
     is job_result($j), 'none', 'Job has no result';
 }
 
-$t->app->db->resultset("GruTasks")->search({id => $gru})->single->fail;
+$t->app->schema->resultset("GruTasks")->search({id => $gru})->single->fail;
 
 foreach my $j (@{$rsp->json->{ids}}) {
     is job_state($j), 'done';
@@ -634,13 +634,13 @@ sub add_opensuse_test {
     for my $key (keys %settings) {
         push(@mapped_settings, {key => $key, value => $settings{$key}});
     }
-    $t->app->db->resultset('TestSuites')->create(
+    $t->app->schema->resultset('TestSuites')->create(
         {
             name     => $name,
             settings => \@mapped_settings
         });
     for my $machine (@{$settings{MACHINE}}) {
-        $t->app->db->resultset('JobTemplates')->create(
+        $t->app->schema->resultset('JobTemplates')->create(
             {
                 machine    => {name => $machine},
                 test_suite => {name => $name},

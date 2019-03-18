@@ -136,7 +136,7 @@ sub text {
 sub _insert_bugs_for_comment {
     my ($self, $comment) = @_;
 
-    my $bugs = $self->app->db->resultset('Bugs');
+    my $bugs = $self->app->schema->resultset('Bugs');
     if (my $bugrefs = $comment->bugrefs) {
         for my $bug (@$bugrefs) {
             $bugs->get_bug($bug);

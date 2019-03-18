@@ -91,7 +91,7 @@ sub on_job_event {
     my ($self, $args) = @_;
 
     my ($user_id, $connection_id, $event, $event_data) = @$args;
-    my $jobs = $self->{app}->db->resultset('Jobs');
+    my $jobs = $self->{app}->schema->resultset('Jobs');
     my $job  = $jobs->find({id => $event_data->{id}});
 
     # find count of pending jobs for the same build to know whether all tests for a build are done
@@ -124,7 +124,7 @@ sub on_comment_event {
     my ($comment_id, $connection_id, $event, $event_data) = @$args;
 
     # find comment in database
-    my $comment = $self->{app}->db->resultset('Comments')->find($event_data->{id});
+    my $comment = $self->{app}->schema->resultset('Comments')->find($event_data->{id});
     return unless $comment;
 
     # just send the hash already used for JSON representation

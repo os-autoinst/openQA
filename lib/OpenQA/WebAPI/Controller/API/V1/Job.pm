@@ -80,7 +80,8 @@ sub list {
         }
     }
 
-    my $rs = $self->db->resultset('Jobs')->complex_query(%args);
+    my $schema = $self->schema;
+    my $rs     = $schema->resultset('Jobs')->complex_query(%args);
     my @jobarray;
     if (defined $self->param('latest')) {
         @jobarray = $rs->latest_jobs;
@@ -98,7 +99,7 @@ sub list {
     for my $job (values %jobs) {
         $job->{_assets} = [];
     }
-    my $jas = $self->db->resultset('JobsAssets')->search({job_id => {in => [keys %jobs]}}, {prefetch => ['asset']});
+    my $jas = $schema->resultset('JobsAssets')->search({job_id => {in => [keys %jobs]}}, {prefetch => ['asset']});
     while (my $ja = $jas->next) {
         my $job = $jobs{$ja->job_id};
         push(@{$job->{_assets}}, $ja->asset);
@@ -112,7 +113,7 @@ sub list {
         $job->group($groups{$job->group_id});
     }
 
-    my $modules = $self->db->resultset('JobModules')->search({job_id => {in => [keys %jobs]}}, {order_by => 'id'});
+    my $modules = $schema->resultset('JobModules')->search({job_id => {in => [keys %jobs]}}, {order_by => 'id'});
     while (my $m = $modules->next) {
         my $job = $jobs{$m->job_id};
         $job->{_modules} ||= [];
@@ -160,7 +161,7 @@ sub overview {
     my $states         = OpenQA::Utils::param_hash($self, 'state');
     my $results        = OpenQA::Utils::param_hash($self, 'result');
 
-    my @jobs = $self->db->resultset('Jobs')->complex_query(%$search_args)->latest_jobs;
+    my @jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs;
 
     my @job_hashes;
     for my $job (@jobs) {
@@ -206,7 +207,7 @@ sub create {
     my $json = {};
     my $status;
     try {
-        my $job = $self->db->resultset('Jobs')->create_from_settings(\%params);
+        my $job = $self->schema->resultset('Jobs')->create_from_settings(\%params);
         $self->emit_event('openqa_job_create', {id => $job->id, %params});
         $json->{id} = $job->id;
 
@@ -241,7 +242,7 @@ sub show {
     my $self    = shift;
     my $job_id  = int($self->stash('jobid'));
     my $details = $self->stash('details') || 0;
-    my $job     = $self->db->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
+    my $job     = $self->schema->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
     if ($job) {
         $self->render(json => {job => $job->to_hash(assets => 1, deps => 1, details => $details)});
     }
@@ -409,8 +410,9 @@ sub update {
     }
 
     # validate specified group
+    my $schema   = $self->schema;
     my $group_id = $json->{group_id};
-    if (defined($group_id) && !$self->db->resultset('JobGroups')->find(int($group_id))) {
+    if (defined($group_id) && !$schema->resultset('JobGroups')->find(int($group_id))) {
         return $self->render(json => {error => 'Group does not exist'}, status => 404);
     }
 
@@ -431,7 +433,7 @@ sub update {
             $job->set_property($key, $settings->{$key});
         }
         # ensure old entries are removed
-        $self->db->resultset('JobSettings')->search({job_id => $job->id, key => {-not_in => \@settings_keys}})->delete;
+        $schema->resultset('JobSettings')->search({job_id => $job->id, key => {-not_in => \@settings_keys}})->delete;
     }
 
     $self->render(json => {job_id => $job->id});
@@ -643,7 +645,7 @@ sub cancel {
     }
     else {
         my $params = $self->req->params->to_hash;
-        $res = $self->db->resultset('Jobs')->cancel_by_settings($params, 0);
+        $res = $self->schema->resultset('Jobs')->cancel_by_settings($params, 0);
         $self->emit_event('openqa_job_cancel_by_settings', $params) if ($res);
     }
 

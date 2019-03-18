@@ -37,7 +37,7 @@ sub auth_login {
     if ($username) {
         # iChain login
         OpenQA::Schema::Result::Users->create_user(
-            $username, $self->db,
+            $username, $self->schema,
             email    => $email,
             nickname => $username,
             fullname => $fullname

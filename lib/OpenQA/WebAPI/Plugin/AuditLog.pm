@@ -51,9 +51,10 @@ sub register {
         OpenQA::Events->singleton->on("openqa_$e" => sub { shift; $self->on_event($app, @_) });
     }
 
-    my $user = $app->db->resultset('Users')->find({username => 'system'});
+    my $schema = $app->schema;
+    my $user   = $schema->resultset('Users')->find({username => 'system'});
 
-    $app->db->resultset('AuditEvents')
+    $schema->resultset('AuditEvents')
       ->create({user_id => $user->id, connection_id => 0, event => 'startup', event_data => 'openQA restarted'});
 }
 
@@ -63,7 +64,7 @@ sub on_event {
     my ($user_id, $connection_id, $event, $event_data) = @$args;
     # no need to log openqa_ prefix in openqa log
     $event =~ s/^openqa_//;
-    $app->db->resultset('AuditEvents')->create(
+    $app->schema->resultset('AuditEvents')->create(
         {
             user_id       => $user_id,
             connection_id => $connection_id,

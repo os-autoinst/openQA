@@ -54,10 +54,11 @@ and test suite (id and name).
 sub list {
     my $self = shift;
 
+    my $schema = $self->schema;
     my @templates;
     eval {
         if (my $id = $self->param('job_template_id')) {
-            @templates = $self->db->resultset("JobTemplates")->search({id => $id});
+            @templates = $schema->resultset("JobTemplates")->search({id => $id});
         }
 
         else {
@@ -80,11 +81,11 @@ sub list {
             if ($has_query) {
                 my $attrs
                   = {join => ['machine', 'test_suite', 'product'], prefetch => [qw(machine test_suite product)]};
-                @templates = $self->db->resultset("JobTemplates")->search(\%cond, $attrs);
+                @templates = $schema->resultset("JobTemplates")->search(\%cond, $attrs);
             }
             else {
                 @templates
-                  = $self->db->resultset("JobTemplates")->search({}, {prefetch => [qw(machine test_suite product)]});
+                  = $schema->resultset("JobTemplates")->search({}, {prefetch => [qw(machine test_suite product)]});
             }
         }
     };
@@ -154,6 +155,7 @@ sub create {
     my $prio = $self->param('prio');
     $prio = ((!$prio || $prio eq 'inherit') ? undef : $prio);
 
+    my $schema = $self->schema;
 
     if ($has_product_id) {
         for my $param (qw(machine_id group_id test_suite_id)) {
@@ -173,7 +175,7 @@ sub create {
                 machine_id    => $self->param('machine_id'),
                 group_id      => $self->param('group_id'),
                 test_suite_id => $self->param('test_suite_id')};
-            eval { $id = $self->db->resultset("JobTemplates")->create($values)->id };
+            eval { $id = $schema->resultset("JobTemplates")->create($values)->id };
             $error = $@;
         }
     }
@@ -190,7 +192,7 @@ sub create {
         }
         else {
             eval {
-                $affected_rows = $self->db->resultset("JobTemplates")->search(
+                $affected_rows = $schema->resultset("JobTemplates")->search(
                     {
                         group_id      => $self->param('group_id'),
                         test_suite_id => $self->param('test_suite_id'),
@@ -226,7 +228,7 @@ sub create {
                 machine    => {name => $self->param('machine_name')},
                 prio       => $prio,
                 test_suite => {name => $self->param('test_suite_name')}};
-            eval { $id = $self->db->resultset("JobTemplates")->create($values)->id };
+            eval { $id = $schema->resultset("JobTemplates")->create($values)->id };
             $error = $@;
         }
     }
@@ -277,7 +279,7 @@ a 400 code on other errors or a 303 code on success.
 
 sub destroy {
     my $self          = shift;
-    my $job_templates = $self->db->resultset('JobTemplates');
+    my $job_templates = $self->schema->resultset('JobTemplates');
 
     my $status;
     my $json = {};

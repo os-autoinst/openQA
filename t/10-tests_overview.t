@@ -150,7 +150,7 @@ $get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 like(get_summary, qr/Passed: 0 Failed: 1/i, 'todo=1 shows only unlabeled left failed');
 
 # add a failing module to one of the softfails to test 'TODO' option
-my $failing_module = $t->app->db->resultset('JobModules')->create(
+my $failing_module = $t->app->schema->resultset('JobModules')->create(
     {
         script   => 'tests/x11/failing_module.pm',
         job_id   => 99936,
@@ -169,7 +169,7 @@ like(
 $t->element_exists_not('#res-99939', 'softfailed filtered out');
 $t->element_exists('#res-99936', 'unreviewed failed because of new failing module present');
 
-my $review_comment = $t->app->db->resultset('Comments')->create(
+my $review_comment = $t->app->schema->resultset('Comments')->create(
     {
         job_id  => 99936,
         text    => 'bsc#1234',

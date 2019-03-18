@@ -39,7 +39,7 @@ use constant STATUS_ERROR       => 5;
 
 our @EXPORT_OK = qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE STATUS_ERROR);
 
-has [qw(host cache location db_file dsn dbh cache_real_size)];
+has [qw(host cache location db_file dsn cache_real_size)];
 has limit      => 50 * (1024**3);
 has sleep_time => 5;
 has sqlite     => sub { Mojo::SQLite->new(shift->dsn) };

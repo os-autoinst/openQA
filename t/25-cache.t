@@ -90,12 +90,12 @@ sub read_log {
 
 sub db_handle_connection {
     my ($cache, $disconnect) = @_;
-    if ($cache->dbh) {
-        $cache->dbh->db->disconnect;
+    if ($cache->sqlite) {
+        $cache->sqlite->db->disconnect;
         return if $disconnect;
     }
 
-    $cache->dbh(Mojo::SQLite->new("sqlite:$db_file"));
+    $cache->sqlite(Mojo::SQLite->new("sqlite:$db_file"));
 }
 
 sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
@@ -159,7 +159,7 @@ for (1 .. 3) {
         log_info "Inserting $_";
         $sql = "INSERT INTO assets (filename,size, etag,last_use)
                 VALUES ( ?, ?, 'Not valid', strftime('\%s','now'));";
-        $cache->dbh->db->query($sql, $filename, 84);
+        $cache->sqlite->db->query($sql, $filename, 84);
     }
 }
 
@@ -274,7 +274,7 @@ truncate_log $logfile;
 
 $cache->track_asset("Foobar", 0);
 
-$cache->dbh->db->query("delete from assets");
+$cache->sqlite->db->query("delete from assets");
 
 my $fake_asset = "$cachedir/test.qcow";
 

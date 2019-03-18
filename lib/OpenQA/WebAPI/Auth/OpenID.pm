@@ -149,7 +149,7 @@ sub auth_response {
             }
 
             my $user = OpenQA::Schema::Result::Users->create_user(
-                $vident->{identity}, $self->db,
+                $vident->{identity}, $self->schema,
                 email    => $email,
                 nickname => $nickname,
                 fullname => $fullname

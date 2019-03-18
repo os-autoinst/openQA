@@ -38,7 +38,7 @@ use OpenQA::Parser::Result::Output;
 
 my $schema = OpenQA::Test::Case->new->init_data;
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
-my $rs     = $t->app->db->resultset("Jobs");
+my $rs     = $t->app->schema->resultset("Jobs");
 
 is($rs->latest_build, '0091');
 is($rs->latest_build(version => 'Factory', distri => 'opensuse'), '0048@0815');
@@ -647,7 +647,7 @@ subtest 'Old logs are deleted when nocleanup is set' => sub {
 $t->get_ok('/t99946')->status_is(302)->header_like(Location => qr{tests/99946});
 
 subtest 'delete job assigned as last use for asset' => sub {
-    my $assets     = $t->app->db->resultset('Assets');
+    my $assets     = $t->app->schema->resultset('Assets');
     my $some_job   = $rs->first;
     my $some_asset = $assets->first;
     my $asset_id   = $some_asset->id;

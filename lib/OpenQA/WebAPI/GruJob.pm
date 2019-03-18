@@ -68,13 +68,13 @@ sub execute {
 
 sub _delete_gru {
     my ($self, $id) = @_;
-    my $gru = $self->minion->app->db->resultset('GruTasks')->find($id);
+    my $gru = $self->minion->app->schema->resultset('GruTasks')->find($id);
     $gru->delete() if $gru;
 }
 
 sub _fail_gru {
     my ($self, $id, $reason) = @_;
-    my $gru = $self->minion->app->db->resultset('GruTasks')->find($id);
+    my $gru = $self->minion->app->schema->resultset('GruTasks')->find($id);
     $gru->fail($reason) if $gru;
 }
 

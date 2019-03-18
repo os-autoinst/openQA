@@ -45,7 +45,7 @@ sub set_up {
     $t = Test::Mojo->new('OpenQA::WebAPI');
     my $sh = OpenQA::Scheduler->new;
     my $ws = OpenQA::WebSockets->new;
-    $rs   = $t->app->db->resultset("Jobs");
+    $rs   = $t->app->schema->resultset("Jobs");
     $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
     $test_case->login($t, 'percival');
 }
@@ -78,7 +78,7 @@ subtest '"happy path": failed->failed carries over last issue reference' => sub 
     is($comments_previous[0],     $label,          'comment present on previous test result');
     is($comments_previous[2],     $simple_comment, 'another comment present');
 
-    my $group = $t->app->db->resultset('JobGroups')->find(1001);
+    my $group = $t->app->schema->resultset('JobGroups')->find(1001);
 
     subtest 'carry over prevented via job group settings' => sub {
         $group->update({carry_over_bugrefs => 0});

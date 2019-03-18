@@ -114,7 +114,7 @@ sub list {
 
     my @result;
     eval {
-        my $rs = $self->db->resultset($table);
+        my $rs = $self->schema->resultset($table);
         @result = %search ? $rs->search(\%search) : $rs->all;
     };
     my $error = $@;
@@ -184,7 +184,7 @@ sub create {
         }
     }
     else {
-        try { $id = $self->db->resultset($table)->create(\%entry)->id; } catch { $error = shift; };
+        try { $id = $self->schema->resultset($table)->create(\%entry)->id; } catch { $error = shift; };
     }
     if ($error) {
         return $self->render(json => {error => $error}, status => 400);
@@ -230,6 +230,8 @@ sub update {
         }
     }
 
+    my $schema = $self->schema;
+
     my $error;
     my $ret;
     if ($validation->has_error) {
@@ -240,7 +242,7 @@ sub update {
     }
     else {
         my $update = sub {
-            my $rc = $self->db->resultset($table)->find({id => $self->param('id')});
+            my $rc = $schema->resultset($table)->find({id => $self->param('id')});
             if ($rc) {
                 $rc->update(\%entry);
                 for my $var (@settings) {
@@ -255,7 +257,7 @@ sub update {
         };
 
         try {
-            $self->db->txn_do($update);
+            $schema->txn_do($update);
         }
         catch {
             $error = shift;
@@ -286,16 +288,18 @@ with the number of deleted tables on success.
 =cut
 
 sub destroy {
-    my ($self)   = @_;
+    my ($self) = @_;
+
     my $table    = $self->param("table");
-    my $machines = $self->db->resultset('Machines');
+    my $schema   = $self->schema;
+    my $machines = $schema->resultset('Machines');
     my $ret;
     my $error;
     my $res;
     my $entry_name;
 
     try {
-        my $rs = $self->db->resultset($table);
+        my $rs = $schema->resultset($table);
         $res = $rs->search({id => $self->param('id')});
         if ($res && $res->single) {
             $entry_name = $res->single->name;

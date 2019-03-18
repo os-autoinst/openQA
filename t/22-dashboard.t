@@ -35,9 +35,9 @@ $test_case->init_data;
 my $t    = Test::Mojo->new('OpenQA::WebAPI');
 my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
 $test_case->login($t, 'percival');
-my $job_groups    = $t->app->db->resultset('JobGroups');
-my $parent_groups = $t->app->db->resultset('JobGroupParents');
-my $jobs          = $t->app->db->resultset('Jobs');
+my $job_groups    = $t->app->schema->resultset('JobGroups');
+my $parent_groups = $t->app->schema->resultset('JobGroupParents');
+my $jobs          = $t->app->schema->resultset('Jobs');
 
 # regular job groups shown
 my $get = $t->get_ok('/')->status_is(200);
@@ -218,7 +218,7 @@ my $job_hash = {
     group_id => $opensuse_test_group->id
 };
 my $not_reviewed_job = $jobs->create($job_hash);
-$t->app->db->resultset('JobModules')->create(
+$t->app->schema->resultset('JobModules')->create(
     {
         script   => 'tests/x11/failing_module.pm',
         job_id   => $not_reviewed_job->id,
@@ -263,7 +263,7 @@ sub check_badge {
 }
 
 # make one of the softfailed jobs a failed because of failed not-important modules
-$t->app->db->resultset('JobModules')->create(
+$t->app->schema->resultset('JobModules')->create(
     {
         script   => 'tests/x11/failing_module.pm',
         job_id   => 99936,

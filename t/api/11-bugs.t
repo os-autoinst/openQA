@@ -40,7 +40,7 @@ $t->ua(
     OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-my $bugs = $app->db->resultset('Bugs');
+my $bugs = $app->schema->resultset('Bugs');
 
 my $bug  = $bugs->get_bug('poo#200');
 my $get  = $t->get_ok('/api/v1/bugs');

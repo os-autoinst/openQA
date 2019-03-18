@@ -226,11 +226,12 @@ sub on_job_event {
     my ($user_id, $connection_id, $event, $event_data) = @$args;
     # find count of pending jobs for the same build
     # this is so we can tell when all tests for a build are done
-    my $job = $app->db->resultset('Jobs')->find({id => $event_data->{id}});
+    my $schema = $app->schema;
+    my $job    = $schema->resultset('Jobs')->find({id => $event_data->{id}});
     # Get app baseurl, as the ci_standard logger needs it
     my $baseurl = $app->config->{global}->{base_url} || "http://UNKNOWN";
     my $build   = $job->BUILD;
-    $event_data->{remaining} = $app->db->resultset('Jobs')->search(
+    $event_data->{remaining} = $schema->resultset('Jobs')->search(
         {
             'me.BUILD' => $build,
             state      => [OpenQA::Jobs::Constants::PENDING_STATES],
@@ -256,7 +257,7 @@ sub on_comment_event {
     # find comment in database. on comment deletion, the mojo event
     # is emitted *before* the comment is actually deleted, so this
     # should still work
-    my $comment = $app->db->resultset('Comments')->find($event_data->{id});
+    my $comment = $app->schema->resultset('Comments')->find($event_data->{id});
     return unless $comment;
 
     # just send the hash already used for JSON representation

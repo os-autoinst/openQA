@@ -33,7 +33,7 @@ sub _needles {
     return $job->finish('Previous scan_needles job is still active')
       unless my $guard = $app->minion->guard('limit_scan_needles_task', 7200);
 
-    my $dirs = $app->db->resultset('NeedleDirs');
+    my $dirs = $app->schema->resultset('NeedleDirs');
 
     while (my $dir = $dirs->next) {
         my $needles = $dir->needles;

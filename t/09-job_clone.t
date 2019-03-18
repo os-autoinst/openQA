@@ -34,7 +34,7 @@ use Test::Warnings;
 OpenQA::Test::Database->new->create();
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $rset     = $t->app->db->resultset("Jobs");
+my $rset     = $t->app->schema->resultset("Jobs");
 my $minimalx = $rset->find(99926);
 my $clones   = $minimalx->duplicate();
 my $clone    = $rset->find($clones->{$minimalx->id}->{clone});

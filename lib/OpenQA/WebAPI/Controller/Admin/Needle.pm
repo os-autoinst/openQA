@@ -110,8 +110,9 @@ sub ajax {
 sub module {
     my ($self) = @_;
 
-    my $module = $self->db->resultset('JobModules')->find($self->param('module_id'));
-    my $needle = $self->db->resultset('Needles')->find($self->param('needle_id'))->name;
+    my $schema = $self->schema;
+    my $module = $schema->resultset('JobModules')->find($self->param('module_id'));
+    my $needle = $schema->resultset('Needles')->find($self->param('needle_id'))->name;
 
     my $index = 1;
     for my $detail (@{$module->details}) {
@@ -127,7 +128,7 @@ sub delete {
     my @removed_ids;
     my @errors;
     for my $needle_id (@{$self->every_param('id')}) {
-        my $needle = $self->db->resultset('Needles')->find($needle_id);
+        my $needle = $self->schema->resultset('Needles')->find($needle_id);
         if (!$needle) {
             push(
                 @errors,

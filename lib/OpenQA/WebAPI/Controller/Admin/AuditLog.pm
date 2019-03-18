@@ -30,7 +30,8 @@ sub index {
     $self->stash(audit_enabled => $self->app->config->{global}{audit_enabled});
     if ($self->param('eventid')) {
         my $event
-          = $self->db->resultset('AuditEvents')->search({'me.id' => $self->param('eventid')}, {prefetch => 'owner'});
+          = $self->schema->resultset('AuditEvents')
+          ->search({'me.id' => $self->param('eventid')}, {prefetch => 'owner'});
         if ($event) {
             $event = $event->single;
             $self->stash('id',         $event->id);
@@ -50,7 +51,7 @@ sub productlog {
     my ($self) = @_;
     my $entries = $self->param('entries') // 100;
     $self->stash(audit_enabled => $self->app->config->{global}{audit_enabled});
-    my $events_rs = $self->db->resultset("AuditEvents")
+    my $events_rs = $self->schema->resultset("AuditEvents")
       ->search({event => 'iso_create'}, {order_by => {-desc => 'me.id'}, prefetch => 'owner', rows => $entries});
     my @events;
     while (my $event = $events_rs->next) {

@@ -70,11 +70,12 @@ sub _scan_images {
         }
     }
     closedir($dh);
+    my $schema = $app->schema;
     while (@files) {
         my @part = splice @files, 0, 100;
         try {
             unshift(@part, [qw(filename t_created)]);
-            $app->db->resultset('Screenshots')->populate(\@part);
+            $schema->resultset('Screenshots')->populate(\@part);
             @part = ();
         }
         catch { };
@@ -83,7 +84,7 @@ sub _scan_images {
         shift @part;    # columns
         for my $row (@part) {
             try {
-                $app->db->resultset('Screenshots')->create({filename => $row->[0], t_created => $row->[1]});
+                $schema->resultset('Screenshots')->create({filename => $row->[0], t_created => $row->[1]});
             }
             catch {
                 my $error = shift;

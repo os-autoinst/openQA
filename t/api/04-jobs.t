@@ -675,7 +675,7 @@ subtest 'default priority correctly assigned when posting job' => sub {
     $t->json_is('/job/priority', 50);
 
     # post new job in job group with customized default priority
-    $t->app->db->resultset('JobGroups')->find({name => 'opensuse test'})->update({default_priority => 42});
+    $t->app->schema->resultset('JobGroups')->find({name => 'opensuse test'})->update({default_priority => 42});
     $jobs_post_params{_GROUP} = 'opensuse test';
     $post = $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
     $t->get_ok('/api/v1/jobs/' . $post->tx->res->json->{id})->status_is(200);

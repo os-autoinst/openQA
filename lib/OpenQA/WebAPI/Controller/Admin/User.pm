@@ -19,7 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 sub index {
     my ($self) = @_;
-    my @users = $self->db->resultset("Users")->search(undef)->all;
+    my @users = $self->schema->resultset("Users")->search(undef)->all;
 
     $self->stash('users', \@users);
     $self->render('admin/user/index');
@@ -27,7 +27,7 @@ sub index {
 
 sub update {
     my ($self)      = @_;
-    my $set         = $self->db->resultset('Users');
+    my $set         = $self->schema->resultset('Users');
     my $is_admin    = 0;
     my $is_operator = 0;
     my $role = $self->param('role') // 'user';

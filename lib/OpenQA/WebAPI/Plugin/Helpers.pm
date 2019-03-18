@@ -18,6 +18,7 @@ package OpenQA::WebAPI::Plugin::Helpers;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use Mojo::ByteStream;
+use OpenQA::Schema;
 use OpenQA::Utils qw(bugurl render_escaped_refs href_to_bugref);
 use OpenQA::Events;
 use db_helpers;
@@ -143,7 +144,7 @@ sub register {
             return Mojo::ByteStream->new($crumbs);
         });
 
-    $app->helper(db => sub { shift->app->schema });
+    $app->helper(schema => sub { OpenQA::Schema->singleton });
 
     $app->helper(
         current_user => sub {
@@ -153,7 +154,7 @@ sub register {
             my $current_user = $c->stash('current_user');
             unless ($current_user && ($current_user->{no_user} || defined $current_user->{user})) {
                 my $id   = $c->session->{user};
-                my $user = $id ? $c->db->resultset("Users")->find({username => $id}) : undef;
+                my $user = $id ? $c->schema->resultset("Users")->find({username => $id}) : undef;
                 $c->stash(current_user => $current_user = $user ? {user => $user} : {no_user => 1});
             }
 
