@@ -159,45 +159,42 @@ sub enqueue_and_keep_track {
     }
 
     # enqueue Minion job
-    my $ids    = $self->enqueue($task_name => $task_args, $task_options);
-    my $minion = $self->app->minion;
+    my $ids = $self->enqueue($task_name => $task_args, $task_options);
     my $minion_id;
     if (ref $ids eq 'HASH') {
         $minion_id = $ids->{minion_id};
     }
 
     # keep track of the Minion job and continue rendering if it has completed
-    # TODO: use https://mojolicious.org/perldoc/Minion#result_p here
-    my $timer_id;
-    my $check_results = sub {
-        my ($loop) = @_;
+    $self->app->minion->result_p($minion_id, {interval => 0.5})->then(
+        sub {
+            my ($info) = @_;
 
-        eval {
-            # find the minion job
-            my $minion_job = $minion->job($minion_id);
-            if (!$minion_job) {
-                $loop->remove($timer_id);
+            unless (ref $info) {
                 return $error_callback->({error => "Minion job for $task_description has been removed."});
             }
-            my $info  = $minion_job->info;
-            my $state = $info->{state};
-
-            # retry on next tick if the job is still running
-            return unless $state && ($state eq 'finished' || $state eq 'failed');
-            $loop->remove($timer_id);
-
             return $success_callback->($info->{result});
-        };
-
-        # ensure the timer is removed and something rendered in any case
-        if ($@) {
-            $loop->remove($timer_id);
-            return $error_callback->(
-                {error => "An internal error occured while keeping track of the task for $task_description."}, 500
-            );
         }
-    };
-    $timer_id = Mojo::IOLoop->recurring(0.5 => $check_results);
+    )->catch(
+        sub {
+            my ($info) = @_;
+
+            # pass result hash with error message (used by save/delete needle tasks)
+            my $result = $info->{result};
+            if (ref $result eq 'HASH' && $result->{error}) {
+                return $error_callback->($result, 500);
+            }
+
+            # format error message (fallback for general case)
+            my $error_message;
+            if (ref $result eq '' && $result) {
+                $error_message = "Task for $task_description failed: $result";
+            }
+            else {
+                $error_message = "Task for $task_description failed: Checkout Minion dashboard for further details.";
+            }
+            return $error_callback->({error => $error_message, result => $result}, 500);
+        });
 }
 
 1;

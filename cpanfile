@@ -40,7 +40,7 @@ requires 'IPC::Run';
 requires 'Cpanel::JSON::XS';
 requires 'JavaScript::Minifier::XS', '>= 0.11';
 requires 'LWP::UserAgent';
-requires 'Minion', '9.0';
+requires 'Minion', '>= 9.09';
 requires 'Minion::Backend::Pg';
 requires 'Minion::Backend::SQLite';
 requires 'MRO::Compat';
