@@ -125,40 +125,25 @@ sub module {
 
 sub delete {
     my ($self) = @_;
-    my @removed_ids;
-    my @errors;
-    for my $needle_id (@{$self->every_param('id')}) {
-        my $needle = $self->schema->resultset('Needles')->find($needle_id);
-        if (!$needle) {
-            push(
-                @errors,
-                {
-                    id           => $needle_id,
-                    display_name => $needle_id,
-                    message      => "Unable to find $needle_id"
-                });
-            next;
-        }
 
-        my $error = $needle->remove($self->current_user);
-        if ($error) {
-            push(
-                @errors,
-                {
-                    id           => $needle_id,
-                    display_name => $needle->filename,
-                    message      => $error
-                });
+    $self->gru->enqueue_and_keep_track(
+        task_name        => 'delete_needles',
+        task_description => 'deleting needles',
+        task_args        => {
+            needle_ids => $self->every_param('id'),
+            user_id    => $self->current_user->id,
         }
-        else {
-            push(@removed_ids, $needle_id);
+    )->then(
+        sub {
+            my ($result) = @_;
+
+            my $removed_ids = ($result->{removed_ids} //= []);
+            $self->emit_event(openqa_needle_delete => {id => $removed_ids}) if (@$removed_ids);
+            $self->render(json => $result);
         }
-    }
-    $self->emit_event('openqa_needle_delete', {id => \@removed_ids});
-    $self->render(
-        json => {
-            removed_ids => \@removed_ids,
-            errors      => \@errors
+    )->catch(
+        sub {
+            $self->reply->gru_result(@_);
         });
 }
 
