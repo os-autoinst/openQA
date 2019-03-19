@@ -1960,6 +1960,28 @@ zypper ar -f obs://devel:openQA:Leap:<span class="tok-nv">$LEAP_VERSION</span>/o
 <div class="paragraph">
 <p>As required change LEAP_VERSION to the version of openSUSE Leap you have installed.</p>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+If you installed openQA from the official repository first, you may need to change the vendor of the dependencies.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE Tumbleweed and Leap</span>
+zypper dup --from devel-openQA --allow-vendor-change
+
+
+<span class="tok-c1"># openSUSE Leap</span>
+zypper dup --from devel-openQA-perl-modules --allow-vendor-change</code></pre>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_installation">Installation</h3>
@@ -6976,7 +6998,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-03-19 09:19:52 UTC
+Last updated 2019-03-19 10:06:28 UTC
 </div>
 </div>
 </body>
