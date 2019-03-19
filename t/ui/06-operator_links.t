@@ -26,7 +26,6 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Test::Database;
-use Data::Dumper;
 use OpenQA::SeleniumTest;
 
 my $test_case = OpenQA::Test::Case->new;

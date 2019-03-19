@@ -24,7 +24,6 @@ BEGIN {
 use strict;
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use Data::Dump qw(pp dd);
 use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';

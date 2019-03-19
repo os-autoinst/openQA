@@ -26,7 +26,6 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use Data::Dump qw(pp dd);
 use OpenQA::Resource::Jobs;
 use OpenQA::Resource::Locks;
 use OpenQA::WebSockets;

@@ -17,8 +17,7 @@ package OpenQA::Scheduler::Scheduler;
 use Mojo::Base -strict;
 
 use Digest::MD5;
-use Data::Dumper;
-use Data::Dump qw(dd pp);
+use Data::Dump 'pp';
 use Date::Format 'time2str';
 use DBIx::Class::Timestamps 'now';
 use DateTime;

@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2019 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,17 +38,21 @@ sub _is_method_allowed {
 }
 
 sub run {
+
     # config Mojo to get reactor
-    my $server = OpenQA::WebSockets::Server->setup;
+    my $server = OpenQA::WebSockets::Server->new->setup;
+
     # start DBus
     my $self = OpenQA::WebSockets->new;
     $self->{server} = $server;
+
     # start IOLoop
     $server->run;
 }
 
 sub new {
     my ($class) = @_;
+
     $class = ref $class || $class;
     my $ipc = OpenQA::IPC->ipc(1);
     return unless $ipc;
@@ -56,6 +60,7 @@ sub new {
     my $self    = $class->SUPER::new($service, '/WebSockets');
     $self->{ipc} = $ipc;
     bless $self, $class;
+
     # hook DBus to Mojo reactor
     $ipc->manage_events(Mojo::IOLoop->singleton->reactor, $self);
 

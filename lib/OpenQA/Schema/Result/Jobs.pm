@@ -38,7 +38,7 @@ use File::Path ();
 use DBIx::Class::Timestamps 'now';
 use File::Temp 'tempdir';
 use Mojo::File qw(tempfile path);
-use Data::Dump qw(dump pp);
+use Data::Dump 'dump';
 use OpenQA::File;
 use OpenQA::Parser 'parser';
 # The state and results constants are duplicated in the Python client:

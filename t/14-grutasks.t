@@ -36,7 +36,7 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use File::Which 'which';
 use File::Path ();
-use Data::Dumper;
+use Data::Dumper 'Dumper';
 use Date::Format 'time2str';
 use Fcntl ':mode';
 use Mojo::File 'tempdir';

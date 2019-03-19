@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,23 +14,20 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebSockets::Server;
-use Mojolicious::Lite;
+use Mojo::Base 'Mojolicious';
 
 use Mojo::Util 'hmac_sha1_sum';
+use Mojo::Server::Daemon;
 use Try::Tiny;
 use OpenQA::IPC;
 use OpenQA::Utils qw(log_debug log_warning log_info log_error);
 use OpenQA::Schema;
 use OpenQA::Setup;
-use Data::Dumper;
+use Data::Dumper 'Dumper';
 use Data::Dump 'pp';
 use db_profiler;
 use OpenQA::Schema::Result::Workers ();
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKERS_CHECKER_THRESHOLD);
-use Exporter 'import';
-
-our @EXPORT    = qw(ws_send ws_send_all ws_send_job);
-our @EXPORT_OK = qw(ws_create ws_is_worker_connected);
 
 # id->worker mapping
 my $workers;
@@ -38,9 +35,47 @@ my $workers;
 # Will be filled out from worker status messages
 my $worker_status;
 
-# internal helpers prototypes
-sub _message;
-sub _get_worker;
+# Mojolicious startup
+sub setup {
+    my $self = shift;
+
+    $self->helper(log_name => sub { return 'websockets' });
+    $self->helper(schema   => sub { return OpenQA::Schema->singleton });
+    $self->defaults(appname => 'openQA Websocket Server');
+    $self->mode('production');
+
+    OpenQA::Setup::read_config($self);
+    OpenQA::Setup::setup_log($self);
+
+    push @{$self->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
+
+    # Assetpack is required to render layouts pages
+    $self->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Fetch OpenQA::WebAPI::AssetPipe Combine)]});
+    $self->plugin('Helpers');
+    $self->asset->process;
+
+    my $ca = $self->routes->under(\&_check_authorized);
+    $ca->websocket('/ws/:workerid' => [workerid => qr/\d+/] => \&_ws_create);
+
+    # no cookies for worker, no secrets to protect
+    $self->secrets(['nosecretshere']);
+
+    # start worker checker - check workers each 2 minutes
+    Mojo::IOLoop->recurring(120 => \&_workers_checker);
+
+    Mojo::IOLoop->recurring(
+        380 => sub {
+            log_debug('Resetting worker status table');
+            $worker_status = {};
+        });
+
+    return Mojo::Server::Daemon->new(app => $self);
+}
+
+sub ws_is_worker_connected {
+    my ($workerid) = @_;
+    return ($workers->{$workerid} && $workers->{$workerid}->{socket} ? 1 : 0);
+}
 
 sub ws_send {
     my ($workerid, $msg, $jobid, $retry) = @_;
@@ -66,7 +101,7 @@ sub ws_send_job {
     my ($job) = @_;
     my $result = {state => {msg_sent => 0}};
 
-    unless (ref($job) eq "HASH" && exists $job->{assigned_worker_id}) {
+    unless (ref($job) eq 'HASH' && exists $job->{assigned_worker_id}) {
         $result->{state}->{error} = "No workerid assigned";
         return $result;
     }
@@ -107,8 +142,9 @@ sub ws_send_all {
     }
 }
 
-sub check_authorized {
-    my ($self)    = @_;
+sub _check_authorized {
+    my ($self) = @_;
+
     my $headers   = $self->req->headers;
     my $key       = $headers->header('X-API-Key');
     my $hash      = $headers->header('X-API-Hash');
@@ -133,31 +169,28 @@ sub check_authorized {
     }
     return 1 if ($user && $user->is_operator);
 
-    $self->render(json => {error => "Not authorized"}, status => 403);
-    return;
+    $self->render(json => {error => 'Not authorized'}, status => 403);
+    return undef;
 }
 
-sub ws_create {
-    my ($self) = @_;
-    my $workerid = $self->param('workerid');
+sub _ws_create {
+    my ($c) = @_;
+
+    my $workerid = $c->param('workerid');
     unless ($workers->{$workerid}) {
-        my $db = app->schema->resultset("Workers")->find($workerid);
+        my $db = $c->app->schema->resultset("Workers")->find($workerid);
         unless ($db) {
-            return $self->render(text => 'Unauthorized', status =>);
+            return $c->render(text => 'Unauthorized', status =>);
         }
         $workers->{$workerid} = {id => $workerid, db => $db, socket => undef, last_seen => time()};
     }
     my $worker = $workers->{$workerid};
-    # upgrade connection to websocket by subscribing to events
-    $self->on(json   => \&_message);
-    $self->on(finish => \&_finish);
-    $self->inactivity_timeout(0);    # Do not force connection close due to inactivity
-    $worker->{socket} = $self->tx->max_websocket_size(10485760);
-}
 
-sub ws_is_worker_connected {
-    my ($workerid) = @_;
-    return ($workers->{$workerid} && $workers->{$workerid}->{socket} ? 1 : 0);
+    # upgrade connection to websocket by subscribing to events
+    $c->on(json   => \&_message);
+    $c->on(finish => \&_finish);
+    $c->inactivity_timeout(0);    # Do not force connection close due to inactivity
+    $worker->{socket} = $c->tx->max_websocket_size(10485760);
 }
 
 sub _get_worker {
@@ -167,14 +200,14 @@ sub _get_worker {
             return $worker;
         }
     }
-    return;
+    return undef;
 }
 
 sub _finish {
-    my ($ws, $code, $reason) = @_;
-    return unless ($ws);
+    my ($c, $code, $reason) = @_;
+    return unless ($c);
 
-    my $worker = _get_worker($ws->tx);
+    my $worker = _get_worker($c->tx);
     unless ($worker) {
         log_error('Worker not found for given connection during connection close');
         return;
@@ -190,26 +223,28 @@ sub _finish {
 }
 
 sub _message {
-    my ($ws, $json) = @_;
-    my $worker = _get_worker($ws->tx);
+    my ($c, $json) = @_;
+
+    my $app    = $c->app;
+    my $schema = $app->schema;
+    my $worker = _get_worker($c->tx);
     unless ($worker) {
-        $ws->app->log->warn("A message received from unknown worker connection");
+        $app->log->warn("A message received from unknown worker connection");
         log_debug(sprintf('A message received from unknown worker connection (terminating ws): %s', Dumper($json)));
-        $ws->finish("1008", "Connection terminated from WebSocket server - thought dead");
+        $c->finish("1008", "Connection terminated from WebSocket server - thought dead");
         return;
     }
     unless (ref($json) eq 'HASH') {
         log_error(sprintf('Received unexpected WS message "%s from worker %u', Dumper($json), $worker->{id}));
-        $ws->finish("1003", "Received unexpected data from worker, forcing close");
+        $c->finish("1003", "Received unexpected data from worker, forcing close");
         return;
     }
 
     # This is to make sure that no worker can skip the _registration.
     if (($worker->{db}->websocket_api_version() || 0) != WEBSOCKET_API_VERSION) {
         log_warning("Received a message from an incompatible worker " . $worker->{id});
-        $ws->tx->send({json => {type => 'incompatible'}});
-        $ws->finish("1008",
-            "Connection terminated from WebSocket server - incompatible communication protocol version");
+        $c->tx->send({json => {type => 'incompatible'}});
+        $c->finish("1008", "Connection terminated from WebSocket server - incompatible communication protocol version");
         return;
     }
 
@@ -222,10 +257,10 @@ sub _message {
         # handle job status update through web socket
         my $jobid  = $json->{jobid};
         my $status = $json->{data};
-        my $job    = $ws->app->schema->resultset("Jobs")->find($jobid);
-        return $ws->tx->send(json => {result => 'nack'}) unless $job;
+        my $job    = $schema->resultset("Jobs")->find($jobid);
+        return $c->tx->send(json => {result => 'nack'}) unless $job;
         my $ret = $job->update_status($status);
-        $ws->tx->send({json => $ret});
+        $c->tx->send({json => $ret});
     }
     elsif ($json->{type} eq 'worker_status') {
         my $current_worker_status = $json->{status};
@@ -238,9 +273,9 @@ sub _message {
         log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $wid, Dumper($json)));
 
         try {
-            app->schema->txn_do(
+            $schema->txn_do(
                 sub {
-                    return unless my $w = app->schema->resultset("Workers")->find($wid);
+                    return unless my $w = $schema->resultset("Workers")->find($wid);
                     log_debug("Updating worker seen from worker_status");
                     $w->seen;
                     $w->update({error => $current_worker_error});
@@ -253,7 +288,7 @@ sub _message {
         my $registered_job_id;
         my $registered_job_token;
         try {
-            $registered_job_id = app->schema->resultset("Workers")->find($wid)->job->id();
+            $registered_job_id = $schema->resultset("Workers")->find($wid)->job->id();
             log_debug("Found Job($registered_job_id) in DB from worker_status update sent by Worker($wid)")
               if $registered_job_id && $wid;
             log_debug("Received request has id: " . $worker_status->{$wid}->{job}->{id})
@@ -261,9 +296,9 @@ sub _message {
         };
 
         try {
-            my $workers_population = app->schema->resultset("Workers")->count();
+            my $workers_population = $schema->resultset("Workers")->count();
             my $msg                = {type => 'info', population => $workers_population};
-            $ws->tx->send({json => $msg} => sub { log_debug("Sent population to worker: " . pp($msg)) });
+            $c->tx->send({json => $msg} => sub { log_debug("Sent population to worker: " . pp($msg)) });
         }
         catch {
             log_debug("Could not send the population number to worker: $_");
@@ -272,7 +307,7 @@ sub _message {
         try {
             # We cover the case where id can be the same, but the token will differ.
             die "Do not check" unless ($registered_job_id);
-            $registered_job_token = app->schema->resultset("Workers")->find($wid)->get_property('JOBTOKEN');
+            $registered_job_token = $schema->resultset("Workers")->find($wid)->get_property('JOBTOKEN');
             log_debug("Worker($wid) for Job($registered_job_id) has token $registered_job_token")
               if $registered_job_token && $registered_job_id && $wid;
             log_debug("Received request has token: " . $worker_status->{$wid}->{job}->{settings}->{JOBTOKEN})
@@ -281,9 +316,9 @@ sub _message {
 
         try {
             # XXX: we should have a field in the DB as well so scheduler can allocate directly on free workers.
-            app->schema->txn_do(
+            $schema->txn_do(
                 sub {
-                    my $w = app->schema->resultset("Workers")->find($wid);
+                    my $w = $schema->resultset("Workers")->find($wid);
                     log_debug('Possibly worker ' . $w->id() . ' should be freed.');
                     return unless ($w && $w->job);
                     return $w->job->incomplete_and_duplicate
@@ -312,9 +347,9 @@ sub _message {
               ($current_worker_status && $current_worker_status eq "free");
 
             return unless $jobid && $job_status && $job_status eq OpenQA::Jobs::Constants::RUNNING;
-            app->schema->txn_do(
+            $schema->txn_do(
                 sub {
-                    my $job = app->schema->resultset("Jobs")->find($jobid);
+                    my $job = $schema->resultset("Jobs")->find($jobid);
                     return
                       if (
                         (
@@ -407,88 +442,6 @@ sub _workers_checker {
     catch {
         log_info("Failed dead job detection : $_");
     };
-
-
-   # XXX: We might need the following check in the future
-   #     try {
-   #         $schema->txn_do(
-   #             sub {
-   #                 # XXX: not needed as for now - check all job in running state with statuses received by the workers
-   #                 my @running_jobs
-   #                   = OpenQA::Schema::connect_db->resultset("Jobs")
-   #                   ->search({state => OpenQA::Jobs::Constants::RUNNING}, {join => 'worker'})->all();
-   #                 # If there is neither a worker assigned or we have a mismatch from the statuses
-   #                 # received by the workers we set it as incomplete and duplicate it
-   #                 foreach my $j (@running_jobs) {
-   #                     if (
-   #                         !$j->worker
-   #                         || (   exists $worker_status->{$j->worker->id()}
-   #                             && exists $worker_status->{$j->worker->id()}->{job}
-   #                             && exists $worker_status->{$j->worker->id()}->{job}->{id}
-   #                             && $worker_status->{$j->worker->id()}->{job}->{id} != $j->id)
-   #                         || (   exists $worker_status->{$j->worker->id()}
-   #                             && exists $worker_status->{$j->worker->id()}->{status}
-   #                             && $worker_status->{$j->worker->id()}->{status} eq "free"))
-   #                     {
-   #                         log_warning(sprintf('Stale running job %d detected', $j->id));
-   #                         $j->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
-   #                         my $res = $j->auto_duplicate;
-   #                         if ($res) {
-   #                             log_warning(
-   #                                 sprintf(
-   # 'running job %d with no worker or worker mismatching id aborted and duplicated to job "%d"',
-   #                                     $j->id, $res->id
-   #                                 ));
-   #                         }
-   #                         else {
-   #                             log_warning(sprintf('running job %d aborted as incomplete', $j->id));
-   #                         }
-   #                     }
-   #                 }
-   #             });
-   #     }
-   #     catch {
-   #         log_debug("Failed stale running job detection : $_");
-   #     };
 }
-
-# Mojolicious startup
-sub setup {
-
-
-    app->helper(log_name => sub { return 'websockets' });
-    app->helper(schema   => sub { return OpenQA::Schema->singleton });
-    app->defaults(appname => "openQA Websocket Server");
-    app->mode('production');
-
-    OpenQA::Setup::read_config(app);
-    OpenQA::Setup::setup_log(app);
-
-    push @{app->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
-
-    # Assetpack is required to render layouts pages.
-    app->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Fetch OpenQA::WebAPI::AssetPipe Combine)]});
-    app->plugin("Helpers");
-    app->asset->process;
-
-    my $ca = under \&check_authorized;
-    $ca->websocket('/ws/:workerid' => [workerid => qr/\d+/] => \&ws_create);
-
-    # no cookies for worker, no secrets to protect
-    app->secrets(['nosecretshere']);
-
-    # start worker checker - check workers each 2 minutes
-    Mojo::IOLoop->recurring(120 => \&_workers_checker);
-
-    Mojo::IOLoop->recurring(
-        380 => sub {
-            log_debug("Resetting worker status table");
-            $worker_status = {};
-        });
-
-
-    return Mojo::Server::Daemon->new(app => app);
-}
-
 
 1;

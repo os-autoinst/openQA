@@ -139,7 +139,7 @@ BEGIN { unshift @INC, "$FindBin::RealBin/../lib" }
 
 use Mojo::JSON;    # booleans
 use Cpanel::JSON::XS ();
-use Data::Dump;
+use Data::Dump 'dd';
 use Mojo::URL;
 use OpenQA::Client;
 use Getopt::Long;

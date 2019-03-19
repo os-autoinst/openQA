@@ -25,8 +25,6 @@ use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
-use Data::Dumper;
-
 use OpenQA::WebSockets;
 use OpenQA::Scheduler;
 

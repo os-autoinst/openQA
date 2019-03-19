@@ -24,6 +24,7 @@ BEGIN {
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use Date::Format;
+use Data::Dumper 'Dumper';
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
@@ -651,7 +652,6 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
     # dumps the state of the websocket connections established in the following subtests
     # note: not actually used after all, but useful during development
     sub dump_websocket_state {
-        use Data::Dumper;
         print('finished: ' . Dumper($t_livehandler->{finished}) . "\n");
         print('messages: ' . Dumper($t_livehandler->{messages}) . "\n");
     }

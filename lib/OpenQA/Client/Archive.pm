@@ -22,7 +22,6 @@ use Mojo::File 'path';
 use Mojo::URL;
 use Carp 'croak';
 use Mojo::JSON 'encode_json';
-use Data::Dump;
 
 my $job;
 my $path;

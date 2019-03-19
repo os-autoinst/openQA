@@ -40,7 +40,6 @@ BEGIN {
 }
 
 use lib "$FindBin::Bin/lib";
-use Data::Dump qw(pp dd);
 use OpenQA::Scheduler;
 use OpenQA::Scheduler::Scheduler;
 use OpenQA::Utils;

@@ -43,7 +43,7 @@ subtest "WebSocket Server _workers_checker" => sub {
 subtest "WebSocket Server _get_stale_worker_jobs" => sub {
     use Mojo::Util 'monkey_patch';
     monkey_patch "OpenQA::WebSockets::Server", app => sub { FooBarTransaction->new };
-    FooBarWorker->new->OpenQA::WebSockets::Server::ws_create();
+    FooBarTransaction->new->OpenQA::WebSockets::Server::_ws_create();
     my $buffer;
     {
         open my $handle, '>', \$buffer;
@@ -117,17 +117,21 @@ sub new { bless({w => FooBarWorker->new()->set}, shift) }
 sub tx  { shift }
 sub app { shift }
 sub log { shift }
-sub schema          { shift }
-sub resultset       { shift }
-sub find            { shift->{w} }
-sub warn            { return $_[1] }
-sub finish          { main::_store(shift, "out", @_) }
-sub send            { main::_store(shift, "send", @_) }
-sub storage         { shift }
-sub datetime_parser { shift }
-sub format_datetime { shift }
-sub search          { shift }
-sub txn_do          { die "BHUAHUAHUAHUA"; }
+sub schema             { shift }
+sub resultset          { shift }
+sub find               { shift->{w} }
+sub on                 { shift }
+sub param              { 1 }
+sub warn               { return $_[1] }
+sub finish             { main::_store(shift, "out", @_) }
+sub send               { main::_store(shift, "send", @_) }
+sub storage            { shift }
+sub datetime_parser    { shift }
+sub inactivity_timeout { shift }
+sub max_websocket_size { shift }
+sub format_datetime    { shift }
+sub search             { shift }
+sub txn_do             { die "BHUAHUAHUAHUA"; }
 
 package FooBarWorker;
 my $singleton;
@@ -140,11 +144,7 @@ sub set {
 sub id                    { 1 }
 sub update_status         { main::_store(shift, "status", @_) }
 sub set_property          { main::_store(shift, "property", @_) }
-sub param                 { 1 }
-sub on                    { shift }
-sub inactivity_timeout    { shift }
 sub tx                    { shift }
-sub max_websocket_size    { shift }
 sub name                  { "Boooo" }
 sub websocket_api_version { OpenQA::Constants::WEBSOCKET_API_VERSION() }
 

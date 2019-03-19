@@ -63,7 +63,7 @@ BEGIN {
 
 use strict;
 use OpenQA::Schema;
-use Data::Dump;
+use Data::Dump 'dd';
 use v5.10;
 use DBIx::Class::DeploymentHandler;
 use Getopt::Long;

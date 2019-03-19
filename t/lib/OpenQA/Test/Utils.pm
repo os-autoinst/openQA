@@ -11,6 +11,7 @@ use POSIX '_exit';
 use OpenQA::Worker;
 use OpenQA::Worker::Common;
 use Config::IniFiles;
+use Data::Dumper 'Dumper';
 use OpenQA::Utils qw(log_error log_info log_debug);
 use Mojo::Home;
 use Mojo::File 'path';
@@ -345,7 +346,6 @@ sub c_worker {
         if ($bogus) {
             monkey_patch 'OpenQA::Worker::Commands', websocket_commands => sub {
                 my ($tx, $json) = @_;
-                use Data::Dumper;
                 log_debug("Received " . Dumper($json));
             };
         }
