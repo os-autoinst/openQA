@@ -160,7 +160,8 @@ sub _generate_jobs {
 
     my $ret = [];
 
-    my @products = $self->db->resultset('Products')->search(
+    my $schema   = $self->schema;
+    my @products = $schema->resultset('Products')->search(
         {
             distri  => lc($args->{DISTRI}),
             version => $args->{VERSION},
@@ -170,7 +171,7 @@ sub _generate_jobs {
 
     unless (@products) {
         OpenQA::Utils::log_warning('no products found, retrying version wildcard');
-        @products = $self->db->resultset('Products')->search(
+        @products = $schema->resultset('Products')->search(
             {
                 distri  => lc($args->{DISTRI}),
                 version => '*',
@@ -192,7 +193,7 @@ sub _generate_jobs {
     my $group_id   = delete $args->{_GROUP_ID};
     my $group_name = delete $args->{_GROUP};
     if (!defined $group_id && defined $group_name) {
-        my $groups = $self->db->resultset('JobGroups')->search({name => $group_name});
+        my $groups = $schema->resultset('JobGroups')->search({name => $group_name});
         my $group  = $groups->next or return;
         $group_id = $group->id;
     }
@@ -388,7 +389,7 @@ sub _create_dependencies {
         catch {
             die "There is a cycle in the dependencies of " . $job->settings_hash->{TEST};
         };
-        $self->db->resultset('JobDependencies')->create(
+        $self->schema->resultset('JobDependencies')->create(
             {
                 child_job_id  => $job->id,
                 parent_job_id => $parent,
@@ -415,7 +416,8 @@ sub schedule_iso {
     my ($self, $args) = @_;
     # register assets posted here right away, in case no job
     # templates produce jobs.
-    my $assets = $self->app->schema->resultset('Assets');
+    my $schema = $self->schema;
+    my $assets = $schema->resultset('Assets');
     for my $asset (values %{parse_assets_from_settings($args)}) {
         my ($name, $type) = ($asset->{name}, $asset->{type});
         return {error => 'Asset type and name must not be empty.'} unless $name && $type;
@@ -451,7 +453,7 @@ sub schedule_iso {
             # ones or deprioritizing them (up to a limit)
             try {
                 $self->emit_event('openqa_iso_cancel', \%cond);
-                $self->db->resultset('Jobs')->cancel_by_settings(\%cond, 1, $deprioritize, $deprioritize_limit);
+                $schema->resultset('Jobs')->cancel_by_settings(\%cond, 1, $deprioritize, $deprioritize_limit);
             }
             catch {
                 my $error = shift;
@@ -474,7 +476,7 @@ sub schedule_iso {
             $settings->{_GROUP_ID} = delete $settings->{GROUP_ID};
 
             # create a new job with these parameters and count if successful, do not send job notifies yet
-            my $job = $self->db->resultset('Jobs')->create_from_settings($settings);
+            my $job = $schema->resultset('Jobs')->create_from_settings($settings);
             push @jobs, $job;
 
             $testsuite_ids{$settings->{TEST}}->{$settings->{MACHINE}} //= [];
@@ -530,7 +532,7 @@ sub schedule_iso {
     };
 
     try {
-        $self->db->txn_do($coderef);
+        $schema->txn_do($coderef);
     }
     catch {
         my $error = shift;
@@ -652,9 +654,10 @@ sub destroy {
     my $iso  = $self->stash('name');
     $self->emit_event('openqa_iso_delete', {iso => $iso});
 
-    my $subquery = $self->db->resultset("JobSettings")->query_for_settings({ISO => $iso});
+    my $schema   = $self->schema;
+    my $subquery = $schema->resultset("JobSettings")->query_for_settings({ISO => $iso});
     my @jobs
-      = $self->db->resultset("Jobs")->search({'me.id' => {-in => $subquery->get_column('job_id')->as_query}})->all;
+      = $schema->resultset("Jobs")->search({'me.id' => {-in => $subquery->get_column('job_id')->as_query}})->all;
 
     for my $job (@jobs) {
         $self->emit_event('openqa_job_delete', {id => $job->id});
@@ -679,7 +682,7 @@ sub cancel {
     my $iso  = $self->stash('name');
     $self->emit_event('openqa_iso_cancel', {iso => $iso});
 
-    my $res = $self->db->resultset('Jobs')->cancel_by_settings({ISO => $iso}, 0);
+    my $res = $self->schema->resultset('Jobs')->cancel_by_settings({ISO => $iso}, 0);
     $self->render(json => {result => $res});
 }
 

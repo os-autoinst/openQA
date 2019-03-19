@@ -38,8 +38,8 @@ my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-my $db           = $app->db;
-my $audit_events = $db->resultset('AuditEvents');
+my $schema       = $app->schema;
+my $audit_events = $schema->resultset('AuditEvents');
 
 sub check_for_event {
     my ($event_name, $expectations) = @_;

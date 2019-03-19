@@ -42,7 +42,7 @@ my $t    = Test::Mojo->new('OpenQA::WebAPI');
 my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
 $test_case->login($t, 'percival');
 
-my $schema        = $t->app->db;
+my $schema        = $t->app->schema;
 my $jobs          = $schema->resultset('Jobs');
 my $job_groups    = $schema->resultset('JobGroups');
 my $parent_groups = $schema->resultset('JobGroupParents');
@@ -264,7 +264,7 @@ sub _map_expired {
 }
 
 subtest 'expired jobs' => sub {
-    my $jg = $t->app->db->resultset('JobGroups')->find(1001);
+    my $jg = $t->app->schema->resultset('JobGroups')->find(1001);
     my $m;
 
     for my $file_type (qw(results logs)) {
@@ -281,7 +281,7 @@ subtest 'expired jobs' => sub {
 
         is_deeply($jg->$m, [], 'no jobs with expired ' . $file_type);
 
-        $t->app->db->resultset('Jobs')->find(99938)
+        $t->app->schema->resultset('Jobs')->find(99938)
           ->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
         is_deeply($jg->$m, [], 'still no jobs with expired ' . $file_type);
         $jg->update({"keep_${file_type}_in_days" => 5});
@@ -296,7 +296,7 @@ subtest 'expired jobs' => sub {
             [qw(99937 99938 99981)], 'now also important job 99938 with expired ' . $file_type);
     }
 
-    $t->app->db->resultset('Jobs')->find(99938)->update({logs_present => 0});
+    $t->app->schema->resultset('Jobs')->find(99938)->update({logs_present => 0});
     is_deeply(_map_expired($jg, $m),
         [qw(99937 99981)], 'job with deleted logs not return among jobs with expired logs');
 };

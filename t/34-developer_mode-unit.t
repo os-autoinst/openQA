@@ -121,7 +121,7 @@ sub login {
 login('arthur');
 
 # get resultset
-my $db                 = $t->app->db;
+my $db                 = $t->app->schema;
 my $jobs               = $db->resultset('Jobs');
 my $users              = $db->resultset('Users');
 my $developer_sessions = $db->resultset('DeveloperSessions');

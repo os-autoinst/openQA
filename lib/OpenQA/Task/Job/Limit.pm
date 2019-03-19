@@ -33,9 +33,10 @@ sub _limit {
 
     # create temporary job group outside of DB to collect
     # jobs without job_group_id
-    $app->db->resultset('JobGroups')->new({})->limit_results_and_logs;
+    my $schema = $app->schema;
+    $schema->resultset('JobGroups')->new({})->limit_results_and_logs;
 
-    my $groups = $app->db->resultset('JobGroups');
+    my $groups = $schema->resultset('JobGroups');
     while (my $group = $groups->next) {
         $group->limit_results_and_logs;
     }

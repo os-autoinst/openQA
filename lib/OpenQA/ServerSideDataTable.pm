@@ -30,7 +30,7 @@ sub render_response {
     my $filter_conds  = $args{filter_conds};
     my $params        = $args{additional_params} // {};
 
-    my $resultset = $controller->db->resultset($resultset_name);
+    my $resultset = $controller->schema->resultset($resultset_name);
 
     # determine total count
     my $total_count

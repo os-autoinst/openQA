@@ -39,7 +39,7 @@ sub auth {
         my $api_key;
         if ($key) {
             $log->debug("API key from client: *$key*");
-            $api_key = $self->db->resultset("ApiKeys")->find({key => $key});
+            $api_key = $self->schema->resultset("ApiKeys")->find({key => $key});
         }
         else {
             $log->debug("No API key from client.");
@@ -113,7 +113,7 @@ sub auth_jobtoken {
 
     if ($token) {
         $self->app->log->debug("Received JobToken: $token");
-        my $job = $self->db->resultset('Jobs')->search(
+        my $job = $self->schema->resultset('Jobs')->search(
             {'properties.key' => 'JOBTOKEN', 'properties.value' => $token},
             {columns => ['id'], join => {worker => 'properties'}})->single;
         if ($job) {

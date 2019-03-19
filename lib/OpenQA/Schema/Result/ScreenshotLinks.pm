@@ -79,7 +79,7 @@ sub scan_images {
         }
     }
     closedir($dh);
-    $app->db->resultset('Screenshots')->populate(\@files);
+    $app->schema->resultset('Screenshots')->populate(\@files);
     return;
 }
 

@@ -33,7 +33,7 @@ sub _extend_info {
 sub index {
     my ($self) = @_;
 
-    my $workers_db          = $self->db->resultset('Workers');
+    my $workers_db          = $self->schema->resultset('Workers');
     my $total_online        = grep { !$_->dead } $workers_db->all();
     my $total               = $workers_db->count;
     my $free_active_workers = grep { !$_->dead } $workers_db->search({job_id => undef, error => undef})->all();
@@ -64,7 +64,7 @@ sub index {
 sub show {
     my ($self) = @_;
 
-    my $w = $self->db->resultset('Workers')->find($self->param('worker_id'))
+    my $w = $self->schema->resultset('Workers')->find($self->param('worker_id'))
       or return $self->reply->not_found;
     $self->stash(worker => _extend_info($w, 1));
 

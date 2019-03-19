@@ -20,11 +20,12 @@ use Mojo::Base 'Mojolicious::Controller';
 sub index {
     my ($self) = @_;
 
-    $self->stash('group', $self->db->resultset("JobGroups")->find($self->param('groupid')));
+    my $schema = $self->schema;
+    $self->stash('group', $schema->resultset("JobGroups")->find($self->param('groupid')));
 
-    my @machines = $self->db->resultset("Machines")->search(undef, {order_by => 'name'});
+    my @machines = $schema->resultset("Machines")->search(undef, {order_by => 'name'});
     $self->stash('machines', \@machines);
-    my @tests = $self->db->resultset("TestSuites")->search(undef, {order_by => 'name'});
+    my @tests = $schema->resultset("TestSuites")->search(undef, {order_by => 'name'});
     $self->stash('tests', \@tests);
 
     $self->render('admin/job_template/index');

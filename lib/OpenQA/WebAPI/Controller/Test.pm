@@ -43,7 +43,7 @@ sub list {
 sub prefetch_comment_counts {
     my ($self, $job_ids) = @_;
 
-    my $comments = $self->db->resultset("Comments")->search(
+    my $comments = $self->schema->resultset("Comments")->search(
         {'me.job_id' => {in => $job_ids}},
         {
             select   => ['job_id', {count => 'job_id', -as => 'count'}],
@@ -70,7 +70,7 @@ sub list_ajax {
     my ($self) = @_;
 
     my $scope = ($self->param('relevant') ne 'false' ? 'relevant' : '');
-    my @jobs  = $self->db->resultset('Jobs')->complex_query(
+    my @jobs  = $self->schema->resultset('Jobs')->complex_query(
         state    => [OpenQA::Jobs::Constants::FINAL_STATES],
         scope    => $scope,
         match    => $self->get_match_param,
@@ -121,7 +121,7 @@ sub list_ajax {
 sub list_running_ajax {
     my ($self) = @_;
 
-    my $running = $self->db->resultset('Jobs')->complex_query(
+    my $running = $self->schema->resultset('Jobs')->complex_query(
         state    => [OpenQA::Jobs::Constants::EXECUTION_STATES],
         match    => $self->get_match_param,
         groupid  => $self->param('groupid'),
@@ -162,7 +162,7 @@ sub list_running_ajax {
 sub list_scheduled_ajax {
     my ($self) = @_;
 
-    my $scheduled = $self->db->resultset('Jobs')->complex_query(
+    my $scheduled = $self->schema->resultset('Jobs')->complex_query(
         state    => [OpenQA::Jobs::Constants::PRE_EXECUTION_STATES],
         match    => $self->get_match_param,
         groupid  => $self->param('groupid'),
@@ -239,7 +239,7 @@ sub get_current_job {
 
     return $self->reply->not_found if (!defined $self->param('testid'));
 
-    my $job = $self->app->schema->resultset("Jobs")->search(
+    my $job = $self->schema->resultset("Jobs")->search(
         {
             id => $self->param('testid')
         },
@@ -259,7 +259,7 @@ sub _show {
 
     my $test_modules    = read_test_modules($job);
     my $worker          = $job->worker;
-    my $clone_of        = $self->db->resultset('Jobs')->find({clone_id => $job->id});
+    my $clone_of        = $self->schema->resultset('Jobs')->find({clone_id => $job->id});
     my $websocket_proxy = determine_web_ui_web_socket_url($job->id);
 
     $self->stash(
@@ -321,7 +321,7 @@ sub job_next_previous_ajax {
     my $p_limit = $self->param('previous_limit') // 400;
     my $n_limit = $self->param('next_limit') // 100;
 
-    my $jobs_rs = $self->db->resultset("Jobs")->next_previous_jobs_query(
+    my $jobs_rs = $self->schema->resultset("Jobs")->next_previous_jobs_query(
         $job, $jobid,
         previous_limit => $p_limit,
         next_limit     => $n_limit,
@@ -415,7 +415,7 @@ sub _job_labels {
 
     my %labels;
     my %bugdetails;
-    my $db   = $self->db;
+    my $db   = $self->schema;
     my $bugs = $db->resultset('Bugs');
     my $comments
       = $db->resultset('Comments')->search({job_id => {in => [map { $_->id } @$jobs]}}, {order_by => 'me.id'});
@@ -465,7 +465,7 @@ sub prepare_job_results {
 
     # prefetch descriptions from test suites
     my %desc_args = (name => {in => \@job_names});
-    my @descriptions = $self->db->resultset('TestSuites')->search(\%desc_args, {columns => [qw(name description)]});
+    my @descriptions = $self->schema->resultset('TestSuites')->search(\%desc_args, {columns => [qw(name description)]});
     my %descriptions = map { $_->name => $_->description } @descriptions;
 
     my $todo = $self->param('todo');
@@ -581,7 +581,7 @@ sub overview {
         distri  => $search_args->{distri},
         groups  => $groups,
     );
-    my @latest_jobs = $self->db->resultset('Jobs')->complex_query(%$search_args)->latest_jobs;
+    my @latest_jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs;
     ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->prepare_job_results(\@latest_jobs);
 
     # determine distribution/version from job results if not explicitely specified via search args
@@ -636,7 +636,7 @@ sub latest {
         next unless defined $self->param($key);
         $search_args{$key} = $self->param($key);
     }
-    my $job = $self->db->resultset("Jobs")->complex_query(%search_args)->first;
+    my $job = $self->schema->resultset("Jobs")->complex_query(%search_args)->first;
     return $self->render(text => 'No matching job found', status => 404) unless $job;
     $self->stash(testid => $job->id);
     return $self->_show($job);
@@ -646,7 +646,7 @@ sub export {
     my ($self) = @_;
     $self->res->headers->content_type('text/plain');
 
-    my @groups = $self->app->schema->resultset("JobGroups")->search(undef, {order_by => 'name'});
+    my @groups = $self->schema->resultset("JobGroups")->search(undef, {order_by => 'name'});
 
     for my $group (@groups) {
         $self->write_chunk(sprintf("Jobs of Group '%s'\n", $group->name));

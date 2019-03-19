@@ -56,7 +56,7 @@ sub _needle_by_id_and_extension {
     my ($self, $extension) = @_;
 
     my $needle_id = $self->param('needle_id') or return $self->reply->not_found;
-    my $needle = $self->db->resultset('Needles')->find($needle_id) or return $self->reply->not_found;
+    my $needle = $self->schema->resultset('Needles')->find($needle_id) or return $self->reply->not_found;
     my $needle_dir      = $needle->directory->path;
     my $needle_filename = $needle->name . $extension;
 
@@ -78,7 +78,7 @@ sub needle_json_by_id {
 sub _set_test($) {
     my $self = shift;
 
-    $self->{job} = $self->db->resultset("Jobs")->find({'me.id' => $self->param('testid')});
+    $self->{job} = $self->schema->resultset("Jobs")->find({'me.id' => $self->param('testid')});
     return unless $self->{job};
 
     $self->{testdirname} = $self->{job}->result_dir;
@@ -124,7 +124,7 @@ sub test_asset {
 
     my %asset;
     my $attrs = {join => {jobs_assets => 'asset'}, +select => [qw(asset.name asset.type)], +as => [qw(name type)]};
-    my $res   = $self->db->resultset('Jobs')->search(\%cond, $attrs);
+    my $res   = $self->schema->resultset('Jobs')->search(\%cond, $attrs);
     if ($res and $res->first) { %asset = $res->first->get_columns }
     else                      { return $self->reply->not_found }
 

@@ -47,10 +47,11 @@ sub _limit {
       unless my $guard = $app->minion->guard('limit_assets_task', 3600);
 
     # scan for untracked assets, refresh the size of all assets
-    $app->db->resultset('Assets')->scan_for_untracked_assets();
-    $app->db->resultset('Assets')->refresh_assets();
+    my $schema = $app->schema;
+    $schema->resultset('Assets')->scan_for_untracked_assets();
+    $schema->resultset('Assets')->refresh_assets();
 
-    my $asset_status = $app->db->resultset('Assets')->status(
+    my $asset_status = $schema->resultset('Assets')->status(
         compute_pending_state_and_max_job => 1,
         compute_max_job_by_group          => 1,
         fail_on_inconsistent_status       => 1,
@@ -62,7 +63,7 @@ sub _limit {
     # first remove grouped assets
     for my $asset (@$assets) {
         if (keys %{$asset->{groups}} && !$asset->{picked_into}) {
-            _remove_if($app->db, $asset);
+            _remove_if($schema, $asset);
         }
     }
 
@@ -84,7 +85,7 @@ sub _limit {
         if ($age_in_seconds >= $untracked_assets_storage_duration || !$asset->{size}) {
             my $age_in_days   = $age_in_seconds / $seconds_per_day;
             my $limit_in_days = $untracked_assets_storage_duration / $seconds_per_day;
-            _remove_if($app->db, $asset,
+            _remove_if($schema, $asset,
 "Removing asset $asset_name (not in any group, age ($age_in_days days) exceeds limit ($limit_in_days days)"
             );
         }
@@ -104,7 +105,7 @@ sub _limit {
     }
 
     # recompute the status (after the cleanup) and produce cache file for /admin/assets
-    $app->db->resultset('Assets')->status(
+    $schema->resultset('Assets')->status(
         compute_pending_state_and_max_job => 0,
         compute_max_job_by_group          => 0,
     );

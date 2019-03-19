@@ -53,10 +53,11 @@ Returns list of bugs reported in the system with its id and text.
 sub list {
     my ($self) = @_;
 
+    my $schema = $self->schema;
     my $bugs;
     if ($self->param('refreshable')) {
         my $delta = $self->param('delta') || 3600;
-        $bugs = $self->db->resultset("Bugs")->search(
+        $bugs = $schema->resultset("Bugs")->search(
             {
                 -or => {
                     refreshed => 0,
@@ -66,7 +67,7 @@ sub list {
             });
     }
     else {
-        $bugs = $self->db->resultset("Bugs");
+        $bugs = $schema->resultset("Bugs");
     }
 
     my %ret = map { $_->id => $_->bugid } $bugs->all;
@@ -89,7 +90,7 @@ existing bug or not, and the date when the bug was last updated in the system.
 sub show {
     my ($self) = @_;
 
-    my $bug = $self->db->resultset("Bugs")->find($self->param('id'));
+    my $bug = $self->schema->resultset("Bugs")->find($self->param('id'));
 
     unless ($bug) {
         $self->reply->not_found;
@@ -116,14 +117,15 @@ is created with the bug values passed as arguments.
 sub create {
     my ($self) = @_;
 
-    my $bug = $self->db->resultset("Bugs")->find({bugid => $self->param('bugid')});
+    my $schema = $self->schema;
+    my $bug    = $schema->resultset("Bugs")->find({bugid => $self->param('bugid')});
 
     if ($bug) {
         $self->render(json => {error => 1});
         return;
     }
 
-    $bug = $self->db->resultset("Bugs")->create({bugid => $self->param('bugid'), %{$self->get_bug_values}});
+    $bug = $schema->resultset("Bugs")->create({bugid => $self->param('bugid'), %{$self->get_bug_values}});
     $self->emit_event('openqa_bug_create', {id => $bug->id, bugid => $bug->bugid, fromapi => 1});
     $self->render(json => {id => $bug->id});
 }
@@ -142,7 +144,7 @@ the id of the bug, or an error if the bug id is not found in the system.
 sub update {
     my ($self) = @_;
 
-    my $bug = $self->db->resultset("Bugs")->find($self->param('id'));
+    my $bug = $self->schema->resultset("Bugs")->find($self->param('id'));
 
     unless ($bug) {
         $self->reply->not_found;
@@ -167,7 +169,7 @@ Removes a bug from the system given its bug id. Return 1 on success or not found
 sub destroy {
     my ($self) = @_;
 
-    my $bug = $self->db->resultset("Bugs")->find($self->param('id'));
+    my $bug = $self->schema->resultset("Bugs")->find($self->param('id'));
 
     unless ($bug) {
         $self->reply->not_found;

@@ -43,7 +43,7 @@ sub create {
         $error = $@;
     }
     unless ($error) {
-        eval { $self->db->resultset("ApiKeys")->create({user_id => $user->id, t_expiration => $expiration}) };
+        eval { $self->schema->resultset("ApiKeys")->create({user_id => $user->id, t_expiration => $expiration}) };
         $error = $@;
     }
     if ($error) {

@@ -35,9 +35,9 @@ $test_case->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # get resultsets
-my $db            = $t->app->db;
-my $job_groups    = $db->resultset('JobGroups');
-my $parent_groups = $db->resultset('JobGroupParents');
+my $schema        = $t->app->schema;
+my $job_groups    = $schema->resultset('JobGroups');
+my $parent_groups = $schema->resultset('JobGroupParents');
 
 # create new parent group
 my $new_parent_group_id = $parent_groups->create({name => 'new parent group'})->id;

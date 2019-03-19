@@ -34,7 +34,7 @@ $test_case->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # get resultsets
-my $db      = $t->app->db;
+my $db      = $t->app->schema;
 my $workers = $db->resultset('Workers');
 my $jobs    = $db->resultset('Jobs');
 

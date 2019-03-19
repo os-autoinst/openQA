@@ -22,10 +22,11 @@ use OpenQA::Utils 'job_groups_and_parents';
 sub index {
     my ($self) = @_;
 
-    my $parent_groups = $self->db->resultset('JobGroupParents')
-      ->search(undef, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
+    my $schema = $self->schema;
+    my $parent_groups
+      = $schema->resultset('JobGroupParents')->search(undef, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
     my $groups
-      = $self->db->resultset('JobGroups')->search(undef, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
+      = $schema->resultset('JobGroups')->search(undef, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
 
     $self->stash('job_groups_and_parents_for_editor', job_groups_and_parents);
     $self->stash('parent_groups',                     $parent_groups);
@@ -39,7 +40,7 @@ sub group_page {
     my $group_id = $self->param('groupid');
     return $self->reply->not_found unless $group_id;
 
-    my $group = $self->db->resultset($resultset)->find($group_id);
+    my $group = $self->schema->resultset($resultset)->find($group_id);
     return $self->reply->not_found unless $group;
 
     $self->stash('group',     $group);
@@ -66,12 +67,13 @@ sub edit_parent_group {
 sub connect {
     my ($self) = @_;
 
-    $self->stash('group', $self->db->resultset('JobGroups')->find($self->param('groupid')));
-    my $products = $self->db->resultset('Products')->search(undef, {order_by => 'name'});
+    my $schema = $self->schema;
+    $self->stash('group', $schema->resultset('JobGroups')->find($self->param('groupid')));
+    my $products = $schema->resultset('Products')->search(undef, {order_by => 'name'});
     $self->stash('products', $products);
-    my $tests = $self->db->resultset('TestSuites')->search(undef, {order_by => 'name'});
+    my $tests = $schema->resultset('TestSuites')->search(undef, {order_by => 'name'});
     $self->stash('tests', $tests);
-    my $machines = $self->db->resultset('Machines')->search(undef, {order_by => 'name'});
+    my $machines = $schema->resultset('Machines')->search(undef, {order_by => 'name'});
     $self->stash('machines', $machines);
 
     $self->render('admin/group/connect');
@@ -80,7 +82,8 @@ sub connect {
 sub save_connect {
     my ($self) = @_;
 
-    my $group = $self->db->resultset("JobGroups")->find($self->param('groupid'));
+    my $schema = $self->schema;
+    my $group  = $schema->resultset("JobGroups")->find($self->param('groupid'));
     if (!$group) {
         $self->flash(error => 'Specified group ID ' . $self->param('groupid') . 'doesn\'t exist.');
         return $self->redirect_to('admin_groups');
@@ -92,7 +95,7 @@ sub save_connect {
         machine_id    => $self->param('machine'),
         group_id      => $group->id,
         test_suite_id => $self->param('test')};
-    eval { $self->db->resultset("JobTemplates")->create($values)->id };
+    eval { $schema->resultset("JobTemplates")->create($values)->id };
     if ($@) {
         $self->flash(error => $@);
         return $self->redirect_to('job_group_new_media', groupid => $group->id);

@@ -49,7 +49,7 @@ sub auth_login {
     $userinfo->{username} = $user;
 
     $user = OpenQA::Schema::Result::Users->create_user(
-        $userinfo->{username}, $self->db,
+        $userinfo->{username}, $self->schema,
         email    => $userinfo->{email},
         nickname => $userinfo->{username},
         fullname => $userinfo->{fullname});

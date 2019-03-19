@@ -920,10 +920,11 @@ sub human_readable_size {
 
 # query group parents and job groups and let the database sort it for us - and merge it afterwards
 sub job_groups_and_parents {
+    my $schema = $app->schema;
     my @parents
-      = $app->db->resultset('JobGroupParents')->search({}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})
+      = $schema->resultset('JobGroupParents')->search({}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})
       ->all;
-    my @groups_without_parent = $app->db->resultset('JobGroups')
+    my @groups_without_parent = $schema->resultset('JobGroups')
       ->search({parent_id => undef}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})->all;
     my @res;
     my $first_parent = shift @parents;
@@ -981,12 +982,13 @@ sub compose_job_overview_search_args {
     # (By 'every_param' we make sure to use multiple values for groupid and
     # group at the same time as a logical or, i.e. all specified groups are
     # returned.)
+    my $schema = $controller->schema;
     my @groups;
     if ($controller->param('groupid') or $controller->param('group')) {
         my @group_id_search   = map { {id   => $_} } @{$controller->every_param('groupid')};
         my @group_name_search = map { {name => $_} } @{$controller->every_param('group')};
         my @search_terms = (@group_id_search, @group_name_search);
-        @groups = $controller->db->resultset('JobGroups')->search(\@search_terms)->all;
+        @groups = $schema->resultset('JobGroups')->search(\@search_terms)->all;
     }
 
     # determine build number
@@ -995,7 +997,7 @@ sub compose_job_overview_search_args {
         # note: the search arg 'groupid' is ignored by complex_query() because we later assign 'groupids'
         $search_args{groupid} = $groups[0]->id if (@groups);
 
-        $search_args{build} = $controller->db->resultset('Jobs')->latest_build(%search_args);
+        $search_args{build} = $schema->resultset('Jobs')->latest_build(%search_args);
 
         # print debug output
         if (@groups == 0) {
@@ -1117,8 +1119,9 @@ sub mark_job_linked {
     my ($jobid, $referer_url) = @_;
 
     my $referer = Mojo::URL->new($referer_url)->host;
+    my $schema  = $app->schema;
     if ($referer && grep { $referer eq $_ } @{$app->config->{global}->{recognized_referers}}) {
-        my $job = $app->db->resultset('Jobs')->find({id => $jobid});
+        my $job = $schema->resultset('Jobs')->find({id => $jobid});
         return unless $job;
         my $found    = 0;
         my $comments = $job->comments;
@@ -1129,7 +1132,7 @@ sub mark_job_linked {
             }
         }
         unless ($found) {
-            my $user = $app->db->resultset('Users')->search({username => 'system'})->first;
+            my $user = $schema->resultset('Users')->search({username => 'system'})->first;
             $comments->create(
                 {
                     text    => "label:linked Job mentioned in $referer_url",

@@ -33,7 +33,7 @@ use Test::Warnings;
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 my $t    = Test::Mojo->new('OpenQA::WebAPI');
 my $app  = $t->app;
-my $bugs = $app->db->resultset('Bugs');
+my $bugs = $app->schema->resultset('Bugs');
 
 my $bug = $bugs->get_bug('poo#200');
 ok(!defined $bug, 'bug not refreshed');

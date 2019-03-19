@@ -49,7 +49,7 @@ sub startup {
     OpenQA::Setup::add_build_tx_time_header($self);
 
     # take care of DB deployment or migration before starting the main app
-    my $schema = $self->schema;
+    OpenQA::Schema->singleton;
 
     # register basic routes
     my $r         = $self->routes;

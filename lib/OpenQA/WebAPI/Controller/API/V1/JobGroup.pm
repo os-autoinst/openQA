@@ -65,7 +65,7 @@ Returns results for a set of groups.
 
 sub resultset {
     my ($self) = @_;
-    return $self->db->resultset($self->is_parent ? 'JobGroupParents' : 'JobGroups');
+    return $self->schema->resultset($self->is_parent ? 'JobGroupParents' : 'JobGroups');
 }
 
 =over 4

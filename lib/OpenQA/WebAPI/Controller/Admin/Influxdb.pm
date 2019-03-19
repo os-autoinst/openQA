@@ -37,15 +37,16 @@ sub jobs {
 
     my $result = {};
 
+    my $schema = $self->schema;
     my $rs
-      = $self->db->resultset('Jobs')->search({state => OpenQA::Jobs::Constants::SCHEDULED, blocked_by_id => undef});
+      = $schema->resultset('Jobs')->search({state => OpenQA::Jobs::Constants::SCHEDULED, blocked_by_id => undef});
     _queue_sub_stats($rs, 'scheduled', $result);
-    $rs = $self->db->resultset('Jobs')
+    $rs = $schema->resultset('Jobs')
       ->search({state => OpenQA::Jobs::Constants::SCHEDULED, -not => {blocked_by_id => undef}});
     _queue_sub_stats($rs, 'blocked', $result);
-    $rs = $self->db->resultset('Jobs')->search({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
+    $rs = $schema->resultset('Jobs')->search({state => [OpenQA::Jobs::Constants::EXECUTION_STATES]});
     _queue_sub_stats($rs, 'running', $result);
-    $rs = $self->db->resultset('Jobs')->search(
+    $rs = $schema->resultset('Jobs')->search(
         {state => [OpenQA::Jobs::Constants::EXECUTION_STATES]},
         {
             join     => [qw(assigned_worker)],
@@ -60,7 +61,7 @@ sub jobs {
     }
 
     # map group ids to names (and group by parent)
-    my $groups = $self->db->resultset('JobGroups')->search({}, {prefetch => 'parent', select => [qw(id name)]});
+    my $groups = $self->schema->resultset('JobGroups')->search({}, {prefetch => 'parent', select => [qw(id name)]});
     while (my $g = $groups->next) {
         my $name = $g->name;
         $name = $g->parent->name if $g->parent;
