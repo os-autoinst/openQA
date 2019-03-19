@@ -729,9 +729,17 @@ sub create_clones {
 # internal (recursive) function for duplicate - returns hash of all jobs in the
 # cluster of the current job (in no order but with relations)
 sub cluster_jobs {
-    my ($self, $jobs) = @_;
+    my $self = shift;
+    my %args = (
+        jobs => {},
+        # set to 1 when called on a cluster job being cancelled or failing;
+        # affects whether we include parallel parents with
+        # PARALLEL_CANCEL_WHOLE_CLUSTER set if they have other pending children
+        cancelmode => 0,
+        @_
+    );
 
-    $jobs ||= {};
+    my $jobs = $args{jobs};
     return $jobs if defined $jobs->{$self->id};
     $jobs->{$self->id} = {
         parallel_parents  => [],
@@ -741,7 +749,7 @@ sub cluster_jobs {
 
     ## if we have a parallel parent, go up recursively
     my $parents = $self->parents;
-    while (my $pd = $parents->next) {
+  PARENT: while (my $pd = $parents->next) {
         my $p = $pd->parent;
 
         if ($pd->dependency eq OpenQA::Schema::Result::JobDependencies->CHAINED) {
@@ -751,7 +759,23 @@ sub cluster_jobs {
         }
         else {
             push(@{$jobs->{$self->id}->{parallel_parents}}, $p->id);
-            $p->cluster_jobs($jobs);
+            my $cancelwhole = 1;
+            # check if the setting to disable cancelwhole is set: the var
+            # must exist and be set to something false-y
+            my $cwset = $p->settings_hash->{PARALLEL_CANCEL_WHOLE_CLUSTER};
+            $cancelwhole = 0 if (defined $cwset && !$cwset);
+            if ($args{cancelmode} && !$cancelwhole) {
+                # skip calling cluster_jobs (so cancelling it and its other
+                # related jobs) if job has pending children we are not
+                # cancelling
+                my $otherchildren = $p->children;
+              CHILD: while (my $childr = $otherchildren->next) {
+                    my $child = $childr->child;
+                    next CHILD unless grep { $child->state eq $_ } PENDING_STATES;
+                    next PARENT unless $jobs->{$child->id};
+                }
+            }
+            $p->cluster_jobs(jobs => $jobs);
         }
     }
 
@@ -772,7 +796,7 @@ sub cluster_children {
         next if $c->clone_id;
 
         # do not fear the recursion
-        $c->cluster_jobs($jobs);
+        $c->cluster_jobs(jobs => $jobs);
         if ($cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
             push(@{$jobs->{$self->id}->{parallel_children}}, $c->id);
         }
@@ -1718,8 +1742,9 @@ sub store_column {
     return $self->SUPER::store_column(%args);
 }
 
-# parent job failed, handle running children - send stop command
-sub _job_stop_child {
+# used to stop jobs with some kind of dependency relationship to another
+# job that failed or was cancelled, see cluster_jobs(), cancel() and done()
+sub _job_stop_cluster {
     my ($self, $job) = @_;
 
     # skip ourselves
@@ -1815,9 +1840,9 @@ sub done {
     $self->update(\%new_val);
 
     if (defined $new_val{result} && !grep { $result eq $_ } OK_RESULTS) {
-        my $jobs = $self->cluster_jobs;
+        my $jobs = $self->cluster_jobs(cancelmode => 1);
         for my $job (sort keys %$jobs) {
-            $self->_job_stop_child($job);
+            $self->_job_stop_cluster($job);
         }
     }
 
@@ -1845,9 +1870,9 @@ sub cancel {
     if ($self->worker) {
         $self->worker->send_command(command => 'cancel', job_id => $self->id);
     }
-    my $jobs = $self->cluster_jobs;
+    my $jobs = $self->cluster_jobs(cancelmode => 1);
     for my $job (sort keys %$jobs) {
-        $count += $self->_job_stop_child($job);
+        $count += $self->_job_stop_cluster($job);
     }
 
     return $count;

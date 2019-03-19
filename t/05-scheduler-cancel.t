@@ -304,4 +304,67 @@ subtest 'chained parent fails -> parallel parents of children are cancelled (ski
     is($jobD->result, OpenQA::Jobs::Constants::SKIPPED,   'D result is skipped');
 };
 
+subtest 'parallel child with one parent fails -> parent is cancelled' => sub {
+    my %settingsA = %settings;
+    my %settingsB = %settings;
+    $settingsA{TEST} = 'A';
+    $settingsB{TEST} = 'B';
+    my $jobA = _job_create(\%settingsA);
+    $settingsB{_PARALLEL_JOBS} = [$jobA->id];
+    my $jobB = _job_create(\%settingsB);
+
+    # set B as failed and reload A from database
+    $jobB->done(result => OpenQA::Jobs::Constants::FAILED);
+    $jobA->discard_changes;
+
+    is($jobA->state, OpenQA::Jobs::Constants::CANCELLED, 'A state is cancelled');
+};
+
+subtest 'failure behaviour for multiple parallel children' => sub {
+    my %settingsA = %settings;
+    my %settingsB = %settings;
+    my %settingsC = %settings;
+    $settingsA{TEST} = 'A';
+    $settingsB{TEST} = 'B';
+    $settingsC{TEST} = 'C';
+    my $jobA = _job_create(\%settingsA);
+    $settingsB{_PARALLEL_JOBS} = [$jobA->id];
+    $settingsC{_PARALLEL_JOBS} = [$jobA->id];
+    my $jobB = _job_create(\%settingsB);
+    my $jobC = _job_create(\%settingsC);
+
+    # set B as failed and reload A and C from database
+    $jobB->done(result => OpenQA::Jobs::Constants::FAILED);
+    $jobA->discard_changes;
+    $jobC->discard_changes;
+
+    # A and C should be cancelled
+    is($jobA->state, OpenQA::Jobs::Constants::CANCELLED, 'A state is cancelled');
+    is($jobC->state, OpenQA::Jobs::Constants::CANCELLED, 'C state is cancelled');
+
+    # now test in 'do not cancel parent and other children' mode
+    $settingsA{PARALLEL_CANCEL_WHOLE_CLUSTER} = '0';
+    $jobA                                     = _job_create(\%settingsA);
+    $settingsB{_PARALLEL_JOBS}                = [$jobA->id];
+    $settingsC{_PARALLEL_JOBS}                = [$jobA->id];
+    $jobB                                     = _job_create(\%settingsB);
+    $jobC                                     = _job_create(\%settingsC);
+
+    # set B as failed and reload A and C from database
+    $jobB->done(result => OpenQA::Jobs::Constants::FAILED);
+    $jobA->discard_changes;
+    $jobC->discard_changes;
+
+    # this time A and C should still be scheduled (*not* cancelled)
+    is($jobA->state, OpenQA::Jobs::Constants::SCHEDULED, 'new A state is scheduled');
+    is($jobC->state, OpenQA::Jobs::Constants::SCHEDULED, 'new C state is scheduled');
+
+    # now set C as failed and reload A
+    $jobC->done(result => OpenQA::Jobs::Constants::FAILED);
+    $jobA->discard_changes;
+
+    # now A *should* be cancelled
+    is($jobA->state, OpenQA::Jobs::Constants::CANCELLED, 'new A state is cancelled');
+};
+
 done_testing();
