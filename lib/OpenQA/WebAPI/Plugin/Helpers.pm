@@ -363,6 +363,12 @@ sub register {
             );
         });
 
+    $app->helper(
+        'reply.gru_result' => sub {
+            my ($c, $result, $error_code) = @_;
+            return $c->render(json => $result, status => ($error_code // 200));
+        });
+
     $app->helper('reply.validation_error' => \&_validation_error);
 }
 

@@ -34,15 +34,15 @@ use Time::HiRes qw(sleep);
 use OpenQA::SeleniumTest;
 use Mojo::JSON 'decode_json';
 
-my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+my $test_case   = OpenQA::Test::Case->new;
+my $schema_name = OpenQA::Test::Database->generate_schema_name;
+my $schema      = $test_case->init_data(schema_name => $schema_name);
 
 # ensure needle dir can be listed (might not be the case because previous test run failed)
 my $needle_dir = 't/data/openqa/share/tests/opensuse/needles/';
 chmod(0755, $needle_dir);
 
 sub schema_hook {
-    my $schema  = OpenQA::Test::Database->new->create;
     my $needles = $schema->resultset('Needles');
     $needles->create(
         {
@@ -54,7 +54,7 @@ sub schema_hook {
             file_present           => 1,
         });
 }
-my $driver = call_driver(\&schema_hook);
+my $driver = call_driver(\&schema_hook, {with_gru => 1});
 unless ($driver) {
     plan skip_all => $OpenQA::SeleniumTest::drivermissing;
     exit(0);
@@ -174,18 +174,26 @@ subtest 'delete needle' => sub {
     };
 };
 
-# just to get some coverage abuse chromium to call an invalid ID
-# this is mere an experiment to test ajax functions in situations that
-# are hard to impossible to achieve using buttons and links
-subtest 'failing deletion' => sub {
-    # the route returns success with error, so check that
+subtest 'pass invalid IDs to needle deletion route' => sub {
     my $func = 'function(error) { window.deleteMsg = JSON.stringify(error); }';
-    ok(!$driver->execute_script("jQuery.ajax({url: '/admin/needles/delete?id=42', type: 'DELETE', success: $func});"),
-        "Delete ID 42");
+    ok(
+        !$driver->execute_script(
+            "jQuery.ajax({url: '/admin/needles/delete?id=42&id=foo', type: 'DELETE', success: $func});"),
+        'delete needle with ID 42'
+    );
     wait_for_ajax;
     my $error = decode_json($driver->execute_script('return window.deleteMsg;'));
-    is_deeply($error, {errors => [{display_name => "42", id => 42, message => "Unable to find 42"}], removed_ids => []},
-        'Proper error');
+    is_deeply(
+        $error,
+        {
+            errors => [
+                {id => 42,    message => 'Unable to find needle with ID "42"'},
+                {id => 'foo', message => 'Unable to find needle with ID "foo"'},
+            ],
+            removed_ids => []
+        },
+        'error returned'
+    );
 };
 
 kill_driver();

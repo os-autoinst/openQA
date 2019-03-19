@@ -23,6 +23,7 @@ use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema;
 use OpenQA::Utils;
 use Mojo::Pg;
+use Mojo::Promise;
 
 has app => undef, weak => 1;
 has 'dsn';
@@ -40,7 +41,8 @@ sub register_tasks {
     $app->plugin($_)
       for (
         qw(OpenQA::Task::Asset::Download OpenQA::Task::Asset::Limit OpenQA::Task::Job::Limit),
-        qw(OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Screenshot::Scan)
+        qw(OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Needle::Delete),
+        qw(OpenQA::Task::Screenshot::Scan),
       );
 }
 
@@ -133,6 +135,65 @@ sub enqueue {
 sub enqueue_limit_assets {
     my $self = shift;
     return $self->enqueue(limit_assets => [] => {priority => 10, ttl => 172800, limit => 1});
+}
+
+sub enqueue_and_keep_track {
+    my ($self, %args) = @_;
+
+    my $task_name        = $args{task_name};
+    my $task_description = $args{task_description};
+    my $task_args        = $args{task_args};
+    my $task_options     = $args{task_options};
+
+    # set default gru task options
+    $task_options = {
+        priority => 10,
+        ttl      => 60,
+    } unless ($task_options);
+
+    # check whether Minion worker are available to get a nice error message instead of an inactive job
+    if (!$self->has_workers) {
+        return Mojo::Promise->reject(
+            {error => 'No Minion worker available. The <code>openqa-gru</code> service is likely not running.'});
+    }
+
+    # enqueue Minion job
+    my $ids = $self->enqueue($task_name => $task_args, $task_options);
+    my $minion_id;
+    if (ref $ids eq 'HASH') {
+        $minion_id = $ids->{minion_id};
+    }
+
+    # keep track of the Minion job and continue rendering if it has completed
+    return $self->app->minion->result_p($minion_id, {interval => 0.5})->then(
+        sub {
+            my ($info) = @_;
+
+            unless (ref $info) {
+                return Mojo::Promise->reject({error => "Minion job for $task_description has been removed."});
+            }
+            return $info->{result};
+        }
+    )->catch(
+        sub {
+            my ($info) = @_;
+
+            # pass result hash with error message (used by save/delete needle tasks)
+            my $result = $info->{result};
+            if (ref $result eq 'HASH' && $result->{error}) {
+                return Mojo::Promise->reject($result, 500);
+            }
+
+            # format error message (fallback for general case)
+            my $error_message;
+            if (ref $result eq '' && $result) {
+                $error_message = "Task for $task_description failed: $result";
+            }
+            else {
+                $error_message = "Task for $task_description failed: Checkout Minion dashboard for further details.";
+            }
+            return Mojo::Promise->reject({error => $error_message, result => $result}, 500);
+        });
 }
 
 1;

@@ -17,6 +17,7 @@ package OpenQA::WebAPI::GruJob;
 use Mojo::Base 'Minion::Job';
 
 use OpenQA::Utils 'log_error';
+use Data::Dumper 'Dumper';
 
 sub execute {
     my $self = shift;
@@ -49,6 +50,7 @@ sub execute {
     my $state = $info->{state};
     if ($state eq 'failed' || defined $err) {
         $err //= $info->{result};
+        $err = Dumper($err) if (ref $err);
         log_error("Gru command issue: $err");
         $self->fail({defined $buffer ? (output => $buffer) : (), error => $err});
         $self->_fail_gru($gru_id => $err);

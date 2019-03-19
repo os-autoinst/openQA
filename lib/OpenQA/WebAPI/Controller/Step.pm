@@ -388,63 +388,26 @@ sub save_needle_ajax {
     my $needledir  = needledir($job->DISTRI, $job->VERSION);
     my $needlename = $validation->param('needlename');
 
-    # check whether Minion worker are available to get a nice error message instead of an inactive job
-    my $gru = $self->gru;
-    if (!$gru->has_workers) {
-        return $self->render(
-            json => {error => 'No Minion worker available. The <code>openqa-gru</code> service is likely not running.'}
-        );
-    }
-
-    # enqueue Minion job to copy the image and (if configured) run Git commands
-    my %minion_args = (
-        job_id       => $job_id,
-        user_id      => $self->current_user->id,
-        needle_json  => $validation->param('json'),
-        overwrite    => $self->param('overwrite'),
-        imagedir     => $self->param('imagedir') // '',
-        imagedistri  => $validation->param('imagedistri'),
-        imagename    => $validation->param('imagename'),
-        imageversion => $validation->param('imageversion'),
-        needledir    => $needledir,
-        needlename   => $needlename,
-    );
-    my %minion_options = (
-        priority => 10,
-        ttl      => 60,
-    );
-    my $ids = $gru->enqueue(save_needle => \%minion_args, \%minion_options);
-    my $minion_id;
-    if (ref $ids eq 'HASH') {
-        $minion_id = $ids->{minion_id};
-    }
-    my $minion     = $app->minion;
-    my $minion_job = $minion->job($minion_id);
-    if (!$minion_job) {
-        return $self->render(json => {error => 'Unable to enqueue Minion job for saving needle.'});
-    }
-
-    # keep track of the Minion job and continue rendering if it has completed
-    my $timer_id;
-    my $check_results = sub {
-        my ($loop) = @_;
-
-        eval {
-            # find the minion job
-            my $minion_job = $minion->job($minion_id);
-            if (!$minion_job) {
-                $loop->remove($timer_id);
-                return $self->render(json => {error => 'Minion job for saving needle has been removed.'});
-            }
-            my $info  = $minion_job->info;
-            my $state = $info->{state};
-
-            # retry on next tick if the job is still running
-            return unless $state && ($state eq 'finished' || $state eq 'failed');
-            $loop->remove($timer_id);
+    $self->gru->enqueue_and_keep_track(
+        task_name        => 'save_needle',
+        task_description => 'saving needles',
+        task_args        => {
+            job_id       => $job_id,
+            user_id      => $self->current_user->id,
+            needle_json  => $validation->param('json'),
+            overwrite    => $self->param('overwrite'),
+            imagedir     => $self->param('imagedir') // '',
+            imagedistri  => $validation->param('imagedistri'),
+            imagename    => $validation->param('imagename'),
+            imageversion => $validation->param('imageversion'),
+            needledir    => $needledir,
+            needlename   => $needlename,
+        }
+    )->then(
+        sub {
+            my ($result) = @_;
 
             # handle request for overwrite
-            my $result = $info->{result};
             if ($result->{requires_overwrite}) {
                 my $initial_request = $self->req->params->to_hash;
                 $initial_request->{requires_overwrite} = 1;
@@ -455,8 +418,7 @@ sub save_needle_ajax {
             if (my $json_data = $result->{json_data}) {
                 $app->gru->enqueue('scan_needles');
                 $app->emit_event(
-                    'openqa_needle_modify',
-                    {
+                    openqa_needle_modify => {
                         needle => "$needledir/$needlename.png",
                         tags   => $json_data->{tags},
                         update => 0,
@@ -466,16 +428,12 @@ sub save_needle_ajax {
             # add the URL to restart if that should be proposed to the user
             $result->{restart} = $self->url_for('apiv1_restart', jobid => $job_id) if ($result->{propose_restart});
 
-            return $self->render(json => $result);
-        };
-
-        # ensure the timer is removed and something rendered in any case
-        if ($@) {
-            $loop->remove($timer_id);
-            return $self->render(json => {error => 'An internal error occured.'}, status => 500);
+            $self->render(json => $result);
         }
-    };
-    $timer_id = Mojo::IOLoop->recurring(0.5 => $check_results);
+    )->catch(
+        sub {
+            $self->reply->gru_result(@_);
+        });
 }
 
 sub map_error_to_avg {

@@ -104,40 +104,13 @@ function setupAdminNeedles() {
         // to scroll there
         $('#confirm_delete').animate({scrollTop: 0}, 'fast');
 
-        // delete needle by needle
-        var deleteNext = function() {
-            if(!outstandingList.data('aborted') && ids.length > 0) {
-                // update progress
-                deletionProgressElement.text(ids.length);
 
-                // delete next ID
-                var id = ids.shift();
-                $.ajax({
-                    url: url + id,
-                    type: 'DELETE',
-                    success: function(response) {
-                        $.each(response.errors, function(index, error) {
-                            var errorElement = $('<li></li>');
-                            errorElement.append(error.display_name);
-                            errorElement.append($('<br>'));
-                            errorElement.append(error.message);
-                            failedList.append(errorElement);
-                        });
-                        $('#deletion-item-' + id).remove();
-                        deleteNext();
-                    },
-                    error: function(xhr, ajaxOptions, thrownError) {
-                        var errorElement = $('<li></li>');
-                        errorElement.append($('#deletion-item-' + id).text());
-                        errorElement.append($('<br>'));
-                        errorElement.append(thrownError);
-                        failedList.append(errorElement);
-                        $('#deletion-item-' + id).remove();
-                        deleteNext();
-                    }
-                });
-            } else {
-                // all needles deleted (at least tried to)
+        // define function to delete a bunch of needles at once
+        // note: Deleting all needles at once could lead to timeouts and the progress could not be tracked at all.
+        var needlesToDeleteAtOnce = 5;
+        var deleteBunchOfNeedles = function() {
+            // handle all needles being deleted (or at least attempted to be deleted)
+            if(outstandingList.data('aborted') || ids.length <= 0) {
                 reloadNeedlesTable();
                 $('#deletion-ongoing').hide();
                 $('#abort_delete').hide();
@@ -148,11 +121,71 @@ function setupAdminNeedles() {
                     // allow to continue deleting outstanding needles after abort
                     $('#really_delete').show();
                 }
+                return true;
             }
+
+            // update progress
+            deletionProgressElement.text(ids.length);
+
+            // determine the next needle IDs to delete
+            var nextIDs = ids.splice(0, needlesToDeleteAtOnce);
+
+            // define function to handle single error affecting all deletions (e.g. GRU task TTL exceeded)
+            var handleSingleError = function (singleError) {
+                $.each(nextIDs, function(index, id) {
+                    var errorElement = $('<li></li>');
+                    errorElement.append($('#deletion-item-' + id).text());
+                    errorElement.append($('<br>'));
+                    errorElement.append(singleError);
+                    failedList.append(errorElement);
+                    $('#deletion-item-' + id).remove();
+                });
+                deleteBunchOfNeedles();
+            };
+
+            $.ajax({
+                url: url + nextIDs.join('&id='),
+                type: 'DELETE',
+                success: function(response) {
+                    // add error affecting all deletions
+                    var singleError = response.error;
+                    if (singleError) {
+                        return handleSingleError(singleError);
+                    }
+
+                    // add individual error messages
+                    if (response.errors) {
+                        $.each(response.errors, function(index, error) {
+                            var errorElement = $('<li></li>');
+                            var errorContext = error.display_name;
+                            if (!errorContext) {
+                                errorContext = $('#deletion-item-' + error.id).text();
+                            }
+                            if (errorContext) {
+                                errorElement.append(errorContext);
+                                errorElement.append($('<br>'));
+                            }
+                            errorElement.append(error.message);
+                            failedList.append(errorElement);
+                        });
+                    }
+
+                    // delete needles from outstanding list
+                    $.each(nextIDs, function(index, id) {
+                        $('#deletion-item-' + id).remove();
+                    });
+
+                    deleteBunchOfNeedles();
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    handleSingleError(thrownError);
+                }
+            });
+
             return true;
         };
 
-        deleteNext();
+        deleteBunchOfNeedles();
         return true;
     }
 
