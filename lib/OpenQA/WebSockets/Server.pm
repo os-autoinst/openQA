@@ -36,28 +36,26 @@ our $WORKER_STATUS = {};
 sub setup {
     my $self = shift;
 
-    $self->helper(log_name => sub { return 'websockets' });
-    $self->helper(schema   => sub { return OpenQA::Schema->singleton });
-    $self->defaults(appname => 'openQA Websocket Server');
-    $self->mode('production');
-
     OpenQA::Setup::read_config($self);
     OpenQA::Setup::setup_log($self);
 
-    push @{$self->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
+    $self->defaults(appname => 'openQA Websocket Server');
+    $self->mode('production');
+
+    # no cookies for worker, no secrets to protect
+    $self->secrets(['nosecretshere']);
 
     # Assetpack is required to render layouts pages
+    push @{$self->plugins->namespaces}, 'OpenQA::WebSockets::Plugin';
     $self->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Fetch OpenQA::WebAPI::AssetPipe Combine)]});
     $self->plugin('Helpers');
+    $self->plugin('OpenQA::WebAPI::Plugin::Helpers');
     $self->asset->process;
 
     my $r = $self->routes;
     $self->routes->namespaces(['OpenQA::WebSockets::Controller']);
     my $ca = $r->under('/')->to('Auth#check');
     $ca->websocket('/ws/<workerid:num>')->to('Worker#ws');
-
-    # no cookies for worker, no secrets to protect
-    $self->secrets(['nosecretshere']);
 
     # start worker checker - check workers each 2 minutes
     Mojo::IOLoop->recurring(120 => \&_workers_checker);
@@ -69,11 +67,6 @@ sub setup {
         });
 
     return Mojo::Server::Daemon->new(app => $self);
-}
-
-sub ws_is_worker_connected {
-    my ($workerid) = @_;
-    return ($WORKERS->{$workerid} && $WORKERS->{$workerid}->{socket} ? 1 : 0);
 }
 
 sub ws_send {
