@@ -22,7 +22,9 @@ use Test::More;
 use POSIX;
 use FindBin;
 use lib ("$FindBin::Bin/lib", "../lib", "lib");
+use Mojo::Util 'monkey_patch';
 use OpenQA::WebSockets::Server;
+use OpenQA::WebSockets::Controller::Worker;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Utils 'redirect_output';
 
@@ -42,8 +44,8 @@ subtest "WebSocket Server _workers_checker" => sub {
 
 subtest "WebSocket Server _get_stale_worker_jobs" => sub {
     use Mojo::Util 'monkey_patch';
-    monkey_patch "OpenQA::WebSockets::Server", app => sub { FooBarTransaction->new };
-    FooBarTransaction->new->OpenQA::WebSockets::Server::_ws_create();
+    monkey_patch 'OpenQA::WebSockets::Controller::Worker', app => sub { FooBarTransaction->new };
+    FooBarTransaction->new->OpenQA::WebSockets::Controller::Worker::ws();
     my $buffer;
     {
         open my $handle, '>', \$buffer;
@@ -54,38 +56,37 @@ subtest "WebSocket Server _get_stale_worker_jobs" => sub {
 };
 
 subtest "WebSocket Server _message()" => sub {
-    use Mojo::Util 'monkey_patch';
-    monkey_patch "OpenQA::WebSockets::Server", _get_worker => sub { FooBarWorker->new };
+    monkey_patch 'OpenQA::WebSockets::Controller::Worker', _get_worker => sub { FooBarWorker->new };
     my $fake_tx = FooBarTransaction->new;
     my $buf;
     redirect_output(\$buf);
 
-    $fake_tx->OpenQA::WebSockets::Server::_message("");
+    $fake_tx->OpenQA::WebSockets::Controller::Worker::_message("");
 
     is @{$fake_tx->{out}}[0], "1003,Received unexpected data from worker, forcing close",
       "WS Server returns 1003 when message is not a hash";
 
-    $fake_tx->OpenQA::WebSockets::Server::_message({type => "status", jobid => 1, data => "mydata"});
+    $fake_tx->OpenQA::WebSockets::Controller::Worker::_message({type => "status", jobid => 1, data => "mydata"});
     is @{$fake_tx->{w}->{status}}[0], "mydata", "status got updated";
 
     $buf = undef;
 
-    $fake_tx->OpenQA::WebSockets::Server::_message({type => "FOOBAR"});
+    $fake_tx->OpenQA::WebSockets::Controller::Worker::_message({type => "FOOBAR"});
     like $buf, qr/Received unknown message type "FOOBAR" from worker/, "log_error on unknown message";
 
     monkey_patch "Mojo::Transaction::Websocket", send => sub { undef };
-    $fake_tx->OpenQA::WebSockets::Server::_message({type => 'worker_status'});
+    $fake_tx->OpenQA::WebSockets::Controller::Worker::_message({type => 'worker_status'});
     like($buf, qr/Could not send the population number to worker/, 'worker population unavailable')
       or diag explain $buf;
 
     monkey_patch "OpenQA::WebAPI", schema => sub { undef };
-    $fake_tx->OpenQA::WebSockets::Server::_message({type => 'worker_status'});
+    $fake_tx->OpenQA::WebSockets::Controller::Worker::_message({type => 'worker_status'});
     like($buf, qr/Failed updating worker seen and error status/, 'seen/error not available')
       or diag explain $buf;
 
     no warnings 'redefine';
     *FooBarWorker::websocket_api_version = sub { };
-    $fake_tx->OpenQA::WebSockets::Server::_message({type => 'worker_status'});
+    $fake_tx->OpenQA::WebSockets::Controller::Worker::_message({type => 'worker_status'});
     like($buf, qr/Received a message from an incompatible worker/, 'worker incompatible')
       or diag explain $buf;
     is @{$fake_tx->{out}}[1],
@@ -93,14 +94,14 @@ subtest "WebSocket Server _message()" => sub {
 
     $buf                                 = undef;
     *FooBarWorker::websocket_api_version = sub { 0 };
-    $fake_tx->OpenQA::WebSockets::Server::_message({type => 'property_change'});
+    $fake_tx->OpenQA::WebSockets::Controller::Worker::_message({type => 'property_change'});
     like $buf, qr/Received a message from an incompatible worker/ or diag explain $buf;
     is @{$fake_tx->{out}}[2],
       "1008,Connection terminated from WebSocket server - incompatible communication protocol version";
 
     $buf                                 = undef;
     *FooBarWorker::websocket_api_version = sub { WEBSOCKET_API_VERSION + 1 };
-    $fake_tx->OpenQA::WebSockets::Server::_message({type => 'accepted'});
+    $fake_tx->OpenQA::WebSockets::Controller::Worker::_message({type => 'accepted'});
     like $buf, qr/Received a message from an incompatible worker/ or diag explain $buf;
     is @{$fake_tx->{out}}[3],
       "1008,Connection terminated from WebSocket server - incompatible communication protocol version";

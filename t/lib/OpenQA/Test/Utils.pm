@@ -188,14 +188,19 @@ sub create_websocket_server {
     if ($wspid == 0) {
         $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
         $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
+
         use OpenQA::WebSockets;
         use Mojo::Util 'monkey_patch';
         use OpenQA::WebSockets::Server;
+        use OpenQA::WebSockets::Controller::Worker;
+
+        # TODO: Kill it with fire!
         if ($bogus) {
-            monkey_patch 'OpenQA::WebSockets::Server', _get_worker => sub { return };
-            monkey_patch 'OpenQA::WebSockets::Server', ws_create => sub {
-                $_[0]->on(json   => \&OpenQA::WebSockets::Server::_message);
-                $_[0]->on(finish => \&OpenQA::WebSockets::Server::_finish);
+            monkey_patch 'OpenQA::WebSockets::Controller::Worker', _get_worker => sub { return };
+            monkey_patch 'OpenQA::WebSockets::Controller::Worker', ws => sub {
+                my $c = shift;
+                $c->on(json   => \&OpenQA::WebSockets::Controller::Worker::_message);
+                $c->on(finish => \&OpenQA::WebSockets::Controller::Worker::_finish);
             };
         }
         monkey_patch 'OpenQA::WebSockets::Server', _workers_checker => sub { 1 }

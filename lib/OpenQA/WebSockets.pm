@@ -23,7 +23,7 @@ use base 'Net::DBus::Object';
 use Net::DBus::Exporter 'org.opensuse.openqa.WebSockets';
 use Mojo::IOLoop;
 use OpenQA::IPC;
-use OpenQA::WebSockets::Server ();
+use OpenQA::WebSockets::Server;
 use OpenQA::Utils 'log_debug';
 
 # monkey patching for debugging IPC

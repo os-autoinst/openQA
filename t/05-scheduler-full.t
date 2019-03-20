@@ -239,7 +239,7 @@ subtest 'Websocket server - close connection test' => sub {
     my $w2_pid          = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2, $log_file);
     my $re              = qr/\[.*?\]\sConnection turned off from .*?\- (.*?)\s\:(.*?) dead/;
 
-    my $attempts = 800;
+    my $attempts = 300;
     do {
         sleep 1;
         $attempts--;
