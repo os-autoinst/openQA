@@ -30,19 +30,19 @@ use OpenQA::Test::Utils 'redirect_output';
 
 OpenQA::WebSockets::Server->new();
 
-subtest "WebSocket Server _workers_checker" => sub {
+subtest "WebSocket Server workers_checker" => sub {
     use Mojo::Util 'monkey_patch';
     monkey_patch "OpenQA::Schema", connect_db => sub { FooBarTransaction->new };
     my $buffer;
     {
         open my $handle, '>', \$buffer;
         local *STDOUT = $handle;
-        OpenQA::WebSockets::Server::_workers_checker;
+        OpenQA::WebSockets::Server->new->workers_checker;
     };
     like $buffer, qr/Failed dead job detection/;
 };
 
-subtest "WebSocket Server _get_stale_worker_jobs" => sub {
+subtest "WebSocket Server get_stale_worker_jobs" => sub {
     use Mojo::Util 'monkey_patch';
     monkey_patch 'OpenQA::WebSockets::Controller::Worker', app => sub { FooBarTransaction->new };
     FooBarTransaction->new->OpenQA::WebSockets::Controller::Worker::ws();
@@ -50,9 +50,9 @@ subtest "WebSocket Server _get_stale_worker_jobs" => sub {
     {
         open my $handle, '>', \$buffer;
         local *STDOUT = $handle;
-        OpenQA::WebSockets::Server::_get_stale_worker_jobs(-9999999999);
+        OpenQA::WebSockets::Server->new->get_stale_worker_jobs(-9999999999);
     };
-    like $buffer, qr/Worker Boooo not seen since 0 seconds/;
+    like $buffer, qr/Worker Boooo not seen since \d+ seconds/;
 };
 
 subtest "WebSocket Server _message()" => sub {

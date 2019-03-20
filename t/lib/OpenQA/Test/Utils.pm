@@ -193,6 +193,7 @@ sub create_websocket_server {
         use Mojo::Util 'monkey_patch';
         use OpenQA::WebSockets::Server;
         use OpenQA::WebSockets::Controller::Worker;
+        use OpenQA::WebSockets::Plugin::Helpers;
 
         # TODO: Kill it with fire!
         if ($bogus) {
@@ -203,7 +204,7 @@ sub create_websocket_server {
                 $c->on(finish => \&OpenQA::WebSockets::Controller::Worker::_finish);
             };
         }
-        monkey_patch 'OpenQA::WebSockets::Server', _workers_checker => sub { 1 }
+        monkey_patch 'OpenQA::WebSockets::Plugin::Helpers', _workers_checker => sub { 1 }
           if ($noworkercheck);
         OpenQA::WebSockets::run;
         Devel::Cover::report() if Devel::Cover->can('report');

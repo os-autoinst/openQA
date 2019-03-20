@@ -28,6 +28,7 @@ use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
+use Mojo::Util 'monkey_patch';
 use DBIx::Class::Timestamps 'now';
 use Net::DBus;
 use Test::More;
@@ -200,15 +201,12 @@ subtest 'chained parent fails -> chilren are canceled (skipped)' => sub {
 
 subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => sub {
     # monkey patch ws_send of OpenQA::WebSockets::Server to store received command
-    package OpenQA::WebSockets::Server;
-    no warnings "redefine";
     my @commands = ();
-    sub ws_send {
+    monkey_patch 'OpenQA::WebSockets::Server', 'ws_send', sub {
         my ($workerid, $command, $jobid) = @_;
         push @OpenQA::WebSockets::Server::commands, $command;
-    }
+    };
 
-    package main;
     my %settingsA = %settings;
     my %settingsB = %settings;
     my %settingsC = %settings;
