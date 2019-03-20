@@ -4854,12 +4854,13 @@ the effect of pressing the magic SysRq key if you are lucky.</p>
 <div class="paragraph">
 <p>The os-autoinst package supports several types of 'consoles' of which the
 virtio serial terminal is one. The majority of code for this console is
-located in consoles/virtio_terminal.pm and consoles/virtio_screen.pm. However
-there is also related code in backends/qemu.pm and distribution.pm.</p>
+located in consoles/virtio_terminal.pm and consoles/serial_screen.pm (used also
+svirt serial console). However there is also related code in backends/qemu.pm
+and distribution.pm.</p>
 </div>
 <div class="paragraph">
 <p>You may find it useful to read the documentation in virtio_terminal.pm and
-virtio_screen.pm if you need to perform some special action on a terminal such
+serial_screen.pm if you need to perform some special action on a terminal such
 as triggering a signal or simulating the SysRq key. There are also some
 console specific arguments to wait_serial and type_string such as
 record_output.</p>
@@ -7008,7 +7009,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-03-19 11:58:51 UTC
+Last updated 2019-03-20 09:27:12 UTC
 </div>
 </div>
 </body>
