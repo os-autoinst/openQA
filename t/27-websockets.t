@@ -119,6 +119,7 @@ sub tx  { shift }
 sub app { shift }
 sub log { shift }
 sub schema             { shift }
+sub status             { OpenQA::WebSockets::Model::Status->singleton }
 sub resultset          { shift }
 sub find               { shift->{w} }
 sub on                 { shift }

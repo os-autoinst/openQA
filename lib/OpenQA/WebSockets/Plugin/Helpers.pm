@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 use OpenQA::Schema;
 use OpenQA::Schema::Result::Workers ();
+use OpenQA::WebSockets::Model::Status;
 use OpenQA::Utils qw(log_debug log_warning log_info);
 use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
 use DateTime;
@@ -28,7 +29,9 @@ sub register {
     my ($self, $app) = @_;
 
     $app->helper(log_name => sub { 'websockets' });
-    $app->helper(schema   => sub { OpenQA::Schema->singleton });
+
+    $app->helper(schema => sub { OpenQA::Schema->singleton });
+    $app->helper(status => sub { OpenQA::WebSockets::Model::Status->singleton });
 
     $app->helper(get_stale_worker_jobs => \&_get_stale_worker_jobs);
     $app->helper(workers_checker       => \&_workers_checker);
@@ -37,11 +40,12 @@ sub register {
 sub _get_stale_worker_jobs {
     my ($c, $threshold) = @_;
 
-    my $schema = OpenQA::Schema->singleton;
+    my $schema  = $c->schema;
+    my $workers = $c->status->workers;
 
     # grab the workers we've seen lately
     my @ok_workers;
-    for my $worker (values %$OpenQA::WebSockets::Server::WORKERS) {
+    for my $worker (values %$workers) {
         if (time - $worker->{last_seen} <= $threshold) {
             push(@ok_workers, $worker->{id});
         }

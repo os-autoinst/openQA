@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Schema;
 use OpenQA::Utils qw(log_debug log_error log_info log_warning);
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKERS_CHECKER_THRESHOLD);
+use OpenQA::WebSockets::Model::Status;
 use DateTime;
 use Data::Dumper 'Dumper';
 use Data::Dump 'pp';
@@ -27,16 +28,18 @@ use Try::Tiny;
 sub ws {
     my $self = shift;
 
+    my $workers = $self->status->workers;
+
     my $workerid = $self->param('workerid');
-    unless ($OpenQA::WebSockets::Server::WORKERS->{$workerid}) {
+    unless ($workers->{$workerid}) {
         my $db = $self->app->schema->resultset("Workers")->find($workerid);
         unless ($db) {
             return $self->render(text => 'Unauthorized', status =>);
         }
-        $OpenQA::WebSockets::Server::WORKERS->{$workerid}
+        $workers->{$workerid}
           = {id => $workerid, db => $db, socket => undef, last_seen => time()};
     }
-    my $worker = $OpenQA::WebSockets::Server::WORKERS->{$workerid};
+    my $worker = $workers->{$workerid};
 
     # upgrade connection to websocket by subscribing to events
     $self->on(json   => \&_message);
@@ -67,7 +70,9 @@ sub _finish {
 sub _get_worker {
     my ($tx) = @_;
 
-    for my $worker (values %$OpenQA::WebSockets::Server::WORKERS) {
+    my $workers = OpenQA::WebSockets::Model::Status->singleton->workers;
+
+    for my $worker (values %$workers) {
         if ($worker->{socket} && ($worker->{socket}->connection eq $tx->connection)) {
             return $worker;
         }
@@ -79,8 +84,10 @@ sub _get_worker {
 sub _message {
     my ($self, $json) = @_;
 
-    my $app    = $self->app;
-    my $schema = $app->schema;
+    my $app           = $self->app;
+    my $schema        = $app->schema;
+    my $worker_status = $app->status->worker_status;
+
     my $worker = _get_worker($self->tx);
     unless ($worker) {
         $app->log->warn("A message received from unknown worker connection");
@@ -124,7 +131,7 @@ sub _message {
         my $jobid                 = $json->{job}->{id};
         my $wid                   = $worker->{id};
 
-        $OpenQA::WebSockets::Server::WORKER_STATUS->{$wid} = $json;
+        $worker_status->{$wid} = $json;
         log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $wid, Dumper($json)));
 
         try {
@@ -146,8 +153,8 @@ sub _message {
             $registered_job_id = $schema->resultset("Workers")->find($wid)->job->id();
             log_debug("Found Job($registered_job_id) in DB from worker_status update sent by Worker($wid)")
               if $registered_job_id && $wid;
-            log_debug("Received request has id: " . $OpenQA::WebSockets::Server::WORKER_STATUS->{$wid}{job}{id})
-              if $OpenQA::WebSockets::Server::WORKER_STATUS->{$wid}{job}{id};
+            log_debug("Received request has id: " . $worker_status->{$wid}{job}{id})
+              if $worker_status->{$wid}{job}{id};
         };
 
         try {
@@ -165,9 +172,8 @@ sub _message {
             $registered_job_token = $schema->resultset("Workers")->find($wid)->get_property('JOBTOKEN');
             log_debug("Worker($wid) for Job($registered_job_id) has token $registered_job_token")
               if $registered_job_token && $registered_job_id && $wid;
-            log_debug("Received request has token: "
-                  . $OpenQA::WebSockets::Server::WORKER_STATUS->{$wid}{job}{settings}{JOBTOKEN})
-              if $OpenQA::WebSockets::Server::WORKER_STATUS->{$wid}{job}{settings}{JOBTOKEN};
+            log_debug("Received request has token: " . $worker_status->{$wid}{job}{settings}{JOBTOKEN})
+              if $worker_status->{$wid}{job}{settings}{JOBTOKEN};
         };
 
         try {
@@ -188,17 +194,16 @@ sub _message {
                 # Check if worker is doing a job for another WebUI
                 (
                        $registered_job_id
-                    && exists $OpenQA::WebSockets::Server::WORKER_STATUS->{$wid}
-                    && exists $OpenQA::WebSockets::Server::WORKER_STATUS->{$wid}{job}
-                    && exists $OpenQA::WebSockets::Server::WORKER_STATUS->{$wid}{job}{id}
-                    && $OpenQA::WebSockets::Server::WORKER_STATUS->{$wid}{job}{id} != $registered_job_id
+                    && exists $worker_status->{$wid}
+                    && exists $worker_status->{$wid}{job}
+                    && exists $worker_status->{$wid}{job}{id}
+                    && $worker_status->{$wid}{job}{id} != $registered_job_id
                 )
                 || (   $registered_job_token
-                    && exists $OpenQA::WebSockets::Server::WORKER_STATUS->{$wid}
-                    && exists $OpenQA::WebSockets::Server::WORKER_STATUS->{$wid}{job}
-                    && exists $OpenQA::WebSockets::Server::WORKER_STATUS->{$wid}{job}{settings}{JOBTOKEN}
-                    && $OpenQA::WebSockets::Server::WORKER_STATUS->{$wid}{job}{settings}{JOBTOKEN} ne
-                    $registered_job_token))
+                    && exists $worker_status->{$wid}
+                    && exists $worker_status->{$wid}{job}
+                    && exists $worker_status->{$wid}{job}{settings}{JOBTOKEN}
+                    && $worker_status->{$wid}{job}{settings}{JOBTOKEN} ne $registered_job_token))
               ||
               # Or if it declares itself free.
               ($current_worker_status && $current_worker_status eq "free");

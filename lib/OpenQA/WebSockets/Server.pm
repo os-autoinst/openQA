@@ -20,13 +20,8 @@ use Mojo::Server::Daemon;
 use OpenQA::IPC;
 use OpenQA::Setup;
 use OpenQA::Utils qw(log_debug log_warning log_info);
+use OpenQA::WebSockets::Model::Status;
 use db_profiler;
-
-# id->worker mapping
-our $WORKERS = {};
-
-# Will be filled out from worker status messages
-our $WORKER_STATUS = {};
 
 sub startup {
     my $self = shift;
@@ -62,7 +57,7 @@ sub setup {
     Mojo::IOLoop->recurring(
         380 => sub {
             log_debug('Resetting worker status table');
-            $WORKER_STATUS = {};
+            $self->status->worker_status({});
         });
 
     return Mojo::Server::Daemon->new(app => $self);
@@ -70,17 +65,18 @@ sub setup {
 
 sub ws_is_worker_connected {
     my ($workerid) = @_;
-    my $workers = $WORKERS;
+    my $workers = OpenQA::WebSockets::Model::Status->singleton->workers;
     return ($workers->{$workerid} && $workers->{$workerid}->{socket} ? 1 : 0);
 }
 
 sub ws_send {
     my ($workerid, $msg, $jobid, $retry) = @_;
 
-    return unless ($workerid && $msg && $WORKERS->{$workerid});
+    my $workers = OpenQA::WebSockets::Model::Status->singleton->workers;
+    return unless ($workerid && $msg && $workers->{$workerid});
     $jobid ||= '';
     my $res;
-    my $tx = $WORKERS->{$workerid}->{socket};
+    my $tx = $workers->{$workerid}->{socket};
     if ($tx) {
         $res = $tx->send({json => {type => $msg, jobid => $jobid}});
     }
@@ -104,14 +100,15 @@ sub ws_send_job {
         return $result;
     }
 
-    unless ($WORKERS->{$job->{assigned_worker_id}}) {
+    my $workers = OpenQA::WebSockets::Model::Status->singleton->workers;
+    unless ($workers->{$job->{assigned_worker_id}}) {
         $result->{state}->{error}
           = "Worker " . $job->{assigned_worker_id} . " doesn't have established a ws connection";
         return $result;
     }
 
     my $res;
-    my $tx = $WORKERS->{$job->{assigned_worker_id}}->{socket};
+    my $tx = $workers->{$job->{assigned_worker_id}}->{socket};
     if ($tx) {
         $res = $tx->send({json => {type => 'grab_job', job => $job}});
     }
@@ -133,7 +130,9 @@ sub ws_send_job {
 # consider ws_send_all as broadcast and don't wait for confirmation
 sub ws_send_all {
     my ($msg) = @_;
-    for my $tx (values %$WORKERS) {
+
+    my $workers = OpenQA::WebSockets::Model::Status->singleton->workers;
+    for my $tx (values %$workers) {
         if ($tx->{socket}) {
             $tx->{socket}->send({json => {type => $msg}});
         }

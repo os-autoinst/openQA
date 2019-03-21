@@ -28,7 +28,7 @@ use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
-use Mojo::Util 'monkey_patch';
+use Test::MockModule;
 use DBIx::Class::Timestamps 'now';
 use Net::DBus;
 use Test::More;
@@ -201,11 +201,14 @@ subtest 'chained parent fails -> chilren are canceled (skipped)' => sub {
 
 subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => sub {
     # monkey patch ws_send of OpenQA::WebSockets::Server to store received command
-    my @commands = ();
-    monkey_patch 'OpenQA::WebSockets::Server', 'ws_send', sub {
-        my ($workerid, $command, $jobid) = @_;
-        push @OpenQA::WebSockets::Server::commands, $command;
-    };
+    my (@commands, $server_called);
+    my $mock_server = Test::MockModule->new('OpenQA::WebSockets::Server');
+    $mock_server->mock(
+        ws_send => sub {
+            my ($workerid, $command, $jobid) = @_;
+            $server_called++;
+            push @OpenQA::WebSockets::Server::commands, $command;
+        });
 
     my %settingsA = %settings;
     my %settingsB = %settings;
@@ -260,6 +263,8 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
     $jobB->update({state => OpenQA::Jobs::Constants::DONE});
     ok($jobB->t_finished, 'B has t_finished set after being actually cancelled')
       and ok($jobB->t_finished ge $now, 'B has t_finished set to a sane value');
+
+    ok $server_called, 'Mocked ws_send function has been called';
 };
 
 subtest 'chained parent fails -> parallel parents of children are cancelled (skipped)' => sub {
