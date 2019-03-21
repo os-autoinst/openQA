@@ -138,8 +138,9 @@ sub schedules {
     my $self = shift;
 
     my %yaml;
-    my $groups = $self->db->resultset("JobGroups")
-      ->search($self->param('id') ? {id => $self->param('id')} : undef, {select => [qw(id name)]});
+    my $groups = $self->db->resultset("JobGroups")->search(
+        $self->param('id') ? {id => $self->param('id')} : undef,
+        {select => [qw(id name parent_id default_priority)]});
     while (my $group = $groups->next) {
         my %group;
         my $templates
@@ -150,7 +151,6 @@ sub schedules {
         $group{products}      = {};
 
         my %machines;
-        my %prios;
         # Extract products and tests per architecture
         while (my $template = $templates->next) {
             $group{products}{$template->product->name} = {
@@ -161,9 +161,8 @@ sub schedules {
             my %test_suite;
             $test_suite{machine} = $template->machine->name;
             $machines{$template->product->arch}{$template->machine->name}++;
-            if ($template->prio) {
+            if ($template->prio && $template->prio != $group->default_priority) {
                 $test_suite{prio} = $template->prio;
-                $prios{$template->product->arch}{$template->prio}++;
             }
             my $test_suites = $group{architectures}{$template->product->arch}{$template->product->name};
             push @$test_suites, {$template->test_suite->name => \%test_suite};
@@ -172,11 +171,7 @@ sub schedules {
 
         # Split off defaults
         foreach my $arch (keys %{$group{architectures}}) {
-            # Ensure prios hash is defined for this architecture
-            $prios{$arch}{0} = 0;
-            my $default_prio
-              = (sort { $prios{$arch}->{$b} <=> $prios{$arch}->{$a} or $b cmp $a } keys %{$prios{$arch}})[0] + 0;
-            $group{defaults}{$arch}{prio} = $default_prio;
+            $group{defaults}{$arch}{prio} = $group->default_priority;
             my $default_machine
               = (sort { $machines{$arch}->{$b} <=> $machines{$arch}->{$a} or $b cmp $a } keys %{$machines{$arch}})[0];
             $group{defaults}{$arch}{machine} = $default_machine;
@@ -188,9 +183,6 @@ sub schedules {
                         my $attr = $test_suite->{$name};
                         if ($attr->{machine} eq $default_machine) {
                             delete $attr->{machine};
-                        }
-                        if ($attr->{prio} && $attr->{prio} == $default_prio) {
-                            delete $attr->{prio};
                         }
                         if (%$attr) {
                             $test_suite->{$name} = $attr;

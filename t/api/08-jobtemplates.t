@@ -546,6 +546,8 @@ is_deeply(
 $yaml->{groupname}{products}{'opensuse'}{version} = '42.1';
 is_deeply($t->app->validate_yaml($yaml, 1), [], 'YAML valid as expected')
   or diag explain YAML::XS::Dump($yaml);
+# Make 40 our default priority, which matters when we look at the "defaults" key later
+$app->schema->resultset('JobGroups')->find({name => 'opensuse'})->update({default_priority => 40});
 # Get all groups
 $get  = $t->get_ok("/api/v1/experimental/job_templates_scheduling")->status_is(200);
 $yaml = YAML::XS::Load($get->tx->res->body);
