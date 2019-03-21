@@ -414,8 +414,8 @@ exported - but called by B<create()>.
 
 sub schedule_iso {
     my ($self, $args) = @_;
-    # register assets posted here right away, in case no job
-    # templates produce jobs.
+
+    # register assets posted here right away, in case no job templates produce jobs
     my $schema = $self->schema;
     my $assets = $schema->resultset('Assets');
     for my $asset (values %{parse_assets_from_settings($args)}) {
@@ -423,6 +423,8 @@ sub schedule_iso {
         return {error => 'Asset type and name must not be empty.'} unless $name && $type;
         return {error => "Failed to register asset $name."} unless $assets->register($type, $name, 1);
     }
+
+    # read arguments for deprioritization and obsoleten
     my $deprioritize       = delete $args->{_DEPRIORITIZEBUILD} // 0;
     my $deprioritize_limit = delete $args->{_DEPRIORITIZE_LIMIT};
     my $obsolete           = !(delete $args->{_NO_OBSOLETE} // delete $args->{_NOOBSOLETEBUILD} // $deprioritize);
@@ -433,10 +435,8 @@ sub schedule_iso {
     my $downloads = create_downloads_list($args);
     my $jobs      = $self->_generate_jobs($args);
 
-    # XXX: take some attributes from the first job to guess what old jobs to
-    # cancel. We should have distri object that decides which attributes are
-    # relevant here.
-
+    # take some attributes from the first job to guess what old jobs to cancel
+    # note: We should have distri object that decides which attributes are relevant here.
     if (($obsolete || $deprioritize) && $jobs && $jobs->[0] && $jobs->[0]->{BUILD}) {
         my $build = $jobs->[0]->{BUILD};
         OpenQA::Utils::log_debug(
@@ -462,39 +462,37 @@ sub schedule_iso {
         }
     }
 
-    # the jobs are now sorted parents first
-
+    # define function to create jobs in the database; executed as transaction
     my @successful_job_ids;
     my @failed_job_info;
-    my $coderef = sub {
-        my @jobs;
+    my $create_jobs_in_database = sub {
+        my $jobs_resultset = $schema->resultset('Jobs');
+        my @created_jobs;
+
         # remember ids of created parents
-        my %testsuite_ids;    # key: "suite", value: {key: "machine" value: "array of job ids"}
+        my %testsuite_ids;    # key: "suite", value: {key: "machine", value: "array of job ids"}
 
         for my $settings (@{$jobs || []}) {
             my $prio = delete $settings->{PRIO};
             $settings->{_GROUP_ID} = delete $settings->{GROUP_ID};
 
             # create a new job with these parameters and count if successful, do not send job notifies yet
-            my $job = $schema->resultset('Jobs')->create_from_settings($settings);
-            push @jobs, $job;
+            my $job = $jobs_resultset->create_from_settings($settings);
+            push @created_jobs, $job;
 
             $testsuite_ids{$settings->{TEST}}->{$settings->{MACHINE}} //= [];
             push @{$testsuite_ids{$settings->{TEST}}->{$settings->{MACHINE}}}, $job->id;
 
             # set prio if defined explicitely (otherwise default prio is used)
-            if (defined($prio)) {
-                $job->priority($prio);
-            }
-            $job->update;
+            $job->update({priority => $prio}) if (defined($prio));
         }
 
-        # for cycle detection
-        my %created_jobs;
-        # for checking wrong parents
-        my %cluster_parents;
+        # keep track of ...
+        my %created_jobs;       # ... for cycle detection
+        my %cluster_parents;    # ... for checking wrong parents
+
         # jobs are created, now recreate dependencies and extract ids
-        for my $job (@jobs) {
+        for my $job (@created_jobs) {
             my $error_messages
               = $self->job_create_dependencies($job, \%testsuite_ids, \%created_jobs, \%cluster_parents);
             if (!@$error_messages) {
@@ -525,14 +523,14 @@ sub schedule_iso {
         }
 
         # now calculate blocked_by state
-        for my $job (@jobs) {
+        for my $job (@created_jobs) {
             $job->calculate_blocked_by;
         }
         enqueue_download_jobs($self->gru, $downloads, \@successful_job_ids);
     };
 
     try {
-        $schema->txn_do($coderef);
+        $schema->txn_do($create_jobs_in_database);
     }
     catch {
         my $error = shift;
@@ -541,14 +539,18 @@ sub schedule_iso {
         @successful_job_ids = ();
     };
 
+    # enqueue cleanup task
     $self->gru->enqueue_limit_assets();
-    $self->gru->enqueue(limit_results_and_logs => [] => {priority => 5, ttl => 172800, limit => 1});
+    $self->gru->enqueue(limit_results_and_logs => [], {priority => 5, ttl => 172800, limit => 1});
 
+    # emit events
     $self->emit_event('openqa_iso_create', $args);
     for my $succjob (@successful_job_ids) {
         $self->emit_event('openqa_job_create', {id => $succjob});
     }
+
     wakeup_scheduler;
+
     return {
         successful_job_ids => \@successful_job_ids,
         failed_job_info    => \@failed_job_info,

@@ -115,13 +115,16 @@ sub latest_jobs {
 
 sub create_from_settings {
     my ($self, $settings) = @_;
-    my %settings = %$settings;
 
+    my %settings     = %$settings;
     my %new_job_args = (TEST => $settings{TEST});
+
+    my $result_source = $self->result_source;
+    my $txn_guard     = $result_source->storage->txn_scope_guard;
+
+    # assign group ID
     my $group;
     my %group_args;
-    my $txn_guard = $self->result_source->storage->txn_scope_guard;
-
     if ($settings{_GROUP_ID}) {
         $group_args{id} = delete $settings{_GROUP_ID};
     }
@@ -130,13 +133,14 @@ sub create_from_settings {
         $group_args{name} = $group_name unless $group_args{id};
     }
     if (%group_args) {
-        $group = $self->result_source->schema->resultset('JobGroups')->find(\%group_args);
+        $group = $result_source->schema->resultset('JobGroups')->find(\%group_args);
         if ($group) {
             $new_job_args{group_id} = $group->id;
             $new_job_args{priority} = $group->default_priority;
         }
     }
 
+    # handle chained dependencies
     if ($settings{_START_AFTER_JOBS}) {
         my $ids = $settings{_START_AFTER_JOBS};    # support array ref or comma separated values
         $ids = [split(/\s*,\s*/, $ids)] if (ref($ids) ne 'ARRAY');
@@ -150,6 +154,7 @@ sub create_from_settings {
         delete $settings{_START_AFTER_JOBS};
     }
 
+    # handle parallel dependencies
     if ($settings{_PARALLEL_JOBS}) {
         my $ids = $settings{_PARALLEL_JOBS};    # support array ref or comma separated values
         $ids = [split(/\s*,\s*/, $ids)] if (ref($ids) ne 'ARRAY');
@@ -162,7 +167,8 @@ sub create_from_settings {
         }
         delete $settings{_PARALLEL_JOBS};
     }
-    # migrate the important keys
+
+    # move important keys from the settings directly to the job
     for my $key (qw(DISTRI VERSION FLAVOR ARCH TEST MACHINE BUILD)) {
         my $value = delete $settings{$key};
         next unless $value;
@@ -175,29 +181,37 @@ sub create_from_settings {
     }
 
     my $job = $self->create(\%new_job_args);
-    my @job_settings;
 
-    # prepare the settings for bulk insert
-    while (my ($k, $v) = each %settings) {
-        my @values = ($v);
-        if ($k eq 'WORKER_CLASS') {    # special case
-            @values = split(m/,/, $v);
+    # add job settings
+    my @job_settings;
+    my $now = now;
+    for my $key (keys %settings) {
+        my $concatenated_value = $settings{$key};
+
+        my @values;
+        if ($key eq 'WORKER_CLASS') {
+            @values = split(m/,/, $concatenated_value);
         }
-        my $now = now;
-        for my $l (@values) {
-            push @job_settings, {job_id => $job->id, t_created => $now, t_updated => $now, key => $k, value => $l};
+        else {
+            @values = ($concatenated_value);
+        }
+
+        for my $value (@values) {
+            push(@job_settings, {t_created => $now, t_updated => $now, key => $key, value => $value});
         }
     }
+    $job->settings->populate(\@job_settings);
 
-    $self->result_source->schema->resultset("JobSettings")->populate(\@job_settings);
-    # this will associate currently available assets with job
+    # associate currently available assets with job
     $job->register_assets_from_settings;
 
     if (%group_args && !$group) {
         OpenQA::Utils::log_warning(
             'Ignoring invalid group ' . encode_json(\%group_args) . ' when creating new job ' . $job->id);
     }
+
     $job->calculate_blocked_by;
+
     $txn_guard->commit;
     return $job;
 }
