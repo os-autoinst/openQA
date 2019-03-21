@@ -74,7 +74,6 @@ our @EXPORT  = qw(
   &check_download_url
   &check_download_whitelist
   &create_downloads_list
-  &enqueue_download_jobs
   &human_readable_size
   &locate_asset
   &job_groups_and_parents
@@ -834,18 +833,6 @@ sub create_downloads_list {
         }
     }
     return \%downloads;
-}
-
-sub enqueue_download_jobs {
-    my ($gru, $downloads, $job_ids) = @_;
-    return unless (%$downloads and @$job_ids);
-    # array of hashrefs job_id => id; this is what create needs
-    # to create entries in a related table (gru_dependencies)
-    my @jobsarray = map +{job_id => $_}, @$job_ids;
-    for my $url (keys %$downloads) {
-        my ($path, $do_extract) = @{$downloads->{$url}};
-        $gru->enqueue(download_asset => [$url, $path, $do_extract] => {priority => 20} => \@jobsarray);
-    }
 }
 
 sub send_job_to_worker {

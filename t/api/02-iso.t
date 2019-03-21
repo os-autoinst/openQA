@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 # Copyright (C) 2016 Red Hat
 #
 # This program is free software; you can redistribute it and/or modify
@@ -30,6 +30,7 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
+use OpenQA::Schema::Result::ScheduledProducts;
 use Mojo::IOLoop;
 
 use OpenQA::WebSockets;
@@ -48,10 +49,11 @@ $t->ua(
     OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-my $schema        = $t->app->schema;
-my $job_templates = $schema->resultset('JobTemplates');
-my $test_suites   = $schema->resultset('TestSuites');
-my $jobs          = $schema->resultset('Jobs');
+my $schema             = $t->app->schema;
+my $job_templates      = $schema->resultset('JobTemplates');
+my $test_suites        = $schema->resultset('TestSuites');
+my $jobs               = $schema->resultset('Jobs');
+my $scheduled_products = $schema->resultset('ScheduledProducts');
 
 sub lj {
     return unless $ENV{HARNESS_IS_VERBOSE};
@@ -132,8 +134,7 @@ is($ret->tx->res->json->{job}->{state}, 'scheduled', 'job $clone99981 is schedul
 
 lj;
 
-my @tasks;
-@tasks = $schema->resultset('GruTasks')->search({taskname => 'download_asset'});
+my @tasks = $schema->resultset('GruTasks')->search({taskname => 'download_asset'});
 is(scalar @tasks, 0, 'we have no gru download tasks to start with');
 
 # add a random comment on a scheduled but not started job so that this one
@@ -195,6 +196,63 @@ subtest 'group filter and priority override' => sub {
 
     # delete job template again so the remaining tests are unaffected
     $job_template->delete;
+};
+
+subtest 'scheduled products added' => sub {
+    my @scheduled_products = $scheduled_products->all;
+    is(scalar @scheduled_products, 3, 'exactly 3 products scheduled in previous subtest');
+
+    for my $product (@scheduled_products) {
+        my $product_id = $product->id;
+        is($product->distri,       'opensuse',                                           "distri, $product_id");
+        is($product->version,      '13.1',                                               "version, $product_id");
+        is($product->flavor,       'DVD',                                                "flavor, $product_id");
+        is($product->arch,         'i586',                                               "arch, $product_id");
+        is($product->build,        '0091',                                               "build, $product_id");
+        is($product->iso,          $iso,                                                 "iso, $product_id");
+        is(ref $product->settings, 'HASH',                                               "settings, $product_id");
+        is(ref $product->results,  'HASH',                                               "results, $product_id");
+        is($product->status,       OpenQA::Schema::Result::ScheduledProducts::SCHEDULED, "status, $product_id");
+    }
+
+    my $empty_result = $scheduled_products[0]->results;
+    is_deeply(
+        $empty_result,
+        {
+            failed_job_info    => [],
+            successful_job_ids => [],
+        },
+        'empty result stored correctly, 1'
+    ) or diag explain $empty_result;
+
+    my $product_1        = $scheduled_products[1];
+    my $non_empty_result = $product_1->results;
+    is(scalar @{$non_empty_result->{successful_job_ids}}, 1, 'successful job ID stored correctly, 2')
+      or diag explain $non_empty_result;
+
+    my $settings = $scheduled_products[2]->settings;
+    is_deeply(
+        $settings,
+        {
+            ISO        => $iso,
+            DISTRI     => 'opensuse',
+            VERSION    => '13.1',
+            FLAVOR     => 'DVD',
+            ARCH       => 'i586',
+            BUILD      => '0091',
+            PRECEDENCE => 'original',
+            _GROUP_ID  => '1002',
+            _PRIORITY  => 43,
+        },
+        'settings stored correctly, 3'
+    ) or diag explain $settings;
+
+    ok(my $scheduled_job_id = $non_empty_result->{successful_job_ids}->[0], 'scheduled job ID present');
+    ok(my $scheduled_job = $jobs->find($scheduled_job_id), 'job actually scheduled');
+    is($scheduled_job->scheduled_product->id, $product_1->id, 'scheduled product assigned');
+    is_deeply([map { $_->id } $product_1->jobs->all],
+        [$scheduled_job_id], 'relationship works also the other way around');
+
 };
 
 # set prio of job template for $server_64 to undef so the prio is inherited from the job group
@@ -889,13 +947,23 @@ subtest 'Create dependency for jobs on different machines - log error parents' =
             {Parallel => [$supportserver_ppc->{id}], Chained => []},
             "supportserver_ppc is only parent of " . $c->{name});
     }
-    for (0 .. 1) {
-        like(
-            $res->json->{failed}->[$_]->{error_messages}->[0],
-            qr/supportserver:(.*?) has no child, check its machine placed or dependency setting typos/,
-            "supportserver placed on 64bit/s390x machine, but no child"
-        );
-    }
+
+    subtest 'error reported to client and logged in scheduled products table' => sub {
+        for (0 .. 1) {
+            my $json                     = $res->json;
+            my $scheduled_product        = $scheduled_products->find($json->{scheduled_product_id});
+            my $error_returned_to_client = $json->{failed}->[$_]->{error_messages}->[0];
+            my $error_stored_in_scheduled_product
+              = $scheduled_product->results->{failed_job_info}->[$_]->{error_messages}->[0];
+            for my $error ($error_returned_to_client, $error_stored_in_scheduled_product) {
+                like(
+                    $error,
+                    qr/supportserver:(.*?) has no child, check its machine placed or dependency setting typos/,
+                    "supportserver placed on 64bit/s390x machine, but no child"
+                );
+            }
+        }
+    };
 
     $schema->txn_rollback;
 };

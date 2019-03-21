@@ -161,6 +161,11 @@ __PACKAGE__->add_columns(
         data_type     => 'integer',
         default_value => 0,
     },
+    scheduled_product_id => {
+        data_type      => 'integer',
+        is_foreign_key => 1,
+        is_nullable    => 1,
+    },
 );
 __PACKAGE__->add_timestamps;
 
@@ -204,6 +209,9 @@ __PACKAGE__->has_many(networks => 'OpenQA::Schema::Result::JobNetworks', 'job_id
 
 __PACKAGE__->has_many(gru_dependencies => 'OpenQA::Schema::Result::GruDependencies', 'job_id');
 __PACKAGE__->has_many(screenshot_links => 'OpenQA::Schema::Result::ScreenshotLinks', 'job_id');
+__PACKAGE__->belongs_to(
+    scheduled_product => 'OpenQA::Schema::Result::ScheduledProducts',
+    'scheduled_product_id', {join_type => 'left', on_delete => 'SET NULL'});
 
 __PACKAGE__->filter_column(
     result_dir => {

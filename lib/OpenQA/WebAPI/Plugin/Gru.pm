@@ -40,8 +40,10 @@ sub register_tasks {
     my $app = $self->app;
     $app->plugin($_)
       for (
-        qw(OpenQA::Task::Asset::Download OpenQA::Task::Asset::Limit OpenQA::Task::Job::Limit),
+        qw(OpenQA::Task::Asset::Download OpenQA::Task::Asset::Limit),
         qw(OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Needle::Delete),
+        qw(OpenQA::Task::Job::Limit),
+        qw(OpenQA::Task::Iso::Schedule),
         qw(OpenQA::Task::Screenshot::Scan),
       );
 }
@@ -135,6 +137,18 @@ sub enqueue {
 sub enqueue_limit_assets {
     my $self = shift;
     return $self->enqueue(limit_assets => [] => {priority => 10, ttl => 172800, limit => 1});
+}
+
+sub enqueue_download_jobs {
+    my ($self, $downloads, $job_ids) = @_;
+    return unless (%$downloads and @$job_ids);
+    # array of hashrefs job_id => id; this is what create needs
+    # to create entries in a related table (gru_dependencies)
+    my @jobsarray = map +{job_id => $_}, @$job_ids;
+    for my $url (keys %$downloads) {
+        my ($path, $do_extract) = @{$downloads->{$url}};
+        $self->enqueue(download_asset => [$url, $path, $do_extract] => {priority => 20} => \@jobsarray);
+    }
 }
 
 sub enqueue_and_keep_track {

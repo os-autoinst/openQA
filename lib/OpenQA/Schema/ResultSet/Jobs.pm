@@ -114,7 +114,7 @@ sub latest_jobs {
 }
 
 sub create_from_settings {
-    my ($self, $settings) = @_;
+    my ($self, $settings, $scheduled_product_id) = @_;
 
     my %settings     = %$settings;
     my %new_job_args = (TEST => $settings{TEST});
@@ -179,6 +179,9 @@ sub create_from_settings {
     if (!$settings{WORKER_CLASS}) {
         $settings{WORKER_CLASS} = 'qemu_' . ($new_job_args{ARCH} // 'x86_64');
     }
+
+    # assign scheduled product
+    $new_job_args{scheduled_product_id} = $scheduled_product_id;
 
     my $job = $self->create(\%new_job_args);
 
