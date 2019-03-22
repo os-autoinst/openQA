@@ -22,7 +22,6 @@ use base 'Net::DBus::Object';
 
 use Net::DBus::Exporter 'org.opensuse.openqa.Scheduler';
 use Net::DBus::Reactor;
-use Data::Dump 'pp';
 use OpenQA::IPC;
 use OpenQA::Setup;
 use OpenQA::Utils 'log_debug';

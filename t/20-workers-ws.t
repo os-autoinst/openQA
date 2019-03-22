@@ -64,7 +64,7 @@ subtest 'worker with job and not updated in last 120s is considered dead' => sub
 
     $schema->resultset('Workers')->update_all({t_updated => $dtf->format_datetime($dt)});
     stderr_like {
-        OpenQA::WebSockets::Server::_workers_checker();
+        OpenQA::WebSockets::Server->new->workers_checker();
     }
     qr/dead job 99961 aborted and duplicated 99982\n.*dead job 99963 aborted as incomplete/;
     _check_job_incomplete($_) for (99961, 99963);

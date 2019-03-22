@@ -30,7 +30,6 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
-use Data::Dump;
 
 use OpenQA::WebSockets;
 use OpenQA::Scheduler;

@@ -106,8 +106,9 @@ use FindBin;
 use lib "$FindBin::RealBin/../lib";
 
 use strict;
-use Data::Dump;
 use v5.10;
+
+use Data::Dump 'dd';
 use Getopt::Long;
 use Mojo::Util qw(decamelize);
 use Mojo::URL;

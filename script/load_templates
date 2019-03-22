@@ -66,7 +66,7 @@ use lib "$FindBin::RealBin/../lib";
 use strict;
 use File::Basename qw(dirname);
 use Try::Tiny;
-use Data::Dump qw(dd pp);
+use Data::Dump 'dd';
 use Mojo::Util qw(decamelize);
 use Mojo::URL;
 use OpenQA::Client;

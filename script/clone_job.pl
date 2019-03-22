@@ -113,7 +113,7 @@ added to the also cloned parent jobs.
 
 use strict;
 use warnings;
-use Data::Dump qw(dd pp);
+use Data::Dump 'pp';
 use Getopt::Long;
 use LWP::UserAgent;
 Getopt::Long::Configure("no_ignore_case");

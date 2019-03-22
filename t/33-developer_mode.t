@@ -47,7 +47,6 @@ use lib "$FindBin::Bin/lib";
 use Test::More;
 use Test::Mojo;
 use Test::Output 'stderr_like';
-use Data::Dumper;
 use IO::Socket::INET;
 use POSIX '_exit';
 use Fcntl ':mode';

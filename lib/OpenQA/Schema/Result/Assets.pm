@@ -24,7 +24,6 @@ use base 'DBIx::Class::Core';
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
-use OpenQA::IPC;
 use Date::Format;
 use Archive::Extract;
 use File::Basename;

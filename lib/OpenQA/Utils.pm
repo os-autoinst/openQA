@@ -30,7 +30,6 @@ use IO::Socket::IP;
 use Time::HiRes 'gettimeofday';
 use POSIX 'strftime';
 use Scalar::Util 'blessed';
-use Data::Dump 'pp';
 use Mojo::Log;
 use Scalar::Util qw(blessed reftype);
 use Exporter 'import';

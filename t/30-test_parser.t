@@ -28,7 +28,6 @@ use OpenQA::Parser::Format::XUnit;
 use OpenQA::Parser::Format::TAP;
 use OpenQA::Parser::Format::IPA;
 use Mojo::File qw(path tempdir);
-use Data::Dumper;
 use Mojo::JSON qw(decode_json encode_json);
 
 subtest 'Result base class object' => sub {

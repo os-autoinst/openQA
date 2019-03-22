@@ -16,22 +16,19 @@
 package OpenQA::IPC;
 use Mojo::Base -strict;
 
+use Carp 'confess';
 use Net::DBus;
 use Net::DBus::Callback;
 use Net::DBus::Binding::Watch;
 use Mojo::IOLoop;
-use Data::Dump 'pp';
 use Try::Tiny;
-use Carp;
-use Scalar::Util 'weaken';
-use OpenQA::Utils qw(log_debug log_warning log_error);
+use OpenQA::Utils qw(log_debug log_error);
 use OpenQA::Events;
 
 my $openqa_prefix = 'org.opensuse.openqa';
 my %services      = (
     scheduler  => 'Scheduler',
-    websockets => 'WebSockets',
-    webapi     => 'WebAPI'
+    websockets => 'WebSockets'
 );
 
 my %handles;
@@ -246,12 +243,6 @@ sub scheduler {
 sub websockets {
     my ($self, @param) = @_;
     return $self->_dispatch('websockets', @param);
-}
-
-# webapi - send message to WebUI/API
-sub webapi {
-    my ($self, @param) = @_;
-    return $self->_dispatch('webapi', @param);
 }
 
 1;
