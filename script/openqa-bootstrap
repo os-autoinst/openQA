@@ -14,7 +14,7 @@ fi
 
 
 # install packages
-zypper -n install --no-recommends openQA-local-db apache2 openQA-worker qemu-kvm sudo
+zypper -n install --no-recommends openQA-local-db apache2 openQA-worker qemu-kvm sudo os-autoinst-distri-opensuse-deps
 
 
 # setup database
