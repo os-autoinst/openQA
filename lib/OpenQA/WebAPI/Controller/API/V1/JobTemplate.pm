@@ -138,13 +138,14 @@ sub schedules {
     my $self = shift;
 
     my %yaml;
-    my $groups = $self->db->resultset("JobGroups")->search(
+    my $groups = $self->schema->resultset("JobGroups")->search(
         $self->param('id') ? {id => $self->param('id')} : undef,
         {select => [qw(id name parent_id default_priority)]});
     while (my $group = $groups->next) {
         my %group;
         my $templates
-          = $self->db->resultset("JobTemplates")->search({group_id => $group->id}, {order_by => 'me.test_suite_id'});
+          = $self->schema->resultset("JobTemplates")
+          ->search({group_id => $group->id}, {order_by => 'me.test_suite_id'});
 
         # Always set the hash of test suites to account for empty groups
         $group{architectures} = {};
