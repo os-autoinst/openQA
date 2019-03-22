@@ -40,9 +40,11 @@ sub startup {
     $self->asset->process;
 
     my $r = $self->routes;
-    $self->routes->namespaces(['OpenQA::WebSockets::Controller']);
+    $r->namespaces(['OpenQA::WebSockets::Controller']);
     my $ca = $r->under('/')->to('Auth#check');
+    $ca->get('/' => {json => {name => $self->defaults('appname')}});
     $ca->websocket('/ws/<workerid:num>')->to('Worker#ws');
+    $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 }
 
 sub setup {
