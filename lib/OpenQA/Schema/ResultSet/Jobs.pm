@@ -148,7 +148,7 @@ sub create_from_settings {
             push @{$new_job_args{parents}},
               {
                 parent_job_id => $id,
-                dependency    => OpenQA::Schema::Result::JobDependencies::CHAINED,
+                dependency    => OpenQA::JobDependencies::Constants::CHAINED,
               };
         }
         delete $settings{_START_AFTER_JOBS};
@@ -162,7 +162,7 @@ sub create_from_settings {
             push @{$new_job_args{parents}},
               {
                 parent_job_id => $id,
-                dependency    => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+                dependency    => OpenQA::JobDependencies::Constants::PARALLEL,
               };
         }
         delete $settings{_PARALLEL_JOBS};

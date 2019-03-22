@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2018 SUSE Linux GmbH
+# Copyright (C) 2015-2019 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-use OpenQA::Schema::Result::Jobs ();
 use Mojo::JSON qw(decode_json encode_json);
 use db_helpers;
 use OpenQA::Parser::Result::OpenQA;

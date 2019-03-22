@@ -53,13 +53,13 @@ sub schema_hook {
         {
             child_job_id  => 99963,
             parent_job_id => 99938,
-            dependency    => OpenQA::Schema::Result::JobDependencies::CHAINED,
+            dependency    => OpenQA::JobDependencies::Constants::CHAINED,
         });
     $dependencies->create(
         {
             child_job_id  => 99945,
             parent_job_id => 99937,
-            dependency    => OpenQA::Schema::Result::JobDependencies::CHAINED,
+            dependency    => OpenQA::JobDependencies::Constants::CHAINED,
         });
 }
 

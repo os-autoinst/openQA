@@ -25,7 +25,7 @@ use DBIx::Class::Timestamps 'now';
 use File::Basename;
 use Try::Tiny;
 use OpenQA::Utils;
-use OpenQA::Schema::Result::JobDependencies;
+use OpenQA::JobDependencies::Constants;
 use Mojo::JSON qw(encode_json decode_json);
 use Carp;
 
@@ -635,8 +635,8 @@ sub _create_dependencies_for_job {
     my @error_messages;
     my $settings = $job->settings_hash;
     for my $dependency (
-        [START_AFTER_TEST => OpenQA::Schema::Result::JobDependencies::CHAINED],
-        [PARALLEL_WITH    => OpenQA::Schema::Result::JobDependencies::PARALLEL])
+        [START_AFTER_TEST => OpenQA::JobDependencies::Constants::CHAINED],
+        [PARALLEL_WITH    => OpenQA::JobDependencies::Constants::PARALLEL])
     {
         my ($depname, $deptype) = @$dependency;
         next unless defined $settings->{$depname};

@@ -715,7 +715,7 @@ sub _add_dependency_to_graph {
     my ($edges, $cluster, $cluster_by_job, $parent_job_id, $child_job_id, $dependency_type) = @_;
 
     # add edge for chained dependencies
-    if ($dependency_type eq OpenQA::Schema::Result::JobDependencies::CHAINED) {
+    if ($dependency_type eq OpenQA::JobDependencies::Constants::CHAINED) {
         push(
             @$edges,
             {
@@ -726,7 +726,7 @@ sub _add_dependency_to_graph {
     }
 
     # add job to a cluster if dependency is parallel with
-    return unless ($dependency_type eq OpenQA::Schema::Result::JobDependencies::PARALLEL);
+    return unless ($dependency_type eq OpenQA::JobDependencies::Constants::PARALLEL);
 
     # check whether the jobs are already parted of a cluster
     my $job1_cluster_id = $cluster_by_job->{$child_job_id};
@@ -763,10 +763,10 @@ sub _add_dependency_to_node {
     my ($node, $parent, $dependency_type) = @_;
 
     my $key;
-    if ($dependency_type eq OpenQA::Schema::Result::JobDependencies::CHAINED) {
+    if ($dependency_type eq OpenQA::JobDependencies::Constants::CHAINED) {
         $key = 'start_after';
     }
-    elsif ($dependency_type eq OpenQA::Schema::Result::JobDependencies::PARALLEL) {
+    elsif ($dependency_type eq OpenQA::JobDependencies::Constants::PARALLEL) {
         $key = 'parallel_with';
     }
     else {

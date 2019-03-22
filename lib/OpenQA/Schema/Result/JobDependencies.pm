@@ -23,12 +23,7 @@ use base 'DBIx::Class::Core';
 
 use db_helpers;
 
-# Use integers instead of a string labels for DEPENDENCIES because:
-#  - It's part of the primary key
-#  - JobDependencies is an internal table, not exposed in the API
-use constant CHAINED      => 1;
-use constant PARALLEL     => 2;
-use constant DEPENDENCIES => (CHAINED, PARALLEL);
+use OpenQA::JobDependencies::Constants;
 
 __PACKAGE__->table('job_dependencies');
 __PACKAGE__->add_columns(
@@ -57,8 +52,10 @@ sub sqlt_deploy_hook {
 sub to_string {
     my ($self) = @_;
 
-    my %deps = (1 => "Chained", 2 => "Parallel");
-
+    my %deps = (
+        OpenQA::JobDependencies::Constants::CHAINED  => "Chained",
+        OpenQA::JobDependencies::Constants::PARALLEL => "Parallel"
+    );
     return $deps{$self->dependency};
 }
 
