@@ -154,15 +154,15 @@ sub schedules {
         # Extract products and tests per architecture
         while (my $template = $templates->next) {
             $group{products}{$template->product->name} = {
-                distri  => $template->product->distri,
-                flavor  => $template->product->flavor,
-                version => $template->product->version
+                distribution => $template->product->distri,
+                flavor       => $template->product->flavor,
+                version      => $template->product->version
             };
             my %test_suite;
             $test_suite{machine} = $template->machine->name;
             $machines{$template->product->arch}{$template->machine->name}++;
             if ($template->prio && $template->prio != $group->default_priority) {
-                $test_suite{prio} = $template->prio;
+                $test_suite{priority} = $template->prio;
             }
             my $test_suites = $group{architectures}{$template->product->arch}{$template->product->name};
             push @$test_suites, {$template->test_suite->name => \%test_suite};
@@ -171,7 +171,7 @@ sub schedules {
 
         # Split off defaults
         foreach my $arch (keys %{$group{architectures}}) {
-            $group{defaults}{$arch}{prio} = $group->default_priority;
+            $group{defaults}{$arch}{priority} = $group->default_priority;
             my $default_machine
               = (sort { $machines{$arch}->{$b} <=> $machines{$arch}->{$a} or $b cmp $a } keys %{$machines{$arch}})[0];
             $group{defaults}{$arch}{machine} = $default_machine;

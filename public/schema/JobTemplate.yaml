@@ -29,7 +29,7 @@ patternProperties:
                   - type: string
                     description: Name of a test suite name
                   - type: object
-                    description: A test suite with machine and/ or prio specified
+                    description: A test suite with machine and/ or priority specified
                     additionalProperties: false
                     patternProperties:
                       "^[A-Za-z0-9_+]+$":
@@ -38,7 +38,7 @@ patternProperties:
                         properties:
                           machine:
                             type: string
-                          prio:
+                          priority:
                             type: number
       defaults:
         description: A set of architectures with default configurations
@@ -50,12 +50,12 @@ patternProperties:
             description: The architecture to define a default configuration for eg. ppc64le
             required:
             - machine
-            - prio
+            - priority
             additionalProperties: false
             properties:
               machine:
                 type: string
-              prio:
+              priority:
                 type: number
       products:
         patternProperties:
@@ -63,12 +63,12 @@ patternProperties:
             type: object
             description: The name of a product (medium)
             required:
-              - distri
+              - distribution
               - flavor
               - version
             additionalProperties: false
             properties:
-              distri:
+              distribution:
                 type: string
               flavor:
                 type: string

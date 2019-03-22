@@ -528,10 +528,10 @@ is_deeply($t->app->validate_yaml($yaml, 1), ["/groupname/products: Missing prope
 $yaml->{groupname}{products}{'opensuse'} = {};
 is_deeply(
     @{$t->app->validate_yaml($yaml, 1)}[0],
-    '/groupname/products/opensuse/distri: Missing property.',
+    '/groupname/products/opensuse/distribution: Missing property.',
     'No distri specified'
 ) or diag explain YAML::XS::Dump($yaml);
-$yaml->{groupname}{products}{'opensuse'}{distri} = 'sle';
+$yaml->{groupname}{products}{'opensuse'}{distribution} = 'sle';
 is_deeply(
     @{$t->app->validate_yaml($yaml, 1)}[0],
     '/groupname/products/opensuse/flavor: Missing property.',
@@ -579,7 +579,7 @@ is_deeply(
                         'kde',
                         {
                             RAID0 => {
-                                prio => 20,
+                                priority => 20,
                             }
                         },
                         {
@@ -606,15 +606,15 @@ is_deeply(
             },
             defaults => {
                 i586 => {
-                    machine => '64bit',
-                    prio    => 40,
+                    machine  => '64bit',
+                    priority => 40,
                 },
             },
             products => {
                 'opensuse-13.1-DVD-i586' => {
-                    distri  => 'opensuse',
-                    flavor  => 'DVD',
-                    version => '13.1',
+                    distribution => 'opensuse',
+                    flavor       => 'DVD',
+                    version      => '13.1',
                 },
             },
         },
