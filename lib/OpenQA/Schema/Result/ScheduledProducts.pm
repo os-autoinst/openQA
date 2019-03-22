@@ -112,6 +112,30 @@ __PACKAGE__->inflate_column(
         deflate => sub { encode_json(shift) },
     });
 
+sub to_hash {
+    my ($self, %args) = @_;
+    my %result;
+
+    # add all columns
+    for my $column ($self->result_source->columns) {
+        $result{$column} = $self->get_column($column);
+    }
+
+    # decode JSON columns
+    for my $column (qw(results settings)) {
+        if (my $encoded_json = $result{$column}) {
+            $result{$column} = decode_json($encoded_json);
+        }
+    }
+
+    # add job IDs
+    if ($args{include_job_ids}) {
+        $result{job_ids} = [map { $_->id } $self->jobs->all];
+    }
+
+    return \%result;
+}
+
 =over 4
 
 =item schedule_iso()

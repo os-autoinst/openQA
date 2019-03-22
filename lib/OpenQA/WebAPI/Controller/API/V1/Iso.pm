@@ -40,6 +40,34 @@ schedule jobs for a given ISO, or cancel jobs for a given ISO.
 
 =over 4
 
+=item show_scheduled_product()
+
+Returns (status) information and jobs for a previously scheduled product via create().
+
+=back
+
+=cut
+
+sub show_scheduled_product {
+    my ($self) = @_;
+
+    my $scheduled_product_id = $self->param('scheduled_product_id');
+    my $scheduled_products   = $self->app->schema->resultset('ScheduledProducts');
+    my $scheduled_product    = $scheduled_products->find($scheduled_product_id);
+    if (!$scheduled_product) {
+        return $self->render(
+            json   => {error => 'Scheduled product does not exist.'},
+            status => 404,
+        );
+    }
+
+    my @args = (include_job_ids => $self->param('include_job_ids'));
+
+    $self->render(json => $scheduled_product->to_hash(@args));
+}
+
+=over 4
+
 =item create()
 
 Schedule jobs for assets matching the required settings DISTRI, VERSION, FLAVOR and ARCH

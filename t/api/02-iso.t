@@ -226,33 +226,60 @@ subtest 'scheduled products added' => sub {
     ) or diag explain $empty_result;
 
     my $product_1        = $scheduled_products[1];
+    my $product_1_id     = $product_1->id;
     my $non_empty_result = $product_1->results;
     is(scalar @{$non_empty_result->{successful_job_ids}}, 1, 'successful job ID stored correctly, 2')
       or diag explain $non_empty_result;
 
-    my $settings = $scheduled_products[2]->settings;
-    is_deeply(
-        $settings,
-        {
-            ISO        => $iso,
-            DISTRI     => 'opensuse',
-            VERSION    => '13.1',
-            FLAVOR     => 'DVD',
-            ARCH       => 'i586',
-            BUILD      => '0091',
-            PRECEDENCE => 'original',
-            _GROUP_ID  => '1002',
-            _PRIORITY  => 43,
-        },
-        'settings stored correctly, 3'
-    ) or diag explain $settings;
+    my $stored_settings   = $scheduled_products[1]->settings;
+    my %expected_settings = (
+        ISO        => $iso,
+        DISTRI     => 'opensuse',
+        VERSION    => '13.1',
+        FLAVOR     => 'DVD',
+        ARCH       => 'i586',
+        BUILD      => '0091',
+        PRECEDENCE => 'original',
+        _GROUP     => 'opensuse test',
+    );
+    is_deeply($stored_settings, \%expected_settings, 'settings stored correctly, 3') or diag explain $stored_settings;
 
     ok(my $scheduled_job_id = $non_empty_result->{successful_job_ids}->[0], 'scheduled job ID present');
     ok(my $scheduled_job = $jobs->find($scheduled_job_id), 'job actually scheduled');
-    is($scheduled_job->scheduled_product->id, $product_1->id, 'scheduled product assigned');
+    is($scheduled_job->scheduled_product->id, $product_1_id, 'scheduled product assigned');
     is_deeply([map { $_->id } $product_1->jobs->all],
         [$scheduled_job_id], 'relationship works also the other way around');
 
+    subtest 'api for querying scheduled products' => sub {
+        $t->get_ok("/api/v1/isos/$product_1_id?include_job_ids=1")->status_is(200);
+        my $json = $t->tx->res->json;
+
+        ok(delete $json->{t_created}, 't_created exists');
+        ok(delete $json->{t_updated}, 't_updated exists');
+        is_deeply(
+            $json,
+            {
+                id            => $product_1_id,
+                gru_task_id   => undef,
+                minion_job_id => undef,
+                user_id       => 99903,
+                job_ids       => [$scheduled_job_id],
+                status        => 'scheduled',
+                distri        => 'opensuse',
+                version       => '13.1',
+                flavor        => 'DVD',
+                build         => '0091',
+                arch          => 'i586',
+                iso           => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',
+                results       => {
+                    failed_job_info    => [],
+                    successful_job_ids => [$scheduled_job_id],
+                },
+                settings => \%expected_settings,
+            },
+            'scheduled product serialized as expected'
+        ) or diag explain $json;
+    };
 };
 
 # set prio of job template for $server_64 to undef so the prio is inherited from the job group
