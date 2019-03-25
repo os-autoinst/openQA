@@ -100,9 +100,13 @@ sub find_job {
 }
 
 sub schedule_iso {
-    my ($args, $status) = @_;
+    my ($args, $status, $query_params) = @_;
     $status //= 200;
-    my $ret = $t->post_ok('/api/v1/isos', form => $args)->status_is($status);
+
+    my $url = Mojo::URL->new('/api/v1/isos');
+    $url->query($query_params);
+
+    my $ret = $t->post_ok($url, form => $args)->status_is($status);
     return $ret->tx->res;
 }
 
@@ -1030,6 +1034,49 @@ subtest 'setting WORKER_CLASS and assigning default WORKER_CLASS' => sub {
             is($actual_worker_class, 'qemu_i586', "default WORKER_CLASS assigned to $test_name");
         }
     }
+};
+
+subtest 'async flag' => sub {
+    # trigger scheduling using the same parameter as in previous subtests - just use the async flag this time
+    my $res = schedule_iso(
+        {
+            ISO        => $iso,
+            DISTRI     => 'opensuse',
+            VERSION    => '13.1',
+            FLAVOR     => 'DVD',
+            ARCH       => 'i586',
+            BUILD      => '0091',
+            PRECEDENCE => 'original',
+        },
+        200,
+        {async => 1});
+    my $json                 = $res->json;
+    my $scheduled_product_id = $json->{scheduled_product_id};
+    ok($json->{gru_task_id},   'gru task ID returned');
+    ok($json->{minion_job_id}, 'minion job ID returned');
+    ok($scheduled_product_id,  'scheduled product ID returned');
+
+    # verify that scheduled product has been added
+    $t->get_ok("/api/v1/isos/$scheduled_product_id?include_job_ids=1")->status_is(200);
+    $json = $t->tx->res->json;
+    is($json->{status}, OpenQA::Schema::Result::ScheduledProducts::ADDED, 'scheduled product trackable');
+
+    # run gru and check whether scheduled product has actually been scheduled
+    $t->app->start('gru', 'run', '--oneshot');
+    $t->get_ok("/api/v1/isos/$scheduled_product_id?include_job_ids=1")->status_is(200);
+    $json = $t->tx->res->json;
+    my $ok = 1;
+    is($json->{status}, OpenQA::Schema::Result::ScheduledProducts::SCHEDULED, 'scheduled product marked as scheduled')
+      or $ok = 0;
+    is(scalar @{$json->{job_ids}}, 10, '10 jobs scheduled') or $ok = 0;
+    is(scalar @{$json->{results}->{successful_job_ids}}, 10, 'all jobs sucessfully scheduled') or $ok = 0;
+    is_deeply(
+        $json->{results}->{failed_job_info}->[0]->{error_messages},
+        ['textmode:32bit has no child, check its machine placed or dependency setting typos'],
+        'there is one error message, though'
+    ) or $ok = 0;
+    diag explain $json unless $ok;
+
 };
 
 done_testing();
