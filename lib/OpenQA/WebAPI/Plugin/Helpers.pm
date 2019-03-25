@@ -295,36 +295,6 @@ sub register {
         });
 
     $app->helper(
-        # Validates the given YAML job group template using JSON schema. The parameter validate_schema enables
-        # validation of the schema itself which can be useful for development and testing.
-        # Returns an array of errors found during validation or otherwise an empty array.
-        validate_yaml => sub {
-            my ($self, $yaml, $validate_schema) = @_;
-
-            # Note: Using the schema filename; slurp'ed text isn't detected as YAML
-            my $schema_yaml = $self->app->home->child('public', 'schema', 'JobTemplate.yaml')->to_string;
-            my $validator   = JSON::Validator->new;
-            my $schema;
-            my @errors;
-            if ($validate_schema) {
-                # Validate the schema: catches errors in type names and definitions
-                $validator = $validator->load_and_validate_schema($schema_yaml);
-                $schema    = $validator->schema;
-            }
-            else {
-                $schema = $validator->schema($schema_yaml);
-            }
-            if ($schema) {
-                # Note: Don't pass $schema here, that won't work
-                push @errors, $validator->validate($yaml);
-            }
-            else {
-                push @errors, "Failed to load schema";
-            }
-            return \@errors;
-        });
-
-    $app->helper(
         text_with_title => sub {
             my ($c, $text) = @_;
             return $c->tag('span', title => $text, $text);

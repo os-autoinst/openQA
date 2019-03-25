@@ -28,7 +28,6 @@ use Mojolicious::Commands;
 use DateTime;
 use Cwd 'abs_path';
 use File::Path 'make_path';
-use YAML::XS;
 
 has secrets => sub {
     my ($self) = @_;
@@ -69,23 +68,6 @@ sub startup {
 
     # set cookie timeout to 48 hours (will be updated on each request)
     $self->app->sessions->default_expiration(48 * 60 * 60);
-
-    # register YAML output type
-    $self->app->types->type(yaml => 'text/yaml;charset=UTF-8');
-    $self->app->renderer->add_handler(
-        yaml => sub {
-            my ($renderer, $c, $output, $options) = @_;
-            delete $options->{encoding};
-            $$output = YAML::XS::Dump($c->stash->{yaml});
-        });
-    $self->app->hook(
-        before_render => sub {
-            my ($c, $args) = @_;
-            if (exists $args->{yaml} || exists $c->stash->{yaml}) {
-                $args->{format}  = 'yaml';
-                $args->{handler} = 'yaml';
-            }
-        });
 
     # commands
     push @{$self->commands->namespaces}, 'OpenQA::WebAPI::Command';
