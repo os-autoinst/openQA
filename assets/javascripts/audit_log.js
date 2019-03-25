@@ -69,106 +69,98 @@ function loadAuditLogTable ()
     });
 }
 
-function loadProductLogTable ()
+var scheduledProductsTable;
+
+function dataForLink(link) {
+    return scheduledProductsTable.row($(link).closest('tr')).data();
+}
+
+function showScheduledProductSettings(link) {
+    var rowData = dataForLink(link);
+    var settings = JSON.parse(rowData[10]);
+    var table = $('<table/>').addClass('table table-striped');
+    Object.keys(settings).forEach(function(key, index) {
+        table.append($('<tr/>').append($('<td/>').text(key)).append($('<td/>').text(settings[key])));
+    });
+
+    var modalDialog = $('#scheduled-product-modal');
+    modalDialog.find('.modal-title').text('Scheduled product settings');
+    modalDialog.find('.modal-body').empty().append(table);
+    modalDialog.modal();
+}
+
+function showScheduledProductResults(link) {
+    var url = $(link).data('url');
+    $.get(url, undefined, function(data, textStatus, xhr) {
+        var results = data.results;
+        var element;
+        if (results) {
+            element = $('<pre></pre>');
+            element.text(JSON.stringify(results, undefined, 4));
+        } else {
+            element = $('<p></p>');
+            element.text('No results available.');
+        }
+
+        var modalDialog = $('#scheduled-product-modal');
+        modalDialog.find('.modal-title').text('Scheduled product results');
+        modalDialog.find('.modal-body').empty().append(element);
+        modalDialog.modal();
+
+    }).fail(function(response) {
+        var responseText = response.responseText;
+        if (responseText) {
+            addFlash('danger', 'Unable to query results: ' + responseText);
+        } else {
+            addFlash('danger', 'Unable to query results.');
+        }
+    });
+}
+
+function rescheduleProduct(link) {
+    if (!window.confirm('Do you really want to reschedule all jobs for the product?')) {
+        return;
+    }
+
+    var url = $(link).data('url');
+    $.post(url, undefined, function() {
+        addFlash('info', 'Re-scheduling the product has been triggered. A new scheduled product should appear when refreshing the page.');
+    }).fail(function(response) {
+        var responseText = response.responseText;
+        if (responseText) {
+            addFlash('danger', 'Unable to trigger re-scheduling: ' + responseText);
+        } else {
+            addFlash('danger', 'Unable to trigger re-scheduling.');
+        }
+    });
+}
+
+function loadProductLogTable()
 {
-    var table = $('#product_log_table').DataTable( {
+    scheduledProductsTable = $('#product_log_table').DataTable({
         lengthMenu: [10, 25, 50],
         order: [[1, 'desc']],
         columnDefs: [
         {
             targets: 0,
             visible: false,
-            searchable: false
+            searchable: false,
         },
         {
             targets: 1,
-            render: function ( data, type, row ) {
-                if (type === 'display')
-                    return '<a href="' + audit_url + '?eventid=' + row[0] + '">' + jQuery.timeago(data + " UTC") + '</a>';
-                else
+            render: function (data, type, row) {
+                if (type === 'display') {
+                    return jQuery.timeago(data + 'Z');
+                } else {
                     return data;
-            }
-        },
-        {
-            targets: 2,
-            render: function ( data, type, row ) {
-                return jQuery.parseJSON(row[8]).DISTRI;
-            }
-        },
-        {
-            targets: 3,
-            render: function ( data, type, row ) {
-                return jQuery.parseJSON(row[8]).VERSION;
-            }
-        },
-        {
-            targets: 4,
-            render: function ( data, type, row ) {
-                return jQuery.parseJSON(row[8]).FLAVOR;
-            }
-        },
-        {
-            targets: 5,
-            render: function ( data, type, row ) {
-                return jQuery.parseJSON(row[8]).ARCH;
-            }
-        },
-        {
-            targets: 6,
-            render: function ( data, type, row ) {
-                var data_o = jQuery.parseJSON(row[8]);
-                if (data_o.hasOwnProperty('BUILD')) {
-                    return data_o.BUILD;
                 }
-                return '';
             }
         },
         {
-            targets: 7,
-            render: function ( data, type, row ) {
-                var data_o = jQuery.parseJSON(row[8]);
-                if (data_o.hasOwnProperty('ISO')) {
-                    return data_o.ISO;
-                }
-                return '';
-            }
-        },
-        {
-            targets: 8,
-            render: function ( data, type, row ) {
-                if (type === 'display' && data.length > 40) {
-                    var parsed_data = JSON.stringify(JSON.parse(data), null, 2);
-                    return '<span class="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data.substr( 0, 38 )) + '…</span>';
-                }
-                else
-                    return data;
-            }
+            targets: 10,
+            visible: false,
+            searchable: true,
         },
         ]
-    });
-
-    $(document).on('click', '.iso_restart', function(event) {
-        event.preventDefault();
-        var restart_link = $(this).attr('href');
-        var action_cell = $(this).parent('td');
-        var action_row = $(this).closest('tr');
-        var event_data = table.row(action_row).data()[8];
-        event_data = jQuery.parseJSON(event_data);
-        $.post(restart_link, event_data).done( function( data, res, xhr ) {
-            var json = xhr.responseJSON;
-            var message = 'ISO rescheduled - ' + json.ids.length + ' new jobs';
-            if(json.failed.length) {
-                message += ' but ' + json.failed.length + ' failed';
-                var details = '';
-                for(var i = 0; i != json.failed.length; ++i) {
-                    details += '<li><ul><li>' + json.failed[i].error_messages.join('</li><li>') + '</li></ul></li>';
-                }
-                addFlash('danger', '<strong>' + message + '</strong><ul>' + details + '</li></ul>');
-            }
-            action_cell.append(message);
-        });
-        var i = $(this).find('i').removeClass('fa-redo');
-        $(this).replaceWith(i);
-        return false;
     });
 }

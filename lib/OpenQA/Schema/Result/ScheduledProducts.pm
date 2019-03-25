@@ -170,10 +170,7 @@ sub schedule_iso {
     }
     catch {
         $result = {error => $_};
-
     };
-    #$result->{successful_job_ids} //= [];
-    #$result->{failed_job_info} //= [];
 
     # update status
     $self->update(

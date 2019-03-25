@@ -655,7 +655,7 @@ $rsp = schedule_iso(
     },
     403
 );
-is($rsp->message, 'Asset download requested from non-whitelisted host adamshost');
+is($rsp->body, 'Asset download requested from non-whitelisted host adamshost.');
 check_download_asset('asset _URL not in whitelist');
 
 # Using asset _DECOMPRESS_URL outside of whitelist will yield 403
@@ -669,7 +669,7 @@ $rsp = schedule_iso(
     },
     403
 );
-is($rsp->message, 'Asset download requested from non-whitelisted host adamshost');
+is($rsp->body, 'Asset download requested from non-whitelisted host adamshost.');
 check_download_asset('asset _DECOMPRESS_URL not in whitelist');
 
 # schedule an existant ISO against a repo to verify the ISO is registered and the repo is not

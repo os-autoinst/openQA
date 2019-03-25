@@ -81,48 +81,76 @@ created, their job ids and the information for jobs that could not be scheduled.
 sub create {
     my ($self) = @_;
 
-    my $log        = $self->app->log;
-    my $validation = $self->validation;
-    $validation->required('DISTRI');
-    $validation->required('VERSION');
-    $validation->required('FLAVOR');
-    $validation->required('ARCH');
-    if ($validation->has_error) {
-        my $error = "Error: missing parameters:";
-        for my $k (qw(DISTRI VERSION FLAVOR ARCH)) {
-            $log->debug(@{$validation->error($k)}) if $validation->has_error($k);
-            $error .= ' ' . $k if $validation->has_error($k);
+    my $params = $self->req->params->to_hash;
+    my $async  = delete $params->{async};       # whether to run the operation as a Minion job
+    my $scheduled_product_clone_id
+      = delete $params->{scheduled_product_clone_id};    # ID of a previous product to clone settings from
+    my $log                 = $self->app->log;
+    my $validation          = $self->validation;
+    my $scheduled_products  = $self->schema->resultset('ScheduledProducts');
+    my @mandatory_parameter = qw(DISTRI VERSION FLAVOR ARCH);
+
+    # validate parameter
+    if (defined $scheduled_product_clone_id) {
+        $validation->required('scheduled_product_clone_id')->num();
+        if ($validation->has_error) {
+            return $self->render(text => 'Specified scheduled_product_id is invalid.', status => 400);
         }
-        $self->res->message($error);
-        return $self->rendered(400);
+    }
+    else {
+        $validation->required($_) for (@mandatory_parameter);
+        if ($validation->has_error) {
+            my $error = "Error: missing parameters:";
+            for my $k (@mandatory_parameter) {
+                $log->debug(@{$validation->error($k)}) if $validation->has_error($k);
+                $error .= ' ' . $k if $validation->has_error($k);
+            }
+            return $self->render(text => $error, status => 400);
+        }
     }
 
-    my $params = $self->req->params->to_hash;
-    # job_create expects upper case keys
-    my %up_params = map { uc $_ => $params->{$_} } keys %$params;
-    # restore URL encoded /
-    my %params = map { $_ => $up_params{$_} =~ s@%2F@/@gr } keys %up_params;
+    my %params;
+    if (defined $scheduled_product_clone_id) {
+        # clone params from previous scheduled product
+        my $previously_scheduled_product = $scheduled_products->find($scheduled_product_clone_id);
+        if (!$previously_scheduled_product) {
+            return $self->render(text => 'Scheduled product to clone settings from not found.', status => 404);
+        }
+        my $settings_to_clone = $previously_scheduled_product->settings // {};
+        for my $required_param (@mandatory_parameter) {
+            if (!$settings_to_clone->{$required_param}) {
+                return $self->render(
+                    text   => "Scheduled product to clone settings from misses $required_param.",
+                    status => 404
+                );
+            }
+        }
+        %params = %$settings_to_clone;
+    }
+    else {
+        # job_create expects upper case keys
+        my %up_params = map { uc $_ => $params->{$_} } keys %$params;
+        # restore URL encoded /
+        %params = map { $_ => $up_params{$_} =~ s@%2F@/@gr } keys %up_params;
+    }
 
     my @check = check_download_whitelist(\%params, $self->app->config->{global}->{download_domains});
     if (@check) {
         my ($status, $param, $url, $host) = @check;
+        $log->debug("$param - $url");
         if ($status == 2) {
-            my $error = "Asset download requested but no domains whitelisted! Set download_domains";
-            $log->debug("$param - $url");
-            $self->res->message($error);
-            return $self->rendered(403);
+            return $self->render(
+                text   => "Asset download requested but no domains whitelisted! Set download_domains.",
+                status => 403
+            );
         }
         else {
-            my $error = "Asset download requested from non-whitelisted host $host";
-            $log->debug("$param - $url");
-            $self->res->message($error);
-            return $self->rendered(403);
+            return $self->render(text => "Asset download requested from non-whitelisted host $host.", status => 403);
         }
     }
 
     # add entry to ScheduledProducts table
-    my $scheduled_products = $self->schema->resultset('ScheduledProducts');
-    my $scheduled_product  = $scheduled_products->create(
+    my $scheduled_product = $scheduled_products->create(
         {
             distri  => $params{DISTRI}  // '',
             version => $params{VERSION} // '',
@@ -136,7 +164,7 @@ sub create {
     my $scheduled_product_id = $scheduled_product->id;
 
     # only spwan Minion job and return IDs if async flag has been passed
-    if ($self->param('async')) {
+    if ($async) {
         my %minion_job_args = (
             scheduled_product_id => $scheduled_product_id,
             scheduling_params    => \%params,

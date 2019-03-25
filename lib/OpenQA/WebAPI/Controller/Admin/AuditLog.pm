@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2016 SUSE LLC
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ use 5.018;
 use Time::Piece;
 use Time::Seconds;
 use Time::ParseDate;
+use Mojo::JSON 'encode_json';
 use OpenQA::Utils 'log_warning';
 use OpenQA::ServerSideDataTable;
 
@@ -49,21 +50,20 @@ sub index {
 
 sub productlog {
     my ($self) = @_;
-    my $entries = $self->param('entries') // 100;
-    $self->stash(audit_enabled => $self->app->config->{global}{audit_enabled});
-    my $events_rs = $self->schema->resultset("AuditEvents")
-      ->search({event => 'iso_create'}, {order_by => {-desc => 'me.id'}, prefetch => 'owner', rows => $entries});
-    my @events;
-    while (my $event = $events_rs->next) {
-        my $data = {
-            id         => $event->id,
-            user       => $event->owner ? $event->owner->nickname : 'system',
-            event_data => $event->event_data,
-            event_time => $event->t_created,
-        };
-        push @events, $data;
+    my $entries            = $self->param('entries') // 100;
+    my $scheduled_products = $self->schema->resultset('ScheduledProducts')
+      ->search(undef, {order_by => {-desc => 'me.id'}, prefetch => 'triggered_by', rows => $entries});
+    my @scheduled_products;
+    while (my $scheduled_product = $scheduled_products->next) {
+        my $responsible_user = $scheduled_product->triggered_by;
+        my $data             = $scheduled_product->to_hash;
+        $data->{user_name}       = $responsible_user ? $responsible_user->name : 'system';
+        $data->{settings_string} = encode_json($data->{settings});
+        $data->{results_string}  = encode_json($data->{results});
+        push(@scheduled_products, $data);
     }
-    $self->stash(isos => \@events);
+    $self->stash(isos         => \@scheduled_products);
+    $self->stash(show_actions => $self->is_operator);
     $self->render('admin/audit_log/productlog');
 }
 
