@@ -27,6 +27,7 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
+use OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 
 OpenQA::Test::Case->new->init_data;
 
@@ -515,6 +516,120 @@ $t->post_ok(
     'setting invalid priority results in error'
 );
 is($job_templates->search({prio => -5})->count, 0, 'no rows affected');
+
+# test the YAML export
+# Test validation
+my $yaml = {};
+is_deeply($t->app->validate_yaml($yaml, 1), [], 'Empty YAML is fine')
+  or diag explain YAML::XS::Dump($yaml);
+$yaml->{groupname}{architectures}{'x86_64'}{opensuse} = ['spam', 'eggs'];
+is_deeply($t->app->validate_yaml($yaml, 1), ["/groupname/products: Missing property."], 'No products defined')
+  or diag explain YAML::XS::Dump($yaml);
+$yaml->{groupname}{products}{'opensuse'} = {};
+is_deeply(
+    @{$t->app->validate_yaml($yaml, 1)}[0],
+    '/groupname/products/opensuse/distribution: Missing property.',
+    'No distri specified'
+) or diag explain YAML::XS::Dump($yaml);
+$yaml->{groupname}{products}{'opensuse'}{distribution} = 'sle';
+is_deeply(
+    @{$t->app->validate_yaml($yaml, 1)}[0],
+    '/groupname/products/opensuse/flavor: Missing property.',
+    'No flavor specified'
+) or diag explain YAML::XS::Dump($yaml);
+$yaml->{groupname}{products}{'opensuse'}{flavor} = 'DVD';
+is_deeply(
+    $t->app->validate_yaml($yaml, 1),
+    ['/groupname/products/opensuse/version: Missing property.'],
+    'No version specified'
+) or diag explain YAML::XS::Dump($yaml);
+$yaml->{groupname}{products}{'opensuse'}{version} = '42.1';
+is_deeply($t->app->validate_yaml($yaml, 1), [], 'YAML valid as expected')
+  or diag explain YAML::XS::Dump($yaml);
+# Make 40 our default priority, which matters when we look at the "defaults" key later
+$app->schema->resultset('JobGroups')->find({name => 'opensuse'})->update({default_priority => 40});
+# Get all groups
+$get  = $t->get_ok("/api/v1/experimental/job_templates_scheduling")->status_is(200);
+$yaml = YAML::XS::Load($get->tx->res->body);
+is_deeply($t->app->validate_yaml($yaml, 1), [], 'YAML of all groups is valid');
+is($yaml->{opensuse}{products}{'opensuse-13.1-DVD-i586'}{version}, '13.1', 'Version of opensuse group')
+  || diag explain $get->tx->res->body;
+# Get one group with defined architectures, products and defaults
+$get  = $t->get_ok("/api/v1/experimental/job_templates_scheduling/1001")->status_is(200);
+$yaml = YAML::XS::Load($get->tx->res->body);
+is_deeply($t->app->validate_yaml($yaml, 1), [], 'YAML of single group is valid');
+is_deeply(
+    $yaml,
+    {
+        opensuse => {
+            architectures => {
+                i586 => {
+                    'opensuse-13.1-DVD-i586' => [
+                        'textmode',
+                        {
+                            textmode => {
+                                machine => '32bit',
+                            }
+                        },
+                        {
+                            kde => {
+                                machine => '32bit',
+                            }
+                        },
+                        'kde',
+                        {
+                            RAID0 => {
+                                priority => 20,
+                            }
+                        },
+                        {
+                            client1 => {
+                                machine => '32bit',
+                            }
+                        },
+                        'client1',
+                        'server',
+                        {
+                            server => {
+                                machine => '32bit',
+                            }
+                        },
+                        {
+                            client2 => {
+                                machine => '32bit',
+                            }
+                        },
+                        'client2',
+                        'advanced_kde',
+                    ],
+                },
+            },
+            defaults => {
+                i586 => {
+                    machine  => '64bit',
+                    priority => 40,
+                },
+            },
+            products => {
+                'opensuse-13.1-DVD-i586' => {
+                    distribution => 'opensuse',
+                    flavor       => 'DVD',
+                    version      => '13.1',
+                },
+            },
+        },
+    },
+    'YAML for opensuse group'
+) || diag explain $get->tx->res->body;
+# Add unicode characters to group name to see if the encoding is correct
+$app->schema->resultset('JobGroups')->find({name => 'opensuse'})->update({name => 'öpensüse'});
+# Swap the group name in the expected YAML
+$yaml->{'öpensüse'} = $yaml->{'opensuse'};
+delete $yaml->{'opensuse'};
+$get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/1001")->status_is(200)
+  ->content_type_is('text/yaml;charset=UTF-8');
+is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, 'Test suite with unicode characters encoded correctly')
+  || diag explain $get->tx->res->body;
 
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(200);
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(404);    #not found

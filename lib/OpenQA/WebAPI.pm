@@ -393,6 +393,10 @@ sub startup {
     $api_public_r->get('job_templates/:job_template_id')->name('apiv1_job_template')->to('job_template#list');
     $api_ra->delete('job_templates/:job_template_id')->to('job_template#destroy');
 
+    # api/v1/job_templates_scheduling
+    $api_public_r->get('experimental/job_templates_scheduling/<id:num>')->name('apiv1_job_templates_schedules')
+      ->to('job_template#schedules', id => undef);
+
     # api/v1/comments
     $api_public_r->get('/jobs/<job_id:num>/comments')->name('apiv1_list_comments')->to('comment#list');
     $api_public_r->get('/jobs/<job_id:num>/comments/<comment_id:num>')->name('apiv1_get_comment')->to('comment#text');

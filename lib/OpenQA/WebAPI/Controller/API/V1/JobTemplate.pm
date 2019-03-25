@@ -16,6 +16,7 @@
 
 package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller';
+use JSON::Validator;
 
 =pod
 
@@ -116,6 +117,90 @@ sub list {
     } @templates;
 
     $self->render(json => {JobTemplates => \@templates});
+}
+
+=over 4
+
+=item schedules()
+
+Serializes the given job group with relevant test suites by architecture and products (mediums), or all available
+groups defined in the system if no group id is specified.
+Common defaults for prio and machine are represented in the defaults key.
+
+Returns a YAML template representing the job groups(s).
+
+=back
+
+=cut
+
+sub schedules {
+    my $self = shift;
+
+    my %yaml;
+    my $groups = $self->schema->resultset("JobGroups")->search(
+        $self->param('id') ? {id => $self->param('id')} : undef,
+        {select => [qw(id name parent_id default_priority)]});
+    while (my $group = $groups->next) {
+        my %group;
+        my $templates
+          = $self->schema->resultset("JobTemplates")
+          ->search({group_id => $group->id}, {order_by => 'me.test_suite_id'});
+
+        # Always set the hash of test suites to account for empty groups
+        $group{architectures} = {};
+        $group{products}      = {};
+
+        my %machines;
+        # Extract products and tests per architecture
+        while (my $template = $templates->next) {
+            $group{products}{$template->product->name} = {
+                distribution => $template->product->distri,
+                flavor       => $template->product->flavor,
+                version      => $template->product->version
+            };
+            my %test_suite;
+            $test_suite{machine} = $template->machine->name;
+            $machines{$template->product->arch}{$template->machine->name}++;
+            if ($template->prio && $template->prio != $group->default_priority) {
+                $test_suite{priority} = $template->prio;
+            }
+            my $test_suites = $group{architectures}{$template->product->arch}{$template->product->name};
+            push @$test_suites, {$template->test_suite->name => \%test_suite};
+            $group{architectures}{$template->product->arch}{$template->product->name} = $test_suites;
+        }
+
+        # Split off defaults
+        foreach my $arch (keys %{$group{architectures}}) {
+            $group{defaults}{$arch}{priority} = $group->default_priority;
+            my $default_machine
+              = (sort { $machines{$arch}->{$b} <=> $machines{$arch}->{$a} or $b cmp $a } keys %{$machines{$arch}})[0];
+            $group{defaults}{$arch}{machine} = $default_machine;
+
+            foreach my $product (keys %{$group{architectures}->{$arch}}) {
+                my @test_suites;
+                foreach my $test_suite (@{$group{architectures}->{$arch}->{$product}}) {
+                    foreach my $name (keys %$test_suite) {
+                        my $attr = $test_suite->{$name};
+                        if ($attr->{machine} eq $default_machine) {
+                            delete $attr->{machine};
+                        }
+                        if (%$attr) {
+                            $test_suite->{$name} = $attr;
+                            push @test_suites, $test_suite;
+                        }
+                        else {
+                            push @test_suites, $name;
+                        }
+                    }
+                }
+                $group{architectures}{$arch}{$product} = \@test_suites;
+            }
+        }
+
+        $yaml{$group->name} = \%group;
+    }
+
+    $self->render(yaml => \%yaml);
 }
 
 =over 4
