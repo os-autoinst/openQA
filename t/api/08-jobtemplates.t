@@ -621,6 +621,15 @@ is_deeply(
     },
     'YAML for opensuse group'
 ) || diag explain $get->tx->res->body;
+# Add unicode characters to group name to see if the encoding is correct
+$app->schema->resultset('JobGroups')->find({name => 'opensuse'})->update({name => 'öpensüse'});
+# Swap the group name in the expected YAML
+$yaml->{'öpensüse'} = $yaml->{'opensuse'};
+delete $yaml->{'opensuse'};
+$get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/1001")->status_is(200)
+  ->content_type_is('text/yaml;charset=UTF-8');
+is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, 'Test suite with unicode characters encoded correctly')
+  || diag explain $get->tx->res->body;
 
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(200);
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(404);    #not found

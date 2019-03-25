@@ -28,6 +28,7 @@ use Mojolicious::Commands;
 use DateTime;
 use Cwd 'abs_path';
 use File::Path 'make_path';
+use YAML::XS;
 
 has secrets => sub {
     my ($self) = @_;
@@ -70,7 +71,21 @@ sub startup {
     $self->app->sessions->default_expiration(48 * 60 * 60);
 
     # register YAML output type
-    $self->app->types->type(yaml => 'text/yaml');
+    $self->app->types->type(yaml => 'text/yaml;charset=UTF-8');
+    $self->app->renderer->add_handler(
+        yaml => sub {
+            my ($renderer, $c, $output, $options) = @_;
+            delete $options->{encoding};
+            $$output = YAML::XS::Dump($c->stash->{yaml});
+        });
+    $self->app->hook(
+        before_render => sub {
+            my ($c, $args) = @_;
+            if (exists $args->{yaml} || exists $c->stash->{yaml}) {
+                $args->{format}  = 'yaml';
+                $args->{handler} = 'yaml';
+            }
+        });
 
     # commands
     push @{$self->commands->namespaces}, 'OpenQA::WebAPI::Command';
@@ -397,7 +412,7 @@ sub startup {
     $api_ra->delete('job_templates/:job_template_id')->to('job_template#destroy');
 
     # api/v1/job_templates_scheduling
-    $api_public_r->get('experimental/job_templates_scheduling/:id')->name('apiv1_job_templates_schedules')
+    $api_public_r->get('experimental/job_templates_scheduling/<id:num>')->name('apiv1_job_templates_schedules')
       ->to('job_template#schedules', id => undef);
 
     # api/v1/comments

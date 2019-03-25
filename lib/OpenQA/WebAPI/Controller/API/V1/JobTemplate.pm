@@ -17,7 +17,6 @@
 package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller';
 use JSON::Validator;
-use YAML::XS;
 
 =pod
 
@@ -201,7 +200,7 @@ sub schedules {
         $yaml{$group->name} = \%group;
     }
 
-    $self->render(data => YAML::XS::Dump(\%yaml), format => 'yaml');
+    $self->render(yaml => \%yaml);
 }
 
 =over 4

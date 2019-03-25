@@ -321,7 +321,7 @@ sub register {
             else {
                 push @errors, "Failed to load schema";
             }
-            \@errors;
+            return \@errors;
         });
 
     $app->helper(
