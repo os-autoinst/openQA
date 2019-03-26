@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 use Mojo::ByteStream;
 use OpenQA::Schema;
+use Mojo::Util 'xml_escape';
 use OpenQA::Utils qw(bugurl render_escaped_refs href_to_bugref);
 use OpenQA::Events;
 use db_helpers;
@@ -68,7 +69,7 @@ sub register {
             my ($c, $bugid, $bug) = @_;
             my $text = "Bug referenced: $bugid";
             if ($bug && $bug->existing && $bug->title) {
-                $text .= "\n" . $bug->title;
+                $text .= "\n" . xml_escape($bug->title);
             }
             return $text;
         });
