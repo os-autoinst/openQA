@@ -236,7 +236,11 @@ sub _schedule_iso {
             # Prefer new build jobs over old ones either by cancelling old
             # ones or deprioritizing them (up to a limit)
             try {
-                OpenQA::Events::emit_event('openqa_iso_cancel', data => \%cond, user_id => $user_id);
+                OpenQA::Events::emit_event(
+                    'openqa_iso_cancel',
+                    data    => {scheduled_product_id => $self->id},
+                    user_id => $user_id
+                );
                 $schema->resultset('Jobs')->cancel_by_settings(\%cond, 1, $deprioritize, $deprioritize_limit);
             }
             catch {
@@ -328,7 +332,6 @@ sub _schedule_iso {
     $gru->enqueue(limit_results_and_logs => [], {priority => 5, ttl => 172800, limit => 1});
 
     # emit events
-    OpenQA::Events::emit_event('openqa_iso_create', data => $args, user_id => $user_id);
     for my $succjob (@successful_job_ids) {
         OpenQA::Events::emit_event('openqa_job_create', data => {id => $succjob}, user_id => $user_id);
     }

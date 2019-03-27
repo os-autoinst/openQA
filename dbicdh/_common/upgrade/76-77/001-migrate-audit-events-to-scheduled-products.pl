@@ -21,7 +21,7 @@ use DBIx::Class::DeploymentHandler;
 use OpenQA::Schema;
 use OpenQA::Schema::Result::ScheduledProducts;
 use OpenQA::Utils;
-use Mojo::JSON 'decode_json';
+use Mojo::JSON qw(decode_json encode_json);
 use Try::Tiny;
 
 sub {
@@ -30,6 +30,9 @@ sub {
     my $scheduled_products = $schema->resultset('ScheduledProducts');
     my $audit_events
       = $schema->resultset('AuditEvents')->search({event => 'iso_create'}, {order_by => {-asc => 'me.id'}},);
+
+    OpenQA::Utils::log_info(
+        'Migration of "iso_create" audit events to scheduled products is ongoing. This might take a while.');
 
     while (my $event = $audit_events->next) {
         my $event_id = $event->id;
@@ -43,7 +46,7 @@ sub {
             next;
         }
 
-        $scheduled_products->create(
+        my $scheduled_product = $scheduled_products->create(
             {
                 distri  => $settings->{DISTRI}  // '',
                 version => $settings->{VERSION} // '',
@@ -55,6 +58,9 @@ sub {
                 settings  => $settings,
                 user_id   => $event->user_id,
                 t_created => $event->t_created,
-            }) if ($settings);
+            });
+
+        # update the event_data so it only contains the product ID and the data is not duplicated
+        $event->update({event_data => encode_json({scheduled_product_id => $scheduled_product->id})});
     }
   }

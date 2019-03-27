@@ -149,7 +149,7 @@ sub create {
         }
     }
 
-    # add entry to ScheduledProducts table
+    # add entry to ScheduledProducts table and log event
     my $scheduled_product = $scheduled_products->create(
         {
             distri  => $params{DISTRI}  // '',
@@ -162,6 +162,7 @@ sub create {
             user_id  => $self->current_user->id,
         });
     my $scheduled_product_id = $scheduled_product->id;
+    $self->emit_event(openqa_iso_create => {scheduled_product_id => $scheduled_product_id});
 
     # only spwan Minion job and return IDs if async flag has been passed
     if ($async) {
