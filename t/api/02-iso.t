@@ -1036,22 +1036,23 @@ subtest 'setting WORKER_CLASS and assigning default WORKER_CLASS' => sub {
     }
 };
 
+my $scheduled_product_id;
+my %scheduling_params = (
+    ISO        => $iso,
+    DISTRI     => 'opensuse',
+    VERSION    => '13.1',
+    FLAVOR     => 'DVD',
+    ARCH       => 'i586',
+    BUILD      => '0091',
+    PRECEDENCE => 'original',
+    SPECIAL    => 'variable',
+);
+
 subtest 'async flag' => sub {
     # trigger scheduling using the same parameter as in previous subtests - just use the async flag this time
-    my $res = schedule_iso(
-        {
-            ISO        => $iso,
-            DISTRI     => 'opensuse',
-            VERSION    => '13.1',
-            FLAVOR     => 'DVD',
-            ARCH       => 'i586',
-            BUILD      => '0091',
-            PRECEDENCE => 'original',
-        },
-        200,
-        {async => 1});
-    my $json                 = $res->json;
-    my $scheduled_product_id = $json->{scheduled_product_id};
+    my $res  = schedule_iso(\%scheduling_params, 200, {async => 1});
+    my $json = $res->json;
+    $scheduled_product_id = $json->{scheduled_product_id};
     ok($json->{gru_task_id},   'gru task ID returned');
     ok($json->{minion_job_id}, 'minion job ID returned');
     ok($scheduled_product_id,  'scheduled product ID returned');
@@ -1060,6 +1061,7 @@ subtest 'async flag' => sub {
     $t->get_ok("/api/v1/isos/$scheduled_product_id?include_job_ids=1")->status_is(200);
     $json = $t->tx->res->json;
     is($json->{status}, OpenQA::Schema::Result::ScheduledProducts::ADDED, 'scheduled product trackable');
+    is_deeply($json->{settings}, \%scheduling_params, 'settings stored correctly');
 
     # run gru and check whether scheduled product has actually been scheduled
     $t->app->start('gru', 'run', '--oneshot');
@@ -1077,6 +1079,20 @@ subtest 'async flag' => sub {
     ) or $ok = 0;
     diag explain $json unless $ok;
 
+};
+
+subtest 're-schedule product' => sub {
+    plan skip_all => 'previous test "async flag" has not scheduled a product' unless $scheduled_product_id;
+
+    my $res  = schedule_iso({scheduled_product_clone_id => $scheduled_product_id}, 200, {async => 1});
+    my $json = $res->json;
+    my $cloned_scheduled_product_id = $json->{scheduled_product_id};
+    ok($cloned_scheduled_product_id, 'scheduled product ID returned');
+
+    $t->get_ok("/api/v1/isos/$cloned_scheduled_product_id?include_job_ids=1")->status_is(200);
+    $json = $t->tx->res->json;
+    is($json->{status}, OpenQA::Schema::Result::ScheduledProducts::ADDED, 'scheduled product trackable');
+    is_deeply($json->{settings}, \%scheduling_params, 'parameter idential to the original scheduled product');
 };
 
 done_testing();
