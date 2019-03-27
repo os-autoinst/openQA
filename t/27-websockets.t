@@ -30,6 +30,7 @@ use OpenQA::Test::Database;
 use OpenQA::Test::Utils 'redirect_output';
 use Test::MockModule;
 use Test::Mojo;
+use Mojo::JSON;
 
 # Pretend the class was loaded with "require"
 $INC{'FooBarWorker.pm'} = 1;
@@ -46,6 +47,12 @@ subtest 'Authentication' => sub {
         OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton)
     )->app($app);
     $t->get_ok('/')->status_is(200)->json_is({name => $app->defaults('appname')});
+};
+
+subtest 'API' => sub {
+    $t->get_ok('/api/is_worker_connected/1')->status_is(200)->json_is({connected => Mojo::JSON::false});
+    local $t->app->status->workers->{1} = {socket => 1};
+    $t->get_ok('/api/is_worker_connected/1')->status_is(200)->json_is({connected => Mojo::JSON::true});
 };
 
 subtest 'WebSocket Server workers_checker' => sub {

@@ -43,6 +43,8 @@ sub startup {
     $r->namespaces(['OpenQA::WebSockets::Controller']);
     my $ca = $r->under('/')->to('Auth#check');
     $ca->get('/' => {json => {name => $self->defaults('appname')}});
+    my $api = $ca->any('/api');
+    $api->get('/is_worker_connected/<worker_id:num>')->to('API#is_worker_connected');
     $ca->websocket('/ws/<workerid:num>')->to('Worker#ws');
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 }

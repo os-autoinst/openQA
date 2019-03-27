@@ -30,20 +30,14 @@ use Test::Warnings ':all';
 use Mojo::URL;
 use OpenQA::Test::Case;
 use OpenQA::Client;
-use OpenQA::WebSockets;
+use OpenQA::WebSockets::Client;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
-use OpenQA::Scheduler;
 use Date::Format 'time2str';
 
-# create Test DBus bus and service for fake WebSockets and Scheduler call
-my $ws = OpenQA::WebSockets->new;
-my $sh = OpenQA::Scheduler->new;
-
 OpenQA::Test::Case->new->init_data;
+OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
 
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-# XXX: Test::Mojo loses it's app when setting a new ua
-# https://github.com/kraih/mojo/issues/598
+my $t   = Test::Mojo->new('OpenQA::WebAPI');
 my $app = $t->app;
 $t->ua(OpenQA::Client->new->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);

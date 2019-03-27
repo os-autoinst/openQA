@@ -26,6 +26,7 @@ use DBIx::Class::Timestamps 'now';
 use Try::Tiny;
 use OpenQA::Utils 'log_error';
 use OpenQA::IPC;
+use OpenQA::WebSockets::Client;
 use db_helpers;
 use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
 use Mojo::JSON qw(encode_json decode_json);
@@ -190,8 +191,8 @@ sub status {
 
 sub connected {
     my ($self) = @_;
-    my $ipc = OpenQA::IPC->ipc;
-    return $ipc->websockets('ws_is_worker_connected', $self->id) ? 1 : 0;
+    my $client = OpenQA::WebSockets::Client->singleton;
+    return $client->is_worker_connected($self->id) ? 1 : 0;
 }
 
 sub unprepare_for_work {

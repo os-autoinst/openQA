@@ -13,6 +13,7 @@ use OpenQA::Worker::Common;
 use Config::IniFiles;
 use Data::Dumper 'Dumper';
 use OpenQA::Utils qw(log_error log_info log_debug);
+use OpenQA::WebSockets::Client;
 use Mojo::Home;
 use Mojo::File 'path';
 use Cwd qw(abs_path getcwd);
@@ -184,6 +185,7 @@ sub create_websocket_server {
     diag("Starting WebSocket service");
     diag("Bogus: $bogus | No wait: $nowait | No worker checks: $noworkercheck");
 
+    OpenQA::WebSockets::Client->singleton->port($port);
     my $wspid = fork();
     if ($wspid == 0) {
         $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
