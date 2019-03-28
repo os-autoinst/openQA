@@ -68,12 +68,6 @@ sub new {
 }
 
 # WebSockets ABI goes here
-dbus_method('ws_is_worker_connected', ['uint32'], ['bool']);
-sub ws_is_worker_connected {
-    my ($self, @args) = @_;
-    return OpenQA::WebSockets::Server::ws_is_worker_connected(@args);
-}
-
 dbus_method('ws_send_job', [['dict', 'string', ['variant']]], [['dict', 'string', ['variant']]]);
 sub ws_send_job {
     my ($self, $args) = @_;
