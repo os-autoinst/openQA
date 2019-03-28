@@ -80,10 +80,4 @@ sub ws_send {
     return OpenQA::WebSockets::Server::ws_send(@args);
 }
 
-dbus_method('ws_send_all', ['string']);
-sub ws_send_all {
-    my ($self, @args) = @_;
-    return OpenQA::WebSockets::Server::ws_send_all(@args);
-}
-
 1;

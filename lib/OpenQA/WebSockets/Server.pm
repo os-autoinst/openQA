@@ -131,16 +131,4 @@ sub ws_send_job {
     return $result;
 }
 
-# consider ws_send_all as broadcast and don't wait for confirmation
-sub ws_send_all {
-    my ($msg) = @_;
-
-    my $workers = OpenQA::WebSockets::Model::Status->singleton->workers;
-    for my $tx (values %$workers) {
-        if ($tx->{socket}) {
-            $tx->{socket}->send({json => {type => $msg}});
-        }
-    }
-}
-
 1;
