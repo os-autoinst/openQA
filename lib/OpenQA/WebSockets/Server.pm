@@ -45,6 +45,7 @@ sub startup {
     $ca->get('/' => {json => {name => $self->defaults('appname')}});
     my $api = $ca->any('/api');
     $api->get('/is_worker_connected/<worker_id:num>')->to('API#is_worker_connected');
+    $api->post('/send_job')->to('API#send_job');
     $ca->websocket('/ws/<workerid:num>')->to('Worker#ws');
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 }

@@ -29,7 +29,7 @@ use db_helpers;
 use OpenQA::Utils (
     qw(log_debug log_info log_warning log_error),
     qw(parse_assets_from_settings locate_asset),
-    qw(send_job_to_worker read_test_modules find_bugref)
+    qw(read_test_modules find_bugref)
 );
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
@@ -42,6 +42,7 @@ use Mojo::File qw(tempfile path);
 use Data::Dump 'dump';
 use OpenQA::File;
 use OpenQA::Parser 'parser';
+use OpenQA::WebSockets::Client;
 # The state and results constants are duplicated in the Python client:
 # if you change them or add any, please also update const.py.
 
@@ -463,12 +464,11 @@ sub prepare_for_work {
 }
 
 sub ws_send {
-    my $self   = shift;
-    my $worker = shift;
-    return unless $worker;
+    my $self = shift;
+    return undef unless my $worker = shift;
     my $hashref = $self->prepare_for_work($worker);
     $hashref->{assigned_worker_id} = $worker->id;
-    return send_job_to_worker($hashref);
+    return OpenQA::WebSockets::Client->singleton->send_job($hashref);
 }
 
 sub settings_hash {

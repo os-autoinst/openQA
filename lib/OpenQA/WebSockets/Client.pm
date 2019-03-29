@@ -42,14 +42,22 @@ sub embed_server_for_testing {
 
 sub is_worker_connected {
     my ($self, $worker_id) = @_;
-
-    my $port = $self->port;
-    my $url  = "http://localhost:$port/api/is_worker_connected/$worker_id";
-    my $res  = $self->client->get($url)->result;
-
+    my $res = $self->client->get($self->_api("is_worker_connected/$worker_id"))->result;
     return $res->json->{connected};
 }
 
+sub send_job {
+    my ($self, $job) = @_;
+    my $res = $self->client->post($self->_api('send_job'), json => $job)->result->json;
+    return $res->{result};
+}
+
 sub singleton { state $client ||= __PACKAGE__->new }
+
+sub _api {
+    my ($self, $method) = @_;
+    my $port = $self->port;
+    return "http://127.0.0.1:$port/api/$method";
+}
 
 1;

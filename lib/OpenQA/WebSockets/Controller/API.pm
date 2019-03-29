@@ -25,4 +25,11 @@ sub is_worker_connected {
     $self->render(json => {connected => $bool ? \1 : \0});
 }
 
+sub send_job {
+    my $self   = shift;
+    my $job    = $self->req->json;
+    my $result = OpenQA::WebSockets::Server::ws_send_job($job);
+    $self->render(json => {result => $result});
+}
+
 1;
