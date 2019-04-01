@@ -24,8 +24,7 @@ BEGIN {
 use strict;
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use OpenQA::Scheduler;
-use OpenQA::WebSockets;
+use OpenQA::WebSockets::Client;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use Test::MockModule;
@@ -35,8 +34,9 @@ use Test::More;
 use Test::Warnings;
 
 my $schema = OpenQA::Test::Database->new->create();
-# create Test DBus bus and service for fake WebSockets call
-my $ws = OpenQA::WebSockets->new;
+
+local $ENV{WS_TEST_NO_AUTH} = 1;
+OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
 
 sub job_get {
     my ($id) = @_;

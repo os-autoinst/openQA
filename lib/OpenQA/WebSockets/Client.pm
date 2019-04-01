@@ -52,6 +52,13 @@ sub send_job {
     return $res->{result};
 }
 
+sub send_msg {
+    my ($self, $worker_id, $msg, $job_id, $retry) = @_;
+    my $data = {worker_id => $worker_id, msg => $msg, job_id => $job_id, retry => $retry};
+    my $res = $self->client->post($self->_api('send_msg'), json => $data)->result->json;
+    return $res->{result};
+}
+
 sub singleton { state $client ||= __PACKAGE__->new }
 
 sub _api {

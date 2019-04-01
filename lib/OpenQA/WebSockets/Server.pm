@@ -46,6 +46,7 @@ sub startup {
     my $api = $ca->any('/api');
     $api->get('/is_worker_connected/<worker_id:num>')->to('API#is_worker_connected');
     $api->post('/send_job')->to('API#send_job');
+    $api->post('/send_msg')->to('API#send_msg');
     $ca->websocket('/ws/<workerid:num>')->to('Worker#ws');
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 }

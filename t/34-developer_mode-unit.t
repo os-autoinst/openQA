@@ -35,6 +35,7 @@ use OpenQA::Test::FakeWebSocketTransaction;
 use OpenQA::WebAPI::Controller::Developer;
 use OpenQA::WebAPI::Controller::LiveViewHandler;
 use OpenQA::Client;
+use OpenQA::WebSockets::Client;
 use Mojo::IOLoop;
 use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
 
@@ -47,12 +48,13 @@ $jobs_mock_module->mock(
         push(@jobs_cancelled, $job->id);
     });
 
-# mock OpenQA::IPC::websockets()
-my $ipc_mock_module = Test::MockModule->new('OpenQA::IPC');
 my @ipc_messages_for_websocket_server;
-$ipc_mock_module->mock(
-    websockets => sub {
-        my $ipc_instance = shift;
+my $mock_client = Test::MockModule->new('OpenQA::WebSockets::Client');
+my ($client_called, $last_command);
+$mock_client->mock(
+    send_msg => sub {
+        my $self = shift;
+        $client_called++;
         push(@ipc_messages_for_websocket_server, [@_]);
     });
 
@@ -530,10 +532,11 @@ subtest 'register developer session' => sub {
 
     is_deeply(
         \@ipc_messages_for_websocket_server,
-        [['ws_send', 1, 'developer_session_start', 99963]],
+        [[1, 'developer_session_start', 99963]],
         'worker notified exactly once about developer session'
     ) or diag explain \@ipc_messages_for_websocket_server;
     @ipc_messages_for_websocket_server = ();
+    ok $client_called, 'mocked send_msg method has been called';
 
     ok(!$developer_sessions->register(99963, 99902), 'locked for other users');
 };
@@ -731,7 +734,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
         is($developer_session->user_id,             99901, 'user ID correct');
         is_deeply(
             \@ipc_messages_for_websocket_server,
-            [['ws_send', $worker_id, 'developer_session_start', 99962]],
+            [[$worker_id, 'developer_session_start', 99962]],
             'worker about devel session notified'
         ) or diag explain \@ipc_messages_for_websocket_server;
     };

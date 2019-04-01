@@ -29,25 +29,19 @@ use Test::More;
 use Test::Warnings ':all';
 use Test::Output 'stderr_like';
 use OpenQA::Test::Case;
-use OpenQA::Client;
-use OpenQA::Scheduler::Scheduler;
-use OpenQA::WebSockets;
+use OpenQA::WebSockets::Client;
+use Test::MockModule;
 
 OpenQA::Test::Case->new->init_data;
 
-# create Test DBus bus and service for fake WebSockets call
-my $ws = OpenQA::WebSockets->new;
-
-# monkey patch ws_send of OpenQA::WebSockets::Server to store received command
-package OpenQA::WebSockets::Server;
-no warnings "redefine";
-my $last_command = '';
-sub ws_send {
-    my ($workerid, $command, $jobid) = @_;
-    $OpenQA::WebSockets::Server::last_command = $command;
-}
-
-package main;
+my $mock_client = Test::MockModule->new('OpenQA::WebSockets::Client');
+my ($client_called, $last_command);
+$mock_client->mock(
+    send_msg => sub {
+        my ($self, $workerid, $command, $jobid) = @_;
+        $client_called++;
+        $last_command = $command;
+    });
 
 my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
 #issue valid commands for worker 1
@@ -57,12 +51,13 @@ my $worker = $schema->resultset('Workers')->find(1);
 
 for my $cmd (@valid_commands) {
     $worker->send_command(command => $cmd, job_id => 0);
-    is($OpenQA::WebSockets::Server::last_command, $cmd, "command $cmd received at WS server");
+    is($last_command, $cmd, "command $cmd received at WS server");
 }
 
 #issue invalid commands
 stderr_like { $worker->send_command(command => 'foo', job_id => 0); }
 qr/\[ERROR\] Trying to issue unknown command "foo" for worker "localhost:"/;
-isnt($OpenQA::WebSockets::Server::last_command, 'foo', 'refuse invalid commands');
+isnt($last_command, 'foo', 'refuse invalid commands');
+ok $client_called, 'mocked send_msg method has been called';
 
 done_testing();

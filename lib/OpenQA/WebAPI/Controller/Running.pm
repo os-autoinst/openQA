@@ -21,7 +21,7 @@ use Mojo::Util 'b64_encode';
 use Mojo::File 'path';
 use Mojo::JSON qw(encode_json decode_json);
 use OpenQA::Utils;
-use OpenQA::IPC;
+use OpenQA::WebSockets::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 
@@ -190,7 +190,6 @@ sub liveterminal {
 sub streaming {
     my ($self) = @_;
     return 0 unless $self->init();
-    my $ipc = OpenQA::IPC->ipc;
 
     $self->render_later;
     Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
@@ -232,16 +231,17 @@ sub streaming {
     # ask worker to create live stream
     OpenQA::Utils::log_debug('Asking the worker to start providing livestream');
 
+    my $client = OpenQA::WebSockets::Client->singleton;
     $self->tx->once(
         finish => sub {
             Mojo::IOLoop->remove($id);
             # ask worker to stop live stream
             OpenQA::Utils::log_debug('Asking the worker to stop providing livestream');
-            $ipc->websockets('ws_send', $worker->id, 'livelog_stop', $job->id);
+            $client->send_msg($worker->id, 'livelog_stop', $job->id);
         },
     );
 
-    $ipc->websockets('ws_send', $worker->id, 'livelog_start', $job->id);
+    $client->send_msg($worker->id, 'livelog_start', $job->id);
 }
 
 1;
