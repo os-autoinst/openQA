@@ -18,7 +18,7 @@ use Mojo::Base -base;
 
 use Mojo::Server::Daemon;
 use OpenQA::Client;
-use OpenQA::WebSockets::Server;
+use OpenQA::WebSockets;
 
 has client => sub { OpenQA::Client->new(api => 'localhost') };
 has port   => 9527;
@@ -32,7 +32,7 @@ sub embed_server_for_testing {
         my $server = $self->{test_server} = Mojo::Server::Daemon->new(
             ioloop => $self->client->ioloop,
             listen => ['http://127.0.0.1']);
-        $server->build_app('OpenQA::WebSockets::Server');
+        $server->build_app('OpenQA::WebSockets');
         $server->start;
         $self->port($server->ports->[0]);
     }

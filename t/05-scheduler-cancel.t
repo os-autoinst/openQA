@@ -35,8 +35,8 @@ use Test::Warnings;
 
 my $schema = OpenQA::Test::Database->new->create();
 
-local $ENV{WS_TEST_NO_AUTH} = 1;
 OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
+OpenQA::WebSockets::Client->singleton->client->apikey('PERCIVALKEY02')->apisecret('PERCIVALSECRET02');
 
 sub job_get {
     my ($id) = @_;
@@ -200,14 +200,14 @@ subtest 'chained parent fails -> chilren are canceled (skipped)' => sub {
 };
 
 subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => sub {
-    # monkey patch ws_send of OpenQA::WebSockets::Server to store received command
+    # monkey patch ws_send of OpenQA::WebSockets to store received command
     my (@commands, $server_called);
-    my $mock_server = Test::MockModule->new('OpenQA::WebSockets::Server');
+    my $mock_server = Test::MockModule->new('OpenQA::WebSockets');
     $mock_server->mock(
         ws_send => sub {
             my ($workerid, $command, $jobid) = @_;
             $server_called++;
-            push @OpenQA::WebSockets::Server::commands, $command;
+            push @OpenQA::WebSockets::commands, $command;
         });
 
     my %settingsA = %settings;
@@ -247,7 +247,7 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
     $_->update for ($jobA, $jobB, $jobC, $w1, $w2, $w3);
 
     # set A as failed and reload B, C from database
-    @OpenQA::WebSockets::Server::commands = ();
+    @OpenQA::WebSockets::commands = ();
     my $now = now();
     $jobA->done(result => OpenQA::Jobs::Constants::FAILED);
     $jobB->discard_changes;
@@ -257,7 +257,7 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
     is($jobB->state, OpenQA::Jobs::Constants::RUNNING, 'B is still running');
     is($jobB->t_finished, undef, 'B does not has t_finished set since it is still running');
     is($jobC->result, OpenQA::Jobs::Constants::PARALLEL_FAILED, 'C result is parallel failed');
-    is_deeply(\@OpenQA::WebSockets::Server::commands, [qw(cancel cancel)], 'both cancel commands issued');
+    is_deeply(\@OpenQA::WebSockets::commands, [qw(cancel cancel)], 'both cancel commands issued');
 
     # assume B has actually been cancelled
     $jobB->update({state => OpenQA::Jobs::Constants::DONE});

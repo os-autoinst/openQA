@@ -102,7 +102,7 @@ OpenQA::Test::FullstackUtils::setup_database();
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
 
 # we don't want no fixtures
-local $ENV{WS_TEST_NO_AUTH} = 1;
+OpenQA::WebSockets::Client->singleton->client->apikey('1234567890ABCDEF')->apisecret('1234567890ABCDEF');
 my $mojoport = Mojo::IOLoop::Server->generate_port;
 my $wsport   = $mojoport + 1;
 $wspid = create_websocket_server($wsport, 0, 0, 0);

@@ -36,7 +36,6 @@ use Mojo::File qw(tempdir path);
 
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Jobs;
-use OpenQA::WebSockets::Server;
 use OpenQA::Schema::Result::Workers ();
 use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD MAX_TIMER MIN_TIMER);
 

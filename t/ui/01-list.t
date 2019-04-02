@@ -31,11 +31,9 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Test::Database;
-use OpenQA::WebSockets;
 use OpenQA::Scheduler;
 
 # create Test DBus bus and service for fake WebSockets and Scheduler call
-my $ws = OpenQA::WebSockets->new;
 my $sh = OpenQA::Scheduler->new;
 
 OpenQA::Test::Case->new->init_data;

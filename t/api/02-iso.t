@@ -32,8 +32,6 @@ use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::Schema::Result::ScheduledProducts;
 use Mojo::IOLoop;
-
-use OpenQA::WebSockets;
 use OpenQA::Scheduler;
 
 use OpenQA::Utils 'locate_asset';
@@ -111,7 +109,6 @@ sub schedule_iso {
 }
 
 # create Test DBus bus and service for fake WebSockets and Scheduler call
-my $ws = OpenQA::WebSockets->new;
 my $sh = OpenQA::Scheduler->new;
 
 my $ret;

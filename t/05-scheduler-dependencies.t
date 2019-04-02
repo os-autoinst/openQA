@@ -27,7 +27,6 @@ BEGIN {
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Scheduler::Scheduler;
-use OpenQA::WebSockets;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use Test::Mojo;
@@ -36,9 +35,6 @@ use Test::Warnings;
 use OpenQA::Jobs::Constants;
 
 my $schema = OpenQA::Test::Database->new->create();
-
-# create Test DBus bus and service for fake WebSockets call
-my $ws = OpenQA::WebSockets->new;
 
 use Mojo::Util 'monkey_patch';
 

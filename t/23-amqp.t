@@ -29,7 +29,6 @@ use lib "$FindBin::Bin/lib";
 use OpenQA::Client;
 use OpenQA::Scheduler;
 use OpenQA::Jobs::Constants;
-use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use Test::MockModule;
 use Test::More;
@@ -75,7 +74,6 @@ $parent_groups->create(
     });
 
 # create Test DBus bus and service for fake WebSockets
-my $ws = OpenQA::WebSockets->new();
 my $sh = OpenQA::Scheduler->new();
 
 my $settings = {

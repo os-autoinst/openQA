@@ -28,16 +28,12 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Resource::Jobs;
 use OpenQA::Resource::Locks;
-use OpenQA::WebSockets;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 
 use Test::More;
 use Test::Warnings;
 use Test::Output qw(stderr_like);
-
-# create Test DBus bus and service for fake WebSockets call
-my $ws = OpenQA::WebSockets->new;
 
 my $schema = OpenQA::Test::Database->new->create();
 

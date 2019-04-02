@@ -26,10 +26,7 @@ use OpenQA::Utils qw(log_debug log_error);
 use OpenQA::Events;
 
 my $openqa_prefix = 'org.opensuse.openqa';
-my %services      = (
-    scheduler  => 'Scheduler',
-    websockets => 'WebSockets'
-);
+my %services      = (scheduler => 'Scheduler');
 
 my %handles;
 
@@ -237,12 +234,6 @@ sub _dispatch {
 sub scheduler {
     my ($self, @param) = @_;
     return $self->_dispatch('scheduler', @param);
-}
-
-# websockets - send message to websockets
-sub websockets {
-    my ($self, @param) = @_;
-    return $self->_dispatch('websockets', @param);
 }
 
 1;

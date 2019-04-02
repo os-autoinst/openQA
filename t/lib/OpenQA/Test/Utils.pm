@@ -193,7 +193,7 @@ sub create_websocket_server {
 
         use OpenQA::WebSockets;
         use Mojo::Util 'monkey_patch';
-        use OpenQA::WebSockets::Server;
+        use OpenQA::WebSockets;
         use OpenQA::WebSockets::Controller::Worker;
         use OpenQA::WebSockets::Plugin::Helpers;
 

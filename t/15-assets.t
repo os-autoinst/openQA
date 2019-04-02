@@ -32,7 +32,6 @@ use Test::MockModule;
 use Test::Mojo;
 use OpenQA::Resource::Jobs 'job_restart';
 use OpenQA::WebAPI::Controller::API::V1::Worker;
-use OpenQA::WebSockets;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use OpenQA::Utils;
@@ -49,8 +48,6 @@ monkey_patch 'OpenQA::Schema::Result::Jobs', ws_send => sub {
     $sent->{job}->{$self->id} = {worker => $worker, job => $self};
     return {state => {msg_sent => 1}};
 };
-# create Test DBus bus and service for fake WebSockets call
-my $ws = OpenQA::WebSockets->new;
 
 my $schema;
 ok($schema = OpenQA::Test::Database->new->create(), 'create database') || BAIL_OUT('failed to create database');

@@ -23,7 +23,7 @@ use POSIX;
 use FindBin;
 use lib ("$FindBin::Bin/lib", "../lib", "lib");
 use OpenQA::Client;
-use OpenQA::WebSockets::Server;
+use OpenQA::WebSockets;
 use OpenQA::WebSockets::Controller::Worker;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
@@ -36,7 +36,7 @@ use Mojo::JSON;
 $INC{'FooBarWorker.pm'} = 1;
 
 OpenQA::Test::Database->new->create;
-my $t = Test::Mojo->new('OpenQA::WebSockets::Server');
+my $t = Test::Mojo->new('OpenQA::WebSockets');
 
 subtest 'Authentication' => sub {
     $t->get_ok('/test')->status_is(404);
@@ -63,7 +63,7 @@ subtest 'WebSocket Server workers_checker' => sub {
     {
         open my $handle, '>', \$buffer;
         local *STDOUT = $handle;
-        OpenQA::WebSockets::Server->new->workers_checker;
+        OpenQA::WebSockets->new->workers_checker;
     };
     like $buffer,              qr/Failed dead job detection/;
     ok $mock_singleton_called, 'mocked singleton method has been called';
@@ -78,7 +78,7 @@ subtest 'WebSocket Server get_stale_worker_jobs' => sub {
     {
         open my $handle, '>', \$buffer;
         local *STDOUT = $handle;
-        OpenQA::WebSockets::Server->new->get_stale_worker_jobs(-9999999999);
+        OpenQA::WebSockets->new->get_stale_worker_jobs(-9999999999);
     };
     like $buffer,              qr/Worker Boooo not seen since \d+ seconds/;
     ok $mock_singleton_called, 'mocked singleton method has been called';

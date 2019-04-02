@@ -25,14 +25,12 @@ use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
-use OpenQA::WebSockets;
 use OpenQA::Scheduler;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
 # create Test DBus bus and service for fake WebSockets and Scheduler call
-my $ws = OpenQA::WebSockets->new;
 my $sh = OpenQA::Scheduler->new;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
