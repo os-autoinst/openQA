@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2016 SUSE LLC
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -350,6 +350,8 @@ sub startup {
     $mm_api->get('/parents')->name('apiv1_mm_parents')->to('mm#get_parents');
 
     # api/v1/isos
+    $api_ro->get('/isos/<scheduled_product_id:num>')->name('apiv1_show_scheduled_product')
+      ->to('iso#show_scheduled_product');
     $api_ro->post('/isos')->name('apiv1_create_iso')->to('iso#create');
     $api_ra->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy');
     $api_ro->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel');

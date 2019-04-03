@@ -70,17 +70,17 @@ sub schema_hook {
     $jobs->find(99900)->children->create(
         {
             child_job_id => 99901,
-            dependency   => OpenQA::Schema::Result::JobDependencies::CHAINED,
+            dependency   => OpenQA::JobDependencies::Constants::CHAINED,
         });
     $jobs->find(99901)->children->create(
         {
             child_job_id => 99902,
-            dependency   => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+            dependency   => OpenQA::JobDependencies::Constants::PARALLEL,
         });
     $jobs->find(99901)->children->create(
         {
             child_job_id => 99903,
-            dependency   => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+            dependency   => OpenQA::JobDependencies::Constants::PARALLEL,
         });
 }
 

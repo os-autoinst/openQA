@@ -251,26 +251,6 @@ subtest 'handling assets with invalid name' => sub {
     # check whether registering an asset with empty name is prevented
     is($schema->resultset('Assets')->register(repo => ''), undef, 'registering an empty asset prevented');
 
-    # handling within OpenQA::WebAPI::Controller::API::V1::Iso::schedule_iso
-    my $iso_api_controller_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::API::V1::Iso');
-    $iso_api_controller_mock->mock(_generate_jobs => sub { return undef; });
-    $iso_api_controller_mock->mock(emit_event     => sub { return undef; });
-    my $iso_api_controller = OpenQA::WebAPI::Controller::API::V1::Iso->new;
-    $iso_api_controller->app($t->app);
-    is_deeply(
-        $iso_api_controller->schedule_iso({REPO_0 => ''}),
-        {error => 'Asset type and name must not be empty.'},
-        'schedule_iso prevents adding assets with empty name',
-    );
-    is_deeply(
-        $iso_api_controller->schedule_iso({REPO_0 => 'invalid'}),
-        {
-            successful_job_ids => [],
-            failed_job_info    => [],
-        },
-        'schedule_iso allows non-existant assets though',
-    );
-
     # handling within OpenQA::Schema::Result::Jobs::register_assets_from_settings
     my $job          = $schema->resultset('Jobs')->first;
     my $job_settings = $job->{_settings} = {REPO_0 => ''};

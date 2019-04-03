@@ -32,6 +32,7 @@ use OpenQA::Utils (
     qw(send_job_to_worker read_test_modules find_bugref)
 );
 use OpenQA::Jobs::Constants;
+use OpenQA::JobDependencies::Constants;
 use File::Basename qw(basename dirname);
 use File::Spec::Functions 'catfile';
 use File::Path ();
@@ -161,6 +162,11 @@ __PACKAGE__->add_columns(
         data_type     => 'integer',
         default_value => 0,
     },
+    scheduled_product_id => {
+        data_type      => 'integer',
+        is_foreign_key => 1,
+        is_nullable    => 1,
+    },
 );
 __PACKAGE__->add_timestamps;
 
@@ -204,6 +210,9 @@ __PACKAGE__->has_many(networks => 'OpenQA::Schema::Result::JobNetworks', 'job_id
 
 __PACKAGE__->has_many(gru_dependencies => 'OpenQA::Schema::Result::GruDependencies', 'job_id');
 __PACKAGE__->has_many(screenshot_links => 'OpenQA::Schema::Result::ScreenshotLinks', 'job_id');
+__PACKAGE__->belongs_to(
+    scheduled_product => 'OpenQA::Schema::Result::ScheduledProducts',
+    'scheduled_product_id', {join_type => 'left', on_delete => 'SET NULL'});
 
 __PACKAGE__->filter_column(
     result_dir => {
@@ -684,7 +693,7 @@ sub create_clones {
             $res->parents->find_or_create(
                 {
                     parent_job_id => $clones{$p}->id,
-                    dependency    => OpenQA::Schema::Result::JobDependencies->PARALLEL,
+                    dependency    => OpenQA::JobDependencies::Constants::PARALLEL,
                 });
         }
         for my $p (@{$info->{chained_parents}}) {
@@ -693,21 +702,21 @@ sub create_clones {
             $res->parents->find_or_create(
                 {
                     parent_job_id => $p,
-                    dependency    => OpenQA::Schema::Result::JobDependencies->CHAINED,
+                    dependency    => OpenQA::JobDependencies::Constants::CHAINED,
                 });
         }
         for my $c (@{$info->{parallel_children}}) {
             $res->children->find_or_create(
                 {
                     child_job_id => $clones{$c}->id,
-                    dependency   => OpenQA::Schema::Result::JobDependencies->PARALLEL,
+                    dependency   => OpenQA::JobDependencies::Constants::PARALLEL,
                 });
         }
         for my $c (@{$info->{chained_children}}) {
             $res->children->find_or_create(
                 {
                     child_job_id => $clones{$c}->id,
-                    dependency   => OpenQA::Schema::Result::JobDependencies->CHAINED,
+                    dependency   => OpenQA::JobDependencies::Constants::CHAINED,
                 });
         }
 
@@ -752,7 +761,7 @@ sub cluster_jobs {
   PARENT: while (my $pd = $parents->next) {
         my $p = $pd->parent;
 
-        if ($pd->dependency eq OpenQA::Schema::Result::JobDependencies->CHAINED) {
+        if ($pd->dependency eq OpenQA::JobDependencies::Constants::CHAINED) {
             push(@{$jobs->{$self->id}->{chained_parents}}, $p->id);
             # we don't duplicate up the chain, only down
             next;
@@ -797,7 +806,7 @@ sub cluster_children {
 
         # do not fear the recursion
         $c->cluster_jobs(jobs => $jobs);
-        if ($cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
+        if ($cd->dependency eq OpenQA::JobDependencies::Constants::PARALLEL) {
             push(@{$jobs->{$self->id}->{parallel_children}}, $c->id);
         }
         else {
@@ -1447,7 +1456,7 @@ sub register_assets_from_settings {
 
     my @parents_rs = $self->parents->search(
         {
-            dependency => OpenQA::Schema::Result::JobDependencies->CHAINED,
+            dependency => OpenQA::JobDependencies::Constants::CHAINED,
         },
         {
             columns => ['parent_job_id'],
@@ -1564,7 +1573,7 @@ sub _find_network {
 
     my $parents = $self->parents->search(
         {
-            dependency => OpenQA::Schema::Result::JobDependencies->PARALLEL,
+            dependency => OpenQA::JobDependencies::Constants::PARALLEL,
         });
     while (my $pd = $parents->next) {
         my $vlan = $pd->parent->_find_network($name, $seen);
@@ -1573,7 +1582,7 @@ sub _find_network {
 
     my $children = $self->children->search(
         {
-            dependency => OpenQA::Schema::Result::JobDependencies->PARALLEL,
+            dependency => OpenQA::JobDependencies::Constants::PARALLEL,
         });
     while (my $cd = $children->next) {
         my $vlan = $cd->child->_find_network($name, $seen);
@@ -1944,7 +1953,7 @@ sub blocked_by_parent_job {
     }
     my $parents = $self->result_source->schema->resultset('JobDependencies')->search(
         {
-            dependency    => OpenQA::Schema::Result::JobDependencies->CHAINED,
+            dependency    => OpenQA::JobDependencies::Constants::CHAINED,
             parent_job_id => {'!=' => $self->id},
             child_job_id  => {-in => \@possibly_blocked_jobs}
         },

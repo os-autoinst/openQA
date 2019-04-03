@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 # Copyright (C) 2016 Red Hat
 #
 # This program is free software; you can redistribute it and/or modify
@@ -30,6 +30,7 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
+use OpenQA::Schema::Result::ScheduledProducts;
 use Mojo::IOLoop;
 
 use OpenQA::WebSockets;
@@ -48,10 +49,11 @@ $t->ua(
     OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-my $schema        = $t->app->schema;
-my $job_templates = $schema->resultset('JobTemplates');
-my $test_suites   = $schema->resultset('TestSuites');
-my $jobs          = $schema->resultset('Jobs');
+my $schema             = $t->app->schema;
+my $job_templates      = $schema->resultset('JobTemplates');
+my $test_suites        = $schema->resultset('TestSuites');
+my $jobs               = $schema->resultset('Jobs');
+my $scheduled_products = $schema->resultset('ScheduledProducts');
 
 sub lj {
     return unless $ENV{HARNESS_IS_VERBOSE};
@@ -98,9 +100,13 @@ sub find_job {
 }
 
 sub schedule_iso {
-    my ($args, $status) = @_;
+    my ($args, $status, $query_params) = @_;
     $status //= 200;
-    my $ret = $t->post_ok('/api/v1/isos', form => $args)->status_is($status);
+
+    my $url = Mojo::URL->new('/api/v1/isos');
+    $url->query($query_params);
+
+    my $ret = $t->post_ok($url, form => $args)->status_is($status);
     return $ret->tx->res;
 }
 
@@ -132,8 +138,7 @@ is($ret->tx->res->json->{job}->{state}, 'scheduled', 'job $clone99981 is schedul
 
 lj;
 
-my @tasks;
-@tasks = $schema->resultset('GruTasks')->search({taskname => 'download_asset'});
+my @tasks = $schema->resultset('GruTasks')->search({taskname => 'download_asset'});
 is(scalar @tasks, 0, 'we have no gru download tasks to start with');
 
 # add a random comment on a scheduled but not started job so that this one
@@ -195,6 +200,90 @@ subtest 'group filter and priority override' => sub {
 
     # delete job template again so the remaining tests are unaffected
     $job_template->delete;
+};
+
+subtest 'scheduled products added' => sub {
+    my @scheduled_products = $scheduled_products->all;
+    is(scalar @scheduled_products, 3, 'exactly 3 products scheduled in previous subtest');
+
+    for my $product (@scheduled_products) {
+        my $product_id = $product->id;
+        is($product->distri,       'opensuse',                                           "distri, $product_id");
+        is($product->version,      '13.1',                                               "version, $product_id");
+        is($product->flavor,       'DVD',                                                "flavor, $product_id");
+        is($product->arch,         'i586',                                               "arch, $product_id");
+        is($product->build,        '0091',                                               "build, $product_id");
+        is($product->iso,          $iso,                                                 "iso, $product_id");
+        is(ref $product->settings, 'HASH',                                               "settings, $product_id");
+        is(ref $product->results,  'HASH',                                               "results, $product_id");
+        is($product->status,       OpenQA::Schema::Result::ScheduledProducts::SCHEDULED, "status, $product_id");
+    }
+
+    my $empty_result = $scheduled_products[0]->results;
+    is_deeply(
+        $empty_result,
+        {
+            failed_job_info    => [],
+            successful_job_ids => [],
+        },
+        'empty result stored correctly, 1'
+    ) or diag explain $empty_result;
+
+    my $product_1        = $scheduled_products[1];
+    my $product_1_id     = $product_1->id;
+    my $non_empty_result = $product_1->results;
+    is(scalar @{$non_empty_result->{successful_job_ids}}, 1, 'successful job ID stored correctly, 2')
+      or diag explain $non_empty_result;
+
+    my $stored_settings   = $scheduled_products[1]->settings;
+    my %expected_settings = (
+        ISO        => $iso,
+        DISTRI     => 'opensuse',
+        VERSION    => '13.1',
+        FLAVOR     => 'DVD',
+        ARCH       => 'i586',
+        BUILD      => '0091',
+        PRECEDENCE => 'original',
+        _GROUP     => 'opensuse test',
+    );
+    is_deeply($stored_settings, \%expected_settings, 'settings stored correctly, 3') or diag explain $stored_settings;
+
+    ok(my $scheduled_job_id = $non_empty_result->{successful_job_ids}->[0], 'scheduled job ID present');
+    ok(my $scheduled_job = $jobs->find($scheduled_job_id), 'job actually scheduled');
+    is($scheduled_job->scheduled_product->id, $product_1_id, 'scheduled product assigned');
+    is_deeply([map { $_->id } $product_1->jobs->all],
+        [$scheduled_job_id], 'relationship works also the other way around');
+
+    subtest 'api for querying scheduled products' => sub {
+        $t->get_ok("/api/v1/isos/$product_1_id?include_job_ids=1")->status_is(200);
+        my $json = $t->tx->res->json;
+
+        ok(delete $json->{t_created}, 't_created exists');
+        ok(delete $json->{t_updated}, 't_updated exists');
+        is_deeply(
+            $json,
+            {
+                id            => $product_1_id,
+                gru_task_id   => undef,
+                minion_job_id => undef,
+                user_id       => 99903,
+                job_ids       => [$scheduled_job_id],
+                status        => 'scheduled',
+                distri        => 'opensuse',
+                version       => '13.1',
+                flavor        => 'DVD',
+                build         => '0091',
+                arch          => 'i586',
+                iso           => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',
+                results       => {
+                    failed_job_info    => [],
+                    successful_job_ids => [$scheduled_job_id],
+                },
+                settings => \%expected_settings,
+            },
+            'scheduled product serialized as expected'
+        ) or diag explain $json;
+    };
 };
 
 # set prio of job template for $server_64 to undef so the prio is inherited from the job group
@@ -566,7 +655,7 @@ $rsp = schedule_iso(
     },
     403
 );
-is($rsp->message, 'Asset download requested from non-whitelisted host adamshost');
+is($rsp->body, 'Asset download requested from non-whitelisted host adamshost.');
 check_download_asset('asset _URL not in whitelist');
 
 # Using asset _DECOMPRESS_URL outside of whitelist will yield 403
@@ -580,7 +669,7 @@ $rsp = schedule_iso(
     },
     403
 );
-is($rsp->message, 'Asset download requested from non-whitelisted host adamshost');
+is($rsp->body, 'Asset download requested from non-whitelisted host adamshost.');
 check_download_asset('asset _DECOMPRESS_URL not in whitelist');
 
 # schedule an existant ISO against a repo to verify the ISO is registered and the repo is not
@@ -889,13 +978,23 @@ subtest 'Create dependency for jobs on different machines - log error parents' =
             {Parallel => [$supportserver_ppc->{id}], Chained => []},
             "supportserver_ppc is only parent of " . $c->{name});
     }
-    for (0 .. 1) {
-        like(
-            $res->json->{failed}->[$_]->{error_messages}->[0],
-            qr/supportserver:(.*?) has no child, check its machine placed or dependency setting typos/,
-            "supportserver placed on 64bit/s390x machine, but no child"
-        );
-    }
+
+    subtest 'error reported to client and logged in scheduled products table' => sub {
+        for (0 .. 1) {
+            my $json                     = $res->json;
+            my $scheduled_product        = $scheduled_products->find($json->{scheduled_product_id});
+            my $error_returned_to_client = $json->{failed}->[$_]->{error_messages}->[0];
+            my $error_stored_in_scheduled_product
+              = $scheduled_product->results->{failed_job_info}->[$_]->{error_messages}->[0];
+            for my $error ($error_returned_to_client, $error_stored_in_scheduled_product) {
+                like(
+                    $error,
+                    qr/supportserver:(.*?) has no child, check its machine placed or dependency setting typos/,
+                    "supportserver placed on 64bit/s390x machine, but no child"
+                );
+            }
+        }
+    };
 
     $schema->txn_rollback;
 };
@@ -935,6 +1034,65 @@ subtest 'setting WORKER_CLASS and assigning default WORKER_CLASS' => sub {
             is($actual_worker_class, 'qemu_i586', "default WORKER_CLASS assigned to $test_name");
         }
     }
+};
+
+my $scheduled_product_id;
+my %scheduling_params = (
+    ISO        => $iso,
+    DISTRI     => 'opensuse',
+    VERSION    => '13.1',
+    FLAVOR     => 'DVD',
+    ARCH       => 'i586',
+    BUILD      => '0091',
+    PRECEDENCE => 'original',
+    SPECIAL    => 'variable',
+);
+
+subtest 'async flag' => sub {
+    # trigger scheduling using the same parameter as in previous subtests - just use the async flag this time
+    my $res  = schedule_iso(\%scheduling_params, 200, {async => 1});
+    my $json = $res->json;
+    $scheduled_product_id = $json->{scheduled_product_id};
+    ok($json->{gru_task_id},   'gru task ID returned');
+    ok($json->{minion_job_id}, 'minion job ID returned');
+    ok($scheduled_product_id,  'scheduled product ID returned');
+
+    # verify that scheduled product has been added
+    $t->get_ok("/api/v1/isos/$scheduled_product_id?include_job_ids=1")->status_is(200);
+    $json = $t->tx->res->json;
+    is($json->{status}, OpenQA::Schema::Result::ScheduledProducts::ADDED, 'scheduled product trackable');
+    is_deeply($json->{settings}, \%scheduling_params, 'settings stored correctly');
+
+    # run gru and check whether scheduled product has actually been scheduled
+    $t->app->start('gru', 'run', '--oneshot');
+    $t->get_ok("/api/v1/isos/$scheduled_product_id?include_job_ids=1")->status_is(200);
+    $json = $t->tx->res->json;
+    my $ok = 1;
+    is($json->{status}, OpenQA::Schema::Result::ScheduledProducts::SCHEDULED, 'scheduled product marked as scheduled')
+      or $ok = 0;
+    is(scalar @{$json->{job_ids}}, 10, '10 jobs scheduled') or $ok = 0;
+    is(scalar @{$json->{results}->{successful_job_ids}}, 10, 'all jobs sucessfully scheduled') or $ok = 0;
+    is_deeply(
+        $json->{results}->{failed_job_info}->[0]->{error_messages},
+        ['textmode:32bit has no child, check its machine placed or dependency setting typos'],
+        'there is one error message, though'
+    ) or $ok = 0;
+    diag explain $json unless $ok;
+
+};
+
+subtest 're-schedule product' => sub {
+    plan skip_all => 'previous test "async flag" has not scheduled a product' unless $scheduled_product_id;
+
+    my $res  = schedule_iso({scheduled_product_clone_id => $scheduled_product_id}, 200, {async => 1});
+    my $json = $res->json;
+    my $cloned_scheduled_product_id = $json->{scheduled_product_id};
+    ok($cloned_scheduled_product_id, 'scheduled product ID returned');
+
+    $t->get_ok("/api/v1/isos/$cloned_scheduled_product_id?include_job_ids=1")->status_is(200);
+    $json = $t->tx->res->json;
+    is($json->{status}, OpenQA::Schema::Result::ScheduledProducts::ADDED, 'scheduled product trackable');
+    is_deeply($json->{settings}, \%scheduling_params, 'parameter idential to the original scheduled product');
 };
 
 done_testing();

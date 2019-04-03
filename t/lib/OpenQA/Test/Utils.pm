@@ -35,7 +35,7 @@ our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
     qw(redirect_output standard_worker),
     qw(create_webapi create_websocket_server create_live_view_handler create_worker unresponsive_worker wait_for_worker setup_share_dir),
-    qw(kill_service unstable_worker job_create client_output fake_asset_server),
+    qw(kill_service unstable_worker client_output fake_asset_server),
     qw(cache_minion_worker cache_worker_service)
 );
 
@@ -364,15 +364,6 @@ sub c_worker {
     }
 
     return $pid;
-}
-
-sub job_create {
-    my $schema = shift;
-    return unless $schema;
-    my $job = $schema->resultset('Jobs')->create_from_settings(@_);
-    # reload all values from database so we can check against default values
-    $job->discard_changes;
-    return $job;
 }
 
 sub read_worker_config {
