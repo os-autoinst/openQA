@@ -23,7 +23,6 @@ BEGIN {
 use strict;
 use warnings;
 use OpenQA::Schema::Result::ApiKeys;
-use OpenQA::Schema::Result::Users;
 use OpenQA::Schema;
 use Getopt::Long;
 
@@ -80,8 +79,8 @@ if ($users != 0) {
     warn "An admin user already exists! Use client or web UI to create further users.\n";
     exit 1;
 }
-my $account = OpenQA::Schema::Result::Users->create_user(
-    $user, $schema,
+my $account = $schema->resultset('Users')->create_user(
+    $user,
     email    => $email,
     nickname => $nickname,
     fullname => $fullname,

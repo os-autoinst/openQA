@@ -18,7 +18,6 @@ package OpenQA::WebAPI::Auth::iChain;
 use strict;
 use warnings;
 
-use OpenQA::Schema::Result::Users;
 use Exporter 'import';
 
 our @EXPORT_OK = qw(auth_login auth_logout);
@@ -36,8 +35,8 @@ sub auth_login {
 
     if ($username) {
         # iChain login
-        OpenQA::Schema::Result::Users->create_user(
-            $username, $self->schema,
+        $self->schema->resultset('Users')->create_user(
+            $username,
             email    => $email,
             nickname => $username,
             fullname => $fullname
