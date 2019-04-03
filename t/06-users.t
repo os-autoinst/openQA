@@ -50,13 +50,13 @@ subtest 'system user presence' => sub {
 };
 
 subtest 'new user is admin if no admin is present' => sub {
-    my $admins = $t->app->schema->resultset('Users')->search({is_admin => 1});
+    my $users  = $t->app->schema->resultset('Users');
+    my $admins = $users->search({is_admin => 1});
     while (my $u = $admins->next) {
         $u->update({is_admin => 0});
     }
-    ok(!$t->app->schema->resultset('Users')->search({is_admin => 1})->all, 'no admin is present');
-    require OpenQA::Schema::Result::Users;
-    my $user = OpenQA::Schema::Result::Users->create_user('test_user', $t->app->schema);
+    ok(!$users->search({is_admin => 1})->all, 'no admin is present');
+    my $user = $users->create_user('test_user');
     ok($user->is_admin,    'new user is admin by default if there was no admin');
     ok($user->is_operator, 'new user is operator by default if there was no admin');
 };

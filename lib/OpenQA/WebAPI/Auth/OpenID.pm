@@ -18,7 +18,6 @@ package OpenQA::WebAPI::Auth::OpenID;
 use strict;
 use warnings;
 
-use OpenQA::Schema::Result::Users;
 use LWP::UserAgent;
 use Net::OpenID::Consumer;
 use Exporter 'import';
@@ -148,8 +147,8 @@ sub auth_response {
                 }
             }
 
-            my $user = OpenQA::Schema::Result::Users->create_user(
-                $vident->{identity}, $self->schema,
+            my $user = $self->schema->resultset('Users')->create_user(
+                $vident->{identity},
                 email    => $email,
                 nickname => $nickname,
                 fullname => $fullname

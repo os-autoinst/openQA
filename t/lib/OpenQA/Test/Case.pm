@@ -20,9 +20,9 @@ use Mojo::Base -base;
 use OpenQA::Test::Database;
 use OpenQA::Test::Testresults;
 use OpenQA::Schema::Result::Users;
+use OpenQA::Schema;
 use Date::Format 'time2str';
-use Mojo::JSON qw(decode_json j);
-use Mojo::Util qw(b64_decode b64_encode hmac_sha1_sum);
+use Mojo::JSON 'decode_json';
 
 sub new {
     my $self = shift->SUPER::new;
@@ -32,63 +32,42 @@ sub new {
     return $self;
 }
 
-{
+sub init_data {
+    my ($self, %options) = @_;
 
-    my $schema;
+    # This should result in the 't' directory, even if $0 is in a subdirectory
+    my ($tdirname) = $0 =~ qr/((.*\/t\/|^t\/)).+$/;
+    my $schema = OpenQA::Test::Database->new->create(%options);
 
-    sub init_data {
-        my ($self, %options) = @_;
+    # ARGL, we can't fake the current time and the db manages
+    # t_started so we have to override it manually
+    my $r = $schema->resultset("Jobs")->search({id => 99937})->update(
+        {
+            t_created => time2str('%Y-%m-%d %H:%M:%S', time - 540000, 'UTC'),    # 150 hours ago;
+        });
 
-        # This should result in the 't' directory, even if $0 is in a subdirectory
-        my ($tdirname) = $0 =~ qr/((.*\/t\/|^t\/)).+$/;
-        $schema = OpenQA::Test::Database->new->create(%options);
+    OpenQA::Test::Testresults->new->create(directory => $tdirname . 'testresults');
+    return $schema;
+}
 
-        # ARGL, we can't fake the current time and the db manages
-        # t_started so we have to override it manually
-        my $r = $schema->resultset("Jobs")->search({id => 99937})->update(
-            {
-                t_created => time2str('%Y-%m-%d %H:%M:%S', time - 540000, 'UTC'),    # 150 hours ago;
-            });
+sub login {
+    my ($self, $test, $username) = @_;
 
-        OpenQA::Test::Testresults->new->create(directory => $tdirname . 'testresults');
-        return $schema;
-    }
+    my $app      = $test->app;
+    my $sessions = $app->sessions;
+    my $c        = $app->build_controller;
+    my $name     = $sessions->cookie_name;
+    return 0 unless my $cookie = (grep { $_->name eq $name } @{$test->ua->cookie_jar->all})[0];
 
-    sub login {
-        my ($self, $test, $username) = @_;
-        # Used to sign the cookie after modifying it
-        my $secret = $test->app->secrets->[0];
+    # Hack the existing session cookie and add a user to pretend we logged in
+    $c->req->cookies($cookie);
+    $sessions->load($c);
+    OpenQA::Schema->singleton->resultset('Users')->create_user($username);
+    $c->session->{user} = $username;
+    $sessions->store($c);
+    $cookie->value($c->res->cookie($name)->value);
 
-        # Look for the signed cookie
-        if (my $jar = $test->ua->cookie_jar) {
-            my $cookie;
-            if (ref($jar->all) eq 'ARRAY') {
-                $cookie = $jar->all->[0];
-            }
-            else {
-                my @cookies = $jar->all;
-                $cookie = $cookies[0];
-            }
-
-            # Extract the information...
-            my ($value) = split('--', $cookie->value);
-            $value = j(b64_decode($value));
-            # ..add the user value...
-            OpenQA::Schema::Result::Users->create_user($username, $schema);
-            $value->{user} = $username;
-            # ...and sign the cookie again with the new value
-            $value = b64_encode(j($value), '');
-            $value =~ y/=/-/;
-            # make login cookie only valid for https
-            # XXX_: we can't do this because the test server runs on
-            # http so the Mojo useragent doesn't use the cookie
-            #$cookie->secure(1);
-            $cookie->value("$value--" . hmac_sha1_sum($value, $secret));
-        }
-
-        return 1;
-    }
-
+    return 1;
 }
 
 ## test helpers
