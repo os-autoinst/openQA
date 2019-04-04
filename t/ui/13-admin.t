@@ -124,7 +124,7 @@ subtest 'add product' => sub() {
     is((shift @headers)->get_text(), "DVD",      "flavor");
     is((shift @headers)->get_text(), "i586",     "arch");
 
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 1, "1 edit button before");
+    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 3, "3 edit buttons/media before");
 
     is($driver->find_element_by_xpath('//input[@value="New medium"]')->click(), 1, 'new medium');
 
@@ -140,7 +140,7 @@ subtest 'add product' => sub() {
 
     is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
     wait_for_ajax;
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 2, "2 edit buttons afterwards");
+    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 4, "4 edit buttons/media afterwards");
 
     # check the distri name will be lowercase after added a new one
     is($driver->find_element_by_xpath('//input[@value="New medium"]')->click(), 1, 'new medium');
@@ -159,7 +159,7 @@ subtest 'add product' => sub() {
 
     is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
     wait_for_ajax;
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 3, "3 edit buttons afterwards");
+    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 5, "5 edit buttons/media afterwards");
 };
 
 subtest 'add machine' => sub() {
@@ -460,7 +460,7 @@ sub is_element_text {
     is_deeply(\@texts, $expected, $message) or diag explain \@texts;
 }
 
-subtest 'edit mediums' => sub() {
+subtest 'edit media' => sub() {
     $driver->title_is('openQA: Jobs for Cool Group has been edited!', 'on jobs for Cool Test has been edited!');
 
     wait_for_ajax;

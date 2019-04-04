@@ -70,6 +70,22 @@ is_deeply(
                     }
                 ],
                 'version' => '13.1'
+            },
+            {
+                id       => 2,
+                distri   => 'sle',
+                version  => '12-SP1',
+                flavor   => 'Server-DVD-Updates',
+                arch     => 'x86_64',
+                settings => [],
+            },
+            {
+                id       => 3,
+                distri   => 'opensuse',
+                version  => '13.1',
+                flavor   => 'DVD',
+                arch     => 'ppc64',
+                settings => [],
             }]
     },
     "Initial products"

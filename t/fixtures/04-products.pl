@@ -100,5 +100,21 @@
             {machine => {name => '64bit'}, test_suite => {name => 'advanced_kde'}, prio => 40, group_id => 1001},
         ],
     },
+    Products => {
+        id      => 2,
+        name    => '',
+        distri  => 'sle',
+        version => '12-SP1',
+        flavor  => 'Server-DVD-Updates',
+        arch    => 'x86_64',
+    },
+    Products => {
+        id      => 3,
+        name    => '',
+        distri  => 'opensuse',
+        version => '13.1',
+        flavor  => 'DVD',
+        arch    => 'ppc64',
+    },
 ]
 # vim: set sw=4 et:

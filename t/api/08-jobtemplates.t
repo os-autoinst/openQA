@@ -631,6 +631,284 @@ $get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/1001")->status_
 is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, 'Test suite with unicode characters encoded correctly')
   || diag explain $get->tx->res->body;
 
+# Remove unicode characters from the group name to simplify further testing
+$app->schema->resultset('JobGroups')->find({name => 'öpensüse'})->update({name => 'opensuse'});
+# Swap the group name in the expected YAML
+$yaml->{'opensuse'} = $yaml->{'öpensüse'};
+delete $yaml->{'öpensüse'};
+
+my $template = {opensuse => {}};
+# Attempting to modify group with erroneous YAML should fail
+$t->post_ok(
+    '/api/v1/experimental/job_templates_scheduling',
+    form => {
+        template => YAML::XS::Dump($template)}
+)->status_is(400)->json_is(
+    '' => {
+        error_status => 400,
+        error        => [
+            {path => '/opensuse/architectures', message => 'Missing property.'},
+            {path => '/opensuse/products',      message => 'Missing property.'},
+        ],
+    },
+    'posting invalid YAML template results in error'
+);
+
+subtest 'Create and modify groups with YAML' => sub {
+    # Create group based on YAML template
+    $yaml = {
+        foo => {
+            architectures => {
+                i586 => {
+                    'opensuse-13.1-DVD-i586' => [
+                        'foobar',    # Test names shouldn't conflict across groups
+                        'spam',
+                        {
+                            eggs => {
+                                machine  => '32bit',
+                                priority => 20,
+                            }
+                        },
+                    ],
+                },
+            },
+            defaults => {
+                i586 => {
+                    machine  => '64bit',
+                    priority => 40,
+                },
+            },
+            products => {
+                'opensuse-13.1-DVD-i586' => {
+                    distribution => 'opensuse',
+                    flavor       => 'DVD',
+                    version      => '13.1',
+                },
+            },
+        },
+    };
+    $res = $t->post_ok(
+        '/api/v1/experimental/job_templates_scheduling',
+        form => {
+            template => YAML::XS::Dump($yaml)})->status_is(200, 'New group was added to the database');
+    if ($res->success) {
+        my $job_group_id3 = $res->tx->res->json->{id};
+        $get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
+        # Prepare expected result
+        splice @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}}, 0, 2;
+        unshift @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}}, {'spam'   => {priority => 40}};
+        unshift @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}}, {'foobar' => {priority => 40}};
+        # Use per-arch default priority which deviates from the group default_priority
+        $yaml->{foo}{defaults}{i586}{'priority'} = 50;
+        is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, 'Added group should be reflected in the database')
+          || diag explain $get->tx->res->body;
+
+        # Add test to group according to YAML template
+        my $test_suite = 'foo';
+        push @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}}, $test_suite;
+        $t->post_ok(
+            '/api/v1/experimental/job_templates_scheduling',
+            form => {
+                template => YAML::XS::Dump($yaml)}
+        )->status_is(200)->json_is(
+            '' => {
+                id => $job_group_id3,
+            },
+            "Added test $test_suite via the template"
+        );
+        $get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
+        is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, "Added test $test_suite to the database")
+          || diag explain $get->tx->res->body;
+
+        $test_suite = {'bar' => {priority => 11}};
+        push @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}}, $test_suite;
+        $t->post_ok(
+            '/api/v1/experimental/job_templates_scheduling',
+            form => {
+                template => YAML::XS::Dump($yaml)}
+        )->status_is(200)->json_is(
+            '' => {
+                id => $job_group_id3,
+            },
+            "Added test $test_suite via the template"
+        );
+        $get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
+        is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, "Added test $test_suite to the database")
+          || diag explain $get->tx->res->body;
+
+        $t->post_ok(
+            '/api/v1/experimental/job_templates_scheduling',
+            form => {
+                template => YAML::XS::Dump($yaml)}
+        )->status_is(200)->json_is(
+            '' => {
+                id => $job_group_id3,
+            },
+            'Dropped test by removing it from the template'
+        );
+        $get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
+        is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, "Dropped test $test_suite from the database")
+          || diag explain $get->tx->res->body;
+
+        $test_suite = pop @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}};
+        $t->post_ok(
+            '/api/v1/experimental/job_templates_scheduling',
+            form => {
+                template => YAML::XS::Dump($yaml)}
+        )->status_is(200)->json_is(
+            '' => {
+                id => $job_group_id3,
+            },
+            'Dropped test by removing it from the template'
+        );
+        $get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
+        is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, "Dropped test $test_suite from the database")
+          || diag explain $get->tx->res->body;
+
+        # Modify test attributes in group according to YAML template
+        $yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}
+          = [{'foobar' => {priority => 11, machine => '32bit'}}, 'spam', 'eggs',];
+        # Use per-arch default priority which deviates from the group default_priority
+        $yaml->{foo}{defaults}{i586}{'priority'} = 70;
+        $t->post_ok(
+            '/api/v1/experimental/job_templates_scheduling',
+            form => {
+                template => YAML::XS::Dump($yaml)}
+        )->status_is(200)->json_is(
+            '' => {
+                id => $job_group_id3,
+            },
+            'Test suite was updated'
+        );
+        # Prepare expected result
+        $yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'} = [
+            {'foobar' => {priority => 11, machine => '32bit'}},
+            {'spam'   => {priority => 70}},
+            {'eggs'   => {priority => 70}},
+        ];
+        # Result *should* in fact be 70, but we get the default_priority
+        $yaml->{foo}{defaults}{i586}{'priority'} = 50;
+        $get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
+        is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, 'Modified test suite should be reflected in the database')
+          || diag explain $get->tx->res->body;
+
+        # Post unmodified group
+        $t->post_ok(
+            '/api/v1/experimental/job_templates_scheduling',
+            form => {
+                template => YAML::XS::Dump($yaml)}
+        )->status_is(200)->json_is(
+            '' => {
+                id => $job_group_id3
+            },
+            'No-op import of existing group'
+        );
+        $get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
+        is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, 'Unmodified group should not result in any changes')
+          || diag explain $get->tx->res->body;
+
+        # Errors due to invalid properties
+        $yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}
+          = [{'foobar' => {priority => 11, machine => '31bit'}}];
+        $t->post_ok(
+            '/api/v1/experimental/job_templates_scheduling',
+            form => {
+                template => YAML::XS::Dump($yaml)}
+        )->status_is(400)->json_is(
+            '' => {
+                id           => $job_group_id3,
+                error_status => 400,
+                error        => ["Machine '31bit' is invalid"],
+            },
+            'Invalid machine in test suite'
+        );
+
+        $yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'} = ['foo'];
+        $yaml->{foo}{defaults}{i586}{'machine'}                     = '66bit';
+        $t->post_ok(
+            '/api/v1/experimental/job_templates_scheduling',
+            form => {
+                template => YAML::XS::Dump($yaml)}
+        )->status_is(400)->json_is(
+            '' => {
+                id           => $job_group_id3,
+                error_status => 400,
+                error        => ["Machine '66bit' is invalid"],
+            },
+            'Invalid machine in defaults'
+        );
+
+        $yaml->{foo}{defaults}{i586}{'machine'}                          = '64bit';
+        $yaml->{foo}{products}{'opensuse-13.1-DVD-i586'}{'distribution'} = 'geeko';
+        $t->post_ok(
+            '/api/v1/experimental/job_templates_scheduling',
+            form => {
+                template => YAML::XS::Dump($yaml)}
+        )->status_is(400)->json_is(
+            '' => {
+                id           => $job_group_id3,
+                error_status => 400,
+                error        => ["Product 'opensuse-13.1-DVD-i586' is invalid"],
+            },
+            'Invalid product'
+        );
+    }
+};
+
+subtest 'References' => sub {
+    # Create group based on YAML with references
+    $yaml = YAML::XS::Load('
+    test:
+      architectures:
+        i586:
+          opensuse-13.1-DVD-i586: &tests
+          - foo
+          - bar
+          - spam
+          - eggs
+        ppc64:
+          opensuse-13.1-DVD-ppc64:
+            *tests
+        x86_64:
+          sle-12-SP1-Server-DVD-Updates-x86_64:
+            *tests
+      defaults:
+        i586:
+          machine: 32bit
+          priority: 50
+        ppc64:
+          machine: 64bit
+          priority: 50
+        x86_64:
+          machine: 64bit
+          priority: 50
+      products:
+        opensuse-13.1-DVD-i586: &opensuse13
+          distribution: opensuse
+          flavor: DVD
+          version: 13.1
+        opensuse-13.1-DVD-ppc64:
+          *opensuse13
+        sle-12-SP1-Server-DVD-Updates-x86_64:
+          distribution: sle
+          flavor: Server-DVD-Updates
+          version: 12-SP1
+    ');
+    $res = $t->post_ok(
+        '/api/v1/experimental/job_templates_scheduling',
+        form => {
+            template => YAML::XS::Dump($yaml)})->status_is(200, 'New group with references was added to the database');
+    if ($res->success) {
+        my $job_group_id4 = $res->tx->res->json->{id};
+        $get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id4");
+        # Prepare expected result
+        $yaml->{test}{architectures}{ppc64}{'opensuse-13.1-DVD-ppc64'} = ['spam', 'eggs', 'foo', 'bar'];
+        is_deeply(YAML::XS::Load($get->tx->res->body),
+            $yaml, 'Added group with references should be reflected in the database')
+          || diag explain $get->tx->res->body;
+    }
+};
+
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(200);
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(404);    #not found
 
