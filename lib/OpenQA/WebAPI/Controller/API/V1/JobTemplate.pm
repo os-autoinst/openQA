@@ -16,6 +16,7 @@
 
 package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller';
+use Try::Tiny;
 use JSON::Validator;
 
 =pod
@@ -201,6 +202,188 @@ sub schedules {
     }
 
     $self->render(yaml => \%yaml);
+}
+
+=over 4
+
+=item update()
+
+Updates a job group according to the given YAML template. Test suites are added or modified
+as needed to reflect the difference to what's specified in the template.
+The given YAML will be validated and results in an error if it doesn't confom to the schema.
+
+Returns a 400 code on error, or a 303 code and the job template id within a JSON block on success.
+
+=back
+
+=cut
+
+sub update {
+    my $self = shift;
+
+    my $yaml   = {};
+    my $errors = [];
+    try {
+        # No objects (aka SafeYAML)
+        $YAML::XS::LoadBlessed = 0;
+        $yaml                  = YAML::XS::Load($self->param('template'));
+        $errors                = $self->app->validate_yaml($yaml, $self->app->log->level eq 'debug');
+    }
+    catch {
+        # Push the exception to the list of errors without the trailing new line
+        push @$errors, substr($_, 0, -1);
+    };
+
+    if (@$errors) {
+        $self->app->log->error(@$errors);
+        $self->respond_to(json => {json => {error => \@$errors}, status => 400},);
+        return;
+    }
+
+    my $job_groups    = $self->schema->resultset("JobGroups");
+    my $job_templates = $self->schema->resultset("JobTemplates");
+    my $machines      = $self->schema->resultset("Machines");
+    my $test_suites   = $self->schema->resultset("TestSuites");
+    my $products      = $self->schema->resultset("Products");
+    foreach my $group (keys %{$yaml}) {
+        my $json = {};
+
+        try {
+            $self->schema->txn_do(
+                sub {
+                    my $id = $job_groups->find_or_create({name => $group}, {select => [qw(id name)]})->id;
+                    $json->{id} = $id;
+
+                    # Find existing templates to update or drop
+                    my $templates = $job_templates->search({group_id => $id}, {order_by => 'me.test_suite_id'});
+                    while (my $template = $templates->next) {
+                        my $arch         = $template->product->arch;
+                        my $product_name = $template->product->name;
+
+                        if (my $product = $yaml->{$group}->{architectures}->{$arch}{$product_name}) {
+                            my $found = 0;
+                            foreach my $test_suite (@{$product}) {
+                                if (ref $test_suite eq 'HASH') {
+                                    foreach my $name (keys %$test_suite) {
+                                        next unless $name eq $template->test_suite->name;
+                                        $found = 1;
+
+                                        my $attr = $test_suite->{$name};
+                                        if (%$attr) {
+                                            if ($attr->{machine}) {
+                                                my $machine = $machines->find({name => $attr->{machine}});
+                                                die "Machine '$attr->{machine}' is invalid\n" unless $machine;
+                                                $template->machine_id($machine->id);
+                                            }
+                                            if ($attr->{priority}) {
+                                                $template->prio($attr->{priority});
+                                            }
+                                            $template->update;
+                                        }
+                                    }
+                                }
+                                elsif ($test_suite eq $template->test_suite->name) {
+                                    $found = 1;
+
+                                    # Apply defaults
+                                    my $machine_name = $yaml->{$group}->{defaults}->{$arch}->{machine};
+                                    my $machine      = $machines->find({name => $machine_name});
+                                    die "Machine '$machine_name' is invalid\n" unless $machine;
+                                    $template->update(
+                                        {
+                                            prio       => $yaml->{$group}->{defaults}->{$arch}->{priority},
+                                            machine_id => $machine->id,
+                                        });
+                                }
+                            }
+
+                            next if $found;
+                            # Drop the existing test suite which is not specified
+                            $template->delete;
+                        }
+                    }
+
+                    foreach my $arch (keys %{$yaml->{$group}->{architectures}}) {
+                        foreach my $product_name (keys %{$yaml->{$group}->{architectures}->{$arch}}) {
+                            foreach my $spec (@{$yaml->{$group}->{architectures}->{$arch}->{$product_name}}) {
+
+                                my $testsuite_name;
+                                my $prio;
+                                my $machine_name;
+                                if (ref $spec eq 'HASH') {
+                                    foreach my $name (keys %$spec) {
+                                        my $attr = $spec->{$name};
+                                        $testsuite_name = $name;
+                                        if ($attr->{priority}) {
+                                            $prio = $attr->{priority};
+                                        }
+                                        if ($attr->{machine}) {
+                                            $machine_name = $attr->{machine};
+                                        }
+                                    }
+                                }
+                                else {
+                                    $testsuite_name = $spec;
+                                }
+                                if (!defined $prio) {
+                                    $prio = $yaml->{$group}->{defaults}->{$arch}{priority};
+                                }
+                                if (!defined $machine_name) {
+                                    $machine_name = $yaml->{$group}->{defaults}->{$arch}{machine};
+                                }
+                                my $machine      = $machines->find({name => $machine_name});
+                                my $product_spec = $yaml->{$group}->{products}{$product_name};
+                                my $product      = $products->find(
+                                    {
+                                        arch    => $arch,
+                                        distri  => $product_spec->{distribution},
+                                        flavor  => $product_spec->{flavor},
+                                        version => $product_spec->{version},
+                                    });
+                                die "Machine '$machine_name' is invalid\n" unless $machine;
+                                die "Product '$product_name' is invalid\n" unless $product;
+
+                                my $test_suite = $test_suites->find_or_create({name => $testsuite_name});
+                                my $r          = $job_templates->find_or_create(
+                                    {
+                                        product_id    => $product->id,
+                                        machine_id    => $machine->id,
+                                        group_id      => $id,
+                                        test_suite_id => $test_suite->id,
+                                    });
+
+                                $r->product_id($product->id);
+                                $r->machine_id($machine->id);
+                                if ($prio) {
+                                    $r->prio($prio);
+                                }
+                                $r->update;
+
+                                # Stop iterating if there were errors with this test suite
+                                last if (@$errors);
+                            }
+                        }
+                    }
+                });
+        }
+        catch {
+            # Push the exception to the list of errors without the trailing new line
+            push @$errors, substr($_, 0, -1);
+        };
+
+        if (@$errors) {
+            $json->{error} = \@$errors;
+            $self->app->log->error(@$errors);
+            $self->respond_to(json => {json => $json, status => 400},);
+            return;
+        }
+
+        $self->emit_event('openqa_jobtemplate_create', $json);
+        $self->respond_to(json => {json => $json});
+
+        # Process only one group
+        last;
+    }
 }
 
 =over 4
