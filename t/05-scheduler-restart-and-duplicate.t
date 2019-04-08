@@ -30,12 +30,15 @@ use OpenQA::Resource::Jobs;
 use OpenQA::Resource::Locks;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
-
+use OpenQA::WebSockets::Client;
 use Test::More;
 use Test::Warnings;
 use Test::Output qw(stderr_like);
 
 my $schema = OpenQA::Test::Database->new->create();
+
+OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
+OpenQA::WebSockets::Client->singleton->client->apikey('PERCIVALKEY02')->apisecret('PERCIVALSECRET02');
 
 sub list_jobs {
     [map { $_->to_hash() } $schema->resultset('Jobs')->all];

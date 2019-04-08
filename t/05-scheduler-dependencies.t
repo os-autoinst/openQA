@@ -32,11 +32,14 @@ use OpenQA::Test::Database;
 use Test::Mojo;
 use Test::More;
 use Test::Warnings;
+use OpenQA::WebSockets::Client;
 use OpenQA::Jobs::Constants;
+use Test::MockModule;
 
 my $schema = OpenQA::Test::Database->new->create();
 
-use Mojo::Util 'monkey_patch';
+OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
+OpenQA::WebSockets::Client->singleton->client->apikey('PERCIVALKEY02')->apisecret('PERCIVALSECRET02');
 
 my $sent = {};
 
@@ -49,16 +52,20 @@ sub schedule {
 }
 
 # Mangle worker websocket send, and record what was sent
-monkey_patch 'OpenQA::Schema::Result::Jobs', ws_send => sub {
-    my ($self, $worker) = @_;
-    my $hashref = $self->prepare_for_work($worker);
-    _jobs_update_state([$self], OpenQA::Jobs::Constants::RUNNING);
+my $mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+my $mock_send_called;
+$mock->mock(
+    ws_send => sub {
+        my ($self, $worker) = @_;
+        my $hashref = $self->prepare_for_work($worker);
+        _jobs_update_state([$self], OpenQA::Jobs::Constants::RUNNING);
 
-    $hashref->{assigned_worker_id} = $worker->id;
-    $sent->{$worker->id} = {worker => $worker, job => $self, jobhash => $hashref};
-    $sent->{job}->{$self->id} = {worker => $worker, job => $self, jobhash => $hashref};
-    return {state => {msg_sent => 1}};
-};
+        $hashref->{assigned_worker_id} = $worker->id;
+        $sent->{$worker->id} = {worker => $worker, job => $self, jobhash => $hashref};
+        $sent->{job}->{$self->id} = {worker => $worker, job => $self, jobhash => $hashref};
+        $mock_send_called++;
+        return {state => {msg_sent => 1}};
+    });
 
 sub list_jobs {
     my %args = @_;
@@ -1020,5 +1027,7 @@ while (my ($k, $v) = each %tests) {
     *OpenQA::Jobs::Constants::search_for = $ordered_sort;
     subtest "$k ordered" => $v;
 }
+
+ok $mock_send_called, 'mocked ws_send method has been called';
 
 done_testing();
