@@ -47,6 +47,7 @@
                     <th>Status</th>
                     <th>Websocket Api version</th>
                     <th>os-autoinst version</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -74,6 +75,13 @@
                         </td>
                         <td class="version">
                             <%= exists $worker->{properties} && $worker->{properties}->{ISOTOVIDEO_INTERFACE_VERSION} ? $worker->{properties}->{ISOTOVIDEO_INTERFACE_VERSION} : 'unknown' %>
+                        </td>
+                        <td class='action'>
+                            % if($is_admin == 1 && ($worker->{status} eq 'dead' && !$worker->{job})){
+                                <a href='#' post_delete_url="<%= url_for('apiv1_worker_delete', worker_id => $worker->{id}) %>" onclick="deleteWorker(this);">
+                                    Delete
+                                </a>
+                            % }
                         </td>
                     </tr>
                 % }

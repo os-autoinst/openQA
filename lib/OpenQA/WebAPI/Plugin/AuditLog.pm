@@ -28,7 +28,7 @@ my @jobtemplate_events = qw(jobtemplate_create jobtemplate_delete);
 my @user_events        = qw(user_update user_login user_new_comment user_update_comment user_delete_comment);
 my @asset_events       = qw(asset_register asset_delete);
 my @iso_events         = qw(iso_create iso_delete iso_cancel);
-my @worker_events      = qw(command_enqueue worker_register);
+my @worker_events      = qw(command_enqueue worker_register worker_delete);
 my @needle_events      = qw(needle_modify needle_delete);
 
 # disabled events:

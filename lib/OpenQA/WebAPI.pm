@@ -319,6 +319,7 @@ sub startup {
     push @api_routes, $worker_r;
     $api_public_r->route('/workers/<workerid:num>')->get('/')->name('apiv1_worker')->to('worker#show');
     $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');
+    $api_ro->delete('/workers/<worker_id:num>')->name('apiv1_worker_delete')->to('worker#delete');
 
     # redirect for older workers
     $worker_r->websocket(
