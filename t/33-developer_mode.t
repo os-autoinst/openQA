@@ -60,7 +60,6 @@ use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
 use OpenQA::Test::Utils qw(create_websocket_server create_live_view_handler setup_share_dir);
 use OpenQA::Test::FullstackUtils;
-use OpenQA::WebSockets::Client;
 
 plan skip_all => 'set DEVELOPER_FULLSTACK=1 (be careful)' unless $ENV{DEVELOPER_FULLSTACK};
 plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
@@ -104,7 +103,6 @@ OpenQA::Test::FullstackUtils::setup_database();
 # make sure the assets are prefetched
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
 
-OpenQA::WebSockets::Client->singleton->client->apikey('1234567890ABCDEF')->apisecret('1234567890ABCDEF');
 my $mojoport = Mojo::IOLoop::Server->generate_port;
 my $wsport   = $mojoport + 1;
 $wspid = create_websocket_server($wsport, 0, 0, 0);

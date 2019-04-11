@@ -23,7 +23,12 @@ use Mojo::Util 'hmac_sha1_sum';
 sub check {
     my $self = shift;
 
-    my $headers   = $self->req->headers;
+    my $req = $self->req;
+    if ($self->app->config->{no_localhost_auth}) {
+        return 1 if $self->tx->remote_address eq '127.0.0.1';
+    }
+
+    my $headers   = $req->headers;
     my $key       = $headers->header('X-API-Key');
     my $hash      = $headers->header('X-API-Hash');
     my $timestamp = $headers->header('X-API-Microtime');

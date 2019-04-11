@@ -33,6 +33,7 @@ sub startup {
 
     # no cookies for worker, no secrets to protect
     $self->secrets(['nosecretshere']);
+    $self->config->{no_localhost_auth} ||= 1;
 
     # Assetpack is required to render layouts pages
     push @{$self->plugins->namespaces}, 'OpenQA::WebSockets::Plugin';

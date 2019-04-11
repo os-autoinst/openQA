@@ -40,9 +40,10 @@ my $t = Test::Mojo->new('OpenQA::WebSockets');
 
 subtest 'Authentication' => sub {
     $t->get_ok('/test')->status_is(404);
-
-    $t->get_ok('/')->status_is(403)->json_is({error => 'Not authorized'});
     my $app = $t->app;
+    $t->get_ok('/')->status_is(200)->json_is({name => $app->defaults('appname')});
+    local $t->app->config->{no_localhost_auth} = 0;
+    $t->get_ok('/')->status_is(403)->json_is({error => 'Not authorized'});
     $t->ua(
         OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton)
     )->app($app);

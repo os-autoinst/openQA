@@ -34,6 +34,7 @@ use OpenQA::Resource::Jobs 'job_restart';
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
+use OpenQA::WebSockets::Client;
 use OpenQA::Utils;
 use Mojo::Util 'monkey_patch';
 
@@ -57,7 +58,6 @@ my $schema;
 ok($schema = OpenQA::Test::Database->new->create(), 'create database') || BAIL_OUT('failed to create database');
 
 OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
-OpenQA::WebSockets::Client->singleton->client->apikey('PERCIVALKEY02')->apisecret('PERCIVALSECRET02');
 
 ## test asset is not assigned to scheduled jobs after job creation
 # create new job

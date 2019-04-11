@@ -38,7 +38,6 @@ use Test::Output qw(stderr_like);
 my $schema = OpenQA::Test::Database->new->create();
 
 OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
-OpenQA::WebSockets::Client->singleton->client->apikey('PERCIVALKEY02')->apisecret('PERCIVALSECRET02');
 
 sub list_jobs {
     [map { $_->to_hash() } $schema->resultset('Jobs')->all];

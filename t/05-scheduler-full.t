@@ -44,7 +44,6 @@ use OpenQA::Scheduler;
 use OpenQA::Scheduler::Scheduler;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
-use OpenQA::WebSockets::Client;
 use Test::More;
 use Net::DBus qw(:typing);
 use Mojo::IOLoop::Server;
@@ -64,7 +63,6 @@ init_db();
 my $schema = OpenQA::Test::Database->new->create(skip_schema => 1);
 
 # Create webapi and websocket server services
-OpenQA::WebSockets::Client->singleton->client->apikey('PERCIVALKEY02')->apisecret('PERCIVALSECRET02');
 my $mojoport = Mojo::IOLoop::Server->generate_port();
 my $wspid    = create_websocket_server($mojoport + 1, 0, 1, 1);
 my $webapi   = create_webapi($mojoport);

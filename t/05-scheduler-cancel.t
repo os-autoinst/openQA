@@ -36,7 +36,6 @@ use Test::Warnings;
 my $schema = OpenQA::Test::Database->new->create();
 
 OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
-OpenQA::WebSockets::Client->singleton->client->apikey('PERCIVALKEY02')->apisecret('PERCIVALSECRET02');
 
 sub job_get {
     my ($id) = @_;
