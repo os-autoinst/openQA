@@ -35,12 +35,8 @@ sub startup {
     $self->secrets(['nosecretshere']);
     $self->config->{no_localhost_auth} ||= 1;
 
-    # Assetpack is required to render layouts pages
     push @{$self->plugins->namespaces}, 'OpenQA::WebSockets::Plugin';
-    $self->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Fetch OpenQA::WebAPI::AssetPipe Combine)]});
     $self->plugin('Helpers');
-    $self->plugin('OpenQA::WebAPI::Plugin::Helpers');
-    $self->asset->process;
 
     my $r = $self->routes;
     $r->namespaces(['OpenQA::WebSockets::Controller']);
