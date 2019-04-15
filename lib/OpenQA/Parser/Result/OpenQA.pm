@@ -37,7 +37,7 @@ sub parsed_details {
 sub search_in_details {
     my ($self, $field, $re) = @_;
     my $results = OpenQA::Parser::Result::OpenQA::Results->new();
-    $results->add($_) for grep { $_->{$field} =~ $re } @{$self->details};
+    $results->add($_) for grep { ($_->{$field} // '') =~ $re } @{$self->details};
     return $results;
 }
 
