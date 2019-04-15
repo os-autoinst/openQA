@@ -64,18 +64,18 @@ function loadWorkerTable() {
 }
 
 function deleteWorker(deleteLink){
-	var post_url = $(deleteLink).attr("post_delete_url");
-	$.ajax({
-		url: post_url,
-		method: 'DELETE',
-		dataType: 'json',
-		success: function(data) {
-			$(deleteLink).parent().parent().remove();
+    var post_url = $(deleteLink).attr("post_delete_url");
+    $.ajax({
+        url: post_url,
+        method: 'DELETE',
+        dataType: 'json',
+        success: function(data) {
+            $(deleteLink).parent().parent().remove();
             addFlash('info', data.message);
-		},
-		error: function(xhr, ajaxOptions, thrownError){
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
             var message = xhr.responseJSON.error;
             addFlash('danger', 'The worker couldn\'t be deleted: ' + message);
-		}
-	});
+        }
+    });
 }
