@@ -17,6 +17,7 @@ package OpenQA::WebSockets::Client;
 use Mojo::Base -base;
 
 use Mojo::Server::Daemon;
+use Carp 'croak';
 use OpenQA::Client;
 use OpenQA::WebSockets;
 
@@ -43,20 +44,23 @@ sub embed_server_for_testing {
 sub is_worker_connected {
     my ($self, $worker_id) = @_;
     my $res = $self->client->get($self->_api("is_worker_connected/$worker_id"))->result;
+    croak "Expected 2xx status from WebSocket server but received @{[$res->code]}" unless $res->is_success;
     return $res->json->{connected};
 }
 
 sub send_job {
     my ($self, $job) = @_;
-    my $res = $self->client->post($self->_api('send_job'), json => $job)->result->json;
-    return $res->{result};
+    my $res = $self->client->post($self->_api('send_job'), json => $job)->result;
+    croak "Expected 2xx status from WebSocket server but received @{[$res->code]}" unless $res->is_success;
+    return $res->json->{result};
 }
 
 sub send_msg {
     my ($self, $worker_id, $msg, $job_id, $retry) = @_;
     my $data = {worker_id => $worker_id, msg => $msg, job_id => $job_id, retry => $retry};
-    my $res = $self->client->post($self->_api('send_msg'), json => $data)->result->json;
-    return $res->{result};
+    my $res = $self->client->post($self->_api('send_msg'), json => $data)->result;
+    croak "Expected 2xx status from WebSocket server but received @{[$res->code]}" unless $res->is_success;
+    return $res->json->{result};
 }
 
 sub singleton { state $client ||= __PACKAGE__->new }
