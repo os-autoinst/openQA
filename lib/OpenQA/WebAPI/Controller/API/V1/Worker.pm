@@ -233,7 +233,7 @@ sub delete {
 
     eval { $worker->delete };
     if ($@) {
-        return $self->render(json => {error => $@}, status => 402);
+        return $self->render(json => {error => $@}, status => 409);
     }
     $message = "Delete worker " . $worker->name . " successfully.";
     $self->emit_event('openqa_worker_delete', {id => $worker->id, name => $worker->name});
