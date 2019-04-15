@@ -236,7 +236,7 @@ sub _schedule_iso {
             # Prefer new build jobs over old ones either by cancelling old
             # ones or deprioritizing them (up to a limit)
             try {
-                OpenQA::Events::emit_event(
+                OpenQA::Events->singleton->emit_event(
                     'openqa_iso_cancel',
                     data    => {scheduled_product_id => $self->id},
                     user_id => $user_id
@@ -333,7 +333,7 @@ sub _schedule_iso {
 
     # emit events
     for my $succjob (@successful_job_ids) {
-        OpenQA::Events::emit_event('openqa_job_create', data => {id => $succjob}, user_id => $user_id);
+        OpenQA::Events->singleton->emit_event('openqa_job_create', data => {id => $succjob}, user_id => $user_id);
     }
 
     wakeup_scheduler;
