@@ -2,6 +2,7 @@
 Description=OpenQA Worker Cache Service
 After=network-online.target
 Wants=network-online.target
+PartOf=openqa-worker.target
 
 [Service]
 Restart=on-failure
