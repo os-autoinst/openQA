@@ -9,8 +9,6 @@ After=openqa-scheduler.service postgresql.service network.target openqa-setup-db
 User=geekotest
 Environment="DBUS_STARTER_BUS_TYPE=system"
 ExecStart=/usr/share/openqa/script/openqa-websockets
-BusName=org.opensuse.openqa.WebSockets
-Type=dbus
 
 [Install]
 WantedBy=multi-user.target

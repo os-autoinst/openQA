@@ -31,7 +31,6 @@ use Mojo::URL;
 use Mojo::Util qw(encode hmac_sha1_sum);
 use OpenQA::Test::Case;
 use OpenQA::Client;
-use OpenQA::WebSockets;
 
 OpenQA::Test::Case->new->init_data;
 
@@ -66,9 +65,6 @@ sub Test::Mojo::websocket_nok {
 my $app = $t->app;
 $t->ua(OpenQA::Client->new()->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
-
-# create Test DBus bus and service for fake WebSockets and Scheduler call
-my $ws = OpenQA::WebSockets->new;
 
 my $ret;
 

@@ -22,7 +22,7 @@ use warnings;
 use base 'DBIx::Class::ResultSet';
 
 use OpenQA::Schema::Result::DeveloperSessions;
-use OpenQA::IPC;
+use OpenQA::WebSockets::Client;
 
 sub register {
     my ($self, $job_id, $user_id) = @_;
@@ -56,7 +56,8 @@ sub register {
     # inform the worker that a new the developer session has been started
     if ($result && !$is_session_already_existing) {
         # hope this IPC call isn't blocking too long (since the livehandler isn't preforking)
-        OpenQA::IPC->ipc->websockets('ws_send', $worker_id, 'developer_session_start', $job_id);
+        my $client = OpenQA::WebSockets::Client->singleton;
+        $client->send_msg($worker_id, 'developer_session_start', $job_id);
     }
 
     return $result;

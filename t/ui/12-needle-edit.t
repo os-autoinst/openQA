@@ -33,12 +33,9 @@ use Mojo::JSON 'decode_json';
 use File::Path qw(make_path remove_tree);
 use Date::Format 'time2str';
 use POSIX 'strftime';
-
-use OpenQA::WebSockets;
 use OpenQA::Scheduler;
 
 # create Test DBus bus and service for fake WebSockets and Scheduler call
-my $ws = OpenQA::WebSockets->new;
 my $sh = OpenQA::Scheduler->new;
 
 my $test_case   = OpenQA::Test::Case->new;

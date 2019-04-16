@@ -448,9 +448,7 @@ sub startup {
     # run fake dbus services in case of test mode
     if ($self->mode eq 'test' && !$ENV{FULLSTACK} && !$ENV{DEVELOPER_FULLSTACK}) {
         log_warning('Running in test mode - dbus services mocked');
-        require OpenQA::WebSockets;
         require OpenQA::Scheduler;
-        OpenQA::WebSockets->new;
         OpenQA::Scheduler->new;
     }
 

@@ -26,6 +26,7 @@ use DBIx::Class::Timestamps 'now';
 use Try::Tiny;
 use OpenQA::Utils 'log_error';
 use OpenQA::IPC;
+use OpenQA::WebSockets::Client;
 use db_helpers;
 use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
 use Mojo::JSON qw(encode_json decode_json);
@@ -190,8 +191,8 @@ sub status {
 
 sub connected {
     my ($self) = @_;
-    my $ipc = OpenQA::IPC->ipc;
-    return $ipc->websockets('ws_is_worker_connected', $self->id) ? 1 : 0;
+    my $client = OpenQA::WebSockets::Client->singleton;
+    return $client->is_worker_connected($self->id) ? 1 : 0;
 }
 
 sub unprepare_for_work {
@@ -236,27 +237,28 @@ sub info {
 
 sub send_command {
     my ($self, %args) = @_;
-    return if (!defined $args{command});
+    return undef if (!defined $args{command});
 
     if (!grep { $args{command} eq $_ } COMMANDS) {
         my $msg = 'Trying to issue unknown command "%s" for worker "%s:%n"';
         log_error(sprintf($msg, $args{command}, $self->host, $self->instance));
-        return;
+        return undef;
     }
 
     try {
         $OpenQA::Utils::app->emit_event(openqa_command_enqueue => {workerid => $self->id, command => $args{command}});
     };
 
-    OpenQA::IPC->ipc->websockets('ws_send', $self->id, $args{command}, $args{job_id});
-    if ($@) {
+    my $client = OpenQA::WebSockets::Client->singleton;
+    try { $client->send_msg($self->id, $args{command}, $args{job_id}) }
+    catch {
         log_error(
             sprintf(
-                'Failed dispatching message to websocket server over ipc for worker "%s:%n"',
-                $self->host, $self->instance
+                'Failed dispatching message to websocket server over ipc for worker "%s:%n": %s',
+                $self->host, $self->instance, $_
             ));
-        return;
-    }
+        return undef;
+    };
     return 1;
 }
 

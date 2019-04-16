@@ -27,7 +27,6 @@ BEGIN {
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Scheduler;
-use OpenQA::WebSockets;
 use OpenQA::Resource::Locks;
 use OpenQA::Resource::Jobs;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
@@ -88,7 +87,6 @@ sub nots {
 }
 
 # create Test DBus bus and service for fake WebSockets
-my $ws = OpenQA::WebSockets->new();
 my $sh = OpenQA::Scheduler->new();
 
 my $current_jobs = list_jobs();

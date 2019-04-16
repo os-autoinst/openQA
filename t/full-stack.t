@@ -102,8 +102,10 @@ OpenQA::Test::FullstackUtils::setup_database();
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
 
 # we don't want no fixtures
-my $driver       = call_driver(sub { });
-my $mojoport     = OpenQA::SeleniumTest::get_mojoport;
+my $mojoport = Mojo::IOLoop::Server->generate_port;
+my $wsport   = $mojoport + 1;
+$wspid = create_websocket_server($wsport, 0, 0, 0);
+my $driver       = call_driver(sub { }, {mojoport => $mojoport});
 my $connect_args = OpenQA::Test::FullstackUtils::get_connect_args();
 
 my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
@@ -118,9 +120,6 @@ $driver->title_is("openQA", "back on main page");
 # cleak away the tour
 $driver->click_element_ok('dont-notify', 'id');
 $driver->click_element_ok('confirm',     'id');
-
-my $wsport = $mojoport + 1;
-$wspid = create_websocket_server($wsport, 0, 0, 0);
 
 $livehandlerpid = create_live_view_handler($mojoport);
 

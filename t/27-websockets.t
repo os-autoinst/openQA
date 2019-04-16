@@ -23,29 +23,37 @@ use POSIX;
 use FindBin;
 use lib ("$FindBin::Bin/lib", "../lib", "lib");
 use OpenQA::Client;
-use OpenQA::WebSockets::Server;
+use OpenQA::WebSockets;
 use OpenQA::WebSockets::Controller::Worker;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils 'redirect_output';
 use Test::MockModule;
 use Test::Mojo;
+use Mojo::JSON;
 
 # Pretend the class was loaded with "require"
 $INC{'FooBarWorker.pm'} = 1;
 
 OpenQA::Test::Database->new->create;
-my $t = Test::Mojo->new('OpenQA::WebSockets::Server');
+my $t = Test::Mojo->new('OpenQA::WebSockets');
 
 subtest 'Authentication' => sub {
     $t->get_ok('/test')->status_is(404);
-
-    $t->get_ok('/')->status_is(403)->json_is({error => 'Not authorized'});
     my $app = $t->app;
+    $t->get_ok('/')->status_is(200)->json_is({name => $app->defaults('appname')});
+    local $t->app->config->{no_localhost_auth} = 0;
+    $t->get_ok('/')->status_is(403)->json_is({error => 'Not authorized'});
     $t->ua(
         OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton)
     )->app($app);
     $t->get_ok('/')->status_is(200)->json_is({name => $app->defaults('appname')});
+};
+
+subtest 'API' => sub {
+    $t->get_ok('/api/is_worker_connected/1')->status_is(200)->json_is({connected => Mojo::JSON::false});
+    local $t->app->status->workers->{1} = {socket => 1};
+    $t->get_ok('/api/is_worker_connected/1')->status_is(200)->json_is({connected => Mojo::JSON::true});
 };
 
 subtest 'WebSocket Server workers_checker' => sub {
@@ -56,7 +64,7 @@ subtest 'WebSocket Server workers_checker' => sub {
     {
         open my $handle, '>', \$buffer;
         local *STDOUT = $handle;
-        OpenQA::WebSockets::Server->new->workers_checker;
+        OpenQA::WebSockets->new->workers_checker;
     };
     like $buffer,              qr/Failed dead job detection/;
     ok $mock_singleton_called, 'mocked singleton method has been called';
@@ -71,7 +79,7 @@ subtest 'WebSocket Server get_stale_worker_jobs' => sub {
     {
         open my $handle, '>', \$buffer;
         local *STDOUT = $handle;
-        OpenQA::WebSockets::Server->new->get_stale_worker_jobs(-9999999999);
+        OpenQA::WebSockets->new->get_stale_worker_jobs(-9999999999);
     };
     like $buffer,              qr/Worker Boooo not seen since \d+ seconds/;
     ok $mock_singleton_called, 'mocked singleton method has been called';

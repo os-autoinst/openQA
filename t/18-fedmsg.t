@@ -30,7 +30,6 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Client;
 use OpenQA::Scheduler;
-use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use Net::DBus;
 use Net::DBus::Test::MockObject;
@@ -70,7 +69,6 @@ $t->ua(
 $t->app($app);
 
 # create Test DBus bus and service for fake WebSockets
-my $ws = OpenQA::WebSockets->new();
 my $sh = OpenQA::Scheduler->new();
 
 my $settings = {

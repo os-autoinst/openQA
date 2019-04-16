@@ -103,6 +103,10 @@ OpenQA::Test::FullstackUtils::setup_database();
 # make sure the assets are prefetched
 ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
 
+my $mojoport = Mojo::IOLoop::Server->generate_port;
+my $wsport   = $mojoport + 1;
+$wspid = create_websocket_server($wsport, 0, 0, 0);
+
 # start scheduler
 $schedulerpid = fork();
 if ($schedulerpid == 0) {
@@ -129,8 +133,8 @@ my $driver = call_driver(
                     feature_version => 0,
                 });
         }
-    });
-my $mojoport     = OpenQA::SeleniumTest::get_mojoport;
+    },
+    {mojoport => $mojoport});
 my $connect_args = OpenQA::Test::FullstackUtils::get_connect_args();
 
 # make resultdir
@@ -142,10 +146,6 @@ $driver->title_is('openQA', 'on main page');
 is($driver->find_element('#user-action a')->get_text(), 'Login', 'no one initially logged-in');
 $driver->click_element_ok('Login', 'link_text');
 $driver->title_is('openQA', 'back on main page');
-
-# setup websocket server
-my $wsport = $mojoport + 1;
-$wspid = create_websocket_server($wsport, 0, 0, 0);
 
 # start live view handler
 $livehandlerpid = create_live_view_handler($mojoport);

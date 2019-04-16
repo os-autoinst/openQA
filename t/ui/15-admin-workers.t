@@ -28,26 +28,15 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 use Date::Format 'time2str';
-
-use OpenQA::WebSockets;
-use OpenQA::Scheduler;
-
-# create Test DBus bus and service for fake WebSockets and Scheduler call
-my $ws = OpenQA::WebSockets->new;
-my $sh = OpenQA::Scheduler->new;
-
-# optional but very useful
-eval 'use Test::More::Color';
-eval 'use Test::More::Color "foreground"';
-
-my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
-
+use OpenQA::WebSockets::Client;
 use OpenQA::SeleniumTest;
 
 my $broken_worker_id  = 5;
 my $online_worker_id  = 6;
 my $offline_worker_id = 8;
+
+OpenQA::Test::Case->new->init_data;
+OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
 
 sub schema_hook {
     my $schema  = OpenQA::Test::Database->new->create;

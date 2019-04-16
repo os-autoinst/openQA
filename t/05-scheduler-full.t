@@ -62,10 +62,10 @@ plan skip_all => "set SCHEDULER_FULLSTACK=1 (be careful)" unless $ENV{SCHEDULER_
 init_db();
 my $schema = OpenQA::Test::Database->new->create(skip_schema => 1);
 
-# Create webapi and websocket server services.
+# Create webapi and websocket server services
 my $mojoport = Mojo::IOLoop::Server->generate_port();
-my $webapi   = create_webapi($mojoport);
 my $wspid    = create_websocket_server($mojoport + 1, 0, 1, 1);
+my $webapi   = create_webapi($mojoport);
 
 my $reactor = get_reactor();
 # Setup needed files for workers.

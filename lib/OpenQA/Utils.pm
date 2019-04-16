@@ -86,7 +86,6 @@ our @EXPORT  = qw(
   loaded_modules
   loaded_plugins
   hashwalker
-  send_job_to_worker
   wakeup_scheduler
   read_test_modules
   exists_worker
@@ -833,15 +832,6 @@ sub create_downloads_list {
         }
     }
     return \%downloads;
-}
-
-sub send_job_to_worker {
-    my $ipc = OpenQA::IPC->ipc;
-    my $job = shift;
-    my $res;
-    # ugly work around for Net::DBus::Test not being able to handle us using low level API
-    return if ref($ipc->{bus}->get_connection) eq 'Net::DBus::Test::MockConnection';
-    return $ipc->websockets('ws_send_job', $job);
 }
 
 sub wakeup_scheduler {

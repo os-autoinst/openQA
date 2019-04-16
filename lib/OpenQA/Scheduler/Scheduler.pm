@@ -29,7 +29,7 @@ use OpenQA::Schema::Result::JobDependencies;
 use Scalar::Util 'weaken';
 use FindBin;
 use lib $FindBin::Bin;
-use OpenQA::Utils qw(log_debug log_warning send_job_to_worker exists_worker);
+use OpenQA::Utils qw(log_debug log_warning exists_worker);
 use db_helpers 'rndstr';
 use Time::HiRes 'time';
 use List::Util qw(all shuffle);

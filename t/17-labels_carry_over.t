@@ -29,7 +29,6 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Scheduler;
-use OpenQA::WebSockets;
 use Mojo::JSON qw(decode_json);
 
 my $test_case;
@@ -44,7 +43,6 @@ sub set_up {
     $test_case->init_data;
     $t = Test::Mojo->new('OpenQA::WebAPI');
     my $sh = OpenQA::Scheduler->new;
-    my $ws = OpenQA::WebSockets->new;
     $rs   = $t->app->schema->resultset("Jobs");
     $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
     $test_case->login($t, 'percival');

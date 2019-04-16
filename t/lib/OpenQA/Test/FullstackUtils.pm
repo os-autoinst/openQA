@@ -104,7 +104,7 @@ sub wait_for_result_panel {
 
     prevent_reload($driver);
 
-    for (my $count = 0; $count < ((10 * 60) / $refresh_interval); $count++) {
+    for (my $count = 0; $count < ((3 * 60) / $refresh_interval); $count++) {
         my $status_text = $driver->find_element('#result-row .card-body')->get_text();
         last if ($status_text =~ $result_panel);
         if ($fail_on_incomplete && $status_text =~ qr/Result: incomplete/) {

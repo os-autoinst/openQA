@@ -32,28 +32,33 @@ use Test::MockModule;
 use Test::Mojo;
 use OpenQA::Resource::Jobs 'job_restart';
 use OpenQA::WebAPI::Controller::API::V1::Worker;
-use OpenQA::WebSockets;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
+use OpenQA::WebSockets::Client;
 use OpenQA::Utils;
 use Mojo::Util 'monkey_patch';
 
 my $sent = {};
 
 # Mangle worker websocket send, and record what was sent
-monkey_patch 'OpenQA::Schema::Result::Jobs', ws_send => sub {
-    my ($self, $worker) = @_;
-    my $hashref = $self->prepare_for_work($worker);
-    $hashref->{assigned_worker_id} = $worker->id;
-    $sent->{$worker->id} = {worker => $worker, job => $self};
-    $sent->{job}->{$self->id} = {worker => $worker, job => $self};
-    return {state => {msg_sent => 1}};
-};
-# create Test DBus bus and service for fake WebSockets call
-my $ws = OpenQA::WebSockets->new;
+my $mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+my $mock_send_called;
+$mock->mock(
+    ws_send => sub {
+        my ($self, $worker) = @_;
+        my $hashref = $self->prepare_for_work($worker);
+        $hashref->{assigned_worker_id} = $worker->id;
+        $sent->{$worker->id} = {worker => $worker, job => $self};
+        $sent->{job}->{$self->id} = {worker => $worker, job => $self};
+        $mock_send_called++;
+        return {state => {msg_sent => 1}};
+    });
 
 my $schema;
 ok($schema = OpenQA::Test::Database->new->create(), 'create database') || BAIL_OUT('failed to create database');
+
+OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
+
 ## test asset is not assigned to scheduled jobs after job creation
 # create new job
 my %settings = (
@@ -266,5 +271,7 @@ my $json = $t->tx->res->json;
 is(ref $json,           'HASH',  'asset status JSON present');
 is(ref $json->{data},   'ARRAY', 'assets array present');
 is(ref $json->{groups}, 'HASH',  'groups hash present');
+
+ok $mock_send_called, 'mocked ws_send method has been called';
 
 done_testing();
