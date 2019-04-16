@@ -544,6 +544,17 @@ is_deeply(
     'No version specified'
 ) or diag explain YAML::XS::Dump($yaml);
 $yaml->{groupname}{products}{'opensuse'}{version} = '42.1';
+# Add non-trivial test suites to exercise the validation
+$yaml->{groupname}{architectures}{'x86_64'}{opensuse} = [
+    'spam',
+    "eg-G_S +133t*\t",
+    {
+        'foo'               => {},
+        "b-A_RRRR +133t*\t" => {
+            machine  => 'x86_64',
+            priority => 33,
+        },
+    }];
 is_deeply($t->app->validate_yaml($yaml, 1), [], 'YAML valid as expected')
   or diag explain YAML::XS::Dump($yaml);
 # Make 40 our default priority, which matters when we look at the "defaults" key later
