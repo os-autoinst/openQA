@@ -32,7 +32,7 @@ patternProperties:
                     description: A test suite with machine and/ or priority specified
                     additionalProperties: false
                     patternProperties:
-                      "^[A-Za-z0-9_+]+$":
+                      "^[A-Za-z\\s0-9_*+-]+$":
                         type: object
                         additionalProperties: false
                         properties:
