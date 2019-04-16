@@ -120,8 +120,8 @@ subtest 'worker overview' => sub {
     is($driver->find_element("tr#worker_$broken_worker_id .action")->get_text(), '', 'foo do not show delete button');
     is($driver->find_element("tr#worker_$online_worker_id .action")->get_text(),
         '', 'online_test do not show delete button');
-    is($driver->find_element("tr#worker_$offline_worker_id .action")->get_text(),
-        'Delete', 'offline worker show delete button');
+    is($driver->find_element("tr#worker_$offline_worker_id .action .btn")->is_displayed(),
+        1, 'offline worker show delete button');
 
     # check worker 1
     is($driver->find_element('tr#worker_1 .worker')->get_text(), 'localhost:1', 'localhost:1 shown');
@@ -151,7 +151,7 @@ subtest 'worker overview' => sub {
 
 # test delete offline worker function
 subtest 'delete offline worker' => sub {
-    $driver->find_element("tr#worker_$offline_worker_id .action a")->click();
+    $driver->find_element("tr#worker_$offline_worker_id .btn")->click();
     is(
         $driver->find_element("div#flash-messages .alert span")->get_text(),
         'Delete worker offline_test:1 successfully.',

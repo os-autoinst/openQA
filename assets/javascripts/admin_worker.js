@@ -63,14 +63,15 @@ function loadWorkerTable() {
   });
 }
 
-function deleteWorker(deleteLink){
-    var post_url = $(deleteLink).attr("post_delete_url");
+function deleteWorker(deleteBtn){
+    var post_url = $(deleteBtn).attr("post_delete_url");
     $.ajax({
         url: post_url,
         method: 'DELETE',
         dataType: 'json',
         success: function(data) {
-            $(deleteLink).parent().parent().remove();
+            var table = $("#workers").DataTable();
+            table.row($(deleteBtn).parents('tr')).remove().draw();
             addFlash('info', data.message);
         },
         error: function(xhr, ajaxOptions, thrownError) {
