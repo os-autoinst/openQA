@@ -16,19 +16,9 @@
 #
 
 
-%define openqa_services \\\
-    openqa-webui.service \\\
-    openqa-gru.service \\\
-    openqa-websockets.service \\\
-    openqa-scheduler.service \\\
-    #EOL
-%define openqa_worker_services \\\
-    openqa-worker.target \\\
-    openqa-slirpvde.service \\\
-    openqa-vde_switch.service \\\
-    openqa-worker-cacheservice.service \\\
-    openqa-worker-cacheservice-minion.service \\\
-    #EOL
+# can't use linebreaks here!
+%define openqa_services openqa-webui.service openqa-gru.service openqa-websockets.service openqa-scheduler.service
+%define openqa_worker_services openqa-worker.target openqa-slirpvde.service openqa-vde_switch.service openqa-worker-cacheservice.service openqa-worker-cacheservice-minion.service
 %if %{undefined tmpfiles_create}
 %define tmpfiles_create() \
 %{_bindir}/systemd-tmpfiles --create %{?*} || : \
@@ -44,45 +34,7 @@
 %bcond_with tests
 %endif
 # runtime requirements that also the testsuite needs
-%define _t_requires \\\
-    perl(DBD::Pg) \\\
-    perl(DBIx::Class) \\\
-    perl(Config::IniFiles) \\\
-    perl(SQL::Translator) \\\
-    perl(Date::Format) \\\
-    perl(File::Copy::Recursive) \\\
-    perl(DateTime::Format::Pg) \\\
-    perl(Net::OpenID::Consumer) \\\
-    perl(Mojolicious::Plugin::RenderFile) \\\
-    perl(Mojolicious::Plugin::AssetPack) \\\
-    perl(aliased) \\\
-    perl(Config::Tiny) \\\
-    perl(DBIx::Class::DynamicDefault) \\\
-    perl(DBIx::Class::Schema::Config) \\\
-    perl(DBIx::Class::Storage::Statistics) \\\
-    perl(IO::Socket::SSL) \\\
-    perl(Data::Dump) \\\
-    perl(DBIx::Class::OptimisticLocking) \\\
-    perl(Text::Markdown) \\\
-    perl(Net::DBus) \\\
-    perl(JSON::Validator) \\\
-    perl(YAML::XS) \\\
-    perl(IPC::Run) \\\
-    perl(Archive::Extract) \\\
-    perl(CSS::Minifier::XS) \\\
-    perl(JavaScript::Minifier::XS) \\\
-    perl(Time::ParseDate) \\\
-    perl(Sort::Versions) \\\
-    perl(Mojo::RabbitMQ::Client) \\\
-    perl(BSD::Resource) \\\
-    perl(Cpanel::JSON::XS) \\\
-    perl(Pod::POM) \\\
-    perl(Mojo::IOLoop::ReadWriteProcess) \\\
-    perl(Minion) \\\
-    perl(Mojo::Pg) \\\
-    perl(Mojo::SQLite) \\\
-    perl(Minion::Backend::SQLite) \\\
-    #EOL
+%define t_requires perl(DBD::Pg) perl(DBIx::Class) perl(Config::IniFiles) perl(SQL::Translator) perl(Date::Format) perl(File::Copy::Recursive) perl(DateTime::Format::Pg) perl(Net::OpenID::Consumer) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) perl(aliased) perl(Config::Tiny) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(IO::Socket::SSL) perl(Data::Dump) perl(DBIx::Class::OptimisticLocking) perl(Text::Markdown) perl(Net::DBus) perl(JSON::Validator) perl(YAML::XS) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(Mojo::RabbitMQ::Client) perl(BSD::Resource) perl(Cpanel::JSON::XS) perl(Pod::POM) perl(Mojo::IOLoop::ReadWriteProcess) perl(Minion) perl(Mojo::Pg) perl(Mojo::SQLite) perl(Minion::Backend::SQLite)
 Name:           openQA
 Version:        4.6
 Release:        0
@@ -97,7 +49,7 @@ Source1:        cache.txz
 Source100:      openQA-rpmlintrc
 Source101:      update-cache.sh
 Source102:      Dockerfile
-BuildRequires:  %{expand:t_requires}
+BuildRequires:  %{t_requires}
 BuildRequires:  fdupes
 BuildRequires:  os-autoinst
 BuildRequires:  systemd
@@ -181,7 +133,7 @@ operating system.
 %package common
 Summary:        The openQA common tools for web-frontend and workers
 Group:          Development/Tools/Other
-Requires:       %{expand:t_requires}
+Requires:       %{t_requires}
 Requires:       perl(Mojolicious) >= 7.92
 
 %description common
