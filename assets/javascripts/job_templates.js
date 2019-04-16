@@ -365,6 +365,66 @@ function toggleEdit() {
     checkJobGroupForm('#group_properties_form');
 }
 
+function toggleTemplateEditor() {
+    $('#media').toggle(250);
+    var form = $('#editor-form');
+    form.toggle(250);
+    form.find('.buttons').hide();
+    form.find('.progress-indication').show();
+    $('#toggle-yaml-editor').toggleClass('btn-secondary');
+    $('#editor-template').prop('readonly', true).height($('#editor-yaml-guide').height());
+    $.ajax(form.data('put-url')).done(prepareTemplateEditor);
+}
+
+function prepareTemplateEditor(data) {
+    $('#editor-template').text(data).prop('readonly', false);
+    var form = $('#editor-form');
+    form.find('.buttons').show ();
+    form.find('.progress-indication').hide();
+}
+
+function submitTemplateEditor() {
+    var form = $('#editor-form');
+    form.find('.buttons').hide();
+    form.find('.progress-indication').show();
+    var result = form.find('.result');
+    result.text('Applying changes...');
+    $.ajax({
+        url: form.data('put-url'),
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            preview: 1,
+            template: $('#editor-template').val()
+        }
+    }).done(function(data) {
+        result.text('Preview of the YAML:');
+        if (data.hasOwnProperty('template')) {
+            $('<code/>').text(data.template).appendTo($('<p/>').appendTo(result));
+        }
+        else {
+            $('<pre/>').text(JSON.stringify(data, undefined, 2)).appendTo(result);
+        }
+    }).fail(function(data) {
+        result.text('There was a problem applying the changes:');
+        if (data.hasOwnProperty('responseJSON') && data.responseJSON.hasOwnProperty('error')) {
+            var errors = data.responseJSON.error;
+            var list = $('<ul/>').appendTo(result);
+            $.each(errors, function(i) {
+                var message = errors[i].hasOwnProperty('message') ? errors[i].message + ': ' + errors[i].path : errors[i];
+                $('<li/>').text(message).appendTo(list);
+            });
+        }
+        else {
+            $('<p/>').text('Invalid server response: ' + data.statusText).appendTo(result);
+        }
+    }).always(function(data) {
+        form.find('.buttons').show();
+        form.find('.progress-indication').hide();
+    });
+    return false;
+}
+
 function showSubmitResults(form, result) {
     form.find('.buttons').show();
     form.find('.properties-progress-indication').hide();

@@ -128,7 +128,7 @@ Serializes the given job group with relevant test suites by architecture and pro
 groups defined in the system if no group id is specified.
 Common defaults for prio and machine are represented in the defaults key.
 
-Returns a YAML template representing the job groups(s).
+Returns a YAML template representing the job group(s).
 
 =back
 
@@ -137,10 +137,16 @@ Returns a YAML template representing the job groups(s).
 sub schedules {
     my $self = shift;
 
+    my $yaml = $self->get_job_groups($self->param('id'));
+    $self->render(yaml => $yaml);
+}
+
+sub get_job_groups {
+    my ($self, $id) = @_;
+
     my %yaml;
-    my $groups = $self->schema->resultset("JobGroups")->search(
-        $self->param('id') ? {id => $self->param('id')} : undef,
-        {select => [qw(id name parent_id default_priority)]});
+    my $groups = $self->schema->resultset("JobGroups")
+      ->search($id ? {id => $id} : undef, {select => [qw(id name parent_id default_priority)]});
     while (my $group = $groups->next) {
         my %group;
         my $templates
@@ -201,7 +207,7 @@ sub schedules {
         $yaml{$group->name} = \%group;
     }
 
-    $self->render(yaml => \%yaml);
+    return \%yaml;
 }
 
 =over 4
@@ -210,7 +216,7 @@ sub schedules {
 
 Updates a job group according to the given YAML template. Test suites are added or modified
 as needed to reflect the difference to what's specified in the template.
-The given YAML will be validated and results in an error if it doesn't confom to the schema.
+The given YAML will be validated and results in an error if it doesn't conform to the schema.
 
 Returns a 400 code on error, or a 303 code and the job template id within a JSON block on success.
 
@@ -336,6 +342,12 @@ sub update {
                             id       => {'not in' => \@job_template_ids},
                             group_id => $group_id,
                         })->delete();
+
+                    # Preview mode: Get the expected YAML and rollback the result
+                    if ($self->param('preview')) {
+                        $json->{template} = YAML::XS::Dump($self->get_job_groups($json->{id}));
+                        $self->schema->txn_rollback;
+                    }
                 });
         }
         catch {

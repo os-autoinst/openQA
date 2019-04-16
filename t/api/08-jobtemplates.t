@@ -731,6 +731,27 @@ subtest 'Create and modify groups with YAML' => sub {
         is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, "Added test $test_suite to the database")
           || diag explain $get->tx->res->body;
 
+        # Assert that nothing changes in preview mode
+        $test_suite = {'bar' => {priority => 11}};
+        push @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}}, $test_suite;
+        $t->post_ok(
+            '/api/v1/experimental/job_templates_scheduling',
+            form => {
+                preview  => 1,
+                template => YAML::XS::Dump($yaml)}
+        )->status_is(200)->json_is(
+            '' => {
+                id       => $job_group_id3,
+                template => YAML::XS::Dump($yaml),
+            },
+            "Dry-run of adding test $test_suite via the template"
+        );
+        # Prepare expected result
+        $test_suite = pop @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}};
+        $get        = $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
+        is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, "Test $test_suite wasn't added to the database")
+          || diag explain $get->tx->res->body;
+
         $test_suite = {'bar' => {priority => 11}};
         push @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}}, $test_suite;
         $t->post_ok(
