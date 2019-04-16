@@ -17,6 +17,17 @@
 <div class="row">
     <div class="col-sm-12">
         <form action="<%= url_for('admin_groups') %>" class="corner-buttons">
+            <button type="button" id="toggle-yaml-editor" class="btn btn-default" onclick="toggleTemplateEditor();">
+                <span>
+                    <i class="fas fa-edit"></i>
+                    % if (is_admin) {
+                        Edit YAML
+                    % }
+                    % else {
+                        Show YAML
+                    % }
+                </span>
+            </button>
             <button type="button" class="btn btn-default" onclick="toggleEdit();">
                 <span>
                     <i class="fas fa-edit"></i>
@@ -76,6 +87,66 @@
             </select>
 
         </div>
+        <form action="#" id="editor-form" class="form-horizontal" style="display: none;" onsubmit="return submitTemplateEditor();"
+          data-put-url="<%= url_for('apiv1_job_templates_schedules' => (id => $group->id)) %>">
+            <div class="form-group row">
+                <label for="editor-template" class="col-sm-4 control-label" data-toggle="tooltip" title="Changes in the YAML will be reflected in the database">
+                    <span id="editor-yaml-guide">
+                        <div>Define test suites per arch/ medium:</div>
+                        <code>
+<b>'My Group'</b>:
+  architectures:
+    <b>ARCH</b>:
+      <i>medium</i>-<b>ARCH</b>:
+      - test_suite
+      - test_suite:
+        machine: <b>MACHINE</b>
+        priority: <b>PRIORITY</b>
+  defaults:
+    <b>ARCH</b>:
+      machine: <b>MACHINE</b>
+      priority: <b>PRIORITY</b>
+  products:
+    <i>medium</i>-<b>ARCH</b>:
+      distribution: <b>DISTRIBUTION</b>
+      flavor: <b>FLAVOR</b>
+      version: <b>VERSION</b>
+                        </code>
+                        <div>Re-use test suites with YAML aliases:</div>
+                        <code>
+architectures:
+  <b>i586</b>:
+    <i>medium</i>-<b>i586</b>: <b>&amp;tests</b>
+    - foo
+    - bar:
+      machine: <b>64bit</b>
+      priority: <b>70</b>
+  <b>x86_64</b>:
+    <i>medium</i>-<b>x86_64</b>:
+      <b>*tests</b>
+                        </code>
+                    </span>
+                </label>
+                <div class="col-sm-8">
+                    <textarea class="form-control" id="editor-template" name="template" rows="30" readOnly="true"></textarea>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-sm-2 control-label"></div>
+                <div class="col-sm-10">
+                    <p class="buttons">
+                    % if (is_admin) {
+                    <button id="update-template" type="submit" class="btn btn-primary"><i class="fas fa-update"></i>Preview changes</button>
+                    % }
+                    </p>
+                    <p class="progress-indication">
+                        <i class="fa fa-cog fa-spin fa-3x fa-fw"></i>
+                        <span class="sr-only">Loading…</span>
+                    </p>
+                    <p class="status"></p>
+                </div>
+            </div>
+        </form>
 
         % if (is_admin) {
             <p>

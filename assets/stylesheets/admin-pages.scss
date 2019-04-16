@@ -311,6 +311,12 @@ h2 + * {
         text-align: center;
     }
 }
+code {
+    white-space: pre;
+    font-weight: normal;
+    display: inline-block;
+    text-align: left !important;
+}
 
 // users
 table#users {

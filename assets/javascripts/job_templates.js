@@ -365,6 +365,64 @@ function toggleEdit() {
     checkJobGroupForm('#group_properties_form');
 }
 
+function toggleTemplateEditor() {
+    $('#media').toggle(250);
+    var form = $('#editor-form');
+    form.toggle(250);
+    form.find('.buttons').hide();
+    form.find('.progress-indication').show();
+    $('#toggle-yaml-editor').toggleClass('btn-secondary');
+    $.ajax(form.data('put-url')).done(prepareTemplateEditor);
+}
+
+function prepareTemplateEditor(data) {
+    $('#editor-template').text(data).prop('readOnly', false);
+    var form = $('#editor-form');
+    form.find('.buttons').show ();
+    form.find('.progress-indication').hide();
+}
+
+function submitTemplateEditor() {
+    var form = $('#editor-form');
+    form.find('.buttons').hide();
+    form.find('.progress-indication').show();
+    form.find('.status').text('Applying changes...');
+    $.ajax({
+        url: form.data('put-url'),
+        type: 'POST',
+        dataType: 'json',
+        data: {
+            preview: 1,
+            template: $('#editor-template').val()
+        }
+    }).done(function(data) {
+        form.find('.status').text('Preview of the YAML:');
+        if (data.hasOwnProperty('template')) {
+            $('<code/>').text(data.template).appendTo(form.find('.status'));
+        }
+        else {
+            $('<pre/>').text(JSON.stringify(data, undefined, 2)).appendTo(form.find('.status'));
+        }
+    }).fail(function(data) {
+        form.find('.status').text('There was a problem applying the changes:');
+        if (data.hasOwnProperty('responseJSON') && data.responseJSON.hasOwnProperty('error')) {
+            var errors = data.responseJSON.error;
+            var list = $('<ul/>').appendTo(form.find('.status'));
+            $.each(errors, function(i) {
+                var message = errors[i].hasOwnProperty('message') ? errors[i].message + ': ' + errors[i].path : errors[i];
+                $('<li/>').text(message).appendTo(list);
+            });
+        }
+        else {
+            $('<p/>').text('Invalid server response: ' + data.statusText).appendTo(form.find('.status'));
+        }
+    }).always(function(data) {
+        form.find('.buttons').show();
+        form.find('.progress-indication').hide();
+    });
+    return false;
+}
+
 function showSubmitResults(form, result) {
     form.find('.buttons').show();
     form.find('.properties-progress-indication').hide();
