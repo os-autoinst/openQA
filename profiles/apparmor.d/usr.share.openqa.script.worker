@@ -26,8 +26,8 @@
 
   network netbeui raw,
 
-  /bin/bash rix,
-  /bin/pkill rix,
+  /{usr/,}bin/bash rix,
+  /{usr/,}bin/pkill rix,
   /dev/ r,
   /dev/bus/usb/ r,
   /dev/hugepages/** rwk,
@@ -144,7 +144,7 @@
     #include <abstractions/fonts>
     #include <abstractions/nameservice>
 
-    /bin/bash rix,
+    /{usr/,}bin/bash rix,
     /proc/*/cmdline r,
     /tmp/* rwlk,
     /usr/bin/Xvnc mr,
@@ -170,7 +170,7 @@
     #include <abstractions/nameservice>
     #include <abstractions/openssl>
 
-    /bin/bash rix,
+    /{usr/,}bin/bash rix,
     /dev/ptmx rw,
     /etc/ssh/ssh_config r,
     /etc/x3270/ibm_hosts r,
