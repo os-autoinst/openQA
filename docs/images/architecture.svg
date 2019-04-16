@@ -598,8 +598,8 @@
       <text x="173.4502" xml:space="preserve" font-size="12px" y="412.93" clip-path="url(#clipPath2)" stroke="none">responsible for developer mode</text>
       <rect fill="none" x="91" width="333" height="62" y="297.527" clip-path="url(#clipPath2)"/>
       <text x="195.2383" xml:space="preserve" y="316.2008" clip-path="url(#clipPath2)" stroke="none">openqa-websockets</text>
-      <text x="217.8965" xml:space="preserve" font-size="12px" y="337.5778" clip-path="url(#clipPath2)" stroke="none">listening on TCP port 9527</text>
-      <text x="159.877" xml:space="preserve" font-size="12px" y="350.984" clip-path="url(#clipPath2)" stroke="none">provides D-Bus service org.openqa.WebSockets</text>
+      <text x="186.458" xml:space="preserve" font-size="12px" y="337.5778" clip-path="url(#clipPath2)" stroke="none">listening on TCP port 9527</text>
+      <text x="153.7891" xml:space="preserve" font-size="12px" y="350.984" clip-path="url(#clipPath2)" stroke="none">responsible for interaction with workers</text>
       <rect x="930.6" y="476.5685" clip-path="url(#clipPath2)" fill="none" width="341.8" rx="4" ry="4" height="41.721"/>
       <text x="1085.1587" xml:space="preserve" y="495.2423" clip-path="url(#clipPath2)" stroke="none">sqlite</text>
       <text x="942.7422" xml:space="preserve" y="510.883" clip-path="url(#clipPath2)" stroke="none">provides database for openqa-cacheservice-minion</text>
