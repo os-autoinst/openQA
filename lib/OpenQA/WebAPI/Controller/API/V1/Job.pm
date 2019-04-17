@@ -206,8 +206,10 @@ sub create {
 
     my $json = {};
     my $status;
+    my $new_params = $self->_generate_job_setting(\%params);
+
     try {
-        my $job = $self->schema->resultset('Jobs')->create_from_settings(\%params);
+        my $job = $self->schema->resultset('Jobs')->create_from_settings($new_params);
         $self->emit_event('openqa_job_create', {id => $job->id, %params});
         $json->{id} = $job->id;
 
@@ -706,6 +708,109 @@ sub whoami {
     my ($self) = @_;
     my $jobid = $self->stash('job_id');
     $self->render(json => {id => $jobid});
+}
+
+=over 4
+
+=item _generate_job_setting()
+
+Create job for product matching the contents of the DISTRI, VERSION, FLAVOR and ARCH, MACHINE
+settings, and returns a job's settings. Internal method used in the B<create()> method.
+
+=back
+
+=cut
+
+sub _generate_job_setting {
+    my ($self, $args) = @_;
+    my $schema = $self->schema;
+
+    my %settings;    #include the machine, product, and test suit setting belongs to this job.
+    my @classes;     #if the machine or product has worker_class setting, push them to this array.
+
+    #if args includes DISTRI, VERSION, FLAVOR, ARCH, get product setting.
+    my $product_id;
+    if (   defined $args->{DISTRI}
+        && defined $args->{VERSION}
+        && defined $args->{FLAVOR}
+        && defined $args->{ARCH})
+    {
+        my $products = $schema->resultset('Products')->search(
+            {
+                distri  => $args->{DISTRI},
+                version => $args->{VERSION},
+                arch    => $args->{ARCH},
+                flavor  => $args->{FLAVOR},
+            });
+        my $product = $products->next or goto OUT1;
+        $product_id = $product->id;
+        my %tmp_setting = map { $_->key => $_->value } $product->settings;
+        if (my $class = delete $tmp_setting{WORKER_CLASS}) {
+            push @classes, $class;
+        }
+        @settings{keys %tmp_setting} = values %tmp_setting;
+    }
+
+  OUT1:
+    #if args includes MACHINE, get machine setting.
+    my $machine_id;
+    if (defined $args->{MACHINE}) {
+        my $machines = $schema->resultset('Machines')->search(
+            {
+                name => $args->{MACHINE},
+            });
+        my $machine = $machines->next or goto OUT2;
+        $machine_id = $machine->id;
+        my %tmp_setting = map { $_->key => $_->value } $machine->settings;
+
+        if (my $class = delete $tmp_setting{WORKER_CLASS}) {
+            push @classes, $class;
+        }
+        @settings{keys %tmp_setting} = values %tmp_setting;
+    }
+
+  OUT2:
+    #TEST is mandatory, find the test suit settings.
+    my $test_suite_id;
+    my $test_suites = $schema->resultset('TestSuites')->search(
+        {
+            name => $args->{TEST},
+        });
+    my $test_suite = $test_suites->next or goto OUT3;
+    $test_suite_id = $test_suite->id;
+    my %test_suite_setting = map { $_->key => $_->value } $test_suite->settings;
+    if (my $test_suite_class = delete $test_suite_setting{WORKER_CLASS}) {
+        push @classes, $test_suite_class;
+    }
+    @settings{keys %test_suite_setting} = values %test_suite_setting;
+
+  OUT3:
+    if (scalar(@classes) > 0) {
+        $settings{WORKER_CLASS} = join(',', sort(@classes));
+    }
+
+    for (keys %$args) {
+        $settings{uc $_} = $args->{$_};
+    }
+
+    #replace %NAME% with $settings{NAME}
+    my $expanded;
+    do {
+        $expanded = 0;
+        for my $key (keys %settings) {
+            my $value = $settings{$key};
+            next unless ($value && $value =~ /%(\w+)%/);
+            my $replace_key   = $1;
+            my $replace_value = $settings{$replace_key};
+            next unless (defined $replace_value);
+            $replace_value = '' if ($replace_key eq $key);
+            $value =~ s/%${replace_key}%/$replace_value/g;
+            $settings{$key} = $value;
+            $expanded = 1;
+        }
+    } while ($expanded);
+
+    return \%settings;
 }
 
 1;
