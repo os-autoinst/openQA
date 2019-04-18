@@ -17,10 +17,11 @@ console.error = console.error || function(){};
 console.info = console.info || function(){};
 
 var MINSIZE = 10;
+var CLICK_POINT_CIRCLE_RADIUS = 10;
 
 // Constructor for Shape objects to hold data for all drawn objects.
 // For now they will just be defined as rectangles.
-function Shape(x, y, w, h, fill) {
+function Shape(x, y, w, h, fill, click_point) {
   // This is a very simple and unsafe constructor. All we're doing is checking if the values exist.
   // "x || 0" just means "if there is a value for x, use that. Otherwise use 0."
   // But we aren't checking anything else! We could put "Lalala" for the value of x
@@ -29,12 +30,34 @@ function Shape(x, y, w, h, fill) {
   this.w = w || 1;
   this.h = h || 1;
   this.fill = fill || '#AAAAAA';
+  this.assign_click_point(click_point);
+}
+
+Shape.prototype.assign_click_point = function(click_point) {
+  if (!click_point) {
+    delete this.click_point;
+    return;
+  }
+  this.click_point = {
+      x: click_point.xpos,
+      y: click_point.ypos,
+  };
 }
 
 // Draws this shape to a given context
 Shape.prototype.draw = function(ctx) {
   ctx.fillStyle = this.fill;
   ctx.fillRect(this.x, this.y, this.w, this.h);
+  var click_point = this.click_point;
+  if (click_point) {
+    var x = this.x + click_point.x;
+    var y = this.y + click_point.y;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.beginPath();
+    ctx.arc(x, y, CLICK_POINT_CIRCLE_RADIUS, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.fill();
+  }
 }
 
 // Determine if a point is inside the shape's bounds
@@ -43,6 +66,16 @@ Shape.prototype.contains = function(mx, my) {
   // the shape's X and (X + Height) and its Y and (Y + Height)
   return  (this.x <= mx) && (this.x + this.w >= mx) &&
           (this.y <= my) && (this.y + this.h >= my);
+}
+
+Shape.prototype.click_point_contains = function(mx, my) {
+  var click_point = this.click_point;
+  if (!click_point) {
+    return false;
+  }
+  var delta_x = this.x + click_point.x - mx;
+  var delta_y = this.y + click_point.y - my;
+  return Math.sqrt(delta_x * delta_x + delta_y * delta_y) < CLICK_POINT_CIRCLE_RADIUS + 3;
 }
 
 // check for resize. only valid if contains!
@@ -158,7 +191,13 @@ function CanvasState(canvas) {
       myState.dirty = true;
       myState.resizing = shape.is_resize(mx, my, myState.selectionWidth)
       if (myState.resizing == 0) {
-                                        myState.dragging = true;
+        myState.dragging = true;
+        if (shape.click_point_contains(mx, my)) {
+          var click_point = shape.click_point;
+          myState.dragoffx -= shape.click_point.x;
+          myState.dragoffy -= shape.click_point.y;
+          myState.draggingClickPoint = true;
+        }
       }
       return;
     }
@@ -173,25 +212,57 @@ function CanvasState(canvas) {
   }, true);
   canvas.addEventListener('mousemove', function(e) {
     var mouse = myState.getMouse(e);
-    if (myState.dragging){
+    if (myState.dragging) {
+      var selection = myState.selection;
+      var objectToDrag;
+      if (myState.draggingClickPoint || selection.click_point_contains(mouse.x, mouse.y)) {
+        objectToDrag = selection.click_point;
+        myState.draggingClickPoint = true;
+      } else {
+        objectToDrag = selection;
+      }
+
       // We don't want to drag the object by its top-left corner, we want to drag it
       // from where we clicked. Thats why we saved the offset and use it here
-      myState.selection.x = mouse.x - myState.dragoffx;
-      myState.selection.y = mouse.y - myState.dragoffy;
-      if (myState.selection.x < 0) {
-          myState.selection.x = 0;
-      } else if (myState.selection.x + myState.selection.w > this.width) {
-          myState.selection.x = this.width - myState.selection.w;
+      objectToDrag.x = mouse.x - myState.dragoffx;
+      objectToDrag.y = mouse.y - myState.dragoffy;
+
+      if (myState.draggingClickPoint) {
+        // make click point coordinates relative to the rectangles top-corner point
+        objectToDrag.x -= selection.x;
+        objectToDrag.y -= selection.y;
+
+        // ensure click point is within the rectangle
+        if (objectToDrag.x < 0) {
+            objectToDrag.x = 0;
+        } else if (objectToDrag.x > selection.w) {
+            objectToDrag.x = selection.w;
+        }
+        if (objectToDrag.y < 0) {
+          objectToDrag.y = 0;
+        } else if (objectToDrag.y > selection.h) {
+          objectToDrag.y = selection.h;
+        }
+
+      } else {
+        // ensure rectange is within the screen
+        if (objectToDrag.x < 0) {
+            objectToDrag.x = 0;
+        } else if (objectToDrag.x + objectToDrag.w > this.width) {
+            objectToDrag.x = this.width - objectToDrag.w;
+        }
+        if (objectToDrag.y < 0) {
+          objectToDrag.y = 0;
+        } else if (objectToDrag.y + objectToDrag.h > this.height) {
+          objectToDrag.y = this.height - objectToDrag.h;
+        }
       }
-      if (myState.selection.y < 0) {
-        myState.selection.y = 0;
-      } else if (myState.selection.y + myState.selection.h > this.height) {
-        myState.selection.y = this.height - myState.selection.h;
-      }
+
       myState.dirty = true; // Something's dragging so we must redraw
       if (myState.shape_changed_cb) {
-        myState.shape_changed_cb(myState.selection);
+        myState.shape_changed_cb(selection);
       }
+
     } else if (myState.resizing != 0) {
       var r = myState.resizing;
       var sel = myState.selection;
@@ -277,6 +348,7 @@ function CanvasState(canvas) {
   }, true);
   canvas.addEventListener('mouseup', function(e) {
     myState.dragging = false;
+    myState.draggingClickPoint = false;
     myState.resizing = 0;
     myState.mousedown = false;
   }, true);

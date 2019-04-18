@@ -46,12 +46,12 @@ NeedleEditor.prototype.init = function() {
 
   // double click switched type
   cv.canvas.addEventListener('dblclick', function(e) {
-    var idx = cv.get_selection_idx();
-    if (idx == -1) {
+    var selection = editor.selection();
+    var shape = selection.shape;
+    var a = selection.area;
+    if (!shape || !a) {
       return;
     }
-    var shape = cv.get_shape(idx);
-    var a = editor.needle.area[idx];
     a.type = NeedleEditor.nexttype(a.type);
     shape.fill = NeedleEditor.areacolor(a.type);
     editor.UpdateTextArea();
@@ -77,10 +77,19 @@ NeedleEditor.prototype.init = function() {
   cv.shape_changed_cb = function(shape) {
     var idx = cv.get_shape_idx(shape);
     var a = editor.needle.area[idx];
+    var click_point = shape.click_point;
     a.xpos = shape.x;
     a.ypos = shape.y;
     a.width = shape.w;
     a.height = shape.h;
+    if (click_point) {
+      a.click_point = {
+        xpos: click_point.x,
+        ypos: click_point.y,
+      };
+    } else {
+      delete a.click_point;
+    }
     editor.UpdateTextArea();
   };
   cv.new_shape_cb = function(x, y) {
@@ -91,13 +100,13 @@ NeedleEditor.prototype.init = function() {
     editor.UpdateTextArea();
     return shape;
   };
+  var areaSpecificButtons = $('#change-match, #change-margin, #toggle-click-coordinates');
   $(cv).on('shape.selected', function() {
-    $('#change-match').removeClass('disabled').removeAttr('disabled');
-    $('#change-margin').removeClass('disabled').removeAttr('disabled');
+    areaSpecificButtons.removeClass('disabled').removeAttr('disabled');
+    updateToggleClickCoordinatesButton(editor.currentClickCoordinates());
   });
   $(cv).on('shape.unselected', function() {
-    $('#change-match').addClass('disabled').attr('disabled', 1);
-    $('#change-margin').addClass('disabled').attr('disabled', 1);
+    areaSpecificButtons.addClass('disabled').attr('disabled', 1);
   });
 };
 
@@ -138,7 +147,7 @@ NeedleEditor.nexttype = function(type) {
 };
 
 NeedleEditor.ShapeFromArea = function(a) {
-  return new Shape(a.xpos, a.ypos, a.width, a.height, NeedleEditor.areacolor(a.type));
+  return new Shape(a.xpos, a.ypos, a.width, a.height, NeedleEditor.areacolor(a.type), a.click_point);
 };
 
 NeedleEditor.prototype.DrawAreas = function() {
@@ -240,29 +249,76 @@ NeedleEditor.prototype.changeProperty = function(name, enabled) {
   this.UpdateTextArea();
 };
 
-NeedleEditor.prototype.setMargin = function(value) {
-  var idx = this.cv.get_selection_idx();
+NeedleEditor.prototype.selection = function() {
+  var cv = this.cv;
+  var idx = cv.get_selection_idx();
+  var areas = this.needle.area;
   if (idx == -1) {
-    if (!this.needle.area.length) {
-      return;
+    if (!areas.length) {
+      return {};
     }
     idx = 0;
   }
-  this.needle.area[idx].margin = parseInt(value);
+  return {
+    index: idx,
+    area: areas[idx],
+    shape: cv.shapes[idx],
+  };
+};
+
+NeedleEditor.prototype.selectedArea = function() {
+  return this.selection().area;
+};
+
+NeedleEditor.prototype.setMargin = function(value) {
+  var selectedArea = this.selectedArea();
+  if (!selectedArea) {
+      return;
+  }
+  selectedArea.margin = parseInt(value);
   this.UpdateTextArea();
 };
 
 NeedleEditor.prototype.setMatch = function(value) {
-  var idx = this.cv.get_selection_idx();
-  if (idx === -1) {
-    if (!this.needle.area.length) {
+  var selectedArea = this.selectedArea();
+  if (!selectedArea) {
       return;
-    }
-    idx = 0;
+  }
+  selectedArea.match = parseFloat(value);
+  this.UpdateTextArea();
+};
+
+NeedleEditor.prototype.currentClickCoordinates = function() {
+  var selectedArea = this.selectedArea();
+  return selectedArea ? selectedArea.click_point : undefined;
+};
+
+NeedleEditor.prototype.toggleClickCoordinates = function() {
+  var selection = this.selection();
+  var selectedArea = selection.area;
+  var selectedShape = selection.shape;
+  if (!selectedArea || !selectedShape) {
+    return;
   }
 
-  this.needle.area[idx].match = parseFloat(value);
+  var clickPoint = selectedArea.click_point;
+  if (clickPoint) {
+    // remove existing click point
+    delete selectedArea.click_point;
+    delete selectedShape.click_point;
+  } else {
+    // initialize new click point to be the middle of the area
+    clickPoint = selectedArea.click_point = {
+        xpos: selectedArea.width / 2,
+        ypos: selectedArea.height / 2,
+    };
+    selectedShape.assign_click_point(clickPoint);
+  }
+
+  // update canvas and text area
+  this.cv.redraw();
   this.UpdateTextArea();
+  return clickPoint;
 };
 
 function loadBackground() {
@@ -321,6 +377,18 @@ function setMargin() {
 
 function setMatch() {
   nEditor.setMatch($('#match').val());
+}
+
+function toggleClickCoordinates() {
+  updateToggleClickCoordinatesButton(nEditor.toggleClickCoordinates());
+}
+
+function updateToggleClickCoordinatesButton(hasClickCoorinates) {
+  if (hasClickCoorinates) {
+    $('#toggle-click-coordinates-verb').text('Remove');
+  } else {
+    $('#toggle-click-coordinates-verb').text('Add');
+  }
 }
 
 function reactToSaveNeedle(data) {
