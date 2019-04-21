@@ -639,7 +639,7 @@ is_deeply(
 );
 
 my %jobs_post_params = (
-    iso     => 'openSUSE-Tumbleweed-DVD-x86_64-Current.iso',
+    iso     => 'openSUSE-%VERSION%-%FLAVOR%-x86_64-Current.iso',
     DISTRI  => 'opensuse',
     VERSION => 'Tumbleweed',
     FLAVOR  => 'DVD',

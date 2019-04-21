@@ -729,7 +729,6 @@ sub _generate_job_setting {
     my @classes;     #if the machine or product has worker_class setting, push them to this array.
 
     #if args includes DISTRI, VERSION, FLAVOR, ARCH, get product setting.
-    my $product_id;
     if (   defined $args->{DISTRI}
         && defined $args->{VERSION}
         && defined $args->{FLAVOR}
@@ -742,49 +741,49 @@ sub _generate_job_setting {
                 arch    => $args->{ARCH},
                 flavor  => $args->{FLAVOR},
             });
-        my $product = $products->next or goto OUT1;
-        $product_id = $product->id;
-        my %tmp_setting = map { $_->key => $_->value } $product->settings;
-        if (my $class = delete $tmp_setting{WORKER_CLASS}) {
-            push @classes, $class;
+
+        if (my $product = $products->next) {
+            my %tmp_setting = map { $_->key => $_->value } $product->settings;
+
+            if (my $class = delete $tmp_setting{WORKER_CLASS}) {
+                push @classes, $class;
+            }
+            @settings{keys %tmp_setting} = values %tmp_setting;
         }
-        @settings{keys %tmp_setting} = values %tmp_setting;
     }
 
-  OUT1:
     #if args includes MACHINE, get machine setting.
-    my $machine_id;
     if (defined $args->{MACHINE}) {
         my $machines = $schema->resultset('Machines')->search(
             {
                 name => $args->{MACHINE},
             });
-        my $machine = $machines->next or goto OUT2;
-        $machine_id = $machine->id;
-        my %tmp_setting = map { $_->key => $_->value } $machine->settings;
 
-        if (my $class = delete $tmp_setting{WORKER_CLASS}) {
-            push @classes, $class;
+        if (my $machine = $machines->next) {
+            my %tmp_setting = map { $_->key => $_->value } $machine->settings;
+
+            if (my $class = delete $tmp_setting{WORKER_CLASS}) {
+                push @classes, $class;
+            }
+            @settings{keys %tmp_setting} = values %tmp_setting;
         }
-        @settings{keys %tmp_setting} = values %tmp_setting;
     }
 
-  OUT2:
     #TEST is mandatory, find the test suit settings.
-    my $test_suite_id;
     my $test_suites = $schema->resultset('TestSuites')->search(
         {
             name => $args->{TEST},
         });
-    my $test_suite = $test_suites->next or goto OUT3;
-    $test_suite_id = $test_suite->id;
-    my %test_suite_setting = map { $_->key => $_->value } $test_suite->settings;
-    if (my $test_suite_class = delete $test_suite_setting{WORKER_CLASS}) {
-        push @classes, $test_suite_class;
-    }
-    @settings{keys %test_suite_setting} = values %test_suite_setting;
 
-  OUT3:
+    if (my $test_suite = $test_suites->next) {
+        my %test_suite_setting = map { $_->key => $_->value } $test_suite->settings;
+
+        if (my $test_suite_class = delete $test_suite_setting{WORKER_CLASS}) {
+            push @classes, $test_suite_class;
+        }
+        @settings{keys %test_suite_setting} = values %test_suite_setting;
+    }
+
     if (scalar(@classes) > 0) {
         $settings{WORKER_CLASS} = join(',', sort(@classes));
     }
@@ -793,24 +792,7 @@ sub _generate_job_setting {
         $settings{uc $_} = $args->{$_};
     }
 
-    #replace %NAME% with $settings{NAME}
-    my $expanded;
-    do {
-        $expanded = 0;
-        for my $key (keys %settings) {
-            my $value = $settings{$key};
-            next unless ($value && $value =~ /%(\w+)%/);
-            my $replace_key   = $1;
-            my $replace_value = $settings{$replace_key};
-            next unless (defined $replace_value);
-            $replace_value = '' if ($replace_key eq $key);
-            $value =~ s/%${replace_key}%/$replace_value/g;
-            $settings{$key} = $value;
-            $expanded = 1;
-        }
-    } while ($expanded);
-
-    return \%settings;
+    return OpenQA::Utils::reset_settings(\%settings);
 }
 
 1;

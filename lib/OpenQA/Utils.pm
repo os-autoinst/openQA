@@ -1313,5 +1313,30 @@ sub any_array_item_contained_by_hash {
     return 0;
 }
 
+#replace %NAME% with $settings{NAME}
+sub reset_settings {
+    my ($settings) = @_;
+
+    for my $value (values %$settings) {
+        if (defined $value) {
+            $value =~ s/(%\w+%)/_replace($settings, $1)/eig;
+        }
+    }
+    return $settings;
+}
+
+#only used in reset_settings method
+sub _replace {
+    my ($settings, $param) = @_;
+
+    my $key = $param;
+    $key =~ s/%//g;
+
+    if (defined $settings->{$key}) {
+        return $settings->{$key};
+    }
+    return $param;
+}
+
 1;
 # vim: set sw=4 et:
