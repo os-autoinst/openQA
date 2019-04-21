@@ -24,6 +24,7 @@ use DBIx::Class::Timestamps 'now';
 use File::Basename;
 use Try::Tiny;
 use OpenQA::Utils;
+use OpenQA::ExpandPlaceholder;
 use OpenQA::JobDependencies::Constants;
 use OpenQA::Scheduler::Client;
 use Mojo::JSON qw(encode_json decode_json);
@@ -218,7 +219,9 @@ sub _schedule_iso {
     # Any arg name ending in _URL is special: it tells us to download
     # the file at that URL before running the job
     my $downloads = create_downloads_list($args);
-    my $jobs      = $self->_generate_jobs($args, \@notes);
+    my $result    = $self->_generate_jobs($args, \@notes);
+    return {error => $result->{error_message}} if defined $result->{error_message};
+    my $jobs = $result->{settings_result};
 
     # take some attributes from the first job to guess what old jobs to cancel
     # note: We should have distri object that decides which attributes are relevant here.
@@ -507,6 +510,7 @@ sub _generate_jobs {
     # allow overriding the priority
     my $priority = delete $args->{_PRIORITY};
 
+    my $error_message;
     for my $product (@products) {
         # find job templates
         my $templates = $product->job_templates;
@@ -565,22 +569,8 @@ sub _generate_jobs {
 
             # variable expansion
             # replace %NAME% with $settings{NAME}
-            my $expanded;
-            do {
-                $expanded = 0;
-                for my $var (keys %settings) {
-                    my $val = $settings{$var};
-                    next unless ($val && $val =~ /(%\w+%)/);
-                    my $replace_var = $1;
-                    $replace_var =~ s/^%(\w+)%$/$1/;
-                    my $replace_val = $settings{$replace_var};
-                    next unless (defined $replace_val);
-                    $replace_val = '' if $replace_var eq $var;    #stop infinite recursion
-                    $val =~ s/%${replace_var}%/$replace_val/g;
-                    $settings{$var} = $val;
-                    $expanded = 1;
-                }
-            } while ($expanded);
+            my $error = OpenQA::ExpandPlaceholder::expand_placeholders(\%settings);
+            $error_message .= $error if defined $error;
 
             if (!$args->{MACHINE} || $args->{MACHINE} eq $settings{MACHINE}) {
                 if (!@tests) {
@@ -595,7 +585,6 @@ sub _generate_jobs {
                     }
                 }
             }
-
             push @$ret, \%settings;
         }
     }
@@ -617,7 +606,7 @@ sub _generate_jobs {
             splice @$ret, $i, 1;    # not wanted - delete
         }
     }
-    return $ret;
+    return {error_message => $error_message, settings_result => $ret};
 }
 
 =over 4

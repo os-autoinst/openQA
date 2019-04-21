@@ -17,6 +17,7 @@ package OpenQA::WebAPI::Controller::API::V1::Job;
 use Mojo::Base 'Mojolicious::Controller';
 
 use OpenQA::Utils;
+use OpenQA::ExpandPlaceholder;
 use OpenQA::Jobs::Constants;
 use OpenQA::Resource::Jobs;
 use OpenQA::Schema::Result::Jobs;
@@ -249,8 +250,12 @@ sub create {
 
     my $json = {};
     my $status;
+    my $result = $self->_generate_job_setting(\%params);
+    return $self->render(json => {error => $result->{error_message}}, status => 400)
+      if defined $result->{error_message};
+
     try {
-        my $job = $self->schema->resultset('Jobs')->create_from_settings(\%params);
+        my $job = $self->schema->resultset('Jobs')->create_from_settings($result->{settings_result});
         $self->emit_event('openqa_job_create', {id => $job->id, %params});
         $json->{id} = $job->id;
 
@@ -749,6 +754,90 @@ sub whoami {
     my ($self) = @_;
     my $jobid = $self->stash('job_id');
     $self->render(json => {id => $jobid});
+}
+
+=over 4
+
+=item _generate_job_setting()
+
+Create job for product matching the contents of the DISTRI, VERSION, FLAVOR and ARCH, MACHINE
+settings, and returns a job's settings. Internal method used in the B<create()> method.
+
+=back
+
+=cut
+
+sub _generate_job_setting {
+    my ($self, $args) = @_;
+    my $schema = $self->schema;
+
+    my %settings;    # Machines, product and test suite settings for the job
+    my @classes;     # Populated with WORKER_CLASS settings from machines and products
+
+    # Populated with Product settins if there are DISTRI, VERSION, FLAVOR, ARCH in arguments.
+    if (   defined $args->{DISTRI}
+        && defined $args->{VERSION}
+        && defined $args->{FLAVOR}
+        && defined $args->{ARCH})
+    {
+        my $products = $schema->resultset('Products')->search(
+            {
+                distri  => $args->{DISTRI},
+                version => $args->{VERSION},
+                arch    => $args->{ARCH},
+                flavor  => $args->{FLAVOR},
+            });
+
+        if (my $product = $products->next) {
+            my %tmp_setting = map { $_->key => $_->value } $product->settings;
+
+            if (my $class = delete $tmp_setting{WORKER_CLASS}) {
+                push @classes, $class;
+            }
+            @settings{keys %tmp_setting} = values %tmp_setting;
+        }
+    }
+
+    # Populated with machine settings if there is MACHINE in arguments.
+    if (defined $args->{MACHINE}) {
+        my $machines = $schema->resultset('Machines')->search(
+            {
+                name => $args->{MACHINE},
+            });
+
+        if (my $machine = $machines->next) {
+            my %tmp_setting = map { $_->key => $_->value } $machine->settings;
+
+            if (my $class = delete $tmp_setting{WORKER_CLASS}) {
+                push @classes, $class;
+            }
+            @settings{keys %tmp_setting} = values %tmp_setting;
+        }
+    }
+
+    # TEST is mandatory, so populate with TestSuite settings.
+    my $test_suites = $schema->resultset('TestSuites')->search(
+        {
+            name => $args->{TEST},
+        });
+
+    if (my $test_suite = $test_suites->next) {
+        my %test_suite_setting = map { $_->key => $_->value } $test_suite->settings;
+
+        if (my $test_suite_class = delete $test_suite_setting{WORKER_CLASS}) {
+            push @classes, $test_suite_class;
+        }
+        @settings{keys %test_suite_setting} = values %test_suite_setting;
+    }
+
+    $settings{WORKER_CLASS} = join ',', sort @classes if @classes > 0;
+
+    for (keys %$args) {
+        $settings{uc $_} = $args->{$_};
+    }
+
+    my $error_message = OpenQA::ExpandPlaceholder::expand_placeholders(\%settings);
+    return {error_message => $error_message, settings_result => \%settings};
 }
 
 1;
