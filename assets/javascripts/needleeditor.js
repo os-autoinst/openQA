@@ -313,6 +313,18 @@ NeedleEditor.prototype.toggleClickCoordinates = function() {
         ypos: selectedArea.height / 2,
     };
     selectedShape.assign_click_point(clickPoint);
+
+    // remove click point from other areas so only one click point per needle is possible
+    var selectedIndex = selection.index;
+    var areas = this.needle.area;
+    var shapes = this.cv.shapes;
+    for (var i = 0; i != areas.length; ++i) {
+      if (i == selectedIndex) {
+        continue;
+      }
+      delete areas[i].click_point;
+      delete shapes[i].click_point;
+    }
   }
 
   // update canvas and text area
