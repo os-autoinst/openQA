@@ -257,62 +257,22 @@ sub update {
         try {
             $self->schema->txn_do(
                 sub {
-                    my $id = $job_groups->find_or_create({name => $group}, {select => [qw(id name)]})->id;
-                    $json->{id} = $id;
+                    my $group_id = $job_groups->find_or_create({name => $group}, {select => [qw(id name)]})->id;
+                    $json->{id} = $group_id;
 
-                    # Find existing templates to update or drop
-                    my $templates = $job_templates->search({group_id => $id}, {order_by => 'me.test_suite_id'});
-                    while (my $template = $templates->next) {
-                        my $arch         = $template->product->arch;
-                        my $product_name = $template->product->name;
-
-                        if (my $product = $yaml->{$group}->{architectures}->{$arch}{$product_name}) {
-                            my $found = 0;
-                            foreach my $test_suite (@{$product}) {
-                                if (ref $test_suite eq 'HASH') {
-                                    foreach my $name (keys %$test_suite) {
-                                        next unless $name eq $template->test_suite->name;
-                                        $found = 1;
-
-                                        my $attr = $test_suite->{$name};
-                                        if (%$attr) {
-                                            if ($attr->{machine}) {
-                                                my $machine = $machines->find({name => $attr->{machine}});
-                                                die "Machine '$attr->{machine}' is invalid\n" unless $machine;
-                                                $template->machine_id($machine->id);
-                                            }
-                                            if ($attr->{priority}) {
-                                                $template->prio($attr->{priority});
-                                            }
-                                            $template->update;
-                                        }
-                                    }
-                                }
-                                elsif ($test_suite eq $template->test_suite->name) {
-                                    $found = 1;
-
-                                    # Apply defaults
-                                    my $machine_name = $yaml->{$group}->{defaults}->{$arch}->{machine};
-                                    my $machine      = $machines->find({name => $machine_name});
-                                    die "Machine '$machine_name' is invalid\n" unless $machine;
-                                    $template->update(
-                                        {
-                                            prio       => $yaml->{$group}->{defaults}->{$arch}->{priority},
-                                            machine_id => $machine->id,
-                                        });
-                                }
-                            }
-
-                            next if $found;
-                            # Drop the existing test suite which is not specified
-                            $template->delete;
-                        }
-                    }
-
-                    foreach my $arch (keys %{$yaml->{$group}->{architectures}}) {
-                        foreach my $product_name (keys %{$yaml->{$group}->{architectures}->{$arch}}) {
-                            foreach my $spec (@{$yaml->{$group}->{architectures}->{$arch}->{$product_name}}) {
-
+                    # Add/update job templates from YAML data
+                    # (create test suites if not already present, fail if referenced machine and product is missing)
+                    my @job_template_ids;
+                    my $yaml_group    = $yaml->{$group};
+                    my $yaml_archs    = $yaml_group->{architectures};
+                    my $yaml_products = $yaml_group->{products};
+                    my $yaml_defaults = $yaml_group->{defaults};
+                    foreach my $arch (keys %$yaml_archs) {
+                        my $yaml_products_for_arch = $yaml_archs->{$arch};
+                        my $yaml_defaults_for_arch = $yaml_defaults->{$arch};
+                        foreach my $product_name (keys %$yaml_products_for_arch) {
+                            foreach my $spec (@{$yaml_products_for_arch->{$product_name}}) {
+                                # Get testsuite, machine and prio from YAML data
                                 my $testsuite_name;
                                 my $prio;
                                 my $machine_name;
@@ -331,14 +291,16 @@ sub update {
                                 else {
                                     $testsuite_name = $spec;
                                 }
-                                if (!defined $prio) {
-                                    $prio = $yaml->{$group}->{defaults}->{$arch}{priority};
-                                }
-                                if (!defined $machine_name) {
-                                    $machine_name = $yaml->{$group}->{defaults}->{$arch}{machine};
-                                }
+
+                                # Assign defaults
+                                $prio         //= $yaml_defaults_for_arch->{priority};
+                                $machine_name //= $yaml_defaults_for_arch->{machine};
+                                die "Machine is empty and there is no default for architecture $arch\n"
+                                  unless $machine_name;
+
+                                # Find machine and product
                                 my $machine      = $machines->find({name => $machine_name});
-                                my $product_spec = $yaml->{$group}->{products}{$product_name};
+                                my $product_spec = $yaml_products->{$product_name};
                                 my $product      = $products->find(
                                     {
                                         arch    => $arch,
@@ -348,28 +310,38 @@ sub update {
                                     });
                                 die "Machine '$machine_name' is invalid\n" unless $machine;
                                 die "Product '$product_name' is invalid\n" unless $product;
+                                # TODO: Consider adding new machines/products via this import as well but it would raise
+                                #       a similar convern as for test suites above.
 
+                                # Find or create test suite
                                 my $test_suite = $test_suites->find_or_create({name => $testsuite_name});
-                                my $r          = $job_templates->find_or_create(
+                                # TODO: This may silently add a new testsuite with not settings and description. So
+                                #       at least inform the user so he is aware. (The new test suite likely should
+                                #       be populated with settings and a description or it was just a typo.)
+
+                                # Create/update job template
+                                my $job_template = $job_templates->find_or_create(
                                     {
+                                        group_id      => $group_id,
                                         product_id    => $product->id,
                                         machine_id    => $machine->id,
-                                        group_id      => $id,
                                         test_suite_id => $test_suite->id,
                                     });
-
-                                $r->product_id($product->id);
-                                $r->machine_id($machine->id);
-                                if ($prio) {
-                                    $r->prio($prio);
-                                }
-                                $r->update;
+                                $job_template->update({prio => $prio}) if (defined $prio);
+                                push(@job_template_ids, $job_template->id);
 
                                 # Stop iterating if there were errors with this test suite
                                 last if (@$errors);
                             }
                         }
                     }
+
+                    # Drop entries we haven't touched in add/update loop
+                    $job_templates->search(
+                        {
+                            id       => {'not in' => \@job_template_ids},
+                            group_id => $group_id,
+                        })->delete();
 
                     # Preview mode: Get the expected YAML and rollback the result
                     if ($self->param('preview')) {
