@@ -25,10 +25,10 @@ use DBIx::Class::Timestamps 'now';
 use File::Basename;
 use Try::Tiny;
 use OpenQA::Utils;
+use OpenQA::Settings;
 use OpenQA::JobDependencies::Constants;
 use Mojo::JSON qw(encode_json decode_json);
 use Carp;
-use OpenQA::Setting;
 
 use constant {
     ADDED      => 'added',
@@ -564,8 +564,7 @@ sub _generate_jobs {
 
             # variable expansion
             # replace %NAME% with $settings{NAME}
-            my $obj          = OpenQA::Setting->new(%settings);
-            my $new_settings = $obj->replace_setting();
+            my $new_settings = OpenQA::Settings->new(%settings)->expand_placeholders();
 
             if (!$args->{MACHINE} || $args->{MACHINE} eq $new_settings->{MACHINE}) {
                 if (!@tests) {

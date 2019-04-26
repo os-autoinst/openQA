@@ -21,11 +21,11 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Resource::Jobs;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Events;
+use OpenQA::Settings;
 use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
 use Mojo::Asset::Memory;
 use Mojo::File 'path';
-use OpenQA::Setting;
 
 =pod
 
@@ -207,7 +207,7 @@ sub create {
 
     my $json = {};
     my $status;
-    my $new_params = $self->_generate_job_setting(\%params);
+    my $new_params = $self->_generate_job_settings(\%params);
 
     try {
         my $job = $self->schema->resultset('Jobs')->create_from_settings($new_params);
@@ -713,7 +713,7 @@ sub whoami {
 
 =over 4
 
-=item _generate_job_setting()
+=item _generate_job_settings()
 
 Create job for product matching the contents of the DISTRI, VERSION, FLAVOR and ARCH, MACHINE
 settings, and returns a job's settings. Internal method used in the B<create()> method.
@@ -722,14 +722,14 @@ settings, and returns a job's settings. Internal method used in the B<create()> 
 
 =cut
 
-sub _generate_job_setting {
+sub _generate_job_settings {
     my ($self, $args) = @_;
     my $schema = $self->schema;
 
-    my %settings;    #include the machine, product, and test suit setting belongs to this job.
-    my @classes;     #if the machine or product has worker_class setting, push them to this array.
+    my %settings;    # include the machine, product, and test suit setting belongs to this job.
+    my @classes;     # if the machine or product has worker_class setting, push them to this array.
 
-    #if args includes DISTRI, VERSION, FLAVOR, ARCH, get product setting.
+    # if args includes DISTRI, VERSION, FLAVOR, ARCH, get product setting.
     if (   defined $args->{DISTRI}
         && defined $args->{VERSION}
         && defined $args->{FLAVOR}
@@ -753,7 +753,7 @@ sub _generate_job_setting {
         }
     }
 
-    #if args includes MACHINE, get machine setting.
+    # if args includes MACHINE, get machine setting.
     if (defined $args->{MACHINE}) {
         my $machines = $schema->resultset('Machines')->search(
             {
@@ -770,7 +770,7 @@ sub _generate_job_setting {
         }
     }
 
-    #TEST is mandatory, find the test suit settings.
+    # TEST is mandatory, find the test suit settings.
     my $test_suites = $schema->resultset('TestSuites')->search(
         {
             name => $args->{TEST},
@@ -793,8 +793,7 @@ sub _generate_job_setting {
         $settings{uc $_} = $args->{$_};
     }
 
-    my $obj          = OpenQA::Setting->new(%settings);
-    my $new_settings = $obj->replace_setting();
+    my $new_settings = OpenQA::Settings->new(%settings)->expand_placeholders();
 
     return $new_settings;
 }
