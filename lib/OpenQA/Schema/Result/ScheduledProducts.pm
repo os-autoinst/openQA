@@ -28,6 +28,7 @@ use OpenQA::Utils;
 use OpenQA::JobDependencies::Constants;
 use Mojo::JSON qw(encode_json decode_json);
 use Carp;
+use OpenQA::Setting;
 
 use constant {
     ADDED      => 'added',
@@ -563,7 +564,8 @@ sub _generate_jobs {
 
             # variable expansion
             # replace %NAME% with $settings{NAME}
-            my $new_settings = OpenQA::Utils::reset_settings(\%settings);
+            my $obj          = OpenQA::Setting->new(%settings);
+            my $new_settings = $obj->replace_setting();
 
             if (!$args->{MACHINE} || $args->{MACHINE} eq $new_settings->{MACHINE}) {
                 if (!@tests) {

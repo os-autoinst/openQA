@@ -25,6 +25,7 @@ use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
 use Mojo::Asset::Memory;
 use Mojo::File 'path';
+use OpenQA::Setting;
 
 =pod
 
@@ -792,7 +793,10 @@ sub _generate_job_setting {
         $settings{uc $_} = $args->{$_};
     }
 
-    return OpenQA::Utils::reset_settings(\%settings);
+    my $obj          = OpenQA::Setting->new(%settings);
+    my $new_settings = $obj->replace_setting();
+
+    return $new_settings;
 }
 
 1;
