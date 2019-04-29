@@ -234,17 +234,35 @@ sub engine_workit {
 
             $vars{PRJDIR} = $shared_cache;
 
-            # TODO: Enqueue all requests in one place
-            return {error => "Failed to send $rsync_request_description"} unless $rsync_request->enqueue;
-            log_info("Enqueued $rsync_request_description");
+            # enqueue rsync task; retry in some error cases
+            for (my $remaining_tries = 3; $remaining_tries > 0; --$remaining_tries) {
+                return {error => "Failed to send $rsync_request_description"} unless $rsync_request->enqueue;
+                log_info("Enqueued $rsync_request_description");
 
-            sleep 5 and update_setup_status until $rsync_request->processed;
-            # treat "no sync necessary" as success as well
-            my $exit = $rsync_request->result // 0;
+                sleep 5 and update_setup_status until $rsync_request->processed;
 
-            if (my $output = $rsync_request->output) { log_info("rsync: " . $output, channels => 'autoinst') }
-            return {error => "Failed to rsync tests: exit code: $exit"} unless (defined $exit && $exit == 0);
-            log_info('Finished to rsync tests');
+                if (my $output = $rsync_request->output) {
+                    log_info('rsync: ' . $output, channels => 'autoinst');
+                }
+
+                # treat "no sync necessary" as success as well
+                my $exit = $rsync_request->result // 0;
+
+                if (!defined $exit) {
+                    return {error => 'Failed to rsync tests.'};
+                }
+                elsif ($exit == 0) {
+                    log_info('Finished to rsync tests');
+                    last;
+                }
+                elsif ($remaining_tries > 1 && $exit == 24) {
+                    log_info("rsync failed due to a vanished source files (exit code 24), trying again");
+                }
+                else {
+                    return {error => "Failed to rsync tests: exit code: $exit"};
+                }
+            }
+
 
             $shared_cache = catdir($shared_cache, 'tests');
         }
