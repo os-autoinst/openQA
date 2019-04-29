@@ -22,26 +22,35 @@ if [ -z ${host+x} ] || [ -z ${job+x} ]; then
     job=${job_url##*/}
 fi
 
+function throw_json_error {
+    echo "in contents queried from $1:"
+    echo "$2"
+    exit 2
+}
+
 if [ -z ${branch+x} ] || [ -z ${repo_name+x} ]; then
-    pr_content=$(curl ${AUTHENTICATED_REQUEST} -s ${target_repo_part/github.com/api.github.com/repos}/pulls/$pr)
-    label=$(echo $pr_content | jq -r '.head.label')
+    pr_url=${target_repo_part/github.com/api.github.com/repos}/pulls/$pr
+    pr_content=$(curl ${AUTHENTICATED_REQUEST} -s "$pr_url")
+    label=$(echo $pr_content | jq -r '.head.label') || throw_json_error "$pr_url" "$pr_content"
     if [ "${label}" == "null" ]; then
         echo "Github API rate limit might have been exceeded. If this is the case, generate one at
         https://github.com/settings/tokens and then export it as an environment variable"
         echo 'export GITHUB_TOKEN=foobar'
-        echo "Github reply: " $( echo ${pr_content} | jq -r '.message')
+        echo "Github reply: " $(echo ${pr_content} | jq -r '.message')
         exit 1
     fi
     repo_name="${repo_name:-"${label%:*}/${target_repo_part##*/}"}"
     branch="${branch:-"${label##*:}"}"
     repo="${repo:-"https://github.com/${repo_name}.git"}"
 fi
+
 if [ -z ${testsuite+x} ] || [ -z ${needles_dir+x} ] || [ -z ${productdir+x} ]; then
-    old_job=$(curl -s ${host}/tests/${job}/file/vars.json)
-    testsuite="${testsuite:-"$(echo $old_job | jq -r '.TEST')"}"
-    needles_dir="${needles_dir:-"$(echo $old_job | jq -r '.NEEDLES_DIR')"}"
-    old_productdir=$(echo $old_job | jq -r '.PRODUCTDIR')
-    old_casedir=$(echo $old_job | jq -r '.CASEDIR')
+    json_url=${host}/tests/${job}/file/vars.json
+    json_data=$(curl -s "${json_url}")
+    testsuite="${testsuite:-"$(echo $json_data | jq -r '.TEST')"}" || throw_json_error "$json_url" "$json_data"
+    needles_dir="${needles_dir:-"$(echo $json_data | jq -r '.NEEDLES_DIR')"}" || throw_json_error "$json_url" "$json_data"
+    old_productdir=$(echo $json_data | jq -r '.PRODUCTDIR') || throw_json_error "$json_url" "$json_data"
+    old_casedir=$(echo $json_data | jq -r '.CASEDIR') || throw_json_error "$json_url" "$json_data"
     productdir="${productdir:-"${repo_name##*/}${old_productdir##$old_casedir}"}"
 fi
 repo_branch="${repo_branch:-"$repo_name#$branch"}"
