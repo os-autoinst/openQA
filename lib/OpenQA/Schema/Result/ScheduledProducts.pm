@@ -196,6 +196,7 @@ Internal function to actually schedule the ISO, see schedule_iso().
 sub _schedule_iso {
     my ($self, $args) = @_;
 
+    my @notes;
     my $gru     = $OpenQA::Utils::app->gru;
     my $schema  = $self->result_source->schema;
     my $user_id = $self->user_id;
@@ -217,7 +218,7 @@ sub _schedule_iso {
     # Any arg name ending in _URL is special: it tells us to download
     # the file at that URL before running the job
     my $downloads = create_downloads_list($args);
-    my $jobs      = $self->_generate_jobs($args);
+    my $jobs      = $self->_generate_jobs($args, \@notes);
 
     # take some attributes from the first job to guess what old jobs to cancel
     # note: We should have distri object that decides which attributes are relevant here.
@@ -245,7 +246,7 @@ sub _schedule_iso {
             }
             catch {
                 my $error = shift;
-                OpenQA::Utils::log_warning("Failed to cancel old jobs: $error");
+                push(@notes, "Failed to cancel old jobs: $error");
             };
         }
     }
@@ -322,7 +323,7 @@ sub _schedule_iso {
     }
     catch {
         my $error = shift;
-        OpenQA::Utils::log_warning("Failed to schedule ISO: $error");
+        push(@notes, "Transaction failed: $error");
         push(@failed_job_info, map { {job_id => $_, error_messages => [$error]} } @successful_job_ids);
         @successful_job_ids = ();
     };
@@ -338,10 +339,12 @@ sub _schedule_iso {
 
     wakeup_scheduler;
 
-    return {
+    my %results = (
         successful_job_ids => \@successful_job_ids,
         failed_job_info    => \@failed_job_info,
-    };
+    );
+    $results{notes} = \@notes if (@notes);
+    return \%results;
 }
 
 =over 4
@@ -460,7 +463,7 @@ method used in the B<schedule_iso()> method.
 =cut
 
 sub _generate_jobs {
-    my ($self, $args) = @_;
+    my ($self, $args, $notes) = @_;
 
     my $ret      = [];
     my $schema   = $self->result_source->schema;
@@ -473,7 +476,7 @@ sub _generate_jobs {
         });
 
     unless (@products) {
-        OpenQA::Utils::log_warning('no products found, retrying version wildcard');
+        push(@$notes, 'no products found, retrying version wildcard');
         @products = $schema->resultset('Products')->search(
             {
                 distri  => lc($args->{DISTRI}),
@@ -649,7 +652,6 @@ sub _create_dependencies_for_job {
             }
             if (!defined $testsuite_mapping->{$test}->{$machine}) {
                 my $error_msg = "$depname=$test:$machine not found - check for dependency typos and dependency cycles";
-                OpenQA::Utils::log_warning($error_msg);
                 push(@error_messages, $error_msg);
             }
             else {
