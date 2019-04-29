@@ -158,29 +158,31 @@ sub edit {
             push(@needles, $needle_info);
         }
     }
-    if ($module_detail->{needles}) {
+    if (my $module_detail_needles = $module_detail->{needles}) {
         # First position: the screenshot
         $screenshot = $self->_new_screenshot($tags, $imgname);
 
         # Afterwards: all the candidate needles
         # $needle contains information from result, in which 'areas' refers to the best matches.
         # We also use $area for transforming the match information into a real area
-        for my $needle (@{$module_detail->{needles}}) {
+        for my $needle (@$module_detail_needles) {
             my $needle_info
               = $self->_extended_needle_info($needle->{name}, \%basic_needle_data, $needle->{json},
                 $needle->{error}, \@error_messages)
               || next;
+            my $matches = $needle_info->{matches};
             for my $match (@{$needle->{area}}) {
-                my $area = {
+                my %area = (
                     xpos   => int $match->{x},
                     width  => int $match->{w},
                     ypos   => int $match->{y},
                     height => int $match->{h},
                     type   => 'match',
-                };
-                $area->{margin} = int($match->{margin}) if defined $match->{margin};
-                $area->{match}  = int($match->{match})  if defined $match->{match};
-                push(@{$needle_info->{matches}}, $area);
+                );
+                $area{margin}      = int($match->{margin}) if defined $match->{margin};
+                $area{match}       = int($match->{match})  if defined $match->{match};
+                $area{click_point} = $match->{click_point} if defined $match->{click_point};
+                push(@$matches, \%area);
             }
             push(@needles, $needle_info);
         }
@@ -267,6 +269,7 @@ sub edit {
 sub _new_screenshot {
     my ($self, $tags, $image_name, $matches) = @_;
 
+    my @matches;
     my %screenshot = (
         name       => 'screenshot',
         title      => 'Screenshot',
@@ -274,7 +277,7 @@ sub _new_screenshot {
         imagedir   => '',
         imageurl   => $self->url_for('test_img', filename => $image_name)->to_string(),
         area       => [],
-        matches    => [],
+        matches    => \@matches,
         properties => [],
         json       => '',
         tags       => $tags,
@@ -282,15 +285,17 @@ sub _new_screenshot {
     return \%screenshot unless $matches;
 
     for my $area (@$matches) {
-        push(
-            @{$screenshot{matches}},
-            {
-                xpos   => int $area->{x},
-                width  => int $area->{w},
-                ypos   => int $area->{y},
-                height => int $area->{h},
-                type   => 'match'
-            });
+        my %match = (
+            xpos   => int $area->{x},
+            ypos   => int $area->{y},
+            width  => int $area->{w},
+            height => int $area->{h},
+            type   => 'match',
+        );
+        if (my $click_point = $area->{click_point}) {
+            $match{click_point} = $click_point;
+        }
+        push(@matches, \%match);
     }
     return \%screenshot;
 }
@@ -445,18 +450,20 @@ sub map_error_to_avg {
 sub calc_matches {
     my ($needle, $areas) = @_;
 
+    my $matches = $needle->{matches};
     for my $area (@$areas) {
-        my $sim = int($area->{similarity} + 0.5);
-        push(
-            @{$needle->{matches}},
-            {
-                xpos       => int $area->{x},
-                width      => int $area->{w},
-                ypos       => int $area->{y},
-                height     => int $area->{h},
-                type       => $area->{result},
-                similarity => $sim
-            });
+        my %match = (
+            xpos       => int $area->{x},
+            ypos       => int $area->{y},
+            width      => int $area->{w},
+            height     => int $area->{h},
+            type       => $area->{result},
+            similarity => int($area->{similarity} + 0.5),
+        );
+        if (my $click_point = $area->{click_point}) {
+            $match{click_point} = $click_point;
+        }
+        push(@$matches, \%match);
     }
     $needle->{avg_similarity} //= map_error_to_avg($needle->{error});
     return;

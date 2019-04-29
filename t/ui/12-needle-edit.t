@@ -175,8 +175,9 @@ sub change_needle_value($$) {
     # check the value of textarea again
     my $elem                = $driver->find_element_by_id('needleeditor_textarea');
     my $decode_new_textarea = decode_json($elem->get_value());
-    is($decode_new_textarea->{area}[0]->{xpos}, $xoffset, "new xpos correct");
-    is($decode_new_textarea->{area}[0]->{ypos}, $yoffset, "new ypos correct");
+    is($decode_new_textarea->{area}[0]->{xpos},        $xoffset, 'new xpos correct');
+    is($decode_new_textarea->{area}[0]->{ypos},        $yoffset, 'new ypos correct');
+    is($decode_new_textarea->{area}[0]->{click_point}, undef,    'initially no click_point');
 
     # test match type
     $decode_new_textarea = decode_json($elem->get_value());
@@ -195,9 +196,7 @@ sub change_needle_value($$) {
     # test match level
     $driver->find_element_by_id('change-match')->click();
     wait_for_ajax;
-
     my $dialog = $driver->find_element_by_id('change-match-form');
-
     is($driver->find_element_by_id('set_match')->is_displayed(),            1,    "found set button");
     is($driver->find_element_by_xpath('//input[@id="match"]')->get_value(), "96", "default match level is 96");
     $driver->find_element_by_xpath('//input[@id="match"]')->clear();
@@ -207,6 +206,24 @@ sub change_needle_value($$) {
     is($driver->find_element_by_id('change-match-form')->is_hidden(), 1, "match level form closed");
     $decode_new_textarea = decode_json($elem->get_value());
     is($decode_new_textarea->{area}[0]->{match}, 99, "match level is 99 now");
+
+    # test adding click point
+    $driver->find_element_by_id('toggle-click-coordinates')->click();
+    $decode_new_textarea = decode_json($elem->get_value());
+    my $area = $decode_new_textarea->{area}[0];
+    is_deeply(
+        $area->{click_point},
+        {
+            xpos => $area->{width} / 2,
+            ypos => $area->{height} / 2,
+        },
+        'click_point added with coordinates in the center of the needle by default'
+    );
+
+    # test removing click point
+    $driver->find_element_by_id('toggle-click-coordinates')->click();
+    $decode_new_textarea = decode_json($elem->get_value());
+    is($decode_new_textarea->{area}[0]->{click_point}, undef, 'click_point removed');
 }
 
 sub overwrite_needle($) {

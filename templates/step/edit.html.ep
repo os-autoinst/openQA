@@ -236,16 +236,23 @@
                 </div>
 
                 <div class="col-lg-3">
+                    Selected area:
                     %= tag div => begin
                         %= tag button => (id => 'change-match') => (class => 'btn btn-default btn-block disabled') => (data => { toggle => 'modal', target => '#change-match-form' }) => (disabled => undef) => begin
                             %= tag i => (class => 'fa fa-chart-bar')
-                            Change Match Level
+                            Change match level
                         % end
                     % end
                     %= tag div => begin
                         %= tag button => (id => 'change-margin') => (class => 'btn btn-default btn-block disabled') => (data => { toggle => 'modal', target => '#change-margin-form' }) => (disabled => undef) => begin
                             %= tag i => (class => 'fa fa-chart-area')
-                            Change Margin
+                            Change margin
+                        % end
+                    % end
+                    %= tag div => begin
+                        %= tag button => (id => 'toggle-click-coordinates') => (class => 'btn btn-default btn-block disabled') => (disabled => undef) => (onclick => 'toggleClickCoordinates()') => begin
+                            %= tag i => (class => 'fa fa-mouse-pointer')
+                            <span id="toggle-click-coordinates-verb">Add</span> click coordinates for<br> <code>assert_and_click</code>
                         % end
                     % end
                 </div>
