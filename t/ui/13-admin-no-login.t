@@ -43,6 +43,7 @@ $driver->title_is("openQA");
 # Test suites without login
 is $driver->get('/admin/test_suites'), 1, 'opened test suites';
 $driver->title_is('openQA: Test suites');
+wait_for_ajax;
 like $driver->find_element('#test-suites tbody tr.odd td')->get_text(),  qr/textmode/, 'first entry';
 like $driver->find_element('#test-suites tbody tr.even td')->get_text(), qr/kde/,      'second entry';
 like $driver->find_element('#test-suites tbody tr.even td:nth-child(3)')->get_text(),

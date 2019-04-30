@@ -1,15 +1,6 @@
 var audit_url;
 var ajax_url;
 
-function htmlEscape(str) {
-    return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
 function loadAuditLogTable ()
 {
     $('#audit_log_table').DataTable( {
