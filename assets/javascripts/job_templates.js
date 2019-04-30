@@ -398,6 +398,10 @@ function submitTemplateEditor() {
             template: $('#editor-template').val()
         }
     }).done(function(data) {
+        if (data.hasOwnProperty('id') && data.id != job_group_id) {
+            result.text('Error: Changing the group name here is not supported');
+            return true;
+        }
         result.text('Preview of the YAML:');
         if (data.hasOwnProperty('template')) {
             $('<code/>').text(data.template).appendTo($('<p/>').appendTo(result));
