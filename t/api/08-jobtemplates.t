@@ -40,6 +40,7 @@ $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->i
 $t->app($app);
 
 my $job_templates = $app->schema->resultset('JobTemplates');
+my $test_suites   = $app->schema->resultset('TestSuites');
 
 my $get = $t->get_ok('/api/v1/job_templates')->status_is(200);
 is_deeply(
@@ -701,101 +702,47 @@ subtest 'Create and modify groups with YAML' => sub {
     $res = $t->post_ok(
         '/api/v1/experimental/job_templates_scheduling',
         form => {
-            template => YAML::XS::Dump($yaml)})->status_is(200, 'New group was added to the database');
-    if ($res->success) {
-        my $job_group_id3 = $res->tx->res->json->{id};
-        $get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
+            template => YAML::XS::Dump($yaml)}
+    )->status_is(400, 'Job template rejected because testsuite does not exist')->json_is(
+        '' => {
+            error        => ['Testsuite \'foobar\' is invalid'],
+            error_status => 400,
+            id           => 1003
+        },
+        'Invalid testsuite'
+    );
+
+    # Add required testsuites
+    for my $test_suite_name (qw(foobar spam eggs)) {
+        $test_suites->create({name => $test_suite_name});
+    }
+
+    # Assert that nothing changes in preview mode
+    $t->post_ok(
+        '/api/v1/experimental/job_templates_scheduling',
+        form => {
+            preview  => 1,
+            template => YAML::XS::Dump($yaml),
+        });
+    $t->status_is(200, 'Posting preview successful');
+    my $job_group_id3 = $t->tx->res->json->{id};
+    $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
+    is_deeply(YAML::XS::Load($t->tx->res->body), {}, 'No job template added to the database')
+      || diag explain $t->tx->res->body;
+
+    $t->post_ok('/api/v1/experimental/job_templates_scheduling', form => {template => YAML::XS::Dump($yaml)});
+    $t->status_is(200, 'New job template was added to the database');
+    if ($t->success) {
+        $job_group_id3 = $t->tx->res->json->{id};
+        $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
         # Prepare expected result
         splice @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}}, 0, 2;
         unshift @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}}, {'spam'   => {priority => 40}};
         unshift @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}}, {'foobar' => {priority => 40}};
         # Use per-arch default priority which deviates from the group default_priority
         $yaml->{foo}{defaults}{i586}{'priority'} = 50;
-        is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, 'Added group should be reflected in the database')
-          || diag explain $get->tx->res->body;
-
-        # Add test to group according to YAML template
-        my $test_suite = 'foo';
-        push @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}}, $test_suite;
-        $t->post_ok(
-            '/api/v1/experimental/job_templates_scheduling',
-            form => {
-                template => YAML::XS::Dump($yaml)}
-        )->status_is(200)->json_is(
-            '' => {
-                id => $job_group_id3,
-            },
-            "Added test $test_suite via the template"
-        );
-        $get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
-        is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, "Added test $test_suite to the database")
-          || diag explain $get->tx->res->body;
-
-        # Assert that nothing changes in preview mode
-        $test_suite = {'bar' => {priority => 11}};
-        push @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}}, $test_suite;
-        $t->post_ok(
-            '/api/v1/experimental/job_templates_scheduling',
-            form => {
-                preview  => 1,
-                template => YAML::XS::Dump($yaml)}
-        )->status_is(200)->json_is(
-            '' => {
-                id       => $job_group_id3,
-                template => YAML::XS::Dump($yaml),
-            },
-            "Dry-run of adding test $test_suite via the template"
-        );
-        # Prepare expected result
-        $test_suite = pop @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}};
-        $get        = $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
-        is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, "Test $test_suite wasn't added to the database")
-          || diag explain $get->tx->res->body;
-
-        $test_suite = {'bar' => {priority => 11}};
-        push @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}}, $test_suite;
-        $t->post_ok(
-            '/api/v1/experimental/job_templates_scheduling',
-            form => {
-                template => YAML::XS::Dump($yaml)}
-        )->status_is(200)->json_is(
-            '' => {
-                id => $job_group_id3,
-            },
-            "Added test $test_suite via the template"
-        );
-        $get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
-        is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, "Added test $test_suite to the database")
-          || diag explain $get->tx->res->body;
-
-        $t->post_ok(
-            '/api/v1/experimental/job_templates_scheduling',
-            form => {
-                template => YAML::XS::Dump($yaml)}
-        )->status_is(200)->json_is(
-            '' => {
-                id => $job_group_id3,
-            },
-            'Dropped test by removing it from the template'
-        );
-        $get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
-        is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, "Dropped test $test_suite from the database")
-          || diag explain $get->tx->res->body;
-
-        $test_suite = pop @{$yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}};
-        $t->post_ok(
-            '/api/v1/experimental/job_templates_scheduling',
-            form => {
-                template => YAML::XS::Dump($yaml)}
-        )->status_is(200)->json_is(
-            '' => {
-                id => $job_group_id3,
-            },
-            'Dropped test by removing it from the template'
-        );
-        $get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
-        is_deeply(YAML::XS::Load($get->tx->res->body), $yaml, "Dropped test $test_suite from the database")
-          || diag explain $get->tx->res->body;
+        is_deeply(YAML::XS::Load($t->tx->res->body), $yaml, 'Added job template reflected in the database')
+          || diag explain $t->tx->res->body;
 
         # Modify test attributes in group according to YAML template
         $yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}
@@ -894,8 +841,6 @@ subtest 'References' => sub {
       architectures:
         i586:
           opensuse-13.1-DVD-i586: &tests
-          - foo
-          - bar
           - spam
           - eggs
         ppc64:
@@ -926,19 +871,19 @@ subtest 'References' => sub {
           flavor: Server-DVD-Updates
           version: 12-SP1
     ');
-    $res = $t->post_ok(
-        '/api/v1/experimental/job_templates_scheduling',
-        form => {
-            template => YAML::XS::Dump($yaml)})->status_is(200, 'New group with references was added to the database');
-    if ($res->success) {
-        my $job_group_id4 = $res->tx->res->json->{id};
-        $get = $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id4");
-        # Prepare expected result
-        $yaml->{test}{architectures}{ppc64}{'opensuse-13.1-DVD-ppc64'} = ['spam', 'eggs', 'foo', 'bar'];
-        is_deeply(YAML::XS::Load($get->tx->res->body),
-            $yaml, 'Added group with references should be reflected in the database')
-          || diag explain $get->tx->res->body;
+    $t->post_ok('/api/v1/experimental/job_templates_scheduling', form => {template => YAML::XS::Dump($yaml)});
+    $t->status_is(200, 'New group with references was added to the database');
+    if (!$t->success) {
+        diag explain $t->tx->res->json;
+        return;
     }
+    my $job_group_id4 = $t->tx->res->json->{id};
+    $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id4");
+    # Prepare expected result
+    $yaml->{test}{architectures}{ppc64}{'opensuse-13.1-DVD-ppc64'} = [qw(spam eggs)];
+    is_deeply(YAML::XS::Load($t->tx->res->body),
+        $yaml, 'Added group with references should be reflected in the database')
+      || diag explain $t->tx->res->body;
 };
 
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(200);

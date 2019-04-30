@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2019 SUSE Linux Products GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -298,8 +298,9 @@ sub update {
                                 die "Machine is empty and there is no default for architecture $arch\n"
                                   unless $machine_name;
 
-                                # Find machine and product
-                                my $machine      = $machines->find({name => $machine_name});
+                                # Find machine, product and testsuite
+                                my $machine = $machines->find({name => $machine_name});
+                                die "Machine '$machine_name' is invalid\n" unless $machine;
                                 my $product_spec = $yaml_products->{$product_name};
                                 my $product      = $products->find(
                                     {
@@ -308,16 +309,9 @@ sub update {
                                         flavor  => $product_spec->{flavor},
                                         version => $product_spec->{version},
                                     });
-                                die "Machine '$machine_name' is invalid\n" unless $machine;
                                 die "Product '$product_name' is invalid\n" unless $product;
-                                # TODO: Consider adding new machines/products via this import as well but it would raise
-                                #       a similar concern as for test suites above.
-
-                                # Find or create test suite
-                                my $test_suite = $test_suites->find_or_create({name => $testsuite_name});
-                                # TODO: This may silently add a new testsuite with no settings and description. So
-                                #       at least inform the user so he is aware. (The new test suite likely should
-                                #       be populated with settings and a description or it was just a typo.)
+                                my $test_suite = $test_suites->find({name => $testsuite_name});
+                                die "Testsuite '$testsuite_name' is invalid\n" unless $test_suite;
 
                                 # Create/update job template
                                 my $job_template = $job_templates->find_or_create(
