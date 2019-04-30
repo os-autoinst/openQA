@@ -128,7 +128,7 @@
   /var/lib/openqa/pool/*/** rwk,
   /var/lib/openqa/share/* r,
   /var/lib/openqa/share/factory/hdd/ r,
-  /var/lib/openqa/share/factory/hdd/* r,
+  /var/lib/openqa/share/factory/hdd/* rk,
   /var/lib/openqa/share/factory/hdd/fixed/* r,
   /var/lib/openqa/share/factory/iso/* rk,
   /var/lib/openqa/share/factory/iso/fixed/* r,
