@@ -736,7 +736,7 @@ been matched at the time of the call.</p>
 <h5 id="_assert_and_click">assert_and_click</h5>
 <div class="literalblock">
 <div class="content">
-<pre>assert_and_click($mustmatch, [$button], [$timeout], [$click_time], [$dclick]);</pre>
+<pre>assert_and_click($mustmatch [, timeout =&gt; $timeout] [, button =&gt; $button] [, clicktime =&gt; $clicktime ] [, dclick =&gt; 1 ] [, mousehide =&gt; 1 ]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -744,7 +744,9 @@ been matched at the time of the call.</p>
 <code>$button</code> in the middle of the last match region as defined in the needle
 JSON file. If <code>$dclick</code> is set, do double click instead.  <code>$mustmatch</code> can
 be string or <code>ARRAYREF</code> of strings (<code>['tag1', 'tag2']</code>).  <code>$button</code> is by
-default <code>'left'</code>. <code>'left'</code> and <code>'right'</code> is supported.</p>
+default <code>'left'</code>. <code>'left'</code> and <code>'right'</code> is supported. If <code>$mousehide</code> is
+true then always move mouse to the 'hidden' position after clicking to prevent
+to hide the area where user wants to assert/click in second step.</p>
 </div>
 <div class="paragraph">
 <p>Throws <code>FailedNeedle</code> exception if <code>$timeout</code> timeout is hit. Default timeout is 30s.</p>
@@ -754,7 +756,7 @@ default <code>'left'</code>. <code>'left'</code> and <code>'right'</code> is sup
 <h5 id="_assert_and_dclick">assert_and_dclick</h5>
 <div class="literalblock">
 <div class="content">
-<pre>assert_and_dclick($mustmatch, $button, [$timeout], [$click_time]);</pre>
+<pre>assert_and_dclick($mustmatch [, timeout =&gt; $timeout] [, button =&gt; $button] [, clicktime =&gt; $clicktime ] [, dclick =&gt; 1 ] [, mousehide =&gt; 1 ]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1301,7 +1303,8 @@ Default timeout is 30s, default stilltime is 0s.</p>
 <h5 id="_type_password">type_password</h5>
 <div class="literalblock">
 <div class="content">
-<pre>type_password([$password]);</pre>
+<pre>type_password($password [, max_interval =&gt; &lt;num&gt; ] [, wait_screen_changes =&gt; &lt;num&gt; ] [, wait_still_screen =&gt; &lt;num&gt; ] [, timeout =&gt; &lt;num&gt;]
+[, similarity_level =&gt; &lt;num&gt;] );</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1309,6 +1312,9 @@ Default timeout is 30s, default stilltime is 0s.</p>
 </div>
 <div class="paragraph">
 <p>Uses <code>$testapi::password</code> if no string is given.</p>
+</div>
+<div class="paragraph">
+<p>You can pass same optional parameters as for <code>type_string</code> function.</p>
 </div>
 </div>
 </div>
@@ -1845,7 +1851,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-04-29 09:16:33 UTC
+Last updated 2019-04-30 13:44:57 UTC
 </div>
 </div>
 </body>
