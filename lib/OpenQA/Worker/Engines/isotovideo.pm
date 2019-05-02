@@ -119,6 +119,8 @@ sub cache_assets {
     for my $this_asset (sort keys %$assetkeys) {
         my $asset;
         my $asset_uri = trim($vars->{$this_asset});
+        # Skip UEFI_PFLASH_VARS asset if the job won't use UEFI.
+        next if (($this_asset eq 'UEFI_PFLASH_VARS') and !$vars->{UEFI});
         log_debug("Found $this_asset, caching " . $vars->{$this_asset});
 
         # check cache availability
