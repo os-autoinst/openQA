@@ -17,6 +17,7 @@ package OpenQA::WebAPI::Plugin::YAMLRenderer;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use YAML::XS;
+use Try::Tiny;
 
 sub register {
     my ($self, $app) = @_;
@@ -50,14 +51,19 @@ sub register {
             my $validator   = JSON::Validator->new;
             my $schema;
             my @errors;
-            if ($validate_schema) {
-                # Validate the schema: catches errors in type names and definitions
-                $validator = $validator->load_and_validate_schema($schema_yaml);
-                $schema    = $validator->schema;
+            try {
+                if ($validate_schema) {
+                    # Validate the schema: catches errors in type names and definitions
+                    $validator = $validator->load_and_validate_schema($schema_yaml);
+                    $schema    = $validator->schema;
+                }
+                else {
+                    $schema = $validator->schema($schema_yaml);
+                }
             }
-            else {
-                $schema = $validator->schema($schema_yaml);
-            }
+            catch {
+                push @errors, $_;
+            };
             if ($schema) {
                 # Note: Don't pass $schema here, that won't work
                 push @errors, $validator->validate($yaml);

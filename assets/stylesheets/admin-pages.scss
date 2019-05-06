@@ -311,6 +311,15 @@ h2 + * {
         text-align: center;
     }
 }
+#editor-form code {
+    display: inline-block;
+    font-weight: normal;
+    text-align: left !important;
+    white-space: pre;
+}
+#editor-template {
+    font-family: monospace, monospace; 
+}
 
 // users
 table#users {

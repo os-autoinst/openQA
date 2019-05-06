@@ -124,7 +124,7 @@ subtest 'add product' => sub() {
     is((shift @headers)->get_text(), "DVD",      "flavor");
     is((shift @headers)->get_text(), "i586",     "arch");
 
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 1, "1 edit button before");
+    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 3, "3 edit buttons/media before");
 
     is($driver->find_element_by_xpath('//input[@value="New medium"]')->click(), 1, 'new medium');
 
@@ -140,7 +140,7 @@ subtest 'add product' => sub() {
 
     is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
     wait_for_ajax;
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 2, "2 edit buttons afterwards");
+    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 4, "4 edit buttons/media afterwards");
 
     # check the distri name will be lowercase after added a new one
     is($driver->find_element_by_xpath('//input[@value="New medium"]')->click(), 1, 'new medium');
@@ -159,7 +159,7 @@ subtest 'add product' => sub() {
 
     is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
     wait_for_ajax;
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 3, "3 edit buttons afterwards");
+    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 5, "5 edit buttons/media afterwards");
 };
 
 subtest 'add machine' => sub() {
@@ -372,7 +372,7 @@ subtest 'job property editor' => sub() {
 
     # navigate to editor first
     $driver->find_element_by_link('Cool Group')->click();
-    $driver->find_element('.corner-buttons button')->click();
+    $driver->find_element_by_id('toggle-group-properties')->click();
 
     subtest 'current/default values present' => sub() {
         is($driver->find_element_by_id('editor-name')->get_value(),              'Cool Group', 'name');
@@ -394,7 +394,7 @@ subtest 'job property editor' => sub() {
         # update group name with empty
         $groupname->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
         $groupname->send_keys(Selenium::Remote::WDKeys->KEYS->{backspace});
-        is($driver->find_element('p.buttons button.btn-primary')->get_attribute('disabled'),
+        is($driver->find_element('#properties p.buttons button.btn-primary')->get_attribute('disabled'),
             'true', 'group properties save button is disabled if leave name is empty');
         is(
             $driver->find_element('#editor-name')->get_attribute('class'),
@@ -402,13 +402,13 @@ subtest 'job property editor' => sub() {
             'editor name input marked as invalid'
         );
         $driver->refresh();
-        $driver->find_element('.corner-buttons button')->click();
+        $driver->find_element_by_id('toggle-group-properties')->click();
 
         # update group name with blank
         $groupname = $driver->find_element_by_id('editor-name');
         $groupname->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
         $groupname->send_keys('   ');
-        is($driver->find_element('p.buttons button.btn-primary')->get_attribute('disabled'),
+        is($driver->find_element('#properties p.buttons button.btn-primary')->get_attribute('disabled'),
             'true', 'group properties save button is disabled if leave name is empty');
         is(
             $driver->find_element('#editor-name')->get_attribute('class'),
@@ -416,7 +416,7 @@ subtest 'job property editor' => sub() {
             'editor name input marked as invalid'
         );
         $driver->refresh();
-        $driver->find_element('.corner-buttons button')->click();
+        $driver->find_element_by_id('toggle-group-properties')->click();
     };
 
     subtest 'edit some properties' => sub() {
@@ -429,16 +429,16 @@ subtest 'job property editor' => sub() {
         $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
         $ele->send_keys('500');
         $driver->find_element_by_id('editor-description')->send_keys('Test group');
-        is($driver->find_element('p.buttons button.btn-primary')->get_attribute('disabled'),
+        is($driver->find_element('#properties p.buttons button.btn-primary')->get_attribute('disabled'),
             undef, 'group properties save button is enabled');
         $driver->find_element_by_id('editor-carry-over-bugrefs')->click();
-        $driver->find_element('p.buttons button.btn-primary')->click();
+        $driver->find_element('#properties p.buttons button.btn-primary')->click();
         # ensure there is no race condition, even though the page is reloaded
         wait_for_ajax;
 
         $driver->refresh();
         $driver->title_is('openQA: Jobs for Cool Group has been edited!', 'new name on title');
-        $driver->find_element('.corner-buttons button')->click();
+        $driver->find_element_by_id('toggle-group-properties')->click();
         is($driver->find_element_by_id('editor-name')->get_value(), 'Cool Group has been edited!', 'name edited');
         is($driver->find_element_by_id('editor-size-limit')->get_value(), '1000', 'size edited');
         is($driver->find_element_by_id('editor-keep-important-results-in-days')->get_value(),
@@ -460,7 +460,7 @@ sub is_element_text {
     is_deeply(\@texts, $expected, $message) or diag explain \@texts;
 }
 
-subtest 'edit mediums' => sub() {
+subtest 'edit media' => sub() {
     $driver->title_is('openQA: Jobs for Cool Group has been edited!', 'on jobs for Cool Test has been edited!');
 
     wait_for_ajax;

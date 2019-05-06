@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2019 SUSE Linux Products GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 
 package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller';
+use Try::Tiny;
 use JSON::Validator;
 
 =pod
@@ -127,7 +128,7 @@ Serializes the given job group with relevant test suites by architecture and pro
 groups defined in the system if no group id is specified.
 Common defaults for prio and machine are represented in the defaults key.
 
-Returns a YAML template representing the job groups(s).
+Returns a YAML template representing the job group(s).
 
 =back
 
@@ -136,10 +137,16 @@ Returns a YAML template representing the job groups(s).
 sub schedules {
     my $self = shift;
 
+    my $yaml = $self->get_job_groups($self->param('id'));
+    $self->render(yaml => $yaml);
+}
+
+sub get_job_groups {
+    my ($self, $id) = @_;
+
     my %yaml;
-    my $groups = $self->schema->resultset("JobGroups")->search(
-        $self->param('id') ? {id => $self->param('id')} : undef,
-        {select => [qw(id name parent_id default_priority)]});
+    my $groups = $self->schema->resultset("JobGroups")
+      ->search($id ? {id => $id} : undef, {select => [qw(id name parent_id default_priority)]});
     while (my $group = $groups->next) {
         my %group;
         my $templates
@@ -200,7 +207,161 @@ sub schedules {
         $yaml{$group->name} = \%group;
     }
 
-    $self->render(yaml => \%yaml);
+    return \%yaml;
+}
+
+=over 4
+
+=item update()
+
+Updates a job group according to the given YAML template. Test suites are added or modified
+as needed to reflect the difference to what's specified in the template.
+The given YAML will be validated and results in an error if it doesn't conform to the schema.
+
+Returns a 400 code on error, or a 303 code and the job template id within a JSON block on success.
+
+=back
+
+=cut
+
+sub update {
+    my $self = shift;
+
+    my $yaml   = {};
+    my $errors = [];
+    try {
+        # No objects (aka SafeYAML)
+        $YAML::XS::LoadBlessed = 0;
+        $yaml                  = YAML::XS::Load($self->param('template'));
+        $errors                = $self->app->validate_yaml($yaml, $self->app->log->level eq 'debug');
+    }
+    catch {
+        # Push the exception to the list of errors without the trailing new line
+        push @$errors, substr($_, 0, -1);
+    };
+
+    if (@$errors) {
+        $self->app->log->error(@$errors);
+        $self->respond_to(json => {json => {error => \@$errors}, status => 400},);
+        return;
+    }
+
+    my $job_groups    = $self->schema->resultset("JobGroups");
+    my $job_templates = $self->schema->resultset("JobTemplates");
+    my $machines      = $self->schema->resultset("Machines");
+    my $test_suites   = $self->schema->resultset("TestSuites");
+    my $products      = $self->schema->resultset("Products");
+    foreach my $group (keys %{$yaml}) {
+        my $json = {};
+
+        try {
+            $self->schema->txn_do(
+                sub {
+                    my $group_id = $job_groups->find_or_create({name => $group}, {select => [qw(id name)]})->id;
+                    $json->{id} = $group_id;
+
+                    # Add/update job templates from YAML data
+                    # (create test suites if not already present, fail if referenced machine and product is missing)
+                    my @job_template_ids;
+                    my $yaml_group    = $yaml->{$group};
+                    my $yaml_archs    = $yaml_group->{architectures};
+                    my $yaml_products = $yaml_group->{products};
+                    my $yaml_defaults = $yaml_group->{defaults};
+                    foreach my $arch (keys %$yaml_archs) {
+                        my $yaml_products_for_arch = $yaml_archs->{$arch};
+                        my $yaml_defaults_for_arch = $yaml_defaults->{$arch};
+                        foreach my $product_name (keys %$yaml_products_for_arch) {
+                            foreach my $spec (@{$yaml_products_for_arch->{$product_name}}) {
+                                # Get testsuite, machine and prio from YAML data
+                                my $testsuite_name;
+                                my $prio;
+                                my $machine_name;
+                                if (ref $spec eq 'HASH') {
+                                    foreach my $name (keys %$spec) {
+                                        my $attr = $spec->{$name};
+                                        $testsuite_name = $name;
+                                        if ($attr->{priority}) {
+                                            $prio = $attr->{priority};
+                                        }
+                                        if ($attr->{machine}) {
+                                            $machine_name = $attr->{machine};
+                                        }
+                                    }
+                                }
+                                else {
+                                    $testsuite_name = $spec;
+                                }
+
+                                # Assign defaults
+                                $prio         //= $yaml_defaults_for_arch->{priority};
+                                $machine_name //= $yaml_defaults_for_arch->{machine};
+                                die "Machine is empty and there is no default for architecture $arch\n"
+                                  unless $machine_name;
+
+                                # Find machine, product and testsuite
+                                my $machine = $machines->find({name => $machine_name});
+                                die "Machine '$machine_name' is invalid\n" unless $machine;
+                                my $product_spec = $yaml_products->{$product_name};
+                                my $product      = $products->find(
+                                    {
+                                        arch    => $arch,
+                                        distri  => $product_spec->{distribution},
+                                        flavor  => $product_spec->{flavor},
+                                        version => $product_spec->{version},
+                                    });
+                                die "Product '$product_name' is invalid\n" unless $product;
+                                my $test_suite = $test_suites->find({name => $testsuite_name});
+                                die "Testsuite '$testsuite_name' is invalid\n" unless $test_suite;
+
+                                # Create/update job template
+                                my $job_template = $job_templates->find_or_create(
+                                    {
+                                        group_id      => $group_id,
+                                        product_id    => $product->id,
+                                        machine_id    => $machine->id,
+                                        test_suite_id => $test_suite->id,
+                                    });
+                                $job_template->update({prio => $prio}) if (defined $prio);
+                                push(@job_template_ids, $job_template->id);
+
+                                # Stop iterating if there were errors with this test suite
+                                last if (@$errors);
+                            }
+                        }
+                    }
+
+                    # Drop entries we haven't touched in add/update loop
+                    $job_templates->search(
+                        {
+                            id       => {'not in' => \@job_template_ids},
+                            group_id => $group_id,
+                        })->delete();
+
+                    # Preview mode: Get the expected YAML and rollback the result
+                    if ($self->param('preview')) {
+                        $json->{template} = YAML::XS::Dump($self->get_job_groups($json->{id}));
+                        $self->schema->txn_rollback;
+                    }
+                });
+        }
+        catch {
+            # Push the exception to the list of errors without the trailing new line
+            push @$errors, substr($_, 0, -1);
+        };
+
+        if (@$errors) {
+            $json->{error} = \@$errors;
+            $self->app->log->error(@$errors);
+            $self->respond_to(json => {json => $json, status => 400},);
+            return;
+        }
+
+        $self->emit_event('openqa_jobtemplate_create', $json);
+        $self->respond_to(json => {json => $json});
+
+        # Process only one group
+        last;
+    }
 }
 
 =over 4
