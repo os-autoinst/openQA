@@ -1,9 +1,9 @@
-FROM opensuse:42.2
+FROM opensuse/leap:15.1
 LABEL maintainer Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz <wnereiz@eienteiland.org>, Sergio Lindo Mansilla <slindomansilla@suse.com>
-LABEL version="0.2"
+LABEL version="0.3"
 
-RUN zypper ar -f obs://devel:openQA/openSUSE_Leap_42.2 openQA && \
-    zypper ar -f obs://devel:openQA:Leap:42.2/openSUSE_Leap_42.2 openQA-perl-modules && \
+RUN zypper ar -f obs://devel:openQA/openSUSE_Leap_15.1 openQA && \
+    zypper ar -f obs://devel:openQA:Leap:15.1/openSUSE_Leap_15.1 openQA-perl-modules && \
     zypper --gpg-auto-import-keys ref && \
     zypper --non-interactive in ca-certificates-mozilla curl && \
     zypper --non-interactive in --force-resolution openQA apache2 hostname which w3m
