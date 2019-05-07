@@ -448,6 +448,27 @@ subtest 'job property editor' => sub() {
         is($driver->find_element_by_id('editor-carry-over-bugrefs')->is_selected(), 0, 'bug carry over disabled');
         is($driver->find_element_by_id('editor-description')->get_value(), 'Test group', 'description added');
     };
+
+    subtest 'edit the yaml' => sub() {
+        $driver->refresh();
+        my $form = $driver->find_element_by_id('editor-form');
+        ok($form->is_hidden(), 'editor form is hidden');
+        $driver->find_element_by_id('toggle-yaml-editor')->click();
+        ok($form->is_displayed(),                             'editor form is shown');
+        ok($form->child('.progress-indication')->is_hidden(), 'spinner is hidden');
+        my $yaml = $driver->execute_script('return editor.doc.getValue();');
+        ok($yaml =~ m/Cool Group/, 'YAML was fetched');
+        $driver->find_element_by_id('update-template')->click();
+        my $result = $form->child('.result');
+        wait_for_ajax;
+        ok($result->get_text() =~ m/Preview of the YAML/, 'preview shown') or diag explain $result->get_text();
+
+        # Make the YAML invalid
+        $driver->execute_script('editor.doc.setValue("invalid: true");');
+        $driver->find_element_by_id('update-template')->click();
+        wait_for_ajax;
+        ok($result->get_text() =~ m/There was a problem applying the changes/, 'error shown');
+    };
 };
 
 sub is_element_text {
