@@ -110,19 +110,6 @@ function getAdminTableRowData(trElement, dataToSubmit, internalRowData) {
             if (internalRowData) {
                 internalRowData[name] = value;
             }
-        } else if (th.hasClass("col_settings")) {
-            var value = $(this).find("input").val();
-            if (value) {
-                if (dataToSubmit) {
-                    dataToSubmit["settings[" + name + "]"] = value;
-                }
-                if (internalRowData) {
-                    if (!internalRowData.settings) {
-                        internalRowData.settings = {};
-                    }
-                    internalRowData.settings[name] = value;
-                }
-            }
         } else if (th.hasClass("col_settings_list")) {
             var settingsToSubmit = {};
             var internalRowSettings = [];
@@ -262,16 +249,6 @@ function deleteTableRow(tdElement, id) {
 }
 
 function renderAdminTableValue(data, type, row, meta) {
-    if (type !== 'display') {
-        return data ? data : -1;
-    }
-    if (isEditingAdminTableRow(meta)) {
-        return '<input type="text" value="' + htmlEscape(data) + '"/>';
-    }
-    return htmlEscape(data);
-}
-
-function renderAdminTableSettings(data, type, row, meta) {
     if (type !== 'display') {
         return data ? data : -1;
     }
