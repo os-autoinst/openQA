@@ -250,7 +250,7 @@ function deleteTableRow(tdElement, id) {
 
 function renderAdminTableValue(data, type, row, meta) {
     if (type !== 'display') {
-        return data ? data : -1;
+        return data ? data : '';
     }
     if (isEditingAdminTableRow(meta)) {
         return '<input type="text" value="' + htmlEscape(data) + '"/>';
@@ -260,7 +260,7 @@ function renderAdminTableValue(data, type, row, meta) {
 
 function renderAdminTableSettingsList(data, type, row, meta) {
     if (type !== 'display') {
-        return data ? data : -1;
+        return data ? data : '';
     }
     var edit = isEditingAdminTableRow(meta);
     var html = '';
@@ -286,7 +286,7 @@ function renderAdminTableSettingsList(data, type, row, meta) {
 
 function renderAdminTableDescription(data, type, row, meta) {
     if (type !== 'display') {
-        return data ? data : -1;
+        return data ? data : '';
     }
     if (isEditingAdminTableRow(meta)) {
         return '<textarea class="description">' + htmlEscape(data) + '</textarea>';
@@ -296,7 +296,7 @@ function renderAdminTableDescription(data, type, row, meta) {
 
 function renderAdminTableActions(data, type, row, meta) {
     if (type !== 'display') {
-        return data ? data : -1;
+        return data ? data : '';
     }
     if (isEditingAdminTableRow(meta)) {
         return renderEditableAdminTableActions(data, type, row, meta);
@@ -309,7 +309,7 @@ function renderAdminTableActions(data, type, row, meta) {
 
 function renderEditableAdminTableActions(data, type, row, meta) {
     if (type !== 'display') {
-        return data ? data : -1;
+        return data ? data : '';
     }
     if (!window.isAdmin) {
         return '';
@@ -333,6 +333,7 @@ function setupAdminTable(isAdmin, enableRegexForFilteringFirstColumn) {
     var columnDefs = [];
     var thElements = $('.admintable thead th').each(function() {
         var th = $(this);
+
         // add column
         var columnName;
         if (th.hasClass('col_action')) {
@@ -341,38 +342,36 @@ function setupAdminTable(isAdmin, enableRegexForFilteringFirstColumn) {
             columnName = th.text().trim().toLowerCase();
         }
         columns.push({data: columnName});
-        // add renderer and template for empty row
-        var renderer;
+
+        // add column definition to customize rendering and sorting and add template for empty row
+        var columnDef = {targets: columns.length - 1};
         if (th.hasClass('col_value')) {
-            renderer = renderAdminTableValue;
+            columnDef.render = renderAdminTableValue;
             emptyRow[columnName] = "";
         } else if (th.hasClass('col_settings')) {
-            renderer = renderAdminTableSettings;
+            columnDef.render = renderAdminTableSettings;
             emptyRow.settings = {};
         } else if (th.hasClass('col_settings_list')) {
-            renderer = renderAdminTableSettingsList;
+            columnDef.render = renderAdminTableSettingsList;
+            columnDef.orderable = false;
             emptyRow.settings = [];
         } else if (th.hasClass('col_description')) {
-            renderer = renderAdminTableDescription;
+            columnDef.render = renderAdminTableDescription;
             emptyRow.description = "";
         } else if (th.hasClass('col_action')) {
-            renderer = renderAdminTableActions;
+            columnDef.render = renderAdminTableActions;
+            columnDef.orderable = false;
         } else {
             emptyRow[columnName] = "";
         }
-        if (renderer) {
-            columnDefs.push({
-                targets: columns.length - 1,
-                render: renderer,
-            });
-        }
+        columnDefs.push(columnDef);
     });
 
     // setup admin table
     var url = $("#admintable_api_url").val();
     var table = $('.admintable');
     var dataTable = table.DataTable({
-        order: [], // no initial resorting
+        order: [[0, 'asc']],
         ajax: {
             url: url,
             dataSrc: function(json) {
@@ -428,4 +427,9 @@ function setupAdminTable(isAdmin, enableRegexForFilteringFirstColumn) {
             dataTable.columns(0).search(searchBox.val(), true, false).draw();
         });
     }
+
+    // prevent sorting when help popover on table heading is clicked
+    table.find('th .help_popover').on('click', function(event) {
+        event.stopPropagation();
+    });
 }
