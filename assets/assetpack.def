@@ -114,6 +114,7 @@
 ! codemirror.js
 < https://raw.githubusercontent.com/codemirror/CodeMirror/8097c7e75ce7ef0512debe9967d7568626106e53/lib/codemirror.js
 < https://raw.githubusercontent.com/codemirror/CodeMirror/8097c7e75ce7ef0512debe9967d7568626106e53/mode/perl/perl.js
+< https://raw.githubusercontent.com/codemirror/CodeMirror/8097c7e75ce7ef0512debe9967d7568626106e53/mode/yaml/yaml.js
 
 ! step_edit.js
 < javascripts/needleeditor.js

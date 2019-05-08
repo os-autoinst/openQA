@@ -228,6 +228,8 @@ sub javascript_console_has_no_warnings_or_errors {
             # FIXME: loading thumbs during live run causes 404. ignore for now
             # (',' is a quotation mark here and '/' part of expression to match)
             next if ($msg =~ qr,/thumb/, || $msg =~ qr,/.thumbs/,);
+            # ignore error responses in 13-admin.t testing YAML errors
+            next if ($msg =~ qr/api\/v1\/experimental\/job_templates_scheduling\/1003 - Failed to load resource/);
         }
         elsif ($source eq 'javascript') {
             # FIXME: ignore WebSocket error for now (connection errors are tracked via devel console anyways)

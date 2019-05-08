@@ -1,6 +1,7 @@
 var job_templates_url;
 var job_group_id;
 var user_is_admin;
+var editor;
 
 function setupJobTemplates(url, id) {
     job_templates_url = url;
@@ -372,15 +373,28 @@ function toggleTemplateEditor() {
     form.find('.buttons').hide();
     form.find('.progress-indication').show();
     $('#toggle-yaml-editor').toggleClass('btn-secondary');
-    $('#editor-template').prop('readonly', true).height($('#editor-yaml-guide').height());
+    if (editor == undefined) {
+        editor = CodeMirror.fromTextArea(document.getElementById('editor-template'), {
+            mode: 'yaml',
+            lineNumbers: true,
+            lineWrapping: true,
+            readOnly: 'nocursor',
+        });
+    }
+    editor.setSize(null, $('#editor-yaml-guide').height());
     $.ajax(form.data('put-url')).done(prepareTemplateEditor);
 }
 
 function prepareTemplateEditor(data) {
-    $('#editor-template').text(data).prop('readonly', false);
+    editor.doc.setValue(data);
     var form = $('#editor-form');
-    form.find('.buttons').show ();
     form.find('.progress-indication').hide();
+    if (!user_is_admin) {
+        return;
+    }
+
+    editor.setOption('readOnly', false);
+    form.find('.buttons').show ();
 }
 
 function submitTemplateEditor() {
@@ -395,7 +409,7 @@ function submitTemplateEditor() {
         dataType: 'json',
         data: {
             preview: 1,
-            template: $('#editor-template').val()
+            template: editor.doc.getValue(),
         }
     }).done(function(data) {
         if (data.hasOwnProperty('id') && data.id != job_group_id) {
@@ -404,7 +418,13 @@ function submitTemplateEditor() {
         }
         result.text('Preview of the YAML:');
         if (data.hasOwnProperty('template')) {
-            $('<code/>').text(data.template).appendTo($('<p/>').appendTo(result));
+            var preview = CodeMirror(result[0], {
+                mode: 'yaml',
+                lineNumbers: true,
+                lineWrapping: true,
+                readOnly: true,
+                value: data.template,
+            });
         }
         else {
             $('<pre/>').text(JSON.stringify(data, undefined, 2)).appendTo(result);
