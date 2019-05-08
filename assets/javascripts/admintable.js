@@ -326,7 +326,7 @@ function renderEditableAdminTableActions(data, type, row, meta) {
     }
 }
 
-function setupAdminTable(isAdmin, enableRegexForFilteringFirstColumn) {
+function setupAdminTable(isAdmin, enableRegexForFiltering) {
     // read columns from empty HTML table rendered by the server
     var emptyRow = {};
     var columns = [];
@@ -386,6 +386,9 @@ function setupAdminTable(isAdmin, enableRegexForFilteringFirstColumn) {
         },
         columns: columns,
         columnDefs: columnDefs,
+        search: {
+            regex: enableRegexForFiltering,
+        },
     });
     dataTable.rowData = [];
     dataTable.emptyRow = emptyRow;
@@ -418,15 +421,6 @@ function setupAdminTable(isAdmin, enableRegexForFilteringFirstColumn) {
     // set/update page-global state (there can only be one admin table at a page anyways)
     window.isAdmin = isAdmin;
     window.adminTable = dataTable;
-
-    // customize search
-    if (enableRegexForFilteringFirstColumn) {
-        var searchBox = $('.dataTables_filter input[type=search]');
-        var searchEvents = 'cut input keypress keyup paste search';
-        searchBox.off(searchEvents).on(searchEvents, function() {
-            dataTable.columns(0).search(searchBox.val(), true, false).draw();
-        });
-    }
 
     // prevent sorting when help popover on table heading is clicked
     table.find('th .help_popover').on('click', function(event) {

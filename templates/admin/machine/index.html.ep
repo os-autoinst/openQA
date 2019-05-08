@@ -14,10 +14,7 @@
         <span id="audit_log_search_popover">
             <%= help_popover('Search' => '
                 <p>Allows to filter the machines.</p>
-                <p>
-                    The filter will only consider the <em>Name</em> column.
-                    You can use regular expressions for searching.
-                </p>
+                <p>You can use regular expressions for searching.</p>
                 <p>
                     <strong>Example</strong><br>
                     <code>^64bit$</code>
