@@ -11,7 +11,7 @@
 
         %= include 'layouts/info'
 
-        <span id="audit_log_search_popover">
+        <span class="search-popover">
             <%= help_popover('Search' => '
                 <p>Allows to filter the testsuites.</p>
                 <p>You can use regular expressions for searching.</p>
