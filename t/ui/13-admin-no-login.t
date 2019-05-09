@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,12 +44,14 @@ $driver->title_is("openQA");
 is $driver->get('/admin/test_suites'), 1, 'opened test suites';
 $driver->title_is('openQA: Test suites');
 wait_for_ajax;
-like $driver->find_element('#test-suites tbody tr.odd td')->get_text(),  qr/textmode/, 'first entry';
-like $driver->find_element('#test-suites tbody tr.even td')->get_text(), qr/kde/,      'second entry';
-like $driver->find_element('#test-suites tbody tr.even td:nth-child(3)')->get_text(),
-  qr/Simple kde test, before advanced_kde/,
-  'second entry has a description';
-like $driver->find_element('#test-suites tbody tr:last-child td')->get_text(), qr/advanced_kde/, 'last entry';
+like($driver->find_element('#test-suites tbody tr:nth-child(2) td')->get_text(), qr/advanced_kde/, '2nd entry');
+like($driver->find_element('#test-suites tbody tr:nth-child(5) td')->get_text(), qr/kde/,          '5th entry');
+like(
+    $driver->find_element('#test-suites tbody tr:nth-child(5) td:nth-child(3)')->get_text(),
+    qr/Simple kde test, before advanced_kde/,
+    '5th entry has a description'
+);
+like($driver->find_element('#test-suites tbody tr:last-child td')->get_text(), qr/textmode/, 'last entry');
 
 kill_driver();
 done_testing();
