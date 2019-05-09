@@ -1,336 +1,455 @@
-function htmlEscape(str) {
-    return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
 function updateTextArea(textArea) {
     textArea.style.height = 'auto';
     textArea.style.height = Math.min(textArea.scrollHeight + 5, 300) + 'px';
 }
 
-function table_row (data, table, edit, is_admin)
-{
-    var html = "<tr>";
+function addAdminTableRow() {
+    // add new row
+    var adminTable = window.adminTable;
+    var newRow = adminTable.row.add(adminTable.emptyRow);
+    var newRowIndex = newRow.index();
+    adminTable.rowData[newRowIndex] = jQuery.extend({isEditing: true}, adminTable.emptyRow);
+    newRow.invalidate().draw();
 
-    table.find('th').each (function() {
-        var th = $(this);
-        var name = th.text().trim().toLowerCase();
-
-        if (th.hasClass("col_value")) {
-            var value = '';
-            if (data[name]) value = htmlEscape(data[name]);
-            if (edit) {
-                html +=
-                '<td class="editable">' +
-                     '<input type="text" value="' + value + '"/>' +
-                 '</td>';
-            }
-            else {
-                html += '<td>' + value + '</td>';
-            }
-        }
-        else if (th.hasClass("col_settings")) {
-            var value = '';
-            if (data['settings']) {
-                for (var j = 0; j < data['settings'].length; j++) {
-                    if (name === data['settings'][j]['key']) {
-                        value = htmlEscape(data['settings'][j]['value']);
-                        break;
-                    }
-                }
-            }
-            if (edit) {
-                html +=
-                '<td class="editable">' +
-                     '<input type="text" value="' + value + '"/>' +
-                 '</td>';
-            }
-            else {
-                html += '<td>' + value + '</td>';
-            }
-        }
-        else if (th.hasClass("col_settings_list")) {
-            if (edit) {
-                html += '<td class="editable">';
-            }
-            else {
-                html += '<td>';
-            }
-            if (edit) {
-                html += '<textarea class="key-value-pairs" oninput="updateTextArea(this);">';
-            }
-            if (data['settings']) {
-                for (var j = 0; j < data['settings'].length; j++) {
-                    var k = htmlEscape(data['settings'][j]['key']);
-
-                    var col = false;
-                    table.find('th.col_settings').each (function() {
-                        if ($(this).text().trim() == k) col = true;
-                    });
-
-                    if (col) continue; /* skip vars in extra columns */
-
-                    var v = htmlEscape(data['settings'][j]['value']);
-                    if (edit) {
-                        html += k + '=' + v + '\n';
-                    }
-                    else {
-                        html += '<span class="key-value-pair"><span class="key">' + k + '</span>=<span class="value">' + v + '</span></span><br/>';
-                    }
-                }
-            }
-            if (edit) {
-                html += '</textarea>';
-            }
-            html += '</td>';
-        } else if (th.hasClass("col_description")) {
-            var description = '';
-            if (data[name]) description = htmlEscape(data[name]);
-            if (edit) {
-                html +=
-                '<td class="editable">' +
-                     '<textarea class="description">' + description + '</textarea>' +
-                 '</td>';
-            }
-            else {
-                html += '<td>' + description + '</td>';
-            }
-        } else if (th.hasClass("col_action")) {
-            html += '<td>';
-            if (edit) {
-                if (data['id']) {
-                    // edit existing
-                    html +=
-                         '<button type="submit" class="btn" alt="Update" title="Update" onclick="submit_table_row_button( this, ' + data['id'] + ');"><i class="far fa-save"></i></button>' +
-                         '<button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="refresh_table_row_button( this, ' + data['id'] + ' , false);"><i class="fa fa-undo"></i></button>' +
-                         '<button type="submit" class="btn" alt="Delete" title="Delete" onclick="delete_table_row_button( this, ' + data['id'] + ');"><i class="fa fa-trash-alt"></i></button>';
-                }
-                else {
-                    // add new
-                    html +=
-                         '<button type="submit" class="btn" alt="Add" title="Add" onclick="submit_table_row_button( this );"><i class="far fa-save"></i></button>' +
-                         '<button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="delete_table_row_button( this );"><i class="fa fa-undo"></i></button>';
-                }
-            }
-            else if (is_admin) {
-                html +=
-                     '<button type="submit" class="btn" alt="Edit" title="Edit" onclick="refresh_table_row_button( this, ' + data['id'] + ' , true);"><i class="far fa-edit"></i></button>';
-            }
-            html += '</td>';
-        }
-    });
-    html += "</tr>";
-
-    return html;
+    // set pagination to the page containing the new row
+    var pageInfo = adminTable.page.info();
+    var rowPosition = adminTable.rows()[0].indexOf(newRowIndex);
+    if (rowPosition < pageInfo.start || rowPosition >= pageInfo.end) {
+        adminTable.page(Math.floor(rowPosition / adminTable.page.len())).draw(false);
+    }
 }
 
-function admintable_api_error(request, status, error) {
-   if (request['responseJSON']['error']) {
-       error += ': ' + request['responseJSON']['error'];
-   }
-   alert(error);
+function isEditingAdminTableRow(meta) {
+    var rowData = window.adminTable.rowData;
+    var rowIndex = meta.row;
+    return rowIndex < rowData.length && rowData[rowIndex].isEditing;
 }
 
-function refresh_table_row (tr, id, edit)
-{
-    var url = $("#admintable_api_url").val();
+function setEditingAdminTableRow(tdElement, editing, submitted) {
+    // get the data table row for the tdElement
+    var adminTable = window.adminTable;
+    var rowData = adminTable.rowData;
+    var row = adminTable.row(tdElement);
+    if (!row) {
+        addFlash('danger', 'Internal error: invalid table row/cell specified');
+        return;
+    }
 
+    // get the buffered row data updated from editor elements before submitting and set the 'isEditing' flag there
+    var rowIndex = row.index();
+    if (rowIndex < rowData.length) {
+        var data = rowData[rowIndex];
+        data.isEditing = editing;
+
+        // pass the buffered row data from editor elements to the data table
+        // note: This applies submitted changed or restores initial values when editing is cancelled by the user.
+        if (submitted) {
+            row.data(data);
+        }
+    }
+
+    // invalidate the table row not resetting the pagination (false parameter to draw())
+    row.invalidate().draw(false);
+}
+
+function refreshAdminTableRow(tdElement) {
+    window.adminTable.row(tdElement).invalidate().draw();
+}
+
+function handleAdminTableApiError(request, status, error) {
+    if (request.responseJSON.error) {
+        error += ': ' + request.responseJSON.error;
+    }
+    addFlash('danger', error);
+}
+
+function handleAdminTableSubmit(tdElement, response, id) {
+    // leave editing mode
+    setEditingAdminTableRow(tdElement, false, true);
+
+    // query affected row again so changes applied by the server (removing invalid chars from settings keys) are visible
     $.ajax({
-        url: url + "/" + id,
+        url: $("#admintable_api_url").val() + "/" + id,
         type: "GET",
         dataType: 'json',
         success: function(resp) {
-            var db_table = Object.keys(resp)[0];
-            var json_row = resp[db_table][0];
-            var table = $(tr).closest('table');
-            $(tr).replaceWith(table_row(json_row, table, edit, 1));
-            table.find('textarea').each(function() {
-                updateTextArea(this);
-            })
+            var rowData = resp[Object.keys(resp)[0]];
+            if (rowData) {
+                rowData = rowData[0];
+            }
+            if (!rowData) {
+                addFlash('danger', 'Internal error: server replied invalid row data.');
+                return;
+            }
+
+            var adminTable = window.adminTable;
+            var row = adminTable.row(tdElement);
+            var rowIndex = row.index();
+            if (rowIndex >= adminTable.rowData.length) {
+                return;
+            }
+            row.data(adminTable.rowData[rowIndex] = rowData).draw(false);
         },
-        error: admintable_api_error
+        error: handleAdminTableApiError,
     });
 }
 
-function submit_table_row(tr, id)
-{
-    try {
-        var data = {};
-        $(tr).find('td').each (function() {
-            var th = $(this).closest('table').find('th').eq( this.cellIndex );
-
-            var name = th.text().trim().toLowerCase();
-
-            if (th.hasClass("col_value")) {
-                var value = $(this).find("input").val();
-                // distri name must be lowercase
-                if (name == 'distri') {
-                    value = value.toLowerCase();
-                }
-                data[name] = value;
+function getAdminTableRowData(trElement, dataToSubmit, internalRowData) {
+    var tableHeadings = trElement.closest('table').find('th');
+    trElement.find('td').each(function() {
+        var th = tableHeadings.eq(this.cellIndex);
+        var name = th.text().trim().toLowerCase();
+        var value;
+        if (th.hasClass("col_value")) {
+            value = $(this).find("input").val();
+            if (name === 'distri') {
+                value = value.toLowerCase();
             }
-            else if (th.hasClass("col_settings")) {
-                var value = $(this).find("input").val();
-                if (value) {
-                    data["settings[" + name + "]"] = value;
-                }
+            if (dataToSubmit) {
+                dataToSubmit[name] = value;
             }
-            else if (th.hasClass("col_settings_list")) {
-                data.settings = {};
-                $(this).find('.key-value-pairs').each (function() {
-                    $.each($(this).val().split('\n'), function(index) {
-                        // ignore empty lines
-                        if (this.length === 0) {
-                            return;
-                        }
-                        // determine key and value
-                        var equationSignIndex = this.indexOf('=');
-                        if (equationSignIndex < 1) {
+            if (internalRowData) {
+                internalRowData[name] = value;
+            }
+        } else if (th.hasClass("col_settings_list")) {
+            var settingsToSubmit = {};
+            var internalRowSettings = [];
+            $(this).find('.key-value-pairs').each(function() {
+                $.each($(this).val().split('\n'), function(index) {
+                    // ignore empty lines
+                    if (this.length === 0) {
+                        return;
+                    }
+                    // determine key and value
+                    var equationSignIndex = this.indexOf('=');
+                    if (equationSignIndex < 1) {
+                        if (dataToSubmit) {
+                            // fail if settings should be submitted
                             throw {
                                 type: 'invalid line',
                                 lineNo: index + 1,
                                 text: this
                             };
+                        } else {
+                            // ignore error if only saving the row internally
+                            equationSignIndex = this.length;
                         }
-                        var key = this.substr(0, equationSignIndex);
-                        var value = this.substr(equationSignIndex + 1);
-                        data.settings[key] = value;
-                    });
+                    }
+                    var key = this.substr(0, equationSignIndex);
+                    var val = this.substr(equationSignIndex + 1);
+                    settingsToSubmit[key] = val;
+                    internalRowSettings.push({key: key, value: val});
                 });
-            }
-            else if (th.hasClass("col_description")) {
-                var value = $(this).find('.description').val();
-                data[name] = value;
-            }
-
-        });
-
-        var url = $("#admintable_api_url").val();
-        if (id) {
-            // update
-            $.ajax({
-                url: url + "/" + id,
-                type: "POST",
-                dataType: 'json',
-                data: data,
-                headers: {
-                    'X-HTTP-Method-Override': 'PUT'
-                },
-                success: function(resp) {
-                    refresh_table_row(tr, id, false);
-                },
-                error: admintable_api_error
             });
+            if (dataToSubmit) {
+                dataToSubmit.settings = settingsToSubmit;
+            }
+            if (internalRowData) {
+                internalRowData.settings = internalRowSettings;
+            }
+        } else if (th.hasClass("col_description")) {
+            value = $(this).find('.description').val();
+            if (value === undefined) {
+                value = '';
+            }
+            if (dataToSubmit) {
+                dataToSubmit[name] = value;
+            }
+            if (internalRowData) {
+                internalRowData[name] = value;
+            }
         }
-        else {
-            // create new
-            $.ajax({
-                url: url,
-                type: "POST",
-                dataType: 'json',
-                data: data,
-                success: function(resp) {
-                    id = resp['id'];
-                    refresh_table_row(tr, id, false);
-                },
-                error: admintable_api_error
-            });
-        }
+    });
+}
+
+function submitAdminTableRow(tdElement, id) {
+    var adminTable = window.adminTable;
+    var rowIndex = adminTable.row(tdElement).index();
+    if (rowIndex === undefined) {
+        addFlash('danger', 'Internal error: invalid table cell specified');
+        return;
     }
-    catch(e) {
+    var rowData = adminTable.rowData[rowIndex];
+    if (!rowData) {
+        addFlash('danger', 'Internal error: row data is missing');
+        return;
+    }
+
+    var dataToSubmit = {};
+    try {
+        getAdminTableRowData($(tdElement).parent('tr'), dataToSubmit, rowData);
+    } catch(e) {
         if(e.type !== 'invalid line') {
             throw e;
         }
-        window.alert('Line ' + e.lineNo + ' of settings is invalid: ' + e.text);
+        addFlash('danger', 'Line ' + e.lineNo + ' of settings is invalid: ' + e.text);
+        return;
     }
-}
 
-
-function delete_table_row (tr, id)
-{
+    var url = $("#admintable_api_url").val();
     if (id) {
-        if (!confirm("Really delete?")) return;
-
-        var url = $("#admintable_api_url").val();
-
+        // update
         $.ajax({
             url: url + "/" + id,
-            type: "DELETE",
+            type: "POST",
             dataType: 'json',
-            success: function(resp) {
-                $(tr).remove();
+            data: dataToSubmit,
+            headers: {
+                'X-HTTP-Method-Override': 'PUT'
             },
-            error: admintable_api_error
+            success: function(response) {
+                handleAdminTableSubmit(tdElement, response, id);
+            },
+            error: handleAdminTableApiError
         });
-    }
-    else {
-        // just remove the table row
-        $(tr).remove();
-    }
-}
-
-
-function refresh_table_row_button (button, id, edit)
-{
-    var tr = $(button).closest('tr')[0];
-    refresh_table_row(tr, id, edit);
-}
-
-function submit_table_row_button (button, id)
-{
-    var tr = $(button).closest('tr')[0];
-    submit_table_row(tr, id);
-}
-
-function delete_table_row_button (button, id)
-{
-    var tr = $(button).closest('tr')[0];
-    delete_table_row(tr, id);
-}
-
-function add_table_row_button ()
-{
-    var table = $('.admintable');
-    var html = table_row({}, table, true);
-    table.find('tr:last').after(html);
-}
-
-function populate_admin_table (is_admin, filter_regex_first_column)
-{
-    var url = $("#admintable_api_url").val();
-    if (url) {
+    } else {
+        // create new
         $.ajax({
             url: url,
-            type: "GET",
+            type: "POST",
             dataType: 'json',
-            success: function(resp) {
-                var db_table = Object.keys(resp)[0];
-                var json_table = resp[db_table];
-                var table = $('.admintable');
-                var html = '';
-                for (var i = 0; i < json_table.length; i++) {
-                    html += table_row(json_table[i], table, false, is_admin);
-                }
-                table.find('tbody').html(html);
-                // a really stupid datatable
-                var tbl = table.DataTable( {
-                    "paging" : false,
-                    "lengthChange": false,
-                    "ordering": false
-                } );
-                if (filter_regex_first_column) {
-                    var search_box = $('.dataTables_filter input[type=search]');
-                    var search_events = 'cut input keypress keyup paste search';
-                    search_box.off(search_events).on(search_events, function() {
-                        tbl.columns(0).search(search_box.val(), true, false).draw();
-                    });
-                }
+            data: dataToSubmit,
+            success: function(response) {
+                handleAdminTableSubmit(tdElement, response, response.id);
             },
-            error: admintable_api_error
+            error: handleAdminTableApiError
         });
     }
+}
+
+function removeAdminTableRow(tdElement) {
+    var adminTable =  window.adminTable;
+    var row = adminTable.row(tdElement);
+    var rowIndex = row.index();
+    if (rowIndex !== undefined && rowIndex < adminTable.rowData.length) {
+        adminTable.rowData.splice(rowIndex, 1);
+    }
+    row.remove().draw();
+}
+
+function deleteTableRow(tdElement, id) {
+    if (!confirm("Really delete?")) {
+        return;
+    }
+
+    // delete unsubmitted row
+    if (!id) {
+        removeAdminTableRow(tdElement);
+        return;
+    }
+
+    $.ajax({
+        url: $("#admintable_api_url").val() + "/" + id,
+        type: "DELETE",
+        dataType: 'json',
+        success: function() {
+            removeAdminTableRow(tdElement);
+        },
+        error: handleAdminTableApiError
+    });
+}
+
+function renderAdminTableValue(data, type, row, meta) {
+    if (type !== 'display') {
+        return data ? data : '';
+    }
+    if (isEditingAdminTableRow(meta)) {
+        return '<input type="text" value="' + htmlEscape(data) + '"/>';
+    }
+    return htmlEscape(data);
+}
+
+function renderAdminTableSettingsList(data, type, row, meta) {
+    if (type !== 'display') {
+        return data ? data : '';
+    }
+    var edit = isEditingAdminTableRow(meta);
+    var html = '';
+    if (edit) {
+        html += '<textarea class="key-value-pairs" oninput="updateTextArea(this);">';
+    }
+    for (var j = 0; j < data.length; j++) {
+        var keyValuePair = data[j];
+        var key = htmlEscape(keyValuePair.key);
+        var value = htmlEscape(keyValuePair.value);
+        if (edit) {
+            html += key + '=' + value + '\n';
+        } else {
+            html += '<span class="key-value-pair"><span class="key">' + key +
+                '</span>=<span class="value">' + value + '</span></span><br/>';
+        }
+    }
+    if (edit) {
+        html += '</textarea>';
+    }
+    return html;
+}
+
+function renderAdminTableDescription(data, type, row, meta) {
+    if (type !== 'display') {
+        return data ? data : '';
+    }
+    if (isEditingAdminTableRow(meta)) {
+        return '<textarea class="description">' + htmlEscape(data) + '</textarea>';
+    }
+    return htmlEscape(data);
+}
+
+function renderAdminTableActions(data, type, row, meta) {
+    if (type !== 'display') {
+        return data ? data : '';
+    }
+    if (isEditingAdminTableRow(meta)) {
+        return renderEditableAdminTableActions(data, type, row, meta);
+    }
+    if (!window.isAdmin) {
+        return '';
+    }
+    return '<button type="submit" class="btn" alt="Edit" title="Edit" onclick="setEditingAdminTableRow(this.parentElement, true, false);"><i class="far fa-edit"></i></button>';
+}
+
+function renderEditableAdminTableActions(data, type, row, meta) {
+    if (type !== 'display') {
+        return data ? data : '';
+    }
+    if (!window.isAdmin) {
+        return '';
+    }
+    if (data) {
+        // show submit/cancel/delete buttons while editing existing row
+        return '<button type="submit" class="btn" alt="Update" title="Update" onclick="submitAdminTableRow(this.parentElement, ' + data +
+                ');"><i class="far fa-save"></i></button><button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="setEditingAdminTableRow(this.parentElement, false, true);"><i class="fa fa-undo"></i></button><button type="submit" class="btn" alt="Delete" title="Delete" onclick="deleteTableRow(this.parentElement, ' + data +
+                ');"><i class="fa fa-trash-alt"></i></button>';
+    }
+    else {
+        // show submit/cancel button while adding new row
+        return '<button type="submit" class="btn" alt="Add" title="Add" onclick="submitAdminTableRow(this.parentElement);"><i class="far fa-save"></i></button><button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="deleteTableRow(this.parentElement);"><i class="fa fa-undo"></i></button>';
+    }
+}
+
+function setupAdminTable(isAdmin, enableRegexForFiltering) {
+    // adjust sorting so empty strings come last
+    jQuery.extend(jQuery.fn.dataTableExt.oSort, {
+        'empty-string-last-asc': function(str1, str2) {
+            if(str1 === '') {
+                return 1;
+            }
+            if(str2 === '') {
+                return -1;
+            }
+            return ((str1 < str2) ? -1 : ((str1 > str2) ? 1 : 0));
+        },
+        'empty-string-last-desc': function(str1, str2) {
+            if(str1 === '') {
+                return 1;
+            }
+            if(str2 === '') {
+                return -1;
+            }
+            return ((str1 < str2) ? 1 : ((str1 > str2) ? -1 : 0));
+        }
+    });
+
+    // read columns from empty HTML table rendered by the server
+    var emptyRow = {};
+    var columns = [];
+    var columnDefs = [];
+    var thElements = $('.admintable thead th').each(function() {
+        var th = $(this);
+
+        // add column
+        var columnName;
+        if (th.hasClass('col_action')) {
+            columnName = 'id';
+        } else {
+            columnName = th.text().trim().toLowerCase();
+        }
+        columns.push({data: columnName});
+
+        // add column definition to customize rendering and sorting and add template for empty row
+        var columnDef = {
+            targets: columns.length - 1,
+            type: 'empty-string-last',
+        };
+        if (th.hasClass('col_value')) {
+            columnDef.render = renderAdminTableValue;
+            emptyRow[columnName] = "";
+        } else if (th.hasClass('col_settings')) {
+            columnDef.render = renderAdminTableSettings;
+            emptyRow.settings = {};
+        } else if (th.hasClass('col_settings_list')) {
+            columnDef.render = renderAdminTableSettingsList;
+            columnDef.orderable = false;
+            emptyRow.settings = [];
+        } else if (th.hasClass('col_description')) {
+            columnDef.render = renderAdminTableDescription;
+            emptyRow.description = "";
+        } else if (th.hasClass('col_action')) {
+            columnDef.render = renderAdminTableActions;
+            columnDef.orderable = false;
+        } else {
+            emptyRow[columnName] = "";
+        }
+        columnDefs.push(columnDef);
+    });
+
+    // setup admin table
+    var url = $("#admintable_api_url").val();
+    var table = $('.admintable');
+    var dataTable = table.DataTable({
+        order: [[0, 'asc']],
+        ajax: {
+            url: url,
+            dataSrc: function(json) {
+                // assume the first "key" contains the data
+                var rowData = json[Object.keys(json)[0]];
+                if (!rowData) {
+                    addFlash('danger', 'Internal error: server response misses table data');
+                    return (dataTable.rowData = []);
+                }
+                return (dataTable.rowData = rowData);
+            },
+        },
+        columns: columns,
+        columnDefs: columnDefs,
+        search: {
+            regex: enableRegexForFiltering,
+        },
+    });
+    dataTable.rowData = [];
+    dataTable.emptyRow = emptyRow;
+
+    // save the current editor values before redraw so they survive using filtering/sorting/pagination
+    dataTable.on('preDraw', function() {
+        var rowData = dataTable.rowData;
+        table.find('tr').each(function() {
+            var row = adminTable.row(this);
+            var rowIndex = row.index();
+            if (rowIndex === undefined || rowIndex >= rowData.length) {
+                return;
+            }
+            var data = jQuery.extend({}, rowData[rowIndex]);
+            if (!data.isEditing) {
+                return;
+            }
+            getAdminTableRowData($(this), undefined, data);
+            row.data(data);
+        });
+    });
+
+    // make the height of text areas fit its contents
+    dataTable.on('draw', function() {
+        table.find('textarea').each(function() {
+            updateTextArea(this);
+        });
+    });
+
+    // set/update page-global state (there can only be one admin table at a page anyways)
+    window.isAdmin = isAdmin;
+    window.adminTable = dataTable;
+
+    // prevent sorting when help popover on table heading is clicked
+    table.find('th .help_popover').on('click', function(event) {
+        event.stopPropagation();
+    });
 }

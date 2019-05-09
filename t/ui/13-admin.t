@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2015-2017 SUSE LLC
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -224,7 +224,7 @@ subtest 'add test suite' => sub() {
     is((shift @headers)->get_text(), "Actions",     "4th column");
 
     # now check one row by example
-    $elem    = $driver->find_element('.admintable tbody tr:nth-child(3)');
+    $elem    = $driver->find_element('.admintable tbody tr:nth-child(1)');
     @headers = $driver->find_child_elements($elem, 'td');
 
     # the headers are specific to our fixtures - if they change, we have to adapt
@@ -261,13 +261,14 @@ subtest 'add test suite' => sub() {
     # leave the ajax some time
     wait_for_ajax;
 # now read data back and compare to original, name and value shall be the same, key sanitized by removing all special chars
-    $elem = $driver->find_element('.admintable tbody tr:last-child');
+    $elem = $driver->find_element('.admintable tbody tr:nth-child(7)')
+      ;    # sorting by name so `t"e\st'Suite\'` is supposed to be the 7th element
     is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
     # try to edit and save
     ok($driver->find_child_element($elem, './td/button[@title="Edit"]', 'xpath')->click(), 'editing enabled');
     wait_for_ajax;
 
-    $elem     = $driver->find_element('.admintable tbody tr:last-child');
+    $elem     = $driver->find_element('.admintable tbody tr:nth-child(7)');
     $name     = $driver->find_child_element($elem, './td/input[@type="text"]', 'xpath');
     $settings = $driver->find_child_element($elem, './td/textarea', 'xpath');
     is($name->get_value,    $suiteName,            'suite name edit box match');
@@ -276,7 +277,7 @@ subtest 'add test suite' => sub() {
 
     # reread and compare to original
     wait_for_ajax;
-    $elem = $driver->find_element('.admintable tbody tr:last-child');
+    $elem = $driver->find_element('.admintable tbody tr:nth-child(7)');
     is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
 
     $elem = $driver->find_element('input[type=search]');

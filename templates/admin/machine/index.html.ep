@@ -2,7 +2,7 @@
 % title 'Machines';
 
 % content_for 'ready_function' => begin
-    populate_admin_table(<%= is_admin_js %>, true);
+    setupAdminTable(<%= is_admin_js %>, true);
 % end
 
 <div class="row">
@@ -11,13 +11,10 @@
 
         %= include 'layouts/info'
 
-        <span id="audit_log_search_popover">
+        <span class="search-popover">
             <%= help_popover('Search' => '
                 <p>Allows to filter the machines.</p>
-                <p>
-                    The filter will only consider the <em>Name</em> column.
-                    You can use regular expressions for searching.
-                </p>
+                <p>You can use regular expressions for searching.</p>
                 <p>
                     <strong>Example</strong><br>
                     <code>^64bit$</code>
@@ -40,7 +37,7 @@
         </table>
         % if (is_admin) {
         <div class="text-center">
-            <input value="New machine" onclick="add_table_row_button( );" type="button" class="btn btn-default"/>
+            <input value="New machine" onclick="addAdminTableRow();" type="button" class="btn btn-default"/>
         </div>
         % }
         <input type="hidden" id="admintable_api_url" value="/api/v1/machines"/>

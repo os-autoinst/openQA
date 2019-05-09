@@ -1,4 +1,3 @@
-// audit log
 #auditlog {
     padding: 0;
     margin: 0;
@@ -10,11 +9,11 @@
     overflow-y: scroll;
 }
 
-#audit_log_search_popover {
+.search-popover {
     float: right;
     margin-top: 5px;
     margin-right: 5px;
-    margin-left: -5px;
+    margin-left: -15px;
 
     .popover {
         min-width: 30em;
