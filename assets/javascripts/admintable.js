@@ -327,6 +327,28 @@ function renderEditableAdminTableActions(data, type, row, meta) {
 }
 
 function setupAdminTable(isAdmin, enableRegexForFiltering) {
+    // adjust sorting so empty strings come last
+    jQuery.extend(jQuery.fn.dataTableExt.oSort, {
+        'empty-string-last-asc': function(str1, str2) {
+            if(str1 === '') {
+                return 1;
+            }
+            if(str2 === '') {
+                return -1;
+            }
+            return ((str1 < str2) ? -1 : ((str1 > str2) ? 1 : 0));
+        },
+        'empty-string-last-desc': function(str1, str2) {
+            if(str1 === '') {
+                return 1;
+            }
+            if(str2 === '') {
+                return -1;
+            }
+            return ((str1 < str2) ? 1 : ((str1 > str2) ? -1 : 0));
+        }
+    });
+
     // read columns from empty HTML table rendered by the server
     var emptyRow = {};
     var columns = [];
@@ -344,7 +366,10 @@ function setupAdminTable(isAdmin, enableRegexForFiltering) {
         columns.push({data: columnName});
 
         // add column definition to customize rendering and sorting and add template for empty row
-        var columnDef = {targets: columns.length - 1};
+        var columnDef = {
+            targets: columns.length - 1,
+            type: 'empty-string-last',
+        };
         if (th.hasClass('col_value')) {
             columnDef.render = renderAdminTableValue;
             emptyRow[columnName] = "";
