@@ -17,6 +17,7 @@ package OpenQA::Task::Needle::Save;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use File::Copy;
+use OpenQA::Git;
 use OpenQA::Jobs::Constants;
 use OpenQA::Utils;
 use Mojo::JSON 'decode_json';
@@ -108,9 +109,9 @@ sub _save_needle {
     }
 
     # ensure needle dir is up-to-date
-    my $save_via_git = ($app->config->{global}->{scm} || '') eq 'git';
-    if ($save_via_git) {
-        my $error = set_to_latest_git_master({dir => $needledir});
+    my $git = OpenQA::Git->new({app => $app, dir => $needledir, $user => $user});
+    if ($git->enabled) {
+        my $error = $git->set_to_latest_master;
         if ($error) {
             $app->log->error($error);
             return $minion_job->fail({error => _format_git_error($needlename, $error)});
@@ -144,12 +145,10 @@ sub _save_needle {
     return $minion_job->fail({error => "<strong>Error creating/updating needle:</strong><br>$!."}) unless $success;
 
     # commit needle in Git repository
-    if ($save_via_git) {
-        my $error = commit_git(
+    if ($git->enabled) {
+        my $error = $git->commit(
             {
-                dir     => $needledir,
                 add     => ["$needledir/$needlename.json", "$needledir/$needlename.png"],
-                user    => $user,
                 message => sprintf("%s for %s", $needlename, $openqa_job->name),
             });
         if ($error) {

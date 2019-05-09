@@ -26,9 +26,10 @@ use DBIx::Class::Timestamps 'now';
 use File::Basename;
 use Cwd 'realpath';
 use File::Spec::Functions 'catdir';
+use OpenQA::Git;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
-use OpenQA::Utils qw(log_error commit_git);
+use OpenQA::Utils qw(log_error);
 
 use db_helpers;
 
@@ -193,14 +194,14 @@ sub remove {
     my $app        = $OpenQA::Utils::app;
     $app->log->debug("Remove needle $fname and $screenshot");
 
-    if (($app->config->{global}->{scm} || '') eq 'git') {
+    my $git = OpenQA::Git->new({app => $app, dir => $self->directory->path, $user => $user});
+    if ($git->enabled) {
         my $directory = $self->directory;
-        my $args      = {
-            dir     => $self->directory->path,
-            rm      => [$fname, $screenshot],
-            user    => $user,
-            message => sprintf("Remove %s/%s", $directory->name, $self->filename)};
-        my $error = commit_git($args);
+        my $error     = $git->commit(
+            {
+                rm      => [$fname, $screenshot],
+                message => sprintf("Remove %s/%s", $directory->name, $self->filename),
+            });
         return $error if $error;
     }
     else {

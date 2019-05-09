@@ -60,8 +60,6 @@ our @EXPORT  = qw(
   &save_base64_png
   &run_cmd_with_log
   &run_cmd_with_log_return_error
-  &set_to_latest_git_master
-  &commit_git
   &parse_assets_from_settings
   &find_bugref
   &find_bugrefs
@@ -490,76 +488,6 @@ sub run_cmd_with_log_return_error($) {
             stderr      => "an internal error occured",
         };
     };
-}
-
-sub _prepare_git_command {
-    my ($args) = @_;
-
-    my $dir = $args->{dir};
-    if ($dir !~ /^\//) {
-        my $absolute_path = abs_path($dir);
-        $dir = $absolute_path if ($absolute_path);
-    }
-    return ('git', '-C', $dir);
-}
-
-sub _format_git_error {
-    my ($git_result, $error_message) = @_;
-
-    if ($git_result->{stderr}) {
-        $error_message .= ': ' . $git_result->{stderr};
-    }
-    return $error_message;
-}
-
-sub set_to_latest_git_master {
-    my ($args) = @_;
-
-    my $git_config = $app->config->{'scm git'};
-    return undef unless $git_config;
-
-    my @git = _prepare_git_command($args);
-
-    if (my $update_remote = $git_config->{update_remote}) {
-        my $res = run_cmd_with_log_return_error([@git, 'remote', 'update', $update_remote]);
-        return _format_git_error($res, 'Unable to fetch from origin master') unless $res->{status};
-    }
-
-    if (my $update_branch = $git_config->{update_branch}) {
-        my $res = run_cmd_with_log_return_error([@git, 'rebase', $update_branch]);
-        return _format_git_error($res, 'Unable to reset repository to origin/master') unless $res->{status};
-    }
-
-    return undef;
-}
-
-sub commit_git {
-    my ($args) = @_;
-
-    my @git = _prepare_git_command($args);
-    my @files;
-
-    # stage changes
-    for my $cmd (qw(add rm)) {
-        next unless $args->{$cmd};
-        push(@files, @{$args->{$cmd}});
-        my $res = run_cmd_with_log_return_error([@git, $cmd, @{$args->{$cmd}}]);
-        return _format_git_error($res, "Unable to $cmd via Git") unless $res->{status};
-    }
-
-    # commit changes
-    my $message = $args->{message};
-    my $user    = $args->{user};
-    my $author  = sprintf('--author=%s <%s>', $user->fullname, $user->email);
-    my $res     = run_cmd_with_log_return_error([@git, 'commit', '-q', '-m', $message, $author, @files]);
-    return _format_git_error($res, 'Unable to commit via Git') unless $res->{status};
-
-    # push changes
-    if (($app->config->{'scm git'}->{do_push} || '') eq 'yes') {
-        $res = run_cmd_with_log_return_error([@git, 'push']);
-        return _format_git_error($res, 'Unable to push Git commit') unless $res->{status};
-    }
-    return undef;
 }
 
 sub asset_type_from_setting {
