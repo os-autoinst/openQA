@@ -60,6 +60,7 @@
                     <option value="parallel_restarted">Parallel restarted</option>
                     <option value="user_cancelled">User cancelled</option>
                     <option value="user_restarted">User restarted</option>
+                    <option value="timeout_exceeded">Timeout exceeded</option>
                 </select>
             </div>
     </div>
