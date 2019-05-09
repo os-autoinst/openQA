@@ -25,6 +25,7 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
+use OpenQA::Git;
 use OpenQA::Utils;
 use OpenQA::Test::Case;
 use Mojo::File 'tempdir';
@@ -67,12 +68,16 @@ subtest 'make git commit (error handling)' => sub {
     my $res;
     stderr_like(
         sub {
-            $res = commit_git {
-                dir     => $empty_tmp_dir,
-                user    => $first_user,
-                cmd     => 'status',
-                message => 'test',
-            };
+            $res = OpenQA::Git->new(
+                {
+                    dir  => $empty_tmp_dir,
+                    user => $first_user,
+                }
+            )->commit(
+                {
+                    cmd     => 'status',
+                    message => 'test',
+                });
         },
         qr/.*\[warn\].*fatal: Not a git repository.*\n.*cmd returned [1-9][0-9]*/i
     );
@@ -89,7 +94,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     # setup mocking
     my @executed_commands;
-    my $utils_mock        = Test::MockModule->new('OpenQA::Utils');
+    my $utils_mock        = Test::MockModule->new('OpenQA::Git');
     my %mock_return_value = (
         status => 1,
         stderr => undef,
@@ -102,47 +107,58 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
         });
 
     # check default config
+    my $git = OpenQA::Git->new(app => $t->app, dir => 'foo/bar', user => $first_user);
+    is($git->app,  $t->app,     'app is set');
+    is($git->dir,  'foo/bar',   'dir is set');
+    is($git->user, $first_user, 'user is set');
+    ok(!$git->enabled, 'git is not enabled by default');
     my $git_config = $t->app->config->{'scm git'};
-    is($git_config->{update_remote}, '', 'by default no remote configured');
-    is($git_config->{update_branch}, '', 'by default no branch configured');
+    is($git->config,                  $git_config, 'global git config is mirrored');
+    is($git->config->{update_remote}, '',          'by default no remote configured');
+    is($git->config->{update_branch}, '',          'by default no branch configured');
 
-    # test set_to_latest_git_master effectively being a no-op because not update remove and branch have been configured
-    is(set_to_latest_git_master({dir => 'foo/bar'}), undef, 'no error if no update remote and branch configured');
+    # read-only getters
+    $git->enabled(1);
+    ok(!$git->enabled, 'enabled is read-only');
+    $git->config({});
+    is($git->config, $git_config, 'config is read-only');
+
+    # test set_to_latest_master effectively being a no-op because no update remote and branch have been configured
+    is($git->set_to_latest_master, undef, 'no error if no update remote and branch configured');
     is_deeply(\@executed_commands, [], 'no commands executed if no update remote and branch configured')
       or diag explain \@executed_commands;
 
     # configure update branch and remote
-    $git_config->{update_remote} = 'origin';
-    $git_config->{update_branch} = 'origin/master';
+    $git->config->{update_remote} = 'origin';
+    $git->config->{update_branch} = 'origin/master';
+    is($git_config->{update_remote}, $git->config->{update_remote}, 'global git config reflects all changes');
 
-    # test set_to_latest_git_master (non-error case)
-    is(set_to_latest_git_master({dir => 'foo/bar'}), undef, 'no error');
+    # test set_to_latest_master (non-error case)
+    is($git->set_to_latest_master, undef, 'no error');
     is_deeply(
         \@executed_commands,
         [[qw(git -C foo/bar remote update origin)], [qw(git -C foo/bar rebase origin/master)],],
         'git remote update and rebase executed',
     ) or diag explain \@executed_commands;
 
-    # test set_to_latest_git_master (error case)
+    # test set_to_latest_master (error case)
     @executed_commands         = ();
     $mock_return_value{status} = 0;
     $mock_return_value{stderr} = 'mocked error';
     is(
-        set_to_latest_git_master({dir => 'foo/bar'}),
+        $git->set_to_latest_master,
         'Unable to fetch from origin master: mocked error',
         'an error occured on remote update'
     );
     is_deeply(\@executed_commands, [[qw(git -C foo/bar remote update origin)],], 'git reset not attempted',)
       or diag explain \@executed_commands;
 
-    # test commit_git
+    # test commit
     @executed_commands = ();
     $mock_return_value{status} = 1;
     is(
-        commit_git(
+        $git->dir('/repo/path')->commit(
             {
-                dir     => '/repo/path',
-                user    => $first_user,
                 message => 'some test',
                 add     => [qw(foo.png foo.json)],
                 rm      => [qw(bar.png bar.json)],
