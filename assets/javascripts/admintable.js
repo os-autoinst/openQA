@@ -99,8 +99,9 @@ function getAdminTableRowData(trElement, dataToSubmit, internalRowData) {
     trElement.find('td').each(function() {
         var th = tableHeadings.eq(this.cellIndex);
         var name = th.text().trim().toLowerCase();
+        var value;
         if (th.hasClass("col_value")) {
-            var value = $(this).find("input").val();
+            value = $(this).find("input").val();
             if (name === 'distri') {
                 value = value.toLowerCase();
             }
@@ -135,9 +136,9 @@ function getAdminTableRowData(trElement, dataToSubmit, internalRowData) {
                         }
                     }
                     var key = this.substr(0, equationSignIndex);
-                    var value = this.substr(equationSignIndex + 1);
-                    settingsToSubmit[key] = value;
-                    internalRowSettings.push({key: key, value: value});
+                    var val = this.substr(equationSignIndex + 1);
+                    settingsToSubmit[key] = val;
+                    internalRowSettings.push({key: key, value: val});
                 });
             });
             if (dataToSubmit) {
@@ -147,7 +148,7 @@ function getAdminTableRowData(trElement, dataToSubmit, internalRowData) {
                 internalRowData.settings = internalRowSettings;
             }
         } else if (th.hasClass("col_description")) {
-            var value = $(this).find('.description').val();
+            value = $(this).find('.description').val();
             if (value === undefined) {
                 value = '';
             }
@@ -404,9 +405,9 @@ function setupAdminTable(isAdmin, enableRegexForFiltering) {
                 var rowData = json[Object.keys(json)[0]];
                 if (!rowData) {
                     addFlash('danger', 'Internal error: server response misses table data');
-                    return dataTable.rowData = [];
+                    return (dataTable.rowData = []);
                 }
-                return dataTable.rowData = rowData;
+                return (dataTable.rowData = rowData);
             },
         },
         columns: columns,
