@@ -996,6 +996,39 @@ subtest 'Create dependency for jobs on different machines - log error parents' =
     $schema->txn_rollback;
 };
 
+subtest 'Creating cluster of jobs to run in parallel with different PARALLEL_WITH' => sub {
+    $schema->txn_begin;
+    add_opensuse_test('supportserver');
+    add_opensuse_test('master', PARALLEL_WITH => 'supportserver');
+    add_opensuse_test('slave1', PARALLEL_WITH => 'supportserver,master');
+    add_opensuse_test('slave2', PARALLEL_WITH => 'supportserver,master');
+    my $res = schedule_iso(
+        {
+            ISO     => $iso,
+            DISTRI  => 'opensuse',
+            VERSION => '13.1',
+            FLAVOR  => 'DVD',
+            ARCH    => 'i586',
+            BUILD   => '0091',
+            _GROUP  => 'opensuse test',
+        });
+    is($res->json->{count}, 4, '4 jobs scheduled');
+
+    my @newids = @{$res->json->{ids}};
+    $t->get_ok("/tests/$newids[0]/dependencies")->status_is(200);
+    my $dependency_graph = $t->tx->res->json;
+    my $cluster          = $dependency_graph->{cluster};
+    my @cluster_ids      = keys %$cluster;
+    is(scalar @cluster_ids, 1, 'exactly one cluster present');
+    is_deeply(
+        $cluster->{$cluster_ids[0]},
+        [100208, 100207, 100209, 100210],
+        'all jobs added into one big cluster - despite master and slaves have different PARALLEL_WITH',
+    );
+    is(scalar @{$dependency_graph->{edges}}, 0, 'no edges created');
+    $schema->txn_rollback;
+};
+
 subtest 'setting WORKER_CLASS and assigning default WORKER_CLASS' => sub {
     # assign a WORKER_CLASS to one of the testsuites
     my $worker_class                = 'advanced_worker';
