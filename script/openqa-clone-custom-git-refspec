@@ -9,7 +9,7 @@
 set -o pipefail
 if [ -n $GITHUB_TOKEN ]; then
     AUTHENTICATED_REQUEST=" -u $GITHUB_TOKEN:x-oauth-basic "
-    echo "Token provided ${AUTHENTICATED_REQUEST}"
+    echo "Github oauth token provided, peforming authenticated requests"
 fi
 if [ -z ${repo_name+x} ] || [ -z ${pr+x} ]; then
     pr_url="${1:?"Need 'pr_url' as parameter pointing to a github pull request or 'repo_name' (sending repo) and 'pr' variables, e.g. either 'https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/1234' 'me/os-autoinst-distri-opensuse' and '1234'"}"
