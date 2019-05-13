@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2019 SUSE Linux Products GmbH
+# Copyright (C) 2019 SUSE Linux Products GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package OpenQA::Schema::Result::JobTemplates;
+package OpenQA::Schema::Result::JobTemplateSettings;
 
 use strict;
 use warnings;
@@ -23,40 +23,36 @@ use base 'DBIx::Class::Core';
 
 use db_helpers;
 
-__PACKAGE__->table('job_templates');
+__PACKAGE__->table('job_template_settings');
 __PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(
     id => {
         data_type         => 'integer',
         is_auto_increment => 1,
     },
-    product_id => {
-        data_type => 'integer',
-    },
-    machine_id => {
-        data_type => 'integer',
-    },
-    test_suite_id => {
-        data_type => 'integer',
-    },
-    prio => {
-        data_type   => 'integer',
-        is_nullable => 1,
-    },
-    group_id => {
+    job_template_id => {
         data_type      => 'integer',
         is_foreign_key => 1,
+    },
+    key => {
+        data_type => 'text',
+    },
+    value => {
+        data_type => 'text',
     },
 );
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->belongs_to(product    => 'OpenQA::Schema::Result::Products',   'product_id');
-__PACKAGE__->belongs_to(machine    => 'OpenQA::Schema::Result::Machines',   'machine_id');
-__PACKAGE__->belongs_to(test_suite => 'OpenQA::Schema::Result::TestSuites', 'test_suite_id');
-__PACKAGE__->belongs_to(group      => 'OpenQA::Schema::Result::JobGroups',  'group_id');
-__PACKAGE__->add_unique_constraint([qw(product_id machine_id test_suite_id)]);
-__PACKAGE__->has_many(
-    settings        => 'OpenQA::Schema::Result::JobTemplateSettings',
-    job_template_id => {order_by => {-asc => 'key'}});
+__PACKAGE__->add_unique_constraint([qw(job_template_id key)]);
+__PACKAGE__->belongs_to(
+    job_template => 'OpenQA::Schema::Result::JobTemplates',
+    {'foreign.id' => "self.job_template_id"},
+    {
+        is_deferrable => 1,
+        join_type     => 'LEFT',
+        on_delete     => 'CASCADE',
+        on_update     => 'CASCADE',
+    },
+);
 
 1;
