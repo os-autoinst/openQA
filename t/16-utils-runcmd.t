@@ -29,21 +29,23 @@ use OpenQA::Git;
 use OpenQA::Utils;
 use OpenQA::Test::Case;
 use Mojo::File 'tempdir';
+use Test::Exception;
 use Test::More;
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings;
-use Test::Output qw(stderr_like);
+use Test::Output 'stdout_like';
 
 # allow catching log messages via stdout_like
 delete $ENV{OPENQA_LOGFILE};
 
 my $schema     = OpenQA::Test::Database->new->create();
 my $first_user = $schema->resultset('Users')->first;
+my $t          = Test::Mojo->new('OpenQA::WebAPI');
 
 subtest 'run (arbitrary) command' => sub {
     ok(run_cmd_with_log([qw(echo Hallo Welt)]), 'run simple command');
-    stderr_like(
+    stdout_like(
         sub {
             is(run_cmd_with_log([qw(false)]), '');
         },
@@ -54,7 +56,7 @@ subtest 'run (arbitrary) command' => sub {
     ok($res->{status}, 'status ok');
     is($res->{stderr}, 'Hallo Welt', 'cmd output returned');
 
-    stderr_like(
+    stdout_like(
         sub {
             $res = run_cmd_with_log_return_error([qw(false)]);
         },
@@ -64,12 +66,21 @@ subtest 'run (arbitrary) command' => sub {
 };
 
 subtest 'make git commit (error handling)' => sub {
+    throws_ok(
+        sub {
+            OpenQA::Git->new({app => $t->app, dir => 'foo/bar'})->commit();
+        },
+        qr/no user specified/,
+        'OpenQA::Git thows an exception if parameter missing'
+    );
+
     my $empty_tmp_dir = tempdir();
     my $res;
-    stderr_like(
+    stdout_like(
         sub {
             $res = OpenQA::Git->new(
                 {
+                    app  => $t->app,
                     dir  => $empty_tmp_dir,
                     user => $first_user,
                 }
@@ -87,9 +98,6 @@ subtest 'make git commit (error handling)' => sub {
         'Git error message returned'
     );
 };
-
-# setup a Mojo app after all because the git commands need it
-my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
     # setup mocking

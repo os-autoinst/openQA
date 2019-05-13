@@ -24,12 +24,14 @@ has 'user';
 
 sub enabled {
     my ($self) = @_;
-    return ($self->app->config->{global}->{scm} || '') eq 'git';
+    die 'no app assigned' unless my $app = $self->app;
+    return ($app->config->{global}->{scm} || '') eq 'git';
 }
 
 sub config {
     my ($self) = @_;
-    return $self->app->config->{'scm git'};
+    die 'no app assigned' unless my $app = $self->app;
+    return $app->config->{'scm git'};
 }
 
 sub _prepare_git_command {
@@ -52,8 +54,17 @@ sub _format_git_error {
     return $error_message;
 }
 
+sub _validate_attributes {
+    my ($self) = @_;
+
+    for my $mandatory_property (qw(app dir user)) {
+        die "no $mandatory_property specified" unless $self->$mandatory_property();
+    }
+}
+
 sub set_to_latest_master {
     my ($self, $args) = @_;
+    $self->_validate_attributes;
 
     my @git = $self->_prepare_git_command($args);
 
@@ -72,6 +83,7 @@ sub set_to_latest_master {
 
 sub commit {
     my ($self, $args) = @_;
+    $self->_validate_attributes;
 
     my @git = $self->_prepare_git_command($args);
     my @files;
