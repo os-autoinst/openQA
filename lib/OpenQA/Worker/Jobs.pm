@@ -20,6 +20,7 @@ use strict;
 use warnings;
 use feature 'state';
 
+use OpenQA::Jobs::Constants;
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Pool 'clean_pool';
 use OpenQA::Worker::Engines::isotovideo;
@@ -502,13 +503,13 @@ sub _stop_job_kill_and_upload {
         # do final status upload for selected $aborted reasons
         if ($aborted eq 'obsolete') {
             log_debug('setting job ' . $job->{id} . ' to incomplete (obsolete)');
-            upload_status(1, sub { _stop_job_finish({result => 'incomplete', newbuild => 1}) });
+            upload_status(1, sub { _stop_job_finish({result => OpenQA::Jobs::Constants::INCOMPLETE, newbuild => 1}) });
             return;
         }
         elsif ($aborted eq 'cancel') {
             # not using job_incomplete here to avoid duplicate
             log_debug('setting job ' . $job->{id} . ' to incomplete (cancel)');
-            upload_status(1, sub { _stop_job_finish({result => 'incomplete'}) });
+            upload_status(1, sub { _stop_job_finish({result => OpenQA::Jobs::Constants::INCOMPLETE}) });
             return;
         }
         elsif ($aborted eq 'done') {
@@ -524,7 +525,7 @@ sub _stop_job_kill_and_upload {
         #       that API call.
         api_call(
             post          => "jobs/$job->{id}/set_done",
-            params        => {result => 'incomplete'},
+            params        => {result => OpenQA::Jobs::Constants::INCOMPLETE},
             non_critical  => 1,
             ignore_errors => 1,
             callback      => sub {
@@ -535,26 +536,29 @@ sub _stop_job_kill_and_upload {
         return;
     }
 
+    my $result;
     if ($aborted eq 'timeout') {
         log_warning("job $job->{id} spent more time than MAX_JOB_TIME");
+        $result = OpenQA::Jobs::Constants::TIMEOUT_EXCEEDED;
     }
     else {
         log_debug("job $job->{id} incomplete");
+        $result = OpenQA::Jobs::Constants::INCOMPLETE;
     }
 
-    # do final status upload and incomplete job ...
+    # do final status upload and set result unless abort reason is "quit"
     if ($aborted ne 'quit') {
-        upload_status(1, sub { _stop_job_finish({result => 'incomplete'}, 0) });
+        upload_status(1, sub { _stop_job_finish({result => $result}, 0) });
         return;
     }
 
-    # ... and duplicate the job before if abort reason is "quit"
+    # duplicate job if abort reason is "quit"; do final status upload and incomplete job
     log_debug("duplicating job $job->{id}");
     api_call(
         post     => "jobs/$job->{id}/duplicate",
         params   => {dup_type_auto => 1},
         callback => sub {
-            upload_status(1, sub { _stop_job_finish({result => 'incomplete'}, 1) });
+            upload_status(1, sub { _stop_job_finish({result => OpenQA::Jobs::Constants::INCOMPLETE}, 1) });
         });
 }
 

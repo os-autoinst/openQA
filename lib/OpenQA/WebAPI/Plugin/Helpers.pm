@@ -183,7 +183,7 @@ sub register {
     $app->helper(is_admin_js => sub { Mojo::ByteStream->new(shift->helpers->is_admin ? 'true' : 'false') });
 
     $app->helper(
-        # CSS class for a job or module based on its result
+        # CSS class for a test module based on its result
         css_for => sub {
             my ($c, $hash) = @_;
             return unless $hash;

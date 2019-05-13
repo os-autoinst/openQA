@@ -55,6 +55,7 @@ sub count_job {
             return;
         }
         if (   $job->result eq OpenQA::Jobs::Constants::FAILED
+            || $job->result eq OpenQA::Jobs::Constants::TIMEOUT_EXCEEDED
             || $job->result eq OpenQA::Jobs::Constants::INCOMPLETE)
         {
             $jr->{failed}++;
@@ -65,6 +66,7 @@ sub count_job {
             $jr->{skipped}++;
             return;
         }
+        # note: Incompletes and timeouts are accounted to both categories - failed and skipped.
     }
     if (   $job->state eq OpenQA::Jobs::Constants::CANCELLED
         || $job->state eq OpenQA::Jobs::Constants::OBSOLETED)

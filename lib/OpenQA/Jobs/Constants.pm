@@ -33,14 +33,16 @@ use constant {
     PARALLEL_RESTARTED => 'parallel_restarted',          # parallel job was restarted, this job has to be restarted too
     USER_CANCELLED     => 'user_cancelled',              # cancelled by user via job_cancel
     USER_RESTARTED     => 'user_restarted',              # restarted by user via job_restart
+    TIMEOUT_EXCEEDED   => 'timeout_exceeded',            # killed by the worker after MAX_JOB_TIME has been exceeded
 };
 use constant RESULTS => (NONE, PASSED, SOFTFAILED, FAILED, INCOMPLETE, SKIPPED,
-    OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED
+    OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED, TIMEOUT_EXCEEDED
 );
 use constant COMPLETE_RESULTS => (PASSED, SOFTFAILED, FAILED);
 use constant OK_RESULTS       => (PASSED, SOFTFAILED);
-use constant INCOMPLETE_RESULTS =>
-  (INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED);
+use constant INCOMPLETE_RESULTS => (INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED,
+    PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED, TIMEOUT_EXCEEDED
+);
 use constant NOT_OK_RESULTS => (INCOMPLETE_RESULTS, FAILED);
 use constant MODULE_RESULTS => (CANCELLED, FAILED, NONE, PASSED, RUNNING, SKIPPED, SOFTFAILED);
 
