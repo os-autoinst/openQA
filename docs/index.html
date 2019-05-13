@@ -1049,8 +1049,25 @@ via record_soft_failure (from os-autoinst) or a job failure has been ignored
 explicitly via a <a href="#https://github.com/os-autoinst/openQA/blob/master/docs/UsersGuide.asciidoc#show-bug-or-label-icon-on-overview-if-labeled-gh550">job label</a>.</p>
 </li>
 <li>
-<p><strong>incomplete</strong> The job is no longer running but no result was provided. Either
-it was cancelled while running or it crashed.</p>
+<p><strong>timeout_exceeded</strong> The job was aborted because MAX_JOB_TIME was exceeded, which is
+by default two hours.</p>
+</li>
+<li>
+<p><strong>skipped</strong> Dependencies failed so the job was not started.</p>
+</li>
+<li>
+<p><strong>obsoleted</strong> The job was superseded by scheduling a new product.</p>
+</li>
+<li>
+<p><strong>parallel_failed</strong>/<strong>parallel_restarted</strong> The job could not continue because a job
+which is supposed to run in parallel failed or was restarted.</p>
+</li>
+<li>
+<p><strong>user_cancelled</strong>/<strong>user_restarted</strong> The job was cancelled/restarted by the user.</p>
+</li>
+<li>
+<p><strong>incomplete</strong> The test execution failed due to an unexpected error, e.g. the network
+connection to the worker was lost.</p>
 </li>
 </ul>
 </div>
@@ -6943,7 +6960,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-05-11 17:53:09 UTC
+Last updated 2019-05-13 09:34:19 UTC
 </div>
 </div>
 <style>
