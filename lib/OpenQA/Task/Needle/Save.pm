@@ -109,7 +109,7 @@ sub _save_needle {
     }
 
     # ensure needle dir is up-to-date
-    my $git = OpenQA::Git->new({app => $app, dir => $needledir, $user => $user});
+    my $git = OpenQA::Git->new({app => $app, dir => $needledir, user => $user});
     if ($git->enabled) {
         my $error = $git->set_to_latest_master;
         if ($error) {
