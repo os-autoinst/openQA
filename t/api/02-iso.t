@@ -360,7 +360,32 @@ is($server_64->{priority}, 50,   'server_64 has default priority from job group'
 
 is($advanced_kde_32->{settings}->{PUBLISH_HDD_1},
     undef, 'variable expansion because kde is not created for 32 bit machine');
-is($advanced_kde_64->{settings}->{PUBLISH_HDD_1}, 'opensuse-13.1-i586-kde-qemu64.qcow2', 'variable expansion');
+is_deeply(
+    $advanced_kde_64->{settings},
+    {
+        ADVANCED    => '1',
+        ARCH        => 'i586',
+        BACKEND     => 'qemu',
+        BUILD       => '0091',
+        DESKTOP     => 'advanced_kde',                                                # overridden on job template level
+        DISTRI      => 'opensuse',
+        DVD         => '1',
+        FLAVOR      => 'DVD',
+        ISO         => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',
+        ISO_MAXSIZE => '4700372992',
+        MACHINE     => '64bit',
+        NAME        => '00099990-opensuse-13.1-DVD-i586-Build0091-advanced_kde@64bit',
+        PRECEDENCE  => 'original',
+        PUBLISH_HDD_1 => 'opensuse-13.1-i586-advanced_kde-qemu64.qcow2'
+        ,    # variable expansion (using variable from job template level as well)
+        QEMUCPU          => 'qemu64',
+        START_AFTER_TEST => 'kde,textmode',
+        TEST             => 'advanced_kde',
+        VERSION          => '13.1',
+        WORKER_CLASS     => 'qemu_i586'
+    },
+    'settings assigned as expected, variable expansion applied, taking job template settings into account'
+) or diag explain $advanced_kde_64->{settings};
 
 # variable precedence
 is($client1_32->{settings}->{PRECEDENCE}, 'original', "default precedence (post PRECEDENCE beats suite PRECEDENCE)");

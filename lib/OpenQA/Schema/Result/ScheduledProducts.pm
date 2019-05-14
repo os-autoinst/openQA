@@ -520,34 +520,33 @@ sub _generate_jobs {
             carp "no templates found for " . join('-', map { $args->{$_} } qw(DISTRI VERSION FLAVOR ARCH));
         }
         for my $job_template (@templates) {
-            my %settings = map { $_->key => $_->value } $product->settings;
-
-            # we need to merge worker classes of all 3
-            my @classes;
-            if (my $class = delete $settings{WORKER_CLASS}) {
-                push @classes, $class;
+          # compose settings from product, machine, testsuite and job template itself
+          # note: That order also defines the precedence from lowest to hightest. The only exception is the WORKER_CLASS
+          #       variable where all occurrences are merged.
+            my %settings;
+            my @worker_classes;
+            for my $entity ($product, $job_template->machine, $job_template->test_suite, $job_template) {
+                my %settings_of_entity = map { $_->key => $_->value } $entity->settings;
+                if (my $worker_class = delete $settings_of_entity{WORKER_CLASS}) {
+                    push(@worker_classes, $worker_class);
+                }
+                @settings{keys %settings_of_entity} = values %settings_of_entity;
             }
 
-            my %tmp_settings = map { $_->key => $_->value } $job_template->machine->settings;
-            if (my $class = delete $tmp_settings{WORKER_CLASS}) {
-                push @classes, $class;
-            }
-            @settings{keys %tmp_settings} = values %tmp_settings;
+            # add properties from dedicated database columns to settings
+            $settings{TEST}    = $job_template->test_suite->name;
+            $settings{MACHINE} = $job_template->machine->name;
+            $settings{BACKEND} = $job_template->machine->backend;
 
-            %tmp_settings = map { $_->key => $_->value } $job_template->test_suite->settings;
-            if (my $class = delete $tmp_settings{WORKER_CLASS}) {
-                push @classes, $class;
-            }
-            @settings{keys %tmp_settings} = values %tmp_settings;
-            $settings{TEST}               = $job_template->test_suite->name;
-            $settings{MACHINE}            = $job_template->machine->name;
-            $settings{BACKEND}            = $job_template->machine->backend;
-            $settings{WORKER_CLASS} = @classes ? join(',', sort(@classes)) : "qemu_$args->{ARCH}";
+            # merge worker classes
+            $settings{WORKER_CLASS} = @worker_classes ? join(',', sort(@worker_classes)) : "qemu_$args->{ARCH}";
 
-            for (keys %$args) {
-                next if $_ eq 'TEST' || $_ eq 'MACHINE';
-                $settings{uc $_} = $args->{$_};
+            # add upper-case versions of keys
+            for my $key (keys %$args) {
+                next if $key eq 'TEST' || $key eq 'MACHINE';
+                $settings{uc $key} = $args->{$key};
             }
+
             # make sure that the DISTRI is lowercase
             $settings{DISTRI} = lc($settings{DISTRI});
 
