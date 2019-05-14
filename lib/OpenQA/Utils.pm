@@ -68,6 +68,7 @@ our @EXPORT  = qw(
   &bugref_to_href
   &href_to_bugref
   &url_to_href
+  &find_bug_number
   &render_escaped_refs
   &asset_type_from_setting
   &check_download_url
@@ -224,6 +225,14 @@ sub needle_info {
     $needle->{name}      = $name;
     $needle->{distri}    = $distri;
     $needle->{version}   = $version;
+
+    # Skip code to support compatibility if HASH-workaround properties already present
+    return $needle unless $needle->{properties};
+
+    # Transform string-workaround-properties into HASH-workaround-properties
+    $needle->{properties}
+      = [map { ref($_) eq "HASH" ? $_ : {name => $_, value => find_bug_number($name)} } @{$needle->{properties}}];
+
     return $needle;
 }
 
@@ -578,11 +587,13 @@ my %bugurls = (
     $bugrefs{jsc}                                  => 'jsc',
 );
 
+my $MARKER_REFS = join('|', keys %bugrefs);
+my $MARKER_URLS = join('|', keys %bugurls);
+
 sub bugref_regex {
-    my $marker  = join('|', keys %bugrefs);
     my $repo_re = qr{[a-zA-Z/-]+};
     # <marker>[#<project/repo>]#<id>
-    return qr{(?<![\(\[\"\>])(?<match>(?<marker>$marker)\#?(?<repo>$repo_re)?\#(?<id>([A-Z]+-)?\d+))(?![\w\"])};
+    return qr{(?<![\(\[\"\>])(?<match>(?<marker>$MARKER_REFS)\#?(?<repo>$repo_re)?\#(?<id>([A-Z]+-)?\d+))(?![\w\"])};
 }
 
 sub find_bugref {
@@ -623,7 +634,7 @@ sub bugref_to_href {
 
 sub href_to_bugref {
     my ($text) = @_;
-    my $regex = join('|', keys %bugurls) =~ s/\?/\\\?/gr;
+    my $regex = $MARKER_URLS =~ s/\?/\\\?/gr;
     # <repo> is optional, e.g. for github. For github issues and pull are
     # interchangeable, see comment in 'bugurl', too
     $regex = qr{(?<!["\(\[])(?<url_root>$regex)((?<repo>.*)/(issues|pull)/)?(?<id>([A-Z]+-)?\d+)(?![\w])};
@@ -640,6 +651,11 @@ sub url_to_href {
 sub render_escaped_refs {
     my ($text) = @_;
     return bugref_to_href(url_to_href(xml_escape($text)));
+}
+
+sub find_bug_number {
+    my ($text) = @_;
+    return $text =~ /\S+\-((?:$MARKER_REFS)\d+)\-\S+/ ? $1 : undef;
 }
 
 sub check_download_url {
