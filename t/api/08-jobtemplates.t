@@ -395,7 +395,7 @@ is_deeply(
     "Initial job templates"
 ) || diag explain $t->tx->res->json;
 
-#search all job templates with testsuite 'kde'
+# search all job templates with testsuite 'kde'
 $t->get_ok("/api/v1/job_templates", form => {test_suite_name => 'kde'})->status_is(200);
 is_deeply(
     $t->tx->res->json,
@@ -614,7 +614,13 @@ is_deeply(
                             }
                         },
                         'client2',
-                        'advanced_kde',
+                        {
+                            advanced_kde => {
+                                settings => {
+                                    DESKTOP  => 'advanced_kde',
+                                    ADVANCED => '1',
+                                }}
+                        },
                     ],
                 },
             },
@@ -682,7 +688,11 @@ subtest 'Create and modify groups with YAML' => sub {
                             eggs => {
                                 machine  => '32bit',
                                 priority => 20,
-                            }
+                                settings => {
+                                    FOO => 'removed later',
+                                    BAR => 'updated later',
+                                },
+                            },
                         },
                     ],
                 },
@@ -750,8 +760,15 @@ subtest 'Create and modify groups with YAML' => sub {
       || diag explain $t->tx->res->body;
 
     subtest 'Modify test attributes in group according to YAML template' => sub {
-        $yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}
-          = [{'foobar' => {priority => 11, machine => '32bit'}}, 'spam', 'eggs'];
+        my %foobar_definition = (
+            priority => 11,
+            machine  => '32bit',
+            settings => {
+                BAR => 'updated value',
+                NEW => 'new setting',
+            },
+        );
+        $yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'} = [{foobar => \%foobar_definition}, 'spam', 'eggs'];
         # Use per-arch default priority which deviates from the group default_priority
         $yaml->{foo}{defaults}{i586}{'priority'} = 70;
         $t->post_ok(
@@ -766,7 +783,7 @@ subtest 'Create and modify groups with YAML' => sub {
         );
         # Prepare expected result
         $yaml->{foo}{architectures}{i586}{'opensuse-13.1-DVD-i586'}
-          = [{foobar => {priority => 11, machine => '32bit'}}, {spam => {priority => 70}}, {eggs => {priority => 70}}];
+          = [{foobar => \%foobar_definition}, {spam => {priority => 70}}, {eggs => {priority => 70}}];
         # Result *should* in fact be 70, but we get the default_priority
         $yaml->{foo}{defaults}{i586}{'priority'} = 50;
         $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");

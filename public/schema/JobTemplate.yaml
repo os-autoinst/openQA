@@ -40,6 +40,13 @@ patternProperties:
                             type: string
                           priority:
                             type: number
+                          settings:
+                            type: object
+                            description: Additional test variables to be set
+                            additionalProperties: false
+                            patternProperties:
+                              "^[A-Z_]+[A-Z0-9_]*$":
+                                type: string
       defaults:
         description: A set of architectures with default configurations
         type: object
