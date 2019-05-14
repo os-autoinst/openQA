@@ -59,4 +59,72 @@ __PACKAGE__->has_many(
     settings        => 'OpenQA::Schema::Result::JobTemplateSettings',
     job_template_id => {order_by => {-asc => 'key'}});
 
+=over 4
+
+=item settings_hash()
+
+Returns a hash with the assigned settings.
+
+=back
+
+=cut
+
+sub settings_hash {
+    my ($self) = @_;
+
+    my $settings = $self->settings;
+    my %settings_hash;
+    while (my $setting = $settings->next) {
+        $settings_hash{$setting->key} = $setting->value;
+    }
+    return \%settings_hash;
+}
+
+=over 4
+
+=item to_hash()
+
+Creates a hash for the job template including testsuite, machine and product details
+
+This is used by the REST API so this function should stay compatible.
+
+=back
+
+=cut
+
+sub to_hash {
+    my ($self) = @_;
+
+    my $product    = $self->product;
+    my $machine    = $self->machine;
+    my $test_suite = $self->test_suite;
+    my $group      = $self->group;
+    my $settings   = $self->settings_hash;
+
+    my %result = (
+        id         => $self->id,
+        prio       => $self->prio,
+        group_name => $group ? $group->name : '',
+        product    => {
+            id      => $product->id,
+            arch    => $product->arch,
+            distri  => $product->distri,
+            flavor  => $product->flavor,
+            group   => $product->mediagroup,
+            version => $product->version,
+        },
+        machine => {
+            id   => $machine->id,
+            name => $machine ? $machine->name : '',
+        },
+        test_suite => {
+            id   => $test_suite->id,
+            name => $test_suite->name,
+        },
+    );
+    $result{settings} = $settings if (%$settings);
+
+    return \%result;
+}
+
 1;

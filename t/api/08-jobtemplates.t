@@ -257,7 +257,11 @@ is_deeply(
                     'name' => 'advanced_kde',
                     'id'   => 1017
                 },
-                'id' => 10
+                'settings' => {
+                    'ADVANCED' => '1',
+                    'DESKTOP'  => 'advanced_kde'
+                },
+                'id' => 10,
             }]
     },
     "Initial job templates"

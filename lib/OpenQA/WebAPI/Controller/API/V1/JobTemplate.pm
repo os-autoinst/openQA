@@ -94,30 +94,7 @@ sub list {
 
     if (my $error = $@) { return $self->render(json => {error => $error}, status => 404) }
 
-    @templates = map {
-        {
-            id         => $_->id,
-            prio       => $_->prio,
-            group_name => $_->group ? $_->group->name : '',
-            product    => {
-                id      => $_->product_id,
-                arch    => $_->product->arch,
-                distri  => $_->product->distri,
-                flavor  => $_->product->flavor,
-                group   => $_->product->mediagroup,
-                version => $_->product->version
-            },
-            machine => {
-                id   => $_->machine_id,
-                name => $_->machine ? $_->machine->name : ''
-            },
-            test_suite => {
-                id   => $_->test_suite_id,
-                name => $_->test_suite->name
-            }}
-    } @templates;
-
-    $self->render(json => {JobTemplates => \@templates});
+    $self->render(json => {JobTemplates => [map { $_->to_hash } @templates]});
 }
 
 =over 4
@@ -174,12 +151,8 @@ sub get_job_groups {
                 $test_suite{priority} = $template->prio;
             }
 
-            my %parameter;
-            my $template_settings = $template->settings;
-            while (my $parameter = $template_settings->next) {
-                $parameter{$parameter->key} = $parameter->value;
-            }
-            $test_suite{parameter} = \%parameter if %parameter;
+            my $settings = $template->settings_hash;
+            $test_suite{settings} = $settings if %$settings;
 
             my $test_suites = $group{architectures}{$template->product->arch}{$template->product->name};
             push @$test_suites, {$template->test_suite->name => \%test_suite};
