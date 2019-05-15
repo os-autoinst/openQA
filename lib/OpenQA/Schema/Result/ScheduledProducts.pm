@@ -25,7 +25,6 @@ use DBIx::Class::Timestamps 'now';
 use File::Basename;
 use Try::Tiny;
 use OpenQA::Utils;
-use OpenQA::Settings;
 use OpenQA::JobDependencies::Constants;
 use Mojo::JSON qw(encode_json decode_json);
 use Carp;
@@ -567,23 +566,38 @@ sub _generate_jobs {
 
             # variable expansion
             # replace %NAME% with $settings{NAME}
-            my $new_settings = OpenQA::Settings->new(%settings)->expand_placeholders();
+            my $expanded;
+            do {
+                $expanded = 0;
+                for my $var (keys %settings) {
+                    my $val = $settings{$var};
+                    next unless ($val && $val =~ /(%\w+%)/);
+                    my $replace_var = $1;
+                    $replace_var =~ s/^%(\w+)%$/$1/;
+                    my $replace_val = $settings{$replace_var};
+                    next unless (defined $replace_val);
+                    $replace_val = '' if $replace_var eq $var;    #stop infinite recursion
+                    $val =~ s/%${replace_var}%/$replace_val/g;
+                    $settings{$var} = $val;
+                    $expanded = 1;
+                }
+            } while ($expanded);
 
-            if (!$args->{MACHINE} || $args->{MACHINE} eq $new_settings->{MACHINE}) {
+            if (!$args->{MACHINE} || $args->{MACHINE} eq $settings{MACHINE}) {
                 if (!@tests) {
-                    $wanted{_settings_key($new_settings)} = 1;
+                    $wanted{_settings_key(\%settings)} = 1;
                 }
                 else {
                     foreach my $test (@tests) {
-                        if ($test eq $new_settings->{TEST}) {
-                            $wanted{_settings_key($new_settings)} = 1;
+                        if ($test eq $settings{TEST}) {
+                            $wanted{_settings_key(\%settings)} = 1;
                             last;
                         }
                     }
                 }
             }
 
-            push @$ret, $new_settings;
+            push @$ret, \%settings;
         }
     }
 

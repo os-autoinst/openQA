@@ -21,7 +21,6 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Resource::Jobs;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Events;
-use OpenQA::Settings;
 use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
 use Mojo::Asset::Memory;
@@ -207,10 +206,8 @@ sub create {
 
     my $json = {};
     my $status;
-    my $new_params = $self->_generate_job_settings(\%params);
-
     try {
-        my $job = $self->schema->resultset('Jobs')->create_from_settings($new_params);
+        my $job = $self->schema->resultset('Jobs')->create_from_settings(\%params);
         $self->emit_event('openqa_job_create', {id => $job->id, %params});
         $json->{id} = $job->id;
 
@@ -709,93 +706,6 @@ sub whoami {
     my ($self) = @_;
     my $jobid = $self->stash('job_id');
     $self->render(json => {id => $jobid});
-}
-
-=over 4
-
-=item _generate_job_settings()
-
-Create job for product matching the contents of the DISTRI, VERSION, FLAVOR and ARCH, MACHINE
-settings, and returns a job's settings. Internal method used in the B<create()> method.
-
-=back
-
-=cut
-
-sub _generate_job_settings {
-    my ($self, $args) = @_;
-    my $schema = $self->schema;
-
-    my %settings;    # include the machine, product, and test suit setting belongs to this job.
-    my @classes;     # if the machine or product has worker_class setting, push them to this array.
-
-    # if args includes DISTRI, VERSION, FLAVOR, ARCH, get product setting.
-    if (   defined $args->{DISTRI}
-        && defined $args->{VERSION}
-        && defined $args->{FLAVOR}
-        && defined $args->{ARCH})
-    {
-        my $products = $schema->resultset('Products')->search(
-            {
-                distri  => $args->{DISTRI},
-                version => $args->{VERSION},
-                arch    => $args->{ARCH},
-                flavor  => $args->{FLAVOR},
-            });
-
-        if (my $product = $products->next) {
-            my %tmp_setting = map { $_->key => $_->value } $product->settings;
-
-            if (my $class = delete $tmp_setting{WORKER_CLASS}) {
-                push @classes, $class;
-            }
-            @settings{keys %tmp_setting} = values %tmp_setting;
-        }
-    }
-
-    # if args includes MACHINE, get machine setting.
-    if (defined $args->{MACHINE}) {
-        my $machines = $schema->resultset('Machines')->search(
-            {
-                name => $args->{MACHINE},
-            });
-
-        if (my $machine = $machines->next) {
-            my %tmp_setting = map { $_->key => $_->value } $machine->settings;
-
-            if (my $class = delete $tmp_setting{WORKER_CLASS}) {
-                push @classes, $class;
-            }
-            @settings{keys %tmp_setting} = values %tmp_setting;
-        }
-    }
-
-    # TEST is mandatory, find the test suit settings.
-    my $test_suites = $schema->resultset('TestSuites')->search(
-        {
-            name => $args->{TEST},
-        });
-
-    if (my $test_suite = $test_suites->next) {
-        my %test_suite_setting = map { $_->key => $_->value } $test_suite->settings;
-
-        if (my $test_suite_class = delete $test_suite_setting{WORKER_CLASS}) {
-            push @classes, $test_suite_class;
-        }
-        @settings{keys %test_suite_setting} = values %test_suite_setting;
-    }
-
-    if (scalar(@classes) > 0) {
-        $settings{WORKER_CLASS} = join(',', sort(@classes));
-    }
-
-    for (keys %$args) {
-        $settings{uc $_} = $args->{$_};
-    }
-
-    my $new_settings = OpenQA::Settings->new(%settings)->expand_placeholders();
-
-    return $new_settings;
 }
 
 1;
