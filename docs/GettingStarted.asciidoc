@@ -337,22 +337,21 @@ options in the admin area to automatically create all the required jobs for each
 revision of your operating system that needs to be tested. If you are starting
 from scratch, you should probably go through the following order:
 
-. Define machines in 'Machines' menu
-. Define medium types (products) you have in 'Medium Types' menu
-. Specify various collections of tests you want to run in the 'Test suites'
-  menu
-. Go to the template matrix in 'Job templates' menu and decide what
-  combinations do make sense and need to be tested
+1. Define machines in 'Machines' menu
+2. Define medium types (products) you have in 'Medium Types' menu
+3. Specify various collections of tests you want to run in the 'Test suites' menu
+4. Go to the template matrix in 'Job templates' menu and decide what combinations
+   make sense and need to be tested
 
-Machines, mediums and test suites can all set various configuration variables.
-Job templates define how the test suites, mediums and machines should be
-combined in various ways to produce individual 'jobs'. All the variables
-from the test suite, medium and machine for the 'job' are combined and made
-available to the actual test code run by the 'job', along with variables
-specified as part of the job creation request. Certain variables also influence
-openQA's and/or os-autoinst's own behavior in terms of how it configures the
-environment for the job. Variables that influence os-autoinst's behavior
-are documented in the file +doc/backend_vars.asciidoc+ in the os-autoinst
+Machines, mediums, test suites and job templates can all set various
+configuration variables. Job templates define how the test suites, mediums
+and machines should be combined in various ways to produce individual 'jobs'.
+All the variables from the test suite, medium, machine and job template are
+combined and made available to the actual test code run by the 'job', along
+with variables specified as part of the job creation request. Certain variables
+also influence openQA's and/or os-autoinst's own behavior in terms of how it
+configures the environment for the job. Variables that influence os-autoinst's
+behavior are documented in the file +doc/backend_vars.asciidoc+ in the os-autoinst
 repository.
 
 In openQA we can parametrize a test to describe for what product it will
@@ -466,9 +465,9 @@ of how the test machine is set up. A few important examples:
 
 === Variable expansion
 
-Any variable defined in Test Suite, Machine or Product table can refer to another
-variable using this syntax: +%NAME%+. When the test job is created, the string
-will be substituted with the value of the specified variable at that time.
+Any variable defined in Test Suite, Machine, Product or Job Template table can
+refer to another variable using this syntax: +%NAME%+. When the test job is created,
+the string will be substituted with the value of the specified variable at that time.
 
 For example this variable defined for Test Suite:
 
@@ -494,6 +493,7 @@ order for variables is as follows (from lowest to highest):
 * Product
 * Machine
 * Test suite
+* Job template
 * API POST query parameters
 
 That is, variable values set as part of the API request that triggers the jobs will
@@ -507,6 +507,9 @@ request, the test suite setting would 'win' and the value would be foo.
 
 If the same variable is set with a + prefix in multiple places, the same precedence
 order described above will apply to those settings.
+
+Note that the +WORKER_CLASS+ variable is not overridden in the way described above.
+Instead multiple occurrences are combined.
 
 [[get-testing]]
 == Testing openSUSE or Fedora

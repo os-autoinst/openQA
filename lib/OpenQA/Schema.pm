@@ -1,4 +1,4 @@
-# Copyright © 2014-2016 SUSE LLC
+# Copyright © 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ use OpenQA::Utils ();
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
-our $VERSION = 77;
+our $VERSION = 78;
 
 __PACKAGE__->load_namespaces;
 

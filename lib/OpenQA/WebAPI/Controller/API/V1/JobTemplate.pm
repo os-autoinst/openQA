@@ -94,30 +94,7 @@ sub list {
 
     if (my $error = $@) { return $self->render(json => {error => $error}, status => 404) }
 
-    @templates = map {
-        {
-            id         => $_->id,
-            prio       => $_->prio,
-            group_name => $_->group ? $_->group->name : '',
-            product    => {
-                id      => $_->product_id,
-                arch    => $_->product->arch,
-                distri  => $_->product->distri,
-                flavor  => $_->product->flavor,
-                group   => $_->product->mediagroup,
-                version => $_->product->version
-            },
-            machine => {
-                id   => $_->machine_id,
-                name => $_->machine ? $_->machine->name : ''
-            },
-            test_suite => {
-                id   => $_->test_suite_id,
-                name => $_->test_suite->name
-            }}
-    } @templates;
-
-    $self->render(json => {JobTemplates => \@templates});
+    $self->render(json => {JobTemplates => [map { $_->to_hash } @templates]});
 }
 
 =over 4
@@ -165,12 +142,18 @@ sub get_job_groups {
                 flavor       => $template->product->flavor,
                 version      => $template->product->version
             };
+
             my %test_suite;
+
             $test_suite{machine} = $template->machine->name;
             $machines{$template->product->arch}{$template->machine->name}++;
             if ($template->prio && $template->prio != $group->default_priority) {
                 $test_suite{priority} = $template->prio;
             }
+
+            my $settings = $template->settings_hash;
+            $test_suite{settings} = $settings if %$settings;
+
             my $test_suites = $group{architectures}{$template->product->arch}{$template->product->name};
             push @$test_suites, {$template->test_suite->name => \%test_suite};
             $group{architectures}{$template->product->arch}{$template->product->name} = $test_suites;
@@ -246,16 +229,18 @@ sub update {
         return;
     }
 
-    my $job_groups    = $self->schema->resultset("JobGroups");
-    my $job_templates = $self->schema->resultset("JobTemplates");
-    my $machines      = $self->schema->resultset("Machines");
-    my $test_suites   = $self->schema->resultset("TestSuites");
-    my $products      = $self->schema->resultset("Products");
+    my $schema                = $self->schema;
+    my $job_groups            = $schema->resultset('JobGroups');
+    my $job_templates         = $schema->resultset('JobTemplates');
+    my $job_template_settings = $schema->resultset('JobTemplateSettings');
+    my $machines              = $schema->resultset('Machines');
+    my $test_suites           = $schema->resultset('TestSuites');
+    my $products              = $schema->resultset('Products');
     foreach my $group (keys %{$yaml}) {
         my $json = {};
 
         try {
-            $self->schema->txn_do(
+            $schema->txn_do(
                 sub {
                     my $group_id = $job_groups->find_or_create({name => $group}, {select => [qw(id name)]})->id;
                     $json->{id} = $group_id;
@@ -272,10 +257,11 @@ sub update {
                         my $yaml_defaults_for_arch = $yaml_defaults->{$arch};
                         foreach my $product_name (keys %$yaml_products_for_arch) {
                             foreach my $spec (@{$yaml_products_for_arch->{$product_name}}) {
-                                # Get testsuite, machine and prio from YAML data
+                                # Get testsuite, machine, prio and job template settings from YAML data
                                 my $testsuite_name;
                                 my $prio;
                                 my $machine_name;
+                                my $settings;
                                 if (ref $spec eq 'HASH') {
                                     foreach my $name (keys %$spec) {
                                         my $attr = $spec->{$name};
@@ -285,6 +271,9 @@ sub update {
                                         }
                                         if ($attr->{machine}) {
                                             $machine_name = $attr->{machine};
+                                        }
+                                        if ($attr->{settings}) {
+                                            $settings = $attr->{settings};
                                         }
                                     }
                                 }
@@ -321,8 +310,38 @@ sub update {
                                         machine_id    => $machine->id,
                                         test_suite_id => $test_suite->id,
                                     });
+                                my $job_template_id = $job_template->id;
                                 $job_template->update({prio => $prio}) if (defined $prio);
                                 push(@job_template_ids, $job_template->id);
+
+                                # Add/update/remove parameter
+                                my @setting_ids;
+                                if ($settings) {
+                                    foreach my $key (keys %$settings) {
+                                        my $setting = $job_template_settings->find(
+                                            {
+                                                job_template_id => $job_template_id,
+                                                key             => $key,
+                                            });
+                                        if ($setting) {
+                                            $setting->update({value => $settings->{$key}});
+                                        }
+                                        else {
+                                            $setting = $job_template_settings->find_or_create(
+                                                {
+                                                    job_template_id => $job_template_id,
+                                                    key             => $key,
+                                                    value           => $settings->{$key},
+                                                });
+                                        }
+                                        push(@setting_ids, $setting->id);
+                                    }
+                                }
+                                $job_template_settings->search(
+                                    {
+                                        id              => {'not in' => \@setting_ids},
+                                        job_template_id => $job_template_id,
+                                    })->delete();
 
                                 # Stop iterating if there were errors with this test suite
                                 last if (@$errors);
