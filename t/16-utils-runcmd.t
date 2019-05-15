@@ -25,25 +25,29 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
+use Data::Dumper;
 use OpenQA::Git;
 use OpenQA::Utils;
+use OpenQA::Task::Needle::Save;
 use OpenQA::Test::Case;
 use Mojo::File 'tempdir';
+use Test::Exception;
 use Test::More;
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warnings;
-use Test::Output qw(stderr_like);
+use Test::Output 'stdout_like';
 
 # allow catching log messages via stdout_like
 delete $ENV{OPENQA_LOGFILE};
 
 my $schema     = OpenQA::Test::Database->new->create();
 my $first_user = $schema->resultset('Users')->first;
+my $t          = Test::Mojo->new('OpenQA::WebAPI');
 
 subtest 'run (arbitrary) command' => sub {
     ok(run_cmd_with_log([qw(echo Hallo Welt)]), 'run simple command');
-    stderr_like(
+    stdout_like(
         sub {
             is(run_cmd_with_log([qw(false)]), '');
         },
@@ -54,7 +58,7 @@ subtest 'run (arbitrary) command' => sub {
     ok($res->{status}, 'status ok');
     is($res->{stderr}, 'Hallo Welt', 'cmd output returned');
 
-    stderr_like(
+    stdout_like(
         sub {
             $res = run_cmd_with_log_return_error([qw(false)]);
         },
@@ -64,12 +68,21 @@ subtest 'run (arbitrary) command' => sub {
 };
 
 subtest 'make git commit (error handling)' => sub {
+    throws_ok(
+        sub {
+            OpenQA::Git->new({app => $t->app, dir => 'foo/bar'})->commit();
+        },
+        qr/no user specified/,
+        'OpenQA::Git thows an exception if parameter missing'
+    );
+
     my $empty_tmp_dir = tempdir();
     my $res;
-    stderr_like(
+    stdout_like(
         sub {
             $res = OpenQA::Git->new(
                 {
+                    app  => $t->app,
                     dir  => $empty_tmp_dir,
                     user => $first_user,
                 }
@@ -88,24 +101,21 @@ subtest 'make git commit (error handling)' => sub {
     );
 };
 
-# setup a Mojo app after all because the git commands need it
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+# setup mocking
+my @executed_commands;
+my $utils_mock        = Test::MockModule->new('OpenQA::Git');
+my %mock_return_value = (
+    status => 1,
+    stderr => undef,
+);
+$utils_mock->mock(
+    run_cmd_with_log_return_error => sub {
+        my ($cmd) = @_;
+        push(@executed_commands, $cmd);
+        return \%mock_return_value;
+    });
 
 subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
-    # setup mocking
-    my @executed_commands;
-    my $utils_mock        = Test::MockModule->new('OpenQA::Git');
-    my %mock_return_value = (
-        status => 1,
-        stderr => undef,
-    );
-    $utils_mock->mock(
-        run_cmd_with_log_return_error => sub {
-            my ($cmd) = @_;
-            push(@executed_commands, $cmd);
-            return \%mock_return_value;
-        });
-
     # check default config
     my $git = OpenQA::Git->new(app => $t->app, dir => 'foo/bar', user => $first_user);
     is($git->app,  $t->app,     'app is set');
@@ -181,6 +191,58 @@ subtest 'git commands with mocked run_cmd_with_log_return_error' => sub {
         ],
         'changes staged and committed',
     ) or diag explain \@executed_commands;
+};
+
+subtest 'saving needle via Git' => sub {
+    {
+        package Test::FakeMinionJob;
+        sub finish {
+        }
+        sub fail {
+            Test::More::fail("Minion job shouldn't have failed.");
+            Test::More::note(Data::Dumper::Dumper(\@_));
+        }
+    }
+
+    # configure use of Git
+    $t->app->config->{global}->{scm} = 'git';
+    my $empty_tmp_dir = tempdir();
+
+    # trigger saving needles like Minion would do
+    @executed_commands = ();
+    OpenQA::Task::Needle::Save::_save_needle(
+        $t->app,
+        bless({} => 'Test::FakeMinionJob'),
+        {
+            job_id      => 99926,
+            user_id     => 99903,
+            needle_json => '{"area":[{"xpos":0,"ypos":0,"width":0,"height":0,"type":"match"}],"tags":["foo"]}',
+            needlename  => 'foo',
+            needledir   => $empty_tmp_dir,
+            imagedir    => 't/data/openqa/share/tests/archlinux/needles',
+            imagename   => 'test-rootneedle.png',
+        });
+    is_deeply(
+        \@executed_commands,
+        [
+            [qw(git -C), $empty_tmp_dir, qw(remote update origin)],
+            [qw(git -C), $empty_tmp_dir, qw(rebase origin/master)],
+            [qw(git -C), $empty_tmp_dir, qw(add), "$empty_tmp_dir/foo.json", "$empty_tmp_dir/foo.png"],
+            [
+                qw(git -C),
+                $empty_tmp_dir,
+                qw(commit -q -m),
+                'foo for opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
+                '--author=Percival <percival@example.com>',
+                "$empty_tmp_dir/foo.json",
+                "$empty_tmp_dir/foo.png"
+            ],
+        ],
+        'commands executed as expected'
+    ) or diag explain \@executed_commands;
+
+    # note: Saving needles is already tested in t/ui/12-needle-edit.t. However, Git is disabled in that UI test so
+    #       it is tested here explicitely.
 };
 
 done_testing();
