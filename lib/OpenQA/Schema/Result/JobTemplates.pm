@@ -59,27 +59,6 @@ __PACKAGE__->has_many(
 
 =over 4
 
-=item settings_hash()
-
-Returns a hash with the assigned settings.
-
-=back
-
-=cut
-
-sub settings_hash {
-    my ($self) = @_;
-
-    my $settings = $self->settings;
-    my %settings_hash;
-    while (my $setting = $settings->next) {
-        $settings_hash{$setting->key} = $setting->value;
-    }
-    return \%settings_hash;
-}
-
-=over 4
-
 =item to_hash()
 
 Creates a hash for the job template including testsuite, machine and product details
@@ -97,7 +76,7 @@ sub to_hash {
     my $machine    = $self->machine;
     my $test_suite = $self->test_suite;
     my $group      = $self->group;
-    my $settings   = $self->settings_hash;
+    my @settings   = sort { $a->key cmp $b->key } $self->settings;
 
     my %result = (
         id         => $self->id,
@@ -120,7 +99,9 @@ sub to_hash {
             name => $test_suite->name,
         },
     );
-    $result{settings} = $settings if (%$settings);
+    if (@settings) {
+        $result{settings} = [map { {key => $_->key, value => $_->value} } @settings];
+    }
 
     return \%result;
 }

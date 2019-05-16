@@ -158,8 +158,8 @@ sub get_job_groups {
                 $test_suite{priority} = $template->prio;
             }
 
-            my $settings = $template->settings_hash;
-            $test_suite{settings} = $settings if %$settings;
+            my %settings = map { $_->key => $_->value } $template->settings;
+            $test_suite{settings} = \%settings if %settings;
 
             my $test_suites = $group{architectures}{$template->product->arch}{$template->product->name};
             push @$test_suites, {$template->test_suite->name => \%test_suite};
