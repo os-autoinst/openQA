@@ -61,6 +61,9 @@ sub register {
 
                     $self->stash(hparams => $ret);
                 }
+                else {
+                    $self->stash(hparams => {});
+                }
             }
             else {
                 $self->stash(hparams => {});

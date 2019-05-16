@@ -16,6 +16,8 @@
 
 package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller';
+
+use OpenQA::WebAPI::TableHelper;
 use Try::Tiny;
 use JSON::Validator;
 
@@ -419,6 +421,15 @@ sub update {
     $self->respond_to(json => {json => $json});
 }
 
+sub _read_priority {
+    my ($self, $validation) = @_;
+
+    $validation->like(qr/^(inherit|[0-9]+)$/);
+
+    my $prio = $self->param('prio');
+    return ((!$prio || $prio eq 'inherit') ? undef : $prio);
+}
+
 =over 4
 
 =item create()
@@ -427,8 +438,11 @@ Creates a new job template. If the method receives a valid product id as argumen
 also check for the following arguments: machine id, group id, test suite id and priority. If
 no valid product id is received as argument, the method will instead check for the following
 arguments: product name, machine name, test suite name, arch, distri, flavor, version and
-priority. Returns a 400 code on error, or a 303 code and the job template id within a JSON
-block on success.
+priority. Returns a 400 code on error, or a 200 code and the job template id within a JSON
+block on success. In case an HTML response is expected 303 is returned on success.
+
+The 'prio_only' parameter is deprecated. The update route should be used to modify existing
+job templates.
 
 =back
 
@@ -444,17 +458,10 @@ sub create {
     my $validation      = $self->validation;
     my $is_number_regex = qr/^[0-9]+$/;
     my $has_product_id  = $validation->optional('product_id')->like($is_number_regex)->is_valid;
-
-    # validate/read priority
-    my $prio_regex = qr/^(inherit|[0-9]+)$/;
-    if ($has_product_id) {
-        $validation->optional('prio')->like($prio_regex);
-    }
-    else {
-        $validation->required('prio')->like($prio_regex);
-    }
-    my $prio = $self->param('prio');
-    $prio = ((!$prio || $prio eq 'inherit') ? undef : $prio);
+    my $prio_only_mode  = $self->param('prio_only');
+    my $prio = $self->_read_priority($prio_only_mode ? $validation->required('prio') : $validation->optional('prio'));
+    my $settings
+      = OpenQA::WebAPI::TableHelper::prepare_settings($self->hparams->{settings})->{settings};
 
     my $schema = $self->schema;
 
@@ -465,22 +472,24 @@ sub create {
 
         if ($validation->has_error) {
             $error = "wrong parameter:";
-            for my $k (qw(product_id machine_id test_suite_id group_id)) {
+            for my $k (qw(product_id machine_id test_suite_id group_id prio)) {
                 $error .= ' ' . $k if $validation->has_error($k);
             }
         }
         else {
             my $values = {
                 prio          => $prio,
+                settings      => $settings,
                 product_id    => $self->param('product_id'),
                 machine_id    => $self->param('machine_id'),
                 group_id      => $self->param('group_id'),
-                test_suite_id => $self->param('test_suite_id')};
+                test_suite_id => $self->param('test_suite_id'),
+            };
             eval { $id = $schema->resultset("JobTemplates")->create($values)->id };
             $error = $@;
         }
     }
-    elsif ($self->param('prio_only')) {
+    elsif ($prio_only_mode) {
         for my $param (qw(group_id test_suite_id)) {
             $validation->required($param)->like($is_number_regex);
         }
@@ -513,13 +522,15 @@ sub create {
 
         if ($validation->has_error) {
             $error = "wrong parameter:";
-            for my $k (qw(group_name machine_name test_suite_name arch distri flavor version)) {
+            for my $k (qw(group_name machine_name test_suite_name arch distri flavor version prio)) {
                 $error .= ' ' . $k if $validation->has_error($k);
             }
         }
         else {
             my $values = {
-                product => {
+                prio     => $prio,
+                settings => $settings,
+                product  => {
                     arch    => $self->param('arch'),
                     distri  => $self->param('distri'),
                     flavor  => $self->param('flavor'),
@@ -527,8 +538,8 @@ sub create {
                 },
                 group      => {name => $self->param('group_name')},
                 machine    => {name => $self->param('machine_name')},
-                prio       => $prio,
-                test_suite => {name => $self->param('test_suite_name')}};
+                test_suite => {name => $self->param('test_suite_name')},
+            };
             eval { $id = $schema->resultset("JobTemplates")->create($values)->id };
             $error = $@;
         }
@@ -565,6 +576,70 @@ sub create {
             $self->res->code(303);
             $self->redirect_to($self->req->headers->referrer);
         });
+}
+
+=over 4
+
+=item update_properties()
+
+Updates the properties (priority and settings) of a job template specified by ID.
+Returns a 404 error code if the template is not found, a 400 code on other errors or a 200 code on success.
+
+=back
+
+=cut
+
+sub update_properties {
+    my ($self)        = @_;
+    my $validation    = $self->validation;
+    my $job_templates = $self->schema->resultset('JobTemplates');
+    my $job_template  = $job_templates->find($self->param('job_template_id'));
+    return $self->render(json => {error => 'Not found'}, status => 404) unless $job_template;
+
+    # read prio
+    my $has_prio = defined $self->param('prio');
+    my $prio;
+    if ($has_prio) {
+        $prio = $self->_read_priority($validation->required('prio'));
+        if ($validation->has_error('prio')) {
+            return $self->render(json => {error => 'Priority is invalid'}, status => 400);
+        }
+    }
+    # read settings
+    my $settings_from_hparams = $self->hparams->{settings};
+    my $settings;
+    if ($settings_from_hparams) {
+        $settings = OpenQA::WebAPI::TableHelper::prepare_settings($settings_from_hparams);
+    }
+
+    my %json;
+    my $status;
+    try {
+        # update priority
+        if ($has_prio) {
+            $job_template->update({prio => $prio});
+        }
+        # update settings
+        if ($settings_from_hparams) {
+            OpenQA::WebAPI::TableHelper::update_settings($settings, $job_template);
+        }
+
+        $status = 200;
+        $json{result} = $job_template->id;
+        $self->emit_event(
+            openqa_table_update => {
+                table    => 'job_templates',
+                id       => $job_template->id,
+                prio     => $prio,
+                settings => $settings_from_hparams,
+            });
+    }
+    catch {
+        $status = 409;       # likely a conflict, e.g. job template has been destroyed
+        $json{error} = $_;
+    };
+    return $self->render(json => \%json, status => $status);
+
 }
 
 =over 4

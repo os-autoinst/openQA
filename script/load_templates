@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2019 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -133,6 +133,9 @@ sub print_error {
     if ($res->body) {
         dd($res->json || $res->body);
     }
+    if ($url) {
+        print("requested URL was: $url\n");
+    }
 }
 
 sub post_entry {
@@ -185,8 +188,7 @@ sub post_entry {
     if (!$options{'clean'}) {    # with --clean the entry should not exist at this point, no need to check
         my $res = $client->get($url->path($options{'apibase'} . '/' . decamelize($table))->query(%param))->res;
         if ($res->code == 200 && @{$res->json->{$table}} == 1 && $res->json->{$table}[0]{id}) {
-            if ($options{'update'} && $table ne 'JobTemplates')
-            {                    # there is nothing to update in JobTemplates, the entry just exists or not
+            if ($options{'update'}) {
                 my $id = $res->json->{$table}[0]{id};
                 my $res
                   = $client->put($url->path($options{'apibase'} . '/' . decamelize($table) . "/$id")->query(%param))
@@ -198,7 +200,7 @@ sub post_entry {
                 return 1;
             }
             else {
-                return 0;        # already exists
+                return 0;    # already exists
             }
         }
     }

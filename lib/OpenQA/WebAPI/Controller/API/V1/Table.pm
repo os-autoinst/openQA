@@ -18,6 +18,7 @@
 package OpenQA::WebAPI::Controller::API::V1::Table;
 use Mojo::Base 'Mojolicious::Controller';
 
+use OpenQA::WebAPI::TableHelper;
 use Try::Tiny;
 
 =pod
@@ -166,14 +167,8 @@ sub create {
         $entry{$par} = $self->param($par);
     }
     $entry{description} = $self->param('description');
-    my $hp = $self->hparams();
-    my @settings;
-    if ($hp->{settings}) {
-        for my $k (keys %{$hp->{settings}}) {
-            push @settings, {key => $k, value => $hp->{settings}->{$k}};
-        }
-    }
-    $entry{settings} = \@settings;
+    $entry{settings}
+      = OpenQA::WebAPI::TableHelper::prepare_settings($self->hparams->{settings})->{settings};
 
     my $error;
     my $id;
@@ -220,17 +215,9 @@ sub update {
         $entry{$par} = $self->param($par);
     }
     $entry{description} = $self->param('description');
-    my $hp = $self->hparams();
-    my @settings;
-    my @keys;
-    if ($hp->{settings}) {
-        for my $k (keys %{$hp->{settings}}) {
-            push @settings, {key => $k, value => $hp->{settings}->{$k}};
-            push @keys, $k;
-        }
-    }
 
-    my $schema = $self->schema;
+    my $settings = OpenQA::WebAPI::TableHelper::prepare_settings($self->hparams->{settings});
+    my $schema   = $self->schema;
 
     my $error;
     my $ret;
@@ -245,10 +232,7 @@ sub update {
             my $rc = $schema->resultset($table)->find({id => $self->param('id')});
             if ($rc) {
                 $rc->update(\%entry);
-                for my $var (@settings) {
-                    $rc->update_or_create_related('settings', $var);
-                }
-                $rc->delete_related('settings', {key => {'not in' => [@keys]}});
+                OpenQA::WebAPI::TableHelper::update_settings($settings, $rc);
                 $ret = 1;
             }
             else {
@@ -271,7 +255,8 @@ sub update {
     if (!$ret) {
         return $self->render(json => {error => $error}, status => 400);
     }
-    $self->emit_event('openqa_table_update', {table => $table, name => $entry{name}, settings => \@settings});
+    $self->emit_event('openqa_table_update',
+        {table => $table, name => $entry{name}, settings => $settings->{settings}});
     $self->render(json => {result => int($ret)});
 }
 

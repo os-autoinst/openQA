@@ -258,11 +258,8 @@ is_deeply(
                     'name' => 'advanced_kde',
                     'id'   => 1017
                 },
-                'settings' => {
-                    'ADVANCED' => '1',
-                    'DESKTOP'  => 'advanced_kde'
-                },
-                'id' => 10,
+                'settings' => [{key => 'ADVANCED', value => '1'}, {key => 'DESKTOP', value => 'advanced_kde'}],
+                'id'       => 10,
             }]
     },
     "Initial job templates"
@@ -272,11 +269,13 @@ is_deeply(
 $t->post_ok(
     '/api/v1/job_templates',
     form => {
-        group_id      => 1001,
-        machine_id    => 1001,
-        test_suite_id => 1002,
-        product_id    => 1,
-        prio          => 30
+        group_id                 => 1001,
+        machine_id               => 1001,
+        test_suite_id            => 1002,
+        product_id               => 1,
+        prio                     => 30,
+        'settings[TEST]'         => 'setting added via API post, updated later',
+        'settings[DELETE_AGAIN]' => 'setting added via API post, deleted again later',
     })->status_is(200);
 my $job_template_id1 = $t->tx->res->json->{id};
 ok($job_template_id1, "Created job template ($job_template_id1)");
@@ -325,11 +324,25 @@ is_deeply(
                 'test_suite' => {
                     'id'   => 1002,
                     'name' => 'kde'
-                }}]
+                },
+                'settings' => [
+                    {key => 'DELETE_AGAIN', value => 'setting added via API post, deleted again later'},
+                    {key => 'TEST',         value => 'setting added via API post, updated later'},
+                ],
+            }]
 
     },
     "Initial job templates"
 ) || diag explain $t->tx->res->json;
+
+$t->put_ok(
+    "/api/v1/job_templates/$job_template_id1",
+    form => {
+        prio                     => 31,
+        'settings[TEST]'         => 'setting updated via API put',
+        'settings[ANOTHER_TEST]' => 'setting added via API put',
+    })->status_is(200);
+is($t->tx->res->json->{result}, $job_template_id1, 'updated ID (1)');
 
 $t->get_ok("/api/v1/job_templates/$job_template_id2")->status_is(200);
 is_deeply(
@@ -430,7 +443,7 @@ is_deeply(
             {
                 'id'         => $job_template_id1,
                 'group_name' => 'opensuse',
-                'prio'       => 30,
+                'prio'       => 31,
                 'machine'    => {
                     'id'   => 1001,
                     'name' => '32bit'
@@ -446,7 +459,12 @@ is_deeply(
                 'test_suite' => {
                     'id'   => 1002,
                     'name' => 'kde'
-                }}]
+                },
+                'settings' => [
+                    {key => 'ANOTHER_TEST', value => 'setting added via API put'},
+                    {key => 'TEST',         value => 'setting updated via API put'},
+                ],
+            }]
     },
     "Initial job templates"
 ) || diag explain $t->tx->res->json;
@@ -588,6 +606,10 @@ is_deeply(
                     {
                         kde => {
                             machine => '32bit',
+                            settings => {
+                                ANOTHER_TEST => 'setting added via API put',
+                                TEST         => 'setting updated via API put',
+                            },
                         }
                     },
                     'kde',
