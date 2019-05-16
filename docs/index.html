@@ -1345,25 +1345,24 @@ from scratch, you should probably go through the following order:</p>
 <p>Define medium types (products) you have in 'Medium Types' menu</p>
 </li>
 <li>
-<p>Specify various collections of tests you want to run in the 'Test suites'
-menu</p>
+<p>Specify various collections of tests you want to run in the 'Test suites' menu</p>
 </li>
 <li>
-<p>Go to the template matrix in 'Job templates' menu and decide what
-combinations do make sense and need to be tested</p>
+<p>Go to the template matrix in 'Job templates' menu and decide what combinations
+make sense and need to be tested</p>
 </li>
 </ol>
 </div>
 <div class="paragraph">
-<p>Machines, mediums and test suites can all set various configuration variables.
-Job templates define how the test suites, mediums and machines should be
-combined in various ways to produce individual 'jobs'. All the variables
-from the test suite, medium and machine for the 'job' are combined and made
-available to the actual test code run by the 'job', along with variables
-specified as part of the job creation request. Certain variables also influence
-openQA&#8217;s and/or os-autoinst&#8217;s own behavior in terms of how it configures the
-environment for the job. Variables that influence os-autoinst&#8217;s behavior
-are documented in the file doc/backend_vars.asciidoc in the os-autoinst
+<p>Machines, mediums, test suites and job templates can all set various
+configuration variables. Job templates define how the test suites, mediums
+and machines should be combined in various ways to produce individual 'jobs'.
+All the variables from the test suite, medium, machine and job template are
+combined and made available to the actual test code run by the 'job', along
+with variables specified as part of the job creation request. Certain variables
+also influence openQA&#8217;s and/or os-autoinst&#8217;s own behavior in terms of how it
+configures the environment for the job. Variables that influence os-autoinst&#8217;s
+behavior are documented in the file doc/backend_vars.asciidoc in the os-autoinst
 repository.</p>
 </div>
 <div class="paragraph">
@@ -1581,9 +1580,9 @@ emulated USB stick.</p>
 <div class="sect2">
 <h3 id="_variable_expansion">Variable expansion</h3>
 <div class="paragraph">
-<p>Any variable defined in Test Suite, Machine or Product table can refer to another
-variable using this syntax: %NAME%. When the test job is created, the string
-will be substituted with the value of the specified variable at that time.</p>
+<p>Any variable defined in Test Suite, Machine, Product or Job Template table can
+refer to another variable using this syntax: %NAME%. When the test job is created,
+the string will be substituted with the value of the specified variable at that time.</p>
 </div>
 <div class="paragraph">
 <p>For example this variable defined for Test Suite:</p>
@@ -1622,6 +1621,9 @@ order for variables is as follows (from lowest to highest):</p>
 <p>Test suite</p>
 </li>
 <li>
+<p>Job template</p>
+</li>
+<li>
 <p>API POST query parameters</p>
 </li>
 </ul>
@@ -1640,6 +1642,10 @@ request, the test suite setting would 'win' and the value would be foo.</p>
 <div class="paragraph">
 <p>If the same variable is set with a + prefix in multiple places, the same precedence
 order described above will apply to those settings.</p>
+</div>
+<div class="paragraph">
+<p>Note that the WORKER_CLASS variable is not overridden in the way described above.
+Instead multiple occurrences are combined.</p>
 </div>
 </div>
 </div>
@@ -6960,7 +6966,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-05-15 13:58:37 UTC
+Last updated 2019-05-16 17:53:47 UTC
 </div>
 </div>
 <style>
