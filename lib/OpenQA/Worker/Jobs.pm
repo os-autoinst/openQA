@@ -646,10 +646,13 @@ sub start_job {
 
     # start updating status - slow updates if livelog is not running
     add_timer('update_status', STATUS_UPDATES_SLOW, \&update_status);
+    # Scale $max_job_time, if needed
+    $max_job_time = $job_settings->{MAX_JOB_TIME} if $job_settings->{MAX_JOB_TIME};
+    $max_job_time = $max_job_time * $job_settings->{TIMEOUT_SCALE} if ($job_settings->{TIMEOUT_SCALE});
     # create job timeout timer
     add_timer(
         'job_timeout',
-        $job_settings->{MAX_JOB_TIME} || $max_job_time,
+        $max_job_time,
         sub {
             # Prevent to determine status of job from exit_status
             eval {
