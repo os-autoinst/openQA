@@ -86,7 +86,11 @@ function renderJobResults(data, type, row) {
         if (count++) {
             var more = row.failedmodules.length - count + 1;
             if (more > 0 && limit < 12) {
-                html += '+' + more;
+                html += '<span title="';
+                for (var j = i; j< row.failedmodules.length ; j++) {
+                    html += "- " + row.failedmodules[j] + "\n";
+                }
+                html += '">+' + more + '</span>';
                 break;
             }
         }
