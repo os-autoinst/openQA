@@ -19,6 +19,7 @@ BEGIN {
     unshift @INC, 'lib';
 }
 
+use Date::Format;
 use Mojo::Base -strict;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
@@ -58,6 +59,11 @@ $t->put_ok('/api/v1/bugs/2', form => {title => "foobar", existing => 1})->status
 
 $get = $t->get_ok('/api/v1/bugs/1');
 is($get->tx->res->json->{title}, 'foobar', 'Bug has correct title');
+is_deeply(
+    [sort keys %{$t->tx->res->json}],
+    [qw(assigned assignee bugid existing id open priority refreshed resolution status t_created t_updated title)],
+    'All expected columns exposed'
+);
 
 $get = $t->get_ok('/api/v1/bugs?refreshable=1');
 is_deeply($get->tx->res->json->{bugs}, {}, 'All bugs are refreshed');
@@ -76,5 +82,16 @@ $t->delete_ok('/api/v1/bugs/2')->status_is(404, 'Bug #2 already deleted');
 $t->post_ok('/api/v1/jobs/99926/comments', form => {text => 'wicked bug: jsc#SLE-42999'});
 $get = $t->get_ok('/api/v1/bugs/3');
 is($get->tx->res->json->{bugid}, 'jsc#SLE-42999', 'Bug was created by comment post');
+
+$t->post_ok('/api/v1/bugs', form => {title => "new", bugid => 'bsc#123'});
+my $bugid = $t->tx->res->json->{id};
+$t->app->schema->resultset('Bugs')->find($bugid)->update(
+    {
+        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 500, 'UTC'),
+    });
+$t->get_ok('/api/v1/bugs?created_since=500');
+is(scalar(keys %{$t->tx->res->json->{bugs}}), 3, 'All reported bugs');
+$t->get_ok('/api/v1/bugs?created_since=100');
+is(scalar(keys %{$t->tx->res->json->{bugs}}), 2, 'Only the latest bugs');
 
 done_testing();
