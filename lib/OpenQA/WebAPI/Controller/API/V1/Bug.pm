@@ -44,7 +44,15 @@ OpenQA API implementation for bug handling methods.
 
 =item list()
 
-Returns list of bugs reported in the system with its id and text.
+Returns a dictionary of bugs reported in the system of the form { id: bug } where the key
+is the ID in the database and the value is the external bug, eg. bsc#123 or poo#123.
+
+The optional parameter "refreshable" limits the results to bugs updated recently.
+Additionally "delta" can be set to a timespan, 3600 seconds by default.
+
+The optional parameter "created_since" limits the results to bugs reported in the given timespan.
+
+Note: Only one of "refreshable" and "created_since" can be used at the same time.
 
 =back
 
@@ -65,6 +73,11 @@ sub list {
                 },
                 existing => 1
             });
+    }
+    elsif (my $delta = $self->param('created_since')) {
+        $bugs = $schema->resultset("Bugs")->search(
+            {
+                t_created => {'>=' => time2str('%Y-%m-%d %H:%M:%S', time - $delta, 'UTC')}});
     }
     else {
         $bugs = $schema->resultset("Bugs");
@@ -98,7 +111,7 @@ sub show {
     }
 
     my %json = map { $_ => $bug->get_column($_) }
-      qw(id bugid title priority assigned assignee open status resolution existing refreshed t_updated);
+      qw(assigned assignee bugid existing id open priority refreshed resolution status t_created t_updated title);
     $self->render(json => \%json);
 }
 
