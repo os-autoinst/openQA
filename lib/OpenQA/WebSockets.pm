@@ -17,7 +17,6 @@ package OpenQA::WebSockets;
 use Mojo::Base 'Mojolicious';
 
 use Mojo::Server::Daemon;
-use OpenQA::IPC;
 use OpenQA::Setup;
 use OpenQA::Utils qw(log_debug log_warning log_info);
 use OpenQA::WebSockets::Model::Status;

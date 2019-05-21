@@ -25,7 +25,6 @@ use base 'DBIx::Class::Core';
 use DBIx::Class::Timestamps 'now';
 use Try::Tiny;
 use OpenQA::Utils 'log_error';
-use OpenQA::IPC;
 use OpenQA::WebSockets::Client;
 use db_helpers;
 use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';

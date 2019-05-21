@@ -18,7 +18,6 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use DBIx::Class::ResultClass::HashRefInflator;
 use OpenQA::Utils;
-use OpenQA::IPC;
 
 =pod
 
