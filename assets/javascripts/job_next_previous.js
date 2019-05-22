@@ -86,18 +86,22 @@ function renderJobResults(data, type, row) {
         if (count++) {
             var more = row.failedmodules.length - count + 1;
             if (more > 0 && limit < 12) {
-                html += '+' + more;
+                html += '<span title="';
+                for (var j = i; j< row.failedmodules.length ; j++) {
+                    html += "- " + htmlEscape(row.failedmodules[j]) + "\n";
+                }
+                html += '">+' + more + '</span>';
                 break;
             }
         }
-        var async_url = '/tests/' + row.id + '/modules/' + row.failedmodules[i] + '/fails';
+        var async_url = '/tests/' + row.id + '/modules/' + htmlEscape(row.failedmodules[i]) + '/fails';
         html += '<a data-toggle="tooltip" data-placement="top" ';
         html += 'data-container="#res_' + row.id + '" ';
         html += 'data-async="' + async_url + '" ';
         html += 'title="<i class=\'fa fa-sync fa-spin fa-2x fa-fw\'></i><span class=\'sr-only\'>Loading...</span>"';
         html += 'class="failedmodule" ';
-        html += 'href="/tests/' + row.id + '#step/' + row.failedmodules[i] + '/1">';
-        html += '<span title="' + row.failedmodules[i] + '">' + row.failedmodules[i] + '</span>';
+        html += 'href="/tests/' + row.id + '#step/' + htmlEscape(row.failedmodules[i]) + '/1">';
+        html += '<span title="' + htmlEscape(row.failedmodules[i]) + '">' + htmlEscape(row.failedmodules[i]) + '</span>';
         html += '</a>';
         if (row.failedmodules[i].length > limit) {
             limit -= limit;

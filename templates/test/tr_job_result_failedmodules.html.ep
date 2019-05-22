@@ -5,7 +5,7 @@
     % if ($count++) {
       % my $more = (scalar(@$failedmodules)) - $count + 1;
       % if ($more > 0 && $limit < 12) {
-         +<%= $more %>
+         <span title="<% for (my $i = $count-1; $i < scalar(@$failedmodules); $i++) { %><%= "- ".$failedmodules->[$i]."\n" %><% } %>">+<%= $more %></span>
          % last;
       % }
     % }
