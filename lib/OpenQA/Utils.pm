@@ -1030,8 +1030,7 @@ sub mark_job_linked {
         my $found    = 0;
         my $comments = $job->comments;
         while (my $comment = $comments->next) {
-            my $label = $comment->label;
-            if ($label && $label eq 'linked') {
+            if (($comment->label // '') eq 'linked') {
                 $found = 1;
                 last;
             }
