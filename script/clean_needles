@@ -68,7 +68,7 @@ use v5.10;
 use DBIx::Class::DeploymentHandler;
 use Getopt::Long;
 use OpenQA::Utils;
-use OpenQA::Scheduler::Scheduler;
+use OpenQA::Scheduler;
 use Mojo::JSON 'decode_json';
 
 Getopt::Long::Configure("no_ignore_case");
@@ -135,7 +135,7 @@ my %seen_tags;
 my %seen_needles;
 while (my $j = $jobs->next) {
     for my $module (OpenQA::Schema::Result::JobModules::job_modules($j)) {
-        my $job = OpenQA::Scheduler::Scheduler::job_get($j->id);
+        my $job = OpenQA::Scheduler::job_get($j->id);
         my $fn  = join('/', $OpenQA::Utils::resultdir, $job->{settings}->{NAME}, 'details-' . $module->name . '.json');
         next unless -e $fn;
         open(my $fd, '<', $fn);

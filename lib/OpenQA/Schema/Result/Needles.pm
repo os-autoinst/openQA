@@ -111,7 +111,7 @@ sub update_needle_cache {
 sub update_needle {
     my ($filename, $module, $matched, $needle_cache) = @_;
 
-    my $schema = OpenQA::Scheduler::Scheduler::schema();
+    my $schema = OpenQA::Schema->singleton;
     my $guard  = $schema->txn_scope_guard;
 
     if (!-f $filename) {

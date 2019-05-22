@@ -16,26 +16,43 @@
 package OpenQA::Scheduler::Client;
 use Mojo::Base -base;
 
-use OpenQA::IPC;
+use Mojo::Server::Daemon;
+use Carp 'croak';
+use OpenQA::Client;
+use OpenQA::Scheduler;
+
+has client => sub { OpenQA::Client->new(api => 'localhost') };
+has port   => 9529;
+
+sub embed_server_for_testing {
+    my $self = shift;
+
+    # Change the current OpenQA::Scheduler::Client instance to use an embedded
+    # scheduler server for testing (this avoids forking a second process)
+    unless ($self->{test_server}) {
+        my $server = $self->{test_server} = Mojo::Server::Daemon->new(listen => ['http://127.0.0.1']);
+        $server->build_app('OpenQA::Scheduler');
+        $server->start;
+        $self->port($server->ports->[0]);
+    }
+
+    return $self;
+}
 
 sub wakeup {
-    my $ipc = OpenQA::IPC->ipc;
-
-    my $con = $ipc->{bus}->get_connection;
-
-    # ugly work around for Net::DBus::Test not being able to handle us using low level API
-    return if ref($con) eq 'Net::DBus::Test::MockConnection';
-
-    my $msg = $con->make_method_call_message(
-        "org.opensuse.openqa.Scheduler",
-        "/Scheduler", "org.opensuse.openqa.Scheduler",
-        "wakeup_scheduler"
-    );
-    # do not wait for a reply - avoid deadlocks. this way we can even call it
-    # from within the scheduler without having to worry about reentering
-    $con->send($msg);
+    my ($self, $worker_id) = @_;
+    return if $self->{wakeup};
+    $self->{wakeup}++;
+    $self->client->max_connections(0)->request_timeout(5)->get_p($self->_api('wakeup'))
+      ->finally(sub { delete $self->{wakeup} })->wait;
 }
 
 sub singleton { state $client ||= __PACKAGE__->new }
+
+sub _api {
+    my ($self, $method) = @_;
+    my $port = $self->port;
+    return "http://127.0.0.1:$port/api/$method";
+}
 
 1;

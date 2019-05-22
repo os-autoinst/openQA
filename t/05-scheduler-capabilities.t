@@ -38,11 +38,11 @@ my $schema = OpenQA::Test::Database->new->create;    #(skip_fixtures => 1);
 
 my $sent = {};
 
-my $s_w = OpenQA::Scheduler::Scheduler::shuffle_workers(0);
+my $s_w = OpenQA::Scheduler::shuffle_workers(0);
 diag "Scheduler shuffle_workers: $s_w\n";
 
 sub schedule {
-    my $id = OpenQA::Scheduler::Scheduler::schedule();
+    my $id = OpenQA::Scheduler::schedule();
     do {
         my $j = $schema->resultset('Jobs')->find($_->{job});
         $j->state(OpenQA::Jobs::Constants::RUNNING);
