@@ -518,8 +518,7 @@ sub job_is_linked {
     $job->discard_changes;
     my $comments = $job->comments;
     while (my $comment = $comments->next) {
-        my $label = $comment->label;
-        if ($label && $label eq 'linked') {
+        if (($comment->label // '') eq 'linked') {
             return 1;
         }
     }
