@@ -555,8 +555,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_data_url">data_url</a></li>
 <li><a href="#_upload_logs">upload_logs</a></li>
 <li><a href="#_upload_asset">upload_asset</a></li>
+<li><a href="#_compat_args">compat_args</a></li>
 </ul>
 </li>
+<li><a href="#_vim_set_sw4_et">vim: set sw=4 et:</a></li>
 </ul>
 </div>
 </div>
@@ -955,11 +957,29 @@ over serial or VNC.</p>
 <h5 id="_wait_serial">wait_serial</h5>
 <div class="literalblock">
 <div class="content">
+<pre>wait_serial($regex or ARRAYREF of $regexes, [, timeout =&gt; $timeout] [, expect_not_found =&gt; $expect_not_found] [, %args]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Deprecated mode</p>
+</div>
+<div class="literalblock">
+<div class="content">
 <pre>wait_serial($regex or ARRAYREF of $regexes [, $timeout [, $expect_not_found [, @args ]]]);</pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Wait for <code>$regex</code> or anyone of <code>$regexes</code> to appear on serial output.</p>
+</div>
+<div class="paragraph">
+<p>Setting <code>$no_regex</code> will cause it to do a plain string search.</p>
+</div>
+<div class="paragraph">
+<p>Set <code>$quiet</code>, to avoid recording serial_result.</p>
+</div>
+<div class="paragraph">
+<p>For serial_terminal there are more options available, like <code>record_output</code>,
+<code>buffer_size</code>. See <code>consoles::serial_screen::read_unitl</code> for details.</p>
 </div>
 <div class="paragraph">
 <p>Returns the string matched or <code>undef</code> if <code>$expect_not_found</code> is false
@@ -968,9 +988,6 @@ over serial or VNC.</p>
 <div class="paragraph">
 <p>Returns <code>undef</code> or (after timeout) the string that <em>did _not</em> match_' if
 <code>$expect_not_found</code> is true. The default timeout is 90 seconds.</p>
-</div>
-<div class="paragraph">
-<p>Setting <code>$no_regex</code> will cause it to do a plain string search.</p>
 </div>
 </div>
 <div class="sect4">
@@ -1021,18 +1038,26 @@ should work on *nix operating systems with a configured serial device.</em>'</p>
 <h5 id="_script_run">script_run</h5>
 <div class="literalblock">
 <div class="content">
-<pre>script_run($cmd [, $wait]);</pre>
+<pre>script_run($cmd [, timeout =&gt; $timeout] [, quiet =&gt; $quiet]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Deprecated mode</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>script_run($cmd [, $timeout]);</pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Run <code>$cmd</code> (in the default implementation, by assuming the console prompt and typing
-the command). If $wait_seconds is greater than 0, wait for that length of time for
+the command). If <code>$timeout</code> is greater than 0, wait for that length of time for
 execution to complete (otherwise, returns undef immediately). See `distri-`script_run&gt;
 for default timeout.</p>
 </div>
 <div class="paragraph">
-<p>&lt;Returns&gt; exit code received from <em>$cmd</em>', or undef if $wait_seconds is 0 or execution
-does not complete within $wait_seconds.</p>
+<p>&lt;Returns&gt; exit code received from <em>$cmd</em>', or undef if $timeout is 0 or execution
+does not complete within $timeout.</p>
 </div>
 <div class="paragraph">
 <p><em>The implementation is distribution specific and not always available.</em>'</p>
@@ -1148,6 +1173,14 @@ This will return content of the file located in data/autoyast/autoinst.xml</p>
 </div>
 <div class="sect4">
 <h5 id="_validate_script_output">validate_script_output</h5>
+<div class="literalblock">
+<div class="content">
+<pre>validate_script_output($script, $code [, timeout =&gt; $timeout] [,quiet =&gt; $quiet])</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Deprecated mode</p>
+</div>
 <div class="literalblock">
 <div class="content">
 <pre>validate_script_output($script, $code, [$wait])</pre>
@@ -1847,11 +1880,50 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 </div>
 </div>
+<div class="sect4">
+<h5 id="_compat_args">compat_args</h5>
+<div class="paragraph">
+<p>Helper function to create backward compatible function arguments when moving
+from positional arguments to named one.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>compat_args( $hash_ref_defaults, $arrayref_old_fixed, [ $arg1, $arg2, ...])</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A typical call would look like:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>    my %args = compat_args({timeout =&gt; 60, .. }, ['timeout'], @_);
+=cut
+sub compat_args {
+    my ($def_args, $fix_keys) = splice(@_, 0, 2);
+    my %ret;
+    for my $key (@{$fix_keys}) {
+        $ret{$key} = shift if (scalar(@_) &gt;= 1 &amp;&amp; (!defined($_[0]) || !grep(/^$_[0]$/, keys(%{$def_args}))));
+    }
+    carp("Odd number of arguments") unless ((@_ % 2) == 0);
+    %ret = (%{$def_args}, %ret, @_);
+    map { $ret{$_} //= $def_args-&gt;{$_} } keys(%{$def_args});
+    return %ret;
+}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>1;</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_vim_set_sw4_et">vim: set sw=4 et:</h3>
+
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-05-22 14:01:07 UTC
+Last updated 2019-05-23 18:12:08 UTC
 </div>
 </div>
 </body>
