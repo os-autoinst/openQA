@@ -31,7 +31,6 @@ use Test::Output qw(stderr_like);
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils 'redirect_output';
-require OpenQA::Worker::Commands;
 
 my $schema = OpenQA::Test::Database->new->create();
 
@@ -66,67 +65,6 @@ subtest 'worker with job and not updated in last 120s is considered dead' => sub
     _check_job_incomplete($_) for (99961, 99963);
 };
 
-my $ws = testUA->new;
-
-no warnings qw(redefine once);
-*OpenQA::Worker::Commands::stop_job = sub {
-    my $reason = shift;
-    $OpenQA::Worker::Common::job = $reason;
-};
-
-*OpenQA::Worker::Commands::backend_running = sub {
-    return 1;
-};
-
-subtest 'worker accepted ws commands' => sub {
-    $OpenQA::Worker::Common::verbose      = 1;
-    $OpenQA::Worker::Common::hosts        = {host1 => {ws => $ws}};
-    $OpenQA::Worker::Common::ws_to_host   = {$ws => 'host1'};
-    $OpenQA::Worker::Common::current_host = 'host1';
-
-    for my $c (qw(quit abort cancel obsolete)) {
-        $OpenQA::Worker::Common::job = {id => 'job'};
-        OpenQA::Worker::Commands::websocket_commands($ws, {type => $c});
-        is($OpenQA::Worker::Common::job, $c, "job aborted as $c");
-    }
-
-    $OpenQA::Worker::Common::job     = {id => 'job', URL => '127.0.0.1/nojob'};
-    $OpenQA::Worker::Common::pooldir = 't';
-    is(OpenQA::Worker::Jobs::is_developer_session_started(), 0, 'worker initially assumes no devel session');
-    OpenQA::Worker::Commands::websocket_commands($ws, {type => 'livelog_start'});
-    is($OpenQA::Worker::Jobs::do_livelog, 1, 'livelog is started');
-    OpenQA::Worker::Commands::websocket_commands($ws, {type => 'livelog_stop'});
-    is($OpenQA::Worker::Jobs::do_livelog, 0, 'livelog is stopped');
-
-    OpenQA::Worker::Commands::websocket_commands($ws, {type => 'developer_session_start'});
-    is(OpenQA::Worker::Jobs::is_developer_session_started(), 1, 'worker aware of devel session');
-
-    my $buf;
-    redirect_output(\$buf);
-    OpenQA::Worker::Commands::websocket_commands($ws, {type => 'unknown'});
-    like($buf, qr/got unknown command/, 'Unknown command');
-    $buf = '';
-    OpenQA::Worker::Commands::websocket_commands($ws, {type => 'incompatible'});
-    like($buf, qr/The worker is running an incompatible version/, 'incompatible version');
-
-};
-
 done_testing();
-
-package testUA;
-sub new {
-    my $type = shift;
-    return bless {}, $type;
-}
-
-sub send {
-    my $self = shift;
-    push @{$self->{commands}}, \@_;
-}
-
-sub get_last_command {
-    my $self = shift;
-    return $self->{commands}[-1];
-}
 
 1;

@@ -9,7 +9,6 @@ use IO::Socket::INET;
 use Mojolicious;
 use POSIX '_exit';
 use OpenQA::Worker;
-use OpenQA::Worker::Common;
 use Config::IniFiles;
 use Data::Dumper 'Dumper';
 use OpenQA::Utils qw(log_error log_info log_debug);
@@ -140,14 +139,15 @@ sub kill_service {
 }
 
 sub wait_for_worker {
-    my $schema = shift;
-    my $id     = shift;
+    my ($schema, $id) = @_;
+
     for (0 .. 10) {
+        diag("Waiting for worker with ID $id");
         sleep 2;
-        diag('Attempt for worker: ' . $id);
-        my $w = $schema->resultset("Workers")->find($id);
-        last if defined $w && !$w->dead;
+        my $worker = $schema->resultset('Workers')->find($id);
+        return undef if defined $worker && !$worker->dead;
     }
+    diag("No worker with ID $id not active");
 }
 
 sub create_webapi {
@@ -292,36 +292,19 @@ sub unstable_worker {
 
     my $pid = fork();
     if ($pid == 0) {
-        use Mojo::Util 'monkey_patch';
         use Mojo::IOLoop;
-        my ($worker_settings, $host_settings)
-          = read_worker_config($instance, $host);    # It will read from config file, so watch out
-        $OpenQA::Worker::Common::worker_settings = $worker_settings;
-        $OpenQA::Worker::Common::instance        = $instance;
 
-
-        # XXX: this should be sent to the scheduler to be included in the worker's table
-        local $ENV{QEMUPORT} = ($instance) * 10 + 20002;
-        local $ENV{VNC}      = ($instance) + 90;
-        # Mangle worker main()
-        monkey_patch 'OpenQA::Worker', main => sub {
-            my ($host_settings) = @_;
-            my $dir;
-            for my $h (@{$host_settings->{HOSTS}}) {
-                my @dirs = ($host_settings->{$h}{SHARE_DIRECTORY}, path($OpenQA::Utils::prjdir, 'share'));
-                ($dir) = grep { $_ && -d } @dirs;
-                unless ($dir) {
-                    log_error("Can not find working directory for host $h. Ignoring host");
-                    next;
-                }
-
-                Mojo::IOLoop->next_tick(
-                    sub { OpenQA::Worker::Common::register_worker($h, $dir, $host_settings->{$h}{TESTPOOLSERVER}) });
-            }
-        };
-
-        OpenQA::Worker::init($host_settings, {apikey => $apikey, apisecret => $apisecret});
-        OpenQA::Worker::main($host_settings);
+        my $worker = OpenQA::Worker->new(
+            {
+                apikey    => $apikey,
+                apisecret => $apisecret,
+                instance  => $instance,
+                verbose   => 1
+            });
+        $worker->settings->clear_webui_hosts;
+        $worker->settings->add_webui_host($host);
+        $worker->log_setup_info;
+        $worker->init();
         for (0 .. $ticks) {
             Mojo::IOLoop->singleton->one_tick;
         }
@@ -336,77 +319,54 @@ sub unstable_worker {
     return $pid;
 }
 
-sub standard_worker     { c_worker(@_, 0) }
-sub unresponsive_worker { c_worker(@_, 1) }
+sub standard_worker {
+    my ($apikey, $apisecret, $host, $instance) = @_;
+
+    diag("Starting standard worker. Instance: $instance for host $host");
+    c_worker($apikey, $apisecret, $host, $instance, 0);
+}
+sub unresponsive_worker {
+    my ($apikey, $apisecret, $host, $instance) = @_;
+
+    diag("Starting unresponsive worker. Instance: $instance for host $host");
+    c_worker($apikey, $apisecret, $host, $instance, 1);
+}
 
 sub c_worker {
-    # the help of the Doctor would be really appreciated here.
     my ($apikey, $apisecret, $host, $instance, $bogus) = @_;
     $bogus //= 1;
 
     my $pid = fork();
     if ($pid == 0) {
-        use Mojo::Util 'monkey_patch';
         use Mojo::IOLoop;
-        my ($worker_settings, $host_settings)
-          = read_worker_config($instance, $host);    # It will read from config file, so watch out
-        $worker_settings->{LOG_LEVEL}            = 'debug';
-        $OpenQA::Worker::Common::worker_settings = $worker_settings;
-        $OpenQA::Worker::Common::instance        = $instance;
+        use Test::MockModule;
 
-
-        # XXX: this should be sent to the scheduler to be included in the worker's table
-        local $ENV{QEMUPORT} = ($instance) * 10 + 20002;
-        local $ENV{VNC}      = ($instance) + 90;
-        # Mangle worker main()
+        my $command_handler_mock = Test::MockModule->new('OpenQA::Worker::CommandHandler');
         if ($bogus) {
-            monkey_patch 'OpenQA::Worker::Commands', websocket_commands => sub {
-                my ($tx, $json) = @_;
-                log_debug("Received " . Dumper($json));
-            };
+            $command_handler_mock->mock(
+                handle_command => sub {
+                    my ($self, $tx, $json) = @_;
+                    log_debug('Received ws message: ' . Dumper($json));
+                });
         }
 
-        OpenQA::Worker::init($host_settings, {apikey => $apikey, apisecret => $apisecret});
-        OpenQA::Worker::main($host_settings);
-        Mojo::IOLoop->start;
+        my $worker = OpenQA::Worker->new(
+            {
+                apikey    => $apikey,
+                apisecret => $apisecret,
+                instance  => $instance,
+                verbose   => 1
+            });
+        $worker->settings->clear_webui_hosts;
+        $worker->settings->add_webui_host($host);
+        $worker->log_setup_info;
+        $worker->exec();
+
         Devel::Cover::report() if Devel::Cover->can('report');
         _exit(0);
     }
 
     return $pid;
-}
-
-sub read_worker_config {
-    my ($instance, $host) = @_;
-    my $worker_dir = $ENV{OPENQA_CONFIG} || '/etc/openqa';
-    my $cfg        = Config::IniFiles->new(-file => $worker_dir . '/workers.ini');
-
-    my $sets = {};
-    for my $section ('global', $instance) {
-        if ($cfg && $cfg->SectionExists($section)) {
-            for my $set ($cfg->Parameters($section)) {
-                $sets->{uc $set} = $cfg->val($section, $set);
-            }
-        }
-    }
-    # use separate set as we may not want to advertise other host confiuration to the world in job settings
-    my $host_settings;
-    $host ||= $sets->{HOST} ||= 'localhost';
-    delete $sets->{HOST};
-    my @hosts = split / /, $host;
-    for my $section (@hosts) {
-        if ($cfg && $cfg->SectionExists($section)) {
-            for my $set ($cfg->Parameters($section)) {
-                $host_settings->{$section}{uc $set} = $cfg->val($section, $set);
-            }
-        }
-        else {
-            $host_settings->{$section} = {};
-        }
-    }
-    $host_settings->{HOSTS} = \@hosts;
-
-    return $sets, $host_settings;
 }
 
 sub client_output {

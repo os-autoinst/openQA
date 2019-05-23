@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,12 +15,13 @@
 
 package OpenQA::Worker::Cache::Service;
 
-use Mojolicious::Lite;
+use OpenQA::Worker::Settings;
 use OpenQA::Worker::Cache::Task::Asset;
-use Mojolicious::Plugin::Minion;
 use OpenQA::Worker::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE STATUS_ERROR);
-use Mojo::Collection;
+use Mojolicious::Lite;
+use Mojolicious::Plugin::Minion;
 use Mojolicious::Plugin::Minion::Admin;
+use Mojo::Collection;
 use Mojo::Util 'md5_sum';
 
 use constant DEFAULT_MINION_WORKERS => 5;
@@ -70,11 +71,10 @@ sub enqueue {
 sub _setup_workers {
     return @_ unless grep { /worker/i } @_;
 
-    require OpenQA::Worker::Common;
-    my @args = @_;
-    my ($worker_settings, undef) = OpenQA::Worker::Common::read_worker_config(undef, undef);
+    my @args            = @_;
+    my $global_settings = OpenQA::Worker::Settings->new->global_settings;
     my $cache_workers
-      = exists $worker_settings->{CACHEWORKERS} ? $worker_settings->{CACHEWORKERS} : DEFAULT_MINION_WORKERS;
+      = exists $global_settings->{CACHEWORKERS} ? $global_settings->{CACHEWORKERS} : DEFAULT_MINION_WORKERS;
     push(@args, '-j', $cache_workers);
     return @args;
 }

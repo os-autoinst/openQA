@@ -579,72 +579,6 @@ subtest 'job set_running()' => sub {
     is($job->state,       'foobar', 'job state is foobar');
 };
 
-
-use OpenQA::Worker::Common 'get_timer';
-use OpenQA::Worker::Jobs;
-use OpenQA::Worker::Pool;
-use File::Spec::Functions;
-no warnings 'redefine';
-sub OpenQA::Worker::Jobs::engine_workit {
-    return {child => Mojo::IOLoop::ReadWriteProcess->new};
-}
-my $alive = 1;
-sub Mojo::IOLoop::ReadWriteProcess::is_running {
-    return $alive;
-}
-
-sub OpenQA::Worker::Jobs::_stop_job {
-    return;
-}
-
-sub _check_timers {
-    my ($is_set) = @_;
-    my $set = 0;
-    for my $t (qw(update_status job_timeout)) {
-        my $timer = get_timer($t);
-        if ($timer) {
-            $set += 1 if Mojo::IOLoop->singleton->reactor->{timers}{$timer->[0]};
-        }
-    }
-    if ($is_set) {
-        is($set, 2, 'timers set');
-    }
-    else {
-        is($set, 0, 'timers not set');
-    }
-
-}
-
-subtest 'job timers are added after start job and removed after stop job' => sub {
-    _check_timers(0);
-    $OpenQA::Worker::Jobs::job = {id => 1, settings => {NAME => 'test_job'}};
-    OpenQA::Worker::Jobs::start_job('example.host');
-    _check_timers(1);
-
-    my $exception = 1;
-    eval {
-        OpenQA::Worker::Jobs::stop_job('done');
-        $exception = 0;
-    };
-    ok(!$exception, 'Pool check qemu done');
-    _check_timers(0);
-};
-
-subtest 'Old logs are deleted when nocleanup is set' => sub {
-    use OpenQA::Worker::Pool 'clean_pool';
-    use OpenQA::Worker::Common qw($nocleanup $pooldir);
-    $nocleanup = 1;
-    $pooldir   = tempdir('poolXXXX');
-
-    $pooldir->child('autoinst-log.txt')->spurt('Hello Mojo!');
-    $OpenQA::Worker::Jobs::job = {id => 1, settings => {NAME => 'test_job'}};
-    OpenQA::Worker::Jobs::start_job('example.host');
-    ok(!-e $pooldir->child('autoinst-log.txt'), 'autoinst-log.txt file has been deleted');
-    ok(-e $pooldir->child('worker-log.txt'),    'Worker log is there');
-    $nocleanup = 0;
-    $pooldir   = undef;
-};
-
 $t->get_ok('/t99946')->status_is(302)->header_like(Location => qr{tests/99946});
 
 subtest 'delete job assigned as last use for asset' => sub {
@@ -664,48 +598,6 @@ subtest 'delete job assigned as last use for asset' => sub {
     $some_asset = $assets->find($asset_id);
     ok($some_asset, 'asset still exists');
     is($some_asset->last_use_job_id, undef, 'last job unset');
-};
-
-subtest 'check dead qemu' => sub {
-    use OpenQA::Worker::Pool 'clean_pool';
-    use OpenQA::Worker::Common qw($nocleanup $pooldir);
-    $nocleanup = 0;
-
-    $pooldir = tempdir('poolXXXX');
-    my $qemu_pid_fh = $pooldir->child('qemu.pid')->spurt('999999999999999999');
-
-    my $exception = 1;
-    eval {
-        clean_pool();
-        $exception = 0;
-    };
-    ok(!$exception, 'dead qemu bogus pid');
-
-    $qemu_pid_fh = $pooldir->child('qemu.pid')->spurt($$);
-    $exception   = 1;
-    eval {
-        clean_pool();
-        $exception = 0;
-    };
-    ok(!$exception, 'dead qemu bogus exec');
-};
-
-subtest 'check dead children stop job' => sub {
-    sub OpenQA::Worker::Jobs::api_call { 1; }
-    use OpenQA::Utils;
-    my $log = add_log_channel('autoinst', level => 'debug', default => 'append');
-    my @messages;
-    $log->on(
-        message => sub {
-            my ($log, $level, @lines) = @_;
-            push @messages, @lines;
-        });
-
-    $alive = 0;
-
-    eval { OpenQA::Worker::Jobs::_stop_job_kill_and_upload('dead_children'); };
-
-    like($messages[2], qr/result: dead_children/, 'dead children match exception');
 };
 
 done_testing();

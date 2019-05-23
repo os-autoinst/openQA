@@ -18,7 +18,6 @@ package OpenQA::Worker::Engines::isotovideo;
 use strict;
 use warnings;
 
-use OpenQA::Worker::Common;
 use OpenQA::Utils qw(locate_asset log_error log_info log_debug log_warning get_channel_handle);
 use POSIX qw(:sys_wait_h strftime uname _exit);
 use Mojo::JSON 'encode_json';    # booleans
@@ -31,7 +30,6 @@ use Cwd qw(abs_path getcwd);
 use OpenQA::Worker::Cache;
 use OpenQA::Worker::Cache::Client;
 use OpenQA::Worker::Cache::Request;
-use OpenQA::Worker::Common;
 use Time::HiRes 'sleep';
 use IO::Handle;
 use Mojo::IOLoop::ReadWriteProcess 'process';
@@ -47,11 +45,6 @@ use constant CGROUP_SLICE => $ENV{OPENQA_CGROUP_SLICE};
 my $isotovideo = "/usr/bin/isotovideo";
 my $workerpid;
 
-require Exporter;
-our (@ISA, @EXPORT);
-@ISA    = qw(Exporter);
-@EXPORT = qw(engine_workit engine_check);
-
 sub set_engine_exec {
     my ($path) = @_;
     if ($path) {
@@ -59,8 +52,10 @@ sub set_engine_exec {
         # save the absolute path as we chdir later
         $isotovideo = abs_path($path);
     }
-    $OpenQA::Worker::Common::isotovideo_interface_version = $1
-      if (-f $isotovideo && qx(perl $isotovideo --version) =~ /interface v(\d+)/);
+    if (-f $isotovideo && qx(perl $isotovideo --version) =~ /interface v(\d+)/) {
+        return $1;
+    }
+    return 0;
 }
 
 sub _kill($) {
@@ -71,8 +66,8 @@ sub _kill($) {
     }
 }
 
-sub _save_vars($) {
-    my $vars = shift;
+sub _save_vars {
+    my ($pooldir, $vars) = @_;
     die "cannot get environment variables!\n" unless $vars;
     my $fn = $pooldir . "/vars.json";
     unlink "$pooldir/vars.json" if -e "$pooldir/vars.json";
@@ -113,7 +108,7 @@ sub detect_asset_keys {
 }
 
 sub cache_assets {
-    my ($job, $vars, $assetkeys) = @_;
+    my ($job, $vars, $assetkeys, $webui_host, $pooldir) = @_;
     my $cache_client = OpenQA::Worker::Cache::Client->new;
     # TODO: Enqueue all, and then wait
     for my $this_asset (sort keys %$assetkeys) {
@@ -128,23 +123,22 @@ sub cache_assets {
         return {error => $error} if $error;
 
         my $asset_request = $cache_client->request->asset(
-            id    => $job->{id},
+            id    => $job->id,
             asset => $asset_uri,
             type  => $assetkeys->{$this_asset},
-            host  => $current_host
+            host  => $webui_host
         );
 
         if ($asset_request->enqueue) {
-            log_debug("Downloading " . $asset_uri . " - request sent to Cache Service.", channels => 'autoinst');
-            update_setup_status and sleep 5 until $asset_request->processed;
+            log_debug("Downloading $asset_uri - request sent to Cache Service.", channels => 'autoinst');
+            $job->post_setup_status and sleep 5 until $asset_request->processed;
             my $msg = "Download of $asset_uri processed";
             if (my $output = $asset_request->output) { $msg .= ": $output" }
             log_debug($msg, channels => 'autoinst');
         }
 
-        die 'Mandatory $current_host is not set' unless $current_host;
-        $asset = $cache_client->asset_path($current_host, $asset_uri)
-          if $cache_client->asset_exists($current_host, $asset_uri);
+        $asset = $cache_client->asset_path($webui_host, $asset_uri)
+          if $cache_client->asset_exists($webui_host, $asset_uri);
 
         if ($this_asset eq 'UEFI_PFLASH_VARS' && !defined $asset) {
             log_error("Failed to download $asset_uri");
@@ -154,7 +148,7 @@ sub cache_assets {
             # TODO: This seems to leave the job stuck in some cases (observed in production on openqaworker3).
             next;
         }
-        return {error => "Failed to download $asset_uri to " . $cache_client->asset_path($current_host, $asset_uri)}
+        return {error => "Failed to download $asset_uri to " . $cache_client->asset_path($webui_host, $asset_uri)}
           unless $asset;
         unlink basename($asset) if -l basename($asset);
         symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";
@@ -164,16 +158,25 @@ sub cache_assets {
 }
 
 sub engine_workit {
-    my ($job) = @_;
+    my ($job)           = @_;
+    my $worker          = $job->worker;
+    my $client          = $job->client;
+    my $global_settings = $worker->settings->global_settings;
+    my $pooldir         = $worker->pool_directory;
+    my $instance        = $worker->instance_number;
+    my $workerid        = $client->worker_id;
+    my $webui_host      = $client->webui_host;
+    my $job_info        = $job->info;
 
+    log_debug('Preparing Mojo::IOLoop::ReadWriteProcess::Session');
     session->enable;
     session->reset;
     session->enable_subreaper;
 
     my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
     log_info('+++ setup notes +++', channels => 'autoinst');
-    log_info(sprintf("start time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
-    log_info(sprintf("running on $hostname:%d ($sysname $release $version $machine)", $instance),
+    log_info(sprintf("Start time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
+    log_info(sprintf("Running on $hostname:%d ($sysname $release $version $machine)", $instance),
         channels => 'autoinst');
 
     log_error("Failed enabling subreaper mode", channels => 'autoinst') unless session->subreaper;
@@ -185,56 +188,52 @@ sub engine_workit {
                 channels => 'autoinst');
         });
 
-    # set base dir to the one assigned with webui
-    OpenQA::Utils::change_sharedir($hosts->{$current_host}{dir});
-
     # XXX: this should come from the worker table. Only included
     # here for convenience when looking at the pool of
     # debugging.
+    my $job_settings = $job_info->{settings};
     for my $i (qw(QEMUPORT VNC OPENQA_HOSTNAME)) {
-        $job->{settings}->{$i} = $ENV{$i};
+        $job_settings->{$i} = $ENV{$i};
     }
     if (open(my $fh, '>', 'job.json')) {
-        print $fh Cpanel::JSON::XS->new->pretty(1)->encode($job);
+        print $fh Cpanel::JSON::XS->new->pretty(1)->encode($job_info);
         close $fh;
     }
 
     # pass worker instance and worker id to isotovideo
     # both used to create unique MAC and TAP devices if needed
     # workerid is also used by libvirt backend to identify VMs
-    my $openqa_url = $current_host;
-    my $workerid   = $hosts->{$current_host}{workerid};
+    my $openqa_url = $webui_host;
     my %vars       = (
         OPENQA_URL      => $openqa_url,
         WORKER_INSTANCE => $instance,
         WORKER_ID       => $workerid,
-        PRJDIR          => $OpenQA::Utils::sharedir
+        PRJDIR          => $OpenQA::Utils::sharedir,
+        %$job_settings
     );
-    while (my ($k, $v) = each %{$job->{settings}}) {
-        log_debug("setting $k=$v");
-        $vars{$k} = $v;
-    }
+    log_debug('Job settings:');
+    log_debug(join("\n", '', map { "    $_=$vars{$_}" } sort keys %vars));
 
     my $shared_cache;
 
     my $assetkeys = detect_asset_keys(\%vars);
 
     # do asset caching if CACHEDIRECTORY is set
-    if ($worker_settings->{CACHEDIRECTORY}) {
-        my $host_to_cache = OpenQA::Worker::Cache::_base_host($current_host);
-        my $error         = cache_assets($job => \%vars => $assetkeys);
+    if ($global_settings->{CACHEDIRECTORY}) {
+        my $host_to_cache = OpenQA::Worker::Cache::_base_host($webui_host);
+        my $error         = cache_assets($job, \%vars, $assetkeys, $webui_host, $pooldir);
         return $error if $error;
 
         # do test caching if TESTPOOLSERVER is set
-        if (my $rsync_source = $hosts->{$current_host}{testpoolserver}) {
-            $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
+        if (my $rsync_source = $client->testpool_server) {
+            $shared_cache = catdir($global_settings->{CACHEDIRECTORY}, $host_to_cache);
 
             my $cache_client  = OpenQA::Worker::Cache::Client->new;
             my $rsync_request = $cache_client->request->rsync(
                 from => $rsync_source,
                 to   => $shared_cache
             );
-            my $rsync_request_description = "rsync cache request from '$rsync_source' to '$shared_cache'";
+            my $rsync_request_description = "Rsync cache request from '$rsync_source' to '$shared_cache'";
 
             $vars{PRJDIR} = $shared_cache;
 
@@ -243,10 +242,10 @@ sub engine_workit {
                 return {error => "Failed to send $rsync_request_description"} unless $rsync_request->enqueue;
                 log_info("Enqueued $rsync_request_description");
 
-                sleep 5 and update_setup_status until $rsync_request->processed;
+                sleep 5 and $job->post_setup_status until $rsync_request->processed;
 
                 if (my $output = $rsync_request->output) {
-                    log_info('rsync: ' . $output, channels => 'autoinst');
+                    log_info('Output of rsync: ' . $output, channels => 'autoinst');
                 }
 
                 # treat "no sync necessary" as success as well
@@ -260,7 +259,7 @@ sub engine_workit {
                     last;
                 }
                 elsif ($remaining_tries > 1 && $exit == 24) {
-                    log_info("rsync failed due to a vanished source files (exit code 24), trying again");
+                    log_info("Rsync failed due to a vanished source files (exit code 24), trying again");
                 }
                 else {
                     return {error => "Failed to rsync tests: exit code: $exit"};
@@ -280,10 +279,11 @@ sub engine_workit {
     $vars{CASEDIR}    //= OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
     $vars{PRODUCTDIR} //= OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
 
-    _save_vars(\%vars);
+    _save_vars($pooldir, \%vars);
 
     # os-autoinst's commands server
-    $job->{URL} = "http://localhost:" . ($job->{settings}->{QEMUPORT} + 1) . "/" . $job->{settings}->{JOBTOKEN};
+    $job_info->{URL}
+      = "http://localhost:" . ($job_info->{settings}->{QEMUPORT} + 1) . "/" . $job_info->{settings}->{JOBTOKEN};
 
     # create tmpdir for qemu to write here
     my $tmpdir = "$pooldir/tmp";
@@ -291,14 +291,15 @@ sub engine_workit {
     my $cgroup;
     mkdir($tmpdir) unless (-d $tmpdir);
 
-    log_info('preparing cgroups to start isotovideo');
+    log_info('Preparing cgroups to start isotovideo');
     eval {
-        $proc_cgroup = (grep { /name=systemd:/ } split(/\n/, path("/proc", $$, "cgroup")->slurp))[0];
+        $proc_cgroup = (grep { /name=systemd:/ } split(/\n/, path("/proc", $$, "cgroup")->slurp))[0]
+          if defined $$;
         $proc_cgroup =~ s/^.*name=systemd:/systemd/g if defined $proc_cgroup;
     };
 
     local $@;
-    eval { $cgroup = cgroupv2->from(CGROUP_SLICE // $proc_cgroup)->child($job->{id})->create; };
+    eval { $cgroup = cgroupv2->from(CGROUP_SLICE // $proc_cgroup)->child($job_info->{id})->create; };
     $cgroup = c() and log_warning(
         "Failed creating CGroup subtree '$@', disabling them."
           . "You can define a custom slice with OPENQA_CGROUP_SLICE or indicating the base mount with MOJO_CGROUP_FS",
@@ -309,12 +310,12 @@ sub engine_workit {
         sub {
             setpgrp(0, 0);
             $ENV{TMPDIR} = $tmpdir;
-            log_info("$$: WORKING " . $job->{id});
+            log_info("$$: WORKING " . $job_info->{id});
             log_debug('+++ worker notes +++', channels => 'autoinst');
-            log_debug(sprintf("start time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
+            log_debug(sprintf("Start time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
 
             my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
-            log_debug(sprintf("running on $hostname:%d ($sysname $release $version $machine)", $instance),
+            log_debug(sprintf("Running on $hostname:%d ($sysname $release $version $machine)", $instance),
                 channels => 'autoinst');
             my $handle = get_channel_handle('autoinst');
             STDOUT->fdopen($handle, 'w');
@@ -329,10 +330,10 @@ sub engine_workit {
             my $self = shift;
             eval { log_info("Isotovideo exit status: " . $self->exit_status, channels => 'autoinst'); };
             if ($self->exit_status != 0) {
-                OpenQA::Worker::Jobs::stop_job('died');
+                $job->stop('died');
             }
             else {
-                OpenQA::Worker::Jobs::stop_job('done');
+                $job->stop('done');
             }
         });
 
@@ -360,7 +361,7 @@ sub engine_workit {
     $container->on(
         container_error => sub { shift; my $e = shift; log_error("Container error: @{$e}", channels => 'worker') });
 
-    log_info('starting isotovideo container');
+    log_info('Starting isotovideo container');
     $container->start();
     $workerpid = $child->pid();
     return {child => $child};
@@ -381,3 +382,5 @@ sub locate_local_assets {
     }
     return undef;
 }
+
+1;

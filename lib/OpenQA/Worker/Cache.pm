@@ -24,7 +24,7 @@ use Fcntl ':flock';
 use Mojo::UserAgent;
 use OpenQA::Utils
   qw(log_error log_info log_debug get_channel_handle add_log_channel append_channel_to_defaults remove_channel_from_defaults);
-use OpenQA::Worker::Common;
+use OpenQA::Worker::Settings;
 use Mojo::SQLite;
 use Mojo::File 'path';
 use Mojo::Base -base;
@@ -49,11 +49,11 @@ sub new {
 }
 
 sub from_worker {
-    my ($worker_settings, undef) = OpenQA::Worker::Common::read_worker_config(undef, undef);
+    my $global_settings = OpenQA::Worker::Settings->new->global_settings;
     __PACKAGE__->new(
         host     => 'localhost',
-        location => ($ENV{OPENQA_CACHE_DIR} || $worker_settings->{CACHEDIRECTORY}),
-        exists $worker_settings->{CACHELIMIT} ? (limit => int($worker_settings->{CACHELIMIT}) * (1024**3)) : ());
+        location => ($ENV{OPENQA_CACHE_DIR} || $global_settings->{CACHEDIRECTORY}),
+        exists $global_settings->{CACHELIMIT} ? (limit => int($global_settings->{CACHELIMIT}) * (1024**3)) : ());
 }
 
 sub DESTROY {
