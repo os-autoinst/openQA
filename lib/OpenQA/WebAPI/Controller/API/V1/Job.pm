@@ -50,6 +50,35 @@ List jobs in the system, including related information for each job such as the 
 associated, assigned worker id, children and parents, job id, group id, name, priority,
 result, settings, state and times of startup and finish of the job.
 
+These options are currently available:
+
+=over 4
+
+=item latest
+
+  latest => 1
+
+De-duplicate so that for the same DISTRI, VERSION, BUILD, TEST, FLAVOR, ARCH and MACHINE
+only the latest job is returned.
+
+=item scope
+
+  scope => relevant
+
+Only pending, not obsoleted jobs are included in the results.
+
+  scope => current
+
+Clones are excluded from the results.
+
+=item limit
+
+  limit => 100
+
+Limit the number of jobs.
+
+=back
+
 =back
 
 =cut
