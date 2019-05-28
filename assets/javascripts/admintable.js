@@ -260,29 +260,27 @@ function renderAdminTableValue(data, type, row, meta) {
 }
 
 function renderAdminTableSettingsList(data, type, row, meta) {
-    if (type !== 'display') {
-        return data ? data : '';
-    }
+    var plainText = type !== 'display';
     var edit = isEditingAdminTableRow(meta);
-    var html = '';
+    var result = '';
     if (edit) {
-        html += '<textarea class="key-value-pairs" oninput="updateTextArea(this);">';
+        result += '<textarea class="key-value-pairs" oninput="updateTextArea(this);">';
     }
     for (var j = 0; j < data.length; j++) {
         var keyValuePair = data[j];
         var key = htmlEscape(keyValuePair.key);
         var value = htmlEscape(keyValuePair.value);
-        if (edit) {
-            html += key + '=' + value + '\n';
+        if (edit || plainText) {
+            result += key + '=' + value + '\n';
         } else {
-            html += '<span class="key-value-pair"><span class="key">' + key +
+            result += '<span class="key-value-pair"><span class="key">' + key +
                 '</span>=<span class="value">' + value + '</span></span><br/>';
         }
     }
     if (edit) {
-        html += '</textarea>';
+        result += '</textarea>';
     }
-    return html;
+    return result;
 }
 
 function renderAdminTableDescription(data, type, row, meta) {
