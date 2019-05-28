@@ -615,7 +615,7 @@ The idea is to have a dedicated "helper server" to allow advanced network based 
 
 Support server takes advantage of the basic parallel setup as described in the previous section, with the support server being the parent test 'A' and the test needing it being the child test 'B'. This ensures that the test 'B' always have the support server available.
 
-==== Preparing the supportserver:
+==== Preparing the supportserver
 
 
 The support server image is created by calling a special test, based on the autoyast test:
@@ -634,7 +634,7 @@ should define correct user and password, as well as packages and the common conf
 
 More specific role the supportserver should take is then selected when the server is run in the actual test scenario.
 
-==== Using the supportserver:
+==== Using the supportserver
 
 
 In the Test suites, the supportserver is defined by setting:

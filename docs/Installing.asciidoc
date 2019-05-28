@@ -626,7 +626,7 @@ a space separated blacklist:
 blacklist = job_grab job_done
 --------------------------------------------------------------------------------
 
-=== List of events tracked by the auditing plugin:
+=== List of events tracked by the auditing plugin
 
 * Assets:
 ** asset_register asset_delete
