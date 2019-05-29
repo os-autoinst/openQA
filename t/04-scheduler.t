@@ -298,12 +298,12 @@ is_deeply($current_jobs, [$jobs->[0]], "jobs with specified IDs (comma list)");
 # Testing job_grab (WORKER_CLASS mismatch)
 %args = (workerid => $worker->{id}, allocate => 1);
 my $rjobs_before = list_jobs(state => 'running');
-OpenQA::Scheduler::schedule();
+OpenQA::Scheduler::Model::Jobs->singleton->schedule();
 is(undef, $sent->{$worker->{id}}->{job}, 'job not grabbed due to default WORKER_CLASS');
 
 # Testing job_grab
 $worker_db_obj->set_property(WORKER_CLASS => 'qemu_x86_64');
-OpenQA::Scheduler::schedule();
+OpenQA::Scheduler::Model::Jobs->singleton->schedule();
 my $grabbed     = $sent->{$worker->{id}}->{job}->to_hash;
 my $rjobs_after = list_jobs(state => 'assigned');
 
@@ -329,7 +329,7 @@ is($grabbed->state,  "done",       "Previous job is in done state");
 is($grabbed->result, "incomplete", "result is incomplete");
 ok(!$grabbed->settings_hash->{JOBTOKEN}, "job token no longer present");
 
-OpenQA::Scheduler::schedule();
+OpenQA::Scheduler::Model::Jobs->singleton->schedule();
 $grabbed = $sent->{$worker->{id}}->{job}->to_hash;
 isnt($job->id, $grabbed->{id}, "new job grabbed") or die diag explain $grabbed->to_hash;
 isnt($grabbed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, "job token differs")

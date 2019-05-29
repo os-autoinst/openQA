@@ -293,7 +293,7 @@ sub range_ok {
         "timeout in range $low_limit->$high_limit (setted tick $tick, real tick occurred at $delta)");
 }
 
-sub scheduler_step { OpenQA::Scheduler::schedule() }
+sub scheduler_step { OpenQA::Scheduler::Model::Jobs->singleton->schedule() }
 
 sub get_scheduler_tick { shift->{tick} }
 

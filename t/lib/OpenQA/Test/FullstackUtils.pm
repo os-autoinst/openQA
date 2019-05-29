@@ -218,7 +218,7 @@ sub wait_for_developer_console_available {
 
 sub schedule_one_job {
     while (1) {
-        my @scheduled_jobs = OpenQA::Scheduler::schedule();
+        my @scheduled_jobs = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
         return if @scheduled_jobs;
         sleep 1;
     }

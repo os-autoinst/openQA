@@ -109,7 +109,7 @@ my $worker = $schema->resultset('Workers')->find($w);
 is($worker->websocket_api_version(), WEBSOCKET_API_VERSION, 'Worker version set correctly');
 
 # grab job
-OpenQA::Scheduler::schedule();
+OpenQA::Scheduler::Model::Jobs->singleton->schedule();
 my $job = $sent->{$w}->{job}->to_hash;
 is($job->{id}, $jobA->id, 'jobA grabbed');
 @assets = $jobA->jobs_assets;
@@ -167,7 +167,7 @@ $schema->resultset('JobsAssets')->create(
 
 # set jobB to running
 $jobB->set_prio(1);
-OpenQA::Scheduler::schedule();
+OpenQA::Scheduler::Model::Jobs->singleton->schedule();
 $job = $sent->{$w}->{job}->to_hash;
 is($job->{id}, $jobB->id, 'jobB grabbed');
 @assets = $jobB->jobs_assets;
