@@ -21,6 +21,7 @@ use Mojo::Log;
 use Sys::Hostname;
 use File::Spec::Functions 'catfile';
 use Mojo::File 'path';
+use Mojo::Util 'trim';
 use Config::IniFiles;
 use OpenQA::Schema::Profiler;
 use OpenQA::Utils;
@@ -222,10 +223,10 @@ sub read_config {
               exists $mode_defaults{$app->mode}{$section}->{$k}
               ? $mode_defaults{$app->mode}{$section}->{$k}
               : $defaults{$section}->{$k};
-            $app->config->{$section}->{$k} = $v if defined $v;
+            $app->config->{$section}->{$k} = trim $v if defined $v;
         }
     }
-    $app->config->{global}->{recognized_referers} = [split(/ /, $app->config->{global}->{recognized_referers})];
+    $app->config->{global}->{recognized_referers} = [split(/\s+/, $app->config->{global}->{recognized_referers})];
     $app->config->{_openid_secret} = random_string(16);
     $app->config->{auth}->{method} =~ s/\s//g;
 }
