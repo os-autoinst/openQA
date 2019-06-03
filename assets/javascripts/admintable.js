@@ -4,8 +4,13 @@ function updateTextArea(textArea) {
 }
 
 function addAdminTableRow() {
-    // add new row
     var adminTable = window.adminTable;
+
+    // clear search
+    $(adminTable.containers()[0]).find('.dataTables_filter input').val('');
+    adminTable.search('');
+
+    // add new row
     var newRow = adminTable.row.add(adminTable.emptyRow);
     var newRowIndex = newRow.index();
     adminTable.rowData[newRowIndex] = jQuery.extend({isEditing: true}, adminTable.emptyRow);
@@ -17,6 +22,9 @@ function addAdminTableRow() {
     if (rowPosition < pageInfo.start || rowPosition >= pageInfo.end) {
         adminTable.page(Math.floor(rowPosition / adminTable.page.len())).draw(false);
     }
+
+    // scroll to the new row
+    $('html').animate({scrollTop: $(newRow.node()).offset().top}, 250);
 }
 
 function isEditingAdminTableRow(meta) {
