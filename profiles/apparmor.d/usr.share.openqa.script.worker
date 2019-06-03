@@ -156,6 +156,7 @@
   profile /usr/bin/lscpu {
     #include <abstractions/base>
 
+    /proc/ r,
     /proc/** r,
     /sys/devices/** r,
     /usr/bin/lscpu mr,
