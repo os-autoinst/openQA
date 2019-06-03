@@ -38,7 +38,7 @@ sub startup {
     $self->plugin('Helpers');
 
     my $r = $self->routes;
-    $r->namespaces(['OpenQA::WebSockets::Controller']);
+    $r->namespaces(['OpenQA::WebSockets::Controller', 'OpenQA::Shared::Controller']);
     my $ca = $r->under('/')->to('Auth#check');
     $ca->get('/' => {json => {name => $self->defaults('appname')}});
     my $api = $ca->any('/api');

@@ -75,14 +75,15 @@ sub startup {
         });
 
     my $r = $self->routes;
-    $r->get(
-        '/api/wakeup' => sub {
-            my $c = shift;
-            _reschedule(0);
-            $c->render(text => 'ok');
-        });
+    $r->namespaces(['OpenQA::Scheduler::Controller', 'OpenQA::Shared::Controller']);
+    my $ca = $r->under('/')->to('Auth#check');
+    $ca->get('/' => {json => {name => $self->defaults('appname')}});
+    my $api = $ca->any('/api');
+    $api->get('/wakeup')->to('API#wakeup');
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 }
+
+sub wakeup { _reschedule(0) }
 
 sub _reschedule {
     my $time = shift;
