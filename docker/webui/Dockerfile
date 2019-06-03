@@ -28,7 +28,6 @@ RUN rm -rf /etc/openqa/openqa.ini /etc/openqa/client.conf \
       /var/lib/openqa/db/db.sqlite /var/lib/openqa/testresults && \
     chmod +x /root/run_openqa.sh && \
     mkdir -p /var/lib/openqa/pool && \
-    mkdir -p /run/dbus && \
     ln -s /data/conf/openqa.ini /etc/openqa/openqa.ini && \
     ln -s /data/conf/client.conf /etc/openqa/client.conf && \
     ln -s /data/factory /var/lib/openqa/share/factory && \

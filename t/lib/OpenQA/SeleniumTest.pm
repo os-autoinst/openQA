@@ -61,7 +61,6 @@ sub start_app {
             OpenQA::Test::Database->new->create;
         }
 
-        # Run openQA in test mode - it will mock Scheduler and Websockets DBus services
         log_info("starting web UI\n");
         $ENV{MOJO_MODE} = 'test';
         my $daemon = Mojo::Server::Daemon->new(

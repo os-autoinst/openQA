@@ -15,7 +15,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-    $ENV{OPENQA_TEST_IPC} = 1;
     unshift @INC, 'lib';
 }
 
@@ -29,9 +28,6 @@ use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
 use OpenQA::Scheduler;
-
-# create Test DBus bus and service for fake WebSockets and Scheduler call
-my $sh = OpenQA::Scheduler->new;
 
 OpenQA::Test::Case->new->init_data;
 

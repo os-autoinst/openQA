@@ -160,7 +160,7 @@ sub schedule {
         my $res;
         try {
             $res = $job->ws_send($worker);    # send the job to the worker
-            die "Failed contacting websocket server over dbus" unless ref($res) eq "HASH" && exists $res->{state};
+            die "Failed contacting websocket server over HTTP" unless ref($res) eq "HASH" && exists $res->{state};
         }
         catch {
             log_debug("Failed to send data to websocket :( bummer! Reason: $_");

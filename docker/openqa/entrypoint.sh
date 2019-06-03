@@ -63,4 +63,4 @@ run_as_normal_user;
 
 echo ">> Running tests"
 
-dbus-run-session -- sh -c "$*"
+sh -c "$*"

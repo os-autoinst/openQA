@@ -44,7 +44,6 @@ use OpenQA::Scheduler;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 use Test::More;
-use Net::DBus qw(:typing);
 use Mojo::IOLoop::Server;
 use Mojo::File 'tempfile';
 use OpenQA::Test::Utils qw(

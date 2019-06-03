@@ -21,7 +21,6 @@ use warnings;
 
 BEGIN {
     unshift @INC, 'lib';
-    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use FindBin;
@@ -31,8 +30,6 @@ use OpenQA::Resource::Locks;
 use OpenQA::Resource::Jobs;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
-use Net::DBus;
-use Net::DBus::Test::MockObject;
 use Mojo::Util 'monkey_patch';
 
 use Test::More;
@@ -85,9 +82,6 @@ sub nots {
     }
     return $h;
 }
-
-# create Test DBus bus and service for fake WebSockets
-my $sh = OpenQA::Scheduler->new();
 
 my $current_jobs = list_jobs();
 is_deeply($current_jobs, [], "assert database has no jobs to start with")

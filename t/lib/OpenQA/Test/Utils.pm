@@ -153,7 +153,6 @@ sub create_webapi {
     my $startingpid = $$;
     my $mojopid     = fork();
     if ($mojopid == 0) {
-        # Run openQA in test mode - it will mock Scheduler and Websockets DBus services
         $ENV{MOJO_MODE} = 'test';
         my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$mojoport"], silent => 1);
         $daemon->build_app('OpenQA::WebAPI');

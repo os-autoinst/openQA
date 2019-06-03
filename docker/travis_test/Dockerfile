@@ -12,7 +12,6 @@ RUN zypper in -y -C \
        glibc-locale \
        automake \
        curl \
-       dbus-1-devel \
        fftw3-devel \
        gcc \
        gcc-c++ \
@@ -93,7 +92,6 @@ RUN zypper in -y -C \
        'perl(Mojolicious::Plugin::RenderFile)' \
        'perl(JSON::Validator)' \
        'perl(YAML::XS) >= 0.67' \
-       'perl(Net::DBus)' \
        'perl(Net::OpenID::Consumer)' \
        'perl(Net::SNMP)' \
        'perl(Net::SSH2)' \
@@ -124,11 +122,9 @@ RUN zypper in -y -C \
        perl-Archive-Extract \
        perl-Test-Simple \
        'perl(aliased)' \
-       dbus-1 systemd-sysvinit \
+       systemd-sysvinit \
 	systemd libudev1 tack
 
-RUN cp /usr/lib/systemd/system/dbus.service /etc/systemd/system/; \
-    sed -i 's/OOMScoreAdjust=-900//' /etc/systemd/system/dbus.service
 VOLUME ["/sys/fs/cgroup", "/run"]
 
 CMD ["/sbin/init"]

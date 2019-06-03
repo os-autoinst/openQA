@@ -18,7 +18,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use strict;
@@ -29,7 +28,6 @@ use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use Test::MockModule;
 use DBIx::Class::Timestamps 'now';
-use Net::DBus;
 use Test::More;
 use Test::Warnings;
 

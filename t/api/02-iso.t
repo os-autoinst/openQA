@@ -19,7 +19,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use Mojo::Base -strict;
@@ -107,9 +106,6 @@ sub schedule_iso {
     my $ret = $t->post_ok($url, form => $args)->status_is($status);
     return $ret->tx->res;
 }
-
-# create Test DBus bus and service for fake WebSockets and Scheduler call
-my $sh = OpenQA::Scheduler->new;
 
 my $ret;
 

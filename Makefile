@@ -69,7 +69,6 @@ install:
 	install -m 644 systemd/openqa-setup-db.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 755 systemd/systemd-openqa-generator "$(DESTDIR)"/usr/lib/systemd/system-generators
 	install -m 644 systemd/tmpfiles-openqa.conf "$(DESTDIR)"/usr/lib/tmpfiles.d/openqa.conf
-	install -D -m 644 etc/dbus-1/system.d/org.opensuse.openqa.conf "$(DESTDIR)"/etc/dbus-1/system.d/org.opensuse.openqa.conf
 #
 	install -D -m 640 /dev/null "$(DESTDIR)"/var/lib/openqa/db/db.sqlite
 # install openQA apparmor profile
@@ -136,7 +135,7 @@ docker.env:
 
 .PHONY: launch-docker-to-run-tests-within
 launch-docker-to-run-tests-within: docker.env
-	docker run --env-file $(docker_env_file) -v $(current_dir):/opt/openqa -v /var/run/dbus:/var/run/dbus \
+	docker run --env-file $(docker_env_file) -v $(current_dir):/opt/openqa \
 	   $(DOCKER_IMG) make travis-codecov
 	rm $(docker_env_file)
 

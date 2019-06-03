@@ -21,7 +21,6 @@ use warnings;
 
 BEGIN {
     unshift @INC, 'lib';
-    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use Mojo::IOLoop;
@@ -31,8 +30,6 @@ use lib "$FindBin::Bin/lib";
 use OpenQA::Client;
 use OpenQA::Scheduler;
 use OpenQA::Test::Database;
-use Net::DBus;
-use Net::DBus::Test::MockObject;
 use Test::MockModule;
 use Test::More;
 use Test::Mojo;
@@ -67,9 +64,6 @@ my $app = $t->app;
 $t->ua(
     OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
-
-# create Test DBus bus and service for fake WebSockets
-my $sh = OpenQA::Scheduler->new();
 
 my $settings = {
     DISTRI      => 'Unicorn',

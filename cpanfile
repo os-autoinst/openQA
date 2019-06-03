@@ -62,7 +62,6 @@ requires 'Mojolicious::Commands';
 requires 'Mojolicious::Plugin';
 requires 'Mojolicious::Plugin::AssetPack';
 requires 'Mojolicious::Static';
-requires 'Net::DBus';
 requires 'Net::OpenID::Consumer';
 requires 'Package::Stash';
 requires 'Params::Util';
