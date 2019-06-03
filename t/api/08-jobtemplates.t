@@ -43,6 +43,7 @@ my $schema        = $app->schema;
 my $job_groups    = $schema->resultset('JobGroups');
 my $job_templates = $schema->resultset('JobTemplates');
 my $test_suites   = $schema->resultset('TestSuites');
+my $audit_events  = $schema->resultset('AuditEvents');
 
 $t->get_ok('/api/v1/job_templates')->status_is(200);
 is_deeply(
@@ -735,6 +736,7 @@ subtest 'Create and modify groups with YAML' => sub {
     }
 
     # Assert that nothing changes in preview mode
+    my $audit_event_count = $audit_events->count;
     $t->post_ok(
         '/api/v1/experimental/job_templates_scheduling',
         form => {
@@ -746,6 +748,7 @@ subtest 'Create and modify groups with YAML' => sub {
     $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
     is_deeply(YAML::XS::Load($t->tx->res->body), {}, 'No job group and templates added to the database')
       || diag explain $t->tx->res->body;
+    is($audit_events->count, $audit_event_count, 'no audit event emitted in preview mode');
 
     $t->post_ok('/api/v1/experimental/job_templates_scheduling', form => {template => YAML::XS::Dump($yaml)});
     $t->status_is(200, 'Changes applied to the database');

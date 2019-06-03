@@ -375,7 +375,7 @@ sub update {
             return;
         }
 
-        $self->emit_event('openqa_jobtemplate_create', $json);
+        $self->emit_event('openqa_jobtemplate_create', $json) unless $self->param('preview');
         $self->respond_to(json => {json => $json});
 
         # Process only one group
