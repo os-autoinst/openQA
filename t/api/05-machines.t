@@ -29,7 +29,6 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
-use OpenQA::Scheduler;
 
 OpenQA::Test::Case->new->init_data;
 

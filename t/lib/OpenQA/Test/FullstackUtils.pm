@@ -26,7 +26,7 @@ use Mojo::Home;
 use Mojo::File 'path';
 use Test::More;
 use OpenQA::SeleniumTest;
-use OpenQA::Scheduler;
+use OpenQA::Scheduler::Model::Jobs;
 
 sub setup_database {
     # make database configuration

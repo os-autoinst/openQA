@@ -28,7 +28,6 @@ use Mojo::IOLoop;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Client;
-use OpenQA::Scheduler;
 use OpenQA::Test::Database;
 use Test::MockModule;
 use Test::More;

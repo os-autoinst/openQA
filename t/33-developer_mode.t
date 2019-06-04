@@ -110,7 +110,7 @@ $wspid = create_websocket_server($wsport, 0, 0, 0);
 # start scheduler
 $schedulerpid = fork();
 if ($schedulerpid == 0) {
-    use OpenQA::Scheduler;
+    require OpenQA::Scheduler;
     OpenQA::Scheduler::run;
     Devel::Cover::report() if Devel::Cover->can('report');
     _exit(0);

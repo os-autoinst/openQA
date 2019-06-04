@@ -30,7 +30,6 @@ use OpenQA::Client;
 use Mojo::IOLoop;
 use Mojo::File 'path';
 use Digest::MD5;
-use OpenQA::Scheduler;
 use OpenQA::Events;
 
 require OpenQA::Schema::Result::Jobs;

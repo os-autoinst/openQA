@@ -34,7 +34,7 @@ use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use OpenQA::WebSockets::Client;
-use OpenQA::Scheduler;
+use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Utils;
 use Mojo::Util 'monkey_patch';
 

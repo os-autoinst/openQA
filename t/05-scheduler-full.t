@@ -40,7 +40,7 @@ BEGIN {
 }
 
 use lib "$FindBin::Bin/lib";
-use OpenQA::Scheduler;
+use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 use Test::More;

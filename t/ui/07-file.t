@@ -26,7 +26,6 @@ use Test::Mojo;
 use Test::Warnings;
 use Mojo::File;
 use OpenQA::Test::Case;
-use OpenQA::Scheduler;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;

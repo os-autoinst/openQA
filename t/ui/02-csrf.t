@@ -24,7 +24,6 @@ use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
-use OpenQA::Scheduler;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;

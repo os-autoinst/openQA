@@ -25,7 +25,7 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use OpenQA::Scheduler;
+use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use Test::Mojo;

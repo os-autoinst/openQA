@@ -29,7 +29,6 @@ use Test::Warnings ':all';
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
-use OpenQA::Scheduler;
 
 sub nots {
     my $h  = shift;

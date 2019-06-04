@@ -30,7 +30,6 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Test::Database;
-use OpenQA::Scheduler;
 
 OpenQA::Test::Case->new->init_data;
 
