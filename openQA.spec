@@ -220,6 +220,7 @@ make %{?_smp_mflags}
 %check
 #for double checking
 %if %{with tests}
+sed -i '/Perl::Tidy/d' cpanfile
 cpanm --installdeps --with-feature=test .
 %endif
 
