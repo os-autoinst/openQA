@@ -318,7 +318,9 @@ sub engine_workit {
             STDOUT->fdopen($handle, 'w');
             STDERR->fdopen($handle, 'w');
 
-            exec "perl", "$isotovideo", '-d';
+            # isotovideo API < 15 do not directly log output
+            my $args = $OpenQA::Worker::Common::isotovideo_interface_version < 15 ? '-d' : '';
+            exec "perl", "$isotovideo", $args;
             die "exec failed: $!\n";
         });
 
