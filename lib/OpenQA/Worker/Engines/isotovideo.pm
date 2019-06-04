@@ -318,7 +318,7 @@ sub engine_workit {
             STDOUT->fdopen($handle, 'w');
             STDERR->fdopen($handle, 'w');
 
-            exec "perl", "$isotovideo", '-d';
+            exec "perl", "$isotovideo";
             die "exec failed: $!\n";
         });
 
