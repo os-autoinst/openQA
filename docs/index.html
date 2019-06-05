@@ -6531,6 +6531,13 @@ without restarting the server:
 <code>morbo -m development -w assets -w lib -w templates
   -l <a href="http://localhost:9526" class="bare">http://localhost:9526</a> script/openqa daemon</code></p>
 </li>
+<li>
+<p>In case you have problems with broken rendering of the web page it can help
+to delete the asset cache and let the webserver regenerate it on first
+startup. For this delete the subdirectories .sass-cache/, assets/cache/
+and assets/assetpack.db. Make sure to look for error messages on startup
+of the webserver and to force the refresh of the web page in your browser.</p>
+</li>
 </ul>
 </div>
 </div>
@@ -6967,7 +6974,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-06-05 10:30:33 UTC
+Last updated 2019-06-05 13:37:11 UTC
 </div>
 </div>
 <style>
