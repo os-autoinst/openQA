@@ -3,12 +3,29 @@ function updateTextArea(textArea) {
     textArea.style.height = Math.min(textArea.scrollHeight + 5, 300) + 'px';
 }
 
+function extendAdminTableSearch(searchTerm) {
+    window.adminTable.search('((' + window.adminTable.search() + ')|(' + searchTerm + '))');
+}
+
+var newRowId = 'new row';
+
 function showAdminTableRow(row) {
     var adminTable = window.adminTable;
 
     // set pagination to the page containing the new row
     var pageInfo = adminTable.page.info();
-    var rowPosition = adminTable.rows()[0].indexOf(row.index());
+    var rowPosition = adminTable.rows({search: 'applied'})[0].indexOf(row.index());
+    if (rowPosition < 0) {
+        // extend the search if the row to be shown would otherwise be filtered out
+        var rowData = row.data();
+        extendAdminTableSearch(!rowData.id ? newRowId : rowData.id);
+        rowPosition = adminTable.rows({search: 'applied'})[0].indexOf(row.index());
+    }
+    if (rowPosition < 0) {
+        // handle case when updating the regex does not work
+        addFlash('info', 'The added/updated row has been filtered out.');
+        return;
+    }
     if (rowPosition < pageInfo.start || rowPosition >= pageInfo.end) {
         adminTable.page(Math.floor(rowPosition / adminTable.page.len())).draw(false);
     }
@@ -19,10 +36,6 @@ function showAdminTableRow(row) {
 
 function addAdminTableRow() {
     var adminTable = window.adminTable;
-
-    // clear search
-    $(adminTable.containers()[0]).find('.dataTables_filter input').val('');
-    adminTable.search('');
 
     // add new row
     var newRow = adminTable.row.add(adminTable.emptyRow);
@@ -56,7 +69,7 @@ function setEditingAdminTableRow(tdElement, editing, submitted) {
         data.isEditing = editing;
 
         // pass the buffered row data from editor elements to the data table
-        // note: This applies submitted changed or restores initial values when editing is cancelled by the user.
+        // note: This applies submitted changes or restores initial values when editing is cancelled by the user.
         if (submitted) {
             row.data(data);
         }
@@ -310,7 +323,7 @@ function renderAdminTableDescription(data, type, row, meta) {
 
 function renderAdminTableActions(data, type, row, meta) {
     if (type !== 'display') {
-        return data ? data : '';
+        return data ? data : newRowId;
     }
     if (isEditingAdminTableRow(meta)) {
         return renderEditableAdminTableActions(data, type, row, meta);
@@ -323,7 +336,7 @@ function renderAdminTableActions(data, type, row, meta) {
 
 function renderEditableAdminTableActions(data, type, row, meta) {
     if (type !== 'display') {
-        return data ? data : '';
+        return data ? data : newRowId;
     }
     if (!window.isAdmin) {
         return '';
