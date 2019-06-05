@@ -3,20 +3,34 @@ function updateTextArea(textArea) {
     textArea.style.height = Math.min(textArea.scrollHeight + 5, 300) + 'px';
 }
 
-function addAdminTableRow() {
-    // add new row
+function showAdminTableRow(row) {
     var adminTable = window.adminTable;
+
+    // set pagination to the page containing the new row
+    var pageInfo = adminTable.page.info();
+    var rowPosition = adminTable.rows()[0].indexOf(row.index());
+    if (rowPosition < pageInfo.start || rowPosition >= pageInfo.end) {
+        adminTable.page(Math.floor(rowPosition / adminTable.page.len())).draw(false);
+    }
+
+    // scroll to the new row
+    $('html').animate({scrollTop: $(row.node()).offset().top}, 250);
+}
+
+function addAdminTableRow() {
+    var adminTable = window.adminTable;
+
+    // clear search
+    $(adminTable.containers()[0]).find('.dataTables_filter input').val('');
+    adminTable.search('');
+
+    // add new row
     var newRow = adminTable.row.add(adminTable.emptyRow);
     var newRowIndex = newRow.index();
     adminTable.rowData[newRowIndex] = jQuery.extend({isEditing: true}, adminTable.emptyRow);
     newRow.invalidate().draw();
 
-    // set pagination to the page containing the new row
-    var pageInfo = adminTable.page.info();
-    var rowPosition = adminTable.rows()[0].indexOf(newRowIndex);
-    if (rowPosition < pageInfo.start || rowPosition >= pageInfo.end) {
-        adminTable.page(Math.floor(rowPosition / adminTable.page.len())).draw(false);
-    }
+    showAdminTableRow(newRow);
 }
 
 function isEditingAdminTableRow(meta) {
@@ -89,6 +103,7 @@ function handleAdminTableSubmit(tdElement, response, id) {
                 return;
             }
             row.data(adminTable.rowData[rowIndex] = rowData).draw(false);
+            showAdminTableRow(row);
         },
         error: handleAdminTableApiError,
     });
