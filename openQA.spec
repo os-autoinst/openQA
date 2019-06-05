@@ -101,7 +101,6 @@ BuildRequires:  perl-App-cpanminus
 BuildRequires:  perl(DBD::SQLite)
 BuildRequires:  perl(Perl::Critic)
 BuildRequires:  perl(Perl::Critic::Freenode)
-BuildRequires:  perl(Perl::Tidy)
 BuildRequires:  perl(Selenium::Remote::Driver) >= 1.20
 BuildRequires:  perl(Test::Compile)
 BuildRequires:  perl(Test::MockObject)
