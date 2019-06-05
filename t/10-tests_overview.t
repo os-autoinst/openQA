@@ -63,7 +63,7 @@ my $form = {distri => 'opensuse', version => '13.1', build => '0091', group => '
 $get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 like(get_summary, qr/Overall Summary of opensuse 13\.1 build 0091/i, 'specifying group parameter');
 $form = {distri => 'opensuse', version => '13.1', build => '0091', groupid => 1001};
-$get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+$get  = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 like(get_summary, qr/Overall Summary of opensuse build 0091/i, 'specifying groupid parameter');
 
 #
@@ -98,7 +98,7 @@ like($summary, qr/Summary of opensuse 13\.1 build 0091/i);
 like($summary, qr/Passed: 3 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
 
 $form = {distri => 'opensuse', version => '13.1', groupid => 1001};
-$get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+$get  = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 like(
     get_summary,
     qr/Summary of opensuse build 0091/i,
@@ -125,7 +125,7 @@ like($summary, qr/Summary of opensuse Factory build 87.5011/);
 like($summary, qr/Passed: 0 Incomplete: 1 Failed: 0/);
 
 # Advanced query parameters can be forwarded
-$form = {distri => 'opensuse', version => '13.1', result => 'passed'};
+$form    = {distri => 'opensuse', version => '13.1', result => 'passed'};
 $get     = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse 13\.1 build 0091/i, "Still references the last build");
@@ -140,13 +140,13 @@ $get->element_exists_not('.state_cancelled');
 
 # This time show only failed
 $form = {distri => 'opensuse', version => 'Factory', build => '0048', result => 'failed'};
-$get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+$get  = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 like(get_summary, qr/Passed: 0 Failed: 1/i);
 $get->element_exists('#res_DVD_x86_64_doc .result_failed');
 $get->element_exists_not('#res_DVD_x86_64_kde .result_passed');
 
 $form = {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1};
-$get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+$get  = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 like(get_summary, qr/Passed: 0 Failed: 1/i, 'todo=1 shows only unlabeled left failed');
 
 # add a failing module to one of the softfails to test 'TODO' option
@@ -224,7 +224,7 @@ $get->element_exists('#res_NET_x86_64_kde .state_running');
 
 # Test initial state of architecture text box
 $form = {distri => 'opensuse', version => 'Factory', result => 'passed', arch => 'i686'};
-$get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+$get  = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 # FIXME: works when testing manually, but accessing the value via Mojo doesn't work
 #is($t->tx->res->dom->at('#filter-arch')->val, 'i686', 'default state of architecture');
 
@@ -236,7 +236,7 @@ $t->get_ok('/tests/99937/modules/zypper_up/fails')
 
 # Check if logpackages has failed, filtering with failed_modules
 $form = {distri => 'opensuse', version => 'Factory', failed_modules => 'logpackages'};
-$get = $t->get_ok('/tests/overview', form => $form)->status_is(200);
+$get  = $t->get_ok('/tests/overview', form => $form)->status_is(200);
 like(get_summary, qr/Passed: 0 Failed: 0/i, 'all jobs filtered out');
 $get->element_exists_not('#res_DVD_x86_64_doc .result_failed', 'old job not revealed');
 $get->element_exists_not('#res_DVD_x86_64_kde .result_passed', 'passed job hidden');

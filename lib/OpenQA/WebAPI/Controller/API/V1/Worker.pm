@@ -55,7 +55,7 @@ websocket status.
 =cut
 
 sub list {
-    my ($self) = @_;
+    my ($self)  = @_;
     my $live    = !looks_like_number($self->param('live')) ? 0 : !!$self->param('live');
     my $workers = $self->schema->resultset("Workers");
     my $ret     = [];

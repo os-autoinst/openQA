@@ -49,7 +49,7 @@ sub index {
 }
 
 sub productlog {
-    my ($self) = @_;
+    my ($self)             = @_;
     my $entries            = $self->param('entries') // 100;
     my $scheduled_products = $self->schema->resultset('ScheduledProducts')
       ->search(undef, {order_by => {-desc => 'me.id'}, prefetch => 'triggered_by', rows => $entries});

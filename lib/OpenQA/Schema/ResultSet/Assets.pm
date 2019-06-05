@@ -269,7 +269,7 @@ END_SQL
                 # add the max job ID for this group to
                 $max_job_by_group_prepared_query->execute($group_id);
                 while (my $result = $max_job_by_group_prepared_query->fetchrow_hashref) {
-                    my $asset_info = $asset_info{$result->{asset_id}} or next;
+                    my $asset_info   = $asset_info{$result->{asset_id}} or next;
                     my $init_max_job = $asset_info->{max_job} || 0;
                     my $res_max_job  = $result->{max_job};
                     $asset_info->{groups}->{$group_id} = $res_max_job;

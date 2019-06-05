@@ -589,7 +589,7 @@ sub verify_workerid {
 sub read_worker_config {
     my ($instance, $host) = @_;
     my $worker_dir = $ENV{OPENQA_CONFIG} || '/etc/openqa';
-    my $cfg = Config::IniFiles->new(-file => $worker_dir . '/workers.ini');
+    my $cfg        = Config::IniFiles->new(-file => $worker_dir . '/workers.ini');
 
     my $sets = {};
     for my $section ('global', $instance) {

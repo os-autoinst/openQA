@@ -91,10 +91,10 @@ goto_admin_needle_table();
 my @trs = $driver->find_elements('#needles tr', 'css');
 # skip header
 my @tds = $driver->find_child_elements($trs[1], 'td', 'css');
-is((shift @tds)->get_text(), 'fixtures', "Path is fixtures");
-is((shift @tds)->get_text(), 'inst-timezone-text.json', "Name is right");
-is((my $module_link = shift @tds)->get_text(), 'a day ago', "last use is right");
-is((shift @tds)->get_text(), 'about 14 hours ago', "last match is right");
+is((shift @tds)->get_text(),                   'fixtures',                "Path is fixtures");
+is((shift @tds)->get_text(),                   'inst-timezone-text.json', "Name is right");
+is((my $module_link = shift @tds)->get_text(), 'a day ago',               "last use is right");
+is((shift @tds)->get_text(),                   'about 14 hours ago',      "last match is right");
 @tds = $driver->find_child_elements($trs[2], 'td', 'css');
 is((shift @tds)->get_text(), 'fixtures',           "Path is fixtures");
 is((shift @tds)->get_text(), 'never-matched.json', "Name is right");

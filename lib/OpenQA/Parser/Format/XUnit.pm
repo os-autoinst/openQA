@@ -69,9 +69,9 @@ sub parse {
             });
 
         my $ts_result = 'ok';
-        $ts_result = 'fail' if ($ts->{failures} && $ts->{failures} > 0) || ($ts->{errors} && $ts->{errors} > 0);
-        $result->{result}     = $ts_result;
-        $result->{dents}      = 0;
+        $ts_result        = 'fail' if ($ts->{failures} && $ts->{failures} > 0) || ($ts->{errors} && $ts->{errors} > 0);
+        $result->{result} = $ts_result;
+        $result->{dents}  = 0;
         $result->{properties} = OpenQA::Parser::Results->new;
         my $num = 1;
         $ts->find('property')->each(sub { addproperty($result, {name => $_->{name}, value => $_->{value}}) });

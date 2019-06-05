@@ -94,7 +94,7 @@ subtest init => sub {
     monkey_patch 'OpenQA::WebAPI::Controller::Running', not_found => sub { $not_found = 1 };
     monkey_patch 'OpenQA::WebAPI::Controller::Running',
       render_specific_not_found => sub { $render_specific_not_found = 1 };
-    monkey_patch 'OpenQA::WebAPI::Controller::Running', reply => sub { shift };
+    monkey_patch 'OpenQA::WebAPI::Controller::Running', reply  => sub { shift };
     monkey_patch 'OpenQA::WebAPI::Controller::Running', render => sub { $render = 1 };
 
     my $c = OpenQA::WebAPI::Controller::Running->new(app => $app);
@@ -155,7 +155,7 @@ subtest edit => sub {
 
     # Check if we can get the fake results
     my $details_count;
-    monkey_patch 'FakeSchema::Find', find => sub { Job->new };
+    monkey_patch 'FakeSchema::Find',                    find        => sub { Job->new };
     monkey_patch 'OpenQA::WebAPI::Controller::Running', redirect_to => sub { $found = 1; $details_count = $_[5]; };
     $c = OpenQA::WebAPI::Controller::Running->new(app => $app);
     $c->param('testid', "foobar");
@@ -194,7 +194,7 @@ sub get_property { shift->{WORKER_TMPDIR} }
 
 package Mojo::Transaction::Fake;
 use Mojo::Base 'Mojo::Transaction';
-sub resume { ++$_[0]{writing} and return $_[0]->emit('resume') }
+sub resume     { ++$_[0]{writing} and return $_[0]->emit('resume') }
 sub connection { shift->{fakestream} }
 
 package FakeSchema;

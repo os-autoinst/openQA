@@ -391,7 +391,7 @@ sub append_channel_to_defaults {
 # Removes a channel from defaults.
 sub remove_channel_from_defaults {
     my ($channel) = @_;
-    $log_defaults{CHANNELS} = [grep { $_ ne $channel } @{$log_defaults{CHANNELS}}];
+    $log_defaults{CHANNELS}                = [grep { $_ ne $channel } @{$log_defaults{CHANNELS}}];
     $log_defaults{LOG_TO_STANDARD_CHANNEL} = 1 if !@{$log_defaults{CHANNELS}};
 }
 
@@ -1200,7 +1200,7 @@ sub logistic_map_steps {
     $_[2];
 }
 sub rand_range { $_[0] + rand($_[1] - $_[0]) }
-sub in_range { $_[0] >= $_[1] && $_[0] <= $_[2] ? 1 : 0 }
+sub in_range   { $_[0] >= $_[1] && $_[0] <= $_[2] ? 1 : 0 }
 
 sub set_listen_address {
     my ($port) = @_;

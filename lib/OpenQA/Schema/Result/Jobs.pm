@@ -197,8 +197,8 @@ __PACKAGE__->might_have(
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'job_id');
 __PACKAGE__->many_to_many(assets => 'jobs_assets', 'asset');
 __PACKAGE__->has_many(last_use_assets => 'OpenQA::Schema::Result::Assets', 'last_use_job_id', {cascade_delete => 0});
-__PACKAGE__->has_many(children        => 'OpenQA::Schema::Result::JobDependencies', 'parent_job_id');
-__PACKAGE__->has_many(parents => 'OpenQA::Schema::Result::JobDependencies', 'child_job_id');
+__PACKAGE__->has_many(children => 'OpenQA::Schema::Result::JobDependencies', 'parent_job_id');
+__PACKAGE__->has_many(parents  => 'OpenQA::Schema::Result::JobDependencies', 'child_job_id');
 __PACKAGE__->has_many(
     modules => 'OpenQA::Schema::Result::JobModules',
     'job_id', {cascade_delete => 0, order_by => 'id'});
@@ -780,7 +780,7 @@ sub cluster_jobs {
                 my $otherchildren = $p->children;
               CHILD: while (my $childr = $otherchildren->next) {
                     my $child = $childr->child;
-                    next CHILD unless grep { $child->state eq $_ } PENDING_STATES;
+                    next CHILD  unless grep { $child->state eq $_ } PENDING_STATES;
                     next PARENT unless $jobs->{$child->id};
                 }
             }
@@ -904,7 +904,7 @@ sub auto_duplicate {
     my $rsource = $self->result_source;
     my $jobs    = $rsource->schema->resultset("Jobs")->search(
         {
-            id    => {'!=' => $self->id,    '-in' => [keys %$clones]},
+            id    => {'!=' => $self->id, '-in' => [keys %$clones]},
             state => [PRE_EXECUTION_STATES, EXECUTION_STATES],
         });
 
@@ -1841,7 +1841,7 @@ sub done {
     }
 
     # update result if not provided
-    my $result = $args{result} || $self->calculate_result();
+    my $result  = $args{result} || $self->calculate_result();
     my %new_val = (state => DONE);
     # for cancelled jobs the result is already known
     $new_val{result} = $result if $self->result eq NONE;

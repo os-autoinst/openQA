@@ -71,8 +71,8 @@
         # One hour ago
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
         # Two hours ago
-        t_started => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
-        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+        t_started   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+        t_created   => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
         jobs_assets => [{asset_id => 4},]
 
     },

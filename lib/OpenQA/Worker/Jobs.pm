@@ -972,8 +972,8 @@ sub upload_images {
         if (-f $file) {
             optimize_image($file);
             $form->{file}->{file} = $file;
-            $form->{thumb} = 1;
-            $tx = $hosts->{$current_host}{ua}->post($ua_url => form => $form);
+            $form->{thumb}        = 1;
+            $tx                   = $hosts->{$current_host}{ua}->post($ua_url => form => $form);
         }
     }
     $tosend_images = {};

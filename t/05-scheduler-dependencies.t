@@ -453,12 +453,12 @@ schedule();
 
 ok(exists $sent->{job}->{$jobA2}, " $jobA2 was assigned ") or die "A2 $jobA2 wasn't scheduled";
 $job = $sent->{job}->{$jobA2}->{jobhash};
-is($job->{id}, $jobA2, "jobA2");    #lowest prio of jobs without parents
-is($job->{settings}->{NICVLAN}, 2, "different vlan") or die explain $job;
+is($job->{id},                  $jobA2, "jobA2");                                #lowest prio of jobs without parents
+is($job->{settings}->{NICVLAN}, 2,      "different vlan") or die explain $job;
 
 ok(exists $sent->{job}->{$jobB2}, " $jobB2 was assigned ") or die "B2 $jobB2 wasn't scheduled";
 $job = $sent->{job}->{$jobB2}->{job}->to_hash;
-is($job->{id}, $jobB2, "jobB2");    #lowest prio of jobs without parents
+is($job->{id}, $jobB2, "jobB2");                                                 #lowest prio of jobs without parents
 
 is($job->{settings}->{NICVLAN}, 2, "different vlan") or die explain $job;
 

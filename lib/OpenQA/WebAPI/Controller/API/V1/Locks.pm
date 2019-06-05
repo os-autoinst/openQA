@@ -90,7 +90,7 @@ sub mutex_create {
     my $name = $validation->param('name');
 
     my $res = OpenQA::Resource::Locks::create($name, $jobid);
-    return $self->render(text => 'ack', status => 200) if $res;
+    return $self->render(text => 'ack',  status => 200) if $res;
     return $self->render(text => 'nack', status => 409);
 }
 
@@ -152,7 +152,7 @@ sub barrier_create {
     my $name  = $validation->param('name');
 
     my $res = OpenQA::Resource::Locks::barrier_create($name, $jobid, $tasks);
-    return $self->render(text => 'ack', status => 200) if $res;
+    return $self->render(text => 'ack',  status => 200) if $res;
     return $self->render(text => 'nack', status => 409);
 }
 

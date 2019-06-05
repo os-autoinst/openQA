@@ -200,7 +200,7 @@ sub create_websocket_server {
         # TODO: Kill it with fire!
         if ($bogus) {
             monkey_patch 'OpenQA::WebSockets::Controller::Worker', _get_worker => sub { return };
-            monkey_patch 'OpenQA::WebSockets::Controller::Worker', ws => sub {
+            monkey_patch 'OpenQA::WebSockets::Controller::Worker', ws          => sub {
                 my $c = shift;
                 $c->on(json   => \&OpenQA::WebSockets::Controller::Worker::_message);
                 $c->on(finish => \&OpenQA::WebSockets::Controller::Worker::_finish);
@@ -371,7 +371,7 @@ sub c_worker {
 sub read_worker_config {
     my ($instance, $host) = @_;
     my $worker_dir = $ENV{OPENQA_CONFIG} || '/etc/openqa';
-    my $cfg = Config::IniFiles->new(-file => $worker_dir . '/workers.ini');
+    my $cfg        = Config::IniFiles->new(-file => $worker_dir . '/workers.ini');
 
     my $sets = {};
     for my $section ('global', $instance) {
