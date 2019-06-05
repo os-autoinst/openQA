@@ -161,8 +161,8 @@ sub startup {
 
     # Favicon
     $r->get('/favicon.ico' => sub { my $c = shift; $c->render_static('favicon.ico') });
-    $r->get('/index'    => [format => ['html', 'json']])->to('main#index');
-    $r->get('/api_help' => sub { shift->render('admin/api_help') })->name('api_help');
+    $r->get('/index'       => [format => ['html', 'json']])->to('main#index');
+    $r->get('/api_help'    => sub { shift->render('admin/api_help') })->name('api_help');
 
     # Default route
     $r->get('/')->name('index')->to('main#index');
@@ -259,7 +259,7 @@ sub startup {
             $c->redirect_to("http://localhost:$port/ws/$workerid");
         });
     my $api_job_auth = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_jobtoken');
-    my $api_r_job = $api_job_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_r_job    = $api_job_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     push @api_routes, $api_job_auth, $api_r_job;
     $api_r_job->get('/whoami')->name('apiv1_jobauth_whoami')->to('job#whoami');    # primarily for tests
 

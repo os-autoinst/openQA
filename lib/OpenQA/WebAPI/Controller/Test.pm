@@ -464,7 +464,7 @@ sub prepare_job_results {
     my @job_names  = map { $_->TEST } @$jobs;
 
     # prefetch descriptions from test suites
-    my %desc_args = (name => {in => \@job_names});
+    my %desc_args    = (name => {in => \@job_names});
     my @descriptions = $self->schema->resultset('TestSuites')->search(\%desc_args, {columns => [qw(name description)]});
     my %descriptions = map { $_->name => $_->description } @descriptions;
 

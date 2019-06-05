@@ -352,7 +352,7 @@ $job = job_get($job_id);
 is($job->state,  "done",   "job_set_done changed state");
 is($job->result, "passed", "job_set_done changed result");
 ok($job->t_finished =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job end timestamp updated");
-ok(!$job->settings_hash->{JOBTOKEN}, "job token not present after job done");
+ok(!$job->settings_hash->{JOBTOKEN},                          "job token not present after job done");
 
 %args         = (result => "passed");
 $current_jobs = list_jobs(%args);

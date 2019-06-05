@@ -49,7 +49,7 @@ $test_case->login($t, 'percival');
 
 $get = $t->ua->get('/api_keys');
 
-ok($token =~ /[0-9a-z]{40}/, "csrf token in meta tag");
+ok($token =~ /[0-9a-z]{40}/,                                                     "csrf token in meta tag");
 ok($get->res->dom->at('meta[name=csrf-param]')->attr('content') eq 'csrf_token', "csrf param in meta tag");
 #say "csrf token is $token";
 

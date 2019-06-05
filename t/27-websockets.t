@@ -150,9 +150,9 @@ sub _store { push(@{shift->{+shift()}}, join(",", @_)); }
 package FooBarTransaction;
 
 sub new { bless({w => FooBarWorker->new()->set}, shift) }
-sub tx  { shift }
-sub app { shift }
-sub log { shift }
+sub tx                 { shift }
+sub app                { shift }
+sub log                { shift }
 sub schema             { shift }
 sub status             { OpenQA::WebSockets::Model::Status->singleton }
 sub resultset          { shift }

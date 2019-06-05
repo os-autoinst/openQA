@@ -115,7 +115,7 @@ sub auth_jobtoken {
         $self->app->log->debug("Received JobToken: $token");
         my $job = $self->schema->resultset('Jobs')->search(
             {'properties.key' => 'JOBTOKEN', 'properties.value' => $token},
-            {columns => ['id'], join => {worker => 'properties'}})->single;
+            {columns          => ['id'],     join               => {worker => 'properties'}})->single;
         if ($job) {
             $self->stash('job_id', $job->id);
             $self->app->log->debug(sprintf('Found associated job %u', $job->id));
