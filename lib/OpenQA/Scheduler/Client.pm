@@ -16,28 +16,11 @@
 package OpenQA::Scheduler::Client;
 use Mojo::Base -base;
 
-use Mojo::Server::Daemon;
-use Carp 'croak';
 use OpenQA::Client;
 use OpenQA::Scheduler;
 
 has client => sub { OpenQA::Client->new(api => 'localhost') };
 has port   => 9529;
-
-sub embed_server_for_testing {
-    my $self = shift;
-
-    # Change the current OpenQA::Scheduler::Client instance to use an embedded
-    # scheduler server for testing (this avoids forking a second process)
-    unless ($self->{test_server}) {
-        my $server = $self->{test_server} = Mojo::Server::Daemon->new(listen => ['http://127.0.0.1']);
-        $server->build_app('OpenQA::Scheduler');
-        $server->start;
-        $self->port($server->ports->[0]);
-    }
-
-    return $self;
-}
 
 sub wakeup {
     my ($self, $worker_id) = @_;

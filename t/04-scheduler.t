@@ -30,8 +30,8 @@ use OpenQA::Resource::Locks;
 use OpenQA::Resource::Jobs;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
-use Mojo::Util 'monkey_patch';
-
+use Test::Mojo;
+use Test::MockModule;
 use Test::More;
 use Test::Warnings;
 use Test::Output qw(stderr_like);
@@ -40,15 +40,37 @@ use OpenQA::Schema::Result::Jobs;
 my $sent = {};
 
 # Mangle worker websocket send, and record what was sent
-monkey_patch 'OpenQA::Schema::Result::Jobs', ws_send => sub {
-    my ($self, $worker) = @_;
-    my $hashref = $self->prepare_for_work($worker);
-    $hashref->{assigned_worker_id} = $worker->id;
-    $sent->{$worker->id} = {worker => $worker, job => $self};
-    return {state => {msg_sent => 1}};
-};
+my $mock_result = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+$mock_result->mock(
+    ws_send => sub {
+        my ($self, $worker) = @_;
+        my $hashref = $self->prepare_for_work($worker);
+        $hashref->{assigned_worker_id} = $worker->id;
+        $sent->{$worker->id} = {worker => $worker, job => $self};
+        return {state => {msg_sent => 1}};
+    });
 
 my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
+
+my $t = Test::Mojo->new('OpenQA::Scheduler');
+
+subtest 'Authentication' => sub {
+    $t->get_ok('/test')->status_is(404);
+    my $app = $t->app;
+    $t->get_ok('/')->status_is(200)->json_is({name => $app->defaults('appname')});
+    local $t->app->config->{no_localhost_auth} = 0;
+    $t->get_ok('/')->status_is(403)->json_is({error => 'Not authorized'});
+};
+
+subtest 'API' => sub {
+    my $mock_scheduler = Test::MockModule->new('OpenQA::Scheduler');
+    my $awake          = 0;
+    $mock_scheduler->mock(wakeup => sub { $awake++ });
+    $t->get_ok('/api/wakeup')->status_is(200)->content_is('ok');
+    is $awake, 1, 'scheduler has been woken up';
+    $t->get_ok('/api/wakeup')->status_is(200)->content_is('ok');
+    is $awake, 2, 'scheduler has been woken up again';
+};
 
 sub list_jobs {
     my %args = @_;

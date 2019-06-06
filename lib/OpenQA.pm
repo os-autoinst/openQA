@@ -14,9 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA;
-
-use strict;
-use warnings;
+use Mojo::Base -strict;
 
 1;
 # vim: set sw=4 et:
