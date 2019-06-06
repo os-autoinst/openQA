@@ -1157,13 +1157,13 @@ stop them outputting non-printable characters.
 To trigger new tests with custom settings the command line client
 +openqa-client+ can be used. To trigger new tests relying on all settings from
 existing tests runs but modifying specific settings the +openqa-clone-job+
-script can be used. Within the openQA repository the script is called
-+clone_job.pl+ and is located at +/usr/share/openqa/script/+.  This tool can
-be used to create a new job that adds, removes or changes settings.
+script can be used. Within the openQA repository the script is located at
++/usr/share/openqa/script/+.  This tool can be used to create a new job that
+adds, removes or changes settings.
 
 [source,sh]
 --------------------------------------------------------------------------------
-/usr/share/openqa/script/clone_job.pl --from localhost --host localhost 42 FOO=bar BAZ=
+openqa-clone-job --from localhost --host localhost 42 FOO=bar BAZ=
 --------------------------------------------------------------------------------
 
 If you do not want a cloned job to start up in the same job group as the job
@@ -1173,7 +1173,7 @@ name, e.g.:
 
 [source,sh]
 -------------
-clone_job.pl --from localhost 42 _GROUP="openSUSE Tumbleweed"
+openqa-clone-job --from localhost 42 _GROUP="openSUSE Tumbleweed"
 -------------
 
 The special group value +0+ means that the group connection will be separated
@@ -1181,7 +1181,7 @@ and the job will not appear as a job in any job group, e.g.:
 
 [source,sh]
 -------------
-clone_job.pl --from localhost 42 _GROUP=0
+openqa-clone-job --from localhost 42 _GROUP=0
 -------------
 
 === Backend variables for faster test execution
@@ -1236,14 +1236,15 @@ existing job and adding the setting:
 
 [source,sh]
 ----
-clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 MAKETESTSNAPSHOTS=1
+openqa-clone-job --from https://openqa.opensuse.org  --host localhost 24 MAKETESTSNAPSHOTS=1
 ----
 
-* Create a job again, this time setting the +SKIPTO+ variable to the snapshot you need. Again, +clone_job.pl+ comes handy here:
+* Create a job again, this time setting the +SKIPTO+ variable to the snapshot
+* you need. Again, +openqa-clone-job+ comes handy here:
 
 [source,sh]
 ----
-clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 SKIPTO=consoletest-yast2_i
+openqa-clone-job --from https://openqa.opensuse.org  --host localhost 24 SKIPTO=consoletest-yast2_i
 ----
 
 * Use qemu-img snapshot -l something.img to find out what snapshots are in the image. Snapshots are named
@@ -1257,7 +1258,7 @@ successful test module run. Snapshots are overwritten. The snapshot is named `la
 
 [source,sh]
 ----
-clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 TESTDEBUG=1
+openqa-clone-job --from https://openqa.opensuse.org  --host localhost 24 TESTDEBUG=1
 ----
 
 * Create a job again, this time setting the +SKIPTO+ variable to the snapshot
@@ -1267,7 +1268,7 @@ the clone source job or specifying the variable explicitly:
 
 [source,sh]
 ----
-clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 TESTDEBUG=1 SKIPTO=consoletest-yast2_i
+openqa-clone-job --from https://openqa.opensuse.org  --host localhost 24 TESTDEBUG=1 SKIPTO=consoletest-yast2_i
 ----
 
 === Defining a custom test schedule or custom test modules
