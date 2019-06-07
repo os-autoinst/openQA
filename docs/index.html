@@ -6830,7 +6830,7 @@ pulled from OBS is called <code>openqa_dev:latest</code>.</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus -e VAR1=1 -e VAR2=1 openqa:latest make run-tests-within-container</pre>
+<pre>docker run -v OPENQA_LOCAL_CODE:/opt/openqa -e VAR1=1 -e VAR2=1 openqa:latest make run-tests-within-container</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -6882,7 +6882,7 @@ environment variables defining our test matrix:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -it -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus openqa:latest bash</pre>
+<pre>docker run -it -v OPENQA_LOCAL_CODE:/opt/openqa openqa:latest bash</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -6894,7 +6894,7 @@ session without any initialization script run:</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>docker run -it --entrypoint /bin/bash -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus registry.opensuse.org/devel/openqa/containers/openqa_dev</pre>
+<pre>docker run -it --entrypoint /bin/bash -v OPENQA_LOCAL_CODE:/opt/openqa registry.opensuse.org/devel/openqa/containers/openqa_dev</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -6978,7 +6978,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-06-07 09:04:54 UTC
+Last updated 2019-06-07 12:55:37 UTC
 </div>
 </div>
 <style>
