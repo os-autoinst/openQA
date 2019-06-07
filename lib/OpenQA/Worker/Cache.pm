@@ -132,7 +132,7 @@ sub download_asset {
                         $last_updated = time;
                         if ($progress < $current) {
                             $progress = $current;
-                            log_debug("CACHE: Downloading $asset: ", $size == $len ? 100 : $progress . "%");
+                            log_debug("CACHE: Downloading $asset: " . ($size == $len ? 100 : $progress) . "%");
                         }
                     }
                 });
