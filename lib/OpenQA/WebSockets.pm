@@ -17,7 +17,6 @@ package OpenQA::WebSockets;
 use Mojo::Base 'Mojolicious';
 
 use Mojo::Server::Daemon;
-use OpenQA::IPC;
 use OpenQA::Setup;
 use OpenQA::Utils qw(log_debug log_warning log_info);
 use OpenQA::WebSockets::Model::Status;
@@ -39,7 +38,7 @@ sub startup {
     $self->plugin('Helpers');
 
     my $r = $self->routes;
-    $r->namespaces(['OpenQA::WebSockets::Controller']);
+    $r->namespaces(['OpenQA::WebSockets::Controller', 'OpenQA::Shared::Controller']);
     my $ca = $r->under('/')->to('Auth#check');
     $ca->get('/' => {json => {name => $self->defaults('appname')}});
     my $api = $ca->any('/api');

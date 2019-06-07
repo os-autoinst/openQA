@@ -17,8 +17,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    $ENV{OPENQA_TEST_IPC} = 1;
-
 }
 
 use strict;
@@ -29,14 +27,12 @@ use DateTime;
 use Test::More;
 use Test::Warnings;
 use Test::Output qw(stderr_like);
-use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils 'redirect_output';
 require OpenQA::Worker::Commands;
 
 my $schema = OpenQA::Test::Database->new->create();
-OpenQA::Scheduler->new;
 
 sub _check_job_running {
     my ($jobid) = @_;

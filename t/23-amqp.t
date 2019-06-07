@@ -18,7 +18,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use Mojo::Base;
@@ -27,7 +26,6 @@ use Mojo::IOLoop;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Client;
-use OpenQA::Scheduler;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Database;
 use Test::MockModule;
@@ -72,9 +70,6 @@ $parent_groups->create(
         id   => 2000,
         name => 'test',
     });
-
-# create Test DBus bus and service for fake WebSockets
-my $sh = OpenQA::Scheduler->new();
 
 my $settings = {
     DISTRI      => 'Unicorn',

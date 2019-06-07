@@ -58,7 +58,7 @@ eval 'use Test::More::Color "foreground"';
 
 use File::Path qw(make_path remove_tree);
 use Module::Load::Conditional 'can_load';
-use OpenQA::Test::Utils qw(create_websocket_server create_live_view_handler setup_share_dir);
+use OpenQA::Test::Utils qw(create_websocket_server create_scheduler create_live_view_handler setup_share_dir);
 use OpenQA::Test::FullstackUtils;
 
 plan skip_all => 'set DEVELOPER_FULLSTACK=1 (be careful)' unless $ENV{DEVELOPER_FULLSTACK};
@@ -107,14 +107,8 @@ my $mojoport = Mojo::IOLoop::Server->generate_port;
 my $wsport   = $mojoport + 1;
 $wspid = create_websocket_server($wsport, 0, 0, 0);
 
-# start scheduler
-$schedulerpid = fork();
-if ($schedulerpid == 0) {
-    use OpenQA::Scheduler;
-    OpenQA::Scheduler::run;
-    Devel::Cover::report() if Devel::Cover->can('report');
-    _exit(0);
-}
+my $schedulerport = $mojoport + 3;
+$schedulerpid = create_scheduler($schedulerport);
 
 # start Selenium test driver without fixtures usual fixtures but an additional admin user
 my $driver = call_driver(

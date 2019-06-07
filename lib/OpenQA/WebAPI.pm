@@ -19,7 +19,6 @@ use Mojo::Base 'Mojolicious';
 use Mojolicious 7.18;
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
-use OpenQA::IPC;
 use OpenQA::Utils qw(log_warning job_groups_and_parents detect_current_version);
 use OpenQA::Setup;
 use OpenQA::WebAPI::Description qw(get_pod_from_controllers set_api_desc);
@@ -445,13 +444,6 @@ sub startup {
     OpenQA::Setup::setup_validator_check_for_datetime($self);
 
     $self->plugin('OpenQA::WebAPI::Plugin::MemoryLimit');
-
-    # run fake dbus services in case of test mode
-    if ($self->mode eq 'test' && !$ENV{FULLSTACK} && !$ENV{DEVELOPER_FULLSTACK}) {
-        log_warning('Running in test mode - dbus services mocked');
-        require OpenQA::Scheduler;
-        OpenQA::Scheduler->new;
-    }
 
     # add method to be called before rendering
     $self->app->hook(

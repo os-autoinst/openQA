@@ -40,12 +40,10 @@ BEGIN {
 }
 
 use lib "$FindBin::Bin/lib";
-use OpenQA::Scheduler;
-use OpenQA::Scheduler::Scheduler;
+use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 use Test::More;
-use Net::DBus qw(:typing);
 use Mojo::IOLoop::Server;
 use Mojo::File 'tempfile';
 use OpenQA::Test::Utils qw(
@@ -67,7 +65,6 @@ my $mojoport = Mojo::IOLoop::Server->generate_port();
 my $wspid    = create_websocket_server($mojoport + 1, 0, 1, 1);
 my $webapi   = create_webapi($mojoport);
 
-my $reactor = get_reactor();
 # Setup needed files for workers.
 
 my $sharedir = setup_share_dir($ENV{OPENQA_BASEDIR});
@@ -87,7 +84,7 @@ subtest 'Scheduler worker job allocation' => sub {
 
     #
     # Step 1
-    $allocated = scheduler_step($reactor);    # Will try to allocate to previous worker and fail!
+    $allocated = scheduler_step();    # Will try to allocate to previous worker and fail!
     is @$allocated, 0;
 
 
@@ -97,7 +94,7 @@ subtest 'Scheduler worker job allocation' => sub {
     wait_for_worker($schema, 3);
     wait_for_worker($schema, 4);
 
-    ($allocated) = scheduler_step($reactor);    # Will try to allocate to previous worker and fail!
+    ($allocated) = scheduler_step();    # Will try to allocate to previous worker and fail!
 
     #($allocated) = scheduler_step($reactor);
     my $job_id1 = $allocated->[0]->{job};
@@ -108,7 +105,7 @@ subtest 'Scheduler worker job allocation' => sub {
     ok $job_id1 != $job_id2, "Jobs dispatched to different workers";
 
 
-    ($allocated) = scheduler_step($reactor);
+    ($allocated) = scheduler_step();
     is @$allocated, 0;
 
     dead_workers($schema);
@@ -124,14 +121,14 @@ subtest 'Simulation of unstable workers' => sub {
 
     shift(@latest)->auto_duplicate();
 
-    ($allocated) = scheduler_step($reactor);    # Will try to allocate to previous worker and fail!
+    ($allocated) = scheduler_step();    # Will try to allocate to previous worker and fail!
 
 # Now let's simulate unstable workers :)
 # In this way the worker will associate, will be registered but won't perform any operation - will just send statuses that is free.
     my $unstable_w_pid = unresponsive_worker($k->key, $k->secret, "http://localhost:$mojoport", 3);
     wait_for_worker($schema, 4);
 
-    $allocated = scheduler_step($reactor);
+    $allocated = scheduler_step();
     is @$allocated, 1;
     is @{$allocated}[0]->{job},    99982;
     is @{$allocated}[0]->{worker}, 5;
@@ -146,14 +143,14 @@ subtest 'Simulation of unstable workers' => sub {
     kill_service($unstable_w_pid, 1);
     sleep 5;
 
-    scheduler_step($reactor);
+    scheduler_step();
     dead_workers($schema);
 
     # Same job, since was put in scheduled state again.
     $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, 8);
     wait_for_worker($schema, 5);
 
-    ($allocated) = scheduler_step($reactor);
+    ($allocated) = scheduler_step();
 
     is @$allocated, 1;
     is @{$allocated}[0]->{job},    99982;
@@ -190,7 +187,7 @@ subtest 'Simulation of heavy unstable load' => sub {
     my $i = 4;
     wait_for_worker($schema, ++$i) for 1 .. 10;
 
-    ($allocated) = scheduler_step($reactor);    # Will try to allocate to previous worker and fail!
+    ($allocated) = scheduler_step();    # Will try to allocate to previous worker and fail!
     is(@$allocated, 10, "Allocated maximum number of jobs that could have been allocated") or die;
     my %jobs;
     my %w;
@@ -217,7 +214,7 @@ subtest 'Simulation of heavy unstable load' => sub {
     $i = 5;
     wait_for_worker($schema, ++$i) for 0 .. 12;
 
-    ($allocated) = scheduler_step($reactor);    # Will try to allocate to previous worker and fail!
+    ($allocated) = scheduler_step();    # Will try to allocate to previous worker and fail!
     is @$allocated, 0, "All failed allocation on second step - workers were killed";
     for my $dup (@duplicated) {
         for (0 .. 100) {
@@ -285,22 +282,6 @@ sub dead_workers {
     $_->update({t_updated => DateTime->from_epoch(epoch => time - 10200)}) for $schema->resultset("Workers")->all();
 }
 
-sub remove_timers {
-    my $reactor = shift;
-
-    $reactor->{timeouts} = [undef];    # This is Net::DBus default...
-    delete $reactor->{timer}->{no_actions_reset};
-}
-
-sub get_reactor {
-    # Instantiate our (hacked) scheduler
-    OpenQA::Scheduler->new();
-    my $reactor = Net::DBus::Reactor->main;
-    OpenQA::Scheduler::Scheduler::reactor($reactor);
-    $reactor->{tick} //= $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS};
-    return $reactor;
-}
-
 sub range_ok {
     my ($tick, $started, $fired) = @_;
     my $step       = 1000;
@@ -311,18 +292,7 @@ sub range_ok {
         "timeout in range $low_limit->$high_limit (setted tick $tick, real tick occurred at $delta)");
 }
 
-sub scheduler_step {
-    my $reactor = shift;
-    my $started = $reactor->_now;
-    my ($allocated);
-    my $current_tick = $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS};
-
-    $allocated = OpenQA::Scheduler::Scheduler::schedule();
-
-    is get_scheduler_tick($reactor), $current_tick, "Tick is at the expected value ($current_tick)";
-
-    return $allocated;
-}
+sub scheduler_step { OpenQA::Scheduler::Model::Jobs->singleton->schedule() }
 
 sub get_scheduler_tick { shift->{tick} }
 

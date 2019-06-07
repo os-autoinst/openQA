@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2016 SUSE LLC
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,20 +14,13 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Scheduler;
+use Mojo::Base 'Mojolicious';
 
-use strict;
-use warnings;
-
-use base 'Net::DBus::Object';
-
-use Net::DBus::Exporter 'org.opensuse.openqa.Scheduler';
-use Net::DBus::Reactor;
-use OpenQA::IPC;
 use OpenQA::Setup;
+use Mojo::IOLoop;
 use OpenQA::Utils 'log_debug';
-
-# How many jobs to allocate in one tick. Defaults to 80 ( set it to 0 for as much as possible)
-use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 80;
+use Mojo::Server::Daemon;
+use OpenQA::Scheduler::Model::Jobs;
 
 # Scheduler default clock. Defaults to 20 s
 # Optimization rule of thumb is:
@@ -37,68 +30,77 @@ use constant MAX_JOB_ALLOCATION => $ENV{OPENQA_SCHEDULER_MAX_JOB_ALLOCATION} // 
 # that the scheduler took to perform the operations
 use constant SCHEDULE_TICK_MS => $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} // 20000;
 
-# monkey patching for debugging IPC
-sub _is_method_allowed {
-    my ($self, $method) = @_;
+our $RUNNING;
 
-    my $ret = $self->SUPER::_is_method_allowed($method);
-    if ($ret) {
-        log_debug "IPC calling $method";
-    }
-    return $ret;
+sub run {
+    my $self   = __PACKAGE__->new;
+    my $daemon = $self->setup;
+    local $RUNNING = 1;
+    $daemon->run;
 }
 
-our $setup;
-sub run {
+sub setup {
+    my $self = shift;
 
-    # Catch normal signals
-    local $SIG{HUP} = local $SIG{INT} = local $SIG{PIPE} = local $SIG{TERM} = sub {
-        OpenQA::Scheduler::Scheduler::quit();
-    };
-
-    $setup = OpenQA::Setup->new(log_name => 'scheduler');
+    my $setup = OpenQA::Setup->new(log_name => 'scheduler');
     OpenQA::Setup::read_config($setup);
     OpenQA::Setup::setup_log($setup);
 
-    OpenQA::Scheduler->new();
     log_debug("Scheduler started");
     log_debug("\t Scheduler default interval(ms) : " . SCHEDULE_TICK_MS);
-    log_debug("\t Max job allocation: " . MAX_JOB_ALLOCATION);
+    log_debug("\t Max job allocation: " . OpenQA::Scheduler::Model::Jobs::MAX_JOB_ALLOCATION());
 
-    my $reactor = Net::DBus::Reactor->main;
-    OpenQA::Scheduler::Scheduler::reactor($reactor);
-    $reactor->{timer}->{schedule_jobs} = $reactor->add_timeout(
-        SCHEDULE_TICK_MS,
-        Net::DBus::Callback->new(
-            method => \&OpenQA::Scheduler::Scheduler::schedule
-        ));
     # initial schedule
-    OpenQA::Scheduler::Scheduler::schedule();
+    OpenQA::Scheduler::Model::Jobs->singleton->schedule;
+    Mojo::IOLoop->next_tick(sub { _reschedule() });
 
-    $reactor->run;
+    return Mojo::Server::Daemon->new(app => $self);
 }
 
-sub new {
-    my ($class) = @_;
-    $class = ref $class || $class;
-    # register @ IPC - we use DBus reactor here for symplicity
-    my $ipc = OpenQA::IPC->ipc;
-    return unless $ipc;
-    my $service = $ipc->register_service('scheduler');
-    my $self    = $class->SUPER::new($service, '/Scheduler');
-    $self->{ipc} = $ipc;
-    bless $self, $class;
+sub startup {
+    my $self = shift;
 
-    return $self;
+    $self->defaults(appname => 'openQA Scheduler');
+    $self->mode('production');
+
+    # no cookies for worker, no secrets to protect
+    $self->secrets(['nosecretshere']);
+    $self->config->{no_localhost_auth} ||= 1;
+
+    # The reactor interval might be set to 1 ms in case the scheduler has been woken up by the
+    # web UI (In this case it is important to set it back to OpenQA::Scheduler::SCHEDULE_TICK_MS)
+    OpenQA::Scheduler::Model::Jobs->singleton->on(
+        conclude => sub {
+            _reschedule(SCHEDULE_TICK_MS);
+        });
+
+    my $r = $self->routes;
+    $r->namespaces(['OpenQA::Scheduler::Controller', 'OpenQA::Shared::Controller']);
+    my $ca = $r->under('/')->to('Auth#check');
+    $ca->get('/' => {json => {name => $self->defaults('appname')}});
+    my $api = $ca->any('/api');
+    $api->get('/wakeup')->to('API#wakeup');
+    $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 }
 
-# Scheduler ABI goes here
+sub wakeup { _reschedule(0) }
 
-dbus_method('wakeup_scheduler');
-sub wakeup_scheduler {
-    my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::wakeup_scheduler();
+sub _reschedule {
+    my $time = shift;
+
+    # Allow manual scheduling
+    return unless $RUNNING;
+
+    # Reuse the existing timer if possible
+    state $interval = SCHEDULE_TICK_MS;
+    my $current = $interval;
+    $interval = $time //= $current;
+    state $timer;
+    return if $interval == $current && $timer;
+
+    log_debug("[rescheduling] Current tick is at $current ms. New tick will be in: $time ms");
+    Mojo::IOLoop->remove($timer) if $timer;
+    $timer = Mojo::IOLoop->recurring(($interval / 1000) => sub { OpenQA::Scheduler::Model::Jobs->singleton->schedule });
 }
-
 
 1;

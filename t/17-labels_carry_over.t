@@ -18,7 +18,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use Mojo::Base -strict;
@@ -28,7 +27,6 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
-use OpenQA::Scheduler;
 use Mojo::JSON qw(decode_json);
 
 my $test_case;
@@ -41,8 +39,7 @@ my $comment_must
 sub set_up {
     $test_case = OpenQA::Test::Case->new;
     $test_case->init_data;
-    $t = Test::Mojo->new('OpenQA::WebAPI');
-    my $sh = OpenQA::Scheduler->new;
+    $t    = Test::Mojo->new('OpenQA::WebAPI');
     $rs   = $t->app->schema->resultset("Jobs");
     $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
     $test_case->login($t, 'percival');

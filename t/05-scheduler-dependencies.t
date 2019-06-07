@@ -21,12 +21,11 @@ use warnings;
 
 BEGIN {
     unshift @INC, 'lib';
-    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use OpenQA::Scheduler::Scheduler;
+use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use Test::Mojo;
@@ -42,9 +41,9 @@ OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
 
 my $sent = {};
 
-my $s_w = OpenQA::Scheduler::Scheduler::shuffle_workers(0);
+OpenQA::Scheduler::Model::Jobs->singleton->shuffle_workers(0);
 sub schedule {
-    my $id = OpenQA::Scheduler::Scheduler::schedule();
+    my $id = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     for my $i (@$id) {
         _jobs_update_state([$schema->resultset('Jobs')->find($i->{job})], OpenQA::Jobs::Constants::RUNNING);
     }

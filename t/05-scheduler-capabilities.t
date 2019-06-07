@@ -21,12 +21,11 @@ use warnings;
 
 BEGIN {
     unshift @INC, 'lib';
-    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use OpenQA::Scheduler;
+use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
 use Test::Mojo;
@@ -38,11 +37,10 @@ my $schema = OpenQA::Test::Database->new->create;    #(skip_fixtures => 1);
 
 my $sent = {};
 
-my $s_w = OpenQA::Scheduler::Scheduler::shuffle_workers(0);
-diag "Scheduler shuffle_workers: $s_w\n";
+OpenQA::Scheduler::Model::Jobs->singleton->shuffle_workers(0);
 
 sub schedule {
-    my $id = OpenQA::Scheduler::Scheduler::schedule();
+    my $id = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     do {
         my $j = $schema->resultset('Jobs')->find($_->{job});
         $j->state(OpenQA::Jobs::Constants::RUNNING);

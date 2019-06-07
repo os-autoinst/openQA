@@ -18,7 +18,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use Mojo::Base -strict;
@@ -33,10 +32,6 @@ use Mojo::JSON 'decode_json';
 use File::Path qw(make_path remove_tree);
 use Date::Format 'time2str';
 use POSIX 'strftime';
-use OpenQA::Scheduler;
-
-# create Test DBus bus and service for fake WebSockets and Scheduler call
-my $sh = OpenQA::Scheduler->new;
 
 my $test_case   = OpenQA::Test::Case->new;
 my $schema_name = OpenQA::Test::Database->generate_schema_name;

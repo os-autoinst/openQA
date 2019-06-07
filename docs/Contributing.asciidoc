@@ -381,7 +381,7 @@ Launch the tests using Makefile target:
 
 Run tests by invoking Docker manually, e.g.:
 
-  docker run -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus -e VAR1=1 -e VAR2=1 openqa:latest make run-tests-within-container
+  docker run -v OPENQA_LOCAL_CODE:/opt/openqa -e VAR1=1 -e VAR2=1 openqa:latest make run-tests-within-container
 
 Replace `OPENQA_LOCAL_CODE` with the location where you have the openQA code.
 
@@ -405,14 +405,14 @@ Of course it is also possible to run (specific) tests directly via `prove` inste
 
 Running commands will be executed after the initialization script (database creation and so on..). So if there is the need to run an interactive session after it just do:
 
-  docker run -it -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus openqa:latest bash
+  docker run -it -v OPENQA_LOCAL_CODE:/opt/openqa openqa:latest bash
 
 Of course you can also use `make run-tests-within-container \; bash` to run the tests first and then open a shell for further investigation.
 
 There's also the possibility to change the initialization scripts with the --entrypoint switch. This allows us to go into an interactive
 session without any initialization script run:
 
-  docker run -it --entrypoint /bin/bash -v OPENQA_LOCAL_CODE:/opt/openqa -v /var/run/dbus:/var/run/dbus registry.opensuse.org/devel/openqa/containers/openqa_dev
+  docker run -it --entrypoint /bin/bash -v OPENQA_LOCAL_CODE:/opt/openqa registry.opensuse.org/devel/openqa/containers/openqa_dev
 
 In case there's the need to follow what's happening in the current running docker (the execution will terminate the session):
 

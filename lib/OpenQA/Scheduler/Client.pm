@@ -1,6 +1,4 @@
-#!/usr/bin/env perl -w
-
-# Copyright (C) 2017 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,29 +13,29 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-BEGIN {
-    unshift @INC, 'lib';
+package OpenQA::Scheduler::Client;
+use Mojo::Base -base;
+
+use OpenQA::Client;
+use OpenQA::Scheduler;
+
+has client => sub { OpenQA::Client->new(api => 'localhost') };
+has port   => 9529;
+
+sub wakeup {
+    my ($self, $worker_id) = @_;
+    return if $self->{wakeup};
+    $self->{wakeup}++;
+    $self->client->max_connections(0)->request_timeout(5)->get_p($self->_api('wakeup'))
+      ->finally(sub { delete $self->{wakeup} })->wait;
 }
 
-use Mojo::Base -strict;
-use FindBin;
-use lib "$FindBin::Bin/../lib";
-use Test::More;
-use Test::Mojo;
-use Test::Warnings;
-use OpenQA::Test::Case;
-use OpenQA::Client;
+sub singleton { state $client ||= __PACKAGE__->new }
 
-OpenQA::Test::Case->new->init_data;
+sub _api {
+    my ($self, $method) = @_;
+    my $port = $self->port;
+    return "http://127.0.0.1:$port/api/$method";
+}
 
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-my $app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
-
-my $get     = $t->get_ok('/admin/workers.json');
-my %workers = %{$get->tx->res->json->{workers}};
-is(2, scalar(keys(%workers)), '2 workers seen');
-
-done_testing();
+1;

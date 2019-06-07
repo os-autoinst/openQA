@@ -21,6 +21,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Resource::Jobs;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Events;
+use OpenQA::Scheduler::Client;
 use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
 use Mojo::Asset::Memory;
@@ -246,7 +247,7 @@ sub create {
         $gru->enqueue_download_jobs($downloads, [$job->id]);
         $gru->enqueue_limit_assets;
         $job->calculate_blocked_by;
-        wakeup_scheduler;
+        OpenQA::Scheduler::Client->singleton->wakeup;
     }
     catch {
         $status = 400;
@@ -636,7 +637,7 @@ sub restart {
     }
 
     my @res = OpenQA::Resource::Jobs::job_restart($jobs);
-    wakeup_scheduler;
+    OpenQA::Scheduler::Client->singleton->wakeup;
 
     my @urls;
     for (my $i = 0; $i < @res; $i++) {

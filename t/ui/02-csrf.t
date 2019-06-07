@@ -16,7 +16,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use Mojo::Base -strict;
@@ -25,13 +24,9 @@ use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
-use OpenQA::Scheduler;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
-
-# create Test DBus bus and service for fake WebSockets and Scheduler call
-my $sh = OpenQA::Scheduler->new;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 

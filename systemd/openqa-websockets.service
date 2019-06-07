@@ -7,7 +7,6 @@ After=openqa-scheduler.service postgresql.service network.target openqa-setup-db
 [Service]
 # TODO: define whether we want to run the websockets with the same user
 User=geekotest
-Environment="DBUS_STARTER_BUS_TYPE=system"
 ExecStart=/usr/share/openqa/script/openqa-websockets
 
 [Install]

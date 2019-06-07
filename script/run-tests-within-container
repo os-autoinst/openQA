@@ -36,7 +36,6 @@ function prepare_fullstack_test {
 function run_fullstack_test {
     prepare_fullstack_test
 
-    eval $(dbus-launch --sh-syntax)
     export PERL5OPT="$PERL5OPT $HARNESS_PERL_SWITCHES"
     if ! perl "$@"; then
         touch tests_failed

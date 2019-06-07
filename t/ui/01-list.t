@@ -18,7 +18,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use Mojo::Base -strict;
@@ -31,10 +30,6 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Test::Database;
-use OpenQA::Scheduler;
-
-# create Test DBus bus and service for fake WebSockets and Scheduler call
-my $sh = OpenQA::Scheduler->new;
 
 OpenQA::Test::Case->new->init_data;
 

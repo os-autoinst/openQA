@@ -34,7 +34,7 @@
 %bcond_with tests
 %endif
 # runtime requirements that also the testsuite needs
-%define t_requires perl(DBD::Pg) perl(DBIx::Class) perl(Config::IniFiles) perl(SQL::Translator) perl(Date::Format) perl(File::Copy::Recursive) perl(DateTime::Format::Pg) perl(Net::OpenID::Consumer) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) perl(aliased) perl(Config::Tiny) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(IO::Socket::SSL) perl(Data::Dump) perl(DBIx::Class::OptimisticLocking) perl(Text::Markdown) perl(Net::DBus) perl(JSON::Validator) perl(YAML::XS) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(Mojo::RabbitMQ::Client) perl(BSD::Resource) perl(Cpanel::JSON::XS) perl(Pod::POM) perl(Mojo::IOLoop::ReadWriteProcess) perl(Minion) perl(Mojo::Pg) perl(Mojo::SQLite) perl(Minion::Backend::SQLite)
+%define t_requires perl(DBD::Pg) perl(DBIx::Class) perl(Config::IniFiles) perl(SQL::Translator) perl(Date::Format) perl(File::Copy::Recursive) perl(DateTime::Format::Pg) perl(Net::OpenID::Consumer) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) perl(aliased) perl(Config::Tiny) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(IO::Socket::SSL) perl(Data::Dump) perl(DBIx::Class::OptimisticLocking) perl(Text::Markdown) perl(JSON::Validator) perl(YAML::XS) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(Mojo::RabbitMQ::Client) perl(BSD::Resource) perl(Cpanel::JSON::XS) perl(Pod::POM) perl(Mojo::IOLoop::ReadWriteProcess) perl(Minion) perl(Mojo::Pg) perl(Mojo::SQLite) perl(Minion::Backend::SQLite)
 Name:           openQA
 Version:        4.6
 Release:        0
@@ -60,7 +60,6 @@ BuildRequires:  perl(Mojolicious) >= 7.92
 BuildRequires:  perl(Mojolicious::Plugin::AssetPack) >= 1.36
 BuildRequires:  perl(Mojo::RabbitMQ::Client) >= 0.2
 BuildRequires:  rubygem(sass)
-Requires:       dbus-1
 Requires:       perl(Minion) >= 9.09
 Requires:       perl(Mojo::RabbitMQ::Client) >= 0.2
 Requires:       perl(YAML::XS) >= 0.67
@@ -370,7 +369,6 @@ fi
 %{_datadir}/openqa%{_sysconfdir}/openqa/openqa.ini
 %{_datadir}/openqa%{_sysconfdir}/openqa/database.ini
 %config %{_sysconfdir}/logrotate.d
-%config(noreplace) %{_sysconfdir}/dbus-1/system.d/org.opensuse.openqa.conf
 # apache vhost
 %dir %{_sysconfdir}/apache2
 %dir %{_sysconfdir}/apache2/vhosts.d
@@ -394,7 +392,6 @@ fi
 %{_datadir}/openqa/assets
 %{_datadir}/openqa/dbicdh
 %{_datadir}/openqa/script/check_dependencies
-%{_datadir}/openqa/script/clean_needles
 %{_datadir}/openqa/script/create_admin
 %{_datadir}/openqa/script/fetchneedles
 %{_datadir}/openqa/script/initdb

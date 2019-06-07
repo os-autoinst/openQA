@@ -26,6 +26,7 @@ use File::Basename;
 use Try::Tiny;
 use OpenQA::Utils;
 use OpenQA::JobDependencies::Constants;
+use OpenQA::Scheduler::Client;
 use Mojo::JSON qw(encode_json decode_json);
 use Carp;
 
@@ -337,7 +338,7 @@ sub _schedule_iso {
         OpenQA::Events->singleton->emit_event('openqa_job_create', data => {id => $succjob}, user_id => $user_id);
     }
 
-    wakeup_scheduler;
+    OpenQA::Scheduler::Client->singleton->wakeup;
 
     my %results = (
         successful_job_ids => \@successful_job_ids,

@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,8 +13,13 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA;
-use Mojo::Base -strict;
+package OpenQA::Scheduler::Controller::API;
+use Mojo::Base 'Mojolicious::Controller';
+
+sub wakeup {
+    my $self = shift;
+    OpenQA::Scheduler::wakeup();
+    $self->render(text => 'ok');
+}
 
 1;
-# vim: set sw=4 et:

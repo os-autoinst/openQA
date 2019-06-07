@@ -18,7 +18,6 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use Date::Format;
 use OpenQA::Utils;
-use OpenQA::IPC;
 use OpenQA::Utils 'href_to_bugref';
 
 =pod

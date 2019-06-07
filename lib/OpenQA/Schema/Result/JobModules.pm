@@ -23,7 +23,6 @@ use 5.012;    # so readdir assigns to $_ in a lone while test
 use base 'DBIx::Class::Core';
 
 use db_helpers;
-use OpenQA::Scheduler::Scheduler;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use Mojo::JSON qw(decode_json encode_json);
@@ -222,14 +221,14 @@ sub details {
 sub job_module {
     my ($job, $name) = @_;
 
-    my $schema = OpenQA::Scheduler::Scheduler::schema();
+    my $schema = OpenQA::Schema->singleton;
     return $schema->resultset("JobModules")->search({job_id => $job->id, name => $name})->first;
 }
 
 sub job_modules {
     my ($job) = @_;
 
-    my $schema = OpenQA::Scheduler::Scheduler::schema();
+    my $schema = OpenQA::Schema->singleton;
     return $schema->resultset("JobModules")->search({job_id => $job->id}, {order_by => 'id'})->all;
 }
 

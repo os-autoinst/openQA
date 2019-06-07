@@ -26,6 +26,7 @@ use Mojo::Home;
 use Mojo::File 'path';
 use Test::More;
 use OpenQA::SeleniumTest;
+use OpenQA::Scheduler::Model::Jobs;
 
 sub setup_database {
     # make database configuration
@@ -217,7 +218,7 @@ sub wait_for_developer_console_available {
 
 sub schedule_one_job {
     while (1) {
-        my @scheduled_jobs = OpenQA::Scheduler::Scheduler::schedule();
+        my @scheduled_jobs = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
         return if @scheduled_jobs;
         sleep 1;
     }

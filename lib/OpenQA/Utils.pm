@@ -84,7 +84,6 @@ our @EXPORT  = qw(
   loaded_modules
   loaded_plugins
   hashwalker
-  wakeup_scheduler
   read_test_modules
   exists_worker
   feature_scaling
@@ -760,24 +759,6 @@ sub create_downloads_list {
         }
     }
     return \%downloads;
-}
-
-sub wakeup_scheduler {
-    my $ipc = OpenQA::IPC->ipc;
-
-    my $con = $ipc->{bus}->get_connection;
-
-    # ugly work around for Net::DBus::Test not being able to handle us using low level API
-    return if ref($con) eq 'Net::DBus::Test::MockConnection';
-
-    my $msg = $con->make_method_call_message(
-        "org.opensuse.openqa.Scheduler",
-        "/Scheduler", "org.opensuse.openqa.Scheduler",
-        "wakeup_scheduler"
-    );
-    # do not wait for a reply - avoid deadlocks. this way we can even call it
-    # from within the scheduler without having to worry about reentering
-    $con->send($msg);
 }
 
 sub exists_worker($$) {

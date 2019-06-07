@@ -17,7 +17,6 @@
 
 BEGIN {
     unshift @INC, 'lib';
-    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use Mojo::Base -strict;
@@ -31,15 +30,11 @@ use OpenQA::Client;
 use Mojo::IOLoop;
 use Mojo::File 'path';
 use Digest::MD5;
-use OpenQA::Scheduler;
 use OpenQA::Events;
 
 require OpenQA::Schema::Result::Jobs;
 
 OpenQA::Test::Case->new->init_data;
-
-# create Test DBus bus and service for fake WebSockets and Scheduler call
-my $sh = OpenQA::Scheduler->new;
 
 my $chunk_size = 10000000;
 

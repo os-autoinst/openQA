@@ -32,6 +32,10 @@ BEGIN {
     }
 }
 
+# listen only locally on port 9529 (preferably on both - IPv4 and IPv6)
+use OpenQA::Utils;
+set_listen_address(9529);
+
 use OpenQA::Schema;
 use OpenQA::Scheduler;
 

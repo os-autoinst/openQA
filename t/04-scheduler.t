@@ -21,20 +21,17 @@ use warnings;
 
 BEGIN {
     unshift @INC, 'lib';
-    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use OpenQA::Scheduler;
+use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Resource::Locks;
 use OpenQA::Resource::Jobs;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
-use Net::DBus;
-use Net::DBus::Test::MockObject;
-use Mojo::Util 'monkey_patch';
-
+use Test::Mojo;
+use Test::MockModule;
 use Test::More;
 use Test::Warnings;
 use Test::Output qw(stderr_like);
@@ -43,15 +40,37 @@ use OpenQA::Schema::Result::Jobs;
 my $sent = {};
 
 # Mangle worker websocket send, and record what was sent
-monkey_patch 'OpenQA::Schema::Result::Jobs', ws_send => sub {
-    my ($self, $worker) = @_;
-    my $hashref = $self->prepare_for_work($worker);
-    $hashref->{assigned_worker_id} = $worker->id;
-    $sent->{$worker->id} = {worker => $worker, job => $self};
-    return {state => {msg_sent => 1}};
-};
+my $mock_result = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+$mock_result->mock(
+    ws_send => sub {
+        my ($self, $worker) = @_;
+        my $hashref = $self->prepare_for_work($worker);
+        $hashref->{assigned_worker_id} = $worker->id;
+        $sent->{$worker->id} = {worker => $worker, job => $self};
+        return {state => {msg_sent => 1}};
+    });
 
 my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
+
+my $t = Test::Mojo->new('OpenQA::Scheduler');
+
+subtest 'Authentication' => sub {
+    $t->get_ok('/test')->status_is(404);
+    my $app = $t->app;
+    $t->get_ok('/')->status_is(200)->json_is({name => $app->defaults('appname')});
+    local $t->app->config->{no_localhost_auth} = 0;
+    $t->get_ok('/')->status_is(403)->json_is({error => 'Not authorized'});
+};
+
+subtest 'API' => sub {
+    my $mock_scheduler = Test::MockModule->new('OpenQA::Scheduler');
+    my $awake          = 0;
+    $mock_scheduler->mock(wakeup => sub { $awake++ });
+    $t->get_ok('/api/wakeup')->status_is(200)->content_is('ok');
+    is $awake, 1, 'scheduler has been woken up';
+    $t->get_ok('/api/wakeup')->status_is(200)->content_is('ok');
+    is $awake, 2, 'scheduler has been woken up again';
+};
 
 sub list_jobs {
     my %args = @_;
@@ -85,9 +104,6 @@ sub nots {
     }
     return $h;
 }
-
-# create Test DBus bus and service for fake WebSockets
-my $sh = OpenQA::Scheduler->new();
 
 my $current_jobs = list_jobs();
 is_deeply($current_jobs, [], "assert database has no jobs to start with")
@@ -298,12 +314,12 @@ is_deeply($current_jobs, [$jobs->[0]], "jobs with specified IDs (comma list)");
 # Testing job_grab (WORKER_CLASS mismatch)
 %args = (workerid => $worker->{id}, allocate => 1);
 my $rjobs_before = list_jobs(state => 'running');
-OpenQA::Scheduler::Scheduler::schedule();
+OpenQA::Scheduler::Model::Jobs->singleton->schedule();
 is(undef, $sent->{$worker->{id}}->{job}, 'job not grabbed due to default WORKER_CLASS');
 
 # Testing job_grab
 $worker_db_obj->set_property(WORKER_CLASS => 'qemu_x86_64');
-OpenQA::Scheduler::Scheduler::schedule();
+OpenQA::Scheduler::Model::Jobs->singleton->schedule();
 my $grabbed     = $sent->{$worker->{id}}->{job}->to_hash;
 my $rjobs_after = list_jobs(state => 'assigned');
 
@@ -329,7 +345,7 @@ is($grabbed->state,  "done",       "Previous job is in done state");
 is($grabbed->result, "incomplete", "result is incomplete");
 ok(!$grabbed->settings_hash->{JOBTOKEN}, "job token no longer present");
 
-OpenQA::Scheduler::Scheduler::schedule();
+OpenQA::Scheduler::Model::Jobs->singleton->schedule();
 $grabbed = $sent->{$worker->{id}}->{job}->to_hash;
 isnt($job->id, $grabbed->{id}, "new job grabbed") or die diag explain $grabbed->to_hash;
 isnt($grabbed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, "job token differs")

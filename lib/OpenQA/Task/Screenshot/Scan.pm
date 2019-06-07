@@ -20,6 +20,7 @@ use OpenQA::Utils;
 use Mojo::URL;
 use File::Spec::Functions 'catfile';
 use File::Basename qw(basename dirname);
+use OpenQA::Schema;
 use OpenQA::Utils qw(log_debug log_warning log_fatal);
 
 sub register {
@@ -103,7 +104,7 @@ sub _scan_images_links {
     return $job->retry({delay => 30})
       unless my $guard = $app->minion->guard('limit_scan_images_task', 3600);
 
-    my $schema = OpenQA::Scheduler::Scheduler::schema();
+    my $schema = OpenQA::Schema->singleton;
     my $jobs   = $schema->resultset("Jobs")->search(
         {
             id => {

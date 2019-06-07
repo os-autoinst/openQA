@@ -14,6 +14,7 @@ use Config::IniFiles;
 use Data::Dumper 'Dumper';
 use OpenQA::Utils qw(log_error log_info log_debug);
 use OpenQA::WebSockets::Client;
+use OpenQA::Scheduler::Client;
 use Mojo::Home;
 use Mojo::File 'path';
 use Cwd qw(abs_path getcwd);
@@ -35,7 +36,8 @@ BEGIN {
 our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
     qw(redirect_output standard_worker),
-    qw(create_webapi create_websocket_server create_live_view_handler create_worker unresponsive_worker wait_for_worker setup_share_dir),
+    qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
+    qw(create_worker unresponsive_worker wait_for_worker setup_share_dir),
     qw(kill_service unstable_worker client_output fake_asset_server),
     qw(cache_minion_worker cache_worker_service)
 );
@@ -153,8 +155,7 @@ sub create_webapi {
     my $startingpid = $$;
     my $mojopid     = fork();
     if ($mojopid == 0) {
-        # Run openQA in test mode - it will mock Scheduler and Websockets DBus services
-        $ENV{MOJO_MODE} = 'test';
+        local $ENV{MOJO_MODE} = 'test';
         my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$mojoport"], silent => 1);
         $daemon->build_app('OpenQA::WebAPI');
         $daemon->run;
@@ -188,8 +189,8 @@ sub create_websocket_server {
     OpenQA::WebSockets::Client->singleton->port($port);
     my $wspid = fork();
     if ($wspid == 0) {
-        $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
-        $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
+        local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
+        local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
 
         use OpenQA::WebSockets;
         use Mojo::Util 'monkey_patch';
@@ -227,6 +228,24 @@ sub create_websocket_server {
         }
     }
     return $wspid;
+}
+
+sub create_scheduler {
+    my ($port) = @_;
+
+    diag("Starting Scheduler service");
+
+    OpenQA::Scheduler::Client->singleton->port($port);
+    my $pid = fork();
+    if ($pid == 0) {
+        local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
+        local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
+
+        OpenQA::Scheduler::run;
+        Devel::Cover::report() if Devel::Cover->can('report');
+        _exit(0);
+    }
+    return $pid;
 }
 
 sub create_live_view_handler {
@@ -293,8 +312,8 @@ sub unstable_worker {
 
 
         # XXX: this should be sent to the scheduler to be included in the worker's table
-        $ENV{QEMUPORT} = ($instance) * 10 + 20002;
-        $ENV{VNC}      = ($instance) + 90;
+        local $ENV{QEMUPORT} = ($instance) * 10 + 20002;
+        local $ENV{VNC}      = ($instance) + 90;
         # Mangle worker main()
         monkey_patch 'OpenQA::Worker', main => sub {
             my ($host_settings) = @_;
@@ -348,8 +367,8 @@ sub c_worker {
 
 
         # XXX: this should be sent to the scheduler to be included in the worker's table
-        $ENV{QEMUPORT} = ($instance) * 10 + 20002;
-        $ENV{VNC}      = ($instance) + 90;
+        local $ENV{QEMUPORT} = ($instance) * 10 + 20002;
+        local $ENV{VNC}      = ($instance) + 90;
         # Mangle worker main()
         if ($bogus) {
             monkey_patch 'OpenQA::Worker::Commands', websocket_commands => sub {
