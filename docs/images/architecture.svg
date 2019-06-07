@@ -567,19 +567,14 @@
       </g>
     </g>
     <g stroke-linecap="butt" transform="matrix(1,0,0,1,12,88)" fill="blue" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" stroke-dasharray="12,4" stroke="blue" stroke-width="2" stroke-miterlimit="1.45">
-      <rect fill="none" x="65" width="359" height="215.419" y="206.054" clip-path="url(#clipPath2)"/>
+      <rect fill="none" x="65" width="359" height="426.838" y="206.054" clip-path="url(#clipPath2)"/>
     </g>
     <g font-size="14px" stroke-linecap="butt" transform="matrix(1,0,0,1,12,88)" text-rendering="geometricPrecision" font-family="'Liberation Sans'" shape-rendering="geometricPrecision" stroke-miterlimit="1.45">
       <text x="71" xml:space="preserve" y="224.7278" clip-path="url(#clipPath2)" stroke="none">The "web UI"</text>
-    </g>
-    <g stroke-linecap="butt" transform="matrix(1,0,0,1,12,88)" fill="blue" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" stroke-dasharray="12,4" stroke="blue" stroke-width="2" stroke-miterlimit="1.45">
-      <rect fill="none" x="65" width="359" height="155.419" y="477.473" clip-path="url(#clipPath2)"/>
-    </g>
-    <g font-size="14px" stroke-linecap="butt" transform="matrix(1,0,0,1,12,88)" text-rendering="geometricPrecision" font-family="'Liberation Sans'" shape-rendering="geometricPrecision" stroke-miterlimit="1.45">
-      <text x="71" xml:space="preserve" y="496.1468" clip-path="url(#clipPath2)" stroke="none">Job starting</text>
-      <rect fill="none" x="91" width="333" height="61.946" y="570.946" clip-path="url(#clipPath2)"/>
-      <text x="201.459" xml:space="preserve" y="589.6198" clip-path="url(#clipPath2)" stroke="none">openqa-scheduler</text>
-      <text x="135.1006" xml:space="preserve" font-size="12px" y="624.349" clip-path="url(#clipPath2)" stroke="none">provides D-Bus service org.openqa.Scheduler</text>
+      <rect fill="none" x="91" width="333" height="61.946" y="421.473" clip-path="url(#clipPath2)"/>
+      <text x="201.459" xml:space="preserve" y="440.1468" clip-path="url(#clipPath2)" stroke="none">openqa-scheduler</text>
+      <text x="186.458" xml:space="preserve" font-size="12px" y="461.4698" clip-path="url(#clipPath2)" stroke="none">listening on TCP port 9529</text>
+      <text x="169.791" xml:space="preserve" font-size="12px" y="474.876" clip-path="url(#clipPath2)" stroke="none">assigns jobs to available workers</text>
     </g>
     <g stroke-linecap="butt" transform="matrix(1,0,0,1,12,88)" fill="blue" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" stroke-dasharray="12,4" stroke="blue" stroke-width="2" stroke-miterlimit="1.45">
       <rect fill="none" x="474" width="359" height="155.419" y="477.473" clip-path="url(#clipPath2)"/>
@@ -835,89 +830,83 @@
     <g font-size="14px" stroke-linecap="butt" transform="matrix(1,0,0,1,12,88)" text-rendering="geometricPrecision" font-family="'Liberation Sans'" shape-rendering="geometricPrecision" stroke-miterlimit="1.45">
       <text x="1049.193" xml:space="preserve" y="889.1741" clip-path="url(#clipPath2)" stroke="none">os-autoinst-distri-opensuse</text>
       <text x="1037.507" xml:space="preserve" y="904.8148" clip-path="url(#clipPath2)" stroke="none">os-autoinst-needles-opensuse </text>
+    </g>
+    <g fill="white" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,12,88)" stroke="white">
+      <path d="M148.925 504.0132 L360.0591 504.0132 L360.0591 519.0132 L375.0591 519.0132 L375.0591 549.5831 L148.925 549.5831 Z" stroke="none" clip-path="url(#clipPath2)"/>
+      <path d="M360.0591 504.0132 L360.0591 519.0132 L375.0591 519.0132 Z" clip-path="url(#clipPath2)" fill-rule="evenodd" stroke="none"/>
+    </g>
+    <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,12,88)" stroke-linecap="butt">
+      <path fill="none" d="M148.925 504.0132 L360.0591 504.0132 L360.0591 519.0132 L375.0591 519.0132 L375.0591 549.5831 L148.925 549.5831 Z" clip-path="url(#clipPath2)"/>
+      <path fill="none" d="M360.0591 504.0132 L360.0591 519.0132 L375.0591 519.0132 Z" clip-path="url(#clipPath2)" fill-rule="evenodd"/>
+      <text x="173.287" xml:space="preserve" y="524.2552" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">note: these services use HTTP to</text>
+      <text x="183.954" xml:space="preserve" y="537.6614" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">communicate with each other</text>
       <path fill="none" d="M447.875 663.75 L447.875 691.3084" clip-path="url(#clipPath2)"/>
-    </g>
-    <g stroke-linecap="butt" transform="matrix(1,0,0,1,12,88)" fill="white" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" stroke="white" stroke-miterlimit="1.45">
-      <path d="M447.875 706.3084 L453.875 690.3084 L441.875 690.3084 Z" stroke="none" clip-path="url(#clipPath2)"/>
-      <path fill="none" d="M447.875 706.3084 L453.875 690.3084 L441.875 690.3084 Z" clip-path="url(#clipPath2)" stroke="black"/>
-      <path fill="none" d="M194.3595 -16.5742 L194.3595 78.1636" clip-path="url(#clipPath2)" stroke="black"/>
-      <path d="M194.3595 93.1636 L200.3595 77.1636 L188.3595 77.1636 Z" clip-path="url(#clipPath2)" stroke="none"/>
-      <path fill="none" d="M194.3595 93.1636 L200.3595 77.1636 L188.3595 77.1636 Z" clip-path="url(#clipPath2)" stroke="black"/>
-      <text x="203.9756" y="8.8268" clip-path="url(#clipPath2)" fill="black" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">TCP port 80/443</text>
-      <path fill="none" d="M194.3595 138.797 L194.3595 191.0215" clip-path="url(#clipPath2)" stroke="black"/>
-      <path d="M194.3595 206.0215 L200.3595 190.0215 L188.3595 190.0215 Z" clip-path="url(#clipPath2)" stroke="none"/>
-      <path fill="none" d="M194.3595 206.0215 L200.3595 190.0215 L188.3595 190.0215 Z" clip-path="url(#clipPath2)" stroke="black"/>
-      <path fill="none" d="M244.5 436.473 L244.5 462.473" clip-path="url(#clipPath2)" stroke="black"/>
-      <path d="M244.5 421.473 L238.5 437.473 L250.5 437.473 Z" clip-path="url(#clipPath2)" stroke="none"/>
-      <path fill="none" d="M244.5 421.473 L238.5 437.473 L250.5 437.473 Z" clip-path="url(#clipPath2)" stroke="black"/>
-      <path d="M244.5 477.473 L250.5 461.473 L238.5 461.473 Z" clip-path="url(#clipPath2)" stroke="none"/>
-      <path fill="none" d="M244.5 477.473 L250.5 461.473 L238.5 461.473 Z" clip-path="url(#clipPath2)" stroke="black"/>
-      <text x="256.7582" y="453.1602" clip-path="url(#clipPath2)" fill="black" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">IPC via D-Bus</text>
-      <path fill="none" d="M1088.5 573.385 L1088.5 533.3311" clip-path="url(#clipPath2)" stroke="black"/>
-      <path d="M1088.5 518.3311 L1082.5 534.3311 L1094.5 534.3311 Z" clip-path="url(#clipPath2)" stroke="none"/>
-      <path fill="none" d="M1088.5 518.3311 L1082.5 534.3311 L1094.5 534.3311 Z" clip-path="url(#clipPath2)" stroke="black"/>
-      <path fill="none" d="M908.9988 328.527 L439 328.527" clip-path="url(#clipPath2)" stroke="black"/>
-      <path d="M424 328.527 L440 334.527 L440 322.527 Z" clip-path="url(#clipPath2)" stroke="none"/>
-      <path fill="none" d="M424 328.527 L440 334.527 L440 322.527 Z" clip-path="url(#clipPath2)" stroke="black"/>
-      <text x="454.4974" y="320.6268" clip-path="url(#clipPath2)" fill="black" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">openqa-worker@X registers/communicates status via openqa-websockets</text>
-      <path fill="none" d="M908.9738 266.581 L439 266.581" clip-path="url(#clipPath2)" stroke="black"/>
-      <path d="M424 266.581 L440 272.581 L440 260.581 Z" clip-path="url(#clipPath2)" stroke="none"/>
-      <path fill="none" d="M424 266.581 L440 272.581 L440 260.581 Z" clip-path="url(#clipPath2)" stroke="black"/>
-      <text x="497.9868" y="259.8268" clip-path="url(#clipPath2)" fill="black" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">openqa-worker@X comunicates/uploads via REST API</text>
-      <path fill="none" d="M908.9938 390.5 L439 390.5" clip-path="url(#clipPath2)" stroke="black"/>
-      <path d="M424 390.5 L440 396.5 L440 384.5 Z" clip-path="url(#clipPath2)" stroke="none"/>
-      <path fill="none" d="M424 390.5 L440 396.5 L440 384.5 Z" clip-path="url(#clipPath2)" stroke="black"/>
-      <text x="505.4252" y="382.9601" clip-path="url(#clipPath2)" fill="black" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">openqa-worker@X posts upload progress to livehandler</text>
-      <path fill="none" d="M1088.5 421.473 L1088.5 461.5841" clip-path="url(#clipPath2)" stroke="black"/>
-      <path d="M1088.5 476.5841 L1094.5 460.5841 L1082.5 460.5841 Z" clip-path="url(#clipPath2)" stroke="none"/>
-      <path fill="none" d="M1088.5 476.5841 L1094.5 460.5841 L1082.5 460.5841 Z" clip-path="url(#clipPath2)" stroke="black"/>
-      <path fill="none" d="M1088.5 206.054 L1088.5 152 L1275.2473 152" clip-path="url(#clipPath2)" stroke="black"/>
-      <path d="M1290.2473 152 L1274.2473 146 L1274.2473 158 Z" clip-path="url(#clipPath2)" stroke="none"/>
-      <path fill="none" d="M1290.2473 152 L1274.2473 146 L1274.2473 158 Z" clip-path="url(#clipPath2)" stroke="black"/>
-      <text x="1104.248" y="147.4102" clip-path="url(#clipPath2)" fill="black" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">fork</text>
-      <path fill="none" d="M1502.375 231.2393 L1502.375 190.3185" clip-path="url(#clipPath2)" stroke="black"/>
-      <path fill="black" d="M1502.375 235.2393 L1508.375 223.2393 L1502.375 235.2393 L1496.375 223.2393 Z" clip-path="url(#clipPath2)" stroke="none"/>
-    </g>
-    <g text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,12,88)">
-      <path fill="none" d="M1502.375 235.2393 L1508.375 223.2393 L1502.375 235.2393 L1496.375 223.2393 Z" clip-path="url(#clipPath2)"/>
-      <path stroke-miterlimit="1.45" d="M1502.375 186.3185 L1496.375 198.3185 L1502.375 186.3185 L1508.375 198.3185 Z" clip-path="url(#clipPath2)" stroke-linecap="butt" stroke="none"/>
-      <path fill="none" d="M1502.375 186.3185 L1496.375 198.3185 L1502.375 186.3185 L1508.375 198.3185 Z" clip-path="url(#clipPath2)"/>
-      <text stroke-linecap="butt" x="1513.6504" y="216.6602" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none" stroke-miterlimit="1.45" xml:space="preserve">"myjsonrpc"</text>
-      <path fill="none" stroke-miterlimit="1.45" d="M1310.2231 134.6667 L364.5 134.6667 L364.5 220.5451" clip-path="url(#clipPath2)" stroke-linecap="butt"/>
-    </g>
-    <g stroke-linecap="butt" transform="matrix(1,0,0,1,12,88)" fill="white" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" stroke="white" stroke-miterlimit="1.45">
-      <path d="M364.5 235.5451 L370.5 219.5451 L358.5 219.5451 Z" stroke="none" clip-path="url(#clipPath2)"/>
-      <path fill="none" d="M364.5 235.5451 L370.5 219.5451 L358.5 219.5451 Z" clip-path="url(#clipPath2)" stroke="black"/>
-      <text x="371.2803" y="152.5768" clip-path="url(#clipPath2)" fill="black" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">isotovideo downloads new needles from web UI when resuming test execution after pause</text>
-      <path fill="none" d="M1421.257 187.1953 L1340.25 220 L1340.25 463.75 L1356.5217 465.2737" clip-path="url(#clipPath2)" stroke="black"/>
-      <path fill="black" d="M1424.9645 185.6938 L1411.5897 184.6368 L1424.9645 185.6938 L1416.094 195.7594 Z" clip-path="url(#clipPath2)" stroke="none"/>
-    </g>
-    <g text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,12,88)">
-      <path fill="none" d="M1424.9645 185.6938 L1411.5897 184.6368 L1424.9645 185.6938 L1416.094 195.7594 Z" clip-path="url(#clipPath2)"/>
-      <path stroke-miterlimit="1.45" d="M1360.5044 465.6466 L1349.116 458.554 L1360.5044 465.6466 L1347.9972 470.5017 Z" clip-path="url(#clipPath2)" stroke-linecap="butt" stroke="none"/>
-      <path fill="none" d="M1360.5044 465.6466 L1349.116 458.554 L1360.5044 465.6466 L1347.9972 470.5017 Z" clip-path="url(#clipPath2)"/>
-      <text stroke-linecap="butt" x="1347.9786" y="426.2755" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none" stroke-miterlimit="1.45" xml:space="preserve">"myjsonrpc"</text>
-      <path fill="none" stroke-miterlimit="1.45" d="M1380.5786 186.5984 L1325.25 201.25 L1325.25 592.9425 L1356.5 592.9425" clip-path="url(#clipPath2)" stroke-linecap="butt"/>
-      <path stroke-miterlimit="1.45" d="M1384.4453 185.5745 L1371.3092 182.8463 L1384.4453 185.5745 L1374.3811 194.4464 Z" clip-path="url(#clipPath2)" stroke-linecap="butt" stroke="none"/>
-      <path fill="none" d="M1384.4453 185.5745 L1371.3092 182.8463 L1384.4453 185.5745 L1374.3811 194.4464 Z" clip-path="url(#clipPath2)"/>
-      <path stroke-miterlimit="1.45" d="M1360.5 592.9425 L1348.5 586.9425 L1360.5 592.9425 L1348.5 598.9425 Z" clip-path="url(#clipPath2)" stroke-linecap="butt" stroke="none"/>
-      <path fill="none" d="M1360.5 592.9425 L1348.5 586.9425 L1360.5 592.9425 L1348.5 598.9425 Z" clip-path="url(#clipPath2)"/>
-      <text stroke-linecap="butt" x="1330.3527" y="539.1495" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none" stroke-miterlimit="1.45" xml:space="preserve">"myjsonrpc"</text>
-      <path fill="none" stroke-miterlimit="1.45" d="M1077.5332 206.0306 L1077.5332 58.75 L1755 58.75 L1755 592.9425 L1709.5 592.9425" clip-path="url(#clipPath2)" stroke-linecap="butt"/>
-    </g>
-    <g stroke-linecap="butt" transform="matrix(1,0,0,1,12,88)" fill="white" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" stroke="white" stroke-miterlimit="1.45">
-      <path d="M1694.5 592.9425 L1710.5 598.9425 L1710.5 586.9425 Z" stroke="none" clip-path="url(#clipPath2)"/>
-      <path fill="none" d="M1694.5 592.9425 L1710.5 598.9425 L1710.5 586.9425 Z" clip-path="url(#clipPath2)" stroke="black"/>
-      <text x="1081.0082" y="74.6067" clip-path="url(#clipPath2)" fill="black" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">openqa-worker@X uses command server API</text>
-      <path fill="none" d="M91 390.5 L3.9167 390.5 L3.9167 795 L1296 795 L1296 618.75 L1346.498 618.75" clip-path="url(#clipPath2)" stroke="black"/>
-      <path d="M1361.498 618.75 L1345.498 612.75 L1345.498 624.75 Z" clip-path="url(#clipPath2)" stroke="none"/>
-      <path fill="none" d="M1361.498 618.75 L1345.498 612.75 L1345.498 624.75 Z" clip-path="url(#clipPath2)" stroke="black"/>
-      <text x="51.4565" y="787.5768" clip-path="url(#clipPath2)" fill="black" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">openqa-livehandler connects directly to command server</text>
-      <path fill="none" d="M1694.5 481.3307 L1740.5439 481.3307 L1740.5439 18.1863 L944.0451 18.1863 L944.0451 26" clip-path="url(#clipPath2)" stroke="black"/>
-      <text x="948.8931" y="12.0647" clip-path="url(#clipPath2)" fill="black" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">autotest executes test code using needles and assets</text>
-      <path fill="none" d="M944.0451 109.442 L944.0451 206.0552" clip-path="url(#clipPath2)" stroke="black"/>
-      <text x="950.4429" y="161.0578" clip-path="url(#clipPath2)" fill="black" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">worker syncs/caches</text>
-      <text x="951.4244" y="174.4641" clip-path="url(#clipPath2)" fill="black" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">code/needles/assets</text>
+      <path fill="white" d="M447.875 706.3084 L453.875 690.3084 L441.875 690.3084 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" d="M447.875 706.3084 L453.875 690.3084 L441.875 690.3084 Z" clip-path="url(#clipPath2)"/>
+      <path fill="none" d="M194.3595 -16.5742 L194.3595 78.1636" clip-path="url(#clipPath2)"/>
+      <path fill="white" d="M194.3595 93.1636 L200.3595 77.1636 L188.3595 77.1636 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" d="M194.3595 93.1636 L200.3595 77.1636 L188.3595 77.1636 Z" clip-path="url(#clipPath2)"/>
+      <text x="203.9756" xml:space="preserve" y="8.8268" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">TCP port 80/443</text>
+      <path fill="none" d="M194.3595 138.7889 L194.3595 190.9896" clip-path="url(#clipPath2)"/>
+      <path fill="white" d="M194.3595 205.9896 L200.3595 189.9896 L188.3595 189.9896 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" d="M194.3595 205.9896 L200.3595 189.9896 L188.3595 189.9896 Z" clip-path="url(#clipPath2)"/>
+      <path fill="none" d="M1088.5 573.385 L1088.5 533.3311" clip-path="url(#clipPath2)"/>
+      <path fill="white" d="M1088.5 518.3311 L1082.5 534.3311 L1094.5 534.3311 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" d="M1088.5 518.3311 L1082.5 534.3311 L1094.5 534.3311 Z" clip-path="url(#clipPath2)"/>
+      <path fill="none" d="M908.9988 328.527 L439 328.527" clip-path="url(#clipPath2)"/>
+      <path fill="white" d="M424 328.527 L440 334.527 L440 322.527 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" d="M424 328.527 L440 334.527 L440 322.527 Z" clip-path="url(#clipPath2)"/>
+      <text x="454.4974" xml:space="preserve" y="320.6268" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">openqa-worker@X registers/communicates status via openqa-websockets</text>
+      <path fill="none" d="M908.9738 266.581 L439 266.581" clip-path="url(#clipPath2)"/>
+      <path fill="white" d="M424 266.581 L440 272.581 L440 260.581 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" d="M424 266.581 L440 272.581 L440 260.581 Z" clip-path="url(#clipPath2)"/>
+      <text x="497.9868" xml:space="preserve" y="259.8268" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">openqa-worker@X comunicates/uploads via REST API</text>
+      <path fill="none" d="M908.9938 390.5 L439 390.5" clip-path="url(#clipPath2)"/>
+      <path fill="white" d="M424 390.5 L440 396.5 L440 384.5 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" d="M424 390.5 L440 396.5 L440 384.5 Z" clip-path="url(#clipPath2)"/>
+      <text x="505.4252" xml:space="preserve" y="382.9601" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">openqa-worker@X posts upload progress to livehandler</text>
+      <path fill="none" d="M1088.5 421.473 L1088.5 461.5841" clip-path="url(#clipPath2)"/>
+      <path fill="white" d="M1088.5 476.5841 L1094.5 460.5841 L1082.5 460.5841 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" d="M1088.5 476.5841 L1094.5 460.5841 L1082.5 460.5841 Z" clip-path="url(#clipPath2)"/>
+      <path fill="none" d="M1088.5 206.054 L1088.5 152 L1275.2473 152" clip-path="url(#clipPath2)"/>
+      <path fill="white" d="M1290.2473 152 L1274.2473 146 L1274.2473 158 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" d="M1290.2473 152 L1274.2473 146 L1274.2473 158 Z" clip-path="url(#clipPath2)"/>
+      <text x="1104.248" xml:space="preserve" y="147.4102" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">fork</text>
+      <path fill="none" d="M1502.375 231.2393 L1502.375 190.3185" clip-path="url(#clipPath2)"/>
+      <path d="M1502.375 235.2393 L1508.375 223.2393 L1502.375 235.2393 L1496.375 223.2393 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" stroke-miterlimit="10" d="M1502.375 235.2393 L1508.375 223.2393 L1502.375 235.2393 L1496.375 223.2393 Z" clip-path="url(#clipPath2)" stroke-linecap="square"/>
+      <path d="M1502.375 186.3185 L1496.375 198.3185 L1502.375 186.3185 L1508.375 198.3185 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" stroke-miterlimit="10" d="M1502.375 186.3185 L1496.375 198.3185 L1502.375 186.3185 L1508.375 198.3185 Z" clip-path="url(#clipPath2)" stroke-linecap="square"/>
+      <text x="1513.6504" xml:space="preserve" y="216.6602" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">"myjsonrpc"</text>
+      <path fill="none" d="M1310.2231 134.6667 L364.5 134.6667 L364.5 220.5451" clip-path="url(#clipPath2)"/>
+      <path fill="white" d="M364.5 235.5451 L370.5 219.5451 L358.5 219.5451 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" d="M364.5 235.5451 L370.5 219.5451 L358.5 219.5451 Z" clip-path="url(#clipPath2)"/>
+      <text x="371.2803" xml:space="preserve" y="152.5768" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">isotovideo downloads new needles from web UI when resuming test execution after pause</text>
+      <path fill="none" d="M1421.257 187.1953 L1340.25 220 L1340.25 463.75 L1356.5217 465.2737" clip-path="url(#clipPath2)"/>
+      <path d="M1424.9645 185.6938 L1411.5897 184.6368 L1424.9645 185.6938 L1416.094 195.7594 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" stroke-miterlimit="10" d="M1424.9645 185.6938 L1411.5897 184.6368 L1424.9645 185.6938 L1416.094 195.7594 Z" clip-path="url(#clipPath2)" stroke-linecap="square"/>
+      <path d="M1360.5044 465.6466 L1349.116 458.554 L1360.5044 465.6466 L1347.9972 470.5017 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" stroke-miterlimit="10" d="M1360.5044 465.6466 L1349.116 458.554 L1360.5044 465.6466 L1347.9972 470.5017 Z" clip-path="url(#clipPath2)" stroke-linecap="square"/>
+      <text x="1347.9786" xml:space="preserve" y="426.2755" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">"myjsonrpc"</text>
+      <path fill="none" d="M1380.5786 186.5984 L1325.25 201.25 L1325.25 592.9425 L1356.5 592.9425" clip-path="url(#clipPath2)"/>
+      <path d="M1384.4453 185.5745 L1371.3092 182.8463 L1384.4453 185.5745 L1374.3811 194.4464 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" stroke-miterlimit="10" d="M1384.4453 185.5745 L1371.3092 182.8463 L1384.4453 185.5745 L1374.3811 194.4464 Z" clip-path="url(#clipPath2)" stroke-linecap="square"/>
+      <path d="M1360.5 592.9425 L1348.5 586.9425 L1360.5 592.9425 L1348.5 598.9425 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" stroke-miterlimit="10" d="M1360.5 592.9425 L1348.5 586.9425 L1360.5 592.9425 L1348.5 598.9425 Z" clip-path="url(#clipPath2)" stroke-linecap="square"/>
+      <text x="1330.3527" xml:space="preserve" y="539.1495" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">"myjsonrpc"</text>
+      <path fill="none" d="M1077.5332 206.0306 L1077.5332 58.75 L1755 58.75 L1755 592.9425 L1709.5 592.9425" clip-path="url(#clipPath2)"/>
+      <path fill="white" d="M1694.5 592.9425 L1710.5 598.9425 L1710.5 586.9425 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" d="M1694.5 592.9425 L1710.5 598.9425 L1710.5 586.9425 Z" clip-path="url(#clipPath2)"/>
+      <text x="1081.0082" xml:space="preserve" y="74.6067" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">openqa-worker@X uses command server API</text>
+      <path fill="none" d="M91 390.5 L3.9167 390.5 L3.9167 795 L1296 795 L1296 618.75 L1346.498 618.75" clip-path="url(#clipPath2)"/>
+      <path fill="white" d="M1361.498 618.75 L1345.498 612.75 L1345.498 624.75 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" d="M1361.498 618.75 L1345.498 612.75 L1345.498 624.75 Z" clip-path="url(#clipPath2)"/>
+      <text x="51.4565" xml:space="preserve" y="787.5768" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">openqa-livehandler connects directly to command server</text>
+      <path fill="none" d="M1694.5 481.3307 L1740.5439 481.3307 L1740.5439 18.1863 L944.0451 18.1863 L944.0451 26" clip-path="url(#clipPath2)"/>
+      <text x="948.8931" xml:space="preserve" y="12.0647" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">autotest executes test code using needles and assets</text>
+      <path fill="none" d="M944.0451 109.442 L944.0451 206.0552" clip-path="url(#clipPath2)"/>
+      <text x="950.4429" xml:space="preserve" y="161.0578" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">worker syncs/caches</text>
+      <text x="951.4244" xml:space="preserve" y="174.4641" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">code/needles/assets</text>
     </g>
   </g>
 </svg>

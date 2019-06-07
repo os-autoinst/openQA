@@ -232,10 +232,10 @@ provides HTTP "reverse proxy"<y:LabelModel>
     <node id="n9">
       <data key="d6">
         <y:ShapeNode>
-          <y:Geometry height="215.41899871826166" width="359.0" x="65.0" y="206.05400085449222"/>
+          <y:Geometry height="426.8379974365234" width="359.0" x="65.0" y="206.05400085449222"/>
           <y:Fill hasColor="false" transparent="false"/>
           <y:BorderStyle color="#0000FF" raised="false" type="dashed" width="2.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Liberation Sans" fontSize="14" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" hasText="false" height="4.0" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="4.0" x="177.5" y="105.70949935913083">
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Liberation Sans" fontSize="14" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" hasText="false" height="4.0" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="4.0" x="177.5" y="211.4189987182617">
             <y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
@@ -257,32 +257,7 @@ provides HTTP "reverse proxy"<y:LabelModel>
     <node id="n10">
       <data key="d6">
         <y:ShapeNode>
-          <y:Geometry height="155.41899871826178" width="359.0" x="65.0" y="477.4729995727538"/>
-          <y:Fill hasColor="false" transparent="false"/>
-          <y:BorderStyle color="#0000FF" raised="false" type="dashed" width="2.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Liberation Sans" fontSize="14" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" hasText="false" height="4.0" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="4.0" x="177.5" y="75.70949935913086">
-            <y:LabelModel>
-              <y:SmartNodeLabelModel distance="4.0"/>
-            </y:LabelModel>
-            <y:ModelParameter>
-              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="0.0" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
-            </y:ModelParameter>
-          </y:NodeLabel>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Liberation Sans" fontSize="14" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="19.640625" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="76.3720703125" x="4.0" y="4.0">Job starting<y:LabelModel>
-              <y:SmartNodeLabelModel distance="4.0"/>
-            </y:LabelModel>
-            <y:ModelParameter>
-              <y:SmartNodeLabelModelParameter labelRatioX="-0.5" labelRatioY="-0.5" nodeRatioX="-0.5" nodeRatioY="-0.5" offsetX="4.0" offsetY="4.0" upX="0.0" upY="-1.0"/>
-            </y:ModelParameter>
-          </y:NodeLabel>
-          <y:Shape type="rectangle"/>
-        </y:ShapeNode>
-      </data>
-    </node>
-    <node id="n11">
-      <data key="d6">
-        <y:ShapeNode>
-          <y:Geometry height="61.9459991455077" width="333.0" x="91.0" y="570.9459991455078"/>
+          <y:Geometry height="61.9459991455077" width="333.0" x="91.0" y="421.47299957275385"/>
           <y:Fill hasColor="false" transparent="false"/>
           <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Liberation Sans" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" hasText="false" height="4.0" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="4.0" x="164.5" y="28.972999572753906">
@@ -300,7 +275,8 @@ provides HTTP "reverse proxy"<y:LabelModel>
               <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="-0.5" nodeRatioX="1.1102230246251565E-16" nodeRatioY="-0.5" offsetX="0.0" offsetY="4.0" upX="0.0" upY="-1.0"/>
             </y:ModelParameter>
           </y:NodeLabel>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Liberation Sans" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.40625" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="248.798828125" x="42.100585937500114" y="40.53974914550781">provides D-Bus service org.openqa.Scheduler<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Liberation Sans" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="30.8125" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="179.41796875" x="76.79101562500011" y="27.133499145507812">listening on TCP port 9529
+assigns jobs to available workers<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -311,7 +287,7 @@ provides HTTP "reverse proxy"<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n12">
+    <node id="n11">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="155.4189987182619" width="359.0" x="474.0" y="477.4729995727537"/>
@@ -352,7 +328,7 @@ communicates via postgresql with web UI<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n13">
+    <node id="n12">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="62.0" width="333.0" x="91.0" y="235.5810012817384"/>
@@ -385,7 +361,7 @@ communicates via postgresql with web UI<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n14">
+    <node id="n13">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="61.945999145507756" width="333.0" x="91.0" y="359.5270004272461"/>
@@ -418,7 +394,7 @@ responsible for developer mode<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n15">
+    <node id="n14">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="62.0" width="333.0" x="91.0" y="297.52700042724615"/>
@@ -451,7 +427,7 @@ responsible for interaction with workers<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n16">
+    <node id="n15">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="41.72100067138672" width="341.8000000000002" x="930.6" y="476.5685005187987"/>
@@ -477,7 +453,7 @@ provides database for openqa-cacheservice-minion<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n17">
+    <node id="n16">
       <data key="d6">
         <y:SVGNode>
           <y:Geometry height="55.612998962402344" width="36.25" x="901.5315649867372" y="469.6225013732909"/>
@@ -498,7 +474,7 @@ provides database for openqa-cacheservice-minion<y:LabelModel>
         </y:SVGNode>
       </data>
     </node>
-    <node id="n18">
+    <node id="n17">
       <data key="d4"/>
       <data key="d6">
         <y:UMLNoteNode>
@@ -516,7 +492,7 @@ systemd service names<y:LabelModel>
         </y:UMLNoteNode>
       </data>
     </node>
-    <node id="n19">
+    <node id="n18">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="61.9459991455077" width="333.0" x="935.0" y="666.8580017089845"/>
@@ -548,7 +524,7 @@ systemd service names<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n20">
+    <node id="n19">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="61.9459991455077" width="333.0" x="935.0" y="604.9120025634768"/>
@@ -573,7 +549,7 @@ systemd service names<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n21">
+    <node id="n20">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="215.4189987182617" width="359.0" x="909.0" y="206.0540008544922"/>
@@ -598,7 +574,7 @@ systemd service names<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n22">
+    <node id="n21">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="61.9459991455077" width="333.0" x="935.0" y="297.58100128173845"/>
@@ -631,7 +607,7 @@ subprocesses (and their subprocesses) are killed<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n23">
+    <node id="n22">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="61.9459991455077" width="333.0" x="935.0" y="235.63500213623075"/>
@@ -664,7 +640,7 @@ subprocesses (and their subprocesses) are killed<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n24">
+    <node id="n23">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="61.9459991455077" width="333.0" x="935.0" y="359.52700042724615"/>
@@ -697,7 +673,7 @@ subprocesses (and their subprocesses) are killed<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n25">
+    <node id="n24">
       <data key="d4"/>
       <data key="d6">
         <y:UMLNoteNode>
@@ -715,7 +691,7 @@ go through apache2.<y:LabelModel>
         </y:UMLNoteNode>
       </data>
     </node>
-    <node id="n26">
+    <node id="n25">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="646.5" width="419.0" x="1290.25" y="82.30400085449219"/>
@@ -740,7 +716,7 @@ go through apache2.<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n27">
+    <node id="n26">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="61.9459991455077" width="333.0" x="1361.5" y="236.2700042724615"/>
@@ -773,7 +749,7 @@ commands from isotovideo IO-loop<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n28">
+    <node id="n27">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="61.9459991455077" width="384.25" x="1310.25" y="123.37250137329107"/>
@@ -806,7 +782,7 @@ commands from isotovideo IO-loop<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n29">
+    <node id="n28">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="55.612998962402344" width="306.6511936339523" x="1387.848806366048" y="298.2160034179692"/>
@@ -839,7 +815,7 @@ provides VNC via port $worker_instance_number + 5990<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n30">
+    <node id="n29">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="55.612998962402344" width="306.6511936339523" x="1387.848806366048" y="353.82900238037155"/>
@@ -871,7 +847,7 @@ provides VNC via port $worker_instance_number + 5990<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n31">
+    <node id="n30">
       <data key="d4"/>
       <data key="d6">
         <y:UMLNoteNode>
@@ -888,7 +864,7 @@ provides VNC via port $worker_instance_number + 5990<y:LabelModel>
         </y:UMLNoteNode>
       </data>
     </node>
-    <node id="n32">
+    <node id="n31">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="79.4459991455077" width="333.0" x="1361.5" y="441.60774993896524"/>
@@ -922,7 +898,7 @@ sends commands to isotovideo IO-loop<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n33">
+    <node id="n32">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="79.4459991455077" width="333.0" x="1361.5" y="553.2194976806643"/>
@@ -956,7 +932,7 @@ passes commands received via WS to isotovideo IO-loop <y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n34">
+    <node id="n33">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="61.9459991455077" width="333.0" x="500.0" y="570.9459991455079"/>
@@ -981,7 +957,7 @@ passes commands received via WS to isotovideo IO-loop <y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n35">
+    <node id="n34">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="41.72100067138672" width="138.0901856763926" x="875.0000000000001" y="26.0"/>
@@ -1007,7 +983,7 @@ and needles<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n36">
+    <node id="n35">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="41.72100067138672" width="138.0901856763926" x="875.0000000000001" y="67.72100067138672"/>
@@ -1033,7 +1009,7 @@ and needles<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n37">
+    <node id="n36">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="55.61299896240229" width="223.86737400530507" x="513.5656056587089" y="864.3344156381625"/>
@@ -1058,7 +1034,7 @@ and needles<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n38">
+    <node id="n37">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="110.43899204244042" width="1706.1666666666667" x="26.283333333333076" y="830.3116710875331"/>
@@ -1083,7 +1059,7 @@ and needles<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n39">
+    <node id="n38">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="55.61299896240229" width="223.86737400530507" x="767.432979664014" y="864.3344156381625"/>
@@ -1108,7 +1084,7 @@ and needles<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n40">
+    <node id="n39">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="55.61299896240229" width="223.86737400530512" x="1021.3003536693191" y="864.3344156381623"/>
@@ -1132,6 +1108,24 @@ os-autoinst-needles-opensuse <y:LabelModel>
           </y:NodeLabel>
           <y:Shape type="rectangle"/>
         </y:ShapeNode>
+      </data>
+    </node>
+    <node id="n40">
+      <data key="d4"/>
+      <data key="d6">
+        <y:UMLNoteNode>
+          <y:Geometry height="45.56999588012695" width="226.13410698496858" x="148.9250000000002" y="504.01316317449493"/>
+          <y:Fill color="#FFFFFF" transparent="false"/>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Liberation Sans" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="30.8125" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="181.41015625" x="22.36197536748432" y="7.378747940063477">note: these services use HTTP to
+communicate with each other<y:LabelModel>
+              <y:SmartNodeLabelModel distance="4.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="0.0" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
+            </y:ModelParameter>
+          </y:NodeLabel>
+        </y:UMLNoteNode>
       </data>
     </node>
     <edge id="e0" source="n8" target="n6">
@@ -1162,10 +1156,10 @@ os-autoinst-needles-opensuse <y:LabelModel>
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="0.0" tx="-50.140499114990234" ty="-107.74201583862305"/>
+          <y:Path sx="0.0" sy="0.0" tx="-50.140499114990234" ty="-213.48342789615552"/>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="none" target="white_delta"/>
-          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Liberation Sans" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" hasText="false" height="4.0" horizontalTextPosition="center" iconTextGap="4" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" verticalTextPosition="bottom" visible="true" width="4.0" x="-31.999996185302734" y="31.611736297607422">
+          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Liberation Sans" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" hasText="false" height="4.0" horizontalTextPosition="center" iconTextGap="4" modelName="custom" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" verticalTextPosition="bottom" visible="true" width="4.0" x="-31.999996185302734" y="31.619823455810547">
             <y:LabelModel>
               <y:SmartEdgeLabelModel autoRotationEnabled="false" defaultAngle="0.0" defaultDistance="10.0"/>
             </y:LabelModel>
@@ -1189,20 +1183,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e4" source="n9" target="n10">
-      <data key="d8"/>
-      <data key="d10">
-        <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
-          <y:LineStyle color="#000000" type="line" width="1.0"/>
-          <y:Arrows source="white_delta" target="white_delta"/>
-          <y:EdgeLabel alignment="center" configuration="AutoFlippingLabel" distance="2.0" fontFamily="Liberation Sans" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.40625" horizontalTextPosition="center" iconTextGap="4" modelName="free" modelPosition="anywhere" preferredPlacement="anywhere" ratio="0.5" textColor="#000000" verticalTextPosition="bottom" visible="true" width="79.3515625" x="10.258218750000196" y="18.823883056640625">IPC via D-Bus<y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRightSide="0" angleReference="absolute" angleRotationOnRightSide="co" distance="-1.0" frozen="true" placement="anywhere" side="anywhere" sideReference="relative_to_edge_flow"/>
-          </y:EdgeLabel>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
-      </data>
-    </edge>
-    <edge id="e5" source="n3" target="n4">
+    <edge id="e4" source="n3" target="n4">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1213,7 +1194,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e6" source="n2" target="n16">
+    <edge id="e5" source="n2" target="n15">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1224,7 +1205,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e7" source="n15" target="n3">
+    <edge id="e6" source="n14" target="n3">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1235,7 +1216,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e8" source="n21" target="n15">
+    <edge id="e7" source="n20" target="n14">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1248,7 +1229,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e9" source="n21" target="n13">
+    <edge id="e8" source="n20" target="n12">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1261,7 +1242,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e10" source="n21" target="n14">
+    <edge id="e9" source="n20" target="n13">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1274,7 +1255,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e11" source="n21" target="n1">
+    <edge id="e10" source="n20" target="n1">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1285,7 +1266,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e12" source="n21" target="n1">
+    <edge id="e11" source="n20" target="n1">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1296,7 +1277,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e13" source="n21" target="n1">
+    <edge id="e12" source="n20" target="n1">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1307,7 +1288,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e14" source="n21" target="n26">
+    <edge id="e13" source="n20" target="n25">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1322,7 +1303,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e15" source="n27" target="n28">
+    <edge id="e14" source="n26" target="n27">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1344,7 +1325,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e16" source="n28" target="n32">
+    <edge id="e15" source="n27" target="n31">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1369,7 +1350,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e17" source="n28" target="n33">
+    <edge id="e16" source="n27" target="n32">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1394,7 +1375,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e18" source="n21" target="n1">
+    <edge id="e17" source="n20" target="n1">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1408,7 +1389,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e19" source="n21" target="n33">
+    <edge id="e18" source="n20" target="n32">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1437,7 +1418,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e20" source="n33" target="n26">
+    <edge id="e19" source="n32" target="n25">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1451,7 +1432,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e21" source="n14" target="n33">
+    <edge id="e20" source="n13" target="n32">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1472,7 +1453,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e22" source="n28" target="n13">
+    <edge id="e21" source="n27" target="n12">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1490,7 +1471,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e23" source="n32" target="n35">
+    <edge id="e22" source="n31" target="n34">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1507,7 +1488,7 @@ os-autoinst-needles-opensuse <y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e24" source="n36" target="n21">
+    <edge id="e23" source="n35" target="n20">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
@@ -1521,7 +1502,7 @@ code/needles/assets<y:PreferredPlacementDescriptor angle="0.0" angleOffsetOnRigh
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e25" source="n21" target="n16">
+    <edge id="e24" source="n20" target="n15">
       <data key="d8"/>
       <data key="d10">
         <y:PolyLineEdge>
