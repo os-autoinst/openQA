@@ -580,7 +580,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <ul class="sectlevel2">
 <li><a href="#_triggering_tests">Triggering tests</a>
 <ul class="sectlevel3">
-<li><a href="#_cloning_existing_jobs_clone_job_pl">Cloning existing jobs - clone_job.pl</a></li>
+<li><a href="#_cloning_existing_jobs_openqa_clone_job">Cloning existing jobs - openqa-clone-job</a></li>
 <li><a href="#_spawning_single_new_jobs_jobs_post">Spawning single new jobs - jobs post</a></li>
 <li><a href="#_spawning_multiple_jobs_based_on_templates_isos_post">Spawning multiple jobs based on templates - isos post</a></li>
 <li><a href="#_asset_handling">Asset handling</a></li>
@@ -3160,19 +3160,20 @@ instance without needing to install the full package. Call
 <div class="sect2">
 <h3 id="_triggering_tests">Triggering tests</h3>
 <div class="paragraph">
-<p>Tests can be triggered over multiple ways, using <code>clone_job.pl</code>, <code>jobs post</code>,
-<code>isos post</code> as well as retriggering existing jobs or whole media over the web
-UI.</p>
+<p>Tests can be triggered over multiple ways, using <code>openqa-clone-job</code>,
+<code>jobs post</code>, <code>isos post</code> as well as retriggering existing jobs or whole media
+over the web UI.</p>
 </div>
 <div class="sect3">
-<h4 id="_cloning_existing_jobs_clone_job_pl">Cloning existing jobs - clone_job.pl</h4>
+<h4 id="_cloning_existing_jobs_openqa_clone_job">Cloning existing jobs - openqa-clone-job</h4>
 <div class="paragraph">
 <p>If one wants to recreate an existing job from any publically available openQA
-instance the script <code>clone_job.pl</code> can be used to copy the necessary settings
-and assets to another instance and schedule the test. For the test to be
-executed it has to be ensured that matching ressources can be found, for
+instance the script <code>openqa-clone-job</code> can be used to copy the necessary
+settings and assets to another instance and schedule the test. For the test to
+be executed it has to be ensured that matching ressources can be found, for
 example a worker with matching <code>WORKER_CLASS</code> must be registered. More details
-on <code>clone_job.pl</code> can be found in <a href="#writingtests">Writing Tests</a>.</p>
+on <code>openqa-clone-job</code> can be found in
+<a href="#writingtests">Writing Tests</a>.</p>
 </div>
 </div>
 <div class="sect3">
@@ -4879,13 +4880,13 @@ stop them outputting non-printable characters.</p>
 <p>To trigger new tests with custom settings the command line client
 openqa-client can be used. To trigger new tests relying on all settings from
 existing tests runs but modifying specific settings the openqa-clone-job
-script can be used. Within the openQA repository the script is called
-clone_job.pl and is located at /usr/share/openqa/script/.  This tool can
-be used to create a new job that adds, removes or changes settings.</p>
+script can be used. Within the openQA repository the script is located at
+/usr/share/openqa/script/.  This tool can be used to create a new job that
+adds, removes or changes settings.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>/usr/share/openqa/script/clone_job.pl --from localhost --host localhost <span class="tok-m">42</span> <span class="tok-nv">FOO</span><span class="tok-o">=</span>bar <span class="tok-nv">BAZ</span><span class="tok-o">=</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-clone-job --from localhost --host localhost <span class="tok-m">42</span> <span class="tok-nv">FOO</span><span class="tok-o">=</span>bar <span class="tok-nv">BAZ</span><span class="tok-o">=</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4896,7 +4897,7 @@ name, e.g.:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from localhost <span class="tok-m">42</span> <span class="tok-nv">_GROUP</span><span class="tok-o">=</span><span class="tok-s2">&quot;openSUSE Tumbleweed&quot;</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-clone-job --from localhost <span class="tok-m">42</span> <span class="tok-nv">_GROUP</span><span class="tok-o">=</span><span class="tok-s2">&quot;openSUSE Tumbleweed&quot;</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4905,7 +4906,7 @@ and the job will not appear as a job in any job group, e.g.:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from localhost <span class="tok-m">42</span> <span class="tok-nv">_GROUP</span><span class="tok-o">=</span><span class="tok-m">0</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-clone-job --from localhost <span class="tok-m">42</span> <span class="tok-nv">_GROUP</span><span class="tok-o">=</span><span class="tok-m">0</span></code></pre>
 </div>
 </div>
 </div>
@@ -4998,19 +4999,22 @@ existing job and adding the setting:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">MAKETESTSNAPSHOTS</span><span class="tok-o">=</span><span class="tok-m">1</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-clone-job --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">MAKETESTSNAPSHOTS</span><span class="tok-o">=</span><span class="tok-m">1</span></code></pre>
 </div>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Create a job again, this time setting the SKIPTO variable to the snapshot you need. Again, clone_job.pl comes handy here:</p>
+<p>Create a job again, this time setting the SKIPTO variable to the snapshot</p>
+</li>
+<li>
+<p>you need. Again, openqa-clone-job comes handy here:</p>
 </li>
 </ul>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">SKIPTO</span><span class="tok-o">=</span>consoletest-yast2_i</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-clone-job --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">SKIPTO</span><span class="tok-o">=</span>consoletest-yast2_i</code></pre>
 </div>
 </div>
 <div class="ulist">
@@ -5037,7 +5041,7 @@ successful test module run. Snapshots are overwritten. The snapshot is named <co
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">TESTDEBUG</span><span class="tok-o">=</span><span class="tok-m">1</span></code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-clone-job --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">TESTDEBUG</span><span class="tok-o">=</span><span class="tok-m">1</span></code></pre>
 </div>
 </div>
 <div class="ulist">
@@ -5052,7 +5056,7 @@ the clone source job or specifying the variable explicitly:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>clone_job.pl --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">TESTDEBUG</span><span class="tok-o">=</span><span class="tok-m">1</span> <span class="tok-nv">SKIPTO</span><span class="tok-o">=</span>consoletest-yast2_i</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-clone-job --from https://openqa.opensuse.org  --host localhost <span class="tok-m">24</span> <span class="tok-nv">TESTDEBUG</span><span class="tok-o">=</span><span class="tok-m">1</span> <span class="tok-nv">SKIPTO</span><span class="tok-o">=</span>consoletest-yast2_i</code></pre>
 </div>
 </div>
 </div>
@@ -6974,7 +6978,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-06-06 18:02:50 UTC
+Last updated 2019-06-07 09:04:54 UTC
 </div>
 </div>
 <style>
