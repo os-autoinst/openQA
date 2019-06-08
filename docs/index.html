@@ -6039,6 +6039,20 @@ systemctl enable firewalld</code></pre>
 <span class="tok-nv">WORKER_CLASS</span> <span class="tok-o">=</span> qemu_x86_64,tap</code></pre>
 </div>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+The number of tap devices should correspond to the number of the
+running workers. For example, if you have set up 3 tap devices, the same number of
+workers should be configured.
+</td>
+</tr>
+</table>
+</div>
 <div class="ulist">
 <ul>
 <li>
@@ -6067,7 +6081,7 @@ setcap <span class="tok-nv">CAP_NET_ADMIN</span><span class="tok-o">=</span>ep /
 </div>
 </div>
 <div class="paragraph">
-<p><strong>Configure Network Manager</strong></p>
+<p><strong>Configure network interfaces</strong></p>
 </div>
 <div class="ulist">
 <ul>
@@ -6111,6 +6125,12 @@ connection.
 <p>Start <em>wicked</em> as network service:</p>
 </li>
 </ul>
+</div>
+<div class="paragraph">
+<p>Pros of wicked over NetworkManager:
+<strong> Proper IPv6 support
+</strong> openvswitch/vlan/bonding/bridge support - wicked can manage your advanced configuration transparently without the need of extra tools
+** Backwards compatible with ifup scripts</p>
 </div>
 <div class="paragraph">
 <p>Check the network service currently being used:</p>
@@ -6157,6 +6177,18 @@ systemctl start wicked</code></pre>
 <p>REBOOT</p>
 </li>
 </ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+It is also possible to switch using YaST.
+</td>
+</tr>
+</table>
 </div>
 <div class="sect2">
 <h3 id="_debugging_open_vswitch_configuration">Debugging Open vSwitch Configuration</h3>
@@ -6206,6 +6238,51 @@ systemctl start wicked</code></pre>
 <pre class="pygments highlight"><code data-lang="sh"><span></span>ovs-vsctl show <span class="tok-c1"># shows the bridge br1, the tap devices are assigned to it</span>
 ovs-ofctl dump-flows br1 <span class="tok-c1"># shows the rules installed by os-autoinst-openvswitch in table=0</span></code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>When everything is ok and the machines are able to communicate, the
+ovs-vsctl should show something like the following</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>Bridge <span class="tok-s2">&quot;br0&quot;</span>
+    Port <span class="tok-s2">&quot;br0&quot;</span>
+        Interface <span class="tok-s2">&quot;br0&quot;</span>
+            type: internal
+    Port <span class="tok-s2">&quot;tap0&quot;</span>
+        Interface <span class="tok-s2">&quot;tap0&quot;</span>
+    Port <span class="tok-s2">&quot;tap1&quot;</span>
+        tag: <span class="tok-m">1</span>
+        Interface <span class="tok-s2">&quot;tap1&quot;</span>
+    Port <span class="tok-s2">&quot;tap2&quot;</span>
+        tag: <span class="tok-m">1</span>
+        Interface <span class="tok-s2">&quot;tap2&quot;</span>
+  ovs_version: <span class="tok-s2">&quot;2.11.1&quot;</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Notice the tag numbers are assigned to tap1 and tap2. They should have the same number.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+If the balance of the tap devices is wrong in the workers.ini the tag cannot be assigned and the communication will be broken.
+</td>
+</tr>
+</table>
 </div>
 <div class="ulist">
 <ul>
@@ -6978,7 +7055,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-06-08 18:04:07 UTC
+Last updated 2019-06-08 20:38:37 UTC
 </div>
 </div>
 <style>
