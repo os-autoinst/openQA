@@ -238,6 +238,10 @@ Also, the `firewall-config` GUI tool for firewalld can be used for configuration
 WORKER_CLASS = qemu_x86_64,tap
 ---------------
 
+NOTE: The number of tap devices should correspond to the number of the
+running workers. For example, if you have set up 3 tap devices, the same number of
+workers should be configured. 
+
 * Enable workers to be started on system boot:
 
 [source,sh]
@@ -258,7 +262,7 @@ zypper in libcap-progs
 setcap CAP_NET_ADMIN=ep /usr/bin/qemu-system-x86_64
 ---------------
 
-*Configure Network Manager*
+*Configure network interfaces*
 
 * Check the configuration for the _eth0_ interface:
 
@@ -282,6 +286,11 @@ DHCLIENT_SET_DEFAULT_ROUTE='yes'
 ---------------
 
 * Start _wicked_ as network service:
+
+Pros of wicked over NetworkManager:
+** Proper IPv6 support
+** openvswitch/vlan/bonding/bridge support - wicked can manage your advanced configuration transparently without the need of extra tools
+** Backwards compatible with ifup scripts
 
 Check the network service currently being used:
 
@@ -316,6 +325,8 @@ wicked ifup br1
 
 * REBOOT
 
+NOTE: It is also possible to switch using YaST.
+
 === Debugging Open vSwitch Configuration
 
 Boot sequence with wicked < 0.6.23:
@@ -340,6 +351,30 @@ The configuration and operation can be checked by the following commands:
 ovs-vsctl show # shows the bridge br1, the tap devices are assigned to it
 ovs-ofctl dump-flows br1 # shows the rules installed by os-autoinst-openvswitch in table=0
 ----
+
+When everything is ok and the machines are able to communicate, the
+ovs-vsctl should show something like the following
+
+[source,sh]
+----
+Bridge "br0"
+    Port "br0"
+        Interface "br0"
+            type: internal
+    Port "tap0"
+        Interface "tap0"
+    Port "tap1"
+        tag: 1
+        Interface "tap1"
+    Port "tap2"
+        tag: 1
+        Interface "tap2"
+  ovs_version: "2.11.1"
+----
+
+NOTE: Notice the tag numbers are assigned to tap1 and tap2. They should have the same number.
+
+NOTE: If the balance of the tap devices is wrong in the workers.ini the tag cannot be assigned and the communication will be broken.
 
 * packets from tapX to br1 create additional rules in table=1
 * packets from br1 to tapX increase packet counts in table=1
