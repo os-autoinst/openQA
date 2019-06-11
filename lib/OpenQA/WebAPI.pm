@@ -458,12 +458,8 @@ sub startup {
         });
 }
 
-sub run {
-    # Start command line interface for application
-    Mojolicious::Commands->start_app('OpenQA::WebAPI');
-}
-
 sub schema { OpenQA::Schema->singleton }
 
+sub run { __PACKAGE__->new->start }
+
 1;
-# vim: set sw=4 et:

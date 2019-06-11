@@ -93,9 +93,7 @@ sub startup {
     OpenQA::Setup::setup_validator_check_for_datetime($self);
 }
 
-sub run {
-    Mojolicious::Commands->start_app('OpenQA::LiveHandler');
-}
+sub run { __PACKAGE__->new->start }
 
 sub schema { OpenQA::Schema->singleton }
 

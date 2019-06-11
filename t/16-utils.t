@@ -31,6 +31,29 @@ use Test::More;
 use Scalar::Util 'reftype';
 use Mojo::File qw(path tempdir tempfile);
 
+subtest 'service ports' => sub {
+    local $ENV{OPENQA_BASE_PORT} = undef;
+    is service_port('webui'),       9526, 'webui port';
+    is service_port('websocket'),   9527, 'websocket port';
+    is service_port('livehandler'), 9528, 'livehandler port';
+    is service_port('scheduler'),   9529, 'scheduler port';
+    local $ENV{OPENQA_BASE_PORT} = 9530;
+    is service_port('webui'),       9530, 'webui port';
+    is service_port('websocket'),   9531, 'websocket port';
+    is service_port('livehandler'), 9532, 'livehandler port';
+    is service_port('scheduler'),   9533, 'scheduler port';
+    eval { service_port('unknown') };
+    like $@, qr/Unknown service: unknown/, 'unknown port';
+};
+
+subtest 'set listen address' => sub {
+    local $ENV{MOJO_LISTEN} = undef;
+    set_listen_address(9526);
+    like $ENV{MOJO_LISTEN}, qr/127\.0\.0\.1:9526/, 'address set';
+    set_listen_address(9527);
+    unlike $ENV{MOJO_LISTEN}, qr/127\.0\.0\.1:9527/, 'not changed';
+};
+
 is bugurl('bsc#1234'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bug url is properly expanded';
 ok find_bugref('gh#os-autoinst/openQA#1234'), 'github bugref is recognized';
 is(find_bugref('bsc#1234 poo#4321'), 'bsc#1234', 'first bugres found');

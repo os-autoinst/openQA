@@ -22,13 +22,14 @@ use OpenQA::Utils qw(log_debug log_warning log_info);
 use OpenQA::WebSockets::Model::Status;
 use db_profiler;
 
-sub run { __PACKAGE__->new->setup->run }
+our $RUNNING;
 
 sub startup {
     my $self = shift;
 
+    $self->_setup if $RUNNING;
+
     $self->defaults(appname => 'openQA Websocket Server');
-    $self->mode('production');
 
     # no cookies for worker, no secrets to protect
     $self->secrets(['nosecretshere']);
@@ -49,22 +50,9 @@ sub startup {
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 }
 
-sub setup {
-    my $self = shift;
-
-    OpenQA::Setup::read_config($self);
-    OpenQA::Setup::setup_log($self);
-
-    # start worker checker - check workers each 2 minutes
-    Mojo::IOLoop->recurring(120 => sub { $self->workers_checker });
-
-    Mojo::IOLoop->recurring(
-        380 => sub {
-            log_debug('Resetting worker status table');
-            $self->status->worker_status({});
-        });
-
-    return Mojo::Server::Daemon->new(app => $self);
+sub run {
+    local $RUNNING = 1;
+    __PACKAGE__->new->start;
 }
 
 sub ws_is_worker_connected {
@@ -129,6 +117,22 @@ sub ws_send_job {
         $result->{state}->{msg_sent} = 1;
     }
     return $result;
+}
+
+sub _setup {
+    my $self = shift;
+
+    OpenQA::Setup::read_config($self);
+    OpenQA::Setup::setup_log($self);
+
+    # start worker checker - check workers each 2 minutes
+    Mojo::IOLoop->recurring(120 => sub { $self->workers_checker });
+
+    Mojo::IOLoop->recurring(
+        380 => sub {
+            log_debug('Resetting worker status table');
+            $self->status->worker_status({});
+        });
 }
 
 1;

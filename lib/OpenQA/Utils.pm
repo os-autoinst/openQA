@@ -94,6 +94,7 @@ our @EXPORT  = qw(
   walker
   &ensure_timestamp_appended
   set_listen_address
+  service_port
 );
 
 our @EXPORT_OK = qw(determine_web_ui_web_socket_url get_ws_status_only_url);
@@ -1184,18 +1185,30 @@ sub rand_range { $_[0] + rand($_[1] - $_[0]) }
 sub in_range   { $_[0] >= $_[1] && $_[0] <= $_[2] ? 1 : 0 }
 
 sub set_listen_address {
-    my ($port) = @_;
+    my $port = shift;
 
-    if ($ENV{MOJO_LISTEN}) {
-        return;
-    }
-
+    return if $ENV{MOJO_LISTEN};
     my @listen_addresses = ("http://127.0.0.1:$port");
-    if (IO::Socket::IP->new(Listen => 5, LocalAddr => '::1')) {
-        push(@listen_addresses, "http://[::1]:$port");
-    }
 
-    $ENV{MOJO_LISTEN} = join(',', @listen_addresses);
+    # Check for IPv6
+    push @listen_addresses, "http://[::1]:$port" if IO::Socket::IP->new(Listen => 5, LocalAddr => '::1');
+
+    $ENV{MOJO_LISTEN} = join ',', @listen_addresses;
+}
+
+sub service_port {
+    my $service = shift;
+
+    my $base = $ENV{OPENQA_BASE_PORT} ||= 9526;
+
+    my $offsets = {
+        webui       => 0,
+        websocket   => 1,
+        livehandler => 2,
+        scheduler   => 3
+    };
+    croak "Unknown service: $service" unless exists $offsets->{$service};
+    return $base + $offsets->{$service};
 }
 
 sub param_hash {

@@ -20,6 +20,7 @@ use OpenQA::Setup;
 use Mojo::IOLoop;
 use OpenQA::Utils 'log_debug';
 use Mojo::Server::Daemon;
+use OpenQA::Schema;
 use OpenQA::Scheduler::Model::Jobs;
 
 # Scheduler default clock. Defaults to 20 s
@@ -32,36 +33,12 @@ use constant SCHEDULE_TICK_MS => $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS} // 2000
 
 our $RUNNING;
 
-sub run {
-    my $self   = __PACKAGE__->new;
-    my $daemon = $self->setup;
-    local $RUNNING = 1;
-    $daemon->run;
-}
-
-sub setup {
-    my $self = shift;
-
-    my $setup = OpenQA::Setup->new(log_name => 'scheduler');
-    OpenQA::Setup::read_config($setup);
-    OpenQA::Setup::setup_log($setup);
-
-    log_debug("Scheduler started");
-    log_debug("\t Scheduler default interval(ms) : " . SCHEDULE_TICK_MS);
-    log_debug("\t Max job allocation: " . OpenQA::Scheduler::Model::Jobs::MAX_JOB_ALLOCATION());
-
-    # initial schedule
-    OpenQA::Scheduler::Model::Jobs->singleton->schedule;
-    Mojo::IOLoop->next_tick(sub { _reschedule() });
-
-    return Mojo::Server::Daemon->new(app => $self);
-}
-
 sub startup {
     my $self = shift;
 
+    $self->_setup if $RUNNING;
+
     $self->defaults(appname => 'openQA Scheduler');
-    $self->mode('production');
 
     # no cookies for worker, no secrets to protect
     $self->secrets(['nosecretshere']);
@@ -83,6 +60,11 @@ sub startup {
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 }
 
+sub run {
+    local $RUNNING = 1;
+    __PACKAGE__->new->start;
+}
+
 sub wakeup { _reschedule(0) }
 
 sub _reschedule {
@@ -101,6 +83,22 @@ sub _reschedule {
     log_debug("[rescheduling] Current tick is at $current ms. New tick will be in: $time ms");
     Mojo::IOLoop->remove($timer) if $timer;
     $timer = Mojo::IOLoop->recurring(($interval / 1000) => sub { OpenQA::Scheduler::Model::Jobs->singleton->schedule });
+}
+
+sub _setup {
+    my $self = shift;
+
+    OpenQA::Setup::read_config($self);
+    OpenQA::Setup::setup_log($self);
+
+    # initial schedule
+    Mojo::IOLoop->next_tick(
+        sub {
+            log_debug("Scheduler default interval(ms): " . SCHEDULE_TICK_MS);
+            log_debug("Max job allocation: " . OpenQA::Scheduler::Model::Jobs::MAX_JOB_ALLOCATION());
+            OpenQA::Scheduler::Model::Jobs->singleton->schedule;
+            _reschedule();
+        });
 }
 
 1;
