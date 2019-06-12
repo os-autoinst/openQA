@@ -19,6 +19,7 @@ cache:
 script:
 - mkdir -p assets/cache && chmod a+w assets/cache
 - touch openqa-debug.log autoinst-log.txt && chmod a+w openqa-debug.log autoinst-log.txt
+- sudo chown -R 1000:1000 assets/cache
 - make prepare-and-launch-docker-to-run-tests-within
 after_script:
 - bash script/generate-documentation $encrypted_e2c381aa6b8c_key $encrypted_e2c381aa6b8c_iv
