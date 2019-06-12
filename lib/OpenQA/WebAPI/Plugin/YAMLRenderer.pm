@@ -28,7 +28,7 @@ sub register {
         yaml => sub {
             my ($renderer, $c, $output, $options) = @_;
             delete $options->{encoding};
-            $$output = YAML::XS::Dump($c->stash->{yaml});
+            $$output = $c->stash->{yaml};
         });
     $app->hook(
         before_render => sub {

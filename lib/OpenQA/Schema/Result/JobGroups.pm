@@ -78,6 +78,10 @@ __PACKAGE__->add_columns(
         data_type   => 'text',
         is_nullable => 1,
     },
+    template => {
+        data_type   => 'text',
+        is_nullable => 1,
+    },
     build_version_sort => {
         data_type     => 'boolean',
         default_value => 1,
