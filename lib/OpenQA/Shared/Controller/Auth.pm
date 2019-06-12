@@ -25,10 +25,7 @@ sub check {
 
     my $req = $self->req;
     if ($self->app->config->{no_localhost_auth}) {
-
-        # IPv4 and IPv6 should be treated the same
-        my $address = $self->tx->remote_address;
-        return 1 if $address eq '127.0.0.1' || $address eq '::1';
+        return 1 if $self->is_local_request;
     }
 
     my $headers   = $req->headers;

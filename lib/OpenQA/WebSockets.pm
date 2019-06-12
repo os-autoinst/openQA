@@ -36,6 +36,7 @@ sub startup {
 
     push @{$self->plugins->namespaces}, 'OpenQA::WebSockets::Plugin';
     $self->plugin('Helpers');
+    $self->plugin('OpenQA::Shared::Plugin::Helpers');
 
     my $r = $self->routes;
     $r->namespaces(['OpenQA::WebSockets::Controller', 'OpenQA::Shared::Controller']);
