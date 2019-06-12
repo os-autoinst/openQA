@@ -77,6 +77,8 @@ sub publish_amqp {
     my $publisher = Mojo::RabbitMQ::Client::Publisher->new(
         url => $self->{config}->{amqp}{url} . "?exchange=" . $self->{config}->{amqp}{exchange});
 
+    # A hard reference to the publisher object needs to be kept until the event
+    # has been published asynchronously, or it gets destroyed too early
     $publisher->publish_p($event_data, routing_key => $topic)->then(
         sub {
             log_debug "$topic published";
@@ -84,7 +86,7 @@ sub publish_amqp {
     )->catch(
         sub {
             die "Publishing $topic failed";
-        });
+        })->finally(sub { undef $publisher });
 }
 
 sub on_job_event {
