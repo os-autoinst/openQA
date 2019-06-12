@@ -1951,10 +1951,14 @@ sub blocked_by_parent_job {
         push(@possibly_blocked_jobs, @{$job_info->{parallel_parents}});
         push(@possibly_blocked_jobs, $self->id);
     }
+
+    my @own_children;
+    push(@own_children, $self->id);
+    push(@own_children, @{$cluster_jobs->{$self->id}->{chained_children}});
     my $parents = $self->result_source->schema->resultset('JobDependencies')->search(
         {
             dependency    => OpenQA::JobDependencies::Constants::CHAINED,
-            parent_job_id => {'!=' => $self->id},
+            parent_job_id => {-not_in => \@own_children},
             child_job_id  => {-in => \@possibly_blocked_jobs}
         },
         {order_by => ['parent_job_id', 'child_job_id']});

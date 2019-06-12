@@ -1026,6 +1026,48 @@ while (my ($k, $v) = each %tests) {
     subtest "$k ordered" => $v;
 }
 
+subtest "SAP setup - issue 52928" => sub {
+    my %settingsA = %settings;
+    $settingsA{TEST} = 'hdd_gnome';
+    my %settingsB = %settings;
+    $settingsB{TEST}             = 'gnome_netweaver';
+    $settingsB{START_AFTER_TEST} = 'hdd_gnome';
+    my %settingsC = %settings;
+    $settingsC{TEST} = 'hdd_textmode';
+    my %settingsD = %settings;
+    $settingsD{TEST}             = 'textmode_netweaver';
+    $settingsD{START_AFTER_TEST} = 'hdd_textmode,gnome_netweaver';
+    my %settingsE = %settings;
+    $settingsE{TEST} = 'node1';
+    my %settingsF = %settings;
+    $settingsF{TEST} = 'node2';
+    my %settingsG = %settings;
+    $settingsG{TEST}             = 'supportserver';
+    $settingsG{START_AFTER_TEST} = 'textmode_netweaver,hdd_textmode';
+    $settingsG{PARALLEL_WITH}    = 'node1,node2';
+    my %settingsH = %settings;
+    $settingsH{TEST}             = 'final';
+    $settingsH{START_AFTER_TEST} = 'supportserver,hdd_gnome';
+
+    my $jobA = _job_create_set_done(\%settingsA, OpenQA::Jobs::Constants::DONE);
+    $settingsB{_START_AFTER_JOBS} = [$jobA->id];
+    my $jobB = _job_create(\%settingsB);
+    my $jobC = _job_create_set_done(\%settingsC, OpenQA::Jobs::Constants::DONE);
+    $settingsD{_START_AFTER_JOBS} = [$jobC->id, $jobB->id];
+    my $jobD = _job_create(\%settingsD);
+    my $jobE = _job_create(\%settingsE);
+    my $jobF = _job_create(\%settingsF);
+    $settingsG{_START_AFTER_JOBS} = [$jobD->id, $jobC->id];
+    $settingsG{_PARALLEL_JOBS}    = [$jobE->id, $jobF->id];
+    my $jobG = _job_create(\%settingsG);
+    $settingsH{_START_AFTER_JOBS} = [$jobG->id, $jobA->id];
+    my $jobH = _job_create(\%settingsH);
+
+    is($jobB->blocked_by_parent_job, undef);
+    is($jobD->blocked_by_parent_job, $jobB->id);
+    is($jobG->blocked_by_parent_job, $jobD->id);
+};
+
 ok $mock_send_called, 'mocked ws_send method has been called';
 
 done_testing();
