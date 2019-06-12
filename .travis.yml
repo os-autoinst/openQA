@@ -11,6 +11,12 @@ env:
   - GH_PUBLISH=true FULLSTACK=1
   - SCHEDULER_FULLSTACK=1
   - DEVELOPER_FULLSTACK=1
+ 
+# workaround "Permission denied" issues
+# see https://github.com/travis-ci/travis-ci/issues/9630#issuecomment-391066593
+# also used further below in "script"
+before_script:
+- sudo chown -R travis:travis assets/cache
 before_script:
 - docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
 cache:
@@ -18,6 +24,7 @@ cache:
   - assets/cache
 script:
 - mkdir -p assets/cache && chmod a+w assets/cache
+- sudo chown -R travis:travis assets/cache
 - touch openqa-debug.log autoinst-log.txt && chmod a+w openqa-debug.log autoinst-log.txt
 - make prepare-and-launch-docker-to-run-tests-within
 after_script:
