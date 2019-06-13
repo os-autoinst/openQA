@@ -25,7 +25,7 @@ sub check {
 
     my $req = $self->req;
     if ($self->app->config->{no_localhost_auth}) {
-        return 1 if $self->tx->remote_address eq '127.0.0.1';
+        return 1 if $self->is_local_request;
     }
 
     my $headers   = $req->headers;

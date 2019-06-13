@@ -48,6 +48,14 @@ subtest 'Authentication' => sub {
         OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton)
     )->app($app);
     $t->get_ok('/')->status_is(200)->json_is({name => $app->defaults('appname')});
+
+    my $c = $t->app->build_controller;
+    $c->tx->remote_address('127.0.0.1');
+    ok $c->is_local_request, 'is localhost';
+    $c->tx->remote_address('::1');
+    ok $c->is_local_request, 'is localhost';
+    $c->tx->remote_address('192.168.2.1');
+    ok !$c->is_local_request, 'not localhost';
 };
 
 subtest 'API' => sub {

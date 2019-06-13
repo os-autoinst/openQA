@@ -67,6 +67,8 @@ sub startup {
     $self->secrets(['nosecretshere']);
     $self->config->{no_localhost_auth} ||= 1;
 
+    $self->plugin('OpenQA::Shared::Plugin::Helpers');
+
     # The reactor interval might be set to 1 ms in case the scheduler has been woken up by the
     # web UI (In this case it is important to set it back to OpenQA::Scheduler::SCHEDULE_TICK_MS)
     OpenQA::Scheduler::Model::Jobs->singleton->on(
