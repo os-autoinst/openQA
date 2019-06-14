@@ -1009,7 +1009,7 @@ over serial or VNC.</p>
 <h5 id="_assert_script_run">assert_script_run</h5>
 <div class="literalblock">
 <div class="content">
-<pre>assert_script_run($cmd [, timeout =&gt; $timeout] [, fail_message =&gt; $fail_message]);</pre>
+<pre>assert_script_run($cmd [, timeout =&gt; $timeout] [, fail_message =&gt; $fail_message] [,quiet =&gt; $quiet]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1108,7 +1108,7 @@ See <code>wait_serial</code> for default timeout.</p>
 <h5 id="_script_output">script_output</h5>
 <div class="literalblock">
 <div class="content">
-<pre>script_output($script [, $wait, type_command =&gt; 1, proceed_on_failure =&gt; 1])</pre>
+<pre>script_output($script [, $wait, type_command =&gt; 1, proceed_on_failure =&gt; 1] [,quiet =&gt; $quiet])</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1924,7 +1924,7 @@ sub compat_args {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-06-14 21:11:32 UTC
+Last updated 2019-06-14 22:18:26 UTC
 </div>
 </div>
 </body>
