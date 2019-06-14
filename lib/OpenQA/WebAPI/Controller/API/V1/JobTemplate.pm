@@ -408,7 +408,9 @@ sub update {
 
                 # Preview mode: Get the expected YAML and rollback the result
                 if ($self->param('preview')) {
+                    $job_group->update({template => ''});
                     $json->{template} = $self->get_job_groups($group_id)->{$job_group->name};
+                    $json->{preview}  = int($self->param('preview'));
                     $self->schema->txn_rollback;
                 }
                 else {

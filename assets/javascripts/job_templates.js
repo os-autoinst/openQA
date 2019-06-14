@@ -403,7 +403,7 @@ function prepareTemplateEditor(data) {
     form.find('.buttons').show ();
 }
 
-function submitTemplateEditor() {
+function submitTemplateEditor(preview) {
     var form = $('#editor-form');
     form.find('.buttons').hide();
     form.find('.progress-indication').show();
@@ -414,15 +414,17 @@ function submitTemplateEditor() {
         type: 'POST',
         dataType: 'json',
         data: {
-            preview: 1,
+            preview: preview,
             template: editor.doc.getValue(),
+            reference: form.data('reference'),
         }
     }).done(function(data) {
-        if (data.hasOwnProperty('id') && data.id != job_group_id) {
-            result.text('Error: Changing the group name here is not supported');
-            return true;
+        result.text(data.preview ? 'Preview of the YAML:' : 'YAML saved!');
+        if (!data.hasOwnProperty('preview')) {
+            // Once a valid YAML template was saved we no longer offer the legacy editor
+            $('#toggle-yaml-editor').hide();
+            $('#media-add').hide();
         }
-        result.text('Preview of the YAML:');
         if (data.hasOwnProperty('template')) {
             var preview = CodeMirror(result[0], {
                 mode: 'yaml',
@@ -448,11 +450,19 @@ function submitTemplateEditor() {
         else {
             $('<p/>').text('Invalid server response: ' + data.statusText).appendTo(result);
         }
+        if (data.responseJSON.template) {
+            var preview = CodeMirror($('<pre/>').appendTo(result)[0], {
+                mode: 'yaml',
+                lineNumbers: true,
+                lineWrapping: true,
+                readOnly: true,
+                value: data.responseJSON.template,
+            });
+        }
     }).always(function(data) {
         form.find('.buttons').show();
         form.find('.progress-indication').hide();
     });
-    return false;
 }
 
 function showSubmitResults(form, result) {
