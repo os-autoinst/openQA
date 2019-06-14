@@ -277,7 +277,6 @@ You may be vulnerable for up to a day until Fake API key expires.
 [source,sh]
 --------------------------------------------------------------------------------
 systemctl start postgresql
-systemctl start openqa-gru
 systemctl start openqa-webui
 systemctl start openqa-scheduler
 # openSUSE
@@ -294,7 +293,6 @@ openQA runs on each boot, you should also +systemctl enable+ the same services.
 [source,sh]
 --------------------------------------------------------------------------------
 systemctl enable postgresql
-systemctl enable openqa-gru
 systemctl enable openqa-webui
 systemctl enable openqa-scheduler
 --------------------------------------------------------------------------------
