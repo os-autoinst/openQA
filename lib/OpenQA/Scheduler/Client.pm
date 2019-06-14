@@ -17,10 +17,10 @@ package OpenQA::Scheduler::Client;
 use Mojo::Base -base;
 
 use OpenQA::Client;
-use OpenQA::Scheduler;
+use OpenQA::Utils 'service_port';
 
 has client => sub { OpenQA::Client->new(api => 'localhost') };
-has port   => 9529;
+has port   => sub { service_port('scheduler') };
 
 sub wakeup {
     my ($self, $worker_id) = @_;

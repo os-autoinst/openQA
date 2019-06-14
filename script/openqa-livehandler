@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2018 SUSE Linux GmbH
+# Copyright (C) 2018-2019 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,28 +15,16 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Mojo::Base -strict;
 
 use FindBin;
 BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
 
-# listen only locally on port 9528 (preferably on both - IPv4 and IPv6)
-use OpenQA::Utils;
-set_listen_address(9528);
+use OpenQA::LiveHandler;
+use OpenQA::Utils qw(service_port set_listen_address);
 
 # ensure the web socket connection won't timeout
 $ENV{MOJO_INACTIVITY_TIMEOUT} ||= 15 * 60;
 
-use OpenQA::LiveHandler;
-
-# prevent use of prefork command
-my $first_arg = $ARGV[0];
-if ($first_arg && $first_arg eq 'prefork') {
-    print STDERR "Can't use prefork for openqa-livehandler.\n";
-    exit -1;
-}
-
+set_listen_address(service_port('livehandler'));
 OpenQA::LiveHandler::run;
-
-# vim: set sw=4 sts=4 et:

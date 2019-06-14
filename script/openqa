@@ -15,22 +15,21 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Mojo::Base -strict;
 
 use FindBin;
 BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
 
-$ENV{'MOJO_LISTEN'} ||= 'http://localhost:9526/';
+use OpenQA::WebAPI;
+use OpenQA::Utils qw(service_port set_listen_address);
 
 # allow up to 20GB - hdd images
 $ENV{MOJO_MAX_MESSAGE_SIZE}   = 1024 * 1024 * 1024 * 20;
 $ENV{MOJO_INACTIVITY_TIMEOUT} = 300;
+
 # the default is EV, and this heavily screws with our children handling
 $ENV{MOJO_REACTOR} = 'Mojo::Reactor::Poll';
 
-use OpenQA::WebAPI;
-
+set_listen_address(service_port('webui'));
 OpenQA::WebAPI::run;
 
-# vim: set sw=4 sts=4 et:

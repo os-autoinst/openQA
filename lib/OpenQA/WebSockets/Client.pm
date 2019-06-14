@@ -19,10 +19,10 @@ use Mojo::Base -base;
 use Mojo::Server::Daemon;
 use Carp 'croak';
 use OpenQA::Client;
-use OpenQA::WebSockets;
+use OpenQA::Utils 'service_port';
 
 has client => sub { OpenQA::Client->new(api => 'localhost') };
-has port   => 9527;
+has port   => sub { service_port('websocket') };
 
 sub embed_server_for_testing {
     my $self = shift;

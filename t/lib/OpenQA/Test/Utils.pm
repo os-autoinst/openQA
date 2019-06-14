@@ -13,7 +13,9 @@ use OpenQA::Worker::Common;
 use Config::IniFiles;
 use Data::Dumper 'Dumper';
 use OpenQA::Utils qw(log_error log_info log_debug);
+use OpenQA::WebSockets;
 use OpenQA::WebSockets::Client;
+use OpenQA::Scheduler;
 use OpenQA::Scheduler::Client;
 use Mojo::Home;
 use Mojo::File 'path';
@@ -209,6 +211,7 @@ sub create_websocket_server {
         }
         monkey_patch 'OpenQA::WebSockets::Plugin::Helpers', _workers_checker => sub { 1 }
           if ($noworkercheck);
+        local @ARGV = ('daemon');
         OpenQA::WebSockets::run;
         Devel::Cover::report() if Devel::Cover->can('report');
         _exit(0);
@@ -240,7 +243,7 @@ sub create_scheduler {
     if ($pid == 0) {
         local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
-
+        local @ARGV                         = ('daemon');
         OpenQA::Scheduler::run;
         Devel::Cover::report() if Devel::Cover->can('report');
         _exit(0);
