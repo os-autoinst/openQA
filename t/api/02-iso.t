@@ -827,7 +827,7 @@ subtest 'Catch blocked_by cycles' => sub {
             ha_alpha_node01_upgrade   => undef,
             ha_alpha_node01_upgraded  => "ha_alpha_node01_upgrade",
             ha_alpha_node02_upgrade   => undef,
-            ha_alpha_node02_upgraded  => "ha_alpha_node01_upgrade",
+            ha_alpha_node02_upgraded  => "ha_alpha_node02_upgrade",
             ha_supportserver_upgraded => "ha_alpha_node01_upgrade",
         },
         "Upgrades not blocked"

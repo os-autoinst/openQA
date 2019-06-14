@@ -1925,45 +1925,22 @@ sub search_for {
     return $self->$result_set->search($condition, $attrs);
 }
 
-# if the job is not blocked by chains or parallels
-sub is_edge_in_cluster {
-    my ($self, $cluster_info) = @_;
-
-    for my $key (qw(parallel_children parallel_parents chained_parents)) {
-        return 0 if scalar(@{$cluster_info->{$self->id}->{$key}}) > 0;
-    }
-    return 1;
-}
-
 sub blocked_by_parent_job {
     my ($self) = @_;
 
     my $cluster_jobs = $self->cluster_jobs;
 
-    # chained parents are part of the cluster, but don't
-    # normally become blocked_by, so make this extra step
-    return undef if $self->is_edge_in_cluster($cluster_jobs);
+    my $job_info              = $cluster_jobs->{$self->id};
+    my @possibly_blocked_jobs = ($self->id, @{$job_info->{parallel_parents}}, @{$job_info->{parallel_children}});
 
-    # now the complicated part
-    my @possibly_blocked_jobs;
-    for my $job_info (values %$cluster_jobs) {
-        push(@possibly_blocked_jobs, @{$job_info->{parallel_children}});
-        push(@possibly_blocked_jobs, @{$job_info->{parallel_parents}});
-        push(@possibly_blocked_jobs, $self->id);
-    }
-
-    my @own_children;
-    push(@own_children, $self->id);
-    push(@own_children, @{$cluster_jobs->{$self->id}->{chained_children}});
-    my $parents = $self->result_source->schema->resultset('JobDependencies')->search(
+    my $chained_parents = $self->result_source->schema->resultset('JobDependencies')->search(
         {
-            dependency    => OpenQA::JobDependencies::Constants::CHAINED,
-            parent_job_id => {-not_in => \@own_children},
-            child_job_id  => {-in => \@possibly_blocked_jobs}
+            dependency   => OpenQA::JobDependencies::Constants::CHAINED,
+            child_job_id => {-in => \@possibly_blocked_jobs}
         },
         {order_by => ['parent_job_id', 'child_job_id']});
 
-    while (my $pd = $parents->next) {
+    while (my $pd = $chained_parents->next) {
         my $p     = $pd->parent;
         my $state = $p->state;
 
