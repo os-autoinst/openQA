@@ -20,7 +20,7 @@ BEGIN {
     unshift @INC, 'lib';
 }
 
-use Mojo::Base;
+use Mojo::Base -strict;
 use Mojo::IOLoop;
 
 use FindBin;
@@ -55,7 +55,7 @@ path($ENV{OPENQA_CONFIG})->make_path->child("openqa.ini")->spurt(@conf);
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-# XXX: Test::Mojo loses its app when setting a new ua
+# Test::Mojo loses its app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
 my $app = $t->app;
 $t->ua(
@@ -63,7 +63,7 @@ $t->ua(
 $t->app($app);
 
 # create a parent group
-my $schema        = $app->schema;
+$schema = $app->schema;
 my $parent_groups = $schema->resultset('JobGroupParents');
 $parent_groups->create(
     {

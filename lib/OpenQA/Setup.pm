@@ -163,10 +163,11 @@ sub read_config {
             blacklist => '',
         },
         amqp => {
-            reconnect_timeout => 5,
-            url               => 'amqp://guest:guest@localhost:5672/',
-            exchange          => 'pubsub',
-            topic_prefix      => 'suse',
+            reconnect_timeout  => 5,
+            url                => 'amqp://guest:guest@localhost:5672/',
+            exchange           => 'pubsub',
+            topic_prefix       => 'suse',
+            fedora_ci_messages => 0,
         },
         default_group_limits => {
             asset_size_limit                  => OpenQA::Schema::JobGroupDefaults::SIZE_LIMIT_GB,

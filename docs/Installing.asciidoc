@@ -484,6 +484,9 @@ reconnect_timeout = 5
 url = amqp://guest:guest@localhost:5672/
 exchange = pubsub
 topic_prefix = suse
+# whether to also emit messages in Fedora CI messages format:
+# https://pagure.io/fedora-ci/messages
+fedora_ci_messages = 0
 --------------------------------------------------------------------------------
 
 For a TLS connection use +amqps://+ and port +5671+.
