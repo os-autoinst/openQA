@@ -115,7 +115,7 @@ sub schedules {
     my $self = shift;
 
     my $yaml = $self->get_job_groups($self->param('id'));
-    $self->render(yaml => $yaml);
+    $self->render(yaml => join("\n", map { $yaml->{$_} } keys %$yaml));
 }
 
 sub get_job_groups {
@@ -123,9 +123,16 @@ sub get_job_groups {
 
     my %yaml;
     my $groups = $self->schema->resultset("JobGroups")
-      ->search($id ? {id => $id} : undef, {select => [qw(id name parent_id default_priority)]});
+      ->search($id ? {id => $id} : undef, {select => [qw(id name parent_id default_priority template)]});
     while (my $group = $groups->next) {
         my %group;
+        # Use stored YAML template from the database if available
+        if ($group->template) {
+            $yaml{$group->name} = $group->template;
+            next;
+        }
+
+        # Compile a YAML template from the current state
         my $templates
           = $self->schema->resultset("JobTemplates")
           ->search({group_id => $group->id}, {order_by => 'me.test_suite_id'});
@@ -187,7 +194,8 @@ sub get_job_groups {
             }
         }
 
-        $yaml{$group->name} = \%group;
+        # Note: Stripping the initial document start marker "---"
+        $yaml{$group->name} = YAML::XS::Dump(\%group) =~ s/^---\n//r;
     }
 
     return \%yaml;
@@ -200,6 +208,28 @@ sub get_job_groups {
 Updates a job group according to the given YAML template. Test suites are added or modified
 as needed to reflect the difference to what's specified in the template.
 The given YAML will be validated and results in an error if it doesn't conform to the schema.
+
+=over 8
+
+=item template
+
+A YAML document describing the job template. The template will be validated against the schema.
+
+=item preview
+
+  preview => 1
+
+Performs a dry-run without committing any changes to the database.
+
+=item reference
+
+  reference => $reference
+
+If specified, this must be a YAML document matching the last known state. If the actual state of the
+database changes before the update transaction it's considered an error.
+A client can use this to handle editing conflicts between multiple users.
+
+=back
 
 Returns a 400 code on error, or a 303 code and the job template id within a JSON block on success.
 
@@ -236,151 +266,157 @@ sub update {
     my $machines              = $schema->resultset('Machines');
     my $test_suites           = $schema->resultset('TestSuites');
     my $products              = $schema->resultset('Products');
-    foreach my $group (keys %{$yaml}) {
-        my $json = {};
+    my $json                  = {};
 
-        try {
-            $schema->txn_do(
-                sub {
-                    my $group_id = $job_groups->find_or_create({name => $group}, {select => [qw(id name)]})->id;
-                    $json->{id} = $group_id;
+    try {
+        $schema->txn_do(
+            sub {
+                my $job_group = $job_groups->find({id => $self->param('id')}, {select => [qw(id name template)]});
+                my $group_id  = $self->param('id');
+                $json->{id} = $group_id;
+                die "Job group not found\n" unless $job_group;
 
-                    # Add/update job templates from YAML data
-                    # (create test suites if not already present, fail if referenced machine and product is missing)
-                    my @job_template_ids;
-                    my $yaml_group    = $yaml->{$group};
-                    my $yaml_archs    = $yaml_group->{architectures};
-                    my $yaml_products = $yaml_group->{products};
-                    my $yaml_defaults = $yaml_group->{defaults};
-                    foreach my $arch (keys %$yaml_archs) {
-                        my $yaml_products_for_arch = $yaml_archs->{$arch};
-                        my $yaml_defaults_for_arch = $yaml_defaults->{$arch};
-                        foreach my $product_name (keys %$yaml_products_for_arch) {
-                            foreach my $spec (@{$yaml_products_for_arch->{$product_name}}) {
-                                # Get testsuite, machine, prio and job template settings from YAML data
-                                my $testsuite_name;
-                                my $prio;
-                                my $machine_name;
-                                my $settings;
-                                if (ref $spec eq 'HASH') {
-                                    foreach my $name (keys %$spec) {
-                                        my $attr = $spec->{$name};
-                                        $testsuite_name = $name;
-                                        if ($attr->{priority}) {
-                                            $prio = $attr->{priority};
-                                        }
-                                        if ($attr->{machine}) {
-                                            $machine_name = $attr->{machine};
-                                        }
-                                        if ($attr->{settings}) {
-                                            $settings = $attr->{settings};
-                                        }
+                if ($self->param('reference')) {
+                    my $reference = $self->get_job_groups($group_id)->{$job_group->name};
+                    $json->{template} = $reference;
+                    die "Template was modified\n" unless $reference eq $self->param('reference');
+                }
+
+                # Add/update job templates from YAML data
+                # (create test suites if not already present, fail if referenced machine and product is missing)
+                my @job_template_ids;
+                my $yaml_archs    = $yaml->{architectures};
+                my $yaml_products = $yaml->{products};
+                my $yaml_defaults = $yaml->{defaults};
+                foreach my $arch (keys %$yaml_archs) {
+                    my $yaml_products_for_arch = $yaml_archs->{$arch};
+                    my $yaml_defaults_for_arch = $yaml_defaults->{$arch};
+                    foreach my $product_name (keys %$yaml_products_for_arch) {
+                        foreach my $spec (@{$yaml_products_for_arch->{$product_name}}) {
+                            # Get testsuite, machine, prio and job template settings from YAML data
+                            my $testsuite_name;
+                            my $prio;
+                            my $machine_name;
+                            my $settings;
+                            if (ref $spec eq 'HASH') {
+                                foreach my $name (keys %$spec) {
+                                    my $attr = $spec->{$name};
+                                    $testsuite_name = $name;
+                                    if ($attr->{priority}) {
+                                        $prio = $attr->{priority};
+                                    }
+                                    if ($attr->{machine}) {
+                                        $machine_name = $attr->{machine};
+                                    }
+                                    if ($attr->{settings}) {
+                                        $settings = $attr->{settings};
                                     }
                                 }
-                                else {
-                                    $testsuite_name = $spec;
-                                }
+                            }
+                            else {
+                                $testsuite_name = $spec;
+                            }
 
-                                # Assign defaults
-                                $prio         //= $yaml_defaults_for_arch->{priority};
-                                $machine_name //= $yaml_defaults_for_arch->{machine};
-                                die "Machine is empty and there is no default for architecture $arch\n"
-                                  unless $machine_name;
+                            # Assign defaults
+                            $prio         //= $yaml_defaults_for_arch->{priority};
+                            $machine_name //= $yaml_defaults_for_arch->{machine};
+                            die "Machine is empty and there is no default for architecture $arch\n"
+                              unless $machine_name;
 
-                                # Find machine, product and testsuite
-                                my $machine = $machines->find({name => $machine_name});
-                                die "Machine '$machine_name' is invalid\n" unless $machine;
-                                my $product_spec = $yaml_products->{$product_name};
-                                my $product      = $products->find(
-                                    {
-                                        arch    => $arch,
-                                        distri  => $product_spec->{distribution},
-                                        flavor  => $product_spec->{flavor},
-                                        version => $product_spec->{version},
-                                    });
-                                die "Product '$product_name' is invalid\n" unless $product;
-                                my $test_suite = $test_suites->find({name => $testsuite_name});
-                                die "Testsuite '$testsuite_name' is invalid\n" unless $test_suite;
+                            # Find machine, product and testsuite
+                            my $machine = $machines->find({name => $machine_name});
+                            die "Machine '$machine_name' is invalid\n" unless $machine;
+                            my $product_spec = $yaml_products->{$product_name};
+                            my $product      = $products->find(
+                                {
+                                    arch    => $arch,
+                                    distri  => $product_spec->{distribution},
+                                    flavor  => $product_spec->{flavor},
+                                    version => $product_spec->{version},
+                                });
+                            die "Product '$product_name' is invalid\n" unless $product;
+                            my $test_suite = $test_suites->find({name => $testsuite_name});
+                            die "Testsuite '$testsuite_name' is invalid\n" unless $test_suite;
 
-                                # Create/update job template
-                                my $job_template = $job_templates->find_or_create(
-                                    {
-                                        group_id      => $group_id,
-                                        product_id    => $product->id,
-                                        machine_id    => $machine->id,
-                                        test_suite_id => $test_suite->id,
-                                    });
-                                my $job_template_id = $job_template->id;
-                                $job_template->update({prio => $prio}) if (defined $prio);
-                                push(@job_template_ids, $job_template->id);
+                            # Create/update job template
+                            my $job_template = $job_templates->find_or_create(
+                                {
+                                    group_id      => $group_id,
+                                    product_id    => $product->id,
+                                    machine_id    => $machine->id,
+                                    test_suite_id => $test_suite->id,
+                                });
+                            my $job_template_id = $job_template->id;
+                            $job_template->update({prio => $prio}) if (defined $prio);
+                            push(@job_template_ids, $job_template->id);
 
-                                # Add/update/remove parameter
-                                my @setting_ids;
-                                if ($settings) {
-                                    foreach my $key (keys %$settings) {
-                                        my $setting = $job_template_settings->find(
+                            # Add/update/remove parameter
+                            my @setting_ids;
+                            if ($settings) {
+                                foreach my $key (keys %$settings) {
+                                    my $setting = $job_template_settings->find(
+                                        {
+                                            job_template_id => $job_template_id,
+                                            key             => $key,
+                                        });
+                                    if ($setting) {
+                                        $setting->update({value => $settings->{$key}});
+                                    }
+                                    else {
+                                        $setting = $job_template_settings->find_or_create(
                                             {
                                                 job_template_id => $job_template_id,
                                                 key             => $key,
+                                                value           => $settings->{$key},
                                             });
-                                        if ($setting) {
-                                            $setting->update({value => $settings->{$key}});
-                                        }
-                                        else {
-                                            $setting = $job_template_settings->find_or_create(
-                                                {
-                                                    job_template_id => $job_template_id,
-                                                    key             => $key,
-                                                    value           => $settings->{$key},
-                                                });
-                                        }
-                                        push(@setting_ids, $setting->id);
                                     }
+                                    push(@setting_ids, $setting->id);
                                 }
-                                $job_template_settings->search(
-                                    {
-                                        id              => {'not in' => \@setting_ids},
-                                        job_template_id => $job_template_id,
-                                    })->delete();
-
-                                # Stop iterating if there were errors with this test suite
-                                last if (@$errors);
                             }
+                            $job_template_settings->search(
+                                {
+                                    id              => {'not in' => \@setting_ids},
+                                    job_template_id => $job_template_id,
+                                })->delete();
+
+                            # Stop iterating if there were errors with this test suite
+                            last if (@$errors);
                         }
                     }
+                }
 
-                    # Drop entries we haven't touched in add/update loop
-                    $job_templates->search(
-                        {
-                            id       => {'not in' => \@job_template_ids},
-                            group_id => $group_id,
-                        })->delete();
+                # Drop entries we haven't touched in add/update loop
+                $job_templates->search(
+                    {
+                        id       => {'not in' => \@job_template_ids},
+                        group_id => $group_id,
+                    })->delete();
 
-                    # Preview mode: Get the expected YAML and rollback the result
-                    if ($self->param('preview')) {
-                        $json->{template} = YAML::XS::Dump($self->get_job_groups($json->{id}));
-                        $self->schema->txn_rollback;
-                    }
-                });
-        }
-        catch {
-            # Push the exception to the list of errors without the trailing new line
-            push @$errors, substr($_, 0, -1);
-        };
-
-        if (@$errors) {
-            $json->{error} = \@$errors;
-            $self->app->log->error(@$errors);
-            $self->respond_to(json => {json => $json, status => 400},);
-            return;
-        }
-
-        $self->emit_event('openqa_jobtemplate_create', $json) unless $self->param('preview');
-        $self->respond_to(json => {json => $json});
-
-        # Process only one group
-        last;
+                # Preview mode: Get the expected YAML and rollback the result
+                if ($self->param('preview')) {
+                    $json->{template} = $self->get_job_groups($group_id)->{$job_group->name};
+                    $self->schema->txn_rollback;
+                }
+                else {
+                    # Store the original YAML template after all changes have been made
+                    $job_group->update({template => $self->param('template')});
+                }
+            });
     }
+    catch {
+        # Push the exception to the list of errors without the trailing new line
+        push @$errors, substr($_, 0, -1);
+    };
+
+    if (@$errors) {
+        $json->{error} = \@$errors;
+        $self->app->log->error(@$errors);
+        $self->respond_to(json => {json => $json, status => 400},);
+        return;
+    }
+
+    $self->emit_event('openqa_jobtemplate_create', $json) unless $self->param('preview');
+    $self->respond_to(json => {json => $json});
 }
 
 =over 4

@@ -398,7 +398,7 @@ sub startup {
     # api/v1/job_templates_scheduling
     $api_public_r->get('experimental/job_templates_scheduling/<id:num>')->name('apiv1_job_templates_schedules')
       ->to('job_template#schedules', id => undef);
-    $api_ra->post('experimental/job_templates_scheduling/<id:num>')->to('job_template#update', id => undef);
+    $api_ra->post('experimental/job_templates_scheduling/<id:num>')->to('job_template#update');
 
     # api/v1/comments
     $api_public_r->get('/jobs/<job_id:num>/comments')->name('apiv1_list_comments')->to('comment#list');
