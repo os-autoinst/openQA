@@ -933,6 +933,21 @@ subtest 'References' => sub {
       || diag explain $t->tx->res->body;
 };
 
+# Test suites which are part of a group managed in YAML can't be modified manually
+ok($opensuse->template, 'Group ' . $opensuse->name . ' is managed in YAML');
+# set priority for particular test suite
+$t->post_ok(
+    '/api/v1/job_templates',
+    form => {
+        group_id      => $opensuse->id,
+        test_suite_id => 1002,
+        prio          => 15,
+        prio_only     => 1,
+    })->status_is(400, 'Attempt to modify priority was blocked');
+
+$t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(400, 'Attempt to delete was blocked');
+$opensuse->update({template => undef});
+
 $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(200);
 $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(404);
 

@@ -41,7 +41,7 @@ function templateRemoved(chosen, deselected) {
     var jid = chosen.find('option[value="' + deselected + '"]').data('jid');
     $.ajax({url: job_templates_url + "/" + jid,
         type: 'DELETE',
-        dataType: 'json'}).done(function() { highlightChosen(chosen); });
+        dataType: 'json'}).done(function() { highlightChosen(chosen); }).fail(addFailed);
 }
 
 function addFailed(data) {

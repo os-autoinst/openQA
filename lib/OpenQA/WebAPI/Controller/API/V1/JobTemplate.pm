@@ -457,8 +457,13 @@ sub create {
     $prio = ((!$prio || $prio eq 'inherit') ? undef : $prio);
 
     my $schema = $self->schema;
+    my $group  = $schema->resultset("JobGroups")->find({id => $self->param('group_id')});
 
-    if ($has_product_id) {
+    if ($group && $group->template) {
+        # An existing group with a YAML template must not be updated manually
+        $error = 'Group "' . $group->name . '" must be updated through the YAML template';
+    }
+    elsif ($has_product_id) {
         for my $param (qw(machine_id group_id test_suite_id)) {
             $validation->required($param)->like($is_number_regex);
         }
@@ -583,25 +588,36 @@ sub destroy {
     my $job_templates = $self->schema->resultset('JobTemplates');
 
     my $status;
+    my $error;
     my $json = {};
 
-    my $rs;
-    eval { $rs = $job_templates->search({id => $self->param('job_template_id')})->delete };
-    my $error = $@;
+    my $job_template = $job_templates->find({id => $self->param('job_template_id')});
+    if ($job_template && $job_template->group->template) {
+        # A test suite that is part of a group with a YAML template must not be deleted manually
+        $error  = 'Test suites in group "' . $job_template->group->name . '" must be updated through the YAML template';
+        $status = 400;
+    }
+    elsif ($job_template) {
+        my $rs;
+        eval { $rs = $job_template->delete };
+        $error = $@;
 
-    if ($rs) {
-        if ($rs == 0) {
-            $status = 404;
-            $error  = 'Not found';
-        }
-        else {
+        if ($rs) {
             $json->{result} = int($rs);
             $self->emit_event('openqa_jobtemplate_delete', {id => $self->param('job_template_id')});
         }
+        else {
+            $status = 400;
+        }
     }
     else {
+        $status = 404;
+        $error  = 'Not found';
+    }
+
+    if ($error) {
+        $self->app->log->error($error);
         $json->{error} = $error;
-        $status = 400;
     }
     $self->respond_to(
         json => {json => $json, status => $status},
