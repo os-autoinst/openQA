@@ -7,24 +7,24 @@
 
 IMPORTANT: This overview is valid only when using QEMU backend!
 
-Which networking type to use is controlled by the `NICTYPE`
-variable. If unset or empty `NICTYPE` defaults to +user+, ie qemu
-user networking which requires no further configuration.
+The networking type used is controlled by the `NICTYPE` variable. If unset or
+empty `NICTYPE` defaults to +user+, i.e. QEMU user networking which requires
+no further configuration.
 
 For more advanced setups or tests that require multiple jobs to be
 in the same networking the <<TAP based network,TAP>> or <<VDE Based Network,VDE>> based modes can be used.
 
-== Qemu User Networking
+== QEMU User Networking
 :qemu-user-networking: http://wiki.qemu.org/Documentation/Networking#User_Networking_.28SLIRP.29[user networking]
 
-With Qemu {qemu-user-networking} each jobs gets it's own isolated network with
-TCP and UDP routed to the outside. DHCP is provided by qemu. The MAC address of
-the machine can be controlled with the +NICMAC+ variable. If not set, it's
+With QEMU {qemu-user-networking} each jobs gets its own isolated network with
+TCP and UDP routed to the outside. DHCP is provided by QEMU. The MAC address of
+the machine can be controlled with the +NICMAC+ variable. If not set, it is
 +52:54:00:12:34:56+.
 
 === TAP Based Network
 
-os-autoinst can connect qemu to TAP devices of the host system to
+os-autoinst can connect QEMU to TAP devices of the host system to
 leverage advanced network setups provided by the host by setting +NICTYPE=tap+.
 
 The TAP device to use can be configured with the +TAPDEV+ variable. If not set
@@ -51,7 +51,7 @@ network, required internet access etc on the host manually.
 === VDE Based Network
 
 Virtual Distributed Ethernet provides a software switch that runs in
-user space. It allows to connect several qemu instances without
+user space. It allows to connect several QEMU instances without
 affecting the system's network configuration.
 
 The openQA workers need a vde_switch instance running. The workers
@@ -59,7 +59,7 @@ reconfigure the switch as needed by the job.
 
 ==== Basic, Single Machine Tests
 
-To start with a basic configuration like qemu user mode networking,
+To start with a basic configuration like QEMU user mode networking,
 create a machine with the following settings:
 
 - +VDE_SOCKETDIR=/run/openqa+
@@ -254,7 +254,7 @@ systemctl enable openqa-worker@3
 *Grant CAP_NET_ADMIN Capabilities to QEMU*
 
 In order to use TAP device which doesn’t exist on the system, it is required to set
-CAP_NET_ADMIN capability on qemu binary file:
+CAP_NET_ADMIN capability on QEMU binary file:
 
 [source,sh]
 ---------------
