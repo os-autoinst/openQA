@@ -23,8 +23,8 @@ use File::Spec::Functions 'catfile';
 use Mojo::File 'path';
 use Config::IniFiles;
 use db_profiler;
-use db_helpers;
 use OpenQA::Utils;
+use OpenQA::Utils 'random_string';
 use File::Path 'make_path';
 use POSIX 'strftime';
 use Time::HiRes 'gettimeofday';
@@ -226,7 +226,7 @@ sub read_config {
         }
     }
     $app->config->{global}->{recognized_referers} = [split(/ /, $app->config->{global}->{recognized_referers})];
-    $app->config->{_openid_secret} = db_helpers::rndstr(16);
+    $app->config->{_openid_secret} = random_string(16);
     $app->config->{auth}->{method} =~ s/\s//g;
 }
 

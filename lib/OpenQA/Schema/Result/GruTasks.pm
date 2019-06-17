@@ -22,7 +22,6 @@ use warnings;
 use base 'DBIx::Class::Core';
 
 use Mojo::JSON qw(decode_json encode_json);
-use db_helpers;
 use OpenQA::Parser::Result::OpenQA;
 use OpenQA::Parser::Result::Test;
 

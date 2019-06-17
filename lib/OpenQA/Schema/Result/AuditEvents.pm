@@ -20,8 +20,6 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-# use db_helpers;
-
 __PACKAGE__->table('audit_events');
 __PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(

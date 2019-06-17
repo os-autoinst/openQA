@@ -31,8 +31,6 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils qw(log_error);
 
-use db_helpers;
-
 __PACKAGE__->table('needles');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->add_columns(

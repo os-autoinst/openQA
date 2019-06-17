@@ -22,7 +22,6 @@ use OpenQA::Schema;
 use Mojo::Util 'xml_escape';
 use OpenQA::Utils qw(bugurl render_escaped_refs href_to_bugref);
 use OpenQA::Events;
-use db_helpers;
 
 sub register {
 

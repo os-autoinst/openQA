@@ -26,8 +26,6 @@ use OpenQA::Schema::Result::Jobs;
 use Date::Format;
 use Try::Tiny;
 
-use db_helpers;
-
 __PACKAGE__->table('developer_sessions');
 __PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(

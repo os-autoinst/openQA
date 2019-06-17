@@ -32,8 +32,6 @@ use Mojo::UserAgent;
 use Mojo::URL;
 use Try::Tiny;
 
-use db_helpers;
-
 __PACKAGE__->table('assets');
 __PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(

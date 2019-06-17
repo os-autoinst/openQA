@@ -11,16 +11,16 @@ use DateTime;        # To allow fixtures using InflateColumn::DateTime
 use Carp;
 use Cwd qw( abs_path getcwd );
 use OpenQA::Schema;
-use OpenQA::Utils;
+use OpenQA::Utils qw(log_info random_string);
 use Mojo::File 'path';
-use db_helpers 'rndstr';
+
 has fixture_path => 't/fixtures';
 
 use Test::More;
 plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
 sub generate_schema_name {
-    return 'tmp_' . rndstr();
+    return 'tmp_' . random_string();
 }
 
 sub create {

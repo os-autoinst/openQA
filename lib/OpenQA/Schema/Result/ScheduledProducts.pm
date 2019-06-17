@@ -19,7 +19,6 @@ use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
-use db_helpers;
 
 use DBIx::Class::Timestamps 'now';
 use File::Basename;

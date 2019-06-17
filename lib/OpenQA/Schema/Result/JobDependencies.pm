@@ -21,8 +21,6 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-use db_helpers;
-
 use OpenQA::JobDependencies::Constants;
 
 __PACKAGE__->table('job_dependencies');

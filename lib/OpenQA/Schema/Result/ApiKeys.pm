@@ -21,7 +21,7 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-use db_helpers;
+use OpenQA::Utils 'random_hex';
 
 __PACKAGE__->table('api_keys');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
@@ -53,8 +53,8 @@ __PACKAGE__->belongs_to(user => 'OpenQA::Schema::Result::Users', 'user_id');
 sub new {
     my ($class, $attrs) = @_;
 
-    $attrs->{key}    = db_helpers::rndhexU unless $attrs->{key};
-    $attrs->{secret} = db_helpers::rndhexU unless $attrs->{secret};
+    $attrs->{key}    = random_hex() unless $attrs->{key};
+    $attrs->{secret} = random_hex() unless $attrs->{secret};
 
     my $new = $class->next::method($attrs);
     return $new;
