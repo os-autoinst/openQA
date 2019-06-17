@@ -703,7 +703,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#networking">Networking in OpenQA</a>
 <ul class="sectlevel1">
-<li><a href="#_qemu_user_networking">Qemu User Networking</a>
+<li><a href="#_qemu_user_networking">QEMU User Networking</a>
 <ul class="sectlevel2">
 <li><a href="#_tap_based_network">TAP Based Network</a></li>
 <li><a href="#_vde_based_network">VDE Based Network</a>
@@ -4248,7 +4248,7 @@ After that we can make cluster from them, but if one of them fails it makes no s
 </div>
 </div>
 <div class="paragraph">
-<p>This produces qemu image 'supportserver.qcow2' that contains the supportserver. The 'autoyast_supportserver.xml'
+<p>This produces QEMU image 'supportserver.qcow2' that contains the supportserver. The 'autoyast_supportserver.xml'
 should define correct user and password, as well as packages and the common configuration.</p>
 </div>
 <div class="paragraph">
@@ -4271,7 +4271,7 @@ should define correct user and password, as well as packages and the common conf
 <div class="paragraph">
 <p>where the SUPPORT_SERVER_ROLES defines the specific role (see code in 'tests/support_server/setup.pm' for available roles and their definition), and
  HDD_1 variable must be the name of the supportserver image as defined via PUBLISH_HDD_1 variable during supportserver generation. If the support
-server is based on older SUSE versions (opensuse 11.x, SLE11SP4..) it may also be needed to add HDDMODEL=virtio-blk. In case of qemu backend, one can
+server is based on older SUSE versions (opensuse 11.x, SLE11SP4..) it may also be needed to add HDDMODEL=virtio-blk. In case of QEMU backend, one can
 also use BOOTFROM=c, for faster boot directly from the HDD_1 image.</p>
 </div>
 <div class="paragraph">
@@ -4341,7 +4341,7 @@ Note that the networking is provided by tap devices, so both jobs should run on 
 <div class="title">Example of Support Server: autoyast based tftp test</div>
 <div class="content">
 <div class="paragraph">
-<p>Here we will use autoyast to setup the system of the test job and the os-autoinst autoyast testing infrastructure. For supportserver, this means using proxy to access qemu provided data, for dowloading autoyast profile and tftp verify script:</p>
+<p>Here we will use autoyast to setup the system of the test job and the os-autoinst autoyast testing infrastructure. For supportserver, this means using proxy to access QEMU provided data, for dowloading autoyast profile and tftp verify script:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -5675,40 +5675,41 @@ By default, QEMUPORT is $worker_instance_number \* 10 \ 20002+.</p>
 <div class="title">Important</div>
 </td>
 <td class="content">
-This overview is valid only when using QEMU backend!
+This overview is valid only when using the QEMU backend!
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>Which networking type to use is controlled by the <code>NICTYPE</code>
-variable. If unset or empty <code>NICTYPE</code> defaults to user, ie qemu
-user networking which requires no further configuration.</p>
+<p>The networking type used is controlled by the <code>NICTYPE</code> variable. If unset or
+empty <code>NICTYPE</code> defaults to user, i.e. QEMU user networking which requires
+no further configuration.</p>
 </div>
 <div class="paragraph">
-<p>For more advanced setups or tests that require multiple jobs to be
-in the same networking the <a href="#TAP based network">TAP</a> or <a href="#_vde_based_network">VDE</a> based modes can be used.</p>
+<p>For more advanced setups or tests that require multiple jobs to be in the same
+networking the <a href="#TAP based network">TAP</a> or <a href="#_vde_based_network">VDE</a> based
+modes can be used.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_qemu_user_networking">Qemu User Networking</h2>
+<h2 id="_qemu_user_networking">QEMU User Networking</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>With Qemu <a href="http://wiki.qemu.org/Documentation/Networking#User_Networking_.28SLIRP.29">user networking</a> each jobs gets it&#8217;s own isolated network with
-TCP and UDP routed to the outside. DHCP is provided by qemu. The MAC address of
-the machine can be controlled with the NICMAC variable. If not set, it&#8217;s
+<p>With QEMU <a href="http://wiki.qemu.org/Documentation/Networking#User_Networking_.28SLIRP.29">user networking</a> each jobs gets its own isolated network with
+TCP and UDP routed to the outside. DHCP is provided by QEMU. The MAC address of
+the machine can be controlled with the NICMAC variable. If not set, it is
 52:54:00:12:34:56.</p>
 </div>
 <div class="sect2">
 <h3 id="_tap_based_network">TAP Based Network</h3>
 <div class="paragraph">
-<p>os-autoinst can connect qemu to TAP devices of the host system to
+<p>os-autoinst can connect QEMU to TAP devices of the host system to
 leverage advanced network setups provided by the host by setting NICTYPE=tap.</p>
 </div>
 <div class="paragraph">
-<p>The TAP device to use can be configured with the TAPDEV variable. If not set
-defined, ist&#8217;s automatically set to "tap" + ($worker_instance - 1), i.e.
+<p>The TAP device to use can be configured with the TAPDEV variable. If not
+defined, it is automatically set to "tap" + ($worker_instance - 1), i.e.
 worker1 uses tap0, worker 2 uses tap1 and so on.</p>
 </div>
 <div class="paragraph">
@@ -5724,19 +5725,19 @@ worker3: tap2 tap66 tap130 ...
 </div>
 </div>
 <div class="paragraph">
-<p>MAC address of virtual NIC is controlled by NICMAC variable or
+<p>The MAC address of each virtual NIC is controlled by the NICMAC variable or
 automatically computed from $worker_id if not set.</p>
 </div>
 <div class="paragraph">
-<p>In TAP mode the system administrator is expected to configure the
-network, required internet access etc on the host manually.</p>
+<p>In TAP mode the system administrator is expected to configure the network,
+required internet access, etc. on the host manually.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_vde_based_network">VDE Based Network</h3>
 <div class="paragraph">
 <p>Virtual Distributed Ethernet provides a software switch that runs in
-user space. It allows to connect several qemu instances without
+user space. It allows to connect several QEMU instances without
 affecting the system&#8217;s network configuration.</p>
 </div>
 <div class="paragraph">
@@ -5746,7 +5747,7 @@ reconfigure the switch as needed by the job.</p>
 <div class="sect3">
 <h4 id="_basic_single_machine_tests">Basic, Single Machine Tests</h4>
 <div class="paragraph">
-<p>To start with a basic configuration like qemu user mode networking,
+<p>To start with a basic configuration like QEMU user mode networking,
 create a machine with the following settings:</p>
 </div>
 <div class="ulist">
@@ -5763,17 +5764,17 @@ create a machine with the following settings:</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>Start switch and user mode networking:</p>
+<p>Start the switch and user mode networking:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start openqa-vde_switch
-systemctl start openqa-slirpvde</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now openqa-vde_switch
+systemctl <span class="tok-nb">enable</span> --now openqa-slirpvde</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>With this setting all jobs on the same host would be in the same
-network share the same SLIRP instance though.</p>
+<p>With this setting all jobs on the same host would be in the same network and
+share the same SLIRP instance.</p>
 </div>
 </div>
 </div>
@@ -5783,12 +5784,15 @@ network share the same SLIRP instance though.</p>
 <h2 id="_multi_machine_tests_setup">Multi Machine Tests Setup</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The section provides one of the ways for setting up openQA environment to run tests that
-require network connection between several machines (e.g. client&#8201;&#8212;&#8201;server tests).</p>
+<p>The section provides one of the ways for setting up the openQA environment to
+run tests that require network connection between several machines (e.g.
+client&#8201;&#8212;&#8201;server tests).</p>
 </div>
 <div class="paragraph">
-<p>The example of the configuration is applicable for openSUSE and will
-use <em>Open vSwitch</em> for virtual switch, <em>SuSEfirewall2</em> or <em>firewalld</em> for NAT and <em>wicked</em> as network manager.</p>
+<p>The example of the configuration is applicable for openSUSE and will use <em>Open
+vSwitch</em> for virtual switch, <em>SuSEfirewall2</em> or <em>firewalld</em> for NAT and
+<em>wicked</em> as network manager. Keep in mind that a firewall is not strictly
+necessary for operation.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -5797,8 +5801,8 @@ use <em>Open vSwitch</em> for virtual switch, <em>SuSEfirewall2</em> or <em>fire
 <div class="title">Note</div>
 </td>
 <td class="content">
-Other way to setup the environment with <em>iptables</em> and <em>firewalld</em> is described
-on <a href="https://fedoraproject.org/wiki/OpenQA_advanced_network_guide">Fedora wiki</a>.
+Another way to setup the environment with <em>iptables</em> and <em>firewalld</em> is described
+on the <a href="https://fedoraproject.org/wiki/OpenQA_advanced_network_guide">Fedora wiki</a>.
 </td>
 </tr>
 </table>
@@ -5807,8 +5811,8 @@ on <a href="https://fedoraproject.org/wiki/OpenQA_advanced_network_guide">Fedora
 <p><strong>Set Up Open vSwitch</strong></p>
 </div>
 <div class="paragraph">
-<p>Compared to VDE setup, Open vSwitch is a little bit more complicated to configure, but provides more
-robust and scalable network.</p>
+<p>Compared to VDE setup, Open vSwitch is slightly more complicated to configure,
+but provides a more robust and scalable network.</p>
 </div>
 <div class="ulist">
 <ul>
@@ -5820,8 +5824,7 @@ robust and scalable network.</p>
 <div class="listingblock">
 <div class="content">
 <pre>zypper in openvswitch
-systemctl start openvswitch.service
-systemctl enable openvswitch.service</pre>
+systemctl enable --now openvswitch</pre>
 </div>
 </div>
 <div class="ulist">
@@ -5838,9 +5841,10 @@ systemctl enable openvswitch.service</pre>
 <div class="title">Note</div>
 </td>
 <td class="content">
-<em>os-autoinst-openvswitch.service</em> is a support service that sets vlan number
-of Open vSwitch ports based on NICVLAN variable - this separates the groups of
-tests from each other. NICVLAN variable is dynamically assigned by OpenQA scheduler.
+<em>os-autoinst-openvswitch.service</em> is a support service that sets the
+vlan number of Open vSwitch ports based on NICVLAN variable - this separates
+the groups of tests from each other. The NICVLAN variable is dynamically
+assigned by the OpenQA scheduler. Install, start and enable the service:
 </td>
 </tr>
 </table>
@@ -5848,13 +5852,12 @@ tests from each other. NICVLAN variable is dynamically assigned by OpenQA schedu
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>zypper in os-autoinst-openvswitch
-systemctl start os-autoinst-openvswitch
-systemctl <span class="tok-nb">enable</span> os-autoinst-openvswitch</code></pre>
+systemctl <span class="tok-nb">enable</span> --now os-autoinst-openvswitch</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p><em>os-autoinst-openvswitch.service</em> uses <em>br0</em> bridge by default.
-As it might be used by KVM, configure <em>br1</em> instead.</p>
+<p>The service <em>os-autoinst-openvswitch.service</em> uses <em>br0</em> bridge by default.
+As it might be used by KVM already it is suggested to configure <em>br1</em> instead:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -5865,7 +5868,7 @@ As it might be used by KVM, configure <em>br1</em> instead.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Create virtual bridge <em>br1</em>:</p>
+<p>Create the virtual bridge <em>br1</em>:</p>
 </li>
 </ul>
 </div>
@@ -5880,7 +5883,7 @@ As it might be used by KVM, configure <em>br1</em> instead.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Add tap interface for every multi-machine worker:</p>
+<p>Add a tap interface for every multi-machine worker instance:</p>
 </li>
 </ul>
 </div>
@@ -5891,9 +5894,11 @@ As it might be used by KVM, configure <em>br1</em> instead.</p>
 <div class="title">Note</div>
 </td>
 <td class="content">
-Create as many interfaces as needed for a test. The instructions are provided for three interfaces
-<em>tap0</em>, <em>tap1</em>, <em>tap2</em> to be used by <em>worker@1</em>, <em>worker@2</em>, <em>worker@3</em> workers. TAP interfaces have to be owned by the <em>_openqa-worker</em> user for openQA to
-be able to access them.
+Create as many interfaces as needed for a test. The instructions are
+provided for three interfaces <em>tap0</em>, <em>tap1</em>, <em>tap2</em> to be used by <em>worker@1</em>,
+<em>worker@2</em>, <em>worker@3</em> worker instances. The TAP interfaces have to be owned
+by the <em>_openqa-worker</em> user for the openQA worker instances to be able to
+access them.
 </td>
 </tr>
 </table>
@@ -5901,7 +5906,8 @@ be able to access them.
 <div class="paragraph">
 <p>To create tap interfaces automatically on startup, add appropriate configuration files to the
 <code>/etc/sysconfig/network/</code> directory. Files have to be named as <code>ifcfg-tap&lt;N&gt;</code>, replacing <code>&lt;N&gt;</code>
-with the number for the interface, such as <code>0</code>, <code>1</code>, <code>2</code> (e.g. <code>ifcfg-tap0</code>, <code>ifcfg-tap1</code>).</p>
+with the number for the interface, such as <code>0</code>, <code>1</code>, <code>2</code> (e.g. <code>ifcfg-tap0</code>,
+<code>ifcfg-tap1</code>):</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -5916,16 +5922,18 @@ with the number for the interface, such as <code>0</code>, <code>1</code>, <code
 <span class="tok-nv">TUNNEL_SET_OWNER</span><span class="tok-o">=</span><span class="tok-s1">&#39;_openqa-worker&#39;</span></code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>Symlinks can be used to reference the same configuration file for each tap
+interface.</p>
+</div>
 <div class="ulist">
 <ul>
 <li>
-<p>Add bridge config with all tap devices that should be connected to it:</p>
+<p>Add the bridge config with all tap devices that should be connected to it.
+The file has to be located in the <code>/etc/sysconfig/network/</code> directory. File
+name is <code>ifcfg-br&lt;N&gt;</code>, where <code>&lt;N&gt;</code> is the id of the bridge (e.g. <code>1</code>):</p>
 </li>
 </ul>
-</div>
-<div class="paragraph">
-<p>The file have to be located in <code>/etc/sysconfig/network/</code> directory. File name is
-<code>ifcfg-br&lt;N&gt;</code>, where <code>&lt;N&gt;</code> is the id of the bridge (e.g. <code>1</code>).</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -5940,12 +5948,12 @@ with the number for the interface, such as <code>0</code>, <code>1</code>, <code
 </div>
 </div>
 <div class="paragraph">
-<p><strong>Configure NAT with SuSEfirewall</strong></p>
+<p><strong>Configure NAT with SuSEfirewall2</strong></p>
 </div>
 <div class="paragraph">
-<p>The IP 10.0.2.2 can be also served as a gateway to access outside
-network. For this, a NAT between <em>br1</em> and <em>eth0</em> must be configured
-with SuSEfirewall or iptables.</p>
+<p>The IP 10.0.2.2 can be also served as a gateway to access the outside network.
+For this, NAT between <em>br1</em> and <em>eth0</em> must be configured with SuSEfirewall2
+or iptables:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -5956,12 +5964,11 @@ with SuSEfirewall or iptables.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Start SuSEfirewall2 and allow to run on startup:</p>
+<p>Start SuSEfirewall2 and enable the service to start on system startup:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start SuSEfirewall2
-systemctl <span class="tok-nb">enable</span> SuSEfirewall2</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now SuSEfirewall2</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -5973,60 +5980,61 @@ and the interface with access to the network to the external zone:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="bash"><span></span>firewall-cmd --permanent --zone<span class="tok-o">=</span>external --add-interface<span class="tok-o">=</span>eth0
+<pre class="pygments highlight"><code data-lang="sh"><span></span>firewall-cmd --permanent --zone<span class="tok-o">=</span>external --add-interface<span class="tok-o">=</span>eth0
 firewall-cmd --permanent --zone<span class="tok-o">=</span>internal --add-interface<span class="tok-o">=</span>br1</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Reload firewall configuration using <code>firewall-cmd --reload</code> command.
-To enable masquerade one can use the following command:</p>
+To enable masquerading one can use the following command:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="bash"><span></span>firewall-cmd --permanent --zone<span class="tok-o">=</span>external --add-masquerade</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>firewall-cmd --permanent --zone<span class="tok-o">=</span>external --add-masquerade</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>ip_forward is enabled automatically if masquerading is enabled:</p>
+<p>IP forwarding is enabled automatically if masquerading is enabled:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="bash"><span></span>cat /proc/sys/net/ipv4/ip_forward
+<pre class="pygments highlight"><code data-lang="sh"><span></span>cat /proc/sys/net/ipv4/ip_forward
 <span class="tok-m">1</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>In case interface is in trusted network it is possible to accept connections by
-default by changing zone target:</p>
+<p>In case the interface is in a trusted network it is possible to accept
+connections by default by changing the zone target:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="bash"><span></span>firewall-cmd --permanent --zone<span class="tok-o">=</span>external --set-target<span class="tok-o">=</span>ACCEPT</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>firewall-cmd --permanent --zone<span class="tok-o">=</span>external --set-target<span class="tok-o">=</span>ACCEPT</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Alternatively, you can assign interface to the <code>trusted</code> zone.</p>
+<p>Alternatively, you can assign the interface to the <code>trusted</code> zone. Make sure
+to enable masquerading for the <code>trusted</code> zone as well in this case.</p>
 </div>
 <div class="paragraph">
-<p>If you do not have firewalld service running, you can use <code>firewall-cmd-offline</code>
-command for the configuration. Enable service to run on startup:</p>
+<p>If you do not currently have the firewalld service running, you can use the
+<code>firewall-cmd-offline</code> command for the configuration. Enable service to run on
+startup:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code><span></span>systemctl start firewalld
-systemctl enable firewalld</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now firewalld</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Also, the <code>firewall-config</code> GUI tool for firewalld can be used for configuration.</p>
 </div>
 <div class="paragraph">
-<p><strong>Configure OpenQA Workers</strong></p>
+<p><strong>Configure OpenQA Worker Instances</strong></p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Allow workers to run multi-machine jobs:</p>
+<p>Allow worker intstances to run multi-machine jobs:</p>
 </li>
 </ul>
 </div>
@@ -6044,9 +6052,9 @@ systemctl enable firewalld</code></pre>
 <div class="title">Note</div>
 </td>
 <td class="content">
-The number of tap devices should correspond to the number of the
-running workers. For example, if you have set up 3 tap devices, the same number of
-workers should be configured.
+The number of tap devices should correspond to the number of the running
+worker instances. For example, if you have set up 3 tap devices, the same
+number of worker instances should be configured.
 </td>
 </tr>
 </table>
@@ -6054,7 +6062,7 @@ workers should be configured.
 <div class="ulist">
 <ul>
 <li>
-<p>Enable workers to be started on system boot:</p>
+<p>Enable worker instances to be started on system boot:</p>
 </li>
 </ul>
 </div>
@@ -6069,8 +6077,8 @@ systemctl <span class="tok-nb">enable</span> openqa-worker@3</code></pre>
 <p><strong>Grant CAP_NET_ADMIN Capabilities to QEMU</strong></p>
 </div>
 <div class="paragraph">
-<p>In order to use TAP device which doesn’t exist on the system, it is required to set
-CAP_NET_ADMIN capability on qemu binary file:</p>
+<p>In order to let QEMU create TAP devices on demand it is required to set
+CAP_NET_ADMIN capability on QEMU binary file:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -6095,9 +6103,9 @@ setcap <span class="tok-nv">CAP_NET_ADMIN</span><span class="tok-o">=</span>ep /
 <div class="title">Important</div>
 </td>
 <td class="content">
-Ensure, that <em>eth0</em> interface is configured in <code>/etc/sysconfig/network/ifcfg-eth0</code>.
-Otherwise, wicked will not be able to bring up the interface on start and host will loose network
-connection.
+Ensure, that <em>eth0</em> interface is configured in
+<code>/etc/sysconfig/network/ifcfg-eth0</code>. Otherwise, wicked will not be able to
+bring up the interface on start and the host will loose network connection:
 </td>
 </tr>
 </table>
@@ -6117,13 +6125,6 @@ connection.
 <span class="tok-nv">DHCLIENT_SET_DEFAULT_ROUTE</span><span class="tok-o">=</span><span class="tok-s1">&#39;yes&#39;</span></code></pre>
 </div>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>Start <em>wicked</em> as network service:</p>
-</li>
-</ul>
-</div>
 <div class="paragraph">
 <p>Pros of wicked over NetworkManager:
 <strong> Proper IPv6 support
@@ -6139,17 +6140,16 @@ connection.
 </div>
 </div>
 <div class="paragraph">
-<p>If the result is different from <code>Id=wicked.service</code> (e.g. <code>NetworkManager.service</code>),
-stop the network service:</p>
+<p>If the result is different from <code>Id=wicked.service</code> (e.g.
+<code>NetworkManager.service</code>), stop the network service:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl stop network.service
-systemctl disable network.service</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl disable --now network.service</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Then switch to wicked:</p>
+<p>Then switch to wicked and start the service:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -6160,7 +6160,7 @@ systemctl start wicked</code></pre>
 <div class="ulist">
 <ul>
 <li>
-<p>Bring up <em>br1</em> interface:</p>
+<p>Bring up the <em>br1</em> interface:</p>
 </li>
 </ul>
 </div>
@@ -6172,7 +6172,7 @@ systemctl start wicked</code></pre>
 <div class="ulist">
 <ul>
 <li>
-<p>REBOOT</p>
+<p>Reboot</p>
 </li>
 </ul>
 </div>
@@ -6183,7 +6183,7 @@ systemctl start wicked</code></pre>
 <div class="title">Note</div>
 </td>
 <td class="content">
-It is also possible to switch using YaST.
+It is also possible to switch the network configuration using YaST.
 </td>
 </tr>
 </table>
@@ -6215,10 +6215,10 @@ It is also possible to switch using YaST.
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>openvswitch</p>
+<p>openvswitch (as above)</p>
 </li>
 <li>
-<p>wicked - creates the bridge br1 and tap devices, add tap devices to the bridge,</p>
+<p>wicked - creates the bridge br1 and tap devices, adds tap devices to the bridge,</p>
 </li>
 <li>
 <p>SuSEfirewall</p>
@@ -6229,7 +6229,7 @@ It is also possible to switch using YaST.
 </ol>
 </div>
 <div class="paragraph">
-<p>The configuration and operation can be checked by the following commands:</p>
+<p>The configuration and operation can be checked with the following commands:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -6238,8 +6238,8 @@ ovs-ofctl dump-flows br1 <span class="tok-c1"># shows the rules installed by os-
 </div>
 </div>
 <div class="paragraph">
-<p>When everything is ok and the machines are able to communicate, the
-ovs-vsctl should show something like the following</p>
+<p>When everything is ok and the machines are able to communicate, the ovs-vsctl
+should show something like the following:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -6265,7 +6265,8 @@ ovs-vsctl should show something like the following</p>
 <div class="title">Note</div>
 </td>
 <td class="content">
-Notice the tag numbers are assigned to tap1 and tap2. They should have the same number.
+Notice the tag numbers are assigned to tap1 and tap2. They should have
+the same number.
 </td>
 </tr>
 </table>
@@ -6277,10 +6278,14 @@ Notice the tag numbers are assigned to tap1 and tap2. They should have the same 
 <div class="title">Note</div>
 </td>
 <td class="content">
-If the balance of the tap devices is wrong in the workers.ini the tag cannot be assigned and the communication will be broken.
+If the balance of the tap devices is wrong in the workers.ini the tag
+cannot be assigned and the communication will be broken.
 </td>
 </tr>
 </table>
+</div>
+<div class="paragraph">
+<p>Check the flow of packets over the network:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -6304,9 +6309,8 @@ If the balance of the tap devices is wrong in the workers.ini the tag cannot be 
 </div>
 </div>
 <div class="paragraph">
-<p>As long as the SUT has access to external network, there should be
-nonzero packet count in the forward chain between br1 and external
-interface.</p>
+<p>As long as the SUT has access to external network, there should be a non-zero
+packet count in the forward chain between the br1 and external interface.</p>
 </div>
 </div>
 </div>
@@ -6316,18 +6320,22 @@ interface.</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>By default all multi-machine workers have to be on single physical machine.
-You can join multiple physical machines and its ovs bridges together by GRE tunnel.</p>
+You can join multiple physical machines and its ovs bridges together by a GRE
+tunnel.</p>
 </div>
 <div class="paragraph">
-<p>If the workers with TAP capability are spread across multiple hosts, the network must be connected.
-See Open vSwitch <a href="http://openvswitch.org/support/config-cookbooks/port-tunneling/">documentation</a> for details.</p>
+<p>If the workers with TAP capability are spread across multiple hosts, the
+network must be connected. See Open vSwitch
+<a href="http://openvswitch.org/support/config-cookbooks/port-tunneling/">documentation</a>
+for details.</p>
 </div>
 <div class="paragraph">
-<p>Create gre_tunnel_preup script (change remote_ip value correspondingly on both hosts)</p>
+<p>Create a gre_tunnel_preup script (change the remote_ip value correspondingly
+on both hosts):</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="bash"><span></span><span class="tok-c1"># /etc/wicked/scripts/gre_tunnel_preup.sh</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/wicked/scripts/gre_tunnel_preup.sh</span>
 <span class="tok-c1">#!/bin/sh</span>
 <span class="tok-nv">action</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$1</span><span class="tok-s2">&quot;</span>
 <span class="tok-nv">bridge</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$2</span><span class="tok-s2">&quot;</span>
@@ -6335,21 +6343,21 @@ ovs-vsctl --may-exist add-port <span class="tok-nv">$bridge</span> gre1 -- <span
 </div>
 </div>
 <div class="paragraph">
-<p>And call it by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry</p>
+<p>And call it by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="bash"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-br1</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/network/ifcfg-br1</span>
 &lt;..&gt;
 <span class="tok-nv">PRE_UP_SCRIPT</span><span class="tok-o">=</span><span class="tok-s2">&quot;wicked:gre_tunnel_preup.sh&quot;</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Allow GRE in firewall</p>
+<p>Allow GRE in firewall:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="bash"><span></span><span class="tok-c1"># /etc/sysconfig/SuSEfirewall2</span>
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># /etc/sysconfig/SuSEfirewall2</span>
 <span class="tok-nv">FW_SERVICES_EXT_IP</span><span class="tok-o">=</span><span class="tok-s2">&quot;GRE&quot;</span>
 <span class="tok-nv">FW_SERVICES_EXT_TCP</span><span class="tok-o">=</span><span class="tok-s2">&quot;1723&quot;</span></code></pre>
 </div>
@@ -6361,7 +6369,11 @@ ovs-vsctl --may-exist add-port <span class="tok-nv">$bridge</span> gre1 -- <span
 <div class="title">Note</div>
 </td>
 <td class="content">
-When using GRE tunnels keep in mind that VMs inside the ovs bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If you are using support_server/setup.pm the MTU will be set automatically to that value on support_server itself and it does MTU advertisement for DHCP clients as well.
+When using GRE tunnels keep in mind that virtual machines inside the ovs
+bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If
+you are using support_server/setup.pm the MTU will be set automatically to
+that value on support_server itself and it does MTU advertisement for DHCP
+clients as well.
 </td>
 </tr>
 </table>
@@ -7053,7 +7065,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-06-17 16:56:54 UTC
+Last updated 2019-06-17 17:26:48 UTC
 </div>
 </div>
 <style>
