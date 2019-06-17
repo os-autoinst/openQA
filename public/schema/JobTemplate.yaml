@@ -4,11 +4,11 @@ description: openQA job template
 type: object
 additionalProperties: false
 required:
-- architectures
 - products
+- scenarios
 properties:
-  architectures:
-    description: A set of architectures with a list of test suite(s) eg. ppc64le
+  scenarios:
+    description: The scenarios to run, i.e. lists of test suites per architecture and medium
     type: object
     additionalProperties: false
     patternProperties:

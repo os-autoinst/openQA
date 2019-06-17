@@ -464,7 +464,7 @@ subtest 'job property editor' => sub() {
         ok($form->is_displayed(),                             'editor form is shown');
         ok($form->child('.progress-indication')->is_hidden(), 'spinner is hidden');
         my $yaml = $driver->execute_script('return editor.doc.getValue();');
-        ok($yaml =~ m/architectures:/, 'YAML was fetched');
+        ok($yaml =~ m/scenarios:/, 'YAML was fetched');
         $driver->find_element_by_id('update-template')->click();
         my $result = $form->child('.result');
         wait_for_ajax;
