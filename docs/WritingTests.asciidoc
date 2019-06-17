@@ -629,7 +629,7 @@ The support server image is created by calling a special test, based on the auto
     PUBLISH_HDD_1=supportserver.qcow2
 --------------------------------------------------------------------------------
 
-This produces qemu image 'supportserver.qcow2' that contains the supportserver. The 'autoyast_supportserver.xml'
+This produces QEMU image 'supportserver.qcow2' that contains the supportserver. The 'autoyast_supportserver.xml'
 should define correct user and password, as well as packages and the common configuration.
 
 More specific role the supportserver should take is then selected when the server is run in the actual test scenario.
@@ -649,7 +649,7 @@ WORKER_CLASS=server,qemu_autoyast_tap_64
 
 where the +SUPPORT_SERVER_ROLES+ defines the specific role (see code in 'tests/support_server/setup.pm' for available roles and their definition), and
  +HDD_1+ variable must be the name of the supportserver image as defined via +PUBLISH_HDD_1+ variable during supportserver generation. If the support
-server is based on older SUSE versions (opensuse 11.x, SLE11SP4..) it may also be needed to add +HDDMODEL=virtio-blk+. In case of qemu backend, one can
+server is based on older SUSE versions (opensuse 11.x, SLE11SP4..) it may also be needed to add +HDDMODEL=virtio-blk+. In case of QEMU backend, one can
 also use +BOOTFROM=c+, for faster boot directly from the +HDD_1+ image.
 
 Then for the 'child' test using this supportserver, the following additional variable must be set:
@@ -713,7 +713,7 @@ assuming of course, that the tested machine was already set up with necessary in
 .autoyast based tftp test
 ====
 
-Here we will use autoyast to setup the system of the test job and the os-autoinst autoyast testing infrastructure. For supportserver, this means using proxy to access qemu provided data, for dowloading autoyast profile and tftp verify script:
+Here we will use autoyast to setup the system of the test job and the os-autoinst autoyast testing infrastructure. For supportserver, this means using proxy to access QEMU provided data, for dowloading autoyast profile and tftp verify script:
 
 [source,ini]
 --------------------------------------------------------------------------------

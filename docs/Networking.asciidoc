@@ -5,53 +5,54 @@
 :toclevels: 6
 :author: openQA Team
 
-IMPORTANT: This overview is valid only when using QEMU backend!
+IMPORTANT: This overview is valid only when using the QEMU backend!
 
-Which networking type to use is controlled by the `NICTYPE`
-variable. If unset or empty `NICTYPE` defaults to +user+, ie qemu
-user networking which requires no further configuration.
+The networking type used is controlled by the `NICTYPE` variable. If unset or
+empty `NICTYPE` defaults to +user+, i.e. QEMU user networking which requires
+no further configuration.
 
-For more advanced setups or tests that require multiple jobs to be
-in the same networking the <<TAP based network,TAP>> or <<VDE Based Network,VDE>> based modes can be used.
+For more advanced setups or tests that require multiple jobs to be in the same
+networking the <<TAP based network,TAP>> or <<VDE Based Network,VDE>> based
+modes can be used.
 
-== Qemu User Networking
+== QEMU User Networking
 :qemu-user-networking: http://wiki.qemu.org/Documentation/Networking#User_Networking_.28SLIRP.29[user networking]
 
-With Qemu {qemu-user-networking} each jobs gets it's own isolated network with
-TCP and UDP routed to the outside. DHCP is provided by qemu. The MAC address of
-the machine can be controlled with the +NICMAC+ variable. If not set, it's
+With QEMU {qemu-user-networking} each jobs gets its own isolated network with
+TCP and UDP routed to the outside. DHCP is provided by QEMU. The MAC address of
+the machine can be controlled with the +NICMAC+ variable. If not set, it is
 +52:54:00:12:34:56+.
 
 === TAP Based Network
 
-os-autoinst can connect qemu to TAP devices of the host system to
+os-autoinst can connect QEMU to TAP devices of the host system to
 leverage advanced network setups provided by the host by setting +NICTYPE=tap+.
 
-The TAP device to use can be configured with the +TAPDEV+ variable. If not set
-defined, ist's automatically set to "tap" + ($worker_instance - 1), i.e.
+The TAP device to use can be configured with the +TAPDEV+ variable. If not
+defined, it is automatically set to "tap" + ($worker_instance - 1), i.e.
 worker1 uses tap0, worker 2 uses tap1 and so on.
 
 For multiple networks per job (see +NETWORKS+ variable), the following numbering
 scheme is used:
 
 [source,sh]
----------------
+----
 worker1: tap0 tap64 tap128 ...
 worker2: tap1 tap65 tap129 ...
 worker3: tap2 tap66 tap130 ...
 ...
----------------
+----
 
-MAC address of virtual NIC is controlled by +NICMAC+ variable or
-automatically computed from $worker_id if not set.
+The MAC address of each virtual NIC is controlled by the +NICMAC+ variable or
+automatically computed from +$worker_id+ if not set.
 
-In TAP mode the system administrator is expected to configure the
-network, required internet access etc on the host manually.
+In TAP mode the system administrator is expected to configure the network,
+required internet access, etc. on the host manually.
 
 === VDE Based Network
 
 Virtual Distributed Ethernet provides a software switch that runs in
-user space. It allows to connect several qemu instances without
+user space. It allows to connect several QEMU instances without
 affecting the system's network configuration.
 
 The openQA workers need a vde_switch instance running. The workers
@@ -59,90 +60,95 @@ reconfigure the switch as needed by the job.
 
 ==== Basic, Single Machine Tests
 
-To start with a basic configuration like qemu user mode networking,
+To start with a basic configuration like QEMU user mode networking,
 create a machine with the following settings:
 
 - +VDE_SOCKETDIR=/run/openqa+
 - +NICTYPE=vde+
 - +NICVLAN=0+
 
-Start switch and user mode networking:
+Start the switch and user mode networking:
 
 [source,sh]
----------------
-systemctl start openqa-vde_switch
-systemctl start openqa-slirpvde
----------------
+----
+systemctl enable --now openqa-vde_switch
+systemctl enable --now openqa-slirpvde
+----
 
-With this setting all jobs on the same host would be in the same
-network share the same SLIRP instance though.
+With this setting all jobs on the same host would be in the same network and
+share the same SLIRP instance.
 
 == Multi Machine Tests Setup
 
-The section provides one of the ways for setting up openQA environment to run tests that
-require network connection between several machines (e.g. client -- server tests).
+The section provides one of the ways for setting up the openQA environment to
+run tests that require network connection between several machines (e.g.
+client -- server tests).
 
-The example of the configuration is applicable for openSUSE and will
-use _Open vSwitch_ for virtual switch, _SuSEfirewall2_ or _firewalld_ for NAT and _wicked_ as network manager.
+The example of the configuration is applicable for openSUSE and will use _Open
+vSwitch_ for virtual switch, _SuSEfirewall2_ or _firewalld_ for NAT and
+_wicked_ as network manager. Keep in mind that a firewall is not strictly
+necessary for operation.
 
-NOTE: Other way to setup the environment with _iptables_ and _firewalld_ is described
-on link:https://fedoraproject.org/wiki/OpenQA_advanced_network_guide[Fedora wiki].
+NOTE: Another way to setup the environment with _iptables_ and _firewalld_ is described
+on the link:https://fedoraproject.org/wiki/OpenQA_advanced_network_guide[Fedora wiki].
 
 *Set Up Open vSwitch*
 
-Compared to VDE setup, Open vSwitch is a little bit more complicated to configure, but provides more
-robust and scalable network.
+Compared to VDE setup, Open vSwitch is slightly more complicated to configure,
+but provides a more robust and scalable network.
 
 * Install and Run Open vSwitch:
 [source,sh]
----------------
+----
 zypper in openvswitch
-systemctl start openvswitch.service
-systemctl enable openvswitch.service
----------------
+systemctl enable --now openvswitch
+----
 
 *  Install and configure _os-autoinst-openvswitch.service_:
 
-NOTE: _os-autoinst-openvswitch.service_ is a support service that sets vlan number
-of Open vSwitch ports based on +NICVLAN+ variable - this separates the groups of
-tests from each other. +NICVLAN+ variable is dynamically assigned by OpenQA scheduler.
+NOTE: _os-autoinst-openvswitch.service_ is a support service that sets the
+vlan number of Open vSwitch ports based on +NICVLAN+ variable - this separates
+the groups of tests from each other. The +NICVLAN+ variable is dynamically
+assigned by the OpenQA scheduler. Install, start and enable the service:
 
 [source,sh]
----------------
+----
 zypper in os-autoinst-openvswitch
-systemctl start os-autoinst-openvswitch
-systemctl enable os-autoinst-openvswitch
----------------
+systemctl enable --now os-autoinst-openvswitch
+----
 
-_os-autoinst-openvswitch.service_ uses _br0_ bridge by default.
-As it might be used by KVM, configure _br1_ instead.
+The service _os-autoinst-openvswitch.service_ uses _br0_ bridge by default.
+As it might be used by KVM already it is suggested to configure _br1_ instead:
 
 [source,sh]
----------------
+----
 # /etc/sysconfig/os-autoinst-openvswitch
 OS_AUTOINST_USE_BRIDGE=br1
----------------
+----
 
-* Create virtual bridge _br1_:
+* Create the virtual bridge _br1_:
 [source,sh]
----------------
+----
 ovs-vsctl add-br br1
----------------
+----
 
 *Configure Virtual Interfaces*
 
-* Add tap interface for every multi-machine worker:
+* Add a tap interface for every multi-machine worker instance:
 
-NOTE: Create as many interfaces as needed for a test. The instructions are provided for three interfaces
-_tap0_, _tap1_, _tap2_ to be used by _worker@1_, _worker@2_, _worker@3_ workers. TAP interfaces have to be owned by the __openqa-worker_ user for openQA to
-be able to access them.
+NOTE: Create as many interfaces as needed for a test. The instructions are
+provided for three interfaces _tap0_, _tap1_, _tap2_ to be used by _worker@1_,
+_worker@2_, _worker@3_ worker instances. The TAP interfaces have to be owned
+by the __openqa-worker_ user for the openQA worker instances to be able to
+access them.
 
 To create tap interfaces automatically on startup, add appropriate configuration files to the
 `/etc/sysconfig/network/` directory. Files have to be named as `ifcfg-tap<N>`, replacing `<N>`
-with the number for the interface, such as `0`, `1`, `2` (e.g. `ifcfg-tap0`, `ifcfg-tap1`).
+with the number for the interface, such as `0`, `1`, `2` (e.g. `ifcfg-tap0`,
+`ifcfg-tap1`):
 
 [source,sh]
----------------
+----
 # /etc/sysconfig/network/ifcfg-tap0
 BOOTPROTO='none'
 IPADDR=''
@@ -152,15 +158,17 @@ STARTMODE='auto'
 TUNNEL='tap'
 TUNNEL_SET_GROUP='nogroup'
 TUNNEL_SET_OWNER='_openqa-worker'
----------------
+----
 
-* Add bridge config with all tap devices that should be connected to it:
+Symlinks can be used to reference the same configuration file for each tap
+interface.
 
-The file have to be located in `/etc/sysconfig/network/` directory. File name is
-`ifcfg-br<N>`, where `<N>` is the id of the bridge (e.g. `1`).
+* Add the bridge config with all tap devices that should be connected to it.
+  The file has to be located in the `/etc/sysconfig/network/` directory. File
+  name is `ifcfg-br<N>`, where `<N>` is the id of the bridge (e.g. `1`):
 
 [source,sh]
----------------
+----
 # /etc/sysconfig/network/ifcfg-br1
 BOOTPROTO='static'
 IPADDR='10.0.2.2/15'
@@ -169,109 +177,123 @@ OVS_BRIDGE='yes'
 OVS_BRIDGE_PORT_DEVICE_1='tap0'
 OVS_BRIDGE_PORT_DEVICE_2='tap1'
 OVS_BRIDGE_PORT_DEVICE_3='tap2'
----------------
+----
 
-*Configure NAT with SuSEfirewall*
+*Configure NAT with SuSEfirewall2*
 
-The IP 10.0.2.2 can be also served as a gateway to access outside
-network. For this, a NAT between _br1_ and _eth0_ must be configured
-with SuSEfirewall or iptables.
+The IP 10.0.2.2 can be also served as a gateway to access the outside network.
+For this, NAT between _br1_ and _eth0_ must be configured with SuSEfirewall2
+or iptables:
 
 [source,sh]
----------------
+----
 # /etc/sysconfig/SuSEfirewall2
 FW_DEV_INT="br1"
 FW_ROUTE="yes"
 FW_MASQUERADE="yes"
----------------
+----
 
-Start SuSEfirewall2 and allow to run on startup:
+Start SuSEfirewall2 and enable the service to start on system startup:
 
 [source,sh]
----------------
-systemctl start SuSEfirewall2
-systemctl enable SuSEfirewall2
----------------
+----
+systemctl enable --now SuSEfirewall2
+----
 
 *Configure NAT with firewalld*
 
 To configure NAT with firewalld assign the bridge interface to the internal zone
 and the interface with access to the network to the external zone:
-```bash
+
+[source,sh]
+----
 firewall-cmd --permanent --zone=external --add-interface=eth0
 firewall-cmd --permanent --zone=internal --add-interface=br1
-```
+----
+
 Reload firewall configuration using `firewall-cmd --reload` command.
-To enable masquerade one can use the following command:
-```bash
+To enable masquerading one can use the following command:
+
+[source,sh]
+----
 firewall-cmd --permanent --zone=external --add-masquerade
-```
-ip_forward is enabled automatically if masquerading is enabled:
-```bash
+----
+
+IP forwarding is enabled automatically if masquerading is enabled:
+
+[source,sh]
+----
 cat /proc/sys/net/ipv4/ip_forward
 1
-```
-In case interface is in trusted network it is possible to accept connections by
-default by changing zone target:
-```bash
-firewall-cmd --permanent --zone=external --set-target=ACCEPT
-```
-Alternatively, you can assign interface to the `trusted` zone.
+----
 
-If you do not have firewalld service running, you can use `firewall-cmd-offline`
-command for the configuration. Enable service to run on startup:
-```
-systemctl start firewalld
-systemctl enable firewalld
-```
+In case the interface is in a trusted network it is possible to accept
+connections by default by changing the zone target:
+
+[source,sh]
+----
+firewall-cmd --permanent --zone=external --set-target=ACCEPT
+----
+
+Alternatively, you can assign the interface to the `trusted` zone. Make sure
+to enable masquerading for the `trusted` zone as well in this case.
+
+If you do not currently have the firewalld service running, you can use the
+`firewall-cmd-offline` command for the configuration. Enable service to run on
+startup:
+
+[source,sh]
+----
+systemctl enable --now firewalld
+----
 
 Also, the `firewall-config` GUI tool for firewalld can be used for configuration.
 
-*Configure OpenQA Workers*
+*Configure OpenQA Worker Instances*
 
-* Allow workers to run multi-machine jobs:
+* Allow worker intstances to run multi-machine jobs:
 
 [source,sh]
----------------
+----
 # /etc/openqa/workers.ini
 [global]
 WORKER_CLASS = qemu_x86_64,tap
----------------
+----
 
-NOTE: The number of tap devices should correspond to the number of the
-running workers. For example, if you have set up 3 tap devices, the same number of
-workers should be configured. 
+NOTE: The number of tap devices should correspond to the number of the running
+worker instances. For example, if you have set up 3 tap devices, the same
+number of worker instances should be configured.
 
-* Enable workers to be started on system boot:
+* Enable worker instances to be started on system boot:
 
 [source,sh]
----------------
+----
 systemctl enable openqa-worker@1
 systemctl enable openqa-worker@2
 systemctl enable openqa-worker@3
----------------
+----
 
 *Grant CAP_NET_ADMIN Capabilities to QEMU*
 
-In order to use TAP device which doesn’t exist on the system, it is required to set
-CAP_NET_ADMIN capability on qemu binary file:
+In order to let QEMU create TAP devices on demand it is required to set
+CAP_NET_ADMIN capability on QEMU binary file:
 
 [source,sh]
----------------
+----
 zypper in libcap-progs
 setcap CAP_NET_ADMIN=ep /usr/bin/qemu-system-x86_64
----------------
+----
 
 *Configure network interfaces*
 
 * Check the configuration for the _eth0_ interface:
 
-IMPORTANT: Ensure, that _eth0_ interface is configured in `/etc/sysconfig/network/ifcfg-eth0`.
-Otherwise, wicked will not be able to bring up the interface on start and host will loose network
-connection.
+IMPORTANT: Ensure, that _eth0_ interface is configured in
+`/etc/sysconfig/network/ifcfg-eth0`. Otherwise, wicked will not be able to
+bring up the interface on start and the host will loose network connection:
 
 [source,sh]
----------------
+----
 # /etc/sysconfig/network/ifcfg-eth0
 BOOTPROTO='dhcp'
 BROADCAST=''
@@ -283,9 +305,7 @@ NETMASK=''
 REMOTE_IPADDR=''
 STARTMODE='auto'
 DHCLIENT_SET_DEFAULT_ROUTE='yes'
----------------
-
-* Start _wicked_ as network service:
+----
 
 Pros of wicked over NetworkManager:
 ** Proper IPv6 support
@@ -295,37 +315,36 @@ Pros of wicked over NetworkManager:
 Check the network service currently being used:
 
 [source,sh]
----------------
+----
 systemctl show -p Id network.service
----------------
+----
 
-If the result is different from `Id=wicked.service` (e.g. `NetworkManager.service`),
-stop the network service:
-
-[source,sh]
----------------
-systemctl stop network.service
-systemctl disable network.service
----------------
-
-Then switch to wicked:
+If the result is different from `Id=wicked.service` (e.g.
+`NetworkManager.service`), stop the network service:
 
 [source,sh]
----------------
+----
+systemctl disable --now network.service
+----
+
+Then switch to wicked and start the service:
+
+[source,sh]
+----
 systemctl enable --force wicked
 systemctl start wicked
----------------
+----
 
-* Bring up _br1_ interface:
+* Bring up the _br1_ interface:
 
 [source,sh]
----------------
+----
 wicked ifup br1
----------------
+----
 
-* REBOOT
+* Reboot
 
-NOTE: It is also possible to switch using YaST.
+NOTE: It is also possible to switch the network configuration using YaST.
 
 === Debugging Open vSwitch Configuration
 
@@ -338,13 +357,13 @@ Boot sequence with wicked < 0.6.23:
 
 Boot sequence with wicked 0.6.23 and newer:
 
-1. openvswitch
-2. wicked - creates the bridge +br1+ and tap devices, add tap devices to the bridge,
+1. openvswitch (as above)
+2. wicked - creates the bridge +br1+ and tap devices, adds tap devices to the bridge,
 3. SuSEfirewall
 4. os-autoinst-openvswitch - installs openflow rules, handles vlan assignment
 
 
-The configuration and operation can be checked by the following commands:
+The configuration and operation can be checked with the following commands:
 
 [source,sh]
 ----
@@ -352,8 +371,8 @@ ovs-vsctl show # shows the bridge br1, the tap devices are assigned to it
 ovs-ofctl dump-flows br1 # shows the rules installed by os-autoinst-openvswitch in table=0
 ----
 
-When everything is ok and the machines are able to communicate, the
-ovs-vsctl should show something like the following
+When everything is ok and the machines are able to communicate, the ovs-vsctl
+should show something like the following:
 
 [source,sh]
 ----
@@ -372,9 +391,13 @@ Bridge "br0"
   ovs_version: "2.11.1"
 ----
 
-NOTE: Notice the tag numbers are assigned to tap1 and tap2. They should have the same number.
+NOTE: Notice the tag numbers are assigned to tap1 and tap2. They should have
+the same number.
 
-NOTE: If the balance of the tap devices is wrong in the workers.ini the tag cannot be assigned and the communication will be broken.
+NOTE: If the balance of the tap devices is wrong in the workers.ini the tag
+cannot be assigned and the communication will be broken.
+
+Check the flow of packets over the network:
 
 * packets from tapX to br1 create additional rules in table=1
 * packets from br1 to tapX increase packet counts in table=1
@@ -386,40 +409,53 @@ NOTE: If the balance of the tap devices is wrong in the workers.ini the tag cann
 iptables -L -v
 ----
 
-As long as the SUT has access to external network, there should be
-nonzero packet count in the forward chain between br1 and external
-interface.
+As long as the SUT has access to external network, there should be a non-zero
+packet count in the forward chain between the br1 and external interface.
 
 == GRE Tunnels
 
 By default all multi-machine workers have to be on single physical machine.
-You can join multiple physical machines and its ovs bridges together by GRE tunnel.
+You can join multiple physical machines and its ovs bridges together by a GRE
+tunnel.
 
-If the workers with TAP capability are spread across multiple hosts, the network must be connected.
-See Open vSwitch http://openvswitch.org/support/config-cookbooks/port-tunneling/[documentation] for details.
+If the workers with TAP capability are spread across multiple hosts, the
+network must be connected. See Open vSwitch
+http://openvswitch.org/support/config-cookbooks/port-tunneling/[documentation]
+for details.
 
 
-Create gre_tunnel_preup script (change remote_ip value correspondingly on both hosts)
-```bash
+Create a gre_tunnel_preup script (change the +remote_ip+ value correspondingly
+on both hosts):
+
+[source,sh]
+----
 # /etc/wicked/scripts/gre_tunnel_preup.sh
 #!/bin/sh
 action="$1"
 bridge="$2"
 ovs-vsctl --may-exist add-port $bridge gre1 -- set interface gre1 type=gre options:remote_ip=<IP address of other host>
-```
+----
 
-And call it by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry
-```bash
+And call it by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry:
+
+[source,sh]
+----
 # /etc/sysconfig/network/ifcfg-br1
 <..>
 PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh"
-```
+----
 
-Allow GRE in firewall
-```bash
+Allow GRE in firewall:
+
+[source,sh]
+----
 # /etc/sysconfig/SuSEfirewall2
 FW_SERVICES_EXT_IP="GRE"
 FW_SERVICES_EXT_TCP="1723"
-```
+----
 
-NOTE: When using GRE tunnels keep in mind that VMs inside the ovs bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If you are using support_server/setup.pm the MTU will be set automatically to that value on support_server itself and it does MTU advertisement for DHCP clients as well.
+NOTE: When using GRE tunnels keep in mind that virtual machines inside the ovs
+bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If
+you are using support_server/setup.pm the MTU will be set automatically to
+that value on support_server itself and it does MTU advertisement for DHCP
+clients as well.
