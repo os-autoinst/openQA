@@ -98,6 +98,7 @@ Compared to VDE setup, Open vSwitch is slightly more complicated to configure,
 but provides a more robust and scalable network.
 
 * Install and Run Open vSwitch:
+
 [source,sh]
 ----
 zypper in openvswitch
