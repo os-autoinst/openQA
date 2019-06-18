@@ -137,8 +137,9 @@ sub cache_assets {
         if ($asset_request->enqueue) {
             log_debug("Downloading " . $asset_uri . " - request sent to Cache Service.", channels => 'autoinst');
             update_setup_status and sleep 5 until $asset_request->processed;
-            log_debug("Download of " . $asset_uri . " processed", channels => 'autoinst');
-            log_debug($asset_request->output,                     channels => 'autoinst');
+            my $msg = "Download of $asset_uri processed";
+            if (my $output = $asset_request->output) { $msg .= ": $output" }
+            log_debug($msg, channels => 'autoinst');
         }
 
         $asset = $cache_client->asset_path($current_host, $asset_uri)
