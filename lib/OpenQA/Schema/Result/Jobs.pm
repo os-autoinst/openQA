@@ -25,11 +25,10 @@ use Try::Tiny;
 use Mojo::JSON 'encode_json';
 use Fcntl;
 use DateTime;
-use db_helpers;
 use OpenQA::Utils (
     qw(log_debug log_info log_warning log_error),
     qw(parse_assets_from_settings locate_asset),
-    qw(read_test_modules find_bugref)
+    qw(read_test_modules find_bugref random_string)
 );
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
@@ -433,7 +432,7 @@ sub prepare_for_work {
     $job_hashref = $self->to_hash(assets => 1);
 
     # JOBTOKEN for test access to API
-    my $token = db_helpers::rndstr;
+    my $token = random_string();
     $worker->set_property('JOBTOKEN', $token);
     #$self->set_property('JOBTOKEN', $token);
 

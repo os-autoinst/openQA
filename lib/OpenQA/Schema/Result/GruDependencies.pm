@@ -26,8 +26,6 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-use db_helpers;
-
 __PACKAGE__->table('gru_dependencies');
 __PACKAGE__->add_columns(
     job_id => {

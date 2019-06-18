@@ -26,6 +26,7 @@ BEGIN {
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
+use OpenQA::Utils qw(random_string random_hex);
 use OpenQA::Test::Utils 'redirect_output';
 use Test::More;
 use Scalar::Util 'reftype';
@@ -52,6 +53,30 @@ subtest 'set listen address' => sub {
     like $ENV{MOJO_LISTEN}, qr/127\.0\.0\.1:9526/, 'address set';
     set_listen_address(9527);
     unlike $ENV{MOJO_LISTEN}, qr/127\.0\.0\.1:9527/, 'not changed';
+};
+
+subtest 'random number generator' => sub {
+    my $r  = random_string;
+    my $r2 = random_string;
+    is(length($r), 16, "length 16");
+    like($r, qr/^\w+$/a, "random_string only consists of word characters");
+    is(length($r), length($r2), "same length");
+    isnt($r, $r2, "random_string produces different results");
+
+    $r  = random_string 32;
+    $r2 = random_string 32;
+    is(length($r), 32, "length 32");
+    like($r, qr/^\w+$/a, "random_string only consists of word characters");
+    is(length($r), length($r2), "same length");
+    isnt($r, $r2, "random_string produces different results");
+
+    is(length(random_hex), 16, 'default length 16');
+    $r  = random_hex 97;
+    $r2 = random_hex 97;
+    is(length($r), 97, "length 97");
+    like($r, qr/^[0-9A-F]+$/a, "random_hex only consists of hex characters");
+    is(length($r), length($r2), "same length");
+    isnt($r, $r2, "random_hex produces different results");
 };
 
 is bugurl('bsc#1234'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bug url is properly expanded';

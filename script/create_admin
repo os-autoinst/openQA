@@ -24,6 +24,7 @@ use strict;
 use warnings;
 use OpenQA::Schema::Result::ApiKeys;
 use OpenQA::Schema;
+use OpenQA::Utils 'random_hex';
 use Getopt::Long;
 
 my $email    = 'admin@example.com';
@@ -67,8 +68,8 @@ if (($key || $secret)
 }
 
 unless ($key) {
-    $key    = db_helpers::rndhexU;
-    $secret = db_helpers::rndhexU;
+    $key    = random_hex();
+    $secret = random_hex();
     print "Key: $key\n";
     print "Secret: $secret\n";
 }

@@ -35,4 +35,3 @@ seq:
      - ./t/basic.t
      - ./t/deploy.t
      - ./t/full-stack.t
-     - ./t/rand.t

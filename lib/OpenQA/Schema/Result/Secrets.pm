@@ -21,7 +21,7 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-use db_helpers;
+use OpenQA::Utils 'random_hex';
 
 __PACKAGE__->table('secrets');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
@@ -41,7 +41,7 @@ __PACKAGE__->add_unique_constraint([qw(secret)]);
 sub new {
     my ($class, $attrs) = @_;
 
-    $attrs->{secret} = db_helpers::rndhexU(32) unless $attrs->{secret};
+    $attrs->{secret} = random_hex(32) unless $attrs->{secret};
 
     my $new = $class->next::method($attrs);
     return $new;

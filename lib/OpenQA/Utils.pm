@@ -97,7 +97,7 @@ our @EXPORT  = qw(
   service_port
 );
 
-our @EXPORT_OK = qw(determine_web_ui_web_socket_url get_ws_status_only_url);
+our @EXPORT_OK = qw(determine_web_ui_web_socket_url get_ws_status_only_url random_string random_hex);
 
 if ($0 =~ /\.t$/) {
     # This should result in the 't' directory, even if $0 is in a subdirectory
@@ -1209,6 +1209,25 @@ sub service_port {
     };
     croak "Unknown service: $service" unless exists $offsets->{$service};
     return $base + $offsets->{$service};
+}
+
+sub random_string {
+    my ($length, $chars) = @_;
+    $length //= 16;
+    $chars  //= ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
+    return join('', map { $chars->[rand @$chars] } 1 .. $length);
+}
+
+sub random_hex {
+    my ($length) = @_;
+    $length //= 16;
+    my $toread = $length / 2 + $length % 2;
+    # uncoverable branch true
+    open(my $fd, '<:raw:bytes', '/dev/urandom') || croak "can't open /dev/urandom: $!";
+    # uncoverable branch true
+    read($fd, my $bytes, $toread) || croak "can't read random byte: $!";
+    close $fd;
+    return uc substr(unpack('H*', $bytes), 0, $length);
 }
 
 sub param_hash {

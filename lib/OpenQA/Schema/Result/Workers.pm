@@ -26,7 +26,6 @@ use DBIx::Class::Timestamps 'now';
 use Try::Tiny;
 use OpenQA::Utils 'log_error';
 use OpenQA::WebSockets::Client;
-use db_helpers;
 use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
 use Mojo::JSON qw(encode_json decode_json);
 
