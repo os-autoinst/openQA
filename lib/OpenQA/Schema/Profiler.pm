@@ -33,7 +33,6 @@ sub query_end {
     log_debug(sprintf("[DBIC] Took %.8f seconds: %s", $elapsed, $sql));
 }
 
-
 sub enable_sql_debugging {
     my $class   = shift;
     my $storage = OpenQA::Schema->singleton->storage;
@@ -42,3 +41,24 @@ sub enable_sql_debugging {
 }
 
 1;
+
+=encoding utf8
+
+=head1 NAME
+
+OpenQA::Schema::Profiler - Logs timing information for OpenQA::Schema SQL queries
+
+=head1 SYNOPSIS
+
+  use OpenQA::Schema::Profiler;
+
+  OpenQA::Schema::Profiler->enable_sql_debugging;
+
+=head1 DESCRIPTION
+
+L<OpenQA::Schema::Profiler> collects statistics from L<OpenQA::Schema> about SQL
+queries that have been executed. It is usually activated with the
+C<OPENQA_SQL_DEBUG> environment variable. This is quite expensive and should
+therefore only be used during development.
+
+=cut
