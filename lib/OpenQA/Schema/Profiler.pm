@@ -22,14 +22,14 @@ use base 'DBIx::Class::Storage::Statistics';
 
 use OpenQA::Schema;
 use OpenQA::Utils 'log_debug';
-use Time::HiRes 'time';
+use Time::HiRes qw(gettimeofday tv_interval);
 
-sub query_start { shift->{start} = time() }
+sub query_start { shift->{start} = [gettimeofday()] }
 
 sub query_end {
     my ($self, $sql, @params) = @_;
     $sql = "$sql: " . join(', ', @params) if @params;
-    my $elapsed = time() - $self->{start};
+    my $elapsed = tv_interval($self->{start}, [gettimeofday()]);
     log_debug(sprintf("[DBIC] Took %.8f seconds: %s", $elapsed, $sql));
 }
 
