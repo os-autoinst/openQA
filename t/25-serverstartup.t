@@ -190,9 +190,3 @@ sub configuration_fields {
             realfoo => 1
         }};
 }
-
-package db_profiler;
-no warnings 'redefine';
-sub enable_sql_debugging {
-    1;
-}
