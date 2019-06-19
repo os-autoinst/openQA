@@ -333,9 +333,6 @@ sub load_ui_plugins {
 
     return if (!defined $server->config->{ini_config} || !defined $server->config->{ini_config}->{v});
 
-    for my $section (@{$server->config->{ini_config}->{sects}}) {
-        $server->log->info("$section");
-    }
     push @{$server->plugins->namespaces}, 'WebAPIPlugin';
     for my $section (@{$server->config->{ini_config}->{sects}}) {
         my $plugin;
@@ -360,7 +357,7 @@ sub load_ui_plugins {
                         url   => $jsonfile
                     });
                 push @{$server->renderer->paths}, $path . '/WebAPIPlugin';
-                $server->log->info("Loaded $jsonfile...");
+                $server->log->info("Loaded $jsonfile");
             }
             my $res = eval "use lib '$path';\nuse WebAPIPlugin::$plugin;\n1;";
             if (!defined $res) {
@@ -374,6 +371,7 @@ sub load_ui_plugins {
         my $err = $@;
         if (!defined $res || $res != 1) {
             my $msg = "Failed to load $section (enabled=" . $plugin_settings->{enabled} . "): {$err}";
+            $server->log->error($msg);
             if ($plugin_settings->{enabled} eq "required") {
                 die $msg;
             }

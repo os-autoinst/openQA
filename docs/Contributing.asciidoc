@@ -333,6 +333,41 @@ Authentication module is expected to return HASH:
 Authentication module is expected to create or update user entry in OpenQA database
 after user validation. See included modules for inspiration.
 
+=== WebAPI Plugins (requires Mojolicious::Plugin::OpenAPI)
+
+At WebUI service startup during configration file processing all sections starting with 
+"WebAPIPlugin" are examined for parameters `enabled` and `path`. 
+(Tail of section name is considered as name of plugin.)
+Unless parameter `enabled` is missing or set to `0` - the process will attempt to load from 
+`WebAPIPlugin` folder within path configured:
+- json file with OpenAPI format describing routes udner 'plugin';
+- perl module.
+Parameters from the configration file secion will be passed to plugin init() method.
+
+E.g. with configration file section like below:
+[source]
+----
+[WebAPIPluginFoo]
+enabled=optional
+path=/etc/bar
+Msg=Test
+----
+The service will attempt to setup routes from json file with OpenAPI format 
+`/etc/bar/WebAPIPlugin/Foo.json` and load perl module: `/etc/bar/WebAPIPlugin/Foo.pm`.
+`Msg` parameter will be passed to plugin `register()` method.
+
+At the moment following restrictions apply:
+- package Mojolicious::Plugin::OpenAPI must be installed on the system;
+- no app data is shared between main app and plugin;
+- plugin routes require at least operator access level;
+- application will fail to start on plugin load error in case if `enabled` parameter is set 
+to `required`;
+- to be able being loaded into service, plugin's perl module must implement 'Mojolicious::Plugin';
+- to be able serve routes properly plugin's perl module must be within WebAPIPlugin namespace and
+implement interface 'Mojolicious::Controller'.
+
+See also example plugin within `t/data/WebAPIPlugin`.
+
 == Customize base directory
 
 It is possible to customize the openQA base directory by setting the environment

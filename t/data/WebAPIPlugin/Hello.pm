@@ -8,7 +8,7 @@ sub register {
 
 sub hello {
     my $self = shift;
-    $self->render(json => {"msg", "HELLO WORLD!!"});
+    $self->render(json => {"msg", "hello world"});
 }
 
 1;
