@@ -60,6 +60,7 @@ BuildRequires:  perl(Mojolicious) >= 7.92
 BuildRequires:  perl(Mojolicious::Plugin::AssetPack) >= 1.36
 BuildRequires:  perl(Mojo::RabbitMQ::Client) >= 0.2
 BuildRequires:  rubygem(sass)
+Requires:       perl(DBIx::Class::DeploymentHandler)
 Requires:       perl(Minion) >= 9.09
 Requires:       perl(Mojo::RabbitMQ::Client) >= 0.2
 Requires:       perl(YAML::XS) >= 0.67
@@ -77,7 +78,6 @@ Requires:       perl(URI)
 %requires_eq    perl-Mojolicious-Plugin-AssetPack
 Recommends:     %{name}-local-db
 Requires(post): coreutils
-Requires(post): perl(DBIx::Class::DeploymentHandler)
 Requires(post): perl(SQL::SplitStatement)
 Recommends:     apache2
 Recommends:     apparmor-profiles
