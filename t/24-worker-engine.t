@@ -22,6 +22,7 @@ use Test::Fatal;
 use Test::More;
 use Test::Warnings;
 use OpenQA::Worker;
+use Test::MockModule;
 use OpenQA::Worker::Engines::isotovideo;
 use Mojo::File 'path';
 
@@ -92,5 +93,13 @@ subtest 'asset settings' => sub {
     is_deeply($got, $expected, 'Asset settings are correct (no UEFI or NUMDISKS)') or diag explain $got;
 };
 
+
+subtest 'caching' => sub {
+    is(OpenQA::Worker::Engines::isotovideo::cache_assets, undef, 'cache_assets has nothing to do without assets');
+    my %assets = (
+        ISO => 'foo.iso',
+    );
+    my $cache_client = Test::MockModule->new('OpenQA::Worker::Cache::Client');
+};
 
 done_testing();
