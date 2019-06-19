@@ -328,6 +328,62 @@ sub load_plugins {
     OpenQA::Setup::update_config($server->config, @{$server->plugins->namespaces}, "OpenQA::WebAPI::Auth");
 }
 
+sub load_ui_plugins {
+    my ($server, $plugin_route) = @_;
+
+    return if (!defined $server->config->{ini_config} || !defined $server->config->{ini_config}->{v});
+
+    for my $section (@{$server->config->{ini_config}->{sects}}) {
+        $server->log->info("$section");
+    }
+    push @{$server->plugins->namespaces}, 'WebAPIPlugin';
+    for my $section (@{$server->config->{ini_config}->{sects}}) {
+        my $plugin;
+        if ($section =~ /WebAPIPlugin(.+)/) {
+            $plugin = $1;
+        }
+        else {
+            next;
+        }
+        my $plugin_settings = $server->config->{ini_config}->{v}->{$section};
+        next if (!$plugin_settings->{enabled});
+        $server->log->info("Loading plugin $section...");
+        my $res = eval {
+            my $path     = $plugin_settings->{path};
+            my $jsonfile = "$path/WebAPIPlugin/$plugin.json";
+            $server->log->info("Checking $jsonfile...");
+            if (-f $jsonfile) {
+                # load routes if defined
+                $server->plugin(
+                    OpenAPI => {
+                        route => $plugin_route,
+                        url   => $jsonfile
+                    });
+                push @{$server->renderer->paths}, $path . '/WebAPIPlugin';
+                $server->log->info("Loaded $jsonfile...");
+            }
+            my $res = eval "use lib '$path';\nuse WebAPIPlugin::$plugin;\n1;";
+            if (!defined $res) {
+                die $@;
+            }
+            # now load actual plugin - should work if command above succeeded
+            $server->plugin($plugin, $plugin_settings);
+            $server->log->info("Loaded plugin $section");
+            1;
+        };
+        my $err = $@;
+        if (!defined $res || $res != 1) {
+            my $msg = "Failed to load $section (enabled=" . $plugin_settings->{enabled} . "): {$err}";
+            if ($plugin_settings->{enabled} eq "required") {
+                die $msg;
+            }
+            else {
+                warn $msg;
+            }
+        }
+    }
+}
+
 sub set_secure_flag_on_cookies {
     my ($controller) = @_;
     if ($controller->req->is_secure) {
