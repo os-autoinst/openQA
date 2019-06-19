@@ -15,7 +15,8 @@
 
 use strict;
 use warnings;
-
+use warnings FATAL => 'all';
+use Carp::Always;
 use FindBin;
 use lib ("$FindBin::Bin/lib", "$FindBin::Bin/../lib");
 use Test::Fatal;
@@ -101,6 +102,16 @@ subtest 'caching' => sub {
         ISO => 'foo.iso',
     );
     my $cache_client = Test::MockModule->new('OpenQA::Worker::Cache::Client');
+    $cache_client->mock(availability_error => undef);
+    #$cache_client->mock(asset_path => undef);
+    $cache_client->mock(asset_exists => undef);
+    my $mojo_file = Test::MockModule->new('Mojo::File');
+    $mojo_file->mock(path => undef);
+    my $cache_request = Test::MockModule->new('OpenQA::Worker::Cache::Request');
+    $cache_request->mock(enqueue => undef);
+    $cache_request->mock(asset => sub { return OpenQA::Worker::Cache::Request->new });
+    $got = OpenQA::Worker::Engines::isotovideo::cache_assets(undef, $settings, \%assets);
+    like($got->{error}, qr/Failed to download/, 'cache_assets can not pick up supplied assets when not found') or diag explain $got;
 };
 
 $got = OpenQA::Worker::Engines::isotovideo::do_asset_caching($settings);
