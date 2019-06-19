@@ -34,7 +34,7 @@
 %bcond_with tests
 %endif
 # runtime requirements that also the testsuite needs
-%define t_requires perl(DBD::Pg) perl(DBIx::Class) perl(Config::IniFiles) perl(SQL::Translator) perl(Date::Format) perl(File::Copy::Recursive) perl(DateTime::Format::Pg) perl(Net::OpenID::Consumer) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) perl(aliased) perl(Config::Tiny) perl(DBIx::Class::DeploymentHandler) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(IO::Socket::SSL) perl(Data::Dump) perl(DBIx::Class::OptimisticLocking) perl(Text::Markdown) perl(JSON::Validator) perl(YAML::XS) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(Mojo::RabbitMQ::Client) perl(BSD::Resource) perl(Cpanel::JSON::XS) perl(Pod::POM) perl(Mojo::IOLoop::ReadWriteProcess) perl(Minion) perl(Mojo::Pg) perl(Mojo::SQLite) perl(Minion::Backend::SQLite)
+%define t_requires perl(DBD::Pg) perl(Config::IniFiles) perl(SQL::Translator) perl(Date::Format) perl(File::Copy::Recursive) perl(DateTime::Format::Pg) perl(Net::OpenID::Consumer) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) perl(aliased) perl(Config::Tiny) perl(IO::Socket::SSL) perl(Data::Dump) perl(Text::Markdown) perl(JSON::Validator) perl(YAML::XS) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(Mojo::RabbitMQ::Client) perl(BSD::Resource) perl(Cpanel::JSON::XS) perl(Pod::POM) perl(Mojo::IOLoop::ReadWriteProcess) perl(Minion) perl(Mojo::Pg) perl(Mojo::SQLite) perl(Minion::Backend::SQLite)
 Name:           openQA
 Version:        4.6
 Release:        0
@@ -60,6 +60,7 @@ BuildRequires:  perl(Mojolicious) >= 7.92
 BuildRequires:  perl(Mojolicious::Plugin::AssetPack) >= 1.36
 BuildRequires:  perl(Mojo::RabbitMQ::Client) >= 0.2
 BuildRequires:  rubygem(sass)
+BuildRequires:  perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::OptimisticLocking)
 Requires:       perl(Minion) >= 9.09
 Requires:       perl(Mojo::RabbitMQ::Client) >= 0.2
 Requires:       perl(YAML::XS) >= 0.67
@@ -70,6 +71,7 @@ Requires:       openQA-common = %{version}
 # needed for saving needles optimized
 Requires:       optipng
 Requires:       perl(DBIx::Class) >= 0.082801
+Requires:       perl(DBIx::Class::DeploymentHandler) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(DBIx::Class::OptimisticLocking)
 # needed for openid support
 Requires:       perl(LWP::Protocol::https)
 Requires:       perl(URI)
@@ -103,6 +105,7 @@ BuildRequires:  perl(Selenium::Remote::Driver) >= 1.20
 BuildRequires:  perl(Test::Compile)
 BuildRequires:  perl(Test::MockObject)
 BuildRequires:  perl(Test::Warnings)
+BuildRequires:  perl(DBIx::Class::DeploymentHandler)
 BuildRequires:  rsync
 %endif
 %if 0%{?suse_version} >= 1330
