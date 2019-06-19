@@ -20,7 +20,6 @@ use warnings;
 
 use base 'DBIx::Class::Storage::Statistics';
 
-use OpenQA::Schema;
 use OpenQA::Utils 'log_debug';
 use Time::HiRes qw(gettimeofday tv_interval);
 
@@ -34,7 +33,10 @@ sub query_end {
 }
 
 sub enable_sql_debugging {
-    my $class   = shift;
+    my $class = shift;
+
+    # Defer loading to prevent the worker from triggering a migration
+    require OpenQA::Schema;
     my $storage = OpenQA::Schema->singleton->storage;
     $storage->debugobj($class->new);
     $storage->debug(1);
