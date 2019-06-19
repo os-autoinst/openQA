@@ -34,7 +34,7 @@ use Test::Mojo;
 use Test::MockModule;
 use OpenQA::Test::Case;
 use OpenQA::Test::FakeWebSocketTransaction;
-use OpenQA::Worker::Client;
+use OpenQA::Worker::WebUIConnection;
 use OpenQA::Worker::CommandHandler;
 use OpenQA::Worker::Job;
 use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD MAX_TIMER MIN_TIMER);
@@ -42,13 +42,13 @@ use OpenQA::Utils qw(in_range rand_range);
 
 like(
     exception {
-        OpenQA::Worker::Client->new('http://test-host', {});
+        OpenQA::Worker::WebUIConnection->new('http://test-host', {});
     },
     qr{API key and secret are needed for the worker connecting http://test-host.*},
     'auth required',
 );
 
-my $client = OpenQA::Worker::Client->new(
+my $client = OpenQA::Worker::WebUIConnection->new(
     'http://test-host',
     {
         apikey    => 'foo',

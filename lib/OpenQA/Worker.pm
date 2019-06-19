@@ -27,7 +27,7 @@ use Scalar::Util 'looks_like_number';
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION MAX_TIMER MIN_TIMER);
 use OpenQA::Client;
 use OpenQA::Utils qw(log_error log_info log_debug add_log_channel remove_log_channel);
-use OpenQA::Worker::Client;
+use OpenQA::Worker::WebUIConnection;
 use OpenQA::Worker::Settings;
 use OpenQA::Worker::Job;
 use OpenQA::Setup;
@@ -226,7 +226,7 @@ sub init {
     }
     my %clients_by_webui_host;
     for my $host (@$webui_hosts) {
-        my $client = OpenQA::Worker::Client->new($host, $self->{_cli_options});
+        my $client = OpenQA::Worker::WebUIConnection->new($host, $self->{_cli_options});
         $clients_by_webui_host{$host} = $client;
     }
     $self->clients_by_webui_host(\%clients_by_webui_host);
