@@ -501,18 +501,25 @@ sub create {
             }
         }
         else {
-            eval {
-                $affected_rows = $schema->resultset("JobTemplates")->search(
-                    {
-                        group_id      => $self->param('group_id'),
-                        test_suite_id => $self->param('test_suite_id'),
-                    }
-                )->update(
-                    {
-                        prio => $prio,
-                    });
-            };
-            $error = $@;
+            my $group_id = $self->param('group_id');
+            my $group    = $schema->resultset('JobGroups')->find($group_id);
+            if ($group && $group->template) {
+                $error = 'Unable to set priority because specified group defines job templates via YAML.';
+            }
+            else {
+                eval {
+                    $affected_rows = $schema->resultset("JobTemplates")->search(
+                        {
+                            group_id      => $group_id,
+                            test_suite_id => $self->param('test_suite_id'),
+                        }
+                    )->update(
+                        {
+                            prio => $prio,
+                        });
+                };
+                $error = $@;
+            }
         }
     }
     else {
@@ -595,6 +602,12 @@ sub update_properties {
     my $job_templates = $self->schema->resultset('JobTemplates');
     my $job_template  = $job_templates->find($self->param('job_template_id'));
     return $self->render(json => {error => 'Not found'}, status => 404) unless $job_template;
+
+    my $group = $job_template->group;
+    return $self->render(
+        json   => {error => 'Job templates for this group are defined exclusively via YAML.'},
+        status => 400
+    ) if $group->template;
 
     # read prio
     my $has_prio = defined $self->param('prio');
