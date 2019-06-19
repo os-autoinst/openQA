@@ -110,6 +110,13 @@ sub _set_status {
     $self->emit(status_changed => $event_data);
 }
 
+sub is_stopped_or_stopping {
+    my ($self) = @_;
+
+    my $status = $self->status;
+    return $status eq 'stopped' || $status eq 'stopping';
+}
+
 sub is_uploading_results {
     my ($self) = @_;
 
@@ -206,6 +213,12 @@ sub start {
         $setup_error = 'isotovideo can not be started';
     }
     if ($self->{_setup_error} = $setup_error) {
+        # let the IO loop take over if the job has been stopped during setup
+        # note: This can happen if stop is called from an interrupt.
+        if ($self->is_stopped_or_stopping) {
+            return undef;
+        }
+
         log_error("Unable to setup job $id: $setup_error");
         return $self->stop('setup failure');
     }
@@ -255,11 +268,12 @@ sub stop {
     my ($self, $reason) = @_;
     $reason //= '';
 
+    # ignore calls to stop if already stopped or stopping
+    # note: This method might be called at any time (including when an interrupted happens).
+    return undef if $self->is_stopped_or_stopping;
+
     my $status = $self->status;
-    if ($status eq 'stopped' || $status eq 'stopping') {
-        return undef;
-    }
-    elsif ($status ne 'setup' && $status ne 'running') {
+    if ($status ne 'setup' && $status ne 'running') {
         $self->_set_status(stopped => {reason => $reason});
         return undef;
     }
@@ -577,6 +591,9 @@ sub stop_livelog {
 sub post_setup_status {
     my ($self) = @_;
 
+    # allow the worker to stop when interrupted during setup
+    return 0 if ($self->is_stopped_or_stopping);
+
     my $client    = $self->client;
     my $job_id    = $self->id;
     my $worker_id = $client->worker_id;
@@ -590,6 +607,7 @@ sub post_setup_status {
         json     => {status => {setup => 1, worker_id => $worker_id}},
         callback => 'no',
     );
+    return 1;
 }
 
 sub _calculate_upload_results_interval {
@@ -633,7 +651,7 @@ sub _upload_results {
     my $global_settings = $self->worker->settings->global_settings;
     my $job_url         = $self->url;
     if (!$job_url || !$worker_id) {
-        log_warning('Attempting to upload results of job with no URL or worker ID.');
+        log_warning('Unable to upload results of the job because no command server URL or worker ID have been set.');
         $self->emit(uploading_results_concluded => {});
         return $callback->() if $callback;
         return undef;
@@ -674,6 +692,7 @@ sub _upload_results {
         if (!$current_test_module) {    # first test
             my $test_order = $self->_read_json_file('test_order.json');
             if (!$test_order) {
+                # FIXME: It would still make sense to upload other files.
                 $self->stop('no tests scheduled');    # will be delayed until upload has been concluded
                 $self->emit(uploading_results_concluded => {});
                 return $callback->() if $callback;
@@ -1089,8 +1108,10 @@ sub _read_json_file {
     local $/;
     my $fh;
     if (!open($fh, '<', $fn)) {
-        log_warning("can't open $fn: $!");
-        return;
+        log_warning(
+"Can't open $fn for result upload - likely isotovideo could not be started or failed early. Error message: $!"
+        );
+        return undef;
     }
     my $json = {};
     eval { $json = decode_json(<$fh>); };

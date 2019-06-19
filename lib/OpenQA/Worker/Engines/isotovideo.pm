@@ -131,7 +131,10 @@ sub cache_assets {
 
         if ($asset_request->enqueue) {
             log_debug("Downloading $asset_uri - request sent to Cache Service.", channels => 'autoinst');
-            $job->post_setup_status and sleep 5 until $asset_request->processed;
+            until ($asset_request->processed) {
+                sleep 5;
+                return {error => 'Status updates interrupted'} unless $job->post_setup_status;
+            }
             my $msg = "Download of $asset_uri processed";
             if (my $output = $asset_request->output) { $msg .= ": $output" }
             log_debug($msg, channels => 'autoinst');
@@ -242,7 +245,10 @@ sub engine_workit {
                 return {error => "Failed to send $rsync_request_description"} unless $rsync_request->enqueue;
                 log_info("Enqueued $rsync_request_description");
 
-                sleep 5 and $job->post_setup_status until $rsync_request->processed;
+                until ($rsync_request->processed) {
+                    sleep 5;
+                    return {error => 'Status updates interrupted'} unless $job->post_setup_status;
+                }
 
                 if (my $output = $rsync_request->output) {
                     log_info('Output of rsync: ' . $output, channels => 'autoinst');

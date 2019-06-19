@@ -396,16 +396,22 @@ sub stop {
     my ($self, $reason) = @_;
 
     $self->{_shall_terminate} = 1;
-    if (my $current_job = $self->current_job) {
-        Mojo::IOLoop->next_tick(
-            sub {
-                $current_job->stop($reason);
-            });
-    }
-    else {
+
+    my $current_job = $self->current_job;
+    if (!$current_job) {
         # FIXME: better stop gracefully?
         Mojo::IOLoop->stop;
+        return undef;
     }
+
+    if ($current_job->status eq 'setup') {
+        # stop job directly during setup because the IO loop is blocked by isotovideo.pm during setup
+        $current_job->stop($reason);
+    }
+    Mojo::IOLoop->next_tick(
+        sub {
+            $current_job->stop($reason);
+        });
 }
 
 # stops the current job if there's one and it is running
@@ -469,9 +475,6 @@ sub check_availability {
             log_error('Worker cache not available: ' . $error);
             $self->current_error($error);
             return 0;
-        }
-        else {
-            log_debug('Worker cache seems to be available');
         }
     }
 
@@ -557,6 +560,9 @@ sub _handle_job_status_changed {
     }
     elsif ($status eq 'accepted') {
         $job->start();
+    }
+    elsif ($status eq 'setup') {
+        log_debug("Setting job $job_id from $webui_host up");
     }
     elsif ($status eq 'running') {
         log_debug("Running job $job_id from $webui_host: $job_name.");
