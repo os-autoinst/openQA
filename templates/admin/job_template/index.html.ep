@@ -99,11 +99,11 @@
                         <div>Define test suites per arch/medium:</div>
                         <code>
 <b>'My Group'</b>:
-  architectures:
+  scenarios:
     <b>ARCH</b>:
       <i>medium</i>-<b>ARCH</b>:
-      - test_suite
-      - test_suite:
+      - test-suite
+      - test-suite:
           machine: <b>MACHINE</b>
           priority: <b>PRIORITY</b>
           settings:
@@ -121,7 +121,7 @@
                         </code>
                         <div>Re-use test suites with YAML aliases:</div>
                         <code>
-architectures:
+scenarios:
   <b>i586</b>:
     <i>medium</i>-<b>i586</b>: <b>&amp;tests</b>
     - foo

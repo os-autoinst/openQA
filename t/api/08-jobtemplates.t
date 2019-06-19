@@ -530,7 +530,7 @@ is($job_templates->search({prio => -5})->count, 0, 'no rows affected');
 my $yaml = {};
 is_deeply(scalar @{$t->app->validate_yaml($yaml, 1)}, 2, 'Empty YAML is an error')
   or diag explain YAML::XS::Dump($yaml);
-$yaml->{architectures}{'x86_64'}{opensuse} = ['spam', 'eggs'];
+$yaml->{scenarios}{'x86_64'}{opensuse} = ['spam', 'eggs'];
 is_deeply($t->app->validate_yaml($yaml, 1), ["/products: Missing property."], 'No products defined')
   or diag explain YAML::XS::Dump($yaml);
 $yaml->{products}{'opensuse'} = {};
@@ -547,7 +547,7 @@ is_deeply($t->app->validate_yaml($yaml, 1), ['/products/opensuse/version: Missin
   or diag explain YAML::XS::Dump($yaml);
 $yaml->{products}{'opensuse'}{version} = '42.1';
 # Add non-trivial test suites to exercise the validation
-$yaml->{architectures}{'x86_64'}{opensuse} = [
+$yaml->{scenarios}{'x86_64'}{opensuse} = [
     'spam',
     "eg-G_S +133t*\t",
     {
@@ -566,7 +566,7 @@ $opensuse->update({default_priority => 40});
 $t->get_ok("/api/v1/experimental/job_templates_scheduling")->status_is(200);
 $yaml = YAML::XS::Load($t->tx->res->body);
 is_deeply($t->app->validate_yaml($yaml, 1), [], 'YAML of all groups is valid');
-# Get one group with defined architectures, products and defaults
+# Get one group with defined scenarios, products and defaults
 $t->get_ok('/api/v1/experimental/job_templates_scheduling/' . $opensuse->id)->status_is(200);
 # A document start marker "---" shouldn't be present by default
 $yaml = $t->tx->res->body =~ s/---\n//r;
@@ -576,7 +576,7 @@ is_deeply($t->app->validate_yaml($yaml, 1), [], 'YAML of single group is valid')
 is_deeply(
     $yaml,
     {
-        architectures => {
+        scenarios => {
             i586 => {
                 'opensuse-13.1-DVD-i586' => [
                     'textmode',
@@ -698,8 +698,8 @@ $t->post_ok(
     '' => {
         error_status => 400,
         error        => [
-            {path => '/architectures', message => 'Missing property.'},
-            {path => '/products',      message => 'Missing property.'},
+            {path => '/products',  message => 'Missing property.'},
+            {path => '/scenarios', message => 'Missing property.'},
         ],
     },
     'posting invalid YAML template results in error'
@@ -711,7 +711,7 @@ subtest 'Create and modify groups with YAML' => sub {
 
     # Create group and job templates based on YAML template
     $yaml = {
-        architectures => {
+        scenarios => {
             i586 => {
                 'opensuse-13.1-DVD-i586' => [
                     'foobar',    # Test names shouldn't conflict across groups
@@ -773,7 +773,7 @@ subtest 'Create and modify groups with YAML' => sub {
     $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
     is_deeply(
         YAML::XS::Load($t->tx->res->body),
-        {architectures => {}, products => {}},
+        {scenarios => {}, products => {}},
         'No job group and templates added to the database'
     ) || diag explain $t->tx->res->body;
     is($audit_events->count, $audit_event_count, 'no audit event emitted in preview mode');
@@ -797,7 +797,7 @@ subtest 'Create and modify groups with YAML' => sub {
                 NEW => 'new setting',
             },
         );
-        $yaml->{architectures}{i586}{'opensuse-13.1-DVD-i586'} = [{foobar => \%foobar_definition}, 'spam', 'eggs'];
+        $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = [{foobar => \%foobar_definition}, 'spam', 'eggs'];
         # Use per-arch default priority which deviates from the group default_priority
         $yaml->{defaults}{i586}{'priority'} = 70;
         $t->post_ok(
@@ -832,7 +832,7 @@ subtest 'Create and modify groups with YAML' => sub {
     };
 
     subtest 'Errors due to invalid properties' => sub {
-        $yaml->{architectures}{i586}{'opensuse-13.1-DVD-i586'}
+        $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'}
           = [{foobar => {priority => 11, machine => '31bit'}}];
         $t->post_ok(
             "/api/v1/experimental/job_templates_scheduling/$job_group_id3",
@@ -847,8 +847,8 @@ subtest 'Create and modify groups with YAML' => sub {
             'Invalid machine in test suite'
         );
 
-        $yaml->{architectures}{i586}{'opensuse-13.1-DVD-i586'} = ['foo'];
-        $yaml->{defaults}{i586}{'machine'}                     = '66bit';
+        $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = ['foo'];
+        $yaml->{defaults}{i586}{'machine'}                 = '66bit';
         $t->post_ok(
             "/api/v1/experimental/job_templates_scheduling/$job_group_id3",
             form => {
@@ -884,7 +884,7 @@ subtest 'References' => sub {
     ok($job_group_id4, "Created group test ($job_group_id4)");
     # Create group based on YAML with references
     $yaml = YAML::XS::Load('
-      architectures:
+      scenarios:
         i586:
           opensuse-13.1-DVD-i586: &tests
           - spam
@@ -927,7 +927,7 @@ subtest 'References' => sub {
 
     $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id4");
     # Prepare expected result
-    $yaml->{architectures}{ppc64}{'opensuse-13.1-DVD-ppc64'} = [qw(spam eggs)];
+    $yaml->{scenarios}{ppc64}{'opensuse-13.1-DVD-ppc64'} = [qw(spam eggs)];
     is_deeply(YAML::XS::Load($t->tx->res->body),
         $yaml, 'Added group with references should be reflected in the database')
       || diag explain $t->tx->res->body;

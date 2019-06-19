@@ -138,8 +138,8 @@ sub get_job_groups {
           ->search({group_id => $group->id}, {order_by => 'me.test_suite_id'});
 
         # Always set the hash of test suites to account for empty groups
-        $group{architectures} = {};
-        $group{products}      = {};
+        $group{scenarios} = {};
+        $group{products}  = {};
 
         my %machines;
         # Extract products and tests per architecture
@@ -161,21 +161,21 @@ sub get_job_groups {
             my $settings = $template->settings_hash;
             $test_suite{settings} = $settings if %$settings;
 
-            my $test_suites = $group{architectures}{$template->product->arch}{$template->product->name};
+            my $test_suites = $group{scenarios}{$template->product->arch}{$template->product->name};
             push @$test_suites, {$template->test_suite->name => \%test_suite};
-            $group{architectures}{$template->product->arch}{$template->product->name} = $test_suites;
+            $group{scenarios}{$template->product->arch}{$template->product->name} = $test_suites;
         }
 
         # Split off defaults
-        foreach my $arch (keys %{$group{architectures}}) {
+        foreach my $arch (keys %{$group{scenarios}}) {
             $group{defaults}{$arch}{priority} = $group->default_priority;
             my $default_machine
               = (sort { $machines{$arch}->{$b} <=> $machines{$arch}->{$a} or $b cmp $a } keys %{$machines{$arch}})[0];
             $group{defaults}{$arch}{machine} = $default_machine;
 
-            foreach my $product (keys %{$group{architectures}->{$arch}}) {
+            foreach my $product (keys %{$group{scenarios}->{$arch}}) {
                 my @test_suites;
-                foreach my $test_suite (@{$group{architectures}->{$arch}->{$product}}) {
+                foreach my $test_suite (@{$group{scenarios}->{$arch}->{$product}}) {
                     foreach my $name (keys %$test_suite) {
                         my $attr = $test_suite->{$name};
                         if ($attr->{machine} eq $default_machine) {
@@ -190,7 +190,7 @@ sub get_job_groups {
                         }
                     }
                 }
-                $group{architectures}{$arch}{$product} = \@test_suites;
+                $group{scenarios}{$arch}{$product} = \@test_suites;
             }
         }
 
@@ -285,7 +285,7 @@ sub update {
                 # Add/update job templates from YAML data
                 # (create test suites if not already present, fail if referenced machine and product is missing)
                 my @job_template_ids;
-                my $yaml_archs    = $yaml->{architectures};
+                my $yaml_archs    = $yaml->{scenarios};
                 my $yaml_products = $yaml->{products};
                 my $yaml_defaults = $yaml->{defaults};
                 foreach my $arch (keys %$yaml_archs) {
