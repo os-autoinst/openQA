@@ -65,8 +65,16 @@ sub handle_command {
     my $job_id = $json->{jobid};
     if ($type ne 'info') {
         if ($current_job) {
+            # ignore messages which do not belong to the current job
             my $current_job_id = $current_job->id // 'another job';
             if (!$job_id) {
+                # log a more specific warning in case of the grab_job message from a different web UI
+                if ($type eq 'grab_job' && $webui_host ne $current_webui_host) {
+                    log_warning(
+"Ignoring job assignment from $webui_host (already busy with job $current_job_id from $current_webui_host)."
+                    );
+                    return undef;
+                }
                 log_warning(
 "Ignoring WS message from $webui_host with type $type but no job ID (currently running $current_job_id for $current_webui_host):\n"
                       . pp($json));
@@ -80,6 +88,7 @@ sub handle_command {
             }
         }
         else {
+            # ignore messages which belong to a job
             if ($job_id) {
                 log_warning(
 "Ignoring WS message from $webui_host with type $type and job ID $job_id (currently not executing a job):\n"
@@ -87,6 +96,7 @@ sub handle_command {
                 return undef;
             }
         }
+        # verify that the web UI host for the job ID matches as well
         if ($job_id && $webui_host ne $current_webui_host) {
             log_warning(
                 "Ignoring job-specific WS message from $webui_host; currently occupied by $current_webui_host:\n"
