@@ -30,65 +30,58 @@ use Mojo::JSON 'decode_json';
 use Mojo::File 'path';
 use Try::Tiny;
 
-# store the associated worker and client
+# define attributes for public properties
 has 'worker';
 has 'client';
-
-# store meta-data about the job
-has 'status';
-has 'id';
-has 'name';
-has 'settings';
-has 'info';
-
-# define properties to track the job itself
-has 'setup_error';
 has 'developer_session_running';
-has 'livelog_viewers';
-has 'autoinst_log_offset';
-has 'serial_log_offset';
-has 'serial_terminal_offset';
-has 'images_to_send';
-has 'files_to_send';
-has 'known_images';
-has 'last_screenshot';
-has 'test_order';
-has 'current_test_module';
-has 'progress_info';
-has 'engine';
 has 'upload_results_interval';
 
-# define internally used timer
-has '_upload_results_timer';
-has '_timeout_timer';
-
-# track internal state
-has '_is_uploading_results';
+# define accessors for public read-only properties
+sub status                    { shift->{_status} }
+sub setup_error               { shift->{_setup_error} }
+sub id                        { shift->{_id} }
+sub name                      { shift->{_name} }
+sub settings                  { shift->{_settings} }
+sub info                      { shift->{_info} }
+sub developer_session_running { shift->{_developer_session_running} }
+sub livelog_viewers           { shift->{_livelog_viewers} }
+sub autoinst_log_offset       { shift->{_autoinst_log_offset} }
+sub serial_log_offset         { shift->{_serial_log_offset} }
+sub serial_terminal_offset    { shift->{_serial_terminal_offset} }
+sub images_to_send            { shift->{_images_to_send} }
+sub files_to_send             { shift->{_files_to_send} }
+sub known_images              { shift->{_known_images} }
+sub last_screenshot           { shift->{_last_screenshot} }
+sub test_order                { shift->{_test_order} }
+sub current_test_module       { shift->{_current_test_module} }
+sub progress_info             { shift->{_progress_info} }
+sub engine                    { shift->{_engine} }
 
 sub new {
     my ($class, $worker, $client, $job_info) = @_;
 
-    return $class->SUPER::new(
-        status                    => 'new',
+    my $self = $class->SUPER::new(
         worker                    => $worker,
         client                    => $client,
-        id                        => $job_info->{id},
-        info                      => $job_info,
-        developer_session_running => 0,
-        livelog_viewers           => 0,
-        autoinst_log_offset       => 0,
-        serial_log_offset         => 0,
-        serial_terminal_offset    => 0,
-        images_to_send            => {},
-        files_to_send             => [],
-        known_images              => [],
-        last_screenshot           => '',
-        current_test_module       => undef,
-        progress_info             => {},
-        engine                    => undef,
         upload_results_interval   => undef,
-        _is_uploading_results     => 0,
+        developer_session_running => 0,
     );
+    $self->{_status}                 = 'new';
+    $self->{_id}                     = $job_info->{id};
+    $self->{_info}                   = $job_info;
+    $self->{_livelog_viewers}        = 0;
+    $self->{_autoinst_log_offset}    = 0;
+    $self->{_serial_log_offset}      = 0;
+    $self->{_serial_terminal_offset} = 0;
+    $self->{_images_to_send}         = {};
+    $self->{_files_to_send}          = [];
+    $self->{_known_images}           = [];
+    $self->{_last_screenshot}        = '';
+    $self->{_current_test_module}    = undef;
+    $self->{_progress_info}          = {};
+    $self->{_engine}                 = undef;
+    $self->{_is_uploading_results}   = 0;
+    return $self;
 }
 
 sub DESTROY {
@@ -101,14 +94,11 @@ sub DESTROY {
 sub _remove_timer {
     my ($self) = @_;
 
-    if (my $_upload_results_timer = $self->_upload_results_timer) {
-        Mojo::IOLoop->remove($_upload_results_timer);
+    for my $timer_name (qw(_upload_results_timer _timeout_timer)) {
+        if (my $timer_id = delete $self->{$timer_name}) {
+            Mojo::IOLoop->remove($timer_id);
+        }
     }
-    if (my $_timeout_timer = $self->_timeout_timer) {
-        Mojo::IOLoop->remove($_timeout_timer);
-    }
-    $self->_upload_results_timer(undef);
-    $self->_timeout_timer(undef);
 }
 
 sub _set_status {
@@ -116,8 +106,14 @@ sub _set_status {
 
     $event_data->{job}    = $self;
     $event_data->{status} = $status;
-    $self->status($status);
+    $self->{_status}      = $status;
     $self->emit(status_changed => $event_data);
+}
+
+sub is_uploading_results {
+    my ($self) = @_;
+
+    return $self->{_is_uploading_results};
 }
 
 sub accept {
@@ -176,8 +172,8 @@ sub start {
     my $global_worker_settings = $worker->settings->global_settings;
     delete $job_settings->{GENERAL_HW_CMD_DIR};
     @{$job_settings}{keys %$global_worker_settings} = values %$global_worker_settings;
-    $self->settings($job_settings);
-    $self->name($job_settings->{NAME});
+    $self->{_settings} = $job_settings;
+    $self->{_name}     = $job_settings->{NAME};
 
     # ensure log files are empty/removed
     if (my $pooldir = $worker->pool_directory) {
@@ -209,15 +205,14 @@ sub start {
     if (!$setup_error && ($engine->{child}->errored || !$engine->{child}->is_running)) {
         $setup_error = 'isotovideo can not be started';
     }
-    $self->setup_error($setup_error);
-    if ($setup_error) {
+    if ($self->{_setup_error} = $setup_error) {
         log_error("Unable to setup job $id: $setup_error");
         return $self->stop('setup failure');
     }
 
     my $isotovideo_pid = $engine->{child}->pid() // 'unknown';
     log_info("isotovideo has been started (PID: $isotovideo_pid)");
-    $self->engine($engine);
+    $self->{_engine} = $engine;
 
     # schedule initial status update and result upload which will also trigger subsequent updates
     Mojo::IOLoop->next_tick(
@@ -227,22 +222,21 @@ sub start {
         });
 
     # kill isotovideo if timeout has been exceeded
-    $self->_timeout_timer(
-        Mojo::IOLoop->timer(
-            $max_job_time => sub {
-                # prevent to determine status of job from exit_status
-                eval {
-                    if (my $child = $engine->{child}) {
-                        $child->session->_protect(
-                            sub {
-                                $child->unsubscribe('collected');
-                            });
-                    }
-                };
-                # abort job if it takes too long
-                $self->_remove_timer;
-                $self->stop('timeout');
-            }));
+    $self->{_timeout_timer} = Mojo::IOLoop->timer(
+        $max_job_time => sub {
+            # prevent to determine status of job from exit_status
+            eval {
+                if (my $child = $engine->{child}) {
+                    $child->session->_protect(
+                        sub {
+                            $child->unsubscribe('collected');
+                        });
+                }
+            };
+            # abort job if it takes too long
+            $self->_remove_timer;
+            $self->stop('timeout');
+        });
 
     $self->_set_status(running => {});
 }
@@ -272,7 +266,7 @@ sub stop {
 
     $self->_set_status(stopping => {reason => $reason});
     $self->_remove_timer;
-    if ($self->_is_uploading_results) {
+    if ($self->{_is_uploading_results}) {
         $self->once(
             uploading_results_concluded => sub {
                 $self->_stop_step_1_init($reason);
@@ -551,7 +545,7 @@ sub start_livelog {
     else {
         log_debug("New livelog viewer, $livelog_viewers viewers in total now");
     }
-    $self->livelog_viewers($livelog_viewers);
+    $self->{_livelog_viewers} = $livelog_viewers;
     $self->upload_results_interval(undef);
     $self->_upload_results();
 }
@@ -573,7 +567,7 @@ sub stop_livelog {
     else {
         log_debug("Livelog viewer left, $livelog_viewers remaining");
     }
-    $self->livelog_viewers($livelog_viewers);
+    $self->{_livelog_viewers} = $livelog_viewers;
     $self->upload_results_interval(undef);
 }
 
@@ -629,8 +623,8 @@ sub _upload_results {
     #        and make it a Minion job or to make everything async (likely harder).
 
     # ensure an ongoing timer is cancelled in case upload_results has been called manually
-    if (my $_upload_results_timer = $self->_upload_results_timer) {
-        Mojo::IOLoop->remove($_upload_results_timer);
+    if (my $upload_results_timer = delete $self->{_upload_results_timer}) {
+        Mojo::IOLoop->remove($upload_results_timer);
     }
 
     # return if job setup is insufficient
@@ -652,7 +646,7 @@ sub _upload_results {
     my $status          = $self->status;
     my $is_final_upload = $status eq 'stopping' || $status eq 'stopped';
 
-    $self->_is_uploading_results(1);
+    $self->{_is_uploading_results} = 1;
 
     # query status from isotovideo (unless it is the final status upload because isotovideo
     # has already been stopped in this case)
@@ -685,14 +679,14 @@ sub _upload_results {
                 return $callback->() if $callback;
                 return undef;
             }
-            $status{test_order} = $test_order;
-            $status{backend}    = $status_from_os_autoinst->{backend};
-            $self->test_order($test_order);
+            $status{test_order}  = $test_order;
+            $status{backend}     = $status_from_os_autoinst->{backend};
+            $self->{_test_order} = $test_order;
         }
         elsif ($current_test_module ne ($status_from_os_autoinst->{running} || '')) {    # next test
             $upload_up_to = $current_test_module;
         }
-        $self->current_test_module($current_test_module = $status_from_os_autoinst->{running});
+        $self->{_current_test_module} = $current_test_module = $status_from_os_autoinst->{running};
     }
 
     # adjust $upload_up_to to handle special cases
@@ -787,7 +781,7 @@ sub _upload_results_step_1_upload_images {
     my ($self, $known_images) = @_;
 
     if (ref $known_images eq 'ARRAY') {
-        $self->known_images($known_images);
+        $self->{_known_images} = $known_images;
     }
     $self->_ignore_known_images;
     $self->upload_images;
@@ -799,15 +793,14 @@ sub _upload_results_step_2_finalize {
     # continue sending status updates
     unless ($is_final_upload) {
         my $interval = $self->_calculate_upload_results_interval;
-        $self->_upload_results_timer(
-            Mojo::IOLoop->timer(
-                $interval,
-                sub {
-                    $self->_upload_results;
-                }));
+        $self->{_upload_results_timer} = Mojo::IOLoop->timer(
+            $interval,
+            sub {
+                $self->_upload_results;
+            });
     }
 
-    $self->_is_uploading_results(0);
+    $self->{_is_uploading_results} = 0;
     $self->emit(uploading_results_concluded => {});
     $callback->() if $callback;
 }
@@ -838,7 +831,7 @@ sub post_upload_progress_to_liveviewhandler {
         return $callback->() if $callback;
         return undef;
     }
-    $self->progress_info(\%new_progress_info);
+    $self->{_progress_info} = \%new_progress_info;
 
     my $job_id = $self->id;
     $self->client->send(
@@ -894,7 +887,7 @@ sub upload_images {
             $tx                 = $ua->post($ua_url => form => \%form);
         }
     }
-    $self->images_to_send({});
+    $self->{_images_to_send} = {};
 
     for my $file (@{$self->files_to_send}) {
         log_debug("Uploading $file");
@@ -911,7 +904,7 @@ sub upload_images {
         $tx = $ua->post($ua_url => form => \%form);
         # FIXME: error handling?
     }
-    $self->files_to_send([]);
+    $self->{_files_to_send} = [];
     return !$tx || !$tx->error;
 }
 
@@ -1195,7 +1188,7 @@ sub _read_last_screen {
     my $lastlink = readlink("$pooldir/qemuscreenshot/last.png");
     return if !$lastlink || $self->last_screenshot eq $lastlink;
     my $png = encode_base64(path($pooldir, "qemuscreenshot/$lastlink")->slurp);
-    $self->last_screenshot($lastlink);
+    $self->{_last_screenshot} = $lastlink;
     return {name => $lastlink, png => $png};
 }
 
@@ -1215,7 +1208,7 @@ sub _log_snippet {
         $ret{data}   = $buf;
     }
     if (my $new_offset = sysseek($fd, 0, Fcntl::SEEK_CUR)) {
-        $self->$offset_name($new_offset);
+        $self->{"_$offset_name"} = $new_offset;
     }
     close($fd);
     return \%ret;

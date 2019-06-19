@@ -44,12 +44,6 @@ has 'current_error';
 has 'worker_hostname';
 has 'isotovideo_interface_version';
 
-has '_cli_options';
-has '_pool_directory_lock_fd';
-has '_shall_terminate';
-
-# FIXME: some of these properties should actually be read-only or private
-
 sub new {
     my ($class, $cli_options) = @_;
 
@@ -79,7 +73,6 @@ sub new {
     my $isotovideo_interface_version = OpenQA::Worker::Engines::isotovideo::set_engine_exec($cli_options->{isotovideo});
 
     my $self = $class->SUPER::new(
-        _cli_options                 => $cli_options,
         instance_number              => $instance_number,
         no_cleanup                   => $cli_options->{no_cleanup},
         pool_directory               => "$OpenQA::Utils::prjdir/pool/$instance_number",
@@ -88,9 +81,10 @@ sub new {
         clients_by_webui_host        => undef,
         worker_hostname              => $hostname,
         isotovideo_interface_version => $isotovideo_interface_version,
-        _shall_terminate             => 0,
-        _pool_directory_lock_fd      => undef,
     );
+    $self->{_cli_options}            = $cli_options;
+    $self->{_pool_directory_lock_fd} = undef;
+    $self->{_shall_terminate}        = 0;
 
     return $self;
 }
@@ -225,7 +219,6 @@ sub init {
     my $return_code = 0;
 
     # instantiate a client for each web UI we need to connect to
-    my $cli_options = $self->_cli_options;
     my $settings    = $self->settings;
     my $webui_hosts = $settings->webui_hosts;
     if (!@$webui_hosts) {
@@ -233,7 +226,7 @@ sub init {
     }
     my %clients_by_webui_host;
     for my $host (@$webui_hosts) {
-        my $client = OpenQA::Worker::Client->new($host, $cli_options);
+        my $client = OpenQA::Worker::Client->new($host, $self->{_cli_options});
         $clients_by_webui_host{$host} = $client;
     }
     $self->clients_by_webui_host(\%clients_by_webui_host);
@@ -258,7 +251,7 @@ sub init {
             $return_code = 1;
 
             # try to stop gracefully
-            if (!$self->_shall_terminate) {
+            if (!$self->{_shall_terminate}) {
                 try {
                     # log error using print because logging utils might have caused the exception
                     # (no need to repeat $err, it is printed anyways)
@@ -402,7 +395,7 @@ sub accept_job {
 sub stop {
     my ($self, $reason) = @_;
 
-    $self->_shall_terminate(1);
+    $self->{_shall_terminate} = 1;
     if (my $current_job = $self->current_job) {
         Mojo::IOLoop->next_tick(
             sub {
@@ -436,7 +429,7 @@ sub kill {
 sub is_stopping {
     my ($self) = @_;
 
-    return 1 if $self->_shall_terminate;
+    return 1 if $self->{_shall_terminate};
     my $current_job = $self->current_job or return 0;
     return $current_job->status eq 'stopping';
 }
@@ -581,7 +574,7 @@ sub _handle_job_status_changed {
 
         # handle case when the worker should not continue to run e.g. because the user stopped it or
         # a critical error occurred
-        if ($self->_shall_terminate) {
+        if ($self->{_shall_terminate}) {
             return $self->stop;
         }
 
@@ -595,7 +588,7 @@ sub _setup_pool_directory {
     my ($self) = @_;
 
     # skip if we have already locked the pool directory
-    my $pool_directory_fd = $self->_pool_directory_lock_fd;
+    my $pool_directory_fd = $self->{_pool_directory_lock_fd};
     if (defined $pool_directory_fd) {
         return $pool_directory_fd;
     }

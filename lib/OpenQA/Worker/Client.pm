@@ -30,19 +30,13 @@ has 'worker';             # the worker this client belongs to
 has 'worker_id';          # the ID the web UI uses to track this worker (populated on registration)
 has 'testpool_server';    # testpool server for this web UI host
 has 'working_directory';  # share directory for this web UI host
-has 'cache_directory';    # cache directory for this web UI host (FIXME: required here?)
+has 'cache_directory';    # cache directory for this web UI host
 has 'websocket_connection'
   ; # the websocket connection to receive commands from the web UI and send the status (Mojo::Transaction::WebSockets instance)
 #has 'command_handler'; # handles commands from the web UI received via the websocket connection
 has 'webui_host_population';
 has 'send_status_interval'
   ;    # interval for overall worker status updates; automatically set when needed (unless set manually)
-
-# define internally used timer
-has '_send_status_timer';
-has '_api_call_timer';
-
-# FIXME: some of these properties should actually be read-only or private
 
 sub new {
     my ($class, $webui_host, $cli_options) = @_;
@@ -92,14 +86,9 @@ sub DESTROY {
 sub _remove_timer {
     my ($self) = @_;
 
-    if (my $_send_status_timer = $self->_send_status_timer) {
-        Mojo::IOLoop->remove($_send_status_timer);
+    if (my $timer_id = delete $self->{_send_status_timer}) {
+        Mojo::IOLoop->remove($timer_id);
     }
-    if (my $_api_call_timer = $self->_api_call_timer) {
-        Mojo::IOLoop->remove($_api_call_timer);
-    }
-    $self->_send_status_timer(undef);
-    $self->_api_call_timer(undef);
 }
 
 sub _set_status {
@@ -418,8 +407,8 @@ sub send_status {
     my ($self) = @_;
 
     # ensure an ongoing timer is cancelled in case send_status has been called manually
-    if (my $_send_status_timer = $self->_send_status_timer) {
-        Mojo::IOLoop->remove($_send_status_timer);
+    if (my $send_status_timer = delete $self->{_send_status_timer}) {
+        Mojo::IOLoop->remove($send_status_timer);
     }
 
     # send the worker status (unless the websocket connection has been lost)
@@ -433,12 +422,11 @@ sub send_status {
             return undef unless $self->websocket_connection;
 
             my $status_update_interval = $self->_calculate_status_update_interval;
-            $self->_send_status_timer(
-                Mojo::IOLoop->timer(
-                    $status_update_interval,
-                    sub {
-                        $self->send_status;
-                    }));
+            $self->{_send_status_timer} = Mojo::IOLoop->timer(
+                $status_update_interval,
+                sub {
+                    $self->send_status;
+                });
         });
 }
 

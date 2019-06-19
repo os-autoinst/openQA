@@ -149,10 +149,10 @@ ok(-e $pool_directory->child('worker-log.txt'),    'worker log is there');
 
 # pretent that the failure didn't happen to be able to continue testing
 # note: The actual worker always creates a new OpenQA::Worker::Job object.
-$job->status('accepted');
+$job->{_status} = 'accepted';
 
 # change the job ID before starting again to better distinguish the resulting messages
-$job->id(2);
+$job->{_id} = 2;
 
 # try to start job again pretenting isotovideo could actually be spawned
 $engine_mock->mock(engine_workit => sub { {child => $isotovideo} });
@@ -160,10 +160,10 @@ $job->start();
 
 # wait until first status upload has been concluded
 wait_until_upload_concluded($job);
-is($job->_is_uploading_results, 0,         'uploading results concluded');
-is($job->status,                'running', 'job is running now');
-ok($job->_upload_results_timer, 'timer for uploading results assigned');
-ok($job->_timeout_timer,        'timer for timeout assigned');
+is($job->is_uploading_results, 0,         'uploading results concluded');
+is($job->status,               'running', 'job is running now');
+ok($job->{_upload_results_timer}, 'timer for uploading results assigned');
+ok($job->{_timeout_timer},        'timer for timeout assigned');
 
 # perform another result upload triggered via start_livelog
 # also assume that a developer mode sesssion is running
@@ -183,8 +183,8 @@ wait_until_upload_concluded($job);
 is($job->status,            'stopped', 'job is stopped now');
 is($isotovideo->is_running, 0,         'isotovideo stopped');
 
-is($job->_upload_results_timer, undef, 'timer for uploading results has been cleaned up');
-is($job->_timeout_timer,        undef, 'timer for timeout has been cleaned up');
+is($job->{_upload_results_timer}, undef, 'timer for uploading results has been cleaned up');
+is($job->{_timeout_timer},        undef, 'timer for timeout has been cleaned up');
 
 # verify messages sent via REST API and websocket connection during the job live-cycle
 # note: This can also be seen as an example for other worker implementations.
