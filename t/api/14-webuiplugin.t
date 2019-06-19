@@ -27,7 +27,7 @@ use Test::Mojo;
 use OpenQA::Test::Database;
 # use Test::Warnings;
 
-my $test_openapi = eval { use Mojolicious::Plugin::OpenAPI; 1; };
+my $test_openapi = eval " use Mojolicious::Plugin::OpenAPI; 1; ";
 plan skip_all => 'OpenAPI plugin is not installed, skipping' unless (defined $test_openapi);
 
 my $tempdir = tempdir;

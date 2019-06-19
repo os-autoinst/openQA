@@ -90,6 +90,7 @@ RUN zypper in -y -C \
        'perl(Mojolicious)' \
        'perl(Mojolicious::Plugin::AssetPack)' \
        'perl(Mojolicious::Plugin::RenderFile)' \
+       'perl(Mojolicious::Plugin::OpenAPI)' \
        'perl(JSON::Validator)' \
        'perl(YAML::XS) >= 0.67' \
        'perl(Net::OpenID::Consumer)' \
