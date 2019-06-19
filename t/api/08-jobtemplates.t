@@ -929,6 +929,34 @@ subtest 'References' => sub {
     is_deeply(YAML::XS::Load($t->tx->res->body),
         $yaml, 'Added group with references should be reflected in the database')
       || diag explain $t->tx->res->body;
+
+    # Event reflects changes to the YAML
+    $yaml->{scenarios}{ppc64}{'opensuse-13.1-DVD-ppc64'} = [qw(spam foobar)];
+    $t->post_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id4",
+        form => {template => YAML::XS::Dump($yaml)})->status_is(200);
+    if (!$t->success) {
+        diag explain $t->tx->res->json;
+        return undef;
+    }
+
+    is_deeply(
+        OpenQA::Test::Case::find_most_recent_event($schema, 'jobtemplate_create'),
+        {
+            id      => $job_group_id4,
+            changes => '
+@@ -23,7 +23,7 @@
+   i586:
+     opensuse-13.1-DVD-i586: &2
+     - spam
+-    - eggs
++    - foobar
+   ppc64:
+     opensuse-13.1-DVD-ppc64: *2
+   x86_64:
+'
+        },
+        'Diff reflects changes in the YAML'
+    );
 };
 
 # Test suites which are part of a group managed in YAML can't be modified manually

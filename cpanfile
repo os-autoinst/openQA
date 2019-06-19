@@ -73,6 +73,7 @@ requires 'SQL::Translator';
 requires 'Scalar::Util';
 requires 'Sub::Install';
 requires 'Sub::Name';
+requires 'Text::Diff';
 requires 'Text::Markdown';
 requires 'Time::HiRes';
 requires 'Time::ParseDate';
