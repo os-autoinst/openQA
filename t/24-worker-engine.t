@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use Test::More;
 use Test::Warnings;
+use Test::MockModule;
 use OpenQA::Worker::Engines::isotovideo;
 
 my $settings = {
@@ -68,5 +69,9 @@ delete($settings->{NUMDISKS});
 
 $got = OpenQA::Worker::Engines::isotovideo::detect_asset_keys($settings);
 is_deeply($got, $expected, 'Asset settings are correct (no UEFI or NUMDISKS)') or diag explain $got;
+
+subtest 'caching' => sub {
+    is(OpenQA::Worker::Engines::isotovideo::cache_assets, undef, 'cache_assets has nothing to do without assets');
+};
 
 done_testing();
