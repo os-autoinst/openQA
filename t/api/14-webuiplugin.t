@@ -25,10 +25,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Database;
-# use Test::Warnings;
-
-my $test_openapi = eval " use Mojolicious::Plugin::OpenAPI; 1; ";
-plan skip_all => 'OpenAPI plugin is not installed, skipping' unless (defined $test_openapi);
+use Test::Warnings 0.005 ':all';
 
 my $tempdir = tempdir;
 $ENV{OPENQA_CONFIG} = $tempdir;
@@ -41,33 +38,39 @@ sub check_plugin {
 
     $tempdir->child("openqa.ini")->spurt($config);
     my $t = eval { Test::Mojo->new('OpenQA::WebAPI'); };
-    # our $last_warning = '';
-    # $SIG{__WARN__} = sub { $last_warning = shift; };
 
-    if (defined $t) {
+    if (!defined $t) {
+        ok(!defined $expected_status, "WebAPI startup");
+    }
+    else {
         my $app = $t->app;
         $t->ua(OpenQA::Client->new()->ioloop(Mojo::IOLoop->singleton));
         $t->app($app);
         $t->ua->apikey('PERCIVALKEY01');
         $t->ua->apisecret('PERCIVALSECRET01');
+        ok($t->get_ok('/plugin/hello')->status_is($expected_status), "API");
+        ok($t->get_ok('/plugin/Hello')->status_is($expected_status), "API form");
     }
-    ok(defined $t || !defined $expected_status, "WebAPI startup");
-    ok(!defined $t || $t->get_ok('/plugin/hello_world')->status_is($expected_status), "API");
 }
 
 sub config_string {
     my ($enabled, $path) = @_;
-    return "[WebAPIPluginHello]\nenabled = $enabled\npath = $path";
+    return "[PluginWebAPIHello]\nenabled = $enabled\npath = $path";
 }
 
-my $correct_path   = "t/data";
-my $incorrect_path = "t";
-
+my $correct_path   = "t/data/OpenQA/Plugin/WebAPI";
+my $incorrect_path = "t/data/OpenQA/";
 
 # first test failures, because outcome may change once plugin was loaded by perl
 check_plugin("", 404);
+# pass undef to $xpected_status means that application startup is expected to fail
 check_plugin(config_string("required", $incorrect_path), undef);
-check_plugin(config_string("optional", $incorrect_path), 404);
+# here we expect warning about plugin failed to load
+like(
+    warning { check_plugin(config_string("optional", $incorrect_path), 404) },
+    qr/Failed to load.*/,
+    "Warn Plugin load"
+);
 
 check_plugin(config_string("optional", $correct_path), 200);
 check_plugin(config_string("required", $correct_path), 200);

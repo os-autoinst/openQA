@@ -1,0 +1,7 @@
+% title 'Hello Plugin Form';
+<H2><Hello Plugin></H2>
+% if (!$name) {
+        <label>Hello</label>
+% } else {
+        <label>%= "Hello, $name" %</label>
+% }

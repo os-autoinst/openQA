@@ -328,54 +328,45 @@ sub load_plugins {
     OpenQA::Setup::update_config($server->config, @{$server->plugins->namespaces}, "OpenQA::WebAPI::Auth");
 }
 
-sub load_ui_plugins {
-    my ($server, $plugin_route) = @_;
+sub load_external_plugins {
+    my ($server, $module, $settings) = @_;
 
+    my $namespace = "OpenQA::Plugin::$module";
     return if (!defined $server->config->{ini_config} || !defined $server->config->{ini_config}->{v});
 
-    push @{$server->plugins->namespaces}, 'WebAPIPlugin';
+    my $need_to_add_namespace = 1;
     for my $section (@{$server->config->{ini_config}->{sects}}) {
-        my $plugin;
-        if ($section =~ /WebAPIPlugin(.+)/) {
-            $plugin = $1;
-        }
-        else {
-            next;
-        }
-        my $plugin_settings = $server->config->{ini_config}->{v}->{$section};
-        next if (!$plugin_settings->{enabled});
+        next unless $section =~ /Plugin$module(.+)/;
+        my $plugin       = $1;
+        my $ini_settings = $server->config->{ini_config}->{v}->{$section};
+        next if (!$ini_settings->{enabled});
         $server->log->info("Loading plugin $section...");
         my $res = eval {
-            my $path     = $plugin_settings->{path};
-            my $jsonfile = "$path/WebAPIPlugin/$plugin.json";
-            $server->log->info("Checking $jsonfile...");
-            if (-f $jsonfile) {
-                # load routes if defined
-                $server->plugin(
-                    OpenAPI => {
-                        route => $plugin_route,
-                        url   => $jsonfile
-                    });
-                push @{$server->renderer->paths}, $path . '/WebAPIPlugin';
-                $server->log->info("Loaded $jsonfile");
+            my $path          = $ini_settings->{path};
+            my $expected_tail = "/OpenQA/Plugin/$module";
+            $path =~ /$expected_tail$/
+              or die "Ignoring plugin $section, because parameter 'path' must end with {$expected_tail}, got: {$path}";
+            push @INC, $path;
+            my $res = eval "use $plugin;\n1;";
+            die $@ unless (defined $res && $res == 1);
+            if ($need_to_add_namespace) {
+                push @{$server->plugins->namespaces}, $namespace;
+                $need_to_add_namespace = 0;
             }
-            my $res = eval "use lib '$path';\nuse WebAPIPlugin::$plugin;\n1;";
-            if (!defined $res) {
-                die $@;
-            }
-            # now load actual plugin - should work if command above succeeded
-            $server->plugin($plugin, $plugin_settings);
-            $server->log->info("Loaded plugin $section");
+
+            $server->plugin($namespace . "::$plugin", $settings);
+            $server->log->info("Loaded $section");
             1;
         };
         my $err = $@;
         if (!defined $res || $res != 1) {
-            my $msg = "Failed to load $section (enabled=" . $plugin_settings->{enabled} . "): {$err}";
+            my $msg = "Failed to load $section (enabled=" . $ini_settings->{enabled} . "): {$err}";
             $server->log->error($msg);
-            if ($plugin_settings->{enabled} eq "required") {
+            if ($ini_settings->{enabled} eq "required") {
                 die $msg;
             }
             else {
+                # Warn here, so message is visible on console during manual startup
                 warn $msg;
             }
         }

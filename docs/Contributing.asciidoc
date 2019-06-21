@@ -333,41 +333,36 @@ Authentication module is expected to return HASH:
 Authentication module is expected to create or update user entry in OpenQA database
 after user validation. See included modules for inspiration.
 
-== WebAPI Plugins (requires Mojolicious::Plugin::OpenAPI)
+== External WebAPI Plugins
 
-During processing of `openqa.ini` all sections with prefix "WebAPIPlugin" are examined 
+During processing of `openqa.ini` all sections with prefix "PluginWebAPI" are examined 
 for parameters `enabled` and `path`.
 (Tail of the section name is considered to be name of the Plugin).
 Unless parameter `enabled` is missing or set to `0` - the process will attempt to load plugin from 
-`WebAPIPlugin` folder within `path` configured. In particular following artefects will be loaded:
-* Json file with OpenAPI format describing routes under `/plugin` entry point.
-* Perl module.
+`WebAPIPlugin` folder within `path` configured.
 
-Parameters from the configration file secion will be passed to plugin's `init()` method.
+Parameters from the configuration file section will be passed to plugin's `init()` method.
 
 E.g. with section like below in the openqa.ini:
 [source]
 ----
-[WebAPIPluginFoo]
+[PluginWebAPIFoo]
 enabled=optional
-path=/etc/bar
+path=/etc/bar/OpenQA/Plugin/WebAPI
 Msg=Test
 ----
-The service will attempt to setup routes from json file with OpenAPI format 
-`/etc/bar/WebAPIPlugin/Foo.json` and load perl module: `/etc/bar/WebAPIPlugin/Foo.pm`.
+The service will attempt to load plugin: `/etc/bar/OpenQA/Plugin/WebAPI/Foo.pm`.
 `Msg` parameter will be passed to plugin `register()` method.
 
 At the moment following restrictions apply:
-* package Mojolicious::Plugin::OpenAPI must be installed on the system.
-* no actual business data is shared between the service and plugin.
-* plugin routes require at least operator access level.
+* plugin routes will be mapped to `/plugin` and require at least operator access level.
+* to be able being loaded into the service, module must implement 'Mojolicious::Plugin' and 
+belong to `OpenQA::Plugin::WebAPI` namespace. Side effect requirement is that `path` 
+parameter in configuration file must end with `OpenQA/Plugin/WebAPI`.
 * application will fail to start on plugin load error in case if `enabled` parameter is set 
 to `required`.
-* to be able being loaded into the service, module must implement 'Mojolicious::Plugin'.
-* to be able serve routes properly, module must be within WebAPIPlugin namespace and
-implement interface 'Mojolicious::Controller'.
 
-See also example plugin within `t/data/WebAPIPlugin`.
+See also example plugin within `t/data/OpenQA/Plugin/WebAPI`.
 
 == Customize base directory
 

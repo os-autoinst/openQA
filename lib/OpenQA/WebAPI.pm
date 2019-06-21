@@ -54,11 +54,12 @@ sub startup {
     my $r         = $self->routes;
     my $logged_in = $r->under('/')->to("session#ensure_user");
     my $auth      = $r->under('/')->to("session#ensure_operator");
-    my $plugin_r  = $auth->route('/plugin')->to(namespace => 'WebAPIPlugin');
+    my $plugin_r  = $auth->route('/plugin')->to(namespace => 'OpenQA::Plugin::WebAPI');
 
     OpenQA::Setup::setup_template_search_path($self);
     OpenQA::Setup::load_plugins($self, $auth);
-    OpenQA::Setup::load_ui_plugins($self, $plugin_r);
+    my %external_plugin_settings = (route => $plugin_r);
+    OpenQA::Setup::load_external_plugins($self, "WebAPI", \%external_plugin_settings);
     OpenQA::Setup::set_secure_flag_on_cookies_of_https_connection($self);
 
  # setup asset pack
