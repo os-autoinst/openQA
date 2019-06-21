@@ -104,6 +104,16 @@ All issue references are stored within the internal database of openQA. The stat
 .Example for visualization of closed issue references. Upside down icons in red visualize closed issues.
 image::images/labels_closed_tickets.png[Example for visualization of closed issue references]
 
+
+=== Distinguish product and test issues bugref https://github.com/os-autoinst/openQA/pull/708[gh#708]
+
+``progress.opensuse.org'' is used to track test issues, bugzilla for product
+issues, at least for SUSE/openSUSE. openQA bugrefs distinguish this and show
+corresponding icons
+
+image::images/tests-overview-issue_icon.png[Different icons for product and test issues]
+
+
 === Build tagging ===
 
 ==== Tag builds with special comments on group overview ====
@@ -155,6 +165,132 @@ be highlighted blue and parents red. So far this only works for jobs displayed o
 the same page of the table.
 
 image::images/highlighting_job_dependencies.png[highlighted child jobs]
+
+
+=== Show previous results in test results page https://github.com/os-autoinst/openQA/pull/538[gh#538]
+
+On a tests result page there is a tab for ``Next & previous results'' showing
+the result of test runs in the same scenario. This shows next and previous
+builds as well as test runs in the same build. This way you can easily check
+and compare results from before including any comments, labels, bug references
+(see next section). This helps to answer questions like ``Is this a new
+issue'', ``Is it reproducible'', ``has it been seen in before'', ``how does the
+history look like''.
+
+Querying the database for former test runs of the same scenario is a
+rather costly operation which we do not want to do for multiple test
+results at once but only for each individual test result (1:1 relation).
+This is why this is done in each individual test result and not for a
+complete build.
+
+Related issue: https://progress.opensuse.org/issues/10212[#10212]
+
+Screenshot of the feature:
+
+image::images/test_details-next_and_previous.png[Next and previous job results]
+
+
+=== Link to latest in scenario name https://github.com/os-autoinst/openQA/pull/836[gh#836]
+
+Find the always latest job in a scenario with the link after the
+scenario name in the tab ``Next & previous results'' Screenshot:
+image::images/test_details-link_to_latest.png[Link to latest in scenario]
+
+
+=== Add `latest' query route https://github.com/os-autoinst/openQA/pull/815[gh#815]
+
+Should always refer to most recent job for the specified scenario.
+
+* have the same link for test development, i.e. if one retriggers tests,
+the person has to always update the URL. If there would be a static URL
+even the browser can be instructed to reload the page automatically
+* for linking to the always current execution of the last job within one
+scenario, e.g. to respond faster to the standard question in bug reports
+``does this bug still happen?''
+
+Examples:
+
+* `tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit`
+* `tests/latest?flavor=DVD&arch=x86_64&test=kde`
+* `tests/latest?test=foobar` - this searches for the most recent job
+using test_suite `foobar' covering all distri, version, flavor, arch,
+machines. To be more specific, add the other query entries.
+
+
+=== Allow group overview query by result https://github.com/os-autoinst/openQA/pull/531[gh#531]
+
+This allows e.g. to show only failed builds. Could be included like in
+http://lists.opensuse.org/opensuse-factory/2016-02/msg00018.html for
+``known defects''.
+
+Example: Add query parameters like `…&result=failed&arch=x86_64` to show
+only failed for the single architecture selected.
+
+
+=== Add web UI controls to select more builds in group_overview https://github.com/os-autoinst/openQA/pull/804[gh#804]
+
+The query parameter `limit_builds' allows to show more than the default
+10 builds on demand. Just like we have for configuring previous results,
+the current commit adds web UI selections to reload the same page with
+higher number of builds on demand. For this, the limit of days is
+increased to show more builds but still limited by the selected number.
+
+Example screenshot:
+
+image::images/job_group-limit_builds.png[Select different limit for number of displayed builds]
+
+
+=== More query parameters for configuring last builds https://github.com/os-autoinst/openQA/pull/575[gh#575]
+
+By using advanced query parameters in the URLs you can configure the
+search for builds. Higher numbers would yield more complex database
+queries but can be selected for special investigation use cases with the
+advanced query parameters, e.g. if one wants to get an overview of a
+longer history. This applies to both the index dashboard and group
+overview page.
+
+Example to show up to three week old builds instead of the default two
+weeks with up to 20 builds instead of up to 10 being the default for the
+group overview page:
+
+....
+http://openqa/group_overview/1?time_limit_days=21&limit_builds=20
+....
+
+
+=== Web UI controls to filter only tagged or all builds https://github.com/os-autoinst/openQA/pull/807[gh#807]
+
+Using a new query parameter `only_tagged=[0|1]' the list can be
+filtered, e.g. show only tagged (important) builds.
+
+Example screenshot:
+
+image::images/job_group-limit_builds_tagged.png[Show only tagged or all builds]
+
+Related issue: https://progress.opensuse.org/issues/11052[#11052]
+
+
+=== Carry over bugrefs from previous jobs in same scenario if still failing https://github.com/os-autoinst/openQA/pull/564[gh#564]
+
+It is possible to label all failing tests but tedious to do by a human
+user as many failures are just having the same issue until it gets
+fixed. It helps if a label is preserved for a build that is still
+failing. This idea is inspired by
+https://wiki.jenkins-ci.org/display/JENKINS/Claim+plugin and has been
+activated for bugrefs.
+
+Does not carry over bugrefs over passes: After a job passed a new issue
+in a subsequent fail is assumed to be failed for a different reason.
+
+Related issue: https://progress.opensuse.org/issues/10212[#10212]
+
+
+=== Pinning comments as group description
+
+This is possible by adding the keyword `pinned-description` anywhere in
+a comment on the group overview page. Then the comment will be shown at
+the top of the group overview page. However, it only works as operator
+or admin.
 
 
 == Asset cleanup ==
