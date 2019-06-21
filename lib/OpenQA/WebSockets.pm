@@ -126,7 +126,7 @@ sub _setup {
     OpenQA::Setup::setup_log($self);
 
     # start worker checker - check workers each 2 minutes
-    Mojo::IOLoop->recurring(120 => sub { $self->workers_checker });
+    Mojo::IOLoop->recurring(120 => sub { $self->status->workers_checker });
 
     Mojo::IOLoop->recurring(
         380 => sub {
