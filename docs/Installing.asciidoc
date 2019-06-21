@@ -8,16 +8,22 @@
 == Introduction
 
 openQA is an automated test tool that makes it possible to test the whole
-installation process of an operating system. It's free software released
-under the http://www.gnu.org/licenses/gpl-2.0.html[GPLv2 license]. The
-source code and documentation are hosted in the
+installation process of an operating system. It is free software released
+under the http://www.gnu.org/licenses/gpl-2.0.html[GPLv2 license]. The source
+code and documentation are hosted in the
 https://github.com/os-autoinst[os-autoinst organization on GitHub].
 
-This document provides the information needed to install and setup the tool, as
-well as information useful for everyday administration of the system. It's
-assumed that the reader is already familiar with openQA and has already read the
-Starter Guide, available at the
-https://github.com/os-autoinst/openQA[official repository].
+This document provides the information needed to install and setup the tool,
+as well as information useful for everyday administration of the system. It is
+assumed that the reader is already familiar with the concepts of openQA and
+has already read the <<GettingStarted.asciidoc#gettingstarted,Getting Started
+Guide>>, also available at the https://github.com/os-autoinst/openQA[official
+repository].
+
+Continue with the ``openQA quick bootstrap'' to get a simple, ready-to-use
+installation, useful for a single user setup. Else, continue with the more
+advanced section about ``Custom installation - Repositories and procedure''.
+
 
 == openQA quick bootstrap
 
@@ -59,7 +65,8 @@ zypper in openQA-bootstrap
 systemd-run -tM openqa1 /bin/bash # start a shell in the container
 -------------------------------------------------------------------------------
 
-== Repositories and installation
+
+== Custom installation - Repositories and procedure
 
 Keep in mind that there can be disruptive changes between openQA versions.
 You need to be sure that the webui and the worker that you are using have the
