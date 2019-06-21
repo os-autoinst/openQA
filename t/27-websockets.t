@@ -72,7 +72,7 @@ subtest 'WebSocket Server workers_checker' => sub {
     {
         open my $handle, '>', \$buffer;
         local *STDOUT = $handle;
-        OpenQA::WebSockets->new->workers_checker;
+        OpenQA::WebSockets::Model::Status->singleton->workers_checker;
     };
     like $buffer,              qr/Failed dead job detection/;
     ok $mock_singleton_called, 'mocked singleton method has been called';
@@ -87,7 +87,7 @@ subtest 'WebSocket Server get_stale_worker_jobs' => sub {
     {
         open my $handle, '>', \$buffer;
         local *STDOUT = $handle;
-        OpenQA::WebSockets->new->get_stale_worker_jobs(-9999999999);
+        OpenQA::WebSockets::Model::Status->singleton->get_stale_worker_jobs(-9999999999);
     };
     like $buffer,              qr/Worker Boooo not seen since \d+ seconds/;
     ok $mock_singleton_called, 'mocked singleton method has been called';

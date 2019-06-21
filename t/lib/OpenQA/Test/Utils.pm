@@ -209,7 +209,7 @@ sub create_websocket_server {
                 $c->on(finish => \&OpenQA::WebSockets::Controller::Worker::_finish);
             };
         }
-        monkey_patch 'OpenQA::WebSockets::Plugin::Helpers', _workers_checker => sub { 1 }
+        monkey_patch 'OpenQA::WebSockets::Model::Status', workers_checker => sub { 1 }
           if ($noworkercheck);
         local @ARGV = ('daemon');
         OpenQA::WebSockets::run;
