@@ -255,18 +255,6 @@ sub register {
         });
 
     $app->helper(
-        limit_previous_link => sub {
-            my ($c, $scenario_hash, $current_limit, $limit) = @_;
-            if ($current_limit eq $limit) {
-                return "<b>$limit</b>";
-            }
-            else {
-                $scenario_hash->{limit_previous} = $limit;
-                return '<a href="' . $c->url_with->query(%$scenario_hash) . '#previous">' . $limit . '</a>';
-            }
-        });
-
-    $app->helper(
         # generate popover help button with title, content and optional details_url
         # Examples:
         #   help_popover 'Help for me' => 'This is me'
