@@ -271,9 +271,11 @@ blog post] about the subject by the openQA development team.
 
 
 === Job groups
-A job can belong to a job group. Those job groups are displayed on the index page
-and in the +Job Groups+ menu on the navigation bar. From there the job group overview
-pages can be accessed. Besides the test results the job group overview pages provide
+
+A job can belong to a job group. Those job groups are displayed on the index
+page when there are recent test results in these job groups and in the +Job
+Groups+ menu on the navigation bar. From there the job group overview pages
+can be accessed. Besides the test results the job group overview pages provide
 a description about the job group and allow commenting.
 
 Job groups have properties. These properties are mostly cleanup related. The
