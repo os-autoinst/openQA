@@ -28,9 +28,14 @@ organization on GitHub].
 
 This document describes the general operation and usage of openQA. The main goal
 is to provide a general overview of the tool, with all the information needed to
-become a happy user. More advanced topics like installation, administration or
-development of new tests are covered by further documents available in the
-https://github.com/os-autoinst/openQA[official repository].
+become a happy user.
+
+For the installation of openQA see the
+<<Installing.asciidoc#installing,Installation Guide>>, as a user of an
+existing instance see the <<UsersGuide.asciidoc#usersguide,Users Guide>>.
+More advanced topics can be found in other documents. All documents are also
+available in the https://github.com/os-autoinst/openQA[official repository].
+
 
 == Architecture
 [id="architecture"]
