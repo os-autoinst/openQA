@@ -99,7 +99,8 @@ distri:: a test distribution but also sometimes referring to a _product_
 multiple _test modules_ in a folder structure that compose _test suites_, e.g.
 "opensuse" (test distribution, short for "os-autoinst-distri-opensuse")
 
-product:: the main "system under test" (SUT), e.g. "openSUSE"
+product:: the main "system under test" (SUT), e.g. "openSUSE", also called
+"Medium Types" in the web interface of openQA
 
 job group:: equivalent to _product_, used in context of the webUI
 
