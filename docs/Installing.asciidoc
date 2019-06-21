@@ -52,8 +52,10 @@ curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openq
 
 === openQA in a container
 
+*NOTE* This method is not available on openSUSE Leap older than version 15.1.
+
 You can also setup a systemd-nspawn container with openQA with the following
-commands. *This will only work on Tumbleweed* (or at least not before Leap 15.1)
+commands.
 and you need to have no application listening on port 80 yet because the container
 will share the host system's network stack.
 
@@ -72,16 +74,16 @@ Keep in mind that there can be disruptive changes between openQA versions.
 You need to be sure that the webui and the worker that you are using have the
 same version number or, at least, are compatible.
 
-For example, the package distributed with openSUSE Leap 42.3 is not compatible with the
-version on Tumbleweed.
-And the package distributed with Tumbleweed may not be compatible with the
-version in the development package.
+For example, the packages distributed with older versions of openSUSE Leap are
+not compatible with the version on Tumbleweed. And the package distributed
+with Tumbleweed may not be compatible with the version in the development
+package.
 
 === Official repositories
 
 The easiest way to install openQA is from distribution packages.
 
-- For openSUSE, packages are available for Leap 42.3 and later.
+- For openSUSE, packages are available for Leap and Tumbleweed
 - For Fedora, packages are available in the official repositories for Fedora 23
 and later.
 
@@ -98,7 +100,7 @@ To add the development repository to your system, you can use these commands.
 zypper ar -f obs://devel:openQA/openSUSE_Tumbleweed devel-openQA
 
 
-LEAP_VERSION=15.0
+LEAP_VERSION=15.1
 zypper ar -f obs://devel:openQA/openSUSE_Leap_$LEAP_VERSION devel-openQA
 zypper ar -f obs://devel:openQA:Leap:$LEAP_VERSION/openSUSE_Leap_$LEAP_VERSION devel-openQA-perl-modules
 -------------------------------------------------------------------------------
