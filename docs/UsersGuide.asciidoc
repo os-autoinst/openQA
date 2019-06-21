@@ -293,65 +293,37 @@ the top of the group overview page. However, it only works as operator
 or admin.
 
 
-== Asset cleanup ==
+=== Developer mode ===
 
-For more information on assets, see 'Asset handling' below.
+The developer mode allows to:
 
-Assets like ISO files consume a huge amount of disk space. Therefore openQA
-removes assets automatically according to configurable limits.
+* Create or update needles from +assert_screen+ mismatches ("re-needling")
+* Pause the test execution (at a certain module) for manual investigation of the SUT
 
-This section provides an overall description of the cleanup strategy and
-how to configure the limits. Cleanup-related parameter for the REST API can
-be found in the 'Asset handling' section under 'Use of the REST API'.
+It can be accessed via the "Live View" tab of a running test. Only registered
+users can take control over a tests. Basic instructions and buttons providing further
+information about the different options are already contained on the web page itself.
+So I am not repeating that information here and rather explain the overall workflow.
 
-=== Cleanup strategy ===
+In case the developer mode in not working on your instance, try to follow the
+<<Pitfalls.asciidoc#debugdevelmode,steps for debugging the developer mode under 'Pitfalls'>>.
 
-openQA frequently checks whether assets need to be removed according to
-the configured limits.
+==== Workflow for creating or updating needles ====
 
-To find out whether an asset should be removed, openQA determines by which
-job groups the asset is used. If at least one job within a certain job group
-is using an asset, the asset is considered to be used by that group.
+1. In case a new needles should be created, add the corresponding +assert_screen+s to
+   your test.
+2. Start the test with the +assert_screen+s which are supposed to fail.
+3. Select "Pause on +assert_screen+ failure and confirm.
+4. Wait until the test has paused. There is a button to skip the current timeout to speed
+   this up.
+5. A button for acessing the needle editor should occour. It may take a few seconds till
+   it occurs because the screenshots created so far need to be uploaded from the worker to
+   the web UI. Of course it is also possible to go back to the "Details" tab to create a new
+   needle from any previous screenshot/match available.
+6. After creating the new needle, click the resume button to test whether it worked.
 
-So an asset can be accounted to multiple groups. The assets table which is
-accessible via the admin menu shows these groups for each asset and also
-the latest job.
-
-If the size limit for assets by a certain group is exceeded, openQA will
-remove assets accounted to that group:
-
-* Assets belonging to old jobs are preferred.
-* Assets belonging to jobs which are still scheduled or running are not
-  considered.
-* Assets which are also accounted to another group that has still space
-  left are not considered.
-
-Assets which do _not_ belong to any group are removed after a configurable
-duration. Keep in mind that this behavior is also enabled on local instances
-and affects all cloned jobs (unless cloned into a job group).
-
-'Fixed' assets - those placed in the +fixed+ subdirectory of the relevant
-asset directory - are counted against the group size limit, but are never
-cleaned up. This is intended for things like base disk images which must
-always be available for a test to work.
-
-=== Configure limit for assets within groups ===
-
-To configure the maximum size for the assets of a group, open 'Job groups'
-in the operators menu and select a group. The size limit for assets can be
-configured under 'Edit job group properties'. It also shows the size of
-assets which belong to that group and not to any other group.
-
-Job groups inherit the size limit from their parent group unless the limit
-is set explicitely. The default size limit for groups can be adjusted in
-the +default_group_limits+ section of the openQA config file.
-
-=== Configure limit for groupless assets ===
-
-Assets not belonging to jobs within a group are deleted automatically
-after a certain number of days. That duration can be adjusted by setting
-+untracked_assets_storage_duration+ in the +misc_limits+ section of the
-openQA config to the desired number of days.
+Steps 4. to 6. can be repeated for further +assert_screen+s/needles without restarting the
+test.
 
 
 == Use of the REST API
@@ -440,7 +412,7 @@ openqa-client isos post ISO=my_iso.iso DISTRI=my_distri FLAVOR=sweet \
 --------------------------------------------------------------------------------
 
 
-==== Asset handling ====
+== Asset handling ==
 
 Multiple parameters exist to reference "assets" to be used by tests. "Assets" are essentially
 content that is stored by the openQA web-UI and provided to the workers; when sending jobs to
@@ -528,37 +500,67 @@ in the <<WritingTests.asciidoc,Writing Tests>> guide.
 When using this mechanism you will often also want to use the 'Variable expansion' mechanism
 described in the <<GettingStarted.asciidoc,Getting Started>> guide.
 
-== Developer mode ==
+=== Asset cleanup ===
 
-The developer mode allows to:
+For more information on assets, see 'Asset handling' below.
 
-* Create or update needles from +assert_screen+ mismatches ("re-needling")
-* Pause the test execution (at a certain module) for manual investigation of the SUT
+Assets like ISO files consume a huge amount of disk space. Therefore openQA
+removes assets automatically according to configurable limits.
 
-It can be accessed via the "Live View" tab of a running test. Only registered
-users can take control over a tests. Basic instructions and buttons providing further
-information about the different options are already contained on the web page itself.
-So I am not repeating that information here and rather explain the overall workflow.
+This section provides an overall description of the cleanup strategy and
+how to configure the limits. Cleanup-related parameter for the REST API can
+be found in the 'Asset handling' section under 'Use of the REST API'.
 
-In case the developer mode in not working on your instance, try to follow the
-<<Pitfalls.asciidoc#debugdevelmode,steps for debugging the developer mode under 'Pitfalls'>>.
+==== Cleanup strategy ====
 
-=== Workflow for creating or updating needles ===
+openQA frequently checks whether assets need to be removed according to
+the configured limits.
 
-1. In case a new needles should be created, add the corresponding +assert_screen+s to
-   your test.
-2. Start the test with the +assert_screen+s which are supposed to fail.
-3. Select "Pause on +assert_screen+ failure and confirm.
-4. Wait until the test has paused. There is a button to skip the current timeout to speed
-   this up.
-5. A button for acessing the needle editor should occour. It may take a few seconds till
-   it occurs because the screenshots created so far need to be uploaded from the worker to
-   the web UI. Of course it is also possible to go back to the "Details" tab to create a new
-   needle from any previous screenshot/match available.
-6. After creating the new needle, click the resume button to test whether it worked.
+To find out whether an asset should be removed, openQA determines by which
+job groups the asset is used. If at least one job within a certain job group
+is using an asset, the asset is considered to be used by that group.
 
-Steps 4. to 6. can be repeated for further +assert_screen+s/needles without restarting the
-test.
+So an asset can be accounted to multiple groups. The assets table which is
+accessible via the admin menu shows these groups for each asset and also
+the latest job.
+
+If the size limit for assets by a certain group is exceeded, openQA will
+remove assets accounted to that group:
+
+* Assets belonging to old jobs are preferred.
+* Assets belonging to jobs which are still scheduled or running are not
+  considered.
+* Assets which are also accounted to another group that has still space
+  left are not considered.
+
+Assets which do _not_ belong to any group are removed after a configurable
+duration. Keep in mind that this behavior is also enabled on local instances
+and affects all cloned jobs (unless cloned into a job group).
+
+'Fixed' assets - those placed in the +fixed+ subdirectory of the relevant
+asset directory - are counted against the group size limit, but are never
+cleaned up. This is intended for things like base disk images which must
+always be available for a test to work.
+
+=== Configure limit for assets within groups ===
+
+To configure the maximum size for the assets of a group, open 'Job groups'
+in the operators menu and select a group. The size limit for assets can be
+configured under 'Edit job group properties'. It also shows the size of
+assets which belong to that group and not to any other group.
+
+Job groups inherit the size limit from their parent group unless the limit
+is set explicitely. The default size limit for groups can be adjusted in
+the +default_group_limits+ section of the openQA config file.
+
+
+=== Configure limit for groupless assets ===
+
+Assets not belonging to jobs within a group are deleted automatically
+after a certain number of days. That duration can be adjusted by setting
++untracked_assets_storage_duration+ in the +misc_limits+ section of the
+openQA config to the desired number of days.
+
 
 == Where to now?
 
