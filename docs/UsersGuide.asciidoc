@@ -558,9 +558,8 @@ test.
 
 openQA includes a _client_ script which - depending on the distribution - is
 packaged independantly if you just want to interface with an existing openQA
-instance without needing to install the full package. Call
-`<openqa-folder>/script/client --help` for help (openSUSE: `openqa-client
---help`).
+instance without needing to install the full package. Call `openqa-client
+--help` for help.
 
 Basics are described in the
 <<GettingStarted.asciidoc#gettingstarted,Getting Started>> guide.
