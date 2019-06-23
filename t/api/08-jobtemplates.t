@@ -534,12 +534,9 @@ $yaml->{scenarios}{'x86_64'}{opensuse} = ['spam', 'eggs'];
 is_deeply($t->app->validate_yaml($yaml, 1), ["/products: Missing property."], 'No products defined')
   or diag explain YAML::XS::Dump($yaml);
 $yaml->{products}{'opensuse'} = {};
-is_deeply(
-    @{$t->app->validate_yaml($yaml, 1)}[0],
-    '/products/opensuse/distribution: Missing property.',
-    'No distri specified'
-) or diag explain YAML::XS::Dump($yaml);
-$yaml->{products}{'opensuse'}{distribution} = 'sle';
+is_deeply(@{$t->app->validate_yaml($yaml, 1)}[0], '/products/opensuse/distri: Missing property.', 'No distri specified')
+  or diag explain YAML::XS::Dump($yaml);
+$yaml->{products}{'opensuse'}{distri} = 'sle';
 is_deeply(@{$t->app->validate_yaml($yaml, 1)}[0], '/products/opensuse/flavor: Missing property.', 'No flavor specified')
   or diag explain YAML::XS::Dump($yaml);
 $yaml->{products}{'opensuse'}{flavor} = 'DVD';
@@ -632,9 +629,9 @@ is_deeply(
         },
         products => {
             'opensuse-13.1-DVD-i586' => {
-                distribution => 'opensuse',
-                flavor       => 'DVD',
-                version      => '13.1',
+                distri  => 'opensuse',
+                flavor  => 'DVD',
+                version => '13.1',
             },
         },
     },
@@ -737,9 +734,9 @@ subtest 'Create and modify groups with YAML' => sub {
         },
         products => {
             'opensuse-13.1-DVD-i586' => {
-                distribution => 'opensuse',
-                flavor       => 'DVD',
-                version      => '13.1',
+                distri  => 'opensuse',
+                flavor  => 'DVD',
+                version => '13.1',
             },
         },
     };
@@ -862,8 +859,8 @@ subtest 'Create and modify groups with YAML' => sub {
             'Invalid machine in defaults'
         );
 
-        $yaml->{defaults}{i586}{'machine'}                          = '64bit';
-        $yaml->{products}{'opensuse-13.1-DVD-i586'}{'distribution'} = 'geeko';
+        $yaml->{defaults}{i586}{'machine'}                    = '64bit';
+        $yaml->{products}{'opensuse-13.1-DVD-i586'}{'distri'} = 'geeko';
         $t->post_ok(
             "/api/v1/experimental/job_templates_scheduling/$job_group_id3",
             form => {
@@ -907,13 +904,13 @@ subtest 'References' => sub {
           priority: 50
       products:
         opensuse-13.1-DVD-i586: &opensuse13
-          distribution: opensuse
+          distri: opensuse
           flavor: DVD
           version: 13.1
         opensuse-13.1-DVD-ppc64:
           *opensuse13
         sle-12-SP1-Server-DVD-Updates-x86_64:
-          distribution: sle
+          distri: sle
           flavor: Server-DVD-Updates
           version: 12-SP1
     ');

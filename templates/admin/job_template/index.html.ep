@@ -115,7 +115,7 @@
       priority: <b>PRIORITY</b>
   products:
     <i>medium</i>-<b>ARCH</b>:
-      distribution: <b>DISTRIBUTION</b>
+      distri: <b>DISTRI</b>
       flavor: <b>FLAVOR</b>
       version: <b>VERSION</b>
                         </code>

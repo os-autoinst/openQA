@@ -65,12 +65,12 @@ properties:
         type: object
         description: The name of a product (medium)
         required:
-          - distribution
+          - distri
           - flavor
           - version
         additionalProperties: false
         properties:
-          distribution:
+          distri:
             type: string
           flavor:
             type: string

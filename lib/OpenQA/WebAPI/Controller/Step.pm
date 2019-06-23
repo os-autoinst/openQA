@@ -124,7 +124,7 @@ sub edit {
     my $module_detail = $self->stash('module_detail');
     my $job           = $self->stash('job');
     my $imgname       = $module_detail->{screenshot};
-    my $distribution  = $job->DISTRI;
+    my $distri        = $job->DISTRI;
     my $dversion      = $job->VERSION || '';
 
     # Each object in @needles will contain the name, both the url and the local path
@@ -141,7 +141,7 @@ sub edit {
     my $screenshot;
     my %basic_needle_data = (
         tags       => $tags,
-        distri     => $distribution,
+        distri     => $distri,
         version    => $dversion,
         image_name => $imgname,
     );
@@ -474,8 +474,8 @@ sub viewimg {
     my $module_detail = $self->stash('module_detail');
     my $job           = $self->stash('job');
     return $self->reply->not_found unless $job;
-    my $distribution = $job->DISTRI;
-    my $dversion     = $job->VERSION || '';
+    my $distri   = $job->DISTRI;
+    my $dversion = $job->VERSION || '';
 
     # initialize hash to store needle lists by tags
     my %needles_by_tag;
@@ -507,10 +507,10 @@ sub viewimg {
     # load primary needle match
     my $primary_match;
     if (my $needle = $module_detail->{needle}) {
-        if (my $needleinfo = needle_info($needle, $distribution, $dversion, $module_detail->{json})) {
+        if (my $needleinfo = needle_info($needle, $distri, $dversion, $module_detail->{json})) {
             my $info = {
                 name          => $needle,
-                image         => $self->needle_url($distribution, $needle . '.png', $dversion, $needleinfo->{json}),
+                image         => $self->needle_url($distri, $needle . '.png', $dversion, $needleinfo->{json}),
                 areas         => $needleinfo->{area},
                 error         => $module_detail->{error},
                 matches       => [],
@@ -527,11 +527,11 @@ sub viewimg {
     if ($module_detail->{needles}) {
         for my $needle (@{$module_detail->{needles}}) {
             my $needlename = $needle->{name};
-            my $needleinfo = needle_info($needlename, $distribution, $dversion, $needle->{json});
+            my $needleinfo = needle_info($needlename, $distri, $dversion, $needle->{json});
             next unless $needleinfo;
             my $info = {
                 name    => $needlename,
-                image   => $self->needle_url($distribution, "$needlename.png", $dversion, $needleinfo->{json}),
+                image   => $self->needle_url($distri, "$needlename.png", $dversion, $needleinfo->{json}),
                 error   => $needle->{error},
                 areas   => $needleinfo->{area},
                 matches => [],
