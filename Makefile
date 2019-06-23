@@ -1,5 +1,6 @@
 PROVE_ARGS ?= -r -v
 DOCKER_IMG ?= openqa:latest
+TEST_PG_PATH ?= /dev/shm/tpg
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 docker_env_file := "$(current_dir)/docker.env"
@@ -89,9 +90,18 @@ endif
 ifeq ($(TRAVIS),true)
 test: run-tests-within-container
 else
-test: checkstyle
-	OPENQA_CONFIG= prove ${PROVE_ARGS}
+test: checkstyle test-with-database
 endif
+
+.PHONY: test-unit-and-integration
+test-unit-and-integration:
+	OPENQA_CONFIG= prove ${PROVE_ARGS}
+
+.PHONY: test-with-database
+test-with-database:
+	test -d $(TEST_PG_PATH) && (pg_ctl -D $(TEST_PG_PATH) -s status >&/dev/null || pg_ctl -D $(TEST_PG_PATH) -s start) || ./t/test_postgresql $(TEST_PG_PATH)
+	$(MAKE) test-unit-and-integration TEST_PG="DBI:Pg:dbname=openqa_test;host=$(TEST_PG_PATH)"
+	-pg_ctl -D $(TEST_PG_PATH) stop
 
 # prepares running the tests within Docker (eg. pulls os-autoinst) and then runs the tests considering
 # the test matrix environment variables

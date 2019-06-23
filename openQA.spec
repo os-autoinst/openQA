@@ -228,10 +228,7 @@ rm -f t/00-tidy.t
 #make test
 rm -rf %{buildroot}/DB
 export LC_ALL=en_US.UTF-8
-./t/test_postgresql %{buildroot}/DB
-export TEST_PG="DBI:Pg:dbname=openqa_test;host=%{buildroot}/DB"
-OBS_RUN=1 prove -rv || true
-pg_ctl -D %{buildroot}/DB stop
+make test-with-database OBS_RUN=1 PROVE_ARGS='-rv' TEST_PG_PATH=%{buildroot}/DB || true
 rm -rf %{buildroot}/DB
 %endif
 
