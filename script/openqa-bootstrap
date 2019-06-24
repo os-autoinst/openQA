@@ -34,11 +34,9 @@ fi
 
 
 # setup webserver and fake-auth
-# from script/setup-single-instance (https://github.com/os-autoinst/openQA/pull/1933)
-for i in headers proxy proxy_http proxy_wstunnel rewrite ; do a2enmod $i ; done
-sed -i -e 's/^.*httpsonly.*$/httpsonly = 0/g' /etc/openqa/openqa.ini
+setup=/usr/share/openqa/script/configure-web-proxy
+(command -f $setup && sh -ex $setup) || (curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/configure-web-proxy | bash -ex)
 sed -i -e 's/#*.*method.*=.*$/method = Fake/' /etc/openqa/openqa.ini
-sed "s/#ServerName.*$/ServerName $(hostname)/" /etc/apache2/vhosts.d/openqa.conf.template > /etc/apache2/vhosts.d/openqa.conf
 
 
 if ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse) ; then

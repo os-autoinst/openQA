@@ -128,6 +128,17 @@ dnf install openqa openqa-httpd
 
 == Basic configuration
 
+For a local instance setup you can simply execute the script:
+
+[source,sh]
+----
+/usr/share/openqa/script/configure-web-proxy
+----
+
+This will automatically setup a local apache http proxy. Read on for more
+detailed setup instructions with all the details.
+
+
 === Apache proxy
 
 It is required to run openQA behind an http proxy (apache, nginx, etc..). See the

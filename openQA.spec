@@ -472,6 +472,7 @@ fi
 %{_datadir}/openqa/script/load_templates
 %{_datadir}/openqa/script/openqa-clone-job
 %{_datadir}/openqa/script/openqa-clone-custom-git-refspec
+%{_datadir}/openqa/script/configure-web-proxy
 %dir %{_datadir}/openqa/lib
 %{_datadir}/openqa/lib/OpenQA/Client.pm
 %{_datadir}/openqa/lib/OpenQA/Client
