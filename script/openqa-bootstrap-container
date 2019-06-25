@@ -1,10 +1,9 @@
-#!/bin/bash
-set -e
+#!/bin/bash -e
 
 # This script doesn't work on Leap 15.0 as it makes use of the -P option of systemd-run
 # which is not available there
 
-if [ $(id -ru) -ne 0 ]; then
+if [ "$(id -ru)" != "0" ]; then
     echo "$0 must be run as root"
     exit 1
 fi
@@ -60,7 +59,7 @@ if [ ! -d $CONTAINER_PATH ] ; then
     zypper -n --root $CONTAINER_PATH addrepo $DEFAULT_REPO defaultrepo
     zypper -n --root $CONTAINER_PATH --gpg-auto-import-keys refresh
     # There are non-fatal errors when zyppering inside chroot, so ignoring errors on the next line
-    zypper -n --root $CONTAINER_PATH install --no-recommends -ly $PKGS_TO_INSTALL || test $? == 107
+    zypper -n --root $CONTAINER_PATH install --no-recommends -ly "$PKGS_TO_INSTALL" || test $? = 107
 else
     echo Container path $CONTAINER_PATH already exists, stopping here. Please clean manually and rerun.
     exit 1
@@ -70,7 +69,7 @@ systemctl daemon-reload
 systemctl start systemd-nspawn-openqa@$CONTAINER_NAME
 # ensure that the container is really running
 # ignore expected errors about 'Failed to create bus connection: Protocol error' and restarting error
-while ! timeout -s9 2 systemd-run -qPM $CONTAINER_NAME /bin/bash -c whoami >& /dev/null ; do systemctl restart systemd-nspawn-openqa@$CONTAINER_NAME.service || true ; sleep 3 ; done
+while ! timeout -s9 2 systemd-run -qPM $CONTAINER_NAME /bin/bash -c whoami /dev/null 2>&1 ; do systemctl restart systemd-nspawn-openqa@$CONTAINER_NAME.service || true ; sleep 3 ; done
 systemd-run -qPM $CONTAINER_NAME /bin/bash -c '/usr/share/openqa/script/openqa-bootstrap'
 
 echo -e "$(tput setaf 2;tput bold)Your openQA container has been created. Run 'systemd-run -tM $CONTAINER_NAME /bin/bash' to get a shell in the container$(tput sgr0)"

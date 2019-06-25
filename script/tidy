@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 #
 # perltidy rules can be found in ../.perltidyrc
@@ -15,55 +15,57 @@ if test "$1"  = '--only-changed'; then
     only_changed=1
 fi
 
-if ! which perltidy > /dev/null 2>&1; then
+if ! command -v perltidy > /dev/null 2>&1; then
     echo "No perltidy found, install it first!"
     exit 1
 fi
 
 perltidy_version_found=$(perltidy -version | sed -n '1s/^.*perltidy, v\([0-9]*\)\s*$/\1/p')
-perltidy_version_expected=$(sed -n "s/^.*Tidy[^0-9]*\([0-9]*\)['];$/\1/p" ${0%/*}/../cpanfile)
+perltidy_version_expected=$(sed -n "s/^.*Tidy[^0-9]*\([0-9]*\)['];$/\1/p" "${0%/*}/../cpanfile")
 if [ "$perltidy_version_found" != "$perltidy_version_expected" ]; then
     echo "Wrong version of perltidy. Found '$perltidy_version_found', expected '$perltidy_version_expected'"
     exit 1
 fi
 
-function find_changed_files() {
+find_changed_files() {
     changed_files=()
     for file in "${files[@]}"; do
-        if ! [[ $only_changed ]] || [ "$(git diff --name-only "$file")" ]; then
+        if ! [ $only_changed ] || [ "$(git diff --name-only "$file")" ]; then
             changed_files+=("$file")
         fi
     done
 }
 
-cd "${0%/*}/.."
+cd "${0%/*}/.." || exit 1
 
 # just to make sure we are at the right location
 test -e script/openqa || exit 1
 
-find -name '*.tdy' -delete
+find . -name '*.tdy' -delete
 
 # .pc directory is used for "quilt" patch system (in Debian/Ubuntu)
 # it contains pre-patched files and should be ignored
+# shellcheck disable=SC2207
 files=($(find . ! -path '*/.pc/*' \( -name '*.p[lm]' -o -name '*.t' \)))
 find_changed_files
+# shellcheck disable=SC2128
 [[ $changed_files ]] && perltidy --pro=.../.perltidyrc "${changed_files[@]}"
 
 files=(script/{check_dependencies,client,initdb,openqa,worker,upgradedb,load_templates,dump_templates,openqa-scheduler,openqa-websockets})
 find_changed_files
-[[ $changed_files ]] && perltidy $TIDY_ARGS "${changed_files[@]}"
+# shellcheck disable=SC2128
+[[ $changed_files ]] && perltidy "$TIDY_ARGS" "${changed_files[@]}"
 
-while read file; do
-    if ! diff -u ${file%.tdy} $file; then
+while IFS= read -r -d '' file
+do
+    if ! diff -u "${file%.tdy}" "$file"; then
         if test -n "$check"; then
             echo "RUN tools/tidy script before checkin"
             exit 1
         else
-            mv -v $file ${file%.tdy}
+            mv -v "$file" "${file%.tdy}"
         fi
     else
-        rm $file
+        rm "$file"
     fi
-done < <(find . -name "*.tdy")
-
-# vim: set sw=4 et:
+done < <(find . -name "*.tdy" -print0)

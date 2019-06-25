@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh -e
 
-# Copyright (C) 2016 SUSE LLC
+# Copyright (C) 2016-2019 SUSE LLC
 # Copyright (C) 2016 Red Hat
 #
 # This program is free software; you can redistribute it and/or modify
@@ -40,8 +40,6 @@
 # would be appropriate if running from the top level of an openQA
 # source tree.
 
-set -e
-
 # Get Assetpack pipes from WebAPI.pm
 ASSETPACK_PLUGINS=$(grep 'AssetPack' lib/OpenQA/WebAPI.pm | awk -F '[()]' '{print $3}')
 [ -z "$ASSETPACK_PLUGINS" ] && echo "Can't get AssetPack pipes" && exit 1
@@ -49,5 +47,7 @@ ASSETPACK_PLUGINS=$(grep 'AssetPack' lib/OpenQA/WebAPI.pm | awk -F '[()]' '{prin
 BUILD_CACHE="plugin AssetPack => { pipes => [qw(${ASSETPACK_PLUGINS})]} and app->asset->process()"
 BUILD_CACHE_OPTS='-Ilib/ -MMojolicious::Lite -MOpenQA::WebAPI::AssetPipe'
 
-MOJO_MODE=test perl $BUILD_CACHE_OPTS -e "$BUILD_CACHE" > /dev/null
-MOJO_MODE=development perl $BUILD_CACHE_OPTS -e "$BUILD_CACHE" > /dev/null
+# shellcheck disable=SC2086  # allow command line options without quotes
+MOJO_MODE="test" perl $BUILD_CACHE_OPTS -e "$BUILD_CACHE" > /dev/null
+# shellcheck disable=SC2086
+MOJO_MODE="development" perl $BUILD_CACHE_OPTS -e "$BUILD_CACHE" > /dev/null
