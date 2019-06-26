@@ -6,6 +6,13 @@ dbuser="${dbuser:="geekotest"}"
 
 # add extra repos for leap
 source /etc/os-release
+if [[ "$NAME" == "openSUSE Leap"]] ; then
+	if ! foundrepo devel:openQA; then zypper -n addrepo -p 90 obs://devel:openQA devel:openQA; fi
+	if ! foundrepo devel:openQA:Leap:${VERSION}; then zypper -n addrepo -p 91 obs://devel:openQA:Leap:${VERSION} devel:openQA:Leap:${VERSION}; fi
+	zypper -n  --gpg-auto-import-keys refresh
+fi
+
+source /etc/os-release
 if [[ "$NAME" == "openSUSE Leap" ]] ; then
 	zypper -n addrepo -p 90 obs://devel:openQA devel:openQA
 	zypper -n addrepo -p 91 obs://devel:openQA:Leap:${VERSION} devel:openQA:Leap:${VERSION}
@@ -105,3 +112,9 @@ EOF
 
 # start worker
 systemctl enable --now openqa-worker@1.service
+
+foundrepo() {
+	zypper lr "$1" && return
+	return 1
+}
+
