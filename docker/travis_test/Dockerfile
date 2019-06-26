@@ -41,6 +41,7 @@ RUN zypper in -y -C \
        xorg-x11-fonts \
        'rubygem(sass)' \
        perl \
+       ShellCheck \
        sudo \
        'perl(App::cpanminus)' \
        'perl(Archive::Extract)' \
