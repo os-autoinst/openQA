@@ -34,6 +34,7 @@ seq:
       - ./t/27-errorpages.t
       - ./t/30-test_parser.t
       - ./t/31-api_descriptions.t
+      - ./t/40-openqa-clone-job.t
       - ./t/40-script_openqa-label-all.t
       - ./t/40-script_openqa-clone-custom-git-refspec.t
       - ./t/basic.t

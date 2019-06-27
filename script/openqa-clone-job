@@ -137,6 +137,12 @@ use OpenQA::Client;
 use OpenQA::Script;
 
 my %options;
+my $jobid;
+my $ua;
+my $local;
+my $local_url;
+my $remote;
+my $remote_url;
 
 sub usage($) {
     my $r = shift;
@@ -159,68 +165,65 @@ sub split_jobid {
     return ($host_url, $jobid);
 }
 
-GetOptions(
-    \%options,           "from=s",        "host=s",               "dir=s",
-    "apikey:s",          "apisecret:s",   "verbose|v",            "skip-deps",
-    "skip-chained-deps", "skip-download", "parental-inheritance", "help|h",
-    "show-progress",     "within-instance|w=s",
-) or usage(1);
+sub parse_options {
+    GetOptions(
+        \%options,           "from=s",        "host=s",               "dir=s",
+        "apikey:s",          "apisecret:s",   "verbose|v",            "skip-deps",
+        "skip-chained-deps", "skip-download", "parental-inheritance", "help|h",
+        "show-progress",     "within-instance|w=s",
+    ) or usage(1);
 
-usage(1) if $options{help} || ($options{'within-instance'} && $options{from});
-my $jobid;
-if ($options{'within-instance'}) {
-    ($options{'within-instance'}, $jobid) = split_jobid($options{'within-instance'});
-    $options{'skip-download'} = 1;
-    $options{'from'}          = $options{'within-instance'};
-    $options{'host'}          = $options{'within-instance'};
+    usage(1) if $options{help} || ($options{'within-instance'} && $options{from});
+    if ($options{'within-instance'}) {
+        ($options{'within-instance'}, $jobid) = split_jobid($options{'within-instance'});
+        $options{'skip-download'} = 1;
+        $options{'from'}          = $options{'within-instance'};
+        $options{'host'}          = $options{'within-instance'};
+    }
+    elsif ($options{'from'}) {
+        ($options{'from'}, $jobid) = split_jobid($options{'from'});
+    }
+    $jobid = shift @ARGV unless $jobid;
+    die "missing job reference, see --help for usage\n" unless $jobid;
+    if (!$options{'from'}) {
+        ($options{'from'}, $jobid) = split_jobid($jobid);
+    }
+    usage(1) unless ($jobid && $options{'from'});
+    $options{'dir'}  ||= '/var/lib/openqa/factory';
+    $options{'host'} ||= 'localhost';
+    return $jobid;
 }
-elsif ($options{'from'}) {
-    ($options{'from'}, $jobid) = split_jobid($options{'from'});
-}
-$jobid = shift @ARGV unless $jobid;
-die "missing job reference, see --help for usage\n" unless $jobid;
-if (!$options{'from'}) {
-    ($options{'from'}, $jobid) = split_jobid($jobid);
-}
-usage(1) unless ($jobid && $options{'from'});
 
-$options{'dir'} ||= '/var/lib/openqa/factory';
+sub create_url_handler {
+    $ua = LWP::UserAgent->new;
+    $ua->timeout(10);
+    $ua->env_proxy;
+    $ua->show_progress(1) if ($options{'show-progress'});
 
-my $ua = LWP::UserAgent->new;
-$ua->timeout(10);
-$ua->env_proxy;
-$ua->show_progress(1) if ($options{'show-progress'});
+    if ($options{'host'} !~ '/') {
+        $local_url = Mojo::URL->new();
+        $local_url->host($options{'host'});
+        $local_url->scheme('http');
+    }
+    else {
+        $local_url = Mojo::URL->new($options{'host'});
+    }
+    $local_url->path('/api/v1/jobs');
+    $local = OpenQA::Client->new(
+        api       => $local_url->host,
+        apikey    => $options{'apikey'},
+        apisecret => $options{'apisecret'});
 
-$options{'host'} ||= 'localhost';
-
-my $local;
-my $local_url;
-if ($options{'host'} !~ '/') {
-    $local_url = Mojo::URL->new();
-    $local_url->host($options{'host'});
-    $local_url->scheme('http');
+    if ($options{'from'} !~ '/') {
+        $remote_url = Mojo::URL->new();
+        $remote_url->host($options{'from'});
+        $remote_url->scheme('http');
+    }
+    else {
+        $remote_url = Mojo::URL->new($options{'from'});
+    }
+    $remote_url->path('/api/v1/jobs');
 }
-else {
-    $local_url = Mojo::URL->new($options{'host'});
-}
-$local_url->path('/api/v1/jobs');
-$local = OpenQA::Client->new(
-    api       => $local_url->host,
-    apikey    => $options{'apikey'},
-    apisecret => $options{'apisecret'});
-
-my $remote;
-my $remote_url;
-if ($options{'from'} !~ '/') {
-    $remote_url = Mojo::URL->new();
-    $remote_url->host($options{'from'});
-    $remote_url->scheme('http');
-}
-else {
-    $remote_url = Mojo::URL->new($options{'from'});
-}
-$remote_url->path('/api/v1/jobs');
-$remote = OpenQA::Client->new(api => $remote_url->host);
 
 sub openqa_baseurl {
     my ($local_url) = @_;
@@ -301,7 +304,14 @@ sub clone_job {
     }
 }
 
-if ($jobid) {
+sub main {
+    my ($jobid, $host) = parse_options();
+    create_url_handler();
+    $remote = OpenQA::Client->new(api => $host);
+    return unless $jobid;
     clone_job($jobid);
 }
+
+main;
+
 1;
