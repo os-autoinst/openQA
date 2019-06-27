@@ -19,19 +19,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-=head1 clone_job
+=head1 openqa-clone-job
 
-clone_job.pl - clone job from remote QA instance
+openqa-clone-job - clone job from local or remote openQA instances
 
 =head1 SYNOPSIS
 
-  clone_job.pl [OPTIONS] JOBID [KEY=[VALUE] ...]
+  openqa-clone-job [OPTIONS] JOBREF [KEY=[VALUE] ...]
 
-  clone_job.pl --from https://openqa.opensuse.org 42
+  openqa-clone-job https://openqa.opensuse.org/t42
 
-  clone_job.pl --from https://openqa.opensuse.org --host openqa.example.com 42
+  openqa-clone-job --from https://openqa.opensuse.org/tests/42
 
-  clone_job.pl --from localhost --host localhost 42 MAKETESTSNAPSHOTS=1 FOOBAR=
+  openqa-clone-job --from https://openqa.opensuse.org 42
+
+  openqa-clone-job --from https://openqa.opensuse.org --host openqa.example.com 42
+
+  openqa-clone-job --from localhost --host localhost 42 MAKETESTSNAPSHOTS=1 FOOBAR=
 
 
 =head1 OPTIONS
@@ -97,11 +101,17 @@ print help
 Clone job from another instance. Downloads all assets associated
 with the job. Optionally settings can be modified.
 
-clone_job.pl --from https://openqa.opensuse.org 42
+openqa-clone-job https://openqa.opensuse.org/t42
 
-clone_job.pl --from https://openqa.opensuse.org --host openqa.example.com 42
+openqa-clone-job --from https://openqa.opensuse.org 42
 
-clone_job.pl --from localhost --host localhost 42 MAKETESTSNAPSHOTS=1 FOOBAR=
+openqa-clone-job --from https://openqa.opensuse.org --host openqa.example.com 42
+
+openqa-clone-job --from localhost --host localhost 42 MAKETESTSNAPSHOTS=1 FOOBAR=
+
+Call with either a full URL pointing to a test job to clone from or one of
+both parameters C<--from> or C<--within-instance>. The job ID can be specified
+as part of the URL or as its own parameter.
 
 Any parent jobs (chained or parallel) are also cloned unless C<--skip-deps> or
 C<--skip-chained-deps> is specified. If C<--skip-chained-deps> is specified
@@ -135,6 +145,14 @@ sub usage($) {
     }
 }
 
+sub split_jobid {
+    my ($url_string) = @_;
+    my $url          = Mojo::URL->new($url_string);
+    my $host_url     = $url->scheme . '://' . $url->host;
+    (my $jobid) = $url->path =~ /([0-9]+)/;
+    return ($host_url, $jobid);
+}
+
 GetOptions(
     \%options,           "from=s",        "host=s",               "dir=s",
     "apikey:s",          "apisecret:s",   "verbose|v",            "skip-deps",
@@ -142,14 +160,23 @@ GetOptions(
     "show-progress",     "within-instance|w=s",
 ) or usage(1);
 
-usage(1) unless @ARGV;
-my $jobid = shift @ARGV || die "missing jobid\n";
+my $jobid;
+usage(1) if $options{'within-instance'} && $options{from};
 if ($options{'within-instance'}) {
+    ($options{'within-instance'}, $jobid) = split_jobid($options{'within-instance'});
     $options{'skip-download'} = 1;
     $options{'from'}          = $options{'within-instance'};
     $options{'host'}          = $options{'within-instance'};
 }
-usage(1) unless exists $options{'from'};
+elsif ($options{'from'}) {
+    ($options{'from'}, $jobid) = split_jobid($options{'from'});
+}
+$jobid = shift @ARGV unless $jobid;
+die "missing job reference\n" unless $jobid;
+if (!$options{'from'}) {
+    ($options{'from'}, $jobid) = split_jobid($jobid);
+}
+usage(1) unless ($jobid && $options{'from'});
 
 $options{'dir'} ||= '/var/lib/openqa/factory';
 
@@ -209,7 +236,7 @@ sub get_job {
         my $err = $tx->error;
         # there is no code for some error reasons, e.g. 'connection refused'
         $err->{code} //= '';
-        warn "failed to get job: $err->{code} $err->{message}";
+        warn "failed to get job '$jobid': $err->{code} $err->{message}";
         exit 1;
     }
 
