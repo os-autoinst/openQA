@@ -115,6 +115,7 @@ RUN zypper in -y -C \
        'perl(Test::Output)' \
        'perl(Socket::MsgHdr)' \
        'perl(Test::Warnings)' \
+       'perl(Text::Diff)' \
        'perl(Text::Markdown)' \
        'perl(Time::ParseDate)' \
        'perl(XSLoader) >= 0.24' \
