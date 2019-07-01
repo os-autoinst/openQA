@@ -145,9 +145,9 @@ sub get_job_groups {
         # Extract products and tests per architecture
         while (my $template = $templates->next) {
             $group{products}{$template->product->name} = {
-                distribution => $template->product->distri,
-                flavor       => $template->product->flavor,
-                version      => $template->product->version
+                distri  => $template->product->distri,
+                flavor  => $template->product->flavor,
+                version => $template->product->version
             };
 
             my %test_suite;
@@ -330,7 +330,7 @@ sub update {
                             my $product      = $products->find(
                                 {
                                     arch    => $arch,
-                                    distri  => $product_spec->{distribution},
+                                    distri  => $product_spec->{distri},
                                     flavor  => $product_spec->{flavor},
                                     version => $product_spec->{version},
                                 });
