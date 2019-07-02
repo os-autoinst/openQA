@@ -1,4 +1,5 @@
 #!/bin/bash -e
+# shellcheck disable=SC2103
 # Copyright (C) 2016-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
@@ -51,7 +52,6 @@ update_docs() {
 }
 
 update_api() {
-
         mkdir -p api/src
         curl -o api/src/testapi.pm https://raw.githubusercontent.com/os-autoinst/os-autoinst/master/testapi.pm
         cd api

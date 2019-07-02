@@ -47,7 +47,8 @@ ASSETPACK_PLUGINS=$(grep 'AssetPack' lib/OpenQA/WebAPI.pm | awk -F '[()]' '{prin
 BUILD_CACHE="plugin AssetPack => { pipes => [qw(${ASSETPACK_PLUGINS})]} and app->asset->process()"
 BUILD_CACHE_OPTS='-Ilib/ -MMojolicious::Lite -MOpenQA::WebAPI::AssetPipe'
 
-# shellcheck disable=SC2086  # allow command line options without quotes
-MOJO_MODE="test" perl $BUILD_CACHE_OPTS -e "$BUILD_CACHE" > /dev/null
+# Allow command line options without quotes
 # shellcheck disable=SC2086
-MOJO_MODE="development" perl $BUILD_CACHE_OPTS -e "$BUILD_CACHE" > /dev/null
+env MOJO_MODE="test" perl $BUILD_CACHE_OPTS -e "$BUILD_CACHE" > /dev/null
+# shellcheck disable=SC2086
+env MOJO_MODE="development" perl $BUILD_CACHE_OPTS -e "$BUILD_CACHE" > /dev/null

@@ -4,7 +4,8 @@ INSTALL_FROM_CPAN="${INSTALL_FROM_CPAN:-0}"
 export OPENQA_LOGFILE=/opt/openqa/openqa-debug.log
 
 run_test() {
-    # shellcheck disable=SC2086  # allow command line options without quotes
+    # Allow command line options without quotes
+    # shellcheck disable=SC2086
     prove ${PROVE_ARGS} "$@" || touch tests_failed
 }
 
@@ -53,7 +54,8 @@ else
         make checkstyle || touch tests_failed
         list=$(find ./t/ -name '*.t' -not -path './t/ui/*' | sort)
     fi
-    # shellcheck disable=SC2086  # allow command line options without quotes
+    # Allow command line options without quotes
+    # shellcheck disable=SC2086
     run_test -r $list
 fi
 
