@@ -46,7 +46,7 @@ find . -name '*.tdy' -delete
 # .pc directory is used for "quilt" patch system (in Debian/Ubuntu)
 # it contains pre-patched files and should be ignored
 # shellcheck disable=SC2207
-files=($(find . ! -path '*/.pc/*' \( -name '*.p[lm]' -o -name '*.t' \)))
+files=($(find . ! -path '*/.pc/*' -type f \( -name '*.p[lm]' -o -name '*.t' \)) $(file --mime-type script/* | sed -n 's/^\(.*\):.*text\/x-perl.*$/\1/p'))
 find_changed_files
 # shellcheck disable=SC2128
 [[ $changed_files ]] && perltidy --pro=.../.perltidyrc "${changed_files[@]}"

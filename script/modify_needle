@@ -71,14 +71,14 @@ for my $needle (@ARGV) {
     close $fh;
 
     my $changed = 0;
-    my %tags = map { $_ => 1 } @{$info->{tags}};
+    my %tags    = map { $_ => 1 } @{$info->{tags}};
     for my $at (@add_tags) {
-	$changed = 1 unless $tags{$at};
-	$tags{$at} = 1;
+        $changed = 1 unless $tags{$at};
+        $tags{$at} = 1;
     }
-    $info->{tags} = [ sort keys %tags ];
+    $info->{tags} = [sort keys %tags];
     next unless $changed;
-    
+
     open($fh, '>', $needle) || die "can't open $needle";
     print $fh Cpanel::JSON::XS->new->pretty->encode($info);
     close $fh;
