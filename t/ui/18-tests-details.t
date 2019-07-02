@@ -174,14 +174,14 @@ subtest 'bug reporting' => sub {
 
 # test running view with Test::Mojo as phantomjs would get stuck on the
 # liveview/livelog forever
-my $t   = Test::Mojo->new('OpenQA::WebAPI');
-my $get = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
+my $t = Test::Mojo->new('OpenQA::WebAPI');
+$t->get_ok($baseurl . 'tests/99963')->status_is(200);
 
-my @worker_text = $get->tx->res->dom->find('#assigned-worker')->map('all_text')->each;
+my @worker_text = $t->tx->res->dom->find('#assigned-worker')->map('all_text')->each;
 like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker displayed when job running');
-my @worker_href = $get->tx->res->dom->find('#assigned-worker a')->map(attr => 'href')->each;
+my @worker_href = $t->tx->res->dom->find('#assigned-worker a')->map(attr => 'href')->each;
 is($worker_href[0], '/admin/workers/1', 'link to worker correct');
-my @scenario_description = $get->tx->res->dom->find('#scenario-description')->map('all_text')->each;
+my @scenario_description = $t->tx->res->dom->find('#scenario-description')->map('all_text')->each;
 like(
     $scenario_description[0],
     qr/[ \n]*Simple kde test, before advanced_kde[ \n]*/,
@@ -276,22 +276,21 @@ subtest 'render video link if frametime is available' => sub {
 };
 
 subtest 'route to latest' => sub {
-    $get
-      = $t->get_ok('/tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit')
+    $t->get_ok('/tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit')
       ->status_is(200);
     my $header = $t->tx->res->dom->at('#info_box .card-header a');
     is($header->text,   '99963',        'link shows correct test');
     is($header->{href}, '/tests/99963', 'latest link shows tests/99963');
-    my $first_detail = $get->tx->res->dom->at('#details tbody > tr ~ tr');
+    my $first_detail = $t->tx->res->dom->at('#details tbody > tr ~ tr');
     is($first_detail->at('.component a')->{href}, '/tests/99963/modules/isosize/steps/1/src', 'correct src link');
     is($first_detail->at('.links_a a')->{'data-url'}, '/tests/99963/modules/isosize/steps/1', 'correct needle link');
-    $get    = $t->get_ok('/tests/latest?flavor=DVD&arch=x86_64&test=kde')->status_is(200);
+    $t->get_ok('/tests/latest?flavor=DVD&arch=x86_64&test=kde')->status_is(200);
     $header = $t->tx->res->dom->at('#info_box .card-header a');
     is($header->{href}, '/tests/99963', '... as long as it is unique');
-    $get    = $t->get_ok('/tests/latest?version=13.1')->status_is(200);
+    $t->get_ok('/tests/latest?version=13.1')->status_is(200);
     $header = $t->tx->res->dom->at('#info_box .card-header a');
     is($header->{href}, '/tests/99981', 'returns highest job nr of ambiguous group');
-    $get    = $t->get_ok('/tests/latest?test=kde&machine=32bit')->status_is(200);
+    $t->get_ok('/tests/latest?test=kde&machine=32bit')->status_is(200);
     $header = $t->tx->res->dom->at('#info_box .card-header a');
     is($header->{href}, '/tests/99937', 'also filter on machine');
     my $job_groups_links = $t->tx->res->dom->find('.navbar .dropdown a + ul.dropdown-menu a');
@@ -304,7 +303,7 @@ subtest 'route to latest' => sub {
     like($build_href, qr/groupid=1001/,    'href to test overview');
     like($build_href, qr/version=13.1/,    'href to test overview');
     like($build_href, qr/build=0091/,      'href to test overview');
-    $get = $t->get_ok('/tests/latest?test=foobar')->status_is(404);
+    $t->get_ok('/tests/latest?test=foobar')->status_is(404);
 };
 
 # test /details route
@@ -472,10 +471,10 @@ my $post
   = $t_api->post_ok($baseurl . 'api/v1/jobs/99963/set_done', form => {result => 'FAILED'})
   ->status_is(200, 'set job as done');
 
-$get         = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
-@worker_text = $get->tx->res->dom->find('#assigned-worker')->map('all_text')->each;
+$t->get_ok($baseurl . 'tests/99963')->status_is(200);
+@worker_text = $t->tx->res->dom->find('#assigned-worker')->map('all_text')->each;
 like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker still displayed when job set to done');
-@scenario_description = $get->tx->res->dom->find('#scenario-description')->map('all_text')->each;
+@scenario_description = $t->tx->res->dom->find('#scenario-description')->map('all_text')->each;
 like(
     $scenario_description[0],
     qr/[ \n]*Simple kde test, before advanced_kde[ \n]*/,
@@ -484,7 +483,7 @@ like(
 
 # now test the details of a job with nearly no settings which should yield no
 # warnings
-$get = $t->get_ok('/tests/80000')->status_is(200);
+$t->get_ok('/tests/80000')->status_is(200);
 
 subtest 'test module flags are displayed correctly' => sub {
     # for this job we have exactly each flag set once, so check that not to rely on the order of the test modules

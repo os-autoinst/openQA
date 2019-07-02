@@ -41,9 +41,9 @@ $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->i
 $t->app($app);
 
 
-my $get = $t->get_ok('/api/v1/products')->status_is(200);
+$t->get_ok('/api/v1/products')->status_is(200);
 is_deeply(
-    $get->tx->res->json,
+    $t->tx->res->json,
     {
         'Products' => [
             {
@@ -81,7 +81,7 @@ is_deeply(
             }]
     },
     "Initial products"
-) || diag explain $get->tx->res->json;
+) || diag explain $t->tx->res->json;
 
 
 # no arch
@@ -96,7 +96,7 @@ $t->post_ok('/api/v1/products', form => {arch => "x86_64", distri => "opensuse",
 # no version
 $t->post_ok('/api/v1/products', form => {arch => "x86_64", distri => "opensuse", flavor => "DVD"})->status_is(400);
 
-my $res = $t->post_ok(
+$t->post_ok(
     '/api/v1/products',
     form => {
         arch              => "x86_64",
@@ -106,15 +106,14 @@ my $res = $t->post_ok(
         "settings[TEST]"  => "val1",
         "settings[TEST2]" => "val1"
     })->status_is(200);
-my $product_id = $res->tx->res->json->{id};
+my $product_id = $t->tx->res->json->{id};
 
-$res
-  = $t->post_ok('/api/v1/products', form => {arch => "x86_64", distri => "opensuse", flavor => "DVD", version => 13.2})
+$t->post_ok('/api/v1/products', form => {arch => "x86_64", distri => "opensuse", flavor => "DVD", version => 13.2})
   ->status_is(400);    #already exists
 
-$get = $t->get_ok("/api/v1/products/$product_id")->status_is(200);
+$t->get_ok("/api/v1/products/$product_id")->status_is(200);
 is_deeply(
-    $get->tx->res->json,
+    $t->tx->res->json,
     {
         'Products' => [
             {
@@ -136,15 +135,15 @@ is_deeply(
             }]
     },
     "Add product"
-) || diag explain $get->tx->res->json;
+) || diag explain $t->tx->res->json;
 
 $t->put_ok("/api/v1/products/$product_id",
     form => {arch => "x86_64", distri => "opensuse", flavor => "DVD", version => 13.2, "settings[TEST2]" => "val1"})
   ->status_is(200);
 
-$get = $t->get_ok("/api/v1/products/$product_id")->status_is(200);
+$t->get_ok("/api/v1/products/$product_id")->status_is(200);
 is_deeply(
-    $get->tx->res->json,
+    $t->tx->res->json,
     {
         'Products' => [
             {
@@ -162,10 +161,10 @@ is_deeply(
             }]
     },
     "Delete product variable"
-) || diag explain $get->tx->res->json;
+) || diag explain $t->tx->res->json;
 
-$res = $t->delete_ok("/api/v1/products/$product_id")->status_is(200);
-$res = $t->delete_ok("/api/v1/products/$product_id")->status_is(404);    #not found
+$t->delete_ok("/api/v1/products/$product_id")->status_is(200);
+$t->delete_ok("/api/v1/products/$product_id")->status_is(404);    #not found
 
 # switch to operator (percival) and try some modifications
 $app = $t->app;
@@ -185,6 +184,6 @@ $t->post_ok(
 $t->put_ok("/api/v1/products/$product_id",
     form => {arch => "x86_64", distri => "opensuse", flavor => "DVD", version => 13.2, "settings[TEST2]" => "val1"})
   ->status_is(403);
-$res = $t->delete_ok("/api/v1/products/$product_id")->status_is(403);
+$t->delete_ok("/api/v1/products/$product_id")->status_is(403);
 
 done_testing();

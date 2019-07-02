@@ -81,8 +81,8 @@ my $settings = {
 my $commonexpr = '/usr/sbin/daemonize /usr/bin/fedmsg-logger-3 --cert-prefix=openqa --modname=openqa';
 my $commonci   = '/usr/sbin/daemonize /usr/bin/fedmsg-logger-3 --cert-prefix=ci --modname=ci';
 # create a job via API
-my $post = $t->post_ok("/api/v1/jobs" => form => $settings)->status_is(200);
-my $job  = $post->tx->res->json->{id};
+$t->post_ok("/api/v1/jobs" => form => $settings)->status_is(200);
+my $job = $t->tx->res->json->{id};
 is(
     $args[0],
     $commonexpr
@@ -116,7 +116,7 @@ is(
 # FIXME: restarting job via API emits an event in real use, but not if we do it here
 
 # set the job as done (implicit failed, it seems) via API
-$post = $t->post_ok("/api/v1/jobs/" . $job . "/set_done")->status_is(200);
+$t->post_ok("/api/v1/jobs/" . $job . "/set_done")->status_is(200);
 # check plugin called fedmsg-logger-3 correctly
 is(
     $args[0],
@@ -151,8 +151,8 @@ is(
 # we don't test update_results as comment indicates it's obsolete
 
 # duplicate the job via API
-$post = $t->post_ok("/api/v1/jobs/" . $job . "/duplicate")->status_is(200);
-my $newjob = $post->tx->res->json->{id};
+$t->post_ok("/api/v1/jobs/" . $job . "/duplicate")->status_is(200);
+my $newjob = $t->tx->res->json->{id};
 # check plugin called fedmsg-logger-3 correctly
 is(
     $args[0],
@@ -188,7 +188,7 @@ is(
 @args = ();
 
 # cancel the new job via API
-$post = $t->post_ok("/api/v1/jobs/" . $newjob . "/cancel")->status_is(200);
+$t->post_ok("/api/v1/jobs/" . $newjob . "/cancel")->status_is(200);
 # check plugin called fedmsg-logger-3 correctly
 is(
     $args[0],
@@ -219,14 +219,14 @@ is(
 );
 
 # duplicate the job once more via API (so we can test 'passed')
-$post = $t->post_ok("/api/v1/jobs/" . $newjob . "/duplicate")->status_is(200);
-my $newerjob = $post->tx->res->json->{id};
+$t->post_ok("/api/v1/jobs/" . $newjob . "/duplicate")->status_is(200);
+my $newerjob = $t->tx->res->json->{id};
 
 # reset $args
 @args = ();
 
 # set the job as done (explicit passed) via API
-$post = $t->post_ok("/api/v1/jobs/" . $newerjob . "/set_done?result=passed")->status_is(200);
+$t->post_ok("/api/v1/jobs/" . $newerjob . "/set_done?result=passed")->status_is(200);
 # check plugin called fedmsg-logger-3 correctly
 is(
     $args[0],
@@ -261,9 +261,9 @@ is(
 # FIXME: deleting job via DELETE call to api/v1/jobs/$newjob fails with 500?
 
 # add a job comment via API
-$post = $t->post_ok("/api/v1/jobs/$job/comments" => form => {text => "test comment"})->status_is(200);
+$t->post_ok("/api/v1/jobs/$job/comments" => form => {text => "test comment"})->status_is(200);
 # stash the comment ID
-my $comment = $post->tx->res->json->{id};
+my $comment = $t->tx->res->json->{id};
 # check plugin called fedmsg-logger-3 correctly
 my $dateexpr = '\d{4}-\d{1,2}-\d{1,2}T\d{2}:\d{2}:\d{2}Z';
 like(
@@ -275,7 +275,7 @@ qr/$commonexpr --topic=comment.create --json-input --message=\{"created":"$datee
 @args = ();
 
 # update job comment via API
-my $put = $t->put_ok("/api/v1/jobs/$job/comments/$comment" => form => {text => "updated comment"})->status_is(200);
+$t->put_ok("/api/v1/jobs/$job/comments/$comment" => form => {text => "updated comment"})->status_is(200);
 # check plugin called fedmsg-logger-3 correctly
 like(
     $args[0],
@@ -289,7 +289,7 @@ qr/$commonexpr --topic=comment.update --json-input --message=\{"created":"$datee
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 # delete comment via API
-my $delete = $t->delete_ok("/api/v1/jobs/$job/comments/$comment")->status_is(200);
+$t->delete_ok("/api/v1/jobs/$job/comments/$comment")->status_is(200);
 like(
     $args[0],
 qr/$commonexpr --topic=comment.delete --json-input --message=\{"created":"$dateexpr","group_id":null,"id":$comment,"job_id":$job,"text":"updated comment","updated":"$dateexpr","user":"perci"\}/,
@@ -301,8 +301,8 @@ qr/$commonexpr --topic=comment.delete --json-input --message=\{"created":"$datee
 # create another job via API, this time for an update
 $settings->{BUILD} = 'Update-FEDORA-2018-3c876babb9';
 delete $settings->{ISO};
-$post = $t->post_ok("/api/v1/jobs" => form => $settings)->status_is(200);
-my $updatejob = $post->tx->res->json->{id};
+$t->post_ok("/api/v1/jobs" => form => $settings)->status_is(200);
+my $updatejob = $t->tx->res->json->{id};
 is(
     $args[0],
     $commonexpr

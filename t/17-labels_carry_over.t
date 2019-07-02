@@ -47,14 +47,14 @@ sub set_up {
 
 sub comments {
     my ($url) = @_;
-    my $get = $t->get_ok($url)->status_is(200);
-    return $get->tx->res->dom->find('div.comments .media-comment > p')->map('content');
+    $t->get_ok($url)->status_is(200);
+    return $t->tx->res->dom->find('div.comments .media-comment > p')->map('content');
 }
 
 sub restart_with_result {
     my ($old_job, $result) = @_;
-    my $get     = $t->post_ok("/api/v1/jobs/$old_job/restart", $auth)->status_is(200);
-    my $res     = decode_json($get->tx->res->body);
+    $t->post_ok("/api/v1/jobs/$old_job/restart", $auth)->status_is(200);
+    my $res     = decode_json($t->tx->res->body);
     my $new_job = $res->{result}[0]->{$old_job};
     $t->post_ok("/api/v1/jobs/$new_job/set_done", $auth => form => {result => $result})->status_is(200);
     return $res;

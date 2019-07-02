@@ -39,32 +39,29 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # we don't want to test javascript here, so we just test the javascript code
 # List with no login
-my $get = $t->get_ok('/tests')->status_is(200);
-$get->content_like(qr/is_operator = false;/, "test list rendered without is_operator");
+$t->get_ok('/tests')->status_is(200)->content_like(qr/is_operator = false;/, "test list rendered without is_operator");
 
 # List with an authorized user
 $test_case->login($t, 'percival');
-$get = $t->get_ok('/tests')->status_is(200);
-$get->content_like(qr/is_operator = true;/, "test list rendered with is_operator");
+$t->get_ok('/tests')->status_is(200)->content_like(qr/is_operator = true;/, "test list rendered with is_operator");
 
 # List with a not authorized user
 $test_case->login($t, 'lancelot', email => 'lancelot@example.com');
-$get = $t->get_ok('/tests')->status_is(200);
-$get->content_like(qr/is_operator = false;/, "test list rendered without is_operator");
+$t->get_ok('/tests')->status_is(200)->content_like(qr/is_operator = false;/, "test list rendered without is_operator");
 
 # now the same for scheduled jobs
 $t->delete_ok('/logout')->status_is(302);
 
 # List with no login (absence of cancel button already checked in 01-list.t)
-$get = $t->get_ok('/tests')->status_is(200);
+$t->get_ok('/tests')->status_is(200);
 
 # List with an authorized user (presence of cancel button already checked in 01-list.t)
 $test_case->login($t, 'percival');
-$get = $t->get_ok('/tests')->status_is(200);
+$t->get_ok('/tests')->status_is(200);
 
 # List with a not authorized user
 $test_case->login($t, 'lancelot', email => 'lancelot@example.com');
-$get = $t->get_ok('/tests')->status_is(200);
+$t->get_ok('/tests')->status_is(200);
 
 # operator has access to part of admin menu - using phantomjs
 $driver->title_is("openQA", "on main page");

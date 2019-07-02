@@ -53,8 +53,8 @@ my $scheduled_products = $schema->resultset('ScheduledProducts');
 
 sub lj {
     return unless $ENV{HARNESS_IS_VERBOSE};
-    my $ret  = $t->get_ok('/api/v1/jobs')->status_is(200);
-    my @jobs = @{$ret->tx->res->json->{jobs}};
+    $t->get_ok('/api/v1/jobs')->status_is(200);
+    my @jobs = @{$t->tx->res->json->{jobs}};
     for my $j (@jobs) {
         printf "%d %-10s %s (%s)\n", $j->{id}, $j->{state}, $j->{name}, $j->{priority};
     }
@@ -62,14 +62,14 @@ sub lj {
 
 sub job_state {
     my $job_id = shift;
-    my $ret    = $t->get_ok("/api/v1/jobs/$job_id")->status_is(200);
-    return $ret->tx->res->json->{job}->{state};
+    $t->get_ok("/api/v1/jobs/$job_id")->status_is(200);
+    return $t->tx->res->json->{job}->{state};
 }
 
 sub job_result {
     my $job_id = shift;
-    my $ret    = $t->get_ok("/api/v1/jobs/$job_id")->status_is(200);
-    return $ret->tx->res->json->{job}->{result};
+    $t->get_ok("/api/v1/jobs/$job_id")->status_is(200);
+    return $t->tx->res->json->{job}->{result};
 }
 
 sub job_gru {
@@ -102,31 +102,29 @@ sub schedule_iso {
     my $url = Mojo::URL->new('/api/v1/isos');
     $url->query($query_params);
 
-    my $ret = $t->post_ok($url, form => $args)->status_is($status);
-    return $ret->tx->res;
+    $t->post_ok($url, form => $args)->status_is($status);
+    return $t->tx->res;
 }
-
-my $ret;
 
 my $iso = 'openSUSE-13.1-DVD-i586-Build0091-Media.iso';
 
-$ret = $t->get_ok('/api/v1/jobs/99927')->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'scheduled', 'job 99927 is scheduled');
-$ret = $t->get_ok('/api/v1/jobs/99928')->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'scheduled', 'job 99928 is scheduled');
-$ret = $t->get_ok('/api/v1/jobs/99963')->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'running', 'job 99963 is running');
+$t->get_ok('/api/v1/jobs/99927')->status_is(200);
+is($t->tx->res->json->{job}->{state}, 'scheduled', 'job 99927 is scheduled');
+$t->get_ok('/api/v1/jobs/99928')->status_is(200);
+is($t->tx->res->json->{job}->{state}, 'scheduled', 'job 99928 is scheduled');
+$t->get_ok('/api/v1/jobs/99963')->status_is(200);
+is($t->tx->res->json->{job}->{state}, 'running', 'job 99963 is running');
 
-$ret = $t->get_ok('/api/v1/jobs/99981')->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'cancelled', 'job 99981 is cancelled');
+$t->get_ok('/api/v1/jobs/99981')->status_is(200);
+is($t->tx->res->json->{job}->{state}, 'cancelled', 'job 99981 is cancelled');
 
-$ret = $t->post_ok('/api/v1/jobs/99981/restart')->status_is(200);
+$t->post_ok('/api/v1/jobs/99981/restart')->status_is(200);
 
-$ret = $t->get_ok('/api/v1/jobs/99981')->status_is(200);
-my $clone99981 = $ret->tx->res->json->{job}->{clone_id};
+$t->get_ok('/api/v1/jobs/99981')->status_is(200);
+my $clone99981 = $t->tx->res->json->{job}->{clone_id};
 
-$ret = $t->get_ok("/api/v1/jobs/$clone99981")->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'scheduled', 'job $clone99981 is scheduled');
+$t->get_ok("/api/v1/jobs/$clone99981")->status_is(200);
+is($t->tx->res->json->{job}->{state}, 'scheduled', 'job $clone99981 is scheduled');
 
 lj;
 
@@ -299,8 +297,8 @@ is($res->json->{count}, 10, '10 new jobs created');
 my @newids = @{$res->json->{ids}};
 my $newid  = $newids[0];
 
-$ret = $t->get_ok('/api/v1/jobs');
-my @jobs = @{$ret->tx->res->json->{jobs}};
+$t->get_ok('/api/v1/jobs');
+my @jobs = @{$t->tx->res->json->{jobs}};
 
 my $server_32       = find_job(\@jobs, \@newids, 'server',       '32bit');
 my $client1_32      = find_job(\@jobs, \@newids, 'client1',      '32bit');
@@ -391,27 +389,27 @@ is($server_64->{settings}->{PRECEDENCE}, 'overridden', "precedence override (sui
 lj;
 
 subtest 'old tests are cancelled unless they are marked as important' => sub {
-    $ret = $t->get_ok('/api/v1/jobs/99927')->status_is(200);
-    is($ret->tx->res->json->{job}->{state}, 'cancelled', 'job 99927 is cancelled');
-    $ret = $t->get_ok('/api/v1/jobs/99928')->status_is(200);
-    is($ret->tx->res->json->{job}->{state}, 'scheduled', 'job 99928 is marked as important and therefore preserved');
-    $ret = $t->get_ok('/api/v1/jobs/99963')->status_is(200);
-    is($ret->tx->res->json->{job}->{state}, 'running', 'job 99963 is running');
+    $t->get_ok('/api/v1/jobs/99927')->status_is(200);
+    is($t->tx->res->json->{job}->{state}, 'cancelled', 'job 99927 is cancelled');
+    $t->get_ok('/api/v1/jobs/99928')->status_is(200);
+    is($t->tx->res->json->{job}->{state}, 'scheduled', 'job 99928 is marked as important and therefore preserved');
+    $t->get_ok('/api/v1/jobs/99963')->status_is(200);
+    is($t->tx->res->json->{job}->{state}, 'running', 'job 99963 is running');
 };
 
 # make sure unrelated jobs are not cancelled
-$ret = $t->get_ok("/api/v1/jobs/$clone99981")->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'scheduled', "job $clone99981 is still scheduled");
+$t->get_ok("/api/v1/jobs/$clone99981")->status_is(200);
+is($t->tx->res->json->{job}->{state}, 'scheduled', "job $clone99981 is still scheduled");
 
 # ... and we have a new test
-$ret = $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'scheduled', "new job $newid is scheduled");
+$t->get_ok("/api/v1/jobs/$newid")->status_is(200);
+is($t->tx->res->json->{job}->{state}, 'scheduled', "new job $newid is scheduled");
 
 # cancel the iso
-$ret = $t->post_ok("/api/v1/isos/$iso/cancel")->status_is(200);
+$t->post_ok("/api/v1/isos/$iso/cancel")->status_is(200);
 
-$ret = $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'cancelled', "job $newid is cancelled");
+$t->get_ok("/api/v1/jobs/$newid")->status_is(200);
+is($t->tx->res->json->{job}->{state}, 'cancelled', "job $newid is cancelled");
 
 # make sure we can't post invalid parameters
 $res = schedule_iso({iso => $iso, tests => "kde/usb"}, 400);
@@ -434,34 +432,34 @@ is($res->json->{count}, 5, '5 new jobs created (two twice for both machine types
 
 # delete the iso
 # can not do as operator
-$ret = $t->delete_ok("/api/v1/isos/$iso")->status_is(403);
+$t->delete_ok("/api/v1/isos/$iso")->status_is(403);
 # switch to admin and continue
 $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
-$ret = $t->delete_ok("/api/v1/isos/$iso")->status_is(200);
+$t->delete_ok("/api/v1/isos/$iso")->status_is(200);
 # now the jobs should be gone
-$ret = $t->get_ok('/api/v1/jobs/$newid')->status_is(404);
+$t->get_ok('/api/v1/jobs/$newid')->status_is(404);
 
 subtest 'jobs belonging to important builds are not cancelled by new iso post' => sub {
-    $ret = $t->get_ok('/api/v1/jobs/99963')->status_is(200);
-    is($ret->tx->res->json->{job}->{state}, 'running', 'job in build 0091 running');
+    $t->get_ok('/api/v1/jobs/99963')->status_is(200);
+    is($t->tx->res->json->{job}->{state}, 'running', 'job in build 0091 running');
     my $tag = 'tag:0091:important';
     $t->app->schema->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
     $res = schedule_iso(
         {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091'});
     is($res->json->{count}, 10, '10 jobs created');
     my $example = $res->json->{ids}->[9];
-    $ret = $t->get_ok("/api/v1/jobs/$example")->status_is(200);
-    is($ret->tx->res->json->{job}->{state}, 'scheduled');
+    $t->get_ok("/api/v1/jobs/$example")->status_is(200);
+    is($t->tx->res->json->{job}->{state}, 'scheduled');
     $res = schedule_iso(
         {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0092'});
-    $ret = $t->get_ok("/api/v1/jobs/$example")->status_is(200);
-    is($ret->tx->res->json->{job}->{state}, 'scheduled', 'job in old important build still scheduled');
+    $t->get_ok("/api/v1/jobs/$example")->status_is(200);
+    is($t->tx->res->json->{job}->{state}, 'scheduled', 'job in old important build still scheduled');
     $res = schedule_iso(
         {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0093'});
-    $ret = $t->get_ok('/api/v1/jobs?state=scheduled');
-    my @jobs = @{$ret->tx->res->json->{jobs}};
+    $t->get_ok('/api/v1/jobs?state=scheduled');
+    my @jobs = @{$t->tx->res->json->{jobs}};
     lj;
     ok(!grep({ $_->{settings}->{BUILD} =~ '009[2]' } @jobs), 'no jobs from intermediate, not-important build');
     is(scalar @jobs, 21, 'only the important jobs, jobs from the current build and the important build are scheduled');
@@ -470,8 +468,8 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     $t->app->schema->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
     $res = schedule_iso(
         {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0094'});
-    $ret  = $t->get_ok('/api/v1/jobs?state=scheduled');
-    @jobs = @{$ret->tx->res->json->{jobs}};
+    $t->get_ok('/api/v1/jobs?state=scheduled');
+    @jobs = @{$t->tx->res->json->{jobs}};
     lj;
     ok(grep({ $_->{settings}->{BUILD} eq '0091' } @jobs), 'we have jobs from important build 0091');
     ok(grep({ $_->{settings}->{BUILD} eq '0093' } @jobs), 'we have jobs from important build 0093');
@@ -481,25 +479,25 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
 subtest 'build obsoletion/depriorization' => sub {
     my %iso = (ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0095');
     $res = schedule_iso({%iso, BUILD => '0095'});
-    $ret = $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
-    my @jobs = @{$ret->tx->res->json->{jobs}};
+    $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
+    my @jobs = @{$t->tx->res->json->{jobs}};
     lj;
     ok(!grep({ $_->{settings}->{BUILD} =~ '009[24]' } @jobs), 'recent non-important builds were obsoleted');
     is(scalar @jobs, 31, 'current build and the important build are scheduled');
-    $res  = schedule_iso({%iso, BUILD => '0096', '_NO_OBSOLETE' => 1});
-    $ret  = $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
-    @jobs = @{$ret->tx->res->json->{jobs}};
+    $res = schedule_iso({%iso, BUILD => '0096', '_NO_OBSOLETE' => 1});
+    $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
+    @jobs = @{$t->tx->res->json->{jobs}};
     lj;
     my @jobs_previous_build = grep { $_->{settings}->{BUILD} eq '0095' } @jobs;
     ok(@jobs_previous_build, 'previous build was not obsoleted');
     is($jobs_previous_build[0]->{priority}, 40, 'job is at same priority as before');
     is($jobs_previous_build[1]->{priority}, 40, 'second job, same priority');
     # set one job to already highest allowed
-    $ret = $t->put_ok('/api/v1/jobs/' . $jobs_previous_build[1]->{id}, json => {priority => 100})->status_is(200);
-    my $job_at_prio_limit = $ret->tx->res->json->{job_id};
-    $res  = schedule_iso({%iso, BUILD => '0097', '_DEPRIORITIZEBUILD' => 1});
-    $ret  = $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
-    @jobs = @{$ret->tx->res->json->{jobs}};
+    $t->put_ok('/api/v1/jobs/' . $jobs_previous_build[1]->{id}, json => {priority => 100})->status_is(200);
+    my $job_at_prio_limit = $t->tx->res->json->{job_id};
+    $res = schedule_iso({%iso, BUILD => '0097', '_DEPRIORITIZEBUILD' => 1});
+    $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
+    @jobs = @{$t->tx->res->json->{jobs}};
     lj;
     @jobs_previous_build = grep { $_->{settings}->{BUILD} eq '0095' } @jobs;
     ok(@jobs_previous_build, 'old build still in progress');
@@ -508,9 +506,9 @@ subtest 'build obsoletion/depriorization' => sub {
     $t->json_is('/job/state' => 'cancelled', 'older job already at priorization limit was cancelled');
     # test 'only same build' obsoletion
     my @jobs_0097 = grep { $_->{settings}->{BUILD} eq '0097' } @jobs;
-    $res  = schedule_iso({%iso, BUILD => '0097', '_ONLY_OBSOLETE_SAME_BUILD' => 1});
-    $ret  = $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
-    @jobs = @{$ret->tx->res->json->{jobs}};
+    $res = schedule_iso({%iso, BUILD => '0097', '_ONLY_OBSOLETE_SAME_BUILD' => 1});
+    $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
+    @jobs = @{$t->tx->res->json->{jobs}};
     lj;
     # jobs from previous build shouldn't be cancelled
     @jobs_previous_build = grep { $_->{settings}->{BUILD} eq '0095' } @jobs;
@@ -866,8 +864,8 @@ subtest 'Create dependency for jobs on different machines - dependency setting a
     my @newids = @{$res->json->{ids}};
     my $newid  = $newids[0];
 
-    $ret = $t->get_ok('/api/v1/jobs');
-    my @jobs = @{$ret->tx->res->json->{jobs}};
+    $t->get_ok('/api/v1/jobs');
+    my @jobs = @{$t->tx->res->json->{jobs}};
 
     my $server1_64    = find_job(\@jobs, \@newids, 'supportserver1', '64bit');
     my $server2_ipmi  = find_job(\@jobs, \@newids, 'supportserver2', '64bit-ipmi');
@@ -916,8 +914,8 @@ subtest 'Create dependency for jobs on different machines - best match and log e
     my @newids = @{$res->json->{ids}};
     my $newid  = $newids[0];
 
-    $ret = $t->get_ok('/api/v1/jobs');
-    my @jobs = @{$ret->tx->res->json->{jobs}};
+    $t->get_ok('/api/v1/jobs');
+    my @jobs = @{$t->tx->res->json->{jobs}};
 
     my $install_ltp   = find_job(\@jobs, \@newids, 'install_ltp', 'powerpc');
     my $use_ltp_64    = find_job(\@jobs, \@newids, 'use_ltp',     '64bit');
@@ -979,8 +977,8 @@ subtest 'Create dependency for jobs on different machines - log error parents' =
     my @newids = @{$res->json->{ids}};
     my $newid  = $newids[0];
 
-    $ret = $t->get_ok('/api/v1/jobs');
-    my @jobs = @{$ret->tx->res->json->{jobs}};
+    $t->get_ok('/api/v1/jobs');
+    my @jobs = @{$t->tx->res->json->{jobs}};
 
     my $supportserver_ppc   = find_job(\@jobs, \@newids, 'supportserver', 'ppc');
     my $supportserver_64    = find_job(\@jobs, \@newids, 'supportserver', '64bit');

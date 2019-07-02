@@ -40,9 +40,9 @@ my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-my $get = $t->get_ok('/api/v1/machines')->status_is(200);
+$t->get_ok('/api/v1/machines')->status_is(200);
 is_deeply(
-    $get->tx->res->json,
+    $t->tx->res->json,
     {
         'Machines' => [
             {
@@ -80,44 +80,41 @@ is_deeply(
                     }]}]
     },
     "Initial machines"
-) || diag explain $get->tx->res->json;
+) || diag explain $t->tx->res->json;
 
 
-my $res = $t->post_ok('/api/v1/machines', form => {name => "testmachine"})->status_is(400)
+$t->post_ok('/api/v1/machines', form => {name => "testmachine"})->status_is(400)
   ->json_is('/error', 'Missing parameter: backend');
 $t->post_ok('/api/v1/machines', form => {backend => "kde/usb"})->status_is(400)
   ->json_is('/error', 'Missing parameter: name');
 $t->post_ok('/api/v1/machines', form => {})->status_is(400)->json_is('/error', 'Missing parameter: backend, name');
 
-$res
-  = $t->post_ok('/api/v1/machines',
+$t->post_ok('/api/v1/machines',
     form => {name => "testmachine", backend => "qemu", "settings[TEST]" => "val1", "settings[TEST2]" => "val1"})
   ->status_is(200);
-my $machine_id = $res->tx->res->json->{id};
+my $machine_id = $t->tx->res->json->{id};
 
-$res = $t->get_ok('/api/v1/machines', form => {name => "testmachine"})->status_is(200);
-is($res->tx->res->json->{Machines}->[0]->{id}, $machine_id);
+$t->get_ok('/api/v1/machines', form => {name => "testmachine"})->status_is(200);
+is($t->tx->res->json->{Machines}->[0]->{id}, $machine_id);
 
-$res
-  = $t->post_ok('/api/v1/machines',
+$t->post_ok('/api/v1/machines',
     form => {name => "testmachineQ", backend => "qemu", "settings[TEST]" => "'v'al1", "settings[TEST2]" => "va'l\'1"})
   ->status_is(200);
-$res = $t->get_ok('/api/v1/machines', form => {name => "testmachineQ"})->status_is(200);
-is($res->tx->res->json->{Machines}->[0]->{settings}->[0]->{value}, "'v'al1");
-is($res->tx->res->json->{Machines}->[0]->{settings}->[1]->{value}, "va'l\'1");
+$t->get_ok('/api/v1/machines', form => {name => "testmachineQ"})->status_is(200);
+is($t->tx->res->json->{Machines}->[0]->{settings}->[0]->{value}, "'v'al1");
+is($t->tx->res->json->{Machines}->[0]->{settings}->[1]->{value}, "va'l\'1");
 
 $t->post_ok('/api/v1/machines', form => {name => "testmachineZ", backend => "qemu", "settings[TE'S\'T]" => "'v'al1"})
   ->status_is(200);
-$res = $t->get_ok('/api/v1/machines', form => {name => "testmachineQ"})->status_is(200);
-is($res->tx->res->json->{Machines}->[0]->{settings}->[0]->{key},   "TEST");
-is($res->tx->res->json->{Machines}->[0]->{settings}->[0]->{value}, "'v'al1");
+$t->get_ok('/api/v1/machines', form => {name => "testmachineQ"})->status_is(200);
+is($t->tx->res->json->{Machines}->[0]->{settings}->[0]->{key},   "TEST");
+is($t->tx->res->json->{Machines}->[0]->{settings}->[0]->{value}, "'v'al1");
 
-$res
-  = $t->post_ok('/api/v1/machines', form => {name => "testmachine", backend => "qemu"})->status_is(400); #already exists
+$t->post_ok('/api/v1/machines', form => {name => "testmachine", backend => "qemu"})->status_is(400);    #already exists
 
-$get = $t->get_ok("/api/v1/machines/$machine_id")->status_is(200);
+$t->get_ok("/api/v1/machines/$machine_id")->status_is(200);
 is_deeply(
-    $get->tx->res->json,
+    $t->tx->res->json,
     {
         'Machines' => [
             {
@@ -135,14 +132,14 @@ is_deeply(
                     }]}]
     },
     "Add machine"
-) || diag explain $get->tx->res->json;
+) || diag explain $t->tx->res->json;
 
-$res = $t->put_ok("/api/v1/machines/$machine_id",
+$t->put_ok("/api/v1/machines/$machine_id",
     form => {name => "testmachine", backend => "qemu", "settings[TEST2]" => "val1"})->status_is(200);
 
-$get = $t->get_ok("/api/v1/machines/$machine_id")->status_is(200);
+$t->get_ok("/api/v1/machines/$machine_id")->status_is(200);
 is_deeply(
-    $get->tx->res->json,
+    $t->tx->res->json,
     {
         'Machines' => [
             {
@@ -156,10 +153,10 @@ is_deeply(
                     }]}]
     },
     "Delete machine variable"
-) || diag explain $get->tx->res->json;
+) || diag explain $t->tx->res->json;
 
-$res = $t->delete_ok("/api/v1/machines/$machine_id")->status_is(200);
-$res = $t->delete_ok("/api/v1/machines/$machine_id")->status_is(404);    #not found
+$t->delete_ok("/api/v1/machines/$machine_id")->status_is(200);
+$t->delete_ok("/api/v1/machines/$machine_id")->status_is(404);    #not found
 
 subtest 'trim whitespace characters' => sub {
     $t->post_ok(

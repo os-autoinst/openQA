@@ -38,9 +38,9 @@ my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-my $get = $t->get_ok('/api/v1/test_suites')->status_is(200);
+$t->get_ok('/api/v1/test_suites')->status_is(200);
 is_deeply(
-    $get->tx->res->json,
+    $t->tx->res->json,
     {
         'TestSuites' => [
             {
@@ -145,12 +145,12 @@ is_deeply(
                     }]}]
     },
     "Initial test suites"
-) || diag explain $get->tx->res->json;
+) || diag explain $t->tx->res->json;
 
 $t->post_ok('/api/v1/test_suites', form => {})->status_is(400);    #no name
 
 
-my $res = $t->post_ok(
+$t->post_ok(
     '/api/v1/test_suites',
     form => {
         name              => "testsuite",
@@ -158,13 +158,13 @@ my $res = $t->post_ok(
         "settings[TEST2]" => "val1",
         description       => "this is a new testsuite"
     })->status_is(200);
-my $test_suite_id = $res->tx->res->json->{id};
+my $test_suite_id = $t->tx->res->json->{id};
 
-$res = $t->post_ok('/api/v1/test_suites', form => {name => "testsuite"})->status_is(400);    #already exists
+$t->post_ok('/api/v1/test_suites', form => {name => "testsuite"})->status_is(400);    #already exists
 
-$get = $t->get_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
+$t->get_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
 is_deeply(
-    $get->tx->res->json,
+    $t->tx->res->json,
     {
         'TestSuites' => [
             {
@@ -182,14 +182,14 @@ is_deeply(
                     }]}]
     },
     "Add test_suite"
-) || diag explain $get->tx->res->json;
+) || diag explain $t->tx->res->json;
 
 $t->put_ok("/api/v1/test_suites/$test_suite_id", form => {name => "testsuite", "settings[TEST2]" => "val1"})
   ->status_is(200);
 
-$get = $t->get_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
+$t->get_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
 is_deeply(
-    $get->tx->res->json,
+    $t->tx->res->json,
     {
         'TestSuites' => [
             {
@@ -202,10 +202,10 @@ is_deeply(
                     }]}]
     },
     "Delete test_suite variable"
-) || diag explain $get->tx->res->json;
+) || diag explain $t->tx->res->json;
 
-$res = $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
-$res = $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(404);    #not found
+$t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
+$t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(404);    #not found
 
 # switch to operator (percival) and try some modifications
 $app = $t->app;
@@ -215,6 +215,6 @@ $t->app($app);
 $t->post_ok('/api/v1/test_suites', form => {name => "testsuite"})->status_is(403);
 $t->put_ok("/api/v1/test_suites/$test_suite_id", form => {name => "testsuite", "settings[TEST2]" => "val1"})
   ->status_is(403);
-$res = $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(403);
+$t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(403);
 
 done_testing();

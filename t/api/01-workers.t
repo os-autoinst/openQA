@@ -41,11 +41,10 @@ my $app = $t->app;
 $t->ua(OpenQA::Client->new->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-my $ret;
-$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu'});
-is($ret->tx->res->code, 403, 'register worker without API key fails (403)');
+$t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu'});
+is($t->tx->res->code, 403, 'register worker without API key fails (403)');
 is_deeply(
-    $ret->tx->res->json,
+    $t->tx->res->json,
     {
         error        => 'no api key',
         error_status => 403,
@@ -84,30 +83,30 @@ my $workers = [
         instance  => 1
     }];
 
-$ret = $t->get_ok('/api/v1/workers?live=1');
-ok(!$ret->tx->error, 'listing workers works');
-is(ref $ret->tx->res->json, 'HASH', 'workers returned hash');
+$t->get_ok('/api/v1/workers?live=1');
+ok(!$t->tx->error, 'listing workers works');
+is(ref $t->tx->res->json, 'HASH', 'workers returned hash');
 is_deeply(
-    $ret->tx->res->json,
+    $t->tx->res->json,
     {
         workers => $workers,
     },
     'worker present'
-) or diag explain $ret->tx->res->json;
+) or diag explain $t->tx->res->json;
 
 $workers->[0]->{connected} = 1;
 $workers->[1]->{connected} = 1;
 
-$ret = $t->get_ok('/api/v1/workers');
-ok(!$ret->tx->error, 'listing workers works');
-is(ref $ret->tx->res->json, 'HASH', 'workers returned hash');
+$t->get_ok('/api/v1/workers');
+ok(!$t->tx->error, 'listing workers works');
+is(ref $t->tx->res->json, 'HASH', 'workers returned hash');
 is_deeply(
-    $ret->tx->res->json,
+    $t->tx->res->json,
     {
         workers => $workers,
     },
     'worker present'
-) or diag explain $ret->tx->res->json;
+) or diag explain $t->tx->res->json;
 
 
 my $worker_caps = {
@@ -115,31 +114,31 @@ my $worker_caps = {
     instance => 1,
 };
 
-$ret = $t->post_ok('/api/v1/workers', form => $worker_caps);
-is($ret->tx->res->code, 400, "worker with missing parameters refused");
+$t->post_ok('/api/v1/workers', form => $worker_caps);
+is($t->tx->res->code, 400, "worker with missing parameters refused");
 
 $worker_caps->{cpu_arch} = 'foo';
-$ret = $t->post_ok('/api/v1/workers', form => $worker_caps);
-is($ret->tx->res->code, 400, "worker with missing parameters refused");
+$t->post_ok('/api/v1/workers', form => $worker_caps);
+is($t->tx->res->code, 400, "worker with missing parameters refused");
 
 $worker_caps->{mem_max} = '4711';
-$ret = $t->post_ok('/api/v1/workers', form => $worker_caps);
-is($ret->tx->res->code, 400, "worker with missing parameters refused");
+$t->post_ok('/api/v1/workers', form => $worker_caps);
+is($t->tx->res->code, 400, "worker with missing parameters refused");
 
 $worker_caps->{worker_class} = 'bar';
 
-$ret = $t->post_ok('/api/v1/workers', form => $worker_caps);
-is($ret->tx->res->code, 426, "worker informed to upgrade");
+$t->post_ok('/api/v1/workers', form => $worker_caps);
+is($t->tx->res->code, 426, "worker informed to upgrade");
 $worker_caps->{websocket_api_version} = WEBSOCKET_API_VERSION;
 
-$ret = $t->post_ok('/api/v1/workers', form => $worker_caps);
-is($ret->tx->res->code,       200, "register existing worker with token");
-is($ret->tx->res->json->{id}, 1,   "worker id is 1");
+$t->post_ok('/api/v1/workers', form => $worker_caps);
+is($t->tx->res->code,       200, "register existing worker with token");
+is($t->tx->res->json->{id}, 1,   "worker id is 1");
 
 $worker_caps->{instance} = 42;
-$ret = $t->post_ok('/api/v1/workers', form => $worker_caps);
-is($ret->tx->res->code,       200, "register new worker");
-is($ret->tx->res->json->{id}, 3,   "new worker id is 3");
+$t->post_ok('/api/v1/workers', form => $worker_caps);
+is($t->tx->res->code,       200, "register new worker");
+is($t->tx->res->json->{id}, 3,   "new worker id is 3");
 
 subtest 'delete offline worker' => sub {
     my $offline_worker_id = 9;
@@ -152,7 +151,7 @@ subtest 'delete offline worker' => sub {
             t_updated => time2str('%Y-%m-%d %H:%M:%S', time - 1200, 'UTC'),
         });
 
-    $ret = $t->delete_ok("/api/v1/workers/$offline_worker_id")->status_is(200, "delete offline worker successfully.");
+    $t->delete_ok("/api/v1/workers/$offline_worker_id")->status_is(200, "delete offline worker successfully.");
 
     is_deeply(
         OpenQA::Test::Case::find_most_recent_event($t->app->schema, 'worker_delete'),
@@ -163,9 +162,9 @@ subtest 'delete offline worker' => sub {
         "Delete worker was logged correctly."
     );
 
-    $ret = $t->delete_ok("/api/v1/workers/99")->status_is(404, "The offline worker not found.");
+    $t->delete_ok("/api/v1/workers/99")->status_is(404, "The offline worker not found.");
 
-    $ret = $t->delete_ok("/api/v1/workers/1")->status_is(400, "The worker status is not offline.");
+    $t->delete_ok("/api/v1/workers/1")->status_is(400, "The worker status is not offline.");
 };
 
 done_testing();

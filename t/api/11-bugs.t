@@ -43,36 +43,36 @@ $t->app($app);
 
 my $bugs = $app->schema->resultset('Bugs');
 
-my $bug  = $bugs->get_bug('poo#200');
-my $get  = $t->get_ok('/api/v1/bugs');
-my %bugs = %{$get->tx->res->json->{bugs}};
+my $bug = $bugs->get_bug('poo#200');
+$t->get_ok('/api/v1/bugs');
+my %bugs = %{$t->tx->res->json->{bugs}};
 is($bugs{1}, 'poo#200', 'Bug entry exists');
 
-$get  = $t->get_ok('/api/v1/bugs?refreshable=1');
-%bugs = %{$get->tx->res->json->{bugs}};
+$t->get_ok('/api/v1/bugs?refreshable=1');
+%bugs = %{$t->tx->res->json->{bugs}};
 is($bugs{1}, 'poo#200', 'Bug entry is refreshable');
 
-my $put = $t->put_ok('/api/v1/bugs/1', form => {title => "foobar", existing => 1});
-is($put->tx->res->json->{id}, 1, 'Bug #1 updated');
+$t->put_ok('/api/v1/bugs/1', form => {title => "foobar", existing => 1});
+is($t->tx->res->json->{id}, 1, 'Bug #1 updated');
 
 $t->put_ok('/api/v1/bugs/2', form => {title => "foobar", existing => 1})->status_is(404, 'Bug #2 not yet existing');
 
-$get = $t->get_ok('/api/v1/bugs/1');
-is($get->tx->res->json->{title}, 'foobar', 'Bug has correct title');
+$t->get_ok('/api/v1/bugs/1');
+is($t->tx->res->json->{title}, 'foobar', 'Bug has correct title');
 is_deeply(
     [sort keys %{$t->tx->res->json}],
     [qw(assigned assignee bugid existing id open priority refreshed resolution status t_created t_updated title)],
     'All expected columns exposed'
 );
 
-$get = $t->get_ok('/api/v1/bugs?refreshable=1');
-is_deeply($get->tx->res->json->{bugs}, {}, 'All bugs are refreshed');
+$t->get_ok('/api/v1/bugs?refreshable=1');
+is_deeply($t->tx->res->json->{bugs}, {}, 'All bugs are refreshed');
 
-my $post = $t->post_ok('/api/v1/bugs', form => {title => "foobar2", bugid => 'poo#201', existing => 1, refreshed => 1});
-is($post->tx->res->json->{id}, 2, 'Bug #2 created');
+$t->post_ok('/api/v1/bugs', form => {title => "foobar2", bugid => 'poo#201', existing => 1, refreshed => 1});
+is($t->tx->res->json->{id}, 2, 'Bug #2 created');
 
-$get = $t->get_ok('/api/v1/bugs/2');
-is($get->tx->res->json->{title}, 'foobar2', 'Bug #2 has correct title');
+$t->get_ok('/api/v1/bugs/2');
+is($t->tx->res->json->{title}, 'foobar2', 'Bug #2 has correct title');
 
 $t->delete_ok('/api/v1/bugs/2');
 $t->get_ok('/api/v1/bugs/2')->status_is(404, 'Bug #2 deleted');
@@ -80,8 +80,8 @@ $t->get_ok('/api/v1/bugs/2')->status_is(404, 'Bug #2 deleted');
 $t->delete_ok('/api/v1/bugs/2')->status_is(404, 'Bug #2 already deleted');
 
 $t->post_ok('/api/v1/jobs/99926/comments', form => {text => 'wicked bug: jsc#SLE-42999'});
-$get = $t->get_ok('/api/v1/bugs/3');
-is($get->tx->res->json->{bugid}, 'jsc#SLE-42999', 'Bug was created by comment post');
+$t->get_ok('/api/v1/bugs/3');
+is($t->tx->res->json->{bugid}, 'jsc#SLE-42999', 'Bug was created by comment post');
 
 $t->post_ok('/api/v1/bugs', form => {title => "new", bugid => 'bsc#123'});
 my $bugid = $t->tx->res->json->{id};

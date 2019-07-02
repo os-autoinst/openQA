@@ -32,8 +32,8 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 sub verify_navbar {
     my ($expected) = @_;
-    my $get        = $t->get_ok('/')->status_is(200);
-    my $groups     = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('.navbar-nav li.dropdown')->all_text);
+    $t->get_ok('/')->status_is(200);
+    my $groups = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('.navbar-nav li.dropdown')->all_text);
     # in fixtures both are sort_order 0, so they are sorted by name
     is($groups, "Job Groups $expected", "got $expected");
 }
