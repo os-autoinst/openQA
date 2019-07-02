@@ -23,6 +23,7 @@ use feature 'state';
 use Carp;
 use POSIX 'uname';
 use Mojo::URL;
+use Mojo::Util 'trim';
 use OpenQA::Client;
 use OpenQA::Utils qw(log_error log_debug log_warning log_info), qw(feature_scaling rand_range logistic_map_steps);
 use Scalar::Util 'looks_like_number';
@@ -595,7 +596,7 @@ sub read_worker_config {
     for my $section ('global', $instance) {
         if ($cfg && $cfg->SectionExists($section)) {
             for my $set ($cfg->Parameters($section)) {
-                $sets->{uc $set} = $cfg->val($section, $set);
+                $sets->{uc $set} = trim $cfg->val($section, $set);
             }
         }
     }
@@ -603,11 +604,11 @@ sub read_worker_config {
     my $host_settings;
     $host ||= $sets->{HOST} ||= 'localhost';
     delete $sets->{HOST};
-    my @hosts = split ' ', $host;
+    my @hosts = split(/\s+/, $host);
     for my $section (@hosts) {
         if ($cfg && $cfg->SectionExists($section)) {
             for my $set ($cfg->Parameters($section)) {
-                $host_settings->{$section}{uc $set} = $cfg->val($section, $set);
+                $host_settings->{$section}{uc $set} = trim $cfg->val($section, $set);
             }
         }
         else {

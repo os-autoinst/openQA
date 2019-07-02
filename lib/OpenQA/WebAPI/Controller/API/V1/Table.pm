@@ -18,6 +18,7 @@
 package OpenQA::WebAPI::Controller::API::V1::Table;
 use Mojo::Base 'Mojolicious::Controller';
 
+use Mojo::Util 'trim';
 use Try::Tiny;
 
 =pod
@@ -156,36 +157,20 @@ OpenQA::WebAPI::Controller::API::V1::Table package documentation.
 =cut
 
 sub create {
-    my ($self)     = @_;
-    my $table      = $self->param("table");
-    my %entry      = %{$tables{$table}->{defaults}};
-    my $validation = $self->validation;
+    my ($self) = @_;
+    my $table  = $self->param("table");
+    my %entry  = %{$tables{$table}->{defaults}};
 
-    for my $par (@{$tables{$table}->{required}}) {
-        $validation->required($par);
-        $entry{$par} = $self->param($par);
-    }
-    $entry{description} = $self->param('description');
-    my $hp = $self->hparams();
-    my @settings;
-    if ($hp->{settings}) {
-        for my $k (keys %{$hp->{settings}}) {
-            push @settings, {key => $k, value => $hp->{settings}->{$k}};
-        }
-    }
-    $entry{settings} = \@settings;
+    my ($error_message, $settings, $keys) = $self->_prepare_settings($table, \%entry);
+    return $self->render(json => {error => $error_message}, status => 400) if defined $error_message;
+
+    $entry{settings} = $settings;
 
     my $error;
     my $id;
-    if ($validation->has_error) {
-        $error = "wrong parameter: ";
-        for my $par (@{$tables{$table}->{required}}) {
-            $error .= " $par" if $validation->has_error($par);
-        }
-    }
-    else {
-        try { $id = $self->schema->resultset($table)->create(\%entry)->id; } catch { $error = shift; };
-    }
+
+    try { $id = $self->schema->resultset($table)->create(\%entry)->id; } catch { $error = shift; };
+
     if ($error) {
         return $self->render(json => {error => $error}, status => 400);
     }
@@ -212,58 +197,37 @@ of tables updated by the method on success.
 sub update {
     my ($self) = @_;
     my $table = $self->param("table");
-    my %entry;
-    my $validation = $self->validation;
 
-    for my $par (@{$tables{$table}->{required}}) {
-        $validation->required($par);
-        $entry{$par} = $self->param($par);
-    }
-    $entry{description} = $self->param('description');
-    my $hp = $self->hparams();
-    my @settings;
-    my @keys;
-    if ($hp->{settings}) {
-        for my $k (keys %{$hp->{settings}}) {
-            push @settings, {key => $k, value => $hp->{settings}->{$k}};
-            push @keys, $k;
-        }
-    }
+    my $entry = {};
+    my ($error_message, $settings, $keys) = $self->_prepare_settings($table, $entry);
+    return $self->render(json => {error => $error_message}, status => 400) if defined $error_message;
 
     my $schema = $self->schema;
 
     my $error;
     my $ret;
-    if ($validation->has_error) {
-        $error = "wrong parameter: ";
-        for my $par (@{$tables{$table}->{required}}) {
-            $error .= " $par" if $validation->has_error($par);
+    my $update = sub {
+        my $rc = $schema->resultset($table)->find({id => $self->param('id')});
+        if ($rc) {
+            $rc->update($entry);
+            for my $var (@$settings) {
+                $rc->update_or_create_related('settings', $var);
+            }
+            $rc->delete_related('settings', {key => {'not in' => [@$keys]}});
+            $ret = 1;
         }
-    }
-    else {
-        my $update = sub {
-            my $rc = $schema->resultset($table)->find({id => $self->param('id')});
-            if ($rc) {
-                $rc->update(\%entry);
-                for my $var (@settings) {
-                    $rc->update_or_create_related('settings', $var);
-                }
-                $rc->delete_related('settings', {key => {'not in' => [@keys]}});
-                $ret = 1;
-            }
-            else {
-                $ret = 0;
-            }
-        };
+        else {
+            $ret = 0;
+        }
+    };
 
-        try {
-            $schema->txn_do($update);
-        }
-        catch {
-            $error = shift;
-            OpenQA::Utils::log_debug("Table update error: $error");
-        };
+    try {
+        $schema->txn_do($update);
     }
+    catch {
+        $error = shift;
+        OpenQA::Utils::log_debug("Table update error: $error");
+    };
 
     if ($ret && $ret == 0) {
         return $self->render(json => {error => 'Not found'}, status => 404);
@@ -271,7 +235,7 @@ sub update {
     if (!$ret) {
         return $self->render(json => {error => $error}, status => 400);
     }
-    $self->emit_event('openqa_table_update', {table => $table, name => $entry{name}, settings => \@settings});
+    $self->emit_event('openqa_table_update', {table => $table, name => $entry->{name}, settings => $settings});
     $self->render(json => {result => int($ret)});
 }
 
@@ -318,6 +282,48 @@ sub destroy {
     }
     $self->emit_event('openqa_table_delete', {table => $table, name => $entry_name});
     $self->render(json => {result => int($ret)});
+}
+
+=over 4
+
+=item _prepare_settings()
+
+Internal method to prepare settings when add or update admin table.
+Use by both B<create()> and B<update()> method.
+
+=back
+
+=cut
+
+sub _prepare_settings {
+    my ($self, $table, $entry) = @_;
+    my $validation = $self->validation;
+
+    for my $par (@{$tables{$table}->{required}}) {
+        $validation->required($par);
+        if (!defined $validation->param($par)) {
+            next;
+        }
+        $entry->{$par} = trim $validation->param($par);
+    }
+
+    if ($validation->has_error) {
+        return "Missing parameter: " . join(', ', @{$validation->failed});
+    }
+
+    $entry->{description} = $self->param('description');
+    my $hp = $self->hparams();
+    my @settings;
+    my @keys;
+    if ($hp->{settings}) {
+        for my $k (keys %{$hp->{settings}}) {
+            $k = trim $k;
+            my $value = trim $hp->{settings}->{$k};
+            push @settings, {key => $k, value => $value};
+            push @keys, $k;
+        }
+    }
+    return (undef, \@settings, \@keys);
 }
 
 1;

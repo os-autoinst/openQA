@@ -83,8 +83,11 @@ is_deeply(
 ) || diag explain $get->tx->res->json;
 
 
-my $res = $t->post_ok('/api/v1/machines', form => {name => "testmachine"})->status_is(400);    # missing backend
-$res = $t->post_ok('/api/v1/machines', form => {backend => "kde/usb"})->status_is(400);        #missing name
+my $res = $t->post_ok('/api/v1/machines', form => {name => "testmachine"})->status_is(400)
+  ->json_is('/error', 'Missing parameter: backend');
+$t->post_ok('/api/v1/machines', form => {backend => "kde/usb"})->status_is(400)
+  ->json_is('/error', 'Missing parameter: name');
+$t->post_ok('/api/v1/machines', form => {})->status_is(400)->json_is('/error', 'Missing parameter: backend, name');
 
 $res
   = $t->post_ok('/api/v1/machines',
@@ -157,6 +160,67 @@ is_deeply(
 
 $res = $t->delete_ok("/api/v1/machines/$machine_id")->status_is(200);
 $res = $t->delete_ok("/api/v1/machines/$machine_id")->status_is(404);    #not found
+
+subtest 'trim whitespace characters' => sub {
+    $t->post_ok(
+        '/api/v1/machines',
+        form => {
+            name                => " create_with_space ",
+            backend             => " qemu ",
+            "settings[ TEST ]"  => " test value  ",
+            "settings[TEST2  ]" => " test value2  ",
+        })->status_is(200);
+    my $id = $t->tx->res->json->{id};
+    $t->get_ok("/api/v1/machines/$id")->status_is(200);
+    $t->json_is(
+        '' => {
+            'Machines' => [
+                {
+                    'backend'  => 'qemu',
+                    'id'       => $id,
+                    'name'     => 'create_with_space',
+                    'settings' => [
+                        {
+                            'key'   => 'TEST',
+                            'value' => 'test value'
+                        },
+                        {
+                            'key'   => 'TEST2',
+                            'value' => 'test value2'
+                        }]}]
+        },
+        'trim whitespace characters when create table'
+    )->or(sub { diag explain $t->tx->res->json });
+
+    $t->put_ok(
+        "/api/v1/machines/$id",
+        form => {
+            name               => "  update_with_space ",
+            backend            => "qemu ",
+            "settings[ TEST ]" => " new test value  ",
+            "settings[ TEST3]" => "  new test value3 ",
+        })->status_is(200);
+    $t->get_ok("/api/v1/machines/$id")->status_is(200);
+    $t->json_is(
+        '' => {
+            'Machines' => [
+                {
+                    'backend'  => 'qemu',
+                    'id'       => $id,
+                    'name'     => 'update_with_space',
+                    'settings' => [
+                        {
+                            'key'   => 'TEST',
+                            'value' => 'new test value'
+                        },
+                        {
+                            'key'   => 'TEST3',
+                            'value' => 'new test value3'
+                        }]}]
+        },
+        'trim whitespace characters when update table'
+    )->or(sub { diag explain $t->tx->res->json });
+};
 
 # switch to operator (percival) and try some modifications
 $app = $t->app;

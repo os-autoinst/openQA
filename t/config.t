@@ -147,7 +147,30 @@ subtest 'Test configuration override from file' => sub {
         ],
         'referers parsed correctly'
     );
+};
 
+subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {
+
+    my $t_dir = tempdir;
+    local $ENV{OPENQA_CONFIG} = $t_dir;
+    my $app  = Mojolicious->new();
+    my $data = '
+        [global]
+        appname =  openQA  
+        hide_asset_types = repo iso  
+        recognized_referers =   bugzilla.suse.com   bugzilla.novell.com   bugzilla.microfocus.com   progress.opensuse.org github.com
+    ';
+    $t_dir->child('openqa.ini')->spurt($data);
+    OpenQA::Setup::read_config($app);
+    print $app->config->{global}->{appname};
+    print $app->config->{global}->{hide_asset_types};
+    ok($app->config->{global}->{appname} eq 'openQA',            'appname');
+    ok($app->config->{global}->{hide_asset_types} eq 'repo iso', 'hide_asset_types');
+    is_deeply(
+        $app->config->{global}->{recognized_referers},
+        [qw(bugzilla.suse.com bugzilla.novell.com bugzilla.microfocus.com progress.opensuse.org github.com)],
+        'recognized_referers'
+    );
 };
 
 done_testing();

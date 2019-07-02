@@ -326,6 +326,33 @@ EOF
     ) or diag explain $j;
 };
 
+subtest 'trim whitespace characters of worker configuration' => sub {
+    my $configdir = tempdir();
+    local $ENV{OPENQA_CONFIG} = $configdir;
+    my $ini = $configdir->child('workers.ini');
+    $ini->spurt(
+        <<EOF
+# Configuration of the workers and their backends.
+[global]
+CACHEDIRECTORY = /var/lib/openqa/cache 
+HOST =  http://10.67.19.214  http://10.67.20.182  http://10.67.19.216  
+[1]
+WORKER_CLASS =  tap,qemu_x86_64,caasp_x86_64  
+CACHEDIRECTORY = /var/lib/openqa/cache 
+[http://10.67.19.214]
+TESTPOOLSERVER =  rsync://10.67.19.214/tests   
+EOF
+    );
+
+    my ($w_setting, $h_setting) = OpenQA::Worker::Common::read_worker_config(1);
+    is $w_setting->{CACHEDIRECTORY}, '/var/lib/openqa/cache'        or diag explain $w_setting;
+    is $w_setting->{WORKER_CLASS},   'tap,qemu_x86_64,caasp_x86_64' or diag explain $w_setting;
+    is_deeply $h_setting->{HOSTS}, ['http://10.67.19.214', 'http://10.67.20.182', 'http://10.67.19.216']
+      or diag explain $h_setting;
+    is_deeply $h_setting->{'http://10.67.19.214'}, {TESTPOOLSERVER => 'rsync://10.67.19.214/tests'}
+      or diag explain $h_setting;
+};
+
 subtest 'worker status timer calculation' => sub {
     $OpenQA::Worker::Common::worker_settings = {};
 
