@@ -20,6 +20,7 @@ use Try::Tiny;
 use Time::HiRes 'time';
 use OpenQA::WebAPI;
 use OpenQA::Utils;
+use POSIX '_exit';
 
 our $_driver;
 our $mojopid;
@@ -69,7 +70,7 @@ sub start_app {
         );
         $daemon->build_app('OpenQA::WebAPI');
         $daemon->run;
-        exit(0);
+        _exit(0);
     }
 
     # as this might download assets on first test, we need to wait a while
@@ -94,7 +95,7 @@ sub start_gru {
         log_info("starting gru\n");
         $ENV{MOJO_MODE} = 'test';
         Mojolicious::Commands->start_app('OpenQA::WebAPI', 'gru', 'run', '-m', 'test', '--check', '0');
-        exit(0);
+        _exit(0);
     }
     return $gru_pid;
 }
