@@ -1,5 +1,6 @@
-#!/bin/bash
-# Copyright (C) 2016 SUSE LLC
+#!/bin/bash -e
+# shellcheck disable=SC2103
+# Copyright (C) 2016-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,65 +15,60 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-function update_docs {
-
+update_docs() {
         call_asciidoctor
 
-        git clone $REPO out
+        git clone "$REPO" out
         cd out
-        git checkout $TARGET_BRANCH
+        git checkout "$TARGET_BRANCH"
         git config user.name "Travis CI"
         git config user.email "$COMMIT_AUTHOR_EMAIL"
         mkdir -p docs
-        cp -r ${tmpwd}/output/* docs
+        cp -r "${tmpwd}"/output/* docs
         cd docs
-        ls -l 
+        ls -l
         git add images
         update_api
-        ln -f openqa-documentation-${verbose_doc_name}.html index.html
-        ln -f openqa-documentation-${verbose_doc_name}.pdf current.pdf
+        ln -f openqa-documentation-"${verbose_doc_name}".html index.html
+        ln -f openqa-documentation-"${verbose_doc_name}".pdf current.pdf
         # "Change is inevitable, except for vending machines"
         # gh#1480
         # 2 files changed, 2 insertions(+), 2 deletions(-)
         ANYTHING_CHANGED=3 #
         ANYTHING_CHANGED=$(git diff --shortstat | perl -ne 'my $n; print $n = () = m/(?: 2 \w+)/g')
-        if [ ${ANYTHING_CHANGED} -ne 3 ]; then
+        if [ "${ANYTHING_CHANGED}" -ne 3 ]; then
             cd ..
             git add _includes/api.html
             git add docs/index.html docs/current.pdf docs/api/testapi.html
             echo "Update documentation to commit ${shortref}" > last.commit
             echo "" >> last.commit # somehow travis does not like \n
-            (cd .. && git log --pretty=fuller ${TRAVIS_COMMIT} -1 >> out/last.commit)
+            (cd .. && git log --pretty=fuller "${TRAVIS_COMMIT}" -1 >> out/last.commit)
             git commit -F last.commit
-            git push $SSH_REPO $TARGET_BRANCH
+            git push "$SSH_REPO" "$TARGET_BRANCH"
             cd ..
         fi
         rm -rf out
 
 }
 
-function  update_api {
-
+update_api() {
         mkdir -p api/src
         curl -o api/src/testapi.pm https://raw.githubusercontent.com/os-autoinst/os-autoinst/master/testapi.pm
         cd api
-        ${TRAVIS_BUILD_DIR}/script/generate-documentation-genapi.pl
+        "${TRAVIS_BUILD_DIR}"/script/generate-documentation-genapi.pl
 
-        for file in $(ls *.asciidoc | grep -v header ); do
-                ${asciidoctor_bin} $file
-        done;
-
-        for file in $( find -regex '.*\.html' ); do
-                header_template $file > $file.tmp
-                cat $file >> $file.tmp
-                mv $file.tmp $file
-        done;
+        find . -name '*.asciidoc' -not -name 'header' -exec "${asciidoctor_bin}" {} \;
+        while IFS= read -r -d '' file
+        do
+            header_template "$file" > "$file.tmp"
+            cat "$file" >> "$file.tmp"
+            mv "$file.tmp" "$file"
+        done < <(find . -name '*.html' -print0)
         cd ..
-
 }
 
-function header_template {
-filename=$( basename -s .html $1 )
+header_template() {
+filename=$( basename -s .html "$1" )
 cat <<APIFILE
 ---
 layout: null
@@ -93,16 +89,14 @@ tmpwd=$(mktemp -d -t openqa-doc-XXXX)
 REPO=$(git config remote.origin.url)
 SSH_REPO=${REPO/https:\/\/github.com\//git@github.com:}
 TARGET_BRANCH="gh-pages"
-REPO_DIRECTORY=$PWD
 SSH_KEY=$1
 SSH_IV=$2
 
 
-function check_asciidoctor {
+check_asciidoctor() {
+    asciidoctor_bin=$(command -v asciidoctor)
 
-    asciidoctor_bin=$(which asciidoctor)
-
-    if [ -z "${asciidoctor_bin}" -o ! -f "${asciidoctor_bin}" ]; then
+    if [ -z "${asciidoctor_bin}" ] || [ ! -f "${asciidoctor_bin}" ]; then
         echo "Could not find asciidoctor binary in your path, please install it and run this command again"
         echo "gem install asciidoctor pygments.rb"
         echo "gem install asciidoctor-pdf --pre"
@@ -111,37 +105,37 @@ function check_asciidoctor {
 
 }
 
-function set_sshkey {
-    openssl aes-256-cbc -K $SSH_KEY -iv $SSH_IV -in .openqa-travis.enc -out .openqa-travis -d
+set_sshkey() {
+    openssl aes-256-cbc -K "$SSH_KEY" -iv "$SSH_IV" -in .openqa-travis.enc -out .openqa-travis -d
     chmod 600 .openqa-travis
     eval "$(ssh-agent -s)"
     ssh-add .openqa-travis
 }
 
-function install_asciidoctor {
+install_asciidoctor() {
     # install dependencies
     gem install asciidoctor pygments.rb
     gem install asciidoctor-pdf --pre
     cpanm --install Pod::AsciiDoctor
 }
 
-function call_asciidoctor {
+call_asciidoctor() {
 
     check_asciidoctor
 
     cd docs
-    mkdir ${tmpwd}/output 2>/dev/null || true # we don't care if the directory already exists
-    cp -r images ${tmpwd}/output
+    mkdir "${tmpwd}"/output 2>/dev/null || true  # we don't care if the directory already exists
+    cp -r images "${tmpwd}"/output
 
-    ${asciidoctor_bin} -r asciidoctor-pdf -b pdf -o ${tmpwd}/output/openqa-documentation-${verbose_doc_name}.pdf index.asciidoc -d book
-    ${asciidoctor_bin} -o ${tmpwd}/output/openqa-documentation-${verbose_doc_name}.html index.asciidoc -d book
+    ${asciidoctor_bin} -r asciidoctor-pdf -b pdf -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".pdf index.asciidoc -d book
+    ${asciidoctor_bin} -o "${tmpwd}"/output/openqa-documentation-"${verbose_doc_name}".html index.asciidoc -d book
 
     echo -e  "${green}The output has been generated at ${tmpwd}/output"
 
     cd ..
 }
 
-if [ ${CONTINUOUS_INTEGRATION} ]; then
+if [ "${CONTINUOUS_INTEGRATION}" ]; then
     if [ "${TRAVIS_BRANCH}" != "master" ]; then
         echo "Branch is: ${TRAVIS_BRANCH}, not generating any documentation"
         exit 0
@@ -152,12 +146,12 @@ if [ ${CONTINUOUS_INTEGRATION} ]; then
         exit 0
     fi
 
-    if [ -z "${SSH_KEY}" -o -z "${SSH_IV}" ]; then
+    if [ -z "${SSH_KEY}" ] || [ -z "${SSH_IV}" ]; then
         echo "Build is a pull request, not generating any documentation"
         exit 0
     fi
 
-    if [ -z ${GH_PUBLISH} ]; then
+    if [ -z "${GH_PUBLISH}" ]; then
         echo "There's no need to generate the documentation"
         exit 0
     fi
@@ -165,7 +159,7 @@ if [ ${CONTINUOUS_INTEGRATION} ]; then
     echo "Requirements met, generating documentation"
 
     set_sshkey
-    cpanm --local-lib=~/perl5 local::lib && eval $(perl -I ~/perl5/lib/perl5/ -Mlocal::lib)
+    cpanm --local-lib=~/perl5 local::lib && eval "$(perl -I ~/perl5/lib/perl5/ -Mlocal::lib)"
     install_asciidoctor
     update_docs
 

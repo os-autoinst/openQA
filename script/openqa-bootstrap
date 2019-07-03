@@ -1,35 +1,34 @@
-#!/bin/bash -x
-set -e
+#!/bin/sh -ex
 
 dbname="${dbname:="openqa"}"
 dbuser="${dbuser:="geekotest"}"
 
 # add extra repos for leap
-source /etc/os-release
-if [[ "$NAME" == "openSUSE Leap" ]] ; then
-	zypper -n addrepo -p 90 obs://devel:openQA devel:openQA
-	zypper -n addrepo -p 91 obs://devel:openQA:Leap:${VERSION} devel:openQA:Leap:${VERSION}
-	zypper -n  --gpg-auto-import-keys refresh
+. /etc/os-release
+if [ "$NAME" = "openSUSE Leap" ]; then
+    zypper -n addrepo -p 90 obs://devel:openQA devel:openQA
+    zypper -n addrepo -p 91 "obs://devel:openQA:Leap:${VERSION}" "devel:openQA:Leap:${VERSION}"
+    zypper -n  --gpg-auto-import-keys refresh
 fi
 
 
 # install packages
 zypper -n install --no-recommends openQA-local-db apache2 openQA-worker qemu-arm qemu-ppc qemu-x86 sudo os-autoinst-distri-opensuse-deps
 
-if [[ "$(uname -m)" == "aarch64" ]] ; then
-	zypper -n install --no-recommends qemu-uefi-aarch64
+if [ "$(uname -m)" = "aarch64" ]; then
+    zypper -n install --no-recommends qemu-uefi-aarch64
 fi
 
 
 # setup database
 systemctl enable --now postgresql
 if ! su postgres -c "psql -qt <<< '\du'" | cut -d '|' -f1 | grep -q $dbuser ; then
-	# create db user if not existing
-	su postgres -c "createuser -D $dbuser"
+    # create db user if not existing
+    su postgres -c "createuser -D $dbuser"
 fi
 if ! su postgres -c "psql -lqt" | cut -d '|' -f1 | grep -q $dbname ; then
-	# create db if not existing
-	su postgres -c "createdb -O $dbuser $dbname"
+    # create db if not existing
+    su postgres -c "createdb -O $dbuser $dbname"
 fi
 
 
@@ -40,39 +39,39 @@ sed -i -e 's/#*.*method.*=.*$/method = Fake/' /etc/openqa/openqa.ini
 
 
 if ping -c1 download.suse.de. && (! rpm -q ca-certificates-suse) ; then
-	# add internal CA if executed within suse network
-	if ! zypper info ca-certificates-suse | grep -q ':' ; then
-		# add suse ca repo if needed
-		# use this way of adding the repo to be distro agnostic
-		zypper -n addrepo obs://SUSE:CA SUSE:CA
-		sed -i -e 's#download.opensuse.org/repositories#download.suse.de/ibs#' /etc/zypp/repos.d/SUSE\:CA.repo
-		sed -i -e 's/https/http/' /etc/zypp/repos.d/SUSE\:CA.repo
-		zypper -n --gpg-auto-import-keys refresh
-	fi
-	zypper -n install --no-recommends -ly ca-certificates-suse
+    # add internal CA if executed within suse network
+    if ! zypper info ca-certificates-suse | grep -q ':' ; then
+        # add suse ca repo if needed
+        # use this way of adding the repo to be distro agnostic
+        zypper -n addrepo obs://SUSE:CA SUSE:CA
+        sed -i -e 's#download.opensuse.org/repositories#download.suse.de/ibs#' /etc/zypp/repos.d/SUSE:CA.repo
+        sed -i -e 's/https/http/' /etc/zypp/repos.d/SUSE:CA.repo
+        zypper -n --gpg-auto-import-keys refresh
+    fi
+    zypper -n install --no-recommends -ly ca-certificates-suse
 fi
 
 # fetch tests and needles
 if ping -c1 gitlab.suse.de. ; then
-	# use faster local mirror if run from within SUSE network
-	export needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-opensuse-mirror.git"
+    # use faster local mirror if run from within SUSE network
+    export needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-opensuse-mirror.git"
 fi
 /usr/share/openqa/script/fetchneedles
 
 if ping -c1 gitlab.suse.de. ; then
         sles_needles_giturl="https://gitlab.suse.de/openqa/os-autoinst-needles-sles.git"
         sles_needles_directory="/var/lib/openqa/tests/opensuse/products/sle/needles"
-	# clone SLE needles if run from within SUSE network
-	if [ -d $sles_needles_directory ]; then
-		echo "cloning $sles_needles_giturl shallow. Call 'git fetch --unshallow' for full history"
+    # clone SLE needles if run from within SUSE network
+    if [ -d $sles_needles_directory ]; then
+        echo "cloning $sles_needles_giturl shallow. Call 'git fetch --unshallow' for full history"
                 git clone --depth 1 "$sles_needles_giturl" "$sles_needles_directory"
         fi
-	chown -R $dbuser: /var/lib/openqa/tests/opensuse/products/sle/needles
+    chown -R $dbuser: /var/lib/openqa/tests/opensuse/products/sle/needles
 fi
 
 
 # ensure that the hostname is mapped to 127.0.0.1 (needed for livehandler)
-grep -q $(hostname) /etc/hosts || echo "127.0.0.1 $(hostname)" >> /etc/hosts
+grep -q "$(hostname)" /etc/hosts || echo "127.0.0.1 $(hostname)" >> /etc/hosts
 
 
 # start daemons
@@ -85,7 +84,7 @@ systemctl enable --now openqa-gru.service
 
 # wait for webui to become available
 while ! curl -sI http://localhost/ | grep 200 ; do
-	sleep 3
+    sleep 3
 done
 
 # create api key

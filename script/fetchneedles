@@ -1,43 +1,41 @@
-#!/bin/bash
-set -e
-: ${dbuser:="geekotest"}
+#!/bin/bash -e
+: "${dbuser:="geekotest"}"
 
-: ${dist:="opensuse"}
-: ${giturl:="git://github.com/os-autoinst/os-autoinst-distri-opensuse.git"}
-: ${branch:="master"}
-: ${email:="openqa@$HOSTNAME"}
-: ${username:="openQA web UI"}
-: ${product:="$dist"}
+: "${dist:="opensuse"}"
+: "${giturl:="git://github.com/os-autoinst/os-autoinst-distri-opensuse.git"}"
+: "${branch:="master"}"
+: "${email:="openqa@$HOSTNAME"}"
+: "${username:="openQA web UI"}"
+: "${product:="$dist"}"
 
-: ${needles_separate:="1"}
-: ${needles_giturl:="git://github.com/os-autoinst/os-autoinst-needles-opensuse.git"}
-: ${needles_branch:="master"}
+: "${needles_separate:="1"}"
+: "${needles_giturl:="git://github.com/os-autoinst/os-autoinst-needles-opensuse.git"}"
+: "${needles_branch:="master"}"
 
-: ${updateall:="0"}
+: "${updateall:="0"}"
 
 dir="/var/lib/openqa/share/tests"
 if [ -w / ]; then
-	if [ ! -e "$dir/$dist" ]; then
-		mkdir -p "$dir/$dist"
-		chown $dbuser:www "$dir/$dist"
-	fi
-	echo "running as root, re-exec as $dbuser ..."
-	exec sudo -u $dbuser env \
-		dist="$dist" \
-		giturl="$giturl" \
-		branch="$branch" \
-		email="$email" \
-		username="$username" \
-		needles_separate="$needles_separate" \
-		needles_giturl="$needles_giturl" \
-		needles_branch="$needles_branch" \
-		updateall="$updateall" \
-		"$0" "$@"
-	exit 1
+    if [ ! -e "$dir/$dist" ]; then
+        mkdir -p "$dir/$dist"
+        chown $dbuser:www "$dir/$dist"
+    fi
+    echo "running as root, re-exec as $dbuser ..."
+    exec sudo -u $dbuser env \
+        dist="$dist" \
+        giturl="$giturl" \
+        branch="$branch" \
+        email="$email" \
+        username="$username" \
+        needles_separate="$needles_separate" \
+        needles_giturl="$needles_giturl" \
+        needles_branch="$needles_branch" \
+        updateall="$updateall" \
+        "$0" "$@"
+    exit 1
 fi
 
-needlesdir()
-{
+needlesdir() {
     # new layout since
     # https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/920
     if [ -d "$dir/$dist/products" ]; then
@@ -47,57 +45,57 @@ needlesdir()
     fi
 }
 
-do_fetch()
-{
-	local target=$1
-	echo fetching $target
-	git fetch -q
-	git rebase -q
-	if [ "$needles_separate" = 1 ]; then
-	    if test -d products; then
-		for nd in products/*/needles; do
-		    cd $target/$nd && (
-			git fetch -q
-			git rebase -q
-		    )
-		done
+do_fetch() {
+    local target=$1
+    echo "fetching $target"
+    git fetch -q
+    git rebase -q
+    if [ "$needles_separate" = 1 ]; then
+        if test -d products; then
+        for nd in products/*/needles; do
+            cd "$target/$nd" && (
+            git fetch -q
+            git rebase -q
+            )
+        done
             else
-		cd $target/needles
+        cd "$target/needles"
                 git fetch -q
-		git rebase -q
-		cd ../..
+        git rebase -q
+        cd ../..
             fi
-	fi
+    fi
 }
 
 if [ "$updateall" = 1 ]; then
-	cd "$dir"
-	fail=0
-	for repo in *; do
-		target="$dir/$repo"
-		! [ -L "$target" ] || continue
-		[ -d "$target/.git" ] || continue
-		cd "$target"
-		do_fetch "$target" || fail=1
-	done
-	exit "$fail"
+    cd "$dir"
+    fail=0
+    for repo in *; do
+        target="$dir/$repo"
+        ! [ -L "$target" ] || continue
+        [ -d "$target/.git" ] || continue
+        cd "$target"
+        do_fetch "$target" || fail=1
+    done
+    exit "$fail"
 else
-	target="$dir/$dist"
-	mkdir -p "$target"
-	cd "$target"
-	if [ ! -d .git ]; then
-		echo "cloning $giturl shallow. Call 'git fetch --unshallow' for full history"
-		git clone --depth 1 -b "$branch" "$giturl" .
-		git config user.email "$email"
-		git config user.name "$username"
-		if [ "$needles_separate" = 1 ]; then
-		    [ -d $(needlesdir) ] || mkdir $(needlesdir)
-		    cd $(needlesdir)
-		    git clone --depth 1 -b "$needles_branch" "$needles_giturl" .
-		    git config user.email "$email"
-		    git config user.name "$username"
-		fi
-	else
-		do_fetch "$target"
-	fi
+    target="$dir/$dist"
+    mkdir -p "$target"
+    cd "$target"
+    if [ ! -d .git ]; then
+        echo "cloning $giturl shallow. Call 'git fetch --unshallow' for full history"
+        git clone --depth 1 -b "$branch" "$giturl" .
+        git config user.email "$email"
+        git config user.name "$username"
+        if [ "$needles_separate" = 1 ]; then
+            needlesdir=$(needlesdir)
+            [ -d "$needlesdir" ] || mkdir "$needlesdir"
+            cd "$needlesdir"
+            git clone --depth 1 -b "$needles_branch" "$needles_giturl" .
+            git config user.email "$email"
+            git config user.name "$username"
+        fi
+    else
+        do_fetch "$target"
+    fi
 fi

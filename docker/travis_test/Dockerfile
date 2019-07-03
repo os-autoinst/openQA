@@ -124,7 +124,7 @@ RUN zypper in -y -C \
        perl-Test-Simple \
        'perl(aliased)' \
        systemd-sysvinit \
-	systemd libudev1 tack
+       systemd libudev1 tack
 
 VOLUME ["/sys/fs/cgroup", "/run"]
 

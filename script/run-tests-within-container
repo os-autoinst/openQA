@@ -3,11 +3,13 @@ INSTALL_FROM_CPAN="${INSTALL_FROM_CPAN:-0}"
 
 export OPENQA_LOGFILE=/opt/openqa/openqa-debug.log
 
-function run_test {
+run_test() {
+    # Allow command line options without quotes
+    # shellcheck disable=SC2086
     prove ${PROVE_ARGS} "$@" || touch tests_failed
 }
 
-function prepare_fullstack_test {
+prepare_fullstack_test() {
     if [ "$CUSTOM_OS_AUTOINST" ]; then
         cp -rd /opt/os-autoinst /opt/testing_area
         if [ "$CUSTOM_OS_AUTOINST_SKIP_BUILD" ]; then
@@ -23,17 +25,12 @@ function prepare_fullstack_test {
     else
         cpanm -n --mirror http://no.where/ --installdeps .
     fi
-    if ! [ $? -eq 0 ]; then
-        echo "OS autoinst dependencies not match. Please check output above"
-        exit 1
-    fi
     sh autogen.sh && make
     cd -
-
-    [ "$INSTALL_FROM_CPAN" -eq 1 ] && eval $(perl -I ~/perl5/lib/perl5/ -Mlocal::lib) || true
+    ([ "$INSTALL_FROM_CPAN" -eq 1 ] && eval "$(perl -I ~/perl5/lib/perl5/ -Mlocal::lib)") || true
 }
 
-function run_fullstack_test {
+run_fullstack_test() {
     prepare_fullstack_test
 
     export PERL5OPT="$PERL5OPT $HARNESS_PERL_SWITCHES"
@@ -52,11 +49,13 @@ elif [ "x$DEVELOPER_FULLSTACK" = x1 ]; then
     run_fullstack_test t/33-developer_mode.t
 else
     if [ "x$UITESTS" = x1 ]; then
-        list=$(find ./t/ui -name *.t | sort)
+        list=$(find ./t/ui -name '*.t' | sort)
     else
         make checkstyle || touch tests_failed
         list=$(find ./t/ -name '*.t' -not -path './t/ui/*' | sort)
     fi
+    # Allow command line options without quotes
+    # shellcheck disable=SC2086
     run_test -r $list
 fi
 

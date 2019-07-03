@@ -80,7 +80,7 @@ install:
 
 
 .PHONY: checkstyle
-checkstyle:
+checkstyle: test-shellcheck
 ifneq ($(CHECKSTYLE),0)
 	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic lib
 endif
@@ -143,3 +143,8 @@ launch-docker-to-run-tests-within: docker.env
 .NOTPARALLEL: prepare-and-launch-docker-to-run-tests-within
 prepare-and-launch-docker-to-run-tests-within: docker-test-build launch-docker-to-run-tests-within
 	echo "Use docker-rm and docker-rmi to remove the container and image if necessary"
+
+.PHONY: test-shellcheck
+test-shellcheck:
+	@which shellcheck >/dev/null 2>&1 || echo "Command 'shellcheck' not found, can not execute shell script checks"
+	shellcheck -x $$(file --mime-type script/* | sed -n 's/^\(.*\):.*text\/x-shellscript.*$$/\1/p')
