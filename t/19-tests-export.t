@@ -33,21 +33,18 @@ my $schema = OpenQA::Test::Database->new->create();
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # export all jobs
-my $r = $t->get_ok("/tests/export")->status_is(200);
-$t->content_type_is('text/plain');
-$t->content_like(qr/Job 99937: opensuse-13.1-DVD-i586-Build0091-kde\@32bit is passed/);
-$t->content_like(qr/Job 99981: opensuse-13.1-GNOME-Live-i686-Build0091-RAID0\@32bit is skipped/);
+$t->get_ok("/tests/export")->status_is(200)->content_type_is('text/plain')
+  ->content_like(qr/Job 99937: opensuse-13.1-DVD-i586-Build0091-kde\@32bit is passed/)
+  ->content_like(qr/Job 99981: opensuse-13.1-GNOME-Live-i686-Build0091-RAID0\@32bit is skipped/);
 
 # filter
-$r = $t->get_ok("/tests/export?from=99981")->status_is(200);
-$t->content_type_is('text/plain');
-$t->content_unlike(qr/Job 99937: opensuse-13.1-DVD-i586-Build0091-kde\@32bit is passed/);
-$t->content_like(qr/Job 99981: opensuse-13.1-GNOME-Live-i686-Build0091-RAID0\@32bit is skipped/);
+$t->get_ok("/tests/export?from=99981")->status_is(200)->content_type_is('text/plain')
+  ->content_unlike(qr/Job 99937: opensuse-13.1-DVD-i586-Build0091-kde\@32bit is passed/)
+  ->content_like(qr/Job 99981: opensuse-13.1-GNOME-Live-i686-Build0091-RAID0\@32bit is skipped/);
 
-$r = $t->get_ok("/tests/export?to=99981")->status_is(200);
-$t->content_type_is('text/plain');
-$t->content_like(qr/Job 99937: opensuse-13.1-DVD-i586-Build0091-kde\@32bit is passed/);
 # to is exclusiv
-$t->content_unlike(qr/Job 99981: opensuse-13.1-GNOME-Live-i686-Build0091-RAID0\@32bit is skipped/);
+$t->get_ok("/tests/export?to=99981")->status_is(200)->content_type_is('text/plain')
+  ->content_like(qr/Job 99937: opensuse-13.1-DVD-i586-Build0091-kde\@32bit is passed/)
+  ->content_unlike(qr/Job 99981: opensuse-13.1-GNOME-Live-i686-Build0091-RAID0\@32bit is skipped/);
 
 done_testing();

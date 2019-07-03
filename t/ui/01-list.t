@@ -168,7 +168,7 @@ wait_for_ajax;
 @expected     = ('3 jobs are running', '2 scheduled jobs', 'Last 1 finished jobs');
 is_deeply(\@header_texts, \@expected, 'limit for finished tests can be adjusted with query parameter');
 
-my $get = $t->get_ok('/tests/99963')->status_is(200);
+$t->get_ok('/tests/99963')->status_is(200);
 $t->content_like(qr/State.*running/, "Running jobs are marked");
 
 subtest 'available comments shown' => sub {

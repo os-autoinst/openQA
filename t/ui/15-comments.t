@@ -58,9 +58,9 @@ $driver->title_is("openQA", "back on main page");
 
 # check 'reviewed' labels
 
-my $get = $t->get_ok('/?limit_builds=10')->status_is(200);
-$get->element_count_is('.review', 2, 'exactly two builds marked as \'reviewed\'');
-$get->element_exists('.badge-all-passed', 'one build is marked as \'reviewed-all-passed\' because all tests passed');
+$t->get_ok('/?limit_builds=10')->status_is(200)
+  ->element_count_is('.review', 2, 'exactly two builds marked as \'reviewed\'')
+  ->element_exists('.badge-all-passed', 'one build is marked as \'reviewed-all-passed\' because all tests passed');
 
 $driver->find_element_by_link_text('opensuse')->click();
 
@@ -339,8 +339,8 @@ subtest 'commenting in test results including labels' => sub {
         );
         my @labels = $driver->find_elements('#res_DVD_x86_64_doc .test-label', 'css');
         is(scalar @labels, 3, '3 bugrefs shown');
-        $get = $t->get_ok($driver->get_current_url())->status_is(200);
-        is($get->tx->res->dom->at('#res_DVD_x86_64_doc .fa-bug')->parent->{href},
+        $t->get_ok($driver->get_current_url())->status_is(200);
+        is($t->tx->res->dom->at('#res_DVD_x86_64_doc .fa-bug')->parent->{href},
             'https://bugzilla.suse.com/show_bug.cgi?id=1234');
         $driver->find_element_by_link_text('opensuse')->click();
         is($driver->find_element('.badge-all-passed')->get_attribute('title'),
@@ -382,8 +382,8 @@ subtest 'commenting in test results including labels' => sub {
             is($bugrefs[1]->get_attribute('title'), 'Bug referenced: poo#9875', 'second bugref shown');
             is($bugrefs[2]->get_attribute('title'), 'Bug referenced: poo#9874', 'third bugref shown');
             is($bugrefs[3],                         undef,                      'correct number of bugrefs shown');
-            $get = $t->get_ok($driver->get_current_url())->status_is(200);
-            is($get->tx->res->dom->at('#res_staging_e_x86_64_minimalx .fa-bolt')->parent->{href},
+            $t->get_ok($driver->get_current_url())->status_is(200);
+            is($t->tx->res->dom->at('#res_staging_e_x86_64_minimalx .fa-bolt')->parent->{href},
                 'https://progress.opensuse.org/issues/9876');
         };
 

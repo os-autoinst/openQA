@@ -59,7 +59,7 @@ $t->app($app);
 my $url = 'http://localhost:' . OpenQA::SeleniumTest::get_mojoport;
 
 # schedule an ISO
-my $ret = $t->post_ok(
+$t->post_ok(
     $url . '/api/v1/isos',
     form => {
         ISO     => 'whatever.iso',
@@ -70,7 +70,7 @@ my $ret = $t->post_ok(
         BUILD   => '0091',
         FOO     => 'bar',
     })->status_is(200);
-is($ret->tx->res->json->{count}, 9, '9 new jobs created, 1 fails due to wrong START_AFTER_TEST');
+is($t->tx->res->json->{count}, 9, '9 new jobs created, 1 fails due to wrong START_AFTER_TEST');
 
 # access product log without being logged-in
 $driver->get($url . '/admin/productlog');

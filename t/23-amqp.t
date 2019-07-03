@@ -88,8 +88,8 @@ my $settings = {
 # create a job via API
 my $job;
 subtest 'create job' => sub {
-    my $post = $t->post_ok("/api/v1/jobs" => form => $settings)->status_is(200);
-    ok($job = $post->tx->res->json->{id}, 'got ID of new job');
+    $t->post_ok("/api/v1/jobs" => form => $settings)->status_is(200);
+    ok($job = $t->tx->res->json->{id}, 'got ID of new job');
     is(
         $published{'suse.openqa.job.create'},
         '{"ARCH":"x86_64","BUILD":"666","DESKTOP":"DESKTOP","DISTRI":"Unicorn","FLAVOR":"pink","ISO":"whatever.iso",'
@@ -101,7 +101,7 @@ subtest 'create job' => sub {
 };
 
 subtest 'mark job as done' => sub {
-    my $post = $t->post_ok("/api/v1/jobs/$job/set_done")->status_is(200);
+    $t->post_ok("/api/v1/jobs/$job/set_done")->status_is(200);
     is(
         $published{'suse.openqa.job.done'},
         '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
@@ -124,7 +124,7 @@ subtest 'mark job with taken over bugref as done' => sub {
     is($previous_job->bugref, 'bsc#123', 'added bugref recognized');
 
     # mark so far running job 99963 as failed which should trigger bug carry over
-    my $post = $t->post_ok(
+    $t->post_ok(
         "/api/v1/jobs/99963/set_done",
         form => {
             result => OpenQA::Jobs::Constants::FAILED
@@ -139,8 +139,8 @@ subtest 'mark job with taken over bugref as done' => sub {
 };
 
 subtest 'duplicate and cancel job' => sub {
-    my $post   = $t->post_ok("/api/v1/jobs/$job/duplicate")->status_is(200);
-    my $newjob = $post->tx->res->json->{id};
+    $t->post_ok("/api/v1/jobs/$job/duplicate")->status_is(200);
+    my $newjob = $t->tx->res->json->{id};
     is(
         $published{'suse.openqa.job.duplicate'},
         '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
@@ -151,7 +151,7 @@ subtest 'duplicate and cancel job' => sub {
         'job duplicate triggers amqp'
     );
 
-    $post = $t->post_ok("/api/v1/jobs/$newjob/cancel")->status_is(200);
+    $t->post_ok("/api/v1/jobs/$newjob/cancel")->status_is(200);
     is(
         $published{'suse.openqa.job.cancel'},
         '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
@@ -173,7 +173,7 @@ sub assert_common_comment_json {
 }
 
 subtest 'create job group comment' => sub {
-    my $post = $t->post_ok('/api/v1/groups/1001/comments' => form => {text => 'test'})->status_is(200);
+    $t->post_ok('/api/v1/groups/1001/comments' => form => {text => 'test'})->status_is(200);
     my $json = decode_json($published{'suse.openqa.comment.create'});
     assert_common_comment_json($json);
     is($json->{group_id},        1001,  'job group id');
@@ -181,7 +181,7 @@ subtest 'create job group comment' => sub {
 };
 
 subtest 'create parent group comment' => sub {
-    my $post = $t->post_ok('/api/v1/parent_groups/2000/comments' => form => {text => 'test'})->status_is(200);
+    $t->post_ok('/api/v1/parent_groups/2000/comments' => form => {text => 'test'})->status_is(200);
     my $json = decode_json($published{'suse.openqa.comment.create'});
     assert_common_comment_json($json);
     is($json->{group_id},        undef, 'job group id');

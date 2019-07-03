@@ -32,11 +32,11 @@ $test_case->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 subtest '404 error page' => sub {
-    my $get = $t->get_ok('/unavailable_page')->status_is(404);
-    my $dom = $get->tx->res->dom;
+    $t->get_ok('/unavailable_page')->status_is(404);
+    my $dom = $t->tx->res->dom;
     is_deeply([$dom->find('h1')->map('text')->each], ['Page not found'],   'correct page');
     is_deeply([$dom->find('h2')->map('text')->each], ['Available routes'], 'available routes shown');
-    ok(index($get->tx->res->text, 'Each entry contains the') >= 0, 'description shown');
+    ok(index($t->tx->res->text, 'Each entry contains the') >= 0, 'description shown');
 };
 
 subtest 'error pages shown for OpenQA::WebAPI::Controller::Step' => sub {

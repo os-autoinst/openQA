@@ -39,50 +39,48 @@ sub get_summary {
 #
 # Overview of build 0091
 #
-my $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', build => '0091'});
-$get->status_is(200);
+$t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', build => '0091'})->status_is(200);
 
 my $summary = get_summary;
 like($summary, qr/Overall Summary of opensuse 13\.1 build 0091/i);
 like($summary, qr/Passed: 3 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
 
 # Check the headers
-$get->element_exists('#flavor_DVD_arch_i586');
-$get->element_exists('#flavor_DVD_arch_x86_64');
-$get->element_exists('#flavor_GNOME-Live_arch_i686');
-$get->element_exists_not('#flavor_GNOME-Live_arch_x86_64');
-$get->element_exists_not('#flavor_DVD_arch_i686');
+$t->element_exists('#flavor_DVD_arch_i586');
+$t->element_exists('#flavor_DVD_arch_x86_64');
+$t->element_exists('#flavor_GNOME-Live_arch_i686');
+$t->element_exists_not('#flavor_GNOME-Live_arch_x86_64');
+$t->element_exists_not('#flavor_DVD_arch_i686');
 
 # Check some results (and it's overview_xxx classes)
-$get->element_exists('#res_DVD_i586_kde .result_passed');
-$get->element_exists('#res_GNOME-Live_i686_RAID0 i.state_cancelled');
-$get->element_exists('#res_DVD_i586_RAID1 i.state_scheduled');
-$get->element_exists_not('#res_DVD_x86_64_doc');
+$t->element_exists('#res_DVD_i586_kde .result_passed');
+$t->element_exists('#res_GNOME-Live_i686_RAID0 i.state_cancelled');
+$t->element_exists('#res_DVD_i586_RAID1 i.state_scheduled');
+$t->element_exists_not('#res_DVD_x86_64_doc');
 
 my $form = {distri => 'opensuse', version => '13.1', build => '0091', group => 'opensuse 13.1'};
-$get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+$t->get_ok('/tests/overview' => form => $form)->status_is(200);
 like(get_summary, qr/Overall Summary of opensuse 13\.1 build 0091/i, 'specifying group parameter');
 $form = {distri => 'opensuse', version => '13.1', build => '0091', groupid => 1001};
-$get  = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+$t->get_ok('/tests/overview' => form => $form)->status_is(200);
 like(get_summary, qr/Overall Summary of opensuse build 0091/i, 'specifying groupid parameter');
 
 #
 # Overview of build 0048
 #
-$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'});
-$get->status_is(200);
+$t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'})->status_is(200);
 like(get_summary, qr/\QPassed: 0 Soft-Failed: 2 Failed: 1\E/i);
 
 # Check the headers
-$get->element_exists('#flavor_DVD_arch_x86_64');
-$get->element_exists_not('#flavor_DVD_arch_i586');
-$get->element_exists_not('#flavor_GNOME-Live_arch_i686');
+$t->element_exists('#flavor_DVD_arch_x86_64');
+$t->element_exists_not('#flavor_DVD_arch_i586');
+$t->element_exists_not('#flavor_GNOME-Live_arch_i686');
 
 # Check some results (and it's overview_xxx classes)
-$get->element_exists('#res_DVD_x86_64_doc .result_failed');
-$get->element_exists('#res_DVD_x86_64_kde .result_softfailed');
-$get->element_exists_not('#res_DVD_i586_doc');
-$get->element_exists_not('#res_DVD_i686_doc');
+$t->element_exists('#res_DVD_x86_64_doc .result_failed');
+$t->element_exists('#res_DVD_x86_64_kde .result_softfailed');
+$t->element_exists_not('#res_DVD_i586_doc');
+$t->element_exists_not('#res_DVD_i686_doc');
 
 my $failedmodules
   = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#res_DVD_x86_64_doc .failedmodule')->all_text);
@@ -91,14 +89,13 @@ like($failedmodules, qr/logpackages/i, "failed modules are listed");
 #
 # Default overview for 13.1
 #
-$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'});
-$get->status_is(200);
+$t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'})->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse 13\.1 build 0091/i);
 like($summary, qr/Passed: 3 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
 
 $form = {distri => 'opensuse', version => '13.1', groupid => 1001};
-$get  = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+$t->get_ok('/tests/overview' => form => $form)->status_is(200);
 like(
     get_summary,
     qr/Summary of opensuse build 0091/i,
@@ -108,8 +105,7 @@ like(
 #
 # Default overview for Factory
 #
-$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory'});
-$get->status_is(200);
+$t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory'})->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse Factory build 0048\@0815/i);
 like($summary, qr/\QPassed: 0 Failed: 1\E/i);
@@ -118,35 +114,35 @@ like($summary, qr/\QPassed: 0 Failed: 1\E/i);
 #
 # Still possible to check an old build
 #
-$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '87.5011'});
-$get->status_is(200);
+$t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '87.5011'})
+  ->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse Factory build 87.5011/);
 like($summary, qr/Passed: 0 Incomplete: 1 Failed: 0/);
 
 # Advanced query parameters can be forwarded
-$form    = {distri => 'opensuse', version => '13.1', result => 'passed'};
-$get     = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+$form = {distri => 'opensuse', version => '13.1', result => 'passed'};
+$t->get_ok('/tests/overview' => form => $form)->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse 13\.1 build 0091/i, "Still references the last build");
 like($summary, qr/Passed: 3 Failed: 0/i, "Only passed are shown");
-$get->element_exists('#res_DVD_i586_kde .result_passed');
-$get->element_exists('#res_DVD_i586_textmode .result_passed');
-$get->element_exists_not('#res_DVD_i586_RAID0 .state_scheduled');
-$get->element_exists_not('#res_DVD_x86_64_kde .state_running');
-$get->element_exists_not('#res_GNOME-Live_i686_RAID0 .state_cancelled');
-$get->element_exists_not('.result_failed');
-$get->element_exists_not('.state_cancelled');
+$t->element_exists('#res_DVD_i586_kde .result_passed');
+$t->element_exists('#res_DVD_i586_textmode .result_passed');
+$t->element_exists_not('#res_DVD_i586_RAID0 .state_scheduled');
+$t->element_exists_not('#res_DVD_x86_64_kde .state_running');
+$t->element_exists_not('#res_GNOME-Live_i686_RAID0 .state_cancelled');
+$t->element_exists_not('.result_failed');
+$t->element_exists_not('.state_cancelled');
 
 # This time show only failed
 $form = {distri => 'opensuse', version => 'Factory', build => '0048', result => 'failed'};
-$get  = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+$t->get_ok('/tests/overview' => form => $form)->status_is(200);
 like(get_summary, qr/Passed: 0 Failed: 1/i);
-$get->element_exists('#res_DVD_x86_64_doc .result_failed');
-$get->element_exists_not('#res_DVD_x86_64_kde .result_passed');
+$t->element_exists('#res_DVD_x86_64_doc .result_failed');
+$t->element_exists_not('#res_DVD_x86_64_kde .result_passed');
 
 $form = {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1};
-$get  = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+$t->get_ok('/tests/overview' => form => $form)->status_is(200);
 like(get_summary, qr/Passed: 0 Failed: 1/i, 'todo=1 shows only unlabeled left failed');
 
 # add a failing module to one of the softfails to test 'TODO' option
@@ -159,7 +155,7 @@ my $failing_module = $t->app->schema->resultset('JobModules')->create(
         result   => 'failed'
     });
 
-$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1})
+$t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1})
   ->status_is(200);
 like(
     get_summary,
@@ -175,7 +171,7 @@ my $review_comment = $t->app->schema->resultset('Comments')->create(
         text    => 'bsc#1234',
         user_id => 99903,
     });
-$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1})
+$t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1})
   ->status_is(200);
 like(get_summary, qr/Passed: 0 Failed: 1/i, 'todo=1 shows only unlabeled left failed after new failed was labeled');
 $t->element_exists_not('#res-99936', 'reviewed failed filtered out');
@@ -184,16 +180,16 @@ $review_comment->delete();
 $failing_module->delete();
 
 # multiple groups can be shown at the same time
-$get = $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1002&build=0091')->status_is(200);
+$t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1002&build=0091')->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse, opensuse test/i, 'references both groups selected by query');
 like($summary, qr/Passed: 2 Failed: 0 Scheduled: 1 Running: 2 None: 1/i,
     'shows latest jobs from both groups 1001/1002');
-$get->element_exists('#res_DVD_i586_kde',                           'job from group 1001 is shown');
-$get->element_exists('#res_GNOME-Live_i686_RAID0 .state_cancelled', 'another job from group 1001');
-$get->element_exists('#res_NET_x86_64_kde .state_running',          'job from group 1002 is shown');
+$t->element_exists('#res_DVD_i586_kde',                           'job from group 1001 is shown');
+$t->element_exists('#res_GNOME-Live_i686_RAID0 .state_cancelled', 'another job from group 1001');
+$t->element_exists('#res_NET_x86_64_kde .state_running',          'job from group 1002 is shown');
 
-$get     = $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1002')->status_is(200);
+$t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1002')->status_is(200);
 $summary = get_summary;
 like(
     $summary,
@@ -206,7 +202,7 @@ like($summary, qr/Passed: 2 Failed: 0 Scheduled: 1 Running: 2 None: 1/i);
 $t->get_ok('/tests/overview' => form => {build => '0091', version => '13.1'})->status_is(200);
 $t->get_ok('/tests/overview' => form => {build => '0091', distri  => 'opensuse'})->status_is(200);
 $t->get_ok('/tests/overview' => form => {build => '0091'})->status_is(200);
-$get     = $t->get_ok('/tests/overview')->status_is(200);
+$t->get_ok('/tests/overview')->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse/i, 'shows all available latest jobs for the only present distri');
 like(
@@ -214,9 +210,9 @@ like(
     qr/Passed: 3 Failed: 0 Scheduled: 2 Running: 2 None: 1/i,
     'shows latest jobs from all distri, version, build, flavor, arch'
 );
-$get->element_exists('#res_DVD_i586_kde');
-$get->element_exists('#res_GNOME-Live_i686_RAID0 .state_cancelled');
-$get->element_exists('#res_NET_x86_64_kde .state_running');
+$t->element_exists('#res_DVD_i586_kde');
+$t->element_exists('#res_GNOME-Live_i686_RAID0 .state_cancelled');
+$t->element_exists('#res_NET_x86_64_kde .state_running');
 
 #
 # Test filter form
@@ -224,7 +220,7 @@ $get->element_exists('#res_NET_x86_64_kde .state_running');
 
 # Test initial state of architecture text box
 $form = {distri => 'opensuse', version => 'Factory', result => 'passed', arch => 'i686'};
-$get  = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+$t->get_ok('/tests/overview' => form => $form)->status_is(200);
 # FIXME: works when testing manually, but accessing the value via Mojo doesn't work
 #is($t->tx->res->dom->at('#filter-arch')->val, 'i686', 'default state of architecture');
 
@@ -236,18 +232,18 @@ $t->get_ok('/tests/99937/modules/zypper_up/fails')
 
 # Check if logpackages has failed, filtering with failed_modules
 $form = {distri => 'opensuse', version => 'Factory', failed_modules => 'logpackages'};
-$get  = $t->get_ok('/tests/overview', form => $form)->status_is(200);
+$t->get_ok('/tests/overview', form => $form)->status_is(200);
 like(get_summary, qr/Passed: 0 Failed: 0/i, 'all jobs filtered out');
-$get->element_exists_not('#res_DVD_x86_64_doc .result_failed', 'old job not revealed');
-$get->element_exists_not('#res_DVD_x86_64_kde .result_passed', 'passed job hidden');
+$t->element_exists_not('#res_DVD_x86_64_doc .result_failed', 'old job not revealed');
+$t->element_exists_not('#res_DVD_x86_64_kde .result_passed', 'passed job hidden');
 
 # make job with logpackages the latest by 'disabling' the currently latest
 my $latest_job = $schema->resultset('Jobs')->find(99940);
 $latest_job->update({DISTRI => 'not opensuse'});
-$get = $t->get_ok('/tests/overview', form => $form)->status_is(200);
+$t->get_ok('/tests/overview', form => $form)->status_is(200);
 like(get_summary, qr/Passed: 0 Failed: 1/i);
-$get->element_exists('#res_DVD_x86_64_doc .result_failed', 'job with failed module logpackages still shown');
-$get->element_exists_not('#res_DVD_x86_64_kde .result_passed', 'passed job hidden');
+$t->element_exists('#res_DVD_x86_64_doc .result_failed', 'job with failed module logpackages still shown');
+$t->element_exists_not('#res_DVD_x86_64_kde .result_passed', 'passed job hidden');
 
 # Check if another random module has failed
 $latest_job->update({DISTRI => 'opensuse'});
@@ -259,7 +255,7 @@ $failing_module = $schema->resultset('JobModules')->create(
         name     => 'failing_module',
         result   => 'failed'
     });
-$get = $t->get_ok(
+$t->get_ok(
     '/tests/overview' => form => {
         distri         => 'opensuse',
         version        => 'Factory',
@@ -267,8 +263,8 @@ $get = $t->get_ok(
     })->status_is(200);
 
 like(get_summary, qr/Passed: 0 Failed: 1/i, 'failed_modules shows failed jobs');
-$get->element_exists('#res-99940',                         'foo_bar_failed_module failed');
-$get->element_exists('#res_DVD_x86_64_doc .result_failed', 'foo_bar_failed_module module failed');
+$t->element_exists('#res-99940',                         'foo_bar_failed_module failed');
+$t->element_exists('#res_DVD_x86_64_doc .result_failed', 'foo_bar_failed_module module failed');
 
 # Check if another random module has failed
 $schema->resultset('JobModules')->create(
@@ -279,7 +275,7 @@ $schema->resultset('JobModules')->create(
         name     => 'failing_module',
         result   => 'failed'
     });
-$get = $t->get_ok(
+$t->get_ok(
     '/tests/overview' => form => {
         distri         => 'opensuse',
         version        => 'Factory',
@@ -298,13 +294,13 @@ $failing_module = $schema->resultset('JobModules')->create(
         name     => 'failing_module',
         result   => 'failed'
     });
-$get = $t->get_ok(
+$t->get_ok(
     '/tests/overview' => form => {
         distri         => 'opensuse',
         version        => '13.1',
         failed_modules => 'failing_module',
     })->status_is(200);
 like(get_summary, qr/Passed: 0 Failed: 0/i, 'Job was successful, so failed_modules does not show it');
-$get->element_exists_not('#res-99946', 'no module has failed');
+$t->element_exists_not('#res-99946', 'no module has failed');
 
 done_testing();

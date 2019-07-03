@@ -65,15 +65,13 @@ my $app = $t->app;
 $t->ua(OpenQA::Client->new()->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-my $ret;
-
 subtest 'access limiting for non authenticated users' => sub() {
     $t->get_ok('/api/v1/jobs')->status_is(200);
     $t->get_ok('/api/v1/products')->status_is(200);
-    my $delete = $t->delete_ok('/api/v1/assets/1')->status_is(403);
-    is($delete->tx->res->code, 403, 'delete forbidden');
+    $t->delete_ok('/api/v1/assets/1')->status_is(403);
+    is($t->tx->res->code, 403, 'delete forbidden');
     is_deeply(
-        $delete->tx->res->json,
+        $t->tx->res->json,
         {
             error        => 'no api key',
             error_status => 403,
@@ -110,17 +108,17 @@ subtest 'wrong api key - expired' => sub() {
     $t->ua->apikey('EXPIREDKEY01');
     $t->ua->apisecret('WHOCARESAFTERALL');
     $t->get_ok('/api/v1/jobs')->status_is(200);
-    $ret = $t->post_ok('/api/v1/products/1')->status_is(403);
-    is($ret->tx->res->json->{error}, 'api key expired', 'key expired error');
+    $t->post_ok('/api/v1/products/1')->status_is(403);
+    is($t->tx->res->json->{error}, 'api key expired', 'key expired error');
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
-    is($ret->tx->res->json->{error}, 'api key expired', 'key expired error');
+    is($t->tx->res->json->{error}, 'api key expired', 'key expired error');
 };
 
 subtest 'wrong api key - not maching key + secret' => sub() {
     $t->ua->apikey('EXPIREDKEY01');
     $t->ua->apisecret('INVALIDSECRET');
     $t->get_ok('/api/v1/jobs')->status_is(200);
-    $ret = $t->post_ok('/api/v1/products/1')->status_is(403);
+    $t->post_ok('/api/v1/products/1')->status_is(403);
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
 };
 
@@ -150,48 +148,48 @@ subtest 'wrong api key - replay attack' => sub() {
             }
         });
     $t->get_ok('/api/v1/jobs')->status_is(200);
-    $ret = $t->post_ok('/api/v1/products/1')->status_is(403);
-    is($ret->tx->res->json->{error}, 'timestamp mismatch', 'timestamp mismatch error');
+    $t->post_ok('/api/v1/products/1')->status_is(403);
+    is($t->tx->res->json->{error}, 'timestamp mismatch', 'timestamp mismatch error');
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
-    is($ret->tx->res->json->{error}, 'timestamp mismatch', 'timestamp mismatch error');
+    is($t->tx->res->json->{error}, 'timestamp mismatch', 'timestamp mismatch error');
 };
 
 
 SKIP: {
     skip "FIXME: how to test Mojo::Lite using Mojo::Test?", 1;
     # Public access to read workers
-    $ret = $t->get_ok('/api/v1/workers')->status_is(200);
-    $ret = $t->get_ok('/api/v1/workers/1')->status_is(200);
+    $t->get_ok('/api/v1/workers')->status_is(200);
+    $t->get_ok('/api/v1/workers/1')->status_is(200);
     # But access without API key is denied for websocket connection
-    $ret = $t->websocket_nok('/api/v1/workers/1/ws');
+    $t->websocket_nok('/api/v1/workers/1/ws');
 
     # Valid key with no expiration date works
     $t->ua->apikey('PERCIVALKEY02');
     $t->ua->apisecret('PERCIVALSECRET02');
-    $ret = $t->websocket_ok('/api/v1/workers/1/ws')->finish_ok;
+    $t->websocket_ok('/api/v1/workers/1/ws')->finish_ok;
 
     # But only with the right secret
     $t->ua->apisecret('PERCIVALNOSECRET');
-    $ret = $t->websocket_nok('/api/v1/workers/1/ws');
+    $t->websocket_nok('/api/v1/workers/1/ws');
 
     # Keys that are still valid also work
     $t->ua->apikey('PERCIVALKEY01');
     $t->ua->apisecret('PERCIVALSECRET01');
-    $ret = $t->websocket_ok('/api/v1/workers/1/ws')->finish_ok;
+    $t->websocket_ok('/api/v1/workers/1/ws')->finish_ok;
 
     # But expired ones don't
     $t->ua->apikey('EXPIREDKEY01');
     $t->ua->apisecret('WHOCARESAFTERALL');
-    $ret = $t->websocket_nok('/api/v1/workers/1/ws');
+    $t->websocket_nok('/api/v1/workers/1/ws');
 
     # Of course, non-existent keys fail
     $t->ua->apikey('INVENTEDKEY01');
-    $ret = $t->websocket_nok('/api/v1/workers/1/ws');
+    $t->websocket_nok('/api/v1/workers/1/ws');
 
     # Valid keys are rejected if the associated user is not operator
     $t->ua->apikey('LANCELOTKEY01');
     $t->ua->apisecret('MANYPEOPLEKNOW');
-    $ret = $t->websocket_nok('/api/v1/workers/1/ws');
+    $t->websocket_nok('/api/v1/workers/1/ws');
 }
 
 done_testing();

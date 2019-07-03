@@ -84,8 +84,8 @@ $jobs->find(99963)->update({assigned_worker_id => 1});
 # 99926 done       no clone
 
 # First, let's try /jobs and ensure the initial state
-my $get        = $t->get_ok('/api/v1/jobs');
-my @jobs       = @{$get->tx->res->json->{jobs}};
+$t->get_ok('/api/v1/jobs');
+my @jobs       = @{$t->tx->res->json->{jobs}};
 my $jobs_count = scalar @jobs;
 is($jobs_count, 18);
 my %jobs = map { $_->{id} => $_ } @jobs;
@@ -100,67 +100,67 @@ is($jobs{99946}->{origin_id},          99945, 'original job');
 is($jobs{99963}->{clone_id},           undef, 'no clone');
 
 # That means that only 9 are current and only 10 are relevant
-$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
-is(scalar(@{$get->tx->res->json->{jobs}}), 15);
-$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
-is(scalar(@{$get->tx->res->json->{jobs}}), 16);
+$t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
+is(scalar(@{$t->tx->res->json->{jobs}}), 15);
+$t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
+is(scalar(@{$t->tx->res->json->{jobs}}), 16);
 
 # check limit quantity
-$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 5});
-is(scalar(@{$get->tx->res->json->{jobs}}), 5);    # 9 jobs for current
+$t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 5});
+is(scalar(@{$t->tx->res->json->{jobs}}), 5);    # 9 jobs for current
 
 # check job group
-$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'opensuse test'});
-is(scalar(@{$get->tx->res->json->{jobs}}), 1);
-is($get->tx->res->json->{jobs}->[0]->{id}, 99961);
-$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'foo bar'});
-is(scalar(@{$get->tx->res->json->{jobs}}), 0);
+$t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'opensuse test'});
+is(scalar(@{$t->tx->res->json->{jobs}}), 1);
+is($t->tx->res->json->{jobs}->[0]->{id}, 99961);
+$t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'foo bar'});
+is(scalar(@{$t->tx->res->json->{jobs}}), 0);
 
 # Test restricting list
 
 # query for existing jobs by iso
-$get = $t->get_ok('/api/v1/jobs?iso=openSUSE-13.1-DVD-i586-Build0091-Media.iso');
-is(scalar(@{$get->tx->res->json->{jobs}}), 6);
+$t->get_ok('/api/v1/jobs?iso=openSUSE-13.1-DVD-i586-Build0091-Media.iso');
+is(scalar(@{$t->tx->res->json->{jobs}}), 6);
 
 # query for existing jobs by build
-$get = $t->get_ok('/api/v1/jobs?build=0091');
-is(scalar(@{$get->tx->res->json->{jobs}}), 11);
+$t->get_ok('/api/v1/jobs?build=0091');
+is(scalar(@{$t->tx->res->json->{jobs}}), 11);
 
 # query for existing jobs by hdd_1
-$get = $t->get_ok('/api/v1/jobs?hdd_1=openSUSE-13.1-x86_64.hda');
-is(scalar(@{$get->tx->res->json->{jobs}}), 3);
+$t->get_ok('/api/v1/jobs?hdd_1=openSUSE-13.1-x86_64.hda');
+is(scalar(@{$t->tx->res->json->{jobs}}), 3);
 
 # query for some combinations with test
-$get = $t->get_ok('/api/v1/jobs?test=kde');
-is(scalar(@{$get->tx->res->json->{jobs}}), 6);
-$get = $t->get_ok('/api/v1/jobs?test=kde&result=passed');
-is(scalar(@{$get->tx->res->json->{jobs}}), 1);
-$get = $t->get_ok('/api/v1/jobs?test=kde&result=softfailed');
-is(scalar(@{$get->tx->res->json->{jobs}}), 2);
-$get = $t->get_ok('/api/v1/jobs?test=kde&result=softfailed&machine=64bit');
-is(scalar(@{$get->tx->res->json->{jobs}}), 1);
-$get = $t->get_ok('/api/v1/jobs?test=kde&result=passed&machine=64bit');
-is(scalar(@{$get->tx->res->json->{jobs}}), 0);
+$t->get_ok('/api/v1/jobs?test=kde');
+is(scalar(@{$t->tx->res->json->{jobs}}), 6);
+$t->get_ok('/api/v1/jobs?test=kde&result=passed');
+is(scalar(@{$t->tx->res->json->{jobs}}), 1);
+$t->get_ok('/api/v1/jobs?test=kde&result=softfailed');
+is(scalar(@{$t->tx->res->json->{jobs}}), 2);
+$t->get_ok('/api/v1/jobs?test=kde&result=softfailed&machine=64bit');
+is(scalar(@{$t->tx->res->json->{jobs}}), 1);
+$t->get_ok('/api/v1/jobs?test=kde&result=passed&machine=64bit');
+is(scalar(@{$t->tx->res->json->{jobs}}), 0);
 
 # test limiting options
-$get = $t->get_ok('/api/v1/jobs?limit=5');
-is(scalar(@{$get->tx->res->json->{jobs}}), 5);
-$get = $t->get_ok('/api/v1/jobs?limit=1');
-is(scalar(@{$get->tx->res->json->{jobs}}), 1);
-is($get->tx->res->json->{jobs}->[0]->{id}, 99981);
-$get = $t->get_ok('/api/v1/jobs?limit=1&page=2');
-is(scalar(@{$get->tx->res->json->{jobs}}), 1);
-is($get->tx->res->json->{jobs}->[0]->{id}, 99963);
-$get = $t->get_ok('/api/v1/jobs?before=99928');
-is(scalar(@{$get->tx->res->json->{jobs}}), 4);
-$get = $t->get_ok('/api/v1/jobs?after=99945');
-is(scalar(@{$get->tx->res->json->{jobs}}), 6);
+$t->get_ok('/api/v1/jobs?limit=5');
+is(scalar(@{$t->tx->res->json->{jobs}}), 5);
+$t->get_ok('/api/v1/jobs?limit=1');
+is(scalar(@{$t->tx->res->json->{jobs}}), 1);
+is($t->tx->res->json->{jobs}->[0]->{id}, 99981);
+$t->get_ok('/api/v1/jobs?limit=1&page=2');
+is(scalar(@{$t->tx->res->json->{jobs}}), 1);
+is($t->tx->res->json->{jobs}->[0]->{id}, 99963);
+$t->get_ok('/api/v1/jobs?before=99928');
+is(scalar(@{$t->tx->res->json->{jobs}}), 4);
+$t->get_ok('/api/v1/jobs?after=99945');
+is(scalar(@{$t->tx->res->json->{jobs}}), 6);
 
 # test multiple arg forms
-$get = $t->get_ok('/api/v1/jobs?ids=99981,99963,99926');
-is(scalar(@{$get->tx->res->json->{jobs}}), 3);
-$get = $t->get_ok('/api/v1/jobs?ids=99981&ids=99963&ids=99926');
-is(scalar(@{$get->tx->res->json->{jobs}}), 3);
+$t->get_ok('/api/v1/jobs?ids=99981,99963,99926');
+is(scalar(@{$t->tx->res->json->{jobs}}), 3);
+$t->get_ok('/api/v1/jobs?ids=99981&ids=99963&ids=99926');
+is(scalar(@{$t->tx->res->json->{jobs}}), 3);
 
 subtest 'job overview' => sub {
     my $query = Mojo::URL->new('/api/v1/jobs/overview');
@@ -171,9 +171,9 @@ subtest 'job overview' => sub {
         version => 'Factory',
         groupid => '1001',
     );
-    $get = $t->get_ok($query->path_query)->status_is(200);
+    $t->get_ok($query->path_query)->status_is(200);
     is_deeply(
-        $get->tx->res->json,
+        $t->tx->res->json,
         [
             {
                 id   => 99940,
@@ -185,9 +185,9 @@ subtest 'job overview' => sub {
 
     # overview for build 0048
     $query->query(build => '0048',);
-    $get = $t->get_ok($query->path_query)->status_is(200);
+    $t->get_ok($query->path_query)->status_is(200);
     is_deeply(
-        $get->tx->res->json,
+        $t->tx->res->json,
         [
             {
                 id   => 99939,
@@ -207,11 +207,11 @@ subtest 'job overview' => sub {
 };
 
 # Test /jobs/restart
-my $post = $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927, 99939]})
+$t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927, 99939]})
   ->status_is(200);
 
-$get = $t->get_ok('/api/v1/jobs');
-my @new_jobs = @{$get->tx->res->json->{jobs}};
+$t->get_ok('/api/v1/jobs');
+my @new_jobs = @{$t->tx->res->json->{jobs}};
 is(scalar(@new_jobs), $jobs_count + 5, '5 new jobs - for 81, 63, 46, 39 and 61 from dependency');
 my %new_jobs = map { $_->{id} => $_ } @new_jobs;
 is($new_jobs{99981}->{state}, 'cancelled');
@@ -223,15 +223,15 @@ like($new_jobs{99981}->{clone_id}, qr/\d/, 'job cloned');
 my $cloned = $new_jobs{$new_jobs{99939}->{clone_id}};
 
 # The number of current jobs doesn't change
-$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
-is(scalar(@{$get->tx->res->json->{jobs}}), 15, 'job count stay the same');
+$t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
+is(scalar(@{$t->tx->res->json->{jobs}}), 15, 'job count stay the same');
 
 # Test /jobs/X/restart and /jobs/X
-$get = $t->get_ok('/api/v1/jobs/99926')->status_is(200);
-ok(!$get->tx->res->json->{job}->{clone_id}, 'job is not a clone');
-$post = $t->post_ok('/api/v1/jobs/99926/restart')->status_is(200);
-$get  = $t->get_ok('/api/v1/jobs/99926')->status_is(200);
-like($get->tx->res->json->{job}->{clone_id}, qr/\d/, 'job cloned');
+$t->get_ok('/api/v1/jobs/99926')->status_is(200);
+ok(!$t->tx->res->json->{job}->{clone_id}, 'job is not a clone');
+$t->post_ok('/api/v1/jobs/99926/restart')->status_is(200);
+$t->get_ok('/api/v1/jobs/99926')->status_is(200);
+like($t->tx->res->json->{job}->{clone_id}, qr/\d/, 'job cloned');
 
 use File::Temp;
 my ($fh, $filename) = File::Temp::tempfile(UNLINK => 1);
@@ -241,27 +241,26 @@ close($fh);
 
 my $rp = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/video.ogv";
 unlink($rp);                       # make sure previous tests don't fool us
-$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'video.ogv'}})
+$t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'video.ogv'}})
   ->status_is(200);
 
 ok(-e $rp, 'video exist after');
 is(calculate_file_md5($rp), "feeebd34e507d3a1641c774da135be77", "md5sum matches");
 
 $rp = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/ulogs/y2logs.tar.bz2";
-$post
-  = $t->post_ok(
+$t->post_ok(
     '/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'y2logs.tar.bz2'}, ulog => 1})
   ->status_is(200);
-$post->content_is('OK');
+$t->content_is('OK');
 ok(-e $rp, 'logs exist after');
 is(calculate_file_md5($rp), "feeebd34e507d3a1641c774da135be77", "md5sum matches");
 
 
 $rp = "t/data/openqa/share/factory/hdd/hdd_image.qcow2";
 unlink($rp);
-$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+$t->post_ok('/api/v1/jobs/99963/artefact' => form =>
       {file => {file => $filename, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(500);
-my $error = $post->tx->res->json->{error};
+my $error = $t->tx->res->json->{error};
 like($error, qr/Failed receiving chunk/);
 
 #Get chunks!
@@ -276,12 +275,12 @@ $pieces->each(
     sub {
         $_->prepare;
         my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
-        $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+        $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
               {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(200);
-        my $error  = $post->tx->res->json->{error};
-        my $status = $post->tx->res->json->{status};
+        my $error  = $t->tx->res->json->{error};
+        my $status = $t->tx->res->json->{status};
 
-        ok !$error or die diag explain $post->tx->res->json;
+        ok !$error or die diag explain $t->tx->res->json;
         is $status, 'ok';
         ok(-d $chunkdir, 'Chunk directory exists') unless $_->is_last;
         #  ok((-e path($chunkdir, $_->index)), 'Chunk is there') unless $_->is_last;
@@ -293,8 +292,8 @@ ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
 
 ok(-e $rp, 'Asset exists after upload');
 
-my $ret = $t->get_ok('/api/v1/assets/hdd/hdd_image.qcow2')->status_is(200);
-is($ret->tx->res->json->{name}, 'hdd_image.qcow2');
+$t->get_ok('/api/v1/assets/hdd/hdd_image.qcow2')->status_is(200);
+is($t->tx->res->json->{name}, 'hdd_image.qcow2');
 
 $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
 
@@ -304,10 +303,10 @@ $pieces->each(
         $_->prepare;
         $_->content(int(rand(99999)));
         my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
-        $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+        $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
               {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
-        my $error  = $post->tx->res->json->{error};
-        my $status = $post->tx->res->json->{status};
+        my $error  = $t->tx->res->json->{error};
+        my $status = $t->tx->res->json->{status};
 
         #  like $error, qr/Checksum mismatch expected/ if $_->is_last;
         like $error, qr/Can't verify written data from chunk/ unless $_->is_last();
@@ -328,10 +327,10 @@ $pieces->each(
         $_->content(int(rand(99999))) if $_->is_last;
         $_->prepare;
         my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
-        $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+        $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
               {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
-        my $error  = $post->tx->res->json->{error};
-        my $status = $post->tx->res->json->{status};
+        my $error  = $t->tx->res->json->{error};
+        my $status = $t->tx->res->json->{status};
         ok !$error unless $_->is_last();
         like $error, qr/Checksum mismatch expected/ if $_->is_last;
         ok(!-d $chunkdir, 'Chunk directory does not exists') if $_->is_last;
@@ -348,10 +347,10 @@ my $first_chunk = $pieces->first;
 $first_chunk->prepare;
 
 my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
-$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+$t->post_ok('/api/v1/jobs/99963/artefact' => form =>
       {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'public'});
 
-is $post->tx->res->json->{status}, 'ok';
+is $t->tx->res->json->{status}, 'ok';
 ok(-d $chunkdir, 'Chunk directory exists');
 #ok((-e path($chunkdir, $first_chunk->index)), 'Chunk is there') or die;
 
@@ -371,10 +370,10 @@ $first_chunk = $pieces->first;
 $first_chunk->prepare;
 
 $chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
-$post        = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+$t->post_ok('/api/v1/jobs/99963/artefact' => form =>
       {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'private'});
 
-is $post->tx->res->json->{status}, 'ok';
+is $t->tx->res->json->{status}, 'ok';
 ok(-d $chunkdir, 'Chunk directory exists');
 #ok((-e path($chunkdir, $first_chunk->index)), 'Chunk is there') or die;
 
@@ -399,12 +398,12 @@ $pieces->each(
     sub {
         $_->prepare;
         my $chunk_asset = Mojo::Asset::Memory->new->add_chunk($_->serialize);
-        $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+        $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
               {file => {file => $chunk_asset, filename => 'hdd_image.qcow2'}, asset => 'private'})->status_is(200);
-        my $error  = $post->tx->res->json->{error};
-        my $status = $post->tx->res->json->{status};
+        my $error  = $t->tx->res->json->{error};
+        my $status = $t->tx->res->json->{status};
 
-        ok !$error or die diag explain $post->tx->res->json;
+        ok !$error or die diag explain $t->tx->res->json;
         is $status, 'ok';
         ok(-d $chunkdir, 'Chunk directory exists') unless $_->is_last;
         #    ok((-e path($chunkdir, $_->index)), 'Chunk is there') unless $_->is_last;
@@ -413,8 +412,8 @@ $pieces->each(
 ok(!-d $chunkdir, 'Chunk directory should not exist anymore');
 ok(-e $rp,        'Asset exists after upload');
 
-$ret = $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(200);
-is($ret->tx->res->json->{name}, '00099963-hdd_image.qcow2');
+$t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(200);
+is($t->tx->res->json->{name}, '00099963-hdd_image.qcow2');
 
 
 # Test for private assets
@@ -429,10 +428,10 @@ $first_chunk = $pieces->first;
 $first_chunk->prepare;
 
 $chunk_asset = Mojo::Asset::Memory->new->add_chunk($first_chunk->serialize);
-$post        = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+$t->post_ok('/api/v1/jobs/99963/artefact' => form =>
       {file => {file => $chunk_asset, filename => 'new_ltp_result_array.json'}, asset => 'other'});
 
-is $post->tx->res->json->{status}, 'ok';
+is $t->tx->res->json->{status}, 'ok';
 ok(!-d $chunkdir, 'Chunk directory doesnt exists');
 $t->get_ok('/api/v1/assets/other/00099963-new_ltp_result_array.json')->status_is(200);
 
@@ -441,8 +440,8 @@ $t->get_ok('/api/v1/assets/other/00099963-new_ltp_result_array.json')->status_is
 my $query = Mojo::URL->new('/api/v1/jobs');
 for my $state (OpenQA::Schema::Result::Jobs->STATES) {
     $query->query(state => $state);
-    $get = $t->get_ok($query->path_query)->status_is(200);
-    my $res = $get->tx->res->json;
+    $t->get_ok($query->path_query)->status_is(200);
+    my $res = $t->tx->res->json;
     for my $job (@{$res->{jobs}}) {
         is($job->{state}, $state);
     }
@@ -450,8 +449,8 @@ for my $state (OpenQA::Schema::Result::Jobs->STATES) {
 
 for my $result (OpenQA::Schema::Result::Jobs->RESULTS) {
     $query->query(result => $result);
-    $get = $t->get_ok($query->path_query)->status_is(200);
-    my $res = $get->tx->res->json;
+    $t->get_ok($query->path_query)->status_is(200);
+    my $res = $t->tx->res->json;
     for my $job (@{$res->{jobs}}) {
         is($job->{result}, $result);
     }
@@ -459,8 +458,8 @@ for my $result (OpenQA::Schema::Result::Jobs->RESULTS) {
 
 for my $result ('failed,none', 'passed,none', 'failed,passed') {
     $query->query(result => $result);
-    $get = $t->get_ok($query->path_query)->status_is(200);
-    my $res  = $get->tx->res->json;
+    $t->get_ok($query->path_query)->status_is(200);
+    my $res  = $t->tx->res->json;
     my $cond = $result =~ s/,/|/r;
     for my $job (@{$res->{jobs}}) {
         like($job->{result}, qr/$cond/);
@@ -468,18 +467,18 @@ for my $result ('failed,none', 'passed,none', 'failed,passed') {
 }
 
 $query->query(result => 'nonexistent_result');
-$get = $t->get_ok($query->path_query)->status_is(200);
-my $res = $get->tx->res->json;
+$t->get_ok($query->path_query)->status_is(200);
+my $res = $t->tx->res->json;
 ok(!@{$res->{jobs}}, 'no result for nonexising result');
 
 $query->query(state => 'nonexistent_state');
-$get = $t->get_ok($query->path_query)->status_is(200);
-$res = $get->tx->res->json;
+$t->get_ok($query->path_query)->status_is(200);
+$res = $t->tx->res->json;
 ok(!@{$res->{jobs}}, 'no result for nonexising state');
 
 subtest 'Check job status and output' => sub {
-    $get      = $t->get_ok('/api/v1/jobs');
-    @new_jobs = @{$get->tx->res->json->{jobs}};
+    $t->get_ok('/api/v1/jobs');
+    @new_jobs = @{$t->tx->res->json->{jobs}};
     my $running_job_id;
 
     local $ENV{MOJO_LOG_LEVEL} = 'debug';
@@ -501,15 +500,15 @@ subtest 'Check job status and output' => sub {
         open STDOUT, '>', \$output;
 
 
-        $post      = $t->post_ok("/api/v1/jobs/$job->{id}/status", json => $json);
+        $t->post_ok("/api/v1/jobs/$job->{id}/status", json => $json);
         $worker_id = 0;
         close STDOUT;
         open(STDOUT, '>&', $oldSTDOUT) or die "Can't dup \$oldSTDOUT: $!";
         if ($job->{id} == 99963) {
-            $post->status_is(200);
+            $t->status_is(200);
         }
         else {
-            $post->status_is(400);
+            $t->status_is(400);
             ok($output =~ /Got status update for job .*? but does not contain a worker id!/,
                 "Check status update for job $job->{id}");
         }
@@ -520,15 +519,12 @@ subtest 'Check job status and output' => sub {
     my $output;
     open STDOUT, '>', \$output;
     # bogus job ID
-    my $bogus_job_post = $t->post_ok("/api/v1/jobs/9999999/status", json => {});
+    $t->post_ok("/api/v1/jobs/9999999/status", json => {})->status_is(400);
     # bogus worker ID
-    my $bogus_worker_post
-      = $t->post_ok("/api/v1/jobs/$running_job_id/status", json => {status => {worker_id => 999999}});
+    $t->post_ok("/api/v1/jobs/$running_job_id/status", json => {status => {worker_id => 999999}})->status_is(400);
     close STDOUT;
     open(STDOUT, '>&', $oldSTDOUT) or die "Can't dup \$oldSTDOUT: $!";
 
-    $bogus_job_post->status_is(400);
-    $bogus_worker_post->status_is(400);
     like($output, qr/Got status update for non-existing job/, 'Check status update for non-existing job');
     like(
         $output,
@@ -539,10 +535,10 @@ subtest 'Check job status and output' => sub {
 # Test /jobs/cancel
 # TODO: cancelling jobs via API in tests doesn't work for some reason
 #
-# $post = $t->post_ok('/api/v1/jobs/cancel?BUILD=0091')->status_is(200);
+# $t->post_ok('/api/v1/jobs/cancel?BUILD=0091')->status_is(200);
 #
-# $get = $t->get_ok('/api/v1/jobs');
-# @new_jobs = @{$get->tx->res->json->{jobs}};
+# $t->get_ok('/api/v1/jobs');
+# @new_jobs = @{$t->tx->res->json->{jobs}};
 #
 # foreach my $job (@new_jobs) {
 #     if ($job->{settings}->{BUILD} eq '0091') {
@@ -565,12 +561,12 @@ sub find_build {
 }
 
 # delete the job with a registered job module
-my $delete = $t->delete_ok('/api/v1/jobs/99937')->status_is(200);
+$t->delete_ok('/api/v1/jobs/99937')->status_is(200);
 $t->get_ok('/api/v1/jobs/99937')->status_is(404);
 
 subtest 'json representation of group overview (actually not part of the API)' => sub {
-    $get = $t->get_ok('/group_overview/1001.json')->status_is(200);
-    my $json       = $get->tx->res->json;
+    $t->get_ok('/group_overview/1001.json')->status_is(200);
+    my $json       = $t->tx->res->json;
     my $group_info = $json->{group};
     ok($group_info, 'group info present');
     is($group_info->{id},   1001,       'group ID');
@@ -602,10 +598,10 @@ subtest 'json representation of group overview (actually not part of the API)' =
     );
 };
 
-$get = $t->get_ok('/index.json?limit_builds=10')->status_is(200);
-$get = $get->tx->res->json;
-is(@{$get->{results}}, 2);
-my $g1 = (shift @{$get->{results}});
+$t->get_ok('/index.json?limit_builds=10')->status_is(200);
+my $ret = $t->tx->res->json;
+is(@{$ret->{results}}, 2);
+my $g1 = (shift @{$ret->{results}});
 is($g1->{group}->{name}, 'opensuse', 'First group is opensuse');
 my $b1 = find_build($g1, '13.1-0092');
 delete $b1->{oldest};
@@ -645,33 +641,32 @@ my %jobs_post_params = (
 );
 
 subtest 'WORKER_CLASS correctly assigned when posting job' => sub {
-    $post = $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
-    is($jobs->find($post->tx->res->json->{id})->settings_hash->{WORKER_CLASS},
+    $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+    is($jobs->find($t->tx->res->json->{id})->settings_hash->{WORKER_CLASS},
         'qemu_x86_64', 'default WORKER_CLASS assigned (with arch fallback)');
 
     $jobs_post_params{ARCH} = 'aarch64';
-    $post = $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
-    is($jobs->find($post->tx->res->json->{id})->settings_hash->{WORKER_CLASS},
+    $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+    is($jobs->find($t->tx->res->json->{id})->settings_hash->{WORKER_CLASS},
         'qemu_aarch64', 'default WORKER_CLASS assigned');
 
     $jobs_post_params{WORKER_CLASS} = 'svirt';
-    $post = $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
-    is($jobs->find($post->tx->res->json->{id})->settings_hash->{WORKER_CLASS},
-        'svirt', 'specified WORKER_CLASS assigned');
+    $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+    is($jobs->find($t->tx->res->json->{id})->settings_hash->{WORKER_CLASS}, 'svirt', 'specified WORKER_CLASS assigned');
 };
 
 subtest 'default priority correctly assigned when posting job' => sub {
     # post new job and check default priority
-    $post = $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
-    $t->get_ok('/api/v1/jobs/' . $post->tx->res->json->{id})->status_is(200);
+    $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+    $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
     $t->json_is('/job/group',    'opensuse');
     $t->json_is('/job/priority', 50);
 
     # post new job in job group with customized default priority
     $t->app->schema->resultset('JobGroups')->find({name => 'opensuse test'})->update({default_priority => 42});
     $jobs_post_params{_GROUP} = 'opensuse test';
-    $post = $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
-    $t->get_ok('/api/v1/jobs/' . $post->tx->res->json->{id})->status_is(200);
+    $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+    $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
     $t->json_is('/job/group',    'opensuse test');
     $t->json_is('/job/priority', 42);
 };
@@ -679,15 +674,15 @@ subtest 'default priority correctly assigned when posting job' => sub {
 subtest 'specifying group by ID' => sub {
     delete $jobs_post_params{_GROUP};
     $jobs_post_params{_GROUP_ID} = 1002;
-    $post = $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
-    $t->get_ok('/api/v1/jobs/' . $post->tx->res->json->{id})->status_is(200);
+    $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(200);
+    $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
     $t->json_is('/job/group',    'opensuse test');
     $t->json_is('/job/priority', 42);
 };
 
 subtest 'TEST is only mandatory parameter' => sub {
-    $post = $t->post_ok('/api/v1/jobs', form => {TEST => 'pretty_empty'})->status_is(200);
-    $t->get_ok('/api/v1/jobs/' . $post->tx->res->json->{id})->status_is(200);
+    $t->post_ok('/api/v1/jobs', form => {TEST => 'pretty_empty'})->status_is(200);
+    $t->get_ok('/api/v1/jobs/' . $t->tx->res->json->{id})->status_is(200);
     $t->json_is('/job/settings/TEST'    => 'pretty_empty');
     $t->json_is('/job/settings/MACHINE' => undef, 'machine was not set and is therefore undef');
     $t->json_is('/job/settings/DISTRI'  => undef);
@@ -707,7 +702,7 @@ subtest 'job details' => sub {
     $t->json_is('/job/assets/hdd/0',           => 'hdd_image.qcow2', 'Job has hdd_image.qcow2 as asset');
     $t->json_is('/job/testresults/0/category', => 'installation',    'Job category is "installation"');
 
-    $post = $t->get_ok('/api/v1/jobs/99946/details')->status_is(200);
+    $t->get_ok('/api/v1/jobs/99946/details')->status_is(200);
     $t->json_has('/job/testresults/0', 'Test details are there');
     $t->json_is('/job/assets/hdd/0', => 'openSUSE-13.1-x86_64.hda', 'Job has openSUSE-13.1-x86_64.hda as asset');
     $t->json_is('/job/testresults/0/category', => 'installation', 'Job category is "installation"');
@@ -794,18 +789,18 @@ subtest 'update job and job settings' => sub {
 subtest 'filter by worker_class' => sub {
 
     $query->query(worker_class => ':MiB:');
-    $get = $t->get_ok($query->path_query)->status_is(200);
-    $res = $get->tx->res->json;
+    $t->get_ok($query->path_query)->status_is(200);
+    my $res = $t->tx->res->json;
     ok(!@{$res->{jobs}}, 'Worker class does not exist');
 
     $query->query(worker_class => '::');
-    $get = $t->get_ok($query->path_query)->status_is(200);
-    $res = $get->tx->res->json;
+    $t->get_ok($query->path_query)->status_is(200);
+    $res = $t->tx->res->json;
     ok(!@{$res->{jobs}}, 'Wrong worker class provides zero results');
 
     $query->query(worker_class => ':UFP:');
-    $get = $t->get_ok($query->path_query)->status_is(200);
-    $res = $get->tx->res->json;
+    $t->get_ok($query->path_query)->status_is(200);
+    $res = $t->tx->res->json;
     ok(@{$res->{jobs}} eq 1, 'Known worker class group exists, and returns one job');
 
     $t->json_is('/jobs/0/settings/WORKER_CLASS' => ':UFP:NCC1701F', 'Correct worker class');
@@ -822,7 +817,7 @@ subtest 'Parse extra tests results - LTP' => sub {
     $parser->load($junit);
     my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
 
-    my $post = $t->post_ok(
+    $t->post_ok(
         '/api/v1/jobs/99963/artefact' => form => {
             file       => {file => $junit, filename => $fname},
             type       => "JUnit",
@@ -830,9 +825,9 @@ subtest 'Parse extra tests results - LTP' => sub {
             script     => 'test'
         })->status_is(200);
 
-    ok $post->tx->res->content->body_contains('FAILED'), 'request FAILED' or die diag explain $post->tx->res->content;
+    ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED' or die diag explain $t->tx->res->content;
 
-    $post = $t->post_ok(
+    $t->post_ok(
         '/api/v1/jobs/99963/artefact' => form => {
             file       => {file => $junit, filename => $fname},
             type       => "foo",
@@ -840,11 +835,11 @@ subtest 'Parse extra tests results - LTP' => sub {
             script     => 'test'
         })->status_is(200);
 
-    ok $post->tx->res->content->body_contains('FAILED'), 'request FAILED';
+    ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED';
 
     ok !-e path($basedir, 'details-LTP_syscalls_accept01.json'), 'detail from LTP was NOT written';
 
-    $post = $t->post_ok(
+    $t->post_ok(
         '/api/v1/jobs/99963/artefact' => form => {
             file       => {file => $junit, filename => $fname},
             type       => "LTP",
@@ -852,8 +847,8 @@ subtest 'Parse extra tests results - LTP' => sub {
             script     => 'test'
         })->status_is(200);
 
-    ok $post->tx->res->content->body_contains('OK'), 'request went fine';
-    ok !$post->tx->res->content->body_contains('FAILED'), 'request went fine, really';
+    ok $t->tx->res->content->body_contains('OK'), 'request went fine';
+    ok !$t->tx->res->content->body_contains('FAILED'), 'request went fine, really';
 
     ok !-e path($basedir, $fname), 'file was not uploaded';
 
@@ -898,7 +893,7 @@ subtest 'Parse extra tests results - xunit' => sub {
     $parser->load($junit);
     my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
 
-    my $post = $t->post_ok(
+    $t->post_ok(
         '/api/v1/jobs/99963/artefact' => form => {
             file       => {file => $junit, filename => $fname},
             type       => "LTP",
@@ -906,9 +901,9 @@ subtest 'Parse extra tests results - xunit' => sub {
             script     => 'test'
         })->status_is(200);
 
-    ok $post->tx->res->content->body_contains('FAILED'), 'request FAILED';
+    ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED';
 
-    $post = $t->post_ok(
+    $t->post_ok(
         '/api/v1/jobs/99963/artefact' => form => {
             file       => {file => $junit, filename => $fname},
             type       => "foo",
@@ -916,11 +911,11 @@ subtest 'Parse extra tests results - xunit' => sub {
             script     => 'test'
         })->status_is(200);
 
-    ok $post->tx->res->content->body_contains('FAILED'), 'request FAILED';
+    ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED';
 
     ok !-e path($basedir, 'details-unkn.json'), 'detail from junit was NOT written';
 
-    $post = $t->post_ok(
+    $t->post_ok(
         '/api/v1/jobs/99963/artefact' => form => {
             file       => {file => $junit, filename => $fname},
             type       => "XUnit",
@@ -928,8 +923,8 @@ subtest 'Parse extra tests results - xunit' => sub {
             script     => 'test'
         })->status_is(200);
 
-    ok $post->tx->res->content->body_contains('OK'), 'request went fine';
-    ok !$post->tx->res->content->body_contains('FAILED'), 'request went fine, really';
+    ok $t->tx->res->content->body_contains('OK'), 'request went fine';
+    ok !$t->tx->res->content->body_contains('FAILED'), 'request went fine, really';
 
     ok !-e path($basedir, $fname), 'file was not uploaded';
 
@@ -977,7 +972,7 @@ subtest 'Parse extra tests results - junit' => sub {
     $parser->load($junit);
     my $basedir = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/";
 
-    my $post = $t->post_ok(
+    $t->post_ok(
         '/api/v1/jobs/99963/artefact' => form => {
             file       => {file => $junit, filename => $fname},
             type       => "foo",
@@ -985,11 +980,11 @@ subtest 'Parse extra tests results - junit' => sub {
             script     => 'test'
         })->status_is(200);
 
-    ok $post->tx->res->content->body_contains('FAILED'), 'request FAILED';
+    ok $t->tx->res->content->body_contains('FAILED'), 'request FAILED';
 
     ok !-e path($basedir, 'details-1_running_upstream_tests.json'), 'detail from junit was NOT written';
 
-    $post = $t->post_ok(
+    $t->post_ok(
         '/api/v1/jobs/99963/artefact' => form => {
             file       => {file => $junit, filename => $fname},
             type       => "JUnit",
@@ -997,8 +992,8 @@ subtest 'Parse extra tests results - junit' => sub {
             script     => 'test'
         })->status_is(200);
 
-    ok $post->tx->res->content->body_contains('OK'), 'request went fine';
-    ok !$post->tx->res->content->body_contains('FAILED'), 'request went fine, really';
+    ok $t->tx->res->content->body_contains('OK'), 'request went fine';
+    ok !$t->tx->res->content->body_contains('FAILED'), 'request went fine, really';
 
     ok !-e path($basedir, $fname), 'file was not uploaded';
 

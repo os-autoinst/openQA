@@ -36,8 +36,8 @@ my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-my $get     = $t->get_ok('/admin/workers.json');
-my %workers = %{$get->tx->res->json->{workers}};
+$t->get_ok('/admin/workers.json');
+my %workers = %{$t->tx->res->json->{workers}};
 is(2, scalar(keys(%workers)), '2 workers seen');
 
 done_testing();

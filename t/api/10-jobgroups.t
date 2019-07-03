@@ -57,9 +57,9 @@ sub check_for_event {
 }
 
 subtest 'list job groups' => sub() {
-    my $get = $t->get_ok('/api/v1/job_groups')->status_is(200);
+    $t->get_ok('/api/v1/job_groups')->status_is(200);
     is_deeply(
-        $get->tx->res->json,
+        $t->tx->res->json,
         [
             {
                 name                           => 'opensuse',
@@ -98,18 +98,18 @@ subtest 'list job groups' => sub() {
 };
 
 subtest 'create parent group' => sub() {
-    my $post = $t->post_ok(
+    $t->post_ok(
         '/api/v1/parent_groups',
         form => {
             name                                => 'Cool parent group',
             default_size_limit_gb               => 200,
             default_keep_important_logs_in_days => 45
         })->status_is(200);
-    my $new_id = $post->tx->res->json->{id};
+    my $new_id = $t->tx->res->json->{id};
 
-    my $get = $t->get_ok('/api/v1/parent_groups/' . $new_id)->status_is(200);
+    $t->get_ok('/api/v1/parent_groups/' . $new_id)->status_is(200);
     is_deeply(
-        $get->tx->res->json,
+        $t->tx->res->json,
         [
             {
                 name                                   => 'Cool parent group',
@@ -133,7 +133,7 @@ subtest 'create parent group' => sub() {
 };
 
 subtest 'create job group' => sub() {
-    my $post = $t->post_ok(
+    $t->post_ok(
         '/api/v1/job_groups',
         form => {
             name                        => 'Cool group',
@@ -141,11 +141,11 @@ subtest 'create job group' => sub() {
             description                 => 'Test2',
             keep_important_logs_in_days => 45
         });
-    my $new_id = $post->tx->res->json->{id};
+    my $new_id = $t->tx->res->json->{id};
 
-    my $get = $t->get_ok('/api/v1/job_groups/' . $new_id)->status_is(200);
+    $t->get_ok('/api/v1/job_groups/' . $new_id)->status_is(200);
     is_deeply(
-        $get->tx->res->json,
+        $t->tx->res->json,
         [
             {
                 name                           => 'Cool group',
@@ -168,9 +168,9 @@ subtest 'create job group' => sub() {
         'list created job group'
     );
 
-    $get = $t->get_ok('/index.json')->status_is(200);
-    $get = $get->tx->res->json;
-    is(@{$get->{results}}, 2, 'empty job groups are not shown on index page');
+    $t->get_ok('/index.json')->status_is(200);
+    my $res = $t->tx->res->json;
+    is(@{$res->{results}}, 2, 'empty job groups are not shown on index page');
 
     check_for_event(jobgroup_create => {group_name => 'Cool group'});
 };
@@ -184,7 +184,7 @@ subtest 'update job group' => sub() {
             default_keep_important_results_in_days => 366
         })->tx->res->json->{id};
 
-    my $put = $t->put_ok(
+    $t->put_ok(
         '/api/v1/job_groups/1001',
         form => {
             name                        => 'opensuse',
@@ -197,9 +197,9 @@ subtest 'update job group' => sub() {
 
     check_for_event(jobgroup_update => {group_name => 'opensuse'});
 
-    my $get = $t->get_ok('/api/v1/job_groups/1001')->status_is(200);
+    $t->get_ok('/api/v1/job_groups/1001')->status_is(200);
     is_deeply(
-        $get->tx->res->json,
+        $t->tx->res->json,
         [
             {
                 name                           => 'opensuse',
@@ -226,13 +226,13 @@ subtest 'update job group' => sub() {
 subtest 'delete job/parent group and error when listing non-existing group' => sub() {
     for my $variant (qw(job_groups parent_groups)) {
         $t->delete_ok("/api/v1/$variant/3498371")->status_is(404);
-        my $new_id = $t->post_ok("/api/v1/$variant", form => {name => 'To delete'})->tx->res->json->{id};
-        my $delete = $t->delete_ok("/api/v1/$variant/$new_id")->status_is(200);
-        is($delete->tx->res->json->{id}, $new_id, 'correct ID returned');
+        my $new_id    = $t->post_ok("/api/v1/$variant", form => {name => 'To delete'})->tx->res->json->{id};
+        my $delete_id = $t->delete_ok("/api/v1/$variant/$new_id")->status_is(200)->tx->res->json->{id};
+        is($delete_id, $new_id, 'correct ID returned');
         check_for_event(jobgroup_delete => {group_id => $new_id});
-        my $get = $t->get_ok("/api/v1/$variant/$new_id")->status_is(404);
+        $t->get_ok("/api/v1/$variant/$new_id")->status_is(404);
         is_deeply(
-            $get->tx->res->json,
+            $t->tx->res->json,
             {error => "Group $new_id does not exist", error_status => 404},
             'error about non-existing group'
         );
@@ -240,20 +240,20 @@ subtest 'delete job/parent group and error when listing non-existing group' => s
 };
 
 subtest 'prevent deleting non-empty job group' => sub() {
-    my $delete = $t->delete_ok('/api/v1/job_groups/1002')->status_is(400);
-    is_deeply($delete->tx->res->json, {error => 'Job group 1002 is not empty', error_status => 400});
-    my $get = $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(200);
-    is_deeply($get->tx->res->json, {ids => [99961]}, '1002 contains one job');
-    $get = $t->get_ok('/api/v1/job_groups/1002/jobs?expired=1')->status_is(200);
-    is_deeply($get->tx->res->json, {ids => []}, '1002 contains no expired job');
+    $t->delete_ok('/api/v1/job_groups/1002')->status_is(400);
+    is_deeply($t->tx->res->json, {error => 'Job group 1002 is not empty', error_status => 400});
+    $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(200);
+    is_deeply($t->tx->res->json, {ids => [99961]}, '1002 contains one job');
+    $t->get_ok('/api/v1/job_groups/1002/jobs?expired=1')->status_is(200);
+    is_deeply($t->tx->res->json, {ids => []}, '1002 contains no expired job');
     my $rd = 't/data/openqa/testresults/00099/00099961-opensuse-13.1-DVD-x86_64-Build0091-kde';
     ok(-d $rd, 'result dir of job exists');
     $t->delete_ok('/api/v1/jobs/99961')->status_is(200);
     ok(!-d $rd, 'result dir of job gone');
-    $get = $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(200);
-    is_deeply($get->tx->res->json, {ids => []}, '1002 contains no more jobs');
+    $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(200);
+    is_deeply($t->tx->res->json, {ids => []}, '1002 contains no more jobs');
     $t->delete_ok('/api/v1/job_groups/1002')->status_is(200);
-    $get = $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(404);
+    $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(404);
 };
 
 subtest 'prevent create/update duplicate job group on top level' => sub() {
@@ -280,9 +280,9 @@ subtest 'prevent create/update duplicate job group on top level' => sub() {
             description                 => 'Updated group without parent',
             keep_important_logs_in_days => 100
         })->status_is(200);
-    my $get = $t->get_ok('/api/v1/job_groups/1003')->status_is(200);
+    $t->get_ok('/api/v1/job_groups/1003')->status_is(200);
     is_deeply(
-        $get->tx->res->json,
+        $t->tx->res->json,
         [
             {
                 name                           => 'Cool group',
@@ -309,9 +309,9 @@ subtest 'prevent create/update duplicate job group on top level' => sub() {
 subtest 'prevent create parent/job group with empty or blank name' => sub() {
     for my $group (qw(parent_groups job_groups)) {
         for my $name (undef, '   ') {
-            my $post = $t->post_ok("/api/v1/$group", form => {name => $name})->status_is(400);
+            $t->post_ok("/api/v1/$group", form => {name => $name})->status_is(400);
             is(
-                $post->tx->res->json->{error},
+                $t->tx->res->json->{error},
                 'The group name must not be empty or blank',
                 'Unable to create parent/job group with empty or blank name'
             );
@@ -321,17 +321,17 @@ subtest 'prevent create parent/job group with empty or blank name' => sub() {
 
 subtest 'prevent update parent/job group with empty or blank name' => sub() {
     for my $name (undef, '   ') {
-        my $put = $t->put_ok('/api/v1/parent_groups/1', form => {name => $name})->status_is(400);
+        $t->put_ok('/api/v1/parent_groups/1', form => {name => $name})->status_is(400);
         is(
-            $put->tx->res->json->{error},
+            $t->tx->res->json->{error},
             'The group name must not be empty or blank',
             'Unable to update parent group with empty or blank name'
         );
     }
     for my $name (undef, '   ') {
-        my $put = $t->put_ok('/api/v1/job_groups/1003', form => {name => $name})->status_is(400);
+        $t->put_ok('/api/v1/job_groups/1003', form => {name => $name})->status_is(400);
         is(
-            $put->tx->res->json->{error},
+            $t->tx->res->json->{error},
             'The group name must not be empty or blank',
             'Unable to update job group with empty or blank name'
         );

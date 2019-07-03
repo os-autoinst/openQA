@@ -30,8 +30,8 @@ $test_case->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $get   = $t->ua->get('/');
-my $token = $get->res->dom->at('meta[name=csrf-token]')->attr('content');
+$t->get_ok('/');
+my $token = $t->tx->res->dom->at('meta[name=csrf-token]')->attr('content');
 
 # test cancel and restart without logging in
 $t->post_ok('/api/v1/jobs/99928/cancel'       => {'X-CSRF-Token' => $token} => form => {})->status_is(403);
@@ -42,13 +42,12 @@ $t->post_ok('/api/v1/jobs/99928/prio?prio=34' => {'X-CSRF-Token' => $token} => f
 # Log in with an authorized user for the rest of the test
 $test_case->login($t, 'percival');
 
-$get = $t->ua->get('/api_keys');
+$t->get_ok('/api_keys');
 
-ok($token =~ /[0-9a-z]{40}/,                                                     "csrf token in meta tag");
-ok($get->res->dom->at('meta[name=csrf-param]')->attr('content') eq 'csrf_token', "csrf param in meta tag");
-#say "csrf token is $token";
+ok($token =~ /[0-9a-z]{40}/,                                                       "csrf token in meta tag");
+ok($t->tx->res->dom->at('meta[name=csrf-param]')->attr('content') eq 'csrf_token', "csrf param in meta tag");
 
-is($token, $get->res->dom->at('form input[name=csrf_token]')->{value}, "token is the same in form");
+is($token, $t->tx->res->dom->at('form input[name=csrf_token]')->{value}, "token is the same in form");
 
 # test cancel with and without CSRF token
 $t->post_ok('/api/v1/jobs/99928/cancel' => form => {csrf_token => 'foobar'})->status_is(403);

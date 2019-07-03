@@ -76,8 +76,7 @@ unless ($driver) {
 }
 
 # check job next and previous not loaded when open tests/x
-my $get = $t->get_ok('/tests/99946')->status_is(200);
-$get->element_exists_not(
+$t->get_ok('/tests/99946')->status_is(200)->element_exists_not(
     '#job_next_previous_table_wrapper .dataTables_wrapper',
     'datatable of job next and previous not loaded when open tests/x'
 );

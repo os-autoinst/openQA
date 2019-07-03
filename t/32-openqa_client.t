@@ -88,8 +88,8 @@ subtest 'upload public assets' => sub {
     ok(-e $rp, 'Asset exists after upload');
 
     is $sum, OpenQA::File::_file_digest($rp), 'cksum match!';
-    my $ret = $t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(200);
-    is($ret->tx->res->json->{name}, 'hdd_image2.qcow2');
+    $t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(200);
+    is($t->tx->res->json->{name}, 'hdd_image2.qcow2');
 
 };
 
@@ -129,8 +129,8 @@ subtest 'upload private assets' => sub {
     ok(-e $rp, 'Asset exists after upload');
 
     is $sum, OpenQA::File::_file_digest($rp), 'cksum match!';
-    my $ret = $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image3.qcow2')->status_is(200);
-    is($ret->tx->res->json->{name}, '00099963-hdd_image3.qcow2');
+    $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image3.qcow2')->status_is(200);
+    is($t->tx->res->json->{name}, '00099963-hdd_image3.qcow2');
 
 };
 
@@ -175,8 +175,8 @@ subtest 'upload other assets' => sub {
     ok(-e $rp, 'Asset exists after upload');
 
     is $sum, OpenQA::File::_file_digest($rp), 'cksum match!';
-    my $ret = $t->get_ok('/api/v1/assets/other/00099963-hdd_image3.xml')->status_is(200);
-    is($ret->tx->res->json->{name}, '00099963-hdd_image3.xml');
+    $t->get_ok('/api/v1/assets/other/00099963-hdd_image3.xml')->status_is(200);
+    is($t->tx->res->json->{name}, '00099963-hdd_image3.xml');
 
 };
 
@@ -229,8 +229,8 @@ subtest 'upload retrials' => sub {
     ok(-e $rp, 'Asset exists after upload');
 
     is $sum, OpenQA::File::_file_digest($rp), 'cksum match!';
-    my $ret = $t->get_ok('/api/v1/assets/other/00099963-hdd_image4.xml')->status_is(200);
-    is($ret->tx->res->json->{name}, '00099963-hdd_image4.xml');
+    $t->get_ok('/api/v1/assets/other/00099963-hdd_image4.xml')->status_is(200);
+    is($t->tx->res->json->{name}, '00099963-hdd_image4.xml');
 
 };
 
@@ -286,7 +286,7 @@ subtest 'upload failures' => sub {
 
     ok(!-e $rp, 'Asset does not exists after upload');
 
-    my $ret = $t->get_ok('/api/v1/assets/other/00099963-hdd_image5.xml')->status_is(404);
+    $t->get_ok('/api/v1/assets/other/00099963-hdd_image5.xml')->status_is(404);
 };
 
 subtest 'upload internal errors' => sub {
@@ -332,7 +332,7 @@ subtest 'upload internal errors' => sub {
 
     ok(!-e $rp, 'Asset does not exists after upload');
 
-    my $ret = $t->get_ok('/api/v1/assets/other/00099963-hdd_image6.xml')->status_is(404);
+    $t->get_ok('/api/v1/assets/other/00099963-hdd_image6.xml')->status_is(404);
 };
 
 
