@@ -1,0 +1,69 @@
+% layout 'bootstrap';
+% content_for 'head' => begin
+  %= asset 'codemirror.js'
+  %= asset 'codemirror.css'
+% end
+
+% title 'OBS synchronization';
+<H2><%= 'OBS synchronization for: ' . $obs_project  %></H2>
+<div class="container" id="content">
+    <p>OBS synchronization is performed in 3 steps.</p>
+</div>
+<hr>
+<div class="container" id="content">
+<H6>Step 1. Retrieve lists of required files from predefined OBS locations.</H6>
+% if (!scalar(@$lst_files)) {
+        <label>No files have been read so far</label>
+% } else {
+        <label>Lists retrieved during last run: </label>
+% }
+% for my $filename (@$lst_files) {
+        <label><%= link_to "$filename"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %></label>
+        <label>|</label>
+% }
+<br>
+% if ($read_files_sh) {
+        <label>Script used to retrieve files: </label>
+	<label><%= link_to "$read_files_sh"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $read_files_sh) %></label>
+% }
+</div>
+<hr>
+<div class="container" id="content">
+<H6>Step 2. Generate and execute commands to rsync and rename deliverables from remote OBS location (based on lists from Step 1.)</H6>
+% if (!scalar(@$rsync_commands)) {
+        <label>No logs found for last run</label>
+% } else {
+        <label>Commands executed during last run: </label>
+% }
+% for my $filename (@$rsync_commands) {
+        <label><%= link_to "$filename"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %></label>
+        <label>|</label>
+% }
+<br>
+% if (scalar(@$rsync_sh)) {
+        <label>Script used to generate commands: </label>
+%     for my $filename (@$rsync_sh) {
+	<label><%= link_to "$filename"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %></label>
+        <label>|</label>
+%     }
+% }
+</div>
+<hr>
+<div class="container" id="content">
+<H6>Step 3. Generate and execute openQA REST requests to trigger tests (based on lists from Step 1.)</H6>
+% if (!$openqa_commands) {
+        <label>No logs found for last run</label>
+% } else {
+        <label>Commands executed during last run: </label>
+        <label><%= link_to "$openqa_commands"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $openqa_commands) %></label>
+% }
+<br>
+% if ($openqa_sh) {
+        <label>Script used to generate commands: </label>
+	<label><%= link_to "$openqa_sh"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $openqa_sh) %></label>
+% }
+</div>
+<hr>
+<div class="row-sm-1">
+<label><%= link_to "all logs" => url_for('plugin_obs_rsync_logs', folder => $obs_project) %></label>
+</div>

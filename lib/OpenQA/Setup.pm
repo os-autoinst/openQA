@@ -169,6 +169,9 @@ sub read_config {
             exchange          => 'pubsub',
             topic_prefix      => 'suse',
         },
+        obs_rsync => {
+            home => '',
+        },
         default_group_limits => {
             asset_size_limit                  => OpenQA::Schema::JobGroupDefaults::SIZE_LIMIT_GB,
             log_storage_duration              => OpenQA::Schema::JobGroupDefaults::KEEP_LOGS_IN_DAYS,
