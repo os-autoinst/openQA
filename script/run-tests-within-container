@@ -47,11 +47,12 @@ elif [ "x$SCHEDULER_FULLSTACK" = x1 ]; then
     run_fullstack_test t/05-scheduler-full.t
 elif [ "x$DEVELOPER_FULLSTACK" = x1 ]; then
     run_fullstack_test t/33-developer_mode.t
+elif [ "x$CHECKSTYLE" = x1 ]; then
+    make checkstyle || touch tests_failed
 else
     if [ "x$UITESTS" = x1 ]; then
         list=$(find ./t/ui -name '*.t' | sort)
     else
-        make checkstyle || touch tests_failed
         list=$(find ./t/ -name '*.t' -not -path './t/ui/*' | sort)
     fi
     # Allow command line options without quotes
