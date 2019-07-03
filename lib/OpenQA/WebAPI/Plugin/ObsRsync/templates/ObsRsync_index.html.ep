@@ -1,0 +1,12 @@
+% layout 'bootstrap';
+% content_for 'head' => begin
+  %= asset 'codemirror.js'
+  %= asset 'codemirror.css'
+% end
+
+% title 'OBS synchronization folders';
+<H2><%= 'OBS synchronization folders ' %></H2>
+% for my $folder (@$folders) {
+	<label><%= link_to "$folder"  => url_for('plugin_obs_rsync_folder', folder => $folder) %></label>
+	<br>
+% }
