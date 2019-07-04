@@ -48,7 +48,7 @@ use Mojo::IOLoop::Server;
 use Mojo::File 'tempfile';
 use OpenQA::Test::Utils qw(
   create_webapi wait_for_worker setup_share_dir
-  create_websocket_server create_worker
+  create_websocket_server
   kill_service unstable_worker client_output unresponsive_worker
 );
 use Mojolicious;
@@ -73,6 +73,20 @@ my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok -d $resultdir;
 
 my $k = $schema->resultset("ApiKeys")->create({user_id => "99903"});
+
+sub create_worker {
+    my ($apikey, $apisecret, $host, $instance, $log) = @_;
+    my $connect_args = "--instance=${instance} --apikey=${apikey} --apisecret=${apisecret} --host=${host}";
+    diag("Starting standard worker. Instance: $instance for host $host");
+
+    my $workerpid = fork();
+    if ($workerpid == 0) {
+        exec("perl ./script/worker $connect_args --isotovideo=../os-autoinst/isotovideo --verbose"
+              . (defined $log ? " 2>&1 > $log" : ""));
+        die "FAILED TO START WORKER";
+    }
+    return defined $log ? `pgrep -P $workerpid` : $workerpid;
+}
 
 subtest 'Scheduler worker job allocation' => sub {
 

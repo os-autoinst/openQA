@@ -39,7 +39,7 @@ our (@EXPORT, @EXPORT_OK);
 @EXPORT_OK = (
     qw(redirect_output standard_worker),
     qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
-    qw(create_worker unresponsive_worker wait_for_worker setup_share_dir),
+    qw(unresponsive_worker wait_for_worker setup_share_dir),
     qw(kill_service unstable_worker client_output fake_asset_server),
     qw(cache_minion_worker cache_worker_service)
 );
@@ -282,20 +282,6 @@ sub setup_share_dir {
     symlink($tests_dir_path, $tests_link_path) || die "can't symlink $tests_link_path -> $tests_dir_path";
 
     return $sharedir;
-}
-
-sub create_worker {
-    my ($apikey, $apisecret, $host, $instance, $log) = @_;
-    my $connect_args = "--instance=${instance} --apikey=${apikey} --apisecret=${apisecret} --host=${host}";
-    diag("Starting standard worker. Instance: $instance for host $host");
-
-    my $workerpid = fork();
-    if ($workerpid == 0) {
-        exec("perl ./script/worker $connect_args --isotovideo=../os-autoinst/isotovideo --verbose"
-              . (defined $log ? " 2>&1 > $log" : ""));
-        die "FAILED TO START WORKER";
-    }
-    return defined $log ? `pgrep -P $workerpid` : $workerpid;
 }
 
 sub unstable_worker {
