@@ -13,6 +13,237 @@ For administrators it is recommend to have read the
 <<Installing.asciidoc#installing,Installation Guide>> first to understand the structure
 of components as well as the configuration of an installed instance.
 
+
+== Using job templates to automate jobs creation
+[id="job_templates"]
+
+=== The problem
+
+When testing an operating system, especially when doing continuous testing,
+there is always a certain combination of jobs, each one with its own
+settings, that needs to be run for every revision. Those combinations can be
+different for different 'flavors' of the same revision, like running a different
+set of jobs for each architecture or for the Full and the Lite versions. This
+combinational problem can go one step further if openQA is being used for
+different kinds of tests, like running some simple pre-integration tests
+for some snapshots combined with more comprehensive post-integration tests for
+release candidates.
+
+This section describes how an instance of openQA can be configured using the
+options in the admin area to automatically create all the required jobs for each
+revision of your operating system that needs to be tested. If you are starting
+from scratch, you should probably go through the following order:
+
+1. Define machines in 'Machines' menu
+2. Define medium types (products) you have in 'Medium types' menu
+3. Specify various collections of tests you want to run in the 'Test suites' menu
+4. Define job groups in 'Job groups' menu for groups of tests
+5. Select individual 'Job groups' and decide what combinations make sense and
+   need to be tested
+
+Machines, mediums, test suites and job templates  can all set various
+configuration variables. The so called job templates within the job groups
+define how the test suites, mediums and machines should be combined in various
+ways to produce individual 'jobs'. All the variables from the test suite,
+medium, machine and job template are combined and made available to the actual
+test code run by the 'job', along with variables specified as part of the job
+creation request. Certain variables also influence openQA's and/or
+os-autoinst's own behavior in terms of how it configures the environment for
+the job. Variables that influence os-autoinst's behavior are documented in the
+file +doc/backend_vars.asciidoc+ in the os-autoinst repository.
+
+In openQA we can parameterize a test to describe for what product it will
+run and for what kind of machines it will be executed. For example, a
+test like KDE can be run for any product that has KDE installed, and
+can be tested in x86-64 and i586 machines. If we write this as a
+triples, we can create a list like this to characterize KDE tests:
+
+  (Product,             Test Suite, Machine)
+  (openSUSE-DVD-x86_64, KDE,        64bit)
+  (openSUSE-DVD-x86_64, KDE,        Laptop-64bit)
+  (openSUSE-DVD-x86_64, KDE,        USBBoot-64bit)
+  (openSUSE-DVD-i586,   KDE,        32bit)
+  (openSUSE-DVD-i586,   KDE,        Laptop-32bit)
+  (openSUSE-DVD-i586,   KDE,        USBBoot-32bit)
+  (openSUSE-DVD-i586,   KDE,        64bit)
+  (openSUSE-DVD-i586,   KDE,        Laptop-64bit)
+  (openSUSE-DVD-i586,   KDE,        USBBoot-64bit)
+
+For every triplet, we need to configure a different instance of
+os-autoinst with a different set of parameters.
+
+
+=== Machines
+
+You need to have at least one machine set up to be able to run any
+tests. Those machines represent virtual machine types that you want to
+test. To make tests actually happen, you have to have an 'openQA
+worker' connected that can fulfill those specifications.
+
+* *Name.* User defined string - only needed for operator to identify the machine
+configuration.
+
+* *Backend.* What backend should be used for this machine. Recommended value is
++qemu+ as it is the most tested one, but other options (such as +kvm2usb+ or +vbox+)
+are also possible.
+
+* *Variables* Most machine variables influence os-autoinst's behavior in terms
+of how the test machine is set up. A few important examples:
+** +QEMUCPU+ can be 'qemu32' or 'qemu64' and specifies the architecture of the
+   virtual CPU.
+** +QEMUCPUS+ is an integer that specifies the number of cores you wish for.
+** +LAPTOP+ if set to 1, QEMU will create a laptop profile.
+** +USBBOOT+ when set to 1, the image will be loaded through an
+   emulated USB stick.
+
+
+=== Medium Types (products)
+
+A medium type (product) in openQA is a simple description without any concrete
+meaning. It basically consists of a name and a set of variables that
+define or characterize this product in os-autoinst.
+
+Some example variables used by openSUSE are:
+
+* +ISO_MAXSIZE+ contains the maximum size of the product. There is a
+  test that checks that the current size of the product is less or
+  equal than this variable.
+* +DVD+ if it is set to 1, this indicates that the medium is a DVD.
+* +LIVECD+ if it is set to 1, this indicates that the medium is a live
+  image (can be a CD or USB)
+* +GNOME+ this variable, if it is set to 1, indicates that it is a GNOME
+  only distribution.
+* +PROMO+ marks the promotional product.
+* +RESCUECD+ is set to 1 for rescue CD images.
+
+
+=== Test Suites
+
+A test suite consists of a name and a set of test variables that are used
+inside this particular test together with an optional description. The test
+variables can be used to parameterize the actual test code and influence the
+behaviour according to the settings.
+
+Some sample variables used by openSUSE are:
+
+* +BTRFS+ if set, the file system will be BtrFS.
+* +DESKTOP+ possible values are 'kde' 'gnome' 'lxde' 'xfce' or
+  'textmode'. Used to indicate the desktop selected by the user during
+  the test.
+* +DOCRUN+ used for documentation tests.
+* +DUALBOOT+ dual boot testing, needs HDD_1 and HDDVERSION.
+* +ENCRYPT+ encrypt the home directory via YaST.
+* +HDDVERSION+ used together with HDD_1 to set the operating system
+  previously installed on the hard disk.
+* +INSTALLONLY+ only basic installation.
+* +INSTLANG+ installation language. Actually used only in documentation
+  tests.
+* +LIVETEST+ the test is on a live medium, do not install the distribution.
+* +LVM+ select LVM volume manager.
+* +NICEVIDEO+ used for rendering a result video for use in show rooms,
+  skipping ugly and boring tests.
+* +NOAUTOLOGIN+ unmark autologin in YaST
+* +NUMDISKS+ total number of disks in QEMU.
+* +REBOOTAFTERINSTALL+ if set to 1, will reboot after the installation.
+* +SCREENSHOTINTERVAL+ used with NICEVIDEO to improve the video quality.
+* +SPLITUSR+ a YaST configuration option.
+* +TOGGLEHOME+ a YaST configuration option.
+* +UPGRADE+ upgrade testing, need HDD_1 and HDDVERSION.
+* +VIDEOMODE+ if the value is 'text', the installation will be done in
+  text mode.
+
+Some of the variables usually set in test suites that influence openQA
+and/or os-autoinst's own behavior are:
+
+* +HDDMODEL+ variable to set the HDD hardware model
+* +HDDSIZEGB+ hard disk size in GB. Used together with BtrFS variable
+* +HDD_1+ path for the pre-created hard disk
+* +RAIDLEVEL+ RAID configuration variable
+* +QEMUVGA+ parameter to declare the video hardware configuration in QEMU
+
+
+=== Job Groups
+
+The job groups are the place where the actual test scenarios are defined by
+the selection of the medium type, the test suite and machine together with a
+priority.
+
+The priority is used in the scheduler to choose the next job. If multiple jobs
+are scheduled and their requirements for running them are fulfilled the ones
+with a lower value for the priority are triggered. The id is the second
+sorting key: Of two jobs with equal requirements and same priority the one
+with lower id is triggered first.
+
+Job groups themselves can be created over the web UI as well as the REST API.
+Job groups can optionally be nested into categories. The display order of job
+groups and categories can be configured by drag-and-drop in the web UI.
+
+The scenario definitions within the job groups can be created and configured
+by different means:
+
+* A simple web UI wizard which is automatically shown for job groups when a
+  new medium is added to the job group.
+
+* An intuitive table within the web UI for adding additional test scenarios to
+  existing media including the possibility to configure the priority values.
+
+* The scripts `openqa-load-templates` and `openqa-dump-templates` to quickly
+  dump and load the configuration from custom plain-text dump format files
+  using the REST API.
+
+* Using declarative schedule definitions in the YAML format using REST API
+  routes or an online-editor within the web UI including a syntax checker.
+
+
+=== Variable expansion
+
+Any variable defined in Test Suite, Machine, Product or Job Template table can
+refer to another variable using this syntax: +%NAME%+. When the test job is created,
+the string will be substituted with the value of the specified variable at that time.
+
+For example this variable defined for Test Suite:
+
+[source,sh]
+--------------------------------------------------------------------------------
+PUBLISH_HDD_1 = %DISTRI%-%VERSION%-%ARCH%-%DESKTOP%.qcow2
+--------------------------------------------------------------------------------
+
+may be expanded to this job variable:
+
+[source,sh]
+--------------------------------------------------------------------------------
+PUBLISH_HDD_1 = opensuse-13.1-i586-kde.qcow2
+--------------------------------------------------------------------------------
+
+=== Variable precedence
+
+It's possible to define the same variable in multiple places that would all be
+used for a single job - for instance, you may have a variable defined in both
+a test suite and a product that appear in the same job template. The precedence
+order for variables is as follows (from lowest to highest):
+
+* Product
+* Machine
+* Test suite
+* Job template
+* API POST query parameters
+
+That is, variable values set as part of the API request that triggers the jobs will
+'win' over values set at any of the other locations.
+
+If you need to override this precedence - for example, you want the value set in
+one particular test suite to take precedence over a setting of the same value from
+the API request - you can add a leading + to the variable name. For instance, if
+you set ++VARIABLE = foo+ in a test suite, and passed +VARIABLE=bar+ in the API
+request, the test suite setting would 'win' and the value would be foo.
+
+If the same variable is set with a + prefix in multiple places, the same precedence
+order described above will apply to those settings.
+
+Note that the +WORKER_CLASS+ variable is not overridden in the way described above.
+Instead multiple occurrences are combined.
+
+
 == Use of the web interface
 
 In general the web UI should be intuitive or self-explanatory. Look out for the
@@ -25,6 +256,21 @@ UI elements to control the parameters, for example to look for more older
 builds or only show failed jobs or other settings. Additionally, the query
 parameters can be tweaked by hand if you want to provide a link to specific
 views.
+
+
+=== Description of test suites
+
+Test suites can be described using API commands or the admin table for any operator using the web UI.
+
+[[test_suite_description_edit]]
+.Entering a test suite description in the admin table using the web interface:
+image::images/test_suite_description_edit.png[test suite description edit field]
+
+If a description is defined, the name of the test suite on the tests overview page shows up as a link. Clicking the link will show the description in a popup. The same syntax as for comments can be used, that is Markdown with custom extensions such as shortened links to ticket systems.
+
+[[test_suite_description_shown]]
+.popover in test overview with content as configured in the test suites database:
+image::images/test_suite_description_shown.png[test suite description popup]
 
 
 === /tests/overview - Customizable test overview page
@@ -42,21 +288,6 @@ image::images/tests-overview_multiple_groups.png[test overview page showing mult
 
 Specifying multiple groups with no build will yield the latest build of the
 first group. This can be useful to have a static URL for bookmarking.
-
-
-=== Description of test suites
-
-Test suites can be described using API commands or the admin table for any operator using the web UI.
-
-[[test_suite_description_edit]]
-.Entering a test suite description in the admin table using the web interface:
-image::images/test_suite_description_edit.png[test suite description edit field]
-
-If a description is defined, the name of the test suite on the tests overview page shows up as a link. Clicking the link will show the description in a popup. The same syntax as for comments can be used, that is Markdown with custom extensions such as shortened links to ticket systems.
-
-[[test_suite_description_shown]]
-.popover in test overview with content as configured in the test suites database:
-image::images/test_suite_description_shown.png[test suite description popup]
 
 
 === Review badges ===
@@ -293,65 +524,37 @@ the top of the group overview page. However, it only works as operator
 or admin.
 
 
-== Asset cleanup ==
+=== Developer mode ===
 
-For more information on assets, see 'Asset handling' below.
+The developer mode allows to:
 
-Assets like ISO files consume a huge amount of disk space. Therefore openQA
-removes assets automatically according to configurable limits.
+* Create or update needles from +assert_screen+ mismatches ("re-needling")
+* Pause the test execution (at a certain module) for manual investigation of the SUT
 
-This section provides an overall description of the cleanup strategy and
-how to configure the limits. Cleanup-related parameter for the REST API can
-be found in the 'Asset handling' section under 'Use of the REST API'.
+It can be accessed via the "Live View" tab of a running test. Only registered
+users can take control over a tests. Basic instructions and buttons providing further
+information about the different options are already contained on the web page itself.
+So I am not repeating that information here and rather explain the overall workflow.
 
-=== Cleanup strategy ===
+In case the developer mode in not working on your instance, try to follow the
+<<Pitfalls.asciidoc#debugdevelmode,steps for debugging the developer mode under 'Pitfalls'>>.
 
-openQA frequently checks whether assets need to be removed according to
-the configured limits.
+==== Workflow for creating or updating needles ====
 
-To find out whether an asset should be removed, openQA determines by which
-job groups the asset is used. If at least one job within a certain job group
-is using an asset, the asset is considered to be used by that group.
+1. In case a new needles should be created, add the corresponding +assert_screen+s to
+   your test.
+2. Start the test with the +assert_screen+s which are supposed to fail.
+3. Select "Pause on +assert_screen+ failure and confirm.
+4. Wait until the test has paused. There is a button to skip the current timeout to speed
+   this up.
+5. A button for acessing the needle editor should occur. It may take a few seconds till
+   it occurs because the screenshots created so far need to be uploaded from the worker to
+   the web UI. Of course it is also possible to go back to the "Details" tab to create a new
+   needle from any previous screenshot/match available.
+6. After creating the new needle, click the resume button to test whether it worked.
 
-So an asset can be accounted to multiple groups. The assets table which is
-accessible via the admin menu shows these groups for each asset and also
-the latest job.
-
-If the size limit for assets by a certain group is exceeded, openQA will
-remove assets accounted to that group:
-
-* Assets belonging to old jobs are preferred.
-* Assets belonging to jobs which are still scheduled or running are not
-  considered.
-* Assets which are also accounted to another group that has still space
-  left are not considered.
-
-Assets which do _not_ belong to any group are removed after a configurable
-duration. Keep in mind that this behavior is also enabled on local instances
-and affects all cloned jobs (unless cloned into a job group).
-
-'Fixed' assets - those placed in the +fixed+ subdirectory of the relevant
-asset directory - are counted against the group size limit, but are never
-cleaned up. This is intended for things like base disk images which must
-always be available for a test to work.
-
-=== Configure limit for assets within groups ===
-
-To configure the maximum size for the assets of a group, open 'Job groups'
-in the operators menu and select a group. The size limit for assets can be
-configured under 'Edit job group properties'. It also shows the size of
-assets which belong to that group and not to any other group.
-
-Job groups inherit the size limit from their parent group unless the limit
-is set explicitely. The default size limit for groups can be adjusted in
-the +default_group_limits+ section of the openQA config file.
-
-=== Configure limit for groupless assets ===
-
-Assets not belonging to jobs within a group are deleted automatically
-after a certain number of days. That duration can be adjusted by setting
-+untracked_assets_storage_duration+ in the +misc_limits+ section of the
-openQA config to the desired number of days.
+Steps 4. to 6. can be repeated for further +assert_screen+s/needles without restarting the
+test.
 
 
 == Use of the REST API
@@ -440,7 +643,7 @@ openqa-client isos post ISO=my_iso.iso DISTRI=my_distri FLAVOR=sweet \
 --------------------------------------------------------------------------------
 
 
-==== Asset handling ====
+== Asset handling ==
 
 Multiple parameters exist to reference "assets" to be used by tests. "Assets" are essentially
 content that is stored by the openQA web-UI and provided to the workers; when sending jobs to
@@ -528,37 +731,67 @@ in the <<WritingTests.asciidoc,Writing Tests>> guide.
 When using this mechanism you will often also want to use the 'Variable expansion' mechanism
 described in the <<GettingStarted.asciidoc,Getting Started>> guide.
 
-== Developer mode ==
+=== Asset cleanup ===
 
-The developer mode allows to:
+For more information on assets, see 'Asset handling' below.
 
-* Create or update needles from +assert_screen+ mismatches ("re-needling")
-* Pause the test execution (at a certain module) for manual investigation of the SUT
+Assets like ISO files consume a huge amount of disk space. Therefore openQA
+removes assets automatically according to configurable limits.
 
-It can be accessed via the "Live View" tab of a running test. Only registered
-users can take control over a tests. Basic instructions and buttons providing further
-information about the different options are already contained on the web page itself.
-So I am not repeating that information here and rather explain the overall workflow.
+This section provides an overall description of the cleanup strategy and
+how to configure the limits. Cleanup-related parameter for the REST API can
+be found in the 'Asset handling' section under 'Use of the REST API'.
 
-In case the developer mode in not working on your instance, try to follow the
-<<Pitfalls.asciidoc#debugdevelmode,steps for debugging the developer mode under 'Pitfalls'>>.
+==== Cleanup strategy ====
 
-=== Workflow for creating or updating needles ===
+openQA frequently checks whether assets need to be removed according to
+the configured limits.
 
-1. In case a new needles should be created, add the corresponding +assert_screen+s to
-   your test.
-2. Start the test with the +assert_screen+s which are supposed to fail.
-3. Select "Pause on +assert_screen+ failure and confirm.
-4. Wait until the test has paused. There is a button to skip the current timeout to speed
-   this up.
-5. A button for acessing the needle editor should occour. It may take a few seconds till
-   it occurs because the screenshots created so far need to be uploaded from the worker to
-   the web UI. Of course it is also possible to go back to the "Details" tab to create a new
-   needle from any previous screenshot/match available.
-6. After creating the new needle, click the resume button to test whether it worked.
+To find out whether an asset should be removed, openQA determines by which
+job groups the asset is used. If at least one job within a certain job group
+is using an asset, the asset is considered to be used by that group.
 
-Steps 4. to 6. can be repeated for further +assert_screen+s/needles without restarting the
-test.
+So an asset can be accounted to multiple groups. The assets table which is
+accessible via the admin menu shows these groups for each asset and also
+the latest job.
+
+If the size limit for assets by a certain group is exceeded, openQA will
+remove assets accounted to that group:
+
+* Assets belonging to old jobs are preferred.
+* Assets belonging to jobs which are still scheduled or running are not
+  considered.
+* Assets which are also accounted to another group that has still space
+  left are not considered.
+
+Assets which do _not_ belong to any group are removed after a configurable
+duration. Keep in mind that this behavior is also enabled on local instances
+and affects all cloned jobs (unless cloned into a job group).
+
+'Fixed' assets - those placed in the +fixed+ subdirectory of the relevant
+asset directory - are counted against the group size limit, but are never
+cleaned up. This is intended for things like base disk images which must
+always be available for a test to work.
+
+=== Configure limit for assets within groups ===
+
+To configure the maximum size for the assets of a group, open 'Job groups'
+in the operators menu and select a group. The size limit for assets can be
+configured under 'Edit job group properties'. It also shows the size of
+assets which belong to that group and not to any other group.
+
+Job groups inherit the size limit from their parent group unless the limit
+is set explicitely. The default size limit for groups can be adjusted in
+the +default_group_limits+ section of the openQA config file.
+
+
+=== Configure limit for groupless assets ===
+
+Assets not belonging to jobs within a group are deleted automatically
+after a certain number of days. That duration can be adjusted by setting
++untracked_assets_storage_duration+ in the +misc_limits+ section of the
+openQA config to the desired number of days.
+
 
 == Where to now?
 
