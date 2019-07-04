@@ -16,6 +16,7 @@
 
 use strict;
 use warnings;
+
 use FindBin;
 use lib ("$FindBin::Bin/lib", "../lib", "lib");
 use Test::More;
@@ -337,5 +338,3 @@ subtest 'upload internal errors' => sub {
 
 
 done_testing();
-
-1;

@@ -16,6 +16,7 @@
 
 use strict;
 use warnings;
+
 use FindBin;
 use lib ("$FindBin::Bin/lib", "../lib", "lib");
 use Test::More;
@@ -208,4 +209,3 @@ subtest 'get_piece' => sub {
 };
 
 done_testing();
-1;

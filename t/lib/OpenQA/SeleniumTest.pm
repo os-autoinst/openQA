@@ -1,8 +1,9 @@
 package OpenQA::SeleniumTest;
-use base 'Exporter';
 
 use strict;
 use warnings;
+
+use base 'Exporter';
 
 require OpenQA::Test::Database;
 
