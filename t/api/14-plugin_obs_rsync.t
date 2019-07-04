@@ -42,36 +42,38 @@ path($ENV{OPENQA_CONFIG})->make_path->child("openqa.ini")->spurt(@conf);
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-# XXX: Test::Mojo loses its app when setting a new ua
-# https://github.com/kraih/mojo/issues/598
 my $app = $t->app;
-$t->ua(
-    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
 
-ok($t->get_ok('/plugin/obs_rsync/')->status_is(200), "index status");
-ok($t->tx->res->content->body_contains('Leap:15.1'), "index content");
+ok($t->get_ok('/admin/plugin/obs_rsync/')->status_is(200), "index status");
+ok($t->tx->res->content->body_contains('Leap:15.1'),       "index content");
 
-ok($t->get_ok('/plugin/obs_rsync/Leap:15.1:ToTest')->status_is(200), "project status");
-ok($t->tx->res->content->body_contains('rsync_iso.cmd'),             "rsync iso commands");
-ok($t->tx->res->content->body_contains('rsync_repo.cmd'),            "rsync repo commands");
-ok($t->tx->res->content->body_contains('openqa.cmd'),                "openqa commands");
+ok($t->get_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest')->status_is(200), "project status");
+ok($t->tx->res->content->body_contains('rsync_iso.cmd'),                   "rsync iso commands");
+ok($t->tx->res->content->body_contains('rsync_repo.cmd'),                  "rsync repo commands");
+ok($t->tx->res->content->body_contains('openqa.cmd'),                      "openqa commands");
 
-ok($t->get_ok('/plugin/obs_rsync/Leap:15.1:ToTest/logs')->status_is(200), "project logs status");
-ok($t->tx->res->content->body_contains('.run_190703_143010'),             "project logs folder");
+ok($t->get_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest/runs')->status_is(200), "project logs status");
+ok($t->tx->res->content->body_contains('.run_190703_143010'),                   "project logs folder");
 
-ok($t->get_ok('/plugin/obs_rsync/Leap:15.1:ToTest/logs/.run_190703_143010')->status_is(200),
+ok($t->get_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010')->status_is(200),
     "project log subfolder status");
 ok($t->tx->res->content->body_contains('files_iso.lst'), "project log file");
 
-ok($t->get_ok('/plugin/obs_rsync/Leap:15.1:ToTest/logs/.run_190703_143010/download/files_iso.lst')->status_is(200),
-    "project log file download status");
+ok(
+    $t->get_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010/download/files_iso.lst')
+      ->status_is(200),
+    "project log file download status"
+);
 ok($t->tx->res->content->body_contains('openSUSE-Leap-15.1-DVD-x86_64-Build470.1-Media.iso'),
     "project log file download content");
 ok($t->tx->res->content->body_contains('openSUSE-Leap-15.1-NET-x86_64-Build470.1-Media.iso'),
     "project log file download content");
 
+
+ok($t->put_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest/runs')->status_is(201), "trigger rsync");
+ok($t->put_ok('/admin/plugin/obs_rsync/WRONGPROJECT/runs')->status_is(404),     "trigger rsync wrong project");
+
 done_testing();
-
-
