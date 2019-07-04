@@ -17,7 +17,6 @@
 package OpenQA::WebAPI::Plugin::ObsRsync::Controller;
 use Mojo::Base 'Mojolicious::Controller';
 use File::Basename;
-use Mojo::Template;
 
 my $home;
 my $app;
@@ -28,9 +27,9 @@ sub init_obs_rsync {
 }
 
 sub index {
-    my $self = shift;
-    $home or return $self->_error('Not configured');
-    -d $home or return $self->_error('Wrong home');
+    my $self   = shift;
+    my $folder = $self->param('folder');
+    return if $self->_check_and_render_error($folder);
     my $out
       = `find "$home" -mindepth 1 -maxdepth 1 -type d -exec basename {} \\; | grep -v test | grep -v __pycache__ | grep -v WebAPIPlugin | grep -v .git`;
     my @files = sort split(/\n/, $out);
@@ -40,11 +39,10 @@ sub index {
 }
 
 sub folder {
-    my $self = shift;
-    $home or return $self->_error('Not configured');
-    -d $home or return $self->_error('Wrong home');
+    my $self   = shift;
+    my $folder = $self->param('folder');
+    return if $self->_check_and_render_error($folder);
 
-    my $folder      = $self->param('folder');
     my $full        = $home;
     my $obs_project = $folder;
     $full = $full . '/' . $obs_project;
@@ -62,11 +60,10 @@ sub folder {
 }
 
 sub logs {
-    my ($self) = @_;
-    $home or return _error('Not configured');
-    -d $home or return $self->_error('Wrong home');
-
+    my $self   = shift;
     my $folder = $self->param('folder');
+    return if $self->_check_and_render_error($folder);
+
     if (CORE::index($folder, '/') != -1 || !$folder) {
         return _error('Incorrect name');
     }
@@ -82,21 +79,12 @@ sub logs {
 }
 
 sub logfiles {
-    my ($self) = @_;
-    -d $home or return $self->_error('Wrong home');
-
-    my $folder = $self->param('folder');
-    if (CORE::index($folder, '/') != -1 || !$folder) {
-        return $self->render(json => {error => 'Incorrect name'}, status => 400);
-    }
+    my $self      = shift;
+    my $folder    = $self->param('folder');
     my $subfolder = $self->param('subfolder');
-    my $full      = $home . '/' . $folder . '/' . $subfolder;
-    if (!-d $full && -s $full) {
-        return $self->download_file();
-    }
-    if (CORE::index($subfolder, '/') != -1) {
-        return $self->render(json => {error => 'Incorrect subfolder name'}, status => 400);
-    }
+    return if $self->_check_and_render_error($folder, $subfolder);
+
+    my $full = $home . '/' . $folder . '/' . $subfolder;
     opendir my $dirh, "$full" or die "Cannot open directory {$full}: $!";
     my @files = sort { $b cmp $a } readdir $dirh;
     closedir $dirh;
@@ -108,26 +96,30 @@ sub logfiles {
 }
 
 sub download_file {
-    my ($self) = @_;
-    # return if (!$self->is_admin());
-    my $folder = $self->param('folder');
-    if (CORE::index($folder, '/') != -1 || !$folder) {
-        return $self->render(json => {error => 'Incorrect name'}, status => 404);
-    }
+    my $self      = shift;
+    my $folder    = $self->param('folder');
     my $subfolder = $self->param('subfolder');
-    if (CORE::index($subfolder, '/') != -1) {
-        return $self->render(json => {error => 'Incorrect subfolder name'}, status => 404);
-    }
-    my $filename = $self->param('filename');
-    if ($filename && CORE::index($filename, '/') != -1) {
-        return $self->render(json => {error => 'Incorrect file name'}, status => 404);
-    }
+    my $filename  = $self->param('filename');
+    return if $self->_check_and_render_error($folder, $subfolder, $filename);
+
     my $full = $home . '/' . $folder;
     $full = $full . '/' . $subfolder if $subfolder;
 
     my $static = Mojolicious::Static->new;
     $static->paths([$full]);
     return $self->rendered if $static->serve($self, $filename);
+}
+
+sub run {
+    my $self   = shift;
+    my $folder = $self->param('folder');
+    return if $self->_check_and_render_error($folder);
+
+    my $cmd    = "bash '$home/rsync.sh' '$folder' 2>&1";
+    my $out    = `$cmd`;
+    my $rc     = $? >> 8;
+    my $status = $rc ? 500 : 201;
+    return $self->render(json => {output => $out, code => $rc}, status => $status);
 }
 
 sub _grep_and_stash_scalar {
@@ -158,11 +150,40 @@ sub _stash_files {
     $self->_grep_and_stash_scalar($files, 'print_openqa\.sh', 'openqa_sh');
 }
 
-sub _error {
+sub _check_and_render_error {
+    my ($res, $code) = _check_error(@_);
+    shift->_render_error($res, $code) if $res;
+    return $res;
+}
+
+sub _check_error {
+    my $self      = shift;
+    my $project   = shift;
+    my $subfolder = shift;
+    my $filename  = shift;
+    # return 401 unless ($self->is_user());
+    # return 403 unless ($self->is_admin());
+    return ("Home directory is not set", 405) unless $home;
+    return ("Home directory not found",  405) unless -d $home;
+    return "Project has invalid characters" if $project && CORE::index($project, '/') != -1;
+    return "Subfolder has invalid characters" if ($subfolder && CORE::index($subfolder, '/') != -1);
+    return "Filename has invalid characters"  if ($filename  && CORE::index($filename,  '/') != -1);
+
+    print($project . "\n") if $project;
+
+    return 404 unless !$project || -d $home . '/' . $project;
+
+    return 0;
+}
+
+sub _render_error {
     my $self    = shift;
     my $message = shift;
+    my $code    = shift;
 
-    $self->render(json => {error => $message}, status => 404);
+    return $self->render(status => $message) if (($message + 0) eq $message);
+    return $self->render(json => {error => $message}, status => $code) if ($code);
+    return $self->render(json => {error => $message}, status => 400);
 }
 
 
