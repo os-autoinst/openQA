@@ -494,7 +494,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_openqa_in_a_container">openQA in a container</a></li>
 </ul>
 </li>
-<li><a href="#_repositories_and_installation">Repositories and installation</a>
+<li><a href="#_custom_installation_repositories_and_procedure">Custom installation - Repositories and procedure</a>
 <ul class="sectlevel2">
 <li><a href="#_official_repositories">Official repositories</a></li>
 <li><a href="#_development_version_repository">Development version repository</a></li>
@@ -559,6 +559,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </ul>
 </li>
 <li><a href="#_show_bug_or_label_icon_on_overview_if_labeled_gh550">Show bug or label icon on overview if labeled gh#550</a></li>
+<li><a href="#_distinguish_product_and_test_issues_bugref_gh708">Distinguish product and test issues bugref gh#708</a></li>
 <li><a href="#_build_tagging">Build tagging</a>
 <ul class="sectlevel3">
 <li><a href="#_tag_builds_with_special_comments_on_group_overview">Tag builds with special comments on group overview</a></li>
@@ -567,6 +568,15 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#_filtering_test_results_and_builds">Filtering test results and builds</a></li>
 <li><a href="#_highlighting_job_dependencies_in_all_tests_table">Highlighting job dependencies in 'All tests' table</a></li>
+<li><a href="#_show_previous_results_in_test_results_page_gh538">Show previous results in test results page gh#538</a></li>
+<li><a href="#_link_to_latest_in_scenario_name_gh836">Link to latest in scenario name gh#836</a></li>
+<li><a href="#_add_latest_query_route_gh815">Add `latest' query route gh#815</a></li>
+<li><a href="#_allow_group_overview_query_by_result_gh531">Allow group overview query by result gh#531</a></li>
+<li><a href="#_add_web_ui_controls_to_select_more_builds_in_group_overview_gh804">Add web UI controls to select more builds in group_overview gh#804</a></li>
+<li><a href="#_more_query_parameters_for_configuring_last_builds_gh575">More query parameters for configuring last builds gh#575</a></li>
+<li><a href="#_web_ui_controls_to_filter_only_tagged_or_all_builds_gh807">Web UI controls to filter only tagged or all builds gh#807</a></li>
+<li><a href="#_carry_over_bugrefs_from_previous_jobs_in_same_scenario_if_still_failing_gh564">Carry over bugrefs from previous jobs in same scenario if still failing gh#564</a></li>
+<li><a href="#_pinning_comments_as_group_description">Pinning comments as group description</a></li>
 </ul>
 </li>
 <li><a href="#_asset_cleanup">Asset cleanup</a>
@@ -798,9 +808,14 @@ organization on GitHub</a>.</p>
 <div class="paragraph">
 <p>This document describes the general operation and usage of openQA. The main goal
 is to provide a general overview of the tool, with all the information needed to
-become a happy user. More advanced topics like installation, administration or
-development of new tests are covered by further documents available in the
-<a href="https://github.com/os-autoinst/openQA">official repository</a>.</p>
+become a happy user.</p>
+</div>
+<div class="paragraph">
+<p>For the installation of openQA see the
+<a href="#installing">Installation Guide</a>, as a user of an
+existing instance see the <a href="#usersguide">Users Guide</a>.
+More advanced topics can be found in other documents. All documents are also
+available in the <a href="https://github.com/os-autoinst/openQA">official repository</a>.</p>
 </div>
 </div>
 </div>
@@ -925,7 +940,8 @@ multiple <em>test modules</em> in a folder structure that compose <em>test suite
 product
 </td>
 <td class="hdlist2">
-<p>the main "system under test" (SUT), e.g. "openSUSE"</p>
+<p>the main "system under test" (SUT), e.g. "openSUSE", also called
+"Medium Types" in the web interface of openQA</p>
 </td>
 </tr>
 <tr>
@@ -1203,9 +1219,10 @@ blog post</a> about the subject by the openQA development team.</p>
 <div class="sect2">
 <h3 id="_job_groups">Job groups</h3>
 <div class="paragraph">
-<p>A job can belong to a job group. Those job groups are displayed on the index page
-and in the Job Groups menu on the navigation bar. From there the job group overview
-pages can be accessed. Besides the test results the job group overview pages provide
+<p>A job can belong to a job group. Those job groups are displayed on the index
+page when there are recent test results in these job groups and in the Job
+Groups menu on the navigation bar. From there the job group overview pages
+can be accessed. Besides the test results the job group overview pages provide
 a description about the job group and allow commenting.</p>
 </div>
 <div class="paragraph">
@@ -1802,17 +1819,23 @@ remote-download feature of assets from trusted domains.
 <div class="sectionbody">
 <div class="paragraph">
 <p>openQA is an automated test tool that makes it possible to test the whole
-installation process of an operating system. It&#8217;s free software released
-under the <a href="http://www.gnu.org/licenses/gpl-2.0.html">GPLv2 license</a>. The
-source code and documentation are hosted in the
+installation process of an operating system. It is free software released
+under the <a href="http://www.gnu.org/licenses/gpl-2.0.html">GPLv2 license</a>. The source
+code and documentation are hosted in the
 <a href="https://github.com/os-autoinst">os-autoinst organization on GitHub</a>.</p>
 </div>
 <div class="paragraph">
-<p>This document provides the information needed to install and setup the tool, as
-well as information useful for everyday administration of the system. It&#8217;s
-assumed that the reader is already familiar with openQA and has already read the
-Starter Guide, available at the
-<a href="https://github.com/os-autoinst/openQA">official repository</a>.</p>
+<p>This document provides the information needed to install and setup the tool,
+as well as information useful for everyday administration of the system. It is
+assumed that the reader is already familiar with the concepts of openQA and
+has already read the <a href="#gettingstarted">Getting Started
+Guide</a>, also available at the <a href="https://github.com/os-autoinst/openQA">official
+repository</a>.</p>
+</div>
+<div class="paragraph">
+<p>Continue with the <code>openQA quick bootstrap'' to get a simple, ready-to-use
+installation, useful for a single user setup. Else, continue with the more
+advanced section about </code>Custom installation - Repositories and procedure''.</p>
 </div>
 </div>
 </div>
@@ -1849,8 +1872,11 @@ curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openq
 <div class="sect2">
 <h3 id="_openqa_in_a_container">openQA in a container</h3>
 <div class="paragraph">
+<p><strong>NOTE</strong> This method is not available on openSUSE Leap older than version 15.1.</p>
+</div>
+<div class="paragraph">
 <p>You can also setup a systemd-nspawn container with openQA with the following
-commands. <strong>This will only work on Tumbleweed</strong> (or at least not before Leap 15.1)
+commands.
 and you need to have no application listening on port 80 yet because the container
 will share the host system&#8217;s network stack.</p>
 </div>
@@ -1866,7 +1892,7 @@ systemd-run -tM openqa1 /bin/bash <span class="tok-c1"># start a shell in the co
 </div>
 </div>
 <div class="sect1">
-<h2 id="_repositories_and_installation">Repositories and installation</h2>
+<h2 id="_custom_installation_repositories_and_procedure">Custom installation - Repositories and procedure</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Keep in mind that there can be disruptive changes between openQA versions.
@@ -1874,10 +1900,10 @@ You need to be sure that the webui and the worker that you are using have the
 same version number or, at least, are compatible.</p>
 </div>
 <div class="paragraph">
-<p>For example, the package distributed with openSUSE Leap 42.3 is not compatible with the
-version on Tumbleweed.
-And the package distributed with Tumbleweed may not be compatible with the
-version in the development package.</p>
+<p>For example, the packages distributed with older versions of openSUSE Leap are
+not compatible with the version on Tumbleweed. And the package distributed
+with Tumbleweed may not be compatible with the version in the development
+package.</p>
 </div>
 <div class="sect2">
 <h3 id="_official_repositories">Official repositories</h3>
@@ -1887,7 +1913,7 @@ version in the development package.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>For openSUSE, packages are available for Leap 42.3 and later.</p>
+<p>For openSUSE, packages are available for Leap and Tumbleweed</p>
 </li>
 <li>
 <p>For Fedora, packages are available in the official repositories for Fedora 23
@@ -1911,7 +1937,7 @@ and later.</p>
 zypper ar -f obs://devel:openQA/openSUSE_Tumbleweed devel-openQA
 
 
-<span class="tok-nv">LEAP_VERSION</span><span class="tok-o">=</span><span class="tok-m">15</span>.0
+<span class="tok-nv">LEAP_VERSION</span><span class="tok-o">=</span><span class="tok-m">15</span>.1
 zypper ar -f obs://devel:openQA/openSUSE_Leap_<span class="tok-nv">$LEAP_VERSION</span> devel-openQA
 zypper ar -f obs://devel:openQA:Leap:<span class="tok-nv">$LEAP_VERSION</span>/openSUSE_Leap_<span class="tok-nv">$LEAP_VERSION</span> devel-openQA-perl-modules</code></pre>
 </div>
@@ -2991,6 +3017,19 @@ reason is stated:</p>
 </div>
 </div>
 <div class="sect2">
+<h3 id="_distinguish_product_and_test_issues_bugref_gh708">Distinguish product and test issues bugref <a href="https://github.com/os-autoinst/openQA/pull/708">gh#708</a></h3>
+<div class="paragraph">
+<p>``progress.opensuse.org'' is used to track test issues, bugzilla for product
+issues, at least for SUSE/openSUSE. openQA bugrefs distinguish this and show
+corresponding icons</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/tests-overview-issue_icon.png" alt="Different icons for product and test issues">
+</div>
+</div>
+</div>
+<div class="sect2">
 <h3 id="_build_tagging">Build tagging</h3>
 <div class="sect3">
 <h4 id="_tag_builds_with_special_comments_on_group_overview">Tag builds with special comments on group overview</h4>
@@ -3062,6 +3101,178 @@ the same page of the table.</p>
 <div class="content">
 <img src="images/highlighting_job_dependencies.png" alt="highlighted child jobs">
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_show_previous_results_in_test_results_page_gh538">Show previous results in test results page <a href="https://github.com/os-autoinst/openQA/pull/538">gh#538</a></h3>
+<div class="paragraph">
+<p>On a tests result page there is a tab for <code>Next &amp; previous results'' showing
+the result of test runs in the same scenario. This shows next and previous
+builds as well as test runs in the same build. This way you can easily check
+and compare results from before including any comments, labels, bug references
+(see next section). This helps to answer questions like </code>Is this a new
+issue'', <code>Is it reproducible'', </code>has it been seen in before'', ``how does the
+history look like''.</p>
+</div>
+<div class="paragraph">
+<p>Querying the database for former test runs of the same scenario is a
+rather costly operation which we do not want to do for multiple test
+results at once but only for each individual test result (1:1 relation).
+This is why this is done in each individual test result and not for a
+complete build.</p>
+</div>
+<div class="paragraph">
+<p>Related issue: <a href="https://progress.opensuse.org/issues/10212">#10212</a></p>
+</div>
+<div class="paragraph">
+<p>Screenshot of the feature:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/test_details-next_and_previous.png" alt="Next and previous job results">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_link_to_latest_in_scenario_name_gh836">Link to latest in scenario name <a href="https://github.com/os-autoinst/openQA/pull/836">gh#836</a></h3>
+<div class="paragraph">
+<p>Find the always latest job in a scenario with the link after the
+scenario name in the tab ``Next &amp; previous results'' Screenshot:
+image::images/test_details-link_to_latest.png[Link to latest in scenario]</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_add_latest_query_route_gh815">Add `latest' query route <a href="https://github.com/os-autoinst/openQA/pull/815">gh#815</a></h3>
+<div class="paragraph">
+<p>Should always refer to most recent job for the specified scenario.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>have the same link for test development, i.e. if one retriggers tests,
+the person has to always update the URL. If there would be a static URL
+even the browser can be instructed to reload the page automatically</p>
+</li>
+<li>
+<p>for linking to the always current execution of the last job within one
+scenario, e.g. to respond faster to the standard question in bug reports
+``does this bug still happen?''</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Examples:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>tests/latest?distri=opensuse&amp;version=13.1&amp;flavor=DVD&amp;arch=x86_64&amp;test=kde&amp;machine=64bit</code></p>
+</li>
+<li>
+<p><code>tests/latest?flavor=DVD&amp;arch=x86_64&amp;test=kde</code></p>
+</li>
+<li>
+<p><code>tests/latest?test=foobar</code> - this searches for the most recent job
+using test_suite `foobar' covering all distri, version, flavor, arch,
+machines. To be more specific, add the other query entries.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_allow_group_overview_query_by_result_gh531">Allow group overview query by result <a href="https://github.com/os-autoinst/openQA/pull/531">gh#531</a></h3>
+<div class="paragraph">
+<p>This allows e.g. to show only failed builds. Could be included like in
+<a href="http://lists.opensuse.org/opensuse-factory/2016-02/msg00018.html" class="bare">http://lists.opensuse.org/opensuse-factory/2016-02/msg00018.html</a> for
+``known defects''.</p>
+</div>
+<div class="paragraph">
+<p>Example: Add query parameters like <code>…&amp;result=failed&amp;arch=x86_64</code> to show
+only failed for the single architecture selected.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_add_web_ui_controls_to_select_more_builds_in_group_overview_gh804">Add web UI controls to select more builds in group_overview <a href="https://github.com/os-autoinst/openQA/pull/804">gh#804</a></h3>
+<div class="paragraph">
+<p>The query parameter `limit_builds' allows to show more than the default
+10 builds on demand. Just like we have for configuring previous results,
+the current commit adds web UI selections to reload the same page with
+higher number of builds on demand. For this, the limit of days is
+increased to show more builds but still limited by the selected number.</p>
+</div>
+<div class="paragraph">
+<p>Example screenshot:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/job_group-limit_builds.png" alt="Select different limit for number of displayed builds">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_more_query_parameters_for_configuring_last_builds_gh575">More query parameters for configuring last builds <a href="https://github.com/os-autoinst/openQA/pull/575">gh#575</a></h3>
+<div class="paragraph">
+<p>By using advanced query parameters in the URLs you can configure the
+search for builds. Higher numbers would yield more complex database
+queries but can be selected for special investigation use cases with the
+advanced query parameters, e.g. if one wants to get an overview of a
+longer history. This applies to both the index dashboard and group
+overview page.</p>
+</div>
+<div class="paragraph">
+<p>Example to show up to three week old builds instead of the default two
+weeks with up to 20 builds instead of up to 10 being the default for the
+group overview page:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>http://openqa/group_overview/1?time_limit_days=21&amp;limit_builds=20</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_web_ui_controls_to_filter_only_tagged_or_all_builds_gh807">Web UI controls to filter only tagged or all builds <a href="https://github.com/os-autoinst/openQA/pull/807">gh#807</a></h3>
+<div class="paragraph">
+<p>Using a new query parameter `only_tagged=[0|1]' the list can be
+filtered, e.g. show only tagged (important) builds.</p>
+</div>
+<div class="paragraph">
+<p>Example screenshot:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/job_group-limit_builds_tagged.png" alt="Show only tagged or all builds">
+</div>
+</div>
+<div class="paragraph">
+<p>Related issue: <a href="https://progress.opensuse.org/issues/11052">#11052</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_carry_over_bugrefs_from_previous_jobs_in_same_scenario_if_still_failing_gh564">Carry over bugrefs from previous jobs in same scenario if still failing <a href="https://github.com/os-autoinst/openQA/pull/564">gh#564</a></h3>
+<div class="paragraph">
+<p>It is possible to label all failing tests but tedious to do by a human
+user as many failures are just having the same issue until it gets
+fixed. It helps if a label is preserved for a build that is still
+failing. This idea is inspired by
+<a href="https://wiki.jenkins-ci.org/display/JENKINS/Claim+plugin" class="bare">https://wiki.jenkins-ci.org/display/JENKINS/Claim+plugin</a> and has been
+activated for bugrefs.</p>
+</div>
+<div class="paragraph">
+<p>Does not carry over bugrefs over passes: After a job passed a new issue
+in a subsequent fail is assumed to be failed for a different reason.</p>
+</div>
+<div class="paragraph">
+<p>Related issue: <a href="https://progress.opensuse.org/issues/10212">#10212</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_pinning_comments_as_group_description">Pinning comments as group description</h3>
+<div class="paragraph">
+<p>This is possible by adding the keyword <code>pinned-description</code> anywhere in
+a comment on the group overview page. Then the comment will be shown at
+the top of the group overview page. However, it only works as operator
+or admin.</p>
 </div>
 </div>
 </div>
@@ -6505,6 +6716,18 @@ instead of using the system service. Eg.</p>
 <pre class="pygments highlight"><code data-lang="sh"><span></span>t/test_postgresql /dev/shm/tpg</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>To check the coverage by individual test files easily call e.g.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>env <span class="tok-nv">CHECKSTYLE</span><span class="tok-o">=</span><span class="tok-m">0</span> <span class="tok-nv">PROVE_ARGS</span><span class="tok-o">=</span>t/24-worker-engine.t make coverage</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and take a look into the generated coverage HTML report in
+cover_db/coverage.html.</p>
+</div>
 <div class="ulist">
 <ul>
 <li>
@@ -7077,7 +7300,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-07-04 10:33:25 UTC
+Last updated 2019-07-04 11:31:48 UTC
 </div>
 </div>
 <style>
