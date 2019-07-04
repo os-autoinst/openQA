@@ -32,10 +32,8 @@ sub ws {
 
     my $workerid = $self->param('workerid');
     unless ($workers->{$workerid}) {
-        my $db = $self->app->schema->resultset("Workers")->find($workerid);
-        unless ($db) {
-            return $self->render(text => 'Unauthorized', status =>);
-        }
+        return $self->render(text => 'Unknown worker', status => 400)
+          unless my $db = $self->app->schema->resultset('Workers')->find($workerid);
         $workers->{$workerid}
           = {id => $workerid, db => $db, socket => undef, last_seen => time()};
     }
