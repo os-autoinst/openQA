@@ -380,6 +380,12 @@ function toggleTemplateEditor() {
             lineWrapping: true,
             readOnly: 'nocursor',
         });
+        editor.setOption('extraKeys', {
+            Tab: function(editor) {
+                // Convert tabs to spaces
+                editor.replaceSelection(Array(editor.getOption('indentUnit') + 1).join(' '));
+            }
+        });
     }
     editor.setSize(null, $('#editor-yaml-guide').height());
     $.ajax(form.data('put-url')).done(prepareTemplateEditor);
