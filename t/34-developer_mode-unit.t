@@ -16,6 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+use Mojo::Base -strict;
+
 BEGIN {
     unshift @INC, 'lib';
 }
@@ -24,7 +26,6 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use Date::Format;
 use Data::Dumper 'Dumper';
-use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;

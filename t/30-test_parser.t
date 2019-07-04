@@ -16,6 +16,7 @@
 
 use strict;
 use warnings;
+
 use FindBin;
 use lib ("$FindBin::Bin/lib", "../lib", "lib");
 use Test::More;
@@ -920,8 +921,6 @@ subtest nested_parsers => sub {
 };
 
 done_testing;
-
-1;
 
 {
     package OpenQA::Parser::Format::Dummy;

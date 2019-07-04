@@ -16,13 +16,14 @@
 
 # see also t/ui/14-dashboard.t and t/ui/14-dashboard-parents.t for PhantomJS test
 
+use Mojo::Base -strict;
+
 BEGIN {
     unshift @INC, 'lib';
 }
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;

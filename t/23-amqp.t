@@ -16,11 +16,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+use Mojo::Base -strict;
+
 BEGIN {
     unshift @INC, 'lib';
 }
 
-use Mojo::Base;
 use Mojo::IOLoop;
 
 use FindBin;
@@ -45,7 +46,7 @@ $plugin_mock->mock(
         $published{$topic} = $data;
     });
 
-my $schema = OpenQA::Test::Database->new->create();
+OpenQA::Test::Database->new->create();
 
 # this test also serves to test plugin loading via config file
 my @conf    = ("[global]\n", "plugins=AMQP\n");

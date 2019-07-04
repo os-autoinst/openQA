@@ -17,6 +17,7 @@
 
 use strict;
 use warnings;
+
 use Test::Compile;
 use Mojo::File 'tempdir';
 

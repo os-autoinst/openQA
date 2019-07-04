@@ -15,12 +15,13 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
+use Mojo::Base -strict;
+
 BEGIN {
     unshift @INC, 'lib';
 }
 
 use Date::Format;
-use Mojo::Base -strict;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::More;
