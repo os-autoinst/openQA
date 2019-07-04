@@ -465,16 +465,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </ul>
 </li>
 <li><a href="#_using_the_client_script">Using the client script</a></li>
-<li><a href="#_using_job_templates_to_automate_jobs_creation">Using job templates to automate jobs creation</a>
-<ul class="sectlevel2">
-<li><a href="#job_templates">The problem</a></li>
-<li><a href="#_medium_types_products">Medium Types (products)</a></li>
-<li><a href="#_test_suites">Test Suites</a></li>
-<li><a href="#_machines">Machines</a></li>
-<li><a href="#_variable_expansion">Variable expansion</a></li>
-<li><a href="#_variable_precedence">Variable precedence</a></li>
-</ul>
-</li>
 <li><a href="#get-testing">Testing openSUSE or Fedora</a>
 <ul class="sectlevel2">
 <li><a href="#_getting_tests">Getting tests</a></li>
@@ -549,10 +539,21 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#usersguide">openQA users guide</a>
 <ul class="sectlevel1">
 <li><a href="#_introduction_3">Introduction</a></li>
+<li><a href="#_using_job_templates_to_automate_jobs_creation">Using job templates to automate jobs creation</a>
+<ul class="sectlevel2">
+<li><a href="#job_templates">The problem</a></li>
+<li><a href="#_machines">Machines</a></li>
+<li><a href="#_medium_types_products">Medium Types (products)</a></li>
+<li><a href="#_test_suites">Test Suites</a></li>
+<li><a href="#_job_groups_2">Job Groups</a></li>
+<li><a href="#_variable_expansion">Variable expansion</a></li>
+<li><a href="#_variable_precedence">Variable precedence</a></li>
+</ul>
+</li>
 <li><a href="#_use_of_the_web_interface">Use of the web interface</a>
 <ul class="sectlevel2">
-<li><a href="#_testsoverview_customizable_test_overview_page">/tests/overview - Customizable test overview page</a></li>
 <li><a href="#_description_of_test_suites">Description of test suites</a></li>
+<li><a href="#_testsoverview_customizable_test_overview_page">/tests/overview - Customizable test overview page</a></li>
 <li><a href="#_review_badges">Review badges</a>
 <ul class="sectlevel3">
 <li><a href="#_meaning_of_the_different_colors">Meaning of the different colors</a></li>
@@ -577,13 +578,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_web_ui_controls_to_filter_only_tagged_or_all_builds_gh807">Web UI controls to filter only tagged or all builds gh#807</a></li>
 <li><a href="#_carry_over_bugrefs_from_previous_jobs_in_same_scenario_if_still_failing_gh564">Carry over bugrefs from previous jobs in same scenario if still failing gh#564</a></li>
 <li><a href="#_pinning_comments_as_group_description">Pinning comments as group description</a></li>
+<li><a href="#_developer_mode">Developer mode</a>
+<ul class="sectlevel3">
+<li><a href="#_workflow_for_creating_or_updating_needles">Workflow for creating or updating needles</a></li>
 </ul>
 </li>
-<li><a href="#_asset_cleanup">Asset cleanup</a>
-<ul class="sectlevel2">
-<li><a href="#_cleanup_strategy">Cleanup strategy</a></li>
-<li><a href="#_configure_limit_for_assets_within_groups">Configure limit for assets within groups</a></li>
-<li><a href="#_configure_limit_for_groupless_assets">Configure limit for groupless assets</a></li>
 </ul>
 </li>
 <li><a href="#_use_of_the_rest_api">Use of the REST API</a>
@@ -593,14 +592,19 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_cloning_existing_jobs_openqa_clone_job">Cloning existing jobs - openqa-clone-job</a></li>
 <li><a href="#_spawning_single_new_jobs_jobs_post">Spawning single new jobs - jobs post</a></li>
 <li><a href="#_spawning_multiple_jobs_based_on_templates_isos_post">Spawning multiple jobs based on templates - isos post</a></li>
-<li><a href="#_asset_handling">Asset handling</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#_developer_mode">Developer mode</a>
+<li><a href="#_asset_handling">Asset handling</a>
 <ul class="sectlevel2">
-<li><a href="#_workflow_for_creating_or_updating_needles">Workflow for creating or updating needles</a></li>
+<li><a href="#_asset_cleanup">Asset cleanup</a>
+<ul class="sectlevel3">
+<li><a href="#_cleanup_strategy">Cleanup strategy</a></li>
+</ul>
+</li>
+<li><a href="#_configure_limit_for_assets_within_groups">Configure limit for assets within groups</a></li>
+<li><a href="#_configure_limit_for_groupless_assets">Configure limit for groupless assets</a></li>
 </ul>
 </li>
 <li><a href="#_where_to_now_2">Where to now?</a></li>
@@ -1333,342 +1337,6 @@ the client.conf, i.e. sections for each machine, e.g. <code>localhost</code>.</p
 </div>
 </div>
 <div class="sect1">
-<h2 id="_using_job_templates_to_automate_jobs_creation">Using job templates to automate jobs creation</h2>
-<div class="sectionbody">
-<div class="sect2">
-<h3 id="job_templates">The problem</h3>
-<div class="paragraph">
-<p>When testing an operating system, especially when doing continuous testing,
-there is always a certain combination of jobs, each one with its own
-settings, that needs to be run for every revision. Those combinations can be
-different for different 'flavors' of the same revision, like running a different
-set of jobs for each architecture or for the Full and the Lite versions. This
-combinational problem can go one step further if openQA is being used for
-different kinds of tests, like running some simple pre-integration tests
-for some snapshots combined with more comprehensive post-integration tests for
-release candidates.</p>
-</div>
-<div class="paragraph">
-<p>This section describes how an instance of openQA can be configured using the
-options in the admin area to automatically create all the required jobs for each
-revision of your operating system that needs to be tested. If you are starting
-from scratch, you should probably go through the following order:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Define machines in 'Machines' menu</p>
-</li>
-<li>
-<p>Define medium types (products) you have in 'Medium Types' menu</p>
-</li>
-<li>
-<p>Specify various collections of tests you want to run in the 'Test suites' menu</p>
-</li>
-<li>
-<p>Go to the template matrix in 'Job templates' menu and decide what combinations
-make sense and need to be tested</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>Machines, mediums, test suites and job templates can all set various
-configuration variables. Job templates define how the test suites, mediums
-and machines should be combined in various ways to produce individual 'jobs'.
-All the variables from the test suite, medium, machine and job template are
-combined and made available to the actual test code run by the 'job', along
-with variables specified as part of the job creation request. Certain variables
-also influence openQA&#8217;s and/or os-autoinst&#8217;s own behavior in terms of how it
-configures the environment for the job. Variables that influence os-autoinst&#8217;s
-behavior are documented in the file doc/backend_vars.asciidoc in the os-autoinst
-repository.</p>
-</div>
-<div class="paragraph">
-<p>In openQA we can parametrize a test to describe for what product it will
-run and for what kind of machines it will be executed. For example, a
-test like KDE can be run for any product that has KDE installed, and
-can be tested in x86-64 and i586 machines. If we write this as a
-triples, we can create a list like this to characterize KDE tests:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>(Product,             Test Suite, Machine)
-(openSUSE-DVD-x86_64, KDE,        64bit)
-(openSUSE-DVD-x86_64, KDE,        Laptop-64bit)
-(openSUSE-DVD-x86_64, KDE,        USBBoot-64bit)
-(openSUSE-DVD-i586,   KDE,        32bit)
-(openSUSE-DVD-i586,   KDE,        Laptop-32bit)
-(openSUSE-DVD-i586,   KDE,        USBBoot-32bit)
-(openSUSE-DVD-i586,   KDE,        64bit)
-(openSUSE-DVD-i586,   KDE,        Laptop-64bit)
-(openSUSE-DVD-i586,   KDE,        USBBoot-64bit)</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>For every triplet, we need to configure a different instance of
-os-autoinst with a different set of parameters.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_medium_types_products">Medium Types (products)</h3>
-<div class="paragraph">
-<p>A medium type (product) in openQA is a simple description without any concrete
-meaning. It basically consists of a name and a set of variables that
-define or characterize this product in os-autoinst.</p>
-</div>
-<div class="paragraph">
-<p>Some example variables used by openSUSE are:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>ISO_MAXSIZE contains the maximum size of the product. There is a
-test that checks that the current size of the product is less or
-equal than this variable.</p>
-</li>
-<li>
-<p>DVD if it is set to 1, this indicates that the medium is a DVD.</p>
-</li>
-<li>
-<p>LIVECD if it is set to 1, this indicates that the medium is a live
-image (can be a CD or USB)</p>
-</li>
-<li>
-<p>GNOME this variable, if it is set to 1, indicates that it is a GNOME
-only distribution.</p>
-</li>
-<li>
-<p>PROMO marks the promotional product.</p>
-</li>
-<li>
-<p>RESCUECD is set to 1 for rescue CD images.</p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_test_suites">Test Suites</h3>
-<div class="paragraph">
-<p>This is the form where we define the different tests that we created for
-openQA. A test consists of a name, a priority and a set of variables that are
-used inside this particular test. The priority is used in the scheduler to
-choose the next job. If multiple jobs are scheduled and their requirements for
-running them are fulfilled the ones with a lower value for the priority are
-triggered. The id is the second sorting key: Of two jobs with equal
-requirements and same priority the one with lower id is triggered first.</p>
-</div>
-<div class="paragraph">
-<p>Some sample variables used by openSUSE are:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>BTRFS if set, the file system will be BtrFS.</p>
-</li>
-<li>
-<p>DESKTOP possible values are 'kde' 'gnome' 'lxde' 'xfce' or
-'textmode'. Used to indicate the desktop selected by the user during
-the test.</p>
-</li>
-<li>
-<p>DOCRUN used for documentation tests.</p>
-</li>
-<li>
-<p>DUALBOOT dual boot testing, needs HDD_1 and HDDVERSION.</p>
-</li>
-<li>
-<p>ENCRYPT encrypt the home directory via YaST.</p>
-</li>
-<li>
-<p>HDDVERSION used together with HDD_1 to set the operating system
-previously installed on the hard disk.</p>
-</li>
-<li>
-<p>INSTALLONLY only basic installation.</p>
-</li>
-<li>
-<p>INSTLANG installation language. Actually used only in documentation
-tests.</p>
-</li>
-<li>
-<p>LIVETEST the test is on a live medium, do not install the distribution.</p>
-</li>
-<li>
-<p>LVM select LVM volume manager.</p>
-</li>
-<li>
-<p>NICEVIDEO used for rendering a result video for use in show rooms,
-skipping ugly and boring tests.</p>
-</li>
-<li>
-<p>NOAUTOLOGIN unmark autologin in YaST</p>
-</li>
-<li>
-<p>NUMDISKS total number of disks in QEMU.</p>
-</li>
-<li>
-<p>REBOOTAFTERINSTALL if set to 1, will reboot after the installation.</p>
-</li>
-<li>
-<p>SCREENSHOTINTERVAL used with NICEVIDEO to improve the video quality.</p>
-</li>
-<li>
-<p>SPLITUSR a YaST configuration option.</p>
-</li>
-<li>
-<p>TOGGLEHOME a YaST configuration option.</p>
-</li>
-<li>
-<p>UPGRADE upgrade testing, need HDD_1 and HDDVERSION.</p>
-</li>
-<li>
-<p>VIDEOMODE if the value is 'text', the installation will be done in
-text mode.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Some of the variables usually set in test suites that influence openQA
-and/or os-autoinst&#8217;s own behavior are:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>HDDMODEL variable to set the HDD hardware model</p>
-</li>
-<li>
-<p>HDDSIZEGB hard disk size in GB. Used together with BtrFS variable</p>
-</li>
-<li>
-<p>HDD_1 path for the pre-created hard disk</p>
-</li>
-<li>
-<p>RAIDLEVEL RAID configuration variable</p>
-</li>
-<li>
-<p>QEMUVGA parameter to declare the video hardware configuration in QEMU</p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_machines">Machines</h3>
-<div class="paragraph">
-<p>You need to have at least one machine set up to be able to run any
-tests. Those machines represent virtual machine types that you want to
-test. To make tests actually happen, you have to have an 'openQA
-worker' connected that can fulfill those specifications.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Name.</strong> User defined string - only needed for operator to identify the machine
-configuration.</p>
-</li>
-<li>
-<p><strong>Backend.</strong> What backend should be used for this machine. Recommended value is
-qemu as it is the most tested one, but other options (such as kvm2usb or vbox)
-are also possible.</p>
-</li>
-<li>
-<p><strong>Variables</strong> Most machine variables influence os-autoinst&#8217;s behavior in terms
-of how the test machine is set up. A few important examples:</p>
-<div class="ulist">
-<ul>
-<li>
-<p>QEMUCPU can be 'qemu32' or 'qemu64' and specifies the architecture of the
-virtual CPU.</p>
-</li>
-<li>
-<p>QEMUCPUS is an integer that specifies the number of cores you wish for.</p>
-</li>
-<li>
-<p>LAPTOP if set to 1, QEMU will create a laptop profile.</p>
-</li>
-<li>
-<p>USBBOOT when set to 1, the image will be loaded through an
-emulated USB stick.</p>
-</li>
-</ul>
-</div>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_variable_expansion">Variable expansion</h3>
-<div class="paragraph">
-<p>Any variable defined in Test Suite, Machine, Product or Job Template table can
-refer to another variable using this syntax: %NAME%. When the test job is created,
-the string will be substituted with the value of the specified variable at that time.</p>
-</div>
-<div class="paragraph">
-<p>For example this variable defined for Test Suite:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">PUBLISH_HDD_1</span> <span class="tok-o">=</span> %DISTRI%-%VERSION%-%ARCH%-%DESKTOP%.qcow2</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>may be expanded to this job variable:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">PUBLISH_HDD_1</span> <span class="tok-o">=</span> opensuse-13.1-i586-kde.qcow2</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_variable_precedence">Variable precedence</h3>
-<div class="paragraph">
-<p>It&#8217;s possible to define the same variable in multiple places that would all be
-used for a single job - for instance, you may have a variable defined in both
-a test suite and a product that appear in the same job template. The precedence
-order for variables is as follows (from lowest to highest):</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Product</p>
-</li>
-<li>
-<p>Machine</p>
-</li>
-<li>
-<p>Test suite</p>
-</li>
-<li>
-<p>Job template</p>
-</li>
-<li>
-<p>API POST query parameters</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>That is, variable values set as part of the API request that triggers the jobs will
-'win' over values set at any of the other locations.</p>
-</div>
-<div class="paragraph">
-<p>If you need to override this precedence - for example, you want the value set in
-one particular test suite to take precedence over a setting of the same value from
-the API request - you can add a leading + to the variable name. For instance, if
-you set +VARIABLE = foo in a test suite, and passed VARIABLE=bar in the API
-request, the test suite setting would 'win' and the value would be foo.</p>
-</div>
-<div class="paragraph">
-<p>If the same variable is set with a + prefix in multiple places, the same precedence
-order described above will apply to those settings.</p>
-</div>
-<div class="paragraph">
-<p>Note that the WORKER_CLASS variable is not overridden in the way described above.
-Instead multiple occurrences are combined.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
 <h2 id="get-testing">Testing openSUSE or Fedora</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -1755,7 +1423,7 @@ the following commands:</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># Run the first test</span>
-/usr/share/openqa/script/client isos post <span class="tok-se">\</span>
+openqa-client isos post <span class="tok-se">\</span>
          <span class="tok-nv">ISO</span><span class="tok-o">=</span>openSUSE-Factory-NET-x86_64-Build0053-Media.iso <span class="tok-se">\</span>
          <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>opensuse <span class="tok-se">\</span>
          <span class="tok-nv">VERSION</span><span class="tok-o">=</span>Factory <span class="tok-se">\</span>
@@ -1789,7 +1457,7 @@ remote-download feature of assets from trusted domains.
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># Run the first test</span>
-/usr/share/openqa/script/client isos post <span class="tok-se">\</span>
+openqa-client isos post <span class="tok-se">\</span>
          <span class="tok-nv">ISO</span><span class="tok-o">=</span>Fedora-Everything-boot-x86_64-Rawhide-20160308.n.0.iso <span class="tok-se">\</span>
          <span class="tok-nv">DISTRI</span><span class="tok-o">=</span>fedora <span class="tok-se">\</span>
          <span class="tok-nv">VERSION</span><span class="tok-o">=</span>Rawhide <span class="tok-se">\</span>
@@ -2879,6 +2547,387 @@ of components as well as the configuration of an installed instance.</p>
 </div>
 </div>
 <div class="sect1">
+<h2 id="_using_job_templates_to_automate_jobs_creation">Using job templates to automate jobs creation</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="job_templates">The problem</h3>
+<div class="paragraph">
+<p>When testing an operating system, especially when doing continuous testing,
+there is always a certain combination of jobs, each one with its own
+settings, that needs to be run for every revision. Those combinations can be
+different for different 'flavors' of the same revision, like running a different
+set of jobs for each architecture or for the Full and the Lite versions. This
+combinational problem can go one step further if openQA is being used for
+different kinds of tests, like running some simple pre-integration tests
+for some snapshots combined with more comprehensive post-integration tests for
+release candidates.</p>
+</div>
+<div class="paragraph">
+<p>This section describes how an instance of openQA can be configured using the
+options in the admin area to automatically create all the required jobs for each
+revision of your operating system that needs to be tested. If you are starting
+from scratch, you should probably go through the following order:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Define machines in 'Machines' menu</p>
+</li>
+<li>
+<p>Define medium types (products) you have in 'Medium types' menu</p>
+</li>
+<li>
+<p>Specify various collections of tests you want to run in the 'Test suites' menu</p>
+</li>
+<li>
+<p>Define job groups in 'Job groups' menu for groups of tests</p>
+</li>
+<li>
+<p>Select individual 'Job groups' and decide what combinations make sense and
+need to be tested</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Machines, mediums, test suites and job templates  can all set various
+configuration variables. The so called job templates within the job groups
+define how the test suites, mediums and machines should be combined in various
+ways to produce individual 'jobs'. All the variables from the test suite,
+medium, machine and job template are combined and made available to the actual
+test code run by the 'job', along with variables specified as part of the job
+creation request. Certain variables also influence openQA&#8217;s and/or
+os-autoinst&#8217;s own behavior in terms of how it configures the environment for
+the job. Variables that influence os-autoinst&#8217;s behavior are documented in the
+file doc/backend_vars.asciidoc in the os-autoinst repository.</p>
+</div>
+<div class="paragraph">
+<p>In openQA we can parameterize a test to describe for what product it will
+run and for what kind of machines it will be executed. For example, a
+test like KDE can be run for any product that has KDE installed, and
+can be tested in x86-64 and i586 machines. If we write this as a
+triples, we can create a list like this to characterize KDE tests:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>(Product,             Test Suite, Machine)
+(openSUSE-DVD-x86_64, KDE,        64bit)
+(openSUSE-DVD-x86_64, KDE,        Laptop-64bit)
+(openSUSE-DVD-x86_64, KDE,        USBBoot-64bit)
+(openSUSE-DVD-i586,   KDE,        32bit)
+(openSUSE-DVD-i586,   KDE,        Laptop-32bit)
+(openSUSE-DVD-i586,   KDE,        USBBoot-32bit)
+(openSUSE-DVD-i586,   KDE,        64bit)
+(openSUSE-DVD-i586,   KDE,        Laptop-64bit)
+(openSUSE-DVD-i586,   KDE,        USBBoot-64bit)</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For every triplet, we need to configure a different instance of
+os-autoinst with a different set of parameters.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_machines">Machines</h3>
+<div class="paragraph">
+<p>You need to have at least one machine set up to be able to run any
+tests. Those machines represent virtual machine types that you want to
+test. To make tests actually happen, you have to have an 'openQA
+worker' connected that can fulfill those specifications.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Name.</strong> User defined string - only needed for operator to identify the machine
+configuration.</p>
+</li>
+<li>
+<p><strong>Backend.</strong> What backend should be used for this machine. Recommended value is
+qemu as it is the most tested one, but other options (such as kvm2usb or vbox)
+are also possible.</p>
+</li>
+<li>
+<p><strong>Variables</strong> Most machine variables influence os-autoinst&#8217;s behavior in terms
+of how the test machine is set up. A few important examples:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>QEMUCPU can be 'qemu32' or 'qemu64' and specifies the architecture of the
+virtual CPU.</p>
+</li>
+<li>
+<p>QEMUCPUS is an integer that specifies the number of cores you wish for.</p>
+</li>
+<li>
+<p>LAPTOP if set to 1, QEMU will create a laptop profile.</p>
+</li>
+<li>
+<p>USBBOOT when set to 1, the image will be loaded through an
+emulated USB stick.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_medium_types_products">Medium Types (products)</h3>
+<div class="paragraph">
+<p>A medium type (product) in openQA is a simple description without any concrete
+meaning. It basically consists of a name and a set of variables that
+define or characterize this product in os-autoinst.</p>
+</div>
+<div class="paragraph">
+<p>Some example variables used by openSUSE are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>ISO_MAXSIZE contains the maximum size of the product. There is a
+test that checks that the current size of the product is less or
+equal than this variable.</p>
+</li>
+<li>
+<p>DVD if it is set to 1, this indicates that the medium is a DVD.</p>
+</li>
+<li>
+<p>LIVECD if it is set to 1, this indicates that the medium is a live
+image (can be a CD or USB)</p>
+</li>
+<li>
+<p>GNOME this variable, if it is set to 1, indicates that it is a GNOME
+only distribution.</p>
+</li>
+<li>
+<p>PROMO marks the promotional product.</p>
+</li>
+<li>
+<p>RESCUECD is set to 1 for rescue CD images.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_test_suites">Test Suites</h3>
+<div class="paragraph">
+<p>A test suite consists of a name and a set of test variables that are used
+inside this particular test together with an optional description. The test
+variables can be used to parameterize the actual test code and influence the
+behaviour according to the settings.</p>
+</div>
+<div class="paragraph">
+<p>Some sample variables used by openSUSE are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>BTRFS if set, the file system will be BtrFS.</p>
+</li>
+<li>
+<p>DESKTOP possible values are 'kde' 'gnome' 'lxde' 'xfce' or
+'textmode'. Used to indicate the desktop selected by the user during
+the test.</p>
+</li>
+<li>
+<p>DOCRUN used for documentation tests.</p>
+</li>
+<li>
+<p>DUALBOOT dual boot testing, needs HDD_1 and HDDVERSION.</p>
+</li>
+<li>
+<p>ENCRYPT encrypt the home directory via YaST.</p>
+</li>
+<li>
+<p>HDDVERSION used together with HDD_1 to set the operating system
+previously installed on the hard disk.</p>
+</li>
+<li>
+<p>INSTALLONLY only basic installation.</p>
+</li>
+<li>
+<p>INSTLANG installation language. Actually used only in documentation
+tests.</p>
+</li>
+<li>
+<p>LIVETEST the test is on a live medium, do not install the distribution.</p>
+</li>
+<li>
+<p>LVM select LVM volume manager.</p>
+</li>
+<li>
+<p>NICEVIDEO used for rendering a result video for use in show rooms,
+skipping ugly and boring tests.</p>
+</li>
+<li>
+<p>NOAUTOLOGIN unmark autologin in YaST</p>
+</li>
+<li>
+<p>NUMDISKS total number of disks in QEMU.</p>
+</li>
+<li>
+<p>REBOOTAFTERINSTALL if set to 1, will reboot after the installation.</p>
+</li>
+<li>
+<p>SCREENSHOTINTERVAL used with NICEVIDEO to improve the video quality.</p>
+</li>
+<li>
+<p>SPLITUSR a YaST configuration option.</p>
+</li>
+<li>
+<p>TOGGLEHOME a YaST configuration option.</p>
+</li>
+<li>
+<p>UPGRADE upgrade testing, need HDD_1 and HDDVERSION.</p>
+</li>
+<li>
+<p>VIDEOMODE if the value is 'text', the installation will be done in
+text mode.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Some of the variables usually set in test suites that influence openQA
+and/or os-autoinst&#8217;s own behavior are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>HDDMODEL variable to set the HDD hardware model</p>
+</li>
+<li>
+<p>HDDSIZEGB hard disk size in GB. Used together with BtrFS variable</p>
+</li>
+<li>
+<p>HDD_1 path for the pre-created hard disk</p>
+</li>
+<li>
+<p>RAIDLEVEL RAID configuration variable</p>
+</li>
+<li>
+<p>QEMUVGA parameter to declare the video hardware configuration in QEMU</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_job_groups_2">Job Groups</h3>
+<div class="paragraph">
+<p>The job groups are the place where the actual test scenarios are defined by
+the selection of the medium type, the test suite and machine together with a
+priority.</p>
+</div>
+<div class="paragraph">
+<p>The priority is used in the scheduler to choose the next job. If multiple jobs
+are scheduled and their requirements for running them are fulfilled the ones
+with a lower value for the priority are triggered. The id is the second
+sorting key: Of two jobs with equal requirements and same priority the one
+with lower id is triggered first.</p>
+</div>
+<div class="paragraph">
+<p>Job groups themselves can be created over the web UI as well as the REST API.
+Job groups can optionally be nested into categories. The display order of job
+groups and categories can be configured by drag-and-drop in the web UI.</p>
+</div>
+<div class="paragraph">
+<p>The scenario definitions within the job groups can be created and configured
+by different means:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A simple web UI wizard which is automatically shown for job groups when a
+new medium is added to the job group.</p>
+</li>
+<li>
+<p>An intuitive table within the web UI for adding additional test scenarios to
+existing media including the possibility to configure the priority values.</p>
+</li>
+<li>
+<p>The scripts <code>openqa-load-templates</code> and <code>openqa-dump-templates</code> to quickly
+dump and load the configuration from custom plain-text dump format files
+using the REST API.</p>
+</li>
+<li>
+<p>Using declarative schedule definitions in the YAML format using REST API
+routes or an online-editor within the web UI including a syntax checker.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_variable_expansion">Variable expansion</h3>
+<div class="paragraph">
+<p>Any variable defined in Test Suite, Machine, Product or Job Template table can
+refer to another variable using this syntax: %NAME%. When the test job is created,
+the string will be substituted with the value of the specified variable at that time.</p>
+</div>
+<div class="paragraph">
+<p>For example this variable defined for Test Suite:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">PUBLISH_HDD_1</span> <span class="tok-o">=</span> %DISTRI%-%VERSION%-%ARCH%-%DESKTOP%.qcow2</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>may be expanded to this job variable:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nv">PUBLISH_HDD_1</span> <span class="tok-o">=</span> opensuse-13.1-i586-kde.qcow2</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_variable_precedence">Variable precedence</h3>
+<div class="paragraph">
+<p>It&#8217;s possible to define the same variable in multiple places that would all be
+used for a single job - for instance, you may have a variable defined in both
+a test suite and a product that appear in the same job template. The precedence
+order for variables is as follows (from lowest to highest):</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Product</p>
+</li>
+<li>
+<p>Machine</p>
+</li>
+<li>
+<p>Test suite</p>
+</li>
+<li>
+<p>Job template</p>
+</li>
+<li>
+<p>API POST query parameters</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>That is, variable values set as part of the API request that triggers the jobs will
+'win' over values set at any of the other locations.</p>
+</div>
+<div class="paragraph">
+<p>If you need to override this precedence - for example, you want the value set in
+one particular test suite to take precedence over a setting of the same value from
+the API request - you can add a leading + to the variable name. For instance, if
+you set +VARIABLE = foo in a test suite, and passed VARIABLE=bar in the API
+request, the test suite setting would 'win' and the value would be foo.</p>
+</div>
+<div class="paragraph">
+<p>If the same variable is set with a + prefix in multiple places, the same precedence
+order described above will apply to those settings.</p>
+</div>
+<div class="paragraph">
+<p>Note that the WORKER_CLASS variable is not overridden in the way described above.
+Instead multiple occurrences are combined.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_use_of_the_web_interface">Use of the web interface</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -2895,6 +2944,27 @@ parameters can be tweaked by hand if you want to provide a link to specific
 views.</p>
 </div>
 <div class="sect2">
+<h3 id="_description_of_test_suites">Description of test suites</h3>
+<div class="paragraph">
+<p>Test suites can be described using API commands or the admin table for any operator using the web UI.</p>
+</div>
+<div id="test_suite_description_edit" class="imageblock">
+<div class="content">
+<img src="images/test_suite_description_edit.png" alt="test suite description edit field">
+</div>
+<div class="title">Figure 2. Entering a test suite description in the admin table using the web interface:</div>
+</div>
+<div class="paragraph">
+<p>If a description is defined, the name of the test suite on the tests overview page shows up as a link. Clicking the link will show the description in a popup. The same syntax as for comments can be used, that is Markdown with custom extensions such as shortened links to ticket systems.</p>
+</div>
+<div id="test_suite_description_shown" class="imageblock">
+<div class="content">
+<img src="images/test_suite_description_shown.png" alt="test suite description popup">
+</div>
+<div class="title">Figure 3. popover in test overview with content as configured in the test suites database:</div>
+</div>
+</div>
+<div class="sect2">
 <h3 id="_testsoverview_customizable_test_overview_page">/tests/overview - Customizable test overview page</h3>
 <div class="paragraph">
 <p>The overview page is configurable by the filter box. Also, some additional
@@ -2908,32 +2978,11 @@ see <a href="#overview_multiple_groups">the following example</a>.</p>
 <div class="content">
 <img src="images/tests-overview_multiple_groups.png" alt="test overview page showing multiple groups">
 </div>
-<div class="title">Figure 2. The openQA test overview page showing multiple groups at once. The URL query parameters specify the groupid parameter two times to resolve both the "opensuse" and "opensuse test" group.</div>
+<div class="title">Figure 4. The openQA test overview page showing multiple groups at once. The URL query parameters specify the groupid parameter two times to resolve both the "opensuse" and "opensuse test" group.</div>
 </div>
 <div class="paragraph">
 <p>Specifying multiple groups with no build will yield the latest build of the
 first group. This can be useful to have a static URL for bookmarking.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_description_of_test_suites">Description of test suites</h3>
-<div class="paragraph">
-<p>Test suites can be described using API commands or the admin table for any operator using the web UI.</p>
-</div>
-<div id="test_suite_description_edit" class="imageblock">
-<div class="content">
-<img src="images/test_suite_description_edit.png" alt="test suite description edit field">
-</div>
-<div class="title">Figure 3. Entering a test suite description in the admin table using the web interface:</div>
-</div>
-<div class="paragraph">
-<p>If a description is defined, the name of the test suite on the tests overview page shows up as a link. Clicking the link will show the description in a popup. The same syntax as for comments can be used, that is Markdown with custom extensions such as shortened links to ticket systems.</p>
-</div>
-<div id="test_suite_description_shown" class="imageblock">
-<div class="content">
-<img src="images/test_suite_description_shown.png" alt="test suite description popup">
-</div>
-<div class="title">Figure 4. popover in test overview with content as configured in the test suites database:</div>
 </div>
 </div>
 <div class="sect2">
@@ -3275,91 +3324,64 @@ the top of the group overview page. However, it only works as operator
 or admin.</p>
 </div>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_asset_cleanup">Asset cleanup</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>For more information on assets, see 'Asset handling' below.</p>
-</div>
-<div class="paragraph">
-<p>Assets like ISO files consume a huge amount of disk space. Therefore openQA
-removes assets automatically according to configurable limits.</p>
-</div>
-<div class="paragraph">
-<p>This section provides an overall description of the cleanup strategy and
-how to configure the limits. Cleanup-related parameter for the REST API can
-be found in the 'Asset handling' section under 'Use of the REST API'.</p>
-</div>
 <div class="sect2">
-<h3 id="_cleanup_strategy">Cleanup strategy</h3>
+<h3 id="_developer_mode">Developer mode</h3>
 <div class="paragraph">
-<p>openQA frequently checks whether assets need to be removed according to
-the configured limits.</p>
-</div>
-<div class="paragraph">
-<p>To find out whether an asset should be removed, openQA determines by which
-job groups the asset is used. If at least one job within a certain job group
-is using an asset, the asset is considered to be used by that group.</p>
-</div>
-<div class="paragraph">
-<p>So an asset can be accounted to multiple groups. The assets table which is
-accessible via the admin menu shows these groups for each asset and also
-the latest job.</p>
-</div>
-<div class="paragraph">
-<p>If the size limit for assets by a certain group is exceeded, openQA will
-remove assets accounted to that group:</p>
+<p>The developer mode allows to:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Assets belonging to old jobs are preferred.</p>
+<p>Create or update needles from assert_screen mismatches ("re-needling")</p>
 </li>
 <li>
-<p>Assets belonging to jobs which are still scheduled or running are not
-considered.</p>
-</li>
-<li>
-<p>Assets which are also accounted to another group that has still space
-left are not considered.</p>
+<p>Pause the test execution (at a certain module) for manual investigation of the SUT</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>Assets which do <em>not</em> belong to any group are removed after a configurable
-duration. Keep in mind that this behavior is also enabled on local instances
-and affects all cloned jobs (unless cloned into a job group).</p>
+<p>It can be accessed via the "Live View" tab of a running test. Only registered
+users can take control over a tests. Basic instructions and buttons providing further
+information about the different options are already contained on the web page itself.
+So I am not repeating that information here and rather explain the overall workflow.</p>
 </div>
 <div class="paragraph">
-<p>'Fixed' assets - those placed in the fixed subdirectory of the relevant
-asset directory - are counted against the group size limit, but are never
-cleaned up. This is intended for things like base disk images which must
-always be available for a test to work.</p>
+<p>In case the developer mode in not working on your instance, try to follow the
+<a href="#debugdevelmode">steps for debugging the developer mode under 'Pitfalls'</a>.</p>
 </div>
+<div class="sect3">
+<h4 id="_workflow_for_creating_or_updating_needles">Workflow for creating or updating needles</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>In case a new needles should be created, add the corresponding +assert_screen+s to
+your test.</p>
+</li>
+<li>
+<p>Start the test with the +assert_screen+s which are supposed to fail.</p>
+</li>
+<li>
+<p>Select "Pause on assert_screen failure and confirm.</p>
+</li>
+<li>
+<p>Wait until the test has paused. There is a button to skip the current timeout to speed
+this up.</p>
+</li>
+<li>
+<p>A button for acessing the needle editor should occur. It may take a few seconds till
+it occurs because the screenshots created so far need to be uploaded from the worker to
+the web UI. Of course it is also possible to go back to the "Details" tab to create a new
+needle from any previous screenshot/match available.</p>
+</li>
+<li>
+<p>After creating the new needle, click the resume button to test whether it worked.</p>
+</li>
+</ol>
 </div>
-<div class="sect2">
-<h3 id="_configure_limit_for_assets_within_groups">Configure limit for assets within groups</h3>
 <div class="paragraph">
-<p>To configure the maximum size for the assets of a group, open 'Job groups'
-in the operators menu and select a group. The size limit for assets can be
-configured under 'Edit job group properties'. It also shows the size of
-assets which belong to that group and not to any other group.</p>
+<p>Steps 4. to 6. can be repeated for further +assert_screen+s/needles without restarting the
+test.</p>
 </div>
-<div class="paragraph">
-<p>Job groups inherit the size limit from their parent group unless the limit
-is set explicitely. The default size limit for groups can be adjusted in
-the default_group_limits section of the openQA config file.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_configure_limit_for_groupless_assets">Configure limit for groupless assets</h3>
-<div class="paragraph">
-<p>Assets not belonging to jobs within a group are deleted automatically
-after a certain number of days. That duration can be adjusted by setting
-untracked_assets_storage_duration in the misc_limits section of the
-openQA config to the desired number of days.</p>
 </div>
 </div>
 </div>
@@ -3501,8 +3523,12 @@ of the job template)</p>
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_asset_handling">Asset handling</h4>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_asset_handling">Asset handling</h2>
+<div class="sectionbody">
 <div class="paragraph">
 <p>Multiple parameters exist to reference "assets" to be used by tests. "Assets" are essentially
 content that is stored by the openQA web-UI and provided to the workers; when sending jobs to
@@ -3632,68 +3658,89 @@ in the <a href="#WritingTests.asciidoc">Writing Tests</a> guide.</p>
 <p>When using this mechanism you will often also want to use the 'Variable expansion' mechanism
 described in the <a href="#GettingStarted.asciidoc">Getting Started</a> guide.</p>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_developer_mode">Developer mode</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_asset_cleanup">Asset cleanup</h3>
 <div class="paragraph">
-<p>The developer mode allows to:</p>
+<p>For more information on assets, see 'Asset handling' below.</p>
+</div>
+<div class="paragraph">
+<p>Assets like ISO files consume a huge amount of disk space. Therefore openQA
+removes assets automatically according to configurable limits.</p>
+</div>
+<div class="paragraph">
+<p>This section provides an overall description of the cleanup strategy and
+how to configure the limits. Cleanup-related parameter for the REST API can
+be found in the 'Asset handling' section under 'Use of the REST API'.</p>
+</div>
+<div class="sect3">
+<h4 id="_cleanup_strategy">Cleanup strategy</h4>
+<div class="paragraph">
+<p>openQA frequently checks whether assets need to be removed according to
+the configured limits.</p>
+</div>
+<div class="paragraph">
+<p>To find out whether an asset should be removed, openQA determines by which
+job groups the asset is used. If at least one job within a certain job group
+is using an asset, the asset is considered to be used by that group.</p>
+</div>
+<div class="paragraph">
+<p>So an asset can be accounted to multiple groups. The assets table which is
+accessible via the admin menu shows these groups for each asset and also
+the latest job.</p>
+</div>
+<div class="paragraph">
+<p>If the size limit for assets by a certain group is exceeded, openQA will
+remove assets accounted to that group:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Create or update needles from assert_screen mismatches ("re-needling")</p>
+<p>Assets belonging to old jobs are preferred.</p>
 </li>
 <li>
-<p>Pause the test execution (at a certain module) for manual investigation of the SUT</p>
+<p>Assets belonging to jobs which are still scheduled or running are not
+considered.</p>
+</li>
+<li>
+<p>Assets which are also accounted to another group that has still space
+left are not considered.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>It can be accessed via the "Live View" tab of a running test. Only registered
-users can take control over a tests. Basic instructions and buttons providing further
-information about the different options are already contained on the web page itself.
-So I am not repeating that information here and rather explain the overall workflow.</p>
+<p>Assets which do <em>not</em> belong to any group are removed after a configurable
+duration. Keep in mind that this behavior is also enabled on local instances
+and affects all cloned jobs (unless cloned into a job group).</p>
 </div>
 <div class="paragraph">
-<p>In case the developer mode in not working on your instance, try to follow the
-<a href="#debugdevelmode">steps for debugging the developer mode under 'Pitfalls'</a>.</p>
+<p>'Fixed' assets - those placed in the fixed subdirectory of the relevant
+asset directory - are counted against the group size limit, but are never
+cleaned up. This is intended for things like base disk images which must
+always be available for a test to work.</p>
+</div>
+</div>
 </div>
 <div class="sect2">
-<h3 id="_workflow_for_creating_or_updating_needles">Workflow for creating or updating needles</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>In case a new needles should be created, add the corresponding +assert_screen+s to
-your test.</p>
-</li>
-<li>
-<p>Start the test with the +assert_screen+s which are supposed to fail.</p>
-</li>
-<li>
-<p>Select "Pause on assert_screen failure and confirm.</p>
-</li>
-<li>
-<p>Wait until the test has paused. There is a button to skip the current timeout to speed
-this up.</p>
-</li>
-<li>
-<p>A button for acessing the needle editor should occour. It may take a few seconds till
-it occurs because the screenshots created so far need to be uploaded from the worker to
-the web UI. Of course it is also possible to go back to the "Details" tab to create a new
-needle from any previous screenshot/match available.</p>
-</li>
-<li>
-<p>After creating the new needle, click the resume button to test whether it worked.</p>
-</li>
-</ol>
+<h3 id="_configure_limit_for_assets_within_groups">Configure limit for assets within groups</h3>
+<div class="paragraph">
+<p>To configure the maximum size for the assets of a group, open 'Job groups'
+in the operators menu and select a group. The size limit for assets can be
+configured under 'Edit job group properties'. It also shows the size of
+assets which belong to that group and not to any other group.</p>
 </div>
 <div class="paragraph">
-<p>Steps 4. to 6. can be repeated for further +assert_screen+s/needles without restarting the
-test.</p>
+<p>Job groups inherit the size limit from their parent group unless the limit
+is set explicitely. The default size limit for groups can be adjusted in
+the default_group_limits section of the openQA config file.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configure_limit_for_groupless_assets">Configure limit for groupless assets</h3>
+<div class="paragraph">
+<p>Assets not belonging to jobs within a group are deleted automatically
+after a certain number of days. That duration can be adjusted by setting
+untracked_assets_storage_duration in the misc_limits section of the
+openQA config to the desired number of days.</p>
 </div>
 </div>
 </div>
@@ -7300,7 +7347,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-07-04 11:31:48 UTC
+Last updated 2019-07-04 12:40:33 UTC
 </div>
 </div>
 <style>
