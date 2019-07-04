@@ -514,11 +514,8 @@ subtest 'Isotovideo version' => sub {
     );
 };
 
-kill_driver;
-turn_down_stack;
 done_testing;
 
-# in case it dies
 END {
     kill_driver;
     turn_down_stack;
