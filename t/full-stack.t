@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2016-2018 SUSE LLC
+# Copyright (C) 2016-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -296,7 +296,7 @@ open(my $conf, '>', path($ENV{OPENQA_CONFIG})->child("workers.ini")->to_string);
 print $conf <<EOC;
 [global]
 CACHEDIRECTORY = $cache_location
-CACHELIMIT = 50;
+CACHELIMIT = 50
 
 [1]
 WORKER_CLASS = qemu_i386,qemu_x86_64
