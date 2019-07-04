@@ -160,7 +160,7 @@ sub usage($) {
 sub handle_result {
     my $res = shift;
 
-    if ($res->code == 200) {
+    if (($res->code // 0) == 200) {
         my $json = $res->json;
         if ($options{'json-output'}) {
             print Cpanel::JSON::XS->new->pretty->encode($json);
@@ -171,7 +171,7 @@ sub handle_result {
         return $json;
     }
 
-    printf(STDERR "ERROR: %s - %s\n", $res->code, $res->{error}->{message});
+    printf(STDERR "ERROR: %s - %s\n", ($res->code // ''), $res->{error}->{message});
     if ($res->body) {
         if ($options{json}) {
             print Cpanel::JSON::XS->new->pretty->encode($res->json);
