@@ -52,25 +52,22 @@ os-autoinst's own behavior in terms of how it configures the environment for
 the job. Variables that influence os-autoinst's behavior are documented in the
 file +doc/backend_vars.asciidoc+ in the os-autoinst repository.
 
-In openQA we can parameterize a test to describe for what product it will
-run and for what kind of machines it will be executed. For example, a
-test like KDE can be run for any product that has KDE installed, and
-can be tested in x86-64 and i586 machines. If we write this as a
-triples, we can create a list like this to characterize KDE tests:
+In openQA we can parameterize a test to describe for what product it will run
+and for what kind of machines it will be executed. For example, a test suite
++kde+ can be run for any product that has the KDE software stack installed,
+like +openSUSE-DVD-x86_64+ and +openSUSE-NET-i586+, and can be tested in
+different x86-64 and i586 machines like +64bit+, +64bit_USBBoot+, +32bit+. In
+this example we could have the following test scenarios considering that the
+``x86_64'' flavor is not compatible with the +32bit+ machine:
 
-  (Product,             Test Suite, Machine)
-  (openSUSE-DVD-x86_64, KDE,        64bit)
-  (openSUSE-DVD-x86_64, KDE,        Laptop-64bit)
-  (openSUSE-DVD-x86_64, KDE,        USBBoot-64bit)
-  (openSUSE-DVD-i586,   KDE,        32bit)
-  (openSUSE-DVD-i586,   KDE,        Laptop-32bit)
-  (openSUSE-DVD-i586,   KDE,        USBBoot-32bit)
-  (openSUSE-DVD-i586,   KDE,        64bit)
-  (openSUSE-DVD-i586,   KDE,        Laptop-64bit)
-  (openSUSE-DVD-i586,   KDE,        USBBoot-64bit)
+* openSUSE-DVD-x86_64-kde-64bit
+* openSUSE-DVD-x86_64-kde-64bit_USBBoot
+* openSUSE-NET-i586-kde-64bit
+* openSUSE-NET-i586-kde-64bit_USBBoot
+* openSUSE-NET-i586-kde-32bit
 
-For every triplet, we need to configure a different instance of
-os-autoinst with a different set of parameters.
+For every test scenario we need to configure a different instance of the test
+backend, for example +os-autoinst+, with a different set of parameters.
 
 
 === Machines
@@ -561,9 +558,8 @@ test.
 
 openQA includes a _client_ script which - depending on the distribution - is
 packaged independantly if you just want to interface with an existing openQA
-instance without needing to install the full package. Call
-`<openqa-folder>/script/client --help` for help (openSUSE: `openqa-client
---help`).
+instance without needing to install the full package. Call `openqa-client
+--help` for help.
 
 Basics are described in the
 <<GettingStarted.asciidoc#gettingstarted,Getting Started>> guide.
