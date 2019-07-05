@@ -6742,12 +6742,16 @@ environment to verify everything works as expected. Call:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>for unit and integration tests.</p>
+<p>for style checks, unit and integration tests.</p>
 </div>
 <div class="paragraph">
-<p>To execute a single test, one can use <code>prove</code>. You must set TEST_PG so the database
-can be found. If you set a custom base directory, be sure to unset it when running tests.
-Example:</p>
+<p>To execute a single test, one can tweak the test execution with the variables
+in the Makefile or use <code>prove</code> after pointing to a local test database in the
+environment variable TEST_PG. Also, If you set a custom base directory, be
+sure to unset it when running tests.</p>
+</div>
+<div class="paragraph">
+<p>Example:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -6755,8 +6759,9 @@ Example:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>To speed up the test initialization, start PostgreSQL using <code>t/test_postgresql</code>
-instead of using the system service. Eg.</p>
+<p>In the case of wanting to tweak the tests as above, to speed up the test
+initialization, start PostgreSQL using <code>t/test_postgresql</code> instead of using
+the system service. E.g.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7347,7 +7352,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-07-04 16:15:08 UTC
+Last updated 2019-07-05 06:56:21 UTC
 </div>
 </div>
 <style>
