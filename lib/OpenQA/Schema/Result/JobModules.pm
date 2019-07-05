@@ -285,24 +285,11 @@ sub store_needle_infos {
 }
 
 sub _save_details_screenshot {
-    my ($self, $screenshot, $existent_md5, $cleanup) = @_;
+    my ($self, $screenshot, $existent_md5) = @_;
 
     my ($full, $thumb) = OpenQA::Utils::image_md5_filename($screenshot->{md5});
     if (-e $full) {    # mark existent
         push(@$existent_md5, $screenshot->{md5});
-    }
-    if ($cleanup) {
-        # interactive mode, recreate the symbolic link of screenshot if it was changed
-        my $full_link  = readlink($self->job->result_dir . "/" . $screenshot->{name})         || '';
-        my $thumb_link = readlink($self->job->result_dir . "/.thumbs/" . $screenshot->{name}) || '';
-        if ($full ne $full_link) {
-            OpenQA::Utils::log_debug "cleaning up " . $self->job->result_dir . "/" . $screenshot->{name};
-            unlink($self->job->result_dir . "/" . $screenshot->{name});
-        }
-        if ($thumb ne $thumb_link) {
-            OpenQA::Utils::log_debug "cleaning up " . $self->job->result_dir . "/.thumbs/" . $screenshot->{name};
-            unlink($self->job->result_dir . "/.thumbs/" . $screenshot->{name});
-        }
     }
     symlink($full,  $self->job->result_dir . "/" . $screenshot->{name});
     symlink($thumb, $self->job->result_dir . "/.thumbs/" . $screenshot->{name});
@@ -310,7 +297,7 @@ sub _save_details_screenshot {
 }
 
 sub save_details {
-    my ($self, $details, $cleanup) = @_;
+    my ($self, $details) = @_;
     my $existent_md5 = [];
     my @dbpaths;
     my $schema = $self->result_source->schema;
@@ -320,7 +307,7 @@ sub save_details {
             # save the database entry for the screenshot first
             push(@dbpaths, OpenQA::Utils::image_md5_filename($d->{screenshot}->{md5}, 1));
             # create possibly stale symlinks
-            $d->{screenshot} = $self->_save_details_screenshot($d->{screenshot}, $existent_md5, $cleanup);
+            $d->{screenshot} = $self->_save_details_screenshot($d->{screenshot}, $existent_md5);
         }
     }
     OpenQA::Schema::Result::ScreenshotLinks::populate_images_to_job($schema, \@dbpaths, $self->job_id);
