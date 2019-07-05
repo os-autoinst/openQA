@@ -59,7 +59,9 @@ if [ ! -d $CONTAINER_PATH ] ; then
     zypper -n --root $CONTAINER_PATH addrepo $DEFAULT_REPO defaultrepo
     zypper -n --root $CONTAINER_PATH --gpg-auto-import-keys refresh
     # There are non-fatal errors when zyppering inside chroot, so ignoring errors on the next line
-    zypper -n --root $CONTAINER_PATH install --no-recommends -ly "$PKGS_TO_INSTALL" || test $? = 107
+    # Allow command line options without quotes
+    # shellcheck disable=SC2086
+    zypper -n --root $CONTAINER_PATH install --no-recommends -ly $PKGS_TO_INSTALL || test $? = 107
 else
     echo Container path $CONTAINER_PATH already exists, stopping here. Please clean manually and rerun.
     exit 1
