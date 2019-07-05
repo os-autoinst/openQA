@@ -832,7 +832,7 @@ sub post_upload_progress_to_liveviewhandler {
         upload_up_to                => $upload_up_to,
         upload_up_to_current_module => $current_test_module && $upload_up_to && $current_test_module eq $upload_up_to,
         outstanding_files           => scalar(@{$self->files_to_send}),
-        outstanding_images          => scalar(%{$self->images_to_send}),
+        outstanding_images          => scalar(keys %{$self->images_to_send}),
     );
 
     # skip if the progress hasn't changed
