@@ -84,15 +84,8 @@ sub wait_until_upload_concluded {
 my $engine_mock = Test::MockModule->new('OpenQA::Worker::Engines::isotovideo');
 $engine_mock->mock(engine_workit => sub { {error => 'some error'} });
 
-# check whether post_upload_progress_to_liveviewhandler is not called until the developer
-# session has been started
-my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
-$job_mock->mock(
-    post_upload_progress_to_liveviewhandler => sub {
-        fail('post_upload_progress_to_liveviewhandler unexpectedly called');
-    });
-
 # log which files and assets would have been uploaded
+my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
 my @uploaded_files;
 $job_mock->mock(_upload_log_file => sub { shift; push(@uploaded_files, [@_]); });
 my @uploaded_assets;
@@ -167,7 +160,6 @@ ok($job->{_timeout_timer},        'timer for timeout assigned');
 
 # perform another result upload triggered via start_livelog
 # also assume that a developer mode sesssion is running
-$job_mock->unmock('post_upload_progress_to_liveviewhandler');
 $job->developer_session_running(1);
 $job->start_livelog;
 is($job->livelog_viewers, 1, 'has now one livelog viewer');
@@ -233,16 +225,6 @@ is_deeply(
                     worker_id             => 1
                 }}
         },
-        # upload progress posted because we've set $job->developer_session_running(1);
-        {
-            path => '/liveviewhandler/api/v1/jobs/2/upload_progress',
-            json => {
-                outstanding_files           => 0,
-                outstanding_images          => 0,
-                upload_up_to                => undef,
-                upload_up_to_current_module => undef,
-            },
-        },
         # subsequent status posts
         {
             path => 'jobs/2/status',
@@ -257,6 +239,16 @@ is_deeply(
                     worker_id             => 1
                 }}
         },
+        # upload progress posted because we've set $job->developer_session_running(1);
+        {
+            path => '/liveviewhandler/api/v1/jobs/2/upload_progress',
+            json => {
+                outstanding_files           => 0,
+                outstanding_images          => 0,
+                upload_up_to                => undef,
+                upload_up_to_current_module => undef,
+            },
+        },
         {
             path => 'jobs/2/status',
             json => {
@@ -270,6 +262,7 @@ is_deeply(
                     worker_id             => 1
                 }}
         },
+        # no further upload progress posted because the upload progress has not changed
         # status set to uploading due to $job->stop;
         {
             path => 'jobs/2/status',
@@ -280,7 +273,7 @@ is_deeply(
                 }
             },
         },
-        # no more upload progress posted during final upload
+        # no further upload progress posted during final upload
         # just the usual status update
         {
             path => 'jobs/2/status',

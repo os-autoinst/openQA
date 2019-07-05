@@ -738,50 +738,52 @@ sub _upload_results {
     $status{result}->{$current_test_module}->{result} = 'running' if ($current_test_module);
 
     # define steps for uploading status to web UI
-    my $steps = sub {
-        return $self->_upload_results_step_0_post_status(
-            \%status,
-            $is_final_upload,
-            sub {
-                my ($status_post_res) = @_;
+    return $self->_upload_results_step_0_post_status(
+        \%status,
+        $is_final_upload,
+        sub {
+            my ($status_post_res) = @_;
 
-                # handle error occurred when posting the status
-                if (!$status_post_res) {
-                    if ($is_final_upload) {
-                        log_error(
-                            'Unable to make final image uploads. Maybe the web UI considers this job already dead.');
-                    }
-                    else {
-                        log_error(
-'Aborting job because web UI doesn\'t accept new images anymore (likely considers this job dead)'
-                        );
-                        $self->stop('api-failure');   # will be delayed until upload has been concluded via *_finalize()
-                    }
-                    return $self->_upload_results_step_2_finalize($is_final_upload, $callback);
+            # handle error occurred when posting the status
+            if (!$status_post_res) {
+                if ($is_final_upload) {
+                    log_error('Unable to make final image uploads. Maybe the web UI considers this job already dead.');
                 }
+                else {
+                    log_error(
+'Aborting job because web UI doesn\'t accept new images anymore (likely considers this job dead)'
+                    );
+                    $self->stop('api-failure');    # will be delayed until upload has been concluded via *_finalize()
+                }
+                return $self->_upload_results_step_2_finalize($is_final_upload, $callback);
+            }
 
-                # upload images (not an async operation)
-                $self->_upload_results_step_1_upload_images($status_post_res->{known_images});
+            # ignore known images
+            my $known_images = $status_post_res->{known_images};
+            if (ref $known_images eq 'ARRAY') {
+                $self->{_known_images} = $known_images;
+            }
+            $self->_ignore_known_images;
 
-                # inform liveviewhandler about upload progress if developer session opened or ...
-                if (!$is_final_upload && $self->developer_session_running) {
+            # inform liveviewhandler about upload progress if developer session opened
+            return $self->post_upload_progress_to_liveviewhandler(
+                $upload_up_to,
+                $is_final_upload,
+                sub {
+
+                    # upload images (not an async operation)
+                    $self->_upload_results_step_1_upload_images();
+
+                    # inform liveviewhandler about upload progress if developer session opened
                     return $self->post_upload_progress_to_liveviewhandler(
                         $upload_up_to,
+                        $is_final_upload,
                         sub {
                             $self->_upload_results_step_2_finalize($is_final_upload, $callback);
                         });
-                }
-                # ... finalize upload directly
-                return $self->_upload_results_step_2_finalize($is_final_upload, $callback);
-            });
-    };
 
-    # inform liveviewhandler about upload progress if developer session opened or ...
-    if (!$is_final_upload && $self->developer_session_running) {
-        return $self->post_upload_progress_to_liveviewhandler($upload_up_to, $steps);
-    }
-    # ... perform steps directly
-    return $steps->();
+                });
+        });
 }
 
 sub _upload_results_step_0_post_status {
@@ -797,77 +799,6 @@ sub _upload_results_step_0_post_status {
 }
 
 sub _upload_results_step_1_upload_images {
-    my ($self, $known_images) = @_;
-
-    if (ref $known_images eq 'ARRAY') {
-        $self->{_known_images} = $known_images;
-    }
-    $self->_ignore_known_images;
-    $self->upload_images;
-}
-
-sub _upload_results_step_2_finalize {
-    my ($self, $is_final_upload, $callback) = @_;
-
-    # continue sending status updates
-    unless ($is_final_upload) {
-        my $interval = $self->_calculate_upload_results_interval;
-        $self->{_upload_results_timer} = Mojo::IOLoop->timer(
-            $interval,
-            sub {
-                $self->_upload_results;
-            });
-    }
-
-    $self->{_is_uploading_results} = 0;
-    $self->emit(uploading_results_concluded => {});
-    $callback->() if $callback;
-}
-
-sub post_upload_progress_to_liveviewhandler {
-    my ($self, $upload_up_to, $callback) = @_;
-
-    my $current_test_module = $self->current_test_module;
-    my %new_progress_info   = (
-        upload_up_to                => $upload_up_to,
-        upload_up_to_current_module => $current_test_module && $upload_up_to && $current_test_module eq $upload_up_to,
-        outstanding_files           => scalar(@{$self->files_to_send}),
-        outstanding_images          => scalar(keys %{$self->images_to_send}),
-    );
-
-    # skip if the progress hasn't changed
-    my $progress_changed;
-    my $current_progress_info = $self->progress_info;
-    for my $key (qw(upload_up_to upload_up_to_current_module outstanding_files outstanding_images)) {
-        my $new_value = $new_progress_info{$key};
-        my $old_value = $current_progress_info->{$key};
-        if (defined($new_value) != defined($old_value) || (defined($new_value) && $new_value ne $old_value)) {
-            $progress_changed = 1;
-            last;
-        }
-    }
-    if (!$progress_changed) {
-        return $callback->() if $callback;
-        return undef;
-    }
-    $self->{_progress_info} = \%new_progress_info;
-
-    my $job_id = $self->id;
-    $self->client->send(
-        post => "/liveviewhandler/api/v1/jobs/$job_id/upload_progress",
-        service_port_delta => 2,                     # liveviewhandler is supposed to run on web UI port + 2
-        json               => \%new_progress_info,
-        non_critical       => 1,
-        callback           => sub {
-            my ($res) = @_;
-            if (!$res) {
-                log_warning('Failed to post upload progress to liveviewhandler.');
-            }
-            $callback->($res);
-        });
-}
-
-sub upload_images {
     my ($self) = @_;
 
     my $tx;
@@ -925,6 +856,72 @@ sub upload_images {
     }
     $self->{_files_to_send} = [];
     return !$tx || !$tx->error;
+}
+
+sub _upload_results_step_2_finalize {
+    my ($self, $is_final_upload, $callback) = @_;
+
+    # continue sending status updates
+    unless ($is_final_upload) {
+        my $interval = $self->_calculate_upload_results_interval;
+        $self->{_upload_results_timer} = Mojo::IOLoop->timer(
+            $interval,
+            sub {
+                $self->_upload_results;
+            });
+    }
+
+    $self->{_is_uploading_results} = 0;
+    $self->emit(uploading_results_concluded => {});
+    $callback->() if $callback;
+}
+
+sub post_upload_progress_to_liveviewhandler {
+    my ($self, $upload_up_to, $is_final_upload, $callback) = @_;
+
+    if ($is_final_upload || !$self->developer_session_running) {
+        return $callback->() if $callback;
+        return undef;
+    }
+
+    my $current_test_module = $self->current_test_module;
+    my %new_progress_info   = (
+        upload_up_to                => $upload_up_to,
+        upload_up_to_current_module => $current_test_module && $upload_up_to && $current_test_module eq $upload_up_to,
+        outstanding_files           => scalar(@{$self->files_to_send}),
+        outstanding_images          => scalar(keys %{$self->images_to_send}),
+    );
+
+    # skip if the progress hasn't changed
+    my $progress_changed;
+    my $current_progress_info = $self->progress_info;
+    for my $key (qw(upload_up_to upload_up_to_current_module outstanding_files outstanding_images)) {
+        my $new_value = $new_progress_info{$key};
+        my $old_value = $current_progress_info->{$key};
+        if (defined($new_value) != defined($old_value) || (defined($new_value) && $new_value ne $old_value)) {
+            $progress_changed = 1;
+            last;
+        }
+    }
+    if (!$progress_changed) {
+        return $callback->() if $callback;
+        return undef;
+    }
+    $self->{_progress_info} = \%new_progress_info;
+
+    my $job_id = $self->id;
+    $self->client->send(
+        post => "/liveviewhandler/api/v1/jobs/$job_id/upload_progress",
+        service_port_delta => 2,                     # liveviewhandler is supposed to run on web UI port + 2
+        json               => \%new_progress_info,
+        non_critical       => 1,
+        callback           => sub {
+            my ($res) = @_;
+            if (!$res) {
+                log_warning('Failed to post upload progress to liveviewhandler.');
+            }
+            $callback->($res);
+        });
 }
 
 sub _upload_log_file_or_asset {
