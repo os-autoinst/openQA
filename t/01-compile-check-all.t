@@ -34,7 +34,7 @@ BEGIN {
 }
 
 my $test = Test::Compile->new();
-$test->verbose(0);
+$test->verbose(1);
 
 my @files = $test->all_pm_files();
 for my $file (@files) {
