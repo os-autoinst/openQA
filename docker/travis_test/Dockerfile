@@ -34,6 +34,9 @@ RUN zypper in -y -C \
        qemu-kvm \
        tar \
        optipng \
+       python3-base \
+       python3-requests \
+       python3-futures \
        sqlite3 \
        postgresql-server \
        which \
