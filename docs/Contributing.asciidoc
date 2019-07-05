@@ -65,18 +65,24 @@ environment to verify everything works as expected. Call:
 make test
 ----
 
-for unit and integration tests.
+for style checks, unit and integration tests.
 
-To execute a single test, one can use `prove`. You must set +TEST_PG+ so the database
-can be found. If you set a custom base directory, be sure to unset it when running tests.
+To execute a single test, one can tweak the test execution with the variables
+in the Makefile or use `prove` after pointing to a local test database in the
+environment variable +TEST_PG+. Also, If you set a custom base directory, be
+sure to unset it when running tests.
+
 Example:
+
 [source,sh]
 ----
 TEST_PG='DBI:Pg:dbname=openqa_test;host=/dev/shm/tpg' OPENQA_BASEDIR= prove -v t/14-grutasks.t
 ----
 
-To speed up the test initialization, start PostgreSQL using `t/test_postgresql`
-instead of using the system service. Eg.
+In the case of wanting to tweak the tests as above, to speed up the test
+initialization, start PostgreSQL using `t/test_postgresql` instead of using
+the system service. E.g.
+
 [source,sh]
 ----
 t/test_postgresql /dev/shm/tpg
