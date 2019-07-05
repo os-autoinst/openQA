@@ -23,7 +23,6 @@ use File::Spec::Functions 'catfile';
 use Mojo::File 'path';
 use Mojo::Util 'trim';
 use Config::IniFiles;
-use OpenQA::Schema::Profiler;
 use OpenQA::Utils;
 use OpenQA::Utils 'random_string';
 use File::Path 'make_path';
@@ -105,6 +104,7 @@ sub setup_log {
 
     $self->log($log);
     if ($ENV{OPENQA_SQL_DEBUG} // $self->config->{logging}->{sql_debug} // 'false' eq 'true') {
+        require OpenQA::Schema::Profiler;
         # avoid enabling the SQL debug unless we really want to see it
         # it's rather expensive
         OpenQA::Schema::Profiler->enable_sql_debugging;
