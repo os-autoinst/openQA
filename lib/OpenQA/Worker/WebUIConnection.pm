@@ -31,12 +31,15 @@ has 'worker_id';          # the ID the web UI uses to track this worker (populat
 has 'testpool_server';    # testpool server for this web UI host
 has 'working_directory';  # share directory for this web UI host
 has 'cache_directory';    # cache directory for this web UI host
-has 'websocket_connection'
-  ; # the websocket connection to receive commands from the web UI and send the status (Mojo::Transaction::WebSockets instance)
-#has 'command_handler'; # handles commands from the web UI received via the websocket connection
+
+# the websocket connection to receive commands from the web UI and send the status (Mojo::Transaction::WebSockets instance)
+has 'websocket_connection';
+
+# stores the "population" of the web UI host which is updated when receiving that info via web sockets
 has 'webui_host_population';
-has 'send_status_interval'
-  ;    # interval for overall worker status updates; automatically set when needed (unless set manually)
+
+# interval for overall worker status updates; automatically set when needed (unless set manually)
+has 'send_status_interval';
 
 sub new {
     my ($class, $webui_host, $cli_options) = @_;
