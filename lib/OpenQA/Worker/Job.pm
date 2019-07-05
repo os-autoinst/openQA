@@ -215,9 +215,7 @@ sub start {
     if ($self->{_setup_error} = $setup_error) {
         # let the IO loop take over if the job has been stopped during setup
         # note: This can happen if stop is called from an interrupt.
-        if ($self->is_stopped_or_stopping) {
-            return undef;
-        }
+        return undef if ($self->is_stopped_or_stopping);
 
         log_error("Unable to setup job $id: $setup_error");
         return $self->stop('setup failure');
@@ -943,17 +941,14 @@ sub _upload_log_file_or_asset {
 sub _log_upload_error {
     my ($filename, $res) = @_;
 
-    my $err = $res->error;
-    return undef unless $err;
+    return undef unless my $err = $res->error;
 
-    my $msg;
-    if (my $code = $err->{code}) {
-        $msg = "Error uploading $filename: $code response: $err->{message}";
-    }
-    else {
-        $msg = "Error uploading $filename: Connection error: $err->{message}";
-    }
-    log_error($msg, channels => ['autoinst', 'worker'], default => 1);
+    my $error_type = $err->{code} ? "$err->{code} response" : 'connection error';
+    log_error(
+        "Error uploading $filename: $error_type: $err->{message}",
+        channels => ['autoinst', 'worker'],
+        default  => 1
+    );
     return 1;
 }
 
@@ -1105,9 +1100,8 @@ sub _read_json_file {
     local $/;
     my $fh;
     if (!open($fh, '<', $fn)) {
-        log_warning(
-"Can't open $fn for result upload - likely isotovideo could not be started or failed early. Error message: $!"
-        );
+        log_warning("Can't open $fn for result upload - likely isotovideo "
+              . "could not be started or failed early. Error message: $!");
         return undef;
     }
     my $json = {};
@@ -1164,12 +1158,6 @@ sub _read_module_result {
     my $images_to_send = $self->images_to_send;
     my $files_to_send  = $self->files_to_send;
     for my $d (@{$result->{details}}) {
-        if ($d->{json}) {
-            $d->{json} = $d->{json};
-        }
-        for my $n (@{$d->{needles}}) {
-            $n->{json} = $n->{json};
-        }
         for my $type (qw(screenshot audio text)) {
             my $file = $d->{$type};
             next unless $file;

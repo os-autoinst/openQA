@@ -16,12 +16,8 @@
 use strict;
 use warnings;
 
-BEGIN {
-    unshift @INC, 'lib';
-}
-
 use FindBin;
-use lib "$FindBin::Bin/lib";
+use lib ("$FindBin::Bin/lib", "$FindBin::Bin/../lib");
 use Test::Fatal;
 use Test::More;
 use Test::Warnings;

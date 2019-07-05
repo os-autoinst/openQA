@@ -19,12 +19,8 @@
 use strict;
 use warnings;
 
-BEGIN {
-    unshift @INC, 'lib';
-}
-
 use FindBin;
-use lib "$FindBin::Bin/lib";
+use lib ("$FindBin::Bin/lib", "$FindBin::Bin/../lib");
 use Mojo::Base -strict;
 use Mojo::File qw(tempdir path);
 use Test::Fatal;

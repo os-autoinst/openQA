@@ -57,19 +57,18 @@ sub handle_command {
             if (!$job_id) {
                 # log a more specific warning in case of the grab_job message from a different web UI
                 if ($type eq 'grab_job' && $webui_host ne $current_webui_host) {
-                    log_warning(
-"Ignoring job assignment from $webui_host (already busy with job $current_job_id from $current_webui_host)."
-                    );
+                    log_warning("Ignoring job assignment from $webui_host "
+                          . "(already busy with job $current_job_id from $current_webui_host).");
                     return undef;
                 }
-                log_warning(
-"Ignoring WS message from $webui_host with type $type but no job ID (currently running $current_job_id for $current_webui_host):\n"
+                log_warning("Ignoring WS message from $webui_host with type $type but no job ID "
+                      . "(currently running $current_job_id for $current_webui_host):\n"
                       . pp($json));
                 return undef;
             }
             if ($job_id ne $current_job_id) {
-                log_warning(
-"Ignoring WS message from $webui_host for job $job_id because that job is not running (running $current_job_id for $current_webui_host instead):\n"
+                log_warning("Ignoring WS message from $webui_host for job $job_id because that job is "
+                      . "not running (running $current_job_id for $current_webui_host instead):\n"
                       . pp($json));
                 return undef;
             }
@@ -77,8 +76,8 @@ sub handle_command {
         else {
             # ignore messages which belong to a job
             if ($job_id) {
-                log_warning(
-"Ignoring WS message from $webui_host with type $type and job ID $job_id (currently not executing a job):\n"
+                log_warning("Ignoring WS message from $webui_host with type $type and job ID $job_id "
+                      . "(currently not executing a job):\n"
                       . pp($json));
                 return undef;
             }
@@ -96,10 +95,7 @@ sub handle_command {
         return $handler->($json, $client, $worker, $webui_host, $current_job);
     }
     if ($type =~ m/quit|abort|cancel|obsolete/) {
-        if (!$job_id) {
-            log_warning("Ignoring command $type without job ID.");
-            return undef;
-        }
+        return log_warning("Ignoring command $type without job ID.") unless $job_id;
         return $current_job->stop($type);
     }
     log_warning("Ignoring WS message with unknown type $type from $webui_host:\n" . pp($json));

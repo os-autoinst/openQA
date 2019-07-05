@@ -52,12 +52,8 @@ sub new {
 
     # determine instance number
     my $instance_number = $cli_options->{instance};
-    if (!defined $instance_number) {
-        die 'no instance number specified';
-    }
-    if (!looks_like_number($instance_number)) {
-        die "the specified instance number \"$instance_number\" is no number";
-    }
+    die 'no instance number specified' unless defined $instance_number;
+    die "the specified instance number \"$instance_number\" is no number" unless looks_like_number($instance_number);
 
     # determine settings and create app
     my $settings = OpenQA::Worker::Settings->new($instance_number, $cli_options);
@@ -110,9 +106,7 @@ sub log_setup_info {
 sub capabilities {
     my ($self) = @_;
 
-    if (my $cached_caps = $self->{_caps}) {
-        return $cached_caps;
-    }
+    return $self->{_caps} if $self->{_caps};
 
     my $global_settings = $self->settings->global_settings;
     my $query_cmd;
@@ -176,13 +170,9 @@ sub capabilities {
 
             aarch64 => ['aarch64'],
         );
-        if (my $supported_archs = $supported_archs_by_cpu_archs{$caps->{cpu_arch}}) {
-            $caps->{worker_class} = join(',', map { 'qemu_' . $_ } @$supported_archs);
-            # TODO: check installed qemu and kvm?
-        }
-        else {
-            $caps->{worker_class} = 'qemu_' . $caps->{cpu_arch};
-        }
+        $caps->{worker_class}
+          = join(',', map { 'qemu_' . $_ } @{$supported_archs_by_cpu_archs{$caps->{cpu_arch}} // [$caps->{cpu_arch}]});
+        # TODO: check installed qemu and kvm?
     }
 
     return $self->{_caps} = $caps;
@@ -192,9 +182,7 @@ sub status {
     my ($self) = @_;
 
     my $current_job = $self->current_job;
-    if (!$current_job) {
-        $self->check_availability;
-    }
+    $self->check_availability unless $current_job;
 
     my %status = (type => 'worker_status');
     if ($current_job) {
@@ -221,14 +209,10 @@ sub init {
     # instantiate a client for each web UI we need to connect to
     my $settings    = $self->settings;
     my $webui_hosts = $settings->webui_hosts;
-    if (!@$webui_hosts) {
-        die 'no web UI hosts configured';
-    }
-    my %clients_by_webui_host;
-    for my $host (@$webui_hosts) {
-        my $client = OpenQA::Worker::WebUIConnection->new($host, $self->{_cli_options});
-        $clients_by_webui_host{$host} = $client;
-    }
+    die 'no web UI hosts configured' unless @$webui_hosts;
+
+    my %clients_by_webui_host
+      = map { $_ => OpenQA::Worker::WebUIConnection->new($_, $self->{_cli_options}) } @$webui_hosts;
     $self->clients_by_webui_host(\%clients_by_webui_host);
 
     # register event handler
@@ -263,9 +247,8 @@ sub init {
             }
 
             # kill if stopping gracefully does not work
-            log_error(
-'Another error occurred when trying to stop gracefully due to an error. Trying to kill ourself forcefully now.'
-            );
+            log_error('Another error occurred when trying to stop gracefully due to an error.'
+                  . 'Trying to kill ourself forcefully now.');
             $self->kill();
             Mojo::IOLoop->stop();
         });
@@ -274,17 +257,10 @@ sub init {
     my $global_settings              = $settings->global_settings;
     my $webui_host_specific_settings = $settings->webui_host_specific_settings;
     for my $host (@$webui_hosts) {
-        my $host_settings = $webui_host_specific_settings->{$host};
-        if (!$host_settings) {
-            die "settings for $host not correctly initialized\n";
-        }
-        my $client = $clients_by_webui_host{$host};
-        if (!$client) {
-            die "client for $host not correctly initialized\n";
-        }
-        if ($client->status ne 'new') {
-            next;
-        }
+        die "settings for $host not correctly initialized\n"
+          unless my $host_settings = $webui_host_specific_settings->{$host};
+        die "client for $host not correctly initialized\n" unless my $client = $clients_by_webui_host{$host};
+        next unless $client->status eq 'new';
 
         # check if host's working directory exists if caching is not enabled
         if ($global_settings->{CACHEDIRECTORY}) {
@@ -296,7 +272,7 @@ sub init {
         my @working_dirs = ($host_settings->{SHARE_DIRECTORY}, catdir($OpenQA::Utils::prjdir, 'share'));
         my ($working_dir) = grep { $_ && -d } @working_dirs;
         unless ($working_dir) {
-            map { log_debug("Found possible working directory for $host: $_") if $_ } @working_dirs;
+            $_ and log_debug("Found possible working directory for $host: $_") for @working_dirs;
             log_error("Ignoring host '$host': Working directory does not exist.");
             next;
         }
@@ -332,23 +308,20 @@ sub send_to_webui_host {
     my ($self, $method, $path, %args) = @_;
 
     my $webui_host = $args{host} // $self->current_webui_host;
-    if (!$webui_host) {
-        die 'send_to_webui_host called but there is no web UI host';
-    }
+    die 'send_to_webui_host called but there is no web UI host' unless $webui_host;
+
     my $client = $self->clients_by_webui_host->{$webui_host};
-    if (!$client) {
-        die "send_to_webui_host called for invalid host $webui_host\n";
-    }
+    die "send_to_webui_host called for invalid host $webui_host\n" unless $client;
     $client->send($method, $path, %args);
 }
 
 
 sub _prepare_cache_directory {
     my ($webui_host, $cachedirectory) = @_;
+    die 'No cachedir' unless $cachedirectory;
 
     my $host_to_cache = Mojo::URL->new($webui_host)->host || $webui_host;
-    die 'No cachedir' unless $cachedirectory;
-    my $shared_cache = File::Spec->catdir($cachedirectory, $host_to_cache);
+    my $shared_cache  = File::Spec->catdir($cachedirectory, $host_to_cache);
     File::Path::make_path($shared_cache);
     log_info("CACHE: caching is enabled, setting up $shared_cache");
 
@@ -364,9 +337,7 @@ sub _prepare_cache_directory {
 sub accept_job {
     my ($self, $client, $job_info) = @_;
 
-    if ($self->current_job) {
-        die 'attempt to accept a new job although there is already a job running';
-    }
+    die 'attempt to accept a new job although there is already a job running' if $self->current_job;
 
     # instantiate new job
     my $webui_host = $client->webui_host;
@@ -418,17 +389,13 @@ sub stop {
 sub stop_current_job {
     my ($self, $reason) = @_;
 
-    if (my $current_job = $self->current_job) {
-        $current_job->stop;
-    }
+    if (my $current_job = $self->current_job) { $current_job->stop; }
 }
 
 sub kill {
     my ($self) = @_;
 
-    if (my $current_job = $self->current_job) {
-        $current_job->kill;
-    }
+    if (my $current_job = $self->current_job) { $current_job->kill; }
     Mojo::IOLoop->stop;
 }
 
@@ -619,10 +586,8 @@ sub _lock_pool_directory {
     my ($self) = @_;
 
     die 'no pool directory assigned' unless my $pool_directory = $self->pool_directory;
+    make_path($pool_directory) unless -e $pool_directory;
 
-    if (!-e $pool_directory) {
-        make_path($pool_directory);
-    }
     chdir $pool_directory || die "cannot change directory to $pool_directory: $!\n";
     open(my $lockfd, '>>', '.locked') or die "cannot open lock file: $!\n";
     unless (fcntl($lockfd, F_SETLK, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
