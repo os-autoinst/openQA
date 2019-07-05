@@ -2601,29 +2601,36 @@ the job. Variables that influence os-autoinst&#8217;s behavior are documented in
 file doc/backend_vars.asciidoc in the os-autoinst repository.</p>
 </div>
 <div class="paragraph">
-<p>In openQA we can parameterize a test to describe for what product it will
-run and for what kind of machines it will be executed. For example, a
-test like KDE can be run for any product that has KDE installed, and
-can be tested in x86-64 and i586 machines. If we write this as a
-triples, we can create a list like this to characterize KDE tests:</p>
+<p>In openQA we can parameterize a test to describe for what product it will run
+and for what kind of machines it will be executed. For example, a test suite
+kde can be run for any product that has the KDE software stack installed,
+like openSUSE-DVD-x86_64 and openSUSE-NET-i586, and can be tested in
+different x86-64 and i586 machines like 64bit, 64bit_USBBoot, 32bit. In
+this example we could have the following test scenarios considering that the
+``x86_64'' flavor is not compatible with the 32bit machine:</p>
 </div>
-<div class="literalblock">
-<div class="content">
-<pre>(Product,             Test Suite, Machine)
-(openSUSE-DVD-x86_64, KDE,        64bit)
-(openSUSE-DVD-x86_64, KDE,        Laptop-64bit)
-(openSUSE-DVD-x86_64, KDE,        USBBoot-64bit)
-(openSUSE-DVD-i586,   KDE,        32bit)
-(openSUSE-DVD-i586,   KDE,        Laptop-32bit)
-(openSUSE-DVD-i586,   KDE,        USBBoot-32bit)
-(openSUSE-DVD-i586,   KDE,        64bit)
-(openSUSE-DVD-i586,   KDE,        Laptop-64bit)
-(openSUSE-DVD-i586,   KDE,        USBBoot-64bit)</pre>
-</div>
+<div class="ulist">
+<ul>
+<li>
+<p>openSUSE-DVD-x86_64-kde-64bit</p>
+</li>
+<li>
+<p>openSUSE-DVD-x86_64-kde-64bit_USBBoot</p>
+</li>
+<li>
+<p>openSUSE-NET-i586-kde-64bit</p>
+</li>
+<li>
+<p>openSUSE-NET-i586-kde-64bit_USBBoot</p>
+</li>
+<li>
+<p>openSUSE-NET-i586-kde-32bit</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
-<p>For every triplet, we need to configure a different instance of
-os-autoinst with a different set of parameters.</p>
+<p>For every test scenario we need to configure a different instance of the test
+backend, for example os-autoinst, with a different set of parameters.</p>
 </div>
 </div>
 <div class="sect2">
@@ -3392,9 +3399,8 @@ test.</p>
 <div class="paragraph">
 <p>openQA includes a <em>client</em> script which - depending on the distribution - is
 packaged independantly if you just want to interface with an existing openQA
-instance without needing to install the full package. Call
-<code>&lt;openqa-folder&gt;/script/client --help</code> for help (openSUSE: <code>openqa-client
---help</code>).</p>
+instance without needing to install the full package. Call <code>openqa-client
+--help</code> for help.</p>
 </div>
 <div class="paragraph">
 <p>Basics are described in the
@@ -7352,7 +7358,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-07-05 06:56:21 UTC
+Last updated 2019-07-05 07:12:57 UTC
 </div>
 </div>
 <style>
