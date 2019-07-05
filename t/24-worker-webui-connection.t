@@ -209,11 +209,6 @@ subtest 'command handler' => sub {
 
     # test at least some of the error cases
     combined_like(
-        sub { $command_handler->handle_command(undef, {result => 1, known_images => []}); },
-        qr/Ignoring 'known_images' from http:\/\/test-host because no job is running\./,
-        'ignoring known images without job',
-    );
-    combined_like(
         sub { $command_handler->handle_command(undef, {}); },
         qr/Ignoring WS message without type from http:\/\/test-host.*/,
         'ignoring non-result message without type',

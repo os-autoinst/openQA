@@ -38,21 +38,8 @@ sub handle_command {
     my $webui_host         = $client->webui_host;
     my $current_webui_host = $worker->current_webui_host // 'unknown web UI host';
 
-    # handle responses to our own messages which are indicated by 'result'
-    if ($json->{result}) {
-        # handle response to update_status and filter known images
-        if (my $known_images = $json->{known_images}) {
-            if (!$current_job) {
-                log_warning("Ignoring 'known_images' from $webui_host because no job is running.");
-                return undef;
-            }
-            # FIXME: Also before refactoring upload_images() did not take any arguments. This merely
-            #        uploads images but does not filter known images as the comment in the previous code
-            #        stated. Is this wanted?
-            $current_job->upload_images($known_images);
-        }
-        return undef;
-    }
+    # ignore responses to our own messages which are indicated by 'result'
+    return undef if ($json->{result});
 
     # handle commands of certain types regarding a specific job (which is supposed to be the job we're working on)
     my $type = $json->{type};
