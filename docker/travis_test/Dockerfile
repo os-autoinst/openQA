@@ -2,11 +2,13 @@
 #!UseOBSRepositories
 FROM opensuse:42.3
 
-RUN zypper -n in openQA-devel
-
 # Define environment variable
 ENV NAME openQA test environment
 ENV LANG en_US.UTF-8
+
+# needs to be checked out in OBS
+COPY dependencies /dependencies
+RUN xargs -a /dependencies zypper in -y -C
 
 VOLUME ["/sys/fs/cgroup", "/run"]
 
