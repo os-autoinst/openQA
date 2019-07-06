@@ -53,7 +53,8 @@
 # all requirements needed by the tests, do not require on this in individual
 # sub-packages except for the devel package
 %define test_requires %common_requires %main_requires %python_scripts_requires %worker_requires perl(Test::MockModule) perl(Test::Output)
-%define devel_requires %test_requires
+%define devel_requires %test_requires rsync ShellCheck os-autoinst-devel curl git postgresql-devel qemu qemu-kvm tar optipng postgresql-server xorg-x11-fonts rubygem(sass) sudo perl(Config) perl(Cwd) perl(Data::Dumper) perl(Digest::MD5) >= 2.55, perl(Data::OptList) perl(Devel::Cover::Report::Codecov) perl(LWP::Protocol::https) perl(SQL::SplitStatement) perl(XSLoader) >= 0.24
+
 Name:           openQA
 Version:        4.6
 Release:        0
@@ -68,7 +69,6 @@ Source1:        cache.txz
 Source100:      openQA-rpmlintrc
 Source101:      update-cache.sh
 Source102:      Dockerfile
-BuildRequires:  %{test_requires}
 BuildRequires:  fdupes
 BuildRequires:  systemd
 # critical bug fix
@@ -103,20 +103,7 @@ BuildArch:      noarch
 ExcludeArch:    i586
 %{?systemd_requires}
 %if %{with tests}
-BuildRequires:  chromedriver
-BuildRequires:  chromium
-BuildRequires:  glibc-locale
-# pick a font so chromium has something to render - doesn't matter so much
-BuildRequires:  dejavu-fonts
-BuildRequires:  google-roboto-fonts
-BuildRequires:  perl-App-cpanminus
-BuildRequires:  perl(Perl::Critic)
-BuildRequires:  perl(Perl::Critic::Freenode)
-BuildRequires:  perl(Selenium::Remote::Driver) >= 1.20
-BuildRequires:  perl(Test::Strict)
-BuildRequires:  perl(Test::MockObject)
-BuildRequires:  perl(Test::Warnings)
-BuildRequires:  rsync
+BuildRequires:  %{test_requires}
 %endif
 %if 0%{?suse_version} >= 1330
 Requires(pre):  group(nogroup)
