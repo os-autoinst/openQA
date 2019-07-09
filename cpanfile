@@ -46,6 +46,7 @@ requires 'Minion::Backend::SQLite';
 requires 'MRO::Compat';
 requires 'Module::Implementation';
 requires 'Module::Load::Conditional';
+requires 'Module::Pluggable';
 requires 'Module::Runtime';
 requires 'Mojo::Base';
 requires 'Mojo::ByteStream';
