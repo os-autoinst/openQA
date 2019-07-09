@@ -18,20 +18,20 @@ package OpenQA::WebAPI::Plugin::ObsRsync::Controller;
 use Mojo::Base 'Mojolicious::Controller';
 use File::Basename;
 
-my $home;
-my $app;
-
-sub init_obs_rsync {
-    $home = shift;
-    $app  = shift;
+sub home {
+    my $self = shift;
+    $self->app->config->{obs_rsync}->{home};
 }
 
 sub index {
     my $self   = shift;
     my $folder = $self->param('folder');
     return if $self->_check_and_render_error($folder);
-    my $out
-      = `find "$home" -mindepth 1 -maxdepth 1 -type d -exec basename {} \\; | grep -v test | grep -v __pycache__ | grep -v WebAPIPlugin | grep -v .git`;
+    my $cmd
+      = "find "
+      . $self->home
+      . " -mindepth 1 -maxdepth 1 -type d -exec basename {} \\; | grep -v test | grep -v __pycache__ | grep -v WebAPIPlugin | grep -v .git";
+    my $out   = `$cmd`;
     my @files = sort split(/\n/, $out);
 
     $self->_grep_and_stash_list(\@files, '[a-zA-Z]', 'folders');
@@ -43,7 +43,7 @@ sub folder {
     my $folder = $self->param('folder');
     return if $self->_check_and_render_error($folder);
 
-    my $full        = $home;
+    my $full        = $self->home;
     my $obs_project = $folder;
     $full = $full . '/' . $obs_project;
     my $last_run = $full . '/.run_last';
@@ -68,7 +68,7 @@ sub logs {
         return _error('Incorrect name');
     }
 
-    my $full = $home . '/' . $folder;
+    my $full = $self->home . '/' . $folder;
     opendir my $dirh, $full or return _error("Cannot open directory {$full} : $!");
     my @files = sort { $b cmp $a } readdir $dirh;
     closedir $dirh;
@@ -84,7 +84,7 @@ sub logfiles {
     my $subfolder = $self->param('subfolder');
     return if $self->_check_and_render_error($folder, $subfolder);
 
-    my $full = $home . '/' . $folder . '/' . $subfolder;
+    my $full = $self->home . '/' . $folder . '/' . $subfolder;
     opendir my $dirh, "$full" or die "Cannot open directory {$full}: $!";
     my @files = sort { $b cmp $a } readdir $dirh;
     closedir $dirh;
@@ -102,7 +102,7 @@ sub download_file {
     my $filename  = $self->param('filename');
     return if $self->_check_and_render_error($folder, $subfolder, $filename);
 
-    my $full = $home . '/' . $folder;
+    my $full = $self->home . '/' . $folder;
     $full = $full . '/' . $subfolder if $subfolder;
 
     my $static = Mojolicious::Static->new;
@@ -115,7 +115,7 @@ sub run {
     my $folder = $self->param('folder');
     return if $self->_check_and_render_error($folder);
 
-    my $cmd    = "bash '$home/rsync.sh' '$folder' 2>&1";
+    my $cmd    = "bash '" . $self->home . "/rsync.sh' '$folder' 2>&1";
     my $out    = `$cmd`;
     my $rc     = $? >> 8;
     my $status = $rc ? 500 : 201;
@@ -161,17 +161,15 @@ sub _check_error {
     my $project   = shift;
     my $subfolder = shift;
     my $filename  = shift;
-    # return 401 unless ($self->is_user());
-    # return 403 unless ($self->is_admin());
-    return ("Home directory is not set", 405) unless $home;
-    return ("Home directory not found",  405) unless -d $home;
+    return ("Home directory is not set", 405) unless $self->home;
+    return ("Home directory not found",  405) unless -d $self->home;
     return "Project has invalid characters" if $project && CORE::index($project, '/') != -1;
     return "Subfolder has invalid characters" if ($subfolder && CORE::index($subfolder, '/') != -1);
     return "Filename has invalid characters"  if ($filename  && CORE::index($filename,  '/') != -1);
 
     print($project . "\n") if $project;
 
-    return 404 unless !$project || -d $home . '/' . $project;
+    return 404 unless !$project || -d $self->home . '/' . $project;
 
     return 0;
 }
