@@ -23,6 +23,7 @@ use FindBin;
 use lib ("$FindBin::Bin/lib", "$FindBin::Bin/../lib");
 use Mojo::Base -strict;
 use Mojo::IOLoop;
+use Mojolicious;
 use Test::Output 'combined_like';
 use Test::Fatal;
 use Test::More;
@@ -35,6 +36,10 @@ use OpenQA::Worker::CommandHandler;
 use OpenQA::Worker::Job;
 use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD MAX_TIMER MIN_TIMER);
 use OpenQA::Utils qw(in_range rand_range);
+
+# use Mojo::Log and suppress debug messages
+my $app = $OpenQA::Utils::app = Mojolicious->new;
+$app->log->level('info');
 
 like(
     exception {
@@ -138,17 +143,23 @@ subtest 'attempt to register and send a command' => sub {
 
     # test failing REST API call *not* ignoring errors
     $callback_invoked = 0;
-    $client->send(
-        post     => 'jobs/500/status',
-        json     => {status => 'running'},
-        tries    => 1,
-        callback => sub {
-            my ($res) = @_;
-            is($res, undef, 'undefined result returned in the error case');
-            $callback_invoked = 1;
+    combined_like(
+        sub {
+            $client->send(
+                post     => 'jobs/500/status',
+                json     => {status => 'running'},
+                tries    => 1,
+                callback => sub {
+                    my ($res) = @_;
+                    is($res, undef, 'undefined result returned in the error case');
+                    $callback_invoked = 1;
+                },
+            );
+            Mojo::IOLoop->start;
         },
+        qr/Connection error: Can't connect:.*(remaining tries: 0)/s,
+        'error logged',
     );
-    Mojo::IOLoop->start;
     is($callback_invoked, 1, 'callback has been invoked');
     is($client->worker->stop_current_job_called,
         0, 'not attempted to stop current job because it is from different web UI');
@@ -168,7 +179,7 @@ subtest 'attempt to register and send a command' => sub {
             );
             Mojo::IOLoop->start;
         },
-        qr/.*\[ERROR\] Connection error:.*(remaining tries: 0).*/s,
+        qr/Connection error:.*(remaining tries: 0)/s,
         'error logged',
     );
 
@@ -215,11 +226,13 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
         'ignoring job-specific message when no job running',
     );
     $client->worker->current_error('some error');
+    $app->log->level('debug');
     combined_like(
         sub { $command_handler->handle_command(undef, {type => 'grab_job'}); },
         qr/Refusing 'grab_job', we are currently unable to do any work: some error/,
         'ignoring grab job while in error-state',
     );
+    $app->log->level('info');
     $client->worker->current_error(undef);
     combined_like(
         sub {

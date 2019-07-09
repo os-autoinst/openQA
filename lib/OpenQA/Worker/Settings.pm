@@ -16,7 +16,6 @@
 package OpenQA::Worker::Settings;
 use Mojo::Base -base;
 use Mojo::Util 'trim';
-
 use Config::IniFiles;
 
 has 'global_settings';
@@ -27,7 +26,9 @@ sub new {
     my ($class, $instance_number, $cli_options) = @_;
     $cli_options //= {};
 
-    my $cfg = Config::IniFiles->new(-file => ($ENV{OPENQA_CONFIG} || '/etc/openqa') . '/workers.ini');
+    my $settings_file = ($ENV{OPENQA_CONFIG} || '/etc/openqa') . '/workers.ini';
+    $settings_file = undef unless -e $settings_file;
+    my $cfg = Config::IniFiles->new(-file => $settings_file);
 
     # read global settings from config
     my %global_settings;
