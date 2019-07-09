@@ -36,7 +36,7 @@ RUN zypper in -y -C \
        optipng \
        python3-base \
        python3-requests \
-       python3-futures \
+       python3-future \
        sqlite3 \
        postgresql-server \
        which \
