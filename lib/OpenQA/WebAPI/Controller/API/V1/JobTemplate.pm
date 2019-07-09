@@ -18,6 +18,7 @@ package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller';
 use Try::Tiny;
 use JSON::Validator;
+use Text::Diff;
 
 =pod
 
@@ -398,6 +399,8 @@ sub update {
                     $self->schema->txn_rollback;
                 }
                 else {
+                    $json->{changes} = "\n" . diff \$job_group->template, \$self->param('template')
+                      if $job_group->template && $job_group->template ne $self->param('template');
                     # Store the original YAML template after all changes have been made
                     $job_group->update({template => $self->param('template')});
                 }
@@ -411,11 +414,13 @@ sub update {
     if (@$errors) {
         $json->{error} = \@$errors;
         $self->app->log->error(@$errors);
+        delete $json->{changes};
         $self->respond_to(json => {json => $json, status => 400},);
         return;
     }
 
     $self->emit_event('openqa_jobtemplate_create', $json) unless $self->param('preview');
+    delete $json->{changes};
     $self->respond_to(json => {json => $json});
 }
 
