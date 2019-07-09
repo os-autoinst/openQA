@@ -33,7 +33,7 @@ my $db = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
 # this test also serves to test plugin loading via config file
 my @conf = (
-    "[global]\n",    "plugins=ObsRsync::Plugin\n",
+    "[global]\n",    "plugins=ObsRsync\n",
     "[obs_rsync]\n", "home=" . dirname(__FILE__) . "/../data/openqa-trigger-from-obs\n"
 );
 my $tempdir = tempdir;
@@ -47,33 +47,25 @@ $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->i
 $t->app($app);
 
 
-ok($t->get_ok('/admin/plugin/obs_rsync/')->status_is(200), "index status");
-ok($t->tx->res->content->body_contains('Leap:15.1'),       "index content");
+$t->get_ok('/admin/plugin/obs_rsync/')->status_is(200, "index status")->element_exists('[Leap\:15.1\:ToTest]');
 
-ok($t->get_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest')->status_is(200), "project status");
-ok($t->tx->res->content->body_contains('rsync_iso.cmd'),                   "rsync iso commands");
-ok($t->tx->res->content->body_contains('rsync_repo.cmd'),                  "rsync repo commands");
-ok($t->tx->res->content->body_contains('openqa.cmd'),                      "openqa commands");
+$t->get_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest')->status_is(200, "project status")
+  ->element_exists('label[rsync_iso.cmd]')->element_exists('label[rsync_repo.cmd]')
+  ->element_exists('label[openqa.cmd]');
 
-ok($t->get_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest/runs')->status_is(200), "project logs status");
-ok($t->tx->res->content->body_contains('.run_190703_143010'),                   "project logs folder");
+$t->get_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest/runs')->status_is(200, "project logs status")
+  ->element_exists('[.run_190703_143010]');
 
-ok($t->get_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010')->status_is(200),
-    "project log subfolder status");
-ok($t->tx->res->content->body_contains('files_iso.lst'), "project log file");
+$t->get_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010')
+  ->status_is(200, "project log subfolder status")->element_exists('[files_iso.lst]');
+# "project log subfolder status")->element_exists(qr/files_iso\.lst/);
 
-ok(
-    $t->get_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010/download/files_iso.lst')
-      ->status_is(200),
-    "project log file download status"
-);
-ok($t->tx->res->content->body_contains('openSUSE-Leap-15.1-DVD-x86_64-Build470.1-Media.iso'),
-    "project log file download content");
-ok($t->tx->res->content->body_contains('openSUSE-Leap-15.1-NET-x86_64-Build470.1-Media.iso'),
-    "project log file download content");
+$t->get_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010/download/files_iso.lst')
+  ->status_is(200, "project log file download status")
+  ->content_like(qr/openSUSE-Leap-15.1-DVD-x86_64-Build470.1-Media.iso/)
+  ->content_like(qr/openSUSE-Leap-15.1-NET-x86_64-Build470.1-Media.iso/);
 
-
-ok($t->put_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest/runs')->status_is(201), "trigger rsync");
-ok($t->put_ok('/admin/plugin/obs_rsync/WRONGPROJECT/runs')->status_is(404),     "trigger rsync wrong project");
+$t->put_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest/runs')->status_is(201, "trigger rsync");
+$t->put_ok('/admin/plugin/obs_rsync/WRONGPROJECT/runs')->status_is(404, "trigger rsync wrong project");
 
 done_testing();
