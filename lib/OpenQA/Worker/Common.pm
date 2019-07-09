@@ -458,7 +458,7 @@ sub call_websocket {
                         log_error "Unable to upgrade connection for host "
                           . "\"$hosts->{$host}{url}{host}\""
                           . " to WebSocket: "
-                          . ($err->{code} ? $err->{code} : ($err->{message} ? $err->{message} : "[no code]"))
+                          . ($err->{code} ? $err->{code} : $err->{message})
                           . ". Apache modules proxy_wstunnel and rewrite enabled?";
 
                         if ($err->{code} && $err->{code} eq '404' && $hosts->{$host}{workerid}) {

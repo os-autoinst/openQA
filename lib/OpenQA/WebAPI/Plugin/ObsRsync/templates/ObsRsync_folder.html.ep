@@ -12,7 +12,7 @@
 <hr>
 <div class="container" id="content">
 <H6>Step 1. Retrieve lists of required files from predefined OBS locations.</H6>
-% if (!scalar(@$lst_files)) {
+% if (@$lst_files) {
         <label>No files have been read so far</label>
 % } else {
         <label>Lists retrieved during last run: </label>

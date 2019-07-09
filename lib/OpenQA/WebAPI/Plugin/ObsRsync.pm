@@ -14,20 +14,16 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package OpenQA::WebAPI::Plugin::ObsRsync::Plugin;
+package OpenQA::WebAPI::Plugin::ObsRsync;
 use Mojo::Base 'Mojolicious::Plugin';
-use File::Basename;
-use Mojo::Template;
-
-use OpenQA::WebAPI::Plugin::ObsRsync::Controller;
+use Mojo::File;
 
 sub register {
     my ($self, $app, $config) = @_;
-    my $admin_r        = $config->{route} // $app->routes->any('/admin/plugin');
-    my $script_dirname = dirname(__FILE__);
+    my $admin_r = $config->{route} // $app->routes->any('/admin/plugin');
 
     # Templates
-    push @{$app->renderer->paths}, "$script_dirname/templates";
+    push @{$app->renderer->paths}, Mojo::File->new(__FILE__)->dirname->child('ObsRsync')->child('templates')->to_string;
 
     $admin_r->get('/obs_rsync/#folder/runs/#subfolder/download/#filename')->name('plugin_obs_rsync_download_file')
       ->to('Plugin::ObsRsync::Controller#download_file');
@@ -38,7 +34,6 @@ sub register {
     $admin_r->get('/obs_rsync/')->name('plugin_obs_rsync_index')->to('Plugin::ObsRsync::Controller#index');
 
     $admin_r->put('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_run')->to('Plugin::ObsRsync::Controller#run');
-    OpenQA::WebAPI::Plugin::ObsRsync::Controller::init_obs_rsync($app->{config}->{obs_rsync}->{home}, $app);
 }
 
 1;
