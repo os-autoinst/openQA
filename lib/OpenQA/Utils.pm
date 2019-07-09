@@ -453,12 +453,12 @@ sub get_ws_status_only_url {
     return "liveviewhandler/tests/$job_id/developer/ws-proxy/status";
 }
 
-sub run_cmd_with_log($) {
+sub run_cmd_with_log {
     my ($cmd) = @_;
     return run_cmd_with_log_return_error($cmd)->{status};
 }
 
-sub run_cmd_with_log_return_error($) {
+sub run_cmd_with_log_return_error {
     my ($cmd) = @_;
 
     log_info('Running cmd: ' . join(' ', @$cmd));
