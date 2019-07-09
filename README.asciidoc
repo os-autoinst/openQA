@@ -49,3 +49,9 @@ effort organizing the existing issues (bugs and desired features) into
 
 Currently developers meet in IRC channel
 irc://chat.freenode.net/opensuse-factory[#opensuse-factory]
+
+== Releases
+
+openQA is developed on a continuous base where every commit in the git master
+branch is considered stable and a valid and installable version. The old tags
+on github are therefore misleading.
