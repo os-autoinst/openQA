@@ -86,6 +86,7 @@ RUN zypper in -y -C \
        'perl(LWP::Protocol::https)' \
        'perl(Minion)' \
        'perl(Module::CPANfile)' \
+       'perl(Module::Pluggable)' \
        'perl(Mojo::IOLoop::ReadWriteProcess)' \
        'perl(Mojo::Pg)' \
        'perl(Mojo::RabbitMQ::Client)' \
