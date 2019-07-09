@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014-2017 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -89,28 +89,17 @@ sub create_worker {
 }
 
 subtest 'Scheduler worker job allocation' => sub {
-
-    my $allocated;
-    my $failures;
-    my $no_actions;
-
-    #dead_workers($schema);
-
-    #
     # Step 1
-    $allocated = scheduler_step();    # Will try to allocate to previous worker and fail!
+    my $allocated = scheduler_step();    # Will try to allocate to previous worker and fail!
     is @$allocated, 0;
 
-
-    # GO GO GO GO GO!!! like crazy now
     my $w1_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 1);
     my $w2_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2);
     wait_for_worker($schema, 3);
     wait_for_worker($schema, 4);
 
-    ($allocated) = scheduler_step();    # Will try to allocate to previous worker and fail!
+    ($allocated) = scheduler_step();     # Will try to allocate to previous worker and fail!
 
-    #($allocated) = scheduler_step($reactor);
     my $job_id1 = $allocated->[0]->{job};
     my $job_id2 = $allocated->[1]->{job};
     my $wr_id1  = $allocated->[0]->{worker};
@@ -128,18 +117,15 @@ subtest 'Scheduler worker job allocation' => sub {
 };
 
 subtest 'Simulation of unstable workers' => sub {
-    my $allocated;
-
-
     my @latest = $schema->resultset("Jobs")->latest_jobs;
-
     shift(@latest)->auto_duplicate();
 
-    ($allocated) = scheduler_step();    # Will try to allocate to previous worker and fail!
+    # try to allocate to previous worker and fail!
+    my ($allocated) = scheduler_step();
 
-# Now let's simulate unstable workers :)
-# In this way the worker will associate, will be registered but won't perform any operation - will just send statuses that is free.
+    # simulate unresponsive worker which will register itself but not grab any jobs
     my $unstable_w_pid = unresponsive_worker($k->key, $k->secret, "http://localhost:$mojoport", 3);
+    # FIXME: Why waiting for worker 4 here? The "unresponsive" worker has ID 5.
     wait_for_worker($schema, 4);
 
     $allocated = scheduler_step();
@@ -160,12 +146,11 @@ subtest 'Simulation of unstable workers' => sub {
     scheduler_step();
     dead_workers($schema);
 
-    # Same job, since was put in scheduled state again.
+    # simulate unstable worker
     $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, 8);
     wait_for_worker($schema, 5);
 
     ($allocated) = scheduler_step();
-
     is @$allocated, 1;
     is @{$allocated}[0]->{job},    99982;
     is @{$allocated}[0]->{worker}, 5;
@@ -243,51 +228,34 @@ subtest 'Simulation of heavy unstable load' => sub {
 
 subtest 'Websocket server - close connection test' => sub {
     kill_service($wspid);
-    my $log_file = tempfile;
+
     local $ENV{OPENQA_LOGFILE};
     local $ENV{MOJO_LOG_LEVEL};
+
+    my $log_file        = tempfile;
     my $unstable_ws_pid = create_websocket_server($mojoport + 1, 1, 0, 1);
     my $w2_pid          = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2, $log_file);
-    my $re              = qr/\[.*?\]\sConnection turned off from .*?\- (.*?)\s\:(.*?) dead/;
 
-    my $attempts = 300;
-    do {
+    my $found_connection_closed_in_log = 0;
+    my $log_file_content               = '';
+    for (my $attempt = 0; $attempt < 300; ++$attempt) {
+        $log_file_content = $log_file->slurp;
+        if ($log_file_content =~ qr/.*Websocket connection to .* finished by remote side with code 1008.*/) {
+            $found_connection_closed_in_log = 1;
+            last;
+        }
         sleep 1;
-        $attempts--;
-    } until ((() = $log_file->slurp() =~ m/$re/g) >= 1 || $attempts <= 0);
+    }
+
+    is($found_connection_closed_in_log, 1, 'closed ws connection logged by worker');
     kill_service($_) for ($unstable_ws_pid, $w2_pid);
     dead_workers($schema);
-    my @matches = $log_file->slurp() =~ m/$re/g;
-    is $matches[0], "1008", "Connection was turned off by ws server correctly - code error is 1008";
-    like $matches[1], qr/Connection terminated from WebSocket server/,
-      "Connection was turned off by ws server correctly";
-};
 
-# This test destroys almost everything.
-# subtest 'Simulation of heavy failures' => sub {
-#     my $allocated;
-#     my @workers;
-#
-#     kill_service($wspid);
-#
-#     dead_workers($schema);
-#
-#     scheduler_step($reactor);
-#
-#     # Destroy db to achieve maximum failures - simulate when we can't reach db to update states.
-#     my $dbh = DBI->connect($ENV{TEST_PG});
-#     $dbh->do('DROP SCHEMA public CASCADE;');
-#     $dbh->do('CREATE SCHEMA public;');
-#     $dbh->disconnect;
-#
-#     ($allocated) = scheduler_step($reactor);    # Will try to allocate to previous worker and fail!
-#     is @$allocated, 0, "Everything is failing as expected - 0 allocations";
-#
-#     ($allocated) = scheduler_step($reactor);    # Will try to allocate to previous worker and fail!
-#     is @$allocated, 0, "Everything is failing as expected - 0 allocations";
-#
-#     kill_service($_, 1) for @workers;
-# };
+    if (!$found_connection_closed_in_log) {
+        note('worker log file contained:');
+        note($log_file_content);
+    }
+};
 
 kill_service($_) for ($wspid, $webapi);
 

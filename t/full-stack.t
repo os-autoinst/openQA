@@ -143,6 +143,11 @@ like($driver->find_element('#result-row .card-body')->get_text(), qr/State: sche
 javascript_console_has_no_warnings_or_errors;
 
 sub start_worker {
+    if (defined $workerpid) {
+        fail("Unable to start worker, previous worker $workerpid is still running");
+        return undef;
+    }
+
     $workerpid = fork();
     if ($workerpid == 0) {
         exec("perl ./script/worker --instance=1 $connect_args --isotovideo=../os-autoinst/isotovideo --verbose");
@@ -220,7 +225,7 @@ OpenQA::Test::FullstackUtils::client_call(
     qr|\Qtest_url => [{ 1 => "/tests/2\E|,
     'client returned new test_url'
 );
-#]} restore syntax highlighting
+#]| restore syntax highlighting
 $driver->refresh();
 like($driver->find_element('#result-row .card-body')->get_text(), qr/Cloned as 2/, 'test 1 is restarted');
 $driver->click_element_ok('2', 'link_text');
@@ -281,11 +286,10 @@ if (!$ENV{MOJO_LOG_LEVEL} || $ENV{MOJO_LOG_LEVEL} =~ /DEBUG|INFO/i) {
     my $autoinst_log = do { local ($/); <$f> };
     close($f);
 
-    like($autoinst_log, qr/result: setup failure/, 'Test 4 state correct: setup failure');
+    like($autoinst_log, qr/Result: setup failure/, 'Test 4 result correct: setup failure');
 
-    like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 4 correct autoinst setup notes');
-    like((split(/\n/, $autoinst_log))[-1], qr/uploading autoinst-log.txt/,
-        'Test 4 correct autoinst uploading autoinst');
+    like((split(/\n/, $autoinst_log))[0],  qr/\+\+\+ setup notes \+\+\+/,  'Test 4 correct autoinst setup notes');
+    like((split(/\n/, $autoinst_log))[-1], qr/Uploading autoinst-log.txt/, 'Test 4: upload of autoinst-log.txt logged');
 }
 
 kill_worker;    # Ensure that the worker can be killed with TERM signal
@@ -339,7 +343,7 @@ subtest 'Cache tests' => sub {
         qr|\Qtest_url => [{ 3 => "/tests/5\E|,
         'client returned new test_url'
     );
-    #] restore syntax highlighting in Kate
+    #]| restore syntax highlighting in Kate
 
     $driver->get('/tests/5');
     like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled')
@@ -368,7 +372,7 @@ subtest 'Cache tests' => sub {
 
         like($autoinst_log, qr/Downloading Core-7.2.iso/, 'Test 5, downloaded the right iso.');
         like($autoinst_log, qr/11116544/,                 'Test 5 Core-7.2.iso size is correct.');
-        like($autoinst_log, qr/result: done/,             'Test 5 result done');
+        like($autoinst_log, qr/Result: done/,             'Test 5 result done');
         like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 5 correct autoinst setup notes');
         like(
             (split(/\n/, $autoinst_log))[-1],
@@ -411,7 +415,7 @@ subtest 'Cache tests' => sub {
         qr|\Qtest_url => [{ 5 => "/tests/6\E|,
         'client returned new test_url'
     );
-    #] restore syntax highlighting in Kate
+    #]| restore syntax highlighting in Kate
 
     $driver->get('/tests/6');
     like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 6 is scheduled');
@@ -433,7 +437,7 @@ subtest 'Cache tests' => sub {
         qr|\Qtest_url => [{ 6 => "/tests/7\E|,
         'client returned new test_url'
     );
-    #] restore syntax highlighting in Kate
+    #]| restore syntax highlighting in Kate
     $driver->get('/tests/7');
     like($driver->find_element('#result-row .card-body')->get_text(), qr/State: scheduled/, 'test 7 is scheduled');
     start_worker;
@@ -481,38 +485,10 @@ subtest 'Cache tests' => sub {
 
         like($autoinst_log, qr/non-existent.qcow2 failed with: 404 - Not Found/,
             'Test 8 failure message found in log.');
-        like($autoinst_log, qr/result: setup failure/, 'Test 8 state correct: setup failure');
+        like($autoinst_log, qr/Result: setup failure/, 'Test 8 state correct: setup failure');
     }
 
     kill_worker;
-};
-
-
-subtest 'Isotovideo version' => sub {
-    use OpenQA::Worker::Engines::isotovideo;
-    use OpenQA::Worker;
-
-    eval { OpenQA::Worker::Engines::isotovideo::set_engine_exec('/bogus/location'); };
-    is($OpenQA::Worker::Common::isotovideo_interface_version,
-        0, 'providing wrong isotovideo binary causes isotovideo version to remain 0');
-    like($@, qr/Path to isotovideo invalid/, 'isotovideo version path invalid');
-
-    # init does not fail without isotovideo parameter
-    # note that this might set the isotovideo version because the isotovideo path defaults
-    # to /usr/bin/isotovideo
-    OpenQA::Worker::init({}, {apikey => 123, apisecret => 456, instance => 1});
-    $OpenQA::Worker::Common::isotovideo_interface_version = 0;
-
-    OpenQA::Worker::Engines::isotovideo::set_engine_exec('../os-autoinst/isotovideo');
-    ok($OpenQA::Worker::Common::isotovideo_interface_version > 0, 'update isotovideo version via set_engine_exec');
-
-    $OpenQA::Worker::Common::isotovideo_interface_version = 0;
-    OpenQA::Worker::init({},
-        {apikey => 123, apisecret => 456, instance => 1, isotovideo => '../os-autoinst/isotovideo'});
-    ok(
-        $OpenQA::Worker::Common::isotovideo_interface_version > 0,
-        'update isotovideo version indirectly via OpenQA::Worker::init'
-    );
 };
 
 done_testing;

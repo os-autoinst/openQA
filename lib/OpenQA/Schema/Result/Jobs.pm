@@ -1180,15 +1180,14 @@ sub create_result_dir {
 }
 
 sub update_module {
-    my ($self, $name, $result, $cleanup) = @_;
+    my ($self, $name, $result) = @_;
 
-    $cleanup //= 0;
     my $mod = $self->modules->find({name => $name});
     return unless $mod;
     $self->create_result_dir();
 
     $mod->update_result($result);
-    return $mod->save_details($result->{details}, $cleanup);
+    return $mod->save_details($result->{details});
 }
 
 # computes the progress info for the current job
@@ -1420,8 +1419,7 @@ sub update_status {
     my %known;
     if ($status->{result}) {
         while (my ($name, $result) = each %{$status->{result}}) {
-            # in interactive mode, updating the symbolic link if needed
-            my $existent = $self->update_module($name, $result, $status->{status}->{needinput}) || [];
+            my $existent = $self->update_module($name, $result) || [];
             for (@$existent) { $known{$_} = 1; }
         }
     }

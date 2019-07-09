@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,19 +16,18 @@
 package OpenQA::Worker::Cache::Client;
 use Mojo::Base -base;
 
+use OpenQA::Worker::Settings;
 use OpenQA::Worker::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE);
-use OpenQA::Worker::Common;
 use OpenQA::Worker::Cache::Request;
 use OpenQA::Worker::Cache::Request::Asset;
 use OpenQA::Worker::Cache::Request::Sync;
 use Mojo::URL;
 use Mojo::File 'path';
 
-has host  => 'http://127.0.0.1:7844';
-has retry => 5;
-has cache_dir =>
-  sub { $ENV{CACHE_DIR} || (OpenQA::Worker::Common::read_worker_config(undef, undef))[0]->{CACHEDIRECTORY} };
-has ua => sub { Mojo::UserAgent->new };
+has host      => 'http://127.0.0.1:7844';
+has retry     => 5;
+has cache_dir => sub { $ENV{CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
+has ua        => sub { Mojo::UserAgent->new };
 
 sub _url { Mojo::URL->new(shift->host)->path(shift)->to_string }
 
@@ -111,7 +110,7 @@ sub request { OpenQA::Worker::Cache::Request->new(client => shift) }
 sub availability_error {
     my ($self) = @_;
 
-    return 'Cache service not available.'            unless $self->available;
+    return 'Cache service not reachable.'            unless $self->available;
     return 'No workers active in the cache service.' unless $self->available_workers;
     return undef;
 }

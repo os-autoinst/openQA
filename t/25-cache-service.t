@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (c) 2018 SUSE LLC
+# Copyright (c) 2018-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -96,7 +96,7 @@ sub start_server {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart->restart;
     $worker_cache_service->restart;
-    sleep 2 and diag "Wait server to be available" until $cache_client->available;
+    sleep 2 and diag "Wait server to be reachable." until $cache_client->available;
     return;
 }
 
@@ -159,7 +159,7 @@ sub test_download {
 subtest 'Availability check and worker status' => sub {
     my $client_mock = Test::MockModule->new('OpenQA::Worker::Cache::Client');
 
-    is($cache_client->availability_error, 'Cache service not available.', 'cache service not available');
+    is($cache_client->availability_error, 'Cache service not reachable.', 'cache service not available');
 
     $client_mock->mock(available         => sub { return 1; });
     $client_mock->mock(available_workers => sub { return 0; });
@@ -167,34 +167,6 @@ subtest 'Availability check and worker status' => sub {
 
     $client_mock->mock(available_workers => sub { return 1; });
     is($cache_client->availability_error, undef, 'no error');
-
-    $client_mock->mock(available => sub { return 0; });
-    OpenQA::Worker::Common::check_availability();
-    is($OpenQA::Worker::Common::current_error, undef, 'no error if worker cache not configured');
-
-    $OpenQA::Worker::Common::worker_settings = {CACHEDIRECTORY => 'FOO'};
-    OpenQA::Worker::Common::check_availability();
-    is($OpenQA::Worker::Common::current_error, 'Cache service not available.', 'error set if cache configured');
-
-    my $tx = OpenQA::Test::FakeWebSocketTransaction->new();
-    OpenQA::Worker::Common::send_status($tx);
-    is_deeply(
-        $tx->sent_messages,
-        [
-            {
-                json => {
-                    type   => 'worker_status',
-                    status => 'broken',
-                    reason => 'Cache service not available.',
-                },
-            },
-        ],
-        'brokenness communicated to web UI'
-    ) or diag explain $tx->sent_messages;
-
-    $client_mock->mock(available => sub { return 1; });
-    OpenQA::Worker::Common::check_availability();
-    is($OpenQA::Worker::Common::current_error, undef, 'error state cleared');
 
     $client_mock->unmock_all();
 };
