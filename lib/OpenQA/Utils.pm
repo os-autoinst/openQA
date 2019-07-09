@@ -85,7 +85,6 @@ our @EXPORT  = qw(
   loaded_plugins
   hashwalker
   read_test_modules
-  exists_worker
   feature_scaling
   logistic_map_steps
   logistic_map
@@ -411,7 +410,7 @@ sub get_channel_handle {
     }
 }
 
-sub save_base64_png($$$) {
+sub save_base64_png {
     my ($dir, $newfile, $png) = @_;
     return unless $newfile;
     # sanitize
@@ -760,15 +759,6 @@ sub create_downloads_list {
         }
     }
     return \%downloads;
-}
-
-sub exists_worker($$) {
-    my $schema   = shift;
-    my $workerid = shift;
-    die "invalid worker id\n" unless $workerid;
-    my $rs = $schema->resultset("Workers")->find($workerid);
-    die "invalid worker id $workerid\n" unless $rs;
-    return $rs;
 }
 
 sub _round_a_bit {
