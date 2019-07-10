@@ -241,9 +241,13 @@ subtest 'add test suite' => sub() {
     );
 
     is($driver->find_element_by_xpath('//input[@value="New test suite"]')->click(), 1, 'new test suite');
-    $elem = $driver->find_element('.admintable tbody tr:last-child');
-    is($search_input->get_value(), '', 'search cleared');
-    is($elem->get_text(),          '', 'new row empty');
+    is($search_input->get_value(), '((DESKTOP=kdeINSTALLONLY=1)|(new row))', 'search cleared');
+    @cells = $driver->find_child_elements($elem, 'td');
+    is(scalar @cells,                             2 * $column_count, 'filtered row and empty row present');
+    is($cells[0 * $column_count + 0]->get_text(), 'RAID0',           'filtered row has correct name');
+    is($cells[1 * $column_count + 0]->get_text(), '',                'name of new row is empty');
+    is($cells[1 * $column_count + 1]->get_text(), '',                'settings of new row are empty');
+    is($cells[1 * $column_count + 2]->get_text(), '',                'description of new row is empty');
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]', 'xpath');
     is(@fields, 1, '1 input field');
     (shift @fields)->send_keys('xfce');    # name
@@ -252,7 +256,11 @@ subtest 'add test suite' => sub() {
 
     is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
     wait_for_ajax;
-    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 8, "8 edit buttons afterwards");
+    is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')},
+        2, '2 edit buttons afterwards (for row matching previously entered filter and submitted row)');
+
+    # clear admin table search
+    $driver->execute_script('window.adminTable.search("")');
 
     # can add entry with single, double quotes, special chars
     my ($suiteName, $suiteKey, $suiteValue) = qw(t"e\\st'Suite\' te\'\\st"Ke"y; te'\""stVa;l%&ue);
