@@ -17,9 +17,8 @@ cache:
   directories:
   - assets/cache
 script:
-- mkdir -p assets/cache && chmod a+w assets/cache
+- mkdir -p assets/cache && chmod a+w assets/cache && sudo chown -R 1000:1000 assets/cache
 - touch openqa-debug.log autoinst-log.txt && chmod a+w openqa-debug.log autoinst-log.txt
-- sudo chown -R 1000:1000 assets/cache
 # as long as we have some unfixed flaky tests we should let travis CI retry,
 # not humans :)
 # known issues:
