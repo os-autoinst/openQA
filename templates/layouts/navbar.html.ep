@@ -53,6 +53,10 @@
                   <!-- Sure this is not the proper place for the workers view,
                   but the previous one was even more annoying -->
                   %= link_to 'Workers' => url_for('admin_workers') => class => 'dropdown-item'
+                  % my $operator_links = config->{plugin_links}{operator};
+                  % for my $name (sort keys %$operator_links) {
+                    %= link_to $name => url_for($operator_links->{$name}) => class => 'dropdown-item'
+                  % }
                   % if (is_admin) {
                       %= tag 'div' => class => 'dropdown-divider'
                       %= tag 'h3' => class => 'dropdown-header' => 'Administrators Menu'
@@ -60,6 +64,10 @@
                       %= link_to('Needles' => url_for('admin_needles') => class => 'dropdown-item')
                       %= link_to('Audit log' => url_for('audit_log') => class => 'dropdown-item')
                       %= link_to('Minion Dashboard' => url_for('minion_dashboard') => class => 'dropdown-item')
+                      % my $admin_links = config->{plugin_links}{admin};
+                      % for my $name (sort keys %$admin_links) {
+                        %= link_to $name => url_for($admin_links->{$name}) => class => 'dropdown-item'
+                      % }
                   % }
                   %= tag 'div' => class => 'dropdown-divider'
                   % if (is_operator) {

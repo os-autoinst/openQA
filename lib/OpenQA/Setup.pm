@@ -163,6 +163,10 @@ sub read_config {
         audit => {
             blacklist => '',
         },
+        plugin_links => {
+            operator => {},
+            admin    => {}
+        },
         amqp => {
             reconnect_timeout => 5,
             url               => 'amqp://guest:guest@localhost:5672/',
