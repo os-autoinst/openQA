@@ -23,6 +23,7 @@ use FindBin;
 use lib ("$FindBin::Bin/lib", "$FindBin::Bin/../lib");
 use Mojo::Base -strict;
 use Mojo::File qw(tempdir path);
+use Mojolicious;
 use Test::Fatal;
 use Test::Output 'combined_like';
 use Test::More;
@@ -32,6 +33,10 @@ use OpenQA::Worker;
 use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
 use OpenQA::Worker::Engines::isotovideo;
+
+# use Mojo::Log and be sure to log debug messages
+my $app = $OpenQA::Utils::app = Mojolicious->new;
+$app->log->level('debug');
 
 # define a minimal fake worker and fake client
 {
@@ -127,7 +132,7 @@ $testresults_directory->make_path;
 $testresults_directory->child('test_order.json')->spurt('[]');
 
 # try to start job
-$job->start();
+combined_like(sub { $job->start(); }, qr/Unable to setup job 1\: some error/, 'error logged');
 Mojo::IOLoop->start unless $job->status eq 'stopped';
 is($job->status,      'stopped',    'job is stopped due to the mocked error');
 is($job->setup_error, 'some error', 'setup error recorded');
@@ -145,10 +150,14 @@ $job->{_id} = 2;
 
 # try to start job again pretenting isotovideo could actually be spawned
 $engine_mock->mock(engine_workit => sub { {child => $isotovideo} });
-$job->start();
-
-# wait until first status upload has been concluded
-wait_until_upload_concluded($job);
+combined_like(
+    sub {
+        $job->start();
+        wait_until_upload_concluded($job);
+    },
+    qr/isotovideo has been started/,
+    'isotovideo startup logged'
+);
 is($job->is_uploading_results, 0,         'uploading results concluded');
 is($job->status,               'running', 'job is running now');
 ok($job->{_upload_results_timer}, 'timer for uploading results assigned');
@@ -157,17 +166,23 @@ ok($job->{_timeout_timer},        'timer for timeout assigned');
 # perform another result upload triggered via start_livelog
 # also assume that a developer mode sesssion is running
 $job->developer_session_running(1);
-$job->start_livelog;
+combined_like(sub { $job->start_livelog; }, qr/Starting livelog/, 'start of livelog logged');
 is($job->livelog_viewers, 1, 'has now one livelog viewer');
 wait_until_upload_concluded($job);
-$job->stop_livelog;
+combined_like(sub { $job->stop_livelog; }, qr/Stopping livelog/, 'stopping of livelog logged');
 is($job->livelog_viewers, 0, 'no livelog viewers anymore');
 
 # stop job again
 is($isotovideo->is_running, 1, 'not attempted to stop fake isotovideo so far');
-$job->stop('done');
+combined_like(
+    sub {
+        $job->stop('done');
+        wait_until_upload_concluded($job);
+    },
+    qr/Result\: done.*Uploading autoinst-log\.txt/s,
+    'result and uploading logged'
+);
 Mojo::IOLoop->start unless $job->status eq 'stopped';
-wait_until_upload_concluded($job);
 is($job->status,            'stopped', 'job is stopped now');
 is($isotovideo->is_running, 0,         'isotovideo stopped');
 

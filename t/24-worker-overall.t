@@ -23,6 +23,7 @@ use FindBin;
 use lib ("$FindBin::Bin/lib", "$FindBin::Bin/../lib");
 use Mojo::Base -strict;
 use Mojo::File 'tempdir';
+use Mojolicious;
 use Test::Fatal;
 use Test::Output 'combined_like';
 use Test::More;
@@ -31,6 +32,11 @@ use OpenQA::Worker::Job;
 
 $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-overall";
 
+# enforce logging to stdout/stderr for combined_like checks
+# note: The worker instantiates OpenQA::Setup which would configure logging to use the output
+#       file specified via OPENQA_LOGFILE instead of stdout/stderr.
+$ENV{OPENQA_LOGFILE} = undef;
+
 like(
     exception {
         OpenQA::Worker->new({instance => 'foo'});
@@ -38,20 +44,24 @@ like(
     qr{.*the specified instance number \"foo\" is no number.*},
     'instance number must be a number',
 );
-
 my $worker = OpenQA::Worker->new({instance => 1, apikey => 'foo', apisecret => 'bar', verbose => 1});
 ok(my $settings = $worker->settings, 'settings instantiated');
 delete $settings->global_settings->{LOG_DIR};
-$worker->init;
+combined_like(
+    sub { $worker->init; },
+    qr/Ignoring host.*Working directory does not exist/,
+    'hosts with non-existant working directory ignored and error logged'
+);
+is($worker->app->level, 'debug', 'log level set to debug with verbose switch');
 my @webui_hosts = sort keys %{$worker->clients_by_webui_host};
 is_deeply(\@webui_hosts, [qw(http://localhost:9527 https://remotehost)], 'client for each web UI host')
   or diag explain \@webui_hosts;
 
-subtest 'setup info' => sub {
-    my $setup_info = $worker->log_setup_info;
-    like($setup_info, qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*/, 'setup info contains hosts');
-    like($setup_info, qr/.*qemu_i386,qemu_x86_64.*/, 'setup info contains worker classes');
-};
+combined_like(
+    sub { $worker->log_setup_info; },
+    qr/.*http:\/\/localhost:9527,https:\/\/remotehost.*qemu_i386,qemu_x86_64.*/s,
+    'setup info'
+);
 
 subtest 'capabilities' => sub {
     my $capabilities      = $worker->capabilities;
@@ -94,8 +104,16 @@ subtest 'status' => sub {
 
     $worker->current_job(undef);
     $worker->settings->global_settings->{CACHEDIRECTORY} = 'foo';
+    my $worker_status;
+    combined_like(
+        sub {
+            $worker_status = $worker->status;
+        },
+        qr/Worker cache not available: Cache service not reachable\./,
+        'worker cache error logged'
+    );
     is_deeply(
-        $worker->status,
+        $worker_status,
         {
             type   => 'worker_status',
             status => 'broken',
