@@ -5,6 +5,8 @@ services:
 env:
   global:
   - COMMIT_AUTHOR_EMAIL=skynet@open.qa
+  - IMAGE=registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
+  - CACHE_FILE=container_cache/openqa_dev.tgz
 matrix:
   include:
     - name: "unit- and integration tests"
@@ -21,10 +23,20 @@ matrix:
       if: branch = master AND fork = false
       env: GH_PUBLISH=true
 before_script:
-- docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
+  # Keep a docker image in cache to save downloading time, inspired by
+  # https://github.com/travis-ci/travis-ci/issues/5358#issuecomment-485726973
+  - |
+    if [ -f $CACHE_FILE ]; then
+      docker load -i $CACHE_FILE
+    else
+      mkdir -p container_cache
+      docker pull $IMAGE
+      docker save $IMAGE | gzip -c > $CACHE_FILE
+    fi
 cache:
   directories:
   - assets/cache
+  - container_cache
 script:
   - |
     if [ -n "$GH_PUBLISH" ]; then
