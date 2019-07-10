@@ -41,8 +41,8 @@ aliases:
       find /var/cache/zypp/packages/ -iname *.rpm > ./logs/packages.txt
 
   - &store_logs
-      path: logs
-      destination: artifacts
+    path: logs
+    destination: artifacts
 
   - &install_cached_packages
     name: Install cached packages
@@ -238,7 +238,7 @@ jobs:
 
   api:
     <<: *test-template
-  
+
   unstable:
     <<: *test-template
 
@@ -300,50 +300,50 @@ workflows:
     jobs:
       - cache
       - t:
-         requires:
-           - cache
+          requires:
+            - cache
       - api:
-         requires:
-           - cache
+          requires:
+            - cache
       - ui:
-         requires:
-           - cache
+          requires:
+            - cache
       - unstable:
-         requires:
-           - cache
+          requires:
+            - cache
       - cache.fullstack:
-         requires:
-           - cache
+          requires:
+            - cache
       - fullstack:
-         requires:
-           - cache.fullstack
+          requires:
+            - cache.fullstack
       - developer:
-         requires:
-           - cache.fullstack
+          requires:
+            - cache.fullstack
       - scheduler:
-         requires:
-           - cache.fullstack
+          requires:
+            - cache.fullstack
       - codecov:
-         requires:
-           - t
-           - api
-           - ui
-           - unstable
-           - fullstack
-           - developer
-           - scheduler
+          requires:
+            - t
+            - api
+            - ui
+            - unstable
+            - fullstack
+            - developer
+            - scheduler
       - build-docs:
-         requires:
-           - cache
+          requires:
+            - cache
 
   nightly:
-   triggers:
-     - schedule:
-         cron: "0 0 * * *"
-         filters:
-           branches:
-             only:
-               - master
-   jobs:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
       - dependencies-pr
       - build-docs-nightly

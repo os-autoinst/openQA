@@ -231,4 +231,6 @@ perl-XML-SemanticDiff-1.0006
 perl-XML-Simple-2.24
 perl-YAML-1.24
 perl-YAML-LibYAML-0.80
+python3-setuptools-40.5.0
+python3-yamllint-1.15.0
 ShellCheck-0.6.0

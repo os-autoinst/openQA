@@ -8,7 +8,7 @@ coverage:
   round: down
   precision: 2
   status:
-    changes: no
+    changes: false
     project:
       default:
         target: 85.7
