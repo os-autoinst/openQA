@@ -55,7 +55,7 @@ update_api() {
         mkdir -p api/src
         curl -o api/src/testapi.pm https://raw.githubusercontent.com/os-autoinst/os-autoinst/master/testapi.pm
         cd api
-        "${TRAVIS_BUILD_DIR}"/script/generate-documentation-genapi.pl
+        "${TRAVIS_BUILD_DIR}"/script/generate-documentation-genapi
 
         find . -name '*.asciidoc' -not -name 'header' -exec "${asciidoctor_bin}" {} \;
         while IFS= read -r -d '' file
