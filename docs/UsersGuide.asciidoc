@@ -58,7 +58,7 @@ and for what kind of machines it will be executed. For example, a test suite
 like +openSUSE-DVD-x86_64+ and +openSUSE-NET-i586+, and can be tested in
 different x86-64 and i586 machines like +64bit+, +64bit_USBBoot+, +32bit+. In
 this example we could have the following test scenarios considering that the
-``x86_64'' flavor is not compatible with the +32bit+ machine:
+"`x86_64`" flavor is not compatible with the +32bit+ machine:
 
 * openSUSE-DVD-x86_64-kde-64bit
 * openSUSE-DVD-x86_64-kde-64bit_USBBoot
@@ -335,7 +335,7 @@ image::images/labels_closed_tickets.png[Example for visualization of closed issu
 
 === Distinguish product and test issues bugref https://github.com/os-autoinst/openQA/pull/708[gh#708]
 
-``progress.opensuse.org'' is used to track test issues, bugzilla for product
+"`progress.opensuse.org`" is used to track test issues, bugzilla for product
 issues, at least for SUSE/openSUSE. openQA bugrefs distinguish this and show
 corresponding icons
 
@@ -397,13 +397,13 @@ image::images/highlighting_job_dependencies.png[highlighted child jobs]
 
 === Show previous results in test results page https://github.com/os-autoinst/openQA/pull/538[gh#538]
 
-On a tests result page there is a tab for ``Next & previous results'' showing
+On a tests result page there is a tab for "`Next & previous results`" showing
 the result of test runs in the same scenario. This shows next and previous
 builds as well as test runs in the same build. This way you can easily check
 and compare results from before including any comments, labels, bug references
-(see next section). This helps to answer questions like ``Is this a new
-issue'', ``Is it reproducible'', ``has it been seen in before'', ``how does the
-history look like''.
+(see next section). This helps to answer questions like "`Is this a new
+issue`", "`Is it reproducible`", "`has it been seen in before`", "`how does
+the history look like`".
 
 Querying the database for former test runs of the same scenario is a
 rather costly operation which we do not want to do for multiple test
@@ -421,7 +421,7 @@ image::images/test_details-next_and_previous.png[Next and previous job results]
 === Link to latest in scenario name https://github.com/os-autoinst/openQA/pull/836[gh#836]
 
 Find the always latest job in a scenario with the link after the
-scenario name in the tab ``Next & previous results'' Screenshot:
+scenario name in the tab "`Next & previous results`" Screenshot:
 image::images/test_details-link_to_latest.png[Link to latest in scenario]
 
 
@@ -434,7 +434,7 @@ the person has to always update the URL. If there would be a static URL
 even the browser can be instructed to reload the page automatically
 * for linking to the always current execution of the last job within one
 scenario, e.g. to respond faster to the standard question in bug reports
-``does this bug still happen?''
+"`does this bug still happen?`"
 
 Examples:
 
@@ -449,7 +449,7 @@ machines. To be more specific, add the other query entries.
 
 This allows e.g. to show only failed builds. Could be included like in
 http://lists.opensuse.org/opensuse-factory/2016-02/msg00018.html for
-``known defects''.
+"`known defects`".
 
 Example: Add query parameters like `…&result=failed&arch=x86_64` to show
 only failed for the single architecture selected.
