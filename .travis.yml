@@ -5,12 +5,18 @@ services:
 env:
   global:
   - COMMIT_AUTHOR_EMAIL=skynet@open.qa
-  matrix:
-  - FULLSTACK=0 UITESTS=0
-  - FULLSTACK=0 UITESTS=1
-  - GH_PUBLISH=true FULLSTACK=1
-  - SCHEDULER_FULLSTACK=1
-  - DEVELOPER_FULLSTACK=1
+matrix:
+  include:
+    - name: "unit- and integration tests"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "UI tests"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "fullstack test"
+      env: GH_PUBLISH=true FULLSTACK=1
+    - name: "scheduler fullstack test"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "developer fullstack test"
+      env: DEVELOPER_FULLSTACK=1
 before_script:
 - docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
 cache:
