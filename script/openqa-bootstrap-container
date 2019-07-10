@@ -14,7 +14,13 @@ set -x
 CONTAINER_NAME="openqa1"
 CONTAINER_PATH="/var/lib/machines/${CONTAINER_NAME}"
 
-DEFAULT_REPO="${DEFAULT_REPO:="http://download.opensuse.org/tumbleweed/repo/oss/"}"
+ARCH="${ARCH:=$(arch)}"
+if [ "$ARCH" = "x86_64" ]; then
+    DEFAULT_REPO="${DEFAULT_REPO:="http://download.opensuse.org/tumbleweed/repo/oss/"}"
+else
+    DEFAULT_REPO="${DEFAULT_REPO:="http://download.opensuse.org/ports/$ARCH/tumbleweed/repo/oss/"}"
+fi
+
 PKGS_TO_INSTALL="aaa_base systemd shadow zypper openSUSE-release vim iproute2 iputils openQA-local-db openQA-worker sudo apache2 net-tools curl wget ca-certificates-mozilla qemu-arm qemu-ppc qemu-x86 openQA-bootstrap"
 
 zypper -n install systemd-container
@@ -56,7 +62,7 @@ EOF
 
 if [ ! -d $CONTAINER_PATH ] ; then
     mkdir -p $CONTAINER_PATH
-    zypper -n --root $CONTAINER_PATH addrepo $DEFAULT_REPO defaultrepo
+    zypper -n --root $CONTAINER_PATH addrepo "$DEFAULT_REPO" defaultrepo
     zypper -n --root $CONTAINER_PATH --gpg-auto-import-keys refresh
     # There are non-fatal errors when zyppering inside chroot, so ignoring errors on the next line
     # Allow command line options without quotes

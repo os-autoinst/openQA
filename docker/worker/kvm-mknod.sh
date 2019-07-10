@@ -3,7 +3,7 @@
 
 set -e
 
-lsmod | grep '\<kvm\>' > /dev/null || {
+test $(gunzip -c /proc/config.gz | grep CONFIG_KVM=y) || lsmod | grep '\<kvm\>' > /dev/null || {
   echo >&2 "KVM module not loaded; software emulation will be used"
   exit 1
 }
