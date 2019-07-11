@@ -36,30 +36,6 @@ OpenQA::Test::Case->new->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-# monkey-patch custom helper websocket_nok - copied from websocked_ok and altered
-sub Test::Mojo::websocket_nok {
-    my ($self, $url) = @_;
-    local $Test::Builder::Level = $Test::Builder::Level + 1;
-
-    my $tx = $self->ua->build_websocket_tx(@_);
-
-    # Establish WebSocket connection
-    @$self{qw(finished messages)} = (undef, []);
-    $self->ua->start(
-        $tx => sub {
-            my ($ua, $tx) = @_;
-            $self->{finished} = [] unless $self->tx($tx)->tx->is_websocket;
-            $tx->on(finish => sub { shift; $self->{finished} = [@_] });
-            $tx->on(binary => sub { push @{$self->{messages}}, [binary => pop] });
-            $tx->on(text   => sub { push @{$self->{messages}}, [text   => pop] });
-            Mojo::IOLoop->stop;
-        });
-    Mojo::IOLoop->start;
-
-    my $desc = encode 'UTF-8', "WebSocket handshake with $url should fail";
-    return $self->_test('ok', !$self->tx->is_websocket, $desc);
-}
-
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
 my $app = $t->app;
@@ -154,43 +130,5 @@ subtest 'wrong api key - replay attack' => sub() {
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
     is($t->tx->res->json->{error}, 'timestamp mismatch', 'timestamp mismatch error');
 };
-
-
-SKIP: {
-    skip "FIXME: how to test Mojo::Lite using Mojo::Test?", 1;
-    # Public access to read workers
-    $t->get_ok('/api/v1/workers')->status_is(200);
-    $t->get_ok('/api/v1/workers/1')->status_is(200);
-    # But access without API key is denied for websocket connection
-    $t->websocket_nok('/api/v1/workers/1/ws');
-
-    # Valid key with no expiration date works
-    $t->ua->apikey('PERCIVALKEY02');
-    $t->ua->apisecret('PERCIVALSECRET02');
-    $t->websocket_ok('/api/v1/workers/1/ws')->finish_ok;
-
-    # But only with the right secret
-    $t->ua->apisecret('PERCIVALNOSECRET');
-    $t->websocket_nok('/api/v1/workers/1/ws');
-
-    # Keys that are still valid also work
-    $t->ua->apikey('PERCIVALKEY01');
-    $t->ua->apisecret('PERCIVALSECRET01');
-    $t->websocket_ok('/api/v1/workers/1/ws')->finish_ok;
-
-    # But expired ones don't
-    $t->ua->apikey('EXPIREDKEY01');
-    $t->ua->apisecret('WHOCARESAFTERALL');
-    $t->websocket_nok('/api/v1/workers/1/ws');
-
-    # Of course, non-existent keys fail
-    $t->ua->apikey('INVENTEDKEY01');
-    $t->websocket_nok('/api/v1/workers/1/ws');
-
-    # Valid keys are rejected if the associated user is not operator
-    $t->ua->apikey('LANCELOTKEY01');
-    $t->ua->apisecret('MANYPEOPLEKNOW');
-    $t->websocket_nok('/api/v1/workers/1/ws');
-}
 
 done_testing();
