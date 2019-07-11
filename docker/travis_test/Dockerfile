@@ -111,6 +111,7 @@ RUN zypper in -y -C \
        'perl(Socket::MsgHdr)' \
        'perl(Sort::Versions)' \
        'perl(Test::Compile)' \
+       'perl(Test::Strict)' \
        'perl(Test::Fatal)' \
        'perl(Test::Pod)' \
        'perl(Test::Mock::Time)' \
