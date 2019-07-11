@@ -45,7 +45,7 @@ sub parse {
     my $m = 0;
     while (my $res = $tap->next) {
         my $result = $res;
-        if ($result->raw =~ m/^(.*\.(:?tap|t)) \.{2}/g) {
+        if ($result->raw =~ m/^(.*\.(?:[a-zA-Z0-9]+)) \.{2}/g) {
             # most cases, teh output of a prove run will contain
             # "/t/$filename.tap .." as name of the file
             # use this to get the filename

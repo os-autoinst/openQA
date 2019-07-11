@@ -564,7 +564,7 @@ sub test_tap_file {
         });
 }
 
-subtest tap_parse => sub {
+subtest tap_parse_ok => sub {
     my $parser = OpenQA::Parser::Format::TAP->new;
 
     my $tap_test_file = path($FindBin::Bin, "data")->child("tap_format_example.tap");
@@ -581,7 +581,34 @@ subtest tap_parse => sub {
     is scalar @{$parser->results->last->details}, 6, '1 test cases details';
 
     is $_->{result}, 'ok', 'All testcases are passing' for @{$parser->results->first->details};
+};
 
+subtest tap_parse_fail => sub {
+    # test other suffix and failing test
+    my $tap_test_file = path($FindBin::Bin, "data")->child("tap_format_example2.tap");
+
+    my $parser = OpenQA::Parser::Format::TAP->new;
+    $parser->load($tap_test_file);
+
+    is $parser->results->size, 1, "One test file";
+    is $parser->results->first->result, 'fail', 'tests failed';
+
+    is scalar @{$parser->results->first->details}, 2, '2 test cases details';
+
+    is $parser->results->first->details->[0]->{result}, 'ok',   'Test 1 passed';
+    is $parser->results->first->details->[1]->{result}, 'fail', 'Test 2 failed';
+};
+
+subtest tap_parse_invalid => sub {
+    # test invalid TAP
+    my $tap_test_file = path($FindBin::Bin, "data")->child("tap_format_example3.tap");
+
+    my $parser = OpenQA::Parser::Format::TAP->new;
+
+    eval { $parser->load($tap_test_file) };
+    my $error = $@;
+
+    like $error, qr{A valid TAP starts with filename.tap}, "Invalid TAP example";
 };
 
 sub test_ltp_file {
