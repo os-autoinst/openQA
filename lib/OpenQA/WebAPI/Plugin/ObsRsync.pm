@@ -37,6 +37,8 @@ sub register {
     $plugin_r->get('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_logs')->to('Plugin::ObsRsync::Controller#logs');
     $plugin_r->get('/obs_rsync/#folder')->name('plugin_obs_rsync_folder')->to('Plugin::ObsRsync::Controller#folder');
     $plugin_r->get('/obs_rsync/')->name('plugin_obs_rsync_index')->to('Plugin::ObsRsync::Controller#index');
+
+    $app->config->{plugin_links}{operator}{'OBS Sync'} = 'plugin_obs_rsync_index';
 }
 
 1;
