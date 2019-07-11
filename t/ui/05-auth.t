@@ -31,6 +31,15 @@ $test_case->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
+subtest 'authentication routes for plugins' => sub {
+    my $ensure_admin = $t->app->routes->find('ensure_admin');
+    ok $ensure_admin, 'ensure_admin route found';
+    $ensure_admin->get('/admin_plugin' => {text => 'Admin plugin works!'});
+    my $ensure_operator = $t->app->routes->find('ensure_operator');
+    ok $ensure_operator, 'ensure_operator route found';
+    $ensure_operator->get('/operator_plugin' => {text => 'Operator plugin works!'});
+};
+
 #
 # No login, no user-info and no api_keys
 my $res = OpenQA::Test::Case::trim_whitespace(
@@ -38,6 +47,7 @@ my $res = OpenQA::Test::Case::trim_whitespace(
 is($res, 'Login', 'no-one logged in');
 $t->get_ok('/api_keys')->status_is(302);
 
+#
 # So let's log in as an unpriviledged user
 $test_case->login($t, 'https://openid.camelot.uk/lancelot');
 # ...who should see a logout option but no link to API keys
@@ -45,6 +55,11 @@ $res = OpenQA::Test::Case::trim_whitespace(
     $t->get_ok('/tests')->status_is(200)->tx->res->dom->at('#user-action')->all_text);
 like($res, qr/Logged in as lance Operators Menu.*Logout/, 'lance is logged in');
 $t->get_ok('/api_keys')->status_is(403);
+
+#
+# Unprivileged users can't access the plugins either
+$t->get_ok('/admin/admin_plugin')->status_is(403);
+$t->get_ok('/admin/operator_plugin')->status_is(403);
 
 #
 # Then logout
@@ -81,5 +96,16 @@ like(
 );
 unlike($actions, qr/Administrators Menu/, 'perci has no admin links');
 $t->get_ok('/api_keys')->status_is(200);
+
+#
+# Operator user can access the operator plugin but not the admin plugin
+$t->get_ok('/admin/admin_plugin')->status_is(403);
+$t->get_ok('/admin/operator_plugin')->status_is(200)->content_is('Operator plugin works!');
+
+#
+# Admin user can access everything
+$t->app->schema->resultset('Users')->search({username => 'percival'})->next->update({is_admin => 1});
+$t->get_ok('/admin/operator_plugin')->status_is(200)->content_is('Operator plugin works!');
+$t->get_ok('/admin/admin_plugin')->status_is(200)->content_is('Admin plugin works!');
 
 done_testing();
