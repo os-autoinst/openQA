@@ -14,11 +14,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+use Mojo::Base -strict;
+
 BEGIN {
     unshift @INC, 'lib';
 }
 
-use Mojo::Base -strict;
 use Mojo::File qw(tempdir);
 use FindBin;
 use lib "$FindBin::Bin/../lib";
@@ -46,26 +47,24 @@ my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
+# needs to log in (it gets redirected)
+$t->get_ok('/admin/obs_rsync/');
 
-$t->get_ok('/admin/plugin/obs_rsync/')->status_is(200, "index status")->element_exists('[Leap\:15.1\:ToTest]');
+$t->get_ok('/admin/obs_rsync/')->status_is(200, "index status")->element_exists('[Leap\:15.1\:ToTest]');
 
-$t->get_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest')->status_is(200, "project status")
+$t->get_ok('/admin/obs_rsync/Leap:15.1:ToTest')->status_is(200, "project status")
   ->element_exists('label[rsync_iso.cmd]')->element_exists('label[rsync_repo.cmd]')
   ->element_exists('label[openqa.cmd]');
 
-$t->get_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest/runs')->status_is(200, "project logs status")
+$t->get_ok('/admin/obs_rsync/Leap:15.1:ToTest/runs')->status_is(200, "project logs status")
   ->element_exists('[.run_190703_143010]');
 
-$t->get_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010')
-  ->status_is(200, "project log subfolder status")->element_exists('[files_iso.lst]');
-# "project log subfolder status")->element_exists(qr/files_iso\.lst/);
+$t->get_ok('/admin/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010')->status_is(200, "project log subfolder status")
+  ->element_exists('[files_iso.lst]');
 
-$t->get_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010/download/files_iso.lst')
+$t->get_ok('/admin/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010/download/files_iso.lst')
   ->status_is(200, "project log file download status")
   ->content_like(qr/openSUSE-Leap-15.1-DVD-x86_64-Build470.1-Media.iso/)
   ->content_like(qr/openSUSE-Leap-15.1-NET-x86_64-Build470.1-Media.iso/);
-
-$t->put_ok('/admin/plugin/obs_rsync/Leap:15.1:ToTest/runs')->status_is(201, "trigger rsync");
-$t->put_ok('/admin/plugin/obs_rsync/WRONGPROJECT/runs')->status_is(404, "trigger rsync wrong project");
 
 done_testing();

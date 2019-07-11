@@ -54,6 +54,7 @@ sub startup {
     my $r         = $self->routes;
     my $logged_in = $r->under('/')->to("session#ensure_user");
     my $auth      = $r->under('/')->to("session#ensure_operator");
+    my $op_auth   = $r->under('/admin')->to('session#ensure_operator')->name('operator_r');
 
     OpenQA::Setup::setup_template_search_path($self);
     OpenQA::Setup::load_plugins($self, $auth);

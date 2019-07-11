@@ -20,20 +20,23 @@ use Mojo::File;
 
 sub register {
     my ($self, $app, $config) = @_;
-    my $admin_r = $config->{route} // $app->routes->any('/admin/plugin');
+    my $plugin_r = $app->routes->find('operator_r');
+
+    if (!$plugin_r) {
+        $app->log->error('Routes not configured, plugin ObsRsync will be disabled');
+        return;
+    }
 
     # Templates
     push @{$app->renderer->paths}, Mojo::File->new(__FILE__)->dirname->child('ObsRsync')->child('templates')->to_string;
 
-    $admin_r->get('/obs_rsync/#folder/runs/#subfolder/download/#filename')->name('plugin_obs_rsync_download_file')
+    $plugin_r->get('/obs_rsync/#folder/runs/#subfolder/download/#filename')->name('plugin_obs_rsync_download_file')
       ->to('Plugin::ObsRsync::Controller#download_file');
-    $admin_r->get('/obs_rsync/#folder/runs/#subfolder')->name('plugin_obs_rsync_logfiles')
+    $plugin_r->get('/obs_rsync/#folder/runs/#subfolder')->name('plugin_obs_rsync_logfiles')
       ->to('Plugin::ObsRsync::Controller#logfiles');
-    $admin_r->get('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_logs')->to('Plugin::ObsRsync::Controller#logs');
-    $admin_r->get('/obs_rsync/#folder')->name('plugin_obs_rsync_folder')->to('Plugin::ObsRsync::Controller#folder');
-    $admin_r->get('/obs_rsync/')->name('plugin_obs_rsync_index')->to('Plugin::ObsRsync::Controller#index');
-
-    $admin_r->put('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_run')->to('Plugin::ObsRsync::Controller#run');
+    $plugin_r->get('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_logs')->to('Plugin::ObsRsync::Controller#logs');
+    $plugin_r->get('/obs_rsync/#folder')->name('plugin_obs_rsync_folder')->to('Plugin::ObsRsync::Controller#folder');
+    $plugin_r->get('/obs_rsync/')->name('plugin_obs_rsync_index')->to('Plugin::ObsRsync::Controller#index');
 }
 
 1;

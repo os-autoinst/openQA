@@ -31,7 +31,7 @@ sub index {
     my $files = Mojo::File->new($self->_home)->list({dir => 1})->map(sub { $_->basename })
       ->grep(qr/^(?!test|WebAPIPlugin|__pycache__)/)->to_array;
 
-    my @files = grep -d Mojo::File->new($self->_home, $_), @$files;
+    my @files = grep { -d Mojo::File->new($self->_home, $_) } @$files;
 
     $self->render('ObsRsync_index', folders => \@files);
 }
@@ -63,8 +63,7 @@ sub logs {
 
     my $full = Mojo::File->new($self->_home, $folder);
     my $files
-      = $full->list({dir => 1, hidden => 1})->map(sub { $_->basename })->grep(qr/\.run_.*/)->sort(sub { $b cmp $a })
-      ->to_array;
+      = $full->list({dir => 1, hidden => 1})->map('basename')->grep(qr/\.run_.*/)->sort(sub { $b cmp $a })->to_array;
     $self->render('ObsRsync_logs', folder => $folder, full => $full->to_string, subfolders => $files);
 }
 
@@ -92,43 +91,15 @@ sub download_file {
     my $filename  = $self->param('filename');
     return if $self->_check_and_render_error($folder, $subfolder, $filename);
 
-    my $full = $self->_home . '/' . $folder;
-    $full = $full . '/' . $subfolder if $subfolder;
-    $self->reply->file("$full/$filename");
-}
-
-sub run {
-    my $self   = shift;
-    my $folder = $self->param('folder');
-    return if $self->_check_and_render_error($folder);
-
-    my $cmd    = "bash '" . $self->_home . "/rsync.sh' '$folder' 2>&1";
-    my $out    = `$cmd`;
-    my $rc     = $? >> 8;
-    my $status = $rc ? 500 : 201;
-    return $self->render(json => {output => $out, code => $rc}, status => $status);
-}
-
-sub _grep_and_stash_scalar {
-    my ($self, $files, $mask, $var) = @_;
-    my $r = "";
-    my @r = grep /$mask/, @$files;
-    if (@r) {
-        $r = $r[0];
-    }
-    $self->stash($var, $r);
-}
-
-sub _grep_and_stash_list {
-    my ($self, $files, $mask, $var) = @_;
-    my @r = grep /$mask/, @$files;
-    $self->stash($var, \@r);
+    my $full = Mojo::File->new($self->_home, $folder, $subfolder);
+    $self->reply->file($full->child($filename));
 }
 
 sub _check_and_render_error {
-    my ($res, $code) = _check_error(@_);
-    shift->_render_error($res, $code) if $res;
-    return $res;
+    my $self = $_[0];
+    my ($code, $message) = _check_error(@_);
+    $self->render(json => {error => $message}, status => $code) if $code;
+    return $code;
 }
 
 sub _check_error {
@@ -136,26 +107,15 @@ sub _check_error {
     my $project   = shift;
     my $subfolder = shift;
     my $filename  = shift;
-    return ("Home directory is not set", 405) unless $self->_home;
-    return ("Home directory not found",  405) unless -d $self->_home;
-    return "Project has invalid characters" if $project && CORE::index($project, '/') != -1;
-    return "Subfolder has invalid characters" if ($subfolder && CORE::index($subfolder, '/') != -1);
-    return "Filename has invalid characters"  if ($filename  && CORE::index($filename,  '/') != -1);
+    my $home      = $self->_home;
+    return (405, "Home directory is not set") unless $home;
+    return (405, "Home directory not found")  unless -d $home;
+    return (400, "Project has invalid characters")   if $project   && $project =~ m!/!;
+    return (400, "Subfolder has invalid characters") if $subfolder && $subfolder =~ m!/!;
+    return (400, "Filename has invalid characters")  if $filename  && $filename =~ m!/!;
 
-    return 404 unless !$project || -d $self->_home . '/' . $project;
-
+    return (404, "Invalid Project") unless !$project || -d Mojo::File->new($home, $project);
     return 0;
 }
-
-sub _render_error {
-    my $self    = shift;
-    my $message = shift;
-    my $code    = shift;
-
-    return $self->render(status => $message) if (($message + 0) eq $message);
-    return $self->render(json => {error => $message}, status => $code) if ($code);
-    return $self->render(json => {error => $message}, status => 400);
-}
-
 
 1;
