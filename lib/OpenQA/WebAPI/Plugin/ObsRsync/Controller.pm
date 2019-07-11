@@ -17,7 +17,6 @@
 package OpenQA::WebAPI::Plugin::ObsRsync::Controller;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::File;
-use File::Basename;
 
 sub _home {
     my $self = shift;
@@ -28,7 +27,7 @@ sub index {
     my $self   = shift;
     my $folder = $self->param('folder');
     return if $self->_check_and_render_error($folder);
-    my $files = Mojo::File->new($self->_home)->list({dir => 1})->map(sub { $_->basename })
+    my $files = Mojo::File->new($self->_home)->list({dir => 1})->map('basename')
       ->grep(qr/^(?!test|WebAPIPlugin|__pycache__)/)->to_array;
 
     my @files = grep { -d Mojo::File->new($self->_home, $_) } @$files;
@@ -43,7 +42,7 @@ sub folder {
 
     my $full        = $self->_home;
     my $obs_project = $folder;
-    my $files       = Mojo::File->new($full, $obs_project, '.run_last')->list({dir => 1})->map(sub { $_->basename });
+    my $files       = Mojo::File->new($full, $obs_project, '.run_last')->list({dir => 1})->map('basename');
 
     $self->render(
         'ObsRsync_folder',

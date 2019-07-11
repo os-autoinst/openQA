@@ -20,13 +20,11 @@ BEGIN {
     unshift @INC, 'lib';
 }
 
-use Mojo::File qw(tempdir);
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Database;
-use File::Basename;
 use Mojo::File qw(tempdir path);
 
 # we must create db, otherwise OpenQA::WebAPI will try to (unused in test)
@@ -35,7 +33,7 @@ my $db = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 # this test also serves to test plugin loading via config file
 my @conf = (
     "[global]\n",    "plugins=ObsRsync\n",
-    "[obs_rsync]\n", "home=" . dirname(__FILE__) . "/../data/openqa-trigger-from-obs\n"
+    "[obs_rsync]\n", "home=" . Mojo::File->new(__FILE__)->dirname->dirname->child('data')->child('openqa-trigger-from-obs') . "\n"
 );
 my $tempdir = tempdir;
 $ENV{OPENQA_CONFIG} = $tempdir;
