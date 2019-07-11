@@ -1,3 +1,6 @@
+use strict;
+use warnings;
+
 [
     Workers => {
         host       => 'localhost',

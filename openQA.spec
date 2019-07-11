@@ -100,7 +100,7 @@ BuildRequires:  perl(DBD::SQLite)
 BuildRequires:  perl(Perl::Critic)
 BuildRequires:  perl(Perl::Critic::Freenode)
 BuildRequires:  perl(Selenium::Remote::Driver) >= 1.20
-BuildRequires:  perl(Test::Compile)
+BuildRequires:  perl(Test::Strict)
 BuildRequires:  perl(Test::MockObject)
 BuildRequires:  perl(Test::Warnings)
 BuildRequires:  rsync

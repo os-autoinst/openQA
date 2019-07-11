@@ -1,3 +1,6 @@
+use strict;
+use warnings;
+
 [
     NeedleDirs => {
         id   => 1,

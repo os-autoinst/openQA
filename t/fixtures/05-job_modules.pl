@@ -1,3 +1,6 @@
+use strict;
+use warnings;
+
 [
     JobModules => {
         script   => 'tests/installation/isosize.pm',

@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,36 +13,19 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-# require all modules to check if they even load
-
 use strict;
 use warnings;
 
-use Test::Compile;
-use Mojo::File 'tempdir';
+use FindBin;
+unshift @INC, "$FindBin::Bin/lib", "$FindBin::Bin/../lib";
 
-my $tempdir;
-BEGIN {
-    unshift @INC, 'lib';
+use Test::Strict;
 
-    # FIXME: Requiring OpenQA::Worker::Cache::Service
-    # Sets up Minion with Mojo::SQLite, that on DESTROY automatically disconnects from the database.
-    # If the database is not existant or can't be accessed we get a warning, that translates to test failure.
-
-    $tempdir = tempdir;
-    $ENV{OPENQA_CACHE_DIR} = $tempdir;
-}
-
-my $test = Test::Compile->new();
-$test->verbose(1);
-
-my @files = $test->all_pm_files();
-for my $file (@files) {
-    $test->ok($test->pm_file_compiles($file), "Compile test for $file");
-}
-
-@files = $test->all_pl_files();
-for my $file (@files) {
-    $test->ok($test->pl_file_compiles($file), "Compile test for $file");
-}
-$test->done_testing();
+$Test::Strict::TEST_SYNTAX   = 1;
+$Test::Strict::TEST_STRICT   = 1;
+$Test::Strict::TEST_WARNINGS = 1;
+$Test::Strict::TEST_SKIP     = [
+    # skip test module which would require test API from os-autoinst to be present
+    't/data/openqa/share/tests/opensuse/tests/installation/installer_timezone.pm'
+];
+all_perl_files_ok(qw(lib script t));
