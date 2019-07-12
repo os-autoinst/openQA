@@ -27,6 +27,8 @@ use DBIx::Class::Timestamps 'now';
 use Mojo::Asset::Memory;
 use Mojo::File 'path';
 
+use constant JOB_QUERY_LIMIT => 10000;
+
 =pod
 
 =head1 NAME
@@ -108,6 +110,17 @@ sub list {
         else {
             $args{$arg} = $self->every_param($arg);
         }
+    }
+
+    # ensure the query does not become too big
+    if (my $limit = $args{limit}) {
+        return $self->render(json => {error => 'limit is not an unsigned number'}, status => 400)
+          unless $limit =~ qr/^\d+$/;
+        return $self->render(json => {error => 'limit exceeds maximum'}, status => 400)
+          unless $limit <= JOB_QUERY_LIMIT;
+    }
+    else {
+        $args{limit} = JOB_QUERY_LIMIT;
     }
 
     my $schema = $self->schema;
