@@ -51,10 +51,11 @@ sub startup {
     OpenQA::Schema->singleton;
 
     # register basic routes
-    my $r         = $self->routes;
-    my $logged_in = $r->under('/')->to("session#ensure_user");
-    my $auth      = $r->under('/')->to("session#ensure_operator");
-    my $op_auth   = $r->under('/admin')->to('session#ensure_operator')->name('operator_r');
+    my $r          = $self->routes;
+    my $logged_in  = $r->under('/')->to("session#ensure_user");
+    my $auth       = $r->under('/')->to("session#ensure_operator");
+    my $admin_auth = $r->under('/admin')->to('session#ensure_admin')->name('ensure_admin');
+    my $op_auth    = $r->under('/admin')->to('session#ensure_operator')->name('ensure_operator');
 
     OpenQA::Setup::setup_template_search_path($self);
     OpenQA::Setup::load_plugins($self, $auth);
@@ -182,9 +183,7 @@ sub startup {
     ## Admin area starts here
     ###
     my %api_description;
-    my $admin_auth  = $r->under('/admin')->to('session#ensure_admin')->name('ensure_admin');
     my $admin_r     = $admin_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
-    my $op_auth     = $r->under('/admin')->to('session#ensure_operator')->name('ensure_operator');
     my $op_r        = $op_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
     my $pub_admin_r = $r->route('/admin')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
 

@@ -30,7 +30,7 @@
 <hr>
 <div class="container" id="content">
 <H6>Step 2. Generate and execute commands to rsync and rename deliverables from remote OBS location (based on lists from Step 1.)</H6>
-% if (!scalar(@$rsync_commands)) {
+% if (!@$rsync_commands) {
         <label>No logs found for last run</label>
 % } else {
         <label>Commands executed during last run: </label>
@@ -40,7 +40,7 @@
         <label>|</label>
 % }
 <br>
-% if (scalar(@$rsync_sh)) {
+% if (@$rsync_sh) {
         <label>Script used to generate commands: </label>
 %     for my $filename (@$rsync_sh) {
 	<label><%= link_to "$filename"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %></label>

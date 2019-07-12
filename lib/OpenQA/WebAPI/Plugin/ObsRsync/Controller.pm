@@ -27,12 +27,11 @@ sub index {
     my $self   = shift;
     my $folder = $self->param('folder');
     return if $self->_check_and_render_error($folder);
-    my $files = Mojo::File->new($self->_home)->list({dir => 1})->map('basename')
+    my $files
+      = Mojo::File->new($self->_home)->list({dir => 1})->grep(sub { -d $_ })->map('basename')
       ->grep(qr/^(?!test|WebAPIPlugin|__pycache__)/)->to_array;
 
-    my @files = grep { -d Mojo::File->new($self->_home, $_) } @$files;
-
-    $self->render('ObsRsync_index', folders => \@files);
+    $self->render('ObsRsync_index', folders => $files);
 }
 
 sub folder {
