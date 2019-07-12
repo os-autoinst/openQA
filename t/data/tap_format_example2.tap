@@ -1,0 +1,5 @@
+t/some-script.bash ..
+# Some comment
+ok 1 - Some bash test
+not ok 2 - failing test
+2..2
