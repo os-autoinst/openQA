@@ -98,6 +98,15 @@
                     <div id="editor-yaml-guide">
                         <div>Define test suites per arch/medium:</div>
                         <code>
+defaults:
+  <b>ARCH</b>:
+    machine: <b>MACHINE</b>
+    priority: <b>PRIORITY</b>
+products:
+  <i>medium</i>-<b>ARCH</b>:
+    distri: <b>DISTRI</b>
+    flavor: <b>FLAVOR</b>
+    version: <b>VERSION</b>
 <b>'My Group'</b>:
   scenarios:
     <b>ARCH</b>:
@@ -109,15 +118,6 @@
           settings:
             <b>SOME_TEST_VARIABLE</b>: <b>VALUE</b>
             <b>ANOTHER_TEST_VARIABLE</b>: <b>YET_ANOTHER_VALUE</b>
-  defaults:
-    <b>ARCH</b>:
-      machine: <b>MACHINE</b>
-      priority: <b>PRIORITY</b>
-  products:
-    <i>medium</i>-<b>ARCH</b>:
-      distri: <b>DISTRI</b>
-      flavor: <b>FLAVOR</b>
-      version: <b>VERSION</b>
                         </code>
                         <div>Re-use test suites with YAML aliases:</div>
                         <code>
