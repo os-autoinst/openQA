@@ -107,17 +107,16 @@ products:
     distri: <b>DISTRI</b>
     flavor: <b>FLAVOR</b>
     version: <b>VERSION</b>
-<b>'My Group'</b>:
-  scenarios:
-    <b>ARCH</b>:
-      <i>medium</i>-<b>ARCH</b>:
-      - test-suite
-      - test-suite:
-          machine: <b>MACHINE</b>
-          priority: <b>PRIORITY</b>
-          settings:
-            <b>SOME_TEST_VARIABLE</b>: <b>VALUE</b>
-            <b>ANOTHER_TEST_VARIABLE</b>: <b>YET_ANOTHER_VALUE</b>
+scenarios:
+  <b>ARCH</b>:
+    <i>medium</i>-<b>ARCH</b>:
+    - test-suite
+    - test-suite:
+        machine: <b>MACHINE</b>
+        priority: <b>PRIORITY</b>
+        settings:
+          <b>SOME_TEST_VARIABLE</b>: <b>VALUE</b>
+          <b>ANOTHER_TEST_VARIABLE</b>: <b>YET_ANOTHER_VALUE</b>
                         </code>
                         <div>Re-use test suites with YAML aliases:</div>
                         <code>
