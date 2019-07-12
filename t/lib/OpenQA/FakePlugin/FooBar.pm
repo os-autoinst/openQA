@@ -1,4 +1,8 @@
 package OpenQA::FakePlugin::FooBar;
+
+use strict;
+use warnings;
+
 sub configuration_fields {
     {
         bar => {

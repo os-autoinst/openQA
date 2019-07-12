@@ -61,9 +61,11 @@ lorem ipsum ...
 
 =cut
 
+use strict;
+use warnings;
+
 use FindBin;
 use lib "$FindBin::RealBin/../lib";
-use strict;
 use File::Basename qw(dirname);
 use Try::Tiny;
 use Data::Dump 'dd';

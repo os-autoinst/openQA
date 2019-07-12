@@ -1,3 +1,6 @@
+use strict;
+use warnings;
+
 [
     Machines => {
         id       => 1001,

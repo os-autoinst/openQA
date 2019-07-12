@@ -1,3 +1,6 @@
+use strict;
+use warnings;
+
 [
     # parallel dependency for running test
     JobDependencies => {

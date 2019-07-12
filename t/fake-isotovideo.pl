@@ -1,5 +1,8 @@
 #!/usr/bin/perl
 
+use strict;
+use warnings;
+
 if ($ARGV[0] ne '--version') {
     print("This script is only meant to test the isotovideo version check.\n");
     exit(-1);

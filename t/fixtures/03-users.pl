@@ -1,3 +1,6 @@
+use strict;
+use warnings;
+
 [
     Users => {
         id              => 99901,
