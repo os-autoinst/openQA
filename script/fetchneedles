@@ -56,16 +56,14 @@ do_fetch() {
     git_update
     if [ "$needles_separate" = 1 ]; then
         if test -d products; then
-        for nd in products/*/needles; do
-            cd "$target/$nd" && (
+            for nd in products/*/needles; do
+                cd "$target/$nd" && (git_update)
+            done
+        else
+            cd "$target/needles"
             git_update
-            )
-        done
-            else
-        cd "$target/needles"
-        git_update
-        cd ../..
-            fi
+            cd ../..
+        fi
     fi
 }
 
