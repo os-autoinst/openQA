@@ -18,7 +18,7 @@ matrix:
     - name: "developer fullstack test"
       env: DEVELOPER_FULLSTACK=1
     - name: "documentation generation job"
-      if: branch = master
+      if: branch = master AND fork = false
       env: GH_PUBLISH=true
 before_script:
 - docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
