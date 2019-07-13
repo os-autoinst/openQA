@@ -45,22 +45,25 @@ needlesdir() {
     fi
 }
 
-do_fetch() {
-    local target=$1
+git_update() {
+    git gc --auto --quiet
     git fetch -q
     git rebase -q
+}
+
+do_fetch() {
+    local target=$1
+    git_update
     if [ "$needles_separate" = 1 ]; then
         if test -d products; then
         for nd in products/*/needles; do
             cd "$target/$nd" && (
-            git fetch -q
-            git rebase -q
+            git_update
             )
         done
             else
         cd "$target/needles"
-                git fetch -q
-        git rebase -q
+        git_update
         cd ../..
             fi
     fi
