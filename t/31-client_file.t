@@ -169,7 +169,7 @@ subtest 'verify_chunks' => sub {
 
     $pieces->first->content('42')->write_content($copied_file);    #Let's simulate a writing error
     is(
-        OpenQA::Files->verify_chunks($t_dir => $copied_file),
+        OpenQA::Files->verify_chunks($t_dir => $copied_file)->message(),
         'Can\'t verify written data from chunk',
         'Verify chunks fail'
     );
