@@ -110,6 +110,7 @@ RUN zypper in -y -C \
        'perl(Selenium::Remote::Driver)' \
        'perl(Socket::MsgHdr)' \
        'perl(Sort::Versions)' \
+       'perl(Test::Compile)' \
        'perl(Test::Strict)' \
        'perl(Test::Fatal)' \
        'perl(Test::Pod)' \
