@@ -390,7 +390,7 @@ sub stop {
 sub stop_current_job {
     my ($self, $reason) = @_;
 
-    if (my $current_job = $self->current_job) { $current_job->stop; }
+    if (my $current_job = $self->current_job) { $current_job->stop($reason); }
 }
 
 sub kill {

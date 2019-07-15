@@ -359,7 +359,7 @@ sub send {
             my $worker             = $self->worker;
             my $current_webui_host = $worker->current_webui_host;
             if ($current_webui_host && $current_webui_host eq $self->webui_host) {
-                $worker->stop_current_job;
+                $worker->stop_current_job('api-failure');
             }
             $callback->();
             return;

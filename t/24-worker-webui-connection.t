@@ -91,8 +91,11 @@ like(
     has stop_current_job_called => 0;
     has current_error           => undef;
     has current_job             => undef;
-    sub stop_current_job { shift->stop_current_job_called(1); }
-    sub status           { {fake_status => 1} }
+    sub stop_current_job {
+        my ($self, $reason) = @_;
+        $self->stop_current_job_called($reason);
+    }
+    sub status { {fake_status => 1} }
     sub accept_job {
         my ($self, $client, $job_info) = @_;
         $self->current_job(OpenQA::Worker::Job->new($self, $client, $job_info));
@@ -183,8 +186,9 @@ subtest 'attempt to register and send a command' => sub {
         'error logged',
     );
 
-    is($callback_invoked,                        1, 'callback has been invoked');
-    is($client->worker->stop_current_job_called, 1, 'attempted to stop current job');
+    is($callback_invoked, 1, 'callback has been invoked');
+    is($client->worker->stop_current_job_called,
+        'api-failure', 'attempted to stop current job with reason "api-failure"');
 
     is_deeply(
         \@happended_events,

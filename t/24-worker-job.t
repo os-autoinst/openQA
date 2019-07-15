@@ -57,12 +57,14 @@ $app->log->level('debug');
     has websocket_connection => sub { OpenQA::Test::FakeWebSocketTransaction->new };
     has ua                   => sub { Mojo::UserAgent->new };
     has url                  => sub { Mojo::URL->new };
+    has register_called      => 0;
     sub send {
         my ($self, $method, $path, %args) = @_;
         push(@{shift->sent_messages}, {path => $path, json => $args{json}});
         $args{callback}->({}) if $args{callback};
     }
     sub send_status { push(@{shift->sent_messages}, @_); }
+    sub register { shift->register_called(1); }
 }
 {
     package Test::FakeProcess;
@@ -83,7 +85,11 @@ sub wait_until_upload_concluded {
 
 # mock isotovideo 'engine' here - we don't actually want to start it in that test
 my $engine_mock = Test::MockModule->new('OpenQA::Worker::Engines::isotovideo');
-$engine_mock->mock(engine_workit => sub { {error => 'some error'} });
+$engine_mock->mock(
+    engine_workit => sub {
+        note('pretending isotovideo startup error');
+        return {error => 'some error'};
+    });
 
 # log which files and assets would have been uploaded
 my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
@@ -103,18 +109,18 @@ $client->ua->connect_timeout(0.1);
 
 # handle/log events
 my @happended_events;
-$job->on(
-    status_changed => sub {
-        my ($event_client, $event_data) = @_;
+my $handle_job_event = sub {
+    my ($event_client, $event_data) = @_;
 
-        is($event_client,   $job,   'job passed correctly');
-        is(ref $event_data, 'HASH', 'event data is a HASH');
-        my $status = $event_data->{status};
-        my %event  = (status => $status,);
-        $event{error_message} = $event_data->{error_message} if $event_data->{error_message};
-        push(@happended_events, \%event);
-        Mojo::IOLoop->stop if $status eq 'stopped';
-    });
+    is($event_client,   $job,   'job passed correctly');
+    is(ref $event_data, 'HASH', 'event data is a HASH');
+    my $status = $event_data->{status};
+    my %event  = (status => $status,);
+    $event{error_message} = $event_data->{error_message} if $event_data->{error_message};
+    push(@happended_events, \%event);
+    Mojo::IOLoop->stop if $status eq 'stopped';
+};
+$job->on(status_changed => $handle_job_event);
 
 # start the actual testing of going though the job live-cycle (in particular a setup failure and a
 # manually stopped job)
@@ -141,15 +147,19 @@ is($job->setup_error, 'some error', 'setup error recorded');
 ok(!-e $pool_directory->child('autoinst-log.txt'), 'autoinst-log.txt file has been deleted');
 ok(-e $pool_directory->child('worker-log.txt'),    'worker log is there');
 
-# pretent that the failure didn't happen to be able to continue testing
+# pretend that the failure didn't happen to be able to continue testing
 # note: The actual worker always creates a new OpenQA::Worker::Job object.
 $job->{_status} = 'accepted';
 
 # change the job ID before starting again to better distinguish the resulting messages
 $job->{_id} = 2;
 
-# try to start job again pretenting isotovideo could actually be spawned
-$engine_mock->mock(engine_workit => sub { {child => $isotovideo} });
+# try to start job again pretending isotovideo could actually be spawned
+$engine_mock->mock(
+    engine_workit => sub {
+        note('pretending to run isotovideo');
+        return {child => $isotovideo};
+    });
 combined_like(
     sub {
         $job->start();
@@ -370,5 +380,61 @@ is_deeply(
 ) or diag explain \@uploaded_files;
 is_deeply(\@uploaded_assets, [], 'no assets uploaded because this test so far has none')
   or diag explain \@uploaded_assets;
+
+# reset fake isotovideo and 'test results'
+$isotovideo->is_running(1);
+@happended_events = ();
+@uploaded_files   = ();
+@uploaded_assets  = ();
+$client->sent_messages([]);
+$client->websocket_connection->sent_messages([]);
+
+# exercise another job live-cycle simulating an API failure
+subtest 'handling API failures' => sub {
+    # create and accept new job
+    $job = OpenQA::Worker::Job->new($worker, $client, {id => 3, URL => 'url'});
+    $job->on(status_changed => $handle_job_event);
+    $job->accept;
+
+    combined_like(
+        sub {
+            $job->start();
+            wait_until_upload_concluded($job);
+        },
+        qr/isotovideo has been started/,
+        'isotovideo startup logged'
+    );
+
+    is($client->register_called, 0, 'no re-registration attempted so far');
+
+    combined_like(
+        sub {
+            $job->stop('api-failure');
+            wait_until_upload_concluded($job);
+        },
+        qr/Result: api-failure/,
+        'job stopped after an API failure'
+    );
+
+    is($client->register_called, 1, 'worker tries to register itself again after an API failure');
+
+    # verify that all status events for the job live-cycle have been emitted
+    is_deeply(
+        \@happended_events,
+        [map { {status => $_} } (qw(accepting accepted setup running stopping stopped))],
+        'status changes emitted'
+    ) or diag explain \@happended_events;
+
+    # verify messages sent via REST API and websocket connection during the job live-cycle
+    # note: This can also be seen as an example for other worker implementations.
+    is($client->sent_messages->[-1]->{path}, 'jobs/3/set_done', 'set_done is still attempted to be called')
+      or diag explain $client->sent_messages;
+
+    # verify that the upload has been skipped
+    is_deeply(\@uploaded_files, [], 'file upload skipped after API failure')
+      or diag explain \@uploaded_files;
+    is_deeply(\@uploaded_assets, [], 'asset upload skipped after API failure')
+      or diag explain \@uploaded_assets;
+};
 
 done_testing();
