@@ -70,7 +70,7 @@ sub new {
 
     my $self = $class->SUPER::new(
         instance_number              => $instance_number,
-        no_cleanup                   => $cli_options->{no_cleanup},
+        no_cleanup                   => $cli_options->{'no-cleanup'},
         pool_directory               => "$OpenQA::Utils::prjdir/pool/$instance_number",
         app                          => $app,
         settings                     => $settings,
@@ -97,6 +97,7 @@ sub log_setup_info {
     $msg .= "\n - websocket API version: " . WEBSOCKET_API_VERSION;
     $msg .= "\n - web UI hosts:          " . join(',', @{$settings->webui_hosts});
     $msg .= "\n - class:                 " . ($settings->global_settings->{WORKER_CLASS} // '?');
+    $msg .= "\n - no cleanup:            " . ($self->no_cleanup ? 'yes' : 'no');
     $msg .= "\n - pool directory:        " . $self->pool_directory;
     log_info($msg);
     return $msg;

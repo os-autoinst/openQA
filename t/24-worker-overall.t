@@ -44,7 +44,8 @@ like(
     qr{.*the specified instance number \"foo\" is no number.*},
     'instance number must be a number',
 );
-my $worker = OpenQA::Worker->new({instance => 1, apikey => 'foo', apisecret => 'bar', verbose => 1});
+my $worker = OpenQA::Worker->new({instance => 1, apikey => 'foo', apisecret => 'bar', verbose => 1, 'no-cleanup' => 1});
+ok($worker->no_cleanup,              'no-cleanup flag works');
 ok(my $settings = $worker->settings, 'settings instantiated');
 delete $settings->global_settings->{LOG_DIR};
 combined_like(
