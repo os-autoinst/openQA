@@ -26,9 +26,11 @@ use Mojo::File 'tempdir';
 use Mojolicious;
 use Test::Fatal;
 use Test::Output 'combined_like';
+use Test::MockModule;
 use Test::More;
 use OpenQA::Worker;
 use OpenQA::Worker::Job;
+use OpenQA::Worker::WebUIConnection;
 
 $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-overall";
 
@@ -133,6 +135,77 @@ subtest 'check negative cases for is_qemu_running' => sub {
 
     $pool_directory->child('qemu.pid')->spurt($$);
     is($worker->is_qemu_running, undef, 'QEMU not considered running if PID is not a qemu process');
+};
+
+subtest 'handle status changes' => sub {
+    # mock cleanup
+    my $worker_mock    = Test::MockModule->new('OpenQA::Worker');
+    my $cleanup_called = 0;
+    $worker_mock->mock(_clean_pool_directory => sub { $cleanup_called = 1; });
+
+    # mock job startup
+    my $job_mock           = Test::MockModule->new('OpenQA::Worker::Job');
+    my $job_startup_called = 0;
+    $job_mock->mock(start => sub { $job_startup_called = 1; });
+
+    # assign fake client and job
+    my $fake_client = OpenQA::Worker::WebUIConnection->new('some-host', {apikey => 'foo', apisecret => 'bar'});
+    my $fake_job = OpenQA::Worker::Job->new($worker, $fake_client, {some => 'info'});
+    $fake_job->{_id} = 42;
+    $worker->current_job($fake_job);
+    $worker->current_webui_host('some-host');
+
+    combined_like(
+        sub {
+            $worker->_handle_job_status_changed($fake_job, {status => 'accepting', reason => 'test'});
+            $worker->_handle_job_status_changed($fake_job, {status => 'setup',     reason => 'test'});
+            $worker->_handle_job_status_changed($fake_job, {status => 'running',   reason => 'test'});
+            $worker->_handle_job_status_changed($fake_job, {status => 'stopping',  reason => 'test'});
+        },
+        qr/Accepting job.*Setting job.*Running job.*Stopping job/s,
+        'status updates logged'
+    );
+
+    subtest 'job accepted' => sub {
+        is($job_startup_called, 0, 'job not started so far');
+        $worker->_handle_job_status_changed($fake_job, {status => 'accepted', reason => 'test'});
+        is($job_startup_called, 1, 'job started');
+    };
+
+    subtest 'job stopped' => sub {
+        # stop job without cleanup enabled
+        combined_like(
+            sub {
+                $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'test'});
+            },
+            qr/Job 42 from some-host finished - reason: test/,
+            'status logged'
+        );
+        is($cleanup_called,             0,     'pool directory not cleaned up');
+        is($worker->current_job,        undef, 'current job unassigned');
+        is($worker->current_webui_host, undef, 'current web UI host unassigned');
+
+        # stop job with cleanup enabled
+        $worker->no_cleanup(0);
+        $worker->current_job($fake_job);
+        $worker->current_webui_host('some-host');
+        combined_like(
+            sub {
+                $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'another test'});
+            },
+            qr/Job 42 from some-host finished - reason: another/,
+            'status logged'
+        );
+        is($cleanup_called, 1, 'pool directory cleaned up');
+    };
+
+    like(
+        exception {
+            $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'another test'});
+        },
+        qr{Received job status update for job 42 \(stopped\) which is not the current one\.},
+        'handling job status changed refused with no job',
+    );
 };
 
 done_testing();
