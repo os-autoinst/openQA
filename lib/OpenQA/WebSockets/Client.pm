@@ -32,8 +32,10 @@ sub embed_server_for_testing {
     unless ($self->{test_server}) {
         my $server = $self->{test_server} = Mojo::Server::Daemon->new(
             ioloop => $self->client->ioloop,
-            listen => ['http://127.0.0.1']);
-        $server->build_app('OpenQA::WebSockets');
+            listen => ['http://127.0.0.1'],
+            silent => 1
+        );
+        $server->build_app('OpenQA::WebSockets')->mode('production');
         $server->start;
         $self->port($server->ports->[0]);
     }
