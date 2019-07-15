@@ -107,8 +107,12 @@ $t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
 is(scalar(@{$t->tx->res->json->{jobs}}), 16);
 
 # check limit quantity
-$t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 5});
-is(scalar(@{$t->tx->res->json->{jobs}}), 5);    # 9 jobs for current
+$t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 20000})->status_is(400)
+  ->json_is({error => 'limit exceeds maximum', error_status => 400});
+$t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 'foo'})->status_is(400)
+  ->json_is({error => 'limit is not an unsigned number', error_status => 400});
+$t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 5})->status_is(200);
+is(scalar(@{$t->tx->res->json->{jobs}}), 5);
 
 # check job group
 $t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'opensuse test'});
