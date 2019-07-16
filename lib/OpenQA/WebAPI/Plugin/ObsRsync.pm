@@ -20,7 +20,7 @@ use Mojo::File;
 
 sub register {
     my ($self, $app, $config) = @_;
-    my $plugin_r = $app->routes->find('ensure_operator');
+    my $plugin_r = $app->routes->find('api_ensure_operator');
 
     return $app->log->error('Routes not configured, plugin ObsRsync will be disabled') unless $plugin_r;
 
