@@ -5,9 +5,9 @@
 % end
 
 % title 'OBS synchronization Logs';
-<H2><%= 'OBS synchronization Logs: ' . $folder %></H2>
-<H6><%= $full %></H6>
+<h2><%= 'OBS synchronization Logs: ' . $folder %></h2>
+<h6><%= $full %></h6>
 % for my $subfolder (@$subfolders) {
-	<label><%= link_to "$subfolder"  => url_for('plugin_obs_rsync_logfiles', folder => $folder, subfolder => $subfolder) %></label>
-	<label>|</label>
+    <%= link_to "$subfolder"  => url_for('plugin_obs_rsync_logfiles', folder => $folder, subfolder => $subfolder) %>
+    |
 % }

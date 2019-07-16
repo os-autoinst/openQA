@@ -37,7 +37,7 @@ sub index {
 sub folder {
     my $self   = shift;
     my $folder = $self->param('folder');
-    return if $self->_check_and_render_error($folder);
+    return undef if $self->_check_and_render_error($folder);
 
     my $full        = $self->_home;
     my $obs_project = $folder;
@@ -57,7 +57,7 @@ sub folder {
 sub logs {
     my $self   = shift;
     my $folder = $self->param('folder');
-    return if $self->_check_and_render_error($folder);
+    return undef if $self->_check_and_render_error($folder);
 
     my $full = Mojo::File->new($self->_home, $folder);
     my $files
@@ -69,7 +69,7 @@ sub logfiles {
     my $self      = shift;
     my $folder    = $self->param('folder');
     my $subfolder = $self->param('subfolder');
-    return if $self->_check_and_render_error($folder, $subfolder);
+    return undef if $self->_check_and_render_error($folder, $subfolder);
 
     my $full  = Mojo::File->new($self->_home, $folder, $subfolder);
     my $files = $full->list({dir => 1})->map('basename')->sort->to_array;
@@ -87,7 +87,7 @@ sub download_file {
     my $folder    = $self->param('folder');
     my $subfolder = $self->param('subfolder');
     my $filename  = $self->param('filename');
-    return if $self->_check_and_render_error($folder, $subfolder, $filename);
+    return undef if $self->_check_and_render_error($folder, $subfolder, $filename);
 
     my $full = Mojo::File->new($self->_home, $folder, $subfolder);
     $self->reply->file($full->child($filename));
@@ -101,18 +101,15 @@ sub _check_and_render_error {
 }
 
 sub _check_error {
-    my $self      = shift;
-    my $project   = shift;
-    my $subfolder = shift;
-    my $filename  = shift;
-    my $home      = $self->_home;
+    my ($self, $project, $subfolder, $filename) = @_;
+    my $home = $self->_home;
     return (405, "Home directory is not set") unless $home;
     return (405, "Home directory not found")  unless -d $home;
     return (400, "Project has invalid characters")   if $project   && $project =~ m!/!;
     return (400, "Subfolder has invalid characters") if $subfolder && $subfolder =~ m!/!;
     return (400, "Filename has invalid characters")  if $filename  && $filename =~ m!/!;
 
-    return (404, "Invalid Project") unless !$project || -d Mojo::File->new($home, $project);
+    return (404, "Invalid Project") if $project && !-d Mojo::File->new($home, $project);
     return 0;
 }
 

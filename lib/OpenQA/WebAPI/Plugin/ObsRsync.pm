@@ -20,12 +20,9 @@ use Mojo::File;
 
 sub register {
     my ($self, $app, $config) = @_;
-    my $plugin_r = $app->routes->find('operator_r');
+    my $plugin_r = $app->routes->find('ensure_operator');
 
-    if (!$plugin_r) {
-        $app->log->error('Routes not configured, plugin ObsRsync will be disabled');
-        return;
-    }
+    return $app->log->error('Routes not configured, plugin ObsRsync will be disabled') unless $plugin_r;
 
     # Templates
     push @{$app->renderer->paths}, Mojo::File->new(__FILE__)->dirname->child('ObsRsync')->child('templates')->to_string;

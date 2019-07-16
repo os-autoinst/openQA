@@ -30,14 +30,14 @@ use Mojo::File qw(tempdir path);
 # we must create db, otherwise OpenQA::WebAPI will try to (unused in test)
 my $db = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
-# this test also serves to test plugin loading via config file
-my @conf = (
-    "[global]\n",    "plugins=ObsRsync\n",
-    "[obs_rsync]\n", "home=" . Mojo::File->new(__FILE__)->dirname->dirname->child('data')->child('openqa-trigger-from-obs') . "\n"
-);
-my $tempdir = tempdir;
-$ENV{OPENQA_CONFIG} = $tempdir;
-path($ENV{OPENQA_CONFIG})->make_path->child("openqa.ini")->spurt(@conf);
+$ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
+my $home = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
+$tempdir->child('openqa.ini')->spurt(<<"EOF");
+[global]
+plugins=ObsRsync
+[obs_rsync]
+home=$home
+EOF
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
@@ -46,13 +46,12 @@ $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->i
 $t->app($app);
 
 # needs to log in (it gets redirected)
-$t->get_ok('/admin/obs_rsync/');
+$t->get_ok('/login');
 
 $t->get_ok('/admin/obs_rsync/')->status_is(200, "index status")->element_exists('[Leap\:15.1\:ToTest]');
 
-$t->get_ok('/admin/obs_rsync/Leap:15.1:ToTest')->status_is(200, "project status")
-  ->element_exists('label[rsync_iso.cmd]')->element_exists('label[rsync_repo.cmd]')
-  ->element_exists('label[openqa.cmd]');
+$t->get_ok('/admin/obs_rsync/Leap:15.1:ToTest')->status_is(200, "project status")->element_exists('[rsync_iso.cmd]')
+  ->element_exists('[rsync_repo.cmd]')->element_exists('[openqa.cmd]');
 
 $t->get_ok('/admin/obs_rsync/Leap:15.1:ToTest/runs')->status_is(200, "project logs status")
   ->element_exists('[.run_190703_143010]');
