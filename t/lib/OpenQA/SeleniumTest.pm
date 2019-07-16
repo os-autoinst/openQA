@@ -114,6 +114,11 @@ sub start_driver {
                 loggingPrefs  => {browser => 'ALL'},
                 chromeOptions => {args    => []}
             },
+            error_handler => sub {
+                # generate Test::More failure instead of croaking to preserve context
+                my ($driver, $exception, $args) = @_;
+                fail((split /\n/, $exception)[0] =~ s/Error while executing command: //r);
+            },
         );
 
         # chromedriver is unfortunately hidden on openSUSE

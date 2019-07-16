@@ -93,8 +93,7 @@ for my $item ('Medium types', 'Machines', 'Workers', 'Assets', 'Scheduled produc
 
 # we shouldn't see users, audit
 for my $item ('Users', 'Needles', 'Audit log') {
-    eval { $driver->find_element($item, 'link_text') };
-    ok($@, "can not see $item");
+    ok(!scalar @{$driver->find_elements($item, 'link_text')}, "can not see $item");
 }
 
 kill_driver();
