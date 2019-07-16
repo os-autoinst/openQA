@@ -6,7 +6,12 @@ function followLog() {
 }
 
 function logLine(msg) {
-    document.logElement.append(msg + "\n");
+    document.logElement.append("<== " + msg + "\n");
+    followLog();
+}
+
+function logEnteredCommand(command) {
+    document.logElement.append("==> " + command + "\n");
     followLog();
 }
 
@@ -23,7 +28,9 @@ function establishWebSocketConnection() {
         // replay commands stashed while offline
         var stashedCommands = window.stashedCommands;
         for (var i = 0, count = stashedCommands.length; i != count; ++i) {
-            ws.send(stashedCommands[i]);
+            var command = stashedCommands[i];
+            ws.send(command);
+            logEnteredCommand(command);
         }
         window.stashedCommands = [];
     };
@@ -69,6 +76,7 @@ function setupWebSocketConsole(url) {
             window.stashedCommands.push(command);
         } else {
             window.ws.send(command);
+            logEnteredCommand(command);
         }
 
         msg.val('');
