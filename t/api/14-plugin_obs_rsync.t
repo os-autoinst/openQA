@@ -64,4 +64,7 @@ $t->get_ok('/admin/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010/download/f
   ->content_like(qr/openSUSE-Leap-15.1-DVD-x86_64-Build470.1-Media.iso/)
   ->content_like(qr/openSUSE-Leap-15.1-NET-x86_64-Build470.1-Media.iso/);
 
+# $t->put_ok('/admin/obs_rsync/Leap:15.1:ToTest/runs')->status_is(201, "trigger rsync");
+# $t->put_ok('/admin/obs_rsync/WRONGPROJECT/runs')->status_is(404, "trigger rsync wrong project");
+
 done_testing();

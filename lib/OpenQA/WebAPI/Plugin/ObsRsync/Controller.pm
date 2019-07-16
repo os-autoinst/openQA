@@ -17,6 +17,7 @@
 package OpenQA::WebAPI::Plugin::ObsRsync::Controller;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::File;
+use IPC::System::Simple qw(system $EXITVAL);
 
 sub _home {
     my $self = shift;
@@ -91,6 +92,20 @@ sub download_file {
 
     my $full = Mojo::File->new($self->_home, $folder, $subfolder);
     $self->reply->file($full->child($filename));
+}
+
+sub run {
+    my $self   = shift;
+    my $folder = $self->param('folder');
+    return undef if $self->_check_and_render_error($folder);
+
+    my @args = ($self->_home . "/rsync.sh", $folder);
+
+    my $out;
+    eval { $out = system([0], "bash", @args); 1 }
+      or return $self->render(json => {output => $@, code => $EXITVAL}, status => 500);
+
+    return $self->render(json => {output => $out, code => $EXITVAL}, status => 201);
 }
 
 sub _check_and_render_error {

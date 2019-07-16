@@ -7,6 +7,5 @@
 % title 'OBS synchronization folders';
 <h2><%= 'OBS synchronization folders ' %></h2>
 % for my $folder (@$folders) {
-    <%= link_to "$folder"  => url_for('plugin_obs_rsync_folder', folder => $folder) %>
-    <br>
+    <div><%= link_to "$folder"  => url_for('plugin_obs_rsync_folder', folder => $folder) %></div>
 % }
