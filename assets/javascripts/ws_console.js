@@ -16,7 +16,16 @@ function establishWebSocketConnection() {
     ws.onopen = function () {
         logLine('Connection opened');
         window.ws = ws;
+
+        // request current status like the developer mode would do
         ws.send('{"cmd":"status"}');
+
+        // replay commands stashed while offline
+        var stashedCommands = window.stashedCommands;
+        for (var i = 0, count = stashedCommands.length; i != count; ++i) {
+            ws.send(stashedCommands[i]);
+        }
+        window.stashedCommands = [];
     };
     ws.onerror = function(error) {
         logLine('Connection error: ' + error.type + " (check JavaScript console for details)");
@@ -44,6 +53,7 @@ function setupWebSocketConsole(url) {
 
     // establish and handle web socket connection
     window.wsUrl = url;
+    window.stashedCommands = [];
     document.logElement = $('#log');
     document.followLogCheckBox = $('#follow_log');
     establishWebSocketConnection();
@@ -51,12 +61,16 @@ function setupWebSocketConsole(url) {
     // send command when user presses return
     var msg = $('#msg');
     form.submit(function(event) {
-        if (!window.ws) {
-            logLine("Can't send command, no ws connection opened!");
-            return;
-        }
         event.preventDefault();
-        window.ws.send(msg.val());
+
+        var command = msg.val();
+        if (!window.ws) {
+            logLine("Can't send command, no ws connection opened! Will try to send when connection has been restored.");
+            window.stashedCommands.push(command);
+        } else {
+            window.ws.send(command);
+        }
+
         msg.val('');
     });
     msg.focus();
