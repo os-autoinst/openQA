@@ -55,6 +55,14 @@ sub startup {
     my $logged_in = $r->under('/')->to("session#ensure_user");
     my $auth      = $r->under('/')->to("session#ensure_operator");
 
+    # Routes used by plugins
+    my $admin_auth = $r->under('/admin')->to('session#ensure_admin')->name('ensure_admin');
+    my $op_auth    = $r->under('/admin')->to('session#ensure_operator')->name('ensure_operator');
+    my $api_auth_operator
+      = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_operator')->name('api_ensure_operator');
+    my $api_auth_admin
+      = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_admin')->name('api_ensure_admin');
+
     OpenQA::Setup::setup_template_search_path($self);
     OpenQA::Setup::load_plugins($self, $auth);
     OpenQA::Setup::set_secure_flag_on_cookies_of_https_connection($self);
@@ -181,9 +189,7 @@ sub startup {
     ## Admin area starts here
     ###
     my %api_description;
-    my $admin_auth  = $r->under('/admin')->to('session#ensure_admin')->name('ensure_admin');
     my $admin_r     = $admin_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
-    my $op_auth     = $r->under('/admin')->to('session#ensure_operator')->name('ensure_operator');
     my $op_r        = $op_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
     my $pub_admin_r = $r->route('/admin')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
 
@@ -238,8 +244,6 @@ sub startup {
     # Array to store new API routes' references, so they can all be checked to get API description from POD
     my @api_routes        = ();
     my $api_auth_any_user = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth');
-    my $api_auth_operator = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_operator');
-    my $api_auth_admin    = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_admin');
     my $api_ru            = $api_auth_any_user->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     my $api_ro            = $api_auth_operator->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     my $api_ra            = $api_auth_admin->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
