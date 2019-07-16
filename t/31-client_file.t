@@ -168,9 +168,9 @@ subtest 'verify_chunks' => sub {
     is $original->slurp, Mojo::File->new($copied_file)->slurp, 'Same content';
 
     $pieces->first->content('42')->write_content($copied_file);    #Let's simulate a writing error
-    is(
+    like(
         OpenQA::Files->verify_chunks($t_dir => $copied_file),
-        'Can\'t verify written data from chunk',
+        qr/^Can't verify written data from chunk/,
         'Verify chunks fail'
     );
     isnt $original->slurp, Mojo::File->new($copied_file)->slurp, 'Not same content';
