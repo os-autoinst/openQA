@@ -20,24 +20,37 @@ use Mojo::File;
 
 sub register {
     my ($self, $app, $config) = @_;
-    my $plugin_r = $app->routes->find('api_ensure_operator');
+    my $plugin_r     = $app->routes->find('ensure_operator');
+    my $plugin_api_r = $app->routes->find('api_ensure_operator');
 
-    return $app->log->error('Routes not configured, plugin ObsRsync will be disabled') unless $plugin_r;
+    if (!$plugin_r) {
+        $app->log->error('Routes not configured, plugin ObsRsync will be disabled') unless $plugin_r;
+    }
+    else {
+        # Templates
+        push @{$app->renderer->paths},
+          Mojo::File->new(__FILE__)->dirname->child('ObsRsync')->child('templates')->to_string;
 
-    # Templates
-    push @{$app->renderer->paths}, Mojo::File->new(__FILE__)->dirname->child('ObsRsync')->child('templates')->to_string;
+        $plugin_r->get('/obs_rsync/#folder/runs/#subfolder/download/#filename')->name('plugin_obs_rsync_download_file')
+          ->to('Plugin::ObsRsync::Controller#download_file');
+        $plugin_r->get('/obs_rsync/#folder/runs/#subfolder')->name('plugin_obs_rsync_logfiles')
+          ->to('Plugin::ObsRsync::Controller#logfiles');
+        $plugin_r->get('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_logs')
+          ->to('Plugin::ObsRsync::Controller#logs');
+        $plugin_r->get('/obs_rsync/#folder')->name('plugin_obs_rsync_folder')
+          ->to('Plugin::ObsRsync::Controller#folder');
+        $plugin_r->get('/obs_rsync/')->name('plugin_obs_rsync_index')->to('Plugin::ObsRsync::Controller#index');
+        $app->config->{plugin_links}{operator}{'OBS Sync'} = 'plugin_obs_rsync_index';
+    }
 
-    $plugin_r->get('/obs_rsync/#folder/runs/#subfolder/download/#filename')->name('plugin_obs_rsync_download_file')
-      ->to('Plugin::ObsRsync::Controller#download_file');
-    $plugin_r->get('/obs_rsync/#folder/runs/#subfolder')->name('plugin_obs_rsync_logfiles')
-      ->to('Plugin::ObsRsync::Controller#logfiles');
-    $plugin_r->get('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_logs')->to('Plugin::ObsRsync::Controller#logs');
-    $plugin_r->get('/obs_rsync/#folder')->name('plugin_obs_rsync_folder')->to('Plugin::ObsRsync::Controller#folder');
-    $plugin_r->get('/obs_rsync/')->name('plugin_obs_rsync_index')->to('Plugin::ObsRsync::Controller#index');
+    if (!$plugin_api_r) {
+        $app->log->error('API routes not configured, plugin ObsRsync will not have API configured') unless $plugin_r;
+    }
+    else {
+        $plugin_api_r->put('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_run')
+          ->to('Plugin::ObsRsync::Controller#run');
+    }
 
-    $plugin_r->put('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_run')->to('Plugin::ObsRsync::Controller#run');
-
-    $app->config->{plugin_links}{operator}{'OBS Sync'} = 'plugin_obs_rsync_index';
 }
 
 1;

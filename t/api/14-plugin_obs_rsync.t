@@ -46,25 +46,28 @@ $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->i
 $t->app($app);
 
 # needs to log in (it gets redirected)
-$t->get_ok('/api/v1/obs_rsync');
+$t->get_ok('/login');
 
-$t->get_ok('/api/v1/obs_rsync')->status_is(200, "index status")->element_exists('[Leap\:15.1\:ToTest]');
+$t->get_ok('/admin/obs_rsync')->status_is(200, "index status")->element_exists('[Leap\:15.1\:ToTest]');
 
-$t->get_ok('/api/v1/obs_rsync/Leap:15.1:ToTest')->status_is(200, "project status")->element_exists('[rsync_iso.cmd]')
+$t->get_ok('/admin/obs_rsync/Leap:15.1:ToTest')->status_is(200, "project status")->element_exists('[rsync_iso.cmd]')
   ->element_exists('[rsync_repo.cmd]')->element_exists('[openqa.cmd]');
 
-$t->get_ok('/api/v1/obs_rsync/Leap:15.1:ToTest/runs')->status_is(200, "project logs status")
+$t->get_ok('/admin/obs_rsync/Leap:15.1:ToTest/runs')->status_is(200, "project logs status")
   ->element_exists('[.run_190703_143010]');
 
-$t->get_ok('/api/v1/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010')
-  ->status_is(200, "project log subfolder status")->element_exists('[files_iso.lst]');
+$t->get_ok('/admin/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010')->status_is(200, "project log subfolder status")
+  ->element_exists('[files_iso.lst]');
 
-$t->get_ok('/api/v1/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010/download/files_iso.lst')
+$t->get_ok('/admin/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010/download/files_iso.lst')
   ->status_is(200, "project log file download status")
   ->content_like(qr/openSUSE-Leap-15.1-DVD-x86_64-Build470.1-Media.iso/)
   ->content_like(qr/openSUSE-Leap-15.1-NET-x86_64-Build470.1-Media.iso/);
 
+$t->reset_session;
+
 $t->put_ok('/api/v1/obs_rsync/Leap:15.1:ToTest/runs')->status_is(201, "trigger rsync");
 $t->put_ok('/api/v1/obs_rsync/WRONGPROJECT/runs')->status_is(404, "trigger rsync wrong project");
+$t->put_ok('/admin/obs_rsync/Leap:15.1:ToTest/runs')->status_is(404, "trigger rsync non-api path");
 
 done_testing();
