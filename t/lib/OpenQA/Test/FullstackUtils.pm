@@ -151,19 +151,8 @@ sub wait_for_developer_console_contains_log_message {
     my $log                    = $log_textarea->get_text();
     my $previous_log           = '';
 
-    my $regex_closed = qr/Connection closed/;
     my $match_index;
     while (($match_index = match_regex_returning_index($message_regex, $log, $position_of_last_match)) < 0) {
-        # check whether connection has been unexpectedly closed/opened
-        if (   $message_regex ne $regex_closed
-            && $diag_info ne 'paused'
-            && $log =~ $regex_closed)
-        {
-            fail('web socket connection closed prematurely, was waiting for ' . $diag_info);
-            note("developer console contained at this point:\n$log");
-            return;
-        }
-
         # poll less frequently when waiting for paused (might take a minute for the first test module to pass)
         sleep($diag_info eq 'paused' ? 5 : 1);
 
