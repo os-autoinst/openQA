@@ -67,18 +67,19 @@ combined_like(
 );
 
 subtest 'capabilities' => sub {
-    my $capabilities      = $worker->capabilities;
-    my @capabilities_keys = sort keys %$capabilities;
+    my $capabilities = $worker->capabilities;
+    delete $capabilities->{cpu_opmode};    # not always present and also not strictly required anyways
+
     is_deeply(
-        \@capabilities_keys,
+        [sort keys %$capabilities],
         [
             qw(
-              cpu_arch cpu_modelname cpu_opmode host instance isotovideo_interface_version
+              cpu_arch cpu_modelname host instance isotovideo_interface_version
               mem_max websocket_api_version worker_class
               )
         ],
         'capabilities contain expected information'
-    ) or diag explain \@capabilities_keys;
+    ) or diag explain $capabilities;
 };
 
 subtest 'status' => sub {
