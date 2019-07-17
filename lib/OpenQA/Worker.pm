@@ -305,18 +305,6 @@ sub exec {
     return $return_code;
 }
 
-sub send_to_webui_host {
-    my ($self, $method, $path, %args) = @_;
-
-    my $webui_host = $args{host} // $self->current_webui_host;
-    die 'send_to_webui_host called but there is no web UI host' unless $webui_host;
-
-    my $client = $self->clients_by_webui_host->{$webui_host};
-    die "send_to_webui_host called for invalid host $webui_host\n" unless $client;
-    $client->send($method, $path, %args);
-}
-
-
 sub _prepare_cache_directory {
     my ($webui_host, $cachedirectory) = @_;
     die 'No cachedir' unless $cachedirectory;
