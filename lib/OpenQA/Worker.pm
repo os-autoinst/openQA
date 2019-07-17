@@ -358,6 +358,10 @@ sub accept_job {
         default => 'append',
     );
 
+    # ensure the pool directory is cleaned up before starting a new job
+    # note: The cleanup after finishing the last job might have been prevented via --no-cleanup.
+    $self->_clean_pool_directory;
+
     $self->current_job($job);
     $self->current_webui_host($webui_host);
     $job->accept();
@@ -454,7 +458,7 @@ sub check_availability {
     }
 
     # ensure pool directory is locked
-    if (!$self->_setup_pool_directory) {
+    unless (defined $self->_setup_pool_directory) {
         # note: $self->current_error is set within $self->_ensure_pool_directory in the error case.
         log_error($self->current_error);
         return 0;
@@ -552,8 +556,10 @@ sub _handle_job_status_changed {
             return $self->stop;
         }
 
-        log_debug('Cleaning up for next job');
-        $self->_clean_pool_directory unless ($self->no_cleanup);
+        unless ($self->no_cleanup) {
+            log_debug('Cleaning up for next job');
+            $self->_clean_pool_directory;
+        }
     }
     # FIXME: Avoid so much elsif like in CommandHandler.pm.
 }
@@ -563,9 +569,7 @@ sub _setup_pool_directory {
 
     # skip if we have already locked the pool directory
     my $pool_directory_fd = $self->{_pool_directory_lock_fd};
-    if (defined $pool_directory_fd) {
-        return $pool_directory_fd;
-    }
+    return $pool_directory_fd if defined $pool_directory_fd;
 
     my $pool_directory = $self->pool_directory;
     if (!$pool_directory) {
@@ -574,11 +578,10 @@ sub _setup_pool_directory {
     }
 
     try {
-        $pool_directory_fd = $self->_lock_pool_directory;
-        $self->_clean_pool_directory();
+        $self->{_pool_directory_lock_fd} = $pool_directory_fd = $self->_lock_pool_directory;
     }
     catch {
-        $self->current_error('Unable to lock and clean pool directory: ' . $_);
+        $self->current_error('Unable to lock pool directory: ' . $_);
     };
     return $pool_directory_fd;
 }
