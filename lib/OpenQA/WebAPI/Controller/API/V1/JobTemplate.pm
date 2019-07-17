@@ -115,16 +115,24 @@ Returns a YAML template representing the job group(s).
 sub schedules {
     my $self = shift;
 
-    my $yaml = $self->get_job_groups($self->param('id'));
+    my $yaml = $self->get_job_groups($self->param('id'), $self->param('name'));
+
+    # Re-indent with group names at the toplevel in case of multiple groups
+    if (keys %$yaml > 1) {
+        foreach my $group (keys %$yaml) {
+            $yaml->{$group} = "'$group': |\n" . ($yaml->{$group} =~ s/(.+)\n/  $1\n/gr);
+        }
+    }
     $self->render(yaml => join("\n", map { $yaml->{$_} } keys %$yaml));
 }
 
 sub get_job_groups {
-    my ($self, $id) = @_;
+    my ($self, $id, $name) = @_;
 
     my %yaml;
-    my $groups = $self->schema->resultset("JobGroups")
-      ->search($id ? {id => $id} : undef, {select => [qw(id name parent_id default_priority template)]});
+    my $groups = $self->schema->resultset("JobGroups")->search(
+        $id ? {id => $id} : ($name ? {name => $name} : undef),
+        {select => [qw(id name parent_id default_priority template)]});
     while (my $group = $groups->next) {
         my %group;
         # Use stored YAML template from the database if available
@@ -272,10 +280,13 @@ sub update {
     try {
         $schema->txn_do(
             sub {
-                my $job_group = $job_groups->find({id => $self->param('id')}, {select => [qw(id name template)]});
-                my $group_id  = $self->param('id');
+                my $id        = $self->param('id');
+                my $name      = $self->param('name');
+                my $job_group = $job_groups->find($id ? {id => $id} : ($name ? {name => $name} : undef),
+                    {select => [qw(id name template)]});
+                die "Job group " . ($name // $id) . " not found\n" unless $job_group;
+                my $group_id = $job_group->id;
                 $json->{id} = $group_id;
-                die "Job group not found\n" unless $job_group;
 
                 if ($self->param('reference')) {
                     my $reference = $self->get_job_groups($group_id)->{$job_group->name};
