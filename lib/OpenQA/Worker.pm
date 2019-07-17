@@ -248,7 +248,7 @@ sub init {
             }
 
             # kill if stopping gracefully does not work
-            log_error('Another error occurred when trying to stop gracefully due to an error.'
+            log_error('Another error occurred when trying to stop gracefully due to an error. '
                   . 'Trying to kill ourself forcefully now.');
             $self->kill();
             Mojo::IOLoop->stop();
@@ -304,18 +304,6 @@ sub exec {
 
     return $return_code;
 }
-
-sub send_to_webui_host {
-    my ($self, $method, $path, %args) = @_;
-
-    my $webui_host = $args{host} // $self->current_webui_host;
-    die 'send_to_webui_host called but there is no web UI host' unless $webui_host;
-
-    my $client = $self->clients_by_webui_host->{$webui_host};
-    die "send_to_webui_host called for invalid host $webui_host\n" unless $client;
-    $client->send($method, $path, %args);
-}
-
 
 sub _prepare_cache_directory {
     my ($webui_host, $cachedirectory) = @_;
@@ -378,7 +366,7 @@ sub stop {
 
     if ($current_job->status eq 'setup') {
         # stop job directly during setup because the IO loop is blocked by isotovideo.pm during setup
-        $current_job->stop($reason);
+        return $current_job->stop($reason);
     }
     Mojo::IOLoop->next_tick(
         sub {
@@ -390,7 +378,7 @@ sub stop {
 sub stop_current_job {
     my ($self, $reason) = @_;
 
-    if (my $current_job = $self->current_job) { $current_job->stop; }
+    if (my $current_job = $self->current_job) { $current_job->stop($reason); }
 }
 
 sub kill {
