@@ -364,14 +364,14 @@ sub _stop_step_3_announce {
                 my $res            = $tx->res;
 
                 if (!$res->is_success) {
-                    log_error('Unable to stop the command server gracefully: ');
-                    log_error($res->code ? $res->to_string : 'Command server likely not reachable at all');
+                    log_info('Unable to stop the command server gracefully: ');
+                    log_info($res->code ? $res->to_string : 'Command server likely not reachable at all');
                 }
                 $callback->();
             });
     }
     catch {
-        log_error('Unable to stop the command server gracefully: ' . $_);
+        log_info('Unable to stop the command server gracefully: ' . $_);
 
         # ensure stopping is proceeded (failing announcement is not critical)
         $callback->();
