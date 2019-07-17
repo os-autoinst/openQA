@@ -366,7 +366,7 @@ sub stop {
 
     if ($current_job->status eq 'setup') {
         # stop job directly during setup because the IO loop is blocked by isotovideo.pm during setup
-        $current_job->stop($reason);
+        return $current_job->stop($reason);
     }
     Mojo::IOLoop->next_tick(
         sub {
