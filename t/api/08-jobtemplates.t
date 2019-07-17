@@ -529,19 +529,24 @@ is($job_templates->search({prio => -5})->count, 0, 'no rows affected');
 # test the YAML export
 # Test validation
 my $yaml = {};
-is_deeply(scalar @{$t->app->validate_yaml($yaml, 1)}, 2, 'Empty YAML is an error')
+eval { $t->app->validate_yaml($yaml, 1); };
+like($_, qr/\/products: Missing property\./, 'Empty YAML is an error')
   or diag explain YAML::XS::Dump($yaml);
 $yaml->{scenarios}{'x86_64'}{opensuse} = ['spam', 'eggs'];
-is_deeply($t->app->validate_yaml($yaml, 1), ["/products: Missing property."], 'No products defined')
+eval { $t->app->validate_yaml($yaml, 1); };
+like($_, qr/\/products: Missing property\./, 'No products defined')
   or diag explain YAML::XS::Dump($yaml);
 $yaml->{products}{'opensuse'} = {};
-is_deeply(@{$t->app->validate_yaml($yaml, 1)}[0], '/products/opensuse/distri: Missing property.', 'No distri specified')
+eval { $t->app->validate_yaml($yaml, 1); };
+like($_, qr/\/products\/opensuse\/distri: Missing property\./, 'No distri specified')
   or diag explain YAML::XS::Dump($yaml);
 $yaml->{products}{'opensuse'}{distri} = 'sle';
-is_deeply(@{$t->app->validate_yaml($yaml, 1)}[0], '/products/opensuse/flavor: Missing property.', 'No flavor specified')
+eval { $t->app->validate_yaml($yaml, 1); };
+like($_, qr/\/products\/opensuse\/flavor: Missing property\./, 'No flavor specified')
   or diag explain YAML::XS::Dump($yaml);
 $yaml->{products}{'opensuse'}{flavor} = 'DVD';
-is_deeply($t->app->validate_yaml($yaml, 1), ['/products/opensuse/version: Missing property.'], 'No version specified')
+eval { $t->app->validate_yaml($yaml, 1); };
+like($_, qr/\/products\/opensuse\/version: Missing property\./, 'No version specified')
   or diag explain YAML::XS::Dump($yaml);
 $yaml->{products}{'opensuse'}{version} = '42.1';
 # Add non-trivial test suites to exercise the validation
@@ -555,7 +560,8 @@ $yaml->{scenarios}{'x86_64'}{opensuse} = [
             priority => 33,
         },
     }];
-is_deeply($t->app->validate_yaml($yaml, 1), [], 'YAML valid as expected')
+eval { $t->app->validate_yaml($yaml, 1); };
+is($_, undef, 'YAML valid as expected')
   or diag explain YAML::XS::Dump($yaml);
 my $opensuse = $job_groups->find({name => 'opensuse'});
 # Make 40 our default priority, which matters when we look at the "defaults" key later
@@ -563,14 +569,16 @@ $opensuse->update({default_priority => 40});
 # Get all groups
 $t->get_ok("/api/v1/experimental/job_templates_scheduling")->status_is(200);
 $yaml = YAML::XS::Load($t->tx->res->body);
-is_deeply($t->app->validate_yaml($yaml, 1), [], 'YAML of all groups is valid');
+eval { $t->app->validate_yaml($yaml, 1); };
+is($_, undef, 'YAML of all groups is valid');
 # Get one group with defined scenarios, products and defaults
 $t->get_ok('/api/v1/experimental/job_templates_scheduling/' . $opensuse->id)->status_is(200);
 # A document start marker "---" shouldn't be present by default
 $yaml = $t->tx->res->body =~ s/---\n//r;
 is($t->tx->res->body, $yaml, 'No document start marker by default');
 $yaml = YAML::XS::Load($t->tx->res->body);
-is_deeply($t->app->validate_yaml($yaml, 1), [], 'YAML of single group is valid');
+eval { $t->app->validate_yaml($yaml, 1) };
+is($_, undef, 'YAML of single group is valid');
 is_deeply(
     $yaml,
     {
@@ -695,10 +703,7 @@ $t->post_ok(
 )->status_is(400)->json_is(
     '' => {
         error_status => 400,
-        error        => [
-            {path => '/products',  message => 'Missing property.'},
-            {path => '/scenarios', message => 'Missing property.'},
-        ],
+        error        => ['Validation failed:', '/products: Missing property.', '/scenarios: Missing property.',],
     },
     'posting invalid YAML template results in error'
 );

@@ -241,24 +241,7 @@ Returns a 400 code on error, or a 303 code and the job template id within a JSON
 sub update {
     my $self = shift;
 
-    my $yaml   = {};
-    my $errors = [];
-    try {
-        # No objects (aka SafeYAML)
-        $YAML::XS::LoadBlessed = 0;
-        $yaml                  = YAML::XS::Load($self->param('template'));
-        $errors                = $self->app->validate_yaml($yaml, $self->app->log->level eq 'debug');
-    }
-    catch {
-        # Push the exception to the list of errors without the trailing new line
-        push @$errors, substr($_, 0, -1);
-    };
-
-    if (@$errors) {
-        $self->app->log->error(@$errors);
-        $self->respond_to(json => {json => {error => \@$errors}, status => 400},);
-        return;
-    }
+    my $yaml = {};
 
     my $schema                = $self->schema;
     my $job_groups            = $schema->resultset('JobGroups');
@@ -270,6 +253,11 @@ sub update {
     my $json                  = {};
 
     try {
+        # No objects (aka SafeYAML)
+        $YAML::XS::LoadBlessed = 0;
+        $yaml                  = YAML::XS::Load($self->param('template'));
+        $self->app->validate_yaml($yaml, $self->app->log->level eq 'debug');
+
         $schema->txn_do(
             sub {
                 my $job_group = $job_groups->find({id => $self->param('id')}, {select => [qw(id name template)]});
@@ -379,9 +367,6 @@ sub update {
                                     id              => {'not in' => \@setting_ids},
                                     job_template_id => $job_template_id,
                                 })->delete();
-
-                            # Stop iterating if there were errors with this test suite
-                            last if (@$errors);
                         }
                     }
                 }
@@ -407,17 +392,12 @@ sub update {
             });
     }
     catch {
-        # Push the exception to the list of errors without the trailing new line
-        push @$errors, substr($_, 0, -1);
-    };
-
-    if (@$errors) {
-        $json->{error} = \@$errors;
-        $self->app->log->error(@$errors);
+        $json->{error} = [split '\n', $_];
+        $self->app->log->error($_);
         delete $json->{changes};
         $self->respond_to(json => {json => $json, status => 400},);
         return;
-    }
+    };
 
     $self->emit_event('openqa_jobtemplate_create', $json) unless $self->param('preview');
     delete $json->{changes};

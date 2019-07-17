@@ -50,28 +50,22 @@ sub register {
             my $schema_yaml = $self->app->home->child('public', 'schema', 'JobTemplate.yaml')->to_string;
             my $validator   = JSON::Validator->new;
             my $schema;
-            my @errors;
-            try {
-                if ($validate_schema) {
-                    # Validate the schema: catches errors in type names and definitions
-                    $validator = $validator->load_and_validate_schema($schema_yaml);
-                    $schema    = $validator->schema;
-                }
-                else {
-                    $schema = $validator->schema($schema_yaml);
-                }
-            }
-            catch {
-                push @errors, $_;
-            };
-            if ($schema) {
-                # Note: Don't pass $schema here, that won't work
-                push @errors, $validator->validate($yaml);
+            if ($validate_schema) {
+                # Validate the schema: catches errors in type names and definitions
+                $validator = $validator->load_and_validate_schema($schema_yaml);
+                $schema    = $validator->schema;
             }
             else {
-                push @errors, "Failed to load schema";
+                $schema = $validator->schema($schema_yaml);
             }
-            return \@errors;
+            if ($schema) {
+                # Note: Don't pass $schema here, that won't work
+                my @errors = $validator->validate($yaml);
+                die "Validation failed:\n" . join("\n", @errors) . "\n" if @errors;
+            }
+            else {
+                die "Failed to load schema\n";
+            }
         });
 }
 
