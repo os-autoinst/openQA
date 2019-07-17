@@ -248,7 +248,7 @@ sub init {
             }
 
             # kill if stopping gracefully does not work
-            log_error('Another error occurred when trying to stop gracefully due to an error.'
+            log_error('Another error occurred when trying to stop gracefully due to an error. '
                   . 'Trying to kill ourself forcefully now.');
             $self->kill();
             Mojo::IOLoop->stop();
