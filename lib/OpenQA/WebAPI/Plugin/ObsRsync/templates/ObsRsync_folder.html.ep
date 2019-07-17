@@ -6,11 +6,11 @@
 
 % title 'OBS synchronization';
 <h2><%= 'OBS synchronization for: ' . $obs_project  %></h2>
-<div class="container" id="caption">
+<div class="container">
     OBS synchronization is performed in 3 steps.
 </div>
 <hr>
-<div class="container" id="step1">
+<div class="container">
 <h6>Step 1. Retrieve lists of required files from predefined OBS locations.</h6>
 % if (!@$lst_files) {
     No files have been read so far
@@ -29,7 +29,7 @@
 % }
 </div>
 <hr>
-<div class="container" id="step2">
+<div class="container">
 <h6>Step 2. Generate and execute commands to rsync and rename deliverables from remote OBS location (based on lists from Step 1.)</h6>
 % if (!@$rsync_commands) {
     No logs found for last run
@@ -50,7 +50,7 @@
 % }
 </div>
 <hr>
-<div class="container" id="step3">
+<div class="container">
 <h6>Step 3. Generate and execute openQA REST requests to trigger tests (based on lists from Step 1.)</h6>
 % if (!$openqa_commands) {
     No logs found for last run

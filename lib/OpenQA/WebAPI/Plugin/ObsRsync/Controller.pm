@@ -27,7 +27,7 @@ sub _home {
 sub index {
     my $self   = shift;
     my $folder = $self->param('folder');
-    return if $self->_check_and_render_error($folder);
+    return undef if $self->_check_and_render_error($folder);
     my $files
       = Mojo::File->new($self->_home)->list({dir => 1})->grep(sub { -d $_ })->map('basename')
       ->grep(qr/^(?!test|WebAPIPlugin|__pycache__)/)->to_array;
