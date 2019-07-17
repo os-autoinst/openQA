@@ -155,6 +155,8 @@ subtest 'status' => sub {
         },
         'worker is broken if CACHEDIRECTORY set but worker cache not available'
     );
+
+    delete $worker->settings->global_settings->{CACHEDIRECTORY};
 };
 
 subtest 'stopping' => sub {
@@ -309,6 +311,9 @@ subtest 'handle job status changes' => sub {
         is($cleanup_called,             0,     'pool directory not cleaned up');
         is($worker->current_job,        undef, 'current job unassigned');
         is($worker->current_webui_host, undef, 'current web UI host unassigned');
+
+        $worker->check_availability;
+        is($cleanup_called, 0, 'pool directory not cleaned up within periodic availability check');
 
         # stop job with cleanup enabled
         $worker->no_cleanup(0);
