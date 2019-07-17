@@ -33,8 +33,18 @@
 %else
 %bcond_with tests
 %endif
+# SLE < 15 does not provide many of the dependencies for the python sub-package
+%if 0%{?sle_version} < 150000 && !0%{?is_opensuse}
+%bcond_with python_scripts
+%else
+%bcond_without python_scripts
+%endif
 # runtime requirements that also the testsuite needs
+%if %{with python_scripts}
 %define python_scripts_requires python3-base python3-requests python3-future
+%else
+%define python_scripts_requires %{nil}
+%endif
 %define t_requires perl(DBD::Pg) perl(DBIx::Class) perl(Config::IniFiles) perl(SQL::Translator) perl(Date::Format) perl(File::Copy::Recursive) perl(DateTime::Format::Pg) perl(Net::OpenID::Consumer) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) perl(aliased) perl(Config::Tiny) perl(DBIx::Class::DeploymentHandler) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(IO::Socket::SSL) perl(Data::Dump) perl(DBIx::Class::OptimisticLocking) perl(Module::Pluggable) perl(Text::Diff) perl(Text::Markdown) perl(JSON::Validator) perl(YAML::XS) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(Mojo::RabbitMQ::Client) perl(BSD::Resource) perl(Cpanel::JSON::XS) perl(Pod::POM) perl(Mojo::IOLoop::ReadWriteProcess) perl(Minion) perl(Mojo::Pg) perl(Mojo::SQLite) perl(Minion::Backend::SQLite) %python_scripts_requires
 Name:           openQA
 Version:        4.6
@@ -182,6 +192,7 @@ Recommends:     jq
 Tools and support files for openQA client script. Client script is
 a convenient helper for interacting with openQA webui REST API.
 
+%if %{with python_scripts}
 %package python-scripts
 Summary:        Additional scripts in python
 Group:          Development/Tools/Other
@@ -189,6 +200,7 @@ Requires:       %python_scripts_requires
 
 %description python-scripts
 Additional scripts for the use of openQA in the python programming language.
+%endif
 
 %package local-db
 Summary:        Helper package to ease setup of postgresql DB
@@ -242,6 +254,9 @@ rm -rf %{buildroot}/DB
 %endif
 
 %install
+%if !%{with python_scripts}
+rm script/openqa-label-all
+%endif
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 %make_install
@@ -255,7 +270,9 @@ ln -s %{_datadir}/openqa/script/openqa-clone-job %{buildroot}%{_bindir}/openqa-c
 ln -s %{_datadir}/openqa/script/dump_templates %{buildroot}%{_bindir}/openqa-dump-templates
 ln -s %{_datadir}/openqa/script/load_templates %{buildroot}%{_bindir}/openqa-load-templates
 ln -s %{_datadir}/openqa/script/openqa-clone-custom-git-refspec %{buildroot}%{_bindir}/openqa-clone-custom-git-refspec
+%if %{with python_scripts}
 ln -s %{_datadir}/openqa/script/openqa-label-all %{buildroot}%{_bindir}/openqa-label-all
+%endif
 
 cd %{buildroot}
 grep -rl %{_bindir}/env . | while read file; do
@@ -490,9 +507,11 @@ fi
 %{_bindir}/openqa-load-templates
 %{_bindir}/openqa-clone-custom-git-refspec
 
+%if %{with python_scripts}
 %files python-scripts
 %{_datadir}/openqa/script/openqa-label-all
 %{_bindir}/openqa-label-all
+%endif
 
 %files doc
 %doc docs/*
