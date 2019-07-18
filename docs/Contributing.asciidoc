@@ -477,3 +477,106 @@ It is also important to mention that your local repositories will be copied into
 profiling data because you enabled +Mojolicious::Plugin::NYTProf+.
 
 In general, if starting the tests via Docker seems to hang, it is a good idea to inspect the process tree to see which command is currently executed.
+
+== Building Plugins
+
+Not all code needs to be included in openQA itself. openQA also supports the use
+of 3rd party plugins that follow the standards for plugins used by the
+https://mojolicious.org[Mojolicious] web framework. These can be distributed as
+normal CPAN modules and installed as such alongside openQA.
+
+Plugins are a good choice especially for extensions to the UI and HTTP API, but
+also for notification systems listening to various events inside the web server.
+
+If your plugin was named +OpenQA::WebAPI::Plugin::Hello+, you would install it
+in one of the include directories of the Perl used to run openQA, and then
+configure it in `openqa.ini`. The `plugins` setting in the `global` section will
+tell openQA what plugins to load.
+
+[source,ini]
+--------------------------------------------------------------------------------
+# Tell openQA to load the plugin
+[global]
+plugins = Hello
+
+# Plugin specific configuration (optional)
+[hello_plugin]
+some = value
+-------------------------------------------------------------------------------
+
+The plugin specific configuration is optional, but if defined would be available
+in `$app->config->{hello_plugin}`.
+
+To extend the UI or HTTP API there are various named routes already defined that
+will take care of authentication for your plugin. You just attach the plugin
+routes to them and only authenticated requests will get through.
+
+[source,perl]
+--------------------------------------------------------------------------------
+package OpenQA::WebAPI::Plugin::Hello;
+use Mojo::Base 'Mojolicious::Plugin';
+
+sub register {
+    my ($self, $app, $config) = @_;
+
+    # Only operators may use our plugin
+    my $ensure_operator = $app->routes->find('ensure_operator');
+    my $plugin_prefix = $ensure_operator->any('/hello_plugin');
+
+    # Plain text response (under "/admin/hello_plugin/")
+    $plugin_prefix->get('/' => sub {
+      my $c = shift;
+      $c->render(text => 'Hello openQA!');
+    })->name('hello_plugin_index');
+
+    # Add a link to the UI menu
+    $app->config->{plugin_links}{operator}{'Hello'} = 'hello_plugin_index';
+}
+
+1;
+-------------------------------------------------------------------------------
+
+The `plugin_links` configuration setting can be modified by plugins to add links
+to the `operator` and `admin` sections of the openQA UI menu. Route names or
+fully qualified URLs can be used as link targets. If your plugin uses templates,
+you should reuse the `bootstrap` layout provided by openQA. This will ensure a
+consistent look, and make the UI menu available everywhere.
+
+[source,perl]
+--------------------------------------------------------------------------------
+% layout 'bootstrap';
+% title 'Hello openQA!';
+<div>
+  <h2>Hello openQA!</h2>
+</div>
+------------------------------------------------------------------------------
+
+For UI plugins there are two named authentication routes defined:
+
+1. `ensure_operator`: under `/admin/`, only allows logged in users with `operator` privileges
+2. `ensure_admin`: under `/admin/`, only allows logged in users with `admin` privileges
+
+And for HTTP API plugins there are four named authentication routes defined:
+
+1. `api_public`: under `/api/v1/`, allows access to everyone
+2. `api_ensure_user`: under `/api/v1/`, only allows authenticated users
+3. `api_ensure_operator`: under `/api/v1/`, only allows authenticated users with `operator` privileges
+4. `api_ensure_admin`: under `/api/v1/`, only allows authenticated nusers with `admin` privileges
+
+To generate a minimal installable plugin with a CPAN distribution directory
+structure you can use the Mojolicious tools. It can be packaged just like any
+other Perl module from CPAN.
+
+[source,sh]
+--------------------------------------------------------------------------------
+$ mojo generate plugin -f OpenQA::WebAPI::Plugin::Hello
+...
+$ cd OpenQA-WebAPI-Plugin-Hello/
+$ perl Makefile.PL
+...
+$ make test
+...
+-------------------------------------------------------------------------------
+
+And if you need code examples, there are some plugins
+https://github.com/os-autoinst/openQA/tree/master/lib/OpenQA/WebAPI/Plugin[included with openQA].
