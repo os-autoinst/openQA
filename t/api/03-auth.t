@@ -24,6 +24,7 @@ BEGIN {
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
+use Test::MockModule;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings ':all';
@@ -41,6 +42,12 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 my $app = $t->app;
 $t->ua(OpenQA::Client->new()->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
+
+# we don't want to *actually* delete any assets when we're testing
+# whether we're allowed to or not, so let's mock that out
+my $mock_asset_remove_callcount = 0;
+my $mock_asset                  = Test::MockModule->new('OpenQA::Schema::Result::Assets');
+$mock_asset->mock(remove_from_disk => sub { $mock_asset_remove_callcount++; return 1; });
 
 subtest 'authentication routes for plugins' => sub {
     my $public = $t->app->routes->find('api_public');
@@ -70,6 +77,7 @@ subtest 'access limiting for non authenticated users' => sub() {
         },
         'error returned as JSON'
     );
+    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
     $t->put_ok('/api/v1/public_plugin')->status_is(200)->content_is('API public plugin works!');
     $t->put_ok('/api/v1/user_plugin')->status_is(403);
     $t->put_ok('/api/v1/admin_plugin')->status_is(403);
@@ -82,6 +90,7 @@ subtest 'access limiting for authenticated users but not operators nor admins' =
     $t->get_ok('/api/v1/jobs')->status_is(200, 'accessible (public)');
     $t->post_ok('/api/v1/assets')->status_is(403, 'restricted (operator and admin only)');
     $t->delete_ok('/api/v1/assets/1')->status_is(403, 'restricted (admin only)');
+    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
     $t->put_ok('/api/v1/public_plugin')->status_is(200)->content_is('API public plugin works!');
     $t->put_ok('/api/v1/user_plugin')->status_is(200)->content_is('API user plugin works!');
     $t->put_ok('/api/v1/admin_plugin')->status_is(403);
@@ -94,6 +103,7 @@ subtest 'access limiting for authenticated operators but not admins' => sub() {
     $t->get_ok('/api/v1/jobs')->status_is(200, 'accessible (public)');
     $t->post_ok('/api/v1/jobs/99927/set_done')->status_is(200, 'accessible (operator and admin only)');
     $t->delete_ok('/api/v1/assets/1')->status_is(403, 'restricted (admin only)');
+    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
     $t->put_ok('/api/v1/public_plugin')->status_is(200)->content_is('API public plugin works!');
     $t->put_ok('/api/v1/user_plugin')->status_is(200)->content_is('API user plugin works!');
     $t->put_ok('/api/v1/admin_plugin')->status_is(403);
@@ -106,6 +116,9 @@ subtest 'access granted for admins' => sub() {
     $t->get_ok('/api/v1/jobs')->status_is(200, 'accessible (public)');
     $t->post_ok('/api/v1/jobs/99927/set_done')->status_is(200, 'accessible (operator and admin only)');
     $t->delete_ok('/api/v1/assets/1')->status_is(200, 'accessible (admin only)');
+    is($mock_asset_remove_callcount, 1, 'asset deletion function was called');
+    # reset the call count
+    $mock_asset_remove_callcount = 0;
     $t->put_ok('/api/v1/public_plugin')->status_is(200)->content_is('API public plugin works!');
     $t->put_ok('/api/v1/user_plugin')->status_is(200)->content_is('API user plugin works!');
     $t->put_ok('/api/v1/admin_plugin')->status_is(200)->content_is('API admin plugin works!');
@@ -120,6 +133,7 @@ subtest 'wrong api key - expired' => sub() {
     is($t->tx->res->json->{error}, 'api key expired', 'key expired error');
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
     is($t->tx->res->json->{error}, 'api key expired', 'key expired error');
+    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
 };
 
 subtest 'wrong api key - not maching key + secret' => sub() {
@@ -128,11 +142,13 @@ subtest 'wrong api key - not maching key + secret' => sub() {
     $t->get_ok('/api/v1/jobs')->status_is(200);
     $t->post_ok('/api/v1/products/1')->status_is(403);
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
+    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
 };
 
 subtest 'no key, no secret' => sub {
     $t->ua->apikey('NOTEXISTINGKEY');
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
+    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
 };
 
 subtest 'wrong api key - replay attack' => sub() {
@@ -160,6 +176,7 @@ subtest 'wrong api key - replay attack' => sub() {
     is($t->tx->res->json->{error}, 'timestamp mismatch', 'timestamp mismatch error');
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
     is($t->tx->res->json->{error}, 'timestamp mismatch', 'timestamp mismatch error');
+    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
 };
 
 done_testing();
