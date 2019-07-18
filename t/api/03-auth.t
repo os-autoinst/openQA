@@ -43,6 +43,12 @@ $t->ua(OpenQA::Client->new()->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
 subtest 'authentication routes for plugins' => sub {
+    my $public = $t->app->routes->find('api_public');
+    ok $public, 'api_pubic route found';
+    $public->put('/public_plugin' => sub { shift->render(text => 'API public plugin works!') });
+    my $ensure_user = $t->app->routes->find('api_ensure_user');
+    ok $ensure_user, 'api_ensure_user route found';
+    $ensure_user->put('/user_plugin' => sub { shift->render(text => 'API user plugin works!') });
     my $ensure_admin = $t->app->routes->find('api_ensure_admin');
     ok $ensure_admin, 'api_ensure_admin route found';
     $ensure_admin->put('/admin_plugin' => sub { shift->render(text => 'API admin plugin works!') });
@@ -64,6 +70,8 @@ subtest 'access limiting for non authenticated users' => sub() {
         },
         'error returned as JSON'
     );
+    $t->put_ok('/api/v1/public_plugin')->status_is(200)->content_is('API public plugin works!');
+    $t->put_ok('/api/v1/user_plugin')->status_is(403);
     $t->put_ok('/api/v1/admin_plugin')->status_is(403);
     $t->put_ok('/api/v1/operator_plugin')->status_is(403);
 };
@@ -74,6 +82,8 @@ subtest 'access limiting for authenticated users but not operators nor admins' =
     $t->get_ok('/api/v1/jobs')->status_is(200, 'accessible (public)');
     $t->post_ok('/api/v1/assets')->status_is(403, 'restricted (operator and admin only)');
     $t->delete_ok('/api/v1/assets/1')->status_is(403, 'restricted (admin only)');
+    $t->put_ok('/api/v1/public_plugin')->status_is(200)->content_is('API public plugin works!');
+    $t->put_ok('/api/v1/user_plugin')->status_is(200)->content_is('API user plugin works!');
     $t->put_ok('/api/v1/admin_plugin')->status_is(403);
     $t->put_ok('/api/v1/operator_plugin')->status_is(403);
 };
@@ -84,6 +94,8 @@ subtest 'access limiting for authenticated operators but not admins' => sub() {
     $t->get_ok('/api/v1/jobs')->status_is(200, 'accessible (public)');
     $t->post_ok('/api/v1/jobs/99927/set_done')->status_is(200, 'accessible (operator and admin only)');
     $t->delete_ok('/api/v1/assets/1')->status_is(403, 'restricted (admin only)');
+    $t->put_ok('/api/v1/public_plugin')->status_is(200)->content_is('API public plugin works!');
+    $t->put_ok('/api/v1/user_plugin')->status_is(200)->content_is('API user plugin works!');
     $t->put_ok('/api/v1/admin_plugin')->status_is(403);
     $t->put_ok('/api/v1/operator_plugin')->status_is(200)->content_is('API operator plugin works!');
 };
@@ -94,6 +106,8 @@ subtest 'access granted for admins' => sub() {
     $t->get_ok('/api/v1/jobs')->status_is(200, 'accessible (public)');
     $t->post_ok('/api/v1/jobs/99927/set_done')->status_is(200, 'accessible (operator and admin only)');
     $t->delete_ok('/api/v1/assets/1')->status_is(200, 'accessible (admin only)');
+    $t->put_ok('/api/v1/public_plugin')->status_is(200)->content_is('API public plugin works!');
+    $t->put_ok('/api/v1/user_plugin')->status_is(200)->content_is('API user plugin works!');
     $t->put_ok('/api/v1/admin_plugin')->status_is(200)->content_is('API admin plugin works!');
     $t->put_ok('/api/v1/operator_plugin')->status_is(200)->content_is('API operator plugin works!');
 };
