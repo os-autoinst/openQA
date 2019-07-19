@@ -163,6 +163,17 @@ sub read_config {
         audit => {
             blacklist => '',
         },
+        'audit/storage_duration' => {
+            startup     => undef,
+            jobgroup    => undef,
+            jobtemplate => undef,
+            table       => undef,
+            iso         => undef,
+            user        => undef,
+            asset       => undef,
+            needle      => undef,
+            other       => undef,
+        },
         plugin_links => {
             operator => {},
             admin    => {}

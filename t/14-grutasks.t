@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (c) 2016 SUSE LLC
+# Copyright (c) 2016-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -74,7 +74,8 @@ $module->mock(delete           => \&mock_delete);
 $module->mock(remove_from_disk => \&mock_remove);
 $module->mock(refresh_size     => sub { });
 
-my $schema     = OpenQA::Test::Case->new->init_data;
+my $test_case  = OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/data/41-audit-log");
+my $schema     = $test_case->init_data;
 my $jobs       = $schema->resultset('Jobs');
 my $job_groups = $schema->resultset('JobGroups');
 my $assets     = $schema->resultset('Assets');
@@ -331,6 +332,17 @@ subtest 'limit_results_and_logs gru task cleans up logs' => sub {
     my $filename = create_temp_job_log_file($job->result_dir);
     run_gru('limit_results_and_logs');
     ok(!-e $filename, 'file got cleaned');
+};
+
+subtest 'limit audit events' => sub {
+    my $app            = $t->app;
+    my $audit_events   = $app->schema->resultset('AuditEvents');
+    my $startup_events = $audit_events->search({event => 'startup'});
+    is($startup_events->count, 1, 'one startup event present');
+
+    $startup_events->first->update({t_created => '2019-01-01'});
+    run_gru('limit_audit_events');
+    is($audit_events->search({event => 'startup'})->count, 0, 'startup events deleted');
 };
 
 subtest 'human readable size' => sub {

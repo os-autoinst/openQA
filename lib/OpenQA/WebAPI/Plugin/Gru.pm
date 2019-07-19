@@ -40,6 +40,7 @@ sub register_tasks {
     my $app = $self->app;
     $app->plugin($_)
       for (
+        qw(OpenQA::Task::AuditEvents::Limit),
         qw(OpenQA::Task::Asset::Download OpenQA::Task::Asset::Limit),
         qw(OpenQA::Task::Needle::Scan OpenQA::Task::Needle::Save OpenQA::Task::Needle::Delete),
         qw(OpenQA::Task::Job::Limit),

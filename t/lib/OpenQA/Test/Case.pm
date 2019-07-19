@@ -25,9 +25,10 @@ use Date::Format 'time2str';
 use Mojo::JSON 'decode_json';
 
 sub new {
-    my $self = shift->SUPER::new;
+    my ($class, %options) = @_;
+    my $self = $class->SUPER::new;
 
-    $ENV{OPENQA_CONFIG} = 't/data';
+    $ENV{OPENQA_CONFIG} = $options{config_directory} // 't/data';
 
     return $self;
 }

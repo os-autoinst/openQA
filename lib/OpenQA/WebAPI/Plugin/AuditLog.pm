@@ -51,9 +51,9 @@ sub register {
         OpenQA::Events->singleton->on("openqa_$e" => sub { shift; $self->on_event($app, @_) });
     }
 
+    # log restart
     my $schema = $app->schema;
     my $user   = $schema->resultset('Users')->find({username => 'system'});
-
     $schema->resultset('AuditEvents')
       ->create({user_id => $user->id, connection_id => 0, event => 'startup', event_data => 'openQA restarted'});
 }

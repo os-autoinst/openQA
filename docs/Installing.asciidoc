@@ -636,13 +636,33 @@ Auditing, by default enabled, can be disabled by global configuration option in 
 audit_enabled = 0
 --------------------------------------------------------------------------------
 
-The audit section of +/etc/openqa/openqa.ini+ allows to exclude some events from logging using
+The +audit+ section of +/etc/openqa/openqa.ini+ allows to exclude some events from logging using
 a space separated blacklist:
 [source,ini]
 --------------------------------------------------------------------------------
 [audit]
 blacklist = job_grab job_done
 --------------------------------------------------------------------------------
+
+The +audit/storage_duration+ section of +/etc/openqa/openqa.ini+ allows to set the retention policy for
+different audit event types:
+[source,ini]
+--------------------------------------------------------------------------------
+[audit/storage_duration]
+startup = 10
+jobgroup = 365
+jobtemplate = 365
+table = 365
+iso = 60
+user = 60
+asset = 30
+needle = 30
+other = 15
+--------------------------------------------------------------------------------
+
+In this example events of the type +startup+ would be cleaned up after 10 days, events related to
+job groups after 365 days and so on. Events which do not fall into one of these categories would be
+cleaned after 15 days. By default, cleanup is disabled.
 
 === List of events tracked by the auditing plugin
 
