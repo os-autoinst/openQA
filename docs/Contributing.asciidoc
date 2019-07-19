@@ -351,8 +351,10 @@ after user validation. See included modules for inspiration.
 
 == Customize base directory
 
-It is possible to customize the openQA base directory by setting the environment
-variable +OPENQA_BASEDIR+. The default value is +/var/lib+.
+It is possible to customize the openQA base directory (which is for instance used to store
+test results) by setting the environment variable +OPENQA_BASEDIR+. The default value
+is +/var/lib+. Be sure to clear that variable when running unit tests locally (see next
+section).
 
 == Running tests of openQA itself
 Beside simply running the testsuite, it is also possible to use containers. Using containers,
