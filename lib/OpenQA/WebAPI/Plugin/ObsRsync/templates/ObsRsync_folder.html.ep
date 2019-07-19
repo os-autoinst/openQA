@@ -1,0 +1,70 @@
+% layout 'bootstrap';
+% content_for 'head' => begin
+  %= asset 'codemirror.js'
+  %= asset 'codemirror.css'
+% end
+
+% title 'OBS synchronization';
+<h2><%= 'OBS synchronization for: ' . $obs_project  %></h2>
+<div class="container">
+    OBS synchronization is performed in 3 steps.
+</div>
+<hr>
+<div class="container">
+<h6>Step 1. Retrieve lists of required files from predefined OBS locations.</h6>
+% if (!@$lst_files) {
+    No files have been read so far
+% } else {
+    Lists retrieved during last run:
+% for my $filename (@$lst_files) {
+    <%= link_to "$filename"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %>
+    |
+%    }
+%
+% }
+<br>
+% if ($read_files_sh) {
+    Script used to retrieve files: 
+    <%= link_to "$read_files_sh"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $read_files_sh) %>
+% }
+</div>
+<hr>
+<div class="container">
+<h6>Step 2. Generate and execute commands to rsync and rename deliverables from remote OBS location (based on lists from Step 1.)</h6>
+% if (!@$rsync_commands) {
+    No logs found for last run
+% } else {
+    Commands executed during last run: 
+% }
+% for my $filename (@$rsync_commands) {
+    <%= link_to "$filename"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %>
+    |
+% }
+<br>
+% if (@$rsync_sh) {
+    Script used to generate commands: 
+%   for my $filename (@$rsync_sh) {
+        <%= link_to "$filename"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %>
+        |
+%   }
+% }
+</div>
+<hr>
+<div class="container">
+<h6>Step 3. Generate and execute openQA REST requests to trigger tests (based on lists from Step 1.)</h6>
+% if (!$openqa_commands) {
+    No logs found for last run
+% } else {
+    Commands executed during last run:
+    <%= link_to "$openqa_commands"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $openqa_commands) %>
+% }
+<br>
+% if ($openqa_sh) {
+    Script used to generate commands: 
+    <%= link_to "$openqa_sh"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $openqa_sh) %>
+% }
+</div>
+<hr>
+<div class="row-sm-1">
+<%= link_to "all logs" => url_for('plugin_obs_rsync_logs', folder => $obs_project) %>
+</div>
