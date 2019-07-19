@@ -746,15 +746,21 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_getting_involved_into_development">Getting involved into development</a></li>
 <li><a href="#_technologies">Technologies</a></li>
 <li><a href="#_starting_the_webserver_from_local_git_checkout">Starting the webserver from local Git checkout</a></li>
+<li><a href="#_adding_dependencies">Adding dependencies</a>
+<ul class="sectlevel2">
+<li><a href="#_remarks">Remarks</a></li>
+<li><a href="#update-asset-cache">Update asset cache for openSUSE RPM package</a></li>
+</ul>
+</li>
 <li><a href="#_managing_the_database">Managing the database</a>
 <ul class="sectlevel2">
 <li><a href="#_when_is_it_required_to_update_the_database_schema">When is it required to update the database schema?</a></li>
 <li><a href="#_how_to_update_the_database_schema">How to update the database schema</a></li>
 <li><a href="#_how_to_add_fixtures_to_the_database">How to add fixtures to the database</a></li>
+<li><a href="#setup-postgresql">How to setup PostgreSQL to test locally with production data</a></li>
 </ul>
 </li>
 <li><a href="#_how_to_overwrite_config_files">How to overwrite config files</a></li>
-<li><a href="#setup-postgresql">How to setup PostgreSQL to test locally with production data</a></li>
 <li><a href="#_adding_new_authentication_module">Adding new authentication module</a></li>
 <li><a href="#_customize_base_directory">Customize base directory</a></li>
 <li><a href="#_running_tests_of_openqa_itself">Running tests of openQA itself</a>
@@ -6896,18 +6902,19 @@ follows the most common Perl style conventions.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>To start the webserver for development, use the <code>scripts/openqa daemon</code>.</p>
+<p>To start the webserver for development, use the scripts/openqa daemon.</p>
+</li>
+<li>
+<p>The other daemons (mentioned in
+the <a href="images/architecture.svg">architecture diagram</a>) are started in the
+same way, e.g. script/openqa-scheduler daemon.</p>
 </li>
 <li>
 <p>openQA will pull the required asssets on the first run.</p>
 </li>
 <li>
-<p>openQA uses SASS, so Ruby development files are required. Under openSUSE,
-installing the packages devel_C_C++ and ruby-devel should be sufficient.
-openQA will install the required files automatically under .gem. Add
-.gem/ruby/2.4.0/bin to the PATH variable to let it find the sass/scss
-binaries. I also had to create symlinks of those binaries without .ruby2.4
-suffix so openQA could find them.</p>
+<p>openQA uses SASS. Under openSUSE, installing rubygem(sass) should be
+sufficient.</p>
 </li>
 <li>
 <p>It is also useful to start openQA with morbo which allows applying changes
@@ -6923,6 +6930,69 @@ and assets/assetpack.db. Make sure to look for error messages on startup
 of the webserver and to force the refresh of the web page in your browser.</p>
 </li>
 </ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_adding_dependencies">Adding dependencies</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Add 3rd party JavaScript and CSS file to assets/assetpack.def. When restarting
+the web server the new/updated files are pulled automatically. Also take care to
+<a href="#update-asset-cache">update the asset cache for the openSUSE RPM package</a>.</p>
+</li>
+<li>
+<p>Other dependencies need to be added to openQA.spec or os-autoinst.spec
+and docker/travis_test/Dockerfile.</p>
+</li>
+<li>
+<p>Perl dependencies need to be added <strong>additionally</strong> to cpanfile.</p>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_remarks">Remarks</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>New dependencies are only available in the Docker container which is used to run
+CI tests <strong>after</strong> the PR adding these dependencies has been merged. Besides, the
+build of that container must not be broken (see
+<a href="https://build.opensuse.org/package/show/devel:openQA/openQA">build results on OBS</a>).</p>
+</li>
+<li>
+<p>The os-autoinst repository uses the same container as the openQA repository
+which is made using docker/travis_test/Dockerfile within the openQA repository.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="update-asset-cache">Update asset cache for openSUSE RPM package</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Clone the repository (or a branch to it if you do not have the rights to push directly)
+locally, e.g. osc co devel:openQA/openQA.</p>
+</li>
+<li>
+<p>Run bash update-cache.sh inside the repository folder. Follow the log checking no
+download errors occurred.</p>
+</li>
+<li>
+<p>Do a sanity check on the generated cache.txz. It usually should not be smaller than
+before, contain the newly added sources and must not contain any empty files.</p>
+</li>
+<li>
+<p>Add an entry to the changes file using osc vc openQA.changes.</p>
+</li>
+<li>
+<p>osc ci -m 'Update asset cache'</p>
+</li>
+</ol>
+</div>
 </div>
 </div>
 </div>
@@ -7026,36 +7096,8 @@ variable.</p>
 </div>
 </div>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_how_to_overwrite_config_files">How to overwrite config files</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>It can be necessary during development to change the config files in etc/.
-For example you have to edit etc/openqa/database.ini to use another database.
-Or to increase the log level it&#8217;s useful to set the loglevel to debug in
-etc/openqa/openqa.ini.</p>
-</div>
-<div class="paragraph">
-<p>To avoid these changes getting in your git workflow, copy them to a new
-directory and set OPENQA_CONFIG in your shell setup files.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>cp -ar etc/openqa etc/mine
-<span class="tok-nb">export</span> <span class="tok-nv">OPENQA_CONFIG</span><span class="tok-o">=</span><span class="tok-nv">$PWD</span>/etc/mine</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Note that OPENQA_CONFIG points to the directory containing openqa.ini, database.ini,
-client.conf and workers.ini.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="setup-postgresql">How to setup PostgreSQL to test locally with production data</h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="setup-postgresql">How to setup PostgreSQL to test locally with production data</h3>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
@@ -7086,6 +7128,32 @@ as the UNIX user you start your local openQA instance with.</p>
 User name and password are not required.</p>
 </li>
 </ol>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_to_overwrite_config_files">How to overwrite config files</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>It can be necessary during development to change the config files in etc/.
+For example you have to edit etc/openqa/database.ini to use another database.
+Or to increase the log level it&#8217;s useful to set the loglevel to debug in
+etc/openqa/openqa.ini.</p>
+</div>
+<div class="paragraph">
+<p>To avoid these changes getting in your git workflow, copy them to a new
+directory and set OPENQA_CONFIG in your shell setup files.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>cp -ar etc/openqa etc/mine
+<span class="tok-nb">export</span> <span class="tok-nv">OPENQA_CONFIG</span><span class="tok-o">=</span><span class="tok-nv">$PWD</span>/etc/mine</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that OPENQA_CONFIG points to the directory containing openqa.ini, database.ini,
+client.conf and workers.ini.</p>
 </div>
 </div>
 </div>
@@ -7134,8 +7202,10 @@ after user validation. See included modules for inspiration.</p>
 <h2 id="_customize_base_directory">Customize base directory</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>It is possible to customize the openQA base directory by setting the environment
-variable OPENQA_BASEDIR. The default value is /var/lib.</p>
+<p>It is possible to customize the openQA base directory (which is for instance used to store
+test results) by setting the environment variable OPENQA_BASEDIR. The default value
+is /var/lib. Be sure to clear that variable when running unit tests locally (see next
+section).</p>
 </div>
 </div>
 </div>
@@ -7362,7 +7432,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-07-19 11:00:10 UTC
+Last updated 2019-07-19 12:07:19 UTC
 </div>
 </div>
 <style>
