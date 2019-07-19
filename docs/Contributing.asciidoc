@@ -275,28 +275,8 @@ variable.
 export DBIC_TRACE=1
 ----
 
-== How to overwrite config files
-
-It can be necessary during development to change the config files in +etc/+.
-For example you have to edit etc/openqa/database.ini to use another database.
-Or to increase the log level it's useful to set the loglevel to debug in
-etc/openqa/openqa.ini.
-
-To avoid these changes getting in your git workflow, copy them to a new
-directory and set OPENQA_CONFIG in your shell setup files.
-
-[source,sh]
-----
-cp -ar etc/openqa etc/mine
-export OPENQA_CONFIG=$PWD/etc/mine
-----
-
-
-Note that OPENQA_CONFIG points to the directory containing openqa.ini, database.ini,
-client.conf and workers.ini.
-
 [[setup-postgresql]]
-== How to setup PostgreSQL to test locally with production data
+=== How to setup PostgreSQL to test locally with production data
 
 1. Install PosgreSQL - under openSUSE the following package are required:
    +postgresql-server postgresql-init+
@@ -316,6 +296,25 @@ client.conf and workers.ini.
 
 8. Configure openQA to use PostgreSQL as described in the section <<Installing.asciidoc#database,Database>> of the installation guide.
  User name and password are not required.
+
+== How to overwrite config files
+
+It can be necessary during development to change the config files in +etc/+.
+For example you have to edit etc/openqa/database.ini to use another database.
+Or to increase the log level it's useful to set the loglevel to debug in
+etc/openqa/openqa.ini.
+
+To avoid these changes getting in your git workflow, copy them to a new
+directory and set OPENQA_CONFIG in your shell setup files.
+
+[source,sh]
+----
+cp -ar etc/openqa etc/mine
+export OPENQA_CONFIG=$PWD/etc/mine
+----
+
+Note that OPENQA_CONFIG points to the directory containing openqa.ini, database.ini,
+client.conf and workers.ini.
 
 == Adding new authentication module
 
