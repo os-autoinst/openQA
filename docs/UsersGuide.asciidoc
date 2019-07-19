@@ -554,6 +554,28 @@ Steps 4. to 6. can be repeated for further +assert_screen+s/needles without rest
 test.
 
 
+=== Job group editor https://github.com/os-autoinst/openQA/pull/2111[gh#2111] ===
+
+Scenarios are defined as part of a job group. The `Edit job group` button exposes the editor.
+
+By default the scenarios are listed in a table per medium. Changes to the priority are
+applied immediately. Machines can be added by selecting the architecture column and picking
+a machine from the list. Remove scenarios by removing all of their machines. Add new scenarios
+via the blue Plus icon at the top of the table.
+
+The `Edit YAML` button can be used to reveal the YAML editor and migrate a group. After
+saving for the first time, the group can only be configured in YAML. The table view will not
+be shown anymore.
+
+Note that making a backup before migrating groups may be a good idea, for example using
+`openqa-dump-templates`.
+
+Settings can be specified as a key/value pair for each scenario. There is no
+equivalent in the table view so you need to migrate groups to use this feature.
+
+YAML-only groups need to be updated through the YAML editor or the YAML-related
+REST API routes.
+
 == Use of the REST API
 
 openQA includes a _client_ script which - depending on the distribution - is
@@ -638,6 +660,28 @@ openqa-client isos post ISO=my_iso.iso DISTRI=my_distri FLAVOR=sweet \
          _DEPRIORITIZEBUILD=1 _DEPRIORITIZE_LIMIT=120 \
 --------------------------------------------------------------------------------
 
+
+=== Job template YAML ===
+
+Job groups can be queried via the experimental REST API:
+
+    api/v1/experimental/job_templates_scheduling
+
+The GET request will get the YAML for one or multiple groups while a POST request
+conversely updates the YAML for a particular group.
+
+
+Two scripts using these routes can be used to import and export YAML templates:
+
+[source,sh]
+--------------------------------------------------------------------------------
+openqa-dump-templates --json --group test > test.json
+--------------------------------------------------------------------------------
+
+[source,sh]
+--------------------------------------------------------------------------------
+openqa-load-templates --group test test.json
+--------------------------------------------------------------------------------
 
 == Asset handling ==
 
