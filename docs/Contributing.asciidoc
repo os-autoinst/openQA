@@ -179,14 +179,13 @@ http://perltidy.sourceforge.net/[Perltidy] to ensure that the contributed code
 follows the most common Perl style conventions.
 
 == Starting the webserver from local Git checkout
-* To start the webserver for development, use the `scripts/openqa daemon`.
+* To start the webserver for development, use the +scripts/openqa daemon+.
+* The other daemons (mentioned in
+  the link:images/architecture.svg[architecture diagram]) are started in the
+  same way, e.g. +script/openqa-scheduler daemon+.
 * openQA will pull the required asssets on the first run.
-* openQA uses SASS, so Ruby development files are required. Under openSUSE,
-  installing the packages +devel_C_C+++ and +ruby-devel+ should be sufficient.
-  openQA will install the required files automatically under +.gem+. Add
-  +.gem/ruby/2.4.0/bin+ to the +PATH+ variable to let it find the sass/scss
-  binaries. I also had to create symlinks of those binaries without +.ruby2.4+
-  suffix so openQA could find them.
+* openQA uses SASS. Under openSUSE, installing +rubygem(sass)+ should be
+  sufficient.
 * It is also useful to start openQA with morbo which allows applying changes
   without restarting the server:
   `morbo -m development -w assets -w lib -w templates
@@ -197,6 +196,32 @@ follows the most common Perl style conventions.
   and +assets/assetpack.db+. Make sure to look for error messages on startup
   of the webserver and to force the refresh of the web page in your browser.
 
+== Adding dependencies
+* Add 3rd party JavaScript and CSS file to +assets/assetpack.def+. When restarting
+  the web server the new/updated files are pulled automatically. Also take care to
+  <<Contributing.asciidoc#update-asset-cache,update the asset cache for the openSUSE RPM package>>.
+* Other dependencies need to be added to +openQA.spec+ or +os-autoinst.spec+
+  and +docker/travis_test/Dockerfile+.
+* Perl dependencies need to be added *additionally* to +cpanfile+.
+
+=== Remarks
+* New dependencies are only available in the Docker container which is used to run
+  CI tests *after* the PR adding these dependencies has been merged. Besides, the
+  build of that container must not be broken (see
+  https://build.opensuse.org/package/show/devel:openQA/openQA[build results on OBS]).
+* The os-autoinst repository uses the same container as the openQA repository
+  which is made using +docker/travis_test/Dockerfile+ within the openQA repository.
+
+[[update-asset-cache]]
+=== Update asset cache for openSUSE RPM package
+1. Clone the repository (or a branch to it if you do not have the rights to push directly)
+   locally, e.g. +osc co devel:openQA/openQA+.
+2. Run +bash update-cache.sh+ inside the repository folder. Follow the log checking no
+   download errors occurred.
+4. Do a sanity check on the generated +cache.txz+. It usually should not be smaller than
+   before, contain the newly added sources and must not contain any empty files.
+5. Add an entry to the changes file using +osc vc openQA.changes+.
+6. +osc ci -m 'Update asset cache'+
 
 == Managing the database
 
@@ -275,28 +300,8 @@ variable.
 export DBIC_TRACE=1
 ----
 
-== How to overwrite config files
-
-It can be necessary during development to change the config files in +etc/+.
-For example you have to edit etc/openqa/database.ini to use another database.
-Or to increase the log level it's useful to set the loglevel to debug in
-etc/openqa/openqa.ini.
-
-To avoid these changes getting in your git workflow, copy them to a new
-directory and set OPENQA_CONFIG in your shell setup files.
-
-[source,sh]
-----
-cp -ar etc/openqa etc/mine
-export OPENQA_CONFIG=$PWD/etc/mine
-----
-
-
-Note that OPENQA_CONFIG points to the directory containing openqa.ini, database.ini,
-client.conf and workers.ini.
-
 [[setup-postgresql]]
-== How to setup PostgreSQL to test locally with production data
+=== How to setup PostgreSQL to test locally with production data
 
 1. Install PosgreSQL - under openSUSE the following package are required:
    +postgresql-server postgresql-init+
@@ -316,6 +321,25 @@ client.conf and workers.ini.
 
 8. Configure openQA to use PostgreSQL as described in the section <<Installing.asciidoc#database,Database>> of the installation guide.
  User name and password are not required.
+
+== How to overwrite config files
+
+It can be necessary during development to change the config files in +etc/+.
+For example you have to edit etc/openqa/database.ini to use another database.
+Or to increase the log level it's useful to set the loglevel to debug in
+etc/openqa/openqa.ini.
+
+To avoid these changes getting in your git workflow, copy them to a new
+directory and set OPENQA_CONFIG in your shell setup files.
+
+[source,sh]
+----
+cp -ar etc/openqa etc/mine
+export OPENQA_CONFIG=$PWD/etc/mine
+----
+
+Note that OPENQA_CONFIG points to the directory containing openqa.ini, database.ini,
+client.conf and workers.ini.
 
 == Adding new authentication module
 
@@ -351,8 +375,10 @@ after user validation. See included modules for inspiration.
 
 == Customize base directory
 
-It is possible to customize the openQA base directory by setting the environment
-variable +OPENQA_BASEDIR+. The default value is +/var/lib+.
+It is possible to customize the openQA base directory (which is for instance used to store
+test results) by setting the environment variable +OPENQA_BASEDIR+. The default value
+is +/var/lib+. Be sure to clear that variable when running unit tests locally (see next
+section).
 
 == Running tests of openQA itself
 Beside simply running the testsuite, it is also possible to use containers. Using containers,
