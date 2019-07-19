@@ -119,18 +119,17 @@ the main development effort organizing the existing issues (bugs and desired
 features) into 'target versions'.
 
 Currently developers meet in IRC channel
-irc://chat.freenode.net/opensuse-factory[#opensuse-factory] and in a daily
+irc://chat.freenode.net/opensuse-factory[#opensuse-factory] and in a weekly
 https://github.com/jangouts/jangouts[jangouts] call of the core developer team.
 
-In addition to the ones representing development sprints, two other versions are
-always open. https://progress.opensuse.org/versions/73[Easy hacks] lists issues
-that are not specially urgent and that are considered to be easy to implement
-by newcomers. Developers looking for a place to start contributing
-are encouraged to simply go to that list and assign any open issue to themselves.
-https://progress.opensuse.org/versions/90[Future improvements] groups features
-that are in the developers' and users' wish list but that have little chances to be
-addressed in the short term, either because the return of investment is not
-worth it or because they are out of the current scope of the development.
+In addition to the ones representing development sprints there is another
+version that is always open. https://progress.opensuse.org/versions/490[Future
+improvements] groups features that are in the developers' and users' wish list
+but that have little chances to be addressed in the short term, either because
+the return of investment is not worth it or because they are out of the
+current scope of the development. Developers looking for a place to start
+contributing are encouraged to simply go to that list and assign any open
+issue to themselves.
 
 openQA and os-autoinst repositories also include test suites aimed at preventing
 bugs and regressions in the software. https://codecov.io/[codecov] is
