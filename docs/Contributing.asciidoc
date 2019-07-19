@@ -179,14 +179,13 @@ http://perltidy.sourceforge.net/[Perltidy] to ensure that the contributed code
 follows the most common Perl style conventions.
 
 == Starting the webserver from local Git checkout
-* To start the webserver for development, use the `scripts/openqa daemon`.
+* To start the webserver for development, use the +scripts/openqa daemon+.
+* The other daemons (mentioned in
+  the link:images/architecture.svg[architecture diagram]) are started in the
+  same way, e.g. +script/openqa-scheduler daemon+.
 * openQA will pull the required asssets on the first run.
-* openQA uses SASS, so Ruby development files are required. Under openSUSE,
-  installing the packages +devel_C_C+++ and +ruby-devel+ should be sufficient.
-  openQA will install the required files automatically under +.gem+. Add
-  +.gem/ruby/2.4.0/bin+ to the +PATH+ variable to let it find the sass/scss
-  binaries. I also had to create symlinks of those binaries without +.ruby2.4+
-  suffix so openQA could find them.
+* openQA uses SASS. Under openSUSE, installing +rubygem(sass)+ should be
+  sufficient.
 * It is also useful to start openQA with morbo which allows applying changes
   without restarting the server:
   `morbo -m development -w assets -w lib -w templates
