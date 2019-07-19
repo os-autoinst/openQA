@@ -42,7 +42,7 @@
                     the same module or the failed modules did not change.
                 </p>';
             %>
-            %= help_popover 'Help for comments' => $content, 'https://progress.opensuse.org/projects/openqav3/wiki/Wiki#Advanced-features-in-openQA' => 'Wiki'
+            %= help_popover 'Help for comments' => $content, 'https://open.qa/docs/#_use_of_the_web_interface' => 'Wiki'
     </div>
 
 </div>
