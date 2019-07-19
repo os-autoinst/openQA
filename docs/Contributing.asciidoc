@@ -196,6 +196,32 @@ follows the most common Perl style conventions.
   and +assets/assetpack.db+. Make sure to look for error messages on startup
   of the webserver and to force the refresh of the web page in your browser.
 
+== Adding dependencies
+* Add 3rd party JavaScript and CSS file to +assets/assetpack.def+. When restarting
+  the web server the new/updated files are pulled automatically. Also take care to
+  <<Contributing.asciidoc#update-asset-cache,update the asset cache for the openSUSE RPM package>>.
+* Other dependencies need to be added to +openQA.spec+ or +os-autoinst.spec+
+  and +docker/travis_test/Dockerfile+.
+* Perl dependencies need to be added *additionally* to +cpanfile+.
+
+=== Remarks
+* New dependencies are only available in the Docker container which is used to run
+  CI tests *after* the PR adding these dependencies has been merged. Besides, the
+  build of that container must not be broken (see
+  https://build.opensuse.org/package/show/devel:openQA/openQA[build results on OBS]).
+* The os-autoinst repository uses the same container as the openQA repository
+  which is made using +docker/travis_test/Dockerfile+ within the openQA repository.
+
+[[update-asset-cache]]
+=== Update asset cache for openSUSE RPM package
+1. Clone the repository (or a branch to it if you do not have the rights to push directly)
+   locally, e.g. +osc co devel:openQA/openQA+.
+2. Run +bash update-cache.sh+ inside the repository folder. Follow the log checking no
+   download errors occurred.
+4. Do a sanity check on the generated +cache.txz+. It usually should not be smaller than
+   before, contain the newly added sources and must not contain any empty files.
+5. Add an entry to the changes file using +osc vc openQA.changes+.
+6. +osc ci -m 'Update asset cache'+
 
 == Managing the database
 
