@@ -65,6 +65,25 @@ like(get_summary, qr/Overall Summary of opensuse 13\.1 build 0091/i, 'specifying
 $form = {distri => 'opensuse', version => '13.1', build => '0091', groupid => 1001};
 $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 like(get_summary, qr/Overall Summary of opensuse build 0091/i, 'specifying groupid parameter');
+subtest 'escaping works' => sub {
+    $form = {
+        distri  => '<img src="distri">',
+        version => ['<img src="version1">', '<img src="version2">'],
+        build   => '<img src="build">'
+    };
+    $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+    my $body = $t->tx->res->body;
+    unlike($body, qr/<img src="distri">/,                         'no unescaped image tag for distri');
+    unlike($body, qr/<img src="version1">.*<img src="version2">/, 'no unescaped image tags for version');
+    unlike($body, qr/<img src="build">/,                          'no unescaped image tag for build');
+    like($body, qr/&lt;img src=&quot;distri&quot;&gt;/, 'image tag for distri escaped');
+    like(
+        $body,
+        qr/&lt;img src=&quot;version1&quot;&gt;.*&lt;img src=&quot;version2&quot;&gt;/,
+        'image tags for version escaped'
+    );
+    like($body, qr/&lt;img src=&quot;build&quot;&gt;/, 'image tag for build escaped');
+};
 
 #
 # Overview of build 0048
