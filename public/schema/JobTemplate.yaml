@@ -60,8 +60,10 @@ properties:
           priority:
             type: number
   products:
+    type: object
+    additionalProperties: false
     patternProperties:
-      "^[a-z0-9_]+$":
+      "^[A-Za-z0-9._-]+$":
         type: object
         description: The name of a product (medium)
         required:
@@ -75,4 +77,6 @@ properties:
           flavor:
             type: string
           version:
-            type: string
+            oneOf:
+              - type: string
+              - type: number

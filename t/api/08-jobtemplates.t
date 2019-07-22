@@ -543,6 +543,13 @@ is_deeply(@{$t->app->validate_yaml($yaml, 1)}[0], '/products/opensuse/flavor: Mi
 $yaml->{products}{'opensuse'}{flavor} = 'DVD';
 is_deeply($t->app->validate_yaml($yaml, 1), ['/products/opensuse/version: Missing property.'], 'No version specified')
   or diag explain YAML::XS::Dump($yaml);
+$yaml->{products}{'opensuse'}{distribution} = 'sle';
+is_deeply(
+    @{$t->app->validate_yaml($yaml, 1)}[0],
+    '/products/opensuse: Properties not allowed: distribution.',
+    'Invalid product property specified'
+) or diag explain YAML::XS::Dump($yaml);
+delete $yaml->{products}{'opensuse'}{distribution};
 $yaml->{products}{'opensuse'}{version} = '42.1';
 # Add non-trivial test suites to exercise the validation
 $yaml->{scenarios}{'x86_64'}{opensuse} = [
