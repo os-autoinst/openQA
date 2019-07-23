@@ -21,6 +21,7 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
+use OpenQA::Markdown 'markdown_to_html';
 use OpenQA::Schema::JobGroupDefaults;
 use OpenQA::Utils 'parse_tags_from_comments';
 use Class::Method::Modifiers;
@@ -157,11 +158,9 @@ sub jobs {
 }
 
 sub rendered_description {
-    my ($self) = @_;
-
-    return unless $self->description;
-    my $m = CommentsMarkdownParser->new;
-    return Mojo::ByteStream->new($m->markdown($self->description));
+    my $self = shift;
+    return undef unless my $desc = $self->description;
+    return Mojo::ByteStream->new(markdown_to_html($desc));
 }
 
 sub tags {

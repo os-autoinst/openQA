@@ -21,6 +21,7 @@ use warnings;
 use base 'DBIx::Class::Core';
 
 use OpenQA::Utils qw(find_bugref find_bugrefs);
+use OpenQA::Markdown qw(markdown_to_html);
 
 __PACKAGE__->load_components(qw(Core));
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
@@ -144,12 +145,7 @@ sub tag {
     return $+{build}, $+{type}, $+{description}, $+{version};
 }
 
-sub rendered_markdown {
-    my ($self) = @_;
-
-    my $m = CommentsMarkdownParser->new;
-    return Mojo::ByteStream->new($m->markdown($self->text));
-}
+sub rendered_markdown { Mojo::ByteStream->new(markdown_to_html(shift->text)) }
 
 sub hash {
     my ($self) = @_;
@@ -172,30 +168,6 @@ sub extended_hash {
         updated          => $self->t_updated->strftime("%Y-%m-%d %H:%M:%S %z"),
         userName         => $self->user->name
     };
-}
-
-package CommentsMarkdownParser;
-require Text::Markdown;
-our @ISA = qw(Text::Markdown);
-use Regexp::Common 'URI';
-use OpenQA::Utils 'bugref_to_href';
-
-sub _DoAutoLinks {
-    my ($self, $text) = @_;
-
-    # auto-replace bugrefs with 'a href...'
-    $text = bugref_to_href($text);
-
-    # auto-replace every http(s) reference which is not already either html
-    # 'a href...' or markdown link '[link](url)' or enclosed by Text::Markdown
-    # URL markers '<>'
-    $text =~ s@(?<!['"(<>])($RE{URI})@<$1>@gi;
-
-    # For tests make sure that references into test modules and needling steps also work
-    $text =~ s{\b(t#([\w/]+))}{<a href="/tests/$2">$1</a>}gi;
-
-    $text =~ s{(http://\S*\.gif$)}{<img src="$1"/>}gi;
-    $self->SUPER::_DoAutoLinks($text);
 }
 
 1;
