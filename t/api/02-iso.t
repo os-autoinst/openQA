@@ -1111,4 +1111,23 @@ subtest 're-schedule product' => sub {
     is_deeply($json->{settings}, \%scheduling_params, 'parameter idential to the original scheduled product');
 };
 
+subtest 'circular reference' => sub {
+    $res = schedule_iso(
+        {
+            ISO      => $iso,
+            DISTRI   => 'opensuse',
+            VERSION  => '13.1',
+            FLAVOR   => 'DVD',
+            ARCH     => 'i586',
+            ISO      => 'openSUSE-13.1-DVD-i586-Build%BUILD%-Media.iso',
+            TEST     => 'textmode',
+            BUILD    => '%BUILD_HA%',
+            BUILD_HA => '%BUILD%'
+        },
+        400
+    );
+    like($res->json->{error}, qr/The key (\w+) contains a circular reference, its value is %\w+%/,
+        'circular reference');
+};
+
 done_testing();

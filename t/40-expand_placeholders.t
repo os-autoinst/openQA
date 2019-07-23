@@ -1,0 +1,124 @@
+#! /usr/bin/perl
+
+# Copyright (C) 2019 SUSE LLC
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+use strict;
+use warnings;
+
+BEGIN {
+    unshift @INC, 'lib';
+}
+
+use FindBin;
+use lib "$FindBin::Bin/lib";
+use Test::More;
+use OpenQA::ExpandPlaceholder;
+
+my $settings = {
+    BUILD_SDK                => '%BUILD_HA%',
+    BETA                     => 1,
+    ISO_MAXSIZE              => '4700372992',
+    SHUTDOWN_NEEDS_AUTH      => 1,
+    HDD_1                    => 'SLES-%VERSION%-%ARCH%-%BUILD%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2',
+    PUBLISH_HDD_1            => 'SLES-%VERSION%-%ARCH%-%BUILD%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2',
+    ANOTHER_JOB              => 'SLES-%VERSION%-%ARCH%-%BUILD%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2',
+    ARCH                     => 'x86_64',
+    BACKEND                  => 'qemu',
+    BUILD                    => '1234',
+    BUILD_SLE                => '%BUILD%',
+    MACHINE                  => '64bit',
+    PATCH                    => 1,
+    UPGRADE                  => 1,
+    ISO                      => 'SLE-%VERSION%-%FLAVOR%-%MACHINE%-Build%BUILD%-Media1.iso',
+    WORKER_CLASS             => 'qemu_x86_64',
+    VERSION                  => '15-SP1',
+    FLAVOR                   => 'Installer-DVD',
+    ADDONURL_SDK             => 'ftp://openqa.suse.de/SLE-%VERSION%-SDK-POOL-%ARCH%-Build%BUILD_SDK%-Media1/',
+    DEPENDENCY_RESOLVER_FLAG => 1,
+    DESKTOP                  => 'textmode',
+    DEV_IMAGE                => 1,
+    HDDSIZEGB                => 50,
+    INSTALLONLY              => 1,
+    PATTERNS                 => 'base,minimal',
+    PUBLISH_PFLASH_VARS =>
+      'SLES-%VERSION%-%ARCH%-%BUILD%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed-uefi-vars.qcow2',
+    SEPARATE_HOME      => 0,
+    BUILD_HA           => '%BUILD%',
+    BUILD_SES          => '%BUILD%',
+    WORKAROUND_MODULES => 'base,desktop,serverapp,script,sdk',
+};
+
+subtest expand_placeholders => sub {
+    my $error          = OpenQA::ExpandPlaceholder::expand_placeholders($settings);
+    my $match_settings = {
+        BUILD_SDK                => '1234',
+        BETA                     => 1,
+        ISO_MAXSIZE              => '4700372992',
+        SHUTDOWN_NEEDS_AUTH      => 1,
+        HDD_1                    => 'SLES-15-SP1-x86_64-1234@64bit-minimal_with_sdk1234_installed.qcow2',
+        PUBLISH_HDD_1            => 'SLES-15-SP1-x86_64-1234@64bit-minimal_with_sdk1234_installed.qcow2',
+        ANOTHER_JOB              => 'SLES-15-SP1-x86_64-1234@64bit-minimal_with_sdk1234_installed.qcow2',
+        ARCH                     => 'x86_64',
+        BACKEND                  => 'qemu',
+        BUILD                    => '1234',
+        BUILD_SLE                => '1234',
+        MACHINE                  => '64bit',
+        PATCH                    => 1,
+        UPGRADE                  => 1,
+        ISO                      => 'SLE-15-SP1-Installer-DVD-64bit-Build1234-Media1.iso',
+        WORKER_CLASS             => 'qemu_x86_64',
+        VERSION                  => '15-SP1',
+        FLAVOR                   => 'Installer-DVD',
+        ADDONURL_SDK             => 'ftp://openqa.suse.de/SLE-15-SP1-SDK-POOL-x86_64-Build1234-Media1/',
+        DEPENDENCY_RESOLVER_FLAG => 1,
+        DESKTOP                  => 'textmode',
+        DEV_IMAGE                => 1,
+        HDDSIZEGB                => 50,
+        INSTALLONLY              => 1,
+        PATTERNS                 => 'base,minimal',
+        PUBLISH_PFLASH_VARS      => 'SLES-15-SP1-x86_64-1234@64bit-minimal_with_sdk1234_installed-uefi-vars.qcow2',
+        SEPARATE_HOME            => 0,
+        BUILD_HA                 => '1234',
+        BUILD_SES                => '1234',
+        WORKAROUND_MODULES       => 'base,desktop,serverapp,script,sdk',
+    };
+    is($error, undef, "no error returned");
+    is_deeply($settings, $match_settings, "Settings replaced");
+};
+
+subtest circular_reference => sub {
+    my $circular_settings = {
+        BUILD_SDK     => '%BUILD_HA%',
+        ISO_MAXSIZE   => '4700372992',
+        HDD_1         => 'SLES-%VERSION%-%ARCH%-%BUILD_HA%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2',
+        PUBLISH_HDD_1 => 'SLES-%VERSION%-%ARCH%-%BUILD_HA%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2',
+        ANOTHER_JOB   => 'SLES-%VERSION%-%ARCH%-%BUILD_HA%@%MACHINE%-minimal_with_sdk%BUILD_SDK%_installed.qcow2',
+        ARCH          => 'x86_64',
+        BACKEND       => 'qemu',
+        BUILD         => '%BUILD_HA%',
+        BUILD_HA      => '%BUILD%',
+        VERSION       => '15-SP1',
+        MACHINE       => '64bit',
+    };
+    like(
+        OpenQA::ExpandPlaceholder::expand_placeholders($circular_settings),
+        qr/The key (\w+) contains a circular reference, its value is %\w+%/,
+        "circular reference exit successfully"
+    );
+};
+
+done_testing;
