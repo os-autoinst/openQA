@@ -40,6 +40,9 @@ is_deeply(
     'global settings, spaces trimmed'
 ) or diag explain $settings->global_settings;
 
+is($settings->file_path, "$FindBin::Bin/data/24-worker-settings/workers.ini", 'file path set');
+is_deeply($settings->parse_errors, [], 'no parse errors occurred');
+
 is_deeply($settings->webui_hosts, ['http://localhost:9527', 'https://remotehost'], 'web UI hosts, spaces trimmed')
   or diag explain $settings->webui_hosts;
 
@@ -101,6 +104,22 @@ subtest 'instance-specific settings' => sub {
         },
         'global settings (instance 2)'
     ) or diag explain $settings2->global_settings;
+};
+
+subtest 'settings file not found' => sub {
+    $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-settings-error";
+    my $settings = OpenQA::Worker::Settings->new(1);
+    is_deeply($settings->parse_errors, ['3: parameter found outside a section'], 'error logged')
+      or diag explain $settings->parse_errors;
+};
+
+subtest 'settings file not found' => sub {
+    $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-setting";
+    my $settings = OpenQA::Worker::Settings->new(1);
+    is($settings->file_path, undef, 'no file path present');
+    is_deeply($settings->parse_errors, ["Config file not found at '$FindBin::Bin/data/24-worker-setting/workers.ini'."],
+        'error logged')
+      or diag explain $settings->parse_errors;
 };
 
 done_testing();

@@ -92,6 +92,7 @@ sub log_setup_info {
     my $instance = $self->instance_number;
     my $settings = $self->settings;
     my $msg      = "worker $instance:";
+    $msg .= "\n - config file:           " . ($settings->file_path // 'not found');
     $msg .= "\n - worker hostname:       " . $self->worker_hostname;
     $msg .= "\n - isotovideo version:    " . $self->isotovideo_interface_version;
     $msg .= "\n - websocket API version: " . WEBSOCKET_API_VERSION;
@@ -100,6 +101,10 @@ sub log_setup_info {
     $msg .= "\n - no cleanup:            " . ($self->no_cleanup ? 'yes' : 'no');
     $msg .= "\n - pool directory:        " . $self->pool_directory;
     log_info($msg);
+
+    my $parse_errors = $settings->parse_errors;
+    log_error(join("\n - ", 'Errors occurred when reading config file:', @$parse_errors)) if (@$parse_errors);
+
     return $msg;
 }
 

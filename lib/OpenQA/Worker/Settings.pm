@@ -27,8 +27,16 @@ sub new {
     $cli_options //= {};
 
     my $settings_file = ($ENV{OPENQA_CONFIG} || '/etc/openqa') . '/workers.ini';
-    $settings_file = undef unless -e $settings_file;
-    my $cfg = Config::IniFiles->new(-file => $settings_file);
+    my $cfg;
+    my @parse_errors;
+    if (-e $settings_file) {
+        $cfg = Config::IniFiles->new(-file => $settings_file);
+        push(@parse_errors, @Config::IniFiles::errors) unless $cfg;
+    }
+    else {
+        push(@parse_errors, "Config file not found at '$settings_file'.");
+        $settings_file = undef;
+    }
 
     # read global settings from config
     my %global_settings;
@@ -73,11 +81,14 @@ sub new {
         $ENV{VNC}      = $instance_number + 90;
     }
 
-    return $class->SUPER::new(
+    my $self = $class->SUPER::new(
         global_settings              => \%global_settings,
         webui_hosts                  => \@hosts,
         webui_host_specific_settings => \%webui_host_specific_settings,
     );
+    $self->{_file_path}    = $settings_file;
+    $self->{_parse_errors} = \@parse_errors;
+    return $self;
 }
 
 sub clear_webui_hosts {
@@ -103,5 +114,9 @@ sub apply_to_app {
     $app->level($global_settings->{LOG_LEVEL}) if $global_settings->{LOG_LEVEL};
     $app->setup_log();
 }
+
+sub file_path { shift->{_file_path} }
+
+sub parse_errors { shift->{_parse_errors} }
 
 1;
