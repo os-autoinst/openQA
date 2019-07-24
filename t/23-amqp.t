@@ -29,6 +29,7 @@ use lib "$FindBin::Bin/lib";
 use OpenQA::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Database;
+use Test::Exception;
 use Test::MockModule;
 use Test::More;
 use Test::Mojo;
@@ -187,6 +188,64 @@ subtest 'create parent group comment' => sub {
     assert_common_comment_json($json);
     is($json->{group_id},        undef, 'job group id');
     is($json->{parent_group_id}, 2000,  'parent group id');
+};
+
+# Now let's unmock publish_amqp so we can test it...
+$plugin_mock->unmock('publish_amqp');
+%published = ();
+# ...but we'll mock the thing it calls.
+my $publisher_mock = Test::MockModule->new('Mojo::RabbitMQ::Client::Publisher');
+$publisher_mock->mock(
+    publish_p => sub {
+        # copied from upstream git master as of 2019-07-24
+        my $self    = shift;
+        my $body    = shift;
+        my $headers = {};
+        my %args    = ();
+
+        if (ref($_[0]) eq 'HASH') {
+            $headers = shift;
+        }
+        if (@_) {
+            %args = (@_);
+        }
+        # end copying
+        $published{body}    = $body;
+        $published{headers} = $headers;
+        $published{args}    = \%args;
+        # we need to return a Promise or stuff breaks
+        my $client_promise = Mojo::Promise->new();
+        return $client_promise;
+    });
+
+# we need an instance of the plugin now. I can't find a documented
+# way to access the one that's already loaded...
+my $amqp = OpenQA::WebAPI::Plugin::AMQP->new;
+$amqp->register($app);
+
+subtest 'amqp_publish call without headers' => sub {
+    $amqp->publish_amqp('some.topic', 'some message');
+    is($published{body}, 'some message', "message body correctly passed");
+    is_deeply($published{headers}, {}, "headers is empty hashref");
+    is_deeply($published{args}->{routing_key}, 'some.topic', "topic appears as routing key");
+};
+
+subtest 'amqp_publish call with headers' => sub {
+    %published = ();
+    $amqp->publish_amqp('some.topic', 'some message', {'someheader' => 'something'});
+    is($published{body}, 'some message', "message body correctly passed");
+    is_deeply($published{headers}, {'someheader' => 'something'}, "headers is expected hashref");
+    is_deeply($published{args}->{routing_key}, 'some.topic', "topic appears as routing key");
+};
+
+subtest 'amqp_publish call with incorrect headers' => sub {
+    throws_ok(
+        sub {
+            $amqp->publish_amqp('some.topic', 'some message', 'some headers');
+        },
+        qr/publish_amqp headers must be a hashref!/,
+        'dies on bad headers'
+    );
 };
 
 done_testing();

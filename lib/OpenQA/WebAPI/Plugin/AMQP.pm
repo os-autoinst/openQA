@@ -71,7 +71,9 @@ sub log_event {
 }
 
 sub publish_amqp {
-    my ($self, $topic, $event_data) = @_;
+    my ($self, $topic, $event_data, $headers) = @_;
+    $headers //= {};
+    die "publish_amqp headers must be a hashref!" unless (ref($headers) eq 'HASH');
 
     log_debug("Sending AMQP event: $topic");
     my $publisher = Mojo::RabbitMQ::Client::Publisher->new(
@@ -79,7 +81,7 @@ sub publish_amqp {
 
     # A hard reference to the publisher object needs to be kept until the event
     # has been published asynchronously, or it gets destroyed too early
-    $publisher->publish_p($event_data, routing_key => $topic)->then(
+    $publisher->publish_p($event_data, $headers, routing_key => $topic)->then(
         sub {
             log_debug "$topic published";
         }
