@@ -8,6 +8,7 @@ requires 'Crypt::DH::GMP';
 requires 'Cwd';
 requires 'DBD::SQLite';
 requires 'DBD::Pg';
+requires 'DBI',         '>= 1.632';
 requires 'DBIx::Class', '>= 0.082801';
 requires 'DBIx::Class::Core';
 requires 'DBIx::Class::DeploymentHandler';
@@ -95,23 +96,23 @@ requires 'warnings';
 requires 'POSIX';
 
 on 'test' => sub {
-  requires 'Perl::Critic';
-  requires 'Perl::Critic::Freenode';
-  requires 'Perl::Tidy', '== 20190601';
-  requires 'Selenium::Remote::Driver', '>= 1.23';
-  requires 'Selenium::Remote::WDKeys';
-  requires 'Test::Strict';
-  requires 'Test::Fatal';
-  requires 'Test::MockModule';
-  requires 'Test::MockObject';
-  requires 'Test::Mojo';
-  requires 'Test::More';
-  requires 'Test::Output';
-  requires 'Test::Pod';
-  requires 'Test::Warnings';
+    requires 'Perl::Critic';
+    requires 'Perl::Critic::Freenode';
+    requires 'Perl::Tidy',               '== 20190601';
+    requires 'Selenium::Remote::Driver', '>= 1.23';
+    requires 'Selenium::Remote::WDKeys';
+    requires 'Test::Strict';
+    requires 'Test::Fatal';
+    requires 'Test::MockModule';
+    requires 'Test::MockObject';
+    requires 'Test::Mojo';
+    requires 'Test::More';
+    requires 'Test::Output';
+    requires 'Test::Pod';
+    requires 'Test::Warnings';
 };
 
 feature 'coverage', 'coverage for travis' => sub {
-  requires 'Devel::Cover';
-  requires 'Devel::Cover::Report::Codecov';
+    requires 'Devel::Cover';
+    requires 'Devel::Cover::Report::Codecov';
 };

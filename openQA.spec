@@ -67,11 +67,13 @@ BuildRequires:  systemd
 # critical bug fix
 BuildRequires:  perl(DBIx::Class) >= 0.082801
 BuildRequires:  perl(Minion) >= 9.09
+BuildRequires:  perl(DBI) >= 1.632
 BuildRequires:  perl(Mojolicious) >= 7.92
 BuildRequires:  perl(Mojolicious::Plugin::AssetPack) >= 1.36
 BuildRequires:  perl(Mojo::RabbitMQ::Client) >= 0.2
 BuildRequires:  rubygem(sass)
 Requires:       perl(Minion) >= 9.09
+Requires:       perl(DBI) >= 1.632
 Requires:       perl(Mojo::RabbitMQ::Client) >= 0.2
 Requires:       perl(YAML::XS) >= 0.67
 # needed for test suite
