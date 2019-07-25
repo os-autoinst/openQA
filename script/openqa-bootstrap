@@ -34,7 +34,7 @@ fi
 
 # setup webserver and fake-auth
 setup=/usr/share/openqa/script/configure-web-proxy
-(command -f $setup && sh -ex $setup) || (curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/configure-web-proxy | bash -ex)
+(command -v $setup && sh -ex $setup) || (curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/configure-web-proxy | bash -ex)
 sed -i -e 's/#*.*method.*=.*$/method = Fake/' /etc/openqa/openqa.ini
 
 
