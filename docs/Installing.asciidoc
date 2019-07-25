@@ -664,6 +664,10 @@ In this example events of the type +startup+ would be cleaned up after 10 days, 
 job groups after 365 days and so on. Events which do not fall into one of these categories would be
 cleaned after 15 days. By default, cleanup is disabled.
 
+Use +systemctl enable --now openqa-enqueue-audit-event-cleanup.timer+ to schedule the cleanup
+automatically every day. It is also possible to trigger the cleanup manually by invoking
++/usr/share/openqa/script/openqa minion job -e limit_audit_events+.
+
 === List of events tracked by the auditing plugin
 
 * Assets:
