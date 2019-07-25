@@ -208,7 +208,7 @@ subtest 'filtering by distri' => sub {
         $driver->get('/tests/overview?distri=foo&distri=opensuse&distri=bar&version=13.1&build=0091');
         check_build_0091_defaults;
         is(
-            OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header b')->get_text()),
+            OpenQA::Test::Case::trim_whitespace($driver->find_element('#summary .card-header strong')->get_text()),
             'foo/opensuse/bar 13.1',
             'filter also visible in summary'
         );

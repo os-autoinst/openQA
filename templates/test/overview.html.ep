@@ -11,8 +11,8 @@
     <div id="summary" class="card <%= ($aggregated->{failed} + $aggregated->{incomplete}) ? 'border-danger' : 'border-success' %>">
         <div class="card-header">
             Overall Summary of
-            % if ($summary_name) {
-                <b><%= b $summary_name %></b>
+            % if (@$summary_parts) {
+                <strong><% for my $part (@$summary_parts) { %><%= $part %><% } %></strong>
             % }
             % else {
                 multiple distri/version

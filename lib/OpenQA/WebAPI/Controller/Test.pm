@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2016 SUSE LLC
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,9 +22,10 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
 use OpenQA::WebAPI::Controller::Developer;
+use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
+use Mojo::ByteStream;
 use File::Basename;
 use POSIX 'strftime';
-use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
 
 sub referer_check {
     my ($self) = @_;
@@ -569,6 +570,31 @@ sub prepare_job_results {
     return (\%archs, \%results, $aggregated);
 }
 
+# appends the specified $distri and $version to $array_to_add_parts_to as string or if $raw as Mojo::ByteStream
+sub _add_distri_and_version_to_summary {
+    my ($array_to_add_parts_to, $distri, $version, $raw) = @_;
+
+    for my $part ($distri, $version) {
+        # handle case when multiple distri/version parameters have been specified
+        $part = $part->{-in} if (ref $part eq 'HASH');
+        next unless $part;
+
+        # separate distri and version with a whitespace
+        push(@$array_to_add_parts_to, ' ') if (@$array_to_add_parts_to);
+
+        if (ref $part eq 'ARRAY') {
+            # separate multiple distris/versions using a slash
+            if (@$part) {
+                push(@$array_to_add_parts_to, map { ($raw ? Mojo::ByteStream->new($_) : $_, '/') } @$part);
+                pop(@$array_to_add_parts_to);
+            }
+        }
+        elsif (ref $part ne 'HASH') {
+            push(@$array_to_add_parts_to, $raw ? Mojo::ByteStream->new($part) : $part);
+        }
+    }
+}
+
 # A generic query page showing test results in a configurable matrix
 sub overview {
     my ($self) = @_;
@@ -585,43 +611,38 @@ sub overview {
     ($stash{archs}, $stash{results}, $stash{aggregated}) = $self->prepare_job_results(\@latest_jobs);
 
     # determine distri/version from job results if not explicitely specified via search args
-    my @distris     = keys %{$stash{results}};
+    my @distris = keys %{$stash{results}};
+    my $formatted_distri;
+    my $formatted_version;
     my $only_distri = scalar @distris == 1;
     if (!defined $stash{distri} && $only_distri) {
-        my $distri = $stash{distri} = $distris[0];
+        $formatted_distri = $distris[0];
         if (!defined $stash{version}) {
-            my @versions = keys %{$stash{results}->{$distri}};
-            $stash{version} = $versions[0] if (scalar @versions == 1);
+            my @versions = keys %{$stash{results}->{$formatted_distri}};
+            $formatted_version = $versions[0] if (scalar @versions == 1);
         }
     }
 
-    # determine summary name for "Overall Summary of ..."
-    my $summary_name;
+    # compose summary for "Overall Summary of ..."
+    my @summary_parts;
     if (@$groups) {
-        $summary_name = join(', ',
-            map { $self->link_to($_->name => $self->url_for('group_overview', groupid => $_->id)) } @$groups);
+        # use groups if present
+        push(@summary_parts,
+            map { ($self->link_to($_->name => $self->url_for('group_overview', groupid => $_->id)), ', ') } @$groups);
+        pop(@summary_parts);
     }
     else {
-        my @variables = ($stash{distri}, $stash{version});
-        my @formatted_parts;
-        for my $part (@variables) {
-            $part = $part->{-in} if (ref $part eq 'HASH');
-            next unless $part;
+        # add pre-formatted distri and version as Mojo::ByteStream
+        _add_distri_and_version_to_summary(\@summary_parts, $formatted_distri, $formatted_version, 1);
 
-            if (ref $part eq 'ARRAY') {
-                push(@formatted_parts, join('/', @$part));
-            }
-            elsif (ref $part ne 'HASH') {
-                push(@formatted_parts, $part);
-            }
-        }
-        $summary_name = join(' ', @formatted_parts) if (@formatted_parts);
+        # add distri and version from query parameters as regular strings
+        _add_distri_and_version_to_summary(\@summary_parts, $stash{distri}, $stash{version}, 0);
     }
 
     $self->stash(
         %stash,
-        summary_name => $summary_name,
-        only_distri  => $only_distri,
+        summary_parts => \@summary_parts,
+        only_distri   => $only_distri,
     );
     $self->respond_to(
         json => {json     => \%stash},
