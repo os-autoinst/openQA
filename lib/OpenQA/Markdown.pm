@@ -15,38 +15,57 @@
 package OpenQA::Markdown;
 use Mojo::Base -strict;
 
-require Text::Markdown;
-our @ISA = qw(Text::Markdown);
-
 use Exporter 'import';
 use Regexp::Common 'URI';
 use OpenQA::Utils 'bugref_to_href';
+use Text::Markdown;
+use HTML::Restrict;
 
 our @EXPORT_OK = qw(markdown_to_html);
 
+# Limit tags to a safe subset
+my $RULES = {
+    a          => [qw(href)],
+    blockquote => [],
+    code       => [],
+    em         => [],
+    img        => [qw(src alt)],
+    h1         => [],
+    h2         => [],
+    h3         => [],
+    h4         => [],
+    h5         => [],
+    h6         => [],
+    hr         => [],
+    li         => [],
+    ol         => [],
+    p          => [],
+    strong     => [],
+    ul         => []};
+
+# Only allow "href=/...", "href=http://..." and "href=https://..."
+my $SCHEMES = [undef, 'http', 'https'];
+
+my $RESTRICT = HTML::Restrict->new(rules => $RULES, uri_schemes => $SCHEMES);
+my $MARKDOWN = Text::Markdown->new;
+
 sub markdown_to_html {
     my $text = shift;
-    my $m    = __PACKAGE__->new;
-    my $html = $m->markdown($text);
-    return $html;
-}
 
-# TODO: Kill it with fire
-sub _DoAutoLinks {
-    my ($self, $text) = @_;
-
-    # auto-replace bugrefs with 'a href...'
+    # Replace bugrefs with links
     $text = bugref_to_href($text);
 
-    # auto-replace every http(s) reference which is not already either html
-    # 'a href...' or markdown link '[link](url)' or enclosed by Text::Markdown
-    # URL markers '<>'
+    # Turn all remaining URLs into links
     $text =~ s@(?<!['"(<>])($RE{URI})@<$1>@gi;
 
-    # For tests make sure that references into test modules and needling steps also work
+    # Turn references to test modules and needling steps into links
     $text =~ s{\b(t#([\w/]+))}{<a href="/tests/$2">$1</a>}gi;
 
-    return $self->SUPER::_DoAutoLinks($text);
+    # Markdown -> HTML
+    my $html = $MARKDOWN->markdown($text);
+
+    # Unsafe -> safe
+    return $RESTRICT->process($html);
 }
 
 1;

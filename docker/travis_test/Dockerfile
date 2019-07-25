@@ -122,6 +122,7 @@ RUN zypper in -y -C \
        'perl(Test::Warnings)' \
        'perl(Text::Diff)' \
        'perl(Text::Markdown)' \
+       'perl(HTML::Restrict)' \
        'perl(CommonMark)' \
        'perl(Time::ParseDate)' \
        'perl(XSLoader) >= 0.24' \
