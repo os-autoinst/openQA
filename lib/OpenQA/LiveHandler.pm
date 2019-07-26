@@ -46,21 +46,21 @@ sub log_name {
 sub startup {
     my $self = shift;
 
+    $self->defaults(appname => 'openQA Live Handler');
     OpenQA::Setup::read_config($self);
     OpenQA::Setup::setup_log($self);
-    OpenQA::Setup::setup_app_defaults($self);
     OpenQA::Setup::setup_mojo_tmpdir();
     OpenQA::Setup::add_build_tx_time_header($self);
 
     # take care of DB deployment or migration before starting the main app
     my $schema = $self->schema;
 
-    OpenQA::Setup::setup_template_search_path($self);
     OpenQA::Setup::load_plugins($self);
     OpenQA::Setup::set_secure_flag_on_cookies_of_https_connection($self);
 
     # register root routes: use same paths as the regular web UI but prefix everything with /liveviewhandler
     my $r = $self->routes;
+    $r->get('/' => {json => {name => $self->defaults('appname')}});
     my $test_r
       = $r->route('/liveviewhandler/tests/:testid', testid => qr/\d+/)->to(namespace => 'OpenQA::WebAPI::Controller');
     $test_r = $test_r->under('/')->to('test#referer_check');
@@ -90,6 +90,7 @@ sub startup {
     $not_found_r->websocket('*')->to('live_view_handler#not_found_ws');
     $not_found_r->any('*')->to('live_view_handler#not_found_http');
 
+    OpenQA::Setup::setup_plain_exception_handler($self);
     OpenQA::Setup::setup_validator_check_for_datetime($self);
 }
 

@@ -282,6 +282,22 @@ sub setup_template_search_path {
     unshift @{$server->renderer->paths}, '/etc/openqa/templates';
 }
 
+sub setup_plain_exception_handler {
+    my ($server) = @_;
+
+    $server->helper(
+        'reply.exception' => sub {
+            my ($c, $error) = @_;
+
+            my $app = $c->app;
+            $error = blessed $error && $error->isa('Mojo::Exception') ? $error : Mojo::Exception->new($error);
+            $error = $error->inspect;
+            $app->log->error($error);
+            $error = 'internal error' if ($app->mode ne 'development');
+            $c->render(text => $error, status => 500);
+        });
+}
+
 sub setup_mojo_tmpdir {
     unless ($ENV{MOJO_TMPDIR}) {
         $ENV{MOJO_TMPDIR} = $OpenQA::Utils::assetdir . '/tmp';
