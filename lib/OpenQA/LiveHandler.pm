@@ -90,6 +90,7 @@ sub startup {
     $not_found_r->websocket('*')->to('live_view_handler#not_found_ws');
     $not_found_r->any('*')->to('live_view_handler#not_found_http');
 
+    OpenQA::Setup::setup_plain_exception_handler($self);
     OpenQA::Setup::setup_validator_check_for_datetime($self);
 }
 

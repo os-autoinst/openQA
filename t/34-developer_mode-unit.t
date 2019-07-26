@@ -26,6 +26,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use Date::Format;
 use Data::Dumper 'Dumper';
+use Test::Output 'combined_like';
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
@@ -958,6 +959,24 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
 
         $t_livehandler->get_ok('/some/route')->status_is(404);
         $t_livehandler->content_is("route does not exist\n", 'livehandler does not try to render a template');
+
+        # don't log to the logfile for the subsequent tests
+        my $log = $t_livehandler->app->log;
+        $t_livehandler->app->log(Mojo::Log->new);
+
+        my $live_view_handler_mock = Test::MockModule->new('OpenQA::WebAPI::Controller::LiveViewHandler');
+        $live_view_handler_mock->mock(not_found_http => sub { die 'some error'; });
+        $t_livehandler->app->mode('development');
+        combined_like(sub { $t_livehandler->get_ok('/some/route'); }, qr/some error/, 'error logged');
+        $t_livehandler->status_is(500)->content_like(qr/some error/, 'error rendered as plain text');
+        $t_livehandler->app->mode('production');
+        combined_like(sub { $t_livehandler->get_ok('/some/route'); }, qr/some error/, 'error logged');
+        $t_livehandler->status_is(500)
+          ->content_like(qr/^(?!.*some error.*).*$/, 'internal errors not leaked in production mode')
+          ->content_like(qr/internal error/,         'just "internal error" returned in production mode');
+
+        # restore previous logging behavior
+        $t_livehandler->app->log($log);
     };
 
     # note: all subtests above were conducted as admin

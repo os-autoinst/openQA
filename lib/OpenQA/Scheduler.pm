@@ -60,6 +60,8 @@ sub startup {
     my $api = $ca->any('/api');
     $api->get('/wakeup')->to('API#wakeup');
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
+
+    OpenQA::Setup::setup_plain_exception_handler($self);
 }
 
 sub run {

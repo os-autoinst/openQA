@@ -48,6 +48,8 @@ sub startup {
     $api->post('/send_msg')->to('API#send_msg');
     $ca->websocket('/ws/<workerid:num>')->to('Worker#ws');
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
+
+    OpenQA::Setup::setup_plain_exception_handler($self);
 }
 
 sub run {
