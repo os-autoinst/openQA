@@ -92,24 +92,46 @@ my $job;
 subtest 'create job' => sub {
     $t->post_ok("/api/v1/jobs" => form => $settings)->status_is(200);
     ok($job = $t->tx->res->json->{id}, 'got ID of new job');
-    is(
+    is_deeply(
         $published{'suse.openqa.job.create'},
-        '{"ARCH":"x86_64","BUILD":"666","DESKTOP":"DESKTOP","DISTRI":"Unicorn","FLAVOR":"pink","ISO":"whatever.iso",'
-          . '"ISO_MAXSIZE":"1","KVM":"KVM","MACHINE":"RainbowPC","TEST":"rainbow","VERSION":"42","group_id":null,"id":'
-          . $job
-          . ',"remaining":1}',
+        {
+            "ARCH"        => "x86_64",
+            "BUILD"       => "666",
+            "DESKTOP"     => "DESKTOP",
+            "DISTRI"      => "Unicorn",
+            "FLAVOR"      => "pink",
+            "ISO"         => "whatever.iso",
+            "ISO_MAXSIZE" => "1",
+            "KVM"         => "KVM",
+            "MACHINE"     => "RainbowPC",
+            "TEST"        => "rainbow",
+            "VERSION"     => "42",
+            "group_id"    => undef,
+            "id"          => $job,
+            "remaining"   => 1
+        },
         'job create triggers amqp'
     );
 };
 
 subtest 'mark job as done' => sub {
     $t->post_ok("/api/v1/jobs/$job/set_done")->status_is(200);
-    is(
+    is_deeply(
         $published{'suse.openqa.job.done'},
-        '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
-          . '"TEST":"rainbow","bugref":null,"group_id":null,"id":'
-          . $job
-          . ',"newbuild":null,"remaining":0,"result":"failed"}',
+        {
+            "ARCH"      => "x86_64",
+            "BUILD"     => "666",
+            "FLAVOR"    => "pink",
+            "ISO"       => "whatever.iso",
+            "MACHINE"   => "RainbowPC",
+            "TEST"      => "rainbow",
+            "bugref"    => undef,
+            "group_id"  => undef,
+            "id"        => $job,
+            "newbuild"  => undef,
+            "remaining" => 0,
+            "result"    => "failed"
+        },
         'job done triggers amqp'
     );
 };
@@ -131,11 +153,23 @@ subtest 'mark job with taken over bugref as done' => sub {
         form => {
             result => OpenQA::Jobs::Constants::FAILED
         })->status_is(200);
-    is(
+    is_deeply(
         $published{'suse.openqa.job.done'},
-        '{"ARCH":"x86_64","BUILD":"0091","FLAVOR":"DVD","ISO":"openSUSE-13.1-DVD-x86_64-Build0091-Media.iso",'
-          . '"MACHINE":"64bit","TEST":"kde","bugref":"bsc#123","bugurl":"https://bugzilla.suse.com/show_bug.cgi?id=123",'
-          . '"group_id":1001,"id":99963,"newbuild":null,"remaining":3,"result":"failed"}',
+        {
+            "ARCH"      => "x86_64",
+            "BUILD"     => "0091",
+            "FLAVOR"    => "DVD",
+            "ISO"       => "openSUSE-13.1-DVD-x86_64-Build0091-Media.iso",
+            "MACHINE"   => "64bit",
+            "TEST"      => "kde",
+            "bugref"    => "bsc#123",
+            "bugurl"    => "https://bugzilla.suse.com/show_bug.cgi?id=123",
+            "group_id"  => 1001,
+            "id"        => 99963,
+            "newbuild"  => undef,
+            "remaining" => 3,
+            "result"    => "failed"
+        },
         'carried over bugref and resolved URL present in AMQP event'
     );
 };
@@ -143,23 +177,39 @@ subtest 'mark job with taken over bugref as done' => sub {
 subtest 'duplicate and cancel job' => sub {
     $t->post_ok("/api/v1/jobs/$job/duplicate")->status_is(200);
     my $newjob = $t->tx->res->json->{id};
-    is(
+    is_deeply(
         $published{'suse.openqa.job.duplicate'},
-        '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
-          . '"TEST":"rainbow","auto":0,"bugref":null,"group_id":null,"id":'
-          . $job
-          . ',"remaining":1,"result":'
-          . $newjob . '}',
+        {
+            "ARCH"      => "x86_64",
+            "BUILD"     => "666",
+            "FLAVOR"    => "pink",
+            "ISO"       => "whatever.iso",
+            "MACHINE"   => "RainbowPC",
+            "TEST"      => "rainbow",
+            "auto"      => 0,
+            "bugref"    => undef,
+            "group_id"  => undef,
+            "id"        => $job,
+            "remaining" => 1,
+            "result"    => $newjob
+        },
         'job duplicate triggers amqp'
     );
 
     $t->post_ok("/api/v1/jobs/$newjob/cancel")->status_is(200);
-    is(
+    is_deeply(
         $published{'suse.openqa.job.cancel'},
-        '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
-          . '"TEST":"rainbow","group_id":null,"id":'
-          . $newjob
-          . ',"remaining":0}',
+        {
+            "ARCH"      => "x86_64",
+            "BUILD"     => "666",
+            "FLAVOR"    => "pink",
+            "ISO"       => "whatever.iso",
+            "MACHINE"   => "RainbowPC",
+            "TEST"      => "rainbow",
+            "group_id"  => undef,
+            "id"        => $newjob,
+            "remaining" => 0
+        },
         "job cancel triggers amqp"
     );
 };
@@ -176,7 +226,7 @@ sub assert_common_comment_json {
 
 subtest 'create job group comment' => sub {
     $t->post_ok('/api/v1/groups/1001/comments' => form => {text => 'test'})->status_is(200);
-    my $json = decode_json($published{'suse.openqa.comment.create'});
+    my $json = $published{'suse.openqa.comment.create'};
     assert_common_comment_json($json);
     is($json->{group_id},        1001,  'job group id');
     is($json->{parent_group_id}, undef, 'parent group id');
@@ -184,7 +234,7 @@ subtest 'create job group comment' => sub {
 
 subtest 'create parent group comment' => sub {
     $t->post_ok('/api/v1/parent_groups/2000/comments' => form => {text => 'test'})->status_is(200);
-    my $json = decode_json($published{'suse.openqa.comment.create'});
+    my $json = $published{'suse.openqa.comment.create'};
     assert_common_comment_json($json);
     is($json->{group_id},        undef, 'job group id');
     is($json->{parent_group_id}, 2000,  'parent group id');
@@ -246,6 +296,14 @@ subtest 'amqp_publish call with incorrect headers' => sub {
         qr/publish_amqp headers must be a hashref!/,
         'dies on bad headers'
     );
+};
+
+subtest 'amqp_publish call with reference as body' => sub {
+    %published = ();
+    my $body = {"field" => "value"};
+    $amqp->publish_amqp('some.topic', $body);
+    is($published{body}, $body, "message body kept as ref not encoded by publish_amqp");
+    is_deeply($published{args}->{routing_key}, 'some.topic', "topic appears as routing key");
 };
 
 done_testing();
