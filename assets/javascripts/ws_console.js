@@ -65,7 +65,11 @@ function establishWebSocketConnection() {
         try {
             var msgObj = JSON.parse(msg.data);
             var what = msgObj.what;
-            proxyConnectionConcluded = (typeof what === 'string' && what.indexOf('connected to os-autoinst command server') >= 0);
+            proxyConnectionConcluded = (
+                typeof what === 'string' &&
+                (what.indexOf('connected to os-autoinst command server') >= 0 ||
+                    what.indexOf('reusing previous connection to os-autoinst command server') >= 0)
+                );
         } catch (e) {
             logStatus('Unable to process received message: ' + e);
         }
