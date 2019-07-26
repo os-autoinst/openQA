@@ -609,6 +609,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_configure_limit_for_groupless_assets">Configure limit for groupless assets</a></li>
 </ul>
 </li>
+<li><a href="#_cli_interface">CLI interface</a></li>
 <li><a href="#_where_to_now_2">Where to now?</a></li>
 </ul>
 </li>
@@ -3814,6 +3815,24 @@ after a certain number of days. That duration can be adjusted by setting
 untracked_assets_storage_duration in the misc_limits section of the
 openQA config to the desired number of days.</p>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_cli_interface">CLI interface</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Beside the daemon argument to run the actual web service the openQA
+startup script /usr/share/openqa/script/openqa supports further arguments.</p>
+</div>
+<div class="paragraph">
+<p>For a full list of those commands, just invoke /usr/share/openqa/script/openqa -h.
+This also works for sub-commands(e.g. /usr/share/openqa/script/openqa minion -h,
+/usr/share/openqa/script/openqa minion job -h).</p>
+</div>
+<div class="paragraph">
+<p>Note that prefork is only supported for the main web service but not for
+other services like the live view handler.</p>
 </div>
 </div>
 </div>
@@ -7615,7 +7634,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-07-26 11:09:20 UTC
+Last updated 2019-07-26 12:28:35 UTC
 </div>
 </div>
 <style>
