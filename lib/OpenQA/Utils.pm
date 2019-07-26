@@ -63,6 +63,7 @@ our @EXPORT  = qw(
   &parse_assets_from_settings
   &find_bugref
   &find_bugrefs
+  bugref_regex
   &bugurl
   &bugref_to_href
   &href_to_bugref

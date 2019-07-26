@@ -76,8 +76,6 @@ requires 'Scalar::Util';
 requires 'Sub::Install';
 requires 'Sub::Name';
 requires 'Text::Diff';
-requires 'Text::Markdown';
-requires 'HTML::Restrict';
 requires 'CommonMark';
 requires 'Time::HiRes';
 requires 'Time::ParseDate';

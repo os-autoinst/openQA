@@ -32,7 +32,7 @@ use warnings;
         id          => 1001,
         name        => 'opensuse',
         sort_order  => 0,
-        description => "##Test description\n\nwith bugref bsc#1234",
+        description => "## Test description\n\nwith bugref bsc#1234",
     },
     JobGroups => {
         id         => 1002,

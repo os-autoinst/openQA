@@ -17,55 +17,54 @@ use Mojo::Base -strict;
 
 use Exporter 'import';
 use Regexp::Common 'URI';
-use OpenQA::Utils 'bugref_to_href';
-use Text::Markdown;
-use HTML::Restrict;
+use OpenQA::Utils qw(bugref_regex bugurl);
+use CommonMark;
 
-our @EXPORT_OK = qw(markdown_to_html);
+our @EXPORT_OK = qw(bugref_to_markdown is_light_color markdown_to_html);
 
-# Limit tags to a safe subset
-my $RULES = {
-    a          => [qw(href)],
-    blockquote => [],
-    code       => [],
-    em         => [],
-    img        => [qw(src alt)],
-    h1         => [],
-    h2         => [],
-    h3         => [],
-    h4         => [],
-    h5         => [],
-    h6         => [],
-    hr         => [],
-    li         => [],
-    ol         => [],
-    p          => [],
-    strong     => [],
-    ul         => []};
+my $RE = bugref_regex;
 
-# Only allow "href=/...", "href=http://..." and "href=https://..."
-my $SCHEMES = [undef, 'http', 'https'];
+sub bugref_to_markdown {
+    my $text = shift;
+    $text =~ s/$RE/"[$+{match}](" . bugurl($+{match}) . ')'/geio;
+    return $text;
+}
 
-my $RESTRICT = HTML::Restrict->new(rules => $RULES, uri_schemes => $SCHEMES);
-my $MARKDOWN = Text::Markdown->new;
+sub is_light_color {
+    my $color = shift;
+    return undef unless $color =~ m/^#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})$/;
+    my ($red, $green, $blue) = ($1, $2, $3);
+    my $sum = hex($red) + hex($green) + hex($blue);
+    return $sum > 380;
+}
 
 sub markdown_to_html {
     my $text = shift;
 
-    # Replace bugrefs with links
-    $text = bugref_to_href($text);
+    $text = bugref_to_markdown($text);
 
     # Turn all remaining URLs into links
-    $text =~ s@(?<!['"(<>])($RE{URI})@<$1>@gi;
+    $text =~ s/(?<!['"(<>])($RE{URI})/<$1>/gio;
 
     # Turn references to test modules and needling steps into links
-    $text =~ s{\b(t#([\w/]+))}{<a href="/tests/$2">$1</a>}gi;
+    $text =~ s!\b(t#([\w/]+))![$1](/tests/$2)!gi;
 
-    # Markdown -> HTML
-    my $html = $MARKDOWN->markdown($text);
+    my $html = CommonMark->markdown_to_html($text);
 
-    # Unsafe -> safe
-    return $RESTRICT->process($html);
+    # Custom markup "{{color:#ff0000|Some text}}"
+    $html =~ s/(\{\{([^|]+?)\|(.*?)\}\})/_custom($1, $2, $3)/ge;
+
+    return $html;
+}
+
+sub _custom {
+    my ($full, $rules, $text) = @_;
+    if ($rules =~ /^color:(#[a-fA-F0-9]{6})$/) {
+        my $color = $1;
+        my $bg    = is_light_color($color) ? 'black' : 'white';
+        return qq{<span style="color:$color;background-color:$bg">$text</span>};
+    }
+    return $full;
 }
 
 1;
