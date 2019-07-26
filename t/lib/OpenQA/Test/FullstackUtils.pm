@@ -150,11 +150,19 @@ sub wait_for_developer_console_contains_log_message {
     my $log_textarea           = $driver->find_element('#log');
     my $log                    = $log_textarea->get_text();
     my $previous_log           = '';
+    # poll less frequently when waiting for paused (might take a minute for the first test module to pass)
+    my $check_interval = $diag_info eq 'paused' ? 5 : 1;
+    my $timeout        = 60 * 5 * $check_interval;
 
     my $match_index;
     while (($match_index = match_regex_returning_index($message_regex, $log, $position_of_last_match)) < 0) {
-        # poll less frequently when waiting for paused (might take a minute for the first test module to pass)
-        sleep($diag_info eq 'paused' ? 5 : 1);
+        if ($timeout <= 0) {
+            fail("Wait for $message_regex timed out");
+            return undef;
+        }
+
+        $timeout -= $check_interval;
+        sleep($check_interval);
 
         # print updated log so we see what's going on
         if ($log ne $previous_log) {
