@@ -832,6 +832,16 @@ after a certain number of days. That duration can be adjusted by setting
 +untracked_assets_storage_duration+ in the +misc_limits+ section of the
 openQA config to the desired number of days.
 
+== CLI interface
+Beside the +daemon+ argument to run the actual web service the openQA
+startup script +/usr/share/openqa/script/openqa+ supports further arguments.
+
+For a full list of those commands, just invoke +/usr/share/openqa/script/openqa -h+.
+This also works for sub-commands(e.g. +/usr/share/openqa/script/openqa minion -h+,
++/usr/share/openqa/script/openqa minion job -h+).
+
+Note that +prefork+ is only supported for the main web service but not for
+other services like the live view handler.
 
 == Where to now?
 
