@@ -25,6 +25,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
+use Test::Output;
 use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
@@ -499,44 +500,52 @@ subtest 'Check job status and output' => sub {
             $running_job_id = $job->{id};
         }
 
-        open(my $oldSTDOUT, ">&", STDOUT) or die "Can't preserve STDOUT\n$!\n";
-        close STDOUT;
-        my $output;
-        open STDOUT, '>', \$output;
-
-
-        $t->post_ok("/api/v1/jobs/$job->{id}/status", json => $json);
+        combined_like(
+            sub {
+                $t->post_ok("/api/v1/jobs/$job->{id}/status", json => $json);
+            },
+            $job->{id} == 99963 ? qr// : qr/Got status update for job .*? but does not contain a worker id!/,
+            "status for $job->{id}"
+        );
+        $t->status_is($job->{id} == 99963 ? 200 : 400);
         $worker_id = 0;
-        close STDOUT;
-        open(STDOUT, '>&', $oldSTDOUT) or die "Can't dup \$oldSTDOUT: $!";
-        if ($job->{id} == 99963) {
-            $t->status_is(200);
-        }
-        else {
-            $t->status_is(400);
-            ok($output =~ /Got status update for job .*? but does not contain a worker id!/,
-                "Check status update for job $job->{id}");
-        }
     }
 
-    open(my $oldSTDOUT, ">&", STDOUT) or die "Can't preserve STDOUT\n$!\n";
-    close STDOUT;
-    my $output;
-    open STDOUT, '>', \$output;
     # bogus job ID
-    $t->post_ok("/api/v1/jobs/9999999/status", json => {})->status_is(400);
-    # bogus worker ID
-    $t->post_ok("/api/v1/jobs/$running_job_id/status", json => {status => {worker_id => 999999}})->status_is(400);
-    close STDOUT;
-    open(STDOUT, '>&', $oldSTDOUT) or die "Can't dup \$oldSTDOUT: $!";
-
-    like($output, qr/Got status update for non-existing job/, 'Check status update for non-existing job');
-    like(
-        $output,
-        qr/Got status update for job .* with unexpected worker ID 999999/,
-        'Got status update for job that doesnt belong to worker'
+    combined_like(
+        sub {
+            $t->post_ok("/api/v1/jobs/9999999/status", json => {})->status_is(400);
+        },
+        qr/Got status update for non-existing job/,
+        'reject status update for non-existing job'
     );
+
+    # bogus worker ID
+    combined_like(
+        sub {
+            $t->post_ok("/api/v1/jobs/$running_job_id/status", json => {status => {worker_id => 999999}})
+              ->status_is(400);
+        },
+        qr/Got status update for job .* with unexpected worker ID 999999 \(expected 1, job is running\)/,
+        'reject status update for job that does not belong to worker'
+    );
+
+    # expected not update anymore
+    my $job = $jobs->find($running_job_id);
+    $schema->txn_begin;
+    $job->worker->update({job_id => undef});
+    $job->update({state => OpenQA::Jobs::Constants::DONE, result => OpenQA::Jobs::Constants::INCOMPLETE});
+    combined_like(
+        sub {
+            $t->post_ok("/api/v1/jobs/$running_job_id/status", json => {status => {worker_id => 999999}})
+              ->status_is(400);
+        },
+qr/Got status update for job .* with unexpected worker ID 999999 \(expected no updates anymore, job is done with result incomplete\)/,
+        'reject status update for job that is already considered incomplete'
+    );
+    $schema->txn_rollback;
 };
+
 # Test /jobs/cancel
 # TODO: cancelling jobs via API in tests doesn't work for some reason
 #
