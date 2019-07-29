@@ -16,8 +16,6 @@
 package OpenQA::WebAPI::Plugin::AMQP;
 use Mojo::Base 'Mojolicious::Plugin';
 
-use Mojo::JSON;    # booleans
-use Cpanel::JSON::XS ();
 use Mojo::IOLoop;
 use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
@@ -62,9 +60,6 @@ sub log_event {
     $event =~ s/_/\./;
 
     my $topic = $self->{config}->{amqp}{topic_prefix} . '.' . $event;
-
-    # convert data to JSON, with reliable key ordering (helps the tests)
-    $event_data = Cpanel::JSON::XS->new->canonical(1)->allow_blessed(1)->ascii(1)->encode($event_data);
 
     # seperate function for tests
     $self->publish_amqp($topic, $event_data);
