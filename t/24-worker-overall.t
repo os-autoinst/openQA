@@ -90,13 +90,16 @@ combined_like(
 
 subtest 'capabilities' => sub {
     my $capabilities = $worker->capabilities;
-    delete $capabilities->{cpu_opmode};    # not always present and also not strictly required anyways
+
+    # ignore keys which are not always present and also not strictly required anyways
+    delete $capabilities->{cpu_opmode};
+    delete $capabilities->{cpu_modelname};
 
     is_deeply(
         [sort keys %$capabilities],
         [
             qw(
-              cpu_arch cpu_modelname host instance isotovideo_interface_version
+              cpu_arch host instance isotovideo_interface_version
               mem_max websocket_api_version worker_class
               )
         ],
