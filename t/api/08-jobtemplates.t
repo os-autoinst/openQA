@@ -259,11 +259,8 @@ is_deeply(
                     'name' => 'advanced_kde',
                     'id'   => 1017
                 },
-                'settings' => {
-                    'ADVANCED' => '1',
-                    'DESKTOP'  => 'advanced_kde'
-                },
-                'id' => 10,
+                'settings' => [{key => 'ADVANCED', value => '1'}, {key => 'DESKTOP', value => 'advanced_kde'},],
+                'id'       => 10,
             }]
     },
     "Initial job templates"
@@ -570,7 +567,8 @@ $opensuse->update({default_priority => 40});
 # Get all groups
 $t->get_ok("/api/v1/experimental/job_templates_scheduling")->status_is(200);
 $yaml = YAML::XS::Load($t->tx->res->body);
-is_deeply($t->app->validate_yaml($yaml, 1), [], 'YAML of all groups is valid');
+is_deeply(['opensuse', 'opensuse test'], [sort keys %$yaml], 'YAML of all groups contains names')
+  || diag explain $t->tx->res->body;
 # Get one group with defined scenarios, products and defaults
 $t->get_ok('/api/v1/experimental/job_templates_scheduling/' . $opensuse->id)->status_is(200);
 # A document start marker "---" shouldn't be present by default
@@ -659,6 +657,9 @@ subtest 'Migration' => sub {
     $yaml = YAML::XS::Dump($yaml);
     $t->post_ok('/api/v1/experimental/job_templates_scheduling/' . $opensuse->id, form => {template => $yaml})
       ->status_is(200, 'YAML added to the database');
+    if (!$t->success) {
+        return undef;
+    }
     $opensuse->discard_changes;
     is($opensuse->template, $yaml, 'YAML stored in the database');
     $yaml = "# comments help readability\n$yaml# or in the end\n";

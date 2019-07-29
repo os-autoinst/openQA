@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2019 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -74,6 +74,7 @@ use Mojo::URL;
 use OpenQA::Client;
 use Mojo::JSON;    # booleans
 use Cpanel::JSON::XS ();
+use YAML::XS;
 
 use Getopt::Long;
 
@@ -93,24 +94,22 @@ GetOptions(\%options, "apibase=s", "apikey=s", "apisecret=s", "clean", "host=s",
 
 usage(1) if $options{help} || $#ARGV;
 
-my $datafile = shift @ARGV;
-die "Data file not found\n" unless $datafile && -r $datafile;
+# Slurp file specified as an argument or STDIN in case of "-"
+my $datafile = join("", <>);
+die "Data file not found\n" unless length $datafile;
 
 my $info;
 
-if ($datafile =~ /\.json$/) {
-    local $/;
-    open(my $fh, '<', $datafile);
-    $info = Cpanel::JSON::XS->new->relaxed->decode(<$fh>);
-    close $fh;
+try {
+    $info = Cpanel::JSON::XS->new->relaxed->decode($datafile);
     dd $info;
 }
-else {
+catch {
     $info = do $datafile;
     if (my $error = $@) {
         die "Error in data file: $error\n";
     }
-}
+};
 
 $options{'host'}    ||= 'localhost';
 $options{'apibase'} ||= '/api/v1';
@@ -127,11 +126,12 @@ else {
 
 my $client = OpenQA::Client->new(apikey => $options{'apikey'}, apisecret => $options{'apisecret'}, api => $url->host);
 
-my @tables = (qw(Machines TestSuites Products JobTemplates));
+my @tables = (qw(Machines TestSuites Products JobTemplates JobGroups));
 
 sub print_error {
     my ($res) = @_;
-    printf STDERR "ERROR: %s - %s\n", $res->code // 'unknown error code', $res->message // 'no error message';
+    printf STDERR "ERROR: %s - %s\n", $res->code // 'unknown error code - host ' . $url->host . ' unreachable?',
+      $res->message // 'no error message';
     if ($res->body) {
         dd($res->json || $res->body);
     }
@@ -141,6 +141,17 @@ sub post_entry {
     my ($table, $entry) = @_;
 
     my %param;
+
+    if ($table eq 'JobGroups') {
+        $url->path($options{'apibase'} . '/experimental/job_templates_scheduling');
+        $url->query({name => $entry->{group_name}, template => $entry->{template}});
+        my $res = $client->post($url)->res;
+        if (!($res->code && $res->code == 200)) {
+            print_error($res);
+            return 0;
+        }
+        return 1;
+    }
 
     if ($table eq 'JobTemplates') {
         unless (defined($entry->{prio})) {
@@ -186,14 +197,14 @@ sub post_entry {
 
     if (!$options{'clean'}) {    # with --clean the entry should not exist at this point, no need to check
         my $res = $client->get($url->path($options{'apibase'} . '/' . decamelize($table))->query(%param))->res;
-        if ($res->code == 200 && @{$res->json->{$table}} == 1 && $res->json->{$table}[0]{id}) {
+        if ($res->code && $res->code == 200 && @{$res->json->{$table}} == 1 && $res->json->{$table}[0]{id}) {
             if ($options{'update'} && $table ne 'JobTemplates')
             {                    # there is nothing to update in JobTemplates, the entry just exists or not
                 my $id = $res->json->{$table}[0]{id};
                 my $res
                   = $client->put($url->path($options{'apibase'} . '/' . decamelize($table) . "/$id")->query(%param))
                   ->res;
-                if ($res->code != 200) {
+                if (!($res->code && $res->code == 200)) {
                     print_error($res);
                     return 0;
                 }
@@ -207,7 +218,7 @@ sub post_entry {
 
     my $res = $client->post($url->path($options{'apibase'} . '/' . decamelize($table))->query(%param))->res;
 
-    if ($res->code != 200) {
+    if (!($res->code && $res->code == 200)) {
         print_error($res);
         return 0;
     }
@@ -217,16 +228,16 @@ sub post_entry {
 if ($options{'clean'}) {
     for my $table (@tables) {
         my $res = $client->get($url->path($options{'apibase'} . '/' . decamelize($table)))->res;
-        if ($res->code == 200) {
+        if ($res->code && $res->code == 200) {
             my $result = $res->json;
             for my $i (0 .. $#{$result->{$table}}) {
                 my $id = $result->{$table}->[$i]->{id};
                 $res = $client->delete($url->path($options{'apibase'} . '/' . decamelize($table) . "/$id"))->res;
-                last if $res->code != 200;
+                last if !($res->code && $res->code == 200);
             }
         }
 
-        if ($res->code != 200) {
+        if (!($res->code && $res->code == 200)) {
             print_error($res);
             exit(1);
         }

@@ -120,7 +120,10 @@ sub to_hash {
             name => $test_suite->name,
         },
     );
-    $result{settings} = $settings if (%$settings);
+    if ($settings) {
+        my @settings = sort { $a->key cmp $b->key } $self->settings;
+        $result{settings} = [map { {key => $_->key, value => $_->value} } @settings] if @settings;
+    }
 
     return \%result;
 }

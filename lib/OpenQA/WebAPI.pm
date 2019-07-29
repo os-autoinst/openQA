@@ -93,6 +93,7 @@ sub startup {
     # placeholder types
     $r->add_type(step    => qr/[1-9]\d*/);
     $r->add_type(barrier => qr/[0-9a-zA-Z_]+/);
+    $r->add_type(str     => qr/[A-Za-z]+/);
 
     # register routes
     $r->post('/session')->to('session#create');
@@ -404,7 +405,8 @@ sub startup {
     # api/v1/job_templates_scheduling
     $api_public_r->get('experimental/job_templates_scheduling/<id:num>')->name('apiv1_job_templates_schedules')
       ->to('job_template#schedules', id => undef);
-    $api_ra->post('experimental/job_templates_scheduling/<id:num>')->to('job_template#update');
+    $api_public_r->get('experimental/job_templates_scheduling/<name:str>')->to('job_template#schedules', name => undef);
+    $api_ra->post('experimental/job_templates_scheduling/<id:num>')->to('job_template#update', id => undef);
 
     # api/v1/comments
     $api_public_r->get('/jobs/<job_id:num>/comments')->name('apiv1_list_comments')->to('comment#list');
