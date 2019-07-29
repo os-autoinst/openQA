@@ -46,6 +46,12 @@ $ENV{OPENQA_LOGFILE} = undef;
     has is_running => 1;
     sub stop { shift->is_running(0) }
 }
+{
+    package Test::FakeJob;
+    use Mojo::Base -base;
+    has id    => 42;
+    has state => 'running';
+}
 
 like(
     exception {
@@ -117,6 +123,18 @@ subtest 'capabilities' => sub {
             'capabilities contain expected information'
         ) or diag explain $capabilities;
         is($capabilities->{worker_class}, 'qemu_aarch64', 'default worker class for architecture assigned');
+    };
+
+    subtest 'current job ID passed if it is running' => sub {
+        $worker->current_job(Test::FakeJob->new);
+        is($worker->capabilities->{job_id}, 42, 'job ID passed if job running');
+
+        $worker->current_job(Test::FakeJob->new(state => 'new'));
+        is($worker->capabilities->{job_id}, undef, 'job ID not passed if job new');
+        $worker->current_job(Test::FakeJob->new(state => 'stopped'));
+        is($worker->capabilities->{job_id}, undef, 'job ID not passed if job stopped');
+
+        $worker->current_job(undef);
     };
 };
 

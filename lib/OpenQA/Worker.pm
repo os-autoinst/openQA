@@ -112,18 +112,30 @@ sub log_setup_info {
 sub capabilities {
     my ($self) = @_;
 
-    return $self->{_caps} if $self->{_caps};
-
-    my $global_settings = $self->settings->global_settings;
-    my $query_cmd;
-    my $caps = {
+    my $cached_caps = $self->{_caps};
+    my $caps        = $cached_caps // {
         host                         => $self->worker_hostname,
         instance                     => $self->instance_number,
         websocket_api_version        => WEBSOCKET_API_VERSION,
         isotovideo_interface_version => $self->isotovideo_interface_version,
     };
 
+    # pass current job if executing one; this should prevent the web UI to mark the current job as
+    # incomplete despite the re-registration
+    my $current_job = $self->current_job;
+    my $job_state   = $current_job ? $current_job->state : undef;
+    if ($job_state && $job_state ne 'new' && $job_state ne 'stopped') {
+        $caps->{job_id} = $current_job->id;
+    }
+    else {
+        delete $caps->{job_id};
+    }
+
+    # do not update subsequent values; just return the previously cached values
+    return $caps if $cached_caps;
+
     # determine CPU info
+    my $global_settings = $self->settings->global_settings;
     if (my $arch = $global_settings->{ARCH}) {
         $caps->{cpu_arch} = $arch;
     }
