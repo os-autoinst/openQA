@@ -77,6 +77,7 @@ requires 'Sub::Install';
 requires 'Sub::Name';
 requires 'Text::Diff';
 requires 'Text::Markdown';
+requires 'CommonMark';
 requires 'Time::HiRes';
 requires 'Time::ParseDate';
 requires 'Time::Piece';
