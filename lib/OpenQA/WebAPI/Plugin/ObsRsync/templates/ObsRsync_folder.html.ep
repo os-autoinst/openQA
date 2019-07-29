@@ -52,11 +52,13 @@
 <hr>
 <div class="container">
 <h6>Step 3. Generate and execute openQA REST requests to trigger tests (based on lists from Step 1.)</h6>
-% if (!$openqa_commands) {
+% if (!@$openqa_commands) {
     No logs found for last run
 % } else {
     Commands executed during last run:
-    <%= link_to "$openqa_commands"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $openqa_commands) %>
+% }
+% for my $filename (@$openqa_commands) {
+    <%= link_to "$filename"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %>
 % }
 <br>
 % if ($openqa_sh) {

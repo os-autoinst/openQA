@@ -17,6 +17,7 @@
 package OpenQA::WebAPI::Plugin::ObsRsync;
 use Mojo::Base 'Mojolicious::Plugin';
 use Mojo::File;
+use OpenQA::WebAPI::Plugin::ObsRsync::Controller;
 
 sub register {
     my ($self, $app, $config) = @_;
@@ -51,6 +52,7 @@ sub register {
           ->to('Plugin::ObsRsync::Controller#run');
     }
 
+    OpenQA::WebAPI::Plugin::ObsRsync::Controller::init($app);
 }
 
 1;

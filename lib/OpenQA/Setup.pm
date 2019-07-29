@@ -185,7 +185,9 @@ sub read_config {
             topic_prefix      => 'suse',
         },
         obs_rsync => {
-            home => '',
+            home          => '',
+            jobs_limit    => '',
+            retry_timeout => '',
         },
         default_group_limits => {
             asset_size_limit                  => OpenQA::Schema::JobGroupDefaults::SIZE_LIMIT_GB,
