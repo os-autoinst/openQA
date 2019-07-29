@@ -215,11 +215,12 @@ sub _schedule_iso {
     my $deprioritize_limit = delete $args->{_DEPRIORITIZE_LIMIT};
     my $obsolete           = !(delete $args->{_NO_OBSOLETE} // delete $args->{_NOOBSOLETEBUILD} // $deprioritize);
     my $onlysame           = delete $args->{_ONLY_OBSOLETE_SAME_BUILD} // 0;
+    my $skip_chained_deps  = delete $args->{_SKIP_CHAINED_DEPS} // 0;
 
     # Any arg name ending in _URL is special: it tells us to download
     # the file at that URL before running the job
     my $downloads = create_downloads_list($args);
-    my $result    = $self->_generate_jobs($args, \@notes);
+    my $result    = $self->_generate_jobs($args, \@notes, $skip_chained_deps);
     return {error => $result->{error_message}} if defined $result->{error_message};
     my $jobs = $result->{settings_result};
 
@@ -286,7 +287,8 @@ sub _schedule_iso {
         # jobs are created, now recreate dependencies and extract ids
         for my $job (@created_jobs) {
             my $error_messages
-              = $self->_create_dependencies_for_job($job, \%testsuite_ids, \%created_jobs, \%cluster_parents);
+              = $self->_create_dependencies_for_job($job, \%testsuite_ids, \%created_jobs, \%cluster_parents,
+                $skip_chained_deps);
             if (!@$error_messages) {
                 push(@successful_job_ids, $job->id);
             }
@@ -409,7 +411,7 @@ used in B<_generate_jobs>.
 =cut
 
 sub _sort_dep {
-    my ($list) = @_;
+    my ($list, $skip_chained_deps) = @_;
 
     my %done;
     my %count;
@@ -466,7 +468,7 @@ method used in the B<schedule_iso()> method.
 =cut
 
 sub _generate_jobs {
-    my ($self, $args, $notes) = @_;
+    my ($self, $args, $notes, $skip_chained_deps) = @_;
 
     my $ret      = [];
     my $schema   = $self->result_source->schema;
@@ -595,7 +597,7 @@ sub _generate_jobs {
         if ($wanted{_settings_key($ret->[$i])}) {
             # add parents to wanted list
             my @parents;
-            push @parents, _parse_dep_variable($ret->[$i]->{START_AFTER_TEST}, $ret->[$i]);
+            push @parents, _parse_dep_variable($ret->[$i]->{START_AFTER_TEST}, $ret->[$i]) unless $skip_chained_deps;
             push @parents, _parse_dep_variable($ret->[$i]->{PARALLEL_WITH},    $ret->[$i]);
             for my $parent (@parents) {
                 my $parent_test_machine = join(':', @$parent);
@@ -611,24 +613,24 @@ sub _generate_jobs {
 
 =over 4
 
-=item _job_create_dependencies()
+=item _create_dependencies_for_job()
 
 Create job dependencies for tasks with settings START_AFTER_TEST or PARALLEL_WITH
-defined. Internal method used by the B<schedule_iso()> method.
+defined. Internal method used by the B<_schedule_iso()> method.
 
 =back
 
 =cut
 
 sub _create_dependencies_for_job {
-    my ($self, $job, $testsuite_mapping, $created_jobs, $cluster_parents) = @_;
+    my ($self, $job, $testsuite_mapping, $created_jobs, $cluster_parents, $skip_chained_deps) = @_;
 
     my @error_messages;
     my $settings = $job->settings_hash;
-    for my $dependency (
-        [START_AFTER_TEST => OpenQA::JobDependencies::Constants::CHAINED],
-        [PARALLEL_WITH    => OpenQA::JobDependencies::Constants::PARALLEL])
-    {
+    my @dependencies;
+    push @dependencies, [START_AFTER_TEST => OpenQA::JobDependencies::Constants::CHAINED] unless $skip_chained_deps;
+    push @dependencies, [PARALLEL_WITH    => OpenQA::JobDependencies::Constants::PARALLEL];
+    for my $dependency (@dependencies) {
         my ($depname, $deptype) = @$dependency;
         next unless defined $settings->{$depname};
         for my $testsuite (_parse_dep_variable($settings->{$depname}, $settings)) {

@@ -1132,4 +1132,34 @@ subtest 'circular reference' => sub {
         'circular reference');
 };
 
+subtest '_SKIP_CHAINED_DEPS prevents scheduling parent tests' => sub {
+    $schema->txn_begin;
+
+    add_opensuse_test('parent_test', MACHINE => ['64bit']);
+    add_opensuse_test(
+        'child_test_1',
+        START_AFTER_TEST => 'parent_test',
+        PARALLEL_WITH    => 'child_test_2',
+        MACHINE          => ['64bit']);
+    add_opensuse_test('child_test_2', START_AFTER_TEST => 'parent_test', MACHINE => ['64bit']);
+
+    my $res = schedule_iso(
+        {
+            ISO                => $iso,
+            DISTRI             => 'opensuse',
+            VERSION            => '13.1',
+            FLAVOR             => 'DVD',
+            ARCH               => 'i586',
+            BUILD              => '0091',
+            _GROUP             => 'opensuse test',
+            TEST               => 'child_test_1',
+            _SKIP_CHAINED_DEPS => 1,
+        });
+    is($res->json->{count}, 2, '2 jobs scheduled');
+
+    my %create_jobs = map { $jobs->find($_)->settings_hash->{'TEST'} => 1 } @{$res->json->{ids}};
+    is_deeply(\%create_jobs, {child_test_1 => 1, child_test_2 => 1}, "parent jobs not scheduled");
+    $schema->txn_rollback;
+};
+
 done_testing();
