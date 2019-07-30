@@ -49,8 +49,8 @@ $ENV{OPENQA_LOGFILE} = undef;
 {
     package Test::FakeJob;
     use Mojo::Base -base;
-    has id    => 42;
-    has state => 'running';
+    has id     => 42;
+    has status => 'running';
 }
 
 like(
@@ -132,9 +132,9 @@ subtest 'capabilities' => sub {
         $worker->current_job(Test::FakeJob->new);
         is($worker->capabilities->{job_id}, 42, 'job ID passed if job running');
 
-        $worker->current_job(Test::FakeJob->new(state => 'new'));
+        $worker->current_job(Test::FakeJob->new(status => 'new'));
         is($worker->capabilities->{job_id}, undef, 'job ID not passed if job new');
-        $worker->current_job(Test::FakeJob->new(state => 'stopped'));
+        $worker->current_job(Test::FakeJob->new(status => 'stopped'));
         is($worker->capabilities->{job_id}, undef, 'job ID not passed if job stopped');
 
         $worker->current_job(undef);
