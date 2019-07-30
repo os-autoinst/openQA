@@ -123,7 +123,7 @@ sub capabilities {
     # pass current job if executing one; this should prevent the web UI to mark the current job as
     # incomplete despite the re-registration
     my $current_job = $self->current_job;
-    my $job_state   = $current_job ? $current_job->state : undef;
+    my $job_state   = $current_job ? $current_job->status : undef;
     if ($job_state && $job_state ne 'new' && $job_state ne 'stopped') {
         $caps->{job_id} = $current_job->id;
     }
