@@ -163,6 +163,8 @@ sub register {
         return undef;
     }
 
+    # setup the websocket connection which is mainly required to get *new* jobs but not strictly necessary while
+    # already running a job
     $self->_setup_websocket_connection();
 }
 
@@ -243,6 +245,8 @@ sub _setup_websocket_connection {
                             error_message =>
                               "Websocket connection to $websocket_url finished by remote side with code $code, $reason"
                         });
+
+                    # note: The worker is supposed to handle this event and e.g. try to re-register again.
                 });
             $tx->max_websocket_size(10485760);
             $self->websocket_connection($tx);
@@ -273,6 +277,8 @@ sub disable {
 }
 
 # sends a command to the web UI via its REST API
+# note: This function may be called when the websocket connection has been interrupted as long as we still have a
+#       worker ID. If the websocket connection is down that should not affect any of the REST API calls.
 sub send {
     my ($self, $method, $path, %args) = @_;
 
