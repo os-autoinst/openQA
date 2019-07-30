@@ -129,6 +129,26 @@ $job->on(status_changed => $handle_job_event);
 $job->accept();
 is($job->status, 'accepted', 'job is now accepted');
 
+# simulate that the websocket connection is interrupted
+$job->client->websocket_connection->emit_finish;
+is($job->status, 'accepted',
+    'ws disconnects are not considered fatal one the job is accepted so it is still in accepted state');
+
+# simulate that the websocket connection is interrupted before we can tell the web UI that we want to work on it
+$job->{_status} = 'accepting';
+$job->client->websocket_connection->emit_finish;
+is($job->status, 'stopped', 'job is abandoned if unable to confirm to the web UI that we are working on it');
+
+# test that it is not possible to start the job in that state
+like(
+    exception { $job->start(); },
+    qr/attempt to start job which is not accepted/,
+    'starting job prevented unless accepted',
+);
+
+# pretend that the job has been accepted after all
+$job->{_status} = 'accepted';
+
 # put some 'old' logs into the pool directory to verify whether those are cleaned up
 $pool_directory->child('autoinst-log.txt')->spurt('Hello Mojo!');
 
@@ -340,6 +360,9 @@ is_deeply(
         # live-cycle of job 1
         {status => 'accepting'},
         {status => 'accepted'},
+        # stopped due to pretended failure to confirm job; we only recover here by also pretending
+        # it worked after all (for the sake of this test)
+        {status => 'stopped'},
         {status => 'setup'},
         {status => 'stopping'},
         {status => 'stopped'},

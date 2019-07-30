@@ -150,7 +150,11 @@ sub accept {
 
     $websocket_connection->on(
         finish => sub {
-            $self->stop();
+            # note: If the websocket connection goes down this is not critical to the job execution.
+            #       However, if it goes down before we can send the "accepted" message we should scrap the
+            #       job and just wait for the next "grab job" message. Otherwise the job would end up in
+            #       perpetual 'accepting' state.
+            $self->stop('api-failure') if ($self->status eq 'accepting' || $self->status eq 'new');
         });
     $websocket_connection->send(
         {json => {type => 'accepted', jobid => $self->id}},
