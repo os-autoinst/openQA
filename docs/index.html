@@ -2282,6 +2282,34 @@ a space separated blacklist:</p>
 <span class="tok-na">blacklist</span> <span class="tok-o">=</span> <span class="tok-s">job_grab job_done</span></code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>The audit/storage_duration section of /etc/openqa/openqa.ini allows to set the retention policy for
+different audit event types:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[audit/storage_duration]</span>
+<span class="tok-na">startup</span> <span class="tok-o">=</span> <span class="tok-s">10</span>
+<span class="tok-na">jobgroup</span> <span class="tok-o">=</span> <span class="tok-s">365</span>
+<span class="tok-na">jobtemplate</span> <span class="tok-o">=</span> <span class="tok-s">365</span>
+<span class="tok-na">table</span> <span class="tok-o">=</span> <span class="tok-s">365</span>
+<span class="tok-na">iso</span> <span class="tok-o">=</span> <span class="tok-s">60</span>
+<span class="tok-na">user</span> <span class="tok-o">=</span> <span class="tok-s">60</span>
+<span class="tok-na">asset</span> <span class="tok-o">=</span> <span class="tok-s">30</span>
+<span class="tok-na">needle</span> <span class="tok-o">=</span> <span class="tok-s">30</span>
+<span class="tok-na">other</span> <span class="tok-o">=</span> <span class="tok-s">15</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this example events of the type startup would be cleaned up after 10 days, events related to
+job groups after 365 days and so on. Events which do not fall into one of these categories would be
+cleaned after 15 days. By default, cleanup is disabled.</p>
+</div>
+<div class="paragraph">
+<p>Use systemctl enable --now openqa-enqueue-audit-event-cleanup.timer to schedule the cleanup
+automatically every day. It is also possible to trigger the cleanup manually by invoking
+/usr/share/openqa/script/openqa minion job -e limit_audit_events.</p>
+</div>
 <div class="sect2">
 <h3 id="_list_of_events_tracked_by_the_auditing_plugin">List of events tracked by the auditing plugin</h3>
 <div class="ulist">
@@ -7651,7 +7679,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-07-30 08:27:58 UTC
+Last updated 2019-07-30 10:20:33 UTC
 </div>
 </div>
 <style>
