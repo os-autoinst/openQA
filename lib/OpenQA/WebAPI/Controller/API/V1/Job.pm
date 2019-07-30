@@ -400,10 +400,11 @@ sub update_status {
 
     my $worker = $job->worker;
     if (!$worker || $worker->id != $status->{worker_id}) {
+        my $worker_id  = $worker ? $worker->id : 'no updates anymore';
+        my $job_status = $job->status_info;
         my $err
           = "Got status update for job $job_id with unexpected worker ID $status->{worker_id}"
-          . ' (expected '
-          . ($worker ? $worker->id : 'none') . ')';
+          . " (expected $worker_id, job is $job_status)";
         OpenQA::Utils::log_info($err);
         $self->render(json => {error => $err}, status => 400);
         return;

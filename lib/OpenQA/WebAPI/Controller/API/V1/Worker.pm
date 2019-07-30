@@ -83,42 +83,44 @@ B<NOTE>: currently this function is used in create (API entry point)
 =cut
 
 sub _register {
-    my ($self, $schema, $host, $instance, $caps) = @_;
+    my ($self, $schema, $host, $instance, $caps, $job_id) = @_;
 
-    die "Incompatible websocket api"
+    die 'Incompatible websocket API version'
       if WEBSOCKET_API_VERSION != ($caps->{websocket_api_version} // 0);
 
-    my $worker = $schema->resultset("Workers")->search(
+    my $worker = $schema->resultset('Workers')->search(
         {
             host     => $host,
             instance => int($instance),
         })->first;
 
-    if ($worker) {    # worker already known. Update fields and return id
+    # update or create database entry for worker
+    if ($worker) {
         $worker->update({t_updated => now()});
     }
     else {
-        $worker = $schema->resultset("Workers")->create(
+        $worker = $schema->resultset('Workers')->create(
             {
                 host     => $host,
                 instance => $instance,
                 job_id   => undef
             });
     }
+
     # store worker's capabilities to database
     $worker->update_caps($caps) if $caps;
-    # in case the worker died ...
-    # ... restart job assigned to this worker
-    if (my $job = $worker->job) {
+
+    # mark the job currently the worker is currently supposed to run as incomplete unless the worker claims
+    # to still work on that job (which might be the case when the worker hasn't actually crashed but just re-registered
+    # due to network issues)
+    my $job = $worker->job;
+    if ($job && (!defined $job_id || $job_id ne $job->id)) {
         $job->set_property('JOBTOKEN');
         $job->auto_duplicate;
-
-        # .. set it incomplete
         $job->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
         $worker->update({job_id => undef});
     }
 
-    die "got invalid id" unless $worker->id;
     return $worker->id;
 }
 
@@ -151,6 +153,7 @@ sub create {
 
     my $host     = $self->param('host');
     my $instance = $self->param('instance');
+    my $job_id   = $self->param('job_id');
     my $caps     = {};
 
     $caps->{cpu_modelname}                = $self->param('cpu_modelname');
@@ -163,21 +166,21 @@ sub create {
 
     my $id;
     try {
-        $id = $self->_register($self->schema, $host, $instance, $caps);
+        $id = $self->_register($self->schema, $host, $instance, $caps, $job_id);
     }
     catch {
         if (/Incompatible/) {
             $self->render(status => 426, json => {error => $_});
-
         }
         else {
             $self->render(status => 500, json => {error => "Failed: $_"});
         }
-
-        return;
+        return undef;
     };
 
-    $self->emit_event('openqa_worker_register', {id => $id, host => $host, instance => $instance, caps => $caps});
+    my %event_data = (id => $id, host => $host, instance => $instance, caps => $caps);
+    $event_data{job_id} = $job_id if defined $job_id;
+    $self->emit_event('openqa_worker_register', \%event_data);
     $self->render(json => {id => $id});
 }
 

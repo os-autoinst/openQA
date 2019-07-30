@@ -1968,6 +1968,14 @@ sub has_dependencies {
     return $dependencies->search({-or => {child_job_id => $id, parent_job_id => $id}}, {rows => 1})->count;
 }
 
+sub status_info {
+    my ($self) = @_;
+
+    my $info = $self->state;
+    $info .= ' with result ' . $self->result if grep { $info eq $_ } FINAL_STATES;
+    return $info;
+}
+
 1;
 
 # vim: set sw=4 et:

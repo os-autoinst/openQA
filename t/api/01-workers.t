@@ -32,9 +32,14 @@ use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::WebSockets::Client;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
+use OpenQA::Jobs::Constants;
 use Date::Format 'time2str';
 
-OpenQA::Test::Case->new->init_data;
+my $test_case = OpenQA::Test::Case->new;
+my $schema    = $test_case->init_data;
+my $jobs      = $schema->resultset('Jobs');
+my $workers   = $schema->resultset('Workers');
+
 OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
 
 my $t   = Test::Mojo->new('OpenQA::WebAPI');
@@ -56,7 +61,7 @@ is_deeply(
 $t->ua(OpenQA::Client->new(api => 'testapi')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-my $workers = [
+my @workers = (
     {
         id         => 1,
         instance   => 1,
@@ -82,7 +87,7 @@ my $workers = [
         status    => 'running',
         host      => 'remotehost',
         instance  => 1
-    }];
+    });
 
 $t->get_ok('/api/v1/workers?live=1');
 ok(!$t->tx->error, 'listing workers works');
@@ -90,13 +95,13 @@ is(ref $t->tx->res->json, 'HASH', 'workers returned hash');
 is_deeply(
     $t->tx->res->json,
     {
-        workers => $workers,
+        workers => \@workers,
     },
     'worker present'
 ) or diag explain $t->tx->res->json;
 
-$workers->[0]->{connected} = 1;
-$workers->[1]->{connected} = 1;
+$workers[0]->{connected} = 1;
+$workers[1]->{connected} = 1;
 
 $t->get_ok('/api/v1/workers');
 ok(!$t->tx->error, 'listing workers works');
@@ -104,47 +109,84 @@ is(ref $t->tx->res->json, 'HASH', 'workers returned hash');
 is_deeply(
     $t->tx->res->json,
     {
-        workers => $workers,
+        workers => \@workers,
     },
     'worker present'
 ) or diag explain $t->tx->res->json;
 
 
-my $worker_caps = {
+my %registration_params = (
     host     => 'localhost',
     instance => 1,
-};
+);
 
-$t->post_ok('/api/v1/workers', form => $worker_caps);
+$t->post_ok('/api/v1/workers', form => \%registration_params);
 is($t->tx->res->code, 400, "worker with missing parameters refused");
 
-$worker_caps->{cpu_arch} = 'foo';
-$t->post_ok('/api/v1/workers', form => $worker_caps);
+$registration_params{cpu_arch} = 'foo';
+$t->post_ok('/api/v1/workers', form => \%registration_params);
 is($t->tx->res->code, 400, "worker with missing parameters refused");
 
-$worker_caps->{mem_max} = '4711';
-$t->post_ok('/api/v1/workers', form => $worker_caps);
+$registration_params{mem_max} = '4711';
+$t->post_ok('/api/v1/workers', form => \%registration_params);
 is($t->tx->res->code, 400, "worker with missing parameters refused");
 
-$worker_caps->{worker_class} = 'bar';
+$registration_params{worker_class} = 'bar';
 
-$t->post_ok('/api/v1/workers', form => $worker_caps);
+$t->post_ok('/api/v1/workers', form => \%registration_params);
 is($t->tx->res->code, 426, "worker informed to upgrade");
-$worker_caps->{websocket_api_version} = WEBSOCKET_API_VERSION;
+$registration_params{websocket_api_version} = WEBSOCKET_API_VERSION;
 
-$t->post_ok('/api/v1/workers', form => $worker_caps);
+$t->post_ok('/api/v1/workers', form => \%registration_params);
 is($t->tx->res->code,       200, "register existing worker with token");
 is($t->tx->res->json->{id}, 1,   "worker id is 1");
 
-$worker_caps->{instance} = 42;
-$t->post_ok('/api/v1/workers', form => $worker_caps);
+$registration_params{instance} = 42;
+$t->post_ok('/api/v1/workers', form => \%registration_params);
 is($t->tx->res->code,       200, "register new worker");
 is($t->tx->res->json->{id}, 3,   "new worker id is 3");
 
+subtest 'incompleting previous job on worker registration' => sub {
+    # assume the worker runs some job
+    my $running_job_id = 99961;
+    my $worker         = $workers->search({job_id => $running_job_id})->first;
+    my $worker_id      = $worker->id;
+
+    my %registration_params = (
+        host                  => 'remotehost',
+        instance              => 1,
+        job_id                => $running_job_id,
+        cpu_arch              => 'aarch64',
+        mem_max               => 2048,
+        worker_class          => 'foo',
+        websocket_api_version => WEBSOCKET_API_VERSION,
+    );
+
+    is($jobs->find($running_job_id)->state, RUNNING, 'job is running in the first place');
+
+    subtest 'previous job not incompleted when still being worked on' => sub {
+        $t->post_ok('/api/v1/workers', form => \%registration_params);
+        is($t->tx->res->code,                   200,        'register existing worker passing job ID');
+        is($t->tx->res->json->{id},             $worker_id, 'worker ID returned');
+        is($jobs->find($running_job_id)->state, RUNNING,    'assigned job still running');
+    };
+
+    subtest 'previous job incompleted when worker doing something else' => sub {
+        delete $registration_params{job_id};
+        $t->post_ok('/api/v1/workers', form => \%registration_params);
+        is($t->tx->res->code,       200,        'register existing worker passing no job ID');
+        is($t->tx->res->json->{id}, $worker_id, 'worker ID returned');
+        my $incomplete_job = $jobs->find($running_job_id);
+        is($incomplete_job->state, DONE, 'assigned job set to done');
+        ok($incomplete_job->result eq INCOMPLETE || $incomplete_job->result eq PARALLEL_RESTARTED,
+            'assigned job considered incomplete or parallel restarted')
+          or diag explain 'actual job result: ' . $incomplete_job->result;
+    };
+};
+
 subtest 'delete offline worker' => sub {
     my $offline_worker_id = 9;
-    my $database_workers  = $t->app->schema->resultset("Workers");
-    $database_workers->create(
+    $workers->create(
         {
             id        => $offline_worker_id,
             host      => 'offline_test',

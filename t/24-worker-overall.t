@@ -46,6 +46,12 @@ $ENV{OPENQA_LOGFILE} = undef;
     has is_running => 1;
     sub stop { shift->is_running(0) }
 }
+{
+    package Test::FakeJob;
+    use Mojo::Base -base;
+    has id    => 42;
+    has state => 'running';
+}
 
 like(
     exception {
@@ -84,13 +90,16 @@ combined_like(
 
 subtest 'capabilities' => sub {
     my $capabilities = $worker->capabilities;
-    delete $capabilities->{cpu_opmode};    # not always present and also not strictly required anyways
+
+    # ignore keys which are not always present and also not strictly required anyways
+    delete $capabilities->{cpu_opmode};
+    delete $capabilities->{cpu_modelname};
 
     is_deeply(
         [sort keys %$capabilities],
         [
             qw(
-              cpu_arch cpu_modelname host instance isotovideo_interface_version
+              cpu_arch host instance isotovideo_interface_version
               mem_max websocket_api_version worker_class
               )
         ],
@@ -117,6 +126,18 @@ subtest 'capabilities' => sub {
             'capabilities contain expected information'
         ) or diag explain $capabilities;
         is($capabilities->{worker_class}, 'qemu_aarch64', 'default worker class for architecture assigned');
+    };
+
+    subtest 'current job ID passed if it is running' => sub {
+        $worker->current_job(Test::FakeJob->new);
+        is($worker->capabilities->{job_id}, 42, 'job ID passed if job running');
+
+        $worker->current_job(Test::FakeJob->new(state => 'new'));
+        is($worker->capabilities->{job_id}, undef, 'job ID not passed if job new');
+        $worker->current_job(Test::FakeJob->new(state => 'stopped'));
+        is($worker->capabilities->{job_id}, undef, 'job ID not passed if job stopped');
+
+        $worker->current_job(undef);
     };
 };
 
