@@ -25,7 +25,6 @@ use Mojo::Base -strict;
 
 my $tempdir;
 BEGIN {
-    unshift @INC, 'lib';
     use FindBin;
     use Mojo::File qw(path tempdir);
     $tempdir = tempdir;

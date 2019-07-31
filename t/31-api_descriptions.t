@@ -16,10 +16,6 @@
 
 use Mojo::Base -strict;
 
-BEGIN {
-    unshift @INC, 'lib';
-}
-
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;

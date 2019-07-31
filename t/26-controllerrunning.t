@@ -17,10 +17,6 @@
 use strict;
 use warnings;
 
-BEGIN {
-    unshift @INC, 'lib';
-}
-
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use DateTime;

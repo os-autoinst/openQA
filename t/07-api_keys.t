@@ -22,10 +22,6 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 
-BEGIN {
-    unshift @INC, 'lib';
-}
-
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 use Test::More;

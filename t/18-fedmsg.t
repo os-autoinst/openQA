@@ -19,10 +19,6 @@
 use strict;
 use warnings;
 
-BEGIN {
-    unshift @INC, 'lib';
-}
-
 use Mojo::IOLoop;
 
 use FindBin;
