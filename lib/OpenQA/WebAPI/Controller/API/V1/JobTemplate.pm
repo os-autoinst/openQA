@@ -151,6 +151,7 @@ sub get_job_groups {
         $group{products}  = {};
 
         my %machines;
+        my %test_suites;
         # Extract products and tests per architecture
         while (my $template = $templates->next) {
             $group{products}{$template->product->name} = {
@@ -170,9 +171,10 @@ sub get_job_groups {
             my $settings = $template->settings_hash;
             $test_suite{settings} = $settings if %$settings;
 
-            my $test_suites = $group{scenarios}{$template->product->arch}{$template->product->name};
-            push @$test_suites, {$template->test_suite->name => \%test_suite};
-            $group{scenarios}{$template->product->arch}{$template->product->name} = $test_suites;
+            my $scenarios = $group{scenarios}{$template->product->arch}{$template->product->name};
+            push @$scenarios, {$template->test_suite->name => \%test_suite};
+            $group{scenarios}{$template->product->arch}{$template->product->name} = $scenarios;
+            $test_suites{$template->product->arch}{$template->test_suite->name}++;
         }
 
         # Split off defaults
@@ -183,23 +185,23 @@ sub get_job_groups {
             $group{defaults}{$arch}{machine} = $default_machine;
 
             foreach my $product (keys %{$group{scenarios}->{$arch}}) {
-                my @test_suites;
+                my @scenarios;
                 foreach my $test_suite (@{$group{scenarios}->{$arch}->{$product}}) {
                     foreach my $name (keys %$test_suite) {
                         my $attr = $test_suite->{$name};
                         if ($attr->{machine} eq $default_machine) {
-                            delete $attr->{machine};
+                            delete $attr->{machine} if $test_suites{$arch}{$name} == 1;
                         }
                         if (%$attr) {
                             $test_suite->{$name} = $attr;
-                            push @test_suites, $test_suite;
+                            push @scenarios, $test_suite;
                         }
                         else {
-                            push @test_suites, $name;
+                            push @scenarios, $name;
                         }
                     }
                 }
-                $group{scenarios}{$arch}{$product} = \@test_suites;
+                $group{scenarios}{$arch}{$product} = \@scenarios;
             }
         }
 

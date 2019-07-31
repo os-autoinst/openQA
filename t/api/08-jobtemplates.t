@@ -582,7 +582,11 @@ is_deeply(
         scenarios => {
             i586 => {
                 'opensuse-13.1-DVD-i586' => [
-                    'textmode',
+                    {
+                        textmode => {
+                            machine => '64bit',
+                        }
+                    },
                     {
                         textmode => {
                             machine => '32bit',
@@ -593,7 +597,11 @@ is_deeply(
                             machine => '32bit',
                         }
                     },
-                    'kde',
+                    {
+                        kde => {
+                            machine => '64bit',
+                        }
+                    },
                     {
                         RAID0 => {
                             priority => 20,
@@ -604,8 +612,16 @@ is_deeply(
                             machine => '32bit',
                         }
                     },
-                    'client1',
-                    'server',
+                    {
+                        client1 => {
+                            machine => '64bit',
+                        }
+                    },
+                    {
+                        server => {
+                            machine => '64bit',
+                        }
+                    },
                     {
                         server => {
                             machine => '32bit',
@@ -616,7 +632,11 @@ is_deeply(
                             machine => '32bit',
                         }
                     },
-                    'client2',
+                    {
+                        client2 => {
+                            machine => '64bit',
+                        }
+                    },
                     {
                         advanced_kde => {
                             settings => {

@@ -278,7 +278,11 @@ subtest 'scheduled products added' => sub {
 };
 
 # set prio of job template for $server_64 to undef so the prio is inherited from the job group
-$job_templates->find(9)->update({prio => undef});
+$job_templates->find(
+    {
+        machine_id    => $schema->resultset('Machines')->find({name => '64bit'})->id,
+        test_suite_id => $test_suites->find({name => 'server'})->id,
+    })->update({prio => undef});
 
 # schedule the iso, this should not actually be possible. Only isos
 # with different name should result in new tests...
@@ -328,6 +332,8 @@ my $client2_64      = find_job(\@jobs, \@newids, 'client2',      '64bit');
 my $advanced_kde_64 = find_job(\@jobs, \@newids, 'advanced_kde', '64bit');
 my $kde_64          = find_job(\@jobs, \@newids, 'kde',          '64bit');
 my $textmode_64     = find_job(\@jobs, \@newids, 'textmode',     '64bit');
+
+my $expected_job_count = 10;
 
 is_deeply(
     $client1_64->{parents},
@@ -593,7 +599,7 @@ $rsp = schedule_iso(
         ARCH    => 'i586',
         ISO_URL => 'http://localhost/nonexistent.iso'
     });
-is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
+is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
 check_download_asset('non-existent ISO',
     ['http://localhost/nonexistent.iso', locate_asset('iso', 'nonexistent.iso', mustexist => 0), 0]);
 check_job_setting($t, $rsp, 'ISO', 'nonexistent.iso', 'parameter ISO is correctly set from ISO_URL');
@@ -607,7 +613,7 @@ $rsp = schedule_iso(
         ARCH                 => 'i586',
         HDD_1_DECOMPRESS_URL => 'http://localhost/nonexistent.hda.xz'
     });
-is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
+is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
 check_download_asset('non-existent HDD (with uncompression)',
     ['http://localhost/nonexistent.hda.xz', locate_asset('hdd', 'nonexistent.hda', mustexist => 0), 1]);
 check_job_setting($t, $rsp, 'HDD_1', 'nonexistent.hda', 'parameter HDD_1 is correctly set from HDD_1_DECOMPRESS_URL');
@@ -636,7 +642,7 @@ $rsp = schedule_iso(
         KERNEL_DECOMPRESS_URL => 'http://localhost/nonexistvmlinuz',
         KERNEL                => 'callitvmlinuz'
     });
-is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
+is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
 check_download_asset('non-existent kernel (with uncompression, custom name',
     ['http://localhost/nonexistvmlinuz', locate_asset('other', 'callitvmlinuz', mustexist => 0), 1]);
 check_job_setting($t, $rsp, 'KERNEL', 'callitvmlinuz',
@@ -651,13 +657,13 @@ $rsp = schedule_iso(
         ARCH         => 'i586',
         NO_ASSET_URL => 'http://localhost/nonexistent.iso'
     });
-is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
+is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
 check_download_asset('non-asset _URL');
 
 # Using asset _URL but without filename extractable from URL create warning in log file, jobs, but no gru job
 $rsp = schedule_iso(
     {DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://localhost'});
-is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
+is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
 check_download_asset('asset _URL without valid filename');
 
 # Using asset _URL outside of whitelist will yield 403
@@ -716,7 +722,7 @@ $rsp = schedule_iso(
         ARCH    => 'i586',
         ISO_URL => 'http://localhost/failure.iso'
     });
-is $rsp->json->{count}, 10;
+is $rsp->json->{count}, $expected_job_count;
 my $gru = job_gru($rsp->json->{ids}->[0]);
 
 foreach my $j (@{$rsp->json->{ids}}) {
