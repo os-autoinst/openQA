@@ -23,8 +23,6 @@ use Mojo::File qw(path tempdir);
 
 my $tempdir;
 BEGIN {
-    unshift @INC, 'lib';
-    #  push @INC, '.';
     use FindBin;
     $tempdir = tempdir;
     $ENV{OPENQA_BASEDIR} = $tempdir->child('t', 'scheduler');

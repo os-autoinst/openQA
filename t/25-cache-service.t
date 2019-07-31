@@ -20,7 +20,7 @@ use warnings;
 
 my $tempdir;
 BEGIN {
-    unshift @INC, 'lib', 't/lib';
+    unshift @INC, 't/lib';
     use Mojo::File qw(path tempdir);
     use FindBin;
 

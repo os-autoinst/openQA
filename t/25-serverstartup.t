@@ -17,8 +17,6 @@ use strict;
 use warnings;
 
 BEGIN {
-    unshift @INC, 'lib';
-
     package OpenQA::FakePlugin::Fuzz;
     use Mojo::Base -base;
 

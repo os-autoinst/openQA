@@ -18,10 +18,6 @@
 
 use Mojo::Base -strict;
 
-BEGIN {
-    unshift @INC, 'lib';
-}
-
 use Module::Load::Conditional qw(can_load);
 use FindBin;
 use lib "$FindBin::Bin/../lib";

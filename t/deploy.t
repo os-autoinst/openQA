@@ -19,8 +19,6 @@
 use strict;
 use warnings;
 
-BEGIN { unshift @INC, 'lib'; }
-
 use Test::More;
 use Test::Warnings;
 use DBIx::Class::DeploymentHandler;

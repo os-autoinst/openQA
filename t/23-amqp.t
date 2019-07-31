@@ -18,10 +18,6 @@
 
 use Mojo::Base -strict;
 
-BEGIN {
-    unshift @INC, 'lib';
-}
-
 use Mojo::IOLoop;
 
 use FindBin;

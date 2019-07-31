@@ -17,10 +17,6 @@
 
 use Mojo::Base -strict;
 
-BEGIN {
-    unshift @INC, 'lib';
-}
-
 use Mojo::JSON 'decode_json';
 use FindBin;
 use lib "$FindBin::Bin/../lib";

@@ -16,7 +16,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 BEGIN {
-    unshift @INC, 'lib', 't/lib';
+    unshift @INC, 't/lib';
 }
 
 use strict;

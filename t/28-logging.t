@@ -19,10 +19,6 @@
 use strict;
 use warnings;
 
-BEGIN {
-    unshift @INC, 'lib';
-}
-
 use Test::More;
 use Mojo::File qw(tempdir tempfile);
 use OpenQA::Utils qw(log_error log_warning log_fatal log_info log_debug add_log_channel remove_log_channel);

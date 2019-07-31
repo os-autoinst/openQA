@@ -22,10 +22,6 @@
 
 use Mojo::Base -strict;
 
-BEGIN {
-    unshift @INC, 'lib';
-}
-
 use Module::Load::Conditional qw(can_load);
 use Mojo::File qw(path tempdir);
 use FindBin;

@@ -1,4 +1,4 @@
-PROVE_ARGS ?= -r -v
+PROVE_ARGS ?= -l -r -v
 DOCKER_IMG ?= openqa:latest
 TEST_PG_PATH ?= /dev/shm/tpg
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
