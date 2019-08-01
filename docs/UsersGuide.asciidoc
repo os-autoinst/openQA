@@ -644,6 +644,8 @@ mean existing jobs for earlier builds with the same DISTRI and VERSION are
 no longer interesting, but you still want to be able to re-submit jobs for a
 build and have existing jobs for the exact same build obsoleted.
 
+_SKIP_CHAINED_DEPS:: Do not schedule parent test suites which are specified in START_AFTER_TEST.
+
 _GROUP:: Job templates *not* matching the given group name are ignored. Does *not*
          affect obsoletion behavior, so you might want to combine with `_NO_OBSOLETE`.
 
