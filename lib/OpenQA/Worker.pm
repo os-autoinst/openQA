@@ -348,7 +348,7 @@ sub accept_job {
 
     # ensure the pool directory is cleaned up before starting a new job
     # note: The cleanup after finishing the last job might have been prevented via --no-cleanup.
-    $self->_clean_pool_directory;
+    $self->_clean_pool_directory unless $self->no_cleanup;
 
     $self->current_job($job);
     $self->current_webui_host($webui_host);
