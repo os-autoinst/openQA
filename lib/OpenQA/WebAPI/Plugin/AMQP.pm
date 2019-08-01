@@ -59,7 +59,8 @@ sub log_event {
     $event =~ s/_/\./;
     $event =~ s/_/\./;
 
-    my $topic = $self->{config}->{amqp}{topic_prefix} . '.' . $event;
+    my $prefix = $self->{config}->{amqp}{topic_prefix};
+    my $topic  = $prefix ? $prefix . '.' . $event : $event;
 
     # seperate function for tests
     $self->publish_amqp($topic, $event_data);
