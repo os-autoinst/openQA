@@ -17,16 +17,21 @@ package OpenQA::WebSockets::Controller::API;
 use Mojo::Base 'Mojolicious::Controller';
 
 use OpenQA::WebSockets;
+use OpenQA::WebSockets::Model::Status;
 
 sub is_worker_connected {
-    my $self      = shift;
-    my $worker_id = $self->param('worker_id');
-    my $bool      = OpenQA::WebSockets::ws_is_worker_connected($worker_id);
-    $self->render(json => {connected => $bool ? \1 : \0});
+    my ($self) = @_;
+
+    $self->render(
+        json => {
+            connected => OpenQA::WebSockets::Model::Status->singleton->is_worker_connected($self->param('worker_id'))
+            ? \1
+            : \0
+        });
 }
 
 sub send_msg {
-    my $self = shift;
+    my ($self) = @_;
 
     my $data      = $self->req->json;
     my $worker_id = $data->{worker_id};
@@ -39,7 +44,8 @@ sub send_msg {
 }
 
 sub send_job {
-    my $self   = shift;
+    my ($self) = @_;
+
     my $job    = $self->req->json;
     my $result = OpenQA::WebSockets::ws_send_job($job);
     $self->render(json => {result => $result});

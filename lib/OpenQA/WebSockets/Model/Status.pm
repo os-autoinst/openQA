@@ -24,9 +24,48 @@ use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
 use DateTime;
 use Try::Tiny;
 
-has ['workers', 'worker_status'] => sub { {} };
+has [qw(workers worker_by_transaction worker_status)] => sub { {} };
 
 sub singleton { state $status ||= __PACKAGE__->new }
+
+sub add_worker_connection {
+    my ($self, $worker_id, $transaction) = @_;
+
+    # add new worker entry if no exists yet
+    my $workers = $self->workers;
+    my $worker  = $workers->{$worker_id};
+    if (!defined $worker) {
+        my $schema = OpenQA::Schema->singleton;
+        return undef unless my $db = $schema->resultset('Workers')->find($worker_id);
+        $worker = $workers->{$worker_id} = {
+            id        => $worker_id,
+            db        => $db,
+            tx        => undef,
+            last_seen => time(),
+        };
+    }
+
+    $self->worker_by_transaction->{$transaction} = $worker;
+
+    # assign the transaction to have always the most recent web socket connection for a certain worker
+    # available
+    $worker->{tx} = $transaction;
+
+    return $worker;
+}
+
+sub remove_worker_connection {
+    my ($self, $transaction) = @_;
+    return delete $self->worker_by_transaction->{$transaction};
+}
+
+sub is_worker_connected {
+    my ($self, $worker_id) = @_;
+
+    return 0 unless my $worker = $self->workers->{$worker_id};
+    return 0 unless my $tx     = $worker->{tx};
+    return !$tx->is_finished;
+}
 
 sub get_stale_worker_jobs {
     my ($self, $threshold) = @_;

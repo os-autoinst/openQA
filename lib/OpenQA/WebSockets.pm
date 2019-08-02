@@ -57,21 +57,16 @@ sub run {
     __PACKAGE__->new->start;
 }
 
-sub ws_is_worker_connected {
-    my ($workerid) = @_;
-    my $workers = OpenQA::WebSockets::Model::Status->singleton->workers;
-    return ($workers->{$workerid} && $workers->{$workerid}->{socket} ? 1 : 0);
-}
-
 sub ws_send {
     my ($workerid, $msg, $jobid, $retry) = @_;
 
-    my $workers = OpenQA::WebSockets::Model::Status->singleton->workers;
-    return unless ($workerid && $msg && $workers->{$workerid});
+    return undef unless $workerid && $msg;
+    return undef unless my $worker = OpenQA::WebSockets::Model::Status->singleton->workers->{$workerid};
+
     $jobid ||= '';
     my $res;
-    my $tx = $workers->{$workerid}->{socket};
-    if ($tx) {
+    my $tx = $worker->{tx};
+    if ($tx && !$tx->is_finished) {
         $res = $tx->send({json => {type => $msg, jobid => $jobid}});
     }
     unless ($res && !$res->error) {
@@ -94,28 +89,28 @@ sub ws_send_job {
         return $result;
     }
 
-    my $workers = OpenQA::WebSockets::Model::Status->singleton->workers;
-    unless ($workers->{$job->{assigned_worker_id}}) {
-        $result->{state}->{error}
-          = "Worker " . $job->{assigned_worker_id} . " doesn't have established a ws connection";
+    my $worker_id = $job->{assigned_worker_id};
+    my $worker    = OpenQA::WebSockets::Model::Status->singleton->workers->{$worker_id};
+    if (!$worker) {
+        $result->{state}->{error} = "Worker $worker_id doesn't have established a ws connection";
         return $result;
     }
 
     my $res;
-    my $tx = $workers->{$job->{assigned_worker_id}}->{socket};
-    if ($tx) {
+    my $tx = $worker->{tx};
+    if ($tx && !$tx->is_finished) {
         $res = $tx->send({json => {type => 'grab_job', job => $job}});
     }
     unless ($res && !$res->error) {
         # Since it is used by scheduler, it's fine to let it fail,
         # will be rescheduled on next round
-        log_debug("Unable to allocate job to worker $job->{assigned_worker_id}");
-        $result->{state}->{error} = "Sending $job->{id} thru WebSockets to $job->{assigned_worker_id} failed miserably";
+        log_debug("Unable to allocate job to worker $worker_id");
+        $result->{state}->{error} = "Sending $job->{id} thru WebSockets to $worker_id failed miserably";
         $result->{state}->{res}   = $res;
         return $result;
     }
     else {
-        log_debug("message sent to $job->{assigned_worker_id} for job $job->{id}");
+        log_debug("message sent to $worker_id for job $job->{id}");
         $result->{state}->{msg_sent} = 1;
     }
     return $result;
