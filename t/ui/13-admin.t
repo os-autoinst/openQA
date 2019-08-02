@@ -460,28 +460,6 @@ subtest 'job property editor' => sub() {
         is($driver->find_element_by_id('editor-carry-over-bugrefs')->is_selected(), 0, 'bug carry over disabled');
         is($driver->find_element_by_id('editor-description')->get_value(), 'Test group', 'description added');
     };
-
-    subtest 'edit the yaml' => sub() {
-        $driver->refresh();
-        my $form = $driver->find_element_by_id('editor-form');
-        ok($form->is_hidden(), 'editor form is hidden');
-        $driver->find_element_by_id('toggle-yaml-editor')->click();
-        wait_for_ajax;
-        ok($form->is_displayed(),                             'editor form is shown');
-        ok($form->child('.progress-indication')->is_hidden(), 'spinner is hidden');
-        my $yaml = $driver->execute_script('return editor.doc.getValue();');
-        ok($yaml =~ m/scenarios:/, 'YAML was fetched') or diag explain $yaml;
-        $driver->find_element_by_id('update-template')->click();
-        my $result = $form->child('.result');
-        wait_for_ajax;
-        ok($result->get_text() =~ m/Preview of the YAML/, 'preview shown') or diag explain $result->get_text();
-
-        # Make the YAML invalid
-        $driver->execute_script('editor.doc.setValue("invalid: true");');
-        $driver->find_element_by_id('update-template')->click();
-        wait_for_ajax;
-        ok($result->get_text() =~ m/There was a problem applying the changes/, 'error shown');
-    };
 };
 
 sub is_element_text {
@@ -569,6 +547,40 @@ subtest 'edit media' => sub() {
     javascript_console_has_no_warnings_or_errors;
     my @picks = $driver->find_elements('.search-choice');
     is_element_text(\@picks, [qw(64bit 64bit HURRA)], 'chosen tests present');
+};
+
+subtest 'edit the yaml' => sub() {
+    $driver->refresh();
+    my $form = $driver->find_element_by_id('editor-form');
+    ok($form->is_hidden(), 'editor form is hidden');
+    $driver->find_element_by_id('toggle-yaml-editor')->click();
+    wait_for_ajax;
+    ok($form->is_displayed(),                             'editor form is shown');
+    ok($form->child('.progress-indication')->is_hidden(), 'spinner is hidden');
+    my $yaml = $driver->execute_script('return editor.doc.getValue();');
+    ok($yaml =~ m/scenarios:/, 'YAML was fetched') or diag explain $yaml;
+    # Preview
+    $driver->find_element_by_id('preview-template')->click();
+    my $result = $form->child('.result');
+    wait_for_ajax;
+    ok($result->get_text() =~ m/Preview of the YAML/, 'preview shown') or diag explain $result->get_text();
+
+    # Save
+    $driver->find_element_by_id('save-template')->click();
+    $result = $form->child('.result');
+    wait_for_ajax;
+    ok($result->get_text() =~ m/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
+
+    # Legacy UI is hidden and no longer available
+    ok($driver->find_element_by_id('toggle-yaml-editor')->is_hidden(), 'editor toggle hidden');
+    ok($driver->find_element_by_id('media')->is_hidden(),              'media editor hidden');
+    ok($driver->find_element_by_id('media-add')->is_hidden(),          'media add button hidden');
+
+    # Make the YAML invalid
+    $driver->execute_script('editor.doc.setValue("invalid: true");');
+    $driver->find_element_by_id('preview-template')->click();
+    wait_for_ajax;
+    ok($result->get_text() =~ m/There was a problem applying the changes/, 'error shown');
 };
 
 sub get_cell_contents {
