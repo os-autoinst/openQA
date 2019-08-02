@@ -20,6 +20,7 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
+use OpenQA::Markdown 'markdown_to_html';
 use OpenQA::Schema::JobGroupDefaults;
 use Class::Method::Modifiers;
 use OpenQA::Utils qw(log_debug parse_tags_from_comments);
@@ -153,13 +154,9 @@ around 'carry_over_bugrefs' => sub {
 };
 
 sub rendered_description {
-    my ($self) = @_;
-
-    if ($self->description) {
-        my $m = CommentsMarkdownParser->new;
-        return Mojo::ByteStream->new($m->markdown($self->description));
-    }
-    return;
+    my $self = shift;
+    return undef unless my $desc = $self->description;
+    return Mojo::ByteStream->new(markdown_to_html($desc));
 }
 
 sub full_name {
