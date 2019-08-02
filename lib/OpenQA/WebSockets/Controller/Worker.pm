@@ -26,57 +26,40 @@ use Data::Dump 'pp';
 use Try::Tiny;
 
 sub ws {
-    my $self = shift;
+    my ($self)      = @_;
+    my $status      = $self->status;
+    my $transaction = $self->tx;
 
-    my $workers = $self->status->workers;
-
-    my $workerid = $self->param('workerid');
-    unless ($workers->{$workerid}) {
-        return $self->render(text => 'Unknown worker', status => 400)
-          unless my $db = $self->app->schema->resultset('Workers')->find($workerid);
-        $workers->{$workerid}
-          = {id => $workerid, db => $db, socket => undef, last_seen => time()};
-    }
-    my $worker = $workers->{$workerid};
+    # add worker connection
+    my $worker_id = $self->param('workerid');
+    return $self->render(text => 'No worker ID', status => 400) unless $worker_id;
+    my $worker = $status->add_worker_connection($worker_id, $transaction);
+    return $self->render(text => 'Unknown worker', status => 400) unless $worker;
 
     # upgrade connection to websocket by subscribing to events
     $self->on(json   => \&_message);
     $self->on(finish => \&_finish);
     $self->inactivity_timeout(0);    # Do not force connection close due to inactivity
-    $worker->{socket} = $self->tx->max_websocket_size(10485760);
+    $transaction->max_websocket_size(10485760);
 }
 
 sub _finish {
     my ($self, $code, $reason) = @_;
-    return unless ($self);
+    return undef unless $self;
 
-    my $worker = _get_worker($self->tx);
+    my $worker = OpenQA::WebSockets::Model::Status->singleton->remove_worker_connection($self->tx);
     unless ($worker) {
         log_error('Worker not found for given connection during connection close');
-        return;
+        return undef;
     }
     log_info(sprintf("Worker %u websocket connection closed - $code", $worker->{id}));
-    # if the server disconnected from web socket, mark it dead so it doesn't get new
+
+    # if the worker disconnected from web socket, mark it dead so it doesn't get new
     # jobs assigned from scheduler (which will check DB and not WS state)
     my $dt = DateTime->now(time_zone => 'UTC');
     # 2 minutes is long enough for the scheduler not to take it
     $dt->subtract(seconds => (WORKERS_CHECKER_THRESHOLD + 20));
     $worker->{db}->update({t_updated => $dt});
-    $worker->{socket} = undef;
-}
-
-sub _get_worker {
-    my ($tx) = @_;
-
-    my $workers = OpenQA::WebSockets::Model::Status->singleton->workers;
-
-    for my $worker (values %$workers) {
-        if ($worker->{socket} && ($worker->{socket}->connection eq $tx->connection)) {
-            return $worker;
-        }
-    }
-
-    return undef;
 }
 
 sub _message {
@@ -86,7 +69,7 @@ sub _message {
     my $schema        = $app->schema;
     my $worker_status = $app->status->worker_status;
 
-    my $worker = _get_worker($self->tx);
+    my $worker = OpenQA::WebSockets::Model::Status->singleton->worker_by_transaction->{$self->tx};
     unless ($worker) {
         $app->log->warn("A message received from unknown worker connection");
         log_debug(sprintf('A message received from unknown worker connection (terminating ws): %s', Dumper($json)));
