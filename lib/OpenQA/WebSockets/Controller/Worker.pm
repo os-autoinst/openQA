@@ -74,12 +74,12 @@ sub _message {
         $app->log->warn("A message received from unknown worker connection");
         log_debug(sprintf('A message received from unknown worker connection (terminating ws): %s', Dumper($json)));
         $self->finish("1008", "Connection terminated from WebSocket server - thought dead");
-        return;
+        return undef;
     }
     unless (ref($json) eq 'HASH') {
         log_error(sprintf('Received unexpected WS message "%s from worker %u', Dumper($json), $worker->{id}));
         $self->finish("1003", "Received unexpected data from worker, forcing close");
-        return;
+        return undef;
     }
 
     # This is to make sure that no worker can skip the _registration.
@@ -88,7 +88,7 @@ sub _message {
         $self->tx->send({json => {type => 'incompatible'}});
         $self->finish("1008",
             "Connection terminated from WebSocket server - incompatible communication protocol version");
-        return;
+        return undef;
     }
 
     $worker->{last_seen} = time();
@@ -118,7 +118,7 @@ sub _message {
         try {
             $schema->txn_do(
                 sub {
-                    return unless my $w = $schema->resultset("Workers")->find($wid);
+                    return undef unless my $w = $schema->resultset("Workers")->find($wid);
                     log_debug("Updating worker seen from worker_status");
                     $w->seen;
                     $w->update({error => $current_worker_error});
@@ -163,7 +163,7 @@ sub _message {
                 sub {
                     my $w = $schema->resultset("Workers")->find($wid);
                     log_debug('Possibly worker ' . $w->id() . ' should be freed.');
-                    return unless ($w && $w->job);
+                    return undef unless ($w && $w->job);
                     return $w->job->incomplete_and_duplicate
                       if ( $w->job->result eq OpenQA::Jobs::Constants::NONE
                         && $w->job->state eq OpenQA::Jobs::Constants::RUNNING
@@ -189,7 +189,7 @@ sub _message {
               # Or if it declares itself free.
               ($current_worker_status && $current_worker_status eq "free");
 
-            return unless $jobid && $job_status && $job_status eq OpenQA::Jobs::Constants::RUNNING;
+            return undef unless $jobid && $job_status && $job_status eq OpenQA::Jobs::Constants::RUNNING;
             $schema->txn_do(
                 sub {
                     my $job = $schema->resultset("Jobs")->find($jobid);
