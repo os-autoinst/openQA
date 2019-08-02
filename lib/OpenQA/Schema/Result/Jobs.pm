@@ -400,29 +400,6 @@ sub set_assigned_worker {
     }
 }
 
-
-sub set_scheduling_worker {
-    my ($self, $worker) = @_;
-    return 0 unless $worker;
-
-    $self->update(
-        {
-            state              => SCHEDULED,
-            t_started          => undef,
-            assigned_worker_id => $worker->id,
-        });
-
-    $worker->update({job_id => $self->id});
-
-    if ($worker->job->id eq $self->id) {
-        log_debug("Job '" . $self->id . "' has worker '" . $worker->id . "' assigned");
-        return 1;
-    }
-    else {
-        return 0;
-    }
-}
-
 sub prepare_for_work {
     my $self   = shift;
     my $worker = shift;
