@@ -101,7 +101,7 @@ sub _message {
         my $jobid  = $json->{jobid};
         my $status = $json->{data};
         my $job    = $schema->resultset("Jobs")->find($jobid);
-        return $self->tx->send(json => {result => 'nack'}) unless $job;
+        return $self->tx->send({json => {result => 'nack'}}) unless $job;
         my $ret = $job->update_status($status);
         $self->tx->send({json => $ret});
     }
