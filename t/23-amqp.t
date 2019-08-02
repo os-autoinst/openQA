@@ -236,6 +236,13 @@ subtest 'create parent group comment' => sub {
     is($json->{parent_group_id}, 2000,  'parent group id');
 };
 
+$t->app->config->{amqp}{topic_prefix} = '';
+
+subtest 'publish without topic prefix' => sub {
+    $t->post_ok("/api/v1/jobs" => form => $settings)->status_is(200);
+    is($published{'openqa.job.create'}->{ARCH}, "x86_64", 'got message with correct topic');
+};
+
 # Now let's unmock publish_amqp so we can test it...
 $plugin_mock->unmock('publish_amqp');
 %published = ();
