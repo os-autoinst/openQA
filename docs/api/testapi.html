@@ -666,9 +666,10 @@ tag on the result file.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Like <code>record_soft_failure</code> but overrides the test module status to a softfail
-status even if the module would be set to fail otherwise. This can be used for
-easier tracking of known issues without needing to handle failed tests a lot.</p>
+<p>Similar to <code>record_soft_failure</code> but can be used to override the test module
+status to softfail from a <code>post_fail_hook</code> if the module would be set to fail
+otherwise. This can be used for easier tracking of known issues without
+needing to handle failed tests a lot.</p>
 </div>
 </div>
 <div class="sect4">
@@ -1924,7 +1925,7 @@ sub compat_args {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-08-01 09:32:17 UTC
+Last updated 2019-08-04 18:41:12 UTC
 </div>
 </div>
 </body>
