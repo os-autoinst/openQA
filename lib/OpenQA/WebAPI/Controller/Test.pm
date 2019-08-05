@@ -24,6 +24,7 @@ use OpenQA::Schema::Result::JobDependencies;
 use OpenQA::WebAPI::Controller::Developer;
 use OpenQA::Utils qw(determine_web_ui_web_socket_url get_ws_status_only_url);
 use Mojo::ByteStream;
+use Mojo::Util 'xml_escape';
 use File::Basename;
 use POSIX 'strftime';
 
@@ -372,7 +373,8 @@ sub job_next_previous_ajax {
                 bug   => $bug,
                 url   => $self->bugurl_for($bug),
                 icon  => $self->bugicon_for($bug, $bugdetails->{$bug}),
-                title => $self->bugtitle_for($bug, $bugdetails->{$bug})};
+                title => xml_escape($self->bugtitle_for($bug, $bugdetails->{$bug})),
+              };
         }
 
         $data->{bugs}  = \@bugs;

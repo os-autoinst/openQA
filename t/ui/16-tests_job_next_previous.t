@@ -1,4 +1,4 @@
-# Copyright (C) 2016 SUSE Linux GmbH
+# Copyright (C) 2016-2019 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -64,6 +64,21 @@ sub schema_hook {
                 {key => 'ISO_MAXSIZE', value => '4700372992'}]};
         $jobs->create($new);
     }
+
+    # Create bug reference
+    $schema->resultset('Comments')->create(
+        {
+            job_id  => 99981,
+            user_id => 99901,
+            text    => 'boo#1138417',
+        });
+    $schema->resultset('Bugs')->create(
+        {
+            bugid     => 'boo#1138417',
+            title     => 'some title with "quotes" and <html>elements</html>',
+            existing  => 1,
+            refreshed => 1,
+        });
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -267,6 +282,16 @@ $driver->get('/tests/latest?previous_limit=1&next_limit=1#next_previous');
 wait_for_ajax();
 is(scalar @{$driver->find_elements('#job_next_previous_table tbody tr', 'css')},
     1, 'job next and previous of the latest job - 99981');
+
+subtest 'bug reference shown' => sub {
+    my @bug_labels = $driver->find_elements('#bug-99981 .label_bug');
+    is(scalar @bug_labels, 1, 'one bug label present');
+    is(
+        $bug_labels[0]->get_attribute('title'),
+        "Bug referenced: boo#1138417\nsome title with \"quotes\" and <html>elements</html>",
+        'title rendered with new-line, HTML code is rendered as text'
+    );
+};
 
 kill_driver();
 done_testing();

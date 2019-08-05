@@ -35,6 +35,13 @@ sub schema_hook {
     # create a parent group
     my $schema = OpenQA::Test::Database->new->create;
     $schema->resultset('JobGroupParents')->create({id => 1, name => 'Test parent', sort_order => 0});
+    $schema->resultset('Bugs')->create(
+        {
+            bugid     => 'bsc#1234',
+            title     => 'some title with "quotes" and <html>elements</html>',
+            existing  => 1,
+            refreshed => 1,
+        });
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -325,8 +332,8 @@ subtest 'commenting in test results including labels' => sub {
         $driver->find_element('#current-build-overview a')->click();
         is(
             $driver->find_element('#res_DVD_x86_64_doc .fa-bug')->get_attribute('title'),
-            'Bug referenced: bsc#1234',
-            'bug icon shown for bsc#1234'
+            "Bug referenced: bsc#1234\nsome title with \"quotes\" and <html>elements</html>",
+            'bug icon shown for bsc#1234, title rendered with new-line, HTML code is rendered as text'
         );
         is(
             $driver->find_element('#res_DVD_x86_64_doc .fa-bolt')->get_attribute('title'),

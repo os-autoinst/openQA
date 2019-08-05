@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2017 SUSE Linux LLC
+# Copyright (C) 2017-2019 SUSE Linux LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,20 +26,18 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 
-OpenQA::Test::Database->new->create(skip_fixtures => 1);
-my $t    = Test::Mojo->new('OpenQA::WebAPI');
-my $app  = $t->app;
-my $bugs = $app->schema->resultset('Bugs');
-my $c    = $app->build_controller;
+my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
+my $t      = Test::Mojo->new('OpenQA::WebAPI');
+my $bugs   = $schema->resultset('Bugs');
+my $c      = $t->app->build_controller;
 
 my $bug = $bugs->get_bug('poo#200');
 ok(!defined $bug, 'bug not refreshed');
 
-$t->app->schema->resultset('Bugs')->find(1)->update({refreshed => 1, title => 'foo bar < " & ß'});
+$bugs->find(1)->update({refreshed => 1, title => 'foo bar < " & ß'});
 $bug = $bugs->get_bug('poo#200');
 ok($bug->refreshed, 'bug refreshed');
 ok($bug->bugid,     'bugid matched');
-
-is($c->bugtitle_for('poo#200', $bug), "Bug referenced: poo#200\nfoo bar &lt; &quot; &amp; ß", 'bug title escaping');
+is($c->bugtitle_for('poo#200', $bug), "Bug referenced: poo#200\nfoo bar < \" & ß", 'bug title not already escaped');
 
 done_testing();
