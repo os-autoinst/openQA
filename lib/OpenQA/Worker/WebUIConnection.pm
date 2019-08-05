@@ -278,7 +278,7 @@ sub disable {
 
 # define list of HTTP error codes which indicate that the web UI is overloaded or down for maintenance
 # (in these cases the re-try delay should be increased)
-my %busy_error_codes = (502 => 1, 503 => 1, 504 => 1, 598 => 1);
+my %BUSY_ERROR_CODES = map { $_ => 1 } 502, 503, 504, 598;
 
 sub _retry_delay {
     my ($self, $is_webui_busy) = @_;
@@ -296,7 +296,6 @@ sub send {
     my $json_data = $args{json};
     my $callback  = $args{callback} // sub { };
     my $tries     = $args{tries} // 3;
-
 
     # if set ignore errors completely and don't retry
     my $ignore_errors = $args{ignore_errors} // 0;
@@ -365,7 +364,7 @@ sub send {
                 $tries = 0;
             }
             else {
-                $is_webui_busy = $busy_error_codes{$error_code};
+                $is_webui_busy = $BUSY_ERROR_CODES{$error_code};
             }
         }
         else {
