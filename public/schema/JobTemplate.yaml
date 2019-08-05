@@ -63,7 +63,7 @@ properties:
     type: object
     additionalProperties: false
     patternProperties:
-      "^[A-Za-z0-9._-]+$":
+      "^[A-Za-z0-9._*-]+$":
         type: object
         description: The name of a product (medium)
         required:
