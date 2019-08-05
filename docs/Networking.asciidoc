@@ -308,12 +308,13 @@ STARTMODE='auto'
 DHCLIENT_SET_DEFAULT_ROUTE='yes'
 ----
 
-Pros of wicked over NetworkManager:
+* Pros of wicked over NetworkManager:
+
 ** Proper IPv6 support
 ** openvswitch/vlan/bonding/bridge support - wicked can manage your advanced configuration transparently without the need of extra tools
 ** Backwards compatible with ifup scripts
 
-Check the network service currently being used:
+* Check the network service currently being used:
 
 [source,sh]
 ----
@@ -328,7 +329,7 @@ If the result is different from `Id=wicked.service` (e.g.
 systemctl disable --now network.service
 ----
 
-Then switch to wicked and start the service:
+* Then switch to wicked and start the service:
 
 [source,sh]
 ----
