@@ -105,7 +105,7 @@ try {
     dd $info;
 }
 catch {
-    $info = do $datafile;
+    $info = eval $datafile;
     if (my $error = $@) {
         die "Error in data file: $error\n";
     }
@@ -227,6 +227,8 @@ sub post_entry {
 
 if ($options{'clean'}) {
     for my $table (@tables) {
+        # we can't clean job groups as they're not deletable unless empty
+        next if ($table eq "JobGroups");
         my $res = $client->get($url->path($options{'apibase'} . '/' . decamelize($table)))->res;
         if ($res->code && $res->code == 200) {
             my $result = $res->json;
