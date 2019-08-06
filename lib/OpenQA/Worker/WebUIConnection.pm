@@ -276,6 +276,18 @@ sub disable {
     $self->finish_websocket_connection;
 }
 
+# define list of HTTP error codes which indicate that the web UI is overloaded or down for maintenance
+# (in these cases the re-try delay should be increased)
+my %BUSY_ERROR_CODES = map { $_ => 1 } 502, 503, 504, 598;
+
+sub _retry_delay {
+    my ($self, $is_webui_busy) = @_;
+    my $key                    = $is_webui_busy ? 'RETRY_DELAY_IF_WEBUI_BUSY' : 'RETRY_DELAY';
+    my $settings               = $self->worker->settings;
+    my $host_specific_settings = $settings->webui_host_specific_settings->{$self->webui_host} // {};
+    return $host_specific_settings->{$key} // $settings->global_settings->{$key};
+}
+
 # sends a command to the web UI via its REST API
 # note: This function may be called when the websocket connection has been interrupted as long as we still have a
 #       worker ID. If the websocket connection is down that should not affect any of the REST API calls.
@@ -322,7 +334,7 @@ sub send {
     my $tx = $ua->build_tx(@args);
     if ($callback eq "no") {
         $ua->start($tx);
-        return;
+        return undef;
     }
     my $cb;
     $cb = sub {
@@ -339,6 +351,7 @@ sub send {
         --$tries;
         my $err = $tx->error;
         my $msg;
+        my $is_webui_busy;
 
         # format error message for log
         if ($tx->res && $tx->res->json) {
@@ -346,16 +359,20 @@ sub send {
             $msg = $tx->res->json->{error};
         }
         $msg //= $err->{message};
-        if ($err->{code}) {
-            $msg = "$err->{code} response: $msg";
-            if ($err->{code} == 404) {
+        if (my $error_code = $err->{code}) {
+            $msg = "$error_code response: $msg";
+            if ($error_code == 404) {
                 # don't retry on 404 errors (in this case we can't expect different
                 # results on further attempts)
                 $tries = 0;
             }
+            else {
+                $is_webui_busy = $BUSY_ERROR_CODES{$error_code};
+            }
         }
         else {
-            $msg = "Connection error: $msg";
+            $msg           = "Connection error: $msg";
+            $is_webui_busy = 1 if $err->{message} =~ qr/timeout/i;
         }
         log_error("$msg (remaining tries: $tries)");
 
@@ -368,19 +385,19 @@ sub send {
                 $worker->stop_current_job('api-failure');
             }
             $callback->();
-            return;
+            return undef;
         }
 
         # handle non-critical error when no more attempts remain
         if ($tries <= 0) {
             $callback->();
-            return;
+            return undef;
         }
 
-        # retry in 5 seconds if there are remaining attempts
+        # retry in 5 seconds or a minute if there are remaining attempts
         $tx = $ua->build_tx(@args);
         Mojo::IOLoop->timer(
-            5,
+            $self->_retry_delay($is_webui_busy),
             sub {
                 $ua->start($tx => sub { $cb->(@_, $tries) });
             });

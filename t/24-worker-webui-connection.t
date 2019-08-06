@@ -82,6 +82,12 @@ like(
 
 # assign a fake worker to the client
 {
+    package Test::FakeSettings;
+    use Mojo::Base -base;
+    has global_settings              => sub { {RETRY_DELAY => 10, RETRY_DELAY_IF_WEBUI_BUSY => 90} };
+    has webui_host_specific_settings => sub { {} };
+}
+{
     package Test::FakeWorker;
     use Mojo::Base -base;
     has instance_number         => 1;
@@ -91,6 +97,7 @@ like(
     has stop_current_job_called => 0;
     has current_error           => undef;
     has current_job             => undef;
+    has settings                => sub { Test::FakeSettings->new; };
     sub stop_current_job {
         my ($self, $reason) = @_;
         $self->stop_current_job_called($reason);
@@ -204,6 +211,150 @@ subtest 'attempt to register and send a command' => sub {
         ],
         'events emitted'
     ) or diag explain \@happended_events;
+};
+
+
+subtest 'retry behavior' => sub {
+    # use fake Mojo::UserAgent and Mojo::Transaction
+    {
+        package Test::FakeTransaction;
+        use Mojo::Base -base;
+        has error => undef;
+        has res   => undef;
+    }
+    {
+        package Test::FakeUserAgent;
+        use Mojo::Base -base;
+        has fake_error  => undef;
+        has start_count => 0;
+        sub build_tx {
+            my ($self, @args) = @_;
+            return Test::FakeTransaction->new;
+        }
+        sub start {
+            my ($self, $tx, $callback) = @_;
+            $tx->error($self->fake_error);
+            $self->start_count($self->start_count + 1);
+            $callback->($self, $tx);
+        }
+    }
+    my $fake_error = {message => 'some timeout'};
+    my $fake_ua    = Test::FakeUserAgent->new(fake_error => $fake_error);
+    my $default_ua = $client->ua;
+    $client->ua($fake_ua);
+
+    # mock retry delay so tests don't take forever
+    my $web_ui_connection_mock                = Test::MockModule->new('OpenQA::Worker::WebUIConnection');
+    my $web_ui_supposed_to_be_considered_busy = 1;
+    my $retry_delay_invoked                   = 0;
+    $web_ui_connection_mock->mock(
+        _retry_delay => sub {
+            my ($self, $is_webui_busy) = @_;
+            is($is_webui_busy, $web_ui_supposed_to_be_considered_busy, 'retry delay applied accordingly');
+            $retry_delay_invoked += 1;
+            return 0;
+        });
+
+    # define arguments for send call
+    my $callback_invoked = 0;
+    my @send_args        = (
+        post     => 'jobs/500/status',
+        json     => {status => 'running'},
+        callback => sub {
+            my ($res) = @_;
+            is($res, undef, 'undefined result returned in the error case');
+            $callback_invoked += 1;
+        },
+    );
+
+    subtest 'retry after timeout' => sub {
+        combined_like(
+            sub {
+                $client->send(@send_args);
+                Mojo::IOLoop->start;
+            },
+qr/Connection error: some timeout \(remaining tries: 2\).*Connection error: some timeout \(remaining tries: 1\).*Connection error: some timeout \(remaining tries: 0\)/s,
+            'attempts logged',
+        );
+        is($fake_ua->start_count, 3, 'tried 3 times');
+        is($callback_invoked,     1, 'callback invoked exactly one time');
+
+        $callback_invoked = $retry_delay_invoked = 0;
+        $fake_ua->start_count(0);
+        $fake_error->{code} = 502;
+        combined_like(
+            sub {
+                $client->send(@send_args);
+                Mojo::IOLoop->start;
+            },
+qr/502 response: some timeout \(remaining tries: 2\).*502 response: some timeout \(remaining tries: 1\).*502 response: some timeout \(remaining tries: 0\)/s,
+            'attempts logged',
+        );
+        is($fake_ua->start_count, 3, 'tried 3 times');
+        is($callback_invoked,     1, 'callback invoked exactly one time');
+        is($retry_delay_invoked,  2, 'retry delay queried');
+    };
+
+    subtest 'retry after unknown API error' => sub {
+        $callback_invoked = $retry_delay_invoked = 0;
+        $fake_ua->start_count(0);
+        $fake_error->{message}                 = 'some error';
+        $fake_error->{code}                    = 500;
+        $web_ui_supposed_to_be_considered_busy = undef;
+        combined_like(
+            sub {
+                $client->send(@send_args, tries => 2);
+                Mojo::IOLoop->start;
+            },
+            qr/500 response: some error \(remaining tries: 1\).*500 response: some error \(remaining tries: 0\)/s,
+            'attempts logged',
+        );
+        is($fake_ua->start_count, 2, 'tried 2 times');
+        is($callback_invoked,     1, 'callback invoked exactly one time');
+        is($retry_delay_invoked,  1, 'retry delay queried');
+    };
+
+    subtest 'no retry after 404' => sub {
+        $callback_invoked = $retry_delay_invoked = 0;
+        $fake_ua->start_count(0);
+        $fake_error->{message} = 'Not found';
+        $fake_error->{code}    = 404;
+        combined_like(
+            sub {
+                $client->send(@send_args, tries => 3);
+                Mojo::IOLoop->start;
+            },
+            qr/404 response: Not found \(remaining tries: 0\)/,
+            '404 logged',
+        );
+        is($fake_ua->start_count, 1, 'tried 1 time');
+        is($callback_invoked,     1, 'callback invoked exactly one time');
+        is($retry_delay_invoked,  0, 'retry delay not queried');
+    };
+
+    subtest 'no retry if ignoring errors' => sub {
+        $callback_invoked = 0;
+        $fake_ua->start_count(0);
+        $client->send(@send_args, tries => 3, ignore_errors => 1);
+        Mojo::IOLoop->start;
+        is($fake_ua->start_count, 1, 'no retry attempts');
+        is($callback_invoked,     1, 'callback invoked exactly one time');
+        is($retry_delay_invoked,  0, 'retry delay not queried');
+    };
+
+    $client->ua($default_ua);
+};
+
+subtest 'retry delay configurable' => sub {
+    is($client->_retry_delay(0), 10, 'default delay used from global settings');
+    is($client->_retry_delay(1), 90, '"busy" delay used from global settings');
+
+    $client->worker->settings->webui_host_specific_settings->{$client->webui_host} = {
+        RETRY_DELAY               => 30,
+        RETRY_DELAY_IF_WEBUI_BUSY => 120,
+    };
+    is($client->_retry_delay(0), 30,  'default delay used from host-specific settings');
+    is($client->_retry_delay(1), 120, '"busy" delay used from host-sepcific settings');
 };
 
 subtest 'send status' => sub {
