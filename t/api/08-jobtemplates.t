@@ -521,31 +521,32 @@ is($job_templates->search({prio => -5})->count, 0, 'no rows affected');
 
 # test the YAML export
 # Test validation
-my $yaml = {};
+my $product = 'open-*.SUSE1';
+my $yaml    = {};
 is_deeply(scalar @{$t->app->validate_yaml($yaml, 1)}, 2, 'Empty YAML is an error')
   or diag explain YAML::XS::Dump($yaml);
-$yaml->{scenarios}{'x86_64'}{opensuse} = ['spam', 'eggs'];
+$yaml->{scenarios}{'x86_64'}{$product} = ['spam', 'eggs'];
 is_deeply($t->app->validate_yaml($yaml, 1), ["/products: Missing property."], 'No products defined')
   or diag explain YAML::XS::Dump($yaml);
-$yaml->{products}{'opensuse'} = {};
-is_deeply(@{$t->app->validate_yaml($yaml, 1)}[0], '/products/opensuse/distri: Missing property.', 'No distri specified')
+$yaml->{products}{$product} = {};
+is_deeply(@{$t->app->validate_yaml($yaml, 1)}[0], "/products/$product/distri: Missing property.", 'No distri specified')
   or diag explain YAML::XS::Dump($yaml);
-$yaml->{products}{'opensuse'}{distri} = 'sle';
-is_deeply(@{$t->app->validate_yaml($yaml, 1)}[0], '/products/opensuse/flavor: Missing property.', 'No flavor specified')
+$yaml->{products}{$product}{distri} = 'sle';
+is_deeply(@{$t->app->validate_yaml($yaml, 1)}[0], "/products/$product/flavor: Missing property.", 'No flavor specified')
   or diag explain YAML::XS::Dump($yaml);
-$yaml->{products}{'opensuse'}{flavor} = 'DVD';
-is_deeply($t->app->validate_yaml($yaml, 1), ['/products/opensuse/version: Missing property.'], 'No version specified')
+$yaml->{products}{$product}{flavor} = 'DVD';
+is_deeply($t->app->validate_yaml($yaml, 1), ["/products/$product/version: Missing property."], 'No version specified')
   or diag explain YAML::XS::Dump($yaml);
-$yaml->{products}{'opensuse'}{distribution} = 'sle';
+$yaml->{products}{$product}{distribution} = 'sle';
 is_deeply(
     @{$t->app->validate_yaml($yaml, 1)}[0],
-    '/products/opensuse: Properties not allowed: distribution.',
+    "/products/$product: Properties not allowed: distribution.",
     'Invalid product property specified'
 ) or diag explain YAML::XS::Dump($yaml);
-delete $yaml->{products}{'opensuse'}{distribution};
-$yaml->{products}{'opensuse'}{version} = '42.1';
+delete $yaml->{products}{$product}{distribution};
+$yaml->{products}{$product}{version} = '42.1';
 # Add non-trivial test suites to exercise the validation
-$yaml->{scenarios}{'x86_64'}{opensuse} = [
+$yaml->{scenarios}{'x86_64'}{$product} = [
     'spam',
     "eg-G_S +133t*\t",
     {
