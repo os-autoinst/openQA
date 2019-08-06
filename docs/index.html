@@ -6523,14 +6523,28 @@ bring up the interface on start and the host will loose network connection:
 <span class="tok-nv">DHCLIENT_SET_DEFAULT_ROUTE</span><span class="tok-o">=</span><span class="tok-s1">&#39;yes&#39;</span></code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>Pros of wicked over NetworkManager:
-<strong> Proper IPv6 support
-</strong> openvswitch/vlan/bonding/bridge support - wicked can manage your advanced configuration transparently without the need of extra tools
-** Backwards compatible with ifup scripts</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Pros of wicked over NetworkManager:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Proper IPv6 support</p>
+</li>
+<li>
+<p>openvswitch/vlan/bonding/bridge support - wicked can manage your advanced configuration transparently without the need of extra tools</p>
+</li>
+<li>
+<p>Backwards compatible with ifup scripts</p>
+</li>
+</ul>
 </div>
-<div class="paragraph">
+</li>
+<li>
 <p>Check the network service currently being used:</p>
+</li>
+</ul>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -6546,8 +6560,12 @@ bring up the interface on start and the host will loose network connection:
 <pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl disable --now network.service</code></pre>
 </div>
 </div>
-<div class="paragraph">
+<div class="ulist">
+<ul>
+<li>
 <p>Then switch to wicked and start the service:</p>
+</li>
+</ul>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7687,7 +7705,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-08-04 18:38:36 UTC
+Last updated 2019-08-06 07:24:32 UTC
 </div>
 </div>
 <style>
