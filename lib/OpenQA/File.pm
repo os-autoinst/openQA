@@ -22,6 +22,7 @@ use Exporter 'import';
 use Carp 'croak';
 use Digest::SHA 'sha1_base64';
 use Fcntl 'SEEK_SET';
+use OpenQA::Files;
 #use Mojo::JSON qw(encode_json decode_json);
 #use Sereal qw( encode_sereal decode_sereal ); # XXX: This would speed up notably
 
@@ -177,94 +178,5 @@ sub encode_content { $_[0]->content(unpack 'H*', $_[0]->content()) }
 sub decode_content { $_[0]->content(pack 'H*',   $_[0]->content()) }
 
 sub _sum { sha1_base64(pop) }    # Weaker for chunks
-
-package OpenQA::Files {
-    use Mojo::Base 'OpenQA::Parser::Results';
-    use Digest::SHA 'sha1_base64';
-    use Mojo::File 'path';
-    use OpenQA::File;
-    use Mojo::Exception;
-
-    sub join {
-        my $content;
-        shift()->each(
-            sub {
-                $content .= $_->read();
-            });
-        $content;
-    }
-
-    sub serialize {
-        my $self = shift;
-        $self->join();    # Be sure content was read
-        my @res;
-        $self->each(
-            sub {
-                push @res, $_->serialize();
-            });
-        @res;
-    }
-
-    sub deserialize {
-        my $self = shift;
-        return $self->new(map { OpenQA::File->deserialize($_) } @_);
-    }
-
-    sub write        { Mojo::File->new(pop())->spurt(shift()->join()) }
-    sub generate_sum { sha1_base64(shift()->join()) }
-    sub is_sum       { shift->generate_sum eq shift }
-    sub prepare {
-        shift()->each(sub { $_->prepare });
-    }
-    sub write_chunks {
-        my $file       = pop();
-        my $chunk_path = pop();
-        Mojo::File->new($chunk_path)->list_tree()->sort->each(
-            sub {
-                my $chunk = OpenQA::File->deserialize($_->slurp);
-                $chunk->decode_content;    # Decode content before writing it
-                $chunk->write_content($file);
-            });
-    }
-
-    sub write_verify_chunks {
-        my $file       = pop();
-        my $chunk_path = pop();
-        write_chunks($chunk_path => $file);
-        return verify_chunks($chunk_path => $file);
-    }
-
-    sub spurt {
-        my $dir = pop();
-        shift->each(
-            sub {
-                $_->prepare;    # Prepare your data first before serializing
-                Mojo::File->new($dir, $_->index)->spurt($_->serialize);
-            });
-    }
-
-    sub verify_chunks {
-        my $verify_file = pop();
-        my $chunk_path  = pop();
-
-        my $sum;
-        for (Mojo::File->new($chunk_path)->list_tree()->each) {
-            my $chunk = OpenQA::File->deserialize($_->slurp);
-
-            $chunk->decode_content;
-            $sum = $chunk->total_cksum if !$sum;
-            return Mojo::Exception->new(
-                "Chunk: " . $chunk->id() . " differs in total checksum, expected $sum given " . $chunk->total_cksum)
-              if $sum ne $chunk->total_cksum;
-            return Mojo::Exception->new("Can't verify written data from chunk")
-              unless $chunk->verify_content($verify_file);
-        }
-
-        my $final_sum = OpenQA::File::_file_digest(Mojo::File->new($verify_file)->to_string);
-        return Mojo::Exception->new("Total checksum failed: expected $sum, computed " . $final_sum)
-          if $sum ne $final_sum;
-        return;
-    }
-}
 
 1;
