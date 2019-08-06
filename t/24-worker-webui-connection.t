@@ -82,6 +82,12 @@ like(
 
 # assign a fake worker to the client
 {
+    package Test::FakeSettings;
+    use Mojo::Base -base;
+    has global_settings              => sub { {RETRY_DELAY => 10, RETRY_DELAY_IF_WEBUI_BUSY => 90} };
+    has webui_host_specific_settings => sub { {} };
+}
+{
     package Test::FakeWorker;
     use Mojo::Base -base;
     has instance_number         => 1;
@@ -91,6 +97,7 @@ like(
     has stop_current_job_called => 0;
     has current_error           => undef;
     has current_job             => undef;
+    has settings                => sub { Test::FakeSettings->new; };
     sub stop_current_job {
         my ($self, $reason) = @_;
         $self->stop_current_job_called($reason);
@@ -336,6 +343,18 @@ qr/502 response: some timeout \(remaining tries: 2\).*502 response: some timeout
     };
 
     $client->ua($default_ua);
+};
+
+subtest 'retry delay configurable' => sub {
+    is($client->_retry_delay(0), 10, 'default delay used from global settings');
+    is($client->_retry_delay(1), 90, '"busy" delay used from global settings');
+
+    $client->worker->settings->webui_host_specific_settings->{$client->webui_host} = {
+        RETRY_DELAY               => 30,
+        RETRY_DELAY_IF_WEBUI_BUSY => 120,
+    };
+    is($client->_retry_delay(0), 30,  'default delay used from host-specific settings');
+    is($client->_retry_delay(1), 120, '"busy" delay used from host-sepcific settings');
 };
 
 subtest 'send status' => sub {

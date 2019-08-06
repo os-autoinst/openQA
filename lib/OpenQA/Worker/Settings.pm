@@ -81,6 +81,10 @@ sub new {
         $ENV{VNC}      = $instance_number + 90;
     }
 
+    # assign default retry-delay for web UI connection
+    $global_settings{RETRY_DELAY}               //= 5;
+    $global_settings{RETRY_DELAY_IF_WEBUI_BUSY} //= 60;
+
     my $self = $class->SUPER::new(
         global_settings              => \%global_settings,
         webui_hosts                  => \@hosts,

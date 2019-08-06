@@ -282,7 +282,10 @@ my %BUSY_ERROR_CODES = map { $_ => 1 } 502, 503, 504, 598;
 
 sub _retry_delay {
     my ($self, $is_webui_busy) = @_;
-    return $is_webui_busy ? 60 : 5;
+    my $key                    = $is_webui_busy ? 'RETRY_DELAY_IF_WEBUI_BUSY' : 'RETRY_DELAY';
+    my $settings               = $self->worker->settings;
+    my $host_specific_settings = $settings->webui_host_specific_settings->{$self->webui_host} // {};
+    return $host_specific_settings->{$key} // $settings->global_settings->{$key};
 }
 
 # sends a command to the web UI via its REST API

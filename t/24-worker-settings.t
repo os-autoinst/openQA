@@ -32,10 +32,12 @@ my $settings = OpenQA::Worker::Settings->new;
 is_deeply(
     $settings->global_settings,
     {
-        GLOBAL          => 'setting',
-        WORKER_HOSTNAME => '127.0.0.1',
-        LOG_LEVEL       => 'test',
-        LOG_DIR         => 'log/dir',
+        GLOBAL                    => 'setting',
+        WORKER_HOSTNAME           => '127.0.0.1',
+        LOG_LEVEL                 => 'test',
+        LOG_DIR                   => 'log/dir',
+        RETRY_DELAY               => 5,
+        RETRY_DELAY_IF_WEBUI_BUSY => 60,
     },
     'global settings, spaces trimmed'
 ) or diag explain $settings->global_settings;
@@ -83,11 +85,13 @@ subtest 'instance-specific settings' => sub {
     is_deeply(
         $settings1->global_settings,
         {
-            GLOBAL          => 'setting',
-            WORKER_HOSTNAME => '127.0.0.1',
-            WORKER_CLASS    => 'qemu_i386,qemu_x86_64',
-            LOG_LEVEL       => 'test',
-            LOG_DIR         => 'log/dir',
+            GLOBAL                    => 'setting',
+            WORKER_HOSTNAME           => '127.0.0.1',
+            WORKER_CLASS              => 'qemu_i386,qemu_x86_64',
+            LOG_LEVEL                 => 'test',
+            LOG_DIR                   => 'log/dir',
+            RETRY_DELAY               => 5,
+            RETRY_DELAY_IF_WEBUI_BUSY => 60,
         },
         'global settings (instance 1)'
     ) or diag explain $settings1->global_settings;
@@ -95,12 +99,14 @@ subtest 'instance-specific settings' => sub {
     is_deeply(
         $settings2->global_settings,
         {
-            GLOBAL          => 'setting',
-            WORKER_HOSTNAME => '127.0.0.1',
-            WORKER_CLASS    => 'qemu_aarch64',
-            LOG_LEVEL       => 'test',
-            LOG_DIR         => 'log/dir',
-            FOO             => 'bar',
+            GLOBAL                    => 'setting',
+            WORKER_HOSTNAME           => '127.0.0.1',
+            WORKER_CLASS              => 'qemu_aarch64',
+            LOG_LEVEL                 => 'test',
+            LOG_DIR                   => 'log/dir',
+            FOO                       => 'bar',
+            RETRY_DELAY               => 10,
+            RETRY_DELAY_IF_WEBUI_BUSY => 120,
         },
         'global settings (instance 2)'
     ) or diag explain $settings2->global_settings;
