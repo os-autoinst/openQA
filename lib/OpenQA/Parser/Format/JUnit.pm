@@ -22,7 +22,6 @@ use OpenQA::Parser::Result::OpenQA;
 use Mojo::DOM;
 
 has include_results => 0;
-has [qw(_dom)];
 
 # Override to use specific OpenQA Result class.
 sub _add_single_result { shift->generated_tests_results->add(OpenQA::Parser::Result::OpenQA->new(@_)) }
@@ -47,10 +46,9 @@ sub _add_result {
 sub parse {
     my ($self, $xml) = @_;
     confess "No XML given/loaded" unless $xml;
-    $self->_dom(Mojo::DOM->new($xml));
-    confess "Failed parsing XML" unless @{$self->_dom->tree} > 2;
+    my $dom = Mojo::DOM->new($xml);
+    confess "Failed parsing XML" unless @{$dom->tree} > 2;
 
-    my $dom = $self->_dom();
     my @tests;
     for my $ts ($dom->find('testsuite')->each) {
         my $ts_category = $ts->{package};
@@ -61,7 +59,7 @@ sub parse {
         $ts_category =~ s/\..*$//;
         $ts_name     =~ s/^[^.]*\.//;
         $ts_name     =~ s/\./_/;
-        if ($ts->{id} =~ /^[0-9]+$/) {
+        if (($ts->{id} // '') =~ /^[0-9]+$/) {
             # make sure that the name is unique
             # prepend numeric $ts->{id}, start counting from 1
             $ts_name = ($ts->{id} + 1) . '_' . $ts_name;

@@ -204,7 +204,11 @@ subtest 'Parser base class object' => sub {
       }, qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
       'serialization support warns';
 
-    is_deeply $good_parser->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()}, [qw(1 2 3)];
+    combined_like sub {
+        is_deeply $good_parser->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()},
+          [qw(1 2 3)];
+      }, qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+      'serialization support warns';
 
     $good_parser->results->add({test => 'bar'});
 
@@ -215,14 +219,27 @@ subtest 'Parser base class object' => sub {
     $good_parser->results->remove(2);
 
     is $good_parser->results->size, 2, '2 results';
-    is_deeply $good_parser->_build_tree->{generated_tests_results}->[1]->{OpenQA::Parser::DATA_FIELD()},
-      {test => 'bar'};
+    combined_like sub {
+        is_deeply $good_parser->_build_tree->{generated_tests_results}->[1]->{OpenQA::Parser::DATA_FIELD()},
+          {test => 'bar'};
+      }, qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+      'serialization support warns';
 
-    my $copy = parser("Base")->_load_tree($good_parser->_build_tree);
-    is_deeply $copy->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()}, [qw(1 2 3)]
-      or diag explain $copy->_build_tree->{generated_tests_results};
-    is_deeply $copy->_build_tree->{generated_tests_results}->[1]->{OpenQA::Parser::DATA_FIELD()}, {test => 'bar'}
-      or die diag explain $good_parser->_build_tree;
+    my $copy;
+    combined_like sub {
+        $copy = parser("Base")->_load_tree($good_parser->_build_tree);
+      }, qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+      'serialization support warns';
+    combined_like sub {
+        is_deeply $copy->_build_tree->{generated_tests_results}->[0]->{OpenQA::Parser::DATA_FIELD()}, [qw(1 2 3)]
+          or diag explain $copy->_build_tree->{generated_tests_results};
+      }, qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+      'serialization support warns';
+    combined_like sub {
+        is_deeply $copy->_build_tree->{generated_tests_results}->[1]->{OpenQA::Parser::DATA_FIELD()}, {test => 'bar'}
+          or die diag explain $good_parser->_build_tree;
+      }, qr/Serialization is offically supported only if object can be turned into an array with \-\>to_array\(\)/,
+      'serialization support warns';
 
     $good_parser->results->remove(1);
     $good_parser->results->remove(0);
@@ -696,9 +713,8 @@ subtest ltp_parse => sub {
 
 sub serialize_test {
     my ($parser_name, $file, $test_function) = @_;
-    diag "Serialization test for $parser_name and $file with test $test_function";
-    {
-        no strict 'refs';    ## no critic
+
+    subtest "Serialization test for $parser_name and $file with test $test_function" => sub {
         my $test_result_file = path($FindBin::Bin, "data")->child($file);
 
         # With content saved
@@ -764,7 +780,6 @@ sub serialize_test {
         is $deserialized->content, undef, 'Content is not there' or diag explain $deserialized->content;
 
         # Json
-        diag("JSON serialization tests");
         $parser = $parser_name->new();
         $parser->load($test_result_file);
         $obj_content  = $parser->to_json();
@@ -798,16 +813,16 @@ sub serialize_test {
           or diag explain $deserialized->content;
         is $deserialized->content, $test_result_file->slurp, 'Content was kept intact'
           or diag explain $deserialized->content;
-    }
+    };
 }
 
 subtest 'serialize/deserialize' => sub {
-    serialize_test("OpenQA::Parser::Format::IPA",   "ipa.json",                           "test_ipa_file");
-    serialize_test("OpenQA::Parser::Format::LTP",   "ltp_test_result_format.json",        "test_ltp_file");
-    serialize_test("OpenQA::Parser::Format::LTP",   "new_ltp_result_array.json",          "test_ltp_file_v2");
-    serialize_test("OpenQA::Parser::Format::JUnit", "slenkins_control-junit-results.xml", "test_junit_file");
-    serialize_test("OpenQA::Parser::Format::XUnit", "xunit_format_example.xml",           "test_xunit_file");
-    serialize_test("OpenQA::Parser::Format::TAP",   "tap_format_example.tap",             "test_tap_file");
+    serialize_test("OpenQA::Parser::Format::IPA",   "ipa.json",                           \&test_ipa_file);
+    serialize_test("OpenQA::Parser::Format::LTP",   "ltp_test_result_format.json",        \&test_ltp_file);
+    serialize_test("OpenQA::Parser::Format::LTP",   "new_ltp_result_array.json",          \&test_ltp_file_v2);
+    serialize_test("OpenQA::Parser::Format::JUnit", "slenkins_control-junit-results.xml", \&test_junit_file);
+    serialize_test("OpenQA::Parser::Format::XUnit", "xunit_format_example.xml",           \&test_xunit_file);
+    serialize_test("OpenQA::Parser::Format::TAP",   "tap_format_example.tap",             \&test_tap_file);
 };
 
 subtest 'Unstructured data' => sub {
