@@ -188,23 +188,22 @@ and the interface with access to the network to the external zone:
 
 [source,sh]
 ----
-firewall-cmd --permanent --zone=external --add-interface=eth0
-firewall-cmd --permanent --zone=internal --add-interface=br1
+firewall-cmd --zone=external --add-interface=eth0
+firewall-cmd --zone=internal --add-interface=br1
 ----
 
-Reload firewall configuration using `firewall-cmd --reload` command.
 To enable masquerading one can use the following command:
 
 [source,sh]
 ----
-firewall-cmd --permanent --zone=external --add-masquerade
+firewall-cmd --zone=external --add-masquerade
 ----
 
 IP forwarding is enabled automatically if masquerading is enabled:
 
 [source,sh]
 ----
-cat /proc/sys/net/ipv4/ip_forward
+grep 1 /proc/sys/net/ipv4/ip_forward
 1
 ----
 
@@ -213,15 +212,22 @@ connections by default by changing the zone target:
 
 [source,sh]
 ----
-firewall-cmd --permanent --zone=external --set-target=ACCEPT
+firewall-cmd --zone=external --set-target=ACCEPT
 ----
 
 Alternatively, you can assign the interface to the `trusted` zone. Make sure
 to enable masquerading for the `trusted` zone as well in this case.
 
-If you do not currently have the firewalld service running, you can use the
-`firewall-cmd-offline` command for the configuration. Enable service to run on
-startup:
+If you are happy with the changes make them persistent:
+
+[source,sh]
+----
+firewall-cmd --runtime-to-permanent
+----
+
+If you do not currently have the firewalld service running, you can instead
+use the `firewall-cmd-offline` command for the configuration. In this case
+start the firewall and enable the service to run on system startup:
 
 [source,sh]
 ----
