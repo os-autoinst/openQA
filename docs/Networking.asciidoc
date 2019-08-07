@@ -192,11 +192,13 @@ firewall-cmd --zone=external --add-interface=eth0
 firewall-cmd --zone=internal --add-interface=br1
 ----
 
-To enable masquerading one can use the following command:
+To enable the virtual machines used by openQA to fully access the external
+network masquerading needs to be enabled on all involved zones:
 
 [source,sh]
 ----
 firewall-cmd --zone=external --add-masquerade
+firewall-cmd --zone=internal --add-masquerade
 ----
 
 IP forwarding is enabled automatically if masquerading is enabled:
