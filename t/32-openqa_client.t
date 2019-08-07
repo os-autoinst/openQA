@@ -61,7 +61,7 @@ subtest 'upload public assets' => sub {
     seek($fh, 20 * 1024 * 1024, 0);    # create 200MB quick
     syswrite($fh, "X");
     close($fh);
-    my $sum = OpenQA::File::_file_digest($filename);
+    my $sum = OpenQA::File->file_digest($filename);
 
     my $client = OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')
       ->ioloop(Mojo::IOLoop->singleton);
@@ -88,7 +88,7 @@ subtest 'upload public assets' => sub {
 
     ok(-e $rp, 'Asset exists after upload');
 
-    is $sum, OpenQA::File::_file_digest($rp), 'cksum match!';
+    is $sum, OpenQA::File->file_digest($rp), 'cksum match!';
     $t->get_ok('/api/v1/assets/hdd/hdd_image2.qcow2')->status_is(200);
     is($t->tx->res->json->{name}, 'hdd_image2.qcow2');
 
@@ -103,7 +103,7 @@ subtest 'upload private assets' => sub {
     seek($fh, 20 * 1024 * 1024, 0);    # create 200MB quick
     syswrite($fh, "A");
     close($fh);
-    my $sum = OpenQA::File::_file_digest($filename);
+    my $sum = OpenQA::File->file_digest($filename);
 
     my $client = OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')
       ->ioloop(Mojo::IOLoop->singleton);
@@ -129,7 +129,7 @@ subtest 'upload private assets' => sub {
 
     ok(-e $rp, 'Asset exists after upload');
 
-    is $sum, OpenQA::File::_file_digest($rp), 'cksum match!';
+    is $sum, OpenQA::File->file_digest($rp), 'cksum match!';
     $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image3.qcow2')->status_is(200);
     is($t->tx->res->json->{name}, '00099963-hdd_image3.qcow2');
 
@@ -144,7 +144,7 @@ subtest 'upload other assets' => sub {
     seek($fh, 20 * 1024 * 1024, 0);    # create 200MB quick
     syswrite($fh, "V");
     close($fh);
-    my $sum = OpenQA::File::_file_digest($filename);
+    my $sum = OpenQA::File->file_digest($filename);
 
     my $client = OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')
       ->ioloop(Mojo::IOLoop->singleton);
@@ -175,7 +175,7 @@ subtest 'upload other assets' => sub {
 
     ok(-e $rp, 'Asset exists after upload');
 
-    is $sum, OpenQA::File::_file_digest($rp), 'cksum match!';
+    is $sum, OpenQA::File->file_digest($rp), 'cksum match!';
     $t->get_ok('/api/v1/assets/other/00099963-hdd_image3.xml')->status_is(200);
     is($t->tx->res->json->{name}, '00099963-hdd_image3.xml');
 
@@ -189,7 +189,7 @@ subtest 'upload retrials' => sub {
     seek($fh, 20 * 1024 * 1024, 0);    # create 200MB quick
     syswrite($fh, "V");
     close($fh);
-    my $sum = OpenQA::File::_file_digest($filename);
+    my $sum = OpenQA::File->file_digest($filename);
 
     my $client = OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')
       ->ioloop(Mojo::IOLoop->singleton);
@@ -229,7 +229,7 @@ subtest 'upload retrials' => sub {
 
     ok(-e $rp, 'Asset exists after upload');
 
-    is $sum, OpenQA::File::_file_digest($rp), 'cksum match!';
+    is $sum, OpenQA::File->file_digest($rp), 'cksum match!';
     $t->get_ok('/api/v1/assets/other/00099963-hdd_image4.xml')->status_is(200);
     is($t->tx->res->json->{name}, '00099963-hdd_image4.xml');
 
@@ -244,7 +244,7 @@ subtest 'upload failures' => sub {
     seek($fh, 20 * 1024 * 1024, 0);    # create 200MB quick
     syswrite($fh, "V");
     close($fh);
-    my $sum = OpenQA::File::_file_digest($filename);
+    my $sum = OpenQA::File->file_digest($filename);
 
     my $client = OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')
       ->ioloop(Mojo::IOLoop->singleton);
@@ -298,7 +298,7 @@ subtest 'upload internal errors' => sub {
     seek($fh, 20 * 1024 * 1024, 0);    # create 200MB quick
     syswrite($fh, "V");
     close($fh);
-    my $sum = OpenQA::File::_file_digest($filename);
+    my $sum = OpenQA::File->file_digest($filename);
 
     my $client = OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')
       ->ioloop(Mojo::IOLoop->singleton);

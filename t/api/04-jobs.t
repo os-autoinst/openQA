@@ -394,7 +394,7 @@ $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(404);
 
 $pieces = OpenQA::File->new(file => Mojo::File->new($filename))->split($chunk_size);
 ok(!-d $chunkdir, 'Chunk directory empty');
-my $sum = OpenQA::File::_file_digest($filename);
+my $sum = OpenQA::File->file_digest($filename);
 is $sum, $pieces->first->total_cksum or die 'Computed cksum is not same';
 $pieces->each(
     sub {

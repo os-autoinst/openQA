@@ -21,12 +21,14 @@ use FindBin;
 use lib ("$FindBin::Bin/lib", "../lib", "lib");
 use Test::More;
 use OpenQA::Client;
-use OpenQA::File 'path';
+use OpenQA::File;
 use Digest::SHA 'sha1_base64';
-use Mojo::File qw(tempfile tempdir);
+use Mojo::File qw(path tempfile tempdir);
+
+sub file_path { OpenQA::File->new(file => path(@_)) }
 
 subtest 'base' => sub {
-    my $file = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
+    my $file = file_path($FindBin::Bin, "data", "ltp_test_result_format.json");
     ok $file->end;
     $file->read;
     my $content = $file->content();
@@ -37,7 +39,7 @@ subtest 'base' => sub {
 };
 
 subtest 'split/join' => sub {
-    my $size = path($FindBin::Bin, "data")->child("ltp_test_result_format.json")->size;
+    my $size = file_path($FindBin::Bin, "data", "ltp_test_result_format.json")->size;
 
     is $size, 6991, 'size matches';
 
@@ -47,21 +49,21 @@ subtest 'split/join' => sub {
     is OpenQA::File::_chunk_size(30, 10), 3;
     is OpenQA::File::_chunk_size(31, 10), 4;
 
-    my $pieces = path($FindBin::Bin, "data")->child("ltp_test_result_format.json")->split(2000);
+    my $pieces = file_path($FindBin::Bin, "data", "ltp_test_result_format.json")->split(2000);
 
     is $pieces->last->end, $size, 'Last piece end must match with size';
 
-    is $pieces->join(), path($FindBin::Bin, "data")->child("ltp_test_result_format.json")->slurp, 'Content match'
+    is $pieces->join(), path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp, 'Content match'
       or die diag explain $pieces;
 
-    is $pieces->generate_sum(), sha1_base64(path($FindBin::Bin, "data")->child("ltp_test_result_format.json")->slurp),
+    is $pieces->generate_sum(), sha1_base64(path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp),
       'SHA-1 match'
       or die diag explain $pieces;
 
     my $t_file = tempfile();
     $pieces->write($t_file);
 
-    is $t_file->slurp, path($FindBin::Bin, "data")->child("ltp_test_result_format.json")->slurp,
+    is $t_file->slurp, path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp,
       'Composed content is same as original'
       or die diag explain $pieces;
 
@@ -73,19 +75,19 @@ subtest 'split/join' => sub {
 
     is_deeply $des_pieces, $pieces or die diag explain $des_pieces;
 
-    is $des_pieces->join(), path($FindBin::Bin, "data")->child("ltp_test_result_format.json")->slurp, 'Content match'
+    is $des_pieces->join(), path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp, 'Content match'
       or die diag explain $des_pieces;
 
     is $des_pieces->generate_sum(),
-      sha1_base64(path($FindBin::Bin, "data")->child("ltp_test_result_format.json")->slurp), 'SHA-1 match'
+      sha1_base64(path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp), 'SHA-1 match'
       or die diag explain $des_pieces;
 
-    ok $des_pieces->is_sum(sha1_base64(path($FindBin::Bin, "data")->child("ltp_test_result_format.json")->slurp));
+    ok $des_pieces->is_sum(sha1_base64(path($FindBin::Bin, "data", "ltp_test_result_format.json")->slurp));
 };
 
 
 subtest 'recompose in-place' => sub {
-    my $original = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
+    my $original = file_path($FindBin::Bin, "data", "ltp_test_result_format.json");
 
     my $pieces = $original->split(103);
 
@@ -102,7 +104,7 @@ subtest 'recompose in-place' => sub {
     # Write piece-by-piece to another file.
     $t_dir->list_tree->shuffle->each(
         sub {
-            my $chunk = OpenQA::File->deserialize(Mojo::File->new($_)->slurp);
+            my $chunk = OpenQA::File->deserialize(path($_)->slurp);
             $chunk->decode_content;
             $chunk->write_content($copied_file);
         });
@@ -110,26 +112,26 @@ subtest 'recompose in-place' => sub {
     my $sha;
     $t_dir->list_tree->shuffle->each(
         sub {
-            my $chunk = OpenQA::File->deserialize(Mojo::File->new($_)->slurp);
+            my $chunk = OpenQA::File->deserialize(path($_)->slurp);
             $chunk->decode_content;
             is $chunk->verify_content($copied_file), 1, 'chunk: ' . $chunk->index . ' verified';
             $sha = $chunk->total_cksum;
         });
 
-    is $sha, OpenQA::File::_file_digest($copied_file->to_string), 'SHA-1 Matches';
+    is $sha, OpenQA::File->file_digest($copied_file->to_string), 'SHA-1 Matches';
 
-    is $original->slurp, Mojo::File->new($copied_file)->slurp, 'Same content';
+    is $original->file->slurp, path($copied_file)->slurp, 'Same content';
 
     $pieces->first->content('42')->write_content($copied_file);    #Let's simulate a writing error
-    isnt $sha, sha1_base64(Mojo::File->new($copied_file)->slurp), 'SHA-1 Are not matching anymore';
-    isnt $original->slurp, Mojo::File->new($copied_file)->slurp, 'Not same content';
+    isnt $sha, sha1_base64(path($copied_file)->slurp), 'SHA-1 Are not matching anymore';
+    isnt $original->file->slurp, path($copied_file)->slurp, 'Not same content';
 
-    my $chunk = OpenQA::File->deserialize(Mojo::File->new($t_dir->list_tree->first)->slurp);
+    my $chunk = OpenQA::File->deserialize(path($t_dir->list_tree->first)->slurp);
     ok !$chunk->verify_content($copied_file), 'chunk NOT verified';
 };
 
 subtest 'prepare_chunks' => sub {
-    my $original = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
+    my $original = file_path($FindBin::Bin, "data", "ltp_test_result_format.json");
 
     my $pieces = $original->split(10);
 
@@ -139,7 +141,7 @@ subtest 'prepare_chunks' => sub {
 };
 
 subtest 'verify_chunks' => sub {
-    my $original = path($FindBin::Bin, "data")->child("ltp_test_result_format.json");
+    my $original = file_path($FindBin::Bin, "data", "ltp_test_result_format.json");
 
     my $pieces = $original->split(100000);
 
@@ -165,7 +167,7 @@ subtest 'verify_chunks' => sub {
 
     is(OpenQA::Files->write_verify_chunks($t_dir => $copied_file), undef, 'Write and verify passes');
 
-    is $original->slurp, Mojo::File->new($copied_file)->slurp, 'Same content';
+    is $original->file->slurp, path($copied_file)->slurp, 'Same content';
 
     $pieces->first->content('42')->write_content($copied_file);    #Let's simulate a writing error
     like(
@@ -173,12 +175,12 @@ subtest 'verify_chunks' => sub {
         qr/^Can't verify written data from chunk/,
         'Verify chunks fail'
     );
-    isnt $original->slurp, Mojo::File->new($copied_file)->slurp, 'Not same content';
+    isnt $original->file->slurp, path($copied_file)->slurp, 'Not same content';
 };
 
 sub compare {
     my ($file, $chunk_size) = @_;
-    my $original = path($FindBin::Bin, "data")->child($file);
+    my $original = file_path($FindBin::Bin, "data", $file);
     my $pieces   = $original->split($chunk_size);
 
     is(OpenQA::File::_chunk_size($original->size, $chunk_size), $pieces->size, 'Size and pieces matches!');
@@ -200,7 +202,7 @@ sub compare {
 
 subtest 'get_piece' => sub {
     my $file = "ltp_test_result_format.json";
-    my $size = path($FindBin::Bin, "data")->child($file)->size;
+    my $size = file_path($FindBin::Bin, "data", $file)->size;
 
     compare($file => 1);
     compare($file => 10);

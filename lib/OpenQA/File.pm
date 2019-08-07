@@ -18,18 +18,14 @@ package OpenQA::File;
 use Mojo::Base 'OpenQA::Parser::Result';
 
 use OpenQA::Parser::Results;
-use Exporter 'import';
 use Carp 'croak';
 use Digest::SHA 'sha1_base64';
 use Fcntl 'SEEK_SET';
 use OpenQA::Files;
-#use Mojo::JSON qw(encode_json decode_json);
 #use Sereal qw( encode_sereal decode_sereal ); # XXX: This would speed up notably
 
-has file => sub { Mojo::File->new() };
+has file => sub { Mojo::File->new };
 has [qw(start end index cksum total content total_cksum)];
-
-our @EXPORT_OK = ('path');
 
 sub new {
     my $self = shift->SUPER::new(@_);
@@ -39,25 +35,22 @@ sub new {
     $self->start(0)                           unless defined $self->start;
     $self->total(1)                           unless defined $self->total;
     $self->end($self->size)                   unless defined $self->end;
-    $self;
+    return $self;
 }
 
-sub size        { -s shift()->file() }
-sub path        { __PACKAGE__->new(file => Mojo::File->new(@_)) }
-sub child       { __PACKAGE__->new(file => shift->file->child(@_)) }
-sub slurp       { shift()->file()->slurp() }
+sub size { -s shift->file }
+
 sub _chunk_size { int($_[0] / $_[1]) + (($_[0] % $_[1]) ? 1 : 0) }
-sub is_last     { !!($_[0]->total == $_[0]->index()) }
+
+sub is_last { !!($_[0]->total == $_[0]->index()) }
 
 # sub serialize   { encode_sereal(shift->to_el) }
-# sub deserialize { shift()->new(OpenQA::Parser::Result::_restore_el(decode_sereal(shift))) }
-#sub serialize   { encode_json(shift->to_el) }
-#sub deserialize { shift()->new(OpenQA::Parser::Result::_restore_el(decode_json(shift))) }
+# sub deserialize { shift->new((decode_sereal(shift))) }
 
 sub write_content {
     my $self = shift;
     $self->_write_content(pop);
-    $self;
+    return $self;
 }
 
 sub verify_content {
@@ -66,8 +59,9 @@ sub verify_content {
 }
 
 sub prepare {
-    $_[0]->generate_sum;
-    $_[0]->encode_content;
+    my $self = shift;
+    $self->generate_sum;
+    $self->encode_content;
 }
 
 sub _chunk {
@@ -95,7 +89,7 @@ sub get_piece {
     croak 'You need to define a file' unless defined $self->file();
     $self->file(Mojo::File->new($self->file())) unless ref $self->file eq 'Mojo::File';
 
-    my $total_cksum = OpenQA::File::_file_digest($self->file->to_string);
+    my $total_cksum = OpenQA::File->file_digest($self->file->to_string);
     my $residual    = $self->size() % $chunk_size;
     my $n_chunks    = _chunk_size($self->size(), $chunk_size);
 
@@ -108,7 +102,7 @@ sub split {
     croak 'You need to define a file' unless defined $self->file();
     $self->file(Mojo::File->new($self->file())) unless ref $self->file eq 'Mojo::File';
 
-    my $total_cksum = OpenQA::File::_file_digest($self->file->to_string);
+    my $total_cksum = OpenQA::File->file_digest($self->file->to_string);
 
     my $residual = $self->size() % $chunk_size;
     my $n_chunks = _chunk_size($self->size(), $chunk_size);
@@ -122,8 +116,8 @@ sub split {
     return $files;
 }
 
-sub _file_digest {
-    my $file   = pop;
+sub file_digest {
+    my ($class, $file) = @_;
     my $digest = Digest::SHA->new('sha256');
     $digest->addfile($file);
     return $digest->b64digest;
@@ -131,13 +125,15 @@ sub _file_digest {
 
 sub read {
     my $self = shift;
-    return $self->content() if $self->content();
-    $self->content($self->_seek_content(${$self->file}));
-    return $self->content;
+    if (my $content = $self->content) { return $content }
+    my $content = $self->_seek_content($self->file->to_string);
+    $self->content($content);
+    return $content;
 }
 
 sub _seek_content {
     my ($self, $file_name) = @_;
+
     croak 'No start point is defined' unless defined $self->start();
     croak 'No end point is defined'   unless defined $self->end();
 
@@ -153,6 +149,7 @@ sub _seek_content {
 
 sub _write_content {
     my ($self, $file_name) = @_;
+
     croak 'No start point is defined' unless defined $self->start();
     croak 'No end point is defined'   unless defined $self->end();
 
@@ -164,14 +161,16 @@ sub _write_content {
     $ret = $file->syswrite($self->content, ($self->end() - $self->start()));
     croak "Can't write to file $file_name : $!" unless defined $ret;
     close($file);
+
     return $ret;
 }
 
 sub generate_sum {
     my $self = shift;
-    $self->read() unless $self->content();
-    $self->cksum($self->_sum($self->content()));
-    $self->cksum;
+    $self->read() unless $self->content;
+    my $sum = $self->_sum($self->content);
+    $self->cksum($sum);
+    return $sum;
 }
 
 sub encode_content { $_[0]->content(unpack 'H*', $_[0]->content()) }

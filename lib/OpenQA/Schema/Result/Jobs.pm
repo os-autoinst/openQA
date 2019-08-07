@@ -1326,7 +1326,7 @@ sub create_asset {
             }
             else {
                 $sum      = $chunk->total_cksum;
-                $real_sum = $chunk->_file_digest($temp_final_file->to_string);
+                $real_sum = $chunk->file_digest($temp_final_file->to_string);
             }
 
             $temp_chunk_folder->remove_tree

@@ -91,7 +91,7 @@ sub verify_chunks {
           unless $chunk->verify_content($verify_file);
     }
 
-    my $final_sum = OpenQA::File::_file_digest(Mojo::File->new($verify_file)->to_string);
+    my $final_sum = OpenQA::File->file_digest(Mojo::File->new($verify_file)->to_string);
     return Mojo::Exception->new("Total checksum failed: expected $sum, computed " . $final_sum)
       if $sum ne $final_sum;
     return undef;
