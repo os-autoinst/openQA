@@ -26,9 +26,8 @@ sub addproperty { shift->{properties}->add(OpenQA::Parser::Result::XUnit::Proper
 sub parse {
     my ($self, $xml) = @_;
     confess "No XML given/loaded" unless $xml;
-    $self->_dom(Mojo::DOM->new->xml(1)->parse($xml));
+    my $dom = Mojo::DOM->new->xml(1)->parse($xml);
 
-    my $dom = $self->_dom();
     my @tests;
     my %t_names;
     my $i = 1;
