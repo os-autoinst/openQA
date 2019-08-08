@@ -85,9 +85,10 @@ run tests that require network connection between several machines (e.g.
 client -- server tests).
 
 The example of the configuration is applicable for openSUSE and will use _Open
-vSwitch_ for virtual switch, _SuSEfirewall2_ or _firewalld_ for NAT and
-_wicked_ as network manager. Keep in mind that a firewall is not strictly
-necessary for operation.
+vSwitch_ for virtual switch, _firewalld_ (or _SuSEfirewall2_ for older
+versions) for NAT and _wicked_ as network manager. Keep in mind that a
+firewall is not strictly necessary for operation. The operation without
+firewall is not covered in all necessary details in this documentation.
 
 NOTE: Another way to setup the environment with _iptables_ and _firewalld_ is described
 on the link:https://fedoraproject.org/wiki/OpenQA_advanced_network_guide[Fedora wiki].
@@ -180,7 +181,64 @@ OVS_BRIDGE_PORT_DEVICE_2='tap1'
 OVS_BRIDGE_PORT_DEVICE_3='tap2'
 ----
 
-*Configure NAT with SuSEfirewall2*
+*Configure NAT with firewalld*
+
+To configure NAT with firewalld assign the bridge interface to the internal zone
+and the interface with access to the network to the external zone:
+
+[source,sh]
+----
+firewall-cmd --zone=external --add-interface=eth0
+firewall-cmd --zone=internal --add-interface=br1
+----
+
+To enable the virtual machines used by openQA to fully access the external
+network masquerading needs to be enabled on all involved zones:
+
+[source,sh]
+----
+firewall-cmd --zone=external --add-masquerade
+firewall-cmd --zone=internal --add-masquerade
+----
+
+IP forwarding is enabled automatically if masquerading is enabled:
+
+[source,sh]
+----
+grep 1 /proc/sys/net/ipv4/ip_forward
+1
+----
+
+In case the interface is in a trusted network it is possible to accept
+connections by default by changing the zone target:
+
+[source,sh]
+----
+firewall-cmd --zone=external --set-target=ACCEPT
+----
+
+Alternatively, you can assign the interface to the `trusted` zone. Make sure
+to enable masquerading for the `trusted` zone as well in this case.
+
+If you are happy with the changes make them persistent:
+
+[source,sh]
+----
+firewall-cmd --runtime-to-permanent
+----
+
+If you do not currently have the firewalld service running, you can instead
+use the `firewall-cmd-offline` command for the configuration. In this case
+start the firewall and enable the service to run on system startup:
+
+[source,sh]
+----
+systemctl enable --now firewalld
+----
+
+Also, the `firewall-config` GUI tool for firewalld can be used for configuration.
+
+*For older versions of openSUSE/SLE: Configure NAT with SuSEfirewall2*
 
 The IP 10.0.2.2 can be also served as a gateway to access the outside network.
 For this, NAT between _br1_ and _eth0_ must be configured with SuSEfirewall2
@@ -201,54 +259,6 @@ Start SuSEfirewall2 and enable the service to start on system startup:
 systemctl enable --now SuSEfirewall2
 ----
 
-*Configure NAT with firewalld*
-
-To configure NAT with firewalld assign the bridge interface to the internal zone
-and the interface with access to the network to the external zone:
-
-[source,sh]
-----
-firewall-cmd --permanent --zone=external --add-interface=eth0
-firewall-cmd --permanent --zone=internal --add-interface=br1
-----
-
-Reload firewall configuration using `firewall-cmd --reload` command.
-To enable masquerading one can use the following command:
-
-[source,sh]
-----
-firewall-cmd --permanent --zone=external --add-masquerade
-----
-
-IP forwarding is enabled automatically if masquerading is enabled:
-
-[source,sh]
-----
-cat /proc/sys/net/ipv4/ip_forward
-1
-----
-
-In case the interface is in a trusted network it is possible to accept
-connections by default by changing the zone target:
-
-[source,sh]
-----
-firewall-cmd --permanent --zone=external --set-target=ACCEPT
-----
-
-Alternatively, you can assign the interface to the `trusted` zone. Make sure
-to enable masquerading for the `trusted` zone as well in this case.
-
-If you do not currently have the firewalld service running, you can use the
-`firewall-cmd-offline` command for the configuration. Enable service to run on
-startup:
-
-[source,sh]
-----
-systemctl enable --now firewalld
-----
-
-Also, the `firewall-config` GUI tool for firewalld can be used for configuration.
 
 *Configure OpenQA Worker Instances*
 
@@ -350,14 +360,7 @@ NOTE: It is also possible to switch the network configuration using YaST.
 
 === Debugging Open vSwitch Configuration
 
-Boot sequence with wicked < 0.6.23:
-
-1. wicked - creates tap devices
-2. openvswitch - creates the bridge +br1+, adds tap devices to it
-3. wicked handles +br1+ as hotplugged device, assignd the IP 10.0.2.2 to it, updates SuSEfirewall
-4. os-autoinst-openvswitch - installs openflow rules, handles vlan assignment
-
-Boot sequence with wicked 0.6.23 and newer:
+Boot sequence with wicked (version 0.6.23 and newer):
 
 1. openvswitch (as above)
 2. wicked - creates the bridge +br1+ and tap devices, adds tap devices to the bridge,
