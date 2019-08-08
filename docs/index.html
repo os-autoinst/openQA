@@ -6188,9 +6188,10 @@ client&#8201;&#8212;&#8201;server tests).</p>
 </div>
 <div class="paragraph">
 <p>The example of the configuration is applicable for openSUSE and will use <em>Open
-vSwitch</em> for virtual switch, <em>SuSEfirewall2</em> or <em>firewalld</em> for NAT and
-<em>wicked</em> as network manager. Keep in mind that a firewall is not strictly
-necessary for operation.</p>
+vSwitch</em> for virtual switch, <em>firewalld</em> (or <em>SuSEfirewall2</em> for older
+versions) for NAT and <em>wicked</em> as network manager. Keep in mind that a
+firewall is not strictly necessary for operation. The operation without
+firewall is not covered in all necessary details in this documentation.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -6346,7 +6347,73 @@ name is <code>ifcfg-br&lt;N&gt;</code>, where <code>&lt;N&gt;</code> is the id o
 </div>
 </div>
 <div class="paragraph">
-<p><strong>Configure NAT with SuSEfirewall2</strong></p>
+<p><strong>Configure NAT with firewalld</strong></p>
+</div>
+<div class="paragraph">
+<p>To configure NAT with firewalld assign the bridge interface to the internal zone
+and the interface with access to the network to the external zone:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>firewall-cmd --zone<span class="tok-o">=</span>external --add-interface<span class="tok-o">=</span>eth0
+firewall-cmd --zone<span class="tok-o">=</span>internal --add-interface<span class="tok-o">=</span>br1</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To enable the virtual machines used by openQA to fully access the external
+network masquerading needs to be enabled on all involved zones:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>firewall-cmd --zone<span class="tok-o">=</span>external --add-masquerade
+firewall-cmd --zone<span class="tok-o">=</span>internal --add-masquerade</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>IP forwarding is enabled automatically if masquerading is enabled:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>grep <span class="tok-m">1</span> /proc/sys/net/ipv4/ip_forward
+<span class="tok-m">1</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In case the interface is in a trusted network it is possible to accept
+connections by default by changing the zone target:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>firewall-cmd --zone<span class="tok-o">=</span>external --set-target<span class="tok-o">=</span>ACCEPT</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Alternatively, you can assign the interface to the <code>trusted</code> zone. Make sure
+to enable masquerading for the <code>trusted</code> zone as well in this case.</p>
+</div>
+<div class="paragraph">
+<p>If you are happy with the changes make them persistent:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>firewall-cmd --runtime-to-permanent</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you do not currently have the firewalld service running, you can instead
+use the <code>firewall-cmd-offline</code> command for the configuration. In this case
+start the firewall and enable the service to run on system startup:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now firewalld</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Also, the <code>firewall-config</code> GUI tool for firewalld can be used for configuration.</p>
+</div>
+<div class="paragraph">
+<p><strong>For older versions of openSUSE/SLE: Configure NAT with SuSEfirewall2</strong></p>
 </div>
 <div class="paragraph">
 <p>The IP 10.0.2.2 can be also served as a gateway to access the outside network.
@@ -6368,63 +6435,6 @@ or iptables:</p>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now SuSEfirewall2</code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p><strong>Configure NAT with firewalld</strong></p>
-</div>
-<div class="paragraph">
-<p>To configure NAT with firewalld assign the bridge interface to the internal zone
-and the interface with access to the network to the external zone:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>firewall-cmd --permanent --zone<span class="tok-o">=</span>external --add-interface<span class="tok-o">=</span>eth0
-firewall-cmd --permanent --zone<span class="tok-o">=</span>internal --add-interface<span class="tok-o">=</span>br1</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Reload firewall configuration using <code>firewall-cmd --reload</code> command.
-To enable masquerading one can use the following command:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>firewall-cmd --permanent --zone<span class="tok-o">=</span>external --add-masquerade</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>IP forwarding is enabled automatically if masquerading is enabled:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>cat /proc/sys/net/ipv4/ip_forward
-<span class="tok-m">1</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>In case the interface is in a trusted network it is possible to accept
-connections by default by changing the zone target:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>firewall-cmd --permanent --zone<span class="tok-o">=</span>external --set-target<span class="tok-o">=</span>ACCEPT</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Alternatively, you can assign the interface to the <code>trusted</code> zone. Make sure
-to enable masquerading for the <code>trusted</code> zone as well in this case.</p>
-</div>
-<div class="paragraph">
-<p>If you do not currently have the firewalld service running, you can use the
-<code>firewall-cmd-offline</code> command for the configuration. Enable service to run on
-startup:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now firewalld</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Also, the <code>firewall-config</code> GUI tool for firewalld can be used for configuration.</p>
 </div>
 <div class="paragraph">
 <p><strong>Configure OpenQA Worker Instances</strong></p>
@@ -6607,26 +6617,7 @@ It is also possible to switch the network configuration using YaST.
 <div class="sect2">
 <h3 id="_debugging_open_vswitch_configuration">Debugging Open vSwitch Configuration</h3>
 <div class="paragraph">
-<p>Boot sequence with wicked &lt; 0.6.23:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>wicked - creates tap devices</p>
-</li>
-<li>
-<p>openvswitch - creates the bridge br1, adds tap devices to it</p>
-</li>
-<li>
-<p>wicked handles br1 as hotplugged device, assignd the IP 10.0.2.2 to it, updates SuSEfirewall</p>
-</li>
-<li>
-<p>os-autoinst-openvswitch - installs openflow rules, handles vlan assignment</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>Boot sequence with wicked 0.6.23 and newer:</p>
+<p>Boot sequence with wicked (version 0.6.23 and newer):</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -7705,7 +7696,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-08-06 07:24:32 UTC
+Last updated 2019-08-08 09:09:58 UTC
 </div>
 </div>
 <style>
