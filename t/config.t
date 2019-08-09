@@ -77,9 +77,10 @@ subtest 'Test configuration default modes' => sub {
             topic_prefix      => 'suse',
         },
         obs_rsync => {
-            home          => '',
-            jobs_limit    => '',
-            retry_timeout => '',
+            home           => '',
+            retry_interval => 15,
+            queue_limit    => 200,
+            concurrency    => 2,
         },
         default_group_limits => {
             asset_size_limit                  => OpenQA::Schema::JobGroupDefaults::SIZE_LIMIT_GB,

@@ -108,6 +108,7 @@ sub enqueue {
 
     my $ttl   = $options->{ttl}   ? $options->{ttl}   : undef;
     my $limit = $options->{limit} ? $options->{limit} : undef;
+    my $notes = $options->{notes} ? $options->{notes} : undef;
     return undef if defined $limit && $self->count_jobs($task, ['inactive']) >= $limit;
 
     $args = [$args] if ref $args eq 'HASH';
@@ -125,11 +126,12 @@ sub enqueue {
         });
     my $gru_id    = $gru->id;
     my @ttl       = defined $ttl ? (ttl => $ttl) : ();
+    my @notes     = defined $notes ? (%$notes) : ();
     my $minion_id = $self->app->minion->enqueue(
         $task => $args => {
             priority => $options->{priority} // 0,
             delay    => $delay,
-            notes    => {gru_id => $gru_id, @ttl}});
+            notes    => {gru_id => $gru_id, @ttl, @notes}});
 
     return {minion_id => $minion_id, gru_id => $gru_id};
 }

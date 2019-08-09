@@ -52,7 +52,7 @@ sub register {
           ->to('Plugin::ObsRsync::Controller#run');
     }
 
-    OpenQA::WebAPI::Plugin::ObsRsync::Controller::init($app);
+    OpenQA::WebAPI::Plugin::ObsRsync::Controller::register($app);
 }
 
 1;

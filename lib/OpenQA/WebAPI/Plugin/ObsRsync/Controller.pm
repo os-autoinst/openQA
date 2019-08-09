@@ -17,27 +17,17 @@
 package OpenQA::WebAPI::Plugin::ObsRsync::Controller;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::File;
-use OpenQA::WebAPI::Plugin::ObsRsync::Runner;
+use OpenQA::WebAPI::Plugin::ObsRsync::Task;
 
-sub init {
-    OpenQA::WebAPI::Plugin::ObsRsync::Runner::newRunner(shift);
+sub register {
+    my $app = shift;
+    return OpenQA::WebAPI::Plugin::ObsRsync::Task::register($app);
 }
 
 sub _home {
     my $self = shift;
     $self->app->config->{obs_rsync}->{home};
 }
-
-sub _jobs_limit {
-    my $self = shift;
-    $self->app->config->{obs_rsync}->{jobs_limit} // 12;
-}
-
-sub _retry_timeout {
-    my $self = shift;
-    $self->app->config->{obs_rsync}->{retry_timeout} // 0;
-}
-
 
 sub index {
     my $self   = shift;
@@ -114,11 +104,7 @@ sub run {
     my $folder = $self->param('folder');
     return undef if $self->_check_and_render_error($folder);
 
-    my $limit = $self->_jobs_limit;
-    my $res   = OpenQA::WebAPI::Plugin::ObsRsync::Runner::Run($self->app, $self->_home, $self->_jobs_limit,
-        $self->_retry_timeout, $folder);
-
-    return $self->render(json => {output => 'Async call rsync.sh'}, status => $res ? 503 : 201);
+    return OpenQA::WebAPI::Plugin::ObsRsync::Task::schedule($self, $folder);
 }
 
 sub _check_and_render_error {
