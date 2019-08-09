@@ -252,15 +252,12 @@ sub delete {
         log_debug "Skipping deleting screenshots, migration is in progress";
     }
     else {
-        my $fns = $schema->resultset('Screenshots')->search(
+        $schema->resultset('Screenshots')->search(
             {id => {-in => \@ids}},
             {
                 join     => 'links_outer',
                 group_by => 'me.id',
-                having   => \['COUNT(links_outer.job_id) = 0']});
-        while (my $sc = $fns->next) {
-            $sc->delete;
-        }
+                having   => \['COUNT(links_outer.job_id) = 0']})->delete;
     }
     my $ret = $self->SUPER::delete;
 
