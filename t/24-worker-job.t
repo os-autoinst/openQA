@@ -94,9 +94,10 @@ $engine_mock->mock(
 # log which files and assets would have been uploaded
 my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
 my @uploaded_files;
-$job_mock->mock(_upload_log_file => sub { shift; push(@uploaded_files, [@_]); });
+my $upload_result = 1;
+$job_mock->mock(_upload_log_file => sub { shift; push(@uploaded_files, [@_]); return $upload_result; });
 my @uploaded_assets;
-$job_mock->mock(_upload_asset => sub { shift; push(@uploaded_assets, [@_]); });
+$job_mock->mock(_upload_asset => sub { shift; push(@uploaded_assets, [@_]); return $upload_result; });
 
 # setup a job with fake worker and client
 my $isotovideo     = Test::FakeProcess->new;
@@ -439,7 +440,7 @@ subtest 'handling API failures' => sub {
         'job stopped after an API failure'
     );
 
-    is($client->register_called, 1, 'worker tries to register itself again after an API failure');
+    is($client->register_called, 1, 'worker tried to register itself again after an API failure');
 
     # verify that all status events for the job live-cycle have been emitted
     is_deeply(
@@ -457,6 +458,87 @@ subtest 'handling API failures' => sub {
     is_deeply(\@uploaded_files, [], 'file upload skipped after API failure')
       or diag explain \@uploaded_files;
     is_deeply(\@uploaded_assets, [], 'asset upload skipped after API failure')
+      or diag explain \@uploaded_assets;
+};
+
+# reset state
+@happended_events = ();
+$isotovideo->is_running(1);
+$client->register_called(0);
+
+# exercise another job live-cycle simulating an upload failure
+subtest 'handle upload failure' => sub {
+    # assume all uploads fail (set this temporarily to 1 to "test the test" which should fail then)
+    $upload_result = 0;
+
+    # create and accept new job
+    $job = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => 'url'});
+    $job->on(status_changed => $handle_job_event);
+    $job->accept;
+
+    combined_like(
+        sub {
+            $job->start();
+            wait_until_upload_concluded($job);
+        },
+        qr/isotovideo has been started/,
+        'isotovideo startup logged'
+    );
+
+    # assume isotovideo generated some logs
+    my $log_dir = $pool_directory->child('ulogs');
+    $log_dir->make_path;
+    $log_dir->child('foo')->spurt('some log');
+    $log_dir->child('bar')->spurt('another log');
+
+    # assume isotovideo generated some assets
+    my $asset_dir = $pool_directory->child('assets_public');
+    $asset_dir->make_path;
+    $asset_dir->child('hdd1.qcow')->spurt('data');
+    $asset_dir->child('hdd2.qcow')->spurt('more data');
+
+    combined_like(
+        sub {
+            $job->stop('done');
+            wait_until_upload_concluded($job);
+        },
+        qr/Result: done/,
+        'job stopped after done'
+    );
+
+    is($client->register_called, 1, 'worker tried to register itself again after an upload failure');
+
+    # verify that all status events for the job live-cycle have been emitted
+    is_deeply(
+        \@happended_events,
+        [map { {status => $_} } (qw(accepting accepted setup running stopping stopped))],
+        'status changes emitted'
+    ) or diag explain \@happended_events;
+
+    # verify messages sent via REST API and websocket connection during the job live-cycle
+    # note: This can also be seen as an example for other worker implementations.
+    is($client->sent_messages->[-1]->{path}, 'jobs/4/set_done', 'set_done is still attempted to be called')
+      or diag explain $client->sent_messages;
+
+    # verify that the upload has been skipped
+    my $ok = 1;
+    is(scalar @uploaded_files, 2, 'only 2 files uploaded; stopped after first failure') or $ok = 0;
+    my $log_name = $uploaded_files[0]->[0]->{file}->{filename};
+    ok($log_name eq 'bar' || $log_name eq 'foo', 'one of the logs attempted to be uploaded') or $ok = 0;
+    is_deeply(
+        $uploaded_files[1],
+        [
+            {
+                file => {
+                    file     => "$pool_directory/autoinst-log.txt",
+                    filename => 'autoinst-log.txt'
+                }
+            },
+        ],
+        'uploading autoinst log tried even though other logs failed'
+    ) or $ok = 0;
+    diag explain \@uploaded_files unless $ok;
+    is_deeply(\@uploaded_assets, [], 'asset upload skipped after previous upload failure')
       or diag explain \@uploaded_assets;
 };
 
