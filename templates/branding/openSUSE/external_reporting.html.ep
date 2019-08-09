@@ -30,7 +30,7 @@
     Leanos => 'Server',
     Installer => 'Server',
 ); %>
-% my $distri = $distri_to_prod{$job->DISTRI};
+% my $distri = $distri_to_prod{$job->DISTRI} // 'DISTRI NOT FOUND: Adjust templates/openSUSE/external_reporting.html.ep';
 % my $product = '';
 % if ($job->DISTRI eq 'sle') {
 %     my $subproduct = $job->FLAVOR =~ s/(\w*)(-\w*)?/$1/r;
