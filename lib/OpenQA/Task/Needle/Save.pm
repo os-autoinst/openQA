@@ -17,6 +17,7 @@ package OpenQA::Task::Needle::Save;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use File::Copy;
+use Encode 'encode_utf8';
 use OpenQA::Git;
 use OpenQA::Jobs::Constants;
 use OpenQA::Utils;
@@ -69,7 +70,7 @@ sub _save_needle {
     my $schema       = $app->schema;
     my $openqa_job   = $schema->resultset('Jobs')->find($args->{job_id});
     my $user         = $schema->resultset('Users')->find($args->{user_id});
-    my $needle_json  = $args->{needle_json};
+    my $needle_json  = encode_utf8($args->{needle_json});
     my $imagedir     = $args->{imagedir};
     my $imagedistri  = $args->{imagedistri};
     my $imagename    = $args->{imagename};
