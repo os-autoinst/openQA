@@ -408,9 +408,9 @@ sub update {
 
                 # Preview mode: Get the expected YAML and rollback the result
                 if ($self->param('preview')) {
-                    $job_group->update({template => ''});
-                    $json->{template} = $self->get_job_groups($group_id)->{$job_group->name};
-                    $json->{preview}  = int($self->param('preview'));
+                    $json->{changes} = "\n" . diff \$job_group->template, \$self->param('template')
+                      if $job_group->template && $job_group->template ne $self->param('template');
+                    $json->{preview} = int($self->param('preview'));
                     $self->schema->txn_rollback;
                 }
                 else {
@@ -418,6 +418,12 @@ sub update {
                       if $job_group->template && $job_group->template ne $self->param('template');
                     # Store the original YAML template after all changes have been made
                     $job_group->update({template => $self->param('template')});
+                }
+                if ($json->{changes}) {
+                    # Remove the warning about new lines. We don't require that!
+                    $json->{changes} =~ s/\\ No newline at end of file\n//;
+                    # Remove leading and trailing whitespace
+                    $json->{changes} =~ s/^\s+|\s+$//g;
                 }
             });
     }
@@ -429,13 +435,11 @@ sub update {
     if (@$errors) {
         $json->{error} = \@$errors;
         $self->app->log->error(@$errors);
-        delete $json->{changes};
         $self->respond_to(json => {json => $json, status => 400},);
         return;
     }
 
     $self->emit_event('openqa_jobtemplate_create', $json) unless $self->param('preview');
-    delete $json->{changes};
     $self->respond_to(json => {json => $json});
 }
 

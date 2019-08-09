@@ -419,44 +419,46 @@ function submitTemplateEditor(preview) {
             reference: form.data('reference'),
         }
     }).done(function(data) {
-        result.text(data.preview ? 'Preview of the YAML:' : 'YAML saved!');
+        result.text(data.preview ? 'Preview of the changes:' : 'YAML saved!');
         if (!data.hasOwnProperty('preview')) {
             // Once a valid YAML template was saved we no longer offer the legacy editor
             $('#toggle-yaml-editor').hide();
             $('#media-add').hide();
         }
-        if (data.hasOwnProperty('template')) {
+        if (data.hasOwnProperty('changes')) {
             var preview = CodeMirror(result[0], {
-                mode: 'yaml',
+                mode: data.changes ? 'diff' : 'yaml',
                 lineNumbers: true,
                 lineWrapping: true,
                 readOnly: true,
-                value: data.template,
+                value: data.changes,
             });
         }
         else {
-            $('<pre/>').text(JSON.stringify(data, undefined, 2)).appendTo(result);
+            $('<strong/>').text(' No changes were made!').appendTo(result);
         }
     }).fail(function(data) {
         result.text('There was a problem applying the changes:');
-        if (data.hasOwnProperty('responseJSON') && data.responseJSON.hasOwnProperty('error')) {
-            var errors = data.responseJSON.error;
+        if (!data.hasOwnProperty('responseJSON')) {
+            $('<p/>').text('Invalid server response: ' + data.statusText).appendTo(result);
+            return;
+        }
+        var data = data.responseJSON;
+        if (data.hasOwnProperty('error')) {
+            var errors = data.error;
             var list = $('<ul/>').appendTo(result);
             $.each(errors, function(i) {
                 var message = errors[i].hasOwnProperty('message') ? errors[i].message + ': ' + errors[i].path : errors[i];
                 $('<li/>').text(message).appendTo(list);
             });
         }
-        else {
-            $('<p/>').text('Invalid server response: ' + data.statusText).appendTo(result);
-        }
-        if (data.responseJSON.template) {
+        if (data.hasOwnProperty('changes')) {
             var preview = CodeMirror($('<pre/>').appendTo(result)[0], {
-                mode: 'yaml',
+                mode: 'diff',
                 lineNumbers: true,
                 lineWrapping: true,
                 readOnly: true,
-                value: data.responseJSON.template,
+                value: data.changes,
             });
         }
     }).always(function(data) {
