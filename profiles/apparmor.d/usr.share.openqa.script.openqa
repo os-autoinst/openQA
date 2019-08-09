@@ -18,6 +18,8 @@
 
   /etc/openqa/database.ini r,
   /etc/openqa/openqa.ini r,
+  /etc/openqa/templates/ r,
+  /etc/openqa/templates/** r,
   /proc/meminfo r,
   /tmp/** rw,
   /usr/bin/perl ix,
