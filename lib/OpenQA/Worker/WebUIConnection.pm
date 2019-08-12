@@ -233,6 +233,8 @@ sub _setup_websocket_connection {
                 });
             $tx->on(
                 finish => sub {
+                    # uncoverable subroutine
+                    # https://progress.opensuse.org/issues/55364
                     my (undef, $code, $reason) = @_;
 
                     # Subprocesses reset the event loop (which triggers this event),
