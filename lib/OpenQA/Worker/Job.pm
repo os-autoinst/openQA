@@ -456,22 +456,30 @@ sub _stop_step_5_upload {
                 last;
             }
         }
+    }
 
-        # do final status upload for selected reasons
-        if ($reason eq 'obsolete') {
-            log_debug("Setting job $job_id to incomplete (obsolete)");
-            return $self->_upload_results(
-                sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE, newbuild => 1}) });
-        }
-        elsif ($reason eq 'cancel') {
-            # not using job_incomplete here to avoid duplicate
-            log_debug("Setting job $job_id to incomplete (cancel)");
-            return $self->_upload_results(sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE}) });
-        }
-        elsif ($reason eq 'done') {
-            log_debug("Setting job $job_id to done");
-            return $self->_upload_results(sub { $callback->(); });
-        }
+    Mojo::IOLoop->next_tick(sub { $self->_stop_step_5_1_upload($reason, $callback) });
+}
+
+sub _stop_step_5_1_upload {
+    my ($self, $reason, $callback) = @_;
+
+    my $job_id = $self->id;
+
+    # do final status upload for selected reasons
+    if ($reason eq 'obsolete') {
+        log_debug("Setting job $job_id to incomplete (obsolete)");
+        return $self->_upload_results(
+            sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE, newbuild => 1}) });
+    }
+    if ($reason eq 'cancel') {
+        # not using job_incomplete here to avoid duplicate
+        log_debug("Setting job $job_id to incomplete (cancel)");
+        return $self->_upload_results(sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE}) });
+    }
+    if ($reason eq 'done') {
+        log_debug("Setting job $job_id to done");
+        return $self->_upload_results(sub { $callback->(); });
     }
 
     if ($reason eq 'api-failure') {
