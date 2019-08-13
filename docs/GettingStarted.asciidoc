@@ -30,7 +30,14 @@ This document describes the general operation and usage of openQA. The main goal
 is to provide a general overview of the tool, with all the information needed to
 become a happy user.
 
-For the installation of openQA see the
+For a quick start, if you already have an openQA instance available you can
+refer to the section
+<<UsersGuide.asciidoc#_cloning_existing_jobs_openqa_clone_job,Cloning existing jobs - openqa-clone-job>>
+directly to trigger a new test based on already existing job. For a quick
+installation refer directly to
+<<Installing.asciidoc#_openqa_quick_bootstrap,openQA quick bootstrap>>.
+
+For the installation of openQA in general see the
 <<Installing.asciidoc#installing,Installation Guide>>, as a user of an
 existing instance see the <<UsersGuide.asciidoc#usersguide,Users Guide>>.
 More advanced topics can be found in other documents. All documents are also
