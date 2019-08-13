@@ -401,64 +401,76 @@ sub _stop_step_5_upload {
 
     # upload logs and assets
     if ($reason ne 'quit' && $reason ne 'abort' && $reason ne 'api-failure') {
-        # upload ulogs
-        my @uploaded_logfiles = glob "$pooldir/ulogs/*";
-        for my $file (@uploaded_logfiles) {
-            next unless -f $file;
 
-            my %upload_parameter = (
-                file => {file => $file, filename => basename($file)},
-                ulog => 1,
-            );
-            if (!$self->_upload_log_file_or_asset(\%upload_parameter)) {
-                $reason = 'api-failure';
-                last;
-            }
-        }
-
-        # upload assets created by successfull jobs
-        if ($reason eq 'done' || $reason eq 'cancel') {
-            for my $dir (qw(private public)) {
-                my @assets        = glob "$pooldir/assets_$dir/*";
-                my $upload_result = 1;
-
-                for my $file (@assets) {
+        Mojo::IOLoop->subprocess(
+            sub {
+                # upload ulogs
+                my @uploaded_logfiles = glob "$pooldir/ulogs/*";
+                for my $file (@uploaded_logfiles) {
                     next unless -f $file;
 
                     my %upload_parameter = (
-                        file  => {file => $file, filename => basename($file)},
-                        asset => $dir,
+                        file => {file => $file, filename => basename($file)},
+                        ulog => 1,
                     );
-                    last unless ($upload_result = $self->_upload_log_file_or_asset(\%upload_parameter));
+                    if (!$self->_upload_log_file_or_asset(\%upload_parameter)) {
+                        $reason = 'api-failure';
+                        last;
+                    }
                 }
-                if (!$upload_result) {
-                    $reason = 'api-failure';
-                    last;
+
+                # upload assets created by successfull jobs
+                if ($reason eq 'done' || $reason eq 'cancel') {
+                    for my $dir (qw(private public)) {
+                        my @assets        = glob "$pooldir/assets_$dir/*";
+                        my $upload_result = 1;
+
+                        for my $file (@assets) {
+                            next unless -f $file;
+
+                            my %upload_parameter = (
+                                file  => {file => $file, filename => basename($file)},
+                                asset => $dir,
+                            );
+                            last unless ($upload_result = $self->_upload_log_file_or_asset(\%upload_parameter));
+                        }
+                        if (!$upload_result) {
+                            $reason = 'api-failure';
+                            last;
+                        }
+                    }
                 }
-            }
-        }
 
-        # upload other logs and files
-        for my $file (
-            qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt serial_terminal.txt virtio_console.log worker-log.txt virtio_console1.log)
-          )
-        {
-            next unless -e $file;
+                # upload other logs and files
+                for my $file (
+                    qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt serial_terminal.txt virtio_console.log worker-log.txt virtio_console1.log)
+                  )
+                {
+                    next unless -e $file;
 
-            # replace some file names
-            my $ofile = $file;
-            $ofile =~ s/serial0/serial0.txt/;
-            $ofile =~ s/virtio_console.log/serial_terminal.txt/;
+                    # replace some file names
+                    my $ofile = $file;
+                    $ofile =~ s/serial0/serial0.txt/;
+                    $ofile =~ s/virtio_console.log/serial_terminal.txt/;
 
-            my %upload_parameter = (file => {file => "$pooldir/$file", filename => $ofile},);
-            if (!$self->_upload_log_file_or_asset(\%upload_parameter)) {
-                $reason = 'api-failure';
-                last;
-            }
-        }
+                    my %upload_parameter = (file => {file => "$pooldir/$file", filename => $ofile},);
+                    if (!$self->_upload_log_file_or_asset(\%upload_parameter)) {
+                        $reason = 'api-failure';
+                        last;
+                    }
+                }
+                return $reason;
+            },
+            sub {
+                my ($subprocess, $err, $reason) = @_;
+                log_error("Upload subprocess error: $err") if $err;
+                $self->_stop_step_5_1_upload($reason, $callback);
+            });
     }
 
-    Mojo::IOLoop->next_tick(sub { $self->_stop_step_5_1_upload($reason, $callback) });
+    else {
+        Mojo::IOLoop->next_tick(sub { $self->_stop_step_5_1_upload($reason, $callback) });
+    }
 }
 
 sub _stop_step_5_1_upload {
