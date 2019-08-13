@@ -52,6 +52,7 @@
   /proc/filesystems r,
   /proc/meminfo r,
   /proc/sys/vm/overcommit_memory r,
+  /proc/sys/fs/pipe-max-size r,
   /run/nscd/group r,
   /run/openqa/vde.ctl/* rw,
   /run/udev/queue.bin r,
