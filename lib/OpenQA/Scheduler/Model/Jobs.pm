@@ -76,11 +76,13 @@ sub schedule {
         next if $checked_jobs{$j->{id}};
         next unless @{$j->{matching_workers}};
         my $tobescheduled = _to_be_scheduled($j, $scheduled_jobs);
-        log_debug "need to schedule " . scalar(@$tobescheduled) . " jobs for $j->{id}($j->{priority})";
         next if defined $allocated_jobs->{$j->{id}};
         next unless $tobescheduled;
+        my @tobescheduled = grep { $_->{id} } @$tobescheduled;
+        log_debug "need to schedule " . scalar(@tobescheduled) . " jobs for $j->{id}($j->{priority})";
+        next unless @tobescheduled;
         my %taken;
-        for my $sub_job (sort { $a->{id} <=> $b->{id} } @$tobescheduled) {
+        for my $sub_job (sort { $a->{id} <=> $b->{id} } @tobescheduled) {
             $checked_jobs{$sub_job->{id}} = 1;
             my $picked_worker;
             for my $worker (@{$sub_job->{matching_workers}}) {
@@ -271,14 +273,16 @@ sub _pick_siblings_of_running {
 sub _to_be_scheduled_recurse {
     my ($j, $scheduled, $taken) = @_;
 
-    return if $taken->{$j->{id}};
+    return undef unless $j;
+    return undef unless $j->{id};
+    return undef if $taken->{$j->{id}};
     # if we were called with undef, this is a sign that
     # the cluster is not fully scheduled (e.g. blocked_by), so
     # take that as mark but return
     $taken->{$j->{id}} = $j;
 
     my $ci = $j->{cluster_jobs}->{$j->{id}};
-    return unless $ci;
+    return undef unless $ci;
     for my $s (@{$ci->{parallel_children}}) {
         _to_be_scheduled_recurse($scheduled->{$s}, $scheduled, $taken);
     }
