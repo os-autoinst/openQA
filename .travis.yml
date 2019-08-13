@@ -5,21 +5,212 @@ services:
 env:
   global:
   - COMMIT_AUTHOR_EMAIL=skynet@open.qa
+  - CI_NODE_TOTAL=20
 matrix:
+  # as we want to check if tests are stable we can abort as soon as we hit one
+  # problem
+  fast_finish: true
   include:
-    - name: "unit- and integration tests"
+    - name: "unit- and integration tests 1"
       env: FULLSTACK=0 UITESTS=0
-    - name: "UI tests"
+    - name: "unit- and integration tests 2"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 3"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 4"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 5"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 6"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 7"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 8"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 9"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 10"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 11"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 12"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 13"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 14"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 15"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 16"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 17"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 18"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 19"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "unit- and integration tests 20"
+      env: FULLSTACK=0 UITESTS=0
+    - name: "UI tests 1"
       env: FULLSTACK=0 UITESTS=1
-    - name: "fullstack test"
+    - name: "UI tests 2"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 3"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 4"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 5"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 6"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 7"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 8"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 9"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 10"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 11"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 12"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 13"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 14"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 15"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 16"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 17"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 18"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 19"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "UI tests 20"
+      env: FULLSTACK=0 UITESTS=1
+    - name: "fullstack test 1"
       env: FULLSTACK=1
-    - name: "scheduler fullstack test"
+    - name: "fullstack test 2"
+      env: FULLSTACK=1
+    - name: "fullstack test 3"
+      env: FULLSTACK=1
+    - name: "fullstack test 4"
+      env: FULLSTACK=1
+    - name: "fullstack test 5"
+      env: FULLSTACK=1
+    - name: "fullstack test 6"
+      env: FULLSTACK=1
+    - name: "fullstack test 7"
+      env: FULLSTACK=1
+    - name: "fullstack test 8"
+      env: FULLSTACK=1
+    - name: "fullstack test 9"
+      env: FULLSTACK=1
+    - name: "fullstack test 10"
+      env: FULLSTACK=1
+    - name: "fullstack test 11"
+      env: FULLSTACK=1
+    - name: "fullstack test 12"
+      env: FULLSTACK=1
+    - name: "fullstack test 13"
+      env: FULLSTACK=1
+    - name: "fullstack test 14"
+      env: FULLSTACK=1
+    - name: "fullstack test 15"
+      env: FULLSTACK=1
+    - name: "fullstack test 16"
+      env: FULLSTACK=1
+    - name: "fullstack test 17"
+      env: FULLSTACK=1
+    - name: "fullstack test 18"
+      env: FULLSTACK=1
+    - name: "fullstack test 19"
+      env: FULLSTACK=1
+    - name: "fullstack test 20"
+      env: FULLSTACK=1
+    - name: "scheduler fullstack test 1"
       env: SCHEDULER_FULLSTACK=1
-    - name: "developer fullstack test"
+    - name: "scheduler fullstack test 2"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 3"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 4"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 5"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 6"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 7"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 8"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 9"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 10"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 11"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 12"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 13"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 14"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 15"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 16"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 17"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 18"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 19"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "scheduler fullstack test 20"
+      env: SCHEDULER_FULLSTACK=1
+    - name: "developer fullstack test 1"
       env: DEVELOPER_FULLSTACK=1
-    - name: "documentation generation job"
-      if: branch = master AND fork = false
-      env: GH_PUBLISH=true
+    - name: "developer fullstack test 2"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 3"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 4"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 5"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 6"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 7"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 8"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 9"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 10"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 11"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 12"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 13"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 14"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 15"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 16"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 17"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 18"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 19"
+      env: DEVELOPER_FULLSTACK=1
+    - name: "developer fullstack test 20"
+      env: DEVELOPER_FULLSTACK=1
 before_script:
 - docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
 cache:
