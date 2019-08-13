@@ -158,7 +158,7 @@ following list.
 * *softfailed* At least one known, non-critical issue has been found. That could be
   that workaround needles are in place, a softfailure has been recorded explicitly
   via +record_soft_failure+ (from os-autoinst) or a job failure has been ignored
-  explicitly via a <<UsersGuide.asciidoc#https://github.com/os-autoinst/openQA/blob/master/docs/UsersGuide.asciidoc#show-bug-or-label-icon-on-overview-if-labeled-gh550,job label>>.
+  explicitly via a <<UsersGuide.asciidoc#_show_bug_or_label_icon_on_overview_if_labeled_gh550,job label>>.
 * *timeout_exceeded* The job was aborted because +MAX_JOB_TIME+ was exceeded, which is
   by default two hours.
 * *skipped* Dependencies failed so the job was not started.
