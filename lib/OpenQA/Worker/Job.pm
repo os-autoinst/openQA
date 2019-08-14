@@ -233,7 +233,7 @@ sub start {
     Mojo::IOLoop->next_tick(
         sub {
             $self->client->send_status();
-            $self->_upload_results();
+            $self->_upload_results(sub { });
         });
 
     # kill isotovideo if timeout has been exceeded
@@ -583,7 +583,7 @@ sub start_livelog {
     }
     $self->{_livelog_viewers} = $livelog_viewers;
     $self->upload_results_interval(undef);
-    $self->_upload_results();
+    $self->_upload_results(sub { });
 }
 
 sub stop_livelog {
@@ -675,8 +675,7 @@ sub _upload_results {
     if (!$job_url || !$worker_id) {
         log_warning('Unable to upload results of the job because no command server URL or worker ID have been set.');
         $self->emit(uploading_results_concluded => {});
-        return $callback->() if $callback;
-        return undef;
+        return $callback->();
     }
 
     # determine wheter this is the final upload
@@ -717,8 +716,7 @@ sub _upload_results {
                 # FIXME: It would still make sense to upload other files.
                 $self->stop('no tests scheduled');    # will be delayed until upload has been concluded
                 $self->emit(uploading_results_concluded => {});
-                return $callback->() if $callback;
-                return undef;
+                return $callback->();
             }
             $status{test_order}  = $test_order;
             $status{backend}     = $status_from_os_autoinst->{backend};
@@ -794,14 +792,16 @@ sub _upload_results {
                 sub {
 
                     # upload images (not an async operation)
-                    $self->_upload_results_step_1_upload_images();
-
-                    # inform liveviewhandler about upload progress if developer session opened
-                    return $self->post_upload_progress_to_liveviewhandler(
-                        $upload_up_to,
-                        $is_final_upload,
+                    $self->_upload_results_step_1_upload_images(
                         sub {
-                            $self->_upload_results_step_2_finalize($is_final_upload, $callback);
+
+                            # inform liveviewhandler about upload progress if developer session opened
+                            return $self->post_upload_progress_to_liveviewhandler(
+                                $upload_up_to,
+                                $is_final_upload,
+                                sub {
+                                    $self->_upload_results_step_2_finalize($is_final_upload, $callback);
+                                });
                         });
 
                 });
@@ -821,7 +821,7 @@ sub _upload_results_step_0_post_status {
 }
 
 sub _upload_results_step_1_upload_images {
-    my ($self) = @_;
+    my ($self, $callback) = @_;
 
     my $tx;
     my $job_id = $self->id;
@@ -877,7 +877,8 @@ sub _upload_results_step_1_upload_images {
         # FIXME: error handling?
     }
     $self->{_files_to_send} = [];
-    return !$tx || !$tx->error;
+
+    $callback->();
 }
 
 sub _upload_results_step_2_finalize {
@@ -889,21 +890,20 @@ sub _upload_results_step_2_finalize {
         $self->{_upload_results_timer} = Mojo::IOLoop->timer(
             $interval,
             sub {
-                $self->_upload_results;
+                $self->_upload_results(sub { });
             });
     }
 
     $self->{_is_uploading_results} = 0;
     $self->emit(uploading_results_concluded => {});
-    $callback->() if $callback;
+    $callback->();
 }
 
 sub post_upload_progress_to_liveviewhandler {
     my ($self, $upload_up_to, $is_final_upload, $callback) = @_;
 
     if ($is_final_upload || !$self->developer_session_running) {
-        return $callback->() if $callback;
-        return undef;
+        return $callback->();
     }
 
     my $current_test_module = $self->current_test_module;
@@ -926,8 +926,7 @@ sub post_upload_progress_to_liveviewhandler {
         }
     }
     if (!$progress_changed) {
-        return $callback->() if $callback;
-        return undef;
+        return $callback->();
     }
     $self->{_progress_info} = \%new_progress_info;
 
