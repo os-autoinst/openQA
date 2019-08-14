@@ -461,6 +461,7 @@ sub prepare_job_results {
     my $states         = OpenQA::Utils::param_hash($self, 'state');
     my $results        = OpenQA::Utils::param_hash($self, 'result');
     my $archs          = OpenQA::Utils::param_hash($self, 'arch');
+    my $machines       = OpenQA::Utils::param_hash($self, 'machine');
 
     # prefetch the number of available labels for those jobs
     my $job_labels = $self->_job_labels($jobs);
@@ -476,6 +477,7 @@ sub prepare_job_results {
         next if $states         && !$states->{$job->state};
         next if $results        && !$results->{$job->result};
         next if $archs          && !$archs->{$job->ARCH};
+        next if $machines       && !$machines->{$job->MACHINE};
         next if $failed_modules && $job->result ne OpenQA::Jobs::Constants::FAILED;
 
         my $jobid  = $job->id;

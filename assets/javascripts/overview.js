@@ -78,6 +78,9 @@ function setupOverview() {
         } else if (key === 'arch') {
             $('#filter-arch').prop('value', val);
             return val;
+        } else if (key === 'machine') {
+            $('#filter-machine').prop('value', val);
+            return val;
         } else if (key === 'modules') {
             $('#modules').prop('value', val);
             return val;

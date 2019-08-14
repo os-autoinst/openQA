@@ -90,6 +90,10 @@
                     <strong>Architecture</strong>
                     <input type="text" class="form-control" name="arch" placeholder="any" id="filter-arch">
                 </div>
+                <div class="form-group">
+                    <strong>Machines</strong>
+                    <input type="text" class="form-control" name="machine" placeholder="any" id="filter-machine">
+                </div>
                 <div class="row" id="filter-modules">
                     <div class="col-8">
                         <div class="form-group">

@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -127,7 +127,7 @@ is(scalar @filtered_out, 0, 'result filter correctly applied');
 
 # Test whether all URL parameter are passed correctly
 my $url_with_escaped_parameters
-  = $baseurl . 'tests/overview?arch=&modules=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
+  = $baseurl . 'tests/overview?arch=&machine=&modules=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
 $driver->get($url_with_escaped_parameters);
 $driver->find_element('#filter-panel .card-header')->click();
 $driver->find_element('#filter-form button')->click();
@@ -280,6 +280,42 @@ subtest 'filtering by module' => sub {
         is(scalar @jobs, $number_of_found_jobs, "$number_of_found_jobs jobs with \"$modules\" modules found");
         element_visible('#res_DVD_i586_kde');
         element_visible('#res_DVD_i586_textmode');
+    };
+};
+
+subtest "filtering by machine" => sub {
+    $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091');
+
+    subtest 'by default, all machines for all flavors present' => sub {
+        check_build_0091_defaults;
+    };
+
+    subtest 'filter for specific machine' => sub {
+        $driver->find_element('#filter-panel .card-header')->click();
+        $driver->find_element('#filter-machine')->send_keys('uefi');
+        $driver->find_element('#filter-panel .btn-default')->click();
+
+        element_visible('#flavor_DVD_arch_x86_64', qr/x86_64/);
+        element_not_present('#flavor_DVD_arch_i586');
+        element_not_present('#flavor_GNOME-Live_arch_i686');
+        element_not_present('#flavor_NET_arch_x86_64');
+
+        my @row = $driver->find_element('#content tbody tr');
+        is(scalar @row, 1, 'The job its machine is uefi is shown');
+
+        is($driver->find_element('#content tbody .name span')->get_text(), 'kde@uefi', 'Test suite name is shown');
+        $driver->find_element('#filter-panel .card-header')->click();
+        is($driver->find_element('#filter-machine')->get_value(), 'uefi', 'machine text is correct.');
+
+        $driver->find_element('#filter-machine')->clear();
+        $driver->find_element('#filter-machine')->send_keys('64bit,uefi');
+        $driver->find_element('#filter-panel .btn-default')->click();
+
+        element_visible('#flavor_DVD_arch_x86_64', qr/x86_64/);
+        element_visible('#flavor_NET_arch_x86_64', qr/x86_64/);
+        element_not_present('#flavor_GONME-Live_arch_i686');
+        element_not_present('#flavor_DVD_arch_i586');
+
     };
 };
 
