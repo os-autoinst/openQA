@@ -56,7 +56,7 @@ my $client = OpenQA::Worker::WebUIConnection->new(
         apisecret => 'bar'
     });
 
-my @happended_events;
+my @happened_events;
 $client->on(
     status_changed => sub {
         my ($event_client, $event_data) = @_;
@@ -64,7 +64,7 @@ $client->on(
         is($event_client,   $client, 'client passed correctly');
         is(ref $event_data, 'HASH',  'event data is a HASH');
         push(
-            @happended_events,
+            @happened_events,
             {
                 status        => $event_data->{status},
                 error_message => $event_data->{error_message},
@@ -198,7 +198,7 @@ subtest 'attempt to register and send a command' => sub {
         'api-failure', 'attempted to stop current job with reason "api-failure"');
 
     is_deeply(
-        \@happended_events,
+        \@happened_events,
         [
             {
                 status        => 'registering',
@@ -210,7 +210,7 @@ subtest 'attempt to register and send a command' => sub {
             }
         ],
         'events emitted'
-    ) or diag explain \@happended_events;
+    ) or diag explain \@happened_events;
 };
 
 
