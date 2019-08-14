@@ -1,11 +1,9 @@
 package OpenQA::Test::Utils;
+use Mojo::Base -strict;
 
-use strict;
-use warnings;
-
-use base 'Exporter';
-
+use Exporter 'import';
 use IO::Socket::INET;
+use Storable qw(lock_store lock_retrieve);
 use Mojolicious;
 use POSIX '_exit';
 use OpenQA::Worker;
@@ -17,7 +15,7 @@ use OpenQA::WebSockets::Client;
 use OpenQA::Scheduler;
 use OpenQA::Scheduler::Client;
 use Mojo::Home;
-use Mojo::File 'path';
+use Mojo::File qw(path tempfile);
 use Cwd qw(abs_path getcwd);
 use Test::More;
 use Mojo::IOLoop::ReadWriteProcess 'process';
@@ -40,7 +38,7 @@ our (@EXPORT, @EXPORT_OK);
     qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
     qw(unresponsive_worker wait_for_worker setup_share_dir),
     qw(kill_service unstable_worker client_output fake_asset_server),
-    qw(cache_minion_worker cache_worker_service)
+    qw(cache_minion_worker cache_worker_service shared_hash)
 );
 
 sub cache_minion_worker {
@@ -379,6 +377,13 @@ sub client_output {
     }
     close($client);
     return $out;
+}
+
+sub shared_hash {
+    my $hash = shift;
+    state $file = do { my $f = tempfile; lock_store {}, $f->to_string; $f };
+    return lock_retrieve $file->to_string unless $hash;
+    lock_store $hash, $file->to_string;
 }
 
 1;

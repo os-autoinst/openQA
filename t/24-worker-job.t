@@ -33,6 +33,7 @@ use OpenQA::Worker;
 use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
 use OpenQA::Worker::Engines::isotovideo;
+use OpenQA::Test::Utils 'shared_hash';
 
 # use Mojo::Log and be sure to log debug messages
 my $app = $OpenQA::Utils::app = Mojolicious->new;
@@ -92,12 +93,28 @@ $engine_mock->mock(
     });
 
 # log which files and assets would have been uploaded
-my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
-my @uploaded_files;
-my $upload_result = 1;
-$job_mock->mock(_upload_log_file => sub { shift; push(@uploaded_files, [@_]); return $upload_result; });
-my @uploaded_assets;
-$job_mock->mock(_upload_asset => sub { shift; push(@uploaded_assets, [@_]); return $upload_result; });
+my $job_mock    = Test::MockModule->new('OpenQA::Worker::Job');
+my $shared_hash = shared_hash;
+$shared_hash->{upload_result}   = 1;
+$shared_hash->{uploaded_files}  = [];
+$shared_hash->{uploaded_assets} = [];
+shared_hash $shared_hash;
+$job_mock->mock(
+    _upload_log_file => sub {
+        my ($self, @args) = @_;
+        my $shared_hash = shared_hash;
+        push @{$shared_hash->{uploaded_files}}, \@args;
+        shared_hash $shared_hash;
+        return $shared_hash->{upload_result};
+    });
+$job_mock->mock(
+    _upload_asset => sub {
+        my ($self, @args) = @_;
+        my $shared_hash = shared_hash;
+        push @{$shared_hash->{uploaded_assets}}, \@args;
+        shared_hash $shared_hash;
+        return $shared_hash->{upload_result};
+    });
 
 # setup a job with fake worker and client
 my $isotovideo     = Test::FakeProcess->new;
@@ -109,7 +126,7 @@ $worker->pool_directory($pool_directory);
 $client->ua->connect_timeout(0.1);
 
 # handle/log events
-my @happended_events;
+my @happened_events;
 my $handle_job_event = sub {
     my ($event_client, $event_data) = @_;
 
@@ -118,7 +135,7 @@ my $handle_job_event = sub {
     my $status = $event_data->{status};
     my %event  = (status => $status,);
     $event{error_message} = $event_data->{error_message} if $event_data->{error_message};
-    push(@happended_events, \%event);
+    push(@happened_events, \%event);
     Mojo::IOLoop->stop if $status eq 'stopped';
 };
 $job->on(status_changed => $handle_job_event);
@@ -356,7 +373,7 @@ is_deeply(
 
 # verify that all status events for the job live-cycle have been emitted
 is_deeply(
-    \@happended_events,
+    \@happened_events,
     [
         # live-cycle of job 1
         {status => 'accepting'},
@@ -374,12 +391,13 @@ is_deeply(
         {status => 'stopped'},
     ],
     'status changes emitted'
-) or diag explain \@happended_events;
+) or diag explain \@happened_events;
 
 # verify that files and assets would have been uploaded
 # TODO: actually provide some assets and have some variety between the jobs
+my $uploaded_files = shared_hash->{uploaded_files};
 is_deeply(
-    \@uploaded_files,
+    $uploaded_files,
     [
         # files for job 1
         [
@@ -401,15 +419,18 @@ is_deeply(
         ]
     ],
     'would have uploaded logs'
-) or diag explain \@uploaded_files;
-is_deeply(\@uploaded_assets, [], 'no assets uploaded because this test so far has none')
-  or diag explain \@uploaded_assets;
+) or diag explain $uploaded_files;
+my $uploaded_assets = shared_hash->{uploaded_assets};
+is_deeply($uploaded_assets, [], 'no assets uploaded because this test so far has none')
+  or diag explain $uploaded_assets;
 
 # reset fake isotovideo and 'test results'
 $isotovideo->is_running(1);
-@happended_events = ();
-@uploaded_files   = ();
-@uploaded_assets  = ();
+$shared_hash                    = shared_hash;
+$shared_hash->{uploaded_files}  = [];
+$shared_hash->{uploaded_assets} = [];
+shared_hash $shared_hash;
+@happened_events = ();
 $client->sent_messages([]);
 $client->websocket_connection->sent_messages([]);
 
@@ -444,10 +465,10 @@ subtest 'handling API failures' => sub {
 
     # verify that all status events for the job live-cycle have been emitted
     is_deeply(
-        \@happended_events,
+        \@happened_events,
         [map { {status => $_} } (qw(accepting accepted setup running stopping stopped))],
         'status changes emitted'
-    ) or diag explain \@happended_events;
+    ) or diag explain \@happened_events;
 
     # verify messages sent via REST API and websocket connection during the job live-cycle
     # note: This can also be seen as an example for other worker implementations.
@@ -455,21 +476,25 @@ subtest 'handling API failures' => sub {
       or diag explain $client->sent_messages;
 
     # verify that the upload has been skipped
-    is_deeply(\@uploaded_files, [], 'file upload skipped after API failure')
-      or diag explain \@uploaded_files;
-    is_deeply(\@uploaded_assets, [], 'asset upload skipped after API failure')
-      or diag explain \@uploaded_assets;
+    my $uploaded_files = shared_hash->{uploaded_files};
+    is_deeply($uploaded_files, [], 'file upload skipped after API failure')
+      or diag explain $uploaded_files;
+    my $uploaded_assets = shared_hash->{uploaded_assets};
+    is_deeply($uploaded_assets, [], 'asset upload skipped after API failure')
+      or diag explain $uploaded_assets;
 };
 
 # reset state
-@happended_events = ();
+@happened_events = ();
 $isotovideo->is_running(1);
 $client->register_called(0);
 
 # exercise another job live-cycle simulating an upload failure
 subtest 'handle upload failure' => sub {
     # assume all uploads fail (set this temporarily to 1 to "test the test" which should fail then)
-    $upload_result = 0;
+    $shared_hash = shared_hash;
+    $shared_hash->{upload_result} = 0;
+    shared_hash $shared_hash;
 
     # create and accept new job
     $job = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => 'url'});
@@ -510,10 +535,10 @@ subtest 'handle upload failure' => sub {
 
     # verify that all status events for the job live-cycle have been emitted
     is_deeply(
-        \@happended_events,
+        \@happened_events,
         [map { {status => $_} } (qw(accepting accepted setup running stopping stopped))],
         'status changes emitted'
-    ) or diag explain \@happended_events;
+    ) or diag explain \@happened_events;
 
     # verify messages sent via REST API and websocket connection during the job live-cycle
     # note: This can also be seen as an example for other worker implementations.
@@ -521,12 +546,13 @@ subtest 'handle upload failure' => sub {
       or diag explain $client->sent_messages;
 
     # verify that the upload has been skipped
-    my $ok = 1;
-    is(scalar @uploaded_files, 2, 'only 2 files uploaded; stopped after first failure') or $ok = 0;
-    my $log_name = $uploaded_files[0]->[0]->{file}->{filename};
+    my $ok             = 1;
+    my $uploaded_files = shared_hash->{uploaded_files};
+    is(scalar @$uploaded_files, 2, 'only 2 files uploaded; stopped after first failure') or $ok = 0;
+    my $log_name = $uploaded_files->[0][0]->{file}->{filename};
     ok($log_name eq 'bar' || $log_name eq 'foo', 'one of the logs attempted to be uploaded') or $ok = 0;
     is_deeply(
-        $uploaded_files[1],
+        $uploaded_files->[1],
         [
             {
                 file => {
@@ -537,9 +563,10 @@ subtest 'handle upload failure' => sub {
         ],
         'uploading autoinst log tried even though other logs failed'
     ) or $ok = 0;
-    diag explain \@uploaded_files unless $ok;
-    is_deeply(\@uploaded_assets, [], 'asset upload skipped after previous upload failure')
-      or diag explain \@uploaded_assets;
+    diag explain $uploaded_files unless $ok;
+    my $uploaded_assets = shared_hash->{uploaded_assets};
+    is_deeply($uploaded_assets, [], 'asset upload skipped after previous upload failure')
+      or diag explain $uploaded_assets;
 };
 
 done_testing();

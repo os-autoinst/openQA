@@ -896,7 +896,7 @@ subtest 'websocket proxy (connection from client to live view handler not mocked
         $t_livehandler->finished_ok(1011);
         is($fake_cmd_srv_tx->finish_called, 1, 'connection to os-autoinst closed');
 
-        # check whether usual cleanup happended here, too
+        # check whether usual cleanup happened here, too
         wait_for_finished_handled();
         is($developer_sessions->find(99961)->ws_connection_count, 0, 'ws connection finished');
         is(scalar @{$t_livehandler->app->devel_java_script_transactions_by_job->{99961} // []},
