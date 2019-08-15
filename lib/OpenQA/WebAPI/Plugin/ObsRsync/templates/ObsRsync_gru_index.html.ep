@@ -1,0 +1,47 @@
+% layout 'bootstrap';
+% content_for 'head' => begin
+  %= asset 'codemirror.js'
+  %= asset 'codemirror.css'
+% end
+
+% title 'OBS synchronization jobs';
+<h2><%= 'OBS synchronization jobs' %></h2>
+
+<div class="row">
+    <div class="col-sm-12">
+
+        %= include 'layouts/info'
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Task</th>
+                    <th>Args</th>
+                    <th>Created</th>
+                    <th>Started</th>
+                    <th>Priority</th>
+                    <th>Retries</th>
+                    <th>State</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                % for my $id (sort keys %$jobs) {
+                    % my $job = $jobs->{$id};
+                    <tr id=$id>
+                        <td class="id"> <%= $job->{id} %> </td>
+                        <td class="task"> <%= $job->{task} %> </td>
+                        <td class="args"> <%= $job->{args} %> </td>
+                        <td class="created"> <%= $job->{created} %> </td>
+                        <td class="started"> <%= $job->{started} %> </td>
+                        <td class="priority"> <%= $job->{priority} %> </td>
+                        <td class="retries"> <%= $job->{retries} %> </td>
+                        <td class="state"> <%= $job->{state} %> </td>
+                        <td class="notes"> <%= $job->{notes} %> </td>
+                    </tr>
+                % }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -106,20 +106,21 @@ sub schedule {
     for my $other_job (@{$results->{jobs}}) {
         if ($other_job->{args} && ($other_job->{args}[0]->{project} eq $project)) {
 
-            return $controller->render(status => IN_QUEUE)
+            return $controller->render(json => {message => $project . ' already in queue'}, status => IN_QUEUE)
               if ($other_job->{task} eq 'obs_rsync_queue' || $other_job->{notes}{waitingconcurrencyslot});
             $app->gru->enqueue('obs_rsync_queue', {project => $project}, {priority => 90});
             return $controller->render(json => {message => "ok"}, status => QUEUED);
         }
     }
     my $queue_limit = $app->config->{obs_rsync}->{queue_limit} // 100;
-    return $controller->render(status => QUEUE_FULL) if ($results->{total} >= $queue_limit);
+    return $controller->render(json => {message => 'queue full'}, status => QUEUE_FULL)
+      if ($results->{total} >= $queue_limit);
 
     $app->gru->enqueue(
         'obs_rsync_run',
         {project  => $project},
         {priority => 100, notes => {waitingconcurrencyslot => 1}});
-    return $controller->render(status => STARTED);
+    return $controller->render(json => {message => 'started'}, status => STARTED);
 }
 
 # try to determine whether project is dirty
