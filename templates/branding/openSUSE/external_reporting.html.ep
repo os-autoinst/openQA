@@ -30,7 +30,7 @@
     Leanos => 'Server',
     Installer => 'Server',
 ); %>
-% my $distri = $distri_to_prod{$job->DISTRI};
+% my $distri = $distri_to_prod{$job->DISTRI} // 'DISTRI NOT FOUND: Adjust templates/openSUSE/external_reporting.html.ep';
 % my $product = '';
 % if ($job->DISTRI eq 'sle') {
 %     my $subproduct = $job->FLAVOR =~ s/(\w*)(-\w*)?/$1/r;
@@ -42,7 +42,8 @@
 %         if ($subproduct eq 'Desktop-Updates' && $version eq '12 SP1') {
 %             $version = "12 SP1\x{00A0}(SLED 12 SP1)";
 %         }
-%         $product = join(' ', $flavor_to_prod_sle{$subproduct}, $version);
+%         # fall back to 'Server' as the most common flavor
+%         $product = join(' ', $flavor_to_prod_sle{$subproduct} // 'Server', $version);
 %     }
 % }
 % elsif ($job->DISTRI eq 'opensuse') {
