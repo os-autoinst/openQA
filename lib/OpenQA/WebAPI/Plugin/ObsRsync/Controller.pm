@@ -51,7 +51,7 @@ sub folder {
         read_files_sh   => $files->grep(qr/read_files\.sh/)->join(),
         rsync_commands  => $files->grep(qr/rsync_.*\.cmd/)->to_array,
         rsync_sh        => $files->grep(qr/print_rsync.*\.sh/)->to_array,
-        openqa_commands => $files->grep(qr/openqa\.cmd/)->join(),
+        openqa_commands => $files->grep(qr/openqa\.cmd/)->to_array,
         openqa_sh       => $files->grep(qr/print_openqa\.sh/)->join());
 }
 
