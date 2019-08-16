@@ -1408,3 +1408,9 @@ state of the specified git refspec. For example the asset caching
 functionality will override the +PRODUCTDIR+ variable. The above method can
 still be used in this case in the common case that the test schedule does not
 need to be changed or in case a custom schedule is defined by +SCHEDULE+.
+
+== Controlling the list of log files to upload
+
+By default openQA uploads a set of file as defined in the constant +UPLOAD_FROM_POOL+
+in https://github.com/os-autoinst/openQA/blob/master/lib/OpenQA/Worker/Job.pm .
+You can override this set in the test variable +AUTOINST_UPLOAD_FROM_POOL+.

@@ -38,6 +38,9 @@ has 'isotovideo_client' => sub { OpenQA::Worker::Isotovideo::Client->new(job => 
 has 'developer_session_running';
 has 'upload_results_interval';
 
+# default list of files which will be uploaded from pool after job execution.
+use constant UPLOAD_FROM_POOL => "video.ogv,video_time.vtt,vars.json,serial0,autoinst-log.txt,serial_terminal.txt,virtio_console.log,worker-log.txt";
+
 # define accessors for public read-only properties
 sub status                    { shift->{_status} }
 sub setup_error               { shift->{_setup_error} }
@@ -410,9 +413,8 @@ sub _stop_step_5_upload {
                     }
                 }
 
-                my @other
-                  = qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt serial_terminal.txt virtio_console.log worker-log.txt virtio_console1.log);
-                for my $other (@other) {
+                my @files_to_upload = split(m/,/, $self->settings->{AUTOINST_UPLOAD_FROM_POOL} // UPLOAD_FROM_POOL);
+                for my $other (@files_to_upload) {
                     my $file = "$pooldir/$other";
                     next unless -e $file;
 
