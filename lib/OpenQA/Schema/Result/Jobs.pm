@@ -1754,7 +1754,7 @@ sub _job_stop_cluster {
 sub test_uploadlog_list {
     # get a list of uploaded logs
     my ($self) = @_;
-    my $testresdir = $self->result_dir();
+    return [] unless my $testresdir = $self->result_dir();
 
     my @filelist;
     for my $f (glob "$testresdir/ulogs/*") {
@@ -1767,7 +1767,7 @@ sub test_uploadlog_list {
 sub test_resultfile_list {
     # get a list of existing resultfiles
     my ($self) = @_;
-    my $testresdir = $self->result_dir();
+    return [] unless my $testresdir = $self->result_dir();
 
     my @filelist = qw(video.ogv vars.json backend.json serial0.txt autoinst-log.txt worker-log.txt);
     my @filelist_existing;
