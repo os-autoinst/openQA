@@ -136,8 +136,10 @@ sub add_needle_tag {
 
 sub add_workaround_property() {
     $driver->find_element_by_id('property_workaround')->click();
+    $driver->find_element_by_id('input_workaround_desc')->send_keys('bsc#123456 - this is a test');
     wait_for_ajax;
-    is($driver->find_element_by_id('property_workaround')->is_selected(), 1, "workaround property selected");
+    is($driver->find_element_by_id('property_workaround')->is_selected(),    1, 'workaround property selected');
+    is($driver->find_element_by_id('input_workaround_desc')->is_displayed(), 1, 'workaround description displayed');
 }
 
 sub create_needle {
@@ -310,7 +312,8 @@ subtest 'Needle editor layout' => sub {
     is($driver->find_element_by_xpath('//input[@value="inst-timezone"]')->is_selected(), 1, "tag selected");
 
     # workaround property isn't selected
-    is($driver->find_element_by_id('property_workaround')->is_selected(), 0, "workaround property unselected");
+    is($driver->find_element_by_id('property_workaround')->is_selected(),    0, 'workaround property unselected');
+    is($driver->find_element_by_id('input_workaround_desc')->is_displayed(), 0, 'workaround description not displayed');
 
     $elem            = $driver->find_element_by_id('needleeditor_textarea');
     $decode_textarea = decode_utf8_json($elem->get_value());
@@ -465,7 +468,13 @@ subtest 'New needle instantly visible after reloading needle editor' => sub {
     $based_on_option->[0]->click();
     is($driver->find_element_by_id('tag_inst-timezone')->is_selected(),
         1, 'tag_inst-timezone checked again via new needle');
-
+    is($driver->find_element_by_id('property_workaround')->is_selected(),    1, 'workaround property selected');
+    is($driver->find_element_by_id('input_workaround_desc')->is_displayed(), 1, 'workaround description displayed');
+    is(
+        $driver->find_element_by_id('input_workaround_desc')->get_value(),
+        'bsc#123456 - this is a test',
+        'workaround description is shown'
+    );
     # check selecting/displaying image
     my $current_image_script = 'return nEditor.bgImage.src;';
     my $current_image        = $driver->execute_script($current_image_script);

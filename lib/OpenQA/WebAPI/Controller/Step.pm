@@ -253,14 +253,8 @@ sub edit {
     $screenshot->{tags} = $screenshot->{area} = $screenshot->{matches} = [];
     unshift(@needles, $screenshot);
 
-    # stash properties
-    my $properties = {};
-    for my $property (@{$default_needle->{properties}}) {
-        $properties->{$property} = $property;
-    }
     $self->stash('needles',        \@needles);
     $self->stash('tags',           $tags);
-    $self->stash('properties',     $properties);
     $self->stash('default_needle', $default_needle);
     $self->stash('error_messages', \@error_messages);
     $self->render('step/edit');

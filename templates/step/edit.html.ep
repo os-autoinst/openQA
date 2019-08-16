@@ -140,15 +140,17 @@
                             </p>
                             <p>
                                 <!-- lists the specific properties -->
-                                <input type="checkbox" name="workaround" id="property_workaround"
-                                        %= 'checked' if $properties->{workaround}
-                                        >
+                                <input type="checkbox" name="workaround" id="property_workaround" >
                                 <label for="property_workaround">workaround</label>
                                 <%= help_popover('Help for the workaround property' =>
                                     'If a needle with the workaround property matches the match result is recorded as
-                                    a \'soft-fail\'. It is suggested to mark the reason for this choice in either the
-                                    name of the needle (e.g. my-name-bsc1234-20161224) or with special tags')
+                                    a \'soft-fail\'. It is suggested to input the reason in the \'Description\' textbox(e.g. bsc#12345 - summary of ticket).')
                                 %>
+                                <span id="workaround_reason" style="display:none;">
+                                    <br/>
+                                    <label for="input_workaround_desc">Description:</label>
+                                    <input tupe="input" name="workaround_desc" id="input_workaround_desc" class="form-control" value="">
+                                </span>
                             </p>
                         </div>
                         <div id="needle_editor_save_buttons">
