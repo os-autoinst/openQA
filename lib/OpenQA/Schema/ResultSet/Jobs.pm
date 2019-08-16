@@ -463,7 +463,7 @@ sub _cancel_or_deprioritize {
             return 0;
         }
     }
-    return $job->cancel($newbuild);
+    return $job->cancel($newbuild) // 0;
 }
 
 sub next_previous_jobs_query {
