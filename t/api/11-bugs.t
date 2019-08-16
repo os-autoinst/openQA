@@ -81,13 +81,17 @@ $t->get_ok('/api/v1/bugs/3');
 is($t->tx->res->json->{bugid}, 'jsc#SLE-42999', 'Bug was created by comment post');
 
 $t->post_ok('/api/v1/bugs', form => {title => "new", bugid => 'bsc#123'});
-my $bugid = $t->tx->res->json->{id};
+my $bugid       = $t->tx->res->json->{id};
+my $update_time = time;
 $t->app->schema->resultset('Bugs')->find($bugid)->update(
     {
-        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 500, 'UTC'),
+        t_created => time2str('%Y-%m-%d %H:%M:%S', $update_time - 490, 'UTC'),
     });
-$t->get_ok('/api/v1/bugs?created_since=500');
-is(scalar(keys %{$t->tx->res->json->{bugs}}), 3, 'All reported bugs');
+# calculate time to be more sure (in case the update takes longer)
+my $now   = time;
+my $delta = $now - $update_time + 500;
+$t->get_ok("/api/v1/bugs?created_since=$delta");
+is(scalar(keys %{$t->tx->res->json->{bugs}}), 3, 'All reported bugs $delta');
 $t->get_ok('/api/v1/bugs?created_since=100');
 is(scalar(keys %{$t->tx->res->json->{bugs}}), 2, 'Only the latest bugs');
 
