@@ -85,4 +85,30 @@ subtest 'test queue again' => sub {
 };
 $t->app->start('gru', 'run', '--oneshot');
 
+# ObsRsync::Gru#_queue and ObsRsync::Gru#_run are called from Gru worker, so they are covered
+# but let's test them explicitly as well to make codecov happy
+use OpenQA::WebAPI::Plugin::ObsRsync::Gru;
+
+subtest 'make codecov happy' => sub {
+    {
+        package Test::FakeMinionJob;
+        sub note {
+        }
+        sub retry {
+        }
+        sub finish {
+            return 222;
+        }
+        sub fail {
+            Test::More::fail("Minion job shouldn't have failed.");
+            Test::More::note(Data::Dumper::Dumper(\@_));
+        }
+    }
+    my %args = (project => 'Proj1');
+    my $res  = OpenQA::WebAPI::Plugin::ObsRsync::Gru::_queue($t->app, bless({} => 'Test::FakeMinionJob'), \%args);
+    ok($res = 222);
+    $res = OpenQA::WebAPI::Plugin::ObsRsync::Gru::_run($t->app, bless({} => 'Test::FakeMinionJob'), \%args);
+    ok($res = 222);
+};
+
 done_testing();

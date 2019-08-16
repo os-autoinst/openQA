@@ -73,16 +73,27 @@ sub index {
     $self->render('ObsRsync_gru_index', jobs => \%jobs);
 }
 
+# this prepares fields for rendering
 sub _extend_job_info {
     my ($job) = @_;
+
     my $created_at = $job->{created};
     $created_at = strftime("%Y-%m-%d %H:%M:%S %z", localtime($created_at)) if $created_at;
+
     my $started_at = $job->{started};
     $started_at = strftime("%Y-%m-%d %H:%M:%S %z", localtime($started_at)) if $started_at;
+
+    my $args = $job->{args};
+    if (ref $args eq 'HASH' && scalar(%$args) == 1 && $args->{project}) {
+        $args = $args->{project};
+    }
+    else {
+        $args = dump($args);
+    }
     my $info = {
         id       => $job->{id},
         task     => $job->{task},
-        args     => dump($job->{args}),
+        args     => $args,
         created  => $created_at,
         started  => $started_at,
         priority => $job->{priority},
@@ -150,14 +161,13 @@ sub _queue {
 
 sub _run {
     my ($app, $job, $args) = @_;
-    my $project            = $args->{project};
-    my $home               = $app->obs_rsync->home;
-    my $concurrency        = $app->obs_rsync->concurrency;
-    my $project_status_url = $app->obs_rsync->project_status_url;
-    my $retry_interval     = $app->obs_rsync->retry_interval;
-    my $queue_limit        = $app->obs_rsync->queue_limit;
+    my $project        = $args->{project};
+    my $home           = $app->obs_rsync->home;
+    my $concurrency    = $app->obs_rsync->concurrency;
+    my $retry_interval = $app->obs_rsync->retry_interval;
+    my $queue_limit    = $app->obs_rsync->queue_limit;
 
-    return $job->retry({delay => $retry_interval}) if $app->obs_project->is_status_dirty($project_status_url, $project);
+    return $job->retry({delay => $retry_interval}) if $app->obs_project->is_status_dirty($project);
     return $job->retry({delay => $retry_interval})
       unless my $guard = $app->minion->guard('obs_rsync_run_guard', $lock_timeout, {limit => $concurrency});
 

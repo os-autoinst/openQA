@@ -64,9 +64,6 @@ my $gru_pid = start_gru();
 
 ok($gru_pid);
 
-# let gru start
-sleep 1;
-
 sub test_async {
     my $t = shift;
     # MockProjectLongProcessing causes job to sleep some sec, so we can reach job limit

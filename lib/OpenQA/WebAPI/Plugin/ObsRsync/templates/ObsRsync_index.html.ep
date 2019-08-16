@@ -10,4 +10,4 @@
     <div><%= link_to "$folder"  => url_for('plugin_obs_rsync_folder', folder => $folder) %></div>
 % }
 <hr>
-<%= link_to 'View job queue...' => url_for('plugin_obs_gru_index') %>
+<%= link_to 'View job queue...' => url_for('plugin_obs_rsync_queue') %>

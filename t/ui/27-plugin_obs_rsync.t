@@ -41,7 +41,6 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 $t->get_ok('/login');
 
 $t->get_ok('/admin/obs_rsync')->status_is(200, "index status")->element_exists('a[href*="/admin/obs_rsync/Proj1"]');
-# $t->get_ok('/admin/obs_rsync')->status_is(200, "index status")->content_like(qr/Proj1/);
 
 $t->get_ok('/admin/obs_rsync/Proj1')->status_is(200, "project status")->element_exists('[rsync_iso.cmd]')
   ->element_exists('[rsync_repo.cmd]')->element_exists('[openqa.cmd]');

@@ -34,7 +34,13 @@ sub register {
         $app->helper('obs_rsync.retry_interval'     => sub { shift->app->config->{obs_rsync}->{retry_interval} });
         $app->helper('obs_rsync.queue_limit'        => sub { shift->app->config->{obs_rsync}->{queue_limit} });
         $app->helper('obs_rsync.project_status_url' => sub { shift->app->config->{obs_rsync}->{project_status_url} });
-        $app->helper('obs_project.is_status_dirty'  => sub { shift; _is_obs_project_status_dirty(shift, shift) });
+        $app->helper(
+            'obs_project.is_status_dirty' => sub {
+                my ($c, $project) = @_;
+                my $url = $c->obs_rsync->project_status_url;
+                return undef unless $url;
+                return _is_obs_project_status_dirty($url, $project);
+            });
 
         # Templates
         push @{$app->renderer->paths},
@@ -76,7 +82,7 @@ sub _is_obs_project_status_dirty {
     my $res = $ua->get($url)->result;
     return undef unless $res->is_success;
 
-    return _parse_obs_response($res->body);
+    return _parse_obs_response_dirty($res->body);
 }
 
 sub _parse_obs_response_dirty {
