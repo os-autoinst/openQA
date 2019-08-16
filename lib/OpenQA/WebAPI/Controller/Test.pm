@@ -393,24 +393,25 @@ sub job_next_previous_ajax {
 
 sub _calculate_preferred_machines {
     my ($jobs) = @_;
-    my %machines;
 
-    foreach my $job (@$jobs) {
-        next unless $job->MACHINE;
-        $machines{$job->ARCH} ||= {};
-        $machines{$job->ARCH}->{$job->MACHINE}++;
+    my %machines;
+    for my $job (@$jobs) {
+        next unless my $machine = $job->MACHINE;
+        ($machines{$job->ARCH} ||= {})->{$machine}++;
     }
-    my $pms = {};
+    my %preferred_machines;
     for my $arch (keys %machines) {
-        my $max = 0;
-        for my $machine (keys %{$machines{$arch}}) {
-            if ($machines{$arch}->{$machine} > $max) {
-                $max = $machines{$arch}->{$machine};
-                $pms->{$arch} = $machine;
+        my $max      = 0;
+        my $machines = $machines{$arch};
+        for my $machine (sort keys %$machines) {
+            my $machine_count = $machines->{$machine};
+            if ($machine_count > $max) {
+                $max = $machine_count;
+                $preferred_machines{$arch} = $machine;
             }
         }
     }
-    return $pms;
+    return \%preferred_machines;
 }
 
 sub _job_labels {
@@ -541,14 +542,16 @@ sub prepare_job_results {
             }
         }
 
-        # Populate %archs
+        # Append machine name to TEST if it does not match the most frequently used MACHINE
+        # for the jobs architecture
         if (   $job->MACHINE
             && $preferred_machines->{$job->ARCH}
             && $preferred_machines->{$job->ARCH} ne $job->MACHINE)
         {
             $test .= "@" . $job->MACHINE;
         }
-        # poor mans set
+
+        # Populate %archs
         my $distri  = $job->DISTRI;
         my $version = $job->VERSION;
         $archs{$distri}{$version}{$flavor} //= [];
