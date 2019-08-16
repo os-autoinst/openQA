@@ -825,7 +825,6 @@ sub _upload_results_step_1_upload_images {
 
     Mojo::IOLoop->subprocess(
         sub {
-            my $tx;
             my $job_id = $self->id;
             my $client = $self->client;
             my $ua     = $client->ua;
@@ -850,15 +849,16 @@ sub _upload_results_step_1_upload_images {
                     md5   => $md5
                 );
                 # don't use api_call as it retries and does not allow form data
-                $tx = $ua->post($ua_url => form => \%form);
-                # FIXME: error handling?
+                my $tx = $ua->post($ua_url => form => \%form);
+                if (my $err = $tx->error) { log_error("Upload failed: $err") }
 
                 $file = "$fileprefix/.thumbs/$file";
                 if (-f $file) {
                     $self->_optimize_image($file);
                     $form{file}->{file} = $file;
-                    $form{thumb}        = 1;
-                    $tx                 = $ua->post($ua_url => form => \%form);
+                    $form{thumb} = 1;
+                    my $tx = $ua->post($ua_url => form => \%form);
+                    if (my $err = $tx->error) { log_error("Upload failed: $err") }
                 }
             }
 
@@ -874,8 +874,8 @@ sub _upload_results_step_1_upload_images {
                 );
                 # don't use api_call as it retries and does not allow form data
                 # (refactor at some point)
-                $tx = $ua->post($ua_url => form => \%form);
-                # FIXME: error handling?
+                my $tx = $ua->post($ua_url => form => \%form);
+                if (my $err = $tx->error) { log_error("Upload failed: $err") }
             }
         },
         sub {
