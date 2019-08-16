@@ -823,62 +823,68 @@ sub _upload_results_step_0_post_status {
 sub _upload_results_step_1_upload_images {
     my ($self, $callback) = @_;
 
-    my $tx;
-    my $job_id = $self->id;
-    my $client = $self->client;
-    my $ua     = $client->ua;
-    my $ua_url = $client->url->clone;
-    $ua_url->path("jobs/$job_id/artefact");
+    Mojo::IOLoop->subprocess(
+        sub {
+            my $tx;
+            my $job_id = $self->id;
+            my $client = $self->client;
+            my $ua     = $client->ua;
+            my $ua_url = $client->url->clone;
+            $ua_url->path("jobs/$job_id/artefact");
 
-    my $pooldir        = $self->worker->pool_directory;
-    my $fileprefix     = "$pooldir/testresults";
-    my $images_to_send = $self->images_to_send;
-    for my $md5 (keys %$images_to_send) {
-        my $file = $images_to_send->{$md5};
-        $self->_optimize_image("$fileprefix/$file");
+            my $pooldir        = $self->worker->pool_directory;
+            my $fileprefix     = "$pooldir/testresults";
+            my $images_to_send = $self->images_to_send;
+            for my $md5 (keys %$images_to_send) {
+                my $file = $images_to_send->{$md5};
+                $self->_optimize_image("$fileprefix/$file");
 
-        log_debug("Uploading $file as $md5");
-        my %form = (
-            file => {
-                file     => "$fileprefix/$file",
-                filename => $file
-            },
-            image => 1,
-            thumb => 0,
-            md5   => $md5
-        );
-        # don't use api_call as it retries and does not allow form data
-        $tx = $ua->post($ua_url => form => \%form);
-        # FIXME: error handling?
+                log_debug("Uploading $file as $md5");
+                my %form = (
+                    file => {
+                        file     => "$fileprefix/$file",
+                        filename => $file
+                    },
+                    image => 1,
+                    thumb => 0,
+                    md5   => $md5
+                );
+                # don't use api_call as it retries and does not allow form data
+                $tx = $ua->post($ua_url => form => \%form);
+                # FIXME: error handling?
 
-        $file = "$fileprefix/.thumbs/$file";
-        if (-f $file) {
-            $self->_optimize_image($file);
-            $form{file}->{file} = $file;
-            $form{thumb}        = 1;
-            $tx                 = $ua->post($ua_url => form => \%form);
-        }
-    }
-    $self->{_images_to_send} = {};
+                $file = "$fileprefix/.thumbs/$file";
+                if (-f $file) {
+                    $self->_optimize_image($file);
+                    $form{file}->{file} = $file;
+                    $form{thumb}        = 1;
+                    $tx                 = $ua->post($ua_url => form => \%form);
+                }
+            }
 
-    for my $file (@{$self->files_to_send}) {
-        log_debug("Uploading $file");
-        my %form = (
-            file => {
-                file     => "$pooldir/testresults/$file",
-                filename => $file,
-            },
-            image => 0,
-            thumb => 0,
-        );
-        # don't use api_call as it retries and does not allow form data
-        # (refactor at some point)
-        $tx = $ua->post($ua_url => form => \%form);
-        # FIXME: error handling?
-    }
-    $self->{_files_to_send} = [];
-
-    $callback->();
+            for my $file (@{$self->files_to_send}) {
+                log_debug("Uploading $file");
+                my %form = (
+                    file => {
+                        file     => "$pooldir/testresults/$file",
+                        filename => $file,
+                    },
+                    image => 0,
+                    thumb => 0,
+                );
+                # don't use api_call as it retries and does not allow form data
+                # (refactor at some point)
+                $tx = $ua->post($ua_url => form => \%form);
+                # FIXME: error handling?
+            }
+        },
+        sub {
+            my ($subprocess, $err) = @_;
+            log_error("Upload images subprocess error: $err") if $err;
+            $self->{_images_to_send} = {};
+            $self->{_files_to_send}  = [];
+            $callback->();
+        });
 }
 
 sub _upload_results_step_2_finalize {
