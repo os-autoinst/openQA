@@ -68,7 +68,7 @@
 </div>
 <hr>
 <div class="row-sm-1">
-<%= link_to "all logs" => url_for('plugin_obs_rsync_logs', folder => $obs_project) %>
+<%= link_to "all logs" => url_for('plugin_obs_rsync_runs', folder => $obs_project) %>
 </div>
 <hr>
 <%= link_post 'Sync Now!' => url_for('plugin_obs_rsync_run', folder => $obs_project) %>

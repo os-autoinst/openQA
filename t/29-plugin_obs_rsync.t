@@ -16,10 +16,6 @@
 
 use Mojo::Base -strict;
 
-BEGIN {
-    unshift @INC, 'lib';
-}
-
 use Test::More;
 use OpenQA::WebAPI::Plugin::ObsRsync::Task '_parse_obs_response_dirty';
 

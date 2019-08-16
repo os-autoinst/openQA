@@ -17,7 +17,8 @@
 package OpenQA::WebAPI::Plugin::ObsRsync;
 use Mojo::Base 'Mojolicious::Plugin';
 use Mojo::File;
-use OpenQA::WebAPI::Plugin::ObsRsync::Controller;
+use OpenQA::WebAPI::Plugin::ObsRsync::Gru;
+use Mojo::UserAgent;
 
 sub register {
     my ($self, $app, $config) = @_;
@@ -28,25 +29,28 @@ sub register {
         $app->log->error('Routes not configured, plugin ObsRsync will be disabled') unless $plugin_r;
     }
     else {
+        $app->helper('obs_rsync.home'               => sub { shift->app->config->{obs_rsync}->{home} });
+        $app->helper('obs_rsync.concurrency'        => sub { shift->app->config->{obs_rsync}->{concurrency} });
+        $app->helper('obs_rsync.retry_interval'     => sub { shift->app->config->{obs_rsync}->{retry_interval} });
+        $app->helper('obs_rsync.queue_limit'        => sub { shift->app->config->{obs_rsync}->{queue_limit} });
+        $app->helper('obs_rsync.project_status_url' => sub { shift->app->config->{obs_rsync}->{project_status_url} });
+        $app->helper('obs_project.is_status_dirty'  => sub { shift; _is_obs_project_status_dirty(shift, shift) });
+
         # Templates
         push @{$app->renderer->paths},
           Mojo::File->new(__FILE__)->dirname->child('ObsRsync')->child('templates')->to_string;
 
         $plugin_r->get('/obs_rsync/queue')->name('plugin_obs_rsync_queue')->to('Plugin::ObsRsync::Gru#index');
+        $plugin_r->post('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_run')->to('Plugin::ObsRsync::Gru#run');
 
         $plugin_r->get('/obs_rsync/#folder/runs/#subfolder/download/#filename')->name('plugin_obs_rsync_download_file')
-          ->to('Plugin::ObsRsync::Controller#download_file');
-        $plugin_r->get('/obs_rsync/#folder/runs/#subfolder')->name('plugin_obs_rsync_logfiles')
-          ->to('Plugin::ObsRsync::Controller#logfiles');
-        $plugin_r->get('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_logs')
-          ->to('Plugin::ObsRsync::Controller#logs');
-        $plugin_r->get('/obs_rsync/#folder')->name('plugin_obs_rsync_folder')
-          ->to('Plugin::ObsRsync::Controller#folder');
-        $plugin_r->get('/obs_rsync/')->name('plugin_obs_rsync_index')->to('Plugin::ObsRsync::Controller#index');
+          ->to('Plugin::ObsRsync::Folders#download_file');
+        $plugin_r->get('/obs_rsync/#folder/runs/#subfolder')->name('plugin_obs_rsync_run')
+          ->to('Plugin::ObsRsync::Folders#run');
+        $plugin_r->get('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_runs')->to('Plugin::ObsRsync::Folders#runs');
+        $plugin_r->get('/obs_rsync/#folder')->name('plugin_obs_rsync_folder')->to('Plugin::ObsRsync::Folders#folder');
+        $plugin_r->get('/obs_rsync/')->name('plugin_obs_rsync_index')->to('Plugin::ObsRsync::Folders#index');
         $app->config->{plugin_links}{operator}{'OBS Sync'} = 'plugin_obs_rsync_index';
-
-        $plugin_r->post('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_run')
-          ->to('Plugin::ObsRsync::Controller#run');
     }
 
     if (!$plugin_api_r) {
@@ -54,10 +58,40 @@ sub register {
     }
     else {
         $plugin_api_r->put('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_api_run')
-          ->to('Plugin::ObsRsync::Controller#run');
+          ->to('Plugin::ObsRsync::Gru#run');
     }
 
-    OpenQA::WebAPI::Plugin::ObsRsync::Controller::register($app);
+    OpenQA::WebAPI::Plugin::ObsRsync::Gru::register_tasks($app);
+}
+
+# try to determine whether project is dirty
+# undef means status is unknown
+sub _is_obs_project_status_dirty {
+    my ($url, $project) = @_;
+    return undef unless $url;
+
+    $url =~ s/%%PROJECT/$project/g;
+    my $ua = Mojo::UserAgent->new;
+
+    my $res = $ua->get($url)->result;
+    return undef unless $res->is_success;
+
+    return _parse_obs_response($res->body);
+}
+
+sub _parse_obs_response_dirty {
+    my ($body) = @_;
+
+    my $dirty;
+    return 1 if $body =~ /dirty/g;
+    while ($body =~ /^(.*repository="images".*)/gm) {
+        my $line = $1;
+        if ($line =~ /state="([a-z]+)"/) {
+            return 1 if $1 ne "published";
+            $dirty = 0 if not defined $dirty;
+        }
+    }
+    return $dirty;
 }
 
 1;

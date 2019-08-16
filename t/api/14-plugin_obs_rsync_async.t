@@ -16,10 +16,6 @@
 
 use Mojo::Base -strict;
 
-BEGIN {
-    unshift @INC, 'lib';
-}
-
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::More;
