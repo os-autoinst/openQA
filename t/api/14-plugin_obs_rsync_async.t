@@ -144,9 +144,19 @@ subtest 'test concurrenctly long running jobs' => sub {
 
 sleep_until_all_jobs_finished($t);
 
+# now we should have 5 finished jobs: 2 for MockProjectLongProcessing and MockProjectLongProcessing1 and one for Proj1
+my $results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => ['finished']});
+ok(5 == $results->{total}, 'Number of finished jobs ' . $results->{total});
+
 subtest 'test concurrenctly long running jobs again' => sub {
     test_async($t);
 };
+
+sleep_until_all_jobs_finished($t);
+
+# the same check will double amount of finished jobs
+$results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => ['finished']});
+ok(10 == $results->{total}, 'Number of finished jobs ' . $results->{total});
 
 if ($gru_pid) {
     kill('TERM', $gru_pid);
