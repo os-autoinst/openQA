@@ -826,7 +826,15 @@ is to provide a general overview of the tool, with all the information needed to
 become a happy user.</p>
 </div>
 <div class="paragraph">
-<p>For the installation of openQA see the
+<p>For a quick start, if you already have an openQA instance available you can
+refer to the section
+<a href="#_cloning_existing_jobs_openqa_clone_job">Cloning existing jobs - openqa-clone-job</a>
+directly to trigger a new test based on already existing job. For a quick
+installation refer directly to
+<a href="#_openqa_quick_bootstrap">openQA quick bootstrap</a>.</p>
+</div>
+<div class="paragraph">
+<p>For the installation of openQA in general see the
 <a href="#installing">Installation Guide</a>, as a user of an
 existing instance see the <a href="#usersguide">Users Guide</a>.
 More advanced topics can be found in other documents. All documents are also
@@ -1078,7 +1086,7 @@ point.</p>
 <p><strong>softfailed</strong> At least one known, non-critical issue has been found. That could be
 that workaround needles are in place, a softfailure has been recorded explicitly
 via record_soft_failure (from os-autoinst) or a job failure has been ignored
-explicitly via a <a href="#https://github.com/os-autoinst/openQA/blob/master/docs/UsersGuide.asciidoc#show-bug-or-label-icon-on-overview-if-labeled-gh550">job label</a>.</p>
+explicitly via a <a href="#_show_bug_or_label_icon_on_overview_if_labeled_gh550">job label</a>.</p>
 </li>
 <li>
 <p><strong>timeout_exceeded</strong> The job was aborted because MAX_JOB_TIME was exceeded, which is
@@ -1546,6 +1554,22 @@ script - it will do the rest for you:</p>
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># get root</span>
 curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openqa-bootstrap <span class="tok-p">|</span> bash -x</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>openQA-bootstrap supports to immediately clone an existing job simply by
+supplying openqa-clone-job parameters directly for a quickstart:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>/usr/share/openqa/script/openqa-bootstrap -from openqa.opensuse.org <span class="tok-m">12345</span> <span class="tok-nv">SCHEDULE</span><span class="tok-o">=</span>tests/boot/boot_to_desktop,tests/x11/kontact</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above command will bootstrap an openQA installation and immediately
+afterwards start a local test job clone from a test job from a remote instance
+with optional, overridden parameters. More information about
+openqa-clone-job can be found in
+<a href="#_cloning_existing_jobs_openqa_clone_job">Cloning existing jobs - openqa-clone-job</a>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -7696,7 +7720,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-08-08 09:09:58 UTC
+Last updated 2019-08-19 09:20:36 UTC
 </div>
 </div>
 <style>
