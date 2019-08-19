@@ -24,6 +24,7 @@ use Test::MockModule;
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
 use Mojo::File qw(tempdir path);
+use Time::HiRes 'sleep';
 
 OpenQA::Test::Case->new->init_data;
 
@@ -64,12 +65,53 @@ my $gru_pid = start_gru();
 
 ok($gru_pid);
 
+BAIL_OUT('Cannot fork gru') unless $gru_pid;
+
+sub sleep_until_job_start {
+    my ($t, $project) = @_;
+    my $status  = 'active';
+    my $retries = 100;
+
+    while ($retries > 0) {
+        my %jobs;
+        my $results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => [$status]});
+        for my $other_job (@{$results->{jobs}}) {
+            return 1
+              if ( $other_job->{args}
+                && ($other_job->{args}[0]->{project} eq $project)
+                && !$other_job->{notes}{waitingconcurrencyslot});
+        }
+
+        sleep(0.1);
+        $retries = $retries - 1;
+    }
+    die 'Timeout reached';
+}
+
+sub sleep_until_all_jobs_finished {
+    my ($t, $project, $status) = @_;
+    my $retries = 100;
+
+    while ($retries > 0) {
+        my %jobs;
+        my $results = $t->app->minion->backend->list_jobs(0, 400,
+            {tasks => ['obs_rsync_run', 'obs_rsync_queue'], states => ['inactive', 'active']});
+        return 1 if !$results->{total};
+
+        sleep(0.1);
+        $retries = $retries - 1;
+    }
+    die 'Timeout reached';
+}
+
 sub test_async {
     my $t = shift;
     # MockProjectLongProcessing causes job to sleep some sec, so we can reach job limit
     $t->put_ok('/api/v1/obs_rsync/MockProjectLongProcessing/runs')
       ->status_is(201, "first request to MockProjectLongProcessing should start");
-    sleep 2;
+
+    sleep_until_job_start($t, 'MockProjectLongProcessing');
+
     $t->put_ok('/api/v1/obs_rsync/MockProjectLongProcessing/runs')
       ->status_is(200, "second request to MockProjectLongProcessing should be queued");
     $t->put_ok('/api/v1/obs_rsync/MockProjectLongProcessing/runs')
@@ -78,7 +120,9 @@ sub test_async {
       ->status_is(201, "first request to MockProjectLongProcessing1 should start");
     $t->put_ok('/api/v1/obs_rsync/MockProjectLongProcessing/runs')
       ->status_is(208, "request for MockProjectLongProcessing still reports in queue");
-    sleep 1;
+
+    sleep_until_job_start($t, 'MockProjectLongProcessing1');
+
     $t->put_ok('/api/v1/obs_rsync/MockProjectLongProcessing1/runs')
       ->status_is(200, "second request to MockProjectLongProcessing1 is queued");
     $t->put_ok('/api/v1/obs_rsync/MockProjectLongProcessing1/runs')
@@ -88,7 +132,9 @@ sub test_async {
       ->status_is(208, "MockProjectLongProcessing1 still in queue");
     $t->put_ok('/api/v1/obs_rsync/WRONGPROJECT/runs')
       ->status_is(404, "trigger rsync wrong project still returns error");
-    sleep 4;
+
+    sleep_until_all_jobs_finished($t);
+
     $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "Proj1 just starts as gru should empty queue for now");
 }
 
@@ -96,7 +142,7 @@ subtest 'test concurrenctly long running jobs' => sub {
     test_async($t);
 };
 
-sleep 5;
+sleep_until_all_jobs_finished($t);
 
 subtest 'test concurrenctly long running jobs again' => sub {
     test_async($t);

@@ -18,7 +18,7 @@ use Mojo::Base -strict;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-use Test::Most;
+use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
@@ -100,7 +100,6 @@ sub fake_api_server {
             return $c->render(status => 200, text => $response_published);
         });
 
-
     return $mock;
 }
 
@@ -142,8 +141,6 @@ start_server();
 
 print "Starting WebAPI\n";
 my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-bail_on_fail;
 
 subtest 'test helper directly' => sub {
     my $res = $t->app->obs_project->is_status_dirty('Proj1');
