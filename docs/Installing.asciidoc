@@ -50,6 +50,21 @@ script - it will do the rest for you:
 curl -s https://raw.githubusercontent.com/os-autoinst/openQA/master/script/openqa-bootstrap | bash -x
 -------------------------------------------------------------------------------
 
+openQA-bootstrap supports to immediately clone an existing job simply by
+supplying +openqa-clone-job+ parameters directly for a quickstart:
+
+[source,sh]
+----
+/usr/share/openqa/script/openqa-bootstrap -from openqa.opensuse.org 12345 SCHEDULE=tests/boot/boot_to_desktop,tests/x11/kontact
+----
+
+The above command will bootstrap an openQA installation and immediately
+afterwards start a local test job clone from a test job from a remote instance
+with optional, overridden parameters. More information about
++openqa-clone-job+ can be found in
+<<UsersGuide.asciidoc#_cloning_existing_jobs_openqa_clone_job,Cloning existing jobs - openqa-clone-job>>.
+
+
 === openQA in a container
 
 *NOTE* This method is not available on openSUSE Leap older than version 15.1.
