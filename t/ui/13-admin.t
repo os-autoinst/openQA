@@ -581,6 +581,14 @@ subtest 'edit the yaml' => sub() {
     $driver->find_element_by_id('preview-template')->click();
     wait_for_ajax;
     ok($result->get_text() =~ m/There was a problem applying the changes/, 'error shown');
+
+    # Group properties remain accessible
+    $driver->find_element_by_id('toggle-group-properties')->click();
+    ok($driver->find_element_by_id('editor-name')->is_displayed(), 'Group name can be edited');
+    $driver->refresh();
+    wait_for_ajax;
+    $driver->find_element_by_id('toggle-group-properties')->click();
+    ok($driver->find_element_by_id('editor-name')->is_displayed(), 'Group name can still be edited after refresh');
 };
 
 sub get_cell_contents {

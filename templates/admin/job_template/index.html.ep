@@ -69,8 +69,8 @@
             <span id="job-group-name"><%= $group->name %></span>
         </h2>
         %= include 'layouts/info'
+        %= include 'admin/group/group_property_editor', group => $group, is_parent => 0
         % if (!$group->template) {
-            %= include 'admin/group/group_property_editor', group => $group, is_parent => 0
             <div id="media">
                 <p id="loading"><i class="fa fa-spinner fa-spin"></i> Loading…</p>
 
