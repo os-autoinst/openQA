@@ -17,7 +17,7 @@
 % } else {
     Lists retrieved during last run:
 % for my $filename (@$lst_files) {
-    <%= link_to "$filename"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %>
+    <%= link_to $filename => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %>
     |
 %    }
 %
@@ -25,7 +25,7 @@
 <br>
 % if ($read_files_sh) {
     Script used to retrieve files: 
-    <%= link_to "$read_files_sh"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $read_files_sh) %>
+    <%= link_to $read_files_sh => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $read_files_sh) %>
 % }
 </div>
 <hr>
@@ -37,14 +37,14 @@
     Commands executed during last run: 
 % }
 % for my $filename (@$rsync_commands) {
-    <%= link_to "$filename"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %>
+    <%= link_to $filename  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %>
     |
 % }
 <br>
 % if (@$rsync_sh) {
     Script used to generate commands: 
 %   for my $filename (@$rsync_sh) {
-        <%= link_to "$filename"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %>
+        <%= link_to $filename  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %>
         |
 %   }
 % }
@@ -58,12 +58,12 @@
     Commands executed during last run:
 % }
 % for my $filename (@$openqa_commands) {
-    <%= link_to "$filename"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %>
+    <%= link_to $filename  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %>
 % }
 <br>
 % if ($openqa_sh) {
     Script used to generate commands: 
-    <%= link_to "$openqa_sh"  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $openqa_sh) %>
+    <%= link_to $openqa_sh  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $openqa_sh) %>
 % }
 </div>
 <hr>

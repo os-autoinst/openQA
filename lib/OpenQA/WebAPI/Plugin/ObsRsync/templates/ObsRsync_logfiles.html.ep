@@ -8,6 +8,6 @@
 <h2><%= 'OBS synchronization Log: ' . $folder . '/' . $subfolder %></h2>
 <h6><%= $full %></h6>
 % for my $filename (@$files) {
-    <%= link_to "$filename"  => url_for('plugin_obs_rsync_download_file', folder => $folder, subfolder => $subfolder, filename => $filename) %>
+    <%= link_to $filename => url_for('plugin_obs_rsync_download_file', folder => $folder, subfolder => $subfolder, filename => $filename) %>
     |
 % }
