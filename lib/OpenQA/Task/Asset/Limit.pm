@@ -86,7 +86,7 @@ sub _limit {
 
         my $age_in_seconds = ($now->epoch() - DateTime::Format::Pg->parse_datetime($asset->{t_created})->epoch());
         my $asset_name     = $asset->{name};
-        if ($age_in_seconds >= $untracked_assets_storage_duration || !$asset->{size}) {
+        if ($age_in_seconds >= $untracked_assets_storage_duration) {
             my $age_in_days   = $age_in_seconds / $seconds_per_day;
             my $limit_in_days = $untracked_assets_storage_duration / $seconds_per_day;
             _remove_if($schema, $asset,
