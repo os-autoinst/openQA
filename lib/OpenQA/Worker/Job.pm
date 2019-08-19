@@ -344,11 +344,11 @@ sub _stop_step_3_announce {
     my ($self, $reason, $callback) = @_;
 
     # skip if isotovideo not running anymore (e.g. when isotovideo just exited on its own)
-    return $callback->() unless $self->is_backend_running;
+    return Mojo::IOLoop->next_tick($callback) unless $self->is_backend_running;
 
     my $ua      = Mojo::UserAgent->new(request_timeout => 10);
     my $job_url = $self->url;
-    return $callback->() unless $job_url;
+    return Mojo::IOLoop->next_tick($callback) unless $job_url;
 
     try {
         my $url = "$job_url/broadcast";
@@ -378,7 +378,7 @@ sub _stop_step_3_announce {
         log_info('Unable to stop the command server gracefully: ' . $_);
 
         # ensure stopping is proceeded (failing announcement is not critical)
-        $callback->();
+        Mojo::IOLoop->next_tick($callback);
     };
 }
 
@@ -675,7 +675,7 @@ sub _upload_results {
     if (!$job_url || !$worker_id) {
         log_warning('Unable to upload results of the job because no command server URL or worker ID have been set.');
         $self->emit(uploading_results_concluded => {});
-        return $callback->();
+        return Mojo::IOLoop->next_tick($callback);
     }
 
     # determine wheter this is the final upload
@@ -716,7 +716,7 @@ sub _upload_results {
                 # FIXME: It would still make sense to upload other files.
                 $self->stop('no tests scheduled');    # will be delayed until upload has been concluded
                 $self->emit(uploading_results_concluded => {});
-                return $callback->();
+                return Mojo::IOLoop->next_tick($callback);
             }
             $status{test_order}  = $test_order;
             $status{backend}     = $status_from_os_autoinst->{backend};
@@ -902,14 +902,14 @@ sub _upload_results_step_2_finalize {
 
     $self->{_is_uploading_results} = 0;
     $self->emit(uploading_results_concluded => {});
-    $callback->();
+    Mojo::IOLoop->next_tick($callback);
 }
 
 sub post_upload_progress_to_liveviewhandler {
     my ($self, $upload_up_to, $is_final_upload, $callback) = @_;
 
     if ($is_final_upload || !$self->developer_session_running) {
-        return $callback->();
+        return Mojo::IOLoop->next_tick($callback);
     }
 
     my $current_test_module = $self->current_test_module;
@@ -932,7 +932,7 @@ sub post_upload_progress_to_liveviewhandler {
         }
     }
     if (!$progress_changed) {
-        return $callback->();
+        return Mojo::IOLoop->next_tick($callback);
     }
     $self->{_progress_info} = \%new_progress_info;
 
