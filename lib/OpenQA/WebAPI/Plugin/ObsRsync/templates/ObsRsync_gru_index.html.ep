@@ -29,7 +29,7 @@
             <tbody>
                 % for my $id (sort keys %$jobs) {
                     % my $job = $jobs->{$id};
-                    <tr id=$id>
+                    <tr>
                         <td class="id"> <%= $job->{id} %> </td>
                         <td class="task"> <%= $job->{task} %> </td>
                         <td class="args"> <%= $job->{args} %> </td>

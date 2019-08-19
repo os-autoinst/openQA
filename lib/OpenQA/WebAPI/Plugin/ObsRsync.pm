@@ -17,7 +17,7 @@
 package OpenQA::WebAPI::Plugin::ObsRsync;
 use Mojo::Base 'Mojolicious::Plugin';
 use Mojo::File;
-use OpenQA::WebAPI::Plugin::ObsRsync::Gru;
+use OpenQA::WebAPI::Plugin::ObsRsync::Task;
 use Mojo::UserAgent;
 
 sub register {
@@ -46,16 +46,21 @@ sub register {
         push @{$app->renderer->paths},
           Mojo::File->new(__FILE__)->dirname->child('ObsRsync')->child('templates')->to_string;
 
-        $plugin_r->get('/obs_rsync/queue')->name('plugin_obs_rsync_queue')->to('Plugin::ObsRsync::Gru#index');
-        $plugin_r->post('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_run')->to('Plugin::ObsRsync::Gru#run');
+        $plugin_r->get('/obs_rsync/queue')->name('plugin_obs_rsync_queue')
+          ->to('Plugin::ObsRsync::Controller::Gru#index');
+        $plugin_r->post('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_run')
+          ->to('Plugin::ObsRsync::Controller::Gru#run');
 
         $plugin_r->get('/obs_rsync/#folder/runs/#subfolder/download/#filename')->name('plugin_obs_rsync_download_file')
-          ->to('Plugin::ObsRsync::Folders#download_file');
+          ->to('Plugin::ObsRsync::Controller::Folders#download_file');
         $plugin_r->get('/obs_rsync/#folder/runs/#subfolder')->name('plugin_obs_rsync_run')
-          ->to('Plugin::ObsRsync::Folders#run');
-        $plugin_r->get('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_runs')->to('Plugin::ObsRsync::Folders#runs');
-        $plugin_r->get('/obs_rsync/#folder')->name('plugin_obs_rsync_folder')->to('Plugin::ObsRsync::Folders#folder');
-        $plugin_r->get('/obs_rsync/')->name('plugin_obs_rsync_index')->to('Plugin::ObsRsync::Folders#index');
+          ->to('Plugin::ObsRsync::Controller::Folders#run');
+        $plugin_r->get('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_runs')
+          ->to('Plugin::ObsRsync::Controller::Folders#runs');
+        $plugin_r->get('/obs_rsync/#folder')->name('plugin_obs_rsync_folder')
+          ->to('Plugin::ObsRsync::Controller::Folders#folder');
+        $plugin_r->get('/obs_rsync/')->name('plugin_obs_rsync_index')
+          ->to('Plugin::ObsRsync::Controller::Folders#index');
         $app->config->{plugin_links}{operator}{'OBS Sync'} = 'plugin_obs_rsync_index';
     }
 
@@ -64,10 +69,10 @@ sub register {
     }
     else {
         $plugin_api_r->put('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_api_run')
-          ->to('Plugin::ObsRsync::Gru#run');
+          ->to('Plugin::ObsRsync::Controller::Gru#run');
     }
 
-    OpenQA::WebAPI::Plugin::ObsRsync::Gru::register_tasks($app);
+    $app->minion->add_task(obs_rsync_run => sub { return OpenQA::WebAPI::Plugin::ObsRsync::Task::_run($app, @_) });
 }
 
 # try to determine whether project is dirty
@@ -94,7 +99,7 @@ sub _parse_obs_response_dirty {
         my $line = $1;
         if ($line =~ /state="([a-z]+)"/) {
             return 1 if $1 ne "published";
-            $dirty = 0 if not defined $dirty;
+            $dirty //= 0;
         }
     }
     return $dirty;

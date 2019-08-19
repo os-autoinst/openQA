@@ -79,7 +79,7 @@ sub sleep_until_job_start {
             return 1
               if ( $other_job->{args}
                 && ($other_job->{args}[0]->{project} eq $project)
-                && !$other_job->{notes}{waitingconcurrencyslot});
+                && $other_job->{notes}{project_lock});
         }
 
         sleep(0.2);
@@ -94,8 +94,8 @@ sub sleep_until_all_jobs_finished {
 
     while ($retries > 0) {
         my %jobs;
-        my $results = $t->app->minion->backend->list_jobs(0, 400,
-            {tasks => ['obs_rsync_run', 'obs_rsync_queue'], states => ['inactive', 'active']});
+        my $results
+          = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => ['inactive', 'active']});
         return 1 if !$results->{total};
 
         sleep(0.2);

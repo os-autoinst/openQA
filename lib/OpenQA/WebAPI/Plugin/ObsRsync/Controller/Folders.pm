@@ -14,13 +14,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package OpenQA::WebAPI::Plugin::ObsRsync::Folders;
+package OpenQA::WebAPI::Plugin::ObsRsync::Controller::Folders;
 use Mojo::Base 'OpenQA::WebAPI::Plugin::ObsRsync::Controller';
 use Mojo::File;
-
-sub _home {
-    return shift->obs_rsync->home;
-}
 
 sub index {
     my $self   = shift;
