@@ -70,7 +70,7 @@ BAIL_OUT('Cannot fork gru') unless $gru_pid;
 sub sleep_until_job_start {
     my ($t, $project) = @_;
     my $status  = 'active';
-    my $retries = 100;
+    my $retries = 500;
 
     while ($retries > 0) {
         my %jobs;
@@ -82,7 +82,7 @@ sub sleep_until_job_start {
                 && !$other_job->{notes}{waitingconcurrencyslot});
         }
 
-        sleep(0.1);
+        sleep(0.2);
         $retries = $retries - 1;
     }
     die 'Timeout reached';
@@ -90,7 +90,7 @@ sub sleep_until_job_start {
 
 sub sleep_until_all_jobs_finished {
     my ($t, $project, $status) = @_;
-    my $retries = 100;
+    my $retries = 500;
 
     while ($retries > 0) {
         my %jobs;
@@ -98,7 +98,7 @@ sub sleep_until_all_jobs_finished {
             {tasks => ['obs_rsync_run', 'obs_rsync_queue'], states => ['inactive', 'active']});
         return 1 if !$results->{total};
 
-        sleep(0.1);
+        sleep(0.2);
         $retries = $retries - 1;
     }
     die 'Timeout reached';
