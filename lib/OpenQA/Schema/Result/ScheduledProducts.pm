@@ -539,9 +539,10 @@ sub _generate_jobs {
             }
 
             # add properties from dedicated database columns to settings
-            $settings{TEST}    = $job_template->test_suite->name;
-            $settings{MACHINE} = $job_template->machine->name;
-            $settings{BACKEND} = $job_template->machine->backend;
+            $settings{TEST}              = $job_template->test_suite->name;
+            $settings{MACHINE}           = $job_template->machine->name;
+            $settings{BACKEND}           = $job_template->machine->backend;
+            $settings{JOB_TEMPLATE_NAME} = $job_template->name if $settings{JOB_TEMPLATE_NAME};
 
             # merge worker classes
             $settings{WORKER_CLASS} = @worker_classes ? join(',', sort(@worker_classes)) : "qemu_$args->{ARCH}";

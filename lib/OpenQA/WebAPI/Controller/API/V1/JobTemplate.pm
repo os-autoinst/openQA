@@ -306,9 +306,12 @@ sub update {
                     my $yaml_products_for_arch = $yaml_archs->{$arch};
                     my $yaml_defaults_for_arch = $yaml_defaults->{$arch};
                     foreach my $product_name (keys %$yaml_products_for_arch) {
+                        # Keep track of job template names to be able to fail on duplicates
+                        my %job_template_names;
                         foreach my $spec (@{$yaml_products_for_arch->{$product_name}}) {
                             # Get testsuite, machine, prio and job template settings from YAML data
                             my $testsuite_name;
+                            my $job_template_name;
                             my $prio;
                             my $machine_name;
                             my $settings;
@@ -321,6 +324,10 @@ sub update {
                                     }
                                     if ($attr->{machine}) {
                                         $machine_name = $attr->{machine};
+                                    }
+                                    if ($attr->{testsuite}) {
+                                        $testsuite_name    = $attr->{testsuite};
+                                        $job_template_name = $testsuite_name;
                                     }
                                     if ($attr->{settings}) {
                                         $settings = $attr->{settings};
@@ -336,6 +343,15 @@ sub update {
                             $machine_name //= $yaml_defaults_for_arch->{machine};
                             die "Machine is empty and there is no default for architecture $arch\n"
                               unless $machine_name;
+
+                            my $job_template_key
+                              = $product_name . $machine_name . $testsuite_name . ($job_template_name // '');
+                            die "Job template name '"
+                              . ($job_template_name // $testsuite_name)
+                              . "' is defined more than once. "
+                              . "Use a unique name and specify 'testsuite' to re-use test suites in multiple scenarios.\n"
+                              if $job_template_names{$job_template_key};
+                            $job_template_names{$job_template_key}++;
 
                             # Find machine, product and testsuite
                             my $machine = $machines->find({name => $machine_name});
@@ -358,6 +374,7 @@ sub update {
                                     group_id      => $group_id,
                                     product_id    => $product->id,
                                     machine_id    => $machine->id,
+                                    name          => $job_template_name,
                                     test_suite_id => $test_suite->id,
                                 });
                             my $job_template_id = $job_template->id;

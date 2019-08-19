@@ -576,19 +576,20 @@ subtest 'edit the yaml' => sub() {
       or diag explain $result->get_text();
 
     # Make changes to existing YAML
-    $yaml .= "    - advanced_kde:\n";
+    $yaml .= "    - advanced_kde_low_prio:\n";
+    $yaml .= "        testsuite: advanced_kde\n";
     $yaml .= "        priority: 11\n";
     $yaml =~ s/\n/\\n/g;
     $driver->execute_script("editor.doc.setValue(\"$yaml\");");
     $driver->find_element_by_id('preview-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/Preview of the changes/, 'preview shown') or diag explain $result->get_text();
-    ok(index($result->get_text(), '@@ -15,3 +15,5 @@') != -1, 'diff of changes shown')
+    ok(index($result->get_text(), '@@ -15,3 +15,6 @@') != -1, 'diff of changes shown')
       or diag explain $result->get_text();
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
-    ok(index($result->get_text(), '@@ -15,3 +15,5 @@') != -1, 'diff of changes shown')
+    ok(index($result->get_text(), '@@ -15,3 +15,6 @@') != -1, 'diff of changes shown')
       or diag explain $result->get_text();
 
     # No changes

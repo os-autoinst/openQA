@@ -454,6 +454,11 @@ sub settings_hash {
             }
         }
         $self->{_settings}->{NAME} = sprintf "%08d-%s", $self->id, $self->name;
+        if ($self->{_settings}->{JOB_TEMPLATE_NAME}) {
+            my $test              = $self->{_settings}->{TEST};
+            my $job_template_name = $self->{_settings}->{JOB_TEMPLATE_NAME};
+            $self->{_settings}->{NAME} =~ s/$test/$job_template_name/e;
+        }
     }
 
     return $self->{_settings};
