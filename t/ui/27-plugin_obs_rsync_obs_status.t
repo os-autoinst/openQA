@@ -143,13 +143,13 @@ print "Starting WebAPI\n";
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 subtest 'test helper directly' => sub {
-    my $res = $t->app->obs_project->is_status_dirty('Proj1');
+    my $res = $t->app->obs_rsync->is_status_dirty('Proj1');
     ok($res, "Status dirty");
 
-    $res = $t->app->obs_project->is_status_dirty('Proj2');
+    $res = $t->app->obs_rsync->is_status_dirty('Proj2');
     ok($res, "Status publishing $res");
 
-    $res = $t->app->obs_project->is_status_dirty('Proj3');
+    $res = $t->app->obs_rsync->is_status_dirty('Proj3');
     ok(!$res, "Status published $res");
 };
 

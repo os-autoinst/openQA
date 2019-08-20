@@ -35,12 +35,13 @@ sub register {
         $app->helper('obs_rsync.queue_limit'        => sub { shift->app->config->{obs_rsync}->{queue_limit} });
         $app->helper('obs_rsync.project_status_url' => sub { shift->app->config->{obs_rsync}->{project_status_url} });
         $app->helper(
-            'obs_project.is_status_dirty' => sub {
+            'obs_rsync.is_status_dirty' => sub {
                 my ($c, $project) = @_;
                 my $url = $c->obs_rsync->project_status_url;
                 return undef unless $url;
                 return _is_obs_project_status_dirty($url, $project);
             });
+        $app->helper('obs_rsync.check_and_render_error' => sub { _check_and_render_error->(shift, @_) });
 
         # Templates
         push @{$app->renderer->paths},
@@ -103,6 +104,26 @@ sub _parse_obs_response_dirty {
         }
     }
     return $dirty;
+}
+
+sub _check_and_render_error {
+    my $controller = $_[0];
+    my ($code, $message) = _check_error(@_);
+    $controller->render(json => {error => $message}, status => $code) if $code;
+    return $code;
+}
+
+sub _check_error {
+    my ($controller, $project, $subfolder, $filename) = @_;
+    my $home = $controller->obs_rsync->home;
+    return (405, "Home directory is not set") unless $home;
+    return (405, "Home directory not found")  unless -d $home;
+    return (400, "Project has invalid characters")   if $project   && $project =~ m!/!;
+    return (400, "Subfolder has invalid characters") if $subfolder && $subfolder =~ m!/!;
+    return (400, "Filename has invalid characters")  if $filename  && $filename =~ m!/!;
+
+    return (404, "Invalid Project {" . $project . "}") if $project && !-d Mojo::File->new($home, $project);
+    return 0;
 }
 
 1;

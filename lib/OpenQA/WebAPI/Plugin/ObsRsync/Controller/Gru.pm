@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::WebAPI::Plugin::ObsRsync::Controller::Gru;
-use Mojo::Base 'OpenQA::WebAPI::Plugin::ObsRsync::Controller';
+use Mojo::Base 'Mojolicious::Controller';
 use POSIX 'strftime';
 use Data::Dump qw/dump/;
 
@@ -47,11 +47,12 @@ use constant {
 my $lock_timeout = 36000;
 
 sub index {
-    my $self = shift;
+    my $self   = shift;
+    my $helper = $self->obs_rsync;
     my %jobs;
     my $results = $self->app->minion->backend->list_jobs(
         0,
-        4 * $self->obs_rsync->queue_limit,
+        4 * $helper->queue_limit,
         {tasks => ['obs_rsync_run'], states => ['active', 'inactive']});
 
     for my $job (@{$results->{jobs}}) {
@@ -95,9 +96,10 @@ sub _extend_job_info {
 sub run {
     my $self    = shift;
     my $project = $self->param('folder');
-    return undef if $self->_check_and_render_error($project);
+    my $helper  = $self->obs_rsync;
+    return undef if $helper->check_and_render_error($project);
     my $app         = $self->app;
-    my $queue_limit = $app->obs_rsync->queue_limit;
+    my $queue_limit = $helper->queue_limit;
 
     my $results = $app->minion->backend->list_jobs(
         0,

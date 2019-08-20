@@ -158,6 +158,18 @@ sleep_until_all_jobs_finished($t);
 $results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => ['finished']});
 ok(10 == $results->{total}, 'Number of finished jobs ' . $results->{total});
 
+$t->put_ok('/api/v1/obs_rsync/MockProjectError/runs')->status_is(201, "Start another mock project");
+
+sleep_until_all_jobs_finished($t);
+
+# MockProjectError will fail so number of finished jobs should remain, but one job must be failed
+$results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => ['finished']});
+ok(10 == $results->{total}, 'Number of finished jobs ' . $results->{total});
+$results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => ['failed']});
+ok(1 == $results->{total}, 'Number of failed jobs ' . $results->{total});
+
+
+
 if ($gru_pid) {
     kill('TERM', $gru_pid);
     waitpid($gru_pid, 0);

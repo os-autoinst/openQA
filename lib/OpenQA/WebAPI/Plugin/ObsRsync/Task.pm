@@ -23,25 +23,34 @@ my $lock_timeout = 36000;
 sub _run {
     my ($app, $job, $args) = @_;
     my $project        = $args->{project};
-    my $home           = $app->obs_rsync->home;
-    my $concurrency    = $app->obs_rsync->concurrency;
-    my $retry_interval = $app->obs_rsync->retry_interval;
-    my $queue_limit    = $app->obs_rsync->queue_limit;
+    my $helper         = $app->obs_rsync;
+    my $home           = $helper->home;
+    my $concurrency    = $helper->concurrency;
+    my $retry_interval = $helper->retry_interval;
+    my $queue_limit    = $helper->queue_limit;
+    my $minion         = $app->minion;
 
     if ($job->info && !$job->info->{notes}{project_lock}) {
         return $job->retry({delay => $retry_interval})
-          unless $app->minion->lock("obs_rsync_project_" . $project . "_lock", $lock_timeout);
+          unless $minion->lock("obs_rsync_project_" . $project . "_lock", $lock_timeout);
 
         $job->note(project_lock => 1);
     }
-    return $job->retry({delay => $retry_interval}) if $app->obs_project->is_status_dirty($project);
+    return $job->retry({delay => $retry_interval}) if $helper->is_status_dirty($project);
 
     return $job->retry({delay => $retry_interval})
-      unless my $concurrency_guard = $app->minion->guard('obs_rsync_run_guard', $lock_timeout, {limit => $concurrency});
+      unless my $concurrency_guard = $minion->guard('obs_rsync_run_guard', $lock_timeout, {limit => $concurrency});
 
-    eval { system([0], "bash", "$home/rsync.sh", $project); };
-    $app->minion->unlock("obs_rsync_project_" . $project . "_lock");
-    return $job->finish($EXITVAL);
+    my $error;
+    eval { system([0], "bash", "$home/rsync.sh", $project); 1; } or do {
+        $error = $@ || 'No message';
+        $app->log->error("ObsRsync#_run failed: " . $EXITVAL . " " . $error);
+    };
+    $minion->unlock("obs_rsync_project_" . $project . "_lock");
+    if ($EXITVAL) {
+        return $job->fail({code => $EXITVAL, message => $error});
+    }
+    return $job->finish(0);
 }
 
 1;
