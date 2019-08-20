@@ -668,11 +668,8 @@ sub _upload_results {
     }
 
     # return if job setup is insufficient
-    my $client          = $self->client;
-    my $worker_id       = $client->worker_id;
-    my $global_settings = $self->worker->settings->global_settings;
-    my $job_url         = $self->url;
-    if (!$job_url || !$worker_id) {
+    my $job_url = $self->url;
+    if (!$job_url || !$self->client->worker_id) {
         log_warning('Unable to upload results of the job because no command server URL or worker ID have been set.');
         $self->emit(uploading_results_concluded => {});
         return Mojo::IOLoop->next_tick($callback);
@@ -690,16 +687,30 @@ sub _upload_results {
     # query status from isotovideo (unless it is the final status upload because isotovideo
     # has already been stopped in this case)
     my $status_from_os_autoinst = {};
-    if (!$is_final_upload) {
-        my $status_url = "$job_url/isotovideo/status";
-        try {
-            $status_from_os_autoinst = Mojo::UserAgent->new->get($status_url)->res->json;
-        }
-        catch {
-            log_warning("Unable to query isotovideo status via \"$status_url\".");
-        };
-    }
-    my %status = (
+    return Mojo::IOLoop->next_tick(
+        sub { $self->_upload_results_step_0_prepare($is_final_upload, $status_from_os_autoinst, $callback) })
+      if $is_final_upload;
+
+    my $ua         = $self->{isotovideo_ua} ||= Mojo::UserAgent->new;
+    my $status_url = "$job_url/isotovideo/status";
+    $ua->get(
+        $status_url => sub {
+            my ($ua, $tx) = @_;
+            if (my $err = $tx->error) {
+                log_warning(qq{Unable to query isotovideo status via "$status_url": $err->{message}});
+            }
+            $status_from_os_autoinst = $tx->res->json;
+            $self->_upload_results_step_0_prepare($is_final_upload, $status_from_os_autoinst, $callback);
+        });
+}
+
+sub _upload_results_step_0_prepare {
+    my ($self, $is_final_upload, $status_from_os_autoinst, $callback) = @_;
+
+    my $worker_id       = $self->client->worker_id;
+    my $job_url         = $self->url;
+    my $global_settings = $self->worker->settings->global_settings;
+    my %status          = (
         worker_id             => $worker_id,
         cmd_srv_url           => $job_url,
         worker_hostname       => $global_settings->{WORKER_HOSTNAME},
@@ -758,7 +769,7 @@ sub _upload_results {
     $status{result}->{$current_test_module}->{result} = 'running' if ($current_test_module);
 
     # define steps for uploading status to web UI
-    return $self->_upload_results_step_0_post_status(
+    return $self->_upload_results_step_1_post_status(
         \%status,
         $is_final_upload,
         sub {
@@ -770,12 +781,11 @@ sub _upload_results {
                     log_error('Unable to make final image uploads. Maybe the web UI considers this job already dead.');
                 }
                 else {
-                    log_error(
-'Aborting job because web UI doesn\'t accept new images anymore (likely considers this job dead)'
-                    );
+                    log_error('Aborting job because web UI doesn\'t accept new images anymore'
+                          . ' (likely considers this job dead)');
                     $self->stop('api-failure');    # will be delayed until upload has been concluded via *_finalize()
                 }
-                return $self->_upload_results_step_2_finalize($is_final_upload, $callback);
+                return $self->_upload_results_step_3_finalize($is_final_upload, $callback);
             }
 
             # ignore known images
@@ -792,7 +802,7 @@ sub _upload_results {
                 sub {
 
                     # upload images (not an async operation)
-                    $self->_upload_results_step_1_upload_images(
+                    $self->_upload_results_step_2_upload_images(
                         sub {
 
                             # inform liveviewhandler about upload progress if developer session opened
@@ -800,7 +810,7 @@ sub _upload_results {
                                 $upload_up_to,
                                 $is_final_upload,
                                 sub {
-                                    $self->_upload_results_step_2_finalize($is_final_upload, $callback);
+                                    $self->_upload_results_step_3_finalize($is_final_upload, $callback);
                                 });
                         });
 
@@ -808,7 +818,7 @@ sub _upload_results {
         });
 }
 
-sub _upload_results_step_0_post_status {
+sub _upload_results_step_1_post_status {
     my ($self, $status, $is_final_upload, $callback) = @_;
 
     my $job_id = $self->id;
@@ -820,7 +830,7 @@ sub _upload_results_step_0_post_status {
     );
 }
 
-sub _upload_results_step_1_upload_images {
+sub _upload_results_step_2_upload_images {
     my ($self, $callback) = @_;
 
     Mojo::IOLoop->subprocess(
@@ -887,7 +897,7 @@ sub _upload_results_step_1_upload_images {
         });
 }
 
-sub _upload_results_step_2_finalize {
+sub _upload_results_step_3_finalize {
     my ($self, $is_final_upload, $callback) = @_;
 
     # continue sending status updates
