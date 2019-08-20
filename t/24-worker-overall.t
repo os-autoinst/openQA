@@ -298,17 +298,34 @@ subtest 'handle job status changes' => sub {
     my $cleanup_called = 0;
     $worker_mock->mock(_clean_pool_directory => sub { $cleanup_called = 1; });
 
+    # mock accepting job
+    my $job_mock     = Test::MockModule->new('OpenQA::Worker::Job');
+    my $job_accepted = 0;
+    $job_mock->mock(accept => sub { $job_accepted = 1; });
+
     # mock job startup
     my $job_mock           = Test::MockModule->new('OpenQA::Worker::Job');
     my $job_startup_called = 0;
     $job_mock->mock(start => sub { $job_startup_called = 1; });
 
-    # assign fake client and job
+    # assign fake client and job with cleanup
     my $fake_client = OpenQA::Worker::WebUIConnection->new('some-host', {apikey => 'foo', apisecret => 'bar'});
-    my $fake_job = OpenQA::Worker::Job->new($worker, $fake_client, {some => 'info'});
-    $fake_job->{_id} = 42;
-    $worker->current_job($fake_job);
-    $worker->current_webui_host('some-host');
+    $worker->current_job(undef);
+    $worker->no_cleanup(0);
+    $worker->accept_job($fake_client, {id => 42, some => 'info'});
+    my $fake_job = $worker->current_job;
+    ok($fake_job, 'job created');
+    is($cleanup_called, 1, 'pool directory cleanup triggered');
+    is($job_accepted,   1, 'job has been accepted');
+
+    # assign fake client and job without cleanup
+    $cleanup_called = 0;
+    $worker->current_job(undef);
+    $worker->no_cleanup(1);
+    $worker->accept_job($fake_client, {id => 42, some => 'info'});
+    ok($fake_job = $worker->current_job, 'job created');
+    is($cleanup_called, 0, 'pool directory cleanup not triggered');
+    is($job_accepted,   1, 'job has been accepted');
 
     combined_like(
         sub {
@@ -328,7 +345,7 @@ subtest 'handle job status changes' => sub {
     };
 
     subtest 'job stopped' => sub {
-        # stop job without cleanup enabled
+        # stop job with error message and without cleanup enabled
         combined_like(
             sub {
                 $worker->_handle_job_status_changed($fake_job,
@@ -341,11 +358,12 @@ subtest 'handle job status changes' => sub {
         is($worker->current_job,        undef, 'current job unassigned');
         is($worker->current_webui_host, undef, 'current web UI host unassigned');
 
+        # enable cleanup and run availability check
+        $worker->no_cleanup(0);
         $worker->check_availability;
         is($cleanup_called, 0, 'pool directory not cleaned up within periodic availability check');
 
-        # stop job with cleanup enabled
-        $worker->no_cleanup(0);
+        # stop job without error message and with cleanup enabled
         $worker->current_job($fake_job);
         $worker->current_webui_host('some-host');
         combined_like(
@@ -355,7 +373,7 @@ subtest 'handle job status changes' => sub {
             qr/Job 42 from some-host finished - reason: another/,
             'status logged'
         );
-        is($cleanup_called, 1, 'pool directory cleaned up');
+        is($cleanup_called, 1, 'pool directory cleaned up after job finished');
     };
 
     like(
