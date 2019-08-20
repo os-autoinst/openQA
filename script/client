@@ -229,7 +229,7 @@ for my $arg (@ARGV) {
     if ($arg =~ /^(?:get|post|delete|put)$/i) {
         $method = lc $arg;
     }
-    elsif ($arg =~ /^([[:alnum:]_\[\]\.]+)=(.+)/) {
+    elsif ($arg =~ /^([[:alnum:]_\[\]\.]+)=(.+)$/s) {
         $params{$1} = $2;
     }
 }
