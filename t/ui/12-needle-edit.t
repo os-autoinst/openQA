@@ -125,7 +125,7 @@ sub goto_editor_for_installer_timezone {
 }
 
 sub add_needle_tag {
-    my $tagname = shift || 'test-newtäg';
+    my $tagname = shift || 'test-newtag';
     $elem = $driver->find_element_by_id('newtag');
     $elem->send_keys($tagname);
     $driver->find_element_by_id('tag_add_button')->click();
@@ -136,7 +136,7 @@ sub add_needle_tag {
 
 sub add_workaround_property() {
     $driver->find_element_by_id('property_workaround')->click();
-    $driver->find_element_by_id('input_workaround_desc')->send_keys('bsc#123456 - this is a test');
+    $driver->find_element_by_id('input_workaround_desc')->send_keys('bsc#123456 - this is a täst');
     wait_for_ajax;
     is($driver->find_element_by_id('property_workaround')->is_selected(),    1, 'workaround property selected');
     is($driver->find_element_by_id('input_workaround_desc')->is_displayed(), 1, 'workaround description displayed');
@@ -453,7 +453,7 @@ subtest 'New needle instantly visible after reloading needle editor' => sub {
     is(
         $driver->find_element('#editor_warnings span')->get_text(),
         "A new needle with matching tags has been created since the job started: $needlename.json"
-          . ' (tags: ENV-VIDEOMODE-text, inst-timezone, test-newtäg, test-overwritetag)',
+          . ' (tags: ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag)',
         'warning about new needle displayed'
     );
 
@@ -472,7 +472,7 @@ subtest 'New needle instantly visible after reloading needle editor' => sub {
     is($driver->find_element_by_id('input_workaround_desc')->is_displayed(), 1, 'workaround description displayed');
     is(
         $driver->find_element_by_id('input_workaround_desc')->get_value(),
-        'bsc#123456 - this is a test',
+        'bsc#123456 - this is a täst',
         'workaround description is shown'
     );
     # check selecting/displaying image
@@ -509,7 +509,7 @@ subtest 'Showing new needles limited to the 5 most recent ones' => sub {
         if ($i >= 2) {
             unshift(@expected_needle_warnings,
                     "A new needle with matching tags has been created since the job started: $new_needle_name.json"
-                  . ' (tags: ENV-VIDEOMODE-text, inst-timezone, test-newtäg, test-overwritetag)');
+                  . ' (tags: ENV-VIDEOMODE-text, inst-timezone, test-newtag, test-overwritetag)');
             splice(@expected_needle_names, 2, 0, 'new: ' . $new_needle_name);
         }
     }
