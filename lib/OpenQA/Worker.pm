@@ -422,7 +422,7 @@ sub is_qemu_running {
     my ($self) = @_;
 
     return undef unless my $pool_directory = $self->pool_directory;
-    return undef unless open(my $fh, '<', "$pool_directory/qemu.pid");
+    return undef unless open(my $fh, '<', my $pid_file = "$pool_directory/qemu.pid");
 
     my $pid = <$fh>;
     chomp($pid);
@@ -430,6 +430,11 @@ sub is_qemu_running {
     return undef unless $pid;
 
     my $link = readlink("/proc/$pid/exe");
+    if (!$link || !($link =~ /\/qemu-[^\/]+$/)) {
+        # delete the obsolete PID file (it might have been spared on cleanup if QEMU was still running)
+        unlink($pid_file) unless $self->no_cleanup;
+        return undef;
+    }
     return undef unless $link;
     return undef unless $link =~ /\/qemu-[^\/]+$/;
 
@@ -613,7 +618,12 @@ sub _clean_pool_directory {
 
     return undef unless my $pool_directory = $self->pool_directory;
 
+    # prevent cleanup of "qemu.pid" file if QEMU is still running so is_qemu_running() continues to work
+    my %excludes;
+    $excludes{"$pool_directory/qemu.pid"} = 1 if $self->is_qemu_running;
+
     for my $file (glob "$pool_directory/*") {
+        next if $excludes{$file};
         if (-d $file) {
             remove_tree($file);
         }
