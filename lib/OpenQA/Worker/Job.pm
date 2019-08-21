@@ -18,6 +18,7 @@ use Mojo::Base 'Mojo::EventEmitter';
 
 use OpenQA::Jobs::Constants;
 use OpenQA::Worker::Engines::isotovideo;
+use OpenQA::Worker::Isotovideo::Client;
 use OpenQA::Utils qw(log_error log_warning log_debug log_info wait_with_progress);
 
 use Digest::MD5;
@@ -33,6 +34,7 @@ use Try::Tiny;
 # define attributes for public properties
 has 'worker';
 has 'client';
+has 'isotovideo_client' => sub { OpenQA::Worker::Isotovideo::Client->new(job => shift) };
 has 'developer_session_running';
 has 'upload_results_interval';
 
@@ -347,7 +349,7 @@ sub _stop_step_3_announce {
     return Mojo::IOLoop->next_tick($callback) unless $self->is_backend_running;
 
     my $ua      = Mojo::UserAgent->new(request_timeout => 10);
-    my $job_url = $self->url;
+    my $job_url = $self->isotovideo_client->url;
     return Mojo::IOLoop->next_tick($callback) unless $job_url;
 
     try {
@@ -419,7 +421,7 @@ sub _stop_step_5_upload {
                     }
                 }
 
-                # upload assets created by successfull jobs
+                # upload assets created by successful jobs
                 if ($reason eq 'done' || $reason eq 'cancel') {
                     for my $dir (qw(private public)) {
                         my @assets        = glob "$pooldir/assets_$dir/*";
@@ -649,13 +651,6 @@ sub _calculate_upload_results_interval {
     return $interval;
 }
 
-sub url {
-    my ($self) = @_;
-
-    my $info = $self->info or return undef;
-    return $info->{URL};
-}
-
 sub _upload_results {
     my ($self, $callback) = @_;
 
@@ -668,7 +663,7 @@ sub _upload_results {
     }
 
     # return if job setup is insufficient
-    my $job_url = $self->url;
+    my $job_url = $self->isotovideo_client->url;
     if (!$job_url || !$self->client->worker_id) {
         log_warning('Unable to upload results of the job because no command server URL or worker ID have been set.');
         $self->emit(uploading_results_concluded => {});
@@ -686,20 +681,12 @@ sub _upload_results {
 
     # query status from isotovideo (unless it is the final status upload because isotovideo
     # has already been stopped in this case)
-    my $status_from_os_autoinst = {};
-    return Mojo::IOLoop->next_tick(
-        sub { $self->_upload_results_step_0_prepare($is_final_upload, $status_from_os_autoinst, $callback) })
+    return Mojo::IOLoop->next_tick(sub { $self->_upload_results_step_0_prepare($is_final_upload, {}, $callback) })
       if $is_final_upload;
 
-    my $ua         = $self->{isotovideo_ua} ||= Mojo::UserAgent->new;
-    my $status_url = "$job_url/isotovideo/status";
-    $ua->get(
-        $status_url => sub {
-            my ($ua, $tx) = @_;
-            if (my $err = $tx->error) {
-                log_warning(qq{Unable to query isotovideo status via "$status_url": $err->{message}});
-            }
-            $status_from_os_autoinst = $tx->res->json;
+    $self->isotovideo_client->status(
+        sub {
+            my ($isotovideo_client, $status_from_os_autoinst) = @_;
             $self->_upload_results_step_0_prepare($is_final_upload, $status_from_os_autoinst, $callback);
         });
 }
@@ -708,7 +695,7 @@ sub _upload_results_step_0_prepare {
     my ($self, $is_final_upload, $status_from_os_autoinst, $callback) = @_;
 
     my $worker_id       = $self->client->worker_id;
-    my $job_url         = $self->url;
+    my $job_url         = $self->isotovideo_client->url;
     my $global_settings = $self->worker->settings->global_settings;
     my %status          = (
         worker_id             => $worker_id,
