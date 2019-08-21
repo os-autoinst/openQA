@@ -251,11 +251,34 @@ subtest 'check negative cases for is_qemu_running' => sub {
     my $pool_directory = tempdir('poolXXXX');
     $worker->pool_directory($pool_directory);
 
+    $worker->no_cleanup(0);
     $pool_directory->child('qemu.pid')->spurt('999999999999999999');
     is($worker->is_qemu_running, undef, 'QEMU not considered running if PID invalid');
+    ok(!-f $pool_directory->child('qemu.pid'), 'PID file not cleaned up with --no-cleanup');
 
+    $worker->no_cleanup(1);
     $pool_directory->child('qemu.pid')->spurt($$);
     is($worker->is_qemu_running, undef, 'QEMU not considered running if PID is not a qemu process');
+    ok(-f $pool_directory->child('qemu.pid'), 'PID file cleaned up');
+};
+
+subtest 'cleaning pool directory' => sub {
+    my $pool_directory = tempdir('poolXXXX');
+    $worker->pool_directory($pool_directory);
+
+    # pretend QEMU is still running
+    my $worker_mock = Test::MockModule->new('OpenQA::Worker');
+    $worker_mock->mock(is_qemu_running => sub { return 1; });
+
+    my $pid_file   = $pool_directory->child('qemu.pid')->spurt($$);
+    my $other_file = $pool_directory->child('other-file')->spurt('foo');
+    $worker->_clean_pool_directory;
+    ok(-f $pid_file,    'PID file not deleted while QEMU still running');
+    ok(!-f $other_file, 'other file deleted');
+
+    $worker_mock->unmock('is_qemu_running');
+    $worker->_clean_pool_directory;
+    ok(!-f $pid_file, 'PID file deleted when QEMU not running');
 };
 
 subtest 'handle client status changes' => sub {
