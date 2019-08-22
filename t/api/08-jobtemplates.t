@@ -826,13 +826,7 @@ subtest 'Create and modify groups with YAML' => sub {
         $t->post_ok(
             "/api/v1/experimental/job_templates_scheduling/$job_group_id3",
             form => {
-                template => YAML::XS::Dump($yaml)}
-        )->status_is(200)->json_is(
-            '' => {
-                id => $job_group_id3,
-            },
-            'Test suite was updated'
-        );
+                template => YAML::XS::Dump($yaml)})->status_is(200, 'Test suite was updated');
         $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
         is_deeply(YAML::XS::Load($t->tx->res->body), $yaml, 'Modified test suite should be reflected in the database')
           || diag explain $t->tx->res->body;
@@ -968,8 +962,7 @@ subtest 'References' => sub {
         OpenQA::Test::Case::find_most_recent_event($schema, 'jobtemplate_create'),
         {
             id      => $job_group_id4,
-            changes => '
-@@ -23,7 +23,7 @@
+            changes => '@@ -23,7 +23,7 @@
    i586:
      opensuse-13.1-DVD-i586: &2
      - spam
@@ -977,8 +970,7 @@ subtest 'References' => sub {
 +    - foobar
    ppc64:
      opensuse-13.1-DVD-ppc64: *2
-   x86_64:
-'
+   x86_64:'
         },
         'Diff reflects changes in the YAML'
     );

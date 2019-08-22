@@ -558,18 +558,49 @@ subtest 'edit the yaml' => sub() {
     ok($form->is_displayed(),                             'editor form is shown');
     ok($form->child('.progress-indication')->is_hidden(), 'spinner is hidden');
     my $yaml = $driver->execute_script('return editor.doc.getValue();');
-    ok($yaml =~ m/scenarios:/, 'YAML was fetched') or diag explain $yaml;
+    like($yaml, qr/scenarios:/, 'YAML was fetched') or diag explain $yaml;
     # Preview
     $driver->find_element_by_id('preview-template')->click();
     my $result = $form->child('.result');
     wait_for_ajax;
-    ok($result->get_text() =~ m/Preview of the YAML/, 'preview shown') or diag explain $result->get_text();
+    like($result->get_text(), qr/Preview of the changes/, 'preview shown') or diag explain $result->get_text();
+    like($result->get_text(), qr/No changes were made!/,  'preview, nothing changed')
+      or diag explain $result->get_text();
 
     # Save
     $driver->find_element_by_id('save-template')->click();
     $result = $form->child('.result');
     wait_for_ajax;
-    ok($result->get_text() =~ m/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
+    like($result->get_text(), qr/YAML saved!/,           'saving confirmed') or diag explain $result->get_text();
+    like($result->get_text(), qr/No changes were made!/, 'preview, nothing changed')
+      or diag explain $result->get_text();
+
+    # Make changes to existing YAML
+    $yaml .= "    - advanced_kde:\n";
+    $yaml .= "        priority: 11\n";
+    $yaml =~ s/\n/\\n/g;
+    $driver->execute_script("editor.doc.setValue(\"$yaml\");");
+    $driver->find_element_by_id('preview-template')->click();
+    wait_for_ajax;
+    like($result->get_text(), qr/Preview of the changes/, 'preview shown') or diag explain $result->get_text();
+    ok(index($result->get_text(), '@@ -15,3 +15,5 @@') != -1, 'diff of changes shown')
+      or diag explain $result->get_text();
+    $driver->find_element_by_id('save-template')->click();
+    wait_for_ajax;
+    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
+    ok(index($result->get_text(), '@@ -15,3 +15,5 @@') != -1, 'diff of changes shown')
+      or diag explain $result->get_text();
+
+    # No changes
+    $driver->find_element_by_id('preview-template')->click();
+    wait_for_ajax;
+    like($result->get_text(), qr/Preview of the changes/, 'preview shown') or diag explain $result->get_text();
+    like($result->get_text(), qr/No changes were made!/,  'preview, nothing changed')
+      or diag explain $result->get_text();
+    $driver->find_element_by_id('save-template')->click();
+    wait_for_ajax;
+    like($result->get_text(), qr/YAML saved!/,           'saving confirmed')       or diag explain $result->get_text();
+    like($result->get_text(), qr/No changes were made!/, 'saved, nothing changed') or diag explain $result->get_text();
 
     # Legacy UI is hidden and no longer available
     ok($driver->find_element_by_id('toggle-yaml-editor')->is_hidden(), 'editor toggle hidden');
@@ -580,7 +611,7 @@ subtest 'edit the yaml' => sub() {
     $driver->execute_script('editor.doc.setValue("invalid: true");');
     $driver->find_element_by_id('preview-template')->click();
     wait_for_ajax;
-    ok($result->get_text() =~ m/There was a problem applying the changes/, 'error shown');
+    like($result->get_text(), qr/There was a problem applying the changes/, 'error shown');
 
     # Group properties remain accessible
     $driver->find_element_by_id('toggle-group-properties')->click();

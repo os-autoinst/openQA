@@ -109,6 +109,7 @@
 
 ! codemirror.css
 < https://raw.githubusercontent.com/codemirror/CodeMirror/8097c7e75ce7ef0512debe9967d7568626106e53/lib/codemirror.css
+< https://raw.githubusercontent.com/codemirror/CodeMirror/8097c7e75ce7ef0512debe9967d7568626106e53/mode/diff/diff.js
 < stylesheets/codemirror_customization.css
 
 ! codemirror.js
