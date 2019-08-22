@@ -538,6 +538,7 @@ sub prepare_job_results {
             };
             if ($job->state eq OpenQA::Jobs::Constants::SCHEDULED) {
                 $aggregated->{scheduled}++;
+                $result->{blocked} = 1 if defined $job->blocked_by_id;
             }
             else {
                 $aggregated->{none}++;

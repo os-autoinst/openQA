@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ sub get_summary {
 #
 # Overview of build 0091
 #
+$schema->resultset('Jobs')->find(99928)->update({blocked_by_id => 99927});
 $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', build => '0091'})->status_is(200);
 
 my $summary = get_summary;
@@ -52,8 +53,15 @@ $t->element_exists_not('#flavor_DVD_arch_i686');
 # Check some results (and it's overview_xxx classes)
 $t->element_exists('#res_DVD_i586_kde .result_passed');
 $t->element_exists('#res_GNOME-Live_i686_RAID0 i.state_cancelled');
-$t->element_exists('#res_DVD_i586_RAID1 i.state_scheduled');
+$t->element_exists('#res_DVD_i586_RAID1 i.state_blocked');
 $t->element_exists_not('#res_DVD_x86_64_doc');
+
+# Check distinction between scheduled and blocked
+my $dom = $t->tx->res->dom;
+is_deeply($dom->find('.status.state_scheduled')->map('parent')->map(attr => 'href')->to_array,
+    ['/tests/99927'], '99927 is scheduled');
+is_deeply($dom->find('.status.state_blocked')->map('parent')->map(attr => 'href')->to_array,
+    ['/tests/99928'], '99928 is blocked');
 
 my $form = {distri => 'opensuse', version => '13.1', build => '0091', group => 'opensuse 13.1'};
 $t->get_ok('/tests/overview' => form => $form)->status_is(200);
