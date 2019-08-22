@@ -168,4 +168,3 @@ the api.
 L<Mojo::UserAgent>, L<Config::IniFiles>
 
 =cut
-# vim: set sw=4 et:

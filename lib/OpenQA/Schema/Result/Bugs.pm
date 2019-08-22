@@ -76,4 +76,3 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw(bugid)]);
 
 1;
-# vim: set sw=4 et:

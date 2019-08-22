@@ -54,4 +54,3 @@ use warnings;
         feature_version => 0,
     },
 ]
-# vim: set sw=4 et:

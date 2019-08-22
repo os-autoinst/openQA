@@ -177,4 +177,3 @@ sub read_application_secrets {
 }
 
 1;
-# vim: set sw=4 et:

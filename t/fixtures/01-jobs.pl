@@ -523,4 +523,3 @@ use warnings;
         result_dir => '00099764-opensuse-13.1-DVD-x86_64-Build0091-kde',
     },
 ]
-# vim: set sw=4 et:

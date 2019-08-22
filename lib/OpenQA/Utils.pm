@@ -1262,4 +1262,3 @@ sub any_array_item_contained_by_hash {
 }
 
 1;
-# vim: set sw=4 et:

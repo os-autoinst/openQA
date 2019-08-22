@@ -82,4 +82,3 @@ sub render_response {
 
 1;
 
-# vim: set sw=4 et:

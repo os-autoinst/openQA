@@ -14,4 +14,3 @@ use warnings;
         properties => [{key => 'JOBTOKEN', value => 'token99961'}],
         job_id     => 99961,
     }]
-# vim: set sw=4 et:

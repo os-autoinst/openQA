@@ -225,4 +225,3 @@ sub get_bug_values {
 }
 
 1;
-# vim: set sw=4 et:

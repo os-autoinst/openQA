@@ -126,4 +126,3 @@ use warnings;
         arch    => 'ppc64',
     },
 ]
-# vim: set sw=4 et:

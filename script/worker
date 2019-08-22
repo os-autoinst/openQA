@@ -141,4 +141,3 @@ $SIG{INT}  = \*catch_exit;
 
 exit $worker->exec();
 
-# vim: set sw=4 sts=4 et:

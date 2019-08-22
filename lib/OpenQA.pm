@@ -17,4 +17,3 @@ package OpenQA;
 use Mojo::Base -strict;
 
 1;
-# vim: set sw=4 et:

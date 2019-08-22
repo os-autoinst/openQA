@@ -357,4 +357,3 @@ if ($jobid) {
     clone_job($jobid);
 }
 1;
-# vim: set sw=4 et:

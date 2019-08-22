@@ -155,4 +155,3 @@ sub _valid_hmac {
 }
 
 1;
-# vim: set sw=4 et:
