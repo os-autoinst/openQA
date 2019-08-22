@@ -112,4 +112,3 @@ if ($upgrade_database) {
     OpenQA::Schema::deployment_check($schema, $force);
 }
 
-# vim: set sw=4 sts=4 et:

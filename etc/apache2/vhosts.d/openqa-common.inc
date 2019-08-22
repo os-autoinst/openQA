@@ -79,4 +79,3 @@ ServerSignature On
 # TODO: try mojo 7.39 - https://github.com/kraih/mojo/commit/f9ff45e48f606
 SetEnv proxy-nokeepalive 1
 
-# vim: syntax=apache

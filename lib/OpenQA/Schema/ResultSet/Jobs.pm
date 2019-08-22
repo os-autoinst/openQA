@@ -492,4 +492,3 @@ sub next_previous_jobs_query {
 }
 
 1;
-# vim: set sw=4 et:

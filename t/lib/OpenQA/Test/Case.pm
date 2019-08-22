@@ -86,4 +86,3 @@ sub find_most_recent_event {
 }
 
 1;
-# vim: set sw=4 et:

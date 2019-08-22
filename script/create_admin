@@ -91,4 +91,3 @@ my $account = $schema->resultset('Users')->create_user(
 
 $schema->resultset("ApiKeys")->create({user_id => $account->id, key => $key, secret => $secret});
 
-# vim: set sw=4 sts=4 et:

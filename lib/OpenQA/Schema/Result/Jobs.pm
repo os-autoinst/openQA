@@ -1955,4 +1955,3 @@ sub status_info {
 
 1;
 
-# vim: set sw=4 et:

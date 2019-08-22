@@ -842,4 +842,3 @@ sub _generate_job_setting {
 }
 
 1;
-# vim: set sw=4 et:

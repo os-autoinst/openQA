@@ -115,4 +115,3 @@ sub previous_jobs_ajax {
 }
 
 1;
-# vim: set sw=4 et:
