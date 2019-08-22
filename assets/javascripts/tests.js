@@ -88,12 +88,16 @@ function renderTestName(data, type, row) {
             }
         };
         depsTooltip.quantify(parents.Chained.length, 'chained parent', 'chained parents');
+        depsTooltip.quantify(parents['Directly chained'].length, 'directly chained parent', 'directly chained parents');
         depsTooltip.quantify(parents.Parallel.length, 'parallel parent', 'parallel parents');
         depsTooltip.quantify(children.Chained.length, 'chained child', 'chained children');
+        depsTooltip.quantify(children['Directly chained'].length, 'directly chained child', 'directly chained children');
         depsTooltip.quantify(children.Parallel.length, 'parallel child', 'parallel children');
         if (depsTooltip.length) {
+            var childrenToHighlight = children.Parallel.concat(children.Chained, children['Directly chained']);
+            var parentsToHighlight = parents.Parallel.concat(parents.Chained, parents['Directly chained']);
             html += ' <a href="/tests/' + row.id + '" title="' + depsTooltip.join(', ') + '"' +
-                highlightJobsHtml(children.Parallel.concat(children.Chained), parents.Parallel.concat(parents.Chained)) +
+                highlightJobsHtml(childrenToHighlight, parentsToHighlight) +
                 '><i class="fa fa-code-branch"></i></a>';
         }
     }
@@ -203,7 +207,8 @@ function renderTestResult( data, type, row ) {
     if (row.state === 'cancelled') {
         html += "<i class='fa fa-times' title='canceled'></i>";
     }
-    if (row.deps.parents.Parallel.length + row.deps.parents.Chained.length > 0) {
+    var parents = row.deps.parents;
+    if (parents.Parallel.length + parents.Chained.length + parents['Directly chained'].length > 0) {
         if (row.result === 'skipped' || row.result === 'parallel_failed') {
             html += " <i class='fa fa-unlink' title='dependency failed'></i>";
         }

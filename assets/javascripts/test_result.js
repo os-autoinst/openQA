@@ -519,6 +519,7 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
             testResultId: testResultId,
             testResultName: testResultName,
             startAfter: node.start_after,
+            startDirectlyAfter: node.start_directly_after,
             parallelWith: node.parallel_with,
         });
     });
@@ -551,14 +552,18 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
             var node = g.node(v);
             var tooltipText = '<p>' + node.name + '</p>';
             var startAfter = node.startAfter;
+            var startDirectlyAfter = node.startDirectlyAfter;
             var parallelWith = node.parallelWith;
-            if (startAfter.length || parallelWith.length) {
+            if (startAfter.length || startDirectlyAfter.length || parallelWith.length) {
                 tooltipText += '<div style="border-top: 1px solid rgba(100, 100, 100, 30); margin: 5px 0px;"></div>';
                 if (startAfter.length) {
-                    tooltipText += '<p><code>START_AFTER_TEST=' + startAfter.join(',') + '</code></p>';
+                    tooltipText += '<p><code>START_AFTER_TEST=' + htmlEscape(startAfter.join(',')) + '</code></p>';
+                }
+                if (startDirectlyAfter.length) {
+                    tooltipText += '<p><code>START_DIRECTLY_AFTER_TEST=' + htmlEscape(startDirectlyAfter.join(',')) + '</code></p>';
                 }
                 if (parallelWith.length) {
-                    tooltipText += '<p><code>PARALLEL_WITH=' + parallelWith.join(',') + '</code></p>';
+                    tooltipText += '<p><code>PARALLEL_WITH=' + htmlEscape(parallelWith.join(',')) + '</code></p>';
                 }
             }
             return tooltipText;

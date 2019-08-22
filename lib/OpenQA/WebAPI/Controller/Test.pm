@@ -744,18 +744,20 @@ sub _add_dependency_to_graph {
     my ($edges, $cluster, $cluster_by_job, $parent_job_id, $child_job_id, $dependency_type) = @_;
 
     # add edge for chained dependencies
-    if ($dependency_type eq OpenQA::JobDependencies::Constants::CHAINED) {
+    if (   $dependency_type eq OpenQA::JobDependencies::Constants::CHAINED
+        || $dependency_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED)
+    {
         push(
             @$edges,
             {
                 from => $parent_job_id,
                 to   => $child_job_id,
             });
-        return;
+        return undef;
     }
 
     # add job to a cluster if dependency is parallel with
-    return unless ($dependency_type eq OpenQA::JobDependencies::Constants::PARALLEL);
+    return undef unless ($dependency_type eq OpenQA::JobDependencies::Constants::PARALLEL);
 
     # check whether the jobs are already parted of a cluster
     my $job1_cluster_id = $cluster_by_job->{$child_job_id};
@@ -798,8 +800,11 @@ sub _add_dependency_to_node {
     elsif ($dependency_type eq OpenQA::JobDependencies::Constants::PARALLEL) {
         $key = 'parallel_with';
     }
+    elsif ($dependency_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
+        $key = 'start_directly_after';
+    }
     else {
-        return;
+        return undef;
     }
 
     push(@{$node->{$key}}, $parent->TEST);
@@ -819,14 +824,15 @@ sub _add_job {
     }
 
     my %node = (
-        id            => $job_id,
-        label         => $job->TEST,
-        name          => $job->name,
-        state         => $job->state,
-        result        => $job->result,
-        blocked_by_id => $job->blocked_by_id,
-        start_after   => [],
-        parallel_with => [],
+        id                   => $job_id,
+        label                => $job->TEST,
+        name                 => $job->name,
+        state                => $job->state,
+        result               => $job->result,
+        blocked_by_id        => $job->blocked_by_id,
+        start_after          => [],
+        start_directly_after => [],
+        parallel_with        => [],
     );
     push(@$nodes, \%node);
 

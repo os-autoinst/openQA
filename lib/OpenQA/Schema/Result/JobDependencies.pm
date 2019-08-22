@@ -49,12 +49,7 @@ sub sqlt_deploy_hook {
 
 sub to_string {
     my ($self) = @_;
-
-    my %deps = (
-        OpenQA::JobDependencies::Constants::CHAINED  => "Chained",
-        OpenQA::JobDependencies::Constants::PARALLEL => "Parallel"
-    );
-    return $deps{$self->dependency};
+    return OpenQA::JobDependencies::Constants::display_name($self->dependency);
 }
 
 1;

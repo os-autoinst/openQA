@@ -463,14 +463,15 @@ sub deps_hash {
     my ($self) = @_;
 
     if (!defined($self->{_deps_hash})) {
-        $self->{_deps_hash} = {
-            parents  => {Chained => [], Parallel => []},
-            children => {Chained => [], Parallel => []}};
+        my @dependency_names = OpenQA::JobDependencies::Constants::display_names;
+        my %parents          = map { $_ => [] } @dependency_names;
+        my %children         = map { $_ => [] } @dependency_names;
+        $self->{_deps_hash} = {parents => \%parents, children => \%children};
         for my $dep ($self->parents) {
-            push @{$self->{_deps_hash}->{parents}->{$dep->to_string}}, $dep->parent_job_id;
+            push @{$parents{$dep->to_string}}, $dep->parent_job_id;
         }
         for my $dep ($self->children) {
-            push @{$self->{_deps_hash}->{children}->{$dep->to_string}}, $dep->child_job_id;
+            push @{$children{$dep->to_string}}, $dep->child_job_id;
         }
     }
 
@@ -729,7 +730,7 @@ sub cluster_jobs {
             # we don't duplicate up the chain, only down
             next;
         }
-        else {
+        elsif ($pd->dependency eq OpenQA::JobDependencies::Constants::PARALLEL) {
             push(@{$jobs->{$self->id}->{parallel_parents}}, $p->id);
             my $cancelwhole = 1;
             # check if the setting to disable cancelwhole is set: the var
@@ -748,6 +749,9 @@ sub cluster_jobs {
                 }
             }
             $p->cluster_jobs(jobs => $jobs);
+        }
+        elsif ($pd->dependency eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
+            # TODO
         }
     }
 
@@ -1851,16 +1855,17 @@ sub cancel {
 sub dependencies {
     my ($self) = @_;
 
-    my %parents  = (Chained => [], Parallel => []);
-    my %children = (Chained => [], Parallel => []);
+    my @dependency_names = OpenQA::JobDependencies::Constants::display_names;
+    my %parents          = map { $_ => [] } @dependency_names;
+    my %children         = map { $_ => [] } @dependency_names;
 
     my $jp = $self->parents;
     while (my $s = $jp->next) {
-        push(@{${parents}{$s->to_string}}, $s->parent_job_id);
+        push(@{$parents{$s->to_string}}, $s->parent_job_id);
     }
     my $jc = $self->children;
     while (my $s = $jc->next) {
-        push(@{${children}{$s->to_string}}, $s->child_job_id);
+        push(@{$children{$s->to_string}}, $s->child_job_id);
     }
 
     return {

@@ -310,15 +310,15 @@ my $textmode_32     = find_job(\@jobs, \@newids, 'textmode',     '32bit');
 
 is_deeply(
     $client1_32->{parents},
-    {Parallel => [$server_32->{id}], Chained => []},
+    {Parallel => [$server_32->{id}], Chained => [], 'Directly chained' => []},
     "server_32 is only parent of client1_32"
 );
 is_deeply(
     $client2_32->{parents},
-    {Parallel => [$server_32->{id}], Chained => []},
+    {Parallel => [$server_32->{id}], Chained => [], 'Directly chained' => []},
     "server_32 is only parent of client2_32"
 );
-is_deeply($server_32->{parents}, {Parallel => [], Chained => []}, "server_32 has no parents");
+is_deeply($server_32->{parents}, {Parallel => [], Chained => [], 'Directly chained' => []}, "server_32 has no parents");
 is($kde_32,          undef, 'kde is not created for 32bit machine');
 is($advanced_kde_32, undef, 'advanced_kde is not created for 32bit machine');
 
@@ -333,15 +333,15 @@ my $expected_job_count = 10;
 
 is_deeply(
     $client1_64->{parents},
-    {Parallel => [$server_64->{id}], Chained => []},
+    {Parallel => [$server_64->{id}], Chained => [], 'Directly chained' => []},
     "server_64 is only parent of client1_64"
 );
 is_deeply(
     $client2_64->{parents},
-    {Parallel => [$server_64->{id}], Chained => []},
+    {Parallel => [$server_64->{id}], Chained => [], 'Directly chained' => []},
     "server_64 is only parent of client2_64"
 );
-is_deeply($server_64->{parents}, {Parallel => [], Chained => []}, "server_64 has no parents");
+is_deeply($server_64->{parents}, {Parallel => [], Chained => [], 'Directly chained' => []}, "server_64 has no parents");
 eq_set($advanced_kde_64->{parents}->{Parallel}, [], 'advanced_kde_64 has no parallel parents');
 eq_set(
     $advanced_kde_64->{parents}->{Chained},
@@ -849,8 +849,9 @@ subtest 'Create dependency for jobs on different machines - dependency setting a
         MACHINE       => ['Laptop_64']);
 
     add_opensuse_test('test1');
-    add_opensuse_test('test2', MACHINE          => ['64bit-ipmi']);
-    add_opensuse_test('test3', START_AFTER_TEST => 'test1,test2:64bit-ipmi');
+    add_opensuse_test('test2', MACHINE                   => ['64bit-ipmi']);
+    add_opensuse_test('test3', START_AFTER_TEST          => 'test1,test2:64bit-ipmi');
+    add_opensuse_test('test4', START_DIRECTLY_AFTER_TEST => 'test3');
 
     my $res = schedule_iso(
         {
@@ -863,7 +864,7 @@ subtest 'Create dependency for jobs on different machines - dependency setting a
             _GROUP  => 'opensuse test',
         });
 
-    is($res->json->{count}, 6, '6 jobs scheduled');
+    is($res->json->{count}, 7, '7 jobs scheduled');
     my @newids = @{$res->json->{ids}};
     my $newid  = $newids[0];
 
@@ -875,18 +876,24 @@ subtest 'Create dependency for jobs on different machines - dependency setting a
     my $client_laptop = find_job(\@jobs, \@newids, 'client',         'Laptop_64');
     is_deeply(
         $client_laptop->{parents},
-        {Parallel => [$server1_64->{id}, $server2_ipmi->{id}], Chained => []},
+        {Parallel => [$server1_64->{id}, $server2_ipmi->{id}], Chained => [], 'Directly chained' => []},
         "server1_64 and server2_ipmi are the parents of client_laptop"
     );
 
     my $test1_64   = find_job(\@jobs, \@newids, 'test1', '64bit');
     my $test2_ipmi = find_job(\@jobs, \@newids, 'test2', '64bit-ipmi');
     my $test3_64   = find_job(\@jobs, \@newids, 'test3', '64bit');
+    my $test4_64   = find_job(\@jobs, \@newids, 'test4', '64bit');
     is_deeply(
         $test3_64->{parents},
-        {Parallel => [], Chained => [$test1_64->{id}, $test2_ipmi->{id}]},
+        {Parallel => [], Chained => [$test1_64->{id}, $test2_ipmi->{id}], 'Directly chained' => []},
         "test1_64 and test2_ipmi are the parents of test3"
-    );
+    ) or diag explain $test3_64->{parents};
+    is_deeply(
+        $test4_64->{parents},
+        {Parallel => [], Chained => [], 'Directly chained' => [$test3_64->{id}]},
+        "test1_64 and test2_ipmi are the parents of test3"
+    ) or diag explain $test4_64->{parents};
 
     $schema->txn_rollback;
 };
@@ -931,7 +938,7 @@ subtest 'Create dependency for jobs on different machines - best match and log e
     );
     is_deeply(
         $use_ltp_power->{parents},
-        {Parallel => [], Chained => [$install_ltp->{id}]},
+        {Parallel => [], Chained => [$install_ltp->{id}], 'Directly chained' => []},
         "install_ltp is parent of use_ltp_power"
     );
 
@@ -941,12 +948,12 @@ subtest 'Create dependency for jobs on different machines - best match and log e
     my $use_kde_power     = find_job(\@jobs, \@newids, 'use_kde',     'powerpc');
     is_deeply(
         $use_kde_64->{parents},
-        {Parallel => [], Chained => [$install_kde_64->{id}]},
+        {Parallel => [], Chained => [$install_kde_64->{id}], 'Directly chained' => []},
         "install_kde_64 is only parent of use_kde_64"
     );
     is_deeply(
         $use_kde_power->{parents},
-        {Parallel => [], Chained => [$install_kde_power->{id}]},
+        {Parallel => [], Chained => [$install_kde_power->{id}], 'Directly chained' => []},
         "install_kde_power is only parent of use_kde_power"
     );
 
@@ -993,7 +1000,7 @@ subtest 'Create dependency for jobs on different machines - log error parents' =
     for my $c (my @children = ($server1_ppc, $slave1_ppc, $slave2_ppc)) {
         is_deeply(
             $c->{parents},
-            {Parallel => [$supportserver_ppc->{id}], Chained => []},
+            {Parallel => [$supportserver_ppc->{id}], Chained => [], 'Directly chained' => []},
             "supportserver_ppc is only parent of " . $c->{name});
     }
 
