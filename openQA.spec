@@ -45,7 +45,13 @@
 %else
 %define python_scripts_requires %{nil}
 %endif
-%define t_requires perl(DBD::Pg) perl(DBIx::Class) perl(Config::IniFiles) perl(SQL::Translator) perl(Date::Format) perl(File::Copy::Recursive) perl(DateTime::Format::Pg) perl(Net::OpenID::Consumer) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) perl(aliased) perl(Config::Tiny) perl(DBIx::Class::DeploymentHandler) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(IO::Socket::SSL) perl(Data::Dump) perl(DBIx::Class::OptimisticLocking) perl(Module::Pluggable) perl(Text::Diff) perl(CommonMark) perl(JSON::Validator) perl(YAML::XS) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(Mojo::RabbitMQ::Client) perl(BSD::Resource) perl(Cpanel::JSON::XS) perl(Pod::POM) perl(Mojo::IOLoop::ReadWriteProcess) perl(Minion) perl(Mojo::Pg) perl(Mojo::SQLite) perl(Minion::Backend::SQLite) %python_scripts_requires
+%define common_requires perl(Config::IniFiles) perl(Cpanel::JSON::XS) perl(Data::Dump) perl(Getopt::Long) perl(Minion) perl(Mojolicious) perl(Try::Tiny) perl(Regexp::Common)
+# runtime requirements for the main package that are not required by other sub-packages
+%define main_requires perl(Date::Format) perl(DateTime::Format::Pg) perl(DBD::Pg) perl(DBI) >= 1.632, perl(DBIx::Class) => 0.082801, perl(DBIx::Class::DeploymentHandler) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(DBIx::Class::OptimisticLocking) perl(File::Copy::Recursive) perl(Net::OpenID::Consumer) perl(Module::Pluggable) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) => 1.36, perl(aliased) perl(Config::Tiny) perl(Text::Diff) perl(CommonMark) perl(JSON::Validator) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(BSD::Resource) perl(Pod::POM) perl(Mojo::Pg) perl(Mojo::RabbitMQ::Client) => 0.2, perl(SQL::Translator) perl(YAML::XS) perl(LWP::UserAgent)
+%define client_requires perl(IO::Socket::SSL) >= 2.009, perl(LWP::UserAgent)
+%define worker_requires os-autoinst < 5, perl(Mojo::IOLoop::ReadWriteProcess) > 0.19, perl(Minion::Backend::SQLite) perl(Mojo::SQLite) openQA-client
+# all requirements needed by the tests, do not require on this in individual sub-packages
+%define test_requires %common_requires %main_requires %python_scripts_requires %worker_requires
 Name:           openQA
 Version:        4.6
 Release:        0
@@ -60,29 +66,22 @@ Source1:        cache.txz
 Source100:      openQA-rpmlintrc
 Source101:      update-cache.sh
 Source102:      Dockerfile
-BuildRequires:  %{t_requires}
+BuildRequires:  %{test_requires}
 BuildRequires:  fdupes
-BuildRequires:  os-autoinst
 BuildRequires:  systemd
 # critical bug fix
-BuildRequires:  perl(DBIx::Class) >= 0.082801
 BuildRequires:  perl(Minion) >= 9.09
 BuildRequires:  perl(DBI) >= 1.632
 BuildRequires:  perl(Mojolicious) >= 7.92
-BuildRequires:  perl(Mojolicious::Plugin::AssetPack) >= 1.36
-BuildRequires:  perl(Mojo::RabbitMQ::Client) >= 0.2
 BuildRequires:  rubygem(sass)
 Requires:       perl(Minion) >= 9.09
-Requires:       perl(DBI) >= 1.632
-Requires:       perl(Mojo::RabbitMQ::Client) >= 0.2
-Requires:       perl(YAML::XS) >= 0.67
+Requires:       %main_requires
 # needed for test suite
 Requires:       git-core
 Requires:       openQA-client = %{version}
 Requires:       openQA-common = %{version}
 # needed for saving needles optimized
 Requires:       optipng
-Requires:       perl(DBIx::Class) >= 0.082801
 # needed for openid support
 Requires:       perl(LWP::Protocol::https)
 Requires:       perl(URI)
@@ -109,7 +108,6 @@ BuildRequires:  glibc-locale
 BuildRequires:  dejavu-fonts
 BuildRequires:  google-roboto-fonts
 BuildRequires:  perl-App-cpanminus
-BuildRequires:  perl(DBD::SQLite)
 BuildRequires:  perl(Perl::Critic)
 BuildRequires:  perl(Perl::Critic::Freenode)
 BuildRequires:  perl(Selenium::Remote::Driver) >= 1.20
@@ -144,7 +142,7 @@ operating system.
 %package common
 Summary:        The openQA common tools for web-frontend and workers
 Group:          Development/Tools/Other
-Requires:       %{t_requires}
+Requires:       %{common_requires}
 Requires:       perl(Mojolicious) >= 7.92
 
 %description common
@@ -154,13 +152,8 @@ openQA workers.
 %package worker
 Summary:        The openQA worker
 Group:          Development/Tools/Other
-Requires:       openQA-client = %{version}
-Requires:       os-autoinst < 5
-Requires:       perl(DBD::SQLite) > 1.51
-Requires:       perl(Minion::Backend::SQLite)
-Requires:       perl(Mojo::SQLite)
-Requires:       perl(Mojo::IOLoop::ReadWriteProcess) > 0.19
-Requires:       perl(SQL::SplitStatement)
+%define worker_requires_including_uncovered_in_tests %worker_requires perl(SQL::SplitStatement)
+Requires:       %worker_requires_including_uncovered_in_tests
 # FIXME: use proper Requires(pre/post/preun/...)
 PreReq:         openQA-common = %{version}
 Requires(post): coreutils
@@ -179,15 +172,7 @@ The openQA worker manages test engine (provided by os-autoinst package).
 Summary:        Client tools for remote openQA management
 Group:          Development/Tools/Other
 Requires:       openQA-common = %{version}
-Requires:       perl(Config::IniFiles)
-Requires:       perl(Cpanel::JSON::XS)
-Requires:       perl(Data::Dump)
-Requires:       perl(Getopt::Long)
-Requires:       perl(IO::Socket::SSL) >= 2.009
-Requires:       perl(LWP::UserAgent)
-Requires:       perl(Mojolicious)
-Requires:       perl(Regexp::Common)
-Requires:       perl(Try::Tiny)
+Requires:       %client_requires
 Recommends:     jq
 
 %description client
