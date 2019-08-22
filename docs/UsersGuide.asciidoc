@@ -159,6 +159,13 @@ and/or os-autoinst's own behavior are:
 * +QEMUVGA+ parameter to declare the video hardware configuration in QEMU
 
 
+==== Test Suite extension
+
+Test suites can extend existing test suites. Specify the test suite you want
+to extend in the variable +EXTENDS+. All variables are inherited from the
+specified test suite. Variables can be overridden in the extending test suite.
+
+
 === Job Groups
 
 The job groups are the place where the actual test scenarios are defined by

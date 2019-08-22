@@ -759,6 +759,25 @@ sub whoami {
 
 =over 4
 
+=item _test_suite_settings
+
+Retrieve test suite settings with setting extension from nested test suites
+using the keyword C<EXTENDS>.
+
+=back
+
+=cut
+
+sub _test_suite_settings {
+    my ($schema, $name) = @_;
+    return {} unless my $test_suite = $schema->resultset('TestSuites')->find({name => $name});
+    my %settings = map { $_->key => $_->value } $test_suite->settings;
+    %settings = (%{_test_suite_settings($schema, $settings{EXTENDS})}, %settings) if $settings{EXTENDS};
+    return \%settings;
+}
+
+=over 4
+
 =item _generate_job_setting()
 
 Create job for product matching the contents of the DISTRI, VERSION, FLAVOR and ARCH, MACHINE
@@ -817,20 +836,12 @@ sub _generate_job_setting {
     }
 
     # TEST is mandatory, so populate with TestSuite settings.
-    my $test_suites = $schema->resultset('TestSuites')->search(
-        {
-            name => $args->{TEST},
-        });
-
-    if (my $test_suite = $test_suites->next) {
-        my %test_suite_setting = map { $_->key => $_->value } $test_suite->settings;
-
+    if (my %test_suite_setting = %{_test_suite_settings($schema, $args->{TEST})}) {
         if (my $test_suite_class = delete $test_suite_setting{WORKER_CLASS}) {
             push @classes, $test_suite_class;
         }
         @settings{keys %test_suite_setting} = values %test_suite_setting;
     }
-
     $settings{WORKER_CLASS} = join ',', sort @classes if @classes > 0;
 
     for (keys %$args) {
