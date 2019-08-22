@@ -65,7 +65,7 @@ sub _save_needle {
 
     # prevent multiple save_needle and delete_needles tasks to run in parallel
     return $minion_job->finish({error => 'Another save or delete needle job is ongoing. Try again later.'})
-      unless my $guard = $app->minion->guard('limit_needle_task', 300);
+      unless my $guard = $app->minion->guard('limit_needle_task', 7200);
 
     my $schema       = $app->schema;
     my $openqa_job   = $schema->resultset('Jobs')->find($args->{job_id});

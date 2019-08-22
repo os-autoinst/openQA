@@ -55,7 +55,7 @@ sub _scan_images {
 
     # prevent multiple scan_images* tasks to run in parallel
     return $job->retry({delay => 30})
-      unless my $guard = $app->minion->guard('limit_scan_images_task', 3600);
+      unless my $guard = $app->minion->guard('limit_scan_images_task', 7200);
 
     return unless $args->{prefix};
     my $dh;
@@ -102,7 +102,7 @@ sub _scan_images_links {
 
     # prevent multiple scan_images* tasks to run in parallel
     return $job->retry({delay => 30})
-      unless my $guard = $app->minion->guard('limit_scan_images_task', 3600);
+      unless my $guard = $app->minion->guard('limit_scan_images_task', 7200);
 
     my $schema = OpenQA::Schema->singleton;
     my $jobs   = $schema->resultset("Jobs")->search(
