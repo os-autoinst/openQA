@@ -1,4 +1,5 @@
-PROVE_ARGS ?= -l -r -v
+PROVE_ARGS ?= -r -v
+PROVE_LIB_ARGS ?= -l
 DOCKER_IMG ?= openqa:latest
 TEST_PG_PATH ?= /dev/shm/tpg
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
@@ -97,7 +98,7 @@ endif
 
 .PHONY: test-unit-and-integration
 test-unit-and-integration:
-	OPENQA_CONFIG= prove ${PROVE_ARGS}
+	OPENQA_CONFIG= prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
 
 .PHONY: test-with-database
 test-with-database:
