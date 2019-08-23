@@ -617,8 +617,10 @@ function setup_needle_editor(imageurl, default_needle)
 
   $('#newtag').bind(
       "propertychange change click keyup input paste",
-      function() { $('#tag_add_button').prop('disabled', !this.value.length); }
-  );
+      function() {
+        var invalid = !this.value.length || !this.validity.valid;
+        $('#tag_add_button').prop('disabled', invalid);
+      });
 
   $('#save_needle_form').submit(saveNeedle);
   $(document).on('click', '.restart-link', function(event) {
