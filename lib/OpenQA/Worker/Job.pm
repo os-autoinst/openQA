@@ -348,40 +348,7 @@ sub _stop_step_3_announce {
     # skip if isotovideo not running anymore (e.g. when isotovideo just exited on its own)
     return Mojo::IOLoop->next_tick($callback) unless $self->is_backend_running;
 
-    my $ua      = Mojo::UserAgent->new(request_timeout => 10);
-    my $job_url = $self->isotovideo_client->url;
-    return Mojo::IOLoop->next_tick($callback) unless $job_url;
-
-    try {
-        my $url = "$job_url/broadcast";
-        my $tx  = $ua->build_tx(
-            POST => $url,
-            json => {
-                stopping_test_execution => $reason,
-            },
-        );
-
-        log_info('Trying to stop job gracefully by announcing it to command server via ' . $url);
-        $ua->start(
-            $tx,
-            sub {
-                my ($ua_from_callback, $tx) = @_;
-                my $keep_ref_to_ua = $ua;
-                my $res            = $tx->res;
-
-                if (!$res->is_success) {
-                    log_info('Unable to stop the command server gracefully: ');
-                    log_info($res->code ? $res->to_string : 'Command server likely not reachable at all');
-                }
-                $callback->();
-            });
-    }
-    catch {
-        log_info('Unable to stop the command server gracefully: ' . $_);
-
-        # ensure stopping is proceeded (failing announcement is not critical)
-        Mojo::IOLoop->next_tick($callback);
-    };
+    $self->isotovideo_client->stop_gracefully($reason, $callback);
 }
 
 sub _stop_step_4_kill {
@@ -674,9 +641,7 @@ sub _upload_results {
     # note: This function is also called when stopping the current job. We can't query isotovideo
     #       anymore in this case and API calls must be treated as non-critical to prevent the usual
     #       error handling.
-    my $status          = $self->status;
-    my $is_final_upload = $status eq 'stopping' || $status eq 'stopped';
-
+    my $is_final_upload = $self->is_stopped_or_stopping;
     $self->{_is_uploading_results} = 1;
 
     # query status from isotovideo (unless it is the final status upload because isotovideo

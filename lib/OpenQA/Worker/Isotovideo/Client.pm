@@ -17,13 +17,14 @@ package OpenQA::Worker::Isotovideo::Client;
 use Mojo::Base -base;
 
 use Mojo::UserAgent;
-use OpenQA::Utils qw(log_warning);
+use OpenQA::Utils qw(log_info log_warning);
 
 has job => undef, weak => 1;
 has ua  => sub { Mojo::UserAgent->new };
 
 sub status {
     my ($self, $callback) = @_;
+
     my $url = $self->url . '/isotovideo/status';
     $self->ua->get(
         $url => sub {
@@ -34,6 +35,30 @@ sub status {
             my $status_from_os_autoinst = $tx->res->json;
             $self->$callback($status_from_os_autoinst);
         });
+}
+
+sub stop_gracefully {
+    my ($self, $reason, $callback) = @_;
+
+    return Mojo::IOLoop->next_tick($callback) unless my $url = $self->url;
+    $url .= '/broadcast';
+
+    log_info('Trying to stop job gracefully by announcing it to command server via ' . $url);
+    my $ua          = $self->ua;
+    my $old_timeout = $ua->request_timeout;
+    $ua->request_timeout(10);
+    $ua->post(
+        $url => json => {stopping_test_execution => $reason} => sub {
+            my ($ua, $tx) = @_;
+
+            my $res = $tx->res;
+            if (!$res->is_success) {
+                log_info('Unable to stop the command server gracefully: ');
+                log_info($res->code ? $res->to_string : 'Command server likely not reachable at all');
+            }
+            $callback->();
+        });
+    $ua->request_timeout($old_timeout);
 }
 
 sub url {

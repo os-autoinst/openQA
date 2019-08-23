@@ -39,8 +39,8 @@ sub wait_until_job_stopped {
     # Do not wait forever in case of problems
     my $error;
     my $timer = Mojo::IOLoop->timer(
-        10 => sub {
-            $error = 'Job was not stopped after 10 seconds';
+        15 => sub {
+            $error = 'Job was not stopped after 15 seconds';
             Mojo::IOLoop->stop;
         });
 
@@ -49,6 +49,7 @@ sub wait_until_job_stopped {
         status_changed => sub {
             my ($job, $event_data) = @_;
             my $status = $event_data->{status};
+            note "worker status change: $status";
             Mojo::IOLoop->stop if $status eq 'stopped';
         });
     Mojo::IOLoop->start;
@@ -174,14 +175,20 @@ subtest 'Clean up pool directory' => sub {
     ok -e $pool_directory->child('worker-log.txt'),    'worker log is there';
 };
 
-# Mock isotovideo engine (simulate successful startup)
+# Mock isotovideo engine (simulate successful startup and stop)
 $engine_mock->mock(
     engine_workit => sub {
+        my $job = shift;
         note 'pretending to run isotovideo';
+        $job->once(
+            uploading_results_concluded => sub {
+                note "pretending job @{[$job->id]} is done";
+                $job->stop('done');
+            });
         return {child => $isotovideo};
     });
 
-subtest 'Successful startup' => sub {
+subtest 'Successful job' => sub {
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => 'url'});
     $job->accept;
     is $job->status, 'accepted', 'job is now accepted';
@@ -192,10 +199,9 @@ subtest 'Successful startup' => sub {
         qr/isotovideo has been started/,
         'isotovideo startup logged'
     );
-    #is wait_until_job_stopped($job), undef, 'no error';
-    #is $job->status,               'stopped', 'job is stopped successfully';
-    #is $job->is_uploading_results, 0,         'uploading results concluded';
-    # TO BE CONTINUED!
+    is wait_until_job_stopped($job), undef, 'no error';
+    is $job->status,               'stopped', 'job is stopped successfully';
+    is $job->is_uploading_results, 0,         'uploading results concluded';
 };
 
 done_testing();
