@@ -44,11 +44,11 @@ sub _limit {
 
     # prevent multiple limit_assets tasks to run in parallel
     return $job->finish('Previous limit_assets job is still active')
-      unless my $guard = $app->minion->guard('limit_assets_task', 3600);
+      unless my $guard = $app->minion->guard('limit_assets_task', 86400);
 
     # prevent multiple limit_* tasks to run in parallel
     return $job->retry({delay => 60})
-      unless my $limit_guard = $app->minion->guard('limit_tasks', 7200);
+      unless my $limit_guard = $app->minion->guard('limit_tasks', 86400);
 
     # scan for untracked assets, refresh the size of all assets
     my $schema = $app->schema;

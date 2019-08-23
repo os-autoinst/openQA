@@ -29,11 +29,11 @@ sub _limit {
 
     # prevent multiple limit_results_and_logs tasks to run in parallel
     return $job->finish('Previous limit_results_and_logs job is still active')
-      unless my $guard = $app->minion->guard('limit_results_and_logs_task', 7200);
+      unless my $guard = $app->minion->guard('limit_results_and_logs_task', 86400);
 
     # prevent multiple limit_* tasks to run in parallel
     return $job->retry({delay => 60})
-      unless my $limit_guard = $app->minion->guard('limit_tasks', 7200);
+      unless my $limit_guard = $app->minion->guard('limit_tasks', 86400);
 
     # create temporary job group outside of DB to collect
     # jobs without job_group_id

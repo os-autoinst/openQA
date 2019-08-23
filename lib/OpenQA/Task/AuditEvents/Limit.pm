@@ -26,11 +26,11 @@ sub _limit {
 
     # prevent multiple limit_audit_events tasks to run in parallel
     return $job->finish('Previous limit_audit_events job is still active')
-      unless my $guard = $app->minion->guard('limit_audit_events_task', 3600);
+      unless my $guard = $app->minion->guard('limit_audit_events_task', 86400);
 
     # prevent multiple limit_* tasks to run in parallel
     return $job->retry({delay => 60})
-      unless my $limit_guard = $app->minion->guard('limit_tasks', 7200);
+      unless my $limit_guard = $app->minion->guard('limit_tasks', 86400);
 
     $app->schema->resultset('AuditEvents')->delete_entries_exceeding_storage_duration;
 }
