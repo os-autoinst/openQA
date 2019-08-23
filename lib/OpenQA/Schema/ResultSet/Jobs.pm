@@ -148,11 +148,11 @@ sub create_from_settings {
         },
         {
             setting_name    => '_START_DIRECTLY_AFTER_JOBS',
-            dependency_type => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED
+            dependency_type => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
         },
         {
             setting_name    => '_PARALLEL_JOBS',
-            dependency_type => OpenQA::JobDependencies::Constants::PARALLEL
+            dependency_type => OpenQA::JobDependencies::Constants::PARALLEL,
         },
     );
     for my $dependency_definition (@dependency_definitions) {

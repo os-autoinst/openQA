@@ -669,6 +669,15 @@ sub create_clones {
                     dependency    => OpenQA::JobDependencies::Constants::CHAINED,
                 });
         }
+        for my $p (@{$info->{directly_chained_parents}}) {
+            # be consistent with regularly chained parents regarding cloning
+            $p = $clones{$p}->id if defined $clones{$p};
+            $res->parents->find_or_create(
+                {
+                    parent_job_id => $p,
+                    dependency    => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
+                });
+        }
         for my $c (@{$info->{parallel_children}}) {
             $res->children->find_or_create(
                 {
@@ -681,6 +690,13 @@ sub create_clones {
                 {
                     child_job_id => $clones{$c}->id,
                     dependency   => OpenQA::JobDependencies::Constants::CHAINED,
+                });
+        }
+        for my $c (@{$info->{directly_chained_children}}) {
+            $res->children->find_or_create(
+                {
+                    child_job_id => $clones{$c}->id,
+                    dependency   => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED,
                 });
         }
 
@@ -715,10 +731,13 @@ sub cluster_jobs {
     my $jobs = $args{jobs};
     return $jobs if defined $jobs->{$self->id};
     $jobs->{$self->id} = {
-        parallel_parents  => [],
-        chained_parents   => [],
-        parallel_children => [],
-        chained_children  => []};
+        parallel_parents          => [],
+        chained_parents           => [],
+        directly_chained_parents  => [],
+        parallel_children         => [],
+        chained_children          => [],
+        directly_chained_children => [],
+    };
 
     ## if we have a parallel parent, go up recursively
     my $parents = $self->parents;
@@ -727,6 +746,11 @@ sub cluster_jobs {
 
         if ($pd->dependency eq OpenQA::JobDependencies::Constants::CHAINED) {
             push(@{$jobs->{$self->id}->{chained_parents}}, $p->id);
+            # we don't duplicate up the chain, only down
+            next;
+        }
+        elsif ($pd->dependency eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
+            push(@{$jobs->{$self->id}->{directly_chained_parents}}, $p->id);
             # we don't duplicate up the chain, only down
             next;
         }
@@ -750,9 +774,6 @@ sub cluster_jobs {
             }
             $p->cluster_jobs(jobs => $jobs);
         }
-        elsif ($pd->dependency eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
-            # TODO
-        }
     }
 
     return $self->cluster_children($jobs);
@@ -773,12 +794,8 @@ sub cluster_children {
 
         # do not fear the recursion
         $c->cluster_jobs(jobs => $jobs);
-        if ($cd->dependency eq OpenQA::JobDependencies::Constants::PARALLEL) {
-            push(@{$jobs->{$self->id}->{parallel_children}}, $c->id);
-        }
-        else {
-            push(@{$jobs->{$self->id}->{chained_children}}, $c->id);
-        }
+        my $relation = OpenQA::JobDependencies::Constants::job_info_relation(children => $cd->dependency);
+        push(@{$jobs->{$self->id}->{$relation}}, $c->id);
     }
     return $jobs;
 }
@@ -1901,7 +1918,7 @@ sub blocked_by_parent_job {
 
     my $chained_parents = $self->result_source->schema->resultset('JobDependencies')->search(
         {
-            dependency   => OpenQA::JobDependencies::Constants::CHAINED,
+            dependency   => {-in => [OpenQA::JobDependencies::Constants::CHAINED_DEPENDENCIES]},
             child_job_id => {-in => \@possibly_blocked_jobs}
         },
         {order_by => ['parent_job_id', 'child_job_id']});

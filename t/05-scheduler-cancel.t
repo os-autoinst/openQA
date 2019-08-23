@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,16 +45,20 @@ is_deeply(
     $job->cluster_jobs,
     {
         99961 => {
-            chained_children  => [],
-            chained_parents   => [],
-            parallel_children => [99963],
-            parallel_parents  => [],
+            chained_children          => [],
+            chained_parents           => [],
+            directly_chained_children => [],
+            directly_chained_parents  => [],
+            parallel_children         => [99963],
+            parallel_parents          => [],
         },
         99963 => {
-            chained_children  => [],
-            chained_parents   => [],
-            parallel_children => [],
-            parallel_parents  => [99961],
+            chained_children          => [],
+            chained_parents           => [],
+            directly_chained_children => [],
+            directly_chained_parents  => [],
+            parallel_children         => [],
+            parallel_parents          => [99961],
         },
     },
     "99963 is part of a duett"
@@ -67,16 +71,20 @@ is_deeply(
     $new_job->cluster_jobs,
     {
         99982 => {
-            chained_children  => [],
-            chained_parents   => [],
-            parallel_children => [99983],
-            parallel_parents  => [],
+            chained_children          => [],
+            chained_parents           => [],
+            directly_chained_children => [],
+            directly_chained_parents  => [],
+            parallel_children         => [99983],
+            parallel_parents          => [],
         },
         99983 => {
-            chained_children  => [],
-            chained_parents   => [],
-            parallel_children => [],
-            parallel_parents  => [99982],
+            chained_children          => [],
+            chained_parents           => [],
+            directly_chained_children => [],
+            directly_chained_parents  => [],
+            parallel_children         => [],
+            parallel_parents          => [99982],
         },
     },
     "new job is part of a new duett"
@@ -165,20 +173,19 @@ sub _job_create {
     return $job;
 }
 
-subtest 'chained parent fails -> chilren are canceled (skipped)' => sub {
-    my %settingsA = %settings;
-    my %settingsB = %settings;
-    my %settingsC = %settings;
-
-    $settingsA{TEST} = 'A';
-    $settingsB{TEST} = 'B';
-    $settingsC{TEST} = 'C';
+subtest 'chained or directly chained parent fails -> chilren are canceled (skipped)' => sub {
+    my %settingsA = (%settings, TEST => 'A');
+    my %settingsB = (%settings, TEST => 'B');
+    my %settingsC = (%settings, TEST => 'C');
+    my %settingsD = (%settings, TEST => 'D');
 
     my $jobA = _job_create(\%settingsA);
     $settingsB{_START_AFTER_JOBS} = [$jobA->id];
     my $jobB = _job_create(\%settingsB);
     $settingsC{_START_AFTER_JOBS} = [$jobB->id];
     my $jobC = _job_create(\%settingsC);
+    $settingsD{_START_DIRECTLY_AFTER_JOBS} = [$jobB->id];
+    my $jobD = _job_create(\%settingsD);
 
     $jobA->state(OpenQA::Jobs::Constants::RUNNING);
     $jobA->update;
@@ -187,11 +194,17 @@ subtest 'chained parent fails -> chilren are canceled (skipped)' => sub {
     $jobA->done(result => OpenQA::Jobs::Constants::FAILED);
     $jobB->discard_changes;
     $jobC->discard_changes;
+    $jobD->discard_changes;
 
     is($jobB->state,  OpenQA::Jobs::Constants::CANCELLED, 'B state is cancelled');
     is($jobC->state,  OpenQA::Jobs::Constants::CANCELLED, 'C state is cancelled');
     is($jobB->result, OpenQA::Jobs::Constants::SKIPPED,   'B result is skipped');
-    is($jobC->result, OpenQA::Jobs::Constants::SKIPPED,   'C result is skipped');
+    is($jobC->result, OpenQA::Jobs::Constants::SKIPPED,   'C (regularly chained) result is skipped');
+    is($jobD->result, OpenQA::Jobs::Constants::SKIPPED,   'D (directly chained) result is skipped');
+
+    # note: A feasable alternative would be making it the worker's responsibility to set
+    #       *directly* chained jobs to SKIPPED. However, it is likely safer to let the web UI handle
+    #       this. Of course we still need to take care that the worker really skips those jobs.
 };
 
 subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => sub {
@@ -205,13 +218,9 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
             push @OpenQA::WebSockets::commands, $command;
         });
 
-    my %settingsA = %settings;
-    my %settingsB = %settings;
-    my %settingsC = %settings;
-
-    $settingsA{TEST} = 'A';
-    $settingsB{TEST} = 'B';
-    $settingsC{TEST} = 'C';
+    my %settingsA = (%settings, TEST => 'A');
+    my %settingsB = (%settings, TEST => 'B');
+    my %settingsC = (%settings, TEST => 'C');
 
     my $jobA = _job_create(\%settingsA);
     $settingsB{_PARALLEL_JOBS} = [$jobA->id];
@@ -262,24 +271,19 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
     ok $server_called, 'Mocked ws_send function has been called';
 };
 
-subtest 'chained parent fails -> parallel parents of children are cancelled (skipped)' => sub {
-    my %settingsA = %settings;
-    my %settingsB = %settings;
-    my %settingsC = %settings;
-    my %settingsD = %settings;
-
+subtest 'chained or directly chained parent fails -> parallel parents of children are cancelled (skipped)' => sub {
     # https://progress.opensuse.org/issues/36565 - A is install, B is support server,
     # C and D are children to both and parallel to each other
-    $settingsA{TEST} = 'A';
-    $settingsB{TEST} = 'B';
-    $settingsC{TEST} = 'C';
-    $settingsD{TEST} = 'D';
+    my %settingsA = (%settings, TEST => 'A');
+    my %settingsB = (%settings, TEST => 'B');
+    my %settingsC = (%settings, TEST => 'C');
+    my %settingsD = (%settings, TEST => 'D');
 
     my $jobA = _job_create(\%settingsA);
     my $jobB = _job_create(\%settingsB);
-    $settingsC{_START_AFTER_JOBS} = [$jobA->id];
-    $settingsD{_START_AFTER_JOBS} = [$jobA->id];
-    $settingsC{_PARALLEL_JOBS}    = [$jobB->id];
+    $settingsC{_START_AFTER_JOBS}          = [$jobA->id];
+    $settingsD{_START_DIRECTLY_AFTER_JOBS} = [$jobA->id];
+    $settingsC{_PARALLEL_JOBS}             = [$jobB->id];
     my $jobC = _job_create(\%settingsC);
     $settingsC{_PARALLEL_JOBS} = [$jobB->id, $jobC->id];
     my $jobD = _job_create(\%settingsD);
@@ -318,13 +322,10 @@ subtest 'parallel child with one parent fails -> parent is cancelled' => sub {
 };
 
 subtest 'failure behaviour for multiple parallel children' => sub {
-    my %settingsA = %settings;
-    my %settingsB = %settings;
-    my %settingsC = %settings;
-    $settingsA{TEST} = 'A';
-    $settingsB{TEST} = 'B';
-    $settingsC{TEST} = 'C';
-    my $jobA = _job_create(\%settingsA);
+    my %settingsA = (%settings, TEST => 'A');
+    my %settingsB = (%settings, TEST => 'B');
+    my %settingsC = (%settings, TEST => 'C');
+    my $jobA      = _job_create(\%settingsA);
     $settingsB{_PARALLEL_JOBS} = [$jobA->id];
     $settingsC{_PARALLEL_JOBS} = [$jobA->id];
     my $jobB = _job_create(\%settingsB);

@@ -126,9 +126,10 @@ my %settingsE = (%settings, TEST => 'E');
 my %settingsF = (%settings, TEST => 'F');
 
 sub _job_create {
-    my ($settings, $parallel_jobs, $start_after_jobs) = @_;
-    $settings->{_PARALLEL_JOBS}    = $parallel_jobs    if $parallel_jobs;
-    $settings->{_START_AFTER_JOBS} = $start_after_jobs if $start_after_jobs;
+    my ($settings, $parallel_jobs, $start_after_jobs, $start_directly_after_jobs) = @_;
+    $settings->{_PARALLEL_JOBS}             = $parallel_jobs             if $parallel_jobs;
+    $settings->{_START_AFTER_JOBS}          = $start_after_jobs          if $start_after_jobs;
+    $settings->{_START_DIRECTLY_AFTER_JOBS} = $start_directly_after_jobs if $start_directly_after_jobs;
     my $job = $schema->resultset('Jobs')->create_from_settings($settings);
     # reload all values from database so we can check against default values
     $job->discard_changes;
@@ -188,40 +189,52 @@ for my $i (0 .. 5) {
 
 my $exp_cluster_jobs = {
     $jobA->id => {
-        chained_children  => [],
-        chained_parents   => [],
-        parallel_children => [$jobD->id],
-        parallel_parents  => [],
+        chained_children          => [],
+        chained_parents           => [],
+        parallel_children         => [$jobD->id],
+        parallel_parents          => [],
+        directly_chained_children => [],
+        directly_chained_parents  => [],
     },
     $jobB->id => {
-        chained_children  => [],
-        chained_parents   => [],
-        parallel_children => [$jobC->id],
-        parallel_parents  => [],
+        chained_children          => [],
+        chained_parents           => [],
+        parallel_children         => [$jobC->id],
+        parallel_parents          => [],
+        directly_chained_children => [],
+        directly_chained_parents  => [],
     },
     $jobC->id => {
-        chained_children  => [],
-        chained_parents   => [],
-        parallel_children => [$jobE->id, $jobF->id],
-        parallel_parents  => [$jobB->id],
+        chained_children          => [],
+        chained_parents           => [],
+        parallel_children         => [$jobE->id, $jobF->id],
+        parallel_parents          => [$jobB->id],
+        directly_chained_children => [],
+        directly_chained_parents  => [],
     },
     $jobD->id => {
-        chained_children  => [],
-        chained_parents   => [],
-        parallel_children => [$jobE->id],
-        parallel_parents  => [$jobA->id],
+        chained_children          => [],
+        chained_parents           => [],
+        parallel_children         => [$jobE->id],
+        parallel_parents          => [$jobA->id],
+        directly_chained_children => [],
+        directly_chained_parents  => [],
     },
     $jobE->id => {
-        chained_children  => [],
-        chained_parents   => [],
-        parallel_children => [],
-        parallel_parents  => [$jobC->id, $jobD->id],
+        chained_children          => [],
+        chained_parents           => [],
+        parallel_children         => [],
+        parallel_parents          => [$jobC->id, $jobD->id],
+        directly_chained_children => [],
+        directly_chained_parents  => [],
     },
     $jobF->id => {
-        chained_children  => [],
-        chained_parents   => [],
-        parallel_children => [],
-        parallel_parents  => [$jobC->id],
+        chained_children          => [],
+        chained_parents           => [],
+        parallel_children         => [],
+        parallel_parents          => [$jobC->id],
+        directly_chained_children => [],
+        directly_chained_parents  => [],
     },
 };
 # it shouldn't matter which job we ask - they should all restart the same cluster
@@ -623,99 +636,139 @@ is_deeply(
 );
 
 # checking all-in mixed scenario
-# original state:
+# create original state (excluding TA which is just the same as T just directly chained to Q):
 # Q <- (chained) W <-\ (parallel)
 #   ^- (chained) U <-- (parallel) T
 #   ^- (chained) R <-/ (parallel) | (chained)
 #   ^-----------------------------/
 #
 # Q is done; W,U,R and T is running
-
-my %settingsQ = (%settings, TEST => 'Q');
-my %settingsW = (%settings, TEST => 'W');
-my %settingsU = (%settings, TEST => 'U');
-my %settingsR = (%settings, TEST => 'R');
-my %settingsT = (%settings, TEST => 'T');
-
-my $jobQ = _job_create(\%settingsQ);
+my %settingsQ  = (%settings, TEST => 'Q');
+my %settingsW  = (%settings, TEST => 'W');
+my %settingsU  = (%settings, TEST => 'U');
+my %settingsR  = (%settings, TEST => 'R');
+my %settingsT  = (%settings, TEST => 'T');
+my %settingsTA = (%settings, TEST => 'TA');
+my $jobQ       = _job_create(\%settingsQ);
 my $jobW = _job_create(\%settingsW, undef, [$jobQ->id]);
 my $jobU = _job_create(\%settingsU, undef, [$jobQ->id]);
 my $jobR = _job_create(\%settingsR, undef, [$jobQ->id]);
-my $jobT = _job_create(\%settingsT, [$jobW->id, $jobU->id, $jobR->id], [$jobQ->id]);
+my $jobT  = _job_create(\%settingsT, [$jobW->id, $jobU->id, $jobR->id], [$jobQ->id]);
+my $jobTA = _job_create(\%settingsTA, [$jobW->id, $jobU->id, $jobR->id], undef, [$jobQ->id]);
 
-is($jobT->blocked_by_id, $jobQ->id, "JobT is blocked");
-is($jobW->blocked_by_id, $jobQ->id, "JobW is blocked");
+# check dependencies of job Q
+my $jobQ_deps  = job_get_deps($jobQ->id);
+my @sorted_got = sort(@{$jobQ_deps->{children}->{Chained}});
+my @sorted_exp = sort(($jobW->id, $jobU->id, $jobR->id, $jobT->id));
+is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is chained parent to all jobs except jobTA') or diag explain \@sorted_got;
+@sorted_got = sort(@{$jobQ_deps->{children}->{'Directly chained'}});
+@sorted_exp = sort(($jobTA->id));
+is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is directly chained parent to jobTA') or diag explain \@sorted_got;
+is($jobT->blocked_by_id,  $jobQ->id, 'JobT is blocked by job supposed to run before');
+is($jobTA->blocked_by_id, $jobQ->id, 'JobT2 is blocked by job supposed to run *directly* before');
+is($jobW->blocked_by_id,  $jobQ->id, 'JobW is blocked by job supposed to run before');
+
+# note: Maybe the blocked_by behavior for jobs to run *directly* after each other needs to be changed
+#       later. Neverthless, let's explicitly assert this behavior so we know what we have right now.
 
 # hack jobs to appear to scheduler in desired state
 _jobs_update_state([$jobQ], OpenQA::Jobs::Constants::DONE);
-_jobs_update_state([$jobW, $jobU, $jobR, $jobT], OpenQA::Jobs::Constants::RUNNING);
+_jobs_update_state([$jobW, $jobU, $jobR, $jobT, $jobTA], OpenQA::Jobs::Constants::RUNNING);
 
-# duplicate U
-my $jobU2 = $jobU->auto_duplicate;
-
-# expected state:
+# duplicate job U
+# expected state (excluding TA2 which is just the same as T2 just directly chained to Q):
 # Q <- (chained) W2 <-\ (parallel)
 #   ^- (chained) E2 <-- (parallel) T2
 #   ^- (chained) R2 <-/ (parallel) | (chained)
 #   ^------------------------------/
 #
-# Q is done; W2,E2,R2 and T2 are scheduled
-
+# Q is done; W2,E2,R2, T2 and TA2 are scheduled
+my $jobU2 = $jobU->auto_duplicate;
 ok($jobU2, 'jobU duplicated');
+
 # reload data from DB
-$_->discard_changes for ($jobQ, $jobW, $jobU, $jobR, $jobT);
-# check other clones
+$_->discard_changes for ($jobQ, $jobW, $jobU, $jobR, $jobT, $jobTA);
+
+# check whether jobs have been cloned
 ok(!$jobQ->clone, 'jobQ not cloned');
 ok($jobW->clone,  'jobW cloned');
 ok($jobU->clone,  'jobU cloned');
 ok($jobR->clone,  'jobR cloned');
 ok($jobT->clone,  'jobT cloned');
+ok($jobTA->clone, 'jobTA cloned');
 
+# check whether dependencies contain cloned jobs as well
 $jobQ = job_get_deps($jobQ->id);
-my $jobW2 = job_get_deps($jobW->clone->id);
-my $jobR2 = job_get_deps($jobR->clone->id);
-my $jobT2 = job_get_deps($jobT->clone->id);
+my $jobW2  = job_get_deps($jobW->clone->id);
+my $jobR2  = job_get_deps($jobR->clone->id);
+my $jobT2  = job_get_deps($jobT->clone->id);
+my $jobTA2 = job_get_deps($jobTA->clone->id);
 
-my @sorted_got = sort(@{$jobQ->{children}->{Chained}});
-my @sorted_exp
+print("jobTA: " . $jobTA->id . "\n");
+print("jobTA2: " . $jobTA2->{id} . "\n");
+
+@sorted_got = sort(@{$jobQ->{children}->{Chained}});
+@sorted_exp
   = sort(($jobW2->{id}, $jobU2->id, $jobR2->{id}, $jobT2->{id}, $jobW->id, $jobU->id, $jobR->id, $jobT->id));
-is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is chained parent to all jobs');
+is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is chained parent to all jobs except jobTA/jobTA2')
+  or diag explain \@sorted_got;
+# note: I have no idea why $jobTA and its clone $jobTA2 appear as regular chained dependencies.
+
+@sorted_got = sort(@{$jobQ->{children}->{'Directly chained'}});
+@sorted_exp = sort(($jobTA2->{id}, $jobTA->id));
+is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is directly chained parent to jobTA and its clone jobTA2')
+  or diag explain \@sorted_got;
+
+@sorted_got = sort(@{$jobTA2->{parents}->{'Directly chained'}});
+@sorted_exp = sort(($jobQ->{id}));
+is_deeply(\@sorted_got, \@sorted_exp, 'jobTA2 directly chained after jobQ') or diag explain \@sorted_got;
+
+@sorted_got = sort(@{$jobTA2->{parents}->{'Chained'}});
+@sorted_exp = sort(());
+is_deeply(\@sorted_got, \@sorted_exp, 'jobTA2 not regularily chained after jobQ') or diag explain \@sorted_got;
+
+@sorted_got = sort(@{$jobTA2->{parents}->{'Directly chained'}});
+@sorted_exp = sort(($jobQ->{id}));
+is_deeply(\@sorted_got, \@sorted_exp, 'jobTA2 directly chained after jobQ') or diag explain \@sorted_got;
 
 @sorted_got = sort(@{$jobT2->{parents}->{Parallel}});
 @sorted_exp = sort(($jobW2->{id}, $jobU2->id, $jobR2->{id}));
-is_deeply(\@sorted_got, \@sorted_exp, 'jobT is parallel child of all jobs except jobQ');
+is_deeply(\@sorted_got, \@sorted_exp, 'jobT is parallel child of all jobs except jobQ') or diag explain \@sorted_got;
+
+@sorted_got = sort(@{$jobTA2->{parents}->{Parallel}});
+is_deeply(\@sorted_got, \@sorted_exp, 'jobTA is parallel child of all jobs except jobQ') or diag explain \@sorted_got;
 
 is_deeply(
     $jobW2->{children},
-    {Chained => [], Parallel => [$jobT2->{id}], 'Directly chained' => []},
+    {Chained => [], Parallel => [$jobT2->{id}, $jobTA2->{id}], 'Directly chained' => []},
     'jobW2 has no child dependency to sibling'
-);
+) or diag explain $jobW2->{children};
 is_deeply(
     $jobU2->to_hash(deps => 1)->{children},
-    {Chained => [], Parallel => [$jobT2->{id}], 'Directly chained' => []},
+    {Chained => [], Parallel => [$jobT2->{id}, $jobTA2->{id}], 'Directly chained' => []},
     'jobU2 has no child dependency to sibling'
-);
+) or diag explain $jobU2->to_hash(deps => 1)->{children};
 is_deeply(
     $jobR2->{children},
-    {Chained => [], Parallel => [$jobT2->{id}], 'Directly chained' => []},
+    {Chained => [], Parallel => [$jobT2->{id}, $jobTA2->{id}], 'Directly chained' => []},
     'jobR2 has no child dependency to sibling'
-);
+) or diag explain $jobR2->{children};
 
 is_deeply(
     $jobW2->{parents},
     {Chained => [$jobQ->{id}], Parallel => [], 'Directly chained' => []},
     'jobW2 has no parent dependency to sibling'
-);
+) or diag explain $jobW2->{parents};
 is_deeply(
     $jobU2->to_hash(deps => 1)->{parents},
     {Chained => [$jobQ->{id}], Parallel => [], 'Directly chained' => []},
     'jobU2 has no parent dependency to sibling'
-);
+) or diag explain $jobU2->to_hash(deps => 1)->{parents};
 is_deeply(
     $jobR2->{parents},
     {Chained => [$jobQ->{id}], Parallel => [], 'Directly chained' => []},
     'jobR2 has no parent dependency to sibling'
-);
+) or diag explain $jobR2->{parents};
 
 # check cloning of clones
 # this is to check whether duplication propely travers clones to find latest clone
