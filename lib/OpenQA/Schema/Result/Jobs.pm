@@ -233,9 +233,7 @@ sub sqlt_deploy_hook {
 sub delete {
     my ($self) = @_;
 
-    # we need to remove the modules one by one to get their delete functions called
-    # otherwise dbix leaves this to the database
-    $self->modules->delete_all;
+    $self->modules->delete;
 
     my $sls = $self->screenshot_links;
     my @ids = map { $_->screenshot_id } $sls->all;
