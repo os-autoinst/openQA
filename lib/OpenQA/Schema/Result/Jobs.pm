@@ -235,18 +235,17 @@ sub delete {
 
     $self->modules->delete;
 
-    my $sls = $self->screenshot_links;
-    my @ids = map { $_->screenshot_id } $sls->all;
+    my $sls = $self->screenshot_links->search({}, {columns => 'screenshot_id'});
+    my %ids = map { $_->screenshot_id => 1 } $sls->all;
     # delete all references
     $self->screenshot_links->delete;
     my $schema = $self->result_source->schema;
 
-    my $fns = $schema->resultset('Screenshots')->search(
-        {id => {-in => \@ids}},
-        {
-            join     => 'links_outer',
-            group_by => 'me.id',
-            having   => \['COUNT(links_outer.job_id) = 0']});
+    $sls = $schema->resultset('ScreenshotLinks')
+      ->search({screenshot_id => {-in => [sort keys %ids]}}, {columns => 'screenshot_id', distinct => 1});
+    map { delete $ids{$_->screenshot_id} } $sls->all;
+
+    my $fns = $schema->resultset('Screenshots')->search({id => {-in => [sort keys %ids]}});
     while (my $sc = $fns->next) {
         $sc->delete;
     }
