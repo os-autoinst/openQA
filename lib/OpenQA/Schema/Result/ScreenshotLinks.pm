@@ -59,30 +59,6 @@ sub _list_images_subdir {
     return \@ret,;
 }
 
-# gru task to scan XXX subdirectory
-sub scan_images {
-    my ($app, $args) = @_;
-
-    return unless $args->{prefix};
-    my $dh;
-    my $prefixdir = catfile($OpenQA::Utils::imagesdir, $args->{prefix});
-    if (!opendir($dh, $prefixdir)) {
-        log_warning "Can't open $args->{prefix} in $OpenQA::Utils::imagesdir: $!";
-        return;
-    }
-    my @files;
-    my $now = DateTime->now;
-    push(@files, [qw(filename t_created)]);
-    for my $file (readdir $dh) {
-        if ($file !~ /^\./ && -d "$prefixdir/$file") {
-            push(@files, map { [$_, $now] } @{_list_images_subdir($app, $args->{prefix}, $file)});
-        }
-    }
-    closedir($dh);
-    $app->schema->resultset('Screenshots')->populate(\@files);
-    return;
-}
-
 sub populate_images_to_job {
     my ($schema, $imgs, $job_id) = @_;
 
