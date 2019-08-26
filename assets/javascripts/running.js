@@ -949,7 +949,7 @@ var messageToStatusVariable = [
         action: function (value, data) {
             developerMode.currentApiFunctionArgs = '';
             if ((value === 'assert_screen' || value === 'check_screen') && data.check_screen) {
-                developerMode.currentApiFunctionArgs = data.check_screen['mustmatch'];
+                developerMode.currentApiFunctionArgs = data.check_screen.mustmatch;
             }
         }
     },
