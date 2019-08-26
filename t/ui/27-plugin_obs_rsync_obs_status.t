@@ -136,10 +136,10 @@ home=$home
 project_status_url=$url
 EOF
 
-print "Starting fake api server\n";
+note("Starting fake api server");
 start_server();
 
-print "Starting WebAPI\n";
+note("Starting WebAPI");
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 subtest 'test helper directly' => sub {
