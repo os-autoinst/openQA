@@ -659,14 +659,14 @@ subtest 'process state changes from os-autoinst/worker' => sub {
         $driver->execute_script(
 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_api_function\":\"assert_screen\",\"check_screen\":{\"check\":0,\"mustmatch\":\"generic-desktop\",\"timeout\":30}}}" });'
         );
-        is(js_variable('developerMode.currentApiFunction'), 'assert_screen', 'current API function set');
+        is(js_variable('developerMode.currentApiFunction'),     'assert_screen',   'current API function set');
         is(js_variable('developerMode.currentApiFunctionArgs'), 'generic-desktop', 'current API function set');
 
         $driver->execute_script(
 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_api_function\":\"wait_serial\"}}" });'
         );
-        is(js_variable('developerMode.currentApiFunction'), 'wait_serial', 'current API function set');
-        is(js_variable('developerMode.currentApiFunctionArgs'), '', 'current API function set');
+        is(js_variable('developerMode.currentApiFunction'),     'wait_serial', 'current API function set');
+        is(js_variable('developerMode.currentApiFunctionArgs'), '',            'current API function set');
 
         $driver->execute_script(
 'handleMessageFromWebsocketConnection(developerMode.wsConnection, { data: "{\"type\":\"info\",\"what\":\"cmdsrvmsg\",\"data\":{\"current_api_function\":\"assert_screen\",\"check_screen\":{\"check\":0,\"mustmatch\":[\"foo\",\"bar\"],\"timeout\":30}}}" });'
