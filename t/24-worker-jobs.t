@@ -33,8 +33,8 @@ use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
 use OpenQA::Test::FakeWebSocketTransaction;
 
-sub wait_until_job_stopped {
-    my $job = shift;
+sub wait_until_job_status {
+    my ($job, $status) = @_;
 
     # Do not wait forever in case of problems
     my $error;
@@ -48,9 +48,9 @@ sub wait_until_job_stopped {
     my $cb = $job->on(
         status_changed => sub {
             my ($job, $event_data) = @_;
-            my $status = $event_data->{status};
-            note "worker status change: $status";
-            Mojo::IOLoop->stop if $status eq 'stopped';
+            my $new = $event_data->{status};
+            note "worker status change: $new";
+            Mojo::IOLoop->stop if $new eq $status;
         });
     Mojo::IOLoop->start;
     $job->unsubscribe(status_changed => $cb);
@@ -102,6 +102,7 @@ my $pool_directory = tempdir('poolXXXX');
 $worker->pool_directory($pool_directory);
 my $client = Test::FakeClient->new;
 $client->ua->connect_timeout(0.1);
+my $engine_url = '127.0.0.1:' . Mojo::IOLoop::Server->generate_port;
 
 # Mock isotovideo engine (simulate startup failure)
 my $engine_mock = Test::MockModule->new('OpenQA::Worker::Engines::isotovideo');
@@ -120,16 +121,32 @@ $api_mock->mock(
     });
 
 subtest 'Interrupted WebSocket connection' => sub {
-    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 1, URL => 'url'});
+    is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 1, URL => $engine_url});
     $job->accept;
     is $job->status, 'accepted', 'job is now accepted';
     $job->client->websocket_connection->emit_finish;
     is $job->status, 'accepted',
       'ws disconnects are not considered fatal one the job is accepted so it is still in accepted state';
+
+    is_deeply(
+        $client->websocket_connection->sent_messages,
+        [
+            {
+                json => {
+                    jobid => 1,
+                    type  => 'accepted',
+                }}
+        ],
+        'job accepted via WebSocket'
+    ) or diag explain $client->websocket_connection->sent_messages;
+    $client->websocket_connection->sent_messages([]);
 };
 
 subtest 'Interrupted WebSocket connection (before we can tell the WebUI that we want to work on it)' => sub {
-    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 2, URL => 'url'});
+    is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
+
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 2, URL => $engine_url});
     $job->accept;
     is $job->status, 'accepted', 'job is now accepted';
     $job->_set_status(accepting => {});
@@ -140,10 +157,23 @@ subtest 'Interrupted WebSocket connection (before we can tell the WebUI that we 
         qr/attempt to start job which is not accepted/,
         'starting job prevented unless accepted'
     );
+
+    is_deeply(
+        $client->websocket_connection->sent_messages,
+        [
+            {
+                json => {
+                    jobid => 2,
+                    type  => 'accepted',
+                }}
+        ],
+        'job accepted via WebSocket'
+    ) or diag explain $client->websocket_connection->sent_messages;
+    $client->websocket_connection->sent_messages([]);
 };
 
 subtest 'Job without id' => sub {
-    my $job = OpenQA::Worker::Job->new($worker, $client, {id => undef, URL => 'url'});
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => undef, URL => $engine_url});
     like(
         exception { $job->start },
         qr/attempt to start job without ID and job info/,
@@ -152,7 +182,10 @@ subtest 'Job without id' => sub {
 };
 
 subtest 'Clean up pool directory' => sub {
-    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 3, URL => 'url'});
+    is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
+    is_deeply $client->sent_messages,                       [], 'no REST-API calls yet';
+
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 3, URL => $engine_url});
     $job->accept;
     is $job->status, 'accepted', 'job is now accepted';
 
@@ -166,13 +199,61 @@ subtest 'Clean up pool directory' => sub {
 
     # Try to start job
     combined_like sub { $job->start }, qr/Unable to setup job 3: this is not a real isotovideo/, 'error logged';
-    is wait_until_job_stopped($job), undef, 'no error';
+    is wait_until_job_status($job, 'stopped'), undef, 'no error';
     is $job->status, 'stopped', 'job is stopped due to the mocked error';
     is $job->setup_error, 'this is not a real isotovideo', 'setup error recorded';
 
     # verify old logs being cleaned up and worker-log.txt being created
     ok !-e $pool_directory->child('autoinst-log.txt'), 'autoinst-log.txt file has been deleted';
     ok -e $pool_directory->child('worker-log.txt'),    'worker log is there';
+
+    is_deeply(
+        $client->sent_messages,
+        [
+            {
+                json => {
+                    status => {
+                        uploading => 1,
+                        worker_id => 1
+                    }
+                },
+                path => 'jobs/3/status'
+            },
+            {
+                json => {
+                    status => {
+                        backend               => undef,
+                        cmd_srv_url           => $engine_url,
+                        result                => {},
+                        test_execution_paused => 0,
+                        test_order            => [],
+                        worker_hostname       => undef,
+                        worker_id             => 1
+                    }
+                },
+                path => 'jobs/3/status'
+            },
+            {
+                json => undef,
+                path => 'jobs/3/set_done'
+            }
+        ],
+        'expected REST-API calls happened'
+    ) or diag explain $client->sent_messages;
+    $client->sent_messages([]);
+
+    is_deeply(
+        $client->websocket_connection->sent_messages,
+        [
+            {
+                json => {
+                    jobid => 3,
+                    type  => 'accepted',
+                }}
+        ],
+        'job accepted via WebSocket'
+    ) or diag explain $client->websocket_connection->sent_messages;
+    $client->websocket_connection->sent_messages([]);
 };
 
 # Mock isotovideo engine (simulate successful startup and stop)
@@ -185,23 +266,207 @@ $engine_mock->mock(
                 note "pretending job @{[$job->id]} is done";
                 $job->stop('done');
             });
-        return {child => $isotovideo};
+        return {child => $isotovideo->is_running(1)};
     });
 
 subtest 'Successful job' => sub {
-    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => 'url'});
+    is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
+    is_deeply $client->sent_messages,                       [], 'no REST-API calls yet';
+
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => $engine_url});
     $job->accept;
     is $job->status, 'accepted', 'job is now accepted';
-    combined_like(
-        sub {
-            $job->start();
-        },
-        qr/isotovideo has been started/,
-        'isotovideo startup logged'
-    );
-    is wait_until_job_stopped($job), undef, 'no error';
+    combined_like(sub { $job->start }, qr/isotovideo has been started/, 'isotovideo startup logged');
+
+    my ($status, $is_uploading_results);
+    $job->once(
+        uploading_results_concluded => sub {
+            my $job = shift;
+            $is_uploading_results = $job->is_uploading_results;
+            $status               = $job->status;
+        });
+    is wait_until_job_status($job, 'stopped'), undef, 'no error';
+    is $is_uploading_results, 0,          'uploading results concluded';
+    is $status,               'stopping', 'job is stopping now';
+
     is $job->status,               'stopped', 'job is stopped successfully';
     is $job->is_uploading_results, 0,         'uploading results concluded';
+
+    is_deeply(
+        $client->sent_messages,
+        [
+            {
+                json => {
+                    status => {
+                        cmd_srv_url           => $engine_url,
+                        test_execution_paused => 0,
+                        worker_hostname       => undef,
+                        worker_id             => 1
+                    }
+                },
+                "path" => 'jobs/4/status'
+            },
+            {
+                json => {
+                    status => {
+                        uploading => 1,
+                        worker_id => 1
+                    }
+                },
+                path => 'jobs/4/status'
+            },
+            {
+                json => {
+                    status => {
+                        backend               => undef,
+                        cmd_srv_url           => $engine_url,
+                        result                => {},
+                        test_execution_paused => 0,
+                        test_order            => [],
+                        worker_hostname       => undef,
+                        worker_id             => 1
+                    }
+                },
+                path => 'jobs/4/status'
+            },
+            {
+                json => undef,
+                path => 'jobs/4/set_done'
+            }
+        ],
+        'expected REST-API calls happened'
+    ) or diag explain $client->sent_messages;
+    $client->sent_messages([]);
+
+    is_deeply(
+        $client->websocket_connection->sent_messages,
+        [
+            {
+                json => {
+                    jobid => 4,
+                    type  => 'accepted',
+                }}
+        ],
+        'job accepted via WebSocket'
+    ) or diag explain $client->websocket_connection->sent_messages;
+    $client->websocket_connection->sent_messages([]);
+};
+
+subtest 'Livelog' => sub {
+    is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
+    is_deeply $client->sent_messages,                       [], 'no REST-API calls yet';
+
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 5, URL => $engine_url});
+    my @status;
+    $job->on(
+        status_changed => sub {
+            my ($job, $event_data) = @_;
+            push @status, $event_data->{status};
+        });
+    $job->accept;
+    is $job->status, 'accepted', 'job is now accepted';
+    combined_like(sub { $job->start }, qr/isotovideo has been started/, 'isotovideo startup logged');
+
+    $job->developer_session_running(1);
+    combined_like(sub { $job->start_livelog }, qr/Starting livelog/, 'start of livelog logged');
+    is $job->livelog_viewers, 1, 'has now one livelog viewer';
+    $job->once(
+        uploading_results_concluded => sub {
+            my $job = shift;
+            combined_like(sub { $job->stop_livelog }, qr/Stopping livelog/, 'stopping of livelog logged');
+        });
+    is wait_until_job_status($job, 'stopped'), undef, 'no error';
+    is $job->livelog_viewers, 0, 'no livelog viewers anymore';
+
+    is $job->status,               'stopped', 'job is stopped successfully';
+    is $job->is_uploading_results, 0,         'uploading results concluded';
+
+    is_deeply \@status, [qw(accepting accepted setup running stopping stopped)], 'expected status changes';
+
+    is_deeply(
+        $client->sent_messages,
+        [
+            {
+                json => {
+                    status => {
+                        cmd_srv_url           => $engine_url,
+                        log                   => {},
+                        serial_log            => {},
+                        serial_terminal       => {},
+                        test_execution_paused => 0,
+                        worker_hostname       => undef,
+                        worker_id             => 1
+                    }
+                },
+                path => 'jobs/5/status'
+            },
+            {
+                json => {
+                    status => {
+                        cmd_srv_url           => $engine_url,
+                        log                   => {},
+                        serial_log            => {},
+                        serial_terminal       => {},
+                        test_execution_paused => 0,
+                        worker_hostname       => undef,
+                        worker_id             => 1
+                    }
+                },
+                path => 'jobs/5/status'
+            },
+            {
+                json => {
+                    outstanding_files           => 0,
+                    outstanding_images          => 0,
+                    upload_up_to                => undef,
+                    upload_up_to_current_module => undef
+                },
+                path => '/liveviewhandler/api/v1/jobs/5/upload_progress'
+            },
+            {
+                json => {
+                    status => {
+                        uploading => 1,
+                        worker_id => 1
+                    }
+                },
+                path => 'jobs/5/status'
+            },
+            {
+                json => {
+                    status => {
+                        backend               => undef,
+                        cmd_srv_url           => $engine_url,
+                        result                => {},
+                        test_execution_paused => 0,
+                        test_order            => [],
+                        worker_hostname       => undef,
+                        worker_id             => 1
+                    }
+                },
+                path => 'jobs/5/status'
+            },
+            {
+                json => undef,
+                path => 'jobs/5/set_done'
+            }
+        ],
+        'expected REST-API calls happened'
+    ) or diag explain $client->sent_messages;
+    $client->sent_messages([]);
+
+    is_deeply(
+        $client->websocket_connection->sent_messages,
+        [
+            {
+                json => {
+                    jobid => 5,
+                    type  => 'accepted',
+                }}
+        ],
+        'job accepted via WebSocket'
+    ) or diag explain $client->websocket_connection->sent_messages;
+    $client->websocket_connection->sent_messages([]);
 };
 
 done_testing();
