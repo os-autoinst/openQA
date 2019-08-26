@@ -124,8 +124,9 @@ subtest 'Interrupted WebSocket connection' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 1, URL => $engine_url});
     $job->accept;
-    is $job->status, 'accepted', 'job is now accepted';
+    is $job->status, 'accepting', 'job is now being accepted';
     $job->client->websocket_connection->emit_finish;
+    is wait_until_job_status($job, 'accepted'), undef, 'no error';
     is $job->status, 'accepted',
       'ws disconnects are not considered fatal one the job is accepted so it is still in accepted state';
 
@@ -148,8 +149,7 @@ subtest 'Interrupted WebSocket connection (before we can tell the WebUI that we 
 
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 2, URL => $engine_url});
     $job->accept;
-    is $job->status, 'accepted', 'job is now accepted';
-    $job->_set_status(accepting => {});
+    is $job->status, 'accepting', 'job is now being accepted';
     $job->client->websocket_connection->emit_finish;
     is $job->status, 'stopped', 'job is abandoned if unable to confirm to the web UI that we are working on it';
     like(
@@ -187,7 +187,8 @@ subtest 'Clean up pool directory' => sub {
 
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 3, URL => $engine_url});
     $job->accept;
-    is $job->status, 'accepted', 'job is now accepted';
+    is $job->status, 'accepting', 'job is now being accepted';
+    wait_until_job_status($job, 'accepted');
 
     # Put some 'old' logs into the pool directory to verify whether those are cleaned up
     $pool_directory->child('autoinst-log.txt')->spurt('Hello Mojo!');
@@ -275,7 +276,8 @@ subtest 'Successful job' => sub {
 
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => $engine_url});
     $job->accept;
-    is $job->status, 'accepted', 'job is now accepted';
+    is $job->status, 'accepting', 'job is now being accepted';
+    wait_until_job_status($job, 'accepted');
     combined_like(sub { $job->start }, qr/isotovideo has been started/, 'isotovideo startup logged');
 
     my ($status, $is_uploading_results);
@@ -364,7 +366,8 @@ subtest 'Livelog' => sub {
             push @status, $event_data->{status};
         });
     $job->accept;
-    is $job->status, 'accepted', 'job is now accepted';
+    is $job->status, 'accepting', 'job is now being accepted';
+    wait_until_job_status($job, 'accepted');
     combined_like(sub { $job->start }, qr/isotovideo has been started/, 'isotovideo startup logged');
 
     $job->developer_session_running(1);

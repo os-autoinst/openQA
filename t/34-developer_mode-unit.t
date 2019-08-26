@@ -280,6 +280,7 @@ subtest 'send message to JavaScript clients' => sub {
     is($_->finish_called, 0, 'no transactions finished so far')
       for (@fake_java_script_transactions, @fake_java_script_transactions2);
     $live_view_handler->send_message_to_java_script_clients_and_finish(99961, error => 'test', {some => 'error'});
+    Mojo::IOLoop->one_tick;
     is($_->finish_called, 1, 'all transactions finished')
       for (@fake_java_script_transactions, @fake_java_script_transactions2);
 
