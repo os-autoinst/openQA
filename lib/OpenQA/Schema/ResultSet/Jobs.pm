@@ -140,32 +140,31 @@ sub create_from_settings {
         }
     }
 
-    # handle chained dependencies
-    if ($settings{_START_AFTER_JOBS}) {
-        my $ids = $settings{_START_AFTER_JOBS};    # support array ref or comma separated values
-        $ids = [split(/\s*,\s*/, $ids)] if (ref($ids) ne 'ARRAY');
-        for my $id (@$ids) {
-            push @{$new_job_args{parents}},
-              {
-                parent_job_id => $id,
-                dependency    => OpenQA::JobDependencies::Constants::CHAINED,
-              };
-        }
-        delete $settings{_START_AFTER_JOBS};
-    }
+    # handle dependencies
+    my @dependency_definitions = (
+        {
+            setting_name    => '_START_AFTER_JOBS',
+            dependency_type => OpenQA::JobDependencies::Constants::CHAINED,
+        },
+        {
+            setting_name    => '_START_DIRECTLY_AFTER_JOBS',
+            dependency_type => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED
+        },
+        {
+            setting_name    => '_PARALLEL_JOBS',
+            dependency_type => OpenQA::JobDependencies::Constants::PARALLEL
+        },
+    );
+    for my $dependency_definition (@dependency_definitions) {
+        next unless my $ids = delete $settings{$dependency_definition->{setting_name}};
 
-    # handle parallel dependencies
-    if ($settings{_PARALLEL_JOBS}) {
-        my $ids = $settings{_PARALLEL_JOBS};    # support array ref or comma separated values
+        # support array ref or comma separated values
         $ids = [split(/\s*,\s*/, $ids)] if (ref($ids) ne 'ARRAY');
+
+        my $dependency_type = $dependency_definition->{dependency_type};
         for my $id (@$ids) {
-            push @{$new_job_args{parents}},
-              {
-                parent_job_id => $id,
-                dependency    => OpenQA::JobDependencies::Constants::PARALLEL,
-              };
+            push(@{$new_job_args{parents}}, {parent_job_id => $id, dependency => $dependency_type});
         }
-        delete $settings{_PARALLEL_JOBS};
     }
 
     # move important keys from the settings directly to the job
