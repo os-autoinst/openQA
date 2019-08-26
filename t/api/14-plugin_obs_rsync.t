@@ -20,7 +20,6 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
-use Test::MockModule;
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
 use Mojo::File qw(tempdir path);
@@ -107,7 +106,7 @@ subtest 'make codecov happy' => sub {
         }
     }
     my %args = (project => 'Proj1');
-    my $res  = OpenQA::WebAPI::Plugin::ObsRsync::Task::_run($t->app, bless({} => 'Test::FakeMinionJob'), \%args);
+    my $res  = OpenQA::WebAPI::Plugin::ObsRsync::Task::run($t->app, bless({} => 'Test::FakeMinionJob'), \%args);
     ok($res = 222);
 };
 

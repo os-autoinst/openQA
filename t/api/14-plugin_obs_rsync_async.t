@@ -20,7 +20,6 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
-use Test::MockModule;
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
 use Mojo::File qw(tempdir path);
@@ -50,9 +49,9 @@ $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->i
 $t->app($app);
 
 sub start_gru {
-    my $gru_pid = fork();
+    die 'Cannot fork gru' unless defined(my $gru_pid = fork());
     if ($gru_pid == 0) {
-        print("starting gru\n");
+        Test::More::note('starting gru');
         $ENV{MOJO_MODE} = 'test';
         Mojolicious::Commands->start_app('OpenQA::WebAPI', 'gru', 'run', '-m', 'test');
         exit(0);
@@ -63,17 +62,12 @@ sub start_gru {
 # we need gru running to test response 200
 my $gru_pid = start_gru();
 
-ok($gru_pid);
-
-BAIL_OUT('Cannot fork gru') unless $gru_pid;
-
 sub sleep_until_job_start {
     my ($t, $project) = @_;
     my $status  = 'active';
     my $retries = 500;
 
     while ($retries > 0) {
-        my %jobs;
         my $results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => [$status]});
         for my $other_job (@{$results->{jobs}}) {
             return 1
@@ -93,7 +87,6 @@ sub sleep_until_all_jobs_finished {
     my $retries = 500;
 
     while ($retries > 0) {
-        my %jobs;
         my $results
           = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => ['inactive', 'active']});
         return 1 if !$results->{total};
@@ -168,7 +161,7 @@ ok(10 == $results->{total}, 'Number of finished jobs ' . $results->{total});
 $results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => ['failed']});
 ok(1 == $results->{total}, 'Number of failed jobs ' . $results->{total});
 
-
+ok(1 == $results->{total} && $results->{jobs}[0]->{result}->{message} eq 'Mock Error', 'Correct error message');
 
 if ($gru_pid) {
     kill('TERM', $gru_pid);

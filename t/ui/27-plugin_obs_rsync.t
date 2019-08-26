@@ -40,6 +40,8 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 # needs to log in (it gets redirected)
 $t->get_ok('/login');
 
+BAIL_OUT('Login exit code (' . $t->tx->res->code . ')') if $t->tx->res->code != 302;
+
 $t->get_ok('/admin/obs_rsync')->status_is(200, "index status")->element_exists('a[href*="/admin/obs_rsync/Proj1"]');
 
 $t->get_ok('/admin/obs_rsync/Proj1')->status_is(200, "project status")->element_exists('[rsync_iso.cmd]')

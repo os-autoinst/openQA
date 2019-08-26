@@ -16,11 +16,9 @@
 
 package OpenQA::WebAPI::Plugin::ObsRsync::Task;
 use Mojo::Base -strict;
-use IPC::System::Simple qw(system $EXITVAL);
+use IPC::Run;
 
-my $lock_timeout = 36000;
-
-sub _run {
+sub run {
     my ($app, $job, $args) = @_;
     my $project        = $args->{project};
     my $helper         = $app->obs_rsync;
@@ -29,10 +27,11 @@ sub _run {
     my $retry_interval = $helper->retry_interval;
     my $queue_limit    = $helper->queue_limit;
     my $minion         = $app->minion;
+    my $lock_timeout   = 36000;
 
     if ($job->info && !$job->info->{notes}{project_lock}) {
         return $job->retry({delay => $retry_interval})
-          unless $minion->lock("obs_rsync_project_" . $project . "_lock", $lock_timeout);
+          unless $minion->lock('obs_rsync_project_' . $project . '_lock', $lock_timeout);
 
         $job->note(project_lock => 1);
     }
@@ -41,16 +40,17 @@ sub _run {
     return $job->retry({delay => $retry_interval})
       unless my $concurrency_guard = $minion->guard('obs_rsync_run_guard', $lock_timeout, {limit => $concurrency});
 
-    my $error;
-    eval { system([0], "bash", "$home/rsync.sh", $project); 1; } or do {
-        $error = $@ || 'No message';
-        $app->log->error("ObsRsync#_run failed: " . $EXITVAL . " " . $error);
-    };
-    $minion->unlock("obs_rsync_project_" . $project . "_lock");
-    if ($EXITVAL) {
-        return $job->fail({code => $EXITVAL, message => $error});
-    }
-    return $job->finish(0);
+    my @cmd = ('bash', "$home/rsync.sh", $project);
+    my ($stdin, $stdout, $error);
+    IPC::Run::run(\@cmd, \$stdin, \$stdout, \$error);
+    my $exit_code = $?;
+    $minion->unlock('obs_rsync_project_' . $project . '_lock');
+    return $job->finish(0) if (!$exit_code);
+
+    $error ||= 'No message';
+    $error =~ s/\s+$//;
+    $app->log->error('ObsRsync#_run failed (' . $exit_code . '): ' . $error);
+    return $job->fail({code => $exit_code, message => $error});
 }
 
 1;

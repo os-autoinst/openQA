@@ -41,7 +41,7 @@ sub register {
                 return undef unless $url;
                 return _is_obs_project_status_dirty($url, $project);
             });
-        $app->helper('obs_rsync.check_and_render_error' => sub { _check_and_render_error->(shift, @_) });
+        $app->helper('obs_rsync.check_and_render_error' => \&_check_and_render_error);
 
         # Templates
         push @{$app->renderer->paths},
@@ -73,7 +73,7 @@ sub register {
           ->to('Plugin::ObsRsync::Controller::Gru#run');
     }
 
-    $app->minion->add_task(obs_rsync_run => sub { return OpenQA::WebAPI::Plugin::ObsRsync::Task::_run($app, @_) });
+    $app->minion->add_task(obs_rsync_run => sub { return OpenQA::WebAPI::Plugin::ObsRsync::Task::run($app, @_) });
 }
 
 # try to determine whether project is dirty
@@ -99,7 +99,7 @@ sub _parse_obs_response_dirty {
     while ($body =~ /^(.*repository="images".*)/gm) {
         my $line = $1;
         if ($line =~ /state="([a-z]+)"/) {
-            return 1 if $1 ne "published";
+            return 1 if $1 ne 'published';
             $dirty //= 0;
         }
     }
@@ -107,22 +107,22 @@ sub _parse_obs_response_dirty {
 }
 
 sub _check_and_render_error {
-    my $controller = $_[0];
+    my $c = $_[0];
     my ($code, $message) = _check_error(@_);
-    $controller->render(json => {error => $message}, status => $code) if $code;
+    $c->render(json => {error => $message}, status => $code) if $code;
     return $code;
 }
 
 sub _check_error {
-    my ($controller, $project, $subfolder, $filename) = @_;
-    my $home = $controller->obs_rsync->home;
-    return (405, "Home directory is not set") unless $home;
-    return (405, "Home directory not found")  unless -d $home;
-    return (400, "Project has invalid characters")   if $project   && $project =~ m!/!;
-    return (400, "Subfolder has invalid characters") if $subfolder && $subfolder =~ m!/!;
-    return (400, "Filename has invalid characters")  if $filename  && $filename =~ m!/!;
+    my ($c, $project, $subfolder, $filename) = @_;
+    my $home = $c->obs_rsync->home;
+    return (405, 'Home directory is not set') unless $home;
+    return (405, 'Home directory not found')  unless -d $home;
+    return (400, 'Project has invalid characters')   if $project   && $project =~ m!/!;
+    return (400, 'Subfolder has invalid characters') if $subfolder && $subfolder =~ m!/!;
+    return (400, 'Filename has invalid characters')  if $filename  && $filename =~ m!/!;
 
-    return (404, "Invalid Project {" . $project . "}") if $project && !-d Mojo::File->new($home, $project);
+    return (404, 'Invalid Project {' . $project . '}') if $project && !-d Mojo::File->new($home, $project);
     return 0;
 }
 

@@ -44,8 +44,6 @@ use constant {
     QUEUE_FULL => 507,
 };
 
-my $lock_timeout = 36000;
-
 sub index {
     my $self   = shift;
     my $helper = $self->obs_rsync;
@@ -67,10 +65,10 @@ sub _extend_job_info {
     my ($job) = @_;
 
     my $created_at = $job->{created};
-    $created_at = strftime("%Y-%m-%d %H:%M:%S %z", localtime($created_at)) if $created_at;
+    $created_at = strftime('%Y-%m-%d %H:%M:%S %z', localtime($created_at)) if $created_at;
 
     my $started_at = $job->{started};
-    $started_at = strftime("%Y-%m-%d %H:%M:%S %z", localtime($started_at)) if $started_at;
+    $started_at = strftime('%Y-%m-%d %H:%M:%S %z', localtime($started_at)) if $started_at;
 
     my $args = $job->{args};
     if (ref $args eq 'HASH' && scalar(%$args) == 1 && $args->{project}) {

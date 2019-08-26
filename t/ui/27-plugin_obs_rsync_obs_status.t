@@ -157,10 +157,11 @@ $t->get_ok('/');
 my $token = $t->tx->res->dom->at('meta[name=csrf-token]')->attr('content');
 # needs to log in (it gets redirected)
 $t->get_ok('/login');
+BAIL_OUT('Login exit code (' . $t->tx->res->code . ')') if $t->tx->res->code != 302;
 
-$t->post_ok('/admin/obs_rsync/Proj1/runs' => {'X-CSRF-Token' => $token})->status_is(201, "trigger rsync");
-$t->post_ok('/admin/obs_rsync/Proj2/runs' => {'X-CSRF-Token' => $token})->status_is(201, "trigger rsync");
-$t->post_ok('/admin/obs_rsync/Proj3/runs' => {'X-CSRF-Token' => $token})->status_is(201, "trigger rsync");
+$t->post_ok('/admin/obs_rsync/Proj1/runs' => {'X-CSRF-Token' => $token})->status_is(201, 'trigger rsync');
+$t->post_ok('/admin/obs_rsync/Proj2/runs' => {'X-CSRF-Token' => $token})->status_is(201, 'trigger rsync');
+$t->post_ok('/admin/obs_rsync/Proj3/runs' => {'X-CSRF-Token' => $token})->status_is(201, 'trigger rsync');
 
 # at start job is added as inactive
 $t->get_ok('/admin/obs_rsync/queue')->status_is(200, "jobs list")->content_like(qr/inactive/)

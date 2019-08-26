@@ -80,7 +80,6 @@ RUN zypper in -y -C \
        'perl(IO::Scalar)' \
        'perl(IO::Socket::SSL)' \
        'perl(IPC::Run)' \
-       'perl(IPC::System::Simple)' \
        'perl(JSON::XS)' \
        'perl(JavaScript::Minifier::XS)' \
        'perl(LWP::Protocol::https)' \
