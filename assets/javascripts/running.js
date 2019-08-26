@@ -366,6 +366,7 @@ var developerMode = {
     pauseOnNextCommand: undefined,          // whether to pause on the next command (current command *not* affected, eg. *no* timeouts skipped or failures suppressed)
     isPaused: undefined,                    // if paused the reason why as a string; otherwise something which evaluates to false
     currentApiFunction: undefined,          // the currently executed API function (eg. assert_screen)
+    currentApiFunctionArgs: '',             // arguments of the currently executed API function (eg. assert_screen)
     outstandingImagesToUpload: undefined,   // number of images which still need to be uploaded by the worker
     outstandingFilesToUpload: undefined,    // number of other files which still need to be uploaded by the worker
     uploadingUpToCurrentModule: undefined,  // whether the worker will upload up to the current module (happens when paused in the middle of a module)
@@ -574,12 +575,18 @@ function updateDeveloperPanel() {
             statusAppendix = 'currently at: ' + developerMode.currentModule;
             if (developerMode.currentApiFunction) {
                 statusAppendix += ', ' + developerMode.currentApiFunction;
+                if (developerMode.currentApiFunctionArgs) {
+                    statusAppendix += ' ' + developerMode.currentApiFunctionArgs;
+                }
             }
         }
     } else if (developerMode.currentModule) {
         statusInfo = 'current module: ' + developerMode.currentModule;
         if (developerMode.currentApiFunction) {
             statusAppendix += 'at ' + developerMode.currentApiFunction;
+            if (developerMode.currentApiFunctionArgs) {
+                statusAppendix += ' ' + developerMode.currentApiFunctionArgs;
+            }
         }
     }
     if (!developerMode.badConfiguration && developerMode.currentApiFunction) {
@@ -939,6 +946,12 @@ var messageToStatusVariable = [
     {
         msg: 'current_api_function',
         statusVar: 'currentApiFunction',
+        action: function (value, data) {
+            developerMode.currentApiFunctionArgs = '';
+            if ((value === 'assert_screen' || value === 'check_screen') && data.check_screen) {
+                developerMode.currentApiFunctionArgs = data.check_screen.mustmatch;
+            }
+        }
     },
     {
         msg: 'stopping_test_execution',
