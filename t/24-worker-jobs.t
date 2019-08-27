@@ -99,9 +99,11 @@ sub wait_until_job_status_ok {
     sub stop { shift->is_running(0) }
 }
 
-my $isotovideo     = Test::FakeEngine->new;
-my $worker         = Test::FakeWorker->new;
-my $pool_directory = tempdir('poolXXXX');
+my $isotovideo            = Test::FakeEngine->new;
+my $worker                = Test::FakeWorker->new;
+my $pool_directory        = tempdir('poolXXXX');
+my $testresults_directory = $pool_directory->child('testresults')->make_path;
+$testresults_directory->child('test_order.json')->spurt('[]');
 $worker->pool_directory($pool_directory);
 my $client = Test::FakeClient->new;
 $client->ua->connect_timeout(0.1);
@@ -217,11 +219,6 @@ subtest 'Clean up pool directory' => sub {
     # Put some 'old' logs into the pool directory to verify whether those are cleaned up
     $pool_directory->child('autoinst-log.txt')->spurt('Hello Mojo!');
 
-    # Put a fake test_order.json into the pool directory
-    my $testresults_directory = path($pool_directory, 'testresults');
-    $testresults_directory->make_path;
-    $testresults_directory->child('test_order.json')->spurt('[]');
-
     # Try to start job
     combined_like sub { $job->start }, qr/Unable to setup job 3: this is not a real isotovideo/, 'error logged';
     wait_until_job_status_ok($job, 'stopped');
@@ -330,6 +327,8 @@ subtest 'Successful job' => sub {
             $is_uploading_results = $job->is_uploading_results;
             $status               = $job->status;
         });
+    my $assets_public = $pool_directory->child('assets_public')->make_path;
+    $assets_public->child('test.txt')->spurt('Works!');
     wait_until_job_status_ok($job, 'stopped');
     is $is_uploading_results, 0,          'uploading results concluded';
     is $status,               'stopping', 'job is stopping now';
@@ -417,8 +416,20 @@ subtest 'Successful job' => sub {
         'would have uploaded logs'
     ) or diag explain $uploaded_files;
     my $uploaded_assets = shared_hash->{uploaded_assets};
-    is_deeply($uploaded_assets, [], 'no assets uploaded because this test so far has none')
-      or diag explain $uploaded_assets;
+    is_deeply(
+        $uploaded_assets,
+        [
+            [
+                {
+                    asset => 'public',
+                    file  => {
+                        file     => "$pool_directory/assets_public/test.txt",
+                        filename => 'test.txt'
+                    }}]
+        ],
+        'would have uploaded assets'
+    ) or diag explain $uploaded_assets;
+    $assets_public->remove_tree;
     shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
 
