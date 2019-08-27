@@ -788,9 +788,6 @@ sub _upload_results_step_2_upload_images {
         sub {
             my $job_id = $self->id;
             my $client = $self->client;
-            my $ua     = $client->ua;
-            my $ua_url = $client->url->clone;
-            $ua_url->path("jobs/$job_id/artefact");
 
             my $pooldir        = $self->worker->pool_directory;
             my $fileprefix     = "$pooldir/testresults";
@@ -800,7 +797,7 @@ sub _upload_results_step_2_upload_images {
                 $self->_optimize_image("$fileprefix/$file");
 
                 log_debug("Uploading $file as $md5");
-                my %form = (
+                my $form = {
                     file => {
                         file     => "$fileprefix/$file",
                         filename => $file
@@ -808,35 +805,29 @@ sub _upload_results_step_2_upload_images {
                     image => 1,
                     thumb => 0,
                     md5   => $md5
-                );
-                # don't use api_call as it retries and does not allow form data
-                my $tx = $ua->post($ua_url => form => \%form);
-                if (my $err = $tx->error) { log_error("Upload failed: $err") }
+                };
+                $client->send_artefact($job_id, $form);
 
                 $file = "$fileprefix/.thumbs/$file";
                 if (-f $file) {
                     $self->_optimize_image($file);
-                    $form{file}->{file} = $file;
-                    $form{thumb} = 1;
-                    my $tx = $ua->post($ua_url => form => \%form);
-                    if (my $err = $tx->error) { log_error("Upload failed: $err") }
+                    $form->{file}->{file} = $file;
+                    $form->{thumb} = 1;
+                    $client->send_artefact($job_id, $form);
                 }
             }
 
             for my $file (@{$self->files_to_send}) {
                 log_debug("Uploading $file");
-                my %form = (
+                my $form = {
                     file => {
                         file     => "$pooldir/testresults/$file",
                         filename => $file,
                     },
                     image => 0,
                     thumb => 0,
-                );
-                # don't use api_call as it retries and does not allow form data
-                # (refactor at some point)
-                my $tx = $ua->post($ua_url => form => \%form);
-                if (my $err = $tx->error) { log_error("Upload failed: $err") }
+                };
+                $client->send_artefact($job_id, $form);
             }
         },
         sub {

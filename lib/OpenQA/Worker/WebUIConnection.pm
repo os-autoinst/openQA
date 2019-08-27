@@ -405,6 +405,17 @@ sub send {
     $ua->start($tx => sub { $cb->(@_, $tries) });
 }
 
+sub send_artefact {
+    my ($self, $job_id, $form) = @_;
+
+    my $ua  = $self->ua;
+    my $url = $self->url->clone;
+    $url->path("jobs/$job_id/artefact");
+
+    my $tx = $ua->post($url => form => $form);
+    if (my $err = $tx->error) { log_error("Artefact upload failed: $err") }
+}
+
 sub _calculate_status_update_interval {
     my ($self) = @_;
 
