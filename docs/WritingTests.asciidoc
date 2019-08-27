@@ -267,15 +267,15 @@ In short, writing multi-machine tests adds a few more layers of complexity:
 
 There are 3 types of dependencies: +CHAINED+, +DIRECTLY_CHAINED+ and +PARALLEL+:
 
-* +CHAINED+ and +DIRECTLY_CHAINED+ describe when one test case depends on another and both are run sequentially, i.e. KDE test suite is run after and only after Installation test suite
-is successfully finished and cancelled if fail.
+* +CHAINED+ and +DIRECTLY_CHAINED+ describe when one test case depends on another and both are run sequentially, i.e. KDE test suite is run after and only after Installation test suite is successfully finished and cancelled if fail.
 
 The difference between +CHAINED+ and +DIRECTLY_CHAINED+ dependencies is that +DIRECTLY_CHAINED+ means the tests must run directly after another on the same worker slot.
+This can be useful to test efficiently on bare metal SUTs and other self-provisioning environments.
 
-To define a +CHAINED+ dependency add the variable +START_AFTER_TEST+ with the name(s) of test suite(s) after which selected test suite is supposed to run.
+To define a +CHAINED+ dependency add the variable +START_AFTER_TEST+ with the name(s) of test suite(s) after which the selected test suite is supposed to run.
 Use comma separated list for multiple test suite dependency. E.g. +START_AFTER_TEST="kde,dhcp-server"+
 
-To define a +DIRECTLY_CHAINED+ add the variable +START_DIRECTLY_AFTER_TEST+. It works in the same way as for +CHAINED+ dependencies. Make sure all tests have the same worker class.
+To define a +DIRECTLY_CHAINED+ dependency add the variable +START_DIRECTLY_AFTER_TEST+. It works in the same way as for +CHAINED+ dependencies. Mismatching worker classes between jobs to run in direct sequence on the same worker are considered an error.
 
 * +PARALLEL+ describes mulit-machine tests. That are test suites scheduled to run at the same time and managed as a group. On top of that, +PARALLEL+ also describes
 test suite dependencies, where some test suites (children) run parallel with other test suites (parents) only when parents are running.
@@ -352,6 +352,24 @@ If variable START_AFTER_TEST or PARALLEL_WITH *only* with name(s) of test suite(
 START_AFTER_TEST=A,B or PARALLEL_WITH=A,B
 ----
 openQA will create job dependencies that are scheduled on the same machine if all test suites are placed on the same machine.
+
+===== Notes regarding directly chained dependencies
+Having multiple jobs with +START_DIRECTLY_AFTER_TEST+ pointing to the same parent job is possible, e.g.:
+----
+   --> B --> C
+ /
+A
+ \
+   --> D --> E
+----
+
+Of course only either +B+ or +D+ jobs can really be started *directly* after +A+. However, the use of +START_DIRECTLY_AFTER_TEST+ still makes sure that no completely different job is executed in the middle and of course that all of these jobs are executed on the same worker.
+
+The directly chained sub-trees are executed in alphabetical order. So the above tree would result in the following execution order: +A, B, C, D, E+.
+
+If +A+ fails, none of the other jobs are attempted to be executed. If +B+ fails, +C+ is not attempted to be executed but +D+ and +E+ are. The assumption is that the average error case does not leave the system in a completely broken state and possibly required cleanup is done in the post fail hook.
+
+Directly chained dependencies and regularly chained dependencies can be mixed. This allows to create a dependency tree which contains multiple directly chained sub-trees. Be aware that these sub-trees might be executed on *different* workers and depending on the tree even be executed in parallel.
 
 ==== OpenQA worker requirements
 
