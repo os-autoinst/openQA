@@ -1,5 +1,4 @@
 #!/bin/bash -e
-# shellcheck disable=SC2086
 
 # Usage:
 #  openqa-clone-custom-git-refspec GITHUB_PR_URL OPENQA_JOB_URL [CUSTOM_TEST_VAR_1=foo] [CUSTOM_TEST_VAR_2=bar]
