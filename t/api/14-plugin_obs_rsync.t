@@ -91,6 +91,8 @@ use OpenQA::WebAPI::Plugin::ObsRsync::Task;
 subtest 'make codecov happy' => sub {
     {
         package Test::FakeMinionJob;
+        use Mojo::Base -base;
+        sub app { $t->app }
         sub note {
         }
         sub retry {
@@ -106,7 +108,7 @@ subtest 'make codecov happy' => sub {
         }
     }
     my %args = (project => 'Proj1');
-    my $res  = OpenQA::WebAPI::Plugin::ObsRsync::Task::run($t->app, bless({} => 'Test::FakeMinionJob'), \%args);
+    my $res  = OpenQA::WebAPI::Plugin::ObsRsync::Task::run(Test::FakeMinionJob->new, \%args);
     ok($res = 222);
 };
 

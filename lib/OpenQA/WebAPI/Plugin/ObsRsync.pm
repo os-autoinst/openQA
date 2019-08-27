@@ -16,8 +16,8 @@
 
 package OpenQA::WebAPI::Plugin::ObsRsync;
 use Mojo::Base 'Mojolicious::Plugin';
+
 use Mojo::File;
-use OpenQA::WebAPI::Plugin::ObsRsync::Task;
 use Mojo::UserAgent;
 
 sub register {
@@ -73,7 +73,7 @@ sub register {
           ->to('Plugin::ObsRsync::Controller::Gru#run');
     }
 
-    $app->minion->add_task(obs_rsync_run => sub { return OpenQA::WebAPI::Plugin::ObsRsync::Task::run($app, @_) });
+    $app->plugin('OpenQA::WebAPI::Plugin::ObsRsync::Task');
 }
 
 # try to determine whether project is dirty
@@ -107,15 +107,14 @@ sub _parse_obs_response_dirty {
 }
 
 sub _check_and_render_error {
-    my $c = $_[0];
-    my ($code, $message) = _check_error(@_);
+    my ($c, @args) = @_;
+    my ($code, $message) = _check_error($c->obs_rsync->home, @args);
     $c->render(json => {error => $message}, status => $code) if $code;
     return $code;
 }
 
 sub _check_error {
-    my ($c, $project, $subfolder, $filename) = @_;
-    my $home = $c->obs_rsync->home;
+    my ($home, $project, $subfolder, $filename) = @_;
     return (405, 'Home directory is not set') unless $home;
     return (405, 'Home directory not found')  unless -d $home;
     return (400, 'Project has invalid characters')   if $project   && $project =~ m!/!;

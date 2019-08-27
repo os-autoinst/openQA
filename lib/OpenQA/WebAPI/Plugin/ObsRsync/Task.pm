@@ -15,11 +15,19 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::WebAPI::Plugin::ObsRsync::Task;
-use Mojo::Base -strict;
+use Mojo::Base 'Mojolicious::Plugin';
+
 use IPC::Run;
 
+sub register {
+    my ($self, $app) = @_;
+    $app->minion->add_task(obs_rsync_run => \&run);
+}
+
 sub run {
-    my ($app, $job, $args) = @_;
+    my ($job, $args) = @_;
+
+    my $app            = $job->app;
     my $project        = $args->{project};
     my $helper         = $app->obs_rsync;
     my $home           = $helper->home;
