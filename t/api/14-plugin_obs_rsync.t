@@ -109,7 +109,7 @@ subtest 'make codecov happy' => sub {
     }
     my %args = (project => 'Proj1');
     my $res  = OpenQA::WebAPI::Plugin::ObsRsync::Task::run(Test::FakeMinionJob->new, \%args);
-    ok($res = 222);
+    ok $res == 222, 'code is 222';
 };
 
 done_testing();
