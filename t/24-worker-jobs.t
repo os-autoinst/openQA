@@ -32,8 +32,9 @@ use Mojo::IOLoop;
 use OpenQA::Worker::Job;
 use OpenQA::Worker::Settings;
 use OpenQA::Test::FakeWebSocketTransaction;
+use OpenQA::Test::Utils 'shared_hash';
 
-sub wait_until_job_status {
+sub wait_until_job_status_ok {
     my ($job, $status) = @_;
 
     # Do not wait forever in case of problems
@@ -56,7 +57,9 @@ sub wait_until_job_status {
     $job->unsubscribe(status_changed => $cb);
     Mojo::IOLoop->remove($timer);
 
-    return $error;
+    # Show caller perspective for failures
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+    is $error, undef, 'no wait_until_job_status_ok error';
 }
 
 # Fake worker, client and engine
@@ -120,13 +123,34 @@ $api_mock->mock(
         Mojo::IOLoop->next_tick(sub { $callback->($isotovideo_client, {}) });
     });
 
+# log which files and assets would have been uploaded
+my $job_mock            = Test::MockModule->new('OpenQA::Worker::Job');
+my $default_shared_hash = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
+shared_hash $default_shared_hash;
+$job_mock->mock(
+    _upload_log_file => sub {
+        my ($self, @args) = @_;
+        my $shared_hash = shared_hash;
+        push @{$shared_hash->{uploaded_files}}, \@args;
+        shared_hash $shared_hash;
+        return $shared_hash->{upload_result};
+    });
+$job_mock->mock(
+    _upload_asset => sub {
+        my ($self, @args) = @_;
+        my $shared_hash = shared_hash;
+        push @{$shared_hash->{uploaded_assets}}, \@args;
+        shared_hash $shared_hash;
+        return $shared_hash->{upload_result};
+    });
+
 subtest 'Interrupted WebSocket connection' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 1, URL => $engine_url});
     $job->accept;
     is $job->status, 'accepting', 'job is now being accepted';
     $job->client->websocket_connection->emit_finish;
-    is wait_until_job_status($job, 'accepted'), undef, 'no error';
+    wait_until_job_status_ok($job, 'accepted');
     is $job->status, 'accepted',
       'ws disconnects are not considered fatal one the job is accepted so it is still in accepted state';
 
@@ -188,7 +212,7 @@ subtest 'Clean up pool directory' => sub {
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 3, URL => $engine_url});
     $job->accept;
     is $job->status, 'accepting', 'job is now being accepted';
-    wait_until_job_status($job, 'accepted');
+    wait_until_job_status_ok($job, 'accepted');
 
     # Put some 'old' logs into the pool directory to verify whether those are cleaned up
     $pool_directory->child('autoinst-log.txt')->spurt('Hello Mojo!');
@@ -200,7 +224,7 @@ subtest 'Clean up pool directory' => sub {
 
     # Try to start job
     combined_like sub { $job->start }, qr/Unable to setup job 3: this is not a real isotovideo/, 'error logged';
-    is wait_until_job_status($job, 'stopped'), undef, 'no error';
+    wait_until_job_status_ok($job, 'stopped');
     is $job->status, 'stopped', 'job is stopped due to the mocked error';
     is $job->setup_error, 'this is not a real isotovideo', 'setup error recorded';
 
@@ -255,6 +279,24 @@ subtest 'Clean up pool directory' => sub {
         'job accepted via WebSocket'
     ) or diag explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
+
+    my $uploaded_files = shared_hash->{uploaded_files};
+    is_deeply(
+        $uploaded_files,
+        [
+            [
+                {
+                    file => {
+                        file     => "$pool_directory/worker-log.txt",
+                        filename => 'worker-log.txt'
+                    }}]
+        ],
+        'would have uploaded logs'
+    ) or diag explain $uploaded_files;
+    my $uploaded_assets = shared_hash->{uploaded_assets};
+    is_deeply($uploaded_assets, [], 'no assets uploaded because this test so far has none')
+      or diag explain $uploaded_assets;
+    shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
 
 # Mock isotovideo engine (simulate successful startup and stop)
@@ -267,6 +309,7 @@ $engine_mock->mock(
                 note "pretending job @{[$job->id]} is done";
                 $job->stop('done');
             });
+        $pool_directory->child('serial_terminal.txt')->spurt('Works!');
         return {child => $isotovideo->is_running(1)};
     });
 
@@ -277,7 +320,7 @@ subtest 'Successful job' => sub {
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => $engine_url});
     $job->accept;
     is $job->status, 'accepting', 'job is now being accepted';
-    wait_until_job_status($job, 'accepted');
+    wait_until_job_status_ok($job, 'accepted');
     combined_like(sub { $job->start }, qr/isotovideo has been started/, 'isotovideo startup logged');
 
     my ($status, $is_uploading_results);
@@ -287,7 +330,7 @@ subtest 'Successful job' => sub {
             $is_uploading_results = $job->is_uploading_results;
             $status               = $job->status;
         });
-    is wait_until_job_status($job, 'stopped'), undef, 'no error';
+    wait_until_job_status_ok($job, 'stopped');
     is $is_uploading_results, 0,          'uploading results concluded';
     is $status,               'stopping', 'job is stopping now';
 
@@ -352,6 +395,31 @@ subtest 'Successful job' => sub {
         'job accepted via WebSocket'
     ) or diag explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
+
+    my $uploaded_files = shared_hash->{uploaded_files};
+    is_deeply(
+        $uploaded_files,
+        [
+            [
+                {
+                    file => {
+                        file     => "$pool_directory/serial_terminal.txt",
+                        filename => 'serial_terminal.txt'
+                    }}
+            ],
+            [
+                {
+                    file => {
+                        file     => "$pool_directory/worker-log.txt",
+                        filename => 'worker-log.txt'
+                    }}]
+        ],
+        'would have uploaded logs'
+    ) or diag explain $uploaded_files;
+    my $uploaded_assets = shared_hash->{uploaded_assets};
+    is_deeply($uploaded_assets, [], 'no assets uploaded because this test so far has none')
+      or diag explain $uploaded_assets;
+    shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
 
 subtest 'Livelog' => sub {
@@ -367,7 +435,7 @@ subtest 'Livelog' => sub {
         });
     $job->accept;
     is $job->status, 'accepting', 'job is now being accepted';
-    wait_until_job_status($job, 'accepted');
+    wait_until_job_status_ok($job, 'accepted');
     combined_like(sub { $job->start }, qr/isotovideo has been started/, 'isotovideo startup logged');
 
     $job->developer_session_running(1);
@@ -378,7 +446,7 @@ subtest 'Livelog' => sub {
             my $job = shift;
             combined_like(sub { $job->stop_livelog }, qr/Stopping livelog/, 'stopping of livelog logged');
         });
-    is wait_until_job_status($job, 'stopped'), undef, 'no error';
+    wait_until_job_status_ok($job, 'stopped');
     is $job->livelog_viewers, 0, 'no livelog viewers anymore';
 
     is $job->status,               'stopped', 'job is stopped successfully';
@@ -470,6 +538,31 @@ subtest 'Livelog' => sub {
         'job accepted via WebSocket'
     ) or diag explain $client->websocket_connection->sent_messages;
     $client->websocket_connection->sent_messages([]);
+
+    my $uploaded_files = shared_hash->{uploaded_files};
+    is_deeply(
+        $uploaded_files,
+        [
+            [
+                {
+                    file => {
+                        file     => "$pool_directory/serial_terminal.txt",
+                        filename => 'serial_terminal.txt'
+                    }}
+            ],
+            [
+                {
+                    file => {
+                        file     => "$pool_directory/worker-log.txt",
+                        filename => 'worker-log.txt'
+                    }}]
+        ],
+        'would have uploaded logs'
+    ) or diag explain $uploaded_files;
+    my $uploaded_assets = shared_hash->{uploaded_assets};
+    is_deeply($uploaded_assets, [], 'no assets uploaded because this test so far has none')
+      or diag explain $uploaded_assets;
+    shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
 
 done_testing();

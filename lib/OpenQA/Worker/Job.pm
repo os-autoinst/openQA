@@ -410,11 +410,10 @@ sub _stop_step_5_upload {
                     }
                 }
 
-                # upload other logs and files
-                for my $file (
-                    qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt serial_terminal.txt virtio_console.log worker-log.txt virtio_console1.log)
-                  )
-                {
+                my @other
+                  = qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt serial_terminal.txt virtio_console.log worker-log.txt virtio_console1.log);
+                for my $other (@other) {
+                    my $file = "$pooldir/$other";
                     next unless -e $file;
 
                     # replace some file names
@@ -422,7 +421,7 @@ sub _stop_step_5_upload {
                     $ofile =~ s/serial0/serial0.txt/;
                     $ofile =~ s/virtio_console.log/serial_terminal.txt/;
 
-                    my %upload_parameter = (file => {file => "$pooldir/$file", filename => $ofile},);
+                    my %upload_parameter = (file => {file => $file, filename => basename($ofile)});
                     if (!$self->_upload_log_file_or_asset(\%upload_parameter)) {
                         $reason = 'api-failure';
                         last;
@@ -433,7 +432,7 @@ sub _stop_step_5_upload {
             sub {
                 my ($subprocess, $err, $reason) = @_;
                 log_error("Upload subprocess error: $err") if $err;
-                $self->_stop_step_5_1_upload($reason, $callback);
+                $self->_stop_step_5_1_upload($reason // 'api-failure', $callback);
             });
     }
 
