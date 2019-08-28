@@ -37,7 +37,7 @@ __PACKAGE__->add_columns(
     });
 
 __PACKAGE__->belongs_to(job        => 'OpenQA::Schema::Result::Jobs',        'job_id');
-__PACKAGE__->belongs_to(screenshot => 'OpenQA::Schema::Result::Screenshots', 'screenshot_id');
+__PACKAGE__->belongs_to(screenshot => 'OpenQA::Schema::Result::Screenshots', 'screenshot_id', {on_delete => 'CASCADE'});
 
 sub _list_images_subdir {
     my ($app, $prefix, $dir) = @_;
@@ -63,30 +63,41 @@ sub populate_images_to_job {
     my ($schema, $imgs, $job_id) = @_;
 
     # insert the symlinks into the DB
-    my $data  = [[qw(screenshot_id job_id)]];
+
+    # find existing screenshots
     my $dbids = $schema->resultset('Screenshots')->search({filename => {-in => $imgs}});
     my %ids;
     while (my $screenshot = $dbids->next) {
         $ids{$screenshot->filename} = $screenshot->id;
     }
+
+    # create missing screenshots
     my $now = DateTime->now;
     for my $img (@$imgs) {
         next if $ids{$img};
+        my $screenshot_id;
         try {
             log_debug "creating $img";
-            $ids{$img} = $schema->resultset('Screenshots')->create({filename => $img, t_created => $now})->id;
+            $screenshot_id = $schema->resultset('Screenshots')->create({filename => $img, t_created => $now})->id;
         }
         catch {
             # it's possible 2 jobs are creating the link at the same time
             my $error = shift;
-            $ids{$img} = $schema->resultset('Screenshots')->find({filename => $img})->id;
+            $screenshot_id = $schema->resultset('Screenshots')->find({filename => $img})->id;
         };
+        $ids{$img} = $screenshot_id;
     }
+
+    # create screenshot links and update link_count on screenshots
+    my $data                   = [[qw(screenshot_id job_id)]];
+    my $dbh                    = $schema->storage->dbh;
+    my $increment_link_counter = $dbh->prepare('UPDATE screenshots SET link_count = link_count + 1 WHERE id = ?');
     for my $id (values %ids) {
         push(@$data, [$id, $job_id]);
+        $increment_link_counter->execute($id);
     }
     $schema->resultset('ScreenshotLinks')->populate($data);
-    return;
+    return undef;
 }
 
 1;

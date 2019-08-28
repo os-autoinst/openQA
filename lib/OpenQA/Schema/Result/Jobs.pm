@@ -229,26 +229,39 @@ sub sqlt_deploy_hook {
     $sqlt_table->add_index(name => 'idx_jobs_scenario',    fields => [qw(VERSION DISTRI FLAVOR TEST MACHINE ARCH)]);
 }
 
-# override to straighten out job modules
+# override to straighten out job modules and screenshots
 sub delete {
     my ($self) = @_;
 
+    my $schema = $self->result_source->schema;
+    my $dbh    = $schema->storage->dbh;
+
+    # delete all job modules
     $self->modules->delete;
 
-    my $sls = $self->screenshot_links->search({}, {columns => 'screenshot_id'});
-    my %ids = map { $_->screenshot_id => 1 } $sls->all;
-    # delete all references
-    $self->screenshot_links->delete;
-    my $schema = $self->result_source->schema;
+    # unlink screenshots
+    my $screenshots
+      = $schema->resultset('Screenshots')->search({job_id => $self->id}, {join => 'links'});
+    my $decrement_link_counter = $dbh->prepare('UPDATE screenshots SET link_count = link_count - 1 WHERE id = ?');
+    while (my $screenshot = $screenshots->next) {
+        my $link_count = $screenshot->link_count;
 
-    $sls = $schema->resultset('ScreenshotLinks')
-      ->search({screenshot_id => {-in => [sort keys %ids]}}, {columns => 'screenshot_id', distinct => 1});
-    map { delete $ids{$_->screenshot_id} } $sls->all;
+        # stop here while migration for link_count still ongoing
+        return 0 unless defined $link_count;
 
-    my $fns = $schema->resultset('Screenshots')->search({id => {-in => [sort keys %ids]}});
-    while (my $sc = $fns->next) {
-        $sc->delete;
+        # delete exclusively used screenshots
+        if ($link_count <= 1) {
+            $screenshot->delete;
+            next;
+        }
+
+        # decrement link count of shared screenshots
+        $decrement_link_counter->execute($screenshot->id);
     }
+
+    # delete screenshot references used by this job
+    $self->screenshot_links->delete;
+
     my $ret = $self->SUPER::delete;
 
     # last step: remove result directory if already existant
