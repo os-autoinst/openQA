@@ -796,7 +796,6 @@ sub _upload_results_step_2_upload_images {
                 my $file = $images_to_send->{$md5};
                 $self->_optimize_image("$fileprefix/$file");
 
-                log_debug("Uploading $file as $md5");
                 my $form = {
                     file => {
                         file     => "$fileprefix/$file",
@@ -811,14 +810,13 @@ sub _upload_results_step_2_upload_images {
                 $file = "$fileprefix/.thumbs/$file";
                 if (-f $file) {
                     $self->_optimize_image($file);
-                    $form->{file}->{file} = $file;
+                    $form->{file}{file} = $file;
                     $form->{thumb} = 1;
                     $client->send_artefact($job_id, $form);
                 }
             }
 
             for my $file (@{$self->files_to_send}) {
-                log_debug("Uploading $file");
                 my $form = {
                     file => {
                         file     => "$pooldir/testresults/$file",

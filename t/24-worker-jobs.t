@@ -125,7 +125,7 @@ $api_mock->mock(
         Mojo::IOLoop->next_tick(sub { $callback->($isotovideo_client, {}) });
     });
 
-# log which files and assets would have been uploaded
+# Mock log file and asset uploads to collect diagnostics
 my $job_mock            = Test::MockModule->new('OpenQA::Worker::Job');
 my $default_shared_hash = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 shared_hash $default_shared_hash;
@@ -573,6 +573,207 @@ subtest 'Livelog' => sub {
     my $uploaded_assets = shared_hash->{uploaded_assets};
     is_deeply($uploaded_assets, [], 'no assets uploaded because this test so far has none')
       or diag explain $uploaded_assets;
+    shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
+};
+
+subtest 'handling API failures' => sub {
+    is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
+    is_deeply $client->sent_messages,                       [], 'no REST-API calls yet';
+
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 6, URL => $engine_url});
+    my @status;
+    $job->on(
+        status_changed => sub {
+            my ($job, $event_data) = @_;
+            push @status, $event_data->{status};
+        });
+    $job->accept;
+    is $job->status, 'accepting', 'job is now being accepted';
+    $job->once(
+        uploading_results_concluded => sub {
+            my $job = shift;
+            $job->stop('api-failure');
+        });
+    wait_until_job_status_ok($job, 'accepted');
+    combined_like(sub { $job->start }, qr/isotovideo has been started/, 'isotovideo startup logged');
+
+    is $client->register_called, 0, 'no re-registration attempted so far';
+    wait_until_job_status_ok($job, 'stopped');
+    is $client->register_called, 1, 'worker tried to register itself again after an API failure';
+
+    is_deeply \@status, [qw(accepting accepted setup running stopping stopped)], 'expected status changes';
+
+    is_deeply(
+        $client->sent_messages,
+        [
+            {
+                json => {
+                    status => {
+                        cmd_srv_url           => $engine_url,
+                        test_execution_paused => 0,
+                        worker_hostname       => undef,
+                        worker_id             => 1
+                    }
+                },
+                path => 'jobs/6/status'
+            },
+            {
+                json => {
+                    status => {
+                        uploading => 1,
+                        worker_id => 1
+                    }
+                },
+                path => 'jobs/6/status'
+            },
+            {
+                json => undef,
+                path => 'jobs/6/set_done'
+            },
+            {
+                json => undef,
+                path => 'jobs/6/set_done'
+            }
+        ],
+        'expected REST-API calls happened'
+    ) or diag explain $client->sent_messages;
+    $client->sent_messages([]);
+
+    is_deeply(
+        $client->websocket_connection->sent_messages,
+        [
+            {
+                json => {
+                    jobid => 6,
+                    type  => 'accepted'
+                }}
+        ],
+        'job accepted via WebSocket'
+    ) or diag explain $client->websocket_connection->sent_messages;
+    $client->websocket_connection->sent_messages([]);
+
+    my $uploaded_files = shared_hash->{uploaded_files};
+    is_deeply($uploaded_files, [], 'file upload skipped after API failure')
+      or diag explain $uploaded_files;
+    my $uploaded_assets = shared_hash->{uploaded_assets};
+    is_deeply($uploaded_assets, [], 'asset upload skipped after API failure')
+      or diag explain $uploaded_assets;
+    shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
+};
+
+subtest 'handle upload failure' => sub {
+    is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
+    is_deeply $client->sent_messages,                       [], 'no REST-API calls yet';
+
+    my $shared_hash = shared_hash;
+    $shared_hash->{upload_result} = 0;
+    shared_hash $shared_hash;
+
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 7, URL => $engine_url});
+    my @status;
+    $job->on(
+        status_changed => sub {
+            my ($job, $event_data) = @_;
+            push @status, $event_data->{status};
+        });
+    $job->accept;
+    is $job->status, 'accepting', 'job is now being accepted';
+    $job->once(
+        uploading_results_concluded => sub {
+            my $job = shift;
+            $job->stop('done');
+        });
+    wait_until_job_status_ok($job, 'accepted');
+
+    # Assume isotovideo generated some logs
+    my $log_dir = $pool_directory->child('ulogs')->make_path;
+    $log_dir->child('foo')->spurt('some log');
+    $log_dir->child('bar')->spurt('another log');
+
+    # Assume isotovideo generated some assets
+    my $asset_dir = $pool_directory->child('assets_public')->make_path;
+    $asset_dir->child('hdd1.qcow')->spurt('data');
+    $asset_dir->child('hdd2.qcow')->spurt('more data');
+
+    combined_like(sub { $job->start }, qr/isotovideo has been started/, 'isotovideo startup logged');
+    wait_until_job_status_ok($job, 'stopped');
+    is $client->register_called, 1, 'worker tried to register itself again after an upload failure';
+
+    is_deeply \@status, [qw(accepting accepted setup running stopping stopped)], 'expected status changes';
+
+    is_deeply(
+        $client->sent_messages,
+        [
+            {
+                json => {
+                    status => {
+                        cmd_srv_url           => $engine_url,
+                        test_execution_paused => 0,
+                        worker_hostname       => undef,
+                        worker_id             => 1
+                    }
+                },
+                path => 'jobs/7/status'
+            },
+            {
+                json => {
+                    status => {
+                        uploading => 1,
+                        worker_id => 1
+                    }
+                },
+                path => 'jobs/7/status'
+            },
+            {
+                json => undef,
+                path => 'jobs/7/set_done'
+            },
+            {
+                json => undef,
+                path => 'jobs/7/set_done'
+            }
+        ],
+        'expected REST-API calls happened'
+    ) or diag explain $client->sent_messages;
+    $client->sent_messages([]);
+
+    is_deeply(
+        $client->websocket_connection->sent_messages,
+        [
+            {
+                json => {
+                    jobid => 7,
+                    type  => 'accepted'
+                }}
+        ],
+        'job accepted via WebSocket'
+    ) or diag explain $client->websocket_connection->sent_messages;
+    $client->websocket_connection->sent_messages([]);
+
+    # Verify that the upload has been skipped
+    my $ok             = 1;
+    my $uploaded_files = shared_hash->{uploaded_files};
+    is(scalar @$uploaded_files, 2, 'only 2 files uploaded; stopped after first failure') or $ok = 0;
+    my $log_name = $uploaded_files->[0][0]->{file}->{filename};
+    ok($log_name eq 'bar' || $log_name eq 'foo', 'one of the logs attempted to be uploaded') or $ok = 0;
+    is_deeply(
+        $uploaded_files->[1],
+        [
+            {
+                file => {
+                    file     => "$pool_directory/serial_terminal.txt",
+                    filename => 'serial_terminal.txt'
+                }
+            },
+        ],
+        'uploading autoinst log tried even though other logs failed'
+    ) or $ok = 0;
+    diag explain $uploaded_files unless $ok;
+    my $uploaded_assets = shared_hash->{uploaded_assets};
+    is_deeply($uploaded_assets, [], 'asset upload skipped after previous upload failure')
+      or diag explain $uploaded_assets;
+    $log_dir->remove_tree;
+    $asset_dir->remove_tree;
     shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
 
