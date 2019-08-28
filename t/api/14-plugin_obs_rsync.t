@@ -27,12 +27,18 @@ use Mojo::File qw(tempdir path);
 OpenQA::Test::Case->new->init_data;
 
 $ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
-my $home = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
+my $home           = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
+my $concurrency    = 2;
+my $queue_limit    = 2;
+my $retry_interval = 1;
 $tempdir->child('openqa.ini')->spurt(<<"EOF");
 [global]
 plugins=ObsRsync
 [obs_rsync]
 home=$home
+queue_limit=$queue_limit
+concurrency=$concurrency
+retry_interval=$retry_interval
 EOF
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
@@ -41,29 +47,69 @@ my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-# needs to log in (it gets redirected)
-$t->get_ok('/login');
+subtest 'smoke' => sub {
+    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "trigger rsync");
+    $t->put_ok('/api/v1/obs_rsync/WRONGPROJECT/runs')->status_is(404, "trigger rsync wrong project");
+    $t->put_ok('/admin/obs_rsync/Proj1/runs')->status_is(404, "trigger rsync non-api path");
+};
 
-$t->get_ok('/admin/obs_rsync')->status_is(200, "index status")->element_exists('[Leap\:15.1\:ToTest]');
+$t->app->start('gru', 'run', '--oneshot');
 
-$t->get_ok('/admin/obs_rsync/Leap:15.1:ToTest')->status_is(200, "project status")->element_exists('[rsync_iso.cmd]')
-  ->element_exists('[rsync_repo.cmd]')->element_exists('[openqa.cmd]');
+sub test_queue {
+    my $t = shift;
+    $t->put_ok('/api/v1/obs_rsync/Proj2/runs')
+      ->status_is(201, "Proj2 first time - should just start as queue is empty");
+    $t->put_ok('/api/v1/obs_rsync/Proj2/runs')
+      ->status_is(208, "Proj2 second time - should report IN_QUEUE, because another Proj2 wasn't started by worker");
+    $t->put_ok('/api/v1/obs_rsync/Proj3/runs')->status_is(201, "Proj3 first time - should just start");
+    $t->put_ok('/api/v1/obs_rsync/Proj2/runs')->status_is(208, "Proj2 still gets queued");
+    $t->put_ok('/api/v1/obs_rsync/Proj3/runs')->status_is(208, "Proj3 now reports that already queued");
+    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')
+      ->status_is(507, "Proj1 cannot be handled because queue is full 2=(Proj2, Proj3 running)");
+    $t->put_ok('/api/v1/obs_rsync/Proj3/runs')->status_is(208, "Proj3 is still in queue");
+    $t->put_ok('/api/v1/obs_rsync/WRONGPROJECT/runs')->status_is(404, "wrong project still returns error");
 
-$t->get_ok('/admin/obs_rsync/Leap:15.1:ToTest/runs')->status_is(200, "project logs status")
-  ->element_exists('[.run_190703_143010]');
+    $t->app->start('gru', 'run', '--oneshot');
 
-$t->get_ok('/admin/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010')->status_is(200, "project log subfolder status")
-  ->element_exists('[files_iso.lst]');
+    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "Proj1 just starts as queue is empty now");
+}
 
-$t->get_ok('/admin/obs_rsync/Leap:15.1:ToTest/runs/.run_190703_143010/download/files_iso.lst')
-  ->status_is(200, "project log file download status")
-  ->content_like(qr/openSUSE-Leap-15.1-DVD-x86_64-Build470.1-Media.iso/)
-  ->content_like(qr/openSUSE-Leap-15.1-NET-x86_64-Build470.1-Media.iso/);
+subtest 'test queue' => sub {
+    test_queue($t);
+};
+$t->app->start('gru', 'run', '--oneshot');
 
-$t->reset_session;
+subtest 'test queue again' => sub {
+    test_queue($t);
+};
+$t->app->start('gru', 'run', '--oneshot');
 
-$t->put_ok('/api/v1/obs_rsync/Leap:15.1:ToTest/runs')->status_is(201, "trigger rsync");
-$t->put_ok('/api/v1/obs_rsync/WRONGPROJECT/runs')->status_is(404, "trigger rsync wrong project");
-$t->put_ok('/admin/obs_rsync/Leap:15.1:ToTest/runs')->status_is(404, "trigger rsync non-api path");
+# ObsRsync::Task#_run are called from Gru worker, so it is covered
+# but let's test it explicitly as well to make codecov happy
+use OpenQA::WebAPI::Plugin::ObsRsync::Task;
+
+subtest 'make codecov happy' => sub {
+    {
+        package Test::FakeMinionJob;
+        use Mojo::Base -base;
+        sub app { $t->app }
+        sub note {
+        }
+        sub retry {
+        }
+        sub info {
+        }
+        sub finish {
+            return 222;
+        }
+        sub fail {
+            Test::More::fail("Minion job shouldn't have failed.");
+            Test::More::note(Data::Dumper::Dumper(\@_));
+        }
+    }
+    my %args = (project => 'Proj1');
+    my $res  = OpenQA::WebAPI::Plugin::ObsRsync::Task::run(Test::FakeMinionJob->new, \%args);
+    ok $res == 222, 'code is 222';
+};
 
 done_testing();

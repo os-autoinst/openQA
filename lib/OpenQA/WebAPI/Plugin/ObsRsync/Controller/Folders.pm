@@ -14,23 +14,18 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package OpenQA::WebAPI::Plugin::ObsRsync::Controller;
+package OpenQA::WebAPI::Plugin::ObsRsync::Controller::Folders;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::File;
-use IPC::System::Simple qw(system $EXITVAL);
-
-sub _home {
-    my $self = shift;
-    $self->app->config->{obs_rsync}->{home};
-}
 
 sub index {
     my $self   = shift;
     my $folder = $self->param('folder');
-    return undef if $self->_check_and_render_error($folder);
+    my $helper = $self->obs_rsync;
+    return undef if $helper->check_and_render_error($folder);
     my $files
-      = Mojo::File->new($self->_home)->list({dir => 1})->grep(sub { -d $_ })->map('basename')
-      ->grep(qr/^(?!test|WebAPIPlugin|__pycache__)/)->to_array;
+      = Mojo::File->new($helper->home)->list({dir => 1})->grep(sub { -d $_ })->map('basename')->grep(qr/^(?!t$|sle$)/)
+      ->to_array;
 
     $self->render('ObsRsync_index', folders => $files);
 }
@@ -38,9 +33,10 @@ sub index {
 sub folder {
     my $self   = shift;
     my $folder = $self->param('folder');
-    return undef if $self->_check_and_render_error($folder);
+    my $helper = $self->obs_rsync;
+    return undef if $helper->check_and_render_error($folder);
 
-    my $full        = $self->_home;
+    my $full        = $helper->home;
     my $obs_project = $folder;
     my $files       = Mojo::File->new($full, $obs_project, '.run_last')->list({dir => 1})->map('basename');
 
@@ -55,24 +51,26 @@ sub folder {
         openqa_sh       => $files->grep(qr/print_openqa\.sh/)->join());
 }
 
-sub logs {
+sub runs {
     my $self   = shift;
     my $folder = $self->param('folder');
-    return undef if $self->_check_and_render_error($folder);
+    my $helper = $self->obs_rsync;
+    return undef if $helper->check_and_render_error($folder);
 
-    my $full = Mojo::File->new($self->_home, $folder);
+    my $full = Mojo::File->new($helper->home, $folder);
     my $files
       = $full->list({dir => 1, hidden => 1})->map('basename')->grep(qr/\.run_.*/)->sort(sub { $b cmp $a })->to_array;
     $self->render('ObsRsync_logs', folder => $folder, full => $full->to_string, subfolders => $files);
 }
 
-sub logfiles {
+sub run {
     my $self      = shift;
     my $folder    = $self->param('folder');
     my $subfolder = $self->param('subfolder');
-    return undef if $self->_check_and_render_error($folder, $subfolder);
+    my $helper    = $self->obs_rsync;
+    return undef if $helper->check_and_render_error($folder, $subfolder);
 
-    my $full  = Mojo::File->new($self->_home, $folder, $subfolder);
+    my $full  = Mojo::File->new($helper->home, $folder, $subfolder);
     my $files = $full->list({dir => 1})->map('basename')->sort->to_array;
     $self->render(
         'ObsRsync_logfiles',
@@ -88,44 +86,11 @@ sub download_file {
     my $folder    = $self->param('folder');
     my $subfolder = $self->param('subfolder');
     my $filename  = $self->param('filename');
-    return undef if $self->_check_and_render_error($folder, $subfolder, $filename);
+    my $helper    = $self->obs_rsync;
+    return undef if $helper->check_and_render_error($folder, $subfolder, $filename);
 
-    my $full = Mojo::File->new($self->_home, $folder, $subfolder);
+    my $full = Mojo::File->new($helper->home, $folder, $subfolder);
     $self->reply->file($full->child($filename));
-}
-
-sub run {
-    my $self   = shift;
-    my $folder = $self->param('folder');
-    return undef if $self->_check_and_render_error($folder);
-
-    my @args = ($self->_home . "/rsync.sh", $folder);
-
-    my $out;
-    eval { $out = system([0], "bash", @args); 1 }
-      or return $self->render(json => {output => $@, code => $EXITVAL}, status => 500);
-
-    return $self->render(json => {output => $out, code => $EXITVAL}, status => 201);
-}
-
-sub _check_and_render_error {
-    my $self = $_[0];
-    my ($code, $message) = _check_error(@_);
-    $self->render(json => {error => $message}, status => $code) if $code;
-    return $code;
-}
-
-sub _check_error {
-    my ($self, $project, $subfolder, $filename) = @_;
-    my $home = $self->_home;
-    return (405, "Home directory is not set") unless $home;
-    return (405, "Home directory not found")  unless -d $home;
-    return (400, "Project has invalid characters")   if $project   && $project =~ m!/!;
-    return (400, "Subfolder has invalid characters") if $subfolder && $subfolder =~ m!/!;
-    return (400, "Filename has invalid characters")  if $filename  && $filename =~ m!/!;
-
-    return (404, "Invalid Project") if $project && !-d Mojo::File->new($home, $project);
-    return 0;
 }
 
 1;
