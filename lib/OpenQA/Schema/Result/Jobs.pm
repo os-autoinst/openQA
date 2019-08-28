@@ -233,34 +233,21 @@ sub sqlt_deploy_hook {
 sub delete {
     my ($self) = @_;
 
-    # we need to remove the modules one by one to get their delete functions called
-    # otherwise dbix leaves this to the database
-    $self->modules->delete_all;
+    $self->modules->delete;
 
-    my $sls = $self->screenshot_links;
-    my @ids = map { $_->screenshot_id } $sls->all;
+    my $sls = $self->screenshot_links->search({}, {columns => 'screenshot_id'});
+    my %ids = map { $_->screenshot_id => 1 } $sls->all;
     # delete all references
     $self->screenshot_links->delete;
     my $schema = $self->result_source->schema;
 
-    # during the migration creating the screenshots table, we leave the
-    # screenshots alone. Because the outer join will reveal incomplete results
-    # and we will delete images linked only during the migration. The screenshots
-    # that would be deleted here, will be removed at the end of the migration as
-    # no further jobs are linking it
-    if (-e catfile($OpenQA::Utils::imagesdir, 'migration_marker')) {
-        log_debug "Skipping deleting screenshots, migration is in progress";
-    }
-    else {
-        my $fns = $schema->resultset('Screenshots')->search(
-            {id => {-in => \@ids}},
-            {
-                join     => 'links_outer',
-                group_by => 'me.id',
-                having   => \['COUNT(links_outer.job_id) = 0']});
-        while (my $sc = $fns->next) {
-            $sc->delete;
-        }
+    $sls = $schema->resultset('ScreenshotLinks')
+      ->search({screenshot_id => {-in => [sort keys %ids]}}, {columns => 'screenshot_id', distinct => 1});
+    map { delete $ids{$_->screenshot_id} } $sls->all;
+
+    my $fns = $schema->resultset('Screenshots')->search({id => {-in => [sort keys %ids]}});
+    while (my $sc = $fns->next) {
+        $sc->delete;
     }
     my $ret = $self->SUPER::delete;
 
