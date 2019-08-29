@@ -112,15 +112,12 @@ To add the development repository to your system, you can use these commands.
 [source,sh]
 -------------------------------------------------------------------------------
 # openSUSE Tumbleweed
-zypper ar -f obs://devel:openQA/openSUSE_Tumbleweed devel-openQA
+zypper ar -p 95 -f 'http://download.opensuse.org/repositories/devel:openQA/openSUSE_Tumbleweed' devel_openQA
 
-
-LEAP_VERSION=15.1
-zypper ar -f obs://devel:openQA/openSUSE_Leap_$LEAP_VERSION devel-openQA
-zypper ar -f obs://devel:openQA:Leap:$LEAP_VERSION/openSUSE_Leap_$LEAP_VERSION devel-openQA-perl-modules
+# openSUSE Leap
+zypper ar -p 95 -f 'http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_$releasever' devel_openQA
+zypper ar -p 90 -f 'http://download.opensuse.org/repositories/devel:openQA:Leap:$releasever/openSUSE_Leap_$releasever' devel_openQA_Leap
 -------------------------------------------------------------------------------
-
-As required change +LEAP_VERSION+ to the version of openSUSE Leap you have installed.
 
 [NOTE]
 If you installed openQA from the official repository first, you may need to change the vendor of the dependencies.
@@ -128,11 +125,10 @@ If you installed openQA from the official repository first, you may need to chan
 [source,sh]
 -------------------------------------------------------------------------------
 # openSUSE Tumbleweed and Leap
-zypper dup --from devel-openQA --allow-vendor-change
-
+zypper dup --from devel_openQA --allow-vendor-change
 
 # openSUSE Leap
-zypper dup --from devel-openQA-perl-modules --allow-vendor-change
+zypper dup --from devel_openQA_Leap --allow-vendor-change
 -------------------------------------------------------------------------------
 
 
