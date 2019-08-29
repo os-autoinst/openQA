@@ -50,7 +50,8 @@
 %define main_requires perl(Date::Format) perl(DateTime::Format::Pg) perl(DBD::Pg) perl(DBI) >= 1.632, perl(DBIx::Class) => 0.082801, perl(DBIx::Class::DeploymentHandler) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(DBIx::Class::OptimisticLocking) perl(File::Copy::Recursive) perl(Net::OpenID::Consumer) perl(Module::Pluggable) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) => 1.36, perl(aliased) perl(Config::Tiny) perl(Text::Diff) perl(CommonMark) perl(JSON::Validator) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(BSD::Resource) perl(Pod::POM) perl(Mojo::Pg) perl(Mojo::RabbitMQ::Client) => 0.2, perl(SQL::Translator) perl(YAML::XS) perl(LWP::UserAgent)
 %define client_requires perl(IO::Socket::SSL) >= 2.009, perl(LWP::UserAgent)
 %define worker_requires os-autoinst < 5, perl(Mojo::IOLoop::ReadWriteProcess) > 0.19, perl(Minion::Backend::SQLite) perl(Mojo::SQLite) openQA-client
-# all requirements needed by the tests, do not require on this in individual sub-packages
+# all requirements needed by the tests, do not require on this in individual
+# sub-packages except for the devel package
 %define test_requires %common_requires %main_requires %python_scripts_requires %worker_requires
 Name:           openQA
 Version:        4.6
@@ -138,6 +139,14 @@ Even more importantly, openQA can run several combinations of tests for every
 revision of the operating system, reporting the errors detected for each
 combination of hardware configuration, installation options and variant of the
 operating system.
+
+%package devel
+Summary:        Development package pulling in all build+test dependencies
+Group:          Development/Tools/Other
+Requires:       %devel_requires
+
+%description devel
+Development package pulling in all build+test dependencies.
 
 %package common
 Summary:        The openQA common tools for web-frontend and workers
@@ -431,6 +440,8 @@ fi
 %dir %{_localstatedir}/lib/openqa/share/factory/other
 %ghost %{_localstatedir}/lib/openqa/db/db.sqlite
 %ghost %{_localstatedir}/log/openqa
+
+%files devel
 
 %files common
 %dir %{_datadir}/openqa
