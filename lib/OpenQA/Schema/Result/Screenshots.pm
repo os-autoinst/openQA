@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2018 SUSE LLC
+# Copyright (C) 2016-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,25 +53,5 @@ __PACKAGE__->has_many(
     links_outer => 'OpenQA::Schema::Result::ScreenshotLinks',
     'screenshot_id',
     {join_type => 'left outer', cascade_delete => 0});
-
-# override to remove on disk too
-sub delete {
-    my ($self) = @_;
-
-    # first try to delete, if this fails due to foreign key violation, do not
-    # delete the file. It's possible that some other worker uploaded a symlink
-    # to this file while we're trying to delete the single job referencing it
-    my $ret = $self->SUPER::delete;
-
-    log_debug("removing screenshot " . $self->filename);
-    if (!unlink(catfile($OpenQA::Utils::imagesdir, $self->filename))) {
-        log_debug("can't remove " . $self->filename);
-    }
-    my $thumb = catfile($OpenQA::Utils::imagesdir, dirname($self->filename), '.thumbs', basename($self->filename));
-    if (!unlink($thumb)) {
-        log_debug("can't remove $thumb");
-    }
-    return $ret;
-}
 
 1;
