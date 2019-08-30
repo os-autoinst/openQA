@@ -53,6 +53,7 @@
 # all requirements needed by the tests, do not require on this in individual
 # sub-packages except for the devel package
 %define test_requires %common_requires %main_requires %python_scripts_requires %worker_requires
+%define devel_requires %test_requires
 Name:           openQA
 Version:        4.6
 Release:        0
@@ -143,7 +144,7 @@ operating system.
 %package devel
 Summary:        Development package pulling in all build+test dependencies
 Group:          Development/Tools/Other
-Requires:       %devel_requires %test_requires
+Requires:       %devel_requires
 
 %description devel
 Development package pulling in all build+test dependencies.
