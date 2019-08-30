@@ -42,7 +42,7 @@ my @screenshot_data  = map { {filename => $_->filename, link_count => $_->link_c
 is(scalar @screenshot_links, 2, '2 screenshot links for job 99926 created');
 is_deeply(
     \@screenshot_data,
-    [{filename => 'foo', link_count => 1}, {filename => 'bar', link_count => 1},],
+    [{filename => 'foo', link_count => 1}, {filename => 'bar', link_count => 1}],
     'link_count set'
 ) or diag explain \@screenshot_data;
 
@@ -54,7 +54,7 @@ OpenQA::Schema::Result::ScreenshotLinks::populate_images_to_job($schema, [qw(foo
 is(scalar @screenshot_links, 1, 'screenshot link for job 99927 created');
 is_deeply(
     \@screenshot_data,
-    [{filename => 'foo', link_count => 2}, {filename => 'bar', link_count => 1},],
+    [{filename => 'foo', link_count => 2}, {filename => 'bar', link_count => 1}],
     'link_count for foo increased'
 ) or diag explain \@screenshot_data;
 
@@ -65,8 +65,19 @@ $jobs->find(99926)->delete;
 is($jobs->find(99926), undef, 'job deleted');
 is_deeply(
     \@screenshot_data,
-    [{filename => 'foo', link_count => 1},],
-    'link_count for foo decreased, bar completely removed'
+    [{filename => 'foo', link_count => 1}, {filename => 'bar', link_count => 0}],
+    'link_count for both screenshots decreased'
+) or diag explain \@screenshot_data;
+
+# limit job results (which involves deleting unused screenshots)
+OpenQA::Task::Job::Limit::_limit($t->app);
+@screenshot_links = $screenshot_links->search({job_id => 99927})->all;
+@screenshots      = $screenshots->search({id => {-in => \@screenshot_ids}})->search({}, {order_by => 'id'});
+@screenshot_data  = map { {filename => $_->filename, link_count => $_->link_count} } @screenshots;
+is_deeply(
+    \@screenshot_data,
+    [{filename => 'foo', link_count => 1}],
+    'foo still present, bar has been removed because link count was zero'
 ) or diag explain \@screenshot_data;
 
 done_testing();

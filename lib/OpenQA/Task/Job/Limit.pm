@@ -44,6 +44,12 @@ sub _limit {
     while (my $group = $groups->next) {
         $group->limit_results_and_logs;
     }
+
+    # delete unused screenshots
+    my $screenshots = $schema->resultset('Screenshots')->search({link_count => {'<' => 1}});
+    while (my $screenshot = $screenshots->next) {
+        $screenshot->delete;
+    }
 }
 
 

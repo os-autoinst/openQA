@@ -239,27 +239,12 @@ sub delete {
     # delete all job modules
     $self->modules->delete;
 
-    # unlink screenshots
-    my $screenshots
-      = $schema->resultset('Screenshots')->search({job_id => $self->id}, {join => 'links'});
-    my $decrement_link_counter = $dbh->prepare('UPDATE screenshots SET link_count = link_count - 1 WHERE id = ?');
-    while (my $screenshot = $screenshots->next) {
-        my $link_count = $screenshot->link_count;
-
-        # stop here while migration for link_count still ongoing
-        return 0 unless defined $link_count;
-
-        # delete exclusively used screenshots
-        if ($link_count <= 1) {
-            $screenshot->delete;
-            next;
-        }
-
-        # decrement link count of shared screenshots
-        $decrement_link_counter->execute($screenshot->id);
-    }
-
-    # delete screenshot references used by this job
+    # decrement link count of screenshots (deletion in filesystem is done at the end of the entire limit task)
+    my $decrement_link_count
+      = $dbh->prepare(
+'UPDATE screenshots SET link_count = link_count - 1 WHERE id in (select screenshot_id FROM screenshot_links WHERE job_id = ?)'
+      );
+    $decrement_link_count->execute($self->id);
     $self->screenshot_links->delete;
 
     my $ret = $self->SUPER::delete;
