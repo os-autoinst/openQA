@@ -227,6 +227,7 @@ Covering both openQA and also os-autoinst test engine.
 
 %prep
 %setup -q -a1
+sed -e 's,/bin/env python,/bin/python,' -i script/openqa-label-all
 
 %build
 make %{?_smp_mflags}
