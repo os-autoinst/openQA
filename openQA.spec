@@ -143,7 +143,7 @@ operating system.
 %package devel
 Summary:        Development package pulling in all build+test dependencies
 Group:          Development/Tools/Other
-Requires:       %devel_requires
+Requires:       %devel_requires %test_requires
 
 %description devel
 Development package pulling in all build+test dependencies.
