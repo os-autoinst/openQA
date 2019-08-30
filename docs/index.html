@@ -1637,16 +1637,12 @@ and later.</p>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE Tumbleweed</span>
-zypper ar -f obs://devel:openQA/openSUSE_Tumbleweed devel-openQA
+zypper ar -p <span class="tok-m">95</span> -f <span class="tok-s1">&#39;http://download.opensuse.org/repositories/devel:openQA/openSUSE_Tumbleweed&#39;</span> devel_openQA
 
-
-<span class="tok-nv">LEAP_VERSION</span><span class="tok-o">=</span><span class="tok-m">15</span>.1
-zypper ar -f obs://devel:openQA/openSUSE_Leap_<span class="tok-nv">$LEAP_VERSION</span> devel-openQA
-zypper ar -f obs://devel:openQA:Leap:<span class="tok-nv">$LEAP_VERSION</span>/openSUSE_Leap_<span class="tok-nv">$LEAP_VERSION</span> devel-openQA-perl-modules</code></pre>
+<span class="tok-c1"># openSUSE Leap</span>
+zypper ar -p <span class="tok-m">95</span> -f <span class="tok-s1">&#39;http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_$releasever&#39;</span> devel_openQA
+zypper ar -p <span class="tok-m">90</span> -f <span class="tok-s1">&#39;http://download.opensuse.org/repositories/devel:openQA:Leap:$releasever/openSUSE_Leap_$releasever&#39;</span> devel_openQA_Leap</code></pre>
 </div>
-</div>
-<div class="paragraph">
-<p>As required change LEAP_VERSION to the version of openSUSE Leap you have installed.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -1663,11 +1659,10 @@ If you installed openQA from the official repository first, you may need to chan
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-c1"># openSUSE Tumbleweed and Leap</span>
-zypper dup --from devel-openQA --allow-vendor-change
-
+zypper dup --from devel_openQA --allow-vendor-change
 
 <span class="tok-c1"># openSUSE Leap</span>
-zypper dup --from devel-openQA-perl-modules --allow-vendor-change</code></pre>
+zypper dup --from devel_openQA_Leap --allow-vendor-change</code></pre>
 </div>
 </div>
 </div>
@@ -7720,7 +7715,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-08-19 09:20:36 UTC
+Last updated 2019-08-30 06:23:39 UTC
 </div>
 </div>
 <style>
