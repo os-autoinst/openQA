@@ -52,7 +52,7 @@
 %define worker_requires os-autoinst < 5, perl(Mojo::IOLoop::ReadWriteProcess) > 0.19, perl(Minion::Backend::SQLite) perl(Mojo::SQLite) openQA-client
 # all requirements needed by the tests, do not require on this in individual
 # sub-packages except for the devel package
-%define test_requires %common_requires %main_requires %python_scripts_requires %worker_requires
+%define test_requires %common_requires %main_requires %python_scripts_requires %worker_requires perl(Test::MockModule) perl(Test::Output)
 %define devel_requires %test_requires
 Name:           openQA
 Version:        4.6
