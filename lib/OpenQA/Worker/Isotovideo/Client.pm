@@ -17,7 +17,7 @@ package OpenQA::Worker::Isotovideo::Client;
 use Mojo::Base -base;
 
 use Mojo::UserAgent;
-use OpenQA::Utils qw(log_info log_warning);
+use OpenQA::Utils qw(log_info log_debug);
 
 has job => undef, weak => 1;
 has ua  => sub { Mojo::UserAgent->new };
@@ -30,7 +30,7 @@ sub status {
         $url => sub {
             my ($ua, $tx) = @_;
             if (my $err = $tx->error) {
-                log_warning(qq{Unable to query isotovideo status via "$url": $err->{message}});
+                log_debug(qq{Unable to query isotovideo status via "$url" (probably harmless): $err->{message}});
             }
             my $status_from_os_autoinst = $tx->res->json;
             $self->$callback($status_from_os_autoinst);
