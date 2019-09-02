@@ -184,13 +184,6 @@ sub engine_workit {
 
     log_error("Failed enabling subreaper mode", channels => 'autoinst') unless session->subreaper;
 
-    session->on(
-        collected_orphan => sub {
-            my ($session, $p) = @_;
-            log_debug("Collected unknown process with pid " . $p->pid . " and exit status: " . $p->exit_status,
-                channels => 'autoinst');
-        });
-
     # XXX: this should come from the worker table. Only included
     # here for convenience when looking at the pool of
     # debugging.
