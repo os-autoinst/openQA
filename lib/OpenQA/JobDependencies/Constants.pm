@@ -11,22 +11,22 @@ use constant DIRECTLY_CHAINED => 3;
 use constant DEPENDENCIES         => (CHAINED, PARALLEL, DIRECTLY_CHAINED);
 use constant CHAINED_DEPENDENCIES => (CHAINED, DIRECTLY_CHAINED);
 
-my %dependency_display_names = (
+my %DEPENDENCY_DISPLAY_NAMES = (
     CHAINED,          => 'Chained',
     PARALLEL,         => 'Parallel',
     DIRECTLY_CHAINED, => 'Directly chained',
 );
 
 sub display_names {
-    return values %dependency_display_names;
+    return values %DEPENDENCY_DISPLAY_NAMES;
 }
 
 sub display_name {
     my ($dependency_type) = @_;
-    return $dependency_display_names{$dependency_type};
+    return $DEPENDENCY_DISPLAY_NAMES{$dependency_type};
 }
 
-my %dependency_job_info_type_name = (
+my %DEPENDENCY_JOB_INFO_TYPE_NAME = (
     CHAINED,          => 'chained',
     PARALLEL,         => 'parallel',
     DIRECTLY_CHAINED, => 'directly_chained',
@@ -34,7 +34,7 @@ my %dependency_job_info_type_name = (
 
 sub job_info_relation {
     my ($relation, $dependency_type) = @_;
-    return "$dependency_job_info_type_name{$dependency_type}_$relation";
+    return "$DEPENDENCY_JOB_INFO_TYPE_NAME{$dependency_type}_$relation";
 }
 
 1;
