@@ -518,9 +518,9 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
             name: node.name,
             testResultId: testResultId,
             testResultName: testResultName,
-            startAfter: node.start_after,
-            startDirectlyAfter: node.start_directly_after,
-            parallelWith: node.parallel_with,
+            startAfter: node.chained,
+            startDirectlyAfter: node.directly_chained,
+            parallelWith: node.parallel,
         });
     });
 

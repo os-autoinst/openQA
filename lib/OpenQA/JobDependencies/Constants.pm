@@ -32,6 +32,15 @@ my %DEPENDENCY_JOB_INFO_TYPE_NAME = (
     DIRECTLY_CHAINED, => 'directly_chained',
 );
 
+sub names {
+    return values %DEPENDENCY_JOB_INFO_TYPE_NAME;
+}
+
+sub name {
+    my ($dependency_type) = @_;
+    return $DEPENDENCY_JOB_INFO_TYPE_NAME{$dependency_type};
+}
+
 sub job_info_relation {
     my ($relation, $dependency_type) = @_;
     return "$DEPENDENCY_JOB_INFO_TYPE_NAME{$dependency_type}_$relation";

@@ -793,21 +793,9 @@ sub _add_dependency_to_graph {
 sub _add_dependency_to_node {
     my ($node, $parent, $dependency_type) = @_;
 
-    my $key;
-    if ($dependency_type eq OpenQA::JobDependencies::Constants::CHAINED) {
-        $key = 'start_after';
+    if (my $key = OpenQA::JobDependencies::Constants::name($dependency_type)) {
+        push(@{$node->{$key}}, $parent->TEST);
     }
-    elsif ($dependency_type eq OpenQA::JobDependencies::Constants::PARALLEL) {
-        $key = 'parallel_with';
-    }
-    elsif ($dependency_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
-        $key = 'start_directly_after';
-    }
-    else {
-        return undef;
-    }
-
-    push(@{$node->{$key}}, $parent->TEST);
 }
 
 sub _add_job {
@@ -824,16 +812,14 @@ sub _add_job {
     }
 
     my %node = (
-        id                   => $job_id,
-        label                => $job->TEST,
-        name                 => $job->name,
-        state                => $job->state,
-        result               => $job->result,
-        blocked_by_id        => $job->blocked_by_id,
-        start_after          => [],
-        start_directly_after => [],
-        parallel_with        => [],
+        id            => $job_id,
+        label         => $job->TEST,
+        name          => $job->name,
+        state         => $job->state,
+        result        => $job->result,
+        blocked_by_id => $job->blocked_by_id,
     );
+    $node{$_} = [] for OpenQA::JobDependencies::Constants::names;
     push(@$nodes, \%node);
 
     # add parents
