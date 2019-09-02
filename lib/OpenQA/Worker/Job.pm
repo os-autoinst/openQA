@@ -440,7 +440,7 @@ sub _stop_step_5_upload {
 
         # upload other logs and files
         for my $file (
-            qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt serial_terminal.txt virtio_console.log worker-log.txt)
+            qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt serial_terminal.txt virtio_console.log worker-log.txt virtio_console1.log)
           )
         {
             next unless -e $file;
