@@ -187,7 +187,7 @@ sub engine_workit {
     session->on(
         collected_orphan => sub {
             my ($session, $p) = @_;
-            log_info("Collected unknown process with pid " . $p->pid . " and exit status: " . $p->exit_status,
+            log_debug("Collected unknown process with pid " . $p->pid . " and exit status: " . $p->exit_status,
                 channels => 'autoinst');
         });
 
