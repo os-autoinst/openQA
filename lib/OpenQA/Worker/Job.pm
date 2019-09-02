@@ -103,6 +103,12 @@ sub _remove_timer {
     }
 }
 
+sub _result_file_path {
+    my ($self, $name) = @_;
+
+    return $self->worker->pool_directory . "/testresults/$name";
+}
+
 sub _set_status {
     my ($self, $status, $event_data) = @_;
 
@@ -800,17 +806,15 @@ sub _upload_results_step_2_upload_images {
             my $job_id = $self->id;
             my $client = $self->client;
 
-            my $pooldir        = $self->worker->pool_directory;
-            my $fileprefix     = "$pooldir/testresults";
             my $images_to_send = $self->images_to_send;
             for my $md5 (keys %$images_to_send) {
                 my $file = $images_to_send->{$md5};
-                $self->_optimize_image("$fileprefix/$file");
+                $self->_optimize_image($self->_result_file_path($file));
 
                 $client->send_artefact(
                     $job_id => {
                         file => {
-                            file     => "$fileprefix/$file",
+                            file     => $self->_result_file_path($file),
                             filename => $file
                         },
                         image => 1,
@@ -818,7 +822,7 @@ sub _upload_results_step_2_upload_images {
                         md5   => $md5
                     });
 
-                my $thumb = "$fileprefix/.thumbs/$file";
+                my $thumb = $self->_result_file_path(".thumbs/$file");
                 if (-f $thumb) {
                     $self->_optimize_image($thumb);
                     $client->send_artefact(
@@ -838,7 +842,7 @@ sub _upload_results_step_2_upload_images {
                 $client->send_artefact(
                     $job_id => {
                         file => {
-                            file     => "$pooldir/testresults/$file",
+                            file     => $self->_result_file_path($file),
                             filename => $file,
                         },
                         image => 0,
@@ -1092,8 +1096,7 @@ sub _upload_log_file {
 sub _read_json_file {
     my ($self, $name) = @_;
 
-    my $pooldir = $self->worker->pool_directory;
-    my $fn      = "$pooldir/testresults/$name";
+    my $fn = $self->_result_file_path($name);
     local $/;
     my $fh;
     if (!open($fh, '<', $fn)) {
