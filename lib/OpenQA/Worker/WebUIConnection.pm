@@ -424,7 +424,7 @@ sub send_artefact {
     $url->path("jobs/$job_id/artefact");
 
     my $tx = $ua->post($url => form => $form);
-    if (my $err = $tx->error) { log_error("Artefact upload failed: $err") }
+    if (my $err = $tx->error) { log_error("Artefact upload failed: $err->{message}") }
 }
 
 sub _calculate_status_update_interval {
