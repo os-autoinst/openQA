@@ -379,6 +379,7 @@ function toggleTemplateEditor() {
             lineNumbers: true,
             lineWrapping: true,
             readOnly: 'nocursor',
+            viewportMargin: Infinity,
         });
         editor.setOption('extraKeys', {
             Tab: function(editor) {
