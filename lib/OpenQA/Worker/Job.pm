@@ -689,17 +689,22 @@ sub _upload_results_step_0_prepare {
     my $current_test_module = $self->current_test_module;
     my $upload_up_to;
     if ($is_final_upload || $status_from_os_autoinst->{running}) {
+        my @file_info = stat $self->_result_file_path('test_order.json');
+        my $test_order;
+        if (!$current_test_module or $file_info[9] != $self->{_test_order_mtime}) {
+            $test_order                = $self->_read_json_file('test_order.json');
+            $status{test_order}        = $test_order;
+            $self->{_test_order}       = $test_order;
+            $self->{_test_order_mtime} = $file_info[9];
+        }
         if (!$current_test_module) {    # first test
-            my $test_order = $self->_read_json_file('test_order.json');
             if (!$test_order) {
                 # FIXME: It would still make sense to upload other files.
                 $self->stop('no tests scheduled');    # will be delayed until upload has been concluded
                 $self->emit(uploading_results_concluded => {});
                 return Mojo::IOLoop->next_tick($callback);
             }
-            $status{test_order}  = $test_order;
-            $status{backend}     = $status_from_os_autoinst->{backend};
-            $self->{_test_order} = $test_order;
+            $status{backend} = $status_from_os_autoinst->{backend};
         }
         elsif ($current_test_module ne ($status_from_os_autoinst->{running} || '')) {    # next test
             $upload_up_to = $current_test_module;
