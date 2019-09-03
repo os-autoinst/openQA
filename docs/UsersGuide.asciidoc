@@ -628,12 +628,12 @@ parameters.
 [horizontal]
 .The following scheduling parameters exist
 
-_NO_OBSOLETE:: Do not obsolete jobs in older builds with same DISTRI and VERSION
-(as is the default behavior). With this option jobs which are currently pending,
-for example scheduled or running, are not cancelled when a new medium is triggered.
+_OBSOLETE:: Obsolete jobs in older builds with same DISTRI and VERSION
+(The default behavior is not obsoleting). With this option jobs which are currently pending,
+for example scheduled or running, are cancelled when a new medium is triggered.
 
-_DEPRIORITIZEBUILD:: Setting this switch '1' will not immediately obsolete jobs of old
-builds but rather deprioritize them up to a configurable limit of priority.
+_DEPRIORITIZEBUILD:: Setting this switch to '1' will deprioritize the unfinished jobs of old
+builds, and it will obsolete the jobs once the configurable limit of priority is reached.
 
 _DEPRIORITIZE_LIMIT:: The configurable limit of priority up to which jobs
 should be deprioritized. Needs `_DEPRIORITIZEBUILD`. Default 100.
@@ -642,12 +642,12 @@ _ONLY_OBSOLETE_SAME_BUILD:: Only obsolete (or deprioritize) jobs for the same BU
 This is useful for cases where a new build appearing does not necessarily
 mean existing jobs for earlier builds with the same DISTRI and VERSION are
 no longer interesting, but you still want to be able to re-submit jobs for a
-build and have existing jobs for the exact same build obsoleted.
+build and have existing jobs for the exact same build obsoleted. Needs `_OBSOLETE`.
 
 _SKIP_CHAINED_DEPS:: Do not schedule parent test suites which are specified in START_AFTER_TEST.
 
 _GROUP:: Job templates *not* matching the given group name are ignored. Does *not*
-         affect obsoletion behavior, so you might want to combine with `_NO_OBSOLETE`.
+         affect obsoletion behavior.
 
 _GROUP_ID:: Same as `_GROUP` but allows to specify the group directly by ID.
 _PRIORITY:: Sets the priority for the new jobs (which otherwise defaults to the priority

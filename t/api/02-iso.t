@@ -290,7 +290,8 @@ my $res = schedule_iso(
         FLAVOR     => 'DVD',
         ARCH       => 'i586',
         BUILD      => '0091',
-        PRECEDENCE => 'original'
+        PRECEDENCE => 'original',
+        _OBSOLETE  => '1'
     });
 
 is($res->json->{count}, 10, '10 new jobs created');
@@ -420,13 +421,14 @@ $res = schedule_iso({iso => $iso, tests => "kde/usb"}, 400);
 # handle list of tests
 $res = schedule_iso(
     {
-        ISO     => $iso,
-        DISTRI  => 'opensuse',
-        VERSION => '13.1',
-        FLAVOR  => 'DVD',
-        ARCH    => 'i586',
-        TEST    => 'server,kde,textmode',
-        BUILD   => '0091'
+        ISO       => $iso,
+        DISTRI    => 'opensuse',
+        VERSION   => '13.1',
+        FLAVOR    => 'DVD',
+        ARCH      => 'i586',
+        TEST      => 'server,kde,textmode',
+        BUILD     => '0091',
+        _OBSOLETE => 1
     },
     200
 );
@@ -450,17 +452,41 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     my $tag = 'tag:0091:important';
     $t->app->schema->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
     $res = schedule_iso(
-        {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091'});
+        {
+            ISO       => $iso,
+            DISTRI    => 'opensuse',
+            VERSION   => '13.1',
+            FLAVOR    => 'DVD',
+            ARCH      => 'i586',
+            BUILD     => '0091',
+            _OBSOLETE => 1
+        });
     is($res->json->{count}, 10, '10 jobs created');
     my $example = $res->json->{ids}->[9];
     $t->get_ok("/api/v1/jobs/$example")->status_is(200);
     is($t->tx->res->json->{job}->{state}, 'scheduled');
     $res = schedule_iso(
-        {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0092'});
+        {
+            ISO       => $iso,
+            DISTRI    => 'opensuse',
+            VERSION   => '13.1',
+            FLAVOR    => 'DVD',
+            ARCH      => 'i586',
+            BUILD     => '0092',
+            _OBSOLETE => 1
+        });
     $t->get_ok("/api/v1/jobs/$example")->status_is(200);
     is($t->tx->res->json->{job}->{state}, 'scheduled', 'job in old important build still scheduled');
     $res = schedule_iso(
-        {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0093'});
+        {
+            ISO       => $iso,
+            DISTRI    => 'opensuse',
+            VERSION   => '13.1',
+            FLAVOR    => 'DVD',
+            ARCH      => 'i586',
+            BUILD     => '0093',
+            _OBSOLETE => 1
+        });
     $t->get_ok('/api/v1/jobs?state=scheduled');
     my @jobs = @{$t->tx->res->json->{jobs}};
     lj;
@@ -470,7 +496,15 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     $tag = 'tag:13.1-0093:important';
     $t->app->schema->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
     $res = schedule_iso(
-        {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0094'});
+        {
+            ISO       => $iso,
+            DISTRI    => 'opensuse',
+            VERSION   => '13.1',
+            FLAVOR    => 'DVD',
+            ARCH      => 'i586',
+            BUILD     => '0094',
+            _OBSOLETE => 1
+        });
     $t->get_ok('/api/v1/jobs?state=scheduled');
     @jobs = @{$t->tx->res->json->{jobs}};
     lj;
@@ -481,13 +515,13 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
 
 subtest 'build obsoletion/depriorization' => sub {
     my %iso = (ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0095');
-    $res = schedule_iso({%iso, BUILD => '0095'});
+    $res = schedule_iso({%iso, BUILD => '0095', _OBSOLETE => 1});
     $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
     my @jobs = @{$t->tx->res->json->{jobs}};
     lj;
     ok(!grep({ $_->{settings}->{BUILD} =~ '009[24]' } @jobs), 'recent non-important builds were obsoleted');
     is(scalar @jobs, 31, 'current build and the important build are scheduled');
-    $res = schedule_iso({%iso, BUILD => '0096', '_NO_OBSOLETE' => 1});
+    $res = schedule_iso({%iso, BUILD => '0096'});
     $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
     @jobs = @{$t->tx->res->json->{jobs}};
     lj;
@@ -509,7 +543,7 @@ subtest 'build obsoletion/depriorization' => sub {
     $t->json_is('/job/state' => 'cancelled', 'older job already at priorization limit was cancelled');
     # test 'only same build' obsoletion
     my @jobs_0097 = grep { $_->{settings}->{BUILD} eq '0097' } @jobs;
-    $res = schedule_iso({%iso, BUILD => '0097', '_ONLY_OBSOLETE_SAME_BUILD' => 1});
+    $res = schedule_iso({%iso, BUILD => '0097', '_ONLY_OBSOLETE_SAME_BUILD' => 1, _OBSOLETE => 1});
     $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
     @jobs = @{$t->tx->res->json->{jobs}};
     lj;
