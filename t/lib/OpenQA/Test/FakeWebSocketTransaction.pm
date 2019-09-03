@@ -17,6 +17,7 @@ package OpenQA::Test::FakeWebSocketTransaction;
 use Mojo::Base 'Mojo::EventEmitter';
 
 use Test::More;
+use Mojo::IOLoop;
 
 has finish_called => 0;
 has sent_messages => sub { return []; };
@@ -41,11 +42,12 @@ sub send {
 
     if ($self->finish_called) {
         fail('attempt to send message via finished connection');
-        return;
+        return undef;
     }
 
-    push(@{$self->sent_messages}, $message);
-    $callback->() if ($callback);
+    push @{$self->sent_messages}, $message;
+    Mojo::IOLoop->next_tick($callback) if $callback;
+
     return 1;
 }
 

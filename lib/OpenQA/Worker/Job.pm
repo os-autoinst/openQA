@@ -18,6 +18,7 @@ use Mojo::Base 'Mojo::EventEmitter';
 
 use OpenQA::Jobs::Constants;
 use OpenQA::Worker::Engines::isotovideo;
+use OpenQA::Worker::Isotovideo::Client;
 use OpenQA::Utils qw(log_error log_warning log_debug log_info wait_with_progress);
 
 use Digest::MD5;
@@ -33,6 +34,7 @@ use Try::Tiny;
 # define attributes for public properties
 has 'worker';
 has 'client';
+has 'isotovideo_client' => sub { OpenQA::Worker::Isotovideo::Client->new(job => shift) };
 has 'developer_session_running';
 has 'upload_results_interval';
 
@@ -233,7 +235,7 @@ sub start {
     Mojo::IOLoop->next_tick(
         sub {
             $self->client->send_status();
-            $self->_upload_results();
+            $self->_upload_results(sub { });
         });
 
     # kill isotovideo if timeout has been exceeded
@@ -344,42 +346,9 @@ sub _stop_step_3_announce {
     my ($self, $reason, $callback) = @_;
 
     # skip if isotovideo not running anymore (e.g. when isotovideo just exited on its own)
-    return $callback->() unless $self->is_backend_running;
+    return Mojo::IOLoop->next_tick($callback) unless $self->is_backend_running;
 
-    my $ua      = Mojo::UserAgent->new(request_timeout => 10);
-    my $job_url = $self->url;
-    return $callback->() unless $job_url;
-
-    try {
-        my $url = "$job_url/broadcast";
-        my $tx  = $ua->build_tx(
-            POST => $url,
-            json => {
-                stopping_test_execution => $reason,
-            },
-        );
-
-        log_info('Trying to stop job gracefully by announcing it to command server via ' . $url);
-        $ua->start(
-            $tx,
-            sub {
-                my ($ua_from_callback, $tx) = @_;
-                my $keep_ref_to_ua = $ua;
-                my $res            = $tx->res;
-
-                if (!$res->is_success) {
-                    log_info('Unable to stop the command server gracefully: ');
-                    log_info($res->code ? $res->to_string : 'Command server likely not reachable at all');
-                }
-                $callback->();
-            });
-    }
-    catch {
-        log_info('Unable to stop the command server gracefully: ' . $_);
-
-        # ensure stopping is proceeded (failing announcement is not critical)
-        $callback->();
-    };
+    $self->isotovideo_client->stop_gracefully($reason, $callback);
 }
 
 sub _stop_step_4_kill {
@@ -401,77 +370,96 @@ sub _stop_step_5_upload {
 
     # upload logs and assets
     if ($reason ne 'quit' && $reason ne 'abort' && $reason ne 'api-failure') {
-        # upload ulogs
-        my @uploaded_logfiles = glob "$pooldir/ulogs/*";
-        for my $file (@uploaded_logfiles) {
-            next unless -f $file;
 
-            my %upload_parameter = (
-                file => {file => $file, filename => basename($file)},
-                ulog => 1,
-            );
-            if (!$self->_upload_log_file_or_asset(\%upload_parameter)) {
-                $reason = 'api-failure';
-                last;
-            }
-        }
-
-        # upload assets created by successfull jobs
-        if ($reason eq 'done' || $reason eq 'cancel') {
-            for my $dir (qw(private public)) {
-                my @assets        = glob "$pooldir/assets_$dir/*";
-                my $upload_result = 1;
-
-                for my $file (@assets) {
+        Mojo::IOLoop->subprocess(
+            sub {
+                # upload ulogs
+                my @uploaded_logfiles = glob "$pooldir/ulogs/*";
+                for my $file (@uploaded_logfiles) {
                     next unless -f $file;
 
                     my %upload_parameter = (
-                        file  => {file => $file, filename => basename($file)},
-                        asset => $dir,
+                        file => {file => $file, filename => basename($file)},
+                        ulog => 1,
                     );
-                    last unless ($upload_result = $self->_upload_log_file_or_asset(\%upload_parameter));
+                    if (!$self->_upload_log_file_or_asset(\%upload_parameter)) {
+                        $reason = 'api-failure';
+                        last;
+                    }
                 }
-                if (!$upload_result) {
-                    $reason = 'api-failure';
-                    last;
+
+                # upload assets created by successful jobs
+                if ($reason eq 'done' || $reason eq 'cancel') {
+                    for my $dir (qw(private public)) {
+                        my @assets        = glob "$pooldir/assets_$dir/*";
+                        my $upload_result = 1;
+
+                        for my $file (@assets) {
+                            next unless -f $file;
+
+                            my %upload_parameter = (
+                                file  => {file => $file, filename => basename($file)},
+                                asset => $dir,
+                            );
+                            last unless ($upload_result = $self->_upload_log_file_or_asset(\%upload_parameter));
+                        }
+                        if (!$upload_result) {
+                            $reason = 'api-failure';
+                            last;
+                        }
+                    }
                 }
-            }
-        }
 
-        # upload other logs and files
-        for my $file (
-            qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt serial_terminal.txt virtio_console.log worker-log.txt virtio_console1.log)
-          )
-        {
-            next unless -e $file;
+                my @other
+                  = qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt serial_terminal.txt virtio_console.log worker-log.txt virtio_console1.log);
+                for my $other (@other) {
+                    my $file = "$pooldir/$other";
+                    next unless -e $file;
 
-            # replace some file names
-            my $ofile = $file;
-            $ofile =~ s/serial0/serial0.txt/;
-            $ofile =~ s/virtio_console.log/serial_terminal.txt/;
+                    # replace some file names
+                    my $ofile = $file;
+                    $ofile =~ s/serial0/serial0.txt/;
+                    $ofile =~ s/virtio_console.log/serial_terminal.txt/;
 
-            my %upload_parameter = (file => {file => "$pooldir/$file", filename => $ofile},);
-            if (!$self->_upload_log_file_or_asset(\%upload_parameter)) {
-                $reason = 'api-failure';
-                last;
-            }
-        }
+                    my %upload_parameter = (file => {file => $file, filename => basename($ofile)});
+                    if (!$self->_upload_log_file_or_asset(\%upload_parameter)) {
+                        $reason = 'api-failure';
+                        last;
+                    }
+                }
+                return $reason;
+            },
+            sub {
+                my ($subprocess, $err, $reason) = @_;
+                log_error("Upload subprocess error: $err") if $err;
+                $self->_stop_step_5_1_upload($reason // 'api-failure', $callback);
+            });
+    }
 
-        # do final status upload for selected reasons
-        if ($reason eq 'obsolete') {
-            log_debug("Setting job $job_id to incomplete (obsolete)");
-            return $self->_upload_results(
-                sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE, newbuild => 1}) });
-        }
-        elsif ($reason eq 'cancel') {
-            # not using job_incomplete here to avoid duplicate
-            log_debug("Setting job $job_id to incomplete (cancel)");
-            return $self->_upload_results(sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE}) });
-        }
-        elsif ($reason eq 'done') {
-            log_debug("Setting job $job_id to done");
-            return $self->_upload_results(sub { $callback->(); });
-        }
+    else {
+        Mojo::IOLoop->next_tick(sub { $self->_stop_step_5_1_upload($reason, $callback) });
+    }
+}
+
+sub _stop_step_5_1_upload {
+    my ($self, $reason, $callback) = @_;
+
+    my $job_id = $self->id;
+
+    # do final status upload for selected reasons
+    if ($reason eq 'obsolete') {
+        log_debug("Setting job $job_id to incomplete (obsolete)");
+        return $self->_upload_results(
+            sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE, newbuild => 1}) });
+    }
+    if ($reason eq 'cancel') {
+        # not using job_incomplete here to avoid duplicate
+        log_debug("Setting job $job_id to incomplete (cancel)");
+        return $self->_upload_results(sub { $callback->({result => OpenQA::Jobs::Constants::INCOMPLETE}) });
+    }
+    if ($reason eq 'done') {
+        log_debug("Setting job $job_id to done");
+        return $self->_upload_results(sub { $callback->(); });
     }
 
     if ($reason eq 'api-failure') {
@@ -563,7 +551,7 @@ sub start_livelog {
     }
     $self->{_livelog_viewers} = $livelog_viewers;
     $self->upload_results_interval(undef);
-    $self->_upload_results();
+    $self->_upload_results(sub { });
 }
 
 sub stop_livelog {
@@ -629,13 +617,6 @@ sub _calculate_upload_results_interval {
     return $interval;
 }
 
-sub url {
-    my ($self) = @_;
-
-    my $info = $self->info or return undef;
-    return $info->{URL};
-}
-
 sub _upload_results {
     my ($self, $callback) = @_;
 
@@ -648,39 +629,39 @@ sub _upload_results {
     }
 
     # return if job setup is insufficient
-    my $client          = $self->client;
-    my $worker_id       = $client->worker_id;
-    my $global_settings = $self->worker->settings->global_settings;
-    my $job_url         = $self->url;
-    if (!$job_url || !$worker_id) {
+    my $job_url = $self->isotovideo_client->url;
+    if (!$job_url || !$self->client->worker_id) {
         log_warning('Unable to upload results of the job because no command server URL or worker ID have been set.');
         $self->emit(uploading_results_concluded => {});
-        return $callback->() if $callback;
-        return undef;
+        return Mojo::IOLoop->next_tick($callback);
     }
 
     # determine wheter this is the final upload
     # note: This function is also called when stopping the current job. We can't query isotovideo
     #       anymore in this case and API calls must be treated as non-critical to prevent the usual
     #       error handling.
-    my $status          = $self->status;
-    my $is_final_upload = $status eq 'stopping' || $status eq 'stopped';
-
+    my $is_final_upload = $self->is_stopped_or_stopping;
     $self->{_is_uploading_results} = 1;
 
     # query status from isotovideo (unless it is the final status upload because isotovideo
     # has already been stopped in this case)
-    my $status_from_os_autoinst = {};
-    if (!$is_final_upload) {
-        my $status_url = "$job_url/isotovideo/status";
-        try {
-            $status_from_os_autoinst = Mojo::UserAgent->new->get($status_url)->res->json;
-        }
-        catch {
-            log_warning("Unable to query isotovideo status via \"$status_url\".");
-        };
-    }
-    my %status = (
+    return Mojo::IOLoop->next_tick(sub { $self->_upload_results_step_0_prepare($is_final_upload, {}, $callback) })
+      if $is_final_upload;
+
+    $self->isotovideo_client->status(
+        sub {
+            my ($isotovideo_client, $status_from_os_autoinst) = @_;
+            $self->_upload_results_step_0_prepare($is_final_upload, $status_from_os_autoinst, $callback);
+        });
+}
+
+sub _upload_results_step_0_prepare {
+    my ($self, $is_final_upload, $status_from_os_autoinst, $callback) = @_;
+
+    my $worker_id       = $self->client->worker_id;
+    my $job_url         = $self->isotovideo_client->url;
+    my $global_settings = $self->worker->settings->global_settings;
+    my %status          = (
         worker_id             => $worker_id,
         cmd_srv_url           => $job_url,
         worker_hostname       => $global_settings->{WORKER_HOSTNAME},
@@ -697,8 +678,7 @@ sub _upload_results {
                 # FIXME: It would still make sense to upload other files.
                 $self->stop('no tests scheduled');    # will be delayed until upload has been concluded
                 $self->emit(uploading_results_concluded => {});
-                return $callback->() if $callback;
-                return undef;
+                return Mojo::IOLoop->next_tick($callback);
             }
             $status{test_order}  = $test_order;
             $status{backend}     = $status_from_os_autoinst->{backend};
@@ -740,7 +720,7 @@ sub _upload_results {
     $status{result}->{$current_test_module}->{result} = 'running' if ($current_test_module);
 
     # define steps for uploading status to web UI
-    return $self->_upload_results_step_0_post_status(
+    return $self->_upload_results_step_1_post_status(
         \%status,
         $is_final_upload,
         sub {
@@ -752,12 +732,11 @@ sub _upload_results {
                     log_error('Unable to make final image uploads. Maybe the web UI considers this job already dead.');
                 }
                 else {
-                    log_error(
-'Aborting job because web UI doesn\'t accept new images anymore (likely considers this job dead)'
-                    );
+                    log_error('Aborting job because web UI doesn\'t accept new images anymore'
+                          . ' (likely considers this job dead)');
                     $self->stop('api-failure');    # will be delayed until upload has been concluded via *_finalize()
                 }
-                return $self->_upload_results_step_2_finalize($is_final_upload, $callback);
+                return $self->_upload_results_step_3_finalize($is_final_upload, $callback);
             }
 
             # ignore known images
@@ -774,21 +753,23 @@ sub _upload_results {
                 sub {
 
                     # upload images (not an async operation)
-                    $self->_upload_results_step_1_upload_images();
-
-                    # inform liveviewhandler about upload progress if developer session opened
-                    return $self->post_upload_progress_to_liveviewhandler(
-                        $upload_up_to,
-                        $is_final_upload,
+                    $self->_upload_results_step_2_upload_images(
                         sub {
-                            $self->_upload_results_step_2_finalize($is_final_upload, $callback);
+
+                            # inform liveviewhandler about upload progress if developer session opened
+                            return $self->post_upload_progress_to_liveviewhandler(
+                                $upload_up_to,
+                                $is_final_upload,
+                                sub {
+                                    $self->_upload_results_step_3_finalize($is_final_upload, $callback);
+                                });
                         });
 
                 });
         });
 }
 
-sub _upload_results_step_0_post_status {
+sub _upload_results_step_1_post_status {
     my ($self, $status, $is_final_upload, $callback) = @_;
 
     my $job_id = $self->id;
@@ -800,67 +781,63 @@ sub _upload_results_step_0_post_status {
     );
 }
 
-sub _upload_results_step_1_upload_images {
-    my ($self) = @_;
+sub _upload_results_step_2_upload_images {
+    my ($self, $callback) = @_;
 
-    my $tx;
-    my $job_id = $self->id;
-    my $client = $self->client;
-    my $ua     = $client->ua;
-    my $ua_url = $client->url->clone;
-    $ua_url->path("jobs/$job_id/artefact");
+    Mojo::IOLoop->subprocess(
+        sub {
+            my $job_id = $self->id;
+            my $client = $self->client;
 
-    my $pooldir        = $self->worker->pool_directory;
-    my $fileprefix     = "$pooldir/testresults";
-    my $images_to_send = $self->images_to_send;
-    for my $md5 (keys %$images_to_send) {
-        my $file = $images_to_send->{$md5};
-        $self->_optimize_image("$fileprefix/$file");
+            my $pooldir        = $self->worker->pool_directory;
+            my $fileprefix     = "$pooldir/testresults";
+            my $images_to_send = $self->images_to_send;
+            for my $md5 (keys %$images_to_send) {
+                my $file = $images_to_send->{$md5};
+                $self->_optimize_image("$fileprefix/$file");
 
-        log_debug("Uploading $file as $md5");
-        my %form = (
-            file => {
-                file     => "$fileprefix/$file",
-                filename => $file
-            },
-            image => 1,
-            thumb => 0,
-            md5   => $md5
-        );
-        # don't use api_call as it retries and does not allow form data
-        $tx = $ua->post($ua_url => form => \%form);
-        # FIXME: error handling?
+                my $form = {
+                    file => {
+                        file     => "$fileprefix/$file",
+                        filename => $file
+                    },
+                    image => 1,
+                    thumb => 0,
+                    md5   => $md5
+                };
+                $client->send_artefact($job_id, $form);
 
-        $file = "$fileprefix/.thumbs/$file";
-        if (-f $file) {
-            $self->_optimize_image($file);
-            $form{file}->{file} = $file;
-            $form{thumb}        = 1;
-            $tx                 = $ua->post($ua_url => form => \%form);
-        }
-    }
-    $self->{_images_to_send} = {};
+                $file = "$fileprefix/.thumbs/$file";
+                if (-f $file) {
+                    $self->_optimize_image($file);
+                    $form->{file}{file} = $file;
+                    $form->{thumb} = 1;
+                    $client->send_artefact($job_id, $form);
+                }
+            }
 
-    for my $file (@{$self->files_to_send}) {
-        log_debug("Uploading $file");
-        my %form = (
-            file => {
-                file     => "$pooldir/testresults/$file",
-                filename => $file,
-            },
-            image => 0,
-            thumb => 0,
-        );
-        # don't use api_call as it retries and does not allow form data
-        # (refactor at some point)
-        $tx = $ua->post($ua_url => form => \%form);
-        # FIXME: error handling?
-    }
-    $self->{_files_to_send} = [];
-    return !$tx || !$tx->error;
+            for my $file (@{$self->files_to_send}) {
+                my $form = {
+                    file => {
+                        file     => "$pooldir/testresults/$file",
+                        filename => $file,
+                    },
+                    image => 0,
+                    thumb => 0,
+                };
+                $client->send_artefact($job_id, $form);
+            }
+        },
+        sub {
+            my ($subprocess, $err) = @_;
+            log_error("Upload images subprocess error: $err") if $err;
+            $self->{_images_to_send} = {};
+            $self->{_files_to_send}  = [];
+            $callback->();
+        });
 }
 
-sub _upload_results_step_2_finalize {
+sub _upload_results_step_3_finalize {
     my ($self, $is_final_upload, $callback) = @_;
 
     # continue sending status updates
@@ -869,21 +846,20 @@ sub _upload_results_step_2_finalize {
         $self->{_upload_results_timer} = Mojo::IOLoop->timer(
             $interval,
             sub {
-                $self->_upload_results;
+                $self->_upload_results(sub { });
             });
     }
 
     $self->{_is_uploading_results} = 0;
     $self->emit(uploading_results_concluded => {});
-    $callback->() if $callback;
+    Mojo::IOLoop->next_tick($callback);
 }
 
 sub post_upload_progress_to_liveviewhandler {
     my ($self, $upload_up_to, $is_final_upload, $callback) = @_;
 
     if ($is_final_upload || !$self->developer_session_running) {
-        return $callback->() if $callback;
-        return undef;
+        return Mojo::IOLoop->next_tick($callback);
     }
 
     my $current_test_module = $self->current_test_module;
@@ -906,8 +882,7 @@ sub post_upload_progress_to_liveviewhandler {
         }
     }
     if (!$progress_changed) {
-        return $callback->() if $callback;
-        return undef;
+        return Mojo::IOLoop->next_tick($callback);
     }
     $self->{_progress_info} = \%new_progress_info;
 

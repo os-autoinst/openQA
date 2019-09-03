@@ -199,6 +199,9 @@ sub _setup_websocket_connection {
 
     $self->_set_status(establishing_ws => {url => $websocket_url});
 
+    # We need to make sure not to reconnect in subprocesses
+    my $websocket_pid = $$;
+
     # start the websocket connection
     $self->ua->websocket(
         $websocket_url,
@@ -231,6 +234,11 @@ sub _setup_websocket_connection {
             $tx->on(
                 finish => sub {
                     my (undef, $code, $reason) = @_;
+
+                    # Subprocesses reset the event loop (which triggers this event),
+                    # and since only the main worker process uses the WebSocket we
+                    # can safely ignore this (and do not want to reconnect)
+                    return unless $websocket_pid == $$;
 
                     # ignore if the connection was disabled from our side
                     if (!$self->websocket_connection) {
@@ -403,6 +411,20 @@ sub send {
             });
     };
     $ua->start($tx => sub { $cb->(@_, $tries) });
+}
+
+sub send_artefact {
+    my ($self, $job_id, $form) = @_;
+
+    my $md5 = $form->{md5};
+    log_debug("Uploading artefact $form->{file}{filename}" . ($md5 ? " as $md5" : ''));
+
+    my $ua  = $self->ua;
+    my $url = $self->url->clone;
+    $url->path("jobs/$job_id/artefact");
+
+    my $tx = $ua->post($url => form => $form);
+    if (my $err = $tx->error) { log_error("Artefact upload failed: $err") }
 }
 
 sub _calculate_status_update_interval {
