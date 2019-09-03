@@ -1,5 +1,4 @@
 #!/bin/bash -e
-# shellcheck disable=SC2086
 
 # Usage:
 #  openqa-clone-custom-git-refspec GITHUB_PR_URL OPENQA_JOB_URL [CUSTOM_TEST_VAR_1=foo] [CUSTOM_TEST_VAR_2=bar]
@@ -8,16 +7,16 @@
 #  openqa-clone-custom-git-refspec https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/6529 https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
 #
 set -o pipefail
-if [ -n "$GITHUB_TOKEN" ]; then
+if [[ -n "$GITHUB_TOKEN" ]]; then
     AUTHENTICATED_REQUEST=" -u $GITHUB_TOKEN:x-oauth-basic "
     echo "Github oauth token provided, peforming authenticated requests"
 fi
-if [ -z ${repo_name+x} ] || [ -z ${pr+x} ]; then
+if [[ -z "$repo_name" ]] || [[ -z "$pr" ]]; then
     pr_url="${1:?"Need 'pr_url' as parameter pointing to a github pull request or 'repo_name' (sending repo) and 'pr' variables, e.g. either 'https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/1234' 'me/os-autoinst-distri-opensuse' and '1234'"}"
     target_repo_part=${pr_url%%/pull*}
     pr="${pr_url##*/}"
 fi
-if [ -z ${host+x} ] || [ -z ${job+x} ]; then
+if [[ -z "$host" ]] || [[ -z "$job" ]]; then
     job_url="${2:?"Need 'job_url' as parameter pointing to the openQA job to clone or 'host' and 'job' variables, e.g. either 'https://openqa.opensuse.org/tests/123456' or 'https://openqa.opensuse.org' and '123456'"}"
     host=${job_url%%/t*}
     job=${job_url##*/}
@@ -29,11 +28,11 @@ throw_json_error() {
     exit 2
 }
 
-if [ -z ${branch+x} ] || [ -z ${repo_name+x} ]; then
+if [[ -z "$branch" ]] || [[ -z "$repo_name" ]]; then
     pr_url=${target_repo_part/github.com/api.github.com/repos}/pulls/$pr
     pr_content=$(curl "${AUTHENTICATED_REQUEST}" -s "$pr_url")
     label=$(echo "$pr_content" | jq -r '.head.label') || throw_json_error "$pr_url" "$pr_content"
-    if [ "${label}" == "null" ]; then
+    if [[ "${label}" == "null" ]]; then
         echo "Github API rate limit might have been exceeded. If this is the case, generate one at
         https://github.com/settings/tokens and then export it as an environment variable"
         echo 'export GITHUB_TOKEN=foobar'
@@ -45,7 +44,7 @@ if [ -z ${branch+x} ] || [ -z ${repo_name+x} ]; then
     repo="${repo:-"https://github.com/${repo_name}.git"}"
 fi
 
-if [ -z ${testsuite+x} ] || [ -z ${needles_dir+x} ] || [ -z ${productdir+x} ]; then
+if [[ -z "$testsuite" ]] || [[ -z "$needles_dir" ]] || [[ -z "$productdir" ]]; then
     json_url=${host}/tests/${job}/file/vars.json
     json_data=$(curl -s "${json_url}")
     testsuite="${testsuite:-"$(echo "$json_data" | jq -r '.TEST')"}" || throw_json_error "$json_url" "$json_data"
