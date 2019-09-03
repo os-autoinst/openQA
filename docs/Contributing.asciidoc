@@ -513,7 +513,7 @@ plugins = Hello
 # Plugin specific configuration (optional)
 [hello_plugin]
 some = value
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 The plugin specific configuration is optional, but if defined would be available
 in `$app->config->{hello_plugin}`.
@@ -545,7 +545,7 @@ sub register {
 }
 
 1;
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 The `plugin_links` configuration setting can be modified by plugins to add links
 to the `operator` and `admin` sections of the openQA UI menu. Route names or
@@ -560,7 +560,7 @@ consistent look, and make the UI menu available everywhere.
 <div>
   <h2>Hello openQA!</h2>
 </div>
-------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 For UI plugins there are two named authentication routes defined:
 
