@@ -382,7 +382,7 @@ sub send {
             $msg           = "Connection error: $msg";
             $is_webui_busy = 1 if $err->{message} =~ qr/timeout/i;
         }
-        log_error("$msg (remaining tries: $tries)");
+        log_error("REST-API error ($method $ua_url): $msg (remaining tries: $tries)");
 
         # handle critical error when no more attempts remain
         if ($tries <= 0 && !$non_critical) {
@@ -416,15 +416,16 @@ sub send {
 sub send_artefact {
     my ($self, $job_id, $form) = @_;
 
-    my $md5 = $form->{md5};
-    log_debug("Uploading artefact $form->{file}{filename}" . ($md5 ? " as $md5" : ''));
+    my $md5  = $form->{md5};
+    my $name = $form->{file}{filename};
+    log_debug("Uploading artefact $name" . ($md5 ? " as $md5" : ''));
 
     my $ua  = $self->ua;
     my $url = $self->url->clone;
     $url->path("jobs/$job_id/artefact");
 
     my $tx = $ua->post($url => form => $form);
-    if (my $err = $tx->error) { log_error("Artefact upload failed: $err->{message}") }
+    if (my $err = $tx->error) { log_error("Uploading artefact $name failed: $err->{message}") }
 }
 
 sub _calculate_status_update_interval {
