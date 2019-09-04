@@ -132,29 +132,49 @@ sub schedule {
 
     my @successfully_allocated;
 
+    # assign the allocated job-worker pairs
     for my $allocated (values %$allocated_jobs) {
-        #  Now we need to set the worker in the job, with the state in SCHEDULED.
-        my $job;
+        # find worker
         my $worker;
-        try {
-            $job = $schema->resultset('Jobs')->find({id => $allocated->{job}});
-        }
-        catch {
-            log_debug("Failed to retrieve job ($allocated->{job}) in the DB, reason: $_");
-        };
-
         try {
             $worker = $schema->resultset('Workers')->find({id => $allocated->{worker}});
         }
         catch {
             log_debug("Failed to retrieve worker ($allocated->{worker}) in the DB, reason: $_");
         };
-
-        next unless $job && $worker;
+        next unless $worker;
         if ($worker->job) {
             log_debug "Worker already got a job, skipping";
             next;
         }
+
+        # take directly chained jobs into account
+        my $first_job_id = $allocated->{job};
+        my ($directly_chained_job_sequence, $job_ids)
+          = _serialize_directly_chained_job_sequence($first_job_id, $scheduled_jobs->{$first_job_id}->{cluster_jobs});
+
+        # find jobs
+        my @jobs;
+        my $job_ids_str = join(', ', @$job_ids);
+        try {
+            @jobs = $schema->resultset('Jobs')->search({id => {-in => $job_ids}});
+        }
+        catch {
+            log_debug("Failed to retrieve jobs ($job_ids_str) in the DB, reason: $_");
+        };
+        next unless @jobs;
+        my $actual_job_count = scalar @jobs;
+        if ($actual_job_count != scalar @$job_ids) {
+            log_debug("Failed to retrieve jobs ($job_ids_str) in the DB, reason: only got $actual_job_count jobs");
+            next;
+        }
+
+        if ($actual_job_count > 1) {
+            log_debug("Unable to schedule $first_job_id, reason: directly chained dependencies not supported yet");
+            next;
+        }
+        my $job = $jobs[0];
+
         if ($job->state ne SCHEDULED) {
             log_debug "Job no longer scheduled, skipping";
             next;
@@ -354,6 +374,36 @@ sub _update_scheduled_jobs {
     for my $id (keys %$scheduled_jobs) {
         delete $scheduled_jobs->{$id} unless $currently_scheduled{$id};
     }
+}
+
+# serializes the sequence of directly chained jobs inside the specified $cluster_info starting from $first_job_id
+# remarks:
+#  * Direct dependency chains might be interrupted by regularily chained dependencies. Jobs not reachable from $first_job_id
+#    via directly chained dependencies nodes are not included.
+#  * Provides a 'flat' list of involved job IDs as 2nd return value.
+#  * See subtest 'serialize sequence of directly chained dependencies' in t/05-scheduler-dependencies.t for examples.
+sub _serialize_directly_chained_job_sequence {
+    my ($first_job_id, $cluster_info) = @_;
+
+    my %visited = ($first_job_id => 1);
+    my $sequence
+      = _serialize_directly_chained_job_sub_sequence([$first_job_id], \%visited,
+        $cluster_info->{$first_job_id}->{directly_chained_children},
+        $cluster_info);
+    return ($sequence, [keys %visited]);
+}
+sub _serialize_directly_chained_job_sub_sequence {
+    my ($output_array, $visited, $child_job_ids, $cluster_info) = @_;
+
+    for my $current_job_id (@$child_job_ids) {
+        die "detected cycle at $current_job_id" if $visited->{$current_job_id}++;
+        my $sub_sequence
+          = _serialize_directly_chained_job_sub_sequence([$current_job_id], $visited,
+            $cluster_info->{$current_job_id}->{directly_chained_children},
+            $cluster_info);
+        push(@$output_array, scalar @$sub_sequence > 1 ? $sub_sequence : $sub_sequence->[0]) if @$sub_sequence;
+    }
+    return $output_array;
 }
 
 1;
