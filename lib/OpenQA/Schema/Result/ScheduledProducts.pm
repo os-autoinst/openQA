@@ -428,8 +428,9 @@ sub _sort_dep {
         for my $job (@$list) {
             next if $done{$job};
             my @parents;
-            push @parents, _parse_dep_variable($job->{START_AFTER_TEST}, $job);
-            push @parents, _parse_dep_variable($job->{PARALLEL_WITH},    $job);
+            push @parents, _parse_dep_variable($job->{START_AFTER_TEST}, $job),
+              _parse_dep_variable($job->{START_DIRECTLY_AFTER_TEST}, $job),
+              _parse_dep_variable($job->{PARALLEL_WITH},             $job);
 
             my $c = 0;    # number of parents that must go to @out before this job
             foreach my $parent (@parents) {
@@ -597,8 +598,10 @@ sub _generate_jobs {
         if ($wanted{_settings_key($ret->[$i])}) {
             # add parents to wanted list
             my @parents;
-            push @parents, _parse_dep_variable($ret->[$i]->{START_AFTER_TEST}, $ret->[$i]) unless $skip_chained_deps;
-            push @parents, _parse_dep_variable($ret->[$i]->{PARALLEL_WITH},    $ret->[$i]);
+            push @parents, _parse_dep_variable($ret->[$i]->{START_AFTER_TEST}, $ret->[$i]),
+              _parse_dep_variable($ret->[$i]->{START_DIRECTLY_AFTER_TEST}, $ret->[$i])
+              unless $skip_chained_deps;
+            push @parents, _parse_dep_variable($ret->[$i]->{PARALLEL_WITH}, $ret->[$i]);
             for my $parent (@parents) {
                 my $parent_test_machine = join(':', @$parent);
                 $wanted{$parent_test_machine} = 1;
@@ -626,10 +629,12 @@ sub _create_dependencies_for_job {
     my ($self, $job, $testsuite_mapping, $created_jobs, $cluster_parents, $skip_chained_deps) = @_;
 
     my @error_messages;
-    my $settings = $job->settings_hash;
-    my @dependencies;
-    push @dependencies, [START_AFTER_TEST => OpenQA::JobDependencies::Constants::CHAINED] unless $skip_chained_deps;
-    push @dependencies, [PARALLEL_WITH    => OpenQA::JobDependencies::Constants::PARALLEL];
+    my $settings     = $job->settings_hash;
+    my @dependencies = ([PARALLEL_WITH => OpenQA::JobDependencies::Constants::PARALLEL]);
+    push(@dependencies,
+        [START_AFTER_TEST          => OpenQA::JobDependencies::Constants::CHAINED],
+        [START_DIRECTLY_AFTER_TEST => OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED])
+      unless $skip_chained_deps;
     for my $dependency (@dependencies) {
         my ($depname, $deptype) = @$dependency;
         next unless defined $settings->{$depname};

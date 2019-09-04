@@ -304,22 +304,30 @@ sub clone_job {
 
     my $job = get_job($jobid);
     if ($job->{parents}) {
-        my $chained = $job->{parents}->{Chained} unless ($options{'skip-deps'} || $options{'skip-chained-deps'});
-        $chained //= [];
-        my $parallel = $job->{parents}->{Parallel} unless ($options{'skip-deps'});
-        $parallel //= [];
+        my ($chained, $directly_chained, $parallel);
+        unless ($options{'skip-deps'}) {
+            unless ($options{'skip-chained-deps'}) {
+                $chained          = $job->{parents}->{Chained};
+                $directly_chained = $job->{parents}->{'Directly chained'};
+            }
+            $parallel = $job->{parents}->{Parallel};
+        }
+        $chained          //= [];
+        $directly_chained //= [];
+        $parallel         //= [];
 
-        print "Cloning dependencies of $job->{name}\n" if (@$chained || @$parallel);
-
-        for my $p (@$chained, @$parallel) {
-            clone_job($p, $clone_map, $depth + 1);
+        print "Cloning dependencies of $job->{name}\n" if (@$chained || @$directly_chained || @$parallel);
+        for my $dependencies ($chained, $directly_chained, $parallel) {
+            clone_job($_, $clone_map, $depth + 1) for @$dependencies;
         }
 
-        my @new_chained  = map { $clone_map->{$_} } @$chained;
-        my @new_parallel = map { $clone_map->{$_} } @$parallel;
+        my @new_chained          = map { $clone_map->{$_} } @$chained;
+        my @new_directly_chained = map { $clone_map->{$_} } @$directly_chained;
+        my @new_parallel         = map { $clone_map->{$_} } @$parallel;
 
-        $job->{settings}->{_PARALLEL_JOBS}    = join(',', @new_parallel) if @new_parallel;
-        $job->{settings}->{_START_AFTER_JOBS} = join(',', @new_chained)  if @new_chained;
+        $job->{settings}->{_PARALLEL_JOBS}             = join(',', @new_parallel) if @new_parallel;
+        $job->{settings}->{_START_AFTER_JOBS}          = join(',', @new_chained)  if @new_chained;
+        $job->{settings}->{_START_DIRECTLY_AFTER_JOBS} = join(',', @new_chained)  if @new_directly_chained;
     }
 
     download_assets($job, $remote_url, $ua, %options) unless $options{'skip-download'};
