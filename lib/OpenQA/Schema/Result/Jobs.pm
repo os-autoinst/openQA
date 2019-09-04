@@ -229,26 +229,15 @@ sub sqlt_deploy_hook {
     $sqlt_table->add_index(name => 'idx_jobs_scenario',    fields => [qw(VERSION DISTRI FLAVOR TEST MACHINE ARCH)]);
 }
 
-# override to straighten out job modules
+# override to straighten out job modules and screenshot references
 sub delete {
     my ($self) = @_;
 
     $self->modules->delete;
 
-    my $sls = $self->screenshot_links->search({}, {columns => 'screenshot_id'});
-    my %ids = map { $_->screenshot_id => 1 } $sls->all;
-    # delete all references
+    # delete all screenshot references (screenshots left unused are deleted later in the job limit task)
     $self->screenshot_links->delete;
-    my $schema = $self->result_source->schema;
 
-    $sls = $schema->resultset('ScreenshotLinks')
-      ->search({screenshot_id => {-in => [sort keys %ids]}}, {columns => 'screenshot_id', distinct => 1});
-    map { delete $ids{$_->screenshot_id} } $sls->all;
-
-    my $fns = $schema->resultset('Screenshots')->search({id => {-in => [sort keys %ids]}});
-    while (my $sc = $fns->next) {
-        $sc->delete;
-    }
     my $ret = $self->SUPER::delete;
 
     # last step: remove result directory if already existant

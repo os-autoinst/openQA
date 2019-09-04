@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,9 @@
 package OpenQA::Task::Job::Limit;
 use Mojo::Base 'Mojolicious::Plugin';
 
+use File::Spec::Functions 'catfile';
+use File::Basename qw(basename dirname);
 use OpenQA::Utils;
-use Mojo::URL;
 
 sub register {
     my ($self, $app) = @_;
@@ -43,6 +44,46 @@ sub _limit {
     my $groups = $schema->resultset('JobGroups');
     while (my $group = $groups->next) {
         $group->limit_results_and_logs;
+    }
+
+    # delete unused screenshots in batches
+    my $storage = $schema->storage;
+    my $dbh     = $storage->dbh;
+    my ($min_id, $max_id) = $dbh->selectrow_array('select min(id), max(id) from screenshots');
+    my $screenshots_with_ref_count_query_limit = 200000;
+    my $delete_screenshot_query                = $dbh->prepare('DELETE FROM screenshots WHERE id = ?');
+    my $unused_screenshots_query               = $dbh->prepare(
+        'SELECT me.id, me.filename
+         FROM screenshots me
+         LEFT OUTER JOIN screenshot_links links_outer
+         ON links_outer.screenshot_id = me.id
+         WHERE me.id BETWEEN ? AND ?
+         AND links_outer.screenshot_id is NULL'
+    );
+    for (my $i = $min_id; $i <= $max_id; $i += $screenshots_with_ref_count_query_limit) {
+        $unused_screenshots_query->execute($i, $i + $screenshots_with_ref_count_query_limit);
+        while (my $screenshot = $unused_screenshots_query->fetchrow_arrayref) {
+            my $screenshot_filename = $screenshot->[1];
+            my $screenshot_path     = catfile($OpenQA::Utils::imagesdir, $screenshot_filename);
+            my $thumb_path          = catfile($OpenQA::Utils::imagesdir, dirname($screenshot_filename),
+                '.thumbs', basename($screenshot_filename));
+            log_debug("removing screenshot $screenshot_filename");
+
+            # delete screenshot in database first
+            # note: This might fail due to foreign key violation because a new screenshot link might
+            #       have just been created. In this case the screenshot should not be deleted in the
+            #       database or the file system.
+            eval { $delete_screenshot_query->execute($screenshot->[0]); };
+            next if $@;
+
+            # delete screenshot in file system
+            unless (unlink($screenshot_path) || !-f $screenshot_path) {
+                log_debug("can't remove $screenshot_filename");
+            }
+            unless (unlink($thumb_path) || !-f $thumb_path) {
+                log_debug("can't remove $thumb_path");
+            }
+        }
     }
 }
 
