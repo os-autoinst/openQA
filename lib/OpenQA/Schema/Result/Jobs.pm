@@ -1122,6 +1122,7 @@ sub create_result_dir {
 
     if (!$dir) {
         $dir = sprintf "%08d-%s", $self->id, $self->name;
+        $dir = substr($dir, 0, 255);
         $self->update({result_dir => $dir});
         $dir = $self->result_dir();
     }
