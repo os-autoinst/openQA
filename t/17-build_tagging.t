@@ -37,6 +37,17 @@ my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
+# Allow Devel::Cover to collect stats for background jobs
+$t->app->minion->on(
+    worker => sub {
+        my ($minion, $worker) = @_;
+        $worker->on(
+            dequeue => sub {
+                my ($worker, $job) = @_;
+                $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
+            });
+    });
+
 my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
 $test_case->login($t, 'percival');
 
