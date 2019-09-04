@@ -137,17 +137,17 @@ sub schedule {
         my $job;
         my $worker;
         try {
-            $job = $schema->resultset("Jobs")->find({id => $allocated->{job}});
+            $job = $schema->resultset('Jobs')->find({id => $allocated->{job}});
         }
         catch {
-            log_debug("Failed to retrieve Job(" . $allocated->{job} . ") in the DB :( bummer! Reason: $_");
+            log_debug("Failed to retrieve job ($allocated->{job}) in the DB, reason: $_");
         };
 
         try {
-            $worker = $schema->resultset("Workers")->find({id => $allocated->{worker}});
+            $worker = $schema->resultset('Workers')->find({id => $allocated->{worker}});
         }
         catch {
-            log_debug("Failed to retrieve Worker(" . $allocated->{worker} . ") in the DB :( bummer! Reason: $_");
+            log_debug("Failed to retrieve worker ($allocated->{worker}) in the DB, reason: $_");
         };
 
         next unless $job && $worker;
@@ -165,12 +165,12 @@ sub schedule {
             die "Failed contacting websocket server over HTTP" unless ref($res) eq "HASH" && exists $res->{state};
         }
         catch {
-            log_debug("Failed to send data to websocket :( bummer! Reason: $_");
+            log_debug("Failed to send data to websocket, reason: $_");
         };
 
         # We succeded dispatching the message
         if (ref($res) eq "HASH" && $res->{state}->{msg_sent} == 1) {
-            log_debug("Sent job '" . $allocated->{job} . "' to worker '" . $allocated->{worker} . "'");
+            log_debug("Sent job '$allocated->{job}' to worker '$allocated->{worker}'");
             my $scheduled_state;
             try {
                 # We associate now the worker to the job, so the worker can send updates.
@@ -183,12 +183,12 @@ sub schedule {
                 }
             }
             catch {
-                log_debug("Failed to set worker in scheduling state :( bummer! Reason: $_");
+                log_debug("Failed to set worker in scheduling state, reason: $_");
             };
 
         }
         else {
-            log_debug("Failed sending job '" . $allocated->{job} . "' to worker '" . $allocated->{worker});
+            log_debug("Failed sending job '$allocated->{job}' to worker '$allocated->{worker}'");
 
             try {
                 $worker->unprepare_for_work;
