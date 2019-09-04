@@ -16,27 +16,6 @@ export LC_ALL="en_US.UTF-8"
 cp -rd /opt/openqa /opt/testing_area
 cd /opt/testing_area/openqa
 
-create_db() {
-    set -e
-    PGDATA=$(mktemp -d)
-    export PGDATA
-    echo ">> Creating fake database in ${PGDATA}"
-    initdb --auth=trust -N "$PGDATA"
-
-cat >> "$PGDATA"/postgresql.conf <<HEREDOC
-listen_addresses='localhost'
-unix_socket_directories='$PGDATA'
-fsync=off
-full_page_writes=off
-HEREDOC
-
-    pg_ctl -D "$PGDATA" start -w
-    createdb -h "$PGDATA" openqa_test
-
-    export TEST_PG="DBI:Pg:dbname=openqa_test;host=localhost;port=5432"
-}
-
-
 run_as_normal_user() {
     if [ "$INSTALL_FROM_CPAN" -eq 1 ]; then
        echo ">> Trying to get dependencies from CPAN"
@@ -44,14 +23,14 @@ run_as_normal_user() {
     else
            cpanm -n --mirror http://no.where/ --installdeps .
     fi
-    create_db
     MOJO_TMPDIR=$(mktemp -d)
     export MOJO_TMPDIR
     export OPENQA_LOGFILE=/tmp/openqa-debug.log
-
     ([ "$INSTALL_FROM_CPAN" -eq 1 ] && eval "$(perl -I ~/perl5/lib/perl5/ -Mlocal::lib)") || true
 }
 
 run_as_normal_user
+export USER="${NORMAL_USER}"
+eval "$(t/test_postgresql | grep TEST_PG=)"
 echo ">> Running tests"
 sh -c "$*"
