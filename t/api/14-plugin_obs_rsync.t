@@ -43,6 +43,17 @@ EOF
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
+# Allow Devel::Cover to collect stats for background jobs
+$t->app->minion->on(
+    worker => sub {
+        my ($minion, $worker) = @_;
+        $worker->on(
+            dequeue => sub {
+                my ($worker, $job) = @_;
+                $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
+            });
+    });
+
 my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
