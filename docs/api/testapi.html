@@ -1197,7 +1197,7 @@ This will return content of the file located in data/autoyast/autoinst.xml</p>
 <h5 id="_validate_script_output">validate_script_output</h5>
 <div class="literalblock">
 <div class="content">
-<pre>validate_script_output($script, $code [, timeout =&gt; $timeout] [,quiet =&gt; $quiet])</pre>
+<pre>validate_script_output($script, $code | $regexp [, timeout =&gt; $timeout] [,quiet =&gt; $quiet])</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1209,11 +1209,14 @@ This will return content of the file located in data/autoyast/autoinst.xml</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Wrapper around script_output, that runs a callback on the output. Use it as</p>
+<p>Wrapper around script_output, that runs a callback on the output, or
+alternatively matches a regular expression. Use it as</p>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>validate_script_output "cat /etc/hosts", sub { m/127.*localhost/ }</pre>
+<pre>validate_script_output "cat /etc/hosts", sub { m/127.*localhost/ };
+validate_script_output "cat /etc/hosts", qr/127.*localhost/;
+validate_script_output "cat /etc/hosts", sub { $_ !~ m/987.*somehost/ };</pre>
 </div>
 </div>
 </div>
@@ -1945,7 +1948,7 @@ sub compat_args {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-09-03 19:08:57 UTC
+Last updated 2019-09-04 13:52:31 UTC
 </div>
 </div>
 </body>
