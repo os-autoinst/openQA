@@ -195,13 +195,15 @@ follows the most common Perl style conventions.
   and +assets/assetpack.db+. Make sure to look for error messages on startup
   of the webserver and to force the refresh of the web page in your browser.
 
-== Adding dependencies
+== Handling of dependencies
 * Add 3rd party JavaScript and CSS file to +assets/assetpack.def+. When restarting
   the web server the new/updated files are pulled automatically. Also take care to
   <<Contributing.asciidoc#update-asset-cache,update the asset cache for the openSUSE RPM package>>.
-* Other dependencies need to be added to +openQA.spec+ or +os-autoinst.spec+
-  and +docker/travis_test/Dockerfile+.
+* Other dependencies need to be added to +openQA.spec+ or +os-autoinst.spec+.
 * Perl dependencies need to be added *additionally* to +cpanfile+.
+* To easily get all necessary dependencies on openSUSE you can install the
+  package +openQA-devel+. In other cases one can rely on the +cpanfile+ and
+  read out the dependencies from the spec file for the rest.
 
 === Remarks
 * New dependencies are only available in the Docker container which is used to run

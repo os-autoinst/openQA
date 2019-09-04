@@ -45,15 +45,20 @@
 %else
 %define python_scripts_requires %{nil}
 %endif
-%define common_requires perl(Config::IniFiles) perl(Cpanel::JSON::XS) perl(Data::Dump) perl(Getopt::Long) perl(Minion) perl(Mojolicious) perl(Try::Tiny) perl(Regexp::Common)
+%define assetpack_requires perl(Mojolicious::Plugin::AssetPack) => 1.36, perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS)
+%define common_requires perl(Config::IniFiles) perl(Cpanel::JSON::XS) perl(Cwd) perl(Data::Dump) perl(Data::Dumper) perl(Digest::MD5) perl(Getopt::Long) perl(Minion) => 9.09, perl(Mojolicious) >= 7.92, perl(Try::Tiny) perl(Regexp::Common)
 # runtime requirements for the main package that are not required by other sub-packages
-%define main_requires perl(Date::Format) perl(DateTime::Format::Pg) perl(DBD::Pg) perl(DBI) >= 1.632, perl(DBIx::Class) => 0.082801, perl(DBIx::Class::DeploymentHandler) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(DBIx::Class::OptimisticLocking) perl(File::Copy::Recursive) perl(Net::OpenID::Consumer) perl(Module::Pluggable) perl(Mojolicious::Plugin::RenderFile) perl(Mojolicious::Plugin::AssetPack) => 1.36, perl(aliased) perl(Config::Tiny) perl(Text::Diff) perl(CommonMark) perl(JSON::Validator) perl(IPC::Run) perl(Archive::Extract) perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS) perl(Time::ParseDate) perl(Sort::Versions) perl(BSD::Resource) perl(Pod::POM) perl(Mojo::Pg) perl(Mojo::RabbitMQ::Client) => 0.2, perl(SQL::Translator) perl(YAML::XS) perl(LWP::UserAgent)
-%define client_requires perl(IO::Socket::SSL) >= 2.009, perl(LWP::UserAgent)
-%define worker_requires os-autoinst < 5, perl(Mojo::IOLoop::ReadWriteProcess) > 0.19, perl(Minion::Backend::SQLite) perl(Mojo::SQLite) openQA-client
-# all requirements needed by the tests, do not require on this in individual
-# sub-packages except for the devel package
-%define test_requires %common_requires %main_requires %python_scripts_requires %worker_requires perl(Test::MockModule) perl(Test::Output)
-%define devel_requires %test_requires
+%define main_requires %assetpack_requires git-core perl(Carp::Always) perl(Date::Format) perl(DateTime::Format::Pg) perl(DBD::Pg) perl(DBI) >= 1.632, perl(DBIx::Class) => 0.082801, perl(DBIx::Class::DeploymentHandler) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(DBIx::Class::OptimisticLocking) perl(File::Copy::Recursive) perl(Net::OpenID::Consumer) perl(Module::Pluggable) perl(aliased) perl(Config::Tiny) perl(Text::Diff) perl(CommonMark) perl(JSON::Validator) perl(IPC::Run) perl(Archive::Extract) perl(Time::ParseDate) perl(Sort::Versions) perl(BSD::Resource) perl(Pod::POM) perl(Mojo::Pg) perl(Mojo::RabbitMQ::Client) => 0.2, perl(SQL::Translator) perl(YAML::XS) perl(LWP::UserAgent)
+%define client_requires git-core perl(IO::Socket::SSL) >= 2.009, perl(LWP::UserAgent)
+%define worker_requires os-autoinst < 5, perl(Mojo::IOLoop::ReadWriteProcess) > 0.19, perl(Minion::Backend::SQLite) perl(Mojo::SQLite) openQA-client optipng
+%define build_requires rubygem(sass) %assetpack_requires
+
+# All requirements needed by the tests executed during build-time.
+# Do not require on this in individual sub-packages except for the devel
+# package.
+%define test_requires %common_requires %main_requires %python_scripts_requires %worker_requires perl(App::cpanminus) perl(Perl::Critic) perl(Perl::Critic::Freenode) perl(Test::Mojo) perl(Test::More) perl(Test::Strict) perl(Test::Fatal) perl(Test::MockModule) perl(Test::Output) perl(Test::Pod) perl(Test::Warnings) perl(Selenium::Remote::Driver) perl(Selenium::Remote::WDKeys) ShellCheck os-autoinst-devel
+%define devel_requires %build_requires %test_requires rsync curl postgresql-devel qemu qemu-kvm tar postgresql-server xorg-x11-fonts sudo perl(Devel::Cover) perl(Devel::Cover::Report::Codecov) perl(Perl::Tidy)
+
 Name:           openQA
 Version:        4.6
 Release:        0
@@ -68,25 +73,12 @@ Source1:        cache.txz
 Source100:      openQA-rpmlintrc
 Source101:      update-cache.sh
 Source102:      Dockerfile
-BuildRequires:  %{test_requires}
 BuildRequires:  fdupes
-BuildRequires:  systemd
-# critical bug fix
-BuildRequires:  perl(Minion) >= 9.09
-BuildRequires:  perl(DBI) >= 1.632
-BuildRequires:  perl(Mojolicious) >= 7.92
-BuildRequires:  rubygem(sass)
+BuildRequires:  %{build_requires}
 Requires:       perl(Minion) >= 9.09
-Requires:       %main_requires
-# needed for test suite
-Requires:       git-core
+Requires:       %{main_requires}
 Requires:       openQA-client = %{version}
 Requires:       openQA-common = %{version}
-# needed for saving needles optimized
-Requires:       optipng
-# needed for openid support
-Requires:       perl(LWP::Protocol::https)
-Requires:       perl(URI)
 # we need to have the same sha1 as expected
 %requires_eq    perl-Mojolicious-Plugin-AssetPack
 Recommends:     %{name}-local-db
@@ -98,25 +90,11 @@ Recommends:     apparmor-utils
 Recommends:     logrotate
 # server needs to run an rsync server if worker caching is used
 Recommends:     rsync
-BuildRequires:  postgresql-server
 BuildArch:      noarch
 ExcludeArch:    i586
 %{?systemd_requires}
 %if %{with tests}
-BuildRequires:  chromedriver
-BuildRequires:  chromium
-BuildRequires:  glibc-locale
-# pick a font so chromium has something to render - doesn't matter so much
-BuildRequires:  dejavu-fonts
-BuildRequires:  google-roboto-fonts
-BuildRequires:  perl-App-cpanminus
-BuildRequires:  perl(Perl::Critic)
-BuildRequires:  perl(Perl::Critic::Freenode)
-BuildRequires:  perl(Selenium::Remote::Driver) >= 1.20
-BuildRequires:  perl(Test::Strict)
-BuildRequires:  perl(Test::MockObject)
-BuildRequires:  perl(Test::Warnings)
-BuildRequires:  rsync
+BuildRequires:  %{test_requires}
 %endif
 %if 0%{?suse_version} >= 1330
 Requires(pre):  group(nogroup)
@@ -144,7 +122,7 @@ operating system.
 %package devel
 Summary:        Development package pulling in all build+test dependencies
 Group:          Development/Tools/Other
-Requires:       %devel_requires
+Requires:       %{devel_requires}
 
 %description devel
 Development package pulling in all build+test dependencies.
@@ -163,7 +141,7 @@ openQA workers.
 Summary:        The openQA worker
 Group:          Development/Tools/Other
 %define worker_requires_including_uncovered_in_tests %worker_requires perl(SQL::SplitStatement)
-Requires:       %worker_requires_including_uncovered_in_tests
+Requires:       %{worker_requires_including_uncovered_in_tests}
 # FIXME: use proper Requires(pre/post/preun/...)
 PreReq:         openQA-common = %{version}
 Requires(post): coreutils
