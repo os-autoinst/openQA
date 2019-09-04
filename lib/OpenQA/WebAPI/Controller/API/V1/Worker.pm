@@ -83,7 +83,7 @@ B<NOTE>: currently this function is used in create (API entry point)
 =cut
 
 sub _register {
-    my ($self, $schema, $host, $instance, $caps, $job_id) = @_;
+    my ($self, $schema, $host, $instance, $caps, $jobs_worker_says_it_works_on) = @_;
 
     die 'Incompatible websocket API version'
       if WEBSOCKET_API_VERSION != ($caps->{websocket_api_version} // 0);
@@ -110,19 +110,26 @@ sub _register {
     # store worker's capabilities to database
     $worker->update_caps($caps) if $caps;
 
-    # mark the job currently the worker is currently supposed to run as incomplete unless the worker claims
-    # to still work on that job (which might be the case when the worker hasn't actually crashed but just re-registered
-    # due to network issues)
-    my $job = $worker->job;
-    if ($job && (!defined $job_id || $job_id ne $job->id)) {
-        $job->set_property('JOBTOKEN');
-        $job->auto_duplicate;
-        $job->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
-        $worker->update({job_id => undef});
-    }
+    # mark the jobs the worker is currently supposed to run as incomplete unless the worker claims
+    # to still work on these jobs (which might be the case when the worker hasn't actually crashed but
+    # just re-registered due to network issues)
+    my %jobs_worker_says_it_works_on = map { ($_ => 1) } @$jobs_worker_says_it_works_on;
+    $worker->update({job_id => undef}) if _incomplete_previous_job(\%jobs_worker_says_it_works_on, $worker->job);
+    _incomplete_previous_job(\%jobs_worker_says_it_works_on, $_) for $worker->unfinished_jobs->all;
 
     return $worker->id;
 }
+
+sub _incomplete_previous_job {
+    my ($jobs_worker_says_it_works_on, $job) = @_;
+    return 0 if !defined $job || $jobs_worker_says_it_works_on->{$job->id};
+
+    $job->set_property('JOBTOKEN');
+    $job->auto_duplicate;
+    $job->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
+    return 1;
+}
+
 
 =over 4
 
@@ -153,7 +160,7 @@ sub create {
 
     my $host     = $self->param('host');
     my $instance = $self->param('instance');
-    my $job_id   = $self->param('job_id');
+    my $job_ids  = $self->every_param('job_id');
     my $caps     = {};
 
     $caps->{cpu_modelname}                = $self->param('cpu_modelname');
@@ -166,7 +173,7 @@ sub create {
 
     my $id;
     try {
-        $id = $self->_register($self->schema, $host, $instance, $caps, $job_id);
+        $id = $self->_register($self->schema, $host, $instance, $caps, $job_ids);
     }
     catch {
         if (/Incompatible/) {
@@ -179,7 +186,7 @@ sub create {
     };
 
     my %event_data = (id => $id, host => $host, instance => $instance, caps => $caps);
-    $event_data{job_id} = $job_id if defined $job_id;
+    $event_data{job_ids} = $job_ids if @$job_ids;
     $self->emit_event('openqa_worker_register', \%event_data);
     $self->render(json => {id => $id});
 }
@@ -228,7 +235,7 @@ sub delete {
     if (!$worker) {
         return $self->render(json => {error => "Worker not found."}, status => 404);
     }
-    if ($worker->status ne 'dead' || $worker->job) {
+    if ($worker->status ne 'dead' || $worker->unfinished_jobs->count) {
         $message = "Worker " . $worker->name . " status is not offline.";
         return $self->render(json => {error => $message}, status => 400);
     }

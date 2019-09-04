@@ -377,19 +377,19 @@ sub set_assigned_worker {
 }
 
 sub prepare_for_work {
-    my $self   = shift;
-    my $worker = shift;
-    return unless $worker;
+    my ($self, $worker, $worker_properties) = @_;
+    return undef unless $worker;
+
     log_debug("[Job#" . $self->id . "] Prepare for being processed by worker " . $worker->id);
+
     my $job_hashref = {};
     $job_hashref = $self->to_hash(assets => 1);
 
-    # JOBTOKEN for test access to API
-    my $token = random_string();
-    $worker->set_property('JOBTOKEN', $token);
-    #$self->set_property('JOBTOKEN', $token);
-
-    $job_hashref->{settings}->{JOBTOKEN} = $token;
+    # set JOBTOKEN for test access to API
+    $worker_properties //= {};
+    my $job_token = $worker_properties->{JOBTOKEN} // random_string();
+    $worker->set_property(JOBTOKEN => $job_token);
+    $job_hashref->{settings}->{JOBTOKEN} = $job_token;
 
     my $updated_settings = $self->register_assets_from_settings();
 
@@ -410,7 +410,7 @@ sub prepare_for_work {
     }
 
     # TODO: cleanup previous tmpdir
-    $worker->set_property('WORKER_TMPDIR', tempdir());
+    $worker->set_property(WORKER_TMPDIR => $worker_properties->{WORKER_TMPDIR} // tempdir());
 
     return $job_hashref;
 }
@@ -1747,8 +1747,8 @@ sub _job_stop_cluster {
     else {
         $job->update({result => PARALLEL_FAILED});
     }
-    if ($job->worker) {
-        $job->worker->send_command(command => 'cancel', job_id => $job->id);
+    if (my $worker = $job->assigned_worker) {
+        $worker->send_command(command => 'cancel', job_id => $job->id);
     }
 
     return 1;
@@ -1812,9 +1812,9 @@ sub done {
     $self->release_networks();
     $self->owned_locks->delete;
     $self->locked_locks->update({locked_by => undef});
-    if ($self->worker) {
+    if (my $worker = $self->worker) {
         # free the worker
-        $self->worker->update({job_id => undef});
+        $worker->update({job_id => undef});
     }
 
     # update result if not provided
@@ -1853,8 +1853,8 @@ sub cancel {
         });
 
     my $count = 1;
-    if ($self->worker) {
-        $self->worker->send_command(command => 'cancel', job_id => $self->id);
+    if (my $worker = $self->assigned_worker) {
+        $worker->send_command(command => 'cancel', job_id => $self->id);
     }
     my $jobs = $self->cluster_jobs(cancelmode => 1);
     for my $job (sort keys %$jobs) {

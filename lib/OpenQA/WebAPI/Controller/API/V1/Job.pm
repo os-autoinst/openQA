@@ -378,7 +378,7 @@ sub update_status {
 
     if (!$self->req->json) {
         $self->render(json => {error => 'No status information provided'}, status => 400);
-        return;
+        return undef;
     }
 
     my $status = $self->req->json->{status};
@@ -388,27 +388,49 @@ sub update_status {
         my $err = 'Got status update for non-existing job: ' . $job_id;
         OpenQA::Utils::log_info($err);
         $self->render(json => {error => $err}, status => 400);
-        return;
+        return undef;
     }
 
-    if (!exists $status->{worker_id}) {
-        my $err = 'Got status update for job ' . $job_id . ' but does not contain a worker id!';
+    my $worker_id = $status->{worker_id};
+    if (!defined $worker_id) {
+        my $err = "Got status update for job $job_id but does not contain a worker id!";
         OpenQA::Utils::log_info($err);
         $self->render(json => {error => $err}, status => 400);
-        return;
+        return undef;
     }
 
+    # find worker
+    # - use either the worker which is known to execute the current job right now
+    # - or use the assigned worker if the job is still running
     my $worker = $job->worker;
-    if (!$worker || $worker->id != $status->{worker_id}) {
-        my $worker_id  = $worker ? $worker->id : 'no updates anymore';
-        my $job_status = $job->status_info;
+    my $use_assigned_worker;
+    if (!$worker && !defined $job->t_finished) {
+        if (my $assigned_worker = $job->assigned_worker) {
+            $worker              = $assigned_worker;
+            $use_assigned_worker = 1;
+        }
+        else {
+            my $job_status = $job->status_info;
+            my $err        = "Got status update for job $job_id and worker $worker_id but there is"
+              . " not even a worker assigned to this job (job is $job_status)";
+            log_info($err);
+            $self->render(json => {error => $err}, status => 400);
+            return undef;
+        }
+    }
+
+    if (!$worker || $worker->id != $worker_id) {
+        my $expected_worker_id = $worker ? $worker->id : 'no updates anymore';
+        my $job_status         = $job->status_info;
         my $err
-          = "Got status update for job $job_id with unexpected worker ID $status->{worker_id}"
-          . " (expected $worker_id, job is $job_status)";
+          = "Got status update for job $job_id with unexpected worker ID $worker_id"
+          . " (expected $expected_worker_id, job is $job_status)";
         OpenQA::Utils::log_info($err);
         $self->render(json => {error => $err}, status => 400);
-        return;
+        return undef;
     }
+
+    $worker->update({job_id => $job->id}) if $use_assigned_worker;
 
     my $ret;
     try {
@@ -426,7 +448,7 @@ sub update_status {
         $ret->{error}        //= 'Unable to update status';
         $ret->{error_status} //= 400;
         $self->render(json => {error => $ret->{error}}, status => $ret->{error_status});
-        return;
+        return undef;
     }
     $self->render(json => $ret);
 }

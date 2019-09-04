@@ -45,6 +45,7 @@ sub startup {
     my $api = $ca->any('/api');
     $api->get('/is_worker_connected/<worker_id:num>')->to('API#is_worker_connected');
     $api->post('/send_job')->to('API#send_job');
+    $api->post('/send_jobs')->to('API#send_jobs');
     $api->post('/send_msg')->to('API#send_msg');
     $ca->websocket('/ws/<workerid:num>')->to('Worker#ws');
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
@@ -81,15 +82,15 @@ sub ws_send {
 }
 
 sub ws_send_job {
-    my ($job) = @_;
+    my ($job_info, $message) = @_;
     my $result = {state => {msg_sent => 0}};
 
-    unless (ref($job) eq 'HASH' && exists $job->{assigned_worker_id}) {
+    unless (ref($job_info) eq 'HASH' && exists $job_info->{assigned_worker_id}) {
         $result->{state}->{error} = "No workerid assigned";
         return $result;
     }
 
-    my $worker_id = $job->{assigned_worker_id};
+    my $worker_id = $job_info->{assigned_worker_id};
     my $worker    = OpenQA::WebSockets::Model::Status->singleton->workers->{$worker_id};
     if (!$worker) {
         $result->{state}->{error} = "Worker $worker_id doesn't have established a ws connection";
@@ -99,18 +100,19 @@ sub ws_send_job {
     my $res;
     my $tx = $worker->{tx};
     if ($tx && !$tx->is_finished) {
-        $res = $tx->send({json => {type => 'grab_job', job => $job}});
+        $res = $tx->send({json => $message});
     }
+    my $id_string = ref($job_info->{ids}) eq 'ARRAY' ? join(', ', @{$job_info->{ids}}) : $job_info->{id} // '?';
     unless ($res && !$res->error) {
         # Since it is used by scheduler, it's fine to let it fail,
         # will be rescheduled on next round
         log_debug("Unable to allocate job to worker $worker_id");
-        $result->{state}->{error} = "Sending $job->{id} thru WebSockets to $worker_id failed miserably";
+        $result->{state}->{error} = "Sending $id_string thru WebSockets to $worker_id failed miserably";
         $result->{state}->{res}   = $res;
         return $result;
     }
     else {
-        log_debug("message sent to $worker_id for job $job->{id}");
+        log_debug("message sent to $worker_id for job $id_string");
         $result->{state}->{msg_sent} = 1;
     }
     return $result;

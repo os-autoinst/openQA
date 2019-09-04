@@ -81,6 +81,9 @@ sub new {
     $self->{_cli_options}            = $cli_options;
     $self->{_pool_directory_lock_fd} = undef;
     $self->{_shall_terminate}        = 0;
+    $self->{_pending_jobs}           = [];
+    $self->{_pending_job_ids}        = {};
+    $self->{_jobs_to_skip}           = {};
 
     return $self;
 }
@@ -120,12 +123,17 @@ sub capabilities {
         isotovideo_interface_version => $self->isotovideo_interface_version,
     };
 
-    # pass current job if executing one; this should prevent the web UI to mark the current job as
+    # pass current and pending jobs if present; this should prevent the web UI to mark these jobs as
     # incomplete despite the re-registration
+    my @job_ids;
     my $current_job = $self->current_job;
     my $job_state   = $current_job ? $current_job->status : undef;
     if ($job_state && $job_state ne 'new' && $job_state ne 'stopped') {
-        $caps->{job_id} = $current_job->id;
+        push(@job_ids, $current_job->id);
+    }
+    push(@job_ids, @{$self->pending_job_ids});
+    if (@job_ids) {
+        $caps->{job_id} = @job_ids > 1 ? \@job_ids : $job_ids[0];
     }
     else {
         delete $caps->{job_id};
@@ -214,6 +222,10 @@ sub status {
     }
     else {
         $status{status} = 'free';
+    }
+    my $pending_job_ids = $self->{_pending_job_ids};
+    if (keys %$pending_job_ids) {
+        $status{pending_job_ids} = $self->{_pending_job_ids};
     }
     return \%status;
 }
@@ -340,36 +352,136 @@ sub _prepare_cache_directory {
     return $shared_cache;
 }
 
-sub accept_job {
-    my ($self, $client, $job_info) = @_;
+sub _assert_whether_job_acceptance_possible {
+    my ($self) = @_;
 
+    die 'attempt to accept a new job although there are still pending jobs'   if $self->has_pending_jobs;
     die 'attempt to accept a new job although there is already a job running' if $self->current_job;
+}
 
-    # instantiate new job
-    my $webui_host = $client->webui_host;
-    my $job        = OpenQA::Worker::Job->new($self, $client, $job_info);
+# brings the overall worker into a state where it can accept the next job (e.g. pool directory is cleaned up)
+sub _prepare_job_execution {
+    my ($self, $job, %args) = @_;
+
     $job->on(
         status_changed => sub {
             $self->_handle_job_status_changed(@_);
         });
 
-    remove_log_channel('autoinst');
-    remove_log_channel('worker');
-    add_log_channel('autoinst', path => 'autoinst-log.txt', level => 'debug');
-    add_log_channel(
-        'worker',
-        path    => 'worker-log.txt',
-        level   => $self->settings->global_settings->{LOG_LEVEL} // 'info',
-        default => 'append',
-    );
+    if (!$args{only_skipping}) {
+        # prepare logging
+        remove_log_channel('autoinst');
+        remove_log_channel('worker');
+        add_log_channel('autoinst', path => 'autoinst-log.txt', level => 'debug');
+        add_log_channel(
+            'worker',
+            path    => 'worker-log.txt',
+            level   => $self->settings->global_settings->{LOG_LEVEL} // 'info',
+            default => 'append',
+        );
 
-    # ensure the pool directory is cleaned up before starting a new job
-    # note: The cleanup after finishing the last job might have been prevented via --no-cleanup.
-    $self->_clean_pool_directory unless $self->no_cleanup;
+        # ensure the pool directory is cleaned up before starting a new job
+        # note: The cleanup after finishing the last job might have been prevented via --no-cleanup.
+        $self->_clean_pool_directory unless $self->no_cleanup;
+    }
 
+    delete $self->{_pending_job_ids}->{$job->id};
     $self->current_job($job);
-    $self->current_webui_host($webui_host);
-    $job->accept();
+    $self->current_webui_host($job->client->webui_host);
+}
+
+# makes a (sub) queue of pending OpenQA::Worker::Job objects from the specified $sub_sequence of job IDs
+sub _enqueue_job_sub_sequence {
+    my ($self, $client, $job_queue, $sub_sequence, $job_data, $job_ids) = @_;
+
+    for my $job_id_or_sub_sequence (@$sub_sequence) {
+        if (ref($job_id_or_sub_sequence) eq 'ARRAY') {
+            push(@$job_queue,
+                $self->_enqueue_job_sub_sequence($client, [], $job_id_or_sub_sequence, $job_data, $job_ids));
+        }
+        else {
+            log_debug("Enqueuing job $job_id_or_sub_sequence");
+            $job_ids->{$job_id_or_sub_sequence} = 1;
+            push(@$job_queue, OpenQA::Worker::Job->new($self, $client, $job_data->{$job_id_or_sub_sequence}));
+        }
+    }
+    return $job_queue;
+}
+
+# removes the first job of the specified sub queue; returns the removed job and the sub queue
+sub _get_next_job {
+    my ($job_queue) = @_;
+    return (undef, []) unless defined $job_queue && @$job_queue;
+
+    my $first_job_or_sub_sequence = $job_queue->[0];
+    return (shift @$job_queue, $job_queue) unless ref($first_job_or_sub_sequence) eq 'ARRAY';
+
+    my ($actually_first_job, $sub_sequence) = _get_next_job($first_job_or_sub_sequence);
+    shift @$job_queue unless @$first_job_or_sub_sequence;
+    return ($actually_first_job, $sub_sequence);
+}
+
+# accepts or skips the next job in the queue of pending jobs
+sub _accept_or_skip_next_job_in_queue {
+    my ($self, $last_job_exist_status) = @_;
+
+    # skip next job in the current sub queue if the last job was not successful
+    my $pending_jobs = $self->{_pending_jobs};
+    if (($last_job_exist_status //= '?') ne 'done') {
+        my $current_sub_queue = $self->{_current_sub_queue} // $pending_jobs;
+        if (scalar @$current_sub_queue > 0) {
+            my ($job_to_skip) = _get_next_job($pending_jobs);
+            my $job_id = $job_to_skip->id;
+            log_info("Skipping job $job_id from queue (parent faild with result $last_job_exist_status)");
+            $self->_prepare_job_execution($job_to_skip, only_skipping => 1);
+            return $job_to_skip->skip;
+
+            # note: When the job has been skipped it counts as stopped. As such _accept_or_skip_next_job_in_queue()
+            #       is called from _handle_job_status_changed() again to accept/skip the next job.
+        }
+    }
+
+    # accept or skip the next job
+    my $next_job;
+    ($next_job, $self->{_current_sub_queue}) = _get_next_job($pending_jobs);
+    return undef unless $next_job;
+
+    my $next_job_id = $next_job->id;
+    $self->_prepare_job_execution($next_job);
+    if (my $skip_reason = $self->{_jobs_to_skip}->{$next_job_id}) {
+        log_info("Skipping job $next_job_id from queue (web UI sent command $skip_reason)");
+        $next_job->skip($skip_reason);
+    }
+    else {
+        log_info("Accepting job $next_job_id from queue");
+        $next_job->accept;
+    }
+}
+
+# accepts a single job from the job info received via the 'grab_job' command
+sub accept_job {
+    my ($self, $client, $job_info) = @_;
+
+    $self->_assert_whether_job_acceptance_possible;
+    $self->_prepare_job_execution(OpenQA::Worker::Job->new($self, $client, $job_info));
+    $self->current_job->accept;
+}
+
+# enqueues multiple jobs from the job info received via the 'grab_jobs' command and accepts the first one
+sub enqueue_jobs_and_accept_first {
+    my ($self, $client, $job_info) = @_;
+
+    # note: The "job queue" these functions work with is just an array containing jobs or a nested array representing
+    #       a "sub qeueue". The "sub queues" group jobs in the execution sequence which need to be skipped altogether
+    #       if one job fails.
+
+    $self->_assert_whether_job_acceptance_possible;
+    $self->{_current_sub_queue} = undef;
+    $self->{_jobs_to_skip}      = {};
+    $self->{_pending_job_ids}   = {};
+    $self->_enqueue_job_sub_sequence($client, $self->{_pending_jobs},
+        $job_info->{sequence}, $job_info->{data}, $self->{_pending_job_ids});
+    $self->_accept_or_skip_next_job_in_queue('done');
 }
 
 # stops the current job and (if there is one) and terminates the worker
@@ -563,13 +675,20 @@ sub _handle_job_status_changed {
         # handle case when the worker should not continue to run e.g. because the user stopped it or
         # a critical error occurred
         if ($self->{_shall_terminate}) {
-            return $self->stop;
+            return $self->stop unless $self->has_pending_jobs;
+
+            # ensure we actually skip the next jobs in the queue if user stops the worker with Ctrl+C right
+            # after the last job has concluded
+            $reason = 'worker terminates' if $reason eq 'done';
         }
 
         unless ($self->no_cleanup) {
             log_debug('Cleaning up for next job');
             $self->_clean_pool_directory;
         }
+
+        # continue with the next job in the queue (this just returns if there are no further jobs)
+        $self->_accept_or_skip_next_job_in_queue($reason);
     }
     # FIXME: Avoid so much elsif like in CommandHandler.pm.
 }
@@ -631,6 +750,48 @@ sub _clean_pool_directory {
             unlink($file);
         }
     }
+}
+
+sub has_pending_jobs {
+    my ($self) = @_;
+
+    return scalar @{$self->{_pending_jobs}} > 0;
+}
+
+sub pending_job_ids {
+    my ($self) = @_;
+
+    return [keys %{$self->{_pending_job_ids}}];
+}
+
+sub _find_job_in_queue {
+    my ($job_id, $queue) = @_;
+
+    for my $job_or_sub_sequence (@$queue) {
+        if (ref($job_or_sub_sequence) eq 'ARRAY') {
+            return _find_job_in_queue($job_id, $job_or_sub_sequence);
+        }
+        elsif ($job_or_sub_sequence->id eq $job_id) {
+            return $job_or_sub_sequence;
+        }
+    }
+    return undef;
+}
+
+sub find_current_or_pending_job {
+    my ($self, $job_id) = @_;
+
+    if (my $current_job = $self->current_job) {
+        return $current_job if $current_job->id eq $job_id;
+    }
+    return _find_job_in_queue($job_id, $self->{_pending_jobs});
+}
+
+# marks a job to be immediately skipped when picking it from the queue
+sub skip_job {
+    my ($self, $job_id, $reason) = @_;
+
+    $self->{_jobs_to_skip}->{$job_id} = $reason;
 }
 
 1;

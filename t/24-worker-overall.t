@@ -47,10 +47,30 @@ $ENV{OPENQA_LOGFILE} = undef;
     sub stop { shift->is_running(0) }
 }
 {
-    package Test::FakeJob;
+    package Test::FakeClient;
     use Mojo::Base -base;
-    has id     => 42;
-    has status => 'running';
+    has webui_host => 'fake';
+}
+{
+    package Test::FakeJob;
+    use Mojo::Base 'Mojo::EventEmitter';
+    has id          => 42;
+    has status      => 'running';
+    has is_skipped  => 0;
+    has is_accepted => 0;
+    has client      => sub { Test::FakeClient->new; };
+    has name        => 'test-job';
+    sub skip {
+        my ($self) = @_;
+        $self->is_skipped(1);
+        $self->emit(status_changed => {job => $self, status => 'stopped', reason => 'skipped'});
+    }
+    sub accept {
+        my ($self) = @_;
+        $self->is_accepted(1);
+        $self->emit(status_changed => {job => $self, status => 'accepted'});
+    }
+    sub start { }
 }
 
 like(
@@ -186,6 +206,127 @@ subtest 'status' => sub {
     );
 
     delete $worker->settings->global_settings->{CACHEDIRECTORY};
+};
+
+subtest 'accept or skip next job' => sub {
+    subtest 'get next job in queue' => sub {
+        my @pending_jobs             = (0, [1, [2, 3], [4, 5]], 6, 7, [8, 9, [10, 11]], 12);
+        my @expected_iteration_steps = (
+            [0, [[1, [2, 3], [4, 5]], 6, 7, [8, 9, [10, 11]], 12]],
+            [1, [[2, 3], [4, 5]]],
+            [2, [3]],
+            [3, []],
+            [4, [5]],
+            [5, []],
+            [6, [7, [8, 9, [10, 11]], 12]],
+            [7, [[8, 9, [10, 11]], 12]],
+            [8, [9, [10, 11]]],
+            [9, [[10, 11]]],
+            [10,    [11]],
+            [11,    []],
+            [12,    []],
+            [undef, []],
+        );
+
+        my $step_index = 0;
+        for my $expected_step (@expected_iteration_steps) {
+            my ($next_job, $current_sub_sequence) = OpenQA::Worker::_get_next_job(\@pending_jobs);
+            my $ok = is_deeply([$next_job, $current_sub_sequence], $expected_step, "iteration step $step_index");
+            if (!$ok) {
+                diag explain $next_job;
+                diag explain $current_sub_sequence;
+            }
+            $step_index += 1;
+        }
+
+        is(scalar @pending_jobs, 0, 'no pending jobs left');
+    };
+
+    subtest 'skip entire job queue (including sub queues) after failure' => sub {
+        my $worker = OpenQA::Worker->new({instance => 1});
+        my @jobs   = (
+            Test::FakeJob->new(id => 0),
+            Test::FakeJob->new(id => 1),
+            Test::FakeJob->new(id => 2),
+            Test::FakeJob->new(id => 3),
+        );
+        $worker->{_pending_jobs} = [$jobs[0], [$jobs[1], $jobs[2]], $jobs[3]];
+
+        # assume the last job failed: all jobs in the queue are expected to be skipped
+        combined_like(
+            sub {
+                $worker->_accept_or_skip_next_job_in_queue('api-failure');
+            },
+            qr/Job 0.*finished.*skipped.*Job 1.*finished.*skipped.*Job 2.*finished.*skipped.*Job 3.*finished.*skipped/s,
+            'skipping logged'
+        );
+        is($_->is_accepted, 0, 'job ' . $_->id . ' not accepted') for @jobs;
+        is($_->is_skipped,  1, 'job ' . $_->id . ' skipped')      for @jobs;
+        is_deeply($worker->{_pending_jobs}, [], 'all jobs skipeed');
+    };
+
+    subtest 'skip (only) a sub queue after a failure' => sub {
+        my $worker = OpenQA::Worker->new({instance => 1});
+        my @jobs   = (
+            Test::FakeJob->new(id => 0),
+            Test::FakeJob->new(id => 1),
+            Test::FakeJob->new(id => 2),
+            Test::FakeJob->new(id => 3),
+        );
+        $worker->{_pending_jobs} = [$jobs[0], [$jobs[1], $jobs[2]], $jobs[3]];
+
+        # assume the last job has been completed: accept the next job in the queue
+        $worker->_accept_or_skip_next_job_in_queue('done');
+        is($_->is_accepted, 1, 'job ' . $_->id . ' accepted')    for ($jobs[0]);
+        is($_->is_skipped,  0, 'job ' . $_->id . ' not skipped') for @jobs;
+        is_deeply($worker->{_pending_jobs}, [[$jobs[1], $jobs[2]], $jobs[3]], 'next jobs still pending');
+
+        # assume the last job has been completed: accept the next job in the queue
+        $worker->_accept_or_skip_next_job_in_queue('done');
+        is($_->is_accepted, 1, 'job ' . $_->id . ' accepted')    for ($jobs[1]);
+        is($_->is_skipped,  0, 'job ' . $_->id . ' not skipped') for @jobs;
+        is_deeply($worker->{_pending_jobs}, [[$jobs[2]], $jobs[3]], 'next jobs still pending');
+
+        # assme the last job (job 0) failed: only the current sub queue (containing job 2) is skipped
+        combined_like(
+            sub {
+                $worker->_accept_or_skip_next_job_in_queue('api-failure');
+            },
+            qr/Job 2.*finished.*skipped/s,
+            'skipping logged'
+        );
+        is($_->is_accepted, 0, 'job ' . $_->id . ' not accepted') for ($jobs[2]);
+        is($_->is_skipped,  1, 'job ' . $_->id . ' skipped')      for ($jobs[2]);
+        is($_->is_accepted, 1, 'job ' . $_->id . ' accepted')     for ($jobs[3]);
+        is($_->is_skipped,  0, 'job ' . $_->id . ' not skipped')  for ($jobs[3]);
+
+        is_deeply($worker->{_pending_jobs}, [], 'no more pending jobs');
+    };
+
+    subtest 'enqueue jobs and accept first' => sub {
+        my $worker   = OpenQA::Worker->new({instance => 1});
+        my $client   = Test::FakeClient->new;
+        my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
+        $job_mock->mock(accept => sub { shift->_set_status(accepting => {}); });
+        my %job_info = (
+            sequence => [26, [27, 28]],
+            data     => {
+                26 => {id => 26, settings => {PARENT => 'job'}},
+                27 => {id => 27, settings => {CHILD  => ' job 1'}},
+                28 => {id => 28, settings => {CHILD  => 'job 2'}},
+            },
+        );
+        $worker->enqueue_jobs_and_accept_first($client, \%job_info);
+        ok($worker->current_job, 'current job assigned');
+        is_deeply($worker->current_job->info, $job_info{data}->{26}, 'the current job is the first job in the sequence')
+          or diag explain $worker->current_job->info;
+
+        ok($worker->has_pending_jobs, 'worker has pending jobs');
+        is_deeply($worker->pending_job_ids, [27, 28], 'pending job IDs returned as expected');
+        is_deeply($worker->find_current_or_pending_job($_)->info, $job_info{data}->{$_}, 'can find all jobs by ID')
+          for (26, 27, 28);
+    };
+
 };
 
 subtest 'stopping' => sub {

@@ -47,7 +47,15 @@ sub send_job {
     my ($self) = @_;
 
     my $job    = $self->req->json;
-    my $result = OpenQA::WebSockets::ws_send_job($job);
+    my $result = OpenQA::WebSockets::ws_send_job($job, {type => 'grab_job', job => $job});
+    $self->render(json => {result => $result});
+}
+
+sub send_jobs {
+    my ($self) = @_;
+
+    my $job_info = $self->req->json;
+    my $result   = OpenQA::WebSockets::ws_send_job($job_info, {type => 'grab_jobs', job_info => $job_info});
     $self->render(json => {result => $result});
 }
 

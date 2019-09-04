@@ -20,6 +20,7 @@ use OpenQA::Schema;
 use OpenQA::Utils qw(log_debug log_error log_info log_warning);
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKERS_CHECKER_THRESHOLD);
 use OpenQA::WebSockets::Model::Status;
+use OpenQA::Jobs::Constants;
 use DateTime;
 use Data::Dumper 'Dumper';
 use Data::Dump 'pp';
@@ -93,8 +94,20 @@ sub _message {
 
     $worker->{last_seen} = time();
     if ($json->{type} eq 'accepted') {
-        my $jobid = $json->{jobid};
-        log_debug("Worker: $worker->{id} accepted job $jobid");
+        my $job_id = $json->{jobid};
+        return undef unless $job_id;
+
+        # verify whether the job has previously been assigned to the worker and can actually be accepted
+        my $job = $worker->{db}->unfinished_jobs->find($job_id);
+        if (!$job) {
+            log_warning(
+                "Worker $worker->{id} accepted job $job_id which was never assigned to it or has already finished");
+            return undef;
+        }
+
+        # update the worker's current job
+        $worker->{db}->update({job_id => $job_id});
+        log_debug("Worker $worker->{id} accepted job $job_id");
     }
     elsif ($json->{type} eq 'status') {
         # handle job status update through web socket
@@ -108,13 +121,18 @@ sub _message {
     elsif ($json->{type} eq 'worker_status') {
         my $current_worker_status = $json->{status};
         my $current_worker_error  = $current_worker_status eq 'broken' ? $json->{reason} : undef;
-        my $job_status            = $json->{job}->{state};
-        my $jobid                 = $json->{job}->{id};
+        my $job_info              = $json->{job} // {};
+        my $job_status            = $job_info->{state};
+        my $job_id                = $job_info->{id};
+        my $job_settings          = $job_info->{settings} // {};
+        my $job_token             = $job_settings->{JOBTOKEN};
+        my $pending_job_ids       = $json->{pending_job_ids} // {};
         my $wid                   = $worker->{id};
 
         $worker_status->{$wid} = $json;
         log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $wid, Dumper($json)));
 
+        # log that we 'saw' the worker
         try {
             $schema->txn_do(
                 sub {
@@ -128,16 +146,7 @@ sub _message {
             log_error("Failed updating worker seen and error status: $_");
         };
 
-        my $registered_job_id;
-        my $registered_job_token;
-        try {
-            $registered_job_id = $schema->resultset("Workers")->find($wid)->job->id();
-            log_debug("Found Job($registered_job_id) in DB from worker_status update sent by Worker($wid)")
-              if $registered_job_id && $wid;
-            log_debug("Received request has id: " . $worker_status->{$wid}{job}{id})
-              if $worker_status->{$wid}{job}{id};
-        };
-
+        # send worker population
         try {
             my $workers_population = $schema->resultset("Workers")->count();
             my $msg                = {type => 'info', population => $workers_population};
@@ -147,61 +156,71 @@ sub _message {
             log_debug("Could not send the population number to worker: $_");
         };
 
+        # find the job currently associated with that worker
+        my $registered_job_id;
+        my $registered_job_token;
         try {
-            # We cover the case where id can be the same, but the token will differ.
-            die "Do not check" unless ($registered_job_id);
-            $registered_job_token = $schema->resultset("Workers")->find($wid)->get_property('JOBTOKEN');
-            log_debug("Worker($wid) for Job($registered_job_id) has token $registered_job_token")
-              if $registered_job_token && $registered_job_id && $wid;
-            log_debug("Received request has token: " . $worker_status->{$wid}{job}{settings}{JOBTOKEN})
-              if $worker_status->{$wid}{job}{settings}{JOBTOKEN};
+            return undef unless defined $wid;
+            my $worker = $schema->resultset('Workers')->find($wid);
+            return undef unless $worker;
+
+            my $registered_job = $worker->job;
+            $registered_job_id = $registered_job->id if $registered_job;
+            log_debug("Found job $registered_job_id in DB from worker_status update sent by worker $wid")
+              if defined $registered_job_id;
+            log_debug("Received request has job id: $job_id")
+              if defined $job_id;
+
+            $registered_job_token = $worker->get_property('JOBTOKEN');
+            log_debug("Worker $wid for job $registered_job_id has token $registered_job_token")
+              if defined $registered_job_id && defined $registered_job_token;
+            log_debug("Received request has token: $job_token")
+              if defined $job_token;
         };
 
+        # update status of unfinished jobs
         try {
-            # XXX: we should have a field in the DB as well so scheduler can allocate directly on free workers.
-            $schema->txn_do(
-                sub {
-                    my $w = $schema->resultset("Workers")->find($wid);
-                    log_debug('Possibly worker ' . $w->id() . ' should be freed.');
-                    return undef unless ($w && $w->job);
-                    return $w->job->incomplete_and_duplicate
-                      if ( $w->job->result eq OpenQA::Jobs::Constants::NONE
-                        && $w->job->state eq OpenQA::Jobs::Constants::RUNNING
-                        && $current_worker_status eq "free");
-                    return $w->job->reschedule_state
-                      if ($w->job->state eq OpenQA::Jobs::Constants::ASSIGNED);    # Was a stale job
-                })
-              if (
-                # Check if worker is doing a job for another WebUI
-                (
-                       $registered_job_id
-                    && exists $worker_status->{$wid}
-                    && exists $worker_status->{$wid}{job}
-                    && exists $worker_status->{$wid}{job}{id}
-                    && $worker_status->{$wid}{job}{id} != $registered_job_id
-                )
-                || (   $registered_job_token
-                    && exists $worker_status->{$wid}
-                    && exists $worker_status->{$wid}{job}
-                    && exists $worker_status->{$wid}{job}{settings}{JOBTOKEN}
-                    && $worker_status->{$wid}{job}{settings}{JOBTOKEN} ne $registered_job_token))
-              ||
-              # Or if it declares itself free.
-              ($current_worker_status && $current_worker_status eq "free");
+            # deal with the case when the worker is not actually working anymore on the job we think it
+            # is working on (e.g. worker has been restarted after a crash)
+            if (   (defined $registered_job_id && defined $job_id && $job_id != $registered_job_id)
+                || ($registered_job_token && defined $job_token && $job_token ne $registered_job_token)
+                || ($current_worker_status && $current_worker_status eq 'free'))
+            {
+                $schema->txn_do(
+                    sub {
+                        my $worker = $schema->resultset('Workers')->find($wid);
+                        return undef unless $worker;
 
-            return undef unless $jobid && $job_status && $job_status eq OpenQA::Jobs::Constants::RUNNING;
+                        # take any unfinished jobs of that worker into account
+                        for my $job ($worker->unfinished_jobs) {
+                            # if the worker claims that job is still pending just leave it be
+                            return undef if exists $pending_job_ids->{$job->id};
+
+                            # mark job which was already running as incomplete and duplicate
+                            if (   $job->result eq OpenQA::Jobs::Constants::NONE
+                                && $job->state eq OpenQA::Jobs::Constants::RUNNING
+                                && $current_worker_status eq 'free')
+                            {
+                                return $job->incomplete_and_duplicate;
+                            }
+
+                            # set job which was only assigned back to scheduled
+                            if ($job->state eq OpenQA::Jobs::Constants::ASSIGNED) {
+                                return $job->reschedule_state;
+                            }
+                        }
+                    });
+            }
+
+            # ensure the job's status is running
+            return undef unless defined $job_id && $job_status && $job_status eq OpenQA::Jobs::Constants::RUNNING;
             $schema->txn_do(
                 sub {
-                    my $job = $schema->resultset("Jobs")->find($jobid);
-                    return
-                      if (
-                        (
-                            $job && (($job->state eq OpenQA::Jobs::Constants::RUNNING)
-                                || ($job->result ne OpenQA::Jobs::Constants::NONE)))
-                        || !$job
-                      );
-                    $job->set_running();
-                    log_debug(sprintf('Job "%s" set to running states from ws status updates', $jobid));
+                    my $job = $schema->resultset('Jobs')->find($job_id);
+                    return undef unless $job;
+                    return undef if $job->state eq RUNNING || $job->result ne NONE;
+                    $job->set_running;
+                    log_debug(sprintf('Job "%s" set to running states from ws status updates', $job_id));
                 });
 
         }
