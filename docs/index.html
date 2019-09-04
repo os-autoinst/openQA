@@ -749,7 +749,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_getting_involved_into_development">Getting involved into development</a></li>
 <li><a href="#_technologies">Technologies</a></li>
 <li><a href="#_starting_the_webserver_from_local_git_checkout">Starting the webserver from local Git checkout</a></li>
-<li><a href="#_adding_dependencies">Adding dependencies</a>
+<li><a href="#_handling_of_dependencies">Handling of dependencies</a>
 <ul class="sectlevel2">
 <li><a href="#_remarks">Remarks</a></li>
 <li><a href="#update-asset-cache">Update asset cache for openSUSE RPM package</a></li>
@@ -7072,7 +7072,7 @@ of the webserver and to force the refresh of the web page in your browser.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_adding_dependencies">Adding dependencies</h2>
+<h2 id="_handling_of_dependencies">Handling of dependencies</h2>
 <div class="sectionbody">
 <div class="ulist">
 <ul>
@@ -7082,11 +7082,15 @@ the web server the new/updated files are pulled automatically. Also take care to
 <a href="#update-asset-cache">update the asset cache for the openSUSE RPM package</a>.</p>
 </li>
 <li>
-<p>Other dependencies need to be added to openQA.spec or os-autoinst.spec
-and docker/travis_test/Dockerfile.</p>
+<p>Other dependencies need to be added to openQA.spec or os-autoinst.spec.</p>
 </li>
 <li>
 <p>Perl dependencies need to be added <strong>additionally</strong> to cpanfile.</p>
+</li>
+<li>
+<p>To easily get all necessary dependencies on openSUSE you can install the
+package openQA-devel. In other cases one can rely on the cpanfile and
+read out the dependencies from the spec file for the rest.</p>
 </li>
 </ul>
 </div>
@@ -7718,7 +7722,7 @@ format.</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-09-04 13:48:59 UTC
+Last updated 2019-09-04 15:26:39 UTC
 </div>
 </div>
 <style>
