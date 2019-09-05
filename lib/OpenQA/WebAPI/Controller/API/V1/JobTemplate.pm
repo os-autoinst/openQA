@@ -311,7 +311,7 @@ sub update {
                             my $testsuite_name;
                             my $prio;
                             my $machine_name;
-                            my $settings;
+                            my $settings = $yaml_defaults_for_arch->{settings};
                             if (ref $spec eq 'HASH') {
                                 foreach my $name (keys %$spec) {
                                     my $attr = $spec->{$name};
@@ -323,7 +323,7 @@ sub update {
                                         $machine_name = $attr->{machine};
                                     }
                                     if ($attr->{settings}) {
-                                        $settings = $attr->{settings};
+                                        %$settings = (%{$settings // {}}, %{$attr->{settings}});
                                     }
                                 }
                             }

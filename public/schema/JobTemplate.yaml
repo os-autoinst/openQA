@@ -59,6 +59,13 @@ properties:
             type: string
           priority:
             type: number
+          settings:
+            type: object
+            description: Additional test variables to be set
+            additionalProperties: false
+            patternProperties:
+              "^[A-Z_]+[A-Z0-9_]*$":
+                type: string
   products:
     type: object
     additionalProperties: false
