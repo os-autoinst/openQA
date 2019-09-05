@@ -1259,4 +1259,25 @@ subtest "SAP setup - issue 52928" => sub {
 
 ok $mock_send_called, 'mocked ws_send method has been called';
 
+subtest 'WORKER_CLASS validated when creating directly chained dependencies' => sub {
+    %settingsA = (%settings, TEST => 'chained-A', WORKER_CLASS => 'foo');
+    %settingsB = (%settings, TEST => 'chained-B', WORKER_CLASS => 'bar');
+    %settingsC = (%settings, TEST => 'chained-C');
+    %settingsD = (%settings, TEST => 'chained-D', WORKER_CLASS => 'foo');
+    $jobA      = _job_create(\%settingsA);
+    is($jobA->settings->find({key => 'WORKER_CLASS'})->value, 'foo', 'job A has class foo');
+    $jobB = _job_create(\%settingsB, undef, [$jobA->id]);
+    is($jobB->settings->find({key => 'WORKER_CLASS'})->value,
+        'bar', 'job B has different class bar (ok for regularily chained dependencies)');
+    $jobC = _job_create(\%settingsC, undef, [], [$jobB->id]);
+    is($jobC->settings->find({key => 'WORKER_CLASS'})->value, 'bar', 'job C inherits worker class from B');
+    throws_ok(
+        sub {
+            $jobD = _job_create(\%settingsD, undef, [], [$jobC->id]);
+        },
+        qr/Specified WORKER_CLASS \(foo\) does not match the one from directly chained parent .* \(bar\)/,
+        'creation of job with mismatching worker class prevented'
+    );
+};
+
 done_testing();

@@ -692,7 +692,9 @@ Internal method used by the B<job_create_dependencies()> method
 sub _create_dependencies_for_parents {
     my ($self, $job, $created_jobs, $deptype, $parents) = @_;
 
-    my $job_dependencies = $self->result_source->schema->resultset('JobDependencies');
+    my $schema           = $self->result_source->schema;
+    my $job_dependencies = $schema->resultset('JobDependencies');
+    my $worker_class;
     for my $parent (@$parents) {
         try {
             _check_for_cycle($job->id, $parent, $created_jobs);
@@ -700,6 +702,20 @@ sub _create_dependencies_for_parents {
         catch {
             die 'There is a cycle in the dependencies of ' . $job->settings_hash->{TEST};
         };
+        if ($deptype eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
+            unless (defined $worker_class) {
+                $worker_class = $job->settings->find({key => 'WORKER_CLASS'});
+                $worker_class = $worker_class ? $worker_class->value : '';
+            }
+            my $parent_worker_class
+              = $schema->resultset('JobSettings')->find({job_id => $parent, key => 'WORKER_CLASS'});
+            $parent_worker_class = $parent_worker_class ? $parent_worker_class->value : '';
+            if ($worker_class ne $parent_worker_class) {
+                my $test_name = $job->settings_hash->{TEST};
+                die
+"Worker class of $test_name ($worker_class) does not match the worker class of its directly chained parent ($parent_worker_class)";
+            }
+        }
         $job_dependencies->create(
             {
                 child_job_id  => $job->id,

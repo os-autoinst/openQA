@@ -909,6 +909,59 @@ subtest 'Catch blocked_by cycles' => sub {
     $schema->txn_rollback;
 };
 
+subtest 'Handling different WORKER_CLASS in directly chained dependency chains' => sub {
+    subtest 'different worker classes in distinct chains are accepted' => sub {
+        $schema->txn_begin;
+        add_opensuse_test('chained-a', WORKER_CLASS              => 'foo');
+        add_opensuse_test('chained-b', START_DIRECTLY_AFTER_TEST => 'chained-a', WORKER_CLASS => 'foo');
+        add_opensuse_test('chained-c', START_AFTER_TEST          => 'chained-b', WORKER_CLASS => 'bar');
+        add_opensuse_test('chained-d', START_DIRECTLY_AFTER_TEST => 'chained-c', WORKER_CLASS => 'bar');
+        add_opensuse_test('chained-e', START_DIRECTLY_AFTER_TEST => 'chained-d', WORKER_CLASS => 'bar');
+
+        my $res = schedule_iso(
+            {
+                ISO     => $iso,
+                DISTRI  => 'opensuse',
+                VERSION => '13.1',
+                FLAVOR  => 'DVD',
+                ARCH    => 'i586',
+                BUILD   => '0091',
+                _GROUP  => 'opensuse test',
+            });
+
+        is($res->json->{count}, 5, 'all jobs scheduled');
+        is_deeply($res->json->{failed}, [], 'no jobs failed') or diag explain $res->json->{failed};
+        $schema->txn_rollback;
+    };
+    subtest 'different worker classes in the same direct chain are rejected' => sub {
+        $schema->txn_begin;
+        add_opensuse_test('chained-a', WORKER_CLASS              => 'foo');
+        add_opensuse_test('chained-b', START_DIRECTLY_AFTER_TEST => 'chained-a', WORKER_CLASS => 'foo');
+        add_opensuse_test('chained-c', START_DIRECTLY_AFTER_TEST => 'chained-b', WORKER_CLASS => 'bar');
+        add_opensuse_test('chained-d', START_DIRECTLY_AFTER_TEST => 'chained-c', WORKER_CLASS => 'bar');
+        add_opensuse_test('chained-e', START_DIRECTLY_AFTER_TEST => 'chained-d', WORKER_CLASS => 'bar');
+
+        my $res = schedule_iso(
+            {
+                ISO     => $iso,
+                DISTRI  => 'opensuse',
+                VERSION => '13.1',
+                FLAVOR  => 'DVD',
+                ARCH    => 'i586',
+                BUILD   => '0091',
+                _GROUP  => 'opensuse test',
+            });
+
+        is($res->json->{count}, 0, 'none of the jobs has been scheduled');
+        like(
+            $_->{error_messages}->[0],
+qr/Worker class of chained-(c|d|e) \(bar\) does not match the worker class of its directly chained parent \(foo\)/,
+            'error reported'
+        ) for @{$res->json->{failed}};
+        $schema->txn_rollback;
+    };
+};
+
 subtest 'Create dependency for jobs on different machines - dependency setting are correct' => sub {
     $schema->txn_begin;
     $t->post_ok('/api/v1/machines', form => {name => '64bit-ipmi', backend => 'ipmi', 'settings[TEST]' => 'ipmi'})

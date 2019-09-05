@@ -120,6 +120,8 @@ sub create_from_settings {
     my %new_job_args = (TEST => $settings{TEST});
 
     my $result_source = $self->result_source;
+    my $schema        = $result_source->schema;
+    my $job_settings  = $schema->resultset('JobSettings');
     my $txn_guard     = $result_source->storage->txn_scope_guard;
 
     # assign group ID
@@ -133,7 +135,7 @@ sub create_from_settings {
         $group_args{name} = $group_name unless $group_args{id};
     }
     if (%group_args) {
-        $group = $result_source->schema->resultset('JobGroups')->find(\%group_args);
+        $group = $schema->resultset('JobGroups')->find(\%group_args);
         if ($group) {
             $new_job_args{group_id} = $group->id;
             $new_job_args{priority} = $group->default_priority;
@@ -165,6 +167,20 @@ sub create_from_settings {
 
         my $dependency_type = $dependency_definition->{dependency_type};
         for my $id (@$ids) {
+            if ($dependency_type eq OpenQA::JobDependencies::Constants::DIRECTLY_CHAINED) {
+                my $parent_worker_class = $job_settings->find({job_id => $id, key => 'WORKER_CLASS'});
+                if ($parent_worker_class = $parent_worker_class ? $parent_worker_class->value : '') {
+                    if (!$settings{WORKER_CLASS}) {
+                        # assume we want to use the worker class from the parent here (and not the default which
+                        # is otherwise assumed)
+                        $settings{WORKER_CLASS} = $parent_worker_class;
+                    }
+                    elsif ($settings{WORKER_CLASS} ne $parent_worker_class) {
+                        die "Specified WORKER_CLASS ($settings{WORKER_CLASS}) does not match the one from"
+                          . " directly chained parent $id ($parent_worker_class)";
+                    }
+                }
+            }
             push(@{$new_job_args{parents}}, {parent_job_id => $id, dependency => $dependency_type});
         }
     }
