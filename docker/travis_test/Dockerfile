@@ -1,12 +1,12 @@
 #!BuildTag: openqa_dev
+#!UseOBSRepositories
 FROM opensuse:42.3
+
+RUN zypper -n in openQA-devel
 
 # Define environment variable
 ENV NAME openQA test environment
 ENV LANG en_US.UTF-8
-
-RUN zypper ar -f -G "http://download.opensuse.org/repositories/devel:/openQA/openSUSE_Leap_42.3" devel_openqa
-RUN zypper in -y openQA-devel
 
 VOLUME ["/sys/fs/cgroup", "/run"]
 
