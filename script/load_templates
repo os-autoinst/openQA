@@ -143,8 +143,8 @@ sub post_entry {
     my %param;
 
     if ($table eq 'JobGroups') {
-        $url->path($options{'apibase'} . '/experimental/job_templates_scheduling');
-        $url->query({name => $entry->{group_name}, template => $entry->{template}});
+        $url->path($options{'apibase'} . '/job_templates_scheduling');
+        $url->query({name => $entry->{group_name}, template => $entry->{template}, schema => 'JobTemplates-01.yaml'});
         my $res = $client->post($url)->res;
         if (!($res->code && $res->code == 200)) {
             print_error($res);

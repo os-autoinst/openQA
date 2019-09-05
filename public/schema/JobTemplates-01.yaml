@@ -1,4 +1,4 @@
-$id: http://open.qa/api/jobs/schema
+$id: http://open.qa/api/schema/JobTemplates-01.yaml
 $schema: http://json-schema.org/draft-04/schema#
 description: openQA job template
 type: object

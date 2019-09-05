@@ -414,6 +414,7 @@ function submitTemplateEditor(preview) {
         type: 'POST',
         dataType: 'json',
         data: {
+            schema: 'JobTemplates-01.yaml',
             preview: preview,
             template: editor.doc.getValue(),
             reference: form.data('reference'),

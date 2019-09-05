@@ -403,6 +403,11 @@ sub startup {
     $api_ra->delete('job_templates/:job_template_id')->to('job_template#destroy');
 
     # api/v1/job_templates_scheduling
+    $api_public_r->get('job_templates_scheduling/<id:num>')->name('apiv1_job_templates_schedules')
+      ->to('job_template#schedules', id => undef);
+    $api_public_r->get('job_templates_scheduling/<name:str>')->to('job_template#schedules', name => undef);
+    $api_ra->post('job_templates_scheduling/<id:num>')->to('job_template#update', id => undef);
+    # Deprecated experimental aliases for the above routes
     $api_public_r->get('experimental/job_templates_scheduling/<id:num>')->name('apiv1_job_templates_schedules')
       ->to('job_template#schedules', id => undef);
     $api_public_r->get('experimental/job_templates_scheduling/<name:str>')->to('job_template#schedules', name => undef);
