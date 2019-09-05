@@ -165,8 +165,8 @@ GetOptions(
     "show-progress",     "within-instance|w=s",
 ) or usage(1);
 
+usage(1) if $options{help} || ($options{'within-instance'} && $options{from});
 my $jobid;
-usage(1) if $options{'within-instance'} && $options{from};
 if ($options{'within-instance'}) {
     ($options{'within-instance'}, $jobid) = split_jobid($options{'within-instance'});
     $options{'skip-download'} = 1;
@@ -177,7 +177,7 @@ elsif ($options{'from'}) {
     ($options{'from'}, $jobid) = split_jobid($options{'from'});
 }
 $jobid = shift @ARGV unless $jobid;
-die "missing job reference\n" unless $jobid;
+die "missing job reference, see --help for usage\n" unless $jobid;
 if (!$options{'from'}) {
     ($options{'from'}, $jobid) = split_jobid($jobid);
 }
