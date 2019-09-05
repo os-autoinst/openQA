@@ -26,6 +26,7 @@ use Test::Fatal;
 use Test::Output 'combined_like';
 use Test::MockModule;
 use Mojo::File qw(path tempdir);
+use Mojo::JSON 'encode_json';
 use Mojo::UserAgent;
 use Mojo::URL;
 use Mojo::IOLoop;
@@ -805,6 +806,66 @@ subtest 'handle upload failure' => sub {
       or diag explain $uploaded_assets;
     $log_dir->remove_tree;
     $asset_dir->remove_tree;
+    shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
+};
+
+# Mock isotovideo engine (simulate successful startup)
+$engine_mock->mock(
+    engine_workit => sub {
+        my $job = shift;
+        note 'pretending to run isotovideo';
+        return {child => $isotovideo->is_running(1)};
+    });
+
+subtest 'Dynamic schedule' => sub {
+    is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
+    is_deeply $client->sent_messages,                       [], 'no REST-API calls yet';
+
+    # Create initial test schedule and test that it'll be loaded
+    my $test_order = [
+        {
+            category => 'kernel',
+            flags    => {fatal => 1},
+            name     => 'install_ltp',
+            script   => 'tests/kernel/install_ltp.pm'
+        }];
+    my $autoinst_status = {
+        running               => 'install_ltp',
+        test_execution_paused => 0
+    };
+    my $results_directory = $pool_directory->child('testresults')->make_path;
+    $results_directory->child('test_order.json')->spurt(encode_json($test_order));
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 8, URL => $engine_url});
+    $job->accept;
+    is $job->status, 'accepting', 'job is now being accepted';
+    wait_until_job_status_ok($job, 'accepted');
+    combined_like(sub { $job->start }, qr/isotovideo has been started/, 'isotovideo startup logged');
+
+    $job->_upload_results_step_0_prepare(0, $autoinst_status, sub { });
+    is_deeply $job->{_test_order}, $test_order, 'Initial test schedule';
+
+    # Write updated test schedule and test it'll be reloaded
+    push @$test_order,
+      {
+        category => 'kernel',
+        flags    => {},
+        name     => 'ping601',
+        script   => 'tests/kernel/run_ltp.pm'
+      };
+    $results_directory->child('test_order.json')->spurt(encode_json($test_order));
+    $job->_upload_results_step_0_prepare(0, $autoinst_status, sub { });
+    is_deeply $job->{_test_order}, $test_order, 'Updated test schedule';
+
+    # Write expected test logs and shut down cleanly
+    $results_directory->child('result-install_ltp.json')->spurt('{"details": []}');
+    $results_directory->child('result-ping601.json')->spurt('{"details": []}');
+    $job->stop('done');
+    wait_until_job_status_ok($job, 'stopped');
+
+    # Cleanup
+    $client->sent_messages([]);
+    $client->websocket_connection->sent_messages([]);
+    $results_directory->remove_tree;
     shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
 
