@@ -829,6 +829,33 @@ subtest 'Catch multimachine cycles' => sub {
     $schema->txn_rollback;
 };
 
+subtest 'Catch cycles in chained dependencies' => sub {
+    $schema->txn_begin;
+    add_opensuse_test('chained-a', START_AFTER_TEST          => 'chained-c');
+    add_opensuse_test('chained-b', START_DIRECTLY_AFTER_TEST => 'chained-a');
+    add_opensuse_test('chained-c', START_DIRECTLY_AFTER_TEST => 'chained-b');
+    add_opensuse_test('chained-d', START_AFTER_TEST          => 'chained-c');
+
+    my $res = schedule_iso(
+        {
+            ISO     => $iso,
+            DISTRI  => 'opensuse',
+            VERSION => '13.1',
+            FLAVOR  => 'DVD',
+            ARCH    => 'i586',
+            BUILD   => '0091',
+            _GROUP  => 'opensuse test',
+        });
+
+    is($res->json->{count}, 0, 'no jobs scheduled if cycle detected');
+    like(
+        $res->json->{failed}->[0]->{error_messages}->[0],
+        qr/There is a cycle in the dependencies of chained-(a|b|c|d)/,
+        'cycle reported'
+    );
+    $schema->txn_rollback;
+};
+
 subtest 'Catch blocked_by cycles' => sub {
 
     # we want the data to be transient

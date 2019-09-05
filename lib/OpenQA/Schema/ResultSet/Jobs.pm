@@ -141,6 +141,8 @@ sub create_from_settings {
     }
 
     # handle dependencies
+    # note: The subsequent code only allows adding existing jobs as parents. Hence it is not
+    #       possible to create cyclic dependencies here.
     my @dependency_definitions = (
         {
             setting_name    => '_START_AFTER_JOBS',
