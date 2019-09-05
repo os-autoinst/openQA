@@ -812,6 +812,7 @@ subtest 'Create and modify groups with YAML' => sub {
       || diag explain $t->tx->res->body;
 
     subtest 'Modify test attributes in group according to YAML template' => sub {
+        $yaml->{defaults}{i586}{settings} = {BAR => 'unused default', FOO => 'default'};
         my %foobar_definition = (
             priority => 11,
             machine  => '32bit',
@@ -821,15 +822,17 @@ subtest 'Create and modify groups with YAML' => sub {
             },
         );
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = [{foobar => \%foobar_definition}, 'spam', 'eggs'];
-        # Use per-arch default priority which deviates from the group default_priority
-        $yaml->{defaults}{i586}{'priority'} = 70;
         $t->post_ok(
             "/api/v1/experimental/job_templates_scheduling/$job_group_id3",
             form => {
                 template => YAML::XS::Dump($yaml)})->status_is(200, 'Test suite was updated');
-        $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
-        is_deeply(YAML::XS::Load($t->tx->res->body), $yaml, 'Modified test suite should be reflected in the database')
-          || diag explain $t->tx->res->body;
+        my $job_template = $job_templates->find({prio => 11});
+        is($job_template->machine_id, 1001, 'Updated machine reflected in the database');
+        is_deeply(
+            $job_template->settings_hash,
+            {FOO => 'default', BAR => 'updated value', NEW => 'new setting'},
+            'Modified attributes reflected in the database'
+        );
     };
 
     subtest 'Post unmodified job template' => sub {
