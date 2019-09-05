@@ -35,6 +35,17 @@ OpenQA::Test::Case->new->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
+# Allow Devel::Cover to collect stats for background jobs
+$t->app->minion->on(
+    worker => sub {
+        my ($minion, $worker) = @_;
+        $worker->on(
+            dequeue => sub {
+                my ($worker, $job) = @_;
+                $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
+            });
+    });
+
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
 my $app = $t->app;

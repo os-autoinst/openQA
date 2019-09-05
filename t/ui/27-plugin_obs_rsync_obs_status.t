@@ -142,6 +142,17 @@ start_server();
 note("Starting WebAPI");
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
+# Allow Devel::Cover to collect stats for background jobs
+$t->app->minion->on(
+    worker => sub {
+        my ($minion, $worker) = @_;
+        $worker->on(
+            dequeue => sub {
+                my ($worker, $job) = @_;
+                $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
+            });
+    });
+
 subtest 'test helper directly' => sub {
     my $res = $t->app->obs_rsync->is_status_dirty('Proj1');
     ok($res, "Status dirty");

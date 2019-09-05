@@ -43,6 +43,17 @@ EOF
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
+# Allow Devel::Cover to collect stats for background jobs
+$t->app->minion->on(
+    worker => sub {
+        my ($minion, $worker) = @_;
+        $worker->on(
+            dequeue => sub {
+                my ($worker, $job) = @_;
+                $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
+            });
+    });
+
 my $app = $t->app;
 $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
@@ -83,33 +94,5 @@ subtest 'test queue again' => sub {
     test_queue($t);
 };
 $t->app->start('gru', 'run', '--oneshot');
-
-# ObsRsync::Task#_run are called from Gru worker, so it is covered
-# but let's test it explicitly as well to make codecov happy
-use OpenQA::WebAPI::Plugin::ObsRsync::Task;
-
-subtest 'make codecov happy' => sub {
-    {
-        package Test::FakeMinionJob;
-        use Mojo::Base -base;
-        sub app { $t->app }
-        sub note {
-        }
-        sub retry {
-        }
-        sub info {
-        }
-        sub finish {
-            return 222;
-        }
-        sub fail {
-            Test::More::fail("Minion job shouldn't have failed.");
-            Test::More::note(Data::Dumper::Dumper(\@_));
-        }
-    }
-    my %args = (project => 'Proj1');
-    my $res  = OpenQA::WebAPI::Plugin::ObsRsync::Task::run(Test::FakeMinionJob->new, \%args);
-    ok $res == 222, 'code is 222';
-};
 
 done_testing();
