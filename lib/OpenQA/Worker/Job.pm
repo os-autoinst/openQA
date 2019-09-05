@@ -691,11 +691,16 @@ sub _upload_results_step_0_prepare {
     if ($is_final_upload || $status_from_os_autoinst->{running}) {
         my @file_info = stat $self->_result_file_path('test_order.json');
         my $test_order;
-        if (!$current_test_module or $file_info[9] != $self->{_test_order_mtime}) {
+        if (  !$current_test_module
+            or $file_info[9] != $self->{_test_order_mtime}
+            or $file_info[7] != $self->{_test_order_fsize})
+        {
+            log_info('Test schedule has changed, reloading test_order.json');
             $test_order                = $self->_read_json_file('test_order.json');
             $status{test_order}        = $test_order;
             $self->{_test_order}       = $test_order;
             $self->{_test_order_mtime} = $file_info[9];
+            $self->{_test_order_fsize} = $file_info[7];
         }
         if (!$current_test_module) {    # first test
             if (!$test_order) {
