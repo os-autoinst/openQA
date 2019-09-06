@@ -21,7 +21,7 @@ matrix:
       if: branch = master AND fork = false
       env: GH_PUBLISH=true
 before_script:
-- docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
+- docker pull registry.opensuse.org/home/coolo/branches/devel/openqa/containers/openqa_dev:latest
 cache:
   directories:
   - assets/cache
