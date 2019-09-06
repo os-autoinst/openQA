@@ -40,31 +40,29 @@
 %bcond_without python_scripts
 %endif
 # runtime requirements that also the testsuite needs
+%define common_requires perl(Config::IniFiles) perl(Cpanel::JSON::XS) perl(Cwd) perl(Data::Dump) perl(Data::Dumper) perl(Digest::MD5) perl(Getopt::Long) perl(Minion) => 9.09, perl(Mojolicious) >= 7.92, perl(Try::Tiny) perl(Regexp::Common)
+# runtime requirements for the main package that are not required by other sub-packages
+%define assetpack_requires perl(Mojolicious::Plugin::AssetPack) => 1.36, perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS)
+%define main_requires %{assetpack_requires} git-core perl(Carp::Always) perl(Date::Format) perl(DateTime::Format::Pg) perl(DBD::Pg) >= 3.7.4, perl(DBI) >= 1.632, perl(DBIx::Class) => 0.082801, perl(DBIx::Class::DeploymentHandler) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(DBIx::Class::OptimisticLocking) perl(File::Copy::Recursive) perl(Net::OpenID::Consumer) perl(Module::Pluggable) perl(aliased) perl(Config::Tiny) perl(Text::Diff) perl(CommonMark) perl(JSON::Validator) perl(IPC::Run) perl(Archive::Extract) perl(Time::ParseDate) perl(Sort::Versions) perl(BSD::Resource) perl(Pod::POM) perl(Mojo::Pg) perl(Mojo::RabbitMQ::Client) => 0.2, perl(SQL::Translator) perl(YAML::XS) perl(LWP::UserAgent)
+%define client_requires git-core perl(IO::Socket::SSL) >= 2.009, perl(LWP::UserAgent)
+%define worker_requires os-autoinst < 5, perl(Mojo::IOLoop::ReadWriteProcess) > 0.19, perl(Minion::Backend::SQLite) perl(Mojo::SQLite) openQA-client optipng
+%define build_requires rubygem(sass) %{assetpack_requires}
 %if %{with python_scripts}
 %define python_scripts_requires python3-base python3-requests python3-future
 %else
 %define python_scripts_requires %{nil}
 %endif
-%define assetpack_requires perl(Mojolicious::Plugin::AssetPack) => 1.36, perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS)
-%define common_requires perl(Config::IniFiles) perl(Cpanel::JSON::XS) perl(Cwd) perl(Data::Dump) perl(Data::Dumper) perl(Digest::MD5) perl(Getopt::Long) perl(Minion) => 9.09, perl(Mojolicious) >= 7.92, perl(Try::Tiny) perl(Regexp::Common)
-# runtime requirements for the main package that are not required by other sub-packages
-%define main_requires %assetpack_requires git-core perl(Carp::Always) perl(Date::Format) perl(DateTime::Format::Pg) perl(DBD::Pg) >= 3.7.4, perl(DBI) >= 1.632, perl(DBIx::Class) => 0.082801, perl(DBIx::Class::DeploymentHandler) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(DBIx::Class::OptimisticLocking) perl(File::Copy::Recursive) perl(Net::OpenID::Consumer) perl(Module::Pluggable) perl(aliased) perl(Config::Tiny) perl(Text::Diff) perl(CommonMark) perl(JSON::Validator) perl(IPC::Run) perl(Archive::Extract) perl(Time::ParseDate) perl(Sort::Versions) perl(BSD::Resource) perl(Pod::POM) perl(Mojo::Pg) perl(Mojo::RabbitMQ::Client) => 0.2, perl(SQL::Translator) perl(YAML::XS) perl(LWP::UserAgent)
-%define client_requires git-core perl(IO::Socket::SSL) >= 2.009, perl(LWP::UserAgent)
-%define worker_requires os-autoinst < 5, perl(Mojo::IOLoop::ReadWriteProcess) > 0.19, perl(Minion::Backend::SQLite) perl(Mojo::SQLite) openQA-client optipng
-%define build_requires rubygem(sass) %assetpack_requires
-
 # All requirements needed by the tests executed during build-time.
 # Do not require on this in individual sub-packages except for the devel
 # package.
-%define test_requires %common_requires %main_requires %python_scripts_requires %worker_requires perl(App::cpanminus) perl(Perl::Critic) perl(Perl::Critic::Freenode) perl(Test::Mojo) perl(Test::More) perl(Test::Strict) perl(Test::Fatal) perl(Test::MockModule) perl(Test::Output) perl(Test::Pod) perl(Test::Warnings) perl(Selenium::Remote::Driver) perl(Selenium::Remote::WDKeys) ShellCheck os-autoinst-devel
-
+%define test_requires %{common_requires} %{main_requires} %{python_scripts_requires} %{worker_requires} perl(App::cpanminus) perl(Perl::Critic) perl(Perl::Critic::Freenode) perl(Test::Mojo) perl(Test::More) perl(Test::Strict) perl(Test::Fatal) perl(Test::MockModule) perl(Test::Output) perl(Test::Pod) perl(Test::Warnings) perl(Selenium::Remote::Driver) perl(Selenium::Remote::WDKeys) ShellCheck os-autoinst-devel
 Name:           openQA
 Version:        4.6
 Release:        0
 Summary:        The openQA web-frontend, scheduler and tools
 License:        GPL-2.0-or-later
 Group:          Development/Tools/Other
-Url:            http://os-autoinst.github.io/openQA/
+URL:            https://os-autoinst.github.io/openQA/
 Source0:        %{name}-%{version}.tar.xz
 # a workaround for set_version looking at random files (so we can't name it .tar.xz)
 # use update-cache to update it
@@ -80,9 +78,9 @@ Requires:       openQA-common = %{version}
 Requires:       perl(Minion) >= 9.13
 # we need to have the same sha1 as expected
 %requires_eq    perl-Mojolicious-Plugin-AssetPack
-Recommends:     %{name}-local-db
 Requires(post): coreutils
 Requires(post): perl(SQL::SplitStatement)
+Recommends:     %{name}-local-db
 Recommends:     apache2
 Recommends:     apparmor-profiles
 Recommends:     apparmor-utils
@@ -121,9 +119,9 @@ operating system.
 %package devel
 Summary:        Development package pulling in all build+test dependencies
 Group:          Development/Tools/Other
-Requires:       %build_requires
-Requires:       %main_requires
-Requires:       %test_requires
+Requires:       %{build_requires}
+Requires:       %{main_requires}
+Requires:       %{test_requires}
 Requires:       curl
 Requires:       postgresql-devel
 Requires:       postgresql-server
@@ -152,9 +150,9 @@ This package contain shared resources for openQA web-frontend and
 openQA workers.
 
 %package worker
+%define worker_requires_including_uncovered_in_tests %{worker_requires} perl(SQL::SplitStatement)
 Summary:        The openQA worker
 Group:          Development/Tools/Other
-%define worker_requires_including_uncovered_in_tests %worker_requires perl(SQL::SplitStatement)
 Requires:       %{worker_requires_including_uncovered_in_tests}
 # FIXME: use proper Requires(pre/post/preun/...)
 PreReq:         openQA-common = %{version}
@@ -173,7 +171,7 @@ The openQA worker manages test engine (provided by os-autoinst package).
 %package client
 Summary:        Client tools for remote openQA management
 Group:          Development/Tools/Other
-Requires:       %client_requires
+Requires:       %{client_requires}
 Requires:       openQA-common = %{version}
 Recommends:     jq
 
@@ -185,7 +183,7 @@ a convenient helper for interacting with openQA webui REST API.
 %package python-scripts
 Summary:        Additional scripts in python
 Group:          Development/Tools/Other
-Requires:       %python_scripts_requires
+Requires:       %{python_scripts_requires}
 
 %description python-scripts
 Additional scripts for the use of openQA in the python programming language.
@@ -194,9 +192,9 @@ Additional scripts for the use of openQA in the python programming language.
 %package local-db
 Summary:        Helper package to ease setup of postgresql DB
 Group:          Development/Tools/Other
-Requires:       %name
+Requires:       %{name}
 Requires:       postgresql-server
-Supplements:    packageand(%name:postgresql-server)
+Supplements:    (%{name} and postgresql-server)
 
 %description local-db
 You only need this package if you have a local postgresql server
@@ -239,7 +237,7 @@ rm -f t/00-tidy.t
 #make test
 rm -rf %{buildroot}/DB
 export LC_ALL=en_US.UTF-8
-make test-with-database OBS_RUN=1 PROVE_ARGS='-l -r -v' TEST_PG_PATH=%{buildroot}/DB || true
+make %{?_smp_mflags} test-with-database OBS_RUN=1 PROVE_ARGS='-l -r -v' TEST_PG_PATH=%{buildroot}/DB || true
 rm -rf %{buildroot}/DB
 %endif
 
@@ -377,7 +375,7 @@ fi
 %config(noreplace) %attr(-,geekotest,root) %{_sysconfdir}/openqa/openqa.ini
 %config(noreplace) %attr(-,geekotest,root) %{_sysconfdir}/openqa/database.ini
 %dir %{_datadir}/openqa
-%dir %{_datadir}/openqa/etc
+%dir %{_datadir}/openqa%{_sysconfdir}
 %dir %{_datadir}/openqa%{_sysconfdir}/openqa
 %{_datadir}/openqa%{_sysconfdir}/openqa/openqa.ini
 %{_datadir}/openqa%{_sysconfdir}/openqa/database.ini
