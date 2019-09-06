@@ -1,4 +1,4 @@
-FROM registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
+FROM registry.opensuse.org/home/coolo/branches/devel/openqa/containers/openqa_dev:latest
 ENV LANG en_US.UTF-8
 
 COPY entrypoint.sh /usr/bin/entrypoint
