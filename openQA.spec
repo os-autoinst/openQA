@@ -1,7 +1,7 @@
 #
 # spec file for package openQA
 #
-# Copyright (c) 2019 SUSE LINUX GmbH, Nuernberg, Germany.
+# Copyright (c) 2018-2019 SUSE LINUX GmbH, Nuernberg, Germany.
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -12,7 +12,7 @@
 # license that conforms to the Open Source Definition (Version 1.9)
 # published by the Open Source Initiative.
 
-# Please submit bugfixes or comments via https://bugs.opensuse.org/
+# Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
 
@@ -57,6 +57,7 @@
 # Do not require on this in individual sub-packages except for the devel
 # package.
 %define test_requires %common_requires %main_requires %python_scripts_requires %worker_requires perl(App::cpanminus) perl(Perl::Critic) perl(Perl::Critic::Freenode) perl(Test::Mojo) perl(Test::More) perl(Test::Strict) perl(Test::Fatal) perl(Test::MockModule) perl(Test::Output) perl(Test::Pod) perl(Test::Warnings) perl(Selenium::Remote::Driver) perl(Selenium::Remote::WDKeys) ShellCheck os-autoinst-devel
+%define devel_requires %build_requires %test_requires rsync curl postgresql-devel qemu qemu-kvm tar postgresql-server xorg-x11-fonts sudo perl(Devel::Cover) perl(Devel::Cover::Report::Codecov) perl(Perl::Tidy)
 
 Name:           openQA
 Version:        4.6
@@ -72,12 +73,12 @@ Source1:        cache.txz
 Source100:      openQA-rpmlintrc
 Source101:      update-cache.sh
 Source102:      Dockerfile
-BuildRequires:  %{build_requires}
 BuildRequires:  fdupes
+BuildRequires:  %{build_requires}
+Requires:       perl(Minion) >= 9.13
 Requires:       %{main_requires}
 Requires:       openQA-client = %{version}
 Requires:       openQA-common = %{version}
-Requires:       perl(Minion) >= 9.13
 # we need to have the same sha1 as expected
 %requires_eq    perl-Mojolicious-Plugin-AssetPack
 Recommends:     %{name}-local-db
@@ -121,22 +122,7 @@ operating system.
 %package devel
 Summary:        Development package pulling in all build+test dependencies
 Group:          Development/Tools/Other
-Requires:       %build_requires
-Requires:       %main_requires
-Requires:       %test_requires
-Requires:       curl
-Requires:       postgresql-devel
-Requires:       postgresql-server
-Requires:       qemu
-Requires:       qemu-kvm
-Requires:       rsync
-Requires:       sudo
-Requires:       tar
-Requires:       xorg-x11-fonts
-Requires:       perl(Devel::Cover)
-Requires:       perl(Devel::Cover::Report::Codecov)
-Requires:       perl(Perl::Tidy)
-Requires:       perl(SQL::SplitStatement)
+Requires:       %{devel_requires}
 
 %description devel
 Development package pulling in all build+test dependencies.
@@ -173,8 +159,8 @@ The openQA worker manages test engine (provided by os-autoinst package).
 %package client
 Summary:        Client tools for remote openQA management
 Group:          Development/Tools/Other
-Requires:       %client_requires
 Requires:       openQA-common = %{version}
+Requires:       %client_requires
 Recommends:     jq
 
 %description client
