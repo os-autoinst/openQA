@@ -417,7 +417,7 @@ sub send_artefact {
     my ($self, $job_id, $form) = @_;
 
     my $md5  = $form->{md5};
-    my $name = $form->{file}{filename};
+    my $name = $form->{file}{filename} // '';
     log_debug("Uploading artefact $name" . ($md5 ? " as $md5" : ''));
 
     my $ua  = $self->ua;
