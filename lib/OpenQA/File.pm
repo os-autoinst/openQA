@@ -22,7 +22,6 @@ use Carp 'croak';
 use Digest::SHA 'sha1_base64';
 use Fcntl 'SEEK_SET';
 use OpenQA::Files;
-#use Sereal qw( encode_sereal decode_sereal ); # XXX: This would speed up notably
 
 has file => sub { Mojo::File->new };
 has [qw(start end index cksum total content total_cksum)];
@@ -43,9 +42,6 @@ sub size { -s shift->file }
 sub _chunk_size { int($_[0] / $_[1]) + (($_[0] % $_[1]) ? 1 : 0) }
 
 sub is_last { !!($_[0]->total == $_[0]->index()) }
-
-# sub serialize   { encode_sereal(shift->to_el) }
-# sub deserialize { shift->new((decode_sereal(shift))) }
 
 sub write_content {
     my $self = shift;
