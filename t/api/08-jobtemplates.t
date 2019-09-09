@@ -290,7 +290,7 @@ $t->post_ok(
 my $job_template_id2 = $t->tx->res->json->{id};
 ok($job_template_id2, "Created job template ($job_template_id2)");
 is_deeply(
-    OpenQA::Test::Case::find_most_recent_event($schema, 'jobtemplate_create'),
+    OpenQA::Test::Case::find_most_recent_event($app->schema, 'jobtemplate_create'),
     {id => $job_template_id2},
     'Create was logged correctly'
 );
@@ -521,25 +521,48 @@ is($job_templates->search({prio => -5})->count, 0, 'no rows affected');
 
 # test the YAML export
 # Test validation
-my $product = 'open-*.SUSE1';
-my $yaml    = {};
-is_deeply(scalar @{$t->app->validate_yaml($yaml, 1)}, 2, 'Empty YAML is an error')
+subtest 'Schema handling' => sub {
+    is_deeply($t->app->validate_yaml({}), ['No valid schema specified'], 'Unspecified schema is an error');
+    is_deeply(
+        $t->app->validate_yaml({}, 'NoSuchSchema'),
+        ['No valid schema specified'],
+        'Invalid schema filename is an error'
+    );
+    is_deeply($t->app->validate_yaml({}, '../test.yaml'), ['No valid schema specified'], 'Relative path is an error');
+    is_deeply($t->app->validate_yaml({}, '/home/test.yaml'), ['No valid schema specified'],
+        'Absolute path is an error');
+    is_deeply(scalar @{$t->app->validate_yaml({}, 'NoSuchSchema.yaml')}, 1, 'Specified schema not found');
+};
+
+my $product         = 'open-*.SUSE1';
+my $yaml            = {};
+my $schema_filename = 'JobTemplates-01.yaml';
+is_deeply(scalar @{$t->app->validate_yaml($yaml, $schema_filename, 1)}, 2, 'Empty YAML is an error')
   or diag explain YAML::XS::Dump($yaml);
 $yaml->{scenarios}{'x86_64'}{$product} = ['spam', 'eggs'];
-is_deeply($t->app->validate_yaml($yaml, 1), ["/products: Missing property."], 'No products defined')
+is_deeply($t->app->validate_yaml($yaml, $schema_filename, 1), ["/products: Missing property."], 'No products defined')
   or diag explain YAML::XS::Dump($yaml);
 $yaml->{products}{$product} = {};
-is_deeply(@{$t->app->validate_yaml($yaml, 1)}[0], "/products/$product/distri: Missing property.", 'No distri specified')
-  or diag explain YAML::XS::Dump($yaml);
+is_deeply(
+    @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
+    "/products/$product/distri: Missing property.",
+    'No distri specified'
+) or diag explain YAML::XS::Dump($yaml);
 $yaml->{products}{$product}{distri} = 'sle';
-is_deeply(@{$t->app->validate_yaml($yaml, 1)}[0], "/products/$product/flavor: Missing property.", 'No flavor specified')
-  or diag explain YAML::XS::Dump($yaml);
+is_deeply(
+    @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
+    "/products/$product/flavor: Missing property.",
+    'No flavor specified'
+) or diag explain YAML::XS::Dump($yaml);
 $yaml->{products}{$product}{flavor} = 'DVD';
-is_deeply($t->app->validate_yaml($yaml, 1), ["/products/$product/version: Missing property."], 'No version specified')
-  or diag explain YAML::XS::Dump($yaml);
+is_deeply(
+    $t->app->validate_yaml($yaml, $schema_filename, 1),
+    ["/products/$product/version: Missing property."],
+    'No version specified'
+) or diag explain YAML::XS::Dump($yaml);
 $yaml->{products}{$product}{distribution} = 'sle';
 is_deeply(
-    @{$t->app->validate_yaml($yaml, 1)}[0],
+    @{$t->app->validate_yaml($yaml, $schema_filename, 1)}[0],
     "/products/$product: Properties not allowed: distribution.",
     'Invalid product property specified'
 ) or diag explain YAML::XS::Dump($yaml);
@@ -556,23 +579,23 @@ $yaml->{scenarios}{'x86_64'}{$product} = [
             priority => 33,
         },
     }];
-is_deeply($t->app->validate_yaml($yaml, 1), [], 'YAML valid as expected')
+is_deeply($t->app->validate_yaml($yaml, $schema_filename, 1), [], 'YAML valid as expected')
   or diag explain YAML::XS::Dump($yaml);
 my $opensuse = $job_groups->find({name => 'opensuse'});
 # Make 40 our default priority, which matters when we look at the "defaults" key later
 $opensuse->update({default_priority => 40});
 # Get all groups
-$t->get_ok("/api/v1/experimental/job_templates_scheduling")->status_is(200);
+$t->get_ok("/api/v1/job_templates_scheduling")->status_is(200);
 $yaml = YAML::XS::Load($t->tx->res->body);
 is_deeply(['opensuse', 'opensuse test'], [sort keys %$yaml], 'YAML of all groups contains names')
   || diag explain $t->tx->res->body;
 # Get one group with defined scenarios, products and defaults
-$t->get_ok('/api/v1/experimental/job_templates_scheduling/' . $opensuse->id)->status_is(200);
+$t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id)->status_is(200);
 # A document start marker "---" shouldn't be present by default
 $yaml = $t->tx->res->body =~ s/---\n//r;
 is($t->tx->res->body, $yaml, 'No document start marker by default');
 $yaml = YAML::XS::Load($t->tx->res->body);
-is_deeply($t->app->validate_yaml($yaml, 1), [], 'YAML of single group is valid');
+is_deeply($t->app->validate_yaml($yaml, $schema_filename, 1), [], 'YAML of single group is valid');
 is_deeply(
     $yaml,
     {
@@ -661,7 +684,7 @@ is_deeply(
     'YAML for opensuse group'
 ) || diag explain $t->tx->res->body;
 
-$t->get_ok('/api/v1/experimental/job_templates_scheduling/' . $opensuse->id)->status_is(200)
+$t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id)->status_is(200)
   ->content_type_is('text/yaml;charset=UTF-8');
 is_deeply(YAML::XS::Load($t->tx->res->body), $yaml, 'Test suite with unicode characters encoded correctly')
   || diag explain $t->tx->res->body;
@@ -672,24 +695,44 @@ subtest 'Migration' => sub {
 
     # After posting YAML the exact template is stored
     $yaml = YAML::XS::Dump($yaml);
-    $t->post_ok('/api/v1/experimental/job_templates_scheduling/' . $opensuse->id, form => {template => $yaml})
-      ->status_is(200, 'YAML added to the database');
+    $t->post_ok(
+        '/api/v1/job_templates_scheduling/' . $opensuse->id,
+        form => {
+            schema   => $schema_filename,
+            template => $yaml
+        })->status_is(200, 'YAML added to the database');
     if (!$t->success) {
         return undef;
     }
     $opensuse->discard_changes;
     is($opensuse->template, $yaml, 'YAML stored in the database');
     $yaml = "# comments help readability\n$yaml# or in the end\n";
-    $t->post_ok('/api/v1/experimental/job_templates_scheduling/' . $opensuse->id, form => {template => $yaml})
-      ->status_is(200, 'YAML with comments posted');
-    $t->get_ok('/api/v1/experimental/job_templates_scheduling/' . $opensuse->id);
+    $t->post_ok(
+        '/api/v1/job_templates_scheduling/' . $opensuse->id,
+        form => {
+            schema   => $schema_filename,
+            template => $yaml
+        })->status_is(200, 'YAML with comments posted');
+    $t->get_ok('/api/v1/job_templates_scheduling/' . $opensuse->id);
     is($t->tx->res->body, $yaml, 'YAML with comments preserved in the database');
+};
+
+subtest 'Deprecated routes still work' => sub {
+    $t->post_ok(
+        '/api/v1/experimental/job_templates_scheduling/' . $opensuse->id,
+        form => {
+            schema   => $schema_filename,
+            template => $yaml
+        })->status_is(200, 'YAML posted successfully');
+    $t->get_ok('/api/v1/experimental/job_templates_scheduling/' . $opensuse->id);
+    is($t->tx->res->body, $yaml, 'YAML retrieved from the database');
 };
 
 subtest 'Conflicts' => sub {
     $t->post_ok(
-        '/api/v1/experimental/job_templates_scheduling/' . $opensuse->id,
+        '/api/v1/job_templates_scheduling/' . $opensuse->id,
         form => {
+            schema    => $schema_filename,
             reference => 'some invalid yaml',
             template  => $yaml,
         }
@@ -704,18 +747,33 @@ subtest 'Conflicts' => sub {
     );
 
     $t->post_ok(
-        '/api/v1/experimental/job_templates_scheduling/' . $opensuse->id,
+        '/api/v1/job_templates_scheduling/' . $opensuse->id,
         form => {
+            schema    => $schema_filename,
             reference => $yaml,
             template  => $yaml,
         })->status_is(200, 'posting with correct reference succeeds');
 };
 
 my $template = {};
+# Attempting to modify group without specifying a schema is not allowed
+$t->post_ok(
+    '/api/v1/job_templates_scheduling/' . $opensuse->id,
+    form => {
+        template => YAML::XS::Dump($template)}
+)->status_is(400)->json_is(
+    '' => {
+        error_status => 400,
+        error        => ['No valid schema specified'],
+    },
+    'posting YAML template without specifying schema results in error'
+);
+
 # Attempting to modify group with erroneous YAML should fail
 $t->post_ok(
-    '/api/v1/experimental/job_templates_scheduling/' . $opensuse->id,
+    '/api/v1/job_templates_scheduling/' . $opensuse->id,
     form => {
+        schema   => $schema_filename,
         template => YAML::XS::Dump($template)}
 )->status_is(400)->json_is(
     '' => {
@@ -767,8 +825,9 @@ subtest 'Create and modify groups with YAML' => sub {
         },
     };
     $t->post_ok(
-        "/api/v1/experimental/job_templates_scheduling/$job_group_id3",
+        "/api/v1/job_templates_scheduling/$job_group_id3",
         form => {
+            schema   => $schema_filename,
             template => YAML::XS::Dump($yaml)}
     )->status_is(400, 'Post rejected because testsuite does not exist')->json_is(
         '' => {
@@ -787,13 +846,14 @@ subtest 'Create and modify groups with YAML' => sub {
     # Assert that nothing changes in preview mode
     my $audit_event_count = $audit_events->count;
     $t->post_ok(
-        "/api/v1/experimental/job_templates_scheduling/$job_group_id3",
+        "/api/v1/job_templates_scheduling/$job_group_id3",
         form => {
+            schema   => $schema_filename,
             preview  => 1,
             template => YAML::XS::Dump($yaml),
         });
     $t->status_is(200, 'Posting preview successful');
-    $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
+    $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id3");
     is_deeply(
         YAML::XS::Load($t->tx->res->body),
         {scenarios => {}, products => {}},
@@ -801,13 +861,16 @@ subtest 'Create and modify groups with YAML' => sub {
     ) || diag explain $t->tx->res->body;
     is($audit_events->count, $audit_event_count, 'no audit event emitted in preview mode');
 
-    $t->post_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3",
-        form => {template => YAML::XS::Dump($yaml)});
+    $t->post_ok(
+        "/api/v1/job_templates_scheduling/$job_group_id3",
+        form => {
+            schema   => $schema_filename,
+            template => YAML::XS::Dump($yaml)});
     $t->status_is(200, 'Changes applied to the database');
     if (!$t->success) {
         return undef;
     }
-    $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
+    $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id3");
     is_deeply(YAML::XS::Load($t->tx->res->body), $yaml, 'Added job template reflected in the database')
       || diag explain $t->tx->res->body;
 
@@ -823,9 +886,11 @@ subtest 'Create and modify groups with YAML' => sub {
         );
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = [{foobar => \%foobar_definition}, 'spam', 'eggs'];
         $t->post_ok(
-            "/api/v1/experimental/job_templates_scheduling/$job_group_id3",
+            "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {
+                schema   => $schema_filename,
                 template => YAML::XS::Dump($yaml)})->status_is(200, 'Test suite was updated');
+
         my $job_template = $job_templates->find({prio => 11});
         is($job_template->machine_id, 1001, 'Updated machine reflected in the database');
         is_deeply(
@@ -849,8 +914,9 @@ subtest 'Create and modify groups with YAML' => sub {
         );
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = [{foobar => \%foo_spam}, {foobar => \%foo_eggs}];
         $t->post_ok(
-            "/api/v1/experimental/job_templates_scheduling/$job_group_id3",
+            "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {
+                schema   => $schema_filename,
                 template => YAML::XS::Dump($yaml)}
         )->status_is(400, 'Post rejected because scenarios are ambiguous')->json_is(
             '' => {
@@ -874,8 +940,9 @@ subtest 'Create and modify groups with YAML' => sub {
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = [{foobar => \%foo_spam}, {foobar_eggs => \%foo_eggs}];
         $yaml->{defaults}{i586}{'priority'}                = 16;
         $t->post_ok(
-            "/api/v1/experimental/job_templates_scheduling/$job_group_id3",
+            "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {
+                schema   => $schema_filename,
                 template => YAML::XS::Dump($yaml)})->status_is(200);
         if (!$t->success) {
             diag explain $t->tx->res->json;
@@ -891,8 +958,9 @@ subtest 'Create and modify groups with YAML' => sub {
 
     subtest 'Post unmodified job template' => sub {
         $t->post_ok(
-            "/api/v1/experimental/job_templates_scheduling/$job_group_id3",
+            "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {
+                schema   => $schema_filename,
                 template => YAML::XS::Dump($yaml)}
         )->status_is(200)->json_is(
             '' => {
@@ -900,7 +968,7 @@ subtest 'Create and modify groups with YAML' => sub {
             },
             'No-op import of existing job template'
         );
-        $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id3");
+        $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id3");
         is_deeply(YAML::XS::Load($t->tx->res->body), $yaml, 'Unmodified group should not result in any changes')
           || diag explain $t->tx->res->body;
     };
@@ -909,8 +977,9 @@ subtest 'Create and modify groups with YAML' => sub {
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'}
           = [{foobar => {priority => 11, machine => '31bit'}}];
         $t->post_ok(
-            "/api/v1/experimental/job_templates_scheduling/$job_group_id3",
+            "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {
+                schema   => $schema_filename,
                 template => YAML::XS::Dump($yaml)}
         )->status_is(400)->json_is(
             '' => {
@@ -924,8 +993,9 @@ subtest 'Create and modify groups with YAML' => sub {
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = ['foo'];
         $yaml->{defaults}{i586}{'machine'}                 = '66bit';
         $t->post_ok(
-            "/api/v1/experimental/job_templates_scheduling/$job_group_id3",
+            "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {
+                schema   => $schema_filename,
                 template => YAML::XS::Dump($yaml)}
         )->status_is(400)->json_is(
             '' => {
@@ -939,8 +1009,9 @@ subtest 'Create and modify groups with YAML' => sub {
         $yaml->{defaults}{i586}{'machine'}                    = '64bit';
         $yaml->{products}{'opensuse-13.1-DVD-i586'}{'distri'} = 'geeko';
         $t->post_ok(
-            "/api/v1/experimental/job_templates_scheduling/$job_group_id3",
+            "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {
+                schema   => $schema_filename,
                 template => YAML::XS::Dump($yaml)}
         )->status_is(400)->json_is(
             '' => {
@@ -991,15 +1062,18 @@ subtest 'References' => sub {
           flavor: Server-DVD-Updates
           version: 12-SP1
     ');
-    $t->post_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id4",
-        form => {template => YAML::XS::Dump($yaml)});
+    $t->post_ok(
+        "/api/v1/job_templates_scheduling/$job_group_id4",
+        form => {
+            schema   => $schema_filename,
+            template => YAML::XS::Dump($yaml)});
     $t->status_is(200, 'New group with references was added to the database');
     if (!$t->success) {
         diag explain $t->tx->res->json;
         return undef;
     }
 
-    $t->get_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id4");
+    $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id4");
     # Prepare expected result
     $yaml->{scenarios}{ppc64}{'opensuse-13.1-DVD-ppc64'} = [qw(spam eggs)];
     is_deeply(YAML::XS::Load($t->tx->res->body),
@@ -1008,15 +1082,18 @@ subtest 'References' => sub {
 
     # Event reflects changes to the YAML
     $yaml->{scenarios}{ppc64}{'opensuse-13.1-DVD-ppc64'} = [qw(spam foobar)];
-    $t->post_ok("/api/v1/experimental/job_templates_scheduling/$job_group_id4",
-        form => {template => YAML::XS::Dump($yaml)})->status_is(200);
+    $t->post_ok(
+        "/api/v1/job_templates_scheduling/$job_group_id4",
+        form => {
+            schema   => $schema_filename,
+            template => YAML::XS::Dump($yaml)})->status_is(200);
     if (!$t->success) {
         diag explain $t->tx->res->json;
         return undef;
     }
 
     is_deeply(
-        OpenQA::Test::Case::find_most_recent_event($schema, 'jobtemplate_create'),
+        OpenQA::Test::Case::find_most_recent_event($app->schema, 'jobtemplate_create'),
         {
             id      => $job_group_id4,
             changes => '@@ -23,7 +23,7 @@

@@ -192,7 +192,7 @@ my %result;
 
 if ($tables{'JobGroups'}) {
     my $group = (keys %{$options{'group'}})[0];
-    $url->path($options{'apibase'} . '/experimental/job_templates_scheduling/' . ($group // ''));
+    $url->path($options{'apibase'} . '/job_templates_scheduling/' . ($group // ''));
     my $res = $client->get($url)->res;
     if ($res->code && $res->code == 200) {
         if ($group) {

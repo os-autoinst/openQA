@@ -240,6 +240,12 @@ If specified, this must be a YAML document matching the last known state. If the
 database changes before the update transaction it's considered an error.
 A client can use this to handle editing conflicts between multiple users.
 
+=item schema
+
+  schema => JobTemplates-01.yaml
+
+The schema must be specified to indicate the format of the posted document.
+
 =back
 
 Returns a 400 code on error, or a 303 code and the job template id within a JSON block on success.
@@ -257,7 +263,7 @@ sub update {
         # No objects (aka SafeYAML)
         $YAML::XS::LoadBlessed = 0;
         $yaml                  = YAML::XS::Load($self->param('template'));
-        $errors                = $self->app->validate_yaml($yaml, $self->app->log->level eq 'debug');
+        $errors = $self->app->validate_yaml($yaml, $self->param('schema'), $self->app->log->level eq 'debug');
     }
     catch {
         # Push the exception to the list of errors without the trailing new line
