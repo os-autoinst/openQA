@@ -796,36 +796,43 @@ sub _upload_results_step_2_upload_images {
                 my $file = $images_to_send->{$md5};
                 $self->_optimize_image("$fileprefix/$file");
 
-                my $form = {
-                    file => {
-                        file     => "$fileprefix/$file",
-                        filename => $file
-                    },
-                    image => 1,
-                    thumb => 0,
-                    md5   => $md5
-                };
-                $client->send_artefact($job_id, $form);
+                $client->send_artefact(
+                    $job_id => {
+                        file => {
+                            file     => "$fileprefix/$file",
+                            filename => $file
+                        },
+                        image => 1,
+                        thumb => 0,
+                        md5   => $md5
+                    });
 
-                $file = "$fileprefix/.thumbs/$file";
-                if (-f $file) {
-                    $self->_optimize_image($file);
-                    $form->{file}{file} = $file;
-                    $form->{thumb} = 1;
-                    $client->send_artefact($job_id, $form);
+                my $thumb = "$fileprefix/.thumbs/$file";
+                if (-f $thumb) {
+                    $self->_optimize_image($thumb);
+                    $client->send_artefact(
+                        $job_id => {
+                            file => {
+                                file     => $thumb,
+                                filename => $file
+                            },
+                            image => 1,
+                            thumb => 1,
+                            md5   => $md5
+                        });
                 }
             }
 
             for my $file (@{$self->files_to_send}) {
-                my $form = {
-                    file => {
-                        file     => "$pooldir/testresults/$file",
-                        filename => $file,
-                    },
-                    image => 0,
-                    thumb => 0,
-                };
-                $client->send_artefact($job_id, $form);
+                $client->send_artefact(
+                    $job_id => {
+                        file => {
+                            file     => "$pooldir/testresults/$file",
+                            filename => $file,
+                        },
+                        image => 0,
+                        thumb => 0,
+                    });
             }
         },
         sub {
