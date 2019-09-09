@@ -24,7 +24,7 @@ properties:
               - type: string
                 description: Name of a test suite name
               - type: object
-                description: A test suite with machine and/ or priority specified
+                description: A test suite with machine and/ or priority specified, or a custom job template name if testsuite was specified
                 additionalProperties: false
                 patternProperties:
                   "^[A-Za-z\\s0-9_*+-]+$":
@@ -45,7 +45,7 @@ properties:
                       testsuite:
                         type: string
                         pattern: "^[A-Za-z\\s0-9_*+-]+$"
-                        description: The test suite this scenario is based on
+                        description: The test suite this scenario is based on if a custom job template name was used
   defaults:
     description: A set of architectures with default configurations
     type: object

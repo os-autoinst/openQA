@@ -105,9 +105,9 @@
         <form action="#" id="editor-form" class="form-horizontal" style="display: none;"
               data-put-url="<%= url_for('apiv1_job_templates_schedules' => (id => $group->id)) %>" data-reference="<%= $group->template %>">
             <div class="form-group row">
-                <label for="editor-template" class="col-sm-4 control-label">
+                <label for="editor-template" class="col-sm-5 control-label">
                     <div id="editor-yaml-guide">
-                        <div>Define test suites per arch/medium:</div>
+                        <div>Define job templates per arch/medium:</div>
                         <code>
 defaults:
   <b>ARCH</b>:
@@ -121,13 +121,22 @@ products:
 scenarios:
   <b>ARCH</b>:
     <i>medium</i>-<b>ARCH</b>:
-    - test-suite
-    - test-suite:
+    - <b>TESTSUITE</b>
+                        </code>
+                        <div>Override machine, priority or settings from defaults:</div>
+                        <code>
+    - <b>TESTSUITE</b>:
         machine: <b>MACHINE</b>
         priority: <b>PRIORITY</b>
         settings:
           <b>SOME_TEST_VARIABLE</b>: <b>VALUE</b>
-          <b>ANOTHER_TEST_VARIABLE</b>: <b>YET_ANOTHER_VALUE</b>
+                        </code>
+                        <div>Re-use a test suite with a custom job template name:</div>
+                        <code>
+    - <b>JOBNAME</b>:
+        testsuite: <b>TESTSUITE</b>
+        settings:
+          <b>ANOTHER_VARIABLE</b>: <b>YET_ANOTHER_VALUE</b>
                         </code>
                         <div>Re-use test suites with YAML aliases:</div>
                         <code>
@@ -142,16 +151,15 @@ scenarios:
     <i>medium</i>-<b>x86_64</b>:
       <b>*tests</b>
                         </code>
-                        <p><%= link_to 'See the docs for more details' => 'http://open.qa/docs/#_job_group_editor_gh2111', target => '_blank' %></p>
                     </div>
                 </label>
-                <div class="col-sm-8">
+                <div class="col-sm-7">
                     <textarea class="form-control" id="editor-template" name="template" spellcheck="false"></textarea>
                 </div>
             </div>
             <div class="form-group row">
-                <div class="col-sm-4 control-label"></div>
-                <div class="col-sm-8">
+                <div class="col-sm-5 control-label"><%= link_to 'See the docs for more details' => 'http://open.qa/docs/#_job_group_editor_gh2111', target => '_blank' %></div>
+                <div class="col-sm-7">
                     <p class="buttons">
                     % if (is_admin) {
                         <button id="preview-template" type="button" class="btn btn-secondary"><i class="fas fa-preview"></i>Preview changes</button>
