@@ -29,6 +29,7 @@ update_docs() {
         ls -l
         git add images
         update_api
+        update_schemas
         ln -f openqa-documentation-"${verbose_doc_name}".html index.html
         ln -f openqa-documentation-"${verbose_doc_name}".pdf current.pdf
         # "Change is inevitable, except for vending machines"
@@ -39,6 +40,7 @@ update_docs() {
             cd ..
             git add _includes/api.html
             git add docs/index.html docs/current.pdf docs/api/testapi.html
+            git add docs/api/schema
             echo "Update documentation to commit ${shortref}" > last.commit
             echo "" >> last.commit # somehow travis does not like \n
             [[ -n ${TRAVIS_COMMIT} ]] && (cd .. && git log --pretty=fuller "${TRAVIS_COMMIT}" -1 >> out/last.commit)
@@ -64,6 +66,11 @@ update_api() {
             mv "$file.tmp" "$file"
         done < <(find . -name '*.html' -print0)
         cd ..
+}
+
+update_schemas() {
+        mkdir -p api/schema
+        cp "$scriptroot"/../public/schema/* api/schema
 }
 
 header_template() {
