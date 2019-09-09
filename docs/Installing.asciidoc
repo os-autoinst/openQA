@@ -224,7 +224,7 @@ The +dsn+ value format technically depends on the database type and is
 documented for PostgreSQL at
 https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods[DBD::Pg]
 
-====== Example for connecting to local PostgreSQL database
+==== Example for connecting to local PostgreSQL database
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -232,7 +232,7 @@ https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods[DBD::Pg]
 dsn = dbi:Pg:dbname=openqa
 --------------------------------------------------------------------------------
 
-====== Example for connecting to remote PostgreSQL database
+==== Example for connecting to remote PostgreSQL database
 
 [source,ini]
 --------------------------------------------------------------------------------

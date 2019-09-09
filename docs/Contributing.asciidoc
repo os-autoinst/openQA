@@ -219,10 +219,10 @@ follows the most common Perl style conventions.
    locally, e.g. +osc co devel:openQA/openQA+.
 2. Run +bash update-cache.sh+ inside the repository folder. Follow the log checking no
    download errors occurred.
-4. Do a sanity check on the generated +cache.txz+. It usually should not be smaller than
+3. Do a sanity check on the generated +cache.txz+. It usually should not be smaller than
    before, contain the newly added sources and must not contain any empty files.
-5. Add an entry to the changes file using +osc vc openQA.changes+.
-6. +osc ci -m 'Update asset cache'+
+4. Add an entry to the changes file using +osc vc openQA.changes+.
+5. +osc ci -m 'Update asset cache'+
 
 == Managing the database
 
@@ -589,7 +589,7 @@ $ perl Makefile.PL
 ...
 $ make test
 ...
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 And if you need code examples, there are some plugins
 https://github.com/os-autoinst/openQA/tree/master/lib/OpenQA/WebAPI/Plugin[included with openQA].

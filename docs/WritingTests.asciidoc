@@ -1281,7 +1281,7 @@ well as define a custom schedule using the test variable +SCHEDULE+.
 Also test modules can be defined and overridden on-the-fly using a
 downloadable asset.
 
-===== EXCLUDE_MODULES
+==== EXCLUDE_MODULES
 
 If a job has the following schedule:
 
@@ -1302,7 +1302,7 @@ The schedule would be:
 
 NOTE: Excluding modules that are not scheduled does not raise an error.
 
-===== INCLUDE_MODULES
+==== INCLUDE_MODULES
 
 If a job has the following schedule:
 
@@ -1323,7 +1323,7 @@ The schedule would be:
 
 NOTE: Including modules that are not scheduled does not raise an error, but they are not scheduled.
 
-===== SCHEDULE
+==== SCHEDULE
 
 Additionally it is possible to define a custom schedule using the test variable +SCHEDULE+.
 
@@ -1333,7 +1333,7 @@ openqa-clone-job --from https://openqa.opensuse.org --host https://openqa.opensu
 
 NOTE: Any existing test module within *CASEDIR* can be scheduled.
 
-===== SCHEDULE + ASSET_<NR>_URL
+==== SCHEDULE + ASSET_<NR>_URL
 Test modules can be defined and overridden on-the-fly using a
 downloadable asset (combining *ASSET_<NR>_URL* and *SCHEDULE*).
 
@@ -1374,7 +1374,7 @@ describes how downloadable assets can be specified. It is important to note
 that the specified asset is only downloaded once. New versions must be
 supplied as new, unambiguous download target file names.
 
-===== Triggering tests based on an any remote git refspec or open github pull request
+=== Triggering tests based on an any remote git refspec or open github pull request
 
 openQA also supports to trigger tests using test code from an open pull
 request on github or any branch or git refspec. That means that code changes

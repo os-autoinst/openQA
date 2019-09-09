@@ -1,5 +1,5 @@
 
-[[installing]]
+[[installing_harness]]
 = openQA test harness result processing
 :toc: left
 :toclevels: 6
