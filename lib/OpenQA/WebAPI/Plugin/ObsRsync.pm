@@ -49,7 +49,7 @@ sub register {
 
         $plugin_r->get('/obs_rsync/queue')->name('plugin_obs_rsync_queue')
           ->to('Plugin::ObsRsync::Controller::Gru#index');
-        $plugin_r->post('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_run')
+        $plugin_r->post('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_queue_run')
           ->to('Plugin::ObsRsync::Controller::Gru#run');
 
         $plugin_r->get('/obs_rsync/#folder/runs/#subfolder/download/#filename')->name('plugin_obs_rsync_download_file')
