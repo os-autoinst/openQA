@@ -38,6 +38,8 @@ has 'isotovideo_client' => sub { OpenQA::Worker::Isotovideo::Client->new(job => 
 has 'developer_session_running';
 has 'upload_results_interval';
 
+use constant AUTOINST_STATUSFILE => 'autoinst-status.json';
+
 # define accessors for public read-only properties
 sub status                    { shift->{_status} }
 sub setup_error               { shift->{_setup_error} }
@@ -660,35 +662,37 @@ sub _upload_results {
     my $is_final_upload = $self->is_stopped_or_stopping;
     $self->{_is_uploading_results} = 1;
 
-    # query status from isotovideo (unless it is the final status upload because isotovideo
-    # has already been stopped in this case)
-    return Mojo::IOLoop->next_tick(sub { $self->_upload_results_step_0_prepare($is_final_upload, {}, $callback) })
-      if $is_final_upload;
-
-    $self->isotovideo_client->status(
-        sub {
-            my ($isotovideo_client, $status_from_os_autoinst) = @_;
-            $self->_upload_results_step_0_prepare($is_final_upload, $status_from_os_autoinst, $callback);
-        });
+    $self->_upload_results_step_0_prepare($is_final_upload, $callback);
 }
 
 sub _upload_results_step_0_prepare {
-    my ($self, $is_final_upload, $status_from_os_autoinst, $callback) = @_;
+    my ($self, $is_final_upload, $callback) = @_;
 
     my $worker_id       = $self->client->worker_id;
     my $job_url         = $self->isotovideo_client->url;
     my $global_settings = $self->worker->settings->global_settings;
+    my $pooldir         = $self->worker->pool_directory;
+    my $status_file     = "$pooldir/" . AUTOINST_STATUSFILE;
     my %status          = (
         worker_id             => $worker_id,
         cmd_srv_url           => $job_url,
         worker_hostname       => $global_settings->{WORKER_HOSTNAME},
-        test_execution_paused => $status_from_os_autoinst->{test_execution_paused} // 0,
+        test_execution_paused => 0,
     );
+
+    my $test_status = {};
+    if (-r $status_file) {
+        $test_status = decode_json(path($status_file)->slurp);
+    }
+
+    my $running_or_finished = ($test_status->{status} || '') =~ m/^(?:running|finished)$/;
+    my $running_test        = $test_status->{current_test} || '';
+    $status{test_execution_paused} = $test_status->{test_execution_paused} // 0;
 
     # determine up to which module the results should be uploaded
     my $current_test_module = $self->current_test_module;
     my $upload_up_to;
-    if ($is_final_upload || $status_from_os_autoinst->{running}) {
+    if ($is_final_upload || $running_or_finished) {
         my @file_info = stat $self->_result_file_path('test_order.json');
         my $test_order;
         if (  !$current_test_module
@@ -702,24 +706,24 @@ sub _upload_results_step_0_prepare {
             $self->{_test_order_mtime} = $file_info[9];
             $self->{_test_order_fsize} = $file_info[7];
         }
-        if (!$current_test_module) {    # first test
+        if (!$current_test_module) {    # first test (or already after the last!)
             if (!$test_order) {
                 # FIXME: It would still make sense to upload other files.
                 $self->stop('no tests scheduled');    # will be delayed until upload has been concluded
                 $self->emit(uploading_results_concluded => {});
                 return Mojo::IOLoop->next_tick($callback);
             }
-            $status{backend} = $status_from_os_autoinst->{backend};
         }
-        elsif ($current_test_module ne ($status_from_os_autoinst->{running} || '')) {    # next test
+        elsif ($current_test_module ne $running_test) {    # next test
             $upload_up_to = $current_test_module;
         }
-        $self->{_current_test_module} = $current_test_module = $status_from_os_autoinst->{running};
+        $self->{_current_test_module} = $current_test_module = $running_test;
     }
 
     # adjust $upload_up_to to handle special cases
     if ($is_final_upload) {
-        # try to upload everything at the end, in case we missed the last $status_from_os_autoinst->{running}
+        # try to upload everything at the end, in case we missed the last
+        # $test_status->{current_test}
         $upload_up_to = '';
     }
     elsif ($status{test_execution_paused}) {

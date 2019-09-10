@@ -118,14 +118,6 @@ $engine_mock->mock(
         return {error => 'this is not a real isotovideo'};
     });
 
-# Mock isotovideo REST API
-my $api_mock = Test::MockModule->new('OpenQA::Worker::Isotovideo::Client');
-$api_mock->mock(
-    status => sub {
-        my ($isotovideo_client, $callback) = @_;
-        Mojo::IOLoop->next_tick(sub { $callback->($isotovideo_client, {}) });
-    });
-
 # Mock log file and asset uploads to collect diagnostics
 my $job_mock            = Test::MockModule->new('OpenQA::Worker::Job');
 my $default_shared_hash = {upload_result => 1, uploaded_files => [], uploaded_assets => []};
@@ -245,7 +237,6 @@ subtest 'Clean up pool directory' => sub {
             {
                 json => {
                     status => {
-                        backend               => undef,
                         cmd_srv_url           => $engine_url,
                         result                => {},
                         test_execution_paused => 0,
@@ -363,7 +354,6 @@ subtest 'Successful job' => sub {
             {
                 json => {
                     status => {
-                        backend               => undef,
                         cmd_srv_url           => $engine_url,
                         result                => {},
                         test_execution_paused => 0,
@@ -549,7 +539,6 @@ subtest 'Livelog' => sub {
             {
                 json => {
                     status => {
-                        backend               => undef,
                         cmd_srv_url           => $engine_url,
                         result                => {},
                         test_execution_paused => 0,
@@ -830,18 +819,24 @@ subtest 'Dynamic schedule' => sub {
             script   => 'tests/kernel/install_ltp.pm'
         }];
     my $autoinst_status = {
-        running               => 'install_ltp',
-        test_execution_paused => 0
+        status       => 'running',
+        current_test => 'install_ltp',
     };
     my $results_directory = $pool_directory->child('testresults')->make_path;
+
+    my $status_file = $pool_directory->child(OpenQA::Worker::Job::AUTOINST_STATUSFILE);
+
     $results_directory->child('test_order.json')->spurt(encode_json($test_order));
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 8, URL => $engine_url});
     $job->accept;
+
     is $job->status, 'accepting', 'job is now being accepted';
     wait_until_job_status_ok($job, 'accepted');
     combined_like(sub { $job->start }, qr/isotovideo has been started/, 'isotovideo startup logged');
 
-    $job->_upload_results_step_0_prepare(0, $autoinst_status, sub { });
+    $status_file->spurt(encode_json($autoinst_status));
+
+    $job->_upload_results_step_0_prepare(0, sub { });
     is_deeply $job->{_test_order}, $test_order, 'Initial test schedule';
 
     # Write updated test schedule and test it'll be reloaded
@@ -853,7 +848,7 @@ subtest 'Dynamic schedule' => sub {
         script   => 'tests/kernel/run_ltp.pm'
       };
     $results_directory->child('test_order.json')->spurt(encode_json($test_order));
-    $job->_upload_results_step_0_prepare(0, $autoinst_status, sub { });
+    $job->_upload_results_step_0_prepare(0, sub { });
     is_deeply $job->{_test_order}, $test_order, 'Updated test schedule';
 
     # Write expected test logs and shut down cleanly

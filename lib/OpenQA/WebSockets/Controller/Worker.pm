@@ -26,6 +26,7 @@ use DateTime;
 use Data::Dumper 'Dumper';
 use Data::Dump 'pp';
 use Try::Tiny;
+use YAML::XS ();
 
 sub ws {
     my ($self)      = @_;
@@ -120,7 +121,7 @@ sub _message {
         my $wid                   = $worker->{id};
 
         $worker_status->{$wid} = $json;
-        log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $wid, Dumper($json)));
+        log_debug(sprintf('Received from worker "%u" worker_status message "%s"', $wid, YAML::XS::Dump($json)));
 
         # log that we 'saw' the worker
         try {
