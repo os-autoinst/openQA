@@ -18,8 +18,7 @@ matrix:
     - name: "developer fullstack test"
       env: DEVELOPER_FULLSTACK=1
     - name: "documentation generation job"
-      if: branch = master AND fork = false
-      env: GH_PUBLISH=true
+      env: BUILD_DOCS=1
 before_script:
 - docker pull registry.opensuse.org/devel/openqa/containers/openqa_dev:latest
 cache:
@@ -27,7 +26,7 @@ cache:
   - assets/cache
 script:
   - |
-    if [ -n "$GH_PUBLISH" ]; then
+    if [ -n "$BUILD_DOCS" ]; then
       bash script/generate-documentation $encrypted_e2c381aa6b8c_key $encrypted_e2c381aa6b8c_iv
     else
       mkdir -p assets/cache && chmod a+w assets/cache && sudo chown -R 1000:1000 assets/cache
