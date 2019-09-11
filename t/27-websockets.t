@@ -149,7 +149,7 @@ subtest 'web socket message handling' => sub {
                 $t->send_ok('{"type":"accepted","jobid":42}');
                 $t->finish_ok(1000, 'finished ws connection');
             },
-            qr/Worker: 1 accepted job 42/s,
+            qr/Worker 1 accepted job 42/s,
             'job accept logged'
         );
     };

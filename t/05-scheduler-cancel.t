@@ -21,6 +21,7 @@ use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
+use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::WebSockets::Client;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
@@ -209,13 +210,14 @@ subtest 'chained or directly chained parent fails -> chilren are canceled (skipp
 
 subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => sub {
     # monkey patch ws_send of OpenQA::WebSockets to store received command
-    my (@commands, $server_called);
     my $mock_server = Test::MockModule->new('OpenQA::WebSockets');
+    my $server_called;
+    my @sent_commands;
     $mock_server->mock(
         ws_send => sub {
             my ($workerid, $command, $jobid) = @_;
             $server_called++;
-            push @OpenQA::WebSockets::commands, $command;
+            push @sent_commands, $command;
         });
 
     my %settingsA = (%settings, TEST => 'A');
@@ -228,30 +230,28 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
     $settingsC{_PARALLEL_JOBS} = [$jobA->id];
     my $jobC = _job_create(\%settingsC);
 
-    # we need 3 workers for command issue test
-    my $workercaps = {};
-    $workercaps->{cpu_modelname}                = 'Rainbow CPU';
-    $workercaps->{cpu_arch}                     = 'x86_64';
-    $workercaps->{cpu_opmode}                   = '32-bit, 64-bit';
-    $workercaps->{mem_max}                      = '4096';
-    $workercaps->{websocket_api_version}        = WEBSOCKET_API_VERSION;
-    $workercaps->{isotovideo_interface_version} = WEBSOCKET_API_VERSION;
-    use OpenQA::WebAPI::Controller::API::V1::Worker;
-    my $c  = OpenQA::WebAPI::Controller::API::V1::Worker->new;
-    my $w1 = $schema->resultset('Workers')->find($c->_register($schema, "host", "1", $workercaps));
-    my $w2 = $schema->resultset('Workers')->find($c->_register($schema, "host", "2", $workercaps));
-    my $w3 = $schema->resultset('Workers')->find($c->_register($schema, "host", "3", $workercaps));
-
-    $jobA->state(OpenQA::Jobs::Constants::RUNNING);
-    $w1->job($jobA);
-    $jobB->state(OpenQA::Jobs::Constants::RUNNING);
-    $w2->job($jobB);
-    $jobC->state(OpenQA::Jobs::Constants::RUNNING);
-    $w3->job($jobC);
-    $_->update for ($jobA, $jobB, $jobC, $w1, $w2, $w3);
+    # create 3 workers for command issue test
+    my %workercaps = (
+        cpu_modelname                => 'Rainbow CPU',
+        cpu_arch                     => 'x86_64',
+        cpu_opmode                   => '32-bit, 64-bit',
+        mem_max                      => '4096',
+        websocket_api_version        => WEBSOCKET_API_VERSION,
+        isotovideo_interface_version => WEBSOCKET_API_VERSION,
+    );
+    my $c       = OpenQA::WebAPI::Controller::API::V1::Worker->new;
+    my $workers = $schema->resultset('Workers');
+    my $w1      = $workers->find($c->_register($schema, 'host', '1', \%workercaps));
+    my $w2      = $workers->find($c->_register($schema, 'host', '2', \%workercaps));
+    my $w3      = $workers->find($c->_register($schema, 'host', '3', \%workercaps));
+    for my $job_and_worker ([$jobA, $w1], [$jobB, $w2], [$jobC, $w3]) {
+        $job_and_worker->[0]
+          ->update({state => OpenQA::Jobs::Constants::RUNNING, assigned_worker_id => $job_and_worker->[1]->id});
+        $job_and_worker->[1]->update({job_id => $job_and_worker->[0]->id});
+    }
 
     # set A as failed and reload B, C from database
-    @OpenQA::WebSockets::commands = ();
+    @sent_commands = ();
     my $now = now();
     $jobA->done(result => OpenQA::Jobs::Constants::FAILED);
     $jobB->discard_changes;
@@ -261,7 +261,7 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
     is($jobB->state, OpenQA::Jobs::Constants::RUNNING, 'B is still running');
     is($jobB->t_finished, undef, 'B does not has t_finished set since it is still running');
     is($jobC->result, OpenQA::Jobs::Constants::PARALLEL_FAILED, 'C result is parallel failed');
-    is_deeply(\@OpenQA::WebSockets::commands, [qw(cancel cancel)], 'both cancel commands issued');
+    is_deeply(\@sent_commands, [qw(cancel cancel)], 'both cancel commands issued');
 
     # assume B has actually been cancelled
     $jobB->update({state => OpenQA::Jobs::Constants::DONE});
