@@ -310,6 +310,9 @@ h2 + * {
         text-align: center;
     }
 }
+#editor-yaml-guide div {
+    white-space: pre;
+}
 #editor-form code {
     display: inline-block;
     font-weight: normal;
