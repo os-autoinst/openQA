@@ -132,6 +132,17 @@ subtest 'serialize sequence of directly chained dependencies' => sub {
       or diag explain $computed_sequence;
     is_deeply([sort @$visited], [13, 14], 'relevant jobs visited');
 
+    # provide a sort function to control the order between multiple children of the same parent
+    my %sort_criteria = (12 => 'anfang', 7 => 'danach', 6 => 'mitte', 8 => 'nach mitte', 1 => 'zuletzt');
+    my $sort_function = sub {
+        return [sort { ($sort_criteria{$a} // $a) cmp($sort_criteria{$b} // $b) } @{shift()}];
+    };
+    @expected_sequence = (0, 12, 7, 6, [8, [10, 11], 9], [1, [2, 3], [4, 5]]);
+    ($computed_sequence, $visited)
+      = OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(0, \%cluster_info, $sort_function);
+    is_deeply($computed_sequence, \@expected_sequence, 'sorting criteria overrides sorting by ID')
+      or diag explain $computed_sequence;
+
     # introduce a cycle
     push(@{$cluster_info{6}->{directly_chained_children}}, 12);
     throws_ok(

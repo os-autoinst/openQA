@@ -152,9 +152,25 @@ sub schedule {
 
         # take directly chained jobs into account
         # note: That these jobs have a matching WORKER_CLASS is enforced on dependency creation.
-        my $first_job_id = $allocated->{job};
+        my $first_job_id   = $allocated->{job};
+        my $cluster_info   = $scheduled_jobs->{$first_job_id}->{cluster_jobs};
+        my $jobs_resultset = $schema->resultset('Jobs');
+        my %sort_criteria  = map {
+            my $job_id = $_;
+            my $sort_criteria;
+            if (my $scheduled_job = $scheduled_jobs->{$job_id}) {
+                $sort_criteria = $scheduled_job->{test};
+            }
+            elsif (my $job = $jobs_resultset->find($job_id)) {
+                $sort_criteria = $job->TEST;
+            }
+            ($job_id => ($sort_criteria || $job_id));
+        } keys %$cluster_info;
+        my $sort_function = sub {
+            [sort { $sort_criteria{$a} cmp $sort_criteria{$b} } @{shift()}]
+        };
         my ($directly_chained_job_sequence, $job_ids)
-          = _serialize_directly_chained_job_sequence($first_job_id, $scheduled_jobs->{$first_job_id}->{cluster_jobs});
+          = _serialize_directly_chained_job_sequence($first_job_id, $cluster_info, $sort_function);
 
         # find jobs
         my @jobs;
@@ -373,6 +389,7 @@ sub _update_scheduled_jobs {
         $info->{id}       = $job->id;
         $info->{priority} = $job->priority - $info->{priority_offset};
         $info->{state}    = $job->state;
+        $info->{test}     = $job->TEST;
         if (!$info->{worker_classes}) {
             push(@missing_worker_class, $job->id);
             $info->{worker_classes} = [];
@@ -407,24 +424,24 @@ sub _update_scheduled_jobs {
 #  * Provides a 'flat' list of involved job IDs as 2nd return value.
 #  * See subtest 'serialize sequence of directly chained dependencies' in t/05-scheduler-dependencies.t for examples.
 sub _serialize_directly_chained_job_sequence {
-    my ($first_job_id, $cluster_info) = @_;
+    my ($first_job_id, $cluster_info, $sort_function) = @_;
 
     my %visited = ($first_job_id => 1);
     my $sequence
       = _serialize_directly_chained_job_sub_sequence([$first_job_id], \%visited,
         $cluster_info->{$first_job_id}->{directly_chained_children},
-        $cluster_info);
+        $cluster_info, $sort_function // sub { return shift });
     return ($sequence, [keys %visited]);
 }
 sub _serialize_directly_chained_job_sub_sequence {
-    my ($output_array, $visited, $child_job_ids, $cluster_info) = @_;
+    my ($output_array, $visited, $child_job_ids, $cluster_info, $sort_function) = @_;
 
-    for my $current_job_id (@$child_job_ids) {
+    for my $current_job_id (@{$sort_function->($child_job_ids)}) {
         die "detected cycle at $current_job_id" if $visited->{$current_job_id}++;
         my $sub_sequence
           = _serialize_directly_chained_job_sub_sequence([$current_job_id], $visited,
             $cluster_info->{$current_job_id}->{directly_chained_children},
-            $cluster_info);
+            $cluster_info, $sort_function);
         push(@$output_array, scalar @$sub_sequence > 1 ? $sub_sequence : $sub_sequence->[0]) if @$sub_sequence;
     }
     return $output_array;
