@@ -123,7 +123,7 @@ sub schedules {
             $yaml->{$group} = "'$group': |\n" . ($yaml->{$group} =~ s/(.+)\n/  $1\n/gr);
         }
     }
-    $self->render(yaml => join("\n", map { $yaml->{$_} } keys %$yaml));
+    $self->render(yaml => join("\n", map { $yaml->{$_} } sort keys %$yaml));
 }
 
 sub get_job_groups {
@@ -178,16 +178,16 @@ sub get_job_groups {
         }
 
         # Split off defaults
-        foreach my $arch (keys %{$group{scenarios}}) {
+        foreach my $arch (sort keys %{$group{scenarios}}) {
             $group{defaults}{$arch}{priority} = $group->default_priority;
             my $default_machine
               = (sort { $machines{$arch}->{$b} <=> $machines{$arch}->{$a} or $b cmp $a } keys %{$machines{$arch}})[0];
             $group{defaults}{$arch}{machine} = $default_machine;
 
-            foreach my $product (keys %{$group{scenarios}->{$arch}}) {
+            foreach my $product (sort keys %{$group{scenarios}->{$arch}}) {
                 my @scenarios;
                 foreach my $test_suite (@{$group{scenarios}->{$arch}->{$product}}) {
-                    foreach my $name (keys %$test_suite) {
+                    foreach my $name (sort keys %$test_suite) {
                         my $attr = $test_suite->{$name};
                         if ($attr->{machine} eq $default_machine) {
                             delete $attr->{machine} if $test_suites{$arch}{$name} == 1;
@@ -308,10 +308,10 @@ sub update {
                 my $yaml_archs    = $yaml->{scenarios};
                 my $yaml_products = $yaml->{products};
                 my $yaml_defaults = $yaml->{defaults};
-                foreach my $arch (keys %$yaml_archs) {
+                foreach my $arch (sort keys %$yaml_archs) {
                     my $yaml_products_for_arch = $yaml_archs->{$arch};
                     my $yaml_defaults_for_arch = $yaml_defaults->{$arch};
-                    foreach my $product_name (keys %$yaml_products_for_arch) {
+                    foreach my $product_name (sort keys %$yaml_products_for_arch) {
                         # Keep track of job template names to be able to fail on duplicates
                         my %job_template_names;
                         foreach my $spec (@{$yaml_products_for_arch->{$product_name}}) {
@@ -322,7 +322,7 @@ sub update {
                             my $machine_name;
                             my $settings = $yaml_defaults_for_arch->{settings};
                             if (ref $spec eq 'HASH') {
-                                foreach my $name (keys %$spec) {
+                                foreach my $name (sort keys %$spec) {
                                     my $attr = $spec->{$name};
                                     $testsuite_name = $name;
                                     if ($attr->{priority}) {
@@ -390,7 +390,7 @@ sub update {
                             # Add/update/remove parameter
                             my @setting_ids;
                             if ($settings) {
-                                foreach my $key (keys %$settings) {
+                                foreach my $key (sort keys %$settings) {
                                     my $setting = $job_template_settings->find(
                                         {
                                             job_template_id => $job_template_id,
