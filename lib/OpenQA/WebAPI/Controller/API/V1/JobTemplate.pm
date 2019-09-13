@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use Try::Tiny;
 use JSON::Validator;
 use Text::Diff;
+use Storable 'dclone';
 
 =pod
 
@@ -320,7 +321,7 @@ sub update {
                             my $job_template_name;
                             my $prio;
                             my $machine_name;
-                            my $settings = $yaml_defaults_for_arch->{settings};
+                            my $settings = dclone($yaml_defaults_for_arch->{settings} // {});
                             if (ref $spec eq 'HASH') {
                                 foreach my $name (sort keys %$spec) {
                                     my $attr = $spec->{$name};
