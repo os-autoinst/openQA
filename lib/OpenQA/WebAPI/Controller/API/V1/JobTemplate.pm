@@ -320,7 +320,7 @@ sub update {
                             my $job_template_name;
                             my $prio;
                             my $machine_name;
-                            my $settings = $yaml_defaults_for_arch->{settings};
+                            my %settings = %{$yaml_defaults_for_arch->{settings} // {}};
                             if (ref $spec eq 'HASH') {
                                 foreach my $name (keys %$spec) {
                                     my $attr = $spec->{$name};
@@ -336,7 +336,7 @@ sub update {
                                         $job_template_name = $testsuite_name;
                                     }
                                     if ($attr->{settings}) {
-                                        %$settings = (%{$settings // {}}, %{$attr->{settings}});
+                                        %settings = (%settings, %{$attr->{settings}});
                                     }
                                 }
                             }
@@ -389,22 +389,22 @@ sub update {
 
                             # Add/update/remove parameter
                             my @setting_ids;
-                            if ($settings) {
-                                foreach my $key (keys %$settings) {
+                            if (%settings) {
+                                foreach my $key (keys %settings) {
                                     my $setting = $job_template_settings->find(
                                         {
                                             job_template_id => $job_template_id,
                                             key             => $key,
                                         });
                                     if ($setting) {
-                                        $setting->update({value => $settings->{$key}});
+                                        $setting->update({value => $settings{$key}});
                                     }
                                     else {
                                         $setting = $job_template_settings->find_or_create(
                                             {
                                                 job_template_id => $job_template_id,
                                                 key             => $key,
-                                                value           => $settings->{$key},
+                                                value           => $settings{$key},
                                             });
                                     }
                                     push(@setting_ids, $setting->id);
