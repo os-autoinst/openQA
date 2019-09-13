@@ -1136,6 +1136,127 @@ is_deeply(
     'Delete was logged correctly'
 );
 
+subtest 'settings defined in a YAML job template' => sub {
+    my $jobs            = $schema->resultset('Jobs');
+    my $schema_filename = 'JobTemplates-01.yaml';
+    my $job_group_name5 = 'geeko';
+    my $job_group_id5   = $job_groups->create({name => $job_group_name5})->id;
+    ok($job_group_id5, "Created group $job_group_name5 ($job_group_id5)");
+    # Create group based on YAML with references
+    my $yaml = '
+      defaults:
+        x86_64:
+          machine: 64bit
+          priority: 30
+          settings:
+            SCHEDULE: schedule/default/%TEST%@%MACHINE%.yaml
+      products:
+        sle-12-SP1-Server-DVD-Updates-x86_64:
+          distri: sle
+          flavor: Server-DVD-Updates
+          version: 12-SP1
+      scenarios:
+        x86_64:
+          sle-12-SP1-Server-DVD-Updates-x86_64:
+          - spam:
+              machine: 32bit
+          - eggs:
+              machine: Laptop_64
+              settings:
+                BENEDICT: "1"
+                RAID: raid/%TEST%@%MACHINE%.yaml
+          - unsolicited_mail:
+              testsuite: spam
+          - junk:
+              machine: Laptop_64
+              testsuite: spam
+          - advanced_kde:
+              settings:
+                SCHEDULE: schedule/explicit/%TEST%@%MACHINE%.yaml
+    ';
+    $t->post_ok(
+        "/api/v1/experimental/job_templates_scheduling/$job_group_id5",
+        form => {
+            schema   => $schema_filename,
+            template => $yaml})->status_is(200, "Group $job_group_name5 was updated");
+    if (!$t->success) {
+        diag explain $t->tx->res->json;
+        return undef;
+    }
+
+    # Post an ISO
+    my %new_isos_post_params = (
+        ISO               => 'SLE-%VERSION%-%FLAVOR%-%MACHINE%-Build%BUILD%-Media1.iso',
+        DISTRI             => 'sle',
+        VERSION            => '12-SP1',
+        FLAVOR             => 'Server-DVD-Updates',
+        ARCH               => 'x86_64',
+        BUILD              => 'XY.101',
+        _GROUP             => $job_group_name5,
+        _SKIP_CHAINED_DEPS => 1,
+    );
+    $t->post_ok('/api/v1/isos', form => \%new_isos_post_params)->status_is(200, 'ISO posted') || diag explain $t->tx->res->json;
+    my %tests = map { $jobs->find($_)->settings_hash->{'NAME'} => $jobs->find($_)->settings_hash->{'TEST'} } @{$t->tx->res->json->{ids}};
+    is_deeply(['advanced_kde', 'eggs', 'foobar', 'spam'], [sort values %tests], 'Jobs created');
+    for my $job_id (@{$t->tx->res->json->{ids}}) {
+        my $job_settings = $jobs->find($job_id)->settings_hash;
+        diag explain YAML::XS::Dump($job_settings); # XXX
+    }
+
+    # Re-post ISO after modifying the group
+    $yaml = '
+      defaults:
+        x86_64:
+          machine: 64bit
+          priority: 30
+          settings:
+            SCHEDULE: schedule/different-default/%TEST%@%MACHINE%.yaml
+            SCHEDULE2: schedule/default/%TEST%@%MACHINE%.yaml
+            RAID2: unset
+      products:
+        sle-12-SP1-Server-DVD-Updates-x86_64:
+          distri: sle
+          flavor: Server-DVD-Updates
+          version: 12-SP1
+      scenarios:
+        x86_64:
+          sle-12-SP1-Server-DVD-Updates-x86_64:
+          - foobar:
+              machine: 64bit
+          - eggs:
+              machine: 32bit
+              settings:
+                RAID1: raid1/%TEST%@%MACHINE%.yaml
+          - unsolicited_krokodile:
+              testsuite: advanced_kde
+              settings:
+                BENEDICT: "1"
+                RAID2: raid2/%TEST%@%MACHINE%.yaml
+          - junk:
+              testsuite: spam
+              settings:
+                SCHEDULE: schedule/explicit/%TEST%@%MACHINE%.yaml
+          - advanced_kde:
+              machine: Laptop_64
+    ';
+    $t->post_ok(
+        "/api/v1/experimental/job_templates_scheduling/$job_group_id5",
+        form => {
+            schema   => $schema_filename,
+            template => $yaml})->status_is(200, "Group $job_group_name5 was updated");
+    if (!$t->success) {
+        diag explain $t->tx->res->json;
+        return undef;
+    }
+    $t->post_ok('/api/v1/isos', form => \%new_isos_post_params)->status_is(200, 'ISO posted') || diag explain $t->tx->res->json;
+    my %tests = map { $jobs->find($_)->settings_hash->{'NAME'} => $jobs->find($_)->settings_hash->{'TEST'} } @{$t->tx->res->json->{ids}};
+    is_deeply(['advanced_kde', 'eggs', 'foobar', 'spam'], [sort values %tests], 'Jobs created');
+    for my $job_id (@{$t->tx->res->json->{ids}}) {
+        my $job_settings = $jobs->find($job_id)->settings_hash;
+        diag explain YAML::XS::Dump($job_settings); # XXX
+    }
+};
+
 # switch to operator (percival) and try some modifications
 $app = $t->app;
 $t->ua(
