@@ -1331,7 +1331,6 @@ scenarios:
             flavor          => ''
         })->status_is(200);
     for my $json (@{$t->tx->res->json->{JobTemplates}}) {
-        say Mojo::Util::dumper $json->{settings};
         is_deeply(
             $json->{settings},
             [
