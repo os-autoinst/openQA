@@ -61,7 +61,7 @@ sub status {
     my $job      = $self->stash('job');
     my $workerid = $job->worker_id;
     my $results  = {workerid => $workerid, state => $job->state};
-    my $r        = $job->modules->find({result => 'running'});
+    my $r        = $job->modules->find({result => 'running'}, {order_by => {-desc => 't_updated'}, rows => 1});
     $results->{running} = $r->name() if $r;
     $self->render(json => $results);
 }
