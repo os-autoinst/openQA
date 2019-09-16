@@ -30,6 +30,7 @@ use Test::More;
 use Test::Warnings;
 use OpenQA::WebSockets::Client;
 use OpenQA::Jobs::Constants;
+use OpenQA::Test::FakeWebSocketTransaction;
 use Test::MockModule;
 
 subtest 'serialize sequence of directly chained dependencies' => sub {
@@ -169,9 +170,9 @@ sub schedule {
 }
 
 # Mangle worker websocket send, and record what was sent
-my $mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+my $jobs_result_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
 my $mock_send_called;
-$mock->mock(
+$jobs_result_mock->mock(
     ws_send => sub {
         my ($self, $worker) = @_;
         my $hashref = $self->prepare_for_work($worker);
@@ -183,6 +184,41 @@ $mock->mock(
         $mock_send_called++;
         return {state => {msg_sent => 1}};
     });
+
+
+subtest 'assign multiple jobs to worker' => sub {
+    my $worker       = $schema->resultset('Workers')->first;
+    my $worker_id    = $worker->id;
+    my @job_ids      = (99926, 99927, 99928);
+    my @jobs         = $schema->resultset('Jobs')->search({id => {-in => \@job_ids}})->all;
+    my @job_sequence = (99927, [99928, 99926]);
+
+    # use fake web socket connection
+    my $fake_ws_tx    = OpenQA::Test::FakeWebSocketTransaction->new;
+    my $sent_messages = $fake_ws_tx->sent_messages;
+    OpenQA::WebSockets::Model::Status->singleton->workers->{$worker_id}->{tx} = $fake_ws_tx;
+
+    OpenQA::Scheduler::Model::Jobs->new->_assign_multiple_jobs_to_worker(\@jobs, $worker, \@job_sequence, \@job_ids);
+
+    is(scalar @$sent_messages, 1, 'exactly one message sent');
+    is(ref(my $json     = $sent_messages->[0]->{json}), 'HASH', 'json data sent');
+    is(ref(my $job_info = $json->{job_info}),           'HASH', 'job info sent') or diag explain $sent_messages;
+    is($json->{type},                   'grab_jobs', 'event type present');
+    is($job_info->{assigned_worker_id}, $worker_id,  'worker ID present');
+    is_deeply($job_info->{ids},                 \@job_ids,      'job IDs present');
+    is_deeply($job_info->{sequence},            \@job_sequence, 'job sequence present');
+    is_deeply([sort keys %{$job_info->{data}}], \@job_ids,      'data for all jobs present');
+
+    # check whether all jobs have the same token
+    my $job_token;
+    my $job_data = $job_info->{data};
+    for my $job_id (keys %$job_data) {
+        my $data = $job_data->{$job_id};
+        is(ref(my $settings = $data->{settings}), 'HASH', "job $job_id has settings");
+        is($settings->{JOBTOKEN}, $job_token //= $settings->{JOBTOKEN}, "job $job_id has same job token");
+    }
+    ok($job_token, 'job token present');
+};
 
 sub list_jobs {
     my %args = @_;
