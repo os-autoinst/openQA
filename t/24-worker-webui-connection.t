@@ -97,7 +97,10 @@ like(
     has stop_current_job_called => 0;
     has current_error           => undef;
     has current_job             => undef;
+    has has_pending_jobs        => 0;
     has settings                => sub { Test::FakeSettings->new; };
+    has enqueued_job_info       => undef;
+    has skipped_jobs            => sub { {}; };
     sub stop_current_job {
         my ($self, $reason) = @_;
         $self->stop_current_job_called($reason);
@@ -106,6 +109,21 @@ like(
     sub accept_job {
         my ($self, $client, $job_info) = @_;
         $self->current_job(OpenQA::Worker::Job->new($self, $client, $job_info));
+    }
+    sub enqueue_jobs_and_accept_first {
+        my ($self, $client, $job_info) = @_;
+        $self->enqueued_job_info($job_info);
+    }
+    sub find_current_or_pending_job {
+        my ($self, $job_id) = @_;
+        if (my $current_job = $self->current_job) {
+            return $current_job if $current_job->id eq $job_id;
+        }
+        return undef;
+    }
+    sub skip_job {
+        my ($self, $job_id, $reason) = @_;
+        $self->skipped_jobs->{$job_id} = $reason;
     }
 }
 $client->worker(Test::FakeWorker->new);
@@ -368,6 +386,7 @@ subtest 'send status' => sub {
 
 subtest 'command handler' => sub {
     my $command_handler = OpenQA::Worker::CommandHandler->new($client);
+    my $worker          = $client->worker;
 
     # test at least some of the error cases
     combined_like(
@@ -380,7 +399,7 @@ subtest 'command handler' => sub {
 qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID 1 \(currently not executing a job\).*/,
         'ignoring job-specific message when no job running',
     );
-    $client->worker->current_error('some error');
+    $worker->current_error('some error');
     $app->log->level('debug');
     combined_like(
         sub { $command_handler->handle_command(undef, {type => 'grab_job'}); },
@@ -388,7 +407,7 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
         'ignoring grab job while in error-state',
     );
     $app->log->level('info');
-    $client->worker->current_error(undef);
+    $worker->current_error(undef);
     combined_like(
         sub {
             $command_handler->handle_command(
@@ -411,13 +430,13 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     is($client->webui_host_population, -42, 'population assigned');
 
     # test accepting a job
-    is($client->worker->current_job, undef, 'no job accepted so far');
+    is($worker->current_job, undef, 'no job accepted so far');
     $command_handler->handle_command(
         undef,
         {
             type => 'grab_job',
             job  => {id => 25, settings => {FOO => 'bar'}}});
-    my $accepted_job = $client->worker->current_job;
+    my $accepted_job = $worker->current_job;
     is_deeply($accepted_job->info, {id => 25, settings => {FOO => 'bar'}}, 'job accepted');
 
     # test live mode related commands
@@ -432,7 +451,7 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
 
     combined_like(
         sub { $command_handler->handle_command(undef, {type => 'quit', jobid => 27}); },
-        qr/Ignoring WS message from http:\/\/test-host for job 27 because that job is not running \(running 25*/,
+        qr/Ignoring job cancel from http:\/\/test-host because there's no job with ID 27/,
         'ignoring commands for different job',
     );
 
@@ -441,6 +460,35 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
         'since our fake worker does not start the job is is still supposed to be in state "new" so far');
     $command_handler->handle_command(undef, {type => 'quit', jobid => 25});
     is($accepted_job->status, 'stopped', 'job has been stopped');
+
+
+    # test accepting multiple jobs
+    $worker->current_job(undef);
+    my %job_info = (
+        sequence => [26, [27, 28]],
+        data     => {
+            26 => {id => 26, settings => {PARENT => 'job'}},
+            27 => {id => 27, settings => {CHILD  => ' job 1'}},
+            28 => {id => 28, settings => {CHILD  => 'job 2'}},
+        },
+    );
+    $command_handler->handle_command(undef, {type => 'grab_jobs', job_info => \%job_info});
+    is_deeply($worker->enqueued_job_info,
+        \%job_info, 'job info successfully validated and passed to enqueue_jobs_and_accept_first')
+      or diag explain $worker->enqueued_job_info;
+
+    # test refusing multiple jobs due because job data is missing
+    delete $job_info{data}->{28};
+    $worker->enqueued_job_info(undef);
+    combined_like(
+        sub {
+            $command_handler->handle_command(undef, {type => 'grab_jobs', job_info => \%job_info});
+        },
+        qr/Refusing to grab job.*because job data for job 28 is missing/,
+        'ignoring grab job if no valid job info provided',
+    );
+    is_deeply($worker->enqueued_job_info, undef, 'no jobs enqueued if validation failed')
+      or diag explain $worker->enqueued_job_info;
 };
 
 $client->worker_id(undef);

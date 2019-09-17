@@ -268,6 +268,17 @@ sub kill {
     $child->stop if $child && $child->is_running;
 }
 
+sub skip {
+    my ($self, $reason) = @_;
+
+    my $status = $self->status;
+    die "attempt to skip $status job; only new jobs can be skipped" unless $status eq 'new';
+
+    $reason //= 'skipped';
+    $self->_set_status(stopping => {reason => $reason});
+    $self->_stop_step_6_finalize($reason, {result => OpenQA::Jobs::Constants::SKIPPED});
+}
+
 sub stop {
     my ($self, $reason) = @_;
     $reason //= '';

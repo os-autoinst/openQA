@@ -71,6 +71,8 @@ function renderTestName(data, type, row) {
         } else {
             html += '<i class="status fa fa-circle state_scheduled" title="Scheduled"></i>';
         }
+    } else if (row.state === 'assigned') {
+        html += '<i class="status fa fa-circle state_running" title="Assigned"></i>';
     } else {
         html += '<i class="status fa fa-circle state_running" title="Running"></i>';
     }
@@ -132,7 +134,7 @@ function renderProgress(data, type, row) {
     if (type !== 'display') {
         return progress ? progress : 0;
     }
-    var progressText = progress === undefined ? 'running' : (progress + ' %');
+    var progressText = progress === undefined ? row.state : (progress + ' %');
     var progressClass = progress === undefined ? 'progress-bar progress-bar-striped active' : 'progress-bar';
     var progressWidth = progress === undefined ? 100 : progress;
     var progressBar = '<div class="' + progressClass + '" role="progressbar" style="width: ' + progressWidth +

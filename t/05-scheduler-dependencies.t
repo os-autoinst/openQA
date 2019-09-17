@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014-2018 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,12 +24,136 @@ use lib "$FindBin::Bin/lib";
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
+use Test::Exception;
 use Test::Mojo;
 use Test::More;
 use Test::Warnings;
 use OpenQA::WebSockets::Client;
 use OpenQA::Jobs::Constants;
+use OpenQA::Test::FakeWebSocketTransaction;
 use Test::MockModule;
+
+subtest 'serialize sequence of directly chained dependencies' => sub {
+    my %cluster_info = (
+        0 => {
+            directly_chained_children => [1, 6, 7, 8, 12],
+            directly_chained_parents  => [],
+            chained_children          => [13],               # supposed to be ignored
+            chained_parents           => [],                 # supposed to be ignored
+        },
+        1 => {
+            directly_chained_children => [2, 4],
+            directly_chained_parents  => [0],
+        },
+        2 => {
+            directly_chained_children => [3],
+            directly_chained_parents  => [0],
+        },
+        3 => {
+            directly_chained_children => [],
+            directly_chained_parents  => [2],
+        },
+        4 => {
+            directly_chained_children => [5],
+            directly_chained_parents  => [0],
+        },
+        5 => {
+            directly_chained_children => [],
+            directly_chained_parents  => [4],
+        },
+        6 => {
+            directly_chained_children => [],
+            directly_chained_parents  => [0],
+        },
+        7 => {
+            directly_chained_children => [],
+            directly_chained_parents  => [0],
+        },
+        8 => {
+            directly_chained_children => [9, 10],
+            directly_chained_parents  => [0],
+        },
+        9 => {
+            directly_chained_children => [],
+            directly_chained_parents  => [8],
+        },
+        10 => {
+            directly_chained_children => [11],
+            directly_chained_parents  => [8],
+        },
+        11 => {
+            directly_chained_children => [],
+            directly_chained_parents  => [10],
+        },
+        12 => {
+            directly_chained_children => [],
+            directly_chained_parents  => [0],
+        },
+        13 => {
+            directly_chained_children => [14],
+            directly_chained_parents  => [0],
+            chained_children          => [],      # supposed to be ignored
+            chained_parents           => [13],    # supposed to be ignored
+        },
+        14 => {
+            directly_chained_children => [],
+            directly_chained_parents  => [13],
+        },
+    );
+    # notes: * The array directly_chained_parents is actually not used by the algorithm. From the test perspective
+    #          we don't want to rely on that detail, though.
+    #        * The direct chain is interrupted between 12 and 13 by a regularily chained dependency. Hence there
+    #          are two distinct clusters of directly chained dependencies present.
+
+    my @expected_sequence = (2, 3);
+    my ($computed_sequence, $visited)
+      = OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(2, \%cluster_info);
+    is_deeply($computed_sequence, \@expected_sequence, 'sub sequence starting from job 2')
+      or diag explain $computed_sequence;
+    is_deeply([sort @$visited], [2, 3], 'relevant jobs visited');
+
+    @expected_sequence = (1, [2, 3], [4, 5]);
+    ($computed_sequence, $visited)
+      = OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(1, \%cluster_info);
+    is_deeply($computed_sequence, \@expected_sequence, 'sub sequence starting from job 1')
+      or diag explain $computed_sequence;
+    is_deeply([sort @$visited], [1, 2, 3, 4, 5], 'relevant jobs visited');
+
+    @expected_sequence = (0, [1, [2, 3], [4, 5]], 6, 7, [8, 9, [10, 11]], 12);
+    ($computed_sequence, $visited)
+      = OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(0, \%cluster_info);
+    is_deeply($computed_sequence, \@expected_sequence, 'whole sequence starting from job 0')
+      or diag explain $computed_sequence;
+    is_deeply([sort @$visited], [0, 1, 10, 11, 12, 2, 3, 4, 5, 6, 7, 8, 9], 'relevant jobs visited');
+
+    @expected_sequence = (13, 14);
+    ($computed_sequence, $visited)
+      = OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(13, \%cluster_info);
+    is_deeply($computed_sequence, \@expected_sequence, 'whole sequence starting from job 13')
+      or diag explain $computed_sequence;
+    is_deeply([sort @$visited], [13, 14], 'relevant jobs visited');
+
+    # provide a sort function to control the order between multiple children of the same parent
+    my %sort_criteria = (12 => 'anfang', 7 => 'danach', 6 => 'mitte', 8 => 'nach mitte', 1 => 'zuletzt');
+    my $sort_function = sub {
+        return [sort { ($sort_criteria{$a} // $a) cmp($sort_criteria{$b} // $b) } @{shift()}];
+    };
+    @expected_sequence = (0, 12, 7, 6, [8, [10, 11], 9], [1, [2, 3], [4, 5]]);
+    ($computed_sequence, $visited)
+      = OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(0, \%cluster_info, $sort_function);
+    is_deeply($computed_sequence, \@expected_sequence, 'sorting criteria overrides sorting by ID')
+      or diag explain $computed_sequence;
+
+    # introduce a cycle
+    push(@{$cluster_info{6}->{directly_chained_children}}, 12);
+    throws_ok(
+        sub {
+            OpenQA::Scheduler::Model::Jobs::_serialize_directly_chained_job_sequence(0, \%cluster_info);
+        },
+        qr/cycle at (6|12)/,
+        'compution dies on cycle'
+    );
+};
 
 my $schema = OpenQA::Test::Database->new->create();
 
@@ -46,9 +170,9 @@ sub schedule {
 }
 
 # Mangle worker websocket send, and record what was sent
-my $mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
+my $jobs_result_mock = Test::MockModule->new('OpenQA::Schema::Result::Jobs');
 my $mock_send_called;
-$mock->mock(
+$jobs_result_mock->mock(
     ws_send => sub {
         my ($self, $worker) = @_;
         my $hashref = $self->prepare_for_work($worker);
@@ -60,6 +184,41 @@ $mock->mock(
         $mock_send_called++;
         return {state => {msg_sent => 1}};
     });
+
+
+subtest 'assign multiple jobs to worker' => sub {
+    my $worker       = $schema->resultset('Workers')->first;
+    my $worker_id    = $worker->id;
+    my @job_ids      = (99926, 99927, 99928);
+    my @jobs         = $schema->resultset('Jobs')->search({id => {-in => \@job_ids}})->all;
+    my @job_sequence = (99927, [99928, 99926]);
+
+    # use fake web socket connection
+    my $fake_ws_tx    = OpenQA::Test::FakeWebSocketTransaction->new;
+    my $sent_messages = $fake_ws_tx->sent_messages;
+    OpenQA::WebSockets::Model::Status->singleton->workers->{$worker_id}->{tx} = $fake_ws_tx;
+
+    OpenQA::Scheduler::Model::Jobs->new->_assign_multiple_jobs_to_worker(\@jobs, $worker, \@job_sequence, \@job_ids);
+
+    is(scalar @$sent_messages, 1, 'exactly one message sent');
+    is(ref(my $json     = $sent_messages->[0]->{json}), 'HASH', 'json data sent');
+    is(ref(my $job_info = $json->{job_info}),           'HASH', 'job info sent') or diag explain $sent_messages;
+    is($json->{type},                   'grab_jobs', 'event type present');
+    is($job_info->{assigned_worker_id}, $worker_id,  'worker ID present');
+    is_deeply($job_info->{ids},                 \@job_ids,      'job IDs present');
+    is_deeply($job_info->{sequence},            \@job_sequence, 'job sequence present');
+    is_deeply([sort keys %{$job_info->{data}}], \@job_ids,      'data for all jobs present');
+
+    # check whether all jobs have the same token
+    my $job_token;
+    my $job_data = $job_info->{data};
+    for my $job_id (keys %$job_data) {
+        my $data = $job_data->{$job_id};
+        is(ref(my $settings = $data->{settings}), 'HASH', "job $job_id has settings");
+        is($settings->{JOBTOKEN}, $job_token //= $settings->{JOBTOKEN}, "job $job_id has same job token");
+    }
+    ok($job_token, 'job token present');
+};
 
 sub list_jobs {
     my %args = @_;
@@ -1146,5 +1305,26 @@ subtest "SAP setup - issue 52928" => sub {
 };
 
 ok $mock_send_called, 'mocked ws_send method has been called';
+
+subtest 'WORKER_CLASS validated when creating directly chained dependencies' => sub {
+    %settingsA = (%settings, TEST => 'chained-A', WORKER_CLASS => 'foo');
+    %settingsB = (%settings, TEST => 'chained-B', WORKER_CLASS => 'bar');
+    %settingsC = (%settings, TEST => 'chained-C');
+    %settingsD = (%settings, TEST => 'chained-D', WORKER_CLASS => 'foo');
+    $jobA      = _job_create(\%settingsA);
+    is($jobA->settings->find({key => 'WORKER_CLASS'})->value, 'foo', 'job A has class foo');
+    $jobB = _job_create(\%settingsB, undef, [$jobA->id]);
+    is($jobB->settings->find({key => 'WORKER_CLASS'})->value,
+        'bar', 'job B has different class bar (ok for regularily chained dependencies)');
+    $jobC = _job_create(\%settingsC, undef, [], [$jobB->id]);
+    is($jobC->settings->find({key => 'WORKER_CLASS'})->value, 'bar', 'job C inherits worker class from B');
+    throws_ok(
+        sub {
+            $jobD = _job_create(\%settingsD, undef, [], [$jobC->id]);
+        },
+        qr/Specified WORKER_CLASS \(foo\) does not match the one from directly chained parent .* \(bar\)/,
+        'creation of job with mismatching worker class prevented'
+    );
+};
 
 done_testing();

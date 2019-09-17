@@ -18,6 +18,7 @@ use Mojo::Base 'Mojo::EventEmitter';
 
 use Test::More;
 use Mojo::IOLoop;
+use Mojo::Message::Response;
 
 has finish_called => 0;
 has sent_messages => sub { return []; };
@@ -48,7 +49,9 @@ sub send {
     push @{$self->sent_messages}, $message;
     Mojo::IOLoop->next_tick($callback) if $callback;
 
-    return 1;
+    my $res = Mojo::Message::Response->new;
+    $res->code(200);
+    return $res;
 }
 
 sub finish {

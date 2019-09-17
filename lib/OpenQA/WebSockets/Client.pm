@@ -57,6 +57,13 @@ sub send_job {
     return $res->json->{result};
 }
 
+sub send_jobs {
+    my ($self, $job_info) = @_;
+    my $res = $self->client->post($self->_api('send_jobs'), json => $job_info)->result;
+    croak "Expected 2xx status from WebSocket server but received @{[$res->code]}" unless $res->is_success;
+    return $res->json->{result};
+}
+
 sub send_msg {
     my ($self, $worker_id, $msg, $job_id, $retry) = @_;
     my $data = {worker_id => $worker_id, msg => $msg, job_id => $job_id, retry => $retry};

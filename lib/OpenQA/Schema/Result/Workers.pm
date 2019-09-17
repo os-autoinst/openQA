@@ -266,4 +266,10 @@ sub to_string {
     return $self->host . ':' . $self->instance;
 }
 
+sub unfinished_jobs {
+    my ($self) = @_;
+
+    return $self->previous_jobs->search({t_finished => undef});
+}
+
 1;

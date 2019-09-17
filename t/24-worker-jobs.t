@@ -433,6 +433,37 @@ subtest 'Successful job' => sub {
     shared_hash {upload_result => 1, uploaded_files => [], uploaded_assets => []};
 };
 
+subtest 'Skip job' => sub {
+    is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
+    is_deeply $client->sent_messages,                       [], 'no REST-API calls yet';
+
+    my $job = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => $engine_url});
+    $job->skip;
+    is $job->status, 'stopping', 'job is considered "stopping"';
+    wait_until_job_status_ok($job, 'stopped');
+
+    is_deeply(
+        $client->sent_messages,
+        [
+            {
+                json => undef,
+                path => 'jobs/4/set_done'
+            }
+        ],
+        'expected REST-API calls happened'
+    ) or diag explain $client->sent_messages;
+    $client->sent_messages([]);
+
+    is_deeply($client->websocket_connection->sent_messages, [], 'job not accepted via WebSocket')
+      or diag explain $client->websocket_connection->sent_messages;
+    $client->websocket_connection->sent_messages([]);
+
+    my $uploaded_files = shared_hash->{uploaded_files};
+    is_deeply($uploaded_files, [], 'no files uploaded') or diag explain $uploaded_files;
+    my $uploaded_assets = shared_hash->{uploaded_assets};
+    is_deeply($uploaded_assets, [], 'no assets uploaded') or diag explain $uploaded_assets;
+};
+
 subtest 'Livelog' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
     is_deeply $client->sent_messages,                       [], 'no REST-API calls yet';
