@@ -1,0 +1,269 @@
+version: 2
+
+aliases:
+  - &restore_cache
+    keys:
+      - v1-{{ checksum ".circleci/dependencies.txt" }}-{{ checksum ".circleci/build_cache.sh" }}
+
+  - &save_cache
+    key: v1-{{ checksum ".circleci/dependencies.txt" }}-{{ checksum ".circleci/build_cache.sh" }} 
+    paths:
+      - "/var/cache/zypp/packages"
+
+  - &restore_integration_cache
+    keys:
+      - v1-{{ checksum ".circleci/autoinst.sha" }}-{{ checksum ".circleci/build_autoinst.sh" }}
+
+  - &save_integration_cache
+    key: v1-{{ checksum ".circleci/autoinst.sha" }}-{{ checksum ".circleci/build_autoinst.sh" }}
+    paths:
+      - "/var/cache/autoinst"
+
+  - &chown_hack_for_cache
+    command: |
+      [ -z "$CIRCLE_WORKFLOW_ID" ] || sudo chown -R squamata /var/cache/zypp/packages
+
+  - &chown_hack_for_cache_integration
+    command: |
+      # hack as we don't want run container as root
+      [ -z "$CIRCLE_WORKFLOW_ID" ] || {
+        sudo chown -R squamata /var/cache/zypp/packages
+        sudo mkdir -p /var/cache/autoinst
+        sudo chown -R squamata /var/cache/autoinst
+      }
+
+  - &show_diagnostic_info
+    command: |
+      find /var/cache/zypp/packages/ | wc -l
+      [ -z "$CIRCLE_WORKFLOW_ID" ] || ls -lRa /var/cache/zypp/packages/openQA || :
+
+  - &check_cache
+    command: |
+      find /var/cache/zypp/packages/ | wc -l
+      [ -z "$CIRCLE_WORKFLOW_ID" ] || ls -lRa /var/cache/zypp/packages/openQA
+  
+  - &install_cached_packages
+    command: |
+        set -x
+        if [ -z "$CIRCLE_WORKFLOW_ID" ]; then
+          bash .circleci/build_cache.sh
+        else
+          sudo rpm -i -f $(find /var/cache/zypp/packages/ | grep '.rpm$')
+        fi
+
+  - &build_autoinst
+    command: |
+      if [ ! -z "$CIRCLE_WORKFLOW_ID" ]; then # only in workflow
+        rm -rf ../os-autoinst
+        sudo cp -r /var/cache/autoinst ../os-autoinst
+        sudo chown -R 1000 ../os-autoinst/t/data
+      else # only in local run
+         [ -d ../os-autoinst ] || { sudo mkdir ../os-autoinst && sudo chown -R 1000 ../os-autoinst; }
+         bash .circleci/build_autoinst.sh ../os-autoinst
+       fi
+
+images:
+  - &docker_config
+    user: squamata
+    environment:
+      USER: squamata
+      PERL5LIB: lib
+      TRAVIS: yes
+      COVER_OPTS: -select_re "^/lib" -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
+
+  - &base
+    image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
+    <<: *docker_config
+  
+  - &dependency_bot
+    image: registry.opensuse.org/devel/openqa/ci/containers/dependency_bot:latest
+  
+jobs:
+  dependencies-pr:
+    docker:
+      - <<: *dependency_bot
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          command: |
+            git config user.email "no@email.com"
+            git config user.name "Dependency bot circleci"
+            git config core.autocrlf true
+            hub --version
+      - run:
+          command: |
+            depid=$(date +%y%m%d%H%M%S)
+            git checkout -b dependency_$depid
+            bash .circleci/build_dependencies.sh
+
+            git --no-pager diff .circleci/dependencies.txt
+            set -x
+            git diff --quiet .circleci/dependencies.txt || (
+                set +o pipefail
+                curl -s https://api.github.com/repos/os-autoinst/os-autoinst/commits | grep sha | head -n 1 | grep -o -E '[0-9a-f]{40}' > .circleci/autoinst.sha
+                git add .circleci/dependencies.txt .circleci/autoinst.sha
+                git commit -m "Dependency cron $depid"
+                git push $CIRCLE_REPOSITORY_URL dependency_$depid
+                hub pull-request -m "Dependency cron $depid" --base $CIRCLE_PROJECT_USERNAME:$CIRCLE_BRANCH
+            )
+
+  build-cache:
+    docker:
+      - <<: *base
+    steps:
+      - checkout
+      - run: ls -la && pwd 
+      - run: cat .circleci/dependencies.txt
+      - run: *chown_hack_for_cache
+      - restore_cache: *restore_cache
+      - run: *show_diagnostic_info
+      - run:
+          command: |
+            if [ ! -d /var/cache/zypp/packages/openQA ]; then
+              bash -x .circleci/build_cache.sh
+            fi
+      - save_cache: *save_cache
+
+  build-integration-cache:
+    docker:
+      - <<: *base
+    steps:
+      - checkout
+      - run: *chown_hack_for_cache_integration
+      - restore_cache: *restore_cache
+      - restore_cache: *restore_integration_cache
+      - run: find /var/cache/zypp/packages/ | wc -l
+      - run:
+          command: |
+            ls -lRa /var/cache/zypp/packages/openQA || :
+            if [ ! -d /var/cache/autoinst/t ]; then
+              bash -x .circleci/build_autoinst.sh "/var/cache/autoinst"
+            fi
+      - save_cache: *save_integration_cache
+
+  test1:
+    docker:
+      - <<: *base
+    steps:
+      - checkout
+      - run: *chown_hack_for_cache
+      - restore_cache: *restore_cache
+      - run: *check_cache
+      - run: *install_cached_packages
+      - run: sudo zypper -n install python3-six # workaround bug https://bugzilla.suse.com/show_bug.cgi?id=1150895
+      - run: eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v t/*.t
+
+  testui:
+    docker:
+      - <<: *base
+    steps:
+      - checkout
+      - run: *chown_hack_for_cache
+      - restore_cache: *restore_cache
+      - run: *check_cache
+      - run: *install_cached_packages
+      - run: 
+          command: |
+            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v $(find t/ui/ -type f -name '*.t' | grep -vf .circleci/unstable_tests.txt | sort)
+
+  testui-unstable:
+    docker:
+      - <<: *base
+    steps:
+      - checkout
+      - run: *chown_hack_for_cache
+      - restore_cache: *restore_cache
+      - run: *check_cache
+      - run: *install_cached_packages
+      - run: 
+          command: |
+            export openqa_unstable_tests="$(cat .circleci/unstable_tests.txt)"
+            if [ ! -z "$openqa_unstable_tests" ]; then
+              eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v $openqa_unstable_tests || echo FAIL
+            fi
+
+  testfullstack:
+    docker:
+      - <<: *base
+    steps:
+      - checkout
+      - run: echo CIRCLE_WORKFLOW_ID=$CIRCLE_WORKFLOW_ID
+      - run: *chown_hack_for_cache_integration
+      - restore_cache: *restore_cache
+      - restore_cache: *restore_integration_cache
+      - run: *check_cache
+      - run: *install_cached_packages 
+      - run: *build_autoinst
+      - run: 
+          command: |
+            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib FULLSTACK=1 prove -v t/full-stack.t
+
+  testdeveloperfullstack:
+    docker:
+      - <<: *base
+    steps:
+      - checkout
+      - run: echo CIRCLE_WORKFLOW_ID=$CIRCLE_WORKFLOW_ID
+      - run: *chown_hack_for_cache_integration
+      - restore_cache: *restore_cache
+      - restore_cache: *restore_integration_cache
+      - run: *check_cache
+      - run: *install_cached_packages 
+      - run: *build_autoinst
+      - run: 
+          command: |
+            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib DEVELOPER_FULLSTACK=1 prove -v t/33-developer_mode.t
+
+  testschedulerfullstack:
+    docker:
+      - <<: *base
+    steps:
+      - checkout
+      - run: echo CIRCLE_WORKFLOW_ID=$CIRCLE_WORKFLOW_ID
+      - run: *chown_hack_for_cache_integration
+      - restore_cache: *restore_cache
+      - restore_cache: *restore_integration_cache
+      - run: *check_cache
+      - run: *install_cached_packages 
+      - run: *build_autoinst
+      - run: 
+          command: |
+            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib SCHEDULER_FULLSTACK=1 OPENQA_BASEDIR=. prove -v t/05-scheduler-full.t
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - build-cache
+      - test1:
+         requires:
+           - build-cache
+      - testui:
+         requires:
+           - build-cache
+      - testui-unstable:
+         requires:
+           - build-cache
+      - build-integration-cache:
+         requires:
+           - build-cache
+      - testfullstack:
+         requires:
+           - build-integration-cache
+      - testdeveloperfullstack:
+         requires:
+           - build-integration-cache
+      - testschedulerfullstack:
+         requires:
+           - build-integration-cache
+  nightly:
+   triggers:
+     - schedule:
+         cron: "0 0 * * *"
+         filters:
+           branches:
+             only:
+               - circleci
+   jobs:
+      - dependencies-pr

@@ -1,0 +1,3 @@
+t/ui/01-list.t
+t/ui/14-dashboard-parents.t
+t/ui/15-admin-workers.t
