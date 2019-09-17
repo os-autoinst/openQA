@@ -1064,7 +1064,8 @@ sub insert_module {
     }
     catch {
         my $err = $_;
-        die $err unless $err =~ /duplicate key value violates unique constraint "job_modules_job_id_name"/;
+        die $err
+          unless $err =~ /duplicate key value violates unique constraint "job_modules_job_id_name_category_script"/;
         $r = $modules->find({name => $tm->{name}});
     };
     $r->update(

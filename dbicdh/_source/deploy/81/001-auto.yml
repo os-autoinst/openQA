@@ -1568,8 +1568,10 @@ schema:
           fields:
             - job_id
             - name
+            - category
+            - script
           match_type: ''
-          name: job_modules_job_id_name
+          name: job_modules_job_id_name_category_script
           on_delete: ''
           on_update: ''
           options: []
@@ -1605,7 +1607,7 @@ schema:
           default_value: ~
           is_nullable: 0
           is_primary_key: 0
-          is_unique: 0
+          is_unique: 1
           name: category
           order: 5
           size:
@@ -1686,7 +1688,7 @@ schema:
           default_value: ~
           is_nullable: 0
           is_primary_key: 0
-          is_unique: 0
+          is_unique: 1
           name: script
           order: 4
           size:

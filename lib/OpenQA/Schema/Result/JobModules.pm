@@ -90,7 +90,7 @@ __PACKAGE__->belongs_to(
         on_update     => "CASCADE",
     },
 );
-__PACKAGE__->add_unique_constraint([qw(job_id name)]);
+__PACKAGE__->add_unique_constraint([qw(job_id name category script)]);
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;

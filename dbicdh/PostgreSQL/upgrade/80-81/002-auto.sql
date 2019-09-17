@@ -4,7 +4,7 @@
 BEGIN;
 
 ;
-ALTER TABLE job_modules ADD CONSTRAINT job_modules_job_id_name UNIQUE (job_id, name);
+ALTER TABLE job_modules ADD CONSTRAINT job_modules_job_id_name_category_script UNIQUE (job_id, name, category, script);
 
 ;
 

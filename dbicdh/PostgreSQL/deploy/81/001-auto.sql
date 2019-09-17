@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Fri Sep 13 17:44:09 2019
+-- Created on Tue Sep 17 16:43:28 2019
 -- 
 ;
 --
@@ -81,7 +81,7 @@ CREATE TABLE job_modules (
   t_created timestamp NOT NULL,
   t_updated timestamp NOT NULL,
   PRIMARY KEY (id),
-  CONSTRAINT job_modules_job_id_name UNIQUE (job_id, name)
+  CONSTRAINT job_modules_job_id_name_category_script UNIQUE (job_id, name, category, script)
 );
 CREATE INDEX job_modules_idx_job_id on job_modules (job_id);
 CREATE INDEX idx_job_modules_result on job_modules (result);

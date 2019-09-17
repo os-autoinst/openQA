@@ -3,7 +3,7 @@
 DELETE FROM job_modules WHERE id IN (
     SELECT id FROM (
         SELECT id, ROW_NUMBER() OVER (
-            PARTITION BY job_id, name
+            PARTITION BY job_id, name, category, script
             ORDER BY id
         ) as row_num FROM job_modules
     ) as t WHERE t.row_num > 1
