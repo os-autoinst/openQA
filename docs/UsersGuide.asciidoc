@@ -538,20 +538,19 @@ In case the developer mode in not working on your instance, try to follow the
 
 ==== Workflow for creating or updating needles ====
 
-1. In case a new needles should be created, add the corresponding +assert_screen+s to
-   your test.
-2. Start the test with the +assert_screen+s which are supposed to fail.
-3. Select "Pause on +assert_screen+ failure and confirm.
+1. In case a new needles should be created, add the corresponding +assert_screen+ calls
+   to your test.
+2. Start the test with the +assert_screen+ calls which are supposed to fail.
+3. Select "+assert_screen+ timeout" under "Pause on screen mismatch" and confirm.
 4. Wait until the test has paused. There is a button to skip the current timeout to speed
    this up.
-5. A button for acessing the needle editor should occur. It may take a few seconds till
+5. A button for accessing the needle editor should occur. It may take a few seconds till
    it occurs because the screenshots created so far need to be uploaded from the worker to
    the web UI. Of course it is also possible to go back to the "Details" tab to create a new
    needle from any previous screenshot/match available.
 6. After creating the new needle, click the resume button to test whether it worked.
 
-Steps 4. to 6. can be repeated for further +assert_screen+s/needles without restarting the
-test.
+Steps 4. to 6. can be repeated for further needles without restarting the test.
 
 
 === Job group editor https://github.com/os-autoinst/openQA/pull/2111[gh#2111] ===
