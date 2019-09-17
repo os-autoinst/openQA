@@ -462,15 +462,12 @@ subtest 'handle job status changes' => sub {
     my $cleanup_called = 0;
     $worker_mock->mock(_clean_pool_directory => sub { $cleanup_called = 1; });
 
-    # mock accepting job
-    my $job_mock     = Test::MockModule->new('OpenQA::Worker::Job');
-    my $job_accepted = 0;
-    $job_mock->mock(accept => sub { $job_accepted = 1; });
-
-    # mock job startup
+    # mock accepting and starting job
     my $job_mock           = Test::MockModule->new('OpenQA::Worker::Job');
+    my $job_accepted       = 0;
     my $job_startup_called = 0;
-    $job_mock->mock(start => sub { $job_startup_called = 1; });
+    $job_mock->mock(accept => sub { $job_accepted       = 1; });
+    $job_mock->mock(start  => sub { $job_startup_called = 1; });
 
     # assign fake client and job with cleanup
     my $fake_client = OpenQA::Worker::WebUIConnection->new('some-host', {apikey => 'foo', apisecret => 'bar'});
