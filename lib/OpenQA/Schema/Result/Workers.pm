@@ -174,7 +174,7 @@ sub currentstep {
     my ($self) = @_;
 
     return unless ($self->job);
-    my $r = $self->job->modules->find({result => 'running'});
+    my $r = $self->job->modules->find({result => 'running'}, {order_by => {-desc => 't_updated'}, rows => 1});
     $r->name if $r;
 }
 
