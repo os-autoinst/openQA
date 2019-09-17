@@ -145,7 +145,7 @@ subtest 'Simulation of unstable workers' => sub {
     dead_workers($schema);
 
     # simulate unstable worker
-    $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, 8);
+    $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, 8, 3);
     wait_for_worker($schema, 5);
 
     ($allocated) = scheduler_step();
