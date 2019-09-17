@@ -605,7 +605,8 @@ function setupDependencyGraph() {
                 return;
             }
             statusElement.style.textAlign = 'left';
-            statusElement.innerHTML = '<p>Arrows visualize chained dependencies specified via <code>START_AFTER_TEST</code>. \
+            statusElement.innerHTML = '<p>Arrows visualize chained dependencies specified via <code>START_AFTER_TEST</code> \
+                                       and <code>START_DIRECTLY_AFTER_TEST</code> (hover over boxes to distinguish). \
                                        Blue boxes visualize parallel dependencies specified via <code>PARALLEL_WITH</code>. \
                                        The current job is highlighted with a bolder border and yellow background.</p> \
                                        <p>The graph shows only the latest jobs. That means jobs which have been cloned will \
