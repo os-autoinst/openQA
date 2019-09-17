@@ -1063,7 +1063,8 @@ sub insert_module {
         $r->insert;
     }
     catch {
-        die $_ unless $_ =~ /duplicate key value violates unique constraint "job_modules_job_id_name"/;
+        my $err = $_;
+        die $err unless $err =~ /duplicate key value violates unique constraint "job_modules_job_id_name"/;
         $r = $modules->find({name => $tm->{name}});
     };
     $r->update(
