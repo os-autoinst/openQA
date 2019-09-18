@@ -1055,12 +1055,18 @@ sub update_backend {
 
 sub insert_module {
     my ($self, $tm) = @_;
-    my $r = $self->modules->find_or_new({name => $tm->{name}});
-    if (!$r->in_storage) {
-        $r->category($tm->{category});
-        $r->script($tm->{script});
-        $r->insert;
+
+    my $r;
+    my $modules = $self->modules;
+    try {
+        $r = $modules->create({name => $tm->{name}, category => $tm->{category}, script => $tm->{script}});
     }
+    catch {
+        my $err = $_;
+        die $err
+          unless $err =~ /duplicate key value violates unique constraint "job_modules_job_id_name_category_script"/;
+        $r = $modules->find({name => $tm->{name}});
+    };
     $r->update(
         {
             # we have 'important' in the db but 'ignore_failure' in the flags

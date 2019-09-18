@@ -596,4 +596,16 @@ subtest 'delete job assigned as last use for asset' => sub {
     is($some_asset->last_use_job_id, undef, 'last job unset');
 };
 
+subtest 'modules are unique per job' => sub {
+    my %_settings = %settings;
+    $_settings{TEST} = 'X';
+    my $job = _job_create(\%_settings);
+    $job->insert_module({name => 'some_name', category => 'some_category', script => 'foo/bar.pm', flags => {}});
+    $job->insert_module({name => 'some_name', category => 'some_category', script => 'foo/bar.pm', flags => {}});
+    my @modules = $job->modules->all;
+    is $modules[0]->name,   'some_name',  'right name';
+    is $modules[0]->script, 'foo/bar.pm', 'right script';
+    is $modules[1], undef, 'no second result';
+};
+
 done_testing();
