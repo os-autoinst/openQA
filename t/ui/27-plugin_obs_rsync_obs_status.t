@@ -33,7 +33,10 @@ use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 
 OpenQA::Test::Case->new->init_data;
 
-my $response_published = '<resultlist state="c181538ad4f4c1be29e73f85b9237653">
+my %fake_response_by_project = (
+    Proj3 => '
+<!-- This project is published. -->
+<resultlist state="c181538ad4f4c1be29e73f85b9237653">
   <result project="Proj1" repository="standard" arch="i586" code="unpublished" state="unpublished">
     <status package="000product" code="excluded"/>
   </result>
@@ -49,9 +52,10 @@ my $response_published = '<resultlist state="c181538ad4f4c1be29e73f85b9237653">
   <result project="Proj1" repository="images" arch="x86_64" code="published" state="published">
     <status package="000product" code="disabled"/>
   </result>
-</resultlist>';
-
-my $response_publishing = '<resultlist state="c181538ad4f4c1be29e73f85b9237651">
+</resultlist>',
+    Proj2 => '
+<!-- This project is still being published. -->
+<resultlist state="c181538ad4f4c1be29e73f85b9237651">
   <result project="Proj1" repository="standard" arch="i586" code="unpublished" state="unpublished">
     <status package="000product" code="excluded"/>
   </result>
@@ -67,10 +71,16 @@ my $response_publishing = '<resultlist state="c181538ad4f4c1be29e73f85b9237651">
   <result project="Proj1" repository="images" arch="x86_64" code="published" state="published">
     <status package="000product" code="disabled"/>
   </result>
-</resultlist>';
-
-my $response_dirty = 'dirty';
-our $response;
+</resultlist>',
+    Proj1 => '
+<!-- This project is "dirty". -->
+<resultlist state="c181538ad4f4c1be29e73f85b9237653">
+  <result project="Proj1" repository="images" arch="x86_64" code="published" state="published" dirty>
+    <status package="000product" code="disabled"/>
+  </result>
+</resultlist>',
+    Proj0 => 'invalid XML',
+);
 
 $SIG{INT} = sub {
     session->clean;
@@ -84,22 +94,12 @@ my $host = "http://127.0.0.1:$port";
 sub fake_api_server {
     my $mock = Mojolicious->new;
     $mock->mode('test');
-    $mock->routes->get(
-        '/public/build/Proj1/_result' => sub {
-            my $c = shift;
-            return $c->render(status => 200, text => $response_dirty);
-        });
-    $mock->routes->get(
-        '/public/build/Proj2/_result' => sub {
-            my $c = shift;
-            return $c->render(status => 200, text => $response_publishing);
-        });
-    $mock->routes->get(
-        '/public/build/Proj3/_result' => sub {
-            my $c = shift;
-            return $c->render(status => 200, text => $response_published);
-        });
-
+    for my $project (sort keys %fake_response_by_project) {
+        $mock->routes->get(
+            "/public/build/$project/_result" => sub {
+                shift->render(status => 200, text => $fake_response_by_project{$project});
+            });
+    }
     return $mock;
 }
 
@@ -154,14 +154,10 @@ $t->app->minion->on(
     });
 
 subtest 'test helper directly' => sub {
-    my $res = $t->app->obs_rsync->is_status_dirty('Proj1');
-    ok($res, "Status dirty");
-
-    $res = $t->app->obs_rsync->is_status_dirty('Proj2');
-    ok($res, "Status publishing $res");
-
-    $res = $t->app->obs_rsync->is_status_dirty('Proj3');
-    ok(!$res, "Status published $res");
+    is($t->app->obs_rsync->is_status_dirty('Proj0'), undef, 'status unknown');
+    is($t->app->obs_rsync->is_status_dirty('Proj1'), 1,     'status dirty');
+    is($t->app->obs_rsync->is_status_dirty('Proj2'), 1,     'status publishing');
+    is($t->app->obs_rsync->is_status_dirty('Proj3'), 0,     'status published');
 };
 
 $t->get_ok('/');

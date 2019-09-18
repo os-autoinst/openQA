@@ -15,7 +15,7 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Id</th>
+                    <th>ID</th>
                     <th>Task</th>
                     <th>Args</th>
                     <th>Created</th>

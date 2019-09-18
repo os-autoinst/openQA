@@ -39,7 +39,7 @@ sub register {
                 my ($c, $project) = @_;
                 my $url = $c->obs_rsync->project_status_url;
                 return undef unless $url;
-                return _is_obs_project_status_dirty($url, $project);
+                return $self->_is_obs_project_status_dirty($url, $project);
             });
         $app->helper('obs_rsync.check_and_render_error' => \&_check_and_render_error);
 
@@ -79,31 +79,30 @@ sub register {
 # try to determine whether project is dirty
 # undef means status is unknown
 sub _is_obs_project_status_dirty {
-    my ($url, $project) = @_;
+    my ($self, $url, $project) = @_;
     return undef unless $url;
 
     $url =~ s/%%PROJECT/$project/g;
-    my $ua = Mojo::UserAgent->new;
-
+    my $ua  = $self->{ua} ||= Mojo::UserAgent->new;
     my $res = $ua->get($url)->result;
     return undef unless $res->is_success;
 
-    return _parse_obs_response_dirty($res->body);
+    return _parse_obs_response_dirty($res);
 }
 
 sub _parse_obs_response_dirty {
-    my ($body) = @_;
+    my ($res) = @_;
 
-    my $dirty;
-    return 1 if $body =~ /dirty/g;
-    while ($body =~ /^(.*repository="images".*)/gm) {
-        my $line = $1;
-        if ($line =~ /state="([a-z]+)"/) {
-            return 1 if $1 ne 'published';
-            $dirty //= 0;
-        }
+    my $results = $res->dom('result');
+    return undef unless $results->size;
+
+    for my $result ($results->each) {
+        my $attributes = $result->attr;
+        return 1 if exists $attributes->{dirty};
+        next if ($attributes->{repository} // '') ne 'images';
+        return 1 if ($attributes->{state} // '') ne 'published';
     }
-    return $dirty;
+    return 0;
 }
 
 sub _check_and_render_error {

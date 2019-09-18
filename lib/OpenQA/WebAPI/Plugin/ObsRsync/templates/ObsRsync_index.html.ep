@@ -6,8 +6,14 @@
 
 % title 'OBS synchronization folders';
 <h2><%= 'OBS synchronization folders ' %></h2>
+<ul>
 % for my $folder (@$folders) {
-    <div><%= link_to $folder => url_for('plugin_obs_rsync_folder', folder => $folder) %></div>
+    <li><%= link_to $folder => url_for('plugin_obs_rsync_folder', folder => $folder) %></li>
 % }
+</ul>
 <hr>
-<%= link_to 'View job queue...' => url_for('plugin_obs_rsync_queue') %>
+<div class="btn-toolbar" role="toolbar">
+    <div class="btn-group mr-2" role="group">
+        %= link_to 'View job queue' => url_for('plugin_obs_rsync_queue'), class => 'btn btn-primary', role => 'button'
+    </div>
+</div>
