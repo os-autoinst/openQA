@@ -375,7 +375,7 @@ subtest 'Cache tests' => sub {
         like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 5 correct autoinst setup notes');
         like(
             (split(/\n/, $autoinst_log))[-1],
-            qr/uploading autoinst-log.txt/,
+            qr/uploading autoinst-log.txt/i,
             'Test 5 correct autoinst uploading autoinst'
         );
     }
@@ -456,7 +456,7 @@ subtest 'Cache tests' => sub {
         like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 7 correct autoinst setup notes');
         like(
             (split(/\n/, $autoinst_log))[-1],
-            qr/uploading autoinst-log.txt/,
+            qr/uploading autoinst-log.txt/i,
             'Test 7 correct autoinst uploading autoinst'
         );
     }
@@ -478,7 +478,7 @@ subtest 'Cache tests' => sub {
         like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 8 correct autoinst setup notes');
         like(
             (split(/\n/, $autoinst_log))[-1],
-            qr/uploading autoinst-log.txt/,
+            qr/uploading autoinst-log.txt/i,
             'Test 8 correct autoinst uploading autoinst'
         );
 
