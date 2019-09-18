@@ -1059,8 +1059,7 @@ sub insert_module {
     my $r;
     my $modules = $self->modules;
     try {
-        $r = $modules->new({name => $tm->{name}, category => $tm->{category}, script => $tm->{script}});
-        $r->insert;
+        $r = $modules->create({name => $tm->{name}, category => $tm->{category}, script => $tm->{script}});
     }
     catch {
         my $err = $_;
