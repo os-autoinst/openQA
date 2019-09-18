@@ -428,24 +428,21 @@ Children B, C, D can run and finish anytime, but A must run until all B, C, D fi
 
 === Test synchronization and locking API
 
-OpenQA provides locking server through lock API. To use lock API import +lockapi+ package (_use lockapi;_) in your test file.
-Lock API provides functions: +mutex_create+, +mutex_lock+, +mutex_unlock+, +mutex_wait+. Each of these functions take at least one parameter: name of the lock. Note that lock name can't contain "-" character.
-Locks are associated with caller's job - locks can't be unlocked by different job then the one who locked the lock.
+OpenQA provides a locking API. To use it in your test files import the +lockapi+ package (_use lockapi;_). It provides the following functions: +mutex_create+, +mutex_lock+, +mutex_unlock+, +mutex_wait+
 
-+mutex_lock+ tries to lock the mutex lock for caller's job. If lock is unavailable or locked by someone else, +mutex_lock+ call blocks.
+Each of these functions takes the name of the mutex lock as first parameter. The name must not contain the "-" character. Mutex locks are associated with the caller's job.
 
-+mutex_unlock+ tries to unlock the mutex lock. If lock is locked by different job, +mutex_unlock+ call blocks. When lock become available or if lock does not exist, call
-returns without doing anything.
++mutex_lock+ tries to lock the mutex for the caller's job. The +mutex_lock+ call blocks if the mutex does not exist or has been locked by a different job.
 
-+mutex_wait+ is combination of +mutex_lock+ & +mutex_unlock+ that displays more information about mutex state (time spent waiting, location of lock). Use this if you wait for specific action from single place (apache is running on master node)
++mutex_unlock+ tries to unlock the mutex. If the mutex is locked by a different job, +mutex_unlock+ call blocks until the lock becomes available. If the mutex does not exist the call returns immediately without doing anything.
 
-+mutex_create+ create new mutex lock. When lock is created by +mutex_create+,
- lock is automatically unlocked. When mutex lock already exists call returns without doing anything.
++mutex_wait+ is a combination of +mutex_lock+ and +mutex_unlock+. It displays more information about mutex state (time spent waiting, location of the lock). Use it if you need to wait for a specific action from single place (e.g. that Apache is running on the master node).
 
-Locks are addressed by _their name_. This name is _valid in test group_ defined by their dependencies. If there are more groups running at the
-same time and the same lock name is used, these locks are independent of each other.
++mutex_create+ creates a new mutex which is initially unlocked. If the mutex already exists the call returns immediately without doing anything.
 
-The +mmapi+ package provides +wait_for_children+, which the parent can use to wait for the children to complete.
+Mutexes are addressed by _their name_. Each cluster of parallel jobs (defined via `PARALLEL_WITH` dependencies) has its own namespace. That means concurrently running jobs in different parallel job clusters use distinct mutexes (even if the same names are used).
+
+The +mmapi+ package provides +wait_for_children+ which the parent can use to wait for the children to complete.
 
 [caption="Example of mutex usage"]
 ====
@@ -496,14 +493,14 @@ sub run {
 ====
 
 
-Sometimes it is useful to wait for certain action from child or sibling job, not parent.
-In this case child or sibling will create a mutex and any cluster job can lock/unlock it.
+Sometimes it is useful to wait for a certain action from the child or sibling job rather than the parent.
+In this case the child or sibling will create a mutex and any cluster job can lock/unlock it.
 
 The child can however die at any time. To prevent parent deadlock in this situation,
-it's required to pass mutex owner job ID as a second parameter to mutex_lock and mutex_wait.
-Mutex owner is the job that creates the mutex.
-If a child job with given ID already finished, mutex_lock() calls die.
-Job ID is also required when unlocking such mutex.
+it is required to pass the mutex owner's job ID as a second parameter to +mutex_lock+ and +mutex_wait+.
+The mutex owner is the job that creates the mutex.
+If a child job with a given ID has already finished, +mutex_lock+ calls die.
+The job ID is also required when unlocking such a mutex.
 
 [caption="Example of mmapi: Parent Job"]
 .Wait until the child reaches given point
@@ -519,7 +516,7 @@ sub run {
     # let's suppose there is only one child
     my $child_id = (keys %$children)[0];
 
-    # this blocks until lock is available and then does nothing
+    # this blocks until the lock is available and then does nothing
     mutex_wait('child_reached_given_point', $child_id);
 
     # continue with the test
@@ -528,20 +525,21 @@ sub run {
 ====
 
 
-Mutexes are a way to wait for specific event from single job.
-When we need multiple jobs to reach required state we need to use barriers.
+Mutexes are a way to wait for specific events from a single job.
+When we need multiple jobs to reach a certain state we need to use barriers.
 
-Before first use barrier needs to be created with barrier_create with 2 parameters - name and count.
-Name behaves as ID (same as with mutexes), count is number of jobs needed to call barrier_wait to unlock barrier.
+To create a barrier call +barrier_create+ with the parameters name and count.
+The name serves as an ID (same as with mutexes). The count parameter specifies the
+number of jobs needed to call +barrier_wait+ to unlock barrier.
 
-There is optional barrier_wait parameter called check_dead_job.
-When used it will kill all jobs waiting in barrier_wait if one of cluster jobs die.
+There is an optional +barrier_wait+ parameter called +check_dead_job+.
+When used it will kill all jobs waiting in +barrier_wait+ if one of the cluster jobs
+dies. It prevents waiting for states that will never be reached (and eventually dies
+on job timeout). It should be set only on one of the +barrier_wait+ calls.
 
-It prevents waiting for state that will never be reached (and eventually die on job timeout).
-Should be set only on one of barrier_wait calls.
-
-Example is situation with 1 master and 3 worker jobs. We need to wait until 3 worker jobs perform initial setup.
-After that we can make cluster from them, but if one of them fails it makes no sense waiting.
+An example would be one master and three worker jobs and you want to do initial setup
+in the three worker jobs before starting main actions. In such a case you might use
++check_dead_job+ to avoid useless actions when one of the worker jobs dies.
 
 
 [caption="Example of barriers: "]
@@ -565,7 +563,7 @@ sub run {
     script_run 'create_cluster';
     script_run 'test_cluster';
 
-    # Notify all nodes we are finished
+    # Notify all nodes that we are finished
     mutex_create 'CLUSTER_CREATED';
     wait_for_children;
 }
