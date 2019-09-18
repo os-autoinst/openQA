@@ -51,6 +51,19 @@ aliases:
           sudo rpm -i -f $(find /var/cache/zypp/packages/ | grep '.rpm$')
         fi
 
+  - &test_junit
+    name: "Enabling JUnit output for Perl tests"
+    command: |
+      mkdir -p test-results/junit
+      echo 'export JUNIT_OUTPUT_FILE=test-results/junit/${CIRCLE_JOB}.xml' >> $BASH_ENV
+
+  - &store_test_results
+    path: test-results/junit
+
+  - &store_artifacts
+    path: test-results/t
+    destination: artifacts
+
   - &build_autoinst
     command: |
       if [ ! -z "$CIRCLE_WORKFLOW_ID" ]; then # only in workflow
@@ -68,6 +81,9 @@ images:
     environment:
       USER: squamata
       PERL5LIB: lib
+      JUNIT_PACKAGE: openQA
+      JUNIT_NAME_MANGLE: perl
+      PERL_TEST_HARNESS_DUMP_TAP: test-results
       TRAVIS: yes
       COVER_OPTS: -select_re "^/lib" -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
 
@@ -154,8 +170,11 @@ jobs:
       - restore_cache: *restore_cache
       - run: *check_cache
       - run: *install_cached_packages
+      - run: *test_junit
       - run: sudo zypper -n install python3-six # workaround bug https://bugzilla.suse.com/show_bug.cgi?id=1150895
-      - run: eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v t/*.t
+      - run: eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove --harness TAP::Harness::JUnit t/*.t
+      - store_test_results: *store_test_results
+      - store_artifacts: *store_artifacts
 
   testui:
     docker:
@@ -166,9 +185,12 @@ jobs:
       - restore_cache: *restore_cache
       - run: *check_cache
       - run: *install_cached_packages
+      - run: *test_junit
       - run:
           command: |
-            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v $(find t/ui/ -type f -name '*.t' | grep -vf .circleci/unstable_tests.txt | sort)
+            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove --harness TAP::Harness::JUnit $(find t/ui/ -type f -name '*.t' | grep -vf .circleci/unstable_tests.txt | sort)
+      - store_test_results: *store_test_results
+      - store_artifacts: *store_artifacts
 
   testui-unstable:
     docker:
@@ -179,12 +201,15 @@ jobs:
       - restore_cache: *restore_cache
       - run: *check_cache
       - run: *install_cached_packages
+      - run: *test_junit
       - run:
           command: |
             export openqa_unstable_tests="$(cat .circleci/unstable_tests.txt)"
             if [ ! -z "$openqa_unstable_tests" ]; then
-              eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v $openqa_unstable_tests || echo FAIL
+              eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove --harness TAP::Harness::JUnit $openqa_unstable_tests || echo FAIL
             fi
+      - store_test_results: *store_test_results
+      - store_artifacts: *store_artifacts
 
   testapi:
     docker:
@@ -195,9 +220,12 @@ jobs:
       - restore_cache: *restore_cache
       - run: *check_cache
       - run: *install_cached_packages
+      - run: *test_junit
       - run:
           command: |
-            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v t/api/*.t
+            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove --harness TAP::Harness::JUnit t/api/*.t
+      - store_test_results: *store_test_results
+      - store_artifacts: *store_artifacts
 
   testfullstack:
     docker:
@@ -210,10 +238,13 @@ jobs:
       - restore_cache: *restore_integration_cache
       - run: *check_cache
       - run: *install_cached_packages
+      - run: *test_junit
       - run: *build_autoinst
       - run:
           command: |
-            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib FULLSTACK=1 prove -v t/full-stack.t
+            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib FULLSTACK=1 prove --harness TAP::Harness::JUnit t/full-stack.t
+      - store_test_results: *store_test_results
+      - store_artifacts: *store_artifacts
 
   testdeveloperfullstack:
     docker:
@@ -226,10 +257,13 @@ jobs:
       - restore_cache: *restore_integration_cache
       - run: *check_cache
       - run: *install_cached_packages
+      - run: *test_junit
       - run: *build_autoinst
       - run:
           command: |
-            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib DEVELOPER_FULLSTACK=1 prove -v t/33-developer_mode.t
+            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib DEVELOPER_FULLSTACK=1 prove --harness TAP::Harness::JUnit t/33-developer_mode.t
+      - store_test_results: *store_test_results
+      - store_artifacts: *store_artifacts
 
   testschedulerfullstack:
     docker:
@@ -242,10 +276,13 @@ jobs:
       - restore_cache: *restore_integration_cache
       - run: *check_cache
       - run: *install_cached_packages
+      - run: *test_junit
       - run: *build_autoinst
       - run:
           command: |
-            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib SCHEDULER_FULLSTACK=1 OPENQA_BASEDIR=. prove -v t/05-scheduler-full.t
+            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib SCHEDULER_FULLSTACK=1 OPENQA_BASEDIR=. prove --harness TAP::Harness::JUnit t/05-scheduler-full.t
+      - store_test_results: *store_test_results
+      - store_artifacts: *store_artifacts
 
 workflows:
   version: 2

@@ -39,6 +39,7 @@ docker exec -t gendep sudo zypper ar -f http://download.opensuse.org/repositorie
 docker exec -t gendep sudo zypper --gpg-auto-import-keys ref
 docker exec -t gendep sudo zypper -n install openQA-devel
 docker exec -t gendep sudo zypper -n install chromedriver
+docker exec -t gendep sudo zypper -n install perl-TAP-Harness-JUnit
 
 docker exec -t gendep rpm -qa --qf "%{NAME}-%{VERSION}\n" |sort > gendep_after.txt
 comm -13 gendep_before.txt gendep_after.txt | grep -v gpg-pubkey | grep -v openQA | grep -v os-autoinst > "$thisdir/dependencies.txt"
