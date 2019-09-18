@@ -71,7 +71,7 @@ sub run {
     return undef if $helper->check_and_render_error($folder, $subfolder);
 
     my $full  = Mojo::File->new($helper->home, $folder, $subfolder);
-    my $files = $full->list({dir => 1})->map('basename')->sort->to_array;
+    my $files = $full->list->map('basename')->sort->to_array;
     $self->render(
         'ObsRsync_logfiles',
         folder    => $folder,
