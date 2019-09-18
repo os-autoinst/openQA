@@ -88,22 +88,19 @@ sub _is_obs_project_status_dirty {
     my $res = $ua->get($url)->result;
     return undef unless $res->is_success;
 
-    return _parse_obs_response_dirty($res->body);
+    return _parse_obs_response_dirty($res);
 }
 
 sub _parse_obs_response_dirty {
-    my ($body) = @_;
+    my ($res) = @_;
 
-    my $dirty;
-    return 1 if $body =~ /dirty/g;
-    while ($body =~ /^(.*repository="images".*)/gm) {
-        my $line = $1;
-        if ($line =~ /state="([a-z]+)"/) {
-            return 1 if $1 ne 'published';
-            $dirty //= 0;
-        }
+    for my $result ($res->dom('result')->each) {
+        my $attributes = $result->attr;
+        return 1 if exists $attributes->{dirty};
+        next if ($attributes->{repository} // '') ne 'images';
+        return 1 if ($attributes->{state} // '') ne 'published';
     }
-    return $dirty;
+    return 0;
 }
 
 sub _check_and_render_error {
