@@ -77,7 +77,6 @@ our @EXPORT  = qw(
   &human_readable_size
   &locate_asset
   &job_groups_and_parents
-  &find_job
   &detect_current_version
   wait_with_progress
   mark_job_linked
@@ -835,18 +834,6 @@ sub job_groups_and_parents {
         }
     }
     return \@res;
-}
-
-sub find_job {
-    my ($controller, $job_id) = @_;
-
-    my $job = $controller->app->schema->resultset('Jobs')->find(int($job_id));
-    if (!$job) {
-        $controller->render(json => {error => 'Job does not exist'}, status => 404);
-        return;
-    }
-
-    return $job;
 }
 
 # returns the search args for the job overview according to the parameter of the specified controller

@@ -351,6 +351,8 @@ sub register {
             );
         });
 
+    $app->helper(find_job_or_render_not_found => \&_find_job_or_render_not_found);
+
     $app->helper(
         'reply.gru_result' => sub {
             my ($c, $result, $error_code) = @_;
@@ -358,6 +360,15 @@ sub register {
         });
 
     $app->helper('reply.validation_error' => \&_validation_error);
+}
+
+sub _find_job_or_render_not_found {
+    my ($c, $job_id) = @_;
+
+    my $job = $c->schema->resultset('Jobs')->find(int($job_id));
+    return $job if $job;
+    $c->render(json => {error => 'Job does not exist'}, status => 404);
+    return undef;
 }
 
 sub _step_thumbnail {
