@@ -761,7 +761,7 @@ sub has_pending_jobs {
 sub pending_job_ids {
     my ($self) = @_;
 
-    return [keys %{$self->{_pending_job_ids}}];
+    return [sort keys %{$self->{_pending_job_ids}}];
 }
 
 sub _find_job_in_queue {
