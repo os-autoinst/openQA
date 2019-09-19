@@ -68,13 +68,13 @@
             &.passed {
                 background-color: $color-ok;
             }
-            &.failed {
+            &.failed, &.parallel_failed {
                 background-color: $color-result-failed;
             }
             &.softfailed {
                 background-color: $color-softfailed;
             }
-            &.incomplete {
+            &.incomplete, &.timeout_exceeded {
                 color: white;
                 background-color: $color-incomplete;
             }
@@ -85,7 +85,7 @@
                 color: white;
                 background-color: $color-state-scheduled;
             }
-            &.cancelled {
+            &.cancelled, &.user_cancelled {
                 background-color: $color-state-cancelled;
             }
             &.assigned, &.running, &.uploading {
