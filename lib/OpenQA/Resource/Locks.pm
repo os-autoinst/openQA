@@ -125,28 +125,32 @@ sub barrier_create {
 
 sub barrier_wait {
     my ($name, $jobid, $where, $check_dead_job) = @_;
+
     return -1 unless $name && $jobid;
-    my $barrier = _get_lock($name, $jobid, $where);
-    return -1 unless $barrier;
-    my $schema    = OpenQA::Schema->singleton;
-    my $jobschema = $schema->resultset('Jobs');
-    my @jobs      = split(/,/, $barrier->locked_by // '');
+    return -1 unless my $barrier = _get_lock($name, $jobid, $where);
 
-    do { $barrier->delete; return -1 }
-      if $check_dead_job
-      && grep { $final_states{$_} }
+    my $jobschema = OpenQA::Schema->singleton->resultset('Jobs');
+    my @jobs      = split ',', $barrier->locked_by // '';
 
-      map { $jobschema->find($_)->result }
-      ($jobid, @jobs, map { scalar $_->id } ($barrier->owner->parents->all, $barrier->owner->children->all));
+    if ($check_dead_job) {
+        my @related_ids = map { scalar $_->id } $barrier->owner->parents->all, $barrier->owner->children->all;
+        my @results     = map { $jobschema->find($_)->result } $jobid, @jobs, @related_ids;
+        for my $result (@results) {
+            next unless $final_states{$result};
+            $barrier->delete;
+            return -1;
+        }
+    }
 
     if (grep { $_ eq $jobid } @jobs) {
-        return 1 if (scalar @jobs eq $barrier->count);
+        return 1 if @jobs == $barrier->count;
         return 0;
     }
 
     push @jobs, $jobid;
     $barrier->update({locked_by => join(',', @jobs)});
-    return 1 if (scalar @jobs eq $barrier->count);
+
+    return 1 if @jobs == $barrier->count;
     return 0;
 }
 
