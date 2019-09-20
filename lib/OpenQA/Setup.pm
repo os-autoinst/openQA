@@ -328,7 +328,7 @@ sub setup_mojo_tmpdir {
 }
 
 sub load_plugins {
-    my ($server, $monitoring_root_route) = @_;
+    my ($server, $monitoring_root_route, %options) = @_;
 
     push @{$server->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
 
@@ -342,7 +342,7 @@ sub load_plugins {
     # Load arbitrary plugins defined in config: 'plugins' in section
     # '[global]' can be a space-separated list of plugins to load, by
     # module name under OpenQA::WebAPI::Plugin::
-    if (defined $server->config->{global}->{plugins}) {
+    if (defined $server->config->{global}->{plugins} && !$options{no_arbitrary_plugins}) {
         my @plugins = split(' ', $server->config->{global}->{plugins});
         for my $plugin (@plugins) {
             $server->log->info("Loading external plugin $plugin");

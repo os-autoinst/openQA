@@ -55,7 +55,7 @@ sub startup {
     # take care of DB deployment or migration before starting the main app
     my $schema = $self->schema;
 
-    OpenQA::Setup::load_plugins($self);
+    OpenQA::Setup::load_plugins($self, undef, no_arbitrary_plugins => 1);
     OpenQA::Setup::set_secure_flag_on_cookies_of_https_connection($self);
 
     # register root routes: use same paths as the regular web UI but prefix everything with /liveviewhandler
