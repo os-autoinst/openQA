@@ -79,6 +79,7 @@ sub ws_send {
             log_debug("Unable to send command \"$msg\" to worker $workerid");
         }
     }
+    return $res;
 }
 
 sub ws_send_job {

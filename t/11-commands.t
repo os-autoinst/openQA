@@ -26,6 +26,8 @@ use Test::Output 'stderr_like';
 use OpenQA::Test::Case;
 use OpenQA::WebSockets::Client;
 use Test::MockModule;
+use Mojolicious;
+use Mojo::Message;
 
 OpenQA::Test::Case->new->init_data;
 
@@ -36,6 +38,13 @@ $mock_client->mock(
         my ($self, $workerid, $command, $jobid) = @_;
         $client_called++;
         $last_command = $command;
+    });
+my $mock_ws = Test::MockModule->new('OpenQA::WebSockets');
+my $last_ws_params;
+$mock_ws->mock(
+    ws_send => sub {
+        $last_ws_params = [@_];
+        return Mojo::Message->new;
     });
 
 my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
@@ -48,8 +57,21 @@ for my $cmd (@valid_commands) {
     $worker->send_command(command => $cmd, job_id => 0);
     is($last_command, $cmd, "command $cmd received at WS server");
 }
+is($last_ws_params, undef, 'ws_send not called directly');
 
-#issue invalid commands
+subtest 'ws server does not try to query itself' => sub {
+    $OpenQA::Utils::app = Mojolicious->new;
+    $OpenQA::Utils::app->defaults(appname => 'openQA Websocket Server');
+    $last_command = undef;
+    $worker->send_command(command => $valid_commands[0], job_id => 0);
+    is($last_command, undef, 'command not sent via client');
+    is_deeply($last_ws_params, [$worker->id, $valid_commands[0], 0, undef], 'ws_send called directly')
+      or diag explain $last_ws_params;
+};
+
+$OpenQA::Utils::app = undef;
+
+# issue invalid commands
 stderr_like { $worker->send_command(command => 'foo', job_id => 0); }
 qr/\[ERROR\] Trying to issue unknown command "foo" for worker "localhost:"/;
 isnt($last_command, 'foo', 'refuse invalid commands');
