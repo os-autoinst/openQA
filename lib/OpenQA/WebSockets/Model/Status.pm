@@ -21,6 +21,7 @@ use OpenQA::Schema;
 use OpenQA::Schema::Result::Workers ();
 use OpenQA::Utils qw(log_debug log_warning log_info);
 use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
+use OpenQA::Jobs::Constants;
 use DateTime;
 use Try::Tiny;
 
