@@ -313,7 +313,7 @@ Deletes a job from the system.
 sub destroy {
     my $self = shift;
 
-    my $job = find_job($self, $self->stash('jobid')) or return;
+    return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     $self->emit_event('openqa_job_delete', {id => $job->id});
     $job->delete;
     $self->render(json => {result => 1});
@@ -331,7 +331,7 @@ Sets priority for a given job.
 
 sub prio {
     my ($self) = @_;
-    my $job = find_job($self, $self->stash('jobid')) or return;
+    return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     my $res = $job->set_prio($self->param('prio'));
 
     # Referencing the scalar will result in true or false
@@ -351,7 +351,7 @@ Updates result of a job in the system. Replaced in favor of done.
 
 sub result {
     my ($self) = @_;
-    my $job    = find_job($self, $self->stash('jobid')) or return;
+    return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     my $result = $self->param('result');
 
     my $res = $job->update({result => $result});
@@ -383,7 +383,7 @@ sub update_status {
 
     my $status = $self->req->json->{status};
     my $job_id = $self->stash('jobid');
-    my $job    = find_job($self, $job_id);
+    my $job    = $self->schema->resultset('Jobs')->find($job_id);
     if (!$job) {
         my $err = 'Got status update for non-existing job: ' . $job_id;
         OpenQA::Utils::log_info($err);
@@ -467,7 +467,7 @@ Columns group_id and priority cannot be set.
 sub update {
     my ($self) = @_;
 
-    my $job  = find_job($self, $self->stash('jobid')) or return;
+    return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     my $json = $self->req->json;
     return $self->render(json => {error => 'No updates provided (must be provided as JSON)'}, status => 400)
       unless $json;
@@ -525,7 +525,7 @@ sub create_artefact {
     my ($self) = @_;
 
     my $jobid = int($self->stash('jobid'));
-    my $job   = find_job($self, $jobid);
+    my $job   = $self->schema->resultset('Jobs')->find($jobid);
     if (!$job) {
         OpenQA::Utils::log_info('Got artefact for non-existing job: ' . $jobid);
         return $self->render(json => {error => "Specified job $jobid does not exist"}, status => 404);
@@ -533,16 +533,14 @@ sub create_artefact {
     if (!$job->worker) {
         OpenQA::Utils::log_info(
             'Got artefact for job with no worker assigned (maybe running job already considered dead): ' . $jobid);
-        $self->render(json => {error => 'No worker assigned'}, status => 404);
-        return;
+        return $self->render(json => {error => 'No worker assigned'}, status => 404);
     }
     # mark the worker as alive
     $job->worker->seen;
 
     if ($self->param('image')) {
         $job->store_image($self->param('file'), $self->param('md5'), $self->param('thumb') // 0);
-        $self->render(text => "OK");
-        return;
+        return $self->render(text => "OK");
     }
     elsif ($self->param('extra_test')) {
         return $self->render(text => "OK")
@@ -635,7 +633,7 @@ Updates result of a job in the system.
 sub done {
     my ($self) = @_;
 
-    my $job    = find_job($self, $self->stash('jobid')) or return;
+    return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     my $result = $self->param('result');
     my $newbuild;
     $newbuild = 1 if defined $self->param('newbuild');
@@ -711,7 +709,7 @@ sub cancel {
 
     my $res;
     if ($jobid) {
-        my $job = find_job($self, $self->stash('jobid')) or return;
+        return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
         $job->cancel;
         $self->emit_event('openqa_job_cancel', {id => int($jobid)});
     }
@@ -738,7 +736,7 @@ sub duplicate {
     my ($self) = @_;
 
     my $jobid = int($self->param('jobid'));
-    my $job   = find_job($self, $self->stash('jobid')) or return;
+    return unless my $job = $self->find_job_or_render_not_found($self->stash('jobid'));
     my $args;
     if (defined $self->param('prio')) {
         $args->{prio} = int($self->param('prio'));

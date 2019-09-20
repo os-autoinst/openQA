@@ -381,8 +381,7 @@ sub save_needle_ajax {
     }
 
     # read parameter
-    my $job = find_job($self, $self->param('testid'))
-      or return $self->render(json => {error => 'The specified job ID is invalid.'});
+    my $job        = $self->find_job_or_render_not_found($self->param('testid')) or return;
     my $job_id     = $job->id;
     my $needledir  = needledir($job->DISTRI, $job->VERSION);
     my $needlename = $validation->param('needlename');
