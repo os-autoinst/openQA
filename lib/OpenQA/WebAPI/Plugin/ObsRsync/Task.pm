@@ -37,13 +37,17 @@ sub run {
     my $minion         = $app->minion;
     my $lock_timeout   = 36000;
 
+    my $retry_interval_on_exception = 120;
+
     if ($job->info && !$job->info->{notes}{project_lock}) {
         return $job->retry({delay => $retry_interval})
           unless $minion->lock('obs_rsync_project_' . $project . '_lock', $lock_timeout);
 
         $job->note(project_lock => 1);
     }
-    return $job->retry({delay => $retry_interval}) if $helper->is_status_dirty($project);
+    my $dirty = 0;
+    eval { $dirty = $helper->is_status_dirty($project); 1 } or $job->retry({delay => $retry_interval_on_exception});
+    return $job->retry({delay => $retry_interval}) if $dirty;
 
     return $job->retry({delay => $retry_interval})
       unless my $concurrency_guard = $minion->guard('obs_rsync_run_guard', $lock_timeout, {limit => $concurrency});
