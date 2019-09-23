@@ -38,15 +38,17 @@ BEGIN {
 }
 
 use lib "$FindBin::Bin/lib";
+use OpenQA::Scheduler::Client;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 use Test::More;
+use Test::MockModule;
 use Mojo::IOLoop::Server;
 use Mojo::File 'tempfile';
 use OpenQA::Test::Utils qw(
   create_webapi wait_for_worker setup_share_dir
-  create_websocket_server
+  create_websocket_server create_scheduler
   kill_service unstable_worker client_output unresponsive_worker
 );
 use Mojolicious;
@@ -60,7 +62,7 @@ my $schema = OpenQA::Test::Database->new->create(skip_schema => 1);
 
 # Create webapi and websocket server services
 my $mojoport = Mojo::IOLoop::Server->generate_port();
-my $wspid    = create_websocket_server($mojoport + 1, 0, 1, 1);
+my $wspid    = create_websocket_server($mojoport + 1, 0, 1, 1, 1);
 my $webapi   = create_webapi($mojoport);
 
 # Setup needed files for workers.
@@ -127,17 +129,18 @@ subtest 'Simulation of unstable workers' => sub {
     wait_for_worker($schema, 4);
 
     $allocated = scheduler_step();
-    is @$allocated, 1;
-    is @{$allocated}[0]->{job},    99982;
-    is @{$allocated}[0]->{worker}, 5;
+    is(@$allocated,                1,     'one job allocated');
+    is(@{$allocated}[0]->{job},    99982, 'right job allocated');
+    is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
 
+    note('waiting for assigned job to be re-scheduled');
     for (0 .. 100) {
         last if $schema->resultset("Jobs")->find(99982)->state eq OpenQA::Jobs::Constants::SCHEDULED;
         sleep 2;
     }
 
     is $schema->resultset("Jobs")->find(99982)->state, OpenQA::Jobs::Constants::SCHEDULED,
-      "If worker declares to be free - reschedule assigned job to that worker";
+      'assigned job set back to scheduled if worker reports back again but has abandoned the job';
     kill_service($unstable_w_pid, 1);
     sleep 5;
 
@@ -149,24 +152,26 @@ subtest 'Simulation of unstable workers' => sub {
     wait_for_worker($schema, 5);
 
     ($allocated) = scheduler_step();
-    is @$allocated, 1;
-    is @{$allocated}[0]->{job},    99982;
-    is @{$allocated}[0]->{worker}, 5;
+    is(@$allocated,                1,     'one job allocated');
+    is(@{$allocated}[0]->{job},    99982, 'right job allocated');
+    is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
 
     kill_service($unstable_w_pid, 1);
-    ok $schema->resultset("Jobs")->find(99982)->state eq OpenQA::Jobs::Constants::ASSIGNED;
+    is $schema->resultset("Jobs")->find(99982)->state, OpenQA::Jobs::Constants::ASSIGNED;
 
     $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, 8);
 
+    note('waiting for job to be incompleted');
     for (0 .. 100) {
         last if $schema->resultset("Jobs")->find(99982)->state eq OpenQA::Jobs::Constants::DONE;
         sleep 2;
     }
 
-    is $schema->resultset("Jobs")->find(99982)->state, OpenQA::Jobs::Constants::DONE,
-      "Job is done - worker re-connected";
-    is $schema->resultset("Jobs")->find(99982)->result, OpenQA::Jobs::Constants::INCOMPLETE,
-      "Job result is incomplete - worker re-connected";
+    my $job = $schema->resultset("Jobs")->find(99982);
+    is $job->state, OpenQA::Jobs::Constants::DONE,
+      'running job set to done if its worker re-connects claiming not to work on it anymore';
+    is $job->result, OpenQA::Jobs::Constants::INCOMPLETE,
+      'running job incompleted if its worker re-connects claiming not to work on it anymore';
 
     dead_workers($schema);
     kill_service($unstable_w_pid, 1);

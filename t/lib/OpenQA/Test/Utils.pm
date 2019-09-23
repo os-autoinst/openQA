@@ -20,6 +20,7 @@ use Cwd qw(abs_path getcwd);
 use Test::More;
 use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::Server::Daemon;
+use Test::MockModule;
 
 BEGIN {
     if (!$ENV{MOJO_HOME}) {
@@ -181,7 +182,7 @@ sub create_webapi {
 }
 
 sub create_websocket_server {
-    my ($port, $bogus, $nowait, $noworkercheck) = @_;
+    my ($port, $bogus, $nowait, $noworkercheck, $with_embedded_scheduler) = @_;
 
     diag("Starting WebSocket service");
     diag("Bogus: $bogus | No wait: $nowait | No worker checks: $noworkercheck");
@@ -210,6 +211,18 @@ sub create_websocket_server {
         monkey_patch 'OpenQA::WebSockets::Model::Status', workers_checker => sub { 1 }
           if ($noworkercheck);
         local @ARGV = ('daemon');
+
+        # embed the scheduler REST API within the ws server (required for scheduler fullstack test)
+        if ($with_embedded_scheduler) {
+            note('Embedding scheduler within ws server subprocess');
+            OpenQA::Scheduler::Client->singleton->embed_server_for_testing;
+
+            # mock the scheduler's automatic rescheduling behavior because this test invokes
+            # the scheduling logic manually
+            my $scheduler_mock = Test::MockModule->new('OpenQA::Scheduler');
+            $scheduler_mock->mock(_reschedule => sub { });
+        }
+
         OpenQA::WebSockets::run;
         Devel::Cover::report() if Devel::Cover->can('report');
         _exit(0);
