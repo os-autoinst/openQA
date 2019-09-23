@@ -264,6 +264,6 @@ workflows:
          filters:
            branches:
              only:
-               - circleci
+               - master
    jobs:
       - dependencies-pr
