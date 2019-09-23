@@ -136,6 +136,8 @@ is_deeply(nots($t->tx->res->json->{assets}->[6]), $listing->[0], "listing ok");
 la;
 
 # test delete operation
+$t->delete_ok('/api/v1/assets/1a')->status_is(400);
+$t->delete_ok('/api/v1/assets/99')->status_is(404);
 $t->delete_ok('/api/v1/assets/' . $listing->[0]->{id})->status_is(200);
 is($t->tx->res->json->{count}, 1, "one asset deleted");
 
@@ -153,7 +155,6 @@ is($t->tx->res->json->{id}, $listing->[1]->{id} + 1, "asset has next id");
 
 # delete by name
 $t->delete_ok('/api/v1/assets/iso/' . $iso2)->status_is(200);
-is($t->tx->res->json->{count}, 1, "one asset deleted");
 ok(!-e iso_path($iso2), 'iso file 2 has been removed');
 # but three must be still there
 $t->get_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(200);
@@ -171,7 +172,7 @@ $t->post_ok('/api/v1/assets', form => {type => 'iso', name => 'foo.iso'})->statu
 
 # check/delete asset by invalid id that should give 404 rather than 500
 $t->get_ok('/api/v1/assets/iso')->status_is(404);
-$t->delete_ok('/api/v1/assets/iso')->status_is(404);
+$t->delete_ok('/api/v1/assets/iso')->status_is(400);
 
 # trigger cleanup task
 my $gru       = $t->app->gru;

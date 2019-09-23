@@ -57,7 +57,7 @@ sub register {
         status => 400,
     ) unless $type && $name;
 
-    my $asset = $self->app->schema->resultset('Assets')->register($type, $name);
+    my $asset = $self->schema->resultset('Assets')->register($type, $name);
     return $self->render(
         json => {
             error => 'registering asset failed',
@@ -87,7 +87,7 @@ as its id, name, timestamp of creation and type is included.
 
 sub list {
     my $self   = shift;
-    my $schema = $self->app->schema;
+    my $schema = $self->schema;
 
     my $rs = $schema->resultset("Assets")->search();
     $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
@@ -119,7 +119,7 @@ on success and of 404 on error.
 
 sub get {
     my $self   = shift;
-    my $schema = $self->app->schema;
+    my $schema = $self->schema;
 
     my %args;
     for my $arg (qw(id type name)) {
@@ -162,12 +162,11 @@ sub delete {
     }
 
     my %cond;
-    my %attrs;
 
     if (defined $args{id}) {
         if ($args{id} !~ /^\d+$/) {
-            $self->render(json => {}, status => 404);
-            return;
+            $self->render(json => {error => 'The asset id is invalid.'}, status => 400);
+            return undef;
         }
         $cond{id} = $args{id};
     }
@@ -176,15 +175,22 @@ sub delete {
         $cond{type} = $args{type};
     }
     else {
-        return;
+        return undef;
     }
 
-    my $asset = $self->app->schema->resultset("Assets")->search(\%cond, \%attrs);
-    return unless $asset;
-    my $rs = $asset->delete_all;
+    my $asset = $self->schema->resultset("Assets")->search(\%cond);
+    return $self->render(
+        json =>
+          {error => 'The asset might have already been removed and only the cached view has not been updated yet.'},
+        status => 404
+    ) if $asset->count == 0;
+    my $rs;
+    eval { $rs = $asset->delete_all };
+    if ($@) {
+        return $self->render(json => {error => $@}, status => 409);
+    }
     $self->emit_event('openqa_asset_delete', \%args);
-
-    $self->render(json => {count => $rs});
+    $self->render(json => {count => $rs}, status => 200);
 }
 
 1;

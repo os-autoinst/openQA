@@ -117,11 +117,13 @@ function deleteAsset(assetId) {
     $.ajax({
         url: '/api/v1/assets/' + assetId,
         method: 'DELETE',
+        dataType: 'json',
         success: function() {
-            $('#asset_' + assetId).remove();
+          addFlash('info', 'The asset was deleted successfully. The asset table\'s contents are cached. Hence the removal is not immediately visible. To update the view use the "Trigger asset cleanup" button. Note that this is an expensive operation which might take a while.');
         },
         error: function(xhr, ajaxOptions, thrownError) {
-            window.alert('The asset couldn\'t be deleted: ' + thrownError);
+          var error_message = xhr.responseJSON.error;
+          addFlash('danger', error_message);
         }
     });
 }

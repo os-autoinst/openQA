@@ -686,6 +686,19 @@ subtest 'asset list' => sub {
       and $asset4_a->click();
     wait_for_ajax;
 
+    like(
+        $driver->find_element("div#flash-messages .alert span")->get_text,
+        qr/The asset was deleted successfully/,
+        'delete asset successfully'
+    );
+    $asset4_a->click();
+    wait_for_ajax;
+    is(
+        $driver->find_element("div#flash-messages .alert-danger span")->get_text,
+        'The asset might have already been removed and only the cached view has not been updated yet.',
+        'The asset has been removed'
+    );
+
     # FIXME/caveat: since the table doesn't show livedata the deletion is currently immediately
     #               visible
 
