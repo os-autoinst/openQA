@@ -23,12 +23,15 @@ use lib "$FindBin::Bin/lib";
 use DateTime;
 use Test::More;
 use Test::Warnings;
-use Test::Output qw(stderr_like);
+use Test::Output 'stderr_like';
+use OpenQA::Scheduler::Client;
 use OpenQA::WebSockets;
+use OpenQA::WebSockets::Model::Status;
 use OpenQA::Test::Database;
-use OpenQA::Test::Utils 'redirect_output';
 
-my $schema = OpenQA::Test::Database->new->create();
+my $schema    = OpenQA::Test::Database->new->create;
+my $ws_server = OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
+my $scheduler = OpenQA::Scheduler::Client->singleton->embed_server_for_testing;
 
 sub _check_job_running {
     my ($jobid) = @_;
@@ -49,15 +52,29 @@ sub _check_job_incomplete {
 
 subtest 'worker with job and not updated in last 120s is considered dead' => sub {
     _check_job_running($_) for (99961, 99963);
+
     # move the updated timestamp of the workers to avoid sleeping
     my $dtf = $schema->storage->datetime_parser;
     my $dt  = DateTime->from_epoch(epoch => time() - 121, time_zone => 'UTC');
-
     $schema->resultset('Workers')->update_all({t_updated => $dtf->format_datetime($dt)});
+
+    OpenQA::WebSockets::Model::Status->singleton->workers_checker(
+        sub {
+            my ($ua, $tx) = @_;
+            Mojo::IOLoop->stop;
+            my $err = $tx->error or return undef;
+            my $message
+              = $err->{code}
+              ? "$err->{code} response: $err->{message}"
+              : "connection error: $err->{message}";
+            fail("failed to report stale jobs: $message");
+        });
+
     stderr_like {
-        OpenQA::WebSockets::Model::Status->singleton->workers_checker();
+        Mojo::IOLoop->start;
     }
-    qr/dead job 99961 aborted and duplicated 99982\n.*dead job 99963 aborted as incomplete/;
+    qr/Dead job 99961 aborted and duplicated 99982\n.*Dead job 99963 aborted as incomplete/;
+
     _check_job_incomplete($_) for (99961, 99963);
 };
 

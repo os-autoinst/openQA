@@ -18,7 +18,7 @@ use Mojo::Base 'Mojolicious';
 
 use Mojo::Server::Daemon;
 use OpenQA::Setup;
-use OpenQA::Utils qw(log_debug log_warning log_info);
+use OpenQA::Utils qw(log_debug log_warning log_info log_error);
 use OpenQA::WebSockets::Model::Status;
 
 our $RUNNING;
@@ -119,14 +119,38 @@ sub ws_send_job {
     return $result;
 }
 
+sub _check_for_stale_jobs_in_two_minutes {
+    my ($self) = @_;
+
+    Mojo::IOLoop->timer(
+        120 => sub {
+            my $ok = $self->status->workers_checker(
+                sub {
+                    my ($ua, $tx) = @_;
+
+                    if (my $err = $tx->error) {
+                        my $message
+                          = $err->{code}
+                          ? "$err->{code} response: $err->{message}"
+                          : "connection error: $err->{message}";
+                        log_error("Unable to report stale jobs to scheduler ($message)");
+                        if (my $res = $tx->res) { log_error('response was: ' . $res->body); }
+                    }
+
+                    $self->_check_for_stale_jobs_in_two_minutes;
+                });
+
+            $self->_check_for_stale_jobs_in_two_minutes unless $ok;
+        });
+}
+
 sub _setup {
     my $self = shift;
 
     OpenQA::Setup::read_config($self);
     OpenQA::Setup::setup_log($self);
 
-    # start worker checker - check workers each 2 minutes
-    Mojo::IOLoop->recurring(120 => sub { $self->status->workers_checker });
+    $self->_check_for_stale_jobs_in_two_minutes;
 
     Mojo::IOLoop->recurring(
         380 => sub {

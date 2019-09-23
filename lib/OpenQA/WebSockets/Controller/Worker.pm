@@ -21,6 +21,7 @@ use OpenQA::Utils qw(log_debug log_error log_info log_warning);
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKERS_CHECKER_THRESHOLD);
 use OpenQA::WebSockets::Model::Status;
 use OpenQA::Jobs::Constants;
+use OpenQA::Scheduler::Client;
 use DateTime;
 use Data::Dumper 'Dumper';
 use Data::Dump 'pp';
@@ -186,6 +187,8 @@ sub _message {
                 || ($registered_job_token && defined $job_token && $job_token ne $registered_job_token)
                 || ($current_worker_status && $current_worker_status eq 'free'))
             {
+                my @stale_job_ids;
+
                 $schema->txn_do(
                     sub {
                         my $worker = $schema->resultset('Workers')->find($wid);
@@ -195,6 +198,8 @@ sub _message {
                         for my $job ($worker->unfinished_jobs) {
                             # if the worker claims that job is still pending just leave it be
                             return undef if exists $pending_job_ids->{$job->id};
+
+                            push(@stale_job_ids, $job->id);
 
                             # mark job which was already running as incomplete and duplicate
                             if (   $job->result eq OpenQA::Jobs::Constants::NONE
@@ -210,6 +215,12 @@ sub _message {
                             }
                         }
                     });
+
+                # FIXME: also move reschedule state to scheduler?
+
+                #OpenQA::Scheduler::Client->singleton->report_stale_jobs(\@stale_job_ids, sub {
+
+                #});
             }
 
             # ensure the job's status is running

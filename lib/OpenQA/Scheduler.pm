@@ -59,6 +59,7 @@ sub startup {
     $ca->get('/' => {json => {name => $self->defaults('appname')}});
     my $api = $ca->any('/api');
     $api->get('/wakeup')->to('API#wakeup');
+    $api->post('/stale_jobs')->to('API#report_stale_jobs');
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 
     OpenQA::Setup::setup_plain_exception_handler($self);
