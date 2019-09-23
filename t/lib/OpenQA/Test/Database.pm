@@ -13,6 +13,7 @@ use Cwd qw( abs_path getcwd );
 use OpenQA::Schema;
 use OpenQA::Utils qw(log_info random_string);
 use Mojo::File 'path';
+use Try::Tiny;
 
 has fixture_path => 't/fixtures';
 
@@ -75,8 +76,13 @@ sub insert_fixtures {
         for (my $i = 0; $i < @$info; $i++) {
             my $class = $info->[$i];
             my $ri    = $info->[++$i];
-            my $row   = $schema->resultset($class)->create($ri);
-            $ids{$row->result_source->from} = $ri->{id} if $ri->{id};
+            try {
+                my $row = $schema->resultset($class)->create($ri);
+                $ids{$row->result_source->from} = $ri->{id} if $ri->{id};
+            }
+            catch {
+                croak "Could not insert fixture " . path($fixture)->to_rel($cwd) . ": $_";
+            };
         }
     }
 

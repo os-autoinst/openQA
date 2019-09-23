@@ -381,9 +381,17 @@ sub update {
                                     group_id      => $group_id,
                                     product_id    => $product->id,
                                     machine_id    => $machine->id,
-                                    name          => $job_template_name,
+                                    name          => $job_template_name // "",
                                     test_suite_id => $test_suite->id,
+                                },
+                                {
+                                    key => 'scenario',
                                 });
+                            die "Job template name '"
+                              . ($job_template_name // $testsuite_name)
+                              . "' with $product_name and $machine_name is already used in job group '"
+                              . $job_template->group->name . "'\n"
+                              if $job_template->group_id != $group_id;
                             my $job_template_id = $job_template->id;
                             $job_template->update({prio => $prio}) if (defined $prio);
                             push(@job_template_ids, $job_template->id);

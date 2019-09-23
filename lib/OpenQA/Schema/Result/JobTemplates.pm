@@ -38,8 +38,8 @@ __PACKAGE__->add_columns(
         data_type => 'integer',
     },
     name => {
-        data_type   => 'text',
-        is_nullable => 1,
+        data_type     => 'text',
+        default_value => '',
     },
     prio => {
         data_type   => 'integer',
@@ -56,7 +56,7 @@ __PACKAGE__->belongs_to(product    => 'OpenQA::Schema::Result::Products',   'pro
 __PACKAGE__->belongs_to(machine    => 'OpenQA::Schema::Result::Machines',   'machine_id');
 __PACKAGE__->belongs_to(test_suite => 'OpenQA::Schema::Result::TestSuites', 'test_suite_id');
 __PACKAGE__->belongs_to(group      => 'OpenQA::Schema::Result::JobGroups',  'group_id');
-__PACKAGE__->add_unique_constraint([qw(product_id machine_id name test_suite_id)]);
+__PACKAGE__->add_unique_constraint(scenario => [qw(product_id machine_id name test_suite_id)]);
 __PACKAGE__->has_many(
     settings        => 'OpenQA::Schema::Result::JobTemplateSettings',
     job_template_id => {order_by => {-asc => 'key'}});
