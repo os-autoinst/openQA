@@ -43,7 +43,6 @@ sub startup {
     my $ca = $r->under('/')->to('Auth#check');
     $ca->get('/' => {json => {name => $self->defaults('appname')}});
     my $api = $ca->any('/api');
-    $api->get('/is_worker_connected/<worker_id:num>')->to('API#is_worker_connected');
     $api->post('/send_job')->to('API#send_job');
     $api->post('/send_jobs')->to('API#send_jobs');
     $api->post('/send_msg')->to('API#send_msg');

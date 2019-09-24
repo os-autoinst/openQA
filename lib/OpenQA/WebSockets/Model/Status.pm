@@ -60,14 +60,6 @@ sub remove_worker_connection {
     return delete $self->worker_by_transaction->{$transaction};
 }
 
-sub is_worker_connected {
-    my ($self, $worker_id) = @_;
-
-    return 0 unless my $worker = $self->workers->{$worker_id};
-    return 0 unless my $tx     = $worker->{tx};
-    return !$tx->is_finished;
-}
-
 sub get_stale_worker_jobs {
     my ($self, $threshold) = @_;
 

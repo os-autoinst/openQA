@@ -65,9 +65,9 @@ my @workers = (
     {
         id         => 1,
         instance   => 1,
-        connected  => 0,
+        connected  => 1,                              # deprecated
+        websocket  => 1,                              # deprecated
         error      => undef,
-        websocket  => 0,
         alive      => 1,
         jobid      => 99963,
         host       => 'localhost',
@@ -80,9 +80,9 @@ my @workers = (
             JOBTOKEN => 'token99961'
         },
         id        => 2,
-        connected => 0,
+        connected => 1,              # deprecated
+        websocket => 1,              # deprecated
         error     => undef,
-        websocket => 0,
         alive     => 1,
         status    => 'running',
         host      => 'remotehost',
@@ -100,8 +100,11 @@ is_deeply(
     'worker present'
 ) or diag explain $t->tx->res->json;
 
-$workers[0]->{connected} = 1;
-$workers[1]->{connected} = 1;
+# note: The live flag is deprecated and makes no difference anymore (not padding the flag
+#       is as good as passing it). For compatibility "connected" and "websocket" are still
+#       provided.
+
+$_->{websocket} = 0 for @workers;
 
 $t->get_ok('/api/v1/workers');
 ok(!$t->tx->error, 'listing workers works');

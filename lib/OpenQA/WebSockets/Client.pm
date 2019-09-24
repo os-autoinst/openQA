@@ -24,13 +24,6 @@ use OpenQA::Utils 'service_port';
 has client => sub { OpenQA::Client->new(api => 'localhost') };
 has port   => sub { service_port('websocket') };
 
-sub is_worker_connected {
-    my ($self, $worker_id) = @_;
-    my $res = $self->client->get($self->_api("is_worker_connected/$worker_id"))->result;
-    croak "Expected 2xx status from WebSocket server but received @{[$res->code]}" unless $res->is_success;
-    return $res->json->{connected};
-}
-
 sub send_job {
     my ($self, $job) = @_;
     my $res = $self->client->post($self->_api('send_job'), json => $job)->result;

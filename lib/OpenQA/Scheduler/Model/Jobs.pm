@@ -42,8 +42,6 @@ sub schedule {
     my @f_w = grep { !$_->dead && ($_->websocket_api_version() || 0) == WEBSOCKET_API_VERSION }
       $schema->resultset("Workers")->search({job_id => undef, error => undef})->all();
 
-    # NOTE: $worker->connected is too much expensive since is over HTTP, prefer dead
-    #       (shuffle avoids starvation if a free worker keeps failing)
     my @free_workers = $self->shuffle_workers ? shuffle(@f_w) : @f_w;
     if (@free_workers == 0) {
         $self->emit('conclude');

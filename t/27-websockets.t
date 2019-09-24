@@ -65,9 +65,6 @@ subtest 'Authentication' => sub {
 
 subtest 'API' => sub {
     $t->tx($t->ua->start($t->ua->build_websocket_tx('/ws/23')))->status_is(400)->content_like(qr/Unknown worker/);
-    $t->get_ok('/api/is_worker_connected/1')->status_is(200)->json_is({connected => Mojo::JSON::false});
-    local $t->app->status->workers->{1} = {tx => OpenQA::Test::FakeWebSocketTransaction->new};
-    $t->get_ok('/api/is_worker_connected/1')->status_is(200)->json_is({connected => Mojo::JSON::true});
 };
 
 subtest 'workers_checker' => sub {

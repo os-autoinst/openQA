@@ -195,10 +195,11 @@ sub create {
 
 =item show()
 
-Prints information from a worker given its ID. Each entry contains the "hostname",
-the boolean flag "connected" which can be 0 or 1 depending on the connection to
-the websockets server and the field "status" which can be "dead", "idle", "running".
-A worker can be considered "up" when "connected=1" and "status!=dead"'
+Prints information from a worker given its ID. Each entry contains the "hostname"
+and the field "status" which can be "dead", "idle", "running" and "broken".
+A worker can be considered online when the status is not "dead". Broken means that
+the worker is able to connect but there is some setup problem on the worker host
+preventing it from taking jobs.
 
 =back
 

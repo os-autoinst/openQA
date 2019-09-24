@@ -187,12 +187,6 @@ sub status {
     return 'idle';
 }
 
-sub connected {
-    my ($self) = @_;
-    my $client = OpenQA::WebSockets::Client->singleton;
-    return $client->is_worker_connected($self->id) ? 1 : 0;
-}
-
 sub unprepare_for_work {
     my $self = shift;
 
@@ -224,12 +218,13 @@ sub info {
         my $cs = $self->currentstep;
         $settings->{currentstep} = $cs if $cs;
     }
-    $settings->{alive}     = $self->dead ? 0                      : 1;
-    $settings->{connected} = $live       ? $self->connected       : $settings->{alive};
-    $settings->{websocket} = $live       ? $settings->{connected} : 0;
+    my $alive = $settings->{alive} = $settings->{connected} = $self->dead ? 0 : 1;
+    $settings->{websocket} = $live ? $alive : 0;
 
-    # $self->connected is expensive
-    # should be done only on single view
+    # note: The keys "connected" and "websocket" are only provided for compatibility. The "live"
+    #       parameter makes no actual difference anymore. (`t_updated` is decrease when a worker
+    #       disconnects from the ws server so relying on it is as live as it gets.)
+
     return $settings;
 }
 
