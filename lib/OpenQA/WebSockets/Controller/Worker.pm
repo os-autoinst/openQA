@@ -56,10 +56,9 @@ sub _finish {
     }
     log_info(sprintf("Worker %u websocket connection closed - $code", $worker->{id}));
 
-    # if the worker disconnected from web socket, mark it dead so it doesn't get new
-    # jobs assigned from scheduler (which will check DB and not WS state)
+    # mark worker as dead in the database so it doesn't get new jobs assigned from scheduler and
+    # appears as offline in the web UI
     my $dt = DateTime->now(time_zone => 'UTC');
-    # 2 minutes is long enough for the scheduler not to take it
     $dt->subtract(seconds => (WORKERS_CHECKER_THRESHOLD + 20));
     $worker->{db}->update({t_updated => $dt});
 }
