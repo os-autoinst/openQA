@@ -1753,11 +1753,11 @@ sub carry_over_bugrefs {
     my ($self) = @_;
 
     if (my $group = $self->group) {
-        return unless $group->carry_over_bugrefs;
+        return undef unless $group->carry_over_bugrefs;
     }
 
     my $prev = $self->_carry_over_candidate;
-    return if !$prev;
+    return undef if !$prev;
 
     my $comments = $prev->comments->search({}, {order_by => {-desc => 'me.id'}});
 
@@ -1769,14 +1769,11 @@ sub carry_over_bugrefs {
             $text .= "\n\n(Automatic takeover from t#" . $prev->id . ")\n";
         }
         my %newone = (text => $text);
-        # TODO can we also use another user id to tell that
-        # this comment was created automatically and not by a
-        # human user?
         $newone{user_id} = $comment->user_id;
         $self->comments->create(\%newone);
-        last;
+        return 1;
     }
-    return;
+    return undef;
 }
 
 sub bugref {
