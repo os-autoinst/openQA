@@ -183,10 +183,10 @@ sub create_webapi {
 }
 
 sub create_websocket_server {
-    my ($port, $bogus, $nowait, $noworkercheck, $with_embedded_scheduler) = @_;
+    my ($port, $bogus, $nowait, $with_embedded_scheduler) = @_;
 
     diag("Starting WebSocket service");
-    diag("Bogus: $bogus | No wait: $nowait | No worker checks: $noworkercheck");
+    diag("Bogus: $bogus | No wait: $nowait");
 
     OpenQA::WebSockets::Client->singleton->port($port);
     my $wspid = fork();
@@ -209,8 +209,6 @@ sub create_websocket_server {
                 $c->on(finish => \&OpenQA::WebSockets::Controller::Worker::_finish);
             };
         }
-        monkey_patch 'OpenQA::WebSockets::Model::Status', workers_checker => sub { 1 }
-          if ($noworkercheck);
         local @ARGV = ('daemon');
 
         # embed the scheduler REST API within the ws server (required for scheduler fullstack test)
@@ -250,7 +248,7 @@ sub create_websocket_server {
 }
 
 sub create_scheduler {
-    my ($port) = @_;
+    my ($port, $no_stale_job_detection) = @_;
 
     diag("Starting Scheduler service");
 
@@ -260,6 +258,8 @@ sub create_scheduler {
         local $ENV{MOJO_LISTEN}             = "http://127.0.0.1:$port";
         local $ENV{MOJO_INACTIVITY_TIMEOUT} = 9999;
         local @ARGV                         = ('daemon');
+        monkey_patch 'OpenQA::Scheduler::Model::Jobs', incomplete_and_duplicate_stale_jobs => sub { 1 }
+          if $no_stale_job_detection;
         OpenQA::Scheduler::run;
         Devel::Cover::report() if Devel::Cover->can('report');
         _exit(0);

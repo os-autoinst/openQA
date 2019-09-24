@@ -92,7 +92,6 @@ sub _message {
         return undef;
     }
 
-    $worker->{last_seen} = time();
     if ($json->{type} eq 'accepted') {
         my $job_id = $json->{jobid};
         return undef unless $job_id;

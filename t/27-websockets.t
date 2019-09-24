@@ -67,33 +67,12 @@ subtest 'API' => sub {
     $t->tx($t->ua->start($t->ua->build_websocket_tx('/ws/23')))->status_is(400)->content_like(qr/Unknown worker/);
 };
 
-subtest 'workers_checker' => sub {
-    my $mock_schema = Test::MockModule->new('OpenQA::Schema');
-    my $mock_singleton_called;
-    $mock_schema->mock(singleton => sub { $mock_singleton_called++; bless({}); });
-    combined_like(
-        sub { OpenQA::WebSockets::Model::Status->singleton->workers_checker; },
-        qr/Failed dead job detection/,
-        'failure logged'
-    );
-    ok $mock_singleton_called, 'mocked singleton method has been called';
-};
-
 my $workers   = $schema->resultset('Workers');
 my $worker    = $workers->search({host => 'localhost', instance => 1})->first;
 my $worker_id = $worker->id;
 OpenQA::WebSockets::Model::Status->singleton->workers->{$worker_id} = {
-    id        => $worker_id,
-    db        => $worker,
-    last_seen => '0001-01-01',
-};
-
-subtest 'get_stale_worker_jobs' => sub {
-    combined_like(
-        sub { OpenQA::WebSockets::Model::Status->singleton->get_stale_worker_jobs(-9999999999); },
-        qr/Worker localhost:1 not seen since \d+ seconds/,
-        'not seen message logged'
-    );
+    id => $worker_id,
+    db => $worker,
 };
 
 subtest 'web socket message handling' => sub {

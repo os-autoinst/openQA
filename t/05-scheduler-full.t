@@ -62,7 +62,7 @@ my $schema = OpenQA::Test::Database->new->create(skip_schema => 1);
 
 # Create webapi and websocket server services
 my $mojoport = Mojo::IOLoop::Server->generate_port();
-my $wspid    = create_websocket_server($mojoport + 1, 0, 1, 1, 1);
+my $wspid    = create_websocket_server($mojoport + 1, 0, 1, 1);
 my $webapi   = create_webapi($mojoport);
 
 # Setup needed files for workers.
@@ -236,7 +236,7 @@ subtest 'Websocket server - close connection test' => sub {
     local $ENV{MOJO_LOG_LEVEL};
 
     my $log_file        = tempfile;
-    my $unstable_ws_pid = create_websocket_server($mojoport + 1, 1, 0, 1);
+    my $unstable_ws_pid = create_websocket_server($mojoport + 1, 1, 0);
     my $w2_pid          = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2, $log_file);
 
     my $found_connection_closed_in_log = 0;
