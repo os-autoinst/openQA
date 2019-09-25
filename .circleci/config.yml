@@ -265,6 +265,6 @@ workflows:
          filters:
            branches:
              only:
-               - circleci_test_nightly_bot
+               - circleci_test_nightly_bot_disabled
    jobs:
       - dependencies-pr
