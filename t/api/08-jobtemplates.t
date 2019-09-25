@@ -973,6 +973,25 @@ subtest 'Create and modify groups with YAML' => sub {
                 diag explain YAML::XS::Dump($j->to_hash);
             }
         }
+        my %new_isos_post_params = (
+            _GROUP  => 'foo',
+            DISTRI  => 'opensuse',
+            VERSION => '13.1',
+            FLAVOR  => 'DVD',
+            ARCH    => 'i586',
+        );
+        $t->post_ok('/api/v1/isos', form => \%new_isos_post_params)->status_is(200, 'ISO posted');
+        if (!$t->success) {
+            diag explain $t->tx->res->body;
+            return undef;
+        }
+        my $jobs  = $schema->resultset('Jobs');
+        my %tests = map { $_ => $jobs->find($_)->settings_hash->{'NAME'} } @{$t->tx->res->json->{ids}};
+        is_deeply(
+            [sort values %tests],
+            ['00099982-opensuse-13.1-DVD-i586-foobar@64bit', '00099983-opensuse-13.1-DVD-i586-foobar_eggs@64bit',],
+            'Jobs created'
+        );
     };
 
     subtest 'Post unmodified job template' => sub {

@@ -333,8 +333,8 @@ sub update {
                                         $machine_name = $attr->{machine};
                                     }
                                     if ($attr->{testsuite}) {
-                                        $testsuite_name    = $attr->{testsuite};
                                         $job_template_name = $testsuite_name;
+                                        $testsuite_name    = $attr->{testsuite};
                                     }
                                     if ($attr->{settings}) {
                                         %$settings = (%{$settings // {}}, %{$attr->{settings}});
