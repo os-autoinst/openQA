@@ -116,9 +116,9 @@ sub _check_error {
     my ($home, $project, $subfolder, $filename) = @_;
     return (405, 'Home directory is not set') unless $home;
     return (405, 'Home directory not found')  unless -d $home;
-    return (400, 'Project has invalid characters')   if $project   && $project =~ m!/!;
+    return (400, 'Project has invalid characters')   if $project   && $project   =~ m!/!;
     return (400, 'Subfolder has invalid characters') if $subfolder && $subfolder =~ m!/!;
-    return (400, 'Filename has invalid characters')  if $filename  && $filename =~ m!/!;
+    return (400, 'Filename has invalid characters')  if $filename  && $filename  =~ m!/!;
 
     return (404, 'Invalid Project {' . $project . '}') if $project && !-d Mojo::File->new($home, $project);
     return 0;

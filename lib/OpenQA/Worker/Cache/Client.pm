@@ -87,11 +87,11 @@ sub execute_task {
     return _status($response);
 }
 
-sub status { $_[0]->_post(status => {lock => $_[1]->lock, id => $_[1]->minion_id}) }
+sub status    { $_[0]->_post(status => {lock => $_[1]->lock, id => $_[1]->minion_id}) }
 sub processed { !!(shift->status(shift) == STATUS_PROCESSED) }
-sub output    { shift->_result(output => pop) }
-sub result    { shift->_result(result => pop) }
-sub info      { $_[0]->ua->get($_[0]->_url("info")) }
+sub output { shift->_result(output => pop) }
+sub result { shift->_result(result => pop) }
+sub info   { $_[0]->ua->get($_[0]->_url("info")) }
 sub available { !shift->info->error }
 sub available_workers {
     return unless $_[0]->available;

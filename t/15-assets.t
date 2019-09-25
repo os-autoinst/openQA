@@ -141,7 +141,7 @@ is(scalar @assets, 1, 'one asset assigned before grabbing');
 # set jobA (normally this is done by worker after abort) and cloneA to done
 # needed for job grab to fulfill dependencies
 $jobA->discard_changes;
-is($jobA->done(result => 'passed'),   'passed', 'jobA job set to done');
+is($jobA->done(result => 'passed'), 'passed', 'jobA job set to done');
 is($cloneA->done(result => 'passed'), 'passed', 'cloneA job set to done');
 
 # register asset and mark as created by cloneA

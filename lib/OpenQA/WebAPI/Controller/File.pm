@@ -125,8 +125,8 @@ sub test_asset {
     my %asset;
     my $attrs = {join => {jobs_assets => 'asset'}, +select => [qw(asset.name asset.type)], +as => [qw(name type)]};
     my $res   = $self->schema->resultset('Jobs')->search(\%cond, $attrs);
-    if   ($res and $res->first) { %asset = $res->first->get_columns }
-    else                        { return $self->reply->not_found }
+    if ($res and $res->first) { %asset = $res->first->get_columns }
+    else                      { return $self->reply->not_found }
 
     # find the asset path
     my $path = locate_asset($asset{type}, $asset{name}, relative => 1);

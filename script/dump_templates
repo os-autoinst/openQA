@@ -223,7 +223,7 @@ for my $table (qw(Machines TestSuites Products JobTemplates)) {
     if ($res->code && $res->code == 200) {
         if (!$res->json) {
             printf STDERR "ERROR requesting %s: response does not contain JSON\n", $table;
-            printf STDERR "response: %s",                                          $res->body if $res->body;
+            printf STDERR "response: %s", $res->body if $res->body;
             exit(1);
         }
         my %tmp = (%result, %{$res->json});

@@ -312,7 +312,7 @@ $pieces->each(
 
         #  like $error, qr/Checksum mismatch expected/ if $_->is_last;
         like $error, qr/Can't verify written data from chunk/ unless $_->is_last();
-        ok(!-d $chunkdir, 'Chunk directory does not exists') if $_->is_last;
+        ok(!-d $chunkdir,                           'Chunk directory does not exists') if $_->is_last;
         ok((-e path($chunkdir, 'hdd_image.qcow2')), 'Chunk is there') unless $_->is_last;
     });
 

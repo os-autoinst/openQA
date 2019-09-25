@@ -137,7 +137,7 @@ sub _download_handler {
 
 sub download_test_results {
 
-    my ($self) = shift;
+    my ($self)          = shift;
     my $resultdir       = path($path, 'testresults')->make_path;
     my $resultdir_ulogs = $resultdir->path('ulogs')->make_path;
 
