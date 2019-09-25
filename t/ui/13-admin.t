@@ -564,14 +564,14 @@ subtest 'edit the yaml' => sub() {
     my $result = $form->child('.result');
     wait_for_ajax;
     like($result->get_text(), qr/Preview of the changes/, 'preview shown') or diag explain $result->get_text();
-    like($result->get_text(), qr/No changes were made!/,  'preview, nothing changed')
+    like($result->get_text(), qr/No changes were made!/, 'preview, nothing changed')
       or diag explain $result->get_text();
 
     # Save
     $driver->find_element_by_id('save-template')->click();
     $result = $form->child('.result');
     wait_for_ajax;
-    like($result->get_text(), qr/YAML saved!/,           'saving confirmed') or diag explain $result->get_text();
+    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
     like($result->get_text(), qr/No changes were made!/, 'preview, nothing changed')
       or diag explain $result->get_text();
 
@@ -596,7 +596,7 @@ subtest 'edit the yaml' => sub() {
     $driver->find_element_by_id('preview-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/Preview of the changes/, 'preview shown') or diag explain $result->get_text();
-    like($result->get_text(), qr/No changes were made!/,  'preview, nothing changed')
+    like($result->get_text(), qr/No changes were made!/, 'preview, nothing changed')
       or diag explain $result->get_text();
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;

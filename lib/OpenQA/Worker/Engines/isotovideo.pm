@@ -71,9 +71,9 @@ sub _save_vars {
     die "cannot get environment variables!\n" unless $vars;
     my $fn = $pooldir . "/vars.json";
     unlink "$pooldir/vars.json" if -e "$pooldir/vars.json";
-    open(my $fd, ">", $fn) or die "can not write vars.json: $!\n";
+    open(my $fd, ">", $fn)                                    or die "can not write vars.json: $!\n";
     fcntl($fd, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$)) or die "cannot lock vars.json: $!\n";
-    truncate($fd, 0) or die "cannot truncate vars.json: $!\n";
+    truncate($fd, 0)                                          or die "cannot truncate vars.json: $!\n";
 
     print $fd Cpanel::JSON::XS->new->pretty(1)->encode(\%$vars);
     close($fd);

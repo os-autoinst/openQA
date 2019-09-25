@@ -41,7 +41,7 @@ $test_case->login($t, 'percival');
 
 $t->get_ok('/api_keys');
 
-ok($token =~ /[0-9a-z]{40}/,                                                       "csrf token in meta tag");
+ok($token =~ /[0-9a-z]{40}/, "csrf token in meta tag");
 ok($t->tx->res->dom->at('meta[name=csrf-param]')->attr('content') eq 'csrf_token', "csrf param in meta tag");
 
 is($token, $t->tx->res->dom->at('form input[name=csrf_token]')->{value}, "token is the same in form");

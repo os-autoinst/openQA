@@ -105,7 +105,7 @@ use warnings;
                 test_suite => {name => 'advanced_kde'},
                 prio       => 40,
                 group_id   => 1001,
-                settings => [{key => 'DESKTOP', value => 'advanced_kde'}, {key => 'ADVANCED', value => '1'},],
+                settings   => [{key => 'DESKTOP', value => 'advanced_kde'}, {key => 'ADVANCED', value => '1'},],
             },
         ],
     },

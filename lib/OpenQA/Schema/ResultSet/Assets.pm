@@ -299,7 +299,7 @@ END_SQL
             }
         }
         $asset->{picked_into} = $largest_group;
-        $group_info{$largest_group}->{size} -= $size;
+        $group_info{$largest_group}->{size}   -= $size;
         $group_info{$largest_group}->{picked} += $size;
     }
 

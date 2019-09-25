@@ -146,8 +146,8 @@ subtest 'filtering subgroups' => sub {
     $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{end}, '0');    # appended
     $driver->find_element('#filter-form button')->click();
     $url .= '?group=Test+parent+%2F+.*+test%24&default_expanded=1&limit_builds=30&time_limit_days=140#';
-    is($driver->get_current_url, $url, 'URL parameters for filter are correct');
-    is(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, "child group 'opensuse' filtered out");
+    is($driver->get_current_url,                                  $url, 'URL parameters for filter are correct');
+    is(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0,    "child group 'opensuse' filtered out");
     isnt(scalar @{$driver->find_elements('opensuse test', 'link_text')}, 0, "child group 'opensuse test' present'");
 };
 

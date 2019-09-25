@@ -27,7 +27,7 @@ my $tempdir;
 BEGIN {
     use FindBin;
     use Mojo::File qw(path tempdir);
-    $tempdir = tempdir;
+    $tempdir             = tempdir;
     $ENV{OPENQA_BASEDIR} = $tempdir->child('t', 'full-stack.d');
     $ENV{OPENQA_CONFIG}  = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
     # Since tests depends on timing, we require the scheduler to be fixed in its actions.
@@ -349,9 +349,9 @@ subtest 'Cache tests' => sub {
       or die;
     start_worker;
     OpenQA::Test::FullstackUtils::wait_for_job_running($driver, 1);
-    ok(-e $db_file, "cache.sqlite file created");
+    ok(-e $db_file,                                 "cache.sqlite file created");
     ok(!-d path($cache_location, "test_directory"), "Directory within cache, not present after deploy");
-    ok(!-e $cache_location->child("test.file"), "File within cache, not present after deploy");
+    ok(!-e $cache_location->child("test.file"),     "File within cache, not present after deploy");
 
     like(
         readlink(path($ENV{OPENQA_BASEDIR}, 'openqa', 'pool', '1')->child("Core-7.2.iso")),
@@ -369,9 +369,9 @@ subtest 'Cache tests' => sub {
         my $autoinst_log = do { local ($/); <$f> };
         close($f);
 
-        like($autoinst_log, qr/Downloading Core-7.2.iso/, 'Test 5, downloaded the right iso.');
-        like($autoinst_log, qr/11116544/,                 'Test 5 Core-7.2.iso size is correct.');
-        like($autoinst_log, qr/Result: done/,             'Test 5 result done');
+        like($autoinst_log,                   qr/Downloading Core-7.2.iso/,  'Test 5, downloaded the right iso.');
+        like($autoinst_log,                   qr/11116544/,                  'Test 5 Core-7.2.iso size is correct.');
+        like($autoinst_log,                   qr/Result: done/,              'Test 5 result done');
         like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 5 correct autoinst setup notes');
         like(
             (split(/\n/, $autoinst_log))[-1],
@@ -451,9 +451,9 @@ subtest 'Cache tests' => sub {
         my $autoinst_log = do { local ($/); <$f> };
         close($f);
 
-        like($autoinst_log, qr/Content has not changed/,     'Test 7 Core-7.2.iso has not changed.');
-        like($autoinst_log, qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 correct autoinst worker notes');
-        like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 7 correct autoinst setup notes');
+        like($autoinst_log,                   qr/Content has not changed/,     'Test 7 Core-7.2.iso has not changed.');
+        like($autoinst_log,                   qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 correct autoinst worker notes');
+        like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/,   'Test 7 correct autoinst setup notes');
         like(
             (split(/\n/, $autoinst_log))[-1],
             qr/uploading autoinst-log.txt/i,

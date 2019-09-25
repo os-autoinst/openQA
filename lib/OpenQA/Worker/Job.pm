@@ -375,9 +375,9 @@ sub _stop_step_5_upload {
     my $pooldir = $self->worker->pool_directory;
 
     # add notes
-    log_info("+++ worker notes +++", channels => 'autoinst');
+    log_info("+++ worker notes +++",                             channels => 'autoinst');
     log_info(sprintf("End time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
-    log_info("Result: $reason", channels => 'autoinst');
+    log_info("Result: $reason",                                  channels => 'autoinst');
 
     # upload logs and assets
     if ($reason ne 'quit' && $reason ne 'abort' && $reason ne 'api-failure') {

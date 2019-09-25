@@ -24,7 +24,7 @@ use Mojo::File qw(path tempdir);
 my $tempdir;
 BEGIN {
     use FindBin;
-    $tempdir = tempdir;
+    $tempdir             = tempdir;
     $ENV{OPENQA_BASEDIR} = $tempdir->child('t', 'scheduler');
     $ENV{OPENQA_CONFIG}  = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
     # Since tests depends on timing, we require the scheduler to be fixed in its actions.

@@ -207,7 +207,7 @@ sub _schedule_iso {
     for my $asset (values %{parse_assets_from_settings($args)}) {
         my ($name, $type) = ($asset->{name}, $asset->{type});
         return {error => 'Asset type and name must not be empty.'} unless $name && $type;
-        return {error => "Failed to register asset $name."} unless $assets->register($type, $name, 1);
+        return {error => "Failed to register asset $name."}        unless $assets->register($type, $name, 1);
     }
 
     # read arguments for deprioritization and obsoleten
@@ -328,7 +328,7 @@ sub _schedule_iso {
     }
     catch {
         my $error = shift;
-        push(@notes, "Transaction failed: $error");
+        push(@notes,           "Transaction failed: $error");
         push(@failed_job_info, map { {job_id => $_, error_messages => [$error]} } @successful_job_ids);
         @successful_job_ids = ();
     };

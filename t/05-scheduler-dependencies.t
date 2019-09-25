@@ -812,7 +812,7 @@ my $jobQ       = _job_create(\%settingsQ);
 my $jobW = _job_create(\%settingsW, undef, [$jobQ->id]);
 my $jobU = _job_create(\%settingsU, undef, [$jobQ->id]);
 my $jobR = _job_create(\%settingsR, undef, [$jobQ->id]);
-my $jobT  = _job_create(\%settingsT, [$jobW->id, $jobU->id, $jobR->id], [$jobQ->id]);
+my $jobT  = _job_create(\%settingsT,  [$jobW->id, $jobU->id, $jobR->id],        [$jobQ->id]);
 my $jobTA = _job_create(\%settingsTA, [$jobW->id, $jobU->id, $jobR->id], undef, [$jobQ->id]);
 
 # check dependencies of job Q

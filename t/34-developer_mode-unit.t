@@ -542,7 +542,7 @@ subtest 'register developer session' => sub {
 subtest 'unregister developer session' => sub {
     is_deeply(\@jobs_cancelled, [], 'no jobs cancelled so far');
     is($developer_sessions->unregister(99963, 99901), 1, 'returns 1 on successful deletion');
-    is($developer_sessions->count, 1, 'session not completely deleted');
+    is($developer_sessions->count,                    1, 'session not completely deleted');
     is_deeply(\@jobs_cancelled, [99963], 'but the job has been cancelled');
     is($developer_sessions->unregister(99962, 99902), 0, 'returns 0 if session has not existed anyways');
 };

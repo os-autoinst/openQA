@@ -1824,7 +1824,7 @@ sub done {
     }
 
     # update result if not provided
-    my $result  = $args{result} || $self->calculate_result();
+    my $result = $args{result} || $self->calculate_result();
     my %new_val = (state => DONE);
     # for cancelled jobs the result is already known
     $new_val{result} = $result if $self->result eq NONE;

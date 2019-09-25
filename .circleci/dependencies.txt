@@ -164,7 +164,7 @@ perl-Path-Tiny-0.104
 perl-Perl-Critic-1.130
 perl-Perl-Critic-Freenode-0.026
 perl-Perl-Critic-Pulp-96
-perl-Perl-Tidy-20190601
+perl-Perl-Tidy-20190915
 perl-Pod-MinimumVersion-50
 perl-Pod-POM-2.01
 perl-Pod-Spell-1.20
@@ -175,7 +175,7 @@ perl-Readonly-2.05
 perl-Regexp-Common-2017060201
 perl-Role-Tiny-2.000006
 perl-Scope-Guard-0.21
-perl-Selenium-Remote-Driver-1.33
+perl-Selenium-Remote-Driver-1.34
 perl-Socket6-0.28
 perl-Socket-MsgHdr-0.04
 perl-Sort-Versions-1.62
