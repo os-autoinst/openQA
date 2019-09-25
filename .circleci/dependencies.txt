@@ -1,4 +1,3 @@
-cmark-0.28.3
 libcmark0_28_3-0.28.3
 libpython2_7-1_0-2.7.14
 libssh2-1-1.8.0

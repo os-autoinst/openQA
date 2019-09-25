@@ -257,13 +257,14 @@ workflows:
       - testschedulerfullstack:
          requires:
            - build-integration-cache
-  nightly:
+
+  hourly:
    triggers:
      - schedule:
-         cron: "0 0 * * *"
+         cron: "45 * * * *"
          filters:
            branches:
              only:
-               - master
+               - circleci_test_nightly_bot
    jobs:
       - dependencies-pr
