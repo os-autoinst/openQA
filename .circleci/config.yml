@@ -183,6 +183,19 @@ jobs:
               eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v $openqa_unstable_tests || echo FAIL
             fi
 
+  testapi:
+    docker:
+      - <<: *base
+    steps:
+      - checkout
+      - run: *chown_hack_for_cache
+      - restore_cache: *restore_cache
+      - run: *check_cache
+      - run: *install_cached_packages
+      - run: 
+          command: |
+            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v t/api/*.t
+
   testfullstack:
     docker:
       - <<: *base
@@ -237,6 +250,9 @@ workflows:
     jobs:
       - build-cache
       - test1:
+         requires:
+           - build-cache
+      - testapi:
          requires:
            - build-cache
       - testui:
