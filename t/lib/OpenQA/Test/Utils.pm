@@ -18,6 +18,7 @@ use Mojo::Home;
 use Mojo::File qw(path tempfile);
 use Cwd qw(abs_path getcwd);
 use Test::More;
+use Mojo::IOLoop;
 use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::Server::Daemon;
 use Test::MockModule;
@@ -39,7 +40,7 @@ our (@EXPORT, @EXPORT_OK);
     qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
     qw(unresponsive_worker wait_for_worker setup_share_dir),
     qw(kill_service unstable_worker client_output fake_asset_server),
-    qw(cache_minion_worker cache_worker_service shared_hash)
+    qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing)
 );
 
 sub cache_minion_worker {
@@ -215,7 +216,11 @@ sub create_websocket_server {
         # embed the scheduler REST API within the ws server (required for scheduler fullstack test)
         if ($with_embedded_scheduler) {
             note('Embedding scheduler within ws server subprocess');
-            OpenQA::Scheduler::Client->singleton->embed_server_for_testing;
+            embed_server_for_testing(
+                server_name => 'OpenQA::Scheduler',
+                client      => OpenQA::Scheduler::Client->singleton,
+                io_loop     => Mojo::IOLoop->singleton,
+            );
 
             # mock the scheduler's automatic rescheduling behavior because this test invokes
             # the scheduling logic manually
@@ -397,6 +402,28 @@ sub shared_hash {
     state $file = do { my $f = tempfile; lock_store {}, $f->to_string; $f };
     return lock_retrieve $file->to_string unless $hash;
     lock_store $hash, $file->to_string;
+}
+
+sub embed_server_for_testing {
+    my (%args)      = @_;
+    my $server_name = $args{server_name};
+    my $client      = $args{client};
+
+    # change the client to use an embedded server for testing (this avoids
+    # forking a second process)
+    my $server = $client->{test_server};
+    unless ($server) {
+        $server = $client->{test_server} = Mojo::Server::Daemon->new(
+            ioloop => ($args{io_loop} // $client->client->ioloop),
+            listen => ($args{listen}  // ['http://127.0.0.1']),
+            silent => ($args{silent}  // 1),
+        );
+        $server->build_app($server_name)->mode($args{mode} // 'production');
+        $server->start;
+        $client->port($server->ports->[0]);
+    }
+
+    return $server;
 }
 
 1;

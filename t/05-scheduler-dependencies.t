@@ -31,6 +31,7 @@ use Test::Warnings;
 use OpenQA::WebSockets::Client;
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::FakeWebSocketTransaction;
+use OpenQA::Test::Utils 'embed_server_for_testing';
 use Test::MockModule;
 
 subtest 'serialize sequence of directly chained dependencies' => sub {
@@ -157,7 +158,10 @@ subtest 'serialize sequence of directly chained dependencies' => sub {
 
 my $schema = OpenQA::Test::Database->new->create();
 
-OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
+embed_server_for_testing(
+    server_name => 'OpenQA::WebSockets',
+    client      => OpenQA::WebSockets::Client->singleton,
+);
 
 my $sent = {};
 

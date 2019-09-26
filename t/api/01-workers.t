@@ -25,6 +25,7 @@ use Test::Mojo;
 use Test::Warnings ':all';
 use Mojo::URL;
 use OpenQA::Test::Case;
+use OpenQA::Test::Utils 'embed_server_for_testing';
 use OpenQA::Client;
 use OpenQA::WebSockets::Client;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
@@ -36,7 +37,10 @@ my $schema    = $test_case->init_data;
 my $jobs      = $schema->resultset('Jobs');
 my $workers   = $schema->resultset('Workers');
 
-OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
+embed_server_for_testing(
+    server_name => 'OpenQA::WebSockets',
+    client      => OpenQA::WebSockets::Client->singleton,
+);
 
 my $t   = Test::Mojo->new('OpenQA::WebAPI');
 my $app = $t->app;

@@ -25,6 +25,7 @@ use OpenQA::Resource::Jobs;
 use OpenQA::Resource::Locks;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
+use OpenQA::Test::Utils 'embed_server_for_testing';
 use OpenQA::WebSockets::Client;
 use Test::More;
 use Test::Warnings;
@@ -32,7 +33,10 @@ use Test::Output qw(stderr_like);
 
 my $schema = OpenQA::Test::Database->new->create();
 
-OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
+embed_server_for_testing(
+    server_name => 'OpenQA::WebSockets',
+    client      => OpenQA::WebSockets::Client->singleton,
+);
 
 sub list_jobs {
     [map { $_->to_hash() } $schema->resultset('Jobs')->all];

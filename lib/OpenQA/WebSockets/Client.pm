@@ -24,25 +24,6 @@ use OpenQA::Utils 'service_port';
 has client => sub { OpenQA::Client->new(api => 'localhost') };
 has port   => sub { service_port('websocket') };
 
-sub embed_server_for_testing {
-    my $self = shift;
-
-    # Change the current OpenQA::WebSockets::Client instance to use an embedded
-    # websocket server for testing (this avoids forking a second process)
-    unless ($self->{test_server}) {
-        my $server = $self->{test_server} = Mojo::Server::Daemon->new(
-            ioloop => $self->client->ioloop,
-            listen => ['http://127.0.0.1'],
-            silent => 1
-        );
-        $server->build_app('OpenQA::WebSockets')->mode('production');
-        $server->start;
-        $self->port($server->ports->[0]);
-    }
-
-    return $self;
-}
-
 sub is_worker_connected {
     my ($self, $worker_id) = @_;
     my $res = $self->client->get($self->_api("is_worker_connected/$worker_id"))->result;

@@ -33,8 +33,6 @@ sub handle_worker_reported_back {
 
     # get and validate IDs from JSON
     my $json = $self->req->json;
-    use Data::Dumper;
-    print("json: " . Dumper($json) . "\n");
     return $self->render(text => 'no JSON with worker and job IDs submitted', status => 400)
       unless ref($json) eq 'HASH';
     my $worker_id = $json->{worker_id};
