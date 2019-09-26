@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2015-2017 SUSE LLC
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -608,7 +608,7 @@ subtest 'json representation of group overview (actually not part of the API)' =
     );
 };
 
-$t->get_ok('/index.json?limit_builds=10')->status_is(200);
+$t->get_ok('/dashboard_build_results.json?limit_builds=10')->status_is(200);
 my $ret = $t->tx->res->json;
 is(@{$ret->{results}}, 2);
 my $g1 = (shift @{$ret->{results}});

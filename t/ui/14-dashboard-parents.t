@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2016-2018 SUSE LLC
+# Copyright (C) 2016-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -98,6 +98,7 @@ my $baseurl = $driver->get_current_url();
 
 $driver->get($baseurl . '?limit_builds=20');
 disable_bootstrap_animations();
+wait_for_ajax();
 
 # test expanding/collapsing
 is(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, 'link to child group collapsed (in the first place)');
@@ -115,6 +116,7 @@ ok($driver->find_element('#group1_build13_1-0091 .h4 a')->is_hidden(), 'link to 
 # go to parent group overview
 $driver->find_element_by_link_text('Test parent')->click();
 disable_bootstrap_animations();
+wait_for_ajax();
 
 ok($driver->find_element('#group1_build13_1-0091 .h4 a')->is_displayed(), 'link to child group displayed');
 my @links = $driver->find_elements('.h4 a', 'css');
@@ -129,11 +131,14 @@ isnt(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, "child group 
 $driver->find_element_by_class('navbar-brand')->click();
 $driver->find_element_by_link_text('Test parent 2')->click();
 disable_bootstrap_animations();
+wait_for_ajax();
 isnt(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, "child group 'opensuse' in 'Test parent 2'");
 
 # test filtering for nested groups
 subtest 'filtering subgroups' => sub {
     $driver->get('/');
+    disable_bootstrap_animations();
+    wait_for_ajax();
     my $url = $driver->get_current_url;
     $driver->find_element('#filter-panel .card-header')->click();
     $driver->find_element_by_id('filter-group')->send_keys('Test parent / .* test$');
@@ -144,8 +149,9 @@ subtest 'filtering subgroups' => sub {
     $ele = $driver->find_element_by_id('filter-time-limit-days');
     $ele->click();
     $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{end}, '0');    # appended
-    $driver->find_element('#filter-form button')->click();
-    $url .= '?group=Test+parent+%2F+.*+test%24&default_expanded=1&limit_builds=30&time_limit_days=140#';
+    $driver->find_element('#filter-apply-button')->click();
+    wait_for_ajax();
+    $url .= '?group=Test%20parent%20%2F%20.*%20test%24&default_expanded=1&limit_builds=30&time_limit_days=140';
     is($driver->get_current_url,                                  $url, 'URL parameters for filter are correct');
     is(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0,    "child group 'opensuse' filtered out");
     isnt(scalar @{$driver->find_elements('opensuse test', 'link_text')}, 0, "child group 'opensuse test' present'");

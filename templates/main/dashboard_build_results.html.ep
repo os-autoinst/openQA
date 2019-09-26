@@ -1,0 +1,17 @@
+% for my $groupresults (@$results) {
+    % my $group         = $groupresults->{group};
+    % my $build_results = $groupresults->{build_results};
+    % my $max_jobs      = $groupresults->{max_jobs};
+
+    % if (@{$groupresults->{children}}) {
+        <h2>
+            %= link_to $group->{name} => url_for('parent_group_overview', groupid => $group->{id})
+        </h2>
+        %= include 'main/group_builds', build_results => $build_results, group => $group, max_jobs => $max_jobs, children => $groupresults->{children}, default_expanded => $default_expanded
+    % } else {
+        <h2>
+            %= link_to $group->{name} => url_for('group_overview', groupid => $group->{id})
+        </h2>
+        %= include 'main/group_builds', build_results => $build_results, group => $group, max_jobs => $max_jobs, children => undef, default_expanded => 0
+    % }
+% }

@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2015-2017 SUSE LLC
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ $driver->title_is("openQA", "back on main page");
 
 # check 'reviewed' labels
 
-$t->get_ok('/?limit_builds=10')->status_is(200)
+$t->get_ok('/dashboard_build_results?limit_builds=10')->status_is(200)
   ->element_count_is('.review', 2, 'exactly two builds marked as \'reviewed\'')
   ->element_exists('.badge-all-passed', 'one build is marked as \'reviewed-all-passed\' because all tests passed');
 

@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2014-2017 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -60,12 +60,15 @@ like(
     'we are on build 91'
 );
 
-is($driver->get('/?limit_builds=1'),                           1, 'index page accepts limit_builds parameter');
-is(scalar @{$driver->find_elements('.h4', 'css')},             2, 'only one build per group shown');
+is($driver->get('/?limit_builds=1'), 1, 'index page accepts limit_builds parameter');
+wait_for_ajax;
+is(scalar @{$driver->find_elements('.h4', 'css')}, 2, 'only one build per group shown');
 is($driver->get('/?time_limit_days=0.02&limit_builds=100000'), 1, 'index page accepts time_limit_days parameter');
-is(scalar @{$driver->find_elements('.h4', 'css')},             0, 'no builds shown');
+wait_for_ajax;
+is(scalar @{$driver->find_elements('.h4', 'css')}, 0, 'no builds shown');
 is($driver->get('/?time_limit_days=0.05&limit_builds=100000'), 1, 'index page accepts time_limit_days parameter');
-is(scalar @{$driver->find_elements('.h4', 'css')},             2, 'only the one hour old builds is shown');
+wait_for_ajax;
+is(scalar @{$driver->find_elements('.h4', 'css')}, 2, 'only the one hour old builds is shown');
 
 # group overview
 $driver->find_element_by_link_text('opensuse')->click();
@@ -83,7 +86,7 @@ is(
     'https://bugzilla.suse.com/show_bug.cgi?id=1234',
     'bugref in description rendered as link'
 );
-$driver->get('//group_overview/1002');
+$driver->get('/group_overview/1002');
 is(scalar @{$driver->find_elements('#group_description', 'css')},
     0, 'no well for group description shown if none present');
 is($driver->get($build_url . '?limit_builds=2'), 1, 'group overview page accepts query parameter, too');
@@ -103,21 +106,28 @@ is($driver->find_element('#more_builds b')->get_text(), 400, 'limited to the sel
 $driver->find_element_by_link_text('tagged')->click();
 is(scalar @{$driver->find_elements('.h4', 'css')}, 0, 'no tagged builds exist');
 
-is($driver->get('/?group=opensuse'),              1, 'group parameter is not exact by default');
+is($driver->get('/?group=opensuse'), 1, 'group parameter is not exact by default');
+wait_for_ajax;
 is(scalar @{$driver->find_elements('h2', 'css')}, 2, 'both job groups shown');
-is($driver->get('/?group=test'),                  1, 'group parameter filters as expected');
+is($driver->get('/?group=test'), 1, 'group parameter filters as expected');
+wait_for_ajax;
 is(scalar @{$driver->find_elements('h2', 'css')}, 1, 'only one job group shown');
 is($driver->find_element_by_link_text('opensuse test')->get_text, 'opensuse test');
-is($driver->get('/?group=opensuse$'),             1, 'group parameter can be used for exact matching, though');
+is($driver->get('/?group=opensuse$'), 1, 'group parameter can be used for exact matching, though');
+wait_for_ajax;
 is(scalar @{$driver->find_elements('h2', 'css')}, 1, 'only one job group shown');
 is($driver->find_element_by_link_text('opensuse')->get_text, 'opensuse');
-is($driver->get('/?group=opensuse$&group=test'),  1, 'multiple group parameter can be use to ease building queries');
+is($driver->get('/?group=opensuse$&group=test'), 1, 'multiple group parameter can be used to ease building queries');
+wait_for_ajax;
 is(scalar @{$driver->find_elements('h2', 'css')}, 2, 'both job groups shown');
 $driver->get('/?group=');
+wait_for_ajax;
 is(scalar @{$driver->find_elements('h2', 'css')}, 2, 'a single, empty group parameter has no affect');
 
 subtest 'filter form' => sub {
     $driver->get('/');
+    disable_bootstrap_animations;
+    wait_for_ajax;
     my $url = $driver->get_current_url;
     $driver->find_element('#filter-panel .card-header')->click();
     $driver->find_element_by_id('filter-group')->send_keys('SLE 12 SP2');
@@ -127,13 +137,14 @@ subtest 'filter form' => sub {
     $ele = $driver->find_element_by_id('filter-time-limit-days');
     $ele->click();
     $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{end}, '2');    # appended to default '14'
-    $driver->find_element('#filter-form button')->click();
-    $url .= '?group=SLE+12+SP2&limit_builds=38&time_limit_days=142#';
+    $driver->find_element('#filter-apply-button')->click();
+    wait_for_ajax;
+    $url .= '?group=SLE%2012%20SP2&limit_builds=38&time_limit_days=142';
     is($driver->get_current_url, $url, 'URL parameters for filter are correct');
 };
 
 # JSON representation of index page
-$driver->get('/index.json');
+$driver->get('/dashboard_build_results.json');
 like($driver->get_page_source(), qr("key":"Factory-0048"), 'page rendered as JSON');
 
 like($t->get_ok('/')->tx->res->dom->at('#filter-panel .help_popover')->{'data-title'},
