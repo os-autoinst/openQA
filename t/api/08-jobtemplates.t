@@ -900,6 +900,25 @@ subtest 'Create and modify groups with YAML' => sub {
         );
     };
 
+    subtest 'Scenarios must be be unique across job groups' => sub {
+        $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = ['textmode'];
+        $t->post_ok(
+            "/api/v1/job_templates_scheduling/$job_group_id3",
+            form => {
+                schema   => $schema_filename,
+                template => YAML::XS::Dump($yaml)}
+        )->status_is(400, 'Post rejected because scenarios are ambiguous')->json_is(
+            '' => {
+                error => [
+'Job template name \'textmode\' with opensuse-13.1-DVD-i586 and 64bit is already used in job group \'opensuse\''
+                ],
+                error_status => 400,
+                id           => $job_group_id3
+            },
+            'Invalid testsuite'
+        );
+    };
+
     subtest 'Multiple scenarios with different variables' => sub {
         # Define more than one scenario with the same testsuite
         my %foo_spam = (
