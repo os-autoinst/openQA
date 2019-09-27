@@ -194,12 +194,35 @@ of tables updated by the method on success.
 
 =cut
 
+sub _verify_table_usage {
+    my ($self, $table, $id) = @_;
+
+    my $parameter = {
+        Products   => 'product_id',
+        Machines   => 'machine_id',
+        TestSuites => 'test_suite_id',
+    }->{$table};
+    my $job_templates = $self->schema->resultset('JobTemplates')->search({$parameter => $id});
+    my %groups;
+    while (my $job_template = $job_templates->next) {
+        $groups{$job_template->group->name} = 1 if $job_template->group->template;
+    }
+    return
+      scalar(keys %groups)
+      ? 'Group'
+      . (scalar(keys %groups) > 1 ? 's' : '') . ' '
+      . join(', ', sort keys(%groups))
+      . " must be updated through the YAML template"
+      : undef;
+}
+
 sub update {
     my ($self) = @_;
     my $table = $self->param("table");
 
     my $entry = {};
     my ($error_message, $settings, $keys) = $self->_prepare_settings($table, $entry);
+
     return $self->render(json => {error => $error_message}, status => 400) if defined $error_message;
 
     my $schema = $self->schema;
@@ -208,6 +231,20 @@ sub update {
     my $ret;
     my $update = sub {
         my $rc = $schema->resultset($table)->find({id => $self->param('id')});
+        # Tables used in a group configured in YAML must not be renamed
+        if (
+            (($table eq 'TestSuites' || $table eq 'Machines') && $rc->name ne $self->param('name'))
+            || (
+                $table eq 'Products'
+                && (   $rc->arch ne $self->param('arch')
+                    || $rc->distri ne $self->param('distri')
+                    || $rc->flavor ne $self->param('flavor')
+                    || $rc->version ne $self->param('version'))))
+        {
+            my $error_message = $self->_verify_table_usage($table, $self->param('id'));
+            $ret = 0;
+            die "$error_message\n" if $error_message;
+        }
         if ($rc) {
             $rc->update($entry);
             for my $var (@$settings) {
@@ -225,7 +262,8 @@ sub update {
         $schema->txn_do($update);
     }
     catch {
-        $error = shift;
+        # The first line of the backtrace gives us the error message we want
+        $error = (split /\n/, $_)[0];
         OpenQA::Utils::log_debug("Table update error: $error");
     };
 
@@ -263,6 +301,10 @@ sub destroy {
     my $entry_name;
 
     try {
+        # Tables used in a group configured in YAML must not be deleted
+        my $error_message = $self->_verify_table_usage($table, $self->param('id'));
+        die "$error_message\n" if $error_message;
+
         my $rs = $schema->resultset($table);
         $res = $rs->search({id => $self->param('id')});
         if ($res && $res->single) {
@@ -271,7 +313,8 @@ sub destroy {
         $ret = $res->delete;
     }
     catch {
-        $error = shift;
+        # The first line of the backtrace gives us the error message we want
+        $error = (split /\n/, $_)[0];
     };
 
     if ($ret && $ret == 0) {
