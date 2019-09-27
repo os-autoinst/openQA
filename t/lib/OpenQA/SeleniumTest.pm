@@ -11,7 +11,7 @@ our @EXPORT = qw($drivermissing check_driver_modules start_driver
   call_driver kill_driver wait_for_ajax disable_bootstrap_animations
   open_new_tab mock_js_functions element_visible element_hidden
   element_not_present javascript_console_has_no_warnings_or_errors
-  wait_until wait_until_element_gone);
+  wait_until wait_until_element_gone wait_for_element);
 
 use Data::Dump 'pp';
 use Mojo::IOLoop::Server;
@@ -350,6 +350,30 @@ sub wait_until_element_gone {
         $selector . ' gone',
         @_,
     );
+}
+
+sub wait_for_element {
+    my (%args)                = @_;
+    my $selector              = $args{selector};
+    my $expected_is_displayed = $args{is_displayed};
+
+    my $element;
+    wait_until(
+        sub {
+            my @elements = $_driver->find_elements($selector);
+            if (scalar @elements >= 1
+                && (!defined $expected_is_displayed || $elements[0]->is_displayed == $expected_is_displayed))
+            {
+                $element = $elements[0];
+                return 1;
+            }
+            return 0;
+        },
+        $args{description} // ($selector . ' present'),
+        $args{timeout},
+        $args{check_interval},
+    );
+    return $element;
 }
 
 sub kill_driver() {
