@@ -30,6 +30,7 @@ use OpenQA::Resource::Jobs 'job_restart';
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
+use OpenQA::Test::Utils 'embed_server_for_testing';
 use OpenQA::WebSockets::Client;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Utils;
@@ -54,7 +55,10 @@ $mock->mock(
 my $schema;
 ok($schema = OpenQA::Test::Database->new->create(), 'create database') || BAIL_OUT('failed to create database');
 
-OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
+embed_server_for_testing(
+    server_name => 'OpenQA::WebSockets',
+    client      => OpenQA::WebSockets::Client->singleton,
+);
 
 ## test asset is not assigned to scheduled jobs after job creation
 # create new job

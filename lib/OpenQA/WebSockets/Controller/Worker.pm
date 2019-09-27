@@ -21,6 +21,7 @@ use OpenQA::Utils qw(log_debug log_error log_info log_warning);
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKERS_CHECKER_THRESHOLD);
 use OpenQA::WebSockets::Model::Status;
 use OpenQA::Jobs::Constants;
+use OpenQA::Scheduler::Client;
 use DateTime;
 use Data::Dumper 'Dumper';
 use Data::Dump 'pp';
@@ -159,13 +160,17 @@ sub _message {
         # find the job currently associated with that worker
         my $registered_job_id;
         my $registered_job_token;
+        my $registered_job_state;
         try {
             return undef unless defined $wid;
             my $worker = $schema->resultset('Workers')->find($wid);
             return undef unless $worker;
 
             my $registered_job = $worker->job;
-            $registered_job_id = $registered_job->id if $registered_job;
+            if ($registered_job) {
+                $registered_job_id    = $registered_job->id;
+                $registered_job_state = $registered_job->state;
+            }
             log_debug("Found job $registered_job_id in DB from worker_status update sent by worker $wid")
               if defined $registered_job_id;
             log_debug("Received request has job id: $job_id")
@@ -178,56 +183,41 @@ sub _message {
               if defined $job_token;
         };
 
-        # update status of unfinished jobs
-        try {
-            # deal with the case when the worker is not actually working anymore on the job we think it
-            # is working on (e.g. worker has been restarted after a crash)
-            if (   (defined $registered_job_id && defined $job_id && $job_id != $registered_job_id)
-                || ($registered_job_token && defined $job_token && $job_token ne $registered_job_token)
-                || ($current_worker_status && $current_worker_status eq 'free'))
+        # skip informing scheduler if worker just does the job we expected it to do
+        return undef
+          if ( defined $job_id
+            && defined $registered_job_id
+            && defined $job_token
+            && defined $registered_job_token
+            && $job_id eq $registered_job_id
+            && $job_token eq $registered_job_token
+            && $registered_job_state eq RUNNING);
+
+        # skip informing scheduler if worker is idling as expected
+        return undef if (!defined $job_id && !defined $registered_job_id);
+
+        # let the scheduler know so it can update the status of related jobs according to what the worker reported
+        OpenQA::Scheduler::Client->singleton->inform_scheduler_that_worker_reported_back(
             {
-                $schema->txn_do(
-                    sub {
-                        my $worker = $schema->resultset('Workers')->find($wid);
-                        return undef unless $worker;
+                worker_id          => $wid,
+                worker_status      => $current_worker_status,
+                current_job_id     => $job_id,
+                current_job_status => $job_status,
+                pending_job_ids    => $pending_job_ids,
+                job_token          => $job_token,
+            },
+            sub {
+                my ($ua, $tx) = @_;
+                my $err = $tx->error;
+                return unless $err;
 
-                        # take any unfinished jobs of that worker into account
-                        for my $job ($worker->unfinished_jobs) {
-                            # if the worker claims that job is still pending just leave it be
-                            return undef if exists $pending_job_ids->{$job->id};
-
-                            # mark job which was already running as incomplete and duplicate
-                            if (   $job->result eq OpenQA::Jobs::Constants::NONE
-                                && $job->state eq OpenQA::Jobs::Constants::RUNNING
-                                && $current_worker_status eq 'free')
-                            {
-                                return $job->incomplete_and_duplicate;
-                            }
-
-                            # set job which was only assigned back to scheduled
-                            if ($job->state eq OpenQA::Jobs::Constants::ASSIGNED) {
-                                return $job->reschedule_state;
-                            }
-                        }
-                    });
-            }
-
-            # ensure the job's status is running
-            return undef unless defined $job_id && $job_status && $job_status eq OpenQA::Jobs::Constants::RUNNING;
-            $schema->txn_do(
-                sub {
-                    my $job = $schema->resultset('Jobs')->find($job_id);
-                    return undef unless $job;
-                    return undef if $job->state eq RUNNING || $job->result ne NONE;
-                    $job->set_running;
-                    log_debug(sprintf('Job "%s" set to running states from ws status updates', $job_id));
-                });
-
-        }
-        catch {
-            log_debug("Failed parsing status message : $_");
-        };
-
+                my $message
+                  = $err->{code}
+                  ? "$err->{code} response: $err->{message}"
+                  : "connection error: $err->{message}";
+                log_error("Unable to inform scheduler that worker $wid reported back ($message)");
+                if (my $res = $tx->res) { log_error('response was: ' . $res->body); }
+            });
     }
     else {
         log_error(sprintf('Received unknown message type "%s" from worker %u', $json->{type}, $worker->{id}));

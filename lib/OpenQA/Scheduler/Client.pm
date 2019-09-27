@@ -30,6 +30,13 @@ sub wakeup {
       ->finally(sub { delete $self->{wakeup} })->wait;
 }
 
+sub inform_scheduler_that_worker_reported_back {
+    my ($self, $worker_info, $callback) = @_;
+
+    $self->client->max_connections(20)->request_timeout(60)
+      ->post($self->_api('worker_reported_back'), json => $worker_info, $callback);
+}
+
 sub singleton { state $client ||= __PACKAGE__->new }
 
 sub _api {

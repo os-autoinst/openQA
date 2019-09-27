@@ -23,6 +23,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
+use OpenQA::Test::Utils 'embed_server_for_testing';
 use Date::Format 'time2str';
 use OpenQA::WebSockets::Client;
 use OpenQA::SeleniumTest;
@@ -32,7 +33,10 @@ my $online_worker_id  = 6;
 my $offline_worker_id = 8;
 
 OpenQA::Test::Case->new->init_data;
-OpenQA::WebSockets::Client->singleton->embed_server_for_testing;
+embed_server_for_testing(
+    server_name => 'OpenQA::WebSockets',
+    client      => OpenQA::WebSockets::Client->singleton,
+);
 
 sub schema_hook {
     my $schema  = OpenQA::Test::Database->new->create;
