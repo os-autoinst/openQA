@@ -58,7 +58,7 @@ $driver->find_element_by_link_text('Logout')->click();
 
 # quit tour temporarly
 $driver->get('/login?user=nobody');
-ok($driver->find_element('#step-0')->is_displayed(), 'tour popover is displayed');
+wait_for_element(selector => '#step-0', is_displayed => 1, description => 'tour popover is displayed');
 my $text = $driver->find_element('h3.popover-header')->get_text();
 is($text, 'All tests area');
 $driver->find_element_by_link_text('Logged in as nobody')->click();
@@ -71,11 +71,11 @@ my $clear = q{
 $driver->execute_script($clear);
 $driver->refresh();
 $driver->get('/login?user=nobody');
-ok($driver->find_element('#step-0')->is_displayed(), 'tour popover is displayed again');
+wait_for_element(selector => '#step-0', is_displayed => 1, description => 'tour popover is displayed again');
 
 # do the tour
 $driver->find_element_by_id('next')->click();
-ok($driver->find_element('#step-1')->is_displayed(), 'tour popover is displayed');
+wait_for_element(selector => '#step-1', is_displayed => 1, description => 'tour popover is displayed');
 $driver->pause();
 $driver->find_element_by_id('prev')->click();
 $driver->execute_script($clear);
