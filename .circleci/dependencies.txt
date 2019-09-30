@@ -61,7 +61,7 @@ perl-DBD-Pg-3.7.4
 perl-DBD-SQLite-1.54
 perl-DBI-1.642
 perl-DBIx-Class-0.082841
-perl-DBIx-Class-DeploymentHandler-0.002232
+perl-DBIx-Class-DeploymentHandler-0.002233
 perl-DBIx-Class-DynamicDefault-0.04
 perl-DBIx-Class-OptimisticLocking-0.02
 perl-DBIx-Class-Schema-Config-0.001011
@@ -181,6 +181,8 @@ perl-Socket-MsgHdr-0.04
 perl-Sort-Versions-1.62
 perl-Specio-0.42
 perl-SQL-Abstract-1.86
+perl-SQL-SplitStatement-1.00020
+perl-SQL-Tokenizer-0.24
 perl-SQL-Translator-0.11024
 perl-strictures-2.000005
 perl-String-Format-1.18
