@@ -496,7 +496,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_apache_proxy">Apache proxy</a></li>
 <li><a href="#_tlsssl">TLS/SSL</a></li>
 <li><a href="#database">Database</a>
-<ul class="sectlevel5">
+<ul class="sectlevel3">
 <li><a href="#_example_for_connecting_to_local_postgresql_database">Example for connecting to local PostgreSQL database</a></li>
 <li><a href="#_example_for_connecting_to_remote_postgresql_database">Example for connecting to remote PostgreSQL database</a></li>
 </ul>
@@ -641,6 +641,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_example_dependency_on_same_machine">Example: dependency on same machine</a></li>
 </ul>
 </li>
+<li><a href="#_notes_regarding_directly_chained_dependencies">Notes regarding directly chained dependencies</a></li>
 </ul>
 </li>
 <li><a href="#_openqa_worker_requirements">OpenQA worker requirements</a>
@@ -678,19 +679,19 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </ul>
 </li>
 <li><a href="#_defining_a_custom_test_schedule_or_custom_test_modules">Defining a custom test schedule or custom test modules</a>
-<ul class="sectlevel4">
+<ul class="sectlevel3">
 <li><a href="#_exclude_modules">EXCLUDE_MODULES</a></li>
 <li><a href="#_include_modules">INCLUDE_MODULES</a></li>
 <li><a href="#_schedule">SCHEDULE</a></li>
 <li><a href="#_schedule_asset_nr_url">SCHEDULE + ASSET_&lt;NR&gt;_URL</a></li>
+</ul>
+</li>
 <li><a href="#_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request">Triggering tests based on an any remote git refspec or open github pull request</a></li>
 </ul>
 </li>
 </ul>
 </li>
-</ul>
-</li>
-<li><a href="#installing">openQA test harness result processing</a>
+<li><a href="#installing_harness">openQA test harness result processing</a>
 <ul class="sectlevel1">
 <li><a href="#_introduction_5">Introduction</a></li>
 <li><a href="#_usage">Usage</a>
@@ -778,6 +779,11 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </ul>
 </li>
 <li><a href="#_building_plugins">Building Plugins</a></li>
+</ul>
+</li>
+<li><a href="#branding">openQA branding</a>
+<ul class="sectlevel1">
+<li><a href="#_web_ui_template">Web UI template</a></li>
 </ul>
 </li>
 </ul>
@@ -1766,8 +1772,8 @@ and change the settings in the [production] section.</p>
 documented for PostgreSQL at
 <a href="https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods">DBD::Pg</a></p>
 </div>
-<div class="sect5">
-<h6 id="_example_for_connecting_to_local_postgresql_database">Example for connecting to local PostgreSQL database</h6>
+<div class="sect3">
+<h4 id="_example_for_connecting_to_local_postgresql_database">Example for connecting to local PostgreSQL database</h4>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[production]</span>
@@ -1775,8 +1781,8 @@ documented for PostgreSQL at
 </div>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_example_for_connecting_to_remote_postgresql_database">Example for connecting to remote PostgreSQL database</h6>
+<div class="sect3">
+<h4 id="_example_for_connecting_to_remote_postgresql_database">Example for connecting to remote PostgreSQL database</h4>
 <div class="listingblock">
 <div class="content">
 <pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[production]</span>
@@ -3414,21 +3420,21 @@ So I am not repeating that information here and rather explain the overall workf
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>In case a new needles should be created, add the corresponding +assert_screen+s to
-your test.</p>
+<p>In case a new needles should be created, add the corresponding assert_screen calls
+to your test.</p>
 </li>
 <li>
-<p>Start the test with the +assert_screen+s which are supposed to fail.</p>
+<p>Start the test with the assert_screen calls which are supposed to fail.</p>
 </li>
 <li>
-<p>Select "Pause on assert_screen failure and confirm.</p>
+<p>Select "assert_screen timeout" under "Pause on screen mismatch" and confirm.</p>
 </li>
 <li>
 <p>Wait until the test has paused. There is a button to skip the current timeout to speed
 this up.</p>
 </li>
 <li>
-<p>A button for acessing the needle editor should occur. It may take a few seconds till
+<p>A button for accessing the needle editor should occur. It may take a few seconds till
 it occurs because the screenshots created so far need to be uploaded from the worker to
 the web UI. Of course it is also possible to go back to the "Details" tab to create a new
 needle from any previous screenshot/match available.</p>
@@ -3439,8 +3445,7 @@ needle from any previous screenshot/match available.</p>
 </ol>
 </div>
 <div class="paragraph">
-<p>Steps 4. to 6. can be repeated for further +assert_screen+s/needles without restarting the
-test.</p>
+<p>Steps 4. to 6. can be repeated for further needles without restarting the test.</p>
 </div>
 </div>
 </div>
@@ -3577,7 +3582,8 @@ build and have existing jobs for the exact same build obsoleted. Needs <code>_OB
 _SKIP_CHAINED_DEPS
 </td>
 <td class="hdlist2">
-<p>Do not schedule parent test suites which are specified in START_AFTER_TEST.</p>
+<p>Do not schedule parent test suites which are specified in <code>START_AFTER_TEST</code>
+or <code>START_DIRECTLY_AFTER_TEST</code>.</p>
 </td>
 </tr>
 <tr>
@@ -4215,32 +4221,39 @@ test designer job</em> (beware deadlocks).</p>
 <div class="sect3">
 <h4 id="_job_dependencies">Job dependencies</h4>
 <div class="paragraph">
-<p>There are 2 types of dependencies: CHAINED and PARALLEL:</p>
+<p>There are 3 types of dependencies: CHAINED, DIRECTLY_CHAINED and PARALLEL:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>CHAINED describes when one test case depends on another and both are run sequentially, i.e. KDE test suite is run after and only after Installation test suite
-is successfully finished and cancelled if fail.</p>
+<p>CHAINED and DIRECTLY_CHAINED describe when one test case depends on another and both are run sequentially, i.e. KDE test suite is run after and only after Installation test suite is successfully finished and cancelled if fail.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>To define CHAINED dependency add variable START_AFTER_TEST with the name(s) of test suite(s) after which selected test suite is supposed to run.
+<p>The difference between CHAINED and DIRECTLY_CHAINED dependencies is that DIRECTLY_CHAINED means the tests must run directly after another on the same worker slot.
+This can be useful to test efficiently on bare metal SUTs and other self-provisioning environments.</p>
+</div>
+<div class="paragraph">
+<p>To define a CHAINED dependency add the variable START_AFTER_TEST with the name(s) of test suite(s) after which the selected test suite is supposed to run.
 Use comma separated list for multiple test suite dependency. E.g. START_AFTER_TEST="kde,dhcp-server"</p>
 </div>
+<div class="paragraph">
+<p>To define a DIRECTLY_CHAINED dependency add the variable START_DIRECTLY_AFTER_TEST. It works in the same way as for CHAINED dependencies. Mismatching worker classes between jobs to run in direct sequence on the same worker are considered an error.</p>
+</div>
 <div class="ulist">
 <ul>
 <li>
-<p>PARALLEL describes MM test, test suites are scheduled to run at the same time and managed as a group. On top of that, PARALLEL also describes
-test suites dependencies, where some test suites (children) run parallel with other test suites (parents) only when parents are running.</p>
+<p>PARALLEL describes mulit-machine tests. That are test suites scheduled to run at the same time and managed as a group. On top of that, PARALLEL also describes
+test suite dependencies, where some test suites (children) run parallel with other test suites (parents) only when parents are running.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>To define PARALLEL dependency, use PARALLEL_WITH variable with the name(s) of test suite(s) which acts as a parent suite(s) to selected test suite.
-In other words, PARALLEL_WITH describes "I need this test suite to be running during my run". Use comma separated list for multiple test suite dependency. E.g. PARALLEL_WITH="web-server,dhcp-server"
-Keep in mind that parent job <em>must be running until all children finish</em>, else scheduler will cancel child jobs once parent is done.</p>
+<p>To define a PARALLEL dependency, use the PARALLEL_WITH variable with the name(s) of test suite(s) which acts as a parent suite(s) to selected test suite.
+In other words, PARALLEL_WITH describes "I need this test suite to be running during my run". Use a comma separated list for multiple test suite dependency
+(e.g. PARALLEL_WITH="web-server,dhcp-server").
+Keep in mind that the parent job <em>must be running until all children finish</em>. Otherwise the scheduler will cancel child jobs once parent is done.</p>
 </div>
 <div class="paragraph">
 <p>Job dependencies are only resolved when using the iso controller to
@@ -4350,6 +4363,33 @@ START_AFTER_TEST=A,B or PARALLEL_WITH=A,B</pre>
 </div>
 </div>
 </div>
+<div class="sect4">
+<h5 id="_notes_regarding_directly_chained_dependencies">Notes regarding directly chained dependencies</h5>
+<div class="paragraph">
+<p>Having multiple jobs with START_DIRECTLY_AFTER_TEST pointing to the same parent job is possible, e.g.:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>   --&gt; B --&gt; C
+ /
+A
+ \
+   --&gt; D --&gt; E</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Of course only either B or D jobs can really be started <strong>directly</strong> after A. However, the use of START_DIRECTLY_AFTER_TEST still makes sure that no completely different job is executed in the middle and of course that all of these jobs are executed on the same worker.</p>
+</div>
+<div class="paragraph">
+<p>The directly chained sub-trees are executed in alphabetical order. So the above tree would result in the following execution order: A, B, C, D, E.</p>
+</div>
+<div class="paragraph">
+<p>If A fails, none of the other jobs are attempted to be executed. If B fails, C is not attempted to be executed but D and E are. The assumption is that the average error case does not leave the system in a completely broken state and possibly required cleanup is done in the post fail hook.</p>
+</div>
+<div class="paragraph">
+<p>Directly chained dependencies and regularly chained dependencies can be mixed. This allows to create a dependency tree which contains multiple directly chained sub-trees. Be aware that these sub-trees might be executed on <strong>different</strong> workers and depending on the tree even be executed in parallel.</p>
+</div>
+</div>
 </div>
 <div class="sect3">
 <h4 id="_openqa_worker_requirements">OpenQA worker requirements</h4>
@@ -4420,30 +4460,28 @@ Children B, C, D can run and finish anytime, but A must run until all B, C, D fi
 <div class="sect2">
 <h3 id="_test_synchronization_and_locking_api">Test synchronization and locking API</h3>
 <div class="paragraph">
-<p>OpenQA provides locking server through lock API. To use lock API import lockapi package (<em>use lockapi;</em>) in your test file.
-Lock API provides functions: mutex_create, mutex_lock, mutex_unlock, mutex_wait. Each of these functions take at least one parameter: name of the lock. Note that lock name can&#8217;t contain "-" character.
-Locks are associated with caller&#8217;s job - locks can&#8217;t be unlocked by different job then the one who locked the lock.</p>
+<p>OpenQA provides a locking API. To use it in your test files import the lockapi package (<em>use lockapi;</em>). It provides the following functions: mutex_create, mutex_lock, mutex_unlock, mutex_wait</p>
 </div>
 <div class="paragraph">
-<p>mutex_lock tries to lock the mutex lock for caller&#8217;s job. If lock is unavailable or locked by someone else, mutex_lock call blocks.</p>
+<p>Each of these functions takes the name of the mutex lock as first parameter. The name must not contain the "-" character. Mutex locks are associated with the caller&#8217;s job.</p>
 </div>
 <div class="paragraph">
-<p>mutex_unlock tries to unlock the mutex lock. If lock is locked by different job, mutex_unlock call blocks. When lock become available or if lock does not exist, call
-returns without doing anything.</p>
+<p>mutex_lock tries to lock the mutex for the caller&#8217;s job. The mutex_lock call blocks if the mutex does not exist or has been locked by a different job.</p>
 </div>
 <div class="paragraph">
-<p>mutex_wait is combination of mutex_lock &amp; mutex_unlock that displays more information about mutex state (time spent waiting, location of lock). Use this if you wait for specific action from single place (apache is running on master node)</p>
+<p>mutex_unlock tries to unlock the mutex. If the mutex is locked by a different job, mutex_unlock call blocks until the lock becomes available. If the mutex does not exist the call returns immediately without doing anything.</p>
 </div>
 <div class="paragraph">
-<p>mutex_create create new mutex lock. When lock is created by mutex_create,
- lock is automatically unlocked. When mutex lock already exists call returns without doing anything.</p>
+<p>mutex_wait is a combination of mutex_lock and mutex_unlock. It displays more information about mutex state (time spent waiting, location of the lock). Use it if you need to wait for a specific action from single place (e.g. that Apache is running on the master node).</p>
 </div>
 <div class="paragraph">
-<p>Locks are addressed by <em>their name</em>. This name is <em>valid in test group</em> defined by their dependencies. If there are more groups running at the
-same time and the same lock name is used, these locks are independent of each other.</p>
+<p>mutex_create creates a new mutex which is initially unlocked. If the mutex already exists the call returns immediately without doing anything.</p>
 </div>
 <div class="paragraph">
-<p>The mmapi package provides wait_for_children, which the parent can use to wait for the children to complete.</p>
+<p>Mutexes are addressed by <em>their name</em>. Each cluster of parallel jobs (defined via <code>PARALLEL_WITH</code> dependencies) has its own namespace. That means concurrently running jobs in different parallel job clusters use distinct mutexes (even if the same names are used).</p>
+</div>
+<div class="paragraph">
+<p>The mmapi package provides wait_for_children which the parent can use to wait for the children to complete.</p>
 </div>
 <div class="exampleblock">
 <div class="content">
@@ -4494,15 +4532,15 @@ same time and the same lock name is used, these locks are independent of each ot
 </div>
 </div>
 <div class="paragraph">
-<p>Sometimes it is useful to wait for certain action from child or sibling job, not parent.
-In this case child or sibling will create a mutex and any cluster job can lock/unlock it.</p>
+<p>Sometimes it is useful to wait for a certain action from the child or sibling job rather than the parent.
+In this case the child or sibling will create a mutex and any cluster job can lock/unlock it.</p>
 </div>
 <div class="paragraph">
 <p>The child can however die at any time. To prevent parent deadlock in this situation,
-it&#8217;s required to pass mutex owner job ID as a second parameter to mutex_lock and mutex_wait.
-Mutex owner is the job that creates the mutex.
-If a child job with given ID already finished, mutex_lock() calls die.
-Job ID is also required when unlocking such mutex.</p>
+it is required to pass the mutex owner&#8217;s job ID as a second parameter to mutex_lock and mutex_wait.
+The mutex owner is the job that creates the mutex.
+If a child job with a given ID has already finished, mutex_lock calls die.
+The job ID is also required when unlocking such a mutex.</p>
 </div>
 <div class="exampleblock">
 <div class="title">Example of mmapi: Parent JobWait until the child reaches given point</div>
@@ -4518,7 +4556,7 @@ Job ID is also required when unlocking such mutex.</p>
     <span class="tok-c1"># let&#39;s suppose there is only one child</span>
     <span class="tok-k">my</span> <span class="tok-nv">$child_id</span> <span class="tok-o">=</span> <span class="tok-p">(</span><span class="tok-nb">keys</span> <span class="tok-nv">%$children</span><span class="tok-p">)[</span><span class="tok-mi">0</span><span class="tok-p">];</span>
 
-    <span class="tok-c1"># this blocks until lock is available and then does nothing</span>
+    <span class="tok-c1"># this blocks until the lock is available and then does nothing</span>
     <span class="tok-n">mutex_wait</span><span class="tok-p">(</span><span class="tok-s">&#39;child_reached_given_point&#39;</span><span class="tok-p">,</span> <span class="tok-nv">$child_id</span><span class="tok-p">);</span>
 
     <span class="tok-c1"># continue with the test</span>
@@ -4528,24 +4566,24 @@ Job ID is also required when unlocking such mutex.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Mutexes are a way to wait for specific event from single job.
-When we need multiple jobs to reach required state we need to use barriers.</p>
+<p>Mutexes are a way to wait for specific events from a single job.
+When we need multiple jobs to reach a certain state we need to use barriers.</p>
 </div>
 <div class="paragraph">
-<p>Before first use barrier needs to be created with barrier_create with 2 parameters - name and count.
-Name behaves as ID (same as with mutexes), count is number of jobs needed to call barrier_wait to unlock barrier.</p>
+<p>To create a barrier call barrier_create with the parameters name and count.
+The name serves as an ID (same as with mutexes). The count parameter specifies the
+number of jobs needed to call barrier_wait to unlock barrier.</p>
 </div>
 <div class="paragraph">
-<p>There is optional barrier_wait parameter called check_dead_job.
-When used it will kill all jobs waiting in barrier_wait if one of cluster jobs die.</p>
+<p>There is an optional barrier_wait parameter called check_dead_job.
+When used it will kill all jobs waiting in barrier_wait if one of the cluster jobs
+dies. It prevents waiting for states that will never be reached (and eventually dies
+on job timeout). It should be set only on one of the barrier_wait calls.</p>
 </div>
 <div class="paragraph">
-<p>It prevents waiting for state that will never be reached (and eventually die on job timeout).
-Should be set only on one of barrier_wait calls.</p>
-</div>
-<div class="paragraph">
-<p>Example is situation with 1 master and 3 worker jobs. We need to wait until 3 worker jobs perform initial setup.
-After that we can make cluster from them, but if one of them fails it makes no sense waiting.</p>
+<p>An example would be one master and three worker jobs and you want to do initial setup
+in the three worker jobs before starting main actions. In such a case you might use
+check_dead_job to avoid useless actions when one of the worker jobs dies.</p>
 </div>
 <div class="exampleblock">
 <div class="title">Example of barriers: Check for dead jobs while waiting for barrier</div>
@@ -4568,7 +4606,7 @@ After that we can make cluster from them, but if one of them fails it makes no s
     <span class="tok-n">script_run</span> <span class="tok-s">&#39;create_cluster&#39;</span><span class="tok-p">;</span>
     <span class="tok-n">script_run</span> <span class="tok-s">&#39;test_cluster&#39;</span><span class="tok-p">;</span>
 
-    <span class="tok-c1"># Notify all nodes we are finished</span>
+    <span class="tok-c1"># Notify all nodes that we are finished</span>
     <span class="tok-n">mutex_create</span> <span class="tok-s">&#39;CLUSTER_CREATED&#39;</span><span class="tok-p">;</span>
     <span class="tok-n">wait_for_children</span><span class="tok-p">;</span>
 <span class="tok-p">}</span>
@@ -5482,8 +5520,8 @@ well as define a custom schedule using the test variable SCHEDULE.
 Also test modules can be defined and overridden on-the-fly using a
 downloadable asset.</p>
 </div>
-<div class="sect4">
-<h5 id="_exclude_modules">EXCLUDE_MODULES</h5>
+<div class="sect3">
+<h4 id="_exclude_modules">EXCLUDE_MODULES</h4>
 <div class="paragraph">
 <p>If a job has the following schedule:</p>
 </div>
@@ -5534,8 +5572,8 @@ Excluding modules that are not scheduled does not raise an error.
 </table>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_include_modules">INCLUDE_MODULES</h5>
+<div class="sect3">
+<h4 id="_include_modules">INCLUDE_MODULES</h4>
 <div class="paragraph">
 <p>If a job has the following schedule:</p>
 </div>
@@ -5586,8 +5624,8 @@ Including modules that are not scheduled does not raise an error, but they are n
 </table>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_schedule">SCHEDULE</h5>
+<div class="sect3">
+<h4 id="_schedule">SCHEDULE</h4>
 <div class="paragraph">
 <p>Additionally it is possible to define a custom schedule using the test variable SCHEDULE.</p>
 </div>
@@ -5609,8 +5647,8 @@ Any existing test module within <strong>CASEDIR</strong> can be scheduled.
 </table>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_schedule_asset_nr_url">SCHEDULE + ASSET_&lt;NR&gt;_URL</h5>
+<div class="sect3">
+<h4 id="_schedule_asset_nr_url">SCHEDULE + ASSET_&lt;NR&gt;_URL</h4>
 <div class="paragraph">
 <p>Test modules can be defined and overridden on-the-fly using a
 downloadable asset (combining <strong>ASSET_&lt;NR&gt;_URL</strong> and <strong>SCHEDULE</strong>).</p>
@@ -5668,8 +5706,9 @@ that the specified asset is only downloaded once. New versions must be
 supplied as new, unambiguous download target file names.</p>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request">Triggering tests based on an any remote git refspec or open github pull request</h5>
+</div>
+<div class="sect2">
+<h3 id="_triggering_tests_based_on_an_any_remote_git_refspec_or_open_github_pull_request">Triggering tests based on an any remote git refspec or open github pull request</h3>
 <div class="paragraph">
 <p>openQA also supports to trigger tests using test code from an open pull
 request on github or any branch or git refspec. That means that code changes
@@ -5713,8 +5752,7 @@ need to be changed or in case a custom schedule is defined by SCHEDULE.</p>
 </div>
 </div>
 </div>
-</div>
-<h1 id="installing" class="sect0">openQA test harness result processing</h1>
+<h1 id="installing_harness" class="sect0">openQA test harness result processing</h1>
 <div class="sect1">
 <h2 id="_introduction_5">Introduction</h2>
 <div class="sectionbody">
@@ -7675,54 +7713,56 @@ $ <span class="tok-nb">cd</span> OpenQA-WebAPI-Plugin-Hello/
 $ perl Makefile.PL
 ...
 $ make <span class="tok-nb">test</span>
-...
--------------------------------------------------------------------------------
-
-And <span class="tok-k">if</span> you need code examples, there are some plugins
-https://github.com/os-autoinst/openQA/tree/master/lib/OpenQA/WebAPI/Plugin<span class="tok-o">[</span>included with openQA<span class="tok-o">]</span>.
-
-<span class="tok-o">[[</span>branding<span class="tok-o">]]</span>
-<span class="tok-o">=</span> openQA branding
-:toc: left
-:toclevels: <span class="tok-m">6</span>
-:author: Adam Williamson
-
-
-You can alter the appearance of the openQA web UI to some extent through
-the <span class="tok-s1">&#39;branding&#39;</span> mechanism. The <span class="tok-s1">&#39;branding&#39;</span> configuration setting in the
-<span class="tok-s1">&#39;global&#39;</span> section of +/etc/openqa/openqa.ini+ specifies the branding to
-use. It defaults to <span class="tok-s1">&#39;openSUSE&#39;</span>, and openQA also includes the <span class="tok-s1">&#39;plain&#39;</span>
-branding, which is - as its name suggests - plain and generic.
-
-To create your own branding <span class="tok-k">for</span> openQA, you can create a subdirectory
-of +/usr/share/openqa/templates/branding+ <span class="tok-o">(</span>or wherever openQA is
-installed<span class="tok-o">)</span>. The subdirectory<span class="tok-s1">&#39;s name will be the name of your branding.</span>
-<span class="tok-s1">You can copy the files from +branding/openSUSE+ or +branding/plain+ to</span>
-<span class="tok-s1">use as starting points, and adjust as necessary.</span>
-
-<span class="tok-s1">== Web UI template</span>
-
-<span class="tok-s1">:mojo-website: http://mojolicio.us/[Mojolicious]</span>
-<span class="tok-s1">:mojo-docs: http://mojolicio.us/perldoc/Mojolicious/Guides/Rendering[Mojolicious Documentation]</span>
-
-<span class="tok-s1">openQA uses the {mojo-website} framework&#39;</span>s templating
-system<span class="tok-p">;</span> the branding files are included into the openQA templates at
-various points. To see where each branding file is actually included,
-you can search through the files in the +templates+ tree <span class="tok-k">for</span> the text
-+include_branding+. Anywhere that helper is called, the branding file
-with the matching name is being included.
-
-The branding files themselves are Mojolicious <span class="tok-s1">&#39;Embedded Perl&#39;</span> templates just
-like the main template files. You can <span class="tok-nb">read</span> the <span class="tok-o">{</span>mojo-docs<span class="tok-o">}</span> <span class="tok-k">for</span> <span class="tok-nb">help</span> with the
-format.</code></pre>
+...</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>And if you need code examples, there are some plugins
+<a href="https://github.com/os-autoinst/openQA/tree/master/lib/OpenQA/WebAPI/Plugin">included with openQA</a>.</p>
+</div>
+</div>
+</div>
+<h1 id="branding" class="sect0">openQA branding</h1>
+<div class="openblock partintro">
+<div class="content">
+<div class="paragraph">
+<p>You can alter the appearance of the openQA web UI to some extent through
+the 'branding' mechanism. The 'branding' configuration setting in the
+'global' section of /etc/openqa/openqa.ini specifies the branding to
+use. It defaults to 'openSUSE', and openQA also includes the 'plain'
+branding, which is - as its name suggests - plain and generic.</p>
+</div>
+<div class="paragraph">
+<p>To create your own branding for openQA, you can create a subdirectory
+of /usr/share/openqa/templates/branding (or wherever openQA is
+installed). The subdirectory&#8217;s name will be the name of your branding.
+You can copy the files from branding/openSUSE or branding/plain to
+use as starting points, and adjust as necessary.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_web_ui_template">Web UI template</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>openQA uses the <a href="http://mojolicio.us/">Mojolicious</a> framework&#8217;s templating
+system; the branding files are included into the openQA templates at
+various points. To see where each branding file is actually included,
+you can search through the files in the templates tree for the text
+include_branding. Anywhere that helper is called, the branding file
+with the matching name is being included.</p>
+</div>
+<div class="paragraph">
+<p>The branding files themselves are Mojolicious 'Embedded Perl' templates just
+like the main template files. You can read the <a href="http://mojolicio.us/perldoc/Mojolicious/Guides/Rendering">Mojolicious Documentation</a> for help with the
+format.</p>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-09-09 20:55:00 UTC
+Last updated 2019-09-30 16:08:27 UTC
 </div>
 </div>
 <style>
