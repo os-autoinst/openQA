@@ -6,7 +6,7 @@ aliases:
       - v1-{{ checksum ".circleci/dependencies.txt" }}-{{ checksum ".circleci/build_cache.sh" }}
 
   - &save_cache
-    key: v1-{{ checksum ".circleci/dependencies.txt" }}-{{ checksum ".circleci/build_cache.sh" }} 
+    key: v1-{{ checksum ".circleci/dependencies.txt" }}-{{ checksum ".circleci/build_cache.sh" }}
     paths:
       - "/var/cache/zypp/packages"
 
@@ -41,7 +41,7 @@ aliases:
     command: |
       find /var/cache/zypp/packages/ | wc -l
       [ -z "$CIRCLE_WORKFLOW_ID" ] || ls -lRa /var/cache/zypp/packages/openQA
-  
+
   - &install_cached_packages
     command: |
         set -x
@@ -74,10 +74,10 @@ images:
   - &base
     image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
     <<: *docker_config
-  
+
   - &dependency_bot
     image: registry.opensuse.org/devel/openqa/ci/containers/dependency_bot:latest
-  
+
 jobs:
   dependencies-pr:
     docker:
@@ -113,7 +113,7 @@ jobs:
       - <<: *base
     steps:
       - checkout
-      - run: ls -la && pwd 
+      - run: ls -la && pwd
       - run: cat .circleci/dependencies.txt
       - run: *chown_hack_for_cache
       - restore_cache: *restore_cache
@@ -163,7 +163,7 @@ jobs:
       - restore_cache: *restore_cache
       - run: *check_cache
       - run: *install_cached_packages
-      - run: 
+      - run:
           command: |
             eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v $(find t/ui/ -type f -name '*.t' | grep -vf .circleci/unstable_tests.txt | sort)
 
@@ -176,7 +176,7 @@ jobs:
       - restore_cache: *restore_cache
       - run: *check_cache
       - run: *install_cached_packages
-      - run: 
+      - run:
           command: |
             export openqa_unstable_tests="$(cat .circleci/unstable_tests.txt)"
             if [ ! -z "$openqa_unstable_tests" ]; then
@@ -192,7 +192,7 @@ jobs:
       - restore_cache: *restore_cache
       - run: *check_cache
       - run: *install_cached_packages
-      - run: 
+      - run:
           command: |
             eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v t/api/*.t
 
@@ -206,9 +206,9 @@ jobs:
       - restore_cache: *restore_cache
       - restore_cache: *restore_integration_cache
       - run: *check_cache
-      - run: *install_cached_packages 
+      - run: *install_cached_packages
       - run: *build_autoinst
-      - run: 
+      - run:
           command: |
             eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib FULLSTACK=1 prove -v t/full-stack.t
 
@@ -222,9 +222,9 @@ jobs:
       - restore_cache: *restore_cache
       - restore_cache: *restore_integration_cache
       - run: *check_cache
-      - run: *install_cached_packages 
+      - run: *install_cached_packages
       - run: *build_autoinst
-      - run: 
+      - run:
           command: |
             eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib DEVELOPER_FULLSTACK=1 prove -v t/33-developer_mode.t
 
@@ -238,9 +238,9 @@ jobs:
       - restore_cache: *restore_cache
       - restore_cache: *restore_integration_cache
       - run: *check_cache
-      - run: *install_cached_packages 
+      - run: *install_cached_packages
       - run: *build_autoinst
-      - run: 
+      - run:
           command: |
             eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib SCHEDULER_FULLSTACK=1 OPENQA_BASEDIR=. prove -v t/05-scheduler-full.t
 
