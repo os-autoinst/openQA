@@ -143,7 +143,7 @@ call_asciidoctor() {
     cd ..
 }
 
-if [[ -z ${TRAVIS_PULL_REQUEST} ]] && [[ -n ${SSH_KEY} ]] && [[ -n ${SSH_IV} ]]; then
+if [[ ${TRAVIS_PULL_REQUEST} == false ]] && [[ -n ${SSH_KEY} ]] && [[ -n ${SSH_IV} ]]; then
     publish=1
     set_sshkey
 fi
