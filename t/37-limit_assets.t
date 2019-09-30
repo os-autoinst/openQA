@@ -31,6 +31,14 @@ use OpenQA::Task::Asset::Limit;
 use OpenQA::Utils;
 use OpenQA::WebAPI::Controller::API::V1::Iso;
 
+{
+    package Test::FakeJob;
+    use Mojo::Base -base;
+    has fail  => undef;
+    has retry => undef;
+    has note  => undef;
+}
+
 # allow catching log messages via stdout_like
 delete $ENV{OPENQA_LOGFILE};
 
@@ -340,6 +348,29 @@ subtest 'limit for keeping untracked assets is overridable in settings' => sub {
         qr/Asset .* is not in any job group, will delete in 2 days/,
         'override works'
     );
+};
+
+subtest 'error handling' => sub {
+    my $assets_mock = Test::MockModule->new('OpenQA::Schema::ResultSet::Assets');
+
+    subtest 'key constraint violation' => sub {
+        my $job = Test::FakeJob->new;
+        $assets_mock->mock(
+            status => sub {
+                die 'insert or update on table "assets" violates foreign key constraint "assets_fk_last_use_job_id"';
+            });
+        OpenQA::Task::Asset::Limit::_limit($t->app, $job);
+        is_deeply($job->retry, {delay => 60}, 'job will be tried again in a minute');
+        is($job->fail, undef, 'job not failed');
+    };
+
+    subtest 'unknown error' => sub {
+        my $job = Test::FakeJob->new;
+        $assets_mock->mock(status => sub { die 'strange error' });
+        OpenQA::Task::Asset::Limit::_limit($t->app, $job);
+        is($job->retry, undef, 'job not retried on unknown error');
+        like($job->fail, qr/strange error/, 'job fails on unknown error');
+    };
 };
 
 done_testing();
