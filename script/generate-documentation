@@ -102,9 +102,8 @@ SSH_IV=$2
 
 
 check_asciidoctor() {
-    asciidoctor_bin=$(command -v asciidoctor)
-
-    if [ -z "${asciidoctor_bin}" ] || [ ! -f "${asciidoctor_bin}" ]; then
+    asciidoctor_bin=$(command -v asciidoctor) || true
+    if [[ -z $asciidoctor_bin ]] || [[ ! -f $asciidoctor_bin ]]; then
         echo "Could not find asciidoctor binary in your path, please install it and run this command again:"
         echo "    sudo gem install asciidoctor pygments.rb"
         echo "    sudo gem install asciidoctor-pdf --pre"
@@ -112,7 +111,6 @@ check_asciidoctor() {
         echo "    sudo zypper install 'perl(Pod::AsciiDoctor)'"
         exit 1
     fi
-
 }
 
 set_sshkey() {
