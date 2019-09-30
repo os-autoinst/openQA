@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2017 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@ use DBIx::Class::Timestamps 'now';
 use Date::Format 'time2str';
 use OpenQA::Schema::Result::JobDependencies;
 use Mojo::JSON 'encode_json';
+use Time::HiRes 'time';
+use DateTime;
 
 =head2 latest_build
 
@@ -506,6 +508,20 @@ sub next_previous_jobs_query {
             bind => \@params
         });
     return $jobs_rs;
+}
+
+
+sub stale_ones {
+    my ($self, $threshold) = @_;
+
+    my $dtf  = $self->result_source->schema->storage->datetime_parser;
+    my $dt   = DateTime->from_epoch(epoch => time() - $threshold, time_zone => 'UTC');
+    my %cond = (
+        state              => [OpenQA::Jobs::Constants::EXECUTION_STATES],
+        'worker.t_updated' => {'<' => $dtf->format_datetime($dt)},
+    );
+    my %attrs = (join => 'worker', order_by => 'worker.id desc');
+    return $self->search(\%cond, \%attrs);
 }
 
 1;

@@ -16,7 +16,7 @@
     %>
 % } elsif ($worker->{status} eq 'broken') {
     Broken <%= help_popover(Error => $worker->{error}) %>
-% } elsif ($worker->{connected}) {
+% } elsif ($worker->{alive}) {
     Online
 % } else {
     Offline

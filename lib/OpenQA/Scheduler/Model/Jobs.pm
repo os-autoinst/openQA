@@ -21,8 +21,9 @@ use DateTime;
 use File::Temp 'tempdir';
 use Try::Tiny;
 use OpenQA::Jobs::Constants;
-use OpenQA::Utils qw(log_debug random_string);
-use OpenQA::Constants 'WEBSOCKET_API_VERSION';
+use OpenQA::Utils qw(log_debug log_info log_warning random_string);
+use OpenQA::Constants qw(WEBSOCKET_API_VERSION WORKERS_CHECKER_THRESHOLD);
+use OpenQA::Schema;
 use Time::HiRes 'time';
 use List::Util qw(all shuffle);
 
@@ -42,8 +43,6 @@ sub schedule {
     my @f_w = grep { !$_->dead && ($_->websocket_api_version() || 0) == WEBSOCKET_API_VERSION }
       $schema->resultset("Workers")->search({job_id => undef, error => undef})->all();
 
-    # NOTE: $worker->connected is too much expensive since is over HTTP, prefer dead
-    #       (shuffle avoids starvation if a free worker keeps failing)
     my @free_workers = $self->shuffle_workers ? shuffle(@f_w) : @f_w;
     if (@free_workers == 0) {
         $self->emit('conclude');
@@ -471,6 +470,31 @@ sub _assign_multiple_jobs_to_worker {
     }
 
     return OpenQA::WebSockets::Client->singleton->send_jobs(\%job_info);
+}
+
+sub incomplete_and_duplicate_stale_jobs {
+    my ($self) = @_;
+
+    try {
+        my $schema = OpenQA::Schema->singleton;
+        $schema->txn_do(
+            sub {
+                my $stale_jobs = $schema->resultset('Jobs')->stale_ones(WORKERS_CHECKER_THRESHOLD);
+                for my $job ($stale_jobs->all) {
+                    $job->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
+                    my $res = $job->auto_duplicate;
+                    if ($res) {
+                        log_warning(sprintf('Dead job %d aborted and duplicated %d', $job->id, $res->id));
+                    }
+                    else {
+                        log_warning(sprintf('Dead job %d aborted as incomplete', $job->id));
+                    }
+                }
+            });
+    }
+    catch {
+        log_info("Failed stale job detection : $_");
+    };
 }
 
 1;

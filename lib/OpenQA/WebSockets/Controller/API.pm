@@ -19,17 +19,6 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::WebSockets;
 use OpenQA::WebSockets::Model::Status;
 
-sub is_worker_connected {
-    my ($self) = @_;
-
-    $self->render(
-        json => {
-            connected => OpenQA::WebSockets::Model::Status->singleton->is_worker_connected($self->param('worker_id'))
-            ? \1
-            : \0
-        });
-}
-
 sub send_msg {
     my ($self) = @_;
 

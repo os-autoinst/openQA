@@ -104,7 +104,7 @@ ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
 # we don't want no fixtures
 my $mojoport = Mojo::IOLoop::Server->generate_port;
 my $wsport   = $mojoport + 1;
-$wspid = create_websocket_server($wsport, 0, 0, 0);
+$wspid = create_websocket_server($wsport, 0, 0);
 my $driver       = call_driver(sub { }, {mojoport => $mojoport});
 my $connect_args = OpenQA::Test::FullstackUtils::get_connect_args();
 

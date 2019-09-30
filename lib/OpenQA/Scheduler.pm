@@ -96,6 +96,12 @@ sub _setup {
     OpenQA::Setup::read_config($self);
     OpenQA::Setup::setup_log($self);
 
+    # check for stale jobs every 2 minutes
+    Mojo::IOLoop->recurring(
+        120 => sub {
+            OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs;
+        });
+
     # initial schedule
     Mojo::IOLoop->next_tick(
         sub {

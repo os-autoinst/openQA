@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2016-2017 SUSE LLC
+# Copyright (C) 2016-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,12 +23,12 @@ use lib "$FindBin::Bin/lib";
 use DateTime;
 use Test::More;
 use Test::Warnings;
-use Test::Output qw(stderr_like);
+use Test::Output qw(combined_like stderr_like);
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils 'redirect_output';
 
-my $schema = OpenQA::Test::Database->new->create();
+my $schema = OpenQA::Test::Database->new->create;
 
 sub _check_job_running {
     my ($jobid) = @_;
@@ -54,11 +54,24 @@ subtest 'worker with job and not updated in last 120s is considered dead' => sub
     my $dt  = DateTime->from_epoch(epoch => time() - 121, time_zone => 'UTC');
 
     $schema->resultset('Workers')->update_all({t_updated => $dtf->format_datetime($dt)});
-    stderr_like {
-        OpenQA::WebSockets::Model::Status->singleton->workers_checker();
-    }
-    qr/dead job 99961 aborted and duplicated 99982\n.*dead job 99963 aborted as incomplete/;
+    stderr_like(
+        sub { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs; },
+        qr/Dead job 99961 aborted and duplicated 99982\n.*Dead job 99963 aborted as incomplete/,
+        'dead jobs logged'
+    );
     _check_job_incomplete($_) for (99961, 99963);
+};
+
+subtest 'exception during stale job detection handled and logged' => sub {
+    my $mock_schema = Test::MockModule->new('OpenQA::Schema');
+    my $mock_singleton_called;
+    $mock_schema->mock(singleton => sub { $mock_singleton_called++; bless({}); });
+    combined_like(
+        sub { OpenQA::Scheduler::Model::Jobs->singleton->incomplete_and_duplicate_stale_jobs; },
+        qr/Failed stale job detection/,
+        'failure logged'
+    );
+    ok($mock_singleton_called, 'mocked singleton method has been called');
 };
 
 done_testing();
