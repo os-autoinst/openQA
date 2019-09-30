@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@ use Mojo::Base -strict;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
+use Mojo::File;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
@@ -39,6 +40,10 @@ $test_case->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 note("Asset directory: $OpenQA::Utils::assetdir");
+
+# ensure Core-7.2.iso exists (usually created by t/14-grutasks.t anyways)
+my $core72iso_path = "$OpenQA::Utils::assetdir/iso/Core-7.2.iso";
+Mojo::File->new($core72iso_path)->spurt('foo') unless (-f $core72iso_path);
 
 # scan initially for untracked assets and refresh
 my $schema = $t->app->schema;
