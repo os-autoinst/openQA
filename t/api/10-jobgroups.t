@@ -165,7 +165,7 @@ subtest 'create job group' => sub() {
         'list created job group'
     );
 
-    $t->get_ok('/index.json')->status_is(200);
+    $t->get_ok('/dashboard_build_results.json')->status_is(200);
     my $res = $t->tx->res->json;
     is(@{$res->{results}}, 2, 'empty job groups are not shown on index page');
 

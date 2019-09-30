@@ -5,8 +5,6 @@
 
 % content_for 'ready_function' => begin
     setupIndexPage();
-    hideNavbar();
-    alignBuildLabels();
 % end
 
 <div class="jumbotron">
@@ -22,24 +20,13 @@
   </div>
 </div>
 
-<div id="build-results"></div>
-% for my $groupresults (@$results) {
-    % my $group              = $groupresults->{group};
-    % my $build_results      = $groupresults->{build_results};
-    % my $max_jobs           = $groupresults->{max_jobs};
-
-    % if (@{$groupresults->{children}}) {
-        <h2>
-            %= link_to $group->{name} => url_for('parent_group_overview', groupid => $group->{id})
-        </h2>
-        %= include 'main/group_builds', build_results => $build_results, group => $group, max_jobs => $max_jobs, children => $groupresults->{children}, default_expanded => $default_expanded
-    % } else {
-        <h2>
-            %= link_to $group->{name} => url_for('group_overview', groupid => $group->{id})
-        </h2>
-        %= include 'main/group_builds', build_results => $build_results, group => $group, max_jobs => $max_jobs, children => undef, default_expanded => 0
-    % }
-% }
+<div id="build-results-loading">
+    <div class="d-flex justify-content-center">
+        <i class="fas fa-circle-notch fa-spin fa-4x" role="status"><span class="sr-only">Loading…</span></i>
+    </div>
+</div>
+<div id="build-results" data-build-results-url="<%= url_for('dashboard_build_results') %>">
+</div>
 
 <div class="card card-outline-secondary filter-panel-bottom" id="filter-panel">
     <div class="card-header"><strong>Filter</strong> <span>no filter present, click to toggle filter form</span></div>
@@ -93,7 +80,7 @@
                 <%= help_popover('Help for <i>Full screen</i>' => '<p>Show builds in full screen mode</p>')
                 %>
             </div>
-            <button type="submit" class="btn btn-default">Apply</button>
+            <button type="submit" class="btn btn-default" id="filter-apply-button">Apply</button>
         </form>
     </div>
 </div>

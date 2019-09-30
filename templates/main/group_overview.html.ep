@@ -5,7 +5,7 @@
 
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
-    hideNavbar(<%= $fullscreen %>);
+    toggleFullscreenMode(<%= $fullscreen %>);
     autoRefresh(<%= $fullscreen %>, <%= $interval %>);
     alignBuildLabels();
 % end

@@ -1,34 +1,35 @@
-function hideNavbar(fullscreen) {
-    // do nothing if not in full screen mode
-    if (!$('#filter-fullscreen').is(':checked') && fullscreen !== 1) {
-        return;
-    }
-
+function toggleFullscreenMode(fullscreen) {
     // change ID of main container (to change applied CSS rules)
-    $("#content").attr('id', 'content_fullscreen');
+    $('#content').attr('id', fullscreen ? 'content_fullscreen' : 'content');
 
-    // hide some elements
-    $(".navbar, .footer, .jumbotron").hide();
-    if (fullscreen === 1) {
-        $("#group_description").hide();
-    }
+    // change visiblity of some elements
+    $('.navbar, .footer, .jumbotron, #group_description')[fullscreen ? 'hide' : 'show']();
 
     // toggle navbar visibility
-    var navbar = $(".navbar");
+    var navbar = $('.navbar');
     var navbarHeight = navbar.outerHeight();
-    document.addEventListener('mousemove', function(e) {
+    var handler = document.showNavbarIfItWouldContainMouse;
+    if (!fullscreen) {
+        if (handler === undefined) {
+            return;
+        }
+        document.removeEventListener('mousemove', handler, false);
+        return;
+    }
+    handler = document.showNavbarIfItWouldContainMouse = function(e) {
         var mouseY = e.clientY || e.pageY;
-        if (mouseY <= navbarHeight || navbar.find("[aria-expanded='true']").length != 0) {
+        if (mouseY <= navbarHeight || navbar.find("[aria-expanded='true']").length !== 0) {
             navbar.show();
         }
-        else if (mouseY > navbarHeight && !$("li").hasClass('dropdown open')) {
+        else if (mouseY > navbarHeight && !$('li').hasClass('dropdown open')) {
             navbar.hide();
         }
-    }, false);
+    };
+    document.addEventListener('mousemove', handler, false);
 }
 
 function autoRefresh(fullscreen, interval) {
-    if (fullscreen != 1) {
+    if (!fullscreen) {
         return;
     }
     $($(document).ready(function() {

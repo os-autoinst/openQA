@@ -172,11 +172,12 @@ sub startup {
 
     # Favicon
     $r->get('/favicon.ico' => sub { my $c = shift; $c->render_static('favicon.ico') });
-    $r->get('/index'       => [format => ['html', 'json']])->to('main#index');
-    $r->get('/api_help'    => sub { shift->render('admin/api_help') })->name('api_help');
+    $r->get('/index'       => sub { shift->render('main/index') });
+    $r->get('/dashboard_build_results')->name('dashboard_build_results')->to('main#dashboard_build_results');
+    $r->get('/api_help' => sub { shift->render('admin/api_help') })->name('api_help');
 
     # Default route
-    $r->get('/')->name('index')->to('main#index');
+    $r->get('/' => sub { shift->render('main/index') })->name('index');
     $r->get('/changelog')->name('changelog')->to('main#changelog');
 
     # shorter version of route to individual job results

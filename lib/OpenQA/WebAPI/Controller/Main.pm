@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2017 SUSE LLC
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,21 +41,20 @@ sub _map_tags_into_build {
     return;
 }
 
-sub index {
+sub dashboard_build_results {
     my ($self) = @_;
 
     my $limit_builds = $self->param('limit_builds');
     $limit_builds = 3 unless looks_like_number($limit_builds);
     my $time_limit_days = $self->param('time_limit_days');
     $time_limit_days = 14 unless looks_like_number($time_limit_days);
-    $self->app->log->debug("Retrieving results for up to $limit_builds builds up to $time_limit_days days old");
     my $only_tagged      = $self->param('only_tagged')      // 0;
     my $default_expanded = $self->param('default_expanded') // 0;
     my $show_tags        = $self->param('show_tags')        // $only_tagged;
     my $group_params     = $self->every_param('group');
-    my @results;
-    my $groups = $self->stash('job_groups_and_parents');
+    my $groups           = $self->stash('job_groups_and_parents');
 
+    my @results;
     for my $group (@$groups) {
         if (@$group_params) {
             next unless grep { $_ eq '' || $group->matches_nested($_) } @$group_params;
@@ -72,13 +71,16 @@ sub index {
         }
         push(@results, $build_results) if @{$build_results_for_group};
     }
-    $self->stash('limit_builds',     $limit_builds);
-    $self->stash('time_limit_days',  $time_limit_days);
-    $self->stash('default_expanded', $default_expanded);
-    $self->stash('results',          \@results);
+
+    $self->stash(
+        default_expanded => $default_expanded,
+        results          => \@results,
+    );
+
     $self->respond_to(
         json => {json     => {results => \@results}},
-        html => {template => 'main/index'});
+        html => {template => 'main/dashboard_build_results'},
+    );
 }
 
 sub group_overview {

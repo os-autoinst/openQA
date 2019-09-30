@@ -1,4 +1,4 @@
-function setupFilterForm() {
+function setupFilterForm(options) {
     // make filter form expandable
     $('#filter-panel .card-header').on('click', function() {
         $('#filter-panel .card-body').toggle(200);
@@ -12,6 +12,10 @@ function setupFilterForm() {
     $('#filter-panel .help_popover').on('click', function(event) {
         event.stopPropagation();
     });
+
+    if (options && options.preventLoadingIndication) {
+        return;
+    }
 
     $('#filter-form').on('submit', function(event) {
         if($('#filter-form').serialize() !== window.location.search.substring(1)) {

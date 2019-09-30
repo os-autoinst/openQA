@@ -1,4 +1,4 @@
-# Copyright (C) 2016 SUSE LLC
+# Copyright (C) 2016-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-# see also t/ui/14-dashboard.t and t/ui/14-dashboard-parents.t for PhantomJS test
+# see also t/ui/14-dashboard.t and t/ui/14-dashboard-parents.t for Selenium test
 
 use Mojo::Base -strict;
 
@@ -37,14 +37,14 @@ my $parent_groups = $t->app->schema->resultset('JobGroupParents');
 my $jobs          = $t->app->schema->resultset('Jobs');
 
 # regular job groups shown
-$t->get_ok('/')->status_is(200);
+$t->get_ok('/dashboard_build_results')->status_is(200);
 my @h2 = $t->tx->res->dom->find('h2 a')->map('text')->each;
 is_deeply(\@h2, ['opensuse', 'opensuse test'], 'two groups shown (from fixtures)');
 
 # create (initially) empty parent group
 my $test_parent = $parent_groups->create({name => 'Test parent', sort_order => 2});
 
-$t->get_ok('/')->status_is(200);
+$t->get_ok('/dashboard_build_results')->status_is(200);
 @h2 = $t->tx->res->dom->find('h2 a')->map('text')->each;
 is_deeply(\@h2, ['opensuse', 'opensuse test'], 'empty parent group not shown');
 
@@ -60,7 +60,7 @@ like(
     'parent name also shown on group overview'
 );
 
-$t->get_ok('/')->status_is(200);
+$t->get_ok('/dashboard_build_results')->status_is(200);
 @h2 = $t->tx->res->dom->find('h2 a')->map('text')->each;
 is_deeply(\@h2, ['opensuse test', 'Test parent'], 'parent group shown and opensuse is no more on top-level');
 
@@ -70,7 +70,7 @@ is_deeply(\@h4, [qw(Build87.5011 Build0048@0815 Build0048)], 'builds on parent-l
 is_deeply(\@h4, ['opensuse', 'opensuse', 'opensuse'], 'opensuse now shown as child group (for each build)');
 
 # check build limit
-$t->get_ok('/?limit_builds=2')->status_is(200);
+$t->get_ok('/dashboard_build_results?limit_builds=2')->status_is(200);
 @h4 = $t->tx->res->dom->find('div.children-collapsed .h4 a')->map('text')->each;
 is_deeply(\@h4, [qw(Build87.5011 Build0048@0815)], 'builds on parent-level shown (limit builds)');
 @h4 = $t->tx->res->dom->find('div.collapse .h4 a')->map('text')->each;
@@ -83,7 +83,7 @@ $opensuse_test_group->update({parent_id => $test_parent->id});
 # and add review for build 0048@0815
 $opensuse_group->jobs->find({BUILD => '0048@0815'})->comments->create({text => 'poo#1234', user_id => 99901});
 
-$t->get_ok('/?limit_builds=20&show_tags=1')->status_is(200);
+$t->get_ok('/dashboard_build_results?limit_builds=20&show_tags=1')->status_is(200);
 @h2 = $t->tx->res->dom->find('h2 a')->map('text')->each;
 is_deeply(\@h2, ['Test parent'], 'only parent shown, no more top-level job groups');
 
@@ -160,7 +160,7 @@ check_test_parent('expanded');
 my $tag_for_0092_comment = $opensuse_group->comments->create({text => 'tag:0092:important:some_tag', user_id => 99901});
 
 sub check_tags {
-    $t->get_ok('/?limit_builds=20&show_tags=1')->status_is(200);
+    $t->get_ok('/dashboard_build_results?limit_builds=20&show_tags=1')->status_is(200);
     my @tags = $t->tx->res->dom->find('div.children-collapsed span i.tag')->map('text')->each;
     is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level');
 
@@ -168,7 +168,7 @@ sub check_tags {
     @tags = $t->tx->res->dom->find('div.children-expanded span i.tag')->map('text')->each;
     is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level');
 
-    $t->get_ok('/?limit_builds=20&only_tagged=1')->status_is(200);
+    $t->get_ok('/dashboard_build_results?limit_builds=20&only_tagged=1')->status_is(200);
     @tags = $t->tx->res->dom->find('div.children-collapsed span i.tag')->map('text')->each;
     is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level (only tagged)');
     @h4 = $t->tx->res->dom->find("div.children-collapsed .h4 a")->map('text')->each;
@@ -182,7 +182,7 @@ check_tags();
 
 # use version-build format where version doesn't matches
 $tag_for_0092_comment->update({text => 'tag:5-0092:important:some_tag', user_id => 99901});
-$t->get_ok('/?limit_builds=20&only_tagged=1')->status_is(200);
+$t->get_ok('/dashboard_build_results?limit_builds=20&only_tagged=1')->status_is(200);
 my @tags = $t->tx->res->dom->find('div.children-collapsed .h4 span i.tag')->map('text')->each;
 is_deeply(\@tags, [], 'tag is not shown on parent-level because version does not match');
 @h4 = $t->tx->res->dom->find("div.children-collapsed .h4 a")->map('text')->each;
@@ -193,7 +193,7 @@ $tag_for_0092_comment->delete();
 my $tag_for_0091_comment
   = $opensuse_test_group->comments->create({text => 'tag:0091:important:some_tag', user_id => 99901});
 
-$t->get_ok('/?limit_builds=20&only_tagged=1')->status_is(200);
+$t->get_ok('/dashboard_build_results?limit_builds=20&only_tagged=1')->status_is(200);
 @h4 = $t->tx->res->dom->find("div.children-collapsed .h4 a")->map('text')->each;
 is_deeply(\@h4, ['Build0091'], 'only tagged builds on parent-level shown (common build)');
 @h4 = $t->tx->res->dom->find('div#group' . $test_parent->id . '_build13_1-0091 .h4 a')->map('text')->each;
@@ -224,7 +224,7 @@ $t->app->schema->resultset('JobModules')->create(
     });
 
 my $review_build_id = '-Factory-0048_0815';
-$t->get_ok('/?limit_builds=20')->status_is(200);
+$t->get_ok('/dashboard_build_results?limit_builds=20')->status_is(200);
 $t->element_count_is('#review-' . $test_parent->id . $review_build_id,
     0, 'review badge NOT shown for build 0048@0815 anymore');
 $t->element_count_is('#child-review-' . $test_parent->id . $review_build_id,
@@ -242,18 +242,18 @@ sub check_auto_badge {
         $all_passed_count, "all passed review badge shown for build $build on child-level");
 }
 # all passed
-$t->get_ok('/?limit_builds=20')->status_is(200);
+$t->get_ok('/dashboard_build_results?limit_builds=20')->status_is(200);
 check_auto_badge(1);
 # all passed or softfailed
 $jobs->find({id => 99947})->update({result => OpenQA::Jobs::Constants::SOFTFAILED});
-$t->get_ok('/?limit_builds=20')->status_is(200);
+$t->get_ok('/dashboard_build_results?limit_builds=20')->status_is(200);
 check_auto_badge(1);
 $jobs->find({id => 99947})->update({result => OpenQA::Jobs::Constants::PASSED});
 
 sub check_badge {
     my ($reviewed_count, $msg, $build) = @_;
     $build //= 'Factory-0048';
-    $t->get_ok('/?limit_builds=20')->status_is(200);
+    $t->get_ok('/dashboard_build_results?limit_builds=20')->status_is(200);
     $t->element_count_is('#review-' . $test_parent->id . '-' . $build,       $reviewed_count, $msg . ' (parent-level)');
     $t->element_count_is('#child-review-' . $test_parent->id . '-' . $build, $reviewed_count, $msg . ' (child-level)');
 }
@@ -329,7 +329,7 @@ check_badge(0, 'no badge when no failed, reviewed softfailed with failing module
 # change DISTRI/VERSION of test in opensuse group to test whether links are still correct then
 $opensuse_group->jobs->update({VERSION => '14.2', DISTRI => 'suse'});
 
-$t->get_ok('/?limit_builds=20&show_tags=0')->status_is(200);
+$t->get_ok('/dashboard_build_results?limit_builds=20&show_tags=0')->status_is(200);
 @urls = $t->tx->res->dom->find('.h4 a')->each;
 is(scalar @urls, 12, 'now builds belong to different versions and are split');
 is(
@@ -354,7 +354,7 @@ subtest 'build which has jobs with different DISTRIs links to overview with all 
             VERSION => '14.2',
             MACHINE => '32bit',
         });
-    $t->get_ok('/?limit_builds=20&show_tags=0')->status_is(200);
+    $t->get_ok('/dashboard_build_results?limit_builds=20&show_tags=0')->status_is(200);
     my @urls = $t->tx->res->dom->find('.h4 a')->each;
     is(scalar @urls, 12, 'still 12 builds shown');
     my $first_url = $urls[1]->attr('href');
