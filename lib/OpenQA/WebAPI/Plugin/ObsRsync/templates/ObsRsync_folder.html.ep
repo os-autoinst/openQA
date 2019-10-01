@@ -84,7 +84,7 @@
                 %= link_to 'Show all logs' => url_for('plugin_obs_rsync_runs', folder => $obs_project), class => 'btn btn-primary', role => 'button'
             </div>
             <div class="btn-group mr-2" role="group">
-                %= link_to 'Sync now' => url_for('plugin_obs_rsync_queue_run', folder => $obs_project), class => 'btn btn-warning', role => 'button'
+                %= link_post 'Sync now' => url_for('plugin_obs_rsync_queue_run', folder => $obs_project), class => 'btn btn-warning', role => 'button'
             </div>
         </div>
     </div>
