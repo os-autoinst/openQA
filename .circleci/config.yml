@@ -1,0 +1,10 @@
+version: 2
+jobs:
+  build:
+    branches:
+      ignore:
+        - gh-pages
+    machine:
+        enabled: true
+    steps:
+      - run: echo "test"
