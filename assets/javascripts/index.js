@@ -92,9 +92,15 @@ function loadBuildResults(queryParams) {
             showBuildResults(response);
             window.buildResultStatus = 'success';
         },
-        error: function(xhr, ajaxOptions, thrownError) {
-            showBuildResults('<div class="alert alert-danger" role="alert">Unable to fetch build results.</div>');
+        error: function(xhr, textStatus, thrownError) {
+            // ignore error if just navigating away
+            if (textStatus !== 'timeout' && !xhr.getAllResponseHeaders()) {
+                return;
+            }
+            showBuildResults(
+                '<div class="alert alert-danger" role="alert">Unable to fetch build results.' +
+                '<a href="javascript:loadBuildResults();" style="float: right;">Try again</a></div>');
             window.buildResultStatus = 'error: ' + thrownError;
-        }
+        },
     });
 }
