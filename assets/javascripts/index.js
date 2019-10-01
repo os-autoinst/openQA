@@ -1,6 +1,4 @@
 function setupIndexPage() {
-    $('.timeago').timeago();
-
     setupFilterForm({preventLoadingIndication: true});
 
     var filterFullScreenCheckBox = $('#filter-fullscreen');
@@ -63,6 +61,7 @@ function setupBuildResults(queryParams) {
     var showBuildResults = function(buildResults) {
         loadingElement.hide();
         buildResultsElement.html(buildResults);
+        $('.timeago').timeago();
         alignBuildLabels();
         filterFormApplyButton.prop('disabled', false);
         window.updatingBuildResults = false;
