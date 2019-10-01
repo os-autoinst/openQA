@@ -120,9 +120,8 @@ function renderTimeAgo(data, type, row, position, notAvailableMessage) {
         return (haveData ?
             ('<span title="' + data + '">' + jQuery.timeago(data) + '</span>') :
             (notAvailableMessage ? notAvailableMessage : 'not yet'));
-    } else {
-        return haveData ? data : 0;
     }
+    return haveData ? data : 'Z-9999-12-31';
 }
 
 function renderTimeAgoForFinished(data, type, row, position) {
