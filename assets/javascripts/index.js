@@ -1,6 +1,8 @@
 function setupIndexPage() {
     setupFilterForm({preventLoadingIndication: true});
 
+    // set default values of filter form
+    var filterForm = $('#filter-form');
     var filterFullScreenCheckBox = $('#filter-fullscreen');
     var showTagsCheckBox = $('#filter-show-tags');
     var onlyTaggedCheckBox = $('#filter-only-tagged');
@@ -17,7 +19,8 @@ function setupIndexPage() {
     });
     defaultExpanedCheckBox.prop('checked', false);
 
-    parseFilterArguments(function(key, val) {
+    // apply query parameters to filter form
+    var handleFilterParams = function(key, val) {
         if (key === 'show_tags') {
             showTagsCheckBox.prop('checked', val !== '0');
             return 'show tags';
@@ -41,13 +44,27 @@ function setupIndexPage() {
             defaultExpanedCheckBox.prop('checked', val !== '0');
             return 'expanded';
         }
+    };
+    parseFilterArguments(handleFilterParams);
+
+    loadBuildResults();
+
+    // prevent page reload when submitting filter form (when we load build results via AJAX anyways)
+    filterForm.submit(function(event) {
+        if (!window.updatingBuildResults) {
+            var queryParams = filterForm.serialize();
+            loadBuildResults(queryParams);
+            history.replaceState({} , document.title, window.location.pathname + '?' + queryParams);
+            parseFilterArguments(handleFilterParams);
+        }
+        toggleFullscreenMode($('#filter-fullscreen').is(':checked'));
+        event.preventDefault();
     });
 
-    setupBuildResults();
     toggleFullscreenMode(filterFullScreenCheckBox.is(':checked'));
 }
 
-function setupBuildResults(queryParams) {
+function loadBuildResults(queryParams) {
     var buildResultsElement = $('#build-results');
     var loadingElement = $('#build-results-loading');
     var filterForm = $('#filter-form');
@@ -79,16 +96,5 @@ function setupBuildResults(queryParams) {
             showBuildResults('<div class="alert alert-danger" role="alert">Unable to fetch build results.</div>');
             window.buildResultStatus = 'error: ' + thrownError;
         }
-    });
-
-    // prevent page reload when submitting filter form (when we load build results via AJAX anyways)
-    filterForm.submit(function(event) {
-        if (!window.updatingBuildResults) {
-            var queryParams = filterForm.serialize();
-            setupBuildResults(queryParams);
-            history.replaceState({} , document.title, window.location.pathname + '?' + queryParams);
-        }
-        toggleFullscreenMode($('#filter-fullscreen').is(':checked'));
-        event.preventDefault();
     });
 }
