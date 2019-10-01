@@ -44,6 +44,8 @@ update_docs() {
             echo "Update documentation to commit ${shortref}" > last.commit
             echo "" >> last.commit # somehow travis does not like \n
             [[ -n ${TRAVIS_COMMIT} ]] && (cd .. && git log --pretty=fuller "${TRAVIS_COMMIT}" -1 >> out/last.commit)
+            echo "" >> last.commit
+            echo "[ci skip]" >> last.commit
             git commit -F last.commit
             [[ -n ${publish} ]] && git push "$SSH_REPO" "$TARGET_BRANCH"
             cd ..
