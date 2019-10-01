@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 use OpenQA::Utils;
 use Mojo::URL;
 use Data::Dump 'pp';
+use Try::Tiny;
 
 sub register {
     my ($self, $app) = @_;
@@ -55,64 +56,77 @@ sub _limit {
     $schema->resultset('Assets')->scan_for_untracked_assets();
     $schema->resultset('Assets')->refresh_assets();
 
-    my $asset_status = $schema->resultset('Assets')->status(
-        compute_pending_state_and_max_job => 1,
-        compute_max_job_by_group          => 1,
-        fail_on_inconsistent_status       => 1,
-        skip_cache_file                   => 1,
-    );
-    log_debug pp($asset_status);
-    my $assets = $asset_status->{assets};
+    try {
+        my $asset_status = $schema->resultset('Assets')->status(
+            compute_pending_state_and_max_job => 1,
+            compute_max_job_by_group          => 1,
+            fail_on_inconsistent_status       => 1,
+            skip_cache_file                   => 1,
+        );
+        log_debug pp($asset_status);
+        my $assets = $asset_status->{assets};
 
-    # first remove grouped assets
-    for my $asset (@$assets) {
-        if (keys %{$asset->{groups}} && !$asset->{picked_into}) {
-            _remove_if($schema, $asset);
+        # first remove grouped assets
+        for my $asset (@$assets) {
+            if (keys %{$asset->{groups}} && !$asset->{picked_into}) {
+                _remove_if($schema, $asset);
+            }
         }
-    }
 
-    # use DBD::Pg as dbix doesn't seem to have a direct update call - find()->update are 2 queries
-    my $dbh        = $app->schema->storage->dbh;
-    my $update_sth = $dbh->prepare('UPDATE assets SET last_use_job_id = ? WHERE id = ?');
+        # use DBD::Pg as dbix doesn't seem to have a direct update call - find()->update are 2 queries
+        my $dbh        = $app->schema->storage->dbh;
+        my $update_sth = $dbh->prepare('UPDATE assets SET last_use_job_id = ? WHERE id = ?');
 
-    # remove all assets older than a certain duration which do not belong to a job group
-    my $seconds_per_day = 24 * 3600;
-    my $untracked_assets_storage_duration
-      = $OpenQA::Utils::app->config->{misc_limits}->{untracked_assets_storage_duration} * $seconds_per_day;
-    my $now = DateTime->now();
-    for my $asset (@$assets) {
-        $update_sth->execute($asset->{max_job} && $asset->{max_job} >= 0 ? $asset->{max_job} : undef, $asset->{id});
-        next if $asset->{fixed} || scalar(keys %{$asset->{groups}}) > 0;
+        # remove all assets older than a certain duration which do not belong to a job group
+        my $seconds_per_day = 24 * 3600;
+        my $untracked_assets_storage_duration
+          = $OpenQA::Utils::app->config->{misc_limits}->{untracked_assets_storage_duration} * $seconds_per_day;
+        my $now = DateTime->now();
+        for my $asset (@$assets) {
+            $update_sth->execute($asset->{max_job} && $asset->{max_job} >= 0 ? $asset->{max_job} : undef, $asset->{id});
+            next if $asset->{fixed} || scalar(keys %{$asset->{groups}}) > 0;
 
-        my $age_in_seconds = ($now->epoch() - DateTime::Format::Pg->parse_datetime($asset->{t_created})->epoch());
-        my $asset_name     = $asset->{name};
-        if ($age_in_seconds >= $untracked_assets_storage_duration) {
-            my $age_in_days   = $age_in_seconds / $seconds_per_day;
-            my $limit_in_days = $untracked_assets_storage_duration / $seconds_per_day;
-            _remove_if($schema, $asset,
-"Removing asset $asset_name (not in any group, age ($age_in_days days) exceeds limit ($limit_in_days days)"
-            );
+            my $age_in_seconds = ($now->epoch() - DateTime::Format::Pg->parse_datetime($asset->{t_created})->epoch());
+            my $asset_name     = $asset->{name};
+            if ($age_in_seconds >= $untracked_assets_storage_duration) {
+                my $age_in_days   = $age_in_seconds / $seconds_per_day;
+                my $limit_in_days = $untracked_assets_storage_duration / $seconds_per_day;
+                _remove_if($schema, $asset,
+                        "Removing asset $asset_name (not in any group, age "
+                      . "($age_in_days days) exceeds limit ($limit_in_days days)");
+            }
+            else {
+                my $remaining_days
+                  = sprintf('%.0f', ($untracked_assets_storage_duration - $age_in_seconds) / $seconds_per_day);
+                OpenQA::Utils::log_warning(
+                    "Asset $asset_name is not in any job group, will delete in $remaining_days days");
+            }
         }
-        else {
-            my $remaining_days
-              = sprintf('%.0f', ($untracked_assets_storage_duration - $age_in_seconds) / $seconds_per_day);
-            OpenQA::Utils::log_warning(
-                "Asset $asset_name is not in any job group, will delete in $remaining_days days");
+
+        # store the exclusively_kept_asset_size in the DB - for the job group edit field
+        $update_sth = $dbh->prepare('UPDATE job_groups SET exclusively_kept_asset_size = ? WHERE id = ?');
+
+        for my $group (values %{$asset_status->{groups}}) {
+            $update_sth->execute($group->{picked}, $group->{id});
         }
+
+        # recompute the status (after the cleanup) and produce cache file for /admin/assets
+        $schema->resultset('Assets')->status(
+            compute_pending_state_and_max_job => 0,
+            compute_max_job_by_group          => 0,
+        );
     }
+    catch {
+        my $error = $_;
 
-    # store the exclusively_kept_asset_size in the DB - for the job group edit field
-    $update_sth = $dbh->prepare('UPDATE job_groups SET exclusively_kept_asset_size = ? WHERE id = ?');
+        # retry on errors which are most likely caused by race conditions (we want to avoid locking the tables here)
+        if ($error =~ qr/violates (foreign key|unique) constraint/) {
+            $job->note(error => $_);
+            return $job->retry({delay => 60});
+        }
 
-    for my $group (values %{$asset_status->{groups}}) {
-        $update_sth->execute($group->{picked}, $group->{id});
-    }
-
-    # recompute the status (after the cleanup) and produce cache file for /admin/assets
-    $schema->resultset('Assets')->status(
-        compute_pending_state_and_max_job => 0,
-        compute_max_job_by_group          => 0,
-    );
+        $job->fail($error);
+    };
 }
 
 1;
