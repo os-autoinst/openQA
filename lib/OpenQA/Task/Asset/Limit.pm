@@ -53,10 +53,10 @@ sub _limit {
 
     # scan for untracked assets, refresh the size of all assets
     my $schema = $app->schema;
-    $schema->resultset('Assets')->scan_for_untracked_assets();
-    $schema->resultset('Assets')->refresh_assets();
-
     try {
+        $schema->resultset('Assets')->scan_for_untracked_assets();
+        $schema->resultset('Assets')->refresh_assets();
+
         my $asset_status = $schema->resultset('Assets')->status(
             compute_pending_state_and_max_job => 1,
             compute_max_job_by_group          => 1,
