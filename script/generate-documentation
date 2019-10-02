@@ -16,12 +16,11 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 update_docs() {
-        git clone "$REPO" out
+        git clone -b "$TARGET_BRANCH" --single-branch "$TARGET_REMOTE" out
         cd out
-        git checkout "$TARGET_BRANCH"
         if [ -n "${COMMIT_AUTHOR_EMAIL}" ]; then
-            git config user.name "Travis CI"
-            git config user.email "$COMMIT_AUTHOR_EMAIL"
+            git config user.name "Circle CI"
+            git config user.email "${COMMIT_AUTHOR_EMAIL}"
         fi
         mkdir -p docs
         cp -r "${tmpwd}"/output/* docs
@@ -42,10 +41,10 @@ update_docs() {
             git add docs/index.html docs/current.pdf docs/api/testapi.html
             git add docs/api/schema
             echo "Update documentation to commit ${shortref}" > last.commit
-            echo "" >> last.commit # somehow travis does not like \n
-            [[ -n ${TRAVIS_COMMIT} ]] && (cd .. && git log --pretty=fuller "${TRAVIS_COMMIT}" -1 >> out/last.commit)
+            echo "" >> last.commit
+            [[ -n ${CIRCLE_SHA1} ]] && (cd .. && git log --pretty=fuller "${CIRCLE_SHA1}" -1 >> out/last.commit)
             git commit -F last.commit
-            [[ -n ${publish} ]] && git push "$SSH_REPO" "$TARGET_BRANCH"
+            [[ -n ${publish} ]] && git push "$TARGET_REMOTE" "$TARGET_BRANCH":"$TARGET_BRANCH"
             cd ..
         fi
         rm -rf out
@@ -92,14 +91,10 @@ asciidoctor_bin="/bin/not/set"
 shortref=$(git rev-parse --short HEAD)
 verbose_doc_name=$(date +%Y%m%d)"_"${shortref} #we are not intending to run this off a git repository
 scriptroot="$( cd "$(dirname "$0")" ; pwd -P )"
-publish=
+publish=${publish:-}
 tmpwd=$(mktemp -d -t openqa-doc-XXXX)
-REPO=$(git config remote.origin.url)
-SSH_REPO=${REPO/https:\/\/github.com\//git@github.com:}
 TARGET_BRANCH="gh-pages"
-SSH_KEY=$1
-SSH_IV=$2
-
+TARGET_REMOTE="$1"
 
 check_asciidoctor() {
     asciidoctor_bin=$(command -v asciidoctor) || true
@@ -111,13 +106,6 @@ check_asciidoctor() {
         echo "    sudo zypper install 'perl(Pod::AsciiDoctor)'"
         exit 1
     fi
-}
-
-set_sshkey() {
-    openssl aes-256-cbc -K "$SSH_KEY" -iv "$SSH_IV" -in .openqa-travis.enc -out .openqa-travis -d
-    chmod 600 .openqa-travis
-    eval "$(ssh-agent -s)"
-    ssh-add .openqa-travis
 }
 
 install_asciidoctor() {
@@ -143,10 +131,6 @@ call_asciidoctor() {
     cd ..
 }
 
-if [[ ${TRAVIS_PULL_REQUEST} == false ]] && [[ -n ${SSH_KEY} ]] && [[ -n ${SSH_IV} ]]; then
-    publish=1
-    set_sshkey
-fi
 if [[ -n ${CONTINUOUS_INTEGRATION} ]]; then
     cpanm --local-lib=~/perl5 local::lib && eval "$(perl -I ~/perl5/lib/perl5/ -Mlocal::lib)"
     install_asciidoctor

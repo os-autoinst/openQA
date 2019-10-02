@@ -10,11 +10,11 @@ aliases:
     paths:
       - "/var/cache/zypp/packages"
 
-  - &restore_integration_cache
+  - &restore_fullstack_cache
     keys:
       - v1-{{ checksum ".circleci/autoinst.sha" }}-{{ checksum ".circleci/build_autoinst.sh" }}
 
-  - &save_integration_cache
+  - &save_fullstack_cache
     key: v1-{{ checksum ".circleci/autoinst.sha" }}-{{ checksum ".circleci/build_autoinst.sh" }}
     paths:
       - "/var/cache/autoinst"
@@ -23,7 +23,7 @@ aliases:
     command: |
       [ -z "$CIRCLE_WORKFLOW_ID" ] || sudo chown -R squamata /var/cache/zypp/packages
 
-  - &chown_hack_for_cache_integration
+  - &chown_hack_for_cache_fullstack
     command: |
       # hack as we don't want run container as root
       [ -z "$CIRCLE_WORKFLOW_ID" ] || {
@@ -59,17 +59,12 @@ aliases:
         sudo chown -R 1000 ../os-autoinst/t/data
       else # only in local run
          [ -d ../os-autoinst ] || { sudo mkdir ../os-autoinst && sudo chown -R 1000 ../os-autoinst; }
-         bash .circleci/build_autoinst.sh ../os-autoinst
+         bash .circleci/build_autoinst.sh ../os-autoinst $(cat .circleci/autoinst.sha)
        fi
 
 images:
   - &docker_config
     user: squamata
-    environment:
-      USER: squamata
-      PERL5LIB: lib
-      TRAVIS: yes
-      COVER_OPTS: -select_re "^/lib" -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
 
   - &base
     image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
@@ -87,7 +82,7 @@ jobs:
       - setup_remote_docker
       - run:
           command: |
-            git config user.email "no@email.com"
+            git config user.email "skynet@open.qa"
             git config user.name "Dependency bot circleci"
             git config core.autocrlf true
             hub --version
@@ -111,7 +106,7 @@ jobs:
                 hub pull-request -m "Dependency cron $depid" --base $CIRCLE_PROJECT_USERNAME:$CIRCLE_BRANCH --head openqabot:dependency_$depid
             )
 
-  build-cache:
+  build.cache:
     docker:
       - <<: *base
     steps:
@@ -128,14 +123,14 @@ jobs:
             fi
       - save_cache: *save_cache
 
-  build-integration-cache:
+  build.fullstack.cache:
     docker:
       - <<: *base
     steps:
       - checkout
-      - run: *chown_hack_for_cache_integration
+      - run: *chown_hack_for_cache_fullstack
       - restore_cache: *restore_cache
-      - restore_cache: *restore_integration_cache
+      - restore_cache: *restore_fullstack_cache
       - run: find /var/cache/zypp/packages/ | wc -l
       - run:
           command: |
@@ -143,139 +138,174 @@ jobs:
             if [ ! -d /var/cache/autoinst/t ]; then
               bash -x .circleci/build_autoinst.sh "/var/cache/autoinst"
             fi
-      - save_cache: *save_integration_cache
+      - save_cache: *save_fullstack_cache
 
-  test1:
+  t: &test-template
     docker:
       - <<: *base
+    environment:
+      TEST_PART=t
     steps:
       - checkout
       - run: *chown_hack_for_cache
       - restore_cache: *restore_cache
       - run: *check_cache
       - run: *install_cached_packages
-      - run: sudo zypper -n install python3-six # workaround bug https://bugzilla.suse.com/show_bug.cgi?id=1150895
-      - run: eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v t/*.t
+      - run: make coverage-with-db-$TEST_PART
+      - persist_to_workspace:
+          root: .
+          paths:
+            - cover_db_*
 
-  testui:
+  t.fullstack: &test-fullstack-template
     docker:
       - <<: *base
+    environment:
+      TEST_PART=fullstack
     steps:
       - checkout
       - run: *chown_hack_for_cache
+      - run: *chown_hack_for_cache_fullstack
       - restore_cache: *restore_cache
-      - run: *check_cache
-      - run: *install_cached_packages
-      - run:
-          command: |
-            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v $(find t/ui/ -type f -name '*.t' | grep -vf .circleci/unstable_tests.txt | sort)
-
-  testui-unstable:
-    docker:
-      - <<: *base
-    steps:
-      - checkout
-      - run: *chown_hack_for_cache
-      - restore_cache: *restore_cache
-      - run: *check_cache
-      - run: *install_cached_packages
-      - run:
-          command: |
-            export openqa_unstable_tests="$(cat .circleci/unstable_tests.txt)"
-            if [ ! -z "$openqa_unstable_tests" ]; then
-              eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v $openqa_unstable_tests || echo FAIL
-            fi
-
-  testapi:
-    docker:
-      - <<: *base
-    steps:
-      - checkout
-      - run: *chown_hack_for_cache
-      - restore_cache: *restore_cache
-      - run: *check_cache
-      - run: *install_cached_packages
-      - run:
-          command: |
-            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove -v t/api/*.t
-
-  testfullstack:
-    docker:
-      - <<: *base
-    steps:
-      - checkout
-      - run: echo CIRCLE_WORKFLOW_ID=$CIRCLE_WORKFLOW_ID
-      - run: *chown_hack_for_cache_integration
-      - restore_cache: *restore_cache
-      - restore_cache: *restore_integration_cache
+      - restore_cache: *restore_fullstack_cache
       - run: *check_cache
       - run: *install_cached_packages
       - run: *build_autoinst
-      - run:
-          command: |
-            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib FULLSTACK=1 prove -v t/full-stack.t
+      - run: make coverage-with-db-$TEST_PART
+      - persist_to_workspace:
+          root: .
+          paths:
+            - cover_db_*
 
-  testdeveloperfullstack:
+  checkstyle:
     docker:
       - <<: *base
     steps:
       - checkout
-      - run: echo CIRCLE_WORKFLOW_ID=$CIRCLE_WORKFLOW_ID
-      - run: *chown_hack_for_cache_integration
+      - run: *chown_hack_for_cache
       - restore_cache: *restore_cache
-      - restore_cache: *restore_integration_cache
       - run: *check_cache
       - run: *install_cached_packages
-      - run: *build_autoinst
-      - run:
-          command: |
-            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib DEVELOPER_FULLSTACK=1 prove -v t/33-developer_mode.t
+      - run: make checkstyle
 
-  testschedulerfullstack:
+  t.ui:
+    <<: *test-template
+    environment:
+      TEST_PART=ui
+
+  t.unstable:
+    <<: *test-template
+    environment:
+      TEST_PART=unstable
+
+  t.api:
+    <<: *test-template
+    environment:
+      TEST_PART=api
+
+  t.developer:
+    <<: *test-fullstack-template
+    environment:
+      TEST_PART=developer-fullstack
+
+  t.scheduler:
+    <<: *test-fullstack-template
+    environment:
+      TEST_PART=scheduler-fullstack
+
+  report.codecov:
     docker:
       - <<: *base
     steps:
       - checkout
-      - run: echo CIRCLE_WORKFLOW_ID=$CIRCLE_WORKFLOW_ID
-      - run: *chown_hack_for_cache_integration
+      - run: *chown_hack_for_cache
+      - run: *chown_hack_for_cache_fullstack
       - restore_cache: *restore_cache
-      - restore_cache: *restore_integration_cache
+      - restore_cache: *restore_fullstack_cache
       - run: *check_cache
       - run: *install_cached_packages
       - run: *build_autoinst
+      - attach_workspace:
+          at: .
+      - run: sudo zypper ar -f https://download.opensuse.org/repositories/devel:/languages:/perl/openSUSE_Leap_15.1/ devel-perl
+      - run: sudo zypper --gpg-auto-import-keys ref
+      - run: sudo zypper -n install --from devel-perl perl-Devel-Cover perl-Devel-Cover-Report-Codecov # 1.29 cannot merge DB
+      - run: make coverage-merge-db
+      - run: cover -report html_minimal
+      - run: make coverage-report-codecov
+  
+  build.docs:
+    docker:
+      - <<: *base
+    environment:
+      COMMIT_AUTHOR_EMAIL=skynet@open.qa
+    steps:
+      - checkout
       - run:
           command: |
-            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib SCHEDULER_FULLSTACK=1 OPENQA_BASEDIR=. prove -v t/05-scheduler-full.t
+            sudo zypper ar -f https://download.opensuse.org/repositories/devel:/languages:/perl/openSUSE_Leap_15.1/ devel-perl
+            sudo zypper ar -f https://download.opensuse.org/repositories/devel:/languages:/ruby/openSUSE_Leap_15.1/ devel-ruby
+            sudo zypper ar -f https://download.opensuse.org/repositories/devel:/languages:/ruby:/extensions/openSUSE_Leap_15.1/ devel-ruby-extensions
+            sudo zypper --gpg-auto-import-keys ref 
+            sudo zypper -n install curl python ruby2.6 ruby2.6-rubygem-asciidoctor 'perl(Pod::AsciiDoctor)'
+            sudo gem.ruby2.6 install asciidoctor pygments.rb
+            sudo gem.ruby2.6 install asciidoctor-pdf --pre
+      - run:
+          command: |
+                echo 'echo $GITHUB_TOKEN' > $(pwd)/.git-askpass
+                export GIT_ASKPASS=$(pwd)/.git-askpass
+                chmod +x $(pwd)/.git-askpass
+                publish=1 bash -xe script/generate-documentation https://token@github.com/openqabot/openQA.git
 
 workflows:
   version: 2
   test:
     jobs:
-      - build-cache
-      - test1:
+      - build.cache
+      - t:
          requires:
-           - build-cache
-      - testapi:
+           - build.cache
+      - t.api:
          requires:
-           - build-cache
-      - testui:
+           - build.cache
+      - t.ui:
          requires:
-           - build-cache
-      - testui-unstable:
+           - build.cache
+      - t.unstable:
          requires:
-           - build-cache
-      - build-integration-cache:
+           - build.cache
+      - build.fullstack.cache:
          requires:
-           - build-cache
-      - testfullstack:
+           - build.cache
+      - t.fullstack:
          requires:
-           - build-integration-cache
-      - testdeveloperfullstack:
+           - build.fullstack.cache
+      - t.developer:
          requires:
-           - build-integration-cache
-      - testschedulerfullstack:
+           - build.fullstack.cache
+      - t.scheduler:
          requires:
-           - build-integration-cache
+           - build.fullstack.cache
+      - report.codecov:
+         requires:
+           - t
+           - t.api
+           - t.ui
+           - t.unstable
+           - t.fullstack
+           - t.developer
+           - t.scheduler
+      - checkstyle:
+         requires:
+           - build.cache
+      - build.docs:
+         requires:
+           - build.cache
+         filters:
+           branches:
+             only:
+               - circleci_add_coverage
+
   nightly:
    triggers:
      - schedule:

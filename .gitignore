@@ -1,6 +1,6 @@
 logs/*.tar.*
 etc/mine/
-cover_db/
+cover_db*/
 temp
 /testresults
 /t/data/openqa/webui/cache

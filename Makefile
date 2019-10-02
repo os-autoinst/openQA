@@ -4,7 +4,6 @@ DOCKER_IMG ?= openqa:latest
 TEST_PG_PATH ?= /dev/shm/tpg
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
-docker_env_file := "$(current_dir)/docker.env"
 
 .PHONY: all
 all:
@@ -18,7 +17,7 @@ install:
 	done
 
 # we didn't actually want to install these...
-	for i in tidy check_coverage generate-packed-assets generate-documentation generate-documentation-genapi run-tests-within-container; do \
+	for i in tidy check_coverage generate-packed-assets generate-documentation generate-documentation-genapi; do \
 		rm "$(DESTDIR)"/usr/share/openqa/script/$$i ;\
 	done
 #
@@ -89,47 +88,55 @@ ifneq ($(CHECKSTYLE),0)
 	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic lib
 endif
 
-.PHONY: test
-ifeq ($(TRAVIS),true)
-test: run-tests-within-container
-else
-test: checkstyle test-with-database
-endif
+test-with-db%: 
+	@$(MAKE) $(subst test-with-db,test-with-database,$@)
 
-.PHONY: test-unit-and-integration
-test-unit-and-integration:
-	OPENQA_CONFIG= prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
-
-.PHONY: test-with-database
-test-with-database:
+test-with-database%:
 	test -d $(TEST_PG_PATH) && (pg_ctl -D $(TEST_PG_PATH) -s status >&/dev/null || pg_ctl -D $(TEST_PG_PATH) -s start) || ./t/test_postgresql $(TEST_PG_PATH)
-	$(MAKE) test-unit-and-integration TEST_PG="DBI:Pg:dbname=openqa_test;host=$(TEST_PG_PATH)"
+	$(MAKE) $(subst -with-database,,$@) TEST_PG="DBI:Pg:dbname=openqa_test;host=$(TEST_PG_PATH)"
 	-pg_ctl -D $(TEST_PG_PATH) stop
 
-# prepares running the tests within Docker (eg. pulls os-autoinst) and then runs the tests considering
-# the test matrix environment variables
-# note: This is supposed to run within the Docker container unlike `launch-docker-to-run-tests-within`
-#       which launches the container.
-.PHONY: run-tests-within-container
-run-tests-within-container:
-	script/run-tests-within-container
+test%:
+	@GLOBIGNORE=$(shell paste -sd: t/unstable_tests.txt); \
+	[ $@ == test-with-d* ] || case $@ in \
+		test-t*) prove -l -v t/$(subst test-t,,$@)*.t;; \
+		test-api*) prove -l -v t/api/$(subst test-api,,$@)*.t;; \
+		test-ui*) prove -l -v t/ui/$(subst test-ui,,$@)*.t;; \
+		test-dev*) DEVELOPER_FULLSTACK=1 prove -l -v t/33-developer_mode.t;; \
+		test-sched*) SCHEDULER_FULLSTACK=1 prove -l -v t/05-scheduler-full.t;; \
+		test-full*) FULLSTACK=1 prove -l -v t/full-stack.t;; \
+		test-unstable*) for f in $(shell cat t/unstable_tests.txt); do \
+		                  prove -l -v $$f || prove -l -v $$f || prove -l -v $$f; \
+		                done ;; \
+		test) prove -l -v -r;; \
+	    *) ( echo Unkown target $@; exit 1 )>&2 ;; \
+	esac ;
 
 # ignore tests and test related addons in coverage analysis
-COVER_OPTS ?= -select_re "^/lib" -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
+COVER_OPTS ?= -select_re '^/lib' -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
+
+coverage-%:
+	@[ $@ == coverage-merge-db ] || \
+	  [ $@ == coverage-report* ] || \
+	  cover $(COVER_OPTS) -test -make 'make $(subst coverage-,test-,$@) #' cover_db_$(subst test-cover-,,$@)
 
 .PHONY: coverage
 coverage:
 	cover ${COVER_OPTS} -test
 
+.PHONY: coverage-merge-db
+coverage-merge-db:
+	cover ${COVER_OPTS} -write cover_db cover_db_*
+
 COVER_REPORT_OPTS ?= -select_re ^lib/
 
-.PHONY: coverage-codecov
-coverage-codecov: coverage
-	cover $(COVER_REPORT_OPTS) -report codecov
+.PHONY: coverage-report-codecov
+coverage-report-codecov:
+	cover $(COVER_REPORT_OPTS) -report codecov cover_db
 
-.PHONY: coverage-html
-coverage-html: coverage
-	cover $(COVER_REPORT_OPTS) -report html_basic
+.PHONY: coverage-report-html
+coverage-report-html:
+	cover $(COVER_REPORT_OPTS) -report html_basic cover_db
 
 public/favicon.ico: assets/images/logo.svg
 	for w in 16 32 64 128; do \
@@ -137,25 +144,6 @@ public/favicon.ico: assets/images/logo.svg
 	done
 	convert assets/images/logo-16.png assets/images/logo-32.png assets/images/logo-64.png assets/images/logo-128.png -background white -alpha remove public/favicon.ico
 	rm assets/images/logo-128.png assets/images/logo-32.png assets/images/logo-64.png
-
-.PHONY: docker-test-build
-docker-test-build:
-	docker build --no-cache $(current_dir)/docker/openqa -t $(DOCKER_IMG)
-
-.PHONY: docker.env
-docker.env:
-	env | grep -E 'FULLSTACK|UITEST|GH|TRAVIS|CPAN|DEBUG|ZYPPER' > $(docker_env_file)
-
-.PHONY: launch-docker-to-run-tests-within
-launch-docker-to-run-tests-within: docker.env
-	docker run --env-file $(docker_env_file) -v $(current_dir):/opt/openqa \
-	   $(DOCKER_IMG) make coverage-codecov
-	rm $(docker_env_file)
-
-.PHONY: prepare-and-launch-docker-to-run-tests-within
-.NOTPARALLEL: prepare-and-launch-docker-to-run-tests-within
-prepare-and-launch-docker-to-run-tests-within: docker-test-build launch-docker-to-run-tests-within
-	echo "Use docker-rm and docker-rmi to remove the container and image if necessary"
 
 .PHONY: test-shellcheck
 test-shellcheck:
