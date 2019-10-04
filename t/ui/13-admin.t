@@ -608,6 +608,37 @@ subtest 'edit the yaml' => sub() {
     ok($driver->find_element_by_id('media')->is_hidden(),              'media editor hidden');
     ok($driver->find_element_by_id('media-add')->is_hidden(),          'media add button hidden');
 
+    # More changes on top of the previous ones
+    $yaml .= "    - advanced_kde_high_prio:\n";
+    $yaml .= "        testsuite: advanced_kde\n";
+    $yaml .= "        priority: 99\n";
+    $yaml =~ s/\n/\\n/g;
+    $driver->execute_script("editor.doc.setValue(\"$yaml\");");
+    $driver->find_element_by_id('save-template')->click();
+    wait_for_ajax;
+    like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
+
+    my $first_tab = $driver->get_current_window_handle();
+    # Make changes in a separate tab
+    my $second_tab = open_new_tab($driver->get_current_url());
+    $driver->switch_to_window($second_tab);
+    $form   = $driver->find_element_by_id('editor-form');
+    $result = $form->child('.result');
+    $yaml .= " # additional comment\\n";
+    $driver->execute_script("editor.doc.setValue(\"$yaml\");");
+    $driver->find_element_by_id('save-template')->click();
+    wait_for_ajax;
+    like($result->get_text(), qr/YAML saved!/, 'second tab saved') or diag explain $result->get_text();
+    # Try and save, after the database has already been modified
+    $driver->switch_to_window($first_tab);
+    $form   = $driver->find_element_by_id('editor-form');
+    $result = $form->child('.result');
+    $yaml .= " # one more comment\\n";
+    $driver->execute_script("editor.doc.setValue(\"$yaml\");");
+    $driver->find_element_by_id('save-template')->click();
+    wait_for_ajax;
+    like($result->get_text(), qr/Template was modified/, 'conflict reported') or diag explain $result->get_text();
+
     # Make the YAML invalid
     $driver->execute_script('editor.doc.setValue("invalid: true");');
     $driver->find_element_by_id('preview-template')->click();

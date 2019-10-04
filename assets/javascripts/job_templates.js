@@ -426,6 +426,8 @@ function submitTemplateEditor(preview) {
             // Once a valid YAML template was saved we no longer offer the legacy editor
             $('#toggle-yaml-editor').hide();
             $('#media-add').hide();
+            // Update the reference to the saved document
+            form.data('reference', editor.doc.getValue());
         }
         if (data.hasOwnProperty('changes')) {
             var preview = CodeMirror(result[0], {
