@@ -1,6 +1,5 @@
 PROVE_ARGS ?= -r -v
 PROVE_LIB_ARGS ?= -l
-DOCKER_IMG ?= openqa:latest
 TEST_PG_PATH ?= /dev/shm/tpg
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
@@ -88,41 +87,63 @@ ifneq ($(CHECKSTYLE),0)
 	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic lib
 endif
 
-test-with-db%: 
+.PHONY: phony_explicit
+phony_explicit: 
+
+.PHONY: test-with-db
+test-with-db: test-with-db-default
+
+test-with-db%: phony_explicit
 	@$(MAKE) $(subst test-with-db,test-with-database,$@)
 
-test-with-database%:
+.PHONY: test-with-database
+test-with-database: test-with-database-default
+
+test-with-database%: phony_explicit
 	test -d $(TEST_PG_PATH) && (pg_ctl -D $(TEST_PG_PATH) -s status >&/dev/null || pg_ctl -D $(TEST_PG_PATH) -s start) || ./t/test_postgresql $(TEST_PG_PATH)
 	$(MAKE) $(subst -with-database,,$@) TEST_PG="DBI:Pg:dbname=openqa_test;host=$(TEST_PG_PATH)"
 	-pg_ctl -D $(TEST_PG_PATH) stop
 
-test%:
-	@GLOBIGNORE=$(shell paste -sd: t/unstable_tests.txt); \
+.PHONY: test
+test:
+	@[ -z ${PERL5OPT} ] || echo PERL5OPT=${PERL5OPT}
+	prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
+
+# must use explicit prove here, because 'make test' doesn't take into account GLOBIGNORE
+test%: phony_explicit
+	@GLOBIGNORE=$(shell paste -sd: t/unstable_tests.txt);\
 	[ $@ == test-with-d* ] || case $@ in \
-		test-t*) prove -l -v t/$(subst test-t,,$@)*.t;; \
-		test-api*) prove -l -v t/api/$(subst test-api,,$@)*.t;; \
-		test-ui*) prove -l -v t/ui/$(subst test-ui,,$@)*.t;; \
-		test-dev*) DEVELOPER_FULLSTACK=1 prove -l -v t/33-developer_mode.t;; \
-		test-sched*) SCHEDULER_FULLSTACK=1 prove -l -v t/05-scheduler-full.t;; \
-		test-full*) FULLSTACK=1 prove -l -v t/full-stack.t;; \
-		test-unstable*) for f in $(shell cat t/unstable_tests.txt); do \
-		                  prove -l -v $$f || prove -l -v $$f || prove -l -v $$f; \
+		test-t*) prove ${PROVE_LIB_ARGS} -v t/$(subst test-t,,$@)*.t;; \
+		test-api*) prove ${PROVE_LIB_ARGS} -v t/api/$(subst test-api,,$@)*.t;; \
+		test-ui*) prove ${PROVE_LIB_ARGS} -v t/ui/$(subst test-ui,,$@)*.t;; \
+		test-dev*) DEVELOPER_FULLSTACK=1 PROVE_ARGS="-v t/33-developer_mode.t" make test;; \
+		test-sched*) SCHEDULER_FULLSTACK=1 PROVE_ARGS="-v t/05-scheduler-full.t" make test;; \
+		test-full*) FULLSTACK=1 PROVE_ARGS="-v t/full-stack.t" make test;; \
+		test-unstable) set -e; for f in $(shell cat t/unstable_tests.txt); do \
+		                  PROVE_ARGS="-v $$f" bash -c 'make test || make test || make test || make test || make test'; \
 		                done ;; \
-		test) prove -l -v -r;; \
+		test-default) make test;; \
 	    *) ( echo Unkown target $@; exit 1 )>&2 ;; \
 	esac ;
 
 # ignore tests and test related addons in coverage analysis
 COVER_OPTS ?= -select_re '^/lib' -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
 
-coverage-%:
+comma := ,
+space :=
+space +=
+.PHONY: print-cover-opts
+print-cover-opt:
+	  @echo "$(subst $(space),$(comma),$(COVER_OPTS))"
+
+coverage-%: phony_explicit
 	@[ $@ == coverage-merge-db ] || \
 	  [ $@ == coverage-report* ] || \
-	  cover $(COVER_OPTS) -test -make 'make $(subst coverage-,test-,$@) #' cover_db_$(subst test-cover-,,$@)
+	  PERL5OPT="-MDevel::Cover=$(shell $(MAKE) --silent print-cover-opt),-db,cover_db_$(subst coverage-,,$(subst with-db-,,$(subst with-database-,,$@)))"\
+        $(MAKE) $(subst coverage-,test-,$@)
 
 .PHONY: coverage
-coverage:
-	cover ${COVER_OPTS} -test
+coverage: coverage-default
 
 .PHONY: coverage-merge-db
 coverage-merge-db:

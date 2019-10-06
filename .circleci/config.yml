@@ -62,6 +62,14 @@ aliases:
          bash .circleci/build_autoinst.sh ../os-autoinst $(cat .circleci/autoinst.sha)
        fi
 
+  - &make_test
+    command: |
+      if [[ "$CIRCLE_BRANCH" == master ]] || [[ "$CIRCLE_BRANCH" == pull* ]] ; then
+        make coverage-with-db-$TEST_PART
+      else
+        make test-with-db-$TEST_PART
+      fi
+
 images:
   - &docker_config
     user: squamata
@@ -151,7 +159,7 @@ jobs:
       - restore_cache: *restore_cache
       - run: *check_cache
       - run: *install_cached_packages
-      - run: make coverage-with-db-$TEST_PART
+      - run: *make_test
       - persist_to_workspace:
           root: .
           paths:
@@ -171,7 +179,7 @@ jobs:
       - run: *check_cache
       - run: *install_cached_packages
       - run: *build_autoinst
-      - run: make coverage-with-db-$TEST_PART
+      - run: *make_test
       - persist_to_workspace:
           root: .
           paths:
@@ -218,20 +226,14 @@ jobs:
       - <<: *base
     steps:
       - checkout
-      - run: *chown_hack_for_cache
-      - run: *chown_hack_for_cache_fullstack
-      - restore_cache: *restore_cache
-      - restore_cache: *restore_fullstack_cache
-      - run: *check_cache
-      - run: *install_cached_packages
-      - run: *build_autoinst
       - attach_workspace:
           at: .
-      - run: sudo zypper ar -f https://download.opensuse.org/repositories/devel:/languages:/perl/openSUSE_Leap_15.1/ devel-perl
-      - run: sudo zypper --gpg-auto-import-keys ref
-      - run: sudo zypper -n install --from devel-perl perl-Devel-Cover perl-Devel-Cover-Report-Codecov # 1.29 cannot merge DB
+      - run:
+          command: |
+            sudo zypper ar -f https://download.opensuse.org/repositories/devel:/languages:/perl/openSUSE_Leap_15.1/ devel-perl
+            sudo zypper --gpg-auto-import-keys ref
+            sudo zypper -n install --from devel-perl perl-Devel-Cover perl-Devel-Cover-Report-Codecov
       - run: make coverage-merge-db
-      - run: cover -report html_minimal
       - run: make coverage-report-codecov
   
   build.docs:
@@ -252,9 +254,6 @@ jobs:
             sudo gem.ruby2.6 install asciidoctor-pdf --pre
       - run:
           command: |
-                echo 'echo $GITHUB_TOKEN' > $(pwd)/.git-askpass
-                export GIT_ASKPASS=$(pwd)/.git-askpass
-                chmod +x $(pwd)/.git-askpass
                 publish=1 bash -xe script/generate-documentation https://token@github.com/openqabot/openQA.git
 
 workflows:
@@ -295,6 +294,11 @@ workflows:
            - t.fullstack
            - t.developer
            - t.scheduler
+         filters:
+           branches:
+             only:
+               - /pull.*/
+               - master
       - checkstyle:
          requires:
            - build.cache
@@ -304,7 +308,7 @@ workflows:
          filters:
            branches:
              only:
-               - circleci_add_coverage
+               - master
 
   nightly:
    triggers:
