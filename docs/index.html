@@ -583,7 +583,12 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_workflow_for_creating_or_updating_needles">Workflow for creating or updating needles</a></li>
 </ul>
 </li>
-<li><a href="#_job_group_editor_gh2111">Job group editor gh#2111</a></li>
+<li><a href="#_job_group_editor_gh2111">Job group editor gh#2111</a>
+<ul class="sectlevel3">
+<li><a href="#_table_based_pre_migration">Table-based (pre-migration)</a></li>
+<li><a href="#_yaml_editor_after_migration">YAML editor (after migration)</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#_use_of_the_rest_api">Use of the REST API</a>
@@ -3461,6 +3466,8 @@ needle from any previous screenshot/match available.</p>
 <div class="paragraph">
 <p>Scenarios are defined as part of a job group. The <code>Edit job group</code> button exposes the editor.</p>
 </div>
+<div class="sect3">
+<h4 id="_table_based_pre_migration">Table-based (pre-migration)</h4>
 <div class="paragraph">
 <p>By default the scenarios are listed in a table per medium. Changes to the priority are
 applied immediately. Machines can be added by selecting the architecture column and picking
@@ -3476,13 +3483,23 @@ be shown anymore.</p>
 <p>Note that making a backup before migrating groups may be a good idea, for example using
 <code>openqa-dump-templates</code>.</p>
 </div>
+</div>
+<div class="sect3">
+<h4 id="_yaml_editor_after_migration">YAML editor (after migration)</h4>
 <div class="paragraph">
 <p>Settings can be specified as a key/value pair for each scenario. There is no
 equivalent in the table view so you need to migrate groups to use this feature.</p>
 </div>
 <div class="paragraph">
+<p>Any settings specified on test suites, machines or products are also used and
+can still be modified independently. However, the YAML document should be
+updated before renaming or deleting test suites, products or machines used by
+it, otherwise that would create an inconsistent state.</p>
+</div>
+<div class="paragraph">
 <p>YAML-only groups need to be updated through the YAML editor or the YAML-related
 REST API routes.</p>
+</div>
 </div>
 </div>
 </div>
@@ -7778,7 +7795,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-10-07 13:03:23 UTC
+Last updated 2019-10-07 13:25:49 UTC
 </div>
 </div>
 <style>
