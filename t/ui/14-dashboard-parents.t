@@ -109,6 +109,7 @@ ok($element->is_displayed(), 'link to child group expanded');
 # first try of click does not work for unknown reasons
 for (0 .. 10) {
     $driver->find_element_by_link_text('Build0091')->click();
+    sleep 1;
     last if $driver->find_element('#group1_build13_1-0091 .h4 a')->is_hidden();
 }
 ok($driver->find_element('#group1_build13_1-0091 .h4 a')->is_hidden(), 'link to child group collapsed');

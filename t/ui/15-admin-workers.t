@@ -124,6 +124,10 @@ subtest 'worker overview' => sub {
     # check worker 2
     is($driver->find_element('tr#worker_2 .worker')->get_text(), 'remotehost:1', 'remotehost:1 shown');
     $driver->find_element('tr#worker_2 .help_popover')->click();
+    for (0 .. 3) {
+        last if $driver->find_element('.popover')->get_text() =~ qr/Worker status\nJob: 99961/;
+        sleep 1;
+    }
     like($driver->find_element('.popover')->get_text(), qr/Worker status\nJob: 99961/, 'working 99961');
     $driver->find_element('.paginate_button')->click();
     wait_until_element_gone('.popover');
@@ -151,6 +155,10 @@ subtest 'delete offline worker' => sub {
 };
 
 $driver->find_element('tr#worker_1 .worker a')->click();
+for (0 .. 3) {
+    last if $driver->get_title() eq 'openQA: Worker localhost:1';
+    sleep 1;
+}
 
 $driver->title_is('openQA: Worker localhost:1', 'on worker 1');
 is(scalar @{$driver->find_elements('#content h3', 'css')}, 2, 'table properties shown');
