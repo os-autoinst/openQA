@@ -1060,7 +1060,7 @@ should work on *nix operating systems with a configured serial device.</em>'</p>
 <h5 id="_script_run">script_run</h5>
 <div class="literalblock">
 <div class="content">
-<pre>script_run($cmd [, timeout =&gt; $timeout] [, quiet =&gt; $quiet]);</pre>
+<pre>script_run($cmd [, timeout =&gt; $timeout] [, output =&gt; ''] [, quiet =&gt; $quiet]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1076,6 +1076,10 @@ should work on *nix operating systems with a configured serial device.</em>'</p>
 the command). If <code>$timeout</code> is greater than 0, wait for that length of time for
 execution to complete (otherwise, returns undef immediately). See `distri-`script_run&gt;
 for default timeout.</p>
+</div>
+<div class="paragraph">
+<p><code>$output</code> can be used as an explanatory text that will be displayed with the execution of
+the command.</p>
 </div>
 <div class="paragraph">
 <p>&lt;Returns&gt; exit code received from <em>$cmd</em>', or undef if $timeout is 0 or execution
@@ -1948,7 +1952,7 @@ sub compat_args {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-10-06 19:20:57 UTC
+Last updated 2019-10-07 11:58:00 UTC
 </div>
 </div>
 </body>
