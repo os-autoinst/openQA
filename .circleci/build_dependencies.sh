@@ -33,12 +33,11 @@ while :; do
   docker exec gendep ls 2>/dev/null && break
 done
  
-docker exec -t gendep rpm -qa --qf "%{NAME}-%{VERSION}\n" |sort > gendep_before.txt
-docker exec -t gendep sudo zypper ar -f https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.1/openSUSE_Leap_15.1 openQA
-docker exec -t gendep sudo zypper ar -f http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.1 devel
-docker exec -t gendep sudo zypper --gpg-auto-import-keys ref
-docker exec -t gendep sudo zypper -n install openQA-devel
-docker exec -t gendep sudo zypper -n install chromedriver
+docker exec gendep rpm -qa --qf "%{NAME}-%{VERSION}\n" |sort > gendep_before.txt
+docker exec gendep sudo zypper ar -f https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.1/openSUSE_Leap_15.1 openQA
+docker exec gendep sudo zypper ar -f http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.1 devel
+docker exec gendep sudo zypper --gpg-auto-import-keys ref
+docker exec gendep sudo zypper -n install openQA-devel
 
-docker exec -t gendep rpm -qa --qf "%{NAME}-%{VERSION}\n" |sort > gendep_after.txt
+docker exec gendep rpm -qa --qf "%{NAME}-%{VERSION}\n" |sort > gendep_after.txt
 comm -13 gendep_before.txt gendep_after.txt | grep -v gpg-pubkey | grep -v openQA | grep -v os-autoinst > "$thisdir/dependencies.txt"

@@ -226,13 +226,12 @@ jobs:
       - <<: *base
     steps:
       - checkout
+      - run: *chown_hack_for_cache
+      - restore_cache: *restore_cache
+      - run: *check_cache
+      - run: *install_cached_packages
       - attach_workspace:
           at: .
-      - run:
-          command: |
-            sudo zypper ar -f https://download.opensuse.org/repositories/devel:/languages:/perl/openSUSE_Leap_15.1/ devel-perl
-            sudo zypper --gpg-auto-import-keys ref
-            sudo zypper -n install --from devel-perl perl-Devel-Cover perl-Devel-Cover-Report-Codecov
       - run: make coverage-merge-db
       - run: make coverage-report-codecov
   
