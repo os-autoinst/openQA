@@ -81,6 +81,9 @@ install:
 	cp -Ra dbicdh "$(DESTDIR)"/usr/share/openqa/dbicdh
 
 
+.PHONY: check
+check: checkstyle test-with-database
+
 .PHONY: checkstyle
 checkstyle: test-shellcheck
 ifneq ($(CHECKSTYLE),0)
