@@ -64,10 +64,11 @@ aliases:
 
   - &make_test
     command: |
+      # Calculate coverage only on master and Pull Requests
       if [[ "$CIRCLE_BRANCH" == master ]] || [[ "$CIRCLE_BRANCH" == pull* ]] ; then
-        make coverage-with-db-$TEST_PART
+        make coverage-with-db-$CIRCLE_JOB
       else
-        make test-with-db-$TEST_PART
+        make test-with-db-$CIRCLE_JOB
       fi
 
 images:
@@ -114,7 +115,7 @@ jobs:
                 hub pull-request -m "Dependency cron $depid" --base $CIRCLE_PROJECT_USERNAME:$CIRCLE_BRANCH --head openqabot:dependency_$depid
             )
 
-  build.cache:
+  cache:
     docker:
       - <<: *base
     steps:
@@ -131,7 +132,7 @@ jobs:
             fi
       - save_cache: *save_cache
 
-  build.fullstack.cache:
+  cache.fullstack:
     docker:
       - <<: *base
     steps:
@@ -144,15 +145,13 @@ jobs:
           command: |
             ls -lRa /var/cache/zypp/packages/openQA || :
             if [ ! -d /var/cache/autoinst/t ]; then
-              bash -x .circleci/build_autoinst.sh "/var/cache/autoinst"
+              bash -x .circleci/build_autoinst.sh "/var/cache/autoinst" $(cat .circleci/autoinst.sha)
             fi
       - save_cache: *save_fullstack_cache
 
   t: &test-template
     docker:
       - <<: *base
-    environment:
-      TEST_PART=t
     steps:
       - checkout
       - run: *chown_hack_for_cache
@@ -165,11 +164,9 @@ jobs:
           paths:
             - cover_db_*
 
-  t.fullstack: &test-fullstack-template
+  fullstack: &test-fullstack-template
     docker:
       - <<: *base
-    environment:
-      TEST_PART=fullstack
     steps:
       - checkout
       - run: *chown_hack_for_cache
@@ -196,32 +193,22 @@ jobs:
       - run: *install_cached_packages
       - run: make checkstyle
 
-  t.ui:
+  ui:
     <<: *test-template
-    environment:
-      TEST_PART=ui
 
-  t.unstable:
+  unstable:
     <<: *test-template
-    environment:
-      TEST_PART=unstable
 
-  t.api:
+  api:
     <<: *test-template
-    environment:
-      TEST_PART=api
 
-  t.developer:
+  developer:
     <<: *test-fullstack-template
-    environment:
-      TEST_PART=developer-fullstack
 
-  t.scheduler:
+  scheduler:
     <<: *test-fullstack-template
-    environment:
-      TEST_PART=scheduler-fullstack
 
-  report.codecov:
+  codecov:
     docker:
       - <<: *base
     steps:
@@ -242,57 +229,52 @@ jobs:
       COMMIT_AUTHOR_EMAIL=skynet@open.qa
     steps:
       - checkout
+      - run: *chown_hack_for_cache
+      - restore_cache: *restore_cache
+      - run: *check_cache
+      - run: *install_cached_packages
       - run:
           command: |
-            sudo zypper ar -f https://download.opensuse.org/repositories/devel:/languages:/perl/openSUSE_Leap_15.1/ devel-perl
-            sudo zypper ar -f https://download.opensuse.org/repositories/devel:/languages:/ruby/openSUSE_Leap_15.1/ devel-ruby
-            sudo zypper ar -f https://download.opensuse.org/repositories/devel:/languages:/ruby:/extensions/openSUSE_Leap_15.1/ devel-ruby-extensions
-            sudo zypper --gpg-auto-import-keys ref 
-            sudo zypper -n install curl python ruby2.6 ruby2.6-rubygem-asciidoctor 'perl(Pod::AsciiDoctor)'
-            sudo gem.ruby2.6 install asciidoctor pygments.rb
-            sudo gem.ruby2.6 install asciidoctor-pdf --pre
-      - run:
-          command: |
-                publish=1 bash -xe script/generate-documentation https://token@github.com/openqabot/openQA.git
+            GEM_HOME=$(pwd)/.gem script/generate-documentation $encrypted_e2c381aa6b8c_key $encrypted_e2c381aa6b8c_iv
 
 workflows:
   version: 2
   test:
     jobs:
-      - build.cache
+      - cache
       - t:
          requires:
-           - build.cache
-      - t.api:
+           - cache
+      - api:
          requires:
-           - build.cache
-      - t.ui:
+           - cache
+      - ui:
          requires:
-           - build.cache
-      - t.unstable:
+           - cache
+      - unstable:
          requires:
-           - build.cache
-      - build.fullstack.cache:
+           - cache
+      - cache.fullstack:
          requires:
-           - build.cache
-      - t.fullstack:
+           - cache
+      - fullstack:
          requires:
-           - build.fullstack.cache
-      - t.developer:
+           - cache.fullstack
+      - developer:
          requires:
-           - build.fullstack.cache
-      - t.scheduler:
+           - cache.fullstack
+      - scheduler:
          requires:
-           - build.fullstack.cache
-      - report.codecov:
+           - cache.fullstack
+      - codecov:
          requires:
            - t
-           - t.api
-           - t.ui
-           - t.unstable
-           - t.fullstack
-           - t.developer
-           - t.scheduler
+           - api
+           - ui
+           - unstable
+           - fullstack
+           - developer
+           - scheduler
          filters:
            branches:
              only:
@@ -300,14 +282,10 @@ workflows:
                - master
       - checkstyle:
          requires:
-           - build.cache
+           - cache
       - build.docs:
          requires:
-           - build.cache
-         filters:
-           branches:
-             only:
-               - master
+           - cache
 
   nightly:
    triggers:
