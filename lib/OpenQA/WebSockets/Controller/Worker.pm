@@ -108,15 +108,6 @@ sub _message {
         $worker->{db}->update({job_id => $job_id});
         log_debug("Worker $worker->{id} accepted job $job_id");
     }
-    elsif ($json->{type} eq 'status') {
-        # handle job status update through web socket
-        my $jobid  = $json->{jobid};
-        my $status = $json->{data};
-        my $job    = $schema->resultset("Jobs")->find($jobid);
-        return $self->tx->send({json => {result => 'nack'}}) unless $job;
-        my $ret = $job->update_status($status);
-        $self->tx->send({json => $ret});
-    }
     elsif ($json->{type} eq 'worker_status') {
         my $current_worker_status = $json->{status};
         my $current_worker_error  = $current_worker_status eq 'broken' ? $json->{reason} : undef;
