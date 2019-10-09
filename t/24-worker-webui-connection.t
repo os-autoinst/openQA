@@ -404,10 +404,18 @@ qr/Ignoring WS message from http:\/\/test-host with type livelog_stop and job ID
     combined_like(
         sub { $command_handler->handle_command(undef, {type => 'grab_job'}); },
         qr/Refusing 'grab_job', we are currently unable to do any work: some error/,
-        'ignoring grab job while in error-state',
+        'ignoring grab_job while in error-state',
     );
+    combined_like(
+        sub { $command_handler->handle_command(undef, {type => 'grab_jobs'}); },
+        qr/Refusing 'grab_job', we are currently unable to do any work: some error/,
+        'ignoring grab_jobs while in error-state',
+    );
+    is($worker->current_job, undef, 'no job has been accepted while in error-state');
+
     $app->log->level('info');
     $worker->current_error(undef);
+
     combined_like(
         sub {
             $command_handler->handle_command(
