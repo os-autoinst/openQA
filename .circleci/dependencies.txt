@@ -11,6 +11,7 @@ perl-App-cpanminus-1.7043
 perl-Archive-Extract-0.80
 perl-Archive-Zip-1.60
 perl-bareword-filehandles-0.006
+perl-B-Debug-1.26
 perl-B-Hooks-EndOfScope-0.21
 perl-B-Hooks-OP-Check-0.22
 perl-B-Keywords-1.18
@@ -65,7 +66,7 @@ perl-DBIx-Class-DeploymentHandler-0.002233
 perl-DBIx-Class-DynamicDefault-0.04
 perl-DBIx-Class-OptimisticLocking-0.02
 perl-DBIx-Class-Schema-Config-0.001011
-perl-Devel-Cover-1.29
+perl-Devel-Cover-1.33
 perl-Devel-Cover-Report-Codecov-0.25
 perl-Devel-GlobalDestruction-0.14
 perl-Devel-OverloadInfo-0.005
@@ -131,7 +132,7 @@ perl-Module-Runtime-Conflicts-0.003
 perl-Mojo-IOLoop-ReadWriteProcess-0.23
 perl-Mojolicious-8.25
 perl-Mojolicious-Plugin-AssetPack-2.08
-perl-Mojo-Pg-4.16
+perl-Mojo-Pg-4.17
 perl-Mojo-RabbitMQ-Client-0.3.1
 perl-Mojo-SQLite-3.002
 perl-Moo-2.003004
