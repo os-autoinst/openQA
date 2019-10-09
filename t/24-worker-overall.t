@@ -463,11 +463,10 @@ subtest 'handle job status changes' => sub {
     $worker_mock->mock(_clean_pool_directory => sub { $cleanup_called = 1; });
 
     # mock accepting and starting job
-    my $job_mock           = Test::MockModule->new('OpenQA::Worker::Job');
-    my $job_accepted       = 0;
-    my $job_startup_called = 0;
-    $job_mock->mock(accept => sub { $job_accepted       = 1; });
-    $job_mock->mock(start  => sub { $job_startup_called = 1; });
+    my $job_mock = Test::MockModule->new('OpenQA::Worker::Job');
+    $job_mock->mock(accept => sub { shift->{_status} = 'accepted'; });
+    $job_mock->mock(start  => sub { shift->{_status} = 'started'; });
+    $job_mock->mock(skip   => sub { shift->{_status} = 'skipped'; });
 
     # assign fake client and job with cleanup
     my $fake_client = OpenQA::Worker::WebUIConnection->new('some-host', {apikey => 'foo', apisecret => 'bar'});
@@ -476,17 +475,18 @@ subtest 'handle job status changes' => sub {
     $worker->accept_job($fake_client, {id => 42, some => 'info'});
     my $fake_job = $worker->current_job;
     ok($fake_job, 'job created');
-    is($cleanup_called, 1, 'pool directory cleanup triggered');
-    is($job_accepted,   1, 'job has been accepted');
+    is($cleanup_called,   1,          'pool directory cleanup triggered');
+    is($fake_job->status, 'accepted', 'job has been accepted');
 
     # assign fake client and job without cleanup
     $cleanup_called = 0;
+    $fake_job->{_status} = 'new';
     $worker->current_job(undef);
     $worker->no_cleanup(1);
     $worker->accept_job($fake_client, {id => 42, some => 'info'});
     ok($fake_job = $worker->current_job, 'job created');
-    is($cleanup_called, 0, 'pool directory cleanup not triggered');
-    is($job_accepted,   1, 'job has been accepted');
+    is($cleanup_called,   0,          'pool directory cleanup not triggered');
+    is($fake_job->status, 'accepted', 'job has been accepted');
 
     combined_like(
         sub {
@@ -500,9 +500,9 @@ subtest 'handle job status changes' => sub {
     );
 
     subtest 'job accepted' => sub {
-        is($job_startup_called, 0, 'job not started so far');
+        is($fake_job->status, 'accepted', 'job has not been started so far');
         $worker->_handle_job_status_changed($fake_job, {status => 'accepted', reason => 'test'});
-        is($job_startup_called, 1, 'job started');
+        is($fake_job->status, 'started', 'job has been accepted');
     };
 
     subtest 'job stopped' => sub {
@@ -535,6 +535,33 @@ subtest 'handle job status changes' => sub {
             'status logged'
         );
         is($cleanup_called, 1, 'pool directory cleaned up after job finished');
+
+        subtest 'availability recomputed' => sub {
+            # pretend QEMU is still running
+            my $worker_mock = Test::MockModule->new('OpenQA::Worker');
+            $worker_mock->mock(is_qemu_running => sub { return 17377; });
+
+            # pretend we're still running the fake job and also that there's another pending job
+            $worker->current_job($fake_job);
+            $worker->{_pending_jobs} = $worker->{_current_sub_queue}
+              = [my $pending_job = OpenQA::Worker::Job->new($worker, $fake_client, {id => 769, some => 'info'})];
+
+            is($worker->current_error, undef, 'no error assumed so far');
+
+            combined_like(
+                sub {
+                    $worker->_handle_job_status_changed($fake_job, {status => 'stopped', reason => 'done'});
+                },
+qr/Job 42 from some-host finished - reason: done.*A QEMU instance using.*Skipping job 769 from queue because worker is broken/s,
+                'status logged'
+            );
+            is(
+                $worker->current_error,
+                'A QEMU instance using the current pool directory is still running (PID: 17377)',
+                'error status recomputed'
+            );
+            is($pending_job->status, 'skipped', 'pending job skipped');
+        };
     };
 
     like(

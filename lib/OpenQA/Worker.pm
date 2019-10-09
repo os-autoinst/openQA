@@ -423,16 +423,22 @@ sub _get_next_job {
 
 # accepts or skips the next job in the queue of pending jobs
 sub _accept_or_skip_next_job_in_queue {
-    my ($self, $last_job_exist_status) = @_;
+    my ($self, $last_job_exit_status) = @_;
 
     # skip next job in the current sub queue if the last job was not successful
     my $pending_jobs = $self->{_pending_jobs};
-    if (($last_job_exist_status //= '?') ne 'done') {
+    if (($last_job_exit_status //= '?') ne 'done') {
         my $current_sub_queue = $self->{_current_sub_queue} // $pending_jobs;
         if (scalar @$current_sub_queue > 0) {
             my ($job_to_skip) = _get_next_job($pending_jobs);
             my $job_id = $job_to_skip->id;
-            log_info("Skipping job $job_id from queue (parent faild with result $last_job_exist_status)");
+            if ($last_job_exit_status eq 'worker broken') {
+                my $current_error = $self->current_error;
+                log_info("Skipping job $job_id from queue because worker is broken ($current_error)");
+            }
+            else {
+                log_info("Skipping job $job_id from queue (parent faild with result $last_job_exit_status)");
+            }
             $self->_prepare_job_execution($job_to_skip, only_skipping => 1);
             return $job_to_skip->skip;
 
@@ -686,6 +692,11 @@ sub _handle_job_status_changed {
             log_debug('Cleaning up for next job');
             $self->_clean_pool_directory;
         }
+
+        # update the general worker availability (e.g. we might detect here that QEMU from the last run
+        # hasn't been terminated yet)
+        # incomplete subsequent jobs in the queue if it turns out the worker is generally broken
+        return $self->_accept_or_skip_next_job_in_queue('worker broken') unless $self->check_availability;
 
         # continue with the next job in the queue (this just returns if there are no further jobs)
         $self->_accept_or_skip_next_job_in_queue($reason);
