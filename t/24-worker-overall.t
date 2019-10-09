@@ -395,12 +395,12 @@ subtest 'check negative cases for is_qemu_running' => sub {
     $worker->no_cleanup(0);
     $pool_directory->child('qemu.pid')->spurt('999999999999999999');
     is($worker->is_qemu_running, undef, 'QEMU not considered running if PID invalid');
-    ok(!-f $pool_directory->child('qemu.pid'), 'PID file not cleaned up with --no-cleanup');
+    ok(!-f $pool_directory->child('qemu.pid'), 'PID file is cleaned up because the QEMU process is no longer running');
 
     $worker->no_cleanup(1);
     $pool_directory->child('qemu.pid')->spurt($$);
     is($worker->is_qemu_running, undef, 'QEMU not considered running if PID is not a qemu process');
-    ok(-f $pool_directory->child('qemu.pid'), 'PID file cleaned up');
+    ok(-f $pool_directory->child('qemu.pid'), 'PID file is not cleaned up when --no-cleanup is enabled');
 };
 
 subtest 'cleaning pool directory' => sub {
