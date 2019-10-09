@@ -213,6 +213,87 @@ sub get_job_groups {
     return \%yaml;
 }
 
+sub create_or_update_job_template {
+    my ($self, $args) = @_;
+
+    my $schema                = $self->schema;
+    my $machines              = $schema->resultset('Machines');
+    my $test_suites           = $schema->resultset('TestSuites');
+    my $products              = $schema->resultset('Products');
+    my $job_templates         = $schema->resultset('JobTemplates');
+    my $job_template_settings = $schema->resultset('JobTemplateSettings');
+
+    my $group_id = $self->param('id');
+
+    die "Machine is empty and there is no default for architecture $args->{arch}\n"
+      unless $args->{machine_name};
+
+    # Find machine, product and testsuite
+    my $machine = $machines->find({name => $args->{machine_name}});
+    die "Machine '$args->{machine_name}' is invalid\n" unless $machine;
+    my $product = $products->find(
+        {
+            arch    => $args->{arch},
+            distri  => $args->{product_spec}->{distri},
+            flavor  => $args->{product_spec}->{flavor},
+            version => $args->{product_spec}->{version},
+        });
+    die "Product '$args->{product_name}' is invalid\n" unless $product;
+    my $test_suite = $test_suites->find({name => $args->{testsuite_name}});
+    die "Testsuite '$args->{testsuite_name}' is invalid\n" unless $test_suite;
+
+    # Create/update job template
+    my $job_template = $job_templates->find_or_create(
+        {
+            group_id      => $group_id,
+            product_id    => $product->id,
+            machine_id    => $machine->id,
+            name          => $args->{job_template_name} // "",
+            test_suite_id => $test_suite->id,
+        },
+        {
+            key => 'scenario',
+        });
+    die "Job template name '"
+      . ($args->{job_template_name} // $args->{testsuite_name})
+      . "' with $args->{product_name} and $args->{machine_name} is already used in job group '"
+      . $job_template->group->name . "'\n"
+      if $job_template->group_id != $group_id;
+    my $job_template_id = $job_template->id;
+    $job_template->update({prio => $args->{prio}}) if (defined $args->{prio});
+
+    # Add/update/remove parameter
+    my @setting_ids;
+    if ($args->{settings}) {
+        foreach my $key (sort keys %{$args->{settings}}) {
+            my $setting = $job_template_settings->find(
+                {
+                    job_template_id => $job_template_id,
+                    key             => $key,
+                });
+            if ($setting) {
+                $setting->update({value => $args->{settings}->{$key}});
+            }
+            else {
+                $setting = $job_template_settings->find_or_create(
+                    {
+                        job_template_id => $job_template_id,
+                        key             => $key,
+                        value           => $args->{settings}->{$key},
+                    });
+            }
+            push(@setting_ids, $setting->id);
+        }
+    }
+    $job_template_settings->search(
+        {
+            id              => {'not in' => \@setting_ids},
+            job_template_id => $job_template_id,
+        })->delete();
+
+    return $job_template->id;
+}
+
 =over 4
 
 =item update()
@@ -277,158 +358,94 @@ sub update {
         return;
     }
 
-    my $schema                = $self->schema;
-    my $job_groups            = $schema->resultset('JobGroups');
-    my $job_templates         = $schema->resultset('JobTemplates');
-    my $job_template_settings = $schema->resultset('JobTemplateSettings');
-    my $machines              = $schema->resultset('Machines');
-    my $test_suites           = $schema->resultset('TestSuites');
-    my $products              = $schema->resultset('Products');
-    my $json                  = {};
+    my $schema        = $self->schema;
+    my $job_groups    = $schema->resultset('JobGroups');
+    my $job_templates = $schema->resultset('JobTemplates');
+    my $json          = {};
 
     try {
-        $schema->txn_do(
-            sub {
-                my $id        = $self->param('id');
-                my $name      = $self->param('name');
-                my $job_group = $job_groups->find($id ? {id => $id} : ($name ? {name => $name} : undef),
-                    {select => [qw(id name template)]});
-                die "Job group " . ($name // $id) . " not found\n" unless $job_group;
-                my $group_id = $job_group->id;
-                $json->{id} = $group_id;
+        my $id        = $self->param('id');
+        my $name      = $self->param('name');
+        my $job_group = $job_groups->find($id ? {id => $id} : ($name ? {name => $name} : undef),
+            {select => [qw(id name template)]});
+        die "Job group " . ($name // $id) . " not found\n" unless $job_group;
+        my $group_id = $job_group->id;
+        $json->{id} = $group_id;
 
-                if ($self->param('reference')) {
-                    my $reference = $self->get_job_groups($group_id)->{$job_group->name};
-                    $json->{template} = $reference;
-                    die "Template was modified\n" unless $reference eq $self->param('reference');
-                }
+        if ($self->param('reference')) {
+            my $reference = $self->get_job_groups($group_id)->{$job_group->name};
+            $json->{template} = $reference;
+            die "Template was modified\n" unless $reference eq $self->param('reference');
+        }
 
-                # Add/update job templates from YAML data
-                # (create test suites if not already present, fail if referenced machine and product is missing)
-                my @job_template_ids;
-                my $yaml_archs    = $yaml->{scenarios};
-                my $yaml_products = $yaml->{products};
-                my $yaml_defaults = $yaml->{defaults};
-                foreach my $arch (sort keys %$yaml_archs) {
-                    my $yaml_products_for_arch = $yaml_archs->{$arch};
-                    my $yaml_defaults_for_arch = $yaml_defaults->{$arch};
-                    foreach my $product_name (sort keys %$yaml_products_for_arch) {
-                        # Keep track of job template names to be able to fail on duplicates
-                        my %job_template_names;
-                        foreach my $spec (@{$yaml_products_for_arch->{$product_name}}) {
-                            # Get testsuite, machine, prio and job template settings from YAML data
-                            my $testsuite_name;
-                            my $job_template_name;
-                            my $prio;
-                            my $machine_name;
-                            my $settings = dclone($yaml_defaults_for_arch->{settings} // {});
-                            if (ref $spec eq 'HASH') {
-                                foreach my $name (sort keys %$spec) {
-                                    my $attr = $spec->{$name};
-                                    $testsuite_name = $name;
-                                    if ($attr->{priority}) {
-                                        $prio = $attr->{priority};
-                                    }
-                                    if ($attr->{machine}) {
-                                        $machine_name = $attr->{machine};
-                                    }
-                                    if ($attr->{testsuite}) {
-                                        $job_template_name = $testsuite_name;
-                                        $testsuite_name    = $attr->{testsuite};
-                                    }
-                                    if ($attr->{settings}) {
-                                        %$settings = (%{$settings // {}}, %{$attr->{settings}});
-                                    }
-                                }
+        my %job_template_names;
+        # Add/update job templates from YAML data
+        # (create test suites if not already present, fail if referenced machine and product is missing)
+        my $yaml_archs    = $yaml->{scenarios};
+        my $yaml_products = $yaml->{products};
+        my $yaml_defaults = $yaml->{defaults};
+        foreach my $arch (sort keys %$yaml_archs) {
+            my $yaml_products_for_arch = $yaml_archs->{$arch};
+            my $yaml_defaults_for_arch = $yaml_defaults->{$arch};
+            foreach my $product_name (sort keys %$yaml_products_for_arch) {
+                foreach my $spec (@{$yaml_products_for_arch->{$product_name}}) {
+                    # Get testsuite, machine, prio and job template settings from YAML data
+                    my $testsuite_name;
+                    my $job_template_name;
+                    # Assign defaults
+                    my $prio         = $yaml_defaults_for_arch->{priority};
+                    my $machine_name = $yaml_defaults_for_arch->{machine};
+                    my $settings     = dclone($yaml_defaults_for_arch->{settings} // {});
+                    if (ref $spec eq 'HASH') {
+                        foreach my $name (sort keys %$spec) {
+                            my $attr = $spec->{$name};
+                            $testsuite_name = $name;
+                            if ($attr->{priority}) {
+                                $prio = $attr->{priority};
                             }
-                            else {
-                                $testsuite_name = $spec;
+                            if ($attr->{machine}) {
+                                $machine_name = $attr->{machine};
                             }
-
-                            # Assign defaults
-                            $prio         //= $yaml_defaults_for_arch->{priority};
-                            $machine_name //= $yaml_defaults_for_arch->{machine};
-                            die "Machine is empty and there is no default for architecture $arch\n"
-                              unless $machine_name;
-
-                            my $job_template_key
-                              = $product_name . $machine_name . $testsuite_name . ($job_template_name // '');
-                            die "Job template name '"
-                              . ($job_template_name // $testsuite_name)
-                              . "' is defined more than once. "
-                              . "Use a unique name and specify 'testsuite' to re-use test suites in multiple scenarios.\n"
-                              if $job_template_names{$job_template_key};
-                            $job_template_names{$job_template_key}++;
-
-                            # Find machine, product and testsuite
-                            my $machine = $machines->find({name => $machine_name});
-                            die "Machine '$machine_name' is invalid\n" unless $machine;
-                            my $product_spec = $yaml_products->{$product_name};
-                            my $product      = $products->find(
-                                {
-                                    arch    => $arch,
-                                    distri  => $product_spec->{distri},
-                                    flavor  => $product_spec->{flavor},
-                                    version => $product_spec->{version},
-                                });
-                            die "Product '$product_name' is invalid\n" unless $product;
-                            my $test_suite = $test_suites->find({name => $testsuite_name});
-                            die "Testsuite '$testsuite_name' is invalid\n" unless $test_suite;
-
-                            # Create/update job template
-                            my $job_template = $job_templates->find_or_create(
-                                {
-                                    group_id      => $group_id,
-                                    product_id    => $product->id,
-                                    machine_id    => $machine->id,
-                                    name          => $job_template_name // "",
-                                    test_suite_id => $test_suite->id,
-                                },
-                                {
-                                    key => 'scenario',
-                                });
-                            die "Job template name '"
-                              . ($job_template_name // $testsuite_name)
-                              . "' with $product_name and $machine_name is already used in job group '"
-                              . $job_template->group->name . "'\n"
-                              if $job_template->group_id != $group_id;
-                            my $job_template_id = $job_template->id;
-                            $job_template->update({prio => $prio}) if (defined $prio);
-                            push(@job_template_ids, $job_template->id);
-
-                            # Add/update/remove parameter
-                            my @setting_ids;
-                            if ($settings) {
-                                foreach my $key (sort keys %$settings) {
-                                    my $setting = $job_template_settings->find(
-                                        {
-                                            job_template_id => $job_template_id,
-                                            key             => $key,
-                                        });
-                                    if ($setting) {
-                                        $setting->update({value => $settings->{$key}});
-                                    }
-                                    else {
-                                        $setting = $job_template_settings->find_or_create(
-                                            {
-                                                job_template_id => $job_template_id,
-                                                key             => $key,
-                                                value           => $settings->{$key},
-                                            });
-                                    }
-                                    push(@setting_ids, $setting->id);
-                                }
+                            if ($attr->{testsuite}) {
+                                $job_template_name = $testsuite_name;
+                                $testsuite_name    = $attr->{testsuite};
                             }
-                            $job_template_settings->search(
-                                {
-                                    id              => {'not in' => \@setting_ids},
-                                    job_template_id => $job_template_id,
-                                })->delete();
-
-                            # Stop iterating if there were errors with this test suite
-                            last if (@$errors);
+                            if ($attr->{settings}) {
+                                %$settings = (%{$settings // {}}, %{$attr->{settings}});
+                            }
                         }
                     }
+                    else {
+                        $testsuite_name = $spec;
+                    }
+
+                    my $job_template_key
+                      = $arch . $product_name . $machine_name . $testsuite_name . ($job_template_name // '');
+                    die "Job template name '"
+                      . ($job_template_name // $testsuite_name)
+                      . "' is defined more than once. "
+                      . "Use a unique name and specify 'testsuite' to re-use test suites in multiple scenarios.\n"
+                      if $job_template_names{$job_template_key};
+                    $job_template_names{$job_template_key} = {
+                        prio              => $prio,
+                        machine_name      => $machine_name,
+                        arch              => $arch,
+                        product_name      => $product_name,
+                        product_spec      => $yaml_products->{$product_name},
+                        job_template_name => $job_template_name,
+                        testsuite_name    => $testsuite_name,
+                        settings          => $settings
+                    };
+                }
+            }
+        }
+
+        $schema->txn_do(
+            sub {
+                my @job_template_ids;
+                foreach my $job_template_key (sort keys %job_template_names) {
+                    push @job_template_ids,
+                      $self->create_or_update_job_template($job_template_names{$job_template_key});
                 }
 
                 # Drop entries we haven't touched in add/update loop
