@@ -132,16 +132,6 @@ subtest 'web socket message handling' => sub {
 
     $t->websocket_ok('/ws/1', 'establish ws connection');
 
-    subtest 'job status' => sub {
-        $t->send_ok({json => {type => 'status', jobid => 42}});
-        $t->message_ok('message received');
-        $t->json_message_is({result => 'nack'});
-
-        $t->send_ok({json => {type => 'status', jobid => 99963, data => {uploading => 1}}});
-        $t->message_ok('message received');
-        $t->json_message_is({result => 1});
-    };
-
     subtest 'worker status' => sub {
         combined_like(
             sub {
