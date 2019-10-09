@@ -573,7 +573,9 @@ $yaml->{scenarios}{'x86_64'}{$product} = [
     'spam',
     "eg-G_S +133t*\t",
     {
-        'foo'               => {},
+        'foo' => {},
+    },
+    {
         "b-A_RRRR +133t*\t" => {
             machine  => 'x86_64',
             priority => 33,
@@ -782,6 +784,36 @@ $t->post_ok(
             {path => '/products',  message => 'Missing property.'},
             {path => '/scenarios', message => 'Missing property.'},
         ],
+    },
+    'posting invalid YAML template results in error'
+);
+
+my $template_yaml = <<'EOM';
+scenarios:
+  i586:
+    opensuse-13.1-DVD-i586:
+      - x:
+          machine: 32bit
+        y:
+          machine: 32bit
+products:
+  opensuse-13.1-DVD-i586:
+    distri:  opensuse
+    flavor:  DVD
+    version: '13.1'
+EOM
+# Assure that testsuite hashes with more than one key are detected as invalid
+$t->post_ok(
+    '/api/v1/job_templates_scheduling/' . $opensuse->id,
+    form => {
+        schema   => $schema_filename,
+        template => $template_yaml,
+    },
+)->status_is(400)->json_is(
+    '' => {
+        error_status => 400,
+        error =>
+          [{path => '/scenarios/i586/opensuse-13.1-DVD-i586/0', message => '/anyOf/1 Too many properties: 2/1.'},],
     },
     'posting invalid YAML template results in error'
 );
