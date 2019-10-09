@@ -831,7 +831,7 @@ subtest 'Create and modify groups with YAML' => sub {
             template => YAML::XS::Dump($yaml)}
     )->status_is(400, 'Post rejected because testsuite does not exist')->json_is(
         '' => {
-            error        => ['Testsuite \'foobar\' is invalid'],
+            error        => ['Testsuite \'eggs\' is invalid'],
             error_status => 400,
             id           => $job_group_id3
         },
