@@ -397,22 +397,21 @@ sub update {
                     my $machine_name = $yaml_defaults_for_arch->{machine};
                     my $settings     = dclone($yaml_defaults_for_arch->{settings} // {});
                     if (ref $spec eq 'HASH') {
-                        foreach my $name (sort keys %$spec) {
-                            my $attr = $spec->{$name};
-                            $testsuite_name = $name;
-                            if ($attr->{priority}) {
-                                $prio = $attr->{priority};
-                            }
-                            if ($attr->{machine}) {
-                                $machine_name = $attr->{machine};
-                            }
-                            if ($attr->{testsuite}) {
-                                $job_template_name = $testsuite_name;
-                                $testsuite_name    = $attr->{testsuite};
-                            }
-                            if ($attr->{settings}) {
-                                %$settings = (%{$settings // {}}, %{$attr->{settings}});
-                            }
+                        # We only have one key. Asserted by schema
+                        $testsuite_name = (keys %$spec)[0];
+                        my $attr = $spec->{$testsuite_name};
+                        if ($attr->{priority}) {
+                            $prio = $attr->{priority};
+                        }
+                        if ($attr->{machine}) {
+                            $machine_name = $attr->{machine};
+                        }
+                        if ($attr->{testsuite}) {
+                            $job_template_name = $testsuite_name;
+                            $testsuite_name    = $attr->{testsuite};
+                        }
+                        if ($attr->{settings}) {
+                            %$settings = (%{$settings // {}}, %{$attr->{settings}});
                         }
                     }
                     else {
