@@ -284,26 +284,36 @@ sub engine_workit {
     $job_info->{URL}
       = "http://localhost:" . ($job_info->{settings}->{QEMUPORT} + 1) . "/" . $job_info->{settings}->{JOBTOKEN};
 
-    # create tmpdir for qemu to write here
-    my $tmpdir = "$pooldir/tmp";
-    my $proc_cgroup;
+    # create cgroup within /sys/fs/cgroup/systemd
+    log_info('Preparing cgroup to start isotovideo');
+    my $cgroup_name  = 'systemd';
+    my $cgroup_slice = CGROUP_SLICE;
+    if (!defined $cgroup_slice) {
+        # determine cgroup slice of the current process
+        eval {
+            my $pid = $$;
+            $cgroup_slice = (grep { /name=$cgroup_name:/ } split(/\n/, path('/proc', $pid, 'cgroup')->slurp))[0]
+              if defined $pid;
+            $cgroup_slice =~ s/^.*name=$cgroup_name:/$cgroup_name/g if defined $cgroup_slice;
+        };
+    }
     my $cgroup;
-    mkdir($tmpdir) unless (-d $tmpdir);
-
-    log_info('Preparing cgroups to start isotovideo');
     eval {
-        $proc_cgroup = (grep { /name=systemd:/ } split(/\n/, path("/proc", $$, "cgroup")->slurp))[0]
-          if defined $$;
-        $proc_cgroup =~ s/^.*name=systemd:/systemd/g if defined $proc_cgroup;
+        $cgroup = cgroupv2(name => $cgroup_name)->from($cgroup_slice)->child($job_info->{id})->create;
+        if (my $query_cgroup_path = $cgroup->can('_cgroup')) {
+            log_info('Using cgroup ' . $query_cgroup_path->($cgroup));
+        }
     };
+    if (my $error = $@) {
+        $cgroup = c();
+        log_warning("Disabling cgroup usage because cgroup creation failed: $error");
+        log_info(
+            'You can define a custom slice with OPENQA_CGROUP_SLICE or indicating the base mount with MOJO_CGROUP_FS.');
+    }
 
-    local $@;
-    eval { $cgroup = cgroupv2->from(CGROUP_SLICE // $proc_cgroup)->child($job_info->{id})->create; };
-    $cgroup = c() and log_warning(
-        "Failed creating CGroup subtree '$@', disabling them."
-          . "You can define a custom slice with OPENQA_CGROUP_SLICE or indicating the base mount with MOJO_CGROUP_FS",
-        channels => 'worker'
-    ) if $@;
+    # create tmpdir for QEMU
+    my $tmpdir = "$pooldir/tmp";
+    mkdir($tmpdir) unless (-d $tmpdir);
 
     my $child = process(
         sub {
