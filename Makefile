@@ -2,6 +2,7 @@ PROVE_ARGS ?= -r -v
 PROVE_LIB_ARGS ?= -l
 DOCKER_IMG ?= openqa:latest
 TEST_PG_PATH ?= /dev/shm/tpg
+RETRY ?= 0
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 docker_env_file := "$(current_dir)/docker.env"
@@ -98,7 +99,17 @@ endif
 
 .PHONY: test-unit-and-integration
 test-unit-and-integration:
+ifeq ($(RETRY),0)
 	export GLOBIGNORE="$(GLOBIGNORE)"; prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
+else
+	export GLOBIGNORE="$(GLOBIGNORE)";\
+	n=0;\
+	until [ $$n -ge "$(RETRY)" ]; do\
+		[ $$n -eq 0 ] || echo Retrying...;\
+		prove ${PROVE_LIB_ARGS} ${PROVE_ARGS} && break;\
+		n=$$[$$n+1];\
+	done
+endif
 
 .PHONY: test-with-database
 test-with-database:
