@@ -98,7 +98,7 @@ endif
 
 .PHONY: test-unit-and-integration
 test-unit-and-integration:
-	OPENQA_CONFIG= prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
+	export GLOBIGNORE="$(GLOBIGNORE)"; prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
 
 .PHONY: test-with-database
 test-with-database:
