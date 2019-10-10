@@ -378,73 +378,14 @@ sub update {
             die "Template was modified\n" unless $reference eq $self->param('reference');
         }
 
-        my %job_template_names;
-        # Add/update job templates from YAML data
-        # (create test suites if not already present, fail if referenced machine and product is missing)
-        my $yaml_archs    = $yaml->{scenarios};
-        my $yaml_products = $yaml->{products};
-        my $yaml_defaults = $yaml->{defaults};
-        foreach my $arch (sort keys %$yaml_archs) {
-            my $yaml_products_for_arch = $yaml_archs->{$arch};
-            my $yaml_defaults_for_arch = $yaml_defaults->{$arch};
-            foreach my $product_name (sort keys %$yaml_products_for_arch) {
-                foreach my $spec (@{$yaml_products_for_arch->{$product_name}}) {
-                    # Get testsuite, machine, prio and job template settings from YAML data
-                    my $testsuite_name;
-                    my $job_template_name;
-                    # Assign defaults
-                    my $prio         = $yaml_defaults_for_arch->{priority};
-                    my $machine_name = $yaml_defaults_for_arch->{machine};
-                    my $settings     = dclone($yaml_defaults_for_arch->{settings} // {});
-                    if (ref $spec eq 'HASH') {
-                        # We only have one key. Asserted by schema
-                        $testsuite_name = (keys %$spec)[0];
-                        my $attr = $spec->{$testsuite_name};
-                        if ($attr->{priority}) {
-                            $prio = $attr->{priority};
-                        }
-                        if ($attr->{machine}) {
-                            $machine_name = $attr->{machine};
-                        }
-                        if ($attr->{testsuite}) {
-                            $job_template_name = $testsuite_name;
-                            $testsuite_name    = $attr->{testsuite};
-                        }
-                        if ($attr->{settings}) {
-                            %$settings = (%{$settings // {}}, %{$attr->{settings}});
-                        }
-                    }
-                    else {
-                        $testsuite_name = $spec;
-                    }
-
-                    my $job_template_key
-                      = $arch . $product_name . $machine_name . $testsuite_name . ($job_template_name // '');
-                    die "Job template name '"
-                      . ($job_template_name // $testsuite_name)
-                      . "' is defined more than once. "
-                      . "Use a unique name and specify 'testsuite' to re-use test suites in multiple scenarios.\n"
-                      if $job_template_names{$job_template_key};
-                    $job_template_names{$job_template_key} = {
-                        prio              => $prio,
-                        machine_name      => $machine_name,
-                        arch              => $arch,
-                        product_name      => $product_name,
-                        product_spec      => $yaml_products->{$product_name},
-                        job_template_name => $job_template_name,
-                        testsuite_name    => $testsuite_name,
-                        settings          => $settings
-                    };
-                }
-            }
-        }
+        my $job_template_names = _create_job_templates_from_yaml($yaml);
 
         $schema->txn_do(
             sub {
                 my @job_template_ids;
-                foreach my $job_template_key (sort keys %job_template_names) {
+                foreach my $job_template_key (sort keys %$job_template_names) {
                     push @job_template_ids,
-                      $self->create_or_update_job_template($job_template_names{$job_template_key});
+                      $self->create_or_update_job_template($job_template_names->{$job_template_key});
                 }
 
                 # Drop entries we haven't touched in add/update loop
@@ -489,6 +430,72 @@ sub update {
 
     $self->emit_event('openqa_jobtemplate_create', $json) unless $self->param('preview');
     $self->respond_to(json => {json => $json});
+}
+
+sub _create_job_templates_from_yaml {
+    my ($yaml) = @_;
+    my %job_template_names;
+
+    # Add/update job templates from YAML data
+    # (create test suites if not already present, fail if referenced machine and product is missing)
+    my $yaml_archs    = $yaml->{scenarios};
+    my $yaml_products = $yaml->{products};
+    my $yaml_defaults = $yaml->{defaults};
+    foreach my $arch (sort keys %$yaml_archs) {
+        my $yaml_products_for_arch = $yaml_archs->{$arch};
+        my $yaml_defaults_for_arch = $yaml_defaults->{$arch};
+        foreach my $product_name (sort keys %$yaml_products_for_arch) {
+            foreach my $spec (@{$yaml_products_for_arch->{$product_name}}) {
+                # Get testsuite, machine, prio and job template settings from YAML data
+                my $testsuite_name;
+                my $job_template_name;
+                # Assign defaults
+                my $prio         = $yaml_defaults_for_arch->{priority};
+                my $machine_name = $yaml_defaults_for_arch->{machine};
+                my $settings     = dclone($yaml_defaults_for_arch->{settings} // {});
+                if (ref $spec eq 'HASH') {
+                    # We only have one key. Asserted by schema
+                    $testsuite_name = (keys %$spec)[0];
+                    my $attr = $spec->{$testsuite_name};
+                    if ($attr->{priority}) {
+                        $prio = $attr->{priority};
+                    }
+                    if ($attr->{machine}) {
+                        $machine_name = $attr->{machine};
+                    }
+                    if ($attr->{testsuite}) {
+                        $job_template_name = $testsuite_name;
+                        $testsuite_name    = $attr->{testsuite};
+                    }
+                    if ($attr->{settings}) {
+                        %$settings = (%{$settings // {}}, %{$attr->{settings}});
+                    }
+                }
+                else {
+                    $testsuite_name = $spec;
+                }
+
+                my $job_template_key
+                  = $arch . $product_name . $machine_name . $testsuite_name . ($job_template_name // '');
+                die "Job template name '"
+                  . ($job_template_name // $testsuite_name)
+                  . "' is defined more than once. "
+                  . "Use a unique name and specify 'testsuite' to re-use test suites in multiple scenarios.\n"
+                  if $job_template_names{$job_template_key};
+                $job_template_names{$job_template_key} = {
+                    prio              => $prio,
+                    machine_name      => $machine_name,
+                    arch              => $arch,
+                    product_name      => $product_name,
+                    product_spec      => $yaml_products->{$product_name},
+                    job_template_name => $job_template_name,
+                    testsuite_name    => $testsuite_name,
+                    settings          => $settings
+                };
+            }
+        }
+    }
+    return \%job_template_names;
 }
 
 =over 4
