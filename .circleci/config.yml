@@ -78,14 +78,14 @@ aliases:
 
   - &make_test
     command: |
-      # Calculate coverage only on master and Pull Requests
       case "$CIRCLE_JOB" in
-      t)   make coverage-codecov PROVE_ARGS="--harness TAP::Harness::JUnit -v t/*.t";;
-      ui)  make coverage-codecov CHECKSTYLE=0 PROVE_ARGS="--harness TAP::Harness::JUnit -v t/ui/*.t";;
-      api) make coverage-codecov CHECKSTYLE=0 PROVE_ARGS="--harness TAP::Harness::JUnit -v t/api/*.t";;
-      fullstack) make coverage-codecov CHECKSTYLE=0 FULLSTACK=1 PROVE_ARGS="--harness TAP::Harness::JUnit -v t/full-stack.t";;
-      scheduler) make coverage-codecov CHECKSTYLE=0 SCHEDULER_FULLSTACK=1 PROVE_ARGS="--harness TAP::Harness::JUnit -v t/05-scheduler-full.t";;
-      developer) make coverage-codecov CHECKSTYLE=0 DEVELOPER_FULLSTACK=1 PROVE_ARGS="--harness TAP::Harness::JUnit -v t/33-developer_mode.t";;
+      t)         make coverage-codecov CHECKSTYLE=1 PROVE_ARGS="$HARNESS -v t/*.t"     GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
+      ui)        make coverage-codecov CHECKSTYLE=0 PROVE_ARGS="$HARNESS -v t/ui/*.t"  GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
+      api)       make coverage-codecov CHECKSTYLE=0 PROVE_ARGS="$HARNESS -v t/api/*.t" GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
+      unstable)  for f in $(cat .circleci/unstable_tests.txt); do make coverage CHECKSTYLE=0 PROVE_ARGS="$HARNESS -v $f" RETRY=3; done; make coverage-report-codecov;;
+      fullstack) make coverage-codecov CHECKSTYLE=0 FULLSTACK=1           PROVE_ARGS="$HARNESS -v t/full-stack.t" RETRY=3;;
+      scheduler) make coverage-codecov CHECKSTYLE=0 SCHEDULER_FULLSTACK=1 PROVE_ARGS="$HARNESS -v t/05-scheduler-full.t";;
+      developer) make coverage-codecov CHECKSTYLE=0 DEVELOPER_FULLSTACK=1 PROVE_ARGS="$HARNESS -v t/33-developer_mode.t";;
       build.docs) COMMIT_AUTHOR_EMAIL=skynet@open.qa GEM_HOME=$(pwd)/.gem script/generate-documentation $encrypted_e2c381aa6b8c_key $encrypted_e2c381aa6b8c_iv;;
       esac
 
@@ -175,6 +175,7 @@ jobs:
       JUNIT_PACKAGE: openQA
       JUNIT_NAME_MANGLE: perl
       PERL_TEST_HARNESS_DUMP_TAP: test-results
+      HARNESS: --harness TAP::Harness::JUnit
     steps:
       - checkout
       - run: *chown_hack_for_cache
@@ -212,6 +213,9 @@ jobs:
 
   api:
     <<: *test-template
+  
+  unstable:
+    <<: *test-template
 
   developer:
     <<: *test-fullstack-template
@@ -234,6 +238,9 @@ workflows:
          requires:
            - cache
       - ui:
+         requires:
+           - cache
+      - unstable:
          requires:
            - cache
       - cache.fullstack:

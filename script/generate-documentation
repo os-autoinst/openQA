@@ -113,14 +113,6 @@ check_asciidoctor() {
         echo "    sudo zypper install 'perl(Pod::AsciiDoctor)'"
         exit 1
     fi
-    local asciidoctor_pdf_bin
-
-    command -v asciidoctor-pdf || [ -s /usr/bin/asciidoctor-pdf ] || {
-        local asciidoctor_pdf_bin
-        for asciidoctor_pdf_bin in "${GEM_HOME}"/bin/asciidoctor-pdf.ruby*; do :; done
-        [ -z "$asciidoctor_pdf_bin" ] || \
-            sudo ln "$asciidoctor_pdf_bin" /usr/bin/asciidoctor-pdf
-    }
 }
 
 set_sshkey() {
