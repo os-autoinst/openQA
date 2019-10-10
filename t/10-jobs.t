@@ -537,7 +537,8 @@ subtest 'job is marked as linked if accessed from recognized referal' => sub {
     $_settings{TEST} = 'refJobTest-step';
     $job = _job_create(\%_settings);
 
-    my $module = $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
+    my $module = $job->modules->find({name => 'a'});
     $job->update;
     $linked = job_is_linked($job);
     is($linked, 0, 'new job is not linked');

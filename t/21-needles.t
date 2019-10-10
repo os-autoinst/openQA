@@ -46,7 +46,8 @@ my $needledir_fedora    = "t/data/openqa/share/tests/fedora/needles";
 # create dummy job
 my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
 # create dummy module
-my $module = $job->insert_module({name => "a", category => "a", script => "a", flags => {}});
+$job->insert_module({name => "a", category => "a", script => "a", flags => {}});
+my $module = $job->modules->find({name => 'a'});
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 
 sub process {
