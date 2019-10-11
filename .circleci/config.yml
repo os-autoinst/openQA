@@ -65,6 +65,10 @@ aliases:
     path: test-results/t
     destination: artifacts
 
+  - &store_cover_db
+    path: cover_db
+    destination: cover_db
+
   - &build_autoinst
     command: |
       if [ ! -z "$CIRCLE_WORKFLOW_ID" ]; then # only in workflow
@@ -78,20 +82,33 @@ aliases:
 
   - &make_test
     command: |
+      # calculate coverage only on PR and master to save time
+      # include 'cover' into branch name if you need coverage
+      case "$CIRCLE_BRANCH" in
+      master |  pull* | *cover*) export PERL5OPT="$COVEROPT,-db,cover_db_${CIRCLE_JOB}";;
+      *) mkdir -p "cover_db_${CIRCLE_JOB}_stub";; # otherwise persist_to_workspace will show error
+      esac
+      echo PERL5OPT="$PERL5OPT"
       case "$CIRCLE_JOB" in
-      t)         make coverage-codecov CHECKSTYLE=1 PROVE_ARGS="$HARNESS -v t/*.t"     GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
-      ui)        make coverage-codecov CHECKSTYLE=0 PROVE_ARGS="$HARNESS -v t/ui/*.t"  GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
-      api)       make coverage-codecov CHECKSTYLE=0 PROVE_ARGS="$HARNESS -v t/api/*.t" GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
-      unstable)  for f in $(cat .circleci/unstable_tests.txt); do make coverage CHECKSTYLE=0 PROVE_ARGS="$HARNESS -v $f" RETRY=3; done; make coverage-report-codecov;;
-      fullstack) make coverage-codecov CHECKSTYLE=0 FULLSTACK=1           PROVE_ARGS="$HARNESS -v t/full-stack.t" RETRY=3;;
-      scheduler) make coverage-codecov CHECKSTYLE=0 SCHEDULER_FULLSTACK=1 PROVE_ARGS="$HARNESS -v t/05-scheduler-full.t";;
-      developer) make coverage-codecov CHECKSTYLE=0 DEVELOPER_FULLSTACK=1 PROVE_ARGS="$HARNESS -v t/33-developer_mode.t";;
+      t)         make test CHECKSTYLE=1 PROVE_ARGS="$HARNESS -v t/*.t"     GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
+      ui)        make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS -v t/ui/*.t"  GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
+      api)       make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS -v t/api/*.t" GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
+      unstable)  for f in $(cat .circleci/unstable_tests.txt); do make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS -v $f" RETRY=3; done;;
+      fullstack) make test CHECKSTYLE=0 FULLSTACK=1           PROVE_ARGS="$HARNESS -v t/full-stack.t" RETRY=3;;
+      scheduler) make test CHECKSTYLE=0 SCHEDULER_FULLSTACK=1 PROVE_ARGS="$HARNESS -v t/05-scheduler-full.t";;
+      developer) make test CHECKSTYLE=0 DEVELOPER_FULLSTACK=1 PROVE_ARGS="$HARNESS -v t/33-developer_mode.t";;
       build.docs) COMMIT_AUTHOR_EMAIL=skynet@open.qa GEM_HOME=$(pwd)/.gem script/generate-documentation $encrypted_e2c381aa6b8c_key $encrypted_e2c381aa6b8c_iv;;
       esac
 
 images:
   - &docker_config
     user: squamata
+    environment:
+      JUNIT_PACKAGE: openQA
+      JUNIT_NAME_MANGLE: perl
+      PERL_TEST_HARNESS_DUMP_TAP: test-results
+      HARNESS: --harness TAP::Harness::JUnit
+      COVEROPT: -MDevel::Cover=-select_re,'^/lib',-ignore_re,'^t/.*',+ignore_re,lib/perlcritic/Perl/Critic/Policy,-coverage,statement
 
   - &base
     image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
@@ -171,11 +188,6 @@ jobs:
   t: &test-template
     docker:
       - <<: *base
-    environment:
-      JUNIT_PACKAGE: openQA
-      JUNIT_NAME_MANGLE: perl
-      PERL_TEST_HARNESS_DUMP_TAP: test-results
-      HARNESS: --harness TAP::Harness::JUnit
     steps:
       - checkout
       - run: *chown_hack_for_cache
@@ -184,16 +196,16 @@ jobs:
       - run: *install_cached_packages
       - run: *test_junit
       - run: *make_test
+      - persist_to_workspace:
+          root: .
+          paths:
+            - cover_db_*
       - store_test_results: *store_test_results
       - store_artifacts: *store_artifacts
 
   fullstack: &test-fullstack-template
     docker:
       - <<: *base
-    environment:
-      JUNIT_PACKAGE: openQA
-      JUNIT_NAME_MANGLE: perl
-      PERL_TEST_HARNESS_DUMP_TAP: test-results
     steps:
       - checkout
       - run: *chown_hack_for_cache
@@ -205,6 +217,10 @@ jobs:
       - run: *build_autoinst
       - run: *test_junit
       - run: *make_test
+      - persist_to_workspace:
+          root: .
+          paths:
+            - cover_db_*
       - store_test_results: *store_test_results
       - store_artifacts: *store_artifacts
 
@@ -222,6 +238,22 @@ jobs:
 
   scheduler:
     <<: *test-fullstack-template
+
+  codecov:
+    docker:
+      - <<: *base
+    steps:
+      - checkout
+      - run: *chown_hack_for_cache
+      - restore_cache: *restore_cache
+      - run: *check_cache
+      - run: *install_cached_packages
+      - attach_workspace:
+          at: .
+      - run: cover -write cover_db cover_db*
+      - run: cover -select_re '^lib/' -report html_minimal
+      - store_artifacts: *store_cover_db
+      - run: cover -select_re '^lib/' -report codecov
 
   build.docs:
     <<: *test-template
@@ -255,6 +287,21 @@ workflows:
       - scheduler:
          requires:
            - cache.fullstack
+      - codecov:
+         requires:
+           - t
+           - api
+           - ui
+           - unstable
+           - fullstack
+           - developer
+           - scheduler
+         filters:
+           branches:
+             only:
+               - /pull.*/
+               - master
+               - /.*cover.*/
       - build.docs:
          requires:
            - cache

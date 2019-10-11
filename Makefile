@@ -126,7 +126,15 @@ run-tests-within-container:
 	script/run-tests-within-container
 
 # ignore tests and test related addons in coverage analysis
-COVER_OPTS ?= -select_re "^/lib" -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
+COVER_OPTS ?= -select_re '^/lib' -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
+
+comma := ,
+space :=
+space +=
+.PHONY: print-cover-opts
+print-cover-opt:
+	  # this was used in writing .circleci/config.yml
+	  @echo "$(subst $(space),$(comma),$(COVER_OPTS))"
 
 .PHONY: coverage
 coverage:
@@ -135,10 +143,7 @@ coverage:
 COVER_REPORT_OPTS ?= -select_re ^lib/
 
 .PHONY: coverage-codecov
-coverage-codecov: coverage coverage-report-codecov
-
-.PHONY: coverage-report-codecov
-coverage-report-codecov:
+coverage-codecov: coverage
 	cover $(COVER_REPORT_OPTS) -report codecov
 
 .PHONY: coverage-html
