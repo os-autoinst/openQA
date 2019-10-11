@@ -1056,27 +1056,27 @@ sub update_backend {
 sub insert_module {
     my ($self, $tm) = @_;
 
-    my $r;
-    my $modules = $self->modules;
+    my $flags = $tm->{flags};
     try {
-        $r = $modules->create({name => $tm->{name}, category => $tm->{category}, script => $tm->{script}});
+        $self->modules->create(
+            {
+                name     => $tm->{name},
+                category => $tm->{category},
+                script   => $tm->{script},
+
+                # we have 'important' in the db but 'ignore_failure' in the flags
+                # for historical reasons...see #1266
+                milestone       => $flags->{milestone}       ? 1 : 0,
+                important       => $flags->{ignore_failure}  ? 0 : 1,
+                fatal           => $flags->{fatal}           ? 1 : 0,
+                always_rollback => $flags->{always_rollback} ? 1 : 0,
+            });
     }
     catch {
         my $err = $_;
         die $err
           unless $err =~ /duplicate key value violates unique constraint "job_modules_job_id_name_category_script"/;
-        $r = $modules->find({name => $tm->{name}});
     };
-    $r->update(
-        {
-            # we have 'important' in the db but 'ignore_failure' in the flags
-            # for historical reasons...see #1266
-            milestone       => $tm->{flags}->{milestone}       ? 1 : 0,
-            important       => $tm->{flags}->{ignore_failure}  ? 0 : 1,
-            fatal           => $tm->{flags}->{fatal}           ? 1 : 0,
-            always_rollback => $tm->{flags}->{always_rollback} ? 1 : 0,
-        });
-    return $r;
 }
 
 sub insert_test_modules {
