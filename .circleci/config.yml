@@ -9,12 +9,13 @@ aliases:
     key: v1-{{ checksum ".circleci/dependencies.txt" }}-{{ checksum ".circleci/build_cache.sh" }}
     paths:
       - "/var/cache/zypp/packages"
+      - "~/project/assets/cache"
 
-  - &restore_integration_cache
+  - &restore_fullstack_cache
     keys:
       - v1-{{ checksum ".circleci/autoinst.sha" }}-{{ checksum ".circleci/build_autoinst.sh" }}
 
-  - &save_integration_cache
+  - &save_fullstack_cache
     key: v1-{{ checksum ".circleci/autoinst.sha" }}-{{ checksum ".circleci/build_autoinst.sh" }}
     paths:
       - "/var/cache/autoinst"
@@ -23,7 +24,7 @@ aliases:
     command: |
       [ -z "$CIRCLE_WORKFLOW_ID" ] || sudo chown -R squamata /var/cache/zypp/packages
 
-  - &chown_hack_for_cache_integration
+  - &chown_hack_for_cache_fullstack
     command: |
       # hack as we don't want run container as root
       [ -z "$CIRCLE_WORKFLOW_ID" ] || {
@@ -64,6 +65,10 @@ aliases:
     path: test-results/t
     destination: artifacts
 
+  - &store_cover_db
+    path: cover_db
+    destination: cover_db
+
   - &build_autoinst
     command: |
       if [ ! -z "$CIRCLE_WORKFLOW_ID" ]; then # only in workflow
@@ -72,20 +77,38 @@ aliases:
         sudo chown -R 1000 ../os-autoinst/t/data
       else # only in local run
          [ -d ../os-autoinst ] || { sudo mkdir ../os-autoinst && sudo chown -R 1000 ../os-autoinst; }
-         bash .circleci/build_autoinst.sh ../os-autoinst
+         bash .circleci/build_autoinst.sh ../os-autoinst $(cat .circleci/autoinst.sha)
        fi
+
+  - &make_test
+    command: |
+      # calculate coverage only on PR and master to save time
+      # include 'cover' into branch name if you need coverage
+      case "$CIRCLE_BRANCH" in
+      master |  pull* | *cover*) export PERL5OPT="$COVEROPT,-db,cover_db_${CIRCLE_JOB}";;
+      *) mkdir -p "cover_db_${CIRCLE_JOB}_stub";; # otherwise persist_to_workspace will show error
+      esac
+      echo PERL5OPT="$PERL5OPT"
+      case "$CIRCLE_JOB" in
+      t)         make test CHECKSTYLE=1 PROVE_ARGS="$HARNESS -v t/*.t"     GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
+      ui)        make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS -v t/ui/*.t"  GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
+      api)       make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS -v t/api/*.t" GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
+      unstable)  for f in $(cat .circleci/unstable_tests.txt); do make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS -v $f" RETRY=3; done;;
+      fullstack) make test CHECKSTYLE=0 FULLSTACK=1           PROVE_ARGS="$HARNESS -v t/full-stack.t" RETRY=3;;
+      scheduler) make test CHECKSTYLE=0 SCHEDULER_FULLSTACK=1 PROVE_ARGS="$HARNESS -v t/05-scheduler-full.t";;
+      developer) make test CHECKSTYLE=0 DEVELOPER_FULLSTACK=1 PROVE_ARGS="$HARNESS -v t/33-developer_mode.t";;
+      build.docs) COMMIT_AUTHOR_EMAIL=skynet@open.qa GEM_HOME=$(pwd)/.gem script/generate-documentation $encrypted_e2c381aa6b8c_key $encrypted_e2c381aa6b8c_iv;;
+      esac
 
 images:
   - &docker_config
     user: squamata
     environment:
-      USER: squamata
-      PERL5LIB: lib
       JUNIT_PACKAGE: openQA
       JUNIT_NAME_MANGLE: perl
       PERL_TEST_HARNESS_DUMP_TAP: test-results
-      TRAVIS: yes
-      COVER_OPTS: -select_re "^/lib" -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
+      HARNESS: --harness TAP::Harness::JUnit
+      COVEROPT: -MDevel::Cover=-select_re,'^/lib',-ignore_re,'^t/.*',+ignore_re,lib/perlcritic/Perl/Critic/Policy,-coverage,statement
 
   - &base
     image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
@@ -103,7 +126,7 @@ jobs:
       - setup_remote_docker
       - run:
           command: |
-            git config user.email "no@email.com"
+            git config user.email "skynet@open.qa"
             git config user.name "Dependency bot circleci"
             git config core.autocrlf true
             hub --version
@@ -127,7 +150,7 @@ jobs:
                 hub pull-request -m "Dependency cron $depid" --base $CIRCLE_PROJECT_USERNAME:$CIRCLE_BRANCH --head openqabot:dependency_$depid
             )
 
-  build-cache:
+  cache:
     docker:
       - <<: *base
     steps:
@@ -141,27 +164,28 @@ jobs:
           command: |
             if [ ! -d /var/cache/zypp/packages/openQA ]; then
               bash -x .circleci/build_cache.sh
+              script/generate-packed-assets
             fi
       - save_cache: *save_cache
 
-  build-integration-cache:
+  cache.fullstack:
     docker:
       - <<: *base
     steps:
       - checkout
-      - run: *chown_hack_for_cache_integration
+      - run: *chown_hack_for_cache_fullstack
       - restore_cache: *restore_cache
-      - restore_cache: *restore_integration_cache
+      - restore_cache: *restore_fullstack_cache
       - run: find /var/cache/zypp/packages/ | wc -l
       - run:
           command: |
             ls -lRa /var/cache/zypp/packages/openQA || :
             if [ ! -d /var/cache/autoinst/t ]; then
-              bash -x .circleci/build_autoinst.sh "/var/cache/autoinst"
+              bash -x .circleci/build_autoinst.sh "/var/cache/autoinst" $(cat .circleci/autoinst.sha)
             fi
-      - save_cache: *save_integration_cache
+      - save_cache: *save_fullstack_cache
 
-  test1:
+  t: &test-template
     docker:
       - <<: *base
     steps:
@@ -171,148 +195,117 @@ jobs:
       - run: *check_cache
       - run: *install_cached_packages
       - run: *test_junit
-      - run: sudo zypper -n install python3-six # workaround bug https://bugzilla.suse.com/show_bug.cgi?id=1150895
-      - run: eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove --harness TAP::Harness::JUnit t/*.t
+      - run: *make_test
+      - persist_to_workspace:
+          root: .
+          paths:
+            - cover_db_*
       - store_test_results: *store_test_results
       - store_artifacts: *store_artifacts
 
-  testui:
+  fullstack: &test-fullstack-template
     docker:
       - <<: *base
     steps:
       - checkout
       - run: *chown_hack_for_cache
+      - run: *chown_hack_for_cache_fullstack
       - restore_cache: *restore_cache
+      - restore_cache: *restore_fullstack_cache
       - run: *check_cache
       - run: *install_cached_packages
-      - run: *test_junit
-      - run:
-          command: |
-            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove --harness TAP::Harness::JUnit $(find t/ui/ -type f -name '*.t' | grep -vf .circleci/unstable_tests.txt | sort)
-      - store_test_results: *store_test_results
-      - store_artifacts: *store_artifacts
-
-  testui-unstable:
-    docker:
-      - <<: *base
-    steps:
-      - checkout
-      - run: *chown_hack_for_cache
-      - restore_cache: *restore_cache
-      - run: *check_cache
-      - run: *install_cached_packages
-      - run: *test_junit
-      - run:
-          command: |
-            export openqa_unstable_tests="$(cat .circleci/unstable_tests.txt)"
-            if [ ! -z "$openqa_unstable_tests" ]; then
-              eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove --harness TAP::Harness::JUnit $openqa_unstable_tests || echo FAIL
-            fi
-      - store_test_results: *store_test_results
-      - store_artifacts: *store_artifacts
-
-  testapi:
-    docker:
-      - <<: *base
-    steps:
-      - checkout
-      - run: *chown_hack_for_cache
-      - restore_cache: *restore_cache
-      - run: *check_cache
-      - run: *install_cached_packages
-      - run: *test_junit
-      - run:
-          command: |
-            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib prove --harness TAP::Harness::JUnit t/api/*.t
-      - store_test_results: *store_test_results
-      - store_artifacts: *store_artifacts
-
-  testfullstack:
-    docker:
-      - <<: *base
-    steps:
-      - checkout
-      - run: echo CIRCLE_WORKFLOW_ID=$CIRCLE_WORKFLOW_ID
-      - run: *chown_hack_for_cache_integration
-      - restore_cache: *restore_cache
-      - restore_cache: *restore_integration_cache
-      - run: *check_cache
-      - run: *install_cached_packages
-      - run: *test_junit
       - run: *build_autoinst
-      - run:
-          command: |
-            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib FULLSTACK=1 prove --harness TAP::Harness::JUnit t/full-stack.t
+      - run: *test_junit
+      - run: *make_test
+      - persist_to_workspace:
+          root: .
+          paths:
+            - cover_db_*
       - store_test_results: *store_test_results
       - store_artifacts: *store_artifacts
 
-  testdeveloperfullstack:
+  ui:
+    <<: *test-template
+
+  api:
+    <<: *test-template
+  
+  unstable:
+    <<: *test-template
+
+  developer:
+    <<: *test-fullstack-template
+
+  scheduler:
+    <<: *test-fullstack-template
+
+  codecov:
     docker:
       - <<: *base
     steps:
       - checkout
-      - run: echo CIRCLE_WORKFLOW_ID=$CIRCLE_WORKFLOW_ID
-      - run: *chown_hack_for_cache_integration
+      - run: *chown_hack_for_cache
       - restore_cache: *restore_cache
-      - restore_cache: *restore_integration_cache
       - run: *check_cache
       - run: *install_cached_packages
-      - run: *test_junit
-      - run: *build_autoinst
-      - run:
-          command: |
-            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib DEVELOPER_FULLSTACK=1 prove --harness TAP::Harness::JUnit t/33-developer_mode.t
-      - store_test_results: *store_test_results
-      - store_artifacts: *store_artifacts
+      - attach_workspace:
+          at: .
+      - run: cover -write cover_db cover_db*
+      - run: cover -select_re '^lib/' -report html_minimal
+      - store_artifacts: *store_cover_db
+      - run: cover -select_re '^lib/' -report codecov
 
-  testschedulerfullstack:
-    docker:
-      - <<: *base
-    steps:
-      - checkout
-      - run: echo CIRCLE_WORKFLOW_ID=$CIRCLE_WORKFLOW_ID
-      - run: *chown_hack_for_cache_integration
-      - restore_cache: *restore_cache
-      - restore_cache: *restore_integration_cache
-      - run: *check_cache
-      - run: *install_cached_packages
-      - run: *test_junit
-      - run: *build_autoinst
-      - run:
-          command: |
-            eval "$(t/test_postgresql | grep TEST_PG=)" && PERL5LIB=lib SCHEDULER_FULLSTACK=1 OPENQA_BASEDIR=. prove --harness TAP::Harness::JUnit t/05-scheduler-full.t
-      - store_test_results: *store_test_results
-      - store_artifacts: *store_artifacts
+  build.docs:
+    <<: *test-template
 
 workflows:
   version: 2
   test:
     jobs:
-      - build-cache
-      - test1:
+      - cache
+      - t:
          requires:
-           - build-cache
-      - testapi:
+           - cache
+      - api:
          requires:
-           - build-cache
-      - testui:
+           - cache
+      - ui:
          requires:
-           - build-cache
-      - testui-unstable:
+           - cache
+      - unstable:
          requires:
-           - build-cache
-      - build-integration-cache:
+           - cache
+      - cache.fullstack:
          requires:
-           - build-cache
-      - testfullstack:
+           - cache
+      - fullstack:
          requires:
-           - build-integration-cache
-      - testdeveloperfullstack:
+           - cache.fullstack
+      - developer:
          requires:
-           - build-integration-cache
-      - testschedulerfullstack:
+           - cache.fullstack
+      - scheduler:
          requires:
-           - build-integration-cache
+           - cache.fullstack
+      - codecov:
+         requires:
+           - t
+           - api
+           - ui
+           - unstable
+           - fullstack
+           - developer
+           - scheduler
+         filters:
+           branches:
+             only:
+               - /pull.*/
+               - master
+               - /.*cover.*/
+      - build.docs:
+         requires:
+           - cache
+
   nightly:
    triggers:
      - schedule:

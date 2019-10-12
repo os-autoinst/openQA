@@ -2,6 +2,7 @@ PROVE_ARGS ?= -r -v
 PROVE_LIB_ARGS ?= -l
 DOCKER_IMG ?= openqa:latest
 TEST_PG_PATH ?= /dev/shm/tpg
+RETRY ?= 0
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 docker_env_file := "$(current_dir)/docker.env"
@@ -98,7 +99,17 @@ endif
 
 .PHONY: test-unit-and-integration
 test-unit-and-integration:
-	OPENQA_CONFIG= prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
+ifeq ($(RETRY),0)
+	export GLOBIGNORE="$(GLOBIGNORE)"; prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
+else
+	export GLOBIGNORE="$(GLOBIGNORE)";\
+	n=0;\
+	until [ $$n -ge "$(RETRY)" ]; do\
+		[ $$n -eq 0 ] || echo Retrying...;\
+		prove ${PROVE_LIB_ARGS} ${PROVE_ARGS} && break;\
+		n=$$[$$n+1];\
+	done
+endif
 
 .PHONY: test-with-database
 test-with-database:
@@ -115,7 +126,15 @@ run-tests-within-container:
 	script/run-tests-within-container
 
 # ignore tests and test related addons in coverage analysis
-COVER_OPTS ?= -select_re "^/lib" -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
+COVER_OPTS ?= -select_re '^/lib' -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
+
+comma := ,
+space :=
+space +=
+.PHONY: print-cover-opts
+print-cover-opt:
+	  # this was used in writing .circleci/config.yml
+	  @echo "$(subst $(space),$(comma),$(COVER_OPTS))"
 
 .PHONY: coverage
 coverage:
