@@ -1043,6 +1043,29 @@ subtest 'Create and modify groups with YAML' => sub {
           || diag explain $t->tx->res->body;
     };
 
+    subtest 'Single scenario with multiple machines' => sub {
+        $test_suites->create({name => 'baz'});
+        $yaml->{defaults}{i586}{'machine'}                 = ['Laptop_64', '64bit'];
+        $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = [
+            {baz => {machine => ['32bit', '64bit'], priority => 7}},
+            {baz_defaults => {priority => 7, testsuite => 'baz'}}];
+        $t->post_ok(
+            "/api/v1/job_templates_scheduling/$job_group_id3",
+            form => {
+                schema   => $schema_filename,
+                template => YAML::XS::Dump($yaml)});
+        if (!$t->success) {
+            diag explain $t->tx->res->json;
+            return undef;
+        }
+        if (!is($job_templates->search({prio => 7})->count, 4, 'four job templates created')) {
+            my $jt = $job_templates->search({prio => 7});
+            while (my $j = $jt->next) {
+                diag explain YAML::XS::Dump($j->to_hash);
+            }
+        }
+    };
+
     subtest 'Errors due to invalid properties' => sub {
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'}
           = [{foobar => {priority => 11, machine => '31bit'}}];
@@ -1448,7 +1471,8 @@ subtest 'Modifying tables used in YAML not allowed' => sub {
         );
         $t->post_ok('/api/v1/machines/' . $job_template->machine_id, form => {name => 'deadbeef', backend => 'kde/usb'})
           ->json_is(
-            '' => {error_status => 400, error => 'Groups opensuse, test must be updated through the YAML template'},
+            '' =>
+              {error_status => 400, error => 'Groups foo, opensuse, test must be updated through the YAML template'},
             'Attempt to rename machine used in group was blocked'
           );
         $t->post_ok('/api/v1/machines/' . $job_template->machine_id,
@@ -1456,7 +1480,8 @@ subtest 'Modifying tables used in YAML not allowed' => sub {
           ->status_is(200, 'Machine settings are not locked');
         diag explain $t->tx->res->body if !$t->success;
         $t->delete_ok('/api/v1/machines/' . $job_template->machine_id)->json_is(
-            '' => {error_status => 400, error => 'Groups opensuse, test must be updated through the YAML template'},
+            '' =>
+              {error_status => 400, error => 'Groups foo, opensuse, test must be updated through the YAML template'},
             'Attempt to delete machine used in group was blocked'
         );
         $t->post_ok('/api/v1/test_suites/' . $job_template->test_suite_id, form => {name => 'deadbeef'})->json_is(

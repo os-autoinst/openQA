@@ -33,7 +33,11 @@ properties:
                     additionalProperties: false
                     properties:
                       machine:
-                        type: string
+                        oneOf:
+                          - type: string
+                          - type: array
+                            items:
+                            - type: string
                       priority:
                         type: number
                       settings:
@@ -61,7 +65,11 @@ properties:
         additionalProperties: false
         properties:
           machine:
-            type: string
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                - type: string
           priority:
             type: number
           settings:

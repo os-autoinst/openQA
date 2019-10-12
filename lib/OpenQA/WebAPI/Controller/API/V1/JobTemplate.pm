@@ -450,9 +450,9 @@ sub _create_job_templates_from_yaml {
                 my $testsuite_name;
                 my $job_template_name;
                 # Assign defaults
-                my $prio         = $yaml_defaults_for_arch->{priority};
-                my $machine_name = $yaml_defaults_for_arch->{machine};
-                my $settings     = dclone($yaml_defaults_for_arch->{settings} // {});
+                my $prio          = $yaml_defaults_for_arch->{priority};
+                my $machine_names = $yaml_defaults_for_arch->{machine};
+                my $settings      = dclone($yaml_defaults_for_arch->{settings} // {});
                 if (ref $spec eq 'HASH') {
                     # We only have one key. Asserted by schema
                     $testsuite_name = (keys %$spec)[0];
@@ -461,7 +461,7 @@ sub _create_job_templates_from_yaml {
                         $prio = $attr->{priority};
                     }
                     if ($attr->{machine}) {
-                        $machine_name = $attr->{machine};
+                        $machine_names = $attr->{machine};
                     }
                     if ($attr->{testsuite}) {
                         $job_template_name = $testsuite_name;
@@ -475,26 +475,30 @@ sub _create_job_templates_from_yaml {
                     $testsuite_name = $spec;
                 }
 
-                my $job_template_key
-                  = $arch . $product_name . $machine_name . $testsuite_name . ($job_template_name // '');
-                die "Job template name '"
-                  . ($job_template_name // $testsuite_name)
-                  . "' is defined more than once. "
-                  . "Use a unique name and specify 'testsuite' to re-use test suites in multiple scenarios.\n"
-                  if $job_template_names{$job_template_key};
-                $job_template_names{$job_template_key} = {
-                    prio              => $prio,
-                    machine_name      => $machine_name,
-                    arch              => $arch,
-                    product_name      => $product_name,
-                    product_spec      => $yaml_products->{$product_name},
-                    job_template_name => $job_template_name,
-                    testsuite_name    => $testsuite_name,
-                    settings          => $settings
-                };
+                $machine_names = [$machine_names] if ref($machine_names) ne 'ARRAY';
+                foreach my $machine_name (@{$machine_names}) {
+                    my $job_template_key
+                      = $arch . $product_name . $machine_name . $testsuite_name . ($job_template_name // '');
+                    die "Job template name '"
+                      . ($job_template_name // $testsuite_name)
+                      . "' is defined more than once. "
+                      . "Use a unique name and specify 'testsuite' to re-use test suites in multiple scenarios.\n"
+                      if $job_template_names{$job_template_key};
+                    $job_template_names{$job_template_key} = {
+                        prio              => $prio,
+                        machine_name      => $machine_name,
+                        arch              => $arch,
+                        product_name      => $product_name,
+                        product_spec      => $yaml_products->{$product_name},
+                        job_template_name => $job_template_name,
+                        testsuite_name    => $testsuite_name,
+                        settings          => $settings
+                    };
+                }
             }
         }
     }
+
     return \%job_template_names;
 }
 

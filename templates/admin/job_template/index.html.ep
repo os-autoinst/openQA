@@ -131,6 +131,11 @@ scenarios:
         settings:
           <b>SOME_TEST_VARIABLE</b>: <b>VALUE</b>
                         </code>
+                        <div>Specify multiple machines:</div>
+                        <code>
+    - <b>TESTSUITE</b>:
+        machine: [<b>MACHINE1</b>, <b>MACHINE2</b>]
+                        </code>
                         <div>Re-use a test suite with a custom job template name:</div>
                         <code>
     - <b>JOBNAME</b>:
