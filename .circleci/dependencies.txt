@@ -1,3 +1,5 @@
+chromedriver-77.0.3865.120
+chromium-77.0.3865.120
 cmark-0.28.3
 libcmark0_28_3-0.28.3
 libpython2_7-1_0-2.7.14
