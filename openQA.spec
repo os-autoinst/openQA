@@ -72,7 +72,6 @@ Source0:        %{name}-%{version}.tar.xz
 Source1:        cache.txz
 Source100:      openQA-rpmlintrc
 Source101:      update-cache.sh
-Source102:      Dockerfile
 BuildRequires:  fdupes
 BuildRequires:  %{build_requires}
 Requires:       perl(Minion) >= 9.13
