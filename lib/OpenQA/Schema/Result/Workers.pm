@@ -243,9 +243,7 @@ sub send_command {
     };
 
     # prevent ws server querying itself (which would cause it to hang until the connection times out)
-    # FIXME: Marking jobs as incomplete (and therefore possibly having send commands to abort other jobs in the cluster)
-    #        should not be the web socket server's responsibility.
-    if (defined $OpenQA::Utils::app && ($OpenQA::Utils::app->defaults('appname') eq 'openQA Websocket Server')) {
+    if (OpenQA::WebSockets::Client::is_current_process_the_websocket_server) {
         my $result = OpenQA::WebSockets::ws_send($self->id, $args{command}, $args{job_id}, undef);
         return $result && !$result->error;
     }

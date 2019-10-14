@@ -26,6 +26,8 @@ our $RUNNING;
 sub startup {
     my $self = shift;
 
+    OpenQA::WebSockets::Client::mark_current_process_as_websocket_server;
+
     $self->_setup if $RUNNING;
 
     $self->defaults(appname => 'openQA Websocket Server');
