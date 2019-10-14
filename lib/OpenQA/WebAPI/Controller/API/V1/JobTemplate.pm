@@ -312,6 +312,16 @@ A YAML document describing the job template. The template will be validated agai
 
 Performs a dry-run without committing any changes to the database.
 
+=item expand
+
+  expand => 1
+
+Computes the result of expanding aliases, defaults and settings used in the YAML. This can be
+used in tandem with B<preview> to see the effects of hypothetical changes or when saving changes.
+Posting the same document unmodified is also a supported use case.
+
+The response will fill in B<result> with the expanded YAML document.
+
 =item reference
 
   reference => $reference
@@ -329,6 +339,27 @@ The schema must be specified to indicate the format of the posted document.
 =back
 
 Returns a 400 code on error, or a 303 code and the job template id within a JSON block on success.
+
+The response will have these fields, depending on the options used:
+
+=over
+
+=item B<id>: the ID of the job group
+
+=item B<error>: an array of errors if validation or updating of the YAML document failed
+
+=item B<template>: the YAML document posted as a B<reference> in the original request
+
+=item B<preview>: set to 1 if B<preview> was specified in the original request
+
+=item B<changes>: a diff between the previous and posted YAML document if they mismatch
+
+=item B<result>: the expanded YAML if B<expand> was specified in the original request
+
+=back
+
+Note that an I<openqa_jobtemplate_create> event is emitted with the same fields contained
+in the response if any changes to the database were made.
 
 =back
 
@@ -377,6 +408,23 @@ sub update {
         }
 
         my $job_template_names = _create_job_templates_from_yaml($yaml);
+        if ($self->param('expand')) {
+            # Preview mode: Get the expected YAML without changing the database
+            my $result = {};
+            foreach my $job_template_key (sort keys %$job_template_names) {
+                my $spec     = $job_template_names->{$job_template_key};
+                my $scenario = {
+                    $spec->{job_template_name} // $spec->{testsuite_name} => {
+                        machine  => $spec->{machine_name},
+                        priority => $spec->{prio},
+                        settings => $spec->{settings},
+                    }};
+                push @{$result->{scenarios}->{$spec->{arch}}->{$spec->{product_name}}}, {%$scenario,};
+                $result->{products}->{$spec->{product_name}} = $spec->{product_spec};
+            }
+            # Note: Stripping the initial document start marker "---"
+            $json->{result} = YAML::XS::Dump($result) =~ s/^---\n//r;
+        }
 
         $schema->txn_do(
             sub {
@@ -393,24 +441,22 @@ sub update {
                         group_id => $group_id,
                     })->delete();
 
-                # Preview mode: Get the expected YAML and rollback the result
-                if ($self->param('preview')) {
-                    $json->{changes} = "\n" . diff \$job_group->template, \$self->param('template')
-                      if $job_group->template && $job_group->template ne $self->param('template');
-                    $json->{preview} = int($self->param('preview'));
-                    $self->schema->txn_rollback;
-                }
-                else {
-                    $json->{changes} = "\n" . diff \$job_group->template, \$self->param('template')
-                      if $job_group->template && $job_group->template ne $self->param('template');
-                    # Store the original YAML template after all changes have been made
-                    $job_group->update({template => $self->param('template')});
-                }
-                if ($json->{changes}) {
+                if ($job_group->template && $job_group->template ne $self->param('template')) {
+                    $json->{changes} = "\n" . diff \$job_group->template, \$self->param('template');
                     # Remove the warning about new lines. We don't require that!
                     $json->{changes} =~ s/\\ No newline at end of file\n//;
                     # Remove leading and trailing whitespace
                     $json->{changes} =~ s/^\s+|\s+$//g;
+                }
+
+                # Preview mode: Get the expected YAML and rollback the result
+                if ($self->param('preview')) {
+                    $json->{preview} = int($self->param('preview'));
+                    $self->schema->txn_rollback;
+                }
+                else {
+                    # Store the original YAML template after all changes have been made
+                    $job_group->update({template => $self->param('template')});
                 }
             });
     }

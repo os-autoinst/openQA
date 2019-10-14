@@ -882,9 +882,49 @@ subtest 'Create and modify groups with YAML' => sub {
         form => {
             schema   => $schema_filename,
             preview  => 1,
+            expand   => 1,
             template => YAML::XS::Dump($yaml),
         });
     $t->status_is(200, 'Posting preview successful');
+    is_deeply(
+        YAML::XS::Load(YAML::XS::Load($t->tx->res->body)->{result}),
+        {
+            products => {
+                'opensuse-13.1-DVD-i586' => {
+                    distri  => 'opensuse',
+                    flavor  => 'DVD',
+                    version => '13.1',
+                }
+            },
+            scenarios => {
+                i586 => {
+                    'opensuse-13.1-DVD-i586' => [
+                        {
+                            eggs => {
+                                machine  => '32bit',
+                                priority => 20,
+                                settings => {BAR => 'updated later', FOO => 'removed later'},
+                            }
+                        },
+                        {
+                            foobar => {
+                                machine  => '64bit',
+                                priority => 40,
+                                settings => {},
+                            }
+                        },
+                        {
+                            spam => {
+                                machine  => '64bit',
+                                priority => 40,
+                                settings => {},
+                            }
+                        },
+                    ]}
+            },
+        },
+        'Expected result returned in response'
+    ) || diag explain $t->tx->res->body;
     $t->get_ok("/api/v1/job_templates_scheduling/$job_group_id3");
     is_deeply(
         YAML::XS::Load($t->tx->res->body),

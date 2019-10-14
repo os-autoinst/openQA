@@ -585,6 +585,15 @@ subtest 'edit job templates using YAML' => sub() {
     like($result->get_text(), qr/No changes were made!/, 'preview, nothing changed')
       or diag explain $result->get_text();
 
+    # Expansion
+    $driver->find_element_by_id('expand-template')->click();
+    wait_for_ajax;
+    like($result->get_text(), qr/Result of expanding the YAML/, 'expansion shown') or diag explain $result->get_text();
+    like($result->get_text(), qr/settings: \{\}/, 'expanded YAML has empty settings')
+      or diag explain $result->get_text();
+    unlike($result->get_text(), qr/defaults:/, 'expanded YAML has no defaults')
+      or diag explain $result->get_text();
+
     # Save
     $driver->find_element_by_id('save-template')->click();
     $result = $form->child('.result');
