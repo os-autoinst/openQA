@@ -584,6 +584,134 @@ it, otherwise that would create an inconsistent state.
 YAML-only groups need to be updated through the YAML editor or the YAML-related
 REST API routes.
 
+== Configuring job groups via YAML documents
+
+A new job group starts out empty, which in YAML means that the two mandatory
+sections are present but contain nothing. This is what can be seen when
+editing a completely group, and what is also the state to revert to before
+deleting a job group that is no longer useful:
+
+```yaml
+products: {}
+scenarios: {}
+```
+
+A job group is comprised of up to three main sections. `products` defines
+one or more mediums to run the scenarios in the group. At least one needs to
+be specified to be able to run tests. Going by an example of openSUSE 15.1
+the name, distri, flavor and version could be written like so. Note that the
+version is a string in single quotes.
+
+```yaml
+products:
+  opensuse-15.1-DVD-Updates-x86_64:
+    distri: opensuse
+    flavor: DVD-Updates
+    version: '15.1'
+```
+
+To complete the job group at least one scenario has to be added. A scenario is
+a combination of a test suite, a machine and an architecture. Scenarios must
+also be unique across job groups - trying to add it to multiple job groups is
+an error. Case in point, `textmode` and `gnome` could be defined like so:
+
+```yaml
+scenarios:
+  x86_64:
+    opensuse-15.1-DVD-Updates-x86_64:
+    - textmode
+    - gnome:
+      machine: uefi
+      priorty: 70
+      settings:
+        QEMUVGA: cirrus
+```
+
+Now there are two scenarios for `x86_64`, one by giving just the name of the
+test suite and another which has a machine, priority and settings. Both are
+allowed. However since at least one scenario relies on defaults those need to
+be specified once in their own section:
+
+```yaml
+defaults:
+  x86_64:
+    machine: 64bit
+    priority: 50
+```
+
+The defaults section is only required whenever a scenario is not completely
+defined in-place. When it is used, the available parameters are identical to
+those for a single scenario. For instance the example could be amended to use
+settings and run every test suite for that architecture on several machines by
+default.
+
+```yaml
+defaults:
+  x86_64:
+    machine: [64bit, 32bit]
+    priority: 50
+    settings:
+      FOO: 1
+```
+
+Defaults are always overwritten by explicit parameters on scenarios. Further
+more, all settings can be specified in YAML. Using this together with custom
+job template names, variants of a scenario can even be specified when they
+would normally be considered duplicated:
+
+```yaml
+scenarios:
+  x86_64:
+    opensuse-15.1-DVD-Updates-x86_64:
+    - textmode
+    - gnome:
+      machine: uefi
+      priorty: 70
+      settings:
+        QEMUVGA: cirrus
+    - gnome_staging:
+      testsuite: gnome
+      machine: [32bit, 64bit-staging]
+      settings:
+        FOO: 2
+```
+
+Even more flexibility can be achieved by using aliases in YAML, or in other
+words re-using a scenario by reference, such as to run the same scenarios in
+two different mediums. `&` is used define an alias, while `*` is a reference:
+
+```yaml
+products:
+  opensuse-15.1-DVD-Updates-x86_64:
+    distri: opensuse
+    flavor: DVD-Updates
+    version: '15.1'
+  opensuse-15.2-GNOME-Live-x86_64:
+    distri: opensuse
+    flavor: GNOME-Live
+    version: '15.2'
+scenarios:
+  x86_64:
+    opensuse-15.1-DVD-Updates-x86_64:
+    - textmode
+    - gnome: &gnome
+      machine: uefi
+      priorty: 70
+      settings:
+        QEMUVGA: cirrus
+    - gnome_staging: &gnome_staging
+      testsuite: gnome
+      machine: [32bit, 64bit-staging]
+      settings:
+        FOO: 2
+    opensuse-15.2-GNOME-Live-x86_64:
+    - textmode
+    - gnome:
+      *gnome
+    - gnome_staging:
+      *gnome_staging
+```
+
 == Use of the REST API
 
 openQA includes a _client_ script which - depending on the distribution - is
