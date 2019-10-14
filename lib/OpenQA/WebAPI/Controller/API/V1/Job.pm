@@ -376,27 +376,23 @@ id must match the id of the worker assigned to the job identified by the job id.
 sub update_status {
     my ($self) = @_;
 
-    if (!$self->req->json) {
-        $self->render(json => {error => 'No status information provided'}, status => 400);
-        return undef;
-    }
+    return $self->render(json => {error => 'No status information provided'}, status => 400)
+      unless my $json = $self->req->json;
 
-    my $status = $self->req->json->{status};
+    my $status = $json->{status};
     my $job_id = $self->stash('jobid');
     my $job    = $self->schema->resultset('Jobs')->find($job_id);
     if (!$job) {
         my $err = 'Got status update for non-existing job: ' . $job_id;
         OpenQA::Utils::log_info($err);
-        $self->render(json => {error => $err}, status => 400);
-        return undef;
+        return $self->render(json => {error => $err}, status => 400);
     }
 
     my $worker_id = $status->{worker_id};
     if (!defined $worker_id) {
         my $err = "Got status update for job $job_id but does not contain a worker id!";
         OpenQA::Utils::log_info($err);
-        $self->render(json => {error => $err}, status => 400);
-        return undef;
+        return $self->render(json => {error => $err}, status => 400);
     }
 
     # find worker
@@ -414,8 +410,7 @@ sub update_status {
             my $err        = "Got status update for job $job_id and worker $worker_id but there is"
               . " not even a worker assigned to this job (job is $job_status)";
             log_info($err);
-            $self->render(json => {error => $err}, status => 400);
-            return undef;
+            return $self->render(json => {error => $err}, status => 400);
         }
     }
 
@@ -426,8 +421,7 @@ sub update_status {
           = "Got status update for job $job_id with unexpected worker ID $worker_id"
           . " (expected $expected_worker_id, job is $job_status)";
         OpenQA::Utils::log_info($err);
-        $self->render(json => {error => $err}, status => 400);
-        return undef;
+        return $self->render(json => {error => $err}, status => 400);
     }
 
     $worker->update({job_id => $job->id}) if $use_assigned_worker;
@@ -447,8 +441,7 @@ sub update_status {
         $ret = {} unless $ret;
         $ret->{error}        //= 'Unable to update status';
         $ret->{error_status} //= 400;
-        $self->render(json => {error => $ret->{error}}, status => $ret->{error_status});
-        return undef;
+        return $self->render(json => {error => $ret->{error}}, status => $ret->{error_status});
     }
     $self->render(json => $ret);
 }

@@ -20,10 +20,6 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-use File::Spec::Functions 'catfile';
-use OpenQA::Utils qw(log_debug log_warning);
-use Try::Tiny;
-
 __PACKAGE__->table('screenshot_links');
 
 __PACKAGE__->add_columns(
@@ -38,55 +34,5 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->belongs_to(job        => 'OpenQA::Schema::Result::Jobs',        'job_id');
 __PACKAGE__->belongs_to(screenshot => 'OpenQA::Schema::Result::Screenshots', 'screenshot_id');
-
-sub _list_images_subdir {
-    my ($app, $prefix, $dir) = @_;
-    log_debug "reading $prefix/$dir";
-    my $subdir = catfile($OpenQA::Utils::imagesdir, $prefix, $dir);
-    my $dh;
-    if (!opendir($dh, $subdir)) {
-        log_warning "Can't open $subdir: $!";
-        return;
-    }
-    my @ret;
-    for my $file (readdir $dh) {
-        my $fn = catfile($subdir, $file);
-        if (-f $fn) {
-            push(@ret, catfile($prefix, $dir, $file));
-        }
-    }
-    closedir($dh);
-    return \@ret,;
-}
-
-sub populate_images_to_job {
-    my ($schema, $imgs, $job_id) = @_;
-
-    # insert the symlinks into the DB
-    my $data  = [[qw(screenshot_id job_id)]];
-    my $dbids = $schema->resultset('Screenshots')->search({filename => {-in => $imgs}});
-    my %ids;
-    while (my $screenshot = $dbids->next) {
-        $ids{$screenshot->filename} = $screenshot->id;
-    }
-    my $now = DateTime->now;
-    for my $img (@$imgs) {
-        next if $ids{$img};
-        try {
-            log_debug "creating $img";
-            $ids{$img} = $schema->resultset('Screenshots')->create({filename => $img, t_created => $now})->id;
-        }
-        catch {
-            # it's possible 2 jobs are creating the link at the same time
-            my $error = shift;
-            $ids{$img} = $schema->resultset('Screenshots')->find({filename => $img})->id;
-        };
-    }
-    for my $id (values %ids) {
-        push(@$data, [$id, $job_id]);
-    }
-    $schema->resultset('ScreenshotLinks')->populate($data);
-    return;
-}
 
 1;
