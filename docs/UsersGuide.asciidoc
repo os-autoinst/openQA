@@ -691,7 +691,7 @@ openqa-dump-templates --json --group test > test.json
 
 [source,sh]
 --------------------------------------------------------------------------------
-openqa-load-templates --group test test.json
+openqa-load-templates test.json
 --------------------------------------------------------------------------------
 
 == Asset handling ==
