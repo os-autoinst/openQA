@@ -472,9 +472,8 @@ sub is_element_text {
     is_deeply(\@texts, $expected, $message) or diag explain \@texts;
 }
 
-subtest 'edit media' => sub() {
-    $driver->title_is('openQA: Jobs for Cool Group has been edited!', 'on jobs for Cool Test has been edited!');
-
+subtest 'edit job templates using the legacy editor' => sub {
+    $driver->get('/admin/job_templates/1001');
     wait_for_ajax;
     $driver->find_element_by_link('Test new medium as part of this group')->click();
 
@@ -490,7 +489,7 @@ subtest 'edit media' => sub() {
 
     $driver->find_element_by_xpath('//input[@type="submit"]')->submit();
 
-    $driver->title_is('openQA: Jobs for Cool Group has been edited!', 'on job groups');
+    $driver->title_is('openQA: Jobs for opensuse', 'on job group');
     wait_for_ajax;
 
     my $td = $driver->find_element('#sle_13_DVD_arm19_xfce_chosen .search-field');
@@ -541,24 +540,43 @@ subtest 'edit media' => sub() {
     $driver->find_element_by_link_text('Job groups')->click();
 
     $driver->title_is('openQA: Job groups', 'on groups');
-    $driver->find_element_by_link('Cool Group has been edited!')->click();
+    $driver->find_element_by_link('opensuse')->click();
 
     wait_for_ajax;
     javascript_console_has_no_warnings_or_errors;
     my @picks = $driver->find_elements('.search-choice');
+
+    # only consider the last three archs (those are the ones actually added by the test)
+    splice(@picks, 0, scalar @picks - 3);
     is_element_text(\@picks, [qw(64bit 64bit HURRA)], 'chosen tests present');
 };
 
-subtest 'edit the yaml' => sub() {
-    $driver->refresh();
-    my $form = $driver->find_element_by_id('editor-form');
-    ok($form->is_hidden(), 'editor form is hidden');
-    $driver->find_element_by_id('toggle-yaml-editor')->click();
-    wait_for_ajax;
-    ok($form->is_displayed(),                             'editor form is shown');
-    ok($form->child('.progress-indication')->is_hidden(), 'spinner is hidden');
-    my $yaml = $driver->execute_script('return editor.doc.getValue();');
-    like($yaml, qr/scenarios:/, 'YAML was fetched') or diag explain $yaml;
+subtest 'edit job templates using YAML' => sub() {
+    subtest 'open YAML editor for new group with no templates' => sub {
+        $driver->get('/admin/job_templates/1003');
+        wait_for_ajax;
+        my $form = $driver->find_element_by_id('editor-form');
+        ok($form->is_displayed(),                             'editor form is shown by default');
+        ok($form->child('.progress-indication')->is_hidden(), 'spinner is hidden');
+        is(scalar @{$driver->find_elements('Test new medium as part of this group', 'link_text')},
+            0, 'link to add a new medium (via legacy editor) not shown');
+        my $yaml = $driver->execute_script('return editor.doc.getValue();');
+        like($yaml, qr/products:\s*{}.*scenarios:\s*{}/s, 'default YAML was fetched') or diag explain $yaml;
+    };
+
+    my ($yaml, $form);
+    subtest 'open YAML editor for legacy group' => sub {
+        $driver->get('/admin/job_templates/1001');
+        $form = $driver->find_element_by_id('editor-form');
+        ok($form->is_hidden(), 'editor form is not shown by default');
+        $driver->find_element_by_id('toggle-yaml-editor')->click();
+        wait_for_ajax;
+        ok($form->is_displayed(),                             'editor form is shown');
+        ok($form->child('.progress-indication')->is_hidden(), 'spinner is hidden');
+        $yaml = $driver->execute_script('return editor.doc.getValue();');
+        like($yaml, qr/scenarios:/, 'YAML was fetched') or diag explain $yaml;
+    };
+
     # Preview
     $driver->find_element_by_id('preview-template')->click();
     my $result = $form->child('.result');
@@ -584,12 +602,12 @@ subtest 'edit the yaml' => sub() {
     $driver->find_element_by_id('preview-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/Preview of the changes/, 'preview shown') or diag explain $result->get_text();
-    ok(index($result->get_text(), '@@ -15,3 +15,6 @@') != -1, 'diff of changes shown')
+    ok(index($result->get_text(), '@@ -55,3 +55,6 @@') != -1, 'diff of changes shown')
       or diag explain $result->get_text();
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
-    ok(index($result->get_text(), '@@ -15,3 +15,6 @@') != -1, 'diff of changes shown')
+    ok(index($result->get_text(), '@@ -55,3 +55,6 @@') != -1, 'diff of changes shown')
       or diag explain $result->get_text();
 
     # No changes
