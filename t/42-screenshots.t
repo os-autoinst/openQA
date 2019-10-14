@@ -76,4 +76,13 @@ combined_like(
 is_deeply(\@screenshot_data, [{filename => 'foo'}], 'foo still present (used in 99927), bar removed (no longer used)')
   or diag explain \@screenshot_data;
 
+subtest 'screenshots are unique' => sub {
+    my $screenshots = $t->app->schema->resultset('Screenshots');
+    $screenshots->populate_images_to_job(['whatever'], 99927);
+    $screenshots->populate_images_to_job(['whatever'], 99927);
+    my @whatever = $screenshots->search({filename => 'whatever'})->all;
+    is $whatever[0]->filename, 'whatever', 'right filename';
+    is $whatever[1], undef, 'no second result';
+};
+
 done_testing();

@@ -29,29 +29,22 @@ sub populate_images_to_job {
     my ($self, $imgs, $job_id) = @_;
 
     # insert the symlinks into the DB
-    my $data  = [[qw(screenshot_id job_id)]];
-    my $dbids = $self->search({filename => {-in => $imgs}});
     my %ids;
-    while (my $screenshot = $dbids->next) {
-        $ids{$screenshot->filename} = $screenshot->id;
-    }
     my $now = DateTime->now;
     for my $img (@$imgs) {
-        next if $ids{$img};
+        log_debug "creating $img";
         try {
-            log_debug "creating $img";
             $ids{$img} = $self->create({filename => $img, t_created => $now})->id;
         }
         catch {
-            # it's possible 2 jobs are creating the link at the same time
-            my $error = shift;
+            my $err = $_;
+            die $err
+              unless $err =~ /duplicate key value violates unique constraint "screenshots_filename"/;
             $ids{$img} = $self->find({filename => $img})->id;
         };
     }
-    for my $id (values %ids) {
-        push(@$data, [$id, $job_id]);
-    }
-    $self->result_source->schema->resultset('ScreenshotLinks')->populate($data);
+    my @data = map { [$_, $job_id] } values %ids;
+    $self->result_source->schema->resultset('ScreenshotLinks')->populate([[qw(screenshot_id job_id)], @data]);
 }
 
 1;
