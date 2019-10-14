@@ -379,6 +379,23 @@ sub update {
         }
 
         my $job_template_names = _create_job_templates_from_yaml($yaml);
+        if ($self->param('preview')) {
+            # Preview mode: Get the expected YAML without changing the database
+            my $result = {};
+            foreach my $job_template_key (sort keys %$job_template_names) {
+                my $spec     = $job_template_names->{$job_template_key};
+                my $scenario = {
+                    $spec->{job_template_name} // $spec->{testsuite_name} => {
+                        machine  => $spec->{machine_name},
+                        priority => $spec->{prio},
+                        settings => $spec->{settings},
+                    }};
+                push @{$result->{scenarios}->{$spec->{arch}}->{$spec->{product_name}}}, {%$scenario,};
+                $result->{products}->{$spec->{product_name}} = $spec->{product_spec};
+            }
+            # Note: Stripping the initial document start marker "---"
+            $json->{preview} = YAML::XS::Dump($result) =~ s/^---\n//r;
+        }
 
         $schema->txn_do(
             sub {
@@ -395,24 +412,21 @@ sub update {
                         group_id => $group_id,
                     })->delete();
 
-                # Preview mode: Get the expected YAML and rollback the result
-                if ($self->param('preview')) {
-                    $json->{changes} = "\n" . diff \$job_group->template, \$self->param('template')
-                      if $job_group->template && $job_group->template ne $self->param('template');
-                    $json->{preview} = int($self->param('preview'));
-                    $self->schema->txn_rollback;
-                }
-                else {
-                    $json->{changes} = "\n" . diff \$job_group->template, \$self->param('template')
-                      if $job_group->template && $job_group->template ne $self->param('template');
-                    # Store the original YAML template after all changes have been made
-                    $job_group->update({template => $self->param('template')});
-                }
-                if ($json->{changes}) {
+                if ($job_group->template && $job_group->template ne $self->param('template')) {
+                    $json->{changes} = "\n" . diff \$job_group->template, \$self->param('template');
                     # Remove the warning about new lines. We don't require that!
                     $json->{changes} =~ s/\\ No newline at end of file\n//;
                     # Remove leading and trailing whitespace
                     $json->{changes} =~ s/^\s+|\s+$//g;
+                }
+
+                # Preview mode: Get the expected YAML and rollback the result
+                if ($self->param('preview')) {
+                    $self->schema->txn_rollback;
+                }
+                else {
+                    # Store the original YAML template after all changes have been made
+                    $job_group->update({template => $self->param('template')});
                 }
             });
     }

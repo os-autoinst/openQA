@@ -429,13 +429,13 @@ function submitTemplateEditor(preview) {
             // Update the reference to the saved document
             form.data('reference', editor.doc.getValue());
         }
-        if (data.hasOwnProperty('changes')) {
-            var preview = CodeMirror(result[0], {
-                mode: data.changes ? 'diff' : 'yaml',
+        if (data.changes || data.preview) {
+            var preview = CodeMirror($('<pre/>').appendTo(result)[0], {
+                mode: data.preview ? 'yaml' : 'diff',
                 lineNumbers: true,
                 lineWrapping: true,
                 readOnly: true,
-                value: data.changes,
+                value: data.preview || data.changes,
             });
         }
         else {
