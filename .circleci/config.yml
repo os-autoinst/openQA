@@ -21,29 +21,32 @@ aliases:
       - "/var/cache/autoinst"
 
   - &chown_hack_for_cache
+    name: Chown package cache to user
     command: |
       [ -z "$CIRCLE_WORKFLOW_ID" ] || sudo chown -R squamata /var/cache/zypp/packages
 
   - &chown_hack_for_cache_fullstack
+    name: Chown autoinst cache to user
     command: |
       # hack as we don't want run container as root
       [ -z "$CIRCLE_WORKFLOW_ID" ] || {
-        sudo chown -R squamata /var/cache/zypp/packages
         sudo mkdir -p /var/cache/autoinst
         sudo chown -R squamata /var/cache/autoinst
       }
 
-  - &show_diagnostic_info
-    command: |
-      find /var/cache/zypp/packages/ | wc -l
-      [ -z "$CIRCLE_WORKFLOW_ID" ] || ls -lRa /var/cache/zypp/packages/openQA || :
-
   - &check_cache
+    name: Log cached packages
     command: |
-      find /var/cache/zypp/packages/ | wc -l
-      [ -z "$CIRCLE_WORKFLOW_ID" ] || ls -lRa /var/cache/zypp/packages/openQA
+      mkdir -p logs
+      find /var/cache/zypp/packages/ | wc -l > ./logs/packages.txt
+      [ -z "$CIRCLE_WORKFLOW_ID" ] || ls -lRa /var/cache/zypp/packages/openQA > ./logs/packages.openQA.txt
+
+  - &store_logs
+      path: logs
+      destination: artifacts
 
   - &install_cached_packages
+    name: Install cached packages
     command: |
         set -x
         if [ -z "$CIRCLE_WORKFLOW_ID" ]; then
@@ -70,6 +73,7 @@ aliases:
     destination: cover_db
 
   - &build_autoinst
+    name: "Link or build os-autoinst"
     command: |
       if [ ! -z "$CIRCLE_WORKFLOW_ID" ]; then # only in workflow
         rm -rf ../os-autoinst
@@ -81,6 +85,7 @@ aliases:
        fi
 
   - &make_test
+    name: "Running unit tests"
     command: |
       # calculate coverage only on PR and master to save time
       # include 'cover' into branch name if you need coverage
@@ -90,13 +95,13 @@ aliases:
       esac
       echo PERL5OPT="$PERL5OPT"
       case "$CIRCLE_JOB" in
-      t)         make test CHECKSTYLE=1 PROVE_ARGS="$HARNESS -v t/*.t"     GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
-      ui)        make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS -v t/ui/*.t"  GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
-      api)       make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS -v t/api/*.t" GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
-      unstable)  for f in $(cat .circleci/unstable_tests.txt); do make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS -v $f" RETRY=3; done;;
-      fullstack) make test CHECKSTYLE=0 FULLSTACK=1           PROVE_ARGS="$HARNESS -v t/full-stack.t" RETRY=3;;
-      scheduler) make test CHECKSTYLE=0 SCHEDULER_FULLSTACK=1 PROVE_ARGS="$HARNESS -v t/05-scheduler-full.t";;
-      developer) make test CHECKSTYLE=0 DEVELOPER_FULLSTACK=1 PROVE_ARGS="$HARNESS -v t/33-developer_mode.t";;
+      t)         make test CHECKSTYLE=1 PROVE_ARGS="$HARNESS t/*.t"     GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
+      ui)        make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS t/ui/*.t"  GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
+      api)       make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS t/api/*.t" GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
+      unstable)  for f in $(cat .circleci/unstable_tests.txt); do make test CHECKSTYLE=0 PROVE_ARGS="$HARNESS $f" RETRY=3; done;;
+      fullstack) make test CHECKSTYLE=0 FULLSTACK=1           PROVE_ARGS="$HARNESS t/full-stack.t" RETRY=3;;
+      scheduler) make test CHECKSTYLE=0 SCHEDULER_FULLSTACK=1 PROVE_ARGS="$HARNESS t/05-scheduler-full.t";;
+      developer) make test CHECKSTYLE=0 DEVELOPER_FULLSTACK=1 PROVE_ARGS="$HARNESS t/33-developer_mode.t";;
       build.docs) COMMIT_AUTHOR_EMAIL=skynet@open.qa GEM_HOME=$(pwd)/.gem script/generate-documentation $encrypted_e2c381aa6b8c_key $encrypted_e2c381aa6b8c_iv;;
       esac
 
@@ -159,8 +164,10 @@ jobs:
       - run: cat .circleci/dependencies.txt
       - run: *chown_hack_for_cache
       - restore_cache: *restore_cache
-      - run: *show_diagnostic_info
+      - run: *check_cache
+      - store_artifacts: *store_logs
       - run:
+          name: "Generate packaged assets"
           command: |
             if [ ! -d /var/cache/zypp/packages/openQA ]; then
               bash -x .circleci/build_cache.sh
@@ -173,13 +180,15 @@ jobs:
       - <<: *base
     steps:
       - checkout
+      - run: *chown_hack_for_cache
       - run: *chown_hack_for_cache_fullstack
       - restore_cache: *restore_cache
       - restore_cache: *restore_fullstack_cache
-      - run: find /var/cache/zypp/packages/ | wc -l
+      - run: *check_cache
+      - store_artifacts: *store_logs
       - run:
+          name: "Build os-autoinst if not cached"
           command: |
-            ls -lRa /var/cache/zypp/packages/openQA || :
             if [ ! -d /var/cache/autoinst/t ]; then
               bash -x .circleci/build_autoinst.sh "/var/cache/autoinst" $(cat .circleci/autoinst.sha)
             fi
@@ -193,6 +202,7 @@ jobs:
       - run: *chown_hack_for_cache
       - restore_cache: *restore_cache
       - run: *check_cache
+      - store_artifacts: *store_logs
       - run: *install_cached_packages
       - run: *test_junit
       - run: *make_test
@@ -213,6 +223,7 @@ jobs:
       - restore_cache: *restore_cache
       - restore_cache: *restore_fullstack_cache
       - run: *check_cache
+      - store_artifacts: *store_logs
       - run: *install_cached_packages
       - run: *build_autoinst
       - run: *test_junit
@@ -247,6 +258,7 @@ jobs:
       - run: *chown_hack_for_cache
       - restore_cache: *restore_cache
       - run: *check_cache
+      - store_artifacts: *store_logs
       - run: *install_cached_packages
       - attach_workspace:
           at: .
@@ -257,6 +269,7 @@ jobs:
 
   build.docs:
     <<: *test-template
+    name: "Generating docs"
 
 workflows:
   version: 2
