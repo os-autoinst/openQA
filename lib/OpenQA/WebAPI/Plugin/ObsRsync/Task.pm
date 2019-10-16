@@ -16,7 +16,7 @@
 
 package OpenQA::WebAPI::Plugin::ObsRsync::Task;
 use Mojo::Base 'Mojolicious::Plugin';
-
+use Mojo::File;
 use IPC::Run;
 
 sub register {
@@ -52,7 +52,7 @@ sub run {
     return $job->retry({delay => $retry_interval})
       unless my $concurrency_guard = $minion->guard('obs_rsync_run_guard', $lock_timeout, {limit => $concurrency});
 
-    my @cmd = ('bash', "$home/rsync.sh", $project);
+    my @cmd = (Mojo::File->new($home, 'script', 'rsync.sh')->to_string, $project);
     my ($stdin, $stdout, $error);
     IPC::Run::run(\@cmd, \$stdin, \$stdout, \$error);
     my $exit_code = $?;
