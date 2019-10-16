@@ -38,8 +38,7 @@ sub populate_images_to_job {
         }
         catch {
             my $err = $_;
-            die $err
-              unless $err =~ /duplicate key value violates unique constraint "screenshots_filename"/;
+            die $err unless $err =~ /"screenshots_filename"/;
             $ids{$img} = $self->find({filename => $img})->id;
         };
     }
