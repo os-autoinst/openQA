@@ -1074,8 +1074,7 @@ sub insert_module {
     }
     catch {
         my $err = $_;
-        die $err
-          unless $err =~ /duplicate key value violates unique constraint "job_modules_job_id_name_category_script"/;
+        die $err unless $err =~ /"job_modules_job_id_name_category_script"/;
     };
 }
 
