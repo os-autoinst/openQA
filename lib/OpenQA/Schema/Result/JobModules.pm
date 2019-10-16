@@ -25,6 +25,7 @@ use base 'DBIx::Class::Core';
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use Mojo::JSON qw(decode_json encode_json);
+use Mojo::File 'path';
 use File::Basename qw(dirname basename);
 use File::Path 'remove_tree';
 use Cwd 'abs_path';
@@ -301,7 +302,6 @@ sub save_details {
     my ($self, $details) = @_;
     my $existent_md5 = [];
     my @dbpaths;
-    my $schema = $self->result_source->schema;
     for my $d (@$details) {
         # avoid creating symlinks for text results
         if ($d->{screenshot}) {
@@ -311,12 +311,10 @@ sub save_details {
             $d->{screenshot} = $self->_save_details_screenshot($d->{screenshot}, $existent_md5);
         }
     }
-    OpenQA::Schema::Result::ScreenshotLinks::populate_images_to_job($schema, \@dbpaths, $self->job_id);
+    $self->result_source->schema->resultset('Screenshots')->populate_images_to_job(\@dbpaths, $self->job_id);
 
     $self->store_needle_infos($details);
-    open(my $fh, ">", $self->job->result_dir . "/details-" . $self->name . ".json");
-    $fh->print(encode_json($details));
-    close($fh);
+    path($self->job->result_dir, 'details-' . $self->name . '.json')->spurt(encode_json($details));
     return $existent_md5;
 }
 
