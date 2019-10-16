@@ -15,7 +15,7 @@
         false
     % }
     ;
-    % if ($group->template) {
+    % if ($force_yaml_editor) {
         toggleTemplateEditor();
     % }
     % else {
@@ -28,7 +28,7 @@
 <div class="row">
     <div class="col-sm-12">
         <form action="<%= url_for('admin_groups') %>" class="corner-buttons">
-            % if (!$group->template) {
+            % if (!$force_yaml_editor) {
             <button type="button" id="toggle-yaml-editor" class="btn btn-default" onclick="toggleTemplateEditor();">
                 <span>
                     <i class="fas fa-edit"></i>
@@ -70,7 +70,7 @@
         </h2>
         %= include 'layouts/info'
         %= include 'admin/group/group_property_editor', group => $group, is_parent => 0
-        % if (!$group->template) {
+        % if (!$force_yaml_editor) {
             <div id="media">
                 <p id="loading"><i class="fa fa-spinner fa-spin"></i> Loading…</p>
 
@@ -103,7 +103,7 @@
             </div>
         % }
         <form action="#" id="editor-form" class="form-horizontal" style="display: none;"
-              data-put-url="<%= url_for('apiv1_job_templates_schedules' => (id => $group->id)) %>" data-reference="<%= $group->template %>">
+              data-put-url="<%= url_for('apiv1_job_templates_schedules' => (id => $group->id)) %>" data-reference="<%= $yaml_template %>">
             <div class="form-group row">
                 <label for="editor-template" class="col-sm-5 control-label">
                     <div id="editor-yaml-guide">
@@ -180,7 +180,7 @@ scenarios:
             </div>
         </form>
 
-        % if (!$group->template && is_admin) {
+        % if (!$force_yaml_editor && is_admin) {
             <p>
                 %= link_to url_for('job_group_new_media', groupid => $group->id), id =>  'media-add', begin
                     <i class="fa fa-plus-square"></i> Test new medium as part of this group
