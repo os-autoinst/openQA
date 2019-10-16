@@ -26,7 +26,7 @@ use Try::Tiny;
 use Scalar::Util 'looks_like_number';
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION MAX_TIMER MIN_TIMER);
 use OpenQA::Client;
-use OpenQA::Utils qw(log_error log_info log_debug add_log_channel remove_log_channel);
+use OpenQA::Utils qw(log_error log_warning log_info log_debug add_log_channel remove_log_channel);
 use OpenQA::Worker::WebUIConnection;
 use OpenQA::Worker::Settings;
 use OpenQA::Worker::Job;
@@ -632,7 +632,7 @@ sub _handle_client_status_changed {
     }
     # handle failures where it makes sense to reconnect
     elsif ($status eq 'failed') {
-        log_error("$error_message - trying again in 10 seconds");
+        log_warning("$error_message - trying again in 10 seconds");
         Mojo::IOLoop->timer(
             10 => sub {
                 $client->register();
