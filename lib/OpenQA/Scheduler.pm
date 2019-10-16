@@ -36,6 +36,8 @@ our $RUNNING;
 sub startup {
     my $self = shift;
 
+    OpenQA::Scheduler::Client::mark_current_process_as_scheduler;
+
     $self->_setup if $RUNNING;
 
     $self->defaults(appname => 'openQA Scheduler');

@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/lib", "lib";
 
+use Test::Exception;
 use Test::More;
 use Test::Mojo;
 use Mojo::URL;
@@ -74,6 +75,26 @@ subtest 'OpenQA::Client:Archive tests' => sub {
     ok(!-e $file, 'Test uploaded logs file was not created') or diag $file;
     is($t->ua->max_response_size, $limit, "Max response size for UA is correct ($limit)");
 
+};
+
+subtest 'client instantiation prevented from the daemons itself' => sub {
+    OpenQA::WebSockets::Client::mark_current_process_as_websocket_server;
+    throws_ok(
+        sub {
+            OpenQA::WebSockets::Client->singleton;
+        },
+        qr/is forbidden/,
+        'can not create ws server client from ws server itself'
+    );
+
+    OpenQA::Scheduler::Client::mark_current_process_as_scheduler;
+    throws_ok(
+        sub {
+            OpenQA::Scheduler::Client->singleton;
+        },
+        qr/is forbidden/,
+        'can not create scheduler client from scheduler itself'
+    );
 };
 
 done_testing();

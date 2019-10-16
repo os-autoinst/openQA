@@ -22,6 +22,17 @@ use OpenQA::Utils 'service_port';
 has client => sub { OpenQA::Client->new(api => 'localhost') };
 has port   => sub { service_port('scheduler') };
 
+my $IS_SCHEDULER_ITSELF;
+sub mark_current_process_as_scheduler { $IS_SCHEDULER_ITSELF = 1; }
+sub is_current_process_the_scheduler { return $IS_SCHEDULER_ITSELF; }
+
+sub new {
+    my $class = shift;
+    die 'creating an OpenQA::Scheduler::Client from the scheduler itself is forbidden'
+      if is_current_process_the_scheduler;
+    $class->SUPER::new(@_);
+}
+
 sub wakeup {
     my ($self, $worker_id) = @_;
     return if $self->{wakeup};
