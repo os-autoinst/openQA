@@ -66,21 +66,18 @@ sub ws_send {
     return undef unless my $worker = OpenQA::WebSockets::Model::Status->singleton->workers->{$workerid};
 
     $jobid ||= '';
-    my $res;
+    $retry ||= 0;
+
     my $tx = $worker->{tx};
-    if ($tx && !$tx->is_finished) {
-        $res = $tx->send({json => {type => $msg, jobid => $jobid}});
+    if (!$tx || $tx->is_finished) {
+        log_debug("Unable to send command \"$msg\" to worker $workerid: worker not connected");
+
+        # try again in 10 seconds because workers try to re-connect in 10 s intervals
+        Mojo::IOLoop->timer(10 => sub { ws_send($workerid, $msg, $jobid, ++$retry); }) if ($retry < 3);
+        return 0;
     }
-    unless ($res && !$res->error) {
-        $retry ||= 0;
-        if ($retry < 3) {
-            Mojo::IOLoop->timer(2 => sub { ws_send($workerid, $msg, $jobid, ++$retry); });
-        }
-        else {
-            log_debug("Unable to send command \"$msg\" to worker $workerid");
-        }
-    }
-    return $res;
+    $tx->send({json => {type => $msg, jobid => $jobid}});
+    return 1;
 }
 
 sub ws_send_job {
@@ -95,28 +92,21 @@ sub ws_send_job {
     my $worker_id = $job_info->{assigned_worker_id};
     my $worker    = OpenQA::WebSockets::Model::Status->singleton->workers->{$worker_id};
     if (!$worker) {
-        $result->{state}->{error} = "Worker $worker_id doesn't have established a ws connection";
+        $result->{state}->{error}
+          = "Unable to assign job to worker $worker_id: the worker has not established a ws connection";
         return $result;
     }
 
-    my $res;
     my $tx = $worker->{tx};
-    if ($tx && !$tx->is_finished) {
-        $res = $tx->send({json => $message});
-    }
-    my $id_string = ref($job_info->{ids}) eq 'ARRAY' ? join(', ', @{$job_info->{ids}}) : $job_info->{id} // '?';
-    unless ($res && !$res->error) {
-        # Since it is used by scheduler, it's fine to let it fail,
-        # will be rescheduled on next round
-        log_debug("Unable to allocate job to worker $worker_id");
-        $result->{state}->{error} = "Sending $id_string thru WebSockets to $worker_id failed miserably";
-        $result->{state}->{res}   = $res;
+    if (!$tx || $tx->is_finished) {
+        $result->{state}->{error} = "Unable to assign job to worker $worker_id: the worker is not connected anymore";
         return $result;
     }
-    else {
-        log_debug("message sent to $worker_id for job $id_string");
-        $result->{state}->{msg_sent} = 1;
-    }
+
+    $tx->send({json => $message});
+    my $id_string = ref($job_info->{ids}) eq 'ARRAY' ? join(', ', @{$job_info->{ids}}) : $job_info->{id} // '?';
+    log_debug("Started to send message to $worker_id for job $id_string");
+    $result->{state}->{msg_sent} = 1;
     return $result;
 }
 

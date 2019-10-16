@@ -244,8 +244,7 @@ sub send_command {
 
     # prevent ws server querying itself (which would cause it to hang until the connection times out)
     if (OpenQA::WebSockets::Client::is_current_process_the_websocket_server) {
-        my $result = OpenQA::WebSockets::ws_send($self->id, $args{command}, $args{job_id}, undef);
-        return $result && !$result->error;
+        return OpenQA::WebSockets::ws_send($self->id, $args{command}, $args{job_id}, undef);
     }
 
     my $client = OpenQA::WebSockets::Client->singleton;
