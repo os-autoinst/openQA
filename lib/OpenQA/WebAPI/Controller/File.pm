@@ -34,19 +34,16 @@ sub needle {
     my $distri   = $self->param('distri');
     my $version  = $self->param('version') || '';
     my $jsonfile = $self->param('jsonfile') || '';
-    # make sure the directory of the file parameter is a real subdir of
-    # testcasedir before applying it as needledir to prevent access
-    # outside of the zoo
+
+    # make sure the directory of the file parameter is a real subdir of testcasedir before
+    # applying it as needledir to prevent access outside of the zoo
     if ($jsonfile && !is_in_tests($jsonfile)) {
         warn "$jsonfile is not in a subdir of $prjdir/share/tests or $prjdir/tests";
         return $self->render(text => 'Forbidden', status => 403);
     }
-    my $needle = needle_info($name, $distri, $version, $jsonfile);
-    return $self->reply->not_found unless $needle;
 
-    $self->{static} = Mojolicious::Static->new;
-    # needledir is an absolute path from the needle database
-    push @{$self->{static}->paths}, $needle->{needledir};
+    # locate the needle in the needle directory for the given distri and version
+    push(@{($self->{static} = Mojolicious::Static->new)->paths}, needledir($distri, $version));
 
     # name is an URL parameter and can't contain slashes, so it should be safe
     return $self->serve_static_($name . $format);

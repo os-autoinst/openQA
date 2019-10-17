@@ -41,6 +41,7 @@ our @EXPORT  = qw(
   $prjdir
   $resultdir
   &data_name
+  &locate_needle
   &needle_info
   &needledir
   &productdir
@@ -178,49 +179,43 @@ sub needledir {
 
 sub log_warning;
 
+sub locate_needle {
+    my ($relative_needle_path, $needles_dir) = @_;
+
+    my $absolute_filename = catdir($needles_dir, $relative_needle_path);
+    my $needle_exists     = -f $absolute_filename;
+
+    if (!$needle_exists) {
+        $absolute_filename = catdir($OpenQA::Utils::sharedir, $relative_needle_path);
+        $needle_exists     = -f $absolute_filename;
+    }
+    return $absolute_filename if $needle_exists;
+
+    log_error("Needle file $relative_needle_path not found within $needles_dir.");
+    return undef;
+}
+
 sub needle_info {
-    my ($name, $distri, $version, $fn) = @_;
-    local $/;
+    my ($name, $distri, $version, $file_name, $needles_dir) = @_;
 
-    my $needledir = needledir($distri, $version);
-
-    if (!$fn) {
-        $fn = "$needledir/$name.json";
-    }
-    elsif (!-f $fn) {
-        $fn        = catfile($sharedir, $fn);
-        $needledir = dirname($fn);
-    }
-    else {
-        $needledir = dirname($fn);
-    }
-
-    my $JF;
-    unless (open($JF, '<', $fn)) {
-        log_warning("$fn: $!");
-        return;
-    }
+    $file_name = locate_needle($file_name, $needles_dir) if !-f $file_name;
+    return undef unless defined $file_name;
 
     my $needle;
     try {
-        $needle = decode_json(<$JF>);
+        $needle = decode_json(Mojo::File->new($file_name)->slurp);
     }
     catch {
-        log_warning("failed to parse $fn: $_");
-        # technically not required, $needle should remain undefined. Being superstitious human I add:
-        undef $needle;
-    }
-    finally {
-        close($JF);
+        log_warning("Failed to parse $file_name: $_");
     };
-    return unless $needle;
+    return undef unless defined $needle;
 
-    my $png_fname = basename($fn, '.json') . '.png';
-    my $pngfile   = File::Spec->catpath('', $needledir, $png_fname);
+    my $png_fname = basename($file_name, '.json') . '.png';
+    my $pngfile   = File::Spec->catpath('', $needles_dir, $png_fname);
 
-    $needle->{needledir} = $needledir;
+    $needle->{needledir} = $needles_dir;
     $needle->{image}     = $pngfile;
-    $needle->{json}      = $fn;
+    $needle->{json}      = $file_name;
     $needle->{name}      = $name;
     $needle->{distri}    = $distri;
     $needle->{version}   = $version;
