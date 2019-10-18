@@ -57,6 +57,7 @@ do_fetch() {
     [ "$needles_separate" = 1 ] || return 0
     if test -d products; then
         for nd in products/*/needles; do
+            ! [ -L "$target/$nd" ] || continue
             (cd "$target/$nd" && git_update)
         done
     else
