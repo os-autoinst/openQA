@@ -80,6 +80,8 @@ install:
 	install -d -m 755 "$(DESTDIR)"/etc/apparmor.d
 	install -m 644 profiles/apparmor.d/usr.share.openqa.script.openqa "$(DESTDIR)"/etc/apparmor.d
 	install -m 644 profiles/apparmor.d/usr.share.openqa.script.worker "$(DESTDIR)"/etc/apparmor.d
+	install -d -m 755 "$(DESTDIR)"/etc/apparmor.d/local
+	install -m 644 profiles/apparmor.d/local/usr.share.openqa.script.openqa "$(DESTDIR)"/etc/apparmor.d/local
 
 	cp -Ra dbicdh "$(DESTDIR)"/usr/share/openqa/dbicdh
 
