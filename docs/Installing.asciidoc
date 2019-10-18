@@ -703,19 +703,24 @@ events are blacklisted by default.
 [NOTE]
 Upgrading openQA does not automatically update +/etc/openqa/openqa.ini+. Review your configuration after upgrade.
 
-== Filesystem Layout
+== Filesystem layout
 [id="filesystem"]
 
-The openQA web interface can be started via +MOJO_REVERSE_PROXY=1 morbo script/openqa+ in
-development mode.
+Tests, needles, assets, results and working directories (a.k.a. "pool directories") are located in certain
+subdirectories within +/var/lib/openqa+. This directory is configurable (see
+<<Contributing.asciidoc#customize_base_directory,Customize base directory>>). Here we assume the default is in place.
 
-+/var/lib/openqa/+ must be owned by root and contain several sub
-directories, most of which must be owned by the user that runs openQA
-(default 'geekotest'):
+Note that the sub directories within +/var/lib/openqa+ must be accessible by the user that runs the openQA web UI
+(by default 'geekotest') or by the user that runs the worker/isotovideo (by default '_openqa-worker').
 
-* +db+ contains the database lockfile
-* +images+ is where the server stores test screenshots and thumbnails
-* +share+ contains shared directories for remote workers, can be owned by root
+These are the most important sub directories within +/var/lib/openqa+:
+
+* +db+ contains the web UI's database lockfile
+* +images+ is where the web UI stores test screenshots and thumbnails
+* +testresults+ is where the web UI stores test logs and test-generated assets
+* +webui+ is where the web UI stores miscellaneous files
+* +pool+ contains working directories of the workers/isotovideo
+* +share+ contains directories shared between the web UI and (remote) workers, can be owned by root
 * +share/factory+ contains test assets and temp directory, can be owned by root but sysadmin must create subdirs
 * +share/factory/iso+ and +share/factory/iso/fixed+ contain ISOs for tests
 * +share/factory/hdd+ and +share/factory/hdd/fixed+ contain hard disk images for tests
@@ -723,7 +728,6 @@ directories, most of which must be owned by the user that runs openQA
 * +share/factory/other+ and +share/factory/other/fixed+ contain miscellaneous test assets (e.g. kernels and initrds)
 * +share/factory/tmp+ is used as a temporary directory (openQA will create it if it owns +share/factory+)
 * +share/tests+ contains the tests themselves
-* +testresults+ is where the server stores test logs and test-generated assets
 
 Each of the asset directories (+factory/iso+, +factory/hdd+, +factory/repo+ and
 +factory/other+) may contain a +fixed/+ subdirectory, and assets of the same
@@ -757,11 +761,42 @@ The worker needs to own +/var/lib/openqa/pool/$INSTANCE+, e.g.
 
 * +/var/lib/openqa/pool/1+
 * +/var/lib/openqa/pool/2+
-* .... - add more if you have more CPUs/disks
+* ... - add more if you have more worker instances
 
 You can also give the whole pool directory to the +_openqa-worker+ user and let
 the workers create their own instance directories.
 
+=== Terms and variables for certain directories used by openQA and isotovideo
+* the "base directory"
+    - by default +/var/lib+
+    - configurable via environment variable +OPENQA_BASEDIR+
+    - referred as +$basedir+ within openQA
+* the "project directory"
+    - defined as +$basedir/openqa+, by default +/var/lib/openqa+
+    - referred as +$prjdir+ within openQA
+* the "share directory": contains directories shared between web UI and (remote) workers
+    - defined as +$prjdir/share+, by default +/var/lib/openqa/share+
+    - referred as +$sharedir+ within openQA
+* the "test case directory": contains a test distribution
+    - by default +$sharedir/tests/$distri+ or +$sharedir/tests/$distri-$version+
+    - configurable via the test variable +CASEDIR+ (see backend variables documentation)
+    - this default is provided by openQA; when starting isotovideo manually the +CASEDIR+ variable *must* be
+      initialized by hand
+    - might contain the sub directory +lib+ for placing Perl modules used by the tests
+* the "product directory": contains the test schedule (+main.pm+) for a certain product within a test distribution
+    - by default identical to the "test case directory"
+    - usually a directory +products/$distri+ within the "test case directory"
+    - configurable via the test variable +PRODUCTDIR+ (see backend variables documentation)
+* the "needles directory": contains reference images for a certain product within a test distribution
+    - by default +$PRODUCTDIR/needles+
+    - configurable via the test variable +NEEDLES_DIR+ (see backend variables documentation)
+
+==== Further notes
+* Setting the test variables has only an influence on os-autoinst. The web UI on the other hand always relies
+  on the directory structure described above. For the exact details how these paths are computed by the web UI
+  have a look at +lib/OpenQA/Utils.pm+.
+* When enabling the worker cache parts of the usual "share directory" are located in the specified cache
+  directory on the worker host.
 
 == Troubleshooting
 [id="troubleshooting"]
