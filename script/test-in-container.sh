@@ -16,10 +16,14 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 testcase=$1
-set -e pipefail
+set -eo pipefail
 
 [ -n "$testcase" ] || (echo No testcase provided; exit 1) >&2
 [ -f "$testcase" ] || (echo Cannot find file "$testcase"; exit 1 ) >&2
+[ -n "$OSHT_LOCATION" ] || OSHT_LOCATION=/usr/share/osht.sh
+[ -f "$OSHT_LOCATION" ] || { echo "1..0 # osht.sh not found, skipped"; exit 0; }
+# shellcheck source=/dev/null
+source "$OSHT_LOCATION"
 
 thisdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 circlecidir="$thisdir"/../.circleci
@@ -28,20 +32,19 @@ circlecidir="$thisdir"/../.circleci
 basename=$(basename "$testcase")
 containername="localtest.$basename"
 
-# shellcheck source=/dev/null
-source "$thisdir/osht.sh"
 [[ ${BASH_SOURCE[0]} != *privileged.sh ]] || SKIP test "${PRIVILEGED_TESTS}" != 1 # PRIVILEGED_TESTS is not set to 1
 SKIP test "$(docker info 2>&1)" == "" # Docker doesn't seem to be running
 PLAN 1
 
-# let's use `docker build` here to untilize docker cache
+# let's use `docker build` here to utilize docker cache
 ( 
 # shellcheck disable=SC2046 disable=SC2005
 echo "FROM registry.opensuse.org/devel/openqa/ci/containers/base:latest
 RUN sudo zypper ar -f -p 80 https://download.opensuse.org/repositories/devel:/openQA:/Leap:/15.1/openSUSE_Leap_15.1 openQA
-RUN sudo zypper ar -f -p 81 http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.1 devel
+RUN sudo zypper ar -f -p 81 https://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.1 devel
 RUN sudo zypper --gpg-auto-import-keys ref
-RUN sudo zypper -n install $( echo $( (cat "$circlecidir"/dependencies.txt) | sed -e 's/\r//' |sort))
+# strip out version information with sed here
+RUN sudo zypper -n install $( echo $( (cat "$circlecidir"/dependencies.txt) | sed -e 's/\r//' | sed 's/-[0-9.]*$//' | sort))
 RUN sudo zypper -n install apparmor-profiles apparmor-utils"
 ) | docker build -t "$containername" -f- "$thisdir"
 

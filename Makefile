@@ -19,7 +19,7 @@ install:
 	done
 
 # we didn't actually want to install these...
-	for i in tidy generate-packed-assets generate-documentation generate-documentation-genapi run-tests-within-container test-in-container.sh test-in-container-privileged.sh osht.sh; do \
+	for i in tidy generate-packed-assets generate-documentation generate-documentation-genapi run-tests-within-container test-in-container.sh test-in-container-privileged.sh; do \
 		rm "$(DESTDIR)"/usr/share/openqa/script/$$i ;\
 	done
 #

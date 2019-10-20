@@ -293,7 +293,15 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Download osht.sh
           command: |
+            cat /etc/*release
+            curl -q -s https://raw.githubusercontent.com/coryb/osht/master/osht.sh --output osht.sh
+            echo "export OSHT_LOCATION=$(pwd)/osht.sh" >> $BASH_ENV
+      - run:
+          name: Run Docker tests
+          command: |
+            # Need machine executor here for privileged container
             PRIVILEGED_TESTS=1 prove -v t/docker/*.t
 
 workflows:

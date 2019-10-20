@@ -26,18 +26,13 @@ $Test::Strict::TEST_SYNTAX   = 1;
 $Test::Strict::TEST_STRICT   = 1;
 $Test::Strict::TEST_WARNINGS = 1;
 
-# problem: when tidy test fails - it leaves .tdy files, so we should ignore them
-my $tidy_leftovers = Mojo::File->new()->list_tree()->grep(qr/\.tdy$/)->map('to_rel')->map('to_string')->to_array;
-
-# docker tests are in bash
-my @docker_tests = glob "t/docker/*.t";
-
-my @skip_files = (@docker_tests, @$tidy_leftovers);
-
-push @skip_files,
-  # skip test module which would require test API from os-autoinst to be present
-  't/data/openqa/share/tests/opensuse/tests/installation/installer_timezone.pm';
-
-$Test::Strict::TEST_SKIP = \@skip_files;
+$Test::Strict::TEST_SKIP = [
+    # skip test module which would require test API from os-autoinst to be present
+    't/data/openqa/share/tests/opensuse/tests/installation/installer_timezone.pm',
+    # problem: when tidy test fails - it leaves .tdy files, so we should ignore them
+    Mojo::File->new->list_tree->grep(qr/\.tdy$/)->map('to_rel')->map('to_string')->to_array,
+    # docker tests are in bash
+    glob "t/docker/*.t",
+];
 
 all_perl_files_ok(qw(lib script t));
