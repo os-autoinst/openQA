@@ -288,6 +288,14 @@ jobs:
     environment:
       PUBLISH: 1
 
+  test.docker:
+    machine: true
+    steps:
+      - checkout
+      - run:
+          command: |
+            PRIVILEGED_TESTS=1 prove -v t/docker/*.t
+
 workflows:
   version: 2
   test:
@@ -326,6 +334,7 @@ workflows:
            - fullstack
            - developer
            - scheduler
+      - test.docker
       - build.docs:
          requires:
            - cache

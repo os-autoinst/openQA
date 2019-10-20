@@ -1,0 +1,1 @@
+../../../script/test-in-container-privileged.sh
