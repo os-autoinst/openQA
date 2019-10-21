@@ -375,6 +375,7 @@ Authentication module is expected to create or update user entry in OpenQA datab
 after user validation. See included modules for inspiration.
 
 == Customize base directory
+[id="customize_base_directory"]
 
 It is possible to customize the openQA base directory (which is for instance used to store
 test results) by setting the environment variable +OPENQA_BASEDIR+. The default value
