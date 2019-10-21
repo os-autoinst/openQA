@@ -56,12 +56,6 @@ sub from_worker {
         exists $global_settings->{CACHELIMIT} ? (limit => int($global_settings->{CACHELIMIT}) * (1024**3)) : ());
 }
 
-sub DESTROY {
-    my $self = shift;
-
-    $self->sqlite->db->disconnect() if $self->sqlite;
-}
-
 sub deploy_cache {
     my $self = shift;
 
