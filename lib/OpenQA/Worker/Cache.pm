@@ -187,6 +187,7 @@ sub _download_asset {
 }
 
 sub _base_host { Mojo::URL->new($_[0])->host || $_[0] }
+
 sub _host { _base_host(shift->host) }
 
 sub get_asset {
@@ -314,16 +315,12 @@ sub purge_asset {
 sub _cache_sync {
     my $self = shift;
 
-    my $location = $self->location;
-    my $ext;
-    $ext .= "-o -name '*.$_' " for qw(qcow2 iso vhd vhdx);
-    my @assets = `find $location -maxdepth 2 -type f -name '*.img' $ext`;
-    chomp @assets;
     $self->{cache_real_size} = 0;
-    foreach my $file (@assets) {
-        my $asset_size = -s $file;
-        next if !defined $asset_size;
-        $self->_increase($asset_size) if $self->asset_lookup($file);
+    my $location = $self->location;
+    my $assets
+      = path($location)->list_tree({max_depth => 2})->map('to_string')->grep(qr/\.(?:img|qcow2|iso|vhd|vhdx)$/);
+    foreach my $file ($assets->each) {
+        $self->_increase(-s $file) if $self->asset_lookup($file);
     }
 }
 
