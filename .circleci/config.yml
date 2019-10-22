@@ -38,8 +38,7 @@ aliases:
     name: Log cached packages
     command: |
       mkdir -p logs
-      find /var/cache/zypp/packages/ | wc -l > ./logs/packages.txt
-      [ -z "$CIRCLE_WORKFLOW_ID" ] || ls -lRa /var/cache/zypp/packages/openQA > ./logs/packages.openQA.txt
+      find /var/cache/zypp/packages/ -iname *.rpm > ./logs/packages.txt
 
   - &store_logs
       path: logs
