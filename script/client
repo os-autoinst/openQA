@@ -239,7 +239,7 @@ my $url;
 if ($options{host} !~ '/') {
     $url = Mojo::URL->new();
     $url->host($options{host});
-    $url->scheme('https');
+    $url->scheme($options{host} eq 'localhost' ? 'http' : 'https');
 }
 else {
     $url = Mojo::URL->new($options{host});
