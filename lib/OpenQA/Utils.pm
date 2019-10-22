@@ -97,7 +97,7 @@ our @EXPORT  = qw(
   service_port
 );
 
-our @EXPORT_OK = qw(determine_web_ui_web_socket_url get_ws_status_only_url random_string random_hex);
+our @EXPORT_OK = qw(base_host determine_web_ui_web_socket_url get_ws_status_only_url random_string random_hex);
 
 if ($0 =~ /\.t$/) {
     # This should result in the 't' directory, even if $0 is in a subdirectory
@@ -1247,5 +1247,7 @@ sub any_array_item_contained_by_hash {
     }
     return 0;
 }
+
+sub base_host { Mojo::URL->new($_[0])->host || $_[0] }
 
 1;
