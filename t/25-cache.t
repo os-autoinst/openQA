@@ -26,6 +26,7 @@ use Test::More;
 use Test::Warnings;
 use Test::MockModule;
 use OpenQA::Utils;
+use OpenQA::Utils 'base_host';
 use OpenQA::Worker::Cache;
 use DBI;
 use File::Path qw(remove_tree make_path);
@@ -121,20 +122,9 @@ sub stop_server {
 
 my $cache = OpenQA::Worker::Cache->new(host => $host, location => $cachedir);
 
-subtest '_base_host' => sub {
-    is OpenQA::Worker::Cache::_base_host('http://opensuse.org'),             'opensuse.org';
-    is OpenQA::Worker::Cache::_base_host('www.opensuse.org'),                'www.opensuse.org';
-    is OpenQA::Worker::Cache::_base_host('test'),                            'test';
-    is OpenQA::Worker::Cache::_base_host('https://opensuse.org/test/1/2/3'), 'opensuse.org';
-
+subtest 'base_host' => sub {
     my $cache_test = OpenQA::Worker::Cache->new(host => $host, location => $cachedir);
-    is $cache_test->_host, 'localhost';
-
-    $cache_test->host('http://opensuse.org');
-    is $cache_test->_host, 'opensuse.org';
-
-    $cache_test->host('foo');
-    is $cache_test->_host, 'foo';
+    is base_host($cache_test->host), 'localhost';
 };
 
 is $cache->init, $cache;

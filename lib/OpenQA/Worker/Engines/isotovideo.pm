@@ -18,7 +18,7 @@ package OpenQA::Worker::Engines::isotovideo;
 use strict;
 use warnings;
 
-use OpenQA::Utils qw(locate_asset log_error log_info log_debug log_warning get_channel_handle);
+use OpenQA::Utils qw(base_host locate_asset log_error log_info log_debug log_warning get_channel_handle);
 use POSIX qw(:sys_wait_h strftime uname _exit);
 use Mojo::JSON 'encode_json';    # booleans
 use Cpanel::JSON::XS ();
@@ -216,7 +216,7 @@ sub engine_workit {
 
     # do asset caching if CACHEDIRECTORY is set
     if ($global_settings->{CACHEDIRECTORY}) {
-        my $host_to_cache = OpenQA::Worker::Cache::_base_host($webui_host);
+        my $host_to_cache = base_host($webui_host);
         my $error         = cache_assets($job, \%vars, $assetkeys, $webui_host, $pooldir);
         return $error if $error;
 

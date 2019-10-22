@@ -21,6 +21,7 @@ use OpenQA::Worker::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING
 use OpenQA::Worker::Cache::Request;
 use OpenQA::Worker::Cache::Request::Asset;
 use OpenQA::Worker::Cache::Request::Sync;
+use OpenQA::Utils 'base_host';
 use Mojo::URL;
 use Mojo::File 'path';
 
@@ -102,7 +103,7 @@ sub session_token { shift->_query('session_token') }
 sub enqueue       { _reply(shift->execute_task(@_)) }
 
 # TODO: This could go in a separate object (?)
-sub asset_path { path(shift->cache_dir, @_ > 1 ? (OpenQA::Worker::Cache::_base_host($_[0]) || shift) : ())->child(pop) }
+sub asset_path { path(shift->cache_dir, @_ > 1 ? (base_host($_[0]) || shift) : ())->child(pop) }
 sub asset_exists { !!(-e shift->asset_path(@_)) }
 
 sub request { OpenQA::Worker::Cache::Request->new(client => shift) }

@@ -21,7 +21,7 @@ use File::Basename;
 use Fcntl ':flock';
 use Mojo::UserAgent;
 use OpenQA::Utils
-  qw(log_error log_info log_debug get_channel_handle add_log_channel append_channel_to_defaults remove_channel_from_defaults);
+  qw(base_host log_error log_info log_debug get_channel_handle add_log_channel append_channel_to_defaults remove_channel_from_defaults);
 use OpenQA::Worker::Settings;
 use Mojo::SQLite;
 use Mojo::File 'path';
@@ -186,14 +186,10 @@ sub _download_asset {
     return $asset;
 }
 
-sub _base_host { Mojo::URL->new($_[0])->host || $_[0] }
-
-sub _host { _base_host(shift->host) }
-
 sub get_asset {
     my ($self, $job, $asset_type, $asset) = @_;
 
-    my $location = path($self->location, $self->_host);
+    my $location = path($self->location, base_host($self->host));
     $location->make_path unless -d $location;
     $asset = $location->child(path($asset)->basename);
 

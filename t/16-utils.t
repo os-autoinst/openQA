@@ -22,7 +22,7 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
-use OpenQA::Utils qw(random_string random_hex);
+use OpenQA::Utils qw(base_host random_string random_hex);
 use OpenQA::Test::Utils 'redirect_output';
 use Test::More;
 use Scalar::Util 'reftype';
@@ -331,6 +331,13 @@ subtest parse_assets_from_settings => sub {
     $assets                        = parse_assets_from_settings($settings);
     $refassets->{UEFI_PFLASH_VARS} = {type => "hdd", name => "uefi_pflash_vars.qcow2"};
     is_deeply $assets, $refassets, "correct with relative UEFI_PFLASH_VARS";
+};
+
+subtest 'base_host' => sub {
+    is base_host('http://opensuse.org'),             'opensuse.org';
+    is base_host('www.opensuse.org'),                'www.opensuse.org';
+    is base_host('test'),                            'test';
+    is base_host('https://opensuse.org/test/1/2/3'), 'opensuse.org';
 };
 
 done_testing;
