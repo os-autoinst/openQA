@@ -57,7 +57,7 @@ do_fetch() {
     [ "$needles_separate" = 1 ] || return 0
     if test -d products; then
         for nd in products/*/needles; do
-            ! [ -L "$target/$nd" ] || continue
+            [ -h "$target/$nd" ] && continue
             (cd "$target/$nd" && git_update)
         done
     else
@@ -70,7 +70,7 @@ if [ "$updateall" = 1 ]; then
     fail=0
     for repo in *; do
         target="$dir/$repo"
-        ! [ -L "$target" ] || continue
+        [ -h "$target" ] && continue
         [ -d "$target/.git" ] || continue
         (cd "$target" && do_fetch "$target") || fail=1
     done
