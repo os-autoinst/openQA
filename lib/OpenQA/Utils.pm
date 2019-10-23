@@ -42,7 +42,6 @@ our @EXPORT  = qw(
   $resultdir
   &data_name
   &locate_needle
-  &needle_info
   &needledir
   &productdir
   &testcasedir
@@ -193,41 +192,6 @@ sub locate_needle {
 
     log_error("Needle file $relative_needle_path not found within $needles_dir.");
     return undef;
-}
-
-sub needle_info {
-    my ($name, $distri, $version, $file_name, $needles_dir) = @_;
-
-    $file_name = locate_needle($file_name, $needles_dir) if !-f $file_name;
-    return undef unless defined $file_name;
-
-    my $needle;
-    try {
-        $needle = decode_json(Mojo::File->new($file_name)->slurp);
-    }
-    catch {
-        log_warning("Failed to parse $file_name: $_");
-    };
-    return undef unless defined $needle;
-
-    my $png_fname = basename($file_name, '.json') . '.png';
-    my $pngfile   = File::Spec->catpath('', $needles_dir, $png_fname);
-
-    $needle->{needledir} = $needles_dir;
-    $needle->{image}     = $pngfile;
-    $needle->{json}      = $file_name;
-    $needle->{name}      = $name;
-    $needle->{distri}    = $distri;
-    $needle->{version}   = $version;
-
-    # Skip code to support compatibility if HASH-workaround properties already present
-    return $needle unless $needle->{properties};
-
-    # Transform string-workaround-properties into HASH-workaround-properties
-    $needle->{properties}
-      = [map { ref($_) eq "HASH" ? $_ : {name => $_, value => find_bug_number($name)} } @{$needle->{properties}}];
-
-    return $needle;
 }
 
 # Adds a timestamp to a string (eg. needle name) or replace the already present timestamp
