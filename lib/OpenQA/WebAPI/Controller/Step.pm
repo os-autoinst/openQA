@@ -299,6 +299,7 @@ sub _new_screenshot {
 sub _basic_needle_info {
     my ($self, $name, $distri, $version, $file_name, $needles_dir) = @_;
 
+    $file_name //= "$name.json";
     $file_name = locate_needle($file_name, $needles_dir) if !-f $file_name;
     return undef unless defined $file_name;
 
