@@ -190,6 +190,8 @@ jobs:
           command: |
             if [ ! -d /var/cache/autoinst/t ]; then
               bash -x .circleci/build_autoinst.sh "/var/cache/autoinst" $(cat .circleci/autoinst.sha)
+            else
+              (cd /var/cache/autoinst && git log -1)
             fi
       - save_cache: *save_fullstack_cache
 
