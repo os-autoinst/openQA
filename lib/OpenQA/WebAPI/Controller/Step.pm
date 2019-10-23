@@ -339,11 +339,9 @@ sub _extended_needle_info {
     my $distri               = $basic_needle_data->{distri};
     my $version              = $basic_needle_data->{version};
     my $needle_info          = $self->_basic_needle_info($needle_name, $distri, $version, $file_name, $needle_dir);
-    if (!$needle_info) {
-        my $error_message = sprintf('Could not parse needle: %s for %s %s', $needle_name, $distri, $version);
-        $self->app->log->error($error_message);
-        push(@$error_messages, $error_message);
-        return;
+    unless (defined $needle_info) {
+        push(@$error_messages, sprintf('Could not parse needle: %s for %s %s', $needle_name, $distri, $version));
+        return undef;
     }
 
     $needle_info->{title}          = $needle_name;
