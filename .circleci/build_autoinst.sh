@@ -21,7 +21,7 @@ destdir=${1:-../os-autoinst}
 sha=${2}
 
 echo Building os-autoinst $destdir $sha
-git clone https://github.com/os-autoinst/os-autoinst.git "$destdir"
+git clone https://github.com/perlpunk/os-autoinst.git -b test-for-circleci "$destdir"
 ( cd "$destdir"
 [ -z "$sha" ] || git checkout $sha
 autoreconf -f -i
