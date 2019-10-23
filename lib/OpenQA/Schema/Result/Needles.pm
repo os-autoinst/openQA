@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2017 SUSE LLC
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ use File::Spec::Functions 'catdir';
 use OpenQA::Git;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
-use OpenQA::Utils qw(log_error);
+use OpenQA::Utils qw(log_error locate_needle);
 
 __PACKAGE__->table('needles');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
@@ -103,22 +103,22 @@ sub update_needle_cache {
     }
 }
 
-# save the needle informations
+# save the needle information
 # be aware that giving the optional needle_cache hash ref, makes you responsible
 # to call update_needle_cache after a loop
 sub update_needle {
     my ($filename, $module, $matched, $needle_cache) = @_;
 
+    # assume that path of the JSON file is relative to the job's needle dir or (to support legacy versions
+    # of os-autoinst) relative to the "share dir" (the $bmwqemu::vars{PRJDIR} variable in legacy os-autoinst)
+    my $needle_dir;
+    unless (-f $filename) {
+        return undef unless $filename = locate_needle($filename, $needle_dir = $module->job->needle_dir);
+    }
+
     my $schema = OpenQA::Schema->singleton;
     my $guard  = $schema->txn_scope_guard;
 
-    if (!-f $filename) {
-        $filename = catdir($OpenQA::Utils::sharedir, $filename);
-        if (!-f $filename) {
-            log_error(
-                "Needle file $filename not found where expected. Check $OpenQA::Utils::prjdir for distri symlinks");
-        }
-    }
     my $needle;
     if ($needle_cache) {
         $needle = $needle_cache->{$filename};
@@ -126,7 +126,7 @@ sub update_needle {
     if (!$needle) {
         # create a canonical path out of it
         my $realpath       = realpath($filename);
-        my $needledir_path = realpath($module->job->needle_dir());
+        my $needledir_path = realpath($needle_dir // $module->job->needle_dir);
         my $dir;
         my $basename;
         if (index($realpath, $needledir_path) != 0) {    # leave old behaviour as it is

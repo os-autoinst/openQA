@@ -204,7 +204,6 @@ sub engine_workit {
         OPENQA_URL      => $openqa_url,
         WORKER_INSTANCE => $instance,
         WORKER_ID       => $workerid,
-        PRJDIR          => $OpenQA::Utils::sharedir,
         %$job_settings
     );
     log_debug('Job settings:');
@@ -230,8 +229,6 @@ sub engine_workit {
                 to   => $shared_cache
             );
             my $rsync_request_description = "Rsync cache request from '$rsync_source' to '$shared_cache'";
-
-            $vars{PRJDIR} = $shared_cache;
 
             # enqueue rsync task; retry in some error cases
             for (my $remaining_tries = 3; $remaining_tries > 0; --$remaining_tries) {
