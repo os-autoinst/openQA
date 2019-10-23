@@ -300,7 +300,7 @@ sub _show {
     # stash information for developer mode
     if ($job->state eq 'running') {
         my $current_user = $self->current_user;
-        my $worker_vnc   = ($worker ? $worker->host . ':' . (90 + $worker->instance) : undef);
+        my $worker_vnc   = ($worker ? $worker->host . ':' . (5990 + $worker->instance) : undef);
         $self->stash(
             {
                 ws_developer_url         => determine_web_ui_web_socket_url($job->id),
