@@ -22,7 +22,7 @@ has task => 'cache_tests';
 
 sub lock {
     my $self = shift;
-    return join '.', map { $self->$_ } qw(from to);
+    return join('.', map { $self->$_ } qw(from to));
 }
 
 sub to_hash { {from => $_[0]->from, to => $_[0]->to} }

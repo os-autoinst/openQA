@@ -129,14 +129,14 @@ sub cache_assets {
             host  => $webui_host
         );
 
-        if ($asset_request->enqueue) {
+        if ($cache_client->enqueue($asset_request)) {
             log_debug("Downloading $asset_uri - request sent to Cache Service.", channels => 'autoinst');
-            until ($asset_request->processed) {
+            until ($cache_client->processed($asset_request)) {
                 sleep 5;
                 return {error => 'Status updates interrupted'} unless $job->post_setup_status;
             }
             my $msg = "Download of $asset_uri processed";
-            if (my $output = $asset_request->output) { $msg .= ": $output" }
+            if (my $output = $cache_client->output($asset_request)) { $msg .= ": $output" }
             log_debug($msg, channels => 'autoinst');
         }
 
@@ -235,20 +235,21 @@ sub engine_workit {
 
             # enqueue rsync task; retry in some error cases
             for (my $remaining_tries = 3; $remaining_tries > 0; --$remaining_tries) {
-                return {error => "Failed to send $rsync_request_description"} unless $rsync_request->enqueue;
+                return {error => "Failed to send $rsync_request_description"}
+                  unless $cache_client->enqueue($rsync_request);
                 log_info("Enqueued $rsync_request_description");
 
-                until ($rsync_request->processed) {
+                until ($cache_client->processed($rsync_request)) {
                     sleep 5;
                     return {error => 'Status updates interrupted'} unless $job->post_setup_status;
                 }
 
-                if (my $output = $rsync_request->output) {
+                if (my $output = $cache_client->output($rsync_request)) {
                     log_info('Output of rsync: ' . $output, channels => 'autoinst');
                 }
 
                 # treat "no sync necessary" as success as well
-                my $exit = $rsync_request->result // 0;
+                my $exit = $cache_client->result($rsync_request) // 0;
 
                 if (!defined $exit) {
                     return {error => 'Failed to rsync tests.'};
