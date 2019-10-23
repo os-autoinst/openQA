@@ -86,12 +86,7 @@ aliases:
   - &make_test
     name: "Running unit tests"
     command: |
-      # calculate coverage only on PR and master to save time
-      # include 'cover' into branch name if you need coverage
-      case "$CIRCLE_BRANCH" in
-      master |  pull* | *cover*) export PERL5OPT="$COVEROPT,-db,cover_db_${CIRCLE_JOB}";;
-      *) mkdir -p "cover_db_${CIRCLE_JOB}_stub";; # otherwise persist_to_workspace will show error
-      esac
+      export PERL5OPT="$COVEROPT,-db,cover_db_${CIRCLE_JOB}"
       echo PERL5OPT="$PERL5OPT"
       case "$CIRCLE_JOB" in
       t)         make test CHECKSTYLE=1 PROVE_ARGS="$HARNESS t/*.t"     GLOBIGNORE="$(cat .circleci/unstable_tests.txt | tr '\n' :)";;
@@ -308,12 +303,6 @@ workflows:
            - fullstack
            - developer
            - scheduler
-         filters:
-           branches:
-             only:
-               - /pull.*/
-               - master
-               - /.*cover.*/
       - build.docs:
          requires:
            - cache
