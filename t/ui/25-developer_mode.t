@@ -241,7 +241,7 @@ subtest 'state shown when connected' => sub {
     fake_state(developerMode => {isPaused => '"some reason"'});
     element_visible(
         '#developer-vnc-notice',
-qr/You might be able to connect to the SUT at remotehost:91 via VNC with shared mode enabled \(eg\. vncviewer remotehost:91 -Shared for TigerVNC\)\./,
+qr/You might be able to connect to the SUT at remotehost:5991 via VNC with shared mode enabled \(eg\. vncviewer remotehost:5991 -Shared for TigerVNC\)\./,
     );
     element_visible(
         '#developer-panel .card-header',
