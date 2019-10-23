@@ -102,7 +102,7 @@ sub start_server {
 
 sub test_default_usage {
     my ($id, $a) = @_;
-    my $asset_request = $cache_client->request->asset(id => $id, asset => $a, type => 'hdd', host => $host);
+    my $asset_request = $cache_client->asset_request(id => $id, asset => $a, type => 'hdd', host => $host);
 
     if ($asset_request->enqueue) {
         sleep .5 until $asset_request->processed;
@@ -114,7 +114,7 @@ sub test_default_usage {
 sub test_sync {
     my $dir           = tempdir;
     my $dir2          = tempdir;
-    my $rsync_request = $cache_client->request->rsync(from => $dir, to => $dir2);
+    my $rsync_request = $cache_client->rsync_request(from => $dir, to => $dir2);
 
     my $t_dir = int(rand(13432432));
     my $data  = int(rand(348394280934820842093));
@@ -137,7 +137,7 @@ sub test_sync {
 sub test_download {
     my ($id, $a) = @_;
     unlink path($cachedir)->child($a);
-    my $asset_request = $cache_client->request->asset(id => $id, asset => $a, type => 'hdd', host => $host);
+    my $asset_request = $cache_client->asset_request(id => $id, asset => $a, type => 'hdd', host => $host);
 
     my $resp = $asset_request->execute_task();
     is($resp, OpenQA::Worker::Cache::STATUS_ENQUEUED) or die diag explain $resp;
@@ -187,15 +187,13 @@ CACHELIMIT = 100");
 };
 
 subtest 'Cache Requests' => sub {
-    my $asset_request = $cache_client->request->asset(id => 922756, asset => 'test', type => 'hdd', host => 'open.qa');
-    my $rsync_request = $cache_client->request->rsync(from => 'foo', to => 'bar');
+    my $asset_request = $cache_client->asset_request(id => 922756, asset => 'test', type => 'hdd', host => 'open.qa');
+    my $rsync_request = $cache_client->rsync_request(from => 'foo', to => 'bar');
 
     is $rsync_request->lock, join('.', 'foo',  'bar');
     is $asset_request->lock, join('.', 'test', 'open.qa');
 
-    my $req = $cache_client->request;
-    is $cache_client, $req->client;
-    my $asset_req = $req->asset();
+    my $asset_req = $cache_client->asset_request;
     is $cache_client, $asset_req->client;
 
     is_deeply $rsync_request->to_hash, {from => 'foo', to => 'bar'};
@@ -204,7 +202,7 @@ subtest 'Cache Requests' => sub {
     is_deeply $rsync_request->to_array, [qw(foo bar)];
     is_deeply $asset_request->to_array, [qw(922756 hdd test open.qa)];
 
-    my $base = $cache_client->request;
+    my $base = OpenQA::Worker::Cache::Request->new;
     local $@;
     eval { $base->lock };
     like $@, qr/lock\(\) not implemented in OpenQA::Worker::Cache::Request/, 'lock() not implemented in base request';
@@ -319,7 +317,7 @@ subtest 'Race for same asset' => sub {
 
     my $a = 'sle-12-SP3-x86_64-0368-200_123200@64bit.qcow2';
 
-    my $asset_request = $cache_client->request->asset(id => 922756, asset => $a, type => 'hdd', host => $host);
+    my $asset_request = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
 
     my $sum = md5_sum(path($cachedir, 'localhost')->child($a)->slurp);
     unlink path($cachedir, 'localhost')->child($a)->to_string;
@@ -356,7 +354,7 @@ subtest 'Race for same asset' => sub {
 
 subtest 'Default usage' => sub {
     my $a             = 'sle-12-SP3-x86_64-0368-200_1000@64bit.qcow2';
-    my $asset_request = $cache_client->request->asset(id => 922756, asset => $a, type => 'hdd', host => $host);
+    my $asset_request = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
 
     unlink path($cachedir)->child($a);
     ok(!$cache_client->asset_exists('localhost', $a), 'Asset absent') or die diag "Asset already exists - abort test";
@@ -377,7 +375,7 @@ subtest 'Default usage' => sub {
 
 subtest 'Small assets causes racing when releasing locks' => sub {
     my $a             = 'sle-12-SP3-x86_64-0368-200_1@64bit.qcow2';
-    my $asset_request = $cache_client->request->asset(id => 922756, asset => $a, type => 'hdd', host => $host);
+    my $asset_request = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
 
     unlink path($cachedir)->child($a);
     ok(!$cache_client->asset_exists('localhost', $a), 'Asset absent') or die diag "Asset already exists - abort test";
@@ -495,7 +493,7 @@ subtest 'Test Minion Sync task' => sub {
 
     $dir->child('test')->spurt('foobar');
     my $expected = $dir2->child('tests')->child('test');
-    my $req      = $cache_client->request->rsync(from => $dir, to => $dir2);
+    my $req      = $cache_client->rsync_request(from => $dir, to => $dir2);
     my $task     = OpenQA::Worker::Cache::Task::Sync->new();
     $task->register($app);
     ok $req->enqueue;

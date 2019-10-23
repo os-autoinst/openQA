@@ -16,16 +16,11 @@
 package OpenQA::Worker::Cache::Request;
 use Mojo::Base -base;
 
-use OpenQA::Worker::Cache::Request::Sync;
-use OpenQA::Worker::Cache::Request::Asset;
 use Carp 'croak';
 use OpenQA::Worker::Cache::Client;
 
 has [qw(task minion_id)];
 has client => sub { OpenQA::Worker::Cache::Client->new };
-
-sub asset { OpenQA::Worker::Cache::Request::Asset->new(client => shift->client, @_,) }
-sub rsync { OpenQA::Worker::Cache::Request::Sync->new(client => shift->client, @_,) }
 
 sub execute_task { $_[0]->client->execute_task(shift) }
 sub status       { $_[0]->client->status(shift) }
@@ -49,14 +44,14 @@ OpenQA::Worker::Cache::Request - OpenQA Cache Service Request Object
     use OpenQA::Worker::Cache::Client;
 
     my $client = OpenQA::Worker::Cache::Client->new( host=> 'http://127.0.0.1:7844', retry => 5, cache_dir => '/tmp/cache/path' );
-    my $request = $client->request->asset( id => 9999, asset => 'asset_name.qcow2', type  => 'hdd', host  => 'openqa.opensuse.org' );
+    my $request = $client->asset_request( id => 9999, asset => 'asset_name.qcow2', type  => 'hdd', host  => 'openqa.opensuse.org' );
     $request->enqueue
 
     if ($request->processed && $client->asset_exists('asset_name.qcow2')) {
       print "Success";
     }
 
-    my $request = $client->request->rsync( from => 'source', to => 'destination');
+    my $request = $client->rsync_request( from => 'source', to => 'destination');
 
     ... $request->enqueue
 

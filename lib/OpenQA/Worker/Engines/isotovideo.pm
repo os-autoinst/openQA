@@ -122,7 +122,7 @@ sub cache_assets {
         my $error = $cache_client->availability_error;
         return {error => $error} if $error;
 
-        my $asset_request = $cache_client->request->asset(
+        my $asset_request = $cache_client->asset_request(
             id    => $job->id,
             asset => $asset_uri,
             type  => $assetkeys->{$this_asset},
@@ -225,7 +225,7 @@ sub engine_workit {
             $shared_cache = catdir($global_settings->{CACHEDIRECTORY}, $host_to_cache);
 
             my $cache_client  = OpenQA::Worker::Cache::Client->new;
-            my $rsync_request = $cache_client->request->rsync(
+            my $rsync_request = $cache_client->rsync_request(
                 from => $rsync_source,
                 to   => $shared_cache
             );
