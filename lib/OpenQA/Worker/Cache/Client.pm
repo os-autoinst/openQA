@@ -18,7 +18,6 @@ use Mojo::Base -base;
 
 use OpenQA::Worker::Settings;
 use OpenQA::Worker::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE);
-use OpenQA::Worker::Cache::Request;
 use OpenQA::Worker::Cache::Request::Asset;
 use OpenQA::Worker::Cache::Request::Sync;
 use OpenQA::Utils 'base_host';
@@ -27,7 +26,7 @@ use Mojo::File 'path';
 
 has host      => 'http://127.0.0.1:7844';
 has retry     => 5;
-has cache_dir => sub { $ENV{CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
+has cache_dir => sub { $ENV{OPENQA_CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
 has ua        => sub { Mojo::UserAgent->new };
 
 sub _url { Mojo::URL->new(shift->host)->path(shift)->to_string }
@@ -147,3 +146,28 @@ sub availability_error {
 }
 
 1;
+
+=encoding utf-8
+
+=head1 NAME
+
+OpenQA::Worker::Cache::Client - OpenQA Cache Service Client
+
+=head1 SYNOPSIS
+
+    use OpenQA::Worker::Cache::Client;
+
+    my $client = OpenQA::Worker::Cache::Client->new(host=> 'http://127.0.0.1:7844', retry => 5, cache_dir => '/tmp/cache/path');
+    my $request = $client->asset_request(id => 9999, asset => 'asset_name.qcow2', type => 'hdd', host => 'openqa.opensuse.org');
+    $client->enqueue($request);
+    until ($client->processed($request)) {
+        say 'Waiting for asset download to finish';
+        sleep 1;
+    }
+    say 'Asset downloaded!';
+
+=head1 DESCRIPTION
+
+OpenQA::Worker::Cache::Client is the client used for interacting with the OpenQA Cache Service.
+
+=cut

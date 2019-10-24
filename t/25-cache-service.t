@@ -155,6 +155,12 @@ sub test_download {
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
 }
 
+subtest 'OPENQA_CACHE_DIR environment variable' => sub {
+    local $ENV{OPENQA_CACHE_DIR} = '/does/not/exist';
+    my $client = OpenQA::Worker::Cache::Client->new;
+    is $client->cache_dir, '/does/not/exist', 'environment variable used';
+};
+
 subtest 'Availability check and worker status' => sub {
     my $client_mock = Test::MockModule->new('OpenQA::Worker::Cache::Client');
 
