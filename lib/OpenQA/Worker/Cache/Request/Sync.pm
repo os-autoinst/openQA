@@ -25,8 +25,9 @@ sub lock {
     return join('.', map { $self->$_ } qw(from to));
 }
 
-sub to_hash { {from => $_[0]->from, to => $_[0]->to} }
-
-sub to_array { [$_[0]->from, $_[0]->to] }
+sub to_array {
+    my $self = shift;
+    return [$self->from, $self->to];
+}
 
 1;

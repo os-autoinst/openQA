@@ -192,9 +192,6 @@ subtest 'Cache Requests' => sub {
     is $rsync_request->lock, join('.', 'foo',  'bar');
     is $asset_request->lock, join('.', 'test', 'open.qa');
 
-    is_deeply $rsync_request->to_hash, {from => 'foo', to => 'bar'};
-    is_deeply $asset_request->to_hash, {id => 922756, asset => 'test', type => 'hdd', host => 'open.qa'};
-
     is_deeply $rsync_request->to_array, [qw(foo bar)];
     is_deeply $asset_request->to_array, [qw(922756 hdd test open.qa)];
 
@@ -202,9 +199,6 @@ subtest 'Cache Requests' => sub {
     local $@;
     eval { $base->lock };
     like $@, qr/lock\(\) not implemented in OpenQA::Worker::Cache::Request/, 'lock() not implemented in base request';
-    eval { $base->to_hash };
-    like $@, qr/to_hash\(\) not implemented in OpenQA::Worker::Cache::Request/,
-      'to_hash() not implemented in base request';
     eval { $base->to_array };
     like $@, qr/to_array\(\) not implemented in OpenQA::Worker::Cache::Request/,
       'to_array() not implemented in base request';

@@ -25,37 +25,42 @@ use OpenQA::Worker::Cache::Client;
 sub register {
     my ($self, $app) = @_;
 
-    my $cache  = OpenQA::Worker::Cache->from_worker;
-    my $client = OpenQA::Worker::Cache::Client->new;
-
-    $app->minion->add_task(
-        cache_asset => sub {
-            my ($job, $id, $type, $asset_name, $host) = @_;
-
-            my $req        = $client->asset_request(id => $id, type => $type, asset => $asset_name, host => $host);
-            my $guard_name = $client->session_token . '.' . $req->lock;
-
-            return $job->remove unless defined $asset_name && defined $type && defined $host;
-            return $job->retry({delay => LOCK_RETRY_DELAY})
-              unless my $guard = $app->minion->guard($guard_name, MINION_LOCK_EXPIRE);
-
-            my $job_prefix = "[Job #" . $job->id . "]";
-            $app->log->debug("$job_prefix Guard: $guard_name Download: $asset_name");
-            $app->log->debug("$job_prefix Dequeued " . $req->lock) if $client->dequeue_lock($req->lock);
-            $OpenQA::Utils::app = undef;
-            my $output;
-            {
-                open my $handle, '>', \$output;
-                local *STDERR = $handle;
-                local *STDOUT = $handle;
-                # Do the real download
-                $cache->host($host);
-                $cache->get_asset({id => $id}, $type, $asset_name);
-                $job->note(output => $output);
-            }
-            $app->log->debug("${job_prefix} Finished");
-        });
+    $app->minion->add_task(cache_asset => \&_cache_asset);
 }
+
+sub _cache_asset {
+    my ($job, $id, $type, $asset_name, $host) = @_;
+
+    my $app = $job->app;
+    my $log = $app->log;
+
+    my $cache      = OpenQA::Worker::Cache->from_worker;
+    my $client     = OpenQA::Worker::Cache::Client->new;
+    my $req        = $client->asset_request(id => $id, type => $type, asset => $asset_name, host => $host);
+    my $guard_name = $client->session_token . '.' . $req->lock;
+
+    return $job->remove unless defined $asset_name && defined $type && defined $host;
+    return $job->retry({delay => LOCK_RETRY_DELAY})
+      unless my $guard = $app->minion->guard($guard_name, MINION_LOCK_EXPIRE);
+
+    my $job_prefix = "[Job #" . $job->id . "]";
+    $log->debug("$job_prefix Guard: $guard_name Download: $asset_name");
+    $log->debug("$job_prefix Dequeued " . $req->lock) if $client->dequeue_lock($req->lock);
+    $OpenQA::Utils::app = undef;
+    my $output;
+    {
+        open my $handle, '>', \$output;
+        local *STDERR = $handle;
+        local *STDOUT = $handle;
+        # Do the real download
+        $cache->host($host);
+        $cache->get_asset({id => $id}, $type, $asset_name);
+        $job->note(output => $output);
+    }
+    $log->debug("${job_prefix} Finished");
+}
+
+1;
 
 =encoding utf-8
 
@@ -73,5 +78,3 @@ OpenQA::Worker::Cache::Task::Asset is the task that minions of the OpenQA Cache 
 are executing to handle the asset download.
 
 =cut
-
-1;
