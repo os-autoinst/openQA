@@ -41,7 +41,7 @@ our @EXPORT  = qw(
   $prjdir
   $resultdir
   &data_name
-  &locate_needle
+  &needle_info
   &needledir
   &productdir
   &testcasedir
@@ -178,20 +178,61 @@ sub needledir {
 
 sub log_warning;
 
-sub locate_needle {
-    my ($relative_needle_path, $needles_dir) = @_;
+sub needle_info {
+    my ($name, $distri, $version, $fn) = @_;
+    local $/;
 
-    my $absolute_filename = catdir($needles_dir, $relative_needle_path);
-    my $needle_exists     = -f $absolute_filename;
+    my $needledir = needledir($distri, $version);
 
-    if (!$needle_exists) {
-        $absolute_filename = catdir($OpenQA::Utils::sharedir, $relative_needle_path);
-        $needle_exists     = -f $absolute_filename;
+    if (!$fn) {
+        $fn = "$needledir/$name.json";
     }
-    return $absolute_filename if $needle_exists;
+    elsif (!-f $fn) {
+        $fn        = catfile($sharedir, $fn);
+        $needledir = dirname($fn);
+    }
+    else {
+        $needledir = dirname($fn);
+    }
 
-    log_error("Needle file $relative_needle_path not found within $needles_dir.");
-    return undef;
+    my $JF;
+    unless (open($JF, '<', $fn)) {
+        log_warning("$fn: $!");
+        return;
+    }
+
+    my $needle;
+    try {
+        $needle = decode_json(<$JF>);
+    }
+    catch {
+        log_warning("failed to parse $fn: $_");
+        # technically not required, $needle should remain undefined. Being superstitious human I add:
+        undef $needle;
+    }
+    finally {
+        close($JF);
+    };
+    return unless $needle;
+
+    my $png_fname = basename($fn, '.json') . '.png';
+    my $pngfile   = File::Spec->catpath('', $needledir, $png_fname);
+
+    $needle->{needledir} = $needledir;
+    $needle->{image}     = $pngfile;
+    $needle->{json}      = $fn;
+    $needle->{name}      = $name;
+    $needle->{distri}    = $distri;
+    $needle->{version}   = $version;
+
+    # Skip code to support compatibility if HASH-workaround properties already present
+    return $needle unless $needle->{properties};
+
+    # Transform string-workaround-properties into HASH-workaround-properties
+    $needle->{properties}
+      = [map { ref($_) eq "HASH" ? $_ : {name => $_, value => find_bug_number($name)} } @{$needle->{properties}}];
+
+    return $needle;
 }
 
 # Adds a timestamp to a string (eg. needle name) or replace the already present timestamp

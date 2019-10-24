@@ -266,12 +266,19 @@ sub store_needle_infos {
         $needle_cache = \%hash;
     }
 
+    my %needles;
+
     for my $detail (@{$details}) {
         if ($detail->{needle}) {
-            OpenQA::Schema::Result::Needles::update_needle($detail->{json}, $self, 1, $needle_cache);
+            my $nfn    = $detail->{json};
+            my $needle = OpenQA::Schema::Result::Needles::update_needle($nfn, $self, 1, $needle_cache);
+            $needles{$needle->id} ||= 1;
         }
         for my $needle (@{$detail->{needles} || []}) {
-            OpenQA::Schema::Result::Needles::update_needle($needle->{json}, $self, 0, $needle_cache);
+            my $nfn    = $needle->{json};
+            my $needle = OpenQA::Schema::Result::Needles::update_needle($nfn, $self, 0, $needle_cache);
+            # failing needles are more interesting than succeeding, so ignore previous values
+            $needles{$needle->id} = -1;
         }
     }
 

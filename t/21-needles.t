@@ -1,7 +1,6 @@
 #!/usr/bin/env perl -w
 
 # Copyright (C) 2016 Red Hat
-# Copyright (C) 2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,12 +20,10 @@ use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use Cwd 'abs_path';
 use OpenQA::Schema;
 use OpenQA::Test::Database;
 use OpenQA::Task::Needle::Scan;
 use File::Find;
-use Test::Output 'combined_like';
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
@@ -170,39 +167,5 @@ OpenQA::Task::Needle::Scan::_needles($t->app);
 is($needles->find({filename => "test-nonexistent.json"})->file_present, 0);
 # this needle exists, so it should have file_present set to 1
 is($needles->find({filename => "installer/test-nestedneedle-1.json"})->file_present, 1);
-
-subtest 'handling relative paths in update_needle' => sub {
-    is($module->job->needle_dir,
-        $needledir_fedora, 'needle dir of job deduced from settings (prerequisite for handling relative paths)');
-
-    subtest 'handle needle path relative to share dir (legacy os-autoinst)' => sub {
-        my $needle
-          = OpenQA::Schema::Result::Needles::update_needle('tests/fedora/needles/test-rootneedle.json', $module, 0);
-        is(
-            $needle->path,
-            abs_path('t/data/openqa/share/tests/fedora/needles/test-rootneedle.json'),
-            'needle path correct'
-        );
-    };
-    subtest 'handle needle path relative to needle dir' => sub {
-        my $needle = OpenQA::Schema::Result::Needles::update_needle('test-rootneedle.json', $module, 0);
-        is(
-            $needle->path,
-            abs_path('t/data/openqa/share/tests/fedora/needles/test-rootneedle.json'),
-            'needle path correct'
-        );
-    };
-    subtest 'handle needle path to non existent needle' => sub {
-        my $needle;
-        combined_like(
-            sub {
-                $needle = OpenQA::Schema::Result::Needles::update_needle('test-does-not-exist.json', $module, 0);
-            },
-            qr/Needle file test-does-not-exist\.json not found within $needledir_fedora/,
-            'error logged',
-        );
-        is($needle, undef, 'no needle created');
-    };
-};
 
 done_testing;
