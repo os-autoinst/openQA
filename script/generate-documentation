@@ -15,8 +15,19 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
+# the script accepts input arguments:
+# $1 - target repo (which repository is used for documentation commit), 
+# defaults to current repo
+# $2 - target branch, defaults to gh-pages
+
+# the script uses environment variables:
+# PUBLISH - non-empty string indicates that commit should be pushed back to target repo
+# (authentification must be set up in advance)
+# PULL_REQUEST_TARGET - if set, then will be passed to `hub pull-request` command
+# (authentification must be set up in advance)
+
 update_docs() {
-        git clone -b "$TARGET_BRANCH" --single-branch "$REPO" out
+        git clone -b "$TARGET_BRANCH" --single-branch "$TARGET_REMOTE" out
         cd out
         if [ -n "${COMMIT_AUTHOR_EMAIL}" ]; then
             git config user.name "CI"
@@ -35,20 +46,23 @@ update_docs() {
         # gh#1480
         # 2 files changed, 2 insertions(+), 2 deletions(-)
         ANYTHING_CHANGED=$(git diff --shortstat | perl -ne 'my $n; print $n = () = m/(?: 2 \w+)/g')
-        if [ "${ANYTHING_CHANGED}" -ne 3 ]; then
+        if [ "${ANYTHING_CHANGED}" -ne 3 ] && [ -n "${ANYTHING_CHANGED}" ]; then
             cd ..
             git add _includes/api.html
             git add docs/index.html docs/current.pdf docs/api/testapi.html
             git add docs/api/schema
-            echo "Update documentation to commit ${shortref}" > last.commit
+            topic="Update documentation to commit ${shortref}"
+            echo "$topic" > last.commit
             echo "" >> last.commit # somehow travis does not like \n
             [[ -z "${CIRCLE_SHA1}" ]] || (cd .. && git log --pretty=fuller "${CIRCLE_SHA1}" -1 >> out/last.commit)
             git commit -F last.commit
-            [[ -n ${publish} ]] && git push "$SSH_REPO" "$TARGET_BRANCH"
+            if [[ -n "${PUBLISH}" ]] && [[ "${PUBLISH}" != 0 ]]; then
+                git push "$TARGET_REMOTE" "$TARGET_BRANCH"
+                [[ -z "${PULL_REQUEST_TARGET}" ]] || hub pull-request -m "$topic" --base "${PULL_REQUEST_TARGET}"
+            fi
             cd ..
         fi
         rm -rf out
-
 }
 
 update_api() {
@@ -91,14 +105,10 @@ asciidoctor_bin="/bin/not/set"
 shortref=$(git rev-parse --short HEAD)
 verbose_doc_name=$(date +%Y%m%d)"_"${shortref} #we are not intending to run this off a git repository
 scriptroot="$( cd "$(dirname "$0")" ; pwd -P )"
-publish=
 tmpwd=$(mktemp -d -t openqa-doc-XXXX)
-REPO=$(git config remote.origin.url)
-SSH_REPO=${REPO/https:\/\/github.com\//git@github.com:}
-TARGET_BRANCH="gh-pages"
-SSH_KEY=$1
-SSH_IV=$2
-
+TARGET_REMOTE="${1:-$(git config --get remote.origin.url)}"
+TARGET_BRANCH="${2:-gh-pages}"
+PUBLISH="${PUBLISH}"
 
 check_asciidoctor() {
     asciidoctor_bin=$(command -v asciidoctor) || true
@@ -113,13 +123,6 @@ check_asciidoctor() {
         echo "    sudo zypper install 'perl(Pod::AsciiDoctor)'"
         exit 1
     fi
-}
-
-set_sshkey() {
-    openssl aes-256-cbc -K "$SSH_KEY" -iv "$SSH_IV" -in .openqa-travis.enc -out .openqa-travis -d
-    chmod 600 .openqa-travis
-    eval "$(ssh-agent -s)"
-    ssh-add .openqa-travis
 }
 
 install_asciidoctor() {
@@ -145,10 +148,6 @@ call_asciidoctor() {
     cd ..
 }
 
-if [[ ${TRAVIS_PULL_REQUEST} == false ]] && [[ -n ${SSH_KEY} ]] && [[ -n ${SSH_IV} ]]; then
-    publish=1
-    set_sshkey
-fi
 if [[ -n ${CI} ]]; then
     cpanm --local-lib=~/perl5 local::lib && eval "$(perl -I ~/perl5/lib/perl5/ -Mlocal::lib)"
     install_asciidoctor

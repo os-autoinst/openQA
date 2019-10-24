@@ -96,8 +96,13 @@ aliases:
       fullstack) make test CHECKSTYLE=0 FULLSTACK=1           PROVE_ARGS="$HARNESS t/full-stack.t" RETRY=3;;
       scheduler) make test CHECKSTYLE=0 SCHEDULER_FULLSTACK=1 PROVE_ARGS="$HARNESS t/05-scheduler-full.t";;
       developer) make test CHECKSTYLE=0 DEVELOPER_FULLSTACK=1 PROVE_ARGS="$HARNESS t/33-developer_mode.t";;
-      build.docs) COMMIT_AUTHOR_EMAIL=skynet@open.qa GEM_HOME=$(pwd)/.gem script/generate-documentation $encrypted_e2c381aa6b8c_key $encrypted_e2c381aa6b8c_iv;;
       esac
+
+  - &git_token_notification
+    command: |
+      echo 'echo $GITHUB_TOKEN' > $(pwd)/.git-askpass
+      export GIT_ASKPASS=$(pwd)/.git-askpass
+      chmod +x $(pwd)/.git-askpass
 
 images:
   - &docker_config
@@ -108,6 +113,7 @@ images:
       PERL_TEST_HARNESS_DUMP_TAP: test-results
       HARNESS: --harness TAP::Harness::JUnit
       COVEROPT: -MDevel::Cover=-select_re,'^/lib',-ignore_re,'^t/.*',+ignore_re,lib/perlcritic/Perl/Critic/Policy,-coverage,statement
+      COMMIT_AUTHOR_EMAIL: skynet@open.qa
 
   - &base
     image: registry.opensuse.org/devel/openqa/ci/containers/base:latest
@@ -125,10 +131,11 @@ jobs:
       - setup_remote_docker
       - run:
           command: |
-            git config user.email "skynet@open.qa"
+            git config user.email "${COMMIT_AUTHOR_EMAIL}"
             git config user.name "Dependency bot circleci"
             git config core.autocrlf true
             hub --version
+      - run: *git_token_notification
       - run:
           command: |
             depid=$(date +%y%m%d%H%M%S)
@@ -142,11 +149,8 @@ jobs:
                 curl -s https://api.github.com/repos/os-autoinst/os-autoinst/commits | grep sha | head -n 1 | grep -o -E '[0-9a-f]{40}' > .circleci/autoinst.sha
                 git add .circleci/dependencies.txt .circleci/autoinst.sha
                 git commit -m "Dependency cron $depid"
-                echo 'echo $GITHUB_TOKEN' > $(pwd)/.git-askpass
-                export GIT_ASKPASS=$(pwd)/.git-askpass
-                chmod +x $(pwd)/.git-askpass
                 git push -q -f https://token@github.com/openqabot/openQA.git dependency_$depid
-                hub pull-request -m "Dependency cron $depid" --base $CIRCLE_PROJECT_USERNAME:$CIRCLE_BRANCH --head openqabot:dependency_$depid
+                hub pull-request -m "Dependency cron $depid" --base "$CIRCLE_PROJECT_USERNAME":"$CIRCLE_BRANCH" --head "openqabot:dependency_$depid"
             )
 
   cache:
@@ -261,9 +265,28 @@ jobs:
       - store_artifacts: *store_cover_db
       - run: cover -select_re '^lib/' -report codecov
 
-  build.docs:
-    <<: *test-template
+  build.docs: &docs-template
     name: "Generating docs"
+    docker:
+      - <<: *base
+    steps:
+      - checkout
+      - run: *chown_hack_for_cache
+      - restore_cache: *restore_cache
+      - run: *check_cache
+      - run: *install_cached_packages
+      - run: sudo zypper -n install hub
+      - run: *git_token_notification
+      - run:
+          command: |
+            export GEM_HOME=$(pwd)/.gem
+            [ -z "${CIRCLE_PROJECT_USERNAME}" ] || export PULL_REQUEST_TARGET="${CIRCLE_PROJECT_USERNAME}:gh-pages"
+            bash -xe script/generate-documentation https://token@github.com/openqabot/openQA.git gh-pages-daily
+
+  build.docs.nightly:
+    <<: *docs-template
+    environment:
+      PUBLISH: 1
 
 workflows:
   version: 2
@@ -317,3 +340,4 @@ workflows:
                - master
    jobs:
       - dependencies-pr
+      - build.docs.nightly
