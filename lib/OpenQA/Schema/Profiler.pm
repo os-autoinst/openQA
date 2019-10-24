@@ -32,6 +32,18 @@ sub query_end {
     log_debug(sprintf("[DBIC] Took %.8f seconds: %s", $elapsed, $sql));
 }
 
+# We need to override print because DBIx::Class::Storage::Statistics::print()
+# is called for txn_begin ('BEGIN WORK') etc., which writes to the default
+# $sorage->debugfh, while log_debug() writes to the specified log filehandle.
+# To make sure all messages land in the same logfile, we call log_debug() here
+# like in query_end()
+sub print {
+    my ($self, $msg) = @_;
+    chomp $msg;
+
+    log_debug(sprintf("[DBIC] %s", $msg));
+}
+
 sub enable_sql_debugging {
     my $class = shift;
 
