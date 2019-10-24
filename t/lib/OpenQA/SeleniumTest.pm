@@ -128,7 +128,7 @@ sub start_driver {
                 $ENV{PATH} = "$ENV{PATH}:$dir";
             }
         }
-        $opts{custom_args} = "--log-path=t/log_chromedriver";
+        $opts{custom_args} = "--single-process --log-path=t/log_chromedriver";
         unless ($ENV{NOT_HEADLESS}) {
             push(@{$opts{extra_capabilities}{chromeOptions}{args}}, ('--headless', '--disable-gpu', '--no-sandbox'));
         }
