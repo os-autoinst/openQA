@@ -229,7 +229,14 @@ rm -f t/00-tidy.t
 #make test
 rm -rf %{buildroot}/DB
 export LC_ALL=en_US.UTF-8
-make test-with-database OBS_RUN=1 PROVE_ARGS='-l -r -v' TEST_PG_PATH=%{buildroot}/DB || true
+# Skip tests not working currently, or flaky, and Selenium tests
+# https://progress.opensuse.org/issues/19652
+rm \
+    t/25-cache-service.t \
+    t/ui/*.t
+
+
+make test-with-database OBS_RUN=1 PROVE_ARGS='-l -r -v' TEST_PG_PATH=%{buildroot}/DB
 rm -rf %{buildroot}/DB
 %endif
 
