@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2018 SUSE LLC
+# Copyright (C) 2017-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Worker::Cache;
+package OpenQA::CacheService::Model::Cache;
 use Mojo::Base -base;
 
 use Carp 'croak';

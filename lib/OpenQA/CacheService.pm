@@ -13,13 +13,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Worker::Cache::Service;
+package OpenQA::CacheService;
 
 use strict;
 use warnings;
 
 use OpenQA::Worker::Settings;
-use OpenQA::Worker::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE STATUS_ERROR);
+use OpenQA::CacheService::Model::Cache
+  qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE STATUS_ERROR);
 use Mojolicious::Lite;
 use Mojolicious::Plugin::Minion;
 use Mojolicious::Plugin::Minion::Admin;
@@ -43,10 +44,10 @@ app->hook(
         $enqueued = Mojo::Collection->new;
     });
 
-plugin Minion => {SQLite => 'sqlite:' . OpenQA::Worker::Cache->from_worker->db_file};
+plugin Minion => {SQLite => 'sqlite:' . OpenQA::CacheService::Model::Cache->from_worker->db_file};
 plugin 'Minion::Admin';
-plugin 'OpenQA::Worker::Cache::Task::Asset';
-plugin 'OpenQA::Worker::Cache::Task::Sync';
+plugin 'OpenQA::CacheService::Task::Asset';
+plugin 'OpenQA::CacheService::Task::Sync';
 
 sub SESSION_TOKEN { $_token }
 
@@ -154,26 +155,26 @@ post '/dequeue' => sub {
 
 =head1 NAME
 
-OpenQA::Worker::Cache::Service - OpenQA Cache Service
+OpenQA::CacheService - OpenQA Cache Service
 
 =head1 SYNOPSIS
 
-    use OpenQA::Worker::Cache::Service;
+    use OpenQA::CacheService;
 
     # Start the daemon
-    OpenQA::Worker::Cache::Service->run(qw(daemon));
+    OpenQA::CacheService->run(qw(daemon));
 
     # Start one or more Minions with:
-    OpenQA::Worker::Cache::Service->run(qw(minion worker))
+    OpenQA::CacheService->run(qw(minion worker))
 
 =head1 DESCRIPTION
 
-OpenQA::Worker::Cache::Service is the OpenQA Cache Service, which is meant to be run
+OpenQA::CacheService is the OpenQA Cache Service, which is meant to be run
 standalone.
 
 =head1 GET ROUTES
 
-OpenQA::Worker::Cache::Service is a L<Mojolicious::Lite> application, and it is exposing the following GET routes.
+OpenQA::CacheService is a L<Mojolicious::Lite> application, and it is exposing the following GET routes.
 
 =head2 /minion
 
@@ -189,7 +190,7 @@ Returns the current session token.
 
 =head1 POST ROUTES
 
-OpenQA::Worker::Cache::Service is exposing the following POST routes.
+OpenQA::CacheService is exposing the following POST routes.
 
 =head2 /execute_task
 

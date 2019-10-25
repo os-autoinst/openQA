@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Worker::Cache::Task::Sync;
+package OpenQA::CacheService::Task::Sync;
 use Mojo::Base 'Mojolicious::Plugin';
 
-use OpenQA::Worker::Cache::Client;
+use OpenQA::CacheService::Client;
 use Mojo::URL;
 
 use constant LOCK_RETRY_DELAY   => 30;
@@ -34,7 +34,7 @@ sub _cache_tests {
     my $app = $job->app;
     my $log = $app->log;
 
-    my $client     = OpenQA::Worker::Cache::Client->new;
+    my $client     = OpenQA::CacheService::Client->new;
     my $req        = $client->rsync_request(from => $from, to => $to);
     my $guard_name = $client->session_token . '.' . $req->lock;
 
@@ -61,15 +61,15 @@ sub _cache_tests {
 
 =head1 NAME
 
-OpenQA::Worker::Cache::Task::Sync - Cache Service task Sync
+OpenQA::CacheService::Task::Sync - Cache Service task Sync
 
 =head1 SYNOPSIS
 
-    plugin 'OpenQA::Worker::Cache::Task::Sync';
+    plugin 'OpenQA::CacheService::Task::Sync';
 
 =head1 DESCRIPTION
 
-OpenQA::Worker::Cache::Task::Sync is the task that minions of the OpenQA Cache Service
+OpenQA::CacheService::Task::Sync is the task that minions of the OpenQA Cache Service
 are executing to handle the tests and needles syncing.
 
 =cut

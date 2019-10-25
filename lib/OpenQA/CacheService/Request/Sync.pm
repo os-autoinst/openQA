@@ -13,23 +13,21 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Worker::Cache::Request::Asset;
-use Mojo::Base 'OpenQA::Worker::Cache::Request';
+package OpenQA::CacheService::Request::Sync;
+use Mojo::Base 'OpenQA::CacheService::Request';
 
-# See task OpenQA::Cache::Task::Asset
-has [qw(id type asset host)];
-has task => 'cache_asset';
+# See task OpenQA::Cache::Task::Sync
+has [qw(from to)];
+has task => 'cache_tests';
 
 sub lock {
     my $self = shift;
-
-    # Generate same lock for asset/host
-    return join('.', map { $self->$_ } qw(asset host));
+    return join('.', map { $self->$_ } qw(from to));
 }
 
 sub to_array {
     my $self = shift;
-    return [$self->id, $self->type, $self->asset, $self->host];
+    return [$self->from, $self->to];
 }
 
 1;
