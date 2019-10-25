@@ -98,7 +98,7 @@ aliases:
       developer) make test CHECKSTYLE=0 DEVELOPER_FULLSTACK=1 PROVE_ARGS="$HARNESS t/33-developer_mode.t";;
       esac
 
-  - &git_token_notification
+  - &git_token_authorization
     command: |
       echo 'echo $GITHUB_TOKEN' > $(pwd)/.git-askpass
       export GIT_ASKPASS=$(pwd)/.git-askpass
@@ -135,7 +135,7 @@ jobs:
             git config user.name "Dependency bot circleci"
             git config core.autocrlf true
             hub --version
-      - run: *git_token_notification
+      - run: *git_token_authorization
       - run:
           command: |
             depid=$(date +%y%m%d%H%M%S)
@@ -276,7 +276,7 @@ jobs:
       - run: *check_cache
       - run: *install_cached_packages
       - run: sudo zypper -n install hub
-      - run: *git_token_notification
+      - run: *git_token_authorization
       - run:
           command: |
             export GEM_HOME=$(pwd)/.gem

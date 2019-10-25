@@ -57,7 +57,7 @@ update_docs() {
             [[ -z "${CIRCLE_SHA1}" ]] || (cd .. && git log --pretty=fuller "${CIRCLE_SHA1}" -1 >> out/last.commit)
             git commit -F last.commit
             if [[ -n "${PUBLISH}" ]] && [[ "${PUBLISH}" != 0 ]]; then
-                git push "$TARGET_REMOTE" "$TARGET_BRANCH"
+                git push -q -f "$TARGET_REMOTE" "$TARGET_BRANCH"
                 [[ -z "${PULL_REQUEST_TARGET}" ]] || hub pull-request -m "$topic" --base "${PULL_REQUEST_TARGET}"
             fi
             cd ..
