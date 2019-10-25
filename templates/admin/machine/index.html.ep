@@ -2,7 +2,7 @@
 % title 'Machines';
 
 % content_for 'ready_function' => begin
-    setupAdminTable(<%= is_admin_js %>, true);
+    setupAdminTable(<%= is_admin_js %>);
 % end
 
 <div class="row">

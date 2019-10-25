@@ -353,7 +353,7 @@ function renderEditableAdminTableActions(data, type, row, meta) {
     }
 }
 
-function setupAdminTable(isAdmin, enableRegexForFiltering) {
+function setupAdminTable(isAdmin) {
     // adjust sorting so empty strings come last
     jQuery.extend(jQuery.fn.dataTableExt.oSort, {
         'empty-string-last-asc': function(str1, str2) {
@@ -439,7 +439,7 @@ function setupAdminTable(isAdmin, enableRegexForFiltering) {
         columns: columns,
         columnDefs: columnDefs,
         search: {
-            regex: enableRegexForFiltering,
+            regex: true,
         },
     });
     dataTable.rowData = [];
