@@ -17,15 +17,17 @@ package OpenQA::Worker::Cache::Request::Sync;
 use Mojo::Base 'OpenQA::Worker::Cache::Request';
 
 # See task OpenQA::Cache::Task::Sync
-my @FIELDS = qw(from to);
-has [@FIELDS];
+has [qw(from to)];
 has task => 'cache_tests';
 
 sub lock {
     my $self = shift;
-    join('.', map { $self->$_ } @FIELDS);
+    return join('.', map { $self->$_ } qw(from to));
 }
-sub to_hash { {from => $_[0]->from, to => $_[0]->to} }
-sub to_array { [$_[0]->from, $_[0]->to] }
+
+sub to_array {
+    my $self = shift;
+    return [$self->from, $self->to];
+}
 
 1;

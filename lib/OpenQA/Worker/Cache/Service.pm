@@ -19,7 +19,6 @@ use strict;
 use warnings;
 
 use OpenQA::Worker::Settings;
-use OpenQA::Worker::Cache::Task::Asset;
 use OpenQA::Worker::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE STATUS_ERROR);
 use Mojolicious::Lite;
 use Mojolicious::Plugin::Minion;

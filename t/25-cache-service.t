@@ -46,6 +46,7 @@ use OpenQA::Utils;
 use File::Spec::Functions qw(catdir catfile);
 use Cwd qw(abs_path getcwd);
 use Mojolicious;
+use Minion;
 use IO::Socket::INET;
 use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
@@ -56,6 +57,7 @@ use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_se
 use OpenQA::Test::FakeWebSocketTransaction;
 use Mojo::Util qw(md5_sum);
 use OpenQA::Worker::Cache::Request;
+use OpenQA::Worker::Cache::Client;
 use Test::MockModule;
 
 my $sql;
@@ -72,8 +74,6 @@ my $logdir  = path(getcwd(), 't', 'cache.d', 'logs')->make_path;
 my $logfile = $logdir->child('cache.log');
 my $port    = Mojo::IOLoop::Server->generate_port;
 my $host    = "http://localhost:$port";
-
-use OpenQA::Worker::Cache::Client;
 
 my $cache_client = OpenQA::Worker::Cache::Client->new();
 
@@ -102,10 +102,10 @@ sub start_server {
 
 sub test_default_usage {
     my ($id, $a) = @_;
-    my $asset_request = $cache_client->request->asset(id => $id, asset => $a, type => 'hdd', host => $host);
+    my $asset_request = $cache_client->asset_request(id => $id, asset => $a, type => 'hdd', host => $host);
 
-    if ($asset_request->enqueue) {
-        sleep .5 until $asset_request->processed;
+    if ($cache_client->enqueue($asset_request)) {
+        sleep .5 until $cache_client->processed($asset_request);
     }
     ok($cache_client->asset_exists('localhost', $a), "Asset $a downloaded");
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
@@ -114,21 +114,21 @@ sub test_default_usage {
 sub test_sync {
     my $dir           = tempdir;
     my $dir2          = tempdir;
-    my $rsync_request = $cache_client->request->rsync(from => $dir, to => $dir2);
+    my $rsync_request = $cache_client->rsync_request(from => $dir, to => $dir2);
 
     my $t_dir = int(rand(13432432));
     my $data  = int(rand(348394280934820842093));
     $dir->child($t_dir)->spurt($data);
     my $expected = $dir2->child('tests')->child($t_dir);
 
-    ok $rsync_request->enqueue;
+    ok $cache_client->enqueue($rsync_request);
 
-    sleep .5 until $rsync_request->processed;
+    sleep .5 until $cache_client->processed($rsync_request);
 
-    is $rsync_request->result, 0;
-    ok $rsync_request->output;
+    is $cache_client->result($rsync_request), 0;
+    ok $cache_client->output($rsync_request);
 
-    like $rsync_request->output, qr/100\%/ or die diag $rsync_request->output;
+    like $cache_client->output($rsync_request), qr/100\%/ or die diag $cache_client->output($rsync_request);
 
     ok -e $expected;
     is $expected->slurp, $data;
@@ -137,17 +137,16 @@ sub test_sync {
 sub test_download {
     my ($id, $a) = @_;
     unlink path($cachedir)->child($a);
-    my $asset_request = $cache_client->request->asset(id => $id, asset => $a, type => 'hdd', host => $host);
+    my $asset_request = $cache_client->asset_request(id => $id, asset => $a, type => 'hdd', host => $host);
 
-    my $resp = $asset_request->execute_task();
-    is($resp, OpenQA::Worker::Cache::STATUS_ENQUEUED) or die diag explain $resp;
+    ok $cache_client->enqueue($asset_request), 'enqueued';
 
-    my $state = $asset_request->status;
-    $state = $asset_request->status until ($state ne OpenQA::Worker::Cache::STATUS_IGNORE);
+    my $state = $cache_client->status($asset_request);
+    $state = $cache_client->status($asset_request) until ($state ne OpenQA::Worker::Cache::STATUS_IGNORE);
 
     # After IGNORE, only DOWNLOAD status could follow, but it could be fast enough to not catch it
-    $state = $asset_request->status;
-    $state = $asset_request->status until ($state ne OpenQA::Worker::Cache::STATUS_DOWNLOADING);
+    $state = $cache_client->status($asset_request);
+    $state = $cache_client->status($asset_request) until ($state ne OpenQA::Worker::Cache::STATUS_DOWNLOADING);
 
     # And then goes to PROCESSED state
     is($state, OpenQA::Worker::Cache::STATUS_PROCESSED) or die diag explain $state;
@@ -156,14 +155,20 @@ sub test_download {
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
 }
 
+subtest 'OPENQA_CACHE_DIR environment variable' => sub {
+    local $ENV{OPENQA_CACHE_DIR} = '/does/not/exist';
+    my $client = OpenQA::Worker::Cache::Client->new;
+    is $client->cache_dir, '/does/not/exist', 'environment variable used';
+};
+
 subtest 'Availability check and worker status' => sub {
     my $client_mock = Test::MockModule->new('OpenQA::Worker::Cache::Client');
 
-    is($cache_client->availability_error, 'Cache service not reachable.', 'cache service not available');
+    is($cache_client->availability_error, 'Cache service not reachable', 'cache service not available');
 
     $client_mock->mock(available         => sub { return 1; });
     $client_mock->mock(available_workers => sub { return 0; });
-    is($cache_client->availability_error, 'No workers active in the cache service.', 'nor workers active');
+    is($cache_client->availability_error, 'No workers active in the cache service', 'nor workers active');
 
     $client_mock->mock(available_workers => sub { return 1; });
     is($cache_client->availability_error, undef, 'no error');
@@ -187,30 +192,19 @@ CACHELIMIT = 100");
 };
 
 subtest 'Cache Requests' => sub {
-    my $asset_request = $cache_client->request->asset(id => 922756, asset => 'test', type => 'hdd', host => 'open.qa');
-    my $rsync_request = $cache_client->request->rsync(from => 'foo', to => 'bar');
+    my $asset_request = $cache_client->asset_request(id => 922756, asset => 'test', type => 'hdd', host => 'open.qa');
+    my $rsync_request = $cache_client->rsync_request(from => 'foo', to => 'bar');
 
     is $rsync_request->lock, join('.', 'foo',  'bar');
     is $asset_request->lock, join('.', 'test', 'open.qa');
 
-    my $req = $cache_client->request;
-    is $cache_client, $req->client;
-    my $asset_req = $req->asset();
-    is $cache_client, $asset_req->client;
-
-    is_deeply $rsync_request->to_hash, {from => 'foo', to => 'bar'};
-    is_deeply $asset_request->to_hash, {id => 922756, asset => 'test', type => 'hdd', host => 'open.qa'};
-
     is_deeply $rsync_request->to_array, [qw(foo bar)];
     is_deeply $asset_request->to_array, [qw(922756 hdd test open.qa)];
 
-    my $base = $cache_client->request;
+    my $base = OpenQA::Worker::Cache::Request->new;
     local $@;
     eval { $base->lock };
     like $@, qr/lock\(\) not implemented in OpenQA::Worker::Cache::Request/, 'lock() not implemented in base request';
-    eval { $base->to_hash };
-    like $@, qr/to_hash\(\) not implemented in OpenQA::Worker::Cache::Request/,
-      'to_hash() not implemented in base request';
     eval { $base->to_array };
     like $@, qr/to_array\(\) not implemented in OpenQA::Worker::Cache::Request/,
       'to_array() not implemented in base request';
@@ -319,7 +313,7 @@ subtest 'Race for same asset' => sub {
 
     my $a = 'sle-12-SP3-x86_64-0368-200_123200@64bit.qcow2';
 
-    my $asset_request = $cache_client->request->asset(id => 922756, asset => $a, type => 'hdd', host => $host);
+    my $asset_request = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
 
     my $sum = md5_sum(path($cachedir, 'localhost')->child($a)->slurp);
     unlink path($cachedir, 'localhost')->child($a)->to_string;
@@ -356,14 +350,14 @@ subtest 'Race for same asset' => sub {
 
 subtest 'Default usage' => sub {
     my $a             = 'sle-12-SP3-x86_64-0368-200_1000@64bit.qcow2';
-    my $asset_request = $cache_client->request->asset(id => 922756, asset => $a, type => 'hdd', host => $host);
+    my $asset_request = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
 
     unlink path($cachedir)->child($a);
     ok(!$cache_client->asset_exists('localhost', $a), 'Asset absent') or die diag "Asset already exists - abort test";
 
-    if ($asset_request->enqueue) {
-        sleep .5 until $asset_request->processed;
-        my $out = $asset_request->output();
+    if ($cache_client->enqueue($asset_request)) {
+        sleep .5 until $cache_client->processed($asset_request);
+        my $out = $cache_client->output($asset_request);
         ok($out, 'Output should be present') or die diag $out;
         like $out, qr/Downloading $a from/, "Asset download attempt logged";
         ok(-e path($cachedir, 'localhost')->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
@@ -377,14 +371,14 @@ subtest 'Default usage' => sub {
 
 subtest 'Small assets causes racing when releasing locks' => sub {
     my $a             = 'sle-12-SP3-x86_64-0368-200_1@64bit.qcow2';
-    my $asset_request = $cache_client->request->asset(id => 922756, asset => $a, type => 'hdd', host => $host);
+    my $asset_request = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
 
     unlink path($cachedir)->child($a);
     ok(!$cache_client->asset_exists('localhost', $a), 'Asset absent') or die diag "Asset already exists - abort test";
 
-    if ($asset_request->enqueue) {
-        1 until $asset_request->processed;
-        my $out = $asset_request->output;
+    if ($cache_client->enqueue($asset_request)) {
+        1 until $cache_client->processed($asset_request);
+        my $out = $cache_client->output($asset_request);
         ok($out, 'Output should be present') or die diag $out;
         like $out, qr/Downloading $a from/, "Asset download attempt logged";
         ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded') or die diag "Failed - no asset is there";
@@ -413,19 +407,15 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
 
     my @assets = map { "sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2" } 1 .. $tot_proc;
     unlink path($cachedir)->child($_) for @assets;
-    ok(
-        $cache_client->enqueue(
-            OpenQA::Worker::Cache::Request->new(client => $cache_client)
-              ->asset(id => 922756, asset => $_, type => 'hdd', host => $host)
-        ),
-        "Download enqueued for $_"
-    ) for @assets;
+    ok($cache_client->enqueue($cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host)),
+        "Download enqueued for $_")
+      for @assets;
 
     sleep 1
       until (
         grep { $_ == 1 } map {
-            $cache_client->processed(OpenQA::Worker::Cache::Request->new(client => $cache_client)
-                  ->asset(id => 922756, asset => $_, type => 'hdd', host => $host))
+            $cache_client->processed(
+                $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host))
         } @assets
       ) == @assets;
 
@@ -433,19 +423,15 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
 
     @assets = map { "sle-12-SP3-x86_64-0368-200_88888\@64bit.qcow2" } 1 .. $tot_proc;
     unlink path($cachedir)->child($_) for @assets;
-    ok(
-        $cache_client->enqueue(
-            OpenQA::Worker::Cache::Request->new(client => $cache_client)
-              ->asset(id => 922756, asset => $_, type => 'hdd', host => $host)
-        ),
-        "Download enqueued for $_"
-    ) for @assets;
+    ok($cache_client->enqueue($cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host)),
+        "Download enqueued for $_")
+      for @assets;
 
     sleep 1
       until (
         grep { $_ == 1 } map {
-            $cache_client->processed(OpenQA::Worker::Cache::Request->new(client => $cache_client)
-                  ->asset(id => 922756, asset => $_, type => 'hdd', host => $host))
+            $cache_client->processed(
+                $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host))
         } @assets
       ) == @assets;
 
@@ -459,54 +445,47 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
 subtest 'Test Minion task registration and execution' => sub {
     my $a = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
 
-    use Minion;
     my $minion = Minion->new(SQLite => "sqlite:" . OpenQA::Worker::Cache->from_worker->db_file);
-    use Mojolicious;
-    my $app = Mojolicious->new;
+    my $app    = Mojolicious->new;
     $app->attr(minion => sub { $minion });
 
     my $task = OpenQA::Worker::Cache::Task::Asset->new();
     $task->register($app);
-    my $req = OpenQA::Worker::Cache::Request->new(client => $cache_client)
-      ->asset(id => 922756, asset => $a, type => 'hdd', host => $host);
-    $req->enqueue;
+    my $req = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
+    $cache_client->enqueue($req);
     my $worker = $app->minion->repair->worker->register;
     ok($worker->id, 'worker has an ID');
     my $job = $worker->dequeue(0);
     ok($job, 'job enqueued');
     $job->execute;
-    ok $req->processed;
-    ok $req->output;
-    like $req->output, qr/Initialized with localhost/;
+    ok $cache_client->processed($req);
+    ok $cache_client->output($req);
     ok $cache_client->asset_exists('localhost', $a);
 };
 
 subtest 'Test Minion Sync task' => sub {
     my $a = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
 
-    use Minion;
-    use OpenQA::Worker::Cache::Task::Sync;
     my $minion = Minion->new(SQLite => "sqlite:" . OpenQA::Worker::Cache->from_worker->db_file);
-    use Mojolicious;
-    my $app = Mojolicious->new;
+    my $app    = Mojolicious->new;
     $app->helper(minion => sub { $minion });
     my $dir  = tempdir;
     my $dir2 = tempdir;
 
     $dir->child('test')->spurt('foobar');
     my $expected = $dir2->child('tests')->child('test');
-    my $req      = $cache_client->request->rsync(from => $dir, to => $dir2);
+    my $req      = $cache_client->rsync_request(from => $dir, to => $dir2);
     my $task     = OpenQA::Worker::Cache::Task::Sync->new();
     $task->register($app);
-    ok $req->enqueue;
+    ok $cache_client->enqueue($req);
     my $worker = $app->minion->repair->worker->register;
     ok($worker->id, 'worker has an ID');
     my $job = $worker->dequeue(0);
     ok($job, 'job enqueued');
     $job->execute;
-    ok $req->processed;
-    is $req->result, 0;
-    diag $req->output;
+    ok $cache_client->processed($req);
+    is $cache_client->result($req), 0;
+    diag $cache_client->output($req);
 
     ok -e $expected;
     is $expected->slurp, 'foobar';

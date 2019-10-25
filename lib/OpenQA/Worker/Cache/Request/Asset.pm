@@ -17,16 +17,19 @@ package OpenQA::Worker::Cache::Request::Asset;
 use Mojo::Base 'OpenQA::Worker::Cache::Request';
 
 # See task OpenQA::Cache::Task::Asset
-my @FIELDS = qw(id type asset host);
-has [@FIELDS];
+has [qw(id type asset host)];
 has task => 'cache_asset';
 
 sub lock {
     my $self = shift;
+
     # Generate same lock for asset/host
     return join('.', map { $self->$_ } qw(asset host));
 }
-sub to_hash { {id => $_[0]->id, type => $_[0]->type, asset => $_[0]->asset, host => $_[0]->host} }
-sub to_array { [$_[0]->id, $_[0]->type, $_[0]->asset, $_[0]->host] }
+
+sub to_array {
+    my $self = shift;
+    return [$self->id, $self->type, $self->asset, $self->host];
+}
 
 1;
