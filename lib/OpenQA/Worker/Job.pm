@@ -699,7 +699,7 @@ sub _upload_results_step_0_prepare {
             or $file_info[9] != $self->{_test_order_mtime}
             or $file_info[7] != $self->{_test_order_fsize})
         {
-            log_info('Test schedule has changed, reloading test_order.json');
+            log_info('Test schedule has changed, reloading test_order.json') if $self->{_test_order_mtime};
             $test_order                = $self->_read_json_file('test_order.json');
             $status{test_order}        = $test_order;
             $self->{_test_order}       = $test_order;
