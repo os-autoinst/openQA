@@ -154,14 +154,16 @@ subtest 'log fatal to stderr' => sub {
     $app->setup_log();
     $OpenQA::Utils::app = undef;    # To make sure we don't are setting it in other tests
     eval { log_fatal('fatal message'); };
+    my $eval_error       = $@;
     my $exception_raised = 0;
-    $exception_raised++ if $@;
+    $exception_raised++ if $eval_error;
     ### End of the Testing code ###
     # Close the capture (current stdout) and restore STDOUT (by dupping the old STDOUT);
     close STDERR;
     open(STDERR, '>&', $oldSTDERR) or die "Can't dup \$oldSTDERR: $!";
     ok($exception_raised == 1, 'Fatal raised exception');
     like($output, qr/\[FATAL\] fatal message/, 'OK fatal');
+    like($eval_error, qr{fatal message.*t/28-logging.t});
 
 };
 
