@@ -149,7 +149,7 @@ Requires:       %{worker_requires_including_uncovered_in_tests}
 # FIXME: use proper Requires(pre/post/preun/...)
 PreReq:         openQA-common = %{version}
 Requires(post): coreutils
-Requires(post): os-autoinst >= 4.4
+Requires(post): os-autoinst >= 4.6
 Recommends:     qemu
 # Needed for caching - not required if caching not used...
 Recommends:     rsync
