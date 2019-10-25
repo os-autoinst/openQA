@@ -236,7 +236,7 @@ sub log_error {
 # log_fatal("message"[, param1=>val1, param2=>val2]);
 sub log_fatal {
     _log_msg('fatal', @_);
-    die $_[0];
+    croak $_[0];
 }
 
 sub _current_log_level {
