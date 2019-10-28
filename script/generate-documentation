@@ -15,20 +15,48 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-# the script accepts input arguments:
+# The script runs in three major modes:
+# * only check that documentation generation doesn't show errors
+# * PUBLISH changes to upstream project
+# * PUBLISH changes to new branch in fork project and create Pull Request to
+# upstream project
+# 
+# First mode (PUBLISH is not set) is to run in CI as part of regular test
+# workflow
+# Second mode (PUBLISH is set) is to run manually from local environment when
+# need to publish documentation to upstream
+# Third mode (PULL_REQUEST_USER is set) is to run from CI nightly job
+
+# Example usages:
+# PUBLISH=1 script/generate-documentation https://github.com/andrii-suse/openQA.git gh-pages
+# PUBLISH=1 GITHUB_TOKEN=xxxx271e PULL_REQUEST_USER=andrii-suse script/generate-documentation https://token@github.com/openqabot/openQA.git gh-pages-$(date +%y%m%d%H%M%S)
+
+# The script accepts input arguments:
 # $1 - target repo (which repository is used for documentation commit), 
 # defaults to current repo
 # $2 - target branch, defaults to gh-pages
 
 # the script uses environment variables:
-# PUBLISH - non-empty string indicates that commit should be pushed back to target repo
+# PUBLISH - non-empty string indicates that commit should be pushed back to
+# target repo (authentification must be set up in advance)
+# PULL_REQUEST_USER - if set, then will be appended with ':gh-pages' and
+# passed to  `hub pull-request` command
 # (authentification must be set up in advance)
-# PULL_REQUEST_TARGET - if set, then will be passed to `hub pull-request` command
-# (authentification must be set up in advance)
+# If PULL_REQUEST_USER is set, then target branch ($2) must not exists at
+# target remote ($1). Target branch will be created based on
+# PULL_REQUEST_USER:gh_pages
 
 update_docs() {
-        git clone -b "$TARGET_BRANCH" --single-branch "$TARGET_REMOTE" out
+        mkdir out || exit 1
+        (
         cd out
+        if [[ -z "${PULL_REQUEST_USER}" ]]; then
+            git clone --depth 1 --branch "$PUSH_BRANCH" "$PUSH_REMOTE_URL" .
+        else
+            git clone --depth 1 --branch gh-pages "https://github.com/$PULL_REQUEST_USER/openQA" .
+            git checkout -b "$PUSH_BRANCH"
+        fi
+
         if [ -n "${COMMIT_AUTHOR_EMAIL}" ]; then
             git config user.name "CI"
             git config user.email "$COMMIT_AUTHOR_EMAIL"
@@ -46,7 +74,7 @@ update_docs() {
         # gh#1480
         # 2 files changed, 2 insertions(+), 2 deletions(-)
         ANYTHING_CHANGED=$(git diff --shortstat | perl -ne 'my $n; print $n = () = m/(?: 2 \w+)/g')
-        if [ "${ANYTHING_CHANGED}" -ne 3 ] && [ -n "${ANYTHING_CHANGED}" ]; then
+        if [ -n "${ANYTHING_CHANGED}" ] && [ "${ANYTHING_CHANGED}" -ne 3 ]; then
             cd ..
             git add _includes/api.html
             git add docs/index.html docs/current.pdf docs/api/testapi.html
@@ -57,11 +85,21 @@ update_docs() {
             [[ -z "${CIRCLE_SHA1}" ]] || (cd .. && git log --pretty=fuller "${CIRCLE_SHA1}" -1 >> out/last.commit)
             git commit -F last.commit
             if [[ -n "${PUBLISH}" ]] && [[ "${PUBLISH}" != 0 ]]; then
-                git push "$TARGET_REMOTE" "$TARGET_BRANCH"
-                [[ -z "${PULL_REQUEST_TARGET}" ]] || hub pull-request -m "$topic" --base "${PULL_REQUEST_TARGET}"
+                git push "$PUSH_REMOTE_URL" "$PUSH_BRANCH"
+                if [[ -n "${PULL_REQUEST_USER}" ]]; then
+                    # convert PUSH_REMOTE_URL to hub format (extract user from url)
+                    local push_user_url
+                    push_user_url="$(dirname "$PUSH_REMOTE_URL")"
+                    local push_user
+                    push_user="$(basename "$push_user_url")"
+                    hub pull-request -m "$topic" --base "${PULL_REQUEST_USER}:gh-pages" --head "$push_user:$PUSH_BRANCH"
+                fi
             fi
             cd ..
-        fi
+        else
+            echo Documentation is up to date 
+        fi 
+        )
         rm -rf out
 }
 
@@ -106,8 +144,8 @@ shortref=$(git rev-parse --short HEAD)
 verbose_doc_name=$(date +%Y%m%d)"_"${shortref} #we are not intending to run this off a git repository
 scriptroot="$( cd "$(dirname "$0")" ; pwd -P )"
 tmpwd=$(mktemp -d -t openqa-doc-XXXX)
-TARGET_REMOTE="${1:-$(git config --get remote.origin.url)}"
-TARGET_BRANCH="${2:-gh-pages}"
+PUSH_REMOTE_URL="${1:-$(git config --get remote.origin.url)}"
+PUSH_BRANCH="${2:-gh-pages}"
 PUBLISH="${PUBLISH}"
 
 check_asciidoctor() {
