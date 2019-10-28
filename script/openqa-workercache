@@ -23,5 +23,5 @@ BEGIN {
     unshift @INC, "$FindBin::Bin/../lib";
 }
 
-require OpenQA::Worker::Cache::Service;
-OpenQA::Worker::Cache::Service->run(@ARGV);
+require OpenQA::CacheService;
+OpenQA::CacheService->run(@ARGV);

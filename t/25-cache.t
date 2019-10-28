@@ -27,7 +27,7 @@ use Test::Warnings;
 use Test::MockModule;
 use OpenQA::Utils;
 use OpenQA::Utils 'base_host';
-use OpenQA::Worker::Cache;
+use OpenQA::CacheService::Model::Cache;
 use DBI;
 use File::Path qw(remove_tree make_path);
 use File::Spec::Functions qw(catdir catfile);
@@ -120,10 +120,10 @@ sub stop_server {
     $server_instance->stop();
 }
 
-my $cache = OpenQA::Worker::Cache->new(host => $host, location => $cachedir);
+my $cache = OpenQA::CacheService::Model::Cache->new(host => $host, location => $cachedir);
 
 subtest 'base_host' => sub {
-    my $cache_test = OpenQA::Worker::Cache->new(host => $host, location => $cachedir);
+    my $cache_test = OpenQA::CacheService::Model::Cache->new(host => $host, location => $cachedir);
     is base_host($cache_test->host), 'localhost';
 };
 

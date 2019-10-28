@@ -13,14 +13,14 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Worker::Cache::Task::Asset;
+package OpenQA::CacheService::Task::Asset;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use constant LOCK_RETRY_DELAY   => 30;
 use constant MINION_LOCK_EXPIRE => 99999;    # ~27 hours
 
-use OpenQA::Worker::Cache;
-use OpenQA::Worker::Cache::Client;
+use OpenQA::CacheService::Model::Cache;
+use OpenQA::CacheService::Client;
 
 sub register {
     my ($self, $app) = @_;
@@ -34,8 +34,8 @@ sub _cache_asset {
     my $app = $job->app;
     my $log = $app->log;
 
-    my $cache      = OpenQA::Worker::Cache->from_worker;
-    my $client     = OpenQA::Worker::Cache::Client->new;
+    my $cache      = OpenQA::CacheService::Model::Cache->from_worker;
+    my $client     = OpenQA::CacheService::Client->new;
     my $req        = $client->asset_request(id => $id, type => $type, asset => $asset_name, host => $host);
     my $guard_name = $client->session_token . '.' . $req->lock;
 
@@ -66,15 +66,15 @@ sub _cache_asset {
 
 =head1 NAME
 
-OpenQA::Worker::Cache::Task::Asset - Cache Service task
+OpenQA::CacheService::Task::Asset - Cache Service task
 
 =head1 SYNOPSIS
 
-    plugin 'OpenQA::Worker::Cache::Task::Asset';
+    plugin 'OpenQA::CacheService::Task::Asset';
 
 =head1 DESCRIPTION
 
-OpenQA::Worker::Cache::Task::Asset is the task that minions of the OpenQA Cache Service
+OpenQA::CacheService::Task::Asset is the task that minions of the OpenQA Cache Service
 are executing to handle the asset download.
 
 =cut

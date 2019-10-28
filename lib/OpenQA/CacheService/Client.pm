@@ -13,13 +13,13 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Worker::Cache::Client;
+package OpenQA::CacheService::Client;
 use Mojo::Base -base;
 
 use OpenQA::Worker::Settings;
-use OpenQA::Worker::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE);
-use OpenQA::Worker::Cache::Request::Asset;
-use OpenQA::Worker::Cache::Request::Sync;
+use OpenQA::CacheService::Model::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE);
+use OpenQA::CacheService::Request::Asset;
+use OpenQA::CacheService::Request::Sync;
 use OpenQA::Utils 'base_host';
 use Mojo::URL;
 use Mojo::File 'path';
@@ -130,12 +130,12 @@ sub asset_exists { -e shift->asset_path(@_) }
 
 sub asset_request {
     my $self = shift;
-    return OpenQA::Worker::Cache::Request::Asset->new(@_);
+    return OpenQA::CacheService::Request::Asset->new(@_);
 }
 
 sub rsync_request {
     my $self = shift;
-    return OpenQA::Worker::Cache::Request::Sync->new(@_);
+    return OpenQA::CacheService::Request::Sync->new(@_);
 }
 
 sub availability_error {
@@ -151,13 +151,13 @@ sub availability_error {
 
 =head1 NAME
 
-OpenQA::Worker::Cache::Client - OpenQA Cache Service Client
+OpenQA::CacheService::Client - OpenQA Cache Service Client
 
 =head1 SYNOPSIS
 
-    use OpenQA::Worker::Cache::Client;
+    use OpenQA::CacheService::Client;
 
-    my $client = OpenQA::Worker::Cache::Client->new(host=> 'http://127.0.0.1:7844', retry => 5, cache_dir => '/tmp/cache/path');
+    my $client = OpenQA::CacheService::Client->new(host=> 'http://127.0.0.1:7844', retry => 5, cache_dir => '/tmp/cache/path');
     my $request = $client->asset_request(id => 9999, asset => 'asset_name.qcow2', type => 'hdd', host => 'openqa.opensuse.org');
     $client->enqueue($request);
     until ($client->processed($request)) {
@@ -168,6 +168,6 @@ OpenQA::Worker::Cache::Client - OpenQA Cache Service Client
 
 =head1 DESCRIPTION
 
-OpenQA::Worker::Cache::Client is the client used for interacting with the OpenQA Cache Service.
+OpenQA::CacheService::Client is the client used for interacting with the OpenQA Cache Service.
 
 =cut

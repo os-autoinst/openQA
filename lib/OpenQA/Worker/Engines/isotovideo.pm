@@ -27,9 +27,8 @@ use File::Spec::Functions 'catdir';
 use File::Basename;
 use Errno;
 use Cwd qw(abs_path getcwd);
-use OpenQA::Worker::Cache;
-use OpenQA::Worker::Cache::Client;
-use OpenQA::Worker::Cache::Request;
+use OpenQA::CacheService::Client;
+use OpenQA::CacheService::Request;
 use Time::HiRes 'sleep';
 use IO::Handle;
 use Mojo::IOLoop::ReadWriteProcess 'process';
@@ -109,7 +108,7 @@ sub detect_asset_keys {
 
 sub cache_assets {
     my ($job, $vars, $assetkeys, $webui_host, $pooldir) = @_;
-    my $cache_client = OpenQA::Worker::Cache::Client->new;
+    my $cache_client = OpenQA::CacheService::Client->new;
     # TODO: Enqueue all, and then wait
     for my $this_asset (sort keys %$assetkeys) {
         my $asset;
@@ -228,7 +227,7 @@ sub engine_workit {
         if (my $rsync_source = $client->testpool_server) {
             $shared_cache = catdir($global_settings->{CACHEDIRECTORY}, $host_to_cache);
 
-            my $cache_client  = OpenQA::Worker::Cache::Client->new;
+            my $cache_client  = OpenQA::CacheService::Client->new;
             my $rsync_request = $cache_client->rsync_request(
                 from => $rsync_source,
                 to   => $shared_cache

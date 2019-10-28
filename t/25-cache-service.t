@@ -37,8 +37,8 @@ CACHELIMIT = 100');
 }
 
 # Avoid warning error: Name "Config::IniFiles::t/cache.d/cache/config/workers.ini" used only once
-use OpenQA::Worker::Cache;
-OpenQA::Worker::Cache->from_worker;
+use OpenQA::CacheService::Model::Cache;
+OpenQA::CacheService::Model::Cache->from_worker;
 
 use Test::More;
 use Test::Warnings;
@@ -56,8 +56,8 @@ use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service);
 use OpenQA::Test::FakeWebSocketTransaction;
 use Mojo::Util qw(md5_sum);
-use OpenQA::Worker::Cache::Request;
-use OpenQA::Worker::Cache::Client;
+use OpenQA::CacheService::Request;
+use OpenQA::CacheService::Client;
 use Test::MockModule;
 
 my $sql;
@@ -75,7 +75,7 @@ my $logfile = $logdir->child('cache.log');
 my $port    = Mojo::IOLoop::Server->generate_port;
 my $host    = "http://localhost:$port";
 
-my $cache_client = OpenQA::Worker::Cache::Client->new();
+my $cache_client = OpenQA::CacheService::Client->new();
 
 sub _port { IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => shift) }
 
@@ -142,14 +142,15 @@ sub test_download {
     ok $cache_client->enqueue($asset_request), 'enqueued';
 
     my $state = $cache_client->status($asset_request);
-    $state = $cache_client->status($asset_request) until ($state ne OpenQA::Worker::Cache::STATUS_IGNORE);
+    $state = $cache_client->status($asset_request) until ($state ne OpenQA::CacheService::Model::Cache::STATUS_IGNORE);
 
     # After IGNORE, only DOWNLOAD status could follow, but it could be fast enough to not catch it
     $state = $cache_client->status($asset_request);
-    $state = $cache_client->status($asset_request) until ($state ne OpenQA::Worker::Cache::STATUS_DOWNLOADING);
+    $state = $cache_client->status($asset_request)
+      until ($state ne OpenQA::CacheService::Model::Cache::STATUS_DOWNLOADING);
 
     # And then goes to PROCESSED state
-    is($state, OpenQA::Worker::Cache::STATUS_PROCESSED) or die diag explain $state;
+    is($state, OpenQA::CacheService::Model::Cache::STATUS_PROCESSED) or die diag explain $state;
 
     ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded');
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
@@ -157,12 +158,12 @@ sub test_download {
 
 subtest 'OPENQA_CACHE_DIR environment variable' => sub {
     local $ENV{OPENQA_CACHE_DIR} = '/does/not/exist';
-    my $client = OpenQA::Worker::Cache::Client->new;
+    my $client = OpenQA::CacheService::Client->new;
     is $client->cache_dir, '/does/not/exist', 'environment variable used';
 };
 
 subtest 'Availability check and worker status' => sub {
-    my $client_mock = Test::MockModule->new('OpenQA::Worker::Cache::Client');
+    my $client_mock = Test::MockModule->new('OpenQA::CacheService::Client');
 
     is($cache_client->availability_error, 'Cache service not reachable', 'cache service not available');
 
@@ -177,18 +178,18 @@ subtest 'Availability check and worker status' => sub {
 };
 
 subtest 'Configurable minion workers' => sub {
-    require OpenQA::Worker::Cache::Service;
+    require OpenQA::CacheService;
 
-    is_deeply([OpenQA::Worker::Cache::Service::_setup_workers(qw(minion test))],   [qw(minion test)]);
-    is_deeply([OpenQA::Worker::Cache::Service::_setup_workers(qw(minion worker))], [qw(minion worker -j 10)]);
-    is_deeply([OpenQA::Worker::Cache::Service::_setup_workers(qw(minion daemon))], [qw(minion daemon)]);
+    is_deeply([OpenQA::CacheService::_setup_workers(qw(minion test))],   [qw(minion test)]);
+    is_deeply([OpenQA::CacheService::_setup_workers(qw(minion worker))], [qw(minion worker -j 10)]);
+    is_deeply([OpenQA::CacheService::_setup_workers(qw(minion daemon))], [qw(minion daemon)]);
 
     path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt("
 [global]
 CACHEDIRECTORY = $cachedir
 CACHELIMIT = 100");
 
-    is_deeply([OpenQA::Worker::Cache::Service::_setup_workers(qw(minion worker))], [qw(minion worker -j 5)]);
+    is_deeply([OpenQA::CacheService::_setup_workers(qw(minion worker))], [qw(minion worker -j 5)]);
 };
 
 subtest 'Cache Requests' => sub {
@@ -201,12 +202,12 @@ subtest 'Cache Requests' => sub {
     is_deeply $rsync_request->to_array, [qw(foo bar)];
     is_deeply $asset_request->to_array, [qw(922756 hdd test open.qa)];
 
-    my $base = OpenQA::Worker::Cache::Request->new;
+    my $base = OpenQA::CacheService::Request->new;
     local $@;
     eval { $base->lock };
-    like $@, qr/lock\(\) not implemented in OpenQA::Worker::Cache::Request/, 'lock() not implemented in base request';
+    like $@, qr/lock\(\) not implemented in OpenQA::CacheService::Request/, 'lock() not implemented in base request';
     eval { $base->to_array };
-    like $@, qr/to_array\(\) not implemented in OpenQA::Worker::Cache::Request/,
+    like $@, qr/to_array\(\) not implemented in OpenQA::CacheService::Request/,
       'to_array() not implemented in base request';
 };
 
@@ -256,34 +257,34 @@ subtest 'different token between restarts' => sub {
 };
 
 subtest 'enqueued' => sub {
-    require OpenQA::Worker::Cache::Service;
+    require OpenQA::CacheService;
 
-    OpenQA::Worker::Cache::Service::enqueue('bar');
-    ok !OpenQA::Worker::Cache::Service::enqueued('foo'), "Queue works" or die;
-    OpenQA::Worker::Cache::Service::enqueue('foo');
-    ok OpenQA::Worker::Cache::Service::enqueued('foo'), "Queue works";
-    OpenQA::Worker::Cache::Service::dequeue('foo');
-    ok !OpenQA::Worker::Cache::Service::enqueued('foo'), "Dequeue works";
+    OpenQA::CacheService::enqueue('bar');
+    ok !OpenQA::CacheService::enqueued('foo'), "Queue works" or die;
+    OpenQA::CacheService::enqueue('foo');
+    ok OpenQA::CacheService::enqueued('foo'), "Queue works";
+    OpenQA::CacheService::dequeue('foo');
+    ok !OpenQA::CacheService::enqueued('foo'), "Dequeue works";
 };
 
 subtest '_gen_guard_name' => sub {
-    require OpenQA::Worker::Cache::Service;
+    require OpenQA::CacheService;
 
-    ok !OpenQA::Worker::Cache::Service::SESSION_TOKEN(), "Session token is not there" or die;
-    OpenQA::Worker::Cache::Service::_gen_session_token();
-    ok OpenQA::Worker::Cache::Service::SESSION_TOKEN(), "Session token is there" or die;
-    is OpenQA::Worker::Cache::Service::_gen_guard_name('foo'),
-      OpenQA::Worker::Cache::Service::SESSION_TOKEN() . '.foo', "Session token is there"
+    ok !OpenQA::CacheService::SESSION_TOKEN(), "Session token is not there" or die;
+    OpenQA::CacheService::_gen_session_token();
+    ok OpenQA::CacheService::SESSION_TOKEN(), "Session token is there" or die;
+    is OpenQA::CacheService::_gen_guard_name('foo'),
+      OpenQA::CacheService::SESSION_TOKEN() . '.foo', "Session token is there"
       or die;
 };
 
 subtest '_exists' => sub {
-    require OpenQA::Worker::Cache::Service;
+    require OpenQA::CacheService;
 
-    ok !OpenQA::Worker::Cache::Service::_exists();
-    ok !OpenQA::Worker::Cache::Service::_exists({total => 0});
-    ok OpenQA::Worker::Cache::Service::_exists({total => 1});
-    ok OpenQA::Worker::Cache::Service::_exists({total => 100});
+    ok !OpenQA::CacheService::_exists();
+    ok !OpenQA::CacheService::_exists({total => 0});
+    ok OpenQA::CacheService::_exists({total => 1});
+    ok OpenQA::CacheService::_exists({total => 100});
 };
 
 subtest 'Client can check if there are available workers' => sub {
@@ -445,11 +446,11 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
 subtest 'Test Minion task registration and execution' => sub {
     my $a = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
 
-    my $minion = Minion->new(SQLite => "sqlite:" . OpenQA::Worker::Cache->from_worker->db_file);
+    my $minion = Minion->new(SQLite => "sqlite:" . OpenQA::CacheService::Model::Cache->from_worker->db_file);
     my $app    = Mojolicious->new;
     $app->attr(minion => sub { $minion });
 
-    my $task = OpenQA::Worker::Cache::Task::Asset->new();
+    my $task = OpenQA::CacheService::Task::Asset->new();
     $task->register($app);
     my $req = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
     $cache_client->enqueue($req);
@@ -466,7 +467,7 @@ subtest 'Test Minion task registration and execution' => sub {
 subtest 'Test Minion Sync task' => sub {
     my $a = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
 
-    my $minion = Minion->new(SQLite => "sqlite:" . OpenQA::Worker::Cache->from_worker->db_file);
+    my $minion = Minion->new(SQLite => "sqlite:" . OpenQA::CacheService::Model::Cache->from_worker->db_file);
     my $app    = Mojolicious->new;
     $app->helper(minion => sub { $minion });
     my $dir  = tempdir;
@@ -475,7 +476,7 @@ subtest 'Test Minion Sync task' => sub {
     $dir->child('test')->spurt('foobar');
     my $expected = $dir2->child('tests')->child('test');
     my $req      = $cache_client->rsync_request(from => $dir, to => $dir2);
-    my $task     = OpenQA::Worker::Cache::Task::Sync->new();
+    my $task     = OpenQA::CacheService::Task::Sync->new();
     $task->register($app);
     ok $cache_client->enqueue($req);
     my $worker = $app->minion->repair->worker->register;
@@ -491,7 +492,7 @@ subtest 'Test Minion Sync task' => sub {
     is $expected->slurp, 'foobar';
 };
 
-subtest 'OpenQA::Worker::Cache::Task::Sync' => sub {
+subtest 'OpenQA::CacheService::Task::Sync' => sub {
     my $worker_2 = cache_minion_worker;
     $worker_cache_service->stop;
 

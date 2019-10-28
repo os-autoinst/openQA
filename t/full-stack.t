@@ -49,7 +49,7 @@ use Test::Output 'stderr_like';
 use autodie ':all';
 use IO::Socket::INET;
 use POSIX '_exit';
-use OpenQA::Worker::Cache::Client;
+use OpenQA::CacheService::Client;
 use Fcntl ':mode';
 use DBI;
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
@@ -331,7 +331,7 @@ subtest 'Cache tests' => sub {
     $worker_cache_service->restart->restart;
     $cache_service->restart->restart;
 
-    my $cache_client = OpenQA::Worker::Cache::Client->new;
+    my $cache_client = OpenQA::CacheService::Client->new;
 
     sleep 5 and diag "Waiting for cache service to be available"        until $cache_client->available;
     sleep 5 and diag "Waiting for cache service worker to be available" until $cache_client->available_workers;
