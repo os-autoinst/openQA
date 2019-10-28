@@ -98,10 +98,10 @@ aliases:
       developer) make test CHECKSTYLE=0 DEVELOPER_FULLSTACK=1 PROVE_ARGS="$HARNESS t/33-developer_mode.t";;
       esac
 
-  - &git_token_notification
+  - &git_token_authentication
     command: |
       echo 'echo $GITHUB_TOKEN' > $(pwd)/.git-askpass
-      export GIT_ASKPASS=$(pwd)/.git-askpass
+      echo "export GIT_ASKPASS=$(pwd)/.git-askpass" >> $BASH_ENV
       chmod +x $(pwd)/.git-askpass
 
 images:
@@ -135,7 +135,7 @@ jobs:
             git config user.name "Dependency bot circleci"
             git config core.autocrlf true
             hub --version
-      - run: *git_token_notification
+      - run: *git_token_authentication
       - run:
           command: |
             depid=$(date +%y%m%d%H%M%S)
@@ -275,18 +275,20 @@ jobs:
       - restore_cache: *restore_cache
       - run: *check_cache
       - run: *install_cached_packages
-      - run: sudo zypper -n install hub
-      - run: *git_token_notification
+      - run: *git_token_authentication
       - run:
           command: |
             export GEM_HOME=$(pwd)/.gem
-            [ -z "${CIRCLE_PROJECT_USERNAME}" ] || export PULL_REQUEST_TARGET="${CIRCLE_PROJECT_USERNAME}:gh-pages"
-            bash -xe script/generate-documentation https://token@github.com/openqabot/openQA.git gh-pages-daily
+            if [[ "${CIRCLE_JOB}" == *nightly ]]; then
+                export PULL_REQUEST_USER=${CIRCLE_PROJECT_USERNAME:-os-autoinst}
+                export TARGET_BRANCH=gh-pages-$(date +%y%m%d%H%M%S)
+                export PUBLISH=1
+                sudo zypper -n install hub
+            fi
+            bash -xe script/generate-documentation https://token@github.com/openqabot/openQA.git $TARGET_BRANCH
 
   build.docs.nightly:
     <<: *docs-template
-    environment:
-      PUBLISH: 1
 
 workflows:
   version: 2
