@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (c) 2018 SUSE LLC
+# Copyright (c) 2018-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,15 +54,16 @@ my $filename;
 my $serverpid;
 my $openqalogs;
 
-my $cachedir = catdir(getcwd(), 't', 'cache.d', 'cache');
+my $cached   = catdir(getcwd(), 't', 'cache.d');
+my $cachedir = catdir($cached,  'cache');
 my $db_file  = "$cachedir/cache.sqlite";
-my $logdir   = path(getcwd(), 't', 'cache.d', 'logs');
-my $logfile  = $logdir->child('cache.log');
-my $port     = Mojo::IOLoop::Server->generate_port;
-my $host     = "http://localhost:$port";
+my $logdir  = path(getcwd(), 't', 'cache.d', 'logs');
+my $logfile = $logdir->child('cache.log');
+my $port    = Mojo::IOLoop::Server->generate_port;
+my $host    = "http://localhost:$port";
 
 remove_tree($cachedir);
-$logdir->make_path;
+ok($logdir->make_path, "creating cachedir under $cachedir");
 
 # reassign STDOUT, STDERR
 open my $FD, '>>', $logfile;
@@ -266,7 +267,7 @@ $cache->track_asset("Foobar", 0);
 
 $cache->sqlite->db->query("delete from assets");
 
-my $fake_asset = "$cachedir/test.qcow";
+my $fake_asset = "$cachedir/test.qcow2";
 
 path($fake_asset)->spurt('');
 ok -e $fake_asset, 'Asset is there';
@@ -284,6 +285,19 @@ is(ref($cache->_asset($fake_asset)), 'HASH', 'Asset was just inserted, so it mus
 
 is $cache->_asset($fake_asset)->{etag}, undef, 'Can get downloading state with _asset()';
 is_deeply $cache->_asset('foobar'), {}, '_asset() returns {} if asset is not present';
+
+subtest 'cache directory is symlink' => sub {
+    my $symlink = catdir($cached, 'symlink');
+    unlink($symlink);
+    ok(symlink($cachedir, $symlink), "symlinking cache dir to $symlink");
+    path($fake_asset)->spurt('not a real image');
+    ok(-e $fake_asset, 'fake asset created');
+
+    $cache->location($symlink);
+    $cache->_cache_sync;
+    is($cache->{cache_real_size}, 16, 'cache size could be determined');
+};
+
 
 stop_server;
 done_testing();
