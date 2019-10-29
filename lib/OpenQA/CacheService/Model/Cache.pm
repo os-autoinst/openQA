@@ -312,7 +312,7 @@ sub _cache_sync {
     my $self = shift;
 
     $self->{cache_real_size} = 0;
-    my $location = $self->location;
+    my $location = readlink($self->location) // $self->location;
     my $assets
       = path($location)->list_tree({max_depth => 2})->map('to_string')->grep(qr/\.(?:img|qcow2|iso|vhd|vhdx)$/);
     foreach my $file ($assets->each) {
