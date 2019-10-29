@@ -234,12 +234,15 @@ sub create {
     }
 
     my $properties = $self->load_properties;
-    my $group      = $self->resultset->create($properties);
-    return $self->render(json => {error => 'Unable to create group with specified properties'}, status => 400)
-      unless $group;
+
+    my $id;
+    eval { $id = $self->resultset->create($properties)->id };
+    if ($@) {
+        return $self->render(json => {error => $@}, status => 400);
+    }
 
     $self->emit_event(openqa_jobgroup_create => $properties);
-    $self->render(json => {id => $group->id});
+    $self->render(json => {id => $id});
 }
 
 =over 4
@@ -275,11 +278,14 @@ sub update {
     }
 
     my $properties = $self->load_properties;
-    my $res        = $group->update($properties);
-    return $self->render(json => {error => 'Specified job group ' . $group->id . ' exist but unable to update, though'})
-      unless $res;
+    my $id;
+    eval { $id = $group->update($properties)->id };
+    if ($@) {
+        return $self->render(json => {error => $@}, status => 400);
+    }
+
     $self->emit_event(openqa_jobgroup_update => $properties);
-    $self->render(json => {id => $res->id});
+    $self->render(json => {id => $id});
 }
 
 =over 4
