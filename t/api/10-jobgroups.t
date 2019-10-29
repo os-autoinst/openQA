@@ -335,4 +335,45 @@ subtest 'prevent update parent/job group with empty or blank name' => sub() {
     }
 };
 
+subtest 'prevent create/update duplicate job group on same parent group' => sub() {
+    my $parent_group_id = $t->post_ok(
+        '/api/v1/parent_groups',
+        form => {
+            name => 'parent_group',
+        })->tx->res->json->{id};
+    $t->post_ok(
+        '/api/v1/job_groups',
+        form => {
+            name      => 'group1',
+            parent_id => $parent_group_id
+        })->status_is(200);
+    $t->post_ok(
+        '/api/v1/job_groups',
+        form => {
+            name      => 'group1',
+            parent_id => $parent_group_id
+        })->status_is(400);
+    like(
+        $t->tx->res->json->{error},
+        qr/duplicate key/,
+        'Unable to create group due to not allow duplicated job group on the same parent job group'
+    );
+    my $group2_id = $t->post_ok(
+        '/api/v1/job_groups',
+        form => {
+            name      => 'group2',
+            parent_id => $parent_group_id
+        })->tx->res->json->{id};
+    $t->put_ok(
+        "/api/v1/job_groups/$group2_id",
+        form => {
+            name => 'group1',
+        })->status_is(400);
+    like(
+        $t->tx->res->json->{error},
+        qr/duplicate key/,
+        'Unable to update group due to not allow duplicated job group on the same parent job group'
+    );
+};
+
 done_testing();
