@@ -56,7 +56,7 @@ sub startup {
     $r->post('/dequeue')->to('API#dequeue');
 }
 
-sub _setup_workers {
+sub setup_workers {
     return @_ unless grep { /worker/i } @_;
     my @args = @_;
 
@@ -69,7 +69,7 @@ sub _setup_workers {
 }
 
 sub run {
-    my @args = _setup_workers(@_);
+    my @args = setup_workers(@_);
 
     my $app = __PACKAGE__->new;
     $app->log->short(1);

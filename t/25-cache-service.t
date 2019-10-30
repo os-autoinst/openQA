@@ -56,6 +56,7 @@ use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service);
 use OpenQA::Test::FakeWebSocketTransaction;
 use Mojo::Util qw(md5_sum);
+use OpenQA::CacheService;
 use OpenQA::CacheService::Request;
 use OpenQA::CacheService::Client;
 use OpenQA::CacheService::Task::Asset;
@@ -180,18 +181,16 @@ subtest 'Availability check and worker status' => sub {
 };
 
 subtest 'Configurable minion workers' => sub {
-    require OpenQA::CacheService;
-
-    is_deeply([OpenQA::CacheService::_setup_workers(qw(minion test))],   [qw(minion test)]);
-    is_deeply([OpenQA::CacheService::_setup_workers(qw(minion worker))], [qw(minion worker -j 10)]);
-    is_deeply([OpenQA::CacheService::_setup_workers(qw(minion daemon))], [qw(minion daemon)]);
+    is_deeply([OpenQA::CacheService::setup_workers(qw(minion test))],   [qw(minion test)]);
+    is_deeply([OpenQA::CacheService::setup_workers(qw(minion worker))], [qw(minion worker -j 10)]);
+    is_deeply([OpenQA::CacheService::setup_workers(qw(minion daemon))], [qw(minion daemon)]);
 
     path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt("
 [global]
 CACHEDIRECTORY = $cachedir
 CACHELIMIT = 100");
 
-    is_deeply([OpenQA::CacheService::_setup_workers(qw(minion worker))], [qw(minion worker -j 5)]);
+    is_deeply([OpenQA::CacheService::setup_workers(qw(minion worker))], [qw(minion worker -j 5)]);
 };
 
 subtest 'Cache Requests' => sub {
