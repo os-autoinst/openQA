@@ -54,6 +54,7 @@ sub startup {
     $r->post('/status')->to('API#status');
     $r->post('/execute_task')->to('API#execute_task');
     $r->post('/dequeue')->to('API#dequeue');
+    $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 }
 
 sub setup_workers {
@@ -73,7 +74,7 @@ sub run {
 
     my $app = __PACKAGE__->new;
     $app->log->short(1);
-    local $ENV{MOJO_INACTIVITY_TIMEOUT} //= 300;
+    $ENV{MOJO_INACTIVITY_TIMEOUT} //= 300;
     $app->log->debug("Starting cache service: $0 @args");
 
     return $app->start(@args);
