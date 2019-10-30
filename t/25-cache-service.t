@@ -58,6 +58,8 @@ use OpenQA::Test::FakeWebSocketTransaction;
 use Mojo::Util qw(md5_sum);
 use OpenQA::CacheService::Request;
 use OpenQA::CacheService::Client;
+use OpenQA::CacheService::Task::Asset;
+use OpenQA::CacheService::Task::Sync;
 use Test::MockModule;
 
 my $sql;
