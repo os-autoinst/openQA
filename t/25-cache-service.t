@@ -259,34 +259,19 @@ subtest 'different token between restarts' => sub {
 };
 
 subtest 'enqueued' => sub {
-    require OpenQA::CacheService;
-
-    OpenQA::CacheService::enqueue('bar');
-    ok !OpenQA::CacheService::enqueued('foo'), "Queue works" or die;
-    OpenQA::CacheService::enqueue('foo');
-    ok OpenQA::CacheService::enqueued('foo'), "Queue works";
-    OpenQA::CacheService::dequeue('foo');
-    ok !OpenQA::CacheService::enqueued('foo'), "Dequeue works";
+    my $app = OpenQA::CacheService->new;
+    $app->locks->enqueue('bar');
+    ok !$app->locks->enqueued('foo'), 'Queue works';
+    $app->locks->enqueue('foo');
+    ok $app->locks->enqueued('foo'), 'Queue works';
+    $app->locks->dequeue('foo');
+    ok !$app->locks->enqueued('foo'), 'Dequeue works';
 };
 
-subtest '_gen_guard_name' => sub {
-    require OpenQA::CacheService;
-
-    ok !OpenQA::CacheService::SESSION_TOKEN(), "Session token is not there" or die;
-    OpenQA::CacheService::_gen_session_token();
-    ok OpenQA::CacheService::SESSION_TOKEN(), "Session token is there" or die;
-    is OpenQA::CacheService::_gen_guard_name('foo'),
-      OpenQA::CacheService::SESSION_TOKEN() . '.foo', "Session token is there"
-      or die;
-};
-
-subtest '_exists' => sub {
-    require OpenQA::CacheService;
-
-    ok !OpenQA::CacheService::_exists();
-    ok !OpenQA::CacheService::_exists({total => 0});
-    ok OpenQA::CacheService::_exists({total => 1});
-    ok OpenQA::CacheService::_exists({total => 100});
+subtest 'gen_guard_name' => sub {
+    my $app = OpenQA::CacheService->new;
+    is $app->gen_guard_name('foo'), $app->session_token . '.foo', 'Session token is there';
+    is $app->gen_guard_name('bar'), $app->session_token . '.bar', 'Session token is there';
 };
 
 subtest 'Client can check if there are available workers' => sub {

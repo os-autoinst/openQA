@@ -17,30 +17,25 @@ package OpenQA::CacheService;
 use Mojo::Base 'Mojolicious';
 
 use OpenQA::Worker::Settings;
-use OpenQA::CacheService::Model::Cache
-  qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE STATUS_ERROR);
-use Mojo::Collection;
+use OpenQA::CacheService::Model::Cache;
+use OpenQA::CacheService::Model::Locks;
 use Mojo::Util 'md5_sum';
 
 use constant DEFAULT_MINION_WORKERS => 5;
 
 BEGIN { srand(time) }
 
-my $_token;
-
-sub _gen_session_token { $_token = md5_sum($$ . time . rand) }
-
-my $enqueued = Mojo::Collection->new;
+has session_token => sub { md5_sum($$ . time . rand) };
 
 sub startup {
     my $self = shift;
+
+    $self->defaults(appname => 'openQA Cache Service');
 
     $self->hook(
         before_server_start => sub {
             my ($server, $app) = @_;
             $server->silent(1) if $app->mode eq 'test';
-            _gen_session_token();
-            $enqueued = Mojo::Collection->new;
         });
 
     $self->plugin(Minion => {SQLite => 'sqlite:' . OpenQA::CacheService::Model::Cache->from_worker->db_file});
@@ -48,102 +43,28 @@ sub startup {
     $self->plugin('OpenQA::CacheService::Task::Asset');
     $self->plugin('OpenQA::CacheService::Task::Sync');
 
+    $self->helper(locks => sub { state $locks = OpenQA::CacheService::Model::Locks->new });
+
+    $self->helper(gen_guard_name => sub { join('.', shift->app->session_token, shift) });
+
     my $r = $self->routes;
-
-    $r->get('/session_token' => sub { shift->render(json => {session_token => SESSION_TOKEN()}) });
-
-    $r->get('/info' => sub { $_[0]->render(json => shift->minion->stats) });
-
-    $r->post(
-        '/status' => sub {
-            my $c         = shift;
-            my $data      = $c->req->json;
-            my $lock_name = $data->{lock};
-            return $c->render(json => {error => 'No lock specified.'}, status => 400) unless $lock_name;
-
-            my $lock = _gen_guard_name($lock_name);
-            my %res
-              = (status =>
-                  ($c->app->_active($lock) ? STATUS_DOWNLOADING : enqueued($lock) ? STATUS_IGNORE : STATUS_PROCESSED));
-
-            if ($data->{id}) {
-                my $job = $c->minion->job($data->{id});
-                return $c->render(json => {error => 'Specified job ID is invalid.'}, status => 404) unless $job;
-
-                my $job_info = $job->info;
-                return $c->render(json => {error => 'Job info not available.'}, status => 404) unless $job_info;
-                $res{result} = $job_info->{result};
-                $res{output} = $job_info->{notes}->{output};
-            }
-
-            $c->render(json => \%res);
-        });
-
-    $r->post(
-        '/execute_task' => sub {
-            my $c    = shift;
-            my $data = $c->req->json;
-            my $task = $data->{task};
-            my $args = $data->{args};
-
-            return $c->render(json => {status => STATUS_ERROR, error => 'No Task defined'})
-              unless defined $task;
-            return $c->render(json => {status => STATUS_ERROR, error => 'No Arguments defined'})
-              unless defined $args;
-
-            my $lock = _gen_guard_name($data->{lock} ? $data->{lock} : @$args);
-            $c->app->log->debug("Requested [$task] Args: @{$args} Lock: $lock");
-
-            return $c->render(json => {status => STATUS_DOWNLOADING()}) if $c->app->_active($lock);
-            return $c->render(json => {status => STATUS_IGNORE()})      if enqueued($lock);
-
-            enqueue($lock);
-            my $id = $c->minion->enqueue($task => $args);
-
-            $c->render(json => {status => STATUS_ENQUEUED, id => $id});
-        });
-
     $r->get('/' => sub { shift->redirect_to('/minion') });
-
-    $r->post(
-        '/dequeue' => sub {
-            my $c    = shift;
-            my $data = $c->req->json;
-            dequeue(_gen_guard_name($data->{lock}));
-            $c->render(json => {status => STATUS_PROCESSED});
-        });
-}
-
-sub SESSION_TOKEN { $_token }
-
-sub _gen_guard_name { join('.', SESSION_TOKEN, pop) }
-
-sub _exists { !!(defined $_[0] && exists $_[0]->{total} && $_[0]->{total} > 0) }
-
-sub _active { !shift->minion->lock(shift, 0) }
-
-sub enqueued {
-    my $lock = shift;
-    !!($enqueued->grep(sub { $_ eq $lock })->size == 1);
-}
-
-sub dequeue {
-    my $lock = shift;
-    $enqueued = $enqueued->grep(sub { $_ ne $lock });
-}
-
-sub enqueue {
-    push @$enqueued, shift;
+    $r->get('/session_token')->to('API#session_token');
+    $r->get('/info')->to('API#info');
+    $r->post('/status')->to('API#status');
+    $r->post('/execute_task')->to('API#execute_task');
+    $r->post('/dequeue')->to('API#dequeue');
 }
 
 sub _setup_workers {
     return @_ unless grep { /worker/i } @_;
+    my @args = @_;
 
-    my @args            = @_;
     my $global_settings = OpenQA::Worker::Settings->new->global_settings;
     my $cache_workers
       = exists $global_settings->{CACHEWORKERS} ? $global_settings->{CACHEWORKERS} : DEFAULT_MINION_WORKERS;
-    push(@args, '-j', $cache_workers);
+    push @args, '-j', $cache_workers;
+
     return @args;
 }
 
