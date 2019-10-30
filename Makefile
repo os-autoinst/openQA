@@ -7,8 +7,11 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 docker_env_file := "$(current_dir)/docker.env"
 
-.PHONY: all
-all:
+.PHONY: help
+help:
+	@echo Call one of the available targets:
+	@sed -n 's/\(^[^.#[:space:]A-Z].*\):.*$$/\1/p' Makefile | uniq
+	@echo See docs/Contributing.asciidoc for more details
 
 .PHONY: install
 install:
