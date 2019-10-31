@@ -24,11 +24,14 @@
 use Mojo::Base -strict;
 
 my $tempdir;
+my $pooldir;
 BEGIN {
+    $ENV{PERL_MYJSONRPC_DEBUG} = 1;
     use FindBin;
     use Mojo::File qw(path tempdir);
     $tempdir             = tempdir;
     $ENV{OPENQA_BASEDIR} = $tempdir->child('t', 'full-stack.d');
+    $pooldir = "$ENV{OPENQA_BASEDIR}/openqa/pool/1";
     $ENV{OPENQA_CONFIG}  = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
     # Since tests depends on timing, we require the scheduler to be fixed in its actions.
     $ENV{OPENQA_SCHEDULER_SCHEDULE_TICK_MS}   = 4000;
@@ -169,6 +172,7 @@ subtest 'wait until developer console becomes available' => sub {
     OpenQA::Test::FullstackUtils::wait_for_developer_console_available($driver);
 };
 
+sleep 6;
 subtest 'pause at certain test' => sub {
     # load Selenium::Remote::WDKeys module or skip this test if not available
     unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
@@ -198,6 +202,9 @@ subtest 'pause at certain test' => sub {
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message($driver,
         qr/\"resume_test_execution\":/, 'resume');
 };
+
+diag "($$) print $pooldir/autoinst-log.txt";
+system "cat $pooldir/autoinst-log.txt";
 
 $driver->get($job_page_url);
 OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/, 'test 1 is passed');
