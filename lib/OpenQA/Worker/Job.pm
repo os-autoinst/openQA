@@ -667,7 +667,6 @@ sub _upload_results {
 #            my ($isotovideo_client, $status_from_os_autoinst) = @_;
 #            $self->_upload_results_step_0_prepare($is_final_upload, $callback);
 #        });
-    sleep 1;
     $self->_upload_results_step_0_prepare($is_final_upload, $callback);
 }
 
