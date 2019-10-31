@@ -106,7 +106,8 @@ ifeq ($(RETRY),0)
 else
 	export GLOBIGNORE="$(GLOBIGNORE)";\
 	n=0;\
-	until [ $$n -ge "$(RETRY)" ]; do\
+	while :; do\
+		[ $$n -lt "$(RETRY)" ] || exit 1;\
 		[ $$n -eq 0 ] || echo Retrying...;\
 		prove ${PROVE_LIB_ARGS} ${PROVE_ARGS} && break;\
 		n=$$[$$n+1];\
