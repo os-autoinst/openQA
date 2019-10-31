@@ -662,12 +662,13 @@ sub _upload_results {
     my $is_final_upload = $self->is_stopped_or_stopping;
     $self->{_is_uploading_results} = 1;
 
-    $self->isotovideo_client->status(
-        sub {
-            my ($isotovideo_client, $status_from_os_autoinst) = @_;
-            $self->_upload_results_step_0_prepare($is_final_upload, $callback);
-        });
-    #    $self->_upload_results_step_0_prepare($is_final_upload, $callback);
+#    $self->isotovideo_client->status(
+#        sub {
+#            my ($isotovideo_client, $status_from_os_autoinst) = @_;
+#            $self->_upload_results_step_0_prepare($is_final_upload, $callback);
+#        });
+    sleep 1;
+    $self->_upload_results_step_0_prepare($is_final_upload, $callback);
 }
 
 sub _upload_results_step_0_prepare {
