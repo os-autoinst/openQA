@@ -186,6 +186,8 @@ subtest 'pause at certain test' => sub {
     # send command to pause at shutdown (hopefully the test wasn't so fast it is already in shutdown)
     $command_input->send_keys('{"cmd":"set_pause_at_test","name":"shutdown"}');
     $command_input->send_keys(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    my $lt = localtime;
+    warn __PACKAGE__.':'.__LINE__.": !!!!!!!! [$lt] sent set_pause_at_test\n";
     OpenQA::Test::FullstackUtils::wait_for_developer_console_contains_log_message(
         $driver,
         qr/\"set_pause_at_test\":\"shutdown\"/,
