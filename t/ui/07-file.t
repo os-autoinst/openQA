@@ -17,6 +17,7 @@
 use Mojo::Base -strict;
 
 use FindBin;
+use File::Spec;
 use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
@@ -63,7 +64,9 @@ sub write_file {
 
 subtest 'needle download' => sub {
     # clean leftovers from previous run
-    my $needle_dir = Mojo::File->new('t/data/openqa/share/tests/opensuse/needles');
+    my $needle_path     = 't/data/openqa/share/tests/opensuse/needles';
+    my $abs_needle_path = File::Spec->rel2abs($needle_path);
+    my $needle_dir      = Mojo::File->new($needle_path);
     $needle_dir->remove_tree();
 
     $t->get_ok('/needles/opensuse/inst-timezone-text.png')->status_is(404, '404 if image not present');
@@ -71,17 +74,41 @@ subtest 'needle download' => sub {
     $t->get_ok('/needles/1/json')->status_is(404, '404 if json not present');
 
     # create fake json file and image
-
     $needle_dir->make_path();
     my $json
       = '{"area" : [{"height": 217, "type": "match", "width": 384, "xpos": 0, "ypos": 0},{"height": 60, "type": "exclude", "width": 160, "xpos": 175, "ypos": 45}], "tags": ["inst-timezone"]}';
     write_file("$needle_dir/inst-timezone-text.png",  "png\n");
     write_file("$needle_dir/inst-timezone-text.json", $json);
 
+    # and another, in a subdirectory, to test that
+    my $needle_subdir = Mojo::File->new('t/data/openqa/share/tests/opensuse/needles/subdirectory');
+    $needle_subdir->make_path();
+    my $json2
+      = '{"area" : [{"height": 217, "type": "match", "width": 384, "xpos": 0, "ypos": 0},{"height": 60, "type": "exclude", "width": 160, "xpos": 175, "ypos": 45}], "tags": ["inst-subdirectory"]}';
+    write_file("$needle_subdir/inst-subdirectory.png",  "png\n");
+    write_file("$needle_subdir/inst-subdirectory.json", $json2);
+
     $t->get_ok('/needles/opensuse/inst-timezone-text.png')->status_is(200)->content_type_is('image/png')
       ->content_is("png\n");
     $t->get_ok('/needles/1/image')->status_is(200)->content_type_is('image/png')->content_is("png\n");
     $t->get_ok('/needles/1/json')->status_is(200)->content_type_is('application/json;charset=UTF-8')->content_is($json);
+
+    # arguably this should work and be tested, but does not work now because
+    # of how we do routing:
+    #$t->get_ok('/needles/opensuse/subdirectory/inst-subdirectory.png')
+
+    # currently you can only find a needle in a subdirectory by passing the
+    # jsonfile query parameter like this:
+    $t->get_ok("/needles/opensuse/inst-subdirectory.png?jsonfile=$needle_path/subdirectory/inst-subdirectory.json")
+      ->status_is(200)->content_type_is('image/png')->content_is("png\n");
+    # also test with jsonfile as absolute path (as usual in production)
+    $t->get_ok("/needles/opensuse/inst-subdirectory.png?jsonfile=$abs_needle_path/subdirectory/inst-subdirectory.json")
+      ->status_is(200)->content_type_is('image/png')->content_is("png\n");
+
+  # getting needle image and json by ID also does not work for needles
+  # in subdirectories, but arguably should do and should be tested:
+  #$t->get_ok('/needles/2/image')->status_is(200)->content_type_is('image/png')->content_is("png\n");
+  #$t->get_ok('/needles/2/json')->status_is(200)->content_type_is('application/json;charset=UTF-8')->content_is($json2);
 };
 
 

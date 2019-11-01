@@ -614,9 +614,15 @@ subtest '(created) needles can be accessed over API' => sub {
       ->status_is(200, 'needle accessible')->content_type_is('image/png');
     @warnings = warnings {
         $t->get_ok('/needles/opensuse/test-newneedle.png?jsonfile=/try/to/break_out.json')
-          ->status_is(403, 'access to files outside the test directory not granted');
+          ->status_is(403, 'access to files outside the test directory not granted (absolute)');
     };
     map { like($_, qr/is not in a subdir of/, 'expected warning') } @warnings;
+    @warnings = warnings {
+        $t->get_ok(
+'/needles/opensuse/test-newneedle.png?jsonfile=t/data/openqa/share/tests/opensuse/needles/../../../../try/to/break_out.json'
+        )->status_is(403, 'access to files outside the test directory not granted (relative)');
+    };
+    map { like($_, qr/cannot contain ../, 'expected warning') } @warnings;
 
     my $tmp_dir = 't/tmp_needles';
     File::Path::rmtree($tmp_dir);
