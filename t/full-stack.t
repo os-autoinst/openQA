@@ -172,7 +172,7 @@ subtest 'wait until developer console becomes available' => sub {
     OpenQA::Test::FullstackUtils::wait_for_developer_console_available($driver);
 };
 
-sleep 6;
+#sleep 8;
 subtest 'pause at certain test' => sub {
     # load Selenium::Remote::WDKeys module or skip this test if not available
     unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
