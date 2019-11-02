@@ -50,7 +50,7 @@ sub cache_minion_worker {
             # this service can be very noisy
             require OpenQA::CacheService;
             local $ENV{MOJO_MODE} = 'test';
-            OpenQA::CacheService->run(qw(minion worker));
+            OpenQA::CacheService::run(qw(minion worker));
             Devel::Cover::report() if Devel::Cover->can('report');
             _exit(0);
         })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);
@@ -63,7 +63,7 @@ sub cache_worker_service {
             # this service can be very noisy
             require OpenQA::CacheService;
             local $ENV{MOJO_MODE} = 'test';
-            OpenQA::CacheService->run(qw(daemon -l http://*:7844));
+            OpenQA::CacheService::run(qw(daemon -l http://*:7844));
             Devel::Cover::report() if Devel::Cover->can('report');
             _exit(0);
         })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);

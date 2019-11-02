@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Mojo::Base -strict;
+
 use FindBin;
+BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
 
-BEGIN {
-    unshift @INC, "$FindBin::Bin/../lib";
-}
+use OpenQA::CacheService;
+use OpenQA::Utils 'set_listen_address';
 
-require OpenQA::CacheService;
-OpenQA::CacheService->run(@ARGV);
+set_listen_address(7844);
+OpenQA::CacheService::run(@ARGV);

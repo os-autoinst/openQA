@@ -1,6 +1,4 @@
-#!/usr/bin/env perl
-
-# Copyright (C) 2015-2019 SUSE Linux GmbH
+# Copyright (C) 2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,16 +13,26 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use Mojo::Base -strict;
+package OpenQA::CacheService::Model::Locks;
+use Mojo::Base -base;
 
-use FindBin;
-BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
+use Mojo::Collection;
 
-use OpenQA::WebSockets;
-use OpenQA::Utils qw(service_port set_listen_address);
+has queue => sub { Mojo::Collection->new };
 
-# allow up to 20GB - hdd images
-$ENV{MOJO_MAX_MESSAGE_SIZE} = 1024 * 1024 * 1024 * 20;
+sub enqueued {
+    my ($self, $lock) = @_;
+    return !!($self->queue->grep(sub { $_ eq $lock })->size == 1);
+}
 
-set_listen_address(service_port('websocket'));
-OpenQA::WebSockets::run;
+sub dequeue {
+    my ($self, $lock) = @_;
+    $self->queue($self->queue->grep(sub { $_ ne $lock }));
+}
+
+sub enqueue {
+    my ($self, $lock) = @_;
+    push @{$self->queue}, $lock;
+}
+
+1;

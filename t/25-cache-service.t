@@ -56,8 +56,11 @@ use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service);
 use OpenQA::Test::FakeWebSocketTransaction;
 use Mojo::Util qw(md5_sum);
+use OpenQA::CacheService;
 use OpenQA::CacheService::Request;
 use OpenQA::CacheService::Client;
+use OpenQA::CacheService::Task::Asset;
+use OpenQA::CacheService::Task::Sync;
 use Test::MockModule;
 
 my $sql;
@@ -178,18 +181,16 @@ subtest 'Availability check and worker status' => sub {
 };
 
 subtest 'Configurable minion workers' => sub {
-    require OpenQA::CacheService;
-
-    is_deeply([OpenQA::CacheService::_setup_workers(qw(minion test))],   [qw(minion test)]);
-    is_deeply([OpenQA::CacheService::_setup_workers(qw(minion worker))], [qw(minion worker -j 10)]);
-    is_deeply([OpenQA::CacheService::_setup_workers(qw(minion daemon))], [qw(minion daemon)]);
+    is_deeply([OpenQA::CacheService::setup_workers(qw(minion test))],   [qw(minion test)]);
+    is_deeply([OpenQA::CacheService::setup_workers(qw(minion worker))], [qw(minion worker -j 10)]);
+    is_deeply([OpenQA::CacheService::setup_workers(qw(minion daemon))], [qw(minion daemon)]);
 
     path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt("
 [global]
 CACHEDIRECTORY = $cachedir
 CACHELIMIT = 100");
 
-    is_deeply([OpenQA::CacheService::_setup_workers(qw(minion worker))], [qw(minion worker -j 5)]);
+    is_deeply([OpenQA::CacheService::setup_workers(qw(minion worker))], [qw(minion worker -j 5)]);
 };
 
 subtest 'Cache Requests' => sub {
@@ -257,34 +258,19 @@ subtest 'different token between restarts' => sub {
 };
 
 subtest 'enqueued' => sub {
-    require OpenQA::CacheService;
-
-    OpenQA::CacheService::enqueue('bar');
-    ok !OpenQA::CacheService::enqueued('foo'), "Queue works" or die;
-    OpenQA::CacheService::enqueue('foo');
-    ok OpenQA::CacheService::enqueued('foo'), "Queue works";
-    OpenQA::CacheService::dequeue('foo');
-    ok !OpenQA::CacheService::enqueued('foo'), "Dequeue works";
+    my $app = OpenQA::CacheService->new;
+    $app->locks->enqueue('bar');
+    ok !$app->locks->enqueued('foo'), 'Queue works';
+    $app->locks->enqueue('foo');
+    ok $app->locks->enqueued('foo'), 'Queue works';
+    $app->locks->dequeue('foo');
+    ok !$app->locks->enqueued('foo'), 'Dequeue works';
 };
 
-subtest '_gen_guard_name' => sub {
-    require OpenQA::CacheService;
-
-    ok !OpenQA::CacheService::SESSION_TOKEN(), "Session token is not there" or die;
-    OpenQA::CacheService::_gen_session_token();
-    ok OpenQA::CacheService::SESSION_TOKEN(), "Session token is there" or die;
-    is OpenQA::CacheService::_gen_guard_name('foo'),
-      OpenQA::CacheService::SESSION_TOKEN() . '.foo', "Session token is there"
-      or die;
-};
-
-subtest '_exists' => sub {
-    require OpenQA::CacheService;
-
-    ok !OpenQA::CacheService::_exists();
-    ok !OpenQA::CacheService::_exists({total => 0});
-    ok OpenQA::CacheService::_exists({total => 1});
-    ok OpenQA::CacheService::_exists({total => 100});
+subtest 'gen_guard_name' => sub {
+    my $app = OpenQA::CacheService->new;
+    is $app->gen_guard_name('foo'), $app->session_token . '.foo', 'Session token is there';
+    is $app->gen_guard_name('bar'), $app->session_token . '.bar', 'Session token is there';
 };
 
 subtest 'Client can check if there are available workers' => sub {
