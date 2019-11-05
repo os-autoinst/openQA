@@ -18,7 +18,6 @@ use Mojo::Base 'Mojolicious';
 
 use OpenQA::Worker::Settings;
 use OpenQA::CacheService::Model::Cache;
-use OpenQA::CacheService::Model::Locks;
 use Mojo::Util 'md5_sum';
 
 use constant DEFAULT_MINION_WORKERS => 5;
@@ -43,9 +42,7 @@ sub startup {
     $self->plugin('OpenQA::CacheService::Task::Asset');
     $self->plugin('OpenQA::CacheService::Task::Sync');
 
-    $self->helper(locks => sub { state $locks = OpenQA::CacheService::Model::Locks->new });
-
-    $self->helper(gen_guard_name => sub { join('.', shift->app->session_token, shift) });
+    $self->plugin('OpenQA::CacheService::Plugin::Helpers');
 
     my $r = $self->routes;
     $r->get('/' => sub { shift->redirect_to('/minion') });

@@ -44,7 +44,7 @@ sub _cache_tests {
 
     my $job_prefix = "[Job #" . $job->id . "]";
     $log->debug("$job_prefix Guard: $guard_name Sync: $from to $to");
-    $log->debug("$job_prefix Dequeued") if $client->dequeue_lock($req->lock);
+    $log->debug("$job_prefix Dequeued " . $req->lock) if $client->dequeue_lock($req->lock);
 
     my @cmd = (qw(rsync -avHP), "$from/", qw(--delete), "$to/tests/");
     $log->debug("$job_prefix Calling " . join(' ', @cmd));

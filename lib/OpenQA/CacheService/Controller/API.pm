@@ -39,9 +39,9 @@ sub status {
     my $lock = $self->gen_guard_name($lock_name);
     my %res  = (
         status => (
-              $self->_active($lock)         ? STATUS_DOWNLOADING
-            : $self->locks->enqueued($lock) ? STATUS_IGNORE
-            :                                 STATUS_PROCESSED
+              $self->_active($lock)           ? STATUS_DOWNLOADING
+            : $self->waiting->enqueued($lock) ? STATUS_IGNORE
+            :                                   STATUS_PROCESSED
         ));
 
     if ($data->{id}) {
@@ -72,10 +72,10 @@ sub enqueue {
     my $lock = $self->gen_guard_name($data->{lock} ? $data->{lock} : @$args);
     $self->app->log->debug("Requested [$task] Args: @{$args} Lock: $lock");
 
-    return $self->render(json => {status => STATUS_DOWNLOADING()}) if $self->_active($lock);
-    return $self->render(json => {status => STATUS_IGNORE()})      if $self->locks->enqueued($lock);
+    return $self->render(json => {status => STATUS_DOWNLOADING}) if $self->_active($lock);
+    return $self->render(json => {status => STATUS_IGNORE})      if $self->waiting->enqueued($lock);
 
-    $self->locks->enqueue($lock);
+    $self->waiting->enqueue($lock);
     my $id = $self->minion->enqueue($task => $args);
 
     $self->render(json => {status => STATUS_ENQUEUED, id => $id});
@@ -84,7 +84,7 @@ sub enqueue {
 sub dequeue {
     my $self = shift;
     my $data = $self->req->json;
-    $self->locks->dequeue($self->gen_guard_name($data->{lock}));
+    $self->waiting->dequeue($self->gen_guard_name($data->{lock}));
     $self->render(json => {status => STATUS_PROCESSED});
 }
 

@@ -259,12 +259,12 @@ subtest 'different token between restarts' => sub {
 
 subtest 'enqueued' => sub {
     my $app = OpenQA::CacheService->new;
-    $app->locks->enqueue('bar');
-    ok !$app->locks->enqueued('foo'), 'Queue works';
-    $app->locks->enqueue('foo');
-    ok $app->locks->enqueued('foo'), 'Queue works';
-    $app->locks->dequeue('foo');
-    ok !$app->locks->enqueued('foo'), 'Dequeue works';
+    $app->waiting->enqueue('bar');
+    ok !$app->waiting->enqueued('foo'), 'Queue works';
+    $app->waiting->enqueue('foo');
+    ok $app->waiting->enqueued('foo'), 'Queue works';
+    $app->waiting->dequeue('foo');
+    ok !$app->waiting->enqueued('foo'), 'Dequeue works';
 };
 
 subtest 'gen_guard_name' => sub {
