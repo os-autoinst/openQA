@@ -35,15 +35,39 @@ sub needle {
     my $version  = $self->param('version') || '';
     my $jsonfile = $self->param('jsonfile') || '';
 
+    # locate the needle in the needle directory for the given distri and version
+    my $needledir = needledir($distri, $version);
+
     # make sure the directory of the file parameter is a real subdir of testcasedir before
-    # applying it as needledir to prevent access outside of the zoo
+    # using it to find needle subdirectory, to prevent access outside of the zoo
     if ($jsonfile && !is_in_tests($jsonfile)) {
         warn "$jsonfile is not in a subdir of $prjdir/share/tests or $prjdir/tests";
         return $self->render(text => 'Forbidden', status => 403);
     }
-
-    # locate the needle in the needle directory for the given distri and version
-    push(@{($self->{static} = Mojolicious::Static->new)->paths}, needledir($distri, $version));
+    # Reject directory traversal breakouts here...
+    if (index($jsonfile, '..') != -1) {
+        warn "jsonfile value $jsonfile is invalid, cannot contain ..";
+        return $self->render(text => 'Forbidden', status => 403);
+    }
+    # we need to handle the needle being in a subdirectory - we cannot assume it is always just
+    # '$needledir/$name.$format'. figure out subdirectory elements from the JSON file path
+    # Note this means you cannot just browse to /needles/distri/subdir/needle.png;
+    # you can only find needles in subdirectories by passing the jsonfile parameter
+    my ($dummy1, $path, $dummy2) = fileparse($jsonfile);
+    # drop the trailing / from $path
+    $path = substr($path, 0, -1);
+    if (index($path, '/needles') != -1) {
+        # we got something like /var/lib/openqa/share/tests/distri/needles/(subdir)/needle.json
+        my @elems = split('/needles', $path, 2);
+        if (defined $elems[1]) {
+            $needledir .= $elems[1];
+        }
+    }
+    elsif ($path ne '.') {
+        # we got something like subdir/needle.json, $path will be "subdir"
+        $needledir .= "/$path";
+    }
+    push(@{($self->{static} = Mojolicious::Static->new)->paths}, $needledir);
 
     # name is an URL parameter and can't contain slashes, so it should be safe
     return $self->serve_static_($name . $format);
