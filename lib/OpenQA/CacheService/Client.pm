@@ -109,7 +109,7 @@ sub enqueue {
 
     my $response = _retry(
         sub {
-            $self->ua->post($self->_url('execute_task') => json =>
+            $self->ua->post($self->_url('enqueue') => json =>
                   {task => $request->task, args => $request->to_array, lock => $request->lock});
         } => $self->retry
     );

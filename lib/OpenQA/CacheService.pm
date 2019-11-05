@@ -52,7 +52,7 @@ sub startup {
     $r->get('/session_token')->to('API#session_token');
     $r->get('/info')->to('API#info');
     $r->post('/status')->to('API#status');
-    $r->post('/execute_task')->to('API#execute_task');
+    $r->post('/enqueue')->to('API#enqueue');
     $r->post('/dequeue')->to('API#dequeue');
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 }
@@ -123,7 +123,7 @@ Returns the current session token.
 
 OpenQA::CacheService is exposing the following POST routes.
 
-=head2 /execute_task
+=head2 /enqueue
 
 Enqueue the task. It acceps a POST JSON payload of the form:
 

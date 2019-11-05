@@ -57,7 +57,7 @@ sub status {
     $self->render(json => \%res);
 }
 
-sub execute_task {
+sub enqueue {
     my $self = shift;
 
     my $data = $self->req->json;

@@ -49,9 +49,10 @@ sub _cache_tests {
     my @cmd = (qw(rsync -avHP), "$from/", qw(--delete), "$to/tests/");
     $log->debug("$job_prefix Calling " . join(' ', @cmd));
     my $output = `@cmd`;
-    $job->finish($? >> 8);
+    my $status = $? >> 8;
+    $job->finish($status);
     $job->note(output => $output);
-    $log->debug("${job_prefix} Finished");
+    $log->debug("${job_prefix} Finished: $status");
 }
 
 1;
