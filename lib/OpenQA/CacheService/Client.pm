@@ -17,7 +17,7 @@ package OpenQA::CacheService::Client;
 use Mojo::Base -base;
 
 use OpenQA::Worker::Settings;
-use OpenQA::CacheService::Model::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE);
+use OpenQA::CacheService::Model::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING);
 use OpenQA::CacheService::Request::Asset;
 use OpenQA::CacheService::Request::Sync;
 use OpenQA::Utils 'base_host';
@@ -32,9 +32,8 @@ has ua        => sub { Mojo::UserAgent->new };
 sub _url { Mojo::URL->new(shift->host)->path(shift)->to_string }
 
 sub _status {
-    my $res  = shift;
-    my $data = $res->result->json;
-    return undef unless my $status = $data->{status} // $data->{session_token};
+    my $res = shift;
+    return undef unless my $status = $res->result->json->{status};
     return $status;
 }
 
@@ -75,11 +74,6 @@ sub _retry {
     return $res;
 }
 
-sub dequeue_lock {
-    my ($self, $lock) = @_;
-    return $self->_post(dequeue => {lock => $lock}) == STATUS_PROCESSED;
-}
-
 sub status {
     my ($self, $request) = @_;
     return $self->_post(status => {lock => $request->lock, id => $request->minion_id});
@@ -102,8 +96,6 @@ sub available_workers {
     return $res->{active_workers} != 0 || $res->{inactive_workers} != 0;
 }
 
-sub session_token { shift->_get('session_token') }
-
 sub enqueue {
     my ($self, $request) = @_;
 
@@ -117,7 +109,7 @@ sub enqueue {
     $request->minion_id($json->{id}) if exists $json->{id};
 
     my $status = _status($response);
-    return $status == STATUS_ENQUEUED || $status == STATUS_DOWNLOADING || $status == STATUS_IGNORE;
+    return $status == STATUS_ENQUEUED || $status == STATUS_DOWNLOADING;
 }
 
 sub asset_path {

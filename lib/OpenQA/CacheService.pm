@@ -18,13 +18,8 @@ use Mojo::Base 'Mojolicious';
 
 use OpenQA::Worker::Settings;
 use OpenQA::CacheService::Model::Cache;
-use Mojo::Util 'md5_sum';
 
 use constant DEFAULT_MINION_WORKERS => 5;
-
-BEGIN { srand(time) }
-
-has session_token => sub { md5_sum($$ . time . rand) };
 
 sub startup {
     my $self = shift;
@@ -46,11 +41,9 @@ sub startup {
 
     my $r = $self->routes;
     $r->get('/' => sub { shift->redirect_to('/minion') });
-    $r->get('/session_token')->to('API#session_token');
     $r->get('/info')->to('API#info');
     $r->post('/status')->to('API#status');
     $r->post('/enqueue')->to('API#enqueue');
-    $r->post('/dequeue')->to('API#dequeue');
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 }
 
@@ -112,10 +105,6 @@ Redirects to the L<Mojolicious::Plugin::Minion::Admin> Dashboard.
 
 Returns Minon statistics, see L<https://metacpan.org/pod/Minion#stats>.
 
-=head2 /session_token
-
-Returns the current session token.
-
 =head1 POST ROUTES
 
 OpenQA::CacheService is exposing the following POST routes.
@@ -129,12 +118,6 @@ Enqueue the task. It acceps a POST JSON payload of the form:
 =head2 /status
 
 Retrieve download asset status. It acceps a POST JSON payload of the form:
-
-      { asset=> 'default.qcow2' }
-
-=head2 /dequeue
-
-Dequeues a job from the queue of jobs which are still inactive. It acceps a POST JSON payload of the form:
 
       { asset=> 'default.qcow2' }
 

@@ -16,13 +16,7 @@
 package OpenQA::CacheService::Controller::API;
 use Mojo::Base 'Mojolicious::Controller';
 
-use OpenQA::CacheService::Model::Cache
-  qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE STATUS_ERROR);
-
-sub session_token {
-    my $self = shift;
-    $self->render(json => {session_token => $self->app->session_token});
-}
+use OpenQA::CacheService::Model::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_ERROR);
 
 sub info {
     my $self = shift;
@@ -36,12 +30,12 @@ sub status {
     my $lock_name = $data->{lock};
     return $self->render(json => {error => 'No lock specified.'}, status => 400) unless $lock_name;
 
-    my $lock = $self->gen_guard_name($lock_name);
+    my $lock = $lock_name;
     my %res  = (
         status => (
-              $self->_active($lock)           ? STATUS_DOWNLOADING
-            : $self->waiting->enqueued($lock) ? STATUS_IGNORE
-            :                                   STATUS_PROCESSED
+            $self->progress->downloading($lock)
+            ? STATUS_DOWNLOADING
+            : STATUS_PROCESSED
         ));
 
     if ($data->{id}) {
@@ -69,25 +63,15 @@ sub enqueue {
     return $self->render(json => {status => STATUS_ERROR, error => 'No Arguments defined'})
       unless defined $args;
 
-    my $lock = $self->gen_guard_name($data->{lock} ? $data->{lock} : @$args);
+    my $lock = $data->{lock} ? $data->{lock} : @$args;
     $self->app->log->debug("Requested [$task] Args: @{$args} Lock: $lock");
 
-    return $self->render(json => {status => STATUS_DOWNLOADING}) if $self->_active($lock);
-    return $self->render(json => {status => STATUS_IGNORE})      if $self->waiting->enqueued($lock);
+    return $self->render(json => {status => STATUS_DOWNLOADING}) if $self->progress->downloading($lock);
 
-    $self->waiting->enqueue($lock);
+    $self->progress->enqueue($lock);
     my $id = $self->minion->enqueue($task => $args);
 
     $self->render(json => {status => STATUS_ENQUEUED, id => $id});
 }
-
-sub dequeue {
-    my $self = shift;
-    my $data = $self->req->json;
-    $self->waiting->dequeue($self->gen_guard_name($data->{lock}));
-    $self->render(json => {status => STATUS_PROCESSED});
-}
-
-sub _active { !shift->minion->lock(shift, 0) }
 
 1;

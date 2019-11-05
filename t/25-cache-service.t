@@ -45,7 +45,6 @@ use Test::Warnings;
 use OpenQA::Utils;
 use File::Spec::Functions qw(catdir catfile);
 use Cwd qw(abs_path getcwd);
-use Mojolicious;
 use Minion;
 use IO::Socket::INET;
 use Mojo::Server::Daemon;
@@ -145,10 +144,6 @@ sub test_download {
     ok $cache_client->enqueue($asset_request), 'enqueued';
 
     my $state = $cache_client->status($asset_request);
-    $state = $cache_client->status($asset_request) until ($state ne OpenQA::CacheService::Model::Cache::STATUS_IGNORE);
-
-    # After IGNORE, only DOWNLOAD status could follow, but it could be fast enough to not catch it
-    $state = $cache_client->status($asset_request);
     $state = $cache_client->status($asset_request)
       until ($state ne OpenQA::CacheService::Model::Cache::STATUS_DOWNLOADING);
 
@@ -243,38 +238,19 @@ subtest 'Asset exists' => sub {
 
 };
 
-subtest 'different token between restarts' => sub {
-    my $token = $cache_client->session_token;
-    ok(defined $token);
-    ok($token ne "");
-    diag "Session token: $token";
-
-    start_server;
-    isnt($cache_client->session_token, $token) or die diag $cache_client->session_token;
-
-    $token = $cache_client->session_token;
-    ok(defined $token);
-    ok($token ne "");
-};
-
-subtest 'enqueued' => sub {
+subtest 'Job progress (guard against parallel downloads of the same file)' => sub {
     my $app = OpenQA::CacheService->new;
-    $app->waiting->enqueue('bar');
-    ok !$app->waiting->enqueued('foo'), 'Queue works';
-    $app->waiting->enqueue('foo');
-    ok $app->waiting->enqueued('foo'), 'Queue works';
-    $app->waiting->dequeue('foo');
-    ok !$app->waiting->enqueued('foo'), 'Dequeue works';
-};
-
-subtest 'gen_guard_name' => sub {
-    my $app = OpenQA::CacheService->new;
-    is $app->gen_guard_name('foo'), $app->session_token . '.foo', 'Session token is there';
-    is $app->gen_guard_name('bar'), $app->session_token . '.bar', 'Session token is there';
+    $app->progress->enqueue('bar');
+    ok !$app->progress->downloading('foo'), 'Queue works';
+    $app->progress->enqueue('foo');
+    ok $app->progress->downloading('foo'), 'Queue works';
+    my $guard = $app->progress->guard('foo');
+    ok $app->progress->downloading('foo'), 'Queue works';
+    undef $guard;
+    ok !$app->progress->downloading('foo'), 'Dequeue works';
 };
 
 subtest 'Client can check if there are available workers' => sub {
-    $cache_client->session_token;
     $worker_cache_service->stop;
     $cache_service->stop;
     ok !$cache_client->available, 'Cache server is not available';
@@ -432,12 +408,8 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
 subtest 'Test Minion task registration and execution' => sub {
     my $a = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
 
-    my $minion = Minion->new(SQLite => "sqlite:" . OpenQA::CacheService::Model::Cache->from_worker->db_file);
-    my $app    = Mojolicious->new;
-    $app->attr(minion => sub { $minion });
+    my $app = OpenQA::CacheService->new;
 
-    my $task = OpenQA::CacheService::Task::Asset->new();
-    $task->register($app);
     my $req = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
     $cache_client->enqueue($req);
     my $worker = $app->minion->repair->worker->register;
@@ -453,17 +425,14 @@ subtest 'Test Minion task registration and execution' => sub {
 subtest 'Test Minion Sync task' => sub {
     my $a = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
 
-    my $minion = Minion->new(SQLite => "sqlite:" . OpenQA::CacheService::Model::Cache->from_worker->db_file);
-    my $app    = Mojolicious->new;
-    $app->helper(minion => sub { $minion });
+    my $app = OpenQA::CacheService->new;
+
     my $dir  = tempdir;
     my $dir2 = tempdir;
-
     $dir->child('test')->spurt('foobar');
     my $expected = $dir2->child('tests')->child('test');
-    my $req      = $cache_client->rsync_request(from => $dir, to => $dir2);
-    my $task     = OpenQA::CacheService::Task::Sync->new();
-    $task->register($app);
+
+    my $req = $cache_client->rsync_request(from => $dir, to => $dir2);
     ok $cache_client->enqueue($req);
     my $worker = $app->minion->repair->worker->register;
     ok($worker->id, 'worker has an ID');

@@ -20,27 +20,30 @@ use Mojo::Base 'Mojolicious::Plugin';
 sub register {
     my ($self, $app) = @_;
 
-    $app->helper(gen_guard_name => sub { join('.', shift->app->session_token, shift) });
-
-    # To determine which jobs are still waiting to be processed
-    $app->helper('waiting.enqueued' => \&_waiting_enqueued);
-    $app->helper('waiting.dequeue'  => \&_waiting_dequeue);
-    $app->helper('waiting.enqueue'  => \&_waiting_enqueue);
+    # To determine download progress and guard against parallel downloads of the same file
+    $app->helper('progress.downloading' => \&_progress_downloading);
+    $app->helper('progress.enqueue'     => \&_progress_enqueue);
+    $app->helper('progress.guard'       => \&_progress_guard);
 }
 
-sub _waiting_enqueued {
+sub _progress_downloading {
     my ($c, $lock) = @_;
-    return !$c->minion->lock("wait_locks_$lock", 0);
+    return !$c->minion->lock("wait_$lock", 0);
 }
 
-sub _waiting_dequeue {
+sub _progress_enqueue {
     my ($c, $lock) = @_;
-    $c->minion->unlock("wait_locks_$lock");
+    $c->minion->lock("wait_$lock", 432000);
 }
 
-sub _waiting_enqueue {
+sub _progress_guard {
     my ($c, $lock) = @_;
-    $c->minion->lock("wait_locks_$lock", 432000);
+
+    # Replace existing lock (created on job creation) with a guard (unlocked after the job)
+    my $guard = $c->minion->guard("wait_$lock", 432000, {limit => 2});
+    $c->minion->unlock("wait_$lock") if !$c->minion->lock("wait_$lock", 0, {limit => 2});
+
+    return $guard;
 }
 
 1;

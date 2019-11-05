@@ -34,17 +34,16 @@ sub _cache_tests {
     my $app = $job->app;
     my $log = $app->log;
 
-    my $client     = OpenQA::CacheService::Client->new;
-    my $req        = $client->rsync_request(from => $from, to => $to);
-    my $guard_name = $client->session_token . '.' . $req->lock;
+    my $client = OpenQA::CacheService::Client->new;
+    my $req    = $client->rsync_request(from => $from, to => $to);
+
+    return $job->retry({delay => LOCK_RETRY_DELAY})
+      unless my $guard = $app->progress->guard($req->lock);
 
     return $job->remove unless defined $from && defined $to;
-    return $job->retry({delay => LOCK_RETRY_DELAY})
-      unless my $guard = $app->minion->guard($guard_name, MINION_LOCK_EXPIRE);
 
     my $job_prefix = "[Job #" . $job->id . "]";
-    $log->debug("$job_prefix Guard: $guard_name Sync: $from to $to");
-    $log->debug("$job_prefix Dequeued " . $req->lock) if $client->dequeue_lock($req->lock);
+    $log->debug("$job_prefix Sync: $from to $to");
 
     my @cmd = (qw(rsync -avHP), "$from/", qw(--delete), "$to/tests/");
     $log->debug("$job_prefix Calling " . join(' ', @cmd));
@@ -52,7 +51,7 @@ sub _cache_tests {
     my $status = $? >> 8;
     $job->finish($status);
     $job->note(output => $output);
-    $log->debug("${job_prefix} Finished: $status");
+    $log->debug("$job_prefix Finished: $status");
 }
 
 1;

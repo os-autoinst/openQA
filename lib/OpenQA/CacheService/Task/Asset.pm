@@ -34,18 +34,17 @@ sub _cache_asset {
     my $app = $job->app;
     my $log = $app->log;
 
-    my $cache      = OpenQA::CacheService::Model::Cache->from_worker;
-    my $client     = OpenQA::CacheService::Client->new;
-    my $req        = $client->asset_request(id => $id, type => $type, asset => $asset_name, host => $host);
-    my $guard_name = $client->session_token . '.' . $req->lock;
+    my $cache  = OpenQA::CacheService::Model::Cache->from_worker;
+    my $client = OpenQA::CacheService::Client->new;
+    my $req    = $client->asset_request(id => $id, type => $type, asset => $asset_name, host => $host);
+
+    return $job->retry({delay => LOCK_RETRY_DELAY})
+      unless my $guard = $app->progress->guard($req->lock);
 
     return $job->remove unless defined $asset_name && defined $type && defined $host;
-    return $job->retry({delay => LOCK_RETRY_DELAY})
-      unless my $guard = $app->minion->guard($guard_name, MINION_LOCK_EXPIRE);
 
     my $job_prefix = "[Job #" . $job->id . "]";
-    $log->debug("$job_prefix Guard: $guard_name Download: $asset_name");
-    $log->debug("$job_prefix Dequeued " . $req->lock) if $client->dequeue_lock($req->lock);
+    $log->debug("$job_prefix Download: $asset_name");
     $OpenQA::Utils::app = undef;
     my $output;
     {
@@ -57,7 +56,7 @@ sub _cache_asset {
         $cache->get_asset({id => $id}, $type, $asset_name);
         $job->note(output => $output);
     }
-    $log->debug("${job_prefix} Finished");
+    $log->debug("$job_prefix Finished");
 }
 
 1;
