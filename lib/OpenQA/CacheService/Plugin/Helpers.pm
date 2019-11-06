@@ -21,19 +21,19 @@ sub register {
     my ($self, $app) = @_;
 
     # To determine download progress and guard against parallel downloads of the same file
-    $app->helper('progress.downloading' => \&_progress_downloading);
     $app->helper('progress.enqueue'     => \&_progress_enqueue);
+    $app->helper('progress.downloading' => \&_progress_downloading);
     $app->helper('progress.guard'       => \&_progress_guard);
-}
-
-sub _progress_downloading {
-    my ($c, $lock) = @_;
-    return !$c->minion->lock("wait_$lock", 0);
 }
 
 sub _progress_enqueue {
     my ($c, $lock) = @_;
     $c->minion->lock("wait_$lock", 432000);
+}
+
+sub _progress_downloading {
+    my ($c, $lock) = @_;
+    return !$c->minion->lock("wait_$lock", 0);
 }
 
 sub _progress_guard {

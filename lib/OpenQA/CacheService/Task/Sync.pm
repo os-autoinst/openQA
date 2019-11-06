@@ -19,9 +19,6 @@ use Mojo::Base 'Mojolicious::Plugin';
 use OpenQA::CacheService::Client;
 use Mojo::URL;
 
-use constant LOCK_RETRY_DELAY   => 30;
-use constant MINION_LOCK_EXPIRE => 99999;    # ~27 hours
-
 sub register {
     my ($self, $app) = @_;
 
@@ -37,9 +34,7 @@ sub _cache_tests {
     my $client = OpenQA::CacheService::Client->new;
     my $req    = $client->rsync_request(from => $from, to => $to);
 
-    return $job->retry({delay => LOCK_RETRY_DELAY})
-      unless my $guard = $app->progress->guard($req->lock);
-
+    return $job->retry({delay => 30}) unless my $guard = $app->progress->guard($req->lock);
     return $job->remove unless defined $from && defined $to;
 
     my $job_prefix = "[Job #" . $job->id . "]";

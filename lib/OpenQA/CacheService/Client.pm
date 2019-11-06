@@ -17,7 +17,7 @@ package OpenQA::CacheService::Client;
 use Mojo::Base -base;
 
 use OpenQA::Worker::Settings;
-use OpenQA::CacheService::Model::Cache qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING);
+use OpenQA::CacheService::Model::Cache qw(STATUS_PROCESSED STATUS_DOWNLOADING);
 use OpenQA::CacheService::Request::Asset;
 use OpenQA::CacheService::Request::Sync;
 use OpenQA::Utils 'base_host';
@@ -29,54 +29,11 @@ has retry     => 5;
 has cache_dir => sub { $ENV{OPENQA_CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
 has ua        => sub { Mojo::UserAgent->new };
 
-sub _url { Mojo::URL->new(shift->host)->path(shift)->to_string }
-
-sub _status {
-    my $res = shift;
-    return undef unless my $status = $res->result->json->{status};
-    return $status;
-}
-
-sub _result {
-    my ($self, $field, $request) = @_;
-
-    my $res = eval {
-        $self->ua->post($self->_url('status') => json => {lock => $request->lock, id => $request->minion_id})
-          ->result->json->{$field};
-    };
-    return "Cache service status error: $@" if $@;
-    return $res;
-}
-
-sub _get {
-    my ($self, $path) = @_;
-    return _status(_retry(sub { $self->ua->get($self->_url($path)) } => $self->retry));
-}
-
-sub _post {
-    my ($self, $path, $data) = @_;
-    return _status(_retry(sub { $self->ua->post($self->_url($path) => json => $data) } => $self->retry));
-}
-
-sub _info {
-    my $self = shift;
-    return $self->ua->get($self->_url('info'));
-}
-
-sub _retry {
-    my ($cb, $times) = @_;
-
-    my $res;
-    my $att = 0;
-    $times ||= 0;
-    do { ++$att and $res = $cb->() } until !$res->error || $att >= $times;
-
-    return $res;
-}
-
 sub status {
     my ($self, $request) = @_;
-    return $self->_post(status => {lock => $request->lock, id => $request->minion_id});
+    my $data     = {lock => $request->lock, id => $request->minion_id};
+    my $response = _retry(sub { $self->ua->post($self->_url('status') => json => $data) } => $self->retry);
+    return $response->result->json->{status};
 }
 
 sub processed {
@@ -86,15 +43,6 @@ sub processed {
 
 sub output { shift->_result(output => @_) }
 sub result { shift->_result(result => @_) }
-
-sub available { !shift->_info->error }
-
-sub available_workers {
-    my $self = shift;
-    return undef unless $self->available;
-    return undef unless my $res = $self->_info->result->json;
-    return $res->{active_workers} != 0 || $res->{inactive_workers} != 0;
-}
 
 sub enqueue {
     my ($self, $request) = @_;
@@ -108,8 +56,8 @@ sub enqueue {
     my $json = $response->result->json;
     $request->minion_id($json->{id}) if exists $json->{id};
 
-    my $status = _status($response);
-    return $status == STATUS_ENQUEUED || $status == STATUS_DOWNLOADING;
+    return undef unless my $status = $response->result->json->{status};
+    return $status == STATUS_DOWNLOADING;
 }
 
 sub asset_path {
@@ -130,11 +78,49 @@ sub rsync_request {
     return OpenQA::CacheService::Request::Sync->new(@_);
 }
 
+sub available { !shift->_info->error }
+
+sub available_workers {
+    my $self = shift;
+    return undef unless $self->available;
+    return undef unless my $res = $self->_info->result->json;
+    return $res->{active_workers} != 0 || $res->{inactive_workers} != 0;
+}
+
 sub availability_error {
     my $self = shift;
     return 'Cache service not reachable'            unless $self->available;
     return 'No workers active in the cache service' unless $self->available_workers;
     return undef;
+}
+
+sub _url { Mojo::URL->new(shift->host)->path(shift)->to_string }
+
+sub _result {
+    my ($self, $field, $request) = @_;
+
+    my $res = eval {
+        $self->ua->post($self->_url('status') => json => {lock => $request->lock, id => $request->minion_id})
+          ->result->json->{$field};
+    };
+    return "Cache service status error: $@" if $@;
+    return $res;
+}
+
+sub _info {
+    my $self = shift;
+    return $self->ua->get($self->_url('info'));
+}
+
+sub _retry {
+    my ($cb, $times) = @_;
+
+    my $res;
+    my $att = 0;
+    $times ||= 0;
+    do { ++$att and $res = $cb->() } until !$res->error || $att >= $times;
+
+    return $res;
 }
 
 1;

@@ -16,9 +16,6 @@
 package OpenQA::CacheService::Task::Asset;
 use Mojo::Base 'Mojolicious::Plugin';
 
-use constant LOCK_RETRY_DELAY   => 30;
-use constant MINION_LOCK_EXPIRE => 99999;    # ~27 hours
-
 use OpenQA::CacheService::Model::Cache;
 use OpenQA::CacheService::Client;
 
@@ -38,9 +35,7 @@ sub _cache_asset {
     my $client = OpenQA::CacheService::Client->new;
     my $req    = $client->asset_request(id => $id, type => $type, asset => $asset_name, host => $host);
 
-    return $job->retry({delay => LOCK_RETRY_DELAY})
-      unless my $guard = $app->progress->guard($req->lock);
-
+    return $job->retry({delay => 30}) unless my $guard = $app->progress->guard($req->lock);
     return $job->remove unless defined $asset_name && defined $type && defined $host;
 
     my $job_prefix = "[Job #" . $job->id . "]";
