@@ -214,7 +214,7 @@ sub get_job_groups {
 }
 
 sub create_or_update_job_template {
-    my ($self, $args) = @_;
+    my ($self, $group_id, $args) = @_;
 
     my $schema                = $self->schema;
     my $machines              = $schema->resultset('Machines');
@@ -222,8 +222,6 @@ sub create_or_update_job_template {
     my $products              = $schema->resultset('Products');
     my $job_templates         = $schema->resultset('JobTemplates');
     my $job_template_settings = $schema->resultset('JobTemplateSettings');
-
-    my $group_id = $self->param('id');
 
     die "Machine is empty and there is no default for architecture $args->{arch}\n"
       unless $args->{machine_name};
@@ -385,7 +383,7 @@ sub update {
                 my @job_template_ids;
                 foreach my $job_template_key (sort keys %$job_template_names) {
                     push @job_template_ids,
-                      $self->create_or_update_job_template($job_template_names->{$job_template_key});
+                      $self->create_or_update_job_template($group_id, $job_template_names->{$job_template_key});
                 }
 
                 # Drop entries we haven't touched in add/update loop
