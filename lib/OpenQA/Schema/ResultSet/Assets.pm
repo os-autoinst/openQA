@@ -30,6 +30,7 @@ use File::Basename;
 use Try::Tiny;
 
 use constant {STATUS_CACHE_FILE => '/webui/cache/asset-status.json'};
+use constant TYPES => (qw(iso repo hdd other));
 
 sub status_cache_file {
     return $OpenQA::Utils::prjdir . STATUS_CACHE_FILE;
@@ -44,8 +45,7 @@ sub register {
         log_warning "attempt to register asset with empty name";
         return;
     }
-    our %types = map { $_ => 1 } qw(iso repo hdd other);
-    unless ($types{$type}) {
+    unless (grep /^$type$/, TYPES) {
         log_warning "asset type '$type' invalid";
         return;
     }
@@ -73,44 +73,32 @@ sub scan_for_untracked_assets {
     my ($self) = @_;
 
     # search for new assets and register them
-    for my $type (qw(iso repo hdd)) {
-        my $dh;
-        next unless opendir($dh, $OpenQA::Utils::assetdir . "/$type");
-        my %assets;
+    for my $type (TYPES) {
         my @paths;
-        for my $file (readdir($dh)) {
-            unless ($file eq 'fixed' or $file eq '.' or $file eq '..') {
-                push(@paths, "$OpenQA::Utils::assetdir/$type/$file");
-            }
-        }
-        closedir($dh);
-        if (opendir($dh, $OpenQA::Utils::assetdir . "/$type" . "/fixed")) {
+
+        for my $subtype (qw(/ /fixed)) {
+            my $path = "$OpenQA::Utils::assetdir/$type$subtype";
+            my $dh;
+            next unless opendir($dh, $path);
             for my $file (readdir($dh)) {
                 unless ($file eq 'fixed' or $file eq '.' or $file eq '..') {
-                    push(@paths, "$OpenQA::Utils::assetdir/$type/fixed/$file");
+                    push(@paths, "$path/$file");
                 }
             }
             closedir($dh);
         }
+
         my %paths;
         for my $path (@paths) {
 
             my $basepath = basename($path);
-            # very specific to our external syncing
-            next if $basepath =~ m/CURRENT/;
+            # ignore links
             next if -l $path;
 
             # ignore files not owned by us
             next unless -o $path;
-            if ($type eq 'repo') {
-                next unless -d $path;
-            }
-            else {
-                next unless -f $path;
-                if ($type eq 'iso') {
-                    next unless $path =~ m/\.iso$/;
-                }
-            }
+            # ignore non-existing files and folders
+            next unless -e $path;
             $paths{$basepath} = 0;
         }
         my $assets = $self->search({type => $type});
