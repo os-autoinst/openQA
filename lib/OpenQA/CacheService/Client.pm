@@ -26,7 +26,6 @@ use Mojo::URL;
 use Mojo::File 'path';
 
 has host      => 'http://127.0.0.1:7844';
-has retry     => 5;
 has cache_dir => sub { $ENV{OPENQA_CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
 has ua        => sub { Mojo::UserAgent->new };
 
@@ -54,12 +53,8 @@ sub status {
 sub enqueue {
     my ($self, $request) = @_;
 
-    my $tx = _retry(
-        sub {
-            $self->ua->post($self->_url('enqueue') => json =>
-                  {task => $request->task, args => $request->to_array, lock => $request->lock});
-        } => $self->retry
-    );
+    my $tx = $self->ua->post(
+        $self->_url('enqueue') => json => {task => $request->task, args => $request->to_array, lock => $request->lock});
     my $json = $tx->result->json;
     $request->minion_id($json->{id}) if exists $json->{id};
 
@@ -86,17 +81,6 @@ sub rsync_request {
 }
 
 sub _url { Mojo::URL->new(shift->host)->path(shift)->to_string }
-
-sub _retry {
-    my ($cb, $times) = @_;
-
-    my $res;
-    my $att = 0;
-    $times ||= 0;
-    do { ++$att and $res = $cb->() } until !$res->error || $att >= $times;
-
-    return $res;
-}
 
 1;
 
