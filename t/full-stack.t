@@ -334,8 +334,8 @@ subtest 'Cache tests' => sub {
 
     my $cache_client = OpenQA::CacheService::Client->new;
 
-    sleep 5 and diag "Waiting for cache service to be available"        until $cache_client->available;
-    sleep 5 and diag "Waiting for cache service worker to be available" until $cache_client->available_workers;
+    sleep 5 and diag "Waiting for cache service to be available"        until $cache_client->info->available;
+    sleep 5 and diag "Waiting for cache service worker to be available" until $cache_client->info->available_workers;
 
     my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
     OpenQA::Test::FullstackUtils::client_call(

@@ -17,9 +17,10 @@ package OpenQA::CacheService::Client;
 use Mojo::Base -base;
 
 use OpenQA::Worker::Settings;
-use OpenQA::CacheService::Model::Cache qw(STATUS_PROCESSED STATUS_DOWNLOADING);
 use OpenQA::CacheService::Request::Asset;
 use OpenQA::CacheService::Request::Sync;
+use OpenQA::CacheService::Response::Info;
+use OpenQA::CacheService::Response::Status;
 use OpenQA::Utils 'base_host';
 use Mojo::URL;
 use Mojo::File 'path';
@@ -29,35 +30,41 @@ has retry     => 5;
 has cache_dir => sub { $ENV{OPENQA_CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
 has ua        => sub { Mojo::UserAgent->new };
 
+sub info {
+    my $self = shift;
+    my $tx   = $self->ua->get($self->_url('info'));
+    my $err  = $tx->error;
+    my $data = $err ? undef : $tx->result->json;
+    return OpenQA::CacheService::Response::Info->new(data => $data, error => $err);
+}
+
 sub status {
     my ($self, $request) = @_;
-    my $data     = {lock => $request->lock, id => $request->minion_id};
-    my $response = _retry(sub { $self->ua->post($self->_url('status') => json => $data) } => $self->retry);
-    return $response->result->json->{status};
-}
 
-sub processed {
-    my ($self, $request) = @_;
-    return $self->status($request) == STATUS_PROCESSED;
-}
+    my $err;
+    my $res = eval {
+        $self->ua->post($self->_url('status') => json => {lock => $request->lock, id => $request->minion_id})->result;
+    };
+    if ($@) { $err = "Cache service status error: $@" }
 
-sub output { shift->_result(output => @_) }
-sub result { shift->_result(result => @_) }
+    my $data = $res ? $res->json : {};
+    return OpenQA::CacheService::Response::Status->new(data => $data, error => $err);
+}
 
 sub enqueue {
     my ($self, $request) = @_;
 
-    my $response = _retry(
+    my $tx = _retry(
         sub {
             $self->ua->post($self->_url('enqueue') => json =>
                   {task => $request->task, args => $request->to_array, lock => $request->lock});
         } => $self->retry
     );
-    my $json = $response->result->json;
+    my $json = $tx->result->json;
     $request->minion_id($json->{id}) if exists $json->{id};
 
-    return undef unless my $status = $response->result->json->{status};
-    return $status == STATUS_DOWNLOADING;
+    return undef unless my $status = $json->{status};
+    return 1;
 }
 
 sub asset_path {
@@ -78,39 +85,7 @@ sub rsync_request {
     return OpenQA::CacheService::Request::Sync->new(@_);
 }
 
-sub available { !shift->_info->error }
-
-sub available_workers {
-    my $self = shift;
-    return undef unless $self->available;
-    return undef unless my $res = $self->_info->result->json;
-    return $res->{active_workers} != 0 || $res->{inactive_workers} != 0;
-}
-
-sub availability_error {
-    my $self = shift;
-    return 'Cache service not reachable'            unless $self->available;
-    return 'No workers active in the cache service' unless $self->available_workers;
-    return undef;
-}
-
 sub _url { Mojo::URL->new(shift->host)->path(shift)->to_string }
-
-sub _result {
-    my ($self, $field, $request) = @_;
-
-    my $res = eval {
-        $self->ua->post($self->_url('status') => json => {lock => $request->lock, id => $request->minion_id})
-          ->result->json->{$field};
-    };
-    return "Cache service status error: $@" if $@;
-    return $res;
-}
-
-sub _info {
-    my $self = shift;
-    return $self->ua->get($self->_url('info'));
-}
 
 sub _retry {
     my ($cb, $times) = @_;
@@ -138,7 +113,7 @@ OpenQA::CacheService::Client - OpenQA Cache Service Client
     my $client = OpenQA::CacheService::Client->new(host=> 'http://127.0.0.1:7844', retry => 5, cache_dir => '/tmp/cache/path');
     my $request = $client->asset_request(id => 9999, asset => 'asset_name.qcow2', type => 'hdd', host => 'openqa.opensuse.org');
     $client->enqueue($request);
-    until ($client->processed($request)) {
+    until ($client->status($request)->is_processed) {
         say 'Waiting for asset download to finish';
         sleep 1;
     }
