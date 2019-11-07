@@ -29,7 +29,7 @@ sub status {
     my $data = $self->req->json;
     return $self->render(json => {error => 'No lock specified'}, status => 400) unless my $lock = $data->{lock};
 
-    my $status = $self->progress->downloading($lock) ? STATUS_DOWNLOADING : STATUS_PROCESSED;
+    my $status = $self->progress->is_downloading($lock) ? STATUS_DOWNLOADING : STATUS_PROCESSED;
     my $res = {status => $status};
 
     if ($data->{id}) {
@@ -59,7 +59,7 @@ sub enqueue {
 
     $self->app->log->debug("Requested [$task] Args: @{$args} Lock: $lock");
 
-    return $self->render(json => {status => STATUS_DOWNLOADING}) if $self->progress->downloading($lock);
+    return $self->render(json => {status => STATUS_DOWNLOADING}) if $self->progress->is_downloading($lock);
 
     $self->progress->enqueue($lock);
     my $id = $self->minion->enqueue($task => $args);

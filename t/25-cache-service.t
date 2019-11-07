@@ -242,13 +242,13 @@ subtest 'Asset exists' => sub {
 subtest 'Job progress (guard against parallel downloads of the same file)' => sub {
     my $app = OpenQA::CacheService->new;
     $app->progress->enqueue('bar');
-    ok !$app->progress->downloading('foo'), 'Queue works';
+    ok !$app->progress->is_downloading('foo'), 'Queue works';
     $app->progress->enqueue('foo');
-    ok $app->progress->downloading('foo'), 'Queue works';
+    ok $app->progress->is_downloading('foo'), 'Queue works';
     my $guard = $app->progress->guard('foo');
-    ok $app->progress->downloading('foo'), 'Queue works';
+    ok $app->progress->is_downloading('foo'), 'Queue works';
     undef $guard;
-    ok !$app->progress->downloading('foo'), 'Dequeue works';
+    ok !$app->progress->is_downloading('foo'), 'Dequeue works';
 };
 
 subtest 'Client can check if there are available workers' => sub {

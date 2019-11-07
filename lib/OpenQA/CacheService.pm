@@ -83,10 +83,10 @@ OpenQA::CacheService - OpenQA Cache Service
     use OpenQA::CacheService;
 
     # Start the daemon
-    OpenQA::CacheService->run(qw(daemon));
+    OpenQA::CacheService::run(qw(daemon));
 
-    # Start one or more Minions with:
-    OpenQA::CacheService->run(qw(minion worker))
+    # Start one or more Minions
+    OpenQA::CacheService::run(qw(minion worker))
 
 =head1 DESCRIPTION
 
