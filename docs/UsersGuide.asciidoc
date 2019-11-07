@@ -972,6 +972,21 @@ after a certain number of days. That duration can be adjusted by setting
 +untracked_assets_storage_duration+ in the +misc_limits+ section of the
 openQA config to the desired number of days.
 
+In less trivial cases where a common limit is not enough or certain assets
+need more fine-grained control, patterns based on the filename can be used.
+The patterns are interpreted as Perl regular expressions and if a pattern
+matches the basename of an asset the specified duration in days will be used.
+In simple cases the pattern is just a match on a word.
+
+Consider the following examples to specify custom limits that would match
+assets with the names `testrepo-latest` and `openSUSE-12.3-x86_64.iso`.
+[source,ini]
+--------------------------------------------------------------------------------
+[assets/storage_duration]
+latest = 30
+openSUSE.+x86_64 = 10
+--------------------------------------------------------------------------------
+
 == CLI interface
 Beside the +daemon+ argument to run the actual web service the openQA
 startup script +/usr/share/openqa/script/openqa+ supports further arguments.
