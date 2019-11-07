@@ -305,11 +305,13 @@ You may be vulnerable for up to a day until Fake API key expires.
 
 == Run the web UI
 
+To start openQA and enable it to run on each boot call
+
 [source,sh]
 --------------------------------------------------------------------------------
-systemctl start postgresql
-systemctl start openqa-webui
-systemctl start openqa-scheduler
+systemctl enable --now postgresql
+systemctl enable --now openqa-webui
+systemctl enable --now openqa-scheduler
 # openSUSE
 systemctl restart apache2
 # Fedora
@@ -318,15 +320,9 @@ setsebool -P httpd_can_network_connect 1
 systemctl restart httpd
 --------------------------------------------------------------------------------
 
-The openQA web UI should be available on http://localhost/ now. To ensure
-openQA runs on each boot, you should also +systemctl enable+ the same services.
-
-[source,sh]
---------------------------------------------------------------------------------
-systemctl enable postgresql
-systemctl enable openqa-webui
-systemctl enable openqa-scheduler
---------------------------------------------------------------------------------
+The openQA web UI should be available on http://localhost/ now. To simply
+start openQA without enabling it permanently one can simply use +systemctl
+start+ instead.
 
 == Run workers
 
@@ -562,24 +558,22 @@ remote instances.
 
 === Asset Caching
 
-If your network is slow or you experience long time to load needles you
-might want to consider to enable caching in your remote workers. To enable caching,
+If your network is slow or you experience long time to load needles you might
+want to consider to enable caching in your remote workers. To enable caching,
 +/var/lib/openqa/cache+ must exist, and right permissions given to the
-'_openqa-worker' user. If you install openQA through the repositories, said directory
-will be created for you.
+'_openqa-worker' user to read everything under this path. If you install
+openQA through the repositories, said directory will be created for you.
 
 Start and enable the Cache Service:
 [source,sh]
 --------------------------------------------------------------------------------
-systemctl start openqa-worker-cacheservice.service
-systemctl enable openqa-worker-cacheservice.service
+systemctl enable --now openqa-worker-cacheservice
 --------------------------------------------------------------------------------
 
 Enable and start the Cache Worker:
 [source,sh]
 --------------------------------------------------------------------------------
-systemctl start openqa-worker-cacheservice-minion.service
-systemctl enable openqa-worker-cacheservice-minion.service
+systemctl enable --now openqa-worker-cacheservice-minion
 --------------------------------------------------------------------------------
 
 In the +/etc/openqa/workers.ini+
@@ -623,8 +617,7 @@ comment = OpenQA Test Distributions
 and
 [source,sh]
 --------------------------------------------------------------------------------
-systemctl start rsyncd.service
-systemctl enable rsyncd.service
+systemctl enable --now rsyncd
 --------------------------------------------------------------------------------
 
 This will allow the workers to download the assets from the webUI and use them
