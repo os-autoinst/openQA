@@ -75,12 +75,9 @@ grep -q "$(hostname)" /etc/hosts || echo "127.0.0.1 $(hostname)" >> /etc/hosts
 
 
 # start daemons
-systemctl enable --now apache2.service
-systemctl enable --now openqa-webui.service
-systemctl enable --now openqa-websockets.service
-systemctl enable --now openqa-scheduler.service
-systemctl enable --now openqa-livehandler.service
-systemctl enable --now openqa-gru.service
+systemctl enable --now apache2
+systemctl enable --now openqa-webui
+systemctl enable --now openqa-scheduler
 
 # wait for webui to become available
 while ! curl -sI http://localhost/ | grep 200 ; do
@@ -101,7 +98,7 @@ EOF
 
 
 # start worker
-systemctl enable --now openqa-worker@1.service
+systemctl enable --now openqa-worker@1
 
 # clone jobs if jobId is given. Possible to pass extra arguments as well.
 # ex: openqa-bootstrap -from openqa.opensuse.org 12345 SCHEDULE=tests/boot/boot_to_desktop,tests/x11/kontact
