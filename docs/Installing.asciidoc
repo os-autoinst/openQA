@@ -558,11 +558,11 @@ remote instances.
 
 === Asset Caching
 
-If your network is slow or you experience long time to load needles you
-might want to consider to enable caching in your remote workers. To enable caching,
+If your network is slow or you experience long time to load needles you might
+want to consider to enable caching in your remote workers. To enable caching,
 +/var/lib/openqa/cache+ must exist, and right permissions given to the
-'_openqa-worker' user. If you install openQA through the repositories, said directory
-will be created for you.
+'_openqa-worker' user to read everything under this path. If you install
+openQA through the repositories, said directory will be created for you.
 
 Start and enable the Cache Service:
 [source,sh]
