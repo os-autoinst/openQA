@@ -334,6 +334,9 @@ sub engine_workit {
             STDOUT->fdopen($handle, 'w');
             STDERR->fdopen($handle, 'w');
 
+            # PERL5OPT may have Devel::Cover options, we don't need and want
+            # them in the spawned process as it does not belong to openQA code
+            local $ENV{PERL5OPT} = "";
             exec "perl", "$isotovideo", '-d';
             die "exec failed: $!\n";
         });
