@@ -21,14 +21,8 @@ sub register {
     my ($self, $app) = @_;
 
     # To determine download progress and guard against parallel downloads of the same file
-    $app->helper('progress.enqueue'        => \&_progress_enqueue);
     $app->helper('progress.is_downloading' => \&_progress_is_downloading);
     $app->helper('progress.guard'          => \&_progress_guard);
-}
-
-sub _progress_enqueue {
-    my ($c, $lock) = @_;
-    $c->minion->lock("cache_$lock", 432000);
 }
 
 sub _progress_is_downloading {
@@ -38,12 +32,7 @@ sub _progress_is_downloading {
 
 sub _progress_guard {
     my ($c, $lock) = @_;
-
-    # Replace existing lock (created on job creation) with a guard (unlocked after the job)
-    my $guard = $c->minion->guard("cache_$lock", 432000, {limit => 2});
-    $c->minion->unlock("cache_$lock") if !$c->minion->lock("cache_$lock", 0, {limit => 2});
-
-    return $guard;
+    return $c->minion->guard("cache_$lock", 432000);
 }
 
 1;

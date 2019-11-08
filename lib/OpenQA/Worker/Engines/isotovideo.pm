@@ -129,7 +129,8 @@ sub cache_assets {
         );
 
         if ($cache_client->enqueue($asset_request)) {
-            log_debug("Downloading $asset_uri - request sent to Cache Service.", channels => 'autoinst');
+            my $minion_id = $asset_request->minion_id;
+            log_debug("Downloading $asset_uri, request sent to Cache Service ($minion_id)", channels => 'autoinst');
             my $status = $cache_client->status($asset_request);
             until ($status->is_processed) {
                 sleep 5;

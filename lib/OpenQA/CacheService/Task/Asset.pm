@@ -17,7 +17,6 @@ package OpenQA::CacheService::Task::Asset;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use OpenQA::CacheService::Model::Cache;
-use OpenQA::CacheService::Client;
 
 sub register {
     my ($self, $app) = @_;
@@ -31,12 +30,15 @@ sub _cache_asset {
     my $app = $job->app;
     my $log = $app->log;
 
-    my $cache  = OpenQA::CacheService::Model::Cache->from_worker;
-    my $client = OpenQA::CacheService::Client->new;
-    my $req    = $client->asset_request(id => $id, type => $type, asset => $asset_name, host => $host);
+    my $lock = $job->info->{notes}{lock};
+    return $job->remove unless defined $asset_name && defined $type && defined $host && defined $lock;
+    my $guard = $app->progress->guard($lock);
+    unless ($guard) {
+        $job->note(output => 'Asset was already requested by another job');
+        return $job->finish;
+    }
 
-    return $job->retry({delay => 30}) unless my $guard = $app->progress->guard($req->lock);
-    return $job->remove unless defined $asset_name && defined $type && defined $host;
+    my $cache = OpenQA::CacheService::Model::Cache->from_worker;
 
     my $job_prefix = "[Job #" . $job->id . "]";
     $log->debug("$job_prefix Download: $asset_name");

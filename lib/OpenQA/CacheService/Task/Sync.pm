@@ -16,7 +16,6 @@
 package OpenQA::CacheService::Task::Sync;
 use Mojo::Base 'Mojolicious::Plugin';
 
-use OpenQA::CacheService::Client;
 use Mojo::URL;
 
 sub register {
@@ -31,11 +30,13 @@ sub _cache_tests {
     my $app = $job->app;
     my $log = $app->log;
 
-    my $client = OpenQA::CacheService::Client->new;
-    my $req    = $client->rsync_request(from => $from, to => $to);
-
-    return $job->retry({delay => 30}) unless my $guard = $app->progress->guard($req->lock);
-    return $job->remove unless defined $from && defined $to;
+    my $lock = $job->info->{notes}{lock};
+    return $job->remove unless defined $from && defined $to && defined $lock;
+    my $guard = $app->progress->guard($lock);
+    unless ($guard) {
+        $job->note(output => 'Sync was already requested by another job');
+        return $job->finish(0);
+    }
 
     my $job_prefix = "[Job #" . $job->id . "]";
     $log->debug("$job_prefix Sync: $from to $to");

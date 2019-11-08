@@ -31,7 +31,7 @@ has ua        => sub { Mojo::UserAgent->new };
 
 sub info {
     my $self = shift;
-    my $tx   = $self->ua->get($self->_url('info'));
+    my $tx   = $self->ua->get($self->url('info'));
     my $err  = $tx->error;
     my $data = $err ? undef : $tx->result->json;
     return OpenQA::CacheService::Response::Info->new(data => $data, error => $err);
@@ -41,9 +41,7 @@ sub status {
     my ($self, $request) = @_;
 
     my $err;
-    my $res = eval {
-        $self->ua->post($self->_url('status') => json => {lock => $request->lock, id => $request->minion_id})->result;
-    };
+    my $res = eval { $self->ua->post($self->url('status') => json => {id => $request->minion_id})->result; };
     if ($@) { $err = "Cache service status error: $@" }
 
     my $data = $res ? $res->json : {};
@@ -54,7 +52,7 @@ sub enqueue {
     my ($self, $request) = @_;
 
     my $tx = $self->ua->post(
-        $self->_url('enqueue') => json => {task => $request->task, args => $request->to_array, lock => $request->lock});
+        $self->url('enqueue') => json => {task => $request->task, args => $request->to_array, lock => $request->lock});
     my $json = $tx->result->json;
     $request->minion_id($json->{id}) if exists $json->{id};
 
@@ -80,7 +78,7 @@ sub rsync_request {
     return OpenQA::CacheService::Request::Sync->new(@_);
 }
 
-sub _url { Mojo::URL->new(shift->host)->path(shift)->to_string }
+sub url { Mojo::URL->new(shift->host)->path(shift)->to_string }
 
 1;
 

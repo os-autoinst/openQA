@@ -211,20 +211,30 @@ subtest 'Cache Requests' => sub {
 start_server;
 
 subtest 'Invalid requests' => sub {
-    my $url             = $cache_client->_url('/status');
-    my $invalid_request = $cache_client->ua->post($url => json => {lock => "some lock"});
+    my $url             = $cache_client->url('/status');
+    my $invalid_request = $cache_client->ua->post($url => json => {lock => 'some lock'});
     my $json            = $invalid_request->result->json;
-    is_deeply($json, {status => 1}, 'no job ID accepted') or diag explain $json;
+    is_deeply($json, {error => 'No job specified'}, 'no job ID accepted') or diag explain $json;
 
-    $url             = $cache_client->_url('/status');
-    $invalid_request = $cache_client->ua->post($url => json => {id => "foo", lock => "some lock"});
+    $url             = $cache_client->url('/status');
+    $invalid_request = $cache_client->ua->post($url => json => {id => 'foo', lock => 'some lock'});
     $json            = $invalid_request->result->json;
     is_deeply($json, {error => 'Specified job ID is invalid'}, 'invalid job ID') or diag explain $json;
 
-    $url             = $cache_client->_url('/status');
-    $invalid_request = $cache_client->ua->post($url => json => {});
+    $url             = $cache_client->url('/enqueue');
+    $invalid_request = $cache_client->ua->post($url => json => {args => []});
     $json            = $invalid_request->result->json;
-    is_deeply($json, {error => 'No lock specified'}, 'no lock') or diag explain $json;
+    is_deeply($json, {error => 'No task defined'}, 'invalid task') or diag explain $json;
+
+    $url             = $cache_client->url('/enqueue');
+    $invalid_request = $cache_client->ua->post($url => json => {task => 'cache_asset'});
+    $json            = $invalid_request->result->json;
+    is_deeply($json, {error => 'No arguments defined'}, 'invalid args') or diag explain $json;
+
+    $url             = $cache_client->url('/enqueue');
+    $invalid_request = $cache_client->ua->post($url => json => {task => 'cache_asset', args => []});
+    $json            = $invalid_request->result->json;
+    is_deeply($json, {error => 'No lock defined'}, 'invalid lock') or diag explain $json;
 };
 
 subtest 'Asset exists' => sub {
@@ -241,11 +251,9 @@ subtest 'Asset exists' => sub {
 
 subtest 'Job progress (guard against parallel downloads of the same file)' => sub {
     my $app = OpenQA::CacheService->new;
-    $app->progress->enqueue('bar');
     ok !$app->progress->is_downloading('foo'), 'Queue works';
-    $app->progress->enqueue('foo');
-    ok $app->progress->is_downloading('foo'), 'Queue works';
     my $guard = $app->progress->guard('foo');
+    ok $app->progress->is_downloading('foo'), 'Queue works';
     ok $app->progress->is_downloading('foo'), 'Queue works';
     undef $guard;
     ok !$app->progress->is_downloading('foo'), 'Dequeue works';
@@ -371,33 +379,21 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
 
     my @assets = map { "sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2" } 1 .. $tot_proc;
     unlink path($cachedir)->child($_) for @assets;
-    ok($cache_client->enqueue($cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host)),
-        "Download enqueued for $_")
-      for @assets;
+    my %requests
+      = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
+    ok($cache_client->enqueue($requests{$_}), "Download enqueued for $_") for @assets;
 
-    sleep 1
-      until (
-        grep { $_ == 1 } map {
-            $cache_client->status($cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host))
-              ->is_processed
-        } @assets
-      ) == @assets;
+    sleep 1 until (grep { $_ == 1 } map { $cache_client->status($requests{$_})->is_processed } @assets) == @assets;
 
     ok($cache_client->asset_exists('localhost', $_), "Asset $_ downloaded correctly") for @assets;
 
     @assets = map { "sle-12-SP3-x86_64-0368-200_88888\@64bit.qcow2" } 1 .. $tot_proc;
     unlink path($cachedir)->child($_) for @assets;
-    ok($cache_client->enqueue($cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host)),
-        "Download enqueued for $_")
-      for @assets;
+    %requests
+      = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
+    ok($cache_client->enqueue($requests{$_}), "Download enqueued for $_") for @assets;
 
-    sleep 1
-      until (
-        grep { $_ == 1 } map {
-            $cache_client->status($cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host))
-              ->is_processed
-        } @assets
-      ) == @assets;
+    sleep 1 until (grep { $_ == 1 } map { $cache_client->status($requests{$_})->is_processed } @assets) == @assets;
 
     ok($cache_client->asset_exists('localhost', "sle-12-SP3-x86_64-0368-200_88888\@64bit.qcow2"),
         "Asset $_ downloaded correctly")
@@ -417,7 +413,7 @@ subtest 'Test Minion task registration and execution' => sub {
     ok($worker->id, 'worker has an ID');
     my $job = $worker->dequeue(0);
     ok($job, 'job enqueued');
-    $job->execute;
+    $job->perform;
     my $status = $cache_client->status($req);
     ok $status->is_processed;
     ok $status->output;
@@ -440,7 +436,7 @@ subtest 'Test Minion Sync task' => sub {
     ok($worker->id, 'worker has an ID');
     my $job = $worker->dequeue(0);
     ok($job, 'job enqueued');
-    $job->execute;
+    $job->perform;
     my $status = $cache_client->status($req);
     ok $status->is_processed;
     is $status->result, 0;

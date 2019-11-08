@@ -16,8 +16,6 @@
 package OpenQA::CacheService::Controller::API;
 use Mojo::Base 'Mojolicious::Controller';
 
-use OpenQA::CacheService::Model::Cache qw(STATUS_PROCESSED STATUS_DOWNLOADING);
-
 sub info {
     my $self = shift;
     $self->render(json => $self->minion->stats);
@@ -27,43 +25,37 @@ sub status {
     my $self = shift;
 
     my $data = $self->req->json;
-    return $self->render(json => {error => 'No lock specified'}, status => 400) unless my $lock = $data->{lock};
+    return $self->render(json => {error => 'No job specified'}, status => 400) unless my $id = $data->{id};
 
-    my $status = $self->progress->is_downloading($lock) ? STATUS_DOWNLOADING : STATUS_PROCESSED;
-    my $res = {status => $status};
+    return $self->render(json => {error => 'Specified job ID is invalid'}, status => 404)
+      unless my $job = $self->minion->job($id);
+    return $self->render(json => {error => 'Job info not available'}, status => 404)
+      unless my $info = $job->info;
 
-    if ($data->{id}) {
-        return $self->render(json => {error => 'Specified job ID is invalid'}, status => 404)
-          unless my $job = $self->minion->job($data->{id});
+    # Our Minion job will finish early if another job is already downloading,
+    # so we have to wait for the lock to be released too
+    my $processed = $info->{state} eq 'finished' || $info->{state} eq 'failed';
+    return $self->render(json => {status => 'processed', result => $info->{result}, output => $info->{notes}{output}})
+      if $processed && !$self->progress->is_downloading($info->{notes}{lock});
 
-        return $self->render(json => {error => 'Job info not available'}, status => 404)
-          unless my $job_info = $job->info;
-
-        $res->{result} = $job_info->{result};
-        $res->{output} = $job_info->{notes}{output};
-    }
-
-    $self->render(json => $res);
+    $self->render(json => {status => 'downloading'});
 }
 
 sub enqueue {
     my $self = shift;
 
     my $data = $self->req->json;
-    return $self->render(json => {error => 'No Task defined'})
+    return $self->render(json => {error => 'No task defined'}, status => 400)
       unless defined(my $task = $data->{task});
-    return $self->render(json => {error => 'No Arguments defined'})
+    return $self->render(json => {error => 'No arguments defined'}, status => 400)
       unless defined(my $args = $data->{args});
-    return $self->render(json => {error => 'No lock defined'})
+    return $self->render(json => {error => 'No lock defined'}, status => 400)
       unless defined(my $lock = $data->{lock});
 
     $self->app->log->debug("Requested [$task] Args: @{$args} Lock: $lock");
 
-    return $self->render(json => {status => STATUS_DOWNLOADING}) if $self->progress->is_downloading($lock);
-
-    $self->progress->enqueue($lock);
-    my $id = $self->minion->enqueue($task => $args);
-    $self->render(json => {status => STATUS_DOWNLOADING, id => $id});
+    my $id = $self->minion->enqueue($task => $args => {notes => {lock => $lock}});
+    $self->render(json => {status => 'downloading', id => $id});
 }
 
 1;
