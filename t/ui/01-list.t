@@ -71,8 +71,8 @@ sub schema_hook {
             DISTRI    => 'opensuse',
             FLAVOR    => 'NET',
             MACHINE   => '64bit',
-            VERSION   => '13.1'
-        });
+            VERSION   => '13.1',
+            settings  => [{key => 'JOB_TEMPLATE_NAME', value => 'kde_variant1'}]});
     my $running_job_modules = $running_job->modules;
     $running_job_modules->create(
         {
@@ -109,6 +109,34 @@ sub schema_hook {
         $job99940->insert_module({name => $k, category => $k, script => $k});
         $job99940->update_module($k, {result => $v, details => []});
     }
+
+    my $job_settings = $schema->resultset('JobSettings');
+    $job_settings->create(
+        {
+            job_id => 99946,
+            key    => 'JOB_TEMPLATE_NAME',
+            value  => 'textmode_variant1'
+        });
+
+    my $schedule_job = $jobs->create(
+        {
+            id         => 99991,
+            group_id   => 1002,
+            priority   => 30,
+            result     => OpenQA::Jobs::Constants::NONE,
+            state      => OpenQA::Jobs::Constants::SCHEDULED,
+            t_finished => undef,
+            backend    => 'qemu',
+            t_started  => undef,
+            t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
+            TEST       => 'migration',
+            ARCH       => 'x86_64',
+            BUILD      => '0092',
+            DISTRI     => 'opensuse',
+            FLAVOR     => 'NET',
+            MACHINE    => '64bit',
+            VERSION    => '13.1',
+            settings   => [{key => 'JOB_TEMPLATE_NAME', value => 'migration_offline'}]});
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -128,7 +156,7 @@ my $job99946 = $driver->find_element('#results #job_99946');
 my @tds      = $driver->find_child_elements($job99946, 'td');
 is(scalar @tds,              4,                                     '4 columns displayed');
 is((shift @tds)->get_text(), 'Build0091 of opensuse-13.1-DVD.i586', 'medium of 99946');
-is((shift @tds)->get_text(), 'textmode@32bit',                      'test of 99946');
+is((shift @tds)->get_text(), 'textmode_variant1@32bit',             'test of 99946');
 is((shift @tds)->get_text(), '28 1 1',                              'result of 99946 (passed, softfailed, failed)');
 my $time = $driver->find_child_element(shift @tds, 'span');
 $time->attribute_like('title', qr/.*Z/, 'finish time title of 99946');
@@ -154,14 +182,14 @@ $driver->get('/tests');
 wait_for_ajax;
 my @header       = $driver->find_elements('h2');
 my @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
-my @expected     = ('3 jobs are running', '2 scheduled jobs', 'Last 11 finished jobs');
+my @expected     = ('3 jobs are running', '3 scheduled jobs', 'Last 11 finished jobs');
 is_deeply(\@header_texts, \@expected, 'all headings correctly displayed');
 
 $driver->get('/tests?limit=1');
 wait_for_ajax;
 @header       = $driver->find_elements('h2');
 @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
-@expected     = ('3 jobs are running', '2 scheduled jobs', 'Last 1 finished jobs');
+@expected     = ('3 jobs are running', '3 scheduled jobs', 'Last 1 finished jobs');
 is_deeply(\@header_texts, \@expected, 'limit for finished tests can be adjusted with query parameter');
 
 $t->get_ok('/tests/99963')->status_is(200);
@@ -366,14 +394,14 @@ wait_for_ajax();
 is(scalar @cancel_links, 1, 'cancel link displayed when logged in');
 
 my $td = $driver->find_element('#job_99946 td.test');
-is($td->get_text(), 'textmode@32bit', 'correct test name');
+is($td->get_text(), 'textmode_variant1@32bit', 'correct test name');
 
 $driver->find_child_element($td, '.restart', 'css')->click();
 wait_for_ajax();
 
 $driver->title_is('openQA: Test results', 'restart stays on page');
 $td = $driver->find_element('#job_99946 td.test');
-is($td->get_text(), 'textmode@32bit (restarted)', 'restart removes link');
+is($td->get_text(), 'textmode_variant1@32bit (restarted)', 'restart removes link');
 
 subtest 'check test results of job99940' => sub {
     $driver->get('/tests');
@@ -388,6 +416,14 @@ subtest 'check test results of job99940' => sub {
     }
 };
 
+subtest 'job template names displayed on "All Tests" page' => sub {
+    $driver->get('/tests');
+    my $td_99970 = $driver->find_element('#job_99970 td.test');
+    is($td_99970->get_text(), 'kde_variant1@64bit', 'job 99970 displays job template name');
+
+    my $td_99991 = $driver->find_element('#job_99991 td.test');
+    is($td_99991->get_text(), 'migration_offline@64bit', 'job 99991 displays job template name');
+};
 
 kill_driver();
 done_testing();

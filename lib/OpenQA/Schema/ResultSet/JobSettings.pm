@@ -62,4 +62,22 @@ sub query_for_settings {
     return $self->search({-and => \@conds}, {join => \@joins});
 }
 
+=head2 get_job_template_names
+
+=over
+
+=item Return value: HASH
+
+=back
+
+=cut
+
+sub get_job_template_names {
+    my ($self) = @_;
+
+    my @job_template_names = $self->search({key => 'JOB_TEMPLATE_NAME'});
+    my %job_template_names = map { $_->job_id => $_->value } @job_template_names;
+    return \%job_template_names;
+}
+
 1;

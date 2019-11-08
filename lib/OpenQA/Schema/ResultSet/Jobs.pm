@@ -95,13 +95,16 @@ the return array.
 
 =cut
 sub latest_jobs {
-    my ($self) = @_;
+    my ($self)             = @_;
+    my $rsource            = $self->result_source;
+    my $schema             = $rsource->schema;
+    my $job_template_names = $schema->resultset("JobSettings")->get_job_template_names();
 
     my @jobs = $self->search(undef, {order_by => ['me.id DESC']});
     my @latest;
     my %seen;
     foreach my $job (@jobs) {
-        my $test    = $job->TEST;
+        my $test    = $job_template_names->{$job->id} || $job->TEST;
         my $distri  = $job->DISTRI;
         my $version = $job->VERSION;
         my $build   = $job->BUILD;

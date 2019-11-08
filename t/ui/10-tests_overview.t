@@ -102,6 +102,39 @@ sub schema_hook {
             ],
         });
     $jobs->find(99946)->update({result => OpenQA::Jobs::Constants::FAILED});
+
+    # add jobs for testing job template name
+    my $job_hash = {
+        id         => 99990,
+        group_id   => 1002,
+        priority   => 30,
+        result     => OpenQA::Jobs::Constants::FAILED,
+        state      => OpenQA::Jobs::Constants::DONE,
+        TEST       => 'migration',
+        VERSION    => '13.1',
+        BUILD      => '0091',
+        ARCH       => 'x86_64',
+        MACHINE    => '64bit',
+        DISTRI     => 'opensuse',
+        FLAVOR     => 'DVD',
+        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 36000, 'UTC'),
+        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
+        settings   => [{key => 'JOB_TEMPLATE_NAME', value => 'migration_online'}],
+
+    };
+    $jobs->create($job_hash);
+
+    $job_hash->{id}                     = '99991';
+    $job_hash->{result}                 = OpenQA::Jobs::Constants::PASSED;
+    $job_hash->{settings}->[0]->{value} = 'migration_offline';
+    $jobs->create($job_hash);
+
+    $job_hash->{id}                     = '99992';
+    $job_hash->{result}                 = OpenQA::Jobs::Constants::INCOMPLETE;
+    $job_hash->{settings}->[0]->{value} = 'online_scc_base_all_full';
+
+    $jobs->create($job_hash);
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -317,6 +350,21 @@ subtest "filtering by machine" => sub {
         element_not_present('#flavor_DVD_arch_i586');
 
     };
+};
+
+subtest "job template names displayed on 'Test result overview' page" => sub {
+    $driver->get('/group_overview/1002');
+    is($driver->find_element('.progress-bar-passed')->get_text(), '1 passed', 'The number of passed jobs is right');
+    is($driver->find_element('.progress-bar-failed')->get_text(), '2 failed', 'The number of failed jobs is right');
+    is($driver->find_element('.progress-bar-unfinished')->get_text(),
+        '1 unfinished', 'The number of unfinished jobs is right');
+
+    $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1002');
+    my @tds = $driver->find_elements('#results_DVD tbody tr .name');
+    is($tds[0]->get_text(), 'migration_offline', 'job template name migration_offline displayed correctly');
+    is($tds[1]->get_text(), 'migration_online',  'job template name migration_online displayed correctly');
+    is($tds[2]->get_text(),
+        'online_scc_base_all_full', 'job template name online_scc_base_all_full displayed correctly');
 };
 
 kill_driver();

@@ -194,8 +194,10 @@ sub compute_build_results {
         @builds = reverse sort { versioncmp($a->{key}, $b->{key}); } @builds;
     }
 
-    my $max_jobs = 0;
-    my $buildnr  = 0;
+    my $schema             = OpenQA::Schema->singleton();
+    my $job_template_names = $schema->resultset("JobSettings")->get_job_template_names();
+    my $max_jobs           = 0;
+    my $buildnr            = 0;
     for my $build (@builds) {
         last if defined($limit) && (--$limit < 0);
 
@@ -233,7 +235,8 @@ sub compute_build_results {
 
         while (my $job = $jobs->next) {
             $jr{distris}->{$job->DISTRI} = 1;
-            my $key = $job->TEST . "-" . $job->ARCH . "-" . $job->FLAVOR . "-" . $job->MACHINE;
+            my $test_name = $job_template_names->{$job->id} || $job->TEST;
+            my $key       = $test_name . "-" . $job->ARCH . "-" . $job->FLAVOR . "-" . $job->MACHINE;
             next if $seen{$key}++;
 
             $jr{oldest} = $job->t_created if $job->t_created < $jr{oldest};

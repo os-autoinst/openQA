@@ -91,11 +91,13 @@ sub list_ajax {
         prefetch => [qw(children parents)],
     )->all;
 
+    my $job_template_names = $self->schema->resultset('JobSettings')->get_job_template_names();
     # need to use all as the order is too complex for a cursor
     my $comment_count = $self->prefetch_comment_counts([map { $_->id } @jobs]);
     my @list;
     for my $job (@jobs) {
-        my $job_id = $job->id;
+        my $job_id    = $job->id;
+        my $test_name = $job_template_names->{$job_id} || $job->TEST;
         push(
             @list,
             {
@@ -104,7 +106,7 @@ sub list_ajax {
                 result_stats  => $job->result_stats,
                 deps          => $job->dependencies,
                 clone         => $job->clone_id,
-                test          => $job->TEST . '@' . ($job->MACHINE // ''),
+                test          => $test_name . '@' . ($job->MACHINE // ''),
                 distri        => $job->DISTRI // '',
                 version       => $job->VERSION // '',
                 flavor        => $job->FLAVOR // '',
@@ -136,17 +138,18 @@ sub list_running_ajax {
         ],
         prefetch => [qw(modules)],
     );
-
+    my $job_template_names = $self->schema->resultset('JobSettings')->get_job_template_names();
     my @running;
     while (my $job = $running->next) {
-        my $job_id = $job->id;
+        my $job_id    = $job->id;
+        my $test_name = $job_template_names->{$job_id} || $job->TEST;
         push(
             @running,
             {
                 DT_RowId => 'job_' . $job_id,
                 id       => $job_id,
                 clone    => $job->clone_id,
-                test     => $job->TEST . '@' . ($job->MACHINE // ''),
+                test     => $test_name . '@' . ($job->MACHINE // ''),
                 distri   => $job->DISTRI // '',
                 version  => $job->VERSION // '',
                 flavor   => $job->FLAVOR // '',
@@ -178,16 +181,18 @@ sub list_scheduled_ajax {
         ],
     );
 
+    my $job_template_names = $self->schema->resultset('JobSettings')->get_job_template_names();
     my @scheduled;
     while (my $job = $scheduled->next) {
-        my $job_id = $job->id;
+        my $job_id    = $job->id;
+        my $test_name = $job_template_names->{$job_id} || $job->TEST;
         push(
             @scheduled,
             {
                 DT_RowId      => 'job_' . $job_id,
                 id            => $job_id,
                 clone         => $job->clone_id,
-                test          => $job->TEST . '@' . ($job->MACHINE // ''),
+                test          => $test_name . '@' . ($job->MACHINE // ''),
                 distri        => $job->DISTRI // '',
                 version       => $job->VERSION // '',
                 flavor        => $job->FLAVOR // '',
@@ -473,6 +478,8 @@ sub prepare_job_results {
     my @descriptions = $self->schema->resultset('TestSuites')->search(\%desc_args, {columns => [qw(name description)]});
     my %descriptions = map { $_->name => $_->description } @descriptions;
 
+    my $job_template_names = $self->schema->resultset('JobSettings')->get_job_template_names();
+
     my $todo = $self->param('todo');
     foreach my $job (@$jobs) {
         next if $states         && !$states->{$job->state};
@@ -482,7 +489,7 @@ sub prepare_job_results {
         next if $failed_modules && $job->result ne OpenQA::Jobs::Constants::FAILED;
 
         my $jobid  = $job->id;
-        my $test   = $job->TEST;
+        my $test   = $job_template_names->{$jobid} || $job->TEST;
         my $flavor = $job->FLAVOR || 'sweet';
         my $arch   = $job->ARCH || 'noarch';
         my $result;
