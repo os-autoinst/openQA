@@ -197,7 +197,7 @@ sub post_entry {
 
     if (!$options{'clean'}) {    # with --clean the entry should not exist at this point, no need to check
         my $res = $client->get($url->path($options{'apibase'} . '/' . decamelize($table))->query(%param))->res;
-        if ($res->code && $res->code == 200 && @{$res->json->{$table}} == 1 && $res->json->{$table}[0]{id}) {
+        if ($res->code && $res->code == 200 && @{$res->json->{$table}} > 0 && $res->json->{$table}[0]{id}) {
             if ($options{'update'} && $table ne 'JobTemplates')
             {                    # there is nothing to update in JobTemplates, the entry just exists or not
                 my $id = $res->json->{$table}[0]{id};
