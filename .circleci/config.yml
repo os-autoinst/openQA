@@ -278,6 +278,10 @@ jobs:
       - run: *git_token_authentication
       - run:
           command: |
+            # pygments requires python2
+            sudo zypper -n install python-base
+      - run:
+          command: |
             export GEM_HOME=$(pwd)/.gem
             if [[ "${CIRCLE_JOB}" == *nightly ]]; then
                 export PULL_REQUEST_USER=${CIRCLE_PROJECT_USERNAME:-os-autoinst}
