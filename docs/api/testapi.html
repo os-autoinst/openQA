@@ -1271,11 +1271,21 @@ MD5 algorithm and taking the first characters.</p>
 <h5 id="_send_key">send_key</h5>
 <div class="literalblock">
 <div class="content">
+<pre>send_key($key [, wait_screen_change =&gt; $wait_screen_change]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Deprecated mode</p>
+</div>
+<div class="literalblock">
+<div class="content">
 <pre>send_key($key [, $do_wait]);</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Send one <code>$key</code> to SUT keyboard input.</p>
+<p>Send one <code>$key</code> to SUT keyboard input. Waits for the screen to change when
+<code>$wait_screen_change</code> is true.
+<em>Deprecated: <code>$do_wait</code> instructs to wait with &lt;$wait_idle</em>'.&gt;</p>
 </div>
 <div class="paragraph">
 <p>Special characters naming:</p>
@@ -1482,7 +1492,8 @@ $self-&gt;add_console('user-console',  'tty-console', {tty =&gt; 4});</pre>
 any action on the system under test, but only store the parameters.</p>
 </div>
 <div class="paragraph">
-<p>The console parameters are console specific.</p>
+<p>The console parameters are console specific. Parameter <code>persistent</code> skips
+console reset and console is persistent during the test execution.</p>
 </div>
 <div class="paragraph">
 <p><em>The implementation is distribution specific and not always available.</em>'</p>
@@ -1952,7 +1963,7 @@ sub compat_args {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-10-11 16:51:21 UTC
+Last updated 2019-11-08 00:08:24 UTC
 </div>
 </div>
 </body>

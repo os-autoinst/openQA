@@ -526,7 +526,15 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_list_of_events_tracked_by_the_auditing_plugin">List of events tracked by the auditing plugin</a></li>
 </ul>
 </li>
-<li><a href="#_filesystem_layout">Filesystem Layout</a></li>
+<li><a href="#_filesystem_layout">Filesystem layout</a>
+<ul class="sectlevel2">
+<li><a href="#_terms_and_variables_for_certain_directories_used_by_openqa_and_isotovideo">Terms and variables for certain directories used by openQA and isotovideo</a>
+<ul class="sectlevel3">
+<li><a href="#_further_notes">Further notes</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a href="#_troubleshooting">Troubleshooting</a>
 <ul class="sectlevel2">
 <li><a href="#troubleshooting">Tests fail quickly</a></li>
@@ -591,6 +599,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 </ul>
 </li>
+<li><a href="#_configuring_job_groups_via_yaml_documents">Configuring job groups via YAML documents</a></li>
 <li><a href="#_use_of_the_rest_api">Use of the REST API</a>
 <ul class="sectlevel2">
 <li><a href="#_triggering_tests">Triggering tests</a>
@@ -1880,11 +1889,14 @@ You may be vulnerable for up to a day until Fake API key expires.</p>
 <div class="sect1">
 <h2 id="_run_the_web_ui">Run the web UI</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>To start openQA and enable it to run on each boot call</p>
+</div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start postgresql
-systemctl start openqa-webui
-systemctl start openqa-scheduler
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now postgresql
+systemctl <span class="tok-nb">enable</span> --now openqa-webui
+systemctl <span class="tok-nb">enable</span> --now openqa-scheduler
 <span class="tok-c1"># openSUSE</span>
 systemctl restart apache2
 <span class="tok-c1"># Fedora</span>
@@ -1894,15 +1906,9 @@ systemctl restart httpd</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The openQA web UI should be available on <a href="http://localhost/" class="bare">http://localhost/</a> now. To ensure
-openQA runs on each boot, you should also systemctl enable the same services.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> postgresql
-systemctl <span class="tok-nb">enable</span> openqa-webui
-systemctl <span class="tok-nb">enable</span> openqa-scheduler</code></pre>
-</div>
+<p>The openQA web UI should be available on <a href="http://localhost/" class="bare">http://localhost/</a> now. To simply
+start openQA without enabling it permanently one can simply use systemctl
+start instead.</p>
 </div>
 </div>
 </div>
@@ -2202,19 +2208,18 @@ remote instances.</p>
 <div class="sect2">
 <h3 id="_asset_caching">Asset Caching</h3>
 <div class="paragraph">
-<p>If your network is slow or you experience long time to load needles you
-might want to consider to enable caching in your remote workers. To enable caching,
+<p>If your network is slow or you experience long time to load needles you might
+want to consider to enable caching in your remote workers. To enable caching,
 /var/lib/openqa/cache must exist, and right permissions given to the
-'_openqa-worker' user. If you install openQA through the repositories, said directory
-will be created for you.</p>
+'_openqa-worker' user to read everything under this path. If you install
+openQA through the repositories, said directory will be created for you.</p>
 </div>
 <div class="paragraph">
 <p>Start and enable the Cache Service:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start openqa-worker-cacheservice.service
-systemctl <span class="tok-nb">enable</span> openqa-worker-cacheservice.service</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now openqa-worker-cacheservice</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -2222,8 +2227,7 @@ systemctl <span class="tok-nb">enable</span> openqa-worker-cacheservice.service<
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start openqa-worker-cacheservice-minion.service
-systemctl <span class="tok-nb">enable</span> openqa-worker-cacheservice-minion.service</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now openqa-worker-cacheservice-minion</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -2272,8 +2276,7 @@ systemctl <span class="tok-nb">enable</span> openqa-worker-cacheservice-minion.s
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl start rsyncd.service
-systemctl <span class="tok-nb">enable</span> rsyncd.service</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>systemctl <span class="tok-nb">enable</span> --now rsyncd</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -2437,27 +2440,39 @@ Upgrading openQA does not automatically update /etc/openqa/openqa.ini. Review yo
 </div>
 </div>
 <div class="sect1">
-<h2 id="_filesystem_layout">Filesystem Layout</h2>
+<h2 id="_filesystem_layout">Filesystem layout</h2>
 <div class="sectionbody">
 <div id="filesystem" class="paragraph">
-<p>The openQA web interface can be started via MOJO_REVERSE_PROXY=1 morbo script/openqa in
-development mode.</p>
+<p>Tests, needles, assets, results and working directories (a.k.a. "pool directories") are located in certain
+subdirectories within /var/lib/openqa. This directory is configurable (see
+<a href="#customize_base_directory">Customize base directory</a>). Here we assume the default is in place.</p>
 </div>
 <div class="paragraph">
-<p>/var/lib/openqa/ must be owned by root and contain several sub
-directories, most of which must be owned by the user that runs openQA
-(default 'geekotest'):</p>
+<p>Note that the sub directories within /var/lib/openqa must be accessible by the user that runs the openQA web UI
+(by default 'geekotest') or by the user that runs the worker/isotovideo (by default '_openqa-worker').</p>
+</div>
+<div class="paragraph">
+<p>These are the most important sub directories within /var/lib/openqa:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>db contains the database lockfile</p>
+<p>db contains the web UI&#8217;s database lockfile</p>
 </li>
 <li>
-<p>images is where the server stores test screenshots and thumbnails</p>
+<p>images is where the web UI stores test screenshots and thumbnails</p>
 </li>
 <li>
-<p>share contains shared directories for remote workers, can be owned by root</p>
+<p>testresults is where the web UI stores test logs and test-generated assets</p>
+</li>
+<li>
+<p>webui is where the web UI stores miscellaneous files</p>
+</li>
+<li>
+<p>pool contains working directories of the workers/isotovideo</p>
+</li>
+<li>
+<p>share contains directories shared between the web UI and (remote) workers, can be owned by root</p>
 </li>
 <li>
 <p>share/factory contains test assets and temp directory, can be owned by root but sysadmin must create subdirs</p>
@@ -2479,9 +2494,6 @@ directories, most of which must be owned by the user that runs openQA
 </li>
 <li>
 <p>share/tests contains the tests themselves</p>
-</li>
-<li>
-<p>testresults is where the server stores test logs and test-generated assets</p>
 </li>
 </ul>
 </div>
@@ -2538,13 +2550,127 @@ software.</p>
 <p>/var/lib/openqa/pool/2</p>
 </li>
 <li>
-<p>&#8230;&#8203;. - add more if you have more CPUs/disks</p>
+<p>&#8230;&#8203; - add more if you have more worker instances</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
 <p>You can also give the whole pool directory to the _openqa-worker user and let
 the workers create their own instance directories.</p>
+</div>
+<div class="sect2">
+<h3 id="_terms_and_variables_for_certain_directories_used_by_openqa_and_isotovideo">Terms and variables for certain directories used by openQA and isotovideo</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>the "base directory"</p>
+<div class="ulist">
+<ul>
+<li>
+<p>by default /var/lib</p>
+</li>
+<li>
+<p>configurable via environment variable OPENQA_BASEDIR</p>
+</li>
+<li>
+<p>referred as $basedir within openQA</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>the "project directory"</p>
+<div class="ulist">
+<ul>
+<li>
+<p>defined as $basedir/openqa, by default /var/lib/openqa</p>
+</li>
+<li>
+<p>referred as $prjdir within openQA</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>the "share directory": contains directories shared between web UI and (remote) workers</p>
+<div class="ulist">
+<ul>
+<li>
+<p>defined as $prjdir/share, by default /var/lib/openqa/share</p>
+</li>
+<li>
+<p>referred as $sharedir within openQA</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>the "test case directory": contains a test distribution</p>
+<div class="ulist">
+<ul>
+<li>
+<p>by default $sharedir/tests/$distri or $sharedir/tests/$distri-$version</p>
+</li>
+<li>
+<p>configurable via the test variable CASEDIR (see backend variables documentation)</p>
+</li>
+<li>
+<p>this default is provided by openQA; when starting isotovideo manually the CASEDIR variable <strong>must</strong> be
+initialized by hand</p>
+</li>
+<li>
+<p>might contain the sub directory lib for placing Perl modules used by the tests</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>the "product directory": contains the test schedule (main.pm) for a certain product within a test distribution</p>
+<div class="ulist">
+<ul>
+<li>
+<p>by default identical to the "test case directory"</p>
+</li>
+<li>
+<p>usually a directory products/$distri within the "test case directory"</p>
+</li>
+<li>
+<p>configurable via the test variable PRODUCTDIR (see backend variables documentation)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>the "needles directory": contains reference images for a certain product within a test distribution</p>
+<div class="ulist">
+<ul>
+<li>
+<p>by default $PRODUCTDIR/needles</p>
+</li>
+<li>
+<p>configurable via the test variable NEEDLES_DIR (see backend variables documentation)</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="_further_notes">Further notes</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>Setting the test variables has only an influence on os-autoinst. The web UI on the other hand always relies
+on the directory structure described above. For the exact details how these paths are computed by the web UI
+have a look at lib/OpenQA/Utils.pm.</p>
+</li>
+<li>
+<p>When enabling the worker cache parts of the usual "share directory" are located in the specified cache
+directory on the worker host.</p>
+</li>
+</ul>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -3505,6 +3631,151 @@ REST API routes.</p>
 </div>
 </div>
 <div class="sect1">
+<h2 id="_configuring_job_groups_via_yaml_documents">Configuring job groups via YAML documents</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A new job group starts out empty, which in YAML means that the two mandatory
+sections are present but contain nothing. This is what can be seen when
+editing a completely group, and what is also the state to revert to before
+deleting a job group that is no longer useful:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">products</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">{}</span>
+<span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">scenarios</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">{}</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A job group is comprised of up to three main sections. <code>products</code> defines
+one or more mediums to run the scenarios in the group. At least one needs to
+be specified to be able to run tests. Going by an example of openSUSE 15.1
+the name, distri, flavor and version could be written like so. Note that the
+version is a string in single quotes.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">products</span><span class="tok-p tok-p-Indicator">:</span>
+  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">distri</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">flavor</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">DVD-Updates</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">version</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-s">&#39;15.1&#39;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To complete the job group at least one scenario has to be added. A scenario is
+a combination of a test suite, a machine and an architecture. Scenarios must
+also be unique across job groups - trying to add it to multiple job groups is
+an error. Case in point, <code>textmode</code> and <code>gnome</code> could be defined like so:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">scenarios</span><span class="tok-p tok-p-Indicator">:</span>
+  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">textmode</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">uefi</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priorty</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
+        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">QEMUVGA</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now there are two scenarios for <code>x86_64</code>, one by giving just the name of the
+test suite and another which has a machine, priority and settings. Both are
+allowed. However since at least one scenario relies on defaults those need to
+be specified once in their own section:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">defaults</span><span class="tok-p tok-p-Indicator">:</span>
+  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">64bit</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priority</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">50</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The defaults section is only required whenever a scenario is not completely
+defined in-place. When it is used, the available parameters are identical to
+those for a single scenario. For instance the example could be amended to use
+settings and run every test suite for that architecture on several machines by
+default.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">defaults</span><span class="tok-p tok-p-Indicator">:</span>
+  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">64bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">]</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priority</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">50</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">1</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Defaults are always overwritten by explicit parameters on scenarios. Further
+more, all settings can be specified in YAML. Using this together with custom
+job template names, variants of a scenario can even be specified when they
+would normally be considered duplicated:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">scenarios</span><span class="tok-p tok-p-Indicator">:</span>
+  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">textmode</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">uefi</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priorty</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
+        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">QEMUVGA</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome_staging</span><span class="tok-p tok-p-Indicator">:</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">testsuite</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
+        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">2</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Even more flexibility can be achieved by using aliases in YAML, or in other
+words re-using a scenario by reference, such as to run the same scenarios in
+two different mediums. <code>&amp;</code> is used define an alias, while <code>*</code> is a reference:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="yaml"><span></span><span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">products</span><span class="tok-p tok-p-Indicator">:</span>
+  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">distri</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">flavor</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">DVD-Updates</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">version</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-s">&#39;15.1&#39;</span>
+  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.2-GNOME-Live-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">distri</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">flavor</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">GNOME-Live</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">version</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-s">&#39;15.2&#39;</span>
+<span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">scenarios</span><span class="tok-p tok-p-Indicator">:</span>
+  <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.1-DVD-Updates-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">textmode</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nl">&amp;gnome</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">uefi</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">priorty</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">70</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
+        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">QEMUVGA</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">cirrus</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome_staging</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nl">&amp;gnome_staging</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">testsuite</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">machine</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-p tok-p-Indicator">[</span><span class="tok-nv">32bit</span><span class="tok-p tok-p-Indicator">,</span> <span class="tok-nv">64bit-staging</span><span class="tok-p tok-p-Indicator">]</span>
+      <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">settings</span><span class="tok-p tok-p-Indicator">:</span>
+        <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">2</span>
+    <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.2-GNOME-Live-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">textmode</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span>
+      <span class="tok-nv">*gnome</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome_staging</span><span class="tok-p tok-p-Indicator">:</span>
+      <span class="tok-nv">*gnome_staging</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_use_of_the_rest_api">Use of the REST API</h2>
 <div class="sectionbody">
 <div class="paragraph">
@@ -3674,7 +3945,7 @@ conversely updates the YAML for a particular group.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-load-templates --group <span class="tok-nb">test</span> test.json</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>openqa-load-templates test.json</code></pre>
 </div>
 </div>
 </div>
@@ -7414,7 +7685,7 @@ after user validation. See included modules for inspiration.</p>
 <div class="sect1">
 <h2 id="_customize_base_directory">Customize base directory</h2>
 <div class="sectionbody">
-<div class="paragraph">
+<div id="customize_base_directory" class="paragraph">
 <p>It is possible to customize the openQA base directory (which is for instance used to store
 test results) by setting the environment variable OPENQA_BASEDIR. The default value
 is /var/lib. Be sure to clear that variable when running unit tests locally (see next
@@ -7795,7 +8066,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-10-11 16:48:00 UTC
+Last updated 2019-11-08 00:07:11 UTC
 </div>
 </div>
 <style>
