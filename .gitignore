@@ -49,3 +49,4 @@ t/log_chromedriver
 docker.env
 pool????/
 log/
+log_test_postgresql
