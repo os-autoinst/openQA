@@ -265,7 +265,7 @@ jobs:
       - store_artifacts: *store_cover_db
       - run: cover -select_re '^lib/' -report codecov
 
-  build.docs: &docs-template
+  build-docs: &docs-template
     name: "Generating docs"
     docker:
       - <<: *base
@@ -278,6 +278,10 @@ jobs:
       - run: *git_token_authentication
       - run:
           command: |
+            # pygments requires python2
+            sudo zypper -n install python-base
+      - run:
+          command: |
             export GEM_HOME=$(pwd)/.gem
             if [[ "${CIRCLE_JOB}" == *nightly ]]; then
                 export PULL_REQUEST_USER=${CIRCLE_PROJECT_USERNAME:-os-autoinst}
@@ -287,7 +291,7 @@ jobs:
             fi
             bash -xe script/generate-documentation https://token@github.com/openqabot/openQA.git $TARGET_BRANCH
 
-  build.docs.nightly:
+  build-docs-nightly:
     <<: *docs-template
 
 workflows:
@@ -328,7 +332,7 @@ workflows:
            - fullstack
            - developer
            - scheduler
-      - build.docs:
+      - build-docs:
          requires:
            - cache
 
@@ -342,4 +346,4 @@ workflows:
                - master
    jobs:
       - dependencies-pr
-      - build.docs.nightly
+      - build-docs-nightly

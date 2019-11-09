@@ -1,6 +1,5 @@
 cmark-0.28.3
 libcmark0_28_3-0.28.3
-libpython2_7-1_0-2.7.14
 libssh2-1-1.8.0
 lsof-4.91
 optipng-0.7.7
@@ -130,7 +129,7 @@ perl-Module-Pluggable-5.2
 perl-Module-Runtime-0.016
 perl-Module-Runtime-Conflicts-0.003
 perl-Mojo-IOLoop-ReadWriteProcess-0.23
-perl-Mojolicious-8.25
+perl-Mojolicious-8.26
 perl-Mojolicious-Plugin-AssetPack-2.08
 perl-Mojo-Pg-4.17
 perl-Mojo-RabbitMQ-Client-0.3.1
@@ -232,5 +231,4 @@ perl-XML-SemanticDiff-1.0006
 perl-XML-Simple-2.24
 perl-YAML-1.24
 perl-YAML-LibYAML-0.80
-python-base-2.7.14
 ShellCheck-0.6.0
