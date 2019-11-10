@@ -96,6 +96,8 @@ sub new {
 }
 
 sub clear_webui_hosts {
+    # uncoverable subroutine
+    # https://progress.opensuse.org/issues/55364
     my ($self) = @_;
 
     $self->webui_hosts([]);
@@ -103,6 +105,8 @@ sub clear_webui_hosts {
 }
 
 sub add_webui_host {
+    # uncoverable subroutine
+    # https://progress.opensuse.org/issues/55364
     my ($self, $hostname, $settings) = @_;
 
     push(@{$self->webui_hosts}, $hostname);

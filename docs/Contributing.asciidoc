@@ -98,6 +98,12 @@ env CHECKSTYLE=0 PROVE_ARGS=t/24-worker-engine.t make coverage
 and take a look into the generated coverage HTML report in
 +cover_db/coverage.html+.
 
+We use annotations in some places to mark "uncoverable" code such as this:
+
+    # uncoverable subroutine
+
+See the docs for details https://metacpan.org/pod/Devel::Cover
+
 * For git commit messages use the rules stated on
 http://chris.beams.io/posts/git-commit/[How to Write a Git Commit Message] as
 a reference
