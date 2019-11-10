@@ -895,7 +895,8 @@ an asset, you can specify e.g. `STORE_HDD_1`. To 'publish' it, you can specify e
 `PUBLISH_HDD_1` or `PUBLISH_PFLASH_VARS`. If you specify `PUBLISH_HDD_1=updated.qcow2`, the
 `HDD_1` disk image as it exists at the end of the test will be uploaded back to the web-UI and
 stored under the name `updated.qcow2`; any other job can then specify `HDD_1=updated.qcow2` to use
-this published image as its `HDD_1`.
+this published image as its `HDD_1`. To force publishing assets even in case
+of a failed job one can try the `FORCE_PUBLISH_HDD_` variable.
 
 The difference between 'storing' and 'publishing' is that when 'storing' an asset, it will be
 altered in some way (currently, by prepending the job ID to the filename) to associate it with
