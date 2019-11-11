@@ -42,13 +42,13 @@ sub startup {
     my $r = $self->routes;
     $r->get('/' => sub { shift->redirect_to('/minion') });
     $r->get('/info')->to('API#info');
-    $r->post('/status')->to('API#status');
+    $r->get('/status/<id:num>')->to('API#status');
     $r->post('/enqueue')->to('API#enqueue');
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 }
 
 sub setup_workers {
-    return @_ unless grep { /worker/i } @_;
+    return @_ unless grep { $_ eq 'worker' } @_;
     my @args = @_;
 
     my $global_settings = OpenQA::Worker::Settings->new->global_settings;
@@ -105,6 +105,10 @@ Redirects to the L<Mojolicious::Plugin::Minion::Admin> Dashboard.
 
 Returns Minon statistics, see L<https://metacpan.org/pod/Minion#stats>.
 
+=head2 /status/<id>
+
+Retrieve current job status in JSON format.
+
 =head1 POST ROUTES
 
 OpenQA::CacheService is exposing the following POST routes.
@@ -113,12 +117,6 @@ OpenQA::CacheService is exposing the following POST routes.
 
 Enqueue the task. It acceps a POST JSON payload of the form:
 
-      { task => 'cache_assets', args => [qw(42 test hdd open.qa)] }
-
-=head2 /status
-
-Retrieve download asset status. It acceps a POST JSON payload of the form:
-
-      { asset=> 'default.qcow2' }
+      {task => 'cache_assets', args => [qw(42 test hdd open.qa)], lock => 'some lock'}
 
 =cut

@@ -31,7 +31,7 @@ sub _cache_asset {
     my $log = $app->log;
 
     my $lock = $job->info->{notes}{lock};
-    return $job->remove unless defined $asset_name && defined $type && defined $host && defined $lock;
+    return $job->finish unless defined $asset_name && defined $type && defined $host && defined $lock;
     my $guard = $app->progress->guard($lock);
     unless ($guard) {
         $job->note(output => 'Asset was already requested by another job');

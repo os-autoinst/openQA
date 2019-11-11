@@ -31,7 +31,7 @@ sub _cache_tests {
     my $log = $app->log;
 
     my $lock = $job->info->{notes}{lock};
-    return $job->remove unless defined $from && defined $to && defined $lock;
+    return $job->finish unless defined $from && defined $to && defined $lock;
     my $guard = $app->progress->guard($lock);
     unless ($guard) {
         $job->note(output => 'Sync was already requested by another job');

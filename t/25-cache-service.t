@@ -225,15 +225,14 @@ subtest 'Cache Requests' => sub {
 start_server;
 
 subtest 'Invalid requests' => sub {
-    my $url             = $cache_client->url('/status');
-    my $invalid_request = $cache_client->ua->post($url => json => {lock => 'some lock'});
+    my $url             = $cache_client->url('/status/12345');
+    my $invalid_request = $cache_client->ua->get($url);
     my $json            = $invalid_request->result->json;
-    is_deeply($json, {error => 'No job specified'}, 'no job ID accepted') or diag explain $json;
-
-    $url             = $cache_client->url('/status');
-    $invalid_request = $cache_client->ua->post($url => json => {id => 'foo', lock => 'some lock'});
-    $json            = $invalid_request->result->json;
     is_deeply($json, {error => 'Specified job ID is invalid'}, 'invalid job ID') or diag explain $json;
+
+    $url             = $cache_client->url('/status/abc');
+    $invalid_request = $cache_client->ua->get($url);
+    is $invalid_request->res->code, 404, 'invalid job ID';
 
     $url             = $cache_client->url('/enqueue');
     $invalid_request = $cache_client->ua->post($url => json => {args => []});

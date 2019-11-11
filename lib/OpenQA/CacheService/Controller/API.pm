@@ -24,16 +24,14 @@ sub info {
 sub status {
     my $self = shift;
 
-    my $data = $self->req->json;
-    return $self->render(json => {error => 'No job specified'}, status => 400) unless my $id = $data->{id};
-
+    my $id = $self->param('id');
     return $self->render(json => {error => 'Specified job ID is invalid'}, status => 404)
       unless my $job = $self->minion->job($id);
     return $self->render(json => {error => 'Job info not available'}, status => 404)
       unless my $info = $job->info;
 
     # Our Minion job will finish early if another job is already downloading,
-    # so we have to wait for the lock to be released too
+    # so we have to check if the lock has been released yet too
     my $processed = $info->{state} eq 'finished' || $info->{state} eq 'failed';
     return $self->render(json => {status => 'processed', result => $info->{result}, output => $info->{notes}{output}})
       if $processed && !$self->progress->is_downloading($info->{notes}{lock});

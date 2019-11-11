@@ -40,8 +40,9 @@ sub info {
 sub status {
     my ($self, $request) = @_;
 
+    my $id = $request->minion_id;
     my $err;
-    my $res = eval { $self->ua->post($self->url('status') => json => {id => $request->minion_id})->result; };
+    my $res = eval { $self->ua->get($self->url("status/$id"))->result; };
     if ($@) { $err = "Cache service status error: $@" }
 
     my $data = $res ? $res->json : {};
