@@ -154,6 +154,20 @@ sub test_download {
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
 }
 
+# Allow Devel::Cover to collect stats for background jobs
+sub fix_coverage {
+    my $app = shift;
+    $app->minion->on(
+        worker => sub {
+            my ($minion, $worker) = @_;
+            $worker->on(
+                dequeue => sub {
+                    my ($worker, $job) = @_;
+                    $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
+                });
+        });
+}
+
 subtest 'OPENQA_CACHE_DIR environment variable' => sub {
     local $ENV{OPENQA_CACHE_DIR} = '/does/not/exist';
     my $client = OpenQA::CacheService::Client->new;
@@ -406,6 +420,7 @@ subtest 'Test Minion task registration and execution' => sub {
     my $a = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
 
     my $app = OpenQA::CacheService->new;
+    fix_coverage($app);
 
     my $req = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
     $cache_client->enqueue($req);
@@ -424,6 +439,7 @@ subtest 'Test Minion Sync task' => sub {
     my $a = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
 
     my $app = OpenQA::CacheService->new;
+    fix_coverage($app);
 
     my $dir  = tempdir;
     my $dir2 = tempdir;
