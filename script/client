@@ -25,11 +25,11 @@ client [OPTIONS] PATH
 
 =item B<--host> HOST
 
-connect to specified host, defaults to localhost
+Connect to specified host, defaults to localhost
 
 =item B<--params> FILE
 
-load get/post parameters from a json file. For example
+Load get/post parameters from a json file. For example
 
 {
    "FLAVOR" : "DVD",
@@ -57,10 +57,23 @@ Specify api key and secret to use, overrides use of config file ~/.config/openqa
 
 =item B<--json-data>
 
-Send JSON data (which is expected by some routes)
+Send JSON data; expected by certain routes
 
 For example:
 jobs/639172 put --json-data '{"group_id": 1}'
+
+=item B<--form>
+
+Send form data (application/x-www-form-urlencoded) instead of appending supplied parameters
+as URL query; expected by certain routes
+
+This is for instance used to post job templates, e.g.:
+
+job_templates_scheduling/1 post --form schema=JobTemplates-01.yaml preview=0 template="$(cat foo.yaml)"
+
+To create nested forms use dotted syntax, e.g.:
+
+jobs/1/artefact post --form file.file=bar file.filename=bar.log
 
 =item B<--help, -h>
 
@@ -122,15 +135,6 @@ Trigger jobs on iso B<bar.iso> matching test suite B<blah>.
 Download all assets and test logs and images from job B<42> with asset limit of B<1GB> to B</path/to/directory>.
 
 =cut
-
-# Intentionally commented out - so far useful only for openQA debugging
-# =item B<--form>
-#
-# Use HTTP forms instead of appending supplied parameters as URL query
-#
-# To create nested forms use dotted syntax. For example:
-#
-# client jobs/1/artefact post file.file=bar file.filename=bar.log
 
 use strict;
 use warnings;
