@@ -53,7 +53,8 @@ update_docs() {
         if [[ -z "${PULL_REQUEST_USER}" ]]; then
             git clone --depth 1 --branch "$PUSH_BRANCH" "$PUSH_REMOTE_URL" .
         else
-            git clone --depth 1 --branch gh-pages "https://github.com/$PULL_REQUEST_USER/openQA" .
+            # we cannot have --depth here because will push to new branch
+            git clone --branch gh-pages "https://github.com/$PULL_REQUEST_USER/openQA" .
             git checkout -b "$PUSH_BRANCH"
         fi
 
