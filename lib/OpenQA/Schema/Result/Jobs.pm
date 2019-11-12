@@ -269,6 +269,14 @@ sub name {
     return $self->{_name};
 }
 
+sub label {
+    my ($self) = @_;
+
+    my $test    = $self->TEST;
+    my $machine = $self->MACHINE;
+    return $machine ? "$test\@$machine" : $test;
+}
+
 sub scenario {
     my ($self) = @_;
 

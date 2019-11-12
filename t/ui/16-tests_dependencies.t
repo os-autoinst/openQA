@@ -93,7 +93,7 @@ subtest 'dependency json' => sub {
                 {
                     blocked_by_id    => undef,
                     id               => 99981,
-                    label            => 'RAID0',
+                    label            => 'RAID0@32bit',
                     result           => 'skipped',
                     state            => 'cancelled',
                     name             => 'opensuse-13.1-GNOME-Live-i686-Build0091-RAID0@32bit',
@@ -129,7 +129,7 @@ subtest 'dependency json' => sub {
                 {
                     blocked_by_id    => undef,
                     id               => 99938,
-                    label            => 'doc',
+                    label            => 'doc@64bit',
                     result           => 'failed',
                     state            => 'done',
                     name             => 'opensuse-Factory-DVD-x86_64-Build0048-doc@64bit',
@@ -142,7 +142,7 @@ subtest 'dependency json' => sub {
                 {
                     blocked_by_id    => undef,
                     id               => 99937,
-                    label            => 'kde',
+                    label            => 'kde@32bit',
                     result           => 'passed',
                     state            => 'done',
                     name             => 'opensuse-13.1-DVD-i586-Build0091-kde@32bit',
@@ -153,7 +153,7 @@ subtest 'dependency json' => sub {
                 {
                     blocked_by_id    => undef,
                     id               => 99963,
-                    label            => 'kde',
+                    label            => 'kde@64bit',
                     result           => 'none',
                     state            => 'running',
                     name             => 'opensuse-13.1-DVD-x86_64-Build0091-kde@64bit',
@@ -164,7 +164,7 @@ subtest 'dependency json' => sub {
                 {
                     blocked_by_id    => undef,
                     id               => 99961,
-                    label            => 'kde',
+                    label            => 'kde@64bit',
                     result           => 'none',
                     state            => 'running',
                     name             => 'opensuse-13.1-NET-x86_64-Build0091-kde@64bit',
@@ -175,7 +175,7 @@ subtest 'dependency json' => sub {
                 {
                     blocked_by_id    => undef,
                     id               => 99927,
-                    label            => 'RAID0',
+                    label            => 'RAID0@32bit',
                     result           => 'none',
                     state            => 'scheduled',
                     name             => 'opensuse-13.1-DVD-i586-Build0091-RAID0@32bit',
@@ -214,7 +214,7 @@ subtest 'graph rendering' => sub {
     };
     $check_element_quandity->('.cluster',  1, 'one cluster present');
     $check_element_quandity->('.edgePath', 3, 'two edges present');
-    $check_element_quandity->('.node',     5, 'four nodes present');
+    $check_element_quandity->('.node',     5, 'five nodes present');
 
     like(
         get_tooltip(99938),
