@@ -88,15 +88,17 @@ install:
 
 .PHONY: checkstyle
 checkstyle: test-shellcheck
-ifneq ($(CHECKSTYLE),0)
 	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic lib
-endif
 
 .PHONY: test
 ifeq ($(TRAVIS),true)
 test: run-tests-within-container
 else
+ifeq ($(CHECKSTYLE),0)
+test: test-with-database
+else
 test: checkstyle test-with-database
+endif
 endif
 
 .PHONY: test-unit-and-integration
