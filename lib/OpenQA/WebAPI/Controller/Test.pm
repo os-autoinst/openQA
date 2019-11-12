@@ -813,7 +813,7 @@ sub _add_job {
 
     my %node = (
         id            => $job_id,
-        label         => $job->TEST,
+        label         => $job->label,
         name          => $job->name,
         state         => $job->state,
         result        => $job->result,
