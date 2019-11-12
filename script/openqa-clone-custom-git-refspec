@@ -63,10 +63,12 @@ if [[ -z "$testsuite" ]] || [[ -z "$needles_dir" ]] || [[ -z "$productdir" ]]; t
     json_url=${host}/tests/${job}/file/vars.json
     json_data=$(curl -s "${json_url}")
     testsuite="${testsuite:-"$(echo "$json_data" | jq -r '.TEST')"}" || throw_json_error "$json_url" "$json_data"
-    needles_dir="${needles_dir:-"$(echo "$json_data" | jq -r '.NEEDLES_DIR')"}" || throw_json_error "$json_url" "$json_data"
     old_productdir=$(echo "$json_data" | jq -r '.PRODUCTDIR') || throw_json_error "$json_url" "$json_data"
     old_casedir=$(echo "$json_data" | jq -r '.CASEDIR') || throw_json_error "$json_url" "$json_data"
     productdir="${productdir:-"${repo_name##*/}${old_productdir##$old_casedir}"}"
+    old_needledir=$(echo "$json_data" | jq -r '.NEEDLES_DIR | select (.!=null)') || throw_json_error "$json_url" "$json_data"
+    needles_dir="${needles_dir:-"$old_needledir"}"
+    needles_dir="${needles_dir:-"$old_productdir/needles"}"
 fi
 repo_branch="${repo_branch:-"$repo_name#$branch"}"
 test="${test:-"$testsuite@$repo_branch"}"
