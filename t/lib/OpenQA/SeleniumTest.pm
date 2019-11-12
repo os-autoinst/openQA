@@ -25,6 +25,7 @@ use OpenQA::Log 'log_info';
 use OpenQA::Utils;
 use OpenQA::Test::Utils;
 use POSIX '_exit';
+use Carp;
 
 our $_driver;
 our $webapi;
@@ -98,7 +99,7 @@ sub start_driver {
                 # same problem exceeded console scrollback buffers easily
                 my ($driver, $exception, $args) = @_;                   # uncoverable statement
                 my $err = (split /\n/, $exception)[0] =~ s/Error while executing command: //r;   # uncoverable statement
-                BAIL_OUT($err . ' at ' . __FILE__ . ':' . __LINE__);                             # uncoverable statement
+                croak($err . ' at ' . __FILE__ . ':' . __LINE__);
             },
         );
 
