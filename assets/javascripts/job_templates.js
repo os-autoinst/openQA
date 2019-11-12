@@ -404,7 +404,7 @@ function prepareTemplateEditor(data) {
     form.find('.buttons').show ();
 }
 
-function submitTemplateEditor(preview) {
+function submitTemplateEditor(button) {
     var form = $('#editor-form');
     form.find('.buttons').hide();
     form.find('.progress-indication').show();
@@ -416,26 +416,44 @@ function submitTemplateEditor(preview) {
         dataType: 'json',
         data: {
             schema: 'JobTemplates-01.yaml',
-            preview: preview,
+            preview: button !== "save" ? 1 : 0,
+            expand: button === "expand" ? 1 : 0,
             template: editor.doc.getValue(),
             reference: form.data('reference'),
         }
     }).done(function(data) {
-        result.text(data.preview ? 'Preview of the changes:' : 'YAML saved!');
-        if (!data.hasOwnProperty('preview')) {
+        var mode, value;
+        switch (button) {
+        case 'expand':
+            result.text('Result of expanding the YAML:');
+            mode = 'yaml';
+            value = data.result;
+            break;
+        case 'preview':
+            result.text('Preview of the changes:');
+            mode = 'diff';
+            value = data.changes;
+            break;
+        case 'save':
             // Once a valid YAML template was saved we no longer offer the legacy editor
             $('#toggle-yaml-editor').hide();
             $('#media-add').hide();
             // Update the reference to the saved document
             form.data('reference', editor.doc.getValue());
+
+            result.text('YAML saved!');
+            mode = 'diff';
+            value = data.changes;
+            break;
         }
-        if (data.hasOwnProperty('changes')) {
-            var preview = CodeMirror(result[0], {
-                mode: data.changes ? 'diff' : 'yaml',
+
+        if (value) {
+            var preview = CodeMirror($('<pre/>').appendTo(result)[0], {
+                mode: mode,
                 lineNumbers: true,
                 lineWrapping: true,
                 readOnly: true,
-                value: data.changes,
+                value: value,
             });
         }
         else {
