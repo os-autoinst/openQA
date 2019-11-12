@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,11 +16,7 @@
 package OpenQA::CacheService::Task::Asset;
 use Mojo::Base 'Mojolicious::Plugin';
 
-use constant LOCK_RETRY_DELAY   => 30;
-use constant MINION_LOCK_EXPIRE => 99999;    # ~27 hours
-
 use OpenQA::CacheService::Model::Cache;
-use OpenQA::CacheService::Client;
 
 sub register {
     my ($self, $app) = @_;
@@ -34,18 +30,18 @@ sub _cache_asset {
     my $app = $job->app;
     my $log = $app->log;
 
-    my $cache      = OpenQA::CacheService::Model::Cache->from_worker;
-    my $client     = OpenQA::CacheService::Client->new;
-    my $req        = $client->asset_request(id => $id, type => $type, asset => $asset_name, host => $host);
-    my $guard_name = $client->session_token . '.' . $req->lock;
+    my $lock = $job->info->{notes}{lock};
+    return $job->finish unless defined $asset_name && defined $type && defined $host && defined $lock;
+    my $guard = $app->progress->guard($lock);
+    unless ($guard) {
+        $job->note(output => 'Asset was already requested by another job');
+        return $job->finish;
+    }
 
-    return $job->remove unless defined $asset_name && defined $type && defined $host;
-    return $job->retry({delay => LOCK_RETRY_DELAY})
-      unless my $guard = $app->minion->guard($guard_name, MINION_LOCK_EXPIRE);
+    my $cache = OpenQA::CacheService::Model::Cache->from_worker;
 
     my $job_prefix = "[Job #" . $job->id . "]";
-    $log->debug("$job_prefix Guard: $guard_name Download: $asset_name");
-    $log->debug("$job_prefix Dequeued " . $req->lock) if $client->dequeue_lock($req->lock);
+    $log->debug("$job_prefix Download: $asset_name");
     $OpenQA::Utils::app = undef;
     my $output;
     {
@@ -57,7 +53,7 @@ sub _cache_asset {
         $cache->get_asset({id => $id}, $type, $asset_name);
         $job->note(output => $output);
     }
-    $log->debug("${job_prefix} Finished");
+    $log->debug("$job_prefix Finished");
 }
 
 1;

@@ -45,7 +45,6 @@ use Test::Warnings;
 use OpenQA::Utils;
 use File::Spec::Functions qw(catdir catfile);
 use Cwd qw(abs_path getcwd);
-use Mojolicious;
 use Minion;
 use IO::Socket::INET;
 use Mojo::Server::Daemon;
@@ -99,7 +98,7 @@ sub start_server {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart->restart;
     $worker_cache_service->restart;
-    sleep 2 and diag "Wait server to be reachable." until $cache_client->available;
+    sleep 2 and diag "Wait server to be reachable." until $cache_client->info->available;
     return;
 }
 
@@ -108,7 +107,7 @@ sub test_default_usage {
     my $asset_request = $cache_client->asset_request(id => $id, asset => $a, type => 'hdd', host => $host);
 
     if ($cache_client->enqueue($asset_request)) {
-        sleep .5 until $cache_client->processed($asset_request);
+        sleep .5 until $cache_client->status($asset_request)->is_processed;
     }
     ok($cache_client->asset_exists('localhost', $a), "Asset $a downloaded");
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
@@ -126,12 +125,13 @@ sub test_sync {
 
     ok $cache_client->enqueue($rsync_request);
 
-    sleep .5 until $cache_client->processed($rsync_request);
+    sleep .5 until $cache_client->status($rsync_request)->is_processed;
 
-    is $cache_client->result($rsync_request), 0;
-    ok $cache_client->output($rsync_request);
+    my $status = $cache_client->status($rsync_request);
+    is $status->result, 0;
+    ok $status->output;
 
-    like $cache_client->output($rsync_request), qr/100\%/ or die diag $cache_client->output($rsync_request);
+    like $status->output, qr/100\%/ or die diag $status->output;
 
     ok -e $expected;
     is $expected->slurp, $data;
@@ -144,19 +144,28 @@ sub test_download {
 
     ok $cache_client->enqueue($asset_request), 'enqueued';
 
-    my $state = $cache_client->status($asset_request);
-    $state = $cache_client->status($asset_request) until ($state ne OpenQA::CacheService::Model::Cache::STATUS_IGNORE);
-
-    # After IGNORE, only DOWNLOAD status could follow, but it could be fast enough to not catch it
-    $state = $cache_client->status($asset_request);
-    $state = $cache_client->status($asset_request)
-      until ($state ne OpenQA::CacheService::Model::Cache::STATUS_DOWNLOADING);
+    my $status = $cache_client->status($asset_request);
+    $status = $cache_client->status($asset_request) until !$status->is_downloading;
 
     # And then goes to PROCESSED state
-    is($state, OpenQA::CacheService::Model::Cache::STATUS_PROCESSED) or die diag explain $state;
+    ok $status->is_processed, 'only other state is processed';
 
     ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded');
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
+}
+
+# Allow Devel::Cover to collect stats for background jobs
+sub fix_coverage {
+    my $app = shift;
+    $app->minion->on(
+        worker => sub {
+            my ($minion, $worker) = @_;
+            $worker->on(
+                dequeue => sub {
+                    my ($worker, $job) = @_;
+                    $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
+                });
+        });
 }
 
 subtest 'OPENQA_CACHE_DIR environment variable' => sub {
@@ -166,16 +175,17 @@ subtest 'OPENQA_CACHE_DIR environment variable' => sub {
 };
 
 subtest 'Availability check and worker status' => sub {
-    my $client_mock = Test::MockModule->new('OpenQA::CacheService::Client');
+    my $client_mock = Test::MockModule->new('OpenQA::CacheService::Response::Info');
 
-    is($cache_client->availability_error, 'Cache service not reachable', 'cache service not available');
+    my $info = $cache_client->info;
+    is($info->availability_error, 'Cache service not reachable', 'cache service not available');
 
     $client_mock->mock(available         => sub { return 1; });
     $client_mock->mock(available_workers => sub { return 0; });
-    is($cache_client->availability_error, 'No workers active in the cache service', 'nor workers active');
+    is($info->availability_error, 'No workers active in the cache service', 'nor workers active');
 
     $client_mock->mock(available_workers => sub { return 1; });
-    is($cache_client->availability_error, undef, 'no error');
+    is($info->availability_error, undef, 'no error');
 
     $client_mock->unmock_all();
 };
@@ -215,20 +225,29 @@ subtest 'Cache Requests' => sub {
 start_server;
 
 subtest 'Invalid requests' => sub {
-    my $url             = $cache_client->_url('/status');
-    my $invalid_request = $cache_client->ua->post($url => json => {lock => "some lock"});
+    my $url             = $cache_client->url('/status/12345');
+    my $invalid_request = $cache_client->ua->get($url);
     my $json            = $invalid_request->result->json;
-    is_deeply($json, {status => 1}, 'no job ID accepted') or diag explain $json;
+    is_deeply($json, {error => 'Specified job ID is invalid'}, 'invalid job ID') or diag explain $json;
 
-    $url             = $cache_client->_url('/status');
-    $invalid_request = $cache_client->ua->post($url => json => {id => "foo", lock => "some lock"});
-    $json            = $invalid_request->result->json;
-    is_deeply($json, {error => 'Specified job ID is invalid.'}, 'invalid job ID') or diag explain $json;
+    $url             = $cache_client->url('/status/abc');
+    $invalid_request = $cache_client->ua->get($url);
+    is $invalid_request->res->code, 404, 'invalid job ID';
 
-    $url             = $cache_client->_url('/status');
-    $invalid_request = $cache_client->ua->post($url => json => {});
+    $url             = $cache_client->url('/enqueue');
+    $invalid_request = $cache_client->ua->post($url => json => {args => []});
     $json            = $invalid_request->result->json;
-    is_deeply($json, {error => 'No lock specified.'}, 'no lock') or diag explain $json;
+    is_deeply($json, {error => 'No task defined'}, 'invalid task') or diag explain $json;
+
+    $url             = $cache_client->url('/enqueue');
+    $invalid_request = $cache_client->ua->post($url => json => {task => 'cache_asset'});
+    $json            = $invalid_request->result->json;
+    is_deeply($json, {error => 'No arguments defined'}, 'invalid args') or diag explain $json;
+
+    $url             = $cache_client->url('/enqueue');
+    $invalid_request = $cache_client->ua->post($url => json => {task => 'cache_asset', args => []});
+    $json            = $invalid_request->result->json;
+    is_deeply($json, {error => 'No lock defined'}, 'invalid lock') or diag explain $json;
 };
 
 subtest 'Asset exists' => sub {
@@ -243,48 +262,27 @@ subtest 'Asset exists' => sub {
 
 };
 
-subtest 'different token between restarts' => sub {
-    my $token = $cache_client->session_token;
-    ok(defined $token);
-    ok($token ne "");
-    diag "Session token: $token";
-
-    start_server;
-    isnt($cache_client->session_token, $token) or die diag $cache_client->session_token;
-
-    $token = $cache_client->session_token;
-    ok(defined $token);
-    ok($token ne "");
-};
-
-subtest 'enqueued' => sub {
+subtest 'Job progress (guard against parallel downloads of the same file)' => sub {
     my $app = OpenQA::CacheService->new;
-    $app->locks->enqueue('bar');
-    ok !$app->locks->enqueued('foo'), 'Queue works';
-    $app->locks->enqueue('foo');
-    ok $app->locks->enqueued('foo'), 'Queue works';
-    $app->locks->dequeue('foo');
-    ok !$app->locks->enqueued('foo'), 'Dequeue works';
-};
-
-subtest 'gen_guard_name' => sub {
-    my $app = OpenQA::CacheService->new;
-    is $app->gen_guard_name('foo'), $app->session_token . '.foo', 'Session token is there';
-    is $app->gen_guard_name('bar'), $app->session_token . '.bar', 'Session token is there';
+    ok !$app->progress->is_downloading('foo'), 'Queue works';
+    my $guard = $app->progress->guard('foo');
+    ok $app->progress->is_downloading('foo'), 'Queue works';
+    ok $app->progress->is_downloading('foo'), 'Queue works';
+    undef $guard;
+    ok !$app->progress->is_downloading('foo'), 'Dequeue works';
 };
 
 subtest 'Client can check if there are available workers' => sub {
-    $cache_client->session_token;
     $worker_cache_service->stop;
     $cache_service->stop;
-    ok !$cache_client->available, 'Cache server is not available';
+    ok !$cache_client->info->available, 'Cache server is not available';
     $cache_service->restart;
-    sleep .5 until $cache_client->available;
-    ok $cache_client->available, 'Cache server is available';
-    ok !$cache_client->available_workers, 'No available workers at the moment';
+    sleep .5 until $cache_client->info->available;
+    ok $cache_client->info->available, 'Cache server is available';
+    ok !$cache_client->info->available_workers, 'No available workers at the moment';
     $worker_cache_service->start;
-    sleep 5 and diag "waiting for minion worker to be available" until $cache_client->available_workers;
-    ok $cache_client->available_workers, 'Workers are available now';
+    sleep 5 and diag "waiting for minion worker to be available" until $cache_client->info->available_workers;
+    ok $cache_client->info->available_workers, 'Workers are available now';
 };
 
 subtest 'Asset download' => sub {
@@ -314,7 +312,7 @@ subtest 'Race for same asset' => sub {
 
     my $concurrent_test = sub {
         if ($cache_client->enqueue($asset_request)) {
-            sleep .5 until $cache_client->processed($asset_request);
+            sleep .5 until $cache_client->status($asset_request)->is_processed;
             Devel::Cover::report() if Devel::Cover->can('report');
 
             return 1 if $cache_client->asset_exists('localhost', $a);
@@ -343,8 +341,8 @@ subtest 'Default usage' => sub {
     ok(!$cache_client->asset_exists('localhost', $a), 'Asset absent') or die diag "Asset already exists - abort test";
 
     if ($cache_client->enqueue($asset_request)) {
-        sleep .5 until $cache_client->processed($asset_request);
-        my $out = $cache_client->output($asset_request);
+        sleep .5 until $cache_client->status($asset_request)->is_processed;
+        my $out = $cache_client->status($asset_request)->output;
         ok($out, 'Output should be present') or die diag $out;
         like $out, qr/Downloading $a from/, "Asset download attempt logged";
         ok(-e path($cachedir, 'localhost')->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
@@ -364,8 +362,8 @@ subtest 'Small assets causes racing when releasing locks' => sub {
     ok(!$cache_client->asset_exists('localhost', $a), 'Asset absent') or die diag "Asset already exists - abort test";
 
     if ($cache_client->enqueue($asset_request)) {
-        1 until $cache_client->processed($asset_request);
-        my $out = $cache_client->output($asset_request);
+        1 until $cache_client->status($asset_request)->is_processed;
+        my $out = $cache_client->status($asset_request)->output;
         ok($out, 'Output should be present') or die diag $out;
         like $out, qr/Downloading $a from/, "Asset download attempt logged";
         ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded') or die diag "Failed - no asset is there";
@@ -394,33 +392,21 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
 
     my @assets = map { "sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2" } 1 .. $tot_proc;
     unlink path($cachedir)->child($_) for @assets;
-    ok($cache_client->enqueue($cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host)),
-        "Download enqueued for $_")
-      for @assets;
+    my %requests
+      = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
+    ok($cache_client->enqueue($requests{$_}), "Download enqueued for $_") for @assets;
 
-    sleep 1
-      until (
-        grep { $_ == 1 } map {
-            $cache_client->processed(
-                $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host))
-        } @assets
-      ) == @assets;
+    sleep 1 until (grep { $_ == 1 } map { $cache_client->status($requests{$_})->is_processed } @assets) == @assets;
 
     ok($cache_client->asset_exists('localhost', $_), "Asset $_ downloaded correctly") for @assets;
 
     @assets = map { "sle-12-SP3-x86_64-0368-200_88888\@64bit.qcow2" } 1 .. $tot_proc;
     unlink path($cachedir)->child($_) for @assets;
-    ok($cache_client->enqueue($cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host)),
-        "Download enqueued for $_")
-      for @assets;
+    %requests
+      = map { $_ => $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host) } @assets;
+    ok($cache_client->enqueue($requests{$_}), "Download enqueued for $_") for @assets;
 
-    sleep 1
-      until (
-        grep { $_ == 1 } map {
-            $cache_client->processed(
-                $cache_client->asset_request(id => 922756, asset => $_, type => 'hdd', host => $host))
-        } @assets
-      ) == @assets;
+    sleep 1 until (grep { $_ == 1 } map { $cache_client->status($requests{$_})->is_processed } @assets) == @assets;
 
     ok($cache_client->asset_exists('localhost', "sle-12-SP3-x86_64-0368-200_88888\@64bit.qcow2"),
         "Asset $_ downloaded correctly")
@@ -432,47 +418,44 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
 subtest 'Test Minion task registration and execution' => sub {
     my $a = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
 
-    my $minion = Minion->new(SQLite => "sqlite:" . OpenQA::CacheService::Model::Cache->from_worker->db_file);
-    my $app    = Mojolicious->new;
-    $app->attr(minion => sub { $minion });
+    my $app = OpenQA::CacheService->new;
+    fix_coverage($app);
 
-    my $task = OpenQA::CacheService::Task::Asset->new();
-    $task->register($app);
     my $req = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
     $cache_client->enqueue($req);
     my $worker = $app->minion->repair->worker->register;
     ok($worker->id, 'worker has an ID');
     my $job = $worker->dequeue(0);
     ok($job, 'job enqueued');
-    $job->execute;
-    ok $cache_client->processed($req);
-    ok $cache_client->output($req);
+    $job->perform;
+    my $status = $cache_client->status($req);
+    ok $status->is_processed;
+    ok $status->output;
     ok $cache_client->asset_exists('localhost', $a);
 };
 
 subtest 'Test Minion Sync task' => sub {
     my $a = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
 
-    my $minion = Minion->new(SQLite => "sqlite:" . OpenQA::CacheService::Model::Cache->from_worker->db_file);
-    my $app    = Mojolicious->new;
-    $app->helper(minion => sub { $minion });
+    my $app = OpenQA::CacheService->new;
+    fix_coverage($app);
+
     my $dir  = tempdir;
     my $dir2 = tempdir;
-
     $dir->child('test')->spurt('foobar');
     my $expected = $dir2->child('tests')->child('test');
-    my $req      = $cache_client->rsync_request(from => $dir, to => $dir2);
-    my $task     = OpenQA::CacheService::Task::Sync->new();
-    $task->register($app);
+
+    my $req = $cache_client->rsync_request(from => $dir, to => $dir2);
     ok $cache_client->enqueue($req);
     my $worker = $app->minion->repair->worker->register;
     ok($worker->id, 'worker has an ID');
     my $job = $worker->dequeue(0);
     ok($job, 'job enqueued');
-    $job->execute;
-    ok $cache_client->processed($req);
-    is $cache_client->result($req), 0;
-    diag $cache_client->output($req);
+    $job->perform;
+    my $status = $cache_client->status($req);
+    ok $status->is_processed;
+    is $status->result, 0;
+    diag $status->output;
 
     ok -e $expected;
     is $expected->slurp, 'foobar';

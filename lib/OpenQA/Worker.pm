@@ -570,7 +570,7 @@ sub check_availability {
 
     # check whether the cache service is available if caching enabled
     if ($self->settings->global_settings->{CACHEDIRECTORY}) {
-        my $error = OpenQA::CacheService::Client->new->availability_error;
+        my $error = OpenQA::CacheService::Client->new->info->availability_error;
         if ($error) {
             log_error('Worker cache not available: ' . $error);
             $self->current_error($error);

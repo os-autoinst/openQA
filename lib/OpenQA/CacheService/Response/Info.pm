@@ -13,26 +13,23 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::CacheService::Model::Locks;
-use Mojo::Base -base;
+package OpenQA::CacheService::Response::Info;
+use Mojo::Base 'OpenQA::CacheService::Response';
 
-use Mojo::Collection;
+sub available { !shift->error }
 
-has queue => sub { Mojo::Collection->new };
-
-sub enqueued {
-    my ($self, $lock) = @_;
-    return !!($self->queue->grep(sub { $_ eq $lock })->size == 1);
+sub available_workers {
+    my $self = shift;
+    return undef unless $self->available;
+    return undef unless my $data = $self->data;
+    return $data->{active_workers} != 0 || $data->{inactive_workers} != 0;
 }
 
-sub dequeue {
-    my ($self, $lock) = @_;
-    $self->queue($self->queue->grep(sub { $_ ne $lock }));
-}
-
-sub enqueue {
-    my ($self, $lock) = @_;
-    push @{$self->queue}, $lock;
+sub availability_error {
+    my $self = shift;
+    return 'Cache service not reachable'            unless $self->available;
+    return 'No workers active in the cache service' unless $self->available_workers;
+    return undef;
 }
 
 1;

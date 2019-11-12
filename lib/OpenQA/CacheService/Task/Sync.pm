@@ -1,4 +1,4 @@
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,11 +16,7 @@
 package OpenQA::CacheService::Task::Sync;
 use Mojo::Base 'Mojolicious::Plugin';
 
-use OpenQA::CacheService::Client;
 use Mojo::URL;
-
-use constant LOCK_RETRY_DELAY   => 30;
-use constant MINION_LOCK_EXPIRE => 99999;    # ~27 hours
 
 sub register {
     my ($self, $app) = @_;
@@ -34,25 +30,24 @@ sub _cache_tests {
     my $app = $job->app;
     my $log = $app->log;
 
-    my $client     = OpenQA::CacheService::Client->new;
-    my $req        = $client->rsync_request(from => $from, to => $to);
-    my $guard_name = $client->session_token . '.' . $req->lock;
-
-    return $job->remove unless defined $from && defined $to;
-    return $job->retry({delay => LOCK_RETRY_DELAY})
-      unless my $guard = $app->minion->guard($guard_name, MINION_LOCK_EXPIRE);
+    my $lock = $job->info->{notes}{lock};
+    return $job->finish unless defined $from && defined $to && defined $lock;
+    my $guard = $app->progress->guard($lock);
+    unless ($guard) {
+        $job->note(output => 'Sync was already requested by another job');
+        return $job->finish(0);
+    }
 
     my $job_prefix = "[Job #" . $job->id . "]";
-    $log->debug("$job_prefix Guard: $guard_name Sync: $from to $to");
-    $log->debug("$job_prefix Dequeued ") if $client->dequeue_lock($req->lock);
-    $OpenQA::Utils::app = undef;
+    $log->debug("$job_prefix Sync: $from to $to");
 
     my @cmd = (qw(rsync -avHP), "$from/", qw(--delete), "$to/tests/");
-    $log->debug("${job_prefix} Calling " . join(' ', @cmd));
+    $log->debug("$job_prefix Calling " . join(' ', @cmd));
     my $output = `@cmd`;
-    $job->finish($? >> 8);
+    my $status = $? >> 8;
+    $job->finish($status);
     $job->note(output => $output);
-    $log->debug("${job_prefix} Finished");
+    $log->debug("$job_prefix Finished: $status");
 }
 
 1;

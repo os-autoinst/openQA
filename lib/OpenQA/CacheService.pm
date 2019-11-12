@@ -18,14 +18,8 @@ use Mojo::Base 'Mojolicious';
 
 use OpenQA::Worker::Settings;
 use OpenQA::CacheService::Model::Cache;
-use OpenQA::CacheService::Model::Locks;
-use Mojo::Util 'md5_sum';
 
 use constant DEFAULT_MINION_WORKERS => 5;
-
-BEGIN { srand(time) }
-
-has session_token => sub { md5_sum($$ . time . rand) };
 
 sub startup {
     my $self = shift;
@@ -43,22 +37,18 @@ sub startup {
     $self->plugin('OpenQA::CacheService::Task::Asset');
     $self->plugin('OpenQA::CacheService::Task::Sync');
 
-    $self->helper(locks => sub { state $locks = OpenQA::CacheService::Model::Locks->new });
-
-    $self->helper(gen_guard_name => sub { join('.', shift->app->session_token, shift) });
+    $self->plugin('OpenQA::CacheService::Plugin::Helpers');
 
     my $r = $self->routes;
     $r->get('/' => sub { shift->redirect_to('/minion') });
-    $r->get('/session_token')->to('API#session_token');
     $r->get('/info')->to('API#info');
-    $r->post('/status')->to('API#status');
-    $r->post('/execute_task')->to('API#execute_task');
-    $r->post('/dequeue')->to('API#dequeue');
+    $r->get('/status/<id:num>')->to('API#status');
+    $r->post('/enqueue')->to('API#enqueue');
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 }
 
 sub setup_workers {
-    return @_ unless grep { /worker/i } @_;
+    return @_ unless grep { $_ eq 'worker' } @_;
     my @args = @_;
 
     my $global_settings = OpenQA::Worker::Settings->new->global_settings;
@@ -93,10 +83,10 @@ OpenQA::CacheService - OpenQA Cache Service
     use OpenQA::CacheService;
 
     # Start the daemon
-    OpenQA::CacheService->run(qw(daemon));
+    OpenQA::CacheService::run(qw(daemon));
 
-    # Start one or more Minions with:
-    OpenQA::CacheService->run(qw(minion worker))
+    # Start one or more Minions
+    OpenQA::CacheService::run(qw(minion worker))
 
 =head1 DESCRIPTION
 
@@ -115,30 +105,18 @@ Redirects to the L<Mojolicious::Plugin::Minion::Admin> Dashboard.
 
 Returns Minon statistics, see L<https://metacpan.org/pod/Minion#stats>.
 
-=head2 /session_token
+=head2 /status/<id>
 
-Returns the current session token.
+Retrieve current job status in JSON format.
 
 =head1 POST ROUTES
 
 OpenQA::CacheService is exposing the following POST routes.
 
-=head2 /execute_task
+=head2 /enqueue
 
 Enqueue the task. It acceps a POST JSON payload of the form:
 
-      { task => 'cache_assets', args => [qw(42 test hdd open.qa)] }
-
-=head2 /status
-
-Retrieve download asset status. It acceps a POST JSON payload of the form:
-
-      { asset=> 'default.qcow2' }
-
-=head2 /dequeue
-
-Dequeues a job from the queue of jobs which are still inactive. It acceps a POST JSON payload of the form:
-
-      { asset=> 'default.qcow2' }
+      {task => 'cache_assets', args => [qw(42 test hdd open.qa)], lock => 'some lock'}
 
 =cut

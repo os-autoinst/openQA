@@ -118,7 +118,7 @@ sub cache_assets {
         log_debug("Found $this_asset, caching " . $vars->{$this_asset});
 
         # check cache availability
-        my $error = $cache_client->availability_error;
+        my $error = $cache_client->info->availability_error;
         return {error => $error} if $error;
 
         my $asset_request = $cache_client->asset_request(
@@ -129,13 +129,16 @@ sub cache_assets {
         );
 
         if ($cache_client->enqueue($asset_request)) {
-            log_debug("Downloading $asset_uri - request sent to Cache Service.", channels => 'autoinst');
-            until ($cache_client->processed($asset_request)) {
+            my $minion_id = $asset_request->minion_id;
+            log_debug("Downloading $asset_uri, request sent to Cache Service ($minion_id)", channels => 'autoinst');
+            my $status = $cache_client->status($asset_request);
+            until ($status->is_processed) {
                 sleep 5;
                 return {error => 'Status updates interrupted'} unless $job->post_setup_status;
+                $status = $cache_client->status($asset_request);
             }
             my $msg = "Download of $asset_uri processed";
-            if (my $output = $cache_client->output($asset_request)) { $msg .= ": $output" }
+            if (my $output = $status->output) { $msg .= ": $output" }
             log_debug($msg, channels => 'autoinst');
         }
 
@@ -242,17 +245,19 @@ sub engine_workit {
                   unless $cache_client->enqueue($rsync_request);
                 log_info("Enqueued $rsync_request_description");
 
-                until ($cache_client->processed($rsync_request)) {
+                my $status = $cache_client->status($rsync_request);
+                until ($status->is_processed) {
                     sleep 5;
                     return {error => 'Status updates interrupted'} unless $job->post_setup_status;
+                    $status = $cache_client->status($rsync_request);
                 }
 
-                if (my $output = $cache_client->output($rsync_request)) {
+                if (my $output = $status->output) {
                     log_info('Output of rsync: ' . $output, channels => 'autoinst');
                 }
 
                 # treat "no sync necessary" as success as well
-                my $exit = $cache_client->result($rsync_request) // 0;
+                my $exit = $status->result // 0;
 
                 if (!defined $exit) {
                     return {error => 'Failed to rsync tests.'};

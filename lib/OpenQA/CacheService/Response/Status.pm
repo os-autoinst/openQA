@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 SUSE LLC
+# Copyright (C) 2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,21 +13,18 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::CacheService::Request::Sync;
-use Mojo::Base 'OpenQA::CacheService::Request';
+package OpenQA::CacheService::Response::Status;
+use Mojo::Base 'OpenQA::CacheService::Response';
 
-# See task OpenQA::Cache::Task::Sync
-has [qw(from to)];
-has task => 'cache_tests';
+sub is_downloading { shift->data->{status} eq 'downloading' }
+sub is_processed   { shift->data->{status} eq 'processed' }
 
-sub lock {
+sub output {
     my $self = shift;
-    return join('.', map { $self->$_ } qw(from to));
+    if (my $err = $self->error) { return $err }
+    return $self->data->{output};
 }
 
-sub to_array {
-    my $self = shift;
-    return [$self->from, $self->to];
-}
+sub result { shift->data->{result} }
 
 1;

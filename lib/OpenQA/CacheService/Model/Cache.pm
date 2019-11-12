@@ -25,16 +25,7 @@ use OpenQA::Utils
 use OpenQA::Worker::Settings;
 use Mojo::SQLite;
 use Mojo::File 'path';
-use Exporter 'import';
 use POSIX;
-
-use constant STATUS_PROCESSED   => 1;
-use constant STATUS_ENQUEUED    => 2;
-use constant STATUS_DOWNLOADING => 3;
-use constant STATUS_IGNORE      => 4;
-use constant STATUS_ERROR       => 5;
-
-our @EXPORT_OK = qw(STATUS_PROCESSED STATUS_ENQUEUED STATUS_DOWNLOADING STATUS_IGNORE STATUS_ERROR);
 
 has [qw(host cache location db_file dsn)];
 has limit      => 50 * (1024**3);
