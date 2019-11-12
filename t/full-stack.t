@@ -147,7 +147,6 @@ subtest 'wait until developer console becomes available' => sub {
     OpenQA::Test::FullstackUtils::wait_for_developer_console_available($driver);
 };
 
-sleep 8;
 subtest 'pause at certain test' => sub {
     # load Selenium::Remote::WDKeys module or skip this test if not available
     unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
@@ -311,9 +310,9 @@ subtest 'Cache tests' => sub {
 
     my $cache_client                = OpenQA::CacheService::Client->new;
     my $supposed_cache_service_host = $cache_client->host;
-    sleep 5 and note "Waiting for cache service to be available under $supposed_cache_service_host"
+    sleep 1 and note "Waiting for cache service to be available under $supposed_cache_service_host"
       until $cache_client->info->available;
-    sleep 5 and note "Waiting for cache service worker to be available" until $cache_client->info->available_workers;
+    sleep 1 and note "Waiting for cache service worker to be available" until $cache_client->info->available_workers;
 
     my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
     OpenQA::Test::FullstackUtils::client_call(
