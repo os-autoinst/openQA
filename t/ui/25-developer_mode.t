@@ -318,7 +318,7 @@ subtest 'expand developer panel' => sub {
     subtest 'behavior when changes have not been confirmed' => sub {
         my @options = $driver->find_elements('#developer-pause-at-module option');
 
-        $options[4]->set_selected();
+        $options[4]->click();
         assert_sent_commands(undef, 'changes not instantly submitted');
 
         subtest 'module to pause at not updated' => sub {
@@ -365,7 +365,7 @@ subtest 'start developer session' => sub {
 
     # select to pause at 'installation-bar'
     my @options = $driver->find_elements('#developer-pause-at-module option');
-    $options[4]->set_selected();
+    $options[4]->click();
 
     # start developer session by submitting the changes
     $driver->find_element('Confirm to control this test', 'link_text')->click();
@@ -445,10 +445,10 @@ subtest 'start developer session' => sub {
         fake_state(developerMode => {moduleToPauseAt => '"installation-foo"'});
         is($_->is_selected(), $_->get_value() eq 'foo' ? 1 : 0, 'foo selected') for (@options);
 
-        $options[3]->set_selected();    # select installation-foo
+        $options[3]->click();    # select installation-foo
         assert_sent_commands(undef, 'no command sent if nothing changes');
 
-        $options[4]->set_selected();    # select installation-bar
+        $options[4]->click();    # select installation-bar
         assert_sent_commands(
             [
                 {
@@ -459,7 +459,7 @@ subtest 'start developer session' => sub {
             'command to set module to pause at sent'
         );
 
-        $options[0]->set_selected();    # select <don't pause>
+        $options[0]->click();    # select <don't pause>
         assert_sent_commands(
             [
                 {
@@ -477,7 +477,7 @@ subtest 'start developer session' => sub {
         is($options[0]->is_selected(), 1, 'pausing on screen mismatch disabled by default');
 
         # attempt to turn pausing on assert_screen on when current state unknown
-        $options[1]->set_selected();
+        $options[1]->click();
         assert_sent_commands(undef, 'prevent overriding pause on mismatch with form defaults if unknown');
 
         # assume we know the pausing on screen match is disabled
@@ -485,7 +485,7 @@ subtest 'start developer session' => sub {
         is($options[0]->is_selected(), 1, 'pausing on screen mismatch still disabled');
 
         # turn pausing on assert_screen on
-        $options[1]->set_selected();
+        $options[1]->click();
         assert_sent_commands(
             [
                 {
@@ -501,7 +501,7 @@ subtest 'start developer session' => sub {
         is($options[1]->is_selected(), 1, 'still right option selected');
 
         # turn pausing on check_screen on
-        $options[2]->set_selected();
+        $options[2]->click();
         assert_sent_commands(
             [
                 {
@@ -517,7 +517,7 @@ subtest 'start developer session' => sub {
         is($options[2]->is_selected(), 1, 'still right option selected');
 
         # turn pausing on screen mismatch off
-        $options[0]->set_selected();
+        $options[0]->click();
         assert_sent_commands(
             [
                 {
