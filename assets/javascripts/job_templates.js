@@ -387,8 +387,18 @@ function toggleTemplateEditor() {
                 editor.replaceSelection(Array(editor.getOption('indentUnit') + 1).join(' '));
             }
         });
+
+        $('.CodeMirror').css('width', window.innerWidth * 0.9 + 'px');
+        $('.CodeMirror').css('height', window.innerHeight * 0.7 + 'px');
+        $(window).on('resize', function() {
+            $('.CodeMirror').css('height', window.innerHeight * 0.7 + 'px');
+        });
+        $('#toggle-yaml-guide').click(function() {
+            $('.editor-yaml-guide').toggle();
+            var guide_width = $('.editor-yaml-guide').is(':visible') ? $('.editor-yaml-guide').width() : 0;
+            $('.CodeMirror').css('width', window.innerWidth * 0.9 - guide_width + 'px');
+        });
     }
-    editor.setSize(null, $('#editor-yaml-guide').height());
     $.ajax(form.data('put-url')).done(prepareTemplateEditor);
 }
 
