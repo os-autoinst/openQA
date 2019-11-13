@@ -115,6 +115,8 @@ subtest 'worker overview' => sub {
     # check worker 1
     is($driver->find_element('tr#worker_1 .worker')->get_text(), 'localhost:1', 'localhost:1 shown');
     $driver->find_element('tr#worker_1 .help_popover')->click();
+    wait_for_element(selector => '.popover', description => 'worker status popover is displayed');
+    wait_for_ajax;
     like($driver->find_element('.popover')->get_text(), qr/Worker status\nJob: 99963/, 'on 99963');
 
     # close the popover and wait until it is actually gone (seems to have a very short animation)
@@ -124,6 +126,8 @@ subtest 'worker overview' => sub {
     # check worker 2
     is($driver->find_element('tr#worker_2 .worker')->get_text(), 'remotehost:1', 'remotehost:1 shown');
     $driver->find_element('tr#worker_2 .help_popover')->click();
+    wait_for_element(selector => '.popover', description => 'worker status popover is displayed');
+    wait_for_ajax;
     like($driver->find_element('.popover')->get_text(), qr/Worker status\nJob: 99961/, 'working 99961');
     $driver->find_element('.paginate_button')->click();
     wait_until_element_gone('.popover');
@@ -154,12 +158,7 @@ $driver->find_element('tr#worker_1 .worker a')->click();
 
 $driver->title_is('openQA: Worker localhost:1', 'on worker 1');
 is(scalar @{$driver->find_elements('#content h3', 'css')}, 2, 'table properties shown');
-
-$driver->find_element('.help_popover')->click();
-my $body = $driver->find_element_by_xpath('//body');
-
-like($body->get_text(), qr/Worker status\nJob: 99963/, 'still on 99963');
-like($body->get_text(), qr/JOBTOKEN token99963/,       'token for 99963');
+like($driver->find_element_by_xpath('//body')->get_text(), qr/JOBTOKEN token99963/, 'token for 99963');
 
 # previous jobs table
 wait_for_ajax;
