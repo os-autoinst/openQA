@@ -22,8 +22,6 @@ use Try::Tiny;
 sub register {
     my ($self, $app) = @_;
 
-    # register YAML output type
-    $app->types->type(yaml => 'text/yaml;charset=UTF-8');
     $app->renderer->add_handler(
         yaml => sub {
             my ($renderer, $c, $output, $options) = @_;

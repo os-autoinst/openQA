@@ -332,7 +332,7 @@ sub load_plugins {
 
     push @{$server->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
 
-    foreach my $plugin (qw(Helpers CSRF REST HashedParams Gru YAMLRenderer)) {
+    foreach my $plugin (qw(Helpers MIMETypes CSRF REST HashedParams Gru YAMLRenderer)) {
         $server->plugin($plugin);
     }
 
