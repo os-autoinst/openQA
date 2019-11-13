@@ -962,66 +962,69 @@ qr/Worker class of chained-(c|d|e) \(bar\) does not match the worker class of it
     };
 };
 
-subtest 'Create dependency for jobs on different machines - dependency setting are correct' => sub {
+for my $machine_separator (qw(@ :)) {
     $schema->txn_begin;
-    $t->post_ok('/api/v1/machines', form => {name => '64bit-ipmi', backend => 'ipmi', 'settings[TEST]' => 'ipmi'})
-      ->status_is(200);
-    add_opensuse_test('supportserver1');
-    add_opensuse_test('supportserver2', MACHINE => ['64bit-ipmi']);
-    add_opensuse_test(
-        'client',
-        PARALLEL_WITH => 'supportserver1:64bit,supportserver2:64bit-ipmi',
-        MACHINE       => ['Laptop_64']);
+    subtest "Create dependency for jobs on different machines"
+      . " - dependency setting are correct (using machine separator '$machine_separator')" => sub {
+        $t->post_ok('/api/v1/machines', form => {name => '64bit-ipmi', backend => 'ipmi', 'settings[TEST]' => 'ipmi'})
+          ->status_is(200);
+        add_opensuse_test('supportserver1');
+        add_opensuse_test('supportserver2', MACHINE => ['64bit-ipmi']);
+        add_opensuse_test(
+            'client',
+            PARALLEL_WITH => "supportserver1${machine_separator}64bit,supportserver2${machine_separator}64bit-ipmi",
+            MACHINE       => ['Laptop_64']);
 
-    add_opensuse_test('test1');
-    add_opensuse_test('test2', MACHINE                   => ['64bit-ipmi']);
-    add_opensuse_test('test3', START_AFTER_TEST          => 'test1,test2:64bit-ipmi');
-    add_opensuse_test('test4', START_DIRECTLY_AFTER_TEST => 'test3');
+        add_opensuse_test('test1');
+        add_opensuse_test('test2', MACHINE                   => ['64bit-ipmi']);
+        add_opensuse_test('test3', START_AFTER_TEST          => "test1,test2${machine_separator}64bit-ipmi");
+        add_opensuse_test('test4', START_DIRECTLY_AFTER_TEST => 'test3');
 
-    my $res = schedule_iso(
-        {
-            ISO     => $iso,
-            DISTRI  => 'opensuse',
-            VERSION => '13.1',
-            FLAVOR  => 'DVD',
-            ARCH    => 'i586',
-            BUILD   => '0091',
-            _GROUP  => 'opensuse test',
-        });
+        my $res = schedule_iso(
+            {
+                ISO     => $iso,
+                DISTRI  => 'opensuse',
+                VERSION => '13.1',
+                FLAVOR  => 'DVD',
+                ARCH    => 'i586',
+                BUILD   => '0091',
+                _GROUP  => 'opensuse test',
+            });
 
-    is($res->json->{count}, 7, '7 jobs scheduled');
-    my @newids = @{$res->json->{ids}};
-    my $newid  = $newids[0];
+        is($res->json->{count}, 7, '7 jobs scheduled');
+        my @newids = @{$res->json->{ids}};
+        my $newid  = $newids[0];
 
-    $t->get_ok('/api/v1/jobs');
-    my @jobs = @{$t->tx->res->json->{jobs}};
+        $t->get_ok('/api/v1/jobs');
+        my @jobs = @{$t->tx->res->json->{jobs}};
 
-    my $server1_64    = find_job(\@jobs, \@newids, 'supportserver1', '64bit');
-    my $server2_ipmi  = find_job(\@jobs, \@newids, 'supportserver2', '64bit-ipmi');
-    my $client_laptop = find_job(\@jobs, \@newids, 'client',         'Laptop_64');
-    is_deeply(
-        $client_laptop->{parents},
-        {Parallel => [$server1_64->{id}, $server2_ipmi->{id}], Chained => [], 'Directly chained' => []},
-        "server1_64 and server2_ipmi are the parents of client_laptop"
-    );
+        my $server1_64    = find_job(\@jobs, \@newids, 'supportserver1', '64bit');
+        my $server2_ipmi  = find_job(\@jobs, \@newids, 'supportserver2', '64bit-ipmi');
+        my $client_laptop = find_job(\@jobs, \@newids, 'client',         'Laptop_64');
+        is_deeply(
+            $client_laptop->{parents},
+            {Parallel => [$server1_64->{id}, $server2_ipmi->{id}], Chained => [], 'Directly chained' => []},
+            "server1_64 and server2_ipmi are the parents of client_laptop"
+        );
 
-    my $test1_64   = find_job(\@jobs, \@newids, 'test1', '64bit');
-    my $test2_ipmi = find_job(\@jobs, \@newids, 'test2', '64bit-ipmi');
-    my $test3_64   = find_job(\@jobs, \@newids, 'test3', '64bit');
-    my $test4_64   = find_job(\@jobs, \@newids, 'test4', '64bit');
-    is_deeply(
-        $test3_64->{parents},
-        {Parallel => [], Chained => [$test1_64->{id}, $test2_ipmi->{id}], 'Directly chained' => []},
-        "test1_64 and test2_ipmi are the parents of test3"
-    ) or diag explain $test3_64->{parents};
-    is_deeply(
-        $test4_64->{parents},
-        {Parallel => [], Chained => [], 'Directly chained' => [$test3_64->{id}]},
-        "test1_64 and test2_ipmi are the parents of test3"
-    ) or diag explain $test4_64->{parents};
+        my $test1_64   = find_job(\@jobs, \@newids, 'test1', '64bit');
+        my $test2_ipmi = find_job(\@jobs, \@newids, 'test2', '64bit-ipmi');
+        my $test3_64   = find_job(\@jobs, \@newids, 'test3', '64bit');
+        my $test4_64   = find_job(\@jobs, \@newids, 'test4', '64bit');
+        is_deeply(
+            $test3_64->{parents},
+            {Parallel => [], Chained => [$test1_64->{id}, $test2_ipmi->{id}], 'Directly chained' => []},
+            "test1_64 and test2_ipmi are the parents of test3"
+        ) or diag explain $test3_64->{parents};
+        is_deeply(
+            $test4_64->{parents},
+            {Parallel => [], Chained => [], 'Directly chained' => [$test3_64->{id}]},
+            "test1_64 and test2_ipmi are the parents of test3"
+        ) or diag explain $test4_64->{parents};
 
+      };
     $schema->txn_rollback;
-};
+}
 
 subtest 'Create dependency for jobs on different machines - best match and log error dependency' => sub {
     $schema->txn_begin;
@@ -1058,8 +1061,8 @@ subtest 'Create dependency for jobs on different machines - best match and log e
     is_deeply($use_ltp_64->{parents}, undef, "not found parent for use_ltp on 64bit, check for dependency typos");
     like(
         $res->json->{failed}->[0]->{error_messages}->[0],
-        qr/START_AFTER_TEST=install_ltp:64bit not found - check for dependency typos and dependency cycles/,
-        "install_ltp:64bit not exist, check for dependency typos"
+        qr/START_AFTER_TEST=install_ltp\@64bit not found - check for dependency typos and dependency cycles/,
+        "install_ltp@64bit not exist, check for dependency typos"
     );
     is_deeply(
         $use_ltp_power->{parents},
@@ -1093,9 +1096,9 @@ subtest 'Create dependency for jobs on different machines - log error parents' =
           ->status_is(200);
     }
     add_opensuse_test('supportserver', MACHINE => ['ppc', '64bit', 's390x']);
-    add_opensuse_test('server1', PARALLEL_WITH => 'supportserver:ppc', MACHINE => ['ppc-6G']);
-    add_opensuse_test('slave1',  PARALLEL_WITH => 'supportserver:ppc', MACHINE => ['ppc-1G']);
-    add_opensuse_test('slave2',  PARALLEL_WITH => 'supportserver:ppc', MACHINE => ['ppc-2G']);
+    add_opensuse_test('server1', PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-6G']);
+    add_opensuse_test('slave1',  PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-1G']);
+    add_opensuse_test('slave2',  PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-2G']);
 
     my $res = schedule_iso(
         {
@@ -1139,7 +1142,7 @@ subtest 'Create dependency for jobs on different machines - log error parents' =
             for my $error ($error_returned_to_client, $error_stored_in_scheduled_product) {
                 like(
                     $error,
-                    qr/supportserver:(.*?) has no child, check its machine placed or dependency setting typos/,
+                    qr/supportserver@(.*?) has no child, check its machine placed or dependency setting typos/,
                     "supportserver placed on 64bit/s390x machine, but no child"
                 );
             }
@@ -1224,7 +1227,7 @@ subtest 'async flag' => sub {
     is(scalar @{$json->{results}->{successful_job_ids}}, 10, 'all jobs sucessfully scheduled') or $ok = 0;
     is_deeply(
         $json->{results}->{failed_job_info}->[0]->{error_messages},
-        ['textmode:32bit has no child, check its machine placed or dependency setting typos'],
+        ['textmode@32bit has no child, check its machine placed or dependency setting typos'],
         'there is one error message, though'
     ) or $ok = 0;
     diag explain $json unless $ok;

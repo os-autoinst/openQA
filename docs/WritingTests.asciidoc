@@ -296,16 +296,16 @@ won't work.
 ===== Inter-machine dependencies
 Those dependencies make it possible to create job dependencies between tests which are supposed to run on different machines.
 
-To use it, simply append the machine name for each dependent test suite with colon separated.
+To use it, simply append the machine name for each dependent test suite with an +@+ sign separated.
 If a machine is not explicitly defined, the variable +MACHINE+ of the current job is used for the dependent test suite.
 
 Example 1:
 
- START_AFTER_TEST="kde:64bit-1G,dhcp-server:64bit-8G"
+ START_AFTER_TEST="kde@64bit-1G,dhcp-server@64bit-8G"
 
 Example 2:
 
- PARALLEL_WITH="web-server:ipmi-fly,dhcp-server:ipmi-bee,http-server"
+ PARALLEL_WITH="web-server@ipmi-fly,dhcp-server@ipmi-bee,http-server"
 
 Then, in job templates, add test suite(s) and all of its dependent test suite(s). Keep in mind to place the machines which
 have been explicitly defined in a variable for each dependent test suite.
@@ -319,9 +319,9 @@ By default, when a parallel *child* fails or is cancelled, the parent and all ot
 ===== Examples
 ====== Specify machine explicitly
 Assume there is a test suite +A+ supposed to run on machine +64bit-8G+. Additionally, test suite +B+ supposed to run on machine +64bit-1G+.
-That means test suite +B+ needs the variable +START_AFTER_TEST=A:64bit-8G+. This results in the following dependency:
+That means test suite +B+ needs the variable +START_AFTER_TEST=A@64bit-8G+. This results in the following dependency:
 ----
-A:64bit-8G --> B:64bit-1G
+A@64bit-8G --> B@64bit-1G
 ----
 
 ====== Implicitly inherit machines from parent
@@ -330,27 +330,27 @@ machines as well. This can be achieved by simply adding the variable +START_AFTE
 openQA take the best matches. This results in the following dependencies:
 
 ----
-A:64bit --> B:64bit
-A:ppc --> B:ppc
+A@64bit --> B@64bit
+A@ppc --> B@ppc
 ----
 
 ====== Conflicting machines prevent inheritence from parent
 Assume test suite +A+ is supposed to run on machine +64bit-8G+. Additionally, test suite +B+ is supposed to run on machine +64bit-1G+.
 
 Adding the variable +START_AFTER_TEST=A+ to test suite +B+ will *not* work. That means openQA will *not* create a job dependency and instead shows
-an error message. So it is required to explicitly define the variable as +START_AFTER_TEST=A:64bit-8G+ in that case.
+an error message. So it is required to explicitly define the variable as +START_AFTER_TEST=A@64bit-8G+ in that case.
 
 Consider a different example: Assume test suite +A+ is supposed to run on the machines +ppc+, +64bit+ and +s390x+. Additionally, there are 3
 testsuites +B+ on +ppc-1G+, +C+ on +ppc-2G+ and +D+ on +ppc64le+.
 
-Adding the variable +PARALLEL_WITH=A:ppc+ to the test suites +B+, +C+ and +D+ will result in the following dependencies:
+Adding the variable +PARALLEL_WITH=A@ppc+ to the test suites +B+, +C+ and +D+ will result in the following dependencies:
 
 ----
-            A:ppc
+            A@ppc
               ^
            /  |  \
          /    |    \
-B:ppc-1G  C:ppc-2G  D:ppc64le
+B@ppc-1G  C@ppc-2G  D@ppc64le
 ----
 
 openQA will also show errors that test suite +A+ is not necessary on the machines +64bit+ and +s390x+.
