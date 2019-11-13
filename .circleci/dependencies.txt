@@ -128,7 +128,7 @@ perl-Module-Implementation-0.09
 perl-Module-Pluggable-5.2
 perl-Module-Runtime-0.016
 perl-Module-Runtime-Conflicts-0.003
-perl-Mojo-IOLoop-ReadWriteProcess-0.23
+perl-Mojo-IOLoop-ReadWriteProcess-0.24
 perl-Mojolicious-8.26
 perl-Mojolicious-Plugin-AssetPack-2.08
 perl-Mojo-Pg-4.17
@@ -175,7 +175,7 @@ perl-Readonly-2.05
 perl-Regexp-Common-2017060201
 perl-Role-Tiny-2.000006
 perl-Scope-Guard-0.21
-perl-Selenium-Remote-Driver-1.35
+perl-Selenium-Remote-Driver-1.36
 perl-Socket6-0.28
 perl-Socket-MsgHdr-0.04
 perl-Sort-Versions-1.62
