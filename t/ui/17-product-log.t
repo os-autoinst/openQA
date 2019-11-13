@@ -126,12 +126,12 @@ subtest 'trigger actions' => sub {
     is(scalar @{$failed_job_info},               2, '2 errors present');
     is_deeply(
         $failed_job_info->[0]->{error_messages},
-        ['START_AFTER_TEST=kda:64bit not found - check for dependency typos and dependency cycles'],
+        ['START_AFTER_TEST=kda@64bit not found - check for dependency typos and dependency cycles'],
         'error message'
     );
     is_deeply(
         $failed_job_info->[1]->{error_messages},
-        ['textmode:32bit has no child, check its machine placed or dependency setting typos'],
+        ['textmode@32bit has no child, check its machine placed or dependency setting typos'],
         'error message'
     );
     $driver->find_element('.modal-footer button')->click();

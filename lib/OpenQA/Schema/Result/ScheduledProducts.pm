@@ -303,17 +303,16 @@ sub _schedule_iso {
         }
 
         # log wrong parents
-        for my $parent_test_machine (keys %cluster_parents) {
-            if ($cluster_parents{$parent_test_machine} ne 'depended') {
-                my $error_msg
-                  = "$parent_test_machine has no child, check its machine placed or dependency setting typos";
-                OpenQA::Utils::log_warning($error_msg);
-                push(
-                    @failed_job_info,
-                    {
-                        job_id         => $cluster_parents{$parent_test_machine},
-                        error_messages => [$error_msg]});
-            }
+        for my $parent_test_machine (sort keys %cluster_parents) {
+            my $job_id = $cluster_parents{$parent_test_machine};
+            next if $job_id eq 'depended';
+            my $error_msg = "$parent_test_machine has no child, check its machine placed or dependency setting typos";
+            OpenQA::Utils::log_warning($error_msg);
+            push(
+                @failed_job_info,
+                {
+                    job_id         => $job_id,
+                    error_messages => [$error_msg]});
         }
 
         # now calculate blocked_by state
@@ -364,19 +363,17 @@ Return settings key for given job settings. Internal method.
 
 sub _settings_key {
     my ($settings) = @_;
-    return "$settings->{TEST}:$settings->{MACHINE}";
-
+    return "$settings->{TEST}\@$settings->{MACHINE}";
 }
 
 =over 4
 
 =item _parse_dep_variable()
 
-Parse dependency variable in format like "suite1:64bit,suite2,suite3:uefi"
-and return settings arrayref for each entry. With machine explicitly defined
-that allow inter-machine dependency and without specifying machine means
-the dependency tests that are scheduled for the same machine.
-Internal method.
+Parse dependency variable in format like "suite1@64bit,suite2,suite3@uefi"
+and return settings arrayref for each entry. Defining the machine explicitly
+to make an inter-machine dependency. Otherwise the MACHINE from the settings
+is used.
 
 =back
 
@@ -386,17 +383,17 @@ sub _parse_dep_variable {
     my ($value, $settings) = @_;
 
     return unless defined $value;
-
-    my @after = split(/\s*,\s*/, $value);
-
     return map {
-        if ($_ =~ /^(.+):([^:]+)$/) {
+        if ($_ =~ /^(.+)\@([^@]+)$/) {
             [$1, $2];
+        }
+        elsif ($_ =~ /^(.+):([^:]+)$/) {
+            [$1, $2];    # for backwards compatibility
         }
         else {
             [$_, $settings->{MACHINE}];
         }
-    } @after;
+    } split(/\s*,\s*/, $value);
 }
 
 =over 4
@@ -434,7 +431,7 @@ sub _sort_dep {
 
             my $c = 0;    # number of parents that must go to @out before this job
             foreach my $parent (@parents) {
-                my $parent_test_machine = join(':', @$parent);
+                my $parent_test_machine = join('@', @$parent);
                 $c += $count{$parent_test_machine} if defined $count{$parent_test_machine};
             }
 
@@ -604,7 +601,7 @@ sub _generate_jobs {
               unless $skip_chained_deps;
             push @parents, _parse_dep_variable($ret->[$i]->{PARALLEL_WITH}, $ret->[$i]);
             for my $parent (@parents) {
-                my $parent_test_machine = join(':', @$parent);
+                my $parent_test_machine = join('@', @$parent);
                 $wanted{$parent_test_machine} = 1;
             }
         }
@@ -641,19 +638,20 @@ sub _create_dependencies_for_job {
         next unless defined $settings->{$depname};
         for my $testsuite (_parse_dep_variable($settings->{$depname}, $settings)) {
             my ($test, $machine) = @$testsuite;
-            for my $mach (keys %{$testsuite_mapping->{$test}}) {
-                if (!exists $cluster_parents->{$test . ':' . $mach}) {
-                    $cluster_parents->{$test . ':' . $mach} = $testsuite_mapping->{$test}->{$mach};
+            for my $machine_from_testsuite (keys %{$testsuite_mapping->{$test}}) {
+                my $key = "$test\@$machine_from_testsuite";
+                if (!exists $cluster_parents->{$key}) {
+                    $cluster_parents->{$key} = $testsuite_mapping->{$test}->{$machine_from_testsuite};
                 }
             }
             if (!defined $testsuite_mapping->{$test}->{$machine}) {
-                my $error_msg = "$depname=$test:$machine not found - check for dependency typos and dependency cycles";
+                my $error_msg = "$depname=$test\@$machine not found - check for dependency typos and dependency cycles";
                 push(@error_messages, $error_msg);
             }
             else {
                 my @parents = @{$testsuite_mapping->{$test}->{$machine}};
                 $self->_create_dependencies_for_parents($job, $created_jobs, $deptype, \@parents);
-                $cluster_parents->{$test . ':' . $machine} = 'depended';
+                $cluster_parents->{"$test\@$machine"} = 'depended';
             }
         }
     }
