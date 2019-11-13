@@ -4066,7 +4066,8 @@ an asset, you can specify e.g. <code>STORE_HDD_1</code>. To 'publish' it, you ca
 <code>PUBLISH_HDD_1</code> or <code>PUBLISH_PFLASH_VARS</code>. If you specify <code>PUBLISH_HDD_1=updated.qcow2</code>, the
 <code>HDD_1</code> disk image as it exists at the end of the test will be uploaded back to the web-UI and
 stored under the name <code>updated.qcow2</code>; any other job can then specify <code>HDD_1=updated.qcow2</code> to use
-this published image as its <code>HDD_1</code>.</p>
+this published image as its <code>HDD_1</code>. To force publishing assets even in case
+of a failed job one can try the <code>FORCE_PUBLISH_HDD_</code> variable.</p>
 </div>
 <div class="paragraph">
 <p>The difference between 'storing' and 'publishing' is that when 'storing' an asset, it will be
@@ -7273,6 +7274,17 @@ the system service. E.g.</p>
 <p>and take a look into the generated coverage HTML report in
 cover_db/coverage.html.</p>
 </div>
+<div class="paragraph">
+<p>We use annotations in some places to mark "uncoverable" code such as this:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre># uncoverable subroutine</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>See the docs for details <a href="https://metacpan.org/pod/Devel::Cover" class="bare">https://metacpan.org/pod/Devel::Cover</a></p>
+</div>
 <div class="ulist">
 <ul>
 <li>
@@ -8066,7 +8078,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-08 00:07:11 UTC
+Last updated 2019-11-13 00:08:26 UTC
 </div>
 </div>
 <style>
