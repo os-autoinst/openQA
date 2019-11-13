@@ -36,6 +36,12 @@ my $job_groups    = $t->app->schema->resultset('JobGroups');
 my $parent_groups = $t->app->schema->resultset('JobGroupParents');
 my $jobs          = $t->app->schema->resultset('Jobs');
 
+subtest 'MIME types' => sub {
+    is $t->app->types->type('yaml'), 'text/yaml;charset=UTF-8', 'right type';
+    is $t->app->types->type('bz2'),  'application/x-bzip2',     'right type';
+    is $t->app->types->type('xz'),   'application/x-xz',        'right type';
+};
+
 # regular job groups shown
 $t->get_ok('/dashboard_build_results')->status_is(200);
 my @h2 = $t->tx->res->dom->find('h2 a')->map('text')->each;
