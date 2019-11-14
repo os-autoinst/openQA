@@ -4566,7 +4566,7 @@ won&#8217;t work.</p>
 <p>Those dependencies make it possible to create job dependencies between tests which are supposed to run on different machines.</p>
 </div>
 <div class="paragraph">
-<p>To use it, simply append the machine name for each dependent test suite with colon separated.
+<p>To use it, simply append the machine name for each dependent test suite with an @ sign separated.
 If a machine is not explicitly defined, the variable MACHINE of the current job is used for the dependent test suite.</p>
 </div>
 <div class="paragraph">
@@ -4574,7 +4574,7 @@ If a machine is not explicitly defined, the variable MACHINE of the current job 
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>START_AFTER_TEST="kde:64bit-1G,dhcp-server:64bit-8G"</pre>
+<pre>START_AFTER_TEST="kde@64bit-1G,dhcp-server@64bit-8G"</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4582,7 +4582,7 @@ If a machine is not explicitly defined, the variable MACHINE of the current job 
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>PARALLEL_WITH="web-server:ipmi-fly,dhcp-server:ipmi-bee,http-server"</pre>
+<pre>PARALLEL_WITH="web-server@ipmi-fly,dhcp-server@ipmi-bee,http-server"</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4606,11 +4606,11 @@ Checkout the following example sections to get a better understanding.</p>
 <h6 id="_specify_machine_explicitly">Specify machine explicitly</h6>
 <div class="paragraph">
 <p>Assume there is a test suite A supposed to run on machine 64bit-8G. Additionally, test suite B supposed to run on machine 64bit-1G.
-That means test suite B needs the variable START_AFTER_TEST=A:64bit-8G. This results in the following dependency:</p>
+That means test suite B needs the variable START_AFTER_TEST=A@64bit-8G. This results in the following dependency:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>A:64bit-8G --&gt; B:64bit-1G</pre>
+<pre>A@64bit-8G --&gt; B@64bit-1G</pre>
 </div>
 </div>
 </div>
@@ -4623,8 +4623,8 @@ openQA take the best matches. This results in the following dependencies:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>A:64bit --&gt; B:64bit
-A:ppc --&gt; B:ppc</pre>
+<pre>A@64bit --&gt; B@64bit
+A@ppc --&gt; B@ppc</pre>
 </div>
 </div>
 </div>
@@ -4635,22 +4635,22 @@ A:ppc --&gt; B:ppc</pre>
 </div>
 <div class="paragraph">
 <p>Adding the variable START_AFTER_TEST=A to test suite B will <strong>not</strong> work. That means openQA will <strong>not</strong> create a job dependency and instead shows
-an error message. So it is required to explicitly define the variable as START_AFTER_TEST=A:64bit-8G in that case.</p>
+an error message. So it is required to explicitly define the variable as START_AFTER_TEST=A@64bit-8G in that case.</p>
 </div>
 <div class="paragraph">
 <p>Consider a different example: Assume test suite A is supposed to run on the machines ppc, 64bit and s390x. Additionally, there are 3
 testsuites B on ppc-1G, C on ppc-2G and D on ppc64le.</p>
 </div>
 <div class="paragraph">
-<p>Adding the variable PARALLEL_WITH=A:ppc to the test suites B, C and D will result in the following dependencies:</p>
+<p>Adding the variable PARALLEL_WITH=A@ppc to the test suites B, C and D will result in the following dependencies:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>            A:ppc
+<pre>            A@ppc
               ^
            /  |  \
          /    |    \
-B:ppc-1G  C:ppc-2G  D:ppc64le</pre>
+B@ppc-1G  C@ppc-2G  D@ppc64le</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -8078,7 +8078,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-13 00:08:26 UTC
+Last updated 2019-11-14 00:06:52 UTC
 </div>
 </div>
 <style>
