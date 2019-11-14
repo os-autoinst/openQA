@@ -80,26 +80,33 @@ sub _limit {
         # remove all assets older than a certain duration which do not belong to a job group
         my $seconds_per_day = 24 * 3600;
         my $untracked_assets_storage_duration
-          = $OpenQA::Utils::app->config->{misc_limits}->{untracked_assets_storage_duration} * $seconds_per_day;
-        my $now = DateTime->now();
+          = $OpenQA::Utils::app->config->{misc_limits}->{untracked_assets_storage_duration};
+        my $untracked_assets_patterns = $OpenQA::Utils::app->config->{'assets/storage_duration'} // {};
+        my $now                       = DateTime->now();
         for my $asset (@$assets) {
             $update_sth->execute($asset->{max_job} && $asset->{max_job} >= 0 ? $asset->{max_job} : undef, $asset->{id});
             next if $asset->{fixed} || scalar(keys %{$asset->{groups}}) > 0;
 
             my $age_in_seconds = ($now->epoch() - DateTime::Format::Pg->parse_datetime($asset->{t_created})->epoch());
             my $asset_name     = $asset->{name};
-            if ($age_in_seconds >= $untracked_assets_storage_duration) {
-                my $age_in_days   = $age_in_seconds / $seconds_per_day;
-                my $limit_in_days = $untracked_assets_storage_duration / $seconds_per_day;
+            my $limit_in_days  = $untracked_assets_storage_duration;
+            for my $pattern (keys %$untracked_assets_patterns) {
+                if ($asset_name =~ $pattern) {
+                    $limit_in_days = $untracked_assets_patterns->{$pattern};
+                    last;
+                }
+            }
+
+            if ($age_in_seconds >= $limit_in_days * $seconds_per_day) {
+                my $age_in_days = $age_in_seconds / $seconds_per_day;
                 _remove_if($schema, $asset,
                         "Removing asset $asset_name (not in any group, age "
                       . "($age_in_days days) exceeds limit ($limit_in_days days)");
             }
             else {
-                my $remaining_days
-                  = sprintf('%.0f', ($untracked_assets_storage_duration - $age_in_seconds) / $seconds_per_day);
+                my $remaining_days = sprintf('%.0f', ($limit_in_days - $age_in_seconds));
                 OpenQA::Utils::log_warning(
-                    "Asset $asset_name is not in any job group, will delete in $remaining_days days");
+                    "Asset $asset_name is not in any job group and will be deleted in $remaining_days days");
             }
         }
 

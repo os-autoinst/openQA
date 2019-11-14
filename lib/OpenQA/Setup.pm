@@ -201,6 +201,9 @@ sub read_config {
         misc_limits => {
             untracked_assets_storage_duration => 14,
         },
+        'assets/storage_duration' => {
+            # intentionally left blank for overview
+        },
     );
 
     # in development mode we use fake auth and log to stderr

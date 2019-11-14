@@ -25,7 +25,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use Test::MockModule;
-use Test::Output qw(stdout_like);
+use Test::Output qw(stdout_like stdout_from);
 use OpenQA::Test::Case;
 use OpenQA::Task::Asset::Limit;
 use OpenQA::Utils;
@@ -332,22 +332,50 @@ subtest 'asset status without pending state, max_job and max_job by group' => su
 };
 
 subtest 'limit for keeping untracked assets is overridable in settings' => sub {
+    my $job = Test::FakeJob->new;
+
     stdout_like(
         sub {
-            OpenQA::Task::Asset::Limit::_limit($t->app);
+            OpenQA::Task::Asset::Limit::_limit($t->app, $job);
         },
-        qr/Asset .* is not in any job group, will delete in 14 days/,
+        qr/Asset .* is not in any job group and will be deleted in 14 days/,
         'default is 14 days'
     );
 
     $t->app->config->{misc_limits}->{untracked_assets_storage_duration} = 2;
     stdout_like(
         sub {
-            OpenQA::Task::Asset::Limit::_limit($t->app);
+            OpenQA::Task::Asset::Limit::_limit($t->app, $job);
         },
-        qr/Asset .* is not in any job group, will delete in 2 days/,
+        qr/Asset .* is not in any job group and will be deleted in 2 days/,
         'override works'
     );
+    is($job->fail, undef, 'job did not fail');
+    # Reset limit to default
+    $t->app->config->{misc_limits}->{untracked_assets_storage_duration} = 14;
+};
+
+subtest 'limits based on fine-grained filename-based patterns' => sub {
+    my $job = Test::FakeJob->new;
+
+    stdout_like(
+        sub {
+            OpenQA::Task::Asset::Limit::_limit($t->app, $job);
+        },
+        qr/Asset .+Core-.+ is not in any job group and will be deleted in 14 days/,
+        'default without pattern is 14 days'
+    );
+
+    $t->app->config->{'assets/storage_duration'}->{'Core-'}            = 30;
+    $t->app->config->{'assets/storage_duration'}->{'openSUSE.+x86_64'} = 10;
+    my $stdout = stdout_from(sub { OpenQA::Task::Asset::Limit::_limit($t->app, $job); });
+    is($job->fail, undef, 'job did not fail');
+    like($stdout, qr/Asset .+Core-.+ will be deleted in 30 days/,                 'simple pattern override works');
+    like($stdout, qr/Asset .+openSUSE-12\.2-x86_64.+ will be deleted in 10 days/, 'regex pattern matches 12.2');
+    like($stdout, qr/Asset .+openSUSE-12\.3-x86_64.+ will be deleted in 10 days/, 'regex pattern matches 12.3');
+    # Drop non-default pattern limits
+    delete $t->app->config->{'assets/storage_duration'}->{'Core-'};
+    delete $t->app->config->{'assets/storage_duration'}->{'openSUSE.+x86_64'};
 };
 
 subtest 'error handling' => sub {
