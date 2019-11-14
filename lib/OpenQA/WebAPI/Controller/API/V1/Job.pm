@@ -788,7 +788,7 @@ sub _generate_job_setting {
     my %settings;    # Machines, product and test suite settings for the job
     my @classes;     # Populated with WORKER_CLASS settings from machines and products
 
-    # Populated with Product settins if there are DISTRI, VERSION, FLAVOR, ARCH in arguments.
+    # Populated with Product settings if there are DISTRI, VERSION, FLAVOR, ARCH in arguments.
     if (   defined $args->{DISTRI}
         && defined $args->{VERSION}
         && defined $args->{FLAVOR}
