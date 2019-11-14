@@ -233,6 +233,7 @@ export LC_ALL=en_US.UTF-8
 # https://progress.opensuse.org/issues/19652
 rm \
     t/25-cache-service.t \
+    t/37-limit_assets.t \
     t/ui/*.t
 
 
