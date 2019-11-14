@@ -220,6 +220,31 @@ __PACKAGE__->filter_column(
         filter_from_storage => 'add_result_dir_prefix',
     });
 
+my %SIMPLIFIED_STATE = (
+    SCHEDULED, => SCHEDULED,
+    ASSIGNED,  => RUNNING,
+    SETUP,     => RUNNING,
+    RUNNING,   => RUNNING,
+    UPLOADING, => RUNNING,
+    DONE,      => DONE,
+    CANCELLED, => CANCELLED,
+);
+
+my %SIMPLIFIED_RESULT = (
+    NONE,               => NONE,
+    PASSED,             => PASSED,
+    SOFTFAILED,         => SOFTFAILED,
+    FAILED,             => FAILED,
+    INCOMPLETE,         => INCOMPLETE,
+    SKIPPED,            => SKIPPED,
+    OBSOLETED,          => SKIPPED,
+    PARALLEL_FAILED,    => SKIPPED,
+    PARALLEL_RESTARTED, => SKIPPED,
+    USER_CANCELLED,     => SKIPPED,
+    USER_RESTARTED,     => SKIPPED,
+    TIMEOUT_EXCEEDED,   => INCOMPLETE,
+);
+
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
 
@@ -1968,6 +1993,19 @@ sub status_info {
     my $info = $self->state;
     $info .= ' with result ' . $self->result if grep { $info eq $_ } FINAL_STATES;
     return $info;
+}
+
+# a condensed mapping when less states need to be differentiated, e.g. for
+# favicons based on state
+sub simplified_state {
+    my ($self) = @_;
+    return $SIMPLIFIED_STATE{$self->state};
+}
+
+# a condensed mapping for results, similar to SIMPLIFIED_STATES
+sub simplified_result {
+    my ($self) = @_;
+    return $SIMPLIFIED_RESULT{$self->result};
 }
 
 1;
