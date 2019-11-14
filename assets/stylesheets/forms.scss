@@ -2,7 +2,10 @@
 .btn, .form-control {
     font-size: 0.94rem;
     padding: 0.6rem;
-    line-height: 0.7rem;
+    line-height: 0.8rem;
+}
+.btn .fas {
+    padding-right: 3pt;
 }
 .form-control {
     padding: 0.4rem;
@@ -20,10 +23,6 @@
     .form-group .control-label {
         text-align: right;
     }
-}
-.btn {
-    padding: 0.6rem;
-    line-height: 0.7rem;
 }
 select.form-control {
     padding: 0rem;
