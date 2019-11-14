@@ -58,13 +58,12 @@ my $schema = $t->app->schema;
 $schema->resultset('Assets')->scan_for_untracked_assets();
 $schema->resultset('Assets')->refresh_assets();
 
-# prevent files being actually deleted
+# prevent files from actually being deleted
 my $mock_asset = Test::MockModule->new('OpenQA::Schema::Result::Assets');
 my $mock_limit = Test::MockModule->new('OpenQA::Task::Asset::Limit');
-$mock_asset->mock(remove_from_disk          => sub { return 1; });
-$mock_asset->mock(refresh_assets            => sub { });
-$mock_asset->mock(scan_for_untracked_assets => sub { });
-$mock_limit->mock(_remove_if                => sub { return 0; });
+$mock_asset->mock(remove_from_disk => sub { return 1; });
+$mock_asset->mock(refresh_assets   => sub { });
+$mock_limit->mock(_remove_if       => sub { return 0; });
 
 # define helper to prepare the returned asset status for checks
 # * remove timestamps
@@ -93,18 +92,15 @@ sub prepare_asset_status {
             next;
         }
 
-        # ignore 'Core-7.2.iso' and other assets which may or may not exist
-        #  (eg. 'Core-7.2.iso' is downloaded conditionally in 14-grutasks.t)
-        my %ignored_assets = (
-            'iso/Core-7.2.iso'              => 1,
-            'iso/whatever.iso'              => 1,
-            'hdd/hdd_image2.qcow'           => 1,
-            'hdd/hdd_image2.qcow2'          => 1,
-            'hdd/00099963-hdd_image3.qcow2' => 1,
+        # other tests may be clobbering the assets folder depending on order of execution
+        my %assets_under_test = (
+            'hdd/Windows-8.hda'            => 1,
+            'hdd/fixed/Fedora-25.img'      => 1,
+            'hdd/openSUSE-12.1-x86_64.hda' => 1,
+            'hdd/openSUSE-12.2-x86_64.hda' => 1,
+            'hdd/openSUSE-12.3-x86_64.hda' => 1,
         );
-        if ($ignored_assets{$name}) {
-            next;
-        }
+        next unless $assets_under_test{$name};
 
         ok(delete $asset->{id}, "asset $name has ID");
         $assets_without_max_job{delete $asset->{name}} = $asset;
@@ -253,6 +249,25 @@ my %expected_assets_without_max_job = (
     },
 );
 
+subtest 'tracked assets' => sub {
+    my @assets = $schema->resultset('Assets')->search;
+    my @tracked_assets;
+    for my $asset (@assets) {
+        push @tracked_assets, $asset->type . '/' . $asset->name;
+    }
+    # Assets here include non-iso in iso, files in other, CURRENT repos
+    for my $name (qw(iso/whatever.sha256 other/misc.xml repo/otherrepo-CURRENT)) {
+        ok(-e $OpenQA::Utils::assetdir . '/' . $name, "$name exists in the test folder");
+        ok(grep(/$name$/, @tracked_assets), "$name picked up for cleanup")
+          || diag explain join(' ', sort @tracked_assets);
+    }
+    # Ignored assets include repo links, file links
+    for my $name (qw(repo/somethingrepo other/misc2.xml)) {
+        ok(-e $OpenQA::Utils::assetdir . '/' . $name, "$name exists in the test folder");
+        ok(!grep(/$name$/, @tracked_assets), "$name ignored") || diag explain join(' ', sort @tracked_assets);
+    }
+};
+
 my $empty_asset_id;
 subtest 'handling assets with invalid name' => sub {
     my $asset_count = $schema->resultset('Assets')->count;
@@ -327,8 +342,12 @@ subtest 'asset status without pending state, max_job and max_job by group' => su
         compute_max_job_by_group          => 0,
     );
     my ($assets_with_max_job, $assets_without_max_job) = prepare_asset_status($asset_status);
-    is_deeply($assets_with_max_job,    \@expected_assets_with_max_job,    'assets with max job');
-    is_deeply($assets_without_max_job, \%expected_assets_without_max_job, 'assets without max job');
+    is_deeply($assets_with_max_job, \@expected_assets_with_max_job, 'assets with max job');
+    is(
+        join(' ', sort keys %$assets_without_max_job),
+        join(' ', sort keys %expected_assets_without_max_job),
+        'assets without max job'
+    );
 };
 
 subtest 'limit for keeping untracked assets is overridable in settings' => sub {
