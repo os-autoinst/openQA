@@ -678,7 +678,8 @@ scenarios:
 
 Even more flexibility can be achieved by using aliases in YAML, or in other
 words re-using a scenario by reference, such as to run the same scenarios in
-two different mediums. `&` is used define an alias, while `*` is a reference:
+two different mediums. `&` is used to define an anchor, while `*` is the alias
+referencing the anchor:
 
 ```yaml
 products:
@@ -706,10 +707,8 @@ scenarios:
         FOO: 2
     opensuse-15.2-GNOME-Live-x86_64:
     - textmode
-    - gnome:
-      *gnome
-    - gnome_staging:
-      *gnome_staging
+    - gnome: *gnome
+    - gnome_staging: *gnome_staging
 ```
 
 == Use of the REST API
