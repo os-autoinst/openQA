@@ -106,13 +106,23 @@ sub start_driver {
 
     # Connect to it
     eval {
+        # enforce the JSON Wire protocol (instead of using W3C WebDriver protocol)
+        # note: This is required with Selenium::Remote::Driver 1.36 which would now use W3C mode leading
+        #       to errors like "unknown command: unknown command: Cannot call non W3C standard command while
+        #       in W3C mode".
+        $Selenium::Remote::Driver::FORCE_WD2 = 1;
+
+        # pass options for Chromium via chromeOptions *and* goog:chromeOptions to support all versions of
+        # Selenium::Remote::Driver which switched to use goog:chromeOptions in version 1.36
+        my @chrome_option_keys = (qw(chromeOptions goog:chromeOptions));
+
         my %opts = (
             base_url           => "http://localhost:$mojoport/",
             default_finder     => 'css',
             webelement_class   => 'Test::Selenium::Remote::WebElement',
             extra_capabilities => {
-                loggingPrefs  => {browser => 'ALL'},
-                chromeOptions => {args    => []}
+                loggingPrefs => {browser => 'ALL'},
+                map { $_ => {args => []} } @chrome_option_keys,
             },
             error_handler => sub {
                 # generate Test::More failure instead of croaking to preserve context
@@ -130,9 +140,11 @@ sub start_driver {
         }
         $opts{custom_args} = "--log-path=t/log_chromedriver";
         unless ($ENV{NOT_HEADLESS}) {
-            push(@{$opts{extra_capabilities}{chromeOptions}{args}}, ('--headless', '--disable-gpu', '--no-sandbox'));
+            push(@{$opts{extra_capabilities}{$_}{args}}, qw(--headless --disable-gpu --no-sandbox))
+              for @chrome_option_keys;
         }
         $_driver = Test::Selenium::Chrome->new(%opts);
+        $_driver->{is_wd3} = 0;    # ensure the Selenium::Remote::Driver instance uses JSON Wire protocol
         $_driver->set_implicit_wait_timeout(2000);
         $_driver->set_window_size(600, 800);
         $_driver->get("http://localhost:$mojoport/");
