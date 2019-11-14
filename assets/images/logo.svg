@@ -14,8 +14,8 @@
    viewBox="0 0 24 24"
    id="svg2"
    version="1.1"
-   inkscape:version="0.91 r13725"
-   sodipodi:docname="ticket #437_concept1_connected.svg"
+   inkscape:version="0.92.2 5c3e80d, 2017-08-06"
+   sodipodi:docname="logo.svg"
    inkscape:export-filename="ticket #437_concept1_final_64x64.png"
    inkscape:export-xdpi="240"
    inkscape:export-ydpi="240">
@@ -28,9 +28,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="45.254834"
-     inkscape:cx="8.7294431"
-     inkscape:cy="13.066312"
+     inkscape:zoom="11.313709"
+     inkscape:cx="18.048189"
+     inkscape:cy="3.8799263"
      inkscape:document-units="px"
      inkscape:current-layer="g11147"
      showgrid="true"
@@ -38,10 +38,10 @@
      inkscape:snap-global="false"
      showguides="false"
      inkscape:guide-bbox="true"
-     inkscape:window-width="960"
-     inkscape:window-height="1016"
-     inkscape:window-x="0"
-     inkscape:window-y="27"
+     inkscape:window-width="681"
+     inkscape:window-height="734"
+     inkscape:window-x="683"
+     inkscape:window-y="16"
      inkscape:window-maximized="0">
     <inkscape:grid
        type="xygrid"
@@ -51,15 +51,18 @@
        orientation="0.81915204,0.57357644"
        id="guide10888"
        inkscape:label=""
-       inkscape:color="rgb(0,0,255)" />
+       inkscape:color="rgb(0,0,255)"
+       inkscape:locked="false" />
     <sodipodi:guide
        position="48.436815,16.61701"
        orientation="0,1"
-       id="guide10894" />
+       id="guide10894"
+       inkscape:locked="false" />
     <sodipodi:guide
        position="37.000001,12.125"
        orientation="0,1"
-       id="guide11003" />
+       id="guide11003"
+       inkscape:locked="false" />
   </sodipodi:namedview>
   <metadata
      id="metadata7">
@@ -262,22 +265,20 @@
        style="opacity:1;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:5.9000001;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
     <text
        xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        x="-361.30362"
        y="846.67255"
-       id="text10981"
-       sodipodi:linespacing="125%"><tspan
+       id="text10981"><tspan
          sodipodi:role="line"
          id="tspan10983"
          x="-361.30362"
          y="846.67255"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40px;line-height:125%;font-family:'Water Street';-inkscape-font-specification:'Water Street, Normal';text-align:start;writing-mode:lr-tb;text-anchor:start">Q</tspan></text>
     <text
-       sodipodi:linespacing="125%"
        id="text10985"
        y="846.67255"
        x="-321.30362"
-       style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        xml:space="preserve"><tspan
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40px;line-height:125%;font-family:'Water Street';-inkscape-font-specification:'Water Street, Normal';text-align:start;writing-mode:lr-tb;text-anchor:start"
          y="846.67255"
