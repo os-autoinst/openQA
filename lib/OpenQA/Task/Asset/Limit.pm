@@ -97,14 +97,14 @@ sub _limit {
                 }
             }
 
-            if ($age_in_seconds >= $limit_in_days * $seconds_per_day) {
-                my $age_in_days = $age_in_seconds / $seconds_per_day;
+            my $age_in_days = $age_in_seconds / $seconds_per_day;
+            if ($age_in_days >= $limit_in_days) {
                 _remove_if($schema, $asset,
                         "Removing asset $asset_name (not in any group, age "
                       . "($age_in_days days) exceeds limit ($limit_in_days days)");
             }
             else {
-                my $remaining_days = sprintf('%.0f', ($limit_in_days - $age_in_seconds));
+                my $remaining_days = sprintf('%.0f', $limit_in_days - $age_in_days);
                 OpenQA::Utils::log_warning(
                     "Asset $asset_name is not in any job group and will be deleted in $remaining_days days");
             }
