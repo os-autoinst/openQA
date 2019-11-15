@@ -22,21 +22,6 @@ use OpenQA::Utils qw(log_info log_debug);
 has job => undef, weak => 1;
 has ua  => sub { Mojo::UserAgent->new };
 
-sub status {
-    my ($self, $callback) = @_;
-
-    my $url = $self->url . '/isotovideo/status';
-    $self->ua->get(
-        $url => sub {
-            my ($ua, $tx) = @_;
-            if (my $err = $tx->error) {
-                log_debug(qq{Unable to query isotovideo status via "$url" (probably harmless): $err->{message}});
-            }
-            my $status_from_os_autoinst = $tx->res->json;
-            $self->$callback($status_from_os_autoinst);
-        });
-}
-
 sub stop_gracefully {
     my ($self, $reason, $callback) = @_;
 

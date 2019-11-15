@@ -648,8 +648,7 @@ sub _upload_results {
     }
 
     # return if job setup is insufficient
-    my $job_url = $self->isotovideo_client->url;
-    if (!$job_url || !$self->client->worker_id) {
+    if (!$self->isotovideo_client->url || !$self->client->worker_id) {
         log_warning('Unable to upload results of the job because no command server URL or worker ID have been set.');
         $self->emit(uploading_results_concluded => {});
         return Mojo::IOLoop->next_tick($callback);
