@@ -440,6 +440,7 @@ container. It does some preparations to be able to run the full stack test withi
 environment variables defining our test matrix:
 
 |============================
+|CHECKSTYLE=1|
 |FULLSTACK=0| UITESTS=0
 |FULLSTACK=0| UITESTS=1
 |FULLSTACK=1|

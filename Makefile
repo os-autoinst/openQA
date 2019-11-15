@@ -171,7 +171,7 @@ docker-test-build:
 
 .PHONY: docker.env
 docker.env:
-	env | grep -E 'FULLSTACK|UITEST|GH|TRAVIS|CPAN|DEBUG|ZYPPER' > $(docker_env_file)
+	env | grep -E 'CHECKSTYLE|FULLSTACK|UITEST|GH|TRAVIS|CPAN|DEBUG|ZYPPER' > $(docker_env_file)
 
 .PHONY: launch-docker-to-run-tests-within
 launch-docker-to-run-tests-within: docker.env
