@@ -709,7 +709,7 @@ sub create_downloads_list {
             }
             $args->{$short} = $filename;
             if (!$args->{$short}) {
-                OpenQA::Utils::log_warning("Unable to get filename from $url. Ignoring $arg");
+                OpenQA::Utils::log_debug("Unable to get filename from $url. Ignoring $arg");
                 delete $args->{$short} unless $args->{$short};
                 next;
             }
