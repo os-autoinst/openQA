@@ -4168,6 +4168,24 @@ after a certain number of days. That duration can be adjusted by setting
 untracked_assets_storage_duration in the misc_limits section of the
 openQA config to the desired number of days.</p>
 </div>
+<div class="paragraph">
+<p>In less trivial cases where a common limit is not enough or certain assets
+need more fine-grained control, patterns based on the filename can be used.
+The patterns are interpreted as Perl regular expressions and if a pattern
+matches the basename of an asset the specified duration in days will be used.
+In simple cases the pattern is just a match on a word.</p>
+</div>
+<div class="paragraph">
+<p>Consider the following examples to specify custom limits that would match
+assets with the names <code>testrepo-latest</code> and <code>openSUSE-12.3-x86_64.iso</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="ini"><span></span><span class="tok-k">[assets/storage_duration]</span>
+<span class="tok-na">latest</span> <span class="tok-o">=</span> <span class="tok-s">30</span>
+<span class="tok-na">openSUSE.+x86_64</span> <span class="tok-o">=</span> <span class="tok-s">10</span></code></pre>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -8078,7 +8096,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-14 00:06:52 UTC
+Last updated 2019-11-15 01:19:50 UTC
 </div>
 </div>
 <style>
