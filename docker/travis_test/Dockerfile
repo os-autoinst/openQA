@@ -45,6 +45,8 @@ RUN zypper in -y -C \
        'rubygem(sass)' \
        perl \
        ShellCheck \
+       python3-setuptools \
+       python3-yamllint \
        sudo \
        'perl(App::cpanminus)' \
        'perl(Archive::Extract)' \

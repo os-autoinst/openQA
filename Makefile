@@ -90,7 +90,7 @@ install:
 
 
 .PHONY: checkstyle
-checkstyle: test-shellcheck
+checkstyle: test-shellcheck test-yaml
 	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic lib
 
 .PHONY: test
@@ -188,3 +188,8 @@ prepare-and-launch-docker-to-run-tests-within: docker-test-build launch-docker-t
 test-shellcheck:
 	@which shellcheck >/dev/null 2>&1 || echo "Command 'shellcheck' not found, can not execute shell script checks"
 	shellcheck -x $$(file --mime-type script/* | sed -n 's/^\(.*\):.*text\/x-shellscript.*$$/\1/p')
+
+.PHONY: test-yaml
+test-yaml:
+	@which yamllint >/dev/null 2>&1 || echo "Command 'yamllint' not found, can not execute YAML syntax checks"
+	yamllint --strict $$(git ls-files "*.yml" "*.yaml" | grep -v ^dbicdh)
