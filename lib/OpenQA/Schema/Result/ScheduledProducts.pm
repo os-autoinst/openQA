@@ -523,9 +523,9 @@ sub _generate_jobs {
             carp "no templates found for " . join('-', map { $args->{$_} } qw(DISTRI VERSION FLAVOR ARCH));
         }
         for my $job_template (@templates) {
-          # compose settings from product, machine, testsuite and job template itself
-          # note: That order also defines the precedence from lowest to hightest. The only exception is the WORKER_CLASS
-          #       variable where all occurrences are merged.
+           # compose settings from product, machine, testsuite and job template itself
+           # note: That order also defines the precedence from lowest to highest. The only exception is the WORKER_CLASS
+           #       variable where all occurrences are merged.
             my %settings;
             my @worker_classes;
             for my $entity ($product, $job_template->machine, $job_template->test_suite, $job_template) {
