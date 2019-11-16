@@ -37,7 +37,7 @@ CACHELIMIT = 100');
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-
+use Test::Output qw(stdout_like combined_like);
 use Test::More;
 use Test::Warnings;
 use OpenQA::Utils;
@@ -76,11 +76,14 @@ my $server_instance = process sub {
     _exit(0);
 };
 
+
 sub start_server {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart->restart;
-    $worker_cache_service->restart;
-    sleep 2 and note 'Wait for server to be reachable' until $cache_client->info->available;
+    combined_like sub {
+        $worker_cache_service->restart;
+        sleep 2 and note "Wait for server to be reachable" until $cache_client->info->available;
+    }, qr/Worker.*started/, 'starting server';
     return;
 }
 
@@ -291,7 +294,7 @@ subtest 'Client can check if there are available workers' => sub {
     sleep .1 until $cache_client->info->available;
     ok $cache_client->info->available, 'Cache server is available';
     ok !$cache_client->info->available_workers, 'No available workers at the moment';
-    $worker_cache_service->start;
+    combined_like sub { $worker_cache_service->start }, qr/Worker.*started/, 'cache service worker was started';
     sleep .1 and note "waiting for minion worker to be available" until $cache_client->info->available_workers;
     ok $cache_client->info->available_workers, 'Workers are available now';
 };
@@ -306,11 +309,9 @@ subtest 'Asset download' => sub {
 };
 
 subtest 'Race for same asset' => sub {
-    my $asset = 'sle-12-SP3-x86_64-0368-200_123200@64bit.qcow2';
-
+    my $asset         = 'sle-12-SP3-x86_64-0368-200_123200@64bit.qcow2';
     my $asset_request = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
-
-    my $sum = md5_sum(path($cachedir, 'localhost')->child($asset)->slurp);
+    my $sum           = md5_sum(path($cachedir, 'localhost')->child($asset)->slurp);
     unlink path($cachedir, 'localhost')->child($asset)->to_string;
     ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
       or die diag "Asset already exists - abort test";
@@ -405,7 +406,8 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
     my $worker_3 = cache_minion_worker;
     my $worker_4 = cache_minion_worker;
 
-    $_->start for ($worker_2, $worker_3, $worker_4);
+    combined_like sub { $_->start for ($worker_2, $worker_3, $worker_4) }, qr/Worker.*started/,
+      'cache service workers have been started';
 
     my @assets = map { "sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2" } 1 .. $tot_proc;
     unlink path($cachedir)->child($_) for @assets;
@@ -429,7 +431,8 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
         "Asset $_ downloaded correctly")
       for @assets;
 
-    $_->stop for ($worker_2, $worker_3, $worker_4);
+    combined_like sub { $_->stop for ($worker_2, $worker_3, $worker_4) }, qr/Worker.*stopped/,
+      'cache service workers have been stopped';
 };
 
 subtest 'Test Minion task registration and execution' => sub {
@@ -454,7 +457,6 @@ subtest 'Test Minion task registration and execution' => sub {
 subtest 'Test Minion Sync task' => sub {
     my $app = OpenQA::CacheService->new;
     fix_coverage($app);
-
     my $dir  = tempdir;
     my $dir2 = tempdir;
     $dir->child('test')->spurt('foobar');
@@ -471,7 +473,6 @@ subtest 'Test Minion Sync task' => sub {
     ok $status->is_processed;
     is $status->result, 0;
     note $status->output;
-
     ok -e $expected;
     is $expected->slurp, 'foobar';
 };
