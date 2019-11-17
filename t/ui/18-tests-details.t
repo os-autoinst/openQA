@@ -381,8 +381,7 @@ sub test_with_error {
     # check whether candidates are displayed as expected
     my $random_number = int(rand(100000));
     $driver->get("/tests/99946?prevent_caching=$random_number#step/yast2_lan/1");
-    disable_bootstrap_animations;
-    wait_for_ajax;
+    wait_for_ajax_and_animations;
     is_deeply(find_candidate_needles, $expect, $test_name // 'candidates displayed as expected');
 }
 

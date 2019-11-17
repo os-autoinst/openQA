@@ -126,8 +126,7 @@ is(scalar @{$driver->find_elements('h2', 'css')}, 2, 'a single, empty group para
 
 subtest 'filter form' => sub {
     $driver->get('/');
-    disable_bootstrap_animations;
-    wait_for_ajax;
+    wait_for_ajax_and_animations;
     my $url = $driver->get_current_url;
     $driver->find_element('#filter-panel .card-header')->click();
     $driver->find_element_by_id('filter-group')->send_keys('SLE 12 SP2');
