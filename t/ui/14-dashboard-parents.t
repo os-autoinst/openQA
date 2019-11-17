@@ -106,13 +106,10 @@ is(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, 'link to child 
 $driver->find_element_by_link_text('Build0091')->click();
 my $element = $driver->find_element_by_link_text('opensuse');
 ok($element->is_displayed(), 'link to child group expanded');
-
-# first try of click does not work for unknown reasons
-for (0 .. 10) {
-    $driver->find_element_by_link_text('Build0091')->click();
-    last if $driver->find_element('#group1_build13_1-0091 .h4 a')->is_hidden();
-}
-ok($driver->find_element('#group1_build13_1-0091 .h4 a')->is_hidden(), 'link to child group collapsed');
+$driver->find_element_by_link_text('Build0091')->click();
+# Looking for "is_hidden" does not turn out to be reliable so relying on xpath
+# lookup of collapsed entries instead
+ok($driver->find_element_by_xpath('//div[contains(@class,"children-collapsed")]//a'), 'link to child group collapsed');
 
 # go to parent group overview
 $driver->find_element_by_link_text('Test parent')->click();
