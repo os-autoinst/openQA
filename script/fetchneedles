@@ -51,6 +51,13 @@ git_update() {
     git rebase -q
 }
 
+# For needles repos because of needle saving we might end up in conflict, i.e.
+# detached HEAD so we need to repair this
+git_update_needles() {
+    git_update
+    test "$(git rev-parse --abbrev-ref --symbolic-full-name HEAD)" = "HEAD" && git branch -D master && git checkout -b master && git push origin HEAD:master
+}
+
 do_fetch() {
     target=$1
     git_update
