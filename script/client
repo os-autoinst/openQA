@@ -162,9 +162,13 @@ sub usage($) {
 }
 
 sub handle_result {
-    my $res = shift;
+    my $res     = shift;
+    my $rescode = $res->code // 0;
+    my $message = "{no message}";
+    $message = $res->{error}->{message} if ($rescode != 200 && $res->{error} && $res->{error}->{message});
 
-    if (($res->code // 0) == 200) {
+    if ($rescode >= 200 && $rescode <= 299) {
+        printf(STDERR "%s - %s\n", $rescode, $message) if $rescode > 200;
         my $json = $res->json;
         if ($options{'json-output'}) {
             print Cpanel::JSON::XS->new->pretty->encode($json);
@@ -175,7 +179,7 @@ sub handle_result {
         return $json;
     }
 
-    printf(STDERR "ERROR: %s - %s\n", ($res->code // ''), $res->{error}->{message});
+    printf(STDERR "ERROR: %s - %s\n", $rescode, $message);
     if ($res->body) {
         if ($options{json}) {
             print Cpanel::JSON::XS->new->pretty->encode($res->json);
