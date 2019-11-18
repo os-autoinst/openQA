@@ -283,13 +283,14 @@ jobs:
       - run:
           command: |
             export GEM_HOME=$(pwd)/.gem
-            if [[ "${CIRCLE_JOB}" == *nightly ]]; then
-                export PULL_REQUEST_USER=${CIRCLE_PROJECT_USERNAME:-os-autoinst}
-                export TARGET_BRANCH=gh-pages-$(date +%y%m%d%H%M%S)
-                export PUBLISH=1
+            if [[ "${CIRCLE_JOB}" != *nightly ]]; then
+                bash -xe script/generate-documentation
+            else
                 sudo zypper -n install hub
+                export PULL_REQUEST_USER=${CIRCLE_PROJECT_USERNAME:-os-autoinst}
+                export PUBLISH=1
+                bash -xe script/generate-documentation https://token@github.com/openqabot/openQA.git gh-pages-$(date +%y%m%d%H%M%S)
             fi
-            bash -xe script/generate-documentation https://token@github.com/openqabot/openQA.git $TARGET_BRANCH
 
   build-docs-nightly:
     <<: *docs-template
