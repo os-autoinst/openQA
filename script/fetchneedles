@@ -65,10 +65,10 @@ do_fetch() {
     if test -d products; then
         for nd in products/*/needles; do
             [ -h "$target/$nd" ] && continue
-            (cd "$target/$nd" && git_update)
+            (cd "$target/$nd" && git_update_needles)
         done
     else
-        (cd "$target/needles" && git_update)
+        (cd "$target/needles" && git_update_needles)
     fi
 }
 
