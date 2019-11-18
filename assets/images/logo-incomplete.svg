@@ -15,7 +15,7 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.92.2 5c3e80d, 2017-08-06"
-   sodipodi:docname="logo.svg"
+   sodipodi:docname="logo-incomplete.svg"
    inkscape:export-filename="ticket #437_concept1_final_64x64.png"
    inkscape:export-xdpi="240"
    inkscape:export-ydpi="240">
@@ -591,5 +591,10 @@
          d="m 58.808714,1031.1326 3.801172,5.2576 -10.531269,0.015 -1.567907,-5.2576 z"
          style="opacity:1;fill:#294172;fill-opacity:1;stroke:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
     </g>
+    <path
+       inkscape:connector-curvature="0"
+       d="m 24.109203,1038.8719 -4.550212,-4.5061 4.504631,-4.5453 -1.403115,-1.3907 -4.503638,4.5478 -4.546248,-4.5027 -1.392214,1.3922 4.551202,4.5111 -4.506116,4.5502 1.392214,1.3922 4.514539,-4.5542 4.548229,4.5086 z"
+       id="path2-7"
+       style="stroke-width:0.49544987;fill:#af1e11;fill-opacity:1" />
   </g>
 </svg>

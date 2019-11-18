@@ -168,8 +168,62 @@
 ! logo-16.png
 < images/logo-16.png
 
+! logo-blocked-16.png
+< images/logo-blocked-16.png
+
+! logo-cancelled-16.png
+< images/logo-cancelled-16.png
+
+! logo-failed-16.png
+< images/logo-failed-16.png
+
+! logo-incomplete-16.png
+< images/logo-incomplete-16.png
+
+! logo-passed-16.png
+< images/logo-passed-16.png
+
+! logo-running-16.png
+< images/logo-running-16.png
+
+! logo-scheduled-16.png
+< images/logo-scheduled-16.png
+
+! logo-skipped-16.png
+< images/logo-skipped-16.png
+
+! logo-softfailed-16.png
+< images/logo-softfailed-16.png
+
 ! logo.svg
 < images/logo.svg
+
+! logo-blocked.svg
+< images/logo-blocked.svg
+
+! logo-cancelled.svg
+< images/logo-cancelled.svg
+
+! logo-failed.svg
+< images/logo-failed.svg
+
+! logo-incomplete.svg
+< images/logo-incomplete.svg
+
+! logo-passed.svg
+< images/logo-passed.svg
+
+! logo-running.svg
+< images/logo-scheduled.svg
+
+! logo-scheduled.svg
+< images/logo-scheduled.svg
+
+! logo-skipped.svg
+< images/logo-skipped.svg
+
+! logo-softfailed.svg
+< images/logo-softfailed.svg
 
 ! terminal.svg
 < images/terminal.svg

@@ -99,6 +99,7 @@ is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "lo
 
 $driver->get("/tests/99946");
 $driver->title_is('openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
+like($driver->find_element('link[rel=icon]')->get_attribute('href'), qr/logo-passed/, 'favicon is based on job result');
 
 $driver->find_element_by_link_text('installer_timezone')->click();
 like(

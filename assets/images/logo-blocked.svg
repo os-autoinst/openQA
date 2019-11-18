@@ -15,7 +15,7 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.92.2 5c3e80d, 2017-08-06"
-   sodipodi:docname="logo.svg"
+   sodipodi:docname="logo-blocked.svg"
    inkscape:export-filename="ticket #437_concept1_final_64x64.png"
    inkscape:export-xdpi="240"
    inkscape:export-ydpi="240">
@@ -591,5 +591,11 @@
          d="m 58.808714,1031.1326 3.801172,5.2576 -10.531269,0.015 -1.567907,-5.2576 z"
          style="opacity:1;fill:#294172;fill-opacity:1;stroke:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
     </g>
+    <circle
+       cx="18.64994"
+       cy="1033.7123"
+       r="4.9289322"
+       id="circle2"
+       style="stroke-width:0.41074434;fill:#9167b7;fill-opacity:1" />
   </g>
 </svg>

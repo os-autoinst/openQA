@@ -249,8 +249,19 @@ sub register {
     $app->helper(
         icon_url => sub {
             my ($c, $icon) = @_;
-            my $json = $c->app->asset->processed($icon)->[0]->TO_JSON;
-            return $c->url_for(assetpack => $json);
+            my $icon_asset = $c->app->asset->processed($icon)->[0];
+            die "Could not find icon '$icon' in assets" unless $icon_asset;
+            return $c->url_for(assetpack => $icon_asset->TO_JSON);
+        });
+
+    $app->helper(
+        favicon_url => sub {
+            my ($c, $suffix) = @_;
+            return $c->icon_url("logo$suffix") unless my $job = $c->stash('job');
+            my $status = $job->state eq 'done' ? $job->simplified_result : $job->simplified_state;
+            my $logo   = 'logo';
+            $logo .= "-$status" if defined $status;
+            return $c->icon_url("$logo$suffix");
         });
 
     $app->helper(

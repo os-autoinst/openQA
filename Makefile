@@ -160,7 +160,9 @@ coverage-html: coverage
 
 public/favicon.ico: assets/images/logo.svg
 	for w in 16 32 64 128; do \
-		inkscape -e assets/images/logo-$$w.png -w $$w assets/images/logo.svg ; \
+		(cd assets/images/ && for i in *.svg; do \
+			inkscape -e $${i%.svg}-$$w.png -w $$w $$i; \
+		done); \
 	done
 	convert assets/images/logo-16.png assets/images/logo-32.png assets/images/logo-64.png assets/images/logo-128.png -background white -alpha remove public/favicon.ico
 	rm assets/images/logo-128.png assets/images/logo-32.png assets/images/logo-64.png

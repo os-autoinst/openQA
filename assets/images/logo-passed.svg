@@ -15,7 +15,7 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.92.2 5c3e80d, 2017-08-06"
-   sodipodi:docname="logo.svg"
+   sodipodi:docname="logo-passed.svg"
    inkscape:export-filename="ticket #437_concept1_final_64x64.png"
    inkscape:export-xdpi="240"
    inkscape:export-ydpi="240">
@@ -548,6 +548,11 @@
          inkscape:connector-curvature="0"
          sodipodi:nodetypes="ccccc" />
     </g>
+    <path
+       style="fill:#59df24;fill-opacity:1;stroke-width:0.50843656"
+       id="path2"
+       d="m 22.355267,1028.5433 -5.737707,5.881 -2.687596,-2.5477 -1.888333,1.8893 4.575929,4.4376 7.626549,-7.7714 z"
+       inkscape:connector-curvature="0" />
     <path
        sodipodi:nodetypes="ccccccccccccccc"
        id="path11132"
