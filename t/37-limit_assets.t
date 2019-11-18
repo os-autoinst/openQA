@@ -320,9 +320,12 @@ subtest 'asset status with pending state, max_job and max_job by group' => sub {
 };
 
 subtest 'asset status without pending state, max_job and max_job by group' => sub {
+    my $job = Test::FakeJob->new;
+
     # execute OpenQA::Task::Asset::Limit::_limit() so the last_use_job_id column of the asset table
     # is populated and so the order of the assets should be the same as in the previous subtest
-    OpenQA::Task::Asset::Limit::_limit($t->app);
+    OpenQA::Task::Asset::Limit::_limit($t->app, $job);
+    is($job->fail, undef, 'job did not fail');
 
     # adjust expected assets
     for my $asset (@expected_assets_with_max_job) {
@@ -376,6 +379,11 @@ subtest 'limit for keeping untracked assets is overridable in settings' => sub {
 
 subtest 'limits based on fine-grained filename-based patterns' => sub {
     my $job = Test::FakeJob->new;
+    # Reset mtime to the current time
+    for my $filename (qw(iso/Core-7.2.iso hdd/openSUSE-12.2-x86_64.hda hdd/openSUSE-12.3-x86_64.hda)) {
+        my $fullpath = Mojo::File->new("$OpenQA::Utils::assetdir/$filename")->to_abs;
+        ok(utime(time, time, $fullpath), "Reset mtime of $filename");
+    }
 
     stdout_like(
         sub {
@@ -392,6 +400,22 @@ subtest 'limits based on fine-grained filename-based patterns' => sub {
     like($stdout, qr/Asset .+Core-.+ will be deleted in 30 days/,                 'simple pattern override works');
     like($stdout, qr/Asset .+openSUSE-12\.2-x86_64.+ will be deleted in 10 days/, 'regex pattern matches 12.2');
     like($stdout, qr/Asset .+openSUSE-12\.3-x86_64.+ will be deleted in 10 days/, 'regex pattern matches 12.3');
+
+    # Half-way into the limit the remaining time is shorter
+    my $now           = DateTime->now->add(DateTime::Duration->new(days => 15, end_of_month => 'wrap'));
+    my $mock_datetime = Test::MockModule->new('DateTime');
+    $mock_datetime->mock(now => sub { return $now; });
+    $stdout = stdout_from(sub { OpenQA::Task::Asset::Limit::_limit($t->app, $job); });
+    is($job->fail, undef, 'job did not fail');
+    like($stdout, qr/Asset .+Core-.+ will be deleted in 15 days/, 'simple pattern half-way in');
+
+    # mtime is newer than the time of registration
+    my $mtime = $now->add(DateTime::Duration->new(days => 3, end_of_month => 'wrap'));
+    utime $mtime->epoch, $mtime->epoch, Mojo::File->new($core72iso_path)->to_abs;
+    $stdout = stdout_from(sub { OpenQA::Task::Asset::Limit::_limit($t->app, $job); });
+    is($job->fail, undef, 'job did not fail');
+    like($stdout, qr/Asset .+Core-.+ will be deleted in 12 days/, 'newer mtime takes precedence');
+
     # Drop non-default pattern limits
     delete $t->app->config->{'assets/storage_duration'}->{'Core-'};
     delete $t->app->config->{'assets/storage_duration'}->{'openSUSE.+x86_64'};
