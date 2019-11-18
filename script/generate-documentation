@@ -46,6 +46,24 @@
 # target remote ($1). Target branch will be created based on
 # PULL_REQUEST_USER:gh_pages
 
+set -eo pipefail
+
+# exit status 0 if any changes detected
+anything_changed() {
+    echo '*.pdf -diff' >> .gitattributes
+    git --no-pager diff --shortstat
+    
+    local lines_changed_in_index lines_changed_in_api other_files_changed
+
+    # it looks it is a challenge to ignore lines in git diff
+    lines_changed_in_index="$(git --no-pager diff -U0 -- index.html     | grep -v -e 'Last updated ' -e '^\@\@' -e '+++ b' -e '^index ' -e '--- a' | tail -n +2 | wc -l)"
+    lines_changed_in_api="$(git --no-pager diff -U0 -- api/testapi.html | grep -v -e 'Last updated ' -e '^\@\@' -e '+++ b' -e '^index ' -e '--- a' | tail -n +2 | wc -l)"
+    other_files_changed="$(git --no-pager diff --name-only -- '(:!index.html)' '(:!api/testapi.html)' '(:!current.pdf)' | wc -l)"
+
+    # if any other file changed || any line besides containing 'Last Updated' in .html
+    test "$other_files_changed" -gt 0 || test "$((lines_changed_in_index+lines_changed_in_api))" -gt 0
+}
+
 update_docs() {
         mkdir out || exit 1
         (
@@ -71,11 +89,7 @@ update_docs() {
         update_schemas
         ln -f openqa-documentation-"${verbose_doc_name}".html index.html
         ln -f openqa-documentation-"${verbose_doc_name}".pdf current.pdf
-        # "Change is inevitable, except for vending machines"
-        # gh#1480
-        # 2 files changed, 2 insertions(+), 2 deletions(-)
-        ANYTHING_CHANGED=$(git diff --shortstat | perl -ne 'my $n; print $n = () = m/(?: 2 \w+)/g')
-        if [ -n "${ANYTHING_CHANGED}" ] && [ "${ANYTHING_CHANGED}" -ne 3 ]; then
+        if anything_changed; then
             cd ..
             git add _includes/api.html
             git add docs/index.html docs/current.pdf docs/api/testapi.html
