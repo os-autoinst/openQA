@@ -65,13 +65,9 @@ plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' u
 my $workerpid;
 my $wspid;
 my $livehandlerpid;
-sub turn_down_stack {
-    stop_service($_) for ($workerpid, $wspid, $livehandlerpid);
-}
-sub stop_worker {
-    is(stop_service($workerpid), $workerpid, 'WORKER is done');
-    $workerpid = undef;
-}
+
+sub turn_down_stack { stop_service($_) for ($workerpid, $wspid, $livehandlerpid) }
+sub stop_worker     { stop_service($workerpid) }
 
 # skip if appropriate modules aren't available
 unless (check_driver_modules) {
