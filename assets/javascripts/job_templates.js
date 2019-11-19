@@ -28,7 +28,6 @@ function loadJobTemplates(data) {
     var width = alignCols() - 16;
     $('#loading').remove();
     $('.chosen-select').chosen({"width": width + "px"});
-    $('a.plus-sign').click(addTestRow);
     $(document).on('change', '.chosen-select', chosenChanged);
 }
 
@@ -186,47 +185,10 @@ function makePrioCell(prio, disabled) {
     prioInput.change(function() {
         priorityChanged($(this));
     });
-    prioInput.prop('disabled', !window.user_is_admin || disabled);
+    prioInput.prop('disabled', disabled);
     prioInput.attr('placeholder', defaultPrio);
     prioInput.appendTo(td);
     return td;
-}
-
-function addTestRow() {
-    var table = $(this).parents('table');
-    var tbody = table.find('tbody');
-    var select = $('#tests-template').clone();
-    filterTestSelection(select, findPresentTests(tbody));
-    var tr = $('<tr/>').prependTo(tbody);
-    var td = $('<td class="name"></td>').appendTo(tr);
-    select.appendTo(td);
-
-    select.show();
-    select.change(testChanged);
-    makePrioCell(undefined, true).appendTo(tr);
-
-    var archnames = table.data('archs');
-    var archHeaders = table.find('thead th.arch');
-    var archColIndex = 0;
-    $.each(archnames, function(archIndex, arch) {
-        while (archColIndex < archHeaders.length
-            && !archHeaders[archColIndex].innerText.trim()) {
-            $('<td class="arch"/>').appendTo(tr);
-        ++archColIndex;
-            }
-            var td = $('<td class="arch"/>').appendTo(tr);
-            var select = $('#machines-template').clone().appendTo(td);
-            select.attr('id', $(this).parent('table').id + "-" + arch + "-" + 'new');
-            select.attr('data-product-id', table.data('product-' + arch));
-            select.addClass('chosen-select');
-            select.show();
-            var width = $('.chosen-container').width();
-            select.chosen({"width": width + "px"});
-            // wait for the combo box to be selected
-            select.prop('disabled', true).trigger("chosen:updated");
-    });
-
-    return false;
 }
 
 function buildMediumGroup(group, media) {
@@ -235,9 +197,7 @@ function buildMediumGroup(group, media) {
     var table = $('<table class="table table-striped mediagroup" id="' + group + '"/>').appendTo(div);
     var thead = $('<thead/>').appendTo(table);
     var tr = $('<tr/>').appendTo(thead);
-    var tname = tr.append($('<th class="name">Test'
-        + (user_is_admin ? ' <a href="#" class="plus-sign"><i class="fa fa-plus"></i></a>' : '')
-        + '</th>'));
+    var tname = tr.append($('<th class="name">Test</th>'));
     var prioHeading = $('<th class="prio">Prio</th>');
     prioHeading.css('white-space', 'nowrap');
     var prioHelpPopover = $('<a href="#" class="help_popover fa fa-question-circle"" data-content="'
