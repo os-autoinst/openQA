@@ -6,6 +6,14 @@
 
 % title 'Jobs for ' . $group->name;
 
+% unless ($force_yaml_editor) {
+    <div class="alert alert-danger">
+        The old job group view is deprecated and will be removed from
+        future versions of openQA. Please save the job templates in YAML
+        format as soon as possible.
+    </div>
+% }
+
 % content_for 'ready_function' => begin
     user_is_admin =
     % if(is_admin) {
