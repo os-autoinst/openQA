@@ -34,6 +34,9 @@ use Mojo::Log;
 use Scalar::Util qw(blessed reftype);
 use Exporter 'import';
 
+# avoid boilerplate "$VAR1 = " in dumper output
+$Data::Dumper::Terse = 1;
+
 our $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 our @EXPORT  = qw(
   $prj
