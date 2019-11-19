@@ -49,9 +49,9 @@
                             % my $href  = "#step/$module->{name}/$step->{num}";
                             % if ($is_parser_text_result) {
                                 <span title="<%= $title %>" data-href="<%= $href %>" onclick="toggleTextPreview(this)" class="text-result">
-                                    <span class="resborder <%= $resborder %>"><%= $step->{text_data} %><span class="step_actions">
+                                    <span class="resborder <%= $resborder %>"><span class="step_actions">
                                         %= bug_report_actions(moduleid => $module->{name}, stepid => $step->{num});
-                                    </span></span>
+                                    </span><%= $step->{text_data} %></span>
                                 </span>
                             % }
                             % else {
