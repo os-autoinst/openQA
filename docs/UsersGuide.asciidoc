@@ -557,21 +557,8 @@ Steps 4. to 6. can be repeated for further needles without restarting the test.
 
 Scenarios are defined as part of a job group. The `Edit job group` button exposes the editor.
 
-==== Table-based (pre-migration)
 
-By default the scenarios are listed in a table per medium. Changes to the priority are
-applied immediately. Machines can be added by selecting the architecture column and picking
-a machine from the list. Remove scenarios by removing all of their machines. Add new scenarios
-via the blue Plus icon at the top of the table.
-
-The `Edit YAML` button can be used to reveal the YAML editor and migrate a group. After
-saving for the first time, the group can only be configured in YAML. The table view will not
-be shown anymore.
-
-Note that making a backup before migrating groups may be a good idea, for example using
-`openqa-dump-templates`.
-
-==== YAML editor (after migration)
+==== YAML job templates editor
 
 Settings can be specified as a key/value pair for each scenario. There is no
 equivalent in the table view so you need to migrate groups to use this feature.
@@ -581,8 +568,37 @@ can still be modified independently. However, the YAML document should be
 updated before renaming or deleting test suites, products or machines used by
 it, otherwise that would create an inconsistent state.
 
-YAML-only groups need to be updated through the YAML editor or the YAML-related
+YAML-only groups can be updated through the YAML editor or the YAML-related
 REST API routes.
+
+
+==== Deprecated: Table-based (pre-migration)
+
+In old versions openQA had a table-based UI for defining job templates, listed
+in a table per medium. Machines can be added by selecting the architecture
+column and picking a machine from the list. Remove scenarios by removing all
+of their machines. Add new scenarios via the blue Plus icon at the top of the
+table. Changes to the priority are applied immediately.
+
+If job groups still exist showing the old mode, the `Edit YAML` button can be
+used to reveal the YAML editor and migrate a group. After saving for the first
+time, the group can only be configured in YAML. The table view will not be
+shown anymore.
+
+Note that making a backup before migrating groups may be a good idea, for example using
+`openqa-dump-templates`.
+
+To migrate an old job group using the API the current schedule can be
+retrieved in YAML format and sent back to save as a complete YAML document.
+For example for all job groups in the old format:
+
+[source,sh]
+----
+for i in $(ssh openqa.example.com "sudo -u geekotest psql --no-align --tuples-only --command=\"select id from job_groups where template is null order by id;\" openqa") ; do
+    curl -s http://openqa.example.com/api/v1/job_templates_scheduling/$i | openqa-client --json-output --host http://openqa.example.com job_templates_scheduling/$i post --form schema=JobTemplates-01.yaml template="$(cat -)"
+done
+----
+
 
 == Configuring job groups via YAML documents
 
