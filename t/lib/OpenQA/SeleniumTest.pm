@@ -95,7 +95,7 @@ sub start_gru {
     if ($gru_pid == 0) {
         log_info("starting gru\n");
         $ENV{MOJO_MODE} = 'test';
-        Mojolicious::Commands->start_app('OpenQA::WebAPI', 'gru', 'run', '-m', 'test', '--check', '0');
+        Mojolicious::Commands->start_app('OpenQA::WebAPI', 'gru', 'run', '-m', 'test');
         _exit(0);
     }
     return $gru_pid;
