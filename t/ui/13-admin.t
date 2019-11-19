@@ -472,86 +472,7 @@ sub is_element_text {
     is_deeply(\@texts, $expected, $message) or diag explain \@texts;
 }
 
-subtest 'edit job templates using the legacy editor' => sub {
-    $driver->get('/admin/job_templates/1001');
-    wait_for_ajax;
-    $driver->find_element_by_link('Test new medium as part of this group')->click();
-
-    my $select = $driver->find_element_by_id('medium');
-    my $option = $driver->find_child_element($select, './option[contains(text(), "sle-13-DVD-arm19")]', 'xpath');
-    $option->click();
-    $select = $driver->find_element_by_id('machine');
-    $option = $driver->find_child_element($select, './option[contains(text(), "HURRA")]', 'xpath');
-    $option->click();
-    $select = $driver->find_element_by_id('test');
-    $option = $driver->find_child_element($select, './option[contains(text(), "xfce")]', 'xpath');
-    $option->click();
-
-    $driver->find_element_by_xpath('//input[@type="submit"]')->submit();
-
-    $driver->title_is('openQA: Jobs for opensuse', 'on job group');
-    wait_for_ajax;
-
-    my $td = $driver->find_element('#sle_13_DVD_arm19_xfce_chosen .search-field');
-    is('', $td->get_text(), 'field is empty for product 2');
-    $driver->mouse_move_to_location(element => $td);
-    $driver->button_down();
-    wait_for_ajax;
-
-    $driver->send_keys_to_active_element('64bit');
-    # as we load this at runtime rather than `use`ing it, we have to
-    # access it explicitly like this
-    $driver->send_keys_to_active_element(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    $driver->find_element('#sle-13-DVD .plus-sign')->click();
-    $select = $driver->find_element('#sle-13-DVD .name select');
-    ok($select, 'selection shown');
-
-    my @options = $driver->find_elements('#sle-13-DVD tr:first-of-type td:first-of-type option');
-    is_element_text(
-        \@options,
-        ['Select…', 'advanced_kde', 'client1', 'client2', 'kde', 'RAID0', 'server', "t\"e\\st\'Suite\\'", 'textmode'],
-        'xfce not selectable because test has already been added before'
-    );
-
-    # select advanced_kde option
-    $options[1]->click();
-    # to check whether the same test isn't selectable twice add another selection and also select advanced_kde
-    $driver->find_element('#sle-13-DVD .plus-sign')->click();
-    @options = $driver->find_elements('#sle-13-DVD tr:first-of-type td:first-of-type option');
-    $options[1]->click();
-    # now finalize the selection
-    $td = $driver->find_element('#undefined_arm19_new_chosen .search-field');
-    $driver->mouse_move_to_location(element => $td);
-    $driver->button_down();
-    wait_for_ajax;
-    $driver->send_keys_to_active_element('64bit');
-    $driver->send_keys_to_active_element(Selenium::Remote::WDKeys->KEYS->{'enter'});
-    javascript_console_has_no_warnings_or_errors;
-    # the test should not be selectable in the first select (which is now second) anymore
-    @options = $driver->find_elements('#sle-13-DVD tr:nth-of-type(2) td:first-of-type option');
-    is_element_text(
-        \@options,
-        ['Select…', 'client1', 'client2', 'kde', 'RAID0', 'server', "t\"e\\st\'Suite\\'", 'textmode'],
-        'advanced_kde not selectable twice'
-    );
-
-    # now reload the page to see if we succeeded
-    $driver->find_element('#user-action a')->click();
-    $driver->find_element_by_link_text('Job groups')->click();
-
-    $driver->title_is('openQA: Job groups', 'on groups');
-    $driver->find_element_by_link('opensuse')->click();
-
-    wait_for_ajax;
-    javascript_console_has_no_warnings_or_errors;
-    my @picks = $driver->find_elements('.search-choice');
-
-    # only consider the last three archs (those are the ones actually added by the test)
-    splice(@picks, 0, scalar @picks - 3);
-    is_element_text(\@picks, [qw(64bit 64bit HURRA)], 'chosen tests present');
-};
-
-subtest 'edit job templates using YAML' => sub() {
+subtest 'edit job templates' => sub() {
     subtest 'open YAML editor for new group with no templates' => sub {
         $driver->get('/admin/job_templates/1003');
         wait_for_ajax;
@@ -611,12 +532,12 @@ subtest 'edit job templates using YAML' => sub() {
     $driver->find_element_by_id('preview-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/Preview of the changes/, 'preview shown') or diag explain $result->get_text();
-    ok(index($result->get_text(), '@@ -55,3 +55,6 @@') != -1, 'diff of changes shown')
+    ok(index($result->get_text(), '@@ -41,3 +41,6 @@') != -1, 'diff of changes shown')
       or diag explain $result->get_text();
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
-    ok(index($result->get_text(), '@@ -55,3 +55,6 @@') != -1, 'diff of changes shown')
+    ok(index($result->get_text(), '@@ -41,3 +41,6 @@') != -1, 'diff of changes shown')
       or diag explain $result->get_text();
 
     # No changes
@@ -633,7 +554,6 @@ subtest 'edit job templates using YAML' => sub() {
     # Legacy UI is hidden and no longer available
     ok($driver->find_element_by_id('toggle-yaml-editor')->is_hidden(), 'editor toggle hidden');
     ok($driver->find_element_by_id('media')->is_hidden(),              'media editor hidden');
-    ok($driver->find_element_by_id('media-add')->is_hidden(),          'media add button hidden');
 
     # More changes on top of the previous ones
     $yaml .= "    - advanced_kde_high_prio:\n";
