@@ -41,8 +41,11 @@ sub run {
                 });
         });
 
-    if   ($oneshot) { $minion->perform_jobs }
-    else            { $self->SUPER::run(@args) }
+    return $minion->perform_jobs if $oneshot;
+
+    $self->app->log->info('Resetting all leftover Gru locks after restart');
+    $minion->reset({locks => 1});
+    $self->SUPER::run(@args);
 }
 
 1;

@@ -86,7 +86,7 @@ RUN zypper in -y -C \
        'perl(JSON::XS)' \
        'perl(JavaScript::Minifier::XS)' \
        'perl(LWP::Protocol::https)' \
-       'perl(Minion) >= 9.13' \
+       'perl(Minion) >= 10.0' \
        'perl(Module::CPANfile)' \
        'perl(Module::Pluggable)' \
        'perl(Mojo::IOLoop::ReadWriteProcess)' \
