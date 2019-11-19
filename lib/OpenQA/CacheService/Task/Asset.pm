@@ -42,7 +42,6 @@ sub _cache_asset {
 
     my $job_prefix = "[Job #" . $job->id . "]";
     $log->debug("$job_prefix Download: $asset_name");
-    $OpenQA::Utils::app = undef;
     my $output;
     {
         open my $handle, '>', \$output;
