@@ -203,7 +203,7 @@ sub list_scheduled_ajax {
     $self->render(json => {data => \@scheduled});
 }
 
-sub stash_module_list {
+sub stash_job_and_module_list {
     my ($self) = @_;
 
     my $job_id = $self->param('testid') or return;
@@ -218,6 +218,7 @@ sub stash_module_list {
       or return;
 
     my $test_modules = read_test_modules($job);
+    $self->stash(job     => $job);
     $self->stash(modlist => ($test_modules ? $test_modules->{modules} : []));
     return 1;
 }
@@ -225,14 +226,14 @@ sub stash_module_list {
 sub details {
     my ($self) = @_;
 
-    $self->stash_module_list or return $self->reply->not_found;
+    $self->stash_job_and_module_list or return $self->reply->not_found;
     $self->render('test/details');
 }
 
 sub module_components {
     my ($self) = @_;
 
-    $self->stash_module_list or return $self->reply->not_found;
+    $self->stash_job_and_module_list or return $self->reply->not_found;
     $self->render('test/module_components');
 }
 

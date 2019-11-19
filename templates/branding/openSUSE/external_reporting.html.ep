@@ -1,6 +1,10 @@
 % my $build = $job->BUILD;
 % my $step_url = url_for('step')->to_abs;
 % my $module = stash('moduleid');
+% my $step = stash('stepid');
+% if ($step) {
+%     $step_url = url_for('step', moduleid => $module, stepid => $step)->to_abs;
+% }
 % my %product_details = ();
 % my $scenario_description = $job->scenario_description // '';
 

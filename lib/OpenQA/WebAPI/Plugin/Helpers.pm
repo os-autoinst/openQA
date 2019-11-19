@@ -72,7 +72,11 @@ sub register {
             return $text;
         });
 
-    $app->helper(bug_report_actions => sub { shift->include_branding('external_reporting') });
+    $app->helper(
+        bug_report_actions => sub {
+            my ($c, %args) = @_;
+            return $c->include_branding('external_reporting', %args);
+        });
 
     $app->helper(
         stepaction_for => sub {
@@ -232,15 +236,15 @@ sub register {
         # falls back to 'plain' if brand doesn't include the template, so
         # allowing partial brands
         include_branding => sub {
-            my ($c, $name) = @_;
+            my ($c, $name, %args) = @_;
             my $path = "branding/" . $c->app->config->{global}->{branding} . "/$name";
-            my $ret  = $c->render_to_string($path);
+            my $ret  = $c->render_to_string($path, %args);
             if (defined($ret)) {
                 return $ret;
             }
             else {
                 $path = "branding/plain/$name";
-                return $c->render_to_string($path);
+                return $c->render_to_string($path, %args);
             }
         });
 
