@@ -142,17 +142,17 @@ sub wait_for_worker {
     my ($schema, $id) = @_;
 
     for (0 .. 10) {
-        diag("Waiting for worker with ID $id");
+        note("Waiting for worker with ID $id");
         sleep 2;
         my $worker = $schema->resultset('Workers')->find($id);
         return undef if defined $worker && !$worker->dead;
     }
-    diag("No worker with ID $id not active");
+    note("No worker with ID $id not active");
 }
 
 sub create_webapi {
     my $mojoport = shift;
-    diag("Starting WebUI service. Port: $mojoport");
+    note("Starting WebUI service. Port: $mojoport");
 
     my $startingpid = $$;
     my $mojopid     = fork();
@@ -185,8 +185,8 @@ sub create_webapi {
 sub create_websocket_server {
     my ($port, $bogus, $nowait, $with_embedded_scheduler) = @_;
 
-    diag("Starting WebSocket service");
-    diag("Bogus: $bogus | No wait: $nowait");
+    note("Starting WebSocket service");
+    note("Bogus: $bogus | No wait: $nowait");
 
     OpenQA::WebSockets::Client->singleton->port($port);
     my $wspid = fork();
@@ -250,7 +250,7 @@ sub create_websocket_server {
 sub create_scheduler {
     my ($port, $no_stale_job_detection) = @_;
 
-    diag("Starting Scheduler service");
+    note("Starting Scheduler service");
 
     OpenQA::Scheduler::Client->singleton->port($port);
     my $pid = fork();
@@ -303,7 +303,7 @@ sub setup_share_dir {
 sub unstable_worker {
     # the help of the Doctor would be really appreciated here.
     my ($apikey, $apisecret, $host, $instance, $ticks, $sleep) = @_;
-    diag("Starting unstable worker. Instance: $instance for host $host");
+    note("Starting unstable worker. Instance: $instance for host $host");
     $ticks = 1 unless $ticks;
 
     my $pid = fork();
@@ -338,13 +338,13 @@ sub unstable_worker {
 sub standard_worker {
     my ($apikey, $apisecret, $host, $instance) = @_;
 
-    diag("Starting standard worker. Instance: $instance for host $host");
+    note("Starting standard worker. Instance: $instance for host $host");
     c_worker($apikey, $apisecret, $host, $instance, 0);
 }
 sub unresponsive_worker {
     my ($apikey, $apisecret, $host, $instance) = @_;
 
-    diag("Starting unresponsive worker. Instance: $instance for host $host");
+    note("Starting unresponsive worker. Instance: $instance for host $host");
     c_worker($apikey, $apisecret, $host, $instance, 1);
 }
 

@@ -77,7 +77,7 @@ my $k = $schema->resultset("ApiKeys")->create({user_id => "99903"});
 sub create_worker {
     my ($apikey, $apisecret, $host, $instance, $log) = @_;
     my $connect_args = "--instance=${instance} --apikey=${apikey} --apisecret=${apisecret} --host=${host}";
-    diag("Starting standard worker. Instance: $instance for host $host");
+    note("Starting standard worker. Instance: $instance for host $host");
 
     my $workerpid = fork();
     if ($workerpid == 0) {
