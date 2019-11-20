@@ -28,7 +28,6 @@ sub _cache_asset {
     my ($job, $id, $type, $asset_name, $host) = @_;
 
     my $app = $job->app;
-    my $log = $app->log;
 
     my $lock = $job->info->{notes}{lock};
     return $job->finish unless defined $asset_name && defined $type && defined $host && defined $lock;
@@ -38,21 +37,24 @@ sub _cache_asset {
         return $job->finish;
     }
 
-    my $cache = OpenQA::CacheService::Model::Cache->from_worker;
+    my $log = $app->log;
+    my $ctx = $log->context('[#' . $job->id . ']');
+    $ctx->info("Download: $asset_name");
 
-    my $job_prefix = "[Job #" . $job->id . "]";
-    $log->debug("$job_prefix Download: $asset_name");
-    my $output;
-    {
-        open my $handle, '>', \$output;
-        local *STDERR = $handle;
-        local *STDOUT = $handle;
-        # Do the real download
-        $cache->host($host);
-        $cache->get_asset({id => $id}, $type, $asset_name);
-        $job->note(output => $output);
-    }
-    $log->debug("$job_prefix Finished");
+    # Log messages need to be logged by this service as well as captured and
+    # forwarded to the worker (for logging on both sides)
+    my $cache  = OpenQA::CacheService::Model::Cache->from_worker->log($ctx);
+    my $output = '';
+    $log->on(
+        message => sub {
+            my ($log, $level, @lines) = @_;
+            $output .= "[$level] " . join "\n", @lines, '';
+        });
+
+    $cache->host($host);
+    $cache->get_asset({id => $id}, $type, $asset_name);
+    $job->note(output => $output);
+    $ctx->info('Finished');
 }
 
 1;

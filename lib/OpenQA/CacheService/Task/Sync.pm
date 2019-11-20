@@ -28,7 +28,6 @@ sub _cache_tests {
     my ($job, $from, $to) = @_;
 
     my $app = $job->app;
-    my $log = $app->log;
 
     my $lock = $job->info->{notes}{lock};
     return $job->finish unless defined $from && defined $to && defined $lock;
@@ -38,16 +37,16 @@ sub _cache_tests {
         return $job->finish(0);
     }
 
-    my $job_prefix = "[Job #" . $job->id . "]";
-    $log->debug("$job_prefix Sync: $from to $to");
+    my $ctx = $app->log->context('[#' . $job->id . ']');
+    $ctx->info("Sync: $from to $to");
 
     my @cmd = (qw(rsync -avHP), "$from/", qw(--delete), "$to/tests/");
-    $log->debug("$job_prefix Calling " . join(' ', @cmd));
+    $ctx->info('Calling: ' . join(' ', @cmd));
     my $output = `@cmd`;
     my $status = $? >> 8;
     $job->finish($status);
     $job->note(output => $output);
-    $log->debug("$job_prefix Finished: $status");
+    $ctx->info("Finished: $status");
 }
 
 1;
