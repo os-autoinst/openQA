@@ -593,8 +593,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#_job_group_editor_gh2111">Job group editor gh#2111</a>
 <ul class="sectlevel3">
-<li><a href="#_table_based_pre_migration">Table-based (pre-migration)</a></li>
-<li><a href="#_yaml_editor_after_migration">YAML editor (after migration)</a></li>
+<li><a href="#_yaml_job_templates_editor">YAML job templates editor</a></li>
+<li><a href="#_deprecated_table_based_pre_migration">Deprecated: Table-based (pre-migration)</a></li>
 </ul>
 </li>
 </ul>
@@ -3593,25 +3593,7 @@ needle from any previous screenshot/match available.</p>
 <p>Scenarios are defined as part of a job group. The <code>Edit job group</code> button exposes the editor.</p>
 </div>
 <div class="sect3">
-<h4 id="_table_based_pre_migration">Table-based (pre-migration)</h4>
-<div class="paragraph">
-<p>By default the scenarios are listed in a table per medium. Changes to the priority are
-applied immediately. Machines can be added by selecting the architecture column and picking
-a machine from the list. Remove scenarios by removing all of their machines. Add new scenarios
-via the blue Plus icon at the top of the table.</p>
-</div>
-<div class="paragraph">
-<p>The <code>Edit YAML</code> button can be used to reveal the YAML editor and migrate a group. After
-saving for the first time, the group can only be configured in YAML. The table view will not
-be shown anymore.</p>
-</div>
-<div class="paragraph">
-<p>Note that making a backup before migrating groups may be a good idea, for example using
-<code>openqa-dump-templates</code>.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_yaml_editor_after_migration">YAML editor (after migration)</h4>
+<h4 id="_yaml_job_templates_editor">YAML job templates editor</h4>
 <div class="paragraph">
 <p>Settings can be specified as a key/value pair for each scenario. There is no
 equivalent in the table view so you need to migrate groups to use this feature.</p>
@@ -3623,8 +3605,40 @@ updated before renaming or deleting test suites, products or machines used by
 it, otherwise that would create an inconsistent state.</p>
 </div>
 <div class="paragraph">
-<p>YAML-only groups need to be updated through the YAML editor or the YAML-related
+<p>YAML-only groups can be updated through the YAML editor or the YAML-related
 REST API routes.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_deprecated_table_based_pre_migration">Deprecated: Table-based (pre-migration)</h4>
+<div class="paragraph">
+<p>In old versions openQA had a table-based UI for defining job templates, listed
+in a table per medium. Machines can be added by selecting the architecture
+column and picking a machine from the list. Remove scenarios by removing all
+of their machines. Add new scenarios via the blue Plus icon at the top of the
+table. Changes to the priority are applied immediately.</p>
+</div>
+<div class="paragraph">
+<p>If job groups still exist showing the old mode, the <code>Edit YAML</code> button can be
+used to reveal the YAML editor and migrate a group. After saving for the first
+time, the group can only be configured in YAML. The table view will not be
+shown anymore.</p>
+</div>
+<div class="paragraph">
+<p>Note that making a backup before migrating groups may be a good idea, for example using
+<code>openqa-dump-templates</code>.</p>
+</div>
+<div class="paragraph">
+<p>To migrate an old job group using the API the current schedule can be
+retrieved in YAML format and sent back to save as a complete YAML document.
+For example for all job groups in the old format:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-k">for</span> i in <span class="tok-k">$(</span>ssh openqa.example.com <span class="tok-s2">&quot;sudo -u geekotest psql --no-align --tuples-only --command=\&quot;select id from job_groups where template is null order by id;\&quot; openqa&quot;</span><span class="tok-k">)</span> <span class="tok-p">;</span> <span class="tok-k">do</span>
+    curl -s http://openqa.example.com/api/v1/job_templates_scheduling/<span class="tok-nv">$i</span> <span class="tok-p">|</span> openqa-client --json-output --host http://openqa.example.com job_templates_scheduling/<span class="tok-nv">$i</span> post --form <span class="tok-nv">schema</span><span class="tok-o">=</span>JobTemplates-01.yaml <span class="tok-nv">template</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-k">$(</span>cat -<span class="tok-k">)</span><span class="tok-s2">&quot;</span>
+<span class="tok-k">done</span></code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -8100,7 +8114,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-16 00:07:03 UTC
+Last updated 2019-11-20 00:05:28 UTC
 </div>
 </div>
 <style>
