@@ -568,7 +568,7 @@ can still be modified independently. However, the YAML document should be
 updated before renaming or deleting test suites, products or machines used by
 it, otherwise that would create an inconsistent state.
 
-YAML-only groups can be updated through the YAML editor or the YAML-related
+Job groups can be updated through the YAML editor or the YAML-related
 REST API routes.
 
 
@@ -599,6 +599,20 @@ for i in $(ssh openqa.example.com "sudo -u geekotest psql --no-align --tuples-on
 done
 ----
 
+Note that in some cases you might run into errors where old test suites or
+products have invalid names which the old editor did not enforce:
+
+*Product names* may not contain `:` or `@` characters. Something like
+`Server-DVD-Staging:A` would require replacing the `:` with eg. a `-`.
+
+*Test suites* may not contain `:` or `@` characters. A test suite such as
+`ext4_uefi@staging` would have been allowed previously. The use of the `@`
+as a suffix could be replaced with a `-` or if it is used for variants of
+the same test suite with different settings, settings can be specified in
+YAML directly.
+
+More generally the regular expression `[A-Za-z0-9._*-]+` could be used to
+check if a name is allowed for a product or test suite.
 
 == Configuring job groups via YAML documents
 
