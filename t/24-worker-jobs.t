@@ -299,6 +299,7 @@ $engine_mock->mock(
                 $job->stop('done');
             });
         $pool_directory->child('serial_terminal.txt')->spurt('Works!');
+        $pool_directory->child('virtio_console1.log')->spurt('Works too!');
         return {child => $isotovideo->is_running(1)};
     });
 
@@ -402,6 +403,13 @@ subtest 'Successful job' => sub {
                     file => {
                         file     => "$pool_directory/worker-log.txt",
                         filename => 'worker-log.txt'
+                    }}
+            ],
+            [
+                {
+                    file => {
+                        file     => "$pool_directory/virtio_console1.log",
+                        filename => 'virtio_console1.log'
                     }}]
         ],
         'would have uploaded logs'
@@ -587,6 +595,13 @@ subtest 'Livelog' => sub {
                     file => {
                         file     => "$pool_directory/worker-log.txt",
                         filename => 'worker-log.txt'
+                    }}
+            ],
+            [
+                {
+                    file => {
+                        file     => "$pool_directory/virtio_console1.log",
+                        filename => 'virtio_console1.log'
                     }}]
         ],
         'would have uploaded logs'
