@@ -98,7 +98,7 @@ sub start_server {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart->restart;
     $worker_cache_service->restart;
-    sleep 2 and diag "Wait server to be reachable." until $cache_client->info->available;
+    sleep 2 and note 'Wait server to be reachable.' until $cache_client->info->available;
     return;
 }
 
@@ -455,7 +455,7 @@ subtest 'Test Minion Sync task' => sub {
     my $status = $cache_client->status($req);
     ok $status->is_processed;
     is $status->result, 0;
-    diag $status->output;
+    note $status->output;
 
     ok -e $expected;
     is $expected->slurp, 'foobar';

@@ -334,8 +334,8 @@ subtest 'Cache tests' => sub {
 
     my $cache_client = OpenQA::CacheService::Client->new;
 
-    sleep 5 and diag "Waiting for cache service to be available"        until $cache_client->info->available;
-    sleep 5 and diag "Waiting for cache service worker to be available" until $cache_client->info->available_workers;
+    sleep 5 and note "Waiting for cache service to be available"        until $cache_client->info->available;
+    sleep 5 and note "Waiting for cache service worker to be available" until $cache_client->info->available_workers;
 
     my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
     OpenQA::Test::FullstackUtils::client_call(
@@ -355,7 +355,7 @@ subtest 'Cache tests' => sub {
     ok(!-e $cache_location->child("test.file"),     "File within cache, not present after deploy");
 
     my $link = path($ENV{OPENQA_BASEDIR}, 'openqa', 'pool', '1')->child("Core-7.2.iso");
-    sleep 5 and diag "Waiting for cache service to finish the download" until -e $link;
+    sleep 5 and note "Waiting for cache service to finish the download" until -e $link;
 
     like(readlink($link), qr($cache_location/localhost/Core-7.2.iso), "iso is symlinked to cache");
 
