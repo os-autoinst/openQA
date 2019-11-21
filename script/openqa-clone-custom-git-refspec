@@ -15,7 +15,7 @@ if [[ -n "$GITHUB_TOKEN" ]]; then
 fi
 
 if [[ -z "$repo_name" ]] || [[ -z "$pr" ]]; then
-    first_arg="${1:?"Need 'pr_url' as parameter pointing to a github pull request or 'repo_name' (sending repo) and 'pr' variables, e.g. either 'https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/1234' 'me/os-autoinst-distri-opensuse' and '1234' or 'branch'"}"
+    first_arg="${1:?"Need 'url' as parameter pointing to a either a git branch, e.g. 'https://github.com/yourname/os-autoinst-distri-opensuse/tree/poo-12345', or a github pull request in the form of pull request url or a combination of 'repo_name' (sending repo) and 'pr' variables, e.g. either 'https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/1234' 'me/os-autoinst-distri-opensuse' and '1234' or 'branch'"}"
     if [[ $first_arg == *"pull"* ]]; then
         pr_url=$first_arg
         target_repo_part=${pr_url%%/pull*}
