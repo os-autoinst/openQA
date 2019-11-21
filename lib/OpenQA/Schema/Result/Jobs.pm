@@ -1824,6 +1824,12 @@ sub test_resultfile_list {
         }
     }
 
+    for (my $i = 1; $i < ($self->settings_hash->{VIRTIO_CONSOLE_NUM} // 1); $i++) {
+        if (-s "$testresdir/virtio_console$i.log") {
+            push(@filelist_existing, "virtio_console$i.log");
+        }
+    }
+
     return \@filelist_existing;
 }
 
