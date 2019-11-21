@@ -957,20 +957,26 @@ openQA frequently checks whether assets need to be removed according to
 the configured limits.
 
 To find out whether an asset should be removed, openQA determines by which
-job groups the asset is used. If at least one job within a certain job group
-is using an asset, the asset is considered to be used by that group.
+groups the asset is used. If at least one job within a certain job group is
+using an asset, the asset is considered to be used by that job group. If
+that job group is within a parent job group, the asset is considered part
+of that parent job group.
 
-So an asset can be accounted to multiple groups. The assets table which is
-accessible via the admin menu shows these groups for each asset and also
-the latest job.
+So an asset can belong to multiple job groups or parent job groups. The
+assets table which is accessible via the admin menu shows these groups for
+each asset and also the latest job.
 
-If the size limit for assets by a certain group is exceeded, openQA will
-remove assets accounted to that group:
+While an asset might belong to multiple groups it is only *accounted*
+to the group with the highest asset limit which has still enough room to
+hold that asset. That basically mean that an asset is never counted twice.
+
+If the size limit for assets of a group is exceeded, openQA will remove
+assets which belong to that group:
 
 * Assets belonging to old jobs are preferred.
 * Assets belonging to jobs which are still scheduled or running are not
   considered.
-* Assets which are also accounted to another group that has still space
+* Assets which have been accounted to another group that has still space
   left are not considered.
 
 Assets which do _not_ belong to any group are removed after a configurable
@@ -983,17 +989,15 @@ asset directory - are counted against the group size limit, but are never
 cleaned up. This is intended for things like base disk images which must
 always be available for a test to work.
 
-=== Configure limit for assets within groups ===
+=== Configure limit for assets within job groups ===
 
 To configure the maximum size for the assets of a group, open 'Job groups'
 in the operators menu and select a group. The size limit for assets can be
 configured under 'Edit job group properties'. It also shows the size of
 assets which belong to that group and not to any other group.
 
-Job groups inherit the size limit from their parent group unless the limit
-is set explicitely. The default size limit for groups can be adjusted in
-the +default_group_limits+ section of the openQA config file.
-
+The default size limit for job groups and parent job groups can be adjusted
+in the +default_group_limits+ section of the openQA config file.
 
 === Configure limit for groupless assets ===
 
