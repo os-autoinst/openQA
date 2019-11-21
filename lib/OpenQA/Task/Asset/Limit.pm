@@ -78,7 +78,6 @@ sub _limit {
         my $update_sth = $dbh->prepare('UPDATE assets SET last_use_job_id = ? WHERE id = ?');
 
         # remove all assets older than a certain duration which do not belong to a job group
-        my $seconds_per_day = 24 * 3600;
         my $untracked_assets_storage_duration
           = $OpenQA::Utils::app->config->{misc_limits}->{untracked_assets_storage_duration};
         my $untracked_assets_patterns = $OpenQA::Utils::app->config->{'assets/storage_duration'} // {};
@@ -87,9 +86,8 @@ sub _limit {
             $update_sth->execute($asset->{max_job} && $asset->{max_job} >= 0 ? $asset->{max_job} : undef, $asset->{id});
             next if $asset->{fixed} || scalar(keys %{$asset->{groups}}) > 0;
 
-            my $age_in_seconds = ($now->epoch() - DateTime::Format::Pg->parse_datetime($asset->{t_created})->epoch());
-            my $asset_name     = $asset->{name};
-            my $limit_in_days  = $untracked_assets_storage_duration;
+            my $asset_name    = $asset->{name};
+            my $limit_in_days = $untracked_assets_storage_duration;
             for my $pattern (keys %$untracked_assets_patterns) {
                 if ($asset_name =~ $pattern) {
                     $limit_in_days = $untracked_assets_patterns->{$pattern};
@@ -97,14 +95,22 @@ sub _limit {
                 }
             }
 
-            my $age_in_days = $age_in_seconds / $seconds_per_day;
+            my $age  = DateTime::Format::Pg->parse_datetime($asset->{t_created});
+            my $file = Mojo::File->new("$OpenQA::Utils::assetdir/$asset_name");
+            if (my $stat = $file->stat) {
+                my $mtime = DateTime->from_epoch(epoch => $stat->mtime);
+                $age = $mtime if $mtime < $age;
+            }
+
+            my $age_in_days = $age->delta_days($now)->in_units('days');
             if ($age_in_days >= $limit_in_days) {
                 _remove_if($schema, $asset,
                         "Removing asset $asset_name (not in any group, age "
                       . "($age_in_days days) exceeds limit ($limit_in_days days)");
             }
             else {
-                my $remaining_days = sprintf('%.0f', $limit_in_days - $age_in_days);
+                my $limit          = $age->add(days => $limit_in_days);
+                my $remaining_days = $now->delta_days($limit)->in_units('days');
                 OpenQA::Utils::log_warning(
                     "Asset $asset_name is not in any job group and will be deleted in $remaining_days days");
             }
