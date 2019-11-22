@@ -974,8 +974,9 @@ remove assets accounted to that group:
   left are not considered.
 
 Assets which do _not_ belong to any group are removed after a configurable
-duration. Keep in mind that this behavior is also enabled on local instances
-and affects all cloned jobs (unless cloned into a job group).
+duration unless the files are still being updated. Keep in mind that this
+behavior is also enabled on local instances and affects all cloned jobs
+(unless cloned into a job group).
 
 'Fixed' assets - those placed in the +fixed+ subdirectory of the relevant
 asset directory - are counted against the group size limit, but are never
@@ -1015,6 +1016,9 @@ assets with the names `testrepo-latest` and `openSUSE-12.3-x86_64.iso`.
 latest = 30
 openSUSE.+x86_64 = 10
 --------------------------------------------------------------------------------
+
+Note that modifications to the file will count against the limit, so if an
+asset was updated within the timespan it will not be removed.
 
 == CLI interface
 Beside the +daemon+ argument to run the actual web service the openQA
