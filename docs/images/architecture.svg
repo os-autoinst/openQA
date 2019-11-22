@@ -18,10 +18,10 @@
       <text x="1260.3923" xml:space="preserve" y="46.4844" clip-path="url(#clipPath2)" stroke="none">Worker host</text>
     </g>
     <g stroke-linecap="butt" transform="matrix(1,0,0,1,12,88)" fill="blue" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" stroke-dasharray="12,4" stroke="blue" stroke-width="2" stroke-miterlimit="1.45">
-      <rect fill="none" x="909" width="359" height="155.419" y="573.385" clip-path="url(#clipPath2)"/>
+      <rect fill="none" x="909" width="359" height="251.331" y="477.473" clip-path="url(#clipPath2)"/>
     </g>
     <g font-size="14px" stroke-linecap="butt" transform="matrix(1,0,0,1,12,88)" text-rendering="geometricPrecision" font-family="'Liberation Sans'" shape-rendering="geometricPrecision" stroke-miterlimit="1.45">
-      <text x="915" xml:space="preserve" y="592.0588" clip-path="url(#clipPath2)" stroke="none">Caching (and potentially other background tasks)</text>
+      <text x="915" xml:space="preserve" y="496.1468" clip-path="url(#clipPath2)" stroke="none">Caching (and potentially other background tasks)</text>
     </g>
     <g stroke-linecap="butt" transform="matrix(1,0,0,1,12,88)" fill="rgb(153,153,153)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" stroke-dasharray="6,2" stroke="rgb(153,153,153)" stroke-miterlimit="1.45">
       <rect fill="none" x="43" width="809.75" height="637.75" y="26" clip-path="url(#clipPath2)"/>
@@ -32,7 +32,7 @@
       <text x="415.5786" font-size="14px" y="725.0068" clip-path="url(#clipPath2)" stroke="none" font-weight="normal" xml:space="preserve">postgresql</text>
       <text x="292.624" font-size="14px" y="740.6475" clip-path="url(#clipPath2)" stroke="none" font-weight="normal" xml:space="preserve">provides database for services on the web UI host</text>
     </g>
-    <g text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="matrix(0.9236,0,0,1.168,160.925,781.75)">
+    <g text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="matrix(0.9236,0,0,1.168,160.925,787.387)">
       <g clip-path="url(#clipPath3)">
         <svg xml:space="preserve" opacity="1" writing-mode="lr-tb" stop-color="rgb(0, 0, 0)" shape-rendering="auto" glyph-orientation-horizontal="0deg" color-profile="auto" lighting-color="rgb(255, 255, 255)" color="rgb(0, 0, 0)" font-weight="400" alignment-baseline="auto" font-style="normal" version="1.1" color-interpolation-filters="linearrgb" text-anchor="start" stroke-linecap="butt" color-interpolation="srgb" font-variant="normal" word-spacing="normal" fill-opacity="1" text-rendering="auto" clip-path="none" text-decoration="none" letter-spacing="normal" viewBox="0 0 40 48" glyph-orientation-vertical="auto" display="inline" font-size-adjust="none" overflow="visible" fill="rgb(0, 0, 0)" font-stretch="normal" stroke-dasharray="none" stroke-miterlimit="4" stop-opacity="1" color-rendering="auto" font-size="12" pointer-events="visiblepainted" mask="none" direction="ltr" baseline-shift="baseline" enable-background="new 0 0 40 48" fill-rule="nonzero" image-rendering="auto" stroke-dashoffset="0" width="40px" marker-end="none" clip="auto" cursor="auto" stroke="none" filter="none" visibility="visible" kerning="auto" stroke-width="1" font-family="&quot;Arial&quot;,&quot;Helvetica&quot;,sans-serif" flood-opacity="1" clip-rule="nonzero" src="none" height="48px" unicode-bidi="normal" stroke-linejoin="miter" stroke-opacity="1" flood-color="rgb(0, 0, 0)" dominant-baseline="auto" marker-start="none" x="0px" marker-mid="none" y="0px">
 <defs>
@@ -43,7 +43,7 @@
               <path d="M-12 -88 L1771 -88 L1771 956 L-12 956 L-12 -88 Z"/>
             </clipPath>
             <clipPath clipPathUnits="userSpaceOnUse" id="clipPath3">
-              <path d="M-174.2429 -669.2943 L1756.3157 -669.2943 L1756.3157 224.525 L-174.2429 224.525 L-174.2429 -669.2943 Z"/>
+              <path d="M-174.2429 -674.1204 L1756.3157 -674.1204 L1756.3157 219.6989 L-174.2429 219.6989 L-174.2429 -674.1204 Z"/>
             </clipPath>
             <clipPath clipPathUnits="userSpaceOnUse" id="clipPath4">
               <path d="M-95.674 -150.736 L1687.326 -150.736 L1687.326 893.264 L-95.674 893.264 L-95.674 -150.736 Z"/>
@@ -52,7 +52,7 @@
               <path d="M-172.5465 -25.663 L1610.4535 -25.663 L1610.4535 1018.337 L-172.5465 1018.337 L-172.5465 -25.663 Z"/>
             </clipPath>
             <clipPath clipPathUnits="userSpaceOnUse" id="clipPath6">
-              <path d="M-989.1342 -477.4078 L941.4244 -477.4078 L941.4244 416.4115 L-989.1342 416.4115 L-989.1342 -477.4078 Z"/>
+              <path d="M-1136.8966 -587.2107 L793.662 -587.2107 L793.662 306.6086 L-1136.8966 306.6086 L-1136.8966 -587.2107 Z"/>
             </clipPath>
           </defs>
 <linearGradient gradientTransform="matrix(1 0 0 1 -370.2002 -614.5742)" x1="370.2002" x2="409.4502" gradientUnits="userSpaceOnUse" y1="655.0938" y2="655.0938" id="svg1.SVGID_1_">
@@ -595,11 +595,10 @@
       <text x="195.2383" xml:space="preserve" y="316.2008" clip-path="url(#clipPath2)" stroke="none">openqa-websockets</text>
       <text x="186.458" xml:space="preserve" font-size="12px" y="337.5778" clip-path="url(#clipPath2)" stroke="none">listening on TCP port 9527</text>
       <text x="153.7891" xml:space="preserve" font-size="12px" y="350.984" clip-path="url(#clipPath2)" stroke="none">responsible for interaction with workers</text>
-      <rect x="930.6" y="476.5685" clip-path="url(#clipPath2)" fill="none" width="341.8" rx="4" ry="4" height="41.721"/>
-      <text x="1085.1587" xml:space="preserve" y="495.2423" clip-path="url(#clipPath2)" stroke="none">sqlite</text>
-      <text x="942.7422" xml:space="preserve" y="510.883" clip-path="url(#clipPath2)" stroke="none">provides database for openqa-cacheservice-minion</text>
+      <rect x="1067.751" y="604.6113" clip-path="url(#clipPath2)" fill="none" width="67.498" rx="4" ry="4" height="42.1397"/>
+      <text x="1085.1587" xml:space="preserve" y="623.2851" clip-path="url(#clipPath2)" stroke="none">sqlite</text>
     </g>
-    <g text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="matrix(0.9236,0,0,1.168,913.5316,557.6225)">
+    <g text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="matrix(0.9236,0,0,1.168,1050,685.8746)">
       <g clip-path="url(#clipPath6)">
         <svg xml:space="preserve" opacity="1" writing-mode="lr-tb" stop-color="rgb(0, 0, 0)" shape-rendering="auto" glyph-orientation-horizontal="0deg" color-profile="auto" lighting-color="rgb(255, 255, 255)" color="rgb(0, 0, 0)" font-weight="400" alignment-baseline="auto" font-style="normal" version="1.1" color-interpolation-filters="linearrgb" text-anchor="start" stroke-linecap="butt" color-interpolation="srgb" font-variant="normal" word-spacing="normal" fill-opacity="1" text-rendering="auto" clip-path="none" text-decoration="none" letter-spacing="normal" viewBox="0 0 40 48" glyph-orientation-vertical="auto" display="inline" font-size-adjust="none" overflow="visible" fill="rgb(0, 0, 0)" font-stretch="normal" stroke-dasharray="none" stroke-miterlimit="4" stop-opacity="1" color-rendering="auto" font-size="12" pointer-events="visiblepainted" mask="none" direction="ltr" baseline-shift="baseline" enable-background="new 0 0 40 48" fill-rule="nonzero" image-rendering="auto" stroke-dashoffset="0" width="40px" marker-end="none" clip="auto" cursor="auto" stroke="none" filter="none" visibility="visible" kerning="auto" stroke-width="1" font-family="&quot;Arial&quot;,&quot;Helvetica&quot;,sans-serif" flood-opacity="1" clip-rule="nonzero" src="none" height="48px" unicode-bidi="normal" stroke-linejoin="miter" stroke-opacity="1" flood-color="rgb(0, 0, 0)" dominant-baseline="auto" marker-start="none" x="0px" marker-mid="none" y="0px">
 <defs>
@@ -716,11 +715,8 @@
       <path fill="none" d="M1702.4166 -41.7715 L1702.4166 -26.7715 L1717.4166 -26.7715 Z" clip-path="url(#clipPath2)" fill-rule="evenodd"/>
       <text x="1436.1139" xml:space="preserve" y="-21.5295" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">note: components named like their corresponding</text>
       <text x="1504.8385" xml:space="preserve" y="-8.1232" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">systemd service names</text>
-      <rect fill="none" x="935" width="333" height="61.946" y="666.858" clip-path="url(#clipPath2)"/>
-      <text x="988.6729" font-size="14px" y="685.5319" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">openqa-worker-cacheservice-minion</text>
-      <text x="996.4385" xml:space="preserve" y="720.261" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">listening on TCP port 7844 (dashboard)</text>
-      <rect fill="none" x="935" width="333" height="61.946" y="604.912" clip-path="url(#clipPath2)"/>
-      <text x="1011.6245" font-size="14px" y="623.5858" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">openqa-worker-cacheservice</text>
+      <rect fill="none" x="935" width="333" height="42.1397" y="686.6541" clip-path="url(#clipPath2)"/>
+      <text x="988.6729" font-size="14px" y="705.3279" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">openqa-worker-cacheservice-minion</text>
     </g>
     <g stroke-linecap="butt" transform="matrix(1,0,0,1,12,88)" fill="blue" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" stroke-dasharray="12,4" stroke="blue" stroke-width="2" stroke-miterlimit="1.45">
       <rect fill="none" x="909" width="359" height="215.419" y="206.054" clip-path="url(#clipPath2)"/>
@@ -840,6 +836,9 @@
       <path fill="none" d="M360.0591 504.0132 L360.0591 519.0132 L375.0591 519.0132 Z" clip-path="url(#clipPath2)" fill-rule="evenodd"/>
       <text x="173.287" xml:space="preserve" y="524.2552" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">note: these services use HTTP to</text>
       <text x="183.954" xml:space="preserve" y="537.6614" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">communicate with each other</text>
+      <rect fill="none" x="935" width="333" height="42.1397" y="518.085" clip-path="url(#clipPath2)"/>
+      <text x="1011.6245" font-size="14px" y="536.7589" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">openqa-worker-cacheservice</text>
+      <text x="996.4385" xml:space="preserve" y="551.6818" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">listening on TCP port 7844 (dashboard)</text>
       <path fill="none" d="M447.875 663.75 L447.875 691.3084" clip-path="url(#clipPath2)"/>
       <path fill="white" d="M447.875 706.3084 L453.875 690.3084 L441.875 690.3084 Z" clip-path="url(#clipPath2)" stroke="none"/>
       <path fill="none" d="M447.875 706.3084 L453.875 690.3084 L441.875 690.3084 Z" clip-path="url(#clipPath2)"/>
@@ -850,9 +849,16 @@
       <path fill="none" d="M194.3595 138.7889 L194.3595 190.9896" clip-path="url(#clipPath2)"/>
       <path fill="white" d="M194.3595 205.9896 L200.3595 189.9896 L188.3595 189.9896 Z" clip-path="url(#clipPath2)" stroke="none"/>
       <path fill="none" d="M194.3595 205.9896 L200.3595 189.9896 L188.3595 189.9896 Z" clip-path="url(#clipPath2)"/>
-      <path fill="none" d="M1088.5 573.385 L1088.5 533.3311" clip-path="url(#clipPath2)"/>
-      <path fill="white" d="M1088.5 518.3311 L1082.5 534.3311 L1094.5 534.3311 Z" clip-path="url(#clipPath2)" stroke="none"/>
-      <path fill="none" d="M1088.5 518.3311 L1082.5 534.3311 L1094.5 534.3311 Z" clip-path="url(#clipPath2)"/>
+      <path fill="none" d="M1101.5 651.7126 L1101.5 681.6541" clip-path="url(#clipPath2)"/>
+      <path d="M1101.5 647.7126 L1095.5 659.7126 L1101.5 647.7126 L1107.5 659.7126 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" stroke-miterlimit="10" d="M1101.5 647.7126 L1095.5 659.7126 L1101.5 647.7126 L1107.5 659.7126 Z" clip-path="url(#clipPath2)" stroke-linecap="square"/>
+      <path d="M1101.5 685.6541 L1107.5 673.6541 L1101.5 685.6541 L1095.5 673.6541 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" stroke-miterlimit="10" d="M1101.5 685.6541 L1107.5 673.6541 L1101.5 685.6541 L1095.5 673.6541 Z" clip-path="url(#clipPath2)" stroke-linecap="square"/>
+      <path fill="none" d="M935 707.7078 L816.5 707.6962 L792.4782 675.7305" clip-path="url(#clipPath2)"/>
+      <path fill="white" d="M783.4668 663.7391 L788.2824 680.1345 L797.8755 672.9254 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" d="M783.4668 663.7391 L788.2824 680.1345 L797.8755 672.9254 Z" clip-path="url(#clipPath2)"/>
+      <text x="749.8059" xml:space="preserve" y="722.8222" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">rsync/HTTP to download</text>
+      <text x="768.802" xml:space="preserve" y="736.2285" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">files to be cached</text>
       <path fill="none" d="M908.9988 328.527 L439 328.527" clip-path="url(#clipPath2)"/>
       <path fill="white" d="M424 328.527 L440 334.527 L440 322.527 Z" clip-path="url(#clipPath2)" stroke="none"/>
       <path fill="none" d="M424 328.527 L440 334.527 L440 322.527 Z" clip-path="url(#clipPath2)"/>
@@ -865,9 +871,6 @@
       <path fill="white" d="M424 390.5 L440 396.5 L440 384.5 Z" clip-path="url(#clipPath2)" stroke="none"/>
       <path fill="none" d="M424 390.5 L440 396.5 L440 384.5 Z" clip-path="url(#clipPath2)"/>
       <text x="505.4252" xml:space="preserve" y="382.9601" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">openqa-worker@X posts upload progress to livehandler</text>
-      <path fill="none" d="M1088.5 421.473 L1088.5 461.5841" clip-path="url(#clipPath2)"/>
-      <path fill="white" d="M1088.5 476.5841 L1094.5 460.5841 L1082.5 460.5841 Z" clip-path="url(#clipPath2)" stroke="none"/>
-      <path fill="none" d="M1088.5 476.5841 L1094.5 460.5841 L1082.5 460.5841 Z" clip-path="url(#clipPath2)"/>
       <path fill="none" d="M1088.5 206.054 L1088.5 152 L1275.2473 152" clip-path="url(#clipPath2)"/>
       <path fill="white" d="M1290.2473 152 L1274.2473 146 L1274.2473 158 Z" clip-path="url(#clipPath2)" stroke="none"/>
       <path fill="none" d="M1290.2473 152 L1274.2473 146 L1274.2473 158 Z" clip-path="url(#clipPath2)"/>
@@ -907,6 +910,15 @@
       <path fill="none" d="M944.0451 109.442 L944.0451 206.0552" clip-path="url(#clipPath2)"/>
       <text x="950.4429" xml:space="preserve" y="161.0578" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">worker syncs/caches</text>
       <text x="951.4244" xml:space="preserve" y="174.4641" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">code/needles/assets</text>
+      <path fill="none" d="M1252.5 421.478 L1252.5 503.0602" clip-path="url(#clipPath2)"/>
+      <path fill="white" d="M1252.5 518.0602 L1258.5 502.0602 L1246.5 502.0602 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" d="M1252.5 518.0602 L1258.5 502.0602 L1246.5 502.0602 Z" clip-path="url(#clipPath2)"/>
+      <text x="987.7109" xml:space="preserve" y="439.9731" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">worker services make caching requests via HTTP</text>
+      <path fill="none" d="M1101.5 599.5988 L1101.5 565.2247" clip-path="url(#clipPath2)"/>
+      <path d="M1101.5 603.5988 L1107.5 591.5988 L1101.5 603.5988 L1095.5 591.5988 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" stroke-miterlimit="10" d="M1101.5 603.5988 L1107.5 591.5988 L1101.5 603.5988 L1095.5 591.5988 Z" clip-path="url(#clipPath2)" stroke-linecap="square"/>
+      <path d="M1101.5 561.2247 L1095.5 573.2247 L1101.5 561.2247 L1107.5 573.2247 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" stroke-miterlimit="10" d="M1101.5 561.2247 L1095.5 573.2247 L1101.5 561.2247 L1107.5 573.2247 Z" clip-path="url(#clipPath2)" stroke-linecap="square"/>
     </g>
   </g>
 </svg>
