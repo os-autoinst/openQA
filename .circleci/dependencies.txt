@@ -62,7 +62,7 @@ perl-DateTime-Format-Strptime-1.74
 perl-DateTime-Locale-1.170000
 perl-DateTime-TimeZone-2.15
 perl-DBD-Pg-3.7.4
-perl-DBD-SQLite-1.54
+perl-DBD-SQLite-1.64
 perl-DBI-1.642
 perl-DBIx-Class-0.082841
 perl-DBIx-Class-DeploymentHandler-0.002233
@@ -137,7 +137,7 @@ perl-Mojolicious-8.26
 perl-Mojolicious-Plugin-AssetPack-2.08
 perl-Mojo-Pg-4.17
 perl-Mojo-RabbitMQ-Client-0.3.1
-perl-Mojo-SQLite-3.002
+perl-Mojo-SQLite-3.003
 perl-Moo-2.003004
 perl-Moose-2.2010
 perl-MooseX-Role-Parameterized-1.10
