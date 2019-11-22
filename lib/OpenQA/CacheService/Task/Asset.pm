@@ -33,13 +33,14 @@ sub _cache_asset {
     return $job->finish unless defined $asset_name && defined $type && defined $host && defined $lock;
     my $guard = $app->progress->guard($lock);
     unless ($guard) {
-        $job->note(output => 'Asset was already requested by another job');
+        $job->note(
+            output => "Asset $asset_name was downloaded by another job, details are therefore unavailable to us");
         return $job->finish;
     }
 
     my $log = $app->log;
     my $ctx = $log->context('[#' . $job->id . ']');
-    $ctx->info("Download: $asset_name");
+    $ctx->info("Downloading $asset_name");
 
     # Log messages need to be logged by this service as well as captured and
     # forwarded to the worker (for logging on both sides)
@@ -54,7 +55,7 @@ sub _cache_asset {
     $cache->host($host);
     $cache->get_asset({id => $id}, $type, $asset_name);
     $job->note(output => $output);
-    $ctx->info('Finished');
+    $ctx->info('Finished download');
 }
 
 1;

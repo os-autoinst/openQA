@@ -84,9 +84,10 @@ subtest 'base_host' => sub {
 is $cache->init, $cache;
 is $cache->sqlite->migrations->latest, 1, 'version 1 is the latest version';
 is $cache->sqlite->migrations->active, 1, 'version 1 is the active version';
-like $cache_log, qr/Creating cache directory tree for/, "Cache directory tree created.";
-like $cache_log, qr/Configured limit: 53687091200/,     "Cache limit is default (50GB).";
-ok(-e $db_file, "cache.sqlite is present");
+like $cache_log, qr/Creating cache directory tree for $cachedir/, 'Cache directory tree created';
+like $cache_log, qr/Loading cache database from $db_file/,        'Cache database loaded';
+like $cache_log, qr/Cache size is 0, with limit 53687091200/,     'Cache limit is default (50GB)';
+ok(-e $db_file, 'cache.sqlite is present');
 $cache_log = '';
 
 $cachedir->child('127.0.0.1')->make_path;
@@ -102,23 +103,24 @@ for my $i (1 .. 3) {
 $cache->sleep_time(1);
 $cache->init;
 is $cache->sqlite->migrations->active, 1, 'version 1 is still the active version';
-like $cache_log, qr/CACHE: Health: Real size: 168, Configured limit: 53687091200/,
-  "Cache limit/size match the expected 100GB/168)";
-unlike $cache_log, qr/CACHE: Purging non registered.*[13].qcow2/, "Registered assets 1 and 3 were kept";
-like $cache_log,   qr/CACHE: Purging non registered.*2.qcow2/,    "Asset 2 was removed";
+like $cache_log, qr/Cache size is 168, with limit 53687091200/, 'Cache limit/size match the expected 100GB/168)';
+unlike $cache_log, qr/Purging .*[13].qcow2/, 'Registered assets 1 and 3 were kept';
+like $cache_log, qr/Purging .*2.qcow2 because the asset is not registered/, 'Asset 2 was removed';
 $cache_log = '';
 
 $cache->limit(100);
 $cache->init;
-like $cache_log, qr/CACHE: Health: Real size: 84, Configured limit: 100/, "Cache limit/size match the expected 100/84)";
-like $cache_log, qr/CACHE: removed.*1.qcow2/, "Oldest asset (1.qcow2) removal was logged";
-like $cache_log , qr/$host/, "Host was initialized correctly ($host).";
-ok(!-e "1.qcow2", "Oldest asset (1.qcow2) was sucessfully removed");
+like $cache_log, qr/Cache size is 84, with limit 100/, 'Cache limit/size match the expected 100/84)';
+like $cache_log, qr/Cache size 168 \+ 0 exceeds limit of 100, purging least used assets/, 'Requested size is logged';
+like $cache_log, qr/Purging.*1.qcow2 because we need space for new assets, reclaiming 84/,
+  'Oldest asset (1.qcow2) removal was logged';
+ok(!-e '1.qcow2', 'Oldest asset (1.qcow2) was sucessfully removed');
 $cache_log = '';
 
-$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-textmode@64bit.qcow2');
-like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-textmode\@64bit.qcow2 from/, "Asset download attempt";
-like $cache_log, qr/failed with: 521/, "Asset download fails with: 521 - Connection refused";
+$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-textmode@64bit.qcow2');
+my $from = "$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-textmode@64bit.qcow2";
+like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-textmode\@64bit.qcow2 from $from/, 'Asset download attempt';
+like $cache_log, qr/failed: 521/, 'Asset download fails with: 521 - Connection refused';
 $cache_log = '';
 
 $port = Mojo::IOLoop::Server->generate_port;
@@ -129,59 +131,68 @@ $cache->host($host);
 $cache->limit(1024);
 $cache->init;
 
-$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-404@64bit.qcow2');
-like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-404\@64bit.qcow2 from/, "Asset download attempt";
-like $cache_log, qr/failed with: 404/, "Asset download fails with: 404 - Not Found";
+$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-404@64bit.qcow2');
+like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-404\@64bit.qcow2 from/, 'Asset download attempt';
+like $cache_log, qr/failed: 404/, 'Asset download fails with: 404 - Not Found';
 $cache_log = '';
 
-$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-400@64bit.qcow2');
-like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-400\@64bit.qcow2 from/, "Asset download attempt";
-like $cache_log, qr/failed with: 400/, "Asset download fails with 400 - Bad Request";
+$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-400@64bit.qcow2');
+like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-400\@64bit.qcow2 from/, 'Asset download attempt';
+like $cache_log, qr/failed: 400/, 'Asset download fails with 400 - Bad Request';
 $cache_log = '';
 
-$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-589@64bit.qcow2');
-like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-589\@64bit.qcow2 from/, "Asset download attempt";
-like $cache_log, qr/Expected: 10 \/ Downloaded: 6/,                            "Incomplete download logged";
-like $cache_log, qr/CACHE: Error 598, retrying download for 4 more tries/,     "4 tries remaining";
-like $cache_log, qr/CACHE: Waiting 1 seconds for the next retry/,              "1 second sleep_time set";
-like $cache_log, qr/CACHE: Too many download errors, aborting/,                "Bailing out after too many retries";
+$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-589@64bit.qcow2');
+like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-589\@64bit.qcow2 from/,           'Asset download attempt';
+like $cache_log, qr/Size of .+ differs, expected 10 but downloaded 6/,                   'Incomplete download logged';
+like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
+like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
+like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
+like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(1 remaining\)/, '1 tries remaining';
+like $cache_log, qr/Too many download errors, aborting/, 'Bailing out after too many retries';
 $cache_log = '';
 
-$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-503@64bit.qcow2');
-like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-503\@64bit.qcow2 from/, "Asset download attempt";
-like $cache_log, qr/triggering a retry for 503/, "Asset download fails with 503 - Server not available";
-like $cache_log, qr/CACHE: Error 503, retrying download for 4 more tries/, "4 tries remaining";
-like $cache_log, qr/CACHE: Waiting 1 seconds for the next retry/,          "1 second sleep_time set";
-like $cache_log, qr/CACHE: Too many download errors, aborting/,            "Bailing out after too many retries";
+$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-503@64bit.qcow2');
+like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-503\@64bit.qcow2 from/, 'Asset download attempt';
+like $cache_log, qr/Abnormal situation, server error 503/, 'Asset download fails with 503 - Server not available';
+like $cache_log, qr/Download error 503, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
+like $cache_log, qr/Too many download errors, aborting/, 'Bailing out after too many retries';
 $cache_log = '';
 
-$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
-like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-200\@64bit.qcow2 from/, "Asset download attempt";
-like $cache_log, qr/CACHE: Asset download successful to .*sle-12-SP3-x86_64-0368-200.*, Cache size is: 1024/,
-  "Full download logged";
-like $cache_log, qr/ andi \$a3, \$t1, 41399 and 1024/, "Etag and size are logged";
+$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-200\@64bit.qcow2 from/, 'Asset download attempt';
+like $cache_log, qr/Download of .*sle-12-SP3-x86_64-0368-200.* successful, new cache size is 1024/,
+  'Full download logged';
+like $cache_log, qr/Size of .* is 1024, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
 $cache_log = '';
 
-$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
-like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-200\@64bit.qcow2 from/, "Asset download attempt";
-like $cache_log, qr/CACHE: Content has not changed, not downloading .* but updating last use/, "Upading last use";
+$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-200\@64bit.qcow2 from/,             'Asset download attempt';
+like $cache_log, qr/Content of .*0368-200@64bit.qcow2 has not changed, updating last use/, 'Content has not changed';
 $cache_log = '';
 
-$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
-like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-200\@64bit.qcow2 from/,      "Asset download attempt";
-like $cache_log, qr/sle-12-SP3-x86_64-0368-200\@64bit.qcow2 but updating last use/, "last use gets updated";
+$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-200\@64bit.qcow2 from/, 'Asset download attempt';
+like $cache_log, qr/Content of .*-0368-200@64bit.qcow2 has not changed, updating last use/, 'Content has not changed';
 $cache_log = '';
 
-$cache->get_asset({id => 922756}, "hdd", 'sle-12-SP3-x86_64-0368-200_256@64bit.qcow2');
-like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-200_256\@64bit.qcow2 from/, "Asset download attempt";
-like $cache_log, qr/CACHE: Asset download successful to .*sle-12-SP3-x86_64-0368-200_256.*, Cache size is: 256/,
-  "Full download logged";
-like $cache_log, qr/ andi \$a3, \$t1, 41399 and 256/, "Etag and size are logged";
-like $cache_log, qr/removed.*sle-12-SP3-x86_64-0368-200\@64bit.qcow2*/, "Reclaimed space for new smaller asset";
+$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_256@64bit.qcow2');
+like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-200_256\@64bit.qcow2 from/, 'Asset download attempt';
+like $cache_log, qr/Download of .*sle-12-SP3-x86_64-0368-200_256.* successful, new cache size is 256/,
+  'Full download logged';
+like $cache_log, qr/is 256, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
+like $cache_log, qr/Cache size 1024 \+ 256 exceeds limit of 1024, purging least used assets/,
+  'Requested size is logged';
+like $cache_log,
+  qr/Purging .*0368-503@64bit.qcow2 because we need space for new assets, reclaiming 0/,
+  'Reclaimed no space from missing asset';
+like $cache_log, qr/Purging .*0368-503@64bit.qcow2 failed because the asset did not exist/, 'Asset was missing';
+like $cache_log,
+  qr/Purging .*sle-12-SP3-x86_64-0368-200\@64bit.qcow2 because we need space for new assets, reclaiming 1024/,
+  'Reclaimed space for new smaller asset';
 $cache_log = '';
 
-$cache->track_asset("Foobar", 0);
-$cache->sqlite->db->query("delete from assets");
+$cache->track_asset('Foobar', 0);
+$cache->sqlite->db->query('delete from assets');
 
 my $fake_asset = $cachedir->child('test.qcow2');
 $fake_asset->spurt('');
