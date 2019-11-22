@@ -3605,7 +3605,7 @@ updated before renaming or deleting test suites, products or machines used by
 it, otherwise that would create an inconsistent state.</p>
 </div>
 <div class="paragraph">
-<p>YAML-only groups can be updated through the YAML editor or the YAML-related
+<p>Job groups can be updated through the YAML editor or the YAML-related
 REST API routes.</p>
 </div>
 </div>
@@ -3639,6 +3639,25 @@ For example for all job groups in the old format:</p>
     curl -s http://openqa.example.com/api/v1/job_templates_scheduling/<span class="tok-nv">$i</span> <span class="tok-p">|</span> openqa-client --json-output --host http://openqa.example.com job_templates_scheduling/<span class="tok-nv">$i</span> post --form <span class="tok-nv">schema</span><span class="tok-o">=</span>JobTemplates-01.yaml <span class="tok-nv">template</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-k">$(</span>cat -<span class="tok-k">)</span><span class="tok-s2">&quot;</span>
 <span class="tok-k">done</span></code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>Note that in some cases you might run into errors where old test suites or
+products have invalid names which the old editor did not enforce:</p>
+</div>
+<div class="paragraph">
+<p><strong>Product names</strong> may not contain <code>:</code> or <code>@</code> characters. Something like
+<code>Server-DVD-Staging:A</code> would require replacing the <code>:</code> with eg. a <code>-</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>Test suites</strong> may not contain <code>:</code> or <code>@</code> characters. A test suite such as
+<code>ext4_uefi@staging</code> would have been allowed previously. The use of the <code>@</code>
+as a suffix could be replaced with a <code>-</code> or if it is used for variants of
+the same test suite with different settings, settings can be specified in
+YAML directly.</p>
+</div>
+<div class="paragraph">
+<p>More generally the regular expression <code>[A-Za-z0-9._*-]+</code> could be used to
+check if a name is allowed for a product or test suite.</p>
 </div>
 </div>
 </div>
@@ -8114,7 +8133,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-20 00:05:28 UTC
+Last updated 2019-11-22 00:06:37 UTC
 </div>
 </div>
 <style>
