@@ -186,7 +186,7 @@ sub read_config {
         },
         obs_rsync => {
             home               => '',
-            retry_interval     => 15,
+            retry_interval     => 60,
             queue_limit        => 200,
             concurrency        => 2,
             project_status_url => '',

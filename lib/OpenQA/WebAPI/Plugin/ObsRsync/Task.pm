@@ -35,7 +35,7 @@ sub run {
     my $retry_interval = $helper->retry_interval;
     my $queue_limit    = $helper->queue_limit;
     my $minion         = $app->minion;
-    my $lock_timeout   = 36000;
+    my $lock_timeout   = 360000;
 
     my $retry_interval_on_exception = 120;
 

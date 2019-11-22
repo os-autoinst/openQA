@@ -24,8 +24,8 @@ sub index {
     my $helper = $self->obs_rsync;
     return undef if $helper->check_and_render_error($folder);
     my $files
-      = Mojo::File->new($helper->home)->list({dir => 1})->grep(sub { -d $_ })->map('basename')->grep(qr/^(?!t$|sle$)/)
-      ->to_array;
+      = Mojo::File->new($helper->home)->list({dir => 1})->grep(sub { -d $_ })->map('basename')
+      ->grep(qr/^(?!t$|profiles$|script$|xml$)/)->to_array;
 
     $self->render('ObsRsync_index', folders => $files);
 }
