@@ -41,7 +41,6 @@ RUN zypper in -y -C \
        postgresql-server \
        which \
        chromedriver \
-       xorg-x11-fonts \
        'rubygem(sass)' \
        perl \
        ShellCheck \
