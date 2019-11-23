@@ -3771,7 +3771,8 @@ would normally be considered duplicated:</p>
 <div class="paragraph">
 <p>Even more flexibility can be achieved by using aliases in YAML, or in other
 words re-using a scenario by reference, such as to run the same scenarios in
-two different mediums. <code>&amp;</code> is used define an alias, while <code>*</code> is a reference:</p>
+two different mediums. <code>&amp;</code> is used to define an anchor, while <code>*</code> is the alias
+referencing the anchor:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -3800,10 +3801,8 @@ two different mediums. <code>&amp;</code> is used define an alias, while <code>*
         <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">FOO</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">2</span>
     <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">opensuse-15.2-GNOME-Live-x86_64</span><span class="tok-p tok-p-Indicator">:</span>
     <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">textmode</span>
-    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span>
-      <span class="tok-nv">*gnome</span>
-    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome_staging</span><span class="tok-p tok-p-Indicator">:</span>
-      <span class="tok-nv">*gnome_staging</span></code></pre>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nv">*gnome</span>
+    <span class="tok-p tok-p-Indicator">-</span> <span class="tok-l tok-l-Scalar tok-l-Scalar-Plain">gnome_staging</span><span class="tok-p tok-p-Indicator">:</span> <span class="tok-nv">*gnome_staging</span></code></pre>
 </div>
 </div>
 </div>
@@ -4168,8 +4167,9 @@ left are not considered.</p>
 </div>
 <div class="paragraph">
 <p>Assets which do <em>not</em> belong to any group are removed after a configurable
-duration. Keep in mind that this behavior is also enabled on local instances
-and affects all cloned jobs (unless cloned into a job group).</p>
+duration unless the files are still being updated. Keep in mind that this
+behavior is also enabled on local instances and affects all cloned jobs
+(unless cloned into a job group).</p>
 </div>
 <div class="paragraph">
 <p>'Fixed' assets - those placed in the fixed subdirectory of the relevant
@@ -4218,6 +4218,10 @@ assets with the names <code>testrepo-latest</code> and <code>openSUSE-12.3-x86_6
 <span class="tok-na">latest</span> <span class="tok-o">=</span> <span class="tok-s">30</span>
 <span class="tok-na">openSUSE.+x86_64</span> <span class="tok-o">=</span> <span class="tok-s">10</span></code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>Note that modifications to the file will count against the limit, so if an
+asset was updated within the timespan it will not be removed.</p>
 </div>
 </div>
 </div>
@@ -8133,7 +8137,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-22 00:06:37 UTC
+Last updated 2019-11-23 00:08:10 UTC
 </div>
 </div>
 <style>
