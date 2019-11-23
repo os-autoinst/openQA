@@ -38,7 +38,6 @@ docker exec -t gendep sudo zypper ar -f https://download.opensuse.org/repositori
 docker exec -t gendep sudo zypper ar -f http://download.opensuse.org/repositories/devel:openQA/openSUSE_Leap_15.1 devel
 docker exec -t gendep sudo zypper --gpg-auto-import-keys ref
 docker exec -t gendep sudo zypper -n install openQA-devel
-docker exec -t gendep sudo zypper -n install chromedriver
 docker exec -t gendep sudo zypper -n install perl-TAP-Harness-JUnit
 
 docker exec -t gendep rpm -qa --qf "%{NAME}-%{VERSION}\n" |sort > gendep_after.txt
