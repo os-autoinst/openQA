@@ -393,19 +393,21 @@ Beside simply running the testsuite, it is also possible to use containers. Usin
 tests are executed in the same environment as on the Travis CI. This allows to reproduce issues
 specific to that environment.
 
-=== Run tests without Docker
-Be sure to install all required dependencies. Those can be found in the file `openQA.spec`
-in the openQA repository.
+=== Run tests without container
+Be sure to install all required dependencies. The package +openQA-devel+ will
+provide them.
 
-To run UI tests the package +perl-Selenium-Remote-Driver+ is required. The version provided
-by Leap 42.2 is too old. The version from the repository +devel-languages-perl+ can be used
-instead. You also need to install chromedriver and either chrome or chromium for the UI tests.
+If the package is not available the dependencies can also be found in the file
+`openQA.spec` in the openQA repository. In this case also the package
++perl-Selenium-Remote-Driver+ is required to run UI tests. You also need to
+install chromedriver and either chrome or chromium for the UI tests.
 
-Run `t/test_postgresql /dev/shm/tpg` to initialize a temporary PostgreSQL database.
-Export the environment variable as instructed by that script.
-
-To execute the testsuite use `make test`. It is also possible
-to run a particular test, for example `prove t/api/01-workers.t`.
+To execute the testsuite use `make test`. This will also initialize a
+temporary PostgreSQL database used for testing. To do this step manually run
+`t/test_postgresql /dev/shm/tpg` to initialize a temporary PostgreSQL database
+and export the environment variable as instructed by that script.
+It is also possible to run a particular test, for example
+`prove t/api/01-workers.t`.
 
 To watch the execution of the UI tests, set the environment variable `NOT_HEADLESS`.
 
