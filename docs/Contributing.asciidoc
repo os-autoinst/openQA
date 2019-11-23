@@ -390,7 +390,7 @@ section).
 
 == Running tests of openQA itself
 Beside simply running the testsuite, it is also possible to use containers. Using containers,
-tests are executed in the same environment as on the Travis CI. This allows to reproduce issues
+tests are executed in the same environment as on CircleCI. This allows to reproduce issues
 specific to that environment.
 
 === Run tests without container
@@ -493,13 +493,18 @@ In general, if starting the tests via Docker seems to hang, it is a good idea to
 executed.
 
 === Logging behavior
-Logs are redirected to a logfile when running tests within Travis. The output can therefore not be asserted using +Test::Output+. This
-can be worked around by temporarily assigning a different +Mojo::Log+ object to the application. To test locally under the same condition
-set the environment variable +OPENQA_LOGFILE+.
 
-Note that redirecting the logs to a logfile only works for tests which run +OpenQA::Setup::setup_log+. In other tests the log is just
-printed to the standard output. This makes use of +Test::Output+ simple but it should be taken care that the test output is not cluttered
-by log messages which can be quite irritating.
+Logs are redirected to a logfile when running tests within the CI. The output
+can therefore not be asserted using +Test::Output+. This can be worked around
+by temporarily assigning a different +Mojo::Log+ object to the application. To
+test locally under the same condition set the environment variable
++OPENQA_LOGFILE+.
+
+Note that redirecting the logs to a logfile only works for tests which run
++OpenQA::Setup::setup_log+. In other tests the log is just printed to the
+standard output. This makes use of +Test::Output+ simple but it should be
+taken care that the test output is not cluttered by log messages which can be
+quite irritating.
 
 
 == openQA circleci workflow
