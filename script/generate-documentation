@@ -96,7 +96,7 @@ update_docs() {
             git add docs/api/schema
             topic="Update documentation to commit ${shortref}"
             echo "$topic" > last.commit
-            echo "" >> last.commit # somehow travis does not like \n
+            echo "" >> last.commit
             [[ -z "${CIRCLE_SHA1}" ]] || (cd .. && git log --pretty=fuller "${CIRCLE_SHA1}" -1 >> out/last.commit)
             git commit -F last.commit
             if [[ -n "${PUBLISH}" ]] && [[ "${PUBLISH}" != 0 ]]; then

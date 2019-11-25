@@ -1,9 +1,9 @@
-:travis-ci: image:https://api.travis-ci.org/os-autoinst/openQA.svg?branch=master[link=https://travis-ci.org/os-autoinst/openQA]
+:circleci: image:https://circleci.com/gh/os-autoinst/openQA.svg?style=svg["CircleCI", link="https://circleci.com/gh/os-autoinst/openQA"]
 :codecov: image:https://codecov.io/gh/os-autoinst/openQA/branch/master/graph/badge.svg[link=https://codecov.io/gh/os-autoinst/openQA]
 
 = openQA
 
-{codecov} {travis-ci}
+{codecov} {circleci}
 
 openQA is a testing framework that allows you to test GUI applications on one
 hand and bootloader and kernel on the other. In both cases, it is difficult to

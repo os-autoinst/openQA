@@ -46,8 +46,8 @@ are the right way to contribute improvements and fixes.
 === Rules for commits
 [id="rules_for_commits"]
 
-* Every commit is checked by https://travis-ci.org/travis[Travis CI] as soon as
-you create a pull request but you *should* run the tidy script locally,
+* Every commit is checked in https://circleci.com/dashboard[CI] as soon as
+you create a pull request, but you *should* run the tidy script locally,
 i.e. before every commit call:
 
 [source,sh]
@@ -188,7 +188,7 @@ follows the most common Perl style conventions.
 * The other daemons (mentioned in
   the link:images/architecture.svg[architecture diagram]) are started in the
   same way, e.g. +script/openqa-scheduler daemon+.
-* openQA will pull the required asssets on the first run.
+* openQA will pull the required assets on the first run.
 * openQA uses SASS. Under openSUSE, installing +rubygem(sass)+ should be
   sufficient.
 * It is also useful to start openQA with morbo which allows applying changes
