@@ -25,7 +25,7 @@ has usage       => sub { shift->extract_usage };
 sub run {
     my ($self, @args) = @_;
 
-    getopt \@args, 'o|oneshot' => \(my $oneshot);
+    getopt \@args, 'o|oneshot' => \my $oneshot, 'reset-locks' => \my $reset_locks;
 
     my $minion = $self->app->minion;
     $minion->on(
@@ -43,8 +43,10 @@ sub run {
 
     return $minion->perform_jobs if $oneshot;
 
-    $self->app->log->info('Resetting all leftover Gru locks after restart');
-    $minion->reset({locks => 1});
+    if ($reset_locks) {
+        $self->app->log->info('Resetting all leftover Gru locks after restart');
+        $minion->reset({locks => 1});
+    }
     $self->SUPER::run(@args);
 }
 
@@ -64,7 +66,8 @@ OpenQA::WebAPI::Command::gru::run - Gru run command
     script/openqa gru run -o
 
   Options:
-    -o, --oneshot   Perform all currently enqueued jobs and then exit
+    -o, --oneshot       Perform all currently enqueued jobs and then exit
+        --reset-locks   Reset all remaining locks before startup
 
     See 'script/openqa minion worker -h' for all available options.
 
