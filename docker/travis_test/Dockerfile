@@ -107,6 +107,7 @@ RUN zypper in -y -C \
        'perl(Perl::Tidy)' \
        'perl(Pod::POM)' \
        'perl(Pod::Coverage)' \
+       'perl(Pod::Spell)' \
        'perl(SQL::SplitStatement)' \
        'perl(SQL::Translator)' \
        'perl(Selenium::Remote::Driver)' \
@@ -130,6 +131,7 @@ RUN zypper in -y -C \
        perl-Archive-Extract \
        perl-Test-Simple \
        'perl(aliased)' \
+       aspell-spell \
        systemd-sysvinit \
        systemd libudev1 tack
 
