@@ -24,11 +24,14 @@ use OpenQA::Test::Database;
 use OpenQA::Test::Case;
 use Mojo::File qw(tempdir path);
 use Time::HiRes 'sleep';
+use File::Copy::Recursive 'dircopy';
 
 OpenQA::Test::Case->new->init_data;
 
 $ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
-my $home           = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
+my $home_template = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
+my $home          = "$tempdir/openqa-trigger-from-obs";
+dircopy($home_template, $home);
 my $concurrency    = 2;
 my $queue_limit    = 4;
 my $retry_interval = 1;
@@ -83,7 +86,7 @@ sub sleep_until_job_start {
 }
 
 sub sleep_until_all_jobs_finished {
-    my ($t, $project, $status) = @_;
+    my ($t, $project) = @_;
     my $retries = 500;
 
     while ($retries > 0) {
@@ -97,38 +100,59 @@ sub sleep_until_all_jobs_finished {
     die 'Timeout reached';
 }
 
+# this function communicates with t/data/openqa-trigger-from-obs/script/rsync.sh
+# when file .$project-ready is created, then rsync process should finish
+sub signal_rsync_ready {
+    foreach (@_) {
+        my $filename = Mojo::File->new($home, 'script', ".$_-ready")->to_string;
+        open my $fh, '>', $filename || die "Cannot create file $filename: $!";
+        close $fh;
+    }
+}
+
+sub unlink_signal_rsync_ready {
+    foreach (@_) {
+        my $filename = Mojo::File->new($home, 'script', ".$_-ready")->to_string;
+        -f $filename || next;
+        unlink $filename || die "Cannot unlink file $filename: $!";
+    }
+}
+
 sub test_async {
     my $t = shift;
+    unlink_signal_rsync_ready('MockProjectLongProcessing', 'MockProjectLongProcessing1');
+
     # MockProjectLongProcessing causes job to sleep some sec, so we can reach job limit
     $t->put_ok('/api/v1/obs_rsync/MockProjectLongProcessing/runs')
-      ->status_is(201, "first request to MockProjectLongProcessing should start");
+      ->status_is(201, 'first request to MockProjectLongProcessing should start');
 
     sleep_until_job_start($t, 'MockProjectLongProcessing');
 
     $t->put_ok('/api/v1/obs_rsync/MockProjectLongProcessing/runs')
-      ->status_is(200, "second request to MockProjectLongProcessing should be queued");
+      ->status_is(200, 'second request to MockProjectLongProcessing should be queued');
     $t->put_ok('/api/v1/obs_rsync/MockProjectLongProcessing/runs')
-      ->status_is(208, "third request to MockProjectLongProcessing should report already in queue");
+      ->status_is(208, 'third request to MockProjectLongProcessing should report already in queue');
     $t->put_ok('/api/v1/obs_rsync/MockProjectLongProcessing1/runs')
-      ->status_is(201, "first request to MockProjectLongProcessing1 should start");
+      ->status_is(201, 'first request to MockProjectLongProcessing1 should start');
     $t->put_ok('/api/v1/obs_rsync/MockProjectLongProcessing/runs')
-      ->status_is(208, "request for MockProjectLongProcessing still reports in queue");
+      ->status_is(208, 'request for MockProjectLongProcessing still reports in queue');
 
     sleep_until_job_start($t, 'MockProjectLongProcessing1');
 
     $t->put_ok('/api/v1/obs_rsync/MockProjectLongProcessing1/runs')
-      ->status_is(200, "second request to MockProjectLongProcessing1 is queued");
+      ->status_is(200, 'second request to MockProjectLongProcessing1 is queued');
     $t->put_ok('/api/v1/obs_rsync/MockProjectLongProcessing1/runs')
-      ->status_is(208, "now MockProjectLongProcessing1 should report already in queue");
-    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(507, "Queue limit is reached 4=(2 running + 2 scheduled)");
+      ->status_is(208, 'now MockProjectLongProcessing1 should report already in queue');
+    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(507, 'Queue limit is reached 4=(2 running + 2 scheduled)');
     $t->put_ok('/api/v1/obs_rsync/MockProjectLongProcessing1/runs')
-      ->status_is(208, "MockProjectLongProcessing1 still in queue");
+      ->status_is(208, 'MockProjectLongProcessing1 still in queue');
     $t->put_ok('/api/v1/obs_rsync/WRONGPROJECT/runs')
-      ->status_is(404, "trigger rsync wrong project still returns error");
+      ->status_is(404, 'trigger rsync wrong project still returns error');
 
+    signal_rsync_ready('MockProjectLongProcessing', 'MockProjectLongProcessing1');
     sleep_until_all_jobs_finished($t);
 
-    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "Proj1 just starts as gru should empty queue for now");
+    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, 'Proj1 just starts as gru should empty queue for now');
 }
 
 subtest 'test concurrenctly long running jobs' => sub {
@@ -151,7 +175,7 @@ sleep_until_all_jobs_finished($t);
 $results = $t->app->minion->backend->list_jobs(0, 400, {tasks => ['obs_rsync_run'], states => ['finished']});
 ok(10 == $results->{total}, 'Number of finished jobs ' . $results->{total});
 
-$t->put_ok('/api/v1/obs_rsync/MockProjectError/runs')->status_is(201, "Start another mock project");
+$t->put_ok('/api/v1/obs_rsync/MockProjectError/runs')->status_is(201, 'Start another mock project');
 
 sleep_until_all_jobs_finished($t);
 
