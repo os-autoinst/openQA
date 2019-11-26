@@ -79,7 +79,7 @@ Source100:      openQA-rpmlintrc
 Source101:      update-cache.sh
 BuildRequires:  fdupes
 BuildRequires:  %{build_requires}
-Requires:       perl(Minion) >= 9.13
+Requires:       perl(Minion) >= 10.0
 Requires:       %{main_requires}
 Requires:       openQA-client = %{version}
 Requires:       openQA-common = %{version}
