@@ -24,6 +24,8 @@ BEGIN {
     use Mojo::File qw(path tempdir);
     use FindBin;
 
+    $ENV{OPENQA_CACHE_SERVICE_QUIET} = $ENV{HARNESS_IS_VERBOSE} ? 0 : 1;
+
     $tempdir = tempdir;
     my $basedir = $tempdir->child('t', 'cache.d');
     $ENV{OPENQA_CACHE_DIR} = path($basedir, 'cache');
@@ -35,10 +37,6 @@ CACHEDIRECTORY = ' . $ENV{OPENQA_CACHE_DIR} . '
 CACHEWORKERS = 10
 CACHELIMIT = 100');
 }
-
-# Avoid warning error: Name "Config::IniFiles::t/cache.d/cache/config/workers.ini" used only once
-use OpenQA::CacheService::Model::Cache;
-OpenQA::CacheService::Model::Cache->from_worker;
 
 use Test::More;
 use Test::Warnings;

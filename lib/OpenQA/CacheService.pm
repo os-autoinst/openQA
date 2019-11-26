@@ -26,13 +26,17 @@ sub startup {
 
     $self->defaults(appname => 'openQA Cache Service');
 
+    # Allow for very quiet tests
     $self->hook(
         before_server_start => sub {
             my ($server, $app) = @_;
             $server->silent(1) if $app->mode eq 'test';
         });
+    my $log = $self->log;
+    $log->unsubscribe('message') if $ENV{OPENQA_CACHE_SERVICE_QUIET};
 
-    $self->plugin(Minion => {SQLite => 'sqlite:' . OpenQA::CacheService::Model::Cache->from_worker->db_file});
+    my $db_file = OpenQA::CacheService::Model::Cache->from_worker(log => $log)->db_file;
+    $self->plugin(Minion => {SQLite => "sqlite:$db_file"});
     $self->plugin('Minion::Admin');
     $self->plugin('OpenQA::CacheService::Task::Asset');
     $self->plugin('OpenQA::CacheService::Task::Sync');
