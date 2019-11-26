@@ -96,14 +96,11 @@ sub _download_asset {
     my $code = $res->code // 521;    # Used by cloudflare to indicate web server is down.
     if ($code eq 304) {
         $log->info("Content of $asset has not changed, updating last use");
-        unless ($self->_update_asset_last_use($asset)) {
-            $log->warn('Abnormal situation, status 304');
-            $ret = 520;
-        }
+        $ret = 520 unless $self->_update_asset_last_use($asset);
     }
 
     elsif ($res->is_server_error) {
-        $log->warn("Abnormal situation, server error $code");
+        $log->warn("Downloading $asset failed with server error $code");
         $ret = $code;
     }
 

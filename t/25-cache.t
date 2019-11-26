@@ -153,7 +153,8 @@ $cache_log = '';
 
 $cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-503@64bit.qcow2');
 like $cache_log, qr/Downloading sle-12-SP3-x86_64-0368-503\@64bit.qcow2 from/, 'Asset download attempt';
-like $cache_log, qr/Abnormal situation, server error 503/, 'Asset download fails with 503 - Server not available';
+like $cache_log, qr/Downloading .*0368-503\@64bit.qcow2 failed with server error 503/,
+  'Asset download fails with 503 - Server not available';
 like $cache_log, qr/Download error 503, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
 like $cache_log, qr/Too many download errors, aborting/, 'Bailing out after too many retries';
 $cache_log = '';
