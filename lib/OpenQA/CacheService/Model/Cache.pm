@@ -63,7 +63,6 @@ sub init {
 
     my $db_file = path($location, 'cache.sqlite');
     $self->db_file($db_file);
-    $log->info("Loading cache database from $db_file");
     $self->dsn("sqlite:$db_file");
     $self->_deploy_cache unless -e $db_file;
     eval { $self->sqlite->migrations->name('cache_service')->from_data->migrate };
@@ -72,7 +71,7 @@ sub init {
 
     $self->_cache_sync;
     $self->_check_limits(0);
-    $log->info("Cache size is $self->{cache_real_size}, with limit " . $self->limit);
+    $log->info("Cache size is $self->{cache_real_size}, with limit " . $self->limit . " ($location)");
 
     return $self;
 }

@@ -84,9 +84,8 @@ subtest 'base_host' => sub {
 is $cache->init, $cache;
 is $cache->sqlite->migrations->latest, 1, 'version 1 is the latest version';
 is $cache->sqlite->migrations->active, 1, 'version 1 is the active version';
-like $cache_log, qr/Creating cache directory tree for $cachedir/, 'Cache directory tree created';
-like $cache_log, qr/Loading cache database from $db_file/,        'Cache database loaded';
-like $cache_log, qr/Cache size is 0, with limit 53687091200/,     'Cache limit is default (50GB)';
+like $cache_log, qr/Creating cache directory tree for $cachedir/,           'Cache directory tree created';
+like $cache_log, qr/Cache size is 0, with limit 53687091200 \($cachedir\)/, 'Cache limit is default (50GB)';
 ok(-e $db_file, 'cache.sqlite is present');
 $cache_log = '';
 
