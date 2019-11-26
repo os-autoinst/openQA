@@ -42,7 +42,8 @@ sub from_worker {
     return $class->new(
         host     => 'localhost',
         location => ($ENV{OPENQA_CACHE_DIR} || $global_settings->{CACHEDIRECTORY}),
-        exists $global_settings->{CACHELIMIT} ? (limit => int($global_settings->{CACHELIMIT}) * (1024**3)) : ());
+        exists $global_settings->{CACHELIMIT} ? (limit => int($global_settings->{CACHELIMIT}) * (1024**3)) : (), @_
+    );
 }
 
 sub _deploy_cache {

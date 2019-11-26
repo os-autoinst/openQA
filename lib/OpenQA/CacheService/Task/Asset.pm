@@ -44,7 +44,6 @@ sub _cache_asset {
 
     # Log messages need to be logged by this service as well as captured and
     # forwarded to the worker (for logging on both sides)
-    my $cache  = OpenQA::CacheService::Model::Cache->from_worker->log($ctx);
     my $output = '';
     $log->on(
         message => sub {
@@ -52,8 +51,8 @@ sub _cache_asset {
             $output .= "[$level] " . join "\n", @lines, '';
         });
 
-    $cache->host($host);
-    $cache->get_asset({id => $id}, $type, $asset_name);
+    my $cache = OpenQA::CacheService::Model::Cache->from_worker(log => $ctx);
+    $cache->host($host)->get_asset({id => $id}, $type, $asset_name);
     $job->note(output => $output);
     $ctx->info('Finished download');
 }
