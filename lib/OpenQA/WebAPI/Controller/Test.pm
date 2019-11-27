@@ -467,12 +467,29 @@ sub prepare_job_results {
 
     # prefetch the number of available labels for those jobs
     my $job_labels = $self->_job_labels($jobs);
-    my @job_names  = map { $_->TEST } @$jobs;
 
     # prefetch descriptions from test suites
-    my %desc_args    = (name => {in => \@job_names});
-    my @descriptions = $self->schema->resultset('TestSuites')->search(\%desc_args, {columns => [qw(name description)]});
-    my %descriptions = map { $_->name => $_->description } @descriptions;
+    my %test_suite_names;
+    my @job_template_names;
+    foreach my $j (@$jobs) {
+        my $job_id = $j->id;
+        my $test   = $j->TEST;
+        my $job_settings
+          = $self->schema->resultset('JobSettings')->search({job_id => $job_id, key => 'TEST_SUITE_NAME'})->single;
+        my $ts_name = $job_settings ? $job_settings->value : $test;
+        push @job_template_names, {name => $j->TEST, test_suite_name => $ts_name};
+        $test_suite_names{$ts_name} = 1;
+    }
+    my @test_suite_names = keys %test_suite_names;
+    my %test_and_description
+      = map { $_->name => $_->description }
+      $self->schema->resultset('TestSuites')
+      ->search({name => {in => \@test_suite_names}}, {columns => [qw(name description)]})->all;
+    my %descriptions;
+    foreach (@job_template_names) {
+        $descriptions{$_->{name}} = $test_and_description{$_->{test_suite_name}}
+          if $test_and_description{$_->{test_suite_name}};
+    }
 
     my $todo = $self->param('todo');
     foreach my $job (@$jobs) {

@@ -102,6 +102,27 @@ sub schema_hook {
             ],
         });
     $jobs->find(99946)->update({result => OpenQA::Jobs::Constants::FAILED});
+
+    # add job for testing job template name
+    my $job_hash = {
+        id         => 99990,
+        group_id   => 1002,
+        priority   => 30,
+        result     => OpenQA::Jobs::Constants::FAILED,
+        state      => OpenQA::Jobs::Constants::DONE,
+        TEST       => 'kde_variant',
+        VERSION    => '13.1',
+        BUILD      => '0091',
+        ARCH       => 'x86_64',
+        MACHINE    => '64bit',
+        DISTRI     => 'opensuse',
+        FLAVOR     => 'DVD',
+        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 36000, 'UTC'),
+        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
+        settings => [{key => 'JOB_TEMPLATE_NAME', value => 'kde_variant'}, {key => 'TEST_SUITE_NAME', value => 'kde'}],
+    };
+    $jobs->create($job_hash);
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -317,6 +338,22 @@ subtest "filtering by machine" => sub {
         element_not_present('#flavor_DVD_arch_i586');
 
     };
+};
+
+subtest "job template names displayed on 'Test result overview' page" => sub {
+    $driver->get('/group_overview/1002');
+    is($driver->find_element('.progress-bar-failed')->get_text(), '1 failed', 'The number of failed jobs is right');
+    is($driver->find_element('.progress-bar-unfinished')->get_text(),
+        '1 unfinished', 'The number of unfinished jobs is right');
+
+    $driver->get('/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1002');
+    my @tds = $driver->find_elements('#results_DVD tbody tr .name');
+    is($tds[0]->get_text(), 'kde_variant', 'job template name kde_variant displayed correctly');
+
+    my @descriptions = $driver->find_elements('td.name a', 'css');
+    is(scalar @descriptions, 2, 'only test suites with description content are shown as links');
+    $descriptions[0]->click();
+    is($driver->find_element('.popover-header')->get_text, 'kde_variant', 'description popover shows content');
 };
 
 kill_driver();

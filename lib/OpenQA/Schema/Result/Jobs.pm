@@ -305,7 +305,8 @@ sub label {
 sub scenario {
     my ($self) = @_;
 
-    return $self->result_source->schema->resultset('TestSuites')->find({name => $self->TEST});
+    my $test_suite_name = $self->settings_hash->{TEST_SUITE_NAME} || $self->TEST;
+    return $self->result_source->schema->resultset('TestSuites')->find({name => $test_suite_name});
 }
 
 sub scenario_hash {
