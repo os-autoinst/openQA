@@ -147,11 +147,20 @@ function showLastAssetStatusUpdate(assetStatus) {
     }
 }
 
+function makeQualifiedGroupIdForAsset(assetInfo) {
+    var parentGroupOfAsset = assetInfo.picked_into_parent_id;
+    if (parentGroupOfAsset !== undefined) {
+        return 'parent-group-' + parentGroupOfAsset;
+    }
+    return 'group-' + assetInfo.picked_into;
+}
+
 function makeAssetsByGroup(assetStatus) {
     var assetsByGroupHeading = $('#assets-by-group-heading');
     var assetsByGroupList = $('#assets-by-group');
     var totalSize = 0;
-    var groups = assetStatus.groups;
+    var jobGroups = assetStatus.groups;
+    var parentGroups = assetStatus.parents;
     var assets = assetStatus.data;
 
     $('#assets-by-group-loading').hide();
@@ -166,9 +175,10 @@ function makeAssetsByGroup(assetStatus) {
         }
 
         // make the ul element but don't populate the li elements already
-        var assetUl = assetsByGroup[asset.picked_into];
+        var qualifiedGroupId = makeQualifiedGroupIdForAsset(asset);
+        var assetUl = assetsByGroup[qualifiedGroupId];
         if (!assetUl) {
-            assetsByGroup[asset.picked_into] = assetUl = $('<ul></ul>');
+            assetsByGroup[qualifiedGroupId] = assetUl = $('<ul></ul>');
             assetUl.assets = [];
 
             // add method lazy-initialize the ul element
@@ -185,33 +195,35 @@ function makeAssetsByGroup(assetStatus) {
     });
 
     // add li element for each group, sorted by used asset size and group name
-    Object.keys(groups).sort(function(b, a) {
-        a = groups[a];
-        b = groups[b];
+    Object.values(parentGroups).concat(Object.values(jobGroups)).sort(function(b, a) {
         if (a.picked < b.picked) {
             return -1;
         } else if (b.picked < a.picked) {
             return 1;
         }
         return a.group.localeCompare(b.group);
-    }).forEach(function(groupId) {
-        var groupInfo = groups[groupId];
+    }).forEach(function(groupInfo) {
         if (!groupInfo.picked) {
             return;
         }
 
+        var groupId = groupInfo.id !== null ? groupInfo.id : 0;
+        var parents = groupInfo.parents;
+        var isParent = groupInfo.parent_id === undefined; // parentless job groups have parent_id set to null
         var groupLi = $('<li></li>');
+        var qualifiedGroupId = isParent ? ('parent-group-' + groupId) : ('group-' + groupId);
+        var checkboxId = qualifiedGroupId + '-checkbox';
 
         // add input for expanding/collapsing
-        var groupCheckbox = $('<input id="group-' + groupId + '-checkbox" type="checkbox"></input>');
+        var groupCheckbox = $('<input id="' + checkboxId + '" type="checkbox"></input>');
         groupLi.append(groupCheckbox);
-        var label = $('<label for="group-' + groupId + '-checkbox">' + groupInfo.group + '</label>');
+        var label = $('<label for="' + checkboxId + '">' + groupInfo.group + '</label>');
         groupLi.append(label);
 
         // add configure button
-        if (window.isAdmin && groupId !== undefined && groupId !== "0") {
-            groupLi.append('<a href="/admin/job_templates/' + groupId +
-                '"><i class="fa fa-wrench" title="Configure"></i></a>');
+        if (window.isAdmin && groupId !== null && groupId !== undefined) {
+            var path = isParent ? ('/admin/edit_parent_group/' + groupId) : ('/admin/job_templates/' + groupId);
+            groupLi.append('<a href="' + path + '"><i class="fa fa-wrench" title="Configure"></i></a>');
         }
 
         // add size
@@ -224,7 +236,7 @@ function makeAssetsByGroup(assetStatus) {
         groupLi.append('<span>' + sizeString + '</span>');
 
         // setup lazy-loading for list of assets
-        var assetUl = assetsByGroup[groupId];
+        var assetUl = assetsByGroup[qualifiedGroupId];
         if (assetUl) {
             groupCheckbox.change(function() {
                 if (assetUl.initialized) {
