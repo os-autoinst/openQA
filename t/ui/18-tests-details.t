@@ -170,6 +170,12 @@ subtest 'bug reporting' => sub {
     };
 };
 
+subtest 'log details on incomplete jobs' => sub {
+    $driver->get('/tests/99926');
+    is(current_tab, 'Details', 'starting on Details tab also for incomplete jobs');
+    like($driver->find_element('#details embed')->get_attribute('src'), qr/autoinst-log.txt/, 'log file embedded');
+};
+
 # test running view with Test::Mojo as phantomjs would get stuck on the
 # liveview/livelog forever
 my $t = Test::Mojo->new('OpenQA::WebAPI');

@@ -63,14 +63,15 @@ use warnings;
             {key => 'ISO_MAXSIZE', value => 737280000},
             {key => 'ISO_1',       value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'}
         ],
-        ARCH    => 'x86_64',
-        BUILD   => '87.5011',
-        DISTRI  => 'opensuse',
-        FLAVOR  => 'staging_e',
-        TEST    => 'minimalx',
-        VERSION => 'Factory',
-        MACHINE => '32bit',
-        state   => "done",
+        ARCH       => 'x86_64',
+        BUILD      => '87.5011',
+        DISTRI     => 'opensuse',
+        FLAVOR     => 'staging_e',
+        TEST       => 'minimalx',
+        VERSION    => 'Factory',
+        MACHINE    => '32bit',
+        result_dir => '00099926-opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx',
+        state      => "done",
         # One hour ago
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
         # Two hours ago

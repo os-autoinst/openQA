@@ -20,7 +20,7 @@
 <div class="row" id="result-row">
     <div class="col-sm-12">
         %= include 'test/infopanel', worker => $assigned_worker
-        <div role="tabpanel">
+        <div role="tabpanel" style="height: 100%">
 
             <ul class="nav nav-tabs" role="tablist" id="result_tabs">
                 <li role="presentation" class="nav-item">
@@ -55,9 +55,18 @@
                 </li>
             </ul>
 
-            <div class="tab-content">
-                <div role="tabpanel" class="tab-pane active" id="details">
+            <div class="tab-content" style="height: 100%">
+                <div role="tabpanel" class="tab-pane active" id="details" style="height: 100%">
+                % if (@$modlist) {
                     %= include 'test/details'
+                % }
+                % else {
+                    % for my $resultfile (@$resultfiles) {
+                        % next unless ($resultfile =~ /autoinst-log.txt$/);
+                        Likely error from autoinst-log.txt:<br>
+                        <embed src=<%= url_for('test_file', testid => $testid, filename => $resultfile) %> type="text/plain" style="width: 100%; height: 100%">
+                    % }
+                % }
                 </div>
 
                 % if ($has_parser_text_results) {
