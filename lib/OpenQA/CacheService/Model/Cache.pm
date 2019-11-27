@@ -32,6 +32,7 @@ has limit      => 50 * (1024**3);
 has log        => sub { Mojo::Log->new };
 has sleep_time => 5;
 has sqlite     => sub { Mojo::SQLite->new(shift->dsn) };
+has ua         => sub { Mojo::UserAgent->new(max_redirects => 2, max_response_size => 0) };
 
 sub new { shift->SUPER::new(@_)->init }
 
@@ -71,7 +72,7 @@ sub init {
           . qq{ (Maybe the file is corrupted and needs to be deleted?): $err};
     }
 
-    $self->_cache_sync;
+    $self->cache_sync;
     $self->_check_limits(0);
     $log->info(qq{Cache size of "$location" is $self->{cache_real_size}, with limit } . $self->limit);
 
@@ -83,15 +84,18 @@ sub _download_asset {
 
     my $log = $self->log;
 
-    my $ua  = Mojo::UserAgent->new(max_redirects => 2, max_response_size => 0);
+    my $ua  = $self->ua;
     my $url = sprintf '%s/tests/%d/asset/%s/%s', $self->host, $id, $type, basename($asset);
     $log->info('Downloading "' . basename($asset) . qq{" from "$url"});
 
-    # Assets might be deleted by a sysadmin
+    # Keep temporary files on the same partition as the cache
+    local $ENV{MOJO_TMPDIR} = path($self->location, 'tmp')->to_string;
     my $tx = $ua->build_tx(GET => $url);
-    $tx->req->headers->header('If-None-Match' => qq{$etag}) if $etag && -e $asset;
 
+    # Assets might be deleted by a sysadmin
+    $tx->req->headers->header('If-None-Match' => qq{$etag}) if $etag && -e $asset;
     $tx = $ua->start($tx);
+
     my $res = $tx->res;
     my $ret;
 
@@ -110,7 +114,7 @@ sub _download_asset {
         my $headers = $tx->res->headers;
         $etag = $headers->etag;
         unlink $asset;
-        $self->_cache_sync;
+        $self->cache_sync;
         my $size = $res->content->asset->move_to($asset)->size;
         if ($size == $headers->content_length) {
             $self->_check_limits($size);
@@ -154,7 +158,7 @@ sub get_asset {
     my $n = 5;
     while (1) {
         $self->track_asset($asset);    # Track asset - make sure it's in DB
-        my $result = $self->_asset($asset);
+        my $result = $self->asset($asset);
 
         my $ret;
         eval { $ret = $self->_download_asset($job->{id}, lc($asset_type), $asset, $result->{etag}) };
@@ -175,7 +179,7 @@ sub get_asset {
     }
 }
 
-sub _asset {
+sub asset {
     my ($self, $asset) = @_;
     my $results = $self->sqlite->db->select('assets', [qw(etag size last_use)], {filename => $asset})->hashes;
     return $results->first || {};
@@ -254,7 +258,7 @@ sub purge_asset {
     return 1;
 }
 
-sub _cache_sync {
+sub cache_sync {
     my $self = shift;
 
     $self->{cache_real_size} = 0;

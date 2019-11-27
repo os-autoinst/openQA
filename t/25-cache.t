@@ -209,11 +209,11 @@ $cache->purge_asset($fake_asset->to_string);
 ok !-e $fake_asset, 'Asset was purged';
 
 $cache->track_asset($fake_asset->to_string);
-is(ref($cache->_asset($fake_asset->to_string)), 'HASH', 'Asset was just inserted, so it must be there')
-  or die diag explain $cache->_asset($fake_asset->to_string);
+is(ref($cache->asset($fake_asset->to_string)), 'HASH', 'Asset was just inserted, so it must be there')
+  or die diag explain $cache->asset($fake_asset->to_string);
 
-is $cache->_asset($fake_asset->to_string)->{etag}, undef, 'Can get downloading state with _asset()';
-is_deeply $cache->_asset('foobar'), {}, '_asset() returns {} if asset is not present';
+is $cache->asset($fake_asset->to_string)->{etag}, undef, 'Can get downloading state with _asset()';
+is_deeply $cache->asset('foobar'), {}, '_asset() returns {} if asset is not present';
 
 subtest 'cache directory is symlink' => sub {
     my $symlink = $cached->child('symlink')->to_string;
@@ -223,8 +223,26 @@ subtest 'cache directory is symlink' => sub {
     ok(-e $fake_asset, 'fake asset created');
 
     $cache->location($symlink);
-    $cache->_cache_sync;
+    $cache->cache_sync;
     is($cache->{cache_real_size}, 16, 'cache size could be determined');
+};
+
+subtest 'cache tmp directory is used for downloads' => sub {
+    my $tmpfile;
+    $cache->ua->on(
+        start => sub {
+            my ($ua, $tx) = @_;
+            $tx->res->on(
+                progress => sub {
+                    my $res = shift;
+                    return unless $res->headers->content_length;
+                    return unless $res->content->progress;
+                    $tmpfile //= $res->content->asset->path;
+                });
+        });
+    local $ENV{MOJO_MAX_MEMORY_SIZE} = 1;
+    $cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+    is path($tmpfile)->dirname, path($cache->location, 'tmp'), 'cache tmp directory was used';
 };
 
 stop_server;
