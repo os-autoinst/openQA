@@ -20,9 +20,9 @@ use warnings;
 
 my $tempdir;
 BEGIN {
-    unshift @INC, 't/lib';
     use Mojo::File qw(path tempdir);
-    use FindBin;
+
+    $ENV{OPENQA_CACHE_SERVICE_QUIET} = $ENV{HARNESS_IS_VERBOSE} ? 0 : 1;
 
     $tempdir = tempdir;
     my $basedir = $tempdir->child('t', 'cache.d');
@@ -36,9 +36,8 @@ CACHEWORKERS = 10
 CACHELIMIT = 100');
 }
 
-# Avoid warning error: Name "Config::IniFiles::t/cache.d/cache/config/workers.ini" used only once
-use OpenQA::CacheService::Model::Cache;
-OpenQA::CacheService::Model::Cache->from_worker;
+use FindBin;
+use lib "$FindBin::Bin/lib";
 
 use Test::More;
 use Test::Warnings;
@@ -344,7 +343,7 @@ subtest 'Default usage' => sub {
         sleep .1 until $cache_client->status($asset_request)->is_processed;
         my $out = $cache_client->status($asset_request)->output;
         ok($out, 'Output should be present') or die diag $out;
-        like $out, qr/Downloading $a from/, "Asset download attempt logged";
+        like $out, qr/Downloading "$a" from/, "Asset download attempt logged";
         ok(-e path($cachedir, 'localhost')->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
     }
     else {
@@ -365,7 +364,7 @@ subtest 'Small assets causes racing when releasing locks' => sub {
         1 until $cache_client->status($asset_request)->is_processed;
         my $out = $cache_client->status($asset_request)->output;
         ok($out, 'Output should be present') or die diag $out;
-        like $out, qr/Downloading $a from/, "Asset download attempt logged";
+        like $out, qr/Downloading "$a" from/, "Asset download attempt logged";
         ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded') or die diag "Failed - no asset is there";
     }
     else {

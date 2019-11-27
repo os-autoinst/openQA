@@ -28,32 +28,33 @@ sub _cache_asset {
     my ($job, $id, $type, $asset_name, $host) = @_;
 
     my $app = $job->app;
-    my $log = $app->log;
 
     my $lock = $job->info->{notes}{lock};
     return $job->finish unless defined $asset_name && defined $type && defined $host && defined $lock;
     my $guard = $app->progress->guard($lock);
     unless ($guard) {
-        $job->note(output => 'Asset was already requested by another job');
+        $job->note(
+            output => qq{Asset "$asset_name" was downloaded by another job, details are therefore unavailable here});
         return $job->finish;
     }
 
-    my $cache = OpenQA::CacheService::Model::Cache->from_worker;
+    my $log = $app->log;
+    my $ctx = $log->context('[#' . $job->id . ']');
+    $ctx->info(qq{Downloading: "$asset_name"});
 
-    my $job_prefix = "[Job #" . $job->id . "]";
-    $log->debug("$job_prefix Download: $asset_name");
-    $OpenQA::Utils::app = undef;
-    my $output;
-    {
-        open my $handle, '>', \$output;
-        local *STDERR = $handle;
-        local *STDOUT = $handle;
-        # Do the real download
-        $cache->host($host);
-        $cache->get_asset({id => $id}, $type, $asset_name);
-        $job->note(output => $output);
-    }
-    $log->debug("$job_prefix Finished");
+    # Log messages need to be logged by this service as well as captured and
+    # forwarded to the worker (for logging on both sides)
+    my $output = '';
+    $log->on(
+        message => sub {
+            my ($log, $level, @lines) = @_;
+            $output .= "[$level] " . join "\n", @lines, '';
+        });
+
+    my $cache = OpenQA::CacheService::Model::Cache->from_worker(log => $ctx);
+    $cache->host($host)->get_asset({id => $id}, $type, $asset_name);
+    $job->note(output => $output);
+    $ctx->info('Finished download');
 }
 
 1;

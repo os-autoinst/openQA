@@ -130,7 +130,7 @@ sub cache_assets {
 
         if ($cache_client->enqueue($asset_request)) {
             my $minion_id = $asset_request->minion_id;
-            log_debug("Downloading $asset_uri, request sent to Cache Service ($minion_id)", channels => 'autoinst');
+            log_debug("Downloading $asset_uri, request #$minion_id sent to Cache Service", channels => 'autoinst');
             my $status = $cache_client->status($asset_request);
             until ($status->is_processed) {
                 sleep 5;
@@ -138,7 +138,7 @@ sub cache_assets {
                 $status = $cache_client->status($asset_request);
             }
             my $msg = "Download of $asset_uri processed";
-            if (my $output = $status->output) { $msg .= ": $output" }
+            if (my $output = $status->output) { $msg .= ":\n$output" }
             log_debug($msg, channels => 'autoinst');
         }
 
@@ -253,7 +253,7 @@ sub engine_workit {
                 }
 
                 if (my $output = $status->output) {
-                    log_info('Output of rsync: ' . $output, channels => 'autoinst');
+                    log_info("Output of rsync:\n$output", channels => 'autoinst');
                 }
 
                 # treat "no sync necessary" as success as well
