@@ -9,6 +9,19 @@ function setupAdminAssets() {
         ajaxQueryParams.force_refresh = paramValues[0];
     }
 
+    var addAssetGroupLinks = function(container, groupIds, pickedId, path) {
+        Object.values(groupIds).forEach(function(groupIdString) {
+            var groupId = parseInt(groupIdString);
+            var className = 'not-picked';
+            if (pickedId === groupId) {
+                className = 'picked-group';
+            } else if (pickedId === 0) {
+                className = 'to-be-removed';
+            }
+            container.push('<a class="' + className + '" href="' + path + groupId + '">' + groupId + '</a>');
+        });
+    };
+
     // setup data table
     var assetsTable = $('#assets');
     window.assetsTable = assetsTable.DataTable({
@@ -80,26 +93,16 @@ function setupAdminAssets() {
                     targets: 3,
                     render: function(data, type, row) {
                         var groupIds = Object.keys(data).sort();
+                        var parentGroupIds = Object.keys(row.parents).sort();
                         if (type !== 'display') {
-                            return groupIds.join(',');
+                            return groupIds.concat(parentGroupIds).join(',');
                         }
-                        var pickedInto = row.picked_into;
-                        for (var groupIndex in groupIds) {
-                            var groupId = parseInt(groupIds[groupIndex]);
-                            var className = 'not-picked';
-                            if (pickedInto === groupId) {
-                                className = 'picked-group';
-                            } else if (pickedInto === 0) {
-                                className = 'to-be-removed';
-                            }
-                            groupIds[groupIndex] = '<a class="' + className +
-                                '" href="/group_overview/' + groupId + '">' +
-                                groupId + '</a>';
-                        }
-                        return groupIds.length ? groupIds.join(' ') : 'none';
+                        var links = [];
+                        addAssetGroupLinks(links, groupIds, row.picked_into, '/group_overview/');
+                        addAssetGroupLinks(links, parentGroupIds, row.picked_into_parent_id, '/parent_group_overview/');
+                        return links.length ? links.join(' ') : 'none';
                     }
                 },
-
             ],
             order: [[1, 'desc']],
         }
