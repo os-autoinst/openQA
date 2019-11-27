@@ -49,8 +49,8 @@ sub from_worker {
 sub _deploy_cache {
     my $self = shift;
 
-    $self->log->info('Creating cache directory tree for ' . $self->location);
     my $location = $self->location;
+    $self->log->info(qq{Creating cache directory tree for "$location"});
     path($location)->remove_tree({keep_root => 1});
     path($location, 'tmp')->make_path;
 }
@@ -66,12 +66,14 @@ sub init {
     $self->dsn("sqlite:$db_file");
     $self->_deploy_cache unless -e $db_file;
     eval { $self->sqlite->migrations->name('cache_service')->from_data->migrate };
-    croak "Deploying cache database to $db_file failed (Maybe the file is corrupted and needs to be deleted?): $@"
-      if $@;
+    if (my $err = $@) {
+        croak qq{Deploying cache database to "$db_file" failed}
+          . qq{ (Maybe the file is corrupted and needs to be deleted?): $err};
+    }
 
     $self->_cache_sync;
     $self->_check_limits(0);
-    $log->info("Cache size is $self->{cache_real_size}, with limit " . $self->limit . " ($location)");
+    $log->info(qq{Cache size of "$location" is $self->{cache_real_size}, with limit } . $self->limit);
 
     return $self;
 }
@@ -83,7 +85,7 @@ sub _download_asset {
 
     my $ua  = Mojo::UserAgent->new(max_redirects => 2, max_response_size => 0);
     my $url = sprintf '%s/tests/%d/asset/%s/%s', $self->host, $id, $type, basename($asset);
-    $log->info('Downloading ' . basename($asset) . " from $url");
+    $log->info('Downloading "' . basename($asset) . qq{" from "$url"});
 
     # Assets might be deleted by a sysadmin
     my $tx = $ua->build_tx(GET => $url);
@@ -95,12 +97,12 @@ sub _download_asset {
 
     my $code = $res->code // 521;    # Used by cloudflare to indicate web server is down.
     if ($code eq 304) {
-        $log->info("Content of $asset has not changed, updating last use");
+        $log->info(qq{Content of "$asset" has not changed, updating last use});
         $ret = 520 unless $self->_update_asset_last_use($asset);
     }
 
     elsif ($res->is_server_error) {
-        $log->warn("Downloading $asset failed with server error $code");
+        $log->info(qq{Downloading "$asset" failed with server error $code});
         $ret = $code;
     }
 
@@ -117,23 +119,23 @@ sub _download_asset {
             # We can't just throw it away if database locks.
             my $att = 0;
             my $ok;
-            ++$att and sleep 1 and $log->warn("Updating cache failed (attempt $att)")
+            ++$att and sleep 1 and $log->info("Updating cache failed (attempt $att)")
               until ($ok = $self->_update_asset($asset, $etag, $size)) || $att > 5;
 
-            if ($ok) { $log->info("Download of $asset successful, new cache size is $self->{cache_real_size}") }
+            if ($ok) { $log->info(qq{Download of "$asset" successful, new cache size is $self->{cache_real_size}}) }
             else {
-                $log->error("Purging $asset because updating the cache failed, this should never happen");
+                $log->error(qq{Purging "$asset" because updating the cache failed, this should never happen});
                 $self->purge_asset($asset);
             }
         }
         else {
-            $log->warn("Size of $asset differs, expected " . $headers->content_length . " but downloaded $size");
+            $log->info(qq{Size of "$asset" differs, expected } . $headers->content_length . " but downloaded $size");
             $ret = 598;    # 598 (Informal convention) Network read timeout error
         }
     }
     else {
         my $message = $res->error->{message};
-        $log->warn("Purging $asset because the download failed: $code - $message");
+        $log->info(qq{Purging "$asset" because the download failed: $code - $message});
         $self->purge_asset($asset);
     }
 
@@ -156,16 +158,16 @@ sub get_asset {
 
         my $ret;
         eval { $ret = $self->_download_asset($job->{id}, lc($asset_type), $asset, $result->{etag}) };
+        last unless $ret;
 
-        if (!$ret) { last }
-        elsif ($ret =~ /^5[0-9]{2}$/ && --$n) {
+        if ($ret =~ /^5[0-9]{2}$/ && --$n) {
             my $time = $self->sleep_time;
-            $log->warn("Download error $ret, waiting $time seconds for next try ($n remaining)");
+            $log->info("Download error $ret, waiting $time seconds for next try ($n remaining)");
             sleep $time;
             next;
         }
         elsif (!$n) {
-            $log->warn('Too many download errors, aborting');
+            $log->info('Too many download errors, aborting');
             last;
         }
 
@@ -189,7 +191,7 @@ sub track_asset {
         $db->query($sql, $asset)->arrays;
         $tx->commit;
     };
-    if ($@) { $self->log->error("Tracking asset failed: $@") }
+    if (my $err = $@) { $self->log->error("Tracking asset failed: $err") }
 }
 
 sub _update_asset_last_use {
@@ -202,8 +204,8 @@ sub _update_asset_last_use {
         $db->query($sql, $asset);
         $tx->commit;
     };
-    if ($@) {
-        $self->log->error("Updating last use failed: $@");
+    if (my $err = $@) {
+        $self->log->error("Updating last use failed: $err");
         return undef;
     }
 
@@ -221,12 +223,12 @@ sub _update_asset {
         $db->query($sql, $etag, $size, $asset);
         $tx->commit;
     };
-    if ($@) {
-        $log->error("Updating asset failed: $@");
+    if (my $err = $@) {
+        $log->error("Updating asset failed: $err");
         return undef;
     }
 
-    $log->info(qq{Size of $asset is $size, with ETag "$etag"});
+    $log->info(qq{Size of "$asset" is $size, with ETag "$etag"});
     $self->_increase($size);
 
     return 1;
@@ -241,11 +243,11 @@ sub purge_asset {
         my $tx = $db->begin();
         $db->delete('assets', {filename => $asset});
         $tx->commit;
-        if (-e $asset) { $log->error("Purging $asset failed: $!") unless unlink $asset }
-        else           { $log->debug("Purging $asset failed because the asset did not exist") }
+        if (-e $asset) { $log->error(qq{Unlinking "$asset" failed: $!}) unless unlink $asset }
+        else           { $log->debug(qq{Purging "$asset" failed because the asset did not exist}) }
     };
-    if ($@) {
-        $log->error("Purging $asset failed: $@");
+    if (my $err = $@) {
+        $log->error(qq{Purging "$asset" failed: $err});
         return undef;
     }
 
@@ -270,7 +272,7 @@ sub asset_lookup {
     my $results = $self->sqlite->db->select('assets', [qw(filename etag last_use size)], {filename => $asset});
 
     if ($results->arrays->size == 0) {
-        $self->log->info("Purging $asset because the asset is not registered");
+        $self->log->info(qq{Purging "$asset" because the asset is not registered});
         $self->purge_asset($asset);
         return undef;
     }
@@ -295,18 +297,20 @@ sub _check_limits {
     my $log   = $self->log;
 
     if ($self->_exceeds_limit($needed)) {
-        $log->info("Cache size $self->{cache_real_size} + $needed exceeds limit of $limit, purging least used assets");
+        $log->info(
+            "Cache size $self->{cache_real_size} + needed $needed exceeds limit of $limit, purging least used assets");
         eval {
             my $db      = $self->sqlite->db;
             my $results = $db->select('assets', [qw(filename size last_use)], undef, {-asc => 'last_use'});
             for my $asset ($results->hashes->each) {
                 my $asset_size = $asset->{size} || -s $asset->{filename} || 0;
-                $log->info("Purging $asset->{filename} because we need space for new assets, reclaiming $asset_size");
+                $log->info(
+                    qq{Purging "$asset->{filename}" because we need space for new assets, reclaiming $asset_size});
                 $self->_decrease($asset_size) if $self->purge_asset($asset->{filename});
                 last if !$self->_exceeds_limit($needed);
             }
         };
-        if ($@) { $log->error("Checking cache limit failed: $@") }
+        if (my $err = $@) { $log->error("Checking cache limit failed: $err") }
     }
 }
 

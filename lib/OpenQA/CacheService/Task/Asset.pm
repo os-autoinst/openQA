@@ -34,13 +34,13 @@ sub _cache_asset {
     my $guard = $app->progress->guard($lock);
     unless ($guard) {
         $job->note(
-            output => "Asset $asset_name was downloaded by another job, details are therefore unavailable to us");
+            output => qq{Asset "$asset_name" was downloaded by another job, details are therefore unavailable here});
         return $job->finish;
     }
 
     my $log = $app->log;
     my $ctx = $log->context('[#' . $job->id . ']');
-    $ctx->info("Downloading $asset_name");
+    $ctx->info(qq{Downloading: "$asset_name"});
 
     # Log messages need to be logged by this service as well as captured and
     # forwarded to the worker (for logging on both sides)

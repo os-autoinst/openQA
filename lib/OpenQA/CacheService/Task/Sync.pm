@@ -33,12 +33,13 @@ sub _cache_tests {
     return $job->finish unless defined $from && defined $to && defined $lock;
     my $guard = $app->progress->guard($lock);
     unless ($guard) {
-        $job->note(output => "Sync $from to $to was performed by another job, details are therefore unavailable to us");
+        $job->note(
+            output => qq{Sync "$from" to "$to" was performed by another job, details are therefore unavailable here});
         return $job->finish(0);
     }
 
     my $ctx = $app->log->context('[#' . $job->id . ']');
-    $ctx->info("Sync $from to $to");
+    $ctx->info(qq{Sync: "$from" to "$to"});
 
     my @cmd = (qw(rsync -avHP), "$from/", qw(--delete), "$to/tests/");
     $ctx->info('Calling: ' . join(' ', @cmd));
@@ -46,7 +47,7 @@ sub _cache_tests {
     my $status = $? >> 8;
     $job->finish($status);
     $job->note(output => $output);
-    $ctx->info("Finished sync ($status)");
+    $ctx->info("Finished sync: $status");
 }
 
 1;
