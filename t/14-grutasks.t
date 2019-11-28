@@ -90,6 +90,10 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 # launch an additional app to serve some file for testing blocking downloads
 my $mojo_port = OpenQA::SeleniumTest::start_app(sub { });
 
+# define a fix asset_size_limit configuration for this test to be independent of the default value
+# we possibly want to adjust without going into the details of this test
+$t->app->config->{default_group_limits}->{asset_size_limit} = 100;
+
 # Allow Devel::Cover to collect stats for background jobs
 $t->app->minion->on(
     worker => sub {

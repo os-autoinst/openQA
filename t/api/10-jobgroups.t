@@ -118,6 +118,7 @@ subtest 'create parent group' => sub() {
                 default_keep_results_in_days           => 365,
                 default_keep_important_results_in_days => 0,
                 size_limit_gb                          => 200,
+                exclusively_kept_asset_size            => undef,
                 id                                     => $new_id,
                 description                            => undef,
                 build_version_sort                     => 1,

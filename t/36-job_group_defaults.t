@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -127,10 +127,10 @@ subtest 'defaults overridden on parent group level' => sub {
     # in previous subtest 'overrideing defaults in settings affects groups'
 };
 
-subtest 'job group properties inherited from parent group' => sub {
+subtest 'job group properties inherited from parent group except for size_limit_gb' => sub {
     $new_job_group->update({parent_id => $new_parent_group_id});
 
-    is($new_job_group->size_limit_gb,     OpenQA::Schema::JobGroupDefaults::SIZE_LIMIT_GB + 2000);
+    is($new_job_group->size_limit_gb,     OpenQA::Schema::JobGroupDefaults::SIZE_LIMIT_GB + 1000);
     is($new_job_group->keep_logs_in_days, OpenQA::Schema::JobGroupDefaults::KEEP_LOGS_IN_DAYS + 2000);
     is($new_job_group->keep_important_logs_in_days,
         OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS + 2000);
@@ -147,7 +147,7 @@ subtest 'inherited job group properties overridden' => sub {
         $new_job_group->update({$column => $new_job_group->$column + 1000});
     }
 
-    is($new_job_group->size_limit_gb,     OpenQA::Schema::JobGroupDefaults::SIZE_LIMIT_GB + 3000);
+    is($new_job_group->size_limit_gb,     OpenQA::Schema::JobGroupDefaults::SIZE_LIMIT_GB + 2000);
     is($new_job_group->keep_logs_in_days, OpenQA::Schema::JobGroupDefaults::KEEP_LOGS_IN_DAYS + 3000);
     is($new_job_group->keep_important_logs_in_days,
         OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS + 3000);
