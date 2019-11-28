@@ -74,13 +74,7 @@ sub stop_server {
     $server_instance->stop();
 }
 
-my $cache = OpenQA::CacheService::Model::Cache->new(host => $host, location => $cachedir->to_string, log => $log);
-
-subtest 'base_host' => sub {
-    my $cache_test
-      = OpenQA::CacheService::Model::Cache->new(host => $host, location => $cachedir->to_string, log => $log);
-    is base_host($cache_test->host), 'localhost';
-};
+my $cache = OpenQA::CacheService::Model::Cache->new(location => $cachedir->to_string, log => $log);
 
 is $cache->init, $cache;
 is $cache->sqlite->migrations->latest, 1, 'version 1 is the latest version';
@@ -119,7 +113,7 @@ like $cache_log, qr/Purging ".*1.qcow2" because we need space for new assets, re
 ok(!-e '1.qcow2', 'Oldest asset (1.qcow2) was sucessfully removed');
 $cache_log = '';
 
-$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-textmode@64bit.qcow2');
+$cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-textmode@64bit.qcow2');
 my $from = "$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-textmode@64bit.qcow2";
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-textmode\@64bit.qcow2" from "$from"/, 'Asset download attempt';
 like $cache_log, qr/failed: 521/, 'Asset download fails with: 521 - Connection refused';
@@ -129,21 +123,20 @@ $port = Mojo::IOLoop::Server->generate_port;
 $host = "http://127.0.0.1:$port";
 start_server;
 
-$cache->host($host);
 $cache->limit(1024);
 $cache->init;
 
-$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-404@64bit.qcow2');
+$cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-404@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-404\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/failed: 404/, 'Asset download fails with: 404 - Not Found';
 $cache_log = '';
 
-$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-400@64bit.qcow2');
+$cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-400@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-400\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/failed: 400/, 'Asset download fails with 400 - Bad Request';
 $cache_log = '';
 
-$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-589@64bit.qcow2');
+$cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-589@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-589\@64bit.qcow2" from/,         'Asset download attempt';
 like $cache_log, qr/Size of .+ differs, expected 10 but downloaded 6/,                   'Incomplete download logged';
 like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
@@ -153,7 +146,7 @@ like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(1 remai
 like $cache_log, qr/Too many download errors, aborting/, 'Bailing out after too many retries';
 $cache_log = '';
 
-$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-503@64bit.qcow2');
+$cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-503@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-503\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/Downloading ".*0368-503\@64bit.qcow2" failed with server error 503/,
   'Asset download fails with 503 - Server not available';
@@ -161,24 +154,24 @@ like $cache_log, qr/Download error 503, waiting 1 seconds for next try \(4 remai
 like $cache_log, qr/Too many download errors, aborting/, 'Bailing out after too many retries';
 $cache_log = '';
 
-$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+$cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200.*" successful, new cache size is 1024/,
   'Full download logged';
 like $cache_log, qr/Size of .* is 1024, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
 $cache_log = '';
 
-$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+$cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/,             'Asset download attempt';
 like $cache_log, qr/Content of ".*0368-200@64bit.qcow2" has not changed, updating last use/, 'Content has not changed';
 $cache_log = '';
 
-$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+$cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/Content of ".*-0368-200@64bit.qcow2" has not changed, updating last use/, 'Content has not changed';
 $cache_log = '';
 
-$cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_256@64bit.qcow2');
+$cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_256@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200_256\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200_256.*" successful, new cache size is 256/,
   'Full download logged';
@@ -241,7 +234,7 @@ subtest 'cache tmp directory is used for downloads' => sub {
                 });
         });
     local $ENV{MOJO_MAX_MEMORY_SIZE} = 1;
-    $cache->get_asset({id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+    $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
     is path($tmpfile)->dirname, path($cache->location, 'tmp'), 'cache tmp directory was used';
 };
 

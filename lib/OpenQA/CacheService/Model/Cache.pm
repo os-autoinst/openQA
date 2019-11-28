@@ -27,14 +27,12 @@ use Mojo::File 'path';
 use Mojo::Log;
 use POSIX;
 
-has [qw(host cache location db_file dsn)];
+has [qw(cache location dsn)];
 has limit      => 50 * (1024**3);
 has log        => sub { Mojo::Log->new };
 has sleep_time => 5;
-has sqlite     => sub { Mojo::SQLite->new(shift->dsn) };
+has sqlite     => sub { Mojo::SQLite->new };
 has ua         => sub { Mojo::UserAgent->new(max_redirects => 2, max_response_size => 0) };
-
-sub new { shift->SUPER::new(@_)->init }
 
 sub from_worker {
     my $class = shift;
@@ -63,8 +61,7 @@ sub init {
     my $log      = $self->log;
 
     my $db_file = path($location, 'cache.sqlite');
-    $self->db_file($db_file);
-    $self->dsn("sqlite:$db_file");
+    $self->sqlite->from_string("sqlite:$db_file");
     $self->_deploy_cache unless -e $db_file;
     eval { $self->sqlite->migrations->name('cache_service')->from_data->migrate };
     if (my $err = $@) {
@@ -80,12 +77,12 @@ sub init {
 }
 
 sub _download_asset {
-    my ($self, $id, $type, $asset, $etag) = @_;
+    my ($self, $host, $id, $type, $asset, $etag) = @_;
 
     my $log = $self->log;
 
     my $ua  = $self->ua;
-    my $url = sprintf '%s/tests/%d/asset/%s/%s', $self->host, $id, $type, basename($asset);
+    my $url = sprintf '%s/tests/%d/asset/%s/%s', $host, $id, $type, basename($asset);
     $log->info('Downloading "' . basename($asset) . qq{" from "$url"});
 
     # Keep temporary files on the same partition as the cache
@@ -147,11 +144,11 @@ sub _download_asset {
 }
 
 sub get_asset {
-    my ($self, $job, $asset_type, $asset) = @_;
+    my ($self, $host, $job, $asset_type, $asset) = @_;
 
     my $log = $self->log;
 
-    my $location = path($self->location, base_host($self->host));
+    my $location = path($self->location, base_host($host));
     $location->make_path unless -d $location;
     $asset = $location->child(path($asset)->basename);
 
@@ -161,7 +158,7 @@ sub get_asset {
         my $result = $self->asset($asset);
 
         my $ret;
-        eval { $ret = $self->_download_asset($job->{id}, lc($asset_type), $asset, $result->{etag}) };
+        eval { $ret = $self->_download_asset($host, $job->{id}, lc($asset_type), $asset, $result->{etag}) };
         last unless $ret;
 
         if ($ret =~ /^5[0-9]{2}$/ && --$n) {
@@ -189,11 +186,8 @@ sub track_asset {
     my ($self, $asset) = @_;
 
     eval {
-        my $db  = $self->sqlite->db;
-        my $tx  = $db->begin('exclusive');
         my $sql = "INSERT OR IGNORE INTO assets (filename, size, last_use) VALUES (?, 0, strftime('%s','now'))";
-        $db->query($sql, $asset)->arrays;
-        $tx->commit;
+        $self->sqlite->db->query($sql, $asset)->arrays;
     };
     if (my $err = $@) { $self->log->error("Tracking asset failed: $err") }
 }
@@ -202,11 +196,8 @@ sub _update_asset_last_use {
     my ($self, $asset) = @_;
 
     eval {
-        my $db  = $self->sqlite->db;
-        my $tx  = $db->begin('exclusive');
         my $sql = "UPDATE assets set last_use = strftime('%s','now') where filename = ?";
-        $db->query($sql, $asset);
-        $tx->commit;
+        $self->sqlite->db->query($sql, $asset);
     };
     if (my $err = $@) {
         $self->log->error("Updating last use failed: $err");
@@ -243,12 +234,9 @@ sub purge_asset {
 
     my $log = $self->log;
     eval {
-        my $db = $self->sqlite->db;
-        my $tx = $db->begin();
-        $db->delete('assets', {filename => $asset});
-        $tx->commit;
-        if (-e $asset) { $log->error(qq{Unlinking "$asset" failed: $!}) unless unlink $asset }
-        else           { $log->debug(qq{Purging "$asset" failed because the asset did not exist}) }
+        $self->sqlite->db->delete('assets', {filename => $asset});
+        if   (-e $asset) { $log->error(qq{Unlinking "$asset" failed: $!}) unless unlink $asset }
+        else             { $log->debug(qq{Purging "$asset" failed because the asset did not exist}) }
     };
     if (my $err = $@) {
         $log->error(qq{Purging "$asset" failed: $err});
