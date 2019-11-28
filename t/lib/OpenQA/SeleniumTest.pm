@@ -71,6 +71,7 @@ sub start_app {
         );
         $daemon->build_app('OpenQA::WebAPI');
         $daemon->run;
+        Devel::Cover::report() if Devel::Cover->can('report');
         _exit(0);
     }
 
@@ -95,7 +96,17 @@ sub start_gru {
     if ($gru_pid == 0) {
         log_info("starting gru\n");
         $ENV{MOJO_MODE} = 'test';
-        Mojolicious::Commands->start_app('OpenQA::WebAPI', 'gru', 'run', '-m', 'test');
+        my $app = Mojo::Server->new->build_app('OpenQA::WebAPI');
+        $app->minion->on(
+            worker => sub {
+                my ($minion, $worker) = @_;
+                $worker->on(
+                    dequeue => sub {
+                        my ($worker, $job) = @_;
+                        $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
+                    });
+            });
+        $app->start('gru', 'run', '-m', 'test');
         _exit(0);
     }
     return $gru_pid;
