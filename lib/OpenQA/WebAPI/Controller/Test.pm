@@ -265,6 +265,12 @@ sub _show {
     my $clone_of        = $self->schema->resultset('Jobs')->find({clone_id => $job->id});
     my $websocket_proxy = determine_web_ui_web_socket_url($job->id);
 
+    my $rd = $job->result_dir();
+    # result files box
+    my $resultfiles = ($rd && $job->test_resultfile_list) // [];
+    # uploaded logs box
+    my $ulogs = ($rd && $job->test_uploadlog_list) // [];
+
     $self->stash(
         {
             job                     => $job,
@@ -275,28 +281,15 @@ sub _show {
             scenario                => $job->scenario_name,
             worker                  => $worker,
             assigned_worker         => $job->assigned_worker,
+            resultfiles             => $resultfiles,
+            ulogs                   => $ulogs,
+            show_details            => ($test_modules || grep { /autoinst-log.txt/ } @$resultfiles),
             show_dependencies       => !defined($job->clone_id) && $job->has_dependencies,
             clone_of                => $clone_of,
             modlist                 => ($test_modules ? $test_modules->{modules} : []),
             ws_url                  => $websocket_proxy,
             has_parser_text_results => $test_modules->{has_parser_text_results},
         });
-
-    my $rd = $job->result_dir();
-    if ($rd) {    # saved anything
-                  # result files box
-        my $resultfiles = $job->test_resultfile_list;
-
-        # uploaded logs box
-        my $ulogs = $job->test_uploadlog_list;
-
-        $self->stash(resultfiles => $resultfiles);
-        $self->stash(ulogs       => $ulogs);
-    }
-    else {
-        $self->stash(resultfiles => []);
-        $self->stash(ulogs       => []);
-    }
 
     # stash information for developer mode
     if ($job->state eq 'running') {
