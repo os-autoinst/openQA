@@ -111,6 +111,10 @@ $mock_limit->mock(_remove_if       => sub { return 0; });
 # is covering defaults)
 $t->app->config->{default_group_limits}->{asset_size_limit} = 100;
 
+# move group 1002 into a parent group
+$schema->resultset('JobGroupParents')->create({id => 1, name => 'parent of "opensuse test"'});
+$schema->resultset('JobGroups')->search({id => 1002})->update({parent_id => 1});
+
 # define helper to prepare the returned asset status for checks
 # * remove timestamps
 # * split into assets without max_job and assets with max_job because the ones
@@ -171,18 +175,26 @@ my %expected_groups = (
         group         => 'opensuse',
         size_limit_gb => 100,
         size          => '107374182388',
-        picked        => 12,
+        picked => 12,    # assets belonging to parentless job group are accounted directly to that job group
     },
     1002 => {
         id            => 1002,
-        parent_id     => undef,
-        group         => 'opensuse test',
+        parent_id     => '1',
+        group         => 'parent of "opensuse test" / opensuse test',
         size_limit_gb => 100,
-        size          => '107374182384',
-        picked        => 16,
+        size          => '107374182400',
+        picked => 0,     # the assets not supposed to be accounted here but only to the parent group
     },
 );
-my %expected_parents             = ();
+my %expected_parents = (
+    1 => {
+        id            => '1',
+        group         => 'parent of "opensuse test"',
+        size_limit_gb => 100,
+        size          => '107374182384',
+        picked => 16,    # the assets of its only child group 1002 are supposed to be accounted here
+    },
+);
 my @expected_assets_with_max_job = (
     {
         max_job     => 99981,
@@ -197,28 +209,31 @@ my @expected_assets_with_max_job = (
         picked_into => '1001',
     },
     {
-        picked_into => 1002,
-        name        => 'iso/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',
-        fixed       => 0,
-        groups      => {1001 => 99963, 1002 => 99961},
-        parents     => {},
-        type        => 'iso',
-        pending     => 1,
-        id          => 2,
-        size        => 4,
-        max_job     => 99963,
+        picked_into           => 1002,
+        picked_into_parent_id => 1,
+        name                  => 'iso/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso',
+        fixed                 => 0,
+        groups                => {1001 => 99963, 1002 => 99961}
+        ,    # specific job groups still visible when a job group is within a parent group
+        parents => {1 => 1},
+        type    => 'iso',
+        pending => 1,
+        id      => 2,
+        size    => 4,
+        max_job => 99963,
     },
     {
-        groups      => {1002 => 99961},
-        parents     => {},
-        name        => 'repo/testrepo',
-        fixed       => 0,
-        picked_into => '1002',
-        max_job     => 99961,
-        pending     => 1,
-        id          => 6,
-        type        => 'repo',
-        size        => 12,
+        groups  => {1002 => 99961},    # specific job groups still visible when a job group is within a parent group
+        parents => {1    => 1},
+        name    => 'repo/testrepo',
+        fixed   => 0,
+        picked_into           => '1002',
+        picked_into_parent_id => 1,
+        max_job               => 99961,
+        pending               => 1,
+        id                    => 6,
+        type                  => 'repo',
+        size                  => 12,
     },
     {
         name        => 'iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso',
@@ -413,6 +428,18 @@ subtest 'asset status without pending state, max_job and max_job by group' => su
         join(' ', sort keys %expected_assets_without_max_job),
         'assets without max job'
     );
+};
+
+subtest 'size of exclusively kept assets tracked' => sub {
+    my @groups                  = ($schema->resultset('JobGroups')->all, $schema->resultset('JobGroupParents')->all);
+    my %exclusively_kept_assets = map { $_->id => $_->exclusively_kept_asset_size } @groups;
+    is_deeply(
+        \%exclusively_kept_assets,
+        {
+            '1001' => 12,
+            '1002' => 0,     # value not present because 1002 is in parent group 1
+            '1'    => 16,    # everything from 1002
+        }) or diag explain \%exclusively_kept_assets;
 };
 
 subtest 'limit for keeping untracked assets is overridable in settings' => sub {
