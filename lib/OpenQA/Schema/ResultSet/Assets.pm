@@ -249,7 +249,7 @@ END_SQL
                 my $parent = $group->parent;
                 my $parent_id;
                 if (defined $parent) {
-                    my $parent_size_limit_gb = $parent->default_size_limit_gb;
+                    my $parent_size_limit_gb = $parent->size_limit_gb;
                     $parent_id = $parent->id;
                     $parent_group_info{$parent_id} = {
                         id            => $parent_id,

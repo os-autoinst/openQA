@@ -24,19 +24,14 @@
                     <input type="text" class="form-control" id="editor-name" name="name" value="<%= $group->name %>">
                 </div>
             </div>
-            % my ($overridden_asset_limit, $parent_group);
                 <div class="form-group row">
                     <label for="editor-size-limit" class="col-sm-2 control-label" data-toggle="tooltip" title="Size limit for assets">Size limit for assets</label>
                     <div class="col-sm-10">
-            % if (!$is_parent) {
-                % $overridden_asset_limit = $parent_group->default_size_limit_gb if defined ($parent_group = $group->parent);
                         <input type="number" min="1" class="form-control" id="editor-size-limit" name="size_limit_gb" value="<%= $group->size_limit_gb %>"> GiB
-            % }
-            % else {
-                        <input type="number" min="1" class="form-control" id="editor-size-limit" name="default_size_limit_gb" value="<%= $group->default_size_limit_gb %>"> GiB
-            % }
                     </div>
                 </div>
+            % my ($overridden_asset_limit, $parent_group);
+            % $overridden_asset_limit = $parent_group->size_limit_gb if !$is_parent && defined ($parent_group = $group->parent);
             % if (defined $overridden_asset_limit) {
                 <div class="form-group row">
                     <label for="editor-size-limit-warning" class="col-sm-2 control-label"><i class="fas fa-exclamation-triangle"></i></label>

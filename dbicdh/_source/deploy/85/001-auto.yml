@@ -1175,16 +1175,6 @@ schema:
           order: 9
           size:
             - 0
-        default_size_limit_gb:
-          data_type: integer
-          default_value: ~
-          is_nullable: 1
-          is_primary_key: 0
-          is_unique: 0
-          name: default_size_limit_gb
-          order: 3
-          size:
-            - 0
         description:
           data_type: text
           default_value: ~
@@ -1224,6 +1214,16 @@ schema:
           is_unique: 1
           name: name
           order: 2
+          size:
+            - 0
+        size_limit_gb:
+          data_type: integer
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: size_limit_gb
+          order: 3
           size:
             - 0
         sort_order:
