@@ -23,6 +23,7 @@ use base 'DBIx::Class::Core';
 use DBIx::Class::Timestamps 'now';
 use File::Basename;
 use Try::Tiny;
+use File::Spec::Functions 'catdir';
 use OpenQA::App;
 use OpenQA::Log qw(log_debug log_warning);
 use OpenQA::Utils;
@@ -194,6 +195,34 @@ sub schedule_iso {
 # make sure that the DISTRI is lowercase
 sub _distri_key { lc(shift->{DISTRI}) }
 
+sub checkout_distri {
+    my ($url, $name) = @_;
+    my $res = run_cmd_with_log_return_error(['git', '-C', catdir(OpenQA::Utils::sharedir, 'tests'), 'clone', '--depth', 1, $url, $name]);
+    return "\n" . $res->{stderr} if $res->{stderr};
+}
+
+sub _handle_distri {
+    my ($args) = @_;
+    my $url = Mojo::URL->new($args->{DISTRI});
+    return undef unless $url->scheme;
+    OpenQA::Utils::log_info("distri URL parameter provided: '$url'");
+    $args->{DISTRI_SOURCE} = $url;
+    my $name = $url->fragment;
+    $url->fragment(undef);
+    if (!$name) {
+        die "Cannot find distri name from URL, check URL or supply DISTRI" unless $url->path->parts->[-1];
+        $name = $url->path->parts->[-1] =~ s/\.git$//ri;
+    }
+    $args->{DISTRI} = $name;
+    # check if OPENQA_BASEDIR/share/tests/$distri_last_part already exists
+    # we can reuse it if it exists (hopefully it's related)
+    # clone from URL to OPENQA_BASE_DIR/share/tests/$distri_last_part, e.g.
+    my $ret = checkout_distri($url, $name);
+    die "Error on distri handling: $ret\n" if $ret;
+    # similar to git_log_diff method in lib/OpenQA/Schema/Result/Jobs.pm
+    die("not implemented");
+}
+
 =over 4
 
 =item _schedule_iso()
@@ -227,6 +256,7 @@ sub _schedule_iso {
     my $onlysame           = delete $args->{_ONLY_OBSOLETE_SAME_BUILD} // 0;
     my $skip_chained_deps  = delete $args->{_SKIP_CHAINED_DEPS}        // 0;
 
+    _handle_distri($args);
     my $result = $self->_generate_jobs($args, \@notes, $skip_chained_deps);
     return {error => $result->{error_message}, error_code => $result->{error_code} // 400}
       if defined $result->{error_message};
