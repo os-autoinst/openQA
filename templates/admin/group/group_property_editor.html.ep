@@ -23,22 +23,26 @@
                     <input type="text" class="form-control" id="editor-name" name="name" value="<%= $group->name %>">
                 </div>
             </div>
-            % if (!$is_parent) {
                 <div class="form-group row">
                     <label for="editor-size-limit" class="col-sm-2 control-label" data-toggle="tooltip" title="Size limit for assets">Size limit for assets</label>
                     <div class="col-sm-10">
+            % if (!$is_parent) {
                         <input type="number" min="1" class="form-control" id="editor-size-limit" name="size_limit_gb" value="<%= $group->size_limit_gb %>"> GiB
+            % }
+            % else {
+                        <input type="number" min="1" class="form-control" id="editor-size-limit" name="default_size_limit_gb" value="<%= $group->default_size_limit_gb %>"> GiB
+            % }
                     </div>
                 </div>
+            % if (!$is_parent) {
                 <div class="form-group row">
-                    <label for="editor-size-limit" class="col-sm-2 control-label" data-toggle="tooltip" title="Size of the assets which are kept only because they are used by jobs of this group" style="font-weight: normal;">Size of exclusively kept assets</label>
+                    <label class="col-sm-2 control-label" data-toggle="tooltip"
+                           title="Size of the assets which are kept only because they are used by jobs of this group" style="font-weight: normal;">
+                        Size of exclusively kept assets
+                    </label>
                     <div class="col-sm-10">
-                        % if (my $size = $group->exclusively_kept_asset_size) {
-                            %= OpenQA::Utils::human_readable_size($group->exclusively_kept_asset_size)
-                        % }
-                        % else {
-                            unknown
-                        % }
+                        % my $size = $group->exclusively_kept_asset_size;
+                        %= defined $size ? OpenQA::Utils::human_readable_size($size) : 'unknown'
                     </div>
                 </div>
             % }
@@ -82,12 +86,6 @@
                 </div>
             % }
             % else {
-                <div class="form-group row">
-                    <label for="editor-size-limit" class="col-sm-2 control-label" data-toggle="tooltip" title="Size limit for assets">Size limit for assets</label>
-                    <div class="col-sm-10">
-                        <input type="number" min="1" class="form-control" id="editor-size-limit" name="default_size_limit_gb" value="<%= $group->default_size_limit_gb %>"> GiB
-                    </div>
-                </div>
                 <div class="form-group row">
                     <label for="editor-keep-logs-in-days" class="col-sm-2 control-label" data-toggle="tooltip" title="Number of days to keep logs of jobs">Keep logs for</label>
                     <div class="col-sm-10">
