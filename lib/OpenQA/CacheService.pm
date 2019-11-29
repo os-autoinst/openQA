@@ -21,6 +21,8 @@ use OpenQA::CacheService::Model::Cache;
 
 use constant DEFAULT_MINION_WORKERS => 5;
 
+has cache => sub { OpenQA::CacheService::Model::Cache->from_worker(log => shift->log) };
+
 sub startup {
     my $self = shift;
 
@@ -35,8 +37,17 @@ sub startup {
     my $log = $self->log;
     $log->unsubscribe('message') if $ENV{OPENQA_CACHE_SERVICE_QUIET};
 
-    my $db_file = OpenQA::CacheService::Model::Cache->from_worker(log => $log)->db_file;
-    $self->plugin(Minion => {SQLite => "sqlite:$db_file"});
+    # Increase busy timeout to 5 minutes
+    my $cache  = $self->cache;
+    my $sqlite = $cache->sqlite;
+    $sqlite->on(
+        connection => sub {
+            my ($sqlite, $dbh) = @_;
+            $dbh->sqlite_busy_timeout(360000);
+        });
+    $cache->init;
+
+    $self->plugin(Minion => {SQLite => $sqlite});
     $self->plugin('Minion::Admin');
     $self->plugin('OpenQA::CacheService::Task::Asset');
     $self->plugin('OpenQA::CacheService::Task::Sync');

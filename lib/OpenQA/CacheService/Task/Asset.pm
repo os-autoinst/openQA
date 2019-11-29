@@ -16,8 +16,6 @@
 package OpenQA::CacheService::Task::Asset;
 use Mojo::Base 'Mojolicious::Plugin';
 
-use OpenQA::CacheService::Model::Cache;
-
 sub register {
     my ($self, $app) = @_;
 
@@ -51,8 +49,8 @@ sub _cache_asset {
             $output .= "[$level] " . join "\n", @lines, '';
         });
 
-    my $cache = OpenQA::CacheService::Model::Cache->from_worker(log => $ctx);
-    $cache->host($host)->get_asset({id => $id}, $type, $asset_name);
+    my $cache = $app->cache->log($ctx)->init;
+    $cache->get_asset($host, {id => $id}, $type, $asset_name);
     $job->note(output => $output);
     $ctx->info('Finished download');
 }
