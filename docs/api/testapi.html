@@ -546,7 +546,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_resume_vm">resume_vm</a></li>
 <li><a href="#_parse_junit_log">parse_junit_log</a></li>
 <li><a href="#_parse_extra_log">parse_extra_log</a></li>
-<li><a href="#_wait_idle">wait_idle</a></li>
 </ul>
 </li>
 <li><a href="#_log_and_data_upload_and_download_helpers">log and data upload and download helpers</a>
@@ -1274,17 +1273,8 @@ MD5 algorithm and taking the first characters.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Deprecated mode</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>send_key($key [, $do_wait]);</pre>
-</div>
-</div>
-<div class="paragraph">
 <p>Send one <code>$key</code> to SUT keyboard input. Waits for the screen to change when
-<code>$wait_screen_change</code> is true.
-<em>Deprecated: <code>$do_wait</code> instructs to wait with &lt;$wait_idle</em>'.&gt;</p>
+<code>$wait_screen_change</code> is true.</p>
 </div>
 <div class="paragraph">
 <p>Special characters naming:</p>
@@ -1776,28 +1766,6 @@ file is then parsed as the format supplied, that can be understood by OpenQA::Pa
 </div>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_wait_idle">wait_idle</h5>
-<div class="literalblock">
-<div class="content">
-<pre>wait_idle([$timeout_sec]);</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>*Deprecated: * It is recommended to avoid the use of <code>wait_idle</code>. See
-<a href="https://progress.opensuse.org/issues/5830" class="bare">https://progress.opensuse.org/issues/5830</a> for details.</p>
-</div>
-<div class="paragraph">
-<p>This function will basically just sleep some time as this is the only viable
-option considering all backend implementations. Previously this function tried
-to wait until a test system becomes idle or timeout which only reliably worked
-on qemu backend and was just sleeping on other backends. As such it is wasting
-a lot of time and should be avoided as such.</p>
-</div>
-<div class="paragraph">
-<p>Default timeout is 19s.</p>
-</div>
-</div>
 </div>
 <div class="sect3">
 <h4 id="_log_and_data_upload_and_download_helpers">log and data upload and download helpers</h4>
@@ -1958,7 +1926,7 @@ sub compat_args {
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-27 00:08:06 UTC
+Last updated 2019-11-30 00:08:18 UTC
 </div>
 </div>
 </body>
