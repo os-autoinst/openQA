@@ -59,6 +59,7 @@ sub startup {
     $r->get('/info')->to('API#info');
     $r->get('/status/<id:num>')->to('API#status');
     $r->post('/enqueue')->to('API#enqueue');
+    $r->get('/influxdb/minion')->to('Influxdb#minion');
     $r->any('/*whatever' => {whatever => ''})->to(status => 404, text => 'Not found');
 }
 
@@ -123,6 +124,10 @@ Returns Minon statistics, see L<https://metacpan.org/pod/Minion#stats>.
 =head2 /status/<id>
 
 Retrieve current job status in JSON format.
+
+=head2 /influxdb/minion
+
+Minion job queue statistics in InfluxDB format for easy monitoring.
 
 =head1 POST ROUTES
 
