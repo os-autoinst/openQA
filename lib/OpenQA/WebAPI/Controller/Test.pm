@@ -520,7 +520,7 @@ sub prepare_job_results {
                 label      => $job_labels->{$jobid}{label},
                 comments   => $job_labels->{$jobid}{comments},
             };
-            $aggregated->{$overall}++;
+            $aggregated->{OpenQA::Jobs::Constants::generalize_result($overall)}++;
         }
         elsif ($job->state eq OpenQA::Jobs::Constants::RUNNING) {
             next if $todo;
