@@ -115,6 +115,7 @@ sub schedule_iso {
 }
 
 my $iso = 'openSUSE-13.1-DVD-i586-Build0091-Media.iso';
+my %iso = (ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091');
 
 $t->get_ok('/api/v1/jobs/99927')->status_is(200);
 is($t->tx->res->json->{job}->{state}, 'scheduled', 'job 99927 is scheduled');
@@ -154,41 +155,16 @@ subtest 'group filter and priority override' => sub {
             product_id => 1,
         });
 
-    my $res = schedule_iso(
-        {
-            ISO        => $iso,
-            DISTRI     => 'opensuse',
-            VERSION    => '13.1',
-            FLAVOR     => 'DVD',
-            ARCH       => 'i586',
-            BUILD      => '0091',
-            PRECEDENCE => 'original',
-            _GROUP     => 'invalid group name',
-        });
+    my $res = schedule_iso({%iso, PRECEDENCE => 'original', _GROUP => 'invalid group name'});
     is($res->json->{count}, 0, 'no jobs created if group invalid');
 
-    $res = schedule_iso(
-        {
-            ISO        => $iso,
-            DISTRI     => 'opensuse',
-            VERSION    => '13.1',
-            FLAVOR     => 'DVD',
-            ARCH       => 'i586',
-            BUILD      => '0091',
-            PRECEDENCE => 'original',
-            _GROUP     => 'opensuse test',
-        });
+    $res = schedule_iso({%iso, PRECEDENCE => 'original', _GROUP => 'opensuse test'});
     is($res->json->{count},                           1,  'only one job created due to group filter');
     is($jobs->find($res->json->{ids}->[0])->priority, 42, 'prio from job template used');
 
     $res = schedule_iso(
         {
-            ISO        => $iso,
-            DISTRI     => 'opensuse',
-            VERSION    => '13.1',
-            FLAVOR     => 'DVD',
-            ARCH       => 'i586',
-            BUILD      => '0091',
+            %iso,
             PRECEDENCE => 'original',
             _GROUP_ID  => '1002',
             _PRIORITY  => 43,
@@ -293,17 +269,7 @@ $job_templates->find(
 
 # schedule the iso, this should not actually be possible. Only isos
 # with different name should result in new tests...
-my $res = schedule_iso(
-    {
-        ISO        => $iso,
-        DISTRI     => 'opensuse',
-        VERSION    => '13.1',
-        FLAVOR     => 'DVD',
-        ARCH       => 'i586',
-        BUILD      => '0091',
-        PRECEDENCE => 'original',
-        _OBSOLETE  => '1'
-    });
+my $res = schedule_iso({%iso, PRECEDENCE => 'original', _OBSOLETE => '1'});
 
 is($res->json->{count}, 10, '10 new jobs created');
 
@@ -430,20 +396,7 @@ is($t->tx->res->json->{job}->{state}, 'cancelled', "job $newid is cancelled");
 $res = schedule_iso({iso => $iso, tests => "kde/usb"}, 400);
 
 # handle list of tests
-$res = schedule_iso(
-    {
-        ISO       => $iso,
-        DISTRI    => 'opensuse',
-        VERSION   => '13.1',
-        FLAVOR    => 'DVD',
-        ARCH      => 'i586',
-        TEST      => 'server,kde,textmode',
-        BUILD     => '0091',
-        _OBSOLETE => 1
-    },
-    200
-);
-
+$res = schedule_iso({%iso, TEST => 'server,kde,textmode', _OBSOLETE => 1}, 200);
 is($res->json->{count}, 5, '5 new jobs created (two twice for both machine types)');
 
 # delete the iso
@@ -462,42 +415,15 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     is($t->tx->res->json->{job}->{state}, 'running', 'job in build 0091 running');
     my $tag = 'tag:0091:important';
     $t->app->schema->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
-    $res = schedule_iso(
-        {
-            ISO       => $iso,
-            DISTRI    => 'opensuse',
-            VERSION   => '13.1',
-            FLAVOR    => 'DVD',
-            ARCH      => 'i586',
-            BUILD     => '0091',
-            _OBSOLETE => 1
-        });
+    $res = schedule_iso({%iso, _OBSOLETE => 1});
     is($res->json->{count}, 10, '10 jobs created');
     my $example = $res->json->{ids}->[9];
     $t->get_ok("/api/v1/jobs/$example")->status_is(200);
     is($t->tx->res->json->{job}->{state}, 'scheduled');
-    $res = schedule_iso(
-        {
-            ISO       => $iso,
-            DISTRI    => 'opensuse',
-            VERSION   => '13.1',
-            FLAVOR    => 'DVD',
-            ARCH      => 'i586',
-            BUILD     => '0092',
-            _OBSOLETE => 1
-        });
+    $res = schedule_iso({%iso, BUILD => '0092', _OBSOLETE => 1});
     $t->get_ok("/api/v1/jobs/$example")->status_is(200);
     is($t->tx->res->json->{job}->{state}, 'scheduled', 'job in old important build still scheduled');
-    $res = schedule_iso(
-        {
-            ISO       => $iso,
-            DISTRI    => 'opensuse',
-            VERSION   => '13.1',
-            FLAVOR    => 'DVD',
-            ARCH      => 'i586',
-            BUILD     => '0093',
-            _OBSOLETE => 1
-        });
+    $res = schedule_iso({%iso, BUILD => '0093', _OBSOLETE => 1});
     $t->get_ok('/api/v1/jobs?state=scheduled');
     my @jobs = @{$t->tx->res->json->{jobs}};
     lj;
@@ -506,16 +432,7 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     # now test with a VERSION-BUILD format tag
     $tag = 'tag:13.1-0093:important';
     $t->app->schema->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
-    $res = schedule_iso(
-        {
-            ISO       => $iso,
-            DISTRI    => 'opensuse',
-            VERSION   => '13.1',
-            FLAVOR    => 'DVD',
-            ARCH      => 'i586',
-            BUILD     => '0094',
-            _OBSOLETE => 1
-        });
+    $res = schedule_iso({%iso, BUILD => '0094', _OBSOLETE => 1});
     $t->get_ok('/api/v1/jobs?state=scheduled');
     @jobs = @{$t->tx->res->json->{jobs}};
     lj;
@@ -525,7 +442,6 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
 };
 
 subtest 'build obsoletion/depriorization' => sub {
-    my %iso = (ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0095');
     $res = schedule_iso({%iso, BUILD => '0095', _OBSOLETE => 1});
     $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
     my @jobs = @{$t->tx->res->json->{jobs}};
@@ -610,25 +526,11 @@ sub check_job_setting {
 }
 
 # Schedule download of an existing ISO
-$rsp = schedule_iso(
-    {
-        DISTRI  => 'opensuse',
-        VERSION => '13.1',
-        FLAVOR  => 'DVD',
-        ARCH    => 'i586',
-        ISO_URL => 'http://localhost/openSUSE-13.1-DVD-i586-Build0091-Media.iso'
-    });
+$rsp = schedule_iso({%iso, ISO_URL => 'http://localhost/openSUSE-13.1-DVD-i586-Build0091-Media.iso'});
 check_download_asset('existing ISO');
 
 # Schedule download of an existing HDD for extraction
-$rsp = schedule_iso(
-    {
-        DISTRI               => 'opensuse',
-        VERSION              => '13.1',
-        FLAVOR               => 'DVD',
-        ARCH                 => 'i586',
-        HDD_1_DECOMPRESS_URL => 'http://localhost/openSUSE-13.1-x86_64.hda.xz'
-    });
+$rsp = schedule_iso({%iso, HDD_1_DECOMPRESS_URL => 'http://localhost/openSUSE-13.1-x86_64.hda.xz'});
 check_download_asset('existing HDD');
 
 # Schedule download of a non-existing ISO
@@ -646,29 +548,14 @@ check_download_asset('non-existent ISO',
 check_job_setting($t, $rsp, 'ISO', 'nonexistent.iso', 'parameter ISO is correctly set from ISO_URL');
 
 # Schedule download and uncompression of a non-existing HDD
-$rsp = schedule_iso(
-    {
-        DISTRI               => 'opensuse',
-        VERSION              => '13.1',
-        FLAVOR               => 'DVD',
-        ARCH                 => 'i586',
-        HDD_1_DECOMPRESS_URL => 'http://localhost/nonexistent.hda.xz'
-    });
+$rsp = schedule_iso({%iso, HDD_1_DECOMPRESS_URL => 'http://localhost/nonexistent.hda.xz'});
 is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
 check_download_asset('non-existent HDD (with uncompression)',
     ['http://localhost/nonexistent.hda.xz', locate_asset('hdd', 'nonexistent.hda', mustexist => 0), 1]);
 check_job_setting($t, $rsp, 'HDD_1', 'nonexistent.hda', 'parameter HDD_1 is correctly set from HDD_1_DECOMPRESS_URL');
 
 # Schedule download of a non-existing ISO with a custom target name
-$rsp = schedule_iso(
-    {
-        DISTRI  => 'opensuse',
-        VERSION => '13.1',
-        FLAVOR  => 'DVD',
-        ARCH    => 'i586',
-        ISO_URL => 'http://localhost/nonexistent2.iso',
-        ISO     => 'callitthis.iso'
-    });
+$rsp = schedule_iso({%iso, ISO_URL => 'http://localhost/nonexistent2.iso', ISO => 'callitthis.iso'});
 check_download_asset('non-existent ISO (with custom name)',
     ['http://localhost/nonexistent2.iso', locate_asset('iso', 'callitthis.iso', mustexist => 0), 0]);
 check_job_setting($t, $rsp, 'ISO', 'callitthis.iso', 'parameter ISO is not overwritten when ISO_URL is set');
@@ -702,22 +589,12 @@ is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the exp
 check_download_asset('non-asset _URL');
 
 # Using asset _URL but without filename extractable from URL create warning in log file, jobs, but no gru job
-$rsp = schedule_iso(
-    {DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://localhost'});
+$rsp = schedule_iso({%iso, ISO_URL => 'http://localhost'});
 is($rsp->json->{count}, $expected_job_count, 'a regular ISO post creates the expected number of jobs');
 check_download_asset('asset _URL without valid filename');
 
 # Using asset _URL outside of whitelist will yield 403
-$rsp = schedule_iso(
-    {
-        DISTRI  => 'opensuse',
-        VERSION => '13.1',
-        FLAVOR  => 'DVD',
-        ARCH    => 'i586',
-        ISO_URL => 'http://adamshost/nonexistent.iso'
-    },
-    403
-);
+$rsp = schedule_iso({%iso, ISO_URL => 'http://adamshost/nonexistent.iso'}, 403);
 is($rsp->body, 'Asset download requested from non-whitelisted host adamshost.');
 check_download_asset('asset _URL not in whitelist');
 
@@ -736,17 +613,9 @@ is($rsp->body, 'Asset download requested from non-whitelisted host adamshost.');
 check_download_asset('asset _DECOMPRESS_URL not in whitelist');
 
 # schedule an existant ISO against a repo to verify the ISO is registered and the repo is not
-$rsp = schedule_iso(
-    {
-        DISTRI  => 'opensuse',
-        VERSION => '13.1',
-        FLAVOR  => 'DVD',
-        ARCH    => 'i586',
-        REPO_1  => 'http://open.qa/does-no-matter',
-        ISO     => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'
-    },
-    200
-);
+$rsp
+  = schedule_iso({%iso, REPO_1 => 'http://open.qa/does-no-matter', ISO => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'},
+    200);
 
 is_deeply(
     fetch_first_job($t, $rsp)->{assets},
@@ -809,17 +678,7 @@ subtest 'Catch multimachine cycles' => sub {
     add_opensuse_test('Algol-b', PARALLEL_WITH => "Algol-c");
     add_opensuse_test('Algol-c', PARALLEL_WITH => "Algol-a,Algol-b");
 
-    my $res = schedule_iso(
-        {
-            ISO     => $iso,
-            DISTRI  => 'opensuse',
-            VERSION => '13.1',
-            FLAVOR  => 'DVD',
-            ARCH    => 'i586',
-            BUILD   => '0091',
-            _GROUP  => 'opensuse test',
-        });
-
+    my $res = schedule_iso({%iso, _GROUP => 'opensuse test'});
     is($res->json->{count}, 0, 'Cycle found');
     like(
         $res->json->{failed}->[0]->{error_messages}->[0],
@@ -836,17 +695,7 @@ subtest 'Catch cycles in chained dependencies' => sub {
     add_opensuse_test('chained-c', START_DIRECTLY_AFTER_TEST => 'chained-b');
     add_opensuse_test('chained-d', START_AFTER_TEST          => 'chained-c');
 
-    my $res = schedule_iso(
-        {
-            ISO     => $iso,
-            DISTRI  => 'opensuse',
-            VERSION => '13.1',
-            FLAVOR  => 'DVD',
-            ARCH    => 'i586',
-            BUILD   => '0091',
-            _GROUP  => 'opensuse test',
-        });
-
+    my $res = schedule_iso({%iso, _GROUP => 'opensuse test'});
     is($res->json->{count}, 0, 'no jobs scheduled if cycle detected');
     like(
         $res->json->{failed}->[0]->{error_messages}->[0],
@@ -870,17 +719,7 @@ subtest 'Catch blocked_by cycles' => sub {
       PARALLEL_WITH    => 'ha_supportserver_upgraded',
       START_AFTER_TEST => 'ha_alpha_node02_upgrade';
 
-    my $res = schedule_iso(
-        {
-            ISO     => $iso,
-            DISTRI  => 'opensuse',
-            VERSION => '13.1',
-            FLAVOR  => 'DVD',
-            ARCH    => 'i586',
-            BUILD   => '0091',
-            _GROUP  => 'opensuse test',
-        });
-
+    my $res = schedule_iso({%iso, _GROUP => 'opensuse test'});
     is($res->json->{count}, 5, 'All jobs scheduled');
 
     # this kind of functional test makes it a little harder to verify data
@@ -918,17 +757,7 @@ subtest 'Handling different WORKER_CLASS in directly chained dependency chains' 
         add_opensuse_test('chained-d', START_DIRECTLY_AFTER_TEST => 'chained-c', WORKER_CLASS => 'bar');
         add_opensuse_test('chained-e', START_DIRECTLY_AFTER_TEST => 'chained-d', WORKER_CLASS => 'bar');
 
-        my $res = schedule_iso(
-            {
-                ISO     => $iso,
-                DISTRI  => 'opensuse',
-                VERSION => '13.1',
-                FLAVOR  => 'DVD',
-                ARCH    => 'i586',
-                BUILD   => '0091',
-                _GROUP  => 'opensuse test',
-            });
-
+        my $res = schedule_iso({%iso, _GROUP => 'opensuse test'});
         is($res->json->{count}, 5, 'all jobs scheduled');
         is_deeply($res->json->{failed}, [], 'no jobs failed') or diag explain $res->json->{failed};
         $schema->txn_rollback;
@@ -941,17 +770,7 @@ subtest 'Handling different WORKER_CLASS in directly chained dependency chains' 
         add_opensuse_test('chained-d', START_DIRECTLY_AFTER_TEST => 'chained-c', WORKER_CLASS => 'bar');
         add_opensuse_test('chained-e', START_DIRECTLY_AFTER_TEST => 'chained-d', WORKER_CLASS => 'bar');
 
-        my $res = schedule_iso(
-            {
-                ISO     => $iso,
-                DISTRI  => 'opensuse',
-                VERSION => '13.1',
-                FLAVOR  => 'DVD',
-                ARCH    => 'i586',
-                BUILD   => '0091',
-                _GROUP  => 'opensuse test',
-            });
-
+        my $res = schedule_iso({%iso, _GROUP => 'opensuse test'});
         is($res->json->{count}, 0, 'none of the jobs has been scheduled');
         like(
             $_->{error_messages}->[0],
@@ -980,17 +799,7 @@ for my $machine_separator (qw(@ :)) {
         add_opensuse_test('test3', START_AFTER_TEST          => "test1,test2${machine_separator}64bit-ipmi");
         add_opensuse_test('test4', START_DIRECTLY_AFTER_TEST => 'test3');
 
-        my $res = schedule_iso(
-            {
-                ISO     => $iso,
-                DISTRI  => 'opensuse',
-                VERSION => '13.1',
-                FLAVOR  => 'DVD',
-                ARCH    => 'i586',
-                BUILD   => '0091',
-                _GROUP  => 'opensuse test',
-            });
-
+        my $res = schedule_iso({%iso, _GROUP => 'opensuse test'});
         is($res->json->{count}, 7, '7 jobs scheduled');
         my @newids = @{$res->json->{ids}};
         my $newid  = $newids[0];
@@ -1037,17 +846,7 @@ subtest 'Create dependency for jobs on different machines - best match and log e
     add_opensuse_test('install_kde', MACHINE => ['powerpc', '64bit']);
     add_opensuse_test('use_kde', START_AFTER_TEST => 'install_kde', MACHINE => ['powerpc', '64bit']);
 
-    my $res = schedule_iso(
-        {
-            ISO     => $iso,
-            DISTRI  => 'opensuse',
-            VERSION => '13.1',
-            FLAVOR  => 'DVD',
-            ARCH    => 'i586',
-            BUILD   => '0091',
-            _GROUP  => 'opensuse test',
-        });
-
+    my $res = schedule_iso({%iso, _GROUP => 'opensuse test'});
     is($res->json->{count}, 6, '6 jobs scheduled');
     my @newids = @{$res->json->{ids}};
     my $newid  = $newids[0];
@@ -1100,17 +899,7 @@ subtest 'Create dependency for jobs on different machines - log error parents' =
     add_opensuse_test('slave1',  PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-1G']);
     add_opensuse_test('slave2',  PARALLEL_WITH => 'supportserver@ppc', MACHINE => ['ppc-2G']);
 
-    my $res = schedule_iso(
-        {
-            ISO     => $iso,
-            DISTRI  => 'opensuse',
-            VERSION => '13.1',
-            FLAVOR  => 'DVD',
-            ARCH    => 'i586',
-            BUILD   => '0091',
-            _GROUP  => 'opensuse test',
-        });
-
+    my $res = schedule_iso({%iso, _GROUP => 'opensuse test'});
     is($res->json->{count}, 6, '6 jobs scheduled');
     my @newids = @{$res->json->{ids}};
     my $newid  = $newids[0];
@@ -1163,16 +952,7 @@ subtest 'setting WORKER_CLASS and assigning default WORKER_CLASS' => sub {
             value => $worker_class,
         });
 
-    my $res = schedule_iso(
-        {
-            ISO        => $iso,
-            DISTRI     => 'opensuse',
-            VERSION    => '13.1',
-            FLAVOR     => 'DVD',
-            ARCH       => 'i586',
-            BUILD      => '0091',
-            PRECEDENCE => 'original',
-        });
+    my $res = schedule_iso({%iso, PRECEDENCE => 'original'});
     is($res->json->{count}, 10, '10 jobs scheduled');
 
     # check whether the assignment of the WORKER_CLASS had effect and that all other jobs still have the default applied
@@ -1191,12 +971,7 @@ subtest 'setting WORKER_CLASS and assigning default WORKER_CLASS' => sub {
 
 my $scheduled_product_id;
 my %scheduling_params = (
-    ISO        => $iso,
-    DISTRI     => 'opensuse',
-    VERSION    => '13.1',
-    FLAVOR     => 'DVD',
-    ARCH       => 'i586',
-    BUILD      => '0091',
+    %iso,
     PRECEDENCE => 'original',
     SPECIAL    => 'variable',
 );
@@ -1251,11 +1026,7 @@ subtest 're-schedule product' => sub {
 subtest 'circular reference' => sub {
     $res = schedule_iso(
         {
-            ISO      => $iso,
-            DISTRI   => 'opensuse',
-            VERSION  => '13.1',
-            FLAVOR   => 'DVD',
-            ARCH     => 'i586',
+            %iso,
             ISO      => 'openSUSE-13.1-DVD-i586-Build%BUILD%-Media.iso',
             TEST     => 'textmode',
             BUILD    => '%BUILD_HA%',
@@ -1280,12 +1051,7 @@ subtest '_SKIP_CHAINED_DEPS prevents scheduling parent tests' => sub {
 
     my $res = schedule_iso(
         {
-            ISO                => $iso,
-            DISTRI             => 'opensuse',
-            VERSION            => '13.1',
-            FLAVOR             => 'DVD',
-            ARCH               => 'i586',
-            BUILD              => '0091',
+            %iso,
             _GROUP             => 'opensuse test',
             TEST               => 'child_test_1',
             _SKIP_CHAINED_DEPS => 1,
