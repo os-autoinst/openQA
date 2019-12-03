@@ -42,6 +42,9 @@ sub schema_hook {
     # manually for PhantomJS test
     $jobs->find(99963)->update({assigned_worker_id => 1});
 
+    # for the "investigation details test"
+    my $ret = $jobs->find(99947)->duplicate;
+    $jobs->find($ret->{99947}->{clone})->done(result => 'failed');
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -293,7 +296,7 @@ subtest 'route to latest' => sub {
     is($header->{href}, '/tests/99963', '... as long as it is unique');
     $t->get_ok('/tests/latest?version=13.1')->status_is(200);
     $header = $t->tx->res->dom->at('#info_box .card-header a');
-    is($header->{href}, '/tests/99981', 'returns highest job nr of ambiguous group');
+    is($header->{href}, '/tests/99982', 'returns highest job nr of ambiguous group');
     $t->get_ok('/tests/latest?test=kde&machine=32bit')->status_is(200);
     $header = $t->tx->res->dom->at('#info_box .card-header a');
     is($header->{href}, '/tests/99937', 'also filter on machine');
@@ -525,6 +528,14 @@ subtest 'test module flags are displayed correctly' => sub {
         'Fatal: testsuite is aborted if this test fails',
         'Description of fatal flag is correct'
     );
+};
+
+subtest 'additional investigation notes provided on new failed' => sub {
+    $driver->get('/tests/99947');
+    $driver->find_element('#clones a')->click;
+    $driver->find_element_by_link_text('Investigation')->click;
+    ok($driver->find_element('#investigation_status_entry')->text_like(qr/No result dir/),
+        'Investigation status content shown');
 };
 
 kill_driver();

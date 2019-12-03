@@ -129,6 +129,7 @@ sub startup {
     $test_r->get('/ajax')->name('job_next_previous_ajax')->to('test#job_next_previous_ajax');
     $test_r->get('/modules/:moduleid/fails')->name('test_module_fails')->to('test#module_fails');
     $test_r->get('/dependencies')->name('test_dependencies')->to('test#dependencies');
+    $test_r->get('/investigation')->name('test_investigation')->to('test#investigate');
 
     $test_r->get('/details')->name('details')->to('test#details');
     $test_r->get('/module_components')->name('module_components')->to('test#module_components');

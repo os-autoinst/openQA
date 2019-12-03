@@ -313,6 +313,8 @@ function handleKeyDownOnTestDetails(e) {
 function setupTab(tabHash) {
     if (tabHash === '#dependencies') {
         setupDependencyGraph();
+    } else if (tabHash === '#investigation') {
+        setupInvestigation();
     } else if (tabHash === '#external') {
         setupExternalResults();
     }
@@ -322,6 +324,24 @@ function setupTab(tabHash) {
     } else {
         pauseLiveView();
     }
+}
+
+function setupInvestigation() {
+    var element = document.getElementById('investigation_status');
+    $.ajax({
+        url: element.dataset.url,
+        method: 'GET',
+        success: function(response) {
+            element.innerHTML = '';
+            var preElement = document.createElement('pre');
+            preElement.id = 'investigation_status_entry';
+            preElement.appendChild(document.createTextNode(response));
+            element.appendChild(preElement);
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            $(element).text('Unable to get investigation info: ' + thrownError);
+        }
+    });
 }
 
 function setupExternalResults() {
