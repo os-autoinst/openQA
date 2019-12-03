@@ -45,7 +45,7 @@ properties:
                         description: Additional test variables to be set
                         additionalProperties: false
                         patternProperties:
-                          "^[A-Z_]+[A-Z0-9_]*$":
+                          "^[A-Z_+]+[A-Z0-9_]*$":
                             type: string
                       testsuite:
                         type: string
