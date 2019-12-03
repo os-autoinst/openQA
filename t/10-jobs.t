@@ -379,11 +379,11 @@ subtest 'carry over for soft-fails' => sub {
     $job->update;
     $job->discard_changes;
     is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
-    is(0, $job->comments, 'no comment');
+    is($job->comments, 0, 'no comment');
     $job->done;
     $job->discard_changes;
     is($job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
-    is(1, $job->comments, 'one comment');
+    is($job->comments, 1, 'one comment');
     like($job->comments->first->text, qr/\Qbsc#101\E/, 'right take over');
 
     $_settings{BUILD} = '668';
@@ -395,11 +395,11 @@ subtest 'carry over for soft-fails' => sub {
     $job->update;
     $job->discard_changes;
     is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
-    is(0, $job->comments, 'no comment');
+    is($job->comments, 0, 'no comment');
     $job->done;
     $job->discard_changes;
     is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
-    is(0, $job->comments, 'no takeover');
+    is($job->comments, 0, 'no takeover');
 
 };
 
@@ -429,11 +429,11 @@ subtest 'carry over for ignore_failure modules' => sub {
     $job->update;
     $job->discard_changes;
     is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
-    is(0, $job->comments, 'no comment');
+    is($job->comments, 0, 'no comment');
     $job->done;
     $job->discard_changes;
     is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
-    is(1, $job->comments, 'one comment');
+    is($job->comments, 1, 'one comment');
     like($job->comments->first->text, qr/\Qbsc#101\E/, 'right take over');
 
     $_settings{BUILD} = '671';
@@ -445,11 +445,11 @@ subtest 'carry over for ignore_failure modules' => sub {
     $job->update;
     $job->discard_changes;
     is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
-    is(0, $job->comments, 'no comment');
+    is($job->comments, 0, 'no comment');
     $job->done;
     $job->discard_changes;
     is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
-    is(0, $job->comments, 'no takeover');
+    is($job->comments, 0, 'no takeover');
 
 };
 
