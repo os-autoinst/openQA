@@ -78,3 +78,11 @@ our @EXPORT = qw(
   MODULE_RESULTS
   TIMEOUT_EXCEEDED
 );
+
+# define mapping from any specific job result to a "generalized" form where the different incomplete results are not distinguished
+my %GENERALIZED_RESULTS = ((map { $_ => $_ } COMPLETE_RESULTS), (map { $_ => 'incomplete' } INCOMPLETE_RESULTS));
+
+sub generalize_result {
+    my ($concrete_result) = @_;
+    return $GENERALIZED_RESULTS{$concrete_result} // NONE;
+}
