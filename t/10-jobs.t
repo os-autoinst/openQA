@@ -37,17 +37,17 @@ my $schema = OpenQA::Test::Case->new->init_data;
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 my $rs     = $t->app->schema->resultset("Jobs");
 
-is($rs->latest_build, '0091');
-is($rs->latest_build(version => 'Factory', distri => 'opensuse'), '0048@0815');
-is($rs->latest_build(version => '13.1',    distri => 'opensuse'), '0091');
+is($rs->latest_build, '0091', 'can find latest build from jobs');
+is($rs->latest_build(version => 'Factory', distri => 'opensuse'), '0048@0815', 'latest build for non-integer build');
+is($rs->latest_build(version => '13.1', distri => 'opensuse'), '0091', 'latest build for different version differs');
 
 my @latest = $rs->latest_jobs;
 my @ids    = map { $_->id } @latest;
 # These two jobs have later clones in the fixture set, so should not appear
-ok(grep(!/^(99962|99945)$/, @ids));
+ok(grep(!/^(99962|99945)$/, @ids), 'jobs with later clones do not show up in latest jobs');
 # These are the later clones, they should appear
-ok(grep(/^99963$/, @ids));
-ok(grep(/^99946$/, @ids));
+ok(grep(/^99963$/, @ids), 'cloned jobs appear as latest job');
+ok(grep(/^99946$/, @ids), 'cloned jobs appear as latest job (2nd)');
 
 my %settings = (
     DISTRI  => 'Unicorn',
@@ -193,7 +193,7 @@ subtest 'Create custom job module' => sub {
     $job->discard_changes;
     is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
 
-    is(($job->failed_modules)->[0], 'CUSTOM');
+    is(($job->failed_modules)->[0], 'CUSTOM', 'modules can have custom result');
 };
 
 subtest 'job with at least one failed module and one softfailed => overall is failed' => sub {
@@ -354,7 +354,7 @@ subtest 'job with no modules => overall is failed' => sub {
     is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
 };
 
-subtest 'carry over for soft-fails' => sub {
+subtest 'carry over, including soft-fails' => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'K';
     my $job = _job_create(\%_settings);
