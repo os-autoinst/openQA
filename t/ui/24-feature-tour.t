@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2015-2017 SUSE LLC
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,18 +26,14 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 
-my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
-
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $test_case   = OpenQA::Test::Case->new;
+my $schema_name = OpenQA::Test::Database->generate_schema_name;
+my $schema      = $test_case->init_data(schema_name => $schema_name);
+my $t           = Test::Mojo->new('OpenQA::WebAPI');
 
 sub schema_hook {
-    my $schema = OpenQA::Test::Database->new->create;
-    my $users  = $schema->resultset('Users');
-
-    my $user = $users->create({username => 'nobody', feature_version => 1});
+    $schema->resultset('Users')->create({username => 'nobody', feature_version => 1});
 }
-
 
 my $driver = call_driver(\&schema_hook);
 unless ($driver) {

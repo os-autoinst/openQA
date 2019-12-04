@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2016-2017 SUSE LLC
+# Copyright (C) 2016-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,11 +29,12 @@ use OpenQA::Client;
 
 use OpenQA::SeleniumTest;
 
-OpenQA::Test::Case->new->init_data;
+my $test_case   = OpenQA::Test::Case->new;
+my $schema_name = OpenQA::Test::Database->generate_schema_name;
+my $schema      = $test_case->init_data(schema_name => $schema_name);
 
 sub schema_hook {
     # simulate typo in START_AFTER_TEST to check for error message in this case
-    my $schema     = OpenQA::Test::Database->new->create;
     my $test_suits = $schema->resultset('TestSuites');
     $test_suits->find(1017)->settings->find({key => 'START_AFTER_TEST'})->update({value => 'kda,textmode'});
 }

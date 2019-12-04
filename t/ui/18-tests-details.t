@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2014-2018 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,12 +31,12 @@ use Module::Load::Conditional qw(can_load);
 
 use OpenQA::SeleniumTest;
 
-my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+my $test_case   = OpenQA::Test::Case->new;
+my $schema_name = OpenQA::Test::Database->generate_schema_name;
+my $schema      = $test_case->init_data(schema_name => $schema_name);
 
 sub schema_hook {
-    my $schema = OpenQA::Test::Database->new->create;
-    my $jobs   = $schema->resultset('Jobs');
+    my $jobs = $schema->resultset('Jobs');
 
     # set assigned_worker_id to test whether worker still displayed when job set to done
     # manually for PhantomJS test

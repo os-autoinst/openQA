@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2014-2018 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,9 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Test::Database;
 
-OpenQA::Test::Case->new->init_data;
+my $test_case   = OpenQA::Test::Case->new;
+my $schema_name = OpenQA::Test::Database->generate_schema_name;
+my $schema      = $test_case->init_data(schema_name => $schema_name);
 
 use OpenQA::SeleniumTest;
 
@@ -37,8 +39,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 # We do not need job 99981 right now so delete it here just to have a helpful
 # example for customizing the test database
 sub schema_hook {
-    my $schema = OpenQA::Test::Database->new->create;
-    my $jobs   = $schema->resultset('Jobs');
+    my $jobs = $schema->resultset('Jobs');
     $jobs->find(99981)->delete;
 
     # add a few comments

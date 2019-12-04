@@ -25,11 +25,11 @@ use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 use OpenQA::Jobs::Constants;
 
-my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+my $test_case   = OpenQA::Test::Case->new;
+my $schema_name = OpenQA::Test::Database->generate_schema_name;
+my $schema      = $test_case->init_data(schema_name => $schema_name);
 
 sub schema_hook {
-    my $schema   = OpenQA::Test::Database->new->create;
     my $comments = $schema->resultset('Comments');
     my $bugs     = $schema->resultset('Bugs');
 
