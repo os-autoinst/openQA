@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2018 SUSE LLC
+# Copyright (C) 2018-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,8 +34,10 @@ use OpenQA::WebSockets::Client;
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 
-OpenQA::Test::Case->new->init_data;
-my $tempdir = tempdir;
+my $test_case   = OpenQA::Test::Case->new;
+my $schema_name = OpenQA::Test::Database->generate_schema_name;
+my $schema      = $test_case->init_data(schema_name => $schema_name);
+my $tempdir     = tempdir;
 
 sub schema_hook {
     my $schema             = OpenQA::Test::Database->new->create;

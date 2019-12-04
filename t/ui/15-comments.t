@@ -26,14 +26,14 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::SeleniumTest;
 
-my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+my $test_case   = OpenQA::Test::Case->new;
+my $schema_name = OpenQA::Test::Database->generate_schema_name;
+my $schema      = $test_case->init_data(schema_name => $schema_name);
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 sub schema_hook {
     # create a parent group
-    my $schema = OpenQA::Test::Database->new->create;
     $schema->resultset('JobGroupParents')->create({id => 1, name => 'Test parent', sort_order => 0});
     $schema->resultset('Bugs')->create(
         {
