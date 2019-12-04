@@ -29,10 +29,10 @@ use OpenQA::Client;
 use Mojo::IOLoop;
 use Module::Load::Conditional qw(can_load);
 
+use OpenQA::SeleniumTest;
+
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
-
-use OpenQA::SeleniumTest;
 
 sub schema_hook {
     my $schema = OpenQA::Test::Database->new->create;
@@ -465,14 +465,13 @@ subtest 'filtering' => sub {
 };
 
 # set job 99963 to done via API to tests whether worker is still displayed then
-my $t_api = Test::Mojo->new('OpenQA::WebAPI');
-my $app   = $t_api->app;
-$t_api->ua(
+my $app = $t->app;
+$t->ua(
     OpenQA::Client->new(apikey => '1234567890ABCDEF', apisecret => '1234567890ABCDEF')->ioloop(Mojo::IOLoop->singleton)
 );
-$t_api->app($app);
+$t->app($app);
 my $post
-  = $t_api->post_ok($baseurl . 'api/v1/jobs/99963/set_done', form => {result => 'FAILED'})
+  = $t->post_ok($baseurl . 'api/v1/jobs/99963/set_done', form => {result => 'FAILED'})
   ->status_is(200, 'set job as done');
 
 $t->get_ok($baseurl . 'tests/99963')->status_is(200);
