@@ -46,7 +46,7 @@
 %define python_scripts_requires %{nil}
 %endif
 %define assetpack_requires perl(Mojolicious::Plugin::AssetPack) >= 1.36, perl(CSS::Minifier::XS) perl(JavaScript::Minifier::XS)
-%define common_requires perl(Config::IniFiles) perl(Cpanel::JSON::XS) perl(Cwd) perl(Data::Dump) perl(Data::Dumper) perl(Digest::MD5) perl(Getopt::Long) perl(Minion) >= 9.09, perl(Mojolicious) >= 7.92, perl(Try::Tiny) perl(Regexp::Common), perl(Storable)
+%define common_requires perl(Config::IniFiles) perl(Cpanel::JSON::XS) perl(Cwd) perl(Data::Dump) perl(Data::Dumper) perl(Digest::MD5) perl(Getopt::Long) perl(Minion) >= 9.09, perl(Mojolicious) >= 8.24, perl(Try::Tiny) perl(Regexp::Common), perl(Storable)
 # runtime requirements for the main package that are not required by other sub-packages
 %define main_requires %assetpack_requires git-core perl(Carp::Always) perl(Date::Format) perl(DateTime::Format::Pg) perl(DBD::Pg) >= 3.7.4, perl(DBI) >= 1.632, perl(DBIx::Class) >= 0.082801, perl(DBIx::Class::DeploymentHandler) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(DBIx::Class::OptimisticLocking) perl(File::Copy::Recursive) perl(Net::OpenID::Consumer) perl(Module::Pluggable) perl(aliased) perl(Config::Tiny) perl(Text::Diff) perl(CommonMark) perl(JSON::Validator) perl(IPC::Run) perl(Archive::Extract) perl(Time::ParseDate) perl(Sort::Versions) perl(BSD::Resource) perl(Pod::POM) perl(Mojo::Pg) perl(Mojo::RabbitMQ::Client) >= 0.2, perl(SQL::Translator) perl(YAML::XS) perl(LWP::UserAgent)
 %define client_requires git-core perl(IO::Socket::SSL) >= 2.009, perl(LWP::UserAgent) perl(IPC::Run)
@@ -135,7 +135,7 @@ Development package pulling in all build+test dependencies.
 Summary:        The openQA common tools for web-frontend and workers
 Group:          Development/Tools/Other
 Requires:       %{common_requires}
-Requires:       perl(Mojolicious) >= 7.92
+Requires:       perl(Mojolicious) >= 8.24
 
 %description common
 This package contain shared resources for openQA web-frontend and
