@@ -481,7 +481,6 @@ sub prepare_job_results {
       = $self->schema->resultset('TestSuites')->search({name => \%desc_args}, {columns => [qw(name description)]});
     my %descriptions = map { $_->name => $_->description } @descriptions;
 
-    my $todo = $self->param('todo');
     foreach my $job (@$jobs) {
         next if $states         && !$states->{$job->state};
         next if $results        && !$results->{$job->result};
@@ -489,69 +488,10 @@ sub prepare_job_results {
         next if $machines       && !$machines->{$job->MACHINE};
         next if $failed_modules && $job->result ne OpenQA::Jobs::Constants::FAILED;
 
-        my $jobid  = $job->id;
+        my $result = $job->overview_result($job_labels, $aggregated, $failed_modules, $self->param('todo')) or next;
         my $test   = $job->TEST;
         my $flavor = $job->FLAVOR || 'sweet';
         my $arch   = $job->ARCH || 'noarch';
-        my $result;
-        if ($job->state eq OpenQA::Jobs::Constants::DONE) {
-            my $actually_failed_modules = $job->failed_modules;
-            next
-              unless !$failed_modules
-              || OpenQA::Utils::any_array_item_contained_by_hash($actually_failed_modules, $failed_modules);
-
-            my $result_stats = $job->result_stats;
-            my $overall      = $job->result;
-
-            if ($todo) {
-                # skip all jobs NOT needed to be labeled for the black certificate icon to show up
-                next
-                  if $job->result eq OpenQA::Jobs::Constants::PASSED
-                  || $job_labels->{$jobid}{bugs}
-                  || $job_labels->{$jobid}{label}
-                  || ($job->result eq OpenQA::Jobs::Constants::SOFTFAILED
-                    && ($job_labels->{$jobid}{label} || !$job->has_failed_modules));
-            }
-
-
-            $result = {
-                passed     => $result_stats->{passed},
-                unknown    => $result_stats->{none},
-                failed     => $result_stats->{failed},
-                overall    => $overall,
-                jobid      => $jobid,
-                state      => OpenQA::Jobs::Constants::DONE,
-                failures   => $actually_failed_modules,
-                bugs       => $job_labels->{$jobid}{bugs},
-                bugdetails => $job_labels->{$jobid}{bugdetails},
-                label      => $job_labels->{$jobid}{label},
-                comments   => $job_labels->{$jobid}{comments},
-            };
-            $aggregated->{OpenQA::Jobs::Constants::generalize_result($overall)}++;
-        }
-        elsif ($job->state eq OpenQA::Jobs::Constants::RUNNING) {
-            next if $todo;
-            $result = {
-                state => OpenQA::Jobs::Constants::RUNNING,
-                jobid => $jobid,
-            };
-            $aggregated->{running}++;
-        }
-        else {
-            next if $todo;
-            $result = {
-                state    => $job->state,
-                jobid    => $jobid,
-                priority => $job->priority,
-            };
-            if ($job->state eq OpenQA::Jobs::Constants::SCHEDULED) {
-                $aggregated->{scheduled}++;
-                $result->{blocked} = 1 if defined $job->blocked_by_id;
-            }
-            else {
-                $aggregated->{none}++;
-            }
-        }
 
         # Append machine name to TEST if it does not match the most frequently used MACHINE
         # for the jobs architecture
