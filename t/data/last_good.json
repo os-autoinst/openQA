@@ -1,0 +1,10 @@
+{
+   "BUILD" : "667",
+   "DESKTOP" : "textmode",
+   "JOBTOKEN" : "fNBevAKhhOQux_GN",
+   "NEEDLES_GIT_HASH" : "3aee70f5f526175469aa189b0c4f820de8f06ae1",
+   "QEMUPORT" : 20001,
+   "TEST_GIT_HASH" : "c65c426a2678223fad4ae7d4ebbe95817e5c725d",
+   "TEXTMODE" : 1,
+   "WORKER_INSTANCE" : 1
+}

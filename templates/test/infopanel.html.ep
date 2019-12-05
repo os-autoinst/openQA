@@ -67,7 +67,7 @@
                 % } else {
                      <div id="developer-global-session-info" style="display: none;"></div>
                 % }
-                <div>
+                <div id="clones">
                     % if ($clone_of) {
                         Clone of
                         %= link_to $clone_of->id => url_for ('test', testid => $clone_of->id)

@@ -21,6 +21,9 @@ use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
+use autodie ':all';
+use File::Copy;
+use File::Spec::Functions 'catfile';
 use OpenQA::Utils;
 use OpenQA::Test::Case;
 use Test::More;
@@ -396,10 +399,17 @@ subtest 'carry over, including soft-fails' => sub {
     $job->discard_changes;
     is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
     is($job->comments, 0, 'no comment');
-    $job->done;
-    $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
-    is($job->comments, 0, 'no takeover');
+
+    subtest 'additional investigation notes provided on new failed' => sub {
+        copy('t/data/last_good.json', catfile(($job->_previous_scenario_jobs)[0]->result_dir(), 'vars.json'));
+        copy('t/data/first_bad.json', catfile($job->result_dir(), 'vars.json'));
+        $job->done;
+        is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
+        ok(my $investigation = $job->investigate, 'job can provide investigation details');
+        ok($investigation,                        'job provides failure investigation');
+        is($investigation->{last_good}, 99997, 'previous job identified as last good');
+        like($investigation->{diff_to_last_good}, qr/^\+.*BUILD.*668/m, 'diff for job settings is shown');
+    };
 
 };
 
@@ -449,8 +459,7 @@ subtest 'carry over for ignore_failure modules' => sub {
     $job->done;
     $job->discard_changes;
     is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
-    is($job->comments, 0, 'no takeover');
-
+    is($job->comments, 0, 'one comment with failure investigation');
 };
 
 subtest 'job with only important passes => overall is passed' => sub {

@@ -39,6 +39,7 @@ use DBIx::Class::Timestamps 'now';
 use File::Temp 'tempdir';
 use Mojo::File qw(tempfile path);
 use Data::Dump 'dump';
+use Text::Diff;
 use OpenQA::File;
 use OpenQA::Parser 'parser';
 use OpenQA::WebSockets::Client;
@@ -1832,6 +1833,32 @@ sub test_resultfile_list {
     }
 
     return \@filelist_existing;
+}
+
+=head2 investigate
+
+Find pointers for investigation on failures, e.g. what changed vs. a "last
+good" job in the same scenario.
+
+=cut
+sub investigate {
+    my ($self, %args) = @_;
+    my @previous = $self->_previous_scenario_jobs;
+    return {error => 'No previous job in this scenario, cannot provide hints'} unless @previous;
+    my %investigation;
+    return {error => 'No result directory available for current job'} unless $self->result_dir();
+    for my $prev (@previous) {
+        next unless $prev->result =~ /(?:passed|softfailed)/;
+        $investigation{last_good} = $prev->id;
+        last unless $prev->result_dir;
+        my @files = map { catfile($_->result_dir(), 'vars.json') } ($prev, $self);
+        # just ignore any problems on generating the diff with eval, e.g.
+        # files missing. This is a best-effort approach.
+        $investigation{diff_to_last_good} = eval { diff(@files) };
+        last;
+    }
+    $investigation{last_good} //= 'not found';
+    return \%investigation;
 }
 
 =head2 done
