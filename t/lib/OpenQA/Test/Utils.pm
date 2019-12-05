@@ -9,7 +9,7 @@ use POSIX '_exit';
 use OpenQA::Worker;
 use Config::IniFiles;
 use Data::Dumper 'Dumper';
-use OpenQA::Utils qw(log_error log_info log_debug);
+use OpenQA::Utils qw(log_error log_info log_debug service_port);
 use OpenQA::WebSockets;
 use OpenQA::WebSockets::Client;
 use OpenQA::Scheduler;
@@ -63,7 +63,8 @@ sub cache_worker_service {
             # this service can be very noisy
             require OpenQA::CacheService;
             local $ENV{MOJO_MODE} = 'test';
-            OpenQA::CacheService::run(qw(daemon -l http://*:7844));
+            my $port = service_port 'cache_service';
+            OpenQA::CacheService::run('daemon', '-l', "http://*:$port");
             Devel::Cover::report() if Devel::Cover->can('report');
             _exit(0);
         })->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0);

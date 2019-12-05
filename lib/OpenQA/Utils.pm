@@ -1158,10 +1158,11 @@ sub service_port {
     my $base = $ENV{OPENQA_BASE_PORT} ||= 9526;
 
     my $offsets = {
-        webui       => 0,
-        websocket   => 1,
-        livehandler => 2,
-        scheduler   => 3
+        webui         => 0,
+        websocket     => 1,
+        livehandler   => 2,
+        scheduler     => 3,
+        cache_service => 4
     };
     croak "Unknown service: $service" unless exists $offsets->{$service};
     return $base + $offsets->{$service};

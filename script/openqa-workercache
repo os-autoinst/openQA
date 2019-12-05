@@ -21,7 +21,7 @@ use FindBin;
 BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
 
 use OpenQA::CacheService;
-use OpenQA::Utils 'set_listen_address';
+use OpenQA::Utils qw(service_port set_listen_address);
 
-set_listen_address(7844);
+set_listen_address(service_port('cache_service'));
 OpenQA::CacheService::run(@ARGV);
