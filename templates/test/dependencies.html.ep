@@ -5,7 +5,7 @@
 <div id="dependencygraph_status">
     <p>
         <i class="fas fa-spinner fa-spin fa-lg"></i>
-        Loading dependency graph ...
+        Loading dependency graph …
     </p>
 </div>
 <svg
