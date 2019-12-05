@@ -110,7 +110,7 @@ on 'test' => sub {
     requires 'Test::Warnings';
 };
 
-feature 'coverage', 'coverage for travis' => sub {
+feature 'coverage', 'coverage for CI' => sub {
     requires 'Devel::Cover';
     requires 'Devel::Cover::Report::Codecov';
 };
