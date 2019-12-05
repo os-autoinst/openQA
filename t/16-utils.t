@@ -30,15 +30,17 @@ use Mojo::File qw(path tempdir tempfile);
 
 subtest 'service ports' => sub {
     local $ENV{OPENQA_BASE_PORT} = undef;
-    is service_port('webui'),       9526, 'webui port';
-    is service_port('websocket'),   9527, 'websocket port';
-    is service_port('livehandler'), 9528, 'livehandler port';
-    is service_port('scheduler'),   9529, 'scheduler port';
+    is service_port('webui'),         9526, 'webui port';
+    is service_port('websocket'),     9527, 'websocket port';
+    is service_port('livehandler'),   9528, 'livehandler port';
+    is service_port('scheduler'),     9529, 'scheduler port';
+    is service_port('cache_service'), 9530, 'cache service port';
     local $ENV{OPENQA_BASE_PORT} = 9530;
-    is service_port('webui'),       9530, 'webui port';
-    is service_port('websocket'),   9531, 'websocket port';
-    is service_port('livehandler'), 9532, 'livehandler port';
-    is service_port('scheduler'),   9533, 'scheduler port';
+    is service_port('webui'),         9530, 'webui port';
+    is service_port('websocket'),     9531, 'websocket port';
+    is service_port('livehandler'),   9532, 'livehandler port';
+    is service_port('scheduler'),     9533, 'scheduler port';
+    is service_port('cache_service'), 9534, 'cache service port';
     eval { service_port('unknown') };
     like $@, qr/Unknown service: unknown/, 'unknown port';
 };

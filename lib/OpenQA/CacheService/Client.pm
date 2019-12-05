@@ -21,11 +21,11 @@ use OpenQA::CacheService::Request::Asset;
 use OpenQA::CacheService::Request::Sync;
 use OpenQA::CacheService::Response::Info;
 use OpenQA::CacheService::Response::Status;
-use OpenQA::Utils 'base_host';
+use OpenQA::Utils qw(base_host service_port);
 use Mojo::URL;
 use Mojo::File 'path';
 
-has host      => 'http://127.0.0.1:7844';
+has host      => 'http://127.0.0.1:' . service_port('cache_service');
 has cache_dir => sub { $ENV{OPENQA_CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
 has ua        => sub { Mojo::UserAgent->new };
 
@@ -93,7 +93,7 @@ OpenQA::CacheService::Client - OpenQA Cache Service Client
 
     use OpenQA::CacheService::Client;
 
-    my $client = OpenQA::CacheService::Client->new(host=> 'http://127.0.0.1:7844', retry => 5, cache_dir => '/tmp/cache/path');
+    my $client = OpenQA::CacheService::Client->new(host=> 'http://127.0.0.1:9530', retry => 5, cache_dir => '/tmp/cache/path');
     my $request = $client->asset_request(id => 9999, asset => 'asset_name.qcow2', type => 'hdd', host => 'openqa.opensuse.org');
     $client->enqueue($request);
     until ($client->status($request)->is_processed) {
