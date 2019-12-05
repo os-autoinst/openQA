@@ -35,6 +35,27 @@ use OpenQA::SeleniumTest;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
+my %job_param = (
+    group_id   => 1002,
+    priority   => 35,
+    result     => OpenQA::Jobs::Constants::NONE,
+    state      => OpenQA::Jobs::Constants::RUNNING,
+    t_finished => undef,
+    backend    => 'qemu',
+    # 5 minutes ago
+    t_started => time2str('%Y-%m-%d %H:%M:%S', time - 300, 'UTC'),
+    # 1 hour ago
+    t_created => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
+    TEST      => 'kde',
+    ARCH      => 'x86_64',
+    BUILD     => '0092',
+    DISTRI    => 'opensuse',
+    FLAVOR    => 'NET',
+    MACHINE   => '64bit',
+    VERSION   => '13.1'
+
+);
+
 # By defining a custom hook we can customize the database based on fixtures.
 # We do not need job 99981 right now so delete it here just to have a helpful
 # example for customizing the test database
@@ -55,24 +76,10 @@ sub schema_hook {
     # add another running job which is half done
     my $running_job = $jobs->create(
         {
-            id         => 99970,
-            group_id   => 1002,
-            priority   => 35,
-            result     => OpenQA::Jobs::Constants::NONE,
-            state      => OpenQA::Jobs::Constants::RUNNING,
-            t_finished => undef,
-            backend    => 'qemu',
-            # 5 minutes ago
-            t_started => time2str('%Y-%m-%d %H:%M:%S', time - 300, 'UTC'),
-            # 1 hour ago
-            t_created => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
-            TEST      => 'kde',
-            ARCH      => 'x86_64',
-            BUILD     => '0092',
-            DISTRI    => 'opensuse',
-            FLAVOR    => 'NET',
-            MACHINE   => '64bit',
-            VERSION   => '13.1'
+            %job_param,
+            id    => 99970,
+            state => OpenQA::Jobs::Constants::RUNNING,
+            TEST  => 'kde'
         });
     my $running_job_modules = $running_job->modules;
     $running_job_modules->create(
@@ -110,6 +117,15 @@ sub schema_hook {
         $job99940->insert_module({name => $k, category => $k, script => $k});
         $job99940->update_module($k, {result => $v, details => []});
     }
+
+    my $schedule_job = $jobs->create(
+        {
+            %job_param,
+            id    => 99991,
+            state => OpenQA::Jobs::Constants::SCHEDULED,
+            TEST  => 'kde_variant',
+            settings =>
+              [{key => 'JOB_TEMPLATE_NAME', value => 'kde_variant'}, {key => 'TEST_SUITE_NAME', value => 'kde'}]});
 }
 
 my $driver = call_driver(\&schema_hook);
@@ -155,14 +171,14 @@ $driver->get('/tests');
 wait_for_ajax;
 my @header       = $driver->find_elements('h2');
 my @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
-my @expected     = ('3 jobs are running', '2 scheduled jobs', 'Last 11 finished jobs');
+my @expected     = ('3 jobs are running', '3 scheduled jobs', 'Last 11 finished jobs');
 is_deeply(\@header_texts, \@expected, 'all headings correctly displayed');
 
 $driver->get('/tests?limit=1');
 wait_for_ajax;
 @header       = $driver->find_elements('h2');
 @header_texts = map { OpenQA::Test::Case::trim_whitespace($_->get_text()) } @header;
-@expected     = ('3 jobs are running', '2 scheduled jobs', 'Last 1 finished jobs');
+@expected     = ('3 jobs are running', '3 scheduled jobs', 'Last 1 finished jobs');
 is_deeply(\@header_texts, \@expected, 'limit for finished tests can be adjusted with query parameter');
 
 $t->get_ok('/tests/99963')->status_is(200);
@@ -389,6 +405,18 @@ subtest 'check test results of job99940' => sub {
     }
 };
 
+subtest 'test name and description still show up correctly using JOB_TEMPLATE_NAME' => sub {
+    $driver->get('/tests');
+    is($driver->find_element('#job_99991 td.test')->get_text(),
+        'kde_variant@64bit', 'job 99991 displays TEST correctly');
+
+    $driver->get('/tests/99991#settings');
+    is(
+        $driver->find_element('#scenario-description')->get_text(),
+        'Simple kde test, before advanced_kde',
+        'job 99991 description displays correctly'
+    );
+};
 
 kill_driver();
 done_testing();

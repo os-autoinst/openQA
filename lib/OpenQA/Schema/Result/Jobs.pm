@@ -305,7 +305,8 @@ sub label {
 sub scenario {
     my ($self) = @_;
 
-    return $self->result_source->schema->resultset('TestSuites')->find({name => $self->TEST});
+    my $test_suite_name = $self->settings_hash->{TEST_SUITE_NAME} || $self->TEST;
+    return $self->result_source->schema->resultset('TestSuites')->find({name => $test_suite_name});
 }
 
 sub scenario_hash {
@@ -2012,6 +2013,70 @@ sub simplified_state {
 sub simplified_result {
     my ($self) = @_;
     return $SIMPLIFIED_RESULT{$self->result};
+}
+
+sub overview_result {
+    my ($self, $job_labels, $aggregated, $failed_modules, $todo) = @_;
+
+    my $jobid = $self->id;
+    if ($self->state eq OpenQA::Jobs::Constants::DONE) {
+        my $actually_failed_modules = $self->failed_modules;
+        return undef
+          unless !$failed_modules
+          || OpenQA::Utils::any_array_item_contained_by_hash($actually_failed_modules, $failed_modules);
+
+        my $result_stats = $self->result_stats;
+        my $overall      = $self->result;
+
+        if ($todo) {
+            # skip all jobs NOT needed to be labeled for the black certificate icon to show up
+            return undef
+              if $self->result eq OpenQA::Jobs::Constants::PASSED
+              || $job_labels->{$jobid}{bugs}
+              || $job_labels->{$jobid}{label}
+              || ($self->result eq OpenQA::Jobs::Constants::SOFTFAILED
+                && ($job_labels->{$jobid}{label} || !$self->has_failed_modules));
+        }
+
+        $aggregated->{OpenQA::Jobs::Constants::generalize_result($overall)}++;
+        return {
+            passed     => $result_stats->{passed},
+            unknown    => $result_stats->{none},
+            failed     => $result_stats->{failed},
+            overall    => $overall,
+            jobid      => $jobid,
+            state      => OpenQA::Jobs::Constants::DONE,
+            failures   => $actually_failed_modules,
+            bugs       => $job_labels->{$jobid}{bugs},
+            bugdetails => $job_labels->{$jobid}{bugdetails},
+            label      => $job_labels->{$jobid}{label},
+            comments   => $job_labels->{$jobid}{comments},
+        };
+    }
+    elsif ($self->state eq OpenQA::Jobs::Constants::RUNNING) {
+        return undef if $todo;
+        $aggregated->{running}++;
+        return {
+            state => OpenQA::Jobs::Constants::RUNNING,
+            jobid => $jobid,
+        };
+    }
+    else {
+        return undef if $todo;
+        my $result = {
+            state    => $self->state,
+            jobid    => $jobid,
+            priority => $self->priority,
+        };
+        if ($self->state eq OpenQA::Jobs::Constants::SCHEDULED) {
+            $aggregated->{scheduled}++;
+            $result->{blocked} = 1 if defined $self->blocked_by_id;
+        }
+        else {
+            $aggregated->{none}++;
+        }
+        return $result;
+    }
 }
 
 1;

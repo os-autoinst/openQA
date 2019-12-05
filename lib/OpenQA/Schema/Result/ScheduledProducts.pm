@@ -273,8 +273,8 @@ sub _schedule_iso {
             my $job = $jobs_resultset->create_from_settings($settings, $self->id);
             push @created_jobs, $job;
 
-            $testsuite_ids{$settings->{TEST}}->{$settings->{MACHINE}} //= [];
-            push @{$testsuite_ids{$settings->{TEST}}->{$settings->{MACHINE}}}, $job->id;
+            $testsuite_ids{$settings->{TEST_SUITE_NAME}}->{$settings->{MACHINE}} //= [];
+            push @{$testsuite_ids{$settings->{TEST_SUITE_NAME}}->{$settings->{MACHINE}}}, $job->id;
 
             # set prio if defined explicitely (otherwise default prio is used)
             $job->update({priority => $prio}) if (defined($prio));
@@ -537,10 +537,11 @@ sub _generate_jobs {
             }
 
             # add properties from dedicated database columns to settings
-            $settings{TEST}              = $job_template->test_suite->name;
+            $settings{TEST}              = $job_template->name || $job_template->test_suite->name;
             $settings{MACHINE}           = $job_template->machine->name;
             $settings{BACKEND}           = $job_template->machine->backend;
             $settings{JOB_TEMPLATE_NAME} = $job_template->name if $job_template->name;
+            $settings{TEST_SUITE_NAME}   = $job_template->test_suite->name;
 
             # merge worker classes
             $settings{WORKER_CLASS} = @worker_classes ? join(',', sort(@worker_classes)) : "qemu_$args->{ARCH}";
@@ -579,7 +580,7 @@ sub _generate_jobs {
                 }
                 else {
                     foreach my $test (@tests) {
-                        if ($test eq $settings{TEST}) {
+                        if ($test eq $settings{TEST} || $test eq $settings{TEST_SUITE_NAME}) {
                             $wanted{_settings_key(\%settings)} = 1;
                             last;
                         }
@@ -602,7 +603,11 @@ sub _generate_jobs {
             push @parents, _parse_dep_variable($ret->[$i]->{PARALLEL_WITH}, $ret->[$i]);
             for my $parent (@parents) {
                 my $parent_test_machine = join('@', @$parent);
-                $wanted{$parent_test_machine} = 1;
+                my @parents_job_template
+                  = grep { join('@', $_->{TEST_SUITE_NAME}, $_->{MACHINE}) eq $parent_test_machine } @$ret;
+                for my $parent_job_template (@parents_job_template) {
+                    $wanted{join('@', $parent_job_template->{TEST}, $parent_job_template->{MACHINE})} = 1;
+                }
             }
         }
         else {

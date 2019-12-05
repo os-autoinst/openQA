@@ -356,7 +356,8 @@ is_deeply(
         START_AFTER_TEST => 'kde,textmode',
         TEST             => 'advanced_kde',
         VERSION          => '13.1',
-        WORKER_CLASS     => 'qemu_i586'
+        WORKER_CLASS     => 'qemu_i586',
+        TEST_SUITE_NAME  => 'advanced_kde'
     },
     'settings assigned as expected, variable expansion applied, taking job template settings into account'
 ) or diag explain $advanced_kde_64->{settings};
@@ -650,6 +651,8 @@ foreach my $j (@{$rsp->json->{ids}}) {
 sub add_opensuse_test {
     my ($name, %settings) = @_;
     $settings{MACHINE} //= ['64bit'];
+    my $job_template_name  = delete $settings{JOB_TEMPLATE_NAME};
+    my $not_add_test_suite = delete $settings{NOT_ADD_TESTSUITE};
     my @mapped_settings;
     for my $key (keys %settings) {
         push(@mapped_settings, {key => $key, value => $settings{$key}});
@@ -658,15 +661,16 @@ sub add_opensuse_test {
         {
             name     => $name,
             settings => \@mapped_settings
-        });
+        }) unless $not_add_test_suite;
+    my $param = {
+        test_suite => {name => $name},
+        group_id   => 1002,
+        product_id => 1
+    };
+    $param->{name} = $job_template_name if $job_template_name;
     for my $machine (@{$settings{MACHINE}}) {
-        $t->app->schema->resultset('JobTemplates')->create(
-            {
-                machine    => {name => $machine},
-                test_suite => {name => $name},
-                group_id   => 1002,
-                product_id => 1,
-            });
+        $param->{machine} = {name => $machine};
+        $t->app->schema->resultset('JobTemplates')->create($param);
     }
 }
 
@@ -1063,4 +1067,59 @@ subtest '_SKIP_CHAINED_DEPS prevents scheduling parent tests' => sub {
     $schema->txn_rollback;
 };
 
+subtest 'schedule tests correctly when changing TEST to job template name' => sub {
+    $schema->txn_begin;
+    add_opensuse_test('parent', JOB_TEMPLATE_NAME => 'parent_variant1');
+    add_opensuse_test(
+        'child',
+        START_AFTER_TEST  => 'parent',
+        JOB_TEMPLATE_NAME => 'child_variant1'
+    );
+    add_opensuse_test(
+        'child',
+        NOT_ADD_TESTSUITE => 1,
+        START_AFTER_TEST  => 'parent',
+        JOB_TEMPLATE_NAME => 'child_variant2'
+    );
+
+    my $res = schedule_iso({%iso, _GROUP_ID => '1002'});
+    is($res->json->{count}, 3, '3 jobs scheduled');
+
+    my @create_jobs;
+    foreach my $job_id (sort @{$res->json->{ids}}) {
+        my $job = $jobs->find($job_id);
+        push @create_jobs,
+          {
+            TEST              => $job->TEST,
+            JOB_TEMPLATE_NAME => $job->settings_hash->{JOB_TEMPLATE_NAME},
+            TEST_SUITE_NAME   => $job->settings_hash->{TEST_SUITE_NAME}};
+    }
+    is_deeply(
+        \@create_jobs,
+        [
+            {TEST => 'parent_variant1', JOB_TEMPLATE_NAME => 'parent_variant1', TEST_SUITE_NAME => 'parent'},
+            {TEST => 'child_variant1',  JOB_TEMPLATE_NAME => 'child_variant1',  TEST_SUITE_NAME => 'child'},
+            {TEST => 'child_variant2',  JOB_TEMPLATE_NAME => 'child_variant2',  TEST_SUITE_NAME => 'child'}
+        ],
+        "The jobs were scheduled with correct TEST, JOB_TEMPLATE_NAME and TEST_SUITE_NAME"
+    );
+
+    $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'child'});
+    is($res->json->{count}, 3, 'TEST parameter support using test suite name');
+
+    $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'child_variant2'});
+    is($res->json->{count}, 2, 'TEST parameter support using job template name');
+    my %create_jobs = map { $jobs->find($_)->TEST => 1 } @{$res->json->{ids}};
+    is_deeply(\%create_jobs, {parent_variant1 => 1, child_variant2 => 1}, "the child and parent job were scheduled");
+
+    $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'child', _SKIP_CHAINED_DEPS => 1});
+    is($res->json->{count}, 2, 'do not schedule parent job');
+    my %schedule_jobs = map { $jobs->find($_)->TEST => 1 } @{$res->json->{ids}};
+    is_deeply(\%schedule_jobs, {child_variant1 => 1, child_variant2 => 1}, "only two children jobs were scheduled");
+
+    $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'child_variant1', _SKIP_CHAINED_DEPS => 1});
+    is($res->json->{count}, 1, 'only schedule the child job with the same job template name');
+    my %child_job = map { $jobs->find($_)->TEST => 1 } @{$res->json->{ids}};
+    is_deeply(\%child_job, {child_variant1 => 1}, "only one child job was scheduled");
+};
 done_testing();
