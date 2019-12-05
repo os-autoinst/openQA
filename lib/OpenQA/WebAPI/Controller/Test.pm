@@ -468,28 +468,18 @@ sub prepare_job_results {
     # prefetch the number of available labels for those jobs
     my $job_labels = $self->_job_labels($jobs);
 
+    # prefetch test suite names from job settings
+    my $job_settings
+      = $self->schema->resultset('JobSettings')
+      ->search({job_id => {-in => [map { $_->id } @$jobs]}, key => 'TEST_SUITE_NAME'});
+    my %test_suite_name_by_job_id = map { $_->job_id => $_->value } $job_settings->all;
+    my %test_suite_names          = map { $_->id     => ($test_suite_name_by_job_id{$_->id} // $_->TEST) } @$jobs;
+
     # prefetch descriptions from test suites
-    my %test_suite_names;
-    my @job_template_names;
-    foreach my $j (@$jobs) {
-        my $job_id = $j->id;
-        my $test   = $j->TEST;
-        my $job_settings
-          = $self->schema->resultset('JobSettings')->search({job_id => $job_id, key => 'TEST_SUITE_NAME'})->single;
-        my $ts_name = $job_settings ? $job_settings->value : $test;
-        push @job_template_names, {name => $j->TEST, test_suite_name => $ts_name};
-        $test_suite_names{$ts_name} = 1;
-    }
-    my @test_suite_names = keys %test_suite_names;
-    my %test_and_description
-      = map { $_->name => $_->description }
-      $self->schema->resultset('TestSuites')
-      ->search({name => {in => \@test_suite_names}}, {columns => [qw(name description)]})->all;
-    my %descriptions;
-    foreach (@job_template_names) {
-        $descriptions{$_->{name}} = $test_and_description{$_->{test_suite_name}}
-          if $test_and_description{$_->{test_suite_name}};
-    }
+    my %desc_args = (in => [values %test_suite_names]);
+    my @descriptions
+      = $self->schema->resultset('TestSuites')->search({name => \%desc_args}, {columns => [qw(name description)]});
+    my %descriptions = map { $_->name => $_->description } @descriptions;
 
     my $todo = $self->param('todo');
     foreach my $job (@$jobs) {
@@ -591,7 +581,8 @@ sub prepare_job_results {
         $results{$distri}{$version}{$flavor}{$test}{$arch} = $result;
 
         # add description
-        $results{$distri}{$version}{$flavor}{$test}{description} //= $descriptions{$test =~ s/@.*//r};
+        my $test_suite_name = $test_suite_names{$job->id};
+        $results{$distri}{$version}{$flavor}{$test}{description} //= $descriptions{$test_suite_name};
     }
     return (\%archs, \%results, $aggregated);
 }
