@@ -237,17 +237,21 @@ $t->element_exists('#res_DVD_i586_kde');
 $t->element_exists('#res_GNOME-Live_i686_RAID0 .state_cancelled');
 $t->element_exists('#res_NET_x86_64_kde .state_running');
 
-subtest 'incomplete results generally accounted as "Incomplete"' => sub {
+subtest 'not complete results generally accounted as "Incomplete"' => sub {
     my $schema = $t->app->schema;
     $schema->txn_begin;
 
     my $jobs = $schema->resultset('Jobs');
+
+    # INCOMPLETE and TIMEOUT_EXCEEDED are expected to be accounted as incomplete
     $jobs->search({id => 99937})->update({result => OpenQA::Jobs::Constants::INCOMPLETE});
-    $jobs->search({id => 99764})->update({result => OpenQA::Jobs::Constants::USER_CANCELLED});
     $jobs->search({id => 99946})->update({result => OpenQA::Jobs::Constants::TIMEOUT_EXCEEDED});
 
+    # USER_CANCELLED is not expected to be accounted as incomplete
+    $jobs->search({id => 99764})->update({result => OpenQA::Jobs::Constants::USER_CANCELLED});
+
     $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'})->status_is(200);
-    like(get_summary, qr/Passed: 0 Incomplete: 3 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
+    like(get_summary, qr/Passed: 0 Incomplete: 2 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
     $schema->txn_rollback;
 };
 

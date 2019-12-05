@@ -36,7 +36,7 @@ __PACKAGE__->result_source_instance->view_definition(
     WITH allofjobs AS(
     SELECT me.*
     FROM jobs me WHERE me.state=?
-    AND me.result NOT IN (?, ?, ?, ?, ?, ?, ?, ?)
+    AND me.result NOT IN (?, ?, ?, ?, ?, ?)
     AND me.DISTRI=? AND me.VERSION=? AND me.FLAVOR=? AND me.ARCH=?
     AND me.TEST=? AND me.MACHINE=?
     )

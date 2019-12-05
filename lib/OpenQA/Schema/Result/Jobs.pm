@@ -221,31 +221,6 @@ __PACKAGE__->filter_column(
         filter_from_storage => 'add_result_dir_prefix',
     });
 
-my %SIMPLIFIED_STATE = (
-    SCHEDULED, => SCHEDULED,
-    ASSIGNED,  => RUNNING,
-    SETUP,     => RUNNING,
-    RUNNING,   => RUNNING,
-    UPLOADING, => RUNNING,
-    DONE,      => DONE,
-    CANCELLED, => CANCELLED,
-);
-
-my %SIMPLIFIED_RESULT = (
-    NONE,               => NONE,
-    PASSED,             => PASSED,
-    SOFTFAILED,         => SOFTFAILED,
-    FAILED,             => FAILED,
-    INCOMPLETE,         => INCOMPLETE,
-    SKIPPED,            => SKIPPED,
-    OBSOLETED,          => SKIPPED,
-    PARALLEL_FAILED,    => SKIPPED,
-    PARALLEL_RESTARTED, => SKIPPED,
-    USER_CANCELLED,     => SKIPPED,
-    USER_RESTARTED,     => SKIPPED,
-    TIMEOUT_EXCEEDED,   => INCOMPLETE,
-);
-
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
 
@@ -2021,25 +1996,22 @@ sub has_dependencies {
     return $dependencies->search({-or => {child_job_id => $id, parent_job_id => $id}}, {rows => 1})->count;
 }
 
+sub status {
+    my ($self) = @_;
+
+    my $state      = $self->state;
+    my $meta_state = OpenQA::Jobs::Constants::meta_state($state);
+    return OpenQA::Jobs::Constants::meta_result($self->result) if $meta_state eq OpenQA::Jobs::Constants::FINAL;
+    return (defined $self->blocked_by_id ? 'blocked' : $state) if $meta_state eq OpenQA::Jobs::Constants::PRE_EXECUTION;
+    return $meta_state;
+}
+
 sub status_info {
     my ($self) = @_;
 
     my $info = $self->state;
     $info .= ' with result ' . $self->result if grep { $info eq $_ } FINAL_STATES;
     return $info;
-}
-
-# a condensed mapping when less states need to be differentiated, e.g. for
-# favicons based on state
-sub simplified_state {
-    my ($self) = @_;
-    return $SIMPLIFIED_STATE{$self->state};
-}
-
-# a condensed mapping for results, similar to SIMPLIFIED_STATES
-sub simplified_result {
-    my ($self) = @_;
-    return $SIMPLIFIED_RESULT{$self->result};
 }
 
 sub overview_result {
@@ -2065,7 +2037,7 @@ sub overview_result {
                 && ($job_labels->{$jobid}{label} || !$self->has_failed_modules));
         }
 
-        $aggregated->{OpenQA::Jobs::Constants::generalize_result($overall)}++;
+        $aggregated->{OpenQA::Jobs::Constants::meta_result($overall)}++;
         return {
             passed     => $result_stats->{passed},
             unknown    => $result_stats->{none},

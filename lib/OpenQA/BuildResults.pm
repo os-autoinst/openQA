@@ -1,4 +1,4 @@
-# Copyright (C) 2016 SUSE LLC
+# Copyright (C) 2016-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,23 +54,18 @@ sub count_job {
             $jr->{softfailed}++;
             return;
         }
-        if (   $job->result eq OpenQA::Jobs::Constants::FAILED
-            || $job->result eq OpenQA::Jobs::Constants::TIMEOUT_EXCEEDED
-            || $job->result eq OpenQA::Jobs::Constants::INCOMPLETE)
-        {
+        if (grep { $job->result eq $_ } OpenQA::Jobs::Constants::ABORTED_RESULTS) {
+            $jr->{skipped}++;
+            return;
+        }
+        if (grep { $job->result eq $_ } OpenQA::Jobs::Constants::NOT_OK_RESULTS) {
             $jr->{failed}++;
             $jr->{labeled}++ if $labels->{$job->id};
             return;
         }
-        if (grep { $job->result eq $_ } OpenQA::Jobs::Constants::INCOMPLETE_RESULTS) {
-            $jr->{skipped}++;
-            return;
-        }
         # note: Incompletes and timeouts are accounted to both categories - failed and skipped.
     }
-    if (   $job->state eq OpenQA::Jobs::Constants::CANCELLED
-        || $job->state eq OpenQA::Jobs::Constants::OBSOLETED)
-    {
+    if ($job->state eq OpenQA::Jobs::Constants::CANCELLED) {
         $jr->{skipped}++;
         return;
     }

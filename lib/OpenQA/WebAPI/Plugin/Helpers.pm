@@ -262,10 +262,8 @@ sub register {
         favicon_url => sub {
             my ($c, $suffix) = @_;
             return $c->icon_url("logo$suffix") unless my $job = $c->stash('job');
-            my $status = $job->state eq 'done' ? $job->simplified_result : $job->simplified_state;
-            my $logo   = 'logo';
-            $logo .= "-$status" if defined $status;
-            return $c->icon_url("$logo$suffix");
+            my $status = $job->status;
+            return $c->icon_url("logo-$status$suffix");
         });
 
     $app->helper(
