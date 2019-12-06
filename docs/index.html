@@ -790,13 +790,23 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_customize_base_directory">Customize base directory</a></li>
 <li><a href="#_running_tests_of_openqa_itself">Running tests of openQA itself</a>
 <ul class="sectlevel2">
-<li><a href="#_run_tests_without_docker">Run tests without Docker</a></li>
+<li><a href="#_run_tests_without_container">Run tests without container</a></li>
 <li><a href="#_run_tests_with_docker">Run tests with Docker</a>
 <ul class="sectlevel3">
 <li><a href="#_tips">Tips</a></li>
 </ul>
 </li>
 <li><a href="#_logging_behavior">Logging behavior</a></li>
+</ul>
+</li>
+<li><a href="#_openqa_circleci_workflow">openQA circleci workflow</a>
+<ul class="sectlevel2">
+<li><a href="#_goal">Goal</a></li>
+<li><a href="#_dependency_artefacts">Dependency artefacts</a></li>
+<li><a href="#_managing_and_troubleshooting_dependencies">Managing and troubleshooting dependencies</a></li>
+<li><a href="#_run_tests_locally_using_docker">Run tests locally using docker</a></li>
+<li><a href="#_run_tests_using_circleci_tool">Run tests using circleci tool</a></li>
+<li><a href="#_changing_config_cnf">Changing config.cnf</a></li>
 </ul>
 </li>
 <li><a href="#_building_plugins">Building Plugins</a></li>
@@ -7765,27 +7775,28 @@ section).</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Beside simply running the testsuite, it is also possible to use containers. Using containers,
-tests are executed in the same environment as on the Travis CI. This allows to reproduce issues
+tests are executed in the same environment as on CircleCI. This allows to reproduce issues
 specific to that environment.</p>
 </div>
 <div class="sect2">
-<h3 id="_run_tests_without_docker">Run tests without Docker</h3>
+<h3 id="_run_tests_without_container">Run tests without container</h3>
 <div class="paragraph">
-<p>Be sure to install all required dependencies. Those can be found in the file <code>openQA.spec</code>
-in the openQA repository.</p>
+<p>Be sure to install all required dependencies. The package openQA-devel will
+provide them.</p>
 </div>
 <div class="paragraph">
-<p>To run UI tests the package perl-Selenium-Remote-Driver is required. The version provided
-by Leap 42.2 is too old. The version from the repository devel-languages-perl can be used
-instead. You also need to install chromedriver and either chrome or chromium for the UI tests.</p>
+<p>If the package is not available the dependencies can also be found in the file
+<code>openQA.spec</code> in the openQA repository. In this case also the package
+perl-Selenium-Remote-Driver is required to run UI tests. You also need to
+install chromedriver and either chrome or chromium for the UI tests.</p>
 </div>
 <div class="paragraph">
-<p>Run <code>t/test_postgresql /dev/shm/tpg</code> to initialize a temporary PostgreSQL database.
-Export the environment variable as instructed by that script.</p>
-</div>
-<div class="paragraph">
-<p>To execute the testsuite use <code>make test</code>. It is also possible
-to run a particular test, for example <code>prove t/api/01-workers.t</code>.</p>
+<p>To execute the testsuite use <code>make test</code>. This will also initialize a
+temporary PostgreSQL database used for testing. To do this step manually run
+<code>t/test_postgresql /dev/shm/tpg</code> to initialize a temporary PostgreSQL database
+and export the environment variable as instructed by that script.
+It is also possible to run a particular test, for example
+<code>prove t/api/01-workers.t</code>.</p>
 </div>
 <div class="paragraph">
 <p>To watch the execution of the UI tests, set the environment variable <code>NOT_HEADLESS</code>.</p>
@@ -7804,7 +7815,7 @@ To launch the test suite first it is required to pull the docker image:</p>
 </div>
 <div class="paragraph">
 <p>This Docker image is provided by the OBS repository <a href="https://build.opensuse.org/package/show/devel:openQA/openqa_dev" class="bare">https://build.opensuse.org/package/show/devel:openQA/openqa_dev</a>
-and based on the <code>Dockerfile</code> within the <code>docker/travis_tests</code> sub directory of the openQA repository.</p>
+and based on the <code>Dockerfile</code> within the <code>docker/travis_test</code> sub directory of the openQA repository.</p>
 </div>
 <div class="paragraph">
 <p>Build the image using Makefile target:</p>
@@ -7951,14 +7962,128 @@ executed.</p>
 <div class="sect2">
 <h3 id="_logging_behavior">Logging behavior</h3>
 <div class="paragraph">
-<p>Logs are redirected to a logfile when running tests within Travis. The output can therefore not be asserted using Test::Output. This
-can be worked around by temporarily assigning a different Mojo::Log object to the application. To test locally under the same condition
-set the environment variable OPENQA_LOGFILE.</p>
+<p>Logs are redirected to a logfile when running tests within the CI. The output
+can therefore not be asserted using Test::Output. This can be worked around
+by temporarily assigning a different Mojo::Log object to the application. To
+test locally under the same condition set the environment variable
+OPENQA_LOGFILE.</p>
 </div>
 <div class="paragraph">
-<p>Note that redirecting the logs to a logfile only works for tests which run OpenQA::Setup::setup_log. In other tests the log is just
-printed to the standard output. This makes use of Test::Output simple but it should be taken care that the test output is not cluttered
-by log messages which can be quite irritating.</p>
+<p>Note that redirecting the logs to a logfile only works for tests which run
+OpenQA::Setup::setup_log. In other tests the log is just printed to the
+standard output. This makes use of Test::Output simple but it should be
+taken care that the test output is not cluttered by log messages which can be
+quite irritating.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_openqa_circleci_workflow">openQA circleci workflow</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_goal">Goal</h3>
+<div class="paragraph">
+<p>Provide a way to run tests with pre-approved list of dependencies both in CI
+and locally</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_dependency_artefacts">Dependency artefacts</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>dependencies.txt list of dependencies to test against.</p>
+</li>
+<li>
+<p>autoinst.sha contains sha of os-autoinst commit for integration testing.
+When value is empty, the testing will run against latest master</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_managing_and_troubleshooting_dependencies">Managing and troubleshooting dependencies</h3>
+<div class="paragraph">
+<p>dependencies.txt and autoinst.sha are aimed to represent those dependencies
+which change often. In normal workflow these files are generated automatically
+by dedicated Bot, then go in PR through CI, then reviewed and accepted by
+human.
+So, in normal workflow it is guaranteed that everyone always works on list of
+correct and approved dependencies (unless they explicitly tell CI to use
+custom dependencies).</p>
+</div>
+<div class="paragraph">
+<p>The Bot tracks dependencies only in master branch by default, but this may be
+extended in circleci config file.
+The Bot uses <code>.circleci/build_dependencies.sh</code> script to detect any changes.
+This script can be used manually as well.
+Alternatively just add newly introduced dependencies into dependencies.txt, so
+CI will run tests with them.</p>
+</div>
+<div class="paragraph">
+<p>Occasionally it may be a challenge to work with dependencies.txt
+(e.g. package version is not available anymore). In such case you can either
+try to rebuild dependencies.txt using <code>.circleci/build_dependencies.sh</code> or
+just remove all entries and put only openQA-devel into it
+Script <code>.circleci/build_dependencies.sh</code> can be also modified when major
+changes are performed, e.g. different OS version or packages from forked OBS
+project, etc.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_run_tests_locally_using_docker">Run tests locally using docker</h3>
+<div class="paragraph">
+<p>One way is to build image using build_local_docker.sh script, start container
+and then use the same commands one would use to test locally.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span># Optionally pull recent base image, otherwise it may be outdated
+docker pull registry.opensuse.org/devel/openqa/ci/containers/base:latest</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>.circleci/build_local_docker.sh # will create image based on content of dependnencies.txt and autoinst
+docker run -it --rm -v $(pwd):/opt/testing_area localtest bash -c &#39;eval &quot;$(t/test_postgresql | grep TEST_PG=)&quot; &amp;&amp; PERL5LIB=lib prove -v t/ui/25*&#39;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Alternatively, start container and execute commands in it, then</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>docker run --rm --name t1 -v $(pwd):/opt/testing_area localtest tail -f /dev/null &amp; sleep 1
+docker exec -it t1 bash -c &#39;eval &quot;$(t/test_postgresql | grep TEST_PG=)&quot; &amp;&amp; PERL5LIB=lib prove -v t/ui/25-developer_mode.t&#39;
+docker stop -t 0 t1</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_run_tests_using_circleci_tool">Run tests using circleci tool</h3>
+<div class="paragraph">
+<p>After installing circleci tool following commands will be available.
+They will build container and use committed changes from current local branch</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>circleci local execute --job test1
+circleci local execute --job testui
+circleci local execute --job testfullstack
+circleci local execute --job testdeveloperfullstack</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_changing_config_cnf">Changing config.cnf</h3>
+<div class="paragraph">
+<p>Command to verify yaml with circleci tool</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code><span></span>circleci config process .circleci/config.yml</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -8137,7 +8262,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-11-30 00:06:45 UTC
+Last updated 2019-12-06 00:07:29 UTC
 </div>
 </div>
 <style>
