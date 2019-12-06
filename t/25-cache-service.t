@@ -466,6 +466,49 @@ subtest 'Test Minion Sync task' => sub {
     is $expected->slurp, 'foobar';
 };
 
+subtest 'Minion monitoring with InfluxDB' => sub {
+    my $url = $cache_client->url('/influxdb/minion');
+    my $ua  = $cache_client->ua;
+    my $res = $ua->get($url)->result;
+    is $res->body, <<'EOF', 'three workers still running';
+openqa_minion_jobs,url=http://127.0.0.1:7844 active=0i,delayed=0i,failed=0i,inactive=0i
+openqa_minion_workers,url=http://127.0.0.1:7844 active=0i,inactive=3i
+EOF
+
+    my $app    = OpenQA::CacheService->new;
+    my $minion = $app->minion;
+    my $worker = $minion->repair->worker->register;
+    $res = $ua->get($url)->result;
+    is $res->body, <<'EOF', 'four workers running now';
+openqa_minion_jobs,url=http://127.0.0.1:7844 active=0i,delayed=0i,failed=0i,inactive=0i
+openqa_minion_workers,url=http://127.0.0.1:7844 active=0i,inactive=4i
+EOF
+
+    $minion->add_task(test => sub { });
+    my $job_id  = $minion->enqueue('test');
+    my $job_id2 = $minion->enqueue('test');
+    my $job     = $worker->dequeue(0);
+    $res = $ua->get($url)->result;
+    is $res->body, <<'EOF', 'two jobs';
+openqa_minion_jobs,url=http://127.0.0.1:7844 active=1i,delayed=0i,failed=0i,inactive=1i
+openqa_minion_workers,url=http://127.0.0.1:7844 active=1i,inactive=3i
+EOF
+
+    $job->fail('test');
+    $res = $ua->get($url)->result;
+    is $res->body, <<'EOF', 'one job failed';
+openqa_minion_jobs,url=http://127.0.0.1:7844 active=0i,delayed=0i,failed=1i,inactive=1i
+openqa_minion_workers,url=http://127.0.0.1:7844 active=0i,inactive=4i
+EOF
+
+    $job->retry({delay => 3600});
+    $res = $ua->get($url)->result;
+    is $res->body, <<'EOF', 'job is being retried';
+openqa_minion_jobs,url=http://127.0.0.1:7844 active=0i,delayed=1i,failed=0i,inactive=2i
+openqa_minion_workers,url=http://127.0.0.1:7844 active=0i,inactive=4i
+EOF
+};
+
 subtest 'OpenQA::CacheService::Task::Sync' => sub {
     my $worker_2 = cache_minion_worker;
     $worker_cache_service->stop;
