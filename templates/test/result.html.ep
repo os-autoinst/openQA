@@ -20,8 +20,7 @@
 <div class="row" id="result-row">
     <div class="col-sm-12">
         %= include 'test/infopanel', worker => $assigned_worker
-        <div role="tabpanel" style="height: 100%">
-
+        <div role="tabpanel">
             <ul class="nav nav-tabs" role="tablist" id="result_tabs">
                 <li role="presentation" class="nav-item">
                     <a href="#details" aria-controls="details" role="tab" data-toggle="tab" class="nav-link active">Details</a>
@@ -60,8 +59,8 @@
                 </li>
             </ul>
 
-            <div class="tab-content" style="height: 100%">
-                <div role="tabpanel" class="tab-pane active" id="details" style="height: 100%">
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="details">
                 % if (@$modlist) {
                     %= include 'test/details'
                 % }
@@ -69,7 +68,7 @@
                     % for my $resultfile (@$resultfiles) {
                         % next unless ($resultfile =~ /autoinst-log.txt$/);
                         Likely error from autoinst-log.txt:<br>
-                        <embed src=<%= url_for('test_file', testid => $testid, filename => $resultfile) %> type="text/plain" style="width: 100%; height: 100%">
+                        <pre class="embedded-logfile" data-src="<%= url_for('test_file', testid => $testid, filename => $resultfile) %>"></pre>
                     % }
                 % }
                 </div>
