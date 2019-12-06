@@ -132,6 +132,7 @@ RUN zypper in -y -C \
        perl-Test-Simple \
        'perl(aliased)' \
        aspell-spell \
+       aspell-en \
        systemd-sysvinit \
        systemd libudev1 tack
 
