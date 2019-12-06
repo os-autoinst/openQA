@@ -176,7 +176,9 @@ subtest 'bug reporting' => sub {
 subtest 'log details on incomplete jobs' => sub {
     $driver->get('/tests/99926');
     is(current_tab, 'Details', 'starting on Details tab also for incomplete jobs');
-    like($driver->find_element('#details embed')->get_attribute('src'), qr/autoinst-log.txt/, 'log file embedded');
+    my $log_element = $driver->find_element_by_xpath('//*[@id="details"]//pre[string-length(text()) > 0]');
+    like($log_element->get_attribute('data-src'), qr/autoinst-log.txt/, 'log file embedded');
+    like($log_element->get_text(),                qr/Crashed\?/,        'log contents loaded');
 };
 
 # test running view with Test::Mojo as phantomjs would get stuck on the

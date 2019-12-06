@@ -380,6 +380,15 @@ function setupExternalResults() {
 }
 
 function setupResult(state, jobid, status_url, details_url) {
+  // load embedded logfiles
+  $('.embedded-logfile').each(function(index, logFileElement) {
+    $.ajax(logFileElement.dataset.src).done(function(response) {
+      logFileElement.innerHTML = response;
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+      logFileElement.innerHTML = 'Unable to load logfile: ' + errorThrown;
+    });
+  });
+
   setupLazyLoadingFailedSteps();
   $(".current_preview").removeClass("current_preview");
 
