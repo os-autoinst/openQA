@@ -838,7 +838,7 @@
       <text x="183.954" xml:space="preserve" y="537.6614" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">communicate with each other</text>
       <rect fill="none" x="935" width="333" height="42.1397" y="518.085" clip-path="url(#clipPath2)"/>
       <text x="1011.6245" font-size="14px" y="536.7589" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none" xml:space="preserve">openqa-worker-cacheservice</text>
-      <text x="996.4385" xml:space="preserve" y="551.6818" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">listening on TCP port 7844 (dashboard)</text>
+      <text x="996.4385" xml:space="preserve" y="551.6818" clip-path="url(#clipPath2)" font-family="'Liberation Sans'" stroke="none">listening on TCP port 9530 (dashboard)</text>
     </g>
     <g fill="white" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,12,88)" stroke="white">
       <circle r="10" clip-path="url(#clipPath2)" cx="734.4208" cy="867.563" stroke="none"/>
