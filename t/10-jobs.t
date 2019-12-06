@@ -23,13 +23,12 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use autodie ':all';
 use File::Copy;
-use File::Spec::Functions 'catfile';
 use OpenQA::Utils;
 use OpenQA::Test::Case;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
-use Mojo::File 'tempdir';
+use Mojo::File qw(path tempdir);
 use Mojo::IOLoop::ReadWriteProcess;
 use OpenQA::Test::Utils 'redirect_output';
 use OpenQA::Parser::Result::OpenQA;
@@ -401,8 +400,8 @@ subtest 'carry over, including soft-fails' => sub {
     is($job->comments, 0,                             'no comment');
 
     subtest 'additional investigation notes provided on new failed' => sub {
-        copy('t/data/last_good.json', catfile(($job->_previous_scenario_jobs)[0]->result_dir(), 'vars.json'));
-        copy('t/data/first_bad.json', catfile($job->result_dir(),                               'vars.json'));
+        path('t/data/last_good.json')->copy_to(path(($job->_previous_scenario_jobs)[0]->result_dir(), 'vars.json'));
+        path('t/data/first_bad.json')->copy_to(path($job->result_dir(),                               'vars.json'));
         $job->done;
         is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
         ok(my $investigation = $job->investigate, 'job can provide investigation details');
