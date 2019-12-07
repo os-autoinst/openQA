@@ -9,6 +9,12 @@
 #  openqa-clone-custom-git-refspec https://github.com/coolgw/os-autoinst-distri-opensuse/tree/nfs https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
 #
 set -o pipefail
+throw_json_error() {
+    echo "in contents queried from $1:"
+    echo "$2"
+    exit 2
+}
+
 if [[ -n "$GITHUB_TOKEN" ]]; then
     AUTHENTICATED_REQUEST="-u $GITHUB_TOKEN:x-oauth-basic"
     echo "Github oauth token provided, peforming authenticated requests"
@@ -31,18 +37,6 @@ if [[ -z "$repo_name" ]] || [[ -z "$pr" ]]; then
     fi
 
 fi
-if [[ -z "$host" ]] || [[ -z "$job" ]]; then
-    job_url="${2:?"Need 'job_url' as parameter pointing to the openQA job to clone or 'host' and 'job' variables, e.g. either 'https://openqa.opensuse.org/tests/123456' or 'https://openqa.opensuse.org' and '123456'"}"
-    host=${job_url%%/t*}
-    job=${job_url##*/}
-fi
-
-throw_json_error() {
-    echo "in contents queried from $1:"
-    echo "$2"
-    exit 2
-}
-
 if [[ -z "$branch" ]] || [[ -z "$repo_name" ]]; then
     pr_url=${target_repo_part/github.com/api.github.com/repos}/pulls/$pr
     # quotes would break the curl option string
@@ -61,21 +55,45 @@ if [[ -z "$branch" ]] || [[ -z "$repo_name" ]]; then
     repo="${repo:-"https://github.com/${repo_name}.git"}"
 fi
 
-if [[ -z "$testsuite" ]] || [[ -z "$needles_dir" ]] || [[ -z "$productdir" ]]; then
-    json_url=${host}/tests/${job}/file/vars.json
-    json_data=$(curl -s "${json_url}")
-    testsuite="${testsuite:-"$(echo "$json_data" | jq -r '.TEST')"}" || throw_json_error "$json_url" "$json_data"
-    old_productdir=$(echo "$json_data" | jq -r '.PRODUCTDIR') || throw_json_error "$json_url" "$json_data"
-    old_casedir=$(echo "$json_data" | jq -r '.CASEDIR') || throw_json_error "$json_url" "$json_data"
-    productdir="${productdir:-"${repo_name##*/}${old_productdir##$old_casedir}"}"
-    old_needledir=$(echo "$json_data" | jq -r '.NEEDLES_DIR | select (.!=null)') || throw_json_error "$json_url" "$json_data"
-    needles_dir="${needles_dir:-"$old_needledir"}"
-    needles_dir="${needles_dir:-"$old_productdir/needles"}"
+clone_job() {
+    if [[ -z "$host" ]] || [[ -z "$job" ]]; then
+        local job_url="${1:?"Need 'job_url' parameter"}"
+        local host=${job_url%%/t*}
+        local job=${job_url##*/}
+    fi
+    if [[ -z "$testsuite" ]] || [[ -z "$needles_dir" ]] || [[ -z "$productdir" ]]; then
+        local json_url=${host}/tests/${job}/file/vars.json
+        local json_data
+        json_data=$(curl -s "${json_url}")
+        local testsuite="${testsuite:-"$(echo "$json_data" | jq -r '.TEST')"}" || throw_json_error "$json_url" "$json_data"
+        local old_productdir
+        old_productdir=$(echo "$json_data" | jq -r '.PRODUCTDIR') || throw_json_error "$json_url" "$json_data"
+        local old_casedir
+        old_casedir=$(echo "$json_data" | jq -r '.CASEDIR') || throw_json_error "$json_url" "$json_data"
+        local productdir="${productdir:-"${repo_name##*/}${old_productdir##$old_casedir}"}"
+        local old_needledir
+        old_needledir=$(echo "$json_data" | jq -r '.NEEDLES_DIR | select (.!=null)') || throw_json_error "$json_url" "$json_data"
+        local needles_dir="${needles_dir:-"$old_needledir"}"
+        needles_dir="${needles_dir:-"$old_productdir/needles"}"
+    fi
+    local repo_branch="${repo_branch:-"$repo_name#$branch"}"
+    local test="${test:-"$testsuite@$repo_branch"}"
+    local build="${build:-"$repo_name#$pr"}"
+    local casedir="${casedir:-"$repo#$branch"}"
+    local GROUP="${GROUP:-0}"
+    local dry_run="${dry_run:-""}"
+    local cmd="$dry_run openqa-clone-job --skip-chained-deps --within-instance \"$host\" \"$job\" _GROUP=\"$GROUP\" TEST=\"$test\" BUILD=\"$build\" CASEDIR=\"$casedir\" PRODUCTDIR=\"$productdir\" NEEDLES_DIR=\"$needles_dir\" $args"
+    if [[ -n "$MARKDOWN" ]]; then
+        eval "$cmd" | sed 's/^Created job.*: \([^ ]*\) -> \(.*\)$/* [\1](\2)/'
+    else
+        eval "$cmd"
+    fi
+}
+
+if [[ -z "$host" ]] || [[ -z "$job" ]]; then
+    job_list="${2:?"Need 'job_url' as parameter pointing to the openQA job to clone or 'host' and 'job' variables, e.g. either 'https://openqa.opensuse.org/tests/123456' or 'https://openqa.opensuse.org' and '123456'. Argument can also be a comma-separated list of job URLs or a single host and multiple ids."}"
 fi
-repo_branch="${repo_branch:-"$repo_name#$branch"}"
-test="${test:-"$testsuite@$repo_branch"}"
-build="${build:-"$repo_name#$pr"}"
-casedir="${casedir:-"$repo#$branch"}"
-GROUP="${GROUP:-0}"
-dry_run="${dry_run:-""}"
-$dry_run openqa-clone-job --skip-chained-deps --within-instance "$host" "$job" _GROUP="$GROUP" TEST="$test" BUILD="$build" CASEDIR="$casedir" PRODUCTDIR="$productdir" NEEDLES_DIR="$needles_dir" "${@:3}"
+args=${*:3}
+IFS=',' ; for i in $job $job_list; do
+    clone_job "$i"
+done
