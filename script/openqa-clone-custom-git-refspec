@@ -10,7 +10,7 @@
 #
 set -o pipefail
 if [[ -n "$GITHUB_TOKEN" ]]; then
-    AUTHENTICATED_REQUEST=" -u $GITHUB_TOKEN:x-oauth-basic "
+    AUTHENTICATED_REQUEST="-u $GITHUB_TOKEN:x-oauth-basic"
     echo "Github oauth token provided, peforming authenticated requests"
 fi
 
@@ -45,7 +45,9 @@ throw_json_error() {
 
 if [[ -z "$branch" ]] || [[ -z "$repo_name" ]]; then
     pr_url=${target_repo_part/github.com/api.github.com/repos}/pulls/$pr
-    pr_content=$(curl "${AUTHENTICATED_REQUEST}" -s "$pr_url")
+    # quotes would break the curl option string
+    # shellcheck disable=SC2086
+    pr_content=$(curl $AUTHENTICATED_REQUEST -s "$pr_url")
     label=$(echo "$pr_content" | jq -r '.head.label') || throw_json_error "$pr_url" "$pr_content"
     if [[ "${label}" == "null" ]]; then
         echo "Github API rate limit might have been exceeded. If this is the case, generate one at
