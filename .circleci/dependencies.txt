@@ -202,7 +202,6 @@ perl-Sub-Uplevel-0.240.0
 perl-SUPER-1.20141117
 perl-TAP-Harness-JUnit-0.42
 perl-Task-Weaken-1.06
-perl-Test-Compile-1.3.0
 perl-Test-Exception-0.430000
 perl-Test-Fatal-0.014
 perl-Test-LongString-0.17
@@ -220,7 +219,6 @@ perl-Try-Tiny-0.30
 perl-Types-Serialiser-1.0
 perl-UNIVERSAL-can-1.20140328
 perl-UNIVERSAL-isa-1.20171012
-perl-UNIVERSAL-require-0.18
 perl-URI-1.73
 perl-URI-db-0.18
 perl-URI-Nested-0.10
