@@ -5,15 +5,33 @@ use Exporter 'import';
 
 # define states
 use constant {
+    # initial job state; the job is supposed to be assigned to a worker by the scheduler
     SCHEDULED => 'scheduled',
-    ASSIGNED  => 'assigned',  # job has been sent to worker but worker has not acknowledged yet
-    SETUP     => 'setup',     # worker prepares execution of backend/isotovideo (e.g. waiting for cache service)
-    RUNNING   => 'running',   # backend/isotovideo is running
-    UPLOADING => 'uploading', # remaining test results are uploaded after backend/isotovideo has exited
-    CANCELLED => 'cancelled', # job was cancelled while still being scheduled
-    DONE      => 'done',      # worker reported that the job is no longer running or web UI considers job dead/abandoned
+    # the job has been sent to worker but worker has not acknowledged yet; the state might be reverted to
+    # SCHEDULED in some conditions
+    ASSIGNED => 'assigned',
+    # worker prepares execution of backend/isotovideo (e.g. waiting for cache service)
+    SETUP => 'setup',
+    # backend/isotovideo is running
+    RUNNING => 'running',
+    # remaining test results are uploaded after backend/isotovideo has exited
+    UPLOADING => 'uploading',
+    # job was cancelled by the user (result USER_CANCELLED is set) or obsoleted due to a new build (result
+    # OBSOLETED is set) or skipped due to failed (directly) chained dependencies (result SKIPPED is set)
+    CANCELLED => 'cancelled',
+    # worker reported that the job is no longer running (a result other than NONE but *including*
+    # USER_CANCELLED and OBSOLETED is set) or web UI considers job dead/abandoned (result INCOMPLETE is set)
+    # or the job has been cancelled due to failed parallel dependencies (result PARALLEL_FAILED is set)
+    DONE => 'done',
 };
 use constant STATES => (SCHEDULED, ASSIGNED, SETUP, RUNNING, UPLOADING, DONE, CANCELLED);
+
+# note regarding CANCELLED vs. DONE:
+# There is an overlap between CANCELLED and DONE (considering that some results are possibly assigned in either of these
+# states). The state CANCELLED is set by the web UI side, e.g. instantly after the user clicks on the 'Cancel job' button.
+# If the worker acknowledges that the job is cancelled the state is set to DONE. The same applies generally to the other
+# overlapping results. Of course if a job has never been picked up by a worker the state is supposed to remain CANCELLED.
+# That is usually the case for jobs SKIPPED due to failed chained dependencies (*not* directly chained dependencies).
 
 # define "meta" states
 use constant PENDING_STATES   => (SCHEDULED, ASSIGNED, SETUP,   RUNNING, UPLOADING);
@@ -28,16 +46,14 @@ use constant {
 
 # define results for the overall job
 use constant {
-    NONE       => 'none',
-    PASSED     => 'passed',
-    SOFTFAILED => 'softfailed',
-    FAILED     => 'failed',
-    INCOMPLETE => 'incomplete',    # worker died or reported some problem
-    SKIPPED =>
-      'skipped',    # dependencies failed before starting this job (FIXME: clarify weird overlap with CANCELLED state)
-    OBSOLETED => 'obsoleted'
-    , # new iso was posted (FIXME: while the job has already been running, right? otherwise the CANCELLED state would have been used?)
-    PARALLEL_FAILED    => 'parallel_failed',       # parallel job failed, this job can't continue
+    NONE            => 'none',               # there's no overall result yet (job is not yet in one of the FINAL_STATES)
+    PASSED          => 'passed',             # the test has been concluded suggessfully with a positive result
+    SOFTFAILED      => 'softfailed',         # the test has been concluded suggessfully with a positive result
+    FAILED          => 'failed',             # the test has been concluded suggessfully with a negative result
+    INCOMPLETE      => 'incomplete',         # worker died or reported some problem
+    SKIPPED         => 'skipped',            # (directly) chained dependencies failed before starting this job
+    OBSOLETED       => 'obsoleted',          # new iso was posted so the job has been cancelled by openQA
+    PARALLEL_FAILED => 'parallel_failed',    # parallel job failed, this job can't continue
     PARALLEL_RESTARTED => 'parallel_restarted',    # parallel job was restarted, this job has to be restarted too
     USER_CANCELLED     => 'user_cancelled',        # cancelled by user via job_cancel
     USER_RESTARTED     => 'user_restarted',        # restarted by user via job_restart
@@ -46,6 +62,9 @@ use constant {
 use constant RESULTS => (NONE, PASSED, SOFTFAILED, FAILED, INCOMPLETE, SKIPPED,
     OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED, TIMEOUT_EXCEEDED
 );
+
+# note: See the "Jobs" section of "GettingStarted.asciidoc" for the difference between SOFTFAILED and FAILED and
+#       further details.
 
 # define "meta" results for the overall job
 use constant COMPLETE_RESULTS     => (PASSED,     SOFTFAILED, FAILED);

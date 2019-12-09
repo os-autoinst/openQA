@@ -143,21 +143,24 @@ returns an overall result. Every one of those executions is called a 'job'.
 Every job is labeled with a numeric identifier and has several associated
 'settings' that will drive its behavior.
 
-A job goes through several states:
+A job goes through several states. Here is (an incomplete list) of these
+states:
 
-* *scheduled* Initial state for recently created jobs. Queued for future
+* *scheduled* Initial state for newly created jobs. Queued for future
   execution.
-* *running* In progress.
-* *cancelled* The job was explicitly cancelled by the user or was replaced by a
-  clone (see below).
-* *done* Execution finished.
+* *setup*/*running*/*uploading* In progress.
+* *cancelled* The job was explicitly cancelled by the user or was
+  replaced by a clone (see below) and the worker has not acknowledged the
+  cancellation yet.
+* *done* The worker acknowledged that the execution finished or the web UI
+  considers the job as abandoned by the worker.
 
-Jobs in state 'done' have typically gone through a whole sequence of steps
-(called 'testmodules') each one with its own result. But in addition to those
-partial results, a finished job also provides an overall result from the
-following list.
+Jobs in the final states 'cancelled' and 'done' have typically gone through a
+whole sequence of steps (called 'testmodules') each one with its own result.
+But in addition to those partial results, a finished job also provides an
+overall result from the following list.
 
-* *none* For jobs that have not reached the 'done' state.
+* *none* For jobs that have not reached one of the final states.
 * *passed* No critical check failed during the process. It does not necessarily
   mean that all testmodules were successful or that no single assertion failed.
 * *failed* At least one assertion considered to be critical was not satisfied at some
