@@ -25,6 +25,7 @@ use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use File::Copy;
 use OpenQA::Test::Database;
+use Test::Output 'combined_like';
 use Test::MockModule;
 use Test::More;
 use Test::Mojo;
@@ -36,6 +37,7 @@ use Data::Dumper 'Dumper';
 use Date::Format 'time2str';
 use Fcntl ':mode';
 use Mojo::File 'tempdir';
+use Mojo::Log;
 use Storable qw(store retrieve);
 
 # these are used to track assets being 'removed from disk' and 'deleted'
@@ -500,19 +502,48 @@ subtest 'Gru manual task' => sub {
       'minion job has the right error message';
 };
 
-SKIP: {
-    skip 'no network available', 1 if $ENV{OBS_RUN};
-    subtest 'download assets with correct permissions' => sub {
-        # need to whitelist github
-        $t->app->config->{global}->{download_domains} = 'github.com';
+# prevent writing to a log file to enable use of combined_like in the following tests
+$t->app->log(Mojo::Log->new(level => 'debug'));
 
-        my $assetsource = 'https://github.com/os-autoinst/os-autoinst/blob/master/t/data/Core-7.2.iso';
-        my $assetpath   = 't/data/openqa/share/factory/iso/Core-7.2.iso';
-        run_gru('download_asset' => [$assetsource, $assetpath, 0]);
-        ok(-f $assetpath, 'asset downloaded');
-        is(S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions');
-    };
-}
+subtest 'download assets with correct permissions' => sub {
+    my $assetsource = 'https://github.com/os-autoinst/os-autoinst/blob/master/t/data/Core-7.2.iso';
+    my $assetpath   = 't/data/openqa/share/factory/iso/Core-7.2.iso';
+
+    # be sure the asset does not exist from a previous test run
+    unlink($assetpath);
+
+    combined_like(
+        sub {
+            run_gru('download_asset' => [$assetsource, $assetpath, 0]);
+        },
+        qr/host github\.com .* is not on the whitelist \(which is empty\)/,
+        'download refused if whitelist empty',
+    );
+
+    $t->app->config->{global}->{download_domains} = 'gitlab.com';
+    combined_like(
+        sub {
+            run_gru('download_asset' => [$assetsource, $assetpath, 0]);
+        },
+        qr/host github\.com .* is not on the whitelist/,
+        'download refused if host not on whitelist',
+    );
+
+    plan skip_all => 'no network available' if $ENV{OBS_RUN};
+
+    $t->app->config->{global}->{download_domains} .= ' github.com';
+    combined_like(
+        sub {
+            run_gru('download_asset' => [$assetsource . '.foo', $assetpath, 0]);
+        },
+        qr/404 response\:/,
+        'error code logged',
+    );
+
+    run_gru('download_asset' => [$assetsource, $assetpath, 0]);
+    ok(-f $assetpath, 'asset downloaded');
+    is(S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions');
+};
 
 done_testing();
 
