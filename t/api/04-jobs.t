@@ -1198,4 +1198,10 @@ subtest 'Parse extra tests results - junit' => sub {
         });
 };
 
+subtest 'create job failed when PUBLISH_HDD_1 is invalid' => sub {
+    $jobs_post_params{PUBLISH_HDD_1} = 'foo/foo@64bit.qcow2';
+    $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(400);
+    like($t->tx->res->json->{error}, qr/The PUBLISH_HDD_1 cannot include \/ in value/, 'PUBLISH_HDD_1 is invalid');
+};
+
 done_testing();

@@ -1121,5 +1121,36 @@ subtest 'schedule tests correctly when changing TEST to job template name' => su
     is($res->json->{count}, 1, 'only schedule the child job with the same job template name');
     my %child_job = map { $jobs->find($_)->TEST => 1 } @{$res->json->{ids}};
     is_deeply(\%child_job, {child_variant1 => 1}, "only one child job was scheduled");
+    $schema->txn_rollback;
 };
+
+subtest 'PUBLISH and STORE variables cannot include slashes' => sub {
+    $schema->txn_begin;
+    add_opensuse_test('parent');
+    add_opensuse_test(
+        'child1',
+        START_AFTER_TEST    => 'parent',
+        HDD_1               => 'foo/server@64bit.qcow2',
+        PUBLISH_HDD_1       => 'foo/foo1@64bit.qcow2',
+        FORCE_PUBLISH_HDD_1 => 'foo/foo1@64bit.qcow2',
+        STORE_HDD_1         => 'foo/foo1@64bit.qcow2',
+        PUBLISH_HDD_2       => 'foo/foo2@64bit.qcow2',
+        FORCE_PUBLISH_HDD_2 => 'foo/foo2@64bit.qcow2',
+        STORE_HDD_2         => 'foo/foo2@64bit.qcow2',
+        PUBLISH_HDD_3       => 'foo/foo3@64bit.qcow2',
+        FORCE_PUBLISH_HDD_3 => 'foo/foo3@64bit.qcow2',
+        STORE_HDD_3         => 'foo/foo3@64bit.qcow2',
+    );
+    add_opensuse_test('child2', START_AFTER_TEST => 'parent');
+    my $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'child1,child2'}, 200);
+    is($res->json->{count},                   2,        'child2 and parent were scheduled');
+    is($res->json->{failed}->[0]->{job_name}, 'child1', 'the test child1 was not scheduled');
+    like(
+        $res->json->{failed}->[0]->{error_message},
+        qr/The (\S+,){8}\S+ cannot include \/ in value/,
+        'the test is scheduled failed because of the invalid value'
+    );
+    $schema->txn_rollback;
+};
+
 done_testing();

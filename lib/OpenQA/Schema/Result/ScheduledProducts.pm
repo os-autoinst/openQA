@@ -270,14 +270,19 @@ sub _schedule_iso {
             $settings->{_GROUP_ID} = delete $settings->{GROUP_ID};
 
             # create a new job with these parameters and count if successful, do not send job notifies yet
-            my $job = $jobs_resultset->create_from_settings($settings, $self->id);
-            push @created_jobs, $job;
+            try {
+                my $job = $jobs_resultset->create_from_settings($settings, $self->id);
+                push @created_jobs, $job;
 
-            $testsuite_ids{$settings->{TEST_SUITE_NAME}}->{$settings->{MACHINE}} //= [];
-            push @{$testsuite_ids{$settings->{TEST_SUITE_NAME}}->{$settings->{MACHINE}}}, $job->id;
+                $testsuite_ids{$settings->{TEST_SUITE_NAME}}->{$settings->{MACHINE}} //= [];
+                push @{$testsuite_ids{$settings->{TEST_SUITE_NAME}}->{$settings->{MACHINE}}}, $job->id;
 
-            # set prio if defined explicitely (otherwise default prio is used)
-            $job->update({priority => $prio}) if (defined($prio));
+                # set prio if defined explicitely (otherwise default prio is used)
+                $job->update({priority => $prio}) if (defined($prio));
+            }
+            catch {
+                push(@failed_job_info, {job_name => $settings->{TEST}, error_message => $_});
+            }
         }
 
         # keep track of ...
