@@ -30,7 +30,6 @@ t/diagram-v*.png
 assets/cache/
 assets/assetpack.db
 nytprof/
-.openqa-travis
 t/full-stack.d/config/database.ini
 t/full-stack.d/config/workers.ini
 t/full-stack.d/openqa/db/db.sqlite
