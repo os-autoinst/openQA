@@ -29,6 +29,7 @@ sub parse {
     my ($self, $json) = @_;
     confess "No JSON given/loaded" unless $json;
     my $decoded_json = Mojo::JSON::from_json($json);
+    my %unique_names;
 
     # may be optional since format result_array:v2
     $self->generated_tests_extra->add(OpenQA::Parser::Result::IPA::Info->new($decoded_json->{info}))
@@ -37,14 +38,35 @@ sub parse {
     foreach my $res (@{$decoded_json->{tests}}) {
         my $result = {};
         my $t_name = $res->{name};
-        $t_name =~ s/\[\w+:\/\/(\d+\.){3}\d+//;
-        $t_name =~ s/\]$//;
+
+        if ($t_name =~ /^(?<path>[\w\/]+\/)?(?<file>\w+)\.py::(?<method>\w+)\[\w+:\/\/(\d+\.){3}\d+(-(?<param>.+))?\]$/)
+        {
+            $t_name = '';
+            $t_name .= $+{path} if ($+{path});
+            $t_name .= $+{file};
+            $t_name .= '_' . $+{method} if ($+{file} ne $+{method});
+            if ($+{param}) {
+                my $param = $+{param};
+                $param =~ s/\.service$//;
+                $t_name .= '_' . $param;
+            }
+        }
+
+        # If a test was triggered twice, we need to unique the name
+        if (exists($unique_names{$t_name})) {
+            $t_name .= sprintf('_%02d', ++$unique_names{$t_name});
+        }
+        else {
+            $unique_names{$t_name} = 0;
+        }
+
+        # replace everything which confuses the web api routes
+        $t_name =~ s/[:\/\[\]\.]/_/g;
 
         $result->{result} = 'fail';
         $result->{result} = 'ok' if $res->{outcome} =~ /passed/i;
         $result->{result} = 'skip' if $res->{outcome} =~ /skipped/i;
 
-        $t_name =~ s/[:\/\[\]\.]/_/g;    # dots in the filename confuse the web api routes
         $result->{name} = $t_name;
 
         my $details = {result => $result->{result}};
