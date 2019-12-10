@@ -29,7 +29,8 @@ if [[ -z "$repo_name" ]] || [[ -z "$pr" ]]; then
     if [[ $first_arg == *"pull"* ]]; then
         pr_url=$first_arg
         target_repo_part=${pr_url%%/pull*}
-        pr="${pr_url##*/}"
+        pr="${pr_url##*pull/}"
+        pr="${pr%%/*}"
     elif [[ $first_arg  == *"tree"* ]]; then
         #maybe a branch_url is given
         branch_url=$first_arg
