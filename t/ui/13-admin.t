@@ -387,9 +387,14 @@ subtest 'job property editor' => sub() {
     $driver->find_element_by_id('toggle-group-properties')->click();
 
     subtest 'current/default values present' => sub() {
-        is($driver->find_element_by_id('editor-name')->get_value(),              'Cool Group', 'name');
-        is($driver->find_element_by_id('editor-size-limit')->get_value(),        '100',        'size limit');
-        is($driver->find_element_by_id('editor-keep-logs-in-days')->get_value(), '30',         'keep logs in days');
+        is($driver->find_element_by_id('editor-name')->get_value(),       'Cool Group', 'name');
+        is($driver->find_element_by_id('editor-size-limit')->get_value(), '',           'size limit');
+        is(
+            $driver->find_element_by_id('editor-size-limit')->get_attribute('placeholder'),
+            'default, configured to 100',
+            'size limit',
+        );
+        is($driver->find_element_by_id('editor-keep-logs-in-days')->get_value(), '30', 'keep logs in days');
         is($driver->find_element_by_id('editor-keep-important-logs-in-days')->get_value(),
             '120', 'keep important logs in days');
         is($driver->find_element_by_id('editor-keep-results-in-days')->get_value(), '365', 'keep results in days');
@@ -459,6 +464,12 @@ subtest 'job property editor' => sub() {
             '50', 'default priority should be the same');
         is($driver->find_element_by_id('editor-carry-over-bugrefs')->is_selected(), 0, 'bug carry over disabled');
         is($driver->find_element_by_id('editor-description')->get_value(), 'Test group', 'description added');
+
+        # clear asset size limit again
+        $driver->find_element_by_id('clear-size-limit-button')->click();
+        $driver->find_element('#properties p.buttons button.btn-primary')->click();
+        $driver->refresh();
+        is($driver->find_element_by_id('editor-size-limit')->get_value(), '', 'size edited');
     };
 };
 

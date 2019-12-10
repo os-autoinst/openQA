@@ -27,7 +27,26 @@
                 <div class="form-group row">
                     <label for="editor-size-limit" class="col-sm-2 control-label" data-toggle="tooltip" title="Size limit for assets">Size limit for assets</label>
                     <div class="col-sm-10">
-                        <input type="number" min="1" class="form-control" id="editor-size-limit" name="size_limit_gb" value="<%= $group->size_limit_gb %>"> GiB
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-sm">
+                                    <input id="editor-size-limit" name="size_limit_gb" type="number" min="1" class="form-control"
+                                        value="<%= $group->get_column('size_limit_gb') // '' %>"
+                                        placeholder="<%= $is_parent
+                                                ? 'none, limits set on job group level apply'
+                                                : 'default, configured to ' . app->config->{default_group_limits}->{asset_size_limit} %>">&nbsp;GiB
+                                </div>
+                                <div class="col-md-auto">
+                                    <button id="clear-size-limit-button"
+                                            class="btn btn-outline-info btn-sm" onclick="$('#editor-size-limit').val('');"
+                                            data-toggle="tooltip" data-placement="bottom"
+                                            title="<%= $is_parent ? 'to use the limits set on job group level instead'
+                                                                  : 'to use configured default instead' %>">
+                                        <i class="fas fa-eraser"></i> Clear limit
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             % my ($overridden_asset_limit, $parent_group);
