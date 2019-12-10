@@ -202,7 +202,7 @@ sub read_config {
             untracked_assets_storage_duration => 14,
         },
         'assets/storage_duration' => {
-            # intentionally left blank for overview
+            CURRENT => 30,
         },
     );
 

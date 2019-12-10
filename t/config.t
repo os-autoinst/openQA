@@ -93,6 +93,9 @@ subtest 'Test configuration default modes' => sub {
         misc_limits => {
             untracked_assets_storage_duration => 14,
         },
+        'assets/storage_duration' => {
+            CURRENT => 30,
+        },
     };
 
     # Test configuration generation with "test" mode
@@ -141,7 +144,9 @@ subtest 'Test configuration override from file' => sub {
         "suse_mirror=http://blah/\n",
 "recognized_referers = bugzilla.suse.com bugzilla.opensuse.org bugzilla.novell.com bugzilla.microfocus.com progress.opensuse.org github.com\n",
         "[audit]\n",
-        "blacklist = job_grab job_done\n"
+        "blacklist = job_grab job_done\n",
+        "[assets/storage_duration]\n",
+        "CURRENT = 45\n",
     );
     $t_dir->child("openqa.ini")->spurt(@data);
     OpenQA::Setup::read_config($app);
@@ -157,6 +162,28 @@ subtest 'Test configuration override from file' => sub {
         ],
         'referers parsed correctly'
     );
+    my $untracked_assets_patterns = $app->config->{'assets/storage_duration'};
+
+    ok(ref $untracked_assets_patterns eq ref {}, "failed to read config for assets/storage_duration");
+    ok(scalar %$untracked_assets_patterns, "config is empty for assets/storage_duration");
+
+    return unless (ref $untracked_assets_patterns eq ref {} and scalar %$untracked_assets_patterns);
+
+    my $current_is_here    = 0;
+    my $current_value      = 0;
+    my $asset_name_matches = 0;
+    for my $pattern (keys %$untracked_assets_patterns) {
+        if ($pattern eq 'CURRENT') {
+            $current_is_here = 1;
+            $current_value   = $untracked_assets_patterns->{$pattern};
+            if ('SLE-12-SP5-HA-POOL-x86_64-CURRENT-Media1' =~ $pattern) {
+                $asset_name_matches = 1;
+            }
+        }
+    }
+    ok($current_is_here,     'CURRENT is configured');
+    ok($current_value == 45, 'CURRENT value is correct');
+    ok($asset_name_matches,  'CURRENT file matches pattern');
 };
 
 subtest 'trim whitespace characters from both ends of openqa.ini value' => sub {
