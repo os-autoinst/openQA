@@ -455,7 +455,16 @@ sub prepare_job_results {
     my ($self, $jobs) = @_;
     my %archs;
     my %results;
-    my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, scheduled => 0, running => 0, unknown => 0};
+    my $aggregated = {
+        none         => 0,
+        passed       => 0,
+        failed       => 0,
+        not_complete => 0,
+        aborted      => 0,
+        scheduled    => 0,
+        running      => 0,
+        unknown      => 0
+    };
     my $preferred_machines = _calculate_preferred_machines($jobs);
 
     # read parameter for additional filtering

@@ -302,7 +302,7 @@ sub complex_query {
         push(@conds, {'me.result' => {-in => $args{result}}});
     }
     if ($args{ignore_incomplete}) {
-        push(@conds, {'me.result' => {-not_in => [OpenQA::Jobs::Constants::INCOMPLETE_RESULTS]}});
+        push(@conds, {'me.result' => {-not_in => [OpenQA::Jobs::Constants::NOT_COMPLETE_RESULTS]}});
     }
     my $scope = $args{scope} || '';
     if ($scope eq 'relevant') {
@@ -487,14 +487,13 @@ sub _cancel_or_deprioritize {
 
 sub next_previous_jobs_query {
     my ($self, $job, $jobid, %args) = @_;
-    my $p_limit     = $args{previous_limit};
-    my $n_limit     = $args{next_limit};
-    my @inc_results = OpenQA::Jobs::Constants::INCOMPLETE_RESULTS;
-    $inc_results[0] = '';
 
-    my @params;
-    push @params, 'done';
-    push @params, @inc_results;
+    my $p_limit = $args{previous_limit};
+    my $n_limit = $args{next_limit};
+    my @params  = (
+        'done',                                      # only consider jobs with state 'done'
+        OpenQA::Jobs::Constants::ABORTED_RESULTS,    # ignore aborted results
+    );
     for (1 .. 2) {
         for my $key (OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS) {
             push @params, $job->get_column($key);

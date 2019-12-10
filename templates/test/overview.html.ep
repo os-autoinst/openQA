@@ -8,7 +8,7 @@
 
 <div>
     <h2>Test result overview</h2>
-    <div id="summary" class="card <%= ($aggregated->{failed} + $aggregated->{incomplete}) ? 'border-danger' : 'border-success' %>">
+    <div id="summary" class="card <%= ($aggregated->{failed} + $aggregated->{not_complete}) ? 'border-danger' : 'border-success' %>">
         <div class="card-header">
             Overall Summary of
             % if (@$summary_parts) {
@@ -24,9 +24,9 @@
         <div class="card-body">
             Passed: <span class="badge badge-success"><%= $aggregated->{passed} %></span>
 
-            % if ($aggregated->{incomplete}) {
+            % if ($aggregated->{not_complete}) {
                 Incomplete:
-                <span class="badge badge-secondary"><%= $aggregated->{incomplete} %></span>
+                <span class="badge badge-secondary"><%= $aggregated->{not_complete} %></span>
             % }
             % if ($aggregated->{softfailed}) {
                 Soft-Failed:
