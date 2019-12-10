@@ -79,8 +79,8 @@ my $cache = OpenQA::CacheService::Model::Cache->new(location => $cachedir->to_st
 is $cache->init, $cache;
 is $cache->sqlite->migrations->latest, 1, 'version 1 is the latest version';
 is $cache->sqlite->migrations->active, 1, 'version 1 is the active version';
-like $cache_log, qr/Creating cache directory tree for "$cachedir"/,          'Cache directory tree created';
-like $cache_log, qr/Cache size of "$cachedir" is 0, with limit 53687091200/, 'Cache limit is default (50GB)';
+like $cache_log, qr/Creating cache directory tree for "$cachedir"/,         'Cache directory tree created';
+like $cache_log, qr/Cache size of "$cachedir" is 0 Byte, with limit 50GiB/, 'Cache limit is default (50GB)';
 ok(-e $db_file, 'cache.sqlite is present');
 $cache_log = '';
 
@@ -97,7 +97,7 @@ for my $i (1 .. 3) {
 $cache->sleep_time(1);
 $cache->init;
 is $cache->sqlite->migrations->active, 1, 'version 1 is still the active version';
-like $cache_log, qr/Cache size of "$cachedir" is 168, with limit 53687091200/,
+like $cache_log, qr/Cache size of "$cachedir" is 168 Byte, with limit 50GiB/,
   'Cache limit/size match the expected 100GB/168)';
 unlike $cache_log, qr/Purging ".*[13].qcow2"/, 'Registered assets 1 and 3 were kept';
 like $cache_log, qr/Purging ".*2.qcow2" because the asset is not registered/, 'Asset 2 was removed';
@@ -105,8 +105,9 @@ $cache_log = '';
 
 $cache->limit(100);
 $cache->init;
-like $cache_log, qr/Cache size of "$cachedir" is 84, with limit 100/, 'Cache limit/size match the expected 100/84)';
-like $cache_log, qr/Cache size 168 \+ needed 0 exceeds limit of 100, purging least used assets/,
+like $cache_log, qr/Cache size of "$cachedir" is 84 Byte, with limit 100 Byte/,
+  'Cache limit/size match the expected 100/84)';
+like $cache_log, qr/Cache size 168 Byte \+ needed 0 Byte exceeds limit of 100 Byte, purging least used assets/,
   'Requested size is logged';
 like $cache_log, qr/Purging ".*1.qcow2" because we need space for new assets, reclaiming 84/,
   'Oldest asset (1.qcow2) removal was logged';
@@ -138,7 +139,7 @@ $cache_log = '';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-589@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-589\@64bit.qcow2" from/,         'Asset download attempt';
-like $cache_log, qr/Size of .+ differs, expected 10 but downloaded 6/,                   'Incomplete download logged';
+like $cache_log, qr/Size of .+ differs, expected 10 Byte but downloaded 6 Byte/,         'Incomplete download logged';
 like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
 like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
 like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
@@ -158,7 +159,7 @@ $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bi
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200.*" successful, new cache size is 1024/,
   'Full download logged';
-like $cache_log, qr/Size of .* is 1024, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
+like $cache_log, qr/Size of .* is 1024 Byte, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
 $cache_log = '';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
@@ -175,8 +176,8 @@ $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_256@
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200_256\@64bit.qcow2" from/, 'Asset download attempt';
 like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200_256.*" successful, new cache size is 256/,
   'Full download logged';
-like $cache_log, qr/is 256, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
-like $cache_log, qr/Cache size 1024 \+ needed 256 exceeds limit of 1024, purging least used assets/,
+like $cache_log, qr/is 256 Byte, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
+like $cache_log, qr/Cache size 1024 Byte \+ needed 256 Byte exceeds limit of 1024 Byte, purging least used assets/,
   'Requested size is logged';
 like $cache_log,
   qr/Purging ".*0368-503@64bit.qcow2" because we need space for new assets, reclaiming 0/,

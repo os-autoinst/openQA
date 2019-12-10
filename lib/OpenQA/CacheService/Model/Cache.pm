@@ -20,7 +20,7 @@ use Carp 'croak';
 use File::Basename;
 use Fcntl ':flock';
 use Mojo::UserAgent;
-use OpenQA::Utils qw(base_host);
+use OpenQA::Utils qw(base_host human_readable_size);
 use OpenQA::Worker::Settings;
 use Mojo::SQLite;
 use Mojo::File 'path';
@@ -71,7 +71,9 @@ sub init {
 
     $self->cache_sync;
     $self->_check_limits(0);
-    $log->info(qq{Cache size of "$location" is $self->{cache_real_size}, with limit } . $self->limit);
+    my $cache_size = human_readable_size($self->{cache_real_size});
+    my $limit_size = human_readable_size($self->limit);
+    $log->info(qq{Cache size of "$location" is $cache_size, with limit $limit_size});
 
     return $self;
 }
@@ -123,14 +125,19 @@ sub _download_asset {
             ++$att and sleep 1 and $log->info("Updating cache failed (attempt $att)")
               until ($ok = $self->_update_asset($asset, $etag, $size)) || $att > 5;
 
-            if ($ok) { $log->info(qq{Download of "$asset" successful, new cache size is $self->{cache_real_size}}) }
+            if ($ok) {
+                my $cache_size = human_readable_size($self->{cache_real_size});
+                $log->info(qq{Download of "$asset" successful, new cache size is $cache_size});
+            }
             else {
                 $log->error(qq{Purging "$asset" because updating the cache failed, this should never happen});
                 $self->purge_asset($asset);
             }
         }
         else {
-            $log->info(qq{Size of "$asset" differs, expected } . $headers->content_length . " but downloaded $size");
+            my $header_size = human_readable_size($headers->content_length);
+            my $actual_size = human_readable_size($size);
+            $log->info(qq{Size of "$asset" differs, expected $header_size but downloaded $actual_size});
             $ret = 598;    # 598 (Informal convention) Network read timeout error
         }
     }
@@ -223,7 +230,8 @@ sub _update_asset {
         return undef;
     }
 
-    $log->info(qq{Size of "$asset" is $size, with ETag "$etag"});
+    my $asset_size = human_readable_size($size);
+    $log->info(qq{Size of "$asset" is $asset_size, with ETag "$etag"});
     $self->_increase($size);
 
     return 1;
@@ -289,15 +297,19 @@ sub _check_limits {
     my $log   = $self->log;
 
     if ($self->_exceeds_limit($needed)) {
+        my $cache_size  = human_readable_size($self->{cache_real_size});
+        my $needed_size = human_readable_size($needed);
+        my $limit_size  = human_readable_size($limit);
         $log->info(
-            "Cache size $self->{cache_real_size} + needed $needed exceeds limit of $limit, purging least used assets");
+            "Cache size $cache_size + needed $needed_size exceeds limit of $limit_size, purging least used assets");
         eval {
             my $db      = $self->sqlite->db;
             my $results = $db->select('assets', [qw(filename size last_use)], undef, {-asc => 'last_use'});
             for my $asset ($results->hashes->each) {
                 my $asset_size = $asset->{size} || -s $asset->{filename} || 0;
+                my $reclaiming = human_readable_size($asset_size);
                 $log->info(
-                    qq{Purging "$asset->{filename}" because we need space for new assets, reclaiming $asset_size});
+                    qq{Purging "$asset->{filename}" because we need space for new assets, reclaiming $reclaiming});
                 $self->_decrease($asset_size) if $self->purge_asset($asset->{filename});
                 last if !$self->_exceeds_limit($needed);
             }
