@@ -24,7 +24,9 @@ use OpenQA::Utils;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use File::Copy;
+use OpenQA::SeleniumTest;
 use OpenQA::Test::Database;
+use Test::Output 'combined_like';
 use Test::MockModule;
 use Test::More;
 use Test::Mojo;
@@ -36,6 +38,7 @@ use Data::Dumper 'Dumper';
 use Date::Format 'time2str';
 use Fcntl ':mode';
 use Mojo::File 'tempdir';
+use Mojo::Log;
 use Storable qw(store retrieve);
 
 # these are used to track assets being 'removed from disk' and 'deleted'
@@ -83,6 +86,9 @@ $assets_mock->mock(scan_for_untracked_assets => sub { });
 $assets_mock->mock(refresh_assets            => sub { });
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
+
+# launch an additional app to serve some file for testing blocking downloads
+my $mojo_port = OpenQA::SeleniumTest::start_app(sub { });
 
 # Allow Devel::Cover to collect stats for background jobs
 $t->app->minion->on(
@@ -345,11 +351,11 @@ subtest 'limit audit events' => sub {
     my $app            = $t->app;
     my $audit_events   = $app->schema->resultset('AuditEvents');
     my $startup_events = $audit_events->search({event => 'startup'});
-    is($startup_events->count, 1, 'one startup event present');
+    is($startup_events->count, 2, 'two startup events present');
 
     $startup_events->first->update({t_created => '2019-01-01'});
     run_gru('limit_audit_events');
-    is($audit_events->search({event => 'startup'})->count, 0, 'startup events deleted');
+    is($audit_events->search({event => 'startup'})->count, 1, 'old startup event deleted');
 };
 
 subtest 'human readable size' => sub {
@@ -502,19 +508,61 @@ subtest 'Gru manual task' => sub {
       'minion job has the right error message';
 };
 
-SKIP: {
-    skip 'no network available', 1 if $ENV{OBS_RUN};
-    subtest 'download assets with correct permissions' => sub {
-        # need to whitelist github
-        $t->app->config->{global}->{download_domains} = 'github.com';
+# prevent writing to a log file to enable use of combined_like in the following tests
+$t->app->log(Mojo::Log->new(level => 'debug'));
 
-        my $assetsource = 'https://github.com/os-autoinst/os-autoinst/blob/master/t/data/Core-7.2.iso';
-        my $assetpath   = 't/data/openqa/share/factory/iso/Core-7.2.iso';
-        run_gru('download_asset' => [$assetsource, $assetpath, 0]);
-        ok(-f $assetpath, 'asset downloaded');
-        is(S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions');
-    };
-}
+subtest 'download assets with correct permissions' => sub {
+    my $local_domain = "127.0.0.1";
+    my $assetsource  = "http://$local_domain:$mojo_port/tests/99926/file/autoinst-log.txt";
+    my $assetpath    = 't/data/openqa/share/factory/iso/Core-7.2.iso';
+
+    # be sure the asset does not exist from a previous test run
+    unlink($assetpath);
+
+    combined_like(
+        sub {
+            run_gru('download_asset' => [$assetsource, $assetpath, 0]);
+        },
+        qr/host $local_domain .* is not on the whitelist \(which is empty\)/,
+        'download refused if whitelist empty',
+    );
+
+    $t->app->config->{global}->{download_domains} = 'foo';
+    combined_like(
+        sub {
+            run_gru('download_asset' => [$assetsource, $assetpath, 0]);
+        },
+        qr/host $local_domain .* is not on the whitelist/,
+        'download refused if host not on whitelist',
+    );
+
+    $t->app->config->{global}->{download_domains} .= " $local_domain";
+    combined_like(
+        sub {
+            run_gru('download_asset' => [$assetsource . '.foo', $assetpath, 0]);
+        },
+        qr/404 response\:/,
+        'error code logged',
+    );
+
+    run_gru('download_asset' => [$assetsource, $assetpath, 0]);
+    ok(-f $assetpath, 'asset downloaded');
+    is(S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions');
+
+    my $ua = Mojo::UserAgent->new(max_redirects => 5);
+    my $tx = $ua->build_tx(GET => $assetsource);
+    $tx->res->max_message_size(0);
+    $tx = $ua->start($tx);
+
+    # check for 4xx/5xx response and connection errors
+    if (my $err = $tx->error) {
+        # clean possibly created incomplete file
+        unlink($assetpath);
+
+        my $msg = $err->{code} ? "$err->{code} response: $err->{message}" : "connection error: $err->{message}";
+        note("asset download: download of $assetsource to $assetpath failed: $msg");
+    }
+};
 
 done_testing();
 
