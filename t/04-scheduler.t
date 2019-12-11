@@ -25,6 +25,7 @@ use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Resource::Locks;
 use OpenQA::Resource::Jobs;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
+use OpenQA::Jobs::Constants;
 use OpenQA::Test::Database;
 use Test::Mojo;
 use Test::MockModule;
@@ -119,19 +120,22 @@ $workercaps->{isotovideo_interface_version} = WEBSOCKET_API_VERSION;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
 
-# this really should be an integration test
-my $id = $c->_register($schema, "host", "1", $workercaps);
-ok($id == 1, "New worker registered");
-my $worker_db_obj = $schema->resultset("Workers")->find($id);
-my $worker        = $worker_db_obj->info();
-ok($worker->{id} == $id && $worker->{host} eq "host" && $worker->{instance} eq "1", "New worker_get");
+sub register_worker {
+    return $c->_register($schema, 'host', '1', $workercaps);
+}
 
-# Update worker
-sleep(1);
-my $id2 = $c->_register($schema, "host", "1", $workercaps);
-ok($id == $id2, "Known worker_register");
-my $worker2 = $schema->resultset("Workers")->find($id2)->info();
-ok($worker2->{id} == $id2 && $worker2->{host} eq "host" && $worker2->{instance} == 1, "Known worker_get");
+my ($id, $worker, $worker_db_obj);
+subtest 'worker registration' => sub {
+    is($id = register_worker, 1, 'new worker registered');
+
+    $worker_db_obj = $schema->resultset('Workers')->find($id);
+    $worker        = $worker_db_obj->info;
+
+    is($worker->{id},       $id,    'id set');
+    is($worker->{host},     'host', 'host set');
+    is($worker->{instance}, '1',    'instance set');
+    is(register_worker,     $id,    're-registered worker got same id');
+};
 
 # Testing job_create and job_get
 my %settings = (
@@ -328,22 +332,33 @@ is(scalar(@{$rjobs_before}) + 1, scalar(@{$rjobs_after}), "number of running job
 is($rjobs_after->[-1]->{assigned_worker_id}, 1, 'assigned worker set');
 
 $grabbed = job_get($job->id);
-is($grabbed->worker->id, $worker->{id}, "correct worker assigned");
-ok($grabbed->state eq "assigned", "Job is in assigned state");    # After job_grab the job is in running state.
+is($grabbed->worker->id, $worker->{id}, 'correct worker assigned');
+is($grabbed->state,      ASSIGNED,      'job is in assigned state');
 
-# register worker again while it has a running job
-$id2 = $c->_register($schema, "host", "1", $workercaps);
-ok($id == $id2, "re-register worker got same id");
+# register worker again with no job while the web UI thinks it has an assigned job
+is(register_worker, $id, 'worker re-registered');
 
-# Now it's previous job must be set to done
+# the assigned job is supposed to be re-scheduled
 $grabbed = job_get($job->id);
-is($grabbed->state,  "done",       "Previous job is in done state");
-is($grabbed->result, "incomplete", "result is incomplete");
-ok(!$grabbed->settings_hash->{JOBTOKEN}, "job token no longer present");
+is($grabbed->state,                     SCHEDULED, 'previous job has been re-scheduled');
+is($grabbed->result,                    NONE,      'previous job has no result yet');
+is($grabbed->settings_hash->{JOBTOKEN}, undef,     'the job token of the previous job has been cleared');
+
+# register worker again with no job while the web UI thinks it as a running job
+$grabbed->update({state => RUNNING});
+$worker_db_obj->update({job_id => $grabbed->id});
+$worker_db_obj->set_property(JOB_TOKEN => 'assume we have a token');
+is(register_worker, $id, 'worker re-registered');
+
+# the assigned job is supposed to be incompleted
+$grabbed = job_get($job->id);
+is($grabbed->state,                     DONE,       'previous job has is considered done');
+is($grabbed->result,                    INCOMPLETE, 'previous job been incompleted');
+is($grabbed->settings_hash->{JOBTOKEN}, undef,      'the job token of the previous job has been cleared');
 
 OpenQA::Scheduler::Model::Jobs->singleton->schedule();
 $grabbed = $sent->{$worker->{id}}->{job}->to_hash;
-isnt($job->id, $grabbed->{id}, "new job grabbed") or die diag explain $grabbed->to_hash;
+isnt($job->id, $grabbed->{id}, "new job grabbed") or die diag explain $grabbed;
 isnt($grabbed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, "job token differs")
   or die diag explain $grabbed->to_hash;
 
@@ -355,7 +370,6 @@ is_deeply($grabbed->{settings}, $job_ref->{settings}, "settings correct");
 my $job3_id = $job->id;
 my $job_id  = $grabbed->{id};
 
-sleep 1;
 # Testing job_set_done
 $job    = job_get($job_id);
 $result = $job->done(result => 'passed');

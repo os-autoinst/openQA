@@ -156,8 +156,12 @@ subtest 'Simulation of unstable workers' => sub {
     is(@{$allocated}[0]->{job},    99982, 'right job allocated');
     is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
 
+    for (0 .. 100) {
+        last if $schema->resultset("Jobs")->find(99982)->state eq OpenQA::Jobs::Constants::RUNNING;
+        sleep 2;
+    }
+    is $schema->resultset("Jobs")->find(99982)->state, OpenQA::Jobs::Constants::RUNNING, 'job is running';
     kill_service($unstable_w_pid, 1);
-    is $schema->resultset("Jobs")->find(99982)->state, OpenQA::Jobs::Constants::ASSIGNED;
 
     $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, 8);
 

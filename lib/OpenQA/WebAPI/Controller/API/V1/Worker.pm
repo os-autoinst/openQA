@@ -88,7 +88,8 @@ sub _register {
     die 'Incompatible websocket API version'
       if WEBSOCKET_API_VERSION != ($caps->{websocket_api_version} // 0);
 
-    my $worker = $schema->resultset('Workers')->search(
+    my $workers = $schema->resultset('Workers');
+    my $worker  = $workers->search(
         {
             host     => $host,
             instance => int($instance),
@@ -99,7 +100,7 @@ sub _register {
         $worker->update({t_updated => now()});
     }
     else {
-        $worker = $schema->resultset('Workers')->create(
+        $worker = $workers->create(
             {
                 host     => $host,
                 instance => $instance,
@@ -114,18 +115,42 @@ sub _register {
     # to still work on these jobs (which might be the case when the worker hasn't actually crashed but
     # just re-registered due to network issues)
     my %jobs_worker_says_it_works_on = map { ($_ => 1) } @$jobs_worker_says_it_works_on;
-    $worker->update({job_id => undef}) if _incomplete_previous_job(\%jobs_worker_says_it_works_on, $worker->job);
-    _incomplete_previous_job(\%jobs_worker_says_it_works_on, $_) for $worker->unfinished_jobs->all;
+    my $worker_id                    = $worker->id;
+    try {
+        $schema->txn_do(
+            sub {
+                $worker->update({job_id => undef})
+                  if _incomplete_previous_job(\%jobs_worker_says_it_works_on, $worker->job);
+                _incomplete_previous_job(\%jobs_worker_says_it_works_on, $_) for $worker->unfinished_jobs->all;
+            });
+    }
+    catch {
+        log_warning("Unable to incomplete/duplicate or reschedule jobs abandoned by worker $worker_id: $_");
+    };
 
-    return $worker->id;
+    return $worker_id;
 }
 
 sub _incomplete_previous_job {
     my ($jobs_worker_says_it_works_on, $job) = @_;
-    return 0 if !defined $job || $jobs_worker_says_it_works_on->{$job->id};
+    return 0 unless defined $job;
 
+    my $job_id = $job->id;
+    return 0 if $jobs_worker_says_it_works_on->{$job_id};
+    my $job_state = $job->state;
+    return 1 if $job_state eq OpenQA::Jobs::Constants::SCHEDULED;
+
+    # set jobs which were only assigned anyways back to scheduled
+    if ($job_state eq OpenQA::Jobs::Constants::ASSIGNED) {
+        $job->reschedule_state;
+        return 1;
+    }
+
+    # mark jobs which were already beyond assigned as incomplete and duplicate it
     $job->set_property('JOBTOKEN');
-    $job->auto_duplicate;
+    if (my $duplicate = $job->auto_duplicate) {
+        log_debug("Job $job_id duplicated as " . $duplicate->id);
+    }
     $job->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
     return 1;
 }

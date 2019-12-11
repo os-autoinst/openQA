@@ -182,32 +182,6 @@ sub _message {
             && $job_id eq $registered_job_id
             && $job_token eq $registered_job_token
             && $registered_job_state eq RUNNING);
-
-        # skip informing scheduler if worker is idling as expected
-        return undef if (!defined $job_id && !defined $registered_job_id);
-
-        # let the scheduler know so it can update the status of related jobs according to what the worker reported
-        OpenQA::Scheduler::Client->singleton->inform_scheduler_that_worker_reported_back(
-            {
-                worker_id          => $wid,
-                worker_status      => $current_worker_status,
-                current_job_id     => $job_id,
-                current_job_status => $job_status,
-                pending_job_ids    => $pending_job_ids,
-                job_token          => $job_token,
-            },
-            sub {
-                my ($ua, $tx) = @_;
-                my $err = $tx->error;
-                return unless $err;
-
-                my $message
-                  = $err->{code}
-                  ? "$err->{code} response: $err->{message}"
-                  : "connection error: $err->{message}";
-                log_error("Unable to inform scheduler that worker $wid reported back ($message)");
-                if (my $res = $tx->res) { log_error('response was: ' . $res->body); }
-            });
     }
     else {
         log_error(sprintf('Received unknown message type "%s" from worker %u', $json->{type}, $worker->{id}));

@@ -330,38 +330,21 @@ sub reschedule_state {
             assigned_worker_id => undef,
             result             => NONE
         });
-    if ($self->worker) {
-        # free the worker
+
+    log_debug('Job  ' . $self->id . " reset to state $state");
+
+    # free the worker
+    if (my $worker = $self->worker) {
         $self->worker->update({job_id => undef});
-    }
-    if ($self->state eq $state) {
-        #if (!$self->assigned_worker_id && !$self->worker) {
-        log_debug("Job '" . $self->id . "' reset to '$state' state");
-        return 1;
-    }
-    else {
-        log_debug("Job '" . $self->id . "' FAILED reset to '$state' state");
-        return 0;
     }
 }
 
 sub reschedule_rollback {
     my ($self, $worker) = @_;
     $self->scheduler_abort($worker)
-      ;    # TODO: this might become a problem if we have duplicated job IDs from 2 or more WebUI
-           # Workers should be able to kill a job checking the (job token + job id) instead.
-    return $self->reschedule_state();
-}
-
-sub incomplete_and_duplicate {
-    my $self = shift;
-    $self->done(result => INCOMPLETE);
-    my $res = $self->auto_duplicate;
-    if ($res) {
-        log_debug("[Job#" . $self->id . "] Duplicated as job '" . $res->id . "'");
-        return $res;
-    }
-    return;
+      ;    # TODO: This might become a problem if we have duplicated job IDs from 2 or more web UIs.
+           #       Workers should be able to kill a job checking the (job token + job id) instead.
+    $self->reschedule_state;
 }
 
 sub set_assigned_worker {

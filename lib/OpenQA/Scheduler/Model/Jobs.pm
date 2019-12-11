@@ -236,7 +236,7 @@ sub schedule {
                     }
                     else {
                         # Send abort and reschedule if we fail associating the job to the worker
-                        die "Failed rollback of job" unless $jobs[0]->reschedule_rollback($worker);
+                        $jobs[0]->reschedule_rollback($worker);
                     }
                 }
             }
@@ -256,7 +256,7 @@ sub schedule {
             for my $job (@jobs) {
                 try {
                     # Remove the associated worker and be sure to be in scheduled state.
-                    die "failed reset" unless $job->reschedule_state;
+                    $job->reschedule_state;
                 }
                 catch {
                     # Again: If we see this, we are in a really bad state.
