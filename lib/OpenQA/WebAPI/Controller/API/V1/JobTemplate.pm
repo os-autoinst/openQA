@@ -569,11 +569,11 @@ sub create {
     my $affected_rows;
 
     my $validation      = $self->validation;
-    my $is_number_regex = qr/^[0-9]+$/;
+    my $is_number_regex = qr/^[0-9]+\z/;
     my $has_product_id  = $validation->optional('product_id')->like($is_number_regex)->is_valid;
 
     # validate/read priority
-    my $prio_regex = qr/^(inherit|[0-9]+)$/;
+    my $prio_regex = qr/^(inherit|[0-9]+)\z/;
     if ($has_product_id) {
         $validation->optional('prio')->like($prio_regex);
     }
@@ -597,7 +597,7 @@ sub create {
 
         if ($validation->has_error) {
             $error = "wrong parameter:";
-            for my $k (qw(product_id machine_id test_suite_id group_id)) {
+            for my $k (qw(product_id machine_id test_suite_id group_id prio)) {
                 $error .= ' ' . $k if $validation->has_error($k);
             }
         }
