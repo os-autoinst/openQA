@@ -23,7 +23,7 @@ use File::Basename;
 use File::Spec;
 use File::Spec::Functions 'catfile';
 use Data::Dump 'pp';
-use Mojolicious::Static;
+use Mojo::File 'path';
 
 sub needle {
     my $self = shift;
@@ -126,9 +126,9 @@ sub download_asset {
     my $path = $self->param('assetpath');
     return $self->reply->not_found if $path =~ qr/\.\./;
 
-    my $static = Mojolicious::Static->new;
-    $static->paths([$OpenQA::Utils::assetdir]);
-    return $self->rendered if $static->serve($self, $path);
+    my $file = path($OpenQA::Utils::assetdir, $path)->to_string;
+    return $self->reply->not_found unless -f $file && -r _;
+    $self->reply->file($file);
 }
 
 sub test_asset {

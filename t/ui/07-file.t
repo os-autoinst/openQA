@@ -143,6 +143,8 @@ $t->get_ok('/tests/99961/asset/repo/testrepo/README/../README')->status_is(400)
 # download_asset is handled by apache normally, but make sure it works - important for fullstack test
 $t->get_ok('/assets/repo/testrepo/README')->status_is(200);
 $t->get_ok('/assets/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(200);
+$t->get_ok('/assets/iso/../iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(404);
+$t->get_ok('/assets/repo/testrepo/doesnotexist')->status_is(404);
 
 
 # TODO: also test repos
