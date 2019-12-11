@@ -1075,36 +1075,39 @@ Every job is labeled with a numeric identifier and has several associated
 'settings' that will drive its behavior.</p>
 </div>
 <div class="paragraph">
-<p>A job goes through several states:</p>
+<p>A job goes through several states. Here is (an incomplete list) of these
+states:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>scheduled</strong> Initial state for recently created jobs. Queued for future
+<p><strong>scheduled</strong> Initial state for newly created jobs. Queued for future
 execution.</p>
 </li>
 <li>
-<p><strong>running</strong> In progress.</p>
+<p><strong>setup</strong>/<strong>running</strong>/<strong>uploading</strong> In progress.</p>
 </li>
 <li>
-<p><strong>cancelled</strong> The job was explicitly cancelled by the user or was replaced by a
-clone (see below).</p>
+<p><strong>cancelled</strong> The job was explicitly cancelled by the user or was
+replaced by a clone (see below) and the worker has not acknowledged the
+cancellation yet.</p>
 </li>
 <li>
-<p><strong>done</strong> Execution finished.</p>
+<p><strong>done</strong> The worker acknowledged that the execution finished or the web UI
+considers the job as abandoned by the worker.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>Jobs in state 'done' have typically gone through a whole sequence of steps
-(called 'testmodules') each one with its own result. But in addition to those
-partial results, a finished job also provides an overall result from the
-following list.</p>
+<p>Jobs in the final states 'cancelled' and 'done' have typically gone through a
+whole sequence of steps (called 'testmodules') each one with its own result.
+But in addition to those partial results, a finished job also provides an
+overall result from the following list.</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>none</strong> For jobs that have not reached the 'done' state.</p>
+<p><strong>none</strong> For jobs that have not reached one of the final states.</p>
 </li>
 <li>
 <p><strong>passed</strong> No critical check failed during the process. It does not necessarily
@@ -8262,7 +8265,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2019-12-06 00:07:29 UTC
+Last updated 2019-12-11 00:07:07 UTC
 </div>
 </div>
 <style>
