@@ -9,6 +9,7 @@ STABILITY_TEST ?= 0
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 docker_env_file := "$(current_dir)/docker.env"
+CI ?= $(TRAVIS)
 
 .PHONY: help
 help:
@@ -102,7 +103,7 @@ checkstyle: test-shellcheck test-yaml
 	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic lib
 
 .PHONY: test
-ifeq ($(TRAVIS),true)
+ifeq ($(CI),true)
 test: run-tests-within-container
 else
 ifeq ($(CHECKSTYLE),0)
