@@ -119,7 +119,7 @@ sub schedules {
     # Re-indent with group names at the toplevel in case of multiple groups
     if (keys %$yaml > 1) {
         foreach my $group (keys %$yaml) {
-            $yaml->{$group} = "'$group': |\n" . ($yaml->{$group} =~ s/(.+)\n/  $1\n/gr);
+            $yaml->{$group} = "'$group': |\n" . ($yaml->{$group} =~ s/^(.+)/  $1/mgr);
         }
     }
     $self->render(yaml => join("\n", map { $yaml->{$_} } sort keys %$yaml));

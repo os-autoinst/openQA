@@ -21,6 +21,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
+use Test::MockModule;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::WebAPI::Controller::API::V1::JobTemplate;
@@ -321,6 +322,23 @@ EOM
         my $yaml = $group->to_yaml;
         cmp_ok($yaml, 'eq', $yaml{$group->id}, "group($id)->to_yaml");
     }
+};
+
+subtest 'missing-linebreak' => sub {
+    my $orig = OpenQA::Schema::Result::JobGroups->can('to_yaml');
+    my $mock = Test::MockModule->new('OpenQA::Schema::Result::JobGroups');
+    # Code should be able to deal with YAML missing last linebreak
+    $mock->mock(
+        to_yaml => sub {
+            my ($self) = @_;
+            my $yaml = $orig->($self);
+            chomp $yaml;
+            return $yaml;
+        });
+    $t->get_ok("/api/v1/job_templates_scheduling")->status_is(200);
+    my $yaml = YAML::XS::Load($t->tx->res->body);
+    is_deeply(['opensuse', 'opensuse test'], [sort keys %$yaml], 'YAML of all groups contains names')
+      || diag explain $t->tx->res->body;
 };
 
 $t->post_ok(
