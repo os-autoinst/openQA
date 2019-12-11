@@ -278,6 +278,23 @@ ok($job_template_id1, "Created job template ($job_template_id1)");
 $t->post_ok(
     '/api/v1/job_templates',
     form => {
+        group_id      => 1001,
+        machine_id    => 1001,
+        test_suite_id => 1002,
+        product_id    => 1,
+        prio          => "30\n",
+    }
+)->status_is(400)->json_is(
+    '' => {
+        error_status => 400,
+        error        => 'wrong parameter: prio'
+    },
+    'setting invalid prio'
+);
+
+$t->post_ok(
+    '/api/v1/job_templates',
+    form => {
         group_name      => 'opensuse',
         machine_name    => '64bit',
         test_suite_name => 'RAID0',
