@@ -147,67 +147,77 @@ sub _message {
             log_debug("Could not send the population number to worker: $_");
         };
 
-        # find the job currently associated with that worker
-        my $registered_job_id;
-        my $registered_job_token;
-        my $registered_job_state;
+# find the job currently associated with that worker and check whether the worker still executes the job it is supposed to
         try {
-            return undef unless defined $wid;
             my $worker = $schema->resultset('Workers')->find($wid);
             return undef unless $worker;
 
+            my $registered_job_id;
+            my $registered_job_token;
+            my $registered_job_state;
             my $registered_job = $worker->job;
             if ($registered_job) {
                 $registered_job_id    = $registered_job->id;
                 $registered_job_state = $registered_job->state;
             }
+
+            # log debugging info
             log_debug("Found job $registered_job_id in DB from worker_status update sent by worker $wid")
               if defined $registered_job_id;
             log_debug("Received request has job id: $job_id")
               if defined $job_id;
-
             $registered_job_token = $worker->get_property('JOBTOKEN');
             log_debug("Worker $wid for job $registered_job_id has token $registered_job_token")
               if defined $registered_job_id && defined $registered_job_token;
             log_debug("Received request has token: $job_token")
               if defined $job_token;
-        };
 
-        # skip informing scheduler if worker just does the job we expected it to do
-        return undef
-          if ( defined $job_id
-            && defined $registered_job_id
-            && defined $job_token
-            && defined $registered_job_token
-            && $job_id eq $registered_job_id
-            && $job_token eq $registered_job_token
-            && $registered_job_state eq RUNNING);
+            # skip any further actions if worker just does the job we expected it to do
+            return undef
+              if ( defined $job_id
+                && defined $registered_job_id
+                && defined $job_token
+                && defined $registered_job_token
+                && $job_id eq $registered_job_id
+                && (my $job_token_correct = $job_token eq $registered_job_token)
+                && OpenQA::Jobs::Constants::meta_state($registered_job_state) eq OpenQA::Jobs::Constants::EXECUTION);
 
-        # skip informing scheduler if worker is idling as expected
-        return undef if (!defined $job_id && !defined $registered_job_id);
+            # handle the case when the worker does not work on the job(s) it is supposed to work on
+            my @all_jobs_currently_associated_with_worker = ($registered_job, $worker->unfinished_jobs);
+            for my $associated_job (@all_jobs_currently_associated_with_worker) {
+                next unless defined $associated_job;
 
-        # let the scheduler know so it can update the status of related jobs according to what the worker reported
-        OpenQA::Scheduler::Client->singleton->inform_scheduler_that_worker_reported_back(
-            {
-                worker_id          => $wid,
-                worker_status      => $current_worker_status,
-                current_job_id     => $job_id,
-                current_job_status => $job_status,
-                pending_job_ids    => $pending_job_ids,
-                job_token          => $job_token,
-            },
-            sub {
-                my ($ua, $tx) = @_;
-                my $err = $tx->error;
-                return unless $err;
+                # do nothing if the job token is corrent and the worker claims that it is still working on that job
+                # or that the job is still pending
+                if ($job_token_correct) {
+                    my $job_id = $associated_job->id;
+                    next if $job_id eq $registered_job_id;
+                    next if exists $pending_job_ids->{$job_id};
+                }
 
-                my $message
-                  = $err->{code}
-                  ? "$err->{code} response: $err->{message}"
-                  : "connection error: $err->{message}";
-                log_error("Unable to inform scheduler that worker $wid reported back ($message)");
-                if (my $res = $tx->res) { log_error('response was: ' . $res->body); }
-            });
+                # set associated job which was only assigned back to scheduled
+                # note: It is not sufficient to do that just on worker registration because if a worker is not taking
+                #       the job we assigned it might just be busy with a job from another web UI. In this case we need
+                #       to assign the job to a different worker.
+                # note: Using a transaction here so we don't end up with an inconsistent state when an error occurs.
+                if ($associated_job->state eq OpenQA::Jobs::Constants::ASSIGNED) {
+                    try {
+                        $schema->txn_do(sub { $associated_job->reschedule_state; });
+                    }
+                    catch {
+                        log_warning("Unable to reschedule jobs abandoned by worker $wid: $_");
+                    };
+                    next;
+                }
+
+                # note: Jobs are only marked as incomplete on worker registration (and not here) because that operation
+                #       can be quite costly. (FIXME: We could just cancel the web socket connection to force the worker
+                #       to re-register.)
+            }
+        }
+        catch {
+            log_warning("Unable to verify whether worker $wid runs its job(s) as expected: $_");
+        }
     }
     else {
         log_error(sprintf('Received unknown message type "%s" from worker %u', $json->{type}, $worker->{id}));
