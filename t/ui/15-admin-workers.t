@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2015-2018 SUSE LLC
+# Copyright (C) 2015-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
+use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
 use OpenQA::Test::Case;
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use Date::Format 'time2str';
@@ -72,7 +73,7 @@ sub schema_hook {
             id        => $offline_worker_id,
             host      => 'offline_test',
             instance  => 1,
-            t_updated => time2str('%Y-%m-%d %H:%M:%S', time - 1200, 'UTC'),
+            t_updated => time2str('%Y-%m-%d %H:%M:%S', time - WORKERS_CHECKER_THRESHOLD - 1, 'UTC'),
         });
 }
 
