@@ -262,6 +262,66 @@ is_deeply(
     "Initial job templates"
 ) || diag explain $t->tx->res->json;
 
+subtest 'to_yaml' => sub {
+    my $yaml1 = <<'EOM';
+defaults:
+  i586:
+    machine: 64bit
+    priority: 50
+products:
+  opensuse-13.1-DVD-i586:
+    distri: opensuse
+    flavor: DVD
+    version: '13.1'
+scenarios:
+  i586:
+    opensuse-13.1-DVD-i586:
+    - textmode:
+        machine: 32bit
+        priority: 40
+    - textmode:
+        machine: 64bit
+        priority: 40
+    - kde:
+        priority: 40
+    - client1:
+        machine: 32bit
+        priority: 40
+    - client1:
+        machine: 64bit
+        priority: 40
+    - server:
+        machine: 32bit
+        priority: 40
+    - server:
+        machine: 64bit
+        priority: 40
+    - client2:
+        machine: 64bit
+        priority: 40
+    - client2:
+        machine: 32bit
+        priority: 40
+    - advanced_kde:
+        priority: 40
+        settings:
+          ADVANCED: '1'
+          DESKTOP: advanced_kde
+EOM
+    my $yaml2 = <<'EOM';
+products: {}
+scenarios: {}
+EOM
+    my %yaml = (1001 => $yaml1, 1002 => $yaml2);
+
+    my @groups = $schema->resultset('JobGroups')->search;
+    my @templates;
+    for my $group (@groups) {
+        my $id   = $group->id;
+        my $yaml = $group->to_yaml;
+        cmp_ok($yaml, 'eq', $yaml{$group->id}, "group($id)->to_yaml");
+    }
+};
 
 $t->post_ok(
     '/api/v1/job_templates',

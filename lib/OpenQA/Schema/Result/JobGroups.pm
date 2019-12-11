@@ -25,6 +25,9 @@ use OpenQA::Schema::JobGroupDefaults;
 use Class::Method::Modifiers;
 use OpenQA::Utils qw(log_debug parse_tags_from_comments);
 use Date::Format 'time2str';
+use YAML::XS ();
+use Storable 'dclone';
+use Text::Diff 'diff';
 
 __PACKAGE__->table('job_groups');
 __PACKAGE__->load_components(qw(Timestamps));
@@ -102,6 +105,7 @@ __PACKAGE__->has_many(comments => 'OpenQA::Schema::Result::Comments', 'group_id'
 __PACKAGE__->belongs_to(
     parent => 'OpenQA::Schema::Result::JobGroupParents',
     'parent_id', {join_type => 'left', on_delete => 'SET NULL'});
+__PACKAGE__->has_many(job_templates => 'OpenQA::Schema::Result::JobTemplates', 'group_id');
 
 sub _get_column_or_default {
     my ($self, $column, $setting) = @_;
@@ -282,6 +286,190 @@ sub tags {
     }
     parse_tags_from_comments($self, \%res);
     return \%res;
+}
+
+sub to_template {
+    my ($self) = @_;
+    # already has yaml template
+    return undef if $self->template;
+
+    # Compile a YAML template from the current state
+    my $templates = $self->search_related(
+        job_templates => {group_id => $self->id},
+        {order_by => 'me.test_suite_id'});
+
+    # Always set the hash of test suites to account for empty groups
+    my %group = (scenarios => {}, products => {});
+
+    my %machines;
+    my %test_suites;
+    # Extract products and tests per architecture
+    while (my $template = $templates->next) {
+        $group{products}{$template->product->name} = {
+            distri  => $template->product->distri,
+            flavor  => $template->product->flavor,
+            version => $template->product->version
+        };
+
+        my %test_suite = (machine => $template->machine->name);
+
+        $machines{$template->product->arch}{$template->machine->name}++;
+        if ($template->prio && $template->prio != $self->default_priority) {
+            $test_suite{priority} = $template->prio;
+        }
+
+        my $settings = $template->settings_hash;
+        $test_suite{settings} = $settings if %$settings;
+
+        my $scenarios = $group{scenarios}{$template->product->arch}{$template->product->name};
+        push @$scenarios, {$template->test_suite->name => \%test_suite};
+        $group{scenarios}{$template->product->arch}{$template->product->name} = $scenarios;
+        $test_suites{$template->product->arch}{$template->test_suite->name}++;
+    }
+
+    # Split off defaults
+    foreach my $arch (sort keys %{$group{scenarios}}) {
+        $group{defaults}{$arch}{priority} = $self->default_priority;
+        my $default_machine
+          = (sort { $machines{$arch}->{$b} <=> $machines{$arch}->{$a} or $b cmp $a } keys %{$machines{$arch}})[0];
+        $group{defaults}{$arch}{machine} = $default_machine;
+
+        foreach my $product (sort keys %{$group{scenarios}->{$arch}}) {
+            my @scenarios;
+            foreach my $test_suite (@{$group{scenarios}->{$arch}->{$product}}) {
+                foreach my $name (sort keys %$test_suite) {
+                    my $attr = $test_suite->{$name};
+                    if ($attr->{machine} eq $default_machine) {
+                        delete $attr->{machine} if $test_suites{$arch}{$name} == 1;
+                    }
+                    if (%$attr) {
+                        $test_suite->{$name} = $attr;
+                        push @scenarios, $test_suite;
+                    }
+                    else {
+                        push @scenarios, $name;
+                    }
+                }
+            }
+            $group{scenarios}{$arch}{$product} = \@scenarios;
+        }
+    }
+
+    return \%group;
+}
+
+sub to_yaml {
+    my ($self) = @_;
+    if ($self->template) {
+        return $self->template;
+    }
+    my $hash = $self->to_template;
+
+    # Note: Stripping the initial document start marker "---"
+    my $yaml = YAML::XS::Dump($hash) =~ s/^---\n//r;
+    return $yaml;
+}
+
+sub template_data_from_yaml {
+    my ($self, $yaml) = @_;
+    my %job_template_names;
+
+    # Add/update job templates from YAML data
+    # (create test suites if not already present, fail if referenced machine and product is missing)
+    my $yaml_archs    = $yaml->{scenarios};
+    my $yaml_products = $yaml->{products};
+    my $yaml_defaults = $yaml->{defaults};
+    foreach my $arch (sort keys %$yaml_archs) {
+        my $yaml_products_for_arch = $yaml_archs->{$arch};
+        my $yaml_defaults_for_arch = $yaml_defaults->{$arch};
+        foreach my $product_name (sort keys %$yaml_products_for_arch) {
+            foreach my $spec (@{$yaml_products_for_arch->{$product_name}}) {
+                # Get testsuite, machine, prio and job template settings from YAML data
+                my $testsuite_name;
+                my $job_template_name;
+                # Assign defaults
+                my $prio          = $yaml_defaults_for_arch->{priority};
+                my $machine_names = $yaml_defaults_for_arch->{machine};
+                my $settings      = dclone($yaml_defaults_for_arch->{settings} // {});
+                if (ref $spec eq 'HASH') {
+                    # We only have one key. Asserted by schema
+                    $testsuite_name = (keys %$spec)[0];
+                    my $attr = $spec->{$testsuite_name};
+                    if ($attr->{priority}) {
+                        $prio = $attr->{priority};
+                    }
+                    if ($attr->{machine}) {
+                        $machine_names = $attr->{machine};
+                    }
+                    if ($attr->{testsuite}) {
+                        $job_template_name = $testsuite_name;
+                        $testsuite_name    = $attr->{testsuite};
+                    }
+                    if ($attr->{settings}) {
+                        %$settings = (%{$settings // {}}, %{$attr->{settings}});
+                    }
+                }
+                else {
+                    $testsuite_name = $spec;
+                }
+
+                $machine_names = [$machine_names] if ref($machine_names) ne 'ARRAY';
+                foreach my $machine_name (@{$machine_names}) {
+                    my $job_template_key
+                      = $arch . $product_name . $machine_name . $testsuite_name . ($job_template_name // '');
+                    die "Job template name '"
+                      . ($job_template_name // $testsuite_name)
+                      . "' is defined more than once. "
+                      . "Use a unique name and specify 'testsuite' to re-use test suites in multiple scenarios.\n"
+                      if $job_template_names{$job_template_key};
+                    $job_template_names{$job_template_key} = {
+                        prio              => $prio,
+                        machine_name      => $machine_name,
+                        arch              => $arch,
+                        product_name      => $product_name,
+                        product_spec      => $yaml_products->{$product_name},
+                        job_template_name => $job_template_name,
+                        testsuite_name    => $testsuite_name,
+                        settings          => $settings
+                    };
+                }
+            }
+        }
+    }
+
+    return \%job_template_names;
+}
+
+sub expand_yaml {
+    my ($self, $job_template_names) = @_;
+    my $result = {};
+    foreach my $job_template_key (sort keys %$job_template_names) {
+        my $spec     = $job_template_names->{$job_template_key};
+        my $scenario = {
+            $spec->{job_template_name} // $spec->{testsuite_name} => {
+                machine  => $spec->{machine_name},
+                priority => $spec->{prio},
+                settings => $spec->{settings},
+            }};
+        push @{$result->{scenarios}->{$spec->{arch}}->{$spec->{product_name}}}, {%$scenario,};
+        $result->{products}->{$spec->{product_name}} = $spec->{product_spec};
+    }
+    # Note: Stripping the initial document start marker "---"
+    $result = YAML::XS::Dump($result) =~ s/^---\n//r;
+    return $result;
+}
+
+sub text_diff {
+    my ($self, $new) = @_;
+    my $changes;
+    if ($self->template && $self->template ne $new) {
+        $changes = "\n" . diff \$self->template, \$new;
+        # Remove the warning about new lines. We don't require that!
+        $changes =~ s/\\ No newline at end of file\n//;
+        # Remove leading and trailing whitespace
+        $changes =~ s/^\s+|\s+$//g;
+    }
+    return $changes;
 }
 
 1;
