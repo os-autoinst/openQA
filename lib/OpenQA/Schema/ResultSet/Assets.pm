@@ -22,7 +22,7 @@ use warnings;
 use base 'DBIx::Class::ResultSet';
 
 use DBIx::Class::Timestamps 'now';
-use OpenQA::Utils qw(log_warning locate_asset human_readable_size log_debug);
+use OpenQA::Utils qw(log_warning locate_asset log_debug);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use Mojo::JSON 'encode_json';
