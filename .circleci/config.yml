@@ -138,7 +138,9 @@ jobs:
       - run: *git_token_authentication
       - run:
           command: |
-            depid=$(date +%y%m%d%H%M%S)
+            depid=$(date +%y%m%d)
+            # more specific branch name if the same exists
+            ! git ls-remote --exit-code -- origin "dependency_$depid" || depid=$(date +%y%m%d%H%M%S)
             git checkout -b dependency_$depid
             bash .circleci/build_dependencies.sh
 
