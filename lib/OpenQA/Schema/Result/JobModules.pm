@@ -148,7 +148,7 @@ sub store_column {
         # update previous job and new job on job assignment
         # handling previous job might not be neccassary because once a job is assigned, it shouldn't
         # change anymore, right?
-        my $result = $self->result or return $res;
+        my $result        = $self->result               or return $res;
         my $result_column = $columns_by_result{$result} or return $res;
         if ($previous_value) {
             if (my $previous_job = $self->result_source->schema->resultset('Jobs')->find($previous_value)) {

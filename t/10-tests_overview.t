@@ -148,7 +148,7 @@ $form = {distri => 'opensuse', version => '13.1', result => 'passed'};
 $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse 13\.1 build 0091/i, "Still references the last build");
-like($summary, qr/Passed: 3 Failed: 0/i, "Only passed are shown");
+like($summary, qr/Passed: 3 Failed: 0/i,                  "Only passed are shown");
 $t->element_exists('#res_DVD_i586_kde .result_passed');
 $t->element_exists('#res_DVD_i586_textmode .result_passed');
 $t->element_exists_not('#res_DVD_i586_RAID0 .state_scheduled');

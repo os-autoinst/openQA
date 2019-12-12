@@ -60,7 +60,7 @@ use Module::Load::Conditional 'can_load';
 use OpenQA::Test::Utils qw(create_websocket_server create_scheduler create_live_view_handler setup_share_dir);
 use OpenQA::Test::FullstackUtils;
 
-plan skip_all => 'set DEVELOPER_FULLSTACK=1 (be careful)' unless $ENV{DEVELOPER_FULLSTACK};
+plan skip_all => 'set DEVELOPER_FULLSTACK=1 (be careful)'                      unless $ENV{DEVELOPER_FULLSTACK};
 plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
 # load Selenium::Remote::WDKeys module or skip this test if not available

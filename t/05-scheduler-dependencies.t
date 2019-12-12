@@ -816,7 +816,7 @@ my $jobQ       = _job_create(\%settingsQ);
 my $jobW = _job_create(\%settingsW, undef, [$jobQ->id]);
 my $jobU = _job_create(\%settingsU, undef, [$jobQ->id]);
 my $jobR = _job_create(\%settingsR, undef, [$jobQ->id]);
-my $jobT  = _job_create(\%settingsT,  [$jobW->id, $jobU->id, $jobR->id],        [$jobQ->id]);
+my $jobT  = _job_create(\%settingsT, [$jobW->id, $jobU->id, $jobR->id], [$jobQ->id]);
 my $jobTA = _job_create(\%settingsTA, [$jobW->id, $jobU->id, $jobR->id], undef, [$jobQ->id]);
 
 # check dependencies of job Q
@@ -835,7 +835,7 @@ is($jobW->blocked_by_id,  $jobQ->id, 'JobW is blocked by job supposed to run bef
 #       later. Neverthless, let's explicitly assert this behavior so we know what we have right now.
 
 # hack jobs to appear to scheduler in desired state
-_jobs_update_state([$jobQ], OpenQA::Jobs::Constants::DONE);
+_jobs_update_state([$jobQ],                              OpenQA::Jobs::Constants::DONE);
 _jobs_update_state([$jobW, $jobU, $jobR, $jobT, $jobTA], OpenQA::Jobs::Constants::RUNNING);
 
 # duplicate job U
@@ -1158,7 +1158,7 @@ my $duplicate_test = sub {
     $jobD = _job_create(\%settingsD, [$jobB->id], [$jobA->id]);
 
     # hack jobs to appear done to scheduler
-    _jobs_update_state([$jobA], OpenQA::Jobs::Constants::DONE, OpenQA::Jobs::Constants::PASSED);
+    _jobs_update_state([$jobA],               OpenQA::Jobs::Constants::DONE, OpenQA::Jobs::Constants::PASSED);
     _jobs_update_state([$jobB, $jobC, $jobD], OpenQA::Jobs::Constants::DONE, OpenQA::Jobs::Constants::FAILED);
 
     $jobA2 = $jobA->auto_duplicate;

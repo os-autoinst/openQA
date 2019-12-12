@@ -223,7 +223,7 @@ subtest 'scheduled products added' => sub {
     is_deeply($stored_settings, \%expected_settings, 'settings stored correctly, 3') or diag explain $stored_settings;
 
     ok(my $scheduled_job_id = $non_empty_result->{successful_job_ids}->[0], 'scheduled job ID present');
-    ok(my $scheduled_job = $jobs->find($scheduled_job_id), 'job actually scheduled');
+    ok(my $scheduled_job    = $jobs->find($scheduled_job_id),               'job actually scheduled');
     is($scheduled_job->scheduled_product->id, $product_1_id, 'scheduled product assigned');
     is_deeply([map { $_->id } $product_1->jobs->all],
         [$scheduled_job_id], 'relationship works also the other way around');
@@ -1002,7 +1002,7 @@ subtest 'async flag' => sub {
     my $ok = 1;
     is($json->{status}, OpenQA::Schema::Result::ScheduledProducts::SCHEDULED, 'scheduled product marked as scheduled')
       or $ok = 0;
-    is(scalar @{$json->{job_ids}}, 10, '10 jobs scheduled') or $ok = 0;
+    is(scalar @{$json->{job_ids}},                       10, '10 jobs scheduled')              or $ok = 0;
     is(scalar @{$json->{results}->{successful_job_ids}}, 10, 'all jobs sucessfully scheduled') or $ok = 0;
     is_deeply(
         $json->{results}->{failed_job_info}->[0]->{error_messages},

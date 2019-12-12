@@ -1256,7 +1256,7 @@ sub parse_extra_tests {
 
         $parser->load($tmp_extra_test)->results->each(
             sub {
-                return if !$_->test;
+                return                    if !$_->test;
                 $_->test->script($script) if $script;
                 my $t_info = $_->test->to_openqa;
                 $self->insert_module($t_info);
@@ -1865,7 +1865,7 @@ sub done {
     }
 
     # update result if not provided
-    my $result = lc($args{result} || $self->calculate_result());
+    my $result  = lc($args{result} || $self->calculate_result());
     my %new_val = (state => DONE);
     # for cancelled jobs the result is already known
     $new_val{result} = $result if $self->result eq NONE;

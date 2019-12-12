@@ -324,8 +324,8 @@ ok($grabbed->{settings}->{JOBTOKEN}, "job token present");
 $job_ref->{settings}->{JOBTOKEN} = $grabbed->{settings}->{JOBTOKEN};
 is_deeply($grabbed->{settings}, $job_ref->{settings}, "settings correct");
 ok(!$grabbed->{t_started}, "job start timestamp not present as job is not started");
-is(scalar(@{$rjobs_before}) + 1, scalar(@{$rjobs_after}), "number of running jobs");
-is($rjobs_after->[-1]->{assigned_worker_id}, 1, 'assigned worker set');
+is(scalar(@{$rjobs_before}) + 1,             scalar(@{$rjobs_after}), "number of running jobs");
+is($rjobs_after->[-1]->{assigned_worker_id}, 1,                       'assigned worker set');
 
 $grabbed = job_get($job->id);
 is($grabbed->worker->id, $worker->{id}, "correct worker assigned");
@@ -364,7 +364,7 @@ $job = job_get($job_id);
 is($job->state,  "done",   "job_set_done changed state");
 is($job->result, "passed", "job_set_done changed result");
 ok($job->t_finished =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job end timestamp updated");
-ok(!$job->settings_hash->{JOBTOKEN}, "job token not present after job done");
+ok(!$job->settings_hash->{JOBTOKEN},                          "job token not present after job done");
 
 %args         = (result => "passed");
 $current_jobs = list_jobs(%args);

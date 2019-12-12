@@ -65,7 +65,7 @@ use OpenQA::Test::Utils
   qw(cache_minion_worker cache_worker_service);
 use OpenQA::Test::FullstackUtils;
 
-plan skip_all => "set FULLSTACK=1 (be careful)" unless $ENV{FULLSTACK};
+plan skip_all => "set FULLSTACK=1 (be careful)"                                unless $ENV{FULLSTACK};
 plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
 my $workerpid;
@@ -203,8 +203,8 @@ subtest 'pause at certain test' => sub {
 $driver->get($job_page_url);
 OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/, 'test 1 is passed');
 
-ok(-s path($resultdir, '00000', "00000001-$job_name")->make_path->child('autoinst-log.txt'), 'log file generated');
-ok(-s path($sharedir, 'factory', 'hdd')->make_path->child('core-hdd.qcow2'), 'image of hdd uploaded');
+ok(-s path($resultdir, '00000',   "00000001-$job_name")->make_path->child('autoinst-log.txt'), 'log file generated');
+ok(-s path($sharedir,  'factory', 'hdd')->make_path->child('core-hdd.qcow2'),                  'image of hdd uploaded');
 my $core_hdd_path = path($sharedir, 'factory', 'hdd')->child('core-hdd.qcow2');
 my @core_hdd_stat = stat($core_hdd_path);
 ok(@core_hdd_stat, 'can stat ' . $core_hdd_path);
@@ -474,8 +474,8 @@ subtest 'Cache tests' => sub {
         my $autoinst_log = do { local ($/); <$f> };
         close($f);
 
-        like($autoinst_log, qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 correct autoinst worker notes');
-        like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/, 'Test 8 correct autoinst setup notes');
+        like($autoinst_log,                   qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 correct autoinst worker notes');
+        like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/,   'Test 8 correct autoinst setup notes');
         like(
             (split(/\n/, $autoinst_log))[-1],
             qr/uploading autoinst-log.txt/i,

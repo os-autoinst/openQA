@@ -26,7 +26,7 @@ has port   => sub { service_port('websocket') };
 
 my $IS_WS_SERVER_ITSELF;
 sub mark_current_process_as_websocket_server { $IS_WS_SERVER_ITSELF = 1; }
-sub is_current_process_the_websocket_server { return $IS_WS_SERVER_ITSELF; }
+sub is_current_process_the_websocket_server  { return $IS_WS_SERVER_ITSELF; }
 
 sub new {
     my $class = shift;

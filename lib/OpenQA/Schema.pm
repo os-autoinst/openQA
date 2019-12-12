@@ -85,7 +85,7 @@ sub deployment_check {
 
     # LOCK_EX works most reliably if the file is open with write intent
     open($dblock, '>>', $dblockfile) or die "Can't open database lock file ${dblockfile}!";
-    flock($dblock, LOCK_EX) or die "Can't lock database lock file ${dblockfile}!";
+    flock($dblock, LOCK_EX)          or die "Can't lock database lock file ${dblockfile}!";
     my ($schema, $force_overwrite) = @_;
     $force_overwrite //= 0;
     my $dir = $FindBin::Bin;

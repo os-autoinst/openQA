@@ -381,12 +381,12 @@ subtest 'carry over, including soft-fails' => sub {
     $job->update_module('b', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
-    is($job->comments, 0, 'no comment');
+    is($job->result,   OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is($job->comments, 0,                             'no comment');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
-    is($job->comments, 1, 'one comment');
+    is($job->result,   OpenQA::Jobs::Constants::SOFTFAILED, 'job result is softfailed');
+    is($job->comments, 1,                                   'one comment');
     like($job->comments->first->text, qr/\Qbsc#101\E/, 'right take over');
 
     $_settings{BUILD} = '668';
@@ -397,12 +397,12 @@ subtest 'carry over, including soft-fails' => sub {
     $job->update_module('b', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
-    is($job->comments, 0, 'no comment');
+    is($job->result,   OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is($job->comments, 0,                             'no comment');
 
     subtest 'additional investigation notes provided on new failed' => sub {
         copy('t/data/last_good.json', catfile(($job->_previous_scenario_jobs)[0]->result_dir(), 'vars.json'));
-        copy('t/data/first_bad.json', catfile($job->result_dir(), 'vars.json'));
+        copy('t/data/first_bad.json', catfile($job->result_dir(),                               'vars.json'));
         $job->done;
         is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
         ok(my $investigation = $job->investigate, 'job can provide investigation details');
@@ -438,12 +438,12 @@ subtest 'carry over for ignore_failure modules' => sub {
     $job->update_module('b', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
-    is($job->comments, 0, 'no comment');
+    is($job->result,   OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is($job->comments, 0,                             'no comment');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::PASSED, 'job result is passed');
-    is($job->comments, 1, 'one comment');
+    is($job->result,   OpenQA::Jobs::Constants::PASSED, 'job result is passed');
+    is($job->comments, 1,                               'one comment');
     like($job->comments->first->text, qr/\Qbsc#101\E/, 'right take over');
 
     $_settings{BUILD} = '671';
@@ -454,12 +454,12 @@ subtest 'carry over for ignore_failure modules' => sub {
     $job->update_module('b', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::NONE, 'result is not yet set');
-    is($job->comments, 0, 'no comment');
+    is($job->result,   OpenQA::Jobs::Constants::NONE, 'result is not yet set');
+    is($job->comments, 0,                             'no comment');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
-    is($job->comments, 0, 'one comment with failure investigation');
+    is($job->result,   OpenQA::Jobs::Constants::FAILED, 'job result is failed');
+    is($job->comments, 0,                               'one comment with failure investigation');
 };
 
 subtest 'job with only important passes => overall is passed' => sub {
@@ -575,11 +575,11 @@ subtest 'job set_running()' => sub {
     $_settings{TEST} = 'L';
     my $job = _job_create(\%_settings);
     $job->update({state => OpenQA::Jobs::Constants::ASSIGNED});
-    is($job->set_running, 1, 'job was set to running');
-    is($job->state, OpenQA::Jobs::Constants::RUNNING, 'job state is now on running');
+    is($job->set_running, 1,                                'job was set to running');
+    is($job->state,       OpenQA::Jobs::Constants::RUNNING, 'job state is now on running');
     $job->update({state => OpenQA::Jobs::Constants::RUNNING});
-    is($job->set_running, 1, 'job already running');
-    is($job->state, OpenQA::Jobs::Constants::RUNNING, 'job state is now on running');
+    is($job->set_running, 1,                                'job already running');
+    is($job->state,       OpenQA::Jobs::Constants::RUNNING, 'job state is now on running');
     $job->update({state => 'foobar'});
     is($job->set_running, 0,        'job not set to running');
     is($job->state,       'foobar', 'job state is foobar');

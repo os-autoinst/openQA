@@ -128,8 +128,8 @@ subtest 'wrong api key - expired' => sub() {
     $t->post_ok('/api/v1/products/1')->status_is(403);
     is($t->tx->res->json->{error}, 'api key expired', 'key expired error');
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
-    is($t->tx->res->json->{error}, 'api key expired', 'key expired error');
-    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
+    is($t->tx->res->json->{error},   'api key expired', 'key expired error');
+    is($mock_asset_remove_callcount, 0,                 'asset deletion function was not called');
 };
 
 subtest 'wrong api key - not maching key + secret' => sub() {
@@ -171,8 +171,8 @@ subtest 'wrong api key - replay attack' => sub() {
     $t->post_ok('/api/v1/products/1')->status_is(403);
     is($t->tx->res->json->{error}, 'timestamp mismatch', 'timestamp mismatch error');
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
-    is($t->tx->res->json->{error}, 'timestamp mismatch', 'timestamp mismatch error');
-    is($mock_asset_remove_callcount, 0, 'asset deletion function was not called');
+    is($t->tx->res->json->{error},   'timestamp mismatch', 'timestamp mismatch error');
+    is($mock_asset_remove_callcount, 0,                    'asset deletion function was not called');
 };
 
 done_testing();

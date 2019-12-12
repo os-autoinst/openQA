@@ -258,13 +258,13 @@ subtest 'tracked assets' => sub {
     # Assets here include non-iso in iso, files in other, CURRENT repos
     for my $name (qw(iso/whatever.sha256 other/misc.xml repo/otherrepo-CURRENT)) {
         ok(-e $OpenQA::Utils::assetdir . '/' . $name, "$name exists in the test folder");
-        ok(grep(/$name$/, @tracked_assets), "$name picked up for cleanup")
+        ok(grep(/$name$/, @tracked_assets),           "$name picked up for cleanup")
           || diag explain join(' ', sort @tracked_assets);
     }
     # Ignored assets include repo links, file links
     for my $name (qw(repo/somethingrepo other/misc2.xml)) {
         ok(-e $OpenQA::Utils::assetdir . '/' . $name, "$name exists in the test folder");
-        ok(!grep(/$name$/, @tracked_assets), "$name ignored") || diag explain join(' ', sort @tracked_assets);
+        ok(!grep(/$name$/, @tracked_assets),          "$name ignored") || diag explain join(' ', sort @tracked_assets);
     }
 };
 

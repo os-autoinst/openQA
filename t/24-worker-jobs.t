@@ -89,7 +89,7 @@ sub wait_until_job_status_ok {
         Mojo::IOLoop->next_tick(sub { $args{callback}->({}) }) if $args{callback};
     }
     sub send_status { push(@{shift->sent_messages}, @_) }
-    sub register { shift->register_called(1) }
+    sub register    { shift->register_called(1) }
 }
 {
     package Test::FakeEngine;
@@ -202,7 +202,7 @@ subtest 'Job without id' => sub {
 
 subtest 'Clean up pool directory' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
-    is_deeply $client->sent_messages,                       [], 'no REST-API calls yet';
+    is_deeply $client->sent_messages, [], 'no REST-API calls yet';
 
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 3, URL => $engine_url});
     $job->accept;
@@ -215,7 +215,7 @@ subtest 'Clean up pool directory' => sub {
     # Try to start job
     combined_like sub { $job->start }, qr/Unable to setup job 3: this is not a real isotovideo/, 'error logged';
     wait_until_job_status_ok($job, 'stopped');
-    is $job->status, 'stopped', 'job is stopped due to the mocked error';
+    is $job->status,      'stopped',                       'job is stopped due to the mocked error';
     is $job->setup_error, 'this is not a real isotovideo', 'setup error recorded';
 
     # verify old logs being cleaned up and worker-log.txt being created
@@ -305,7 +305,7 @@ $engine_mock->mock(
 
 subtest 'Successful job' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
-    is_deeply $client->sent_messages,                       [], 'no REST-API calls yet';
+    is_deeply $client->sent_messages, [], 'no REST-API calls yet';
 
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => $engine_url});
     $job->accept;
@@ -434,7 +434,7 @@ subtest 'Successful job' => sub {
 
 subtest 'Skip job' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
-    is_deeply $client->sent_messages,                       [], 'no REST-API calls yet';
+    is_deeply $client->sent_messages, [], 'no REST-API calls yet';
 
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 4, URL => $engine_url});
     $job->skip;
@@ -465,7 +465,7 @@ subtest 'Skip job' => sub {
 
 subtest 'Livelog' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
-    is_deeply $client->sent_messages,                       [], 'no REST-API calls yet';
+    is_deeply $client->sent_messages, [], 'no REST-API calls yet';
 
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 5, URL => $engine_url});
     my @status;
@@ -614,7 +614,7 @@ subtest 'Livelog' => sub {
 
 subtest 'handling API failures' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
-    is_deeply $client->sent_messages,                       [], 'no REST-API calls yet';
+    is_deeply $client->sent_messages, [], 'no REST-API calls yet';
 
     my $job = OpenQA::Worker::Job->new($worker, $client, {id => 6, URL => $engine_url});
     my @status;
@@ -699,7 +699,7 @@ subtest 'handling API failures' => sub {
 
 subtest 'handle upload failure' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
-    is_deeply $client->sent_messages,                       [], 'no REST-API calls yet';
+    is_deeply $client->sent_messages, [], 'no REST-API calls yet';
 
     my $shared_hash = shared_hash;
     $shared_hash->{upload_result} = 0;
@@ -823,7 +823,7 @@ $engine_mock->mock(
 
 subtest 'Dynamic schedule' => sub {
     is_deeply $client->websocket_connection->sent_messages, [], 'no WebSocket calls yet';
-    is_deeply $client->sent_messages,                       [], 'no REST-API calls yet';
+    is_deeply $client->sent_messages, [], 'no REST-API calls yet';
 
     # Create initial test schedule and test that it'll be loaded
     my $test_order = [

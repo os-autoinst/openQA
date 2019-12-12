@@ -311,7 +311,7 @@ sub _check_limits {
                 $log->info(
                     qq{Purging "$asset->{filename}" because we need space for new assets, reclaiming $reclaiming});
                 $self->_decrease($asset_size) if $self->purge_asset($asset->{filename});
-                last if !$self->_exceeds_limit($needed);
+                last                          if !$self->_exceeds_limit($needed);
             }
         };
         if (my $err = $@) { $log->error("Checking cache limit failed: $err") }

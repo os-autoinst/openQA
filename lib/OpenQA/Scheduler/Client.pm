@@ -24,7 +24,7 @@ has port   => sub { service_port('scheduler') };
 
 my $IS_SCHEDULER_ITSELF;
 sub mark_current_process_as_scheduler { $IS_SCHEDULER_ITSELF = 1; }
-sub is_current_process_the_scheduler { return $IS_SCHEDULER_ITSELF; }
+sub is_current_process_the_scheduler  { return $IS_SCHEDULER_ITSELF; }
 
 sub new {
     my $class = shift;

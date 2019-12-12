@@ -51,7 +51,7 @@ $t->ua->on(
 # try locking before mutex is created
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(409);
 
-$t->post_ok('/api/v1/mutex')->status_is(400);    # missing name
+$t->post_ok('/api/v1/mutex')->status_is(400);                             # missing name
 $t->post_ok('/api/v1/mutex', form => {name => 'a/b'})->status_is(400);    # invalid name
 
 # create test mutex
@@ -62,7 +62,7 @@ ok($res, 'mutex is in database');
 ## mutex is not locked
 ok(!$res->locked_by, 'mutex is not locked');
 
-$t->post_ok('/api/v1/mutex/test_lock')->status_is(400);                   # missing action
+$t->post_ok('/api/v1/mutex/test_lock')->status_is(400);                                   # missing action
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'invalid'})->status_is(400);    # invalid action
 
 # lock mutex

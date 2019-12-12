@@ -99,14 +99,14 @@ sub _parse_obs_response_dirty {
     for my $result ($results->each) {
         my $attributes = $result->attr;
         return 1 if exists $attributes->{dirty};
-        next if ($attributes->{repository} // '') ne 'images';
-        return 1 if ($attributes->{state} // '') ne 'published';
+        next     if ($attributes->{repository} // '') ne 'images';
+        return 1 if ($attributes->{state}      // '') ne 'published';
     }
     return 0;
 }
 
 sub _check_and_render_error {
-    my ($c, @args) = @_;
+    my ($c,    @args)    = @_;
     my ($code, $message) = _check_error($c->obs_rsync->home, @args);
     $c->render(json => {error => $message}, status => $code) if $code;
     return $code;

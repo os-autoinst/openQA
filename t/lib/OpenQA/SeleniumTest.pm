@@ -84,7 +84,7 @@ sub start_app {
             PeerPort => $mojoport,
             Proto    => 'tcp',
         );
-        last if $socket;
+        last    if $socket;
         sleep 1 if time - $t < 1;
     }
     start_gru() if ($args->{with_gru});
