@@ -126,6 +126,10 @@ sub create_from_settings {
     my $job_settings  = $schema->resultset('JobSettings');
     my $txn_guard     = $result_source->storage->txn_scope_guard;
 
+    my @invalid_keys = grep { $_ =~ /^(PUBLISH_HDD|FORCE_PUBLISH_HDD|STORE_HDD)\S+(\d+)$/ && $settings{$_} =~ /\// }
+      keys %settings;
+    die 'The ' . join(',', @invalid_keys) . ' cannot include / in value' if @invalid_keys;
+
     # assign group ID
     my $group;
     my %group_args;
