@@ -20,11 +20,6 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
-use File::Spec::Functions 'catfile';
-use File::Basename qw(basename dirname);
-use OpenQA::Utils qw(log_debug log_warning);
-use Try::Tiny;
-
 __PACKAGE__->table('screenshots');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime));
 

@@ -23,11 +23,13 @@ use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 use OpenQA::Schema::Result::ScreenshotLinks;
+use Mojo::File;
 use Mojo::Log;
 use Test::Output 'combined_like';
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
+use File::Spec 'catfile';
 
 my $schema           = OpenQA::Test::Database->new->create;
 my $t                = Test::Mojo->new('OpenQA::WebAPI');
@@ -83,6 +85,15 @@ subtest 'screenshots are unique' => sub {
     my @whatever = $screenshots->search({filename => 'whatever'})->all;
     is $whatever[0]->filename, 'whatever', 'right filename';
     is $whatever[1], undef, 'no second result';
+};
+
+subtest 'no errors in database log' => sub {
+    my $prep = $schema->storage->dbh->prepare('select pg_current_logfile()');
+    $prep->execute;
+    my $db_log_file  = File::Spec->catfile($ENV{TEST_PG} =~ s/^.*host=//r, $prep->fetchrow_arrayref->[0]);
+    my $log          = Mojo::File->new($db_log_file)->slurp;
+    my $error_in_log = $log =~ /duplicate.*violates unique constraint "screenshots_filename"/;
+    isnt $error_in_log, 1, 'no unique constraint error in dabatabase logs';
 };
 
 done_testing();
