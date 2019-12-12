@@ -21,26 +21,21 @@ use warnings;
 
 use base 'DBIx::Class::ResultSet';
 
-use DateTime;
 use OpenQA::Utils 'log_debug';
-use Try::Tiny;
 
 sub populate_images_to_job {
     my ($self, $imgs, $job_id) = @_;
 
     # insert the symlinks into the DB
     my %ids;
-    my $now = DateTime->now;
     for my $img (@$imgs) {
         log_debug "creating $img";
-        try {
-            $ids{$img} = $self->create({filename => $img, t_created => $now})->id;
-        }
-        catch {
-            my $err = $_;
-            die $err unless $err =~ /screenshots_filename/;
-            $ids{$img} = $self->find({filename => $img})->id;
-        };
+        my $dbh       = $self->result_source->schema->storage->dbh;
+        my $statement = $dbh->prepare(
+            'INSERT INTO screenshots (filename, t_created) VALUES(?, now()) ON CONFLICT DO NOTHING RETURNING id');
+        $statement->execute($img);
+        my $res = $statement->fetchrow_arrayref;
+        $ids{$img} = $res ? $res->[0] : $self->find({filename => $img})->id;
     }
     my @data = map { [$_, $job_id] } values %ids;
     $self->result_source->schema->resultset('ScreenshotLinks')->populate([[qw(screenshot_id job_id)], @data]);
