@@ -320,6 +320,8 @@ sub to_template {
 
         my $settings = $template->settings_hash;
         $test_suite{settings} = $settings if %$settings;
+        my $description = $template->description;
+        $test_suite{description} = $description if length $description;
 
         my $scenarios = $group{scenarios}{$template->product->arch}{$template->product->name};
         push @$scenarios, {$template->test_suite->name => \%test_suite};
@@ -391,6 +393,7 @@ sub template_data_from_yaml {
                 my $prio          = $yaml_defaults_for_arch->{priority};
                 my $machine_names = $yaml_defaults_for_arch->{machine};
                 my $settings      = dclone($yaml_defaults_for_arch->{settings} // {});
+                my $description   = '';
                 if (ref $spec eq 'HASH') {
                     # We only have one key. Asserted by schema
                     $testsuite_name = (keys %$spec)[0];
@@ -407,6 +410,9 @@ sub template_data_from_yaml {
                     }
                     if ($attr->{settings}) {
                         %$settings = (%{$settings // {}}, %{$attr->{settings}});
+                    }
+                    if (defined $attr->{description}) {
+                        $description = $attr->{description};
                     }
                 }
                 else {
@@ -430,7 +436,8 @@ sub template_data_from_yaml {
                         product_spec      => $yaml_products->{$product_name},
                         job_template_name => $job_template_name,
                         testsuite_name    => $testsuite_name,
-                        settings          => $settings
+                        settings          => $settings,
+                        length $description ? (description => $description) : (),
                     };
                 }
             }
@@ -450,6 +457,7 @@ sub expand_yaml {
                 machine  => $spec->{machine_name},
                 priority => $spec->{prio},
                 settings => $spec->{settings},
+                length $spec->{description} ? (description => $spec->{description}) : (),
             }};
         push @{$result->{scenarios}->{$spec->{arch}}->{$spec->{product_name}}}, {%$scenario,};
         $result->{products}->{$spec->{product_name}} = $spec->{product_spec};

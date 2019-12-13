@@ -278,6 +278,7 @@ scenarios:
   i586:
     opensuse-13.1-DVD-i586:
     - textmode:
+        description: 32bit textmode prio 40
         machine: 32bit
         priority: 40
     - textmode:
@@ -348,7 +349,8 @@ $t->post_ok(
         machine_id    => 1001,
         test_suite_id => 1002,
         product_id    => 1,
-        prio          => 30
+        prio          => 30,
+        description   => 'descr',
     })->status_is(200);
 my $job_template_id1 = $t->tx->res->json->{id};
 ok($job_template_id1, "Created job template ($job_template_id1)");
@@ -706,7 +708,8 @@ is_deeply(
                     },
                     {
                         textmode => {
-                            machine => '32bit',
+                            machine     => '32bit',
+                            description => '32bit textmode prio 40',
                         }
                     },
                     {
