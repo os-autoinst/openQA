@@ -22,6 +22,7 @@ use Mojo::IOLoop;
 use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::Server::Daemon;
 use Test::MockModule;
+use Time::HiRes 'sleep';
 
 BEGIN {
     if (!$ENV{MOJO_HOME}) {
@@ -142,13 +143,13 @@ sub kill_service {
 sub wait_for_worker {
     my ($schema, $id) = @_;
 
-    for (0 .. 10) {
-        note("Waiting for worker with ID $id");
-        sleep 2;
+    note("Waiting for worker with ID $id");
+    for (0 .. 40) {
+        sleep .5;
         my $worker = $schema->resultset('Workers')->find($id);
         return undef if defined $worker && !$worker->dead;
     }
-    note("No worker with ID $id not active");
+    note("No worker with ID $id active");
 }
 
 sub create_webapi {
@@ -305,12 +306,10 @@ sub unstable_worker {
     # the help of the Doctor would be really appreciated here.
     my ($apikey, $apisecret, $host, $instance, $ticks, $sleep) = @_;
     note("Starting unstable worker. Instance: $instance for host $host");
-    $ticks = 1 unless $ticks;
+    $ticks = 1 unless defined $ticks;
 
     my $pid = fork();
     if ($pid == 0) {
-        use Mojo::IOLoop;
-
         my $worker = OpenQA::Worker->new(
             {
                 apikey    => $apikey,
@@ -322,8 +321,11 @@ sub unstable_worker {
         $worker->settings->add_webui_host($host);
         $worker->log_setup_info;
         $worker->init();
-        for (0 .. $ticks) {
-            Mojo::IOLoop->singleton->one_tick;
+        if ($ticks < 0) {
+            Mojo::IOLoop->singleton->start;
+        }
+        else {
+            Mojo::IOLoop->singleton->one_tick for (0 .. $ticks);
         }
         Devel::Cover::report() if Devel::Cover->can('report');
         if ($sleep) {
@@ -355,9 +357,6 @@ sub c_worker {
 
     my $pid = fork();
     if ($pid == 0) {
-        use Mojo::IOLoop;
-        use Test::MockModule;
-
         my $command_handler_mock = Test::MockModule->new('OpenQA::Worker::CommandHandler');
         if ($bogus) {
             $command_handler_mock->mock(

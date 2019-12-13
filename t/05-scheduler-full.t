@@ -40,6 +40,7 @@ BEGIN {
 use lib "$FindBin::Bin/lib";
 use OpenQA::Scheduler::Client;
 use OpenQA::Scheduler::Model::Jobs;
+use OpenQA::Worker::WebUIConnection;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 use Test::More;
@@ -54,7 +55,7 @@ use OpenQA::Test::Utils qw(
 use Mojolicious;
 use File::Path qw(make_path remove_tree);
 use DateTime;
-# This test have to be treated like fullstack.
+# This test has to be treated like fullstack.
 plan skip_all => "set SCHEDULER_FULLSTACK=1 (be careful)" unless $ENV{SCHEDULER_FULLSTACK};
 
 init_db();
@@ -111,13 +112,18 @@ subtest 'Scheduler worker job allocation' => sub {
     ($allocated) = scheduler_step();
     is @$allocated, 0;
 
-    dead_workers($schema);
-
     kill_service($_, 1) for ($w1_pid, $w2_pid);
+
+    dead_workers($schema);
 };
 
-subtest 'Simulation of unstable workers' => sub {
-    my @latest = $schema->resultset("Jobs")->latest_jobs;
+subtest 're-scheduling and incompletion of jobs when worker is unresponsive or crashes completely' => sub {
+    # avoid wasting time waiting for status updates
+    my $web_ui_connection_mock = Test::MockModule->new('OpenQA::Worker::WebUIConnection');
+    $web_ui_connection_mock->mock(_calculate_status_update_interval => .1);
+
+    my $jobs   = $schema->resultset('Jobs');
+    my @latest = $jobs->latest_jobs;
     shift(@latest)->auto_duplicate();
 
     # try to allocate to previous worker and fail!
@@ -125,30 +131,31 @@ subtest 'Simulation of unstable workers' => sub {
 
     # simulate unresponsive worker which will register itself but not grab any jobs
     my $unstable_w_pid = unresponsive_worker($k->key, $k->secret, "http://localhost:$mojoport", 3);
-    # FIXME: Why waiting for worker 4 here? The "unresponsive" worker has ID 5.
-    wait_for_worker($schema, 4);
+    wait_for_worker($schema, 5);
 
+    note('waiting for job to be assigned');
     $allocated = scheduler_step();
     is(@$allocated,                1,     'one job allocated');
     is(@{$allocated}[0]->{job},    99982, 'right job allocated');
     is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
+    for (0 .. 100) {
+        last if $jobs->find(99982)->state eq OpenQA::Jobs::Constants::ASSIGNED;
+        sleep .2;
+    }
+    is $jobs->find(99982)->state, OpenQA::Jobs::Constants::ASSIGNED, 'job is assigned';
 
     note('waiting for assigned job to be re-scheduled');
     for (0 .. 100) {
-        last if $schema->resultset("Jobs")->find(99982)->state eq OpenQA::Jobs::Constants::SCHEDULED;
-        sleep 2;
+        last if $jobs->find(99982)->state eq OpenQA::Jobs::Constants::SCHEDULED;
+        sleep .2;
     }
-
-    is $schema->resultset("Jobs")->find(99982)->state, OpenQA::Jobs::Constants::SCHEDULED,
+    is $jobs->find(99982)->state, OpenQA::Jobs::Constants::SCHEDULED,
       'assigned job set back to scheduled if worker reports back again but has abandoned the job';
+
     kill_service($unstable_w_pid, 1);
-    sleep 5;
 
-    scheduler_step();
-    dead_workers($schema);
-
-    # simulate unstable worker
-    $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, 8, 3);
+    # start unstable worker again
+    $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, -1);
     wait_for_worker($schema, 5);
 
     ($allocated) = scheduler_step();
@@ -156,25 +163,34 @@ subtest 'Simulation of unstable workers' => sub {
     is(@{$allocated}[0]->{job},    99982, 'right job allocated');
     is(@{$allocated}[0]->{worker}, 5,     'job allocated to expected worker');
 
-    kill_service($unstable_w_pid, 1);
-    is $schema->resultset("Jobs")->find(99982)->state, OpenQA::Jobs::Constants::ASSIGNED;
+    for (0 .. 100) {
+        last if $jobs->find(99982)->state eq OpenQA::Jobs::Constants::ASSIGNED;
+        sleep .2;
+    }
+    is $jobs->find(99982)->state, OpenQA::Jobs::Constants::ASSIGNED, 'job is assigned again';
 
-    $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, 8);
+    # assume the job has been actually started
+    $jobs->find(99982)->update({state => OpenQA::Jobs::Constants::RUNNING});
+
+    kill_service($unstable_w_pid, 1);
+
+    $unstable_w_pid = unstable_worker($k->key, $k->secret, "http://localhost:$mojoport", 3, -1);
+    wait_for_worker($schema, 5);
 
     note('waiting for job to be incompleted');
     for (0 .. 100) {
-        last if $schema->resultset("Jobs")->find(99982)->state eq OpenQA::Jobs::Constants::DONE;
-        sleep 2;
+        last if $jobs->find(99982)->state eq OpenQA::Jobs::Constants::DONE;
+        sleep .2;
     }
 
-    my $job = $schema->resultset("Jobs")->find(99982);
+    my $job = $jobs->find(99982);
     is $job->state, OpenQA::Jobs::Constants::DONE,
       'running job set to done if its worker re-connects claiming not to work on it anymore';
     is $job->result, OpenQA::Jobs::Constants::INCOMPLETE,
       'running job incompleted if its worker re-connects claiming not to work on it anymore';
 
-    dead_workers($schema);
     kill_service($unstable_w_pid, 1);
+    dead_workers($schema);
 };
 
 subtest 'Simulation of heavy unstable load' => sub {
