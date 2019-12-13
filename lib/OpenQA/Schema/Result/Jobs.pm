@@ -1227,10 +1227,9 @@ sub store_image {
         # this is actually meant to cause a conflict - the worker uploads symlinks first.
         # But to be sure we have a DB entry in case this was missed, we still force create it
         # using postgresql's "do nothing"
-        my $statement
+        my $sth
           = $dbh->prepare('INSERT INTO screenshots (filename, t_created) VALUES(?, now()) ON CONFLICT DO NOTHING');
-
-        $statement->execute($dbpath);
+        $sth->execute($dbpath);
         log_debug("store_image: $storepath");
     }
     return $storepath;
