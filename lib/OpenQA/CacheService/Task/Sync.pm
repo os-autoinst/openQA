@@ -27,18 +27,21 @@ sub register {
 sub _cache_tests {
     my ($job, $from, $to) = @_;
 
-    my $app = $job->app;
+    my $app    = $job->app;
+    my $job_id = $job->id;
 
     my $lock = $job->info->{notes}{lock};
     return $job->finish unless defined $from && defined $to && defined $lock;
-    my $guard = $app->progress->guard($lock);
+    my $guard = $app->progress->guard($lock, $job_id);
     unless ($guard) {
-        $job->note(
-            output => qq{Sync "$from" to "$to" was performed by another job, details are therefore unavailable here});
+        my $id = $app->progress->downloading_job($lock);
+        $job->note(downloading_job => $id);
+        $id ||= 'unknown';
+        $job->note(output => qq{Sync "$from" to "$to" was performed by #$id, details are therefore unavailable here});
         return $job->finish(0);
     }
 
-    my $ctx = $app->log->context('[#' . $job->id . ']');
+    my $ctx = $app->log->context("[#$job_id]");
     $ctx->info(qq{Sync: "$from" to "$to"});
 
     my @cmd = (qw(rsync -avHP), "$from/", qw(--delete), "$to/tests/");

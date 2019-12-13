@@ -17,6 +17,24 @@
 
 use Mojo::Base -strict;
 
+my ($tempdir, $cached, $cachedir, $db_file);
+BEGIN {
+    use Mojo::File qw(path tempdir);
+
+    $tempdir  = tempdir;
+    $cached   = $tempdir->child('t', 'cache.d');
+    $cachedir = path($cached, 'cache');
+    $cachedir->remove_tree;
+    $cachedir->make_path;
+    $db_file = $cachedir->child('cache.sqlite');
+    $ENV{OPENQA_CONFIG} = path($cached, 'config')->make_path;
+    path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt("
+[global]
+CACHEDIRECTORY = $cachedir
+CACHEWORKERS = 10
+CACHELIMIT = 50");
+}
+
 use FindBin;
 use lib "$FindBin::Bin/lib";
 
@@ -24,25 +42,19 @@ use Test::More;
 use Test::Warnings;
 use OpenQA::Utils;
 use OpenQA::Utils 'base_host';
-use OpenQA::CacheService::Model::Cache;
+use OpenQA::CacheService;
 use IO::Socket::INET;
 use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
 use Mojo::SQLite;
-use Mojo::File qw(path);
 use Mojo::Log;
 use POSIX '_exit';
-use Mojo::IOLoop::ReadWriteProcess qw(queue process);
+use Mojo::IOLoop::ReadWriteProcess 'process';
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils qw(fake_asset_server);
 
-my $cached   = path()->child('t', 'cache.d');
-my $cachedir = $cached->child('cache');
-my $db_file  = $cachedir->child('cache.sqlite');
-my $port     = Mojo::IOLoop::Server->generate_port;
-my $host     = "http://localhost:$port";
-$cachedir->remove_tree;
-ok($cachedir->make_path, "creating cachedir under $cachedir");
+my $port = Mojo::IOLoop::Server->generate_port;
+my $host = "http://localhost:$port";
 
 # Capture logs
 my $log = Mojo::Log->new;
@@ -74,11 +86,10 @@ sub stop_server {
     $server_instance->stop();
 }
 
-my $cache = OpenQA::CacheService::Model::Cache->new(location => $cachedir->to_string, log => $log);
-
-is $cache->init, $cache;
-is $cache->sqlite->migrations->latest, 1, 'version 1 is the latest version';
-is $cache->sqlite->migrations->active, 1, 'version 1 is the active version';
+my $app   = OpenQA::CacheService->new(log => $log);
+my $cache = $app->cache;
+is $cache->sqlite->migrations->latest, 2, 'version 2 is the latest version';
+is $cache->sqlite->migrations->active, 2, 'version 2 is the active version';
 like $cache_log, qr/Creating cache directory tree for "$cachedir"/,         'Cache directory tree created';
 like $cache_log, qr/Cache size of "$cachedir" is 0 Byte, with limit 50GiB/, 'Cache limit is default (50GB)';
 ok(-e $db_file, 'cache.sqlite is present');
@@ -96,7 +107,7 @@ for my $i (1 .. 3) {
 
 $cache->sleep_time(1);
 $cache->init;
-is $cache->sqlite->migrations->active, 1, 'version 1 is still the active version';
+is $cache->sqlite->migrations->active, 2, 'version 2 is still the active version';
 like $cache_log, qr/Cache size of "$cachedir" is 168 Byte, with limit 50GiB/,
   'Cache limit/size match the expected 100GB/168)';
 unlike $cache_log, qr/Purging ".*[13].qcow2"/,                                  'Registered assets 1 and 3 were kept';

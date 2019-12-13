@@ -18,10 +18,9 @@ use Mojo::Base 'Mojolicious';
 
 use OpenQA::Worker::Settings;
 use OpenQA::CacheService::Model::Cache;
+use OpenQA::CacheService::Model::Downloads;
 
 use constant DEFAULT_MINION_WORKERS => 5;
-
-has cache => sub { OpenQA::CacheService::Model::Cache->from_worker(log => shift->log) };
 
 sub startup {
     my $self = shift;
@@ -38,6 +37,7 @@ sub startup {
     $log->unsubscribe('message') if $ENV{OPENQA_CACHE_SERVICE_QUIET};
 
     # Increase busy timeout to 5 minutes
+    $self->helper(cache => sub { state $cache = OpenQA::CacheService::Model::Cache->from_worker(log => shift->log) });
     my $cache  = $self->cache;
     my $sqlite = $cache->sqlite;
     $sqlite->on(
@@ -45,13 +45,14 @@ sub startup {
             my ($sqlite, $dbh) = @_;
             $dbh->sqlite_busy_timeout(360000);
         });
+    $sqlite->migrations->name('cache_service')->from_data;
     $cache->init;
+    $self->helper(downloads => sub { state $dl = OpenQA::CacheService::Model::Downloads->new(sqlite => $sqlite) });
 
     $self->plugin(Minion => {SQLite => $sqlite});
     $self->plugin('Minion::Admin');
     $self->plugin('OpenQA::CacheService::Task::Asset');
     $self->plugin('OpenQA::CacheService::Task::Sync');
-
     $self->plugin('OpenQA::CacheService::Plugin::Helpers');
 
     my $r = $self->routes;
@@ -140,3 +141,30 @@ Enqueue the task. It acceps a POST JSON payload of the form:
       {task => 'cache_assets', args => [qw(42 test hdd open.qa)], lock => 'some lock'}
 
 =cut
+
+__DATA__
+@@ cache_service
+-- 1 up
+CREATE TABLE IF NOT EXISTS assets (
+    `etag` TEXT,
+    `size` INTEGER,
+    `last_use` DATETIME NOT NULL,
+    `filename` TEXT NOT NULL UNIQUE,
+    PRIMARY KEY(`filename`)
+);
+
+-- 1 down
+DROP TABLE assets;
+
+-- 2 up
+CREATE TABLE IF NOT EXISTS downloads (
+    `id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    `lock` TEXT,
+    `job_id` TEXT,
+    `created` DATETIME NOT NULL DEFAULT current_timestamp
+);
+CREATE INDEX IF NOT EXISTS downloads_lock on downloads (lock);
+CREATE INDEX IF NOT EXISTS downloads_created on downloads (created);
+
+-- 2 down
+DROP TABLE downloads;

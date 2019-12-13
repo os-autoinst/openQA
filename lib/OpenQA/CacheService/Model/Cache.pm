@@ -63,7 +63,7 @@ sub init {
     my $db_file = path($location, 'cache.sqlite');
     $self->sqlite->from_string("sqlite:$db_file");
     $self->_deploy_cache unless -e $db_file;
-    eval { $self->sqlite->migrations->name('cache_service')->from_data->migrate };
+    eval { $self->sqlite->migrations->migrate };
     if (my $err = $@) {
         croak qq{Deploying cache database to "$db_file" failed}
           . qq{ (Maybe the file is corrupted and needs to be deleted?): $err};
@@ -319,17 +319,3 @@ sub _check_limits {
 }
 
 1;
-
-__DATA__
-@@ cache_service
--- 1 up
-CREATE TABLE IF NOT EXISTS assets (
-    `etag` TEXT,
-    `size` INTEGER,
-    `last_use` DATETIME NOT NULL,
-    `filename` TEXT NOT NULL UNIQUE,
-    PRIMARY KEY(`filename`)
-);
-
--- 1 down
-DROP TABLE assets;

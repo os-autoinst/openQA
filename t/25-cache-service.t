@@ -273,12 +273,31 @@ subtest 'Increased SQLite busy timeout' => sub {
 
 subtest 'Job progress (guard against parallel downloads of the same file)' => sub {
     my $app = OpenQA::CacheService->new;
-    ok !$app->progress->is_downloading('foo'), 'Queue works';
-    my $guard = $app->progress->guard('foo');
-    ok $app->progress->is_downloading('foo'), 'Queue works';
-    ok $app->progress->is_downloading('foo'), 'Queue works';
+    ok !$app->progress->is_downloading('foo'), 'not downloading';
+    is $app->progress->downloading_job('foo'), undef, 'no job';
+    my $guard = $app->progress->guard('foo', 123);
+    ok $app->progress->is_downloading('foo'),  'is downloading';
+    is $app->progress->downloading_job('foo'), 123, 'has job';
+    ok $app->progress->is_downloading('foo'),  'still downloading';
     undef $guard;
-    ok !$app->progress->is_downloading('foo'), 'Dequeue works';
+    ok !$app->progress->is_downloading('foo'), 'not downloading anymore';
+
+    $guard = $app->progress->guard('foo', 124);
+    ok $app->progress->is_downloading('foo'), 'is downloading again';
+    is $app->progress->downloading_job('foo'), 124, 'new job';
+    undef $guard;
+    $guard = $app->progress->guard('foo', 125);
+    ok $app->progress->is_downloading('foo'), 'is downloading again';
+    is $app->progress->downloading_job('foo'), 125, 'new job';
+    undef $guard;
+
+    is $app->downloads->sqlite->db->select('downloads', '*', {lock => 'foo'})->hashes->size, 3, 'three entries';
+    $app->downloads->sqlite->db->update('downloads', {created => \'datetime(\'now\',\'-3 day\')'});
+    $guard = $app->progress->guard('foo', 126);
+    ok $app->progress->is_downloading('foo'), 'is downloading again';
+    is $app->progress->downloading_job('foo'), 126, 'new job';
+    is $app->downloads->sqlite->db->select('downloads', '*', {lock => 'foo'})->hashes->size, 1,
+      'old jobs have been removed';
 };
 
 subtest 'Client can check if there are available workers' => sub {
@@ -511,6 +530,56 @@ EOF
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=1i,failed=0i,inactive=2i
 openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=4i
 EOF
+};
+
+subtest 'Concurrent downloads of the same file' => sub {
+    my $asset = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
+
+    my $app = OpenQA::CacheService->new;
+    fix_coverage($app);
+
+    my $req = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
+    $cache_client->enqueue($req);
+
+    my $worker = $app->minion->repair->worker->register;
+    ok $worker->id, 'worker has an ID';
+
+    # Downloading job
+    my $job = $worker->dequeue(0, {id => $req->minion_id});
+    ok $job, 'job dequeued';
+    ok !$app->progress->is_downloading($req->lock), 'not downloading yet';
+    $job->perform;
+    my $status = $cache_client->status($req);
+    ok $status->is_processed, 'is processed';
+    like $status->output, qr/Downloading "sle\-12\-SP3\-x86_64\-0368\-200_133333\@64bit.qcow2"/, 'right output';
+    ok $cache_client->asset_exists('localhost', $asset), 'cached file exists';
+
+    my $req2 = $cache_client->asset_request(id => 922757, asset => $asset, type => 'hdd', host => $host);
+    $cache_client->enqueue($req2);
+    is $req->lock, $req2->lock, 'same lock';
+
+    # Concurrent request for same file
+    my $job2 = $worker->dequeue(0, {id => $req2->minion_id});
+    ok $job2, 'job dequeued';
+    ok !$app->progress->is_downloading($req2->lock), 'not downloading yet';
+    ok my $guard = $app->progress->guard($req2->lock, $req->minion_id), 'lock acquired';
+    ok $app->progress->is_downloading($req2->lock), 'concurrent download in progress';
+    $job2->perform;
+    ok !$cache_client->status($req2)->is_processed, 'not yet processed';
+    undef $guard;
+    my $status2 = $cache_client->status($req2);
+    ok $status2->is_processed, 'is processed';
+    like $app->minion->job($req2->minion_id)->info->{notes}{output},
+      qr/Asset "sle.+" was downloaded by #\d+, details are therefore unavailable here/, 'right output';
+    like $status2->output, qr/Downloading "sle\-12\-SP3\-x86_64\-0368\-200_133333\@64bit.qcow2"/, 'right output';
+    ok $cache_client->asset_exists('localhost', $asset), 'cached file still exists';
+
+    # Downloading job has been removed
+    $app->minion->job($req->minion_id)->remove;
+    my $status3 = $cache_client->status($req2);
+    ok $status3->is_processed, 'is processed';
+    like $status3->output,     qr/Asset "sle.+" was downloaded by #\d+, details are therefore unavailable here/,
+      'right output';
 };
 
 subtest 'OpenQA::CacheService::Task::Sync' => sub {
