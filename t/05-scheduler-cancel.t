@@ -262,7 +262,7 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
     $jobC->discard_changes;
 
     is($jobB->result, OpenQA::Jobs::Constants::PARALLEL_FAILED, 'B result is parallel failed');
-    is($jobB->state, OpenQA::Jobs::Constants::RUNNING, 'B is still running');
+    is($jobB->state,  OpenQA::Jobs::Constants::RUNNING,         'B is still running');
     is($jobB->t_finished, undef, 'B does not has t_finished set since it is still running');
     is($jobC->result, OpenQA::Jobs::Constants::PARALLEL_FAILED, 'C result is parallel failed');
     is_deeply(\@sent_commands, [qw(cancel cancel)], 'both cancel commands issued');

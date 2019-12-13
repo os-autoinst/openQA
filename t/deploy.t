@@ -56,7 +56,7 @@ ok(!$deployed_version, 'DB not deployed by plain schema connection with check =>
 my $ret = OpenQA::Schema::deployment_check($schema);
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
-is($ret, 2, 'Expected return value (2) for a deployment');
+is($ret,                                   2,                   'Expected return value (2) for a deployment');
 
 OpenQA::Schema::disconnect_db;
 $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
@@ -77,13 +77,13 @@ is($dh->version_storage->database_version, $dh->schema_version - 2, 'Schema at c
 $ret = OpenQA::Schema::deployment_check($schema);
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
-is($ret, 1, 'Expected return value (1) for an upgrade');
+is($ret,                                   1,                   'Expected return value (1) for an upgrade');
 
 # check another deployment_check call doesn't do a thing
 $ret = OpenQA::Schema::deployment_check($schema);
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
-is($ret, 0, 'Expected return value (0) for no action needed');
+is($ret,                                   0,                   'Expected return value (0) for no action needed');
 
 SKIP: {
     eval { require SQL::Translator::Producer::Diagram; };

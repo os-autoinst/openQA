@@ -100,7 +100,7 @@ $search->clear;
 $search->send_keys('older:today');
 wait_for_data_table;
 @entries = $driver->find_child_elements($table, 'tbody/tr/td', 'xpath');
-is(scalar @entries, 1, 'one element when filtered by yesterday time');
+is(scalar @entries,                     1,                  'one element when filtered by yesterday time');
 is($entries[0]->get_attribute('class'), 'dataTables_empty', 'but datatables are empty');
 $search->clear;
 

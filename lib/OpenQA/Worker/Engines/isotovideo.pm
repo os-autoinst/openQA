@@ -329,7 +329,7 @@ sub engine_workit {
             setpgrp(0, 0);
             $ENV{TMPDIR} = $tmpdir;
             log_info("$$: WORKING " . $job_info->{id});
-            log_debug('+++ worker notes +++', channels => 'autoinst');
+            log_debug('+++ worker notes +++',                               channels => 'autoinst');
             log_debug(sprintf("Start time: %s", strftime("%F %T", gmtime)), channels => 'autoinst');
 
             my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();

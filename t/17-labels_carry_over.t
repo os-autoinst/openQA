@@ -120,7 +120,7 @@ subtest 'failed->failed labels which are not bugrefs are *not* carried over' => 
     $old_job = $job;
     my @comments_new = @{comments($res->{test_url}[0]->{$old_job})};
     is(join('', @comments_new), '', 'no simple labels are carried over');
-    is(scalar @comments_new, 0, 'no simple label present in new result');
+    is(scalar @comments_new,    0,  'no simple label present in new result');
 };
 
 

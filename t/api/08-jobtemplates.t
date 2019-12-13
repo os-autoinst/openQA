@@ -1104,8 +1104,8 @@ subtest 'Create and modify groups with YAML' => sub {
         $test_suites->create({name => 'baz'});
         $yaml->{defaults}{i586}{'machine'}                 = ['Laptop_64', '64bit'];
         $yaml->{scenarios}{i586}{'opensuse-13.1-DVD-i586'} = [
-            {baz => {machine => ['32bit', '64bit'], priority => 7}},
-            {baz_defaults => {priority => 7, testsuite => 'baz'}}];
+            {baz          => {machine  => ['32bit', '64bit'], priority  => 7}},
+            {baz_defaults => {priority => 7,                  testsuite => 'baz'}}];
         $t->post_ok(
             "/api/v1/job_templates_scheduling/$job_group_id3",
             form => {

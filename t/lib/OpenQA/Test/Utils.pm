@@ -176,7 +176,7 @@ sub create_webapi {
                 PeerPort => $mojoport,
                 Proto    => 'tcp',
             );
-            last if $socket;
+            last    if $socket;
             sleep 1 if time - $t < 1;
         }
     }
@@ -204,7 +204,7 @@ sub create_websocket_server {
         # TODO: Kill it with fire!
         if ($bogus) {
             monkey_patch 'OpenQA::WebSockets::Controller::Worker', _get_worker => sub { return };
-            monkey_patch 'OpenQA::WebSockets::Controller::Worker', ws => sub {
+            monkey_patch 'OpenQA::WebSockets::Controller::Worker', ws          => sub {
                 my $c = shift;
                 $c->on(json   => \&OpenQA::WebSockets::Controller::Worker::_message);
                 $c->on(finish => \&OpenQA::WebSockets::Controller::Worker::_finish);
@@ -241,7 +241,7 @@ sub create_websocket_server {
                 PeerPort => $port,
                 Proto    => 'tcp'
             );
-            last if $socket;
+            last    if $socket;
             sleep 1 if time - $t < 1;
         }
     }

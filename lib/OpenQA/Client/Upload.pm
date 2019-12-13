@@ -72,7 +72,7 @@ sub asset {
             };
             $self->emit('upload_chunk.fail' => $res => $_) if $done == 0;
 
-            $trial-- if $trial > 0;
+            $trial--                                              if $trial > 0;
             $self->emit('upload_chunk.request_err' => $res => $@) if $@;
             $e = $@ || $res if $trial == 0 && $done == 0;
         } until ($trial == 0 || $done);

@@ -359,8 +359,8 @@ ok(-d $chunkdir, 'Chunk directory exists');
 # Simulate worker failed upload
 $t->post_ok(
     '/api/v1/jobs/99963/upload_state' => form => {filename => 'hdd_image.qcow2', scope => 'public', state => 'fail'});
-ok(!-d $chunkdir, 'Chunk directory was removed') or die;
-ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed') or die;
+ok(!-d $chunkdir,                              'Chunk directory was removed') or die;
+ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed')           or die;
 
 # Test for private assets
 $chunkdir = 't/data/openqa/share/factory/tmp/private/00099963-hdd_image.qcow2.CHUNKS/';
@@ -387,8 +387,8 @@ $t->post_ok(
         state    => 'fail'
     });
 
-ok(!-d $chunkdir, 'Chunk directory was removed') or die;
-ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed') or die;
+ok(!-d $chunkdir,                              'Chunk directory was removed') or die;
+ok((!-e path($chunkdir, $first_chunk->index)), 'Chunk was removed')           or die;
 
 $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image.qcow2')->status_is(404);
 

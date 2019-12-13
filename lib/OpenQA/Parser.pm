@@ -64,7 +64,7 @@ sub load {
     croak "You need to specify a file" if !$file;
     my $file_content = $self->_read_file($file);
     confess "Failed reading file $file" if !$file_content;
-    $self->content($file_content) if $self->include_content;
+    $self->content($file_content)       if $self->include_content;
     $self->parse($file_content);
     $self;
 }

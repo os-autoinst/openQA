@@ -72,7 +72,7 @@ sub unregister {
     return $self->result_source->schema->txn_do(
         sub {
             my $session = $self->find({job_id => $job_id}) or return 0;
-            my $job = $session->job or return 0;
+            my $job     = $session->job                    or return 0;
             return $job->cancel();
         });
 }

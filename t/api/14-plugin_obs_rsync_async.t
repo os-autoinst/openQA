@@ -113,7 +113,7 @@ sub signal_rsync_ready {
 sub unlink_signal_rsync_ready {
     foreach (@_) {
         my $filename = Mojo::File->new($home, 'script', ".$_-ready")->to_string;
-        -f $filename || next;
+        -f $filename     || next;
         unlink $filename || die "Cannot unlink file $filename: $!";
     }
 }

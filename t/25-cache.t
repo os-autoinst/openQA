@@ -99,8 +99,8 @@ $cache->init;
 is $cache->sqlite->migrations->active, 1, 'version 1 is still the active version';
 like $cache_log, qr/Cache size of "$cachedir" is 168 Byte, with limit 50GiB/,
   'Cache limit/size match the expected 100GB/168)';
-unlike $cache_log, qr/Purging ".*[13].qcow2"/, 'Registered assets 1 and 3 were kept';
-like $cache_log, qr/Purging ".*2.qcow2" because the asset is not registered/, 'Asset 2 was removed';
+unlike $cache_log, qr/Purging ".*[13].qcow2"/,                                  'Registered assets 1 and 3 were kept';
+like $cache_log,   qr/Purging ".*2.qcow2" because the asset is not registered/, 'Asset 2 was removed';
 $cache_log = '';
 
 $cache->limit(100);
@@ -168,7 +168,7 @@ like $cache_log, qr/Content of ".*0368-200@64bit.qcow2" has not changed, updatin
 $cache_log = '';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
-like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
+like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/,              'Asset download attempt';
 like $cache_log, qr/Content of ".*-0368-200@64bit.qcow2" has not changed, updating last use/, 'Content has not changed';
 $cache_log = '';
 

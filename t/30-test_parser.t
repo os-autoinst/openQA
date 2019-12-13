@@ -910,7 +910,7 @@ subtest functional_interface => sub {
     ok $default->isa('OpenQA::Parser::Format::Base');
 
     # Supports functional interface.
-    my $test_file = path($FindBin::Bin, "data")->child("new_ltp_result_array.json");
+    my $test_file  = path($FindBin::Bin, "data")->child("new_ltp_result_array.json");
     my $parsed_res = p(LTP => $test_file);
 
     is $parsed_res->results->size, 4, 'Expected 4 results';

@@ -122,7 +122,7 @@ subtest 'delete needle' => sub {
     wait_for_ajax;
     $driver->find_element_by_id('delete_all')->click();
 
-    is($driver->find_element_by_id('confirm_delete')->is_displayed(), 1, 'modal dialog');
+    is($driver->find_element_by_id('confirm_delete')->is_displayed(),     1,                 'modal dialog');
     is($driver->find_element('#confirm_delete .modal-title')->get_text(), 'Needle deletion', 'title matches');
     is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 1, 'one needle outstanding for deletion');
     is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 0, 'no failed needles so far');

@@ -73,7 +73,7 @@ combined_like(
     qr/removing screenshot bar/,
     'removing screenshot logged'
 );
-@screenshots = $screenshots->search({id => {-in => \@screenshot_ids}})->search({}, {order_by => 'id'});
+@screenshots     = $screenshots->search({id => {-in => \@screenshot_ids}})->search({}, {order_by => 'id'});
 @screenshot_data = map { {filename => $_->filename} } @screenshots;
 is_deeply(\@screenshot_data, [{filename => 'foo'}], 'foo still present (used in 99927), bar removed (no longer used)')
   or diag explain \@screenshot_data;

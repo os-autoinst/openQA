@@ -220,8 +220,8 @@ subtest 'Checking log level' => sub {
             ok(keys(%matches) == $counterChannel, "Worker channel log level $level entry");  # TODO
                                                                                              #  use Data::Dumper;
                                                                                              #  print Dumper(\%matches);
-                 #  print "counter Channel: $counterChannel";
-                 # unlink $logging_test_file;
+                #  print "counter Channel: $counterChannel";
+                # unlink $logging_test_file;
         }
         $counterChannel--;
 
@@ -374,10 +374,10 @@ subtest 'Logs to bogus channels' => sub {
             add_log_channel($channel_tupple->[0], path => $logging_test_file1, level => $level);
             add_log_channel($channel_tupple->[1], path => $logging_test_file2, level => $level);
 
-            log_debug("debug message", channels => ['test',  'test1']);
-            log_info("info message", channels => ['test',    'test1']);
+            log_debug("debug message", channels => ['test', 'test1']);
+            log_info("info message", channels => ['test', 'test1']);
             log_warning("warn message", channels => ['test', 'test1']);
-            log_error("error message", channels => ['test',  'test1']);
+            log_error("error message", channels => ['test', 'test1']);
 
             eval { log_fatal('fatal message', channels => ['test', 'test1']); };
 
