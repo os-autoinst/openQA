@@ -177,9 +177,13 @@ subtest 'Availability check and worker status' => sub {
     my $client_mock = Test::MockModule->new('OpenQA::CacheService::Response::Info');
 
     my $info = $cache_client->info;
-    is($info->availability_error, 'Cache service not reachable', 'cache service not available');
+    $client_mock->mock(error => sub { return {message => 'foo'}; });
+    is($info->availability_error, 'Cache service not reachable: foo', 'unable to connect to cache service');
 
-    $client_mock->mock(available         => sub { return 1; });
+    $client_mock->mock(error => sub { return {message => 'bar', code => 404}; });
+    is($info->availability_error, 'Cache service returned error 404: bar', 'cache service returns an error');
+
+    $client_mock->mock(error             => sub { return undef; });
     $client_mock->mock(available_workers => sub { return 0; });
     is($info->availability_error, 'No workers active in the cache service', 'nor workers active');
 

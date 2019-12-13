@@ -192,7 +192,7 @@ subtest 'status' => sub {
         sub {
             $worker_status = $worker->status;
         },
-        qr/Worker cache not available: Cache service not reachable/,
+        qr/Worker cache not available: Cache service not reachable: Connection refused/,
         'worker cache error logged'
     );
     is_deeply(
@@ -200,7 +200,7 @@ subtest 'status' => sub {
         {
             type   => 'worker_status',
             status => 'broken',
-            reason => 'Cache service not reachable'
+            reason => 'Cache service not reachable: Connection refused'
         },
         'worker is broken if CACHEDIRECTORY set but worker cache not available'
     );
