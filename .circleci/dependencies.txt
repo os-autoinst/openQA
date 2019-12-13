@@ -2,6 +2,7 @@ aspell-0.60.6.1
 aspell-en-2017.08.24
 aspell-spell-0.60.6.1
 cmark-0.28.3
+jq-1.5
 libaspell15-0.60.6.1
 libcmark0_28_3-0.28.3
 libssh2-1-1.8.0

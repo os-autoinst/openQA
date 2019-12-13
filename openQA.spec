@@ -49,14 +49,14 @@
 %define common_requires perl(Config::IniFiles) perl(Cpanel::JSON::XS) perl(Cwd) perl(Data::Dump) perl(Data::Dumper) perl(Digest::MD5) perl(Getopt::Long) perl(Minion) >= 9.09, perl(Mojolicious) >= 8.24, perl(Try::Tiny) perl(Regexp::Common), perl(Storable)
 # runtime requirements for the main package that are not required by other sub-packages
 %define main_requires %assetpack_requires git-core perl(Carp::Always) perl(Date::Format) perl(DateTime::Format::Pg) perl(DBD::Pg) >= 3.7.4, perl(DBI) >= 1.632, perl(DBIx::Class) >= 0.082801, perl(DBIx::Class::DeploymentHandler) perl(DBIx::Class::DynamicDefault) perl(DBIx::Class::Schema::Config) perl(DBIx::Class::Storage::Statistics) perl(DBIx::Class::OptimisticLocking) perl(File::Copy::Recursive) perl(Net::OpenID::Consumer) perl(Module::Pluggable) perl(aliased) perl(Config::Tiny) perl(Text::Diff) perl(CommonMark) perl(JSON::Validator) perl(IPC::Run) perl(Archive::Extract) perl(Time::ParseDate) perl(Sort::Versions) perl(BSD::Resource) perl(Pod::POM) perl(Mojo::Pg) perl(Mojo::RabbitMQ::Client) >= 0.2, perl(SQL::Translator) perl(YAML::XS) perl(LWP::UserAgent)
-%define client_requires git-core perl(IO::Socket::SSL) >= 2.009, perl(LWP::UserAgent) perl(IPC::Run)
+%define client_requires curl jq git-core perl(IO::Socket::SSL) >= 2.009, perl(LWP::UserAgent) perl(IPC::Run)
 %define worker_requires os-autoinst < 5, perl(Mojo::IOLoop::ReadWriteProcess) > 0.19, perl(Minion::Backend::SQLite) perl(Mojo::SQLite) openQA-client optipng
 %define build_requires rubygem(sass) %assetpack_requires
 
 # All requirements needed by the tests executed during build-time.
 # Do not require on this in individual sub-packages except for the devel
 # package.
-%define test_requires %common_requires %main_requires %python_scripts_requires %worker_requires perl(App::cpanminus) perl(Perl::Critic) perl(Perl::Critic::Freenode) perl(Test::Mojo) perl(Test::More) perl(Test::Strict) perl(Test::Fatal) perl(Test::MockModule) perl(Test::Output) perl(Test::Pod) perl(Test::Warnings) perl(Selenium::Remote::Driver) perl(Selenium::Remote::WDKeys) ShellCheck os-autoinst-devel postgresql-server python3-setuptools python3-yamllint
+%define test_requires %common_requires %main_requires %python_scripts_requires %worker_requires perl(App::cpanminus) perl(Perl::Critic) perl(Perl::Critic::Freenode) perl(Test::Mojo) perl(Test::More) perl(Test::Strict) perl(Test::Fatal) perl(Test::MockModule) perl(Test::Output) perl(Test::Pod) perl(Test::Warnings) perl(Selenium::Remote::Driver) perl(Selenium::Remote::WDKeys) ShellCheck os-autoinst-devel postgresql-server python3-setuptools python3-yamllint curl jq
 %ifarch x86_64
 %define qemu qemu qemu-kvm
 %else
@@ -165,7 +165,6 @@ Summary:        Client tools for remote openQA management
 Group:          Development/Tools/Other
 Requires:       openQA-common = %{version}
 Requires:       %client_requires
-Recommends:     jq
 
 %description client
 Tools and support files for openQA client script. Client script is
