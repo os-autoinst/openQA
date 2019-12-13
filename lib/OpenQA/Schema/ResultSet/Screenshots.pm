@@ -30,11 +30,11 @@ sub populate_images_to_job {
     my %ids;
     for my $img (@$imgs) {
         log_debug "creating $img";
-        my $dbh       = $self->result_source->schema->storage->dbh;
-        my $statement = $dbh->prepare(
+        my $dbh = $self->result_source->schema->storage->dbh;
+        my $sth = $dbh->prepare(
             'INSERT INTO screenshots (filename, t_created) VALUES(?, now()) ON CONFLICT DO NOTHING RETURNING id');
-        $statement->execute($img);
-        my $res = $statement->fetchrow_arrayref;
+        $sth->execute($img);
+        my $res = $sth->fetchrow_arrayref;
         $ids{$img} = $res ? $res->[0] : $self->find({filename => $img})->id;
     }
     my @data = map { [$_, $job_id] } values %ids;
