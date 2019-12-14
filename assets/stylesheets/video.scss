@@ -1,0 +1,66 @@
+.video_viewer {
+    height:100%;
+    width:100%;
+}
+.video {
+    width:100%;
+}
+.controls, .controls > * {
+    padding:0;
+    margin:0;
+}
+.controls {
+    overflow:hidden;
+    background:transparent;
+    width:100%;
+    height:2em;
+    position:relative;
+}
+.controls[data-state=visible] {
+    display:block;
+}
+.controls .fps::before {
+        content: attr(data-fps);
+}
+.controls .spinbox {
+    width:5.7%;
+}
+.controls .spinbox > * {
+    float: right;
+}
+.controls .fps {
+    padding-right: 0.4em;
+    line-height: 2em;
+    text-align: right;
+}
+.controls .narrow {
+    width: 1em;
+    padding: 0;
+}
+.controls .slim {
+    height: 50%;
+}
+.controls #fast {
+    -moz-appearance: spinner-upbutton;
+}
+.controls #slow {
+    -moz-appearance: spinner-downbutton;
+}
+.controls > * {
+    float:left;
+    width:3.8%;
+    height:100%;
+    margin-left:0.2%;
+    display:block;
+}
+.controls > *:first-child {
+    margin-left:0;
+}
+.controls .progress {
+    cursor:pointer;
+    width:78%;
+}
+.controls progress {
+    width:100%;
+    height:100%;
+}

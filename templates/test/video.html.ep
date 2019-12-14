@@ -1,0 +1,31 @@
+% layout 'bootstrap';
+% title 'Video';
+
+% content_for 'head' => begin
+  %= asset 'video.js'
+  %= asset 'video.css'
+% end
+
+<div id="video_viewer">
+    <video id="video" src="<%= url_for('test_file', testid => $testid, filename => 'video.ogv') %>" style="display: block; max-width: 100%; margin: 0 auto;">
+        <track default="" kind="subtitles" srclang="en" label="Timestamps" src="<%= url_for('test_file', testid => $testid, filename => 'video_time.vtt') %>">
+    </video>
+    <div id="video-controls" class="controls" data-state="visible">
+        <button title="[SPACE]" id="playpause"><i class="fa fa-play"></i></button>
+        <button id="prev"><i class="fa fa-step-backward"></i></button>
+        <button id="next"><i class="fa fa-step-forward"></i></button>
+        <div class="progress">
+            <progress id="progress" value="0" min="0">
+                <span id="progress-bar"></span>
+            </progress>
+        </div>
+        <div class="spinbox">
+            <span style="float: right;" class="narrow">
+                <button title="[UP]" id="fast" class="btn slim"><i class="slim fa fa-angle-up"></i></button>
+                <button title="[DOWN]" id="slow" class="btn slim"><i class="slim fa fa-angle-down"></i></button>
+            </span>
+            <span class="fps" id="fps" data-fps="24"> fps</span>
+        </div>
+        <button title="[t]" id="subtitles"><i class="fa fa-clock-o"></i></button>
+    </div>
+</div>
