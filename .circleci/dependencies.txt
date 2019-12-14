@@ -5,6 +5,8 @@ cmark-0.28.3
 jq-1.5
 libaspell15-0.60.6.1
 libcmark0_28_3-0.28.3
+libjq1-1.5
+libonig4-6.7.0
 libssh2-1-1.8.0
 lsof-4.91
 optipng-0.7.7
