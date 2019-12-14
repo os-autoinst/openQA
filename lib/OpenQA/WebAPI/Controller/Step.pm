@@ -596,9 +596,8 @@ sub viewimg {
         $self->stash(textresult => 'Seems like os-autoinst has produced a result which openQA can not display.');
         return $self->render('step/viewtext');
     }
-
     $self->stash('screenshot',     $screenshot);
-    $self->stash('frametime',      $module_detail->{frametime}) if grep { /video.ogv$/ } @{$job->test_resultfile_list};
+    $self->stash('frametime',      grep(/video.ogv$/, @{$job->test_resultfile_list}) ? $module_detail->{frametime} : 0);
     $self->stash('default_label',  $primary_match ? $primary_match->{label} : 'Screenshot');
     $self->stash('needles_by_tag', \%needles_by_tag);
     $self->stash('tag_count',      scalar %needles_by_tag);
