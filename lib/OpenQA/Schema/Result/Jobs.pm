@@ -1821,14 +1821,16 @@ sub investigate {
     return {error => 'No previous job in this scenario, cannot provide hints'} unless @previous;
     my %investigation;
     return {error => 'No result directory available for current job'} unless $self->result_dir();
+    my $ignore = $OpenQA::Utils::app->config->{global}->{job_investigate_ignore};
     for my $prev (@previous) {
         next unless $prev->result =~ /(?:passed|softfailed)/;
         $investigation{last_good} = $prev->id;
         last unless $prev->result_dir;
-        my @files = map { catfile($_->result_dir(), 'vars.json') } ($prev, $self);
         # just ignore any problems on generating the diff with eval, e.g.
         # files missing. This is a best-effort approach.
-        $investigation{diff_to_last_good} = eval { diff(@files) };
+        my @files = map { Mojo::File->new($_->result_dir(), 'vars.json')->slurp } ($prev, $self);
+        my $diff  = eval { diff(\$files[0], \$files[1]) };
+        $investigation{diff_to_last_good} = join("\n", grep { !/$ignore/ } split(/\n/, $diff));
         last;
     }
     $investigation{last_good} //= 'not found';

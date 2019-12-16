@@ -408,6 +408,7 @@ subtest 'carry over, including soft-fails' => sub {
         ok($investigation,                        'job provides failure investigation');
         is($investigation->{last_good}, 99997, 'previous job identified as last good');
         like($investigation->{diff_to_last_good}, qr/^\+.*BUILD.*668/m, 'diff for job settings is shown');
+        unlike($investigation->{diff_to_last_good}, qr/JOBTOKEN/, 'special variables are not included');
     };
 
 };
