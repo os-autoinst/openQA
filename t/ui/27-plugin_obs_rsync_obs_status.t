@@ -23,6 +23,7 @@ use Test::Mojo;
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
 use Mojo::File qw(tempdir path);
+use File::Copy::Recursive 'dircopy';
 
 use Mojolicious;
 use IO::Socket::INET;
@@ -125,8 +126,10 @@ sub stop_server {
 }
 
 $ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
-my $home = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
-my $url  = "http://127.0.0.1:$port/public/build/%%PROJECT/_result?package=000product";
+my $home_template = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
+my $home          = "$tempdir/openqa-trigger-from-obs";
+dircopy($home_template, $home);
+my $url = "http://127.0.0.1:$port/public/build/%%PROJECT/_result?package=000product";
 
 $tempdir->child('openqa.ini')->spurt(<<"EOF");
 [global]
@@ -166,19 +169,28 @@ my $token = $t->tx->res->dom->at('meta[name=csrf-token]')->attr('content');
 $t->get_ok('/login');
 BAIL_OUT('Login exit code (' . $t->tx->res->code . ')') if $t->tx->res->code != 302;
 
+# no inactive gru jobs is dispayed in project list
+$t->get_ok('/admin/obs_rsync/')->status_is(200, 'project list')->content_unlike(qr/inactive/);
+
 $t->post_ok('/admin/obs_rsync/Proj1/runs' => {'X-CSRF-Token' => $token})->status_is(201, 'trigger rsync');
 $t->post_ok('/admin/obs_rsync/Proj2/runs' => {'X-CSRF-Token' => $token})->status_is(201, 'trigger rsync');
 $t->post_ok('/admin/obs_rsync/Proj3/runs' => {'X-CSRF-Token' => $token})->status_is(201, 'trigger rsync');
 
+# now inactive job is dispayed in project list
+$t->get_ok('/admin/obs_rsync/')->status_is(200, 'project list')->content_like(qr/inactive/);
+
 # at start job is added as inactive
-$t->get_ok('/admin/obs_rsync/queue')->status_is(200, "jobs list")->content_like(qr/inactive/)
+$t->get_ok('/admin/obs_rsync/queue')->status_is(200, 'jobs list')->content_like(qr/inactive/)
   ->content_unlike(qr/\bactive\b/)->content_like(qr/Proj1/)->content_like(qr/Proj2/)->content_like(qr/Proj3/);
 
 $t->app->start('gru', 'run', '--oneshot');
 
-# Proj1 and Proj2 must be still there but Proj3 must gone now
-$t->get_ok('/admin/obs_rsync/queue')->status_is(200, "jobs list")->content_like(qr/inactive/)
+# Proj1 and Proj2 must be still in queue, but Proj3 must gone now
+$t->get_ok('/admin/obs_rsync/queue')->status_is(200, 'jobs list')->content_like(qr/inactive/)
   ->content_unlike(qr/\bactive\b/)->content_like(qr/Proj1/)->content_like(qr/Proj2/)->content_unlike(qr/Proj3/);
+
+$t->get_ok('/admin/obs_rsync/')->status_is(200, 'project list')->content_like(qr/published/)->content_like(qr/dirty/)
+  ->content_like(qr/publishing/);
 
 stop_server();
 done_testing();

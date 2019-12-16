@@ -23,11 +23,14 @@ use Test::Mojo;
 use OpenQA::Test::Database;
 use OpenQA::Test::Case;
 use Mojo::File qw(tempdir path);
+use File::Copy::Recursive 'dircopy';
 
 OpenQA::Test::Case->new->init_data;
 
 $ENV{OPENQA_CONFIG} = my $tempdir = tempdir;
-my $home           = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
+my $home_template = path(__FILE__)->dirname->dirname->child('data', 'openqa-trigger-from-obs');
+my $home          = "$tempdir/openqa-trigger-from-obs";
+dircopy($home_template, $home);
 my $concurrency    = 2;
 my $queue_limit    = 2;
 my $retry_interval = 1;

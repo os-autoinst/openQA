@@ -6,11 +6,70 @@
 
 % title 'OBS synchronization folders';
 <h2><%= 'OBS synchronization folders ' %></h2>
-<ul>
-% for my $folder (@$folders) {
-    <li><%= link_to $folder => url_for('plugin_obs_rsync_folder', folder => $folder) %></li>
-% }
-</ul>
+
+<div class="row">
+    <div class="col-sm-12">
+        %= include 'layouts/info'
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Project</th>
+                    <th>Last sync</th>
+                    <th>Synced version</th>
+                    <th>Current OBS version</th>
+                    <th>Sync status</th>
+                    <th>Job created</th>
+                    <th>Dirty status</th>
+                    <th>Last failure</th>
+                </tr>
+            </thead>
+            <tbody>
+            % for my $folder (sort keys %$folder_info_by_name) {
+                % my $folder_ident = $folder;
+                % $folder_ident =~ s/\W//g; # remove all special characters
+                % my $folder_info = $folder_info_by_name->{$folder};
+                % my $job_id = $folder_info->{run_last_job_id};
+                % my $fail_job_id = $folder_info->{fail_last_job_id};
+                <tr id="folder_<%= $folder_ident %>">
+                    <td class="project"><%= link_to $folder => url_for('plugin_obs_rsync_folder', folder => $folder)%></td>
+                    % if ($folder_info->{run_last}) {
+                    <td class="lastsynccol">
+                        <span id="lastsync_<%=$folder_ident%>" class="lastsync"><%= $folder_info->{run_last} %>
+                        % if ($job_id) {
+                            <span> | </span>
+                            <%= link_to $job_id => url_for('minion_jobs')->query(id => $job_id), class => "jobid" %>
+                        % }
+                        </span>
+                        <button type="submit" alt="forget" title="forget" class="lastsyncforget" post_url="<%= url_for('plugin_obs_rsync_forget_run_last', folder => $folder) %>" get_url="<%= url_for('plugin_obs_rsync_get_run_last', folder => $folder) %>" onclick="postAndRedrawElement(this, 'lastsync_<%=$folder_ident%>',0,'Are you sure you want to delete information about last sync for <%=$folder%>')">forget</button>
+                    </td>
+                    % } else {
+                    <td class="lastsync">no data</td>
+                    % }
+                    <td class="lastsyncversion"><%= $folder_info->{run_last_version} // "" %></span>
+                    <td class="obsversioncol">
+                        <span id="obsversion_<%=$folder_ident%>" class="obsversion"></span>
+                        <button type="submit" alt="update" title="update" class="obsversionupdate" post_url="<%= url_for('plugin_obs_rsync_update_obs_version', folder => $folder) %>" get_url="<%= url_for('plugin_obs_rsync_get_obs_version', folder => $folder) %>" onclick="postAndRedrawElement(this, 'obsversion_<%=$folder_ident%>',2000)">update</button>
+                    </td>
+                    <td class="syncstatus"><%= $folder_info->{state} %></td>
+                    <td class="jobcreated"><%= $folder_info->{created} %></td>
+                    <td class="dirtystatuscol">
+                        <span id="dirtystatus_<%=$folder_ident%>" class="dirtystatus"><%= $folder_info->{dirty_status} %></span>
+                        <button type="submit" alt="update" title="update" class="dirtystatusupdate" post_url="<%= url_for('plugin_obs_rsync_update_dirty_status', folder => $folder) %>" get_url="<%= url_for('plugin_obs_rsync_get_dirty_status', folder => $folder) %>" onclick="postAndRedrawElement(this, 'dirtystatus_<%=$folder_ident%>', 2000)">update</button>
+                    </td>
+                    <td class="lastfailurecol">
+                    % if ($folder_info->{fail_last_when}) {
+                        <%= $folder_info->{fail_last_when} %>
+                    % }
+                    % if ($fail_job_id) {
+                        <%= link_to $fail_job_id => url_for('minion_jobs')->query(id => $fail_job_id), class => "failjobid" %>
+                    % }
+                    </td>
+                </tr>
+            % }
+            </tbody>
+        </table>
+    </div>
+</div>
 <hr>
 <div class="btn-toolbar" role="toolbar">
     <div class="btn-group mr-2" role="group">

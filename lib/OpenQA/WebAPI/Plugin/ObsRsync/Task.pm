@@ -21,7 +21,9 @@ use IPC::Run;
 
 sub register {
     my ($self, $app) = @_;
-    $app->minion->add_task(obs_rsync_run => \&run);
+    $app->minion->add_task(obs_rsync_run                 => \&run);
+    $app->minion->add_task(obs_rsync_update_dirty_status => \&update_dirty_status);
+    $app->minion->add_task(obs_rsync_update_obs_version  => \&update_obs_version);
 }
 
 sub run {
@@ -46,12 +48,13 @@ sub run {
         $job->note(project_lock => 1);
     }
     my $dirty = 0;
-    eval { $dirty = $helper->is_status_dirty($project); 1 } or $job->retry({delay => $retry_interval_on_exception});
+    eval { $dirty = $helper->is_status_dirty($project, 1); 1 } or $job->retry({delay => $retry_interval_on_exception});
     return $job->retry({delay => $retry_interval}) if $dirty;
 
     return $job->retry({delay => $retry_interval})
       unless my $concurrency_guard = $minion->guard('obs_rsync_run_guard', $lock_timeout, {limit => $concurrency});
 
+    $helper->log_job_id($project, $job->id);
     my @cmd = (Mojo::File->new($home, 'script', 'rsync.sh')->to_string, $project);
     my ($stdin, $stdout, $error);
     IPC::Run::run(\@cmd, \$stdin, \$stdout, \$error);
@@ -62,6 +65,44 @@ sub run {
     $error ||= 'No message';
     $error =~ s/\s+$//;
     $app->log->error('ObsRsync#_run failed (' . $exit_code . '): ' . $error);
+    $helper->log_failure($project, $job->id);
+    return $job->fail({code => $exit_code, message => $error});
+}
+
+sub update_dirty_status {
+    my ($job, $args) = @_;
+
+    my $app     = $job->app;
+    my $project = $args->{project};
+    my $helper  = $app->obs_rsync;
+    eval { $helper->is_status_dirty($project, 1); 1 };
+    return $job->finish(0);
+}
+
+sub update_obs_version {
+    my ($job, $args) = @_;
+
+    my $app          = $job->app;
+    my $project      = $args->{project};
+    my $helper       = $app->obs_rsync;
+    my $lock_timeout = 120;
+
+    my $read_files = Mojo::File->new($helper->home, $project, 'read_files.sh');
+    return $job->finish("Cannot find $read_files") unless -f $read_files;
+
+    my $project_lock = Mojo::File->new($helper->home, $project, 'rsync.lock');
+    return $job->finish("File exists $project_lock") if -f $project_lock;
+
+    my $gru_project_lock = 'obs_rsync_project_' . $project . '_lock';
+    my $guard            = $app->minion->guard($gru_project_lock, $lock_timeout);
+    return $job->finish('Gru lock exists') unless $guard;
+
+    my @cmd = ("bash", $read_files);
+    my ($stdin, $stdout, $error);
+    IPC::Run::run(\@cmd, \$stdin, \$stdout, \$error);
+    my $exit_code = $?;
+    return $job->finish('Success') if (!$exit_code);
+
     return $job->fail({code => $exit_code, message => $error});
 }
 

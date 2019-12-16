@@ -71,6 +71,7 @@ sub _extend_job_info {
     $started_at = strftime('%Y-%m-%d %H:%M:%S %z', localtime($started_at)) if $started_at;
 
     my $args = $job->{args};
+    $args = $args->[0] if (ref $args eq 'ARRAY' && scalar(@$args) == 1);
     if (ref $args eq 'HASH' && scalar(%$args) == 1 && $args->{project}) {
         $args = $args->{project};
     }
@@ -121,6 +122,42 @@ sub run {
         return $self->render(json => {message => 'queued'}, status => QUEUED);
     }
     return $self->render(json => {message => 'started'}, status => STARTED);
+}
+
+sub get_dirty_status {
+    my $self    = shift;
+    my $project = $self->param('folder');
+    my $helper  = $self->obs_rsync;
+    return undef if $helper->check_and_render_error($project);
+
+    return $self->render(json => {message => $helper->get_dirty_status($project)}, status => 200);
+}
+
+sub update_dirty_status {
+    my $self    = shift;
+    my $project = $self->param('folder');
+    return undef if $self->obs_rsync->check_and_render_error($project);
+
+    $self->app->gru->enqueue('obs_rsync_update_dirty_status', {project => $project});
+    return $self->render(json => {message => 'started'}, status => 200);
+}
+
+sub get_obs_version {
+    my $self    = shift;
+    my $project = $self->param('folder');
+    my $helper  = $self->obs_rsync;
+    return undef if $helper->check_and_render_error($project);
+
+    return $self->render(json => {message => $helper->get_obs_version($project)}, status => 200);
+}
+
+sub update_obs_version {
+    my $self    = shift;
+    my $project = $self->param('folder');
+    return undef if $self->obs_rsync->check_and_render_error($project);
+
+    $self->app->gru->enqueue('obs_rsync_update_obs_version', {project => $project});
+    return $self->render(json => {message => 'started'}, status => 200);
 }
 
 1;
