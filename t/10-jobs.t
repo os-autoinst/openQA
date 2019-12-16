@@ -23,13 +23,13 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use autodie ':all';
 use File::Copy;
-use File::Spec::Functions 'catfile';
 use OpenQA::Utils;
 use OpenQA::Test::Case;
 use Test::More;
+use Test::MockModule 'strict';
 use Test::Mojo;
 use Test::Warnings;
-use Mojo::File 'tempdir';
+use Mojo::File qw(path tempdir);
 use Mojo::IOLoop::ReadWriteProcess;
 use OpenQA::Test::Utils 'redirect_output';
 use OpenQA::Parser::Result::OpenQA;
@@ -39,6 +39,11 @@ use OpenQA::Parser::Result::Output;
 my $schema = OpenQA::Test::Case->new->init_data;
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 my $rs     = $t->app->schema->resultset("Jobs");
+
+# for "investigation" tests
+my $job_mock     = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
+my $fake_git_log = 'deadbeef Break test foo';
+$job_mock->redefine(git_log_diff => $fake_git_log);
 
 is($rs->latest_build, '0091', 'can find latest build from jobs');
 is($rs->latest_build(version => 'Factory', distri => 'opensuse'), '0048@0815', 'latest build for non-integer build');
@@ -401,14 +406,16 @@ subtest 'carry over, including soft-fails' => sub {
     is($job->comments, 0,                             'no comment');
 
     subtest 'additional investigation notes provided on new failed' => sub {
-        copy('t/data/last_good.json', catfile(($job->_previous_scenario_jobs)[0]->result_dir(), 'vars.json'));
-        copy('t/data/first_bad.json', catfile($job->result_dir(),                               'vars.json'));
+        path('t/data/last_good.json')->copy_to(path(($job->_previous_scenario_jobs)[0]->result_dir(), 'vars.json'));
+        path('t/data/first_bad.json')->copy_to(path($job->result_dir(),                               'vars.json'));
         $job->done;
         is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
         ok(my $investigation = $job->investigate, 'job can provide investigation details');
         ok($investigation,                        'job provides failure investigation');
         is($investigation->{last_good}, 99997, 'previous job identified as last good');
         like($investigation->{diff_to_last_good}, qr/^\+.*BUILD.*668/m, 'diff for job settings is shown');
+        unlike($investigation->{diff_to_last_good}, qr/JOBTOKEN/, 'special variables are not included');
+        is($investigation->{git_log}, $fake_git_log, 'git log is evaluated');
     };
 
 };
