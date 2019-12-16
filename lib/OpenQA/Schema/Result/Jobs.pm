@@ -28,7 +28,8 @@ use DateTime;
 use OpenQA::Utils (
     qw(log_debug log_info log_warning log_error),
     qw(parse_assets_from_settings locate_asset),
-    qw(read_test_modules find_bugref random_string)
+    qw(read_test_modules find_bugref random_string),
+    qw(run_cmd_with_log_return_error testcasedir)
 );
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
@@ -38,6 +39,7 @@ use File::Path ();
 use DBIx::Class::Timestamps 'now';
 use File::Temp 'tempdir';
 use Mojo::File qw(tempfile path);
+use Mojo::JSON 'decode_json';
 use Data::Dump 'dump';
 use Text::Diff;
 use OpenQA::File;
@@ -1809,6 +1811,17 @@ sub test_resultfile_list {
     return \@filelist_existing;
 }
 
+sub git_log_diff {
+    my ($self, $before, $after) = @_;
+    my $res = run_cmd_with_log_return_error(
+        [
+            'git', '-C', testcasedir($self->DISTRI, $self->VERSION),
+            'log', '--pretty=oneline', '--abbrev-commit', "$before->{TEST_GIT_HASH}..$after->{TEST_GIT_HASH}"
+        ]);
+    # regardless of success or not the output contains the information we need
+    return $res->{stderr};
+}
+
 =head2 investigate
 
 Find pointers for investigation on failures, e.g. what changed vs. a "last
@@ -1831,6 +1844,8 @@ sub investigate {
         my @files = map { Mojo::File->new($_->result_dir(), 'vars.json')->slurp } ($prev, $self);
         my $diff  = eval { diff(\$files[0], \$files[1]) };
         $investigation{diff_to_last_good} = join("\n", grep { !/$ignore/ } split(/\n/, $diff));
+        my ($before, $after) = map { decode_json($_) } @files;
+        $investigation{git_log} = $self->git_log_diff($before, $after);
         last;
     }
     $investigation{last_good} //= 'not found';
