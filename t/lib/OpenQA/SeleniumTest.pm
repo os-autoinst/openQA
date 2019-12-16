@@ -7,7 +7,8 @@ use base 'Exporter';
 
 require OpenQA::Test::Database;
 
-our @EXPORT = qw($drivermissing check_driver_modules start_driver
+our @EXPORT = qw($drivermissing check_driver_modules enable_timeout
+  disable_timeout start_driver
   call_driver kill_driver wait_for_ajax disable_bootstrap_animations
   open_new_tab mock_js_functions element_visible element_hidden
   element_not_present javascript_console_has_no_warnings_or_errors
@@ -112,6 +113,14 @@ sub start_gru {
     return $gru_pid;
 }
 
+sub enable_timeout {
+    $_driver->set_implicit_wait_timeout(2000);
+}
+
+sub disable_timeout {
+    $_driver->set_implicit_wait_timeout(0);
+}
+
 sub start_driver {
     my ($mojoport) = @_;
 
@@ -156,7 +165,7 @@ sub start_driver {
         }
         $_driver = Test::Selenium::Chrome->new(%opts);
         $_driver->{is_wd3} = 0;    # ensure the Selenium::Remote::Driver instance uses JSON Wire protocol
-        $_driver->set_implicit_wait_timeout(2000);
+        enable_timeout;
         $_driver->set_window_size(600, 800);
         $_driver->get("http://localhost:$mojoport/");
 
