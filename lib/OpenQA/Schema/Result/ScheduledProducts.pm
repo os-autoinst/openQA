@@ -337,10 +337,6 @@ sub _schedule_iso {
         @successful_job_ids = ();
     };
 
-    # enqueue cleanup task
-    $gru->enqueue_limit_assets();
-    $gru->enqueue(limit_results_and_logs => [], {priority => 5, ttl => 172800, limit => 1});
-
     # emit events
     for my $succjob (@successful_job_ids) {
         OpenQA::Events->singleton->emit_event('openqa_job_create', data => {id => $succjob}, user_id => $user_id);
