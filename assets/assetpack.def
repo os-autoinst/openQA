@@ -159,6 +159,9 @@
 ! job_next_previous.js
 < javascripts/job_next_previous.js
 
+! video.css
+< stylesheets/video.scss
+
 ! ws_console.css
 < stylesheets/ws_console.scss
 
