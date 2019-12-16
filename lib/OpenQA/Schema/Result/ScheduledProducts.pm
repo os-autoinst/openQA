@@ -274,8 +274,11 @@ sub _schedule_iso {
                 my $job = $jobs_resultset->create_from_settings($settings, $self->id);
                 push @created_jobs, $job;
 
-                $testsuite_ids{$settings->{TEST_SUITE_NAME}}->{$settings->{MACHINE}} //= [];
-                push @{$testsuite_ids{$settings->{TEST_SUITE_NAME}}->{$settings->{MACHINE}}}, $job->id;
+                $testsuite_ids{JOB_TEMPLATE_NAME}->{$settings->{TEST}}->{$settings->{MACHINE}} //= [];
+                push @{$testsuite_ids{JOB_TEMPLATE_NAME}->{$settings->{TEST}}->{$settings->{MACHINE}}}, $job->id;
+                $testsuite_ids{TEST_SUITE_NAME}->{$settings->{TEST_SUITE_NAME}}->{$settings->{MACHINE}} //= [];
+                push @{$testsuite_ids{TEST_SUITE_NAME}->{$settings->{TEST_SUITE_NAME}}->{$settings->{MACHINE}}},
+                  $job->id;
 
                 # set prio if defined explicitely (otherwise default prio is used)
                 $job->update({priority => $prio}) if (defined($prio));
@@ -436,8 +439,15 @@ sub _sort_dep {
 
             my $c = 0;    # number of parents that must go to @out before this job
             foreach my $parent (@parents) {
-                my $parent_test_machine = join('@', @$parent);
-                $c += $count{$parent_test_machine} if defined $count{$parent_test_machine};
+                my $parent_test_machine  = join('@', @$parent);
+                my @parent_job_templates = grep {
+                    join('@', $_->{TEST}, $_->{MACHINE}) eq $parent_test_machine
+                      || join('@', $_->{TEST_SUITE_NAME}, $_->{MACHINE}) eq $parent_test_machine
+                } @$list;
+                foreach my $parent_job_template (@parent_job_templates) {
+                    my $parent_job_key = join('@', $parent_job_template->{TEST}, $parent_job_template->{MACHINE});
+                    $c += $count{$parent_job_key} if defined $count{$parent_job_key};
+                }
             }
 
             if ($c == 0) {    # no parents, we can do this job
@@ -607,9 +617,11 @@ sub _generate_jobs {
               unless $skip_chained_deps;
             push @parents, _parse_dep_variable($ret->[$i]->{PARALLEL_WITH}, $ret->[$i]);
             for my $parent (@parents) {
-                my $parent_test_machine = join('@', @$parent);
-                my @parents_job_template
-                  = grep { join('@', $_->{TEST_SUITE_NAME}, $_->{MACHINE}) eq $parent_test_machine } @$ret;
+                my $parent_test_machine  = join('@', @$parent);
+                my @parents_job_template = grep {
+                    join('@', $_->{TEST}, $_->{MACHINE}) eq $parent_test_machine
+                      || join('@', $_->{TEST_SUITE_NAME}, $_->{MACHINE}) eq $parent_test_machine
+                } @$ret;
                 for my $parent_job_template (@parents_job_template) {
                     $wanted{join('@', $parent_job_template->{TEST}, $parent_job_template->{MACHINE})} = 1;
                 }
@@ -648,18 +660,20 @@ sub _create_dependencies_for_job {
         next unless defined $settings->{$depname};
         for my $testsuite (_parse_dep_variable($settings->{$depname}, $settings)) {
             my ($test, $machine) = @$testsuite;
-            for my $machine_from_testsuite (keys %{$testsuite_mapping->{$test}}) {
+            my $job_mapping
+              = $testsuite_mapping->{JOB_TEMPLATE_NAME}->{$test} || $testsuite_mapping->{TEST_SUITE_NAME}->{$test};
+            for my $machine_from_testsuite (keys %$job_mapping) {
                 my $key = "$test\@$machine_from_testsuite";
                 if (!exists $cluster_parents->{$key}) {
-                    $cluster_parents->{$key} = $testsuite_mapping->{$test}->{$machine_from_testsuite};
+                    $cluster_parents->{$key} = $job_mapping->{$machine_from_testsuite};
                 }
             }
-            if (!defined $testsuite_mapping->{$test}->{$machine}) {
+            if (!defined $job_mapping->{$machine}) {
                 my $error_msg = "$depname=$test\@$machine not found - check for dependency typos and dependency cycles";
                 push(@error_messages, $error_msg);
             }
             else {
-                my @parents = @{$testsuite_mapping->{$test}->{$machine}};
+                my @parents = @{$job_mapping->{$machine}};
                 $self->_create_dependencies_for_parents($job, $created_jobs, $deptype, \@parents);
                 $cluster_parents->{"$test\@$machine"} = 'depended';
             }
