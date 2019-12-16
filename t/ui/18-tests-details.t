@@ -59,6 +59,9 @@ sub find_candidate_needles {
     # ensure the candidates menu is visible
     my @candidates_menus = $driver->find_elements('#candidatesMenu');
     is(scalar @candidates_menus, 1, 'exactly one candidates menu present at a time');
+    # save implicit waiting time as long as we are only looking for elements
+    # that should be visible already
+    disable_timeout;
     $candidates_menus[0]->click();
 
     # read the tags/needles from the HTML strucutre
@@ -90,6 +93,7 @@ sub find_candidate_needles {
 
     # close the candidates menu again, return results
     $driver->find_element('#candidatesMenu')->click();
+    enable_timeout;
     return \%needles_by_tag;
 }
 
