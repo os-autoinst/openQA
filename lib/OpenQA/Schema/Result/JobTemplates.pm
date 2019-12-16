@@ -65,6 +65,10 @@ __PACKAGE__->has_many(
     settings        => 'OpenQA::Schema::Result::JobTemplateSettings',
     job_template_id => {order_by => {-asc => 'key'}});
 
+sub name {
+    $self->get_column('name') || $self->test_suite->name;
+}
+
 =over 4
 
 =item settings_hash()

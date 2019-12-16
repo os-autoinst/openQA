@@ -84,6 +84,7 @@ our @EXPORT = qw(
   hashwalker
   read_test_modules
   feature_scaling
+  job_label
   logistic_map_steps
   logistic_map
   rand_range
@@ -1077,5 +1078,13 @@ sub any_array_item_contained_by_hash {
 }
 
 sub base_host { Mojo::URL->new($_[0])->host || $_[0] }
+
+sub job_label {
+    my ($job) = @_;
+
+    my $test    = $job->TEST;
+    my $machine = $job->MACHINE;
+    return $machine ? "$test\@$machine" : $test;
+}
 
 1;

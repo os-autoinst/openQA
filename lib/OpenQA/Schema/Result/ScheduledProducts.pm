@@ -264,7 +264,7 @@ sub _schedule_iso {
         my @created_jobs;
 
         # remember ids of created parents
-        my %job_ids_by_test_machine;    # key: "TEST@MACHINE", value: "array of job ids"
+        my %ids_by_label;
 
         for my $settings (@{$jobs || []}) {
             my $prio = delete $settings->{PRIO};
@@ -275,8 +275,8 @@ sub _schedule_iso {
                 my $job = $jobs_resultset->create_from_settings($settings, $self->id);
                 push @created_jobs, $job;
 
-                $job_ids_by_test_machine{_settings_key($settings)} //= [];
-                push @{$job_ids_by_test_machine{_settings_key($settings)}}, $job->id;
+                $ids_by_label{job_label($settings)} //= [];
+                push @{$ids_by_label{job_label($settings)}}, $job->id;
 
                 # set prio if defined explicitely (otherwise default prio is used)
                 $job->update({priority => $prio}) if (defined($prio));
@@ -292,7 +292,7 @@ sub _schedule_iso {
         # jobs are created, now recreate dependencies and extract ids
         for my $job (@created_jobs) {
             my $error_messages
-              = $self->_create_dependencies_for_job($job, \%job_ids_by_test_machine, \%created_jobs, \%cluster_parents,
+              = $self->_create_dependencies_for_job($job, \%ids_by_label, \%created_jobs, \%cluster_parents,
                 $skip_chained_deps);
             if (!@$error_messages) {
                 push(@successful_job_ids, $job->id);
@@ -354,21 +354,6 @@ sub _schedule_iso {
 
 =over 4
 
-=item _settings_key()
-
-Return settings key for given job settings. Internal method.
-
-=back
-
-=cut
-
-sub _settings_key {
-    my ($settings) = @_;
-    return "$settings->{TEST}\@$settings->{MACHINE}";
-}
-
-=over 4
-
 =item _parse_dep_variable()
 
 Parse dependency variable in format like "suite1@64bit,suite2,suite3@uefi"
@@ -416,8 +401,8 @@ sub _sort_dep {
     my @out;
 
     for my $job (@$list) {
-        $count{_settings_key($job)} //= 0;
-        $count{_settings_key($job)}++;
+        $count{job_label($job)} //= 0;
+        $count{job_label($job)}++;
     }
 
     my $added;
@@ -439,7 +424,7 @@ sub _sort_dep {
             if ($c == 0) {    # no parents, we can do this job
                 push @out, $job;
                 $done{$job} = 1;
-                $count{_settings_key($job)}--;
+                $count{job_label($job)}--;
                 $added = 1;
             }
         }
@@ -538,10 +523,9 @@ sub _generate_jobs {
             }
 
             # add properties from dedicated database columns to settings
-            $settings{TEST}            = $job_template->name || $job_template->test_suite->name;
-            $settings{MACHINE}         = $job_template->machine->name;
-            $settings{BACKEND}         = $job_template->machine->backend;
-            $settings{TEST_SUITE_NAME} = $job_template->test_suite->name;
+            $settings{TEST}              = $job_template->name;
+            $settings{MACHINE}           = $job_template->machine->name;
+            $settings{BACKEND}           = $job_template->machine->backend;
             $settings{JOB_DESCRIPTION} = $job_template->description if length $job_template->description;
 
             # merge worker classes
@@ -577,12 +561,12 @@ sub _generate_jobs {
 
             if (!$args->{MACHINE} || $args->{MACHINE} eq $settings{MACHINE}) {
                 if (!@tests) {
-                    $wanted{_settings_key(\%settings)} = 1;
+                    $wanted{job_label(\%settings)} = 1;
                 }
                 else {
                     foreach my $test (@tests) {
                         if ($test eq $settings{TEST}) {
-                            $wanted{_settings_key(\%settings)} = 1;
+                            $wanted{job_label(\%settings)} = 1;
                             last;
                         }
                     }
@@ -595,7 +579,7 @@ sub _generate_jobs {
     $ret = _sort_dep($ret);
     # the array is sorted parents first - iterate it backward
     for (my $i = $#{$ret}; $i >= 0; $i--) {
-        if ($wanted{_settings_key($ret->[$i])}) {
+        if ($wanted{job_label($ret->[$i])}) {
             # add parents to wanted list
             my @parents;
             push @parents, _parse_dep_variable($ret->[$i]->{START_AFTER_TEST}, $ret->[$i]),
@@ -604,11 +588,8 @@ sub _generate_jobs {
             push @parents, _parse_dep_variable($ret->[$i]->{PARALLEL_WITH}, $ret->[$i]);
             for my $parent (@parents) {
                 my $parent_test_machine = join('@', @$parent);
-                my @parents_job_template
-                  = grep { join('@', $_->{TEST}, $_->{MACHINE}) eq $parent_test_machine } @$ret;
-                for my $parent_job_template (@parents_job_template) {
-                    $wanted{join('@', $parent_job_template->{TEST}, $parent_job_template->{MACHINE})} = 1;
-                }
+                my @parents_job_template = grep { job_label($_) eq $parent_test_machine } @$ret;
+                $wanted{map { job_label($parent_job_template) } @parents_job_template} = 1;
             }
         }
         else {

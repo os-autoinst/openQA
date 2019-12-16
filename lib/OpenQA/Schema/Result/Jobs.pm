@@ -273,21 +273,6 @@ sub name {
     return $self->{_name};
 }
 
-sub label {
-    my ($self) = @_;
-
-    my $test    = $self->TEST;
-    my $machine = $self->MACHINE;
-    return $machine ? "$test\@$machine" : $test;
-}
-
-sub scenario {
-    my ($self) = @_;
-
-    my $test_suite_name = $self->settings_hash->{TEST_SUITE_NAME} || $self->TEST;
-    return $self->result_source->schema->resultset('TestSuites')->find({name => $test_suite_name});
-}
-
 sub scenario_hash {
     my ($self) = @_;
     my %scenario = map { lc $_ => $self->get_column($_) } SCENARIO_WITH_MACHINE_KEYS;
@@ -425,11 +410,6 @@ sub settings_hash {
             }
         }
         $self->{_settings}->{NAME} = sprintf "%08d-%s", $self->id, $self->name;
-        if ($self->{_settings}->{JOB_TEMPLATE_NAME}) {
-            my $test              = $self->{_settings}->{TEST};
-            my $job_template_name = $self->{_settings}->{JOB_TEMPLATE_NAME};
-            $self->{_settings}->{NAME} =~ s/$test/$job_template_name/e;
-        }
     }
 
     return $self->{_settings};
