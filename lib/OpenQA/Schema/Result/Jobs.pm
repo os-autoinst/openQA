@@ -1829,6 +1829,7 @@ sub investigate {
         $investigation{diff_to_last_good} = join("\n", grep { !/$ignore/ } split(/\n/, $diff));
         my ($before, $after) = map { decode_json($_) } @files;
         $investigation{git_log} = $self->git_log_diff($before, $after);
+        $investigation{git_log} ||= 'No test changes recorded, test regression unlikely';
         last;
     }
     $investigation{last_good} //= 'not found';
