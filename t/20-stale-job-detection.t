@@ -24,6 +24,7 @@ use DateTime;
 use Test::More;
 use Test::Warnings;
 use Test::Output qw(combined_like stderr_like);
+use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use OpenQA::Test::Utils 'redirect_output';
@@ -51,7 +52,7 @@ subtest 'worker with job and not updated in last 120s is considered dead' => sub
     _check_job_running($_) for (99961, 99963);
     # move the updated timestamp of the workers to avoid sleeping
     my $dtf = $schema->storage->datetime_parser;
-    my $dt  = DateTime->from_epoch(epoch => time() - 121, time_zone => 'UTC');
+    my $dt  = DateTime->from_epoch(epoch => time() - WORKERS_CHECKER_THRESHOLD - 1, time_zone => 'UTC');
 
     $schema->resultset('Workers')->update_all({t_updated => $dtf->format_datetime($dt)});
     stderr_like(

@@ -10,8 +10,8 @@ use Exporter 'import';
 # If this value differs from server to worker then it won't be able to connect.
 use constant WEBSOCKET_API_VERSION => 1;
 
-# Time threshold used to check active workers
-use constant WORKERS_CHECKER_THRESHOLD => 120;
+# Time threshold used to check active workers (in seconds)
+use constant WORKERS_CHECKER_THRESHOLD => (2 * 24 * 60 * 60);
 
 # Time verification to be use with WORKERS_CHECKER_THRESHOLD.
 # It shouldn't be bigger than WORKERS_CHECKER_THRESHOLD
