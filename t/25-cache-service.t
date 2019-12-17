@@ -450,8 +450,6 @@ subtest 'Test Minion task registration and execution' => sub {
 };
 
 subtest 'Test Minion Sync task' => sub {
-    my $a = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
-
     my $app = OpenQA::CacheService->new;
     fix_coverage($app);
 
@@ -565,6 +563,63 @@ subtest 'Concurrent downloads of the same file' => sub {
     my $status3 = $cache_client->status($req2);
     ok $status3->is_processed, 'is processed';
     like $status3->output,     qr/Asset "sle.+" was downloaded by #\d+, details are therefore unavailable here/,
+      'right output';
+};
+
+subtest 'Concurrent rsync' => sub {
+    my $dir  = tempdir;
+    my $dir2 = tempdir;
+    $dir->child('test')->spurt('foobar');
+    my $expected = $dir2->child('tests')->child('test');
+
+    my $app = OpenQA::CacheService->new;
+    fix_coverage($app);
+
+    my $req = $cache_client->rsync_request(from => $dir, to => $dir2);
+    $cache_client->enqueue($req);
+    my $req2 = $cache_client->rsync_request(from => $dir, to => $dir2);
+    $cache_client->enqueue($req2);
+    is $req->lock, $req2->lock, 'same lock';
+
+    my $worker = $app->minion->repair->worker->register;
+    ok $worker->id, 'worker has an ID';
+
+    # Downloading job
+    my $job = $worker->dequeue(0, {id => $req->minion_id});
+    ok $job, 'job dequeued';
+    ok !$app->progress->is_downloading($req->lock), 'not downloading yet';
+    $job->perform;
+    my $status = $cache_client->status($req);
+    ok $status->is_processed, 'is processed';
+    is $status->result,       0, 'expected result';
+    like $status->output,     qr/sending incremental file list/, 'right output';
+    ok -e $expected, 'target file exists';
+    is $expected->slurp, 'foobar', 'expected content';
+
+    # Concurrent request for same file
+    my $job2 = $worker->dequeue(0, {id => $req2->minion_id});
+    ok $job2, 'job dequeued';
+    ok !$app->progress->is_downloading($req2->lock), 'not downloading yet';
+    ok my $guard = $app->progress->guard($req2->lock, $req->minion_id), 'lock acquired';
+    ok $app->progress->is_downloading($req2->lock), 'concurrent download in progress';
+    $job2->perform;
+    ok !$cache_client->status($req2)->is_processed, 'not yet processed';
+    undef $guard;
+    my $status2 = $cache_client->status($req2);
+    ok $status2->is_processed, 'is processed';
+    is $status2->result, 0, 'expected result';
+    like $app->minion->job($req2->minion_id)->info->{notes}{output},
+      qr/Sync ".+" to ".+" was performed by #\d+, details are therefore unavailable here/, 'right output';
+    like $status2->output, qr/sending incremental file list/, 'right output';
+    ok -e $expected, 'target file exists';
+    is $expected->slurp, 'foobar', 'expected content';
+
+    # Downloading job has been removed
+    $app->minion->job($req->minion_id)->remove;
+    my $status3 = $cache_client->status($req2);
+    ok $status3->is_processed, 'is processed';
+    is $status3->result,       0, 'expected result';
+    like $status3->output,     qr/Sync ".+" to ".+" was performed by #\d+, details are therefore unavailable here/,
       'right output';
 };
 
