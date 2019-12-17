@@ -130,7 +130,7 @@ sub cache_assets {
 
         if ($cache_client->enqueue($asset_request)) {
             my $minion_id = $asset_request->minion_id;
-            log_debug("Downloading $asset_uri, request #$minion_id sent to Cache Service", channels => 'autoinst');
+            log_info("Downloading $asset_uri, request #$minion_id sent to Cache Service", channels => 'autoinst');
             my $status = $cache_client->status($asset_request);
             until ($status->is_processed) {
                 sleep 5;
@@ -139,7 +139,7 @@ sub cache_assets {
             }
             my $msg = "Download of $asset_uri processed";
             if (my $output = $status->output) { $msg .= ":\n$output" }
-            log_debug($msg, channels => 'autoinst');
+            log_info($msg, channels => 'autoinst');
         }
 
         $asset = $cache_client->asset_path($webui_host, $asset_uri)
@@ -235,15 +235,17 @@ sub engine_workit {
                 from => $rsync_source,
                 to   => $shared_cache
             );
-            my $rsync_request_description = "Rsync cache request from '$rsync_source' to '$shared_cache'";
+            my $rsync_request_description = "from '$rsync_source' to '$shared_cache'";
 
             $vars{PRJDIR} = $shared_cache;
 
             # enqueue rsync task; retry in some error cases
             for (my $remaining_tries = 3; $remaining_tries > 0; --$remaining_tries) {
-                return {error => "Failed to send $rsync_request_description"}
+                return {error => "Failed to send rsync $rsync_request_description"}
                   unless $cache_client->enqueue($rsync_request);
-                log_info("Enqueued $rsync_request_description");
+                my $minion_id = $rsync_request->minion_id;
+                log_info("Rsync $rsync_request_description, request #$minion_id sent to Cache Service",
+                    channels => 'autoinst');
 
                 my $status = $cache_client->status($rsync_request);
                 until ($status->is_processed) {
@@ -260,14 +262,15 @@ sub engine_workit {
                 my $exit = $status->result // 0;
 
                 if (!defined $exit) {
-                    return {error => 'Failed to rsync tests.'};
+                    return {error => 'Failed to rsync tests'};
                 }
                 elsif ($exit == 0) {
-                    log_info('Finished to rsync tests');
+                    log_info('Finished to rsync tests', channels => 'autoinst');
                     last;
                 }
                 elsif ($remaining_tries > 1 && $exit == 24) {
-                    log_info("Rsync failed due to a vanished source files (exit code 24), trying again");
+                    log_info("Rsync failed due to a vanished source files (exit code 24), trying again",
+                        channels => 'autoinst');
                 }
                 else {
                     return {error => "Failed to rsync tests: exit code: $exit"};
