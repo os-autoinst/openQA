@@ -18,8 +18,6 @@ package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller';
 use Try::Tiny;
 use JSON::Validator;
-use Text::Diff;
-use Storable 'dclone';
 
 =pod
 
@@ -116,18 +114,18 @@ Returns a YAML template representing the job group(s).
 sub schedules {
     my $self = shift;
 
-    my $yaml = $self->get_job_groups($self->param('id'), $self->param('name'));
+    my $yaml = $self->_get_job_groups($self->param('id'), $self->param('name'));
 
     # Re-indent with group names at the toplevel in case of multiple groups
     if (keys %$yaml > 1) {
         foreach my $group (keys %$yaml) {
-            $yaml->{$group} = "'$group': |\n" . ($yaml->{$group} =~ s/(.+)\n/  $1\n/gr);
+            $yaml->{$group} = "'$group': |\n" . ($yaml->{$group} =~ s/^(.+)/  $1/mgr);
         }
     }
     $self->render(yaml => join("\n", map { $yaml->{$_} } sort keys %$yaml));
 }
 
-sub get_job_groups {
+sub _get_job_groups {
     my ($self, $id, $name) = @_;
 
     my %yaml;
@@ -135,161 +133,11 @@ sub get_job_groups {
         $id ? {id => $id} : ($name ? {name => $name} : undef),
         {select => [qw(id name parent_id default_priority template)]});
     while (my $group = $groups->next) {
-        my %group;
         # Use stored YAML template from the database if available
-        if ($group->template) {
-            $yaml{$group->name} = $group->template;
-            next;
-        }
-
-        # Compile a YAML template from the current state
-        my $templates
-          = $self->schema->resultset("JobTemplates")
-          ->search({group_id => $group->id}, {order_by => 'me.test_suite_id'});
-
-        # Always set the hash of test suites to account for empty groups
-        $group{scenarios} = {};
-        $group{products}  = {};
-
-        my %machines;
-        my %test_suites;
-        # Extract products and tests per architecture
-        while (my $template = $templates->next) {
-            $group{products}{$template->product->name} = {
-                distri  => $template->product->distri,
-                flavor  => $template->product->flavor,
-                version => $template->product->version
-            };
-
-            my %test_suite;
-
-            $test_suite{machine} = $template->machine->name;
-            $machines{$template->product->arch}{$template->machine->name}++;
-            if ($template->prio && $template->prio != $group->default_priority) {
-                $test_suite{priority} = $template->prio;
-            }
-
-            my $settings = $template->settings_hash;
-            $test_suite{settings} = $settings if %$settings;
-
-            my $scenarios = $group{scenarios}{$template->product->arch}{$template->product->name};
-            push @$scenarios, {$template->test_suite->name => \%test_suite};
-            $group{scenarios}{$template->product->arch}{$template->product->name} = $scenarios;
-            $test_suites{$template->product->arch}{$template->test_suite->name}++;
-        }
-
-        # Split off defaults
-        foreach my $arch (sort keys %{$group{scenarios}}) {
-            $group{defaults}{$arch}{priority} = $group->default_priority;
-            my $default_machine
-              = (sort { $machines{$arch}->{$b} <=> $machines{$arch}->{$a} or $b cmp $a } keys %{$machines{$arch}})[0];
-            $group{defaults}{$arch}{machine} = $default_machine;
-
-            foreach my $product (sort keys %{$group{scenarios}->{$arch}}) {
-                my @scenarios;
-                foreach my $test_suite (@{$group{scenarios}->{$arch}->{$product}}) {
-                    foreach my $name (sort keys %$test_suite) {
-                        my $attr = $test_suite->{$name};
-                        if ($attr->{machine} eq $default_machine) {
-                            delete $attr->{machine} if $test_suites{$arch}{$name} == 1;
-                        }
-                        if (%$attr) {
-                            $test_suite->{$name} = $attr;
-                            push @scenarios, $test_suite;
-                        }
-                        else {
-                            push @scenarios, $name;
-                        }
-                    }
-                }
-                $group{scenarios}{$arch}{$product} = \@scenarios;
-            }
-        }
-
-        # Note: Stripping the initial document start marker "---"
-        $yaml{$group->name} = YAML::XS::Dump(\%group) =~ s/^---\n//r;
+        $yaml{$group->name} = $group->to_yaml;
     }
 
     return \%yaml;
-}
-
-sub create_or_update_job_template {
-    my ($self, $group_id, $args) = @_;
-
-    my $schema                = $self->schema;
-    my $machines              = $schema->resultset('Machines');
-    my $test_suites           = $schema->resultset('TestSuites');
-    my $products              = $schema->resultset('Products');
-    my $job_templates         = $schema->resultset('JobTemplates');
-    my $job_template_settings = $schema->resultset('JobTemplateSettings');
-
-    die "Machine is empty and there is no default for architecture $args->{arch}\n"
-      unless $args->{machine_name};
-
-    # Find machine, product and testsuite
-    my $machine = $machines->find({name => $args->{machine_name}});
-    die "Machine '$args->{machine_name}' is invalid\n" unless $machine;
-    my $product = $products->find(
-        {
-            arch    => $args->{arch},
-            distri  => $args->{product_spec}->{distri},
-            flavor  => $args->{product_spec}->{flavor},
-            version => $args->{product_spec}->{version},
-        });
-    die "Product '$args->{product_name}' is invalid\n" unless $product;
-    my $test_suite = $test_suites->find({name => $args->{testsuite_name}});
-    die "Testsuite '$args->{testsuite_name}' is invalid\n" unless $test_suite;
-
-    # Create/update job template
-    my $job_template = $job_templates->find_or_create(
-        {
-            group_id      => $group_id,
-            product_id    => $product->id,
-            machine_id    => $machine->id,
-            name          => $args->{job_template_name} // "",
-            test_suite_id => $test_suite->id,
-        },
-        {
-            key => 'scenario',
-        });
-    die "Job template name '"
-      . ($args->{job_template_name} // $args->{testsuite_name})
-      . "' with $args->{product_name} and $args->{machine_name} is already used in job group '"
-      . $job_template->group->name . "'\n"
-      if $job_template->group_id != $group_id;
-    my $job_template_id = $job_template->id;
-    $job_template->update({prio => $args->{prio}}) if (defined $args->{prio});
-
-    # Add/update/remove parameter
-    my @setting_ids;
-    if ($args->{settings}) {
-        foreach my $key (sort keys %{$args->{settings}}) {
-            my $setting = $job_template_settings->find(
-                {
-                    job_template_id => $job_template_id,
-                    key             => $key,
-                });
-            if ($setting) {
-                $setting->update({value => $args->{settings}->{$key}});
-            }
-            else {
-                $setting = $job_template_settings->find_or_create(
-                    {
-                        job_template_id => $job_template_id,
-                        key             => $key,
-                        value           => $args->{settings}->{$key},
-                    });
-            }
-            push(@setting_ids, $setting->id);
-        }
-    }
-    $job_template_settings->search(
-        {
-            id              => {'not in' => \@setting_ids},
-            job_template_id => $job_template_id,
-        })->delete();
-
-    return $job_template->id;
 }
 
 =over 4
@@ -402,36 +250,23 @@ sub update {
         $json->{id} = $group_id;
 
         if ($self->param('reference')) {
-            my $reference = $self->get_job_groups($group_id)->{$job_group->name};
+            my $reference = $job_group->to_yaml;
             $json->{template} = $reference;
             die "Template was modified\n" unless $reference eq $self->param('reference');
         }
 
-        my $job_template_names = _create_job_templates_from_yaml($yaml);
+        my $job_template_names = $job_group->template_data_from_yaml($yaml);
         if ($self->param('expand')) {
             # Preview mode: Get the expected YAML without changing the database
-            my $result = {};
-            foreach my $job_template_key (sort keys %$job_template_names) {
-                my $spec     = $job_template_names->{$job_template_key};
-                my $scenario = {
-                    $spec->{job_template_name} // $spec->{testsuite_name} => {
-                        machine  => $spec->{machine_name},
-                        priority => $spec->{prio},
-                        settings => $spec->{settings},
-                    }};
-                push @{$result->{scenarios}->{$spec->{arch}}->{$spec->{product_name}}}, {%$scenario,};
-                $result->{products}->{$spec->{product_name}} = $spec->{product_spec};
-            }
-            # Note: Stripping the initial document start marker "---"
-            $json->{result} = YAML::XS::Dump($result) =~ s/^---\n//r;
+            $json->{result} = $job_group->expand_yaml($job_template_names);
         }
 
         $schema->txn_do(
             sub {
                 my @job_template_ids;
-                foreach my $job_template_key (sort keys %$job_template_names) {
+                foreach my $key (sort keys %$job_template_names) {
                     push @job_template_ids,
-                      $self->create_or_update_job_template($group_id, $job_template_names->{$job_template_key});
+                      $job_templates->create_or_update_job_template($group_id, $job_template_names->{$key});
                 }
 
                 # Drop entries we haven't touched in add/update loop
@@ -441,12 +276,8 @@ sub update {
                         group_id => $group_id,
                     })->delete();
 
-                if ($job_group->template && $job_group->template ne $self->param('template')) {
-                    $json->{changes} = "\n" . diff \$job_group->template, \$self->param('template');
-                    # Remove the warning about new lines. We don't require that!
-                    $json->{changes} =~ s/\\ No newline at end of file\n//;
-                    # Remove leading and trailing whitespace
-                    $json->{changes} =~ s/^\s+|\s+$//g;
+                if (my $diff = $job_group->text_diff($self->param('template'))) {
+                    $json->{changes} = $diff;
                 }
 
                 # Preview mode: Get the expected YAML and rollback the result
@@ -474,76 +305,6 @@ sub update {
 
     $self->emit_event('openqa_jobtemplate_create', $json) unless $self->param('preview');
     $self->respond_to(json => {json => $json});
-}
-
-sub _create_job_templates_from_yaml {
-    my ($yaml) = @_;
-    my %job_template_names;
-
-    # Add/update job templates from YAML data
-    # (create test suites if not already present, fail if referenced machine and product is missing)
-    my $yaml_archs    = $yaml->{scenarios};
-    my $yaml_products = $yaml->{products};
-    my $yaml_defaults = $yaml->{defaults};
-    foreach my $arch (sort keys %$yaml_archs) {
-        my $yaml_products_for_arch = $yaml_archs->{$arch};
-        my $yaml_defaults_for_arch = $yaml_defaults->{$arch};
-        foreach my $product_name (sort keys %$yaml_products_for_arch) {
-            foreach my $spec (@{$yaml_products_for_arch->{$product_name}}) {
-                # Get testsuite, machine, prio and job template settings from YAML data
-                my $testsuite_name;
-                my $job_template_name;
-                # Assign defaults
-                my $prio          = $yaml_defaults_for_arch->{priority};
-                my $machine_names = $yaml_defaults_for_arch->{machine};
-                my $settings      = dclone($yaml_defaults_for_arch->{settings} // {});
-                if (ref $spec eq 'HASH') {
-                    # We only have one key. Asserted by schema
-                    $testsuite_name = (keys %$spec)[0];
-                    my $attr = $spec->{$testsuite_name};
-                    if ($attr->{priority}) {
-                        $prio = $attr->{priority};
-                    }
-                    if ($attr->{machine}) {
-                        $machine_names = $attr->{machine};
-                    }
-                    if ($attr->{testsuite}) {
-                        $job_template_name = $testsuite_name;
-                        $testsuite_name    = $attr->{testsuite};
-                    }
-                    if ($attr->{settings}) {
-                        %$settings = (%{$settings // {}}, %{$attr->{settings}});
-                    }
-                }
-                else {
-                    $testsuite_name = $spec;
-                }
-
-                $machine_names = [$machine_names] if ref($machine_names) ne 'ARRAY';
-                foreach my $machine_name (@{$machine_names}) {
-                    my $job_template_key
-                      = $arch . $product_name . $machine_name . $testsuite_name . ($job_template_name // '');
-                    die "Job template name '"
-                      . ($job_template_name // $testsuite_name)
-                      . "' is defined more than once. "
-                      . "Use a unique name and specify 'testsuite' to re-use test suites in multiple scenarios.\n"
-                      if $job_template_names{$job_template_key};
-                    $job_template_names{$job_template_key} = {
-                        prio              => $prio,
-                        machine_name      => $machine_name,
-                        arch              => $arch,
-                        product_name      => $product_name,
-                        product_spec      => $yaml_products->{$product_name},
-                        job_template_name => $job_template_name,
-                        testsuite_name    => $testsuite_name,
-                        settings          => $settings
-                    };
-                }
-            }
-        }
-    }
-
-    return \%job_template_names;
 }
 
 =over 4

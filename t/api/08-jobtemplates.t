@@ -21,6 +21,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
+use Test::MockModule;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::WebAPI::Controller::API::V1::JobTemplate;
@@ -262,6 +263,83 @@ is_deeply(
     "Initial job templates"
 ) || diag explain $t->tx->res->json;
 
+subtest 'to_yaml' => sub {
+    my $yaml1 = <<'EOM';
+defaults:
+  i586:
+    machine: 64bit
+    priority: 50
+products:
+  opensuse-13.1-DVD-i586:
+    distri: opensuse
+    flavor: DVD
+    version: '13.1'
+scenarios:
+  i586:
+    opensuse-13.1-DVD-i586:
+    - textmode:
+        machine: 32bit
+        priority: 40
+    - textmode:
+        machine: 64bit
+        priority: 40
+    - kde:
+        priority: 40
+    - client1:
+        machine: 32bit
+        priority: 40
+    - client1:
+        machine: 64bit
+        priority: 40
+    - server:
+        machine: 32bit
+        priority: 40
+    - server:
+        machine: 64bit
+        priority: 40
+    - client2:
+        machine: 64bit
+        priority: 40
+    - client2:
+        machine: 32bit
+        priority: 40
+    - advanced_kde:
+        priority: 40
+        settings:
+          ADVANCED: '1'
+          DESKTOP: advanced_kde
+EOM
+    my $yaml2 = <<'EOM';
+products: {}
+scenarios: {}
+EOM
+    my %yaml = (1001 => $yaml1, 1002 => $yaml2);
+
+    my @groups = $schema->resultset('JobGroups')->search;
+    my @templates;
+    for my $group (@groups) {
+        my $id   = $group->id;
+        my $yaml = $group->to_yaml;
+        cmp_ok($yaml, 'eq', $yaml{$group->id}, "group($id)->to_yaml");
+    }
+};
+
+subtest 'missing-linebreak' => sub {
+    my $orig = OpenQA::Schema::Result::JobGroups->can('to_yaml');
+    my $mock = Test::MockModule->new('OpenQA::Schema::Result::JobGroups');
+    # Code should be able to deal with YAML missing last linebreak
+    $mock->mock(
+        to_yaml => sub {
+            my ($self) = @_;
+            my $yaml = $orig->($self);
+            chomp $yaml;
+            return $yaml;
+        });
+    $t->get_ok("/api/v1/job_templates_scheduling")->status_is(200);
+    my $yaml = YAML::XS::Load($t->tx->res->body);
+    is_deeply(['opensuse', 'opensuse test'], [sort keys %$yaml], 'YAML of all groups contains names')
+      || diag explain $t->tx->res->body;
+};
 
 $t->post_ok(
     '/api/v1/job_templates',
