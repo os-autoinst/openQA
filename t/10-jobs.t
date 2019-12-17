@@ -43,7 +43,7 @@ my $rs     = $t->app->schema->resultset("Jobs");
 # for "investigation" tests
 my $job_mock     = Test::MockModule->new('OpenQA::Schema::Result::Jobs', no_auto => 1);
 my $fake_git_log = 'deadbeef Break test foo';
-$job_mock->redefine(git_log_diff => $fake_git_log);
+$job_mock->redefine(git_log_diff => sub { $fake_git_log });
 
 is($rs->latest_build, '0091', 'can find latest build from jobs');
 is($rs->latest_build(version => 'Factory', distri => 'opensuse'), '0048@0815', 'latest build for non-integer build');
@@ -410,12 +410,15 @@ subtest 'carry over, including soft-fails' => sub {
         path('t/data/first_bad.json')->copy_to(path($job->result_dir(),                               'vars.json'));
         $job->done;
         is($job->result, OpenQA::Jobs::Constants::FAILED, 'job result is failed');
-        ok(my $investigation = $job->investigate, 'job can provide investigation details');
-        ok($investigation,                        'job provides failure investigation');
-        is($investigation->{last_good}, 99997, 'previous job identified as last good');
-        like($investigation->{diff_to_last_good}, qr/^\+.*BUILD.*668/m, 'diff for job settings is shown');
-        unlike($investigation->{diff_to_last_good}, qr/JOBTOKEN/, 'special variables are not included');
-        is($investigation->{git_log}, $fake_git_log, 'git log is evaluated');
+        ok(my $inv = $job->investigate, 'job can provide investigation details');
+        ok($inv,                        'job provides failure investigation');
+        is($inv->{last_good}, 99997, 'previous job identified as last good');
+        like($inv->{diff_to_last_good}, qr/^\+.*BUILD.*668/m, 'diff for job settings is shown');
+        unlike($inv->{diff_to_last_good}, qr/JOBTOKEN/, 'special variables are not included');
+        is($inv->{git_log}, $fake_git_log, 'git log is evaluated');
+        $fake_git_log = '';
+        ok($inv = $job->investigate, 'job investigation ok for no test changes');
+        is($inv->{git_log}, 'No test changes recorded, test regression unlikely', 'git log with no test changes');
     };
 
 };
