@@ -1,10 +1,9 @@
 function handleObsRsyncAjaxError(xhr, ajaxOptions, thrownError) {
     var message = xhr.responseJSON.error;
     if (!message) {
-        message = 'no message';
+        message = thrownError ? thrownError : 'no message';
     }
     addFlash('danger', 'Error: ' + message);
-    $(controlToShow).show();
 }
 
 function fetchValue(url, element, controlToShow) {
@@ -17,41 +16,45 @@ function fetchValue(url, element, controlToShow) {
                 $(controlToShow).show();
             }
         },
-        error: handleObsRsyncAjaxError,
+        error: function(xhr, ajaxOptions, thrownError, controlToShow) {
+            handleObsRsyncAjaxError(xhr, ajaxOptions, thrownError);
+            if (controlToShow) {
+                $(controlToShow).show();
+            }
+        },
     });
 }
 
-function postAndRedrawElement(btn, id, delay, confirm_message){
-    if (confirm_message && !confirm(confirm_message)) {
-        return
+function postAndRedrawElement(btn, id, delay, confirmMessage) {
+    if (confirmMessage && !confirm(confirmMessage)) {
+        return;
     }
-    var post_url = $(btn).attr("post_url");
-    var get_url = $(btn).attr("get_url");
     $(btn).hide();
+    var cell = document.getElementById(id);
+    if (!cell) {
+        addFlash('danger', 'Internal error: Unable to find related cell.');
+        return;
+    }
     $.ajax({
-        url: post_url,
+        url: btn.dataset.posturl,
         method: 'POST',
         dataType: 'json',
         success: function(data) {
-            var cell = document.getElementById(id);
-            if (delay) {
-                if (cell) {
-                    setTimeout(function() {
-                        fetchValue(get_url, cell, btn);
-                     }, delay);
-                }
-            } else {
-                fetchValue(get_url, cell);
+            if (!delay) {
+                fetchValue(btn.dataset.geturl, cell);
+                return;
             }
+            setTimeout(function() {
+                fetchValue(btn.dataset.geturl, cell, btn);
+            }, delay);
         },
         error: handleObsRsyncAjaxError,
     });
 }
 
-function postAndRedirect(btn, redir){
-    var post_url = $(btn).attr("post_url");
+function postAndRedirect(btn, redir) {
     $.ajax({
-        url: post_url,
+        url: btn.dataset.posturl,
         method: 'POST',
         dataType: 'json',
         success: function(data) {
