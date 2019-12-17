@@ -42,9 +42,6 @@ use lib "$FindBin::Bin/lib";
 use Test::More;
 use Test::Warnings;
 use OpenQA::Utils;
-use File::Spec::Functions qw(catdir catfile);
-use Cwd qw(abs_path getcwd);
-use Minion;
 use IO::Socket::INET;
 use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
@@ -52,29 +49,16 @@ use POSIX '_exit';
 use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service);
-use OpenQA::Test::FakeWebSocketTransaction;
 use Mojo::Util qw(md5_sum);
 use OpenQA::CacheService;
 use OpenQA::CacheService::Request;
 use OpenQA::CacheService::Client;
-use OpenQA::CacheService::Task::Asset;
-use OpenQA::CacheService::Task::Sync;
 use Test::MockModule;
 
-my $sql;
-my $sth;
-my $result;
-my $dbh;
-my $filename;
-my $serverpid;
-my $openqalogs;
 my $cachedir = $ENV{OPENQA_CACHE_DIR};
-
-my $db_file = "$cachedir/cache.sqlite";
-my $logdir  = path(getcwd(), 't', 'cache.d', 'logs')->make_path;
-my $logfile = $logdir->child('cache.log');
-my $port    = Mojo::IOLoop::Server->generate_port;
-my $host    = "http://localhost:$port";
+my $db_file  = "$cachedir/cache.sqlite";
+my $port     = Mojo::IOLoop::Server->generate_port;
+my $host     = "http://localhost:$port";
 
 my $cache_client = OpenQA::CacheService::Client->new();
 
@@ -408,6 +392,9 @@ subtest 'Asset download with default usage' => sub {
     test_default_usage(922756, "sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2") for 1 .. $tot_proc;
 };
 
+# The following tests start their own workers
+$worker_cache_service->stop;
+
 subtest 'Multiple minion workers (parallel downloads, almost simulating real scenarios)' => sub {
     my $tot_proc = $ENV{STRESS_TEST} ? 100 : 10;
 
@@ -495,7 +482,7 @@ subtest 'Minion monitoring with InfluxDB' => sub {
     my $res = $ua->get($url)->result;
     is $res->body, <<'EOF', 'three workers still running';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=0i,inactive=0i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i
+openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=2i
 EOF
 
     my $app    = OpenQA::CacheService->new;
@@ -504,7 +491,7 @@ EOF
     $res = $ua->get($url)->result;
     is $res->body, <<'EOF', 'four workers running now';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=0i,inactive=0i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=4i
+openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i
 EOF
 
     $minion->add_task(test => sub { });
@@ -514,21 +501,21 @@ EOF
     $res = $ua->get($url)->result;
     is $res->body, <<'EOF', 'two jobs';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=1i,delayed=0i,failed=0i,inactive=1i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=1i,inactive=3i
+openqa_minion_workers,url=http://127.0.0.1:9530 active=1i,inactive=2i
 EOF
 
     $job->fail('test');
     $res = $ua->get($url)->result;
     is $res->body, <<'EOF', 'one job failed';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=1i,inactive=1i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=4i
+openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i
 EOF
 
     $job->retry({delay => 3600});
     $res = $ua->get($url)->result;
     is $res->body, <<'EOF', 'job is being retried';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=1i,failed=0i,inactive=2i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=4i
+openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i
 EOF
 };
 
@@ -540,6 +527,9 @@ subtest 'Concurrent downloads of the same file' => sub {
 
     my $req = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
     $cache_client->enqueue($req);
+    my $req2 = $cache_client->asset_request(id => 922757, asset => $asset, type => 'hdd', host => $host);
+    $cache_client->enqueue($req2);
+    is $req->lock, $req2->lock, 'same lock';
 
     my $worker = $app->minion->repair->worker->register;
     ok $worker->id, 'worker has an ID';
@@ -553,10 +543,6 @@ subtest 'Concurrent downloads of the same file' => sub {
     ok $status->is_processed, 'is processed';
     like $status->output, qr/Downloading "sle\-12\-SP3\-x86_64\-0368\-200_133333\@64bit.qcow2"/, 'right output';
     ok $cache_client->asset_exists('localhost', $asset), 'cached file exists';
-
-    my $req2 = $cache_client->asset_request(id => 922757, asset => $asset, type => 'hdd', host => $host);
-    $cache_client->enqueue($req2);
-    is $req->lock, $req2->lock, 'same lock';
 
     # Concurrent request for same file
     my $job2 = $worker->dequeue(0, {id => $req2->minion_id});
@@ -584,8 +570,6 @@ subtest 'Concurrent downloads of the same file' => sub {
 
 subtest 'OpenQA::CacheService::Task::Sync' => sub {
     my $worker_2 = cache_minion_worker;
-    $worker_cache_service->stop;
-
     $worker_2->start;
 
     test_sync;
