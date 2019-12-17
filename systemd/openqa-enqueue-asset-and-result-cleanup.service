@@ -1,9 +1,0 @@
-[Unit]
-Description=Enqueues an asset cleanup and a result/logs cleanup task for the openQA.
-After=postgresql.service openqa-setup-db.service
-Wants=openqa-setup-db.service
-
-[Service]
-Type=oneshot
-User=geekotest
-ExecStart=/usr/share/openqa/script/openqa eval -m production -V '[app->gru->enqueue_limit_assets(), app->gru->enqueue(limit_results_and_logs => [], {priority => 5, ttl => 172800, limit => 1})]'

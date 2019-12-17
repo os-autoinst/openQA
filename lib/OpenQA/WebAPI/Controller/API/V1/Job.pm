@@ -263,6 +263,7 @@ sub create {
         my $downloads = create_downloads_list(\%params);
         my $gru       = $self->gru;
         $gru->enqueue_download_jobs($downloads, [$job->id]);
+        $gru->enqueue_limit_assets;
         $job->calculate_blocked_by;
         OpenQA::Scheduler::Client->singleton->wakeup;
     }
