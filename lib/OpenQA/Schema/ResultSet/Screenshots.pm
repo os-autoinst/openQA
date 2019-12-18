@@ -22,6 +22,17 @@ use base 'DBIx::Class::ResultSet';
 
 use OpenQA::Utils 'log_debug';
 
+sub create_screenshot {
+    my ($self, $img) = @_;
+    my $dbh     = $self->result_source->schema->storage->dbh;
+    my $columns = 'filename, t_created';
+    my $values  = '?, now()';
+    my $options = 'ON CONFLICT DO NOTHING RETURNING id';
+    my $sth     = $dbh->prepare("INSERT INTO screenshots ($columns) VALUES($values) $options");
+    $sth->execute($img);
+    return $sth;
+}
+
 sub populate_images_to_job {
     my ($self, $imgs, $job_id) = @_;
 
@@ -29,11 +40,7 @@ sub populate_images_to_job {
     my %ids;
     for my $img (@$imgs) {
         log_debug "creating $img";
-        my $dbh = $self->result_source->schema->storage->dbh;
-        my $sth = $dbh->prepare(
-            'INSERT INTO screenshots (filename, t_created) VALUES(?, now()) ON CONFLICT DO NOTHING RETURNING id');
-        $sth->execute($img);
-        my $res = $sth->fetchrow_arrayref;
+        my $res = $self->create_screenshot($img)->fetchrow_arrayref;
         $ids{$img} = $res ? $res->[0] : $self->find({filename => $img})->id;
     }
     my @data = map { [$_, $job_id] } values %ids;
