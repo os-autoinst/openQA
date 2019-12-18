@@ -57,7 +57,7 @@ test_once '--invalid-arg', qr/Usage:/, 'invalid args also yield help', 0, 'help 
 my $args = 'https://github.com/user/repo/pull/9128 https://openqa.opensuse.org/tests/1234';
 isnt run_once($args), 0, 'without network we fail (without error)';
 # mock any external access with all arguments
-$ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my_branch"}}'; true};
+$ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my_branch"}, "body": "Lorem ipsum"}'; true};
 $ENV{curl_openqa}
   = qq{echo -e '{"TEST": "my_test", "CASEDIR": "/my/case/dir", "PRODUCTDIR": "/my/case/dir/product", "NEEDLES_DIR": "/my/case/dir/product/needles"}'; true};
 my $clone_job = 'openqa-clone-job --skip-chained-deps --within-instance https://openqa.opensuse.org ';
@@ -94,5 +94,12 @@ TODO: {
     $args .= ',https://openqa.suse.de/t1234';
     test_once $args, qr/${expected}.* 1234/s, 'multiple short URLs from different hosts point to individual hosts';
 }
+
+my $test_url = 'https://openqa.opensuse.org/tests/1107158';
+$ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my_branch"}, "body": "\@openqa: Clone ${test_url}"}'; true};
+$args             = 'https://github.com/user/repo/pull/9128';
+$expected         = $clone_job . '1107158 _GROUP=0 TEST=my_test@user/repo#my_branch BUILD=user/repo#9128 ';
+$expected_re      = qr/${expected}/s;
+test_once $args, $expected_re, 'clone-job command with test from PR description';
 
 done_testing;

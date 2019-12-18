@@ -27,11 +27,19 @@ fi
 
 curl_github="${curl_github:-"curl${AUTHENTICATED_REQUEST}"}"
 curl_openqa="${curl_openqa:-"curl"}"
+job_list="${job:-"$2"}"
 
 throw_json_error() {
     echo "in contents queried from $1:"
     echo "$2"
     exit 2
+}
+
+extract_urls_from_pr() {
+    urls=$(echo "$1" | jq -r '.body | sub("^(?<marker>@openqa: Clone )(?<url>http.*[0-9]*)"; "\(.url)")')
+    if [[ $urls == *"http"* ]]; then
+      echo "$urls"
+    fi
 }
 
 opts=$(getopt -o vhn --long verbose,dry-run,help -n 'parse-options' -- "$@") || usage
@@ -62,7 +70,6 @@ if [[ -z "$repo_name" ]] || [[ -z "$pr" ]]; then
         casedir="${casedir:-"${forked_repo_part}.git#${branch}"}"
         build="${build:-"$repo_name#$branch"}"
     fi
-
 fi
 if [[ -z "$branch" ]] || [[ -z "$repo_name" ]]; then
     pr_url=${target_repo_part/github.com/api.github.com/repos}/pulls/$pr
@@ -78,14 +85,17 @@ if [[ -z "$branch" ]] || [[ -z "$repo_name" ]]; then
     repo_name="${repo_name:-"${label%:*}/${target_repo_part##*/}"}"
     branch="${branch:-"${label##*:}"}"
     repo="${repo:-"https://github.com/${repo_name}.git"}"
+    pr_urls=$(extract_urls_from_pr "$pr_content")
+    job_list=${pr_urls:-"$job_list"}
 fi
 
 clone_job() {
     if [[ -z "$host" ]] || [[ -z "$job" ]]; then
-        local job_url="${1:?"Need 'job_url' parameter"}"
+        local job_url="${1:?"Need 'job_url' parameter (\$1)"}"
         local host=${job_url%%/t*}
         local job=${job_url##*/}
     fi
+
     if [[ -z "$testsuite" ]] || [[ -z "$needles_dir" ]] || [[ -z "$productdir" ]]; then
         local json_url=${host}/tests/${job}/file/vars.json
         local json_data
@@ -115,10 +125,11 @@ clone_job() {
     fi
 }
 
-if [[ -z "$host" ]] || [[ -z "$job" ]]; then
-    job_list="${2:?"Need 'job_url' as parameter pointing to the openQA job to clone or 'host' and 'job' variables, e.g. either 'https://openqa.opensuse.org/tests/123456' or 'https://openqa.opensuse.org' and '123456'. Argument can also be a comma-separated list of job URLs or a single host and multiple ids."}"
+if [[ -z "$host" ]] && [[ -z "$job_list" ]]; then
+    echo "Need 'job_url' as parameter pointing to the openQA job to clone or 'host' and 'job' variables, e.g. either 'https://openqa.opensuse.org/tests/123456' or 'https://openqa.opensuse.org' and '123456'. Argument can also be a comma-separated list of job URLs or a single host and multiple ids."
+    exit 1
 fi
 args=${*:3}
-IFS=',' ; for i in $job $job_list; do
+IFS=',' ; for i in $job_list; do
     clone_job "$i"
 done
