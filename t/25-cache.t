@@ -115,7 +115,7 @@ like $cache_log,   qr/Purging ".*2.qcow2" because the asset is not registered/, 
 $cache_log = '';
 
 $cache->limit(100);
-$cache->init;
+$cache->refresh;
 like $cache_log, qr/Cache size of "$cachedir" is 84 Byte, with limit 100 Byte/,
   'Cache limit/size match the expected 100/84)';
 like $cache_log, qr/Cache size 168 Byte \+ needed 0 Byte exceeds limit of 100 Byte, purging least used assets/,
@@ -136,7 +136,7 @@ $host = "http://127.0.0.1:$port";
 start_server;
 
 $cache->limit(1024);
-$cache->init;
+$cache->refresh;
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-404@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-404\@64bit.qcow2" from/, 'Asset download attempt';

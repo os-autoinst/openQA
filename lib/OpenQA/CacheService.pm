@@ -16,6 +16,8 @@
 package OpenQA::CacheService;
 use Mojo::Base 'Mojolicious';
 
+use Mojo::SQLite;
+use Mojo::File 'path';
 use OpenQA::Worker::Settings;
 use OpenQA::CacheService::Model::Cache;
 use OpenQA::CacheService::Model::Downloads;
@@ -27,6 +29,11 @@ sub startup {
 
     $self->defaults(appname => 'openQA Cache Service');
 
+    # Worker settings
+    my $global_settings = OpenQA::Worker::Settings->new->global_settings;
+    my $location        = $ENV{OPENQA_CACHE_DIR} || $global_settings->{CACHEDIRECTORY};
+    my $limit           = $global_settings->{CACHELIMIT};
+
     # Allow for very quiet tests
     $self->hook(
         before_server_start => sub {
@@ -37,17 +44,24 @@ sub startup {
     $log->unsubscribe('message') if $ENV{OPENQA_CACHE_SERVICE_QUIET};
 
     # Increase busy timeout to 5 minutes
-    $self->helper(cache => sub { state $cache = OpenQA::CacheService::Model::Cache->from_worker(log => shift->log) });
-    my $cache  = $self->cache;
-    my $sqlite = $cache->sqlite;
+    my $db_file = path($location, 'cache.sqlite');
+    my $sqlite  = Mojo::SQLite->new("sqlite:$db_file");
     $sqlite->on(
         connection => sub {
             my ($sqlite, $dbh) = @_;
             $dbh->sqlite_busy_timeout(360000);
         });
     $sqlite->migrations->name('cache_service')->from_data;
-    $cache->init;
+    $self->helper(
+        cache => sub {
+            state $cache = OpenQA::CacheService::Model::Cache->new(
+                sqlite   => $sqlite,
+                log      => shift->log,
+                location => $location,
+                defined $limit ? (limit => int($limit) * (1024**3)) : ());
+        });
     $self->helper(downloads => sub { state $dl = OpenQA::CacheService::Model::Downloads->new(sqlite => $sqlite) });
+    $self->cache->init;
 
     $self->plugin(Minion => {SQLite => $sqlite});
     $self->plugin('Minion::Admin');

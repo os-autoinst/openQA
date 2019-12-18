@@ -80,7 +80,7 @@ sub start_server {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart->restart;
     $worker_cache_service->restart;
-    sleep 2 and note 'Wait server to be reachable.' until $cache_client->info->available;
+    sleep 2 and note 'Wait for server to be reachable' until $cache_client->info->available;
     return;
 }
 

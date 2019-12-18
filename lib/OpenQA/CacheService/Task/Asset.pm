@@ -52,7 +52,7 @@ sub _cache_asset {
             $output .= "[$level] " . join "\n", @lines, '';
         });
 
-    my $cache = $app->cache->log($ctx)->init;
+    my $cache = $app->cache->log($ctx)->refresh;
     $cache->get_asset($host, {id => $id}, $type, $asset_name);
     $job->note(output => $output);
     $ctx->info('Finished download');
