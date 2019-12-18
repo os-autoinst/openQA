@@ -541,10 +541,12 @@ subtest 'Concurrent downloads of the same file' => sub {
     $job->perform;
     my $status = $cache_client->status($req);
     ok $status->is_processed, 'is processed';
+    my $info = $app->minion->job($req->minion_id)->info;
+    ok !$info->{notes}{downloading_job}, 'no linked job';
     like $status->output, qr/Downloading "sle\-12\-SP3\-x86_64\-0368\-200_133333\@64bit.qcow2"/, 'right output';
     ok $cache_client->asset_exists('localhost', $asset), 'cached file exists';
 
-    # Concurrent request for same file
+    # Concurrent request for same file (logs are shared through status API)
     my $job2 = $worker->dequeue(0, {id => $req2->minion_id});
     ok $job2, 'job dequeued';
     ok !$app->progress->is_downloading($req2->lock), 'not downloading yet';
@@ -555,12 +557,14 @@ subtest 'Concurrent downloads of the same file' => sub {
     undef $guard;
     my $status2 = $cache_client->status($req2);
     ok $status2->is_processed, 'is processed';
-    like $app->minion->job($req2->minion_id)->info->{notes}{output},
-      qr/Asset "sle.+" was downloaded by #\d+, details are therefore unavailable here/, 'right output';
+    my $info2 = $app->minion->job($req2->minion_id)->info;
+    ok $info2->{notes}{downloading_job}, 'downloading job is linked';
+    like $info2->{notes}{output}, qr/Asset "sle.+" was downloaded by #\d+, details are therefore unavailable here/,
+      'right output';
     like $status2->output, qr/Downloading "sle\-12\-SP3\-x86_64\-0368\-200_133333\@64bit.qcow2"/, 'right output';
     ok $cache_client->asset_exists('localhost', $asset), 'cached file still exists';
 
-    # Downloading job has been removed
+    # Downloading job has been removed (fallback for the rare case)
     $app->minion->job($req->minion_id)->remove;
     my $status3 = $cache_client->status($req2);
     ok $status3->is_processed, 'is processed';
@@ -593,12 +597,14 @@ subtest 'Concurrent rsync' => sub {
     $job->perform;
     my $status = $cache_client->status($req);
     ok $status->is_processed, 'is processed';
-    is $status->result,       0, 'expected result';
-    like $status->output,     qr/sending incremental file list/, 'right output';
+    is $status->result, 0, 'expected result';
+    my $info = $app->minion->job($req->minion_id)->info;
+    ok !$info->{notes}{downloading_job}, 'no linked job';
+    like $status->output, qr/sending incremental file list/, 'right output';
     ok -e $expected, 'target file exists';
     is $expected->slurp, 'foobar', 'expected content';
 
-    # Concurrent request for same file
+    # Concurrent request for same file (logs are shared through status API)
     my $job2 = $worker->dequeue(0, {id => $req2->minion_id});
     ok $job2, 'job dequeued';
     ok !$app->progress->is_downloading($req2->lock), 'not downloading yet';
@@ -610,13 +616,15 @@ subtest 'Concurrent rsync' => sub {
     my $status2 = $cache_client->status($req2);
     ok $status2->is_processed, 'is processed';
     is $status2->result, 0, 'expected result';
-    like $app->minion->job($req2->minion_id)->info->{notes}{output},
-      qr/Sync ".+" to ".+" was performed by #\d+, details are therefore unavailable here/, 'right output';
+    my $info2 = $app->minion->job($req2->minion_id)->info;
+    ok $info2->{notes}{downloading_job}, 'downloading job is linked';
+    like $info2->{notes}{output}, qr/Sync ".+" to ".+" was performed by #\d+, details are therefore unavailable here/,
+      'right output';
     like $status2->output, qr/sending incremental file list/, 'right output';
     ok -e $expected, 'target file exists';
     is $expected->slurp, 'foobar', 'expected content';
 
-    # Downloading job has been removed
+    # Downloading job has been removed (fallback for the rare case)
     $app->minion->job($req->minion_id)->remove;
     my $status3 = $cache_client->status($req2);
     ok $status3->is_processed, 'is processed';

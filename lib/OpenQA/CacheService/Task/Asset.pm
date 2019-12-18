@@ -27,9 +27,10 @@ sub _cache_asset {
 
     my $app    = $job->app;
     my $job_id = $job->id;
-
-    my $lock = $job->info->{notes}{lock};
+    my $lock   = $job->info->{notes}{lock};
     return $job->finish unless defined $asset_name && defined $type && defined $host && defined $lock;
+
+    # Handle concurrent requests gracefully and try to share logs
     my $guard = $app->progress->guard($lock, $job_id);
     unless ($guard) {
         my $id = $app->progress->downloading_job($lock);

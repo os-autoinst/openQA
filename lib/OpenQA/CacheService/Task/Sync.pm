@@ -29,9 +29,10 @@ sub _cache_tests {
 
     my $app    = $job->app;
     my $job_id = $job->id;
-
-    my $lock = $job->info->{notes}{lock};
+    my $lock   = $job->info->{notes}{lock};
     return $job->finish unless defined $from && defined $to && defined $lock;
+
+    # Handle concurrent requests gracefully and try to share logs
     my $guard = $app->progress->guard($lock, $job_id);
     unless ($guard) {
         my $id = $app->progress->downloading_job($lock);
@@ -45,11 +46,12 @@ sub _cache_tests {
     $ctx->info(qq{Sync: "$from" to "$to"});
 
     my @cmd = (qw(rsync -avHP), "$from/", qw(--delete), "$to/tests/");
-    $ctx->info('Calling: ' . join(' ', @cmd));
+    my $cmd = join ' ', @cmd;
+    $ctx->info("Calling: $cmd");
     my $output = `@cmd`;
     my $status = $? >> 8;
     $job->finish($status);
-    $job->note(output => $output);
+    $job->note(output => "[info] [#$job_id] Calling: $cmd\n$output");
     $ctx->info("Finished sync: $status");
 }
 
