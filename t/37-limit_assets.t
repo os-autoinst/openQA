@@ -25,7 +25,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use Test::MockModule;
-use Test::Output qw(stdout_like stdout_from combined_like);
+use Test::Output qw(stdout_like stdout_from);
 use OpenQA::Test::Case;
 use OpenQA::Task::Asset::Limit;
 use OpenQA::Utils;
