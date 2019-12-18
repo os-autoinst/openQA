@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Mojo::Base -strict;
 
 my $tempdir;
 BEGIN {
@@ -86,13 +85,13 @@ sub start_server {
 }
 
 sub test_default_usage {
-    my ($id, $a) = @_;
-    my $asset_request = $cache_client->asset_request(id => $id, asset => $a, type => 'hdd', host => $host);
+    my ($id, $asset) = @_;
+    my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
     if ($cache_client->enqueue($asset_request)) {
         sleep .1 until $cache_client->status($asset_request)->is_processed;
     }
-    ok($cache_client->asset_exists('localhost', $a), "Asset $a downloaded");
+    ok($cache_client->asset_exists('localhost', $asset), "Asset $asset downloaded");
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
 }
 
@@ -121,9 +120,9 @@ sub test_sync {
 }
 
 sub test_download {
-    my ($id, $a) = @_;
-    unlink path($cachedir)->child($a);
-    my $asset_request = $cache_client->asset_request(id => $id, asset => $a, type => 'hdd', host => $host);
+    my ($id, $asset) = @_;
+    unlink path($cachedir)->child($asset);
+    my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
     ok $cache_client->enqueue($asset_request), 'enqueued';
 
@@ -133,7 +132,7 @@ sub test_download {
     # And then goes to PROCESSED state
     ok $status->is_processed, 'only other state is processed';
 
-    ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded');
+    ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded');
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
 }
 
@@ -307,14 +306,14 @@ subtest 'Asset download' => sub {
 };
 
 subtest 'Race for same asset' => sub {
+    my $asset = 'sle-12-SP3-x86_64-0368-200_123200@64bit.qcow2';
 
-    my $a = 'sle-12-SP3-x86_64-0368-200_123200@64bit.qcow2';
+    my $asset_request = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
 
-    my $asset_request = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
-
-    my $sum = md5_sum(path($cachedir, 'localhost')->child($a)->slurp);
-    unlink path($cachedir, 'localhost')->child($a)->to_string;
-    ok(!$cache_client->asset_exists('localhost', $a), 'Asset absent') or die diag "Asset already exists - abort test";
+    my $sum = md5_sum(path($cachedir, 'localhost')->child($asset)->slurp);
+    unlink path($cachedir, 'localhost')->child($asset)->to_string;
+    ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
+      or die diag "Asset already exists - abort test";
 
     my $tot_proc   = $ENV{STRESS_TEST} ? 100 : 10;
     my $concurrent = $ENV{STRESS_TEST} ? 30  : 2;
@@ -327,7 +326,7 @@ subtest 'Race for same asset' => sub {
             sleep .1 until $cache_client->status($asset_request)->is_processed;
             Devel::Cover::report() if Devel::Cover->can('report');
 
-            return 1 if $cache_client->asset_exists('localhost', $a);
+            return 1 if $cache_client->asset_exists('localhost', $asset);
             return 0;
         }
     };
@@ -341,50 +340,53 @@ subtest 'Race for same asset' => sub {
             is $_->return_status, 1, "Asset exists after worker got released from cache service" or die diag explain $_;
         });
 
-    ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded') or die diag "Failed - no asset is there";
-    is($sum, md5_sum(path($cachedir, 'localhost')->child($a)->slurp), 'Download not corrupted');
+    ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded') or die diag "Failed - no asset is there";
+    is($sum, md5_sum(path($cachedir, 'localhost')->child($asset)->slurp), 'Download not corrupted');
 };
 
 subtest 'Default usage' => sub {
-    my $a             = 'sle-12-SP3-x86_64-0368-200_1000@64bit.qcow2';
-    my $asset_request = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
+    my $asset         = 'sle-12-SP3-x86_64-0368-200_1000@64bit.qcow2';
+    my $asset_request = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
 
-    unlink path($cachedir)->child($a);
-    ok(!$cache_client->asset_exists('localhost', $a), 'Asset absent') or die diag "Asset already exists - abort test";
+    unlink path($cachedir)->child($asset);
+    ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
+      or die diag "Asset already exists - abort test";
 
     if ($cache_client->enqueue($asset_request)) {
         sleep .1 until $cache_client->status($asset_request)->is_processed;
         my $out = $cache_client->status($asset_request)->output;
         ok($out, 'Output should be present') or die diag $out;
-        like $out, qr/Downloading "$a" from/, "Asset download attempt logged";
-        ok(-e path($cachedir, 'localhost')->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
+        like $out, qr/Downloading "$asset" from/, "Asset download attempt logged";
+        ok(-e path($cachedir, 'localhost')->child($asset), 'Asset downloaded') or die diag "Failed - no asset is there";
     }
     else {
         fail("Failed enqueuing download");
     }
 
-    ok(-e path($cachedir, 'localhost')->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
+    ok(-e path($cachedir, 'localhost')->child($asset), 'Asset downloaded') or die diag "Failed - no asset is there";
 };
 
 subtest 'Small assets causes racing when releasing locks' => sub {
-    my $a             = 'sle-12-SP3-x86_64-0368-200_1@64bit.qcow2';
-    my $asset_request = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
+    my $asset         = 'sle-12-SP3-x86_64-0368-200_1@64bit.qcow2';
+    my $asset_request = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
 
-    unlink path($cachedir)->child($a);
-    ok(!$cache_client->asset_exists('localhost', $a), 'Asset absent') or die diag "Asset already exists - abort test";
+    unlink path($cachedir)->child($asset);
+    ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
+      or die diag "Asset already exists - abort test";
 
     if ($cache_client->enqueue($asset_request)) {
         1 until $cache_client->status($asset_request)->is_processed;
         my $out = $cache_client->status($asset_request)->output;
         ok($out, 'Output should be present') or die diag $out;
-        like $out, qr/Downloading "$a" from/, "Asset download attempt logged";
-        ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded') or die diag "Failed - no asset is there";
+        like $out, qr/Downloading "$asset" from/, "Asset download attempt logged";
+        ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded')
+          or die diag "Failed - no asset is there";
     }
     else {
         fail("Failed enqueuing download");
     }
 
-    ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded') or die diag "Failed - no asset is there";
+    ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded') or die diag "Failed - no asset is there";
 };
 
 subtest 'Asset download with default usage' => sub {
@@ -431,12 +433,12 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
 };
 
 subtest 'Test Minion task registration and execution' => sub {
-    my $a = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
+    my $asset = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
 
     my $app = OpenQA::CacheService->new;
     fix_coverage($app);
 
-    my $req = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
+    my $req = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
     $cache_client->enqueue($req);
     my $worker = $app->minion->repair->worker->register;
     ok($worker->id, 'worker has an ID');
@@ -446,7 +448,7 @@ subtest 'Test Minion task registration and execution' => sub {
     my $status = $cache_client->status($req);
     ok $status->is_processed;
     ok $status->output;
-    ok $cache_client->asset_exists('localhost', $a);
+    ok $cache_client->asset_exists('localhost', $asset);
 };
 
 subtest 'Test Minion Sync task' => sub {

@@ -58,8 +58,8 @@ sub la {
     return unless $ENV{HARNESS_IS_VERBOSE};
     $t->get_ok('/api/v1/assets')->status_is(200);
     my @assets = @{$t->tx->res->json->{assets}};
-    for my $a (@assets) {
-        printf "%d %-5s %s\n", $a->{id}, $a->{type}, $a->{name};
+    for my $asset (@assets) {
+        printf "%d %-5s %s\n", $asset->{id}, $asset->{type}, $asset->{name};
     }
 }
 
