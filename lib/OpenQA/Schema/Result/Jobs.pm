@@ -1053,26 +1053,21 @@ sub update_backend {
 sub insert_module {
     my ($self, $tm) = @_;
 
-    my $flags = $tm->{flags};
-    try {
-        $self->modules->create(
-            {
-                name     => $tm->{name},
-                category => $tm->{category},
-                script   => $tm->{script},
-
-                # we have 'important' in the db but 'ignore_failure' in the flags
-                # for historical reasons...see #1266
-                milestone       => $flags->{milestone}       ? 1 : 0,
-                important       => $flags->{ignore_failure}  ? 0 : 1,
-                fatal           => $flags->{fatal}           ? 1 : 0,
-                always_rollback => $flags->{always_rollback} ? 1 : 0,
-            });
-    }
-    catch {
-        my $err = $_;
-        die $err unless $err =~ /job_modules_job_id_name_category_script/;
-    };
+    my $name     = $tm->{name};
+    my $script   = $tm->{script};
+    my $category = $tm->{category};
+    my $flags    = $tm->{flags};
+    # we have 'important' in the db but 'ignore_failure' in the flags
+    # for historical reasons...see #1266
+    my $milestone       = $flags->{milestone}       ? 1 : 0;
+    my $important       = $flags->{ignore_failure}  ? 0 : 1;
+    my $fatal           = $flags->{fatal}           ? 1 : 0;
+    my $always_rollback = $flags->{always_rollback} ? 1 : 0;
+    my $dbh             = $self->result_source->schema->storage->dbh;
+    my $columns = 'job_id, name, script, category, t_created, t_updated, milestone, important, fatal, always_rollback';
+    my $values  = '?, ?, ?, ?, now(), now(), ?, ?, ?, ?';
+    my $sth     = $dbh->prepare("INSERT INTO job_modules ($columns) VALUES($values) ON CONFLICT DO NOTHING");
+    $sth->execute($self->id, $name, $script, $category, $milestone, $important, $fatal, $always_rollback);
 }
 
 sub insert_test_modules {
