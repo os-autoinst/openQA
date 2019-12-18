@@ -111,7 +111,7 @@ sub _limit {
             else {
                 my $limit          = $age->add(days => $limit_in_days);
                 my $remaining_days = $now->delta_days($limit)->in_units('days');
-                OpenQA::Utils::log_warning(
+                OpenQA::Utils::log_info(
                     "Asset $asset_name is not in any job group and will be deleted in $remaining_days days");
             }
         }
