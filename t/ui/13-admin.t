@@ -532,12 +532,12 @@ subtest 'edit job templates' => sub() {
     $driver->find_element_by_id('preview-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/Preview of the changes/, 'preview shown') or diag explain $result->get_text();
-    ok(index($result->get_text(), '@@ -41,3 +41,6 @@') != -1, 'diff of changes shown')
+    ok(index($result->get_text(), '@@ -42,3 +42,6 @@') != -1, 'diff of changes shown')
       or diag explain $result->get_text();
     $driver->find_element_by_id('save-template')->click();
     wait_for_ajax;
     like($result->get_text(), qr/YAML saved!/, 'saving confirmed') or diag explain $result->get_text();
-    ok(index($result->get_text(), '@@ -41,3 +41,6 @@') != -1, 'diff of changes shown')
+    ok(index($result->get_text(), '@@ -42,3 +42,6 @@') != -1, 'diff of changes shown')
       or diag explain $result->get_text();
 
     # No changes

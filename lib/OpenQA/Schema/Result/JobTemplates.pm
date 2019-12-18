@@ -41,6 +41,10 @@ __PACKAGE__->add_columns(
         data_type     => 'text',
         default_value => '',
     },
+    description => {
+        data_type     => 'text',
+        default_value => '',
+    },
     prio => {
         data_type   => 'integer',
         is_nullable => 1,

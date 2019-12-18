@@ -51,6 +51,9 @@ properties:
                         type: string
                         pattern: "^[A-Za-z\\s0-9_*.+-]+$"
                         description: The test suite this scenario is based on if a custom job template name was used
+                      description:
+                        type: string
+                        description: The description of the job template
   defaults:
     description: A set of architectures with default configurations
     type: object

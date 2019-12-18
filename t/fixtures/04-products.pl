@@ -91,7 +91,13 @@ use warnings;
             },
         ],
         job_templates => [
-            {machine => {name => '32bit'}, test_suite => {name => 'textmode'}, prio => 40, group_id => 1001},
+            {
+                machine     => {name => '32bit'},
+                test_suite  => {name => 'textmode'},
+                prio        => 40,
+                group_id    => 1001,
+                description => '32bit textmode prio 40'
+            },
             {machine => {name => '64bit'}, test_suite => {name => 'textmode'}, prio => 40, group_id => 1001},
             {machine => {name => '64bit'}, test_suite => {name => 'kde'},      prio => 40, group_id => 1001},
             {machine => {name => '32bit'}, test_suite => {name => 'client1'},  prio => 40, group_id => 1001},
