@@ -216,8 +216,8 @@ follows the most common Perl style conventions.
   CI tests *after* the PR adding these dependencies has been merged. Besides, the
   build of that container must not be broken (see
   https://build.opensuse.org/package/show/devel:openQA/openQA[build results on OBS]).
-* The os-autoinst repository uses the same container as the openQA repository
-  which is made using +docker/travis_test/Dockerfile+ within the openQA repository.
+* The os-autoinst repository uses the container made using
+  +docker/travis_test/Dockerfile+ within the openQA repository.
 
 [[update-asset-cache]]
 === Update asset cache for openSUSE RPM package
