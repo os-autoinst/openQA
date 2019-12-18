@@ -20,12 +20,12 @@ use Mojo::Base -strict;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use Mojo::File;
+use Mojo::File 'path';
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use Test::MockModule;
-use Test::Output qw(stdout_like stdout_from);
+use Test::Output qw(stdout_like stdout_from combined_like);
 use OpenQA::Test::Case;
 use OpenQA::Task::Asset::Limit;
 use OpenQA::Utils;
@@ -45,16 +45,57 @@ delete $ENV{OPENQA_LOGFILE};
 # init test case
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $t      = Test::Mojo->new('OpenQA::WebAPI');
+my $schema = $t->app->schema;
 
 note("Asset directory: $OpenQA::Utils::assetdir");
+
+subtest 'filesystem removal' => sub {
+    my $assets        = $schema->resultset('Assets');
+    my $asset_sub_dir = path($OpenQA::Utils::assetdir, 'foo');
+    $asset_sub_dir->make_path;
+
+    subtest 'remove file' => sub {
+        my $asset_path = path($asset_sub_dir, 'foo.txt');
+        $asset_path->spurt('foo');
+        stdout_like(
+            sub {
+                $assets->create({type => 'foo', name => 'foo.txt', size => 3})->delete;
+            },
+            qr/removed $asset_path/,
+            'removal logged',
+        );
+        ok(!-e $asset_path, 'asset is gone');
+    };
+    subtest 'remove directory tree' => sub {
+        my $asset_path = path($asset_sub_dir, 'some-repo');
+        $asset_path->make_path;
+        path($asset_path, 'repo-file')->spurt('a file within the repo');
+        stdout_like(
+            sub {
+                $assets->create({type => 'foo', name => 'some-repo', size => 3})->delete;
+            },
+            qr/removed $asset_path/,
+            'removal logged',
+        );
+        ok(!-e $asset_path, 'asset is gone');
+    };
+    subtest 'removal skipped' => sub {
+        stdout_like(
+            sub {
+                $assets->create({type => 'foo', name => 'some-repo', size => 3})->delete;
+            },
+            qr/skipping removal of foo\/some-repo/,
+            'skpping logged',
+        );
+    };
+};
 
 # ensure Core-7.2.iso exists (usually created by t/14-grutasks.t anyways)
 my $core72iso_path = "$OpenQA::Utils::assetdir/iso/Core-7.2.iso";
 Mojo::File->new($core72iso_path)->spurt('foo') unless (-f $core72iso_path);
 
 # scan initially for untracked assets and refresh
-my $schema = $t->app->schema;
 $schema->resultset('Assets')->scan_for_untracked_assets();
 $schema->resultset('Assets')->refresh_assets();
 

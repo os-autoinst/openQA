@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ use Date::Format;
 use Archive::Extract;
 use File::Basename;
 use File::Spec::Functions qw(catfile splitpath);
+use File::Path 'remove_tree';
 use Mojo::UserAgent;
 use Mojo::URL;
 use Try::Tiny;
@@ -112,15 +113,18 @@ sub is_fixed {
 sub remove_from_disk {
     my ($self) = @_;
 
-    my $file = $self->disk_file;
-    OpenQA::Utils::log_info("GRU: removing $file");
-    if ($self->type eq 'iso' || $self->type eq 'hdd') {
-        return unless -f $file;
-        unlink($file) || die "can't remove $file";
+    my $type = $self->type;
+    my $name = $self->name;
+    my $file = locate_asset($type, $name, mustexist => 1);
+    if (!defined $file) {
+        OpenQA::Utils::log_info("GRU: skipping removal of $type/$name; it does not exist anyways");
+        return undef;
     }
-    elsif ($self->type eq 'repo') {
-        use File::Path 'remove_tree';
-        remove_tree($file) || print "can't remove $file\n";
+    if (-f $file ? unlink($file) : remove_tree($file)) {
+        OpenQA::Utils::log_info("GRU: removed $file");
+    }
+    else {
+        OpenQA::Utils::log_error("GRU: unable to remove $file");
     }
 }
 
