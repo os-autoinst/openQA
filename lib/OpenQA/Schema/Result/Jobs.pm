@@ -1810,13 +1810,18 @@ sub git_diff {
     return "\n" . $res->{stderr} if $res->{stderr};
 }
 
-=head2 investigate
+sub investigate {
+    my $self = shift;
+    return $self->{investigate} ||= $self->_investigate(@_);
+}
+
+=head2 _investigate
 
 Find pointers for investigation on failures, e.g. what changed vs. a "last
 good" job in the same scenario.
 
 =cut
-sub investigate {
+sub _investigate {
     my ($self, %args) = @_;
     my @previous = $self->_previous_scenario_jobs;
     return {error => 'No previous job in this scenario, cannot provide hints'} unless @previous;

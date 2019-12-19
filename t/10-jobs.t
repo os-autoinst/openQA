@@ -418,7 +418,8 @@ subtest 'carry over, including soft-fails' => sub {
         is($inv->{test_log},    $fake_git_log, 'test git log is evaluated');
         is($inv->{needles_log}, $fake_git_log, 'needles git log is evaluated');
         $fake_git_log = '';
-        ok($inv = $job->investigate, 'job investigation ok for no test changes');
+        is($job->investigate->{test_log}, $inv->{test_log}, 'investigate caches per-job, git log not updated');
+        ok($inv = $job->_investigate, 'job investigation ok for no test changes');
         is($inv->{test_log}, 'No test changes recorded, test regression unlikely', 'git log with no test changes');
     };
 
