@@ -27,7 +27,7 @@ use Mojo::File 'path';
 
 has host      => 'http://127.0.0.1:' . service_port('cache_service');
 has cache_dir => sub { $ENV{OPENQA_CACHE_DIR} || OpenQA::Worker::Settings->new->global_settings->{CACHEDIRECTORY} };
-has ua        => sub { Mojo::UserAgent->new };
+has ua        => sub { Mojo::UserAgent->new(inactivity_timeout => 300) };
 
 sub info {
     my $self = shift;
