@@ -1801,7 +1801,8 @@ sub git_log_diff {
     my $res = run_cmd_with_log_return_error(
         [
             'git', '-C', testcasedir($self->DISTRI, $self->VERSION),
-            'log', '--pretty=oneline', '--abbrev-commit', "$before->{TEST_GIT_HASH}..$after->{TEST_GIT_HASH}"
+            'log', '--pretty=oneline', '--abbrev-commit', '--no-merges',
+            "$before->{TEST_GIT_HASH}..$after->{TEST_GIT_HASH}"
         ]);
     # regardless of success or not the output contains the information we need
     return $res->{stderr};
