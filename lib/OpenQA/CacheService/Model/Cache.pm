@@ -21,59 +21,42 @@ use File::Basename;
 use Fcntl ':flock';
 use Mojo::UserAgent;
 use OpenQA::Utils qw(base_host human_readable_size);
-use OpenQA::Worker::Settings;
-use Mojo::SQLite;
 use Mojo::File 'path';
-use Mojo::Log;
 use POSIX;
 
-has [qw(cache location dsn)];
+has [qw(location log sqlite)];
 has limit      => 50 * (1024**3);
-has log        => sub { Mojo::Log->new };
 has sleep_time => 5;
-has sqlite     => sub { Mojo::SQLite->new };
 has ua         => sub { Mojo::UserAgent->new(max_redirects => 2, max_response_size => 0) };
-
-sub from_worker {
-    my $class = shift;
-
-    my $global_settings = OpenQA::Worker::Settings->new->global_settings;
-    return $class->new(
-        host     => 'localhost',
-        location => ($ENV{OPENQA_CACHE_DIR} || $global_settings->{CACHEDIRECTORY}),
-        exists $global_settings->{CACHELIMIT} ? (limit => int($global_settings->{CACHELIMIT}) * (1024**3)) : (), @_
-    );
-}
-
-sub _deploy_cache {
-    my $self = shift;
-
-    my $location = $self->location;
-    $self->log->info(qq{Creating cache directory tree for "$location"});
-    path($location)->remove_tree({keep_root => 1});
-    path($location, 'tmp')->make_path;
-}
 
 sub init {
     my $self = shift;
 
     my $location = $self->location;
-    my $log      = $self->log;
-
-    my $db_file = path($location, 'cache.sqlite');
-    $self->sqlite->from_string("sqlite:$db_file");
-    $self->_deploy_cache unless -e $db_file;
-    eval { $self->sqlite->migrations->name('cache_service')->from_data->migrate };
+    my $db_file  = path($location, 'cache.sqlite');
+    unless (-e $db_file) {
+        $self->log->info(qq{Creating cache directory tree for "$location"});
+        path($location)->remove_tree({keep_root => 1});
+        path($location, 'tmp')->make_path;
+    }
+    eval { $self->sqlite->migrations->migrate };
     if (my $err = $@) {
         croak qq{Deploying cache database to "$db_file" failed}
           . qq{ (Maybe the file is corrupted and needs to be deleted?): $err};
     }
 
+    return $self->refresh;
+}
+
+sub refresh {
+    my $self = shift;
+
     $self->cache_sync;
     $self->_check_limits(0);
     my $cache_size = human_readable_size($self->{cache_real_size});
     my $limit_size = human_readable_size($self->limit);
-    $log->info(qq{Cache size of "$location" is $cache_size, with limit $limit_size});
+    my $location   = $self->location;
+    $self->log->info(qq{Cache size of "$location" is $cache_size, with limit $limit_size});
 
     return $self;
 }
@@ -319,17 +302,3 @@ sub _check_limits {
 }
 
 1;
-
-__DATA__
-@@ cache_service
--- 1 up
-CREATE TABLE IF NOT EXISTS assets (
-    `etag` TEXT,
-    `size` INTEGER,
-    `last_use` DATETIME NOT NULL,
-    `filename` TEXT NOT NULL UNIQUE,
-    PRIMARY KEY(`filename`)
-);
-
--- 1 down
-DROP TABLE assets;

@@ -25,19 +25,23 @@ sub register {
 sub _cache_asset {
     my ($job, $id, $type, $asset_name, $host) = @_;
 
-    my $app = $job->app;
-
-    my $lock = $job->info->{notes}{lock};
+    my $app    = $job->app;
+    my $job_id = $job->id;
+    my $lock   = $job->info->{notes}{lock};
     return $job->finish unless defined $asset_name && defined $type && defined $host && defined $lock;
-    my $guard = $app->progress->guard($lock);
+
+    # Handle concurrent requests gracefully and try to share logs
+    my $guard = $app->progress->guard($lock, $job_id);
     unless ($guard) {
-        $job->note(
-            output => qq{Asset "$asset_name" was downloaded by another job, details are therefore unavailable here});
+        my $id = $app->progress->downloading_job($lock);
+        $job->note(downloading_job => $id);
+        $id ||= 'unknown';
+        $job->note(output => qq{Asset "$asset_name" was downloaded by #$id, details are therefore unavailable here});
         return $job->finish;
     }
 
     my $log = $app->log;
-    my $ctx = $log->context('[#' . $job->id . ']');
+    my $ctx = $log->context("[#$job_id]");
     $ctx->info(qq{Downloading: "$asset_name"});
 
     # Log messages need to be logged by this service as well as captured and
@@ -49,7 +53,7 @@ sub _cache_asset {
             $output .= "[$level] " . join "\n", @lines, '';
         });
 
-    my $cache = $app->cache->log($ctx)->init;
+    my $cache = $app->cache->log($ctx)->refresh;
     $cache->get_asset($host, {id => $id}, $type, $asset_name);
     $job->note(output => $output);
     $ctx->info('Finished download');

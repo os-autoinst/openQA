@@ -21,8 +21,14 @@ sub register {
     my ($self, $app) = @_;
 
     # To determine download progress and guard against parallel downloads of the same file
-    $app->helper('progress.is_downloading' => \&_progress_is_downloading);
-    $app->helper('progress.guard'          => \&_progress_guard);
+    $app->helper('progress.downloading_job' => \&_progress_downloading_job);
+    $app->helper('progress.is_downloading'  => \&_progress_is_downloading);
+    $app->helper('progress.guard'           => \&_progress_guard);
+}
+
+sub _progress_downloading_job {
+    my ($c, $lock) = @_;
+    return $c->downloads->find($lock);
 }
 
 sub _progress_is_downloading {
@@ -31,8 +37,10 @@ sub _progress_is_downloading {
 }
 
 sub _progress_guard {
-    my ($c, $lock) = @_;
-    return $c->minion->guard("cache_$lock", 432000);
+    my ($c, $lock, $job_id) = @_;
+    my $guard = $c->minion->guard("cache_$lock", 86400);
+    $c->downloads->add($lock, $job_id) if $guard;
+    return $guard;
 }
 
 1;

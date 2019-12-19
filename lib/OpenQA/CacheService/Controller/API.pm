@@ -29,14 +29,22 @@ sub status {
       unless my $job = $self->minion->job($id);
     return $self->render(json => {error => 'Job info not available'}, status => 404)
       unless my $info = $job->info;
+    my $status = {status => 'downloading'};
 
     # Our Minion job will finish early if another job is already downloading,
     # so we have to check if the lock has been released yet too
     my $processed = $info->{state} eq 'finished' || $info->{state} eq 'failed';
-    return $self->render(json => {status => 'processed', result => $info->{result}, output => $info->{notes}{output}})
-      if $processed && !$self->progress->is_downloading($info->{notes}{lock});
+    if ($processed && !$self->progress->is_downloading($info->{notes}{lock})) {
+        $status = {status => 'processed', result => $info->{result}, output => $info->{notes}{output}};
 
-    $self->render(json => {status => 'downloading'});
+        # Output from the job that actually did the download
+        my $id = $info->{notes}{downloading_job};
+        if ($id && (my $job = $self->minion->job($id))) {
+            if (my $info = $job->info) { $status->{output} = $info->{notes}{output} }
+        }
+    }
+
+    $self->render(json => $status);
 }
 
 sub enqueue {

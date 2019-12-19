@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-use strict;
-use warnings;
+use Mojo::Base -strict;
 
 my $tempdir;
 BEGIN {
@@ -42,9 +41,6 @@ use lib "$FindBin::Bin/lib";
 use Test::More;
 use Test::Warnings;
 use OpenQA::Utils;
-use File::Spec::Functions qw(catdir catfile);
-use Cwd qw(abs_path getcwd);
-use Minion;
 use IO::Socket::INET;
 use Mojo::Server::Daemon;
 use Mojo::IOLoop::Server;
@@ -52,29 +48,16 @@ use POSIX '_exit';
 use Mojo::IOLoop::ReadWriteProcess qw(queue process);
 use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils qw(fake_asset_server cache_minion_worker cache_worker_service);
-use OpenQA::Test::FakeWebSocketTransaction;
 use Mojo::Util qw(md5_sum);
 use OpenQA::CacheService;
 use OpenQA::CacheService::Request;
 use OpenQA::CacheService::Client;
-use OpenQA::CacheService::Task::Asset;
-use OpenQA::CacheService::Task::Sync;
 use Test::MockModule;
 
-my $sql;
-my $sth;
-my $result;
-my $dbh;
-my $filename;
-my $serverpid;
-my $openqalogs;
 my $cachedir = $ENV{OPENQA_CACHE_DIR};
-
-my $db_file = "$cachedir/cache.sqlite";
-my $logdir  = path(getcwd(), 't', 'cache.d', 'logs')->make_path;
-my $logfile = $logdir->child('cache.log');
-my $port    = Mojo::IOLoop::Server->generate_port;
-my $host    = "http://localhost:$port";
+my $db_file  = "$cachedir/cache.sqlite";
+my $port     = Mojo::IOLoop::Server->generate_port;
+my $host     = "http://localhost:$port";
 
 my $cache_client = OpenQA::CacheService::Client->new();
 
@@ -97,18 +80,18 @@ sub start_server {
     $server_instance->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart;
     $cache_service->set_pipes(0)->separate_err(0)->blocking_stop(1)->channels(0)->restart->restart;
     $worker_cache_service->restart;
-    sleep 2 and note 'Wait server to be reachable.' until $cache_client->info->available;
+    sleep 2 and note 'Wait for server to be reachable' until $cache_client->info->available;
     return;
 }
 
 sub test_default_usage {
-    my ($id, $a) = @_;
-    my $asset_request = $cache_client->asset_request(id => $id, asset => $a, type => 'hdd', host => $host);
+    my ($id, $asset) = @_;
+    my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
     if ($cache_client->enqueue($asset_request)) {
         sleep .1 until $cache_client->status($asset_request)->is_processed;
     }
-    ok($cache_client->asset_exists('localhost', $a), "Asset $a downloaded");
+    ok($cache_client->asset_exists('localhost', $asset), "Asset $asset downloaded");
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
 }
 
@@ -137,9 +120,9 @@ sub test_sync {
 }
 
 sub test_download {
-    my ($id, $a) = @_;
-    unlink path($cachedir)->child($a);
-    my $asset_request = $cache_client->asset_request(id => $id, asset => $a, type => 'hdd', host => $host);
+    my ($id, $asset) = @_;
+    unlink path($cachedir)->child($asset);
+    my $asset_request = $cache_client->asset_request(id => $id, asset => $asset, type => 'hdd', host => $host);
 
     ok $cache_client->enqueue($asset_request), 'enqueued';
 
@@ -149,7 +132,7 @@ sub test_download {
     # And then goes to PROCESSED state
     ok $status->is_processed, 'only other state is processed';
 
-    ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded');
+    ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded');
     ok($asset_request->minion_id, "Minion job id recorded in the request object") or die diag explain $asset_request;
 }
 
@@ -273,12 +256,31 @@ subtest 'Increased SQLite busy timeout' => sub {
 
 subtest 'Job progress (guard against parallel downloads of the same file)' => sub {
     my $app = OpenQA::CacheService->new;
-    ok !$app->progress->is_downloading('foo'), 'Queue works';
-    my $guard = $app->progress->guard('foo');
-    ok $app->progress->is_downloading('foo'), 'Queue works';
-    ok $app->progress->is_downloading('foo'), 'Queue works';
+    ok !$app->progress->is_downloading('foo'), 'not downloading';
+    is $app->progress->downloading_job('foo'), undef, 'no job';
+    my $guard = $app->progress->guard('foo', 123);
+    ok $app->progress->is_downloading('foo'),  'is downloading';
+    is $app->progress->downloading_job('foo'), 123, 'has job';
+    ok $app->progress->is_downloading('foo'),  'still downloading';
     undef $guard;
-    ok !$app->progress->is_downloading('foo'), 'Dequeue works';
+    ok !$app->progress->is_downloading('foo'), 'not downloading anymore';
+
+    $guard = $app->progress->guard('foo', 124);
+    ok $app->progress->is_downloading('foo'), 'is downloading again';
+    is $app->progress->downloading_job('foo'), 124, 'new job';
+    undef $guard;
+    $guard = $app->progress->guard('foo', 125);
+    ok $app->progress->is_downloading('foo'), 'is downloading again';
+    is $app->progress->downloading_job('foo'), 125, 'new job';
+    undef $guard;
+
+    is $app->downloads->sqlite->db->select('downloads', '*', {lock => 'foo'})->hashes->size, 3, 'three entries';
+    $app->downloads->sqlite->db->update('downloads', {created => \'datetime(\'now\',\'-3 day\')'});
+    $guard = $app->progress->guard('foo', 126);
+    ok $app->progress->is_downloading('foo'), 'is downloading again';
+    is $app->progress->downloading_job('foo'), 126, 'new job';
+    is $app->downloads->sqlite->db->select('downloads', '*', {lock => 'foo'})->hashes->size, 1,
+      'old jobs have been removed';
 };
 
 subtest 'Client can check if there are available workers' => sub {
@@ -304,14 +306,14 @@ subtest 'Asset download' => sub {
 };
 
 subtest 'Race for same asset' => sub {
+    my $asset = 'sle-12-SP3-x86_64-0368-200_123200@64bit.qcow2';
 
-    my $a = 'sle-12-SP3-x86_64-0368-200_123200@64bit.qcow2';
+    my $asset_request = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
 
-    my $asset_request = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
-
-    my $sum = md5_sum(path($cachedir, 'localhost')->child($a)->slurp);
-    unlink path($cachedir, 'localhost')->child($a)->to_string;
-    ok(!$cache_client->asset_exists('localhost', $a), 'Asset absent') or die diag "Asset already exists - abort test";
+    my $sum = md5_sum(path($cachedir, 'localhost')->child($asset)->slurp);
+    unlink path($cachedir, 'localhost')->child($asset)->to_string;
+    ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
+      or die diag "Asset already exists - abort test";
 
     my $tot_proc   = $ENV{STRESS_TEST} ? 100 : 10;
     my $concurrent = $ENV{STRESS_TEST} ? 30  : 2;
@@ -324,7 +326,7 @@ subtest 'Race for same asset' => sub {
             sleep .1 until $cache_client->status($asset_request)->is_processed;
             Devel::Cover::report() if Devel::Cover->can('report');
 
-            return 1 if $cache_client->asset_exists('localhost', $a);
+            return 1 if $cache_client->asset_exists('localhost', $asset);
             return 0;
         }
     };
@@ -338,56 +340,62 @@ subtest 'Race for same asset' => sub {
             is $_->return_status, 1, "Asset exists after worker got released from cache service" or die diag explain $_;
         });
 
-    ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded') or die diag "Failed - no asset is there";
-    is($sum, md5_sum(path($cachedir, 'localhost')->child($a)->slurp), 'Download not corrupted');
+    ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded') or die diag "Failed - no asset is there";
+    is($sum, md5_sum(path($cachedir, 'localhost')->child($asset)->slurp), 'Download not corrupted');
 };
 
 subtest 'Default usage' => sub {
-    my $a             = 'sle-12-SP3-x86_64-0368-200_1000@64bit.qcow2';
-    my $asset_request = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
+    my $asset         = 'sle-12-SP3-x86_64-0368-200_1000@64bit.qcow2';
+    my $asset_request = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
 
-    unlink path($cachedir)->child($a);
-    ok(!$cache_client->asset_exists('localhost', $a), 'Asset absent') or die diag "Asset already exists - abort test";
+    unlink path($cachedir)->child($asset);
+    ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
+      or die diag "Asset already exists - abort test";
 
     if ($cache_client->enqueue($asset_request)) {
         sleep .1 until $cache_client->status($asset_request)->is_processed;
         my $out = $cache_client->status($asset_request)->output;
         ok($out, 'Output should be present') or die diag $out;
-        like $out, qr/Downloading "$a" from/, "Asset download attempt logged";
-        ok(-e path($cachedir, 'localhost')->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
+        like $out, qr/Downloading "$asset" from/, "Asset download attempt logged";
+        ok(-e path($cachedir, 'localhost')->child($asset), 'Asset downloaded') or die diag "Failed - no asset is there";
     }
     else {
         fail("Failed enqueuing download");
     }
 
-    ok(-e path($cachedir, 'localhost')->child($a), 'Asset downloaded') or die diag "Failed - no asset is there";
+    ok(-e path($cachedir, 'localhost')->child($asset), 'Asset downloaded') or die diag "Failed - no asset is there";
 };
 
 subtest 'Small assets causes racing when releasing locks' => sub {
-    my $a             = 'sle-12-SP3-x86_64-0368-200_1@64bit.qcow2';
-    my $asset_request = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
+    my $asset         = 'sle-12-SP3-x86_64-0368-200_1@64bit.qcow2';
+    my $asset_request = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
 
-    unlink path($cachedir)->child($a);
-    ok(!$cache_client->asset_exists('localhost', $a), 'Asset absent') or die diag "Asset already exists - abort test";
+    unlink path($cachedir)->child($asset);
+    ok(!$cache_client->asset_exists('localhost', $asset), 'Asset absent')
+      or die diag "Asset already exists - abort test";
 
     if ($cache_client->enqueue($asset_request)) {
         1 until $cache_client->status($asset_request)->is_processed;
         my $out = $cache_client->status($asset_request)->output;
         ok($out, 'Output should be present') or die diag $out;
-        like $out, qr/Downloading "$a" from/, "Asset download attempt logged";
-        ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded') or die diag "Failed - no asset is there";
+        like $out, qr/Downloading "$asset" from/, "Asset download attempt logged";
+        ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded')
+          or die diag "Failed - no asset is there";
     }
     else {
         fail("Failed enqueuing download");
     }
 
-    ok($cache_client->asset_exists('localhost', $a), 'Asset downloaded') or die diag "Failed - no asset is there";
+    ok($cache_client->asset_exists('localhost', $asset), 'Asset downloaded') or die diag "Failed - no asset is there";
 };
 
 subtest 'Asset download with default usage' => sub {
     my $tot_proc = $ENV{STRESS_TEST} ? 100 : 10;
     test_default_usage(922756, "sle-12-SP3-x86_64-0368-200_$_\@64bit.qcow2") for 1 .. $tot_proc;
 };
+
+# The following tests start their own workers
+$worker_cache_service->stop;
 
 subtest 'Multiple minion workers (parallel downloads, almost simulating real scenarios)' => sub {
     my $tot_proc = $ENV{STRESS_TEST} ? 100 : 10;
@@ -425,12 +433,12 @@ subtest 'Multiple minion workers (parallel downloads, almost simulating real sce
 };
 
 subtest 'Test Minion task registration and execution' => sub {
-    my $a = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
+    my $asset = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
 
     my $app = OpenQA::CacheService->new;
     fix_coverage($app);
 
-    my $req = $cache_client->asset_request(id => 922756, asset => $a, type => 'hdd', host => $host);
+    my $req = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
     $cache_client->enqueue($req);
     my $worker = $app->minion->repair->worker->register;
     ok($worker->id, 'worker has an ID');
@@ -440,12 +448,10 @@ subtest 'Test Minion task registration and execution' => sub {
     my $status = $cache_client->status($req);
     ok $status->is_processed;
     ok $status->output;
-    ok $cache_client->asset_exists('localhost', $a);
+    ok $cache_client->asset_exists('localhost', $asset);
 };
 
 subtest 'Test Minion Sync task' => sub {
-    my $a = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
-
     my $app = OpenQA::CacheService->new;
     fix_coverage($app);
 
@@ -476,7 +482,7 @@ subtest 'Minion monitoring with InfluxDB' => sub {
     my $res = $ua->get($url)->result;
     is $res->body, <<'EOF', 'three workers still running';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=0i,inactive=0i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i
+openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=2i
 EOF
 
     my $app    = OpenQA::CacheService->new;
@@ -485,7 +491,7 @@ EOF
     $res = $ua->get($url)->result;
     is $res->body, <<'EOF', 'four workers running now';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=0i,inactive=0i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=4i
+openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i
 EOF
 
     $minion->add_task(test => sub { });
@@ -495,28 +501,140 @@ EOF
     $res = $ua->get($url)->result;
     is $res->body, <<'EOF', 'two jobs';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=1i,delayed=0i,failed=0i,inactive=1i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=1i,inactive=3i
+openqa_minion_workers,url=http://127.0.0.1:9530 active=1i,inactive=2i
 EOF
 
     $job->fail('test');
     $res = $ua->get($url)->result;
     is $res->body, <<'EOF', 'one job failed';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=0i,failed=1i,inactive=1i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=4i
+openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i
 EOF
 
     $job->retry({delay => 3600});
     $res = $ua->get($url)->result;
     is $res->body, <<'EOF', 'job is being retried';
 openqa_minion_jobs,url=http://127.0.0.1:9530 active=0i,delayed=1i,failed=0i,inactive=2i
-openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=4i
+openqa_minion_workers,url=http://127.0.0.1:9530 active=0i,inactive=3i
 EOF
+};
+
+subtest 'Concurrent downloads of the same file' => sub {
+    my $asset = 'sle-12-SP3-x86_64-0368-200_133333@64bit.qcow2';
+
+    my $app = OpenQA::CacheService->new;
+    fix_coverage($app);
+
+    my $req = $cache_client->asset_request(id => 922756, asset => $asset, type => 'hdd', host => $host);
+    $cache_client->enqueue($req);
+    my $req2 = $cache_client->asset_request(id => 922757, asset => $asset, type => 'hdd', host => $host);
+    $cache_client->enqueue($req2);
+    is $req->lock, $req2->lock, 'same lock';
+
+    my $worker = $app->minion->repair->worker->register;
+    ok $worker->id, 'worker has an ID';
+
+    # Downloading job
+    my $job = $worker->dequeue(0, {id => $req->minion_id});
+    ok $job, 'job dequeued';
+    ok !$app->progress->is_downloading($req->lock), 'not downloading yet';
+    $job->perform;
+    my $status = $cache_client->status($req);
+    ok $status->is_processed, 'is processed';
+    my $info = $app->minion->job($req->minion_id)->info;
+    ok !$info->{notes}{downloading_job}, 'no linked job';
+    like $status->output, qr/Downloading "sle\-12\-SP3\-x86_64\-0368\-200_133333\@64bit.qcow2"/, 'right output';
+    ok $cache_client->asset_exists('localhost', $asset), 'cached file exists';
+
+    # Concurrent request for same file (logs are shared through status API)
+    my $job2 = $worker->dequeue(0, {id => $req2->minion_id});
+    ok $job2, 'job dequeued';
+    ok !$app->progress->is_downloading($req2->lock), 'not downloading yet';
+    ok my $guard = $app->progress->guard($req2->lock, $req->minion_id), 'lock acquired';
+    ok $app->progress->is_downloading($req2->lock), 'concurrent download in progress';
+    $job2->perform;
+    ok !$cache_client->status($req2)->is_processed, 'not yet processed';
+    undef $guard;
+    my $status2 = $cache_client->status($req2);
+    ok $status2->is_processed, 'is processed';
+    my $info2 = $app->minion->job($req2->minion_id)->info;
+    ok $info2->{notes}{downloading_job}, 'downloading job is linked';
+    like $info2->{notes}{output}, qr/Asset "sle.+" was downloaded by #\d+, details are therefore unavailable here/,
+      'right output';
+    like $status2->output, qr/Downloading "sle\-12\-SP3\-x86_64\-0368\-200_133333\@64bit.qcow2"/, 'right output';
+    ok $cache_client->asset_exists('localhost', $asset), 'cached file still exists';
+
+    # Downloading job has been removed (fallback for the rare case)
+    $app->minion->job($req->minion_id)->remove;
+    my $status3 = $cache_client->status($req2);
+    ok $status3->is_processed, 'is processed';
+    like $status3->output,     qr/Asset "sle.+" was downloaded by #\d+, details are therefore unavailable here/,
+      'right output';
+};
+
+subtest 'Concurrent rsync' => sub {
+    my $dir  = tempdir;
+    my $dir2 = tempdir;
+    $dir->child('test')->spurt('foobar');
+    my $expected = $dir2->child('tests')->child('test');
+
+    my $app = OpenQA::CacheService->new;
+    fix_coverage($app);
+
+    my $req = $cache_client->rsync_request(from => $dir, to => $dir2);
+    $cache_client->enqueue($req);
+    my $req2 = $cache_client->rsync_request(from => $dir, to => $dir2);
+    $cache_client->enqueue($req2);
+    is $req->lock, $req2->lock, 'same lock';
+
+    my $worker = $app->minion->repair->worker->register;
+    ok $worker->id, 'worker has an ID';
+
+    # Downloading job
+    my $job = $worker->dequeue(0, {id => $req->minion_id});
+    ok $job, 'job dequeued';
+    ok !$app->progress->is_downloading($req->lock), 'not downloading yet';
+    $job->perform;
+    my $status = $cache_client->status($req);
+    ok $status->is_processed, 'is processed';
+    is $status->result, 0, 'expected result';
+    my $info = $app->minion->job($req->minion_id)->info;
+    ok !$info->{notes}{downloading_job}, 'no linked job';
+    like $status->output, qr/sending incremental file list/, 'right output';
+    ok -e $expected, 'target file exists';
+    is $expected->slurp, 'foobar', 'expected content';
+
+    # Concurrent request for same file (logs are shared through status API)
+    my $job2 = $worker->dequeue(0, {id => $req2->minion_id});
+    ok $job2, 'job dequeued';
+    ok !$app->progress->is_downloading($req2->lock), 'not downloading yet';
+    ok my $guard = $app->progress->guard($req2->lock, $req->minion_id), 'lock acquired';
+    ok $app->progress->is_downloading($req2->lock), 'concurrent download in progress';
+    $job2->perform;
+    ok !$cache_client->status($req2)->is_processed, 'not yet processed';
+    undef $guard;
+    my $status2 = $cache_client->status($req2);
+    ok $status2->is_processed, 'is processed';
+    is $status2->result, 0, 'expected result';
+    my $info2 = $app->minion->job($req2->minion_id)->info;
+    ok $info2->{notes}{downloading_job}, 'downloading job is linked';
+    like $info2->{notes}{output}, qr/Sync ".+" to ".+" was performed by #\d+, details are therefore unavailable here/,
+      'right output';
+    like $status2->output, qr/sending incremental file list/, 'right output';
+    ok -e $expected, 'target file exists';
+    is $expected->slurp, 'foobar', 'expected content';
+
+    # Downloading job has been removed (fallback for the rare case)
+    $app->minion->job($req->minion_id)->remove;
+    my $status3 = $cache_client->status($req2);
+    ok $status3->is_processed, 'is processed';
+    is $status3->result,       0, 'expected result';
+    like $status3->output,     qr/Sync ".+" to ".+" was performed by #\d+, details are therefore unavailable here/,
+      'right output';
 };
 
 subtest 'OpenQA::CacheService::Task::Sync' => sub {
     my $worker_2 = cache_minion_worker;
-    $worker_cache_service->stop;
-
     $worker_2->start;
 
     test_sync;
