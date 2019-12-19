@@ -1,0 +1,13 @@
+#!/bin/sh -e
+
+start_service() {
+    sudo -u geekotest $(dirname $0)/$1 daemon
+}
+
+# terminate all processes spawned by current process groups
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+
+for i in websockets scheduler livehandler; do
+    (start_service openqa-$i &)
+done
+start_service openqa
