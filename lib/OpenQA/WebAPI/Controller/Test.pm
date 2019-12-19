@@ -824,7 +824,13 @@ sub investigate {
     my $investigation = $job->investigate;
     $self->respond_to(
         json => {json => $investigation},
-        html => {text => join("\n", map { "$_: $investigation->{$_}" } sort keys %$investigation)});
+        html => {
+            data => join(
+                "\n",
+                map {
+                    "<tr><td style=\"vertical-align: top;\"><b>$_:</b></td><td><pre>$investigation->{$_}</pre></td><tr>"
+                } sort keys %$investigation
+            )});
 }
 
 1;

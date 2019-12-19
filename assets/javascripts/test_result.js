@@ -333,10 +333,10 @@ function setupInvestigation() {
         method: 'GET',
         success: function(response) {
             element.innerHTML = '';
-            var preElement = document.createElement('pre');
-            preElement.id = 'investigation_status_entry';
-            preElement.appendChild(document.createTextNode(response));
-            element.appendChild(preElement);
+            var tableElement = document.createElement('table');
+            tableElement.id = 'investigation_status_entry';
+            tableElement.innerHTML = response;
+            element.appendChild(tableElement);
         },
         error: function(xhr, ajaxOptions, thrownError) {
             $(element).text('Unable to get investigation info: ' + thrownError);
