@@ -43,7 +43,20 @@ main.pm.
 The *test_flags* subroutine specifies what should happen when test execution of the
 current test module is finished depending on the result.
 If we should skip execution of the following test modules if current one failed, or it
-should be used to create a snapshot of SUT to rollback to. See example below.
+should be used to create a snapshot of the SUT to rollback to. The following flags
+are supported:
+
+* *fatal*: The whole test suite is aborted if the test module fails. The overall state
+  is set to +failed+.
+* *ignore_failure*: If this module fails, it will not affect the overall result at all.
+* *milestone*: After this test succeeds, update the 'lastgood' snapshot.
+* *no_rollback*: Don't roll back to the 'lastgood' snapshot if the test module fails.
+* *always_rollback*: Roll back to the 'lastgood' snapshot even if test was successful.
+
+See the example below for how to enable a test flag.
+Note that snapshots are only supported by the QEMU backend. When using other backends
++fatal+ is therefore enabled by default. One can explicitly set it to +0+ to disable
+the behavior for all backends even though it is not possible to roll back.
 
 There are several callbacks defined:
 
@@ -77,12 +90,7 @@ sub run {
 }
 
 sub test_flags {
-    # 'fatal'          - abort whole test suite if this fails (and set overall state 'failed')
-    # 'ignore_failure' - if this module fails, it will not affect the overall result at all
-    # 'milestone'      - after this test succeeds, update 'lastgood'
-    # 'no_rollback'     - don't roll back to 'lastgood' snapshot if this fails
-    # 'always_rollback'    - roll back to 'lastgood' snapshot even if test was successful (supported on QEMU backend only)
-    return { fatal => 1 };
+    return {fatal => 1};
 }
 
 1;
@@ -166,15 +174,16 @@ Variables are accessible via the *get_var* and *check_var* functions.
 === Capturing kernel exceptions and/or any other exceptions from the serial console
 
 Soft and hard failures can be triggered on demand by regular expressions when they match the
-serial output which is done after the test is executed. In case it doesn't make sense
-to continue test run even if current test module doesn't have fatal flag, use `fatal` as
-serial failure type, so all subsequent test modules won't be executed if such failure
+serial output which is done after the test is executed. In case it does not make sense
+to continue the test run even if the current test module does not have the fatal flag, use +fatal+
+as serial failure type, so all subsequent test modules will not be executed if such failure
 was detected.
+
 To use this functionality the test developer needs to define the patterns to
 look for in the serial output either in the main.pm or in the test itself.
 Any pattern change done in a test it will be reflected in the next tests.
 
-The patterns defined in the main.pm will be valid for all the tests.
+The patterns defined in +main.pm+ will be valid for all the tests.
 
 To simplify tests results review, if job fails with the same message, which is defined
 for the pattern, as previous job, automatic comment carryover will work even if
@@ -1229,15 +1238,15 @@ test development. For example:
 [id="snapshots"]
 
 For lower turn-around times during test development based on virtual machines
-the +QEMU backend+ provides a feature that allows a job to start from a
-snapshot which can help in this situation.
+the QEMU backend provides a feature that allows a job to start from a snapshot
+which can help in this situation.
 
 Depending on the use case, there are two options to help:
 
 * Create and *preserve* snapshots for *every test* module run (+MAKETESTSNAPSHOTS+)
   - Offers more flexibility as the test can be resumed almost at any point.
     However disk space requirements are high (expect more than 30GB for one
-    job)
+    job).
   - This mode is useful for fixing non-fatal issues in tests and debugging SUT
     as more than just the snapshot of the last failed module is saved.
 
@@ -1249,7 +1258,7 @@ Depending on the use case, there are two options to help:
   - This mode is useful for iterative test development
 
 In both modes there is no need to modify tests (i.e. adding +milestone+ test
-flag as the behaviour  is implied). In the later mode every test module is
+flag as the behaviour is implied). In the later mode every test module is
 also considered +fatal+. This means the job is aborted after the first failed
 test module.
 
