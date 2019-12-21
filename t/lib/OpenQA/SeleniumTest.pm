@@ -116,7 +116,6 @@ sub start_driver {
         }
         $_driver = Test::Selenium::Chrome->new(%opts);
         $_driver->{is_wd3} = 0;    # ensure the Selenium::Remote::Driver instance uses JSON Wire protocol
-        enable_timeout;
         # Scripts are considered stuck after this timeout
         $_driver->set_timeout(script => $ENV{OPENQA_SELENIUM_SCRIPT_TIMEOUT_MS} // 2000);
         $_driver->set_window_size(600, 800);
