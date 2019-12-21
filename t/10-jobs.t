@@ -415,10 +415,11 @@ subtest 'carry over, including soft-fails' => sub {
         is($inv->{last_good}, 99997, 'previous job identified as last good');
         like($inv->{diff_to_last_good}, qr/^\+.*BUILD.*668/m, 'diff for job settings is shown');
         unlike($inv->{diff_to_last_good}, qr/JOBTOKEN/, 'special variables are not included');
-        is($inv->{git_log}, $fake_git_log, 'git log is evaluated');
+        is($inv->{test_log},    $fake_git_log, 'test git log is evaluated');
+        is($inv->{needles_log}, $fake_git_log, 'needles git log is evaluated');
         $fake_git_log = '';
         ok($inv = $job->investigate, 'job investigation ok for no test changes');
-        is($inv->{git_log}, 'No test changes recorded, test regression unlikely', 'git log with no test changes');
+        is($inv->{test_log}, 'No test changes recorded, test regression unlikely', 'git log with no test changes');
     };
 
 };

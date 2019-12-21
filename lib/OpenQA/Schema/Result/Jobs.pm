@@ -29,7 +29,7 @@ use OpenQA::Utils (
     qw(log_debug log_info log_warning log_error),
     qw(parse_assets_from_settings locate_asset),
     qw(read_test_modules find_bugref random_string),
-    qw(run_cmd_with_log_return_error testcasedir)
+    qw(run_cmd_with_log_return_error needledir testcasedir)
 );
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
@@ -1797,14 +1797,17 @@ sub test_resultfile_list {
 }
 
 sub git_log_diff {
-    my ($self, $before, $after) = @_;
+    my ($self, $dir, $refspec_range) = @_;
     my $res = run_cmd_with_log_return_error(
-        [
-            'git', '-C', testcasedir($self->DISTRI, $self->VERSION),
-            'log', '--pretty=oneline', '--abbrev-commit', "$before->{TEST_GIT_HASH}..$after->{TEST_GIT_HASH}"
-        ]);
+        ['git', '-C', $dir, 'log', '--pretty=oneline', '--abbrev-commit', '--no-merges', $refspec_range]);
     # regardless of success or not the output contains the information we need
-    return $res->{stderr};
+    return "\n" . $res->{stderr} if $res->{stderr};
+}
+
+sub git_diff {
+    my ($self, $dir, $refspec_range) = @_;
+    my $res = run_cmd_with_log_return_error(['git', '-C', $dir, 'diff', '--stat', $refspec_range]);
+    return "\n" . $res->{stderr} if $res->{stderr};
 }
 
 =head2 investigate
@@ -1817,25 +1820,37 @@ sub investigate {
     my ($self, %args) = @_;
     my @previous = $self->_previous_scenario_jobs;
     return {error => 'No previous job in this scenario, cannot provide hints'} unless @previous;
-    my %investigation;
+    my %inv;
     return {error => 'No result directory available for current job'} unless $self->result_dir();
     my $ignore = $OpenQA::Utils::app->config->{global}->{job_investigate_ignore};
     for my $prev (@previous) {
         next unless $prev->result =~ /(?:passed|softfailed)/;
-        $investigation{last_good} = $prev->id;
+        $inv{last_good} = $prev->id;
         last unless $prev->result_dir;
         # just ignore any problems on generating the diff with eval, e.g.
         # files missing. This is a best-effort approach.
         my @files = map { Mojo::File->new($_->result_dir(), 'vars.json')->slurp } ($prev, $self);
-        my $diff  = eval { diff(\$files[0], \$files[1]) };
-        $investigation{diff_to_last_good} = join("\n", grep { !/$ignore/ } split(/\n/, $diff));
+        my $diff  = eval { diff(\$files[0], \$files[1], {CONTEXT => 0}) };
+        $inv{diff_to_last_good} = join("\n", grep { !/(^@@|$ignore)/ } split(/\n/, $diff));
         my ($before, $after) = map { decode_json($_) } @files;
-        $investigation{git_log} = $self->git_log_diff($before, $after);
-        $investigation{git_log} ||= 'No test changes recorded, test regression unlikely';
+        my $dir           = testcasedir($self->DISTRI, $self->VERSION);
+        my $refspec_range = "$before->{TEST_GIT_HASH}..$after->{TEST_GIT_HASH}";
+        $inv{test_log} = $self->git_log_diff($dir, $refspec_range);
+        $inv{test_log} ||= 'No test changes recorded, test regression unlikely';
+        $inv{test_diff_stat} = $self->git_diff($dir, $refspec_range) if $inv{test_log};
+        # no need for duplicating needles git log if the git repo is the same
+        # as for tests
+        if ($after->{TEST_GIT_HASH} ne $after->{NEEDLES_GIT_HASH}) {
+            $dir = needledir($self->DISTRI, $self->VERSION);
+            my $refspec_needles_range = "$before->{NEEDLES_GIT_HASH}..$after->{NEEDLES_GIT_HASH}";
+            $inv{needles_log} = $self->git_log_diff($dir, $refspec_needles_range);
+            $inv{needles_log} ||= 'No needle changes recorded, test regression due to needles unlikely';
+            $inv{needles_diff_stat} = $self->git_diff($dir, $refspec_needles_range) if $inv{needles_log};
+        }
         last;
     }
-    $investigation{last_good} //= 'not found';
-    return \%investigation;
+    $inv{last_good} //= 'not found';
+    return \%inv;
 }
 
 =head2 done
