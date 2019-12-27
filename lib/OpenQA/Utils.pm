@@ -875,6 +875,10 @@ sub read_test_modules {
     my $testresultdir = $job->result_dir();
     return unless $testresultdir;
 
+    my $modules_spent_time_file = path($testresultdir, "modules_spent_time.json");
+    my $modules_spent_time_data;
+    $modules_spent_time_data = decode_json($modules_spent_time_file->slurp) if (-e $modules_spent_time_file);
+
     my $category;
     my $has_parser_text_results = 0;
     my @modlist;
@@ -916,6 +920,9 @@ sub read_test_modules {
         }
 
         $has_parser_text_results = 1 if ($has_module_parser_text_result);
+        my $spent_time;
+        $spent_time = $modules_spent_time_data->{$name} . 's'
+          if ($modules_spent_time_data && exists $modules_spent_time_data->{$name});
 
         push(
             @modlist,
@@ -928,6 +935,7 @@ sub read_test_modules {
                 fatal                  => $module->fatal,
                 always_rollback        => $module->always_rollback,
                 has_parser_text_result => $has_module_parser_text_result,
+                spent_time             => $spent_time
             });
 
         if (!$category || $category ne $module->category) {

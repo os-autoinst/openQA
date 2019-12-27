@@ -545,5 +545,25 @@ subtest 'additional investigation notes provided on new failed' => sub {
         'Investigation status content shown');
 };
 
+subtest 'show modules spent time' => sub {
+    $driver->get("/tests/99937");
+    my $tds                = $driver->find_elements(".component");
+    my %modules_spent_time = (
+        zypper_in => '243s ',
+        yast2_i   => '37s ',
+        sshd      => '134s ',
+        kontact   => '38s ',
+        amarok    => '23s '
+    );
+    for my $td (@$tds) {
+        my $module_name = $td->children('div')->[0]->get_text();
+        is(
+            $td->children('span')->[0]->get_text(),
+            'spent time: ' . $modules_spent_time{$module_name},
+            $module_name . 'spent time showed correctly'
+        ) if $modules_spent_time{$module_name};
+    }
+};
+
 kill_driver();
 done_testing();

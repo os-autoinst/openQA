@@ -430,7 +430,7 @@ sub _stop_step_5_upload {
                 }
 
                 my @other
-                  = qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt serial_terminal.txt virtio_console.log worker-log.txt virtio_console1.log);
+                  = qw(video.ogv video_time.vtt vars.json serial0 autoinst-log.txt serial_terminal.txt virtio_console.log worker-log.txt virtio_console1.log modules_spent_time.json);
                 for my $other (@other) {
                     my $file = "$pooldir/$other";
                     next unless -e $file;

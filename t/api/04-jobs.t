@@ -29,6 +29,7 @@ use Mojo::IOLoop;
 use Mojo::File 'path';
 use Digest::MD5;
 use OpenQA::Events;
+use Cpanel::JSON::XS ();
 
 require OpenQA::Schema::Result::Jobs;
 
@@ -570,9 +571,6 @@ sub find_build {
     }
 }
 
-# delete the job with a registered job module
-$t->delete_ok('/api/v1/jobs/99937')->status_is(200);
-$t->get_ok('/api/v1/jobs/99937')->status_is(404);
 
 subtest 'json representation of group overview (actually not part of the API)' => sub {
     $t->get_ok('/group_overview/1001.json')->status_is(200);
@@ -1203,5 +1201,27 @@ subtest 'create job failed when PUBLISH_HDD_1 is invalid' => sub {
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(400);
     like($t->tx->res->json->{error}, qr/The PUBLISH_HDD_1 cannot include \/ in value/, 'PUBLISH_HDD_1 is invalid');
 };
+
+subtest 'show job modules spent time' => sub {
+    my $result_dir         = $jobs->find(99937)->result_dir();
+    my %modules_spent_time = (
+        zypper_in => '243s',
+        yast2_i   => '37s',
+        sshd      => '134s',
+        kontact   => '38s',
+        amarok    => '23s'
+    );
+
+    $t->get_ok('/api/v1/jobs/99937/details');
+    my %spent_time = map { $_->{name} => $_->{spent_time} } @{$t->tx->res->json->{job}->{testresults}};
+    for my $module_name (keys %modules_spent_time) {
+        is($spent_time{$module_name}, $modules_spent_time{$module_name}, $module_name . ' spent time showed correctly');
+    }
+    is($spent_time{bootloader}, undef, 'bootloader spent time is undef');
+};
+
+# delete the job with a registered job module
+$t->delete_ok('/api/v1/jobs/99937')->status_is(200);
+$t->get_ok('/api/v1/jobs/99937')->status_is(404);
 
 done_testing();

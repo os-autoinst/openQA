@@ -22,6 +22,9 @@
                         %= link_to $module->{name} => url_for('src_step', stepid => 1, moduleid => $module->{name}, testid => $testid)
                     </div>
                     <div class="flags">
+                        % if ($module->{spent_time}) {
+                            <span>spent time: <%= $module->{spent_time} %><span>&nbsp;
+                        % }
                         % if ($module->{fatal}) {
                             <i class="flag fa fa-plug" title="Fatal: testsuite is aborted if this test fails"></i>
                         % } elsif (!$module->{important})
