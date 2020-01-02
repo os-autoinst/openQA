@@ -65,8 +65,10 @@ sub create_or_update_job_template {
       . $job_template->group->name . "'\n"
       if $job_template->group_id != $group_id;
     my $job_template_id = $job_template->id;
-    $job_template->update({prio        => $args->{prio}}) if defined $args->{prio};
-    $job_template->update({description => $args->{description} // ''});
+    $job_template->update(
+        {
+            (defined $args->{prio}) ? (prio => $args->{prio}) : (), description => $args->{description} // '',
+        });
 
     # Add/update/remove parameter
     my @setting_ids;
