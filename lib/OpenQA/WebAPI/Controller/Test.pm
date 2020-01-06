@@ -483,11 +483,10 @@ sub prepare_job_results {
       ->search({job_id => [map { $_->id } @$jobs], key => [qw(TEST_SUITE_DESCRIPTION TEST_SUITE_NAME)]});
     my %settings_by_job_id;
     for my $js ($job_settings->all) {
-        $settings_by_job_id{$js->key}->{$js->job_id} = $js->value;
+        $settings_by_job_id{$js->job_id}->{$js->key} = $js->value;
     }
-    my $test_suite_descr_by_job_id = $settings_by_job_id{TEST_SUITE_DESCRIPTION};
 
-    my %test_suite_names = map { $_->id => ($settings_by_job_id{TEST_SUITE_NAME}->{$_->id} // $_->TEST) } @$jobs;
+    my %test_suite_names = map { $_->id => ($settings_by_job_id{$_->id}->{TEST_SUITE_NAME} // $_->TEST) } @$jobs;
 
     # prefetch descriptions from test suites
     my %desc_args = (in => [values %test_suite_names]);
@@ -536,7 +535,7 @@ sub prepare_job_results {
 
         # add description
         my $id          = $job->id;
-        my $description = $settings_by_job_id{TEST_SUITE_DESCRIPTION}->{$id} // $descriptions{$test_suite_names{$id}};
+        my $description = $settings_by_job_id{$id}->{TEST_SUITE_DESCRIPTION} // $descriptions{$test_suite_names{$id}};
         $results{$distri}{$version}{$flavor}{$test}{description} //= $description;
     }
     return (\%archs, \%results, $aggregated);
