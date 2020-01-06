@@ -34,7 +34,7 @@ sub _download {
 
     # prevent multiple asset download tasks for the same asset to run
     # in parallel
-    return undef $job->retry({delay => 30})
+    return $job->retry({delay => 30})
       unless my $guard = $app->minion->guard("limit_asset_download_${assetpath}_task", 7200);
 
     # bail if the dest file exists (in case multiple downloads of same ISO are scheduled)
