@@ -97,7 +97,7 @@ sub fake_asset_server {
                 $c->rendered(200);
             }
 
-            if (my ($size) = ($filename =~ /sle-12-SP3-x86_64-0368-200_?([0-9]+)?\@/)) {
+            elsif (my ($size) = ($filename =~ /sle-12-SP3-x86_64-0368-200_?([0-9]+)?\@/)) {
                 my $our_etag = 'andi $a3, $t1, 41399';
 
                 my $browser_etag = $c->req->headers->header('If-None-Match');
@@ -113,6 +113,14 @@ sub fake_asset_server {
                     $c->res->body("\0" x ($size // 1024));
                     $c->rendered(200);
                 }
+            }
+
+            elsif ($filename =~ /sle-12-SP3-x86_64-0368-200_#:/) {
+                $c->res->headers->content_length(20);
+                $c->res->headers->content_type('text/plain');
+                $c->res->headers->header('ETag' => '123456789');
+                $c->res->body('this is a test for character check');
+                $c->rendered(200);
             }
         });
 

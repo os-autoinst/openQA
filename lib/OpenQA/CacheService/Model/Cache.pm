@@ -17,9 +17,9 @@ package OpenQA::CacheService::Model::Cache;
 use Mojo::Base -base;
 
 use Carp 'croak';
-use File::Basename;
 use Fcntl ':flock';
 use Mojo::UserAgent;
+use Mojo::URL;
 use OpenQA::Utils qw(base_host human_readable_size);
 use Mojo::File 'path';
 use POSIX;
@@ -66,16 +66,17 @@ sub _download_asset {
 
     my $log = $self->log;
 
-    my $ua  = $self->ua;
-    my $url = sprintf '%s/tests/%d/asset/%s/%s', $host, $id, $type, basename($asset);
-    $log->info('Downloading "' . basename($asset) . qq{" from "$url"});
+    my $ua   = $self->ua;
+    my $file = path($asset)->basename;
+    my $url  = Mojo::URL->new($host)->path("/tests/$id/asset/$type/$file");
+    $log->info(qq{Downloading "$file" from "$url"});
 
     # Keep temporary files on the same partition as the cache
     local $ENV{MOJO_TMPDIR} = path($self->location, 'tmp')->to_string;
     my $tx = $ua->build_tx(GET => $url);
 
     # Assets might be deleted by a sysadmin
-    $tx->req->headers->header('If-None-Match' => qq{$etag}) if $etag && -e $asset;
+    $tx->req->headers->header('If-None-Match' => $etag) if $etag && -e $asset;
     $tx = $ua->start($tx);
 
     my $res = $tx->res;
