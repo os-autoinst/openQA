@@ -177,6 +177,13 @@ while ($retries > 0) {
 
 isnt($dirty_status, $new_dirty_status, 'Timestamp on dirty status is updated');
 
+# test 'Sync Now' button
+$driver->get('/admin/obs_rsync/Proj1');
+$driver->find_element_by_class('btn-warning')->click();
+wait_for_ajax();
+
+is($driver->get_title(), 'openQA: OBS synchronization jobs', 'Get redirected to obs gru jobs page');
+
 stop_server();
 kill_driver();
 done_testing();
