@@ -480,7 +480,7 @@ sub prepare_job_results {
     # prefetch test suite names from job settings
     my $job_settings
       = $self->schema->resultset('JobSettings')
-      ->search({job_id => [map { $_->id } @$jobs], key => [qw(TEST_SUITE_DESCRIPTION TEST_SUITE_NAME)]});
+      ->search({job_id => [map { $_->id } @$jobs], key => [qw(JOB_DESCRIPTION TEST_SUITE_NAME)]});
     my %settings_by_job_id;
     for my $js ($job_settings->all) {
         $settings_by_job_id{$js->job_id}->{$js->key} = $js->value;
@@ -535,7 +535,7 @@ sub prepare_job_results {
 
         # add description
         my $id          = $job->id;
-        my $description = $settings_by_job_id{$id}->{TEST_SUITE_DESCRIPTION} // $descriptions{$test_suite_names{$id}};
+        my $description = $settings_by_job_id{$id}->{JOB_DESCRIPTION} // $descriptions{$test_suite_names{$id}};
         $results{$distri}{$version}{$flavor}{$test}{description} //= $description;
     }
     return (\%archs, \%results, $aggregated);

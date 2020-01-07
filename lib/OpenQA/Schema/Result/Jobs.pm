@@ -302,7 +302,7 @@ sub scenario_name {
 
 sub scenario_description {
     my ($self) = @_;
-    my $description = $self->settings_hash->{TEST_SUITE_DESCRIPTION};
+    my $description = $self->settings_hash->{JOB_DESCRIPTION};
     return $description if defined $description;
     my $scenario = $self->scenario or return undef;
     return $scenario->description;
