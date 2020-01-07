@@ -328,6 +328,9 @@ function setupTab(tabHash) {
 
 function setupInvestigation() {
     var element = document.getElementById('investigation_status');
+    if (element.dataset.initialized) {
+        return;
+    }
     $.ajax({
         url: element.dataset.url,
         method: 'GET',
@@ -337,6 +340,7 @@ function setupInvestigation() {
             preElement.id = 'investigation_status_entry';
             preElement.appendChild(document.createTextNode(response));
             element.appendChild(preElement);
+            element.dataset.initialized = true;
         },
         error: function(xhr, ajaxOptions, thrownError) {
             $(element).text('Unable to get investigation info: ' + thrownError);
