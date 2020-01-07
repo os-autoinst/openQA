@@ -69,6 +69,7 @@ sub _download_asset {
     my $ua  = $self->ua;
     my $url = sprintf '%s/tests/%d/asset/%s/%s', $host, $id, $type, basename($asset);
     $log->info('Downloading "' . basename($asset) . qq{" from "$url"});
+    $url =~ s/#/%23/g;
 
     # Keep temporary files on the same partition as the cache
     local $ENV{MOJO_TMPDIR} = path($self->location, 'tmp')->to_string;

@@ -114,6 +114,13 @@ sub fake_asset_server {
                     $c->rendered(200);
                 }
             }
+            if ($filename =~ /sle-12-SP3-x86_64-0368-200_(#|:)/) {
+                $c->res->headers->content_length(20);
+                $c->res->headers->content_type('text/plain');
+                $c->res->headers->header('ETag' => '123456789');
+                $c->res->body('this is a test for character check');
+                $c->rendered(200);
+            }
         });
 
     $mock->routes->get(

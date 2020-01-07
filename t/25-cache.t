@@ -199,6 +199,16 @@ like $cache_log,
   'Reclaimed space for new smaller asset';
 $cache_log = '';
 
+$cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_#@64bit.qcow2');
+like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200_#.*" successful/,
+  'Asset with # was downloaded successfully';
+$cache_log = '';
+
+$cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_:@64bit.qcow2');
+like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200_:.*" successful/,
+  'Asset with : was downloaded successfully';
+$cache_log = '';
+
 $cache->track_asset('Foobar', 0);
 $cache->sqlite->db->query('delete from assets');
 
