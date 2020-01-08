@@ -1050,6 +1050,60 @@ sub update_backend {
             backend_info => encode_json($backend_info->{backend_info})});
 }
 
+# override to update job module stats in jobs table
+sub store_column {
+    my ($self, $name, $value) = @_;
+
+    # only updates of result relevant here
+    return $self->next::method($name, $value) unless ($name eq 'result' || $name eq 'job_id');
+
+    # set default result to 'none'
+    $value //= OpenQA::Jobs::Constants::NONE if ($name eq 'result');
+
+    # remember previous value before updating
+    my $previous_value = $self->get_column($name);
+    my $res            = $self->next::method($name, $value);
+
+    # skip this when the value does not change
+    return $res if ($value && $previous_value && $value eq $previous_value);
+
+    # update statistics in relevant job(s)
+    if ($name eq 'result') {
+        # update assigned job on result change
+        my $job = $self->job or return $res;
+        my %job_update;
+        if (my $value_column = $columns_by_result{$value}) {
+            $job_update{$value_column} = $job->get_column($value_column) + 1;
+        }
+        if ($previous_value) {
+            if (my $previous_value_column = $columns_by_result{$previous_value}) {
+                $job_update{$previous_value_column} = $job->get_column($previous_value_column) - 1;
+            }
+        }
+        $job->update(\%job_update);
+
+    }
+    elsif ($name eq 'job_id') {
+        # update previous job and new job on job assignment
+        # handling previous job might not be neccassary because once a job is assigned, it shouldn't
+        # change anymore, right?
+        my $result        = $self->result               or return $res;
+        my $result_column = $columns_by_result{$result} or return $res;
+        if ($previous_value) {
+            if (my $previous_job = $self->result_source->schema->resultset('Jobs')->find($previous_value)) {
+                $previous_job->update({$result_column => $previous_job->get_column($result_column) - 1});
+            }
+        }
+        if ($value) {
+            if (my $job = $self->result_source->schema->resultset('Jobs')->find($value)) {
+                $job->update({$result_column => $job->get_column($result_column) + 1});
+            }
+        }
+    }
+
+    return $res;
+}
+
 sub insert_module {
     my ($self, $tm) = @_;
 
@@ -1068,6 +1122,13 @@ sub insert_module {
     my $values  = '?, ?, ?, ?, now(), now(), ?, ?, ?, ?';
     my $sth     = $dbh->prepare("INSERT INTO job_modules ($columns) VALUES($values) ON CONFLICT DO NOTHING");
     $sth->execute($self->id, $name, $script, $category, $milestone, $important, $fatal, $always_rollback);
+    # count modules which are initially skipped (default value for the result) in statistics of associated job
+    # doing this explicitely is required because in this case store_column does not seem to be called
+    my $job    = $self->job;
+    my $result = $self->result;
+    if ($job && (!$result || $result eq OpenQA::Jobs::Constants::NONE)) {
+        $job->update({skipped_module_count => $job->skipped_module_count + 1});
+    }
 }
 
 sub insert_test_modules {
