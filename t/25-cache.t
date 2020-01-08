@@ -54,7 +54,7 @@ use Mojo::IOLoop::ReadWriteProcess::Session 'session';
 use OpenQA::Test::Utils qw(fake_asset_server);
 
 my $port = Mojo::IOLoop::Server->generate_port;
-my $host = "http://localhost:$port";
+my $host = "localhost:$port";
 
 # Capture logs
 my $log = Mojo::Log->new;
@@ -71,7 +71,7 @@ $SIG{INT} = sub { session->clean };
 END { session->clean }
 
 my $server_instance = process sub {
-    Mojo::Server::Daemon->new(app => fake_asset_server, listen => [$host], silent => 1)->run;
+    Mojo::Server::Daemon->new(app => fake_asset_server, listen => ["http://$host"], silent => 1)->run;
     _exit(0);
 };
 
@@ -126,13 +126,13 @@ ok(!-e '1.qcow2', 'Oldest asset (1.qcow2) was sucessfully removed');
 $cache_log = '';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-textmode@64bit.qcow2');
-my $from = "$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-textmode@64bit.qcow2";
+my $from = "http://$host/tests/922756/asset/hdd/sle-12-SP3-x86_64-0368-textmode@64bit.qcow2";
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-textmode\@64bit.qcow2" from "$from"/, 'Asset download attempt';
 like $cache_log, qr/failed: 521/, 'Asset download fails with: 521 - Connection refused';
 $cache_log = '';
 
 $port = Mojo::IOLoop::Server->generate_port;
-$host = "http://127.0.0.1:$port";
+$host = "127.0.0.1:$port";
 start_server;
 
 $cache->limit(1024);
@@ -203,6 +203,18 @@ $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_#:@6
 like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200_#:.*" successful/,
   'Asset with special characters was downloaded successfully';
 like $cache_log, qr/Size of .* is 20 Byte, with ETag "123456789"/, 'Etag and size are logged';
+$cache_log = '';
+
+$cache->get_asset("http://$host", {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
+like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200.*" successful, new cache size is 1024/,
+  'Full download logged';
+like $cache_log, qr/Size of .* is 1024 Byte, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
+$cache_log = '';
+
+$cache->get_asset("http://$host", {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/,             'Asset download attempt';
+like $cache_log, qr/Content of ".*0368-200@64bit.qcow2" has not changed, updating last use/, 'Content has not changed';
 $cache_log = '';
 
 $cache->track_asset('Foobar', 0);

@@ -68,7 +68,7 @@ sub _download_asset {
 
     my $ua   = $self->ua;
     my $file = path($asset)->basename;
-    my $url  = Mojo::URL->new($host)->path("/tests/$id/asset/$type/$file");
+    my $url  = Mojo::URL->new($host =~ m!^/|://! ? $host : "http://$host")->path("/tests/$id/asset/$type/$file");
     $log->info(qq{Downloading "$file" from "$url"});
 
     # Keep temporary files on the same partition as the cache
