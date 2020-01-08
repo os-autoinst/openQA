@@ -24,9 +24,8 @@ use Mojo::JSON 'encode_json';    # booleans
 use Cpanel::JSON::XS ();
 use Fcntl;
 use File::Spec::Functions 'catdir';
-use File::Basename;
 use Errno;
-use Cwd qw(abs_path getcwd);
+use Cwd 'abs_path';
 use OpenQA::CacheService::Client;
 use OpenQA::CacheService::Request;
 use Time::HiRes 'sleep';
@@ -155,11 +154,34 @@ sub cache_assets {
         }
         return {error => "Failed to download $asset_uri to " . $cache_client->asset_path($webui_host, $asset_uri)}
           unless $asset;
-        unlink basename($asset) if -l basename($asset);
-        symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";
-        $vars->{$this_asset} = path(getcwd, basename($asset))->to_string;
+        $vars->{$this_asset} = _link_asset($asset, $pooldir);
     }
     return undef;
+}
+
+sub _link_asset {
+    my ($asset, $pooldir) = @_;
+
+    $asset   = path($asset);
+    $pooldir = path($pooldir);
+    my $target = $pooldir->child($asset->basename);
+
+    # Prevent the syncing to abort e.g. for workers running with "--no-cleanup"
+    unlink $target if -e $target;
+
+    # Use hard links if both are on the same device, this ensures that assets
+    # cannot be purged early from the pool even if the cache service runs out of
+    # space
+    if ($asset->stat->dev == $pooldir->stat->dev) {
+        link($asset, $target) or die qq{Cannot create link from "$asset" to "$target": $!};
+        log_debug(qq{Linked asset "$asset" to "$target"});
+    }
+    else {
+        symlink($asset, $target) or die qq{Cannot create symlink from "$asset" to "$target": $!};
+        log_debug(qq{Symlinked asset "$asset" to "$target"});
+    }
+
+    return $target->to_string;
 }
 
 sub engine_workit {

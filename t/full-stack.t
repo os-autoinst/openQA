@@ -354,10 +354,11 @@ subtest 'Cache tests' => sub {
     ok(!-d path($cache_location, "test_directory"), "Directory within cache, not present after deploy");
     ok(!-e $cache_location->child("test.file"),     "File within cache, not present after deploy");
 
-    my $link = path($ENV{OPENQA_BASEDIR}, 'openqa', 'pool', '1')->child("Core-7.2.iso");
+    my $link = path($ENV{OPENQA_BASEDIR}, 'openqa', 'pool', '1')->child('Core-7.2.iso');
     sleep 5 and note "Waiting for cache service to finish the download" until -e $link;
 
-    like(readlink($link), qr($cache_location/localhost/Core-7.2.iso), "iso is symlinked to cache");
+    my $cached = $cache_location->child('localhost', 'Core-7.2.iso');
+    is $cached->stat->ino, $link->stat->ino, 'iso is hardlinked to cache';
 
     OpenQA::Test::FullstackUtils::wait_for_result_panel($driver, qr/Result: passed/, 'test 5 is passed');
     kill_worker;
