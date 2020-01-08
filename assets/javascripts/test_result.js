@@ -595,12 +595,12 @@ function renderDependencyGraph(container, nodes, edges, cluster, currentNode) {
     });
 
     // insert clusters
-    for (var clusterId in cluster) {
+    Object.keys(cluster).forEach(clusterId => {
         g.setNode(clusterId, {});
         cluster[clusterId].forEach(child => {
             g.setParent(child, clusterId);
         });
-    }
+    });
 
     // create the renderer
     var render = new dagreD3.render();
