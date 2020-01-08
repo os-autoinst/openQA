@@ -335,11 +335,43 @@ function setupInvestigation() {
         url: element.dataset.url,
         method: 'GET',
         success: function(response) {
+            if (typeof response !== 'object') {
+                element.innerHTML = 'Investigation info returned by server is invalid.';
+                return;
+            }
+
+            var theadElement = document.createElement('thead');
+            var headTrElement = document.createElement('tr');
+            var headThElement = document.createElement('th');
+            headThElement.appendChild(document.createTextNode('Investigation'));
+            headThElement.colSpan = 2;
+            headTrElement.appendChild(headThElement);
+            theadElement.appendChild(headTrElement);
+
+            var tbodyElement = document.createElement('tbody');
+            Object.keys(response).forEach(key => {
+                var keyElement = document.createElement('td');
+                keyElement.style.verticalAlign = 'top';
+                keyElement.appendChild(document.createTextNode(key));
+
+                var valueElement = document.createElement('td');
+                var preElement = document.createElement('pre');
+                preElement.appendChild(document.createTextNode(response[key]));
+                valueElement.appendChild(preElement);
+
+                var trElement = document.createElement('tr');
+                trElement.appendChild(keyElement);
+                trElement.appendChild(valueElement);
+                tbodyElement.appendChild(trElement);
+            });
+
+            var tableElement = document.createElement('table');
+            tableElement.id = 'investigation_status_entry';
+            tableElement.className = 'infotbl table table-striped';
+            tableElement.appendChild(theadElement);
+            tableElement.appendChild(tbodyElement);
             element.innerHTML = '';
-            var preElement = document.createElement('pre');
-            preElement.id = 'investigation_status_entry';
-            preElement.appendChild(document.createTextNode(response));
-            element.appendChild(preElement);
+            element.appendChild(tableElement);
             element.dataset.initialized = true;
         },
         error: function(xhr, ajaxOptions, thrownError) {

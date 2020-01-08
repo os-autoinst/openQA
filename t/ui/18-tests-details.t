@@ -541,8 +541,8 @@ subtest 'additional investigation notes provided on new failed' => sub {
     $driver->get('/tests/99947');
     $driver->find_element('#clones a')->click;
     $driver->find_element_by_link_text('Investigation')->click;
-    ok($driver->find_element('#investigation_status_entry')->text_like(qr/No result dir/),
-        'Investigation status content shown');
+    ok($driver->find_element('table#investigation_status_entry')->text_like(qr/No result dir/),
+        'investigation status content shown as table');
 };
 
 kill_driver();

@@ -130,6 +130,14 @@ div.flags {
     }
 }
 
+// settings and investigation table
+#settings_box, #investigation_status_entry {
+    padding-top: 9px;
+}
+#investigation_status_entry pre {
+    margin: 2px 0px;
+}
+
 // misc
 .component {
     text-align: right;
