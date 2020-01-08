@@ -821,9 +821,7 @@ sub investigate {
     my ($self) = @_;
     return $self->reply->not_found unless my $job = $self->get_current_job;
     my $investigation = $job->investigate;
-    $self->respond_to(
-        json => {json => $investigation},
-        html => {text => join("\n", map { "$_: $investigation->{$_}" } sort keys %$investigation)});
+    $self->render(json => $investigation);
 }
 
 1;
