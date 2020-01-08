@@ -28,7 +28,7 @@ advanced section about "`Custom installation - Repositories and procedure''.
 == Quick bootstrapping under openSUSE
 
 To quickly get a working openQA installation, you can use the openqa-bootstrap
-script. It esentially automates the steps mentioned in the
+script. It essentially automates the steps mentioned in the
 <<#custom_installation,Custom installation>> section.
 
 === Directly on your machine

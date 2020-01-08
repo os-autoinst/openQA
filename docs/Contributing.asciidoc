@@ -694,3 +694,24 @@ $ make test
 
 And if you need code examples, there are some plugins
 https://github.com/os-autoinst/openQA/tree/master/lib/OpenQA/WebAPI/Plugin[included with openQA].
+
+== Checking for JavaScript problems
+One can use the tool +jshint+ to check for problems within JavaScript code. It can be installed
+easily via +npm+.
+
+[source,sh]
+--------------------------------------------------------------------------------
+npm install jshint
+node_modules/jshint/bin/jshint path/to/javascript.js
+--------------------------------------------------------------------------------
+
+== Profiling the web UI
+1. Install NYTProf, under openSUSE Tumbleweed: +zypper in perl-Devel-NYTProf perl-Mojolicious-Plugin-NYTProf+
+2. Put +profiling_enabled = 1+ in  +openqa.ini+.
+3. Optionally import production data like described in the official contributers documentation.
+4. Restart the web UI, browse some pages. Profiling is done in the background.
+5. Access profiling data via +/nytprof+ route.
+
+=== Note
+Profiling data is extensive. Remove it if you do not need it anymore and disable the +profiling_enabled+
+configuration again if not needed anymore.
