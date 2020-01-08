@@ -1216,13 +1216,13 @@ schema:
           order: 2
           size:
             - 0
-        default_size_limit_gb:
+        size_limit_gb:
           data_type: integer
           default_value: ~
           is_nullable: 1
           is_primary_key: 0
           is_unique: 0
-          name: default_size_limit_gb
+          name: size_limit_gb
           order: 3
           size:
             - 0
