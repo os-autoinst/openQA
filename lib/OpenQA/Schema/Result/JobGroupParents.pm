@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2018 SUSE LLC
+# Copyright (C) 2016-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,8 +38,12 @@ __PACKAGE__->add_columns(
         data_type   => 'text',
         is_nullable => 0,
     },
-    default_size_limit_gb => {
+    size_limit_gb => {
         data_type   => 'integer',
+        is_nullable => 1,
+    },
+    exclusively_kept_asset_size => {
+        data_type   => 'bigint',
         is_nullable => 1,
     },
     default_keep_logs_in_days => {
@@ -98,9 +102,9 @@ sub _get_column_or_default {
     return $OpenQA::Utils::app->config->{default_group_limits}->{$setting};
 }
 
-around 'default_size_limit_gb' => sub {
+around 'size_limit_gb' => sub {
     my ($orig, $self) = @_;
-    return $self->_get_column_or_default('default_size_limit_gb', 'asset_size_limit');
+    return $self->_get_column_or_default('size_limit_gb', 'asset_size_limit');
 };
 
 around 'default_keep_logs_in_days' => sub {

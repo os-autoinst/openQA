@@ -73,11 +73,18 @@ $module->mock(delete           => \&mock_delete);
 $module->mock(remove_from_disk => \&mock_remove);
 $module->mock(refresh_size     => sub { });
 
-my $test_case  = OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/data/41-audit-log");
-my $schema     = $test_case->init_data;
-my $jobs       = $schema->resultset('Jobs');
-my $job_groups = $schema->resultset('JobGroups');
-my $assets     = $schema->resultset('Assets');
+my $test_case     = OpenQA::Test::Case->new(config_directory => "$FindBin::Bin/data/41-audit-log");
+my $schema        = $test_case->init_data;
+my $jobs          = $schema->resultset('Jobs');
+my $job_groups    = $schema->resultset('JobGroups');
+my $parent_groups = $schema->resultset('JobGroupParents');
+my $assets        = $schema->resultset('Assets');
+
+# move group 1002 into a parent group
+# note: This shouldn't change much because 1002 will be the only child and the same limit applies.
+#       However, the size of exclusively kept assets is moved to the parent-level.
+$parent_groups->create({id => 1, name => 'parent of "opensuse test"'});
+$job_groups->search({id => 1002})->update({parent_id => 1});
 
 # refresh assets only once and prevent adding untracked assets
 my $assets_mock = Test::MockModule->new('OpenQA::Schema::ResultSet::Assets');
@@ -89,6 +96,10 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # launch an additional app to serve some file for testing blocking downloads
 my $mojo_port = OpenQA::SeleniumTest::start_app(sub { });
+
+# define a fix asset_size_limit configuration for this test to be independent of the default value
+# we possibly want to adjust without going into the details of this test
+$t->app->config->{default_group_limits}->{asset_size_limit} = 100;
 
 # Allow Devel::Cover to collect stats for background jobs
 $t->app->minion->on(
@@ -204,12 +215,15 @@ my @expected_last_jobs_no_removal = (
 
 is_deeply(find_kept_assets_with_last_jobs, \@expected_last_jobs_no_removal, 'last jobs correctly assigned');
 
-# 1001 should exclusively keep 3, 1, 5 and 4
+# job group 1001 should exclusively keep 3, 1, 5 and 4
 is($job_groups->find(1001)->exclusively_kept_asset_size,
     72 * $gib, 'kept assets for group 1001 accumulated (18 GiB per asset)');
+# parent group 1 should exclusively keep 2 and 6 belonging to its job group 1002
+is($parent_groups->find(1)->exclusively_kept_asset_size,
+    36 * $gib, 'kept assets for group 1 accumulated (18 GiB per asset)');
 # 1002 should exclusively keep 2 and 6
 is($job_groups->find(1002)->exclusively_kept_asset_size,
-    36 * $gib, 'kept assets for group 1002 accumulated (18 GiB per asset)');
+    0, 'nothing accumulated for individual job group within parent');
 
 
 # at size 24GiB, group 1001 is over the 80% threshold but under the 100GiB
@@ -222,15 +236,15 @@ is_deeply(mock_deleted(), [], "nothing should have been 'deleted' at size 24GiB"
 
 is_deeply(find_kept_assets_with_last_jobs, \@expected_last_jobs_no_removal, 'last jobs have not been altered');
 
-# 1001 should exclusively keep the same as above
+# job group 1001 should exclusively keep the same as above
 is(
     $job_groups->find(1001)->exclusively_kept_asset_size,
     4 * 24 * $gib,
     'kept assets for group 1001 accumulated, job over threshold not taken into account (24 GiB per asset)'
 );
-# 1002 should exclusively keep the same as above
+# parent group 1 should exclusively keep the same as above
 is(
-    $job_groups->find(1002)->exclusively_kept_asset_size,
+    $parent_groups->find(1)->exclusively_kept_asset_size,
     2 * 24 * $gib,
     'kept assets for group 1002 accumulated (24 GiB per asset)'
 );
@@ -255,15 +269,15 @@ is_deeply(
     'last jobs still present but first one deleted'
 );
 
-# 1001 should exclusively keep 3, 5 and 1
+# job group 1001 should exclusively keep 3, 5 and 1
 is(
     $job_groups->find(1001)->exclusively_kept_asset_size,
     3 * 26 * $gib,
     'kept assets for group 1001 accumulated and deleted asset not taken into account (26 GiB per asset)'
 );
-# 1002 should exclusively keep 2 and 6
+# parent group 1 should exclusively keep 2 and 6 belonging to its job group 1002
 is(
-    $job_groups->find(1002)->exclusively_kept_asset_size,
+    $parent_groups->find(1)->exclusively_kept_asset_size,
     2 * 26 * $gib,
     'kept assets for group 1002 accumulated (26 GiB per asset)'
 );
@@ -297,9 +311,9 @@ is(
     2 * 34 * $gib,
     'kept assets for group 1001 accumulated and deleted asset not taken into account (34 GiB per asset)'
 );
-# 1002 should exclusively keep 2 and 6
+# parent group 1 should exclusively keep 2 and 6 belonging to its job group 1002
 is(
-    $job_groups->find(1002)->exclusively_kept_asset_size,
+    $parent_groups->find(1)->exclusively_kept_asset_size,
     2 * 34 * $gib,
     'kept assets for group 1002 accumulated (34 GiB per asset)'
 );
@@ -311,8 +325,7 @@ unlink $tempdir->child('deleted');
 # now we set the most recent job for asset #1 (99947) to PENDING state,
 # to test protection of assets for PENDING jobs which would otherwise
 # be removed.
-my $job99947 = $schema->resultset('Jobs')->find({id => 99947});
-#$job99947->state(OpenQA::Jobs::Constants::SCHEDULED);
+my $job99947            = $schema->resultset('Jobs')->find({id => 99947});
 my $job99947_t_finished = $job99947->t_finished;
 $job99947->update({t_finished => undef});
 
@@ -324,8 +337,7 @@ is(scalar @{mock_removed()}, 1, "only one asset should have been 'removed' at si
 is(scalar @{mock_deleted()}, 1, "only one asset should have been 'deleted' at size 34GiB with 99947 pending");
 
 # restore job 99947 to DONE state
-#$job99947->state(OpenQA::Jobs::Constants::DONE);
-#$job99947->update;
+$job99947->state(OpenQA::Jobs::Constants::DONE);
 $job99947->update({t_finished => $job99947_t_finished});
 
 sub create_temp_job_log_file {

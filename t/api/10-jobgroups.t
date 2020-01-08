@@ -99,7 +99,7 @@ subtest 'create parent group' => sub() {
         '/api/v1/parent_groups',
         form => {
             name                                => 'Cool parent group',
-            default_size_limit_gb               => 200,
+            size_limit_gb                       => 200,
             default_keep_important_logs_in_days => 45
         })->status_is(200);
     my $new_id = $t->tx->res->json->{id};
@@ -117,7 +117,8 @@ subtest 'create parent group' => sub() {
                 carry_over_bugrefs                     => 1,
                 default_keep_results_in_days           => 365,
                 default_keep_important_results_in_days => 0,
-                default_size_limit_gb                  => 200,
+                size_limit_gb                          => 200,
+                exclusively_kept_asset_size            => undef,
                 id                                     => $new_id,
                 description                            => undef,
                 build_version_sort                     => 1,

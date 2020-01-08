@@ -33,11 +33,22 @@ sub _remove_if {
     if (!$reason) {
         my $asset_name = $asset->{name};
         my $groups     = join(', ', keys %{$asset->{groups}});
-        $reason = "Removing asset $asset_name (assigned to groups: $groups)";
+        my $parents    = join(', ', keys %{$asset->{parents}});
+        $parents = " within parent job groups $parents" if $parents;
+        $reason  = "Removing asset $asset_name (belonging to job groups: ${groups}${parents})";
     }
     OpenQA::Utils::log_info($reason);
 
     $db->resultset('Assets')->single({id => $asset->{id}})->delete;
+}
+
+sub _update_exclusively_kept_asset_size {
+    my ($dbh, $table_name, $parent_or_job_group_info) = @_;
+
+    my $update_sth = $dbh->prepare("UPDATE $table_name SET exclusively_kept_asset_size = ? WHERE id = ?");
+    for my $group (values %$parent_or_job_group_info) {
+        $update_sth->execute($group->{picked}, $group->{id});
+    }
 }
 
 sub _limit {
@@ -116,12 +127,9 @@ sub _limit {
             }
         }
 
-        # store the exclusively_kept_asset_size in the DB - for the job group edit field
-        $update_sth = $dbh->prepare('UPDATE job_groups SET exclusively_kept_asset_size = ? WHERE id = ?');
-
-        for my $group (values %{$asset_status->{groups}}) {
-            $update_sth->execute($group->{picked}, $group->{id});
-        }
+        # store the exclusively_kept_asset_size in the DB (e.g. shown in group property editor)
+        _update_exclusively_kept_asset_size($dbh, job_groups        => $asset_status->{groups});
+        _update_exclusively_kept_asset_size($dbh, job_group_parents => $asset_status->{parents});
 
         # recompute the status (after the cleanup) and produce cache file for /admin/assets
         $schema->resultset('Assets')->status(

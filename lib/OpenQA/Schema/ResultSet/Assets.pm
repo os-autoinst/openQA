@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2018 SUSE LLC
+# Copyright (C) 2014-2019 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -190,8 +190,18 @@ END_SQL
     }
     my $max_job_by_group_prepared_query = $dbh->prepare($max_job_by_group_query);
 
+    # define variables; add "zero group" for groupless assets
+    my (@assets, %asset_info, %group_info, %parent_group_info);
+    $group_info{0} = {
+        size_limit_gb => 0,
+        size          => 0,
+        group         => 'Untracked',
+        id            => undef,
+        parent_id     => undef,
+        picked        => 0,
+    };
+
     # query the database in one transaction
-    my (@assets, %asset_info, %group_info);
     $schema->txn_do(
         sub {
             # set transaction-level so "all statements of the current transaction can only see rows committed
@@ -225,48 +235,56 @@ END_SQL
                     max_job   => ($max_job >= 0 ? $max_job : undef),
                     pending   => $asset_array->[7],
                     groups    => {},
+                    parents   => {},
                 );
                 $asset_info{$id} = \%asset;
                 push(@assets, \%asset);
             }
 
             # query list of job groups to show assets by job group
-            # We collect data required for /admin/assets *and* the limit_assets task
-            my $groups = $schema->resultset('JobGroups');
-            $group_info{0} = {
-                size_limit_gb => 0,
-                size          => 0,
-                group         => 'Untracked',
-                id            => undef,
-                picked        => 0,
-            };
-
-            # find relevant assets which belong to a job group
+            # note: We collect data required for /admin/assets *and* the limit_assets task.
+            my $groups                      = $schema->resultset('JobGroups');
             my $fail_on_inconsistent_status = $options{fail_on_inconsistent_status};
             while (my $group = $groups->next) {
+                my $parent = $group->parent;
+                my $parent_id;
+                if (defined $parent) {
+                    my $parent_size_limit_gb = $parent->size_limit_gb;
+                    $parent_id = $parent->id;
+                    $parent_group_info{$parent_id} = {
+                        id            => $parent_id,
+                        size_limit_gb => $parent_size_limit_gb,
+                        size          => $parent_size_limit_gb * 1024 * 1024 * 1024,
+                        picked        => 0,
+                        group         => $parent->name,
+                    };
+                }
+
                 my $group_id      = $group->id;
                 my $size_limit_gb = $group->size_limit_gb;
                 $group_info{$group_id} = {
                     id            => $group_id,
+                    parent_id     => $parent_id,
                     size_limit_gb => $size_limit_gb,
                     size          => $size_limit_gb * 1024 * 1024 * 1024,
                     picked        => 0,
                     group         => $group->full_name,
                 };
 
-                # add the max job ID for this group to
+                # add the max job ID for this group
                 $max_job_by_group_prepared_query->execute($group_id);
                 while (my $result = $max_job_by_group_prepared_query->fetchrow_hashref) {
                     my $asset_info   = $asset_info{$result->{asset_id}} or next;
                     my $init_max_job = $asset_info->{max_job} || 0;
                     my $res_max_job  = $result->{max_job};
-                    $asset_info->{groups}->{$group_id} = $res_max_job;
+                    $asset_info->{groups}->{$group_id}   = $res_max_job;
+                    $asset_info->{parents}->{$parent_id} = 1 if defined $parent_id;
 
                     # check whether the data from the 2nd select is inconsistent with what we've got from the 1st
                     # (pure pre-caution, shouldn't happen due to the transaction)
                     if ($fail_on_inconsistent_status && $res_max_job && ($res_max_job > $init_max_job)) {
-                        die
-"$asset_info->{name} was scheduled during cleanup (max job initially $init_max_job, now $res_max_job)";
+                        die "$asset_info->{name} was scheduled during cleanup"
+                          . " (max job initially $init_max_job, now $res_max_job)";
                     }
                 }
             }
@@ -274,21 +292,54 @@ END_SQL
 
     # compute group sizes
     for my $asset (@assets) {
-        my $largest_group = 0;
-        my $largest_size  = 0;
-        my @groups        = sort { $a <=> $b } keys %{$asset->{groups}};
-        my $size          = $asset->{size} // 0;
-        for my $g (@groups) {
-            log_debug("Asset $asset->{name} ($size) fits into $g: $group_info{$g}->{size}?");
-            if ($largest_size < $group_info{$g}->{size} && $group_info{$g}->{size} >= $size) {
-                $largest_size  = $group_info{$g}->{size};
-                $largest_group = $g;
-                log_debug("Asset $asset->{name} ($size) picked into $g");
+        my $largest_group_id  = 0;       # default to "zero group" for groupless assets
+        my $largest_parent_id = undef;
+        my $largest_size      = 0;
+        my @groups     = sort { $a <=> $b } keys %{$asset->{groups}};
+        my $asset_name = $asset->{name};
+        my $asset_size = $asset->{size} // 0;
+
+        # search for parent job group or job group with the highest asset size limit which has still enough space
+        # left for the asset
+        for my $group_id (@groups) {
+            my $group_info        = $group_info{$group_id};
+            my $group_size        = $group_info->{size};
+            my $parent_group_id   = $group_info->{parent_id};
+            my $parent_group_info = defined $parent_group_id ? $parent_group_info{$parent_group_id} : undef;
+            my $parent_group_size = defined $parent_group_info ? $parent_group_info->{size} : undef;
+            if (defined $parent_group_size) {
+                log_debug("Checking whether asset $asset_name ($asset_size) fits into"
+                      . " parent $parent_group_id ($parent_group_size)");
+                next unless $largest_size < $parent_group_size && $parent_group_size >= $asset_size;
+
+                log_debug("Asset $asset_name ($asset_size) picked into parent $parent_group_id");
+                $largest_size      = $parent_group_size;
+                $largest_parent_id = $parent_group_id;
+                $largest_group_id  = $group_id;
+            }
+            else {
+                log_debug("Checking whether asset $asset_name ($asset_size) fits into group $group_id ($group_size)");
+                next unless $largest_size < $group_size && $group_size >= $asset_size;
+
+                log_debug("Asset $asset_name ($asset_size) picked into group $group_id");
+                $largest_size      = $group_size;
+                $largest_parent_id = undef;
+                $largest_group_id  = $group_id;
             }
         }
-        $asset->{picked_into} = $largest_group;
-        $group_info{$largest_group}->{size}   -= $size;
-        $group_info{$largest_group}->{picked} += $size;
+
+        # account the asset to the determined parent group or job group or the default "zero group" for groupless assets
+        my $determined_group;
+        $asset->{picked_into} = $largest_group_id;
+        if (defined $largest_parent_id) {
+            $asset->{picked_into_parent_id} = $largest_parent_id;
+            $determined_group = $parent_group_info{$largest_parent_id};
+        }
+        else {
+            $determined_group = $group_info{$largest_group_id};
+        }
+        $determined_group->{size}   -= $asset_size;
+        $determined_group->{picked} += $asset_size;
     }
 
     # produce cache file for /admin/assets
@@ -304,6 +355,7 @@ END_SQL
                     {
                         data        => \@assets,
                         groups      => \%group_info,
+                        parents     => \%parent_group_info,
                         last_update => now() . 'Z',
                     }));
         }
@@ -312,7 +364,7 @@ END_SQL
         };
     }
 
-    return {assets => \@assets, groups => \%group_info};
+    return {assets => \@assets, groups => \%group_info, parents => \%parent_group_info};
 }
 
 1;

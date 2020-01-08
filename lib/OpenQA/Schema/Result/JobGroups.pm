@@ -122,7 +122,14 @@ sub _get_column_or_default {
 
 around 'size_limit_gb' => sub {
     my ($orig, $self) = @_;
-    return $self->_get_column_or_default('size_limit_gb', 'asset_size_limit');
+
+    if (defined(my $own_value = $self->get_column('size_limit_gb'))) {
+        return $own_value;
+    }
+    return $OpenQA::Utils::app->config->{default_group_limits}->{asset_size_limit};
+
+    # note: In contrast to other cleanup-related properties the limit for assets is not inherited from
+    #       the parent group. So the default is directly read from the config.
 };
 
 around 'keep_logs_in_days' => sub {

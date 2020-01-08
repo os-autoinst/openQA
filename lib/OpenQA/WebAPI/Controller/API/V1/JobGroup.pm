@@ -117,13 +117,15 @@ sub load_properties {
     my %properties;
     for my $param ($self->resultset->result_source->columns) {
         my $value = $self->param($param);
-        if (defined($value)) {
-            if ($param eq 'parent_id') {
-                $properties{$param} = ($value eq 'none') ? undef : $value;
-            }
-            else {
-                $properties{$param} = $value;
-            }
+        next unless defined $value;
+        if ($param eq 'parent_id') {
+            $properties{$param} = ($value eq 'none') ? undef : $value;
+        }
+        elsif ($param eq 'size_limit_gb') {
+            $properties{$param} = ($value eq '') ? undef : $value;
+        }
+        else {
+            $properties{$param} = $value;
         }
     }
 
