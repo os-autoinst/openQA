@@ -87,7 +87,10 @@ sub startup {
         before_dispatch => sub {
             my ($controller) = @_;
             OpenQA::Setup::set_secure_flag_on_cookies($controller);
-            $controller->stash('job_groups_and_parents', job_groups_and_parents);
+            unless ($controller->req->url->path =~ m{^/(?:api/|asset/|tests/.*ajax)}) {
+                # only retrieve job groups if we deliver HTML
+                $controller->stash('job_groups_and_parents', job_groups_and_parents);
+            }
         });
 
     # placeholder types
