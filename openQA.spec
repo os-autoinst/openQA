@@ -312,6 +312,7 @@ fi
 %service_add_pre %{openqa_worker_services}
 
 %post
+%tmpfiles_create %{_tmpfilesdir}/openqa-webui.conf
 # install empty log file
 if [ ! -e %{_localstatedir}/log/openqa ]; then
         install -D -m 644 -o geekotest /dev/null %{_localstatedir}/log/openqa || :
@@ -400,6 +401,7 @@ fi
 %{_unitdir}/openqa-enqueue-audit-event-cleanup.timer
 %{_unitdir}/openqa-enqueue-asset-and-result-cleanup.service
 %{_unitdir}/openqa-enqueue-asset-and-result-cleanup.timer
+%{_tmpfilesdir}/openqa-webui.conf
 # web libs
 %dir %{_datadir}/openqa
 %{_datadir}/openqa/templates
