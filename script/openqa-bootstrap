@@ -100,8 +100,8 @@ EOF
 # start worker
 systemctl enable --now openqa-worker@1
 
-# clone jobs if jobId is given. Possible to pass extra arguments as well.
-# ex: openqa-bootstrap -from openqa.opensuse.org 12345 SCHEDULE=tests/boot/boot_to_desktop,tests/x11/kontact
+# clone job if job ID is given passing extra arguments as well
+# e.g.: openqa-bootstrap --from openqa.opensuse.org 12345 SCHEDULE=tests/boot/boot_to_desktop,tests/x11/kontact
 if [ $# -ne 0 ]; then
-	openqa-clone-job "$@"
+    openqa-clone-job "$@"
 fi

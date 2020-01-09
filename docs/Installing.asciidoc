@@ -57,7 +57,7 @@ supplying +openqa-clone-job+ parameters directly for a quickstart:
 
 [source,sh]
 ----
-/usr/share/openqa/script/openqa-bootstrap -from openqa.opensuse.org 12345 SCHEDULE=tests/boot/boot_to_desktop,tests/x11/kontact
+/usr/share/openqa/script/openqa-bootstrap --from openqa.opensuse.org 12345 SCHEDULE=tests/boot/boot_to_desktop,tests/x11/kontact
 ----
 
 The above command will bootstrap an openQA installation and immediately
