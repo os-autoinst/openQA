@@ -252,7 +252,7 @@ any statements) you can just drop the migration again.
 
 1. First, you need to increase the database version number in the `$VERSION`
    variable in the +lib/OpenQA/Schema.pm+ file.
-   Note that it's recommended to notify the other developers before doing so,
+   Note that it is recommended to notify the other developers before doing so,
    to synchronize in case there are more developers wanting to increase the
    version number at the same time.
 
@@ -267,25 +267,28 @@ any statements) you can just drop the migration again.
    initialize the schema and to upgrade from one version
    to the next in the corresponding database engine.
 
-4. Migration scripts to upgrade from previous versions can be added under
+4. Custom migration scripts to upgrade from previous versions can be added under
    +dbicdh/_common/upgrade+. Create a +<prev_version>-<new_version>+ directory and
    put some files there with DBIx commands for the migration. For examples just
    have a look at the migrations which are already there.
+   The custom migration scripts are executed in addition to the automatically
+   generated ones. If the name of the custom migration script comes before
+   `001-auto.sql` in alphabetical order it will be executed *before* the
+   automatically created migration script. That is most of the times *not* desired.
 
-The above steps are only for preparing the required SQL statements, but do not
-actually alter the database. Before doing so, it is recommended *to backup your
-database* to be able to downgrade again if something goes wrong or you just need
-to continue working on another branch. To do so, the following command can be
-used to create a copy:
+The above steps are only for preparing the required SQL statements for the migration.
+
+The migration itself (which alters your database!) is done *automatically* the first
+time the web UI is (re)started. So be sure *to backup your database* before restarting
+to be able to downgrade again if something goes wrong or you just need to continue
+working on another branch. To do so, the following command can be used to create a copy:
 [source,sh]
 ----
 createdb -O ownername -T originaldb newdb
 ----
 
-To actually create or update the database (after creating a backup as described),
-you should run either `./script/initdb --init_database` or
-`./script/upgradedb --upgrade_database`. This is also required when the changes
-are installed in a production server.
+To initialize or update the database manually before restarting the web UI you can run
+either `./script/initdb --init_database` or `./script/upgradedb --upgrade_database`.
 
 === How to add fixtures to the database
 
