@@ -1,4 +1,4 @@
-# Copyright © 2014-2019 SUSE LLC
+# Copyright © 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -132,14 +132,7 @@ sub _try_deploy_db {
     }
     catch {
         $dh->install;
-        # create system user right away
-        $schema->resultset('Users')->create(
-            {
-                username => 'system',
-                email    => 'noemail@open.qa',
-                fullname => 'openQA system user',
-                nickname => 'system'
-            });
+        $schema->create_system_user;    # create system user right away
     };
 
     return !$version;
@@ -155,6 +148,18 @@ sub _try_upgrade_db {
     }
 
     return 0;
+}
+
+sub create_system_user {
+    my ($self) = @_;
+
+    $self->resultset('Users')->create(
+        {
+            username => 'system',
+            email    => 'noemail@open.qa',
+            fullname => 'openQA system user',
+            nickname => 'system'
+        });
 }
 
 # read application secret from database

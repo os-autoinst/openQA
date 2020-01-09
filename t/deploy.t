@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,26 +19,30 @@
 use strict;
 use warnings;
 
+use FindBin;
+use lib "$FindBin::Bin/lib";
+
 use Test::More;
 use Test::Warnings;
+use Test::Mojo;
 use DBIx::Class::DeploymentHandler;
 use SQL::Translator;
 use OpenQA::Schema;
+use OpenQA::Test::Case;
 use Try::Tiny;
 use FindBin;
 
 plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
-sub redo_schema {
+sub ensure_schema_is_created_and_empty {
     my $dbh = shift->storage->dbh;
     $dbh->do('SET client_min_messages TO WARNING;');
     $dbh->do("drop schema if exists deploy cascade");
     $dbh->do("create schema deploy");
     $dbh->do("SET search_path TO deploy");
 }
-
 my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
-redo_schema $schema;
+ensure_schema_is_created_and_empty $schema;
 
 my $dh = DBIx::Class::DeploymentHandler->new(
     {
@@ -60,7 +64,7 @@ is($ret,                                   2,                   'Expected return
 
 OpenQA::Schema::disconnect_db;
 $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
-redo_schema $schema;
+ensure_schema_is_created_and_empty $schema;
 
 # redeploy DB to older version and check if deployment_check upgrades the DB
 $dh = DBIx::Class::DeploymentHandler->new(
@@ -72,9 +76,15 @@ $dh = DBIx::Class::DeploymentHandler->new(
         force_overwrite     => 1,
     });
 $dh->install({version => $dh->schema_version - 2});
+$schema->create_system_user;
+
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version - 2, 'Schema at correct, old, version');
 $ret = OpenQA::Schema::deployment_check($schema);
+
+# insert default fixtures so this test is at least a little bit closer to migrations in production
+OpenQA::Test::Database->new->insert_fixtures($schema);
+
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
 is($ret,                                   1,                   'Expected return value (1) for an upgrade');
@@ -108,5 +118,12 @@ SKIP: {
     ok($trans->translate, "generate graph");
     ok(-e $fn,            "graph png exists");
 }
+
+subtest 'serving common pages works after db migrations' => sub {
+    my $t = Test::Mojo->new('OpenQA::WebAPI');
+    for my $page (qw(/ /tests /tests/overview /admin/workers /admin/groups /admin/job_templates/1001)) {
+        $t->get_ok($page)->status_is(200);
+    }
+};
 
 done_testing();
