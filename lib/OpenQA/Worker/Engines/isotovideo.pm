@@ -169,17 +169,15 @@ sub _link_asset {
     # Prevent the syncing to abort e.g. for workers running with "--no-cleanup"
     unlink $target if -e $target;
 
-    # Use hard links if both are on the same device, this ensures that assets
-    # cannot be purged early from the pool even if the cache service runs out of
-    # space
-    if ($asset->stat->dev == $pooldir->stat->dev) {
-        link($asset, $target) or die qq{Cannot create link from "$asset" to "$target": $!};
-        log_debug(qq{Linked asset "$asset" to "$target"});
-    }
-    else {
+    # Try to use hardlinks first and only fall back to symlinks when that fails,
+    # to ensure that assets cannot be purged early from the pool even if the
+    # cache service runs out of space
+    eval { link($asset, $target) or die qq{Cannot create link from "$asset" to "$target": $!} };
+    if (my $err = $@) {
         symlink($asset, $target) or die qq{Cannot create symlink from "$asset" to "$target": $!};
-        log_debug(qq{Symlinked asset "$asset" to "$target"});
+        log_debug(qq{Symlinked asset because hardlink failed: $err});
     }
+    log_debug(qq{Linked asset "$asset" to "$target"});
 
     return $target->to_string;
 }
