@@ -20,15 +20,17 @@ use Mojo::File;
 use POSIX 'strftime';
 
 sub index {
-    my $self   = shift;
-    my $helper = $self->obs_rsync;
+    my $self        = shift;
+    my $obs_project = shift;
+    my $helper      = $self->obs_rsync;
     my %folder_info_by_name;
-    my $folders = Mojo::File->new($helper->home)->list({dir => 1})->grep(sub { -d $_ })->map('basename')
+    my $folders
+      = Mojo::File->new($helper->home, $obs_project // "")->list({dir => 1})->grep(sub { -d $_ })->map('basename')
       ->grep(qr/^^(?!t$|profiles$|script$|xml$)/)->to_array;
 
     for my $folder (@$folders) {
-        my $run_last_info = $helper->get_run_last_info($folder);
-        my ($fail_last_job_id, $fail_last_when) = $helper->get_fail_last_info($folder);
+        my $run_last_info = $helper->get_run_last_info($folder, $obs_project);
+        my ($fail_last_job_id, $fail_last_when) = $helper->get_fail_last_info($folder, $obs_project);
         $folder_info_by_name{$folder} = {
             run_last         => $run_last_info->{dt},
             run_last_version => $run_last_info->{version},
@@ -38,24 +40,26 @@ sub index {
             dirty_status     => $helper->get_dirty_status($folder)};
     }
 
-    my $running_jobs = $self->app->minion->backend->list_jobs(0, undef,
-        {tasks => ['obs_rsync_run'], states => ['active', 'inactive']});
+    if (!$obs_project) {
+        my $running_jobs = $self->app->minion->backend->list_jobs(0, undef,
+            {tasks => ['obs_rsync_run'], states => ['active', 'inactive']});
 
-    for my $job (@{$running_jobs->{jobs}}) {
-        my $args = $job->{args};
-        $args = $args->[0] if (ref $args eq 'ARRAY' && scalar(@$args) == 1);
+        for my $job (@{$running_jobs->{jobs}}) {
+            my $args = $job->{args};
+            $args = $args->[0] if (ref $args eq 'ARRAY' && scalar(@$args) == 1);
 
-        next unless (ref $args eq 'HASH' && scalar(%$args) == 1 && $args->{project});
-        my $project = $args->{project};
-        next unless exists $folder_info_by_name{$project};
-        $folder_info_by_name{$project}->{state} = $job->{state};
-        my $created_at = $job->{created};
-        if ($created_at) {
-            $created_at = strftime('%Y-%m-%d %H:%M:%S %z', localtime($created_at));
-            $folder_info_by_name{$project}->{created} = $created_at;
+            next unless (ref $args eq 'HASH' && scalar(%$args) == 1 && $args->{project});
+            my $project = $args->{project};
+            next unless exists $folder_info_by_name{$project};
+            $folder_info_by_name{$project}->{state} = $job->{state};
+            my $created_at = $job->{created};
+            if ($created_at) {
+                $created_at = strftime('%Y-%m-%d %H:%M:%S %z', localtime($created_at));
+                $folder_info_by_name{$project}->{created} = $created_at;
+            }
         }
     }
-    $self->render('ObsRsync_index', folder_info_by_name => \%folder_info_by_name);
+    $self->render('ObsRsync_index', folder_info_by_name => \%folder_info_by_name, obs_project => $obs_project);
 }
 
 sub folder {
@@ -64,13 +68,19 @@ sub folder {
     my $helper = $self->obs_rsync;
     return undef if $helper->check_and_render_error($folder);
 
-    my $full        = $helper->home;
-    my $obs_project = $folder;
-    my $files       = Mojo::File->new($full, $obs_project, '.run_last')->list({dir => 1})->map('basename');
+    my $full = $helper->home;
+    my ($obs_project, $batch) = split(/\|/, $folder, 2);
+    $batch = "" unless $batch;
+
+    if (!$batch && Mojo::File->new($full, $obs_project)->list({dir => 1})->grep(sub { -d $_ })->size) {
+        return $self->index($obs_project);
+    }
+    my $files = Mojo::File->new($full, $obs_project, $batch, '.run_last')->list({dir => 1})->map('basename');
 
     $self->render(
         'ObsRsync_folder',
         obs_project     => $obs_project,
+        folder          => $folder,
         lst_files       => $files->grep(qr/files_.*\.lst/)->to_array,
         read_files_sh   => $files->grep(qr/read_files\.sh/)->join(),
         rsync_commands  => $files->grep(qr/rsync_.*\.cmd/)->to_array,
@@ -85,7 +95,10 @@ sub runs {
     my $helper = $self->obs_rsync;
     return undef if $helper->check_and_render_error($folder);
 
-    my $full = Mojo::File->new($helper->home, $folder);
+    my ($obs_project, $batch) = split(/\|/, $folder, 2);
+    $batch = "" unless $batch;
+
+    my $full = Mojo::File->new($helper->home, $obs_project, $batch);
     my $files
       = $full->list({dir => 1, hidden => 1})->map('basename')->grep(qr/\.run_.*/)->sort(sub { $b cmp $a })->to_array;
     $self->render('ObsRsync_logs', folder => $folder, full => $full->to_string, subfolders => $files);
@@ -98,7 +111,10 @@ sub run {
     my $helper    = $self->obs_rsync;
     return undef if $helper->check_and_render_error($folder, $subfolder);
 
-    my $full  = Mojo::File->new($helper->home, $folder, $subfolder);
+    my ($obs_project, $batch) = split(/\|/, $folder, 2);
+    $batch = "" unless $batch;
+
+    my $full  = Mojo::File->new($helper->home, $obs_project, $batch, $subfolder);
     my $files = $full->list->map('basename')->sort->to_array;
     $self->render(
         'ObsRsync_logfiles',
@@ -117,7 +133,10 @@ sub download_file {
     my $helper    = $self->obs_rsync;
     return undef if $helper->check_and_render_error($folder, $subfolder, $filename);
 
-    my $full = Mojo::File->new($helper->home, $folder, $subfolder);
+    my ($obs_project, $batch) = split(/\|/, $folder, 2);
+    $batch = "" unless $batch;
+
+    my $full = Mojo::File->new($helper->home, $obs_project, $batch, $subfolder);
     $self->res->headers->content_type('text/plain');
     $self->reply->file($full->child($filename));
 }

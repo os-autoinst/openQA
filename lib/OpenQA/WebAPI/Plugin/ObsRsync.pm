@@ -276,7 +276,11 @@ sub _check_error {
     return (400, 'Subfolder has invalid characters') if $subfolder && $subfolder =~ m!/!;
     return (400, 'Filename has invalid characters')  if $filename  && $filename  =~ m!/!;
 
-    return (404, 'Invalid Project {' . $project . '}') if $project && !-d Mojo::File->new($home, $project);
+    my $batch;
+    ($project, $batch) = split(/\|/, $project, 2);
+    return (404, "Invalid Project {$project}") if $project && !-d Mojo::File->new($home, $project);
+    return (404, "Invalid Batch {$project|$batch}")
+      if $project && $batch && !-d Mojo::File->new($home, $project, $batch);
     return 0;
 }
 

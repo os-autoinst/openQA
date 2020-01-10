@@ -45,21 +45,55 @@ $t->get_ok('/login');
 
 BAIL_OUT('Login exit code (' . $t->tx->res->code . ')') if $t->tx->res->code != 302;
 
-$t->get_ok('/admin/obs_rsync')->status_is(200, "index status")->element_exists('a[href*="/admin/obs_rsync/Proj1"]')
-  ->content_unlike(qr/script\<\/a\>/);
+sub _el {
+    my ($project, $run, $file) = @_;
+    return qq{a[href="/admin/obs_rsync/$project/runs/$run/download/$file"]} if $file;
+    return qq{a[href="/admin/obs_rsync/$project/runs/$run"]}          if $run;
+    return qq{a[href="/admin/obs_rsync/$project"]};
+}
 
-$t->get_ok('/admin/obs_rsync/Proj1')->status_is(200, "project status")->element_exists('[rsync_iso.cmd]')
-  ->element_exists('[rsync_repo.cmd]')->element_exists('[openqa.cmd]');
+sub _el1 {
+    my ($project, $file) = @_;
+    return _el($project, '.run_last', $file);
+}
 
-$t->get_ok('/admin/obs_rsync/Proj1/runs')->status_is(200, "project logs status")
-  ->element_exists('[.run_190703_143010]');
+sub test_project {
+    my ($t, $project, $batch, $dt) = @_;
+    $t->get_ok('/admin/obs_rsync')->status_is(200, 'index status')->element_exists(_el($project))
+      ->content_unlike(qr/script\<\/a\>/);
 
-$t->get_ok('/admin/obs_rsync/Proj1/runs/.run_190703_143010')->status_is(200, "project log subfolder status")
-  ->element_exists('[files_iso.lst]');
+    my $projectbatch  = $project;
+    my $projectbatch1 = $project;
+    if ($batch) {
+        $projectbatch  = "$project|$batch";
+        $projectbatch1 = $project . '%7C' . $batch;
+        $t->get_ok("/admin/obs_rsync/$project")->status_is(200, 'project status')
+          ->element_exists_not(_el1($project, 'rsync_iso.cmd'))->element_exists_not(_el1($project, 'rsync_repo.cmd'))
+          ->element_exists_not(_el1($project, 'openqa.cmd'))->element_exists(_el($projectbatch1));
+    }
 
-$t->get_ok('/admin/obs_rsync/Proj1/runs/.run_190703_143010/download/files_iso.lst')
-  ->status_is(200, "project log file download status")
-  ->content_like(qr/openSUSE-Leap-15.1-DVD-x86_64-Build470.1-Media.iso/)
-  ->content_like(qr/openSUSE-Leap-15.1-NET-x86_64-Build470.1-Media.iso/);
+    $t->get_ok("/admin/obs_rsync/$projectbatch")->status_is(200, 'project status')
+      ->element_exists(_el1($projectbatch1, 'rsync_iso.cmd'))->element_exists(_el1($projectbatch1, 'rsync_repo.cmd'))
+      ->element_exists(_el1($projectbatch1, 'openqa.cmd'));
+
+    $t->get_ok("/admin/obs_rsync/$projectbatch/runs")->status_is(200, 'project logs status')
+      ->element_exists(_el($projectbatch1, ".run_$dt"));
+
+    $t->get_ok("/admin/obs_rsync/$projectbatch/runs/.run_$dt")->status_is(200, 'project log subfolder status')
+      ->element_exists(_el($projectbatch1, ".run_$dt", 'files_iso.lst'));
+
+    $t->get_ok("/admin/obs_rsync/$projectbatch/runs/.run_$dt/download/files_iso.lst")
+      ->status_is(200, "project log file download status")
+      ->content_like(qr/openSUSE-Leap-15.1-DVD-x86_64-Build470.1-Media.iso/)
+      ->content_like(qr/openSUSE-Leap-15.1-NET-x86_64-Build470.1-Media.iso/);
+}
+
+subtest 'Smoke test Proj1' => sub {
+    test_project($t, 'Proj1', '', '190703_143010');
+};
+
+subtest 'Test batched project' => sub {
+    test_project($t, 'BatchedProj', 'Batch1', '191216_150610');
+};
 
 done_testing();
