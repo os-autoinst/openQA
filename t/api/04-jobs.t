@@ -570,10 +570,6 @@ sub find_build {
     }
 }
 
-# delete the job with a registered job module
-$t->delete_ok('/api/v1/jobs/99937')->status_is(200);
-$t->get_ok('/api/v1/jobs/99937')->status_is(404);
-
 subtest 'json representation of group overview (actually not part of the API)' => sub {
     $t->get_ok('/group_overview/1001.json')->status_is(200);
     my $json       = $t->tx->res->json;
@@ -1036,12 +1032,12 @@ subtest 'Parse extra tests results - LTP' => sub {
 
             ok -e path($basedir, 'details-' . $_->test->name . '.json'),
               'detail from junit was written for ' . $_->test->name;
-            is_deeply $db_module->details, $_->details;
-            is $db_module->name,           $_->test->name, 'Modules name are matching';
-            is $db_module->script,         'test', 'Modules script are matching';
-            is $db_module->category,       $_->test->category, 'Modules category are matching';
+            is_deeply $db_module->details->{results}, $_->details;
+            is $db_module->name, $_->test->name, 'Modules name are matching';
+            is $db_module->script, 'test', 'Modules script are matching';
+            is $db_module->category, $_->test->category, 'Modules category are matching';
             is $db_module->result, ($_->result eq 'ok' ? 'passed' : 'failed'), 'Modules can be passed or failed';
-            ok -e path($basedir, $_->{text}) for @{$db_module->details};
+            ok -e path($basedir, $_->{text}) for @{$db_module->details->{results}};
         });
 
     $parser->outputs->each(
@@ -1113,12 +1109,12 @@ subtest 'Parse extra tests results - xunit' => sub {
 
             ok -e path($basedir, 'details-' . $_->test->name . '.json'),
               'detail from junit was written for ' . $_->test->name;
-            is_deeply $db_module->details, $_->details;
-            is $db_module->name,           $_->test->name, 'Modules name are matching';
-            is $db_module->script,         'test', 'Modules script are matching';
-            is $db_module->category,       $_->test->category, 'Modules category are matching';
+            is_deeply $db_module->details->{results}, $_->details;
+            is $db_module->name, $_->test->name, 'Modules name are matching';
+            is $db_module->script, 'test', 'Modules script are matching';
+            is $db_module->category, $_->test->category, 'Modules category are matching';
             is $db_module->result, ($_->result eq 'ok' ? 'passed' : 'failed'), 'Modules can be passed or failed';
-            ok -e path($basedir, $_->{text}) for @{$db_module->details};
+            ok -e path($basedir, $_->{text}) for @{$db_module->details->{results}};
         });
 
 
@@ -1181,13 +1177,13 @@ subtest 'Parse extra tests results - junit' => sub {
 
             ok -e path($basedir, 'details-' . $_->test->name . '.json'),
               'detail from junit was written for ' . $_->test->name;
-            is_deeply $db_module->details, $_->details;
-            is $db_module->name,           $_->test->name, 'Modules name are matching';
-            is $db_module->script,         'test', 'Modules script are matching';
-            is $db_module->category,       $_->test->category, 'Modules category are matching';
-            is $db_module->result,         'passed', 'Modules result are ok';
+            is_deeply $db_module->details->{results}, $_->details;
+            is $db_module->name, $_->test->name, 'Modules name are matching';
+            is $db_module->script, 'test', 'Modules script are matching';
+            is $db_module->category, $_->test->category, 'Modules category are matching';
+            is $db_module->result, 'passed', 'Modules result are ok';
 
-            ok -e path($basedir, $_->{text}) for @{$db_module->details};
+            ok -e path($basedir, $_->{text}) for @{$db_module->details->{results}};
         });
 
 
@@ -1203,5 +1199,30 @@ subtest 'create job failed when PUBLISH_HDD_1 is invalid' => sub {
     $t->post_ok('/api/v1/jobs', form => \%jobs_post_params)->status_is(400);
     like($t->tx->res->json->{error}, qr/The PUBLISH_HDD_1 cannot include \/ in value/, 'PUBLISH_HDD_1 is invalid');
 };
+
+subtest 'show job modules execution time' => sub {
+    my %modules_execution_time = (
+        aplay              => 146,
+        consoletest_finish => 164,
+        gnucash            => 187,
+        installer_timezone => 34
+    );
+    $t->get_ok('/api/v1/jobs/99937/details');
+    my @testresults     = sort { $a->{name} cmp $b->{name} } @{$t->tx->res->json->{job}->{testresults}};
+    my %execution_times = map  { $_->{name} => $_->{execution_time} } @testresults;
+    for my $module_name (keys %modules_execution_time) {
+        is(
+            $execution_times{$module_name},
+            $modules_execution_time{$module_name},
+            $module_name . ' execution time showed correctly'
+        );
+    }
+    is(scalar(@{$testresults[0]->{details}}), 2,  'the old format json file parsed correctly');
+    is($testresults[0]->{execution_time},     '', 'the old format json file does not include execution_time');
+};
+
+# delete the job with a registered job module
+$t->delete_ok('/api/v1/jobs/99937')->status_is(200);
+$t->get_ok('/api/v1/jobs/99937')->status_is(404);
 
 done_testing();

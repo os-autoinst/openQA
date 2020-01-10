@@ -188,7 +188,7 @@ sub details {
     return unless $dir;
     my $fn = "$dir/details-" . $self->name . ".json";
     OpenQA::Utils::log_debug "reading $fn";
-    open(my $fh, "<", $fn) || return [];
+    open(my $fh, "<", $fn) || return {};
     local $/;
     my $ret;
     # decode_json dies if JSON is malformed, so handle that
@@ -197,12 +197,13 @@ sub details {
     }
     catch {
         OpenQA::Utils::log_debug "malformed JSON file $fn";
-        $ret = [];
+        $ret = {};
     }
     finally {
         close($fh);
     };
-    for my $img (@$ret) {
+    my $details = ref($ret) eq 'HASH' ? $ret : {results => $ret, execution_time => ''};
+    for my $img (@{$details->{results}}) {
         next unless $img->{screenshot};
         my $link = abs_path($dir . "/" . $img->{screenshot});
         next unless $link;
@@ -216,7 +217,7 @@ sub details {
         }
     }
 
-    return $ret;
+    return $details;
 }
 
 sub job_module {
@@ -266,7 +267,7 @@ sub store_needle_infos {
         $needle_cache = \%hash;
     }
 
-    for my $detail (@{$details}) {
+    for my $detail (@$details) {
         if ($detail->{needle}) {
             OpenQA::Schema::Result::Needles::update_needle($detail->{json}, $self, 1, $needle_cache);
         }
@@ -295,6 +296,7 @@ sub save_details {
     my ($self, $details) = @_;
     my $existent_md5 = [];
     my @dbpaths;
+    $details = ref($details) eq 'HASH' ? $details->{results} : $details;
     for my $d (@$details) {
         # avoid creating symlinks for text results
         if ($d->{screenshot}) {

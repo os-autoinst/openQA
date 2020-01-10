@@ -1610,7 +1610,7 @@ sub _failure_reason {
     while (my $m = $modules->next) {
         if ($m->result eq FAILED || $m->result eq SOFTFAILED) {
             # Look for serial failures which have bug reference
-            my @bugrefs = map { find_bugref($_->{title}) || '' } @{$m->details};
+            my @bugrefs = map { find_bugref($_->{title}) || '' } @{$m->details->{results}};
             # If bug reference is in title, put it as a failure reason, otherwise use module name
             if (my $failure_reason = join('', @bugrefs)) {
                 return $failure_reason;

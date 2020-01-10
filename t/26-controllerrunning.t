@@ -175,7 +175,7 @@ sub new {
 sub worker  { shift->{worker} }
 sub state   { 1 }
 sub modules { FakeSchema::Find->new }
-sub details { [qw(foo bar baz)] }
+sub details { {results => [qw(foo bar baz)]} }
 sub name    { "foobar" }
 
 package Worker;

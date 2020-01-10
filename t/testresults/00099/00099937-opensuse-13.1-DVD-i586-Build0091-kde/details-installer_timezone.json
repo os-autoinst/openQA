@@ -1,1 +1,1 @@
-[{"screenshot":"installer_timezone-1.png","tags":["inst-timezone"],"area":[{"x":"261","diff":"installer_timezone-1-inst-timezone-diff0.png","y":"0","result":"ok","w":759,"similarity":96,"h":708}],"needle":"inst-timezone","result":"ok"}]
+{"execution_time":34,"results":[{"area":[{"diff":"installer_timezone-1-inst-timezone-diff0.png","h":708,"result":"ok","similarity":96,"w":759,"x":"261","y":"0"}],"needle":"inst-timezone","result":"ok","screenshot":"installer_timezone-1.png","tags":["inst-timezone"]}]}
