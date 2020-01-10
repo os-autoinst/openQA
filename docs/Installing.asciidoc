@@ -626,59 +626,6 @@ This will allow the workers to download the assets from the webUI and use them
 locally. If +TESTPOOLSERVER+ is set tests and needles will also be cached by the
 worker.
 
-[[development-setup]]
-== Development setup
-
-For developing openQA and os-autoinst itself it makes sense to checkout the Git repository
-and to start the daemons manually.
-
-This section should give you a general idea how to do that. For further details and starting
-unit tests have a look at the <<Contributing.asciidoc#contributing,developer guide>>. For a concrete
-example some developers use under openSUSE Tumbleweed have a look at the
-https://github.com/Martchus/openQA-helper[openQA-helper repository].
-
-=== Repository URLs
-* os-autoinst: https://github.com/os-autoinst/os-autoinst
-    - the "backend" (thing that executes tests and starts/controls the SUT e.g. using QEMU)
-* openQA: https://github.com/os-autoinst/openQA
-    - mainly the web UI and accompanying daemons like the scheduler
-    - the worker (thing that starts the backend and uploads results to the web UI)
-    - documentation
-* test distribution: e.g. https://github.com/os-autoinst/os-autoinst-distri-opensuse for openSUSE
-    - the actual tests
-* needles: e.g. https://github.com/os-autoinst/os-autoinst-needles-opensuse for openSUSE
-    - reference images if not already included in the test distribution
-
-=== Dependencies
-Have a look at the packaged version (e.g. +openQA.spec+ within the root of the openQA repository)
-for all required dependencies. For development build time dependencies need to be installed as well.
-Recommended dependencies such logrotate can be ignored.
-
-=== Starting daemons
-Although it likely makes not much sense to use the systemd unit files directly it still makes
-sense to have a look at them to see how the different daemons are started. They are found in
-the +systemd+ directory of the openQA repository. You can substitute +/usr/share/openqa/+ with the
-path of your openQA Git checkout.
-
-Of course you can ignore the user specified in these unit files and instead start everything as your
-regular user. However, you need to ensure that your user has the permission to the "openQA base directory".
-That is not the case by default so it makes sense to <<Contributing.asciidoc#_customize_base_directory,customize it>>.
-
-Note that the web UI daemon will pull required JavaScript/CSS libraries automatically when started
-the first time. This might take a while and requires an internet connection.
-
-You do *not* need to setup an additional web server because the daemons already provide one. The port
-under which a service is available is logged on startup (the main web UI port is 9625 by default). Local
-workers need to be configured to connect to the main web UI port (add +HOST = http://localhost:9526+ to
-+workers.ini+).
-
-For an overview over all daemons/processes/ports and their connections have a look at
-the link:images/architecture.svg[architecture diagram].
-
-=== Setting up the database
-One also needs to setup a PostgreSQL database for openQA manually owned by your regular user
-which is documented in the <<Contributing.asciidoc#setup-postgresql,developer guide>>.
-
 == Auditing - tracking openQA changes
 [id="auditing"]
 

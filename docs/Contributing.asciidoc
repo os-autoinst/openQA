@@ -26,19 +26,23 @@ https://github.com/os-autoinst/openQA[official repository].
 
 As mentioned, the central point of development is the
 https://github.com/os-autoinst[os-autoinst organization on GitHub] where several
-repositories can be found:
+repositories can be found.
 
-* https://github.com/os-autoinst/openQA[openQA] containing documentation,
-  server, worker and other support scripts.
-* https://github.com/os-autoinst/os-autoinst[os-autoinst] with the standalone
-  test tool.
-* https://github.com/os-autoinst/os-autoinst-distri-opensuse[os-autoinst-distri-opensuse]
-  containing the tests used in http://openqa.opensuse.org
-* https://github.com/os-autoinst/os-autoinst-needles-opensuse[os-autoinst-needles-opensuse]
-  with the needles associated to the tests in the former repository.
-* https://github.com/os-autoinst/os-autoinst-distri-example[os-autoinst-distri-example]
-  with an almost empty set of tests meant to be used to start writing tests (and
-  creating the corresponding needles) from scratch for a new operating system.
+[id="repo-urls"]
+=== Repository URLs
+* os-autoinst: https://github.com/os-autoinst/os-autoinst
+    - the "backend" (thing that executes tests and starts/controls the SUT e.g. using QEMU)
+* openQA: https://github.com/os-autoinst/openQA
+    - mainly the web UI and accompanying daemons like the scheduler
+    - the worker (thing that starts the backend and uploads results to the web UI)
+    - documentation
+    - miscellaneous support scripts
+* test distribution: e.g. https://github.com/os-autoinst/os-autoinst-distri-opensuse for openSUSE
+    - the actual tests, in case of +os-autoinst-distri-opensuse+ conducted on http://openqa.opensuse.org
+* needles: e.g. https://github.com/os-autoinst/os-autoinst-needles-opensuse for openSUSE
+    - reference images if not already included in the test distribution
+* empty example test distribution: https://github.com/os-autoinst/os-autoinst-distri-example
+   - meant to be used to start writing tests (and creating the corresponding needles) from scratch for a new operating system
 
 As in most projects hosted on GitHub, pull request are always welcome and
 are the right way to contribute improvements and fixes.
@@ -183,16 +187,68 @@ package, one of the tests consists of a call to
 http://perltidy.sourceforge.net/[Perltidy] to ensure that the contributed code
 follows the most common Perl style conventions.
 
-== Starting the webserver from local Git checkout
-* Be sure to read the <<Installing.asciidoc#development-setup,Development setup>>
-  section before.
-* To start the webserver for development, use the +scripts/openqa daemon+.
-* The other daemons (mentioned in
-  the link:images/architecture.svg[architecture diagram]) are started in the
-  same way, e.g. +script/openqa-scheduler daemon+.
-* openQA will pull the required assets on the first run.
-* openQA uses SASS. Under openSUSE, installing +rubygem(sass)+ should be
-  sufficient.
+[[development-setup]]
+== Development setup
+For developing openQA and os-autoinst itself it makes sense to checkout the
+<<Contributing.asciidoc#repo-urls,Git repositories>> and to start the daemons manually.
+
+This section should give you a general idea how to do that. For a concrete example some developers
+use under openSUSE Tumbleweed have a look at the https://github.com/Martchus/openQA-helper[openQA-helper repository].
+
+=== Dependencies
+Have a look at the packaged version (e.g. +openQA.spec+ within the root of the openQA repository)
+for all required dependencies. For development build time dependencies need to be installed as well.
+Recommended dependencies such logrotate can be ignored. For openSUSE there is also the +openQA-devel+
+meta-package which pulls all required dependencies for development.
+
+[[setup-postgresql]]
+=== Setting up the PostgreSQL database
+One also needs to setup a PostgreSQL database for openQA manually owned by your regular user:
+
+1. Install PostgreSQL - under openSUSE the following package are required:
+   `postgresql-server postgresql-init`
+2. Start the server: `systemctl start postgresql`
+3. The next two steps need to be done as the user postgres: `su - postgres`
+4. Create user: `createuser your_username` where `your_username` must be the same
+   as the UNIX user you start your local openQA instance with.
+5. Create database: `createdb -O your_username openqa-local` where `openqa-local` is
+   the name you want to use for the database
+6. Configure openQA to use PostgreSQL as described in the section
+   <<Installing.asciidoc#database,Database>> of the installation guide.
+   User name and password are not required.
+7. openQA will default-initialize the new database on the next startup.
+
+==== Importing production data
+Assuming you have already followed steps 1. to 4. above:
+
+1. Create a separate database: `createdb -O your_username openqa-o3` where `openqa-o3` is
+   the name you want to use for the database
+2. The next steps must be done by the user you start your local openQA instance with.
+3. Import dump: `pg_restore -c -d openqa path/to/dump`
+4. Configure openQA to use that database as in step 7. above.
+
+=== Starting daemons
+To start the webserver for development, use the +scripts/openqa daemon+. The other daemons (mentioned in
+the link:images/architecture.svg[architecture diagram]) are started in the same way,
+e.g. +script/openqa-scheduler daemon+.
+
+You can also have a look at the systemd unit files. Although it likely makes not much sense to use them directly
+you can have a look at them to see how the different daemons are started. They are found in the +systemd+ directory
+of the openQA repository. You can substitute +/usr/share/openqa/+ with the path of your openQA Git checkout.
+
+Of course you can ignore the user specified in these unit files and instead start everything as your
+regular user. However, you need to ensure that your user has the permission to the "openQA base directory".
+That is not the case by default so it makes sense to <<Contributing.asciidoc#_customize_base_directory,customize it>>.
+
+Note that the web UI daemon will pull required JavaScript/CSS libraries automatically when started the first time.
+This might take a while and requires an internet connection.
+
+You do *not* need to setup an additional web server because the daemons already provide one. The port
+under which a service is available is logged on startup (the main web UI port is 9625 by default). Local
+workers need to be configured to connect to the main web UI port (add +HOST = http://localhost:9526+ to
++workers.ini+).
+
+==== Further tips
 * It is also useful to start openQA with morbo which allows applying changes
   without restarting the server:
   `morbo -m development -w assets -w lib -w templates
@@ -262,7 +318,7 @@ any statements) you can just drop the migration again.
 3. Afterwards you need to generate the deployment files for existing installations,
    this is done by running `./script/upgradedb --prepare_upgrade`.
    After doing so, the directories +dbicdh/$ENGINE/deploy/<new version>+ and
-   +dbicdh/$ENGINE/upgrade/<prev version>-<new version>+ for PosgreSQL
+   +dbicdh/$ENGINE/upgrade/<prev version>-<new version>+ for PostgreSQL
    should have been created with some SQL files inside containing the statements to
    initialize the schema and to upgrade from one version
    to the next in the corresponding database engine.
@@ -313,30 +369,6 @@ variable.
 ----
 export DBIC_TRACE=1
 ----
-
-[[setup-postgresql]]
-=== How to setup PostgreSQL manually
-1. Install PosgreSQL - under openSUSE the following package are required:
-   `postgresql-server postgresql-init`
-2. Start the server: `systemctl start postgresql`
-3. The next two steps need to be done as the user postgres: `su - postgres`
-4. Create user: `createuser your_username` where `your_username` must be the same
-   as the UNIX user you start your local openQA instance with.
-6. Create database: `createdb -O your_username openqa-local` where `openqa-local` is
-   the name you want to use for the database
-7. Configure openQA to use PostgreSQL as described in the section
-   <<Installing.asciidoc#database,Database>> of the installation guide.
-   User name and password are not required.
-8. openQA will default-initialize the new database on the next startup.
-
-=== Import production data
-Assuming you have already followed steps 1. to 4. above:
-
-1. Create a separate database: `createdb -O your_username openqa-o3` where `openqa-o3` is
-   the name you want to use for the database
-2. The next steps must be done by the user you start your local openQA instance with.
-3. Import dump: `pg_restore -c -d openqa path/to/dump`
-4. Configure openQA to use that database as in step 7. above.
 
 == How to overwrite config files
 
