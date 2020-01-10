@@ -25,7 +25,7 @@ BEGIN {
     $cached   = $tempdir->child('t', 'cache.d');
     $cachedir = path($cached, 'cache');
     $cachedir->remove_tree;
-    $cachedir->make_path;
+    $cachedir->make_path->realpath;
     $db_file = $cachedir->child('cache.sqlite');
     $ENV{OPENQA_CONFIG} = path($cached, 'config')->make_path;
     path($ENV{OPENQA_CONFIG})->child("workers.ini")->spurt("
@@ -217,40 +217,64 @@ like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/,
 like $cache_log, qr/Content of ".*0368-200@64bit.qcow2" has not changed, updating last use/, 'Content has not changed';
 $cache_log = '';
 
-$cache->track_asset('Foobar', 0);
-$cache->sqlite->db->query('delete from assets');
+subtest 'track assets' => sub {
+    $cache->sqlite->db->query('delete from assets');
+    my $fake_asset = $cachedir->child('test.qcow2');
+    $fake_asset->spurt('');
+    ok -e $fake_asset, 'Asset is there';
+    $cache->asset_lookup($fake_asset->to_string);
+    ok !-e $fake_asset, 'Asset was purged since was not tracked';
 
-my $fake_asset = $cachedir->child('test.qcow2');
-$fake_asset->spurt('');
-ok -e $fake_asset, 'Asset is there';
-$cache->asset_lookup($fake_asset->to_string);
-ok !-e $fake_asset, 'Asset was purged since was not tracked';
+    $fake_asset->spurt('');
+    ok -e $fake_asset, 'Asset is there';
+    $cache->purge_asset($fake_asset->to_string);
+    ok !-e $fake_asset, 'Asset was purged';
 
-$fake_asset->spurt('');
-ok -e $fake_asset, 'Asset is there';
-$cache->purge_asset($fake_asset->to_string);
-ok !-e $fake_asset, 'Asset was purged';
+    $cache->track_asset($fake_asset->to_string);
+    is(ref($cache->asset($fake_asset->to_string)), 'HASH', 'Asset was just inserted, so it must be there')
+      or die diag explain $cache->asset($fake_asset->to_string);
 
-$cache->track_asset($fake_asset->to_string);
-is(ref($cache->asset($fake_asset->to_string)), 'HASH', 'Asset was just inserted, so it must be there')
-  or die diag explain $cache->asset($fake_asset->to_string);
-
-is $cache->asset($fake_asset->to_string)->{etag}, undef, 'Can get downloading state with _asset()';
-is_deeply $cache->asset('foobar'), {}, '_asset() returns {} if asset is not present';
+    is $cache->asset($fake_asset->to_string)->{etag}, undef, 'Can get downloading state with _asset()';
+    is_deeply $cache->asset('foobar'), {}, 'asset() returns {} if asset is not present';
+};
 
 subtest 'cache directory is symlink' => sub {
+    $cache->sqlite->db->query('delete from assets');
+    $cache->init;
+    $cache_log = '';
+
     my $symlink = $cached->child('symlink')->to_string;
     unlink($symlink);
     ok(symlink($cachedir, $symlink), "symlinking cache dir to $symlink");
-    $fake_asset->spurt('not a real image');
-    ok(-e $fake_asset, 'fake asset created');
-
     $cache->location($symlink);
-    $cache->cache_sync;
-    is($cache->{cache_real_size}, 16, 'cache size could be determined');
+
+    $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+    like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
+    like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200.*" successful, new cache size is 1024/,
+      'Full download logged';
+    like $cache_log, qr/Size of .* is 1024 Byte, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
+    $cache_log = '';
+
+    $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
+    like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200\@64bit.qcow2" from/, 'Asset download attempt';
+    like $cache_log, qr/Content of ".*0368-200@64bit.qcow2" has not changed, updating last use/,
+      'Content has not changed';
+    $cache_log = '';
+
+    $cache->refresh;
+    like $cache_log, qr/Cache size of "$cachedir" is 1024 Byte, with limit 1024 Byte/,
+      'Cache limit/size match the expected 1024/1024)';
+    $cache_log = '';
+
+    $cache->limit(512)->refresh;
+    like $cache_log, qr/Purging ".*200@64bit.qcow2" because we need space for new assets, reclaiming 1024 Byte/,
+      'Reclaimed 1024 Byte';
+    like $cache_log, qr/Cache size of "$cachedir" is 0 Byte, with limit 512 Byte/, 'Cache limit is 512 Byte';
+    $cache_log = '';
 };
 
 subtest 'cache tmp directory is used for downloads' => sub {
+    $cache->location($cachedir);
     my $tmpfile;
     $cache->ua->on(
         start => sub {
