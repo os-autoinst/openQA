@@ -127,6 +127,7 @@ use Data::Dump 'pp';
 use Getopt::Long;
 use LWP::UserAgent;
 Getopt::Long::Configure("no_ignore_case");
+use Mojo::File 'path';
 use Mojo::URL;
 use Mojo::JSON;    # booleans
 use Cpanel::JSON::XS;
@@ -279,6 +280,10 @@ sub download_assets {
             unless ($r->is_success || $r->code == 304) {
                 die "$jobid failed: ", $r->status_line, "\n";
             }
+
+            # ensure the asset cleanup preserves the asset the configured amount of days starting from the time
+            # it has been cloned (otherwise old assets might be cleaned up directly again after cloning)
+            path($dst)->touch;
         }
     }
 }
