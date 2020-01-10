@@ -20,24 +20,28 @@ use Mojo::File;
 use POSIX 'strftime';
 
 sub index {
-    my $self        = shift;
-    my $obs_project = shift;
-    my $helper      = $self->obs_rsync;
+    my ($self, $obs_project, $folders) = @_;
+    my $helper = $self->obs_rsync;
     my %folder_info_by_name;
-    my $folders
-      = Mojo::File->new($helper->home, $obs_project // "")->list({dir => 1})->grep(sub { -d $_ })->map('basename')
-      ->grep(qr/^^(?!t$|profiles$|script$|xml$)/)->to_array;
+    if (!$folders) {
+        $folders
+          = Mojo::File->new($helper->home, $obs_project // '')->list({dir => 1})->grep(sub { -d $_ })->map('basename')
+          ->to_array;
+        @$folders = grep { !/^(t|profiles|script|xml)$/ } @$folders;
+    }
 
     for my $folder (@$folders) {
-        my $run_last_info = $helper->get_run_last_info($folder, $obs_project);
-        my ($fail_last_job_id, $fail_last_when) = $helper->get_fail_last_info($folder, $obs_project);
+        my $batch = $folder;
+        $batch = "$obs_project|$folder" if $obs_project;
+        my $run_last_info = $helper->get_run_last_info($batch);
+        my ($fail_last_job_id, $fail_last_when) = $helper->get_fail_last_info($batch);
         $folder_info_by_name{$folder} = {
             run_last         => $run_last_info->{dt},
             run_last_version => $run_last_info->{version},
             run_last_job_id  => $run_last_info->{job_id},
             fail_last_when   => $fail_last_when,
             fail_last_job_id => $fail_last_job_id,
-            dirty_status     => $helper->get_dirty_status($folder)};
+            dirty_status     => $helper->get_dirty_status($obs_project // $folder)};
     }
 
     if (!$obs_project) {
@@ -67,13 +71,13 @@ sub folder {
     my $folder = $self->param('folder');
     my $helper = $self->obs_rsync;
     return undef if $helper->check_and_render_error($folder);
-
     my $full = $helper->home;
-    my ($obs_project, $batch) = split(/\|/, $folder, 2);
-    $batch = "" unless $batch;
+    my ($obs_project, $batch) = $helper->split_project_batch($folder);
 
-    if (!$batch && Mojo::File->new($full, $obs_project)->list({dir => 1})->grep(sub { -d $_ })->size) {
-        return $self->index($obs_project);
+    # if project has batches - redirect to index route to show the batches
+    if (!$batch) {
+        my $batches = $helper->get_batches($obs_project);
+        return $self->index($obs_project, $batches) if ref $batches eq 'ARRAY' && @$batches;
     }
     my $files = Mojo::File->new($full, $obs_project, $batch, '.run_last')->list({dir => 1})->map('basename');
 
@@ -94,9 +98,7 @@ sub runs {
     my $folder = $self->param('folder');
     my $helper = $self->obs_rsync;
     return undef if $helper->check_and_render_error($folder);
-
-    my ($obs_project, $batch) = split(/\|/, $folder, 2);
-    $batch = "" unless $batch;
+    my ($obs_project, $batch) = $helper->split_project_batch($folder);
 
     my $full = Mojo::File->new($helper->home, $obs_project, $batch);
     my $files
@@ -110,9 +112,7 @@ sub run {
     my $subfolder = $self->param('subfolder');
     my $helper    = $self->obs_rsync;
     return undef if $helper->check_and_render_error($folder, $subfolder);
-
-    my ($obs_project, $batch) = split(/\|/, $folder, 2);
-    $batch = "" unless $batch;
+    my ($obs_project, $batch) = $helper->split_project_batch($folder);
 
     my $full  = Mojo::File->new($helper->home, $obs_project, $batch, $subfolder);
     my $files = $full->list->map('basename')->sort->to_array;
@@ -132,9 +132,7 @@ sub download_file {
     my $filename  = $self->param('filename');
     my $helper    = $self->obs_rsync;
     return undef if $helper->check_and_render_error($folder, $subfolder, $filename);
-
-    my ($obs_project, $batch) = split(/\|/, $folder, 2);
-    $batch = "" unless $batch;
+    my ($obs_project, $batch) = $helper->split_project_batch($folder);
 
     my $full = Mojo::File->new($helper->home, $obs_project, $batch, $subfolder);
     $self->res->headers->content_type('text/plain');
@@ -160,8 +158,9 @@ sub forget_run_last {
     my $helper  = $self->obs_rsync;
     return undef if $helper->check_and_render_error($project);
     my $app = $self->app;
+    (my $batch, $project) = $helper->get_first_batch($project);
 
-    my $dest = Mojo::File->new($helper->home, $project, '.run_last');
+    my $dest = Mojo::File->new($helper->home, $project, $batch, '.run_last');
     -l $dest or return $self->render(json => {message => '.run_last link not found'}, status => 404);
 
     my $project_lock = Mojo::File->new($helper->home, $project, 'rsync.lock');

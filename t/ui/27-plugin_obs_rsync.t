@@ -48,7 +48,7 @@ BAIL_OUT('Login exit code (' . $t->tx->res->code . ')') if $t->tx->res->code != 
 sub _el {
     my ($project, $run, $file) = @_;
     return qq{a[href="/admin/obs_rsync/$project/runs/$run/download/$file"]} if $file;
-    return qq{a[href="/admin/obs_rsync/$project/runs/$run"]}          if $run;
+    return qq{a[href="/admin/obs_rsync/$project/runs/$run"]}                if $run;
     return qq{a[href="/admin/obs_rsync/$project"]};
 }
 
