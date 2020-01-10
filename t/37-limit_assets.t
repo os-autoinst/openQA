@@ -112,7 +112,7 @@ $mock_limit->mock(_remove_if       => sub { return 0; });
 $t->app->config->{default_group_limits}->{asset_size_limit} = 100;
 
 # move group 1002 into a parent group
-$schema->resultset('JobGroupParents')->create({id => 1, name => 'parent of "opensuse test"'});
+$schema->resultset('JobGroupParents')->create({id => 1, name => 'parent of "opensuse test"', size_limit_gb => 100});
 $schema->resultset('JobGroups')->search({id => 1002})->update({parent_id => 1});
 
 # define helper to prepare the returned asset status for checks

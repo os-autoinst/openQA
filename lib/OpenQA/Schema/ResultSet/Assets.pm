@@ -250,11 +250,13 @@ END_SQL
                 my $parent_id;
                 if (defined $parent) {
                     my $parent_size_limit_gb = $parent->size_limit_gb;
+                    my $parent_size
+                      = (defined $parent_size_limit_gb ? $parent_size_limit_gb * 1024 * 1024 * 1024 : undef);
                     $parent_id = $parent->id;
                     $parent_group_info{$parent_id} = {
                         id            => $parent_id,
                         size_limit_gb => $parent_size_limit_gb,
-                        size          => $parent_size_limit_gb * 1024 * 1024 * 1024,
+                        size          => $parent_size,
                         picked        => 0,
                         group         => $parent->name,
                     };

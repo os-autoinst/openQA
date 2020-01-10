@@ -83,7 +83,7 @@ my $assets        = $schema->resultset('Assets');
 # move group 1002 into a parent group
 # note: This shouldn't change much because 1002 will be the only child and the same limit applies.
 #       However, the size of exclusively kept assets is moved to the parent-level.
-$parent_groups->create({id => 1, name => 'parent of "opensuse test"'});
+$parent_groups->create({id => 1, name => 'parent of "opensuse test"', size_limit_gb => 100});
 $job_groups->search({id => 1002})->update({parent_id => 1});
 
 # refresh assets only once and prevent adding untracked assets
