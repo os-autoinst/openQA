@@ -20,11 +20,13 @@ has already read the <<GettingStarted.asciidoc#gettingstarted,Getting Started
 Guide>>, also available at the https://github.com/os-autoinst/openQA[official
 repository].
 
-Continue with the "`openQA quick bootstrap`" to get a simple, ready-to-use
-installation, useful for a single user setup. Else, continue with the more
-advanced section about "`Custom installation - Repositories and procedure''.
+Continue with the next section to get a simple, ready-to-use installation, useful
+for a single user setup. Else, continue with the more advanced section
+about <<#custom_installation,Custom installation>>. For a setup suitable to
+develop openQA itself, have a look at the
+<<Contributing.asciidoc#development-setup,Development setup>> section.
 
-
+[[bootstrapping]]
 == Quick bootstrapping under openSUSE
 
 To quickly get a working openQA installation, you can use the openqa-bootstrap
