@@ -102,11 +102,6 @@ sub _get_column_or_default {
     return $OpenQA::Utils::app->config->{default_group_limits}->{$setting};
 }
 
-around 'size_limit_gb' => sub {
-    my ($orig, $self) = @_;
-    return $self->_get_column_or_default('size_limit_gb', 'asset_size_limit');
-};
-
 around 'default_keep_logs_in_days' => sub {
     my ($orig, $self) = @_;
     return $self->_get_column_or_default('default_keep_logs_in_days', 'log_storage_duration');

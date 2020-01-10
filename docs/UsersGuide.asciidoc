@@ -996,8 +996,8 @@ in the operators menu and select a group. The size limit for assets can be
 configured under 'Edit job group properties'. It also shows the size of
 assets which belong to that group and not to any other group.
 
-The default size limit for job groups and parent job groups can be adjusted
-in the +default_group_limits+ section of the openQA config file.
+The default size limit for job groups can be adjusted in the
++default_group_limits+ section of the openQA config file.
 
 === Configure limit for groupless assets ===
 

@@ -47,7 +47,7 @@ my $new_job_group    = $job_groups->find($new_job_group_id);
 ok($new_job_group, 'create new job group');
 
 subtest 'defaults of parent group' => sub {
-    is($new_parent_group->size_limit_gb,             OpenQA::Schema::JobGroupDefaults::SIZE_LIMIT_GB);
+    is($new_parent_group->size_limit_gb,             undef);
     is($new_parent_group->default_keep_logs_in_days, OpenQA::Schema::JobGroupDefaults::KEEP_LOGS_IN_DAYS);
     is(
         $new_parent_group->default_keep_important_logs_in_days,
@@ -78,7 +78,7 @@ subtest 'overrideing defaults in settings affects groups' => sub {
     $config->{$_} += 1000 for (@fields);
 
     subtest 'defaults for parent group overridden' => sub {
-        is($new_parent_group->size_limit_gb,             OpenQA::Schema::JobGroupDefaults::SIZE_LIMIT_GB + 1000);
+        is($new_parent_group->size_limit_gb,             undef);
         is($new_parent_group->default_keep_logs_in_days, OpenQA::Schema::JobGroupDefaults::KEEP_LOGS_IN_DAYS + 1000);
         is(
             $new_parent_group->default_keep_important_logs_in_days,
@@ -107,10 +107,10 @@ subtest 'defaults overridden on parent group level' => sub {
     my @columns
       = qw(size_limit_gb default_keep_logs_in_days default_keep_important_logs_in_days default_keep_results_in_days default_keep_important_results_in_days default_priority);
     for my $column (@columns) {
-        $new_parent_group->update({$column => $new_parent_group->$column + 1000});
+        $new_parent_group->update({$column => ($new_parent_group->$column // 0) + 1000});
     }
 
-    is($new_parent_group->size_limit_gb,             OpenQA::Schema::JobGroupDefaults::SIZE_LIMIT_GB + 2000);
+    is($new_parent_group->size_limit_gb,             1000);
     is($new_parent_group->default_keep_logs_in_days, OpenQA::Schema::JobGroupDefaults::KEEP_LOGS_IN_DAYS + 2000);
     is(
         $new_parent_group->default_keep_important_logs_in_days,
