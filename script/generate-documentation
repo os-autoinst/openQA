@@ -45,6 +45,8 @@
 # If PULL_REQUEST_USER is set, then target branch ($2) must not exists at
 # target remote ($1). Target branch will be created based on
 # PULL_REQUEST_USER:gh_pages
+# KEEP_OUTPUT - keep the output directory so the (locally) generated documentation
+# can be found under out/docs/index.html after running the script
 
 set -eo pipefail
 
@@ -127,7 +129,7 @@ update_docs() {
             echo Documentation is up to date 
         fi 
         )
-        rm -rf out
+        [[ $KEEP_OUTPUT ]] || rm -rf out
 }
 
 update_api() {
