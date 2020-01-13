@@ -26,19 +26,23 @@ https://github.com/os-autoinst/openQA[official repository].
 
 As mentioned, the central point of development is the
 https://github.com/os-autoinst[os-autoinst organization on GitHub] where several
-repositories can be found:
+repositories can be found.
 
-* https://github.com/os-autoinst/openQA[openQA] containing documentation,
-  server, worker and other support scripts.
-* https://github.com/os-autoinst/os-autoinst[os-autoinst] with the standalone
-  test tool.
-* https://github.com/os-autoinst/os-autoinst-distri-opensuse[os-autoinst-distri-opensuse]
-  containing the tests used in http://openqa.opensuse.org
-* https://github.com/os-autoinst/os-autoinst-needles-opensuse[os-autoinst-needles-opensuse]
-  with the needles associated to the tests in the former repository.
-* https://github.com/os-autoinst/os-autoinst-distri-example[os-autoinst-distri-example]
-  with an almost empty set of tests meant to be used to start writing tests (and
-  creating the corresponding needles) from scratch for a new operating system.
+[id="repo-urls"]
+=== Repository URLs
+* os-autoinst: https://github.com/os-autoinst/os-autoinst
+    - the "backend" (thing that executes tests and starts/controls the SUT e.g. using QEMU)
+* openQA: https://github.com/os-autoinst/openQA
+    - mainly the web UI and accompanying daemons like the scheduler
+    - the worker (thing that starts the backend and uploads results to the web UI)
+    - documentation
+    - miscellaneous support scripts
+* test distribution: e.g. https://github.com/os-autoinst/os-autoinst-distri-opensuse for openSUSE
+    - the actual tests, in case of +os-autoinst-distri-opensuse+ conducted on http://openqa.opensuse.org
+* needles: e.g. https://github.com/os-autoinst/os-autoinst-needles-opensuse for openSUSE
+    - reference images if not already included in the test distribution
+* empty example test distribution: https://github.com/os-autoinst/os-autoinst-distri-example
+   - meant to be used to start writing tests (and creating the corresponding needles) from scratch for a new operating system
 
 As in most projects hosted on GitHub, pull request are always welcome and
 are the right way to contribute improvements and fixes.
@@ -183,14 +187,68 @@ package, one of the tests consists of a call to
 http://perltidy.sourceforge.net/[Perltidy] to ensure that the contributed code
 follows the most common Perl style conventions.
 
-== Starting the webserver from local Git checkout
-* To start the webserver for development, use the +scripts/openqa daemon+.
-* The other daemons (mentioned in
-  the link:images/architecture.svg[architecture diagram]) are started in the
-  same way, e.g. +script/openqa-scheduler daemon+.
-* openQA will pull the required assets on the first run.
-* openQA uses SASS. Under openSUSE, installing +rubygem(sass)+ should be
-  sufficient.
+[[development-setup]]
+== Development setup
+For developing openQA and os-autoinst itself it makes sense to checkout the
+<<Contributing.asciidoc#repo-urls,Git repositories>> and to start the daemons manually.
+
+This section should give you a general idea how to do that. For a concrete example some developers
+use under openSUSE Tumbleweed have a look at the https://github.com/Martchus/openQA-helper[openQA-helper repository].
+
+=== Dependencies
+Have a look at the packaged version (e.g. +openQA.spec+ within the root of the openQA repository)
+for all required dependencies. For development build time dependencies need to be installed as well.
+Recommended dependencies such logrotate can be ignored. For openSUSE there is also the +openQA-devel+
+meta-package which pulls all required dependencies for development.
+
+[[setup-postgresql]]
+=== Setting up the PostgreSQL database
+One also needs to setup a PostgreSQL database for openQA manually owned by your regular user:
+
+1. Install PostgreSQL - under openSUSE the following package are required:
+   `postgresql-server postgresql-init`
+2. Start the server: `systemctl start postgresql`
+3. The next two steps need to be done as the user postgres: `su - postgres`
+4. Create user: `createuser your_username` where `your_username` must be the same
+   as the UNIX user you start your local openQA instance with.
+5. Create database: `createdb -O your_username openqa-local` where `openqa-local` is
+   the name you want to use for the database
+6. Configure openQA to use PostgreSQL as described in the section
+   <<Installing.asciidoc#database,Database>> of the installation guide.
+   User name and password are not required.
+7. openQA will default-initialize the new database on the next startup.
+
+==== Importing production data
+Assuming you have already followed steps 1. to 4. above:
+
+1. Create a separate database: `createdb -O your_username openqa-o3` where `openqa-o3` is
+   the name you want to use for the database
+2. The next steps must be done by the user you start your local openQA instance with.
+3. Import dump: `pg_restore -c -d openqa path/to/dump`
+4. Configure openQA to use that database as in step 7. above.
+
+=== Starting daemons
+To start the webserver for development, use the +scripts/openqa daemon+. The other daemons (mentioned in
+the link:images/architecture.svg[architecture diagram]) are started in the same way,
+e.g. +script/openqa-scheduler daemon+.
+
+You can also have a look at the systemd unit files. Although it likely makes not much sense to use them directly
+you can have a look at them to see how the different daemons are started. They are found in the +systemd+ directory
+of the openQA repository. You can substitute +/usr/share/openqa/+ with the path of your openQA Git checkout.
+
+Of course you can ignore the user specified in these unit files and instead start everything as your
+regular user. However, you need to ensure that your user has the permission to the "openQA base directory".
+That is not the case by default so it makes sense to <<Contributing.asciidoc#_customize_base_directory,customize it>>.
+
+Note that the web UI daemon will pull required JavaScript/CSS libraries automatically when started the first time.
+This might take a while and requires an internet connection.
+
+You do *not* need to setup an additional web server because the daemons already provide one. The port
+under which a service is available is logged on startup (the main web UI port is 9625 by default). Local
+workers need to be configured to connect to the main web UI port (add +HOST = http://localhost:9526+ to
++workers.ini+).
+
+==== Further tips
 * It is also useful to start openQA with morbo which allows applying changes
   without restarting the server:
   `morbo -m development -w assets -w lib -w templates
@@ -242,13 +300,15 @@ After modifying files in +lib/OpenQA/Schema/Result+. However, not all changes
 require to update the schema. Adding just another method or altering/adding
 functions like +has_many+ doesn't require an update. However, adding new
 columns, modifying or removing existing ones requires to follow the steps
-mentioned above.
+mentioned above. In doubt, just follow the instructions below. If an empty
+migration has been emitted (SQL file produced in step 3. does not contain
+any statements) you can just drop the migration again.
 
 === How to update the database schema
 
 1. First, you need to increase the database version number in the `$VERSION`
    variable in the +lib/OpenQA/Schema.pm+ file.
-   Note that it's recommended to notify the other developers before doing so,
+   Note that it is recommended to notify the other developers before doing so,
    to synchronize in case there are more developers wanting to increase the
    version number at the same time.
 
@@ -258,30 +318,33 @@ mentioned above.
 3. Afterwards you need to generate the deployment files for existing installations,
    this is done by running `./script/upgradedb --prepare_upgrade`.
    After doing so, the directories +dbicdh/$ENGINE/deploy/<new version>+ and
-   +dbicdh/$ENGINE/upgrade/<prev version>-<new version>+ for PosgreSQL
+   +dbicdh/$ENGINE/upgrade/<prev version>-<new version>+ for PostgreSQL
    should have been created with some SQL files inside containing the statements to
    initialize the schema and to upgrade from one version
    to the next in the corresponding database engine.
 
-4. Migration scripts to upgrade from previous versions can be added under
+4. Custom migration scripts to upgrade from previous versions can be added under
    +dbicdh/_common/upgrade+. Create a +<prev_version>-<new_version>+ directory and
    put some files there with DBIx commands for the migration. For examples just
    have a look at the migrations which are already there.
+   The custom migration scripts are executed in addition to the automatically
+   generated ones. If the name of the custom migration script comes before
+   `001-auto.sql` in alphabetical order it will be executed *before* the
+   automatically created migration script. That is most of the times *not* desired.
 
-The above steps are only for preparing the required SQL statements, but do not
-actually alter the database. Before doing so, it is recommended *to backup your
-database* to be able to downgrade again if something goes wrong or you just need
-to continue working on another branch. To do so, the following command can be
-used to create a copy:
+The above steps are only for preparing the required SQL statements for the migration.
+
+The migration itself (which alters your database!) is done *automatically* the first
+time the web UI is (re)started. So be sure *to backup your database* before restarting
+to be able to downgrade again if something goes wrong or you just need to continue
+working on another branch. To do so, the following command can be used to create a copy:
 [source,sh]
 ----
 createdb -O ownername -T originaldb newdb
 ----
 
-To actually create or update the database (after creating a backup as described),
-you should run either `./script/initdb --init_database` or
-`./script/upgradedb --upgrade_database`. This is also required when the changes
-are installed in a production server.
+To initialize or update the database manually before restarting the web UI you can run
+either `./script/initdb --init_database` or `./script/upgradedb --upgrade_database`.
 
 === How to add fixtures to the database
 
@@ -306,28 +369,6 @@ variable.
 ----
 export DBIC_TRACE=1
 ----
-
-[[setup-postgresql]]
-=== How to setup PostgreSQL to test locally with production data
-
-1. Install PosgreSQL - under openSUSE the following package are required:
-   +postgresql-server postgresql-init+
-
-2. Start the server: `systemctl start postgresql`
-
-3. The following steps need to be done by the user postgres: `su - postgres`
-
-4. Create user: `createuser your_username` where +your_username+ must be the same
-   as the UNIX user you start your local openQA instance with.
-
-5. Create database: `createdb -O your_username openqa`
-
-6. The next steps must be done by the user you start your local openQA instance with.
-
-7. Import dump: `pg_restore -c -d openqa path/to/dump`
-
-8. Configure openQA to use PostgreSQL as described in the section <<Installing.asciidoc#database,Database>> of the installation guide.
- User name and password are not required.
 
 == How to overwrite config files
 
@@ -386,7 +427,8 @@ after user validation. See included modules for inspiration.
 It is possible to customize the openQA base directory (which is for instance used to store
 test results) by setting the environment variable +OPENQA_BASEDIR+. The default value
 is +/var/lib+. Be sure to clear that variable when running unit tests locally (see next
-section).
+section). Take into account that the test results and assets can need a big amount of disk
+space.
 
 == Running tests of openQA itself
 Beside simply running the testsuite, it is also possible to use containers. Using containers,
@@ -687,3 +729,24 @@ $ make test
 
 And if you need code examples, there are some plugins
 https://github.com/os-autoinst/openQA/tree/master/lib/OpenQA/WebAPI/Plugin[included with openQA].
+
+== Checking for JavaScript problems
+One can use the tool +jshint+ to check for problems within JavaScript code. It can be installed
+easily via +npm+.
+
+[source,sh]
+--------------------------------------------------------------------------------
+npm install jshint
+node_modules/jshint/bin/jshint path/to/javascript.js
+--------------------------------------------------------------------------------
+
+== Profiling the web UI
+1. Install NYTProf, under openSUSE Tumbleweed: +zypper in perl-Devel-NYTProf perl-Mojolicious-Plugin-NYTProf+
+2. Put +profiling_enabled = 1+ in  +openqa.ini+.
+3. Optionally import production data like described in the official contributers documentation.
+4. Restart the web UI, browse some pages. Profiling is done in the background.
+5. Access profiling data via +/nytprof+ route.
+
+=== Note
+Profiling data is extensive. Remove it if you do not need it anymore and disable the +profiling_enabled+
+configuration again if not needed anymore.
