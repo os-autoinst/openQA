@@ -222,72 +222,6 @@ else {
 $remote_url->path('/api/v1/jobs');
 $remote = OpenQA::Client->new(api => $remote_url->host);
 
-sub get_job {
-    my ($jobid) = @_;
-
-    my $job;
-    my $url = $remote_url->clone;
-    $url->path("jobs/$jobid");
-    my $tx = $remote->max_redirects(3)->get($url);
-    if (!$tx->error) {
-        if ($tx->res->code == 200) {
-            $job = $tx->res->json->{job};
-        }
-        else {
-            warn sprintf("unexpected return code: %s %s", $tx->res->code, $tx->res->message);
-            exit 1;
-        }
-    }
-    else {
-        my $err = $tx->error;
-        # there is no code for some error reasons, e.g. 'connection refused'
-        $err->{code} //= '';
-        warn "failed to get job '$jobid': $err->{code} $err->{message}";
-        exit 1;
-    }
-
-    print Cpanel::JSON::XS->new->pretty->encode($job) if ($options{verbose});
-    return $job;
-}
-
-sub download_assets {
-    my ($job, $remote_url, $ua, %options) = @_;
-    my @parents = map { get_job($_) } @{$job->{parents}->{Chained}};
-  ASSET:
-    for my $type (keys %{$job->{assets}}) {
-        next if $type eq 'repo';    # we can't download repos
-        for my $file (@{$job->{assets}->{$type}}) {
-            my $dst = $file;
-            # skip downloading published assets assuming we are also cloning
-            # the generation job or if the only cloned job *is* the generation
-            # job.
-            my $nr_parents = @parents;
-            if ((!$options{'skip-deps'} && !$options{'skip-chained-deps'}) || ($nr_parents == 0)) {
-                for my $j (@parents, $job) {
-                    next ASSET if $j->{settings}->{PUBLISH_HDD_1} && $file eq $j->{settings}->{PUBLISH_HDD_1};
-                }
-            }
-            $dst =~ s,.*/,,;
-            $dst = join('/', $options{dir}, $type, $dst);
-            my $from = $remote_url->clone;
-            $from->path(sprintf '/tests/%d/asset/%s/%s', $jobid, $type, $file);
-            $from = $from->to_string;
-
-            die "can't write $options{dir}/$type\n" unless -w "$options{dir}/$type";
-
-            print "downloading\n$from\nto\n$dst\n";
-            my $r = $ua->mirror($from, $dst);
-            unless ($r->is_success || $r->code == 304) {
-                die "$jobid failed: ", $r->status_line, "\n";
-            }
-
-            # ensure the asset cleanup preserves the asset the configured amount of days starting from the time
-            # it has been cloned (otherwise old assets might be cleaned up directly again after cloning)
-            path($dst)->touch;
-        }
-    }
-}
-
 sub openqa_baseurl {
     my ($local_url) = @_;
     my $port = '';
@@ -307,7 +241,7 @@ sub clone_job {
     $depth     //= 0;
     return $clone_map->{$jobid} if defined $clone_map->{$jobid};
 
-    my $job = get_job($jobid);
+    my $job = clone_job_get_job($jobid, $remote, $remote_url, \%options);
     if ($job->{parents}) {
         my ($chained, $directly_chained, $parallel);
         unless ($options{'skip-deps'}) {
@@ -335,7 +269,8 @@ sub clone_job {
         $job->{settings}->{_START_DIRECTLY_AFTER_JOBS} = join(',', @new_chained)  if @new_directly_chained;
     }
 
-    download_assets($job, $remote_url, $ua, %options) unless $options{'skip-download'};
+    clone_job_download_assets($jobid, $job, $remote, $remote_url, $ua, \%options)
+      unless $options{'skip-download'};
 
     my $url      = $local_url->clone;
     my %settings = %{$job->{settings}};
