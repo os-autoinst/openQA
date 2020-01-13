@@ -32,12 +32,12 @@ has ua         => sub { Mojo::UserAgent->new(max_redirects => 2, max_response_si
 sub init {
     my $self = shift;
 
-    my $location = $self->location;
-    my $db_file  = path($location, 'cache.sqlite');
+    my $location = $self->_realpath;
+    my $db_file  = $location->child('cache.sqlite');
     unless (-e $db_file) {
         $self->log->info(qq{Creating cache directory tree for "$location"});
-        path($location)->remove_tree({keep_root => 1});
-        path($location, 'tmp')->make_path;
+        $location->remove_tree({keep_root => 1});
+        $location->child('tmp')->make_path;
     }
     eval { $self->sqlite->migrations->migrate };
     if (my $err = $@) {
@@ -48,14 +48,16 @@ sub init {
     return $self->refresh;
 }
 
+sub _realpath { path(shift->location)->realpath }
+
 sub refresh {
     my $self = shift;
 
-    $self->cache_sync;
+    $self->_cache_sync;
     $self->_check_limits(0);
     my $cache_size = human_readable_size($self->{cache_real_size});
     my $limit_size = human_readable_size($self->limit);
-    my $location   = $self->location;
+    my $location   = $self->_realpath;
     $self->log->info(qq{Cache size of "$location" is $cache_size, with limit $limit_size});
 
     return $self;
@@ -72,7 +74,7 @@ sub _download_asset {
     $log->info(qq{Downloading "$file" from "$url"});
 
     # Keep temporary files on the same partition as the cache
-    local $ENV{MOJO_TMPDIR} = path($self->location, 'tmp')->to_string;
+    local $ENV{MOJO_TMPDIR} = $self->_realpath->child('tmp')->to_string;
     my $tx = $ua->build_tx(GET => $url);
 
     # Assets might be deleted by a sysadmin
@@ -97,7 +99,7 @@ sub _download_asset {
         my $headers = $tx->res->headers;
         $etag = $headers->etag;
         unlink $asset;
-        $self->cache_sync;
+        $self->_cache_sync;
         my $size = $res->content->asset->move_to($asset)->size;
         if ($size == $headers->content_length) {
             $self->_check_limits($size);
@@ -139,9 +141,9 @@ sub get_asset {
 
     my $log = $self->log;
 
-    my $location = path($self->location, base_host($host));
-    $location->make_path unless -d $location;
-    $asset = $location->child(path($asset)->basename);
+    my $host_location = $self->_realpath->child(base_host($host));
+    $host_location->make_path unless -d $host_location;
+    $asset = $host_location->child(path($asset)->basename);
 
     my $n = 5;
     while (1) {
@@ -238,13 +240,12 @@ sub purge_asset {
     return 1;
 }
 
-sub cache_sync {
+sub _cache_sync {
     my $self = shift;
 
     $self->{cache_real_size} = 0;
-    my $location = readlink($self->location) // $self->location;
-    my $assets
-      = path($location)->list_tree({max_depth => 2})->map('to_string')->grep(qr/\.(?:img|qcow2|iso|vhd|vhdx)$/);
+    my $location = $self->_realpath;
+    my $assets   = $location->list_tree({max_depth => 2})->map('to_string')->grep(qr/\.(?:img|qcow2|iso|vhd|vhdx)$/);
     foreach my $file ($assets->each) {
         $self->_increase(-s $file) if $self->asset_lookup($file);
     }
