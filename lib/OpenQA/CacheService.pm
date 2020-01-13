@@ -93,8 +93,8 @@ sub setup_workers {
 sub run {
     my @args = setup_workers(@_);
 
+    local $ENV{MOJO_LOG_SHORT} = 1;
     my $app = __PACKAGE__->new;
-    $app->log->short(1);
     $ENV{MOJO_INACTIVITY_TIMEOUT} //= 300;
     $app->log->debug("Starting cache service: $0 @args");
 
