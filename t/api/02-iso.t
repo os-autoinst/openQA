@@ -1072,7 +1072,7 @@ subtest 'schedule tests correctly when changing TEST to job template name' => su
     add_opensuse_test('parent', JOB_TEMPLATE_NAME => 'parent_variant1');
     add_opensuse_test(
         'child',
-        START_AFTER_TEST  => 'parent',
+        START_AFTER_TEST  => 'parent_variant1',
         JOB_TEMPLATE_NAME => 'child_variant1'
     );
     add_opensuse_test(
@@ -1082,45 +1082,43 @@ subtest 'schedule tests correctly when changing TEST to job template name' => su
         JOB_TEMPLATE_NAME => 'child_variant2'
     );
 
+    add_opensuse_test('child_test', START_AFTER_TEST => 'parent',);
     my $res = schedule_iso({%iso, _GROUP_ID => '1002'});
     is($res->json->{count}, 3, '3 jobs scheduled');
 
-    my @create_jobs;
-    foreach my $job_id (sort @{$res->json->{ids}}) {
-        my $job = $jobs->find($job_id);
-        push @create_jobs,
-          {
-            TEST              => $job->TEST,
-            JOB_TEMPLATE_NAME => $job->settings_hash->{JOB_TEMPLATE_NAME},
-            TEST_SUITE_NAME   => $job->settings_hash->{TEST_SUITE_NAME}};
-    }
-    is_deeply(
-        \@create_jobs,
-        [
-            {TEST => 'parent_variant1', JOB_TEMPLATE_NAME => 'parent_variant1', TEST_SUITE_NAME => 'parent'},
-            {TEST => 'child_variant1',  JOB_TEMPLATE_NAME => 'child_variant1',  TEST_SUITE_NAME => 'child'},
-            {TEST => 'child_variant2',  JOB_TEMPLATE_NAME => 'child_variant2',  TEST_SUITE_NAME => 'child'}
-        ],
-        "The jobs were scheduled with correct TEST, JOB_TEMPLATE_NAME and TEST_SUITE_NAME"
-    );
-
     $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'child'});
-    is($res->json->{count}, 3, 'TEST parameter support using test suite name');
+    is($res->json->{count}, 0, 'there is no job template which is named child');
 
-    $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'child_variant2'});
-    is($res->json->{count}, 2, 'TEST parameter support using job template name');
-    my %create_jobs = map { $jobs->find($_)->TEST => 1 } @{$res->json->{ids}};
-    is_deeply(\%create_jobs, {parent_variant1 => 1, child_variant2 => 1}, "the child and parent job were scheduled");
+    $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'child_test'});
+    my $failed_message = $res->json->{failed}->[0];
+    is(
+        $failed_message->{error_messages}->[0],
+        'START_AFTER_TEST=parent@64bit not found - check for dependency typos and dependency cycles',
+        'failed to schedule parent job'
+    );
+    like($failed_message->{job_id}, qr/\d+/, 'child_test was scheduled');
 
-    $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'child', _SKIP_CHAINED_DEPS => 1});
-    is($res->json->{count}, 2, 'do not schedule parent job');
-    my %schedule_jobs = map { $jobs->find($_)->TEST => 1 } @{$res->json->{ids}};
-    is_deeply(\%schedule_jobs, {child_variant1 => 1, child_variant2 => 1}, "only two children jobs were scheduled");
+    $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'child_variant1'});
+    is($res->json->{count}, 2, 'both child and parent jobs were triggered successfully');
 
     $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'child_variant1', _SKIP_CHAINED_DEPS => 1});
-    is($res->json->{count}, 1, 'only schedule the child job with the same job template name');
-    my %child_job = map { $jobs->find($_)->TEST => 1 } @{$res->json->{ids}};
-    is_deeply(\%child_job, {child_variant1 => 1}, "only one child job was scheduled");
+    is($res->json->{count}, 1, 'do not schedule parent job');
+
+    add_opensuse_test('parallel_one', JOB_TEMPLATE_NAME => 'parallel_one_variant');
+    add_opensuse_test('parallel_two', PARALLEL_WITH     => 'parallel_one',);
+    $res            = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'parallel_two'});
+    $failed_message = $res->json->{failed}->[0];
+    is(
+        $failed_message->{error_messages}->[0],
+        'PARALLEL_WITH=parallel_one@64bit not found - check for dependency typos and dependency cycles',
+        'failed to schedule parallel job'
+    );
+    like($failed_message->{job_id}, qr/\d+/, 'parallel_two was scheduled');
+
+    add_opensuse_test('parallel_three', PARALLEL_WITH => 'parallel_one_variant',);
+    $res = schedule_iso({%iso, _GROUP_ID => '1002', TEST => 'parallel_three'});
+    is($res->json->{count}, 2, 'trigger parallel job successfully');
+
     $schema->txn_rollback;
 };
 

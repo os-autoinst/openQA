@@ -263,7 +263,7 @@ sub _schedule_iso {
         my @created_jobs;
 
         # remember ids of created parents
-        my %testsuite_ids;    # key: "suite", value: {key: "machine", value: "array of job ids"}
+        my %job_ids_by_test_machine;    # key: "TEST@MACHINE", value: "array of job ids"
 
         for my $settings (@{$jobs || []}) {
             my $prio = delete $settings->{PRIO};
@@ -274,8 +274,8 @@ sub _schedule_iso {
                 my $job = $jobs_resultset->create_from_settings($settings, $self->id);
                 push @created_jobs, $job;
 
-                $testsuite_ids{$settings->{TEST_SUITE_NAME}}->{$settings->{MACHINE}} //= [];
-                push @{$testsuite_ids{$settings->{TEST_SUITE_NAME}}->{$settings->{MACHINE}}}, $job->id;
+                $job_ids_by_test_machine{_settings_key($settings)} //= [];
+                push @{$job_ids_by_test_machine{_settings_key($settings)}}, $job->id;
 
                 # set prio if defined explicitely (otherwise default prio is used)
                 $job->update({priority => $prio}) if (defined($prio));
@@ -284,7 +284,6 @@ sub _schedule_iso {
                 push(@failed_job_info, {job_name => $settings->{TEST}, error_message => $_});
             }
         }
-
         # keep track of ...
         my %created_jobs;       # ... for cycle detection
         my %cluster_parents;    # ... for checking wrong parents
@@ -292,7 +291,7 @@ sub _schedule_iso {
         # jobs are created, now recreate dependencies and extract ids
         for my $job (@created_jobs) {
             my $error_messages
-              = $self->_create_dependencies_for_job($job, \%testsuite_ids, \%created_jobs, \%cluster_parents,
+              = $self->_create_dependencies_for_job($job, \%job_ids_by_test_machine, \%created_jobs, \%cluster_parents,
                 $skip_chained_deps);
             if (!@$error_messages) {
                 push(@successful_job_ids, $job->id);
@@ -538,12 +537,11 @@ sub _generate_jobs {
             }
 
             # add properties from dedicated database columns to settings
-            $settings{TEST}              = $job_template->name || $job_template->test_suite->name;
-            $settings{MACHINE}           = $job_template->machine->name;
-            $settings{BACKEND}           = $job_template->machine->backend;
-            $settings{JOB_TEMPLATE_NAME} = $job_template->name if $job_template->name;
-            $settings{TEST_SUITE_NAME}   = $job_template->test_suite->name;
-            $settings{JOB_DESCRIPTION}   = $job_template->description if length $job_template->description;
+            $settings{TEST}            = $job_template->name || $job_template->test_suite->name;
+            $settings{MACHINE}         = $job_template->machine->name;
+            $settings{BACKEND}         = $job_template->machine->backend;
+            $settings{TEST_SUITE_NAME} = $job_template->test_suite->name;
+            $settings{JOB_DESCRIPTION} = $job_template->description if length $job_template->description;
 
             # merge worker classes
             $settings{WORKER_CLASS} = @worker_classes ? join(',', sort(@worker_classes)) : "qemu_$args->{ARCH}";
@@ -582,7 +580,7 @@ sub _generate_jobs {
                 }
                 else {
                     foreach my $test (@tests) {
-                        if ($test eq $settings{TEST} || $test eq $settings{TEST_SUITE_NAME}) {
+                        if ($test eq $settings{TEST}) {
                             $wanted{_settings_key(\%settings)} = 1;
                             last;
                         }
@@ -606,7 +604,7 @@ sub _generate_jobs {
             for my $parent (@parents) {
                 my $parent_test_machine = join('@', @$parent);
                 my @parents_job_template
-                  = grep { join('@', $_->{TEST_SUITE_NAME}, $_->{MACHINE}) eq $parent_test_machine } @$ret;
+                  = grep { join('@', $_->{TEST}, $_->{MACHINE}) eq $parent_test_machine } @$ret;
                 for my $parent_job_template (@parents_job_template) {
                     $wanted{join('@', $parent_job_template->{TEST}, $parent_job_template->{MACHINE})} = 1;
                 }
@@ -631,7 +629,7 @@ defined. Internal method used by the B<_schedule_iso()> method.
 =cut
 
 sub _create_dependencies_for_job {
-    my ($self, $job, $testsuite_mapping, $created_jobs, $cluster_parents, $skip_chained_deps) = @_;
+    my ($self, $job, $job_ids_mapping, $created_jobs, $cluster_parents, $skip_chained_deps) = @_;
 
     my @error_messages;
     my $settings     = $job->settings_hash;
@@ -645,20 +643,22 @@ sub _create_dependencies_for_job {
         next unless defined $settings->{$depname};
         for my $testsuite (_parse_dep_variable($settings->{$depname}, $settings)) {
             my ($test, $machine) = @$testsuite;
-            for my $machine_from_testsuite (keys %{$testsuite_mapping->{$test}}) {
-                my $key = "$test\@$machine_from_testsuite";
-                if (!exists $cluster_parents->{$key}) {
-                    $cluster_parents->{$key} = $testsuite_mapping->{$test}->{$machine_from_testsuite};
-                }
+            my $key = "$test\@$machine";
+
+            for my $parent_job (keys %$job_ids_mapping) {
+                my @parents = split(/@/, $parent_job);
+                $cluster_parents->{$parent_job} = $job_ids_mapping->{$parent_job}
+                  if (!exists $cluster_parents->{$parent_job} && $test eq $parents[0]);
             }
-            if (!defined $testsuite_mapping->{$test}->{$machine}) {
-                my $error_msg = "$depname=$test\@$machine not found - check for dependency typos and dependency cycles";
+
+            if (!defined $job_ids_mapping->{$key}) {
+                my $error_msg = "$depname=$key not found - check for dependency typos and dependency cycles";
                 push(@error_messages, $error_msg);
             }
             else {
-                my @parents = @{$testsuite_mapping->{$test}->{$machine}};
+                my @parents = @{$job_ids_mapping->{$key}};
                 $self->_create_dependencies_for_parents($job, $created_jobs, $deptype, \@parents);
-                $cluster_parents->{"$test\@$machine"} = 'depended';
+                $cluster_parents->{$key} = 'depended';
             }
         }
     }
