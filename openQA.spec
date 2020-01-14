@@ -230,7 +230,9 @@ rm -rf %{buildroot}/DB
 export LC_ALL=en_US.UTF-8
 # Skip tests not working currently, or flaky, and Selenium tests
 # https://progress.opensuse.org/issues/19652
+# 17-labels_carry_over.t: https://progress.opensuse.org/issues/60209
 rm \
+    t/17-labels_carry_over.t \
     t/25-cache-service.t \
     t/ui/*.t
 
