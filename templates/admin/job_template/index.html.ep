@@ -73,18 +73,16 @@
                 </span>
             </button>
         </form>
-        <h2>
-            Job templates for group
-            <span id="job-group-name"><%= $group->name %></span>
-        </h2>
+        <h2><span id="job-config-page-heading">Job templates for</span> group <span id="job-group-name"><%= $group->name %></span></h2>
+        %= include 'layouts/info'
+        %= include 'admin/group/group_property_editor', group => $group, is_parent => 0
+        <h3 id="job-config-templates-heading" style="display: none;">Job templates</h3>
         <p>
             A job template is a combination of machine, product and test suite settings. These combination are used
             to produce actual jobs within a certain job group. Checkout
             <a href="http://open.qa/docs/#_using_job_templates_to_automate_jobs_creation" target="blank">the documentation</a>
             for more details.
         </p>
-        %= include 'layouts/info'
-        %= include 'admin/group/group_property_editor', group => $group, is_parent => 0
         % if (!$force_yaml_editor) {
             <div id="media">
                 <p id="loading"><i class="fa fa-spinner fa-spin"></i> Loading…</p>
