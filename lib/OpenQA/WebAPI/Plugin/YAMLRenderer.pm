@@ -15,8 +15,8 @@
 
 package OpenQA::WebAPI::Plugin::YAMLRenderer;
 use Mojo::Base 'Mojolicious::Plugin';
+use OpenQA::JobTemplates 'validate_data';
 
-use YAML::XS;
 use Try::Tiny;
 
 sub register {
@@ -43,32 +43,24 @@ sub register {
         # Returns an array of errors found during validation or otherwise an empty array.
         validate_yaml => sub {
             my ($self, $yaml, $schema_filename, $validate_schema) = @_;
-            my $validator = JSON::Validator->new;
-            my $schema;
+
             my @errors;
 
             try {
                 die "No valid schema specified\n" unless ($schema_filename // '') =~ /^[^.\/]+\.yaml$/;
-                # Note: Using the schema filename; slurp'ed text isn't detected as YAML
                 my $schema_abspath = $self->app->home->child('public', 'schema', $schema_filename)->to_string;
+                my $errors         = validate_data(
+                    data            => $yaml,
+                    schema_file     => $schema_abspath,
+                    validate_schema => $validate_schema,
+                );
+                push @errors, @$errors;
 
-                if ($validate_schema) {
-                    # Validate the schema: catches errors in type names and definitions
-                    $validator = $validator->load_and_validate_schema($schema_abspath);
-                    $schema    = $validator->schema;
-                }
-                else {
-                    $schema = $validator->schema($schema_abspath);
-                }
             }
             catch {
                 # The first line of the backtrace gives us the error message we want
                 push @errors, (split /\n/, $_)[0];
             };
-            if ($schema) {
-                # Note: Don't pass $schema here, that won't work
-                push @errors, $validator->validate($yaml);
-            }
             return \@errors;
         });
 }
