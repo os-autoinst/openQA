@@ -131,6 +131,9 @@ scenarios:
         priority: <b>PRIORITY</b>
         settings:
           <b>SOME_TEST_VARIABLE</b>: <b>VALUE</b>
+        description: >-
+          A description similar to the one
+          defined on test suite level.
                         </code>
                         <div>Specify multiple machines:</div>
                         <code>
