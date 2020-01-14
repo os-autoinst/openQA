@@ -4,7 +4,7 @@
   %= asset 'codemirror.css'
 % end
 
-% title 'Jobs for ' . $group->name;
+% title 'Job templates for ' . $group->name;
 
 % unless ($force_yaml_editor) {
     <div class="alert alert-danger">
@@ -74,9 +74,15 @@
             </button>
         </form>
         <h2>
-            Jobs for
+            Job templates for group
             <span id="job-group-name"><%= $group->name %></span>
         </h2>
+        <p>
+            A job template is a combination of machine, product and test suite settings. These combination are used
+            to produce actual jobs within a certain job group. Checkout
+            <a href="http://open.qa/docs/#_using_job_templates_to_automate_jobs_creation" target="blank">the documentation</a>
+            for more details.
+        </p>
         %= include 'layouts/info'
         %= include 'admin/group/group_property_editor', group => $group, is_parent => 0
         % if (!$force_yaml_editor) {
@@ -108,9 +114,8 @@
             <div class="form-group row">
                 <label for="editor-template" class="col-sm-5 control-label editor-yaml-guide" style="display: none;">
                     <div>
-                        <div>Define job templates per arch/medium:</div>
-                        <code>
-defaults:
+                        <div>Basic YAML structure for defining job templates:</div>
+<code>defaults:
   <b>ARCH</b>:
     machine: <b>MACHINE</b>
     priority: <b>PRIORITY</b>
@@ -124,32 +129,37 @@ scenarios:
     <i>medium</i>-<b>ARCH</b>:
     - <b>TESTSUITE</b>
                         </code>
-                        <div>Override machine, priority or settings from defaults:</div>
-                        <code>
+                        <div>Override machine, priority, settings or description:</div>
+<code>scenarios:
+  ARCH:
+    medium-ARCH:
     - <b>TESTSUITE</b>:
         machine: <b>MACHINE</b>
         priority: <b>PRIORITY</b>
         settings:
           <b>SOME_TEST_VARIABLE</b>: <b>VALUE</b>
         description: >-
-          A description similar to the one
-          defined on test suite level.
+          <b>A description similar to the one
+          defined on test suite level.</b>
                         </code>
                         <div>Specify multiple machines:</div>
-                        <code>
+<code>scenarios:
+  ARCH:
+    medium-ARCH:
     - <b>TESTSUITE</b>:
         machine: [<b>MACHINE1</b>, <b>MACHINE2</b>]
                         </code>
                         <div>Re-use a test suite with a custom job template name:</div>
-                        <code>
+<code>scenarios:
+  ARCH:
+    medium-ARCH:
     - <b>JOBNAME</b>:
         testsuite: <b>TESTSUITE</b>
         settings:
           <b>ANOTHER_VARIABLE</b>: <b>YET_ANOTHER_VALUE</b>
                         </code>
                         <div>Re-use test suites with YAML aliases:</div>
-                        <code>
-scenarios:
+<code>scenarios:
   <b>i586</b>:
     <i>medium</i>-<b>i586</b>: <b>&amp;tests</b>
     - foo
