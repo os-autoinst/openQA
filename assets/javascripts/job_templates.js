@@ -366,12 +366,12 @@ function prepareTemplateEditor(data) {
     editor.doc.setValue(data);
     var form = $('#editor-form');
     form.find('.progress-indication').hide();
+    form.find('.buttons').show();
     if (!user_is_admin) {
         return;
     }
 
     editor.setOption('readOnly', false);
-    form.find('.buttons').show ();
 }
 
 function submitTemplateEditor(button) {
