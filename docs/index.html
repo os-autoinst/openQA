@@ -478,13 +478,13 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#installing">openQA installation guide</a>
 <ul class="sectlevel1">
 <li><a href="#_introduction_2">Introduction</a></li>
-<li><a href="#_openqa_quick_bootstrap">openQA quick bootstrap</a>
+<li><a href="#bootstrapping">Quick bootstrapping under openSUSE</a>
 <ul class="sectlevel2">
 <li><a href="#_directly_on_your_machine">Directly on your machine</a></li>
 <li><a href="#_openqa_in_a_container">openQA in a container</a></li>
 </ul>
 </li>
-<li><a href="#_custom_installation_repositories_and_procedure">Custom installation - Repositories and procedure</a>
+<li><a href="#_custom_installation_repositories_and_procedure">Custom installation - repositories and procedure</a>
 <ul class="sectlevel2">
 <li><a href="#_official_repositories">Official repositories</a></li>
 <li><a href="#_development_version_repository">Development version repository</a></li>
@@ -765,12 +765,27 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_introduction_6">Introduction</a></li>
 <li><a href="#_development_guidelines">Development guidelines</a>
 <ul class="sectlevel2">
+<li><a href="#repo-urls">Repository URLs</a></li>
 <li><a href="#_rules_for_commits">Rules for commits</a></li>
 </ul>
 </li>
 <li><a href="#_getting_involved_into_development">Getting involved into development</a></li>
 <li><a href="#_technologies">Technologies</a></li>
-<li><a href="#_starting_the_webserver_from_local_git_checkout">Starting the webserver from local Git checkout</a></li>
+<li><a href="#development-setup">Development setup</a>
+<ul class="sectlevel2">
+<li><a href="#_dependencies">Dependencies</a></li>
+<li><a href="#setup-postgresql">Setting up the PostgreSQL database</a>
+<ul class="sectlevel3">
+<li><a href="#_importing_production_data">Importing production data</a></li>
+</ul>
+</li>
+<li><a href="#_starting_daemons">Starting daemons</a>
+<ul class="sectlevel3">
+<li><a href="#_further_tips">Further tips</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a href="#_handling_of_dependencies">Handling of dependencies</a>
 <ul class="sectlevel2">
 <li><a href="#_remarks">Remarks</a></li>
@@ -782,7 +797,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_when_is_it_required_to_update_the_database_schema">When is it required to update the database schema?</a></li>
 <li><a href="#_how_to_update_the_database_schema">How to update the database schema</a></li>
 <li><a href="#_how_to_add_fixtures_to_the_database">How to add fixtures to the database</a></li>
-<li><a href="#setup-postgresql">How to setup PostgreSQL to test locally with production data</a></li>
 </ul>
 </li>
 <li><a href="#_how_to_overwrite_config_files">How to overwrite config files</a></li>
@@ -810,6 +824,12 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </ul>
 </li>
 <li><a href="#_building_plugins">Building Plugins</a></li>
+<li><a href="#_checking_for_javascript_problems">Checking for JavaScript problems</a></li>
+<li><a href="#_profiling_the_web_ui">Profiling the web UI</a>
+<ul class="sectlevel2">
+<li><a href="#_note">Note</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#branding">openQA branding</a>
@@ -1555,17 +1575,21 @@ Guide</a>, also available at the <a href="https://github.com/os-autoinst/openQA"
 repository</a>.</p>
 </div>
 <div class="paragraph">
-<p>Continue with the &#8220;openQA quick bootstrap&#8221; to get a simple, ready-to-use
-installation, useful for a single user setup. Else, continue with the more
-advanced section about "`Custom installation - Repositories and procedure''.</p>
+<p>Continue with the next section to get a simple, ready-to-use installation, useful
+for a single user setup. Else, continue with the more advanced section
+about <a href="#custom_installation">Custom installation</a>. For a setup suitable to
+develop openQA itself, have a look at the
+<a href="#development-setup">Development setup</a> section.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_openqa_quick_bootstrap">openQA quick bootstrap</h2>
+<h2 id="bootstrapping">Quick bootstrapping under openSUSE</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>To quickly get a working openQA installation, you can use openQA-bootstrap.</p>
+<p>To quickly get a working openQA installation, you can use the openqa-bootstrap
+script. It essentially automates the steps mentioned in the
+<a href="#custom_installation">Custom installation</a> section.</p>
 </div>
 <div class="sect2">
 <h3 id="_directly_on_your_machine">Directly on your machine</h3>
@@ -1596,7 +1620,7 @@ supplying openqa-clone-job parameters directly for a quickstart:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh"><span></span>/usr/share/openqa/script/openqa-bootstrap -from openqa.opensuse.org <span class="tok-m">12345</span> <span class="tok-nv">SCHEDULE</span><span class="tok-o">=</span>tests/boot/boot_to_desktop,tests/x11/kontact</code></pre>
+<pre class="pygments highlight"><code data-lang="sh"><span></span>/usr/share/openqa/script/openqa-bootstrap --from openqa.opensuse.org <span class="tok-m">12345</span> <span class="tok-nv">SCHEDULE</span><span class="tok-o">=</span>tests/boot/boot_to_desktop,tests/x11/kontact</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1630,9 +1654,9 @@ systemd-run -tM openqa1 /bin/bash <span class="tok-c1"># start a shell in the co
 </div>
 </div>
 <div class="sect1">
-<h2 id="_custom_installation_repositories_and_procedure">Custom installation - Repositories and procedure</h2>
+<h2 id="_custom_installation_repositories_and_procedure">Custom installation - repositories and procedure</h2>
 <div class="sectionbody">
-<div class="paragraph">
+<div id="custom_installation" class="paragraph">
 <p>Keep in mind that there can be disruptive changes between openQA versions.
 You need to be sure that the webui and the worker that you are using have the
 same version number or, at least, are compatible.</p>
@@ -7270,36 +7294,77 @@ are available at the
 <div id="guidelines" class="paragraph">
 <p>As mentioned, the central point of development is the
 <a href="https://github.com/os-autoinst">os-autoinst organization on GitHub</a> where several
-repositories can be found:</p>
+repositories can be found.</p>
 </div>
+<div class="sect2">
+<h3 id="repo-urls">Repository URLs</h3>
 <div class="ulist">
 <ul>
 <li>
-<p><a href="https://github.com/os-autoinst/openQA">openQA</a> containing documentation,
-server, worker and other support scripts.</p>
+<p>os-autoinst: <a href="https://github.com/os-autoinst/os-autoinst" class="bare">https://github.com/os-autoinst/os-autoinst</a></p>
+<div class="ulist">
+<ul>
+<li>
+<p>the "backend" (thing that executes tests and starts/controls the SUT e.g. using QEMU)</p>
+</li>
+</ul>
+</div>
 </li>
 <li>
-<p><a href="https://github.com/os-autoinst/os-autoinst">os-autoinst</a> with the standalone
-test tool.</p>
+<p>openQA: <a href="https://github.com/os-autoinst/openQA" class="bare">https://github.com/os-autoinst/openQA</a></p>
+<div class="ulist">
+<ul>
+<li>
+<p>mainly the web UI and accompanying daemons like the scheduler</p>
 </li>
 <li>
-<p><a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse">os-autoinst-distri-opensuse</a>
-containing the tests used in <a href="http://openqa.opensuse.org" class="bare">http://openqa.opensuse.org</a></p>
+<p>the worker (thing that starts the backend and uploads results to the web UI)</p>
 </li>
 <li>
-<p><a href="https://github.com/os-autoinst/os-autoinst-needles-opensuse">os-autoinst-needles-opensuse</a>
-with the needles associated to the tests in the former repository.</p>
+<p>documentation</p>
 </li>
 <li>
-<p><a href="https://github.com/os-autoinst/os-autoinst-distri-example">os-autoinst-distri-example</a>
-with an almost empty set of tests meant to be used to start writing tests (and
-creating the corresponding needles) from scratch for a new operating system.</p>
+<p>miscellaneous support scripts</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>test distribution: e.g. <a href="https://github.com/os-autoinst/os-autoinst-distri-opensuse" class="bare">https://github.com/os-autoinst/os-autoinst-distri-opensuse</a> for openSUSE</p>
+<div class="ulist">
+<ul>
+<li>
+<p>the actual tests, in case of os-autoinst-distri-opensuse conducted on <a href="http://openqa.opensuse.org" class="bare">http://openqa.opensuse.org</a></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>needles: e.g. <a href="https://github.com/os-autoinst/os-autoinst-needles-opensuse" class="bare">https://github.com/os-autoinst/os-autoinst-needles-opensuse</a> for openSUSE</p>
+<div class="ulist">
+<ul>
+<li>
+<p>reference images if not already included in the test distribution</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>empty example test distribution: <a href="https://github.com/os-autoinst/os-autoinst-distri-example" class="bare">https://github.com/os-autoinst/os-autoinst-distri-example</a></p>
+<div class="ulist">
+<ul>
+<li>
+<p>meant to be used to start writing tests (and creating the corresponding needles) from scratch for a new operating system</p>
+</li>
+</ul>
+</div>
 </li>
 </ul>
 </div>
 <div class="paragraph">
 <p>As in most projects hosted on GitHub, pull request are always welcome and
 are the right way to contribute improvements and fixes.</p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_rules_for_commits">Rules for commits</h3>
@@ -7487,25 +7552,115 @@ follows the most common Perl style conventions.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_starting_the_webserver_from_local_git_checkout">Starting the webserver from local Git checkout</h2>
+<h2 id="development-setup">Development setup</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>For developing openQA and os-autoinst itself it makes sense to checkout the
+<a href="#repo-urls">Git repositories</a> and to start the daemons manually.</p>
+</div>
+<div class="paragraph">
+<p>This section should give you a general idea how to do that. For a concrete example some developers
+use under openSUSE Tumbleweed have a look at the <a href="https://github.com/Martchus/openQA-helper">openQA-helper repository</a>.</p>
+</div>
+<div class="sect2">
+<h3 id="_dependencies">Dependencies</h3>
+<div class="paragraph">
+<p>Have a look at the packaged version (e.g. openQA.spec within the root of the openQA repository)
+for all required dependencies. For development build time dependencies need to be installed as well.
+Recommended dependencies such logrotate can be ignored. For openSUSE there is also the openQA-devel
+meta-package which pulls all required dependencies for development.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="setup-postgresql">Setting up the PostgreSQL database</h3>
+<div class="paragraph">
+<p>One also needs to setup a PostgreSQL database for openQA manually owned by your regular user:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Install PostgreSQL - under openSUSE the following package are required:
+<code>postgresql-server postgresql-init</code></p>
+</li>
+<li>
+<p>Start the server: <code>systemctl start postgresql</code></p>
+</li>
+<li>
+<p>The next two steps need to be done as the user postgres: <code>su - postgres</code></p>
+</li>
+<li>
+<p>Create user: <code>createuser your_username</code> where <code>your_username</code> must be the same
+as the UNIX user you start your local openQA instance with.</p>
+</li>
+<li>
+<p>Create database: <code>createdb -O your_username openqa-local</code> where <code>openqa-local</code> is
+the name you want to use for the database</p>
+</li>
+<li>
+<p>Configure openQA to use PostgreSQL as described in the section
+<a href="#database">Database</a> of the installation guide.
+User name and password are not required.</p>
+</li>
+<li>
+<p>openQA will default-initialize the new database on the next startup.</p>
+</li>
+</ol>
+</div>
+<div class="sect3">
+<h4 id="_importing_production_data">Importing production data</h4>
+<div class="paragraph">
+<p>Assuming you have already followed steps 1. to 4. above:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Create a separate database: <code>createdb -O your_username openqa-o3</code> where <code>openqa-o3</code> is
+the name you want to use for the database</p>
+</li>
+<li>
+<p>The next steps must be done by the user you start your local openQA instance with.</p>
+</li>
+<li>
+<p>Import dump: <code>pg_restore -c -d openqa path/to/dump</code></p>
+</li>
+<li>
+<p>Configure openQA to use that database as in step 7. above.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_starting_daemons">Starting daemons</h3>
+<div class="paragraph">
+<p>To start the webserver for development, use the scripts/openqa daemon. The other daemons (mentioned in
+the <a href="images/architecture.svg">architecture diagram</a>) are started in the same way,
+e.g. script/openqa-scheduler daemon.</p>
+</div>
+<div class="paragraph">
+<p>You can also have a look at the systemd unit files. Although it likely makes not much sense to use them directly
+you can have a look at them to see how the different daemons are started. They are found in the systemd directory
+of the openQA repository. You can substitute /usr/share/openqa/ with the path of your openQA Git checkout.</p>
+</div>
+<div class="paragraph">
+<p>Of course you can ignore the user specified in these unit files and instead start everything as your
+regular user. However, you need to ensure that your user has the permission to the "openQA base directory".
+That is not the case by default so it makes sense to <a href="#_customize_base_directory">customize it</a>.</p>
+</div>
+<div class="paragraph">
+<p>Note that the web UI daemon will pull required JavaScript/CSS libraries automatically when started the first time.
+This might take a while and requires an internet connection.</p>
+</div>
+<div class="paragraph">
+<p>You do <strong>not</strong> need to setup an additional web server because the daemons already provide one. The port
+under which a service is available is logged on startup (the main web UI port is 9625 by default). Local
+workers need to be configured to connect to the main web UI port (add HOST = http://localhost:9526 to
+workers.ini).</p>
+</div>
+<div class="sect3">
+<h4 id="_further_tips">Further tips</h4>
 <div class="ulist">
 <ul>
-<li>
-<p>To start the webserver for development, use the scripts/openqa daemon.</p>
-</li>
-<li>
-<p>The other daemons (mentioned in
-the <a href="images/architecture.svg">architecture diagram</a>) are started in the
-same way, e.g. script/openqa-scheduler daemon.</p>
-</li>
-<li>
-<p>openQA will pull the required assets on the first run.</p>
-</li>
-<li>
-<p>openQA uses SASS. Under openSUSE, installing rubygem(sass) should be
-sufficient.</p>
-</li>
 <li>
 <p>It is also useful to start openQA with morbo which allows applying changes
 without restarting the server:
@@ -7520,6 +7675,8 @@ and assets/assetpack.db. Make sure to look for error messages on startup
 of the webserver and to force the refresh of the web page in your browser.</p>
 </li>
 </ul>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -7606,7 +7763,9 @@ and upgrades include those changes.</p>
 require to update the schema. Adding just another method or altering/adding
 functions like has_many doesn&#8217;t require an update. However, adding new
 columns, modifying or removing existing ones requires to follow the steps
-mentioned above.</p>
+mentioned above. In doubt, just follow the instructions below. If an empty
+migration has been emitted (SQL file produced in step 3. does not contain
+any statements) you can just drop the migration again.</p>
 </div>
 </div>
 <div class="sect2">
@@ -7616,7 +7775,7 @@ mentioned above.</p>
 <li>
 <p>First, you need to increase the database version number in the <code>$VERSION</code>
 variable in the lib/OpenQA/Schema.pm file.
-Note that it&#8217;s recommended to notify the other developers before doing so,
+Note that it is recommended to notify the other developers before doing so,
 to synchronize in case there are more developers wanting to increase the
 version number at the same time.</p>
 </li>
@@ -7628,25 +7787,31 @@ this is done by running <code>./script/initdb --prepare_init</code>.</p>
 <p>Afterwards you need to generate the deployment files for existing installations,
 this is done by running <code>./script/upgradedb --prepare_upgrade</code>.
 After doing so, the directories dbicdh/$ENGINE/deploy/&lt;new version&gt; and
-dbicdh/$ENGINE/upgrade/&lt;prev version&gt;-&lt;new version&gt; for PosgreSQL
+dbicdh/$ENGINE/upgrade/&lt;prev version&gt;-&lt;new version&gt; for PostgreSQL
 should have been created with some SQL files inside containing the statements to
 initialize the schema and to upgrade from one version
 to the next in the corresponding database engine.</p>
 </li>
 <li>
-<p>Migration scripts to upgrade from previous versions can be added under
+<p>Custom migration scripts to upgrade from previous versions can be added under
 dbicdh/_common/upgrade. Create a &lt;prev_version&gt;-&lt;new_version&gt; directory and
 put some files there with DBIx commands for the migration. For examples just
-have a look at the migrations which are already there.</p>
+have a look at the migrations which are already there.
+The custom migration scripts are executed in addition to the automatically
+generated ones. If the name of the custom migration script comes before
+<code>001-auto.sql</code> in alphabetical order it will be executed <strong>before</strong> the
+automatically created migration script. That is most of the times <strong>not</strong> desired.</p>
 </li>
 </ol>
 </div>
 <div class="paragraph">
-<p>The above steps are only for preparing the required SQL statements, but do not
-actually alter the database. Before doing so, it is recommended <strong>to backup your
-database</strong> to be able to downgrade again if something goes wrong or you just need
-to continue working on another branch. To do so, the following command can be
-used to create a copy:</p>
+<p>The above steps are only for preparing the required SQL statements for the migration.</p>
+</div>
+<div class="paragraph">
+<p>The migration itself (which alters your database!) is done <strong>automatically</strong> the first
+time the web UI is (re)started. So be sure <strong>to backup your database</strong> before restarting
+to be able to downgrade again if something goes wrong or you just need to continue
+working on another branch. To do so, the following command can be used to create a copy:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7654,10 +7819,8 @@ used to create a copy:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>To actually create or update the database (after creating a backup as described),
-you should run either <code>./script/initdb --init_database</code> or
-<code>./script/upgradedb --upgrade_database</code>. This is also required when the changes
-are installed in a production server.</p>
+<p>To initialize or update the database manually before restarting the web UI you can run
+either <code>./script/initdb --init_database</code> or <code>./script/upgradedb --upgrade_database</code>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -7688,40 +7851,6 @@ variable.</p>
 <div class="content">
 <pre class="pygments highlight"><code data-lang="sh"><span></span><span class="tok-nb">export</span> <span class="tok-nv">DBIC_TRACE</span><span class="tok-o">=</span><span class="tok-m">1</span></code></pre>
 </div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="setup-postgresql">How to setup PostgreSQL to test locally with production data</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Install PosgreSQL - under openSUSE the following package are required:
-postgresql-server postgresql-init</p>
-</li>
-<li>
-<p>Start the server: <code>systemctl start postgresql</code></p>
-</li>
-<li>
-<p>The following steps need to be done by the user postgres: <code>su - postgres</code></p>
-</li>
-<li>
-<p>Create user: <code>createuser your_username</code> where your_username must be the same
-as the UNIX user you start your local openQA instance with.</p>
-</li>
-<li>
-<p>Create database: <code>createdb -O your_username openqa</code></p>
-</li>
-<li>
-<p>The next steps must be done by the user you start your local openQA instance with.</p>
-</li>
-<li>
-<p>Import dump: <code>pg_restore -c -d openqa path/to/dump</code></p>
-</li>
-<li>
-<p>Configure openQA to use PostgreSQL as described in the section <a href="#database">Database</a> of the installation guide.
-User name and password are not required.</p>
-</li>
-</ol>
 </div>
 </div>
 </div>
@@ -7799,7 +7928,8 @@ after user validation. See included modules for inspiration.</p>
 <p>It is possible to customize the openQA base directory (which is for instance used to store
 test results) by setting the environment variable OPENQA_BASEDIR. The default value
 is /var/lib. Be sure to clear that variable when running unit tests locally (see next
-section).</p>
+section). Take into account that the test results and assets can need a big amount of disk
+space.</p>
 </div>
 </div>
 </div>
@@ -8255,6 +8385,52 @@ $ make <span class="tok-nb">test</span>
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_checking_for_javascript_problems">Checking for JavaScript problems</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>One can use the tool jshint to check for problems within JavaScript code. It can be installed
+easily via npm.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span></span>npm install jshint
+node_modules/jshint/bin/jshint path/to/javascript.js</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_profiling_the_web_ui">Profiling the web UI</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Install NYTProf, under openSUSE Tumbleweed: zypper in perl-Devel-NYTProf perl-Mojolicious-Plugin-NYTProf</p>
+</li>
+<li>
+<p>Put profiling_enabled = 1 in  openqa.ini.</p>
+</li>
+<li>
+<p>Optionally import production data like described in the official contributers documentation.</p>
+</li>
+<li>
+<p>Restart the web UI, browse some pages. Profiling is done in the background.</p>
+</li>
+<li>
+<p>Access profiling data via /nytprof route.</p>
+</li>
+</ol>
+</div>
+<div class="sect2">
+<h3 id="_note">Note</h3>
+<div class="paragraph">
+<p>Profiling data is extensive. Remove it if you do not need it anymore and disable the profiling_enabled
+configuration again if not needed anymore.</p>
+</div>
+</div>
+</div>
+</div>
 <h1 id="branding" class="sect0">openQA branding</h1>
 <div class="openblock partintro">
 <div class="content">
@@ -8295,7 +8471,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-01-11 00:06:26 UTC
+Last updated 2020-01-14 00:06:46 UTC
 </div>
 </div>
 <style>
