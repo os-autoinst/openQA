@@ -332,8 +332,9 @@ is(scalar(@{$rjobs_before}) + 1,             scalar(@{$rjobs_after}), "number of
 is($rjobs_after->[-1]->{assigned_worker_id}, 1,                       'assigned worker set');
 
 $grabbed = job_get($job->id);
-is($grabbed->worker->id, $worker->{id}, 'correct worker assigned');
-is($grabbed->state,      ASSIGNED,      'job is in assigned state');
+is($grabbed->assigned_worker_id, $worker->{id}, 'worker assigned to job');
+is($grabbed->worker->id,         $worker->{id}, 'job assigned to worker');
+is($grabbed->state,              ASSIGNED,      'job is in assigned state');
 
 # register worker again with no job while the web UI thinks it has an assigned job
 is(register_worker, $id, 'worker re-registered');

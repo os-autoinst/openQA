@@ -147,51 +147,59 @@ sub _message {
             log_debug("Could not send the population number to worker: $_");
         };
 
-# find the job currently associated with that worker and check whether the worker still executes the job it is supposed to
+        # find the job currently associated with that worker and check whether the worker still
+        # executes the job it is supposed to
         try {
             my $worker = $schema->resultset('Workers')->find($wid);
             return undef unless $worker;
 
-            my $registered_job_id;
+            my $current_job_id;
             my $registered_job_token;
-            my $registered_job_state;
-            my $registered_job = $worker->job;
-            if ($registered_job) {
-                $registered_job_id    = $registered_job->id;
-                $registered_job_state = $registered_job->state;
+            my $current_job_state;
+            my @unfinished_jobs = $worker->unfinished_jobs;
+            my $current_job     = $worker->job // $unfinished_jobs[0];
+            if ($current_job) {
+                $current_job_id    = $current_job->id;
+                $current_job_state = $current_job->state;
             }
 
             # log debugging info
-            log_debug("Found job $registered_job_id in DB from worker_status update sent by worker $wid")
-              if defined $registered_job_id;
+            log_debug("Found job $current_job_id in DB from worker_status update sent by worker $wid")
+              if defined $current_job_id;
             log_debug("Received request has job id: $job_id")
               if defined $job_id;
             $registered_job_token = $worker->get_property('JOBTOKEN');
-            log_debug("Worker $wid for job $registered_job_id has token $registered_job_token")
-              if defined $registered_job_id && defined $registered_job_token;
+            log_debug("Worker $wid for job $current_job_id has token $registered_job_token")
+              if defined $current_job_id && defined $registered_job_token;
             log_debug("Received request has token: $job_token")
               if defined $job_token;
 
-            # skip any further actions if worker just does the job we expected it to do
+            # skip any further actions if worker just does the one job we expected it to do
             return undef
               if ( defined $job_id
-                && defined $registered_job_id
+                && defined $current_job_id
                 && defined $job_token
                 && defined $registered_job_token
-                && $job_id eq $registered_job_id
+                && $job_id eq $current_job_id
                 && (my $job_token_correct = $job_token eq $registered_job_token)
-                && OpenQA::Jobs::Constants::meta_state($registered_job_state) eq OpenQA::Jobs::Constants::EXECUTION);
+                && OpenQA::Jobs::Constants::meta_state($current_job_state) eq OpenQA::Jobs::Constants::EXECUTION)
+              && (scalar @unfinished_jobs <= 1);
 
             # handle the case when the worker does not work on the job(s) it is supposed to work on
-            my @all_jobs_currently_associated_with_worker = ($registered_job, $worker->unfinished_jobs);
+            my @all_jobs_currently_associated_with_worker = ($current_job, @unfinished_jobs);
+            my %considered_jobs;
             for my $associated_job (@all_jobs_currently_associated_with_worker) {
                 next unless defined $associated_job;
+
+                # prevent doing this twice for the same job ($current_job and @unfinished_jobs might overlap)
+                my $job_id = $associated_job->id;
+                next if exists $considered_jobs{$job_id};
+                $considered_jobs{$job_id} = 1;
 
                 # do nothing if the job token is corrent and the worker claims that it is still working on that job
                 # or that the job is still pending
                 if ($job_token_correct) {
-                    my $job_id = $associated_job->id;
-                    next if $job_id eq $registered_job_id;
+                    next if $job_id eq $current_job_id;
                     next if exists $pending_job_ids->{$job_id};
                 }
 

@@ -343,34 +343,18 @@ sub reschedule_state {
     }
 }
 
-sub reschedule_rollback {
-    my ($self, $worker) = @_;
-    $self->scheduler_abort($worker)
-      ;    # TODO: This might become a problem if we have duplicated job IDs from 2 or more web UIs.
-           #       Workers should be able to kill a job checking the (job token + job id) instead.
-    $self->reschedule_state;
-}
-
 sub set_assigned_worker {
     my ($self, $worker) = @_;
-    return 0 unless $worker;
 
+    my $job_id    = $self->id;
+    my $worker_id = $worker->id;
     $self->update(
         {
             state              => ASSIGNED,
             t_started          => undef,
-            assigned_worker_id => $worker->id,
+            assigned_worker_id => $worker_id,
         });
-
-    $worker->update({job_id => $self->id});
-
-    if ($worker->job->id eq $self->id) {
-        log_debug("Job '" . $self->id . "' has worker '" . $worker->id . "' assigned");
-        return 1;
-    }
-    else {
-        return 0;
-    }
+    log_debug("Job '$job_id' has worker '$worker_id' assigned");
 }
 
 sub prepare_for_work {
@@ -925,10 +909,13 @@ sub _cluster_cloned {
 }
 
 sub abort {
-    my $self = shift;
-    return unless $self->worker;
-    log_debug("[Job#" . $self->id . "] Sending abort command");
-    $self->worker->send_command(command => 'abort', job_id => $self->id);
+    my $self   = shift;
+    my $worker = $self->worker;
+    return undef unless $worker;
+
+    my ($job_id, $worker_id) = ($self->id, $worker->id);
+    log_debug("Sending abort command to worker $worker_id for job $job_id");
+    $worker->send_command(command => 'abort', job_id => $job_id);
 }
 
 sub scheduler_abort {

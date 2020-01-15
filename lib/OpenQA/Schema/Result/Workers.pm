@@ -272,4 +272,9 @@ sub unfinished_jobs {
     return $self->previous_jobs->search({t_finished => undef});
 }
 
+sub set_current_job {
+    my ($self, $job) = @_;
+    $self->update({job_id => $job->id});
+}
+
 1;
