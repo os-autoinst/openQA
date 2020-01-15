@@ -454,7 +454,7 @@ subtest 'job property editor' => sub() {
         wait_for_ajax;
 
         $driver->refresh();
-        $driver->title_is('openQA: Jobs for Cool Group has been edited!', 'new name on title');
+        $driver->title_is('openQA: Job templates for Cool Group has been edited!', 'new name on title');
         $driver->find_element_by_id('toggle-group-properties')->click();
         is($driver->find_element_by_id('editor-name')->get_value(),       'Cool Group has been edited!', 'name edited');
         is($driver->find_element_by_id('editor-size-limit')->get_value(), '1000',                        'size edited');

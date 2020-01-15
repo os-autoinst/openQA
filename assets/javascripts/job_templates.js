@@ -324,6 +324,13 @@ function alignCols() {
 function toggleEdit() {
     $('#properties').toggle(250);
     checkJobGroupForm('#group_properties_form');
+    if ((window.groupPropertiesEditorVisisble = !window.groupPropertiesEditorVisisble)) {
+        document.getElementById('job-config-page-heading').innerHTML = 'Job';
+        document.getElementById('job-config-templates-heading').style.display = 'inline';
+    } else {
+        document.getElementById('job-config-page-heading').innerHTML = 'Job templates for';
+        document.getElementById('job-config-templates-heading').style.display = 'none';
+    }
 }
 
 function toggleTemplateEditor() {
@@ -366,12 +373,12 @@ function prepareTemplateEditor(data) {
     editor.doc.setValue(data);
     var form = $('#editor-form');
     form.find('.progress-indication').hide();
+    form.find('.buttons').show();
     if (!user_is_admin) {
         return;
     }
 
     editor.setOption('readOnly', false);
-    form.find('.buttons').show ();
 }
 
 function submitTemplateEditor(button) {
