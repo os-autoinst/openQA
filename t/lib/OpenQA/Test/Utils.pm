@@ -115,6 +115,11 @@ sub fake_asset_server {
                 }
             }
 
+            elsif ($filename =~ /sle-12-SP3-x86_64-0368-200_close/) {
+                my $stream = Mojo::IOLoop->stream($c->tx->connection);
+                Mojo::IOLoop->next_tick(sub { $stream->close });
+            }
+
             elsif ($filename =~ /sle-12-SP3-x86_64-0368-200_#:/) {
                 $c->res->headers->content_length(20);
                 $c->res->headers->content_type('text/plain');
