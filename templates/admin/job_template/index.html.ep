@@ -15,14 +15,7 @@
 % }
 
 % content_for 'ready_function' => begin
-    user_is_admin =
-    % if(is_admin) {
-        true
-    % }
-    % else {
-        false
-    % }
-    ;
+    user_is_admin = <%= is_admin_js %>;
     % if ($force_yaml_editor) {
         toggleTemplateEditor();
     % }
