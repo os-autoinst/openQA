@@ -99,6 +99,7 @@ aliases:
       esac
 
   - &git_token_authentication
+    name: "Prepare auth token"
     command: |
       echo 'echo $GITHUB_TOKEN' > $(pwd)/.git-askpass
       echo "export GIT_ASKPASS=$(pwd)/.git-askpass" >> $BASH_ENV
@@ -130,6 +131,7 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
+          name: "Setup git"
           command: |
             git config user.email "${COMMIT_AUTHOR_EMAIL}"
             git config user.name "Dependency bot circleci"
@@ -137,6 +139,7 @@ jobs:
             hub --version
       - run: *git_token_authentication
       - run:
+          name: "Prepare dependency PR"
           command: |
             depid=$(date +%y%m%d)
             # more specific branch name if the same exists
