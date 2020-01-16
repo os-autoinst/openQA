@@ -129,8 +129,8 @@ sub _download_asset {
     }
     else {
         my $message = $res->error->{message};
-        $log->info(qq{Purging "$asset" because the download failed: $code - $message});
-        $self->purge_asset($asset);
+        $log->info(qq{Download of "$asset" failed: $code - $message});
+        $ret = 521;
     }
 
     return $ret;
@@ -161,7 +161,8 @@ sub get_asset {
             next;
         }
         elsif (!$n) {
-            $log->info('Too many download errors, aborting');
+            $log->info(qq{Purging "$asset" because of too many download errors});
+            $self->purge_asset($asset);
             last;
         }
 

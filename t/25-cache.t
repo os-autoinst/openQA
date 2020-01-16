@@ -148,6 +148,7 @@ like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-400\@64bit.qcow2" from/,
 like $cache_log, qr/failed: 400/, 'Asset download fails with 400 - Bad Request';
 $cache_log = '';
 
+# Server error
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-589@64bit.qcow2');
 like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-589\@64bit.qcow2" from/,         'Asset download attempt';
 like $cache_log, qr/Size of .+ differs, expected 10 Byte but downloaded 6 Byte/,         'Incomplete download logged';
@@ -155,7 +156,22 @@ like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(4 remai
 like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
 like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
 like $cache_log, qr/Download error 598, waiting 1 seconds for next try \(1 remaining\)/, '1 tries remaining';
-like $cache_log, qr/Too many download errors, aborting/, 'Bailing out after too many retries';
+like $cache_log,   qr/Purging ".*qcow2" because of too many download errors/, 'Bailing out after too many retries';
+unlike $cache_log, qr/failed because the asset did not exist/,                'Asset existed';
+$cache_log = '';
+
+# Connection error (closed early)
+$cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200_close@64bit.qcow2');
+like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-200_close\@64bit.qcow2" from/, 'Asset download attempt';
+like $cache_log, qr/Download of ".*200_close\@64bit.qcow2" failed: 521 - Premature connection close/,
+  'Real error is logged';
+like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
+like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(3 remaining\)/, '3 tries remaining';
+like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(2 remaining\)/, '2 tries remaining';
+like $cache_log, qr/Download error 521, waiting 1 seconds for next try \(1 remaining\)/, '1 tries remaining';
+like $cache_log, qr/Purging ".*200_close\@64bit.qcow2" because of too many download errors/,
+  'Bailing out after too many retries';
+like $cache_log, qr/Purging ".*200_close\@64bit.qcow2" failed because the asset did not exist/, 'Asset was missing';
 $cache_log = '';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-503@64bit.qcow2');
@@ -163,7 +179,8 @@ like $cache_log, qr/Downloading "sle-12-SP3-x86_64-0368-503\@64bit.qcow2" from/,
 like $cache_log, qr/Downloading ".*0368-503\@64bit.qcow2" failed with server error 503/,
   'Asset download fails with 503 - Server not available';
 like $cache_log, qr/Download error 503, waiting 1 seconds for next try \(4 remaining\)/, '4 tries remaining';
-like $cache_log, qr/Too many download errors, aborting/, 'Bailing out after too many retries';
+like $cache_log, qr/Purging ".*-503@64bit.qcow2" because of too many download errors/,
+  'Bailing out after too many retries';
 $cache_log = '';
 
 $cache->get_asset($host, {id => 922756}, 'hdd', 'sle-12-SP3-x86_64-0368-200@64bit.qcow2');
@@ -190,10 +207,6 @@ like $cache_log, qr/Download of ".*sle-12-SP3-x86_64-0368-200_256.*" successful,
 like $cache_log, qr/is 256 Byte, with ETag "andi \$a3, \$t1, 41399"/, 'Etag and size are logged';
 like $cache_log, qr/Cache size 1024 Byte \+ needed 256 Byte exceeds limit of 1024 Byte, purging least used assets/,
   'Requested size is logged';
-like $cache_log,
-  qr/Purging ".*0368-503@64bit.qcow2" because we need space for new assets, reclaiming 0/,
-  'Reclaimed no space from missing asset';
-like $cache_log, qr/Purging ".*0368-503@64bit.qcow2" failed because the asset did not exist/, 'Asset was missing';
 like $cache_log,
   qr/Purging ".*sle-12-SP3-x86_64-0368-200\@64bit.qcow2" because we need space for new assets, reclaiming 1024/,
   'Reclaimed space for new smaller asset';
