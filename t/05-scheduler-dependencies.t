@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014-2019 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -169,7 +169,7 @@ OpenQA::Scheduler::Model::Jobs->singleton->shuffle_workers(0);
 sub schedule {
     my $id = OpenQA::Scheduler::Model::Jobs->singleton->schedule();
     for my $i (@$id) {
-        _jobs_update_state([$schema->resultset('Jobs')->find($i->{job})], OpenQA::Jobs::Constants::RUNNING);
+        _jobs_update_state([$schema->resultset('Jobs')->find($i->{job})], RUNNING);
     }
 }
 
@@ -180,7 +180,7 @@ $jobs_result_mock->mock(
     ws_send => sub {
         my ($self, $worker) = @_;
         my $hashref = $self->prepare_for_work($worker);
-        _jobs_update_state([$self], OpenQA::Jobs::Constants::RUNNING);
+        _jobs_update_state([$self], RUNNING);
 
         $hashref->{assigned_worker_id} = $worker->id;
         $sent->{$worker->id} = {worker => $worker, job => $self, jobhash => $hashref};
@@ -427,35 +427,37 @@ $result = $jobE->done(result => 'incomplete');
 is($result, 'incomplete', 'job_set_done on E');
 
 my $job = job_get_deps($jobA->id);
-is($job->{state},  "done",   "job_set_done changed state");
-is($job->{result}, "failed", "job_set_done changed result");
+is($job->{state},  DONE,   'job_set_done changed state');
+is($job->{result}, FAILED, 'job_set_done changed result');
 
 $job = job_get_deps($jobB->id);
-is($job->{state}, "running", "job_set_done changed state");
+is($job->{state}, RUNNING, 'job_set_done changed state');
 
 $job = job_get_deps($jobC->id);
-is($job->{state}, "running", "job_set_done changed state");
+is($job->{state}, RUNNING, 'job_set_done changed state');
 
 $job = job_get_deps($jobD->id);
-is($job->{state},  "done",            "job_set_done changed state");
-is($job->{result}, "parallel_failed", "job_set_done changed result, jobD failed because of jobA");
+is($job->{state},  DONE,            'job_set_done changed state');
+is($job->{result}, PARALLEL_FAILED, 'job_set_done changed result, jobD failed because of jobA');
 
 $job = job_get_deps($jobE->id);
-is($job->{state},  "done",            "job_set_done changed state");
-is($job->{result}, "parallel_failed", "job_set_done changed result, jobE failed because of jobD");
+is($job->{state},  DONE,            'job_set_done changed state');
+is($job->{result}, PARALLEL_FAILED, 'job_set_done changed result, jobE failed because of jobD');
 
 $jobF->discard_changes;
 $job = job_get_deps($jobF->id);
-is($job->{state}, "running", "job_set_done changed state");
+is($job->{state}, RUNNING, 'job_set_done changed state');
 
 # check MM API for children status - available only for running jobs
 my $worker = $schema->resultset("Workers")->find($worker_ids[1]);
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 
+my $job_token = $sent->{job}->{$jobC->id}->{worker}->get_property('JOBTOKEN');
+isnt($job_token, undef, 'JOBTOKEN is present');
 $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
-        $tx->req->headers->add('X-API-JobToken' => $sent->{job}->{$jobC->id}->{worker}->get_property('JOBTOKEN'));
+        $tx->req->headers->add('X-API-JobToken' => $job_token);
     });
 $t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$jobF->id])
   ->or(sub { diag explain $t->tx->res->content });
@@ -469,47 +471,47 @@ my $id = $jobF->auto_duplicate;
 ok(defined $id, "duplicate works");
 
 $job = job_get_deps($jobA->id);    # cloned
-is($job->{state},  "done",   "no change");
-is($job->{result}, "failed", "no change");
-ok(defined $job->{clone_id}, "cloned");
+is($job->{state},  DONE,   'no change');
+is($job->{result}, FAILED, 'no change');
+ok(defined $job->{clone_id}, 'cloned');
 
 $job = job_get_deps($jobB->id);    # cloned
 is($job->{result}, "parallel_failed", "$job->{id} B stopped");
-ok(defined $job->{clone_id}, "cloned");
+ok(defined $job->{clone_id}, 'cloned');
 my $jobB2 = $job->{clone_id};
 
 $job = job_get_deps($jobC->id);    # cloned
-is($job->{state}, "running", "no change");
-ok(defined $job->{clone_id}, "cloned");
+is($job->{state}, RUNNING, 'no change');
+ok(defined $job->{clone_id}, 'cloned');
 my $jobC2 = $job->{clone_id};
 
 $job = job_get_deps($jobD->id);    # cloned
-is($job->{state},  "done",            "no change");
-is($job->{result}, "parallel_failed", "no change");
-ok(defined $job->{clone_id}, "cloned");
+is($job->{state},  DONE,              'no change');
+is($job->{result}, "parallel_failed", 'no change');
+ok(defined $job->{clone_id}, 'cloned');
 
 $job = job_get_deps($jobE->id);    # cloned
-is($job->{state},  "done",            "no change");
-is($job->{result}, "parallel_failed", "no change");
-ok(defined $job->{clone_id}, "cloned");
+is($job->{state},  DONE,              'no change');
+is($job->{result}, "parallel_failed", 'no change');
+ok(defined $job->{clone_id}, 'cloned');
 
 $job = job_get_deps($jobF->id);    # cloned
-is($job->{state}, "running", "no change");
-ok(defined $job->{clone_id}, "cloned");
+is($job->{state}, RUNNING, 'no change');
+ok(defined $job->{clone_id}, 'cloned');
 my $jobF2 = $job->{clone_id};
 
 $job = job_get_deps($jobB2);
-is($job->{state},    "scheduled", "cloned jobs are scheduled");
-is($job->{clone_id}, undef,       "no clones");
+is($job->{state},    SCHEDULED, "cloned jobs are scheduled");
+is($job->{clone_id}, undef,     'no clones');
 
 $job = job_get_deps($jobC2);
-is($job->{state},    "scheduled", "cloned jobs are scheduled");
-is($job->{clone_id}, undef,       "no clones");
+is($job->{state},    SCHEDULED, "cloned jobs are scheduled");
+is($job->{clone_id}, undef,     'no clones');
 is_deeply($job->{parents}, {Parallel => [$jobB2], Chained => [], 'Directly chained' => []}, "cloned deps");
 
 $job = job_get_deps($jobF2);
-is($job->{state},    "scheduled", "cloned jobs are scheduled");
-is($job->{clone_id}, undef,       "no clones");
+is($job->{state},    SCHEDULED, "cloned jobs are scheduled");
+is($job->{clone_id}, undef,     'no clones');
 is_deeply($job->{parents}, {Parallel => [$jobC2], Chained => [], 'Directly chained' => []}, "cloned deps");
 
 # recheck that cloning didn't change MM API results children status
@@ -518,65 +520,65 @@ $t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => 
 $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id]);
 
 $job = job_get_deps($jobA->id);    # cloned
-is($job->{state},  "done",   "no change");
-is($job->{result}, "failed", "no change");
-ok(defined $job->{clone_id}, "cloned");
+is($job->{state},  DONE,   'no change');
+is($job->{result}, FAILED, 'no change');
+ok(defined $job->{clone_id}, 'cloned');
 my $jobA2 = $job->{clone_id};
 
 $job = job_get_deps($jobB->id);    # unchanged
 is($job->{result},   "parallel_failed", "B is unchanged");
-is($job->{clone_id}, $jobB2,            "cloned");
+is($job->{clone_id}, $jobB2,            'cloned');
 
 $job = job_get_deps($jobC->id);    # unchanged
-is($job->{state},    "running",         "no change");
+is($job->{state},    RUNNING,           'no change');
 is($job->{result},   "parallel_failed", "C is restarted");
-is($job->{clone_id}, $jobC2,            "cloned");
+is($job->{clone_id}, $jobC2,            'cloned');
 
 $job = job_get_deps($jobD->id);    #cloned
-is($job->{state},  "done",            "no change");
-is($job->{result}, "parallel_failed", "no change");
-ok(defined $job->{clone_id}, "cloned");
+is($job->{state},  DONE,              'no change');
+is($job->{result}, "parallel_failed", 'no change');
+ok(defined $job->{clone_id}, 'cloned');
 my $jobD2 = $job->{clone_id};
 
 $job = job_get_deps($jobE->id);    #cloned
-is($job->{state},  "done",            "no change");
-is($job->{result}, "parallel_failed", "no change");
-ok(defined $job->{clone_id}, "cloned");
+is($job->{state},  DONE,              'no change');
+is($job->{result}, "parallel_failed", 'no change');
+ok(defined $job->{clone_id}, 'cloned');
 my $jobE2 = $job->{clone_id};
 
 $job = job_get_deps($jobF->id);    # unchanged
-is($job->{state},    "running", "no change");
-is($job->{clone_id}, $jobF2,    "cloned");
+is($job->{state},    RUNNING, 'no change');
+is($job->{clone_id}, $jobF2,  'cloned');
 
 $job = job_get_deps($jobA2);
-is($job->{state},    "scheduled", "no change");
-is($job->{clone_id}, undef,       "no clones");
+is($job->{state},    SCHEDULED, 'no change');
+is($job->{clone_id}, undef,     'no clones');
 is_deeply($job->{parents}, {Parallel => [], Chained => [], 'Directly chained' => []}, "cloned deps");
 
 $job = job_get_deps($jobB2);
-is($job->{state},    "scheduled", "no change");
-is($job->{clone_id}, undef,       "no clones");
+is($job->{state},    SCHEDULED, 'no change');
+is($job->{clone_id}, undef,     'no clones');
 is_deeply($job->{parents}, {Parallel => [], Chained => [], 'Directly chained' => []}, "cloned deps");
 
 $job = job_get_deps($jobC2);
-is($job->{state},    "scheduled", "no change");
-is($job->{clone_id}, undef,       "no clones");
+is($job->{state},    SCHEDULED, 'no change');
+is($job->{clone_id}, undef,     'no clones');
 is_deeply($job->{parents}, {Parallel => [$jobB2], Chained => [], 'Directly chained' => []}, "cloned deps");
 
 
 $job = job_get_deps($jobD2);
-is($job->{state},    "scheduled", "no change");
-is($job->{clone_id}, undef,       "no clones");
+is($job->{state},    SCHEDULED, 'no change');
+is($job->{clone_id}, undef,     'no clones');
 is_deeply($job->{parents}, {Parallel => [$jobA2], Chained => [], 'Directly chained' => []}, "cloned deps");
 
 $job = job_get_deps($jobE2);
-is($job->{state},    "scheduled", "no change");
-is($job->{clone_id}, undef,       "no clones");
+is($job->{state},    SCHEDULED, 'no change');
+is($job->{clone_id}, undef,     'no clones');
 is_deeply([sort @{$job->{parents}->{Parallel}}], [sort ($jobC2, $jobD2)], "cloned deps");
 
 $job = job_get_deps($jobF2);
-is($job->{state},    "scheduled", "no change");
-is($job->{clone_id}, undef,       "no clones");
+is($job->{state},    SCHEDULED, 'no change');
+is($job->{clone_id}, undef,     'no clones');
 is_deeply($job->{parents}, {Parallel => [$jobC2], Chained => [], 'Directly chained' => []}, "cloned deps");
 
 # now we have:
@@ -614,7 +616,7 @@ $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$job
 # We have 3 free workers (as B,C and F are still running)
 # and the cluster is 6, so we expect nothing to be SCHEDULED
 schedule();
-is(job_get_deps($jobA2)->{state}, "scheduled", "no change");
+is(job_get_deps($jobA2)->{state}, SCHEDULED, 'job still scheduled');
 
 # now free two of them and create one more worker. So that we
 # have 6 free, but have vlan 1 still busy
@@ -686,8 +688,8 @@ is_deeply(
 # when Y is scheduled and X is duplicated, Y must be cancelled and Y2 needs to depend on X2
 my $jobX2 = $jobX->auto_duplicate;
 $jobY->discard_changes;
-is($jobY->state,  OpenQA::Jobs::Constants::CANCELLED,          'jobY was cancelled');
-is($jobY->result, OpenQA::Jobs::Constants::PARALLEL_RESTARTED, 'jobY was skipped');
+is($jobY->state,  CANCELLED,          'jobY was cancelled');
+is($jobY->result, PARALLEL_RESTARTED, 'jobY was skipped');
 my $jobY2 = $jobY->clone;
 ok(defined $jobY2, "jobY was cloned too");
 is($jobY2->blocked_by_id, $jobX2->id, "JobY2 is blocked");
@@ -771,7 +773,7 @@ my $jobJ = _job_create(\%settingsJ, [$jobH->id]);
 my $jobL = _job_create(\%settingsL, [$jobJ->id]);
 
 # hack jobs to appear running to scheduler
-_jobs_update_state([$jobH, $jobJ, $jobK, $jobL], OpenQA::Jobs::Constants::RUNNING);
+_jobs_update_state([$jobH, $jobJ, $jobK, $jobL], RUNNING);
 
 # expected output after cloning D, all jobs scheduled
 # H2 <-(parallel) J2
@@ -835,8 +837,8 @@ is($jobW->blocked_by_id,  $jobQ->id, 'JobW is blocked by job supposed to run bef
 #       later. Neverthless, let's explicitly assert this behavior so we know what we have right now.
 
 # hack jobs to appear to scheduler in desired state
-_jobs_update_state([$jobQ],                              OpenQA::Jobs::Constants::DONE);
-_jobs_update_state([$jobW, $jobU, $jobR, $jobT, $jobTA], OpenQA::Jobs::Constants::RUNNING);
+_jobs_update_state([$jobQ],                              DONE);
+_jobs_update_state([$jobW, $jobU, $jobR, $jobT, $jobTA], RUNNING);
 
 # duplicate job U
 # expected state (excluding TA2 which is just the same as T2 just directly chained to Q):
@@ -950,7 +952,7 @@ my $jobO = _job_create(\%settingsO, [$jobP->id]);
 my $jobI = _job_create(\%settingsI, [$jobO->id]);
 
 # hack jobs to appear to scheduler in desired state
-_jobs_update_state([$jobP, $jobO, $jobI], OpenQA::Jobs::Constants::DONE);
+_jobs_update_state([$jobP, $jobO, $jobI], DONE);
 
 # cloning O gets to expected state
 #
@@ -979,9 +981,9 @@ $jobO2 = $schema->resultset('Jobs')->search({id => $jobO2->{id}})->single;
 $jobP2 = $schema->resultset('Jobs')->search({id => $jobP2->{id}})->single;
 $jobI2 = $schema->resultset('Jobs')->search({id => $jobI2->{id}})->single;
 # set P2 running and O2 done
-_jobs_update_state([$jobP2], OpenQA::Jobs::Constants::RUNNING);
-_jobs_update_state([$jobO2], OpenQA::Jobs::Constants::DONE);
-_jobs_update_state([$jobI2], OpenQA::Jobs::Constants::DONE);
+_jobs_update_state([$jobP2], RUNNING);
+_jobs_update_state([$jobO2], DONE);
+_jobs_update_state([$jobI2], DONE);
 
 # cloning I gets to expected state:
 # P3 <-(parallel) O3 <-(parallel) I2
@@ -1015,10 +1017,10 @@ $jobC = _job_create(\%settingsC, undef, [$jobA->id]);
 $jobD = _job_create(\%settingsD, undef, [$jobA->id]);
 
 # hack jobs to appear done to scheduler
-_jobs_update_state([$jobA, $jobB, $jobC, $jobD], OpenQA::Jobs::Constants::DONE, OpenQA::Jobs::Constants::PASSED);
+_jobs_update_state([$jobA, $jobB, $jobC, $jobD], DONE, PASSED);
 
 # only job B failed as incomplete
-$jobB->result(OpenQA::Jobs::Constants::INCOMPLETE);
+$jobB->result(INCOMPLETE);
 $jobB->update;
 
 # situation, all chained and done, B is incomplete:
@@ -1052,7 +1054,7 @@ is_deeply($jobD_h->{parents}->{Chained}, [$jobA->id], 'jobD has jobA as chained 
 is($jobD_h->{settings}{TEST}, $jobD->TEST, 'jobBc test and jobB test are equal');
 
 # hack jobs to appear running to scheduler
-$jobB->clone->state(OpenQA::Jobs::Constants::RUNNING);
+$jobB->clone->state(RUNNING);
 $jobB->clone->update;
 
 # clone A
@@ -1062,7 +1064,7 @@ $jobA2 = $jobA->auto_duplicate;
 ok($jobA2, 'jobA duplicated');
 $jobA->discard_changes;
 
-$jobA->clone->state(OpenQA::Jobs::Constants::RUNNING);
+$jobA->clone->state(RUNNING);
 $jobA->clone->update;
 $jobA2 = $jobA->clone->auto_duplicate;
 ok($jobA2, 'jobA->clone duplicated');
@@ -1112,8 +1114,8 @@ $jobC = _job_create(\%settingsC, undef, [$jobA->id]);
 $jobD = _job_create(\%settingsD, undef, [$jobA->id]);
 
 # hack jobs to appear done to scheduler
-_jobs_update_state([$jobA], OpenQA::Jobs::Constants::DONE, OpenQA::Jobs::Constants::PASSED);
-_jobs_update_state([$jobB, $jobC, $jobD], OpenQA::Jobs::Constants::RUNNING);
+_jobs_update_state([$jobA], DONE, PASSED);
+_jobs_update_state([$jobB, $jobC, $jobD], RUNNING);
 
 $jobA2 = $jobA->auto_duplicate;
 $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
@@ -1127,7 +1129,7 @@ for ($jobB, $jobC, $jobD) {
 # set jobA2 as running and clone it
 $jobA2 = $jobA->clone;
 is($jobA2->id, $jobA2->id, 'jobA2 is indeed jobA clone');
-$jobA2->state(OpenQA::Jobs::Constants::RUNNING);
+$jobA2->state(RUNNING);
 $jobA2->update;
 my $jobA3 = $jobA2->auto_duplicate;
 ok($jobA3, "cloned A2");
@@ -1158,8 +1160,8 @@ my $duplicate_test = sub {
     $jobD = _job_create(\%settingsD, [$jobB->id], [$jobA->id]);
 
     # hack jobs to appear done to scheduler
-    _jobs_update_state([$jobA],               OpenQA::Jobs::Constants::DONE, OpenQA::Jobs::Constants::PASSED);
-    _jobs_update_state([$jobB, $jobC, $jobD], OpenQA::Jobs::Constants::DONE, OpenQA::Jobs::Constants::FAILED);
+    _jobs_update_state([$jobA],               DONE, PASSED);
+    _jobs_update_state([$jobB, $jobC, $jobD], DONE, FAILED);
 
     $jobA2 = $jobA->auto_duplicate;
     $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
@@ -1181,7 +1183,7 @@ sub _job_create_set_done {
     my ($settings, $state) = @_;
     my $job = _job_create($settings);
     # hack jobs to appear done to scheduler
-    _jobs_update_state([$job], $state, OpenQA::Jobs::Constants::PASSED);
+    _jobs_update_state([$job], $state, PASSED);
     return $job;
 }
 
@@ -1221,23 +1223,23 @@ my $slepos_test_workers = sub {
     $settingsT{TEST} = 'Terminal';
 
     # Support server
-    my $jobSUS = _job_create_set_done(\%settingsSUS, OpenQA::Jobs::Constants::DONE);
+    my $jobSUS = _job_create_set_done(\%settingsSUS, DONE);
     # Admin Server 1
     $settingsAS{_PARALLEL_JOBS} = [$jobSUS->id];
-    my $jobAS = _job_create_set_done(\%settingsAS, OpenQA::Jobs::Constants::DONE);
+    my $jobAS = _job_create_set_done(\%settingsAS, DONE);
     # Image server 2
     $settingsIS2{_START_AFTER_JOBS} = [$jobAS->id];
-    my $jobIS2 = _job_create_set_done(\%settingsIS2, OpenQA::Jobs::Constants::DONE);
+    my $jobIS2 = _job_create_set_done(\%settingsIS2, DONE);
     # Image server
     $settingsIS{_PARALLEL_JOBS}    = [$jobSUS->id];
     $settingsIS{_START_AFTER_JOBS} = [$jobAS->id];
-    my $jobIS = _job_create_set_done(\%settingsIS, OpenQA::Jobs::Constants::CANCELLED);
+    my $jobIS = _job_create_set_done(\%settingsIS, CANCELLED);
     # Branch server
     $settingsBS{_PARALLEL_JOBS} = [$jobAS->id, $jobSUS->id];
-    my $jobBS = _job_create_set_done(\%settingsBS, OpenQA::Jobs::Constants::DONE);
+    my $jobBS = _job_create_set_done(\%settingsBS, DONE);
     # Terminal
     $settingsT{_PARALLEL_JOBS} = [$jobBS->id];
-    my $jobT = _job_create_set_done(\%settingsT, OpenQA::Jobs::Constants::DONE);
+    my $jobT = _job_create_set_done(\%settingsT, DONE);
     # clone terminal
     $jobT->duplicate;
     $_->discard_changes for ($jobSUS, $jobAS, $jobIS, $jobIS2, $jobBS, $jobT);
@@ -1289,10 +1291,10 @@ subtest "SAP setup - issue 52928" => sub {
     $settingsH{TEST}             = 'final';
     $settingsH{START_AFTER_TEST} = 'supportserver,hdd_gnome';
 
-    my $jobA = _job_create_set_done(\%settingsA, OpenQA::Jobs::Constants::DONE);
+    my $jobA = _job_create_set_done(\%settingsA, DONE);
     $settingsB{_START_AFTER_JOBS} = [$jobA->id];
     my $jobB = _job_create(\%settingsB);
-    my $jobC = _job_create_set_done(\%settingsC, OpenQA::Jobs::Constants::DONE);
+    my $jobC = _job_create_set_done(\%settingsC, DONE);
     $settingsD{_START_AFTER_JOBS} = [$jobC->id, $jobB->id];
     my $jobD = _job_create(\%settingsD);
     my $jobE = _job_create(\%settingsE);

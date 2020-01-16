@@ -24,14 +24,14 @@ use lib "$FindBin::Bin/lib";
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Test::Database;
+use OpenQA::WebAPI::Controller::API::V1::Worker;
 use Test::Mojo;
 use Test::More;
 use Test::Warnings;
 use Mojo::Util 'monkey_patch';
 
-my $schema = OpenQA::Test::Database->new->create;    #(skip_fixtures => 1);
-
-my $sent = {};
+my $schema = OpenQA::Test::Database->new->create;
+my $sent   = {};
 
 OpenQA::Scheduler::Model::Jobs->singleton->shuffle_workers(0);
 
@@ -55,18 +55,13 @@ monkey_patch 'OpenQA::Schema::Result::Jobs', ws_send => sub {
     return {state => {msg_sent => 1}};
 };
 
-
-#my $t = Test::Mojo->new('OpenQA::WebAPI');
-
 sub list_jobs {
     my %args = @_;
     [map { $_->to_hash(assets => 1) } $schema->resultset('Jobs')->complex_query(%args)->all];
 }
 
-my $current_jobs = list_jobs();
-#diag explain $current_jobs;
-
-my %settings = (
+my $current_jobs = list_jobs;
+my %settings     = (
     DISTRI      => 'Unicorn',
     FLAVOR      => 'pink',
     VERSION     => '42',
@@ -174,9 +169,7 @@ $jobH->set_prio(8);
 $jobI->set_prio(10);
 $jobJ->set_prio(9);
 
-use OpenQA::WebAPI::Controller::API::V1::Worker;
-my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
-
+my $c     = OpenQA::WebAPI::Controller::API::V1::Worker->new;
 my $w1_id = $c->_register($schema, "host", "1", \%workercaps64_client);
 my $w2_id = $c->_register($schema, "host", "2", \%workercaps64_server);
 my $w3_id = $c->_register($schema, "host", "3", \%workercaps32);
@@ -219,7 +212,6 @@ is($job->{id}, $jobJ->id,
 
 $job = $sent->{$w9_id}->{job}->to_hash;
 is($job->{id}, $jobI->id, "this worker can do jobI, child - client");
-
 
 # job G is not grabbed because there is no worker with class 'special'
 
