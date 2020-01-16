@@ -78,7 +78,7 @@ sub edit {
 'The test has no currently running module so opening the needle editor is not possible. Likely results have not been uploaded yet so reloading the page might help.',
     ) unless ($running_module);
 
-    my $details = $running_module->details();
+    my $details = $running_module->details->{results};
     my $stepid  = scalar(@{$details});
     return $self->render_specific_not_found(
         $page_name,

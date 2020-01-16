@@ -680,7 +680,7 @@ sub module_fails {
 
     my $counter           = 0;
     my $first_failed_step = 0;
-    for my $detail (@{$module->details}) {
+    for my $detail (@{$module->details->{results}}) {
         $counter++;
         next unless $detail->{result} eq 'fail';
         if ($first_failed_step == 0) {

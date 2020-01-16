@@ -115,7 +115,7 @@ sub module {
     my $needle = $schema->resultset('Needles')->find($self->param('needle_id'))->name;
 
     my $index = 1;
-    for my $detail (@{$module->details}) {
+    for my $detail (@{$module->details->{results}}) {
         last if $detail->{needle} eq $needle;
         last if grep { $needle eq $_->{name} } @{$detail->{needles} || []};
         $index++;

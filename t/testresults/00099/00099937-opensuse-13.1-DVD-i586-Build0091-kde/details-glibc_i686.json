@@ -1,1 +1,1 @@
-[{"tags":["test-glibc_i686-1"],"result":"ok","needle":"glibc_i686-1","area":[{"h":22,"y":"91","diff":"glibc_i686-1-glibc_i686-1-diff0.png","x":"0","similarity":99,"result":"ok","w":255},{"w":198,"result":"ok","similarity":100,"x":"0","y":"0","h":32}],"screenshot":"glibc_i686-1.png"}]
+{"results":[{"area":[{"diff":"glibc_i686-1-glibc_i686-1-diff0.png","h":22,"result":"ok","similarity":99,"w":255,"x":"0","y":"91"},{"h":32,"result":"ok","similarity":100,"w":198,"x":"0","y":"0"}],"needle":"glibc_i686-1","result":"ok","screenshot":"glibc_i686-1.png","tags":["test-glibc_i686-1"]}]}

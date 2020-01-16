@@ -1170,7 +1170,8 @@ sub _read_module_result {
 
     my $images_to_send = $self->images_to_send;
     my $files_to_send  = $self->files_to_send;
-    for my $d (@{$result->{details}}) {
+    my $details        = ref($result->{details}) eq 'HASH' ? $result->{details}->{results} : $result->{details};
+    for my $d (@$details) {
         for my $type (qw(screenshot audio text)) {
             my $file = $d->{$type};
             next unless $file;

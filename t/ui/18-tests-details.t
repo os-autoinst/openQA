@@ -545,5 +545,24 @@ subtest 'additional investigation notes provided on new failed' => sub {
         'investigation status content shown as table');
 };
 
+subtest 'show job modules execution time' => sub {
+    $driver->get('/tests/99937');
+    my $tds                    = $driver->find_elements(".component");
+    my %modules_execution_time = (
+        aplay              => '146 s',
+        consoletest_finish => '164 s',
+        gnucash            => '187 s',
+        installer_timezone => '34 s'
+    );
+    for my $td (@$tds) {
+        my $module_name = $td->children('div')->[0]->get_text();
+        is(
+            $td->children('span')->[0]->get_text(),
+            'Execution time: ' . $modules_execution_time{$module_name},
+            $module_name . ' execution time showed correctly'
+        ) if $modules_execution_time{$module_name};
+    }
+};
+
 kill_driver();
 done_testing();
