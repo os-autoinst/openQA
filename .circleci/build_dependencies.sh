@@ -20,7 +20,8 @@ set -e
 thisdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 docker pull registry.opensuse.org/devel/openqa/ci/containers/base:latest
-docker run --rm --name gendep --entrypoint="/usr/bin/tail" registry.opensuse.org/devel/openqa/ci/containers/base:latest -f /dev/null &
+
+docker run --rm --name gendep --entrypoint="/usr/bin/tail" -v "$thisdir/..":/opt/testing_area registry.opensuse.org/devel/openqa/ci/containers/base:latest -f /dev/null &
 
 function cleanup {
   docker stop -t 0 gendep || :
@@ -42,3 +43,10 @@ docker exec -t gendep sudo zypper -n install perl-TAP-Harness-JUnit
 
 docker exec -t gendep rpm -qa --qf "%{NAME}-%{VERSION}\n" |sort > gendep_after.txt
 comm -13 gendep_before.txt gendep_after.txt | grep -v gpg-pubkey | grep -v openQA | grep -v os-autoinst > "$thisdir/dependencies.txt"
+
+# let's tidy if Tidy version changes
+newtidyver="$(git diff $thisdir/dependencies.txt | grep perl-Perl-Tidy | grep '^+' | grep -o '[0-9]*' || :)"
+[ -z "$newtidyver" ] || {
+    sed -i -e "s/\('Perl::Tidy',\s\+'==\s\)\([0-9]\+\)\(.*\)/\1$newtidyver\3/g" cpanfile
+    docker exec -t gendep script/tidy
+}
