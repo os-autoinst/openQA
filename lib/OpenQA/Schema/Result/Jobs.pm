@@ -872,7 +872,7 @@ sub auto_duplicate {
 
     while (my $j = $jobs->next) {
         next if $j->abort;
-        next unless $j->state eq SCHEDULED;
+        next unless $j->state eq SCHEDULED || $j->state eq ASSIGNED;
         $j->release_networks;
         $j->update({state => CANCELLED});
     }
