@@ -91,7 +91,8 @@ my $workercaps = {
 my $jobA   = $schema->resultset('Jobs')->create_from_settings(\%settings);
 my @assets = $jobA->jobs_assets;
 @assets = map { $_->asset_id } @assets;
-is(scalar @assets, 1, 'one asset assigned before grabbing');
+is(scalar @assets,        1, 'one asset assigned before grabbing');
+is($jobA->assets_missing, 0, 'asset present');
 my $theasset = $assets[0];
 $jobA->set_prio(1);
 
@@ -123,6 +124,7 @@ is($assets[0],     $theasset, 'the assigned asset is the same');
 # test asset is not assigned to scheduled jobs after duping
 my $jobA_id = $jobA->id;
 my ($cloneA) = job_restart($jobA_id);
+
 $cloneA = $schema->resultset('Jobs')->find(
     {
         id => $cloneA->{$jobA_id},
@@ -221,7 +223,7 @@ ok(!$ja->is_fixed(),   'ja should not be considered a fixed asset');
 ok(!$repo->is_fixed(), 'repo should not be considered a fixed asset');
 ok($fixed->is_fixed(), 'fixed should be considered a fixed asset');
 
-# test Utils::locate_asset
+# test OpenQA::Utils::locate_asset
 # fixed HDD asset
 my $expected = catfile(assetdir(), 'hdd', 'fixed', 'fixed.img');
 is(locate_asset('hdd', 'fixed.img', mustexist => 1),
@@ -240,10 +242,10 @@ $expected = catfile(assetdir(), 'iso', 'nex.iso');
 is(locate_asset('iso', 'nex.iso'), $expected, 'locate_asset 0 should give location for non-existent asset');
 ok(!locate_asset('iso', 'nex.iso', mustexist => 1), 'locate_asset 1 should not give location for non-existent asset');
 
-
 # test ensure_size
-is($ja->ensure_size(),   6,  'ja asset size should be 6');
-is($repo->ensure_size(), 10, 'repo asset size should be 10');
+is($ja->size,          undef, 'size not immediately set');
+is($ja->ensure_size,   6,     'ja asset size should be 6');
+is($repo->ensure_size, 10,    'repo asset size should be 10');
 
 # test remove_from_disk
 $ja->remove_from_disk();
@@ -296,10 +298,29 @@ subtest 'asset status' => sub {
       ->status_is(200, 'asset status rendered from cache file although cleanup is ongoing');
 };
 
+
 subtest 'check for hidden assets' => sub {
     ok(OpenQA::Schema::Result::Assets::is_type_hidden('repo'), 'repo is considered hidden');
     ok(OpenQA::Schema::Result::Assets::is_type_hidden('foo'),  'foo is considered hidden');
     ok(!OpenQA::Schema::Result::Assets::is_type_hidden('bar'), 'bar is not considered hidden');
+};
+
+subtest 'check for missing assets' => sub {
+    $settings{ISO_0} = 'whatever.sha256';    # supposed to exist
+    $settings{HDD_1} = 'not_existent';       # supposed to be missing
+
+    subtest 'one asset is missing' => sub {
+        my $job_with_2_assets = $schema->resultset('Jobs')->create_from_settings(\%settings);
+        @assets = map { $_->asset_id } $job_with_2_assets->jobs_assets;
+        is(scalar @assets,                     2, 'two (existing) assets assigned');
+        is($job_with_2_assets->assets_missing, 1, 'assets are considered missing if at least one is missing');
+    };
+    subtest 'hidden assets are ignored' => sub {
+        $settings{REPO_0} = delete $settings{HDD_1};
+        diag explain $t->app->config->{global}->{hide_asset_types};
+        my $job_with_2_assets = $schema->resultset('Jobs')->create_from_settings(\%settings);
+        is($job_with_2_assets->assets_missing, 0, 'hidden asset not considered so no asset missing');
+    };
 };
 
 done_testing();

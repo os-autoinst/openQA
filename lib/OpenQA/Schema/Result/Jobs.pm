@@ -563,6 +563,14 @@ sub can_be_duplicated {
     return 1;
 }
 
+sub assets_missing {
+    my ($self) = @_;
+
+    my $assets       = parse_assets_from_settings($self->settings_hash);
+    my @assets_query = map { {type => $_->{type}, name => $_->{name}} }
+      grep { !OpenQA::Schema::Result::Assets::is_type_hidden($_->{type}) } values %$assets;
+    return $self->result_source->schema->resultset('Assets')->search(\@assets_query)->count < @assets_query ? 1 : 0;
+}
 
 =head2 create_clone
 
