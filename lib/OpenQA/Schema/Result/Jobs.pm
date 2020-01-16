@@ -853,47 +853,35 @@ sub auto_duplicate {
     # set this clone was triggered by manually if it's not auto-clone
     $args->{dup_type_auto} //= 0;
 
+    my $job_id = $self->id;
     my $clones = $self->duplicate($args);
-
-    unless ($clones) {
-        log_debug('duplication failed');
-        return;
+    if (!$clones) {
+        log_debug("Duplication of job $job_id failed");
+        return undef;
     }
+
     # abort jobs in the old cluster (exclude the original $args->{jobid})
     my $rsource = $self->result_source;
     my $jobs    = $rsource->schema->resultset("Jobs")->search(
         {
-            id    => {'!=' => $self->id, '-in' => [keys %$clones]},
+            id    => {'!=' => $job_id, '-in' => [keys %$clones]},
             state => [PRE_EXECUTION_STATES, EXECUTION_STATES],
         });
 
-    $jobs->search(
-        {
-            result => NONE,
-        }
-    )->update(
-        {
-            result => PARALLEL_RESTARTED,
-        });
+    $jobs->search({result => NONE})->update({result => PARALLEL_RESTARTED});
 
     while (my $j = $jobs->next) {
-        if ($j->worker) {
-            log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
-            $j->worker->send_command(command => 'abort', job_id => $j->id);
-        }
-        else {
-            if ($j->state eq SCHEDULED) {
-                $j->release_networks;
-                $j->update({state => CANCELLED});
-            }
-        }
+        next if $j->abort;
+        next unless $j->state eq SCHEDULED;
+        $j->release_networks;
+        $j->update({state => CANCELLED});
     }
 
-    log_debug('new job ' . $clones->{$self->id}->{clone});
+    log_debug('new job ' . $clones->{$job_id}->{clone});
 
     # Attach all clones mapping to new job object
     # TODO: better return a proper hash here
-    my $dup = $rsource->resultset->find($clones->{$self->id}->{clone});
+    my $dup = $rsource->resultset->find($clones->{$job_id}->{clone});
     $dup->_cluster_cloned($clones);
     return $dup;
 }
@@ -911,11 +899,12 @@ sub _cluster_cloned {
 sub abort {
     my $self   = shift;
     my $worker = $self->worker;
-    return undef unless $worker;
+    return 0 unless $worker;
 
     my ($job_id, $worker_id) = ($self->id, $worker->id);
     log_debug("Sending abort command to worker $worker_id for job $job_id");
     $worker->send_command(command => 'abort', job_id => $job_id);
+    return 1;
 }
 
 sub scheduler_abort {

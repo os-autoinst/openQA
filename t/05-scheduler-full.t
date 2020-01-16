@@ -199,7 +199,11 @@ subtest 'Simulation of heavy unstable load' => sub {
     dead_workers($schema);
     my @duplicated;
 
-    push(@duplicated, $_->auto_duplicate()) for $schema->resultset("Jobs")->latest_jobs;
+    # duplicate latest jobs ignoring failures
+    for my $job ($schema->resultset('Jobs')->latest_jobs) {
+        my $duplicate = $job->auto_duplicate;
+        push(@duplicated, $duplicate) if defined $duplicate;
+    }
 
     push(@workers, unresponsive_worker($k->key, $k->secret, "http://localhost:$mojoport", $_)) for (1 .. 50);
     my $i = 4;
