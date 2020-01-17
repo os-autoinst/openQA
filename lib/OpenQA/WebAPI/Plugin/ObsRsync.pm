@@ -24,6 +24,8 @@ use POSIX 'strftime';
 my $dirty_status_filename = '.dirty_status';
 my $files_iso_filename    = 'files_iso.lst';
 
+my $lock_timeout = 360000;
+
 sub register {
     my ($self, $app, $config) = @_;
     my $plugin_r     = $app->routes->find('ensure_operator');
@@ -63,8 +65,12 @@ sub register {
         $app->helper('obs_rsync.get_obs_version'        => \&_get_obs_version);
         $app->helper('obs_rsync.check_and_render_error' => \&_check_and_render_error);
 
-        $app->helper('obs_rsync.log_job_id'  => \&_log_job_id);
-        $app->helper('obs_rsync.log_failure' => \&_log_failure);
+        $app->helper('obs_rsync.log_job_id'        => \&_log_job_id);
+        $app->helper('obs_rsync.log_failure'       => \&_log_failure);
+        $app->helper('obs_rsync.concurrency_guard' => \&_concurrency_guard);
+        $app->helper('obs_rsync.guard'             => \&_guard);
+        $app->helper('obs_rsync.lock'              => \&_lock);
+        $app->helper('obs_rsync.unlock'            => \&_unlock);
 
         # Templates
         push @{$app->renderer->paths},
@@ -215,6 +221,26 @@ sub _get_obs_version {
     my ($c, $project) = @_;
     my $home = $c->obs_rsync->home;
     return _get_version_in_folder(Mojo::File->new($home, $project));
+}
+
+sub _concurrency_guard {
+    my $app = shift->app;
+    return $app->minion->guard('obs_rsync_run_guard', $lock_timeout, {limit => $app->obs_rsync->concurrency});
+}
+
+sub _guard {
+    my ($c, $project) = @_;
+    return $c->app->minion->guard('obs_rsync_project_' . $project . '_lock', $lock_timeout);
+}
+
+sub _lock {
+    my ($c, $project) = @_;
+    return $c->app->minion->lock('obs_rsync_project_' . $project . '_lock', $lock_timeout);
+}
+
+sub _unlock {
+    my ($c, $project) = @_;
+    return $c->app->minion->unlock('obs_rsync_project_' . $project . '_lock');
 }
 
 sub _log_job_id {

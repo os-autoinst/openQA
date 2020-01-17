@@ -96,6 +96,32 @@ $t->app->start('gru', 'run', '--oneshot');
 subtest 'test queue again' => sub {
     test_queue($t);
 };
+
 $t->app->start('gru', 'run', '--oneshot');
+
+sub lock_test() {
+    my $helper = $t->app->obs_rsync;
+    # use BAIL_OUT because only first failure is important
+    BAIL_OUT('Cannot lock') unless $helper->lock('Proj1');
+    BAIL_OUT('Shouldnt lock') if $helper->lock('Proj1');
+    BAIL_OUT('Cannot unlock') unless $helper->unlock('Proj1');
+    BAIL_OUT('Cannot lock')   unless $helper->lock('Proj1');
+    BAIL_OUT('Shouldnt lock') if $helper->lock('Proj1');
+    BAIL_OUT('Cannot unlock') unless $helper->unlock('Proj1');
+    ok(1, 'lock/unlock behaves as expected');
+}
+
+subtest 'test lock smoke' => sub {
+    lock_test();
+};
+
+subtest 'test lock after failure' => sub {
+    # now similate error by deleting the script
+    unlink(Mojo::File->new($home, 'script', 'rsync.sh'));
+    $t->put_ok('/api/v1/obs_rsync/Proj1/runs')->status_is(201, "trigger rsync");
+    $t->app->start('gru', 'run', '--oneshot');
+
+    lock_test();
+};
 
 done_testing();
