@@ -115,6 +115,14 @@ sub fake_asset_server {
                 }
             }
 
+            elsif ($filename =~ /sle-12-SP3-x86_64-0368-200_client_error/) {
+                $c->render(text => 'Client error!', status => 404);
+            }
+
+            elsif ($filename =~ /sle-12-SP3-x86_64-0368-200_server_error/) {
+                $c->render(text => 'Server error!', status => 500);
+            }
+
             elsif ($filename =~ /sle-12-SP3-x86_64-0368-200_close/) {
                 my $stream = Mojo::IOLoop->stream($c->tx->connection);
                 Mojo::IOLoop->next_tick(sub { $stream->close });

@@ -90,11 +90,6 @@ sub _download_asset {
         $ret = 520 unless $self->_update_asset_last_use($asset);
     }
 
-    elsif ($res->is_server_error) {
-        $log->info(qq{Downloading "$asset" failed with server error $code});
-        $ret = $code;
-    }
-
     elsif ($res->is_success) {
         my $headers = $tx->res->headers;
         $etag = $headers->etag;
@@ -129,8 +124,8 @@ sub _download_asset {
     }
     else {
         my $message = $res->error->{message};
-        $log->info(qq{Download of "$asset" failed: $code - $message});
-        $ret = 521;
+        $log->info(qq{Download of "$asset" failed: $code $message});
+        $ret = $code;
     }
 
     return $ret;
@@ -154,7 +149,7 @@ sub get_asset {
         eval { $ret = $self->_download_asset($host, $job->{id}, lc($asset_type), $asset, $result->{etag}) };
         last unless $ret;
 
-        if ($ret =~ /^5[0-9]{2}$/ && --$n) {
+        if ($ret =~ /^[45][0-9]{2}$/ && --$n) {
             my $time = $self->sleep_time;
             $log->info("Download error $ret, waiting $time seconds for next try ($n remaining)");
             sleep $time;
