@@ -149,7 +149,7 @@ sub get_asset {
         eval { $ret = $self->_download_asset($host, $job->{id}, lc($asset_type), $asset, $result->{etag}) };
         last unless $ret;
 
-        if ($ret =~ /^[45][0-9]{2}$/ && --$n) {
+        if ($ret =~ /^5[0-9]{2}$/ && --$n) {
             my $time = $self->sleep_time;
             $log->info("Download error $ret, waiting $time seconds for next try ($n remaining)");
             sleep $time;
