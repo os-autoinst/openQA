@@ -96,7 +96,7 @@ on 'test' => sub {
     requires 'App::cpanminus';
     requires 'Perl::Critic';
     requires 'Perl::Critic::Freenode';
-    requires 'Perl::Tidy',               '== 20191203';
+    requires 'Perl::Tidy',               '== 20200110';
     requires 'Selenium::Remote::Driver', '>= 1.23';
     requires 'Selenium::Remote::WDKeys';
     requires 'Test::Strict';
