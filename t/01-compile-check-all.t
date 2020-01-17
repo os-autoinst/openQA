@@ -26,6 +26,8 @@ $Test::Strict::TEST_STRICT   = 1;
 $Test::Strict::TEST_WARNINGS = 1;
 $Test::Strict::TEST_SKIP     = [
     # skip test module which would require test API from os-autoinst to be present
-    't/data/openqa/share/tests/opensuse/tests/installation/installer_timezone.pm'
+    't/data/openqa/share/tests/opensuse/tests/installation/installer_timezone.pm',
+    # Skip data file which is supposed to resemble generated output which has no 'use' statements
+    't/data/40-templates.pl',
 ];
 all_perl_files_ok(qw(lib script t));
