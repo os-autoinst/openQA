@@ -42,41 +42,32 @@ or done. Scheduled jobs can't be restarted.
 sub job_restart {
     my ($jobids) = @_ or die "missing name parameter\n";
 
-    # first, duplicate all jobs that are either running or done
+    # duplicate all jobs that are either running or done
     my $schema = OpenQA::Schema->singleton;
     my $jobs   = $schema->resultset("Jobs")->search(
         {
             id    => $jobids,
             state => [OpenQA::Jobs::Constants::EXECUTION_STATES, OpenQA::Jobs::Constants::FINAL_STATES],
         });
-
     my @duplicated;
     while (my $j = $jobs->next) {
         my $dup = $j->auto_duplicate;
         push @duplicated, $dup->{cluster_cloned} if $dup;
     }
 
-    # then tell workers to abort
-    $jobs = $schema->resultset("Jobs")->search(
+    # abort running jobs
+    my $running_jobs = $schema->resultset("Jobs")->search(
         {
             id    => $jobids,
             state => [OpenQA::Jobs::Constants::EXECUTION_STATES],
         });
-
-    $jobs->search(
-        {
-            result => OpenQA::Jobs::Constants::NONE,
-        }
-    )->update(
-        {
-            result => OpenQA::Jobs::Constants::USER_RESTARTED,
-        });
-
-    while (my $j = $jobs->next) {
+    $running_jobs->search({result => OpenQA::Jobs::Constants::NONE})
+      ->update({result => OpenQA::Jobs::Constants::USER_RESTARTED});
+    while (my $j = $running_jobs->next) {
         $j->calculate_blocked_by;
-        log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
-        $j->worker->send_command(command => 'abort', job_id => $j->id);
+        $j->abort;
     }
+
     return @duplicated;
 }
 

@@ -199,13 +199,33 @@ sub schedule {
             next;
         }
 
+        # assign the jobs to the worker and then send the jobs to the worker
+        # note: The $worker->update(...) is also done when the worker sends a status update. That is
+        #       required to track the worker's current job when assigning multiple jobs to it. We still
+        #       need to set it here immediately to be sure the scheduler does not consider the worker
+        #       free anymore.
         my $res;
         try {
             if ($actual_job_count > 1) {
+                my %worker_assignment = (
+                    state              => ASSIGNED,
+                    t_started          => undef,
+                    assigned_worker_id => $worker_id,
+                );
+                $schema->txn_do(
+                    sub {
+                        $_->update(\%worker_assignment) for @jobs;
+                        $worker->set_current_job($jobs[0]);
+                    });
                 $res
                   = $self->_assign_multiple_jobs_to_worker(\@jobs, $worker, $directly_chained_job_sequence, $job_ids);
             }
             else {
+                $schema->txn_do(
+                    sub {
+                        $jobs[0]->set_assigned_worker($worker);
+                        $worker->set_current_job($jobs[0]);
+                    });
                 $res = $jobs[0]->ws_send($worker);
             }
             die "Failed contacting websocket server over HTTP" unless ref($res) eq "HASH" && exists $res->{state};
@@ -214,56 +234,30 @@ sub schedule {
             log_debug("Failed to send data to websocket, reason: $_");
         };
 
-        if (ref($res) eq "HASH" && $res->{state}->{msg_sent} == 1) {
+        if (ref($res) eq 'HASH' && $res->{state} && $res->{state}->{msg_sent} == 1) {
             log_debug("Sent job(s) '$job_ids_str' to worker '$worker_id'");
-
-            # associate the worker to the job, so the worker can send updates
-            try {
-                if ($actual_job_count > 1) {
-                    my %worker_assignment = (
-                        state              => ASSIGNED,
-                        t_started          => undef,
-                        assigned_worker_id => $worker_id,
-                    );
-                    $_->update(\%worker_assignment) for @jobs;
-                    $worker->update({job_id => $first_job_id});
-                    # note: The job_id column of the workers table is updated as soon as the worker progresses
-                    #       to the next job so the actually current job and current module can be displayed.
-                }
-                else {
-                    if ($jobs[0]->set_assigned_worker($worker)) {
-                        push(@successfully_allocated, {job => $first_job_id, worker => $worker_id});
-                    }
-                    else {
-                        # Send abort and reschedule if we fail associating the job to the worker
-                        $jobs[0]->reschedule_rollback($worker);
-                    }
-                }
-            }
-            catch {
-                log_debug("Failed to set worker in scheduling state, reason: $_");
-            };
+            push(@successfully_allocated, map { {job => $_, worker => $worker_id} } @$job_ids);
+            next;
         }
-        else {
-            # reset worker and jobs on failure
-            log_debug("Failed sending job(s) '$job_ids_str' to worker '$worker_id'");
+
+        # reset worker and jobs on failure
+        log_debug("Failed sending job(s) '$job_ids_str' to worker '$worker_id'");
+        try {
+            $schema->txn_do(sub { $worker->unprepare_for_work; });
+        }
+        catch {
+            log_debug("Failed resetting unprepare worker, reason: $_");
+        };
+        for my $job (@jobs) {
             try {
-                $worker->unprepare_for_work;
+                # remove the associated worker and be sure to be in scheduled state.
+                $schema->txn_do(sub { $job->reschedule_state; });
             }
             catch {
-                log_debug("Failed resetting unprepare worker, reason: $_");
+                # if we see this, we are in a really bad state
+                my $job_id = $job->id;
+                log_debug("Failed resetting job '$job_id' to scheduled state, reason: $_");
             };
-            for my $job (@jobs) {
-                try {
-                    # Remove the associated worker and be sure to be in scheduled state.
-                    $job->reschedule_state;
-                }
-                catch {
-                    # Again: If we see this, we are in a really bad state.
-                    my $job_id = $job->id;
-                    log_debug("Failed resetting job '$job_id' to scheduled state, reason: $_");
-                };
-            }
         }
     }
 

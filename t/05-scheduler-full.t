@@ -90,30 +90,30 @@ sub create_worker {
 }
 
 subtest 'Scheduler worker job allocation' => sub {
-    # Step 1
-    my $allocated = scheduler_step();    # Will try to allocate to previous worker and fail!
+    note('try to allocate to previous worker (supposed to fail)');
+    my $allocated = scheduler_step();
     is @$allocated, 0;
 
+    note('starting two workers');
     my $w1_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 1);
     my $w2_pid = create_worker($k->key, $k->secret, "http://localhost:$mojoport", 2);
     wait_for_worker($schema, 3);
     wait_for_worker($schema, 4);
 
-    ($allocated) = scheduler_step();     # Will try to allocate to previous worker and fail!
-
-    my $job_id1 = $allocated->[0]->{job};
-    my $job_id2 = $allocated->[1]->{job};
-    my $wr_id1  = $allocated->[0]->{worker};
-    my $wr_id2  = $allocated->[1]->{worker};
-    ok $wr_id1 != $wr_id2,   "Jobs dispatched to different workers";
-    ok $job_id1 != $job_id2, "Jobs dispatched to different workers";
-
+    note('assigning one job to each worker');
+    ($allocated) = scheduler_step();
+    my $job_id1           = $allocated->[0]->{job};
+    my $job_id2           = $allocated->[1]->{job};
+    my $wr_id1            = $allocated->[0]->{worker};
+    my $wr_id2            = $allocated->[1]->{worker};
+    my $different_workers = isnt($wr_id1, $wr_id2, 'jobs dispatched to different workers');
+    my $different_jobs    = isnt($job_id1, $job_id2, 'each of the two jobs allocated to one of the workers');
+    diag explain $allocated unless $different_workers && $different_jobs;
 
     ($allocated) = scheduler_step();
     is @$allocated, 0;
 
     kill_service($_, 1) for ($w1_pid, $w2_pid);
-
     dead_workers($schema);
 };
 
@@ -199,7 +199,11 @@ subtest 'Simulation of heavy unstable load' => sub {
     dead_workers($schema);
     my @duplicated;
 
-    push(@duplicated, $_->auto_duplicate()) for $schema->resultset("Jobs")->latest_jobs;
+    # duplicate latest jobs ignoring failures
+    for my $job ($schema->resultset('Jobs')->latest_jobs) {
+        my $duplicate = $job->auto_duplicate;
+        push(@duplicated, $duplicate) if defined $duplicate;
+    }
 
     push(@workers, unresponsive_worker($k->key, $k->secret, "http://localhost:$mojoport", $_)) for (1 .. 50);
     my $i = 4;
