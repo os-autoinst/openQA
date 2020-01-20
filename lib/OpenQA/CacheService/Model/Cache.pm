@@ -90,11 +90,6 @@ sub _download_asset {
         $ret = 520 unless $self->_update_asset_last_use($asset);
     }
 
-    elsif ($res->is_server_error) {
-        $log->info(qq{Downloading "$asset" failed with server error $code});
-        $ret = $code;
-    }
-
     elsif ($res->is_success) {
         my $headers = $tx->res->headers;
         $etag = $headers->etag;
@@ -129,8 +124,8 @@ sub _download_asset {
     }
     else {
         my $message = $res->error->{message};
-        $log->info(qq{Download of "$asset" failed: $code - $message});
-        $ret = 521;
+        $log->info(qq{Download of "$asset" failed: $code $message});
+        $ret = $code;
     }
 
     return $ret;
