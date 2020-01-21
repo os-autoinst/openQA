@@ -43,8 +43,10 @@ sub register {
         $app->helper(
             'obs_rsync.is_status_dirty' => sub {
                 my ($c, $project, $trace) = @_;
-                my $url = $c->obs_rsync->project_status_url;
+                my $helper = $c->obs_rsync;
+                my $url    = $helper->project_status_url;
                 return undef unless $url;
+                ($project, undef) = $helper->split_project_batch($project);
                 my @res = $self->_is_obs_project_status_dirty($url, $project);
                 if ($trace && scalar @res > 1 && $res[1]) {
                     # ignore potential errors because we use this only for cosmetic rendering
@@ -55,7 +57,10 @@ sub register {
                 }
                 return $res[0];
             });
-        $app->helper('obs_rsync.get_run_last_info' => \&_get_run_last_info);
+        $app->helper('obs_rsync.split_project_batch' => \&_split_project_batch);
+        $app->helper('obs_rsync.get_batches'         => \&_get_batches);
+        $app->helper('obs_rsync.get_first_batch'     => \&_get_first_batch);
+        $app->helper('obs_rsync.get_run_last_info'   => \&_get_run_last_info);
         $app->helper(
             'obs_rsync.get_fail_last_info' => sub {
                 my ($c, $project) = @_;
@@ -146,15 +151,49 @@ sub _parse_obs_response_dirty {
     return (0, 'published');
 }
 
+# _split_project_batch() splits name like 'projectname|batchname'
+# and returns pair ('projectname', 'batchname')
+# if $project doesn't have '|' character -
+# returned pair is ($project, "")
+sub _split_project_batch {
+    my (undef, $project) = @_;
+    my ($ret,  $batch)   = split(/\|/, $project, 2);
+    $batch = "" unless $batch;
+    return ($ret, $batch);
+}
+
+sub _get_batches {
+    my ($c, $project, $only_first) = @_;
+    my $home    = $c->obs_rsync->home;
+    my $batches = Mojo::File->new($home, $project)->list({dir => 1})->grep(sub { -d $_ })->map('basename');
+    return $batches->to_array() unless $only_first;
+    return "" if !$batches->size;
+    return $batches->to_array()->[0];
+}
+
+# _get_first_batch will attempt to split batch from input name
+# and return it in pair with split project name
+# otherwise it attempts to find first batch of project
+# and returns it in pair with unaltered input
+sub _get_first_batch {
+    my ($c, $project) = @_;
+    my $helper = $c->obs_rsync;
+    my ($shortproj, $batch) = $helper->split_project_batch($project);
+    return ($batch,                            $shortproj) if $batch;
+    return ($helper->get_batches($project, 1), $project);
+}
+
 # This method is coupled with openqa-trigger-from-obs and returns
 # string in format %y%m%d_%H%M%S, which corresponds to location
 # used by openqa-trigger-from-obs to determine if any files changed
 # or rsync can be skipped.
 sub _get_run_last_info {
     my ($c, $project) = @_;
-    my $home = $c->obs_rsync->home;
+    my $helper = $c->obs_rsync;
+    my $home   = $helper->home;
+    (my $batch, $project) = $helper->get_first_batch($project);
 
-    my $linkpath = Mojo::File->new($home, $project, '.run_last');
+    my $linkpath = Mojo::File->new($home, $project, $batch, '.run_last');
     my $folder;
     eval { $folder = readlink($linkpath) };
     return undef unless $folder;
@@ -192,7 +231,10 @@ sub _write_to_file {
 # Dirty status file is updated from ObsRsync Gru tasks
 sub _get_dirty_status {
     my ($c, $project) = @_;
-    my $home = $c->obs_rsync->home;
+    my $helper = $c->obs_rsync;
+    # doesn't depend on batch, so just strip it out
+    ($project, undef) = $helper->split_project_batch($project);
+    my $home = $helper->home;
     my ($status, $when) = _get_first_line(Mojo::File->new($home, $project, $dirty_status_filename), 1);
     return "" unless $status;
     return "$status on $when";
@@ -219,8 +261,11 @@ sub _get_version_in_folder {
 # Obs version is parsed from files_iso.lst, which is updated from ObsRsync Gru tasks
 sub _get_obs_version {
     my ($c, $project) = @_;
-    my $home = $c->obs_rsync->home;
-    return _get_version_in_folder(Mojo::File->new($home, $project));
+    my $helper = $c->obs_rsync;
+    my $home   = $helper->home;
+    (my $batch, $project) = $helper->get_first_batch($project);
+
+    return _get_version_in_folder(Mojo::File->new($home, $project, $batch));
 }
 
 sub _concurrency_guard {
@@ -276,7 +321,10 @@ sub _check_error {
     return (400, 'Subfolder has invalid characters') if $subfolder && $subfolder =~ m!/!;
     return (400, 'Filename has invalid characters')  if $filename  && $filename  =~ m!/!;
 
-    return (404, 'Invalid Project {' . $project . '}') if $project && !-d Mojo::File->new($home, $project);
+    ($project, my $batch) = _split_project_batch(undef, $project);
+    return (404, "Invalid Project {$project}") if $project && !-d Mojo::File->new($home, $project);
+    return (404, "Invalid Batch {$project|$batch}")
+      if $project && $batch && !-d Mojo::File->new($home, $project, $batch);
     return 0;
 }
 

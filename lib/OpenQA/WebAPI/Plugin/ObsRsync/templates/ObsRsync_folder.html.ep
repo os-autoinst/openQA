@@ -5,7 +5,7 @@
 % end
 
 % title 'OBS synchronization';
-<h2>OBS synchronization for: <%= $obs_project  %></h2>
+<h2>OBS synchronization for: <%= $folder %></h2>
 <h3>Synchronization is performed in 3 steps:</h3>
 <ul class="list-group">
   <li class="list-group-item flex-column align-items-start">
@@ -17,7 +17,7 @@
             Lists retrieved during last run:
             <ul>
             % for my $filename (@$lst_files) {
-                <li><%= link_to $filename => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %></li>
+                <li><%= link_to $filename => url_for('plugin_obs_rsync_download_file', folder => $folder, subfolder => ".run_last", filename => $filename) %></li>
             % }
             </ul>
         % }
@@ -25,7 +25,7 @@
     <p class="mb-1">
         % if ($read_files_sh) {
             Script used to retrieve files:
-            %= link_to $read_files_sh => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $read_files_sh)
+            %= link_to $read_files_sh => url_for('plugin_obs_rsync_download_file', folder => $folder, subfolder => ".run_last", filename => $read_files_sh)
         % }
     </p>
   </li>
@@ -38,7 +38,7 @@
             Commands executed during last run:
             <ul>
             % for my $filename (@$rsync_commands) {
-                <li><%= link_to $filename  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %></li>
+                <li><%= link_to $filename  => url_for('plugin_obs_rsync_download_file', folder => $folder, subfolder => ".run_last", filename => $filename) %></li>
             % }
             </ul>
         % }
@@ -48,7 +48,7 @@
             Scripts used to generate commands:
             <ul>
             % for my $filename (@$rsync_sh) {
-                <li><%= link_to $filename  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %></li>
+                <li><%= link_to $filename  => url_for('plugin_obs_rsync_download_file', folder => $folder, subfolder => ".run_last", filename => $filename) %></li>
             % }
             </ul>
         % }
@@ -63,7 +63,7 @@
             Commands executed during last run:
             <ul>
             % for my $filename (@$openqa_commands) {
-                <li><%= link_to $filename  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $filename) %></li>
+                <li><%= link_to $filename  => url_for('plugin_obs_rsync_download_file', folder => $folder, subfolder => ".run_last", filename => $filename) %></li>
             % }
             </ul>
         % }
@@ -71,7 +71,7 @@
     <p class="mb-1">
         % if ($openqa_sh) {
             Script used to retrieve files:
-            %= link_to $openqa_sh  => url_for('plugin_obs_rsync_download_file', folder => $obs_project, subfolder => ".run_last", filename => $openqa_sh)
+            %= link_to $openqa_sh  => url_for('plugin_obs_rsync_download_file', folder => $folder, subfolder => ".run_last", filename => $openqa_sh)
         % }
     </p>
   </li>
@@ -81,7 +81,7 @@
     <div class="card-body">
         <div class="btn-toolbar" role="toolbar">
             <div class="btn-group mr-2" role="group">
-                %= link_to 'Show all logs' => url_for('plugin_obs_rsync_runs', folder => $obs_project), class => 'btn btn-primary', role => 'button'
+                %= link_to 'Show all logs' => url_for('plugin_obs_rsync_runs', folder => $folder), class => 'btn btn-primary', role => 'button'
             </div>
             <div class="btn-group mr-2" role="group">
                 <button class='btn btn-warning' type='submit' alt='Sync now' title='Sync now' data-posturl=<%= url_for("plugin_obs_rsync_queue_run", folder => $obs_project) %> onclick='postAndRedirect(this,"/admin/obs_rsync/queue")'>Sync now</button>

@@ -28,6 +28,7 @@
                 % my $folder_ident = $folder;
                 % $folder_ident =~ s/\W//g; # remove all special characters
                 % my $folder_info = $folder_info_by_name->{$folder};
+                % $folder = "$obs_project|$folder" if ($obs_project);
                 % my $job_id = $folder_info->{run_last_job_id};
                 % my $fail_job_id = $folder_info->{fail_last_job_id};
                 <tr id="folder_<%= $folder_ident %>">

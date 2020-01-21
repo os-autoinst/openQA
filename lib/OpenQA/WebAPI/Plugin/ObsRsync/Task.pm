@@ -85,8 +85,9 @@ sub update_obs_version {
     my $app     = $job->app;
     my $project = $args->{project};
     my $helper  = $app->obs_rsync;
+    (my $batch, $project) = $helper->get_first_batch($project);
 
-    my $read_files = Mojo::File->new($helper->home, $project, 'read_files.sh');
+    my $read_files = Mojo::File->new($helper->home, $project, $batch, 'read_files.sh');
     return $job->finish("Cannot find $read_files") unless -f $read_files;
 
     my $project_lock = Mojo::File->new($helper->home, $project, 'rsync.lock');
