@@ -1,14 +1,7 @@
 % layout 'bootstrap';
 % title 'Assets';
 % content_for 'ready_function' => begin
-    window.isAdmin =
-    % if(is_admin) {
-        true
-    % }
-    % else {
-        false
-    % }
-    ;
+    window.isAdmin = <%= is_admin_js %>;
     setupAdminAssets();
 % end
 

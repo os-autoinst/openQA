@@ -42,22 +42,20 @@ sub _serve_status_json_from_cache {
 sub status_json {
     my ($self) = @_;
 
-    # fail if cleanup is currently ongoing (the static JSON file might be written right now)
+    # serve previously cached, static JSON file unless $force_refresh has been specified
+    my $force_refresh = $self->param('force_refresh');
+    return !!$self->rendered if !$force_refresh && $self->_serve_status_json_from_cache;
+
+    # fail if cleanup is currently ongoing and there is no cache file yet
     if ($self->gru->is_task_active('limit_assets')) {
         return $self->render(json => {error => 'Asset cleanup is currently ongoing.'}, status => 400);
     }
 
     # allow to force scan for untracked assets and refresh
-    my $force_refresh = $self->param('force_refresh');
-    my $assets        = $self->app->schema->resultset('Assets');
+    my $assets = $self->app->schema->resultset('Assets');
     if ($force_refresh) {
         $assets->scan_for_untracked_assets();
         $assets->refresh_assets();
-    }
-
-    # serve previously cached, static JSON file unless $force_refresh has been specified
-    if (!$force_refresh) {
-        return !!$self->rendered if $self->_serve_status_json_from_cache;
     }
 
     # generate new static JSON file
@@ -67,7 +65,7 @@ sub status_json {
     );
 
     return !!$self->rendered if $self->_serve_status_json_from_cache;
-    return $self->render(json => {error => 'cache file for asset status not found'}, status => 500);
+    $self->render(json => {error => 'Cache file for asset status could not be generated.'}, status => 500);
 }
 
 1;
