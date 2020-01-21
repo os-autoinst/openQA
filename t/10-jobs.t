@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014-2019 SUSE LLC
+# Copyright (C) 2014-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ use OpenQA::Test::Case;
 use Test::More;
 use Test::MockModule 'strict';
 use Test::Mojo;
+use Mojo::JSON 'decode_json';
 use Test::Warnings;
 use Mojo::File qw(path tempdir);
 use Mojo::IOLoop::ReadWriteProcess;
@@ -627,6 +628,14 @@ subtest 'modules are unique per job' => sub {
     is $modules[0]->name,   'some_name',  'right name';
     is $modules[0]->script, 'foo/bar.pm', 'right script';
     is $modules[1], undef, 'no second result';
+};
+
+subtest 'saving details' => sub {
+    my %some_test_results    = (results => [], spare => 'me the details');
+    my $arbitrary_job_module = $schema->resultset('JobModules')->first;
+    $arbitrary_job_module->save_details(\%some_test_results);
+    my $details_file = path($arbitrary_job_module->job->result_dir, 'details-' . $arbitrary_job_module->name . '.json');
+    is_deeply(decode_json($details_file->slurp), \%some_test_results, 'overall structure of test results preserved');
 };
 
 done_testing();

@@ -296,8 +296,8 @@ sub save_details {
     my ($self, $details) = @_;
     my $existent_md5 = [];
     my @dbpaths;
-    $details = ref($details) eq 'HASH' ? $details->{results} : $details;
-    for my $d (@$details) {
+    my $results = ref($details) eq 'HASH' ? $details->{results} : $details;
+    for my $d (@$results) {
         # avoid creating symlinks for text results
         if ($d->{screenshot}) {
             # save the database entry for the screenshot first
@@ -308,7 +308,7 @@ sub save_details {
     }
     $self->result_source->schema->resultset('Screenshots')->populate_images_to_job(\@dbpaths, $self->job_id);
 
-    $self->store_needle_infos($details);
+    $self->store_needle_infos($results);
     path($self->job->result_dir, 'details-' . $self->name . '.json')->spurt(encode_json($details));
     return $existent_md5;
 }
