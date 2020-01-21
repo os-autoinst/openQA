@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Setup;
-use Mojo::Base 'Mojolicious';
+use Mojo::Base -base;
 
 use Sys::Hostname;
 use File::Spec::Functions 'catfile';
@@ -28,18 +28,11 @@ use POSIX 'strftime';
 use Time::HiRes 'gettimeofday';
 use OpenQA::Schema::JobGroupDefaults;
 
-has [qw(log_name level instance log_dir)];
-
-sub startup {
-    my $self = shift;
-    $self->mode('production');
-}
-
 sub setup_log {
     my ($self) = @_;
     my ($logfile, $logdir, $level, $log);
 
-    if ($self->isa('OpenQA::Setup')) {
+    if ($self->isa('OpenQA::Worker::App')) {
         $logdir = $self->log_dir;
         $level  = $self->level;
         if ($logdir && !-e $logdir) {
@@ -101,11 +94,6 @@ sub setup_log {
 
     $OpenQA::Utils::app = $self;
     return $log;
-}
-
-sub emit_event {
-    my ($self, $event, $data) = @_;
-    # nothing to see here, move along
 }
 
 sub read_config {
@@ -276,8 +264,6 @@ sub update_config {
         };
     }
 }
-
-sub schema { OpenQA::Schema->singleton }
 
 sub setup_app_defaults {
     my ($server) = @_;

@@ -23,6 +23,7 @@ use Test::More;
 use Mojo::File qw(tempdir tempfile);
 use OpenQA::Utils qw(log_error log_warning log_fatal log_info log_debug add_log_channel remove_log_channel);
 use OpenQA::Setup;
+use OpenQA::Worker::App;
 use File::Path qw(make_path remove_tree);
 use Test::MockModule;
 use Test::Output qw(stdout_like stderr_like);
@@ -35,7 +36,7 @@ my $reChannel = qr/\[.*?\] \[(.*?)\] (?:\[pid:\d+\]\s)?(.*?) message/;
 
 subtest 'load correct configs' => sub {
     local $ENV{OPENQA_CONFIG} = 't/data/logging/';
-    my $app = OpenQA::Setup->new(
+    my $app = OpenQA::Worker::App->new(
         mode     => 'production',
         log_name => 'worker',
         instance => 1,
@@ -52,7 +53,7 @@ subtest 'load correct configs' => sub {
     is($app->level,      'debug');
     is($app->log->level, 'debug');
 
-    $app = OpenQA::Setup->new();
+    $app = OpenQA::Worker::App->new();
     OpenQA::Setup::read_config($app);
     is($app->level,                    undef);
     is($app->mode,                     'production');
@@ -77,7 +78,7 @@ subtest 'Logging to stdout' => sub {
     open STDOUT, '>', \$output;
     ### Testing code here ###
 
-    my $app = OpenQA::Setup->new(
+    my $app = OpenQA::Worker::App->new(
         mode     => 'production',
         log_name => 'worker',
         instance => 1,
@@ -85,7 +86,7 @@ subtest 'Logging to stdout' => sub {
         level    => 'debug'
     );
 
-    $app->setup_log();
+    OpenQA::Setup::setup_log($app);
 
     log_debug('debug message');
     log_error('error message');
@@ -109,7 +110,7 @@ subtest 'Logging to file' => sub {
     my $tempdir = tempdir;
     local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
-    my $app = OpenQA::Setup->new(
+    my $app = OpenQA::Worker::App->new(
         mode     => 'production',
         log_name => 'worker',
         instance => 1,
@@ -117,7 +118,7 @@ subtest 'Logging to file' => sub {
         level    => 'debug'
     );
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
-    $app->setup_log();
+    OpenQA::Setup::setup_log($app);
     log_debug('debug message');
     log_error('error message');
     log_info('info message');
@@ -143,7 +144,7 @@ subtest 'log fatal to stderr' => sub {
     open STDERR, '>', \$output;
     ### Testing code here ###
 
-    my $app = OpenQA::Setup->new(
+    my $app = OpenQA::Worker::App->new(
         mode     => 'production',
         log_name => 'worker',
         instance => 1,
@@ -151,7 +152,7 @@ subtest 'log fatal to stderr' => sub {
         level    => 'debug'
     );
 
-    $app->setup_log();
+    OpenQA::Setup::setup_log($app);
     $OpenQA::Utils::app = undef;    # To make sure we don't are setting it in other tests
     eval { log_fatal('fatal message'); };
     my $eval_error       = $@;
@@ -181,7 +182,7 @@ subtest 'Checking log level' => sub {
     my $counterFile    = @loglevels;
     my $counterChannel = @loglevels;
     for my $level (@loglevels) {
-        my $app = OpenQA::Setup->new(
+        my $app = OpenQA::Worker::App->new(
             mode     => 'production',
             log_name => 'worker',
             instance => 1,
@@ -189,7 +190,7 @@ subtest 'Checking log level' => sub {
             level    => $level
         );
 
-        $app->setup_log();
+        OpenQA::Setup::setup_log($app);
         # $OpenQA::Utils::app = $app;
 
         log_debug('debug message');
@@ -251,7 +252,7 @@ subtest 'Logging to right place' => sub {
     my $tempdir = tempdir;
     local $ENV{OPENQA_WORKER_LOGDIR} = $tempdir;
 
-    my $app = OpenQA::Setup->new(
+    my $app = OpenQA::Worker::App->new(
         mode     => 'production',
         log_name => 'worker',
         instance => 1,
@@ -259,21 +260,21 @@ subtest 'Logging to right place' => sub {
         level    => 'debug'
     );
     my $output_logfile = catfile($ENV{OPENQA_WORKER_LOGDIR}, hostname() . '-1.log');
-    $app->setup_log();
+    OpenQA::Setup::setup_log($app);
     log_debug('debug message');
     log_error('error message');
     log_info('info message');
     ok(-f $output_logfile, 'Log file defined in logdir');
 
     local $ENV{OPENQA_LOGFILE} = 'test_log_file.log';
-    $app = OpenQA::Setup->new(
+    $app = OpenQA::Worker::App->new(
         mode     => 'production',
         log_name => 'worker',
         instance => 1,
         log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
         level    => 'debug'
     );
-    $app->setup_log();
+    OpenQA::Setup::setup_log($app);
     log_debug('debug message');
     log_error('error message');
     log_info('info message');
@@ -284,13 +285,13 @@ subtest 'Logging to right place' => sub {
 
 
     local $ENV{OPENQA_LOGFILE} = catfile($ENV{OPENQA_WORKER_LOGDIR}, 'another_test_log_file.log');
-    $app = OpenQA::Setup->new(
+    $app = OpenQA::Worker::App->new(
         mode     => 'production',
         log_name => 'worker',
         instance => 1,
         level    => 'debug'
     );
-    $app->setup_log();
+    OpenQA::Setup::setup_log($app);
     log_debug('debug message');
     log_error('error message');
     log_info('info message');
@@ -309,14 +310,14 @@ subtest 'Logs to multiple channels' => sub {
 
 
     for my $level (@loglevels) {
-        my $app = OpenQA::Setup->new(
+        my $app = OpenQA::Worker::App->new(
             mode     => 'production',
             log_name => 'worker',
             instance => 1,
             log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
             level    => $level
         );
-        $app->setup_log();
+        OpenQA::Setup::setup_log($app);
 
         for my $channel_tupple (@channel_tupples) {
             my $logging_test_file1 = tempfile;
@@ -358,14 +359,14 @@ subtest 'Logs to bogus channels' => sub {
     my $counterChannel  = @loglevels;
 
     for my $level (@loglevels) {
-        my $app = OpenQA::Setup->new(
+        my $app = OpenQA::Worker::App->new(
             mode     => 'production',
             log_name => 'worker',
             instance => 1,
             log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
             level    => $level
         );
-        $app->setup_log();
+        OpenQA::Setup::setup_log($app);
 
         for my $channel_tupple (@channel_tupples) {
             my $logging_test_file1 = tempfile;
@@ -408,14 +409,14 @@ subtest 'Logs to defaults channels' => sub {
 
 
     for my $level (@loglevels) {
-        my $app = OpenQA::Setup->new(
+        my $app = OpenQA::Worker::App->new(
             mode     => 'production',
             log_name => 'worker',
             instance => 1,
             log_dir  => $ENV{OPENQA_WORKER_LOGDIR},
             level    => $level
         );
-        $app->setup_log();
+        OpenQA::Setup::setup_log($app);
 
         my $logging_test_file1 = tempfile;
         my $logging_test_file2 = tempfile;

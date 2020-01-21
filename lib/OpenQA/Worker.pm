@@ -30,7 +30,7 @@ use OpenQA::Utils qw(log_error log_warning log_info log_debug add_log_channel re
 use OpenQA::Worker::WebUIConnection;
 use OpenQA::Worker::Settings;
 use OpenQA::Worker::Job;
-use OpenQA::Setup;
+use OpenQA::Worker::App;
 
 has 'instance_number';
 has 'pool_directory';
@@ -57,7 +57,7 @@ sub new {
 
     # determine settings and create app
     my $settings = OpenQA::Worker::Settings->new($instance_number, $cli_options);
-    my $app      = OpenQA::Setup->new(
+    my $app      = OpenQA::Worker::App->new(
         mode     => 'production',
         log_name => 'worker',
         instance => $instance_number,

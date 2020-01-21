@@ -430,14 +430,4 @@ is_deeply($current_jobs, [], "no jobs listed");
 my $asset = $schema->resultset('Assets')->register('iso', $settings{ISO});
 is($asset->name, $settings{ISO}, "asset register returns same");
 
-subtest 'OpenQA::Setup object test' => sub {
-    use OpenQA::Setup;
-    my $setup = OpenQA::Setup->new;
-    OpenQA::Setup::read_config($setup);
-    OpenQA::Setup::setup_log($setup);
-    isa_ok($setup->home,   'Mojo::Home');
-    isa_ok($setup->schema, 'OpenQA::Schema');
-    isa_ok($setup->log,    'Mojo::Log');
-};
-
 done_testing;
