@@ -21,6 +21,7 @@ use warnings;
 
 use Test::More;
 use Mojo::File qw(tempdir tempfile);
+use OpenQA::App;
 use OpenQA::Utils qw(log_error log_warning log_fatal log_info log_debug add_log_channel remove_log_channel);
 use OpenQA::Setup;
 use OpenQA::Worker::App;
@@ -153,7 +154,7 @@ subtest 'log fatal to stderr' => sub {
     );
 
     OpenQA::Setup::setup_log($app);
-    $OpenQA::Utils::app = undef;    # To make sure we don't are setting it in other tests
+    OpenQA::App->set_singleton(undef);    # To make sure we don't are setting it in other tests
     eval { log_fatal('fatal message'); };
     my $eval_error       = $@;
     my $exception_raised = 0;
@@ -191,7 +192,6 @@ subtest 'Checking log level' => sub {
         );
 
         OpenQA::Setup::setup_log($app);
-        # $OpenQA::Utils::app = $app;
 
         log_debug('debug message');
         log_info('info message');

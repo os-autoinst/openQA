@@ -13,23 +13,16 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Worker::App;
-use Mojo::Base 'Mojolicious';
+package OpenQA::App;
+use Mojo::Base -strict;
 
-has [qw(log_name level instance log_dir)];
+my $SINGLETON;
 
-# This is a mock application, so OpenQA::Setup can be reused to set up logging
-# for the workers
-sub startup {
-    my $self = shift;
-    $self->mode('production');
+sub set_singleton {
+    my ($class, $app) = @_;
+    $SINGLETON = $app;
 }
 
-sub emit_event {
-    my ($self, $event, $data) = @_;
-    # nothing to see here, move along
-}
-
-sub schema { OpenQA::Schema->singleton }
+sub singleton { $SINGLETON }
 
 1;

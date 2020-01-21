@@ -21,6 +21,7 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
+use OpenQA::App;
 use OpenQA::Markdown 'markdown_to_html';
 use OpenQA::Schema::JobGroupDefaults;
 use OpenQA::Utils 'parse_tags_from_comments';
@@ -99,7 +100,7 @@ sub _get_column_or_default {
     if (defined(my $own_value = $self->get_column($column))) {
         return $own_value;
     }
-    return $OpenQA::Utils::app->config->{default_group_limits}->{$setting};
+    return OpenQA::App->singleton->config->{default_group_limits}->{$setting};
 }
 
 around 'default_keep_logs_in_days' => sub {

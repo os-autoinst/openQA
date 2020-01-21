@@ -33,6 +33,7 @@ use Scalar::Util 'blessed';
 use Mojo::Log;
 use Scalar::Util qw(blessed reftype);
 use Exporter 'import';
+use OpenQA::App;
 
 # avoid boilerplate "$VAR1 = " in dumper output
 $Data::Dumper::Terse = 1;
@@ -123,7 +124,6 @@ our $resultdir = "$prjdir/testresults";
 our $assetdir  = "$sharedir/factory";
 our $imagesdir = "$prjdir/images";
 our $hostname  = $ENV{SERVER_NAME};
-our $app;
 my %channels     = ();
 my %log_defaults = (LOG_TO_STANDARD_CHANNEL => 1, CHANNELS => []);
 
@@ -243,7 +243,7 @@ sub log_fatal {
 }
 
 sub _current_log_level {
-    # FIXME: avoid use of $app here
+    my $app = OpenQA::App->singleton;
     return defined $app && $app->can('log') && $app->log->can('level') && $app->log->level;
 }
 
@@ -297,8 +297,9 @@ sub _log_to_channel_by_name {
 sub _log_via_mojo_app {
     my ($level, $msg) = @_;
 
-    return 0 unless ($app && $app->log);
-    return _try_logging_to_channel($level, $msg, $app->log);
+    return 0 unless my $app = OpenQA::App->singleton;
+    return 0 unless my $log = $app->log;
+    return _try_logging_to_channel($level, $msg, $log);
 }
 
 sub _try_logging_to_channel {
@@ -376,7 +377,7 @@ sub get_channel_handle {
     if ($channel) {
         return $channels{$channel}->handle if $channels{$channel};
     }
-    elsif ($app) {
+    elsif (my $app = OpenQA::App->singleton) {
         return $app->log->handle;
     }
 }
@@ -774,7 +775,7 @@ sub human_readable_size {
 
 # query group parents and job groups and let the database sort it for us - and merge it afterwards
 sub job_groups_and_parents {
-    my $schema = $app->schema;
+    my $schema = OpenQA::App->singleton->schema;
     my @parents
       = $schema->resultset('JobGroupParents')->search({}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})
       ->all;
@@ -963,6 +964,7 @@ sub mark_job_linked {
     my ($jobid, $referer_url) = @_;
 
     my $referer = Mojo::URL->new($referer_url)->host;
+    my $app     = OpenQA::App->singleton;
     my $schema  = $app->schema;
     if ($referer && grep { $referer eq $_ } @{$app->config->{global}->{recognized_referers}}) {
         my $job = $schema->resultset('Jobs')->find({id => $jobid});

@@ -20,6 +20,7 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
+use OpenQA::App;
 use OpenQA::Markdown 'markdown_to_html';
 use OpenQA::Schema::JobGroupDefaults;
 use Class::Method::Modifiers;
@@ -117,7 +118,7 @@ sub _get_column_or_default {
         my $parent_column = 'default_' . $column;
         return $self->parent->$parent_column();
     }
-    return $OpenQA::Utils::app->config->{default_group_limits}->{$setting};
+    return OpenQA::App->singleton->config->{default_group_limits}->{$setting};
 }
 
 around 'size_limit_gb' => sub {
@@ -126,7 +127,7 @@ around 'size_limit_gb' => sub {
     if (defined(my $own_value = $self->get_column('size_limit_gb'))) {
         return $own_value;
     }
-    return $OpenQA::Utils::app->config->{default_group_limits}->{asset_size_limit};
+    return OpenQA::App->singleton->config->{default_group_limits}->{asset_size_limit};
 
     # note: In contrast to other cleanup-related properties the limit for assets is not inherited from
     #       the parent group. So the default is directly read from the config.

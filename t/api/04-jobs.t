@@ -23,6 +23,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Output;
 use Test::Warnings;
+use OpenQA::App;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
@@ -486,7 +487,7 @@ subtest 'Check job status and output' => sub {
     local $ENV{MOJO_LOG_LEVEL} = 'debug';
     local $ENV{OPENQA_LOGFILE};
     local $ENV{OPENQA_WORKER_LOGDIR};
-    $OpenQA::Utils::app->log(Mojo::Log->new(handle => \*STDOUT));
+    OpenQA::App->singleton->log(Mojo::Log->new(handle => \*STDOUT));
 
     for my $job (@new_jobs) {
         my $worker_id = $job->{assigned_worker_id};

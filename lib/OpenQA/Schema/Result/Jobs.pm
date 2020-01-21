@@ -31,6 +31,7 @@ use OpenQA::Utils (
     qw(read_test_modules find_bugref random_string),
     qw(run_cmd_with_log_return_error needledir testcasedir)
 );
+use OpenQA::App;
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use File::Basename qw(basename dirname);
@@ -1798,7 +1799,7 @@ sub investigate {
     return {error => 'No previous job in this scenario, cannot provide hints'} unless @previous;
     my %inv;
     return {error => 'No result directory available for current job'} unless $self->result_dir();
-    my $ignore = $OpenQA::Utils::app->config->{global}->{job_investigate_ignore};
+    my $ignore = OpenQA::App->singleton->config->{global}->{job_investigate_ignore};
     for my $prev (@previous) {
         next unless $prev->result =~ /(?:passed|softfailed)/;
         $inv{last_good} = $prev->id;

@@ -89,10 +89,10 @@ sub _limit {
         my $update_sth = $dbh->prepare('UPDATE assets SET last_use_job_id = ? WHERE id = ?');
 
         # remove all assets older than a certain duration which do not belong to a job group
-        my $untracked_assets_storage_duration
-          = $OpenQA::Utils::app->config->{misc_limits}->{untracked_assets_storage_duration};
-        my $untracked_assets_patterns = $OpenQA::Utils::app->config->{'assets/storage_duration'} // {};
-        my $now                       = DateTime->now();
+        my $config                            = OpenQA::App->singleton->config;
+        my $untracked_assets_storage_duration = $config->{misc_limits}->{untracked_assets_storage_duration};
+        my $untracked_assets_patterns         = $config->{'assets/storage_duration'} // {};
+        my $now                               = DateTime->now();
         for my $asset (@$assets) {
             $update_sth->execute($asset->{max_job} && $asset->{max_job} >= 0 ? $asset->{max_job} : undef, $asset->{id});
             next if $asset->{fixed} || scalar(keys %{$asset->{groups}}) > 0;

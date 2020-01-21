@@ -26,6 +26,7 @@ use DBIx::Class::Timestamps 'now';
 use File::Basename;
 use Cwd 'realpath';
 use File::Spec::Functions 'catdir';
+use OpenQA::App;
 use OpenQA::Git;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
@@ -189,7 +190,7 @@ sub remove {
 
     my $fname      = $self->path;
     my $screenshot = $fname =~ s/.json$/.png/r;
-    my $app        = $OpenQA::Utils::app;
+    my $app        = OpenQA::App->singleton;
     $app->log->debug("Remove needle $fname and $screenshot");
 
     my $git = OpenQA::Git->new({app => $app, dir => $self->directory->path, user => $user});
