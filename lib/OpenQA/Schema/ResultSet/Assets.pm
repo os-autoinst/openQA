@@ -346,9 +346,10 @@ END_SQL
 
     # produce cache file for /admin/assets
     unless ($options{skip_cache_file}) {
-        my $cache_file_path = status_cache_file;
+        my $cache_file_path     = status_cache_file;
+        my $new_cache_file_path = "$cache_file_path.new";
         try {
-            my $cache_file = Mojo::File->new($cache_file_path);
+            my $cache_file = Mojo::File->new($new_cache_file_path);
             # ensure parent directory exists
             $cache_file->dirname->make_path();
             # write JSON file, replacing possibly existing one
@@ -360,6 +361,7 @@ END_SQL
                         parents     => \%parent_group_info,
                         last_update => now() . 'Z',
                     }));
+            rename($new_cache_file_path, $cache_file_path) or die $!;
         }
         catch {
             OpenQA::Utils::log_warning("Unable to create cache file $cache_file_path: $@");

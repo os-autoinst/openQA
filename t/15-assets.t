@@ -33,6 +33,7 @@ use OpenQA::Test::Database;
 use OpenQA::Test::Utils 'embed_server_for_testing';
 use OpenQA::WebSockets::Client;
 use OpenQA::Scheduler::Model::Jobs;
+use OpenQA::Schema::ResultSet::Assets;
 use OpenQA::Utils;
 use Mojo::Util 'monkey_patch';
 
@@ -265,7 +266,14 @@ $gru_mock->mock(
         return $limit_assets_active if ($task eq 'limit_assets');
         fail("is_task_active called for unexpected task $task");
     });
-$t->get_ok('/admin/assets/status')->status_is(400)->json_is('/error' => 'Asset cleanup is currently ongoing.');
+$t->get_ok('/admin/assets/status?force_refresh=1')
+  ->status_is(400, 'viewing assets page with force_refresh not possible during cleanup')
+  ->json_is('/error' => 'Asset cleanup is currently ongoing.');
+$t->get_ok('/admin/assets/status')->status_is(200, 'asset status rendered from cache file although cleanup is ongoing');
+ok(unlink(OpenQA::Schema::ResultSet::Assets::status_cache_file), 'cache file removed');
+$t->get_ok('/admin/assets/status?force_refresh=1')
+  ->status_is(400, 'viewing assets page without cache file not possible during cleanup')
+  ->json_is('/error' => 'Asset cleanup is currently ongoing.');
 $limit_assets_active = 0;
 $t->get_ok('/admin/assets/status')->status_is(200);
 my $json = $t->tx->res->json;
