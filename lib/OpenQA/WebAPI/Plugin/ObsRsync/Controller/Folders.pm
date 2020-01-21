@@ -118,6 +118,7 @@ sub download_file {
     return undef if $helper->check_and_render_error($folder, $subfolder, $filename);
 
     my $full = Mojo::File->new($helper->home, $folder, $subfolder);
+    $self->res->headers->content_type('text/plain');
     $self->reply->file($full->child($filename));
 }
 
