@@ -17,7 +17,6 @@
 package OpenQA::WebAPI::Controller::API::V1::JobTemplate;
 use Mojo::Base 'Mojolicious::Controller';
 use Try::Tiny;
-use JSON::Validator;
 
 =pod
 

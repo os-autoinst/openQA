@@ -31,6 +31,7 @@ requires 'File::Path';
 requires 'File::Spec';
 requires 'FindBin';
 requires 'Getopt::Long';
+requires 'Getopt::Long::Descriptive';
 requires 'IO::Handle';
 requires 'IO::Socket::SSL';
 requires 'IPC::Run';
