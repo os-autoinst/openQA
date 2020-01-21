@@ -14,10 +14,8 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Setup;
-use Mojo::Base -base;
+use Mojo::Base 'Mojolicious';
 
-use Mojo::Home;
-use Mojo::Log;
 use Sys::Hostname;
 use File::Spec::Functions 'catfile';
 use Mojo::File 'path';
@@ -30,21 +28,12 @@ use POSIX 'strftime';
 use Time::HiRes 'gettimeofday';
 use OpenQA::Schema::JobGroupDefaults;
 
-has config => sub { {} };
+has [qw(log_name level instance log_dir)];
 
-has log => sub { Mojo::Log->new(handle => \*STDOUT, level => "info"); };
-
-has home => sub { Mojo::Home->new($ENV{MOJO_HOME} || '/') };
-
-has mode => 'production';
-
-has 'log_name';
-
-has 'level';
-
-has 'instance';
-
-has 'log_dir';
+sub startup {
+    my $self = shift;
+    $self->mode('production');
+}
 
 sub setup_log {
     my ($self) = @_;
