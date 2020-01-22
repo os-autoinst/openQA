@@ -17,8 +17,6 @@
 package OpenQA::WebAPI::Controller::Admin::JobGroup;
 use Mojo::Base 'Mojolicious::Controller';
 
-use OpenQA::Utils 'job_groups_and_parents';
-
 sub index {
     my ($self) = @_;
 
@@ -27,8 +25,9 @@ sub index {
       = $schema->resultset('JobGroupParents')->search(undef, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
     my $groups
       = $schema->resultset('JobGroups')->search(undef, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
+    my $for_editor = $schema->resultset('JobGroupParents')->job_groups_and_parents;
 
-    $self->stash('job_groups_and_parents_for_editor', job_groups_and_parents);
+    $self->stash('job_groups_and_parents_for_editor', $for_editor);
     $self->stash('parent_groups',                     $parent_groups);
     $self->stash('groups',                            $groups);
     $self->render('admin/group/index');

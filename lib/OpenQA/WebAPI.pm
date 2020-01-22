@@ -19,7 +19,7 @@ use Mojo::Base 'Mojolicious';
 use Mojolicious 7.18;
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
-use OpenQA::Utils qw(log_warning job_groups_and_parents detect_current_version);
+use OpenQA::Utils qw(log_warning detect_current_version);
 use OpenQA::Setup;
 use OpenQA::WebAPI::Description qw(get_pod_from_controllers set_api_desc);
 use Mojo::IOLoop;
@@ -89,7 +89,8 @@ sub startup {
             OpenQA::Setup::set_secure_flag_on_cookies($controller);
             unless ($controller->req->url->path =~ m{^/(?:api/|asset/|tests/.*ajax)}) {
                 # only retrieve job groups if we deliver HTML
-                $controller->stash('job_groups_and_parents', job_groups_and_parents);
+                $controller->stash('job_groups_and_parents',
+                    OpenQA::Schema->singleton->resultset('JobGroupParents')->job_groups_and_parents);
             }
         });
 
