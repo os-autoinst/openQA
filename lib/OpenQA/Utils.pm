@@ -40,44 +40,43 @@ $Data::Dumper::Terse = 1;
 
 our $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 our @EXPORT = qw(
-  &data_name
-  &locate_needle
-  &needledir
-  &productdir
-  &testcasedir
-  &is_in_tests
-  &log_debug
-  &log_warning
-  &log_info
-  &log_error
-  &log_fatal
+  locate_needle
+  needledir
+  productdir
+  testcasedir
+  is_in_tests
+  log_debug
+  log_warning
+  log_info
+  log_error
+  log_fatal
   add_log_channel
   append_channel_to_defaults
   remove_log_channel
   remove_channel_from_defaults
   log_format_callback
   get_channel_handle
-  &save_base64_png
-  &run_cmd_with_log
-  &run_cmd_with_log_return_error
-  &parse_assets_from_settings
-  &find_bugref
-  &find_bugrefs
+  save_base64_png
+  run_cmd_with_log
+  run_cmd_with_log_return_error
+  parse_assets_from_settings
+  find_bugref
+  find_bugrefs
   bugref_regex
-  &bugurl
-  &bugref_to_href
-  &href_to_bugref
-  &url_to_href
-  &find_bug_number
-  &render_escaped_refs
-  &asset_type_from_setting
-  &check_download_url
-  &check_download_whitelist
-  &create_downloads_list
-  &human_readable_size
-  &locate_asset
-  &job_groups_and_parents
-  &detect_current_version
+  bugurl
+  bugref_to_href
+  href_to_bugref
+  url_to_href
+  find_bug_number
+  render_escaped_refs
+  asset_type_from_setting
+  check_download_url
+  check_download_whitelist
+  create_downloads_list
+  human_readable_size
+  locate_asset
+  job_groups_and_parents
+  detect_current_version
   wait_with_progress
   mark_job_linked
   parse_tags_from_comments
