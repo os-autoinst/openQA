@@ -222,9 +222,11 @@ sub update {
         $yaml .= "\n";
     }
     try {
+        my $template = $self->param('template') or die "No template specified\n";
+
         # No objects (aka SafeYAML)
         $YAML::XS::LoadBlessed = 0;
-        $data                  = YAML::XS::Load($yaml);
+        $data                  = YAML::XS::Load($template);
         $errors = $self->app->validate_yaml($data, $self->param('schema'), $self->app->log->level eq 'debug');
     }
     catch {

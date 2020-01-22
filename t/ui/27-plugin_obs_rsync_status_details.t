@@ -158,7 +158,7 @@ foreach my $proj (sort { $b cmp $a } keys %params) {
 
     # refresh page and make sure that last sync is gone
     $driver->get("/admin/obs_rsync/$parent");
-    is($driver->find_element("tr#folder_$proj .lastsync")->get_text(), 'no data', "$proj last sync forgotten");
+    is($driver->find_element("tr#folder_$proj .lastsync")->get_text(), 'no data', "$proj last sync absent from web UI");
 
     # Update project status
     $driver->find_element("tr#folder_$proj .dirtystatusupdate")->click();

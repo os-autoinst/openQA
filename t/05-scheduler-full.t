@@ -65,7 +65,7 @@ my $schema = OpenQA::Test::Database->new->create(skip_schema => 1);
 # Create webapi and websocket server services
 my $mojoport = Mojo::IOLoop::Server->generate_port();
 my $wspid    = create_websocket_server($mojoport + 1, 0, 1, 1);
-my $webapi   = create_webapi($mojoport);
+my $webapi   = create_webapi($mojoport, sub { });
 
 # Setup needed files for workers.
 

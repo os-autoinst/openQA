@@ -173,12 +173,16 @@ sub wait_for_worker {
 }
 
 sub create_webapi {
-    my $mojoport = shift;
+    my ($mojoport, $schema_hook) = @_;
+    die 'No port specified '       unless $mojoport;
+    die 'No schema hook specified' unless $schema_hook;
     note("Starting WebUI service. Port: $mojoport");
 
-    my $startingpid = $$;
-    my $mojopid     = fork();
+    my $mojopid = fork();
     if ($mojopid == 0) {
+        log_info("inserting fixtures into database\n");
+        $schema_hook->();
+
         local $ENV{MOJO_MODE} = 'test';
         my $daemon = Mojo::Server::Daemon->new(listen => ["http://127.0.0.1:$mojoport"], silent => 1);
         $daemon->build_app('OpenQA::WebAPI');
