@@ -114,11 +114,10 @@ sub cache_assets {
         my $asset_uri = trim($vars->{$this_asset});
         # Skip UEFI_PFLASH_VARS asset if the job won't use UEFI.
         next if (($this_asset eq 'UEFI_PFLASH_VARS') and !$vars->{UEFI});
-        log_debug("Found $this_asset, caching " . $vars->{$this_asset});
-
         # check cache availability
         my $error = $cache_client->info->availability_error;
         return {error => $error} if $error;
+        log_debug("Found $this_asset, caching $vars->{$this_asset}", channels => 'autoinst');
 
         my $asset_request = $cache_client->asset_request(
             id    => $job->id,
@@ -126,7 +125,6 @@ sub cache_assets {
             type  => $assetkeys->{$this_asset},
             host  => $webui_host
         );
-
         if ($cache_client->enqueue($asset_request)) {
             my $minion_id = $asset_request->minion_id;
             log_info("Downloading $asset_uri, request #$minion_id sent to Cache Service", channels => 'autoinst');
@@ -145,15 +143,18 @@ sub cache_assets {
           if $cache_client->asset_exists($webui_host, $asset_uri);
 
         if ($this_asset eq 'UEFI_PFLASH_VARS' && !defined $asset) {
-            log_error("Failed to download $asset_uri");
+            log_error("Failed to download $asset_uri", channels => 'autoinst');
             # assume that if we have a full path, that's what we should use
             $vars->{$this_asset} = $asset_uri if -e $asset_uri;
             # don't kill the job if the asset is not found
             # TODO: This seems to leave the job stuck in some cases (observed in production on openqaworker3).
             next;
         }
-        return {error => "Failed to download $asset_uri to " . $cache_client->asset_path($webui_host, $asset_uri)}
-          unless $asset;
+        if (!$asset) {
+            $error = "Failed to download $asset_uri to " . $cache_client->asset_path($webui_host, $asset_uri);
+            log_error($error, channels => 'autoinst');
+            return {error => $error};
+        }
         $vars->{$this_asset} = _link_asset($asset, $pooldir);
     }
     return undef;
