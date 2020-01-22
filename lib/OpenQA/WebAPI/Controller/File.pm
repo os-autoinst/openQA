@@ -18,8 +18,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 BEGIN { $ENV{MAGICK_THREAD_LIMIT} = 1; }
 
-use OpenQA::Utils;
-use OpenQA::Utils qw(prjdir assetdir imagesdir);
+use OpenQA::Utils qw(:DEFAULT prjdir assetdir imagesdir);
 use File::Basename;
 use File::Spec;
 use File::Spec::Functions 'catfile';

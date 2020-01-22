@@ -19,8 +19,7 @@ use Mojo::Base -base;
 
 use File::Copy::Recursive 'dircopy';
 use File::Path 'remove_tree';
-use OpenQA::Utils;
-use OpenQA::Utils 'resultdir';
+use OpenQA::Utils qw(:DEFAULT resultdir);
 
 sub create {
     my $self    = shift;

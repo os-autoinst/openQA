@@ -28,8 +28,7 @@ use Test::MockModule;
 use Test::Output qw(stdout_like stdout_from);
 use OpenQA::Test::Case;
 use OpenQA::Task::Asset::Limit;
-use OpenQA::Utils;
-use OpenQA::Utils 'assetdir';
+use OpenQA::Utils qw(:DEFAULT assetdir);
 use OpenQA::WebAPI::Controller::API::V1::Iso;
 
 {

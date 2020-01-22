@@ -16,8 +16,7 @@
 package OpenQA::Task::Asset::Limit;
 use Mojo::Base 'Mojolicious::Plugin';
 
-use OpenQA::Utils;
-use OpenQA::Utils 'assetdir';
+use OpenQA::Utils qw(:DEFAULT assetdir);
 use Mojo::URL;
 use Data::Dump 'pp';
 use Try::Tiny;

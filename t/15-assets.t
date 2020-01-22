@@ -34,8 +34,7 @@ use OpenQA::Test::Utils 'embed_server_for_testing';
 use OpenQA::WebSockets::Client;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Schema::ResultSet::Assets;
-use OpenQA::Utils;
-use OpenQA::Utils 'assetdir';
+use OpenQA::Utils qw(:DEFAULT assetdir);
 use Mojo::Util 'monkey_patch';
 
 my $sent = {};

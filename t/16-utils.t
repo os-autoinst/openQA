@@ -21,8 +21,7 @@ use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use OpenQA::Utils;
-use OpenQA::Utils qw(prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex);
+use OpenQA::Utils qw(:DEFAULT prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex);
 use OpenQA::Test::Utils 'redirect_output';
 use Test::More;
 use Scalar::Util 'reftype';

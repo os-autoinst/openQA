@@ -18,8 +18,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 use File::Spec::Functions 'catfile';
 use File::Basename qw(basename dirname);
-use OpenQA::Utils;
-use OpenQA::Utils 'imagesdir';
+use OpenQA::Utils qw(:DEFAULT imagesdir);
 
 sub register {
     my ($self, $app) = @_;

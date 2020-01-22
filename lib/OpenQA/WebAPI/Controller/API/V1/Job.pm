@@ -16,8 +16,7 @@
 package OpenQA::WebAPI::Controller::API::V1::Job;
 use Mojo::Base 'Mojolicious::Controller';
 
-use OpenQA::Utils;
-use OpenQA::Utils 'assetdir';
+use OpenQA::Utils qw(:DEFAULT assetdir);
 use OpenQA::ExpandPlaceholder;
 use OpenQA::Jobs::Constants;
 use OpenQA::Resource::Jobs;

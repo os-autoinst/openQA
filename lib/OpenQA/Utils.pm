@@ -126,9 +126,7 @@ use Mojo::Util 'xml_escape';
 my %channels     = ();
 my %log_defaults = (LOG_TO_STANDARD_CHANNEL => 1, CHANNELS => []);
 
-sub _basedir { $ENV{OPENQA_BASEDIR} || '/var/lib' }
-
-sub prjdir { _basedir() . '/openqa' }
+sub prjdir { ($ENV{OPENQA_BASEDIR} || '/var/lib') . '/openqa' }
 
 sub sharedir { $ENV{OPENQA_SHAREDIR} || (prjdir() . '/share') }
 

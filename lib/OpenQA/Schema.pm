@@ -28,8 +28,7 @@ use Try::Tiny;
 use FindBin '$Bin';
 use Fcntl ':flock';
 use File::Spec::Functions 'catfile';
-use OpenQA::Utils;
-use OpenQA::Utils 'prjdir';
+use OpenQA::Utils qw(:DEFAULT prjdir);
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
