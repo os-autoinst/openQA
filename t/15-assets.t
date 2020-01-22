@@ -35,6 +35,7 @@ use OpenQA::WebSockets::Client;
 use OpenQA::Scheduler::Model::Jobs;
 use OpenQA::Schema::ResultSet::Assets;
 use OpenQA::Utils;
+use OpenQA::Utils 'assetdir';
 use Mojo::Util 'monkey_patch';
 
 my $sent = {};
@@ -130,7 +131,7 @@ $cloneA = $schema->resultset('Jobs')->find(
 is($assets[0], $theasset, 'clone does have the same asset assigned');
 
 my $janame = sprintf('%08d-%s', $cloneA->id, 'jobasset.raw');
-my $japath = catfile($OpenQA::Utils::assetdir, 'hdd', $janame);
+my $japath = catfile(assetdir(), 'hdd', $janame);
 # make sure it's gone before creating the job
 unlink($japath);
 
@@ -184,7 +185,7 @@ $jobB->discard_changes();
 ok($jobB->clone, 'jobB has a clone after cloning asset creator');
 
 # create a repo asset for the following tests
-my $repopath = catfile($OpenQA::Utils::assetdir, 'repo', 'tmprepo');
+my $repopath = catfile(assetdir(), 'repo', 'tmprepo');
 # ensure no leftovers from previous testing
 remove_tree($repopath);
 # create the dir
@@ -205,7 +206,7 @@ my $repo = $schema->resultset('Assets')->create(
     });
 
 # create a test 'fixed' asset
-my $fixedpath = catfile($OpenQA::Utils::assetdir, 'hdd', 'fixed', 'fixed.img');
+my $fixedpath = catfile(assetdir(), 'hdd', 'fixed', 'fixed.img');
 open($fh, '>', $fixedpath);
 close($fh);
 my $fixed = $schema->resultset('Assets')->create(
@@ -221,7 +222,7 @@ ok($fixed->is_fixed(), 'fixed should be considered a fixed asset');
 
 # test Utils::locate_asset
 # fixed HDD asset
-my $expected = catfile($OpenQA::Utils::assetdir, 'hdd', 'fixed', 'fixed.img');
+my $expected = catfile(assetdir(), 'hdd', 'fixed', 'fixed.img');
 is(locate_asset('hdd', 'fixed.img', mustexist => 1),
     $expected, 'locate_asset should find fixed asset in fixed location');
 # relative
@@ -230,11 +231,11 @@ is(locate_asset('hdd', 'fixed.img', mustexist => 1, relative => 1),
     $expected, 'locate_asset should return fixed path as relative');
 
 # transient repo asset
-$expected = catfile($OpenQA::Utils::assetdir, 'repo', 'tmprepo');
+$expected = catfile(assetdir(), 'repo', 'tmprepo');
 is(locate_asset('repo', 'tmprepo', mustexist => 1), $expected, 'locate_asset should find tmprepo in expected location');
 
 # non-existent ISO asset
-$expected = catfile($OpenQA::Utils::assetdir, 'iso', 'nex.iso');
+$expected = catfile(assetdir(), 'iso', 'nex.iso');
 is(locate_asset('iso', 'nex.iso'), $expected, 'locate_asset 0 should give location for non-existent asset');
 ok(!locate_asset('iso', 'nex.iso', mustexist => 1), 'locate_asset 1 should not give location for non-existent asset');
 

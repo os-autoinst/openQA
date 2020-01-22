@@ -17,6 +17,7 @@ package OpenQA::Task::Asset::Limit;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use OpenQA::Utils;
+use OpenQA::Utils 'assetdir';
 use Mojo::URL;
 use Data::Dump 'pp';
 use Try::Tiny;
@@ -107,7 +108,7 @@ sub _limit {
             }
 
             my $age  = DateTime::Format::Pg->parse_datetime($asset->{t_created});
-            my $file = Mojo::File->new("$OpenQA::Utils::assetdir/$asset_name");
+            my $file = Mojo::File->new(assetdir(), $asset_name);
             if (my $stat = $file->stat) {
                 my $mtime = DateTime->from_epoch(epoch => $stat->mtime);
                 $age = $mtime if $mtime < $age;

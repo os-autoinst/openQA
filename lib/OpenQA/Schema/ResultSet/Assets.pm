@@ -22,7 +22,7 @@ use warnings;
 use base 'DBIx::Class::ResultSet';
 
 use DBIx::Class::Timestamps 'now';
-use OpenQA::Utils qw(log_warning locate_asset log_debug);
+use OpenQA::Utils qw(log_warning prjdir assetdir locate_asset log_debug);
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use Mojo::JSON 'encode_json';
@@ -33,7 +33,7 @@ use constant {STATUS_CACHE_FILE => '/webui/cache/asset-status.json'};
 use constant TYPES => (qw(iso repo hdd other));
 
 sub status_cache_file {
-    return $OpenQA::Utils::prjdir . STATUS_CACHE_FILE;
+    return prjdir() . STATUS_CACHE_FILE;
 }
 
 # called when uploading an asset or finding one in scanning
@@ -76,8 +76,9 @@ sub scan_for_untracked_assets {
     for my $type (TYPES) {
         my @paths;
 
+        my $assetdir = assetdir();
         for my $subtype (qw(/ /fixed)) {
-            my $path = "$OpenQA::Utils::assetdir/$type$subtype";
+            my $path = "$assetdir/$type$subtype";
             my $dh;
             next unless opendir($dh, $path);
             for my $file (readdir($dh)) {

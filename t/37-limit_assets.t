@@ -29,6 +29,7 @@ use Test::Output qw(stdout_like stdout_from);
 use OpenQA::Test::Case;
 use OpenQA::Task::Asset::Limit;
 use OpenQA::Utils;
+use OpenQA::Utils 'assetdir';
 use OpenQA::WebAPI::Controller::API::V1::Iso;
 
 {
@@ -48,11 +49,11 @@ $test_case->init_data;
 my $t      = Test::Mojo->new('OpenQA::WebAPI');
 my $schema = $t->app->schema;
 
-note("Asset directory: $OpenQA::Utils::assetdir");
+note('Asset directory: ' . assetdir());
 
 subtest 'filesystem removal' => sub {
     my $assets        = $schema->resultset('Assets');
-    my $asset_sub_dir = path($OpenQA::Utils::assetdir, 'foo');
+    my $asset_sub_dir = path(assetdir(), 'foo');
     $asset_sub_dir->make_path;
 
     subtest 'remove file' => sub {
@@ -92,7 +93,7 @@ subtest 'filesystem removal' => sub {
 };
 
 # ensure Core-7.2.iso exists (usually created by t/14-grutasks.t anyways)
-my $core72iso_path = "$OpenQA::Utils::assetdir/iso/Core-7.2.iso";
+my $core72iso_path = assetdir() . '/iso/Core-7.2.iso';
 Mojo::File->new($core72iso_path)->spurt('foo') unless (-f $core72iso_path);
 
 # scan initially for untracked assets and refresh
@@ -333,14 +334,14 @@ subtest 'tracked assets' => sub {
     }
     # Assets here include non-iso in iso, files in other, CURRENT repos
     for my $name (qw(iso/whatever.sha256 other/misc.xml repo/otherrepo-CURRENT)) {
-        ok(-e $OpenQA::Utils::assetdir . '/' . $name, "$name exists in the test folder");
-        ok(grep(/$name$/, @tracked_assets),           "$name picked up for cleanup")
+        ok(-e assetdir() . '/' . $name,     "$name exists in the test folder");
+        ok(grep(/$name$/, @tracked_assets), "$name picked up for cleanup")
           || diag explain join(' ', sort @tracked_assets);
     }
     # Ignored assets include repo links, file links
     for my $name (qw(repo/somethingrepo other/misc2.xml)) {
-        ok(-e $OpenQA::Utils::assetdir . '/' . $name, "$name exists in the test folder");
-        ok(!grep(/$name$/, @tracked_assets),          "$name ignored") || diag explain join(' ', sort @tracked_assets);
+        ok(-e assetdir() . '/' . $name,      "$name exists in the test folder");
+        ok(!grep(/$name$/, @tracked_assets), "$name ignored") || diag explain join(' ', sort @tracked_assets);
     }
 };
 
@@ -470,7 +471,7 @@ subtest 'limits based on fine-grained filename-based patterns' => sub {
     my $job = Test::FakeJob->new;
     # Reset mtime to the current time
     for my $filename (qw(iso/Core-7.2.iso hdd/openSUSE-12.2-x86_64.hda hdd/openSUSE-12.3-x86_64.hda)) {
-        my $fullpath = Mojo::File->new("$OpenQA::Utils::assetdir/$filename")->to_abs;
+        my $fullpath = Mojo::File->new(assetdir(), $filename)->to_abs;
         ok(utime(time, time, $fullpath), "Reset mtime of $filename");
     }
 

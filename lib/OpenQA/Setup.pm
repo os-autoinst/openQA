@@ -23,7 +23,7 @@ use Mojo::Util 'trim';
 use Config::IniFiles;
 use OpenQA::App;
 use OpenQA::Utils;
-use OpenQA::Utils 'random_string';
+use OpenQA::Utils qw(assetdir random_string);
 use File::Path 'make_path';
 use POSIX 'strftime';
 use Time::HiRes 'gettimeofday';
@@ -296,7 +296,7 @@ sub setup_plain_exception_handler {
 
 sub setup_mojo_tmpdir {
     unless ($ENV{MOJO_TMPDIR}) {
-        $ENV{MOJO_TMPDIR} = $OpenQA::Utils::assetdir . '/tmp';
+        $ENV{MOJO_TMPDIR} = assetdir() . '/tmp';
         # Try to create tmpdir if it doesn't exist but don't die if failed to create
         if (!-e $ENV{MOJO_TMPDIR}) {
             eval { make_path($ENV{MOJO_TMPDIR}); };

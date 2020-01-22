@@ -27,6 +27,7 @@ use OpenQA::Resource::Jobs;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Database;
+use OpenQA::Utils 'assetdir';
 use Test::Mojo;
 use Test::MockModule;
 use Test::More;
@@ -186,7 +187,7 @@ my $job_ref = {
     test => 'rainbow'
 };
 
-my $iso = sprintf("%s/iso/%s", $OpenQA::Utils::assetdir, $settings{ISO});
+my $iso = sprintf("%s/iso/%s", assetdir(), $settings{ISO});
 my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
 is($job->id, 1, "job_create");
 

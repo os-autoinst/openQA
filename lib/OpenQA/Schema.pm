@@ -28,7 +28,8 @@ use Try::Tiny;
 use FindBin '$Bin';
 use Fcntl ':flock';
 use File::Spec::Functions 'catfile';
-use OpenQA::Utils ();
+use OpenQA::Utils;
+use OpenQA::Utils 'prjdir';
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
@@ -80,7 +81,7 @@ sub deployment_check {
     # lock config file to ensure only one thing will deploy/upgrade DB at once
     # we use a file in prjdir/db as the lock file as the install process and
     # packages make this directory writeable by openQA user by default
-    my $dblockfile = catfile($OpenQA::Utils::prjdir, 'db', 'db.lock');
+    my $dblockfile = catfile(prjdir(), 'db', 'db.lock');
     my $dblock;
 
     # LOCK_EX works most reliably if the file is open with write intent

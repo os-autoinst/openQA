@@ -22,7 +22,7 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
-use OpenQA::Utils qw(base_host random_string random_hex);
+use OpenQA::Utils qw(prjdir sharedir resultdir assetdir imagesdir base_host random_string random_hex);
 use OpenQA::Test::Utils 'redirect_output';
 use Test::More;
 use Scalar::Util 'reftype';
@@ -340,6 +340,30 @@ subtest 'base_host' => sub {
     is base_host('www.opensuse.org'),                'www.opensuse.org';
     is base_host('test'),                            'test';
     is base_host('https://opensuse.org/test/1/2/3'), 'opensuse.org';
+};
+
+subtest 'project directory functions' => sub {
+    local $ENV{OPENQA_BASEDIR};
+    local $ENV{OPENQA_SHAREDIR};
+    is prjdir(),    '/var/lib/openqa',               'right directory';
+    is sharedir(),  '/var/lib/openqa/share',         'right directory';
+    is resultdir(), '/var/lib/openqa/testresults',   'right directory';
+    is assetdir(),  '/var/lib/openqa/share/factory', 'right directory';
+    is imagesdir(), '/var/lib/openqa/images',        'right directory';
+
+    local $ENV{OPENQA_BASEDIR} = '/tmp/test';
+    is prjdir(),    '/tmp/test/openqa',               'right directory';
+    is sharedir(),  '/tmp/test/openqa/share',         'right directory';
+    is resultdir(), '/tmp/test/openqa/testresults',   'right directory';
+    is assetdir(),  '/tmp/test/openqa/share/factory', 'right directory';
+    is imagesdir(), '/tmp/test/openqa/images',        'right directory';
+
+    local $ENV{OPENQA_SHAREDIR} = '/tmp/share';
+    is prjdir(),    '/tmp/test/openqa',             'right directory';
+    is sharedir(),  '/tmp/share',                   'right directory';
+    is resultdir(), '/tmp/test/openqa/testresults', 'right directory';
+    is assetdir(),  '/tmp/share/factory',           'right directory';
+    is imagesdir(), '/tmp/test/openqa/images',      'right directory';
 };
 
 done_testing;

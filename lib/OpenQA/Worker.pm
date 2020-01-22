@@ -26,7 +26,7 @@ use Try::Tiny;
 use Scalar::Util 'looks_like_number';
 use OpenQA::Constants qw(WEBSOCKET_API_VERSION MAX_TIMER MIN_TIMER);
 use OpenQA::Client;
-use OpenQA::Utils qw(log_error log_warning log_info log_debug add_log_channel remove_log_channel);
+use OpenQA::Utils qw(prjdir log_error log_warning log_info log_debug add_log_channel remove_log_channel);
 use OpenQA::Worker::WebUIConnection;
 use OpenQA::Worker::Settings;
 use OpenQA::Worker::Job;
@@ -71,7 +71,7 @@ sub new {
     my $self = $class->SUPER::new(
         instance_number              => $instance_number,
         no_cleanup                   => $cli_options->{'no-cleanup'},
-        pool_directory               => "$OpenQA::Utils::prjdir/pool/$instance_number",
+        pool_directory               => prjdir() . "/pool/$instance_number",
         app                          => $app,
         settings                     => $settings,
         clients_by_webui_host        => undef,
@@ -299,7 +299,7 @@ sub init {
 
         # find working directory for host
         # note: This is being also duplicated by OpenQA::Test::Utils since 49c06362d.
-        my @working_dirs = ($host_settings->{SHARE_DIRECTORY}, catdir($OpenQA::Utils::prjdir, 'share'));
+        my @working_dirs = ($host_settings->{SHARE_DIRECTORY}, catdir(prjdir(), 'share'));
         my ($working_dir) = grep { $_ && -d } @working_dirs;
         unless ($working_dir) {
             $_ and log_debug("Found possible working directory for $host: $_") for @working_dirs;

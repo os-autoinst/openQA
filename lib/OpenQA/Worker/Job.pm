@@ -217,7 +217,7 @@ sub start {
     }
 
     # set base dir to the one assigned with web UI
-    OpenQA::Utils::change_sharedir($client->working_directory);
+    $ENV{OPENQA_SHAREDIR} = $client->working_directory;
 
     # start isotovideo
     # FIXME: isotovideo.pm could be a class inheriting from Job.pm or simply be merged

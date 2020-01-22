@@ -91,12 +91,23 @@ our @EXPORT = qw(
   rand_range
   in_range
   walker
-  &ensure_timestamp_appended
+  ensure_timestamp_appended
   set_listen_address
   service_port
 );
 
-our @EXPORT_OK = qw(base_host determine_web_ui_web_socket_url get_ws_status_only_url random_string random_hex);
+our @EXPORT_OK = qw(
+  prjdir
+  sharedir
+  resultdir
+  assetdir
+  imagesdir
+  base_host
+  determine_web_ui_web_socket_url
+  get_ws_status_only_url
+  random_string
+  random_hex
+);
 
 if ($0 =~ /\.t$/) {
     # This should result in the 't' directory, even if $0 is in a subdirectory
@@ -112,15 +123,20 @@ use Fcntl;
 use Mojo::JSON qw(encode_json decode_json);
 use Mojo::Util 'xml_escape';
 
-our $basedir   = $ENV{OPENQA_BASEDIR} || "/var/lib";
-our $prjdir    = "$basedir/openqa";
-our $sharedir  = "$prjdir/share";
-our $resultdir = "$prjdir/testresults";
-our $assetdir  = "$sharedir/factory";
-our $imagesdir = "$prjdir/images";
-
 my %channels     = ();
 my %log_defaults = (LOG_TO_STANDARD_CHANNEL => 1, CHANNELS => []);
+
+sub _basedir { $ENV{OPENQA_BASEDIR} || '/var/lib' }
+
+sub prjdir { _basedir() . '/openqa' }
+
+sub sharedir { $ENV{OPENQA_SHAREDIR} || (prjdir() . '/share') }
+
+sub resultdir { prjdir() . '/testresults' }
+
+sub assetdir { sharedir() . '/factory' }
+
+sub imagesdir { prjdir() . '/images' }
 
 # the desired new folder structure is
 # $testcasedir/<testrepository>
@@ -143,6 +159,7 @@ sub productdir {
 
 sub testcasedir {
     my ($distri, $version, $rootfortests) = @_;
+    my $prjdir = prjdir();
     for my $dir (catdir($prjdir, 'share', 'tests'), catdir($prjdir, 'tests')) {
         $rootfortests ||= $dir if -d $dir;
     }
@@ -158,15 +175,9 @@ sub is_in_tests {
 
     $file = File::Spec->rel2abs($file);
     # at least tests use a relative $prjdir, so it needs to be converted to absolute path as well
-    my $abs_projdir = File::Spec->rel2abs($prjdir);
+    my $abs_projdir = File::Spec->rel2abs(prjdir());
     return index($file, catdir($abs_projdir, 'share', 'tests')) == 0
       || index($file, catdir($abs_projdir, 'tests')) == 0;
-}
-
-# Call this when $prjdir is changed to re-evaluate all dependent directories
-sub change_sharedir {
-    $sharedir = shift;
-    $assetdir = "$sharedir/factory";
 }
 
 sub needledir {
@@ -183,7 +194,7 @@ sub locate_needle {
     my $needle_exists     = -f $absolute_filename;
 
     if (!$needle_exists) {
-        $absolute_filename = catdir($OpenQA::Utils::sharedir, $relative_needle_path);
+        $absolute_filename = catdir(sharedir(), $relative_needle_path);
         $needle_exists     = -f $absolute_filename;
     }
     return $absolute_filename if $needle_exists;
@@ -402,6 +413,8 @@ sub image_md5_filename {
         # stored this way in the database
         return catfile($prefix1, $prefix2, "$md5.png");
     }
+
+    my $imagesdir = imagesdir();
     return (
         catfile($imagesdir, $prefix1, $prefix2, "$md5.png"),
         catfile($imagesdir, $prefix1, $prefix2, '.thumbs', "$md5.png"));
@@ -499,7 +512,7 @@ sub _relative_or_absolute {
     my ($path, $relative) = @_;
 
     return $path if $relative;
-    return catfile($assetdir, $path);
+    return catfile(assetdir(), $path);
 }
 
 # find the actual disk location of a given asset. Supported arguments are

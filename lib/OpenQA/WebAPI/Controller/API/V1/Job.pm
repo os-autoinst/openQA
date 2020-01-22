@@ -17,6 +17,7 @@ package OpenQA::WebAPI::Controller::API::V1::Job;
 use Mojo::Base 'Mojolicious::Controller';
 
 use OpenQA::Utils;
+use OpenQA::Utils 'assetdir';
 use OpenQA::ExpandPlaceholder;
 use OpenQA::Jobs::Constants;
 use OpenQA::Resource::Jobs;
@@ -604,7 +605,7 @@ sub upload_state {
 
     if ($state eq 'fail') {
         $self->app->log->debug("FAIL chunk upload of $file");
-        path($OpenQA::Utils::assetdir, 'tmp', $scope)->list_tree({dir => 1})->each(
+        path(assetdir(), 'tmp', $scope)->list_tree({dir => 1})->each(
             sub {
                 $_->remove_tree if -d $_ && $_->basename eq $file . '.CHUNKS';
             });
