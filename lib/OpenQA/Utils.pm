@@ -40,10 +40,6 @@ $Data::Dumper::Terse = 1;
 
 our $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 our @EXPORT = qw(
-  $prj
-  $basedir
-  $prjdir
-  $resultdir
   &data_name
   &locate_needle
   &needledir
@@ -116,14 +112,14 @@ use File::Spec::Functions qw(catfile catdir);
 use Fcntl;
 use Mojo::JSON qw(encode_json decode_json);
 use Mojo::Util 'xml_escape';
+
 our $basedir   = $ENV{OPENQA_BASEDIR} || "/var/lib";
-our $prj       = "openqa";
-our $prjdir    = "$basedir/$prj";
+our $prjdir    = "$basedir/openqa";
 our $sharedir  = "$prjdir/share";
 our $resultdir = "$prjdir/testresults";
 our $assetdir  = "$sharedir/factory";
 our $imagesdir = "$prjdir/images";
-our $hostname  = $ENV{SERVER_NAME};
+
 my %channels     = ();
 my %log_defaults = (LOG_TO_STANDARD_CHANNEL => 1, CHANNELS => []);
 

@@ -41,6 +41,7 @@ sub needle {
     # make sure the directory of the file parameter is a real subdir of testcasedir before
     # using it to find needle subdirectory, to prevent access outside of the zoo
     if ($jsonfile && !is_in_tests($jsonfile)) {
+        my $prjdir = $OpenQA::Utils::prjdir;
         warn "$jsonfile is not in a subdir of $prjdir/share/tests or $prjdir/tests";
         return $self->render(text => 'Forbidden', status => 403);
     }
