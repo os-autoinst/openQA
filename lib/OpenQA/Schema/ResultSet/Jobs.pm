@@ -23,8 +23,11 @@ use base 'DBIx::Class::ResultSet';
 
 use DBIx::Class::Timestamps 'now';
 use Date::Format 'time2str';
+use OpenQA::App;
+use OpenQA::Utils 'log_debug';
 use OpenQA::Schema::Result::JobDependencies;
 use Mojo::JSON 'encode_json';
+use Mojo::URL;
 use Time::HiRes 'time';
 use DateTime;
 
@@ -525,6 +528,36 @@ sub stale_ones {
     );
     my %attrs = (join => 'worker', order_by => 'worker.id desc');
     return $self->search(\%cond, \%attrs);
+}
+
+sub mark_job_linked {
+    my ($self, $jobid, $referer_url) = @_;
+
+    my $referer = Mojo::URL->new($referer_url)->host;
+    my $app     = OpenQA::App->singleton;
+    if ($referer && grep { $referer eq $_ } @{$app->config->{global}->{recognized_referers}}) {
+        my $job = $self->find({id => $jobid});
+        return unless $job;
+        my $found    = 0;
+        my $comments = $job->comments;
+        while (my $comment = $comments->next) {
+            if (($comment->label // '') eq 'linked') {
+                $found = 1;
+                last;
+            }
+        }
+        unless ($found) {
+            my $user = $self->result_source->schema->resultset('Users')->search({username => 'system'})->first;
+            $comments->create(
+                {
+                    text    => "label:linked Job mentioned in $referer_url",
+                    user_id => $user->id
+                });
+        }
+    }
+    elsif ($referer) {
+        log_debug("Unrecognized referer '$referer'");
+    }
 }
 
 1;

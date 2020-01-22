@@ -77,7 +77,6 @@ our @EXPORT = qw(
   locate_asset
   detect_current_version
   wait_with_progress
-  mark_job_linked
   parse_tags_from_comments
   path_to_class
   loaded_modules
@@ -937,37 +936,6 @@ sub wait_with_progress {
     } while ($interval > $tics);
 
     print "\n";
-}
-
-sub mark_job_linked {
-    my ($jobid, $referer_url) = @_;
-
-    my $referer = Mojo::URL->new($referer_url)->host;
-    my $app     = OpenQA::App->singleton;
-    my $schema  = $app->schema;
-    if ($referer && grep { $referer eq $_ } @{$app->config->{global}->{recognized_referers}}) {
-        my $job = $schema->resultset('Jobs')->find({id => $jobid});
-        return unless $job;
-        my $found    = 0;
-        my $comments = $job->comments;
-        while (my $comment = $comments->next) {
-            if (($comment->label // '') eq 'linked') {
-                $found = 1;
-                last;
-            }
-        }
-        unless ($found) {
-            my $user = $schema->resultset('Users')->search({username => 'system'})->first;
-            $comments->create(
-                {
-                    text    => "label:linked Job mentioned in $referer_url",
-                    user_id => $user->id
-                });
-        }
-    }
-    elsif ($referer) {
-        log_debug("Unrecognized referer '$referer'");
-    }
 }
 
 # parse comments of the specified (parent) group and store all mentioned builds in $res (hashref)

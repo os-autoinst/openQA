@@ -33,7 +33,7 @@ sub referer_check {
     return $self->reply->not_found if (!defined $self->param('testid'));
     my $referer = $self->req->headers->header('Referer') // '';
     if ($referer) {
-        mark_job_linked($self->param('testid'), $referer);
+        $self->schema->resultset('Jobs')->mark_job_linked($self->param('testid'), $referer);
     }
     return 1;
 }
