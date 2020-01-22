@@ -256,31 +256,43 @@ unlink($japath);
 unlink($fixedpath);
 remove_tree($repopath);
 
-# asset status
-my $t                   = Test::Mojo->new('OpenQA::WebAPI');
-my $gru_mock            = Test::MockModule->new('OpenQA::WebAPI::Plugin::Gru');
-my $limit_assets_active = 1;
-$gru_mock->mock(
-    is_task_active => sub {
-        my ($self, $task) = @_;
-        return $limit_assets_active if ($task eq 'limit_assets');
-        fail("is_task_active called for unexpected task $task");
-    });
-$t->get_ok('/admin/assets/status?force_refresh=1')
-  ->status_is(400, 'viewing assets page with force_refresh not possible during cleanup')
-  ->json_is('/error' => 'Asset cleanup is currently ongoing.');
-$t->get_ok('/admin/assets/status')->status_is(200, 'asset status rendered from cache file although cleanup is ongoing');
-ok(unlink(OpenQA::Schema::ResultSet::Assets::status_cache_file), 'cache file removed');
-$t->get_ok('/admin/assets/status?force_refresh=1')
-  ->status_is(400, 'viewing assets page without cache file not possible during cleanup')
-  ->json_is('/error' => 'Asset cleanup is currently ongoing.');
-$limit_assets_active = 0;
-$t->get_ok('/admin/assets/status')->status_is(200);
-my $json = $t->tx->res->json;
-is(ref $json,           'HASH',  'asset status JSON present');
-is(ref $json->{data},   'ARRAY', 'assets array present');
-is(ref $json->{groups}, 'HASH',  'groups hash present');
-
 ok $mock_send_called, 'mocked ws_send method has been called';
+
+subtest 'asset status' => sub {
+    my $t                = Test::Mojo->new('OpenQA::WebAPI');
+    my $asset_cache_file = OpenQA::Schema::ResultSet::Assets::status_cache_file;
+    note("asset cache file is expected to be created under $asset_cache_file");
+
+    my $gru_mock            = Test::MockModule->new('OpenQA::WebAPI::Plugin::Gru');
+    my $limit_assets_active = 1;
+    $gru_mock->mock(
+        is_task_active => sub {
+            my ($self, $task) = @_;
+            return $limit_assets_active if $task eq 'limit_assets';
+            fail("is_task_active called for unexpected task $task");
+        });
+
+    # ensure cache file does not exist from a previous test run
+    unlink($asset_cache_file);
+
+    $t->get_ok('/admin/assets/status?force_refresh=1')
+      ->status_is(400, 'viewing assets page without cache file not possible during cleanup')
+      ->json_is('/error' => 'Asset cleanup is currently ongoing.');
+
+    $limit_assets_active = 0;
+    $t->get_ok('/admin/assets/status')->status_is(200, 'viewing assets possible when cleanup finished');
+    my $json = $t->tx->res->json;
+    is(ref $json,           'HASH',  'asset status JSON present');
+    is(ref $json->{data},   'ARRAY', 'assets array present');
+    is(ref $json->{groups}, 'HASH',  'groups hash present');
+    ok(-f $asset_cache_file, 'asset cache file has been created');
+
+    $limit_assets_active = 1;
+    $t->get_ok('/admin/assets/status?force_refresh=1')
+      ->status_is(400, 'viewing assets page with force_refresh not possible during cleanup')
+      ->json_is('/error' => 'Asset cleanup is currently ongoing.');
+    $t->get_ok('/admin/assets/status')
+      ->status_is(200, 'asset status rendered from cache file although cleanup is ongoing');
+};
 
 done_testing();
