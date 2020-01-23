@@ -18,7 +18,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 BEGIN { $ENV{MAGICK_THREAD_LIMIT} = 1; }
 
-use OpenQA::Utils;
+use OpenQA::Utils qw(:DEFAULT prjdir assetdir imagesdir);
 use File::Basename;
 use File::Spec;
 use File::Spec::Functions 'catfile';
@@ -41,6 +41,7 @@ sub needle {
     # make sure the directory of the file parameter is a real subdir of testcasedir before
     # using it to find needle subdirectory, to prevent access outside of the zoo
     if ($jsonfile && !is_in_tests($jsonfile)) {
+        my $prjdir = prjdir();
         warn "$jsonfile is not in a subdir of $prjdir/share/tests or $prjdir/tests";
         return $self->render(text => 'Forbidden', status => 403);
     }
@@ -126,7 +127,7 @@ sub download_asset {
     my $path = $self->param('assetpath');
     return $self->reply->not_found if $path =~ qr/\.\./;
 
-    my $file = path($OpenQA::Utils::assetdir, $path)->to_string;
+    my $file = path(assetdir(), $path)->to_string;
     return $self->reply->not_found unless -f $file && -r _;
     $self->reply->file($file);
 }
@@ -214,7 +215,7 @@ sub thumb_image {
     my ($self) = @_;
 
     $self->{static} = Mojolicious::Static->new;
-    push @{$self->{static}->paths}, $OpenQA::Utils::imagesdir;
+    push @{$self->{static}->paths}, imagesdir();
 
     # name is an URL parameter and can't contain slashes, so it should be safe
     my $dir = $self->param('md5_dirname') || ($self->param('md5_1') . '/' . $self->param('md5_2'));

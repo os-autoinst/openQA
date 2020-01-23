@@ -373,6 +373,94 @@ sub register {
         });
 
     $app->helper('reply.validation_error' => \&_validation_error);
+
+    $app->helper(compose_job_overview_search_args => \&_compose_job_overview_search_args);
+    $app->helper(param_hash                       => \&_param_hash);
+}
+
+# returns the search args for the job overview according to the parameter of the specified controller
+sub _compose_job_overview_search_args {
+    my ($c) = @_;
+    my %search_args;
+
+    # add simple query params to search args
+    for my $arg (qw(distri version flavor build test)) {
+        my $params      = $c->every_param($arg) or next;
+        my $param_count = scalar @$params;
+        if ($param_count == 1) {
+            $search_args{$arg} = $params->[0];
+        }
+        elsif ($param_count > 1) {
+            $search_args{$arg} = {-in => $params};
+        }
+    }
+    if (my $modules = $c->helpers->param_hash('modules')) {
+        $search_args{modules} = [keys %$modules];
+    }
+    if ($c->param('modules_result')) {
+        $search_args{modules_result} = $c->every_param('modules_result');
+    }
+    # add group query params to search args
+    # (By 'every_param' we make sure to use multiple values for groupid and
+    # group at the same time as a logical or, i.e. all specified groups are
+    # returned.)
+    my $schema = $c->schema;
+    my @groups;
+    if ($c->param('groupid') or $c->param('group')) {
+        my @group_id_search   = map { {id   => $_} } @{$c->every_param('groupid')};
+        my @group_name_search = map { {name => $_} } @{$c->every_param('group')};
+        my @search_terms = (@group_id_search, @group_name_search);
+        @groups = $schema->resultset('JobGroups')->search(\@search_terms)->all;
+    }
+
+    # determine build number
+    if (!$search_args{build}) {
+        # yield the latest build of the first group if (multiple) groups but not build specified
+        # note: the search arg 'groupid' is ignored by complex_query() because we later assign 'groupids'
+        $search_args{groupid} = $groups[0]->id if (@groups);
+
+        $search_args{build} = $schema->resultset('Jobs')->latest_build(%search_args);
+
+        # print debug output
+        if (@groups == 0) {
+            $c->app->log->debug('No build and no group specified, will lookup build based on the other parameters');
+        }
+        elsif (@groups == 1) {
+            $c->app->log->debug('Only one group but no build specified, searching for build');
+        }
+        else {
+            $c->app->log->info('More than one group but no build specified, selecting build of first group');
+        }
+    }
+
+    # exclude jobs which are already cloned by setting scope for OpenQA::Jobs::complex_query()
+    $search_args{scope} = 'current';
+
+    # allow filtering by job ID
+    my $ids = $c->every_param('id');
+    $search_args{id} = $ids if ($ids && @$ids);
+    # note: filter for results, states and failed modules are applied after the initial search
+    #       so old jobs are not revealed by applying those filters
+
+    # allow filtering by group ID or group name
+    $search_args{groupids} = [map { $_->id } @groups] if (@groups);
+
+    return (\%search_args, \@groups);
+}
+
+sub _param_hash {
+    my ($c, $param_name) = @_;
+
+    my $params = $c->every_param($param_name) or return;
+    my %hash;
+    for my $param (@$params) {
+        # ignore empty params
+        next unless $param;
+        # allow passing multiple values by separating them with comma
+        $hash{$_} = 1 for split(',', $param);
+    }
+    return unless (%hash);
+    return \%hash;
 }
 
 sub _find_job_or_render_not_found {

@@ -33,56 +33,50 @@ use Scalar::Util 'blessed';
 use Mojo::Log;
 use Scalar::Util qw(blessed reftype);
 use Exporter 'import';
+use OpenQA::App;
 
 # avoid boilerplate "$VAR1 = " in dumper output
 $Data::Dumper::Terse = 1;
 
 our $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 our @EXPORT = qw(
-  $prj
-  $basedir
-  $prjdir
-  $resultdir
-  &data_name
-  &locate_needle
-  &needledir
-  &productdir
-  &testcasedir
-  &is_in_tests
-  &log_debug
-  &log_warning
-  &log_info
-  &log_error
-  &log_fatal
+  locate_needle
+  needledir
+  productdir
+  testcasedir
+  is_in_tests
+  log_debug
+  log_warning
+  log_info
+  log_error
+  log_fatal
   add_log_channel
   append_channel_to_defaults
   remove_log_channel
   remove_channel_from_defaults
   log_format_callback
   get_channel_handle
-  &save_base64_png
-  &run_cmd_with_log
-  &run_cmd_with_log_return_error
-  &parse_assets_from_settings
-  &find_bugref
-  &find_bugrefs
+  save_base64_png
+  run_cmd_with_log
+  run_cmd_with_log_return_error
+  parse_assets_from_settings
+  find_bugref
+  find_bugrefs
   bugref_regex
-  &bugurl
-  &bugref_to_href
-  &href_to_bugref
-  &url_to_href
-  &find_bug_number
-  &render_escaped_refs
-  &asset_type_from_setting
-  &check_download_url
-  &check_download_whitelist
-  &create_downloads_list
-  &human_readable_size
-  &locate_asset
-  &job_groups_and_parents
-  &detect_current_version
+  bugurl
+  bugref_to_href
+  href_to_bugref
+  url_to_href
+  find_bug_number
+  render_escaped_refs
+  asset_type_from_setting
+  check_download_url
+  check_download_whitelist
+  create_downloads_list
+  human_readable_size
+  locate_asset
+  detect_current_version
   wait_with_progress
-  mark_job_linked
   parse_tags_from_comments
   path_to_class
   loaded_modules
@@ -95,12 +89,23 @@ our @EXPORT = qw(
   rand_range
   in_range
   walker
-  &ensure_timestamp_appended
+  ensure_timestamp_appended
   set_listen_address
   service_port
 );
 
-our @EXPORT_OK = qw(base_host determine_web_ui_web_socket_url get_ws_status_only_url random_string random_hex);
+our @EXPORT_OK = qw(
+  prjdir
+  sharedir
+  resultdir
+  assetdir
+  imagesdir
+  base_host
+  determine_web_ui_web_socket_url
+  get_ws_status_only_url
+  random_string
+  random_hex
+);
 
 if ($0 =~ /\.t$/) {
     # This should result in the 't' directory, even if $0 is in a subdirectory
@@ -115,17 +120,19 @@ use File::Spec::Functions qw(catfile catdir);
 use Fcntl;
 use Mojo::JSON qw(encode_json decode_json);
 use Mojo::Util 'xml_escape';
-our $basedir   = $ENV{OPENQA_BASEDIR} || "/var/lib";
-our $prj       = "openqa";
-our $prjdir    = "$basedir/$prj";
-our $sharedir  = "$prjdir/share";
-our $resultdir = "$prjdir/testresults";
-our $assetdir  = "$sharedir/factory";
-our $imagesdir = "$prjdir/images";
-our $hostname  = $ENV{SERVER_NAME};
-our $app;
-my %channels     = ();
-my %log_defaults = (LOG_TO_STANDARD_CHANNEL => 1, CHANNELS => []);
+
+my %CHANNELS;
+my %LOG_DEFAULTS = (LOG_TO_STANDARD_CHANNEL => 1, CHANNELS => []);
+
+sub prjdir { ($ENV{OPENQA_BASEDIR} || '/var/lib') . '/openqa' }
+
+sub sharedir { $ENV{OPENQA_SHAREDIR} || (prjdir() . '/share') }
+
+sub resultdir { prjdir() . '/testresults' }
+
+sub assetdir { sharedir() . '/factory' }
+
+sub imagesdir { prjdir() . '/images' }
 
 # the desired new folder structure is
 # $testcasedir/<testrepository>
@@ -148,6 +155,7 @@ sub productdir {
 
 sub testcasedir {
     my ($distri, $version, $rootfortests) = @_;
+    my $prjdir = prjdir();
     for my $dir (catdir($prjdir, 'share', 'tests'), catdir($prjdir, 'tests')) {
         $rootfortests ||= $dir if -d $dir;
     }
@@ -163,15 +171,9 @@ sub is_in_tests {
 
     $file = File::Spec->rel2abs($file);
     # at least tests use a relative $prjdir, so it needs to be converted to absolute path as well
-    my $abs_projdir = File::Spec->rel2abs($prjdir);
+    my $abs_projdir = File::Spec->rel2abs(prjdir());
     return index($file, catdir($abs_projdir, 'share', 'tests')) == 0
       || index($file, catdir($abs_projdir, 'tests')) == 0;
-}
-
-# Call this when $prjdir is changed to re-evaluate all dependent directories
-sub change_sharedir {
-    $sharedir = shift;
-    $assetdir = "$sharedir/factory";
 }
 
 sub needledir {
@@ -188,7 +190,7 @@ sub locate_needle {
     my $needle_exists     = -f $absolute_filename;
 
     if (!$needle_exists) {
-        $absolute_filename = catdir($OpenQA::Utils::sharedir, $relative_needle_path);
+        $absolute_filename = catdir(sharedir(), $relative_needle_path);
         $needle_exists     = -f $absolute_filename;
     }
     return $absolute_filename if $needle_exists;
@@ -243,7 +245,7 @@ sub log_fatal {
 }
 
 sub _current_log_level {
-    # FIXME: avoid use of $app here
+    my $app = OpenQA::App->singleton;
     return defined $app && $app->can('log') && $app->log->can('level') && $app->log->level;
 }
 
@@ -262,8 +264,8 @@ sub _log_msg {
     if (!%options) {
         return _log_msg(
             $level, $msg,
-            channels => $log_defaults{CHANNELS},
-            standard => $log_defaults{LOG_TO_STANDARD_CHANNEL});
+            channels => $LOG_DEFAULTS{CHANNELS},
+            standard => $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL});
     }
 
     # prepend process ID on debug level
@@ -280,7 +282,7 @@ sub _log_msg {
     }
 
     # log to standard (as fallback or when explicitely requested)
-    if (!$wrote_to_at_least_one_channel || ($options{standard} // $log_defaults{LOG_TO_STANDARD_CHANNEL})) {
+    if (!$wrote_to_at_least_one_channel || ($options{standard} // $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL})) {
         # use Mojolicious app if available and otherwise just STDERR/STDOUT
         _log_via_mojo_app($level, $msg) or _log_to_stderr_or_stdout($level, $msg);
     }
@@ -290,15 +292,16 @@ sub _log_to_channel_by_name {
     my ($level, $msg, $channel_name) = @_;
 
     return 0 unless ($channel_name);
-    my $channel = $channels{$channel_name} or return 0;
+    my $channel = $CHANNELS{$channel_name} or return 0;
     return _try_logging_to_channel($level, $msg, $channel);
 }
 
 sub _log_via_mojo_app {
     my ($level, $msg) = @_;
 
-    return 0 unless ($app && $app->log);
-    return _try_logging_to_channel($level, $msg, $app->log);
+    return 0 unless my $app = OpenQA::App->singleton;
+    return 0 unless my $log = $app->log;
+    return _try_logging_to_channel($level, $msg, $log);
 }
 
 sub _try_logging_to_channel {
@@ -330,17 +333,17 @@ sub add_log_channel {
     my ($channel, %options) = @_;
     if ($options{default}) {
         if ($options{default} eq 'append') {
-            push @{$log_defaults{CHANNELS}}, $channel;
+            push @{$LOG_DEFAULTS{CHANNELS}}, $channel;
         }
         elsif ($options{default} eq 'set') {
-            $log_defaults{CHANNELS}                = [$channel];
-            $log_defaults{LOG_TO_STANDARD_CHANNEL} = 0;
+            $LOG_DEFAULTS{CHANNELS}                = [$channel];
+            $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL} = 0;
         }
         delete $options{default};
     }
-    $channels{$channel} = Mojo::Log->new(%options);
+    $CHANNELS{$channel} = Mojo::Log->new(%options);
 
-    $channels{$channel}->format(\&log_format_callback);
+    $CHANNELS{$channel}->format(\&log_format_callback);
 }
 
 # The default format for logging
@@ -355,28 +358,28 @@ sub log_format_callback {
 
 sub append_channel_to_defaults {
     my ($channel) = @_;
-    push @{$log_defaults{CHANNELS}}, $channel if $channels{$channel};
+    push @{$LOG_DEFAULTS{CHANNELS}}, $channel if $CHANNELS{$channel};
 }
 
 # Removes a channel from defaults.
 sub remove_channel_from_defaults {
     my ($channel) = @_;
-    $log_defaults{CHANNELS}                = [grep { $_ ne $channel } @{$log_defaults{CHANNELS}}];
-    $log_defaults{LOG_TO_STANDARD_CHANNEL} = 1 if !@{$log_defaults{CHANNELS}};
+    $LOG_DEFAULTS{CHANNELS}                = [grep { $_ ne $channel } @{$LOG_DEFAULTS{CHANNELS}}];
+    $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL} = 1 if !@{$LOG_DEFAULTS{CHANNELS}};
 }
 
 sub remove_log_channel {
     my ($channel) = @_;
     remove_channel_from_defaults($channel);
-    delete $channels{$channel} if $channel;
+    delete $CHANNELS{$channel} if $channel;
 }
 
 sub get_channel_handle {
     my ($channel) = @_;
     if ($channel) {
-        return $channels{$channel}->handle if $channels{$channel};
+        return $CHANNELS{$channel}->handle if $CHANNELS{$channel};
     }
-    elsif ($app) {
+    elsif (my $app = OpenQA::App->singleton) {
         return $app->log->handle;
     }
 }
@@ -406,6 +409,8 @@ sub image_md5_filename {
         # stored this way in the database
         return catfile($prefix1, $prefix2, "$md5.png");
     }
+
+    my $imagesdir = imagesdir();
     return (
         catfile($imagesdir, $prefix1, $prefix2, "$md5.png"),
         catfile($imagesdir, $prefix1, $prefix2, '.thumbs', "$md5.png"));
@@ -503,7 +508,7 @@ sub _relative_or_absolute {
     my ($path, $relative) = @_;
 
     return $path if $relative;
-    return catfile($assetdir, $path);
+    return catfile(assetdir(), $path);
 }
 
 # find the actual disk location of a given asset. Supported arguments are
@@ -772,103 +777,6 @@ sub human_readable_size {
     return $p . _round_a_bit($size) . "GiB";
 }
 
-# query group parents and job groups and let the database sort it for us - and merge it afterwards
-sub job_groups_and_parents {
-    my $schema = $app->schema;
-    my @parents
-      = $schema->resultset('JobGroupParents')->search({}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})
-      ->all;
-    my @groups_without_parent = $schema->resultset('JobGroups')
-      ->search({parent_id => undef}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})->all;
-    my @res;
-    my $first_parent = shift @parents;
-    my $first_group  = shift @groups_without_parent;
-    while ($first_parent || $first_group) {
-        my $pick_parent
-          = $first_parent && (!$first_group || ($first_group->sort_order // 0) > ($first_parent->sort_order // 0));
-        if ($pick_parent) {
-            push(@res, $first_parent);
-            $first_parent = shift @parents;
-        }
-        else {
-            push(@res, $first_group);
-            $first_group = shift @groups_without_parent;
-        }
-    }
-    return \@res;
-}
-
-# returns the search args for the job overview according to the parameter of the specified controller
-sub compose_job_overview_search_args {
-    my ($controller) = @_;
-    my %search_args;
-
-    # add simple query params to search args
-    for my $arg (qw(distri version flavor build test)) {
-        my $params      = $controller->every_param($arg) or next;
-        my $param_count = scalar @$params;
-        if ($param_count == 1) {
-            $search_args{$arg} = $params->[0];
-        }
-        elsif ($param_count > 1) {
-            $search_args{$arg} = {-in => $params};
-        }
-    }
-    if (my $modules = param_hash($controller, 'modules')) {
-        $search_args{modules} = [keys %$modules];
-    }
-    if ($controller->param('modules_result')) {
-        $search_args{modules_result} = $controller->every_param('modules_result');
-    }
-    # add group query params to search args
-    # (By 'every_param' we make sure to use multiple values for groupid and
-    # group at the same time as a logical or, i.e. all specified groups are
-    # returned.)
-    my $schema = $controller->schema;
-    my @groups;
-    if ($controller->param('groupid') or $controller->param('group')) {
-        my @group_id_search   = map { {id   => $_} } @{$controller->every_param('groupid')};
-        my @group_name_search = map { {name => $_} } @{$controller->every_param('group')};
-        my @search_terms = (@group_id_search, @group_name_search);
-        @groups = $schema->resultset('JobGroups')->search(\@search_terms)->all;
-    }
-
-    # determine build number
-    if (!$search_args{build}) {
-        # yield the latest build of the first group if (multiple) groups but not build specified
-        # note: the search arg 'groupid' is ignored by complex_query() because we later assign 'groupids'
-        $search_args{groupid} = $groups[0]->id if (@groups);
-
-        $search_args{build} = $schema->resultset('Jobs')->latest_build(%search_args);
-
-        # print debug output
-        if (@groups == 0) {
-            $controller->app->log->debug(
-                'No build and no group specified, will lookup build based on the other parameters');
-        }
-        elsif (@groups == 1) {
-            $controller->app->log->debug('Only one group but no build specified, searching for build');
-        }
-        else {
-            $controller->app->log->info('More than one group but no build specified, selecting build of first group');
-        }
-    }
-
-    # exclude jobs which are already cloned by setting scope for OpenQA::Jobs::complex_query()
-    $search_args{scope} = 'current';
-
-    # allow filtering by job ID
-    my $ids = $controller->every_param('id');
-    $search_args{id} = $ids if ($ids && @$ids);
-    # note: filter for results, states and failed modules are applied after the initial search
-    #       so old jobs are not revealed by applying those filters
-
-    # allow filtering by group ID or group name
-    $search_args{groupids} = [map { $_->id } @groups] if (@groups);
-
-    return (\%search_args, \@groups);
-}
-
 sub read_test_modules {
     my ($job) = @_;
 
@@ -957,36 +865,6 @@ sub wait_with_progress {
     } while ($interval > $tics);
 
     print "\n";
-}
-
-sub mark_job_linked {
-    my ($jobid, $referer_url) = @_;
-
-    my $referer = Mojo::URL->new($referer_url)->host;
-    my $schema  = $app->schema;
-    if ($referer && grep { $referer eq $_ } @{$app->config->{global}->{recognized_referers}}) {
-        my $job = $schema->resultset('Jobs')->find({id => $jobid});
-        return unless $job;
-        my $found    = 0;
-        my $comments = $job->comments;
-        while (my $comment = $comments->next) {
-            if (($comment->label // '') eq 'linked') {
-                $found = 1;
-                last;
-            }
-        }
-        unless ($found) {
-            my $user = $schema->resultset('Users')->search({username => 'system'})->first;
-            $comments->create(
-                {
-                    text    => "label:linked Job mentioned in $referer_url",
-                    user_id => $user->id
-                });
-        }
-    }
-    elsif ($referer) {
-        log_debug("Unrecognized referer '$referer'");
-    }
 }
 
 # parse comments of the specified (parent) group and store all mentioned builds in $res (hashref)
@@ -1187,21 +1065,6 @@ sub random_hex {
     read($fd, my $bytes, $toread) || croak "can't read random byte: $!";
     close $fd;
     return uc substr(unpack('H*', $bytes), 0, $length);
-}
-
-sub param_hash {
-    my ($controller, $param_name) = @_;
-
-    my $params = $controller->every_param($param_name) or return;
-    my %hash;
-    for my $param (@$params) {
-        # ignore empty params
-        next unless $param;
-        # allow passing multiple values by separating them with comma
-        $hash{$_} = 1 for split(',', $param);
-    }
-    return unless (%hash);
-    return \%hash;
 }
 
 sub any_array_item_contained_by_hash {

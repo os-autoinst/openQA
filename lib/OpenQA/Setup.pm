@@ -14,45 +14,27 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Setup;
-use Mojo::Base -base;
+use Mojo::Base -strict;
 
-use Mojo::Home;
-use Mojo::Log;
 use Sys::Hostname;
 use File::Spec::Functions 'catfile';
 use Mojo::File 'path';
 use Mojo::Util 'trim';
 use Config::IniFiles;
-use OpenQA::Utils;
-use OpenQA::Utils 'random_string';
+use OpenQA::App;
+use OpenQA::Utils qw(:DEFAULT assetdir random_string);
 use File::Path 'make_path';
 use POSIX 'strftime';
 use Time::HiRes 'gettimeofday';
 use OpenQA::Schema::JobGroupDefaults;
 
-has config => sub { {} };
-
-has log => sub { Mojo::Log->new(handle => \*STDOUT, level => "info"); };
-
-has home => sub { Mojo::Home->new($ENV{MOJO_HOME} || '/') };
-
-has mode => 'production';
-
-has 'log_name';
-
-has 'level';
-
-has 'instance';
-
-has 'log_dir';
-
 sub setup_log {
-    my ($self) = @_;
+    my ($app) = @_;
     my ($logfile, $logdir, $level, $log);
 
-    if ($self->isa('OpenQA::Setup')) {
-        $logdir = $self->log_dir;
-        $level  = $self->level;
+    if ($app->isa('OpenQA::Worker::App')) {
+        $logdir = $app->log_dir;
+        $level  = $app->level;
         if ($logdir && !-e $logdir) {
             make_path($logdir);
         }
@@ -61,16 +43,16 @@ sub setup_log {
         }
     }
     else {
-        $log = $self->log;
+        $log = $app->log;
     }
-    $level //= $self->config->{logging}->{level} // 'info';
-    $logfile = $ENV{OPENQA_LOGFILE} || $self->config->{logging}->{file};
+    $level //= $app->config->{logging}->{level} // 'info';
+    $logfile = $ENV{OPENQA_LOGFILE} || $app->config->{logging}->{file};
 
     if ($logfile && $logdir) {
         $logfile = catfile($logdir, $logfile);
         $log     = Mojo::Log->new(
             handle => path($logfile)->open('>>'),
-            level  => $self->level,
+            level  => $app->level,
             format => \&log_format_callback
         );
     }
@@ -85,10 +67,10 @@ sub setup_log {
         # So each worker from each host get it's own log (as the folder can be shared). Hopefully the machine hostname
         # is already sanitized. Otherwise we need to check
         $logfile
-          = catfile($logdir, hostname() . (defined $self->instance ? "-${\$self->instance}" : '') . ".log");
+          = catfile($logdir, hostname() . (defined $app->instance ? "-${\$app->instance}" : '') . ".log");
         $log = Mojo::Log->new(
             handle => path($logfile)->open('>>'),
-            level  => $self->level,
+            level  => $app->level,
             format => \&log_format_callback
         );
     }
@@ -102,21 +84,17 @@ sub setup_log {
             });
     }
 
-    $self->log($log);
-    if ($ENV{OPENQA_SQL_DEBUG} // $self->config->{logging}->{sql_debug} // 'false' eq 'true') {
+    $app->log($log);
+    if ($ENV{OPENQA_SQL_DEBUG} // $app->config->{logging}->{sql_debug} // 'false' eq 'true') {
         require OpenQA::Schema::Profiler;
         # avoid enabling the SQL debug unless we really want to see it
         # it's rather expensive
         OpenQA::Schema::Profiler->enable_sql_debugging;
     }
 
-    $OpenQA::Utils::app = $self;
-    return $log;
-}
+    OpenQA::App->set_singleton($app);
 
-sub emit_event {
-    my ($self, $event, $data) = @_;
-    # nothing to see here, move along
+    return $log;
 }
 
 sub read_config {
@@ -288,8 +266,6 @@ sub update_config {
     }
 }
 
-sub schema { OpenQA::Schema->singleton }
-
 sub setup_app_defaults {
     my ($server) = @_;
     $server->defaults(appname         => $server->app->config->{global}->{appname});
@@ -319,7 +295,7 @@ sub setup_plain_exception_handler {
 
 sub setup_mojo_tmpdir {
     unless ($ENV{MOJO_TMPDIR}) {
-        $ENV{MOJO_TMPDIR} = $OpenQA::Utils::assetdir . '/tmp';
+        $ENV{MOJO_TMPDIR} = assetdir() . '/tmp';
         # Try to create tmpdir if it doesn't exist but don't die if failed to create
         if (!-e $ENV{MOJO_TMPDIR}) {
             eval { make_path($ENV{MOJO_TMPDIR}); };

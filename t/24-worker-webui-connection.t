@@ -29,6 +29,7 @@ use Test::Fatal;
 use Test::More;
 use Test::Mojo;
 use Test::MockModule;
+use OpenQA::App;
 use OpenQA::Test::Case;
 use OpenQA::Test::FakeWebSocketTransaction;
 use OpenQA::Worker::WebUIConnection;
@@ -38,7 +39,8 @@ use OpenQA::Constants qw(WORKERS_CHECKER_THRESHOLD MAX_TIMER MIN_TIMER);
 use OpenQA::Utils qw(in_range rand_range);
 
 # use Mojo::Log and suppress debug messages
-my $app = $OpenQA::Utils::app = Mojolicious->new;
+OpenQA::App->set_singleton(Mojolicious->new);
+my $app = OpenQA::App->singleton;
 $app->log->level('info');
 
 like(

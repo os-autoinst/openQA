@@ -16,14 +16,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-use strict;
-use warnings;
+use Mojo::Base -strict;
 
 use FindBin;
 use lib ("$FindBin::Bin/lib", "$FindBin::Bin/../lib");
-use Mojo::Base -strict;
 use Test::More;
 use OpenQA::Worker::Settings;
+use OpenQA::Worker::App;
+use Test::MockModule;
 
 $ENV{OPENQA_CONFIG} = "$FindBin::Bin/data/24-worker-settings";
 
@@ -62,22 +62,19 @@ is_deeply(
 ) or diag explain $settings->webui_host_specific_settings;
 
 subtest 'apply settings to app' => sub {
-    {
-        package Test::FakeApp;
-        use Mojo::Base -base;
-        has 'level';
-        has 'log_dir';
-        has 'setup_log_called';
-        sub setup_log {
-            shift->setup_log_called(1);
-        }
-    }
-
-    my $app = Test::FakeApp->new;
+    my ($setup_log_called, $setup_log_app);
+    my $mock = Test::MockModule->new('OpenQA::Setup');
+    $mock->mock(
+        setup_log => sub {
+            $setup_log_app    = shift;
+            $setup_log_called = 1;
+        });
+    my $app = OpenQA::Worker::App->new;
     $settings->apply_to_app($app);
-    is($app->level,            'test',    'log level applied');
-    is($app->log_dir,          'log/dir', 'log dir applied');
-    is($app->setup_log_called, 1,         'setup_log called');
+    is($app->level,       'test',    'log level applied');
+    is($app->log_dir,     'log/dir', 'log dir applied');
+    is($setup_log_called, 1,         'setup_log called');
+    is($setup_log_app,    $app,      'setup_log called with the right application');
 };
 
 subtest 'instance-specific settings' => sub {

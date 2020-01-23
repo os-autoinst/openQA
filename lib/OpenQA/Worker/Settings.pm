@@ -15,8 +15,10 @@
 
 package OpenQA::Worker::Settings;
 use Mojo::Base -base;
+
 use Mojo::Util 'trim';
 use Config::IniFiles;
+use OpenQA::Setup;
 
 has 'global_settings';
 has 'webui_hosts';
@@ -120,7 +122,7 @@ sub apply_to_app {
     my $global_settings = $self->global_settings;
     $app->log_dir($global_settings->{LOG_DIR});
     $app->level($global_settings->{LOG_LEVEL}) if $global_settings->{LOG_LEVEL};
-    $app->setup_log();
+    OpenQA::Setup::setup_log($app);
 }
 
 sub file_path { shift->{_file_path} }

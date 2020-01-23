@@ -19,7 +19,7 @@ use Mojo::Base -base;
 
 use File::Copy::Recursive 'dircopy';
 use File::Path 'remove_tree';
-use OpenQA::Utils;
+use OpenQA::Utils qw(:DEFAULT resultdir);
 
 sub create {
     my $self    = shift;
@@ -30,12 +30,12 @@ sub create {
 
     if ($options{directory}) {
         # Remove previous
-        remove_tree($OpenQA::Utils::resultdir) if -e $OpenQA::Utils::resultdir;
+        remove_tree(resultdir()) if -e resultdir();
         # copy new
-        dircopy($options{directory}, $OpenQA::Utils::resultdir) or die $!;
+        dircopy($options{directory}, resultdir()) or die $!;
     }
 
-    return $OpenQA::Utils::resultdir;
+    return resultdir();
 }
 
 1;

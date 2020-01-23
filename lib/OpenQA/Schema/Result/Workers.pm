@@ -24,6 +24,7 @@ use base 'DBIx::Class::Core';
 
 use DBIx::Class::Timestamps 'now';
 use Try::Tiny;
+use OpenQA::App;
 use OpenQA::Utils 'log_error';
 use OpenQA::WebSockets::Client;
 use OpenQA::Constants 'WORKERS_CHECKER_THRESHOLD';
@@ -239,7 +240,8 @@ sub send_command {
     }
 
     try {
-        $OpenQA::Utils::app->emit_event(openqa_command_enqueue => {workerid => $self->id, command => $args{command}});
+        OpenQA::App->singleton->emit_event(
+            openqa_command_enqueue => {workerid => $self->id, command => $args{command}});
     };
 
     # prevent ws server querying itself (which would cause it to hang until the connection times out)

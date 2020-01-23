@@ -26,6 +26,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
+use OpenQA::Utils 'assetdir';
 use Date::Format 'time2str';
 use IO::Socket::INET;
 
@@ -619,8 +620,7 @@ sub get_cell_contents {
 
 subtest 'asset list' => sub {
     # add the file for asset 4 actually in the file system to check deletion
-    my $asset_path
-      = catfile($OpenQA::Utils::assetdir, 'iso', 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso');
+    my $asset_path = catfile(assetdir(), 'iso', 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso');
     open(my $fh, '>', $asset_path);
     print $fh "ISO\n";
     close($fh);

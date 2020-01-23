@@ -40,8 +40,7 @@ use lib "$FindBin::Bin/lib";
 
 use Test::More;
 use Test::Warnings;
-use OpenQA::Utils;
-use OpenQA::Utils 'base_host';
+use OpenQA::Utils qw(:DEFAULT base_host);
 use OpenQA::CacheService;
 use IO::Socket::INET;
 use Mojo::Server::Daemon;

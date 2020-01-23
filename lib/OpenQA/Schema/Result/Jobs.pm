@@ -28,9 +28,10 @@ use DateTime;
 use OpenQA::Utils (
     qw(log_debug log_info log_warning log_error),
     qw(parse_assets_from_settings locate_asset),
-    qw(read_test_modules find_bugref random_string),
+    qw(resultdir assetdir read_test_modules find_bugref random_string),
     qw(run_cmd_with_log_return_error needledir testcasedir)
 );
+use OpenQA::App;
 use OpenQA::Jobs::Constants;
 use OpenQA::JobDependencies::Constants;
 use File::Basename qw(basename dirname);
@@ -1106,7 +1107,7 @@ sub delete_logs {
 sub num_prefix_dir {
     my ($self) = @_;
     my $numprefix = sprintf "%05d", $self->id / 1000;
-    return catfile($OpenQA::Utils::resultdir, $numprefix);
+    return catfile(resultdir(), $numprefix);
 }
 
 sub create_result_dir {
@@ -1265,8 +1266,9 @@ sub create_asset {
 
     $fname = sprintf("%08d-%s", $self->id, $fname) if $scope ne 'public';
 
-    my $fpath     = path($OpenQA::Utils::assetdir, $type);
-    my $temp_path = path($OpenQA::Utils::assetdir, 'tmp', $scope);
+    my $assetdir  = assetdir();
+    my $fpath     = path($assetdir, $type);
+    my $temp_path = path($assetdir, 'tmp', $scope);
 
     my $temp_chunk_folder = path($temp_path,         join('.', $fname, 'CHUNKS'));
     my $temp_final_file   = path($temp_chunk_folder, $fname);
@@ -1798,7 +1800,7 @@ sub investigate {
     return {error => 'No previous job in this scenario, cannot provide hints'} unless @previous;
     my %inv;
     return {error => 'No result directory available for current job'} unless $self->result_dir();
-    my $ignore = $OpenQA::Utils::app->config->{global}->{job_investigate_ignore};
+    my $ignore = OpenQA::App->singleton->config->{global}->{job_investigate_ignore};
     for my $prev (@previous) {
         next unless $prev->result =~ /(?:passed|softfailed)/;
         $inv{last_good} = $prev->id;

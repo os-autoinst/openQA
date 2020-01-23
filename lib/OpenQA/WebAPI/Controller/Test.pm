@@ -33,7 +33,7 @@ sub referer_check {
     return $self->reply->not_found if (!defined $self->param('testid'));
     my $referer = $self->req->headers->header('Referer') // '';
     if ($referer) {
-        mark_job_linked($self->param('testid'), $referer);
+        $self->schema->resultset('Jobs')->mark_job_linked($self->param('testid'), $referer);
     }
     return 1;
 }
@@ -468,11 +468,11 @@ sub prepare_job_results {
     my $preferred_machines = _calculate_preferred_machines($jobs);
 
     # read parameter for additional filtering
-    my $failed_modules = OpenQA::Utils::param_hash($self, 'failed_modules');
-    my $states         = OpenQA::Utils::param_hash($self, 'state');
-    my $results        = OpenQA::Utils::param_hash($self, 'result');
-    my $archs          = OpenQA::Utils::param_hash($self, 'arch');
-    my $machines       = OpenQA::Utils::param_hash($self, 'machine');
+    my $failed_modules = $self->param_hash('failed_modules');
+    my $states         = $self->param_hash('state');
+    my $results        = $self->param_hash('result');
+    my $archs          = $self->param_hash('arch');
+    my $machines       = $self->param_hash('machine');
 
     # prefetch the number of available labels for those jobs
     my $job_labels = $self->_job_labels($jobs);
@@ -569,7 +569,7 @@ sub _add_distri_and_version_to_summary {
 # A generic query page showing test results in a configurable matrix
 sub overview {
     my ($self) = @_;
-    my ($search_args, $groups) = OpenQA::Utils::compose_job_overview_search_args($self);
+    my ($search_args, $groups) = $self->compose_job_overview_search_args;
     my %stash = (
         # build, version, distri are not mandatory and therefore not
         # necessarily come from the search args so they can be undefined.

@@ -23,6 +23,7 @@ use base 'DBIx::Class::Core';
 use DBIx::Class::Timestamps 'now';
 use File::Basename;
 use Try::Tiny;
+use OpenQA::App;
 use OpenQA::Utils;
 use OpenQA::ExpandPlaceholder;
 use OpenQA::JobDependencies::Constants;
@@ -198,7 +199,7 @@ sub _schedule_iso {
     my ($self, $args) = @_;
 
     my @notes;
-    my $gru     = $OpenQA::Utils::app->gru;
+    my $gru     = OpenQA::App->singleton->gru;
     my $schema  = $self->result_source->schema;
     my $user_id = $self->user_id;
 

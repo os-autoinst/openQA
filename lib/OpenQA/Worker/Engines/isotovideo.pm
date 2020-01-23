@@ -227,7 +227,7 @@ sub engine_workit {
         OPENQA_URL      => $openqa_url,
         WORKER_INSTANCE => $instance,
         WORKER_ID       => $workerid,
-        PRJDIR          => $OpenQA::Utils::sharedir,
+        PRJDIR          => OpenQA::Utils::sharedir(),
         %$job_settings
     );
     # note: PRJDIR is used as base for relative needle paths by os-autoinst. This is supposed to change
@@ -307,7 +307,7 @@ sub engine_workit {
         return $error if $error;
     }
 
-    $vars{ASSETDIR}   //= $OpenQA::Utils::assetdir;
+    $vars{ASSETDIR}   //= OpenQA::Utils::assetdir();
     $vars{CASEDIR}    //= OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
     $vars{PRODUCTDIR} //= OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
 

@@ -27,6 +27,7 @@ use OpenQA::Resource::Jobs;
 use OpenQA::Constants 'WEBSOCKET_API_VERSION';
 use OpenQA::Jobs::Constants;
 use OpenQA::Test::Database;
+use OpenQA::Utils 'assetdir';
 use Test::Mojo;
 use Test::MockModule;
 use Test::More;
@@ -186,7 +187,7 @@ my $job_ref = {
     test => 'rainbow'
 };
 
-my $iso = sprintf("%s/iso/%s", $OpenQA::Utils::assetdir, $settings{ISO});
+my $iso = sprintf("%s/iso/%s", assetdir(), $settings{ISO});
 my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
 is($job->id, 1, "job_create");
 
@@ -429,15 +430,5 @@ is_deeply($current_jobs, [], "no jobs listed");
 
 my $asset = $schema->resultset('Assets')->register('iso', $settings{ISO});
 is($asset->name, $settings{ISO}, "asset register returns same");
-
-subtest 'OpenQA::Setup object test' => sub {
-    use OpenQA::Setup;
-    my $setup = OpenQA::Setup->new;
-    OpenQA::Setup::read_config($setup);
-    OpenQA::Setup::setup_log($setup);
-    isa_ok($setup->home,   'Mojo::Home');
-    isa_ok($setup->schema, 'OpenQA::Schema');
-    isa_ok($setup->log,    'Mojo::Log');
-};
 
 done_testing;

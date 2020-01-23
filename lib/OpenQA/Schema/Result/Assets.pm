@@ -21,6 +21,7 @@ use warnings;
 
 use base 'DBIx::Class::Core';
 
+use OpenQA::App;
 use OpenQA::Jobs::Constants;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
@@ -169,7 +170,7 @@ sub hidden {
     # 1 if asset should not be linked from the web UI (as set by
     # 'hide_asset_types' config setting), otherwise 0
     my ($self) = @_;
-    my @types = split(/ /, $OpenQA::Utils::app->config->{global}->{hide_asset_types});
+    my @types = split(/ /, OpenQA::App->singleton->config->{global}->{hide_asset_types});
     return grep { $_ eq $self->type } @types;
 }
 

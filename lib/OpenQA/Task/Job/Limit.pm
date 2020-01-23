@@ -18,7 +18,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 
 use File::Spec::Functions 'catfile';
 use File::Basename qw(basename dirname);
-use OpenQA::Utils;
+use OpenQA::Utils qw(:DEFAULT imagesdir);
 
 sub register {
     my ($self, $app) = @_;
@@ -64,9 +64,10 @@ sub _limit {
         $unused_screenshots_query->execute($i, $i + $screenshots_with_ref_count_query_limit);
         while (my $screenshot = $unused_screenshots_query->fetchrow_arrayref) {
             my $screenshot_filename = $screenshot->[1];
-            my $screenshot_path     = catfile($OpenQA::Utils::imagesdir, $screenshot_filename);
-            my $thumb_path          = catfile($OpenQA::Utils::imagesdir, dirname($screenshot_filename),
-                '.thumbs', basename($screenshot_filename));
+            my $imagesdir           = imagesdir();
+            my $screenshot_path     = catfile($imagesdir, $screenshot_filename);
+            my $thumb_path
+              = catfile($imagesdir, dirname($screenshot_filename), '.thumbs', basename($screenshot_filename));
             log_debug("removing screenshot $screenshot_filename");
 
             # delete screenshot in database first

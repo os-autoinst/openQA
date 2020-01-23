@@ -16,7 +16,7 @@
 package OpenQA::WebAPI::Controller::API::V1::Job;
 use Mojo::Base 'Mojolicious::Controller';
 
-use OpenQA::Utils;
+use OpenQA::Utils qw(:DEFAULT assetdir);
 use OpenQA::ExpandPlaceholder;
 use OpenQA::Jobs::Constants;
 use OpenQA::Resource::Jobs;
@@ -200,10 +200,11 @@ So this works in the same way as the test results overview in the GUI.
 
 sub overview {
     my $self = shift;
-    my ($search_args, $groups) = OpenQA::Utils::compose_job_overview_search_args($self);
-    my $failed_modules = OpenQA::Utils::param_hash($self, 'failed_modules');
-    my $states         = OpenQA::Utils::param_hash($self, 'state');
-    my $results        = OpenQA::Utils::param_hash($self, 'result');
+
+    my ($search_args, $groups) = $self->compose_job_overview_search_args;
+    my $failed_modules = $self->param_hash('failed_modules');
+    my $states         = $self->param_hash('state');
+    my $results        = $self->param_hash('result');
 
     my @jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs;
 
@@ -604,7 +605,7 @@ sub upload_state {
 
     if ($state eq 'fail') {
         $self->app->log->debug("FAIL chunk upload of $file");
-        path($OpenQA::Utils::assetdir, 'tmp', $scope)->list_tree({dir => 1})->each(
+        path(assetdir(), 'tmp', $scope)->list_tree({dir => 1})->each(
             sub {
                 $_->remove_tree if -d $_ && $_->basename eq $file . '.CHUNKS';
             });

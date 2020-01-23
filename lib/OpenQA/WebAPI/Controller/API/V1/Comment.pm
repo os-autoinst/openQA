@@ -17,8 +17,7 @@ package OpenQA::WebAPI::Controller::API::V1::Comment;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Date::Format;
-use OpenQA::Utils;
-use OpenQA::Utils 'href_to_bugref';
+use OpenQA::Utils qw(:DEFAULT href_to_bugref);
 
 =pod
 

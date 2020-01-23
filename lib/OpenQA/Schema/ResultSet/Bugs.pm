@@ -21,6 +21,8 @@ use warnings;
 
 use base 'DBIx::Class::ResultSet';
 
+use OpenQA::App;
+
 # this method returns the bug if it has already been refreshed (and undef otherwise)
 sub get_bug {
     my ($self, $bugid, %attrs) = @_;
@@ -30,7 +32,7 @@ sub get_bug {
 
     if (!$bug->in_storage) {
         $bug->insert;
-        $OpenQA::Utils::app->emit_event(openqa_bug_create => {id => $bug->id, bugid => $bug->bugid, implicit => 1});
+        OpenQA::App->singleton->emit_event(openqa_bug_create => {id => $bug->id, bugid => $bug->bugid, implicit => 1});
     }
     elsif ($bug->refreshed && $bug->existing) {
         return $bug;

@@ -22,6 +22,7 @@ use warnings;
 use Time::Piece;
 use Time::Seconds;
 use Time::ParseDate;
+use OpenQA::App;
 use OpenQA::Utils;
 
 use base 'DBIx::Class::ResultSet';
@@ -45,7 +46,7 @@ sub delete_entries_exceeding_storage_duration {
     my $other_time_constraint;
 
     # make queries for event types
-    my $storage_durations = $OpenQA::Utils::app->config->{'audit/storage_duration'};
+    my $storage_durations = OpenQA::App->singleton->config->{'audit/storage_duration'};
     for my $event_category (keys %$storage_durations) {
         my $duration_in_days = $storage_durations->{$event_category};
         next unless $duration_in_days;
