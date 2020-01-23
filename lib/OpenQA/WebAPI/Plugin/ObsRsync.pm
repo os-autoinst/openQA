@@ -249,7 +249,7 @@ sub _get_version_in_folder {
         chomp $row;
         next unless $row;
         next if substr($row, 0, 1) eq "#";
-        if ($row =~ m/Build((\d)+\.(\d)+(.(\d)+)?)/) {
+        if ($row =~ m/Build((\d)+\.(\d)+(\.(\d)+)?)/ or $row =~ m/Snapshot((\d)+(\.(\d)+)*)/) {
             $version = $1;
             last;
         }
