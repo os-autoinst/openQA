@@ -127,6 +127,7 @@ perl-List-MoreUtils-XS-0.428
 perl-local-lib-2.000023
 perl-Log-Contextual-0.008001
 perl-LWP-MediaTypes-6.02
+perl-LWP-Protocol-https-6.06
 perl-Meta-Builder-0.003
 perl-Minion-10.02
 perl-Minion-Backend-SQLite-4.005
