@@ -200,10 +200,11 @@ So this works in the same way as the test results overview in the GUI.
 
 sub overview {
     my $self = shift;
-    my ($search_args, $groups) = OpenQA::Utils::compose_job_overview_search_args($self);
-    my $failed_modules = OpenQA::Utils::param_hash($self, 'failed_modules');
-    my $states         = OpenQA::Utils::param_hash($self, 'state');
-    my $results        = OpenQA::Utils::param_hash($self, 'result');
+
+    my ($search_args, $groups) = $self->compose_job_overview_search_args;
+    my $failed_modules = $self->param_hash('failed_modules');
+    my $states         = $self->param_hash('state');
+    my $results        = $self->param_hash('result');
 
     my @jobs = $self->schema->resultset('Jobs')->complex_query(%$search_args)->latest_jobs;
 

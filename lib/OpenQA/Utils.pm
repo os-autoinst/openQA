@@ -777,77 +777,6 @@ sub human_readable_size {
     return $p . _round_a_bit($size) . "GiB";
 }
 
-# returns the search args for the job overview according to the parameter of the specified controller
-sub compose_job_overview_search_args {
-    my ($controller) = @_;
-    my %search_args;
-
-    # add simple query params to search args
-    for my $arg (qw(distri version flavor build test)) {
-        my $params      = $controller->every_param($arg) or next;
-        my $param_count = scalar @$params;
-        if ($param_count == 1) {
-            $search_args{$arg} = $params->[0];
-        }
-        elsif ($param_count > 1) {
-            $search_args{$arg} = {-in => $params};
-        }
-    }
-    if (my $modules = param_hash($controller, 'modules')) {
-        $search_args{modules} = [keys %$modules];
-    }
-    if ($controller->param('modules_result')) {
-        $search_args{modules_result} = $controller->every_param('modules_result');
-    }
-    # add group query params to search args
-    # (By 'every_param' we make sure to use multiple values for groupid and
-    # group at the same time as a logical or, i.e. all specified groups are
-    # returned.)
-    my $schema = $controller->schema;
-    my @groups;
-    if ($controller->param('groupid') or $controller->param('group')) {
-        my @group_id_search   = map { {id   => $_} } @{$controller->every_param('groupid')};
-        my @group_name_search = map { {name => $_} } @{$controller->every_param('group')};
-        my @search_terms = (@group_id_search, @group_name_search);
-        @groups = $schema->resultset('JobGroups')->search(\@search_terms)->all;
-    }
-
-    # determine build number
-    if (!$search_args{build}) {
-        # yield the latest build of the first group if (multiple) groups but not build specified
-        # note: the search arg 'groupid' is ignored by complex_query() because we later assign 'groupids'
-        $search_args{groupid} = $groups[0]->id if (@groups);
-
-        $search_args{build} = $schema->resultset('Jobs')->latest_build(%search_args);
-
-        # print debug output
-        if (@groups == 0) {
-            $controller->app->log->debug(
-                'No build and no group specified, will lookup build based on the other parameters');
-        }
-        elsif (@groups == 1) {
-            $controller->app->log->debug('Only one group but no build specified, searching for build');
-        }
-        else {
-            $controller->app->log->info('More than one group but no build specified, selecting build of first group');
-        }
-    }
-
-    # exclude jobs which are already cloned by setting scope for OpenQA::Jobs::complex_query()
-    $search_args{scope} = 'current';
-
-    # allow filtering by job ID
-    my $ids = $controller->every_param('id');
-    $search_args{id} = $ids if ($ids && @$ids);
-    # note: filter for results, states and failed modules are applied after the initial search
-    #       so old jobs are not revealed by applying those filters
-
-    # allow filtering by group ID or group name
-    $search_args{groupids} = [map { $_->id } @groups] if (@groups);
-
-    return (\%search_args, \@groups);
-}
-
 sub read_test_modules {
     my ($job) = @_;
 
@@ -1136,21 +1065,6 @@ sub random_hex {
     read($fd, my $bytes, $toread) || croak "can't read random byte: $!";
     close $fd;
     return uc substr(unpack('H*', $bytes), 0, $length);
-}
-
-sub param_hash {
-    my ($controller, $param_name) = @_;
-
-    my $params = $controller->every_param($param_name) or return;
-    my %hash;
-    for my $param (@$params) {
-        # ignore empty params
-        next unless $param;
-        # allow passing multiple values by separating them with comma
-        $hash{$_} = 1 for split(',', $param);
-    }
-    return unless (%hash);
-    return \%hash;
 }
 
 sub any_array_item_contained_by_hash {
