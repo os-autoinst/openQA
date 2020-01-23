@@ -131,6 +131,11 @@ sub _is_obs_project_status_dirty {
     $url =~ s/%%PROJECT/$project/g;
     my $ua  = $self->{ua} ||= Mojo::UserAgent->new;
     my $res = $ua->get($url)->result;
+
+    if (!$res->is_success) {
+        # this is OBS-specific hack, which must be moved to config somehow
+        $res = $ua->get($url)->result if $url =~ s/\?package=000product//;
+    }
     return undef unless $res->is_success;
 
     return _parse_obs_response_dirty($res);

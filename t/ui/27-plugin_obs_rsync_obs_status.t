@@ -98,7 +98,10 @@ sub fake_api_server {
     for my $project (sort keys %fake_response_by_project) {
         $mock->routes->get(
             "/public/build/$project/_result" => sub {
-                shift->render(status => 200, text => $fake_response_by_project{$project});
+                my $c   = shift;
+                my $pkg = $c->param('package');
+                return $c->render(status => 404) if $pkg;
+                return $c->render(status => 200, text => $fake_response_by_project{$project});
             });
     }
     return $mock;
