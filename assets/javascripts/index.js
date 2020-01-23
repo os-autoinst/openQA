@@ -38,8 +38,11 @@ function setupIndexPage() {
             $('#filter-time-limit-days').prop('value', val);
             return val + ' days old or newer';
         } else if (key === 'fullscreen') {
-          filterFullScreenCheckBox.prop('checked', val !== '0');
-          return 'fullscreen';
+            filterFullScreenCheckBox.prop('checked', val !== '0');
+            return 'fullscreen';
+        } else if (key === 'interval') {
+            window.autoreload = val;
+            return 'interval';
         } else if (key === 'default_expanded') {
             defaultExpanedCheckBox.prop('checked', val !== '0');
             return 'expanded';
@@ -62,6 +65,10 @@ function setupIndexPage() {
     });
 
     toggleFullscreenMode(filterFullScreenCheckBox.is(':checked'));
+
+    if (window.autoreload) {
+        window.setInterval(loadBuildResults, window.autoreload*1000);
+    }
 }
 
 function loadBuildResults(queryParams) {
@@ -70,8 +77,10 @@ function loadBuildResults(queryParams) {
     var filterForm = $('#filter-form');
     var filterFormApplyButton = $('#filter-apply-button');
 
-    loadingElement.show();
-    buildResultsElement.html('');
+    if (!window.autoreload) {
+        loadingElement.show();
+        buildResultsElement.html('');
+    }
     filterFormApplyButton.prop('disabled', true);
     window.updatingBuildResults = true;
 
