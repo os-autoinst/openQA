@@ -25,11 +25,4 @@ sub startup {
     $self->mode('production');
 }
 
-sub emit_event {
-    my ($self, $event, $data) = @_;
-    # nothing to see here, move along
-}
-
-sub schema { OpenQA::Schema->singleton }
-
 1;
