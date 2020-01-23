@@ -121,8 +121,8 @@ use Fcntl;
 use Mojo::JSON qw(encode_json decode_json);
 use Mojo::Util 'xml_escape';
 
-my %channels     = ();
-my %log_defaults = (LOG_TO_STANDARD_CHANNEL => 1, CHANNELS => []);
+my %CHANNELS;
+my %LOG_DEFAULTS = (LOG_TO_STANDARD_CHANNEL => 1, CHANNELS => []);
 
 sub prjdir { ($ENV{OPENQA_BASEDIR} || '/var/lib') . '/openqa' }
 
@@ -264,8 +264,8 @@ sub _log_msg {
     if (!%options) {
         return _log_msg(
             $level, $msg,
-            channels => $log_defaults{CHANNELS},
-            standard => $log_defaults{LOG_TO_STANDARD_CHANNEL});
+            channels => $LOG_DEFAULTS{CHANNELS},
+            standard => $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL});
     }
 
     # prepend process ID on debug level
@@ -282,7 +282,7 @@ sub _log_msg {
     }
 
     # log to standard (as fallback or when explicitely requested)
-    if (!$wrote_to_at_least_one_channel || ($options{standard} // $log_defaults{LOG_TO_STANDARD_CHANNEL})) {
+    if (!$wrote_to_at_least_one_channel || ($options{standard} // $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL})) {
         # use Mojolicious app if available and otherwise just STDERR/STDOUT
         _log_via_mojo_app($level, $msg) or _log_to_stderr_or_stdout($level, $msg);
     }
@@ -292,7 +292,7 @@ sub _log_to_channel_by_name {
     my ($level, $msg, $channel_name) = @_;
 
     return 0 unless ($channel_name);
-    my $channel = $channels{$channel_name} or return 0;
+    my $channel = $CHANNELS{$channel_name} or return 0;
     return _try_logging_to_channel($level, $msg, $channel);
 }
 
@@ -333,17 +333,17 @@ sub add_log_channel {
     my ($channel, %options) = @_;
     if ($options{default}) {
         if ($options{default} eq 'append') {
-            push @{$log_defaults{CHANNELS}}, $channel;
+            push @{$LOG_DEFAULTS{CHANNELS}}, $channel;
         }
         elsif ($options{default} eq 'set') {
-            $log_defaults{CHANNELS}                = [$channel];
-            $log_defaults{LOG_TO_STANDARD_CHANNEL} = 0;
+            $LOG_DEFAULTS{CHANNELS}                = [$channel];
+            $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL} = 0;
         }
         delete $options{default};
     }
-    $channels{$channel} = Mojo::Log->new(%options);
+    $CHANNELS{$channel} = Mojo::Log->new(%options);
 
-    $channels{$channel}->format(\&log_format_callback);
+    $CHANNELS{$channel}->format(\&log_format_callback);
 }
 
 # The default format for logging
@@ -358,26 +358,26 @@ sub log_format_callback {
 
 sub append_channel_to_defaults {
     my ($channel) = @_;
-    push @{$log_defaults{CHANNELS}}, $channel if $channels{$channel};
+    push @{$LOG_DEFAULTS{CHANNELS}}, $channel if $CHANNELS{$channel};
 }
 
 # Removes a channel from defaults.
 sub remove_channel_from_defaults {
     my ($channel) = @_;
-    $log_defaults{CHANNELS}                = [grep { $_ ne $channel } @{$log_defaults{CHANNELS}}];
-    $log_defaults{LOG_TO_STANDARD_CHANNEL} = 1 if !@{$log_defaults{CHANNELS}};
+    $LOG_DEFAULTS{CHANNELS}                = [grep { $_ ne $channel } @{$LOG_DEFAULTS{CHANNELS}}];
+    $LOG_DEFAULTS{LOG_TO_STANDARD_CHANNEL} = 1 if !@{$LOG_DEFAULTS{CHANNELS}};
 }
 
 sub remove_log_channel {
     my ($channel) = @_;
     remove_channel_from_defaults($channel);
-    delete $channels{$channel} if $channel;
+    delete $CHANNELS{$channel} if $channel;
 }
 
 sub get_channel_handle {
     my ($channel) = @_;
     if ($channel) {
-        return $channels{$channel}->handle if $channels{$channel};
+        return $CHANNELS{$channel}->handle if $CHANNELS{$channel};
     }
     elsif (my $app = OpenQA::App->singleton) {
         return $app->log->handle;
