@@ -109,9 +109,9 @@ $driver->find_element_by_class('navbar-brand')->click();
 $driver->find_element_by_link_text('Login')->click();
 
 my %params = (
-    'Proj1'       => ['190703_143010'],
-    'BatchedProj' => ['191216_150610'],
-    'Batch1'      => ['191216_150610', 'BatchedProj'],
+    'Proj1'       => ['190703_143010', '',            '470.1'],
+    'BatchedProj' => ['191216_150610', '',            '4704, 4703, 470.2'],
+    'Batch1'      => ['191216_150610', 'BatchedProj', '470.2'],
 );
 
 sub _wait_helper {
@@ -127,8 +127,7 @@ sub _wait_helper {
 
 foreach my $proj (sort { $b cmp $a } keys %params) {
     dircopy($home_template, $home);
-    my ($dt, $parent) = @{$params{$proj}};
-    $parent = "" unless $parent;
+    my ($dt, $parent, $builds_text) = @{$params{$proj}};
 
     $driver->get("/admin/obs_rsync/$parent");
     my $projfull = $proj;
@@ -137,16 +136,17 @@ foreach my $proj (sort { $b cmp $a } keys %params) {
     # check project name and other fields are displayed properly
     is($driver->find_element("tr#folder_$proj .project")->get_text(), $projfull, "$proj name");
     like($driver->find_element("tr#folder_$proj .lastsync")->get_text(), qr/$dt/, "$proj last sync");
-    is($driver->find_element("tr#folder_$proj .lastsyncversion")->get_text(), '470.1', "$proj sync version");
-    # at start no project fetches version from obs
-    is($driver->find_element("tr#folder_$proj .obsversion")->get_text(), '', "$proj obs version empty");
+    is($driver->find_element("tr#folder_$proj .lastsyncbuilds")->get_text(), $builds_text, "$proj sync builds");
+
+    # at start no project fetches builds from obs
+    is($driver->find_element("tr#folder_$proj .obsbuilds")->get_text(), '', "$proj obs builds empty");
     my $status = $driver->find_element("tr#folder_$proj .dirtystatuscol .dirtystatus")->get_text();
     like($status, qr/dirty/, "$proj dirty status");
 
-    # now request fetching version from obs
-    $driver->find_element("tr#folder_$proj .obsversionupdate")->click();
-    my $obsversion = _wait_helper("tr#folder_$proj .obsversion", sub { shift });
-    is($obsversion, '470.1', "$proj obs version");
+    # now request fetching builds from obs
+    $driver->find_element("tr#folder_$proj .obsbuildsupdate")->click();
+    my $obsbuilds = _wait_helper("tr#folder_$proj .obsbuilds", sub { shift });
+    is($obsbuilds, $builds_text, "$proj obs builds");
 
     # now we call forget_run_last() and refresh_last_run() and check once again corresponding columns
     $driver->find_element("tr#folder_$proj .lastsyncforget")->click();

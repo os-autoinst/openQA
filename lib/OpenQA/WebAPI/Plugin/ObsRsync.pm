@@ -42,11 +42,11 @@ sub register {
         $app->helper('obs_rsync.project_status_url' => sub { shift->app->config->{obs_rsync}->{project_status_url} });
         $app->helper(
             'obs_rsync.is_status_dirty' => sub {
-                my ($c, $project, $trace) = @_;
+                my ($c, $alias, $trace) = @_;
                 my $helper = $c->obs_rsync;
                 my $url    = $helper->project_status_url;
                 return undef unless $url;
-                ($project, undef) = $helper->split_project_batch($project);
+                my ($project, undef) = $helper->split_alias($alias);
                 my @res = $self->_is_obs_project_status_dirty($url, $project);
                 if ($trace && scalar @res > 1 && $res[1]) {
                     # ignore potential errors because we use this only for cosmetic rendering
@@ -57,17 +57,18 @@ sub register {
                 }
                 return $res[0];
             });
-        $app->helper('obs_rsync.split_project_batch' => \&_split_project_batch);
-        $app->helper('obs_rsync.get_batches'         => \&_get_batches);
-        $app->helper('obs_rsync.get_first_batch'     => \&_get_first_batch);
-        $app->helper('obs_rsync.get_run_last_info'   => \&_get_run_last_info);
+        $app->helper('obs_rsync.split_alias'       => \&_split_alias);
+        $app->helper('obs_rsync.for_every_batch'   => \&_for_every_batch);
+        $app->helper('obs_rsync.get_batches'       => \&_get_batches);
+        $app->helper('obs_rsync.get_first_batch'   => \&_get_first_batch);
+        $app->helper('obs_rsync.get_run_last_info' => \&_get_run_last_info);
         $app->helper(
             'obs_rsync.get_fail_last_info' => sub {
                 my ($c, $project) = @_;
                 return _get_last_failed_job($c, $project, 1);
             });
         $app->helper('obs_rsync.get_dirty_status'       => \&_get_dirty_status);
-        $app->helper('obs_rsync.get_obs_version'        => \&_get_obs_version);
+        $app->helper('obs_rsync.get_obs_builds_text'    => \&_get_obs_builds_text);
         $app->helper('obs_rsync.check_and_render_error' => \&_check_and_render_error);
 
         $app->helper('obs_rsync.log_job_id'        => \&_log_job_id);
@@ -81,32 +82,42 @@ sub register {
         push @{$app->renderer->paths},
           Mojo::File->new(__FILE__)->dirname->child('ObsRsync')->child('templates')->to_string;
 
+# terminology:
+# * project - Obs Project name alone, e.g. 'openSUSE:Factory:ToTest'
+# * batch - abstraction used by openqa-trigger-from-obs to split actions, needed to be taken when Obs Project is ready for testing,
+# e.g. 'base, 'jeos', 'migration'.
+# * alias - Obs Project name alone or with corresponding batch concatenated with '|': 'projectname|batchname'
+# e.g. 'openSUSE:Factory:ToTest|base', 'openSUSE:Factory:ToTest|microos', 'openSUSE:Factory:ToTest|jeos'
+# * subfolder - folder, containing artifacts from paricular synch actions. Most often if form `.run_YYYYMMDDhhmmss`.
+#
+# routes which have parameter #alias, can be called for simple project, for batched project or for particular batch
+# routes which have parameter #project, can not be called for single batch
         $plugin_r->get('/obs_rsync/queue')->name('plugin_obs_rsync_queue')
           ->to('Plugin::ObsRsync::Controller::Gru#index');
-        $plugin_r->post('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_queue_run')
+        $plugin_r->post('/obs_rsync/#project/runs')->name('plugin_obs_rsync_queue_run')
           ->to('Plugin::ObsRsync::Controller::Gru#run');
-        $plugin_r->get('/obs_rsync/#folder/dirty_status')->name('plugin_obs_rsync_get_dirty_status')
+        $plugin_r->get('/obs_rsync/#project/dirty_status')->name('plugin_obs_rsync_get_dirty_status')
           ->to('Plugin::ObsRsync::Controller::Gru#get_dirty_status');
-        $plugin_r->post('/obs_rsync/#folder/dirty_status')->name('plugin_obs_rsync_update_dirty_status')
+        $plugin_r->post('/obs_rsync/#project/dirty_status')->name('plugin_obs_rsync_update_dirty_status')
           ->to('Plugin::ObsRsync::Controller::Gru#update_dirty_status');
-        $plugin_r->get('/obs_rsync/#folder/obs_version')->name('plugin_obs_rsync_get_obs_version')
-          ->to('Plugin::ObsRsync::Controller::Gru#get_obs_version');
-        $plugin_r->post('/obs_rsync/#folder/obs_version')->name('plugin_obs_rsync_update_obs_version')
-          ->to('Plugin::ObsRsync::Controller::Gru#update_obs_version');
+        $plugin_r->get('/obs_rsync/#alias/obs_builds_text')->name('plugin_obs_rsync_get_builds_text')
+          ->to('Plugin::ObsRsync::Controller::Gru#get_obs_builds_text');
+        $plugin_r->post('/obs_rsync/#alias/obs_builds_text')->name('plugin_obs_rsync_update_builds_text')
+          ->to('Plugin::ObsRsync::Controller::Gru#update_obs_builds_text');
 
-        $plugin_r->get('/obs_rsync/#folder/runs/#subfolder/download/#filename')->name('plugin_obs_rsync_download_file')
+        $plugin_r->get('/obs_rsync/#alias/runs/#subfolder/download/#filename')->name('plugin_obs_rsync_download_file')
           ->to('Plugin::ObsRsync::Controller::Folders#download_file');
-        $plugin_r->get('/obs_rsync/#folder/runs/#subfolder')->name('plugin_obs_rsync_run')
+        $plugin_r->get('/obs_rsync/#alias/runs/#subfolder')->name('plugin_obs_rsync_run')
           ->to('Plugin::ObsRsync::Controller::Folders#run');
-        $plugin_r->get('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_runs')
+        $plugin_r->get('/obs_rsync/#alias/runs')->name('plugin_obs_rsync_runs')
           ->to('Plugin::ObsRsync::Controller::Folders#runs');
-        $plugin_r->get('/obs_rsync/#folder')->name('plugin_obs_rsync_folder')
+        $plugin_r->get('/obs_rsync/#alias')->name('plugin_obs_rsync_folder')
           ->to('Plugin::ObsRsync::Controller::Folders#folder');
         $plugin_r->get('/obs_rsync/')->name('plugin_obs_rsync_index')
           ->to('Plugin::ObsRsync::Controller::Folders#index');
-        $plugin_r->get('/obs_rsync/#folder/run_last')->name('plugin_obs_rsync_get_run_last')
+        $plugin_r->get('/obs_rsync/#alias/run_last')->name('plugin_obs_rsync_get_run_last')
           ->to('Plugin::ObsRsync::Controller::Folders#get_run_last');
-        $plugin_r->post('/obs_rsync/#folder/run_last')->name('plugin_obs_rsync_forget_run_last')
+        $plugin_r->post('/obs_rsync/#alias/run_last')->name('plugin_obs_rsync_forget_run_last')
           ->to('Plugin::ObsRsync::Controller::Folders#forget_run_last');
         $app->config->{plugin_links}{operator}{'OBS Sync'} = 'plugin_obs_rsync_index';
     }
@@ -115,7 +126,7 @@ sub register {
         $app->log->error('API routes not configured, plugin ObsRsync will not have API configured') unless $plugin_r;
     }
     else {
-        $plugin_api_r->put('/obs_rsync/#folder/runs')->name('plugin_obs_rsync_api_run')
+        $plugin_api_r->put('/obs_rsync/#project/runs')->name('plugin_obs_rsync_api_run')
           ->to('Plugin::ObsRsync::Controller::Gru#run');
     }
 
@@ -156,15 +167,15 @@ sub _parse_obs_response_dirty {
     return (0, 'published');
 }
 
-# _split_project_batch() splits name like 'projectname|batchname'
+# _split_alias() splits name like 'projectname|batchname'
 # and returns pair ('projectname', 'batchname')
-# if $project doesn't have '|' character -
-# returned pair is ($project, "")
-sub _split_project_batch {
-    my (undef, $project) = @_;
-    my ($ret,  $batch)   = split(/\|/, $project, 2);
-    $batch = "" unless $batch;
-    return ($ret, $batch);
+# if input doesn't have '|' character -
+# returned pair is ($project, '')
+sub _split_alias {
+    my (undef,    $alias) = @_;
+    my ($project, $batch) = split(/\|/, $alias, 2);
+    $batch = '' unless $batch;
+    return ($project, $batch);
 }
 
 sub _get_batches {
@@ -181,10 +192,10 @@ sub _get_batches {
 # otherwise it attempts to find first batch of project
 # and returns it in pair with unaltered input
 sub _get_first_batch {
-    my ($c, $project) = @_;
+    my ($c, $alias) = @_;
     my $helper = $c->obs_rsync;
-    my ($shortproj, $batch) = $helper->split_project_batch($project);
-    return ($batch,                            $shortproj) if $batch;
+    my ($project, $batch) = $helper->split_alias($alias);
+    return ($batch,                            $project) if $batch;
     return ($helper->get_batches($project, 1), $project);
 }
 
@@ -193,18 +204,18 @@ sub _get_first_batch {
 # used by openqa-trigger-from-obs to determine if any files changed
 # or rsync can be skipped.
 sub _get_run_last_info {
-    my ($c, $project) = @_;
+    my ($c, $alias) = @_;
     my $helper = $c->obs_rsync;
     my $home   = $helper->home;
-    (my $batch, $project) = $helper->get_first_batch($project);
+    my ($batch, $project) = $helper->get_first_batch($alias);
 
     my $linkpath = Mojo::File->new($home, $project, $batch, '.run_last');
     my $folder;
     eval { $folder = readlink($linkpath) };
     return undef unless $folder;
     my %res;
-    $res{dt}      = Mojo::File->new($folder)->basename =~ s/^.run_//r;
-    $res{version} = _get_version_in_folder($linkpath);
+    $res{dt}     = Mojo::File->new($folder)->basename =~ s/^.run_//r;
+    $res{builds} = $helper->get_obs_builds_text($alias, 1);
     for my $f (qw(job_id)) {
         $res{$f} = _get_first_line(Mojo::File->new($linkpath, ".$f"));
     }
@@ -235,10 +246,10 @@ sub _write_to_file {
 
 # Dirty status file is updated from ObsRsync Gru tasks
 sub _get_dirty_status {
-    my ($c, $project) = @_;
+    my ($c, $alias) = @_;
     my $helper = $c->obs_rsync;
     # doesn't depend on batch, so just strip it out
-    ($project, undef) = $helper->split_project_batch($project);
+    my ($project, undef) = $helper->split_alias($alias);
     my $home = $helper->home;
     my ($status, $when) = _get_first_line(Mojo::File->new($home, $project, $dirty_status_filename), 1);
     return "" unless $status;
@@ -246,31 +257,41 @@ sub _get_dirty_status {
 }
 
 # Obs version is parsed from files_iso.lst, which is updated from ObsRsync Gru tasks
-sub _get_version_in_folder {
+sub _get_builds_in_folder {
     my ($folder) = @_;
     open(my $fh, '<', Mojo::File->new($folder, $files_iso_filename)) or return "";
-    my $version;
+    my %seen;
     while (my $row = <$fh>) {
         chomp $row;
         next unless $row;
-        next if substr($row, 0, 1) eq "#";
-        if ($row =~ m/Build((\d)+\.(\d)+(\.(\d)+)?)/ or $row =~ m/Snapshot((\d)+(\.(\d)+)*)/) {
-            $version = $1;
-            last;
-        }
+        next unless ($row =~ m/Build((\d)+\.(\d)+(\.(\d)+)?)/ or $row =~ m/Snapshot((\d)+(\.(\d)+)*)/);
+        my $build = $1;
+        $seen{$build} = 1;
     }
     close $fh;
-    return $version;
+    return sort { $b cmp $a } keys %seen;
 }
 
-# Obs version is parsed from files_iso.lst, which is updated from ObsRsync Gru tasks
-sub _get_obs_version {
-    my ($c, $project) = @_;
-    my $helper = $c->obs_rsync;
-    my $home   = $helper->home;
-    (my $batch, $project) = $helper->get_first_batch($project);
+# Obs builds are parsed from files_iso.lst, which is updated from ObsRsync Gru tasks
+sub _get_obs_builds_text {
+    my ($c, $alias, $last) = @_;
+    my $helper    = $c->obs_rsync;
+    my $home      = $helper->home;
+    my $subfolder = $last ? '.run_last' : '';
+    my %seen;
+    my $sub = sub {
+        my ($project, $batch) = @_;
+        my @builds = _get_builds_in_folder(Mojo::File->new($home, $project, $batch, $subfolder));
+        for my $build (@builds) {
+            $seen{$build} = 1 if $build;
+        }
+        return undef;
+    };
+    $helper->for_every_batch($alias, $sub);
 
-    return _get_version_in_folder(Mojo::File->new($home, $project, $batch));
+    my @builds = sort { $b cmp $a } keys %seen;
+    return "No data" unless @builds;
+    return join ', ', @builds;
 }
 
 sub _concurrency_guard {
@@ -319,18 +340,39 @@ sub _check_and_render_error {
 }
 
 sub _check_error {
-    my ($home, $project, $subfolder, $filename) = @_;
+    my ($home, $alias, $subfolder, $filename) = @_;
     return (405, 'Home directory is not set') unless $home;
     return (405, 'Home directory not found')  unless -d $home;
-    return (400, 'Project has invalid characters')   if $project   && $project   =~ m!/!;
+    return (400, 'Project has invalid characters')   if $alias     && $alias     =~ m!/!;
     return (400, 'Subfolder has invalid characters') if $subfolder && $subfolder =~ m!/!;
     return (400, 'Filename has invalid characters')  if $filename  && $filename  =~ m!/!;
 
-    ($project, my $batch) = _split_project_batch(undef, $project);
+    my ($project, $batch) = _split_alias(undef, $alias);
     return (404, "Invalid Project {$project}") if $project && !-d Mojo::File->new($home, $project);
     return (404, "Invalid Batch {$project|$batch}")
       if $project && $batch && !-d Mojo::File->new($home, $project, $batch);
     return 0;
+}
+
+sub _for_every_batch {
+    my ($c, $alias, $sub) = @_;
+    my $helper = $c->obs_rsync;
+    my ($project, $batch) = $helper->split_alias($alias);
+
+    # Three cases possible when $sub() must be called:
+    # for this single batch alone ($thisbatch != undef)
+    # for a regular project without batches (!@$batches)
+    # for every batch of a project with batches
+    return $sub->($project, $batch) if $batch;
+    my $batches = $helper->get_batches($project);
+    return $sub->($project, '') unless @$batches;
+
+    my @ret;
+    for $batch (@$batches) {
+        @ret = $sub->($project, $batch);
+        return @ret if @ret && $ret[0];
+    }
+    return @ret;
 }
 
 1;

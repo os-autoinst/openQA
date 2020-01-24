@@ -23,7 +23,7 @@ sub register {
     my ($self, $app) = @_;
     $app->minion->add_task(obs_rsync_run                 => \&run);
     $app->minion->add_task(obs_rsync_update_dirty_status => \&update_dirty_status);
-    $app->minion->add_task(obs_rsync_update_obs_version  => \&update_obs_version);
+    $app->minion->add_task(obs_rsync_update_builds_text  => \&update_obs_builds_text);
 }
 
 sub run {
@@ -79,30 +79,39 @@ sub update_dirty_status {
     return $job->finish(0);
 }
 
-sub update_obs_version {
+sub update_obs_builds_text {
     my ($job, $args) = @_;
 
-    my $app     = $job->app;
-    my $project = $args->{project};
-    my $helper  = $app->obs_rsync;
-    (my $batch, $project) = $helper->get_first_batch($project);
+    my $app    = $job->app;
+    my $alias  = $args->{alias};
+    my $helper = $app->obs_rsync;
 
-    my $read_files = Mojo::File->new($helper->home, $project, $batch, 'read_files.sh');
-    return $job->finish("Cannot find $read_files") unless -f $read_files;
-
+    my ($project, undef) = $helper->split_alias($alias);
+    # this lock indicates that rsync.sh have started - it is dangerous to call read_files.sh
     my $project_lock = Mojo::File->new($helper->home, $project, 'rsync.lock');
     return $job->finish("File exists $project_lock") if -f $project_lock;
 
+    # this lock indicates that Gru job for project is active - it is dangerous to call read_files.sh
     my $guard = $helper->guard($project);
     return $job->finish('Gru lock exists') unless $guard;
 
-    my @cmd = ("bash", $read_files);
-    my ($stdin, $stdout, $error);
-    IPC::Run::run(\@cmd, \$stdin, \$stdout, \$error);
-    my $exit_code = $?;
-    return $job->finish('Success') if (!$exit_code);
+    my $sub = sub {
+        my (undef, $batch) = @_;
+        my $read_files = Mojo::File->new($helper->home, $project, $batch, 'read_files.sh');
+        return $job->finish("Cannot find $read_files") unless -f $read_files;
 
-    return $job->fail({code => $exit_code, message => $error});
+        my @cmd = ("bash", $read_files);
+        my ($stdin, $stdout, $error);
+        my $exit_code = -1;
+        eval { IPC::Run::run(\@cmd, \$stdin, \$stdout, \$error); $exit_code = $?; };
+        my $err = $@;
+        return ($exit_code, $error // $err);
+    };
+
+    my ($exit_code, $error) = $helper->for_every_batch($alias, $sub);
+
+    return $job->fail({code => $exit_code, message => $error}) if !$exit_code;
+    return $job->finish('Success');
 }
 
 1;
