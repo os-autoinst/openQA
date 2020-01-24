@@ -25,27 +25,66 @@ use Test::Output;
 $ENV{dry_run} = 'echo';
 
 sub run_once {
-    my ($args) = @_;
+    my ($args, $prefix) = @_;
     $args //= '';
+    $prefix = $prefix ? $prefix . ' ' : '';
     # prevent all network access to stay local
-    my $cmd = "unshare -r -n script/openqa-clone-custom-git-refspec $args";
+    my $cmd = "$prefix unshare -r -n script/openqa-clone-custom-git-refspec $args";
     note("Calling '$cmd'");
     system("$cmd") >> 8;
 }
 
+sub test_once {
+    my ($args, $expected, $test_msg, $exit_code, $exit_code_msg) = @_;
+    $expected      //= qr//;
+    $test_msg      //= 'command line is correct';
+    $exit_code     //= 0;
+    $exit_code_msg //= 'command exits successfully';
+    my $ret;
+    combined_like sub { $ret = run_once($args); }, $expected, $test_msg;
+    is $ret, $exit_code, $exit_code_msg;
+    return $ret;
+}
+
 my $ret;
-stderr_like(sub { $ret = run_once() }, qr/Need.*parameter/, 'help text shown');
-is $ret, 1, 'openqa-clone-custom-git-refspec needs parameters';
-my $args
-  = 'https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/9128 https://openqa.opensuse.org/tests/1107158';
+test_once '', qr/Need.*parameter/, 'help text shown', 1, 'openqa-clone-custom-git-refspec needs parameters';
+my $args = 'https://github.com/user/repo/pull/9128 https://openqa.opensuse.org/tests/1234';
 isnt run_once($args), 0, 'without network we fail (without error)';
 # mock any external access with all arguments
 $ENV{curl_github} = qq{echo -e '{"head": {"label": "user:my_branch"}}'; true};
 $ENV{curl_openqa}
   = qq{echo -e '{"TEST": "my_test", "CASEDIR": "/my/case/dir", "PRODUCTDIR": "/my/case/dir/product", "NEEDLES_DIR": "/my/case/dir/product/needles"}'; true};
-my $expected
-  = qr{openqa-clone-job --skip-chained-deps --within-instance https://openqa.opensuse.org 1107158 _GROUP=0 TEST=my_test\@user/os-autoinst-distri-opensuse#my_branch BUILD=user/os-autoinst-distri-opensuse#9128 CASEDIR=https://github.com/user/os-autoinst-distri-opensuse.git#my_branch PRODUCTDIR=os-autoinst-distri-opensuse/product NEEDLES_DIR=/my/case/dir/product/needles};
-stdout_like sub { $ret = run_once($args); }, $expected, 'clone-job command line is correct';
-is $ret, 0, 'command exits successfully';
+my $clone_job = 'openqa-clone-job --skip-chained-deps --within-instance https://openqa.opensuse.org ';
+my $dirs
+  = 'CASEDIR=https://github.com/user/repo.git#my_branch PRODUCTDIR=repo/product NEEDLES_DIR=/my/case/dir/product/needles';
+my $expected    = $clone_job . '1234 _GROUP=0 TEST=my_test@user/repo#my_branch BUILD=user/repo#9128 ' . $dirs;
+my $expected_re = qr/${expected}/;
+test_once $args, $expected_re, 'clone-job command line is correct';
+my $args_branch = 'https://github.com/user/repo/tree/my_branch https://openqa.opensuse.org/tests/1234 FOO=bar';
+my $expected_branch_re
+  = qr{${clone_job}1234 _GROUP=0 TEST=my_test\@user/repo#my_branch BUILD=user/repo#my_branch ${dirs} FOO=bar};
+test_once $args_branch, $expected_branch_re, 'alternative mode with branch reference also yields right variables';
+my $prefix = 'env repo_name=user/repo pr=9128 host=https://openqa.opensuse.org job=1234';
+combined_like sub { $ret = run_once('', $prefix) }, $expected_re, 'environment variables can be used instead';
+is $ret, 0, 'exits successfully';
+$prefix .= ' testsuite=new_test needles_dir=/my/needles productdir=my/product';
+$dirs = 'PRODUCTDIR=my/product NEEDLES_DIR=/my/needles';
+my $expected_custom_re = qr{https://openqa.opensuse.org 1234 _GROUP=0 TEST=new_test\@user/repo#my_branch.*${dirs}};
+combined_like sub { $ret = run_once('', $prefix) }, $expected_custom_re, 'testsuite and dirs can be overridden';
+is $ret, 0, 'exits successfully';
+$args .= ',https://openqa.opensuse.org/tests/1234';
+$expected_re = qr/${expected}.*opensuse.org 1234/s;
+test_once $args, $expected_re, 'accepts comma-separated list of jobs';
+$args .= ' FOO=bar';
+$expected_re = qr/${expected} FOO=bar.*opensuse.org 1234.*FOO=bar/s;
+test_once $args, $expected_re, 'additional arguments are passed as test parameters for each job';
+
+TODO: {
+    local $TODO = 'not implemented';
+    $args = 'https://github.com/user/repo/pull/9128 https://openqa.opensuse.org/t1234';
+    test_once $args, qr/${expected}/, 'short test URLs are supported the same';
+    $args .= ',https://openqa.suse.de/t1234';
+    test_once $args, qr/${expected}.* 1234/s, 'multiple short URLs from different hosts point to individual hosts';
+}
 
 done_testing;
