@@ -112,12 +112,12 @@ my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
 ok(-d $resultdir, "resultdir \"$resultdir\" exists");
 
 $driver->title_is("openQA", "on main page");
-is($driver->find_element('#user-action a')->get_text(), 'Login', "noone logged in");
+is($driver->find_element('#user-action a')->get_text(), 'Login', "no one logged in");
 $driver->click_element_ok('Login', 'link_text');
 # we're back on the main page
 $driver->title_is("openQA", "back on main page");
 
-# cleak away the tour
+# click away the tour
 $driver->click_element_ok('dont-notify', 'id');
 $driver->click_element_ok('confirm',     'id');
 
@@ -452,7 +452,7 @@ subtest 'Cache tests' => sub {
         my $autoinst_log = do { local ($/); <$f> };
         close($f);
 
-        like($autoinst_log,                   qr/Content has not changed/,     'Test 7 Core-7.2.iso has not changed.');
+        like($autoinst_log,                   qr/Content has not changed/,     'Test 7 Core-7.2.iso has not changed');
         like($autoinst_log,                   qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 correct autoinst worker notes');
         like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/,   'Test 7 correct autoinst setup notes');
         like(
@@ -475,7 +475,7 @@ subtest 'Cache tests' => sub {
         my $autoinst_log = do { local ($/); <$f> };
         close($f);
 
-        like($autoinst_log,                   qr/\+\+\+\ worker notes \+\+\+/, 'Test 7 correct autoinst worker notes');
+        like($autoinst_log,                   qr/\+\+\+\ worker notes \+\+\+/, 'Test 8 correct autoinst worker notes');
         like((split(/\n/, $autoinst_log))[0], qr/\+\+\+ setup notes \+\+\+/,   'Test 8 correct autoinst setup notes');
         like(
             (split(/\n/, $autoinst_log))[-1],
