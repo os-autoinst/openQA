@@ -19,7 +19,7 @@ else
             run_once $* && break
         else
             [ $n -le "$RETRY" ] || exit 0
-            run_once $* || exit
+            run_once $*
             echo "Rerun $n of $RETRY …"
         fi
         n=$((n+1))

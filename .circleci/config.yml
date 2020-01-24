@@ -88,8 +88,8 @@ aliases:
     command: |
       export PERL5OPT="$COVEROPT,-db,cover_db_${CIRCLE_JOB}"
       echo PERL5OPT="$PERL5OPT"
-      make test-$CIRCLE_JOB
-    no_output_timeout: 50m
+      make STABILITY_TEST=1 test-$CIRCLE_JOB
+    no_output_timeout: "2h"
 
   - &git_token_authentication
     name: "Prepare auth token"
