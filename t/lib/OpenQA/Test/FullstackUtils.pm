@@ -78,6 +78,8 @@ sub reload_manually {
     prevent_reload($driver);
 }
 
+sub find_status_text { shift->find_element('#result-row .card-body')->get_text() }
+
 sub wait_for_result_panel {
     my ($driver, $result_panel, $desc, $fail_on_incomplete, $refresh_interval) = @_;
     $refresh_interval //= 1;
@@ -85,7 +87,7 @@ sub wait_for_result_panel {
     prevent_reload($driver);
 
     for (my $count = 0; $count < ((3 * 60) / $refresh_interval); $count++) {
-        my $status_text = $driver->find_element('#result-row .card-body')->get_text();
+        my $status_text = find_status_text($driver);
         last if ($status_text =~ $result_panel);
         if ($fail_on_incomplete && $status_text =~ qr/Result: (incomplete|timeout_exceeded)/) {
             fail('test result is incomplete but shouldn\'t');
@@ -96,7 +98,7 @@ sub wait_for_result_panel {
     }
     javascript_console_has_no_warnings_or_errors;
     reload_manually($driver, $desc);
-    like($driver->find_element('#result-row .card-body')->get_text(), $result_panel, $desc);
+    like(find_status_text($driver), $result_panel, $desc);
 }
 
 sub wait_for_job_running {
