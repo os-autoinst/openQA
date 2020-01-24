@@ -694,8 +694,10 @@ sub _upload_results_step_0_prepare {
     if ($is_final_upload || $running_or_finished) {
         my @file_info = stat $self->_result_file_path('test_order.json');
         my $test_order;
-        if (  !$current_test_module
+        if (   !$current_test_module
+            or !$file_info[9]
             or $file_info[9] != $self->{_test_order_mtime}
+            or !$file_info[7]
             or $file_info[7] != $self->{_test_order_fsize})
         {
             log_info('Test schedule has changed, reloading test_order.json') if $self->{_test_order_mtime};
