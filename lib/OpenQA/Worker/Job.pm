@@ -1132,7 +1132,7 @@ sub _read_result_file {
     # upload all results not yet uploaded - and stop at $upload_up_to
     # if $upload_up_to is empty string, then upload everything
     my $test_order = $self->test_order;
-    while (my $remaining_test_count = scalar(@$test_order)) {
+    while ($test_order && (my $remaining_test_count = scalar(@$test_order))) {
         my $test   = $test_order->[0]->{name};
         my $result = $self->_read_module_result($test);
 
