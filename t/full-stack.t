@@ -98,8 +98,7 @@ unless (check_driver_modules) {
 
 OpenQA::Test::FullstackUtils::setup_database();
 
-# make sure the assets are prefetched
-ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
+ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'), 'assets are prefetched');
 
 # we don't want no fixtures
 my $mojoport = Mojo::IOLoop::Server->generate_port;
