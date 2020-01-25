@@ -1,5 +1,4 @@
 #!/usr/bin/env perl
-# Copyright (C) 2015-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -147,12 +146,8 @@ subtest 'worker overview' => sub {
 # test delete offline worker function
 subtest 'delete offline worker' => sub {
     $driver->find_element("tr#worker_$offline_worker_id .btn")->click();
-    is(
-        $driver->find_element("div#flash-messages .alert span")->get_text(),
-        'Delete worker offline_test:1 successfully.',
-        'delete offline worker successfully'
-    );
-
+    my $e = wait_for_element(selector => 'div#flash-messages .alert span', description => 'delete message displayed');
+    is($e->get_text(), 'Delete worker offline_test:1 successfully.', 'delete offline worker successfully');
     is(scalar @{$driver->find_elements('table#workers tbody tr')}, 4, 'worker deleted not shown');
 };
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2019 SUSE Linux GmbH
+# Copyright (C) 2016-2020 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -103,7 +103,7 @@ like(
 # trigger job next and previous for current job
 $driver->title_is('openQA', 'on main page');
 $driver->find_element_by_link_text('All Tests')->click();
-$driver->find_element('[href="/tests/99946"]')->click();
+wait_for_element(selector => '[href="/tests/99946"]')->click();
 $driver->find_element_by_link_text('Next & previous results')->click();
 wait_for_ajax();
 $driver->find_element_by_class('dataTables_wrapper');
