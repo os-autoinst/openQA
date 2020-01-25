@@ -1,4 +1,4 @@
-# Copyright (C) 2019 SUSE LLC
+# Copyright (C) 2019-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -72,6 +72,8 @@ $dirs = 'PRODUCTDIR=my/product NEEDLES_DIR=/my/needles';
 my $expected_custom_re = qr{https://openqa.opensuse.org 1234 _GROUP=0 TEST=new_test\@user/repo#my_branch.*${dirs}};
 combined_like sub { $ret = run_once('', $prefix) }, $expected_custom_re, 'testsuite and dirs can be overridden';
 is $ret, 0, 'exits successfully';
+my $args_trailing = 'https://github.com/me/repo/pull/1/ https://openqa.opensuse.org/tests/1';
+test_once $args_trailing, qr{TEST=my_test\@user/repo#my_branch.*}, 'trailing slash ignored';
 $args .= ',https://openqa.opensuse.org/tests/1234';
 $expected_re = qr/${expected}.*opensuse.org 1234/s;
 test_once $args, $expected_re, 'accepts comma-separated list of jobs';
