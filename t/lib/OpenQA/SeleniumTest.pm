@@ -20,7 +20,7 @@ use Mojo::IOLoop::Server;
 use Mojo::Server::Daemon;
 use Test::More;
 use Try::Tiny;
-use Time::HiRes 'time';
+use Time::HiRes qw(time sleep);
 use OpenQA::WebAPI;
 use OpenQA::Utils;
 use OpenQA::Test::Utils;
@@ -318,8 +318,8 @@ sub element_not_present {
 
 sub wait_until {
     my ($check_function, $check_description, $timeout, $check_interval) = @_;
-    $timeout        //= 10;
-    $check_interval //= 1;
+    $timeout        //= 100;
+    $check_interval //= .1;
 
     while (1) {
         if ($check_function->()) {
