@@ -96,6 +96,8 @@ delete $job1->{state};
 delete $job2->{state};
 delete $job1->{result};
 delete $job2->{result};
+delete $job1->{reason};
+delete $job2->{reason};
 delete $job1->{t_finished};
 delete $job2->{t_finished};
 delete $job1->{t_started};

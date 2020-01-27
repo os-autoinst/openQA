@@ -126,7 +126,8 @@ subtest 'mark job as done' => sub {
             "id"        => $job,
             "newbuild"  => undef,
             "remaining" => 0,
-            "result"    => "failed"
+            "result"    => "failed",
+            "reason"    => undef,
         },
         'job done triggers amqp'
     );
@@ -164,7 +165,8 @@ subtest 'mark job with taken over bugref as done' => sub {
             "id"        => 99963,
             "newbuild"  => undef,
             "remaining" => 3,
-            "result"    => "failed"
+            "result"    => "failed",
+            "reason"    => undef,
         },
         'carried over bugref and resolved URL present in AMQP event'
     );
