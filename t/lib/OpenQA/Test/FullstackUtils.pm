@@ -31,8 +31,8 @@ use OpenQA::Scheduler::Model::Jobs;
 sub setup_database {
     # make database configuration
     path($ENV{OPENQA_CONFIG})->child('database.ini')->to_string;
-    ok(-e path($ENV{OPENQA_BASEDIR}, 'openqa', 'db')->child('db.lock'));
-    ok(open(my $conf, '>', path($ENV{OPENQA_CONFIG})->child('database.ini')->to_string));
+    ok(-e path($ENV{OPENQA_BASEDIR}, 'openqa', 'db')->child('db.lock'),                  'database lock file exists');
+    ok(open(my $conf, '>', path($ENV{OPENQA_CONFIG})->child('database.ini')->to_string), 'database config writable');
     print $conf <<"EOC";
     [production]
     dsn = $ENV{TEST_PG}
