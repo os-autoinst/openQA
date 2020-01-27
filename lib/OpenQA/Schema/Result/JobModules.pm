@@ -112,9 +112,7 @@ sub store_column {
     my ($self, $name, $value) = @_;
 
     # only updates of result relevant here
-    if (!($name eq 'result' || $name eq 'job_id')) {
-        return $self->next::method($name, $value);
-    }
+    return $self->next::method($name, $value) unless ($name eq 'result' || $name eq 'job_id');
 
     # set default result to 'none'
     $value //= OpenQA::Jobs::Constants::NONE if ($name eq 'result');
@@ -124,9 +122,7 @@ sub store_column {
     my $res            = $self->next::method($name, $value);
 
     # skip this when the value does not change
-    if ($value && $previous_value && $value eq $previous_value) {
-        return $res;
-    }
+    return $res if ($value && $previous_value && $value eq $previous_value);
 
     # update statistics in relevant job(s)
     if ($name eq 'result') {
@@ -236,22 +232,14 @@ sub job_modules {
 
 sub update_result {
     my ($self, $r) = @_;
-
-    my $result = $r->{result};
-
-    $result ||= 'none';
+    my $result = $r->{result} || 'none';
     $result =~ s,fail,failed,;
     $result =~ s,^na,none,;
     $result =~ s,^ok,passed,;
     $result =~ s,^unk,none,;
     $result =~ s,^skip,skipped,;
-    if ($r->{dents} && $result eq 'passed') {
-        $result = 'softfailed';
-    }
-    $self->update(
-        {
-            result => $result,
-        });
+    $result = 'softfailed' if ($r->{dents} && $result eq 'passed');
+    $self->update({result => $result});
 }
 
 # if you give a needle_cache, make sure to call
@@ -259,14 +247,9 @@ sub update_result {
 sub store_needle_infos {
     my ($self, $details, $needle_cache) = @_;
 
-    my $schema = $self->result_source->schema;
-
     # we often see the same needles in the same test, so avoid duplicated work
     my %hash;
-    if (!$needle_cache) {
-        $needle_cache = \%hash;
-    }
-
+    $needle_cache = \%hash unless $needle_cache;
     for my $detail (@$details) {
         if ($detail->{needle}) {
             OpenQA::Schema::Result::Needles::update_needle($detail->{json}, $self, 1, $needle_cache);
@@ -284,9 +267,7 @@ sub _save_details_screenshot {
     my ($self, $screenshot, $existent_md5) = @_;
 
     my ($full, $thumb) = OpenQA::Utils::image_md5_filename($screenshot->{md5});
-    if (-e $full) {    # mark existent
-        push(@$existent_md5, $screenshot->{md5});
-    }
+    push(@$existent_md5, $screenshot->{md5}) if (-e $full);    # mark existent
     symlink($full,  $self->job->result_dir . "/" . $screenshot->{name});
     symlink($thumb, $self->job->result_dir . "/.thumbs/" . $screenshot->{name});
     return $screenshot->{name};
