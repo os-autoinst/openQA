@@ -138,11 +138,13 @@ sub _is_obs_project_status_dirty {
     }
     return undef unless $res->is_success;
 
-    return _parse_obs_response_dirty($res);
+    return _parse_obs_response_dirty($res, $project);
 }
 
 sub _parse_obs_response_dirty {
-    my ($res) = @_;
+    my ($res, $project) = @_;
+    my $repository = 'images';
+    $repository = 'containers' if $project && index($project, ':Images:') != -1;
 
     my $results = $res->dom('result');
     return (undef, '') unless $results->size;
@@ -150,7 +152,7 @@ sub _parse_obs_response_dirty {
     for my $result ($results->each) {
         my $attributes = $result->attr;
         return (1, 'dirty') if exists $attributes->{dirty};
-        next if ($attributes->{repository} // '') ne 'images';
+        next if ($attributes->{repository} // '') ne $repository;
         return (1, $attributes->{state} // '') if ($attributes->{state} // '') ne 'published';
     }
     return (0, 'published');
