@@ -1,0 +1,27 @@
+#!/bin/sh -e
+# shellcheck disable=SC2048,SC2086
+
+RETRY="${RETRY:-0}"
+STABILITY_TEST="${STABILITY_TEST:-0}"
+
+run_once() {
+    $*
+}
+
+if [ "$RETRY" = "0" ]; then
+    run_once $*
+else
+    n=0
+    while :; do
+        if [ "$STABILITY_TEST" = "0" ]; then
+            [ $n -lt "$RETRY" ] || exit 1
+            [ $n -eq 0 ] || echo Retrying...
+            run_once $* && break
+        else
+            [ $n -lt "$RETRY" ] || exit 0
+            run_once $* || break
+            echo Retrying...
+        fi
+        n=$((n+1))
+    done
+fi

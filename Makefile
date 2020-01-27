@@ -3,6 +3,9 @@ PROVE_LIB_ARGS ?= -l
 DOCKER_IMG ?= openqa:latest
 TEST_PG_PATH ?= /dev/shm/tpg
 RETRY ?= 0
+# STABILITY_TEST: Set to 1 to fail as soon as any of the RETRY fails rather
+# than succeed if any of the RETRY succeed
+STABILITY_TEST ?= 0
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 docker_env_file := "$(current_dir)/docker.env"
@@ -22,7 +25,7 @@ install:
 	done
 
 # we didn't actually want to install these...
-	for i in tidy generate-packed-assets generate-documentation generate-documentation-genapi run-tests-within-container; do \
+	for i in tidy generate-packed-assets generate-documentation generate-documentation-genapi retry run-tests-within-container; do \
 		rm "$(DESTDIR)"/usr/share/openqa/script/$$i ;\
 	done
 #
@@ -109,18 +112,8 @@ endif
 
 .PHONY: test-unit-and-integration
 test-unit-and-integration:
-ifeq ($(RETRY),0)
-	export GLOBIGNORE="$(GLOBIGNORE)"; prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
-else
 	export GLOBIGNORE="$(GLOBIGNORE)";\
-	n=0;\
-	while :; do\
-		[ $$n -lt "$(RETRY)" ] || exit 1;\
-		[ $$n -eq 0 ] || echo Retrying...;\
-		prove ${PROVE_LIB_ARGS} ${PROVE_ARGS} && break;\
-		n=$$[$$n+1];\
-	done
-endif
+	script/retry prove ${PROVE_LIB_ARGS} ${PROVE_ARGS}
 
 .PHONY: test-with-database
 test-with-database:
