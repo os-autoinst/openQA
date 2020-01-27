@@ -94,7 +94,7 @@ sub _extend_job_info {
 
 sub run {
     my $self    = shift;
-    my $project = $self->param('folder');
+    my $project = $self->param('project');
     my $helper  = $self->obs_rsync;
     return undef if $helper->check_and_render_error($project);
     my $app         = $self->app;
@@ -126,7 +126,7 @@ sub run {
 
 sub get_dirty_status {
     my $self    = shift;
-    my $project = $self->param('folder');
+    my $project = $self->param('project');
     my $helper  = $self->obs_rsync;
     return undef if $helper->check_and_render_error($project);
 
@@ -135,28 +135,28 @@ sub get_dirty_status {
 
 sub update_dirty_status {
     my $self    = shift;
-    my $project = $self->param('folder');
+    my $project = $self->param('project');
     return undef if $self->obs_rsync->check_and_render_error($project);
 
     $self->app->gru->enqueue('obs_rsync_update_dirty_status', {project => $project});
     return $self->render(json => {message => 'started'}, status => 200);
 }
 
-sub get_obs_version {
-    my $self    = shift;
-    my $project = $self->param('folder');
-    my $helper  = $self->obs_rsync;
-    return undef if $helper->check_and_render_error($project);
+sub get_obs_builds_text {
+    my $self   = shift;
+    my $alias  = $self->param('alias');
+    my $helper = $self->obs_rsync;
+    return undef if $helper->check_and_render_error($alias);
 
-    return $self->render(json => {message => $helper->get_obs_version($project)}, status => 200);
+    return $self->render(json => {message => $helper->get_obs_builds_text($alias)}, status => 200);
 }
 
-sub update_obs_version {
-    my $self    = shift;
-    my $project = $self->param('folder');
-    return undef if $self->obs_rsync->check_and_render_error($project);
+sub update_obs_builds_text {
+    my $self  = shift;
+    my $alias = $self->param('alias');
+    return undef if $self->obs_rsync->check_and_render_error($alias);
 
-    $self->app->gru->enqueue('obs_rsync_update_obs_version', {project => $project});
+    $self->app->gru->enqueue('obs_rsync_update_builds_text', {alias => $alias});
     return $self->render(json => {message => 'started'}, status => 200);
 }
 

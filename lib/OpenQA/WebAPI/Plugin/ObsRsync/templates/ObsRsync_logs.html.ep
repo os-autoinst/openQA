@@ -5,10 +5,10 @@
 % end
 
 % title 'OBS synchronization Logs';
-<h2>OBS synchronization logs: <%= $folder %></h2>
+<h2>OBS synchronization logs: <%= $alias %></h2>
 <h5>Full directory path: <%= $full %></h5>
 <ul>
     % for my $subfolder (@$subfolders) {
-        <li><%= link_to $subfolder => url_for('plugin_obs_rsync_run', folder => $folder, subfolder => $subfolder) %></li>
+        <li><%= link_to $subfolder => url_for('plugin_obs_rsync_run', alias => $alias, subfolder => $subfolder) %></li>
     % }
 </ul>

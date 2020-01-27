@@ -58,42 +58,42 @@ sub _el1 {
 }
 
 sub test_project {
-    my ($t, $project, $batch, $dt) = @_;
+    my ($t, $project, $batch, $dt, $build) = @_;
     $t->get_ok('/admin/obs_rsync')->status_is(200, 'index status')->element_exists(_el($project))
       ->content_unlike(qr/script\<\/a\>/);
 
-    my $projectbatch  = $project;
-    my $projectbatch1 = $project;
+    my $alias  = $project;
+    my $alias1 = $project;
     if ($batch) {
-        $projectbatch  = "$project|$batch";
-        $projectbatch1 = $project . '%7C' . $batch;
-        $t->get_ok("/admin/obs_rsync/$project")->status_is(200, 'project status')
+        $alias  = "$project|$batch";
+        $alias1 = $project . '%7C' . $batch;
+        $t->get_ok("/admin/obs_rsync/$project")->status_is(200, 'parent project status')
           ->element_exists_not(_el1($project, 'rsync_iso.cmd'))->element_exists_not(_el1($project, 'rsync_repo.cmd'))
-          ->element_exists_not(_el1($project, 'openqa.cmd'))->element_exists(_el($projectbatch1));
+          ->element_exists_not(_el1($project, 'openqa.cmd'))->element_exists(_el($alias1));
     }
 
-    $t->get_ok("/admin/obs_rsync/$projectbatch")->status_is(200, 'project status')
-      ->element_exists(_el1($projectbatch1, 'rsync_iso.cmd'))->element_exists(_el1($projectbatch1, 'rsync_repo.cmd'))
-      ->element_exists(_el1($projectbatch1, 'openqa.cmd'));
+    $t->get_ok("/admin/obs_rsync/$alias")->status_is(200, 'project status')
+      ->element_exists(_el1($alias1, 'rsync_iso.cmd'))->element_exists(_el1($alias1, 'rsync_repo.cmd'))
+      ->element_exists(_el1($alias1, 'openqa.cmd'));
 
-    $t->get_ok("/admin/obs_rsync/$projectbatch/runs")->status_is(200, 'project logs status')
-      ->element_exists(_el($projectbatch1, ".run_$dt"));
+    $t->get_ok("/admin/obs_rsync/$alias/runs")->status_is(200, 'project logs status')
+      ->element_exists(_el($alias1, ".run_$dt"));
 
-    $t->get_ok("/admin/obs_rsync/$projectbatch/runs/.run_$dt")->status_is(200, 'project log subfolder status')
-      ->element_exists(_el($projectbatch1, ".run_$dt", 'files_iso.lst'));
+    $t->get_ok("/admin/obs_rsync/$alias/runs/.run_$dt")->status_is(200, 'project log subfolder status')
+      ->element_exists(_el($alias1, ".run_$dt", 'files_iso.lst'));
 
-    $t->get_ok("/admin/obs_rsync/$projectbatch/runs/.run_$dt/download/files_iso.lst")
+    $t->get_ok("/admin/obs_rsync/$alias/runs/.run_$dt/download/files_iso.lst")
       ->status_is(200, "project log file download status")
-      ->content_like(qr/openSUSE-Leap-15.1-DVD-x86_64-Build470.1-Media.iso/)
-      ->content_like(qr/openSUSE-Leap-15.1-NET-x86_64-Build470.1-Media.iso/);
+      ->content_like(qr/openSUSE-Leap-15.1-DVD-x86_64-Build470.$build-Media.iso/)
+      ->content_like(qr/openSUSE-Leap-15.1-NET-x86_64-Build470.$build-Media.iso/);
 }
 
 subtest 'Smoke test Proj1' => sub {
-    test_project($t, 'Proj1', '', '190703_143010');
+    test_project($t, 'Proj1', '', '190703_143010', 1);
 };
 
 subtest 'Test batched project' => sub {
-    test_project($t, 'BatchedProj', 'Batch1', '191216_150610');
+    test_project($t, 'BatchedProj', 'Batch1', '191216_150610', 2);
 };
 
 done_testing();

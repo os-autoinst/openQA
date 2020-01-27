@@ -159,11 +159,19 @@ $t->app->minion->on(
             });
     });
 
-subtest 'test helper directly' => sub {
-    is($t->app->obs_rsync->is_status_dirty('Proj0'), undef, 'status unknown');
-    is($t->app->obs_rsync->is_status_dirty('Proj1'), 1,     'status dirty');
-    is($t->app->obs_rsync->is_status_dirty('Proj2'), 1,     'status publishing');
-    is($t->app->obs_rsync->is_status_dirty('Proj3'), 0,     'status published');
+my $helper = $t->app->obs_rsync;
+subtest 'test builds_text helper' => sub {
+    is($helper->get_obs_builds_text('Proj1',              1), '470.1');
+    is($helper->get_obs_builds_text('BatchedProj',        1), '4704, 4703, 470.2');
+    is($helper->get_obs_builds_text('BatchedProj|Batch1', 1), '470.2');
+    is($helper->get_obs_builds_text('BatchedProj|Batch2', 1), '4704, 4703');
+};
+
+subtest 'test status_dirty helper' => sub {
+    is($helper->is_status_dirty('Proj0'), undef, 'status unknown');
+    is($helper->is_status_dirty('Proj1'), 1,     'status dirty');
+    is($helper->is_status_dirty('Proj2'), 1,     'status publishing');
+    is($helper->is_status_dirty('Proj3'), 0,     'status published');
 };
 
 $t->get_ok('/');

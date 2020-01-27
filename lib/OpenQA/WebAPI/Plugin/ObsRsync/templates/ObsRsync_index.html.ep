@@ -4,8 +4,10 @@
   %= asset 'codemirror.css'
 % end
 
-% title 'OBS synchronization folders';
-<h2><%= 'OBS synchronization folders ' %></h2>
+% my $title = 'OBS synchronization folders';
+% $title = $title . " of $project" if $project;
+% title $title;
+<h2><%= $title %></h2>
 
 <div class="row">
     <div class="col-sm-12">
@@ -15,8 +17,8 @@
                 <tr>
                     <th>Project</th>
                     <th>Last sync</th>
-                    <th>Synced version</th>
-                    <th>Current OBS version</th>
+                    <th>Synced builds</th>
+                    <th>Builds on OBS</th>
                     <th>Sync status</th>
                     <th>Job created</th>
                     <th>Dirty status</th>
@@ -28,12 +30,13 @@
                 % my $folder_ident = $folder;
                 % $folder_ident =~ s/\W//g; # remove all special characters
                 % my $folder_info = $folder_info_by_name->{$folder};
-                % $folder = "$obs_project|$folder" if ($obs_project);
+                % my $alias = $folder;
+                % $alias = "$project|$folder" if $project;
                 % my $job_id = $folder_info->{run_last_job_id};
                 % my $fail_job_id = $folder_info->{fail_last_job_id};
                 <tr id="folder_<%= $folder_ident %>">
                     <td class="project">
-                        %= link_to $folder => url_for('plugin_obs_rsync_folder', folder => $folder)
+                        %= link_to $alias => url_for('plugin_obs_rsync_folder', alias => $alias)
                     </td>
                     % if ($folder_info->{run_last}) {
                     <td class="lastsynccol">
@@ -45,22 +48,22 @@
                             % }
                         </span>
                         <button type="submit" class="lastsyncforget btn btn-info" btn-sm"
-                                data-posturl="<%= url_for('plugin_obs_rsync_forget_run_last', folder => $folder) %>"
-                                data-geturl="<%= url_for('plugin_obs_rsync_get_run_last', folder => $folder) %>"
-                                onclick="postAndRedrawElement(this, 'lastsync_<%=$folder_ident%>',0,'Are you sure you want to delete information about last sync for <%=$folder%>')">
+                                data-posturl="<%= url_for('plugin_obs_rsync_forget_run_last', alias => $alias) %>"
+                                data-geturl="<%= url_for('plugin_obs_rsync_get_run_last', alias => $alias) %>"
+                                onclick="postAndRedrawElement(this, 'lastsync_<%=$folder_ident%>',0,'Are you sure you want to delete information about last sync for <%=$alias%>')">
                             Forget
                         </button>
                     </td>
                     % } else {
                     <td class="lastsync">no data</td>
                     % }
-                    <td class="lastsyncversion"><%= $folder_info->{run_last_version} // '' %></td>
-                    <td class="obsversioncol">
-                        <span id="obsversion_<%= $folder_ident %>" class="obsversion"></span>
-                        <button type="submit" class="obsversionupdate btn btn-info" btn-sm"
-                                data-posturl="<%= url_for('plugin_obs_rsync_update_obs_version', folder => $folder) %>"
-                                data-geturl="<%= url_for('plugin_obs_rsync_get_obs_version', folder => $folder) %>"
-                                onclick="postAndRedrawElement(this, 'obsversion_<%=$folder_ident%>',2000)">
+                    <td class="lastsyncbuilds"><%= $folder_info->{run_last_builds} // '' %></td>
+                    <td class=obsbuildscol">
+                        <span id="obsbuilds_<%= $folder_ident %>" class="obsbuilds"></span>
+                        <button type="submit" class="obsbuildsupdate btn btn-info" btn-sm"
+                                data-posturl="<%= url_for('plugin_obs_rsync_update_builds_text', alias => $alias) %>"
+                                data-geturl="<%= url_for('plugin_obs_rsync_get_builds_text', alias => $alias) %>"
+                                onclick="postAndRedrawElement(this, 'obsbuilds_<%=$folder_ident%>',2000)">
                             Update
                         </button>
                     </td>
@@ -69,8 +72,8 @@
                     <td class="dirtystatuscol">
                         <span id="dirtystatus_<%= $folder_ident %>" class="dirtystatus"><%= $folder_info->{dirty_status} %></span>
                         <button type="submit" class="dirtystatusupdate btn btn-info" btn-sm"
-                                data-posturl="<%= url_for('plugin_obs_rsync_update_dirty_status', folder => $folder) %>"
-                                data-geturl="<%= url_for('plugin_obs_rsync_get_dirty_status', folder => $folder) %>"
+                                data-posturl="<%= url_for('plugin_obs_rsync_update_dirty_status', project => $project // $folder) %>"
+                                data-geturl="<%= url_for('plugin_obs_rsync_get_dirty_status', project => $project // $folder) %>"
                                 onclick="postAndRedrawElement(this, 'dirtystatus_<%=$folder_ident%>', 2000)">
                             Update
                         </button>
