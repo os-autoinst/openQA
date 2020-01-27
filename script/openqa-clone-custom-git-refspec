@@ -1,13 +1,23 @@
 #!/bin/bash -e
 
-# Usage:
-#  openqa-clone-custom-git-refspec GITHUB_PR_URL OPENQA_JOB_URL [CUSTOM_TEST_VAR_1=foo] [CUSTOM_TEST_VAR_2=bar]
-#  openqa-clone-custom-git-refspec GITHUB_BRANCH_URL OPENQA_JOB_URL [CUSTOM_TEST_VAR_1=foo] [CUSTOM_TEST_VAR_2=bar]
-#
-# Example:
-#  openqa-clone-custom-git-refspec https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/6529 https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
-#  openqa-clone-custom-git-refspec https://github.com/coolgw/os-autoinst-distri-opensuse/tree/nfs https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
-#
+usage() {
+    cat << EOF
+Usage:
+ openqa-clone-custom-git-refspec <github_pr_url> <openqa_job_url> [CUSTOM_TEST_VAR_1=foo] [CUSTOM_TEST_VAR_2=bar] ...
+ openqa-clone-custom-git-refspec <github_branch_url> <openqa_job_url> [CUSTOM_TEST_VAR_1=foo] [CUSTOM_TEST_VAR_2=bar] ...
+
+Options:
+ -v, --verbose      execute with verbose output
+ -h, -?, --help     display this help
+ -n, --dry-run      execute in dry-run mode, do not clone any openQA jobs
+
+Examples:
+ openqa-clone-custom-git-refspec https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/6529 https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
+ openqa-clone-custom-git-refspec https://github.com/coolgw/os-autoinst-distri-opensuse/tree/nfs https://openqa.opensuse.org/tests/835060 DESKTOP=textmode
+EOF
+    exit
+}
+
 set -o pipefail
 
 if [[ -n "$GITHUB_TOKEN" ]]; then
@@ -23,6 +33,18 @@ throw_json_error() {
     echo "$2"
     exit 2
 }
+
+opts=$(getopt -o vhn --long verbose,dry-run,help -n 'parse-options' -- "$@") || usage
+eval set -- "$opts"
+while true; do
+  case "$1" in
+    -v | --verbose ) set -x; shift ;;
+    -h | --help ) usage; shift ;;
+    -n | --dry-run ) dry_run=true; shift ;;
+    -- ) shift; break ;;
+    * ) break ;;
+  esac
+done
 
 if [[ -z "$repo_name" ]] || [[ -z "$pr" ]]; then
     first_arg="${1:?"Need 'url' as parameter pointing to a either a git branch, e.g. 'https://github.com/yourname/os-autoinst-distri-opensuse/tree/poo-12345', or a github pull request in the form of pull request url or a combination of 'repo_name' (sending repo) and 'pr' variables, e.g. either 'https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/1234' 'me/os-autoinst-distri-opensuse' and '1234' or 'branch'"}"

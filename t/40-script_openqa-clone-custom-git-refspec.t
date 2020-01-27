@@ -47,7 +47,10 @@ sub test_once {
 }
 
 my $ret;
-test_once '', qr/Need.*parameter/, 'help text shown', 1, 'openqa-clone-custom-git-refspec needs parameters';
+test_once '', qr/Need.*parameter/, 'hint shown for mandatory parameter missing', 1,
+  'openqa-clone-custom-git-refspec needs parameters';
+test_once '--help',        qr/Usage:/, 'help text shown',              0, 'help screen is regarded as success';
+test_once '--invalid-arg', qr/Usage:/, 'invalid args also yield help', 0, 'help screen still success';
 my $args = 'https://github.com/user/repo/pull/9128 https://openqa.opensuse.org/tests/1234';
 isnt run_once($args), 0, 'without network we fail (without error)';
 # mock any external access with all arguments
