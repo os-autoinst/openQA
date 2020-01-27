@@ -147,13 +147,17 @@ sub _parse_obs_response_dirty {
     my $results = $res->dom('result');
     return (undef, '') unless $results->size;
 
+    my $retstate = '';
     for my $result ($results->each) {
         my $attributes = $result->attr;
         return (1, 'dirty') if exists $attributes->{dirty};
-        next if ($attributes->{repository} // '') ne 'images';
-        return (1, $attributes->{state} // '') if ($attributes->{state} // '') ne 'published';
+        next                if ($attributes->{repository} // '') ne 'images';
+        my $state = $attributes->{state} // '';
+        # values containing 'published' are not dirty: ('published', 'unpublished')
+        return (1, $state) if $state && index($state, 'published') == -1;
+        $retstate = $state if $state;
     }
-    return (0, 'published');
+    return (0, $retstate);
 }
 
 # _split_project_batch() splits name like 'projectname|batchname'
