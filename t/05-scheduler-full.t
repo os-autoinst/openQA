@@ -188,6 +188,7 @@ subtest 're-scheduling and incompletion of jobs when worker is unresponsive or c
       'running job set to done if its worker re-connects claiming not to work on it anymore';
     is $job->result, OpenQA::Jobs::Constants::INCOMPLETE,
       'running job incompleted if its worker re-connects claiming not to work on it anymore';
+    is $job->reason, 'associated worker re-connected but abandoned the job', 'reason is set';
 
     kill_service($unstable_w_pid, 1);
     dead_workers($schema);

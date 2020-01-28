@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2016-2019 SUSE LLC
+# Copyright (C) 2016-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,8 +42,9 @@ sub _check_job_running {
 sub _check_job_incomplete {
     my ($jobid) = @_;
     my $job = $schema->resultset('Jobs')->find($jobid);
-    is($job->state,  OpenQA::Jobs::Constants::DONE,       "job $jobid set as done");
-    is($job->result, OpenQA::Jobs::Constants::INCOMPLETE, "job $jobid set as incomplete");
+    is($job->state,  OpenQA::Jobs::Constants::DONE,                                    "job $jobid set as done");
+    is($job->result, OpenQA::Jobs::Constants::INCOMPLETE,                              "job $jobid set as incomplete");
+    is($job->reason, 'associated worker has not sent any status updates for too long', "job $jobid set as incomplete");
     ok($job->clone, "job $jobid was cloned");
     return $job;
 }

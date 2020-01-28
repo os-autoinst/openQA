@@ -152,7 +152,10 @@ sub _incomplete_previous_job {
     if (my $duplicate = $job->auto_duplicate) {
         log_debug("Job $job_id duplicated as " . $duplicate->id);
     }
-    $job->done(result => OpenQA::Jobs::Constants::INCOMPLETE);
+    $job->done(
+        result => OpenQA::Jobs::Constants::INCOMPLETE,
+        reason => 'associated worker re-connected but abandoned the job'
+    );
     return 1;
 }
 
