@@ -146,7 +146,11 @@ sub accept {
     }
     $self->_set_status(accepting => {});
 
-    my $client               = $self->client;
+    # clear last API error (which happened before this job) and is therefore unrelated
+    # note: The last_error attribute is only used within job context.
+    my $client = $self->client;
+    $client->reset_last_error;
+
     my $websocket_connection = $client->websocket_connection;
     if (!$websocket_connection) {
         my $webui_host = $client->webui_host;
@@ -485,18 +489,14 @@ sub _stop_step_5_1_upload {
         # give the API one last try to incomplete the job at least
         # note: Setting 'ignore_errors' here is important. Otherwise we would endlessly repeat
         #       that API call.
-        return $self->client->send(
-            post          => "jobs/$job_id/set_done",
-            params        => {result => OpenQA::Jobs::Constants::INCOMPLETE},
-            non_critical  => 1,
-            ignore_errors => 1,
-            callback      => sub {
+        return $self->_set_job_done(
+            $reason,
+            {result => OpenQA::Jobs::Constants::INCOMPLETE},
+            sub {
                 # try to replenish registration (maybe the error is caused by wrong registration)
                 $self->client->register;
-
                 $callback->();
-            },
-        );
+            });
     }
 
     my $result;
@@ -527,8 +527,32 @@ sub _stop_step_5_1_upload {
         });
 }
 
-sub _stop_step_6_finalize {
-    my ($self, $reason, $params) = @_;
+sub _format_reason {
+    my ($self, $result, $reason) = @_;
+    return undef unless $reason ne 'done' && (!defined $result || $result ne $reason);
+
+    if ($reason eq 'setup failure') {
+        return "setup failure: $self->{_setup_error}";
+    }
+    elsif ($reason eq 'api-failure') {
+        if (my $last_client_error = $self->client->last_error) {
+            return "api failure: $last_client_error";
+        }
+        else {
+            return 'api failure';
+        }
+    }
+    else {
+        return $reason;
+    }
+}
+
+sub _set_job_done {
+    my ($self, $reason, $params, $callback) = @_;
+
+    # pass the reason if it is an additional specification of the result
+    my $formatted_reason = $self->_format_reason($params->{result}, $reason);
+    $params->{reason} = $formatted_reason if defined $formatted_reason;
 
     my $job_id = $self->id;
     return $self->client->send(
@@ -536,10 +560,18 @@ sub _stop_step_6_finalize {
         params        => $params,
         non_critical  => 1,
         ignore_errors => 1,
-        callback      => sub {
-            $self->_set_status(stopped => {reason => $reason});
-        },
+        callback      => $callback,
     );
+}
+
+sub _stop_step_6_finalize {
+    my ($self, $reason, $params) = @_;
+
+    $self->_set_job_done(
+        $reason, $params,
+        sub {
+            $self->_set_status(stopped => {reason => $reason});
+        });
 
     # note: The worker itself will react the the changed status and unassign this job object
     #       from its current_job property and will clean the pool directory.
