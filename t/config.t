@@ -80,6 +80,7 @@ subtest 'Test configuration default modes' => sub {
         obs_rsync => {
             home               => '',
             retry_interval     => 60,
+            retry_max_count    => 1400,
             queue_limit        => 200,
             concurrency        => 2,
             project_status_url => '',
