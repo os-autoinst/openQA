@@ -90,23 +90,13 @@ $current_jobs = $jobs;
 
 my $job2 = job_get($job->id);
 is(delete $job2->{origin_id}, delete $job1->{id}, 'original job');
-# delete the obviously different fields
-delete $job2->{id};
-delete $job1->{state};
-delete $job2->{state};
-delete $job1->{result};
-delete $job2->{result};
-delete $job1->{reason};
-delete $job2->{reason};
-delete $job1->{t_finished};
-delete $job2->{t_finished};
-delete $job1->{t_started};
-delete $job2->{t_started};
-# the name has job id as prefix, delete that too
-delete $job1->{settings}->{NAME};
-delete $job2->{settings}->{NAME};
-# assets are assigned during job grab and not cloned
-delete $job1->{assets};
+
+# compare cloned and original job ignoring fields which are supposed to be different
+# note: Assets are assigned during job grab and not cloned.
+for my $job ($job1, $job2) {
+    delete $job->{$_} for (qw(id state result reason t_finished t_started assets));
+    delete $job->{settings}->{NAME};    # has job id as prefix
+}
 is_deeply($job1, $job2, 'duplicated job equal');
 
 my @ret = OpenQA::Resource::Jobs::job_restart(99926);
