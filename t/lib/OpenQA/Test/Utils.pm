@@ -43,7 +43,7 @@ our (@EXPORT, @EXPORT_OK);
     qw(redirect_output standard_worker create_user_for_workers),
     qw(create_webapi create_websocket_server create_scheduler create_live_view_handler),
     qw(unresponsive_worker wait_for_worker setup_share_dir setup_fullstack_temp_dir run_gru_job),
-    qw(stop_service unstable_worker client_output fake_asset_server),
+    qw(collect_coverage_of_gru_jobs stop_service unstable_worker client_output fake_asset_server),
     qw(cache_minion_worker cache_worker_service shared_hash embed_server_for_testing),
     qw(run_cmd test_cmd)
 );
@@ -494,6 +494,20 @@ sub run_gru_job {
     $job->perform;
     $worker->unregister;
     return $job->info;
+}
+
+sub collect_coverage_of_gru_jobs {
+    my ($app) = @_;
+
+    $app->minion->on(
+        worker => sub {
+            my ($minion, $worker) = @_;
+            $worker->on(
+                dequeue => sub {
+                    my ($worker, $job) = @_;
+                    $job->on(cleanup => sub { Devel::Cover::report() if Devel::Cover->can('report') });
+                });
+        });
 }
 
 sub run_cmd {

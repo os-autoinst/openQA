@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 SUSE LLC
+# Copyright (C) 2018-2020 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,22 +19,35 @@ use Mojo::Base 'Mojolicious::Plugin';
 use File::Spec::Functions 'catfile';
 use File::Basename qw(basename dirname);
 use OpenQA::Utils qw(:DEFAULT imagesdir);
+use Scalar::Util 'looks_like_number';
+use List::Util 'min';
+
+# define default parameter for batch processing
+use constant SCREENSHOTS_PER_BATCH            => 200000;       # number of screenshots processed in one DB query
+use constant AVERAGE_EXECUTION_TIME_PER_BATCH => 8;            # estimation for SCREENSHOTS_PER_BATCH
+use constant DESIRED_MINION_JOB_RUNTIME       => (60 * 60);    # aim for one hour per Minion job
+use constant BATCHES_PER_MINION_JOB => (DESIRED_MINION_JOB_RUNTIME / AVERAGE_EXECUTION_TIME_PER_BATCH);
 
 sub register {
     my ($self, $app) = @_;
-    $app->minion->add_task(limit_results_and_logs => sub { _limit($app, @_) });
+    my $minion = $app->minion;
+    $minion->add_task(limit_results_and_logs => \&_limit);
+    $minion->add_task(limit_screenshots      => \&_limit_screenshots);
 }
 
 sub _limit {
-    my ($app, $job) = @_;
+    my ($job, $args) = @_;
 
-    # prevent multiple limit_results_and_logs tasks to run in parallel
+    # prevent multiple limit_results_and_logs tasks and limit_screenshots_task to run in parallel
+    my $app = $job->app;
     return $job->finish('Previous limit_results_and_logs job is still active')
-      unless my $guard = $app->minion->guard('limit_results_and_logs_task', 86400);
+      unless my $limit_results_and_logs_guard = $app->minion->guard('limit_results_and_logs_task', 86400);
+    return $job->finish('Previous limit_screenshots_task job is still active')
+      unless my $limit_screenshots_guard = $app->minion->guard('limit_screenshots_task', 86400);
 
     # prevent multiple limit_* tasks to run in parallel
     return $job->retry({delay => 60})
-      unless my $limit_guard = $app->minion->guard('limit_tasks', 86400);
+      unless my $overall_limit_guard = $app->minion->guard('limit_tasks', 86400);
 
     # create temporary job group outside of DB to collect
     # jobs without job_group_id
@@ -46,14 +59,59 @@ sub _limit {
         $group->limit_results_and_logs;
     }
 
-    # delete unused screenshots in batches
-    my $storage = $schema->storage;
-    my $dbh     = $storage->dbh;
-    my ($min_id, $max_id) = $dbh->selectrow_array('select min(id), max(id) from screenshots');
+    # prevent enqueuing new limit_screenshot if there are still inactive/delayed ones
+    my $limit_screenshots_jobs
+      = $app->minion->jobs({tasks => ['limit_screenshots'], states => ['inactive', 'active']})->total;
+    if ($limit_screenshots_jobs > 0) {
+        return $job->note(screenshot_cleanup =>
+              "skipping, there are still $limit_screenshots_jobs inactive/active limit_screenshots jobs");
+    }
+
+    # enqueue further Minion jobs to delete unused screenshots in batches
+    my ($min_id, $max_id) = $schema->storage->dbh->selectrow_array('select min(id), max(id) from screenshots');
     return undef unless $min_id && $max_id;
-    my $screenshots_with_ref_count_query_limit = 200000;
-    my $delete_screenshot_query                = $dbh->prepare('DELETE FROM screenshots WHERE id = ?');
-    my $unused_screenshots_query               = $dbh->prepare(
+    my $screenshots_per_batch  = $args->{screenshots_per_batch}  // SCREENSHOTS_PER_BATCH;
+    my $batches_per_minion_job = $args->{batches_per_minion_job} // BATCHES_PER_MINION_JOB;
+    my $screenshots_per_minion_job = $batches_per_minion_job * $screenshots_per_batch;
+    my $gru                        = $app->gru;
+    my %options                    = (priority => 4, ttl => 172800);
+    my @screenshot_cleanup_info;
+    for (my $i = $min_id; $i < $max_id; $i += $screenshots_per_minion_job) {
+        my %args = (
+            min_screenshot_id     => $i,
+            max_screenshot_id     => min($max_id, $i + $screenshots_per_minion_job - 1),
+            screenshots_per_batch => $screenshots_per_batch,
+        );
+        $gru->enqueue(limit_screenshots => \%args, \%options);
+        push(@screenshot_cleanup_info, \%args);
+    }
+    $job->note(screenshot_cleanup => \@screenshot_cleanup_info);
+}
+
+sub _limit_screenshots {
+    my ($job, $args) = @_;
+
+    # prevent multiple limit_screenshots tasks to run in parallel
+    my $app = $job->app;
+    return $job->retry({delay => 60})
+      unless my $limit_screenshots_guard = $app->minion->guard('limit_screenshots_task', 86400);
+
+    # prevent multiple limit_* tasks to run in parallel
+    return $job->retry({delay => 60})
+      unless my $overall_limit_guard = $app->minion->guard('limit_tasks', 86400);
+
+    # validate ID range
+    my ($min_id, $max_id, $screenshots_per_batch)
+      = ($args->{min_screenshot_id}, $args->{max_screenshot_id}, $args->{screenshots_per_batch});
+    return $job->fail({error => 'The specified ID range or screenshots per batch is invalid.'})
+      unless looks_like_number($min_id)
+      && looks_like_number($max_id)
+      && looks_like_number($args->{screenshots_per_batch});
+
+    # delete unused screenshots in batches
+    my $dbh                      = $app->schema->storage->dbh;
+    my $delete_screenshot_query  = $dbh->prepare('DELETE FROM screenshots WHERE id = ?');
+    my $unused_screenshots_query = $dbh->prepare(
         'SELECT me.id, me.filename
          FROM screenshots me
          LEFT OUTER JOIN screenshot_links links_outer
@@ -61,8 +119,8 @@ sub _limit {
          WHERE me.id BETWEEN ? AND ?
          AND links_outer.screenshot_id is NULL'
     );
-    for (my $i = $min_id; $i <= $max_id; $i += $screenshots_with_ref_count_query_limit) {
-        $unused_screenshots_query->execute($i, $i + $screenshots_with_ref_count_query_limit);
+    for (my $i = $min_id; $i <= $max_id; $i += $screenshots_per_batch) {
+        $unused_screenshots_query->execute($i, min($max_id, $i + $screenshots_per_batch - 1));
         while (my $screenshot = $unused_screenshots_query->fetchrow_arrayref) {
             my $screenshot_filename = $screenshot->[1];
             my $imagesdir           = imagesdir();
@@ -88,6 +146,5 @@ sub _limit {
         }
     }
 }
-
 
 1;

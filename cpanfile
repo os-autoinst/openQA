@@ -39,7 +39,7 @@ requires 'Cpanel::JSON::XS';
 requires 'JavaScript::Minifier::XS', '>= 0.11';
 requires 'JSON::Validator';
 requires 'LWP::UserAgent';
-requires 'Minion', '>= 10.0';
+requires 'Minion', '>= 10.04';
 requires 'Minion::Backend::SQLite';
 requires 'MRO::Compat';
 requires 'Module::Implementation';
