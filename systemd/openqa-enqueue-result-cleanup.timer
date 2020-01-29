@@ -1,8 +1,8 @@
 [Unit]
-Description=Enqueues a result/screenshots/logs cleanup task for openQA every hour.
+Description=Enqueues a result/screenshots/logs cleanup task for openQA every day.
 
 [Timer]
-OnCalendar=hourly
+OnCalendar=daily
 Persistent=true
 
 [Install]
