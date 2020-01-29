@@ -32,6 +32,8 @@ use OpenQA::Test::Case;
 use Try::Tiny;
 use FindBin;
 
+use constant OLDEST_STILL_SUPPORTED_SCHEMA_VERSION => 63;
+
 plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
 
 sub ensure_schema_is_created_and_empty {
@@ -66,8 +68,7 @@ OpenQA::Schema::disconnect_db;
 $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
 ensure_schema_is_created_and_empty $schema;
 
-# redeploy DB to older version and check if deployment_check upgrades the DB
-my $old_schema_version = 76;
+# redeploy DB to the oldest still supported version and check if deployment_check upgrades the DB
 $dh = DBIx::Class::DeploymentHandler->new(
     {
         schema              => $schema,
@@ -76,11 +77,11 @@ $dh = DBIx::Class::DeploymentHandler->new(
         sql_translator_args => {add_drop_table => 0},
         force_overwrite     => 1,
     });
-$dh->install({version => $old_schema_version});
+$dh->install({version => OLDEST_STILL_SUPPORTED_SCHEMA_VERSION});
 $schema->create_system_user;
 
 ok($dh->version_storage->database_version, 'DB deployed');
-is($dh->version_storage->database_version, $old_schema_version, 'Schema at correct, old, version');
+is($dh->version_storage->database_version, OLDEST_STILL_SUPPORTED_SCHEMA_VERSION, 'Schema at correct, old, version');
 $ret = OpenQA::Schema::deployment_check($schema);
 
 # insert default fixtures so this test is at least a little bit closer to migrations in production
