@@ -3,7 +3,7 @@ Description=The openQA web UI
 Wants=apache2.service openqa-setup-db.service
 Before=apache2.service
 After=postgresql.service openqa-setup-db.service openqa-scheduler.service
-Requires=openqa-livehandler.service openqa-websockets.service openqa-gru.service openqa-enqueue-asset-and-result-cleanup.timer
+Requires=openqa-livehandler.service openqa-websockets.service openqa-gru.service openqa-enqueue-asset-cleanup.timer openqa-enqueue-result-cleanup.timer
 
 [Service]
 # TODO: define whether we want to run the web ui with the same user
