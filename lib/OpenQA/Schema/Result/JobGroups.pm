@@ -412,7 +412,7 @@ sub template_data_from_yaml {
                     if ($attr->{machine}) {
                         $machine_names = $attr->{machine};
                     }
-                    if ($attr->{testsuite}) {
+                    if (exists $attr->{testsuite}) {
                         $job_template_name = $testsuite_name;
                         $testsuite_name    = $attr->{testsuite};
                     }
@@ -430,7 +430,7 @@ sub template_data_from_yaml {
                 $machine_names = [$machine_names] if ref($machine_names) ne 'ARRAY';
                 foreach my $machine_name (@{$machine_names}) {
                     my $job_template_key
-                      = $arch . $product_name . $machine_name . $testsuite_name . ($job_template_name // '');
+                      = $arch . $product_name . $machine_name . ($testsuite_name // '') . ($job_template_name // '');
                     die "Job template name '"
                       . ($job_template_name // $testsuite_name)
                       . "' is defined more than once. "
