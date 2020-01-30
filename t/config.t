@@ -142,7 +142,9 @@ subtest 'Test configuration override from file' => sub {
         "suse_mirror=http://blah/\n",
 "recognized_referers = bugzilla.suse.com bugzilla.opensuse.org bugzilla.novell.com bugzilla.microfocus.com progress.opensuse.org github.com\n",
         "[audit]\n",
-        "blacklist = job_grab job_done\n"
+        "blacklist = job_grab job_done\n",
+        "[assets/storage_duration]\n",
+        "-CURRENT = 40\n"
     );
     $t_dir->child("openqa.ini")->spurt(@data);
     OpenQA::Setup::read_config($app);
@@ -150,6 +152,7 @@ subtest 'Test configuration override from file' => sub {
     ok -e $t_dir->child("openqa.ini");
     ok($app->config->{global}->{suse_mirror} eq 'http://blah/',   'suse mirror');
     ok($app->config->{audit}->{blacklist} eq 'job_grab job_done', 'audit blacklist');
+    is($app->config->{'assets/storage_duration'}->{'-CURRENT'}, 40, 'assets/storage_duration');
 
     is_deeply(
         $app->config->{global}->{recognized_referers},

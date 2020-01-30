@@ -221,7 +221,14 @@ sub read_config {
     }
 
     for my $section (sort keys %defaults) {
-        for my $k (sort keys %{$defaults{$section}}) {
+        my @known_keys = sort keys %{$defaults{$section}};
+        # if no known_keys defined - just assign every key from the section
+        if (!@known_keys && $cfg) {
+            for my $k ($cfg->Parameters($section)) {
+                $app->config->{$section}->{$k} = $cfg->val($section, $k);
+            }
+        }
+        for my $k (@known_keys) {
             my $v = $cfg && $cfg->val($section, $k);
             $v //=
               exists $mode_defaults{$app->mode}{$section}->{$k}
