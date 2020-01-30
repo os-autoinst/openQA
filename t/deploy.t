@@ -29,12 +29,18 @@ use DBIx::Class::DeploymentHandler;
 use SQL::Translator;
 use OpenQA::Schema;
 use OpenQA::Test::Case;
+use Mojo::File 'path';
+use List::Util 'min';
 use Try::Tiny;
 use FindBin;
 
-use constant OLDEST_STILL_SUPPORTED_SCHEMA_VERSION => 63;
-
 plan skip_all => 'set TEST_PG to e.g. DBI:Pg:dbname=test" to enable this test' unless $ENV{TEST_PG};
+
+# find the oldest still supported schema version which is defined by the oldest deploy folder
+# which is still present
+my $oldest_still_supported_schema_version
+  = min(@{path($FindBin::Bin, '../dbicdh/PostgreSQL/deploy')->list({dir => 1})->map('basename')});
+ok($oldest_still_supported_schema_version, 'found oldest still supported schema version');
 
 sub ensure_schema_is_created_and_empty {
     my $dbh = shift->storage->dbh;
@@ -77,11 +83,11 @@ $dh = DBIx::Class::DeploymentHandler->new(
         sql_translator_args => {add_drop_table => 0},
         force_overwrite     => 1,
     });
-$dh->install({version => OLDEST_STILL_SUPPORTED_SCHEMA_VERSION});
+$dh->install({version => $oldest_still_supported_schema_version});
 $schema->create_system_user;
 
 ok($dh->version_storage->database_version, 'DB deployed');
-is($dh->version_storage->database_version, OLDEST_STILL_SUPPORTED_SCHEMA_VERSION, 'Schema at correct, old, version');
+is($dh->version_storage->database_version, $oldest_still_supported_schema_version, 'Schema at correct, old, version');
 $ret = OpenQA::Schema::deployment_check($schema);
 
 # insert default fixtures so this test is at least a little bit closer to migrations in production
