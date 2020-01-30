@@ -104,7 +104,7 @@ for my $i (1 .. 3) {
     }
 }
 
-$cache->sleep_time(1);
+$cache->downloader->sleep_time(1);
 $cache->init;
 is $cache->sqlite->migrations->active, 2, 'version 2 is still the active version';
 like $cache_log, qr/Cache size of "$cachedir" is 168 Byte, with limit 50GiB/,
@@ -314,7 +314,7 @@ subtest 'cache directory is symlink' => sub {
 subtest 'cache tmp directory is used for downloads' => sub {
     $cache->location($cachedir);
     my $tmpfile;
-    $cache->ua->on(
+    $cache->downloader->ua->on(
         start => sub {
             my ($ua, $tx) = @_;
             $tx->res->on(
